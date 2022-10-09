@@ -1,7 +1,7 @@
-import moment, { Moment } from "moment";
-import winston from "winston";
+import moment, {Moment} from 'moment';
+import winston from 'winston';
 
-import logger from "./logger";
+import logger from './logger';
 
 export class Timer {
   now: Moment;
@@ -29,7 +29,7 @@ export class Timer {
   stop(): Timer {
     logger.info({
       label: this.label,
-      message: `${this.endMessage} in ${moment().diff(this.now, "ms")}ms`,
+      message: `${this.endMessage} in ${moment().diff(this.now, 'ms')}ms`,
     });
     return this;
   }

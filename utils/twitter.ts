@@ -1,6 +1,6 @@
-import Twitter from "twitter";
+import Twitter from 'twitter';
 
-const { env } = process;
+const {env} = process;
 
 const T = new Twitter({
   consumer_key: env.TWITTER_API_KEY,
@@ -50,8 +50,8 @@ export class TwitterClient {
   async getAll(user_id: string): Promise<Tweet[]> {
     return new Promise((resolve, reject) => {
       T.get(
-        "statuses/user_timeline",
-        { user_id, tweet_mode: "extended" },
+        'statuses/user_timeline',
+        {user_id, tweet_mode: 'extended'},
         (err: Error, data: Tweet[]) => {
           if (err) {
             return reject(err);

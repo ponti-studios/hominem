@@ -15,45 +15,43 @@
  *  8. Determine how many years of a user's time it times to afford item
  */
 
-const { v4: uuidV4 } = require('uuid');
+const {v4: uuidV4} = require('uuid');
 
 export class User {
-    id: number
+  id: number;
 
-    salary: number = 0;
+  salary = 0;
 
-    items: Item[] = []
+  items: Item[] = [];
 
-    constructor() {
-      this.id = uuidV4();
-    }
+  constructor() {
+    this.id = uuidV4();
+  }
 
-    /**
-     *
-     * @param {Number} salary - Set yearly
-     */
-    setSalary(salary: number): User {
-      this.salary = salary;
-      return this;
-    }
+  /**
+   *
+   * @param {Number} salary - Set yearly
+   */
+  setSalary(salary: number): User {
+    this.salary = salary;
+    return this;
+  }
 
-    addItem(item: Item): User {
-      return this;
-    }
+  addItem(item: Item): User {
+    return this;
+  }
 
-    calculateCostPerDay(item: Item): number {
-      return (this.salary / 365) * item.price;
-    }
+  calculateCostPerDay(item: Item): number {
+    return (this.salary / 365) * item.price;
+  }
 }
 
 export class Item {
-    price = 0;
+  price = 0;
 
-    constructor(name: string, price: number) {
-
-    }
+  constructor(name: string, price: number) {}
 }
 
 const user = new User().setSalary(75000);
-const item = new Item('Tesla Model 3', 75000.00);
+const item = new Item('Tesla Model 3', 75000.0);
 console.log(user.calculateCostPerDay(item) === 602.73);

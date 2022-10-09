@@ -1,12 +1,12 @@
 export interface MintTransaction {
   Date: string;
   Description: string;
-  "Original Description": string;
+  'Original Description': string;
   Amount: string;
   Transaction: string;
   Type: string;
   Category: string;
-  "Account Name": string;
+  'Account Name': string;
   Labels: string;
   Notes: string;
 }

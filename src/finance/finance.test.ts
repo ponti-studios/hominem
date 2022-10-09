@@ -1,6 +1,6 @@
-import { expect } from '@jest/globals';
-import { describe } from 'yargs';
-import { User } from './finance';
+import {expect} from '@jest/globals';
+import {describe} from 'yargs';
+import {User} from './finance';
 
 describe('finance', () => {
   it('should create User', () => {

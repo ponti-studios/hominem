@@ -1,5 +1,5 @@
-import { Timer } from "./timer";
-import logger from "./logger";
+import {Timer} from './timer';
+import logger from './logger';
 
 export async function createRecords(name: string, fn: Function): Promise<void> {
   try {
@@ -12,7 +12,7 @@ export async function createRecords(name: string, fn: Function): Promise<void> {
     await fn();
     timer.stop();
   } catch (error) {
-    logger.error({ message: `Could not save ${name}: ${error} ` });
+    logger.error({message: `Could not save ${name}: ${error} `});
     process.exit(1);
   }
 }

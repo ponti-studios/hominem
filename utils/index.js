@@ -1,26 +1,26 @@
 const budget = {
   types: [
-    { name: "fixed", amount: 0.5 },
-    { name: "flexible", amount: 0.3 },
-    { name: "goals", amount: 0.2 }
+    {name: 'fixed', amount: 0.5},
+    {name: 'flexible', amount: 0.3},
+    {name: 'goals', amount: 0.2},
   ],
   categories: {
-    Housing: { amount: 0.3, type: "fixed" },
-    "Living Expenses": {
+    Housing: {amount: 0.3, type: 'fixed'},
+    'Living Expenses': {
       amount: 0.1,
-      type: "fixed",
-      includes: ["electricity"]
+      type: 'fixed',
+      includes: ['electricity'],
     },
     Food: {
       amount: 0.1,
-      type: "fixed",
-      includes: ["groceries", "dining out"]
+      type: 'fixed',
+      includes: ['groceries', 'dining out'],
     },
-    Savings: { amount: 0.2, type: "goals" },
-    Debt: { amount: 0.1, type: "goals" },
-    Transportation: { amount: 0.05, type: "fixed" },
-    Personal: { amount: 0.15, type: "flexible" }
-  }
+    Savings: {amount: 0.2, type: 'goals'},
+    Debt: {amount: 0.1, type: 'goals'},
+    Transportation: {amount: 0.05, type: 'fixed'},
+    Personal: {amount: 0.15, type: 'flexible'},
+  },
 };
 
 /**
@@ -41,9 +41,6 @@ const flex = function getFlexBudget(monthlyIncome, fixedCosts) {
 };
 
 module.exports = {
-    types: [
-        budget,
-        flex
-    ],
-    categories
-}
+  types: [budget, flex],
+  categories,
+};

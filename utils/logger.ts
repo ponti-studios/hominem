@@ -1,12 +1,12 @@
-import { createLogger, format, transports } from "winston";
+import {createLogger, format, transports} from 'winston';
 
 const logTransports = [
   new transports.File({
-    level: "error",
-    filename: "./logs/error.log",
+    level: 'error',
+    filename: './logs/error.log',
     format: format.json({
       replacer: (key, value) => {
-        if (key === "error") {
+        if (key === 'error') {
           return {
             message: (value as Error).message,
             stack: (value as Error).stack,
@@ -17,12 +17,12 @@ const logTransports = [
     }),
   }),
   new transports.Console({
-    level: "debug",
+    level: 'debug',
     format: format.combine(
       format.colorize(),
       format.simple(),
       format.printf(
-        ({ level, message, label, timestamp }) =>
+        ({level, message, label, timestamp}) =>
           `${timestamp} [${label}] ${level}: ${message}`
       )
     ),
@@ -32,7 +32,7 @@ const logTransports = [
 const logger = createLogger({
   format: format.combine(format.timestamp()),
   transports: logTransports,
-  defaultMeta: { service: "api" },
+  defaultMeta: {service: 'api'},
 });
 
 export default logger;
