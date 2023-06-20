@@ -5,9 +5,9 @@ export interface Bank {
   formatter: Function;
 }
 
-interface GetTransactionsResponse {
+export interface GetTransactionsResponse {
   error?: string;
   data?: KeyMap[];
 }
 
-type KeyMap = {[key: string]: string};
+export type KeyMap = {[key: string]: string};

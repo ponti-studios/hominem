@@ -4,11 +4,11 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import {seed} from './seed';
-import logger from '../../src/utils/logger';
+import logger from './logger';
 import {createRecords} from './create-record';
 
-import * as GoogleSheetsTypes from '../../src/utils/google-sheets/google-sheets-types';
-import {getSheetValues} from '../../src/utils/google-sheets';
+import * as GoogleSheetsTypes from './google-sheets/google-sheets-types';
+import {getSheetValues} from './google-sheets';
 
 import {TransactionModel} from '../../src/transactions/transaction.model';
 import {HumanModel} from '../../src/humans/humans.model';

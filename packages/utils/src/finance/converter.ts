@@ -1,6 +1,6 @@
 import csv from 'csvtojson';
 import * as fs from 'fs';
-import {Bank, GetTransactionsResponse, KeyMap} from '.';
+import {Bank, GetTransactionsResponse, KeyMap} from '../types/finance';
 import {capital_one} from './capital-one';
 
 export function formatTransaction(
