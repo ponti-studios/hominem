@@ -4,9 +4,8 @@
   "description": "Random utilities",
   "main": "./src/index.ts",
   "scripts": {
-    "test": "jest",
-    "compile": "tsc",
-    "posttest": "npm run lint"
+    "build": "tsc",
+    "test": "jest"
   },
   "dependencies": {
     "@hapi/boom": "^9.1.4",
