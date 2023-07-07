@@ -3,14 +3,9 @@
 import React, {useState} from 'react';
 
 const LandingPage: React.FC = () => {
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [responseValue, setResponseValue] = useState('');
   const [inputValue, setInputValue] = useState('');
   const [error, setError] = useState(null);
-
-  const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
