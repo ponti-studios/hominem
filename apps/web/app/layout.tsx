@@ -9,7 +9,7 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
             <h1 className="text-4xl font-bold">Random</h1>
           </div>
         </header>
-        <main className="container mx-auto py-16 px-4 flex-1 flex flex-col max-w-4xl">
+        <main className="container mx-auto pt-16 px-4 flex-1 flex flex-col max-w-4xl">
           {children}
         </main>
         <footer className="py-4 px-4 bg-gray-200 dark:bg-gray-800">
