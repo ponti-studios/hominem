@@ -19,25 +19,20 @@ const {v4: uuidV4} = require('uuid');
 
 export class User {
   id: number;
-
-  salary = 0;
-
   items: Item[] = [];
+  salary = 0;
 
   constructor() {
     this.id = uuidV4();
   }
 
-  /**
-   *
-   * @param {Number} salary - Set yearly
-   */
   setSalary(salary: number): User {
     this.salary = salary;
     return this;
   }
 
   addItem(item: Item): User {
+    this.items.push(item);
     return this;
   }
 
@@ -51,7 +46,3 @@ export class Item {
 
   constructor(name: string, price: number) {}
 }
-
-const user = new User().setSalary(75000);
-const item = new Item('Tesla Model 3', 75000.0);
-console.log(user.calculateCostPerDay(item) === 602.73);

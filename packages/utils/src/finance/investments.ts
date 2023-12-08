@@ -11,7 +11,6 @@ interface Expense {
 /**
  * percentage rate of return of US stock market per year
  */
-
 export function costOverTime(expense: Expense, user: Human) {
   const expectedLifespan = 74;
   const age = moment().diff(user.birthday, 'y');

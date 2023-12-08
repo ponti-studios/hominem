@@ -28,7 +28,7 @@ export const budget = {
  * based on the 50/30/20 rule. This rule states that 50% of your
  * income should go towards needs, 30% towards wants, and 20% towards
  * savings and debt repayment.
- * 
+ *
  * This function calculates users' weekly flexible spending budget by
  * subtracting monthly fixed costs from monthly income and dividing the remainder by 4.3.
  * NOTE: 4.3 is used instead of 4 to account for months with 5 weeks.
@@ -37,6 +37,9 @@ export const budget = {
  * @param {number} monthlyFixedCosts - The sum of all costs that are fixed
  * @return {number}
  */
-export function getFlexBudget(monthlyIncome: number, monthlyFixedCosts: number) {
+export function getFlexBudget(
+  monthlyIncome: number,
+  monthlyFixedCosts: number
+) {
   return (monthlyIncome - monthlyFixedCosts) / 4.3;
-};
+}
