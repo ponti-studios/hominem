@@ -37,12 +37,16 @@ export class User {
   }
 
   calculateCostPerDay(item: Item): number {
-    return (this.salary / 365) * item.price;
+    return +(item.price / 3 / 365).toPrecision(4);
   }
 }
 
 export class Item {
+  name: string;
   price = 0;
 
-  constructor(name: string, price: number) {}
+  constructor(name: string, price: number) {
+    this.name = name;
+    this.price = price;
+  }
 }

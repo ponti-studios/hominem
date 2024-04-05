@@ -1,33 +1,35 @@
 {
-  "name": "utils",
-  "version": "0.0.0",
-  "description": "Random utilities",
-  "main": "./src/index.ts",
-  "scripts": {
-    "build": "tsc",
-    "test": "jest"
-  },
-  "dependencies": {
-    "@hapi/boom": "^9.1.4",
-    "axios": "^0.21.0",
-    "csvtojson": "^2.0.10",
-    "dotenv": "^8.2.0",
-    "googleapis": "118.0.0",
-    "google-auth-library": "8.8.0",
-    "moment": "^2.29.1",
-    "ts-node": "^9.0.0",
-    "twitter": "1.7.1",
-    "winston": "3.9.0",
-    "uuid": "^8.3.1"
-  },
-  "devDependencies": {
-    "@types/node": "^14.11.2",
-    "@types/twitter": "1.7.1",
-    "@typescript-eslint/eslint-plugin": "^4.6.0",
-    "@typescript-eslint/parser": "^4.6.0",
-    "eslint": "^7.12.1",
-    "jest": "^26.6.1",
-    "tsconfig": "*",
-    "typescript": "^4.0.3"
-  }
+	"name": "utils",
+	"version": "0.0.0",
+	"description": "Random utilities",
+	"main": "./src/index.ts",
+	"scripts": {
+		"build": "tsc",
+		"test": "vitest --run",
+		"test:watch": "vitest"
+	},
+	"dependencies": {
+		"@hapi/boom": "^9.1.4",
+		"axios": "^0.21.0",
+		"csvtojson": "^2.0.10",
+		"dotenv": "^8.2.0",
+		"google-auth-library": "8.8.0",
+		"googleapis": "118.0.0",
+		"moment": "^2.29.1",
+		"ts-node": "^9.0.0",
+		"twitter": "1.7.1",
+		"uuid": "^8.3.1",
+		"vite-tsconfig-paths": "^4.3.2",
+		"winston": "3.9.0"
+	},
+	"devDependencies": {
+		"@types/node": "^20.12.4",
+		"@types/twitter": "1.7.1",
+		"@vitest/coverage-v8": "^1.4.0",
+		"jsdom": "^24.0.0",
+		"tsconfig": "*",
+		"typescript": "^5.4.3",
+		"vite": "^5.2.8",
+		"vitest": "^1.4.0"
+	}
 }

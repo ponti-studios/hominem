@@ -1,11 +1,11 @@
+import {readFile} from 'node:fs';
+import {resolve} from 'node:path';
+import {promisify} from 'node:util';
 import * as dotenv from 'dotenv';
-import {readFile} from 'fs';
-import {google, sheets_v4} from 'googleapis';
-import {JWT, OAuth2Client} from 'google-auth-library';
-import {resolve} from 'path';
-import {promisify} from 'util';
+import {google, type sheets_v4} from 'googleapis';
+import {JWT, type OAuth2Client} from 'google-auth-library';
 
-import {SpreadSheetRange} from './google-sheets-types';
+import type {SpreadSheetRange} from './google-sheets-types';
 import logger from '../logger';
 
 dotenv.config({
@@ -88,7 +88,6 @@ export async function getSheetValues(
 
   const [headers, ...rows]: string[][] = response.data.values;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const values = rows.map((row: any[]) =>
     headers.reduce(
       (record, header, idx) => ({...record, [header]: row[idx]}),

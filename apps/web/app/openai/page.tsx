@@ -1,6 +1,7 @@
 'use client';
 
-import React, {useState} from 'react';
+import type React from 'react';
+import {useState} from 'react';
 
 const LandingPage: React.FC = () => {
   const [responseValue, setResponseValue] = useState('');
@@ -51,7 +52,10 @@ const LandingPage: React.FC = () => {
             placeholder="Enter your value"
             className="p-2 w-full border border-gray-300 focus:outline-none flex-1 rounded-r-none rounded-l-md"
           />
-          <button className="px-4 py-1 rounded text-white bg-blue-500 hover:bg-blue-600 rounded-l-none rounded-r-md">
+          <button
+            type="submit"
+            className="px-4 py-1 rounded text-white bg-blue-500 hover:bg-blue-600 rounded-l-none rounded-r-md"
+          >
             Submit
           </button>
         </div>
