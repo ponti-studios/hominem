@@ -1,0 +1,16 @@
+{
+  "name": "nlp",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "vitest --run --passWithNoTests"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "chrono-node": "^2.7.5",
+    "compromise": "^14.13.0"
+  }
+}

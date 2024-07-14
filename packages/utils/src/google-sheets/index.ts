@@ -1,16 +1,16 @@
+import * as dotenv from 'dotenv';
+dotenv.config({
+  path: resolve(__dirname, `../.env.${process.env.NODE_ENV}`),
+});
+
 import {readFile} from 'node:fs';
 import {resolve} from 'node:path';
 import {promisify} from 'node:util';
-import * as dotenv from 'dotenv';
 import {google, type sheets_v4} from 'googleapis';
 import {JWT, type OAuth2Client} from 'google-auth-library';
 
 import type {SpreadSheetRange} from './google-sheets-types';
 import logger from '../logger';
-
-dotenv.config({
-  path: resolve(__dirname, `../.env.${process.env.NODE_ENV}`),
-});
 
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
 
@@ -86,7 +86,7 @@ export async function getSheetValues(
     valueRenderOption: 'FORMATTED_VALUE',
   });
 
-  const [headers, ...rows]: string[][] = response.data.values;
+  const [headers, ...rows]: string[][] = response.data.values || [];
 
   const values = rows.map((row: any[]) =>
     headers.reduce(
