@@ -28,7 +28,10 @@ function parseEventDetails(userInput: string): EventDetails {
     place = places.join(', ');
   }
 
+  // Extract people
   const people = doc.people().out('array');
+  // ! TODO Search user's contacts to find the appropriate people
+
   // Extract and parse date/time
   const dates = chrono.parse(userInput);
   if (dates.length > 0) {
@@ -51,6 +54,6 @@ const eventDetails = parseEventDetails(
 console.log('Event Details:');
 console.log(`all: ${eventDetails.all}`);
 console.log(`Title: ${eventDetails.title}`);
-console.log(`Place: ${eventDetails.people}`);
+console.log(`People: ${eventDetails.people}`);
 console.log(`Place: ${eventDetails.place}`);
 console.log(`Date and Time: ${eventDetails.date_time}`);
