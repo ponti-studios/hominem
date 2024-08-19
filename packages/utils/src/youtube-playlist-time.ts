@@ -10,9 +10,16 @@ const isString = (v: string | null | undefined): v is string => Boolean(v);
  * @param {Element} el - The YouTube playlist section element.
  * @returns {string[]} An array of timestamps in the format "HH:MM:SS" or "MM:SS".
  */
-export function getPlaylistTimestamps(el: Element) {
+export function getPlaylistTimestamps(el: Element): string[] {
   const timestampBadges = el.querySelectorAll(".badge-shape-wiz__text")
   return Array.from(timestampBadges).map((e: Element) => e.textContent).filter(isString);
+}
+
+type TimeObject = {
+  days: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
 }
 
 /**
@@ -25,7 +32,7 @@ export function getPlaylistTimestamps(el: Element) {
  * @returns {{ days: number, hours: number, minutes: number, seconds: number }}
  *   An object containing the total duration in days, hours, minutes, and seconds.
  */
-export function calculateTotalTimeFromArray(timestamps: string[]) {
+export function calculateTotalTimeFromArray(timestamps: string[]): TimeObject {
   const aggregator = {
     days: 0,
     hours: 0,
@@ -67,4 +74,22 @@ export function calculateTotalTimeFromArray(timestamps: string[]) {
 
 export function getPlaylistLength(el: Element) {
   return calculateTotalTimeFromArray(getPlaylistTimestamps(el))
+}
+
+/**
+ * Calculates the number of chunks needed to complete a given time duration.
+ *
+ * This function takes a time object representing a duration and a chunk length in
+ * minutes and calculates the number of chunks needed to complete the duration.
+ * 
+ * For example, the user may want to determine how many 25-minute Peloton cycling rides
+ * are needed to complete the total time of their YouTube Watch Later Playlist.
+ *
+ * @param {TimeObject} timeObject - The time object representing the duration.
+ * @param {number} cycleLengthMinutes - The length of each chunk in minutes.
+ * @returns {number} The number of chunks needed to complete the duration.
+ */
+export function calculateTimeChunksCount(timeObject: TimeObject, chunkInMinutes: number): number {
+  const totalSeconds = timeObject.days * 86400 + timeObject.hours * 3600 + timeObject.minutes * 60 + timeObject.seconds;
+  return Math.ceil(totalSeconds / (chunkInMinutes * 60));
 }

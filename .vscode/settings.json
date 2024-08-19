@@ -1,5 +1,8 @@
 {
   "editor.formatOnSave": true,
   "editor.formatOnType": true,
-  "biome.enabled": false
+  "biome.enabled": false,
+  "cSpell.words": [
+    "Peloton"
+  ]
 }
