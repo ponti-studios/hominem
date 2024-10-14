@@ -12,7 +12,7 @@
   "license": "ISC",
   "dependencies": {
     "dotenv": "^16.4.5",
-    "openai": "^4.47.1"
+    "openai": "^4.67.3"
   },
   "devDependencies": {
     "ts-node": "^10.9.2"
