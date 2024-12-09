@@ -3,6 +3,9 @@
   "editor.formatOnType": true,
   "biome.enabled": false,
   "cSpell.words": [
-    "Peloton"
+    "openai",
+    "Peloton",
+    "posttest",
+    "prepush"
   ]
 }
