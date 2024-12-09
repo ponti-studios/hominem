@@ -1,3 +1,0 @@
-# Randomstuff
-
-🗑 random code stuffs
