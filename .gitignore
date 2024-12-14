@@ -16,6 +16,11 @@ build
 # misc
 .DS_Store
 *.pem
+db.sqlite
+
+# Google credentials
+credentials.json
+token.json
 
 # debug
 npm-debug.log*

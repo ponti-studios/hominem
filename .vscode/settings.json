@@ -1,10 +1,14 @@
 {
   "editor.formatOnSave": true,
   "editor.formatOnType": true,
-  "biome.enabled": false,
+  "biome.enabled": true,
   "cSpell.words": [
+    "AUTOINCREMENT",
+    "googleauth",
+    "libsql",
     "openai",
     "Peloton",
+    "ponti",
     "posttest",
     "prepush"
   ]
