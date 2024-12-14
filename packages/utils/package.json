@@ -1,5 +1,5 @@
 {
-  "name": "utils",
+  "name": "@ponti/utils",
   "version": "0.0.0",
   "description": "Random utilities",
   "main": "./src/index.ts",
