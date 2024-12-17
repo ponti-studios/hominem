@@ -1,17 +1,27 @@
 {
-	"$schema": "https://turbo.build/schema.json",
-	"globalDependencies": ["**/.env.*local"],
-	"pipeline": {
-		"build": {
-			"dependsOn": ["^build"],
-			"outputs": [".next/**", "!.next/cache/**"]
-		},
-		"lint": {},
-		"test": {},
-		"dev": {
-			"cache": false,
-			"persistent": true
-		}
-	},
-	"globalEnv": ["OPENAI_API_KEY", "OPENAI_ORG_ID"]
+  "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": [
+    "**/.env.*local"
+  ],
+  "globalEnv": [
+    "OPENAI_API_KEY",
+    "OPENAI_ORG_ID"
+  ],
+  "tasks": {
+    "build": {
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        ".next/**",
+        "!.next/cache/**"
+      ]
+    },
+    "lint": {},
+    "test": {},
+    "dev": {
+      "cache": false,
+      "persistent": true
+    }
+  }
 }
