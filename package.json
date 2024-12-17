@@ -28,6 +28,7 @@
   "name": "random",
   "packageManager": "npm@9.6.6",
   "workspaces": [
+    "scratchpad",
     "apps/*",
     "packages/*"
   ],
