@@ -6,7 +6,7 @@
   "scripts": {
     "eslint": "node node_modules/eslint/bin/eslint.js --ignore-path .eslintignore ./",
     "start": "node_modules/.bin/webpack-dev-server",
-    "test": "jest --config ./jest.config.js",
+    "test": "vitest --run",
     "webpack": "node_modules/.bin/webpack"
   },
   "author": "",
@@ -39,6 +39,7 @@
     "styled-components": "5.1.1",
     "stylelint-config-styled-components": "0.1.1",
     "stylelint-processor-styled-components": "1.10.0",
+    "vitest": "^2.1.8",
     "webpack": "4.40.2",
     "webpack-cli": "3.0.3",
     "webpack-dev-server": "3.1.3"

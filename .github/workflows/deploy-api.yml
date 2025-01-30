@@ -1,0 +1,39 @@
+name: api-deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/hominem-api/**"
+      - "packages/**"
+      - ".github/workflows/**"
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/hominem-api/**"
+      - "packages/**"
+      - ".github/workflows/**"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "23"
+          cache: "npm"
+          cache-dependency-path: "./package-lock.json"
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Install Railway
+        run: npm install -g @railway/cli
+
+      - name: Deploy
+        run: railway up --service ${{ secrets.RAILWAY_SERVICE_API }}
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}

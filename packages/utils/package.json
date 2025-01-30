@@ -1,35 +1,55 @@
 {
-  "name": "@ponti/utils",
-  "version": "0.0.0",
-  "description": "Random utilities",
-  "main": "./src/index.ts",
-  "scripts": {
-    "build": "tsc",
-    "test": "vitest --run --passWithNoTests",
-    "test:watch": "vitest"
-  },
-  "dependencies": {
-    "@hapi/boom": "^9.1.4",
-    "axios": "^0.21.0",
-    "csvtojson": "^2.0.10",
-    "dotenv": "^8.2.0",
-    "google-auth-library": "8.8.0",
-    "googleapis": "118.0.0",
-    "moment": "^2.29.1",
-    "ts-node": "^9.0.0",
-    "twitter": "1.7.1",
-    "uuid": "^8.3.1",
-    "vite-tsconfig-paths": "^4.3.2",
-    "winston": "3.9.0"
-  },
-  "devDependencies": {
-    "@types/node": "^20.12.4",
-    "@types/twitter": "1.7.1",
-    "@vitest/coverage-v8": "^1.4.0",
-    "jsdom": "^24.0.0",
-    "tsconfig": "*",
-    "typescript": "^5.4.3",
-    "vite": "^5.2.8",
-    "vitest": "^1.4.0"
-  }
+	"name": "@ponti/utils",
+	"version": "0.0.0",
+	"description": "Random utilities",
+	"main": "./src/index.ts",
+	"exports": {
+		".": "./src/index.ts",
+		"./db": "./src/db/index.ts",
+		"./career": "./src/career/index.ts",
+		"./finance": "./src/finance/index.ts",
+		"./time": "./src/time.ts",
+		"./logger": "./src/logger.ts",
+		"./notes": "./src/notes.utils.ts",
+		"./google-sheets": "./src/google/sheets.ts",
+		"./google-calendar": "./src/google/calendar.ts",
+		"./google-maps": "./src/google/maps.ts"
+	},
+	"scripts": {
+		"build": "tsc",
+		"test": "vitest --run --passWithNoTests",
+		"test:watch": "vitest"
+	},
+	"dependencies": {
+		"@hapi/boom": "^9.1.4",
+		"@neondatabase/serverless": "^0.10.4",
+		"aws4": "^1.13.2",
+		"axios": "^1.7.9",
+		"chrono-node": "^2.7.5",
+		"compromise": "^14.13.0",
+		"csvtojson": "^2.0.10",
+		"dotenv": "^8.2.0",
+		"drizzle-orm": "^0.38.4",
+		"google-auth-library": "8.8.0",
+		"googleapis": "118.0.0",
+		"moment": "^2.29.1",
+		"mongodb": "^6.12.0",
+		"openai": "4.77.3",
+		"postgres": "^3.4.5",
+		"ts-node": "^9.0.0",
+		"uuid": "^8.3.1",
+		"winston": "3.9.0",
+		"zod": "^3.24.1"
+	},
+	"devDependencies": {
+		"@types/node": "^20.12.4",
+		"@vitest/coverage-v8": "^1.4.0",
+		"drizzle-kit": "^0.30.2",
+		"jsdom": "^24.0.0",
+		"tsconfig": "*",
+		"typescript": "5.4.3",
+		"vite": "^5.2.8",
+		"vite-tsconfig-paths": "^5.1.4",
+		"vitest": "^1.4.0"
+	}
 }

@@ -1,7 +1,5 @@
 import { getPositions } from './positions';
-
-// Jest makes all objects global https://github.com/facebook/jest/pull/7571
-const { describe, test, expect } = global;
+import { describe, test, expect } from 'vitest';
 
 describe('getPositions', () => {
 	test('streams are positioned side by side', () => {

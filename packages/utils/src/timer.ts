@@ -1,36 +1,47 @@
-import moment, {Moment} from 'moment';
-import winston from 'winston';
+import type { Dayjs, QUnitType } from "dayjs";
+import dayjs from "dayjs";
 
-import logger from './logger';
+export interface TimerOptions {
+	label?: string;
+	onStart?: (label: string, startTime: Dayjs) => void;
+	onStop?: (label: string, duration: number) => void;
+}
 
 export class Timer {
-  now: Moment;
-  label: string;
-  startMessage: string;
-  endMessage: string;
+	private startTime: Dayjs;
+	private label: string;
+	private onStart?: (label: string, startTime: Dayjs) => void;
+	private onStop?: (label: string, duration: number) => void;
 
-  constructor(
-    logger: winston.Logger,
-    label: string,
-    startMessage: string,
-    endMessage: string
-  ) {
-    this.now = moment();
-    this.label = label;
-    this.startMessage = startMessage;
-    this.endMessage = endMessage;
+	constructor(options: TimerOptions = {}) {
+		this.startTime = dayjs();
+		this.label = options.label || "default";
+		this.onStart = options.onStart;
+		this.onStop = options.onStop;
 
-    logger.info({
-      label,
-      message: `\n\n${this.startMessage}...`,
-    });
-  }
+		if (this.onStart) {
+			this.onStart(this.label, this.startTime);
+		}
+	}
 
-  stop(): Timer {
-    logger.info({
-      label: this.label,
-      message: `${this.endMessage} in ${moment().diff(this.now, 'ms')}ms`,
-    });
-    return this;
-  }
+	stop(): number {
+		const duration = this.getDuration();
+		if (this.onStop) {
+			this.onStop(this.label, duration);
+		}
+		return duration;
+	}
+
+	getDuration(unit: QUnitType = "milliseconds"): number {
+		return dayjs().diff(this.startTime, unit);
+	}
+
+	reset(): Timer {
+		this.startTime = dayjs();
+		return this;
+	}
+
+	getStartTime(): Dayjs {
+		return this.startTime;
+	}
 }

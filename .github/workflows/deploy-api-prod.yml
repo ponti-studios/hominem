@@ -1,0 +1,33 @@
+name: deploy-api-prod
+
+on:
+  workflow_run:
+    workflows: ["deploy-db"]
+    branches: [main]
+    # Requied to run only on successful completion of the code-quality workflow
+    types:
+      - completed
+    
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: >
+      ${{ github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.workflow_id != github.workflow }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: 🏗️ Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Railway
+        run: npm install -g @railway/cli
+
+      - name: Deploy
+        run: railway up --service ${{ secrets.RAILWAY_SERVICE_API }}
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}

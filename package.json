@@ -1,46 +1,48 @@
 {
-  "private": true,
-  "scripts": {
-    "build": "turbo run build",
-    "dev": "turbo run dev --parallel",
-    "lint": "turbo run lint",
-    "format": "prettier --write \"**/src/*.{ts,tsx,md}\"",
-    "clean": "gts clean",
-    "posttest": "npm run lint",
-    "precommit": "npm run format && npm run lint",
-    "postinstall": "husky install",
-    "prepush": "npm run test",
-    "prerelease": "npm run test",
-    "test": "turbo run test",
-    "test:e2e:ci": "turbo run test:e2e:ci",
-    "test:update": "turbo run test:update",
-    "prepare": "husky install"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "1.6.4",
-    "@turbo/gen": "^1.9.7",
-    "@types/node": "^20.12.4",
-    "husky": "^7.0.0",
-    "prettier": "^2.5.1",
-    "turbo": "^2.3.3",
-    "typescript": "^5.4.3"
-  },
-  "name": "random",
-  "packageManager": "npm@9.6.6",
-  "workspaces": [
-    "scratchpad",
-    "apps/*",
-    "packages/*"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/charlesponti/randomstuff.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/charlesponti/randomstuff/issues"
-  },
-  "homepage": "https://github.com/charlesponti/randomstuff#readme"
+	"name": "random",
+	"version": "1.0.0",
+	"description": "random stuff",
+	"author": {
+		"name": "chase bridges",
+		"email": "code@ponti.io",
+		"url": "https://ponti.io/"
+	},
+	"homepage": "https://github.com/charlesponti/randomstuff#readme",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/charlesponti/randomstuff.git"
+	},
+	"private": true,
+	"bugs": {
+		"url": "https://github.com/charlesponti/randomstuff/issues"
+	},
+	"scripts": {
+		"build": "turbo run build",
+		"clean": "gts clean",
+		"dev": "turbo run dev --parallel",
+		"lint": "turbo run lint",
+		"postinstall": "npx husky install",
+		"posttest": "npm run lint",
+		"prepare": "npx husky install",
+		"prepush": "npm run test",
+		"prerelease": "npm run test",
+		"start:api": "cd apps/hominem-api && npm start",
+		"start:web": "cd apps/web && npm start",
+		"test": "turbo run test",
+		"test:ci": "turbo run test",
+		"test:e2e:ci": "turbo run test:e2e:ci",
+		"test:update": "turbo run test:update"
+	},
+	"dependencies": {},
+	"devDependencies": {
+		"@biomejs/biome": "1.9.4",
+		"@turbo/gen": "^1.9.7",
+		"husky": "^7.0.0",
+		"turbo": "^2.3.3",
+		"typescript": "5.4.3"
+	},
+	"keywords": [],
+	"license": "ISC",
+	"packageManager": "npm@10.2.4",
+	"workspaces": ["scratchpad", "apps/*", "packages/*"]
 }

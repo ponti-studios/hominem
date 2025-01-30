@@ -1,24 +1,99 @@
-version: '3.4'
-
 services:
+  mongodb:
+    image: mongo:latest
+    container_name: hominem-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: hominem
+    ports:
+      - "44017:27017"
+    volumes:
+      - hominem-mongodb:/data/db
+    healthcheck:
+      test: ["CMD-SHELL", "mongo --eval 'db.adminCommand('ping')'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   postgres:
     image: postgres:latest
-    container_name: postgres
+    container_name: hominem-postgres
     restart: always
-    volumes:
-      - random:/var/lib/postgresql/data
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: random
+      POSTGRES_DB: hominem
     networks:
-      - random
+      - hominem
     ports:
-      - 5432:5432
+      - 4432:5432
+    volumes:
+      - hominem-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  
+  postgres-test:
+    image: postgres:latest
+    container_name: hominem-postgres-test
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: hominem-test
+    networks:
+      - hominem
+    ports:
+      - 4433:5432
+
+  rabbitmq:
+    image: rabbitmq:management-alpine
+    container_name: hominem-rabbitmq
+    ports:
+      - "5672:5672" # RabbitMQ default port
+      - "15672:15672" # RabbitMQ Management UI port
+    environment:
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
+
+  chroma:
+    image: chromadb/chroma:latest
+    container_name: hominem-chroma
+    volumes:
+      - hominem-chroma:/chroma/.chroma/index 
+    ports:
+      - "8000:8000" # Expose ChromaDB on port 8000 on the host
+    environment:
+      CHROMA_DB: postgres
+      CHROMA_DB_HOST: postgres # The service name of the PostgreSQL container
+      CHROMA_DB_PORT: 5432 # The port on which PostgreSQL runs inside the Docker network
+      CHROMA_DB_USER: root
+      CHROMA_DB_PASSWORD: password
+      CHROMA_DB_DATABASE: main
+    depends_on:
+      - postgres
+
+  redis:
+    image: redis:latest
+    container_name: hominem-redis
+    ports:
+      - 4479:6379
+    volumes:
+      - hominem-redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 networks:
-  random:
+  hominem:
     driver: bridge
 
 volumes:
-  random:
+  hominem-postgres:
+  hominem-mongodb:
+  hominem-redis:
+  hominem-chroma:

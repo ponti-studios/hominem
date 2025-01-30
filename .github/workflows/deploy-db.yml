@@ -1,0 +1,34 @@
+name: deploy-db
+
+on:
+  workflow_run:
+    workflows: ["code-quality"]
+    branches: [main]
+    types:
+      - completed
+  push:
+    branches: [main]
+    paths:
+      - 'apps/hominem-api/**'
+
+jobs:
+  deploy-migrations:
+    defaults:
+      run:
+        working-directory: ./apps/hominem-api
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 🏗 Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: ⬇️ Install dependencies
+        run: npm install
+
+      - name: ⬆️ Deploy
+        run: npx drizzle-kit migrate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}

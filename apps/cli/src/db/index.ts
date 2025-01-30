@@ -1,4 +1,8 @@
-import { drizzle } from "drizzle-orm/libsql";
-export { applications } from "./schema.ts";
+import { drizzle } from "drizzle-orm/libsql/node";
+import assert from "node:assert";
 
-export const db = drizzle("file:db.sqlite");
+const { DATABASE_URL } = process.env;
+
+assert(DATABASE_URL, "Missing DATABASE_URL");
+
+export const db = drizzle(DATABASE_URL);

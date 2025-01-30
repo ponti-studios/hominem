@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `transactions_date_name_amount_type_account_unique` ON `transactions` (`date`,`name`,`amount`,`type`,`account`);
