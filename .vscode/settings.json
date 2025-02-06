@@ -1,4 +1,10 @@
 {
+  "[javascript]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
   "[jsonc]": {
     "editor.defaultFormatter": "vscode.json-language-features"
   },
@@ -65,8 +71,5 @@
   "rust-analyzer.completion.autoimport.enable": true,
   "typescript.enablePromptUseWorkspaceTsdk": true,
   "typescript.preferences.importModuleSpecifier": "relative",
-  "typescript.tsdk": "node_modules/typescript/lib",
-  "[json]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  }
+  "typescript.tsdk": "node_modules/typescript/lib"
 }
