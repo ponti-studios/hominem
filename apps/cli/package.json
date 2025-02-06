@@ -24,7 +24,7 @@
 		"@pinecone-database/pinecone": "^4.1.0",
 		"@ponti/utils": "*",
 		"@tanstack/react-query": "^5.64.1",
-		"ai": "^4.0.20",
+		"ai": "^4.1.7",
 		"ansi-colors": "^4.1.3",
 		"axios": "1.7.9",
 		"chalk": "^5.4.1",
