@@ -19,8 +19,8 @@ const navigation = [
 		href: "/dashboard/finance/state-tax-calculator",
 	},
 	{
-		name: "Price Tax Calculator",
-		href: "/dashboard/finance/price-tax-calculator",
+		name: "Sales Tax Calculator",
+		href: "/dashboard/finance/sales-tax-calculator",
 	},
 	{
 		name: "Music Streaming Calculator",
