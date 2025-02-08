@@ -71,19 +71,19 @@ export default function ApplicationsPage() {
 
 	return (
 		<div className="container mx-auto py-10">
-			<div className="flex justify-between items-center mb-6">
-				<div className="flex items-center gap-4">
+			<div className="flex justify-between items-center gap-2 mb-6 px-2 md:px-0">
+				<div className="flex-1 flex items-center gap-4">
 					<Input
 						placeholder="Search applications..."
 						value={search}
 						onChange={(e) => setSearch(e.target.value)}
-						className="w-[300px]"
+						className="w-full"
 					/>
 				</div>
 				<Dialog>
 					<DialogTrigger asChild>
-						<Button>
-							<Plus className="mr-2 h-4 w-4" />
+						<Button className="space-x-2">
+							<Plus className="h-4 w-4" />
 							New Application
 						</Button>
 					</DialogTrigger>

@@ -11,7 +11,7 @@ export default function RootLayout({
 		<html lang="en">
 			<body>
 				<Providers>
-					<div className="bg-background text-foreground min-h-screen flex flex-col">
+					<div className="bg-background text-foreground min-h-screen min-w-full flex flex-col">
 						<SiteNavigation />
 						<div className="flex-1 flex flex-col">{children}</div>
 					</div>
