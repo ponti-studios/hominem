@@ -4,6 +4,6 @@ buildCommand = "npm run build"
 
 [deploy]
 startCommand = "cd apps/hominem-api && npm start"
-healthcheckPath = "/"
+healthcheckPath = "/status"
 healthcheckTimeout = 100
 restartPolicyType = "never"
