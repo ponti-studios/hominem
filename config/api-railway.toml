@@ -3,7 +3,7 @@ builder = "nixpacks"
 buildCommand = "npm run build"
 
 [deploy]
-startCommand = "cd apps/hominem-api && npm start"
+startCommand = "bun run apps/hominem-api/src/index.ts"
 healthcheckPath = "/status"
 healthcheckTimeout = 100
 restartPolicyType = "never"
