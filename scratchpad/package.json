@@ -2,9 +2,7 @@
 	"name": "scratchpad",
 	"version": "1.0.0",
 	"main": "index.js",
-	"scripts": {
-		"test": "vitest --run"
-	},
+	"scripts": {},
 	"keywords": [],
 	"author": "",
 	"license": "ISC",

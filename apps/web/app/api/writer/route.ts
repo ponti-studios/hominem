@@ -1,8 +1,8 @@
 import { OpenAI } from "openai";
 import { z } from "zod";
 import { zodResponseFormat } from "openai/helpers/zod";
+import { WritingActions } from "../../../lib/writing";
 
-// Provide a two sentence description for why the word perfectly should be avoided
 const MODEL = "gpt-4o-mini";
 
 const openai = new OpenAI({
@@ -52,32 +52,25 @@ async function wordRewrite({ sentence, word }: WordRewriteParams) {
 		],
 	});
 
-	return completion.choices[0].message[0].trim();
-}
-
-enum WriterActions {
-	REWRITE_SENTENCE = "rewrite",
-	DESCRIBE_WORD = "describe_word",
+	return completion.choices[0].message.content;
 }
 
 export async function POST(req: Request) {
 	const { sentence, word, action } = (await req.json()) as {
 		sentence: string;
 		word: string;
-		action: WriterActions;
+		action: WritingActions;
 	};
-
-	let result: z.infer<typeof WordDescriptionSchema> | null = null;
 
 	try {
 		switch (action) {
-			case WriterActions.DESCRIBE_WORD: {
-				result = await wordDescription(word);
-				break;
+			case WritingActions.DESCRIBE_WORD: {
+				const result = await wordDescription(word);
+				return Response.json({ result }, { status: 200 });
 			}
-			case WriterActions.REWRITE_SENTENCE: {
-				result = await wordRewrite({ sentence, word });
-				break;
+			case WritingActions.REWRITE_SENTENCE: {
+				const result = await wordRewrite({ sentence, word });
+				return Response.json({ result }, { status: 200 });
 			}
 			default: {
 				/**
@@ -89,14 +82,12 @@ export async function POST(req: Request) {
 					{
 						error: "Invalid action",
 						// Provide a list of available actions
-						availableActions: Object.values(WriterActions),
+						availableActions: Object.values(WritingActions),
 					},
 					{ status: 400 },
 				);
 			}
 		}
-
-		return Response.json({ result }, { status: 200 });
 	} catch (error) {
 		console.error(error);
 		return Response.json(

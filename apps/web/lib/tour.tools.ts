@@ -179,7 +179,11 @@ export const get_performance_ticket_sales_by_id = tool({
 		}),
 	}),
 	execute: async ({ query }) => {
-		const filter = (item) => item.eventId === query.eventId;
+		const filter = (
+			item:
+				| (typeof TICKET_SALES)[number]
+				| (typeof PERFORMANCE_MERCHANDISE_SALES)[number],
+		) => item.eventId === query.eventId;
 		switch (query.incomeType) {
 			case "merchandise":
 				return PERFORMANCE_MERCHANDISE_SALES.filter(filter);

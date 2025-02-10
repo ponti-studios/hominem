@@ -1,13 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-	Card,
-	CardHeader,
-	CardTitle,
-	CardContent,
-} from "@/components/ui/card.tsx";
-import { Slider } from "@/components/ui/slider.tsx";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Slider } from "@/components/ui/slider";
 
 const SalesTaxCalculator = () => {
 	const [price, setPrice] = useState(100);

@@ -1,59 +1,21 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Timer, StopCircle, ListChecks } from "lucide-react";
-import { TaskSchema, TasksSchema, type Task } from "./types";
-
-const STORAGE_KEY = "task-tracker-tasks";
+import { TaskSchema } from "../../../../lib/tasks/types";
+import { useTasks } from "../../../../lib/hooks/use-tasks";
 
 const TaskTimerApp = () => {
-	const [tasks, setTasks] = useState<Task[]>([]);
 	const [currentTask, setCurrentTask] = useState("");
 	const [activeTimer, setActiveTimer] = useState<string | null>(null);
 	const [elapsedTime, setElapsedTime] = useState(0);
 	const [error, setError] = useState<string | null>(null);
+	const { tasks, createTask, stopTask } = useTasks();
 
-	// Load tasks from localStorage
-	useEffect(() => {
-		try {
-			const savedTasks = localStorage.getItem(STORAGE_KEY);
-			if (savedTasks) {
-				const parsedTasks = JSON.parse(savedTasks);
-				const validatedTasks = TasksSchema.parse(
-					parsedTasks.map((task) => ({
-						...task,
-						startTime: new Date(task.startTime),
-					})),
-				);
-				setTasks(validatedTasks);
-			}
-		} catch (err) {
-			console.error("Failed to load tasks:", err);
-			setError("Failed to load saved tasks");
-		}
-	}, []);
-
-	// Save tasks to localStorage whenever they change
-	useEffect(() => {
-		localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
-	}, [tasks]);
-
-	useEffect(() => {
-		let intervalId: NodeJS.Timer;
-
-		if (activeTimer) {
-			intervalId = setInterval(() => {
-				setElapsedTime((prev) => prev + 1);
-			}, 1000);
-		}
-
-		return () => clearInterval(intervalId);
-	}, [activeTimer]);
-
-	const startTimer = () => {
+	const onStartTask = () => {
 		if (currentTask.trim()) {
 			try {
 				const newTask = TaskSchema.parse({
@@ -64,7 +26,7 @@ const TaskTimerApp = () => {
 					isActive: true,
 				});
 
-				setTasks((prev) => [...prev, newTask]);
+				createTask(newTask);
 				setActiveTimer(newTask.id);
 				setElapsedTime(0);
 				setCurrentTask("");
@@ -76,29 +38,22 @@ const TaskTimerApp = () => {
 		}
 	};
 
-	const stopTimer = (taskId: string) => {
-		try {
-			setTasks((prev) =>
-				prev.map((task) =>
-					task.id === taskId
-						? TaskSchema.parse({
-								...task,
-								duration: task.duration + elapsedTime,
-								isActive: false,
-							})
-						: task,
-				),
-			);
-			setActiveTimer(null);
-			setElapsedTime(0);
-			setError(null);
-		} catch (err) {
-			setError("Failed to stop timer");
-			console.error("Validation error:", err);
-		}
-	};
+	const onStopTask = useCallback(
+		(taskId: string) => {
+			try {
+				stopTask({ taskId, elapsedTime });
+				setActiveTimer(null);
+				setElapsedTime(0);
+				setError(null);
+			} catch (err) {
+				setError("Failed to stop timer");
+				console.error("Validation error:", err);
+			}
+		},
+		[elapsedTime, stopTask],
+	);
 
-	const formatTime = (seconds) => {
+	const formatTime = (seconds: number) => {
 		const hrs = Math.floor(seconds / 3600);
 		const mins = Math.floor((seconds % 3600) / 60);
 		const secs = seconds % 60;
@@ -123,7 +78,7 @@ const TaskTimerApp = () => {
 							disabled={!!activeTimer}
 						/>
 						<Button
-							onClick={startTimer}
+							onClick={onStartTask}
 							disabled={!currentTask.trim() || !!activeTimer}
 						>
 							Start Task
@@ -143,8 +98,8 @@ const TaskTimerApp = () => {
 										key={task.id}
 										className="flex justify-between items-center border p-2 rounded"
 									>
-										<div className="flex-grow">
-											<div className="font-medium">{task.name}</div>
+										<div className="grow">
+											<div className="font-medium">{task.title}</div>
 											<div className="text-sm text-gray-500">
 												Started: {task.startTime.toLocaleString()}
 											</div>
@@ -160,7 +115,7 @@ const TaskTimerApp = () => {
 												<Button
 													variant="destructive"
 													size="sm"
-													onClick={() => stopTimer(task.id)}
+													onClick={() => onStopTask(task.id)}
 												>
 													<StopCircle className="mr-2" /> Stop
 												</Button>

@@ -12,10 +12,11 @@ const shutdownPlugin: FastifyPluginAsync = fp(async (server) => {
 		dsn: SENTRY_DSN,
 		environment: NODE_ENV,
 		enabled: !!SENTRY_DSN,
-		integrations: [new Sentry.Integrations.Http({ tracing: true })],
 		debug: !!SENTRY_DEBUG,
 		tracesSampleRate: 1,
 	});
+
+	Sentry.addIntegration(Sentry.httpIntegration({ spans: true }));
 
 	server.addHook("onError", (request, reply, error, done) => {
 		Sentry.withScope((scope) => {

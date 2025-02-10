@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const TaskSchema = z.object({
 	id: z.string(),
-	name: z.string().min(1, "Task name is required").max(100),
+	title: z.string().min(1, "Task name is required").max(100),
 	startTime: z.date(),
 	duration: z.number().min(0),
 	isActive: z.boolean(),

@@ -1,63 +1,31 @@
 "use client";
 
-import {
-	Card,
-	CardContent,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card.tsx";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-} from "@/components/ui/select.tsx";
-import { Slider } from "@/components/ui/slider.tsx";
+} from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 import React, { useState } from "react";
-import { federalBrackets, stateTaxRates } from "../../../../lib/finance";
+import {
+	formatCurrency,
+	stateTaxRates,
+	calculateFederalTax,
+	calculateStateTax,
+	calculateTakeHome,
+} from "../../../../lib/finance";
+import { formatPercent } from "../../../../lib/number.tools";
 
 const IncomeTaxCalculator = () => {
 	const [income, setIncome] = useState(50000);
-	const [state, setState] = useState("CA");
-
-	const calculateFederalTax = (amount: number) => {
-		let tax = 0;
-		let remainingIncome = amount;
-
-		for (const bracket of federalBrackets) {
-			const taxableInBracket = Math.min(
-				Math.max(0, remainingIncome),
-				bracket.max - bracket.min,
-			);
-			tax += taxableInBracket * bracket.rate;
-			remainingIncome -= taxableInBracket;
-			if (remainingIncome <= 0) break;
-		}
-
-		return tax;
-	};
-
-	const calculateStateTax = (amount) => {
-		return amount * stateTaxRates[state].rate;
-	};
+	const [state, setState] = useState<keyof typeof stateTaxRates>("CA");
 
 	const federalTax = calculateFederalTax(income);
-	const stateTax = calculateStateTax(income);
-	const totalTax = federalTax + stateTax;
-	const takeHome = income - totalTax;
-
-	const formatCurrency = (amount) => {
-		return new Intl.NumberFormat("en-US", {
-			style: "currency",
-			currency: "USD",
-			maximumFractionDigits: 0,
-		}).format(amount);
-	};
-
-	const formatPercent = (amount) => {
-		return `${(amount * 100).toFixed(1)}%`;
-	};
+	const stateTax = calculateStateTax(income, state);
+	const takeHome = calculateTakeHome(income, state);
 
 	return (
 		<Card className="w-full max-w-md">
@@ -84,7 +52,11 @@ const IncomeTaxCalculator = () => {
 						<label className="block text-sm font-medium mb-2" htmlFor="state">
 							State
 						</label>
-						<Select name="state" value={state} onValueChange={setState}>
+						<Select
+							name="state"
+							value={state}
+							onValueChange={(v: keyof typeof stateTaxRates) => setState(v)}
+						>
 							<SelectTrigger>
 								<SelectValue />
 							</SelectTrigger>
@@ -136,10 +108,10 @@ const IncomeTaxCalculator = () => {
 							<span>Take-Home Pay:</span>
 							<div className="text-right">
 								<div className="text-lg text-green-600">
-									{formatCurrency(takeHome)}
+									{formatCurrency(takeHome.takeHome)}
 								</div>
 								<div className="text-xs text-gray-500">
-									({formatPercent(takeHome / income)} of gross)
+									({formatPercent(takeHome.takeHome / income)} of gross)
 								</div>
 							</div>
 						</div>

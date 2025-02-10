@@ -1,93 +1,75 @@
-/**
- * # Activity Management System
- *
- * An activity represents a task or action that contributes to personal or professional growth.
- * This system helps track, measure, and optimize how time is spent on various activities.
- *
- * ## Core Concepts
- * - Each activity has a specific type (physical, mental, creative, etc.)
- * - Activities can be recurring or one-time events
- * - Impact is measured through multiple metrics
- * - Activities can be linked to goals and outcomes
- */
+import {
+	pgTable,
+	text,
+	varchar,
+	integer,
+	boolean,
+	timestamp,
+	json,
+	uuid,
+} from "drizzle-orm/pg-core";
+import z from "zod";
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
-import type { Tag } from "./tagging";
+export const activities = pgTable("activities", {
+	id: uuid("id").primaryKey(),
+	title: varchar("title", { length: 100 }),
+	description: text("description").notNull(),
+	type: text("type"),
+	duration: integer("duration"),
+	durationType: text("durationType"),
+	interval: text("interval").notNull(),
+	score: integer("score"),
+	metrics: json("metrics").notNull(),
+	startDate: timestamp("startDate").notNull(),
+	endDate: timestamp("endDate").notNull(),
+	isCompleted: boolean("isCompleted").default(false),
+	lastPerformed: timestamp("lastPerformed").notNull(),
+	priority: integer("priority").notNull(),
+	dependencies: json("dependencies").notNull(),
+	resources: json("resources").notNull(),
+	notes: text("notes").notNull(),
+	dueDate: timestamp("dueDate").notNull(),
+	status: text("status"),
+	recurrenceRule: text("recurrenceRule").notNull(),
+	completedInstances: integer("completedInstances").notNull(),
+	streakCount: integer("streakCount").notNull(),
+});
 
-/**
- * ## Activity Categories
- *
- * These categories help classify activities based on their purpose and impact.
- */
-export type ActivityCategory =
-	| "BODY" // Physical activities, exercise, health
-	| "MIND" // Mental activities, learning, meditation
-	| "WORK" // Professional tasks
-	| "SOCIAL" // Relationship building, networking
-	| "CREATIVE" // Artistic endeavors
-	| "MAINTENANCE"; // Life admin, chores
+// Zod schemas
+export const activityBaseSchema = z.object({
+	id: z.string().optional(),
+	title: z.string().max(100),
+	description: z.string().max(500).optional(),
+	type: z.enum(["BODY", "MIND", "WORK", "SOCIAL", "CREATIVE", "MAINTENANCE"]),
+	duration: z.number(),
+	durationType: z.enum(["MINUTES", "HOURS", "DAYS", "WEEKS"]),
+	interval: z
+		.enum(["DAILY", "WEEKLY", "BIWEEKLY", "MONTHLY", "QUARTERLY", "YEARLY"])
+		.optional(),
+	score: z.number().min(1).max(10),
+	metrics: z
+		.object({
+			energyLevel: z.number(),
+			focusLevel: z.number(),
+			enjoymentLevel: z.number(),
+			productivity: z.number(),
+		})
+		.optional(),
+	startDate: z.date().optional(),
+	endDate: z.date().optional(),
+	isCompleted: z.boolean().optional(),
+	lastPerformed: z.date().optional(),
+	priority: z.number().optional(),
+	dependencies: z.array(z.string()).optional(),
+	resources: z.array(z.string()).optional(),
+	notes: z.string().optional(),
+	dueDate: z.date().optional(),
+	status: z.enum(["NOT_STARTED", "IN_PROGRESS", "COMPLETED", "CANCELLED"]),
+	recurrenceRule: z.string().optional(),
+	completedInstances: z.number().optional(),
+	streakCount: z.number().optional(),
+});
 
-export type Interval =
-	| "DAILY"
-	| "WEEKLY"
-	| "BIWEEKLY"
-	| "MONTHLY"
-	| "QUARTERLY"
-	| "YEARLY";
-
-export type DurationType = "MINUTES" | "HOURS" | "DAYS" | "WEEKS";
-
-// Validation constants
-export const ACTIVITY_CONSTANTS = {
-	MAX_SCORE: 10,
-	MIN_SCORE: 1,
-	MAX_TITLE_LENGTH: 100,
-	MAX_DESCRIPTION_LENGTH: 500,
-} as const;
-
-export interface ActivityMetrics {
-	energyLevel: number; // 1-10 scale of energy required
-	focusLevel: number; // 1-10 scale of focus required
-	enjoymentLevel: number; // 1-10 scale of enjoyment
-	productivity: number; // 1-10 scale of productive output
-}
-
-export interface Activity {
-	id?: string;
-	title: string;
-	description?: string;
-	type: ActivityCategory;
-	duration: number;
-	durationType: DurationType;
-	interval?: Interval;
-	score: number; // Impact score (1-10)
-	metrics?: ActivityMetrics;
-	startDate?: Date;
-	endDate?: Date;
-	isCompleted?: boolean;
-	lastPerformed?: Date;
-	priority?: number; // 1-5 scale
-	tags?: Tag[];
-	dependencies?: string[]; // IDs of activities that must be completed first
-	resources?: string[]; // URLs or references needed
-	notes?: string;
-	dueDate?: Date | null;
-	status: ActivityStatus;
-}
-
-// Utility types
-export type ActivityStatus =
-	| "NOT_STARTED"
-	| "IN_PROGRESS"
-	| "COMPLETED"
-	| "CANCELLED";
-
-export type RecurringActivity = Activity & {
-	recurrenceRule: string; // iCal RRule format
-	completedInstances?: number;
-	streakCount?: number;
-};
-
-export type ActivityTag = {
-	activityId: string;
-	tagId: Tag["id"];
-};
+export const activityInsertSchema = createInsertSchema(activities);
+export const activitySelectSchema = createSelectSchema(activities);

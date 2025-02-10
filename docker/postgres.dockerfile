@@ -20,13 +20,4 @@ RUN apt-get update && apt-get install -y \
     postgis \
     gdal-bin \
     osm2pgsql \
-    postgresql-${PG_MAJOR}-pgcrypto \
-    postgresql-${PG_MAJOR}-uuid-ossp \
-    postgresql-${PG_MAJOR}-fuzzystrmatch \
-    postgresql-${PG_MAJOR}-unaccent \
-    postgresql-${PG_MAJOR}-intarray \
-    postgresql-${PG_MAJOR}-cube \
-    postgresql-${PG_MAJOR}-btree-gin \
-    postgresql-${PG_MAJOR}-btree-gist \
-    postgresql-${PG_MAJOR}-earthdistance \
     && rm -rf /var/lib/apt/lists/*

@@ -15,135 +15,21 @@ import {
 	SelectValue,
 } from "../../../../components/ui/select";
 import { Slider } from "../../../../components/ui/slider";
-import { federalBrackets } from "../../../../lib/finance";
+import {
+	type StateTaxCode,
+	calculateTakeHome,
+	stateTaxRates,
+	formatCurrency,
+} from "../../../../lib/finance";
 
 const StateTaxCalculator = () => {
 	const [income, setIncome] = useState(100000);
 	const [state1, setState1] = useState("CA");
 	const [state2, setState2] = useState("TX");
 
-	// State Tax Rates with more states and info
-	const stateTaxRates = {
-		CA: {
-			rate: 0.093,
-			name: "California",
-			notes: "Progressive tax system, high cost of living",
-		},
-		NY: {
-			rate: 0.085,
-			name: "New York",
-			notes: "Additional local taxes may apply",
-		},
-		TX: {
-			rate: 0,
-			name: "Texas",
-			notes: "No state income tax, higher property taxes",
-		},
-		FL: {
-			rate: 0,
-			name: "Florida",
-			notes: "No state income tax",
-		},
-		WA: {
-			rate: 0,
-			name: "Washington",
-			notes: "No state income tax, high sales tax",
-		},
-		CO: {
-			rate: 0.044,
-			name: "Colorado",
-			notes: "Flat tax rate",
-		},
-		IL: {
-			rate: 0.0495,
-			name: "Illinois",
-			notes: "Flat tax rate",
-		},
-		MA: {
-			rate: 0.05,
-			name: "Massachusetts",
-			notes: "Flat tax rate",
-		},
-	};
-
-	const calculateFederalTax = (amount) => {
-		let tax = 0;
-		let remainingIncome = amount;
-
-		for (const bracket of federalBrackets) {
-			const taxableInBracket = Math.min(
-				Math.max(0, remainingIncome),
-				bracket.max - bracket.min,
-			);
-			tax += taxableInBracket * bracket.rate;
-			remainingIncome -= taxableInBracket;
-			if (remainingIncome <= 0) break;
-		}
-
-		return tax;
-	};
-
-	const calculateStateTax = (amount, stateCode) => {
-		return amount * stateTaxRates[stateCode].rate;
-	};
-
-	const calculateTakeHome = (amount, stateCode) => {
-		const federalTax = calculateFederalTax(amount);
-		const stateTax = calculateStateTax(amount, stateCode);
-		return {
-			federalTax,
-			stateTax,
-			takeHome: amount - federalTax - stateTax,
-			effectiveTaxRate: ((federalTax + stateTax) / amount) * 100,
-		};
-	};
-
 	const state1Calc = calculateTakeHome(income, state1);
 	const state2Calc = calculateTakeHome(income, state2);
 	const difference = state1Calc.takeHome - state2Calc.takeHome;
-
-	const formatCurrency = (amount) => {
-		return new Intl.NumberFormat("en-US", {
-			style: "currency",
-			currency: "USD",
-			maximumFractionDigits: 0,
-		}).format(amount);
-	};
-
-	const TaxBreakdown = ({ stateCode, calculation }) => (
-		<div className="space-y-3">
-			<div className="text-lg font-semibold mb-4">
-				{stateTaxRates[stateCode].name}
-			</div>
-			<div className="text-sm text-gray-600 italic mb-4">
-				{stateTaxRates[stateCode].notes}
-			</div>
-			<div className="space-y-2">
-				<div className="flex justify-between">
-					<span className="text-gray-600">Federal Tax:</span>
-					<span className="text-red-600">
-						-{formatCurrency(calculation.federalTax)}
-					</span>
-				</div>
-				<div className="flex justify-between">
-					<span className="text-gray-600">State Tax:</span>
-					<span className="text-red-600">
-						-{formatCurrency(calculation.stateTax)}
-					</span>
-				</div>
-				<div className="h-px bg-gray-200 my-2" />
-				<div className="flex justify-between font-medium">
-					<span>Take-Home Pay:</span>
-					<span className="text-green-600">
-						{formatCurrency(calculation.takeHome)}
-					</span>
-				</div>
-				<div className="text-sm text-gray-500 text-right">
-					Effective Tax Rate: {calculation.effectiveTaxRate.toFixed(1)}%
-				</div>
-			</div>
-		</div>
-	);
 
 	return (
 		<Card className="w-full max-w-2xl">
@@ -237,3 +123,42 @@ const StateTaxCalculator = () => {
 };
 
 export default StateTaxCalculator;
+
+interface TaxBreakdownProps {
+	stateCode: StateTaxCode;
+	calculation: ReturnType<typeof calculateTakeHome>;
+}
+const TaxBreakdown = ({ stateCode, calculation }: TaxBreakdownProps) => (
+	<div className="space-y-3">
+		<div className="text-lg font-semibold mb-4">
+			{stateTaxRates[stateCode].name}
+		</div>
+		<div className="text-sm text-gray-600 italic mb-4">
+			{stateTaxRates[stateCode].notes}
+		</div>
+		<div className="space-y-2">
+			<div className="flex justify-between">
+				<span className="text-gray-600">Federal Tax:</span>
+				<span className="text-red-600">
+					-{formatCurrency(calculation.federalTax)}
+				</span>
+			</div>
+			<div className="flex justify-between">
+				<span className="text-gray-600">State Tax:</span>
+				<span className="text-red-600">
+					-{formatCurrency(calculation.stateTax)}
+				</span>
+			</div>
+			<div className="h-px bg-gray-200 my-2" />
+			<div className="flex justify-between font-medium">
+				<span>Take-Home Pay:</span>
+				<span className="text-green-600">
+					{formatCurrency(calculation.takeHome)}
+				</span>
+			</div>
+			<div className="text-sm text-gray-500 text-right">
+				Effective Tax Rate: {calculation.effectiveTaxRate.toFixed(1)}%
+			</div>
+		</div>
+	</div>
+);

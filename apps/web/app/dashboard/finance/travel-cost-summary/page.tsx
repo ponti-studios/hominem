@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building, Plane, Utensils } from "lucide-react";
 import React from "react";
+import { formatCurrency } from "../../../../lib/finance";
 
 const DESTINATION = "Tokyo, Japan";
 const COSTS = {
@@ -8,21 +9,16 @@ const COSTS = {
 	accommodation: { hotel: 800, taxes: 100 },
 	food: { restaurants: 300, groceries: 100 },
 };
+
+const getTotalCost = (category: Category) => {
+	return Object.values(category).reduce((acc, curr) => acc + curr, 0);
+};
+
+type Category = Record<string, number>;
 const TravelCostCard = () => {
 	const { transportation, accommodation, food } = COSTS;
 
-	const formatCurrency = (amount) => {
-		return new Intl.NumberFormat("en-US", {
-			style: "currency",
-			currency: "USD",
-		}).format(amount);
-	};
-
-	const getTotalCost = (category: Record<string, number>) => {
-		return Object.values(category).reduce((acc, curr) => acc + curr, 0);
-	};
-
-	const getCategoryPercentage = (category) => {
+	const getCategoryPercentage = (category: Category) => {
 		const totalTrip =
 			getTotalCost(transportation) +
 			getTotalCost(accommodation) +

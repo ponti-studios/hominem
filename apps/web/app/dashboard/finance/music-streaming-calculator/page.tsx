@@ -66,8 +66,21 @@ const MusicStreamingCalculator = () => {
 	);
 };
 
-function StreamingServiceStreamingRate({ service, streamCount, maxEarnings }) {
-	const earnings = calculateEarnings(service.rate, streamCount);
+interface StreamingServiceRateProps {
+	service: {
+		name: string;
+		rate: number;
+		color: string;
+	};
+	streamCount: number[];
+	maxEarnings: number;
+}
+function StreamingServiceStreamingRate({
+	service,
+	streamCount,
+	maxEarnings,
+}: StreamingServiceRateProps) {
+	const earnings = calculateEarnings(service.rate, streamCount[0]);
 	const percentOfMax = earnings / maxEarnings;
 
 	return (

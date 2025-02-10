@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { parseNoteDetails, type NoteDetails } from "@ponti/utils/notes";
 import { Calendar, Hash, Tag } from "lucide-react";
-import React, { useState } from "react";
+import { useState, type ChangeEvent } from "react";
 
 const SmartTaskInput = () => {
 	const [inputValue, setInputValue] = useState("");
@@ -16,13 +16,13 @@ const SmartTaskInput = () => {
 		labels: [],
 	});
 
-	const handleInputChange = (e) => {
+	const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
 		const value = e.target.value;
 		setInputValue(value);
 		setTask(parseNoteDetails(value));
 	};
 
-	const formatDate = (date) => {
+	const formatDate = (date: Date) => {
 		if (!date) return "";
 		return date.toLocaleDateString("en-US", {
 			weekday: "long",
@@ -43,10 +43,10 @@ const SmartTaskInput = () => {
 							className="w-full text-lg"
 						/>
 
-						{(task.content ||
-							task.date_time ||
-							task.category ||
-							(task.labels && task.labels.length > 0)) && (
+						{task.content ||
+						task.date_time ||
+						task.category ||
+						(task.labels && task.labels.length > 0) ? (
 							<div className="space-y-3 p-4 bg-gray-50 rounded-lg">
 								{task.content && (
 									<div className="font-medium">{task.content}</div>
@@ -59,7 +59,7 @@ const SmartTaskInput = () => {
 											className="flex items-center gap-1"
 										>
 											<Calendar className="w-3 h-3" />
-											{formatDate(task.date_time)}
+											{formatDate(new Date(task.date_time))}
 										</Badge>
 									)}
 
@@ -81,7 +81,7 @@ const SmartTaskInput = () => {
 									))}
 								</div>
 							</div>
-						)}
+						) : null}
 					</div>
 				</CardContent>
 			</Card>
