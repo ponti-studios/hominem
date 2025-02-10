@@ -1,7 +1,7 @@
 "use client";
 
 import { SignInButton, SignOutButton, useUser } from "@clerk/nextjs";
-import { Menu } from "lucide-react";
+import { DollarSign, User, FilePen } from "lucide-react";
 import Link from "next/link";
 import {
 	Sidebar,
@@ -19,6 +19,7 @@ export function SiteNavigation() {
 			<SidebarHeader>
 				{user ? (
 					<div className="flex gap-4 items-center border-input border rounded-md px-3 py-2">
+						<User size={24} />
 						<Link href="/dashboard/profile" className="text-sm font-medium">
 							{user.fullName}
 						</Link>
@@ -29,15 +30,16 @@ export function SiteNavigation() {
 			</SidebarHeader>
 			<SidebarContent>
 				<SidebarGroup>
-					<Link
-						href="/dashboard/career/applications"
-						className="text-sm font-medium"
-					>
-						Applications
-					</Link>
-					<Link href="/dashboard/finance" className="text-sm font-medium">
-						Finance
-					</Link>
+					<SidebarContent className="flex flex-col gap-4 mt-8">
+						<SidebarLink href="/dashboard/career/applications">
+							<FilePen size={16} />
+							Applications
+						</SidebarLink>
+						<SidebarLink href="/dashboard/finance">
+							<DollarSign size={16} />
+							Finance
+						</SidebarLink>
+					</SidebarContent>
 				</SidebarGroup>
 				<SidebarGroup />
 			</SidebarContent>
@@ -47,5 +49,19 @@ export function SiteNavigation() {
 				</SignOutButton>
 			</SidebarFooter>
 		</Sidebar>
+	);
+}
+
+function SidebarLink({
+	href,
+	children,
+}: { href: string; children: React.ReactNode }) {
+	return (
+		<Link
+			href={href}
+			className="flex items-center gap-3 hover:bg-gray-100 p-2 rounded-md"
+		>
+			{children}
+		</Link>
 	);
 }
