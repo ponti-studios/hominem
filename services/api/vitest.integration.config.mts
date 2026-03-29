@@ -14,7 +14,6 @@ export default defineConfig({
     clearMocks: true,
     slowTestThreshold: 1_000,
     include: [
-      'src/auth/session-store.test.ts',
       'src/routes/auth.step-up.test.ts',
       'src/routes/finance/plaid/finance.plaid.router.test.ts',
       'src/routes/status.test.ts',

@@ -54,13 +54,7 @@ async function cleanupDeviceCodes(userIds: string[]) {
     await db.deleteFrom('deviceCode').where('userId', 'in', userIds).execute();
   }
 
-  await pool.query(
-    `
-      delete from "deviceCode"
-      where clientId = any($1::text[])
-    `,
-    [TEST_DEVICE_CLIENT_IDS],
-  );
+  await db.deleteFrom('deviceCode').where('clientId', 'in', TEST_DEVICE_CLIENT_IDS).execute();
 }
 
 async function cleanupVerificationRows() {
