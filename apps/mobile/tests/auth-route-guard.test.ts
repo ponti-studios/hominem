@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest';
 
-import { resolveAuthRedirect } from '../utils/navigation/auth-route-guard'
+import { resolveAuthRedirect } from '../utils/navigation/auth-route-guard';
 
 describe('resolveAuthRedirect', () => {
   it('does not redirect while booting', () => {
@@ -10,8 +10,8 @@ describe('resolveAuthRedirect', () => {
         isSignedIn: false,
         segments: ['(protected)'],
       }),
-    ).toBeNull()
-  })
+    ).toBeNull();
+  });
 
   it('redirects signed-out users away from protected group', () => {
     expect(
@@ -20,8 +20,8 @@ describe('resolveAuthRedirect', () => {
         isSignedIn: false,
         segments: ['(protected)', '(tabs)', 'start'],
       }),
-    ).toBe('/(auth)')
-  })
+    ).toBe('/(auth)');
+  });
 
   it('redirects signed-in users away from auth group', () => {
     expect(
@@ -30,8 +30,8 @@ describe('resolveAuthRedirect', () => {
         isSignedIn: true,
         segments: ['(auth)'],
       }),
-    ).toBe('/(protected)/(tabs)/start')
-  })
+    ).toBe('/(protected)/(tabs)/start');
+  });
 
   it('does not redirect signed-out users already in auth group', () => {
     expect(
@@ -40,8 +40,8 @@ describe('resolveAuthRedirect', () => {
         isSignedIn: false,
         segments: ['(auth)'],
       }),
-    ).toBeNull()
-  })
+    ).toBeNull();
+  });
 
   it('does not redirect signed-in users already in protected group', () => {
     expect(
@@ -50,8 +50,8 @@ describe('resolveAuthRedirect', () => {
         isSignedIn: true,
         segments: ['(protected)', '(tabs)', 'start'],
       }),
-    ).toBeNull()
-  })
+    ).toBeNull();
+  });
 
   it('does not redirect while signing_out — user stays in place until sign-out completes', () => {
     expect(
@@ -60,31 +60,23 @@ describe('resolveAuthRedirect', () => {
         isSignedIn: false,
         segments: ['(protected)', '(tabs)', 'start'],
       }),
-    ).toBeNull()
-  })
+    ).toBeNull();
+  });
 
-  it.each([
-    'verifying_otp',
-    'minting_api_token',
-    'syncing_profile',
-    'requesting_otp',
-  ] as const)(
+  it.each(['verifying_otp', 'authenticating_passkey', 'requesting_otp'] as const)(
     'redirects %s status on protected group to auth (in-flight auth, not yet signed in)',
     (authStatus) => {
       expect(
         resolveAuthRedirect({ authStatus, isSignedIn: false, segments: ['(protected)'] }),
-      ).toBe('/(auth)')
+      ).toBe('/(auth)');
     },
-  )
+  );
 
-  it.each(['degraded', 'terminal_error'] as const)(
-    'redirects %s status on protected group to auth',
-    (authStatus) => {
-      expect(
-        resolveAuthRedirect({ authStatus, isSignedIn: false, segments: ['(protected)'] }),
-      ).toBe('/(auth)')
-    },
-  )
+  it.each(['degraded'] as const)('redirects %s status on protected group to auth', (authStatus) => {
+    expect(resolveAuthRedirect({ authStatus, isSignedIn: false, segments: ['(protected)'] })).toBe(
+      '/(auth)',
+    );
+  });
 
   it('does not redirect degraded status on auth group', () => {
     expect(
@@ -93,16 +85,6 @@ describe('resolveAuthRedirect', () => {
         isSignedIn: false,
         segments: ['(auth)'],
       }),
-    ).toBeNull()
-  })
-
-  it('does not redirect terminal_error status on auth group', () => {
-    expect(
-      resolveAuthRedirect({
-        authStatus: 'terminal_error',
-        isSignedIn: false,
-        segments: ['(auth)'],
-      }),
-    ).toBeNull()
-  })
-})
+    ).toBeNull();
+  });
+});

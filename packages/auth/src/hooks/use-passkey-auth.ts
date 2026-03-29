@@ -1,5 +1,6 @@
-import { STEP_UP_ACTIONS } from '../step-up-actions';
 import { useCallback, useEffect, useState } from 'react';
+
+import { STEP_UP_ACTIONS } from '../step-up-actions';
 
 // Get API URL from environment - works in Vite, Bun, Node, and React Native
 // Note: This avoids import.meta which is not supported in Hermes (React Native)
@@ -10,7 +11,7 @@ function getApiUrl(): string {
   if (proc?.env?.VITE_PUBLIC_API_URL) {
     return proc.env.VITE_PUBLIC_API_URL;
   }
-  
+
   // For Vite and other ESM bundlers, check if we have a global __VITE_PUBLIC_API_URL__
   // This can be injected by the build process
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -18,7 +19,7 @@ function getApiUrl(): string {
   if (globalVite) {
     return globalVite;
   }
-  
+
   // Default fallback - consumer must provide API URL through other means
   return '';
 }
@@ -288,7 +289,7 @@ export function usePasskeyAuth(options: UsePasskeyAuthOptions = {}) {
 
   /**
    * Register a new passkey for the currently authenticated user.
-   * Requires the user to already have a valid app session (access token cookie).
+   * Requires the user to already have a valid app session cookie.
    */
   const register = useCallback(async (): Promise<boolean> => {
     setIsLoading(true);

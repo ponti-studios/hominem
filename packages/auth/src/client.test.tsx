@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { AuthProvider, useAuthContext } from './client';
@@ -13,20 +13,12 @@ const initialUser: User = {
 };
 
 function TestConsumer() {
-  const { authClient, isAuthenticated, user } = useAuthContext();
-  const [sessionState, setSessionState] = useState<string>('pending');
-
-  useEffect(() => {
-    void authClient.auth.getSession().then(({ data }) => {
-      setSessionState(data.session ? 'present' : 'missing');
-    });
-  }, [authClient]);
+  const { isAuthenticated, user } = useAuthContext();
 
   return (
     <div>
       <div data-testid="authenticated">{isAuthenticated ? 'authenticated' : 'signed-out'}</div>
       <div data-testid="email">{user?.email ?? 'missing'}</div>
-      <div data-testid="session">{sessionState}</div>
     </div>
   );
 }
@@ -43,26 +35,18 @@ function StateConsumer() {
 }
 
 function IdentityOnlyConsumer() {
-  const { isAuthenticated, user, authClient } = useAuthContext();
-  const [sessionValue, setSessionValue] = useState<string>('pending');
-
-  useEffect(() => {
-    void authClient.auth.getSession().then(({ data }) => {
-      setSessionValue(data.session ? 'present' : 'missing');
-    });
-  }, [authClient]);
+  const { isAuthenticated, user } = useAuthContext();
 
   return (
     <div>
       <div data-testid="authenticated">{isAuthenticated ? 'authenticated' : 'signed-out'}</div>
       <div data-testid="email">{user?.email ?? 'missing'}</div>
-      <div data-testid="session-client">{sessionValue}</div>
     </div>
   );
 }
 
 function SignOutConsumer() {
-  const { authClient, isAuthenticated } = useAuthContext();
+  const { isAuthenticated, signOut } = useAuthContext();
   const [result, setResult] = useState('idle');
 
   return (
@@ -71,9 +55,14 @@ function SignOutConsumer() {
       <div data-testid="signout-result">{result}</div>
       <button
         onClick={() => {
-          void authClient.auth.signOut().then(({ error }) => {
-            setResult(error ? error.message : 'success');
-          });
+          void signOut().then(
+            () => {
+              setResult('success');
+            },
+            (error: unknown) => {
+              setResult(error instanceof Error ? error.message : 'Sign out failed');
+            },
+          );
         }}
         type="button"
       >
@@ -107,11 +96,7 @@ describe('AuthProvider', () => {
       expect(screen.getByTestId('email').textContent).toBe('user@example.com');
     });
 
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
-    expect(fetchSpy).toHaveBeenCalledWith(
-      'http://localhost:4040/api/auth/session',
-      expect.objectContaining({ method: 'GET', credentials: 'include' }),
-    );
+    expect(fetchSpy).not.toHaveBeenCalled();
     expect(onAuthEvent).not.toHaveBeenCalled();
   });
 
@@ -173,7 +158,6 @@ describe('AuthProvider', () => {
     await waitFor(() => {
       expect(screen.getByTestId('authenticated').textContent).toBe('authenticated');
       expect(screen.getByTestId('email').textContent).toBe('user@example.com');
-      expect(screen.getByTestId('session-client').textContent).toBe('missing');
     });
 
     expect(fetchSpy).toHaveBeenCalledWith(

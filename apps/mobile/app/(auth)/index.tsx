@@ -1,8 +1,8 @@
 import { AUTH_COPY, CHAT_AUTH_CONFIG } from '@hominem/auth';
 import { Image } from 'expo-image';
-import { Redirect, useRouter } from 'expo-router';
 import type { RelativePathString } from 'expo-router';
-import React, { useState, useCallback, useEffect } from 'react';
+import { Redirect, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -29,8 +29,8 @@ export function AuthScreen() {
     authError: recoveryError,
     authStatus,
     isSignedIn,
-    completePasskeySignIn,
     requestEmailOtp,
+    signInWithPasskey,
     retrySessionRecovery,
   } = useAuth();
   const router = useRouter();
@@ -41,12 +41,7 @@ export function AuthScreen() {
     posthog.capture('auth_screen_viewed');
   }, []);
   const [authError, setAuthError] = useState<string | null>(null);
-  const {
-    signIn: signInWithPasskey,
-    isLoading: isPasskeyLoading,
-    error: passkeyError,
-    isSupported: isPasskeySupported,
-  } = useMobilePasskeyAuth();
+  const { isSupported: isPasskeySupported } = useMobilePasskeyAuth();
 
   const handleSendCode = useCallback(async () => {
     posthog.capture('auth_send_code_pressed');
@@ -80,26 +75,21 @@ export function AuthScreen() {
     try {
       setIsSubmitting(true);
       setAuthError(null);
-      const result = await signInWithPasskey();
-      if (result) {
-        await completePasskeySignIn(result);
-      }
+      await signInWithPasskey();
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : AUTH_COPY.passkey.genericError;
       setAuthError(message);
     } finally {
       setIsSubmitting(false);
     }
-  }, [completePasskeySignIn, signInWithPasskey]);
+  }, [signInWithPasskey]);
 
   if (isSignedIn) {
     return <Redirect href={CHAT_AUTH_CONFIG.defaultPostAuthDestination as RelativePathString} />;
   }
 
   const displayError =
-    authError ||
-    passkeyError ||
-    (authStatus === 'degraded' ? (recoveryError?.message ?? null) : null);
+    authError || (authStatus === 'degraded' ? (recoveryError?.message ?? null) : null);
   const canUsePasskeys = MOBILE_PASSKEY_ENABLED && isPasskeySupported;
 
   return (
@@ -181,11 +171,11 @@ export function AuthScreen() {
                 <Button
                   onPress={handlePasskeySignIn}
                   disabled={isSubmitting}
-                  isLoading={isPasskeyLoading}
+                  isLoading={isSubmitting}
                   style={styles.passkeyButton}
                   testID="auth-passkey-button"
                   title={
-                    isPasskeyLoading
+                    isSubmitting
                       ? AUTH_COPY.emailEntry.passkeyLoadingButton.toUpperCase()
                       : AUTH_COPY.emailEntry.passkeyButton.toUpperCase()
                   }
@@ -197,10 +187,7 @@ export function AuthScreen() {
                     try {
                       setIsSubmitting(true);
                       setAuthError(null);
-                      const result = await signInWithPasskey('e2e-success');
-                      if (result) {
-                        await completePasskeySignIn(result);
-                      }
+                      await signInWithPasskey('e2e-success');
                     } catch (error: unknown) {
                       const message =
                         error instanceof Error ? error.message : AUTH_COPY.passkey.genericError;

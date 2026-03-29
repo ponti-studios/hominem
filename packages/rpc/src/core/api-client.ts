@@ -1,8 +1,8 @@
 import { createAdminClient, type AdminClient } from '../domains/admin';
 import { createChatsClient, type ChatsClient } from '../domains/chats';
-import { createFocusClient, type FocusClient } from '../domains/focus';
-import { createFinanceClient, type FinanceClient } from '../domains/finance';
 import { createFilesClient, type FilesClient } from '../domains/files';
+import { createFinanceClient, type FinanceClient } from '../domains/finance';
+import { createFocusClient, type FocusClient } from '../domains/focus';
 import { createInvitesClient, type InvitesClient } from '../domains/invites';
 import { createItemsClient, type ItemsClient } from '../domains/items';
 import { createListsClient, type ListsClient } from '../domains/lists';
@@ -13,13 +13,11 @@ import { createPlacesClient, type PlacesClient } from '../domains/places';
 import { createReviewClient, type ReviewClient } from '../domains/review';
 import { createTwitterClient, type TwitterClient } from '../domains/twitter';
 import { createUserClient, type UserClient } from '../domains/user';
-import { createVoiceClient, type VoiceClient } from '../domains/voice'
-
+import { createVoiceClient, type VoiceClient } from '../domains/voice';
 import { createRawHonoClient, type RawHonoClient } from './raw-client';
 
 export interface ClientConfig {
   baseUrl: string;
-  getAuthToken: () => Promise<string | null>;
   getHeaders?: () => Promise<Record<string, string>>;
   onError?: (error: Error) => void;
 }
@@ -43,10 +41,10 @@ export interface ApiClient {
   user: UserClient;
 }
 
-export type RpcClient = ApiClient
-export type RpcClientInstance = RawHonoClient
-export type HonoClient = RpcClient
-export type HonoClientInstance = RpcClientInstance
+export type RpcClient = ApiClient;
+export type RpcClientInstance = RawHonoClient;
+export type HonoClient = RpcClient;
+export type HonoClientInstance = RpcClientInstance;
 
 export function createApiClientFromRaw(rawClient: RawHonoClient): ApiClient {
   return {
@@ -74,5 +72,5 @@ export function createApiClient(config: ClientConfig): ApiClient {
   return createApiClientFromRaw(rawClient);
 }
 
-export const createClient = createApiClient
-export const createHonoClient = createClient
+export const createClient = createApiClient;
+export const createHonoClient = createClient;

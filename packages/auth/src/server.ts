@@ -102,32 +102,3 @@ export async function getServerAuth(
     };
   }
 }
-
-export function createServerAuthClient(request: Request, config: AuthConfig) {
-  return {
-    headers: new Headers(),
-    authClient: {
-      auth: {
-        async getUser() {
-          const headers = new Headers();
-          const cookieHeader = request.headers.get('cookie');
-          if (cookieHeader) {
-            headers.set('cookie', cookieHeader);
-          }
-
-          const res = await fetch(getAbsoluteApiUrl(config.apiBaseUrl, '/api/auth/session'), {
-            method: 'GET',
-            headers,
-          });
-
-          if (!res.ok) {
-            return { data: { user: null }, error: new Error('Unauthorized') };
-          }
-
-          const payload = (await res.json()) as ServerAuthResult;
-          return { data: { user: payload.user }, error: null };
-        },
-      },
-    },
-  };
-}

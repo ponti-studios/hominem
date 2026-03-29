@@ -11,15 +11,14 @@ import React, {
   type PropsWithChildren,
 } from 'react';
 
+import { authClient } from '~/lib/auth-client';
+
 import { captureAuthAnalyticsEvent, captureAuthAnalyticsFailure } from './auth/auth-analytics';
-import { markAuthPhaseStart, recordAuthEvent } from './auth/auth-event-log';
 import { runAuthBoot } from './auth/boot';
-import { resolveIsLoadingAuth, type AuthStatusCompat } from './auth/provider-utils';
 import {
   clearPersistedSessionCookies,
   getPersistedSessionCookieHeader,
   persistSessionCookieFromHeaders,
-  persistSessionCookieHeader,
 } from './auth/session-cookie';
 import { authStateMachine, initialAuthState, type AuthState } from './auth/types';
 import { API_BASE_URL, E2E_TESTING } from './constants';
@@ -31,6 +30,40 @@ const OTP_REQUEST_TIMEOUT_MS = 12000;
 const OTP_VERIFY_TIMEOUT_MS = 20000;
 const AUTH_BOOT_TIMEOUT_MS = 8000;
 
+type PasskeyAuthMode = 'real' | 'e2e-success' | 'e2e-cancel';
+
+type AuthenticatedUserInput = {
+  id: string;
+  email: string;
+  name?: string | null;
+  image?: string | null;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+};
+
+function normalizeUserTimestamp(value: string | Date, fieldName: 'createdAt' | 'updatedAt') {
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+
+  if (typeof value === 'string' && value.length > 0) {
+    return value;
+  }
+
+  throw new Error(`Authenticated user is missing ${fieldName}`);
+}
+
+function toAppUser(user: AuthenticatedUserInput): User {
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name ?? undefined,
+    image: user.image ?? undefined,
+    createdAt: normalizeUserTimestamp(user.createdAt, 'createdAt'),
+    updatedAt: normalizeUserTimestamp(user.updatedAt, 'updatedAt'),
+  };
+}
+
 async function clearLegacyLocalDataOnce() {
   const migrationFlag = await SecureStore.getItemAsync(LOCAL_MIGRATION_KEY);
   if (migrationFlag === '1') return;
@@ -39,14 +72,14 @@ async function clearLegacyLocalDataOnce() {
 }
 
 type AuthContextType = {
-  authStatus: AuthStatusCompat;
+  authStatus: AuthState['status'];
   authError: Error | null;
   isLoadingAuth: boolean;
   isSignedIn: boolean;
   currentUser: User | null;
   requestEmailOtp: (email: string) => Promise<void>;
   verifyEmailOtp: (input: { email: string; otp: string; name?: string }) => Promise<void>;
-  completePasskeySignIn: (user: User | null) => Promise<void>;
+  signInWithPasskey: (mode?: PasskeyAuthMode) => Promise<void>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<User>) => Promise<User>;
   getAuthHeaders: () => Promise<Record<string, string>>;
@@ -81,8 +114,6 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     const startedAt = Date.now();
 
     markStartupPhase('auth_boot_start');
-    markAuthPhaseStart('boot');
-    recordAuthEvent('auth_boot_start', 'boot');
     captureAuthAnalyticsEvent('auth_boot_started', {
       phase: 'boot',
     });
@@ -132,7 +163,6 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
       if (result.type === 'SESSION_LOADED') {
         sessionCookieHeaderRef.current = result.tokens.sessionCookieHeader;
         dispatch({ type: 'SESSION_LOADED', user: result.user });
-        recordAuthEvent('auth_boot_resolved:session_loaded', 'boot');
         captureAuthAnalyticsEvent('auth_boot_succeeded', {
           phase: 'boot',
           durationMs: Date.now() - startedAt,
@@ -140,7 +170,6 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
         });
       } else {
         dispatch({ type: 'SESSION_EXPIRED' });
-        recordAuthEvent('auth_boot_resolved:session_expired', 'boot');
         captureAuthAnalyticsEvent('auth_boot_signed_out', {
           phase: 'boot',
           durationMs: Date.now() - startedAt,
@@ -153,7 +182,6 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
       const resolvedError =
         error instanceof Error ? error : new Error('Unable to recover your session right now.');
       dispatch({ type: 'SESSION_RECOVERY_FAILED', error: resolvedError });
-      recordAuthEvent('auth_boot_resolved:error', 'boot');
       captureAuthAnalyticsFailure('auth_boot_failed', {
         phase: 'boot',
         durationMs: Date.now() - startedAt,
@@ -167,6 +195,21 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
       isBootingRef.current = false;
     }
   }, []);
+
+  const persistAuthenticatedUser = useCallback(
+    async (inputUser: AuthenticatedUserInput, sessionCookieHeader: string) => {
+      sessionCookieHeaderRef.current = sessionCookieHeader;
+
+      const userProfile = await LocalStore.upsertUserProfile(toAppUser(inputUser));
+      if (!userProfile) {
+        throw new Error('Failed to create user profile');
+      }
+
+      dispatch({ type: 'SESSION_LOADED', user: userProfile });
+      return userProfile;
+    },
+    [],
+  );
 
   useEffect(() => {
     return () => {
@@ -287,27 +330,16 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
         if (!sessionCookieHeader) {
           throw new Error('Verification succeeded but no session cookie was returned');
         }
-        sessionCookieHeaderRef.current = sessionCookieHeader;
 
-        const sessionResponse = await fetch(new URL('/api/auth/session', API_BASE_URL).toString(), {
-          method: 'GET',
-          headers: { cookie: sessionCookieHeader },
-        });
-
-        if (!sessionResponse.ok) {
-          throw new Error('Verification succeeded but failed to load user session');
+        const sessionData = (await response.json()) as {
+          isAuthenticated?: boolean;
+          user: AuthenticatedUserInput | null;
+        };
+        if (sessionData.isAuthenticated === false || !sessionData.user) {
+          throw new Error('Verification succeeded but no authenticated user was returned');
         }
 
-        const sessionData = (await sessionResponse.json()) as { user: User | null };
-        if (!sessionData.user) {
-          throw new Error('Verification succeeded but no user in session');
-        }
-
-        dispatch({ type: 'PROFILE_SYNC_STARTED' });
-        const userProfile = await LocalStore.upsertUserProfile(sessionData.user);
-        if (!userProfile) throw new Error('Failed to create user profile');
-
-        dispatch({ type: 'SESSION_LOADED', user: userProfile });
+        await persistAuthenticatedUser(sessionData.user, sessionCookieHeader);
         captureAuthAnalyticsEvent('auth_email_otp_verify_succeeded', {
           phase: 'email_otp_verify',
           durationMs: Date.now() - startedAt,
@@ -329,54 +361,60 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
         clearTimeout(timeoutId);
       }
     },
-    [],
+    [persistAuthenticatedUser],
   );
 
-  const completePasskeySignIn = useCallback(async (user: User | null) => {
-    const startedAt = Date.now();
+  const signInWithPasskey = useCallback(
+    async (mode: PasskeyAuthMode = 'real') => {
+      const startedAt = Date.now();
 
-    dispatch({ type: 'PASSKEY_AUTH_STARTED' });
-    captureAuthAnalyticsEvent('auth_passkey_sign_in_started', {
-      phase: 'passkey_sign_in',
-      email: user?.email,
-    });
-
-    try {
-      if (!user) {
-        throw new Error('Invalid passkey sign-in response from API');
-      }
-
-      const sessionCookieHeader = await getPersistedSessionCookieHeader();
-      if (!sessionCookieHeader) {
-        throw new Error('Missing Better Auth session cookie after passkey sign-in');
-      }
-
-      sessionCookieHeaderRef.current = sessionCookieHeader;
-      await persistSessionCookieHeader(sessionCookieHeader);
-
-      dispatch({ type: 'PROFILE_SYNC_STARTED' });
-      const userProfile = await LocalStore.upsertUserProfile(user);
-      if (!userProfile) throw new Error('Failed to create passkey user profile');
-
-      dispatch({ type: 'SESSION_LOADED', user: userProfile });
-      captureAuthAnalyticsEvent('auth_passkey_sign_in_succeeded', {
+      dispatch({ type: 'PASSKEY_AUTH_STARTED' });
+      captureAuthAnalyticsEvent('auth_passkey_sign_in_started', {
         phase: 'passkey_sign_in',
-        durationMs: Date.now() - startedAt,
-        email: user.email,
       });
-    } catch (error) {
-      const resolvedError = error instanceof Error ? error : new Error('Passkey sign-in failed');
-      dispatch({ type: 'PASSKEY_AUTH_FAILED', error: resolvedError });
-      captureAuthAnalyticsFailure('auth_passkey_sign_in_failed', {
-        phase: 'passkey_sign_in',
-        durationMs: Date.now() - startedAt,
-        email: user?.email,
-        error: resolvedError,
-        failureStage: 'storage',
-      });
-      throw resolvedError;
-    }
-  }, []);
+
+      try {
+        if (E2E_TESTING && mode === 'e2e-cancel') {
+          throw new Error('Passkey sign-in was cancelled');
+        }
+
+        const { data, error } = await authClient.signIn.passkey();
+        if (error) {
+          throw new Error(error.message || 'Passkey sign-in failed');
+        }
+
+        if (!data?.user) {
+          throw new Error('Invalid passkey sign-in response from API');
+        }
+
+        const sessionCookieHeader = await getPersistedSessionCookieHeader();
+        if (!sessionCookieHeader) {
+          throw new Error('Missing Better Auth session cookie after passkey sign-in');
+        }
+
+        const userProfile = await persistAuthenticatedUser(
+          data.user as AuthenticatedUserInput,
+          sessionCookieHeader,
+        );
+        captureAuthAnalyticsEvent('auth_passkey_sign_in_succeeded', {
+          phase: 'passkey_sign_in',
+          durationMs: Date.now() - startedAt,
+          email: userProfile.email,
+        });
+      } catch (error) {
+        const resolvedError = error instanceof Error ? error : new Error('Passkey sign-in failed');
+        dispatch({ type: 'PASSKEY_AUTH_FAILED', error: resolvedError });
+        captureAuthAnalyticsFailure('auth_passkey_sign_in_failed', {
+          phase: 'passkey_sign_in',
+          durationMs: Date.now() - startedAt,
+          error: resolvedError,
+          failureStage: 'unknown',
+        });
+        throw resolvedError;
+      }
+    },
+    [persistAuthenticatedUser],
+  );
 
   const signOut = useCallback(async () => {
     const startedAt = Date.now();
@@ -470,19 +508,9 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 
   const authStatus = state.status;
   const authError = state.error;
-  const isLoadingAuth = useMemo(() => resolveIsLoadingAuth(state), [state]);
+  const isLoadingAuth = state.isLoading || state.status === 'booting';
   const isSignedIn = state.status === 'signed_in';
-  const currentUser = useMemo(() => {
-    if (!state.user) return null;
-    return {
-      id: state.user.id,
-      email: state.user.email,
-      name: state.user.name,
-      image: state.user.image,
-      createdAt: state.user.createdAt,
-      updatedAt: state.user.updatedAt,
-    };
-  }, [state.user]);
+  const currentUser = state.user;
 
   const value: AuthContextType = {
     authStatus,
@@ -492,7 +520,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     currentUser,
     requestEmailOtp,
     verifyEmailOtp,
-    completePasskeySignIn,
+    signInWithPasskey,
     signOut,
     updateProfile,
     getAuthHeaders,

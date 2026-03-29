@@ -198,45 +198,12 @@ export interface AuthEnvelope {
   authTime: number;
 }
 
-export interface Session {
-  access_token: string;
-  token_type: 'Bearer';
-  expires_in: number;
-  expires_at: string;
-  refresh_token?: string | undefined;
-}
-
-export interface AuthClient {
-  auth: {
-    signInWithOAuth: (input: {
-      provider: 'google';
-      options?: { redirectTo?: string | undefined } | undefined;
-    }) => Promise<{ error: Error | null }>;
-    signOut: () => Promise<{ error: Error | null }>;
-    getSession: () => Promise<{
-      data: {
-        session: Session | null;
-      };
-      error: Error | null;
-    }>;
-  };
-}
-
 export interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   signIn: () => Promise<void>;
-  signInWithEmail: () => Promise<void>;
-  signInWithPasskey: () => Promise<void>;
-  addPasskey: (name?: string) => Promise<void>;
-  linkGoogle: () => Promise<void>;
-  unlinkGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
-  getSession: () => Promise<Session | null>;
-  requireStepUp: (action: string) => Promise<void>;
-  logout: () => Promise<void>;
-  authClient: AuthClient;
   userId?: string | undefined;
 }
 

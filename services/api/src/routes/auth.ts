@@ -120,10 +120,17 @@ function jsonWithHeaders(body: Record<string, unknown>, status: number, headers?
   });
 }
 
-function getHeaderCarrier(c: { req: { raw: Request } }) {
+function getHeaderCarrier(headers: Headers) {
   return {
-    headers: c.req.raw.headers,
+    headers,
   };
+}
+
+function toCookieHeader(setCookieValues: string[]) {
+  return setCookieValues
+    .map((value) => value.split(';')[0]?.trim())
+    .filter((value): value is string => Boolean(value && value.length > 0))
+    .join('; ');
 }
 
 async function resolveAuthUserId(c: {
@@ -142,8 +149,14 @@ async function resolveAuthUserId(c: {
 async function getBetterAuthSessionContext(
   c: Context<AppEnv>,
 ): Promise<BetterAuthSessionContext | null> {
+  return getBetterAuthSessionContextFromHeaders(c.req.raw.headers);
+}
+
+async function getBetterAuthSessionContextFromHeaders(
+  headers: Headers,
+): Promise<BetterAuthSessionContext | null> {
   const session = await betterAuthServer.api.getSession({
-    ...getHeaderCarrier(c),
+    ...getHeaderCarrier(headers),
   });
 
   if (!session?.user?.id || !session.session?.id) {
@@ -154,6 +167,28 @@ async function getBetterAuthSessionContext(
     sessionId: session.session.id,
     userId: session.user.id,
   };
+}
+
+function buildSessionHeaders(requestHeaders: Headers, authHeaders: Headers) {
+  const headers = new Headers();
+  const requestCookieHeader = requestHeaders.get('cookie');
+  const authCookieHeader = toCookieHeader(getSetCookieHeaders(authHeaders));
+
+  if (requestCookieHeader && authCookieHeader) {
+    headers.set('cookie', `${requestCookieHeader}; ${authCookieHeader}`);
+    return headers;
+  }
+
+  if (authCookieHeader) {
+    headers.set('cookie', authCookieHeader);
+    return headers;
+  }
+
+  if (requestCookieHeader) {
+    headers.set('cookie', requestCookieHeader);
+  }
+
+  return headers;
 }
 
 async function buildSessionResponse(input: {
@@ -176,6 +211,22 @@ async function buildSessionResponse(input: {
       authTime: Math.floor(Date.now() / 1000),
     },
   };
+}
+
+async function buildSessionResponseFromHeaders(input: {
+  headers: Headers;
+  amr: string[];
+}): Promise<AppSessionResponse | null> {
+  const sessionContext = await getBetterAuthSessionContextFromHeaders(input.headers);
+  if (!sessionContext) {
+    return null;
+  }
+
+  return buildSessionResponse({
+    sessionId: sessionContext.sessionId,
+    userId: sessionContext.userId,
+    amr: input.amr,
+  });
 }
 
 async function getRedis() {
@@ -400,10 +451,33 @@ authRoutes.post('/email-otp/verify', zValidator('json', emailOtpVerifySchema), a
       },
     });
 
-    return new Response(await response.text(), {
-      status: response.status,
-      headers: copyHeadersWithSetCookie(response.headers),
+    const headers = copyHeadersWithSetCookie(response.headers);
+    const responseText = await response.text();
+
+    if (!response.ok) {
+      return new Response(responseText, {
+        status: response.status,
+        headers,
+      });
+    }
+
+    const sessionResponse = await buildSessionResponseFromHeaders({
+      headers: buildSessionHeaders(c.req.raw.headers, headers),
+      amr: ['email-otp'],
     });
+
+    if (!sessionResponse) {
+      return new Response(responseText, {
+        status: response.status,
+        headers,
+      });
+    }
+
+    return jsonWithHeaders(
+      sessionResponse as unknown as Record<string, unknown>,
+      response.status,
+      headers,
+    );
   } catch {
     return c.json({ error: 'email_otp_verify_failed' }, 400);
   }
@@ -593,11 +667,12 @@ authRoutes.post('/passkey/auth/verify', zValidator('json', passkeyAuthVerifySche
       body: { response: body.response },
     });
     const responseText = await response.text();
+    const headers = copyHeadersWithSetCookie(response.headers);
 
     if (!response.ok) {
       return new Response(responseText, {
         status: response.status,
-        headers: copyHeadersWithSetCookie(response.headers),
+        headers,
       });
     }
 
@@ -607,9 +682,24 @@ authRoutes.post('/passkey/auth/verify', zValidator('json', passkeyAuthVerifySche
       await grantStepUp(existingUserId, requestedAction).catch(() => null);
     }
 
+    if (!requestedAction) {
+      const sessionResponse = await buildSessionResponseFromHeaders({
+        headers: buildSessionHeaders(c.req.raw.headers, headers),
+        amr: ['passkey'],
+      });
+
+      if (sessionResponse) {
+        return jsonWithHeaders(
+          sessionResponse as unknown as Record<string, unknown>,
+          response.status,
+          headers,
+        );
+      }
+    }
+
     return new Response(responseText, {
       status: response.status,
-      headers: copyHeadersWithSetCookie(response.headers),
+      headers,
     });
   } catch {
     return c.json({ error: 'passkey_authentication_failed' }, 401);

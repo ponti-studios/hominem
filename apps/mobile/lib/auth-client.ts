@@ -6,13 +6,15 @@ import * as SecureStore from 'expo-secure-store';
 
 import { API_BASE_URL, APP_SCHEME } from '~/utils/constants';
 
+export const AUTH_CLIENT_STORAGE_PREFIX = 'hominem';
+
 export const authClient = createAuthClient({
   baseURL: API_BASE_URL,
   plugins: [
     expoClient({
       scheme: APP_SCHEME,
       storage: SecureStore,
-      storagePrefix: 'hominem',
+      storagePrefix: AUTH_CLIENT_STORAGE_PREFIX,
     }),
     emailOTPClient(),
     passkeyClient(),

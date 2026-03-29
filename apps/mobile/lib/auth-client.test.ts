@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, mock, test } from 'bun:test';
+import { describe, expect, mock, test } from 'bun:test';
 
 process.env.EXPO_PUBLIC_API_BASE_URL = 'https://test-api.example.com';
 process.env.APP_VARIANT = 'e2e';
@@ -20,16 +20,17 @@ mock.module('expo-constants', () => ({
   },
 }));
 
+mock.module('expo-device', () => ({
+  isDevice: false,
+}));
+
 mock.module('@better-auth/expo/client', () => ({
   expoClient: (config: unknown) => ({
     name: 'expoClient',
     config,
   }),
+  getSetCookie: () => '{}',
 }));
-
-afterEach(() => {
-  mock.restore();
-});
 
 describe('authClient', () => {
   test('creates auth client with expoClient plugin', async () => {

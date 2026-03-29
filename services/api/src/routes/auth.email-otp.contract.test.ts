@@ -29,6 +29,7 @@ interface _SessionResponse {
 }
 
 interface VerifyOtpResponse {
+  isAuthenticated: boolean;
   user: {
     id: string;
     email: string;
@@ -141,6 +142,7 @@ describe('auth email otp contract', () => {
 
     expect(signInResponse.status).toBe(200);
     const payload = (await signInResponse.json()) as VerifyOtpResponse;
+    expect(payload.isAuthenticated).toBe(true);
     expect(payload.user.email).toBe(email);
   }, 15000);
 
@@ -161,6 +163,7 @@ describe('auth email otp contract', () => {
 
     expect(signInResponse.status).toBe(200);
     const payload = (await signInResponse.json()) as VerifyOtpResponse;
+    expect(payload.isAuthenticated).toBe(true);
     expect(payload.user.email).toBe(email);
   }, 15000);
 

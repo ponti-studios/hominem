@@ -1,12 +1,14 @@
-import { HonoProvider } from '@hominem/rpc/react'
-import type { Preview } from '@storybook/react-vite'
-import { initialize, mswLoader } from 'msw-storybook-addon'
-import { MemoryRouter } from 'react-router'
-import { handlers } from '../src/mocks/handlers'
-import '../src/styles/animations.css'
-import '../src/styles/globals.css'
+import { HonoProvider } from '@hominem/rpc/react';
+import type { Preview } from '@storybook/react-vite';
+import { initialize, mswLoader } from 'msw-storybook-addon';
+import { MemoryRouter } from 'react-router';
 
-initialize()
+import { handlers } from '../src/mocks/handlers';
+
+import '../src/styles/animations.css';
+import '../src/styles/globals.css';
+
+initialize();
 
 const preview: Preview = {
   parameters: {
@@ -14,8 +16,8 @@ const preview: Preview = {
       options: {
         base: { name: 'base', value: '#ffffff' },
         surface: { name: 'surface', value: '#f5f5f7' },
-        elevated: { name: 'elevated', value: '#f2f2f7' }
-      }
+        elevated: { name: 'elevated', value: '#f2f2f7' },
+      },
     },
     controls: {
       matchers: {
@@ -32,7 +34,7 @@ const preview: Preview = {
 
   decorators: [
     (Story) => (
-      <HonoProvider config={{ baseUrl: 'http://localhost:3000', getAuthToken: async () => null }}>
+      <HonoProvider config={{ baseUrl: 'http://localhost:3000' }}>
         <MemoryRouter>
           <div className="p-8">
             <Story />
@@ -44,9 +46,9 @@ const preview: Preview = {
 
   initialGlobals: {
     backgrounds: {
-      value: 'base'
-    }
-  }
-}
+      value: 'base',
+    },
+  },
+};
 
-export default preview
+export default preview;

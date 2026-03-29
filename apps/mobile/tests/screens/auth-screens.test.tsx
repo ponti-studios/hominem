@@ -1,64 +1,62 @@
-import React from 'react'
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native'
-import { vi } from 'vitest'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import React from 'react';
+import { vi } from 'vitest';
 
-import { AuthScreen } from '../../app/(auth)/index'
-import { VerifyScreen } from '../../app/(auth)/verify'
+import { AuthScreen } from '../../app/(auth)/index';
+import { VerifyScreen } from '../../app/(auth)/verify';
 
-const mockReplace = vi.fn()
-const mockCompletePasskeySignIn = vi.fn()
-const mockRequestEmailOtp = vi.fn()
-const mockRetrySessionRecovery = vi.fn()
-const mockVerifyEmailOtp = vi.fn()
-const mockPasskeySignIn = vi.fn()
-let mockIsE2ETesting = false
-let mockIsMobilePasskeyEnabled = true
-let mockAuthStatus: 'signed_out' | 'degraded' = 'signed_out'
-let mockRecoveryError: Error | null = null
+const mockReplace = vi.fn();
+const mockRequestEmailOtp = vi.fn();
+const mockRetrySessionRecovery = vi.fn();
+const mockSignInWithPasskey = vi.fn();
+const mockVerifyEmailOtp = vi.fn();
+let mockIsE2ETesting = false;
+let mockIsMobilePasskeyEnabled = true;
+let mockAuthStatus: 'signed_out' | 'degraded' = 'signed_out';
+let mockRecoveryError: Error | null = null;
 
 vi.mock('expo-router', () => ({
   Redirect: ({ href }: { href: string }) => href,
   Link: ({ children }: { children: React.ReactNode }) => children,
   useRouter: () => ({ replace: mockReplace }),
   useLocalSearchParams: () => ({ email: 'mobile-test@hominem.test' }),
-}))
+}));
 
 vi.mock('../../utils/auth-provider', () => ({
   useAuth: () => ({
     authError: mockRecoveryError,
     authStatus: mockAuthStatus,
     isSignedIn: false,
-    completePasskeySignIn: mockCompletePasskeySignIn,
     requestEmailOtp: mockRequestEmailOtp,
     retrySessionRecovery: mockRetrySessionRecovery,
+    signInWithPasskey: mockSignInWithPasskey,
     verifyEmailOtp: mockVerifyEmailOtp,
   }),
-}))
+}));
 
 vi.mock('../../utils/use-mobile-passkey-auth', () => ({
   useMobilePasskeyAuth: () => ({
-    signIn: mockPasskeySignIn,
     isLoading: false,
     error: null,
     isSupported: true,
   }),
-}))
+}));
 
 vi.mock('../../utils/constants', () => ({
   get E2E_TESTING() {
-    return mockIsE2ETesting
+    return mockIsE2ETesting;
   },
   get MOBILE_PASSKEY_ENABLED() {
-    return mockIsMobilePasskeyEnabled
+    return mockIsMobilePasskeyEnabled;
   },
-}))
+}));
 
 vi.mock('../../theme', () => ({
   Box: ({ children, testID }: { children: React.ReactNode; testID?: string }) => {
-    return React.createElement('View', { testID }, children)
+    return React.createElement('View', { testID }, children);
   },
   Text: ({ children, testID }: { children: React.ReactNode; testID?: string }) => {
-    return React.createElement('Text', { testID }, children)
+    return React.createElement('Text', { testID }, children);
   },
   theme: {
     colors: {
@@ -93,14 +91,19 @@ vi.mock('../../theme', () => ({
     },
   },
   makeStyles: () => () => ({}),
-}))
+}));
 
 vi.mock('../../components/Button', () => ({
-  Button: ({ title, testID, onPress, disabled }: {
-    title?: string
-    testID?: string
-    onPress?: () => void
-    disabled?: boolean
+  Button: ({
+    title,
+    testID,
+    onPress,
+    disabled,
+  }: {
+    title?: string;
+    testID?: string;
+    onPress?: () => void;
+    disabled?: boolean;
   }) => {
     return React.createElement(
       'TouchableOpacity',
@@ -112,17 +115,17 @@ vi.mock('../../components/Button', () => ({
         testID,
       },
       React.createElement('Text', null, title),
-    )
+    );
   },
-}))
+}));
 
 vi.mock('../../components/text-input', () => {
   return {
     default: (props: {
-      testID?: string
-      value?: string
-      onChangeText?: (value: string) => void
-      placeholder?: string
+      testID?: string;
+      value?: string;
+      onChangeText?: (value: string) => void;
+      placeholder?: string;
     }) =>
       React.createElement('TextInput', {
         onChangeText: props.onChangeText,
@@ -130,217 +133,221 @@ vi.mock('../../components/text-input', () => {
         testID: props.testID,
         value: props.value,
       }),
-  }
-})
+  };
+});
 
 vi.mock('../../components/error-boundary', () => ({
   FeatureErrorBoundary: ({ children }: { children: React.ReactNode }) => children,
-}))
+}));
 
 describe('auth rendered screens', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    mockIsE2ETesting = false
-    mockIsMobilePasskeyEnabled = true
-    mockAuthStatus = 'signed_out'
-    mockRecoveryError = null
-  })
+    vi.clearAllMocks();
+    mockIsE2ETesting = false;
+    mockIsMobilePasskeyEnabled = true;
+    mockAuthStatus = 'signed_out';
+    mockRecoveryError = null;
+  });
 
   it('shows validation error when email is empty', async () => {
-    await render(<AuthScreen />)
+    await render(<AuthScreen />);
 
-    await fireEvent.press(screen.getByTestId('auth-send-otp'))
+    await fireEvent.press(screen.getByTestId('auth-send-otp'));
 
-    expect(await screen.findByTestId('auth-error-text')).toHaveTextContent('EMAIL IS REQUIRED.')
-    expect(mockRequestEmailOtp).not.toHaveBeenCalled()
-  })
+    expect(await screen.findByTestId('auth-error-text')).toHaveTextContent('EMAIL IS REQUIRED.');
+    expect(mockRequestEmailOtp).not.toHaveBeenCalled();
+  });
 
   it('submits normalized email and routes to verify screen', async () => {
-    mockRequestEmailOtp.mockResolvedValue(undefined)
-    vi.useFakeTimers()
+    mockRequestEmailOtp.mockResolvedValue(undefined);
+    vi.useFakeTimers();
 
-    await render(<AuthScreen />)
+    await render(<AuthScreen />);
 
-    await fireEvent.changeText(screen.getByTestId('auth-email-input'), '  USER@Example.com  ')
-    await fireEvent.press(screen.getByTestId('auth-send-otp'))
+    await fireEvent.changeText(screen.getByTestId('auth-email-input'), '  USER@Example.com  ');
+    await fireEvent.press(screen.getByTestId('auth-send-otp'));
 
     await waitFor(() => {
-      expect(mockRequestEmailOtp).toHaveBeenCalledWith('user@example.com')
-    })
+      expect(mockRequestEmailOtp).toHaveBeenCalledWith('user@example.com');
+    });
 
     await act(() => {
-      vi.runAllTimers()
-    })
+      vi.runAllTimers();
+    });
 
     await waitFor(() => {
-      expect(screen.getByTestId('auth-send-otp')).not.toBeDisabled()
-    })
+      expect(screen.getByTestId('auth-send-otp')).not.toBeDisabled();
+    });
 
-    expect(mockReplace).toHaveBeenCalledWith('/(auth)/verify?email=user%40example.com')
-    vi.useRealTimers()
-  })
+    expect(mockReplace).toHaveBeenCalledWith('/(auth)/verify?email=user%40example.com');
+    vi.useRealTimers();
+  });
 
   it('shows verify screen validation error when OTP is invalid', async () => {
-    await render(<VerifyScreen />)
+    await render(<VerifyScreen />);
 
-    await fireEvent.changeText(screen.getByTestId('auth-otp-input'), '12')
-    await fireEvent.press(screen.getByTestId('auth-verify-otp'))
+    await fireEvent.changeText(screen.getByTestId('auth-otp-input'), '12');
+    await fireEvent.press(screen.getByTestId('auth-verify-otp'));
 
-    expect(await screen.findByTestId('auth-error-text')).toHaveTextContent('CODE MUST BE 6 DIGITS.')
-    expect(mockVerifyEmailOtp).not.toHaveBeenCalled()
-  })
+    expect(await screen.findByTestId('auth-error-text')).toHaveTextContent(
+      'CODE MUST BE 6 DIGITS.',
+    );
+    expect(mockVerifyEmailOtp).not.toHaveBeenCalled();
+  });
 
   it('submits normalized OTP to verify flow', async () => {
-    mockVerifyEmailOtp.mockResolvedValue(undefined)
+    mockVerifyEmailOtp.mockResolvedValue(undefined);
 
-    await render(<VerifyScreen />)
+    await render(<VerifyScreen />);
 
-    await fireEvent.changeText(screen.getByTestId('auth-otp-input'), '12 34-56')
-    await fireEvent.press(screen.getByTestId('auth-verify-otp'))
+    await fireEvent.changeText(screen.getByTestId('auth-otp-input'), '12 34-56');
+    await fireEvent.press(screen.getByTestId('auth-verify-otp'));
 
     await waitFor(() => {
       expect(mockVerifyEmailOtp).toHaveBeenCalledWith({
         email: 'mobile-test@hominem.test',
         otp: '123456',
-      })
-    })
+      });
+    });
 
     await waitFor(() => {
-      expect(screen.getByTestId('auth-verify-otp')).not.toBeDisabled()
-    })
-  })
+      expect(screen.getByTestId('auth-verify-otp')).not.toBeDisabled();
+    });
+  });
 
   it('renders six OTP slots and mirrors pasted digits into the slots', async () => {
-    await render(<VerifyScreen />)
+    await render(<VerifyScreen />);
 
-    await fireEvent.changeText(screen.getByTestId('auth-otp-input'), '12 34-56')
+    await fireEvent.changeText(screen.getByTestId('auth-otp-input'), '12 34-56');
 
-    expect(screen.getByTestId('auth-otp-slot-0')).toHaveTextContent('1')
-    expect(screen.getByTestId('auth-otp-slot-1')).toHaveTextContent('2')
-    expect(screen.getByTestId('auth-otp-slot-2')).toHaveTextContent('3')
-    expect(screen.getByTestId('auth-otp-slot-3')).toHaveTextContent('4')
-    expect(screen.getByTestId('auth-otp-slot-4')).toHaveTextContent('5')
-    expect(screen.getByTestId('auth-otp-slot-5')).toHaveTextContent('6')
-  })
+    expect(screen.getByTestId('auth-otp-slot-0')).toHaveTextContent('1');
+    expect(screen.getByTestId('auth-otp-slot-1')).toHaveTextContent('2');
+    expect(screen.getByTestId('auth-otp-slot-2')).toHaveTextContent('3');
+    expect(screen.getByTestId('auth-otp-slot-3')).toHaveTextContent('4');
+    expect(screen.getByTestId('auth-otp-slot-4')).toHaveTextContent('5');
+    expect(screen.getByTestId('auth-otp-slot-5')).toHaveTextContent('6');
+  });
 
   it('resends the code and shows resend confirmation', async () => {
-    mockRequestEmailOtp.mockResolvedValue(undefined)
+    mockRequestEmailOtp.mockResolvedValue(undefined);
 
-    await render(<VerifyScreen />)
+    await render(<VerifyScreen />);
 
-    await fireEvent.press(screen.getByTestId('auth-resend-otp'))
+    await fireEvent.press(screen.getByTestId('auth-resend-otp'));
 
     await waitFor(() => {
-      expect(mockRequestEmailOtp).toHaveBeenCalledWith('mobile-test@hominem.test')
-    })
+      expect(mockRequestEmailOtp).toHaveBeenCalledWith('mobile-test@hominem.test');
+    });
 
-    expect(await screen.findByTestId('auth-resend-message')).toHaveTextContent('A new code is on the way.')
-  })
+    expect(await screen.findByTestId('auth-resend-message')).toHaveTextContent(
+      'A new code is on the way.',
+    );
+  });
 
   it('shows inline error and re-enables submit on OTP verify failure', async () => {
-    mockVerifyEmailOtp.mockRejectedValue(new Error('Invalid or expired code.'))
+    mockVerifyEmailOtp.mockRejectedValue(new Error('Invalid or expired code.'));
 
-    await render(<VerifyScreen />)
+    await render(<VerifyScreen />);
 
-    await fireEvent.changeText(screen.getByTestId('auth-otp-input'), '123456')
-    await fireEvent.press(screen.getByTestId('auth-verify-otp'))
+    await fireEvent.changeText(screen.getByTestId('auth-otp-input'), '123456');
+    await fireEvent.press(screen.getByTestId('auth-verify-otp'));
 
-    expect(await screen.findByTestId('auth-error-text')).toHaveTextContent('INVALID OR EXPIRED CODE.')
+    expect(await screen.findByTestId('auth-error-text')).toHaveTextContent(
+      'INVALID OR EXPIRED CODE.',
+    );
 
     // Button must be re-enabled after rejection so the user can retry
     await waitFor(() => {
-      expect(screen.getByTestId('auth-verify-otp')).not.toBeDisabled()
-    })
-  })
+      expect(screen.getByTestId('auth-verify-otp')).not.toBeDisabled();
+    });
+  });
 
   it('disables send-code button while OTP request is in-flight', async () => {
-    let resolveOtp!: () => void
-    mockRequestEmailOtp.mockReturnValue(new Promise<void>((res) => { resolveOtp = res }))
+    let resolveOtp!: () => void;
+    mockRequestEmailOtp.mockReturnValue(
+      new Promise<void>((res) => {
+        resolveOtp = res;
+      }),
+    );
 
-    await render(<AuthScreen />)
-    await fireEvent.changeText(screen.getByTestId('auth-email-input'), 'user@example.com')
-    const submitPromise = fireEvent.press(screen.getByTestId('auth-send-otp'))
+    await render(<AuthScreen />);
+    await fireEvent.changeText(screen.getByTestId('auth-email-input'), 'user@example.com');
+    const submitPromise = fireEvent.press(screen.getByTestId('auth-send-otp'));
 
     await waitFor(() => {
-      expect(screen.getByTestId('auth-send-otp')).toBeDisabled()
-    })
+      expect(screen.getByTestId('auth-send-otp')).toBeDisabled();
+    });
 
     await act(async () => {
-      resolveOtp()
-    })
-    await submitPromise
+      resolveOtp();
+    });
+    await submitPromise;
 
     await waitFor(() => {
-      expect(screen.getByTestId('auth-send-otp')).not.toBeDisabled()
-    })
-  })
+      expect(screen.getByTestId('auth-send-otp')).not.toBeDisabled();
+    });
+  });
 
   it('disables verify button while OTP verify is in-flight', async () => {
-    let resolveVerify!: () => void
-    mockVerifyEmailOtp.mockReturnValue(new Promise<void>((res) => { resolveVerify = res }))
+    let resolveVerify!: () => void;
+    mockVerifyEmailOtp.mockReturnValue(
+      new Promise<void>((res) => {
+        resolveVerify = res;
+      }),
+    );
 
-    await render(<VerifyScreen />)
-    await fireEvent.changeText(screen.getByTestId('auth-otp-input'), '123456')
-    const verifyPromise = fireEvent.press(screen.getByTestId('auth-verify-otp'))
+    await render(<VerifyScreen />);
+    await fireEvent.changeText(screen.getByTestId('auth-otp-input'), '123456');
+    const verifyPromise = fireEvent.press(screen.getByTestId('auth-verify-otp'));
 
     await waitFor(() => {
-      expect(screen.getByTestId('auth-verify-otp')).toBeDisabled()
-    })
+      expect(screen.getByTestId('auth-verify-otp')).toBeDisabled();
+    });
 
     await act(async () => {
-      resolveVerify()
-    })
-    await verifyPromise
+      resolveVerify();
+    });
+    await verifyPromise;
 
     await waitFor(() => {
-      expect(screen.getByTestId('auth-verify-otp')).not.toBeDisabled()
-    })
-  })
+      expect(screen.getByTestId('auth-verify-otp')).not.toBeDisabled();
+    });
+  });
 
   it('shows passkey CTA when supported and invokes passkey sign-in', async () => {
-    mockPasskeySignIn.mockResolvedValue({
-      accessToken: 'passkey-access-token',
-      refreshToken: 'passkey-refresh-token',
-      expiresIn: 600,
-      tokenType: 'Bearer',
-      user: {
-        id: 'passkey-user',
-        email: 'passkey-user@hominem.test',
-      },
-    })
+    mockSignInWithPasskey.mockResolvedValue(undefined);
 
-    await render(<AuthScreen />)
+    await render(<AuthScreen />);
 
-    await fireEvent.press(screen.getByTestId('auth-passkey-button'))
+    await fireEvent.press(screen.getByTestId('auth-passkey-button'));
 
     await waitFor(() => {
-      expect(mockPasskeySignIn).toHaveBeenCalledTimes(1)
-      expect(mockCompletePasskeySignIn).toHaveBeenCalledTimes(1)
-    })
-  })
+      expect(mockSignInWithPasskey).toHaveBeenCalledTimes(1);
+    });
+  });
 
   it('shows retry recovery CTA when boot recovery degrades', async () => {
-    mockAuthStatus = 'degraded'
-    mockRecoveryError = new Error('Boot timed out')
+    mockAuthStatus = 'degraded';
+    mockRecoveryError = new Error('Boot timed out');
 
-    await render(<AuthScreen />)
+    await render(<AuthScreen />);
 
-    expect(screen.getByTestId('auth-error-text')).toHaveTextContent('BOOT TIMED OUT')
+    expect(screen.getByTestId('auth-error-text')).toHaveTextContent('BOOT TIMED OUT');
 
-    await fireEvent.press(screen.getByTestId('auth-retry-recovery'))
+    await fireEvent.press(screen.getByTestId('auth-retry-recovery'));
 
     await waitFor(() => {
-      expect(mockRetrySessionRecovery).toHaveBeenCalledTimes(1)
-    })
-  })
+      expect(mockRetrySessionRecovery).toHaveBeenCalledTimes(1);
+    });
+  });
 
   it('hides passkey CTA when the mobile passkey flag is disabled', async () => {
-    mockIsMobilePasskeyEnabled = false
+    mockIsMobilePasskeyEnabled = false;
 
-    await render(<AuthScreen />)
+    await render(<AuthScreen />);
 
-    expect(screen.queryByTestId('auth-passkey-button')).toBeNull()
-    expect(screen.queryByTestId('auth-e2e-passkey-success')).toBeNull()
-    expect(screen.queryByTestId('auth-e2e-passkey-cancel')).toBeNull()
-  })
-})
+    expect(screen.queryByTestId('auth-passkey-button')).toBeNull();
+    expect(screen.queryByTestId('auth-e2e-passkey-success')).toBeNull();
+    expect(screen.queryByTestId('auth-e2e-passkey-cancel')).toBeNull();
+  });
+});

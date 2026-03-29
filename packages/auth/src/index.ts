@@ -18,7 +18,8 @@
  *
  * Import mock utilities from the mock sub-path:
  * ```typescript
- * import { LocalMockAuthProvider, createMockAuthProvider } from '@hominem/auth/AuthContext';
+ * import { LocalMockAuthProvider } from '@hominem/auth/AuthContext';
+ * import { createMockAuthProvider } from '@hominem/auth/providers/mock';
  * ```
  *
  * Note: Mock utilities are NOT exported from the package root to prevent accidental use in production.
@@ -32,17 +33,17 @@
  */
 
 // Public client API
-export { AuthProvider, type AuthProviderProps, useAuthContext, useSafeAuth } from './client'
-export * from './auth-error-contract'
-export * from './auth-ux-contract'
-export * from './contracts'
-export * from './types'
-export * from './user'
+export * from './auth-error-contract';
+export * from './auth-ux-contract';
+export { AuthProvider, useAuthContext, useSafeAuth, type AuthProviderProps } from './client';
+export * from './contracts';
+export * from './types';
+export * from './user';
 
 // Mock auth exports (tests and development only)
-export * from './auth.types'
-export * from './mock-users'
-export * from './config'
+export * from './auth.types';
+export * from './config';
+export * from './mock-users';
 // helpers such as createMockAuthProvider are intentionally **not** re-exported
 // here; they live under `@hominem/auth/providers/mock` or server-auth for
 // explicit imports to avoid accidental use in production code.
@@ -51,9 +52,9 @@ export * from './config'
 // By design, the only provider apps should import is the one above from
 // './client'.  We avoid re-exporting another "AuthProvider" here to prevent
 // accidental imports.
-export { AuthContext, useAuth, useProtectedRoute } from './AuthContext'
-export type { AuthContextState } from './AuthContext'
+export { AuthContext, useAuth, useProtectedRoute } from './AuthContext';
+export type { AuthContextState } from './AuthContext';
 
 // Passkey authentication hook
-export { usePasskeyAuth } from './hooks/use-passkey-auth'
-export type { UsePasskeyAuthOptions } from './hooks/use-passkey-auth'
+export { usePasskeyAuth } from './hooks/use-passkey-auth';
+export type { UsePasskeyAuthOptions } from './hooks/use-passkey-auth';

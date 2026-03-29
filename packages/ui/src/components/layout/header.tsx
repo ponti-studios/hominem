@@ -31,7 +31,7 @@ function useLogout() {
   const navigate = useNavigate();
   const authContext = useSafeAuth();
   return useCallback(async () => {
-    await authContext?.logout();
+    await authContext?.signOut();
     navigate('/');
   }, [authContext, navigate]);
 }

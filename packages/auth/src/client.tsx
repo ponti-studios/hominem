@@ -1,7 +1,7 @@
 import { useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { AuthContext } from './AuthContext';
-import type { AppAuthStatus, AuthClient, AuthConfig, AuthContextType, User } from './types';
+import type { AppAuthStatus, AuthConfig, AuthContextType, User } from './types';
 type AuthEvent = 'SIGNED_IN' | 'SIGNED_OUT';
 
 interface SessionResponse {
@@ -13,73 +13,6 @@ interface SessionResponse {
     amr: string[];
     authTime: number;
   } | null;
-}
-
-interface PublicKeyCredentialDescriptorJSON {
-  type: 'public-key';
-  id: string;
-  transports?: AuthenticatorTransport[] | undefined;
-}
-
-interface PublicKeyCredentialRequestOptionsJSON {
-  challenge: string;
-  timeout?: number | undefined;
-  rpId?: string | undefined;
-  allowCredentials?: PublicKeyCredentialDescriptorJSON[] | undefined;
-  userVerification?: UserVerificationRequirement | undefined;
-}
-
-interface PasskeyAuthOptionsResponse {
-  options?: PublicKeyCredentialRequestOptionsJSON | undefined;
-  challenge?: PublicKeyCredentialRequestOptionsJSON | undefined;
-  [key: string]: unknown;
-}
-
-interface PasskeyRegistrationOptionsResponse {
-  options?: PublicKeyCredentialCreationOptionsJSON | undefined;
-  [key: string]: unknown;
-}
-
-interface PublicKeyCredentialCreationOptionsJSON {
-  challenge: string;
-  rp: {
-    name: string;
-    id: string;
-  };
-  user: {
-    id: string;
-    name: string;
-    displayName: string;
-  };
-  pubKeyCredParams: Array<{
-    type: 'public-key';
-    alg: number;
-  }>;
-  timeout?: number | undefined;
-  excludeCredentials?:
-    | Array<{
-        id: string;
-        type: string;
-        transports?: string[] | undefined;
-      }>
-    | undefined;
-  attestation?: string | undefined;
-  extensions?: Record<string, unknown> | undefined;
-}
-
-interface SerializedAuthenticatorAssertionResponse {
-  clientDataJSON: string;
-  authenticatorData: string;
-  signature: string;
-  userHandle?: string | null | undefined;
-}
-
-interface SerializedPublicKeyCredential {
-  id: string;
-  rawId: string;
-  type: PublicKeyCredentialType;
-  clientExtensionResults: AuthenticationExtensionsClientOutputs;
-  response: SerializedAuthenticatorAssertionResponse;
 }
 
 function getAbsoluteApiUrl(apiBaseUrl: string, path: string) {
@@ -104,98 +37,6 @@ async function fetchSession(apiBaseUrl: string): Promise<SessionResponse> {
   }
 
   return { isAuthenticated: false, user: null };
-}
-
-function toBase64Url(buffer: ArrayBuffer) {
-  const bytes = new Uint8Array(buffer);
-  let binary = '';
-  for (const byte of bytes) {
-    binary += String.fromCharCode(byte);
-  }
-  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
-}
-
-function fromBase64Url(input: string) {
-  const normalized = input.replace(/-/g, '+').replace(/_/g, '/');
-  const padding = normalized.length % 4 === 0 ? '' : '='.repeat(4 - (normalized.length % 4));
-  const base64 = normalized + padding;
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i += 1) {
-    const char = binary.charCodeAt(i);
-    bytes[i] = char;
-  }
-  return bytes.buffer;
-}
-
-function normalizeRequestOptions(
-  options: PublicKeyCredentialRequestOptionsJSON,
-): PublicKeyCredentialRequestOptions {
-  return {
-    challenge: fromBase64Url(options.challenge),
-    ...(options.timeout !== undefined ? { timeout: options.timeout } : {}),
-    ...(options.rpId ? { rpId: options.rpId } : {}),
-    ...(options.allowCredentials
-      ? {
-          allowCredentials: options.allowCredentials.map((credential) => ({
-            type: 'public-key' as const,
-            id: fromBase64Url(credential.id),
-            ...(credential.transports ? { transports: credential.transports } : {}),
-          })),
-        }
-      : {}),
-    ...(options.userVerification ? { userVerification: options.userVerification } : {}),
-  };
-}
-
-function normalizeCreationOptions(
-  options: PublicKeyCredentialCreationOptionsJSON,
-): PublicKeyCredentialCreationOptions {
-  const result: Record<string, unknown> = {
-    challenge: fromBase64Url(options.challenge),
-    rp: options.rp,
-    user: {
-      id: fromBase64Url(options.user.id),
-      name: options.user.name,
-      displayName: options.user.displayName,
-    },
-    pubKeyCredParams: options.pubKeyCredParams as PublicKeyCredentialParameters[],
-  };
-  if (options.timeout !== undefined) {
-    result.timeout = options.timeout;
-  }
-  if (options.excludeCredentials !== undefined) {
-    result.excludeCredentials = options.excludeCredentials.map((cred) => ({
-      id: fromBase64Url(cred.id),
-      type: cred.type as PublicKeyCredentialType,
-      ...(cred.transports ? { transports: cred.transports as AuthenticatorTransport[] } : {}),
-    }));
-  }
-  if (options.attestation !== undefined) {
-    result.attestation = options.attestation;
-  }
-  if (options.extensions !== undefined) {
-    result.extensions = options.extensions;
-  }
-  return result as unknown as PublicKeyCredentialCreationOptions;
-}
-
-function serializeAssertion(credential: PublicKeyCredential): SerializedPublicKeyCredential {
-  const assertionResponse = credential.response as AuthenticatorAssertionResponse;
-  return {
-    id: credential.id,
-    rawId: toBase64Url(credential.rawId),
-    type: 'public-key',
-    clientExtensionResults: credential.getClientExtensionResults(),
-    response: {
-      clientDataJSON: toBase64Url(assertionResponse.clientDataJSON),
-      authenticatorData: toBase64Url(assertionResponse.authenticatorData),
-      signature: toBase64Url(assertionResponse.signature),
-      ...(assertionResponse.userHandle
-        ? { userHandle: toBase64Url(assertionResponse.userHandle) }
-        : { userHandle: null }),
-    },
-  };
 }
 
 export type AuthProviderProps = {
@@ -246,192 +87,6 @@ export function AuthProvider({
     window.location.href = '/auth';
   }, []);
 
-  const signInWithEmail = useCallback(async () => {
-    window.location.href = '/auth';
-  }, []);
-
-  const signInWithPasskey = useCallback(async () => {
-    if (typeof window === 'undefined' || !window.PublicKeyCredential) {
-      throw new Error('Passkeys are not available in this environment.');
-    }
-
-    const optionsRes = await fetch(
-      getAbsoluteApiUrl(config.apiBaseUrl, '/api/auth/passkey/auth/options'),
-      {
-        method: 'POST',
-        credentials: 'include',
-      },
-    );
-    if (!optionsRes.ok) {
-      throw new Error('Failed to request passkey authentication options.');
-    }
-
-    const optionsPayload = (await optionsRes.json()) as PasskeyAuthOptionsResponse;
-    const rawOptions =
-      optionsPayload.options && typeof optionsPayload.options === 'object'
-        ? optionsPayload.options
-        : optionsPayload.challenge && typeof optionsPayload.challenge === 'object'
-          ? optionsPayload.challenge
-          : null;
-
-    if (!rawOptions || typeof rawOptions.challenge !== 'string') {
-      throw new Error('Invalid passkey options response.');
-    }
-
-    const credential = (await navigator.credentials.get({
-      publicKey: normalizeRequestOptions(rawOptions),
-    })) as PublicKeyCredential | null;
-    if (!credential) {
-      throw new Error('Passkey authentication was cancelled.');
-    }
-
-    const verifyRes = await fetch(
-      getAbsoluteApiUrl(config.apiBaseUrl, '/api/auth/passkey/auth/verify'),
-      {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'content-type': 'application/json',
-        },
-        body: JSON.stringify({
-          response: serializeAssertion(credential),
-        }),
-      },
-    );
-
-    if (!verifyRes.ok) {
-      throw new Error('Passkey sign-in failed.');
-    }
-
-    await refreshAuth();
-  }, [config.apiBaseUrl, refreshAuth]);
-
-  const addPasskey = useCallback(
-    async (name?: string) => {
-      if (typeof window === 'undefined' || !window.PublicKeyCredential) {
-        throw new Error('Passkeys are not available in this environment.');
-      }
-
-      const optionsRes = await fetch(
-        getAbsoluteApiUrl(config.apiBaseUrl, '/api/auth/passkey/register/options'),
-        {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'content-type': 'application/json',
-          },
-          body: JSON.stringify({ name: name ?? 'Default Device' }),
-        },
-      );
-      if (!optionsRes.ok) {
-        throw new Error('Failed to request passkey registration options.');
-      }
-
-      const optionsPayload = (await optionsRes.json()) as PasskeyRegistrationOptionsResponse;
-      const rawOptions: PublicKeyCredentialCreationOptionsJSON | null =
-        optionsPayload.options && typeof optionsPayload.options === 'object'
-          ? optionsPayload.options
-          : null;
-
-      if (!rawOptions || typeof rawOptions.challenge !== 'string') {
-        throw new Error('Invalid passkey options response.');
-      }
-
-      const credential = (await navigator.credentials.create({
-        publicKey: normalizeCreationOptions(rawOptions),
-      })) as PublicKeyCredential | null;
-      if (!credential) {
-        throw new Error('Passkey registration was cancelled.');
-      }
-
-      const verifyRes = await fetch(
-        getAbsoluteApiUrl(config.apiBaseUrl, '/api/auth/passkey/register/verify'),
-        {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'content-type': 'application/json',
-          },
-          body: JSON.stringify({
-            response: serializeAssertion(credential),
-            name: name ?? 'Default Device',
-          }),
-        },
-      );
-
-      if (!verifyRes.ok) {
-        throw new Error('Passkey registration failed.');
-      }
-    },
-    [config.apiBaseUrl],
-  );
-
-  const linkGoogle = useCallback(async () => {
-    throw new Error('OAuth account linking is disabled.');
-  }, []);
-
-  const requireStepUp = useCallback(
-    async (action: string) => {
-      if (typeof window === 'undefined' || !window.PublicKeyCredential) {
-        throw new Error('Passkeys are not available in this environment.');
-      }
-
-      const optionsRes = await fetch(
-        getAbsoluteApiUrl(config.apiBaseUrl, '/api/auth/passkey/auth/options'),
-        {
-          method: 'POST',
-          credentials: 'include',
-        },
-      );
-      if (!optionsRes.ok) {
-        throw new Error('Failed to request passkey authentication options.');
-      }
-
-      const optionsPayload = (await optionsRes.json()) as PasskeyAuthOptionsResponse;
-      const rawOptions =
-        optionsPayload.options && typeof optionsPayload.options === 'object'
-          ? optionsPayload.options
-          : optionsPayload.challenge && typeof optionsPayload.challenge === 'object'
-            ? optionsPayload.challenge
-            : null;
-
-      if (!rawOptions || typeof rawOptions.challenge !== 'string') {
-        throw new Error('Invalid passkey options response.');
-      }
-
-      const credential = (await navigator.credentials.get({
-        publicKey: normalizeRequestOptions(rawOptions),
-      })) as PublicKeyCredential | null;
-      if (!credential) {
-        throw new Error('Passkey authentication was cancelled.');
-      }
-
-      const verifyRes = await fetch(
-        getAbsoluteApiUrl(config.apiBaseUrl, '/api/auth/passkey/auth/verify'),
-        {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'content-type': 'application/json',
-          },
-          body: JSON.stringify({
-            response: serializeAssertion(credential),
-            action,
-          }),
-        },
-      );
-
-      if (!verifyRes.ok) {
-        throw new Error('Passkey step-up verification failed.');
-      }
-    },
-    [config.apiBaseUrl],
-  );
-
-  const unlinkGoogle = useCallback(async () => {
-    throw new Error('OAuth account linking is disabled.');
-  }, []);
-
   const signOut = useCallback(async () => {
     setAuthState((currentState) => ({
       ...currentState,
@@ -469,78 +124,16 @@ export function AuthProvider({
     }
   }, [config.apiBaseUrl, onAuthEvent]);
 
-  const getSession = useCallback(async () => {
-    await refreshAuth();
-    return null;
-  }, [refreshAuth]);
-
-  const authClient = useMemo<AuthClient>(
-    () => ({
-      auth: {
-        signInWithOAuth: async ({ provider, options }) => {
-          try {
-            void provider;
-            void options;
-            return { error: new Error('OAuth sign-in is disabled. Use email OTP or passkey.') };
-          } catch (error) {
-            return { error: error instanceof Error ? error : new Error('OAuth redirect failed') };
-          }
-        },
-        signOut: async () => {
-          try {
-            await signOut();
-            return { error: null };
-          } catch (error) {
-            return { error: error instanceof Error ? error : new Error('Sign out failed') };
-          }
-        },
-        getSession: async () => {
-          try {
-            await getSession();
-            return { data: { session: null }, error: null };
-          } catch (error) {
-            return {
-              data: { session: null },
-              error: error instanceof Error ? error : new Error('Failed to get session'),
-            };
-          }
-        },
-      },
-    }),
-    [getSession, signOut],
-  );
-
   const value = useMemo<AuthContextType>(
     () => ({
       user: authState.user,
       isLoading: authState.isLoading,
       isAuthenticated: authState.status === 'signed_in',
       signIn,
-      signInWithEmail,
-      signInWithPasskey,
-      addPasskey,
-      linkGoogle,
-      unlinkGoogle,
       signOut,
-      getSession,
-      requireStepUp,
-      logout: signOut,
-      authClient,
       userId: authState.user?.id,
     }),
-    [
-      authState,
-      signIn,
-      signInWithEmail,
-      signInWithPasskey,
-      addPasskey,
-      linkGoogle,
-      unlinkGoogle,
-      signOut,
-      getSession,
-      requireStepUp,
-      authClient,
-    ],
+    [authState, signIn, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

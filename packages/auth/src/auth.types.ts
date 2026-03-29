@@ -3,38 +3,24 @@
  * These types are shared between client and server
  */
 
-import type { User, Session } from './types';
+import type { User } from './types';
 
-export type { User, Session };
-
-/**
- * Request payload for sign-in endpoints
- */
-export interface AuthRequest {
-  provider: 'google' | 'passkey' | 'email_otp' | 'mock'
-  mockUserId?: string
-}
+export type { User };
 
 /**
  * Response payload from sign-in endpoints
  */
 export interface AuthResponse {
-  user: User
-  session: Session
+  user: User;
 }
-
-/**
- * Sign-out request (minimal payload, mainly for type safety)
- */
-export interface SignOutRequest {}
 
 /**
  * Configuration for authentication
  */
 export interface MockAuthConfig {
-  useMockAuth: boolean
-  oauthEnabled: boolean
-  apiBaseUrl?: string
+  useMockAuth: boolean;
+  oauthEnabled: boolean;
+  apiBaseUrl?: string;
 }
 
 export const MOCK_USERS: Record<string, User> = {
@@ -59,6 +45,6 @@ export const MOCK_USERS: Record<string, User> = {
     createdAt: new Date('2024-02-01').toISOString(),
     updatedAt: new Date().toISOString(),
   },
-}
+};
 
-export const DEFAULT_MOCK_USER: User = MOCK_USERS['developer']!
+export const DEFAULT_MOCK_USER: User = MOCK_USERS['developer']!;

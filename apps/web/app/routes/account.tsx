@@ -9,7 +9,7 @@ import { ConnectTwitterAccount } from '~/components/connect-twitter-account';
 import { useTwitterOAuth } from '~/lib/hooks/use-twitter-oauth';
 
 export default function AccountPage() {
-  const { userId, isLoading, logout } = useAuthContext();
+  const { userId, isLoading, signOut } = useAuthContext();
   const { refetch } = useTwitterOAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const twitterStatus = searchParams.get('twitter');
@@ -68,7 +68,7 @@ export default function AccountPage() {
                 <h3 className="text-sm font-medium text-foreground">Sign Out</h3>
                 <p className="text-sm text-text-secondary">End your current session.</p>
               </div>
-              <Button variant="outline" onClick={() => logout()}>
+              <Button variant="outline" onClick={() => signOut()}>
                 Sign Out
               </Button>
             </div>

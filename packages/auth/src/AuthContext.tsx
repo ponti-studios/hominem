@@ -4,7 +4,7 @@
  */
 
 import type { ReactNode } from 'react';
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 import { isMockAuthEnabled } from './config';
 import type { User } from './mock-users';
@@ -111,31 +111,12 @@ export function LocalMockAuthProvider({ children }: MockAuthProviderProps) {
     }
   }, []);
 
-  const authClient: AuthContextType['authClient'] = useMemo(() => {
-    return {
-      auth: {
-        signInWithOAuth: async () => ({ error: null }),
-        signOut: async () => ({ error: null }),
-        getSession: async () => ({ data: { session: null }, error: null }),
-      },
-    };
-  }, []);
-
   const value: AuthContextState = {
     user,
     isLoading,
     isAuthenticated,
     signIn,
-    signInWithEmail: signIn,
-    signInWithPasskey: signIn,
-    addPasskey: async () => {},
-    linkGoogle: async () => {},
-    unlinkGoogle: async () => {},
     signOut,
-    getSession: async () => null,
-    requireStepUp: async () => {},
-    logout: signOut,
-    authClient,
     userId: user?.id,
   };
 

@@ -1,7 +1,7 @@
-import type { AuthStatusCompat } from '~/utils/auth/provider-utils';
+import type { AuthState } from '~/utils/auth/types';
 
 interface ResolveAuthRedirectInput {
-  authStatus: AuthStatusCompat;
+  authStatus: AuthState['status'];
   isSignedIn: boolean;
   segments: string[];
 }

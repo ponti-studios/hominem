@@ -1,18 +1,12 @@
-import type { User } from '@hominem/auth';
 import { STEP_UP_ACTIONS } from '@hominem/auth/step-up-actions';
 import { useCallback, useState } from 'react';
 import { Platform } from 'react-native';
 
 import { authClient } from '~/lib/auth-client';
 import { useAuth } from '~/utils/auth-provider';
-import {
-  getPersistedSessionCookieHeader,
-  persistSessionCookieHeader,
-} from '~/utils/auth/session-cookie';
 import { API_BASE_URL, E2E_TESTING } from '~/utils/constants';
 
 interface UseMobilePasskeyAuthReturn {
-  signIn: (mode?: 'real' | 'e2e-success' | 'e2e-cancel') => Promise<User | null>;
   addPasskey: (name?: string) => Promise<{ success: boolean; error?: string }>;
   listPasskeys: () => Promise<{ id: string; name: string }[]>;
   deletePasskey: (id: string) => Promise<{ success: boolean; error?: string }>;
@@ -30,80 +24,20 @@ export function useMobilePasskeyAuth(): UseMobilePasskeyAuthReturn {
   const isSupported =
     Platform.OS === 'ios' && Number.parseInt(Platform.Version as string, 10) >= 16;
 
-  const signIn = useCallback(
-    async (mode: 'real' | 'e2e-success' | 'e2e-cancel' = 'real'): Promise<User | null> => {
-      setIsLoading(true);
-      setError(null);
+  const authenticateStepUp = useCallback(async () => {
+    if (E2E_TESTING) {
+      return;
+    }
 
-      try {
-        if (E2E_TESTING && mode !== 'real') {
-          if (mode === 'e2e-cancel') {
-            const message = 'Passkey sign-in was cancelled';
-            setError(message);
-            return null;
-          }
+    const { data, error: passkeyError } = await authClient.signIn.passkey();
+    if (passkeyError) {
+      throw new Error(passkeyError.message || 'Passkey step-up failed');
+    }
 
-          return signIn('real');
-        }
-
-        // Step 1: Sign in with passkey via Better Auth (handles native platform credential APIs).
-        // On iOS this triggers the system passkey prompt. expoClient stores the
-        // resulting Better Auth session in SecureStore automatically.
-        const { data: passkeyData, error: passkeyError } = await authClient.signIn.passkey();
-
-        if (passkeyError) {
-          setError(passkeyError.message || 'Passkey sign-in failed');
-          return null;
-        }
-
-        if (!passkeyData) {
-          setError('No data returned from passkey sign-in');
-          return null;
-        }
-
-        // Step 2: Resolve the Better Auth session into the normalized app session payload.
-        const cookieHeader = await getPersistedSessionCookieHeader();
-        const headers: Record<string, string> = {};
-        if (cookieHeader) {
-          headers['cookie'] = cookieHeader;
-        }
-
-        const tokenResponse = await fetch(new URL('/api/auth/session', API_BASE_URL).toString(), {
-          method: 'GET',
-          headers,
-        });
-
-        if (!tokenResponse.ok) {
-          const body = (await tokenResponse.json()) as { error?: string };
-          setError(body.error || 'Failed to restore app session after passkey sign-in');
-          return null;
-        }
-
-        const sessionData = (await tokenResponse.json()) as {
-          isAuthenticated: boolean;
-          user: User | null;
-        };
-
-        if (!sessionData.isAuthenticated || !sessionData.user) {
-          setError('Failed to restore app session after passkey sign-in');
-          return null;
-        }
-
-        if (cookieHeader) {
-          await persistSessionCookieHeader(cookieHeader);
-        }
-
-        return sessionData.user;
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Passkey sign-in failed';
-        setError(message);
-        return null;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [],
-  );
+    if (!data?.user) {
+      throw new Error('Passkey step-up failed');
+    }
+  }, []);
 
   const addPasskey = useCallback(async (name?: string) => {
     setIsLoading(true);
@@ -179,12 +113,7 @@ export function useMobilePasskeyAuth(): UseMobilePasskeyAuthReturn {
         if (response.status === 403) {
           const body = (await response.json()) as { error?: string; action?: string };
           if (body.error === 'step_up_required' && body.action === STEP_UP_ACTIONS.PASSKEY_DELETE) {
-            const stepUpResult = await signIn('real');
-            if (!stepUpResult) {
-              const message = 'Passkey step-up required';
-              setError(message);
-              return { success: false, error: message };
-            }
+            await authenticateStepUp();
 
             authHeaders = await getAuthHeaders();
             response = await requestDelete(authHeaders);
@@ -211,11 +140,10 @@ export function useMobilePasskeyAuth(): UseMobilePasskeyAuthReturn {
         setIsLoading(false);
       }
     },
-    [getAuthHeaders, signIn],
+    [authenticateStepUp, getAuthHeaders],
   );
 
   return {
-    signIn,
     addPasskey,
     listPasskeys,
     deletePasskey,
