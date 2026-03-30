@@ -17,66 +17,66 @@ export type AuthUxState =
   | 'passkey'
   | 'loading'
   | 'error'
-  | 'signed-in'
+  | 'signed-in';
 
-import { BRAND } from '@hominem/env/brand'
+import { BRAND } from '@hominem/env/brand';
 
 // ---------------------------------------------------------------------------
 // Brand
 // ---------------------------------------------------------------------------
 
 /** Single source of truth for the app brand name used across auth surfaces. */
-export const AUTH_APP_NAME = BRAND.appName
+export const AUTH_APP_NAME = BRAND.appName;
 
 // ---------------------------------------------------------------------------
 // Canonical auth copy
 // ---------------------------------------------------------------------------
 
 export interface AuthEntryCopy {
-  title: string
-  subtitle: string
-  formHeading: string
-  formSubheading: string
-  emailPlaceholder: string
-  emailLabel: string
-  submitButton: string
-  passkeyButton: string
-  passkeyLoadingButton: string
-  emailRequiredError: string
-  emailInvalidError: string
-  sendFailedError: string
+  title: string;
+  subtitle: string;
+  formHeading: string;
+  formSubheading: string;
+  emailPlaceholder: string;
+  emailLabel: string;
+  submitButton: string;
+  passkeyButton: string;
+  passkeyLoadingButton: string;
+  emailRequiredError: string;
+  emailInvalidError: string;
+  sendFailedError: string;
 }
 
 export interface AuthVerifyCopy {
-  title: string
-  subtitle: string
-  formHeading: string
-  formSubheading: (email: string) => string
-  verifyButton: string
-  resendButton: string
-  changeEmailLink: string
-  resendSuccessMessage: string
-  codeRequiredError: string
-  codeLengthError: string
-  verifyFailedError: string
-  resendFailedError: string
+  title: string;
+  subtitle: string;
+  formHeading: string;
+  formSubheading: (email: string) => string;
+  verifyButton: string;
+  resendButton: string;
+  changeEmailLink: string;
+  resendSuccessMessage: string;
+  codeRequiredError: string;
+  codeLengthError: string;
+  verifyFailedError: string;
+  resendFailedError: string;
 }
 
 export interface AuthPasskeyCopy {
-  genericError: string
+  genericError: string;
 }
 
 export interface AuthCopy {
-  emailEntry: AuthEntryCopy
-  otpVerification: AuthVerifyCopy
-  passkey: AuthPasskeyCopy
+  emailEntry: AuthEntryCopy;
+  otpVerification: AuthVerifyCopy;
+  passkey: AuthPasskeyCopy;
 }
 
 /** Canonical auth copy. All first-party apps MUST import strings from here. */
 export const AUTH_COPY: AuthCopy = {
   emailEntry: {
     title: 'Welcome',
-    subtitle: 'Sign in with your email and a one-time code.',
+    subtitle: 'Enter your email to get a one-time code for signing in or creating an account.',
     formHeading: 'Sign in',
     formSubheading: 'Use your email to receive a one-time code.',
     emailPlaceholder: 'you@example.com',
@@ -105,7 +105,7 @@ export const AUTH_COPY: AuthCopy = {
   passkey: {
     genericError: 'Passkey sign-in failed.',
   },
-}
+};
 
 // ---------------------------------------------------------------------------
 // Per-app auth config
@@ -113,13 +113,13 @@ export const AUTH_COPY: AuthCopy = {
 
 export interface AppAuthConfig {
   /** Human-readable product name shown in auth UI. */
-  appName: string
+  appName: string;
   /** Platform-specific canonical post-auth destination path. */
-  defaultPostAuthDestination: string
+  defaultPostAuthDestination: string;
   /** Allowed redirect prefixes for safe redirect validation (web only). */
-  allowedDestinations: string[]
+  allowedDestinations: string[];
   /** Copy to use for this app. Defaults to AUTH_COPY. */
-  copy: AuthCopy
+  copy: AuthCopy;
 }
 
 /** Hakumi web app auth config. */
@@ -128,7 +128,7 @@ export const NOTES_AUTH_CONFIG: AppAuthConfig = {
   defaultPostAuthDestination: '/home',
   allowedDestinations: ['/', '/home', '/chat', '/notes', '/account', '/settings'],
   copy: AUTH_COPY,
-}
+};
 
 /** Hakumi mobile app auth config. */
 export const CHAT_AUTH_CONFIG: AppAuthConfig = {
@@ -136,4 +136,4 @@ export const CHAT_AUTH_CONFIG: AppAuthConfig = {
   defaultPostAuthDestination: '/(protected)/(tabs)/start',
   allowedDestinations: ['/(protected)/(tabs)/start'],
   copy: AUTH_COPY,
-}
+};
