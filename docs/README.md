@@ -7,5 +7,6 @@ Hakumi is a notes-first personal workspace that helps people capture thoughts, o
 - [Vision](/Users/charlesponti/Developer/hominem/docs/vision.md)
 - [Product Architecture](/Users/charlesponti/Developer/hominem/docs/product-architecture.md)
 - [Experience Principles](/Users/charlesponti/Developer/hominem/docs/experience-principles.md)
+- [Auth Journey Test Plan](/Users/charlesponti/Developer/hominem/docs/auth-test-journeys.md)
 - [Roadmap](/Users/charlesponti/Developer/hominem/docs/roadmap.md)
 - [Naming](/Users/charlesponti/Developer/hominem/docs/naming.md)

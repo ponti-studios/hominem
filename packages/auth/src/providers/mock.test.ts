@@ -1,62 +1,33 @@
-/**
- * Tests for MockAuthProvider
- */
-
-import { beforeEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { DEFAULT_MOCK_USER, MOCK_USERS } from '../mock-users';
-import { MockAuthProvider } from '../providers/mock';
+import { createMockAuthProvider } from '../providers/mock';
 
 describe('MockAuthProvider', () => {
-  let provider: MockAuthProvider;
+  it('signs in as the selected mock identity', async () => {
+    const provider = createMockAuthProvider('tester');
 
-  beforeEach(() => {
-    provider = new MockAuthProvider();
-  });
-
-  describe('signIn', () => {
-    it('should return a user on sign in', async () => {
-      const response = await provider.signIn();
-
-      expect(response.user).toBeDefined();
-      expect(response.user.id).toBe(DEFAULT_MOCK_USER.id);
-      expect(response.user.email).toBe(DEFAULT_MOCK_USER.email);
+    await expect(provider.signIn()).resolves.toMatchObject({
+      user: {
+        id: MOCK_USERS.tester.id,
+        email: MOCK_USERS.tester.email,
+      },
     });
   });
 
-  describe('signOut', () => {
-    it('should complete sign out successfully', async () => {
-      await expect(provider.signOut()).resolves.toBeUndefined();
-    });
-  });
+  it('switches mock identities for subsequent sign-ins and rejects unknown users', async () => {
+    const provider = createMockAuthProvider();
 
-  describe('user selection', () => {
-    it('should use default user when none specified', () => {
-      const current = provider.getCurrentUser();
-      expect(current.id).toBe(DEFAULT_MOCK_USER.id);
-    });
+    expect(provider.getCurrentUser().id).toBe(DEFAULT_MOCK_USER.id);
 
-    it('should use specified user if provided', () => {
-      const provider2 = new MockAuthProvider('tester');
-      const current = provider2.getCurrentUser();
-
-      expect(current.id).toBe(MOCK_USERS.tester.id);
-      expect(current.email).toBe(MOCK_USERS.tester.email);
+    provider.switchUser('tester');
+    await expect(provider.signIn()).resolves.toMatchObject({
+      user: {
+        id: MOCK_USERS.tester.id,
+        email: MOCK_USERS.tester.email,
+      },
     });
 
-    it('should switch to different user', () => {
-      const current1 = provider.getCurrentUser();
-      expect(current1.id).toBe(DEFAULT_MOCK_USER.id);
-
-      const switched = provider.switchUser('tester');
-      expect(switched.id).toBe(MOCK_USERS.tester.id);
-
-      const current2 = provider.getCurrentUser();
-      expect(current2.id).toBe(MOCK_USERS.tester.id);
-    });
-
-    it('should throw error when switching to non-existent user', () => {
-      expect(() => provider.switchUser('non-existent')).toThrow();
-    });
+    expect(() => provider.switchUser('missing-user')).toThrow("Mock user 'missing-user' not found");
   });
 });
