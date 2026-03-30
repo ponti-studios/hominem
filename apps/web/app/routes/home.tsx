@@ -2,18 +2,25 @@ import { NOTES_AUTH_CONFIG } from '@hominem/auth';
 import { resolveSafeAuthRedirect } from '@hominem/auth/server-utils';
 import { LandingPage } from '@hominem/ui/components/layout/landing-page';
 import { FileText, MessageSquare, Mic, Tag } from 'lucide-react';
-import { data, redirect } from 'react-router';
 import type { LoaderFunctionArgs } from 'react-router';
-import { useSearchParams } from 'react-router';
+import { data, redirect, useSearchParams } from 'react-router';
 
 import { FocusView } from '~/components/focus-view';
+import { buildAuthRedirectPath } from '~/lib/auth-redirect';
 import { getServerSession } from '~/lib/auth.server';
 import { WEB_BRAND } from '~/lib/brand';
 
 export async function loader({ request }: LoaderFunctionArgs) {
+  const requestUrl = new URL(request.url);
   const { user, headers } = await getServerSession(request);
+
+  if (!user && requestUrl.pathname === '/home') {
+    return redirect(buildAuthRedirectPath(`${requestUrl.pathname}${requestUrl.search}`), {
+      headers,
+    });
+  }
+
   if (user) {
-    const requestUrl = new URL(request.url);
     const rawNext = requestUrl.searchParams.get('next');
     // Only redirect when an explicit `next` destination is present — otherwise
     // render the authenticated home surface here at `/`.

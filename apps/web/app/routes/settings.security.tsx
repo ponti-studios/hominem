@@ -2,16 +2,12 @@ import { usePasskeyAuth } from '@hominem/auth';
 import { PasskeyManagement } from '@hominem/ui';
 import { Container } from '@hominem/ui/components/layout';
 import { useCallback } from 'react';
-import { redirect } from 'react-router';
 
 import { usePasskeys } from '~/hooks/use-passkeys';
-import { getServerAuth } from '~/lib/auth.server';
+import { requireAuth } from '~/lib/guards';
 
 export async function loader({ request }: { request: Request }) {
-  const { user, headers } = await getServerAuth(request);
-  if (!user) {
-    return redirect('/auth', { headers });
-  }
+  await requireAuth(request);
   return null;
 }
 

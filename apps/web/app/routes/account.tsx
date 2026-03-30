@@ -3,14 +3,16 @@ import { Button } from '@hominem/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@hominem/ui/card';
 import { Container } from '@hominem/ui/components/layout';
 import { useEffect } from 'react';
-import { Navigate, useSearchParams } from 'react-router';
+import { Navigate, useLocation, useSearchParams } from 'react-router';
 
 import { ConnectTwitterAccount } from '~/components/connect-twitter-account';
+import { buildAuthRedirectPath } from '~/lib/auth-redirect';
 import { useTwitterOAuth } from '~/lib/hooks/use-twitter-oauth';
 
 export default function AccountPage() {
   const { userId, isLoading, signOut } = useAuthContext();
   const { refetch } = useTwitterOAuth();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const twitterStatus = searchParams.get('twitter');
 
@@ -34,7 +36,9 @@ export default function AccountPage() {
   }
 
   if (!userId) {
-    return <Navigate to="/auth" replace />;
+    return (
+      <Navigate to={buildAuthRedirectPath(`${location.pathname}${location.search}`)} replace />
+    );
   }
 
   return (

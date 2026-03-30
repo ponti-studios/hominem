@@ -2,7 +2,7 @@ import { db } from '@hominem/db';
 import { logger } from '@hominem/utils/logger';
 import { Hono } from 'hono';
 
-import { unavailable } from '../errors';
+import { UnavailableError } from '../errors';
 import type { AppEnv } from '../server';
 
 export const statusRoutes = new Hono<AppEnv>();
@@ -20,7 +20,7 @@ statusRoutes.get('/', async (c) => {
     });
   } catch (err) {
     logger.error('Health check failed', { error: err });
-    throw unavailable('Health check failed', undefined, {
+    throw new UnavailableError('Health check failed', {
       status: 'error',
       serverTime: new Date().toISOString(),
       uptime: process.uptime(),

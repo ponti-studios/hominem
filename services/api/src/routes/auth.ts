@@ -19,6 +19,7 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 
 import { betterAuthServer } from '../auth/better-auth';
+import { cleanupApiAuthRedisState, cleanupApiAuthTestState } from '../auth/test-cleanup';
 import { getLatestTestOtp, isTestOtpStoreEnabled } from '../auth/test-otp-store';
 import { env } from '../env';
 import type { AppEnv } from '../server';
@@ -510,6 +511,26 @@ authRoutes.get('/test/otp/latest', zValidator('query', testOtpQuerySchema), asyn
     createdAt: record.createdAt,
     expiresAt: record.expiresAt,
   });
+});
+
+authRoutes.post('/test/cleanup', async (c) => {
+  if (!isTestOtpStoreEnabled()) {
+    return c.json({ error: 'not_found' }, 404);
+  }
+
+  const providedSecret = c.req.header('x-e2e-auth-secret');
+  if (!providedSecret || providedSecret !== env.AUTH_E2E_SECRET) {
+    return c.json({ error: 'forbidden' }, 403);
+  }
+
+  try {
+    await cleanupApiAuthTestState();
+    await cleanupApiAuthRedisState();
+    return c.json({ success: true });
+  } catch (error) {
+    logger.error('Auth test cleanup failed', { error });
+    return c.json({ error: 'cleanup_failed' }, 500);
+  }
 });
 
 authRoutes.post('/logout', async (c) => {

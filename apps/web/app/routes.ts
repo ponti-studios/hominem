@@ -1,4 +1,4 @@
-import { index, layout, type RouteConfig, route } from '@react-router/dev/routes';
+import { index, layout, route, type RouteConfig } from '@react-router/dev/routes';
 
 export default [
   // API Routes (specific handlers)
@@ -13,6 +13,7 @@ export default [
 
   layout('routes/layout.tsx', [
     index('routes/home.tsx'),
+    route('/home', 'routes/home.alias.tsx'),
 
     // Chat Routes
     route('chat', 'routes/chat/index.tsx'),

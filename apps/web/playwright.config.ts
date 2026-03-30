@@ -1,9 +1,10 @@
-import { defineConfig, devices } from '@playwright/test'
-import { fileURLToPath } from 'node:url'
-import path from 'node:path'
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
-const reuseExistingServer = process.env.REUSE_SERVERS === 'true' || !process.env.CI
+import { defineConfig, devices } from '@playwright/test';
+
+const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const reuseExistingServer = process.env.REUSE_SERVERS === 'true' || !process.env.CI;
 
 export default defineConfig({
   testDir: './tests',
@@ -18,7 +19,7 @@ export default defineConfig({
     {
       command: 'bun run --filter @hominem/db build && bun run --filter @hominem/api dev',
       cwd: workspaceRoot,
-      url: 'http://localhost:4040/',
+      url: 'http://localhost:4040/api/status',
       reuseExistingServer,
       timeout: 120_000,
       env: {
@@ -36,9 +37,9 @@ export default defineConfig({
     {
       command: 'bun dev --filter @hominem/web',
       cwd: workspaceRoot,
-      url: 'http://localhost:4445/',
+      url: 'http://localhost:4445/home',
       reuseExistingServer,
       timeout: 60_000,
     },
   ],
-})
+});

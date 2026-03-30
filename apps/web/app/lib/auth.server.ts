@@ -7,3 +7,4 @@ export const authConfig = {
 };
 
 export const getServerAuth = (request: Request) => sharedGetServerAuth(request, authConfig);
+export const getServerSession = getServerAuth;

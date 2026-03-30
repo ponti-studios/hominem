@@ -1,15 +1,20 @@
 import { useAuthContext } from '@hominem/auth';
-import { Navigate, Outlet } from 'react-router';
+import { Navigate, Outlet, useLocation } from 'react-router';
+
+import { buildAuthRedirectPath } from '~/lib/auth-redirect';
 
 export default function NotesLayout() {
   const { userId, isLoading } = useAuthContext();
+  const location = useLocation();
 
   if (isLoading) {
     return <div>Loading...</div>;
   }
 
   if (!userId) {
-    return <Navigate to="/auth" replace />;
+    return (
+      <Navigate to={buildAuthRedirectPath(`${location.pathname}${location.search}`)} replace />
+    );
   }
 
   return (
