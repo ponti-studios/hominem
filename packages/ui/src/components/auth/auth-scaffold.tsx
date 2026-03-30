@@ -12,17 +12,21 @@ export function AuthScaffold({ children, title, description, logo, className }: 
   return (
     <div className={`min-h-screen flex items-center justify-center bg-base p-4 ${className ?? ''}`}>
       <Container maxWidth="sm">
-        <div className="text-center mb-8">
-          {logo ? (
-            <img src={logo} alt="" className="w-24 h-24 mx-auto mb-4 object-contain" />
-          ) : (
-            <div className="inline-flex items-center justify-center w-24 h-24 rounded-md bg-elevated border border-default mb-4" />
-          )}
-          <h1 className="heading-2 text-text-primary uppercase">{title}</h1>
-          {description && <p className="body-3 text-text-secondary mt-2">{description}</p>}
-        </div>
+        <div className="mx-auto w-full max-w-100">
+          <div className="text-center mb-8">
+            {logo ? (
+              <img src={logo} alt="" className="w-24 h-24 mx-auto mb-4 object-contain" />
+            ) : (
+              <div className="inline-flex items-center justify-center w-24 h-24 rounded-md bg-elevated border border-default mb-4" />
+            )}
+            <h1 className="heading-2 text-text-primary uppercase">{title}</h1>
+            {description && <p className="body-3 text-text-secondary mt-2">{description}</p>}
+          </div>
 
-        <div className="bg-surface border border-default rounded-md p-4">{children}</div>
+          <div className="auth-frame bg-surface border border-default rounded-md p-4 sm:p-5">
+            {children}
+          </div>
+        </div>
       </Container>
     </div>
   );

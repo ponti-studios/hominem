@@ -58,14 +58,10 @@ export async function getServerAuth(
 
   try {
     const cookieHeader = request.headers.get('cookie');
-    const authHeader = request.headers.get('authorization');
 
     const upstreamHeaders = new Headers();
     if (cookieHeader) {
       upstreamHeaders.set('cookie', cookieHeader);
-    }
-    if (authHeader) {
-      upstreamHeaders.set('authorization', authHeader);
     }
 
     const res = await fetch(getAbsoluteApiUrl(config.apiBaseUrl, '/api/auth/session'), {

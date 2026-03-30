@@ -389,30 +389,11 @@ async function forwardBetterAuthDeviceTokenResponse(input: {
   request: Request;
   body: Record<string, unknown>;
 }) {
-  const response = await callBetterAuthPluginEndpoint({
+  return forwardBetterAuthPluginResponse({
     request: input.request,
     path: '/device/token',
     method: 'POST',
     body: input.body,
-  });
-
-  const responseText = await response.text();
-  const headers = copyHeadersWithSetCookie(response.headers);
-
-  if (!headers.has('set-auth-token')) {
-    try {
-      const payload = JSON.parse(responseText) as { access_token?: string };
-      if (typeof payload.access_token === 'string' && payload.access_token.length > 0) {
-        headers.set('set-auth-token', payload.access_token);
-      }
-    } catch {
-      // Preserve the upstream response when the token payload is not JSON.
-    }
-  }
-
-  return new Response(responseText, {
-    status: response.status,
-    headers,
   });
 }
 

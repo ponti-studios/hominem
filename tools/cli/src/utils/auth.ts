@@ -317,18 +317,18 @@ export async function deviceCodeLogin(_options: AuthOptions) {
     await new Promise((resolve) => setTimeout(resolve, waitMs));
 
     try {
-      const { data, headers } = await postJsonWithHeaders<TokenResponse>(tokenUrl.toString(), {
+      const { data } = await postJsonWithHeaders<TokenResponse>(tokenUrl.toString(), {
         grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
         device_code: device.device_code,
         client_id: clientId,
       });
-      const accessToken = headers.get('set-auth-token') ?? data.access_token;
+      const accessToken = data.access_token;
 
       if (!accessToken) {
         throw new AuthError({
           code: 'AUTH_LOGIN_FAILED',
           category: 'auth',
-          message: 'Device token exchange did not return a Better Auth bearer token',
+          message: 'Device token exchange did not return a Better Auth access token',
         });
       }
 

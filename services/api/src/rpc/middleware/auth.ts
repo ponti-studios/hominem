@@ -15,14 +15,6 @@ export interface AppContext {
     user?: User;
     userId?: string;
     auth?: AuthEnvelope;
-    authError?:
-      | 'invalid_token'
-      | 'expired_token'
-      | 'invalid_audience'
-      | 'invalid_issuer'
-      | 'disallowed_kid'
-      | 'revoked_session'
-      | 'insufficient_scope';
     requestId?: string;
   };
   Bindings: Record<string, unknown>;
@@ -38,10 +30,9 @@ export interface AppContext {
 export const authMiddleware = createMiddleware<AppContext>(async (c, next) => {
   const user = c.get('user');
   const userId = c.get('userId');
-  const authError = c.get('authError');
 
   if (!user || !userId) {
-    throw new UnauthorizedError('Authentication required', authError ? { authError } : undefined);
+    throw new UnauthorizedError('Authentication required');
   }
 
   return await next();

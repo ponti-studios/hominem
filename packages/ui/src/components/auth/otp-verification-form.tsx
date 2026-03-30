@@ -147,7 +147,13 @@ export function OtpVerificationForm({
   };
 
   return (
-    <Form ref={formRef} method="post" action={action} className={className}>
+    <Form
+      ref={formRef}
+      method="post"
+      action={action}
+      viewTransition
+      className={`auth-step-form ${className ?? ''}`.trim()}
+    >
       <input type="hidden" name="email" value={resolvedEmail} />
       <input type="hidden" name="next" value={next} />
       <input type="hidden" name="otp" value={otp} />
@@ -212,6 +218,7 @@ export function OtpVerificationForm({
         {/* Submit button */}
         <Button
           type="submit"
+          variant="primary"
           disabled={otp.length < 6 || isSubmitting || isAccountLocked || isSuccess}
           className="w-full"
         >

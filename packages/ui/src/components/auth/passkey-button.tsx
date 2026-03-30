@@ -16,7 +16,7 @@ export function PasskeyButton({
   return (
     <Button
       type="button"
-      variant="outline"
+      variant="secondary"
       onClick={onClick}
       disabled={disabled || isLoading}
       className={className}

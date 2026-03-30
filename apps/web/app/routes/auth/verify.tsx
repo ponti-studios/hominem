@@ -91,6 +91,7 @@ export default function Component() {
     <AuthScaffold
       title={AUTH_COPY.otpVerification.title}
       description={AUTH_COPY.otpVerification.subtitle}
+      logo={AUTH_CONFIG.logo}
     >
       <OtpVerificationForm
         action={`/auth/verify${location.search}`}

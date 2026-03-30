@@ -69,7 +69,11 @@ export default function Component() {
   const resolvedError = actionData?.error ?? callbackError ?? passkeyError ?? undefined;
 
   return (
-    <AuthScaffold title={AUTH_CONFIG.title} description={AUTH_CONFIG.description}>
+    <AuthScaffold
+      title={AUTH_CONFIG.title}
+      description={AUTH_CONFIG.description}
+      logo={AUTH_CONFIG.logo}
+    >
       <EmailEntryForm
         action="/auth"
         {...(resolvedError ? { error: resolvedError } : {})}

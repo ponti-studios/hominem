@@ -11,7 +11,7 @@ import type { AppContext } from './auth';
  *
  * Runs on EVERY request to initialize context (similar to previous createContext patterns).
  * Sets up:
- * - User authentication from Better Auth session and bearer token material
+ * - User authentication from Better Auth-backed session state
  * - Response headers for cookies
  */
 export const contextMiddleware = createMiddleware<AppContext>(async (c, next) => {

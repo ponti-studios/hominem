@@ -167,7 +167,7 @@ describe('auth email otp contract', () => {
     expect(payload.user.email).toBe(email);
   }, 15000);
 
-  test('2.2 bearer logout revokes the authenticated session', async () => {
+  test('2.2 logout revokes the authenticated session', async () => {
     const app = createServer();
     const email = createAuthTestEmail('otp-logout');
     await requestOtp(app, email);
@@ -295,7 +295,7 @@ describe('auth email otp contract', () => {
       message: 'Invalid OTP',
     });
 
-    // Verify session is not created by trying with an invalid token
+    // Verify session is not created when no Better Auth session is present
     const sessionResponse = await app.request('http://localhost/api/auth/session', {
       method: 'GET',
       headers: {
@@ -332,7 +332,7 @@ describe('auth email otp contract', () => {
         message: 'OTP expired',
       });
 
-      // Verify session is not created by trying with an invalid token
+      // Verify session is not created when no Better Auth session is present
       const sessionResponse = await app.request('http://localhost/api/auth/session', {
         method: 'GET',
         headers: {

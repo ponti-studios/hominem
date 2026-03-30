@@ -31,7 +31,12 @@ export function EmailEntryForm({
   const hasPasskey = onPasskeyClick !== undefined;
 
   return (
-    <Form method={method} action={action} className={className}>
+    <Form
+      method={method}
+      action={action}
+      viewTransition
+      className={`auth-step-form ${className ?? ''}`.trim()}
+    >
       {next ? <input type="hidden" name="next" value={next} /> : null}
       <div className="space-y-3">
         <div>
@@ -46,7 +51,7 @@ export function EmailEntryForm({
             required
             placeholder="you@example.com"
             disabled={isSubmitting}
-            className="mt-1 bg-muted font-mono py-3"
+            className="mt-1 bg-muted font-mono"
           />
         </div>
 
@@ -54,7 +59,7 @@ export function EmailEntryForm({
 
         <Button
           type="submit"
-          variant="outline"
+          variant="primary"
           disabled={isSubmitting}
           className="w-full uppercase"
         >

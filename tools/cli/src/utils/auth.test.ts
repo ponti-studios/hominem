@@ -42,7 +42,6 @@ function createDeviceCodeResponse(
 }
 
 function createDeviceTokenResponse(input?: {
-  headerToken?: string | null;
   bodyToken?: string;
   scope?: string;
   expiresIn?: number;
@@ -51,15 +50,7 @@ function createDeviceTokenResponse(input?: {
     ok: true,
     status: 200,
     headers: {
-      get: (name: string) => {
-        if (name !== 'set-auth-token') {
-          return null;
-        }
-        if (input && 'headerToken' in input) {
-          return input.headerToken ?? null;
-        }
-        return 'header-token';
-      },
+      get: () => null,
     },
     json: async () => ({
       access_token: input?.bodyToken ?? 'body-token',
@@ -145,7 +136,7 @@ describe('cli auth utils', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  test('deviceCodeLogin stores Better Auth bearer token from set-auth-token header', async () => {
+  test('deviceCodeLogin stores Better Auth access_token from the response body', async () => {
     fetchMock.mockResolvedValueOnce(createDeviceCodeResponse());
     fetchMock.mockResolvedValueOnce(createDeviceTokenResponse());
 
@@ -169,34 +160,10 @@ describe('cli auth utils', () => {
 
     expect(saveTokensMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        accessToken: 'header-token',
+        accessToken: 'body-token',
         issuerBaseUrl: 'http://localhost:4040',
         scopes: ['cli:read'],
         tokenVersion: 2,
-      }),
-    );
-  });
-
-  test('deviceCodeLogin falls back to access_token from the response body when header is absent', async () => {
-    fetchMock.mockResolvedValueOnce(createDeviceCodeResponse());
-    fetchMock.mockResolvedValueOnce(
-      createDeviceTokenResponse({
-        headerToken: null,
-        bodyToken: 'body-only-token',
-      }),
-    );
-
-    await deviceCodeLogin({
-      authBaseUrl: 'http://localhost:4040',
-      scopes: [],
-      outputMode: 'machine',
-      timeoutMs: 1000,
-    });
-
-    expect(saveTokensMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        accessToken: 'body-only-token',
-        scopes: ['cli:read'],
       }),
     );
   });

@@ -11,7 +11,6 @@ declare module 'hono' {
     auth?: AuthContextEnvelope;
     user?: User;
     userId?: string;
-    authError?: 'invalidToken' | 'revoked_session';
   }
 }
 

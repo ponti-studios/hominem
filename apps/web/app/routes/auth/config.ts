@@ -1,11 +1,13 @@
 import { NOTES_AUTH_CONFIG } from '@hominem/auth';
 
+import { WEB_BRAND } from '~/lib/brand';
 import { serverEnv } from '~/lib/env';
 
 export const AUTH_CONFIG = {
   allowedRedirectPrefixes: NOTES_AUTH_CONFIG.allowedDestinations,
   defaultRedirect: NOTES_AUTH_CONFIG.defaultPostAuthDestination,
   description: NOTES_AUTH_CONFIG.copy.emailEntry.subtitle,
+  logo: WEB_BRAND.logoPath,
   title: `Continue to ${NOTES_AUTH_CONFIG.appName}`,
 } as const;
 
