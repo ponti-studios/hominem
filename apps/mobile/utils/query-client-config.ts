@@ -13,9 +13,15 @@ export function shouldRetryQuery(failureCount: number, error: Error | Response):
   return true;
 }
 
-export function getQueryRetryDelayMs(attemptIndex: number): number {
-  return Math.min(1000 * 2 ** attemptIndex, 30000);
+/**
+ * Returns an exponential-backoff retry-delay function capped at `maxMs`.
+ * Used to create per-concern delay functions with different caps (queries vs chats).
+ */
+export function makeRetryDelay(maxMs: number): (attemptIndex: number) => number {
+  return (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, maxMs);
 }
+
+export const getQueryRetryDelayMs = makeRetryDelay(30_000);
 
 export const mobileQueryDefaultOptions: DefaultOptions = {
   queries: {
