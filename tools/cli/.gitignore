@@ -4,3 +4,4 @@ dist
 .logs
 debug-error.json
 *.log
+package-lock.json

@@ -14,10 +14,10 @@
     "plugins": []
   },
   "scripts": {
-    "build": "bun run build:binary && bun run build:agent",
+    "build": "bun run build:binary && bun run build:mcp",
     "build:binary": "rm -rf dist && tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
-    "build:agent": "bun build src/services/agent-server/index.ts --outdir dist/agent --target bun",
-    "start:agent": "bun run src/services/agent-server/index.ts",
+    "build:mcp": "bun build src/services/mcp-server/index.ts --outdir dist/mcp --target bun",
+    "start:mcp": "bun run src/services/mcp-server/index.ts",
     "typecheck": "tsc -p tsconfig.build.json --noEmit",
     "test": "bun test test/**/*.test.ts src/**/*.test.ts",
     "lint": "oxlint --tsconfig tsconfig.json \"src/**/*.{ts,tsx,js,jsx}\" \"test/**/*.{ts,tsx,js,jsx}\"",
@@ -28,7 +28,6 @@
     "chalk": "^5.4.1",
     "consola": "^3.4.2",
     "dotenv": "17.2.3",
-    "get-port": "^7.1.0",
     "keytar": "^7.9.0",
     "open": "^10.1.1",
     "ora": "^9.3.0",
@@ -40,6 +39,8 @@
     "oxfmt": "^0.28.0",
     "oxlint": "^1.43.0",
     "tsc-alias": "^1.8.16",
-    "typescript": "^5.0.0"
+    "typescript": "^5.9.3",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^4.1.2"
   }
 }

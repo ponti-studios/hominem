@@ -1,5 +1,7 @@
 import type { ChatMessageItem } from '@hominem/ui/chat';
 
+import { makeRetryDelay } from '../../query-client-config';
+
 // ChatMessageItem is the canonical shared type for rendered chat messages.
 // Re-exported as MessageOutput for backward compatibility with existing consumers.
 export type { ChatMessageItem as MessageOutput } from '@hominem/ui/chat';
@@ -44,6 +46,4 @@ export function reconcileMessagesAfterSend(
   return [...withoutOptimistic, ...newMessages];
 }
 
-export function getChatRetryDelayMs(attemptIndex: number): number {
-  return Math.min(1000 * 2 ** attemptIndex, 10000);
-}
+export const getChatRetryDelayMs = makeRetryDelay(10_000);
