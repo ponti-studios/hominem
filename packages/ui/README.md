@@ -1,6 +1,6 @@
-# Storybook
+# @hominem/ui
 
-`packages/ui` Storybook is the source of truth for the publishable UI surface.
+Shared UI components for the Hominem monorepo. Storybook is the source of truth for the publishable UI surface in this package.
 
 ## Run
 
