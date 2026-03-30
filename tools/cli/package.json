@@ -14,12 +14,10 @@
     "plugins": []
   },
   "scripts": {
-    "build": "bun run build:binary && bun run build:agent && bun run build:mcp",
+    "build": "bun run build:binary && bun run build:agent",
     "build:binary": "rm -rf dist && tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
     "build:agent": "bun build src/services/agent-server/index.ts --outdir dist/agent --target bun",
-    "build:mcp": "bun build src/services/mcp-server/index.ts --outdir dist/mcp --target bun",
     "start:agent": "bun run src/services/agent-server/index.ts",
-    "start:mcp": "bun run src/services/mcp-server/index.ts",
     "typecheck": "tsc -p tsconfig.build.json --noEmit",
     "test": "bun test test/**/*.test.ts src/**/*.test.ts",
     "lint": "oxlint --tsconfig tsconfig.json \"src/**/*.{ts,tsx,js,jsx}\" \"test/**/*.{ts,tsx,js,jsx}\"",
@@ -28,12 +26,7 @@
   "dependencies": {
     "@oclif/core": "^4.0.19",
     "chalk": "^5.4.1",
-    "consola": "^3.4.2",
     "dotenv": "17.2.3",
-    "get-port": "^7.1.0",
-    "keytar": "^7.9.0",
-    "open": "^10.1.1",
-    "ora": "^9.3.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {

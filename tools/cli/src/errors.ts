@@ -27,8 +27,6 @@ export function toExitCode(category: ErrorCategory): ExitCode {
   switch (category) {
     case 'usage':
       return 2;
-    case 'auth':
-      return 3;
     case 'validation':
       return 4;
     case 'dependency':

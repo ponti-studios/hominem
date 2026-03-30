@@ -3,7 +3,6 @@ import fs from 'node:fs/promises';
 import { z } from 'zod';
 
 import { getConfigPath, loadConfigV2 } from '@/config';
-import { getStoredTokens, hasValidStoredSession } from '@/utils/auth';
 import { validateWithZod } from '@/utils/zod-validation';
 
 const outputSchema = z.object({
@@ -47,35 +46,6 @@ export default class SystemDoctor extends Command {
         id: 'config.v2',
         status: 'warn',
         message: `config missing at ${configPath}; run 'hominem config init'`,
-      });
-    }
-
-    let tokens: Awaited<ReturnType<typeof getStoredTokens>>;
-    try {
-      tokens = await getStoredTokens();
-    } catch (error) {
-      this.error(error instanceof Error ? error.message : 'Failed to read auth state', {
-        exit: 3,
-        code: 'AUTH_STATUS_FAILED',
-      });
-    }
-
-    checks.push({
-      id: 'auth.token',
-      status: tokens?.accessToken ? 'pass' : 'warn',
-      message: tokens?.accessToken
-        ? 'auth device-session token stored'
-        : "auth token missing; run 'hominem auth login'",
-    });
-
-    if (tokens?.issuerBaseUrl) {
-      const authenticated = await hasValidStoredSession(tokens.issuerBaseUrl);
-      checks.push({
-        id: 'auth.session',
-        status: authenticated ? 'pass' : 'warn',
-        message: authenticated
-          ? 'auth session validated remotely'
-          : "stored auth token is not accepted; run 'hominem auth login'",
       });
     }
 

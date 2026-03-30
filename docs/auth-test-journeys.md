@@ -22,7 +22,7 @@ The goal is not to increase test count. The goal is to make every auth lane prov
 - API auth contract tests are the protocol source of truth.
 - App-level journey tests should consume API contracts, not restate every protocol detail.
 - Shared packages stay at adapter, serializer, reducer, redirect-safety, and contract level.
-- Real user journeys belong to shipped surfaces: Web, Mobile, Desktop, and CLI.
+- Real user journeys belong to shipped surfaces: Web, Mobile, and Desktop.
 - No auth test may depend on execution order or on another test leaving behind a valid session.
 - Deterministic cleanup is part of the test, not an optional extra.
 
@@ -52,7 +52,6 @@ Surface-specific durable proof must be explicit.
 - API: cookie mutation, bearer token acceptance or rejection, and `/api/auth/session` truth.
 - Web: URL redirect, authenticated shell visibility, cookie-backed reload behavior, and logout re-protection.
 - Mobile and Desktop: auth state convergence plus route-gate behavior plus persisted-session consequences.
-- CLI: stored credential reuse by a later auth-dependent command, not just a single successful exchange.
 
 ## Deterministic Setup And Isolation
 
@@ -137,14 +136,6 @@ Current useful lane:
 
 - `apps/desktop/src/renderer/src/auth/session-client.test.ts`
 
-### CLI
-
-CLI owns device-code login, stored token reuse, issuer validation, and session validation against the API.
-
-Current useful lane:
-
-- `tools/cli/src/utils/auth.test.ts`
-
 ### Shared Package Boundary
 
 `packages/auth` is not a user surface.
@@ -156,7 +147,7 @@ That package should keep:
 - redirect safety tests
 - copy and error contract tests
 
-It should not try to own browser, native, desktop, or CLI auth journeys.
+It should not try to own browser, native, or desktop auth journeys.
 
 ## Required Workflow For Future LLMs
 
@@ -194,7 +185,6 @@ These reads were useful and remain the right starting point when auth behavior i
 - `services/api/src/routes/auth.test-otp-route.test.ts`
 - `services/api/src/routes/test-helpers/auth.ts`
 - `services/api/src/auth/test-otp-store.ts`
-- `tools/cli/src/utils/auth.test.ts`
 
 ## Exact Local Stack Commands
 

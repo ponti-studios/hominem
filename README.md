@@ -82,17 +82,3 @@ hominem skills import /tmp/skills-export
 
 The commands simply copy the directory tree, creating the destination as
 needed.  Once imported you can commit the files in the new project as usual.
-
-### MCP server auth (single source of truth)
-
-The MCP server reads its auth token from a config file only.
-
-- Path: ~/.hominem/config.json (override with HOMINEM_CONFIG_PATH or HOMINEM_CONFIG_DIR)
-- Format:
-
-	{ "token": "YOUR_TOKEN_HERE" }
-
-Optional API endpoint overrides for MCP HTTP tools:
-
-- HOMINEM_API_HOST (default: localhost)
-- HOMINEM_API_PORT (default: 4040)

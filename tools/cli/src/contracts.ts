@@ -4,9 +4,9 @@ export const OUTPUT_FORMATS = ['text', 'json', 'ndjson'] as const;
 
 export type OutputFormat = (typeof OUTPUT_FORMATS)[number];
 
-export type ErrorCategory = 'usage' | 'auth' | 'validation' | 'dependency' | 'internal';
+export type ErrorCategory = 'usage' | 'validation' | 'dependency' | 'internal';
 
-export type ExitCode = 0 | 2 | 3 | 4 | 5 | 10;
+export type ExitCode = 0 | 2 | 4 | 5 | 10;
 
 export type JsonPrimitive = string | number | boolean | null;
 export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };

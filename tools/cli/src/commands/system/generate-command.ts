@@ -34,7 +34,7 @@ export default class SystemGenerateCommand extends Command {
     'Creates a typed command module under src/commands/<domain>/<command>.ts.';
 
   static override examples = [
-    '<%= config.bin %> <%= command.id %> auth login',
+    '<%= config.bin %> <%= command.id %> config init',
     '<%= config.bin %> <%= command.id %> --force my-domain my-command',
   ];
 
