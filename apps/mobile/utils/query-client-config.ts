@@ -18,7 +18,16 @@ export function shouldRetryQuery(failureCount: number, error: Error | Response):
  * Used to create per-concern delay functions with different caps (queries vs chats).
  */
 export function makeRetryDelay(maxMs: number): (attemptIndex: number) => number {
-  return (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, maxMs);
+  const safeMaxMs = Number.isFinite(maxMs) ? Math.max(0, maxMs) : 0;
+
+  return (attemptIndex: number) => {
+    const normalizedAttempt = Number.isFinite(attemptIndex)
+      ? Math.max(0, Math.floor(attemptIndex))
+      : 0;
+
+    const delayMs = 1000 * 2 ** normalizedAttempt;
+    return Math.min(delayMs, safeMaxMs);
+  };
 }
 
 export const getQueryRetryDelayMs = makeRetryDelay(30_000);
