@@ -41,7 +41,7 @@ async function readBody(req: http.IncomingMessage): Promise<string> {
 // MCP JSON-RPC dispatcher
 // ---------------------------------------------------------------------------
 
-function handleMcpRequest(body: string): unknown {
+async function handleMcpRequest(body: string): Promise<unknown> {
   let parsed: unknown;
   try {
     parsed = JSON.parse(body);
@@ -75,8 +75,16 @@ function handleMcpRequest(body: string): unknown {
       if (typeof toolName !== 'string') {
         return mcpError(id, MCP_ERROR_CODES.INVALID_PARAMS, 'Missing tool name');
       }
-      const result = callTool(toolName, toolArgs);
-      return mcpSuccess(id, result);
+      try {
+        const result = await callTool(toolName, toolArgs);
+        return mcpSuccess(id, result);
+      } catch (error) {
+        return mcpError(
+          id,
+          MCP_ERROR_CODES.INTERNAL_ERROR,
+          error instanceof Error ? error.message : 'Tool execution failed',
+        );
+      }
     }
 
     default:
@@ -104,7 +112,7 @@ const server = http.createServer(async (req, res) => {
       respondJson(res, 400, mcpError('0', MCP_ERROR_CODES.PARSE_ERROR, 'Failed to read body'));
       return;
     }
-    const response = handleMcpRequest(body);
+    const response = await handleMcpRequest(body);
     respondJson(res, 200, response);
     return;
   }
