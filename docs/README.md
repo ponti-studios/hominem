@@ -4,8 +4,8 @@ Hakumi is a notes-first personal workspace that helps people capture thoughts, o
 
 ## Canonical docs
 
-- [Vision](/Users/charlesponti/Developer/hominem/docs/vision.md)
-- [Experience Principles](/Users/charlesponti/Developer/hominem/docs/experience-principles.md)
-- [Roadmap](/Users/charlesponti/Developer/hominem/docs/roadmap.md)
-- [Naming](/Users/charlesponti/Developer/hominem/docs/naming.md)
-- [Rebuild Reset](/Users/charlesponti/Developer/hominem/docs/rebuild-reset.md)
+- [Vision](./vision.md)
+- [Experience Principles](./experience-principles.md)
+- [Roadmap](./roadmap.md)
+- [Naming](./naming.md)
+- [Rebuild Reset](./rebuild-reset.md)
