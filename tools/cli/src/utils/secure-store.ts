@@ -26,7 +26,6 @@ function getFallbackFile(): string {
 export interface StoredTokens {
   tokenVersion: 2;
   accessToken: string;
-  refreshToken?: string;
   expiresAt?: string;
   scopes?: string[];
   provider?: 'better-auth';
@@ -128,7 +127,6 @@ function normalizeStoredTokens(
   return {
     tokenVersion: 2,
     accessToken: input.accessToken,
-    ...(input.refreshToken ? { refreshToken: input.refreshToken } : {}),
     ...(input.expiresAt ? { expiresAt: input.expiresAt } : {}),
     ...(input.scopes ? { scopes: input.scopes } : {}),
     ...(input.provider ? { provider: input.provider } : {}),

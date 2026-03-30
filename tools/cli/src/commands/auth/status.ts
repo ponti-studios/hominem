@@ -25,6 +25,8 @@ export default class AuthStatus extends Command {
   static enableJsonFlag = true;
 
   async run(): Promise<z.infer<typeof outputSchema>> {
+    await this.parse(AuthStatus);
+
     const tokens = await getStoredTokens();
     const tokenStored = Boolean(tokens?.accessToken);
     const authenticated = tokens?.issuerBaseUrl

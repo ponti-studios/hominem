@@ -21,11 +21,13 @@ import { posthog } from '~/lib/posthog';
 import { Box, Text, makeStyles } from '~/theme';
 import { useAuth } from '~/utils/auth-provider';
 import { isValidOtp, normalizeOtp } from '~/utils/auth/validation';
+import { resolveAuthVerifyEmailParam } from '~/utils/navigation/auth-route-params';
 
 export function VerifyScreen() {
   const styles = useStyles();
   const { isSignedIn, requestEmailOtp, verifyEmailOtp } = useAuth();
-  const { email } = useLocalSearchParams<{ email: string }>();
+  const { email } = useLocalSearchParams<{ email?: string | string[] }>();
+  const resolvedEmail = resolveAuthVerifyEmailParam(email);
   const [otp, setOtp] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResending, setIsResending] = useState(false);
@@ -44,7 +46,7 @@ export function VerifyScreen() {
 
   const handleVerify = useCallback(async () => {
     posthog.capture('auth_verify_pressed');
-    if (!email) {
+    if (!resolvedEmail) {
       setAuthError('Email is required.');
       return;
     }
@@ -62,7 +64,7 @@ export function VerifyScreen() {
     try {
       setIsSubmitting(true);
       await verifyEmailOtp({
-        email,
+        email: resolvedEmail,
         otp: normalizedOtp,
       });
       setAuthError(null);
@@ -73,7 +75,7 @@ export function VerifyScreen() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [email, otp, verifyEmailOtp]);
+  }, [otp, resolvedEmail, verifyEmailOtp]);
 
   const handleOtpChange = useCallback((text: string) => {
     const normalized = normalizeOtp(text);
@@ -91,7 +93,7 @@ export function VerifyScreen() {
 
   const handleResend = useCallback(async () => {
     posthog.capture('auth_resend_pressed');
-    if (!email) {
+    if (!resolvedEmail) {
       setAuthError('Email is required.');
       return;
     }
@@ -99,7 +101,7 @@ export function VerifyScreen() {
     try {
       setIsResending(true);
       setAuthError(null);
-      await requestEmailOtp(email);
+      await requestEmailOtp(resolvedEmail);
       setResendMessage(AUTH_COPY.otpVerification.resendSuccessMessage);
       focusOtpInput();
     } catch (error: unknown) {
@@ -110,13 +112,13 @@ export function VerifyScreen() {
     } finally {
       setIsResending(false);
     }
-  }, [email, focusOtpInput, requestEmailOtp]);
+  }, [focusOtpInput, requestEmailOtp, resolvedEmail]);
 
   if (isSignedIn) {
     return <Redirect href={CHAT_AUTH_CONFIG.defaultPostAuthDestination as RelativePathString} />;
   }
 
-  if (!email) {
+  if (!resolvedEmail) {
     return null;
   }
 
@@ -151,7 +153,7 @@ export function VerifyScreen() {
                 {AUTH_COPY.otpVerification.formHeading.toUpperCase()}
               </Text>
               <Text style={styles.subheading}>
-                {AUTH_COPY.otpVerification.formSubheading(email)}
+                {AUTH_COPY.otpVerification.formSubheading(resolvedEmail)}
               </Text>
               {authError ? (
                 <View testID="auth-error-banner" style={styles.errorContainer}>

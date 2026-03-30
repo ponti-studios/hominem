@@ -32,7 +32,7 @@ jobs:
           install-flags: "--frozen-lockfile"
 
       - name: Build CLI binary
-        run: bun run --filter @hominem/cli build:core
+        run: bun run --filter @hominem/cli build:binary
 
       - name: Verify binary exists
         run: |

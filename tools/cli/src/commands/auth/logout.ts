@@ -19,6 +19,8 @@ export default class AuthLogout extends Command {
   static enableJsonFlag = true;
 
   async run(): Promise<z.infer<typeof outputSchema>> {
+    await this.parse(AuthLogout);
+
     try {
       await logout({
         outputMode: this.jsonEnabled() ? 'machine' : 'interactive',

@@ -38,8 +38,8 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Mobile unit tests
-        run: bun run --filter @hominem/mobile test:unit:auth
+      - name: Mobile auth verification lane
+        run: bun run --filter @hominem/mobile test
         env:
           EXPO_PUBLIC_API_BASE_URL: "http://localhost:4040"
 

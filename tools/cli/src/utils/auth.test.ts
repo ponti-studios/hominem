@@ -16,7 +16,8 @@ mock.module('open', () => ({
   default: openMock,
 }));
 
-const { deviceCodeLogin, getAccessToken, interactiveLogin } = await import('./auth');
+const { deviceCodeLogin, getAccessToken, hasValidStoredSession, interactiveLogin, logout } =
+  await import('./auth');
 
 function createDeviceCodeResponse(
   overrides?: Partial<{
@@ -72,6 +73,18 @@ function createPendingTokenResponse() {
   } as Response;
 }
 
+function createSessionResponse(input?: { ok?: boolean; isAuthenticated?: boolean }) {
+  const ok = input?.ok ?? true;
+  return {
+    ok,
+    status: ok ? 200 : 401,
+    statusText: ok ? 'OK' : 'Unauthorized',
+    json: async () => ({
+      isAuthenticated: input?.isAuthenticated ?? ok,
+    }),
+  } as Response;
+}
+
 describe('cli auth utils', () => {
   let fetchMock: ReturnType<typeof mock>;
   const originalFetch = globalThis.fetch;
@@ -112,7 +125,6 @@ describe('cli auth utils', () => {
     loadTokensMock.mockResolvedValueOnce({
       tokenVersion: 2,
       accessToken: 'access',
-      refreshToken: 'refresh',
       expiresAt: new Date(Date.now() + 60_000).toISOString(),
       issuerBaseUrl: 'http://localhost:4040',
     });
@@ -166,6 +178,59 @@ describe('cli auth utils', () => {
         tokenVersion: 2,
       }),
     );
+  });
+
+  test('deviceCodeLogin plus hasValidStoredSession proves later CLI session reuse', async () => {
+    fetchMock.mockResolvedValueOnce(createDeviceCodeResponse());
+    fetchMock.mockResolvedValueOnce(createDeviceTokenResponse({ bodyToken: 'session-token' }));
+    fetchMock.mockResolvedValueOnce(createSessionResponse());
+
+    await deviceCodeLogin({
+      authBaseUrl: 'http://localhost:4040',
+      scopes: [],
+      outputMode: 'machine',
+      timeoutMs: 1000,
+    });
+
+    loadTokensMock.mockResolvedValueOnce({
+      accessToken: 'session-token',
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+      tokenVersion: 2,
+      provider: 'better-auth',
+      scopes: ['cli:read'],
+      issuerBaseUrl: 'http://localhost:4040',
+    });
+
+    await expect(hasValidStoredSession()).resolves.toBe(true);
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'http://localhost:4040/api/auth/session',
+      expect.objectContaining({
+        method: 'GET',
+        headers: {
+          authorization: 'Bearer session-token',
+        },
+      }),
+    );
+  });
+
+  test('hasValidStoredSession fails closed when the Better Auth session probe rejects the token', async () => {
+    loadTokensMock.mockResolvedValueOnce({
+      accessToken: 'rejected-token',
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+      tokenVersion: 2,
+      provider: 'better-auth',
+      scopes: ['cli:read'],
+      issuerBaseUrl: 'http://localhost:4040',
+    });
+    fetchMock.mockResolvedValueOnce(createSessionResponse({ ok: false, isAuthenticated: false }));
+
+    await expect(hasValidStoredSession()).resolves.toBe(false);
+  });
+
+  test('logout clears locally stored CLI credentials', async () => {
+    await logout({ outputMode: 'machine' });
+
+    expect(clearTokensMock).toHaveBeenCalledTimes(1);
   });
 
   test('interactiveLogin fails loudly when the browser verification URL cannot be opened', async () => {

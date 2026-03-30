@@ -6,12 +6,12 @@ This app is the iOS client for Hakumi, the notes-first personal workspace, built
 
 The mobile app uses explicit runtime variants. `APP_VARIANT` controls app identity, native generation, and local env loading.
 
-| Variant | Purpose | Native Shape | OTA Updates | Primary Command |
-| --- | --- | --- | --- | --- |
-| `dev` | local feature development | Expo dev client + Metro | disabled | `bun run start` |
-| `e2e` | deterministic mobile test runtime | standalone native test app | disabled | `bun run test:e2e:build:ios` |
-| `preview` | internal QA / release candidate | standalone update-enabled build | preview channel | `bun run build:preview` |
-| `production` | App Store / TestFlight | standalone update-enabled build | production channel | `bun run build:production` |
+| Variant      | Purpose                           | Native Shape                    | OTA Updates        | Primary Command            |
+| ------------ | --------------------------------- | ------------------------------- | ------------------ | -------------------------- |
+| `dev`        | local feature development         | Expo dev client + Metro         | disabled           | `bun run start`            |
+| `e2e`        | deterministic mobile test runtime | standalone native test app      | disabled           | `bun run test:e2e:build`   |
+| `preview`    | internal QA / release candidate   | standalone update-enabled build | preview channel    | `bun run build:preview`    |
+| `production` | App Store / TestFlight            | standalone update-enabled build | production channel | `bun run build:production` |
 
 ## Native Generation Rules
 
@@ -29,56 +29,9 @@ The mobile app uses explicit runtime variants. `APP_VARIANT` controls app identi
 - Authentication: Email + OTP via Better Auth API
 - API: `@hominem/rpc` via authenticated HTTP requests
 
-## Environment Variables
+## Environment Setup
 
-### Development (`.env.development.local`, `APP_VARIANT=dev`)
-
-```bash
-EXPO_PUBLIC_API_BASE_URL="http://localhost:4040"
-EXPO_PUBLIC_E2E_TESTING="false"
-EXPO_PUBLIC_E2E_AUTH_SECRET=""
-EXPO_APPLE_TEAM_ID="<apple-team-id>"
-EXPO_PUBLIC_PASSKEY_RP_DOMAIN="api.ponti.io"
-EXPO_PUBLIC_MOBILE_PASSKEY_ENABLED="false"
-```
-
-### E2E (`.env.e2e.local`, `APP_VARIANT=e2e`)
-
-```bash
-EXPO_PUBLIC_API_BASE_URL="http://localhost:4040"
-EXPO_PUBLIC_E2E_TESTING="true"
-EXPO_PUBLIC_E2E_AUTH_SECRET="<shared-non-prod-secret>"
-```
-
-### Preview (`APP_VARIANT=preview`, EAS environment: `preview`)
-
-Set these in the project `preview` environment on EAS, not in a local `.env` file:
-
-```bash
-EXPO_PUBLIC_API_BASE_URL="https://api.ponti.io"
-EXPO_PUBLIC_E2E_TESTING="false"
-EXPO_PUBLIC_E2E_AUTH_SECRET=""
-EXPO_PUBLIC_AI_SDK_CHAT_WEB_ENABLED="false"
-EXPO_PUBLIC_AI_SDK_CHAT_MOBILE_ENABLED="false"
-EXPO_PUBLIC_AI_SDK_TRANSCRIBE_ENABLED="false"
-EXPO_PUBLIC_AI_SDK_SPEECH_ENABLED="false"
-EXPO_PUBLIC_MOBILE_PASSKEY_ENABLED="false"
-```
-
-### Production (`APP_VARIANT=production`, EAS environment: `production`)
-
-Set these in the project `production` environment on EAS, not in a local `.env` file:
-
-```bash
-EXPO_PUBLIC_API_BASE_URL="https://api.ponti.io"
-EXPO_PUBLIC_E2E_TESTING="false"
-EXPO_PUBLIC_E2E_AUTH_SECRET=""
-EXPO_PUBLIC_AI_SDK_CHAT_WEB_ENABLED="true"
-EXPO_PUBLIC_AI_SDK_CHAT_MOBILE_ENABLED="true"
-EXPO_PUBLIC_AI_SDK_TRANSCRIBE_ENABLED="true"
-EXPO_PUBLIC_AI_SDK_SPEECH_ENABLED="true"
-EXPO_PUBLIC_MOBILE_PASSKEY_ENABLED="false"
-```
+Use [apps/mobile/.env.example](.env.example) as the local starting point. Release values are enforced through EAS and the CI release workflows.
 
 ## Development
 
@@ -105,8 +58,8 @@ If you switch from simulator Detox work back to a physical-device dev build, run
 
 ### Local device signing
 
-- Set `EXPO_APPLE_TEAM_ID` in `.env.development.local` before generating or building a physical-device `dev` app.
-- Set `EXPO_PUBLIC_MOBILE_PASSKEY_ENABLED=true` only when you are actively validating the mobile passkey surface.
+- Use the mobile env example to configure Apple signing before generating or building a physical-device `dev` app.
+- Only enable the mobile passkey toggle when you are actively validating that surface.
 - Expo maps `ios.appleTeamId` from app config into the generated Xcode project for `dev` builds, which keeps local device signing reproducible after a clean prebuild.
 - The `e2e` simulator workflow does not require a development team.
 
@@ -123,10 +76,13 @@ If you switch from simulator Detox work back to a physical-device dev build, run
 
 ```bash
 # build clean simulator binary (no dev client)
-bun run test:e2e:build:ios
+bun run test:e2e:build
 
-# full mobile auth e2e
-bun run test:e2e
+# current critical auth lane
+bun run test:e2e:auth
+
+# full mobile Detox suite
+bun run test:e2e:all
 
 # targeted smoke
 bun run test:e2e:smoke
@@ -150,20 +106,23 @@ bun run test:e2e:smoke
 ## Auth Testing
 
 ```bash
-bun run test:unit:auth
-bun run test:integration:auth
-bun run test:screens:auth
-bun run test:routes:auth
-bun run test:e2e:build:ios
-bun run test:e2e:auth:critical
+bun run test
+bun run test:auth:unit
+bun run test:auth:integration
+bun run test:e2e:build
+bun run test:e2e:auth
+bun run test:e2e:all
 bun run test:e2e:smoke
 ```
 
+- `test` is the canonical mobile auth verification lane.
+- `test:e2e:auth` is the current CI-critical Detox lane.
+- `test:e2e:all` exists for full native coverage, but it is not the default gate yet.
 - `jest-expo` plus React Native Testing Library cover auth screen behavior.
-- `expo-router/testing-library` covers route-level auth navigation and deep-link hydration.
+- A dedicated route-level auth harness covers Expo Router navigation and deep-link hydration.
 - Detox covers native-critical auth and relaunch flows.
 - personal-device smoke covers final hardware-specific auth validation.
-- Mobile passkey buttons are hidden by default behind `EXPO_PUBLIC_MOBILE_PASSKEY_ENABLED`.
+- Mobile passkey buttons are hidden by default.
 
 ## EAS Builds
 
@@ -179,8 +138,7 @@ bun run test:e2e:smoke
 # Configure Apple API key for EAS (required for CI)
 eas credentials
 
-# Or set environment variables for CI:
-# EXPO_APPLE_ID, EXPO_APPLE_PASSWORD, EXPO_APPLE_TEAM_ID
+# Or configure the matching Apple credentials in your CI or shell environment.
 ```
 
 ### Build Commands
@@ -205,110 +163,3 @@ bun run build:production
 # Submit to TestFlight (requires credentials)
 eas submit --platform ios --latest
 ```
-
-## Device Auth Smoke Checklist
-
-1. Set `EXPO_APPLE_TEAM_ID`, run `bun run prebuild:dev`, and install the generated development build on iPhone.
-2. Launch app and complete email + OTP sign-in.
-3. Verify protected data screen loads from API without auth error.
-4. Sign out and verify app returns to signed-out state.
-5. Relaunch app and verify refresh-token session restore works.
-6. For passkey add/sign-in on a real device, use a backend configured with a stable HTTPS passkey domain (`AUTH_PASSKEY_RP_ID` / `AUTH_PASSKEY_ORIGIN`), not a local IP or `localhost`.
-
-## Auth Readiness
-
-- Read the closeout matrix in [tests/AUTH_READINESS.md](/Users/charlesponti/Developer/hominem/apps/mobile/tests/AUTH_READINESS.md) before signing off mobile auth changes.
-- Detox is the repo-standard native-critical auth harness.
-- The `dev` and `e2e` native projects are intentionally different; always regenerate when switching harnesses.
-- A final personal-device smoke pass is required before sign-off.
-
-## Architecture
-
-### Auth State Machine
-
-The app uses a deterministic state machine for authentication state management (`utils/auth/types.ts`):
-
-```
-BOOTING → AUTHENTICATED/UNAUTHENTICATED/ERROR
-   ↑           ↓
-   └────── SIGN_IN/SIGN_OUT events
-```
-
-**Benefits:**
-- Eliminates race conditions in auth flow
-- Predictable state transitions
-- Proper async operation cancellation via AbortController
-- Easy to test and debug
-
-**Key Files:**
-- `utils/auth/types.ts` - State machine types and reducer
-- `utils/auth-provider.tsx` - Auth provider using state machine
-
-### Error Boundaries
-
-Three-tier error handling system:
-
-1. **Root Error Boundary** (`components/error-boundary/root-error-boundary.tsx`)
-   - Catches unhandled errors at app level
-   - Provides recovery options
-
-2. **Feature Error Boundaries** (`components/error-boundary/feature-error-boundary.tsx`)
-   - Wraps individual features (Chat, Focus, Auth)
-   - Allows partial functionality when one feature fails
-
-3. **Error Logging** (`utils/error-boundary/log-error.ts`)
-   - Centralized error tracking
-   - Contextual information for debugging
-
-### State Consolidation
-
-**Chat State:** Single source of truth with React Query
-- Removed triple-state architecture (AI SDK + React Query + SQLite)
-- React Query cache is the active state
-- SQLite is persistence layer only
-- Optimistic updates with automatic rollback
-
-**Focus Items:** Server state with local fallback
-- React Query for server state
-- SQLite for offline persistence
-- Automatic refetch when online
-
-### Runtime Validation
-
-Zod schemas for type-safe API responses (`utils/validation/schemas.ts`):
-- `ChatMessageSchema` - Chat message validation
-- `FocusItemSchema` - Focus item validation  
-- `UserProfileSchema` - User profile validation
-- `NoteSchema` - Note validation
-
-Replaces unsafe `as Type` assertions with runtime validation.
-
-### Performance Optimizations
-
-1. **FlashList Optimization** (`components/focus/focus-list.tsx`)
-   - Memoized render items
-   - Stable key extractor
-   - `removeClippedSubviews` for memory efficiency
-
-2. **Query Client Tuning** (`utils/query-client.ts`)
-   - `staleTime: 60s` - Reduce unnecessary refetches
-   - `gcTime: 10min` - Keep data in memory longer
-   - Exponential backoff for retries
-   - NetInfo integration for offline detection
-
-3. **Effect Cleanup**
-   - AbortController pattern for async operations
-   - Proper timer/timeout cleanup
-   - No memory leaks from abandoned promises
-
-## iOS IDs
-
-- Dev bundle ID: `com.pontistudios.hakumi.dev`
-- E2E bundle ID: `com.pontistudios.hakumi.e2e`
-- Preview bundle ID: `com.pontistudios.hakumi.preview`
-- Prod bundle ID: `com.pontistudios.hakumi`
-- Schemes:
-  - `hakumi-dev`
-  - `hakumi-e2e`
-  - `hakumi-preview`
-  - `hakumi`

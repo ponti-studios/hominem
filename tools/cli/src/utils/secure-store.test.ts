@@ -7,7 +7,6 @@ interface SecureStoreModule {
   saveTokens: (tokens: {
     tokenVersion: 2;
     accessToken: string;
-    refreshToken?: string;
     expiresAt?: string;
     scopes?: string[];
     provider?: 'better-auth';
@@ -19,7 +18,6 @@ interface SecureStoreModule {
   loadTokens: () => Promise<{
     tokenVersion: 2;
     accessToken: string;
-    refreshToken?: string;
     expiresAt?: string;
     scopes?: string[];
     provider?: 'better-auth';
@@ -92,7 +90,6 @@ describe('secure-store fallback encryption', () => {
       await store.saveTokens({
         tokenVersion: 2,
         accessToken: 'access-token-value',
-        refreshToken: 'refresh-token-value',
         issuerBaseUrl: 'http://localhost:4040',
       });
 
@@ -105,7 +102,6 @@ describe('secure-store fallback encryption', () => {
       expect(loaded).toEqual({
         tokenVersion: 2,
         accessToken: 'access-token-value',
-        refreshToken: 'refresh-token-value',
         issuerBaseUrl: 'http://localhost:4040',
       });
 

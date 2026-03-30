@@ -307,10 +307,8 @@ jobs:
         env:
           EXPO_PUBLIC_API_BASE_URL: "http://localhost:4040"
           EXPO_PUBLIC_R2_DOMAIN: "test-domain"
-      - name: 📱 Mobile auth unit/integration/screen tests
-        run: |
-          bun run --filter @hominem/mobile test:unit:auth
-          bun run --filter @hominem/mobile test:integration:auth
+      - name: 📱 Mobile auth verification lane
+        run: bun run --filter @hominem/mobile test
         timeout-minutes: 15
         env:
           EXPO_PUBLIC_API_BASE_URL: "http://localhost:4040"

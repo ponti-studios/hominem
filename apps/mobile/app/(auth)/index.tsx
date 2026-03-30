@@ -21,6 +21,7 @@ import { Box, Text, makeStyles } from '~/theme';
 import { useAuth } from '~/utils/auth-provider';
 import { isValidEmail, normalizeEmail } from '~/utils/auth/validation';
 import { E2E_TESTING, MOBILE_PASSKEY_ENABLED } from '~/utils/constants';
+import { buildAuthVerifyHref } from '~/utils/navigation/auth-route-params';
 import { useMobilePasskeyAuth } from '~/utils/use-mobile-passkey-auth';
 
 export function AuthScreen() {
@@ -59,9 +60,7 @@ export function AuthScreen() {
     try {
       setIsSubmitting(true);
       await requestEmailOtp(normalizedEmail);
-      router.replace(
-        `/(auth)/verify?email=${encodeURIComponent(normalizedEmail)}` as RelativePathString,
-      );
+      router.replace(buildAuthVerifyHref(normalizedEmail) as RelativePathString);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : AUTH_COPY.emailEntry.sendFailedError;
       setAuthError(message);

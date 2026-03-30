@@ -1,7 +1,8 @@
-import chalk from 'chalk';
-import { consola } from 'consola';
 import fs from 'node:fs/promises';
 import { URL } from 'node:url';
+
+import chalk from 'chalk';
+import { consola } from 'consola';
 import open from 'open';
 import ora from 'ora';
 
@@ -148,7 +149,6 @@ async function migrateLegacyConfig(): Promise<void> {
     const content = await fs.readFile(legacyConfig, 'utf-8');
     const json = JSON.parse(content) as {
       token?: string;
-      refreshToken?: string;
       timestamp?: string;
     };
     if (!json.token) return;
@@ -159,7 +159,6 @@ async function migrateLegacyConfig(): Promise<void> {
       provider: 'better-auth',
       issuerBaseUrl: normalizeBaseUrl(DEFAULT_AUTH_BASE),
     };
-    if (json.refreshToken) tokens.refreshToken = json.refreshToken;
     if (json.timestamp) {
       tokens.expiresAt = new Date(
         new Date(json.timestamp).getTime() + 55 * 60 * 1000,
