@@ -9,9 +9,7 @@ Automation-first CLI for hominem, replatformed to a typed command graph runtime.
 - Deterministic exit code taxonomy
 
 ## Command Taxonomy
-- `hominem data ...`
-- `hominem files ...`
-- `hominem agent ...`
+- `hominem auth ...`
 - `hominem system ...`
 - `hominem config ...`
 - `hominem skills ...` (export/import `.github/skills`)
