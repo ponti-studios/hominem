@@ -2,8 +2,8 @@ import { AUTH_COPY, usePasskeyAuth } from '@hominem/auth';
 import { resolveSafeAuthRedirect } from '@hominem/auth/server-utils';
 import { AuthScaffold, OtpVerificationForm } from '@hominem/ui';
 import { getSetCookieHeaders } from '@hominem/utils/headers';
-import { redirect, useActionData, useLoaderData, useLocation, useSearchParams } from 'react-router';
 import type { ActionFunctionArgs } from 'react-router';
+import { redirect, useActionData, useLoaderData, useLocation, useSearchParams } from 'react-router';
 
 import { getServerAuth } from '~/lib/auth.server';
 
