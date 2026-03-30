@@ -19,12 +19,8 @@ import { requestLogger } from './middleware/request-logger';
 import { aiRoutes } from './routes/ai';
 import { authRoutes } from './routes/auth';
 import { componentsRoutes } from './routes/components';
-import { financeRoutes } from './routes/finance';
-import { plaidRoutes } from './routes/finance/plaid';
 import { healthRoutes } from './routes/health';
 import { imagesRoutes } from './routes/images';
-import { invitesRoutes } from './routes/invites';
-import { oauthRoutes } from './routes/oauth';
 import { statusRoutes } from './routes/status';
 import { rpcApp } from './rpc/app';
 
@@ -82,12 +78,8 @@ export function createServer() {
     return betterAuthServer.handler(c.req.raw);
   });
   app.route('/api/ai', aiRoutes);
-  app.route('/api/oauth', oauthRoutes);
-  app.route('/api/invites', invitesRoutes);
   app.route('/api/images', imagesRoutes);
   app.route('/components', componentsRoutes);
-  app.route('/api/finance', financeRoutes);
-  app.route('/api/finance/plaid', plaidRoutes);
 
   // Root health check
   app.get('/', (c) => {

@@ -8,7 +8,18 @@ import { handlers } from '../src/mocks/handlers';
 import '../src/styles/animations.css';
 import '../src/styles/globals.css';
 
-initialize();
+const ignoredMswRequestPattern = /\.(avif|css|gif|ico|jpeg|jpg|png|svg|webp)$/i;
+
+initialize({
+  quiet: true,
+  onUnhandledRequest: ({ url }, print) => {
+    if (ignoredMswRequestPattern.test(String(url))) {
+      return;
+    }
+
+    print.warning();
+  }
+});
 
 const preview: Preview = {
   parameters: {
