@@ -88,7 +88,7 @@ describe('callTool', () => {
     const result = callTool('agent_health', {});
     const payload = JSON.parse(result.content[0]!.text) as { status: string; service: string };
     expect(payload.status).toBe('ok');
-    expect(payload.service).toBe('hominem-agent-server');
+    expect(payload.service).toBe('hominem-mcp-server');
   });
 
   it('offline_retry_config returns the expected networkMode', () => {

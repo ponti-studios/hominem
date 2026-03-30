@@ -31,7 +31,7 @@ function computeBackoffMs(attemptIndex: number, maxMs: number): number {
 export const MCP_TOOLS: McpTool[] = [
   {
     name: 'ping',
-    description: 'Verify connectivity to the Hominem agent server.',
+    description: 'Verify connectivity to the Hominem MCP server.',
     inputSchema: {
       type: 'object',
       properties: {},
@@ -39,7 +39,7 @@ export const MCP_TOOLS: McpTool[] = [
   },
   {
     name: 'agent_health',
-    description: 'Get the current health status of the Hominem agent server.',
+    description: 'Get the current health status of the Hominem MCP server.',
     inputSchema: {
       type: 'object',
       properties: {},
@@ -91,7 +91,7 @@ export function callTool(name: string, args: Record<string, unknown>): McpCallTo
             type: 'text',
             text: JSON.stringify({
               status: 'ok',
-              service: 'hominem-agent-server',
+              service: 'hominem-mcp-server',
               timestamp: Date.now(),
             }),
           },

@@ -89,7 +89,7 @@ function handleMcpRequest(body: string): unknown {
 // ---------------------------------------------------------------------------
 
 const server = http.createServer(async (req, res) => {
-  // Health endpoint (mirrors agent-server for parity)
+  // Health endpoint for the local MCP server.
   if (req.method === 'GET' && req.url === '/health') {
     respondJson(res, 200, { status: 'ok', service: 'hominem-mcp-server' });
     return;

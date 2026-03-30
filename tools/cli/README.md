@@ -10,10 +10,6 @@ Automation-first CLI for hominem, replatformed to a typed command graph runtime.
 
 ## Command Taxonomy
 - `hominem auth ...`
-- `hominem ai ...`
-- `hominem data ...`
-- `hominem files ...`
-- `hominem agent ...`
 - `hominem system ...`
 - `hominem config ...`
 - `hominem skills ...` (export/import `.github/skills`)
