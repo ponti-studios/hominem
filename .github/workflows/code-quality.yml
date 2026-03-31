@@ -301,14 +301,16 @@ jobs:
               with:
                   install-flags: "--force"
             - name: 🔬 Mobile lint
-              run: bun run --filter @hominem/mobile lint
-            - name: 📱 Verify mobile gate
-              run: bun run --filter @hominem/mobile check:expo-config
+              run: make mobile.lint
+            - name: 📐 Mobile typecheck
+              run: make mobile.typecheck
+            - name: 📱 Verify mobile config
+              run: make mobile.check-config
               env:
                   EXPO_PUBLIC_API_BASE_URL: "http://localhost:4040"
                   EXPO_PUBLIC_R2_DOMAIN: "test-domain"
             - name: 📱 Mobile auth verification lane
-              run: bun run --filter @hominem/mobile test
+              run: make mobile.test
               timeout-minutes: 15
               env:
                   EXPO_PUBLIC_API_BASE_URL: "http://localhost:4040"

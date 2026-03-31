@@ -35,34 +35,19 @@ jobs:
             - name: Setup EAS
               uses: expo/expo-github-action@v8
               with:
-                  eas-version: latest
+                  eas-version: 10.0.3
                   token: ${{ secrets.EXPO_TOKEN }}
 
-            - name: Mobile auth verification lane
-              run: bun run --filter @hominem/mobile test
+            - name: Mobile release gate
+              run: make mobile.release
               env:
                   EXPO_PUBLIC_API_BASE_URL: "http://localhost:4040"
 
-            - name: Verify Expo config
-              run: bun run --filter @hominem/mobile check:expo-config
-              env:
-                  APP_VARIANT: production
-                  EXPO_NO_DOTENV: "1"
-                  EXPO_PUBLIC_E2E_TESTING: "false"
-
-            - name: Verify production EAS env
-              run: bun run --filter @hominem/mobile verify:eas-env:production
-
             - name: Build production iOS binary
-              working-directory: apps/mobile
-              env:
-                  APP_VARIANT: production
-                  EXPO_NO_DOTENV: "1"
-              run: eas build --profile production --platform ios --non-interactive
+              run: make mobile.release.build.production
 
             - name: Submit to TestFlight
-              working-directory: apps/mobile
               env:
                   EXPO_APPLE_ID: ${{ secrets.EXPO_APPLE_ID }}
                   EXPO_ASC_APP_ID: ${{ secrets.EXPO_ASC_APP_ID }}
-              run: eas submit --profile production --platform ios --non-interactive --latest
+              run: make mobile.release.submit.production

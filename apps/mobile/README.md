@@ -6,12 +6,12 @@ This app is the iOS client for Hakumi, the notes-first personal workspace, built
 
 The mobile app uses explicit runtime variants. `APP_VARIANT` controls app identity, native generation, and local env loading.
 
-| Variant      | Purpose                           | Native Shape                    | OTA Updates        | Primary Command            |
-| ------------ | --------------------------------- | ------------------------------- | ------------------ | -------------------------- |
-| `dev`        | local feature development         | Expo dev client + Metro         | disabled           | `bun run start`            |
-| `e2e`        | deterministic mobile test runtime | standalone native test app      | disabled           | `bun run test:e2e:build`   |
-| `preview`    | internal QA / release candidate   | standalone update-enabled build | preview channel    | `bun run build:preview`    |
-| `production` | App Store / TestFlight            | standalone update-enabled build | production channel | `bun run build:production` |
+| Variant      | Purpose                           | Native Shape                    | OTA Updates        | Primary Command         |
+| ------------ | --------------------------------- | ------------------------------- | ------------------ | ----------------------- |
+| `dev`        | local feature development         | Expo dev client + Metro         | disabled           | `make mobile.dev`       |
+| `e2e`        | deterministic mobile test runtime | standalone native test app      | disabled           | `make mobile.e2e.build` |
+| `preview`    | internal QA / release candidate   | standalone update-enabled build | preview channel    | `make mobile.rc`        |
+| `production` | App Store / TestFlight            | standalone update-enabled build | production channel | `make mobile.release`   |
 
 ## Native Generation Rules
 
@@ -33,12 +33,32 @@ The mobile app uses explicit runtime variants. `APP_VARIANT` controls app identi
 
 Use [apps/mobile/.env.example](.env.example) as the local starting point. Release values are enforced through EAS and the CI release workflows.
 
+## Command Surface
+
+Prefer repo-root Make targets for mobile platform work. The app-level Makefile mirrors the same commands when you are already in `apps/mobile`.
+
+| Goal                                 | Root command                            | Wrapper in `apps/mobile`         |
+| ------------------------------------ | --------------------------------------- | -------------------------------- |
+| Start dev client                     | `make mobile.dev`                       | `make dev`                       |
+| Lint                                 | `make mobile.lint`                      | `make lint`                      |
+| Typecheck                            | `make mobile.typecheck`                 | `make typecheck`                 |
+| Auth gate                            | `make mobile.test`                      | `make test`                      |
+| Build iOS simulator binary           | `make mobile.e2e.build`                 | `make e2e-build`                 |
+| Run Detox smoke                      | `make mobile.e2e.smoke`                 | `make e2e-smoke`                 |
+| Verify local Expo config             | `make mobile.check-config`              | `make check-config`              |
+| Release candidate gate               | `make mobile.rc`                        | `make rc`                        |
+| Release candidate gate + Detox smoke | `make mobile.rc.smoke`                  | `make rc-smoke`                  |
+| Publish preview OTA                  | `make mobile.ota.publish.preview`       | `make ota-publish-preview`       |
+| Production release gate              | `make mobile.release`                   | `make release`                   |
+| Build production binary              | `make mobile.release.build.production`  | `make release-build-production`  |
+| Submit latest production build       | `make mobile.release.submit.production` | `make release-submit-production` |
+
 ## Development
 
 From monorepo root:
 
 ```bash
-bun run dev --filter @hominem/mobile
+make mobile.dev
 ```
 
 From mobile app directory (`dev` variant):
@@ -68,24 +88,27 @@ If you switch from simulator Detox work back to a physical-device dev build, run
 ### Prerequisites
 
 - Xcode command line tools
-- iOS simulator available (`iPhone 17 Pro`)
+- iOS simulator available (`iPhone 16 Pro`)
 - `applesimutils` installed (`brew tap wix/brew && brew install applesimutils`)
-- API server running and configured for non-production E2E auth (`AUTH_E2E_ENABLED=true`)
+- API server running and configured for non-production E2E auth (`AUTH_E2E_ENABLED=true`) when you run the OTP auth or deep-link Detox lanes
 
 ### Run E2E
 
 ```bash
 # build clean simulator binary (no dev client)
-bun run test:e2e:build
+make mobile.e2e.build
 
-# current critical auth lane
+# targeted smoke gate
+make mobile.e2e.smoke
+
+# macOS-only release-candidate gate
+make mobile.rc.smoke
+
+# deeper auth lane
 bun run test:e2e:auth
 
 # full mobile Detox suite
 bun run test:e2e:all
-
-# targeted smoke
-bun run test:e2e:smoke
 ```
 
 ### Auth model in E2E
@@ -106,30 +129,32 @@ bun run test:e2e:smoke
 ## Auth Testing
 
 ```bash
-bun run test
-bun run test:auth:unit
-bun run test:auth:integration
-bun run test:e2e:build
+make mobile.test
+make mobile.e2e.build
+make mobile.e2e.smoke
+make mobile.rc.smoke
 bun run test:e2e:auth
 bun run test:e2e:all
-bun run test:e2e:smoke
 ```
 
-- `test` is the canonical mobile auth verification lane.
-- `test:e2e:auth` is the current CI-critical Detox lane.
+- `make mobile.test` is the canonical mobile auth verification lane.
+- `make mobile.rc.smoke` is the release-candidate simulator gate run in CI on macOS.
+- `make mobile.e2e.smoke` and `make mobile.rc.smoke` only validate clean boot and do not require a live backend.
+- `test:e2e:auth` remains the focused native auth lane when you need deeper mobile auth coverage.
 - `test:e2e:all` exists for full native coverage, but it is not the default gate yet.
 - `jest-expo` plus React Native Testing Library cover auth screen behavior.
 - A dedicated route-level auth harness covers Expo Router navigation and deep-link hydration.
 - Detox covers native-critical auth and relaunch flows.
 - personal-device smoke covers final hardware-specific auth validation.
 - Mobile passkey buttons are hidden by default.
+- The `mobile-release-candidate` workflow uploads Detox logs, screenshots, and videos when smoke fails.
 
 ## EAS Builds
 
 ### Prerequisites
 
 1. **Apple Developer Account** with App Store Connect access
-2. **EAS CLI** installed: `npm install -g eas-cli`
+2. **EAS CLI** installed: `npm install -g eas-cli@10.0.3`
 3. **Expo account** linked: `eas login`
 
 ### Setup Credentials
@@ -144,12 +169,11 @@ eas credentials
 ### Build Commands
 
 ```bash
-bun run build:development
-bun run build:e2e
-bun run build:preview
-bun run build:production
-bun run build:update:preview
-bun run build:update:production
+make mobile.rc
+make mobile.ota.publish.preview
+make mobile.release
+make mobile.release.build.production
+make mobile.release.submit.production
 ```
 
 ### TestFlight Deployment
@@ -157,9 +181,7 @@ bun run build:update:production
 For production TestFlight deployment, ensure Apple credentials are configured:
 
 ```bash
-# Build for production
-bun run build:production
-
-# Submit to TestFlight (requires credentials)
-eas submit --platform ios --latest
+make mobile.release
+make mobile.release.build.production
+make mobile.release.submit.production
 ```

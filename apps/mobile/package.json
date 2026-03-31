@@ -21,6 +21,7 @@
     "test:e2e:auth": "detox test -c ios.sim.e2e --testPathPattern=e2e/auth.mobile.e2e.js --cleanup --retries 0",
     "test:e2e:deep-links": "detox test -c ios.sim.e2e --testPathPattern=e2e/deep-links.mobile.e2e.js --cleanup --retries 0",
     "test:e2e:smoke": "detox test -c ios.sim.e2e --testPathPattern=e2e/smoke.mobile.e2e.js --cleanup",
+    "test:e2e:smoke:ci": "detox test -c ios.sim.e2e --testPathPattern=e2e/smoke.mobile.e2e.js --cleanup --retries 0 --record-logs all --take-screenshots failing --record-videos failing --artifacts-location artifacts/detox-smoke",
     "test:e2e:build": "bash scripts/ensure-ios-variant.sh e2e && detox build -c ios.sim.e2e",
     "postinstall": "node node_modules/@shopify/react-native-skia/scripts/install-libs.js",
     "verify:eas-env:preview": "bash scripts/check-release-env.sh preview",
