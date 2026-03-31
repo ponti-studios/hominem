@@ -127,10 +127,10 @@ mobile.rc.smoke: mobile.rc mobile.e2e.build mobile.e2e.smoke.ci
 
 mobile.release: mobile.lint mobile.typecheck mobile.test mobile.check-tooling mobile.check-profiles mobile.check-config.production mobile.ota.verify.production
 
-mobile.ota.publish.preview:
+mobile.ota.publish.preview: mobile.rc
 	cd $(MOBILE_DIR) && APP_VARIANT=preview EXPO_NO_DOTENV=1 EXPO_PUBLIC_E2E_TESTING=false eas update --auto --platform ios --branch preview --clear-cache --non-interactive --environment preview
 
-mobile.release.build.production:
+mobile.release.build.production: mobile.release
 	cd $(MOBILE_DIR) && APP_VARIANT=production EXPO_NO_DOTENV=1 EXPO_PUBLIC_E2E_TESTING=false eas build --profile production --platform ios --non-interactive
 
 mobile.release.submit.production:

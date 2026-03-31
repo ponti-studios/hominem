@@ -18,6 +18,9 @@ const cfg = JSON.parse(raw)
 if (!cfg.cli?.version) {
   throw new Error('cli.version must be defined so local and CI EAS contracts stay pinned')
 }
+if (cfg.cli.version !== '>= 10.0.3') {
+  throw new Error('cli.version must stay at >= 10.0.3 so local release commands can use newer compatible EAS CLIs')
+}
 const requiredProfiles = ['development', 'e2e', 'preview', 'production']
 for (const profile of requiredProfiles) {
   if (!cfg.build || !cfg.build[profile]) {

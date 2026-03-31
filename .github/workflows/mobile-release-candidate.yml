@@ -49,16 +49,10 @@ jobs:
                   xcodebuild -version
                   xcrun simctl list devices available | cat
 
-            - name: Mobile release candidate gate
-              run: make mobile.rc
+            - name: Run preview RC smoke gate
+              run: make mobile.rc.smoke
               env:
                   EXPO_PUBLIC_API_BASE_URL: "http://localhost:4040"
-
-            - name: Build iOS simulator binary
-              run: make mobile.e2e.build
-
-            - name: Run Detox smoke
-              run: make mobile.e2e.smoke.ci
 
             - name: Upload Detox artifacts
               if: failure()

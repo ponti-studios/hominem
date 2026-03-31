@@ -8,6 +8,9 @@ on:
         paths:
             - "apps/mobile/**"
             - "packages/**"
+            - "Makefile"
+            - "package.json"
+            - ".github/actions/setup/action.yml"
             - ".github/workflows/mobile-ota-deploy.yml"
 
 concurrency:
@@ -41,10 +44,7 @@ jobs:
                   eas-version: 10.0.3
                   token: ${{ secrets.EXPO_TOKEN }}
 
-            - name: Mobile RC gate
-              run: make mobile.rc
-              env:
-                  EXPO_PUBLIC_API_BASE_URL: "http://localhost:4040"
-
             - name: Publish OTA update → preview
               run: make mobile.ota.publish.preview
+              env:
+                  EXPO_PUBLIC_API_BASE_URL: "http://localhost:4040"

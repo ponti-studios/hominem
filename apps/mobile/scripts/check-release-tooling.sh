@@ -10,6 +10,7 @@ const path = require('node:path')
 
 const rootDir = process.argv[1]
 const expectedBunVersion = '1.3.10'
+const expectedEasVersionRange = '>= 10.0.3'
 const expectedEasVersion = '10.0.3'
 
 function read(relativePath) {
@@ -32,7 +33,7 @@ const easConfig = readJson('apps/mobile/eas.json')
 
 expectEqual(rootPackage.packageManager, 'bun@' + expectedBunVersion, 'root packageManager')
 expectEqual(mobilePackage.packageManager, 'bun@' + expectedBunVersion, 'mobile packageManager')
-expectEqual(easConfig.cli?.version, expectedEasVersion, 'mobile eas cli.version')
+expectEqual(easConfig.cli?.version, expectedEasVersionRange, 'mobile eas cli.version')
 
 const setupAction = read('.github/actions/setup/action.yml')
 if (!setupAction.includes('default: \"' + expectedBunVersion + '\"')) {

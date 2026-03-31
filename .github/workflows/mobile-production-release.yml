@@ -38,13 +38,10 @@ jobs:
                   eas-version: 10.0.3
                   token: ${{ secrets.EXPO_TOKEN }}
 
-            - name: Mobile release gate
-              run: make mobile.release
-              env:
-                  EXPO_PUBLIC_API_BASE_URL: "http://localhost:4040"
-
             - name: Build production iOS binary
               run: make mobile.release.build.production
+              env:
+                  EXPO_PUBLIC_API_BASE_URL: "http://localhost:4040"
 
             - name: Submit to TestFlight
               env:
