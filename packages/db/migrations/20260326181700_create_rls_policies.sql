@@ -88,6 +88,7 @@ $$;
 -- Better Auth tables (user, session, account, verification, passkey, jwks, deviceCode)
 -- are owned by Better Auth and not managed by our RLS policies.
 
+-- +goose StatementBegin
 ALTER TABLE app.notes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE app.notes FORCE ROW LEVEL SECURITY;
 ALTER TABLE app.note_versions ENABLE ROW LEVEL SECURITY;
@@ -156,51 +157,13 @@ ALTER TABLE app.possessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE app.possessions FORCE ROW LEVEL SECURITY;
 ALTER TABLE app.possession_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE app.possession_events FORCE ROW LEVEL SECURITY;
-
 ALTER TABLE ops.audit_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ops.audit_logs FORCE ROW LEVEL SECURITY;
 ALTER TABLE ops.search_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ops.search_logs FORCE ROW LEVEL SECURITY;
+-- +goose StatementEnd
 
-CREATE POLICY auth_users_service_policy ON auth.users
-  FOR ALL
-  USING (auth.is_service_role())
-  WITH CHECK (auth.is_service_role());
-
-CREATE POLICY auth_users_self_select_policy ON auth.users
-  FOR SELECT
-  USING (id = auth.current_user_id());
-
-CREATE POLICY auth_users_self_update_policy ON auth.users
-  FOR UPDATE
-  USING (id = auth.current_user_id())
-  WITH CHECK (id = auth.current_user_id());
-
-CREATE POLICY auth_identities_service_policy ON auth.identities
-  FOR ALL
-  USING (auth.is_service_role())
-  WITH CHECK (auth.is_service_role());
-
-CREATE POLICY auth_sessions_service_policy ON auth.sessions
-  FOR ALL
-  USING (auth.is_service_role())
-  WITH CHECK (auth.is_service_role());
-
-CREATE POLICY auth_passkeys_service_policy ON auth.passkeys
-  FOR ALL
-  USING (auth.is_service_role())
-  WITH CHECK (auth.is_service_role());
-
-CREATE POLICY auth_verification_tokens_service_policy ON auth.verification_tokens
-  FOR ALL
-  USING (auth.is_service_role())
-  WITH CHECK (auth.is_service_role());
-
-CREATE POLICY auth_device_codes_service_policy ON auth.device_codes
-  FOR ALL
-  USING (auth.is_service_role())
-  WITH CHECK (auth.is_service_role());
-
+-- +goose StatementBegin
 CREATE POLICY app_notes_select_policy ON app.notes
   FOR SELECT
   USING (
@@ -721,8 +684,10 @@ CREATE POLICY ops_search_logs_service_policy ON ops.search_logs
   FOR ALL
   USING (auth.is_service_role())
   WITH CHECK (auth.is_service_role());
+-- +goose StatementEnd
 
 -- +goose Down
+-- +goose StatementBegin
 DROP POLICY IF EXISTS ops_search_logs_service_policy ON ops.search_logs;
 DROP POLICY IF EXISTS ops_audit_logs_service_policy ON ops.audit_logs;
 DROP POLICY IF EXISTS app_possession_events_owner_policy ON app.possession_events;
@@ -768,14 +733,11 @@ DROP POLICY IF EXISTS app_note_versions_owner_write_policy ON app.note_versions;
 DROP POLICY IF EXISTS app_note_versions_select_policy ON app.note_versions;
 DROP POLICY IF EXISTS app_notes_owner_write_policy ON app.notes;
 DROP POLICY IF EXISTS app_notes_select_policy ON app.notes;
-
 DROP FUNCTION IF EXISTS auth.is_space_member(uuid);
 DROP FUNCTION IF EXISTS auth.owns_space(uuid);
 DROP FUNCTION IF EXISTS auth.can_write_note(uuid);
 DROP FUNCTION IF EXISTS auth.can_read_note(uuid);
-
 ALTER TABLE ops.search_logs NO FORCE ROW LEVEL SECURITY;
-
 ALTER TABLE app.possession_events NO FORCE ROW LEVEL SECURITY;
 ALTER TABLE app.possession_events DISABLE ROW LEVEL SECURITY;
 ALTER TABLE app.possessions NO FORCE ROW LEVEL SECURITY;

@@ -600,117 +600,6 @@ export interface AppVideoViews {
   watched_at: Timestamp;
 }
 
-export interface AuthApiKeys {
-  createdat: Generated<Timestamp>;
-  expires_at: Timestamp | null;
-  id: Generated<string>;
-  key_hash: string;
-  last_used_at: Timestamp | null;
-  name: string;
-  prefix: string;
-  revoked_at: Timestamp | null;
-  updatedat: Generated<Timestamp>;
-  userid: string;
-}
-
-export interface AuthDeviceCodes {
-  client_id: string | null;
-  createdat: Generated<Timestamp>;
-  device_code: string;
-  expires_at: Timestamp;
-  id: Generated<string>;
-  last_polled_at: Timestamp | null;
-  polling_interval_seconds: Generated<number>;
-  scope: string | null;
-  status: string;
-  updatedat: Generated<Timestamp>;
-  user_code: string;
-  userid: string | null;
-}
-
-export interface AuthIdentities {
-  access_token_encrypted: string | null;
-  createdat: Generated<Timestamp>;
-  id: Generated<string>;
-  id_token_encrypted: string | null;
-  last_used_at: Timestamp | null;
-  linked_at: Generated<Timestamp>;
-  provider: string;
-  provider_account_id: string | null;
-  provider_subject: string;
-  refresh_token_encrypted: string | null;
-  revoked_at: Timestamp | null;
-  scope: string | null;
-  updatedat: Generated<Timestamp>;
-  userid: string;
-}
-
-export interface AuthPasskeys {
-  aaguid: string | null;
-  backed_up: Generated<boolean>;
-  createdat: Generated<Timestamp>;
-  credential_id: string;
-  device_type: string | null;
-  friendly_name: string | null;
-  id: Generated<string>;
-  last_used_at: Timestamp | null;
-  public_key: Buffer;
-  sign_count: Generated<Int8>;
-  transports: string[] | null;
-  userid: string;
-}
-
-export interface AuthRefreshTokens {
-  createdat: Generated<Timestamp>;
-  expires_at: Timestamp;
-  family_id: string;
-  id: Generated<string>;
-  parent_id: string | null;
-  revoked_at: Timestamp | null;
-  session_id: string;
-  token_hash: string;
-  used_at: Timestamp | null;
-}
-
-export interface AuthSessions {
-  amr: Generated<Json>;
-  auth_level: Generated<string>;
-  createdat: Generated<Timestamp>;
-  expires_at: Timestamp;
-  id: Generated<string>;
-  ip_hash: string | null;
-  last_seen_at: Generated<Timestamp>;
-  revoked_at: Timestamp | null;
-  state: Generated<string>;
-  token_hash: string;
-  updatedat: Generated<Timestamp>;
-  user_agent_hash: string | null;
-  userid: string;
-}
-
-export interface AuthUsers {
-  avatar_url: string | null;
-  createdat: Generated<Timestamp>;
-  email: string;
-  email_verified_at: Timestamp | null;
-  id: Generated<string>;
-  name: string | null;
-  updatedat: Generated<Timestamp>;
-}
-
-export interface AuthVerificationTokens {
-  channel: string;
-  consumed_at: Timestamp | null;
-  createdat: Generated<Timestamp>;
-  expires_at: Timestamp;
-  id: Generated<string>;
-  identifier: string;
-  purpose: string;
-  token_hash: string;
-  updatedat: Generated<Timestamp>;
-  userid: string | null;
-}
-
 export interface DeviceCode {
   clientId: string | null;
   deviceCode: string;
@@ -722,26 +611,6 @@ export interface DeviceCode {
   status: string;
   userCode: string;
   userId: string | null;
-}
-
-export interface GeographyColumns {
-  coord_dimension: number | null;
-  f_geography_column: string | null;
-  f_table_catalog: string | null;
-  f_table_name: string | null;
-  f_table_schema: string | null;
-  srid: number | null;
-  type: string | null;
-}
-
-export interface GeometryColumns {
-  coord_dimension: number | null;
-  f_geometry_column: string | null;
-  f_table_catalog: string | null;
-  f_table_name: string | null;
-  f_table_schema: string | null;
-  srid: number | null;
-  type: string | null;
 }
 
 export interface GooseDbVersion {
@@ -807,34 +676,6 @@ export interface Session {
   userId: string;
 }
 
-export interface SpatialRefSys {
-  auth_name: string | null;
-  auth_srid: number | null;
-  proj4text: string | null;
-  srid: number;
-  srtext: string | null;
-}
-
-export interface TopologyLayer {
-  child_id: number | null;
-  feature_column: string;
-  feature_type: number;
-  layer_id: number;
-  level: Generated<number>;
-  schema_name: string;
-  table_name: string;
-  topology_id: number;
-}
-
-export interface TopologyTopology {
-  hasz: Generated<boolean>;
-  id: Generated<number>;
-  name: string;
-  precision: number;
-  srid: number;
-  useslargeids: Generated<boolean>;
-}
-
 export interface User {
   createdAt: Generated<Timestamp>;
   email: string;
@@ -896,26 +737,13 @@ export interface DB {
   "app.travel_trips": AppTravelTrips;
   "app.video_channels": AppVideoChannels;
   "app.video_views": AppVideoViews;
-  "auth.api_keys": AuthApiKeys;
-  "auth.device_codes": AuthDeviceCodes;
-  "auth.identities": AuthIdentities;
-  "auth.passkeys": AuthPasskeys;
-  "auth.refresh_tokens": AuthRefreshTokens;
-  "auth.sessions": AuthSessions;
-  "auth.users": AuthUsers;
-  "auth.verification_tokens": AuthVerificationTokens;
   deviceCode: DeviceCode;
-  geography_columns: GeographyColumns;
-  geometry_columns: GeometryColumns;
   goose_db_version: GooseDbVersion;
   jwks: Jwks;
   "ops.audit_logs": OpsAuditLogs;
   "ops.search_logs": OpsSearchLogs;
   passkey: Passkey;
   session: Session;
-  spatial_ref_sys: SpatialRefSys;
-  "topology.layer": TopologyLayer;
-  "topology.topology": TopologyTopology;
   user: User;
   verification: Verification;
 }
