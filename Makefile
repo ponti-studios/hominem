@@ -24,7 +24,7 @@ TEST_DATABASE_URL ?= postgres://postgres:postgres@localhost:4433/hominem-test
 .PHONY: db-reset-dev db-reset-test db-verify-fresh
 .PHONY: mobile.dev mobile.lint mobile.format mobile.test mobile.typecheck
 .PHONY: mobile.e2e.build mobile.e2e.smoke mobile.e2e.smoke.ci
-.PHONY: mobile.check-config mobile.check-config.preview mobile.check-config.production mobile.check-profiles
+.PHONY: mobile.check-tooling mobile.check-config mobile.check-config.preview mobile.check-config.production mobile.check-profiles
 .PHONY: mobile.rc mobile.rc.smoke mobile.release
 .PHONY: mobile.ota.verify.preview mobile.ota.verify.production mobile.ota.publish.preview
 .PHONY: mobile.release.build.production mobile.release.submit.production
@@ -37,7 +37,7 @@ help:
 	@echo "Mobile:"
 	@echo "  make mobile.dev | mobile.lint | mobile.format | mobile.test | mobile.typecheck"
 	@echo "  make mobile.e2e.build | mobile.e2e.smoke | mobile.e2e.smoke.ci"
-	@echo "  make mobile.check-config | mobile.check-config.preview | mobile.check-config.production"
+	@echo "  make mobile.check-tooling | mobile.check-config | mobile.check-config.preview | mobile.check-config.production"
 	@echo "  make mobile.check-profiles | mobile.rc | mobile.rc.smoke | mobile.release"
 	@echo "  make mobile.ota.verify.preview | mobile.ota.verify.production | mobile.ota.publish.preview"
 	@echo "  make mobile.release.build.production | mobile.release.submit.production"
@@ -100,6 +100,9 @@ mobile.e2e.smoke:
 mobile.e2e.smoke.ci:
 	$(MOBILE_BUN) test:e2e:smoke:ci
 
+mobile.check-tooling:
+	bash "$(MOBILE_DIR)/scripts/check-release-tooling.sh"
+
 mobile.check-config:
 	$(MOBILE_BUN) check:expo-config
 
@@ -118,11 +121,11 @@ mobile.ota.verify.preview:
 mobile.ota.verify.production:
 	cd $(MOBILE_DIR) && eas env:exec production "bash scripts/check-release-env.sh production"
 
-mobile.rc: mobile.lint mobile.typecheck mobile.test mobile.check-profiles mobile.check-config.preview mobile.ota.verify.preview
+mobile.rc: mobile.lint mobile.typecheck mobile.test mobile.check-tooling mobile.check-profiles mobile.check-config.preview mobile.ota.verify.preview
 
 mobile.rc.smoke: mobile.rc mobile.e2e.build mobile.e2e.smoke.ci
 
-mobile.release: mobile.lint mobile.typecheck mobile.test mobile.check-profiles mobile.check-config.production mobile.ota.verify.production
+mobile.release: mobile.lint mobile.typecheck mobile.test mobile.check-tooling mobile.check-profiles mobile.check-config.production mobile.ota.verify.production
 
 mobile.ota.publish.preview:
 	cd $(MOBILE_DIR) && APP_VARIANT=preview EXPO_NO_DOTENV=1 EXPO_PUBLIC_E2E_TESTING=false eas update --auto --platform ios --branch preview --clear-cache --non-interactive --environment preview

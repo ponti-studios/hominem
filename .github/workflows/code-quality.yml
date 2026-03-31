@@ -304,6 +304,10 @@ jobs:
               run: make mobile.lint
             - name: 📐 Mobile typecheck
               run: make mobile.typecheck
+            - name: 🛠️ Verify mobile release tooling pins
+              run: make mobile.check-tooling
+            - name: 🧾 Verify mobile EAS profile contract
+              run: make mobile.check-profiles
             - name: 📱 Verify mobile config
               run: make mobile.check-config
               env:

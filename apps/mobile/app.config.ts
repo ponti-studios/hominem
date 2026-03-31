@@ -228,6 +228,7 @@ export default ({ config }: ConfigContext) => {
         projectId: EXPO_PROJECT_ID,
       },
     },
+    // Fingerprint runtime policy keeps OTA compatibility tied to the native surface.
     runtimeVersion: {
       policy: 'fingerprint',
     },

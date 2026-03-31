@@ -4,7 +4,7 @@ ROOT_MAKE := $(MAKE) -C ../..
 
 .PHONY: help dev lint format test typecheck
 .PHONY: e2e-build e2e-smoke e2e-smoke-ci
-.PHONY: check-config check-config-preview check-config-production check-profiles
+.PHONY: check-tooling check-config check-config-preview check-config-production check-profiles
 .PHONY: verify-eas-preview verify-eas-production rc rc-smoke release
 .PHONY: ota-publish-preview release-build-production release-submit-production
 
@@ -13,7 +13,7 @@ help:
 	@echo "Mobile wrappers:"
 	@echo "  make dev | lint | format | test | typecheck"
 	@echo "  make e2e-build | e2e-smoke | e2e-smoke-ci"
-	@echo "  make check-config | check-config-preview | check-config-production | check-profiles"
+	@echo "  make check-tooling | check-config | check-config-preview | check-config-production | check-profiles"
 	@echo "  make verify-eas-preview | verify-eas-production | rc | rc-smoke | release"
 	@echo "  make ota-publish-preview | release-build-production | release-submit-production"
 	@echo ""
@@ -43,6 +43,9 @@ e2e-smoke:
 
 e2e-smoke-ci:
 	$(ROOT_MAKE) mobile.e2e.smoke.ci
+
+check-tooling:
+	$(ROOT_MAKE) mobile.check-tooling
 
 check-config:
 	$(ROOT_MAKE) mobile.check-config

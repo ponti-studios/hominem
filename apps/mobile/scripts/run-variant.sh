@@ -13,6 +13,7 @@ fi
 VARIANT="$1"
 shift
 
+# Preview and production must come from EAS-managed env so local shells cannot drift from CI.
 CAN_USE_LOCAL_ENV="$(node -e "const { canUseLocalEnvFile } = require('${RELEASE_ENV_POLICY}'); process.stdout.write(canUseLocalEnvFile('${VARIANT}') ? 'true' : 'false')")"
 
 if [[ "${CAN_USE_LOCAL_ENV}" != "true" ]]; then

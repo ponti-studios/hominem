@@ -15,17 +15,29 @@ const fs = require('node:fs')
 const path = process.argv[1]
 const raw = fs.readFileSync(path, 'utf8')
 const cfg = JSON.parse(raw)
+if (!cfg.cli?.version) {
+  throw new Error('cli.version must be defined so local and CI EAS contracts stay pinned')
+}
 const requiredProfiles = ['development', 'e2e', 'preview', 'production']
 for (const profile of requiredProfiles) {
   if (!cfg.build || !cfg.build[profile]) {
     throw new Error('Missing build profile: ' + profile)
   }
 }
+if (cfg.build.development.environment !== 'development') {
+  throw new Error('development profile must use environment=development')
+}
 if (cfg.build.development.channel !== 'development') {
   throw new Error('development profile must use channel=development')
 }
 if (cfg.build.development.developmentClient !== true) {
   throw new Error('development profile must enable developmentClient')
+}
+if (cfg.build.e2e.channel !== 'e2e') {
+  throw new Error('e2e profile must use channel=e2e')
+}
+if (cfg.build.e2e.environment !== 'development') {
+  throw new Error('e2e profile must use environment=development')
 }
 if (cfg.build.development.env?.APP_VARIANT !== 'dev') {
   throw new Error('development profile must define APP_VARIANT=dev')
@@ -39,6 +51,12 @@ if (cfg.build.e2e.developmentClient === true) {
 if (cfg.build.e2e.env?.APP_VARIANT !== 'e2e') {
   throw new Error('e2e profile must define APP_VARIANT=e2e')
 }
+if (cfg.build.preview.channel !== 'preview') {
+  throw new Error('preview profile must use channel=preview')
+}
+if (cfg.build.preview.environment !== 'preview') {
+  throw new Error('preview profile must use environment=preview')
+}
 if (cfg.build.preview.env?.APP_VARIANT !== 'preview') {
   throw new Error('preview profile must define APP_VARIANT=preview')
 }
@@ -51,11 +69,17 @@ if (cfg.build.preview.distribution !== 'store') {
 if (cfg.build.production.channel !== 'production') {
   throw new Error('production profile must use channel=production')
 }
+if (cfg.build.production.environment !== 'production') {
+  throw new Error('production profile must use environment=production')
+}
 if (cfg.build.production.env?.APP_VARIANT !== 'production') {
   throw new Error('production profile must define APP_VARIANT=production')
 }
 if (cfg.build.production.developmentClient === true) {
   throw new Error('production profile must not enable developmentClient')
+}
+if (cfg.build.production.distribution !== 'store') {
+  throw new Error('production profile must use distribution=store')
 }
 if (cfg.build.production.autoIncrement !== true) {
   throw new Error('production profile must enable autoIncrement')
