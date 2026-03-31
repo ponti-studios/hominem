@@ -50,15 +50,14 @@ OTEL_TRACES_SAMPLER_ARG=1.0
 
 ## Notes
 
-- `services/api` and `services/workers` already initialize telemetry at startup.
+- `services/api` initializes telemetry at startup; `services/workers` is currently idle until background file-upload workers are added.
 - `apps/web` already initializes browser telemetry in the root provider.
 - Mobile stays on the existing PostHog path for this phase.
 
 ## Local verification
 
 - Run `bash ./scripts/auth-e2e-flow.sh` to verify concrete API route spans appear in ClickHouse for the auth flow.
-- Run `bash ./scripts/worker-e2e-flow.sh` to verify `bullmq.process smart-input` spans appear and stay correlated to the enqueue trace.
 - Run `make obs-smoke` to verify the collector still ingests telemetry into ClickHouse.
-- In HyperDX at `http://localhost:8080`, inspect `Traces`, `Logs`, and `Metrics` for `hominem-api` and `hominem-workers`.
+- In HyperDX at `http://localhost:8080`, inspect `Traces`, `Logs`, and `Metrics` for `hominem-api` and any future worker service you enable locally.
 - Request logs now emit OTEL log records with `trace_id` and `span_id`, so correlated log inspection should work in the local stack.
-- Local API and worker middleware emit `hominem_api_requests_total`, `hominem_api_request_duration_ms`, `hominem_worker_jobs_total`, and `hominem_worker_job_duration_ms` metrics for HyperDX verification.
+- Local API middleware emits `hominem_api_requests_total` and `hominem_api_request_duration_ms` metrics for HyperDX verification.

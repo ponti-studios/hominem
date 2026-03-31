@@ -24,12 +24,6 @@ export const QUEUE_NAMES = {
    */
   PLAID_SYNC: 'plaid-sync',
   /**
-   * Queue for processing smart input emails and attachments
-   * Used by:
-   * - services/workers/src/smart-input/smart-input.worker.ts (processing jobs)
-   */
-  SMART_INPUT: 'smart-input',
-  /**
    * Queue for Google Calendar synchronization jobs
    * Used by:
    * - apps/api/src/rpc/routers/events.ts (adding jobs)

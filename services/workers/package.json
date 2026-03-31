@@ -2,7 +2,7 @@
   "name": "@hominem/workers",
   "version": "0.1.0",
   "private": true,
-  "description": "collection of worker functions",
+  "description": "background workers for file uploads",
   "files": [
     "build"
   ],
@@ -16,23 +16,17 @@
     "format": "bunx oxfmt ./src"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^1.3.22",
     "@hominem/db": "workspace:*",
     "@hominem/jobs-services": "workspace:*",
     "@hominem/services": "workspace:*",
     "@hominem/telemetry": "workspace:*",
     "@hominem/utils": "workspace:*",
-    "ai": "^4.3.16",
     "bullmq": "5.66.4",
     "dotenv": "17.2.3",
     "effect": "^3.16.10",
-    "mailparser": "^3.7.2",
-    "pdf-parse": "^1.1.1",
     "zod": "4.3.6"
   },
   "devDependencies": {
-    "@types/mailparser": "^3.4.5",
-    "@types/pdf-parse": "^1.1.5",
     "vitest": "4.0.16"
   }
 }
