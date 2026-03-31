@@ -1,8 +1,6 @@
-// Test fixtures using Kysely
+import type { User } from '../types/database';
 
-export const createTestUser = async (
-  overrides: { id?: string; email?: string; name?: string } = {},
-) => {
+export const createTestUser = async (overrides: Partial<User> = {}) => {
   const { db } = await import('../db');
   const id = overrides.id || `test-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
