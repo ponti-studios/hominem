@@ -5,6 +5,8 @@
   "main": "expo-router/entry",
   "scripts": {
     "start": "bash scripts/run-variant.sh dev expo start --dev-client",
+    "prebuild:dev": "bash scripts/ensure-ios-variant.sh dev",
+    "prebuild:e2e": "bash scripts/ensure-ios-variant.sh e2e",
     "check:expo-config": "bash scripts/check-expo-config.sh",
     "target": "bash scripts/dev-target.sh",
     "target:sim": "bash scripts/dev-target.sh simulator",
