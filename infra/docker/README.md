@@ -3,21 +3,25 @@
 ## Quick Start
 
 ### Development (with persistence)
+
 ```bash
 docker compose -f infra/docker/compose/base.yml -f infra/docker/compose/dev.yml up -d
 ```
 
 ### Development + Observability
+
 ```bash
 docker compose -f infra/docker/compose/base.yml -f infra/docker/compose/observability.yml up -d
 ```
 
 ### Full Stack
+
 ```bash
 docker compose -f infra/docker/compose/base.yml -f infra/docker/compose/dev.yml -f infra/docker/compose/observability.yml up -d
 ```
 
 ### Test (ephemeral)
+
 ```bash
 docker compose -f infra/docker/compose/test.yml up -d
 docker compose -f infra/docker/compose/test.yml down -v
@@ -31,15 +35,15 @@ docker compose -f infra/docker/compose/test.yml down -v
 
 ## Services
 
-| Service | Port | Purpose |
-|---------|------|---------|
-| db | 5434 | Main PostgreSQL database |
-| test-db | 4433 | Ephemeral test database |
-| redis | 6379 | Cache/sessions |
-| clickhouse | 8123 | Telemetry storage |
-| mongo | 27017 | HyperDX metadata store |
-| hyperdx | 8080 | Observability UI |
-| otel | 4318 | OTLP HTTP ingest |
+| Service    | Port  | Purpose                  |
+| ---------- | ----- | ------------------------ |
+| db         | 5434  | Main PostgreSQL database |
+| test-db    | 4433  | Ephemeral test database  |
+| redis      | 6379  | Cache/sessions           |
+| clickhouse | 8123  | Telemetry storage        |
+| mongo      | 27017 | HyperDX metadata store   |
+| hyperdx    | 8080  | Observability UI         |
+| otel       | 4318  | OTLP HTTP ingest         |
 
 ## Stack Layers
 
@@ -62,6 +66,7 @@ docker compose -f infra/docker/compose/test.yml down -v
 ## PostgreSQL 18
 
 This setup uses PostgreSQL 18.5 with:
+
 - pgvector 0.8.2
 - PostGIS 3.6.2
 - pgrouting 4.0.1
@@ -71,18 +76,21 @@ This setup uses PostgreSQL 18.5 with:
 PostgreSQL 18+ changed the volume mount location:
 
 **Old (PG 17):**
+
 ```yaml
 volumes:
   - db-data:/var/lib/postgresql/data
 ```
 
 **New (PG 18):**
+
 ```yaml
 volumes:
   - db-data:/var/lib/postgresql
 ```
 
 If upgrading from PG 17, you'll need to remove old volumes:
+
 ```bash
 docker compose -f infra/docker/compose/base.yml -f infra/docker/compose/dev.yml down -v
 ```
@@ -102,20 +110,22 @@ CREATE EXTENSION IF NOT EXISTS pgrouting;
 
 ## Environment Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
+| Variable          | Default  | Description       |
+| ----------------- | -------- | ----------------- |
 | POSTGRES_PASSWORD | postgres | Database password |
-| POSTGRES_USER | postgres | Database user |
-| POSTGRES_DB | hominem | Database name |
+| POSTGRES_USER     | postgres | Database user     |
+| POSTGRES_DB       | hominem  | Database name     |
 
 ## Backup & Restore
 
 ### Backup
+
 ```bash
 docker exec hominem-postgres pg_dump -U postgres hominem > backup.sql
 ```
 
 ### Restore
+
 ```bash
 docker exec -i hominem-postgres psql -U postgres hominem < backup.sql
 ```
@@ -123,16 +133,21 @@ docker exec -i hominem-postgres psql -U postgres hominem < backup.sql
 ## Troubleshooting
 
 ### Container won't start
+
 Check logs:
+
 ```bash
 docker compose -f infra/docker/compose/base.yml -f infra/docker/compose/dev.yml logs db
 ```
 
 ### "Old PostgreSQL data" error
+
 PG18 requires mounting to `/var/lib/postgresql`, not `/var/lib/postgresql/data`. Remove old volumes:
+
 ```bash
 docker compose -f infra/docker/compose/base.yml -f infra/docker/compose/dev.yml down -v
 ```
 
 ### Extensions not available
+
 Create them manually or ensure migrations run on startup.

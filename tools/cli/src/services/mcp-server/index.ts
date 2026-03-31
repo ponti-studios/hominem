@@ -15,11 +15,7 @@ const port = process.env.MCP_PORT ? Number(process.env.MCP_PORT) : 4568;
 // Helpers
 // ---------------------------------------------------------------------------
 
-function respondJson(
-  res: http.ServerResponse,
-  status: number,
-  body: unknown,
-): void {
+function respondJson(res: http.ServerResponse, status: number, body: unknown): void {
   const payload = JSON.stringify(body);
   res.writeHead(status, {
     'Content-Type': 'application/json',

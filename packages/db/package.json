@@ -61,7 +61,8 @@
     "codegen:write": "kysely-codegen --out-file ./src/types/database.ts",
     "goose:up": "goose -dir ./migrations postgres \"$DATABASE_URL\" up",
     "goose:down": "goose -dir ./migrations postgres \"$DATABASE_URL\" down",
-    "goose:status": "goose -dir ./migrations postgres \"$DATABASE_URL\" status"
+    "goose:status": "goose -dir ./migrations postgres \"$DATABASE_URL\" status",
+    "goose:reset": "goose -dir ./migrations postgres \"$DATABASE_URL\" down-to 0"
   },
   "dependencies": {
     "@hominem/utils": "workspace:*",

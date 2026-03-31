@@ -1,13 +1,12 @@
 SHELL := /bin/bash
 
-.PHONY: help build typecheck codegen goose-up goose-down goose-status goose-v1-up goose-v1-down goose-v1-status
+.PHONY: help build typecheck codegen goose-up goose-down goose-status goose-reset
 
 help:
 	@echo ""
 	@echo "Database:"
 	@echo "  make build | typecheck | codegen"
-	@echo "  make goose-up | goose-down | goose-status"
-	@echo "  make goose-v1-up | goose-v1-down | goose-v1-status"
+	@echo "  make goose-up | goose-down | goose-status | goose-reset"
 
 build:
 	bun run build
@@ -27,11 +26,5 @@ goose-down:
 goose-status:
 	bun run goose:status
 
-goose-v1-up:
-	bun run goose:v1:up
-
-goose-v1-down:
-	bun run goose:v1:down
-
-goose-v1-status:
-	bun run goose:v1:status
+goose-reset:
+	bun run goose:reset

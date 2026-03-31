@@ -180,7 +180,10 @@ export const MCP_TOOLS: McpTool[] = [
 // Tool dispatcher
 // ---------------------------------------------------------------------------
 
-export async function callTool(name: string, args: Record<string, unknown>): Promise<McpCallToolResult> {
+export async function callTool(
+  name: string,
+  args: Record<string, unknown>,
+): Promise<McpCallToolResult> {
   switch (name) {
     case 'ping':
       return toolResult({ ok: true, timestamp: Date.now() });
@@ -200,8 +203,7 @@ export async function callTool(name: string, args: Record<string, unknown>): Pro
 
     case 'offline_backoff_preview': {
       const raw = args.attempts;
-      const attempts =
-        typeof raw === 'number' ? Math.min(Math.max(1, Math.floor(raw)), 10) : 5;
+      const attempts = typeof raw === 'number' ? Math.min(Math.max(1, Math.floor(raw)), 10) : 5;
       const schedule = Array.from({ length: attempts }, (_, i) => ({
         attempt: i + 1,
         queryDelayMs: computeBackoffMs(i, OFFLINE_FIRST_CONFIG.queryRetryMaxMs),

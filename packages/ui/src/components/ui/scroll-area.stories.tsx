@@ -20,9 +20,7 @@ export const Default: Story = {
         <h4 className="mb-4 text-sm font-medium leading-none">Tags</h4>
         {tags.map((tag) => (
           <div key={tag}>
-            <div className="text-sm">
-              {tag}
-            </div>
+            <div className="text-sm">{tag}</div>
             <Separator className="my-2" />
           </div>
         ))}

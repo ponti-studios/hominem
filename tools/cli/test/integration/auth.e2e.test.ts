@@ -1,10 +1,9 @@
+import { settings as oclifSettings } from '@oclif/core';
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
-
-import { settings as oclifSettings } from '@oclif/core';
 
 process.env.HOMINEM_DISABLE_KEYTAR = '1';
 

@@ -1,8 +1,7 @@
-import fs from 'node:fs/promises';
-import { URL } from 'node:url';
-
 import chalk from 'chalk';
 import { consola } from 'consola';
+import fs from 'node:fs/promises';
+import { URL } from 'node:url';
 import open from 'open';
 import ora from 'ora';
 

@@ -18,7 +18,7 @@ initialize({
     }
 
     print.warning();
-  }
+  },
 });
 
 const preview: Preview = {
