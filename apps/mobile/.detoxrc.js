@@ -16,7 +16,7 @@ module.exports = {
     'ios.e2e': {
       type: 'ios.app',
       binaryPath: 'ios/build/Build/Products/Release-iphonesimulator/hakumie2e.app',
-      build: `bash scripts/run-variant.sh e2e xcodebuild -workspace ios/hakumie2e.xcworkspace -scheme hakumie2e -configuration Release -sdk iphonesimulator -destination 'platform=iOS Simulator,name=${SIMULATOR_DEVICE}' -derivedDataPath ios/build`
+      build: `bash scripts/with-variant.sh e2e xcodebuild -workspace ios/hakumie2e.xcworkspace -scheme hakumie2e -configuration Release -sdk iphonesimulator -destination 'platform=iOS Simulator,name=${SIMULATOR_DEVICE}' -derivedDataPath ios/build`
     }
   },
   devices: {

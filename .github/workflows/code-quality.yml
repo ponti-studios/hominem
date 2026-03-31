@@ -305,11 +305,11 @@ jobs:
             - name: 📐 Mobile typecheck
               run: make mobile.typecheck
             - name: 🛠️ Verify mobile release tooling pins
-              run: make mobile.check-tooling
+              run: make mobile.check.tool-pins
             - name: 🧾 Verify mobile EAS profile contract
-              run: make mobile.check-profiles
+              run: make mobile.check.eas-profiles
             - name: 📱 Verify mobile config
-              run: make mobile.check-config
+              run: make mobile.check.expo-config
               env:
                   EXPO_PUBLIC_API_BASE_URL: "http://localhost:4040"
                   EXPO_PUBLIC_R2_DOMAIN: "test-domain"

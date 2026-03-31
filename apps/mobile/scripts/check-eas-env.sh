@@ -2,8 +2,11 @@
 set -euo pipefail
 source "$(dirname "$0")/_lib.sh"
 
+# Verify release-only EAS environment variables.
+# Run this inside eas env:exec so local shells do not masquerade as release env.
+
 if [[ $# -ne 1 ]]; then
-  fail "usage: check-release-env.sh <preview|production>"
+  fail "usage: check-eas-env.sh <preview|production>"
   exit 1
 fi
 

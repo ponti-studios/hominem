@@ -2,6 +2,9 @@
 set -euo pipefail
 source "$(dirname "$0")/_lib.sh"
 
+# Verify the EAS profile contract for mobile release workflows.
+# These checks catch profile drift before build time.
+
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 EAS_FILE="${ROOT_DIR}/apps/mobile/eas.json"
 
@@ -15,12 +18,6 @@ const fs = require('node:fs')
 const path = process.argv[1]
 const raw = fs.readFileSync(path, 'utf8')
 const cfg = JSON.parse(raw)
-if (!cfg.cli?.version) {
-  throw new Error('cli.version must be defined so local and CI EAS contracts stay pinned')
-}
-if (cfg.cli.version !== '>= 10.0.3') {
-  throw new Error('cli.version must stay at >= 10.0.3 so local release commands can use newer compatible EAS CLIs')
-}
 const requiredProfiles = ['development', 'e2e', 'preview', 'production']
 for (const profile of requiredProfiles) {
   if (!cfg.build || !cfg.build[profile]) {

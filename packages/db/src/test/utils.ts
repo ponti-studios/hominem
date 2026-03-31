@@ -1,118 +1,103 @@
-import { randomUUID } from 'node:crypto'
+import { randomUUID } from 'node:crypto';
 
 // Kysely-compatible test utilities
 
 export const isIntegrationDatabaseAvailable = async (): Promise<boolean> => {
   try {
-    const { pool } = await import('../db')
-    const result = await pool.query('SELECT 1')
-    return result.rowCount === 1
+    const { pool } = await import('../db');
+    const result = await pool.query('SELECT 1');
+    return result.rowCount === 1;
   } catch {
-    return false
+    return false;
   }
-}
+};
 
 export const createDeterministicIdFactory = (prefix: string) => {
-  void prefix
-  let counter = 0
+  void prefix;
+  let counter = 0;
   return () => {
-    counter += 1
-    return randomUUID()
-  }
-}
+    counter += 1;
+    return randomUUID();
+  };
+};
 
 // Helper to extract rows from query results (handles both Kysely and raw results)
 export const extractRows = <T>(result: unknown): T[] => {
   if (Array.isArray(result)) {
-    return result as T[]
+    return result as T[];
   }
   if (result && typeof result === 'object' && 'rows' in result) {
-    const rows = (result as { rows?: unknown }).rows
+    const rows = (result as { rows?: unknown }).rows;
     if (Array.isArray(rows)) {
-      return rows as T[]
+      return rows as T[];
     }
   }
-  return []
-}
+  return [];
+};
 
 // Check if a table exists by name
 export const tableExists = async (tableName: string): Promise<boolean> => {
   try {
-    const { pool } = await import('../db')
-    const result = await pool.query(
-      `select to_regclass($1) as relation_name`,
-      [tableName.includes('.') ? tableName : `public.${tableName}`]
-    )
-    const rows = result.rows as Array<{ relation_name: string | null }> | undefined
-    return Boolean(rows?.[0]?.relation_name)
+    const { pool } = await import('../db');
+    const result = await pool.query(`select to_regclass($1) as relation_name`, [
+      tableName.includes('.') ? tableName : `public.${tableName}`,
+    ]);
+    const rows = result.rows as Array<{ relation_name: string | null }> | undefined;
+    return Boolean(rows?.[0]?.relation_name);
   } catch {
-    return false
+    return false;
   }
-}
+};
 
 // Create users with specific IDs (for tests that need deterministic IDs)
 export const ensureIntegrationUsers = async (
-  users: Array<{ id: string; name: string; email?: string }>
+  users: Array<{ id: string; name: string; email?: string }>,
 ): Promise<{ ownerId: string; otherUserId: string }> => {
-  const { db } = await import('../db')
-  
-  for (const user of users) {
-    await db.insertInto('auth.users').values({
-      id: user.id,
-      email: user.email ?? `${user.id}@test.com`,
-      name: user.name,
-    }).execute()
-  }
-  
-  return { ownerId: users[0]?.id || '', otherUserId: users[1]?.id || '' }
-}
+  const { db } = await import('../db');
 
-export const createTestUser = async (overrides?: { id?: string; email?: string; name?: string }): Promise<string> => {
-  const { db } = await import('../db')
-  const id = overrides?.id || randomUUID()
-  
-    await db.insertInto('auth.users').values({
+  for (const user of users) {
+    await db
+      .insertInto('user')
+      .values({
+        id: user.id,
+        email: user.email ?? `${user.id}@test.com`,
+        name: user.name,
+      })
+      .execute();
+  }
+
+  return { ownerId: users[0]?.id || '', otherUserId: users[1]?.id || '' };
+};
+
+export const createTestUser = async (overrides?: {
+  id?: string;
+  email?: string;
+  name?: string;
+}): Promise<string> => {
+  const { db } = await import('../db');
+  const id = overrides?.id || randomUUID();
+
+  await db
+    .insertInto('user')
+    .values({
       id,
       email: overrides?.email || `${id}@test.com`,
       name: overrides?.name || 'Test User',
-    }).execute()
-  
-  return id
-}
+    })
+    .execute();
+
+  return id;
+};
 
 export const cleanupTestData = async (userIds: string[]): Promise<void> => {
-  if (userIds.length === 0) return
-  
-  const { db } = await import('../db')
-  
-  await db.deleteFrom('app.notes')
-    .where('owner_userid', 'in', userIds)
-    .execute()
-  
-  await db.deleteFrom('auth.users')
-    .where('id', 'in', userIds)
-    .execute()
-}
+  if (userIds.length === 0) return;
 
-export const setUserCleanup = (cleanup: (userId: string) => Promise<void>): void => {
-  void cleanup
-  // No-op for Kysely
-}
+  const { db } = await import('../db');
 
-// Mock utilities for unit tests
-export const createDbMocks = () => {
-  return {
-    db: {},
-    client: {},
-    mockQueryResult: <T>(data: T[] | T | null): Promise<T[] | T | null> => Promise.resolve(data),
-    mockMutationResult: (count = 1): Promise<{ rowCount: number; rows: unknown[] }> => 
-      Promise.resolve({ rowCount: count, rows: [] }),
-    tableQueries: {},
-    mutations: {},
-  }
-}
+  await db.deleteFrom('app.notes').where('owner_userid', 'in', userIds).execute();
 
-export const globalDbMocks = createDbMocks()
+  await db.deleteFrom('user').where('id', 'in', userIds).execute();
+};
 
 export const createTestData = {
   user: (overrides?: Record<string, unknown>) => ({
@@ -123,30 +108,30 @@ export const createTestData = {
     updatedAt: new Date(),
     ...overrides,
   }),
-}
+};
 
 export const mockDbOperations = {
   mockFindSuccess: <T>(table: string, method: string, data: T): void => {
-    void table
-    void method
-    void data
+    void table;
+    void method;
+    void data;
   },
   mockFindNotFound: (table: string, method: string): void => {
-    void table
-    void method
+    void table;
+    void method;
   },
   mockDbError: (table: string, method: string, error?: Error): void => {
-    void table
-    void method
-    void error
+    void table;
+    void method;
+    void error;
   },
   mockInsertSuccess: <T>(data: T): void => {
-    void data
+    void data;
   },
   mockUpdateSuccess: <T>(data: T): void => {
-    void data
+    void data;
   },
   mockDeleteSuccess: (count?: number): void => {
-    void count
+    void count;
   },
-}
+};

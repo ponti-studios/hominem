@@ -2,6 +2,9 @@
 set -euo pipefail
 source "$(dirname "$0")/_lib.sh"
 
+# Verify the resolved Expo config matches the variant contract.
+# This checks the final config Expo will use, not just source declarations.
+
 CONFIG_JSON="$(bash -lc 'bunx expo config --json --type public')"
 
 export CONFIG_JSON

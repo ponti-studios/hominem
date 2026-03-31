@@ -2,6 +2,9 @@
 set -euo pipefail
 source "$(dirname "$0")/_lib.sh"
 
+# Copy the right icon set for the current variant.
+# This runs before iOS prebuild so the generated project gets the correct assets.
+
 VARIANT="${1:?usage: setup-icons.sh <dev|e2e|preview|production>}"
 SCRIPTS_DIR="$(dirname "$0")"
 ASSETS_DIR="$(dirname "$SCRIPTS_DIR")/assets"
@@ -20,7 +23,7 @@ case "$VARIANT" in
     LOGO_FILE="logo.hakumi.png"
     ;;
   *)
-    error "Unknown variant: $VARIANT"
+    fail "Unknown variant: $VARIANT"
     exit 1
     ;;
 esac

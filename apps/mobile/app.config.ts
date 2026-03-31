@@ -182,6 +182,7 @@ export default ({ config }: ConfigContext) => {
       output: 'static',
       favicon: './assets/favicon.png',
     },
+    platforms: ['ios', 'android', 'web'],
     plugins,
     experiments: {
       typedRoutes: true,

@@ -49,9 +49,6 @@ jobs:
                   xcodebuild -version
                   xcrun simctl list devices available | cat
 
-            - name: Run preview RC gate
-              run: make mobile.rc
-
             - name: Run preview RC smoke gate
               run: make mobile.rc.smoke
 

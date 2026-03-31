@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Shared output helpers — sourced by other scripts.
-# Colors are automatically disabled when stdout is not a TTY (e.g. CI logs).
+# Shared output helpers for mobile scripts.
+# Keep terminal output readable in both local shells and CI logs.
 
 if [[ -t 1 ]]; then
   BOLD='\033[1m'
@@ -15,8 +15,8 @@ else
 fi
 
 header() { printf "\n${BOLD}%s${RESET}\n" "$*"; }
-step()   { printf "  ${DIM}▸${RESET} %s\n" "$*"; }
-ok()     { printf "  ${GREEN}✓${RESET}  %s\n" "$*"; }
-fail()   { printf "  ${RED}✗${RESET}  %s\n" "$*" >&2; }
-warn()   { printf "  ${YELLOW}⚠${RESET}  %s\n" "$*"; }
-info()   { printf "  ${DIM}%s${RESET}\n" "$*"; }
+step() { printf "  ${DIM}▸${RESET} %s\n" "$*"; }
+ok() { printf "  ${GREEN}✓${RESET}  %s\n" "$*"; }
+fail() { printf "  ${RED}✗${RESET}  %s\n" "$*" >&2; }
+warn() { printf "  ${YELLOW}⚠${RESET}  %s\n" "$*"; }
+info() { printf "  ${DIM}%s${RESET}\n" "$*"; }

@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Run a command with a mobile variant loaded.
+# Development variants source local env files; release variants are blocked here.
+
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 MOBILE_DIR="${ROOT_DIR}/apps/mobile"
 RELEASE_ENV_POLICY="${MOBILE_DIR}/config/release-env-policy.js"
 
 if [[ $# -lt 2 ]]; then
-  echo "usage: run-variant.sh <variant> <command> [args...]" >&2
+  echo "usage: with-variant.sh <variant> <command> [args...]" >&2
   exit 1
 fi
 

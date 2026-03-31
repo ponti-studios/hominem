@@ -24,10 +24,13 @@ TEST_DATABASE_URL ?= postgres://postgres:postgres@localhost:4433/hominem-test
 .PHONY: db-reset-dev db-reset-test db-verify-fresh
 .PHONY: mobile.dev mobile.lint mobile.format mobile.test mobile.typecheck
 .PHONY: mobile.e2e.build mobile.e2e.smoke mobile.e2e.smoke.ci
-.PHONY: mobile.check-tooling mobile.check-config mobile.check-config.preview mobile.check-config.production mobile.check-profiles
+.PHONY: mobile.check.tool-pins mobile.check.expo-config mobile.check.expo-config.preview mobile.check.expo-config.production mobile.check.eas-profiles
+.PHONY: mobile.check.eas-env.preview mobile.check.eas-env.production
 .PHONY: mobile.rc mobile.rc.smoke mobile.release
-.PHONY: mobile.ota.verify.preview mobile.ota.verify.production mobile.ota.publish.preview
+.PHONY: mobile.ota.publish.preview
 .PHONY: mobile.release.build.production mobile.release.submit.production
+
+MOBILE_RELEASE_ENV := EXPO_NO_DOTENV=1 EXPO_PUBLIC_E2E_TESTING=false
 
 help:
 	@echo ""
@@ -37,9 +40,9 @@ help:
 	@echo "Mobile:"
 	@echo "  make mobile.dev | mobile.lint | mobile.format | mobile.test | mobile.typecheck"
 	@echo "  make mobile.e2e.build | mobile.e2e.smoke | mobile.e2e.smoke.ci"
-	@echo "  make mobile.check-tooling | mobile.check-config | mobile.check-config.preview | mobile.check-config.production"
-	@echo "  make mobile.check-profiles | mobile.rc | mobile.rc.smoke | mobile.release"
-	@echo "  make mobile.ota.verify.preview | mobile.ota.verify.production | mobile.ota.publish.preview"
+	@echo "  make mobile.check.tool-pins | mobile.check.expo-config | mobile.check.expo-config.preview | mobile.check.expo-config.production"
+	@echo "  make mobile.check.eas-profiles | mobile.check.eas-env.preview | mobile.check.eas-env.production"
+	@echo "  make mobile.rc | mobile.rc.smoke | mobile.release | mobile.ota.publish.preview"
 	@echo "  make mobile.release.build.production | mobile.release.submit.production"
 	@echo ""
 	@echo "Infra:"
@@ -91,8 +94,9 @@ mobile.test:
 mobile.typecheck:
 	$(MOBILE_BUN) typecheck
 
+# Expo and Detox lanes.
 mobile.e2e.build:
-	$(MOBILE_BUN) test:e2e:build
+	cd $(MOBILE_DIR) && bash scripts/prebuild-ios.sh e2e && detox build -c ios.sim.e2e
 
 mobile.e2e.smoke:
 	$(MOBILE_BUN) test:e2e:smoke
@@ -100,40 +104,42 @@ mobile.e2e.smoke:
 mobile.e2e.smoke.ci:
 	$(MOBILE_BUN) test:e2e:smoke:ci
 
-mobile.check-tooling:
-	bash "$(MOBILE_DIR)/scripts/check-release-tooling.sh"
+# Release-contract checks.
+mobile.check.tool-pins:
+	bash "$(MOBILE_DIR)/scripts/check-tool-pins.sh"
 
-mobile.check-config:
-	$(MOBILE_BUN) check:expo-config
+mobile.check.expo-config:
+	cd $(MOBILE_DIR) && APP_VARIANT=dev bash scripts/check-expo-config.sh
 
-mobile.check-config.preview:
-	cd $(MOBILE_DIR) && eas env:exec preview "APP_VARIANT=preview EXPO_NO_DOTENV=1 EXPO_PUBLIC_E2E_TESTING=false bash scripts/check-expo-config.sh"
+mobile.check.expo-config.preview:
+	cd $(MOBILE_DIR) && eas env:exec preview "APP_VARIANT=preview $(MOBILE_RELEASE_ENV) bash scripts/check-expo-config.sh"
 
-mobile.check-config.production:
-	cd $(MOBILE_DIR) && eas env:exec production "APP_VARIANT=production EXPO_NO_DOTENV=1 EXPO_PUBLIC_E2E_TESTING=false bash scripts/check-expo-config.sh"
+mobile.check.expo-config.production:
+	cd $(MOBILE_DIR) && eas env:exec production "APP_VARIANT=production $(MOBILE_RELEASE_ENV) bash scripts/check-expo-config.sh"
 
-mobile.check-profiles:
-	$(MOBILE_BUN) verify:eas-profiles
+mobile.check.eas-profiles:
+	bash "$(MOBILE_DIR)/scripts/check-eas-profiles.sh"
 
-mobile.ota.verify.preview:
-	cd $(MOBILE_DIR) && eas env:exec preview "bash scripts/check-release-env.sh preview"
+mobile.check.eas-env.preview:
+	cd $(MOBILE_DIR) && eas env:exec preview "bash scripts/check-eas-env.sh preview"
 
-mobile.ota.verify.production:
-	cd $(MOBILE_DIR) && eas env:exec production "bash scripts/check-release-env.sh production"
+mobile.check.eas-env.production:
+	cd $(MOBILE_DIR) && eas env:exec production "bash scripts/check-eas-env.sh production"
 
-mobile.rc: mobile.lint mobile.typecheck mobile.test mobile.check-tooling mobile.check-profiles mobile.check-config.preview mobile.ota.verify.preview
+# Higher-level gates used by CI and release workflows.
+mobile.rc: mobile.lint mobile.typecheck mobile.test mobile.check.tool-pins mobile.check.eas-profiles mobile.check.expo-config.preview mobile.check.eas-env.preview
 
 mobile.rc.smoke: mobile.rc mobile.e2e.build mobile.e2e.smoke.ci
 
-mobile.release: mobile.lint mobile.typecheck mobile.test mobile.check-tooling mobile.check-profiles mobile.check-config.production mobile.ota.verify.production
+mobile.release: mobile.lint mobile.typecheck mobile.test mobile.check.tool-pins mobile.check.eas-profiles mobile.check.expo-config.production mobile.check.eas-env.production
 
 mobile.ota.publish.preview: mobile.rc
-	cd $(MOBILE_DIR) && APP_VARIANT=preview EXPO_NO_DOTENV=1 EXPO_PUBLIC_E2E_TESTING=false eas update --auto --platform ios --branch preview --clear-cache --non-interactive --environment preview
+	cd $(MOBILE_DIR) && APP_VARIANT=preview $(MOBILE_RELEASE_ENV) eas update --auto --platform ios --branch preview --clear-cache --non-interactive --environment preview
 
 mobile.release.build.production: mobile.release
-	cd $(MOBILE_DIR) && APP_VARIANT=production EXPO_NO_DOTENV=1 EXPO_PUBLIC_E2E_TESTING=false eas build --profile production --platform ios --non-interactive
+	cd $(MOBILE_DIR) && APP_VARIANT=production $(MOBILE_RELEASE_ENV) eas build --profile production --platform ios --non-interactive
 
-mobile.release.submit.production: mobile.release.build.production
+mobile.release.submit.production:
 	cd $(MOBILE_DIR) && eas submit --profile production --platform ios --non-interactive --latest
 
 infra-up:

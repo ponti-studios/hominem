@@ -35,23 +35,23 @@ Use [apps/mobile/.env.example](.env.example) as the local starting point. Releas
 
 ## Command Surface
 
-Prefer repo-root Make targets for mobile platform work. The app-level Makefile mirrors the same commands when you are already in `apps/mobile`.
+Prefer repo-root Make targets for mobile platform work.
 
-| Goal                                 | Root command                            | Wrapper in `apps/mobile`         |
-| ------------------------------------ | --------------------------------------- | -------------------------------- |
-| Start dev client                     | `make mobile.dev`                       | `make dev`                       |
-| Lint                                 | `make mobile.lint`                      | `make lint`                      |
-| Typecheck                            | `make mobile.typecheck`                 | `make typecheck`                 |
-| Auth gate                            | `make mobile.test`                      | `make test`                      |
-| Build iOS simulator binary           | `make mobile.e2e.build`                 | `make e2e-build`                 |
-| Run Detox smoke                      | `make mobile.e2e.smoke`                 | `make e2e-smoke`                 |
-| Verify local Expo config             | `make mobile.check-config`              | `make check-config`              |
-| Release candidate gate               | `make mobile.rc`                        | `make rc`                        |
-| Release candidate gate + Detox smoke | `make mobile.rc.smoke`                  | `make rc-smoke`                  |
-| Publish preview OTA                  | `make mobile.ota.publish.preview`       | `make ota-publish-preview`       |
-| Production release gate              | `make mobile.release`                   | `make release`                   |
-| Build production binary              | `make mobile.release.build.production`  | `make release-build-production`  |
-| Submit latest production build       | `make mobile.release.submit.production` | `make release-submit-production` |
+| Goal                                 | Root command                           |
+| ------------------------------------ | -------------------------------------- |
+| Start dev client                     | `make mobile.dev`                      |
+| Lint                                 | `make mobile.lint`                     |
+| Typecheck                            | `make mobile.typecheck`                |
+| Auth gate                            | `make mobile.test`                     |
+| Build iOS simulator binary           | `make mobile.e2e.build`                |
+| Run Detox smoke                      | `make mobile.e2e.smoke`                |
+| Verify local Expo config             | `make mobile.check.expo-config`        |
+| Release candidate gate               | `make mobile.rc`                       |
+| Release candidate gate + Detox smoke | `make mobile.rc.smoke`                 |
+| Publish preview OTA                  | `make mobile.ota.publish.preview`      |
+| Production release gate              | `make mobile.release`                  |
+| Build production binary              | `make mobile.release.build.production` |
+| Submit latest production build       | `make mobile.release.submit.production` |
 
 ## Development
 

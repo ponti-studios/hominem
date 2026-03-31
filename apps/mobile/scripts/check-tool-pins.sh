@@ -2,6 +2,9 @@
 set -euo pipefail
 source "$(dirname "$0")/_lib.sh"
 
+# Verify Bun and EAS pins across repo files.
+# This keeps local dev, CI, and workflows on the same toolchain.
+
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 
 node -e "

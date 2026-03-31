@@ -58,10 +58,16 @@ function getPodfileUseExpoModulesLine(rawVariant = process.env.APP_VARIANT ?? 'd
   return `  use_expo_modules!(exclude: ${JSON.stringify(DEV_CLIENT_EXCLUDED_MODULES)})`
 }
 
+function getPodfileProjectLine(rawVariant = process.env.APP_VARIANT ?? 'dev') {
+  const variantConfig = getAppVariantConfig(rawVariant)
+  return `project '${variantConfig.displayName.replace(/\s+/g, '')}.xcodeproj'`
+}
+
 module.exports = {
   APP_VARIANTS,
   DEV_CLIENT_EXCLUDED_MODULES,
   getAppVariant,
   getAppVariantConfig,
+  getPodfileProjectLine,
   getPodfileUseExpoModulesLine,
 }
