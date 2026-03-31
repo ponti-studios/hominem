@@ -2,20 +2,20 @@
  * Browser OpenTelemetry SDK initialization
  */
 
-import { WebTracerProvider, BatchSpanProcessor } from '@opentelemetry/sdk-trace-web'
-import { MeterProvider, PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics'
-import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
-import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http'
-import { propagation, trace, metrics, context as otelContext, type Span } from '@opentelemetry/api'
-import { W3CTraceContextPropagator, W3CBaggagePropagator, CompositePropagator } from '@opentelemetry/core'
-import { Resource } from '@opentelemetry/resources'
+import { metrics, context as otelContext, propagation, trace, type Span } from '@opentelemetry/api';
+import { CompositePropagator, W3CBaggagePropagator, W3CTraceContextPropagator } from '@opentelemetry/core';
+import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
+import { Resource } from '@opentelemetry/resources';
+import { MeterProvider, PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
+import { BatchSpanProcessor, WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import {
-  SEMRESATTRS_SERVICE_NAME,
-  SEMRESATTRS_SERVICE_VERSION,
-  SEMRESATTRS_SERVICE_NAMESPACE,
-  SEMRESATTRS_DEPLOYMENT_ENVIRONMENT,
-} from '@opentelemetry/semantic-conventions'
-import type { TelemetryConfig } from '../shared/index.js'
+    SEMRESATTRS_DEPLOYMENT_ENVIRONMENT,
+    SEMRESATTRS_SERVICE_NAME,
+    SEMRESATTRS_SERVICE_NAMESPACE,
+    SEMRESATTRS_SERVICE_VERSION,
+} from '@opentelemetry/semantic-conventions';
+import type { TelemetryConfig } from '../shared/index.js';
 
 /**
  * Browser telemetry SDK instance
@@ -69,14 +69,16 @@ export function initTelemetry(explicitConfig?: Partial<TelemetryConfig>): Browse
   const metricExporter = new OTLPMetricExporter({
     url: `${otlpEndpoint}/v1/metrics`,
   })
+  const metricExportIntervalMillis = config.metricExportIntervalMillis ?? 30000
+  const metricExportTimeoutMillis = Math.min(30000, metricExportIntervalMillis)
 
   const meterProvider = new MeterProvider({
     resource,
     readers: [
       new PeriodicExportingMetricReader({
         exporter: metricExporter,
-        exportIntervalMillis: 30000,
-        exportTimeoutMillis: 30000,
+        exportIntervalMillis: metricExportIntervalMillis,
+        exportTimeoutMillis: metricExportTimeoutMillis,
       }),
     ],
   })
@@ -121,8 +123,23 @@ function getBrowserConfig(explicit?: Partial<TelemetryConfig>): TelemetryConfig 
     otlpEndpoint: explicit?.otlpEndpoint || env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://localhost:4318',
     otlpProtocol: 'http/protobuf', // Browser only supports HTTP
     samplingRatio: explicit?.samplingRatio || parseFloat(env.OTEL_TRACES_SAMPLER_ARG || '1.0'),
+    ...((explicit?.metricExportIntervalMillis ||
+      parseOptionalNumber(env.OTEL_METRIC_EXPORT_INTERVAL_MILLIS)) !== undefined
+      ? {
+          metricExportIntervalMillis:
+            explicit?.metricExportIntervalMillis ||
+            parseOptionalNumber(env.OTEL_METRIC_EXPORT_INTERVAL_MILLIS),
+        }
+      : {}),
     ...(explicit?.attributes !== undefined ? { attributes: explicit.attributes } : {}),
   }
+}
+
+function parseOptionalNumber(value?: string): number | undefined {
+  if (!value) return undefined
+
+  const parsed = Number.parseInt(value, 10)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined
 }
 
 /**

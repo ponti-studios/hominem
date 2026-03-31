@@ -50,13 +50,15 @@ OTEL_TRACES_SAMPLER_ARG=1.0
 
 ## Notes
 
-- `services/api` initializes telemetry at startup; `services/workers` is currently idle until background file-upload workers are added.
+- `services/api` initializes telemetry at startup and exposes a guarded local-only worker smoke route for observability validation.
+- `services/workers` runs an observability smoke worker so local queue traces can be validated without reviving removed product features.
 - `apps/web` already initializes browser telemetry in the root provider.
 - Mobile stays on the existing PostHog path for this phase.
 
 ## Local verification
 
-- Run `bash ./scripts/auth-e2e-flow.sh` to verify concrete API route spans appear in ClickHouse for the auth flow.
+- Run `bash ./scripts/auth-e2e-flow.sh` to verify concrete API route spans, correlated request logs, and API metrics appear in ClickHouse for the auth flow.
+- Run `bash ./scripts/worker-e2e-flow.sh` to verify API -> worker trace correlation and worker spans appear in ClickHouse.
 - Run `make obs-smoke` to verify the collector still ingests telemetry into ClickHouse.
 - In HyperDX at `http://localhost:8080`, inspect `Traces`, `Logs`, and `Metrics` for `hominem-api` and any future worker service you enable locally.
 - Request logs now emit OTEL log records with `trace_id` and `span_id`, so correlated log inspection should work in the local stack.

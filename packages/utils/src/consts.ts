@@ -37,6 +37,14 @@ export const QUEUE_NAMES = {
    * - services/workers (processing jobs)
    */
   PLACE_PHOTO_ENRICH: 'place-photo-enrich',
+
+  /**
+   * Queue for observability smoke jobs
+   * Used by:
+   * - services/api observability smoke route (adding jobs)
+   * - services/workers observability smoke worker (processing jobs)
+   */
+  OBSERVABILITY_SMOKE: 'observability-smoke',
 } as const;
 
 /**

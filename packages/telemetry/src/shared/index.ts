@@ -2,15 +2,15 @@
  * Shared telemetry utilities and configuration
  */
 
-import { Resource } from '@opentelemetry/resources'
+import { Resource } from '@opentelemetry/resources';
 import {
-  SEMRESATTRS_SERVICE_NAME,
-  SEMRESATTRS_SERVICE_VERSION,
-  SEMRESATTRS_SERVICE_NAMESPACE,
-  SEMRESATTRS_DEPLOYMENT_ENVIRONMENT,
-  SEMRESATTRS_HOST_NAME,
-  SEMRESATTRS_PROCESS_PID,
-} from '@opentelemetry/semantic-conventions'
+    SEMRESATTRS_DEPLOYMENT_ENVIRONMENT,
+    SEMRESATTRS_HOST_NAME,
+    SEMRESATTRS_PROCESS_PID,
+    SEMRESATTRS_SERVICE_NAME,
+    SEMRESATTRS_SERVICE_NAMESPACE,
+    SEMRESATTRS_SERVICE_VERSION,
+} from '@opentelemetry/semantic-conventions';
 
 /**
  * Telemetry configuration options
@@ -30,6 +30,8 @@ export interface TelemetryConfig {
   otlpProtocol?: string
   /** Sampling ratio (0.0 to 1.0) */
   samplingRatio?: number
+  /** Metric export interval in milliseconds */
+  metricExportIntervalMillis?: number | undefined
   /** Additional resource attributes */
   attributes?: Record<string, string>
 }
@@ -62,8 +64,23 @@ export function getTelemetryConfig(explicit?: Partial<TelemetryConfig>): Telemet
     otlpProtocol: explicit?.otlpProtocol || process.env.OTEL_EXPORTER_OTLP_PROTOCOL || 'http/protobuf',
     samplingRatio: explicit?.samplingRatio || parseFloat(process.env.OTEL_TRACES_SAMPLER_ARG || '1.0'),
     attributes: parseAttributes(process.env.OTEL_RESOURCE_ATTRIBUTES),
+    ...((explicit?.metricExportIntervalMillis ||
+      parseOptionalNumber(process.env.OTEL_METRIC_EXPORT_INTERVAL_MILLIS)) !== undefined
+      ? {
+          metricExportIntervalMillis:
+            explicit?.metricExportIntervalMillis ||
+            parseOptionalNumber(process.env.OTEL_METRIC_EXPORT_INTERVAL_MILLIS),
+        }
+      : {}),
     ...explicit?.attributes,
   }
+}
+
+function parseOptionalNumber(value?: string): number | undefined {
+  if (!value) return undefined
+
+  const parsed = Number.parseInt(value, 10)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined
 }
 
 /**

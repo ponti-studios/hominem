@@ -3,44 +3,44 @@
  */
 
 import {
-  NodeTracerProvider,
-  BatchSpanProcessor,
-} from "@opentelemetry/sdk-trace-node";
-import type { SpanProcessor } from "@opentelemetry/sdk-trace-base";
-import {
-  MeterProvider,
-  PeriodicExportingMetricReader,
-} from "@opentelemetry/sdk-metrics";
-import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
-import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-http";
-import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
-import {
-  LoggerProvider,
-  BatchLogRecordProcessor,
-} from "@opentelemetry/sdk-logs";
-import { logs } from "@opentelemetry/api-logs";
-import {
-  context,
-  propagation,
-  trace,
-  metrics,
-  type Span,
+    context,
+    metrics,
+    propagation,
+    trace,
+    type Span,
 } from "@opentelemetry/api";
-import { CompressionAlgorithm } from "@opentelemetry/otlp-exporter-base";
+import { logs } from "@opentelemetry/api-logs";
 import { AsyncHooksContextManager } from "@opentelemetry/context-async-hooks";
 import {
-  CompositePropagator,
-  W3CTraceContextPropagator,
-  W3CBaggagePropagator,
+    CompositePropagator,
+    W3CBaggagePropagator,
+    W3CTraceContextPropagator,
 } from "@opentelemetry/core";
-import { B3Propagator, B3InjectEncoding } from "@opentelemetry/propagator-b3";
-import { JaegerPropagator } from "@opentelemetry/propagator-jaeger";
+import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
+import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-http";
+import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
+import { registerInstrumentations } from "@opentelemetry/instrumentation";
 import { HttpInstrumentation } from "@opentelemetry/instrumentation-http";
 import { PgInstrumentation } from "@opentelemetry/instrumentation-pg";
 import { RedisInstrumentation } from "@opentelemetry/instrumentation-redis";
-import { registerInstrumentations } from "@opentelemetry/instrumentation";
+import { CompressionAlgorithm } from "@opentelemetry/otlp-exporter-base";
+import { B3InjectEncoding, B3Propagator } from "@opentelemetry/propagator-b3";
+import { JaegerPropagator } from "@opentelemetry/propagator-jaeger";
+import {
+    BatchLogRecordProcessor,
+    LoggerProvider,
+} from "@opentelemetry/sdk-logs";
+import {
+    MeterProvider,
+    PeriodicExportingMetricReader,
+} from "@opentelemetry/sdk-metrics";
+import type { SpanProcessor } from "@opentelemetry/sdk-trace-base";
+import {
+    BatchSpanProcessor,
+    NodeTracerProvider,
+} from "@opentelemetry/sdk-trace-node";
 import type { TelemetryConfig } from "../shared/index.js";
-import { getTelemetryConfig, createResource } from "../shared/index.js";
+import { createResource, getTelemetryConfig } from "../shared/index.js";
 
 /**
  * Node telemetry SDK instance
@@ -118,14 +118,16 @@ export function initTelemetry(
     url: `${otlpEndpoint}/v1/metrics`,
     compression: CompressionAlgorithm.GZIP,
   });
+  const metricExportIntervalMillis = config.metricExportIntervalMillis ?? 60000;
+  const metricExportTimeoutMillis = Math.min(30000, metricExportIntervalMillis);
 
   const meterProvider = new MeterProvider({
     resource,
     readers: [
       new PeriodicExportingMetricReader({
         exporter: metricExporter,
-        exportIntervalMillis: 60000, // Export every 60s
-        exportTimeoutMillis: 30000, // Timeout after 30s
+        exportIntervalMillis: metricExportIntervalMillis,
+        exportTimeoutMillis: metricExportTimeoutMillis,
       }),
     ],
   });
@@ -220,7 +222,6 @@ export function initTelemetry(
  * Middleware for Hono framework to create spans for HTTP requests
  */
 export function createHonoTelemetryMiddleware() {
-  const { trace, context: otelContext } = require("@opentelemetry/api");
   const tracer = trace.getTracer("hominem-hono");
   const meter = metrics.getMeter("hominem-hono");
   const requestCounter = meter.createCounter("hominem_api_requests_total", {
@@ -250,6 +251,31 @@ export function createHonoTelemetryMiddleware() {
         return ctx.req.path;
       }
     })();
+    const activeContext = context.active();
+    const activeSpan = trace.getSpan(activeContext);
+    const carrier: Record<string, string> = {};
+
+    for (const headerName of [
+      'traceparent',
+      'baggage',
+      'x-b3-traceid',
+      'x-b3-spanid',
+      'x-b3-sampled',
+      'x-b3-flags',
+      'uber-trace-id',
+    ]) {
+      const value = ctx.req.header(headerName);
+      if (value) {
+        carrier[headerName] = value;
+      }
+    }
+
+    const parentContext =
+      Object.keys(carrier).length > 0
+        ? propagation.extract(activeContext, carrier)
+        : activeSpan
+          ? activeContext
+          : activeContext;
     const startedAt = performance.now();
 
     await tracer.startActiveSpan(
@@ -266,7 +292,7 @@ export function createHonoTelemetryMiddleware() {
           "user_agent.original": ctx.req.header("user-agent") || "unknown",
         },
       },
-      otelContext.active(),
+      parentContext,
       async (span: Span) => {
         try {
           await next();

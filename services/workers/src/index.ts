@@ -1,6 +1,8 @@
 import { initTelemetry } from '@hominem/telemetry/node';
 import { logger } from '@hominem/utils/logger';
 
+import { startObservabilitySmokeWorker, type WorkerRuntime } from './observability-smoke.worker';
+
 // Initialize OpenTelemetry telemetry for workers
 const telemetry = initTelemetry({
   serviceName: 'hominem-workers',
@@ -17,6 +19,15 @@ const telemetry = initTelemetry({
 
 import './env.ts';
 
+const workerRuntimes: WorkerRuntime[] = [];
+
+async function bootstrapWorkers() {
+  workerRuntimes.push(await startObservabilitySmokeWorker());
+  logger.info('workers_ready', { count: workerRuntimes.length });
+}
+
+await bootstrapWorkers();
+
 // Production-ready process management
 let isShuttingDown = false;
 const shutdownTimeout = 5000; // 5 seconds timeout for graceful shutdown
@@ -28,6 +39,8 @@ async function gracefulShutdown(exitCode = 0) {
 
   isShuttingDown = true;
   logger.info('Initiating graceful shutdown for main process...');
+
+  await Promise.allSettled(workerRuntimes.map((workerRuntime) => workerRuntime.close()));
 
   // Shutdown telemetry
   await telemetry.shutdown();
