@@ -3,8 +3,8 @@
 
 x-postgres-build: &postgres-build
   build:
-    context: ../..
-    dockerfile: docker/postgres/Dockerfile
+    context: ../../..
+    dockerfile: infra/docker/postgres/Dockerfile
   platform: linux/amd64
 
 x-postgres-defaults: &postgres-defaults
@@ -13,7 +13,7 @@ x-postgres-defaults: &postgres-defaults
 
 services:
   redis:
-    image: redis:latest
+    image: redis:8.6.2-alpine
     container_name: hominem-redis
     ports:
       - 6379:6379
@@ -47,7 +47,7 @@ services:
       - hominem
 
   # Test database - fresh on each run
-  test-db:
+  db-test:
     <<: *postgres-build
     container_name: hominem-test-postgres
     ports:
@@ -57,25 +57,6 @@ services:
       POSTGRES_DB: hominem-test
     volumes:
       - hominem-test-postgres:/var/lib/postgresql
-      - ./no-init:/docker-entrypoint-initdb.d:ro
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - hominem
-
-  grafana-db:
-    <<: *postgres-build
-    container_name: hominem-grafana-postgres
-    ports:
-      - "5433:5432"
-    environment:
-      <<: *postgres-defaults
-      POSTGRES_DB: grafana
-    volumes:
-      - hominem-grafana-postgres:/var/lib/postgresql
       - ./no-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]

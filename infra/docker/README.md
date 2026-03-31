@@ -1,4 +1,4 @@
-# Docker Local Infrastructure
+# Docker Development Environment
 
 ## Quick Start
 
@@ -7,57 +7,30 @@
 docker compose -f infra/docker/compose/base.yml -f infra/docker/compose/dev.yml up -d
 ```
 
-### Development + Observability
+### Observability
 ```bash
-docker compose -f infra/docker/compose/base.yml -f infra/docker/compose/observability.yml up -d
-```
-
-### Full Stack
-```bash
-docker compose -f infra/docker/compose/base.yml -f infra/docker/compose/dev.yml -f infra/docker/compose/observability.yml up -d
+make obs-up
 ```
 
 ### Test (ephemeral)
 ```bash
 docker compose -f infra/docker/compose/test.yml up -d
-docker compose -f infra/docker/compose/test.yml down -v
+docker compose -f infra/docker/compose/test.yml down -v  # Clean up
 ```
 
-## Documentation
+## Full Documentation
 
 - **[Canonical Docker Skill](../../.github/skills/docker-workflow/SKILL.md)** - Current Docker source of truth
 - **[Canonical Setup Skill](../../.github/skills/setup-workflow/SKILL.md)** - Repo-level local setup and daily workflow
-- **[Container Observability Assets](./observability/README.md)** - Provider-light observability images and configs
+- **[Canonical Deployment Skill](../../.github/skills/deployment-workflow/SKILL.md)** - Repo-level production and release guidance
 
 ## Services
 
 | Service | Port | Purpose |
 |---------|------|---------|
 | db | 5434 | Main PostgreSQL database |
-| test-db | 4433 | Ephemeral test database |
+| db-test | 4433 | Ephemeral test database |
 | redis | 6379 | Cache/sessions |
-| clickhouse | 8123 | Telemetry storage |
-| mongo | 27017 | HyperDX metadata store |
-| hyperdx | 8080 | Observability UI |
-| otel | 4318 | OTLP HTTP ingest |
-
-## Stack Layers
-
-- `base.yml` defines shared networks, volumes, and build anchors
-- `dev.yml` brings up stateful local dependencies: Redis and PostgreSQL
-- `observability.yml` adds ClickHouse, MongoDB, HyperDX, and the OTEL collector
-
-## App Runtime
-
-- `web`, `api`, `workers`, and `desktop` are not containerized in local development
-- Run application processes with Turbo from the repo root
-- Use Docker Compose here only for shared infrastructure and observability
-
-## Notes
-
-- Production deployment is intentionally undefined during the rebuild.
-- Keep Docker assets here limited to reusable local infrastructure and image inputs.
-- Use the root `Makefile` only for local infra orchestration while the new command surface settles.
 
 ## PostgreSQL 18
 
@@ -66,39 +39,6 @@ This setup uses PostgreSQL 18.3 with:
 - PostGIS 3.6.2
 - pgrouting 4.0.1
 
-### Important: Volume Mount Change
-
-PostgreSQL 18+ changed the volume mount location:
-
-**Old (PG 17):**
-```yaml
-volumes:
-  - db-data:/var/lib/postgresql/data
-```
-
-**New (PG 18):**
-```yaml
-volumes:
-  - db-data:/var/lib/postgresql
-```
-
-If upgrading from PG 17, you'll need to remove old volumes:
-```bash
-docker compose -f infra/docker/compose/base.yml -f infra/docker/compose/dev.yml down -v
-```
-
-## Extensions
-
-Extensions are created via migrations, not init scripts. To create them manually:
-
-```bash
-docker exec hominem-postgres psql -U postgres -c "
-CREATE EXTENSION IF NOT EXISTS vector;
-CREATE EXTENSION IF NOT EXISTS postgis;
-CREATE EXTENSION IF NOT EXISTS pgrouting;
--- etc.
-"
-```
 
 ## Environment Variables
 
@@ -125,14 +65,14 @@ docker exec -i hominem-postgres psql -U postgres hominem < backup.sql
 ### Container won't start
 Check logs:
 ```bash
-docker compose -f infra/docker/compose/base.yml -f infra/docker/compose/dev.yml logs db
+docker-compose logs db
 ```
 
 ### "Old PostgreSQL data" error
 PG18 requires mounting to `/var/lib/postgresql`, not `/var/lib/postgresql/data`. Remove old volumes:
 ```bash
-docker compose -f infra/docker/compose/base.yml -f infra/docker/compose/dev.yml down -v
+docker-compose down -v
 ```
 
 ### Extensions not available
-Create them manually or ensure migrations run on startup.
+- Ensure migrations run on startup.

@@ -17,6 +17,7 @@ GOOSE_MIGRATIONS_DIR ?= $(CURDIR)/packages/db/migrations
 .PHONY: help install dev build test lint format duplication typecheck-native
 .PHONY: infra-up infra-down infra-reset infra-status
 .PHONY: docker-up docker-up-observability docker-up-full docker-down
+.PHONY: obs-up obs-down obs-smoke obs-status
 .PHONY: db-up db-up-test db-down db-down-test db-status db-status-test
 .PHONY: db-reset-dev db-reset-test db-verify-fresh
 .PHONY: db-v1-verify-fresh db-v1-verify-relational db-v1-verify-registry db-v1-verify-rls
@@ -29,6 +30,7 @@ help:
 	@echo ""
 	@echo "Infra:"
 	@echo "  make infra-up | infra-down | infra-reset | infra-status"
+	@echo "  make obs-up | obs-smoke | obs-down"
 	@echo "  make docker-up-observability | docker-up-full | docker-down"
 	@echo ""
 	@echo "Database:"
@@ -62,7 +64,7 @@ lint:
 	bun run ./scripts/check-duplication.ts
 
 infra-up:
-	$(DOCKER_DEV) up -d redis db test-db
+	$(DOCKER_DEV) up -d redis db db-test
 
 infra-down:
 	$(DOCKER_DEV) down
@@ -77,7 +79,19 @@ infra-status:
 docker-up: infra-up
 
 docker-up-observability:
-	$(DOCKER_OBSERVABILITY) up -d
+	$(MAKE) obs-up
+
+obs-up:
+	$(DOCKER_OBSERVABILITY) up -d --wait
+
+obs-status:
+	$(DOCKER_OBSERVABILITY) ps
+
+obs-smoke:
+	bash ./scripts/observability-smoke.sh
+
+obs-down:
+	$(DOCKER_OBSERVABILITY) down -v
 
 docker-up-full:
 	$(DOCKER_FULL) up -d
