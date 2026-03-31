@@ -7,11 +7,8 @@ networks:
 
 volumes:
   hominem-redis:
-  hominem-postgres:
-  hominem-test-postgres:
-  hominem-grafana-postgres:
-  hominem-clickhouse:
-  hominem-mongo:
+  hominem-db:
+  hominem-db-test:
 
 x-postgres-defaults: &postgres-defaults
   POSTGRES_USER: postgres
@@ -20,5 +17,5 @@ x-postgres-defaults: &postgres-defaults
 x-postgres-build: &postgres-build
   build:
     context: ../../..
-    dockerfile: infra/docker/images/postgres/Dockerfile
+    dockerfile: infra/docker/postgres/Dockerfile
   platform: linux/amd64

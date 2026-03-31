@@ -3,8 +3,8 @@
 
 x-postgres-build: &postgres-build
   build:
-    context: ../../..
-    dockerfile: infra/docker/images/postgres/Dockerfile
+    context: ../..
+    dockerfile: infra/docker/postgres/Dockerfile
   platform: linux/amd64
 
 networks:
@@ -12,23 +12,23 @@ networks:
     driver: bridge
 
 volumes:
-  hominem-test-postgres:
+  hominem-db-test:
 
 services:
-  test-db:
+  db-test:
     <<: *postgres-build
-    container_name: hominem-test-postgres
+    container_name: hominem-db-test
     ports:
-      - "4433:5432"
+      - '4433:5432'
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: hominem-test
     volumes:
-      - hominem-test-postgres:/var/lib/postgresql
+      - hominem-db-test:/var/lib/postgresql
       - ./no-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
       interval: 10s
       timeout: 5s
       retries: 5

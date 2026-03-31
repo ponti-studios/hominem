@@ -19,7 +19,8 @@ TEST_DATABASE_URL ?= postgres://postgres:postgres@localhost:4433/hominem-test
 
 .PHONY: help install dev build test lint format duplication typecheck-native
 .PHONY: infra-up infra-down infra-reset infra-status
-.PHONY: docker-up docker-down
+.PHONY: docker-up docker-up-observability docker-up-full docker-down
+.PHONY: obs-up obs-down obs-smoke obs-status
 .PHONY: db-up db-up-test db-down db-down-test db-status db-status-test
 .PHONY: db-reset-dev db-reset-test db-verify-fresh
 .PHONY: mobile.dev mobile.lint mobile.format mobile.test mobile.typecheck
@@ -44,7 +45,8 @@ help:
 	@echo ""
 	@echo "Infra:"
 	@echo "  make infra-up | infra-down | infra-reset | infra-status"
-	@echo "  make docker-up | docker-down"
+	@echo "  make obs-up | obs-smoke | obs-down"
+	@echo "  make docker-up-observability | docker-up-full | docker-down"
 	@echo ""
 	@echo "Database:"
 	@echo "  make db-up | db-up-test | db-down | db-down-test | db-status | db-status-test"
@@ -134,7 +136,7 @@ mobile.release.submit.production:
 	cd $(MOBILE_DIR) && eas submit --profile production --platform ios --non-interactive --latest
 
 infra-up:
-	$(DOCKER_DEV) up -d redis db test-db
+	$(DOCKER_DEV) up -d redis db db-test
 
 infra-down:
 	$(DOCKER_DEV) down
@@ -146,7 +148,24 @@ infra-reset:
 infra-status:
 	$(DOCKER_DEV) ps
 
-docker-up:
+docker-up: infra-up
+
+docker-up-observability:
+	$(MAKE) obs-up
+
+obs-up:
+	$(DOCKER_OBSERVABILITY) up -d --wait
+
+obs-status:
+	$(DOCKER_OBSERVABILITY) ps
+
+obs-smoke:
+	bash ./scripts/observability-smoke.sh
+
+obs-down:
+	$(DOCKER_OBSERVABILITY) down -v
+
+docker-up-full:
 	$(DOCKER_FULL) up -d
 
 docker-down:

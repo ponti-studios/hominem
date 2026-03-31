@@ -21,6 +21,7 @@ import { authRoutes } from './routes/auth';
 import { componentsRoutes } from './routes/components';
 import { healthRoutes } from './routes/health';
 import { imagesRoutes } from './routes/images';
+import { observabilityRoutes } from './routes/observability';
 import { statusRoutes } from './routes/status';
 import { rpcApp } from './rpc/app';
 
@@ -79,6 +80,7 @@ export function createServer() {
   });
   app.route('/api/ai', aiRoutes);
   app.route('/api/images', imagesRoutes);
+  app.route('/api/observability', observabilityRoutes);
   app.route('/components', componentsRoutes);
 
   // Root health check

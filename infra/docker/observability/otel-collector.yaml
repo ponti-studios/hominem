@@ -1,0 +1,61 @@
+# This configuration mirrors HyperDX's standalone collector layout.
+
+receivers:
+  otlp/hyperdx:
+    protocols:
+      grpc:
+        include_metadata: true
+        endpoint: "0.0.0.0:4317"
+      http:
+        cors:
+          allowed_origins: ["*"]
+          allowed_headers: ["*"]
+        include_metadata: true
+        endpoint: "0.0.0.0:4318"
+
+processors:
+  batch:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 512
+    spike_limit_mib: 128
+
+exporters:
+  clickhouse:
+    database: ${env:HYPERDX_OTEL_EXPORTER_CLICKHOUSE_DATABASE}
+    endpoint: ${env:CLICKHOUSE_ENDPOINT}
+    password: ${env:CLICKHOUSE_PASSWORD}
+    username: ${env:CLICKHOUSE_USER}
+    ttl: 720h
+    timeout: 5s
+    create_schema: ${env:HYPERDX_OTEL_EXPORTER_CREATE_LEGACY_SCHEMA:-false}
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 300s
+  debug:
+    verbosity: basic
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+service:
+  extensions: [health_check]
+  telemetry:
+    logs:
+      level: ${env:HYPERDX_LOG_LEVEL}
+  pipelines:
+    traces:
+      receivers: [otlp/hyperdx]
+      processors: [memory_limiter, batch]
+      exporters: [clickhouse, debug]
+    metrics:
+      receivers: [otlp/hyperdx]
+      processors: [memory_limiter, batch]
+      exporters: [clickhouse, debug]
+    logs:
+      receivers: [otlp/hyperdx]
+      processors: [memory_limiter, batch]
+      exporters: [clickhouse, debug]

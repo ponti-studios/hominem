@@ -1,23 +1,27 @@
-# Container Observability Assets
+# Local Observability Assets
 
-These assets are provider-neutral Docker build inputs for the observability stack.
+This directory contains the provider-light observability stack used for local development.
 
-## Contents
+## Stack
 
-- `clickhouse/` - ClickHouse image and config
-- `mongo/` - MongoDB image wrapper
-- `hyperdx/` - HyperDX image wrapper
-- `otel/` - OpenTelemetry Collector image and config
-- `cloudflare-tunnel/` - optional Cloudflare tunnel image
+- ClickHouse for telemetry storage
+- MongoDB for HyperDX metadata
+- OpenTelemetry Collector for ingest and export
+- HyperDX for querying traces, metrics, and logs
 
-## Usage
+## Start
 
-Use these directories anywhere a container runtime can build images from a Dockerfile:
+```bash
+docker compose -f infra/docker/compose/base.yml -f infra/docker/compose/observability.yml up -d
+```
 
-- Railway services
-- local Docker Compose
-- any OCI-compatible platform
+## Ports
 
-The deploy platform should supply runtime configuration such as environment variables,
-networking, volumes, domains, and secrets. These assets should not encode provider-
-specific topology.
+- `4318` - OTLP HTTP ingest
+- `8080` - HyperDX UI
+- `8123` - ClickHouse HTTP
+
+## Notes
+
+- App services should point `OTEL_EXPORTER_OTLP_ENDPOINT` at `http://localhost:4318`.
+- The collector is intentionally local-dev friendly and can be stopped without affecting app startup.

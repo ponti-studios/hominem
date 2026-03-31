@@ -1,89 +1,87 @@
-# Observability services for the local stack
-# Usage: docker compose -f infra/docker/compose/base.yml -f infra/docker/compose/observability.yml up
-
 services:
-  clickhouse:
-    build:
-      context: ../observability/clickhouse
-      dockerfile: Dockerfile
-    platform: linux/amd64
-    container_name: hominem-clickhouse
-    ports:
-      - "8123:8123"
-      - "9000:9000"
-      - "9363:9363"
+  db:
+    image: mongo:5.0.32-focal
     volumes:
-      - hominem-clickhouse:/var/lib/clickhouse
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8123/ping | grep -qx 'Ok\\.'"]
-      interval: 10s
-      timeout: 5s
-      retries: 12
-      start_period: 10s
-    networks:
-      - hominem
+      - db-data:/data/db
+    restart: unless-stopped
 
-  mongo:
-    build:
-      context: ../observability/mongo
-      dockerfile: Dockerfile
-    platform: linux/amd64
-    container_name: hominem-mongo
-    ports:
-      - "27017:27017"
+  ch-server:
+    image: clickhouse/clickhouse-server:26.2-alpine
+    environment:
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: '1'
     volumes:
-      - hominem-mongo:/data/db
-    networks:
-      - hominem
+      - ch-data:/var/lib/clickhouse
+      - ../observability/clickhouse-config.xml:/etc/clickhouse-server/config.d/observability.xml:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:8123/ping | grep -q Ok']
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    ports:
+      - '8123:8123'
+      - '9000:9000'
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.147.0
+    command: ['--config=/etc/otelcol/config.yaml']
+    environment:
+      CLICKHOUSE_ENDPOINT: tcp://ch-server:9000?dial_timeout=10s
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: ''
+      HYPERDX_OTEL_EXPORTER_CLICKHOUSE_DATABASE: default
+      HYPERDX_OTEL_EXPORTER_CREATE_LEGACY_SCHEMA: 'true'
+      HYPERDX_LOG_LEVEL: error
+    volumes:
+      - ../observability/otel-collector.yaml:/etc/otelcol/config.yaml:ro
+    depends_on:
+      ch-server:
+        condition: service_healthy
+    ports:
+      - '13133:13133'
+      - '4317:4317'
+      - '4318:4318'
+      - '8888:8888'
+    restart: unless-stopped
 
   hyperdx:
-    build:
-      context: ../observability/hyperdx
-      dockerfile: Dockerfile
-    platform: linux/amd64
-    container_name: hominem-hyperdx
-    ports:
-      - "8080:8080"
-      - "8000:8000"
-      - "4320:4320"
+    image: hyperdx/hyperdx:2
     environment:
+      CLICKHOUSE_ENDPOINT: tcp://ch-server:9000?dial_timeout=10s
+      CLICKHOUSE_LOG_LEVEL: error
+      CLICKHOUSE_PROMETHEUS_METRICS_ENDPOINT: ch-server:9363
+      DEFAULT_CONNECTIONS: '[{"name":"Local ClickHouse","host":"http://ch-server:8123","username":"default","password":""}]'
+      DEFAULT_SOURCES: '[{"from":{"databaseName":"default","tableName":"otel_logs"},"kind":"log","timestampValueExpression":"TimestampTime","name":"Logs","displayedTimestampValueExpression":"Timestamp","implicitColumnExpression":"Body","serviceNameExpression":"ServiceName","bodyExpression":"Body","eventAttributesExpression":"LogAttributes","resourceAttributesExpression":"ResourceAttributes","defaultTableSelectExpression":"Timestamp,ServiceName,SeverityText,Body","severityTextExpression":"SeverityText","traceIdExpression":"TraceId","spanIdExpression":"SpanId","connection":"Local ClickHouse","traceSourceId":"Traces","sessionSourceId":"Sessions","metricSourceId":"Metrics"},{"from":{"databaseName":"default","tableName":"otel_traces"},"kind":"trace","timestampValueExpression":"Timestamp","name":"Traces","displayedTimestampValueExpression":"Timestamp","implicitColumnExpression":"SpanName","serviceNameExpression":"ServiceName","eventAttributesExpression":"SpanAttributes","resourceAttributesExpression":"ResourceAttributes","defaultTableSelectExpression":"Timestamp,ServiceName,StatusCode,round(Duration/1e6),SpanName","traceIdExpression":"TraceId","spanIdExpression":"SpanId","durationExpression":"Duration","durationPrecision":9,"parentSpanIdExpression":"ParentSpanId","spanNameExpression":"SpanName","spanKindExpression":"SpanKind","statusCodeExpression":"StatusCode","statusMessageExpression":"StatusMessage","connection":"Local ClickHouse","logSourceId":"Logs","sessionSourceId":"Sessions","metricSourceId":"Metrics"},{"from":{"databaseName":"default","tableName":""},"kind":"metric","timestampValueExpression":"TimeUnix","name":"Metrics","resourceAttributesExpression":"ResourceAttributes","metricTables":{"gauge":"otel_metrics_gauge","histogram":"otel_metrics_histogram","sum":"otel_metrics_sum","summary":"otel_metrics_summary","exponentialHistogram":"otel_metrics_exponential_histogram","_id":"682586a8b1f81924e628e808","id":"682586a8b1f81924e628e808"},"connection":"Local ClickHouse","logSourceId":"Logs","traceSourceId":"Traces","sessionSourceId":"Sessions"},{"from":{"databaseName":"default","tableName":"hyperdx_sessions"},"kind":"session","timestampValueExpression":"TimestampTime","name":"Sessions","displayedTimestampValueExpression":"Timestamp","implicitColumnExpression":"Body","serviceNameExpression":"ServiceName","bodyExpression":"Body","eventAttributesExpression":"LogAttributes","resourceAttributesExpression":"ResourceAttributes","defaultTableSelectExpression":"Timestamp,ServiceName,SeverityText,Body","severityTextExpression":"SeverityText","traceIdExpression":"TraceId","spanIdExpression":"SpanId","connection":"Local ClickHouse","logSourceId":"Logs","traceSourceId":"Traces","metricSourceId":"Metrics"}]'
+      EXPRESS_SESSION_SECRET: hyperdx is cool 👋
       FRONTEND_URL: http://localhost:8080
-      HYPERDX_API_PORT: "8000"
-      HYPERDX_APP_PORT: "8080"
-      HYPERDX_APP_URL: http://localhost:8080
-      HYPERDX_LOG_LEVEL: info
-      HYPERDX_OPAMP_PORT: "4320"
-      MONGO_URI: mongodb://mongo:27017/hyperdx
+      HYPERDX_APP_LISTEN_HOSTNAME: 0.0.0.0
+      HYPERDX_APP_PORT: '8080'
+      HYPERDX_API_PORT: '8000'
+      HYPERDX_IMAGE: all-in-one-noauth
+      HYPERDX_LOG_LEVEL: error
+      HYPERDX_OTEL_EXPORTER_CLICKHOUSE_DATABASE: default
+      IS_LOCAL_APP_MODE: DANGEROUSLY_is_local_app_mode💀
+      MONGO_URI: mongodb://db:27017/hyperdx
+      NEXT_TELEMETRY_DISABLED: '1'
+      OPAMP_PORT: '4320'
+      OPAMP_SERVER_URL: http://127.0.0.1:4320
       SERVER_URL: http://127.0.0.1:8000
-      OPAMP_PORT: "4320"
-      USAGE_STATS_ENABLED: "false"
-      DEFAULT_CONNECTIONS: '[{"name":"Local ClickHouse","host":"http://clickhouse:8123","username":"api","password":"api"}]'
-      DEFAULT_SOURCES: '[{"from":{"databaseName":"default","tableName":"otel_logs"},"kind":"log","timestampValueExpression":"TimestampTime","name":"Logs","displayedTimestampValueExpression":"Timestamp","implicitColumnExpression":"Body","serviceNameExpression":"ServiceName","bodyExpression":"Body","eventAttributesExpression":"LogAttributes","resourceAttributesExpression":"ResourceAttributes","defaultTableSelectExpression":"Timestamp,ServiceName,SeverityText,Body","severityTextExpression":"SeverityText","traceIdExpression":"TraceId","spanIdExpression":"SpanId","connection":"Local ClickHouse","traceSourceId":"Traces","sessionSourceId":"Sessions","metricSourceId":"Metrics"},{"from":{"databaseName":"default","tableName":"otel_traces"},"kind":"trace","timestampValueExpression":"Timestamp","name":"Traces","displayedTimestampValueExpression":"Timestamp","implicitColumnExpression":"SpanName","serviceNameExpression":"ServiceName","eventAttributesExpression":"SpanAttributes","resourceAttributesExpression":"ResourceAttributes","defaultTableSelectExpression":"Timestamp,ServiceName,StatusCode,round(Duration/1e6),SpanName","traceIdExpression":"TraceId","spanIdExpression":"SpanId","durationExpression":"Duration","durationPrecision":9,"parentSpanIdExpression":"ParentSpanId","spanNameExpression":"SpanName","spanKindExpression":"SpanKind","statusCodeExpression":"StatusCode","statusMessageExpression":"StatusMessage","connection":"Local ClickHouse","logSourceId":"Logs","sessionSourceId":"Sessions","metricSourceId":"Metrics"},{"from":{"databaseName":"default","tableName":""},"kind":"metric","timestampValueExpression":"TimeUnix","name":"Metrics","resourceAttributesExpression":"ResourceAttributes","metricTables":{"gauge":"otel_metrics_gauge","histogram":"otel_metrics_histogram","sum":"otel_metrics_sum"},"connection":"Local ClickHouse","logSourceId":"Logs","traceSourceId":"Traces","sessionSourceId":"Sessions"},{"from":{"databaseName":"default","tableName":"hyperdx_sessions"},"kind":"session","timestampValueExpression":"TimestampTime","name":"Sessions","displayedTimestampValueExpression":"Timestamp","implicitColumnExpression":"Body","serviceNameExpression":"ServiceName","bodyExpression":"Body","eventAttributesExpression":"LogAttributes","resourceAttributesExpression":"ResourceAttributes","defaultTableSelectExpression":"Timestamp,ServiceName,SeverityText,Body","severityTextExpression":"SeverityText","traceIdExpression":"TraceId","spanIdExpression":"SpanId","connection":"Local ClickHouse","logSourceId":"Logs","traceSourceId":"Traces","metricSourceId":"Metrics"}]'
+      USAGE_STATS_ENABLED: 'false'
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: ''
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_SERVICE_NAME: hdx-oss-app
     depends_on:
-      clickhouse:
+      ch-server:
         condition: service_healthy
-      mongo:
+      db:
         condition: service_started
-    networks:
-      - hominem
-
-  otel:
-    build:
-      context: ../observability/otel
-      dockerfile: Dockerfile
-    platform: linux/amd64
-    container_name: hominem-otel
+      otel-collector:
+        condition: service_started
     ports:
-      - "4317:4317"
-      - "4318:4318"
-      - "8888:8888"
-      - "13133:13133"
-    environment:
-      CLICKHOUSE_ENDPOINT: tcp://clickhouse:9000?dial_timeout=10s&compress=lz4&async_insert=1
-      CLICKHOUSE_USERNAME: api
-      CLICKHOUSE_PASSWORD: api
-    depends_on:
-      clickhouse:
-        condition: service_healthy
-    networks:
-      - hominem
+      - '8080:8080'
+    restart: unless-stopped
+
+volumes:
+  ch-data:
+  db-data:
