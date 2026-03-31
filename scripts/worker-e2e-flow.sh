@@ -6,10 +6,10 @@ set -euo pipefail
 # What this script does:
 # 1. Starts the local infra stack (Postgres, Redis).
 # 2. Reuses the local observability stack when it is already running.
-# 3. Starts the API locally with OTLP export.
-# 4. Starts the workers locally with OTLP export.
-# 5. Adds a test job to the smart-input queue.
-# 6. Verifies traces from both the API and workers appear in ClickHouse.
+# 3. Starts the workers locally with OTLP export.
+# 4. Adds a test job to the smart-input queue.
+# 5. Verifies worker traces appear in ClickHouse.
+# 6. Verifies worker spans are correlated to the originating enqueue trace.
 #
 # Notes:
 # - Workers use BullMQ and process jobs from Redis queues.
@@ -17,18 +17,13 @@ set -euo pipefail
 # - We send a simple email-like content to trigger job processing.
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-API_DIR="$ROOT_DIR/services/api"
 WORKERS_DIR="$ROOT_DIR/services/workers"
-API_PORT="${API_PORT:-4040}"
 WORKERS_PORT="${WORKERS_PORT:-4447}"
 OTEL_ENDPOINT="${OTEL_EXPORTER_OTLP_ENDPOINT:-http://localhost:4318}"
 CLICKHOUSE_URL="${CLICKHOUSE_URL:-http://localhost:8123}"
-API_LOG_FILE="${API_LOG_FILE:-/tmp/hominem-api-worker-e2e.log}"
 WORKERS_LOG_FILE="${WORKERS_LOG_FILE:-/tmp/hominem-workers-worker-e2e.log}"
-API_PID_FILE="${API_PID_FILE:-/tmp/hominem-api-worker-e2e.pid}"
 WORKERS_PID_FILE="${WORKERS_PID_FILE:-/tmp/hominem-workers-worker-e2e.pid}"
 
-START_API="${START_API:-1}"
 START_WORKERS="${START_WORKERS:-1}"
 
 cleanup() {
@@ -39,15 +34,6 @@ cleanup() {
       kill "$pid" 2>/dev/null || true
     fi
     rm -f "$WORKERS_PID_FILE"
-  fi
-
-  if [ "${START_API}" = "1" ] && [ -f "$API_PID_FILE" ]; then
-    local pid
-    pid="$(cat "$API_PID_FILE")"
-    if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
-      kill "$pid" 2>/dev/null || true
-    fi
-    rm -f "$API_PID_FILE"
   fi
 }
 
@@ -63,19 +49,6 @@ if curl -fsS http://localhost:8080/api/health >/dev/null 2>&1 \
   echo "Observability stack is already running; reusing it."
 else
   docker compose -f "$ROOT_DIR/infra/docker/compose/base.yml" -f "$ROOT_DIR/infra/docker/compose/observability.yml" up -d --wait
-fi
-
-if [ "$START_API" = "1" ]; then
-  echo "==> Starting API with OTLP export pointed at $OTEL_ENDPOINT"
-  rm -f "$API_LOG_FILE" "$API_PID_FILE"
-
-  (
-    cd "$API_DIR"
-    OTEL_EXPORTER_OTLP_ENDPOINT="$OTEL_ENDPOINT" \
-      OTEL_EXPORTER_OTLP_PROTOCOL="http/protobuf" \
-      bun src/index.ts >"$API_LOG_FILE" 2>&1 &
-    echo $! >"$API_PID_FILE"
-  )
 fi
 
 if [ "$START_WORKERS" = "1" ]; then
@@ -94,16 +67,6 @@ if [ "$START_WORKERS" = "1" ]; then
   )
 fi
 
-echo "==> Waiting for API health on port $API_PORT"
-for _ in $(seq 1 30); do
-  if curl -fsS "http://localhost:${API_PORT}/api/status" >/dev/null 2>&1; then
-    break
-  fi
-  sleep 1
-done
-
-curl -fsS "http://localhost:${API_PORT}/api/status" >/dev/null
-
 echo "==> Waiting for workers to be ready"
 for _ in $(seq 1 20); do
   if curl -fsS "http://localhost:${WORKERS_PORT}/health" >/dev/null 2>&1; then
@@ -112,32 +75,63 @@ for _ in $(seq 1 20); do
   sleep 1
 done
 
-echo "==> Adding a test job to the smart-input queue"
-# Use a simple test email content that the worker can process
-# The worker expects emailContent in the job data
+trace_query_id="worker-e2e-$(date +%s)"
+
+echo "==> Adding a test job to the smart-input queue with trace context"
 bun -e "
 import { redis } from '@hominem/services/redis';
 import { Queue } from 'bullmq';
+import { context, propagation, trace } from '@opentelemetry/api';
+import { BasicTracerProvider } from '@opentelemetry/sdk-trace-base';
 
-const smartInputQueue = new Queue('smart-input', { connection: redis });
+const provider = new BasicTracerProvider();
+trace.setGlobalTracerProvider(provider);
 
-await smartInputQueue.add('test-job', {
-  emailContent: 'Test email from observability worker smoke test. Writer: John Doe'
+const queue = new Queue('smart-input', { connection: redis });
+const tracer = trace.getTracer('worker-e2e-script');
+
+await tracer.startActiveSpan('worker-e2e.enqueue', async (span) => {
+  const headers = {};
+  const spanContext = trace.setSpan(context.active(), span);
+  propagation.inject(spanContext, headers, {
+    set: (carrier, key, value) => {
+      carrier[key] = value;
+    },
+  });
+
+  await queue.add('test-job', {
+    emailContent: 'Test email from observability worker smoke test. Writer: John Doe',
+    telemetry: {
+      traceparent: headers.traceparent,
+      baggage: headers.baggage,
+      traceQueryId: '${trace_query_id}',
+    },
+  });
+
+  console.log(JSON.stringify({
+    traceId: span.spanContext().traceId,
+    traceQueryId: '${trace_query_id}',
+  }));
+  span.end();
 });
 
-console.log('Job added to smart-input queue');
-await smartInputQueue.close();
+await queue.close();
 await redis.quit();
-"
+" > /tmp/hominem-worker-e2e-enqueue.json
 
 echo "==> Waiting for job to be processed"
 sleep 5
 
 echo "==> Verifying traces landed in ClickHouse"
 
-# Query for traces - note that API runs in a separate process so we should see both services
-# The 3-minute window should capture our recent health check traces from the API
-trace_query="SELECT ServiceName, SpanName, TraceId, Timestamp FROM default.otel_traces WHERE Timestamp > now() - INTERVAL 5 MINUTE ORDER BY Timestamp DESC LIMIT 50 FORMAT JSONEachRow"
+enqueue_trace_id="$(python - <<'PY'
+import json
+with open('/tmp/hominem-worker-e2e-enqueue.json') as f:
+    print(json.load(f)['traceId'])
+PY
+)"
+
+trace_query="SELECT ServiceName, SpanName, TraceId, ParentSpanId, SpanAttributes, Timestamp FROM default.otel_traces WHERE Timestamp > now() - INTERVAL 5 MINUTE AND (TraceId = '${enqueue_trace_id}' OR SpanAttributes['messaging.message.id'] != '') ORDER BY Timestamp DESC LIMIT 100 FORMAT JSONEachRow"
 
 trace_rows=""
 for _ in $(seq 1 15); do
@@ -150,14 +144,10 @@ done
 
 if [ -z "$trace_rows" ]; then
   echo "No traces found in ClickHouse."
-  echo "If the API or workers failed to start, inspect:"
-  echo "  API: $API_LOG_FILE"
+  echo "If the workers failed to start, inspect:"
   echo "  Workers: $WORKERS_LOG_FILE"
   exit 1
 fi
-
-# Write trace output to temp file and parse from there to avoid shell escaping issues
-echo "$trace_rows" > /tmp/trace_output.json
 
 # Write trace output to temp file and parse from there to avoid shell escaping issues
 echo "$trace_rows" > /tmp/trace_output.json
@@ -198,12 +188,23 @@ for svc, traces in services.items():
 if not services:
     print("No traces found!")
     sys.exit(1)
+
+worker_spans = [
+    t for group in services.values() for t in group
+    if t.get('SpanName') == 'bullmq.process smart-input'
+]
+if not worker_spans:
+    print('Missing worker BullMQ processing span')
+    sys.exit(1)
+
+if not any(t.get('TraceId') == '${enqueue_trace_id}' for t in worker_spans):
+    print('Worker span is not correlated with the enqueue trace')
+    sys.exit(1)
 PY
 
 rm -f /tmp/trace_output.json
 
 echo "==> Done"
 echo "Comments:"
-echo "- API traces should be visible in ClickHouse from the /api/status health checks."
-echo "- Workers currently use auto-instrumentation (Redis, pg) but lack explicit BullMQ spans."
-echo "- BullMQ instrumentation would provide visibility into job processing."
+echo "- Worker processing should produce a bullmq.process smart-input span in ClickHouse."
+echo "- The worker span should share the same trace as the enqueue span for correlation checks."

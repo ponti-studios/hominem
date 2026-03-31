@@ -3,6 +3,7 @@ import { getSharedTextModel } from '@hominem/services/ai-model';
 import { redis } from '@hominem/services/redis';
 import { QUEUE_NAMES } from '@hominem/utils/consts';
 import { logger } from '@hominem/utils/logger';
+import { context, metrics, propagation, SpanStatusCode, trace } from '@opentelemetry/api';
 import { generateObject } from 'ai';
 import { type Job, Worker } from 'bullmq';
 import { ZodError } from 'zod';
@@ -14,6 +15,11 @@ import { processAttachments } from './smart-input.worker.utils';
 
 interface SmartInputJobData {
   emailContent: string;
+  telemetry?: {
+    traceparent?: string;
+    baggage?: string;
+    traceQueryId?: string;
+  };
 }
 
 function mergeWriterData(writerData: Candidates, attachmentResults: SubmissionAttachment[]) {
@@ -105,15 +111,77 @@ async function processEmailBody(emailBody: string): Promise<Candidates> {
 }
 
 const CONCURRENCY = Number.parseInt(process.env.SMART_INPUT_CONCURRENCY ?? '1', 10);
+const tracer = trace.getTracer('hominem-workers-smart-input');
+const meter = metrics.getMeter('hominem-workers-smart-input');
+const jobCounter = meter.createCounter('hominem_worker_jobs_total', {
+  description: 'Total smart-input jobs processed by the worker',
+});
+const jobDuration = meter.createHistogram('hominem_worker_job_duration_ms', {
+  description: 'Duration of smart-input worker job processing in milliseconds',
+  unit: 'ms',
+});
 
 const processSmartInputJob = async (job: Job<SmartInputJobData>) => {
-  logger.info(`Processing smart input job ${job.id}`);
-  if (!job.data?.emailContent) {
-    throw new Error('emailContent is required to process smart input job');
-  }
+  const startedAt = performance.now();
+  const parentContext = propagation.extract(context.active(), {
+    ...(job.data?.telemetry?.traceparent ? { traceparent: job.data.telemetry.traceparent } : {}),
+    ...(job.data?.telemetry?.baggage ? { baggage: job.data.telemetry.baggage } : {}),
+  });
+  return tracer.startActiveSpan(
+    'bullmq.process smart-input',
+    {
+      attributes: {
+        'messaging.system': 'bullmq',
+        'messaging.destination': QUEUE_NAMES.SMART_INPUT,
+        'messaging.operation': 'process',
+        'messaging.message.id': String(job.id ?? 'unknown'),
+        'messaging.destination.name': QUEUE_NAMES.SMART_INPUT,
+        ...(job.data?.telemetry?.traceQueryId
+          ? { 'messaging.message.conversation_id': job.data.telemetry.traceQueryId }
+          : {}),
+      },
+    },
+    parentContext,
+    async (span) => {
+      try {
+        logger.info(`Processing smart input job ${job.id}`);
+        if (!job.data?.emailContent) {
+          throw new Error('emailContent is required to process smart input job');
+        }
 
-  const writerDataWithAttachments = await processSmartInputEmail(job.data.emailContent);
-  return { writerDataWithAttachments };
+        const writerDataWithAttachments = await processSmartInputEmail(job.data.emailContent);
+        jobCounter.add(1, {
+          'messaging.destination': QUEUE_NAMES.SMART_INPUT,
+          'job.status': 'completed',
+        });
+        jobDuration.record(Math.max(0, performance.now() - startedAt), {
+          'messaging.destination': QUEUE_NAMES.SMART_INPUT,
+          'job.status': 'completed',
+        });
+        span.setStatus({ code: SpanStatusCode.OK });
+        return { writerDataWithAttachments };
+      } catch (error) {
+        jobCounter.add(1, {
+          'messaging.destination': QUEUE_NAMES.SMART_INPUT,
+          'job.status': 'failed',
+        });
+        jobDuration.record(Math.max(0, performance.now() - startedAt), {
+          'messaging.destination': QUEUE_NAMES.SMART_INPUT,
+          'job.status': 'failed',
+        });
+        span.setAttribute('error.type', error instanceof Error ? error.name : 'UnknownError');
+        span.setAttribute(
+          'error.message',
+          error instanceof Error ? error.message : 'Unknown smart-input worker error',
+        );
+        span.recordException(error as Error);
+        span.setStatus({ code: SpanStatusCode.ERROR, message: (error as Error).message });
+        throw error;
+      } finally {
+        span.end();
+      }
+    },
+  );
 };
 
 const smartInputWorker = new Worker<SmartInputJobData>(

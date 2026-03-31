@@ -18,8 +18,7 @@ set -euo pipefail
 # Notes:
 # - This uses the local test OTP retrieval endpoint, so it expects the API env to
 #   have AUTH_TEST_OTP_ENABLED=true and AUTH_E2E_SECRET set.
-# - The current Hono middleware records route spans as POST /* and GET /*.
-#   The real request path is still present in SpanAttributes.http.request.url.
+# - API request spans should use concrete route paths in SpanName.
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 API_DIR="$ROOT_DIR/services/api"
@@ -164,9 +163,8 @@ PY
 
 echo "==> Verifying traces landed in ClickHouse"
 
-# We match by service name plus the real request URL fragments because the
-# current route span names are still normalized to POST /* and GET /*.
-trace_query="SELECT SpanName, TraceId, SpanAttributes, Timestamp FROM default.otel_traces WHERE ServiceName = 'hominem-api' AND (SpanAttributes['http.request.url'] LIKE '%/api/auth/email-otp/send%' OR SpanAttributes['http.request.url'] LIKE '%/api/auth/test/otp/latest%' OR SpanAttributes['http.request.url'] LIKE '%/api/auth/email-otp/verify%' OR SpanAttributes['http.request.url'] LIKE '%/api/auth/session%') ORDER BY Timestamp DESC LIMIT 12 FORMAT JSONEachRow"
+# We match by concrete span names so the verification fails if route naming regresses.
+trace_query="SELECT SpanName, TraceId, SpanAttributes, Timestamp FROM default.otel_traces WHERE ServiceName = 'hominem-api' AND SpanName IN ('GET /api/status', 'POST /api/auth/email-otp/send', 'GET /api/auth/test/otp/latest', 'POST /api/auth/email-otp/verify', 'GET /api/auth/session') ORDER BY Timestamp DESC LIMIT 20 FORMAT JSONEachRow"
 
 trace_rows=""
 for _ in $(seq 1 15); do
@@ -188,5 +186,4 @@ printf '%s\n' "$trace_rows"
 echo "==> Done"
 echo "Comments:"
 echo "- Successful auth flow should show send_status=200, verify_status=200, session_status=200, isAuthenticated=true."
-echo "- Current middleware records span names like POST /* and GET /*."
-echo "- Real request paths are still visible in SpanAttributes.http.request.url."
+echo "- API spans should now be named with concrete route paths like POST /api/auth/email-otp/send."
