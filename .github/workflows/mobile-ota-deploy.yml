@@ -46,5 +46,3 @@ jobs:
 
             - name: Publish OTA update → preview
               run: make mobile.ota.publish.preview
-              env:
-                  EXPO_PUBLIC_API_BASE_URL: "http://localhost:4040"

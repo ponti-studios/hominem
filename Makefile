@@ -133,7 +133,7 @@ mobile.ota.publish.preview: mobile.rc
 mobile.release.build.production: mobile.release
 	cd $(MOBILE_DIR) && APP_VARIANT=production EXPO_NO_DOTENV=1 EXPO_PUBLIC_E2E_TESTING=false eas build --profile production --platform ios --non-interactive
 
-mobile.release.submit.production:
+mobile.release.submit.production: mobile.release.build.production
 	cd $(MOBILE_DIR) && eas submit --profile production --platform ios --non-interactive --latest
 
 infra-up:

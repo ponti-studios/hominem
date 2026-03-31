@@ -49,10 +49,11 @@ jobs:
                   xcodebuild -version
                   xcrun simctl list devices available | cat
 
+            - name: Run preview RC gate
+              run: make mobile.rc
+
             - name: Run preview RC smoke gate
               run: make mobile.rc.smoke
-              env:
-                  EXPO_PUBLIC_API_BASE_URL: "http://localhost:4040"
 
             - name: Upload Detox artifacts
               if: failure()

@@ -40,8 +40,6 @@ jobs:
 
             - name: Build production iOS binary
               run: make mobile.release.build.production
-              env:
-                  EXPO_PUBLIC_API_BASE_URL: "http://localhost:4040"
 
             - name: Submit to TestFlight
               env:
