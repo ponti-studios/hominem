@@ -11,7 +11,12 @@ const { EXPO_OWNER, EXPO_PROJECT_ID, EXPO_PROJECT_SLUG } = require('./config/exp
 const { getAppVariantConfig } = require('./config/appVariant.js')
 
 const config = JSON.parse(process.env.CONFIG_JSON ?? '{}')
-const variant = config.extra?.appVariant ?? process.env.APP_VARIANT ?? 'dev'
+const variant = process.env.APP_VARIANT
+
+if (!variant) {
+  throw new Error('Expo config mismatch: APP_VARIANT must be set')
+}
+
 const variantConfig = getAppVariantConfig(variant)
 const resolvedConfig = {
   owner: config.owner,
