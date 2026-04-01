@@ -1,61 +1,36 @@
 {
   "version": "0.2.0",
   "configurations": [
+    // ─── Bun ──────────────────────────────────────────────────────────────────
     {
       "type": "bun",
       "request": "launch",
-      "name": "Debug Bun",
-      // The path to a JavaScript or TypeScript file to run.
+      "name": "Debug Bun (current file)",
       "program": "${file}",
-      // The arguments to pass to the program, if any.
       "args": [],
-      // The working directory of the program.
       "cwd": "${workspaceFolder}",
-      // The environment variables to pass to the program.
       "env": {},
-      // If the environment variables should not be inherited from the parent process.
       "strictEnv": false,
-      // If the program should be run in watch mode.
-      // This is equivalent to passing `--watch` to the `bun` executable.
-      // You can also set this to "hot" to enable hot reloading using `--hot`.
       "watchMode": false,
-      // If the debugger should stop on the first line of the program.
       "stopOnEntry": false,
-      // If the debugger should be disabled. (for example, breakpoints will not be hit)
       "noDebug": false,
-      // The path to the `bun` executable, defaults to your `PATH` environment variable.
       "runtime": "bun",
-      // The arguments to pass to the `bun` executable, if any.
-      // Unlike `args`, these are passed to the executable itself, not the program.
-      "runtimeArgs": [],
+      "runtimeArgs": []
     },
     {
       "type": "bun",
       "request": "attach",
       "name": "Attach to Bun",
-      // The URL of the WebSocket inspector to attach to.
-      // This value can be retrieved by using `bun --inspect`.
-      "url": "ws://localhost:6499/",
+      // Start the target process with: bun --inspect <file>
+      "url": "ws://localhost:6499/"
     },
-    {
-      "type": "node",
-      "request": "attach",
-      "name": "Debug Chat API (Node.js)",
-      "processId": "${command:PickProcess}",
-      "restart": true,
-    },
-    {
-      "type": "node",
-      "request": "attach",
-      "name": "Debug API (Node.js)",
-      "processId": "${command:PickProcess}",
-      "restart": true,
-    },
+
+    // ─── API (services/api) ───────────────────────────────────────────────────
     {
       "type": "node",
       "request": "launch",
-      "name": "Debug API App (Node.js)",
-      "cwd": "${workspaceFolder}/apps/api",
+      "name": "Debug API",
+      "cwd": "${workspaceFolder}/services/api",
       "runtimeExecutable": "bun",
       "runtimeArgs": ["dev"],
       "console": "integratedTerminal",
@@ -63,32 +38,90 @@
       "skipFiles": ["<node_internals>/**"],
       "outputCapture": "std",
       "env": {
-        "NODE_OPTIONS": "--inspect",
-      },
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Debug CLI App (Node.js)",
-      "program": "${workspaceFolder}/apps/cli/src/index.ts",
-      "cwd": "${workspaceFolder}/apps/cli",
-      "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen",
-      "skipFiles": ["<node_internals>/**"],
-    },
-    {
-      "type": "chrome",
-      "request": "launch",
-      "name": "Debug Notes App (Chrome)",
-      "url": "http://localhost:4445",
-      "webRoot": "${workspaceFolder}/apps/notes/app",
+        "NODE_OPTIONS": "--inspect"
+      }
     },
     {
       "type": "node",
       "request": "attach",
-      "name": "Debug Notes API (Node.js)",
+      "name": "Attach to API",
       "processId": "${command:PickProcess}",
-      "restart": true,
+      "restart": true
     },
+
+    // ─── Web app ──────────────────────────────────────────────────────────────
+    {
+      "type": "chrome",
+      "request": "launch",
+      "name": "Debug Web App (Chrome)",
+      "url": "http://localhost:4445",
+      "webRoot": "${workspaceFolder}/apps/web/app"
+    },
+
+    // ─── Desktop (Electron) ───────────────────────────────────────────────────
+    {
+      "name": "Debug Desktop Main Process",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/apps/desktop",
+      "runtimeExecutable": "${workspaceFolder}/apps/desktop/node_modules/.bin/electron-vite",
+      "runtimeArgs": ["dev", "--sourcemap", "--remote-debugging-port=9222"],
+      "env": {
+        "DEBUG": "true",
+        "NODE_ENV": "development"
+      },
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**", "node_modules/**"]
+    },
+    {
+      "name": "Debug Desktop Renderer Process",
+      "type": "chrome",
+      "request": "attach",
+      "port": 9222,
+      "webRoot": "${workspaceFolder}/apps/desktop/src/renderer",
+      "timeout": 60000
+    },
+    {
+      "name": "Electron: Start Production",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/apps/desktop",
+      "runtimeExecutable": "${workspaceFolder}/apps/desktop/node_modules/.bin/electron",
+      "runtimeArgs": ["."],
+      "env": {
+        "NODE_ENV": "production"
+      },
+      "console": "integratedTerminal"
+    },
+
+    // ─── Mobile (React Native / Hermes) ───────────────────────────────────────
+    {
+      "name": "Attach to Hermes (Mobile)",
+      "cwd": "${workspaceFolder}/apps/mobile",
+      "type": "reactnativedirect",
+      "request": "attach"
+    },
+    {
+      "name": "Debug iOS Simulator (Mobile)",
+      "cwd": "${workspaceFolder}/apps/mobile",
+      "type": "reactnativedirect",
+      "request": "launch",
+      "platform": "ios"
+    },
+    {
+      "name": "Debug iOS Device (Mobile)",
+      "cwd": "${workspaceFolder}/apps/mobile",
+      "type": "reactnativedirect",
+      "request": "launch",
+      "platform": "ios",
+      "port": 9221,
+      "target": "device"
+    }
   ],
+  "compounds": [
+    {
+      "name": "Debug Desktop (Main + Renderer)",
+      "configurations": ["Debug Desktop Main Process", "Debug Desktop Renderer Process"]
+    }
+  ]
 }

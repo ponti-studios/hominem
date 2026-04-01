@@ -45,10 +45,10 @@ export interface AccountInsert {
 function toRecord(row: AccountSelectRow): AccountRecord {
   return {
     id: row.id,
-    userId: row.user_id,
+    userId: row.userId,
     type: 'oauth',
-    provider: row.provider,
-    providerAccountId: row.account_id,
+    provider: row.providerId,
+    providerAccountId: row.accountId,
     refreshToken: null,
     accessToken: null,
     expiresAt: null,
@@ -64,13 +64,13 @@ export async function listAccountsByProvider(
   provider: string,
 ): Promise<AccountRecord[]> {
   const rows = (await db
-    .selectFrom('user_accounts')
+    .selectFrom('account')
     .selectAll()
-    .where('user_id', '=', userId)
-    .where('provider', '=', provider)
-    .orderBy('created_at', 'desc')
+    .where('userId', '=', userId)
+    .where('providerId', '=', provider)
+    .orderBy('createdAt', 'desc')
     .orderBy('id', 'asc')
-    .execute()) as AccountSelectRow[]
+    .execute()) as unknown as AccountSelectRow[]
   return rows.map(toRecord)
 }
 
@@ -79,11 +79,11 @@ export async function getAccountByUserAndProvider(
   provider: string,
 ): Promise<AccountRecord | null> {
   const row = (await db
-    .selectFrom('user_accounts')
+    .selectFrom('account')
     .selectAll()
-    .where('user_id', '=', userId)
-    .where('provider', '=', provider)
-    .orderBy('created_at', 'desc')
+    .where('userId', '=', userId)
+    .where('providerId', '=', provider)
+    .orderBy('createdAt', 'desc')
     .orderBy('id', 'asc')
     .limit(1)
     .executeTakeFirst()) as AccountSelectRow | undefined
@@ -95,10 +95,10 @@ export async function getAccountByProviderAccountId(
   provider: string,
 ): Promise<AccountRecord | null> {
   const row = (await db
-    .selectFrom('user_accounts')
+    .selectFrom('account')
     .selectAll()
-    .where('account_id', '=', providerAccountId)
-    .where('provider', '=', provider)
+    .where('accountId', '=', providerAccountId)
+    .where('providerId', '=', provider)
     .limit(1)
     .executeTakeFirst()) as AccountSelectRow | undefined
   return row ? toRecord(row) : null
@@ -106,14 +106,14 @@ export async function getAccountByProviderAccountId(
 
 export async function createAccount(data: AccountInsert): Promise<AccountRecord | null> {
   const row = (await db
-    .insertInto('user_accounts')
+    .insertInto('account')
     .values({
       id: data.id ?? generateUUID(),
-      user_id: data.userId,
-      account_id: data.providerAccountId,
-      provider: data.provider,
+      userId: data.userId,
+      accountId: data.providerAccountId,
+      providerId: data.provider,
     })
-    .onConflict((oc) => oc.columns(['account_id', 'provider', 'user_id']).doNothing())
+    .onConflict((oc) => oc.columns(['accountId', 'providerId', 'userId']).doNothing())
     .returningAll()
     .executeTakeFirst()) as AccountSelectRow | undefined
   return row ? toRecord(row) : null
@@ -123,13 +123,13 @@ export async function updateAccount(
   id: string,
   updates: Partial<AccountInsert>,
 ): Promise<AccountRecord | null> {
-  const updateData: Partial<Record<'account_id' | 'provider', string>> = {}
-  if (updates.providerAccountId !== undefined) updateData.account_id = updates.providerAccountId
-  if (updates.provider !== undefined) updateData.provider = updates.provider
+  const updateData: Partial<Record<'accountId' | 'providerId', string>> = {}
+  if (updates.providerAccountId !== undefined) updateData.accountId = updates.providerAccountId
+  if (updates.provider !== undefined) updateData.providerId = updates.provider
   if (Object.keys(updateData).length === 0) return null
 
   const row = (await db
-    .updateTable('user_accounts')
+    .updateTable('account')
     .set(updateData)
     .where('id', '=', id)
     .returningAll()
@@ -143,10 +143,10 @@ export async function deleteAccountForUser(
   provider: string,
 ): Promise<boolean> {
   const result = await db
-    .deleteFrom('user_accounts')
+    .deleteFrom('account')
     .where('id', '=', id)
-    .where('user_id', '=', userId)
-    .where('provider', '=', provider)
+    .where('userId', '=', userId)
+    .where('providerId', '=', provider)
     .executeTakeFirst()
   return (result.numDeletedRows ?? 0n) > 0n
 }

@@ -69,6 +69,9 @@ const serverSchema = z.object({
   PLAID_API_KEY: z.string().default(''),
   PLAID_ENV: z.enum(['sandbox', 'development', 'production']).default('sandbox'),
   PLAID_WEBHOOK_SECRET: z.string().default(''),
+
+  // OBSERVABILITY
+  SENTRY_DSN: z.string().optional(),
 });
 
 export const env = createServerEnv(serverSchema, 'apiServer');

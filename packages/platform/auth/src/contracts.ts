@@ -8,17 +8,15 @@ export interface UserRow {
   email: string
   name: string | null
   image: string | null
-  avatar_url: string | null
-  is_admin: boolean
-  email_verified: boolean
-  created_at: string | null
-  updated_at: string | null
+  emailVerified: boolean
+  createdAt: string | null
+  updatedAt: string | null
 }
 
 export interface AccountSelectRow {
   id: string
-  user_id: string
-  provider: string
-  account_id: string
-  created_at?: string | null
+  userId: string
+  providerId: string
+  accountId: string
+  createdAt?: string | Date | null
 }

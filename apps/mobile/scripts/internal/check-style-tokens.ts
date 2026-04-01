@@ -24,8 +24,7 @@ const spacingProperties = [
   'columnGap',
 ]
 
-const root = path.resolve(__dirname, '../../..')
-const targetDir = path.join(root, 'apps', 'mobile')
+const targetDir = path.resolve(__dirname, '..', '..')
 const extensions = ['.ts', '.tsx']
 let violations: string[] = []
 

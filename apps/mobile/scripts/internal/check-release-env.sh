@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-source "$(dirname "$0")/_lib.sh"
+source "$(dirname "$0")/../_lib.sh"
 
 if [[ $# -ne 1 ]]; then
   fail "usage: check-release-env.sh <preview|production>"

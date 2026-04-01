@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-source "$(dirname "$0")/_lib.sh"
+source "$(dirname "$0")/../_lib.sh"
 
 CONFIG_JSON="$(bash -lc 'bunx expo config --json --type public')"
 

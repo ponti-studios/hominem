@@ -35,13 +35,13 @@ describeIntegration('events integration', () => {
       sql`, `,
     );
     await db
-      .execute(sql`delete from calendar_events where user_id in (${userIdsSql})`)
+      .execute(sql`delete from app.events where owner_userid in (${userIdsSql})`)
       .catch(() => {});
-    await db.execute(sql`delete from tags where owner_id in (${userIdsSql})`).catch(() => {});
+    await db.execute(sql`delete from app.tags where owner_id in (${userIdsSql})`).catch(() => {});
     await db
-      .execute(sql`delete from persons where owner_user_id in (${userIdsSql})`)
+      .execute(sql`delete from app.people where owner_userid in (${userIdsSql})`)
       .catch(() => {});
-    await db.execute(sql`delete from users where id in (${userIdsSql})`).catch(() => {});
+    await db.execute(sql`delete from "user" where id in (${userIdsSql})`).catch(() => {});
   };
 
   beforeEach(async () => {
@@ -55,8 +55,8 @@ describeIntegration('events integration', () => {
 
     ownerContactId = nextUserId();
     await db.execute(sql`
-      insert into persons (id, owner_user_id, person_type, first_name, last_name, email)
-      values (${ownerContactId}, ${ownerId}, 'contact', 'Companion', 'One', ${`${ownerContactId}@example.com`})
+      insert into app.people (id, owner_userid, person_type, first_name, last_name, email)
+      values (${ownerContactId}, ${ownerId}, 'person', 'Companion', 'One', ${`${ownerContactId}@example.com`})
     `);
   });
 
@@ -109,7 +109,7 @@ describeIntegration('events integration', () => {
 
     const eventAfterDelete = await getEventById(created.id);
     const peopleAfterDelete = await db.execute(sql`
-      select id from calendar_attendees where event_id = ${created.id}
+      select id from app.event_attendees where event_id = ${created.id}
     `);
 
     expect(deleted).toBe(true);

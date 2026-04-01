@@ -7,10 +7,10 @@ export function toUser(row: UserRow): User {
     id: row.id,
     email: row.email,
     name: row.name ?? undefined,
-    image: row.image ?? row.avatar_url ?? undefined,
-    isAdmin: row.is_admin,
-    createdAt: row.created_at ?? new Date().toISOString(),
-    updatedAt: row.updated_at ?? new Date().toISOString(),
+    image: row.image ?? undefined,
+    isAdmin: false,
+    createdAt: row.createdAt ?? new Date().toISOString(),
+    updatedAt: row.updatedAt ?? new Date().toISOString(),
   }
 }
 
@@ -19,7 +19,7 @@ export class UserAuthService {
     const { id, email } = opts
     if (!id && !email) return null
 
-    let query = db.selectFrom('users').selectAll()
+    let query = db.selectFrom('user').selectAll()
 
     if (id && email) {
       query = query.where((eb) => eb.or([eb('id', '=', id), eb('email', '=', email)]))
@@ -35,7 +35,7 @@ export class UserAuthService {
 
   static async getUserByEmail(email: string): Promise<UserRow | null> {
     const result = await db
-      .selectFrom('users')
+      .selectFrom('user')
       .selectAll()
       .where('email', '=', email)
       .limit(1)
@@ -45,7 +45,7 @@ export class UserAuthService {
 
   static async getUserById(id: string): Promise<UserRow | null> {
     const result = await db
-      .selectFrom('users')
+      .selectFrom('user')
       .selectAll()
       .where('id', '=', id)
       .limit(1)
@@ -54,7 +54,7 @@ export class UserAuthService {
   }
 
   static async deleteUser(id: string): Promise<boolean> {
-    const result = await db.deleteFrom('users').where('id', '=', id).executeTakeFirst()
+    const result = await db.deleteFrom('user').where('id', '=', id).executeTakeFirst()
     return (result.numDeletedRows ?? 0n) > 0n
   }
 }

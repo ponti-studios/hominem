@@ -27,7 +27,7 @@ const mocks = vi.hoisted(() => ({
   updateChatTitleQuery: vi.fn(),
 }));
 
-vi.mock('@hominem/chat-services', () => ({
+vi.mock('@hominem/chat-services/server', () => ({
   MessageService: class {
     addMessages = mocks.addMessages;
     getChatMessages = mocks.getChatMessages;

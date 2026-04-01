@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
-source "$(dirname "$0")/_lib.sh"
+source "$(dirname "$0")/../_lib.sh"
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-EAS_FILE="${ROOT_DIR}/apps/mobile/eas.json"
+MOBILE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+EAS_FILE="${MOBILE_DIR}/eas.json"
 
 if [[ ! -f "${EAS_FILE}" ]]; then
   fail "Missing eas.json at ${EAS_FILE}"

@@ -2,6 +2,7 @@ import type { User } from '@hominem/auth/server';
 import { createHonoTelemetryMiddleware } from '@hominem/telemetry/node';
 import { logger } from '@hominem/utils/logger';
 import { apiReference } from '@scalar/hono-api-reference';
+import * as Sentry from '@sentry/node';
 import { Hono } from 'hono';
 import { openAPIRouteHandler } from 'hono-openapi';
 import { cors } from 'hono/cors';
@@ -160,6 +161,7 @@ export function createServer() {
 
   // Global error handler - must be after routes
   app.onError((err, c) => {
+    Sentry.captureException(err);
     logger.error('[services/api] Error', { error: err });
 
     if (isServiceError(err)) {

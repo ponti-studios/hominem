@@ -59,6 +59,12 @@ export function initTelemetry(
   explicitConfig?: Partial<TelemetryConfig>,
 ): NodeTelemetry {
   const config = getTelemetryConfig(explicitConfig);
+
+  // Skip all OTel setup when explicitly disabled
+  if (config.otlpEndpoint === 'none') {
+    return { shutdown: async () => {}, forceFlush: async () => {} };
+  }
+
   const resource = createResource(config);
 
   // Set up context manager
