@@ -55,7 +55,7 @@ export const ensureIntegrationUsers = async (
   const { db } = await import('../db')
   
   for (const user of users) {
-    await db.insertInto('users').values({
+    await db.insertInto('user').values({
       id: user.id,
       email: user.email ?? `${user.id}@test.com`,
       name: user.name,
@@ -69,7 +69,7 @@ export const createTestUser = async (overrides?: { id?: string; email?: string; 
   const { db } = await import('../db')
   const id = overrides?.id || randomUUID()
   
-  await db.insertInto('users').values({
+  await db.insertInto('user').values({
     id,
     email: overrides?.email || `${id}@test.com`,
     name: overrides?.name || 'Test User',
@@ -83,13 +83,12 @@ export const cleanupTestData = async (userIds: string[]): Promise<void> => {
   
   const { db } = await import('../db')
   
-  // Delete notes for users
-  await db.deleteFrom('notes')
-    .where('user_id', 'in', userIds)
+  await db.deleteFrom('app.notes')
+    .where('owner_userid', 'in', userIds)
     .execute()
   
   // Delete users
-  await db.deleteFrom('users')
+  await db.deleteFrom('user')
     .where('id', 'in', userIds)
     .execute()
 }
