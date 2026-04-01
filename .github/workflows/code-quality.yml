@@ -381,6 +381,23 @@ jobs:
           AUTH_E2E_SECRET: "otp-secret"
           SEND_EMAILS: "false"
 
+  test-observability-smoke:
+    name: test:observability-smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+        with:
+          install-flags: "--force"
+      - name: 🚦 Run observability smoke test
+        run: |
+          trap 'docker compose -f infra/docker/compose/observability.yml down -v' EXIT
+          make obs-smoke
+
   analyze:
     name: analyze
     runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}

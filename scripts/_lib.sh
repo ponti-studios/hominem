@@ -7,12 +7,6 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 COMPOSE_DEV=(docker compose -f "$ROOT_DIR/infra/docker/compose/base.yml" -f "$ROOT_DIR/infra/docker/compose/dev.yml")
 COMPOSE_OBS=(docker compose -f "$ROOT_DIR/infra/docker/compose/observability.yml")
 
-OBS_ENDPOINTS=(
-  "http://localhost:8080/api/health"
-  "http://localhost:13133/"
-  "http://localhost:8123/ping"
-)
-
 # wait_for_http <url> <max_attempts> [delay_secs=1]
 # Polls <url> until it returns 2xx or <max_attempts> is exhausted.
 wait_for_http() {
@@ -43,20 +37,8 @@ poll_clickhouse() {
   return 1
 }
 
-# obs_is_running — returns 0 if all three observability endpoints are healthy
-obs_is_running() {
-  for url in "${OBS_ENDPOINTS[@]}"; do
-    curl -fsS "$url" >/dev/null 2>&1 || return 1
-  done
-  return 0
-}
-
 # ensure_obs_stack — idempotently starts the observability stack
 ensure_obs_stack() {
-  if obs_is_running; then
-    echo "Observability stack is already running."
-    return 0
-  fi
   echo "==> Starting observability stack..."
   "${COMPOSE_OBS[@]}" up -d --wait
 }

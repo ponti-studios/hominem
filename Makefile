@@ -13,6 +13,8 @@ DOCKER_FULL := $(DOCKER_COMPOSE) -f infra/docker/compose/base.yml -f infra/docke
 DEV_DATABASE_URL ?= postgres://postgres:postgres@localhost:5434/hominem
 TEST_DATABASE_URL ?= postgres://postgres:postgres@localhost:4433/hominem-test
 GOOSE_MIGRATIONS_DIR ?= $(CURDIR)/packages/db/migrations
+CLICKHOUSE_USER ?= default
+CLICKHOUSE_PASSWORD ?= default
 
 .PHONY: help install dev build test lint format duplication typecheck-native
 .PHONY: infra-up infra-down infra-reset infra-status
@@ -82,13 +84,38 @@ docker-up-observability:
 	$(MAKE) obs-up
 
 obs-up:
-	$(DOCKER_OBSERVABILITY) up -d --wait
+	CLICKHOUSE_USER="$(CLICKHOUSE_USER)" CLICKHOUSE_PASSWORD="$(CLICKHOUSE_PASSWORD)" $(DOCKER_OBSERVABILITY) up -d --wait
 
 obs-status:
 	$(DOCKER_OBSERVABILITY) ps
 
 obs-smoke:
-	bash ./scripts/observability-smoke.sh
+	@set -euo pipefail; \
+	source scripts/_lib.sh; \
+	: "$${CLICKHOUSE_USER:=default}"; \
+	: "$${CLICKHOUSE_PASSWORD:=default}"; \
+	export CLICKHOUSE_USER CLICKHOUSE_PASSWORD; \
+	ensure_obs_stack; \
+	trace_suffix="$$(openssl rand -hex 4)"; \
+	service_name="hominem-observability-smoke-$${trace_suffix}"; \
+	span_name="smoke-span-$${trace_suffix}"; \
+	export OTEL_LOGS_EXPORTER=none; \
+	echo "==> Sending smoke trace to the collector..."; \
+	SERVICE_NAME="$${service_name}" SPAN_NAME="$${span_name}" bun --eval 'import { trace } from "@opentelemetry/api"; import { initTelemetry } from "@hominem/telemetry/node"; const telemetry = initTelemetry({ serviceName: process.env.SERVICE_NAME, environment: "local", otlpEndpoint: "http://localhost:4318", otlpProtocol: "http/protobuf" }); const tracer = trace.getTracer("smoke"); const span = tracer.startSpan(process.env.SPAN_NAME); span.setAttribute("smoke", "true"); span.end(); await telemetry.forceFlush(); await telemetry.shutdown();' >/dev/null; \
+	echo "==> Waiting for trace to land in ClickHouse..."; \
+	query="SELECT count() FROM default.otel_traces WHERE ServiceName = '$${service_name}' AND SpanName = '$${span_name}' FORMAT TSVRaw"; \
+	count=""; \
+	for _ in $$(seq 1 24); do \
+	  count="$$(curl -fsS -u "$${CLICKHOUSE_USER}:$${CLICKHOUSE_PASSWORD}" --get --data-urlencode "query=$${query}" http://localhost:8123/ 2>/dev/null || true)"; \
+	  if [ "$${count}" = "1" ]; then \
+	    echo "Smoke trace verified in ClickHouse."; \
+	    exit 0; \
+	  fi; \
+	  sleep 2; \
+	done; \
+	echo "ERROR: Smoke trace did not appear in ClickHouse within 48s." >&2; \
+	exit 1
+
 
 obs-down:
 	$(DOCKER_OBSERVABILITY) down -v
