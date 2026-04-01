@@ -2,7 +2,7 @@
 # https://clickhouse.com/docs/use-cases/observability/clickstack/overview
 #
 # Secrets: copy infra/docker/observability/.env.example → infra/docker/observability/.env
-# Usage:   make obs-up
+# Source of truth: this compose file and the observability package/docs.
 
 networks:
   observability:

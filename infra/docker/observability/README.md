@@ -1,29 +1,21 @@
 # Local Observability Stack (ClickStack)
 
-[ClickStack](https://clickhouse.com/docs/use-cases/observability/clickstack/overview) — logs, traces, metrics, and session replay in one place, backed by ClickHouse with full OpenTelemetry support.
+[ClickStack](https://clickhouse.com/docs/use-cases/observability/clickstack/overview) provides logs, traces, metrics, and session replay on top of ClickHouse with OpenTelemetry support.
 
 ## Stack
 
-| Service        | Image                                      | Role                         |
-| -------------- | ------------------------------------------ | ---------------------------- |
-| ch-server      | `clickhouse/clickhouse-server:26.2.6-alpine` | Storage & query engine       |
-| otel-collector | `clickhouse/clickstack-otel-collector:2.22.1`   | OTLP ingest (pre-configured) |
-| hyperdx        | `clickhouse/clickstack-all-in-one:2.22.1`       | UI + API                     |
-| mongo          | `mongo:8.0`                                | HyperDX metadata store       |
+| Service        | Image                                         | Role                     |
+| -------------- | --------------------------------------------- | ------------------------ |
+| ch-server      | `clickhouse/clickhouse-server:26.2.6-alpine`  | Storage and query engine |
+| otel-collector | `clickhouse/clickstack-otel-collector:2.22.1` | OTLP ingest              |
+| hyperdx        | `clickhouse/clickstack-all-in-one:2.22.1`     | UI and API               |
+| mongo          | `mongo:8.0`                                   | HyperDX metadata store   |
 
-## Setup
+## Local Setup
 
-```bash
-# First time only
-cp infra/docker/observability/.env.example infra/docker/observability/.env
-# Edit .env if using non-default ClickHouse credentials
-```
-
-## Start
-
-```bash
-make obs-up
-```
+- Create the local observability env file from the example before first use.
+- Adjust credentials only if the defaults are not appropriate for the local environment.
+- Treat the Compose file and the local env file in this directory as the source of truth for startup and teardown behavior.
 
 ## Ports
 
@@ -36,17 +28,12 @@ make obs-up
 | `8888`  | OTel collector metrics      |
 | `13133` | OTel collector health check |
 
-## App configuration
+## App Configuration
 
-Point your services at the collector:
-
-```
-OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
-```
+Point local services at OTLP HTTP on `http://localhost:4318`.
 
 ## Notes
 
-- The collector is pre-configured for ClickHouse — no `otel-collector.yaml` needed.
-- The observability stack uses its own `observability` Docker network and `obs-*` volumes, isolated from the dev stack.
-- `make obs-down` destroys containers and volumes — telemetry data is not preserved across restarts by design.
-- Volumes persist while containers are running; use `obs-down` to wipe all data.
+- The collector is pre-configured for ClickHouse, so there is no separate collector config file to maintain in the repo.
+- The observability stack uses its own Docker network and volumes, isolated from the main dev stack.
+- Destroying the local observability stack also removes its telemetry data by design.

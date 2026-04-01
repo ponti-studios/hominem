@@ -21,15 +21,15 @@
 
 ## Risks
 
-- 
+-
 
 ## Follow-Ups
 
-- 
+-
 
 ## Merge Checklist
 
 - [ ] Scope is focused and reviewable
 - [ ] No temporary debug code or dead code left behind
-- [ ] Docs and scripts reflect the shipped behavior
+- [ ] Docs reflect the shipped behavior
 - [ ] New config or environment requirements are called out

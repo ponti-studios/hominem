@@ -1,8 +1,8 @@
 ## Hakumi monorepo
 
-Hakumi is a notes-first personal workspace. This repo contains the product apps, shared packages, and services that power capture, notes, and chat across platforms.
+Hakumi is a notes-first personal workspace. This repository contains the apps, shared packages, services, infrastructure definitions, and product tooling that support capture, notes, and chat across platforms.
 
-This repo uses Bun as the package manager and script runner.
+The repo uses Bun workspaces and Turbo.
 
 ### Prerequisites
 
@@ -11,89 +11,43 @@ This repo uses Bun as the package manager and script runner.
 
 Toolchain versions are pinned in `.tool-versions` and `.node-version`.
 
-Run a local environment check:
+### Source Of Truth
 
-- `bun run dev:doctor`
+This repository intentionally does not duplicate runnable command strings in documentation.
 
-### Common tasks
+If you need a concrete entrypoint, inspect the owning files directly:
 
-- Install deps:
+- root `package.json` for the small cross-workspace surface
+- workspace `package.json` files for package-local entrypoints
+- `turbo.json` for graph task behavior
+- `infra/docker/compose/*.yml` for local infrastructure lifecycle
+- `.github/workflows/*.yml` and `.github/actions/*` for CI execution paths
+- package-local config such as `eas.json`, Detox config, Playwright config, Storybook config, and app config files
 
-	bun install
+### Working Model
 
-- Build all packages:
+- The root surface stays intentionally small.
+- Package-local behavior lives with the owning workspace.
+- Infrastructure behavior lives in Compose files and CI/workflow definitions.
+- Documentation describes ownership and architecture, not shell snippets.
 
-	bun run build
+### Repository Shape
 
-- Develop (example):
+- `apps/` contains user-facing applications.
+- `services/` contains service processes and APIs.
+- `packages/` contains shared libraries, runtime packages, and UI building blocks.
+- `tools/` contains product tooling packages.
+- `infra/` contains infrastructure definitions.
 
-	bun run dev
-
-### Script standard
-
-Root scripts are intentionally minimal during the rebuild:
-
-- `bun run dev`
-- `bun run build`
-- `bun run test`
-- `bun run lint` (workspace lint + native typecheck + duplication)
-- `bun run format`
-
-Use filtering for targeted work instead of extra root aliases:
-
-- `bun run build --filter @hominem/web`
-- `bun run test --filter @hominem/api`
-- `bun run dev --filter @hominem/api --filter @hominem/web`
-- `bun run --filter @hominem/mobile check:expo-config`
-- `bun run --filter @hominem/api test:auth:contract`
-
-Workspace scripts should follow `verb[:qualifier]` and keep names aligned with behavior.
-
-### Rebuild command surface
-
-The repo is in a rebuild phase. Use the root `Makefile` only for:
-
-- core orchestration
-- local infra bootstrap
-- current DB verification helpers
-
-Older deploy/mobile/database convenience targets have been removed from the root surface and should be reintroduced only when they match the rebuilt architecture.
-
-### Canonical Docs
-
-- Product docs: `docs/README.md`
-- Observability: `docs/observability.md`
-- Rebuild reset: `docs/rebuild-reset.md`
-- Local setup: `.github/skills/setup-workflow/SKILL.md`
-- Deployment: `.github/skills/deployment-workflow/SKILL.md`
-- Docker: `.github/skills/docker-workflow/SKILL.md`
-
-### Sharing skills between projects
-
-Skills are defined under `.github/skills` and are repo‑scoped.  To move them
-elsewhere you can use the CLI helpers:
-
-```bash
-# from the source repository
-hominem skills export /tmp/skills-export
-
-# in the new repository
-hominem skills import /tmp/skills-export
-```
-
-The commands simply copy the directory tree, creating the destination as
-needed.  Once imported you can commit the files in the new project as usual.
-
-### MCP server auth (single source of truth)
+### MCP Server Auth
 
 The MCP server reads its auth token from a config file only.
 
-- Path: ~/.hominem/config.json (override with HOMINEM_CONFIG_PATH or HOMINEM_CONFIG_DIR)
-- Format:
-
-	{ "token": "YOUR_TOKEN_HERE" }
+- Path: `~/.hominem/config.json`
+- Overrides: `HOMINEM_CONFIG_PATH` or `HOMINEM_CONFIG_DIR`
+- Required field: `token`
 
 Optional API endpoint overrides for MCP HTTP tools:
 
-- HOMINEM_API_HOST (default: localhost)
-- HOMINEM_API_PORT (default: 4040)
+- `HOMINEM_API_HOST`
+- `HOMINEM_API_PORT`
