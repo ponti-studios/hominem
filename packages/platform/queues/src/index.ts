@@ -1,5 +1,5 @@
-import { QUEUE_NAMES } from '@hominem/utils/consts';
 import { redis } from '@hominem/services/redis';
+import { QUEUE_NAMES } from '@hominem/utils/consts';
 import type { Queue } from 'bullmq';
 import { Queue as BullQueue } from 'bullmq';
 

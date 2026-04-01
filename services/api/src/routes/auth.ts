@@ -29,7 +29,7 @@ import { issueAccessToken, verifyAccessToken } from '../auth/tokens';
 function createMockAuthProvider() {
   return {
     async signIn() {
-      const id = randomUUID()
+      const id = randomUUID();
       return {
         user: {
           id,
@@ -45,12 +45,12 @@ function createMockAuthProvider() {
           expires_in: 3600,
           expires_at: new Date(Date.now() + 3600 * 1000).toISOString(),
         },
-      }
+      };
     },
     async signOut() {
       // no-op for mock
     },
-  }
+  };
 }
 
 import { env } from '../env';

@@ -2,11 +2,12 @@ import { useChat } from '@ai-sdk/react';
 import { useRpcMutation } from '@hominem/rpc/react';
 import type {
   ChatMessage,
+  ChatsGetMessagesOutput,
   ChatsSendInput,
   ChatsSendOutput,
-  ChatsGetMessagesOutput,
 } from '@hominem/rpc/types/chat.types';
 import { useQueryClient } from '@tanstack/react-query';
+import { DefaultChatTransport } from 'ai';
 import { useMemo } from 'react';
 
 import { chatQueryKeys } from '~/lib/query-keys';
@@ -29,16 +30,17 @@ export function useSendMessage({ chatId }: { chatId: string; userId?: string }) 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const chat = useChat({
     id: `chat-${chatId}`,
-    api: `${apiBase}/api/chats/${chatId}/ui/send`,
-    streamProtocol: 'data',
-    credentials: 'include',
+    transport: new DefaultChatTransport({
+      api: `${apiBase}/api/chats/${chatId}/ui/send`,
+      credentials: 'include',
+    }),
     onFinish: () => {
       queryClient.invalidateQueries({ queryKey: chatQueryKeys.messages(chatId) });
     },
     onError: () => {
       queryClient.invalidateQueries({ queryKey: chatQueryKeys.messages(chatId) });
     },
-  } as any);
+  });
 
   const legacySend = useRpcMutation(
     async ({ chats }, variables: ChatsSendInput) => {

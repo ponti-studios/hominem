@@ -115,7 +115,5 @@
     "**/__tests__/**",
     "**/__mocks__/**",
     "**/test-assets/**"
-  ],
-
-  "ignoreDependencies": ["quansync"]
+  ]
 }
