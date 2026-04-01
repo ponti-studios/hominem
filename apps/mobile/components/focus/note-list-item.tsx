@@ -1,7 +1,7 @@
 import type { Note } from '@hominem/rpc/types';
 import { fontSizes } from '@hominem/ui/tokens';
-import { Link } from 'expo-router';
 import type { RelativePathString } from 'expo-router';
+import { Link } from 'expo-router';
 import { memo, useCallback, useEffect, useRef } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';

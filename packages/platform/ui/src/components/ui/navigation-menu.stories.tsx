@@ -14,6 +14,30 @@ const meta: Meta<typeof NavigationMenu> = {
   title: 'Navigation/NavigationMenu',
   component: NavigationMenu,
   tags: ['autodocs'],
+  argTypes: {
+    orientation: {
+      control: 'select',
+      options: ['horizontal', 'vertical'],
+      description: 'The orientation of the navigation menu',
+      table: { defaultValue: { summary: 'horizontal' } },
+    },
+    delayDuration: {
+      control: 'number',
+      description: 'Duration in milliseconds to delay opening a submenu',
+      table: { defaultValue: { summary: '200' } },
+    },
+    skipDelayDuration: {
+      control: 'number',
+      description:
+        'How long the user has to move pointer from one trigger to another before the delay resets',
+      table: { defaultValue: { summary: '300' } },
+    },
+    dir: {
+      control: 'select',
+      options: ['ltr', 'rtl'],
+      description: 'Reading direction of the navigation menu',
+    },
+  },
 };
 export default meta;
 type Story = StoryObj<typeof NavigationMenu>;

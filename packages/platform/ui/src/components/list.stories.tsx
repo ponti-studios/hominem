@@ -1,11 +1,19 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { expect, within } from 'storybook/test';
 
 import { List } from './list';
 
 const meta: Meta<typeof List> = {
-  title: 'Patterns/DataDisplay/List',
+  title: 'Primitives/List',
   component: List,
   tags: ['autodocs'],
+  argTypes: {
+    isLoading: { control: 'boolean' },
+    loadingSize: {
+      control: 'select',
+      options: ['sm', 'md', 'lg', 'xl', '2xl', '3xl'],
+    },
+  },
 };
 export default meta;
 type Story = StoryObj<typeof List>;
@@ -18,12 +26,48 @@ export const Default: Story = {
       <li className="px-4 py-3 text-sm">Item three</li>
     </List>
   ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText('Item one')).toBeInTheDocument();
+    await expect(canvas.getByText('Item three')).toBeInTheDocument();
+  },
 };
 
 export const Loading: Story = {
-  render: () => (
-    <List isLoading className="max-w-sm">
+  args: {
+    isLoading: true,
+  },
+  render: (args) => (
+    <List {...args} className="max-w-sm">
       <li className="px-4 py-3 text-sm">This won't show</li>
+    </List>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    expect(canvas.queryByText("This won't show")).not.toBeInTheDocument();
+  },
+};
+
+export const LoadingSmall: Story = {
+  args: {
+    isLoading: true,
+    loadingSize: 'sm',
+  },
+  render: (args) => (
+    <List {...args} className="max-w-sm">
+      <li className="px-4 py-3 text-sm">Item</li>
+    </List>
+  ),
+};
+
+export const LoadingLarge: Story = {
+  args: {
+    isLoading: true,
+    loadingSize: 'lg',
+  },
+  render: (args) => (
+    <List {...args} className="max-w-sm">
+      <li className="px-4 py-3 text-sm">Item</li>
     </List>
   ),
 };
@@ -47,4 +91,8 @@ export const WithContent: Story = {
       ))}
     </List>
   ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText('Alice Johnson')).toBeInTheDocument();
+  },
 };

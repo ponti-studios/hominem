@@ -77,7 +77,7 @@ export function NoteEditor({ note }: NoteEditorProps) {
         />
         <div className="flex shrink-0 items-center gap-2 pt-1">
           <span
-            className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${
+            className={`inline-flex items-center rounded-full px-2 py-1 text-caption-2 font-medium uppercase tracking-widest ${
               saveStatus === 'saving'
                 ? 'bg-elevated text-text-tertiary'
                 : saveStatus === 'unsaved'

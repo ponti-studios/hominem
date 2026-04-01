@@ -22,11 +22,18 @@ export const fontFamiliesNative = {
 } as const;
 
 export const fontSizes = {
+  micro: 10,
+  caption2: 11,
+  caption1: 12,
+  footnote: 13,
   xs: 12,
   sm: 14,
+  subhead: 15,
   md: 16,
+  body: 17,
   lg: 18,
   xl: 20,
+  headline: 17,
   display: 28,
 } as const;
 

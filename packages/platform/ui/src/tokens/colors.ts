@@ -97,4 +97,74 @@ export const colors = {
   white: '#ffffff',
 } as const;
 
+export const darkColors = {
+  ...colors,
+  'bg-base': '#1A1814',
+  'bg-surface': '#242019',
+  'bg-elevated': '#2E2A22',
+  'bg-overlay': 'rgba(250, 249, 247, 0.04)',
+
+  'text-primary': '#F5F2EC',
+  'text-secondary': '#A89F90',
+  'text-tertiary': '#6B6555',
+  'text-disabled': '#3E3B35',
+
+  'border-default': 'rgba(250, 249, 247, 0.09)',
+  'border-subtle': 'rgba(250, 249, 247, 0.05)',
+  'border-focus': 'rgba(250, 249, 247, 0.20)',
+
+  'icon-primary': '#F5F2EC',
+  'icon-muted': '#6B6555',
+
+  success: '#34C47A',
+  warning: '#F59E0B',
+  destructive: '#F05252',
+
+  accent: '#E0703A',
+  'accent-foreground': '#FFFFFF',
+
+  primary: '#F5F2EC',
+  'primary-foreground': '#1A1814',
+  secondary: 'rgba(250, 249, 247, 0.08)',
+  'secondary-foreground': '#A89F90',
+  muted: 'rgba(250, 249, 247, 0.05)',
+  'muted-foreground': '#6B6555',
+  foreground: '#F5F2EC',
+  background: '#1A1814',
+  'destructive-foreground': '#FFFFFF',
+  popover: '#242019',
+  'popover-foreground': '#F5F2EC',
+  input: '#242019',
+  ring: '#E0703A',
+
+  'emphasis-highest': 'rgba(250, 249, 247, 0.90)',
+  'emphasis-high': 'rgba(250, 249, 247, 0.70)',
+  'emphasis-medium': 'rgba(250, 249, 247, 0.50)',
+  'emphasis-low': 'rgba(250, 249, 247, 0.30)',
+  'emphasis-lower': 'rgba(250, 249, 247, 0.20)',
+  'emphasis-subtle': 'rgba(250, 249, 247, 0.12)',
+  'emphasis-minimal': 'rgba(250, 249, 247, 0.07)',
+  'emphasis-faint': 'rgba(250, 249, 247, 0.04)',
+
+  'chart-1': '#C05A2A',
+  'chart-2': '#2A9D63',
+  'chart-3': '#3B82F6',
+  'chart-4': '#D97706',
+  'chart-5': '#9E9585',
+
+  sidebar: '#1A1814',
+  'sidebar-foreground': '#F5F2EC',
+  'sidebar-primary': '#F5F2EC',
+  'sidebar-primary-foreground': '#1A1814',
+  'sidebar-accent': 'rgba(250, 249, 247, 0.06)',
+  'sidebar-accent-foreground': '#F5F2EC',
+  'sidebar-border': 'rgba(250, 249, 247, 0.08)',
+  'sidebar-ring': '#E0703A',
+
+  'prompt-bg': '#242019',
+  'prompt-border': 'rgba(250, 249, 247, 0.12)',
+  'prompt-border-focus': 'rgba(250, 249, 247, 0.28)',
+} as const;
+
 export type ColorToken = keyof typeof colors;
+export type DarkColorToken = keyof typeof darkColors;

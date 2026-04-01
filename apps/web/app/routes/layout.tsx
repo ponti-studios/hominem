@@ -5,6 +5,7 @@ import { Container } from '@hominem/ui/components/layout';
 import { Toaster } from '@hominem/ui/components/ui/toaster';
 import {
   Composer,
+  COMPOSER_RESTING_HEIGHT,
   ComposerProvider,
   ComposerStore,
   type ComposerActions,
@@ -135,7 +136,7 @@ export default function Layout() {
       <div
         style={
           {
-            '--composer-resting-height': 'calc(env(safe-area-inset-bottom) + 112px)',
+            '--composer-resting-height': `calc(env(safe-area-inset-bottom) + ${COMPOSER_RESTING_HEIGHT}px)`,
           } as React.CSSProperties
         }
       >
@@ -151,10 +152,7 @@ export default function Layout() {
         )}
         <div className="flex min-h-dvh flex-col bg-background">
           <NotesHeader />
-          <main
-            id="main-content"
-            className="mt-14 flex-1 pb-[calc(env(safe-area-inset-bottom)+112px)] md:mt-16"
-          >
+          <main id="main-content" className="mt-14 flex-1 pb-(--composer-resting-height) md:mt-16">
             <Container maxWidth="md" padded={false}>
               <Suspense fallback={<LoadingScreen />}>
                 <Outlet />

@@ -17,6 +17,26 @@ const meta: Meta<typeof DropdownMenu> = {
   title: 'Patterns/Overlay/DropdownMenu',
   component: DropdownMenu,
   tags: ['autodocs'],
+  argTypes: {
+    open: {
+      control: 'boolean',
+      description: 'Controls whether the dropdown menu is open',
+    },
+    defaultOpen: {
+      control: 'boolean',
+      description: 'Whether the dropdown menu is open by default (uncontrolled)',
+    },
+    modal: {
+      control: 'boolean',
+      description: 'When true, interaction outside the menu is disabled while open',
+      table: { defaultValue: { summary: 'true' } },
+    },
+    dir: {
+      control: 'select',
+      options: ['ltr', 'rtl'],
+      description: 'Reading direction of the dropdown menu',
+    },
+  },
 };
 export default meta;
 type Story = StoryObj<typeof DropdownMenu>;

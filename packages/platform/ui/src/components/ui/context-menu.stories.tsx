@@ -14,6 +14,18 @@ const meta: Meta<typeof ContextMenu> = {
   title: 'Patterns/Overlay/ContextMenu',
   component: ContextMenu,
   tags: ['autodocs'],
+  argTypes: {
+    modal: {
+      control: 'boolean',
+      description: 'When true, interaction outside the context menu is disabled while open',
+      table: { defaultValue: { summary: 'true' } },
+    },
+    dir: {
+      control: 'select',
+      options: ['ltr', 'rtl'],
+      description: 'Reading direction of the context menu',
+    },
+  },
 };
 export default meta;
 type Story = StoryObj<typeof ContextMenu>;

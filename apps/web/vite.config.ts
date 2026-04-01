@@ -1,3 +1,4 @@
+import { shellTheme } from '@hominem/ui/theme';
 import { reactRouter } from '@react-router/dev/vite';
 import tailwindcss from '@tailwindcss/vite';
 import { visualizer } from 'rollup-plugin-visualizer';
@@ -5,6 +6,7 @@ import type { ConfigEnv, PluginOption, UserConfig } from 'vite';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import tsconfigPaths from 'vite-tsconfig-paths';
+
 import { WEB_BRAND } from './app/lib/brand';
 
 export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
@@ -27,8 +29,8 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
           name: WEB_BRAND.manifest.name,
           short_name: WEB_BRAND.manifest.shortName,
           description: WEB_BRAND.manifest.description,
-          theme_color: '#000000',
-          background_color: '#ffffff',
+          theme_color: shellTheme.web.themeColor,
+          background_color: shellTheme.web.backgroundColor,
           display: 'standalone',
           start_url: '/',
           icons: [
@@ -148,7 +150,11 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
                 return 'vendor-syntax-highlighter';
               }
               // Markdown renderer
-              if (id.includes('/react-markdown/') || id.includes('/remark-') || id.includes('/rehype-')) {
+              if (
+                id.includes('/react-markdown/') ||
+                id.includes('/remark-') ||
+                id.includes('/rehype-')
+              ) {
                 return 'vendor-markdown';
               }
               // Uppy file upload

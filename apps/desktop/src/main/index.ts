@@ -1,6 +1,7 @@
 import { join } from 'node:path';
 
 import { electronApp, is, optimizer } from '@electron-toolkit/utils';
+import { shellTheme } from '@hominem/ui/theme';
 import { app, BrowserWindow, ipcMain, shell } from 'electron';
 
 let mainWindow: BrowserWindow | null = null;
@@ -12,7 +13,7 @@ function createWindow(): BrowserWindow {
     minWidth: 960,
     minHeight: 640,
     show: false,
-    backgroundColor: '#0f1113',
+    backgroundColor: shellTheme.desktop.backgroundColor,
     autoHideMenuBar: true,
     webPreferences: {
       preload: join(__dirname, '../preload/index.mjs'),

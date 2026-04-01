@@ -1,16 +1,16 @@
 import type { LinkDescriptor } from 'react-router';
 
+export * from './theme';
 export * from './tokens';
 
-export * from './components/layout';
-export * from './components/typography';
-export * from './components/email-sign-in';
+export * from './components/auth';
 export * from './components/finance';
 export * from './components/invites';
+export * from './components/layout';
 export * from './components/page-title';
+export * from './components/typography';
 export * from './components/ui';
 export * from './components/update-guard';
-export * from './components/auth';
 export * from './constants/chart-colors';
 export * from './hooks/sort.types';
 export * from './hooks/use-api-client';

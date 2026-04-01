@@ -19,6 +19,26 @@ const meta: Meta<typeof Sidebar> = {
   title: 'Navigation/Sidebar',
   component: Sidebar,
   tags: ['autodocs'],
+  argTypes: {
+    side: {
+      control: 'select',
+      options: ['left', 'right'],
+      description: 'Side of the screen where the sidebar appears',
+      table: { defaultValue: { summary: 'left' } },
+    },
+    variant: {
+      control: 'select',
+      options: ['sidebar', 'floating', 'inset'],
+      description: 'Visual variant of the sidebar',
+      table: { defaultValue: { summary: 'sidebar' } },
+    },
+    collapsible: {
+      control: 'select',
+      options: ['offcanvas', 'icon', 'none'],
+      description: 'Collapse behavior when the sidebar is toggled',
+      table: { defaultValue: { summary: 'offcanvas' } },
+    },
+  },
 };
 export default meta;
 type Story = StoryObj<typeof Sidebar>;

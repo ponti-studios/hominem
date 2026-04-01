@@ -1,128 +1,145 @@
 /* ============================================
- * Ponti Studios Unified Design System v1.0
- * 
- * Premium dark-mode design system combining:
- * - Ponti Studios: Opacity-based elevation, off-white foreground
- * - Apple HIG: Semantic tokens, typography, spacing
- * - Modern aesthetic: Simplicity, legibility, developer-native polish
+ * Hominem Design System
+ *
+ * Anthropic × Apple Human Interface Guidelines
+ * Warm, joyous, human-first design language.
+ *
+ * Principles:
+ *   - Warmth over sterility
+ *   - Clarity over cleverness
+ *   - Motion with purpose
+ *   - Accessible by default
  * ============================================ */
 
 @import 'tailwindcss';
 @import './animations.css';
 
-/* Fonts loaded via <link> in COMMON_FONT_LINKS — not @import url() here,
-   which would violate the CSS @import ordering rule after PostCSS inlines
-   the imports above. */
-
 @theme {
   /* ====== TYPOGRAPHY ====== */
 
-  /* Font families */
+  /* Font families — Geist for brand consistency, Apple system stack as fallback */
   --font-family-primary:
-    'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  --font-family-mono: 'Geist Mono', ui-monospace, 'SF Mono', 'Menlo', monospace;
+    'Geist', -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  --font-family-mono: 'Geist Mono', 'SF Mono', ui-monospace, 'Menlo', monospace;
 
-  /* Font sizes - 4px rhythm scale */
+  /* Apple HIG type scale — adapted for web densities */
+  --font-size-large-title: 34px;
+  --font-size-title-1: 28px;
+  --font-size-title-2: 22px;
+  --font-size-title-3: 20px;
+  --font-size-headline: 17px;
+  --font-size-body: 17px;
+  --font-size-callout: 16px;
+  --font-size-subhead: 15px;
+  --font-size-footnote: 13px;
+  --font-size-caption-1: 12px;
+  --font-size-caption-2: 11px;
+
+  /* Legacy size aliases — used by existing typography components */
   --font-size-xs: 12px;
   --font-size-sm: 14px;
   --font-size-md: 16px;
   --font-size-lg: 18px;
   --font-size-xl: 20px;
-  --font-size-display: 28px;
+  --font-size-display: 34px;
 
-  /* Font weights */
+  /* Weights */
   --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
 
-  /* Line heights - Apple HIG aligned */
+  /* Line heights — Apple HIG */
   --line-height-tight: 1.2;
   --line-height-normal: 1.4;
   --line-height-relaxed: 1.6;
 
-  /* Letter spacing - light mode optimized */
-  --letter-spacing-tight: -0.05em;
+  /* Letter spacing */
+  --letter-spacing-tight: -0.025em;
   --letter-spacing-normal: 0;
   --letter-spacing-relaxed: 0.01em;
 
-  /* ====== COLORS: BACKGROUNDS ====== */
-  /* Light palette per Apple Human Interface Guidelines */
+  /* ====== COLORS: LIGHT MODE ====== */
+  /* Anthropic-inspired warm palette — parchment whites, warm grays, coral accent */
 
-  --color-bg-base: #ffffff; /* App background - lightest */
-  --color-bg-surface: #f5f5f7; /* Cards, panels */
-  --color-bg-elevated: #f2f2f7; /* Modals, elevated state */
-  --color-bg-overlay: rgba(0, 0, 0, 0.04);
+  /* Backgrounds */
+  --color-bg-base: #faf9f7; /* Warm off-white — primary app background */
+  --color-bg-surface: #f2efe9; /* Warm light gray — cards, panels */
+  --color-bg-elevated: #e9e5dc; /* Warmer raised surface — modals, popovers */
+  --color-bg-overlay: rgba(28, 25, 18, 0.04);
 
-  /* ====== COLORS: TEXT ====== */
-  /* Dark foreground for light backgrounds */
+  /* Text — warm near-black, not pure black */
+  --color-text-primary: #1c1912;
+  --color-text-secondary: #6b6555;
+  --color-text-tertiary: #9e9585;
+  --color-text-disabled: #c4bdb0;
 
-  --color-text-primary: #000000; /* Main text - 100% black */
-  --color-text-secondary: #555555; /* Subtext - 33% gray */
-  --color-text-tertiary: #888888; /* Metadata - 53% gray */
-  --color-text-disabled: #cccccc; /* Disabled - 80% gray */
+  /* Borders */
+  --color-border-default: rgba(28, 25, 18, 0.1);
+  --color-border-subtle: rgba(28, 25, 18, 0.05);
+  --color-border-focus: rgba(28, 25, 18, 0.22);
 
-  /* ====== COLORS: BORDERS & LINES ====== */
-  /* Opacity-based for subtle separation */
+  /* Icons */
+  --color-icon-primary: #1c1912;
+  --color-icon-muted: #9e9585;
 
-  --color-border-default: rgba(0, 0, 0, 0.1);
-  --color-border-subtle: rgba(0, 0, 0, 0.05);
-  --color-border-focus: rgba(0, 0, 0, 0.15);
+  /* Semantic status */
+  --color-success: #2a9d63;
+  --color-warning: #d97706;
+  --color-destructive: #dc2626;
 
-  /* ====== COLORS: ICONS & LINES ====== */
-
-  --color-icon-primary: #000000;
-  --color-icon-muted: #888888;
-
-  /* ====== COLORS: SEMANTIC STATUS ====== */
-
-  --color-success: #34c759;
-  --color-warning: #ff9500;
-  --color-destructive: #ff3b30;
-
-  /* ====== COLORS: ACCENT (Per-Product Override) ====== */
-  /* Default: Apple Blue. Override with [data-product="*"] */
-
-  --color-accent: #007aff; /* Apple Blue per HIG */
+  /* Accent — Anthropic warm coral */
+  --color-accent: #c05a2a;
   --color-accent-foreground: #ffffff;
 
-  /* ====== COLORS: SYSTEM (Backward Compatibility) ====== */
-
-  --color-primary: #000000;
-  --color-primary-foreground: #ffffff;
-  --color-secondary: rgba(0, 0, 0, 0.1);
-  --color-secondary-foreground: #555555;
-  --color-muted: rgba(0, 0, 0, 0.05);
-  --color-muted-foreground: #888888;
-  --color-foreground: #000000;
-  --color-background: #ffffff;
+  /* System tokens — used by shadcn/ui component internals */
+  --color-primary: #1c1912;
+  --color-primary-foreground: #faf9f7;
+  --color-secondary: rgba(28, 25, 18, 0.07);
+  --color-secondary-foreground: #6b6555;
+  --color-muted: rgba(28, 25, 18, 0.04);
+  --color-muted-foreground: #9e9585;
+  --color-foreground: #1c1912;
+  --color-background: #faf9f7;
   --color-destructive-foreground: #ffffff;
-  --color-popover: #f5f5f7;
-  --color-popover-foreground: #000000;
-  --color-input: #f5f5f7;
-  --color-ring: #1c1c1e;
+  --color-popover: #f2efe9;
+  --color-popover-foreground: #1c1912;
+  --color-input: #f2efe9;
+  --color-ring: #c05a2a;
 
-  /* ====== COLORS: EMPHASIS SCALE ====== */
-  /* Opacity layers for subtle differentiation on black */
+  /* Emphasis scale — layered warm black for subtle differentiation */
+  --color-emphasis-highest: rgba(28, 25, 18, 0.9);
+  --color-emphasis-high: rgba(28, 25, 18, 0.7);
+  --color-emphasis-medium: rgba(28, 25, 18, 0.5);
+  --color-emphasis-low: rgba(28, 25, 18, 0.3);
+  --color-emphasis-lower: rgba(28, 25, 18, 0.2);
+  --color-emphasis-subtle: rgba(28, 25, 18, 0.12);
+  --color-emphasis-minimal: rgba(28, 25, 18, 0.07);
+  --color-emphasis-faint: rgba(28, 25, 18, 0.04);
 
-  --color-emphasis-highest: rgba(0, 0, 0, 0.9);
-  --color-emphasis-high: rgba(0, 0, 0, 0.7);
-  --color-emphasis-medium: rgba(0, 0, 0, 0.5);
-  --color-emphasis-low: rgba(0, 0, 0, 0.3);
-  --color-emphasis-lower: rgba(0, 0, 0, 0.2);
-  --color-emphasis-subtle: rgba(0, 0, 0, 0.15);
-  --color-emphasis-minimal: rgba(0, 0, 0, 0.1);
-  --color-emphasis-faint: rgba(0, 0, 0, 0.05);
+  /* Charts — warm, distinct, accessible */
+  --color-chart-1: #c05a2a;
+  --color-chart-2: #2a9d63;
+  --color-chart-3: #3b82f6;
+  --color-chart-4: #d97706;
+  --color-chart-5: #9e9585;
 
-  /* ====== COLORS: CHARTS ====== */
+  /* Sidebar */
+  --color-sidebar: #f2efe9;
+  --color-sidebar-foreground: #1c1912;
+  --color-sidebar-primary: #1c1912;
+  --color-sidebar-primary-foreground: #faf9f7;
+  --color-sidebar-accent: rgba(28, 25, 18, 0.06);
+  --color-sidebar-accent-foreground: #1c1912;
+  --color-sidebar-border: rgba(28, 25, 18, 0.08);
+  --color-sidebar-ring: #c05a2a;
 
-  --color-chart-1: rgba(0, 0, 0, 0.9);
-  --color-chart-2: rgba(0, 0, 0, 0.7);
-  --color-chart-3: rgba(0, 0, 0, 0.5);
-  --color-chart-4: rgba(0, 0, 0, 0.3);
-  --color-chart-5: rgba(0, 0, 0, 0.15);
+  /* Chat / Prompt input */
+  --color-prompt-bg: #faf9f7;
+  --color-prompt-border: rgba(28, 25, 18, 0.12);
+  --color-prompt-border-focus: rgba(28, 25, 18, 0.28);
 
-  /* ====== SPACING: 8PX + 4PX GRID ====== */
+  /* ====== SPACING: 8PT GRID ====== */
 
   --spacing-1: 4px;
   --spacing-2: 8px;
@@ -133,51 +150,172 @@
   --spacing-7: 48px;
   --spacing-8: 64px;
 
-  /* ====== CONTENT WIDTHS: MAX-WIDTH CONSTRAINTS ====== */
-  /* Used for constraining message bubbles, transcripts, and content areas */
+  /* Content widths */
+  --content-width-bubble: 36rem;
+  --content-width-transcript: 44rem;
+  --content-width-note-preview: 32ch;
 
-  --content-width-bubble: 36rem; /* Compact message bubble (576px) */
-  --content-width-transcript: 44rem; /* Standard transcript width (704px) */
-
-  /* ====== BORDER RADIUS ====== */
-  /* Soft rounded corners — progressive scale */
+  /* ====== BORDER RADIUS — Apple continuous corners ====== */
 
   --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-
-  /* Icon radius: 22% for squircular appearance */
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
   --radius-icon: 22%;
 
   /* ====== SHADOWS ====== */
-  /* Subtle elevation shadows */
+  /* Warm-tinted, multi-layer for depth without harshness */
 
-  --shadow-low: 0 2px 8px rgba(0, 0, 0, 0.1);
-  --shadow-medium: 0 8px 24px rgba(0, 0, 0, 0.15);
-  --shadow-high: 0 20px 60px rgba(0, 0, 0, 0.2);
+  --shadow-low: 0 1px 3px rgba(28, 25, 18, 0.06), 0 1px 2px rgba(28, 25, 18, 0.04);
+  --shadow-medium: 0 4px 16px rgba(28, 25, 18, 0.08), 0 2px 4px rgba(28, 25, 18, 0.04);
+  --shadow-high: 0 16px 48px rgba(28, 25, 18, 0.1), 0 4px 12px rgba(28, 25, 18, 0.06);
 
-  /* ====== GLASS MORPHISM ====== */
+  /* Glass morphism */
+  --glass-blur: 16px;
+  --glass-background: rgba(250, 249, 247, 0.85);
 
-  --glass-blur: 12px;
-  --glass-background: rgba(255, 255, 255, 0.8);
+  /* ====== MOTION ====== */
+  /* Apple spring-inspired easing */
 
-  /* ====== SIDEBAR COLORS ====== */
-  /* ChatGPT-style light sidebar */
+  --duration-fast: 120ms;
+  --duration-default: 200ms;
+  --duration-slow: 320ms;
+  --ease-default: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+}
 
-  --color-sidebar: #f9f9f9;
-  --color-sidebar-foreground: #0d0d0d;
-  --color-sidebar-primary: #0d0d0d;
-  --color-sidebar-primary-foreground: #ffffff;
-  --color-sidebar-accent: rgba(0, 0, 0, 0.06);
-  --color-sidebar-accent-foreground: #0d0d0d;
-  --color-sidebar-border: rgba(0, 0, 0, 0.08);
-  --color-sidebar-ring: #0d0d0d;
+/* ====== DARK MODE ====== */
+/* Override warm-light tokens with warm-dark equivalents.
+   The same warmth, inverted. Deep charcoal backgrounds, cream text. */
 
-  /* ====== CHAT INPUT ====== */
-  --color-prompt-bg: #ffffff;
-  --color-prompt-border: rgba(0, 0, 0, 0.15);
-  --color-prompt-border-focus: rgba(0, 0, 0, 0.25);
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg-base: #1a1814;
+    --color-bg-surface: #242019;
+    --color-bg-elevated: #2e2a22;
+    --color-bg-overlay: rgba(250, 249, 247, 0.04);
+
+    --color-text-primary: #f5f2ec;
+    --color-text-secondary: #a89f90;
+    --color-text-tertiary: #6b6555;
+    --color-text-disabled: #3e3b35;
+
+    --color-border-default: rgba(250, 249, 247, 0.09);
+    --color-border-subtle: rgba(250, 249, 247, 0.05);
+    --color-border-focus: rgba(250, 249, 247, 0.2);
+
+    --color-icon-primary: #f5f2ec;
+    --color-icon-muted: #6b6555;
+
+    --color-success: #34c47a;
+    --color-warning: #f59e0b;
+    --color-destructive: #f05252;
+
+    --color-accent: #e0703a;
+    --color-accent-foreground: #ffffff;
+
+    --color-primary: #f5f2ec;
+    --color-primary-foreground: #1a1814;
+    --color-secondary: rgba(250, 249, 247, 0.08);
+    --color-secondary-foreground: #a89f90;
+    --color-muted: rgba(250, 249, 247, 0.05);
+    --color-muted-foreground: #6b6555;
+    --color-foreground: #f5f2ec;
+    --color-background: #1a1814;
+    --color-popover: #242019;
+    --color-popover-foreground: #f5f2ec;
+    --color-input: #242019;
+    --color-ring: #e0703a;
+
+    --color-emphasis-highest: rgba(250, 249, 247, 0.9);
+    --color-emphasis-high: rgba(250, 249, 247, 0.7);
+    --color-emphasis-medium: rgba(250, 249, 247, 0.5);
+    --color-emphasis-low: rgba(250, 249, 247, 0.3);
+    --color-emphasis-lower: rgba(250, 249, 247, 0.2);
+    --color-emphasis-subtle: rgba(250, 249, 247, 0.12);
+    --color-emphasis-minimal: rgba(250, 249, 247, 0.07);
+    --color-emphasis-faint: rgba(250, 249, 247, 0.04);
+
+    --color-sidebar: #1a1814;
+    --color-sidebar-foreground: #f5f2ec;
+    --color-sidebar-primary: #f5f2ec;
+    --color-sidebar-primary-foreground: #1a1814;
+    --color-sidebar-accent: rgba(250, 249, 247, 0.06);
+    --color-sidebar-accent-foreground: #f5f2ec;
+    --color-sidebar-border: rgba(250, 249, 247, 0.08);
+    --color-sidebar-ring: #e0703a;
+
+    --color-prompt-bg: #242019;
+    --color-prompt-border: rgba(250, 249, 247, 0.12);
+    --color-prompt-border-focus: rgba(250, 249, 247, 0.28);
+
+    --glass-background: rgba(26, 24, 20, 0.88);
+  }
+}
+
+/* Manual dark mode — for apps that toggle theme explicitly (e.g. desktop) */
+:root[data-theme='dark'] {
+  --color-bg-base: #1a1814;
+  --color-bg-surface: #242019;
+  --color-bg-elevated: #2e2a22;
+  --color-bg-overlay: rgba(250, 249, 247, 0.04);
+
+  --color-text-primary: #f5f2ec;
+  --color-text-secondary: #a89f90;
+  --color-text-tertiary: #6b6555;
+  --color-text-disabled: #3e3b35;
+
+  --color-border-default: rgba(250, 249, 247, 0.09);
+  --color-border-subtle: rgba(250, 249, 247, 0.05);
+  --color-border-focus: rgba(250, 249, 247, 0.2);
+
+  --color-icon-primary: #f5f2ec;
+  --color-icon-muted: #6b6555;
+
+  --color-success: #34c47a;
+  --color-warning: #f59e0b;
+  --color-destructive: #f05252;
+
+  --color-accent: #e0703a;
+  --color-accent-foreground: #ffffff;
+
+  --color-primary: #f5f2ec;
+  --color-primary-foreground: #1a1814;
+  --color-secondary: rgba(250, 249, 247, 0.08);
+  --color-secondary-foreground: #a89f90;
+  --color-muted: rgba(250, 249, 247, 0.05);
+  --color-muted-foreground: #6b6555;
+  --color-foreground: #f5f2ec;
+  --color-background: #1a1814;
+  --color-popover: #242019;
+  --color-popover-foreground: #f5f2ec;
+  --color-input: #242019;
+  --color-ring: #e0703a;
+
+  --color-emphasis-highest: rgba(250, 249, 247, 0.9);
+  --color-emphasis-high: rgba(250, 249, 247, 0.7);
+  --color-emphasis-medium: rgba(250, 249, 247, 0.5);
+  --color-emphasis-low: rgba(250, 249, 247, 0.3);
+  --color-emphasis-lower: rgba(250, 249, 247, 0.2);
+  --color-emphasis-subtle: rgba(250, 249, 247, 0.12);
+  --color-emphasis-minimal: rgba(250, 249, 247, 0.07);
+  --color-emphasis-faint: rgba(250, 249, 247, 0.04);
+
+  --color-sidebar: #1a1814;
+  --color-sidebar-foreground: #f5f2ec;
+  --color-sidebar-primary: #f5f2ec;
+  --color-sidebar-primary-foreground: #1a1814;
+  --color-sidebar-accent: rgba(250, 249, 247, 0.06);
+  --color-sidebar-accent-foreground: #f5f2ec;
+  --color-sidebar-border: rgba(250, 249, 247, 0.08);
+  --color-sidebar-ring: #e0703a;
+
+  --color-prompt-bg: #242019;
+  --color-prompt-border: rgba(250, 249, 247, 0.12);
+  --color-prompt-border-focus: rgba(250, 249, 247, 0.28);
+
+  --glass-background: rgba(26, 24, 20, 0.88);
 }
 
 /* ====== SAFE AREA UTILITIES ====== */
@@ -215,14 +353,23 @@
     color-scheme: light;
     background-color: var(--color-bg-base);
     color: var(--color-text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
-  /* ── Universal focus reset ──────────────────────────────────────────────
-   * Suppress the browser's default blue outline on every element.
-   * Keyboard focus (focus-visible) gets a consistent 2px near-black ring
-   * drawn from --color-ring so all surfaces match the design system.
-   * Mouse/touch focus (:focus but not :focus-visible) shows nothing.
-   * ─────────────────────────────────────────────────────────────────────── */
+  @media (prefers-color-scheme: dark) {
+    html,
+    body {
+      color-scheme: dark;
+    }
+  }
+
+  :root[data-theme='dark'] html,
+  :root[data-theme='dark'] body {
+    color-scheme: dark;
+  }
+
+  /* Universal focus reset — mouse/touch shows nothing, keyboard gets a ring */
   *:focus {
     outline: none;
   }
@@ -233,15 +380,15 @@
     border-radius: inherit;
   }
 
-  /* Enable smooth transitions globally (no more transition: none !important) */
+  /* Selective transitions — only interactive elements animate, not everything */
   * {
     transition: none;
   }
 
   *:is(button, a, input, select, textarea, [role='button'], [role='link']) {
     transition-property: background-color, color, border-color, opacity;
-    transition-duration: 150ms;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: var(--duration-fast);
+    transition-timing-function: var(--ease-default);
   }
 
   *,
@@ -257,12 +404,12 @@
     font-family: inherit;
   }
 
-  /* Ensure Radix portals work correctly */
+  /* Radix portals */
   [data-radix-portal] {
     z-index: 9999;
   }
 
-  /* Typography defaults */
+  /* Headings */
   h1,
   h2,
   h3,
@@ -274,7 +421,7 @@
     letter-spacing: var(--letter-spacing-tight);
   }
 
-  /* Root CSS variable aliases */
+  /* shadcn/ui CSS variable aliases */
   :root {
     --background: var(--color-bg-base);
     --foreground: var(--color-text-primary);
@@ -301,7 +448,7 @@
     --warning: var(--color-warning);
   }
 
-  /* Respect prefers-reduced-motion */
+  /* Reduced motion */
   @media (prefers-reduced-motion: reduce) {
     * {
       animation-duration: 0.01ms !important;
@@ -311,8 +458,9 @@
   }
 }
 
-/* ====== COLOR UTILITIES ====== */
-/* Using @utility directive for proper variant support */
+/* ====== BACKGROUND SHORTHAND UTILITIES ====== */
+/* Tailwind v4 generates bg-bg-base from --color-bg-base; these provide
+   the cleaner bg-base / bg-surface / bg-elevated names used in components. */
 
 @utility bg-base {
   background-color: var(--color-bg-base);
@@ -326,53 +474,9 @@
   background-color: var(--color-bg-elevated);
 }
 
-@utility text-text-primary {
-  color: var(--color-text-primary);
-}
-
-@utility text-text-secondary {
-  color: var(--color-text-secondary);
-}
-
-@utility text-text-tertiary {
-  color: var(--color-text-tertiary);
-}
-
-@utility text-text-disabled {
-  color: var(--color-text-disabled);
-}
-
-@utility text-icon-primary {
-  color: var(--color-icon-primary);
-}
-
-@utility text-icon-muted {
-  color: var(--color-icon-muted);
-}
-
-@utility bg-success {
-  background-color: var(--color-success);
-}
-
-@utility bg-warning {
-  background-color: var(--color-warning);
-}
-
-@utility bg-destructive {
-  background-color: var(--color-destructive);
-}
-
-@utility text-success {
-  color: var(--color-success);
-}
-
-@utility text-warning {
-  color: var(--color-warning);
-}
-
-@utility text-destructive {
-  color: var(--color-destructive);
-}
+/* ====== BORDER SHORTHAND UTILITIES ====== */
+/* Tailwind v4 generates border-border-default from --color-border-default;
+   these provide the cleaner border-default / border-subtle / border-focus names. */
 
 @utility border-default {
   border-color: var(--color-border-default);
@@ -386,103 +490,15 @@
   border-color: var(--color-border-focus);
 }
 
-@utility bg-accent {
-  background-color: var(--color-accent);
-}
-
-@utility text-accent {
-  color: var(--color-accent);
-}
-
-@utility bg-primary {
-  background-color: var(--color-primary);
-}
-
-@utility text-primary {
-  color: var(--color-primary);
-}
-
-@utility text-primary-foreground {
-  color: var(--color-primary-foreground);
-}
-
-@utility bg-secondary {
-  background-color: var(--color-secondary);
-}
-
-@utility text-secondary {
-  color: var(--color-secondary-foreground);
-}
-
-@utility bg-muted {
-  background-color: var(--color-muted);
-}
-
-@utility text-muted-foreground {
-  color: var(--color-muted-foreground);
-}
-
-@utility text-foreground {
-  color: var(--color-foreground);
-}
-
-@utility bg-emphasis-highest {
-  background-color: var(--color-emphasis-highest);
-}
-
-@utility bg-emphasis-high {
-  background-color: var(--color-emphasis-high);
-}
-
-@utility bg-emphasis-medium {
-  background-color: var(--color-emphasis-medium);
-}
-
-@utility bg-emphasis-low {
-  background-color: var(--color-emphasis-low);
-}
-
-@utility bg-emphasis-lower {
-  background-color: var(--color-emphasis-lower);
-}
-
-@utility bg-emphasis-subtle {
-  background-color: var(--color-emphasis-subtle);
-}
-
-@utility bg-emphasis-minimal {
-  background-color: var(--color-emphasis-minimal);
-}
-
-@utility bg-emphasis-faint {
-  background-color: var(--color-emphasis-faint);
-}
-
-@utility text-emphasis-highest {
-  color: var(--color-emphasis-highest);
-}
-
-@utility text-emphasis-high {
-  color: var(--color-emphasis-high);
-}
-
-@utility text-emphasis-medium {
-  color: var(--color-emphasis-medium);
-}
-
-@utility text-emphasis-low {
-  color: var(--color-emphasis-low);
-}
-
 /* ====== TYPOGRAPHY UTILITIES ====== */
-/* Apple HIG aligned scales with proper line heights and letter spacing */
-/* Using @utility for proper variant support */
+/* Apple HIG type scale — multi-property composites that can't be expressed
+   as single token values. Fluid clamp() scaling for responsive web. */
 
 @utility display-1 {
   font-size: clamp(2.5rem, 5vw, 6rem);
   font-family: var(--font-family-primary);
   font-weight: var(--font-weight-bold);
-  line-height: 1.2;
+  line-height: 1.1;
   letter-spacing: var(--letter-spacing-tight);
 }
 
@@ -490,12 +506,12 @@
   font-size: clamp(2rem, 3vw, 3.5rem);
   font-family: var(--font-family-primary);
   font-weight: var(--font-weight-bold);
-  line-height: 1.2;
+  line-height: 1.15;
   letter-spacing: var(--letter-spacing-tight);
 }
 
 @utility heading-1 {
-  font-size: clamp(2.25rem, 3vw, 3rem);
+  font-size: clamp(2rem, 3vw, 2.75rem);
   font-family: var(--font-family-primary);
   font-weight: var(--font-weight-semibold);
   line-height: 1.2;
@@ -503,31 +519,31 @@
 }
 
 @utility heading-2 {
-  font-size: clamp(1.5rem, 2vw, 1.875rem);
+  font-size: clamp(1.375rem, 2vw, 1.75rem);
   font-family: var(--font-family-primary);
   font-weight: var(--font-weight-semibold);
-  line-height: 1.3;
-  letter-spacing: var(--letter-spacing-tight);
+  line-height: 1.25;
+  letter-spacing: -0.02em;
 }
 
 @utility heading-3 {
-  font-size: clamp(1.125rem, 1.5vw, 1.25rem);
+  font-size: clamp(1.125rem, 1.5vw, 1.375rem);
   font-family: var(--font-family-primary);
   font-weight: var(--font-weight-semibold);
-  line-height: 1.4;
-  letter-spacing: -0.04em;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
 }
 
 @utility heading-4 {
-  font-size: clamp(1rem, 1.25vw, 1.25rem);
+  font-size: clamp(1rem, 1.25vw, 1.125rem);
   font-family: var(--font-family-primary);
   font-weight: var(--font-weight-semibold);
   line-height: 1.4;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.01em;
 }
 
 @utility body-1 {
-  font-size: clamp(1rem, 1.25vw, 1.25rem);
+  font-size: clamp(1rem, 1.25vw, 1.0625rem);
   font-family: var(--font-family-primary);
   font-weight: var(--font-weight-regular);
   line-height: 1.6;
@@ -543,67 +559,62 @@
 }
 
 @utility body-3 {
-  font-size: clamp(0.75rem, 0.875vw, 0.875rem);
+  font-size: 0.9375rem;
   font-family: var(--font-family-primary);
   font-weight: var(--font-weight-regular);
-  line-height: 1.5;
-  letter-spacing: var(--letter-spacing-relaxed);
+  line-height: 1.47;
+  letter-spacing: -0.015em;
 }
 
 @utility body-4 {
-  font-size: clamp(0.625rem, 0.75vw, 0.75rem);
+  font-size: 0.8125rem;
   font-family: var(--font-family-primary);
   font-weight: var(--font-weight-regular);
-  line-height: 1.4;
-  letter-spacing: var(--letter-spacing-relaxed);
+  line-height: 1.38;
+  letter-spacing: -0.005em;
 }
 
 @utility subheading-1 {
-  font-size: clamp(1.25rem, 2vw, 1.75rem);
+  font-size: clamp(1.125rem, 1.5vw, 1.375rem);
   font-family: var(--font-family-primary);
   font-weight: var(--font-weight-medium);
-  line-height: 1.4;
+  line-height: 1.35;
   letter-spacing: -0.02em;
 }
 
 @utility subheading-2 {
-  font-size: clamp(1.125rem, 1.5vw, 1.5rem);
-  font-family: var(--font-family-primary);
-  font-weight: var(--font-weight-medium);
-  line-height: 1.4;
-  letter-spacing: -0.01em;
-}
-
-@utility subheading-3 {
   font-size: clamp(1rem, 1.25vw, 1.25rem);
   font-family: var(--font-family-primary);
   font-weight: var(--font-weight-medium);
-  line-height: 1.5;
-  letter-spacing: var(--letter-spacing-normal);
+  line-height: 1.4;
+  letter-spacing: -0.015em;
+}
+
+@utility subheading-3 {
+  font-size: 1rem;
+  font-family: var(--font-family-primary);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.33;
+  letter-spacing: -0.01em;
 }
 
 @utility subheading-4 {
-  font-size: clamp(0.875rem, 1vw, 1.125rem);
+  font-size: 0.9375rem;
   font-family: var(--font-family-primary);
   font-weight: var(--font-weight-medium);
-  line-height: 1.5;
-  letter-spacing: var(--letter-spacing-normal);
+  line-height: 1.33;
+  letter-spacing: -0.008em;
 }
 
-@utility font-mono {
-  font-family: var(--font-family-mono);
-}
+/* ====== FOCUS UTILITIES ====== */
 
-/* ====== INTERACTION & TRANSITION UTILITIES ====== */
-
-/* focus-ring: apply when you need to force the ring visible (e.g. programmatic focus) */
+/* Programmatic focus ring — use when you need to force visibility */
 @utility focus-ring {
   outline: 2px solid var(--color-ring);
   outline-offset: 2px;
 }
 
-/* void-focus: explicit opt-in for components that need to override Radix defaults.
-   Base layer handles the universal case — this is kept for surgical overrides. */
+/* Explicit opt-in for Radix component overrides */
 @utility void-focus {
   outline: none;
   &:focus-visible {
@@ -612,54 +623,10 @@
   }
 }
 
-@utility transition-colors {
-  transition-property: background-color, border-color, color, fill, stroke;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
-}
+/* ====== LAYOUT UTILITIES ====== */
 
-@utility transition-opacity {
-  transition-property: opacity;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
-}
-
-@utility transition-all {
-  transition-property: all;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
-}
-
-/* ====== BORDER RADIUS UTILITIES ====== */
-
-@utility rounded-sm {
-  border-radius: var(--radius-sm);
-}
-
-@utility rounded-md {
-  border-radius: var(--radius-md);
-}
-
-@utility rounded-lg {
-  border-radius: var(--radius-lg);
-}
-
-@utility rounded-xl {
-  border-radius: var(--radius-xl);
-}
-
-/* ── list-row ────────────────────────────────────────────────────────────────
- * Apply to every <li> in an interactive list (sidebar nav, menu, feed rows).
- *
- * Rule: all direct children of a list item must occupy the full height of
- * the row — no child may be shorter than its siblings. Each child is
- * responsible for centering its own content (items-center / justify-center).
- *
- * Usage:  <li className="list-row …">
- *           <a className="flex flex-1 items-center …">…</a>   ← stretches
- *           <button className="flex items-center …">…</button> ← stretches
- *         </li>
- * ─────────────────────────────────────────────────────────────────────────── */
+/* list-row: full-height row where every child stretches to fill the row height.
+   Each child centers its own content. Usage: <li className="list-row"> */
 @utility list-row {
   display: flex;
   align-items: stretch;
@@ -670,44 +637,25 @@
   }
 }
 
-/* ====== GLASS MORPHISM UTILITY ====== */
-
+/* Glass morphism — warm frosted glass */
 @utility glass {
   background-color: var(--glass-background);
   backdrop-filter: blur(var(--glass-blur));
 }
 
-/* ====== ACCESSIBILITY UTILITY ====== */
-
-@utility sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border-width: 0;
+/* Page-width constraints — used exclusively by layout primitives (Page, Container, Center).
+   Leaf components must never apply these directly. */
+@utility content-width-bubble {
+  max-inline-size: var(--content-width-bubble);
 }
 
-/* ====== LAYER UTILITIES ====== */
-/* Layout and helper utilities that work well in @layer */
-
-@layer utilities {
-  /* PDL: .container only adds horizontal padding.
-   * Centering (margin-inline: auto) and width constraints are
-   * the responsibility of layout components (Page, Container, Center). */
-  .container {
-    @apply w-full px-4 sm:px-6;
-    margin-inline: auto;
-  }
+@utility content-width-transcript {
+  max-inline-size: var(--content-width-transcript);
 }
 
-/* ====== PAGE-WIDTH TOKENS ====== */
-/* Used exclusively by Page / Container / Center layout components. */
-/* Leaf components must never use these directly — pass width via props or
- * wrap content in a layout primitive. */
+@utility content-width-note-preview {
+  max-inline-size: var(--content-width-note-preview);
+}
 
 @utility page-width-sm {
   max-inline-size: min(100%, 42rem);
@@ -729,153 +677,15 @@
   max-inline-size: 100%;
 }
 
-/* Center — logical-property centering utility.
- * Apply on any layout wrapper that should be horizontally centered.
- * Replaces the anti-pattern of mx-auto on leaf components. */
 @utility center-layout {
   margin-inline: auto;
   width: 100%;
 }
 
-/* ====== COMPONENT CLASSES ====== */
-/* Complex, multi-property components that should be overridable with utilities */
-
-@layer components {
-  /* Button base component */
-  .btn {
-    padding: 0.5rem 1rem;
-    border-radius: var(--radius-md);
-    font-weight: var(--font-weight-medium);
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    cursor: pointer;
-    transition-property: background-color, color, border-color, opacity;
-    transition-duration: 150ms;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  /* Primary button variant */
-  .btn-primary {
-    background-color: var(--color-accent);
-    color: var(--color-accent-foreground);
-  }
-
-  .btn-primary:hover {
-    opacity: 0.9;
-  }
-
-  .btn-primary:active,
-  .btn-primary:focus-visible {
-    background-color: var(--color-accent);
-    outline: 2px solid var(--color-accent);
-    outline-offset: 2px;
-  }
-
-  /* Secondary button variant */
-  .btn-secondary {
-    background-color: var(--color-bg-surface);
-    color: var(--color-text-primary);
-    border: 1px solid var(--color-border-default);
-  }
-
-  .btn-secondary:hover {
-    background-color: var(--color-bg-elevated);
-    border-color: var(--color-border-focus);
-  }
-
-  .btn-secondary:focus-visible {
-    outline: 2px solid var(--color-accent);
-    outline-offset: 2px;
-  }
-
-  /* Destructive button variant */
-  .btn-destructive {
-    background-color: var(--color-destructive);
-    color: white;
-  }
-
-  .btn-destructive:hover {
-    opacity: 0.9;
-  }
-
-  .btn-destructive:focus-visible {
-    outline: 2px solid var(--color-destructive);
-    outline-offset: 2px;
-  }
-
-  /* Card component */
-  .card {
-    background-color: var(--color-bg-surface);
-    border: 1px solid var(--color-border-default);
-    border-radius: var(--radius-md);
-    padding: 1rem;
-  }
-
-  /* Elevated card variant */
-  .card-elevated {
-    background-color: var(--color-bg-elevatePd);
-  }
-
-  /* Input component */
-  .input {
-    width: 100%;
-    background-color: var(--color-bg-surface);
-    color: var(--color-text-primary);
-    border: 1px solid var(--color-border-default);
-    border-radius: var(--radius-md);
-    padding: 0.5rem 0.75rem;
-    font-family: inherit;
-    transition-property: border-color, background-color, box-shadow;
-    transition-duration: 150ms;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .input:focus {
-    outline: none;
-    border-color: var(--color-border-focus);
-    background-color: var(--color-bg-elevated);
-    box-shadow: 0 0 0 3px rgba(28, 28, 30, 0.08);
-  }
-
-  .input:disabled {
-    background-color: var(--color-bg-surface);
-    color: var(--color-text-disabled);
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  .input::placeholder {
-    color: var(--color-text-tertiary);
-  }
-
-  /* Input error state */
-  .input-error {
-    border-color: var(--color-destructive);
-  }
-
-  .input-error:focus {
-    box-shadow:
-      0 0 0 2px var(--color-destructive),
-      0 0 0 4px rgba(255, 59, 48, 0.08);
-  }
-
-  /* Badge component */
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    padding: 0.25rem 0.5rem;
-    border-radius: var(--radius-md);
-    background-color: var(--color-bg-elevated);
-    color: var(--color-text-primary);
-    font-size: 0.75rem;
-    font-weight: var(--font-weight-medium);
-  }
-
-  /* Badge accent variant */
-  .badge-accent {
-    background-color: var(--color-accent);
-    color: var(--color-accent-foreground);
+@layer utilities {
+  /* Container: horizontal padding only. Centering is the layout component's job. */
+  .container {
+    @apply w-full px-4 sm:px-6;
+    margin-inline: auto;
   }
 }

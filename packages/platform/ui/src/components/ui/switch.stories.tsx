@@ -7,6 +7,32 @@ const meta: Meta<typeof Switch> = {
   title: 'Forms/Switch',
   component: Switch,
   tags: ['autodocs'],
+  argTypes: {
+    checked: {
+      control: 'boolean',
+      description: 'Controlled on/off state of the switch',
+    },
+    defaultChecked: {
+      control: 'boolean',
+      description: 'Initial checked state for uncontrolled usage',
+      table: { defaultValue: { summary: 'false' } },
+    },
+    disabled: {
+      control: 'boolean',
+      description: 'Prevents user interaction and applies disabled styling',
+      table: { defaultValue: { summary: 'false' } },
+    },
+    size: {
+      control: 'select',
+      options: ['default', 'sm'],
+      description: 'Size variant of the switch',
+      table: { defaultValue: { summary: 'default' } },
+    },
+    onCheckedChange: {
+      action: 'checkedChange',
+      description: 'Callback fired when the checked state changes',
+    },
+  },
 };
 export default meta;
 type Story = StoryObj<typeof Switch>;

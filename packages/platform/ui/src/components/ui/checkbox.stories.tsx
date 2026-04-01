@@ -7,6 +7,27 @@ const meta: Meta<typeof Checkbox> = {
   title: 'Forms/Checkbox',
   component: Checkbox,
   tags: ['autodocs'],
+  argTypes: {
+    checked: {
+      control: 'select',
+      options: [true, false, 'indeterminate'],
+      description: 'Controlled checked state of the checkbox',
+    },
+    defaultChecked: {
+      control: 'boolean',
+      description: 'Initial checked state for uncontrolled usage',
+      table: { defaultValue: { summary: 'false' } },
+    },
+    disabled: {
+      control: 'boolean',
+      description: 'Prevents user interaction and applies disabled styling',
+      table: { defaultValue: { summary: 'false' } },
+    },
+    onCheckedChange: {
+      action: 'checkedChange',
+      description: 'Callback fired when the checked state changes',
+    },
+  },
 };
 export default meta;
 type Story = StoryObj<typeof Checkbox>;

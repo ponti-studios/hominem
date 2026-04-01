@@ -10,10 +10,10 @@ export default function NotesHomeSection({
   return (
     <section className="flex flex-col gap-8">
       <header className="flex flex-col gap-4 border-b border-border/30 pb-6">
-        <div className="text-xs uppercase tracking-[0.14em] text-text-tertiary">{eyebrow}</div>
+        <div className="text-caption-1 uppercase tracking-widest text-text-tertiary">{eyebrow}</div>
         <div className="space-y-3">
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">{title}</h1>
-          <p className="text-sm leading-relaxed text-text-secondary">{description}</p>
+          <h1 className="text-title-2 font-semibold tracking-tight text-foreground">{title}</h1>
+          <p className="text-body-3 text-text-secondary">{description}</p>
         </div>
       </header>
     </section>

@@ -48,16 +48,16 @@ const NotePreview = ({
   return (
     <View style={[styles.item]} {...props}>
       <View style={[styles.info]}>
-        <Text variant="body" color="black">
+        <Text variant="body" color="foreground">
           {note.title || note.excerpt || note.content}
         </Text>
         {note.scheduledFor && readableDate ? <Text variant="caption">{readableDate}</Text> : null}
       </View>
       <Pressable disabled={disabled} style={[styles.icon]} onPress={onDeleteIconPress}>
-        <AppIcon name="trash" size={24} color="#d32f2f" />
+        <AppIcon name="trash" size={24} color={theme.colors.destructive} />
       </Pressable>
       <Pressable disabled={disabled} style={[styles.icon]} onPress={onIconPress}>
-        <AppIcon name="list-tree" size={24} color="#000" />
+        <AppIcon name="list-tree" size={24} color={theme.colors.foreground} />
       </Pressable>
     </View>
   );

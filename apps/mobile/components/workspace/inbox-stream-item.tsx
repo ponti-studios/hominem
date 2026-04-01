@@ -1,5 +1,5 @@
-import { useRouter } from 'expo-router';
 import type { RelativePathString } from 'expo-router';
+import { useRouter } from 'expo-router';
 import React, { memo, useCallback } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Reanimated, { FadeInDown, LinearTransition } from 'react-native-reanimated';

@@ -15,6 +15,21 @@ const meta: Meta<typeof Sheet> = {
   title: 'Patterns/Overlay/Sheet',
   component: Sheet,
   tags: ['autodocs'],
+  argTypes: {
+    open: {
+      control: 'boolean',
+      description: 'Controls whether the sheet is open',
+    },
+    defaultOpen: {
+      control: 'boolean',
+      description: 'Whether the sheet is open by default (uncontrolled)',
+    },
+    modal: {
+      control: 'boolean',
+      description: 'Whether interaction outside the sheet is disabled while open',
+      table: { defaultValue: { summary: 'true' } },
+    },
+  },
 };
 export default meta;
 type Story = StoryObj<typeof Sheet>;

@@ -37,7 +37,7 @@ export function VoiceSessionModal({
               accessibilityLabel="Close voice input"
               accessibilityRole="button"
             >
-              <MaterialIcons name="close" size={20} color="#000" />
+              <MaterialIcons name="close" size={20} color={t.colors.foreground} />
             </Pressable>
           </View>
 

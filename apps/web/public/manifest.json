@@ -4,8 +4,8 @@
   "description": "Hakumi brings notes, voice capture, and chat into one workspace.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#000000",
+  "background_color": "#FAF9F7",
+  "theme_color": "#1C1912",
   "orientation": "portrait-primary",
   "icons": [
     {

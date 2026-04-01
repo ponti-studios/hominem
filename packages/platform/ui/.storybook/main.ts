@@ -1,12 +1,8 @@
 import type { StorybookConfig } from '@storybook/react-vite'
 import tailwindcss from '@tailwindcss/vite'
-import { dirname, join } from 'node:path'
+import { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createLogger } from 'vite'
-import tsconfigPaths from 'vite-tsconfig-paths'
-
-const currentDir = dirname(fileURLToPath(import.meta.url))
-const uiTsconfigPath = join(currentDir, '../tsconfig.json')
 
 const config: StorybookConfig = {
   staticDirs: ['../public'],
@@ -45,10 +41,10 @@ const config: StorybookConfig = {
 
     config.plugins = [
       tailwindcss(),
-      tsconfigPaths({ projects: [uiTsconfigPath] }),
       ...(config.plugins ?? []),
     ]
     config.customLogger = logger
+    config.resolve = { ...(config.resolve ?? {}), tsconfigPaths: true }
     config.build = {
       ...(config.build ?? {}),
       rollupOptions: {

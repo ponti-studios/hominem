@@ -81,7 +81,8 @@
     "./composer": "./src/components/composer/index.ts",
     "./types/upload": "./src/types/upload.ts",
     "./types/chat": "./src/types/chat.ts",
-    "./tokens": "./src/tokens/index.ts"
+    "./tokens": "./src/tokens/index.ts",
+    "./theme": "./src/theme.ts"
   },
   "scripts": {
     "format": "bunx oxfmt ./src",

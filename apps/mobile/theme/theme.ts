@@ -1,8 +1,8 @@
 import {
-  colors as tokenColors,
   fontFamiliesNative,
   radiiNative,
   shadowsNative,
+  colors as tokenColors,
   spacing as tokenSpacing,
 } from '@hominem/ui/tokens';
 import { createTheme, useTheme as useRestyleTheme } from '@shopify/restyle';
@@ -145,7 +145,7 @@ const theme = createTheme({
       color: 'text-secondary',
     },
     shadow: {
-      shadowColor: '#000000',
+      shadowColor: tokenColors.black,
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.35,
       shadowRadius: 8,

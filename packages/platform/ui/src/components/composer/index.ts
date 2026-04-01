@@ -12,25 +12,25 @@ export { VoiceDialog } from './voice-dialog';
 // ─── Provider & Store ─────────────────────────────────────────────────────────
 export {
   ComposerProvider,
-  useComposerActionsRef,
-  useComposerSlice,
-  useComposerStore,
   // Re-exports from store
   ComposerStore,
   INITIAL_COMPOSER_STATE,
+  useComposerActionsRef,
+  useComposerSlice,
+  useComposerStore,
 } from './composer-provider';
 export type {
+  // Re-exported store types
+  ComposerAction,
   ComposerActions,
   ComposerMode,
   ComposerProviderProps,
-  // Re-exported store types
-  ComposerAction,
   ComposerState,
 } from './composer-provider';
 
 // ─── Actions (pure functions) ─────────────────────────────────────────────────
 export { buildNoteContext, resolveComposerActions, toNoteTitle } from './composer-actions';
-export type { ResolvedComposerActions, ResolveComposerActionsInput } from './composer-actions';
+export type { ResolveComposerActionsInput, ResolvedComposerActions } from './composer-actions';
 
 // ─── Presentation ─────────────────────────────────────────────────────────────
 export { deriveComposerPresentation } from './composer-presentation';
@@ -45,5 +45,10 @@ export {
 } from './composer-attachments';
 
 // ─── Mobile (unchanged) ───────────────────────────────────────────────────────
-export { playSwipeSnap, PILL_HEIGHT, MOBILE_EXPANDED_HEIGHT_VH } from './animations';
+export {
+  COMPOSER_RESTING_HEIGHT,
+  MOBILE_EXPANDED_HEIGHT_VH,
+  PILL_HEIGHT,
+  playSwipeSnap,
+} from './animations';
 export { useSwipeGesture } from './mobile-gestures';

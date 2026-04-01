@@ -28,9 +28,11 @@ const preview: Preview = {
     },
     controls: {
       matchers: {
-        color: /(background|color)$/i,
+        color: /(background|color|accent|fill)$/i,
         date: /Date$/i,
       },
+      sort: 'requiredFirst',
+      expanded: true,
     },
     msw: {
       handlers,

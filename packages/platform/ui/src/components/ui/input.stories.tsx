@@ -8,6 +8,23 @@ const meta: Meta<typeof Input> = {
   title: 'Forms/Input',
   component: Input,
   tags: ['autodocs'],
+  argTypes: {
+    type: {
+      control: 'select',
+      options: ['text', 'email', 'password', 'search', 'number', 'tel', 'url'],
+      description: 'HTML input type attribute',
+      table: { defaultValue: { summary: 'text' } },
+    },
+    placeholder: {
+      control: 'text',
+      description: 'Placeholder text shown when the input is empty',
+    },
+    disabled: {
+      control: 'boolean',
+      description: 'Prevents user interaction and applies disabled styling',
+      table: { defaultValue: { summary: 'false' } },
+    },
+  },
 };
 export default meta;
 type Story = StoryObj<typeof Input>;

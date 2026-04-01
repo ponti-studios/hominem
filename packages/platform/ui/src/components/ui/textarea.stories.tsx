@@ -6,6 +6,22 @@ const meta: Meta<typeof Textarea> = {
   title: 'Forms/Textarea',
   component: Textarea,
   tags: ['autodocs'],
+  argTypes: {
+    placeholder: {
+      control: 'text',
+      description: 'Placeholder text shown when the textarea is empty',
+    },
+    disabled: {
+      control: 'boolean',
+      description: 'Prevents user interaction and applies disabled styling',
+      table: { defaultValue: { summary: 'false' } },
+    },
+    rows: {
+      control: { type: 'number', min: 1, max: 20 },
+      description: 'Number of visible text lines',
+      table: { defaultValue: { summary: '3' } },
+    },
+  },
 };
 export default meta;
 type Story = StoryObj<typeof Textarea>;

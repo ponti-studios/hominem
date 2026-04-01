@@ -15,6 +15,21 @@ const meta: Meta<typeof Dialog> = {
   title: 'Patterns/Overlay/Dialog',
   component: Dialog,
   tags: ['autodocs'],
+  argTypes: {
+    open: {
+      control: 'boolean',
+      description: 'Controls whether the dialog is open',
+    },
+    defaultOpen: {
+      control: 'boolean',
+      description: 'Whether the dialog is open by default (uncontrolled)',
+    },
+    modal: {
+      control: 'boolean',
+      description: 'Whether interaction outside the dialog is disabled when open',
+      table: { defaultValue: { summary: 'true' } },
+    },
+  },
 };
 export default meta;
 type Story = StoryObj<typeof Dialog>;

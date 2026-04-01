@@ -14,6 +14,17 @@ const meta: Meta<typeof Menubar> = {
   title: 'Navigation/Menubar',
   component: Menubar,
   tags: ['autodocs'],
+  argTypes: {
+    dir: {
+      control: 'select',
+      options: ['ltr', 'rtl'],
+      description: 'Reading direction of the menubar',
+    },
+    loop: {
+      control: 'boolean',
+      description: 'Whether keyboard navigation loops from last to first item and vice versa',
+    },
+  },
 };
 export default meta;
 type Story = StoryObj<typeof Menubar>;

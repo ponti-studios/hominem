@@ -1,30 +1,31 @@
-import type { ConfigContext, ExpoConfig } from 'expo/config'
+import { shellTheme } from '@hominem/ui/theme';
+import type { ConfigContext, ExpoConfig } from 'expo/config';
 
-type AppVariant = 'dev' | 'e2e' | 'preview' | 'production'
+type AppVariant = 'dev' | 'e2e' | 'preview' | 'production';
 
 interface VariantConfig {
-  bundleIdentifier: string
-  displayName: string
-  updatesChannel: string | null
-  scheme: string
-  usesDevClient: boolean
+  bundleIdentifier: string;
+  displayName: string;
+  updatesChannel: string | null;
+  scheme: string;
+  usesDevClient: boolean;
 }
 
 const { getAppVariant, getAppVariantConfig } = require('./config/appVariant') as {
-  getAppVariant: () => AppVariant
-  getAppVariantConfig: (rawVariant?: string) => VariantConfig
-}
+  getAppVariant: () => AppVariant;
+  getAppVariantConfig: (rawVariant?: string) => VariantConfig;
+};
 
 const { EXPO_OWNER, EXPO_PROJECT_ID, getExpoExtraConfig } = require('./config/expo-config.js') as {
-  EXPO_OWNER: string
-  EXPO_PROJECT_ID: string
+  EXPO_OWNER: string;
+  EXPO_PROJECT_ID: string;
   getExpoExtraConfig: (env: Record<string, string | undefined>) => {
-    apiBaseUrl: string
-    e2eTesting: string
-    e2eAuthSecret: string
-    mobilePasskeyEnabled: string
-  }
-}
+    apiBaseUrl: string;
+    e2eTesting: string;
+    e2eAuthSecret: string;
+    mobilePasskeyEnabled: string;
+  };
+};
 
 function getUpdatesConfig(variantConfig: VariantConfig): ExpoConfig['updates'] {
   if (variantConfig.usesDevClient || variantConfig.updatesChannel === null) {
@@ -32,7 +33,7 @@ function getUpdatesConfig(variantConfig: VariantConfig): ExpoConfig['updates'] {
       enabled: false,
       checkAutomatically: 'NEVER',
       fallbackToCacheTimeout: 0,
-    }
+    };
   }
 
   return {
@@ -40,28 +41,28 @@ function getUpdatesConfig(variantConfig: VariantConfig): ExpoConfig['updates'] {
     requestHeaders: {
       'expo-channel-name': variantConfig.updatesChannel,
     },
-  }
+  };
 }
 
 function allowsLocalNetworking(appVariant: AppVariant) {
-  return appVariant !== 'production'
+  return appVariant !== 'production';
 }
 
 function getAppleTeamId(appVariant: AppVariant) {
   if (appVariant !== 'dev') {
-    return undefined
+    return undefined;
   }
 
-  return process.env.EXPO_APPLE_TEAM_ID
+  return process.env.EXPO_APPLE_TEAM_ID;
 }
 
 function getAppGroupId(bundleIdentifier: string) {
-  return `group.${bundleIdentifier}`
+  return `group.${bundleIdentifier}`;
 }
 
 export default ({ config }: ConfigContext) => {
-  const appVariant = getAppVariant()
-  const variantConfig = getAppVariantConfig(appVariant)
+  const appVariant = getAppVariant();
+  const variantConfig = getAppVariantConfig(appVariant);
   const plugins: ExpoConfig['plugins'] = [
     'expo-router',
     './plugins/with-expo-dev-client-exclusion',
@@ -108,7 +109,7 @@ export default ({ config }: ConfigContext) => {
       'expo-notifications',
       {
         icon: './assets/icon.png',
-        color: '#000000',
+        color: shellTheme.mobile.notificationColor,
       },
     ],
     [
@@ -148,7 +149,7 @@ export default ({ config }: ConfigContext) => {
     './plugins/with-widget-bundle-update',
     './plugins/with-app-intents',
     '@bacons/apple-targets',
-  ]
+  ];
 
   if (variantConfig.usesDevClient) {
     plugins.splice(1, 0, [
@@ -156,10 +157,10 @@ export default ({ config }: ConfigContext) => {
       {
         launchMode: 'most-recent',
       },
-    ])
+    ]);
   }
 
-  const extraConfig = getExpoExtraConfig(process.env)
+  const extraConfig = getExpoExtraConfig(process.env);
 
   return {
     ...config,
@@ -175,7 +176,7 @@ export default ({ config }: ConfigContext) => {
     splash: {
       image: './assets/splash.png',
       resizeMode: 'contain',
-      backgroundColor: '#000000',
+      backgroundColor: shellTheme.mobile.splashBackgroundColor,
     },
     web: {
       bundler: 'metro',
@@ -196,14 +197,13 @@ export default ({ config }: ConfigContext) => {
       entitlements: {
         'com.apple.developer.siri': true,
         'com.apple.security.application-groups': [getAppGroupId(variantConfig.bundleIdentifier)],
-        'keychain-access-groups': [
-          `$(AppIdentifierPrefix)${variantConfig.bundleIdentifier}`,
-        ],
+        'keychain-access-groups': [`$(AppIdentifierPrefix)${variantConfig.bundleIdentifier}`],
       },
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
         NSCalendarsUsageDescription: 'Allow Hakumi to access your calendar to add events.',
-        NSCalendarsFullAccessUsageDescription: 'Allow Hakumi to access your calendar to add events.',
+        NSCalendarsFullAccessUsageDescription:
+          'Allow Hakumi to access your calendar to add events.',
         NSRemindersUsageDescription: 'Allow Hakumi to access your reminders.',
         NSRemindersFullAccessUsageDescription: 'Allow Hakumi to access your reminders.',
         NSLocationWhenInUseUsageDescription:
@@ -215,7 +215,7 @@ export default ({ config }: ConfigContext) => {
     android: {
       adaptiveIcon: {
         foregroundImage: './assets/adaptive-icon.png',
-        backgroundColor: '#000000',
+        backgroundColor: shellTheme.mobile.adaptiveIconBackgroundColor,
       },
       package: variantConfig.bundleIdentifier,
     },
@@ -232,5 +232,5 @@ export default ({ config }: ConfigContext) => {
       policy: 'fingerprint',
     },
     updates: getUpdatesConfig(variantConfig),
-  }
-}
+  };
+};
