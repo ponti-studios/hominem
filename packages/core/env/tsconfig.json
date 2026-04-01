@@ -1,0 +1,26 @@
+{
+  "extends": "../../../tsconfig.profiles/package-bundler.json",
+  "compilerOptions": {
+    "lib": ["ESNext", "DOM"],
+    "tsBuildInfoFile": "../../../.cache/env.tsbuildinfo",
+    "noImplicitAny": false,
+    "noUncheckedIndexedAccess": false,
+    "exactOptionalPropertyTypes": false,
+    "rootDir": "src",
+    "outDir": "./build",
+    "types": []
+  },
+  "include": ["src/**/*.ts", "tests/**/*.ts"],
+  "exclude": [
+    "node_modules",
+    "build",
+    "dist",
+    ".turbo",
+    ".cache",
+    "coverage",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "**/__tests__",
+    "*.tsbuildinfo"
+  ]
+}
