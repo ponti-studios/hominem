@@ -6,10 +6,10 @@
 
 | Service        | Image                                      | Role                         |
 | -------------- | ------------------------------------------ | ---------------------------- |
-| ch-server      | `clickhouse/clickhouse-server:25.3-alpine` | Storage & query engine       |
-| otel-collector | `clickhouse/clickstack-otel-collector:2`   | OTLP ingest (pre-configured) |
-| hyperdx        | `clickhouse/clickstack-all-in-one:2`       | UI + API                     |
-| mongo          | `mongo:7.0`                                | HyperDX metadata store       |
+| ch-server      | `clickhouse/clickhouse-server:26.2.6-alpine` | Storage & query engine       |
+| otel-collector | `clickhouse/clickstack-otel-collector:2.22.1`   | OTLP ingest (pre-configured) |
+| hyperdx        | `clickhouse/clickstack-all-in-one:2.22.1`       | UI + API                     |
+| mongo          | `mongo:8.0`                                | HyperDX metadata store       |
 
 ## Setup
 

@@ -21,7 +21,7 @@ x-logging: &default-logging
 
 services:
   mongo:
-    image: mongo:7.0
+    image: mongo:8.0
     volumes:
       - obs-mongo-data:/data/db
     restart: unless-stopped
@@ -42,7 +42,7 @@ services:
       - observability
 
   ch-server:
-    image: clickhouse/clickhouse-server:25.3-alpine
+    image: clickhouse/clickhouse-server:26.2.6-alpine
     environment:
       CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-default}
@@ -70,7 +70,7 @@ services:
       - observability
 
   otel-collector:
-    image: clickhouse/clickstack-otel-collector:2
+    image: clickhouse/clickstack-otel-collector:2.22.1
     environment:
       CLICKHOUSE_ENDPOINT: tcp://ch-server:9000?dial_timeout=10s
       CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
@@ -98,7 +98,7 @@ services:
       - observability
 
   hyperdx:
-    image: clickhouse/clickstack-all-in-one:2
+    image: clickhouse/clickstack-all-in-one:2.22.1
     environment:
       CLICKHOUSE_ENDPOINT: tcp://ch-server:9000?dial_timeout=10s
       CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
