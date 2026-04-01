@@ -48,14 +48,14 @@ services:
 
   db:
     <<: *postgres-service
-    container_name: hominem-postgres
+    container_name: hominem-db
     ports:
       - '5434:5432'
     environment:
       <<: *postgres-defaults
       POSTGRES_DB: ${POSTGRES_DB:-hominem}
     volumes:
-      - hominem-postgres:/var/lib/postgresql
+      - hominem-db:/var/lib/postgresql
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-postgres}']
       interval: 10s
@@ -74,14 +74,14 @@ services:
 
   db-test:
     <<: *postgres-service
-    container_name: hominem-test-postgres
+    container_name: hominem-db-test
     ports:
       - '4433:5432'
     environment:
       <<: *postgres-defaults
       POSTGRES_DB: ${POSTGRES_TEST_DB:-hominem-test}
     volumes:
-      - hominem-test-postgres:/var/lib/postgresql
+      - hominem-db-test:/var/lib/postgresql
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-postgres}']
       interval: 10s

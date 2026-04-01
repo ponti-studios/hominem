@@ -7,5 +7,5 @@ networks:
 
 volumes:
   hominem-redis:
-  hominem-postgres:
-  hominem-test-postgres:
+  hominem-db:
+  hominem-db-test:

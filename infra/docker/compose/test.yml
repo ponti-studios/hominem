@@ -16,12 +16,12 @@ networks:
     driver: bridge
 
 volumes:
-  hominem-test-postgres:
+  hominem-db-test:
 
 services:
   db-test:
     <<: *postgres-build
-    container_name: hominem-test-postgres
+    container_name: hominem-db-test
     ports:
       - '4433:5432'
     environment:
@@ -29,7 +29,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_TEST_DB:-hominem-test}
     volumes:
-      - hominem-test-postgres:/var/lib/postgresql
+      - hominem-db-test:/var/lib/postgresql
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-postgres}']
       interval: 10s
