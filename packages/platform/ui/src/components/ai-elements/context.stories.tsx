@@ -13,6 +13,11 @@ const meta: Meta<typeof Context> = {
   title: 'Patterns/AI/Context',
   component: Context,
   tags: ['autodocs'],
+  parameters: {
+    controls: {
+      disable: true,
+    },
+  },
 };
 export default meta;
 type Story = StoryObj<typeof Context>;

@@ -7,6 +7,11 @@ const meta: Meta<typeof FilterSelect> = {
   title: 'Patterns/Filters/FilterSelect',
   component: FilterSelect,
   tags: ['autodocs'],
+  parameters: {
+    controls: {
+      disable: true,
+    },
+  },
 };
 export default meta;
 
@@ -26,7 +31,7 @@ export const Default = {
         options={statusOptions}
         onChange={setValue}
         placeholder="All"
-        className="max-w-[200px]"
+        className="max-w-50"
       />
     );
   },
@@ -42,7 +47,7 @@ export const WithSelection = {
         options={statusOptions}
         onChange={setValue}
         placeholder="All"
-        className="max-w-[200px]"
+        className="max-w-50"
       />
     );
   },

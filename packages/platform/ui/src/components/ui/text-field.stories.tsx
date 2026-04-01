@@ -7,6 +7,17 @@ const meta: Meta<typeof TextField> = {
   title: 'Forms/TextField',
   component: TextField,
   tags: ['autodocs'],
+  argTypes: {
+    label: textControl('Label displayed above the field'),
+    type: selectControl(textFieldTypeOptions, 'Input type used by the field', {
+      defaultValue: 'text',
+    }),
+    placeholder: textControl('Placeholder text shown when the field is empty'),
+    helpText: textControl('Supporting text shown below the field'),
+    error: textControl('Validation error text shown below the field'),
+    disabled: booleanControl('Prevents user interaction and applies disabled styling', false),
+    required: booleanControl('Marks the field as required for form submission', false),
+  },
 };
 
 export default meta;

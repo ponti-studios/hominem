@@ -1,6 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
+import {
+  booleanControl,
+  hiddenControl,
+  selectControl,
+  textControl,
+} from '../../storybook/controls';
 import { TagSelect, type TagOption } from './tag-select';
 
 const tags: TagOption[] = [
@@ -9,10 +15,23 @@ const tags: TagOption[] = [
   { id: 'software', name: 'Software' },
 ];
 
+const tagOptions = ['all', ...tags.map((tag) => tag.id)] as const;
+
 const meta: Meta<typeof TagSelect> = {
   title: 'Patterns/Finance/TagSelect',
   component: TagSelect,
   tags: ['autodocs'],
+  argTypes: {
+    selectedTag: selectControl(tagOptions, 'Currently selected tag', {
+      defaultValue: 'all',
+    }),
+    isLoading: booleanControl('Shows the loading placeholder state', false),
+    placeholder: textControl('Placeholder text shown when no tag is selected'),
+    label: textControl('Label displayed above the select'),
+    tags: hiddenControl,
+    onTagChange: hiddenControl,
+    className: hiddenControl,
+  },
   args: {
     selectedTag: 'all',
     tags,
@@ -22,6 +41,10 @@ const meta: Meta<typeof TagSelect> = {
   },
   render: (args) => {
     const [selectedTag, setSelectedTag] = useState(args.selectedTag);
+
+    useEffect(() => {
+      setSelectedTag(args.selectedTag);
+    }, [args.selectedTag]);
 
     return <TagSelect {...args} selectedTag={selectedTag} onTagChange={setSelectedTag} />;
   },

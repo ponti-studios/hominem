@@ -2,6 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Plus, Trash2 } from 'lucide-react';
 import { expect, userEvent, within } from 'storybook/test';
 
+import { booleanControl, selectControl } from '../../storybook/controls';
+import { buttonSizeOptions, buttonVariantOptions } from '../../storybook/options';
 import { Button } from './button';
 
 const meta: Meta<typeof Button> = {
@@ -9,14 +11,14 @@ const meta: Meta<typeof Button> = {
   component: Button,
   tags: ['autodocs'],
   argTypes: {
-    variant: {
-      control: 'select',
-      options: ['default', 'primary', 'destructive', 'ghost', 'link', 'outline', 'secondary'],
-    },
-    size: {
-      control: 'select',
-      options: ['sm', 'md', 'lg', 'icon', 'default'],
-    },
+    variant: selectControl(buttonVariantOptions, 'Visual style variant of the button', {
+      defaultValue: 'default',
+    }),
+    size: selectControl(buttonSizeOptions, 'Size variant of the button', {
+      defaultValue: 'md',
+    }),
+    disabled: booleanControl('Prevents user interaction and applies disabled styling', false),
+    isLoading: booleanControl('Shows the button in a loading state', false),
   },
 };
 export default meta;

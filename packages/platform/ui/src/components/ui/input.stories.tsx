@@ -9,21 +9,12 @@ const meta: Meta<typeof Input> = {
   component: Input,
   tags: ['autodocs'],
   argTypes: {
-    type: {
-      control: 'select',
-      options: ['text', 'email', 'password', 'search', 'number', 'tel', 'url'],
-      description: 'HTML input type attribute',
-      table: { defaultValue: { summary: 'text' } },
-    },
-    placeholder: {
-      control: 'text',
-      description: 'Placeholder text shown when the input is empty',
-    },
-    disabled: {
-      control: 'boolean',
-      description: 'Prevents user interaction and applies disabled styling',
-      table: { defaultValue: { summary: 'false' } },
-    },
+    type: selectControl(inputTypeOptions, 'HTML input type attribute', {
+      defaultValue: 'text',
+    }),
+    placeholder: textControl('Placeholder text shown when the input is empty'),
+    disabled: booleanControl('Prevents user interaction and applies disabled styling', false),
+    required: booleanControl('Marks the input as required for form submission', false),
   },
 };
 export default meta;

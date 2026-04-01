@@ -6,6 +6,11 @@ const meta: Meta<typeof Sources> = {
   title: 'Patterns/AI/Sources',
   component: Sources,
   tags: ['autodocs'],
+  parameters: {
+    controls: {
+      disable: true,
+    },
+  },
 };
 export default meta;
 type Story = StoryObj<typeof Sources>;

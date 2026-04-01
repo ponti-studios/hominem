@@ -2,7 +2,7 @@
 set -euo pipefail
 source "$(dirname "$0")/../_lib.sh"
 
-CONFIG_JSON="$(bash -lc 'bunx expo config --json --type public')"
+CONFIG_JSON="$(bunx --yes expo config --json --type public)"
 
 export CONFIG_JSON
 

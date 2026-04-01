@@ -12,6 +12,11 @@ const meta: Meta<typeof Transcription> = {
   title: 'Patterns/AI/Transcription',
   component: Transcription,
   tags: ['autodocs'],
+  parameters: {
+    controls: {
+      disable: true,
+    },
+  },
 };
 export default meta;
 type Story = StoryObj<typeof Transcription>;

@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import { hiddenControl, selectControl, textControl } from '../../storybook/controls';
 import { PageTitle } from './page-title';
 import { Button } from './ui/button';
 
@@ -8,10 +9,17 @@ const meta: Meta<typeof PageTitle> = {
   component: PageTitle,
   tags: ['autodocs'],
   argTypes: {
-    variant: {
-      control: 'select',
-      options: ['serif', 'sans', 'large'],
-    },
+    title: textControl('Primary heading text shown in the page title'),
+    subtitle: textControl('Optional subtitle shown below the title'),
+    variant: selectControl(
+      ['serif', 'sans', 'large'] as const,
+      'Typography variant used for the title',
+      {
+        defaultValue: 'serif',
+      },
+    ),
+    actions: hiddenControl,
+    className: hiddenControl,
   },
 };
 export default meta;
@@ -32,11 +40,16 @@ export const WithActions: Story = {
   args: {
     title: 'My Notes',
     subtitle: '24 notes',
-    actions: <Button size="sm">New Note</Button>,
   },
+  render: (args) => <PageTitle {...args} actions={<Button size="sm">New Note</Button>} />,
 };
 
 export const Variants: Story = {
+  parameters: {
+    controls: {
+      disable: true,
+    },
+  },
   render: () => (
     <div className="flex flex-col gap-8">
       <div>

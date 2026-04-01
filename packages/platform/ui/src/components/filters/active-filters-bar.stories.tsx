@@ -1,11 +1,17 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import { hiddenControl, textControl } from '../../storybook/controls';
 import { ActiveFiltersBar } from './active-filters-bar';
 
 const meta: Meta<typeof ActiveFiltersBar> = {
   title: 'Patterns/Filters/ActiveFiltersBar',
   component: ActiveFiltersBar,
   tags: ['autodocs'],
+  argTypes: {
+    label: textControl('Optional label shown before the filter chips'),
+    filters: hiddenControl,
+    className: hiddenControl,
+  },
 };
 export default meta;
 type Story = StoryObj<typeof ActiveFiltersBar>;
@@ -31,6 +37,11 @@ export const WithLabel: Story = {
 };
 
 export const Empty: Story = {
+  parameters: {
+    controls: {
+      disable: true,
+    },
+  },
   args: {
     filters: [],
   },

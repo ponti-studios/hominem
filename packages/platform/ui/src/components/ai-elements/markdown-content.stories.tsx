@@ -1,11 +1,17 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import { booleanControl, hiddenControl, textControl } from '../../storybook/controls';
 import { MarkdownContent } from './markdown-content';
 
 const meta: Meta<typeof MarkdownContent> = {
   title: 'Patterns/AI/MarkdownContent',
   component: MarkdownContent,
   tags: ['autodocs'],
+  argTypes: {
+    content: textControl('Markdown content rendered in the preview'),
+    isStreaming: booleanControl('Shows the streaming caret at the end of the content', false),
+    className: hiddenControl,
+  },
 };
 export default meta;
 type Story = StoryObj<typeof MarkdownContent>;
@@ -67,5 +73,10 @@ export const WithTable: Story = {
 };
 
 export const Null: Story = {
+  parameters: {
+    controls: {
+      disable: true,
+    },
+  },
   args: { content: null },
 };

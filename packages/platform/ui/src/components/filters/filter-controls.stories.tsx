@@ -11,6 +11,11 @@ export default meta;
 type Story = StoryObj<typeof FilterControls>;
 
 export const Default: Story = {
+  parameters: {
+    controls: {
+      disable: true,
+    },
+  },
   render: () => (
     <FilterControls>
       <select className="h-9 rounded-md border px-3 text-sm">
@@ -28,6 +33,11 @@ export const Default: Story = {
 };
 
 export const WithActiveFilters: Story = {
+  parameters: {
+    controls: {
+      disable: true,
+    },
+  },
   render: () => (
     <FilterControls
       showActiveFilters

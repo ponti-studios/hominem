@@ -1,5 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { useEffect, useState } from 'react';
 
+import { booleanControl, hiddenControl, selectControl } from '../../storybook/controls';
+import { checkboxStateOptions } from '../../storybook/options';
 import { Checkbox } from './checkbox';
 import { Label } from './label';
 
@@ -8,59 +11,93 @@ const meta: Meta<typeof Checkbox> = {
   component: Checkbox,
   tags: ['autodocs'],
   argTypes: {
-    checked: {
-      control: 'select',
-      options: [true, false, 'indeterminate'],
-      description: 'Controlled checked state of the checkbox',
-    },
-    defaultChecked: {
-      control: 'boolean',
-      description: 'Initial checked state for uncontrolled usage',
-      table: { defaultValue: { summary: 'false' } },
-    },
-    disabled: {
-      control: 'boolean',
-      description: 'Prevents user interaction and applies disabled styling',
-      table: { defaultValue: { summary: 'false' } },
-    },
-    onCheckedChange: {
-      action: 'checkedChange',
-      description: 'Callback fired when the checked state changes',
-    },
+    checked: selectControl(checkboxStateOptions, 'Controlled checked state of the checkbox', {
+      defaultValue: false,
+    }),
+    disabled: booleanControl('Prevents user interaction and applies disabled styling', false),
+    onCheckedChange: hiddenControl,
   },
 };
 export default meta;
 type Story = StoryObj<typeof Checkbox>;
 
-export const Default: Story = {
-  render: () => (
+function CheckboxPreview({
+  checked,
+  disabled,
+  id,
+  label,
+}: {
+  checked: boolean | 'indeterminate';
+  disabled?: boolean;
+  id: string;
+  label: string;
+}) {
+  const [currentChecked, setCurrentChecked] = useState<boolean | 'indeterminate'>(checked);
+
+  useEffect(() => {
+    setCurrentChecked(checked);
+  }, [checked]);
+
+  return (
     <div className="flex items-center gap-2">
-      <Checkbox id="terms" />
-      <Label htmlFor="terms">Accept terms and conditions</Label>
+      <Checkbox
+        id={id}
+        checked={currentChecked}
+        disabled={disabled}
+        onCheckedChange={setCurrentChecked}
+      />
+      <Label htmlFor={id}>{label}</Label>
     </div>
+  );
+}
+
+export const Default: Story = {
+  args: {
+    checked: false,
+  },
+  render: (args) => (
+    <CheckboxPreview
+      checked={args.checked ?? false}
+      disabled={args.disabled}
+      id="terms"
+      label="Accept terms and conditions"
+    />
   ),
 };
 
 export const Checked: Story = {
-  render: () => (
-    <div className="flex items-center gap-2">
-      <Checkbox id="checked" defaultChecked />
-      <Label htmlFor="checked">Already checked</Label>
-    </div>
+  args: {
+    checked: true,
+  },
+  render: (args) => (
+    <CheckboxPreview
+      checked={args.checked ?? true}
+      disabled={args.disabled}
+      id="checked"
+      label="Already checked"
+    />
   ),
 };
 
 export const Disabled: Story = {
-  render: () => (
+  args: {
+    checked: false,
+    disabled: true,
+  },
+  render: (args) => (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-2">
-        <Checkbox id="disabled" disabled />
-        <Label htmlFor="disabled">Disabled unchecked</Label>
-      </div>
-      <div className="flex items-center gap-2">
-        <Checkbox id="disabled-checked" disabled defaultChecked />
-        <Label htmlFor="disabled-checked">Disabled checked</Label>
-      </div>
+      <CheckboxPreview
+        checked={args.checked ?? false}
+        disabled={args.disabled}
+        id="disabled"
+        label="Disabled unchecked"
+      />
+      <CheckboxPreview
+        checked="indeterminate"
+        disabled={args.disabled}
+        id="disabled-checked"
+        label="Disabled checked"
+      />
     </div>
   ),
 };

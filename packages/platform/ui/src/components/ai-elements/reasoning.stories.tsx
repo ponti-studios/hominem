@@ -6,6 +6,11 @@ const meta: Meta<typeof Reasoning> = {
   title: 'Patterns/AI/Reasoning',
   component: Reasoning,
   tags: ['autodocs'],
+  parameters: {
+    controls: {
+      disable: true,
+    },
+  },
 };
 export default meta;
 type Story = StoryObj<typeof Reasoning>;

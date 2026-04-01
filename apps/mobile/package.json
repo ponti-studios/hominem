@@ -18,7 +18,7 @@
     "web": "expo start --web",
     "android": "expo run:android",
     "typecheck": "tsc --noEmit",
-    "lint": "bunx tsx ./scripts/internal/check-style-tokens.ts && bunx oxlint ./app ./components ./utils ./theme ./lib",
+    "lint": "bun ./scripts/internal/check-style-tokens.ts && bunx oxlint ./app ./components ./utils ./theme ./lib",
     "format": "bunx oxfmt ./app ./components ./utils ./theme ./lib",
     "test": "bun run test:unit:auth && bunx vitest run --config vitest.config.ts tests/integration/*.integration.test.ts",
     "test:unit:auth": "vitest run --config vitest.config.ts tests/auth-state-machine.test.ts tests/auth-provider-utils.test.ts tests/auth-route-guard.test.ts tests/startup-metrics.test.ts tests/auth-validation.test.ts tests/auth-boot.test.ts",

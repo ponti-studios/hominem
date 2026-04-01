@@ -1,11 +1,27 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import { hiddenControl, selectControl, textControl } from '../../storybook/controls';
 import { ConfirmationBanner } from './confirmation';
 
 const meta: Meta<typeof ConfirmationBanner> = {
   title: 'Patterns/AI/Confirmation',
   component: ConfirmationBanner,
   tags: ['autodocs'],
+  argTypes: {
+    type: selectControl(
+      ['info', 'success', 'warning', 'error', 'question'] as const,
+      'Banner style and icon treatment',
+      {
+        defaultValue: 'info',
+      },
+    ),
+    title: textControl('Title shown in the confirmation banner'),
+    message: textControl('Supporting message shown below the title'),
+    confirmLabel: textControl('Text shown on the confirm action button'),
+    cancelLabel: textControl('Text shown on the cancel action button'),
+    onConfirm: hiddenControl,
+    onCancel: hiddenControl,
+  },
 };
 export default meta;
 type Story = StoryObj<typeof ConfirmationBanner>;

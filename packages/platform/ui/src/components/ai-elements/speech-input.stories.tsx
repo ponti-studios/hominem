@@ -3,6 +3,11 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 const meta: Meta = {
   title: 'Patterns/AI/SpeechInput',
   tags: ['autodocs'],
+  parameters: {
+    controls: {
+      disable: true,
+    },
+  },
 };
 
 export default meta;

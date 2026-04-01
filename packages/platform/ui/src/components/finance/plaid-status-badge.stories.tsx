@@ -1,11 +1,18 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import { selectControl } from '../../storybook/controls';
+import { plaidStatusOptions } from '../../storybook/options';
 import { PlaidStatusBadge } from './plaid-status-badge';
 
 const meta: Meta<typeof PlaidStatusBadge> = {
   title: 'Patterns/Finance/PlaidStatusBadge',
   component: PlaidStatusBadge,
   tags: ['autodocs'],
+  argTypes: {
+    status: selectControl(plaidStatusOptions, 'Plaid connection status shown in the badge', {
+      defaultValue: 'active',
+    }),
+  },
   args: {
     status: 'active',
   },

@@ -6,6 +6,11 @@ const meta: Meta<typeof AudioPlayer> = {
   title: 'Patterns/AI/AudioPlayer',
   component: AudioPlayer,
   tags: ['autodocs'],
+  parameters: {
+    controls: {
+      disable: true,
+    },
+  },
 };
 export default meta;
 type Story = StoryObj<typeof AudioPlayer>;

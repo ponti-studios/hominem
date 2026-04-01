@@ -1,6 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { useEffect, useState } from 'react';
 import { expect, userEvent, within } from 'storybook/test';
 
+import { booleanControl, hiddenControl, textControl } from '../../storybook/controls';
+import type { SelectFieldProps } from './select-field';
 import { SelectField } from './select-field';
 
 const meta: Meta<typeof SelectField> = {
@@ -8,13 +11,31 @@ const meta: Meta<typeof SelectField> = {
   component: SelectField,
   tags: ['autodocs'],
   argTypes: {
-    disabled: { control: 'boolean' },
-    required: { control: 'boolean' },
+    label: textControl('Label displayed above the select'),
+    placeholder: textControl('Placeholder text shown when the select is empty'),
+    helpText: textControl('Supporting text shown below the select'),
+    error: textControl('Validation error text shown below the select'),
+    value: textControl('Selected option value'),
+    disabled: booleanControl('Prevents user interaction and applies disabled styling', false),
+    required: booleanControl('Marks the select as required for form submission', false),
+    defaultValue: hiddenControl,
+    options: hiddenControl,
+    onValueChange: hiddenControl,
   },
 };
 
 export default meta;
 type Story = StoryObj<typeof SelectField>;
+
+function SelectFieldPreview(props: SelectFieldProps) {
+  const [value, setValue] = useState(props.value ?? props.defaultValue ?? '');
+
+  useEffect(() => {
+    setValue(props.value ?? props.defaultValue ?? '');
+  }, [props.defaultValue, props.value]);
+
+  return <SelectField {...props} value={value} onValueChange={setValue} />;
+}
 
 const defaultOptions = [
   { label: 'Option A', value: 'a' },
@@ -28,6 +49,7 @@ export const Default: Story = {
     placeholder: 'Select...',
     options: defaultOptions,
   },
+  render: (args) => <SelectFieldPreview {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
@@ -46,6 +68,7 @@ export const WithHelpText: Story = {
       { label: 'High', value: 'high' },
     ],
   },
+  render: (args) => <SelectFieldPreview {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
@@ -63,6 +86,7 @@ export const Required: Story = {
       { label: 'Inactive', value: 'inactive' },
     ],
   },
+  render: (args) => <SelectFieldPreview {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const label = canvas.getByText('Status');
@@ -79,6 +103,7 @@ export const Error: Story = {
     options: defaultOptions,
     placeholder: 'Choose...',
   },
+  render: (args) => <SelectFieldPreview {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
@@ -93,6 +118,7 @@ export const Disabled: Story = {
     placeholder: 'Cannot select',
     options: defaultOptions,
   },
+  render: (args) => <SelectFieldPreview {...args} />,
 };
 
 export const WithDisabledOptions: Story = {
@@ -105,4 +131,5 @@ export const WithDisabledOptions: Story = {
     ],
     placeholder: 'Select status',
   },
+  render: (args) => <SelectFieldPreview {...args} />,
 };

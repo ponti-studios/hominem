@@ -6,6 +6,11 @@ const meta: Meta<typeof Suggestions> = {
   title: 'Patterns/AI/Suggestion',
   component: Suggestions,
   tags: ['autodocs'],
+  parameters: {
+    controls: {
+      disable: true,
+    },
+  },
 };
 export default meta;
 type Story = StoryObj<typeof Suggestions>;

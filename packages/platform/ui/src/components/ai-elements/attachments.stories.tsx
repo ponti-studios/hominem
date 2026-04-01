@@ -6,6 +6,11 @@ const meta: Meta<typeof Attachments> = {
   title: 'Patterns/AI/Attachments',
   component: Attachments,
   tags: ['autodocs'],
+  parameters: {
+    controls: {
+      disable: true,
+    },
+  },
 };
 export default meta;
 type Story = StoryObj<typeof Attachments>;

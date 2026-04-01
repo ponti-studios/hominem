@@ -1,6 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
+import {
+  booleanControl,
+  hiddenControl,
+  selectControl,
+  textControl,
+} from '../../storybook/controls';
 import { AccountSelect, type AccountOption } from './account-select';
 
 const accounts: AccountOption[] = [
@@ -9,10 +15,24 @@ const accounts: AccountOption[] = [
   { id: 'savings', name: 'Emergency Savings' },
 ];
 
+const accountOptions = ['all', ...accounts.map((account) => account.id)] as const;
+
 const meta: Meta<typeof AccountSelect> = {
   title: 'Patterns/Finance/AccountSelect',
   component: AccountSelect,
   tags: ['autodocs'],
+  argTypes: {
+    selectedAccount: selectControl(accountOptions, 'Currently selected account', {
+      defaultValue: 'all',
+    }),
+    isLoading: booleanControl('Shows the loading placeholder state', false),
+    placeholder: textControl('Placeholder text shown when no account is selected'),
+    label: textControl('Label displayed above the select when shown'),
+    showLabel: booleanControl('Shows the select label above the control', false),
+    accounts: hiddenControl,
+    onAccountChange: hiddenControl,
+    className: hiddenControl,
+  },
   args: {
     selectedAccount: 'all',
     accounts,
@@ -23,6 +43,10 @@ const meta: Meta<typeof AccountSelect> = {
   },
   render: (args) => {
     const [selectedAccount, setSelectedAccount] = useState(args.selectedAccount);
+
+    useEffect(() => {
+      setSelectedAccount(args.selectedAccount);
+    }, [args.selectedAccount]);
 
     return (
       <AccountSelect

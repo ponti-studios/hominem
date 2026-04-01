@@ -6,6 +6,11 @@ const meta: Meta<typeof Queue> = {
   title: 'Patterns/AI/Queue',
   component: Queue,
   tags: ['autodocs'],
+  parameters: {
+    controls: {
+      disable: true,
+    },
+  },
 };
 export default meta;
 type Story = StoryObj<typeof Queue>;

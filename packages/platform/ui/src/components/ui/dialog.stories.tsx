@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { useEffect, useState } from 'react';
 
+import { booleanControl, hiddenControl } from '../../storybook/controls';
 import { Button } from './button';
 import {
   Dialog,
@@ -16,27 +18,44 @@ const meta: Meta<typeof Dialog> = {
   component: Dialog,
   tags: ['autodocs'],
   argTypes: {
-    open: {
-      control: 'boolean',
-      description: 'Controls whether the dialog is open',
-    },
-    defaultOpen: {
-      control: 'boolean',
-      description: 'Whether the dialog is open by default (uncontrolled)',
-    },
-    modal: {
-      control: 'boolean',
-      description: 'Whether interaction outside the dialog is disabled when open',
-      table: { defaultValue: { summary: 'true' } },
-    },
+    open: booleanControl('Controls whether the dialog is open', true),
+    modal: booleanControl('Whether interaction outside the dialog is disabled when open', true),
+    defaultOpen: hiddenControl,
+    onOpenChange: hiddenControl,
   },
 };
 export default meta;
 type Story = StoryObj<typeof Dialog>;
 
+function DialogPreview({
+  open,
+  modal,
+  children,
+}: {
+  open: boolean;
+  modal: boolean;
+  children: React.ReactNode;
+}) {
+  const [isOpen, setIsOpen] = useState(open);
+
+  useEffect(() => {
+    setIsOpen(open);
+  }, [open]);
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen} modal={modal}>
+      {children}
+    </Dialog>
+  );
+}
+
 export const Default: Story = {
-  render: () => (
-    <Dialog>
+  args: {
+    open: true,
+    modal: true,
+  },
+  render: (args) => (
+    <DialogPreview open={args.open ?? true} modal={args.modal ?? true}>
       <DialogTrigger asChild>
         <Button variant="outline">Open Dialog</Button>
       </DialogTrigger>
@@ -63,13 +82,17 @@ export const Default: Story = {
           <Button type="submit">Save changes</Button>
         </DialogFooter>
       </DialogContent>
-    </Dialog>
+    </DialogPreview>
   ),
 };
 
 export const WithCloseButton: Story = {
-  render: () => (
-    <Dialog>
+  args: {
+    open: true,
+    modal: true,
+  },
+  render: (args) => (
+    <DialogPreview open={args.open ?? true} modal={args.modal ?? true}>
       <DialogTrigger asChild>
         <Button>Open</Button>
       </DialogTrigger>
@@ -82,6 +105,6 @@ export const WithCloseButton: Story = {
           <Button>Confirm</Button>
         </DialogFooter>
       </DialogContent>
-    </Dialog>
+    </DialogPreview>
   ),
 };

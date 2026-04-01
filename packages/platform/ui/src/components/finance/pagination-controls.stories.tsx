@@ -1,18 +1,31 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
+import { hiddenControl, numberControl } from '../../storybook/controls';
 import { PaginationControls } from './pagination-controls';
 
 const meta: Meta<typeof PaginationControls> = {
   title: 'Patterns/Finance/PaginationControls',
   component: PaginationControls,
   tags: ['autodocs'],
+  argTypes: {
+    currentPage: numberControl('Zero-based page index currently shown', {
+      defaultValue: 0,
+      min: 0,
+    }),
+    totalPages: numberControl('Total number of pages available', { defaultValue: 5, min: 0 }),
+    onPageChange: hiddenControl,
+  },
   args: {
     currentPage: 0,
     totalPages: 5,
   },
   render: (args) => {
     const [currentPage, setCurrentPage] = useState(args.currentPage);
+
+    useEffect(() => {
+      setCurrentPage(args.currentPage);
+    }, [args.currentPage]);
 
     return (
       <div className="w-full max-w-xl">
@@ -34,6 +47,11 @@ export const LastPage: Story = {
 };
 
 export const HiddenWhenEmpty: Story = {
+  parameters: {
+    controls: {
+      disable: true,
+    },
+  },
   args: {
     totalPages: 0,
   },

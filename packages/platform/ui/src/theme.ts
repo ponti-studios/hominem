@@ -1,4 +1,4 @@
-import { colors, darkColors } from './tokens';
+import { colors, darkColors } from './tokens/index';
 
 export const shellTheme = {
   web: {

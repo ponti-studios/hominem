@@ -7,20 +7,10 @@ const meta: Meta<typeof Textarea> = {
   component: Textarea,
   tags: ['autodocs'],
   argTypes: {
-    placeholder: {
-      control: 'text',
-      description: 'Placeholder text shown when the textarea is empty',
-    },
-    disabled: {
-      control: 'boolean',
-      description: 'Prevents user interaction and applies disabled styling',
-      table: { defaultValue: { summary: 'false' } },
-    },
-    rows: {
-      control: { type: 'number', min: 1, max: 20 },
-      description: 'Number of visible text lines',
-      table: { defaultValue: { summary: '3' } },
-    },
+    placeholder: textControl('Placeholder text shown when the textarea is empty'),
+    disabled: booleanControl('Prevents user interaction and applies disabled styling', false),
+    required: booleanControl('Marks the textarea as required for form submission', false),
+    rows: numberControl('Number of visible text lines', { min: 1, max: 20, defaultValue: 3 }),
   },
 };
 export default meta;

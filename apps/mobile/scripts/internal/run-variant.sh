@@ -43,5 +43,8 @@ set +a
 
 export APP_VARIANT="${VARIANT}"
 export EXPO_NO_DOTENV=1
+export PATH="${MOBILE_DIR}/node_modules/.bin:${PATH}"
+
+cd "${MOBILE_DIR}"
 
 exec "$@"

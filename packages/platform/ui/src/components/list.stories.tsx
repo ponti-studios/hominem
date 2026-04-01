@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, within } from 'storybook/test';
 
+import { booleanControl, selectControl } from '../storybook/controls';
+import { loadingSizeOptions } from '../storybook/options';
 import { List } from './list';
 
 const meta: Meta<typeof List> = {
@@ -8,19 +10,22 @@ const meta: Meta<typeof List> = {
   component: List,
   tags: ['autodocs'],
   argTypes: {
-    isLoading: { control: 'boolean' },
-    loadingSize: {
-      control: 'select',
-      options: ['sm', 'md', 'lg', 'xl', '2xl', '3xl'],
-    },
+    isLoading: booleanControl('Shows the loading state instead of the list content', false),
+    loadingSize: selectControl(loadingSizeOptions, 'Size of the loading placeholder', {
+      defaultValue: 'md',
+    }),
   },
 };
 export default meta;
 type Story = StoryObj<typeof List>;
 
 export const Default: Story = {
-  render: () => (
-    <List className="max-w-sm">
+  args: {
+    isLoading: false,
+    loadingSize: 'md',
+  },
+  render: (args) => (
+    <List {...args} className="max-w-sm">
       <li className="px-4 py-3 text-sm">Item one</li>
       <li className="px-4 py-3 text-sm">Item two</li>
       <li className="px-4 py-3 text-sm">Item three</li>
@@ -73,10 +78,20 @@ export const LoadingLarge: Story = {
 };
 
 export const Empty: Story = {
+  parameters: {
+    controls: {
+      disable: true,
+    },
+  },
   render: () => <List className="max-w-sm" />,
 };
 
 export const WithContent: Story = {
+  parameters: {
+    controls: {
+      disable: true,
+    },
+  },
   render: () => (
     <List className="max-w-sm">
       {['Alice Johnson', 'Bob Smith', 'Carol Williams', 'David Brown'].map((name) => (

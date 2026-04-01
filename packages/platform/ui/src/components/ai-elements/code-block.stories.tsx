@@ -1,18 +1,21 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
+import {
+  booleanControl,
+  hiddenControl,
+  selectControl,
+  textControl,
+} from '../../storybook/controls';
+import { codeBlockLanguageOptions } from '../../storybook/options';
+import type { CodeBlockProps } from './code-block';
 import CodeBlock from './code-block';
 
-interface CodeBlockStoryProps {
-  language: string;
-  code: string;
-  isCopied: boolean;
-  onCopy: () => void;
-}
+type CodeBlockStoryArgs = CodeBlockProps;
 
-const meta = {
+const meta: Meta<CodeBlockStoryArgs> = {
   title: 'Patterns/AI/CodeBlock',
-  component: CodeBlockWrapper,
+  component: CodeBlock,
   tags: ['autodocs'],
   parameters: {
     docs: {
@@ -22,57 +25,50 @@ const meta = {
       },
     },
   },
+  argTypes: {
+    language: selectControl(
+      codeBlockLanguageOptions,
+      'Programming language for syntax highlighting',
+      {
+        defaultValue: 'javascript',
+      },
+    ),
+    code: textControl('Code content to display'),
+    isCopied: booleanControl('Whether the copy action has been completed', false),
+    onCopy: hiddenControl,
+  },
   args: {
     isCopied: false,
-    onCopy: () => undefined,
   },
   render: (args) => <CodeBlockWrapper {...args} />,
-  argTypes: {
-    language: {
-      control: 'select',
-      options: [
-        'typescript',
-        'tsx',
-        'javascript',
-        'jsx',
-        'python',
-        'bash',
-        'sql',
-        'json',
-        'html',
-        'css',
-        'yaml',
-        'dockerfile',
-      ],
-      description: 'Programming language for syntax highlighting',
-    },
-    code: {
-      control: 'text',
-      description: 'Code content to display',
-    },
-    isCopied: {
-      control: 'boolean',
-      description: 'Whether copy action was completed',
-    },
-    onCopy: {
-      description: 'Callback when copy button is clicked',
-    },
-  },
-} satisfies Meta<typeof CodeBlockWrapper>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-function CodeBlockWrapper(props: CodeBlockStoryProps) {
-  const [isCopied, setIsCopied] = useState(false);
+function CodeBlockWrapper({ code, isCopied, ...props }: CodeBlockStoryArgs) {
+  const [currentCopied, setCurrentCopied] = useState(isCopied);
+
+  useEffect(() => {
+    setCurrentCopied(isCopied);
+  }, [isCopied]);
+
+  useEffect(() => {
+    if (!currentCopied) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => setCurrentCopied(false), 2000);
+
+    return () => window.clearTimeout(timeout);
+  }, [currentCopied]);
 
   const handleCopy = () => {
-    setIsCopied(true);
-    navigator.clipboard.writeText(props.code);
-    setTimeout(() => setIsCopied(false), 2000);
+    setCurrentCopied(true);
+    void navigator.clipboard.writeText(code);
   };
 
-  return <CodeBlock {...props} isCopied={isCopied} onCopy={handleCopy} />;
+  return <CodeBlock {...props} code={code} isCopied={currentCopied} onCopy={handleCopy} />;
 }
 
 export const TypeScript: Story = {

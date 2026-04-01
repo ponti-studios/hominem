@@ -6,6 +6,11 @@ const meta: Meta<typeof Tool> = {
   title: 'Patterns/AI/Tool',
   component: Tool,
   tags: ['autodocs'],
+  parameters: {
+    controls: {
+      disable: true,
+    },
+  },
 };
 export default meta;
 type Story = StoryObj<typeof Tool>;

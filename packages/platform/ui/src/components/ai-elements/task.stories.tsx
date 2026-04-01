@@ -1,11 +1,29 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import { hiddenControl, selectControl, textControl } from '../../storybook/controls';
 import { Task, TaskList, TaskStatusBadge } from './task';
 
 const meta: Meta<typeof Task> = {
   title: 'Patterns/AI/Task',
   component: Task,
   tags: ['autodocs'],
+  argTypes: {
+    status: selectControl(
+      ['pending', 'in-progress', 'completed', 'cancelled'] as const,
+      'Task completion state',
+      {
+        defaultValue: 'pending',
+      },
+    ),
+    priority: selectControl(['low', 'medium', 'high'] as const, 'Task priority level', {
+      defaultValue: 'medium',
+    }),
+    title: textControl('Primary title for the task card'),
+    description: textControl('Supporting description shown below the title'),
+    dueDate: textControl('Due date label shown in the task footer'),
+    assignee: textControl('Person assigned to the task'),
+    onToggle: hiddenControl,
+  },
 };
 export default meta;
 type Story = StoryObj<typeof Task>;
@@ -30,6 +48,11 @@ export const Completed: Story = {
 };
 
 export const TaskListStory: Story = {
+  parameters: {
+    controls: {
+      disable: true,
+    },
+  },
   render: () => (
     <TaskList>
       <Task title="Design mockups" status="completed" priority="low" />
@@ -51,6 +74,11 @@ export const TaskListStory: Story = {
 };
 
 export const StatusBadges: Story = {
+  parameters: {
+    controls: {
+      disable: true,
+    },
+  },
   render: () => (
     <div className="flex flex-wrap gap-2">
       <TaskStatusBadge status="pending" />

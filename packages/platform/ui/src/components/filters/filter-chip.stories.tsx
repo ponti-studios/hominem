@@ -1,11 +1,17 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import { hiddenControl, textControl } from '../../storybook/controls';
 import { FilterChip } from './filter-chip';
 
 const meta: Meta<typeof FilterChip> = {
   title: 'Patterns/Filters/FilterChip',
   component: FilterChip,
   tags: ['autodocs'],
+  argTypes: {
+    label: textControl('Label displayed inside the filter chip'),
+    onRemove: hiddenControl,
+    onClick: hiddenControl,
+  },
 };
 export default meta;
 type Story = StoryObj<typeof FilterChip>;
@@ -26,6 +32,11 @@ export const Clickable: Story = {
 };
 
 export const Multiple: Story = {
+  parameters: {
+    controls: {
+      disable: true,
+    },
+  },
   render: () => (
     <div className="flex flex-wrap gap-2">
       <FilterChip label="Status: Active" onRemove={() => {}} />

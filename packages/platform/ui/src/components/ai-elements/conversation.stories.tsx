@@ -11,6 +11,11 @@ const meta: Meta<typeof Conversation> = {
   title: 'Patterns/AI/Conversation',
   component: Conversation,
   tags: ['autodocs'],
+  parameters: {
+    controls: {
+      disable: true,
+    },
+  },
 };
 export default meta;
 type Story = StoryObj<typeof Conversation>;

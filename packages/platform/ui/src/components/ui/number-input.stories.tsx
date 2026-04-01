@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, within } from 'storybook/test';
 
+import { booleanControl, numberControl, textControl } from '../../storybook/controls';
 import { NumberInput } from './number-input';
 
 const meta: Meta<typeof NumberInput> = {
@@ -8,10 +9,11 @@ const meta: Meta<typeof NumberInput> = {
   component: NumberInput,
   tags: ['autodocs'],
   argTypes: {
-    maxLength: { control: 'number' },
-    error: { control: 'boolean' },
-    success: { control: 'boolean' },
-    disabled: { control: 'boolean' },
+    placeholder: textControl('Placeholder text shown when the field is empty'),
+    maxLength: numberControl('Maximum number of digits allowed', { min: 1 }),
+    error: booleanControl('Shows the error visual state', false),
+    success: booleanControl('Shows the success visual state and locks editing', false),
+    disabled: booleanControl('Prevents user interaction and applies disabled styling', false),
   },
 };
 

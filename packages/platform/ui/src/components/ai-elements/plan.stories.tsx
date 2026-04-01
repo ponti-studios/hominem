@@ -7,6 +7,11 @@ const meta: Meta<typeof Plan> = {
   title: 'Patterns/AI/Plan',
   component: Plan,
   tags: ['autodocs'],
+  parameters: {
+    controls: {
+      disable: true,
+    },
+  },
 };
 export default meta;
 type Story = StoryObj<typeof Plan>;

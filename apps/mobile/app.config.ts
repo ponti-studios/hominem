@@ -1,4 +1,3 @@
-import { shellTheme } from '@hominem/ui/theme';
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 
 type AppVariant = 'dev' | 'e2e' | 'preview' | 'production';
@@ -24,6 +23,17 @@ const { EXPO_OWNER, EXPO_PROJECT_ID, getExpoExtraConfig } = require('./config/ex
     e2eTesting: string;
     e2eAuthSecret: string;
     mobilePasskeyEnabled: string;
+  };
+};
+
+const { shellTheme } = require('./config/expo-theme.js') as {
+  shellTheme: {
+    mobile: {
+      adaptiveIconBackgroundColor: string;
+      htmlBackgroundColor: string;
+      notificationColor: string;
+      splashBackgroundColor: string;
+    };
   };
 };
 

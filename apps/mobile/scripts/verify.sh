@@ -17,27 +17,19 @@ SCRIPTS_DIR="$(dirname "$0")"
 
 header "Verification · $VARIANT"
 
-# Run concurrent checks (no dependencies between them)
+# Run validation checks in sequence to avoid Bun/Expo loader races.
 step "Running configuration checks..."
-bash "$SCRIPTS_DIR/internal/check-eas-profiles.sh" &
-PID_EAS=$!
-
-bash "$SCRIPTS_DIR/internal/check-expo-config.sh" &
-PID_EXPO=$!
-
-bunx tsx "$SCRIPTS_DIR/internal/check-style-tokens.ts" &
-PID_TOKENS=$!
-
-# Wait for all concurrent checks to complete
-if ! wait $PID_EAS; then
+if ! bash "$SCRIPTS_DIR/internal/check-eas-profiles.sh"; then
   fail "EAS profiles validation failed"
   exit 1
 fi
-if ! wait $PID_EXPO; then
+
+if ! bash "$SCRIPTS_DIR/internal/check-expo-config.sh"; then
   fail "Expo configuration validation failed"
   exit 1
 fi
-if ! wait $PID_TOKENS; then
+
+if ! bun "$SCRIPTS_DIR/internal/check-style-tokens.ts"; then
   fail "Design tokens validation failed"
   exit 1
 fi
