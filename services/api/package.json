@@ -27,7 +27,6 @@
     "@hominem/db": "workspace:*",
     "@hominem/env": "workspace:*",
     "@hominem/events-services": "workspace:*",
-    "@hominem/health-services": "workspace:*",
     "@hominem/jobs-services": "workspace:*",
     "@hominem/rpc": "workspace:*",
     "@hominem/queues": "workspace:*",

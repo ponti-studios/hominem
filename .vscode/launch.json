@@ -27,7 +27,7 @@
       "runtime": "bun",
       // The arguments to pass to the `bun` executable, if any.
       // Unlike `args`, these are passed to the executable itself, not the program.
-      "runtimeArgs": []
+      "runtimeArgs": [],
     },
     {
       "type": "bun",
@@ -35,21 +35,21 @@
       "name": "Attach to Bun",
       // The URL of the WebSocket inspector to attach to.
       // This value can be retrieved by using `bun --inspect`.
-      "url": "ws://localhost:6499/"
+      "url": "ws://localhost:6499/",
     },
     {
       "type": "node",
       "request": "attach",
       "name": "Debug Chat API (Node.js)",
       "processId": "${command:PickProcess}",
-      "restart": true
+      "restart": true,
     },
     {
       "type": "node",
       "request": "attach",
       "name": "Debug API (Node.js)",
       "processId": "${command:PickProcess}",
-      "restart": true
+      "restart": true,
     },
     {
       "type": "node",
@@ -63,8 +63,8 @@
       "skipFiles": ["<node_internals>/**"],
       "outputCapture": "std",
       "env": {
-        "NODE_OPTIONS": "--inspect"
-      }
+        "NODE_OPTIONS": "--inspect",
+      },
     },
     {
       "type": "node",
@@ -74,21 +74,21 @@
       "cwd": "${workspaceFolder}/apps/cli",
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
-      "skipFiles": ["<node_internals>/**"]
+      "skipFiles": ["<node_internals>/**"],
     },
     {
       "type": "chrome",
       "request": "launch",
       "name": "Debug Notes App (Chrome)",
       "url": "http://localhost:4445",
-      "webRoot": "${workspaceFolder}/apps/notes/app"
+      "webRoot": "${workspaceFolder}/apps/notes/app",
     },
     {
       "type": "node",
       "request": "attach",
       "name": "Debug Notes API (Node.js)",
       "processId": "${command:PickProcess}",
-      "restart": true
+      "restart": true,
     },
-  ]
+  ],
 }
