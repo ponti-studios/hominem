@@ -53,6 +53,7 @@ bun-debug.log*
 .env.development*
 .env.test*
 .env.production*
+!/packages/core/env
 
 # TypeScript build cache
 .cache/
