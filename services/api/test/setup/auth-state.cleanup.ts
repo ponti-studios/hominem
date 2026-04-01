@@ -21,7 +21,7 @@ interface UserRow {
 }
 
 async function deleteMatchingRedisKeys(
-  redis: Awaited<typeof import('../../../../packages/services/src/redis')>['redis'],
+  redis: Awaited<typeof import('@hominem/services/redis')>['redis'],
   pattern: string,
 ) {
   let cursor = '0'
@@ -92,7 +92,7 @@ export async function cleanupApiAuthTestState() {
 
 export async function cleanupApiAuthRedisState() {
   try {
-    const { redis } = await import('../../../../packages/services/src/redis')
+    const { redis } = await import('@hominem/services/redis')
     for (const pattern of AUTH_REDIS_PATTERNS) {
       await deleteMatchingRedisKeys(redis, pattern)
     }

@@ -30,6 +30,30 @@
         "vitest": "4.0.18",
       },
     },
+    "apps/cli": {
+      "name": "@hominem/cli",
+      "version": "1.0.0",
+      "bin": {
+        "hominem": "bin/hominem.js",
+      },
+      "dependencies": {
+        "@oclif/core": "^4.0.19",
+        "chalk": "^5.4.1",
+        "consola": "^3.4.2",
+        "keytar": "^7.9.0",
+        "open": "^10.1.1",
+        "ora": "^9.3.0",
+        "zod": "^4.3.6",
+      },
+      "devDependencies": {
+        "@types/bun": "^1.3.8",
+        "@types/node": "*",
+        "oxfmt": "^0.28.0",
+        "oxlint": "^1.43.0",
+        "tsc-alias": "^1.8.16",
+        "typescript": "^5.0.0",
+      },
+    },
     "apps/desktop": {
       "name": "@hominem/desktop",
       "version": "0.0.0",
@@ -567,32 +591,6 @@
         "vite": "7.3.1",
         "vite-tsconfig-paths": "6.0.3",
         "vitest": "4.0.16",
-      },
-    },
-    "tools/cli": {
-      "name": "@hominem/cli",
-      "version": "1.0.0",
-      "bin": {
-        "hominem": "bin/hominem.js",
-      },
-      "dependencies": {
-        "@oclif/core": "^4.0.19",
-        "chalk": "^5.4.1",
-        "consola": "^3.4.2",
-        "dotenv": "17.2.3",
-        "get-port": "^7.1.0",
-        "keytar": "^7.9.0",
-        "open": "^10.1.1",
-        "ora": "^9.3.0",
-        "zod": "^4.3.6",
-      },
-      "devDependencies": {
-        "@types/bun": "^1.3.8",
-        "@types/node": "*",
-        "oxfmt": "^0.28.0",
-        "oxlint": "^1.43.0",
-        "tsc-alias": "^1.8.16",
-        "typescript": "^5.0.0",
       },
     },
   },
@@ -1206,7 +1204,7 @@
 
     "@hominem/chat-services": ["@hominem/chat-services@workspace:packages/domains/chat"],
 
-    "@hominem/cli": ["@hominem/cli@workspace:tools/cli"],
+    "@hominem/cli": ["@hominem/cli@workspace:apps/cli"],
 
     "@hominem/db": ["@hominem/db@workspace:packages/core/db"],
 
@@ -3236,7 +3234,7 @@
 
     "get-package-type": ["get-package-type@0.1.0", "", {}, "sha512-pjzuKtY64GYfWizNAJ0fr9VqttZkNiK2iS430LtIHzjBEr6bX8Am2zm4sW4Ro5wjWW5cAlRL1qAMTcXbjNAO2Q=="],
 
-    "get-port": ["get-port@7.1.0", "", {}, "sha512-QB9NKEeDg3xxVwCCwJQ9+xycaz6pBB6iQ76wiWMl1927n0Kir6alPiP+yuiICLLU4jpMe08dXfpebuQppFA2zw=="],
+    "get-port": ["get-port@5.1.1", "", {}, "sha512-g/Q1aTSDOxFpchXC4i8ZWvxA1lnPqx/JHqcpIw0/LX9T8x/GBbi6YnlN5nhaKIFkT8oFsscUKgDJYxfwfS6QsQ=="],
 
     "get-port-please": ["get-port-please@3.2.0", "", {}, "sha512-I9QVvBw5U/hw3RmWpYKRumUeaDgxTPd401x364rLmWBJcOQ753eov1eTgzDqRG9bqFIfDc7gfzcQEWrUri3o1A=="],
 
@@ -5529,8 +5527,6 @@
     "@react-router/express/react-router": ["react-router@7.13.1", "", { "dependencies": { "cookie": "^1.0.1", "set-cookie-parser": "^2.6.0" }, "peerDependencies": { "react": ">=18", "react-dom": ">=18" }, "optionalPeers": ["react-dom"] }, "sha512-td+xP4X2/6BJvZoX6xw++A2DdEi++YypA69bJUV5oVvqf6/9/9nNlD70YO1e9d3MyamJEBQFEzk6mbfDYbqrSA=="],
 
     "@react-router/node/react-router": ["react-router@7.13.1", "", { "dependencies": { "cookie": "^1.0.1", "set-cookie-parser": "^2.6.0" }, "peerDependencies": { "react": ">=18", "react-dom": ">=18" }, "optionalPeers": ["react-dom"] }, "sha512-td+xP4X2/6BJvZoX6xw++A2DdEi++YypA69bJUV5oVvqf6/9/9nNlD70YO1e9d3MyamJEBQFEzk6mbfDYbqrSA=="],
-
-    "@react-router/serve/get-port": ["get-port@5.1.1", "", {}, "sha512-g/Q1aTSDOxFpchXC4i8ZWvxA1lnPqx/JHqcpIw0/LX9T8x/GBbi6YnlN5nhaKIFkT8oFsscUKgDJYxfwfS6QsQ=="],
 
     "@react-router/serve/react-router": ["react-router@7.13.1", "", { "dependencies": { "cookie": "^1.0.1", "set-cookie-parser": "^2.6.0" }, "peerDependencies": { "react": ">=18", "react-dom": ">=18" }, "optionalPeers": ["react-dom"] }, "sha512-td+xP4X2/6BJvZoX6xw++A2DdEi++YypA69bJUV5oVvqf6/9/9nNlD70YO1e9d3MyamJEBQFEzk6mbfDYbqrSA=="],
 

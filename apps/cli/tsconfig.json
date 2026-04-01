@@ -8,9 +8,7 @@
 			"@/*": ["./src/*"]
 		}
 	},
-	"include": ["src/**/*", "test/**/*.ts", "test/**/*.tsx"],
+	"include": ["src/**/*"],
 	"exclude": ["dist"],
-	"references": [
-		{ "path": "../../packages/platform/rpc" }
-	]
+	"references": []
 }
