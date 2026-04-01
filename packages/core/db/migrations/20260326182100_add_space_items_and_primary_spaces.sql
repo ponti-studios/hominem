@@ -18,7 +18,7 @@ ALTER TABLE app.task_assignments
   RENAME CONSTRAINT app_task_assignments_task_space_fkey TO app_task_assignments_task_primary_space_fkey;
 
 ALTER TABLE app.task_assignments
-  RENAME CONSTRAINT app_task_assignments_membership_fkey TO app_task_assignments_primary_space_membership_fkey;
+  RENAME CONSTRAINT app_task_assignments_space_fkey TO app_task_assignments_primary_space_fkey;
 
 ALTER INDEX app.app_tasks_space_id_idx
   RENAME TO app_tasks_primary_space_id_idx;
@@ -53,11 +53,10 @@ CREATE TABLE app.space_items (
   CONSTRAINT app_space_items_membership_period_not_empty CHECK (
     NOT isempty(membership_period)
   ),
-  CONSTRAINT app_space_items_active_window_key UNIQUE (
+  CONSTRAINT app_space_items_entity_space_key UNIQUE (
     space_id,
     entity_table,
-    entity_id,
-    membership_period WITHOUT OVERLAPS
+    entity_id
   )
 );
 

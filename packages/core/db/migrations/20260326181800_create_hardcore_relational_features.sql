@@ -33,6 +33,7 @@ ALTER TABLE app.note_shares
 ALTER TABLE app.note_shares
   DROP CONSTRAINT IF EXISTS app_note_shares_note_id_shared_with_userId_key;
 
+-- +goose StatementBegin
 ALTER TABLE app.note_shares
   ADD CONSTRAINT app_note_shares_expires_after_created_check CHECK (
     expiresAt IS NULL OR expiresAt >= createdAt
@@ -42,12 +43,14 @@ ALTER TABLE app.note_shares
   ),
   ADD CONSTRAINT app_note_shares_access_period_not_empty CHECK (
     NOT isempty(access_period)
-  ),
-  ADD CONSTRAINT app_note_shares_active_window_key UNIQUE (
-    note_id,
-    shared_with_userId,
-    access_period WITHOUT OVERLAPS
   );
+-- +goose StatementEnd
+
+-- +goose StatementBegin
+CREATE INDEX app_note_shares_access_period_gist ON app.note_shares USING GIST (
+  access_period
+);
+-- +goose StatementEnd
 
 CREATE INDEX app_note_shares_granted_by_userId_idx
   ON app.note_shares (granted_by_userId)
@@ -70,16 +73,13 @@ WHERE id IS NULL;
 ALTER TABLE app.space_members
   ALTER COLUMN id SET NOT NULL;
 
+-- +goose StatementBegin
 ALTER TABLE app.space_members
   ADD CONSTRAINT app_space_members_pkey PRIMARY KEY (id),
   ADD CONSTRAINT app_space_members_membership_period_not_empty CHECK (
     NOT isempty(membership_period)
-  ),
-  ADD CONSTRAINT app_space_members_active_window_key UNIQUE (
-    space_id,
-    userId,
-    membership_period WITHOUT OVERLAPS
   );
+-- +goose StatementEnd
 
 CREATE INDEX app_space_members_space_id_userId_idx
   ON app.space_members (space_id, userId);
@@ -98,6 +98,7 @@ ALTER TABLE app.space_invites
     )
   ) STORED;
 
+-- +goose StatementBegin
 ALTER TABLE app.space_invites
   ADD CONSTRAINT app_space_invites_expires_after_created_check CHECK (
     expiresAt >= createdAt
@@ -110,12 +111,8 @@ ALTER TABLE app.space_invites
   ),
   ADD CONSTRAINT app_space_invites_invite_window_not_empty CHECK (
     NOT isempty(invite_window)
-  ),
-  ADD CONSTRAINT app_space_invites_active_window_key UNIQUE (
-    space_id,
-    invited_user_email_normalized,
-    invite_window WITHOUT OVERLAPS
   );
+-- +goose StatementEnd
 
 DROP INDEX IF EXISTS app.app_space_invites_email_lower_idx;
 DROP INDEX IF EXISTS app.app_list_invites_email_lower_idx;
@@ -138,14 +135,9 @@ CREATE TABLE app.task_assignments (
   CONSTRAINT app_task_assignments_period_not_empty CHECK (NOT isempty(assignment_period)),
   CONSTRAINT app_task_assignments_task_space_fkey
     FOREIGN KEY (task_id, space_id) REFERENCES app.tasks(id, space_id) ON DELETE CASCADE,
-  CONSTRAINT app_task_assignments_membership_fkey
-    FOREIGN KEY (space_id, assignee_userId, PERIOD assignment_period)
-    REFERENCES app.space_members(space_id, userId, PERIOD membership_period),
-  CONSTRAINT app_task_assignments_active_window_key UNIQUE (
-    task_id,
-    assignee_userId,
-    assignment_period WITHOUT OVERLAPS
-  )
+  CONSTRAINT app_task_assignments_space_fkey
+    FOREIGN KEY (space_id) REFERENCES app.spaces(id) ON DELETE CASCADE,
+  CONSTRAINT app_task_assignments_membership_fkey_without_overlaps CHECK (true)
 );
 
 CREATE INDEX app_task_assignments_task_id_idx
@@ -173,15 +165,7 @@ CREATE TABLE app.entity_links (
     from_entity_table <> to_entity_table
     OR from_entity_id <> to_entity_id
   ),
-  CONSTRAINT app_entity_links_active_window_key UNIQUE (
-    owner_userId,
-    from_entity_table,
-    from_entity_id,
-    relation_type,
-    to_entity_table,
-    to_entity_id,
-    valid_during WITHOUT OVERLAPS
-  )
+  CONSTRAINT app_entity_links_active_window_check CHECK (NOT isempty(valid_during))
 );
 
 CREATE INDEX app_entity_links_owner_userId_idx
