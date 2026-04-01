@@ -1,27 +1,50 @@
-# Local Observability Assets
+# Local Observability Stack (ClickStack)
 
-This directory contains the provider-light observability stack used for local development.
+[ClickStack](https://clickhouse.com/docs/use-cases/observability/clickstack/overview) — logs, traces, metrics, and session replay in one place, backed by ClickHouse with full OpenTelemetry support.
 
 ## Stack
 
-- ClickHouse for telemetry storage
-- MongoDB for HyperDX metadata
-- OpenTelemetry Collector for ingest and export
-- HyperDX for querying traces, metrics, and logs
+| Service        | Image                                    | Role                         |
+| -------------- | ---------------------------------------- | ---------------------------- |
+| ch-server      | `clickhouse/clickhouse-server:25.3`      | Storage & query engine       |
+| otel-collector | `clickhouse/clickstack-otel-collector:2` | OTLP ingest (pre-configured) |
+| hyperdx        | `clickhouse/clickstack-all-in-one:2`     | UI + API                     |
+| mongo          | `mongo:7`                                | HyperDX metadata store       |
+
+## Setup
+
+```bash
+# First time only
+cp infra/docker/observability/.env.example infra/docker/observability/.env
+# Edit .env if using non-default ClickHouse credentials
+```
 
 ## Start
 
 ```bash
-docker compose -f infra/docker/compose/base.yml -f infra/docker/compose/observability.yml up -d
+make obs-up
 ```
 
 ## Ports
 
-- `4318` - OTLP HTTP ingest
-- `8080` - HyperDX UI
-- `8123` - ClickHouse HTTP
+| Port    | Service                     |
+| ------- | --------------------------- |
+| `4317`  | OTLP gRPC ingest            |
+| `4318`  | OTLP HTTP ingest            |
+| `8080`  | HyperDX UI                  |
+| `8123`  | ClickHouse HTTP             |
+| `13133` | OTel collector health check |
+
+## App configuration
+
+Point your services at the collector:
+
+```
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
+```
 
 ## Notes
 
-- App services should point `OTEL_EXPORTER_OTLP_ENDPOINT` at `http://localhost:4318`.
-- The collector is intentionally local-dev friendly and can be stopped without affecting app startup.
+- The collector is pre-configured for ClickHouse — no `otel-collector.yaml` needed.
+- The observability stack uses its own `observability` Docker network and `obs-*` volumes, isolated from the dev stack.
+- `make obs-down` destroys volumes (telemetry data is ephemeral by design).

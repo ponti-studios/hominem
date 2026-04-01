@@ -1,15 +1,25 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-START_FRESH="$ROOT_DIR/scripts/with-fresh-test-db.sh"
+# Runs API integration and contract tests against a fresh test database.
+# Usage:
+#   make test:integration          — runs api integration + contract
+#   bash scripts/run-integration-tests.sh @hominem/workers  — runs for a specific filter
+
+# shellcheck source=scripts/_lib.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/_lib.sh"
+
 cd "$ROOT_DIR"
 
-make infra-up
+echo "==> Starting test database..."
+docker compose -f infra/docker/compose/test.yml up -d --wait db-test
+
+echo "==> Resetting and migrating test database..."
+make db-reset-test
 
 if [ "$#" -gt 0 ]; then
-  exec $START_FRESH bun run "$@" test:integration
+  exec bun run --filter "$1" test:integration
 fi
 
-exec "$START_FRESH" bun run --filter @hominem/api test:integration
-exec "$START_FRESH" bun run --filter @hominem/api test:contract
+bun run --filter @hominem/api test:integration
+bun run --filter @hominem/api test:contract

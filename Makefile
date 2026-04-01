@@ -7,7 +7,7 @@ endif
 
 DOCKER_COMPOSE := docker compose
 DOCKER_DEV := $(DOCKER_COMPOSE) -f infra/docker/compose/base.yml -f infra/docker/compose/dev.yml
-DOCKER_OBSERVABILITY := $(DOCKER_COMPOSE) -f infra/docker/compose/base.yml -f infra/docker/compose/observability.yml
+DOCKER_OBSERVABILITY := $(DOCKER_COMPOSE) -f infra/docker/compose/observability.yml
 DOCKER_FULL := $(DOCKER_COMPOSE) -f infra/docker/compose/base.yml -f infra/docker/compose/dev.yml -f infra/docker/compose/observability.yml
 
 DEV_DATABASE_URL ?= postgres://postgres:postgres@localhost:5434/hominem
@@ -64,7 +64,7 @@ lint:
 	bun run ./scripts/check-duplication.ts
 
 infra-up:
-	$(DOCKER_DEV) up -d redis db db-test
+	$(DOCKER_DEV) up -d redis db
 
 infra-down:
 	$(DOCKER_DEV) down

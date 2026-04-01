@@ -1,11 +1,10 @@
 # Local development environment
-# Usage: docker-compose -f compose/base.yml -f compose/dev.yml up
+# Usage: docker compose -f infra/docker/compose/base.yml -f infra/docker/compose/dev.yml up
 
 x-postgres-build: &postgres-build
   build:
-    context: ../../..
-    dockerfile: infra/docker/postgres/Dockerfile
-  platform: linux/amd64
+    context: ../postgres
+    dockerfile: Dockerfile
 
 x-postgres-defaults: &postgres-defaults
   POSTGRES_USER: postgres
@@ -20,7 +19,7 @@ services:
     volumes:
       - hominem-redis:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -31,35 +30,32 @@ services:
     <<: *postgres-build
     container_name: hominem-postgres
     ports:
-      - "5434:5432"
+      - '5434:5432'
     environment:
       <<: *postgres-defaults
       POSTGRES_DB: hominem
     volumes:
       - hominem-postgres:/var/lib/postgresql
-      - ./no-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
       - hominem
 
-  # Test database - fresh on each run
   db-test:
     <<: *postgres-build
     container_name: hominem-test-postgres
     ports:
-      - "4433:5432"
+      - '4433:5432'
     environment:
       <<: *postgres-defaults
       POSTGRES_DB: hominem-test
     volumes:
       - hominem-test-postgres:/var/lib/postgresql
-      - ./no-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
       interval: 10s
       timeout: 5s
       retries: 5

@@ -1,5 +1,5 @@
 # Shared configuration for all environments
-# Usage: docker-compose -f base.yml -f dev.yml up
+# Usage: docker compose -f infra/docker/compose/base.yml -f infra/docker/compose/dev.yml up
 
 networks:
   hominem:
@@ -9,14 +9,3 @@ volumes:
   hominem-redis:
   hominem-postgres:
   hominem-test-postgres:
-
-# Shared environment defaults
-x-postgres-defaults: &postgres-defaults
-  POSTGRES_USER: postgres
-  POSTGRES_PASSWORD: postgres
-
-x-postgres-build: &postgres-build
-  build:
-    context: ../../..
-    dockerfile: infra/docker/postgres/Dockerfile
-  platform: linux/amd64

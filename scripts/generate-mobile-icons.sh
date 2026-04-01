@@ -21,7 +21,6 @@ fi
 
 echo "Generating icons from $SRC..."
 
-# Resize helper — always produces a square PNG with transparent padding
 resize() {
   magick "$SRC" \
     -resize "${1}x${1}" \
@@ -29,32 +28,49 @@ resize() {
     -gravity center \
     -extent "${1}x${1}" \
     "$2"
+  echo "  ✓ $(basename "$2") (${1}x${1})"
 }
 
-# Main icon (Expo + iOS)
-resize 1024 "${ICON_DIR}/icon.png"
-echo "  ✓ icon.png (1024x1024)"
+# All sizes to generate: "size output_path"
+declare -a ICONS=(
+  "1024 ${ICON_DIR}/icon.png"
+  "1024 ${ICON_DIR}/adaptive-icon.png"
+  "20   ${IOS_DIR}/Icon-App-20x20@1x.png"
+  "40   ${IOS_DIR}/Icon-App-20x20@2x.png"
+  "60   ${IOS_DIR}/Icon-App-20x20@3x.png"
+  "29   ${IOS_DIR}/Icon-App-29x29@1x.png"
+  "58   ${IOS_DIR}/Icon-App-29x29@2x.png"
+  "87   ${IOS_DIR}/Icon-App-29x29@3x.png"
+  "40   ${IOS_DIR}/Icon-App-40x40@1x.png"
+  "80   ${IOS_DIR}/Icon-App-40x40@2x.png"
+  "120  ${IOS_DIR}/Icon-App-40x40@3x.png"
+  "120  ${IOS_DIR}/Icon-App-60x60@2x.png"
+  "180  ${IOS_DIR}/Icon-App-60x60@3x.png"
+  "76   ${IOS_DIR}/Icon-App-76x76@1x.png"
+  "152  ${IOS_DIR}/Icon-App-76x76@2x.png"
+  "167  ${IOS_DIR}/Icon-App-83.5x83.5@2x.png"
+  "1024 ${IOS_DIR}/Icon-App-1024x1024@1x.png"
+)
 
-# Android adaptive icon
-resize 1024 "${ICON_DIR}/adaptive-icon.png"
-echo "  ✓ adaptive-icon.png (1024x1024)"
+mkdir -p "$ICON_DIR" "$IOS_DIR"
 
-# iOS icon set
-resize 20   "${IOS_DIR}/Icon-App-20x20@1x.png"
-resize 40   "${IOS_DIR}/Icon-App-20x20@2x.png"
-resize 60   "${IOS_DIR}/Icon-App-20x20@3x.png"
-resize 29   "${IOS_DIR}/Icon-App-29x29@1x.png"
-resize 58   "${IOS_DIR}/Icon-App-29x29@2x.png"
-resize 87   "${IOS_DIR}/Icon-App-29x29@3x.png"
-resize 40   "${IOS_DIR}/Icon-App-40x40@1x.png"
-resize 80   "${IOS_DIR}/Icon-App-40x40@2x.png"
-resize 120  "${IOS_DIR}/Icon-App-40x40@3x.png"
-resize 120  "${IOS_DIR}/Icon-App-60x60@2x.png"
-resize 180  "${IOS_DIR}/Icon-App-60x60@3x.png"
-resize 76   "${IOS_DIR}/Icon-App-76x76@1x.png"
-resize 152  "${IOS_DIR}/Icon-App-76x76@2x.png"
-resize 167  "${IOS_DIR}/Icon-App-83.5x83.5@2x.png"
-resize 1024 "${IOS_DIR}/Icon-App-1024x1024@1x.png"
-echo "  ✓ iOS AppIcon.appiconset (15 sizes)"
+# Run all ImageMagick conversions in parallel
+pids=()
+for entry in "${ICONS[@]}"; do
+  read -r size out <<< "$entry"
+  resize "$size" "$out" &
+  pids+=($!)
+done
 
-echo "Done."
+# Wait for all and collect failures
+failed=0
+for pid in "${pids[@]}"; do
+  wait "$pid" || failed=$((failed + 1))
+done
+
+if [ "$failed" -gt 0 ]; then
+  echo "ERROR: $failed icon generation(s) failed." >&2
+  exit 1
+fi
+
+echo "Done. Generated ${#ICONS[@]} icons."
