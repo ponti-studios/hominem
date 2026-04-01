@@ -1,4 +1,4 @@
-import { useAuthContext } from '@hominem/auth';
+import { useAuth } from '@hominem/auth';
 import type { ClientConfig } from '@hominem/rpc';
 import { HonoProvider as BaseHonoProvider } from '@hominem/rpc/react';
 import type { ReactNode } from 'react';
@@ -11,7 +11,7 @@ interface HonoProviderProps {
 }
 
 export function HonoProvider({ children, baseUrl }: HonoProviderProps) {
-  const { session } = useAuthContext();
+  const { session } = useAuth();
   const config: ClientConfig = {
     baseUrl,
     getAuthToken: async () => session?.access_token ?? null,

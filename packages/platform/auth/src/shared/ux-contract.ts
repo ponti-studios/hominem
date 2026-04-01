@@ -2,14 +2,16 @@
  * Canonical cross-platform auth UX contract.
  *
  * Both web and mobile MUST source their auth copy and per-app destination
- * policy from here. Platform adapters may apply native styling (e.g. uppercase
- * transforms on mobile) but the underlying string values must be identical.
+ * policy from here. Platform adapters may apply native styling but the
+ * underlying string values must be identical.
  */
 
-// ---------------------------------------------------------------------------
-// Auth UX states — platform-agnostic user-facing auth flow states
-// (distinct from the internal AppAuthStatus state machine)
-// ---------------------------------------------------------------------------
+import { BRAND } from '@hominem/env/brand'
+
+/** Single source of truth for the app brand name used across auth surfaces. */
+export const AUTH_APP_NAME = BRAND.appName
+
+// ─── UX State ─────────────────────────────────────────────────────────────────
 
 export type AuthUxState =
   | 'email-entry'
@@ -19,18 +21,7 @@ export type AuthUxState =
   | 'error'
   | 'signed-in'
 
-import { BRAND } from '@hominem/env/brand'
-
-// ---------------------------------------------------------------------------
-// Brand
-// ---------------------------------------------------------------------------
-
-/** Single source of truth for the app brand name used across auth surfaces. */
-export const AUTH_APP_NAME = BRAND.appName
-
-// ---------------------------------------------------------------------------
-// Canonical auth copy
-// ---------------------------------------------------------------------------
+// ─── Copy Interfaces ──────────────────────────────────────────────────────────
 
 export interface AuthEntryCopy {
   title: string
@@ -72,7 +63,8 @@ export interface AuthCopy {
   passkey: AuthPasskeyCopy
 }
 
-/** Canonical auth copy. All first-party apps MUST import strings from here. */
+// ─── Canonical Copy ───────────────────────────────────────────────────────────
+
 export const AUTH_COPY: AuthCopy = {
   emailEntry: {
     title: 'Welcome',
@@ -107,9 +99,7 @@ export const AUTH_COPY: AuthCopy = {
   },
 }
 
-// ---------------------------------------------------------------------------
-// Per-app auth config
-// ---------------------------------------------------------------------------
+// ─── Per-App Auth Config ──────────────────────────────────────────────────────
 
 export interface AppAuthConfig {
   /** Human-readable product name shown in auth UI. */
@@ -122,7 +112,7 @@ export interface AppAuthConfig {
   copy: AuthCopy
 }
 
-/** Hakumi web app auth config. */
+/** Web app auth config. */
 export const NOTES_AUTH_CONFIG: AppAuthConfig = {
   appName: AUTH_APP_NAME,
   defaultPostAuthDestination: '/home',
@@ -130,7 +120,7 @@ export const NOTES_AUTH_CONFIG: AppAuthConfig = {
   copy: AUTH_COPY,
 }
 
-/** Hakumi mobile app auth config. */
+/** Mobile app auth config. */
 export const CHAT_AUTH_CONFIG: AppAuthConfig = {
   appName: AUTH_APP_NAME,
   defaultPostAuthDestination: '/(protected)/(tabs)/start',

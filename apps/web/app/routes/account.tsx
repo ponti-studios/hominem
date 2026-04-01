@@ -1,32 +1,16 @@
-import { useAuthContext } from '@hominem/auth';
+import { useAuth } from '@hominem/auth';
 import { Button } from '@hominem/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@hominem/ui/card';
 import { Container } from '@hominem/ui/components/layout';
 import { useEffect } from 'react';
-import { Navigate, useSearchParams } from 'react-router';
-
-import { useTwitterOAuth } from '~/lib/hooks/use-twitter-oauth';
+import { Navigate } from 'react-router';
 
 export default function AccountPage() {
-  const { userId, isLoading, logout } = useAuthContext();
-  const { refetch } = useTwitterOAuth();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const twitterStatus = searchParams.get('twitter');
+  const { userId, isLoading, logout } = useAuth();
 
   useEffect(() => {
-    if (!twitterStatus) return;
-    setSearchParams(
-      (prev) => {
-        const next = new URLSearchParams(prev);
-        next.delete('twitter');
-        return next;
-      },
-      { replace: true },
-    );
-    if (twitterStatus === 'connected') {
-      refetch();
-    }
-  }, [twitterStatus, refetch, setSearchParams]);
+    // No-op: legacy Twitter connection side effects were removed with the auth rewrite.
+  }, []);
 
   if (isLoading) {
     return <div>Loading...</div>;

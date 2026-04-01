@@ -1,13 +1,17 @@
 import { logger } from '@hominem/utils/logger'
 import { getSetCookieHeaders } from '@hominem/utils/headers'
+import { resolveAuthRedirect } from '../shared/redirect-policy'
+import type { AuthConfig, AuthEnvelope, ServerAuthResult, Session, User } from '../types'
 
-import { resolveAuthRedirect } from './redirect-policy'
-import type { AuthConfig, Session, User, ServerAuthResult } from './types'
+// ─── Redirect Helpers ─────────────────────────────────────────────────────────
+
+export { resolveAuthRedirect } from '../shared/redirect-policy'
+export { buildAuthCallbackErrorRedirect, readAuthErrorMessage } from '../shared/error-contract'
 
 export function resolveSafeAuthRedirect(
   next: string | null | undefined,
   fallback: string,
-  allowedPrefixes: string[] = [fallback]
+  allowedPrefixes: string[] = [fallback],
 ): string {
   const resolution = resolveAuthRedirect(next, fallback, allowedPrefixes)
 
@@ -27,10 +31,16 @@ export function resolveSafeAuthRedirect(
   return resolution.safeRedirect
 }
 
+export function getAuthCookieDomain() {
+  return process.env.AUTH_COOKIE_DOMAIN?.trim()
+}
+
+// ─── Internal Helpers ─────────────────────────────────────────────────────────
+
 interface ServerSessionPayload {
   isAuthenticated: boolean
   user: User | null
-  auth: ServerAuthResult['auth']
+  auth: AuthEnvelope | null
   accessToken?: string | null
   expiresIn?: number | null
 }
@@ -39,30 +49,18 @@ function getAbsoluteApiUrl(baseUrl: string, path: string) {
   return new URL(path, baseUrl).toString()
 }
 
-export function getAuthCookieDomain() {
-  return process.env.AUTH_COOKIE_DOMAIN?.trim()
-}
-
 function appendSetCookieHeaders(target: Headers, source: Headers) {
-  const setCookieValues = getSetCookieHeaders(source)
-  if (setCookieValues.length > 0) {
-    for (const value of setCookieValues) {
-      target.append('set-cookie', value)
-    }
+  const values = getSetCookieHeaders(source)
+  if (values.length > 0) {
+    for (const value of values) target.append('set-cookie', value)
     return
   }
-
   const setCookie = source.get('set-cookie')
-  if (setCookie) {
-    target.append('set-cookie', setCookie)
-  }
+  if (setCookie) target.append('set-cookie', setCookie)
 }
 
 function toSession(accessToken?: string | null, expiresIn?: number | null): Session | null {
-  if (!accessToken) {
-    return null
-  }
-
+  if (!accessToken) return null
   const ttl = typeof expiresIn === 'number' && expiresIn > 0 ? expiresIn : 600
   return {
     access_token: accessToken,
@@ -72,9 +70,18 @@ function toSession(accessToken?: string | null, expiresIn?: number | null): Sess
   }
 }
 
+// ─── getServerAuth ────────────────────────────────────────────────────────────
+
+/**
+ * Fetches the current session from the API service by forwarding cookies and
+ * auth headers. Used by Remix/React Router loaders for SSR session hydration.
+ *
+ * IMPORTANT: Always propagate the returned `headers` to the response so that
+ * session-cookie refreshes reach the browser.
+ */
 export async function getServerAuth(
   request: Request,
-  config: AuthConfig
+  config: AuthConfig,
 ): Promise<ServerAuthResult & { headers: Headers }> {
   const headers = new Headers()
 
@@ -83,12 +90,8 @@ export async function getServerAuth(
     const authHeader = request.headers.get('authorization')
 
     const upstreamHeaders = new Headers()
-    if (cookieHeader) {
-      upstreamHeaders.set('cookie', cookieHeader)
-    }
-    if (authHeader) {
-      upstreamHeaders.set('authorization', authHeader)
-    }
+    if (cookieHeader) upstreamHeaders.set('cookie', cookieHeader)
+    if (authHeader) upstreamHeaders.set('authorization', authHeader)
 
     const res = await fetch(getAbsoluteApiUrl(config.apiBaseUrl, '/api/auth/session'), {
       method: 'GET',
@@ -98,13 +101,7 @@ export async function getServerAuth(
     appendSetCookieHeaders(headers, res.headers)
 
     if (!res.ok) {
-      return {
-        user: null,
-        session: null,
-        auth: null,
-        isAuthenticated: false,
-        headers,
-      }
+      return { user: null, session: null, auth: null, isAuthenticated: false, headers }
     }
 
     const payload = (await res.json()) as ServerSessionPayload
@@ -119,16 +116,16 @@ export async function getServerAuth(
     }
   } catch (error) {
     logger.error('[getServerAuth]', { error })
-    return {
-      user: null,
-      session: null,
-      auth: null,
-      isAuthenticated: false,
-      headers,
-    }
+    return { user: null, session: null, auth: null, isAuthenticated: false, headers }
   }
 }
 
+// ─── createServerAuthClient ───────────────────────────────────────────────────
+
+/**
+ * Creates a minimal server-side auth client for accessing the current user
+ * in server-only code paths (e.g. Hono middleware, Remix actions).
+ */
 export function createServerAuthClient(request: Request, config: AuthConfig) {
   return {
     headers: new Headers(),
@@ -137,9 +134,7 @@ export function createServerAuthClient(request: Request, config: AuthConfig) {
         async getUser() {
           const headers = new Headers()
           const cookieHeader = request.headers.get('cookie')
-          if (cookieHeader) {
-            headers.set('cookie', cookieHeader)
-          }
+          if (cookieHeader) headers.set('cookie', cookieHeader)
 
           const res = await fetch(getAbsoluteApiUrl(config.apiBaseUrl, '/api/auth/session'), {
             method: 'GET',

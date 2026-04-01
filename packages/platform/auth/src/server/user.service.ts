@@ -1,23 +1,23 @@
 import { db } from '@hominem/db'
+import type { UserRow } from '../contracts'
+import type { User } from '../types'
 
-type UserRow = {
-  id: string
-  email: string
-  avatar_url: string | null
-  created_at: string | null
-  email_verified: boolean
-  image: string | null
-  is_admin: boolean
-  name: string | null
-  updated_at: string | null
+export function toUser(row: UserRow): User {
+  return {
+    id: row.id,
+    email: row.email,
+    name: row.name ?? undefined,
+    image: row.image ?? row.avatar_url ?? undefined,
+    isAdmin: row.is_admin,
+    createdAt: row.created_at ?? new Date().toISOString(),
+    updatedAt: row.updated_at ?? new Date().toISOString(),
+  }
 }
 
 export class UserAuthService {
   static async findByIdOrEmail(opts: { id?: string; email?: string }): Promise<UserRow | null> {
     const { id, email } = opts
-    if (!id && !email) {
-      return null
-    }
+    if (!id && !email) return null
 
     let query = db.selectFrom('users').selectAll()
 
@@ -40,7 +40,6 @@ export class UserAuthService {
       .where('email', '=', email)
       .limit(1)
       .executeTakeFirst()
-
     return (result as unknown as UserRow) ?? null
   }
 
@@ -51,16 +50,11 @@ export class UserAuthService {
       .where('id', '=', id)
       .limit(1)
       .executeTakeFirst()
-
     return (result as unknown as UserRow) ?? null
   }
 
   static async deleteUser(id: string): Promise<boolean> {
-    const result = await db
-      .deleteFrom('users')
-      .where('id', '=', id)
-      .executeTakeFirst()
-
+    const result = await db.deleteFrom('users').where('id', '=', id).executeTakeFirst()
     return (result.numDeletedRows ?? 0n) > 0n
   }
 }

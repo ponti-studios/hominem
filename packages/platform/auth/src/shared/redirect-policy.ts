@@ -6,12 +6,8 @@ function normalizeRedirectPrefix(prefix: string) {
 function isAllowedRedirectPath(pathname: string, allowedPrefixes: string[]) {
   for (const prefix of allowedPrefixes) {
     const normalizedPrefix = normalizeRedirectPrefix(prefix)
-    if (pathname === normalizedPrefix) {
-      return true
-    }
-    if (normalizedPrefix !== '/' && pathname.startsWith(`${normalizedPrefix}/`)) {
-      return true
-    }
+    if (pathname === normalizedPrefix) return true
+    if (normalizedPrefix !== '/' && pathname.startsWith(`${normalizedPrefix}/`)) return true
   }
   return false
 }
@@ -25,30 +21,16 @@ export interface AuthRedirectResolution {
 export function resolveAuthRedirect(
   next: string | null | undefined,
   fallback: string,
-  allowedPrefixes: string[] = [fallback]
+  allowedPrefixes: string[] = [fallback],
 ): AuthRedirectResolution {
   if (!next || next.length === 0) {
-    return {
-      safeRedirect: fallback,
-      rejectedReason: 'missing',
-      rejectedPathname: null,
-    }
+    return { safeRedirect: fallback, rejectedReason: 'missing', rejectedPathname: null }
   }
-
   if (!next.startsWith('/')) {
-    return {
-      safeRedirect: fallback,
-      rejectedReason: 'non_local',
-      rejectedPathname: null,
-    }
+    return { safeRedirect: fallback, rejectedReason: 'non_local', rejectedPathname: null }
   }
-
   if (next.startsWith('//')) {
-    return {
-      safeRedirect: fallback,
-      rejectedReason: 'protocol_relative',
-      rejectedPathname: null,
-    }
+    return { safeRedirect: fallback, rejectedReason: 'protocol_relative', rejectedPathname: null }
   }
 
   const url = new URL(next, 'https://hominem.local')

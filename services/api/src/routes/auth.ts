@@ -23,6 +23,36 @@ import { getJwks } from '../auth/key-store';
 import { isSessionRevoked, revokeSession, rotateRefreshToken } from '../auth/session-store';
 import { getLatestTestOtp, isTestOtpStoreEnabled } from '../auth/test-otp-store';
 import { issueAccessToken, verifyAccessToken } from '../auth/tokens';
+
+// ─── Mock Auth Provider (dev/test only) ───────────────────────────────────────
+
+function createMockAuthProvider() {
+  return {
+    async signIn() {
+      const id = randomUUID()
+      return {
+        user: {
+          id,
+          email: `mock+${id.slice(0, 8)}@example.com`,
+          name: 'Mock User',
+          isAdmin: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        session: {
+          access_token: `mock-token-${id}`,
+          token_type: 'Bearer' as const,
+          expires_in: 3600,
+          expires_at: new Date(Date.now() + 3600 * 1000).toISOString(),
+        },
+      }
+    },
+    async signOut() {
+      // no-op for mock
+    },
+  }
+}
+
 import { env } from '../env';
 import type { AppEnv } from '../server';
 
@@ -1260,9 +1290,6 @@ authRoutes.post('/device/token', zValidator('json', deviceTokenSchema), async (c
 function isMockAuthEnabled(): boolean {
   return process.env.VITE_USE_MOCK_AUTH === 'true';
 }
-
-// Import mock auth types and provider
-import { createMockAuthProvider } from '@hominem/auth/server-auth';
 
 /**
  * POST /auth/mock/signin

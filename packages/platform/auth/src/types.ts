@@ -1,3 +1,5 @@
+// ─── Core Identity ────────────────────────────────────────────────────────────
+
 export interface User {
   id: string
   email: string
@@ -8,8 +10,22 @@ export interface User {
   updatedAt: string
 }
 
-// Canonical app auth state machine types
-// Used by all first-party apps (mobile and web) for consistent auth behavior
+// ─── Session Token Envelope ───────────────────────────────────────────────────
+
+export interface Session {
+  access_token: string
+  token_type: 'Bearer'
+  expires_in: number
+  expires_at: string
+  refresh_token?: string | undefined
+}
+
+// ─── Auth State Machine ───────────────────────────────────────────────────────
+
+/**
+ * Canonical state machine for all first-party apps (web, mobile).
+ * Mobile platforms may extend with additional states.
+ */
 export type AppAuthStatus =
   | 'booting'
   | 'signed_out'
@@ -50,136 +66,37 @@ export type AppAuthEvent =
 export function appAuthStateMachine(state: AppAuthState, event: AppAuthEvent): AppAuthState {
   switch (event.type) {
     case 'SESSION_LOADED':
-      return {
-        ...state,
-        status: 'signed_in',
-        user: event.user,
-        error: null,
-        isLoading: false,
-      }
-
+      return { ...state, status: 'signed_in', user: event.user, error: null, isLoading: false }
     case 'SESSION_EXPIRED':
-      return {
-        ...state,
-        status: 'signed_out',
-        user: null,
-        error: null,
-        isLoading: false,
-      }
-
+      return { ...state, status: 'signed_out', user: null, error: null, isLoading: false }
     case 'OTP_REQUEST_STARTED':
-      return {
-        ...state,
-        status: 'requesting_otp',
-        isLoading: true,
-        error: null,
-      }
-
+      return { ...state, status: 'requesting_otp', isLoading: true, error: null }
     case 'OTP_REQUESTED':
-      return {
-        ...state,
-        status: 'otp_requested',
-        isLoading: false,
-        error: null,
-      }
-
+      return { ...state, status: 'otp_requested', isLoading: false, error: null }
     case 'OTP_REQUEST_FAILED':
-      return {
-        ...state,
-        status: 'degraded',
-        error: event.error,
-        isLoading: false,
-      }
-
+      return { ...state, status: 'degraded', error: event.error, isLoading: false }
     case 'OTP_VERIFICATION_STARTED':
-      return {
-        ...state,
-        status: 'verifying_otp',
-        error: null,
-        isLoading: true,
-      }
-
+      return { ...state, status: 'verifying_otp', error: null, isLoading: true }
     case 'OTP_VERIFICATION_FAILED':
-      return {
-        ...state,
-        status: 'otp_requested',
-        error: event.error,
-        isLoading: false,
-      }
-
+      return { ...state, status: 'otp_requested', error: event.error, isLoading: false }
     case 'PASSKEY_AUTH_STARTED':
-      return {
-        ...state,
-        status: 'authenticating_passkey',
-        error: null,
-        isLoading: true,
-      }
-
+      return { ...state, status: 'authenticating_passkey', error: null, isLoading: true }
     case 'PASSKEY_AUTH_FAILED':
-      return {
-        ...state,
-        status: 'degraded',
-        error: event.error,
-        isLoading: false,
-      }
-
+      return { ...state, status: 'degraded', error: event.error, isLoading: false }
     case 'REFRESH_STARTED':
-      return {
-        ...state,
-        status: 'refreshing_session',
-        error: null,
-        isLoading: true,
-      }
-
+      return { ...state, status: 'refreshing_session', error: null, isLoading: true }
     case 'REFRESH_FAILED':
-      return {
-        ...state,
-        status: 'signed_out',
-        error: event.error,
-        isLoading: false,
-      }
-
+      return { ...state, status: 'signed_out', error: event.error, isLoading: false }
     case 'SIGN_OUT_REQUESTED':
-      return {
-        ...state,
-        status: 'signing_out',
-        isLoading: true,
-        error: null,
-      }
-
+      return { ...state, status: 'signing_out', isLoading: true, error: null }
     case 'SIGN_OUT_SUCCESS':
-      return {
-        ...state,
-        status: 'signed_out',
-        user: null,
-        error: null,
-        isLoading: false,
-      }
-
+      return { ...state, status: 'signed_out', user: null, error: null, isLoading: false }
     case 'RESET_TO_SIGNED_OUT':
-      return {
-        ...state,
-        status: 'signed_out',
-        user: null,
-        error: null,
-        isLoading: false,
-      }
-
+      return { ...state, status: 'signed_out', user: null, error: null, isLoading: false }
     case 'FATAL_ERROR':
-      return {
-        ...state,
-        status: 'degraded',
-        error: event.error,
-        isLoading: false,
-      }
-
+      return { ...state, status: 'degraded', error: event.error, isLoading: false }
     case 'CLEAR_ERROR':
-      return {
-        ...state,
-        error: null,
-        status: state.status === 'degraded' ? 'signed_out' : state.status,
-      }
-
+      return { ...state, error: null, status: state.status === 'degraded' ? 'signed_out' : state.status }
     default:
       return state
   }
@@ -192,6 +109,8 @@ export const initialAppAuthState: AppAuthState = {
   isLoading: false,
 }
 
+// ─── Auth Envelope (server-side claim) ───────────────────────────────────────
+
 export interface AuthEnvelope {
   sub: string
   sid: string
@@ -201,13 +120,7 @@ export interface AuthEnvelope {
   authTime: number
 }
 
-export interface Session {
-  access_token: string
-  token_type: 'Bearer'
-  expires_in: number
-  expires_at: string
-  refresh_token?: string | undefined
-}
+// ─── Auth Client Interface ────────────────────────────────────────────────────
 
 export interface AuthClient {
   auth: {
@@ -217,13 +130,13 @@ export interface AuthClient {
     }) => Promise<{ error: Error | null }>
     signOut: () => Promise<{ error: Error | null }>
     getSession: () => Promise<{
-      data: {
-        session: Session | null
-      }
+      data: { session: Session | null }
       error: Error | null
     }>
   }
 }
+
+// ─── Auth Context ─────────────────────────────────────────────────────────────
 
 export interface AuthContextType {
   user: User | null
@@ -244,10 +157,14 @@ export interface AuthContextType {
   userId?: string | undefined
 }
 
+// ─── Auth Config ──────────────────────────────────────────────────────────────
+
 export interface AuthConfig {
   apiBaseUrl: string
   redirectTo?: string
 }
+
+// ─── Server Auth Result ───────────────────────────────────────────────────────
 
 export interface ServerAuthResult {
   user: User | null
