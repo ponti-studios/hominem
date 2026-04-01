@@ -74,7 +74,6 @@
         "@hominem/chat-services": "workspace:*",
         "@hominem/env": "workspace:*",
         "@hominem/rpc": "workspace:*",
-        "@hominem/services": "workspace:*",
         "@hominem/ui": "workspace:*",
         "@hominem/utils": "workspace:*",
         "@react-native-async-storage/async-storage": "2.2.0",
@@ -177,7 +176,6 @@
         "@hominem/chat-services": "workspace:*",
         "@hominem/env": "workspace:*",
         "@hominem/rpc": "workspace:*",
-        "@hominem/services": "workspace:*",
         "@hominem/telemetry": "workspace:*",
         "@hominem/ui": "workspace:*",
         "@hominem/utils": "workspace:*",
@@ -223,7 +221,119 @@
         "vitest": "4.0.16",
       },
     },
-    "packages/auth": {
+    "packages/core/db": {
+      "name": "@hominem/db",
+      "version": "0.0.0",
+      "dependencies": {
+        "@hominem/utils": "workspace:*",
+        "csv-parser": "^3.2.0",
+        "googleapis": "^170.0.0",
+        "openai": "4.83.0",
+        "postgres": "^3.4.5",
+        "uuid": "^11.1.0",
+        "zod": "4.3.6",
+      },
+      "devDependencies": {
+        "@types/node": "^22.10.7",
+        "dotenv": "^16.4.7",
+        "kysely-codegen": "^0.15.0",
+        "typescript": "5.9.3",
+        "vitest": "^4.0.16",
+      },
+    },
+    "packages/core/env": {
+      "name": "@hominem/env",
+      "version": "0.0.0",
+      "dependencies": {
+        "zod": "4.3.6",
+      },
+      "devDependencies": {
+        "@types/node": "^22.18.13",
+        "typescript": "5.9.3",
+        "vitest": "4.0.16",
+      },
+    },
+    "packages/core/utils": {
+      "name": "@hominem/utils",
+      "version": "0.0.0",
+      "dependencies": {
+        "@aws-sdk/client-s3": "^3.529.0",
+        "@aws-sdk/s3-request-presigner": "^3.529.0",
+        "@langchain/core": "^1.1.29",
+        "@langchain/textsplitters": "^1.0.1",
+        "@opentelemetry/api-logs": "^0.51.0",
+        "date-fns": "^3.6.0",
+        "langchain": "^1.2.28",
+        "pino": "^9.7.0",
+        "pino-pretty": "^13.1.2",
+        "zod": "4.3.6",
+      },
+      "devDependencies": {
+        "jsdom": "^26.0.0",
+        "typescript": "5.9.3",
+        "vitest": "4.0.16",
+      },
+    },
+    "packages/domains/chat": {
+      "name": "@hominem/chat-services",
+      "version": "0.0.0",
+      "dependencies": {
+        "@hominem/db": "workspace:*",
+        "@hominem/rpc": "workspace:*",
+        "@hominem/utils": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/node": "^22.18.13",
+        "@types/react": "19.2.10",
+        "react": "19.2.0",
+        "typescript": "5.9.3",
+        "vitest": "4.0.16",
+      },
+      "peerDependencies": {
+        "react": "19.2.0",
+      },
+    },
+    "packages/domains/events": {
+      "name": "@hominem/events-services",
+      "version": "0.0.0",
+      "dependencies": {
+        "@hominem/db": "workspace:*",
+        "@hominem/services": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/node": "^22.18.13",
+        "typescript": "5.9.3",
+        "vitest": "4.0.16",
+      },
+    },
+    "packages/domains/health": {
+      "name": "@hominem/health-services",
+      "version": "0.0.0",
+      "dependencies": {
+        "@hominem/db": "workspace:*",
+        "ai": "^4.3.0",
+        "zod": "4.3.6",
+      },
+      "devDependencies": {
+        "@types/node": "^22.18.13",
+        "typescript": "5.9.3",
+        "vitest": "4.0.16",
+      },
+    },
+    "packages/domains/jobs": {
+      "name": "@hominem/jobs-services",
+      "version": "0.0.0",
+      "dependencies": {
+        "@hominem/services": "workspace:*",
+        "@hominem/utils": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/node": "^22.18.13",
+        "typescript": "5.9.3",
+        "vitest": "4.0.16",
+      },
+    },
+    "packages/platform/auth": {
       "name": "@hominem/auth",
       "version": "0.0.0",
       "dependencies": {
@@ -252,97 +362,7 @@
         "react": "19.2.0",
       },
     },
-    "packages/chat": {
-      "name": "@hominem/chat-services",
-      "version": "0.0.0",
-      "dependencies": {
-        "@hominem/db": "workspace:*",
-        "@hominem/utils": "workspace:*",
-      },
-      "devDependencies": {
-        "@types/node": "^22.18.13",
-        "@types/react": "19.2.10",
-        "react": "19.2.0",
-        "typescript": "5.9.3",
-        "vitest": "4.0.16",
-      },
-      "peerDependencies": {
-        "react": "19.2.0",
-      },
-    },
-    "packages/db": {
-      "name": "@hominem/db",
-      "version": "0.0.0",
-      "dependencies": {
-        "@hominem/utils": "workspace:*",
-        "csv-parser": "^3.2.0",
-        "googleapis": "^170.0.0",
-        "openai": "4.83.0",
-        "postgres": "^3.4.5",
-        "uuid": "^11.1.0",
-        "zod": "4.3.6",
-      },
-      "devDependencies": {
-        "@types/node": "^22.10.7",
-        "dotenv": "^16.4.7",
-        "kysely-codegen": "^0.15.0",
-        "typescript": "5.9.3",
-        "vitest": "^4.0.16",
-      },
-    },
-    "packages/env": {
-      "name": "@hominem/env",
-      "version": "0.0.0",
-      "dependencies": {
-        "zod": "4.3.6",
-      },
-      "devDependencies": {
-        "@types/node": "^22.18.13",
-        "typescript": "5.9.3",
-        "vitest": "4.0.16",
-      },
-    },
-    "packages/events": {
-      "name": "@hominem/events-services",
-      "version": "0.0.0",
-      "dependencies": {
-        "@hominem/db": "workspace:*",
-        "@hominem/services": "workspace:*",
-      },
-      "devDependencies": {
-        "@types/node": "^22.18.13",
-        "typescript": "5.9.3",
-        "vitest": "4.0.16",
-      },
-    },
-    "packages/health": {
-      "name": "@hominem/health-services",
-      "version": "0.0.0",
-      "dependencies": {
-        "@hominem/db": "workspace:*",
-        "ai": "^4.3.0",
-        "zod": "4.3.6",
-      },
-      "devDependencies": {
-        "@types/node": "^22.18.13",
-        "typescript": "5.9.3",
-        "vitest": "4.0.16",
-      },
-    },
-    "packages/jobs": {
-      "name": "@hominem/jobs-services",
-      "version": "0.0.0",
-      "dependencies": {
-        "@hominem/services": "workspace:*",
-        "@hominem/utils": "workspace:*",
-      },
-      "devDependencies": {
-        "@types/node": "^22.18.13",
-        "typescript": "5.9.3",
-        "vitest": "4.0.16",
-      },
-    },
-    "packages/queues": {
+    "packages/platform/queues": {
       "name": "@hominem/queues",
       "version": "0.0.1",
       "dependencies": {
@@ -351,7 +371,7 @@
         "bullmq": "^5.0.0",
       },
     },
-    "packages/rpc": {
+    "packages/platform/rpc": {
       "name": "@hominem/rpc",
       "version": "0.1.0",
       "dependencies": {
@@ -371,7 +391,7 @@
         "react": "19.2.0",
       },
     },
-    "packages/services": {
+    "packages/platform/services": {
       "name": "@hominem/services",
       "version": "0.0.0",
       "dependencies": {
@@ -396,7 +416,7 @@
         "vitest": "4.0.16",
       },
     },
-    "packages/telemetry": {
+    "packages/platform/telemetry": {
       "name": "@hominem/telemetry",
       "version": "0.1.0",
       "dependencies": {
@@ -432,13 +452,13 @@
         "pino",
       ],
     },
-    "packages/ui": {
+    "packages/platform/ui": {
       "name": "@hominem/ui",
       "version": "0.0.0",
       "dependencies": {
         "@hominem/auth": "workspace:*",
         "@hominem/chat-services": "workspace:*",
-        "@hominem/services": "workspace:*",
+        "@hominem/rpc": "workspace:*",
         "@hominem/utils": "workspace:*",
         "@radix-ui/react-accordion": "^1.2.12",
         "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -491,7 +511,6 @@
         "vaul": "^1.1.2",
       },
       "devDependencies": {
-        "@hominem/rpc": "workspace:*",
         "@storybook/addon-docs": "^10.3.3",
         "@storybook/addon-mcp": "^0.4.2",
         "@storybook/addon-vitest": "^10.3.3",
@@ -525,27 +544,6 @@
       "peerDependencies": {
         "react": "19.2.0",
         "react-dom": "19.2.0",
-      },
-    },
-    "packages/utils": {
-      "name": "@hominem/utils",
-      "version": "0.0.0",
-      "dependencies": {
-        "@aws-sdk/client-s3": "^3.529.0",
-        "@aws-sdk/s3-request-presigner": "^3.529.0",
-        "@langchain/core": "^1.1.29",
-        "@langchain/textsplitters": "^1.0.1",
-        "@opentelemetry/api-logs": "^0.51.0",
-        "date-fns": "^3.6.0",
-        "langchain": "^1.2.28",
-        "pino": "^9.7.0",
-        "pino-pretty": "^13.1.2",
-        "zod": "4.3.6",
-      },
-      "devDependencies": {
-        "jsdom": "^26.0.0",
-        "typescript": "5.9.3",
-        "vitest": "4.0.16",
       },
     },
     "services/api": {
@@ -583,24 +581,6 @@
         "msw": "^2.12.7",
         "vite": "7.3.1",
         "vite-tsconfig-paths": "6.0.3",
-        "vitest": "4.0.16",
-      },
-    },
-    "services/workers": {
-      "name": "@hominem/workers",
-      "version": "0.1.0",
-      "dependencies": {
-        "@hominem/db": "workspace:*",
-        "@hominem/jobs-services": "workspace:*",
-        "@hominem/services": "workspace:*",
-        "@hominem/telemetry": "workspace:*",
-        "@hominem/utils": "workspace:*",
-        "bullmq": "5.66.4",
-        "dotenv": "17.2.3",
-        "effect": "^3.16.10",
-        "zod": "4.3.6",
-      },
-      "devDependencies": {
         "vitest": "4.0.16",
       },
     },
@@ -1237,41 +1217,39 @@
 
     "@hominem/api": ["@hominem/api@workspace:services/api"],
 
-    "@hominem/auth": ["@hominem/auth@workspace:packages/auth"],
+    "@hominem/auth": ["@hominem/auth@workspace:packages/platform/auth"],
 
-    "@hominem/chat-services": ["@hominem/chat-services@workspace:packages/chat"],
+    "@hominem/chat-services": ["@hominem/chat-services@workspace:packages/domains/chat"],
 
     "@hominem/cli": ["@hominem/cli@workspace:tools/cli"],
 
-    "@hominem/db": ["@hominem/db@workspace:packages/db"],
+    "@hominem/db": ["@hominem/db@workspace:packages/core/db"],
 
     "@hominem/desktop": ["@hominem/desktop@workspace:apps/desktop"],
 
-    "@hominem/env": ["@hominem/env@workspace:packages/env"],
+    "@hominem/env": ["@hominem/env@workspace:packages/core/env"],
 
-    "@hominem/events-services": ["@hominem/events-services@workspace:packages/events"],
+    "@hominem/events-services": ["@hominem/events-services@workspace:packages/domains/events"],
 
-    "@hominem/health-services": ["@hominem/health-services@workspace:packages/health"],
+    "@hominem/health-services": ["@hominem/health-services@workspace:packages/domains/health"],
 
-    "@hominem/jobs-services": ["@hominem/jobs-services@workspace:packages/jobs"],
+    "@hominem/jobs-services": ["@hominem/jobs-services@workspace:packages/domains/jobs"],
 
     "@hominem/mobile": ["@hominem/mobile@workspace:apps/mobile"],
 
-    "@hominem/queues": ["@hominem/queues@workspace:packages/queues"],
+    "@hominem/queues": ["@hominem/queues@workspace:packages/platform/queues"],
 
-    "@hominem/rpc": ["@hominem/rpc@workspace:packages/rpc"],
+    "@hominem/rpc": ["@hominem/rpc@workspace:packages/platform/rpc"],
 
-    "@hominem/services": ["@hominem/services@workspace:packages/services"],
+    "@hominem/services": ["@hominem/services@workspace:packages/platform/services"],
 
-    "@hominem/telemetry": ["@hominem/telemetry@workspace:packages/telemetry"],
+    "@hominem/telemetry": ["@hominem/telemetry@workspace:packages/platform/telemetry"],
 
-    "@hominem/ui": ["@hominem/ui@workspace:packages/ui"],
+    "@hominem/ui": ["@hominem/ui@workspace:packages/platform/ui"],
 
-    "@hominem/utils": ["@hominem/utils@workspace:packages/utils"],
+    "@hominem/utils": ["@hominem/utils@workspace:packages/core/utils"],
 
     "@hominem/web": ["@hominem/web@workspace:apps/web"],
-
-    "@hominem/workers": ["@hominem/workers@workspace:services/workers"],
 
     "@hono/node-server": ["@hono/node-server@1.19.11", "", { "peerDependencies": { "hono": "^4" } }, "sha512-dr8/3zEaB+p0D2n/IUrlPF1HZm586qgJNXK1a9fhg/PzdtkK7Ksd5l312tJX2yBuALqDYBlG20QEbayqPyxn+g=="],
 
@@ -5307,8 +5285,6 @@
 
     "@hominem/web/vitest": ["vitest@4.0.16", "", { "dependencies": { "@vitest/expect": "4.0.16", "@vitest/mocker": "4.0.16", "@vitest/pretty-format": "4.0.16", "@vitest/runner": "4.0.16", "@vitest/snapshot": "4.0.16", "@vitest/spy": "4.0.16", "@vitest/utils": "4.0.16", "es-module-lexer": "^1.7.0", "expect-type": "^1.2.2", "magic-string": "^0.30.21", "obug": "^2.1.1", "pathe": "^2.0.3", "picomatch": "^4.0.3", "std-env": "^3.10.0", "tinybench": "^2.9.0", "tinyexec": "^1.0.2", "tinyglobby": "^0.2.15", "tinyrainbow": "^3.0.3", "vite": "^6.0.0 || ^7.0.0", "why-is-node-running": "^2.3.0" }, "peerDependencies": { "@edge-runtime/vm": "*", "@opentelemetry/api": "^1.9.0", "@types/node": "^20.0.0 || ^22.0.0 || >=24.0.0", "@vitest/browser-playwright": "4.0.16", "@vitest/browser-preview": "4.0.16", "@vitest/browser-webdriverio": "4.0.16", "@vitest/ui": "4.0.16", "happy-dom": "*", "jsdom": "*" }, "optionalPeers": ["@edge-runtime/vm", "@opentelemetry/api", "@types/node", "@vitest/browser-playwright", "@vitest/browser-preview", "@vitest/browser-webdriverio", "@vitest/ui", "happy-dom", "jsdom"], "bin": { "vitest": "vitest.mjs" } }, "sha512-E4t7DJ9pESL6E3I8nFjPa4xGUd3PmiWDLsDztS2qXSJWfHtbQnwAWylaBvSNY48I3vr8PTqIZlyK8TE3V3CA4Q=="],
 
-    "@hominem/workers/vitest": ["vitest@4.0.16", "", { "dependencies": { "@vitest/expect": "4.0.16", "@vitest/mocker": "4.0.16", "@vitest/pretty-format": "4.0.16", "@vitest/runner": "4.0.16", "@vitest/snapshot": "4.0.16", "@vitest/spy": "4.0.16", "@vitest/utils": "4.0.16", "es-module-lexer": "^1.7.0", "expect-type": "^1.2.2", "magic-string": "^0.30.21", "obug": "^2.1.1", "pathe": "^2.0.3", "picomatch": "^4.0.3", "std-env": "^3.10.0", "tinybench": "^2.9.0", "tinyexec": "^1.0.2", "tinyglobby": "^0.2.15", "tinyrainbow": "^3.0.3", "vite": "^6.0.0 || ^7.0.0", "why-is-node-running": "^2.3.0" }, "peerDependencies": { "@edge-runtime/vm": "*", "@opentelemetry/api": "^1.9.0", "@types/node": "^20.0.0 || ^22.0.0 || >=24.0.0", "@vitest/browser-playwright": "4.0.16", "@vitest/browser-preview": "4.0.16", "@vitest/browser-webdriverio": "4.0.16", "@vitest/ui": "4.0.16", "happy-dom": "*", "jsdom": "*" }, "optionalPeers": ["@edge-runtime/vm", "@opentelemetry/api", "@types/node", "@vitest/browser-playwright", "@vitest/browser-preview", "@vitest/browser-webdriverio", "@vitest/ui", "happy-dom", "jsdom"], "bin": { "vitest": "vitest.mjs" } }, "sha512-E4t7DJ9pESL6E3I8nFjPa4xGUd3PmiWDLsDztS2qXSJWfHtbQnwAWylaBvSNY48I3vr8PTqIZlyK8TE3V3CA4Q=="],
-
     "@inquirer/core/signal-exit": ["signal-exit@4.1.0", "", {}, "sha512-bzyZ1e88w9O1iNJbKnOlvYTrWPDl46O1bG0D3XInv+9tkPrxrN8jUUTiFlDkkmKWgn1M6CfIA13SuGqOa9Korw=="],
 
     "@inquirer/core/wrap-ansi": ["wrap-ansi@6.2.0", "", { "dependencies": { "ansi-styles": "^4.0.0", "string-width": "^4.1.0", "strip-ansi": "^6.0.0" } }, "sha512-r6lPcBGxZXlIcymEu7InxDMhdW0KDxpLgoFLcguasxCaJ/SOIZwINatK9KY/tf+ZrlywOKU0UDj3ATXUBfxJXA=="],
@@ -6511,20 +6487,6 @@
 
     "@hominem/web/vitest/vite": ["vite@7.3.1", "", { "dependencies": { "esbuild": "^0.27.0", "fdir": "^6.5.0", "picomatch": "^4.0.3", "postcss": "^8.5.6", "rollup": "^4.43.0", "tinyglobby": "^0.2.15" }, "optionalDependencies": { "fsevents": "~2.3.3" }, "peerDependencies": { "@types/node": "^20.19.0 || >=22.12.0", "jiti": ">=1.21.0", "less": "^4.0.0", "lightningcss": "^1.21.0", "sass": "^1.70.0", "sass-embedded": "^1.70.0", "stylus": ">=0.54.8", "sugarss": "^5.0.0", "terser": "^5.16.0", "tsx": "^4.8.1", "yaml": "^2.4.2" }, "optionalPeers": ["@types/node", "jiti", "less", "lightningcss", "sass", "sass-embedded", "stylus", "sugarss", "terser", "tsx", "yaml"], "bin": { "vite": "bin/vite.js" } }, "sha512-w+N7Hifpc3gRjZ63vYBXA56dvvRlNWRczTdmCBBa+CotUzAPf5b7YMdMR/8CQoeYE5LX3W4wj6RYTgonm1b9DA=="],
 
-    "@hominem/workers/vitest/@vitest/expect": ["@vitest/expect@4.0.16", "", { "dependencies": { "@standard-schema/spec": "^1.0.0", "@types/chai": "^5.2.2", "@vitest/spy": "4.0.16", "@vitest/utils": "4.0.16", "chai": "^6.2.1", "tinyrainbow": "^3.0.3" } }, "sha512-eshqULT2It7McaJkQGLkPjPjNph+uevROGuIMJdG3V+0BSR2w9u6J9Lwu+E8cK5TETlfou8GRijhafIMhXsimA=="],
-
-    "@hominem/workers/vitest/@vitest/mocker": ["@vitest/mocker@4.0.16", "", { "dependencies": { "@vitest/spy": "4.0.16", "estree-walker": "^3.0.3", "magic-string": "^0.30.21" }, "peerDependencies": { "msw": "^2.4.9", "vite": "^6.0.0 || ^7.0.0-0" }, "optionalPeers": ["msw", "vite"] }, "sha512-yb6k4AZxJTB+q9ycAvsoxGn+j/po0UaPgajllBgt1PzoMAAmJGYFdDk0uCcRcxb3BrME34I6u8gHZTQlkqSZpg=="],
-
-    "@hominem/workers/vitest/@vitest/pretty-format": ["@vitest/pretty-format@4.0.16", "", { "dependencies": { "tinyrainbow": "^3.0.3" } }, "sha512-eNCYNsSty9xJKi/UdVD8Ou16alu7AYiS2fCPRs0b1OdhJiV89buAXQLpTbe+X8V9L6qrs9CqyvU7OaAopJYPsA=="],
-
-    "@hominem/workers/vitest/@vitest/runner": ["@vitest/runner@4.0.16", "", { "dependencies": { "@vitest/utils": "4.0.16", "pathe": "^2.0.3" } }, "sha512-VWEDm5Wv9xEo80ctjORcTQRJ539EGPB3Pb9ApvVRAY1U/WkHXmmYISqU5E79uCwcW7xYUV38gwZD+RV755fu3Q=="],
-
-    "@hominem/workers/vitest/@vitest/snapshot": ["@vitest/snapshot@4.0.16", "", { "dependencies": { "@vitest/pretty-format": "4.0.16", "magic-string": "^0.30.21", "pathe": "^2.0.3" } }, "sha512-sf6NcrYhYBsSYefxnry+DR8n3UV4xWZwWxYbCJUt2YdvtqzSPR7VfGrY0zsv090DAbjFZsi7ZaMi1KnSRyK1XA=="],
-
-    "@hominem/workers/vitest/@vitest/spy": ["@vitest/spy@4.0.16", "", {}, "sha512-4jIOWjKP0ZUaEmJm00E0cOBLU+5WE0BpeNr3XN6TEF05ltro6NJqHWxXD0kA8/Zc8Nh23AT8WQxwNG+WeROupw=="],
-
-    "@hominem/workers/vitest/@vitest/utils": ["@vitest/utils@4.0.16", "", { "dependencies": { "@vitest/pretty-format": "4.0.16", "tinyrainbow": "^3.0.3" } }, "sha512-h8z9yYhV3e1LEfaQ3zdypIrnAg/9hguReGZoS7Gl0aBG5xgA410zBqECqmaF/+RkTggRsfnzc1XaAHA6bmUufA=="],
-
     "@inquirer/core/wrap-ansi/ansi-styles": ["ansi-styles@4.3.0", "", { "dependencies": { "color-convert": "^2.0.1" } }, "sha512-zbB9rCJAT1rbjiVDb2hqKFHNYLxgtk8NURxZ3IZwD3F6NtxbXZQCnnSi1Lkx+IDohdPlFp222wVALIheZJQSEg=="],
 
     "@isaacs/cliui/string-width/emoji-regex": ["emoji-regex@9.2.2", "", {}, "sha512-L18DaJsXSUk2+42pv8mLs5jJT2hqFkFE4j21wOmgbUqsZ2hL72NsUU785g9RXgo3s0ZNgVl42TiHp3ZtOv/Vyg=="],
@@ -7158,8 +7120,6 @@
     "@hominem/web/jsdom/whatwg-url/tr46": ["tr46@6.0.0", "", { "dependencies": { "punycode": "^2.3.1" } }, "sha512-bLVMLPtstlZ4iMQHpFHTR7GAGj2jxi8Dg0s2h2MafAE4uSWF98FC/3MomU51iQAMf8/qDUbKWf5GxuvvVcXEhw=="],
 
     "@hominem/web/vitest/@vitest/expect/chai": ["chai@6.2.2", "", {}, "sha512-NUPRluOfOiTKBKvWPtSD4PhFvWCqOi0BGStNWs57X9js7XGTprSmFoz5F0tWhR4WPjNeR9jXqdC7/UpSJTnlRg=="],
-
-    "@hominem/workers/vitest/@vitest/expect/chai": ["chai@6.2.2", "", {}, "sha512-NUPRluOfOiTKBKvWPtSD4PhFvWCqOi0BGStNWs57X9js7XGTprSmFoz5F0tWhR4WPjNeR9jXqdC7/UpSJTnlRg=="],
 
     "@istanbuljs/load-nyc-config/find-up/locate-path/p-locate": ["p-locate@4.1.0", "", { "dependencies": { "p-limit": "^2.2.0" } }, "sha512-R79ZZ/0wAxKGu3oYMlz8jy/kbhsNrS7SKZ7PxEHBgJ5+F2mtFW2fK2cOtBh1cHYkQsbzFV7I+EoRKe6Yt0oK7A=="],
 

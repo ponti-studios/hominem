@@ -11,6 +11,6 @@
 	"include": ["src/**/*", "test/**/*.ts", "test/**/*.tsx"],
 	"exclude": ["dist"],
 	"references": [
-		{ "path": "../../packages/rpc" }
+		{ "path": "../../packages/platform/rpc" }
 	]
 }

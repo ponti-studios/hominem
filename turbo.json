@@ -36,7 +36,7 @@
       "inputs": [
         "src/**/*.{ts,tsx,js,jsx,json,md,css}",
         "app/**/*.{ts,tsx,js,jsx,json,md,css}",
-        "packages/ui/tools/stylelint-config-void.cjs"
+        "packages/platform/ui/tools/stylelint-config-void.cjs"
       ],
       "outputs": []
     },

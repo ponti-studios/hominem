@@ -7,7 +7,9 @@
         "./src/renderer/src/*"
       ],
       "@hominem/*": [
-        "../../packages/*",
+        "../../packages/core/*",
+        "../../packages/platform/*",
+        "../../packages/domains/*",
         "../../services/*"
       ]
     },

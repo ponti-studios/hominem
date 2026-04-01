@@ -90,15 +90,5 @@
       "processId": "${command:PickProcess}",
       "restart": true
     },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Debug Workers App (Node.js)",
-      "program": "${workspaceFolder}/services/workers/src/index.ts",
-      "cwd": "${workspaceFolder}/services/workers",
-      "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen",
-      "skipFiles": ["<node_internals>/**"]
-    }
   ]
 }

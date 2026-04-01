@@ -1,4 +1,4 @@
-import type { VoiceErrorCode } from '@hominem/services/voice-transcription';
+import type { VoiceErrorCode } from '@hominem/rpc/voice-events';
 import { useMutation } from '@tanstack/react-query';
 
 // Shape returned by /api/voice/transcribe on success

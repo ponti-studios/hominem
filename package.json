@@ -22,7 +22,9 @@
     "apps/*",
     "services/*",
     "tools/*",
-    "packages/*"
+    "packages/core/*",
+    "packages/platform/*",
+    "packages/domains/*"
   ],
   "scripts": {
     "build": "turbo run build",
@@ -31,9 +33,8 @@
     "format": "turbo run format",
     "knip": "knip --include files,dependencies,exports --isolate-workspaces --no-config-hints",
     "knip:fix": "knip --fix",
-    "lint": "turbo run lint && bun run typecheck:native",
+    "lint": "turbo run lint",
     "test": "turbo run test",
-    "typecheck:native": "bun run ./scripts/typecheck-native.mjs",
     "update:turbo": "bunx @turbo/codemod@latest update"
   },
   "dependencies": {

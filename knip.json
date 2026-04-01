@@ -79,17 +79,37 @@
       ]
     },
 
-    "services/workers": {
+    "packages/core/*": {
       "entry": [
         "src/index.ts",
-        "vitest.config.ts"
+        "src/index.tsx",
+        "*.config.{ts,js,mjs,cjs}",
+        "vitest.config.ts",
+        "vite.config.ts",
+        "postcss.config.{ts,js,mjs,cjs}",
+        "tailwind.config.{ts,js,mjs,cjs}"
       ],
       "project": [
         "src/**/*.{ts,tsx}"
       ]
     },
 
-    "packages/*": {
+    "packages/platform/*": {
+      "entry": [
+        "src/index.ts",
+        "src/index.tsx",
+        "*.config.{ts,js,mjs,cjs}",
+        "vitest.config.ts",
+        "vite.config.ts",
+        "postcss.config.{ts,js,mjs,cjs}",
+        "tailwind.config.{ts,js,mjs,cjs}"
+      ],
+      "project": [
+        "src/**/*.{ts,tsx}"
+      ]
+    },
+
+    "packages/domains/*": {
       "entry": [
         "src/index.ts",
         "src/index.tsx",

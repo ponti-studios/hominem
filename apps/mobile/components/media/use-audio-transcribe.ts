@@ -1,4 +1,4 @@
-import { emitVoiceEvent, isVoiceErrorCode } from '@hominem/services/voice-events';
+import { emitVoiceEvent, isVoiceErrorCode } from '@hominem/rpc/voice-events';
 import { useMutation } from '@tanstack/react-query';
 import { useCallback, useRef } from 'react';
 
