@@ -7,11 +7,11 @@
  * callbacks so each surface stays free of the other's dependencies.
  */
 
+import type { ArtifactType, SessionSource } from '@hominem/rpc/types';
 import { useCallback, useMemo, useReducer } from 'react';
 
 import { isBlockingState, type ThoughtLifecycleState } from './lifecycle-state';
 import { deriveSessionSource, type SessionArtifactMessage } from './session-artifacts';
-import type { ArtifactType, SessionSource } from '@hominem/rpc/types';
 
 // ─── Pending Review ───────────────────────────────────────────────────────────
 

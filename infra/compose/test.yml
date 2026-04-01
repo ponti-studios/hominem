@@ -1,14 +1,14 @@
 # Test environment - ephemeral database
-# Usage: docker compose -f infra/docker/compose/test.yml up
-# Teardown: docker compose -f infra/docker/compose/test.yml down -v
-# Secrets: copy infra/docker/compose/.env.example → infra/docker/compose/.env
+# Usage: docker compose -f infra/compose/test.yml up
+# Teardown: docker compose -f infra/compose/test.yml down -v
+# Secrets: copy infra/compose/.env.example → infra/compose/.env
 #
 # NOTE: Port 4433 is shared with db-test in dev.yml.
 #       Do not run this alongside dev.yml simultaneously.
 
 x-postgres-build: &postgres-build
   build:
-    context: ../postgres
+    context: ../images/postgres
     dockerfile: Dockerfile
 
 networks:

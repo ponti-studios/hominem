@@ -130,7 +130,8 @@ If a workspace cannot answer those questions, it is not ready to survive the res
 2. Shrink `services/api` to a thin composition layer with fewer direct workspace dependencies.
 3. Split mixed concern packages so UI bindings and server logic stop sharing the same public surface by default.
 4. Establish a package template for new domains with explicit exports, tests, and allowed dependency directions.
-5. Add architecture guardrails to CI so ghost workspaces, cross-layer imports, and undeclared boundaries fail early.
+5. Route CI through the same Compose files used locally so service definitions do not drift.
+6. Add architecture guardrails to CI so ghost workspaces, cross-layer imports, and undeclared boundaries fail early.
 
 ## Do Not Do
 

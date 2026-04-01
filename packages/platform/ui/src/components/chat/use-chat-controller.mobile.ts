@@ -1,14 +1,22 @@
 import { useChatLifecycle } from '@hominem/chat-services/react';
 import type { PendingReview } from '@hominem/chat-services/react';
-import type { ArtifactType, SessionSource, ThoughtLifecycleState } from '@hominem/rpc/types';
 import { buildNoteProposal } from '@hominem/chat-services/ui';
 import { useApiClient } from '@hominem/rpc/react';
+import type { ArtifactType, SessionSource, ThoughtLifecycleState } from '@hominem/rpc/types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Haptics from 'expo-haptics';
 import * as Sharing from 'expo-sharing';
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type RefObject } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+  type RefObject,
+} from 'react';
 import { Alert, Platform, Share, type TextInput } from 'react-native';
 
 import type { ChatMessageItem } from './chat.types';

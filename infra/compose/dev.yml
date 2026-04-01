@@ -1,11 +1,11 @@
 # Local development environment
-# Usage: docker compose -f infra/docker/compose/base.yml -f infra/docker/compose/dev.yml up
-# Secrets: copy infra/docker/compose/.env.example → infra/docker/compose/.env
+# Usage: docker compose -f infra/compose/base.yml -f infra/compose/dev.yml up
+# Secrets: copy infra/compose/.env.example → infra/compose/.env
 
 # Combined build + logging anchor for all postgres services
 x-postgres-service: &postgres-service
   build:
-    context: ../postgres
+    context: ../images/postgres
     dockerfile: Dockerfile
   logging:
     driver: json-file

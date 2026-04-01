@@ -5,7 +5,6 @@ import { Container } from '@hominem/ui/components/layout';
 import { useEffect } from 'react';
 import { Navigate, useSearchParams } from 'react-router';
 
-import { ConnectTwitterAccount } from '~/components/connect-twitter-account';
 import { useTwitterOAuth } from '~/lib/hooks/use-twitter-oauth';
 
 export default function AccountPage() {
@@ -45,18 +44,6 @@ export default function AccountPage() {
       </header>
 
       <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Connected Accounts</CardTitle>
-            <CardDescription>
-              Connect your social media accounts to enhance your experience.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <ConnectTwitterAccount />
-          </CardContent>
-        </Card>
-
         <Card>
           <CardHeader>
             <CardTitle>Authentication</CardTitle>

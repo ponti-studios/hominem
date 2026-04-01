@@ -12,7 +12,7 @@ export const QUEUE_NAMES = {
    * Queue for transaction import jobs
    * Used by:
    * - apps/api/src/routes/finance.router.ts (adding jobs)
-    * - background processors (processing jobs)
+   * - background processors (processing jobs)
    */
   IMPORT_TRANSACTIONS: 'import-transaction',
 
@@ -20,21 +20,21 @@ export const QUEUE_NAMES = {
    * Queue for Plaid synchronization jobs
    * Used by:
    * - apps/api/src/routes/plaid.router.ts (adding jobs)
-    * - background processors (processing jobs)
+   * - background processors (processing jobs)
    */
   PLAID_SYNC: 'plaid-sync',
   /**
    * Queue for Google Calendar synchronization jobs
    * Used by:
    * - apps/api/src/rpc/routers/events.ts (adding jobs)
-    * - background processors (processing jobs)
+   * - background processors (processing jobs)
    */
   GOOGLE_CALENDAR_SYNC: 'google-calendar-sync',
   /**
    * Queue for place photo enrichment jobs
    * Used by:
    * - apps/api (enqueuing jobs)
-    * - background processors (processing jobs)
+   * - background processors (processing jobs)
    */
   PLACE_PHOTO_ENRICH: 'place-photo-enrich',
 } as const;
@@ -47,7 +47,7 @@ export const REDIS_CHANNELS = {
   /**
    * Channel for import progress updates
    * Used by:
-    * - background processors (publishing)
+   * - background processors (publishing)
    * - apps/api/src/websocket/index.ts (subscribing)
    */
   IMPORT_PROGRESS: 'import:progress',

@@ -10,10 +10,7 @@
 
 // Re-export canonical types from @hominem/rpc/types so all consumers
 // resolve to the same declaration and TypeScript can name them portably.
-export type {
-  ThoughtLifecycleState,
-  ThoughtLifecycleTransition,
-} from '@hominem/rpc/types';
+export type { ThoughtLifecycleState, ThoughtLifecycleTransition } from '@hominem/rpc/types';
 
 import type { ThoughtLifecycleState, ThoughtLifecycleTransition } from '@hominem/rpc/types';
 

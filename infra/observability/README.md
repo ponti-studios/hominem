@@ -15,7 +15,7 @@
 
 - Create the local observability env file from the example before first use.
 - Adjust credentials only if the defaults are not appropriate for the local environment.
-- Treat the Compose file and the local env file in this directory as the source of truth for startup and teardown behavior.
+- Treat `infra/compose/observability.yml` and `infra/observability/.env.example` as the source of truth for startup and teardown behavior.
 
 ## Ports
 

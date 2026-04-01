@@ -9,7 +9,7 @@ inputs:
   migrations-path:
     description: Path to Goose migrations directory (relative to repo root)
     required: false
-    default: packages/db/migrations
+    default: packages/core/db/migrations
 
 runs:
   using: composite
@@ -23,9 +23,9 @@ runs:
     - name: Ensure database URL available
       shell: bash
       run: |
-        # workflow should already provide DATABASE_URL via env for prod or test
         if [ -z "$DATABASE_URL" ]; then
-          echo "DATABASE_URL=postgresql://postgres:postgres@localhost:4433/hominem-test?sslmode=disable" >> $GITHUB_ENV
+          echo "DATABASE_URL must be provided by the workflow before running db-setup"
+          exit 1
         fi
 
     - name: Apply database migrations

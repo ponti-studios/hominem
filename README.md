@@ -20,15 +20,17 @@ If you need a concrete entrypoint, inspect the owning files directly:
 - root `package.json` for the small cross-workspace surface
 - workspace `package.json` files for package-local entrypoints
 - `turbo.json` for graph task behavior
-- `infra/docker/compose/*.yml` for local infrastructure lifecycle
-- `.github/workflows/*.yml` and `.github/actions/*` for CI execution paths
+- `infra/compose/*.yml` for shared local/CI infrastructure lifecycle
+- `infra/images/postgres/Dockerfile` for the canonical Postgres image build context
+- `infra/observability/*` for the telemetry stack config and docs
+- `.github/workflows/*.yml` and `.github/actions/*` for CI execution paths that consume those Compose definitions
 - package-local config such as `eas.json`, Detox config, Playwright config, Storybook config, and app config files
 
 ### Working Model
 
 - The root surface stays intentionally small.
 - Package-local behavior lives with the owning workspace.
-- Infrastructure behavior lives in Compose files and CI/workflow definitions.
+- Infrastructure behavior lives in Compose files, and CI/workflow definitions consume those files instead of redefining services.
 - Documentation describes ownership and architecture, not shell snippets.
 
 ### Repository Shape

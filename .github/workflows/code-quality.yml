@@ -41,9 +41,18 @@ jobs:
             packages: read
         steps:
             - uses: actions/checkout@v4
+            - uses: ./.github/actions/start-compose-services
+              with:
+                  compose-files: infra/compose/test.yml
+                  services: db-test
+                  project-name: code-quality-static-lint
             - uses: ./.github/actions/setup
               with:
                   install-flags: "--force"
+            - name: 🗄️ Initialize test database schema
+              uses: ./.github/actions/db-setup
+              with:
+                  environment: test
             - name: 🔬 Lint
               run: bun run lint
               timeout-minutes: 10
@@ -54,35 +63,26 @@ jobs:
         permissions:
             contents: read
             packages: read
-        services:
-            postgres:
-                image: ghcr.io/hackefeller/postgres:latest
-                env:
-                    POSTGRES_USER: postgres
-                    POSTGRES_PASSWORD: postgres
-                    POSTGRES_DB: hominem-test
-                ports:
-                    - 5432:5432
-                options: >-
-                    --health-cmd pg_isready
-                    --health-interval 10s
-                    --health-timeout 5s
-                    --health-retries 5
         steps:
             - uses: actions/checkout@v4
+            - uses: ./.github/actions/start-compose-services
+              with:
+                  compose-files: infra/compose/test.yml
+                  services: db-test
+                  project-name: code-quality-db-migrations
             - uses: ./.github/actions/setup
               with:
                   install-flags: "--force"
                   install-goose: "true"
             - name: 🛡️ Validate DB migrations (lint)
-              run: cd packages/db && npx --yes squawk-cli --no-error-on-unmatched-pattern --exclude-path '*schema_baseline.sql' migrations/*.sql
+              run: cd packages/core/db && npx --yes squawk-cli --no-error-on-unmatched-pattern --exclude-path '*schema_baseline.sql' migrations/*.sql
             - name: 🗄️ Validate migrations run and are idempotent
               env:
-                  DATABASE_URL: postgres://postgres:postgres@localhost:5432/hominem-test?sslmode=disable
+                  DATABASE_URL: postgres://postgres:postgres@localhost:4433/hominem-test?sslmode=disable
               run: |
-                  goose -dir packages/db/migrations postgres "$DATABASE_URL" up
-                  goose -dir packages/db/migrations postgres "$DATABASE_URL" up
-                  STATUS=$(goose -dir packages/db/migrations postgres "$DATABASE_URL" status)
+                  goose -dir packages/core/db/migrations postgres "$DATABASE_URL" up
+                  goose -dir packages/core/db/migrations postgres "$DATABASE_URL" up
+                  STATUS=$(goose -dir packages/core/db/migrations postgres "$DATABASE_URL" status)
                   echo "$STATUS"
                   if echo "$STATUS" | grep -Ei 'Pending|pending'; then
                     echo "Pending migrations remain after goose up"
@@ -124,49 +124,16 @@ jobs:
         permissions:
             contents: read
             packages: read
-        services:
-            postgres:
-                env:
-                    POSTGRES_USER: postgres
-                    POSTGRES_PASSWORD: postgres
-                    POSTGRES_DB: hominem-test
-                image: ghcr.io/hackefeller/postgres:latest
-                options: >-
-                    --health-cmd "pg_isready -h localhost -p 5432 -U postgres"
-                    --health-interval 10s
-                    --health-timeout 5s
-                    --health-retries 5
-                ports:
-                    - 4433:5432
-            redis:
-                image: redis
-                options: >-
-                    --health-cmd "redis-cli ping"
-                    --health-interval 10s
-                    --health-timeout 5s
-                    --health-retries 5
-                ports:
-                    - 6379:6379
         steps:
             - uses: actions/checkout@v4
-            - name: Install PostgreSQL client tools
-              run: |
-                  sudo apt-get update
-                  sudo apt-get install -y postgresql-client
+            - uses: ./.github/actions/start-compose-services
+              with:
+                  compose-files: infra/compose/base.yml infra/compose/dev.yml
+                  services: redis db-test
+                  project-name: code-quality-test-unit
             - uses: ./.github/actions/setup
               with:
                   install-flags: "--force"
-            - name: 🏗️ Wait for services
-              run: |
-                  until pg_isready -h localhost -p 4433; do
-                    echo "Waiting for postgres..."
-                    sleep 2
-                  done
-                  until nc -z localhost 6379; do
-                    echo "Waiting for redis..."
-                    sleep 2
-                  done
-                  echo "All services are ready!"
             - name: 🗄️ Initialize test database schema
               uses: ./.github/actions/db-setup
               with:
@@ -181,49 +148,16 @@ jobs:
         permissions:
             contents: read
             packages: read
-        services:
-            postgres:
-                env:
-                    POSTGRES_USER: postgres
-                    POSTGRES_PASSWORD: postgres
-                    POSTGRES_DB: hominem-test
-                image: ghcr.io/hackefeller/postgres:latest
-                options: >-
-                    --health-cmd "pg_isready -h localhost -p 5432 -U postgres"
-                    --health-interval 10s
-                    --health-timeout 5s
-                    --health-retries 5
-                ports:
-                    - 4433:5432
-            redis:
-                image: redis
-                options: >-
-                    --health-cmd "redis-cli ping"
-                    --health-interval 10s
-                    --health-timeout 5s
-                    --health-retries 5
-                ports:
-                    - 6379:6379
         steps:
             - uses: actions/checkout@v4
-            - name: Install PostgreSQL client tools
-              run: |
-                  sudo apt-get update
-                  sudo apt-get install -y postgresql-client
+            - uses: ./.github/actions/start-compose-services
+              with:
+                  compose-files: infra/compose/base.yml infra/compose/dev.yml
+                  services: redis db-test
+                  project-name: code-quality-api-integration
             - uses: ./.github/actions/setup
               with:
                   install-flags: "--force"
-            - name: 🏗️ Wait for services
-              run: |
-                  until pg_isready -h localhost -p 4433; do
-                    echo "Waiting for postgres..."
-                    sleep 2
-                  done
-                  until nc -z localhost 6379; do
-                    echo "Waiting for redis..."
-                    sleep 2
-                  done
-                  echo "All services are ready!"
             - name: 🗄️ Initialize test database schema
               uses: ./.github/actions/db-setup
               with:
@@ -238,49 +172,16 @@ jobs:
         permissions:
             contents: read
             packages: read
-        services:
-            postgres:
-                env:
-                    POSTGRES_USER: postgres
-                    POSTGRES_PASSWORD: postgres
-                    POSTGRES_DB: hominem-test
-                image: ghcr.io/hackefeller/postgres:latest
-                options: >-
-                    --health-cmd "pg_isready -h localhost -p 5432 -U postgres"
-                    --health-interval 10s
-                    --health-timeout 5s
-                    --health-retries 5
-                ports:
-                    - 4433:5432
-            redis:
-                image: redis
-                options: >-
-                    --health-cmd "redis-cli ping"
-                    --health-interval 10s
-                    --health-timeout 5s
-                    --health-retries 5
-                ports:
-                    - 6379:6379
         steps:
             - uses: actions/checkout@v4
-            - name: Install PostgreSQL client tools
-              run: |
-                  sudo apt-get update
-                  sudo apt-get install -y postgresql-client
+            - uses: ./.github/actions/start-compose-services
+              with:
+                  compose-files: infra/compose/base.yml infra/compose/dev.yml
+                  services: redis db-test
+                  project-name: code-quality-auth-contract
             - uses: ./.github/actions/setup
               with:
                   install-flags: "--force"
-            - name: 🏗️ Wait for services
-              run: |
-                  until pg_isready -h localhost -p 4433; do
-                    echo "Waiting for postgres..."
-                    sleep 2
-                  done
-                  until nc -z localhost 6379; do
-                    echo "Waiting for redis..."
-                    sleep 2
-                  done
-                  echo "All services are ready!"
             - name: 🗄️ Initialize test database schema
               uses: ./.github/actions/db-setup
               with:
@@ -322,49 +223,16 @@ jobs:
         permissions:
             contents: read
             packages: read
-        services:
-            postgres:
-                env:
-                    POSTGRES_USER: postgres
-                    POSTGRES_PASSWORD: postgres
-                    POSTGRES_DB: hominem-test
-                image: ghcr.io/hackefeller/postgres:latest
-                options: >-
-                    --health-cmd "pg_isready -h localhost -p 5432 -U postgres"
-                    --health-interval 10s
-                    --health-timeout 5s
-                    --health-retries 5
-                ports:
-                    - 4433:5432
-            redis:
-                image: redis
-                options: >-
-                    --health-cmd "redis-cli ping"
-                    --health-interval 10s
-                    --health-timeout 5s
-                    --health-retries 5
-                ports:
-                    - 6379:6379
         steps:
             - uses: actions/checkout@v4
-            - name: Install PostgreSQL client tools
-              run: |
-                  sudo apt-get update
-                  sudo apt-get install -y postgresql-client
+            - uses: ./.github/actions/start-compose-services
+              with:
+                  compose-files: infra/compose/base.yml infra/compose/dev.yml
+                  services: redis db-test
+                  project-name: code-quality-web-auth-e2e
             - uses: ./.github/actions/setup
               with:
                   install-flags: "--force"
-            - name: 🏗️ Wait for services
-              run: |
-                  until pg_isready -h localhost -p 4433; do
-                    echo "Waiting for postgres..."
-                    sleep 2
-                  done
-                  until nc -z localhost 6379; do
-                    echo "Waiting for redis..."
-                    sleep 2
-                  done
-                  echo "All services are ready!"
             - name: 🗄️ Initialize test database schema
               uses: ./.github/actions/db-setup
               with:

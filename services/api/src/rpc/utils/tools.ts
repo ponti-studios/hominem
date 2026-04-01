@@ -115,7 +115,8 @@ export const getAvailableTools = (_userId: string): ToolSet => ({
   }),
 
   assess_mental_wellness: tool({
-    description: 'Assess mental wellness and get personalized coping strategies and recommendations',
+    description:
+      'Assess mental wellness and get personalized coping strategies and recommendations',
     parameters: assessMentalWellnessInputSchema,
     execute: async (_input) => ({
       overallAssessment: 'OK',

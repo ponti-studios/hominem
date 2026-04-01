@@ -1,8 +1,8 @@
 # ClickStack observability stack
 # https://clickhouse.com/docs/use-cases/observability/clickstack/overview
 #
-# Secrets: copy infra/docker/observability/.env.example → infra/docker/observability/.env
-# Source of truth: this compose file and the observability package/docs.
+# Secrets: copy infra/observability/.env.example → infra/observability/.env
+# Source of truth: this compose file and the observability docs in infra/observability.
 
 networks:
   observability:
