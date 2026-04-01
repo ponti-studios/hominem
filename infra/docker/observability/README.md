@@ -4,12 +4,12 @@
 
 ## Stack
 
-| Service        | Image                                    | Role                         |
-| -------------- | ---------------------------------------- | ---------------------------- |
-| ch-server      | `clickhouse/clickhouse-server:25.3`      | Storage & query engine       |
-| otel-collector | `clickhouse/clickstack-otel-collector:2` | OTLP ingest (pre-configured) |
-| hyperdx        | `clickhouse/clickstack-all-in-one:2`     | UI + API                     |
-| mongo          | `mongo:7`                                | HyperDX metadata store       |
+| Service        | Image                                      | Role                         |
+| -------------- | ------------------------------------------ | ---------------------------- |
+| ch-server      | `clickhouse/clickhouse-server:25.3-alpine` | Storage & query engine       |
+| otel-collector | `clickhouse/clickstack-otel-collector:2`   | OTLP ingest (pre-configured) |
+| hyperdx        | `clickhouse/clickstack-all-in-one:2`       | UI + API                     |
+| mongo          | `mongo:7.0`                                | HyperDX metadata store       |
 
 ## Setup
 
@@ -33,6 +33,7 @@ make obs-up
 | `4318`  | OTLP HTTP ingest            |
 | `8080`  | HyperDX UI                  |
 | `8123`  | ClickHouse HTTP             |
+| `8888`  | OTel collector metrics      |
 | `13133` | OTel collector health check |
 
 ## App configuration
@@ -47,4 +48,5 @@ OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
 
 - The collector is pre-configured for ClickHouse — no `otel-collector.yaml` needed.
 - The observability stack uses its own `observability` Docker network and `obs-*` volumes, isolated from the dev stack.
-- `make obs-down` destroys volumes (telemetry data is ephemeral by design).
+- `make obs-down` destroys containers and volumes — telemetry data is not preserved across restarts by design.
+- Volumes persist while containers are running; use `obs-down` to wipe all data.

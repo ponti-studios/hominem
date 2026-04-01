@@ -1,14 +1,21 @@
 # Local development environment
 # Usage: docker compose -f infra/docker/compose/base.yml -f infra/docker/compose/dev.yml up
+# Secrets: copy infra/docker/compose/.env.example → infra/docker/compose/.env
 
-x-postgres-build: &postgres-build
+# Combined build + logging anchor for all postgres services
+x-postgres-service: &postgres-service
   build:
     context: ../postgres
     dockerfile: Dockerfile
+  logging:
+    driver: json-file
+    options:
+      max-size: '10m'
+      max-file: '3'
 
 x-postgres-defaults: &postgres-defaults
-  POSTGRES_USER: postgres
-  POSTGRES_PASSWORD: postgres
+  POSTGRES_USER: ${POSTGRES_USER:-postgres}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
 
 services:
   redis:
@@ -22,42 +29,71 @@ services:
       test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
       timeout: 5s
+      start_period: 10s
       retries: 5
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 128M
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
     networks:
       - hominem
 
   db:
-    <<: *postgres-build
+    <<: *postgres-service
     container_name: hominem-postgres
     ports:
       - '5434:5432'
     environment:
       <<: *postgres-defaults
-      POSTGRES_DB: hominem
+      POSTGRES_DB: ${POSTGRES_DB:-hominem}
     volumes:
       - hominem-postgres:/var/lib/postgresql
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-postgres}']
       interval: 10s
       timeout: 5s
+      start_period: 30s
       retries: 5
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 512M
     networks:
       - hominem
 
   db-test:
-    <<: *postgres-build
+    <<: *postgres-service
     container_name: hominem-test-postgres
     ports:
       - '4433:5432'
     environment:
       <<: *postgres-defaults
-      POSTGRES_DB: hominem-test
+      POSTGRES_DB: ${POSTGRES_TEST_DB:-hominem-test}
     volumes:
       - hominem-test-postgres:/var/lib/postgresql
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-postgres}']
       interval: 10s
       timeout: 5s
+      start_period: 30s
       retries: 5
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 256M
     networks:
       - hominem

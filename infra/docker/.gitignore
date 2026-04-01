@@ -7,10 +7,10 @@ secrets/
 backups/*.sql
 backups/*.dump
 
-# Environment files with secrets
+# Environment files with secrets (keep .env.example committed)
+.env
 .env.local
 .env.production
-*.env
 
 # Temporary files
 *.tmp
