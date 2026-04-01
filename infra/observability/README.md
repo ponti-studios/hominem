@@ -1,39 +1,32 @@
-# Local Observability Stack (ClickStack)
+# Local Observability
 
-[ClickStack](https://clickhouse.com/docs/use-cases/observability/clickstack/overview) provides logs, traces, metrics, and session replay on top of ClickHouse with OpenTelemetry support.
-
-## Stack
-
-| Service        | Image                                         | Role                     |
-| -------------- | --------------------------------------------- | ------------------------ |
-| ch-server      | `clickhouse/clickhouse-server:26.2.6-alpine`  | Storage and query engine |
-| otel-collector | `clickhouse/clickstack-otel-collector:2.22.1` | OTLP ingest              |
-| hyperdx        | `clickhouse/clickstack-all-in-one:2.22.1`     | UI and API               |
-| mongo          | `mongo:8.0`                                   | HyperDX metadata store   |
+Jaeger ships with the local dev Compose stack, so there is no separate observability compose file anymore.
 
 ## Local Setup
 
-- Create the local observability env file from the example before first use.
-- Adjust credentials only if the defaults are not appropriate for the local environment.
-- Treat `infra/compose/observability.yml` and `infra/observability/.env.example` as the source of truth for startup and teardown behavior.
+Start the dev stack to bring up Jaeger alongside Redis and Postgres.
 
-## Ports
+```sh
+docker compose -f infra/compose/base.yml -f infra/compose/dev.yml up -d
+```
 
-| Port    | Service                     |
-| ------- | --------------------------- |
-| `4317`  | OTLP gRPC ingest            |
-| `4318`  | OTLP HTTP ingest            |
-| `8080`  | HyperDX UI                  |
-| `8123`  | ClickHouse HTTP             |
-| `8888`  | OTel collector metrics      |
-| `13133` | OTel collector health check |
+The stack exposes OTLP HTTP on `http://localhost:4318`, OTLP gRPC on `4317`, and the Jaeger UI on `http://localhost:16686`.
 
 ## App Configuration
 
-Point local services at OTLP HTTP on `http://localhost:4318`.
+Point local services at OTLP HTTP on `http://localhost:4318` (the default).
+
+## Production
+
+In staging/prod, swap the OTLP endpoint for [Axiom](https://axiom.co) and add a `SENTRY_DSN` for error tracking. No code changes required — environment variables only.
+
+```
+OTEL_EXPORTER_OTLP_ENDPOINT=https://api.axiom.co
+OTEL_EXPORTER_OTLP_HEADERS=Authorization=Bearer <token>,X-Axiom-Dataset=hominem
+SENTRY_DSN=https://<key>@<org>.ingest.sentry.io/<project>
+```
 
 ## Notes
 
-- The collector is pre-configured for ClickHouse, so there is no separate collector config file to maintain in the repo.
-- The observability stack uses its own Docker network and volumes, isolated from the main dev stack.
-- Destroying the local observability stack also removes its telemetry data by design.
+- Destroying the dev stack also removes local trace data by design.
+- The dev stack is the only local observability entrypoint now.
