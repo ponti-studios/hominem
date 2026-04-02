@@ -21,9 +21,24 @@ const reviewItemTemplate: Omit<ReviewItem, 'proposedType' | 'proposedTitle'> = {
   createdAt: '2026-04-01T00:00:00.000Z',
 };
 
+function ProposalCardPreview({
+  proposedType,
+  proposedTitle,
+  onReview,
+  onReject,
+}: ProposalCardStoryArgs) {
+  return (
+    <ProposalCard
+      item={proposalCardItem(proposedType, proposedTitle)}
+      onReview={onReview}
+      onReject={onReject}
+    />
+  );
+}
+
 const meta: Meta<ProposalCardStoryArgs> = {
   title: 'Patterns/AI/ProposalCard',
-  component: ProposalCard,
+  component: ProposalCardPreview,
   tags: ['autodocs'],
   argTypes: {
     proposedType: selectControl(proposalTypeOptions, 'Type of proposal shown in the card', {
@@ -52,28 +67,18 @@ export const Note: Story = {
   args: {
     proposedType: 'note',
     proposedTitle: 'Meeting notes from Q3 planning',
+    onReview: () => undefined,
+    onReject: () => undefined,
   },
-  render: (args) => (
-    <ProposalCard
-      item={proposalCardItem(args.proposedType, args.proposedTitle)}
-      onReview={() => undefined}
-      onReject={() => undefined}
-    />
-  ),
 };
 
 export const Task: Story = {
   args: {
     proposedType: 'task',
     proposedTitle: 'Follow up with design team',
+    onReview: () => undefined,
+    onReject: () => undefined,
   },
-  render: (args) => (
-    <ProposalCard
-      item={proposalCardItem(args.proposedType, args.proposedTitle)}
-      onReview={() => undefined}
-      onReject={() => undefined}
-    />
-  ),
 };
 
 export const List: StoryObj<typeof ProposalList> = {

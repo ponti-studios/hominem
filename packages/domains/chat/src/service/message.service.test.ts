@@ -17,8 +17,6 @@ type InsertMessageRow = {
 type InsertMessageRows = InsertMessageRow[];
 
 const mockInsertExecute = vi.fn();
-const mockChatUpdateExecute = vi.fn();
-const mockTransactionExecute = vi.fn();
 const mockSelectExecute = vi.fn();
 
 vi.mock('@hominem/utils/logger', () => ({
@@ -28,19 +26,10 @@ vi.mock('@hominem/utils/logger', () => ({
 }));
 
 vi.mock('@hominem/db', () => {
-  const transactionContext = {
-    insertInto: vi.fn(() => ({
-      values: vi.fn((values: InsertMessageRows) => ({
-        returningAll: vi.fn(() => ({
-          execute: mockInsertExecute.mockImplementation(async () => values),
-        })),
-      })),
-    })),
-    updateTable: vi.fn(() => ({
-      set: vi.fn(() => ({
-        where: vi.fn(() => ({
-          execute: mockChatUpdateExecute,
-        })),
+  const insertChain = {
+    values: vi.fn((values: InsertMessageRows) => ({
+      returningAll: vi.fn(() => ({
+        execute: mockInsertExecute.mockImplementation(async () => values),
       })),
     })),
   };
@@ -57,11 +46,7 @@ vi.mock('@hominem/db', () => {
 
   return {
     db: {
-      transaction: vi.fn(() => ({
-        execute: mockTransactionExecute.mockImplementation(async (callback) =>
-          callback(transactionContext),
-        ),
-      })),
+      insertInto: vi.fn(() => insertChain),
       selectFrom: vi.fn(() => selectChain),
     },
   };
@@ -73,24 +58,6 @@ describe('MessageService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockInsertExecute.mockImplementation(async (values) => values);
-    mockTransactionExecute.mockImplementation(async (callback) =>
-      callback({
-        insertInto: () => ({
-          values: (values: InsertMessageRows) => ({
-            returningAll: () => ({
-              execute: mockInsertExecute.mockImplementation(async () => values),
-            }),
-          }),
-        }),
-        updateTable: () => ({
-          set: () => ({
-            where: () => ({
-              execute: mockChatUpdateExecute,
-            }),
-          }),
-        }),
-      }),
-    );
   });
 
   it('serializes database Date timestamps without replacing them with now', async () => {

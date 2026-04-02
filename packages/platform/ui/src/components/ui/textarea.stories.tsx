@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import { booleanControl, numberControl, textControl } from '../../storybook/controls';
 import { Textarea } from './textarea';
 
 const meta: Meta<typeof Textarea> = {

@@ -297,7 +297,7 @@ async function resolveChatFiles(userId: string, fileIds: string[]): Promise<Chat
     url: string;
   }>;
 
-  if (files.length !== [...new Set(fileIds)].length) {
+  if (files.length !== new Set(fileIds).size) {
     throw new ValidationError('One or more uploaded files are unavailable');
   }
 
@@ -492,7 +492,7 @@ const chatByIdRoutes = new Hono<AppContext>()
     const now = new Date().toISOString();
     const [userMessage, assistantMessage] = await db
       .transaction()
-      .execute(async (trx: any) => {
+      .execute(async (trx) => {
         const insertedUser = await trx
           .insertInto('app.chat_messages')
           .values({

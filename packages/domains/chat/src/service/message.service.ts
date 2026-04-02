@@ -1,13 +1,18 @@
 import crypto from 'node:crypto';
 
 import { db } from '@hominem/db';
-import type { Database } from '@hominem/db';
-import type { Selectable } from 'kysely';
+import type { Database, JsonValue as DbJsonValue, Selectable } from '@hominem/db';
+import { logger } from '@hominem/utils/logger';
 
 import type { ChatMessageInput, ChatMessageOutput, ChatMessageRole } from '../contracts';
 import { ChatError } from './chat.types';
 
 type ChatMessageRow = Selectable<Database['app.chat_messages']>;
+type ChatMessageRowLike = ChatMessageRow & {
+  user_id?: string | null;
+  created_at?: string | Date | null;
+  updated_at?: string | Date | null;
+};
 
 export type CreateMessageParams = {
   chatId: ChatMessageOutput['chatId'];
@@ -38,11 +43,28 @@ function toIsoString(value: string | Date | null | undefined): string {
   return new Date(0).toISOString();
 }
 
-function toMessageOutput(row: ChatMessageRow): ChatMessageOutput {
+function toNullableParentMessageId(value: string | null | undefined): string | null {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : null;
+}
+
+function toDbJsonValue(value: unknown): DbJsonValue | null {
+  if (value == null) {
+    return null;
+  }
+
+  return JSON.parse(JSON.stringify(value)) as DbJsonValue;
+}
+
+function toMessageOutput(row: ChatMessageRowLike): ChatMessageOutput {
   return {
     id: row.id,
     chatId: row.chat_id,
-    userId: row.author_userid ?? '',
+    userId: row.author_userid ?? row.user_id ?? '',
     role: row.role as ChatMessageRole,
     content: row.content,
     files: (Array.isArray(row.files) ? row.files : null) as ChatMessageOutput['files'],
@@ -51,8 +73,8 @@ function toMessageOutput(row: ChatMessageRow): ChatMessageOutput {
       : null) as ChatMessageOutput['toolCalls'],
     reasoning: row.reasoning ?? null,
     parentMessageId: row.parent_message_id,
-    createdAt: toIsoString(row.createdat),
-    updatedAt: toIsoString(row.updatedat),
+    createdAt: toIsoString(row.createdat ?? row.created_at),
+    updatedAt: toIsoString(row.updatedat ?? row.updated_at),
   };
 }
 
@@ -72,41 +94,51 @@ export class MessageService {
       throw new ChatError('VALIDATION_ERROR', 'Messages must target the same chat');
     }
 
-    const inserted = await db
-      .insertInto('app.chat_messages')
-      .values(
-        params.map((message) => ({
-          id: crypto.randomUUID(),
-          chat_id: message.chatId,
-          author_userid: message.userId,
-          role: message.role,
-          content: message.content,
-          files: message.files ?? null,
-          tool_calls: message.toolCalls ?? null,
-          reasoning: message.reasoning ?? null,
-          parent_message_id: message.parentMessageId ?? null,
-        })),
-      )
-      .returningAll()
-      .execute();
+    try {
+      const inserted = await db
+        .insertInto('app.chat_messages')
+        .values(
+          params.map((message) => ({
+            id: crypto.randomUUID(),
+            chat_id: message.chatId,
+            author_userid: message.userId,
+            role: message.role,
+            content: message.content,
+            files: toDbJsonValue(message.files),
+            tool_calls: toDbJsonValue(message.toolCalls),
+            reasoning: message.reasoning ?? null,
+            parent_message_id: toNullableParentMessageId(message.parentMessageId),
+          })),
+        )
+        .returningAll()
+        .execute();
 
-    return inserted.map(toMessageOutput);
+      return inserted.map(toMessageOutput);
+    } catch (error) {
+      logger.error('Failed to add chat messages', { error, chatId });
+      throw new ChatError('DATABASE_ERROR', 'Failed to add chat messages');
+    }
   }
 
   async getChatMessages(
     chatId: string,
     options: ChatMessagesOptions = { limit: 10, offset: 0, orderBy: 'asc' },
   ): Promise<ChatMessageOutput[]> {
-    const messages = await db
-      .selectFrom('app.chat_messages')
-      .selectAll()
-      .where('chat_id', '=', chatId)
-      .limit(options.limit ?? 50)
-      .offset(options.offset ?? 0)
-      .orderBy('createdat', options.orderBy === 'desc' ? 'desc' : 'asc')
-      .execute();
+    try {
+      const messages = await db
+        .selectFrom('app.chat_messages')
+        .selectAll()
+        .where('chat_id', '=', chatId)
+        .limit(options.limit ?? 50)
+        .offset(options.offset ?? 0)
+        .orderBy('createdat', options.orderBy === 'desc' ? 'desc' : 'asc')
+        .execute();
 
-    return messages.map(toMessageOutput);
+      return messages.map(toMessageOutput);
+    } catch (error) {
+      logger.error('Failed to get chat messages', { error, chatId });
+      throw new ChatError('DATABASE_ERROR', 'Failed to get chat messages');
+    }
   }
 
   async getMessageById(messageId: string, userId: string): Promise<ChatMessageOutput | null> {
@@ -134,7 +166,7 @@ export class MessageService {
       .updateTable('app.chat_messages')
       .set({
         content,
-        tool_calls: toolCalls ?? null,
+        tool_calls: toDbJsonValue(toolCalls),
         updatedat: new Date().toISOString(),
       })
       .where('id', '=', messageId)
@@ -180,7 +212,7 @@ export class MessageService {
     const deleted = await db
       .deleteFrom('app.chat_messages')
       .where('chat_id', '=', chatId)
-      .where('createdat', '>', afterTimestamp)
+      .where('createdat', '>', new Date(afterTimestamp))
       .returning('id')
       .execute();
 

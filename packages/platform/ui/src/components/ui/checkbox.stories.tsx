@@ -23,12 +23,12 @@ type Story = StoryObj<typeof Checkbox>;
 
 function CheckboxPreview({
   checked,
-  disabled,
+  disabled = false,
   id,
   label,
 }: {
   checked: boolean | 'indeterminate';
-  disabled?: boolean;
+  disabled: boolean;
   id: string;
   label: string;
 }) {
@@ -58,7 +58,7 @@ export const Default: Story = {
   render: (args) => (
     <CheckboxPreview
       checked={args.checked ?? false}
-      disabled={args.disabled}
+      disabled={args.disabled ?? false}
       id="terms"
       label="Accept terms and conditions"
     />
@@ -72,7 +72,7 @@ export const Checked: Story = {
   render: (args) => (
     <CheckboxPreview
       checked={args.checked ?? true}
-      disabled={args.disabled}
+      disabled={args.disabled ?? false}
       id="checked"
       label="Already checked"
     />
@@ -88,13 +88,13 @@ export const Disabled: Story = {
     <div className="flex flex-col gap-3">
       <CheckboxPreview
         checked={args.checked ?? false}
-        disabled={args.disabled}
+        disabled={args.disabled ?? false}
         id="disabled"
         label="Disabled unchecked"
       />
       <CheckboxPreview
         checked="indeterminate"
-        disabled={args.disabled}
+        disabled={args.disabled ?? false}
         id="disabled-checked"
         label="Disabled checked"
       />

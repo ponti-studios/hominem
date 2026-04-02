@@ -10,7 +10,7 @@ type ChatMessagesStoryArgs = React.ComponentProps<typeof ChatMessages> & {
 
 const meta = {
   title: 'Patterns/Chat/ChatMessages',
-  component: ChatMessages,
+  component: ChatMessagesPreview,
   tags: ['autodocs'],
   argTypes: {
     scenario: selectControl(
@@ -42,7 +42,7 @@ type Story = StoryObj<typeof meta>;
 
 function ChatMessagesPreview({
   scenario,
-  showDebug,
+  showDebug = false,
 }: {
   scenario: ChatMessagesStoryArgs['scenario'];
   showDebug?: boolean;
@@ -66,7 +66,7 @@ function ChatMessagesPreview({
   if (scenario === 'streaming') {
     return (
       <div className="w-full bg-background" style={{ height: 720 }}>
-        <ChatMessages messages={mockChatMessages} status="streaming" showDebug={showDebug} />
+        <ChatMessages messages={mockChatMessages} status="idle" showDebug={showDebug} />
       </div>
     );
   }
@@ -81,13 +81,13 @@ function ChatMessagesPreview({
 export const Conversation: Story = {
   args: {
     scenario: 'conversation',
+    showDebug: false,
   },
-  render: (args) => <ChatMessagesPreview scenario={args.scenario} showDebug={args.showDebug} />,
 };
 
 export const EmptyLoading: Story = {
   args: {
     scenario: 'loading',
+    showDebug: false,
   },
-  render: (args) => <ChatMessagesPreview scenario={args.scenario} showDebug={args.showDebug} />,
 };

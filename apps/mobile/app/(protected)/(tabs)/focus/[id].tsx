@@ -8,7 +8,6 @@ import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native
 import { CameraModal } from '~/components/media/camera-modal';
 import { MobileVoiceInput } from '~/components/media/mobile-voice-input';
 import { Text, theme } from '~/theme';
-import { getTimezone } from '~/utils/dates';
 import { useFileUpload } from '~/utils/services/files/use-file-upload';
 import { useNoteQuery } from '~/utils/services/notes/use-note-query';
 

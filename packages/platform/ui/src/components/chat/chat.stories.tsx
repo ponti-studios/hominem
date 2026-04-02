@@ -11,7 +11,7 @@ type ChatStoryArgs = ComponentProps<typeof Chat> & {
 
 const meta = {
   title: 'Patterns/Chat/Chat',
-  component: Chat,
+  component: ChatPreview,
   tags: ['autodocs'],
   argTypes: {
     sourceFixture: selectControl(
@@ -69,12 +69,12 @@ type Story = StoryObj<typeof meta>;
 
 function ChatPreview({
   sourceFixture,
-  status,
-  isLoading,
-  showDebug,
-  isVoiceModeActive,
-  voiceModeState,
-  isVoiceModeRecording,
+  status = 'streaming',
+  isLoading = false,
+  showDebug = false,
+  isVoiceModeActive = false,
+  voiceModeState = 'idle',
+  isVoiceModeRecording = false,
 }: Pick<
   ChatStoryArgs,
   | 'sourceFixture'
@@ -122,7 +122,6 @@ export const Default: Story = {
     voiceModeState: 'idle',
     isVoiceModeRecording: false,
   },
-  render: (args) => <ChatPreview {...args} />,
 };
 
 export const VoiceModeActive: Story = {
@@ -135,5 +134,4 @@ export const VoiceModeActive: Story = {
     voiceModeState: 'listening',
     isVoiceModeRecording: true,
   },
-  render: (args) => <ChatPreview {...args} />,
 };

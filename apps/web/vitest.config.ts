@@ -4,13 +4,17 @@ import { defineConfig } from 'vitest/config'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
-  plugins: [react(), tsconfigPaths(), VitePWA({
-    registerType: 'prompt',
-    injectRegister: false,
-    devOptions: {
-      enabled: false,
-    },
-  })],
+  plugins: [
+    react(),
+    tsconfigPaths(),
+    VitePWA({
+      registerType: 'prompt',
+      injectRegister: false,
+      devOptions: {
+        enabled: false,
+      },
+    }),
+  ],
   test: {
     globals: true,
     environment: 'jsdom',

@@ -6,7 +6,7 @@ import { ChatHeader } from './chat-header';
 
 const meta = {
   title: 'Patterns/Chat/ChatHeader',
-  component: ChatHeader,
+  component: ChatHeaderPreview,
   tags: ['autodocs'],
   argTypes: {
     searchQuery: textControl('Text shown in the search input'),

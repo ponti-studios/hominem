@@ -255,7 +255,7 @@ export const filesRoutes = new Hono<AppContext>()
           createdat: now,
           updatedat: now,
         })
-        .onConflict((oc: any) =>
+        .onConflict((oc) =>
           oc.column('id').doUpdateSet({
             storage_key: parsed.data.key,
             original_name: parsed.data.originalName,

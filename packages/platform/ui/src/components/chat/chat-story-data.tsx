@@ -37,6 +37,7 @@ export const mockChatMessages: ExtendedMessage[] = [
     role: 'user',
     content: 'Can you summarize these notes into a short action list?',
     files: null,
+    referencedNotes: null,
     toolCalls: null,
     reasoning: null,
     parentMessageId: null,
@@ -50,6 +51,7 @@ export const mockChatMessages: ExtendedMessage[] = [
     role: 'assistant',
     content: 'Absolutely.\n\n- Confirm scope\n- Draft the follow-up note\n- Send it to the team\n',
     files: null,
+    referencedNotes: null,
     toolCalls: [
       {
         toolName: 'search_notes',
@@ -70,6 +72,7 @@ export const mockChatMessages: ExtendedMessage[] = [
     role: 'assistant',
     content: 'Working on the final wording…',
     files: null,
+    referencedNotes: null,
     toolCalls: null,
     reasoning: null,
     parentMessageId: 'msg-2',

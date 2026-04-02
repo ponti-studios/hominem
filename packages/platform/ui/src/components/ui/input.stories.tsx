@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import { booleanControl, selectControl, textControl } from '../../storybook/controls';
+import { inputTypeOptions } from '../../storybook/options';
 import { Input } from './input';
 import { Label } from './label';
 import { Textarea } from './textarea';

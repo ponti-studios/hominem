@@ -36,6 +36,9 @@ export const Pressable = ({ children, ...props }) => React.createElement('Pressa
 export const ScrollView = ({ children, ...props }) => React.createElement('ScrollView', props, children)
 export const TouchableOpacity = ({ children, ...props }) =>
   React.createElement('TouchableOpacity', props, children)
+export const Touchable = {
+  Mixin: {},
+}
 export const Platform = {
   OS: 'ios',
 }

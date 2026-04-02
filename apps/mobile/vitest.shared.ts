@@ -31,8 +31,8 @@ export const mobileVitestResolve = {
       './tests/__mocks__/use-update-note.ts',
       rootUrl,
     ).pathname,
+    '~': new URL('./', rootUrl).pathname,
   },
-  tsconfigPaths: true,
 }
 
 export const mobileVitestBase = {

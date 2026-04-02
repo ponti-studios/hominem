@@ -23,16 +23,16 @@ type Story = StoryObj<typeof Switch>;
 
 function SwitchPreview({
   checked,
-  disabled,
+  disabled = false,
   id,
   label,
-  size,
+  size = 'default',
 }: {
   checked: boolean;
-  disabled?: boolean;
+  disabled: boolean;
   id: string;
   label: string;
-  size?: 'default' | 'sm';
+  size: 'default' | 'sm';
 }) {
   const [currentChecked, setCurrentChecked] = useState(checked);
 
@@ -61,10 +61,10 @@ export const Default: Story = {
   render: (args) => (
     <SwitchPreview
       checked={args.checked ?? false}
-      disabled={args.disabled}
+      disabled={args.disabled ?? false}
       id="switch-default"
       label="Airplane Mode"
-      size={args.size}
+      size={args.size ?? 'default'}
     />
   ),
 };
@@ -77,10 +77,10 @@ export const WithLabel: Story = {
   render: (args) => (
     <SwitchPreview
       checked={args.checked ?? false}
-      disabled={args.disabled}
+      disabled={args.disabled ?? false}
       id="airplane-mode"
       label="Airplane Mode"
-      size={args.size}
+      size={args.size ?? 'default'}
     />
   ),
 };
@@ -92,10 +92,10 @@ export const Checked: Story = {
   render: (args) => (
     <SwitchPreview
       checked={args.checked ?? true}
-      disabled={args.disabled}
+      disabled={args.disabled ?? false}
       id="notifications"
       label="Enable Notifications"
-      size={args.size}
+      size={args.size ?? 'default'}
     />
   ),
 };
@@ -109,17 +109,17 @@ export const Disabled: Story = {
     <div className="flex flex-col gap-3">
       <SwitchPreview
         checked={args.checked ?? false}
-        disabled={args.disabled}
+        disabled={args.disabled ?? false}
         id="disabled-off"
         label="Disabled off"
-        size={args.size}
+        size={args.size ?? 'default'}
       />
       <SwitchPreview
         checked
-        disabled={args.disabled}
+        disabled={args.disabled ?? false}
         id="disabled-on"
         label="Disabled on"
-        size={args.size}
+        size={args.size ?? 'default'}
       />
     </div>
   ),
@@ -133,10 +133,10 @@ export const Small: Story = {
   render: (args) => (
     <SwitchPreview
       checked={args.checked ?? false}
-      disabled={args.disabled}
+      disabled={args.disabled ?? false}
       id="small"
       label="Small switch"
-      size={args.size}
+      size={args.size ?? 'default'}
     />
   ),
 };

@@ -39,7 +39,7 @@ function withDefaultValue(
   return {
     ...control,
     table: {
-      ...(control.table ?? {}),
+      ...control.table,
       defaultValue: {
         summary: String(defaultValue),
       },
@@ -124,11 +124,11 @@ function selectControl<T extends boolean | number | string | null>(
         type: config?.controlType ?? 'select',
       },
       description,
-      if: config?.if,
-      labels: config?.labels,
-      mapping: config?.mapping,
       options,
-      table: config?.table,
+      ...(config?.if ? { if: config.if } : {}),
+      ...(config?.labels ? { labels: config.labels } : {}),
+      ...(config?.mapping ? { mapping: config.mapping } : {}),
+      ...(config?.table ? { table: config.table } : {}),
     },
     config?.defaultValue,
   );

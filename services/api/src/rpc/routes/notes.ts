@@ -213,7 +213,7 @@ export const notesRoutes = new Hono<AppContext>()
 
     if (query.query) {
       const pattern = `%${query.query.trim()}%`;
-      notesQuery = notesQuery.where((eb: any) =>
+      notesQuery = notesQuery.where((eb) =>
         eb.or([
           eb('title', 'ilike', pattern),
           eb('content', 'ilike', pattern),
@@ -247,7 +247,7 @@ export const notesRoutes = new Hono<AppContext>()
       .selectFrom('app.notes')
       .select(['id', 'title', 'excerpt'])
       .where('owner_userid', '=', userId)
-      .where((eb: any) => eb.or([eb('title', 'ilike', pattern), eb('content', 'ilike', pattern)]))
+      .where((eb) => eb.or([eb('title', 'ilike', pattern), eb('content', 'ilike', pattern)]))
       .orderBy('updatedat', 'desc')
       .limit(limit)
       .execute()) as Array<Pick<NoteRow, 'id' | 'title' | 'excerpt'>>;

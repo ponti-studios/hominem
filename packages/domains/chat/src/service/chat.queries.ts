@@ -1,8 +1,7 @@
 import crypto from 'node:crypto';
 
 import { db } from '@hominem/db';
-import type { Database } from '@hominem/db';
-import type { Selectable } from 'kysely';
+import type { Database, Selectable } from '@hominem/db';
 
 import type { ChatOutput } from '../contracts';
 import type { CreateChatParams } from './chat.types';

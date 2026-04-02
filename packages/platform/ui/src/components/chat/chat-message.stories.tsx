@@ -21,7 +21,7 @@ type ChatMessageStoryArgs = ChatMessageProps & {
 
 const meta: Meta<ChatMessageStoryArgs> = {
   title: 'Patterns/Chat/ChatMessage',
-  component: ChatMessage,
+  component: ChatMessagePreview,
   tags: ['autodocs'],
   argTypes: {
     fixture: selectControl(
@@ -48,7 +48,7 @@ type Story = StoryObj<typeof meta>;
 
 function ChatMessagePreview({
   fixture,
-  showDebug,
+  showDebug = false,
 }: {
   fixture: keyof typeof messageFixtures;
   showDebug?: boolean;
@@ -92,20 +92,20 @@ function ChatMessagePreview({
 export const UserMessage: Story = {
   args: {
     fixture: 'user',
+    showDebug: false,
   },
-  render: (args) => <ChatMessagePreview fixture={args.fixture} showDebug={args.showDebug} />,
 };
 
 export const AssistantReply: Story = {
   args: {
     fixture: 'assistant',
+    showDebug: false,
   },
-  render: (args) => <ChatMessagePreview fixture={args.fixture} showDebug={args.showDebug} />,
 };
 
 export const StreamingAssistant: Story = {
   args: {
     fixture: 'streaming',
+    showDebug: false,
   },
-  render: (args) => <ChatMessagePreview fixture={args.fixture} showDebug={args.showDebug} />,
 };

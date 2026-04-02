@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { hiddenControl, selectControl, textControl } from '../../storybook/controls';
+import { hiddenControl, selectControl, textControl } from '../storybook/controls';
 import { PageTitle } from './page-title';
 import { Button } from './ui/button';
 

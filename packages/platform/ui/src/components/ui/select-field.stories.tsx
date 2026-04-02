@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useEffect, useState } from 'react';
-import { expect, userEvent, within } from 'storybook/test';
+import { expect, within } from 'storybook/test';
 
 import { booleanControl, hiddenControl, textControl } from '../../storybook/controls';
 import type { SelectFieldProps } from './select-field';

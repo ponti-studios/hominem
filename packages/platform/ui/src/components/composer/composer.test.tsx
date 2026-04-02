@@ -1,14 +1,10 @@
 import type { Note } from '@hominem/rpc/types/notes.types';
 import {
-  ComposerProvider,
-  ComposerStore,
   resolveComposerActions,
   formatNoteAttachmentsSection,
   formatUploadedFileContext,
 } from '@hominem/ui/composer';
 import type { UploadedFile } from '@hominem/ui/types/upload';
-import { render, screen, waitFor } from '@testing-library/react';
-import { useRef } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 function createNoteFixture(overrides: Partial<Note> = {}): Note {
@@ -25,6 +21,7 @@ function createNoteFixture(overrides: Partial<Note> = {}): Note {
     analysis: null,
     publishingMetadata: null,
     parentNoteId: null,
+    files: [],
     versionNumber: 1,
     isLatestVersion: true,
     publishedAt: null,

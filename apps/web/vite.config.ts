@@ -5,7 +5,6 @@ import { visualizer } from 'rollup-plugin-visualizer';
 import type { ConfigEnv, PluginOption, UserConfig } from 'vite';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
-import tsconfigPaths from 'vite-tsconfig-paths';
 
 import { WEB_BRAND } from './app/lib/brand';
 
@@ -18,7 +17,6 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
     plugins: [
       tailwindcss(),
       reactRouter(),
-      tsconfigPaths(),
       VitePWA({
         registerType: 'prompt',
         injectRegister: false,
@@ -112,10 +110,14 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
       strictPort: true,
     },
 
+    resolve: {
+      tsconfigPaths: true,
+    },
+
     build: {
       cssCodeSplit: true,
       chunkSizeWarningLimit: 1200, // Allow route chunks up to 1.2MB
-      minify: isProd ? 'esbuild' : false,
+      minify: isProd ? 'oxc' : false,
       rollupOptions: {
         external: ['node:perf_hooks', 'perf_hooks'],
         output: {
