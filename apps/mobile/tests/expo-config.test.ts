@@ -47,7 +47,7 @@ describe('expo config helpers', () => {
     })
   })
 
-  it('includes calendar usage descriptions in ios info plist', () => {
+  it('includes the voice transcription permission copy and omits calendar access copy', () => {
     const previousVariant = process.env.APP_VARIANT
 
     process.env.APP_VARIANT = 'dev'
@@ -56,11 +56,11 @@ describe('expo config helpers', () => {
 
     expect(config.ios?.infoPlist).toMatchObject({
       ITSAppUsesNonExemptEncryption: false,
-      NSCalendarsUsageDescription: 'Allow Hakumi to access your calendar to add events.',
-      NSCalendarsFullAccessUsageDescription: 'Allow Hakumi to access your calendar to add events.',
-      NSRemindersUsageDescription: 'Allow Hakumi to access your reminders.',
-      NSRemindersFullAccessUsageDescription: 'Allow Hakumi to access your reminders.',
+      NSMicrophoneUsageDescription:
+        'Allow Hakumi to access your microphone to transcribe voice notes.',
     })
+    expect(config.ios?.infoPlist?.NSCalendarsUsageDescription).toBeUndefined()
+    expect(config.ios?.infoPlist?.NSRemindersUsageDescription).toBeUndefined()
 
     if (previousVariant === undefined) {
       delete process.env.APP_VARIANT

@@ -269,26 +269,21 @@ export function useChatController({
 
       if (!previousUserMessage) return;
 
-      await client.messages.delete({ messageId }).catch(() => null);
       await sendChatMessage(previousUserMessage.message);
     },
-    [client.messages, formattedMessages, sendChatMessage],
+    [formattedMessages, sendChatMessage],
   );
 
   const handleEditMessage = useCallback(
     async (messageId: string, content: string) => {
+      const existingMessage = formattedMessages.find((message) => message.id === messageId);
       const trimmedContent = content.trim();
       if (!trimmedContent) return;
-
-      const updatedMessage = await client.messages
-        .update({ messageId, content: trimmedContent })
-        .catch(() => null);
-
-      if (!updatedMessage) return;
+      if (!existingMessage || existingMessage.role !== 'user') return;
 
       await sendChatMessage(trimmedContent);
     },
-    [client.messages, sendChatMessage],
+    [formattedMessages, sendChatMessage],
   );
 
   const handleShareMessage = useCallback(async (message: ChatMessageItem) => {
@@ -300,13 +295,11 @@ export function useChatController({
   }, []);
 
   const handleDeleteMessage = useCallback(
-    (messageId: string) => {
+    (_messageId: string) => {
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      void client.messages.delete({ messageId }).then(() => {
-        queryClient.invalidateQueries({ queryKey: services.chatKeys.messages(chatId) });
-      });
+      queryClient.invalidateQueries({ queryKey: services.chatKeys.messages(chatId) });
     },
-    [chatId, client.messages, queryClient, services.chatKeys],
+    [chatId, queryClient, services.chatKeys],
   );
 
   const handleSpeakMessage = useCallback(

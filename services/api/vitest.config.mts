@@ -5,6 +5,7 @@ export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
     name: '@hominem/api-unit',
+    fileParallelism: false,
     deps: {
       interopDefault: true,
     },

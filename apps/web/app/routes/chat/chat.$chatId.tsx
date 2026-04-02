@@ -1,6 +1,6 @@
 import { useRpcQuery } from '@hominem/rpc/react';
 import type { NoteSearchResult } from '@hominem/rpc/types/notes.types';
-import { SpeechInput } from '@hominem/ui/ai-elements/speech-input';
+import { SpeechInput } from '@hominem/ui/ai-elements';
 import { Button } from '@hominem/ui/button';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
@@ -300,7 +300,7 @@ export default function ChatPage({ params }: Route.ComponentProps) {
                 </label>
                 <SpeechInput
                   ariaLabel="Dictate chat message"
-                  onAudioRecorded={async (audioBlob) => {
+                  onAudioRecorded={async (audioBlob: Blob) => {
                     const result = await transcribe.mutateAsync({ audioBlob });
                     setDraft((current) => `${current}\n${result.text}`.trim());
                   }}

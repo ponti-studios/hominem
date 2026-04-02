@@ -22,8 +22,8 @@ vi.mock('../../components/chat/blurred-background', () => ({
   default: ({ children }: { children: React.ReactNode }) => children,
 }))
 
-vi.mock('../../components/chat/chat', () => ({
-  Chat: () => null,
+vi.mock('../../components/media/camera-modal', () => ({
+  CameraModal: () => null,
 }))
 
 vi.mock('../../lib/use-chat-live-activity', () => ({
@@ -32,23 +32,80 @@ vi.mock('../../lib/use-chat-live-activity', () => ({
   }),
 }))
 
+vi.mock('../../components/media/mobile-voice-input', () => ({
+  MobileVoiceInput: () => null,
+}))
+
+vi.mock('../../components/media/use-tts', () => ({
+  useTTS: () => ({
+    speak: vi.fn(),
+    state: 'idle',
+  }),
+}))
+
 vi.mock('../../components/LoadingFull', () => ({
   LoadingFull: ({ children }: { children: React.ReactNode }) => children,
 }))
 
 vi.mock('../../theme', () => ({
-  Text: ({ children }: { children: React.ReactNode }) => children,
+  Text: ({ children }: { children: React.ReactNode }) =>
+    React.createElement('Text', null, children),
   makeStyles: () => () => ({}),
+  theme: {
+    colors: {
+      background: '#000000',
+      foreground: '#ffffff',
+      'text-secondary': '#999999',
+      'text-tertiary': '#777777',
+      'border-default': '#333333',
+      destructive: '#ff0000',
+    },
+    spacing: {
+      xs_4: 4,
+      sm_8: 8,
+      sm_12: 12,
+      m_16: 16,
+    },
+    borderRadii: {
+      md: 12,
+    },
+  },
 }))
 
 vi.mock('../../utils/services/chat', () => ({
   useActiveChat: () => ({
-    isPending: false,
+    data: {
+      id: 'chat-1',
+    },
+    isLoading: false,
     refetch: mockRefetch,
+  }),
+  useChatMessages: () => ({
+    data: [],
+  }),
+  useSendMessage: () => ({
+    isChatSending: false,
+    sendChatMessage: vi.fn().mockResolvedValue(undefined),
   }),
   useStartChat: () => ({
     mutateAsync: vi.fn(),
     isPending: false,
+  }),
+}))
+
+vi.mock('../../utils/services/files/use-file-upload', () => ({
+  useFileUpload: () => ({
+    clearErrors: vi.fn(),
+    uploadAssets: vi.fn().mockResolvedValue([]),
+    uploadState: {
+      errors: [],
+    },
+  }),
+}))
+
+vi.mock('../../utils/services/notes/use-note-stream', () => ({
+  useNoteStream: () => ({
+    data: [],
   }),
 }))
 

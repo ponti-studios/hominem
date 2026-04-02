@@ -90,7 +90,7 @@ export function createNotesClient(rawClient: RawHonoClient): NotesClient {
       const res = await rawClient.api.notes.$get({
         query: toNotesQuery(input),
       });
-      return res.json();
+      return res.json() as Promise<NotesListOutput>;
     },
 
     async search(input) {
@@ -99,19 +99,19 @@ export function createNotesClient(rawClient: RawHonoClient): NotesClient {
         query.limit = String(input.limit);
       }
       const res = await rawClient.api.notes.search.$get({ query });
-      return res.json();
+      return res.json() as Promise<NotesSearchOutput>;
     },
 
     async get(input) {
       const res = await rawClient.api.notes[':id'].$get({
         param: { id: input.id },
       });
-      return res.json();
+      return res.json() as Promise<NotesGetOutput>;
     },
 
     async create(input) {
       const res = await rawClient.api.notes.$post({ json: input });
-      return res.json();
+      return res.json() as Promise<NotesCreateOutput>;
     },
 
     async update(input) {
@@ -120,21 +120,21 @@ export function createNotesClient(rawClient: RawHonoClient): NotesClient {
         param: { id },
         json: data,
       });
-      return res.json();
+      return res.json() as Promise<NotesUpdateOutput>;
     },
 
     async delete(input) {
       const res = await rawClient.api.notes[':id'].$delete({
         param: { id: input.id },
       });
-      return res.json();
+      return res.json() as Promise<NotesDeleteOutput>;
     },
 
     async archive(input) {
       const res = await rawClient.api.notes[':id'].archive.$post({
         param: { id: input.id },
       });
-      return res.json();
+      return res.json() as Promise<NotesArchiveOutput>;
     },
   };
 }

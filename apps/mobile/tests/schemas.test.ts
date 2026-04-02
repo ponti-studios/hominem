@@ -1,53 +1,53 @@
 import { describe, it, expect } from 'vitest'
 import {
-  UserProfileSchema,
+  MediaSchema,
+  SettingsSchema,
 } from '../utils/validation/schemas'
 
 describe('Zod Schemas', () => {
-  describe('UserProfileSchema', () => {
-    it('should validate a valid user profile', () => {
-      const validProfile = {
-        id: 'user-123',
-        email: 'test@example.com',
-        name: 'Test User',
-        createdAt: '2024-01-01T00:00:00.000Z',
-        updatedAt: '2024-01-02T00:00:00.000Z',
+  describe('SettingsSchema', () => {
+    it('validates a settings row with optional nullable fields', () => {
+      const settings = {
+        id: 'settings-1',
+        theme: 'light',
+        preferencesJson: '{"voice":"on"}',
       }
 
-      expect(() => UserProfileSchema.parse(validProfile)).not.toThrow()
+      expect(SettingsSchema.parse(settings)).toEqual(settings)
     })
 
-    it('should allow null email and name', () => {
-      const profile = {
-        id: 'user-123',
-        email: null,
-        name: null,
-        createdAt: '2024-01-01T00:00:00.000Z',
-        updatedAt: '2024-01-02T00:00:00.000Z',
-      }
-
-      expect(() => UserProfileSchema.parse(profile)).not.toThrow()
+    it('allows omitted optional settings fields', () => {
+      expect(SettingsSchema.parse({ id: 'settings-1' })).toEqual({
+        id: 'settings-1',
+      })
     })
 
-    it('should reject invalid email format', () => {
-      const invalidProfile = {
-        id: 'user-123',
-        email: 'not-an-email',
-        name: 'Test',
-        createdAt: '2024-01-01T00:00:00.000Z',
-        updatedAt: '2024-01-02T00:00:00.000Z',
+    it('rejects a settings row without an id', () => {
+      expect(() => SettingsSchema.parse({ theme: 'dark' })).toThrow()
+    })
+  })
+
+  describe('MediaSchema', () => {
+    it('validates a media row with an ISO timestamp', () => {
+      const media = {
+        id: 'media-1',
+        type: 'image',
+        localURL: 'file:///tmp/photo.jpg',
+        createdAt: '2026-04-02T12:00:00.000Z',
       }
 
-      expect(() => UserProfileSchema.parse(invalidProfile)).toThrow()
+      expect(MediaSchema.parse(media)).toEqual(media)
     })
 
-    it('should reject missing required fields', () => {
-      const incompleteProfile = {
-        id: 'user-123',
-        // missing email, name, dates
-      }
-
-      expect(() => UserProfileSchema.parse(incompleteProfile)).toThrow()
+    it('rejects a media row with a non-ISO timestamp', () => {
+      expect(() =>
+        MediaSchema.parse({
+          id: 'media-1',
+          type: 'image',
+          localURL: 'file:///tmp/photo.jpg',
+          createdAt: 'yesterday',
+        }),
+      ).toThrow()
     })
   })
 })

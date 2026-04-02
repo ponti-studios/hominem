@@ -9,7 +9,7 @@ import {
 import { buildAuthUser } from './fixtures'
 import { createAuthIntegrationHarness } from './harness'
 
-describe('auth flow integration', () => {
+describe('auth flow contract', () => {
   it('requesting OTP enters loading state and does not redirect away from auth routes', () => {
     const harness = createAuthIntegrationHarness({
       status: 'signed_out',

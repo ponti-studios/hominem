@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { buildUpdateNoteInput } from '../../utils/services/notes/use-update-note'
 
-describe('focus update contract integration', () => {
+describe('note update contract', () => {
   it('omits scheduledFor when it is left unchanged', () => {
     expect(
       buildUpdateNoteInput({
@@ -73,4 +73,3 @@ describe('focus update contract integration', () => {
     })
   })
 })
-

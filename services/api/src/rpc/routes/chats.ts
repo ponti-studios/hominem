@@ -1,4 +1,4 @@
-import { db } from '@hominem/db';
+import { db, sql } from '@hominem/db';
 import {
   type Chat,
   type ChatMessage,
@@ -72,6 +72,10 @@ type NoteContext = {
   title: string | null;
 };
 
+function toJsonColumnValue(value: unknown[] | null): string | null {
+  return value ? JSON.stringify(value) : null;
+}
+
 function toIsoString(value: Date | string | null | undefined): string | null {
   if (value == null) {
     return null;
@@ -141,11 +145,11 @@ async function getNoteTitles(noteIds: string[]): Promise<Map<string, string | nu
     return new Map();
   }
 
-  const notes = await db
+  const notes = (await db
     .selectFrom('app.notes')
     .select(['id', 'title'])
     .where('id', 'in', noteIds)
-    .execute();
+    .execute()) as Array<{ id: string; title: string | null }>;
 
   return new Map(notes.map((note) => [note.id, note.title]));
 }
@@ -189,7 +193,7 @@ async function resolveReferencedNotes(userId: string, explicitNoteIds: string[],
   const mentionedSlugs = extractMentionSlugs(message);
   const explicitIds = [...new Set(explicitNoteIds)];
 
-  const explicitNotes =
+  const explicitNotes = (
     explicitIds.length > 0
       ? await db
           .selectFrom('app.notes')
@@ -197,20 +201,22 @@ async function resolveReferencedNotes(userId: string, explicitNoteIds: string[],
           .where('owner_userid', '=', userId)
           .where('id', 'in', explicitIds)
           .execute()
-      : [];
+      : []
+  ) as Array<{ id: string; title: string | null; content: string; excerpt: string | null }>;
 
   if (explicitNotes.length !== explicitIds.length) {
     throw new ValidationError('One or more referenced notes are unavailable');
   }
 
-  const candidateNotes =
+  const candidateNotes = (
     mentionedSlugs.length > 0
       ? await db
           .selectFrom('app.notes')
           .select(['id', 'title', 'content', 'excerpt'])
           .where('owner_userid', '=', userId)
           .execute()
-      : [];
+      : []
+  ) as Array<{ id: string; title: string | null; content: string; excerpt: string | null }>;
 
   const matchedMentionNotes = candidateNotes.filter((note) => {
     const slug = slugifyNoteTitle(note.title);
@@ -237,7 +243,7 @@ async function resolveReferencedNotes(userId: string, explicitNoteIds: string[],
     return [];
   }
 
-  const files = await db
+  const files = (await db
     .selectFrom('app.note_files as noteFile')
     .innerJoin('app.files as file', 'file.id', 'noteFile.file_id')
     .select([
@@ -248,7 +254,13 @@ async function resolveReferencedNotes(userId: string, explicitNoteIds: string[],
       'file.text_content',
     ])
     .where('noteFile.note_id', 'in', noteIds)
-    .execute();
+    .execute()) as Array<{
+    noteId: string;
+    id: string;
+    original_name: string;
+    content: string | null;
+    text_content: string | null;
+  }>;
 
   for (const file of files) {
     const note = mergedNotes.get(file.noteId);
@@ -271,18 +283,25 @@ async function resolveChatFiles(userId: string, fileIds: string[]): Promise<Chat
     return [];
   }
 
-  const files = await db
+  const files = (await db
     .selectFrom('app.files')
     .selectAll()
     .where('owner_userid', '=', userId)
     .where('id', 'in', [...new Set(fileIds)])
-    .execute();
+    .execute()) as Array<{
+    id: string;
+    mimetype: string;
+    original_name: string;
+    size: number;
+    text_content: string | null;
+    url: string;
+  }>;
 
   if (files.length !== [...new Set(fileIds)].length) {
     throw new ValidationError('One or more uploaded files are unavailable');
   }
 
-  return files.map((file) => ({
+  return files.map((file): ChatMessageFile => ({
     type: file.mimetype.startsWith('image/') ? 'image' : 'file',
     fileId: file.id,
     url: file.url,
@@ -293,6 +312,25 @@ async function resolveChatFiles(userId: string, fileIds: string[]): Promise<Chat
       ? { metadata: { extractedText: file.text_content.slice(0, 4_000) } }
       : {}),
   }));
+}
+
+function getRequiredChatId(c: { req: { param: (name: string) => string | undefined } }): string {
+  const chatId = c.req.param('id');
+  if (!chatId) {
+    throw new ValidationError('Chat id is required');
+  }
+  return chatId;
+}
+
+function toCoreHistoryMessage(entry: ChatMessage): CoreMessage | null {
+  if (entry.role === 'system' || entry.role === 'user' || entry.role === 'assistant') {
+    return {
+      role: entry.role,
+      content: entry.content,
+    };
+  }
+
+  return null;
 }
 
 function buildUserPrompt(message: string, notes: NoteContext[], files: ChatMessageFile[]) {
@@ -341,17 +379,39 @@ function buildUserPrompt(message: string, notes: NoteContext[], files: ChatMessa
   return sections.filter(Boolean).join('\n\n');
 }
 
+function buildStoredUserMessageContent(
+  message: string,
+  notes: NoteContext[],
+  files: ChatMessageFile[],
+) {
+  const trimmed = message.trim();
+
+  if (trimmed.length > 0) {
+    return trimmed;
+  }
+
+  if (files.length > 0) {
+    return files.map((file) => file.filename ?? 'Attachment').join(', ');
+  }
+
+  if (notes.length > 0) {
+    return notes.map((note) => note.title ?? 'Untitled note').join(', ');
+  }
+
+  throw new ValidationError('Message, notes, or files are required');
+}
+
 const chatByIdRoutes = new Hono<AppContext>()
   .get('/', async (c) => {
     const userId = c.get('userId')!;
-    const chatId = c.req.param('id');
+    const chatId = getRequiredChatId(c);
     const chat = toChat(await getChat(chatId, userId));
     const messages = await getChatMessages(chatId, 100, 0);
     return c.json<ChatsGetOutput>({ ...chat, messages });
   })
   .delete('/', async (c) => {
     const userId = c.get('userId')!;
-    const chatId = c.req.param('id');
+    const chatId = getRequiredChatId(c);
     await getChat(chatId, userId);
     await db
       .deleteFrom('app.chats')
@@ -362,7 +422,7 @@ const chatByIdRoutes = new Hono<AppContext>()
   })
   .patch('/', zValidator('json', chatsUpdateSchema), async (c) => {
     const userId = c.get('userId')!;
-    const chatId = c.req.param('id');
+    const chatId = getRequiredChatId(c);
     const { title } = c.req.valid('json');
     await getChat(chatId, userId);
     await db
@@ -375,7 +435,7 @@ const chatByIdRoutes = new Hono<AppContext>()
   })
   .post('/archive', async (c) => {
     const userId = c.get('userId')!;
-    const chatId = c.req.param('id');
+    const chatId = getRequiredChatId(c);
     await getChat(chatId, userId);
     const archived = await db
       .updateTable('app.chats')
@@ -392,7 +452,7 @@ const chatByIdRoutes = new Hono<AppContext>()
   })
   .get('/messages', zValidator('query', chatsMessagesQuerySchema), async (c) => {
     const userId = c.get('userId')!;
-    const chatId = c.req.param('id');
+    const chatId = getRequiredChatId(c);
     await getChat(chatId, userId);
     const query = c.req.valid('query');
     const limit = query.limit ? Number.parseInt(query.limit, 10) : 100;
@@ -401,7 +461,7 @@ const chatByIdRoutes = new Hono<AppContext>()
   })
   .post('/send', zValidator('json', chatsSendSchema), async (c) => {
     const userId = c.get('userId')!;
-    const chatId = c.req.param('id');
+    const chatId = getRequiredChatId(c);
     const chat = await getChat(chatId, userId);
     const { message, fileIds = [], noteIds = [] } = c.req.valid('json');
 
@@ -409,6 +469,7 @@ const chatByIdRoutes = new Hono<AppContext>()
     const resolvedNotes = await resolveReferencedNotes(userId, noteIds, message);
     const resolvedFiles = await resolveChatFiles(userId, fileIds);
     const prompt = buildUserPrompt(message, resolvedNotes, resolvedFiles);
+    const storedUserContent = buildStoredUserMessageContent(message, resolvedNotes, resolvedFiles);
 
     const messages: CoreMessage[] = [
       {
@@ -416,10 +477,7 @@ const chatByIdRoutes = new Hono<AppContext>()
         content:
           'You are a helpful assistant. Answer only with the user message, explicitly referenced notes, and attached files provided in the conversation.',
       },
-      ...history.map((entry) => ({
-        role: entry.role,
-        content: entry.content,
-      })),
+      ...history.map(toCoreHistoryMessage).filter((entry): entry is CoreMessage => entry !== null),
       {
         role: 'user',
         content: prompt,
@@ -432,44 +490,46 @@ const chatByIdRoutes = new Hono<AppContext>()
     });
 
     const now = new Date().toISOString();
-    const [userMessage, assistantMessage] = await db.transaction().execute(async (trx) => {
-      const insertedUser = await trx
-        .insertInto('app.chat_messages')
-        .values({
-          chat_id: chatId,
-          author_userid: userId,
-          role: 'user',
-          content: message.trim(),
-          files: resolvedFiles.length > 0 ? resolvedFiles : null,
-          referenced_note_ids:
-            resolvedNotes.length > 0 ? resolvedNotes.map((note) => note.id) : null,
-        })
-        .returningAll()
-        .executeTakeFirstOrThrow();
+    const [userMessage, assistantMessage] = await db
+      .transaction()
+      .execute(async (trx: any) => {
+        const insertedUser = await trx
+          .insertInto('app.chat_messages')
+          .values({
+            chat_id: chatId,
+            author_userid: userId,
+            role: 'user',
+            content: storedUserContent,
+            files: toJsonColumnValue(resolvedFiles.length > 0 ? resolvedFiles : null),
+            referenced_note_ids: toJsonColumnValue(
+              resolvedNotes.length > 0 ? resolvedNotes.map((note) => note.id) : null,
+            ),
+          })
+          .returningAll()
+          .executeTakeFirstOrThrow();
 
-      const insertedAssistant = await trx
-        .insertInto('app.chat_messages')
-        .values({
-          chat_id: chatId,
-          author_userid: userId,
-          role: 'assistant',
-          content: result.text,
-        })
-        .returningAll()
-        .executeTakeFirstOrThrow();
+        const insertedAssistant = await trx
+          .insertInto('app.chat_messages')
+          .values({
+            chat_id: chatId,
+            author_userid: userId,
+            role: 'assistant',
+            content: result.text,
+          })
+          .returningAll()
+          .executeTakeFirstOrThrow();
 
-      await trx
-        .updateTable('app.chats')
-        .set({
-          title: chat.title || 'Chat',
-          updatedat: now,
-          last_message_at: now,
-        })
-        .where('id', '=', chatId)
-        .execute();
+        await trx
+          .updateTable('app.chats')
+          .set({
+            title: chat.title || 'Chat',
+            last_message_at: sql`GREATEST(createdat, now())`,
+          })
+          .where('id', '=', chatId)
+          .execute();
 
-      return [insertedUser as ChatMessageRow, insertedAssistant as ChatMessageRow];
-    });
+        return [insertedUser as ChatMessageRow, insertedAssistant as ChatMessageRow];
+      });
 
     const noteTitlesById = await getNoteTitles(resolvedNotes.map((note) => note.id));
 
@@ -492,16 +552,16 @@ export const chatsRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
   .get('/', async (c) => {
     const userId = c.get('userId')!;
-    const chats = await db
+    const chats = (await db
       .selectFrom('app.chats')
       .selectAll()
       .where('owner_userid', '=', userId)
       .where('archived_at', 'is', null)
       .orderBy('last_message_at', 'desc')
       .limit(100)
-      .execute();
+      .execute()) as ChatRow[];
 
-    return c.json<ChatsListOutput>(chats.map((chat) => toChat(chat as ChatRow)));
+    return c.json<ChatsListOutput>(chats.map((chat) => toChat(chat)));
   })
   .post('/', zValidator('json', chatsCreateSchema), async (c) => {
     const userId = c.get('userId')!;

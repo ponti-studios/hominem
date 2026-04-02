@@ -71,6 +71,6 @@ describe('mobile inbox refresh', () => {
   })
 
   it('declares the shared inbox query keys that must refresh together', () => {
-    expect(INBOX_REFRESH_QUERY_KEYS).toEqual([['focusItems'], ['resumableSessions']])
+    expect(INBOX_REFRESH_QUERY_KEYS).toEqual([['notes'], ['resumableSessions']])
   })
 })

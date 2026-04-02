@@ -19,7 +19,3 @@ export const notesQueryKeys = {
   detail: (id: string) => ['notes', id] as const,
   search: (query: string) => ['notes', 'search', query] as const,
 };
-
-export const focusQueryKeys = {
-  all: ['focus'] as const,
-};

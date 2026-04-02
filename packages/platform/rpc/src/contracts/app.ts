@@ -23,12 +23,6 @@ const filesContract = new Hono()
   .post('/complete-upload', stub)
   .delete('/:fileId', stub);
 
-const messagesContract = new Hono().patch('/:messageId', stub).delete('/:messageId', stub);
-
-const mobileContract = new Hono()
-  .route('/intents', new Hono().get('/suggestions', stub))
-  .route('/voice', new Hono().post('/speech', stub));
-
 const voiceContract = new Hono().post('/speech', stub);
 
 const notesContract = new Hono()
@@ -58,19 +52,9 @@ const notesContract = new Hono()
     return c.json({} as Note);
   });
 
-const focusContract = new Hono().get('/', stub);
-
-const reviewContract = new Hono()
-  .post('/:reviewItemId/accept', stub)
-  .post('/:reviewItemId/reject', stub);
-
 export const app = new Hono()
   .basePath('/api')
   .route('/chats', chatsContract)
   .route('/files', filesContract)
-  .route('/focus', focusContract)
-  .route('/messages', messagesContract)
-  .route('/mobile', mobileContract)
   .route('/notes', notesContract)
-  .route('/review', reviewContract)
   .route('/voice', voiceContract);

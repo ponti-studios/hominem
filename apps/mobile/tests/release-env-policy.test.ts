@@ -29,12 +29,16 @@ describe('release env policy', () => {
     expect(() =>
       assertReleaseEnv('preview', {
         EXPO_PUBLIC_API_BASE_URL: 'https://api.ponti.io',
+        EXPO_PUBLIC_POSTHOG_API_KEY: 'phc_test',
+        EXPO_PUBLIC_POSTHOG_HOST: 'https://app.posthog.com',
       }),
     ).not.toThrow()
 
     expect(() =>
       assertReleaseEnv('production', {
         EXPO_PUBLIC_API_BASE_URL: 'https://api.ponti.io',
+        EXPO_PUBLIC_POSTHOG_API_KEY: 'phc_live',
+        EXPO_PUBLIC_POSTHOG_HOST: 'https://app.posthog.com',
       }),
     ).not.toThrow()
   })

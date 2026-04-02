@@ -1,43 +1,36 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, it } from 'vitest'
 
-import { extractSuccessfulAuthCallbackUrl } from './auth-provider-result';
+import { extractSuccessfulAuthCallbackUrl } from './auth-provider-result'
 
 describe('extractSuccessfulAuthCallbackUrl', () => {
-  test('returns callback URL for successful browser result', () => {
+  it('returns the callback URL for a successful browser result', () => {
     const callbackUrl = extractSuccessfulAuthCallbackUrl({
       type: 'success',
       url: 'hakumi-dev://auth/callback?state=abc&code=token',
-    });
+    })
 
-    expect(callbackUrl).toBe('hakumi-dev://auth/callback?state=abc&code=token');
-  });
+    expect(callbackUrl).toBe('hakumi-dev://auth/callback?state=abc&code=token')
+  })
 
-  test('throws cancellable error on cancel or dismiss', () => {
-    try {
-      extractSuccessfulAuthCallbackUrl({ type: 'cancel' });
-      throw new Error('expected cancellation error');
-    } catch (error) {
-      if (!(error instanceof Error)) {
-        throw error;
-      }
-      expect(error.name).toBe('ERR_REQUEST_CANCELED');
-      expect(error.message).toBe('OAuth sign-in cancelled');
-    }
+  it('throws a cancellable error on cancel or dismiss', () => {
+    expect(() => extractSuccessfulAuthCallbackUrl({ type: 'cancel' })).toThrowError(
+      expect.objectContaining({
+        message: 'OAuth sign-in cancelled',
+        name: 'ERR_REQUEST_CANCELED',
+      }),
+    )
 
-    try {
-      extractSuccessfulAuthCallbackUrl({ type: 'dismiss' });
-      throw new Error('expected dismissal error');
-    } catch (error) {
-      if (!(error instanceof Error)) {
-        throw error;
-      }
-      expect(error.name).toBe('ERR_REQUEST_CANCELED');
-    }
-  });
+    expect(() => extractSuccessfulAuthCallbackUrl({ type: 'dismiss' })).toThrowError(
+      expect.objectContaining({
+        message: 'OAuth sign-in cancelled',
+        name: 'ERR_REQUEST_CANCELED',
+      }),
+    )
+  })
 
-  test('throws failure for non-success result without callback URL', () => {
+  it('throws a generic failure when no callback URL is present', () => {
     expect(() => extractSuccessfulAuthCallbackUrl({ type: 'opened' })).toThrow(
       'OAuth sign-in failed',
-    );
-  });
-});
+    )
+  })
+})

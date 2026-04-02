@@ -7,7 +7,7 @@ import {
   shouldRetryQuery,
 } from '../../utils/query-client-config'
 
-describe('query client contract integration', () => {
+describe('query client contract', () => {
   it('uses explicit disabled query persistence strategy', () => {
     expect(QUERY_PERSISTENCE_STRATEGY).toBe('disabled')
   })

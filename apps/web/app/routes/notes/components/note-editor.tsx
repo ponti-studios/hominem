@@ -1,6 +1,6 @@
 import { useApiClient } from '@hominem/rpc/react';
 import type { Note } from '@hominem/rpc/types/notes.types';
-import { SpeechInput } from '@hominem/ui/ai-elements/speech-input';
+import { SpeechInput } from '@hominem/ui/ai-elements';
 import { Button } from '@hominem/ui/button';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
@@ -85,7 +85,13 @@ export function NoteEditor({ note }: NoteEditorProps) {
       return;
     }
 
-    const nextFiles = [...files, ...uploadedFiles];
+    const nextFiles = [
+      ...files,
+      ...uploadedFiles.map((file) => ({
+        ...file,
+        uploadedAt: file.uploadedAt.toISOString(),
+      })),
+    ];
     setFiles(nextFiles);
     await updateNote.mutateAsync({
       id: note.id,
@@ -163,7 +169,7 @@ export function NoteEditor({ note }: NoteEditorProps) {
           <div className="mt-3">
             <SpeechInput
               ariaLabel="Dictate note"
-              onAudioRecorded={async (audioBlob) => {
+              onAudioRecorded={async (audioBlob: Blob) => {
                 const result = await transcribe.mutateAsync({ audioBlob });
                 const nextContent = `${content}\n${result.text}`.trim();
                 setContent(nextContent);

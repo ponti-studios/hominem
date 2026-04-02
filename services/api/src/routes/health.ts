@@ -1,11 +1,10 @@
 import crypto from 'node:crypto';
 
-import type { Database } from '@hominem/db';
+import type { Database, Selectable } from '@hominem/db';
 import { db } from '@hominem/db';
 import { logger } from '@hominem/utils/logger';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
-import type { Selectable } from 'kysely';
 import * as z from 'zod';
 
 import { NotFoundError, InternalError } from '../errors';
@@ -45,7 +44,7 @@ async function getHealthRecord(id: string): Promise<HealthRecordRow | null> {
 }
 
 async function createHealthRecord(
-  data: Omit<HealthRecordRow, 'id' | 'created_at'>,
+  data: Omit<HealthRecordRow, 'id' | 'created_at' | 'updated_at'>,
 ): Promise<HealthRecordRow> {
   return db
     .insertInto('health_records')
@@ -56,7 +55,7 @@ async function createHealthRecord(
 
 async function updateHealthRecord(
   id: string,
-  updates: Partial<Omit<HealthRecordRow, 'id' | 'created_at'>>,
+  updates: Partial<Omit<HealthRecordRow, 'id' | 'created_at' | 'updated_at'>>,
 ): Promise<HealthRecordRow | null> {
   if (Object.keys(updates).length === 0) return getHealthRecord(id);
   const result = await db
@@ -188,7 +187,7 @@ healthRoutes.put('/:id', zValidator('json', updateHealthDataSchema), async (c) =
   try {
     const id = c.req.param('id');
     const validated = c.req.valid('json');
-    const updates: Partial<Omit<HealthRecordRow, 'id' | 'created_at'>> = {};
+    const updates: Partial<Omit<HealthRecordRow, 'id' | 'created_at' | 'updated_at'>> = {};
     if (validated.date !== undefined) updates.recorded_at = new Date(validated.date);
     if (validated.activityType !== undefined) updates.record_type = validated.activityType;
     if (validated.duration !== undefined) updates.value = String(validated.duration);

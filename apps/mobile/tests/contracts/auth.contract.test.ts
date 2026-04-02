@@ -10,7 +10,7 @@ import {
   expectRetryDelayWithinBackoff,
 } from './assertions'
 
-describe('auth contract integration', () => {
+describe('auth contract', () => {
   it('boot resolves to signed_out when no session exists', () => {
     const harness = createAuthIntegrationHarness()
 

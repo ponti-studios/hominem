@@ -1,84 +1,35 @@
 import type { User } from '@hominem/auth/server';
+import { db } from '@hominem/db';
 import { Hono } from 'hono';
-import { beforeEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+
+import {
+  attachFileToNote,
+  resetTestDb,
+  seedChat,
+  seedFile,
+  seedNote,
+  seedTestUser,
+} from '../../../test/test-db';
 
 const mocks = vi.hoisted(() => ({
-  addMessages: vi.fn(),
-  archiveChatQuery: vi.fn(),
-  convertToCoreMessages: vi.fn(),
-  createChatQuery: vi.fn(),
-  deleteChatQuery: vi.fn(),
-  generateObject: vi.fn(),
   generateText: vi.fn(),
-  getAvailableTools: vi.fn(),
-  getChatByIdQuery: vi.fn(),
-  getChatByNoteIdQuery: vi.fn(),
-  getChatMessages: vi.fn(),
-  getFile: vi.fn(),
-  getFileUrl: vi.fn(),
   getOpenAIAdapter: vi.fn(),
-  getUserChatsQuery: vi.fn(),
-  listUserFiles: vi.fn(),
   loggerError: vi.fn(),
-  loggerInfo: vi.fn(),
-  processFile: vi.fn(),
-  setReviewItem: vi.fn(),
-  streamText: vi.fn(),
-  updateChatTitleQuery: vi.fn(),
-}));
-
-vi.mock('@hominem/chat-services/server', () => ({
-  MessageService: class {
-    addMessages = mocks.addMessages;
-    getChatMessages = mocks.getChatMessages;
-  },
-  archiveChatQuery: mocks.archiveChatQuery,
-  createChatQuery: mocks.createChatQuery,
-  deleteChatQuery: mocks.deleteChatQuery,
-  getChatByIdQuery: mocks.getChatByIdQuery,
-  getChatByNoteIdQuery: mocks.getChatByNoteIdQuery,
-  getUserChatsQuery: mocks.getUserChatsQuery,
-  updateChatTitleQuery: mocks.updateChatTitleQuery,
-}));
-
-vi.mock('@hominem/services/files', () => ({
-  FileProcessorService: {
-    processFile: mocks.processFile,
-  },
-}));
-
-vi.mock('@hominem/utils/storage', () => ({
-  fileStorageService: {
-    getFile: mocks.getFile,
-    getFileUrl: mocks.getFileUrl,
-    listUserFiles: mocks.listUserFiles,
-  },
 }));
 
 vi.mock('@hominem/utils/logger', () => ({
   logger: {
     error: mocks.loggerError,
-    info: mocks.loggerInfo,
   },
 }));
 
 vi.mock('ai', () => ({
-  convertToCoreMessages: mocks.convertToCoreMessages,
-  generateObject: mocks.generateObject,
   generateText: mocks.generateText,
-  streamText: mocks.streamText,
 }));
 
 vi.mock('../utils/llm', () => ({
   getOpenAIAdapter: mocks.getOpenAIAdapter,
-}));
-
-vi.mock('../utils/tools', () => ({
-  getAvailableTools: mocks.getAvailableTools,
-}));
-
-vi.mock('../services/review-store', () => ({
-  setReviewItem: mocks.setReviewItem,
 }));
 
 import type { AppContext } from '../middleware/auth';
@@ -87,6 +38,7 @@ import { chatsRoutes } from './chats';
 
 const testUserId = '00000000-0000-4000-8000-000000000001';
 const testFileId = '11111111-1111-4111-8111-111111111111';
+const testChatId = '33333333-3333-4333-8333-333333333333';
 const nowIso = '2026-03-24T12:00:00.000Z';
 
 function createUser(): User {
@@ -128,72 +80,43 @@ async function postJson(
 }
 
 describe('chatsRoutes send with attachments', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    await resetTestDb();
+    await seedTestUser({
+      id: testUserId,
+      email: 'chat-upload-test@hominem.test',
+    });
+    await seedChat({
+      id: testChatId,
+      ownerUserId: testUserId,
+      title: 'Test chat',
+    });
+
     vi.clearAllMocks();
 
     mocks.getOpenAIAdapter.mockReturnValue({ modelId: 'test-model' });
-    mocks.getAvailableTools.mockReturnValue({});
-    mocks.getChatByIdQuery.mockResolvedValue({
-      archivedAt: null,
-      createdAt: nowIso,
-      id: 'chat-1',
-      noteId: null,
-      title: 'Test chat',
-      updatedAt: nowIso,
-      userId: testUserId,
-    });
-    mocks.getChatMessages.mockResolvedValue([]);
-    mocks.listUserFiles.mockResolvedValue([
-      {
-        name: `${testFileId}-receipt.png`,
-        size: 128,
-      },
-    ]);
-    mocks.getFileUrl.mockResolvedValue('https://cdn.example.com/uploads/receipt.png');
-    mocks.getFile.mockResolvedValue(new Uint8Array([1, 2, 3]).buffer);
-    mocks.processFile.mockResolvedValue({
-      content: undefined,
-      id: testFileId,
-      metadata: {},
-      mimetype: 'image/png',
-      originalName: 'receipt.png',
-      size: 3,
-      textContent: 'Receipt for lunch',
-      type: 'image',
-    });
     mocks.generateText.mockResolvedValue({
       text: 'Assistant reply',
-      toolCalls: [],
     });
-    mocks.addMessages.mockImplementation(
-      async (
-        messages: Array<{
-          chatId: string;
-          content: string;
-          files?: unknown;
-          role: string;
-          toolCalls?: unknown;
-          userId: string;
-        }>,
-      ) =>
-        messages.map((message, index: number) => ({
-          chatId: message.chatId,
-          content: message.content,
-          createdAt: nowIso,
-          files: message.files ?? null,
-          id: `message-${index + 1}`,
-          parentMessageId: null,
-          reasoning: null,
-          role: message.role,
-          toolCalls: message.toolCalls ?? null,
-          updatedAt: nowIso,
-          userId: message.userId,
-        })),
-    );
+  });
+
+  afterEach(async () => {
+    await resetTestDb();
   });
 
   test('accepts attachment-backed sends and persists user message files', async () => {
-    const response = await postJson(createApp(), '/api/chats/chat-1/send', {
+    await seedFile({
+      id: testFileId,
+      ownerUserId: testUserId,
+      storageKey: `${testUserId}/${testFileId}-receipt.png`,
+      originalName: 'receipt.png',
+      mimetype: 'image/png',
+      size: 128,
+      url: 'https://cdn.example.com/uploads/receipt.png',
+      textContent: 'Receipt for lunch',
+    });
+
+    const response = await postJson(createApp(), `/api/chats/${testChatId}/send`, {
       fileIds: [testFileId],
       message: '',
     });
@@ -212,7 +135,7 @@ describe('chatsRoutes send with attachments', () => {
       };
     };
 
-    expect(body.messages.user.content).toBe('');
+    expect(body.messages.user.content).toBe('receipt.png');
     expect(body.messages.user.files).toMatchObject([
       {
         fileId: testFileId,
@@ -225,22 +148,35 @@ describe('chatsRoutes send with attachments', () => {
 
     expect(mocks.generateText).toHaveBeenCalledWith(
       expect.objectContaining({
-        messages: [
-          {
+        messages: expect.arrayContaining([
+          expect.objectContaining({
             content: expect.stringContaining('Attached files:'),
             role: 'user',
-          },
-        ],
+          }),
+        ]),
       }),
     );
+
+    const storedMessages = await db
+      .selectFrom('app.chat_messages')
+      .selectAll()
+      .where('chat_id', '=', testChatId)
+      .orderBy('createdat', 'asc')
+      .execute();
+
+    expect(storedMessages).toHaveLength(2);
+    expect(storedMessages[0]?.role).toBe('user');
+    expect(storedMessages[1]?.role).toBe('assistant');
+    expect(storedMessages[0]?.files).toMatchObject([
+      {
+        fileId: testFileId,
+        filename: 'receipt.png',
+      },
+    ]);
   });
 
   test('returns validation error when an uploaded file cannot be resolved', async () => {
-    mocks.listUserFiles.mockResolvedValue([]);
-    mocks.getFile.mockResolvedValue(null);
-    mocks.getFileUrl.mockResolvedValue(null);
-
-    const response = await postJson(createApp(), '/api/chats/chat-1/send', {
+    const response = await postJson(createApp(), `/api/chats/${testChatId}/send`, {
       fileIds: [testFileId],
       message: '',
     });
@@ -249,7 +185,58 @@ describe('chatsRoutes send with attachments', () => {
     await expect(response.json()).resolves.toMatchObject({
       code: 'VALIDATION_ERROR',
       error: 'validation_error',
-      message: `Uploaded file ${testFileId} is not available`,
+      message: 'One or more uploaded files are unavailable',
     });
+  });
+
+  test('resolves referenced notes from mentions and persists note ids', async () => {
+    const noteId = '22222222-2222-4222-8222-222222222222';
+
+    await seedNote({
+      id: noteId,
+      ownerUserId: testUserId,
+      title: 'Roadmap Draft',
+      content: 'Ship notes and chat first.',
+      excerpt: 'Ship notes and chat first.',
+    });
+    await seedFile({
+      id: testFileId,
+      ownerUserId: testUserId,
+      storageKey: `${testUserId}/${testFileId}-roadmap.txt`,
+      originalName: 'roadmap.txt',
+      mimetype: 'text/plain',
+      size: 64,
+      url: 'https://cdn.example.com/uploads/roadmap.txt',
+      textContent: 'Milestone details',
+    });
+    await attachFileToNote({
+      noteId,
+      fileId: testFileId,
+    });
+
+    const response = await postJson(createApp(), `/api/chats/${testChatId}/send`, {
+      message: 'Summarize #roadmap-draft',
+    });
+
+    expect(response.status).toBe(200);
+    expect(mocks.generateText).toHaveBeenCalledWith(
+      expect.objectContaining({
+        messages: expect.arrayContaining([
+          expect.objectContaining({
+            role: 'user',
+            content: expect.stringContaining('Referenced notes:'),
+          }),
+        ]),
+      }),
+    );
+
+    const storedMessage = await db
+      .selectFrom('app.chat_messages')
+      .selectAll()
+      .where('chat_id', '=', testChatId)
+      .where('role', '=', 'user')
+      .executeTakeFirstOrThrow();
+
+    expect(storedMessage.referenced_note_ids).toEqual([noteId]);
   });
 });

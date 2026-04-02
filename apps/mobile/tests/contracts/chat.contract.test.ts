@@ -21,7 +21,7 @@ function ordered(messages: MessageOutput[]): MessageOutput[] {
   })
 }
 
-describe('chat contract integration', () => {
+describe('chat contract', () => {
   it('applies optimistic send then reconciles to server messages', () => {
     const fixture = buildChatThreadFixture()
     const client = createIntegrationQueryClient()

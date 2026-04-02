@@ -52,7 +52,7 @@ CREATE INDEX app_notes_title_idx
 CREATE TRIGGER app_files_set_updated_at
   BEFORE UPDATE ON app.files
   FOR EACH ROW
-  EXECUTE FUNCTION app.set_updated_at();
+  EXECUTE FUNCTION public.set_updated_at();
 
 -- +goose Down
 DROP TRIGGER IF EXISTS app_files_set_updated_at ON app.files;

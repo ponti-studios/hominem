@@ -1,4 +1,5 @@
 import { db } from '@hominem/db';
+import type { JsonValue } from '@hominem/db';
 import { FileProcessorService } from '@hominem/services/files';
 import { logger } from '@hominem/utils/logger';
 import { fileStorageService } from '@hominem/utils/storage';
@@ -86,12 +87,12 @@ export const filesRoutes = new Hono<AppContext>()
   .get('/', async (c) => {
     try {
       const userId = c.get('userId')!;
-      const files = await db
+      const files = (await db
         .selectFrom('app.files')
         .selectAll()
         .where('owner_userid', '=', userId)
         .orderBy('createdat', 'desc')
-        .execute();
+        .execute()) as StoredFileRecord[];
 
       return c.json({
         files: files.map((file) => toStoredFilePayload(file as StoredFileRecord)),
@@ -106,12 +107,12 @@ export const filesRoutes = new Hono<AppContext>()
       const userId = c.get('userId')!;
       const fileId = c.req.param('fileId');
 
-      const file = await db
+      const file = (await db
         .selectFrom('app.files')
         .selectAll()
         .where('id', '=', fileId)
         .where('owner_userid', '=', userId)
-        .executeTakeFirst();
+        .executeTakeFirst()) as StoredFileRecord | undefined;
 
       if (!file) {
         throw new NotFoundError('File');
@@ -128,12 +129,12 @@ export const filesRoutes = new Hono<AppContext>()
     try {
       const userId = c.get('userId')!;
       const fileId = c.req.param('fileId');
-      const file = await db
+      const file = (await db
         .selectFrom('app.files')
         .select(['url'])
         .where('id', '=', fileId)
         .where('owner_userid', '=', userId)
-        .executeTakeFirst();
+        .executeTakeFirst()) as { url: string } | undefined;
 
       if (!file) {
         throw new NotFoundError('File');
@@ -153,12 +154,12 @@ export const filesRoutes = new Hono<AppContext>()
       const userId = c.get('userId')!;
       const fileId = c.req.param('fileId');
 
-      const existing = await db
+      const existing = (await db
         .selectFrom('app.files')
         .select(['id'])
         .where('id', '=', fileId)
         .where('owner_userid', '=', userId)
-        .executeTakeFirst();
+        .executeTakeFirst()) as { id: string } | undefined;
 
       if (!existing) {
         throw new NotFoundError('File');
@@ -250,11 +251,11 @@ export const filesRoutes = new Hono<AppContext>()
           url,
           content: processed.content ?? null,
           text_content: processed.textContent ?? null,
-          metadata: processed.metadata ?? null,
+          metadata: (processed.metadata ?? null) as JsonValue | null,
           createdat: now,
           updatedat: now,
         })
-        .onConflict((oc) =>
+        .onConflict((oc: any) =>
           oc.column('id').doUpdateSet({
             storage_key: parsed.data.key,
             original_name: parsed.data.originalName,
@@ -263,18 +264,18 @@ export const filesRoutes = new Hono<AppContext>()
             url,
             content: processed.content ?? null,
             text_content: processed.textContent ?? null,
-            metadata: processed.metadata ?? null,
+            metadata: (processed.metadata ?? null) as JsonValue | null,
             updatedat: now,
           }),
         )
         .execute();
 
-      const stored = await db
+      const stored = (await db
         .selectFrom('app.files')
         .selectAll()
         .where('id', '=', parsed.data.fileId)
         .where('owner_userid', '=', userId)
-        .executeTakeFirstOrThrow();
+        .executeTakeFirstOrThrow()) as StoredFileRecord;
 
       return c.json({
         success: true,

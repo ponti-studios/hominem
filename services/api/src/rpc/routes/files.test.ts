@@ -1,6 +1,9 @@
 import type { User } from '@hominem/auth/server';
 import { Hono } from 'hono';
-import { beforeEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+
+import { db } from '@hominem/db';
+import { resetTestDb, seedTestUser } from '../../../test/test-db';
 
 const mocks = vi.hoisted(() => ({
   createPreparedUpload: vi.fn(),
@@ -84,7 +87,13 @@ async function postJson(
 }
 
 describe('filesRoutes direct upload lifecycle', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    await resetTestDb();
+    await seedTestUser({
+      id: testUserId,
+      email: 'upload-test@hominem.test',
+    });
+
     vi.clearAllMocks();
 
     mocks.createPreparedUpload.mockResolvedValue({
@@ -116,6 +125,10 @@ describe('filesRoutes direct upload lifecycle', () => {
         pages: 1,
       },
     });
+  });
+
+  afterEach(async () => {
+    await resetTestDb();
   });
 
   test('rejects prepare-upload when unauthenticated', async () => {
@@ -244,7 +257,7 @@ describe('filesRoutes direct upload lifecycle', () => {
       originalName: 'report.pdf',
       type: 'document',
       mimetype: 'application/pdf',
-      size: 9,
+      size: 512,
       textContent: 'Extracted text',
       url: 'https://cdn.example.com/uploads/report.pdf',
       vectorIds: [],
@@ -257,5 +270,17 @@ describe('filesRoutes direct upload lifecycle', () => {
       testFileId,
     );
     expect(mocks.getPublicUrlForPath).toHaveBeenCalledWith(testKey);
+
+    const stored = await db
+      .selectFrom('app.files')
+      .selectAll()
+      .where('id', '=', testFileId)
+      .where('owner_userid', '=', testUserId)
+      .executeTakeFirstOrThrow();
+
+    expect(stored.original_name).toBe('report.pdf');
+    expect(stored.size).toBe(512);
+    expect(stored.text_content).toBe('Extracted text');
+    expect(stored.metadata).toEqual({ pages: 1 });
   });
 });

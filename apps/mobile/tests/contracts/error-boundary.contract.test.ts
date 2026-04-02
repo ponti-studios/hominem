@@ -9,22 +9,22 @@ import {
 } from '../../utils/error-boundary/contracts'
 import { clearErrorLog, getErrorLog, logError } from '../../utils/error-boundary/log-error'
 
-describe('error boundary contract integration', () => {
+describe('error boundary contract', () => {
   beforeEach(() => {
     clearErrorLog()
   })
 
-  it('creates scoped fallback behavior for chat/focus/auth feature failures', () => {
+  it('creates scoped fallback behavior for chat/note/auth feature failures', () => {
     const chatState = createBoundaryStateFromError(new Error('chat exploded'))
-    const focusState = createBoundaryStateFromError(new Error('focus exploded'))
+    const noteState = createBoundaryStateFromError(new Error('note exploded'))
     const authState = createBoundaryStateFromError(new Error('auth exploded'))
 
     expect(chatState.hasError).toBe(true)
-    expect(focusState.hasError).toBe(true)
+    expect(noteState.hasError).toBe(true)
     expect(authState.hasError).toBe(true)
 
     expect(createFeatureFallbackLabel('Chat')).toBe('Chat is unavailable')
-    expect(createFeatureFallbackLabel('Focus')).toBe('Focus is unavailable')
+    expect(createFeatureFallbackLabel('Note')).toBe('Note is unavailable')
     expect(createFeatureFallbackLabel('Auth')).toBe('Auth is unavailable')
   })
 

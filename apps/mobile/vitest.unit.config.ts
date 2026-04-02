@@ -6,7 +6,12 @@ export default defineConfig({
   resolve: mobileVitestResolve,
   test: {
     ...mobileVitestBase,
-    include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx', 'tests/contracts/*.contract.test.ts'],
+    include: [
+      'lib/*.test.ts',
+      'tests/*.test.ts',
+      'tests/components/*.test.ts',
+      'utils/**/*.test.ts',
+    ],
     setupFiles: ['./tests/setup/base.ts'],
   },
 })

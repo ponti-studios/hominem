@@ -155,7 +155,7 @@ function renderSheet(props: Partial<React.ComponentProps<typeof NoteEditingSheet
   )
 }
 
-describe('focus note editing sheet', () => {
+describe('note editing sheet', () => {
   it('renders safely when the note prop is temporarily unavailable', async () => {
     await renderSheet({
       note: undefined,
@@ -172,7 +172,8 @@ describe('focus note editing sheet', () => {
 
     expect(screen.getByTestId('note-editing-sheet-header')).toBeTruthy()
     expect(screen.getByTestId('note-editing-sheet-editor')).toBeTruthy()
-    expect(screen.getByTestId('note-editing-sheet-metadata')).toBeTruthy()
+    expect(screen.getByText('Due date')).toBeTruthy()
+    expect(screen.getByText('Actions')).toBeTruthy()
     expect(screen.getByTestId('note-editing-sheet-footer')).toBeTruthy()
     expect(screen.getByTestId('note-editing-sheet-due-date-label').props.children).toBe(
       'Set due date',
@@ -191,7 +192,7 @@ describe('focus note editing sheet', () => {
 
     expect(screen.getByTestId('note-editing-sheet-date-picker')).toBeTruthy()
 
-    await fireEvent.press(screen.getByTestId('note-editing-sheet-clear-due-date'))
+    await fireEvent.press(screen.getByLabelText('Clear due date'))
 
     expect(onScheduledForChange).toHaveBeenCalledWith(null)
     expect(screen.getByTestId('note-editing-sheet-save').props.title).toBe('Save')

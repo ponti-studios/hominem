@@ -1,5 +1,5 @@
 import { db } from '@hominem/db';
-import type { Database } from '@hominem/db';
+import type { AppFiles, AppNotes, Selectable } from '@hominem/db';
 import {
   CreateNoteInputSchema,
   NotesListQuerySchema,
@@ -8,20 +8,32 @@ import {
 import type {
   Note,
   NoteFile,
-  NoteSearchOutput,
+  NotesSearchOutput,
   NotesDeleteOutput,
   NotesListOutput,
 } from '@hominem/rpc/types/notes.types';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
-import type { Selectable } from 'kysely';
 import * as z from 'zod';
 
 import { ForbiddenError, NotFoundError, ValidationError } from '../errors';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 
-type NoteRow = Selectable<Database['app.notes']>;
-type FileRow = Selectable<Database['app.files']>;
+type NoteRow = Selectable<AppNotes>;
+type FileRow = Selectable<AppFiles>;
+type NoteFileSource = Pick<
+  FileRow,
+  | 'id'
+  | 'original_name'
+  | 'mimetype'
+  | 'size'
+  | 'url'
+  | 'content'
+  | 'text_content'
+  | 'metadata'
+  | 'createdat'
+>;
+type AttachedFileRow = NoteFileSource & { noteId: string };
 
 const noteParamSchema = z.object({ id: z.uuid() });
 const noteSearchQuerySchema = z.object({
@@ -60,7 +72,7 @@ function deriveExcerpt(excerpt: string | null | undefined, content: string): str
   return normalized.length > 0 ? normalized.slice(0, 240) : null;
 }
 
-function toNoteFile(row: FileRow): NoteFile {
+function toNoteFile(row: NoteFileSource): NoteFile {
   return {
     id: row.id,
     originalName: row.original_name,
@@ -105,7 +117,7 @@ async function getAttachedFiles(noteIds: string[]): Promise<Map<string, NoteFile
     return new Map();
   }
 
-  const rows = await db
+  const rows = (await db
     .selectFrom('app.note_files as noteFile')
     .innerJoin('app.files as file', 'file.id', 'noteFile.file_id')
     .select([
@@ -122,28 +134,13 @@ async function getAttachedFiles(noteIds: string[]): Promise<Map<string, NoteFile
     ])
     .where('noteFile.note_id', 'in', noteIds)
     .orderBy('noteFile.attached_at', 'asc')
-    .execute();
+    .execute()) as AttachedFileRow[];
 
   const attachedFiles = new Map<string, NoteFile[]>();
 
   for (const row of rows) {
     const current = attachedFiles.get(row.noteId) ?? [];
-    current.push(
-      toNoteFile({
-        id: row.id,
-        original_name: row.original_name,
-        mimetype: row.mimetype,
-        size: row.size,
-        url: row.url,
-        content: row.content,
-        text_content: row.text_content,
-        metadata: row.metadata,
-        createdat: row.createdat,
-        updatedat: row.createdat,
-        owner_userid: '',
-        storage_key: '',
-      }),
-    );
+    current.push(toNoteFile(row));
     attachedFiles.set(row.noteId, current);
   }
 
@@ -151,12 +148,12 @@ async function getAttachedFiles(noteIds: string[]): Promise<Map<string, NoteFile
 }
 
 async function getOwnedNote(noteId: string, userId: string): Promise<NoteRow> {
-  const note = await db
+  const note = (await db
     .selectFrom('app.notes')
     .selectAll()
     .where('id', '=', noteId)
     .where('owner_userid', '=', userId)
-    .executeTakeFirst();
+    .executeTakeFirst()) as NoteRow | undefined;
 
   if (!note) {
     throw new NotFoundError('Note');
@@ -173,12 +170,12 @@ async function syncNoteFiles(noteId: string, userId: string, fileIds: string[]) 
     return;
   }
 
-  const ownedFiles = await db
+  const ownedFiles = (await db
     .selectFrom('app.files')
     .select('id')
     .where('owner_userid', '=', userId)
     .where('id', 'in', uniqueFileIds)
-    .execute();
+    .execute()) as Array<{ id: string }>;
 
   if (ownedFiles.length !== uniqueFileIds.length) {
     throw new ValidationError('One or more files are unavailable for this note');
@@ -205,15 +202,18 @@ export const notesRoutes = new Hono<AppContext>()
     const limit = query.limit ? Math.min(Number.parseInt(query.limit, 10), 100) : 50;
     const offset = query.offset ? Number.parseInt(query.offset, 10) : 0;
 
-    let notesQuery = db.selectFrom('app.notes').selectAll().where('owner_userid', '=', userId);
+    let notesQuery = db
+      .selectFrom('app.notes')
+      .selectAll()
+      .where('owner_userid', '=', userId);
 
     if (query.since) {
-      notesQuery = notesQuery.where('updatedat', '>=', query.since);
+      notesQuery = notesQuery.where('updatedat', '>=', new Date(query.since));
     }
 
     if (query.query) {
       const pattern = `%${query.query.trim()}%`;
-      notesQuery = notesQuery.where((eb) =>
+      notesQuery = notesQuery.where((eb: any) =>
         eb.or([
           eb('title', 'ilike', pattern),
           eb('content', 'ilike', pattern),
@@ -230,7 +230,7 @@ export const notesRoutes = new Hono<AppContext>()
       notesQuery = notesQuery.orderBy('updatedat', query.sortOrder ?? 'desc');
     }
 
-    const rows = await notesQuery.limit(limit).offset(offset).execute();
+    const rows = (await notesQuery.limit(limit).offset(offset).execute()) as NoteRow[];
     const attachedFiles = await getAttachedFiles(rows.map((row) => row.id));
 
     return c.json<NotesListOutput>({
@@ -243,16 +243,16 @@ export const notesRoutes = new Hono<AppContext>()
     const limit = query.limit ? Math.min(Number.parseInt(query.limit, 10), 20) : 10;
     const pattern = `%${query.query}%`;
 
-    const notes = await db
+    const notes = (await db
       .selectFrom('app.notes')
       .select(['id', 'title', 'excerpt'])
       .where('owner_userid', '=', userId)
-      .where((eb) => eb.or([eb('title', 'ilike', pattern), eb('content', 'ilike', pattern)]))
+      .where((eb: any) => eb.or([eb('title', 'ilike', pattern), eb('content', 'ilike', pattern)]))
       .orderBy('updatedat', 'desc')
       .limit(limit)
-      .execute();
+      .execute()) as Array<Pick<NoteRow, 'id' | 'title' | 'excerpt'>>;
 
-    return c.json<NoteSearchOutput>({
+    return c.json<NotesSearchOutput>({
       notes: notes.map((note) => ({
         id: note.id,
         title: note.title,
@@ -267,7 +267,7 @@ export const notesRoutes = new Hono<AppContext>()
     const title = deriveTitle(input.title, content);
     const excerpt = deriveExcerpt(input.excerpt, content);
 
-    const created = await db
+    const created = (await db
       .insertInto('app.notes')
       .values({
         owner_userid: userId,
@@ -276,7 +276,7 @@ export const notesRoutes = new Hono<AppContext>()
         excerpt,
       })
       .returningAll()
-      .executeTakeFirstOrThrow();
+      .executeTakeFirstOrThrow()) as NoteRow;
 
     await syncNoteFiles(created.id, userId, input.fileIds ?? []);
 

@@ -72,7 +72,7 @@ describe('mobile workspace shell state', () => {
 
   it('defines labels and routes for the top workspace shell', () => {
     expect(MOBILE_WORKSPACE_LABELS).toEqual({
-      inbox: 'Inbox',
+      inbox: 'Notes',
       note: 'Note',
       chat: 'Chat',
       search: 'Search',
@@ -80,7 +80,7 @@ describe('mobile workspace shell state', () => {
     })
 
     expect(MOBILE_WORKSPACE_ROUTES).toEqual({
-      inbox: '/(protected)/(tabs)/focus',
+      inbox: '/(protected)/(tabs)/notes',
       note: null,
       chat: '/(protected)/(tabs)/chat',
       search: null,

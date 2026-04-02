@@ -23,9 +23,9 @@ export interface NoteFile {
   size: number
   url: string
   uploadedAt: string
-  content?: string
-  textContent?: string
-  metadata?: Record<string, unknown>
+  content?: string | undefined
+  textContent?: string | undefined
+  metadata?: Record<string, unknown> | undefined
 }
 
 export interface NoteSearchResult {

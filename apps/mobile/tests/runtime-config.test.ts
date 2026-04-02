@@ -1,31 +1,47 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+const mockExpoConstants = {
+  expoConfig: {
+    extra: {},
+    hostUri: undefined,
+  },
+  manifest2: undefined,
+}
+
+let mockIsDevice = false
+
+vi.mock('expo-constants', () => ({
+  default: mockExpoConstants,
+}))
+
+vi.mock('expo-device', () => ({
+  get isDevice() {
+    return mockIsDevice
+  },
+}))
 
 describe('mobile runtime config', () => {
   beforeEach(() => {
     vi.resetModules()
     delete process.env.APP_VARIANT
     delete process.env.EXPO_PUBLIC_API_BASE_URL
-  })
-
-  afterEach(() => {
-    vi.unmock('expo-device')
-    vi.unmock('expo-constants')
+    mockIsDevice = false
+    mockExpoConstants.expoConfig = {
+      extra: {},
+      hostUri: undefined,
+    }
+    mockExpoConstants.manifest2 = undefined
   })
 
   it('treats preview and production as release variants', async () => {
     process.env.EXPO_PUBLIC_API_BASE_URL = 'https://api.ponti.io'
-    vi.doMock('expo-constants', () => ({
-      default: {
-        expoConfig: {
-          extra: {
-            appVariant: 'preview',
-          },
-        },
+    mockExpoConstants.expoConfig = {
+      extra: {
+        appVariant: 'preview',
       },
-    }))
-    vi.doMock('expo-device', () => ({
-      isDevice: true,
-    }))
+      hostUri: undefined,
+    }
+    mockIsDevice = true
 
     const { isReleaseAppVariant } = await import('../utils/constants')
 
@@ -35,18 +51,13 @@ describe('mobile runtime config', () => {
   })
 
   it('throws when preview runtime is missing the API base URL', async () => {
-    vi.doMock('expo-constants', () => ({
-      default: {
-        expoConfig: {
-          extra: {
-            appVariant: 'preview',
-          },
-        },
+    mockExpoConstants.expoConfig = {
+      extra: {
+        appVariant: 'preview',
       },
-    }))
-    vi.doMock('expo-device', () => ({
-      isDevice: true,
-    }))
+      hostUri: undefined,
+    }
+    mockIsDevice = true
 
     await expect(import('../utils/constants')).rejects.toThrow(
       'Missing API base URL. Set EXPO_PUBLIC_API_BASE_URL in mobile runtime configuration for preview.',
@@ -55,20 +66,14 @@ describe('mobile runtime config', () => {
 
   it('keeps localhost for simulator runtimes', async () => {
     process.env.EXPO_PUBLIC_API_BASE_URL = 'http://localhost:4040'
-    vi.doMock('expo-constants', () => ({
-      default: {
-        expoConfig: {
-          hostUri: '192.168.1.153:8081',
-          extra: {
-            appVariant: 'dev',
-            apiBaseUrl: 'http://localhost:4040',
-          },
-        },
+    mockExpoConstants.expoConfig = {
+      hostUri: '192.168.1.153:8081',
+      extra: {
+        appVariant: 'dev',
+        apiBaseUrl: 'http://localhost:4040',
       },
-    }))
-    vi.doMock('expo-device', () => ({
-      isDevice: false,
-    }))
+    }
+    mockIsDevice = false
 
     const { API_BASE_URL } = await import('../utils/constants')
 
@@ -77,20 +82,14 @@ describe('mobile runtime config', () => {
 
   it('rewrites localhost for physical devices', async () => {
     process.env.EXPO_PUBLIC_API_BASE_URL = 'http://localhost:4040'
-    vi.doMock('expo-constants', () => ({
-      default: {
-        expoConfig: {
-          hostUri: '192.168.1.153:8081',
-          extra: {
-            appVariant: 'dev',
-            apiBaseUrl: 'http://localhost:4040',
-          },
-        },
+    mockExpoConstants.expoConfig = {
+      hostUri: '192.168.1.153:8081',
+      extra: {
+        appVariant: 'dev',
+        apiBaseUrl: 'http://localhost:4040',
       },
-    }))
-    vi.doMock('expo-device', () => ({
-      isDevice: true,
-    }))
+    }
+    mockIsDevice = true
 
     const { API_BASE_URL } = await import('../utils/constants')
 
@@ -98,19 +97,13 @@ describe('mobile runtime config', () => {
   })
 
   it('uses the canonical local API fallback port in development', async () => {
-    vi.doMock('expo-constants', () => ({
-      default: {
-        expoConfig: {
-          hostUri: '192.168.1.153:8081',
-          extra: {
-            appVariant: 'dev',
-          },
-        },
+    mockExpoConstants.expoConfig = {
+      hostUri: '192.168.1.153:8081',
+      extra: {
+        appVariant: 'dev',
       },
-    }))
-    vi.doMock('expo-device', () => ({
-      isDevice: false,
-    }))
+    }
+    mockIsDevice = false
 
     const { API_BASE_URL } = await import('../utils/constants')
 
