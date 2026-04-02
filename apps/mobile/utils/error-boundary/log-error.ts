@@ -43,11 +43,13 @@ export function logError(
     return;
   }
 
-  posthog.captureException(error, {
-    feature: context?.feature ?? null,
-    route: context?.route ?? null,
-    userId: context?.userId ?? null,
-  });
+  if (typeof posthog.captureException === 'function') {
+    posthog.captureException(error, {
+      feature: context?.feature ?? null,
+      route: context?.route ?? null,
+      userId: context?.userId ?? null,
+    });
+  }
 }
 
 export function getErrorLog(): ErrorLogEntry[] {

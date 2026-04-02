@@ -34,6 +34,7 @@ const note = {
 jest.mock('@react-native-community/datetimepicker', () => {
   const React = require('react')
   return {
+    __esModule: true,
     default: (props: Record<string, never>) => {
       return React.createElement('DateTimePicker', {
         testID: 'note-editing-sheet-date-picker',
@@ -141,6 +142,7 @@ jest.mock('../../components/Button', () => {
 jest.mock('../../components/text-input', () => {
   const React = require('react')
   return {
+    __esModule: true,
     default: (props: Record<string, never>) => {
       return React.createElement('TextInput', props)
     },

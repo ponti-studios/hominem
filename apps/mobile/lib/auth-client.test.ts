@@ -6,6 +6,7 @@ jest.mock('expo-secure-store', () => ({
 }))
 
 jest.mock('expo-constants', () => ({
+  __esModule: true,
   default: {
     expoConfig: {
       extra: {
@@ -46,6 +47,22 @@ jest.mock('better-auth/react', () => ({
   }),
 }))
 
+function loadConstants() {
+  let result: typeof import('../utils/constants') | undefined
+  jest.isolateModules(() => {
+    result = require('../utils/constants')
+  })
+  return result!
+}
+
+function loadAuthClient() {
+  let result: typeof import('./auth-client') | undefined
+  jest.isolateModules(() => {
+    result = require('./auth-client')
+  })
+  return result!
+}
+
 describe('auth client', () => {
   beforeEach(() => {
     jest.resetModules()
@@ -59,20 +76,20 @@ describe('auth client', () => {
   })
 
   it('creates an auth client with the Expo plugin', () => {
-    const { authClient } = require('./auth-client')
+    const { authClient } = loadAuthClient()
 
     expect(authClient).toBeDefined()
     expect(typeof authClient.signIn).toBe('function')
   })
 
   it('uses the active app scheme for auth redirects', () => {
-    const { APP_SCHEME } = require('../utils/constants')
+    const { APP_SCHEME } = loadConstants()
 
     expect(APP_SCHEME).toBe('hakumi-e2e')
   })
 
   it('uses the configured API base URL', () => {
-    const { API_BASE_URL } = require('../utils/constants')
+    const { API_BASE_URL } = loadConstants()
 
     expect(API_BASE_URL).toBe('https://test-api.example.com')
   })

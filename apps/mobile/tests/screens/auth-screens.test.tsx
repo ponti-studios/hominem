@@ -55,6 +55,12 @@ jest.mock('../../utils/constants', () => ({
   },
 }))
 
+jest.mock('../../lib/posthog', () => ({
+  posthog: {
+    capture: jest.fn(),
+  },
+}))
+
 jest.mock('../../theme', () => {
   const React = require('react')
   return {
@@ -127,6 +133,7 @@ jest.mock('../../components/Button', () => {
 jest.mock('../../components/text-input', () => {
   const React = require('react')
   return {
+    __esModule: true,
     default: (props: {
       testID?: string
       value?: string

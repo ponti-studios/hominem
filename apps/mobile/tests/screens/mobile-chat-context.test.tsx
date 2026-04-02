@@ -18,13 +18,6 @@ jest.mock('expo-router', () => ({
   useRouter: () => ({ push: mockPush }),
 }))
 
-jest.mock('../../components/chat/blurred-background', () => {
-  const React = require('react')
-  return {
-    default: ({ children }: { children: React.ReactNode }) => children,
-  }
-})
-
 jest.mock('../../components/media/camera-modal', () => ({
   CameraModal: () => null,
 }))

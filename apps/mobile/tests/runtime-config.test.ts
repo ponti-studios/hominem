@@ -10,6 +10,7 @@ const mockExpoConstants = {
 let mockIsDevice = false
 
 jest.mock('expo-constants', () => ({
+  __esModule: true,
   default: mockExpoConstants,
 }))
 
@@ -18,6 +19,14 @@ jest.mock('expo-device', () => ({
     return mockIsDevice
   },
 }))
+
+function loadConstants() {
+  let result: typeof import('../utils/constants') | undefined
+  jest.isolateModules(() => {
+    result = require('../utils/constants')
+  })
+  return result!
+}
 
 describe('mobile runtime config', () => {
   beforeEach(() => {
@@ -42,7 +51,7 @@ describe('mobile runtime config', () => {
     }
     mockIsDevice = true
 
-    const { isReleaseAppVariant } = require('../utils/constants')
+    const { isReleaseAppVariant } = loadConstants()
 
     expect(isReleaseAppVariant('preview')).toBe(true)
     expect(isReleaseAppVariant('production')).toBe(true)
@@ -58,7 +67,11 @@ describe('mobile runtime config', () => {
     }
     mockIsDevice = true
 
-    expect(() => require('../utils/constants')).toThrow(
+    expect(() =>
+      jest.isolateModules(() => {
+        require('../utils/constants')
+      }),
+    ).toThrow(
       'Missing API base URL. Set EXPO_PUBLIC_API_BASE_URL in mobile runtime configuration for preview.',
     )
   })
@@ -74,7 +87,7 @@ describe('mobile runtime config', () => {
     }
     mockIsDevice = false
 
-    const { API_BASE_URL } = require('../utils/constants')
+    const { API_BASE_URL } = loadConstants()
 
     expect(API_BASE_URL).toBe('http://localhost:4040')
   })
@@ -90,7 +103,7 @@ describe('mobile runtime config', () => {
     }
     mockIsDevice = true
 
-    const { API_BASE_URL } = require('../utils/constants')
+    const { API_BASE_URL } = loadConstants()
 
     expect(API_BASE_URL).toBe('http://192.168.1.153:4040')
   })
@@ -104,7 +117,7 @@ describe('mobile runtime config', () => {
     }
     mockIsDevice = false
 
-    const { API_BASE_URL } = require('../utils/constants')
+    const { API_BASE_URL } = loadConstants()
 
     expect(API_BASE_URL).toBe('http://localhost:4040')
   })
