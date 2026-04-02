@@ -1,4 +1,4 @@
-name: Mobile · Unit & Integration Tests
+name: Mobile · Tests
 
 on:
     push:
@@ -43,11 +43,11 @@ jobs:
               uses: ./.github/actions/setup-mobile
 
             - name: Run unit tests
-              run: bun run test:unit:auth
+              run: bun run test:unit
               working-directory: apps/mobile
 
-    integration-tests:
-        name: Integration Tests
+    render-tests:
+        name: Render Tests
         runs-on: ubuntu-latest
         steps:
             - name: Checkout
@@ -56,19 +56,33 @@ jobs:
             - name: Setup mobile workspace
               uses: ./.github/actions/setup-mobile
 
-            - name: Run integration tests
-              run: bun run test:integration:auth
+            - name: Run render tests
+              run: bun run test:render
+              working-directory: apps/mobile
+
+    contract-tests:
+        name: Contract Tests
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup mobile workspace
+              uses: ./.github/actions/setup-mobile
+
+            - name: Run contract tests
+              run: bun run test:contracts
               working-directory: apps/mobile
 
     test-results:
         name: Test Results
         runs-on: ubuntu-latest
-        needs: [unit-tests, integration-tests]
+        needs: [unit-tests, render-tests, contract-tests]
         if: always()
         steps:
             - name: Check test status
               run: |
-                  if [ "${{ needs.unit-tests.result }}" != "success" ] || [ "${{ needs.integration-tests.result }}" != "success" ]; then
+                  if [ "${{ needs.unit-tests.result }}" != "success" ] || [ "${{ needs.render-tests.result }}" != "success" ] || [ "${{ needs.contract-tests.result }}" != "success" ]; then
                     echo "❌ Tests failed"
                     exit 1
                   fi

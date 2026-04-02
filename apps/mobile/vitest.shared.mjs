@@ -1,4 +1,4 @@
-const rootUrl = import.meta.url
+const rootUrl = import.meta.url;
 
 export const mobileVitestResolve = {
   alias: {
@@ -33,10 +33,10 @@ export const mobileVitestResolve = {
     ).pathname,
     '~': new URL('./', rootUrl).pathname,
   },
-}
+};
 
 export const mobileVitestBase = {
-  environment: 'node' as const,
+  environment: 'node',
   globals: true,
   slowTestThreshold: 250,
-}
+};
