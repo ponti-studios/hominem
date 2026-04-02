@@ -1,6 +1,5 @@
 import React from 'react'
 import { act, render, waitFor } from '@testing-library/react-native'
-import { describe, expect, it } from 'vitest'
 
 import {
   MobileWorkspaceProvider,
@@ -32,7 +31,7 @@ describe('mobile workspace context', () => {
 
     const firstSetActiveContext = ref.current?.setActiveContext
 
-    expect(firstSetActiveContext).toBeTypeOf('function')
+    expect(typeof firstSetActiveContext).toBe('function')
 
     await act(() => {
       firstSetActiveContext?.('chat')

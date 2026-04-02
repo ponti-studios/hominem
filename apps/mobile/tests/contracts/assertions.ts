@@ -1,4 +1,3 @@
-import { expect } from 'vitest'
 
 import type { AuthRedirectTarget } from '../../utils/navigation/auth-route-guard'
 import type { AuthState } from '../../utils/auth/types'

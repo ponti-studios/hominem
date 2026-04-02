@@ -59,7 +59,7 @@ describe('mobile workspace shell state', () => {
       </MobileWorkspaceProvider>,
     )
 
-    expect(setActiveContextRef).toBeTypeOf('function')
+    expect(typeof setActiveContextRef).toBe('function')
 
     await act(() => {
       setActiveContextRef?.('note')

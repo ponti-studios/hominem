@@ -1,4 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+jest.mock('../../lib/posthog', () => ({
+  posthog: { capture: jest.fn() },
+}))
 
 import {
   createBoundaryLogContext,
@@ -40,7 +42,7 @@ describe('error boundary contract', () => {
   })
 
   it('emits structured log entries without throwing during app flow', () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
     const context = createBoundaryLogContext({
       feature: 'chat',
       route: '/(protected)/(tabs)/chat',

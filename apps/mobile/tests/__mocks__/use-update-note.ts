@@ -1,4 +1,3 @@
-import { vi } from 'vitest'
 
 export interface UpdateNoteInput {
   id: string
@@ -11,6 +10,6 @@ export interface UpdateNoteInput {
 export function useUpdateNote() {
   return {
     isPending: false,
-    mutateAsync: vi.fn(),
+    mutateAsync: jest.fn(),
   }
 }

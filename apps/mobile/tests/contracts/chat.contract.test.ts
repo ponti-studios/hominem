@@ -1,5 +1,4 @@
 import { dehydrate, hydrate, QueryClient } from '@tanstack/react-query'
-import { describe, expect, it } from 'vitest'
 
 import { createIntegrationQueryClient } from './harness'
 import { buildChatThreadFixture, buildOfflineNetworkState, buildOnlineNetworkState } from './fixtures'

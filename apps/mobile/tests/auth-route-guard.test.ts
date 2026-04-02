@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest'
 
 import { resolveAuthRedirect } from '../utils/navigation/auth-route-guard'
 

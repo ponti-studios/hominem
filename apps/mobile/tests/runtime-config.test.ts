@@ -1,4 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockExpoConstants = {
   expoConfig: {
@@ -10,11 +9,11 @@ const mockExpoConstants = {
 
 let mockIsDevice = false
 
-vi.mock('expo-constants', () => ({
+jest.mock('expo-constants', () => ({
   default: mockExpoConstants,
 }))
 
-vi.mock('expo-device', () => ({
+jest.mock('expo-device', () => ({
   get isDevice() {
     return mockIsDevice
   },
@@ -22,7 +21,7 @@ vi.mock('expo-device', () => ({
 
 describe('mobile runtime config', () => {
   beforeEach(() => {
-    vi.resetModules()
+    jest.resetModules()
     delete process.env.APP_VARIANT
     delete process.env.EXPO_PUBLIC_API_BASE_URL
     mockIsDevice = false
@@ -33,7 +32,7 @@ describe('mobile runtime config', () => {
     mockExpoConstants.manifest2 = undefined
   })
 
-  it('treats preview and production as release variants', async () => {
+  it('treats preview and production as release variants', () => {
     process.env.EXPO_PUBLIC_API_BASE_URL = 'https://api.ponti.io'
     mockExpoConstants.expoConfig = {
       extra: {
@@ -43,14 +42,14 @@ describe('mobile runtime config', () => {
     }
     mockIsDevice = true
 
-    const { isReleaseAppVariant } = await import('../utils/constants')
+    const { isReleaseAppVariant } = require('../utils/constants')
 
     expect(isReleaseAppVariant('preview')).toBe(true)
     expect(isReleaseAppVariant('production')).toBe(true)
     expect(isReleaseAppVariant('dev')).toBe(false)
   })
 
-  it('throws when preview runtime is missing the API base URL', async () => {
+  it('throws when preview runtime is missing the API base URL', () => {
     mockExpoConstants.expoConfig = {
       extra: {
         appVariant: 'preview',
@@ -59,12 +58,12 @@ describe('mobile runtime config', () => {
     }
     mockIsDevice = true
 
-    await expect(import('../utils/constants')).rejects.toThrow(
+    expect(() => require('../utils/constants')).toThrow(
       'Missing API base URL. Set EXPO_PUBLIC_API_BASE_URL in mobile runtime configuration for preview.',
     )
   })
 
-  it('keeps localhost for simulator runtimes', async () => {
+  it('keeps localhost for simulator runtimes', () => {
     process.env.EXPO_PUBLIC_API_BASE_URL = 'http://localhost:4040'
     mockExpoConstants.expoConfig = {
       hostUri: '192.168.1.153:8081',
@@ -75,12 +74,12 @@ describe('mobile runtime config', () => {
     }
     mockIsDevice = false
 
-    const { API_BASE_URL } = await import('../utils/constants')
+    const { API_BASE_URL } = require('../utils/constants')
 
     expect(API_BASE_URL).toBe('http://localhost:4040')
   })
 
-  it('rewrites localhost for physical devices', async () => {
+  it('rewrites localhost for physical devices', () => {
     process.env.EXPO_PUBLIC_API_BASE_URL = 'http://localhost:4040'
     mockExpoConstants.expoConfig = {
       hostUri: '192.168.1.153:8081',
@@ -91,12 +90,12 @@ describe('mobile runtime config', () => {
     }
     mockIsDevice = true
 
-    const { API_BASE_URL } = await import('../utils/constants')
+    const { API_BASE_URL } = require('../utils/constants')
 
     expect(API_BASE_URL).toBe('http://192.168.1.153:4040')
   })
 
-  it('uses the canonical local API fallback port in development', async () => {
+  it('uses the canonical local API fallback port in development', () => {
     mockExpoConstants.expoConfig = {
       hostUri: '192.168.1.153:8081',
       extra: {
@@ -105,7 +104,7 @@ describe('mobile runtime config', () => {
     }
     mockIsDevice = false
 
-    const { API_BASE_URL } = await import('../utils/constants')
+    const { API_BASE_URL } = require('../utils/constants')
 
     expect(API_BASE_URL).toBe('http://localhost:4040')
   })

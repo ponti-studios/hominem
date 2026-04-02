@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest'
 
 interface NoteListItem {
   id: string

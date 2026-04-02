@@ -1,5 +1,4 @@
 import type { Chat } from '@hominem/rpc/types'
-import { describe, expect, it } from 'vitest'
 
 import {
   getArchivedChatsWithActivity,

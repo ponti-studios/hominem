@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest'
 import appConfig from '../app.config'
 
 const { EXPO_OWNER, EXPO_PROJECT_ID, EXPO_PROJECT_SLUG, getExpoExtraConfig } = require(

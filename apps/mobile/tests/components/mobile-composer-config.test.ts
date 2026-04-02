@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest'
 
 import { deriveMobileComposerPresentation } from '../../components/input/mobile-composer-config'
 

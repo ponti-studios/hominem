@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest'
 
 import { createAuthIntegrationHarness, createIntegrationQueryClient } from './harness'
 import { buildAuthUser } from './fixtures'

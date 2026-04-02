@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest'
 
 const controlCenterTargetConfig = require('../targets/control-center/expo-target.config.js') as (
   config: {

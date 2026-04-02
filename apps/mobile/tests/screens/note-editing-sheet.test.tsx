@@ -1,6 +1,5 @@
 import React from 'react'
 import { fireEvent, render, screen } from '@testing-library/react-native'
-import { vi } from 'vitest'
 
 import { NoteEditingSheet } from '../../components/focus/note-editing-sheet'
 
@@ -32,24 +31,29 @@ const note = {
   scheduledFor: null,
 }
 
-vi.mock('@react-native-community/datetimepicker', () => ({
-  default: (props: Record<string, never>) => {
-    return React.createElement('DateTimePicker', {
-      testID: 'note-editing-sheet-date-picker',
-      ...props,
-    })
-  },
-}))
+jest.mock('@react-native-community/datetimepicker', () => {
+  const React = require('react')
+  return {
+    default: (props: Record<string, never>) => {
+      return React.createElement('DateTimePicker', {
+        testID: 'note-editing-sheet-date-picker',
+        ...props,
+      })
+    },
+  }
+})
 
-vi.mock('react-native-safe-area-context', () => ({
+jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => mockInsets,
 }))
 
-vi.mock('../../theme', () => ({
-  Text: ({ children, testID }: { children: React.ReactNode; testID?: string }) => {
-    return React.createElement('Text', { testID }, children)
-  },
-  theme: {
+jest.mock('../../theme', () => {
+  const React = require('react')
+  return {
+    Text: ({ children, testID }: { children: React.ReactNode; testID?: string }) => {
+      return React.createElement('Text', { testID }, children)
+    },
+    theme: {
     colors: {
       foreground: '#ffffff',
       background: '#000000',
@@ -70,73 +74,80 @@ vi.mock('../../theme', () => ({
       md: 12,
     },
   },
-  makeStyles: (builder: (theme: {
-    colors: Record<string, string>
-    spacing: Record<string, number>
-    borderRadii: Record<string, number>
-  }) => Record<string, unknown>) => {
-    return () => builder({
-      colors: {
-        foreground: '#ffffff',
-        background: '#000000',
-        'border-default': '#333333',
-        'bg-surface': '#111111',
-        'text-tertiary': '#888888',
-        'text-secondary': '#aaaaaa',
-      },
-      spacing: {
-        xs_4: 4,
-        sm_8: 8,
-        sm_12: 12,
-        m_16: 16,
-        ml_24: 24,
-      },
-      borderRadii: {
-        full: 999,
-        md: 12,
-      },
-    })
-  },
-}))
+    makeStyles: (builder: (theme: {
+      colors: Record<string, string>
+      spacing: Record<string, number>
+      borderRadii: Record<string, number>
+    }) => Record<string, unknown>) => {
+      return () => builder({
+        colors: {
+          foreground: '#ffffff',
+          background: '#000000',
+          'border-default': '#333333',
+          'bg-surface': '#111111',
+          'text-tertiary': '#888888',
+          'text-secondary': '#aaaaaa',
+        },
+        spacing: {
+          xs_4: 4,
+          sm_8: 8,
+          sm_12: 12,
+          m_16: 16,
+          ml_24: 24,
+        },
+        borderRadii: {
+          full: 999,
+          md: 12,
+        },
+      })
+    },
+  }
+})
 
-vi.mock('../../components/Button', () => ({
-  Button: ({
-    title,
-    testID,
-    onPress,
-    disabled,
-    isLoading,
-    children,
-  }: {
-    title?: string
-    testID?: string
-    onPress?: () => void
-    disabled?: boolean
-    isLoading?: boolean
-    children?: React.ReactNode
-  }) => {
-    return React.createElement(
-      'Button',
-      {
-        accessibilityRole: 'button',
-        accessibilityState: { disabled, busy: isLoading },
-        disabled,
-        onPress,
-        testID,
-        title,
-      },
-      React.createElement('Text', null, children ?? title),
-    )
-  },
-}))
+jest.mock('../../components/Button', () => {
+  const React = require('react')
+  return {
+    Button: ({
+      title,
+      testID,
+      onPress,
+      disabled,
+      isLoading,
+      children,
+    }: {
+      title?: string
+      testID?: string
+      onPress?: () => void
+      disabled?: boolean
+      isLoading?: boolean
+      children?: React.ReactNode
+    }) => {
+      return React.createElement(
+        'Button',
+        {
+          accessibilityRole: 'button',
+          accessibilityState: { disabled, busy: isLoading },
+          disabled,
+          onPress,
+          testID,
+          title,
+        },
+        React.createElement('Text', null, children ?? title),
+      )
+    },
+  }
+})
 
-vi.mock('../../components/text-input', () => ({
-  default: (props: Record<string, never>) => {
-    return React.createElement('TextInput', props)
-  },
-}))
+jest.mock('../../components/text-input', () => {
+  const React = require('react')
+  return {
+    default: (props: Record<string, never>) => {
+      return React.createElement('TextInput', props)
+    },
+  }
+})
 
-vi.mock('../../components/ui/icon', () => ({
+jest.mock('../../components/ui/icon', () => ({
   __esModule: true,
   default: () => null,
 }))
@@ -147,9 +158,9 @@ function renderSheet(props: Partial<React.ComponentProps<typeof NoteEditingSheet
       note={note}
       text="Hello"
       scheduledFor={null}
-      onTextChange={vi.fn()}
-      onScheduledForChange={vi.fn()}
-      onSave={vi.fn()}
+      onTextChange={jest.fn()}
+      onScheduledForChange={jest.fn()}
+      onSave={jest.fn()}
       {...props}
     />,
   )
@@ -182,7 +193,7 @@ describe('note editing sheet', () => {
   })
 
   it('keeps due date editable and save reachable from the footer', async () => {
-    const onScheduledForChange = vi.fn()
+    const onScheduledForChange = jest.fn()
     await renderSheet({
       scheduledFor: new Date('2026-03-19T10:30:00.000Z'),
       onScheduledForChange,
@@ -199,7 +210,7 @@ describe('note editing sheet', () => {
   })
 
   it('propagates text edits when the editor is enabled', async () => {
-    const onTextChange = vi.fn()
+    const onTextChange = jest.fn()
 
     await renderSheet({
       onTextChange,
@@ -211,7 +222,7 @@ describe('note editing sheet', () => {
   })
 
   it('disables save affordance while saving', async () => {
-    const onTextChange = vi.fn()
+    const onTextChange = jest.fn()
     await renderSheet({
       isSaving: true,
       onTextChange,

@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest'
 
 import { extractSuccessfulAuthCallbackUrl } from './auth-provider-result'
 

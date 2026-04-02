@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest'
 
 const { assertReleaseEnv, canUseLocalEnvFile } = require('../config/release-env-policy.js') as {
   assertReleaseEnv: (variant: string, env: Record<string, string | undefined>) => void

@@ -1,29 +1,31 @@
 import React from 'react'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native'
-import { vi } from 'vitest'
 
 import { AuthScreen } from '../../app/(auth)/index'
 import { VerifyScreen } from '../../app/(auth)/verify'
 
-const mockReplace = vi.fn()
-const mockCompletePasskeySignIn = vi.fn()
-const mockRequestEmailOtp = vi.fn()
-const mockRetrySessionRecovery = vi.fn()
-const mockVerifyEmailOtp = vi.fn()
-const mockPasskeySignIn = vi.fn()
+const mockReplace = jest.fn()
+const mockCompletePasskeySignIn = jest.fn()
+const mockRequestEmailOtp = jest.fn()
+const mockRetrySessionRecovery = jest.fn()
+const mockVerifyEmailOtp = jest.fn()
+const mockPasskeySignIn = jest.fn()
 let mockIsE2ETesting = false
 let mockIsMobilePasskeyEnabled = true
 let mockAuthStatus: 'signed_out' | 'degraded' = 'signed_out'
 let mockRecoveryError: Error | null = null
 
-vi.mock('expo-router', () => ({
-  Redirect: ({ href }: { href: string }) => href,
-  Link: ({ children }: { children: React.ReactNode }) => children,
-  useRouter: () => ({ replace: mockReplace }),
-  useLocalSearchParams: () => ({ email: 'mobile-test@hominem.test' }),
-}))
+jest.mock('expo-router', () => {
+  const React = require('react')
+  return {
+    Redirect: ({ href }: { href: string }) => href,
+    Link: ({ children }: { children: React.ReactNode }) => children,
+    useRouter: () => ({ replace: mockReplace }),
+    useLocalSearchParams: () => ({ email: 'mobile-test@hominem.test' }),
+  }
+})
 
-vi.mock('../../utils/auth-provider', () => ({
+jest.mock('../../utils/auth-provider', () => ({
   useAuth: () => ({
     authError: mockRecoveryError,
     authStatus: mockAuthStatus,
@@ -35,7 +37,7 @@ vi.mock('../../utils/auth-provider', () => ({
   }),
 }))
 
-vi.mock('../../utils/use-mobile-passkey-auth', () => ({
+jest.mock('../../utils/use-mobile-passkey-auth', () => ({
   useMobilePasskeyAuth: () => ({
     signIn: mockPasskeySignIn,
     isLoading: false,
@@ -44,7 +46,7 @@ vi.mock('../../utils/use-mobile-passkey-auth', () => ({
   }),
 }))
 
-vi.mock('../../utils/constants', () => ({
+jest.mock('../../utils/constants', () => ({
   get E2E_TESTING() {
     return mockIsE2ETesting
   },
@@ -53,14 +55,16 @@ vi.mock('../../utils/constants', () => ({
   },
 }))
 
-vi.mock('../../theme', () => ({
-  Box: ({ children, testID }: { children: React.ReactNode; testID?: string }) => {
-    return React.createElement('View', { testID }, children)
-  },
-  Text: ({ children, testID }: { children: React.ReactNode; testID?: string }) => {
-    return React.createElement('Text', { testID }, children)
-  },
-  theme: {
+jest.mock('../../theme', () => {
+  const React = require('react')
+  return {
+    Box: ({ children, testID }: { children: React.ReactNode; testID?: string }) => {
+      return React.createElement('View', { testID }, children)
+    },
+    Text: ({ children, testID }: { children: React.ReactNode; testID?: string }) => {
+      return React.createElement('Text', { testID }, children)
+    },
+    theme: {
     colors: {
       foreground: '#ffffff',
       mutedForeground: '#999999',
@@ -92,31 +96,36 @@ vi.mock('../../theme', () => ({
       xl_24: 24,
     },
   },
-  makeStyles: () => () => ({}),
-}))
+    makeStyles: () => () => ({}),
+  }
+})
 
-vi.mock('../../components/Button', () => ({
-  Button: ({ title, testID, onPress, disabled }: {
-    title?: string
-    testID?: string
-    onPress?: () => void
-    disabled?: boolean
-  }) => {
-    return React.createElement(
-      'TouchableOpacity',
-      {
-        accessibilityRole: 'button',
-        accessibilityState: { disabled },
-        disabled,
-        onPress,
-        testID,
-      },
-      React.createElement('Text', null, title),
-    )
-  },
-}))
+jest.mock('../../components/Button', () => {
+  const React = require('react')
+  return {
+    Button: ({ title, testID, onPress, disabled }: {
+      title?: string
+      testID?: string
+      onPress?: () => void
+      disabled?: boolean
+    }) => {
+      return React.createElement(
+        'TouchableOpacity',
+        {
+          accessibilityRole: 'button',
+          accessibilityState: { disabled },
+          disabled,
+          onPress,
+          testID,
+        },
+        React.createElement('Text', null, title),
+      )
+    },
+  }
+})
 
-vi.mock('../../components/text-input', () => {
+jest.mock('../../components/text-input', () => {
+  const React = require('react')
   return {
     default: (props: {
       testID?: string
@@ -133,13 +142,16 @@ vi.mock('../../components/text-input', () => {
   }
 })
 
-vi.mock('../../components/error-boundary', () => ({
-  FeatureErrorBoundary: ({ children }: { children: React.ReactNode }) => children,
-}))
+jest.mock('../../components/error-boundary', () => {
+  const React = require('react')
+  return {
+    FeatureErrorBoundary: ({ children }: { children: React.ReactNode }) => children,
+  }
+})
 
 describe('auth rendered screens', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    jest.clearAllMocks()
     mockIsE2ETesting = false
     mockIsMobilePasskeyEnabled = true
     mockAuthStatus = 'signed_out'
@@ -157,7 +169,7 @@ describe('auth rendered screens', () => {
 
   it('submits normalized email and routes to verify screen', async () => {
     mockRequestEmailOtp.mockResolvedValue(undefined)
-    vi.useFakeTimers()
+    jest.useFakeTimers()
 
     await render(<AuthScreen />)
 
@@ -169,7 +181,7 @@ describe('auth rendered screens', () => {
     })
 
     await act(() => {
-      vi.runAllTimers()
+      jest.runAllTimers()
     })
 
     await waitFor(() => {
@@ -177,7 +189,7 @@ describe('auth rendered screens', () => {
     })
 
     expect(mockReplace).toHaveBeenCalledWith('/(auth)/verify?email=user%40example.com')
-    vi.useRealTimers()
+    jest.useRealTimers()
   })
 
   it('shows verify screen validation error when OTP is invalid', async () => {

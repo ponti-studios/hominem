@@ -7,51 +7,59 @@ import {
   useMobileWorkspace,
 } from '../../components/workspace/mobile-workspace-context'
 
-const mockPush = vi.fn()
-const mockRefetch = vi.fn()
+const mockPush = jest.fn()
+const mockRefetch = jest.fn()
 
 let workspaceContext = 'inbox'
 
-vi.mock('expo-router', () => ({
+jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({ chatId: 'chat-1' }),
   usePathname: () => '/(protected)/(tabs)/chat',
   useRouter: () => ({ push: mockPush }),
 }))
 
-vi.mock('../../components/chat/blurred-background', () => ({
-  default: ({ children }: { children: React.ReactNode }) => children,
-}))
+jest.mock('../../components/chat/blurred-background', () => {
+  const React = require('react')
+  return {
+    default: ({ children }: { children: React.ReactNode }) => children,
+  }
+})
 
-vi.mock('../../components/media/camera-modal', () => ({
+jest.mock('../../components/media/camera-modal', () => ({
   CameraModal: () => null,
 }))
 
-vi.mock('../../lib/use-chat-live-activity', () => ({
+jest.mock('../../lib/use-chat-live-activity', () => ({
   useChatLiveActivity: () => ({
     stop: () => undefined,
   }),
 }))
 
-vi.mock('../../components/media/mobile-voice-input', () => ({
+jest.mock('../../components/media/mobile-voice-input', () => ({
   MobileVoiceInput: () => null,
 }))
 
-vi.mock('../../components/media/use-tts', () => ({
+jest.mock('../../components/media/use-tts', () => ({
   useTTS: () => ({
-    speak: vi.fn(),
+    speak: jest.fn(),
     state: 'idle',
   }),
 }))
 
-vi.mock('../../components/LoadingFull', () => ({
-  LoadingFull: ({ children }: { children: React.ReactNode }) => children,
-}))
+jest.mock('../../components/LoadingFull', () => {
+  const React = require('react')
+  return {
+    LoadingFull: ({ children }: { children: React.ReactNode }) => children,
+  }
+})
 
-vi.mock('../../theme', () => ({
-  Text: ({ children }: { children: React.ReactNode }) =>
-    React.createElement('Text', null, children),
-  makeStyles: () => () => ({}),
-  theme: {
+jest.mock('../../theme', () => {
+  const React = require('react')
+  return {
+    Text: ({ children }: { children: React.ReactNode }) =>
+      React.createElement('Text', null, children),
+    makeStyles: () => () => ({}),
+    theme: {
     colors: {
       background: '#000000',
       foreground: '#ffffff',
@@ -70,9 +78,10 @@ vi.mock('../../theme', () => ({
       md: 12,
     },
   },
-}))
+  }
+})
 
-vi.mock('../../utils/services/chat', () => ({
+jest.mock('../../utils/services/chat', () => ({
   useActiveChat: () => ({
     data: {
       id: 'chat-1',
@@ -85,25 +94,25 @@ vi.mock('../../utils/services/chat', () => ({
   }),
   useSendMessage: () => ({
     isChatSending: false,
-    sendChatMessage: vi.fn().mockResolvedValue(undefined),
+    sendChatMessage: jest.fn().mockResolvedValue(undefined),
   }),
   useStartChat: () => ({
-    mutateAsync: vi.fn(),
+    mutateAsync: jest.fn(),
     isPending: false,
   }),
 }))
 
-vi.mock('../../utils/services/files/use-file-upload', () => ({
+jest.mock('../../utils/services/files/use-file-upload', () => ({
   useFileUpload: () => ({
-    clearErrors: vi.fn(),
-    uploadAssets: vi.fn().mockResolvedValue([]),
+    clearErrors: jest.fn(),
+    uploadAssets: jest.fn().mockResolvedValue([]),
     uploadState: {
       errors: [],
     },
   }),
 }))
 
-vi.mock('../../utils/services/notes/use-note-stream', () => ({
+jest.mock('../../utils/services/notes/use-note-stream', () => ({
   useNoteStream: () => ({
     data: [],
   }),
