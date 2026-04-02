@@ -202,10 +202,7 @@ export const notesRoutes = new Hono<AppContext>()
     const limit = query.limit ? Math.min(Number.parseInt(query.limit, 10), 100) : 50;
     const offset = query.offset ? Number.parseInt(query.offset, 10) : 0;
 
-    let notesQuery = db
-      .selectFrom('app.notes')
-      .selectAll()
-      .where('owner_userid', '=', userId);
+    let notesQuery = db.selectFrom('app.notes').selectAll().where('owner_userid', '=', userId);
 
     if (query.since) {
       notesQuery = notesQuery.where('updatedat', '>=', new Date(query.since));

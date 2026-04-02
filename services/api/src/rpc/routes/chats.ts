@@ -301,17 +301,19 @@ async function resolveChatFiles(userId: string, fileIds: string[]): Promise<Chat
     throw new ValidationError('One or more uploaded files are unavailable');
   }
 
-  return files.map((file): ChatMessageFile => ({
-    type: file.mimetype.startsWith('image/') ? 'image' : 'file',
-    fileId: file.id,
-    url: file.url,
-    filename: file.original_name,
-    mimeType: file.mimetype,
-    size: file.size,
-    ...(file.text_content
-      ? { metadata: { extractedText: file.text_content.slice(0, 4_000) } }
-      : {}),
-  }));
+  return files.map(
+    (file): ChatMessageFile => ({
+      type: file.mimetype.startsWith('image/') ? 'image' : 'file',
+      fileId: file.id,
+      url: file.url,
+      filename: file.original_name,
+      mimeType: file.mimetype,
+      size: file.size,
+      ...(file.text_content
+        ? { metadata: { extractedText: file.text_content.slice(0, 4_000) } }
+        : {}),
+    }),
+  );
 }
 
 function getRequiredChatId(c: { req: { param: (name: string) => string | undefined } }): string {
@@ -490,46 +492,44 @@ const chatByIdRoutes = new Hono<AppContext>()
     });
 
     const now = new Date().toISOString();
-    const [userMessage, assistantMessage] = await db
-      .transaction()
-      .execute(async (trx) => {
-        const insertedUser = await trx
-          .insertInto('app.chat_messages')
-          .values({
-            chat_id: chatId,
-            author_userid: userId,
-            role: 'user',
-            content: storedUserContent,
-            files: toJsonColumnValue(resolvedFiles.length > 0 ? resolvedFiles : null),
-            referenced_note_ids: toJsonColumnValue(
-              resolvedNotes.length > 0 ? resolvedNotes.map((note) => note.id) : null,
-            ),
-          })
-          .returningAll()
-          .executeTakeFirstOrThrow();
+    const [userMessage, assistantMessage] = await db.transaction().execute(async (trx) => {
+      const insertedUser = await trx
+        .insertInto('app.chat_messages')
+        .values({
+          chat_id: chatId,
+          author_userid: userId,
+          role: 'user',
+          content: storedUserContent,
+          files: toJsonColumnValue(resolvedFiles.length > 0 ? resolvedFiles : null),
+          referenced_note_ids: toJsonColumnValue(
+            resolvedNotes.length > 0 ? resolvedNotes.map((note) => note.id) : null,
+          ),
+        })
+        .returningAll()
+        .executeTakeFirstOrThrow();
 
-        const insertedAssistant = await trx
-          .insertInto('app.chat_messages')
-          .values({
-            chat_id: chatId,
-            author_userid: userId,
-            role: 'assistant',
-            content: result.text,
-          })
-          .returningAll()
-          .executeTakeFirstOrThrow();
+      const insertedAssistant = await trx
+        .insertInto('app.chat_messages')
+        .values({
+          chat_id: chatId,
+          author_userid: userId,
+          role: 'assistant',
+          content: result.text,
+        })
+        .returningAll()
+        .executeTakeFirstOrThrow();
 
-        await trx
-          .updateTable('app.chats')
-          .set({
-            title: chat.title || 'Chat',
-            last_message_at: sql`GREATEST(createdat, now())`,
-          })
-          .where('id', '=', chatId)
-          .execute();
+      await trx
+        .updateTable('app.chats')
+        .set({
+          title: chat.title || 'Chat',
+          last_message_at: sql`GREATEST(createdat, now())`,
+        })
+        .where('id', '=', chatId)
+        .execute();
 
-        return [insertedUser as ChatMessageRow, insertedAssistant as ChatMessageRow];
-      });
+      return [insertedUser as ChatMessageRow, insertedAssistant as ChatMessageRow];
+    });
 
     const noteTitlesById = await getNoteTitles(resolvedNotes.map((note) => note.id));
 

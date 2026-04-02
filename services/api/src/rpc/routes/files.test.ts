@@ -1,8 +1,8 @@
 import type { User } from '@hominem/auth/server';
+import { db } from '@hominem/db';
 import { Hono } from 'hono';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
-import { db } from '@hominem/db';
 import { resetTestDb, seedTestUser } from '../../../test/test-db';
 
 const mocks = vi.hoisted(() => ({
