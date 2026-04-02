@@ -47,24 +47,31 @@ jest.mock('better-auth/react', () => ({
 }));
 
 function loadConstants() {
-  let result: typeof import('../utils/constants') | undefined;
-  jest.isolateModules(() => {
-    result = require('../utils/constants');
-  });
-  return result!;
+  const nodeRequire = require as typeof require & {
+    resolve(path: string): string;
+    cache: Record<string, unknown>;
+  };
+
+  const modulePath = nodeRequire.resolve('../utils/constants');
+  delete nodeRequire.cache[modulePath];
+  return nodeRequire('../utils/constants') as typeof import('../utils/constants');
 }
 
 function loadAuthClient() {
-  let result: typeof import('./auth-client') | undefined;
-  jest.isolateModules(() => {
-    result = require('./auth-client');
-  });
-  return result!;
+  const nodeRequire = require as typeof require & {
+    resolve(path: string): string;
+    cache: Record<string, unknown>;
+  };
+
+  const authClientPath = nodeRequire.resolve('./auth-client');
+  const constantsPath = nodeRequire.resolve('../utils/constants');
+  delete nodeRequire.cache[authClientPath];
+  delete nodeRequire.cache[constantsPath];
+  return nodeRequire('./auth-client') as typeof import('./auth-client');
 }
 
 describe('auth client', () => {
   beforeEach(() => {
-    jest.resetModules();
     process.env.EXPO_PUBLIC_API_BASE_URL = 'https://test-api.example.com';
     process.env.APP_VARIANT = 'e2e';
   });
