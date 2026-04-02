@@ -1,4 +1,4 @@
-import type { RawHonoClient } from '../core/raw-client'
+import type { RawHonoClient } from '../core/raw-client';
 import type {
   NotesArchiveOutput,
   NotesCreateInput,
@@ -7,143 +7,134 @@ import type {
   NotesGetOutput,
   NotesListInput,
   NotesListOutput,
-  NotesSyncInput,
-  NotesSyncOutput,
+  NotesSearchOutput,
   NotesUpdateInput,
   NotesUpdateOutput,
-} from '../types/notes.types'
+} from '../types/notes.types';
 
 export interface NotesGetInput {
-  id: string
+  id: string;
 }
 
 export interface NotesUpdateByIdInput extends NotesUpdateInput {
-  id: string
+  id: string;
 }
 
 export interface NotesDeleteInput {
-  id: string
+  id: string;
 }
 
 export interface NotesArchiveInput {
-  id: string
+  id: string;
+}
+
+export interface NotesSearchInput {
+  query: string;
+  limit?: number;
 }
 
 function toNotesQuery(input: NotesListInput): Record<string, string> {
-  const query: Record<string, string> = {}
+  const query: Record<string, string> = {};
 
   if (input.types) {
-    query.types = input.types.join(',')
+    query.types = input.types.join(',');
   }
   if (input.status) {
-    query.status = input.status.join(',')
+    query.status = input.status.join(',');
   }
   if (input.tags) {
-    query.tags = input.tags.join(',')
+    query.tags = input.tags.join(',');
   }
   if (input.query) {
-    query.query = input.query
+    query.query = input.query;
   }
   if (input.since) {
-    query.since = input.since
+    query.since = input.since;
   }
   if (input.sortBy) {
-    query.sortBy = input.sortBy
+    query.sortBy = input.sortBy;
   }
   if (input.sortOrder) {
-    query.sortOrder = input.sortOrder
+    query.sortOrder = input.sortOrder;
   }
   if (typeof input.limit === 'number') {
-    query.limit = String(input.limit)
+    query.limit = String(input.limit);
   }
   if (typeof input.offset === 'number') {
-    query.offset = String(input.offset)
+    query.offset = String(input.offset);
   }
   if (typeof input.includeAllVersions === 'boolean') {
-    query.includeAllVersions = String(input.includeAllVersions)
+    query.includeAllVersions = String(input.includeAllVersions);
   }
 
-  return query
+  return query;
 }
+
+// ─── NotesClient interface ────────────────────────────────────────────────────
 
 export interface NotesClient {
-  list(input: NotesListInput): Promise<NotesListOutput>
-  listFocusItems(): Promise<NotesListOutput>
-  get(input: NotesGetInput): Promise<NotesGetOutput>
-  create(input: NotesCreateInput): Promise<NotesCreateOutput>
-  update(input: NotesUpdateByIdInput): Promise<NotesUpdateOutput>
-  delete(input: NotesDeleteInput): Promise<NotesDeleteOutput>
-  archive(input: NotesArchiveInput): Promise<NotesArchiveOutput>
-  sync(input: NotesSyncInput): Promise<NotesSyncOutput>
+  list(input: NotesListInput): Promise<NotesListOutput>;
+  search(input: NotesSearchInput): Promise<NotesSearchOutput>;
+  get(input: NotesGetInput): Promise<NotesGetOutput>;
+  create(input: NotesCreateInput): Promise<NotesCreateOutput>;
+  update(input: NotesUpdateByIdInput): Promise<NotesUpdateOutput>;
+  delete(input: NotesDeleteInput): Promise<NotesDeleteOutput>;
+  archive(input: NotesArchiveInput): Promise<NotesArchiveOutput>;
 }
 
-interface NotesUpdateRouteClient {
-  api: {
-    notes: {
-      ':id': {
-        $patch(args: { param: { id: string }; json: NotesUpdateInput }): Promise<{
-          json(): Promise<NotesUpdateOutput>
-        }>
-      }
-    }
-  }
-}
+// ─── Factory ──────────────────────────────────────────────────────────────────
 
 export function createNotesClient(rawClient: RawHonoClient): NotesClient {
-  const routeClient = rawClient as RawHonoClient & NotesUpdateRouteClient
-
   return {
     async list(input) {
       const res = await rawClient.api.notes.$get({
         query: toNotesQuery(input),
-      })
-      return res.json() as Promise<NotesListOutput>
+      });
+      return res.json();
     },
-    async listFocusItems() {
-      const res = await rawClient.api.notes.$get({
-        query: {
-          status: 'draft,published',
-        },
-      })
-      return res.json() as Promise<NotesListOutput>
+
+    async search(input) {
+      const query: Record<string, string> = { query: input.query };
+      if (typeof input.limit === 'number') {
+        query.limit = String(input.limit);
+      }
+      const res = await rawClient.api.notes.search.$get({ query });
+      return res.json();
     },
+
     async get(input) {
       const res = await rawClient.api.notes[':id'].$get({
         param: { id: input.id },
-      })
-      return res.json() as Promise<NotesGetOutput>
+      });
+      return res.json();
     },
+
     async create(input) {
-      const res = await rawClient.api.notes.$post({
-        json: input,
-      })
-      return res.json() as Promise<NotesCreateOutput>
+      const res = await rawClient.api.notes.$post({ json: input });
+      return res.json();
     },
+
     async update(input) {
-      const { id, ...data } = input
-      const res = await routeClient.api.notes[':id'].$patch({
+      const { id, ...data } = input;
+      const res = await rawClient.api.notes[':id'].$patch({
         param: { id },
         json: data,
-      })
-      return res.json() as Promise<NotesUpdateOutput>
+      });
+      return res.json();
     },
+
     async delete(input) {
       const res = await rawClient.api.notes[':id'].$delete({
         param: { id: input.id },
-      })
-      return res.json() as Promise<NotesDeleteOutput>
+      });
+      return res.json();
     },
+
     async archive(input) {
       const res = await rawClient.api.notes[':id'].archive.$post({
         param: { id: input.id },
-      })
-      return res.json() as Promise<NotesArchiveOutput>
+      });
+      return res.json();
     },
-    async sync(input) {
-      const res = await rawClient.api.notes.sync.$post({
-        json: input,
-      })
-      return res.json() as Promise<NotesSyncOutput>
-    },
-  }
+  };
 }

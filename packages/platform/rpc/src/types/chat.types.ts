@@ -22,6 +22,11 @@ export interface ChatMessageFile {
   metadata?: Record<string, JsonValue>
 }
 
+export interface ChatMessageReferencedNote {
+  id: string
+  title: string | null
+}
+
 export interface Chat {
   archivedAt: string | null
   id: string
@@ -39,6 +44,7 @@ export interface ChatMessage {
   role: ChatMessageRole
   content: string
   files: ChatMessageFile[] | null
+  referencedNotes: ChatMessageReferencedNote[] | null
   toolCalls: ChatMessageToolCall[] | null
   reasoning: string | null
   parentMessageId: string | null
@@ -57,6 +63,7 @@ export type ChatWithMessages = Chat & {
 export type ChatsSendInput = {
   message: string;
   fileIds?: string[];
+  noteIds?: string[];
   chatId?: string;
 };
 
@@ -78,12 +85,17 @@ export type ChatsUISendInput = {
 export const chatsSendSchema = z.object({
   message: z.string(),
   fileIds: z.array(z.uuid()).max(5).optional(),
+  noteIds: z.array(z.uuid()).max(10).optional(),
   chatId: z.string().optional(),
 }).superRefine((value, ctx) => {
-  if (value.message.trim().length === 0 && (!value.fileIds || value.fileIds.length === 0)) {
+  if (
+    value.message.trim().length === 0 &&
+    (!value.fileIds || value.fileIds.length === 0) &&
+    (!value.noteIds || value.noteIds.length === 0)
+  ) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: 'message or fileIds is required',
+      message: 'message, fileIds, or noteIds is required',
       path: ['message'],
     })
   }

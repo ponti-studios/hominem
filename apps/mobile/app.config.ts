@@ -143,13 +143,6 @@ export default ({ config }: ConfigContext) => {
       },
     ],
     [
-      'expo-calendar',
-      {
-        calendarPermission: 'Allow Hakumi to access your calendar to add events.',
-        remindersPermission: 'Allow Hakumi to access your reminders.',
-      },
-    ],
-    [
       'react-native-vision-camera',
       {
         cameraPermissionText: 'Allow Hakumi to access your camera to capture photos for notes.',
@@ -211,13 +204,6 @@ export default ({ config }: ConfigContext) => {
       },
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
-        NSCalendarsUsageDescription: 'Allow Hakumi to access your calendar to add events.',
-        NSCalendarsFullAccessUsageDescription:
-          'Allow Hakumi to access your calendar to add events.',
-        NSRemindersUsageDescription: 'Allow Hakumi to access your reminders.',
-        NSRemindersFullAccessUsageDescription: 'Allow Hakumi to access your reminders.',
-        NSLocationWhenInUseUsageDescription:
-          'Allow Hakumi to access your location to provide location-aware features.',
         NSMicrophoneUsageDescription:
           'Allow Hakumi to access your microphone to transcribe voice notes.',
       },

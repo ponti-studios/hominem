@@ -1,7 +1,7 @@
 import { useAuth } from '@hominem/auth';
+import { Container } from '@hominem/ui';
 import { Button } from '@hominem/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@hominem/ui/card';
-import { Container } from '@hominem/ui/components/layout';
 import { useEffect } from 'react';
 import { Navigate } from 'react-router';
 

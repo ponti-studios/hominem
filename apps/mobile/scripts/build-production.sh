@@ -17,29 +17,30 @@ bash "$SCRIPTS_DIR/preflight.sh" production
 ok "Preflight checks passed"
 
 # Step 3: Confirm production build
-printf "\n"
-warn "You are about to build a production release"
-warn "This will increment version numbers and create a final release build"
-printf "\n"
+if [[ "${SKIP_RELEASE_CONFIRMATION:-0}" != "1" ]]; then
+  printf "\n"
+  warn "You are about to build a production release"
+  warn "This will increment version numbers and create a final release build"
+  printf "\n"
 
-read -p "  Continue with production build? (yes/no): " confirm
-if [[ "$confirm" != "yes" ]]; then
-  fail "Production build cancelled"
-  exit 1
+  read -p "  Continue with production build? (yes/no): " confirm
+  if [[ "$confirm" != "yes" ]]; then
+    fail "Production build cancelled"
+    exit 1
+  fi
 fi
 
 printf "\n"
 
-# Step 4: Trigger EAS build for production
+# Step 4: Trigger EAS build and submission for production
 step "Building production with EAS..."
-info "This will build for both iOS and Android platforms"
-info "View progress at: https://expo.dev"
+info "This waits for both platform builds and store submissions to finish"
+info "A release manifest will be written to artifacts/releases/production-release-manifest.json"
 printf "\n"
 
-eas build --platform all --profile production
+bun "$SCRIPTS_DIR/internal/orchestrate-release.ts" production --submit
 
 printf "\n"
-ok "Production build submitted to EAS"
-info "Check your build status at: https://expo.dev"
-info "Once complete, builds will be automatically submitted to App Store and Google Play"
+ok "Production build and submission finished successfully"
+info "Review artifacts/releases/production-release-manifest.json for build and submission IDs"
 printf "\n"

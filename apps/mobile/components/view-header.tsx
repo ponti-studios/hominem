@@ -12,10 +12,10 @@ export const ViewHeader = ({ children }: PropsWithChildren) => {
   return (
     <View style={styles.container}>
       <View style={styles.navbar}>
-        <Link href={'/(protected)/(tabs)/focus' as RelativePathString}>
+        <Link href={'/(protected)/(tabs)/notes' as RelativePathString}>
           <View style={styles.backLink}>
             <AppIcon name="arrow-left" size={26} color={theme.colors.foreground} />
-            <Text variant="bodyLarge">Today</Text>
+            <Text variant="bodyLarge">Notes</Text>
           </View>
         </Link>
       </View>

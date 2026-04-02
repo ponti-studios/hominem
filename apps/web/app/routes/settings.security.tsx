@@ -1,6 +1,5 @@
 import { usePasskeyAuth } from '@hominem/auth';
-import { PasskeyManagement } from '@hominem/ui';
-import { Container } from '@hominem/ui/components/layout';
+import { Container, PasskeyManagement } from '@hominem/ui';
 import { useCallback } from 'react';
 import { redirect } from 'react-router';
 

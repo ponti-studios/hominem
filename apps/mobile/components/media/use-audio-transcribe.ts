@@ -1,9 +1,13 @@
 import { emitVoiceEvent, isVoiceErrorCode } from '@hominem/rpc/voice-events';
 import { useMutation } from '@tanstack/react-query';
+import * as FileSystem from 'expo-file-system/legacy';
 import { useCallback, useRef } from 'react';
 
 import { useAuth } from '~/utils/auth-provider';
 import { API_BASE_URL } from '~/utils/constants';
+
+/** Must match VOICE_TRANSCRIPTION_MAX_SIZE_BYTES on the server. */
+const MAX_AUDIO_SIZE_BYTES = 25 * 1024 * 1024;
 
 type VoiceTranscribeResponse = {
   text: string;
@@ -48,6 +52,13 @@ export const useAudioTranscribe = ({
         throw new Error('Missing auth session for voice transcription');
       }
 
+      // Validate file size before uploading to avoid wasting bandwidth
+      const fileInfo = await FileSystem.getInfoAsync(audioUri);
+      if (fileInfo.exists && 'size' in fileInfo && fileInfo.size > MAX_AUDIO_SIZE_BYTES) {
+        const sizeMB = Math.round(fileInfo.size / (1024 * 1024));
+        throw new Error(`Recording too large (${sizeMB}MB). Maximum is 25MB.`);
+      }
+
       const formData = new FormData();
       const mimeType = getMimeTypeFromUri(audioUri);
 
@@ -62,12 +73,17 @@ export const useAudioTranscribe = ({
         mimeType,
       });
 
+      // Timeout after 60s to prevent indefinitely blocking the UI
+      const timeoutId = setTimeout(() => abortControllerRef.current?.abort(), 60_000);
+
       const response = await fetch(`${API_BASE_URL}/api/voice/transcribe`, {
         method: 'POST',
         headers: authHeaders,
         body: formData,
         signal: abortControllerRef.current.signal,
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         const payload = (await response.json().catch(() => ({}))) as VoiceTranscribeErrorResponse;

@@ -22,6 +22,8 @@ interface PageProps extends React.ComponentProps<'main'> {
   padded?: boolean;
 }
 
+type ScreenProps = PageProps;
+
 /**
  * Page — top-level route wrapper for web.
  * Handles max-width constraint and horizontal padding consistently.
@@ -67,4 +69,7 @@ function Container({ maxWidth = 'lg', padded = true, className, style, ...props 
   );
 }
 
-export { Container, Page, type ContainerProps, type PageMaxWidth, type PageProps };
+const Screen = Page;
+
+export { Container, Page, Screen, type ContainerProps, type PageMaxWidth, type PageProps };
+export type { ScreenProps };

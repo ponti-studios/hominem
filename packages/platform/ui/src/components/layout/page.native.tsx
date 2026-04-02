@@ -33,6 +33,8 @@ interface ContainerProps extends ViewProps {
   padded?: boolean | undefined;
 }
 
+type PageProps = ScreenProps;
+
 function getContentStyle(maxWidth: PageMaxWidth, padded: boolean): ViewStyle {
   return {
     alignSelf: 'center',
@@ -88,5 +90,5 @@ const styles = {
   } satisfies ViewStyle,
 };
 
-export { Screen, Page, Container };
-export type { ScreenProps, ContainerProps };
+export { Container, Page, Screen };
+export type { ContainerProps, PageMaxWidth, PageProps, ScreenProps };

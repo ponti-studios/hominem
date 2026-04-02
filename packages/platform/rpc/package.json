@@ -2,42 +2,42 @@
   "name": "@hominem/rpc",
   "version": "0.1.0",
   "type": "module",
-  "types": "./build/index.d.ts",
+  "types": "./src/index.ts",
   "exports": {
     ".": {
-      "types": "./build/index.d.ts",
+      "types": "./src/index.ts",
       "default": "./src/index.ts"
     },
     "./client": {
-      "types": "./build/client.d.ts",
+      "types": "./src/client.ts",
       "default": "./src/client.ts"
     },
     "./react": {
-      "types": "./build/react/index.d.ts",
+      "types": "./src/react/index.ts",
       "default": "./src/react/index.ts"
     },
     "./ssr": {
-      "types": "./build/ssr/index.d.ts",
+      "types": "./src/ssr/index.ts",
       "default": "./src/ssr/index.ts"
     },
     "./types": {
-      "types": "./build/types/index.d.ts",
+      "types": "./src/types/index.ts",
       "default": "./src/types/index.ts"
     },
     "./types/*": {
-      "types": "./build/types/*.d.ts",
+      "types": "./src/types/*.ts",
       "default": "./src/types/*.ts"
     },
     "./schemas/*": {
-      "types": "./build/schemas/*.d.ts",
+      "types": "./src/schemas/*.ts",
       "default": "./src/schemas/*.ts"
     },
     "./contracts": {
-      "types": "./build/contracts/app.d.ts",
+      "types": "./src/contracts/app.ts",
       "default": "./src/contracts/app.ts"
     },
     "./voice-events": {
-      "types": "./build/voice-events.d.ts",
+      "types": "./src/voice-events.ts",
       "default": "./src/voice-events.ts"
     }
   },
@@ -47,6 +47,7 @@
   },
   "dependencies": {
     "@hominem/auth": "workspace:*",
+    "@hono/zod-validator": "^0.7.6",
     "@tanstack/react-query": "5.90.16",
     "hono": "^4.12.6",
     "zod": "4.3.6"

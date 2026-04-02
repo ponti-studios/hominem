@@ -18,13 +18,13 @@ ok "Preflight checks passed"
 
 # Step 3: Trigger EAS build for preview
 step "Building preview with EAS..."
-info "This will build for both iOS and Android platforms"
-info "View progress at: https://expo.dev"
+info "This waits for both iOS and Android builds to reach a terminal state"
+info "A release manifest will be written to artifacts/releases/preview-release-manifest.json"
 printf "\n"
 
-eas build --platform all --profile preview
+bun "$SCRIPTS_DIR/internal/orchestrate-release.ts" preview
 
 printf "\n"
-ok "Preview build submitted to EAS"
-info "Check your build status at: https://expo.dev"
+ok "Preview build finished successfully"
+info "Review artifacts/releases/preview-release-manifest.json for build IDs and status details"
 printf "\n"

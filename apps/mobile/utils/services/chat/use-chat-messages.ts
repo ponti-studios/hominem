@@ -29,6 +29,7 @@ type SendChatMessageOutput = {
 export interface SendChatMessageInput {
   fileIds?: string[];
   message: string;
+  noteIds?: string[];
 }
 
 function updateSessionCache(
@@ -141,7 +142,7 @@ export const useSendMessage = ({ chatId }: { chatId: string }) => {
       return { previousMessages };
     },
 
-    mutationFn: async ({ message: messageText, fileIds }) => {
+    mutationFn: async ({ message: messageText, fileIds, noteIds }) => {
       const status = await NetInfo.fetch();
       if (!status.isConnected) {
         throw new Error('offline_unavailable');
@@ -151,6 +152,7 @@ export const useSendMessage = ({ chatId }: { chatId: string }) => {
         chatId,
         message: messageText.trim(),
         ...(fileIds && fileIds.length > 0 ? { fileIds } : {}),
+        ...(noteIds && noteIds.length > 0 ? { noteIds } : {}),
       });
       setChatSendStatus('streaming');
       const mappedMessages = [payload.messages.user, payload.messages.assistant].flatMap(
@@ -213,6 +215,9 @@ export const useSendMessage = ({ chatId }: { chatId: string }) => {
         message: text,
         ...(resolvedInput.fileIds && resolvedInput.fileIds.length > 0
           ? { fileIds: resolvedInput.fileIds }
+          : {}),
+        ...(resolvedInput.noteIds && resolvedInput.noteIds.length > 0
+          ? { noteIds: resolvedInput.noteIds }
           : {}),
       });
       setMessage('');

@@ -6,6 +6,7 @@
 const MESSAGES_LIMIT = 50;
 
 export const chatQueryKeys = {
+  list: ['chats', 'list'] as const,
   get: (chatId: string) => ['chats', chatId] as const,
   messages: (chatId: string) =>
     ['chats', 'getMessages', { chatId, limit: MESSAGES_LIMIT }] as const,
@@ -16,6 +17,7 @@ export const chatQueryKeys = {
 export const notesQueryKeys = {
   list: (options: Record<string, unknown> = {}) => ['notes', 'list', options] as const,
   detail: (id: string) => ['notes', id] as const,
+  search: (query: string) => ['notes', 'search', query] as const,
 };
 
 export const focusQueryKeys = {

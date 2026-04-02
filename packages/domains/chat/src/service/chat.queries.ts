@@ -7,10 +7,10 @@ import type { Selectable } from 'kysely';
 import type { ChatOutput } from '../contracts';
 import type { CreateChatParams } from './chat.types';
 
-type ChatRow = Selectable<Database['chat']>;
+type ChatRow = Selectable<Database['app.chats']>;
 
 function toIsoString(value: Date | string | null | undefined): string {
-  if (value === null || value === undefined) {
+  if (value == null) {
     return new Date().toISOString();
   }
 
@@ -19,50 +19,44 @@ function toIsoString(value: Date | string | null | undefined): string {
 
 function toChatOutput(row: ChatRow): ChatOutput {
   return {
-    archivedAt: null,
+    archivedAt: toIsoString(row.archived_at),
     id: row.id,
     title: row.title,
-    userId: row.user_id,
+    userId: row.owner_userid,
     noteId: row.note_id ?? null,
-    createdAt: toIsoString(row.created_at),
-    updatedAt: toIsoString(row.updated_at),
+    createdAt: toIsoString(row.createdat),
+    updatedAt: toIsoString(row.updatedat),
   };
 }
 
 export async function createChatQuery(params: CreateChatParams): Promise<ChatOutput> {
-  const chatId = crypto.randomUUID();
-  const now = new Date();
-
-  const newChat = await db
-    .insertInto('chat')
+  const now = new Date().toISOString();
+  const chat = await db
+    .insertInto('app.chats')
     .values({
-      id: chatId,
+      id: crypto.randomUUID(),
+      owner_userid: params.userId,
       title: params.title,
-      user_id: params.userId,
       note_id: params.noteId ?? null,
-      created_at: now,
-      updated_at: now,
+      createdat: now,
+      updatedat: now,
+      ...(params.archivedAt ? { archived_at: params.archivedAt } : {}),
     })
     .returningAll()
-    .executeTakeFirst();
+    .executeTakeFirstOrThrow();
 
-  if (!newChat) {
-    throw new Error('Failed to create chat');
-  }
-
-  return toChatOutput(newChat);
+  return toChatOutput(chat);
 }
 
 export async function getChatByIdQuery(chatId: string, userId: string): Promise<ChatOutput | null> {
-  const chatData = await db
-    .selectFrom('chat')
+  const chat = await db
+    .selectFrom('app.chats')
     .selectAll()
     .where('id', '=', chatId)
-    .where('user_id', '=', userId)
-    .limit(1)
+    .where('owner_userid', '=', userId)
     .executeTakeFirst();
 
-  return chatData ? toChatOutput(chatData) : null;
+  return chat ? toChatOutput(chat) : null;
 }
 
 export async function getOrCreateActiveChatQuery(
@@ -70,43 +64,22 @@ export async function getOrCreateActiveChatQuery(
   chatId?: string,
 ): Promise<ChatOutput> {
   if (chatId) {
-    const existingChat = await db
-      .selectFrom('chat')
-      .selectAll()
-      .where('id', '=', chatId)
-      .where('user_id', '=', userId)
-      .limit(1)
-      .executeTakeFirst();
-
-    if (existingChat) {
-      return toChatOutput(existingChat);
+    const existing = await getChatByIdQuery(chatId, userId);
+    if (existing) {
+      return existing;
     }
   }
 
-  const newChat = await db
-    .insertInto('chat')
-    .values({
-      id: crypto.randomUUID(),
-      title: 'New Chat',
-      user_id: userId,
-      note_id: null,
-    })
-    .returningAll()
-    .executeTakeFirst();
-
-  if (!newChat) {
-    throw new Error('Failed to create chat');
-  }
-
-  return toChatOutput(newChat);
+  return createChatQuery({ title: 'New Chat', userId });
 }
 
 export async function getUserChatsQuery(userId: string, limit = 50): Promise<ChatOutput[]> {
   const chats = await db
-    .selectFrom('chat')
+    .selectFrom('app.chats')
     .selectAll()
-    .where('user_id', '=', userId)
-    .orderBy('updated_at', 'desc')
+    .where('owner_userid', '=', userId)
+    .where('archived_at', 'is', null)
+    .orderBy('last_message_at', 'desc')
     .limit(limit)
     .execute();
 
@@ -117,15 +90,14 @@ export async function getChatByNoteIdQuery(
   noteId: string,
   userId: string,
 ): Promise<ChatOutput | null> {
-  const chatData = await db
-    .selectFrom('chat')
+  const chat = await db
+    .selectFrom('app.chats')
     .selectAll()
     .where('note_id', '=', noteId)
-    .where('user_id', '=', userId)
-    .limit(1)
+    .where('owner_userid', '=', userId)
     .executeTakeFirst();
 
-  return chatData ? toChatOutput(chatData) : null;
+  return chat ? toChatOutput(chat) : null;
 }
 
 export async function updateChatTitleQuery(
@@ -133,73 +105,52 @@ export async function updateChatTitleQuery(
   title: string,
   userId: string,
 ): Promise<ChatOutput | null> {
-  const updatedChat = await db
-    .updateTable('chat')
+  const chat = await db
+    .updateTable('app.chats')
     .set({
-      title: title,
-      updated_at: new Date(),
+      title,
+      updatedat: new Date().toISOString(),
     })
     .where('id', '=', chatId)
-    .where('user_id', '=', userId)
+    .where('owner_userid', '=', userId)
     .returningAll()
     .executeTakeFirst();
 
-  return updatedChat ? toChatOutput(updatedChat) : null;
+  return chat ? toChatOutput(chat) : null;
 }
 
 export async function archiveChatQuery(chatId: string, userId: string): Promise<ChatOutput | null> {
-  const timestamp = new Date();
-  const archivedChat = await db
-    .updateTable('chat')
+  const chat = await db
+    .updateTable('app.chats')
     .set({
-      updated_at: timestamp,
+      archived_at: new Date().toISOString(),
+      updatedat: new Date().toISOString(),
     })
     .where('id', '=', chatId)
-    .where('user_id', '=', userId)
+    .where('owner_userid', '=', userId)
     .returningAll()
     .executeTakeFirst();
 
-  if (!archivedChat) {
-    return null;
-  }
-
-  return {
-    ...toChatOutput(archivedChat),
-    archivedAt: timestamp.toISOString(),
-  };
+  return chat ? toChatOutput(chat) : null;
 }
 
 export async function deleteChatQuery(chatId: string, userId: string): Promise<boolean> {
-  const existingChat = await db
-    .selectFrom('chat')
-    .select('id')
+  const deleted = await db
+    .deleteFrom('app.chats')
     .where('id', '=', chatId)
-    .where('user_id', '=', userId)
-    .limit(1)
+    .where('owner_userid', '=', userId)
+    .returning('id')
     .executeTakeFirst();
 
-  if (!existingChat) {
-    return false;
-  }
-
-  await db.deleteFrom('chat_message').where('chat_id', '=', chatId).execute();
-  await db.deleteFrom('chat').where('id', '=', chatId).where('user_id', '=', userId).execute();
-  return true;
+  return Boolean(deleted);
 }
 
 export async function clearChatMessagesQuery(chatId: string, userId: string): Promise<boolean> {
-  const existingChat = await db
-    .selectFrom('chat')
-    .select('id')
-    .where('id', '=', chatId)
-    .where('user_id', '=', userId)
-    .limit(1)
-    .executeTakeFirst();
-
-  if (!existingChat) {
+  const existing = await getChatByIdQuery(chatId, userId);
+  if (!existing) {
     return false;
   }
 
-  await db.deleteFrom('chat_message').where('chat_id', '=', chatId).execute();
+  await db.deleteFrom('app.chat_messages').where('chat_id', '=', chatId).execute();
   return true;
 }

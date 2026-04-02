@@ -16,6 +16,24 @@ export {
 
 import type { ContentTag, TaskPriority, TaskStatus, NoteAnalysis } from '../schemas/notes.schema'
 
+export interface NoteFile {
+  id: string
+  originalName: string
+  mimetype: string
+  size: number
+  url: string
+  uploadedAt: string
+  content?: string
+  textContent?: string
+  metadata?: Record<string, unknown>
+}
+
+export interface NoteSearchResult {
+  id: string
+  title: string | null
+  excerpt: string | null
+}
+
 export type NoteContentType =
   | 'note'
   | 'document'
@@ -73,6 +91,7 @@ export type Note = {
   analysis: NoteAnalysis | null
   publishingMetadata: PublishingMetadata | null
   parentNoteId: string | null
+  files: NoteFile[]
   versionNumber: number
   isLatestVersion: boolean
   publishedAt: string | null
@@ -121,6 +140,7 @@ export type NotesDeleteOutput = Note;
 export type NotesPublishOutput = Note;
 export type NotesArchiveOutput = Note;
 export type NotesVersionsOutput = { versions: Note[] };
+export type NotesSearchOutput = { notes: NoteSearchResult[] };
 
 export type NotesListInput = {
   types?: NoteContentType[];

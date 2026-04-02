@@ -5,7 +5,7 @@ export const MOBILE_WORKSPACE_BASE_CONTEXTS = ['inbox', 'search', 'settings'] as
 export type MobileWorkspaceContext = (typeof MOBILE_WORKSPACE_CONTEXTS)[number];
 
 export const MOBILE_WORKSPACE_LABELS: Record<MobileWorkspaceContext, string> = {
-  inbox: 'Inbox',
+  inbox: 'Notes',
   note: 'Note',
   chat: 'Chat',
   search: 'Search',
@@ -13,7 +13,7 @@ export const MOBILE_WORKSPACE_LABELS: Record<MobileWorkspaceContext, string> = {
 };
 
 export const MOBILE_WORKSPACE_ROUTES: Record<MobileWorkspaceContext, Href | null> = {
-  inbox: '/(protected)/(tabs)/focus',
+  inbox: '/(protected)/(tabs)/notes',
   note: null,
   chat: '/(protected)/(tabs)/chat',
   search: null,

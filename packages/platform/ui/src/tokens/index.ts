@@ -1,5 +1,5 @@
 export * from './chat';
-export * from './colors';
+export { colors, darkColors } from './colors';
 export * from './motion';
 export * from './notes';
 export * from './radii';

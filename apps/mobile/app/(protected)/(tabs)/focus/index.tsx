@@ -1,165 +1,125 @@
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { useRouter } from 'expo-router';
+import type { RelativePathString } from 'expo-router';
+import React from 'react';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { PulsingCircle } from '~/components/animated/pulsing-circle';
-import { FeatureErrorBoundary } from '~/components/error-boundary';
-import { FeedbackBlock } from '~/components/feedback-block';
-import { ActiveSearchSummary, type ActiveSearch } from '~/components/focus/focus-search';
-import { useInputContext } from '~/components/input/input-context';
-import { LoadingContainer } from '~/components/LoadingFull';
-import AppIcon from '~/components/ui/icon';
-import { InboxStream } from '~/components/workspace/inbox-stream';
-import { donateAddNoteIntent } from '~/lib/intent-donation';
-import { Text, theme, makeStyles } from '~/theme';
+import { LoadingFull } from '~/components/LoadingFull';
+import { Text, theme } from '~/theme';
+import { useCreateNote } from '~/utils/services/notes/use-create-note';
 import { useNoteStream } from '~/utils/services/notes/use-note-stream';
 
-const FOCUS_SCREEN_OPTIONS = {
-  headerShown: false,
-} as const;
-
-const useStyles = makeStyles((t) =>
-  StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: t.colors['bg-elevated'],
-    },
-    focusContainer: {
-      flex: 1,
-    },
-    focuses: {
-      flex: 1,
-      rowGap: t.spacing.sm_12,
-    },
-    empty: {
-      marginHorizontal: t.spacing.m_16,
-      paddingVertical: t.spacing.xl_64,
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: t.colors.background,
-      borderRadius: t.borderRadii.md,
-      borderWidth: 1,
-      borderColor: t.colors['border-default'],
-    },
-    sectionLabel: {
-      letterSpacing: 1,
-    },
-    headerRight: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      columnGap: t.spacing.sm_12,
-    },
-  }),
-);
-
-export const FocusView = () => {
-  const styles = useStyles();
+export default function NotesScreen() {
   const router = useRouter();
-  const { action } = useLocalSearchParams<{ action?: string }>();
-  const { setMode } = useInputContext();
-  const [activeSearch, setActiveSearch] = useState<ActiveSearch | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
+  const { data: notes = [], isLoading, refetch, isRefetching } = useNoteStream();
+  const createNote = useCreateNote();
 
-  // Deep link: hakumi://note/add → focus?action=new
-  useEffect(() => {
-    if (action !== 'new') return;
-    setMode('text');
-    donateAddNoteIntent();
-    // Clear the param so re-focusing the screen doesn't re-trigger
-    router.setParams({ action: undefined });
-  }, [action, setMode, router]);
-  const { data: items = [], refetch, isLoading, isRefetching, isError } = useNoteStream({});
-
-  const onRefresh = useCallback(async () => {
-    setActiveSearch(null);
-    setRefreshing(true);
-    try {
-      await refetch();
-    } finally {
-      setRefreshing(false);
-    }
-  }, [refetch]);
-
-  const onSearchClose = useCallback(() => {
-    onRefresh();
-    setActiveSearch(null);
-  }, [onRefresh]);
-
-  const isLoaded = Boolean(!isLoading && !isRefetching && !refreshing);
+  if (isLoading) {
+    return <LoadingFull />;
+  }
 
   return (
-    <>
-      <Stack.Screen options={FOCUS_SCREEN_OPTIONS} />
-
-      <GestureHandlerRootView testID="focus-screen" style={styles.container}>
-        <View style={styles.focusContainer}>
-          {isLoading && !isRefetching && !refreshing ? (
-            <LoadingContainer>
-              <PulsingCircle />
-            </LoadingContainer>
-          ) : null}
-
-          {isError ? <FocusLoadingError /> : null}
-
-          {isLoaded || isRefetching ? (
-            <View style={styles.focuses}>
-              {activeSearch ? (
-                <ActiveSearchSummary onCloseClick={onSearchClose} activeSearch={activeSearch} />
-              ) : null}
-
-              <InboxStream items={items} />
-            </View>
-          ) : null}
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      refreshControl={undefined}
+    >
+      <View style={styles.header}>
+        <View>
+          <Text variant="cardHeader" color="foreground">
+            NOTES
+          </Text>
+          <Text color="text-secondary">Capture text, files, and voice.</Text>
         </View>
-      </GestureHandlerRootView>
-    </>
-  );
-};
+        <Pressable
+          style={styles.primaryButton}
+          onPress={async () => {
+            const note = await createNote.mutateAsync({ text: '' });
+            router.push(`/(protected)/(tabs)/notes/${note.id}` as RelativePathString);
+          }}
+        >
+          <Text color="foreground">NEW</Text>
+        </Pressable>
+      </View>
 
-const FocusViewWithErrorBoundary = () => (
-  <FeatureErrorBoundary featureName="Focus">
-    <FocusView />
-  </FeatureErrorBoundary>
-);
+      {notes.map((note) => (
+        <Pressable
+          key={note.id}
+          style={styles.card}
+          onPress={() => router.push(`/(protected)/(tabs)/notes/${note.id}` as RelativePathString)}
+        >
+          <Text variant="body" color="foreground">
+            {note.title || 'Untitled note'}
+          </Text>
+          <Text color="text-secondary" style={styles.preview}>
+            {note.excerpt || note.content || 'No content yet.'}
+          </Text>
+          <Text color="text-tertiary">{note.files.length} files</Text>
+        </Pressable>
+      ))}
 
-export default FocusViewWithErrorBoundary;
-
-const FocusLoadingError = React.memo(() => {
-  const errorStyles = useErrorStyles();
-  return (
-    <View style={errorStyles.wrapper}>
-      <FeedbackBlock error>
-        <View style={errorStyles.row}>
-          <AppIcon name="circle-exclamation" size={24} color={theme.colors.destructive} />
-          <View style={errorStyles.textCol}>
-            <Text variant="body" color="foreground">
-              FOCUS LOAD FAILED.
-            </Text>
-            <Text variant="body" color="text-secondary">
-              RETRY LATER.
-            </Text>
-          </View>
+      {notes.length === 0 ? (
+        <View style={styles.empty}>
+          <Text color="foreground">No notes yet.</Text>
+          <Text color="text-secondary">Create one and start capturing.</Text>
         </View>
-      </FeedbackBlock>
-    </View>
+      ) : null}
+
+      {isRefetching ? (
+        <Pressable style={styles.secondaryButton} onPress={() => void refetch()}>
+          <Text color="text-secondary">REFRESHING…</Text>
+        </Pressable>
+      ) : (
+        <Pressable style={styles.secondaryButton} onPress={() => void refetch()}>
+          <Text color="text-secondary">REFRESH</Text>
+        </Pressable>
+      )}
+    </ScrollView>
   );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  content: {
+    padding: theme.spacing.m_16,
+    gap: theme.spacing.sm_12,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing.sm_12,
+  },
+  primaryButton: {
+    borderWidth: 1,
+    borderColor: theme.colors['border-default'],
+    borderRadius: theme.borderRadii.md,
+    paddingHorizontal: theme.spacing.m_16,
+    paddingVertical: theme.spacing.sm_8,
+  },
+  secondaryButton: {
+    alignItems: 'center',
+    paddingVertical: theme.spacing.sm_8,
+  },
+  card: {
+    borderWidth: 1,
+    borderColor: theme.colors['border-default'],
+    borderRadius: theme.borderRadii.md,
+    padding: theme.spacing.m_16,
+    gap: theme.spacing.xs_4,
+  },
+  preview: {
+    minHeight: 20,
+  },
+  empty: {
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: theme.colors['border-default'],
+    borderRadius: theme.borderRadii.md,
+    padding: theme.spacing.ml_24,
+    gap: theme.spacing.xs_4,
+    alignItems: 'center',
+  },
 });
-
-const useErrorStyles = makeStyles((t) =>
-  StyleSheet.create({
-    wrapper: {
-      padding: t.spacing.sm_12,
-      marginHorizontal: t.spacing.sm_12,
-    },
-    row: {
-      flex: 1,
-      flexDirection: 'row',
-      alignItems: 'center',
-      columnGap: t.spacing.ml_24,
-    },
-    textCol: {
-      flex: 1,
-    },
-  }),
-);

@@ -1,138 +1,76 @@
-import { Hono } from 'hono'
+import { zValidator } from '@hono/zod-validator';
+import { Hono } from 'hono';
 
-const stub = () => new Response(null)
+import {
+  CreateNoteInputSchema,
+  NotesListQuerySchema,
+  UpdateNoteInputSchema,
+} from '../schemas/notes.schema';
+import type { Note } from '../types/notes.types';
 
-const adminContract = new Hono().post('/refresh-google-places', stub)
+const stub = () => new Response(null);
 
 const chatsContract = new Hono()
   .get('/', stub)
   .post('/', stub)
   .get('/:id', stub)
-  .delete('/:id', stub)
   .get('/:id/messages', stub)
   .post('/:id/send', stub)
-  .post('/:id/classify', stub)
-  .post('/:id/archive', stub)
-  .get('/note/:noteId', stub)
+  .post('/:id/archive', stub);
 
 const filesContract = new Hono()
-  .get('/', stub)
-  .get('/:fileId', stub)
-  .get('/:fileId/url', stub)
-  .delete('/:fileId', stub)
-  .post('/index', stub)
   .post('/prepare-upload', stub)
   .post('/complete-upload', stub)
+  .delete('/:fileId', stub);
 
-const financeContract = new Hono()
-  .route(
-    '/accounts',
-    new Hono()
-      .post('/list', stub)
-      .post('/all', stub)
-      .post('/get', stub)
-      .post('/with-plaid', stub)
-      .post('/connections', stub)
-      .post('/institution-accounts', stub),
-  )
-  .route(
-    '/transactions',
-    new Hono().post('/list', stub),
-  )
-  .route(
-    '/institutions',
-    new Hono().post('/list', stub).post('/create', stub),
-  )
-  .route(
-    '/analyze',
-    new Hono()
-      .post('/tag-breakdown', stub)
-      .post('/monthly-stats', stub)
-      .post('/spending-time-series', stub)
-      .post('/top-merchants', stub),
-  )
-  .route('/tags', new Hono().post('/list', stub))
-  .route('/runway', new Hono().post('/calculate', stub))
-
-const invitesContract = new Hono()
-  .post('/received', stub)
-  .post('/sent', stub)
-  .post('/by-list', stub)
-  .post('/preview', stub)
-  .post('/create', stub)
-  .post('/accept', stub)
-  .post('/decline', stub)
-  .post('/delete', stub)
-
-const itemsContract = new Hono().post('/add', stub).post('/remove', stub).post('/by-list', stub)
-
-const listsContract = new Hono()
-  .post('/list', stub)
-  .post('/get', stub)
-  .post('/create', stub)
-  .post('/update', stub)
-  .post('/delete', stub)
-  .post('/delete-item', stub)
-  .post('/containing-place', stub)
-  .post('/remove-collaborator', stub)
-
-const messagesContract = new Hono().patch('/:messageId', stub).delete('/:messageId', stub)
+const messagesContract = new Hono().patch('/:messageId', stub).delete('/:messageId', stub);
 
 const mobileContract = new Hono()
   .route('/intents', new Hono().get('/suggestions', stub))
-  .route('/voice', new Hono().post('/transcribe', stub).post('/speech', stub).post('/respond', stub))
+  .route('/voice', new Hono().post('/speech', stub));
 
-const voiceContract = new Hono().post('/transcribe', stub).post('/speech', stub).post('/respond', stub)
+const voiceContract = new Hono().post('/speech', stub);
 
 const notesContract = new Hono()
-  .get('/', stub)
-  .post('/', stub)
-  .get('/:id', stub)
-  .patch('/:id', stub)
-  .delete('/:id', stub)
-  .post('/:id/archive', stub)
-  .post('/sync', stub)
+  // List notes — query params typed via NotesListQuerySchema
+  .get('/', zValidator('query', NotesListQuerySchema), (c) => {
+    return c.json({ notes: [] as Note[] });
+  })
+  .get('/search', stub)
+  // Create note
+  .post('/', zValidator('json', CreateNoteInputSchema), (c) => {
+    return c.json({} as Note, 201 as const);
+  })
+  // Get single note
+  .get('/:id', (c) => {
+    return c.json({} as Note);
+  })
+  // Update note
+  .patch('/:id', zValidator('json', UpdateNoteInputSchema), (c) => {
+    return c.json({} as Note);
+  })
+  // Delete note
+  .delete('/:id', (c) => {
+    return c.json({} as Note);
+  })
+  // Archive note
+  .post('/:id/archive', (c) => {
+    return c.json({} as Note);
+  });
 
-const placesContract = new Hono()
-  .post('/create', stub)
-  .post('/update', stub)
-  .post('/delete', stub)
-  .post('/autocomplete', stub)
-  .post('/get', stub)
-  .post('/get-by-google-id', stub)
-  .post('/add-to-lists', stub)
-  .post('/remove-from-list', stub)
-  .post('/nearby', stub)
-  .post('/log-visit', stub)
-  .post('/my-visits', stub)
-  .post('/place-visits', stub)
-  .post('/update-visit', stub)
-  .post('/delete-visit', stub)
-  .post('/visit-stats', stub)
+const focusContract = new Hono().get('/', stub);
 
-const focusContract = new Hono().get('/', stub)
-
-const reviewContract = new Hono().post('/:reviewItemId/accept', stub).post('/:reviewItemId/reject', stub)
-
-const twitterContract = new Hono().get('/accounts', stub).post('/post', stub)
-
-const userContract = new Hono().post('/delete-account', stub)
+const reviewContract = new Hono()
+  .post('/:reviewItemId/accept', stub)
+  .post('/:reviewItemId/reject', stub);
 
 export const app = new Hono()
   .basePath('/api')
-  .route('/admin', adminContract)
   .route('/chats', chatsContract)
   .route('/files', filesContract)
-  .route('/finance', financeContract)
-  .route('/invites', invitesContract)
-  .route('/items', itemsContract)
-  .route('/lists', listsContract)
-  .route('/messages', messagesContract)
-  .route('/voice', voiceContract)
-  .route('/mobile', mobileContract)
   .route('/focus', focusContract)
+  .route('/messages', messagesContract)
+  .route('/mobile', mobileContract)
   .route('/notes', notesContract)
-  .route('/places', placesContract)
   .route('/review', reviewContract)
-  .route('/twitter', twitterContract)
-  .route('/user', userContract)
+  .route('/voice', voiceContract);

@@ -1,15 +1,16 @@
 import { useSafeAuth } from '@hominem/auth';
-import { Button } from '@hominem/ui/button';
+import { LogOut, Settings, type LucideIcon } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router';
+
+import { cn } from '../../lib/utils';
+import { Button } from '../ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@hominem/ui/dropdown';
-import { cn } from '@hominem/ui/lib/utils';
-import { LogOut, Settings, type LucideIcon } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router';
+} from '../ui/dropdown-menu';
 
 export interface NavItem {
   title: string;

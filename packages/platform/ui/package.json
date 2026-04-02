@@ -50,30 +50,13 @@
       "react-native": "./src/components/ui/card.native.tsx",
       "default": "./src/components/ui/card.tsx"
     },
-    "./loading": "./src/components/ui/loading.tsx",
-    "./list": "./src/components/list.tsx",
     "./filters": "./src/components/filters/index.ts",
     "./hooks": "./src/hooks/index.ts",
     "./hooks/sort.types": "./src/hooks/sort.types.ts",
-    "./auth-server-routes": "./src/components/auth/web-auth-route-servers.ts",
-    "./components/ui/*": "./src/components/ui/*.tsx",
-    "./components/ui/text-field.native": "./src/components/ui/text-field.native.tsx",
-    "./components/ui/text-area.native": "./src/components/ui/text-area.native.tsx",
-    "./components/ui/field.native": "./src/components/ui/field.native.tsx",
-    "./components/typography/text.native": "./src/components/typography/text.native.tsx",
-    "./components/typography/heading.native": "./src/components/typography/heading.native.tsx",
-    "./components/chat/chat.types": "./src/components/chat/chat.types.ts",
-    "./components/chat/*": "./src/components/chat/*.tsx",
-    "./components/layout": "./src/components/layout/index.ts",
-    "./components/layout/*": "./src/components/layout/*.tsx",
-    "./components/*": "./src/components/*.tsx",
-    "./finance": "./src/components/finance/index.ts",
-    "./invites": "./src/components/invites/index.ts",
     "./lib/*": "./src/lib/*.ts",
     "./lib/gsap": "./src/lib/gsap/sequences.ts",
     "./styles/*": "./src/styles/*",
     "./ai-elements": "./src/components/ai-elements/index.ts",
-    "./ai-elements/*": "./src/components/ai-elements/*.tsx",
     "./chat": {
       "react-native": "./src/components/chat/index.mobile.ts",
       "default": "./src/components/chat/index.ts"
@@ -82,7 +65,12 @@
     "./types/upload": "./src/types/upload.ts",
     "./types/chat": "./src/types/chat.ts",
     "./tokens": "./src/tokens/index.ts",
-    "./theme": "./src/theme.ts"
+    "./theme": {
+      "types": "./src/theme.ts",
+      "node": "./shell-theme.cjs",
+      "require": "./shell-theme.cjs",
+      "default": "./src/theme.ts"
+    }
   },
   "scripts": {
     "format": "bunx oxfmt ./src",

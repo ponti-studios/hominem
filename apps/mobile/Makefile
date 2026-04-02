@@ -1,4 +1,4 @@
-.PHONY: help dev verify verify-dev verify-e2e verify-preview verify-production build build-e2e build-preview build-production test test-unit test-integration test-e2e lint format typecheck
+.PHONY: help dev dev-select dev-sim dev-device verify-dev verify-e2e verify-preview verify-production build-e2e build-preview build-production test test-unit test-integration test-e2e test-e2e-deep-links test-e2e-smoke lint format typecheck precommit pr web android
 
 # ── DEFAULT ────────────────────────────────────────────────────────────────
 
@@ -33,7 +33,7 @@ help:
 	@echo "  make format                 Format code"
 	@echo "  make typecheck              TypeScript type checking"
 	@echo ""
-	@echo "See SCRIPTS.md for detailed documentation"
+	@echo "See README.md for detailed documentation"
 	@echo ""
 
 # ── DEVELOPMENT ────────────────────────────────────────────────────────────

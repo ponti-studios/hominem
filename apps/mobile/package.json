@@ -18,6 +18,7 @@
     "web": "expo start --web",
     "android": "expo run:android",
     "typecheck": "tsc --noEmit",
+    "check:expo-config": "bash scripts/internal/check-expo-config.sh",
     "lint": "bun ./scripts/internal/check-style-tokens.ts && bunx oxlint ./app ./components ./utils ./theme ./lib",
     "format": "bunx oxfmt ./app ./components ./utils ./theme ./lib",
     "test": "bun run test:unit:auth && bunx vitest run --config vitest.config.ts tests/integration/*.integration.test.ts",

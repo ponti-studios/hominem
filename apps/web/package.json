@@ -31,6 +31,7 @@
     "@types/react-syntax-highlighter": "^15.5.13",
     "@uppy/aws-s3": "^4.3.2",
     "@uppy/core": "^4.5.2",
+    "ai": "^6.0.137",
     "clsx": "^2.1.1",
     "gsap": "^3.14.2",
     "i18next": "^25.7.3",

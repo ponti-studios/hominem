@@ -1,6 +1,6 @@
 ## Hakumi monorepo
 
-Hakumi is a notes-first personal workspace. This repository contains the apps, shared packages, services, infrastructure definitions, and product tooling that support capture, notes, and chat across platforms.
+Hakumi is a notes, chat, files, and voice product. This repository contains the web app, mobile app, API, and shared packages that support authenticated note CRUD, file uploads, speech-to-text, text-to-speech, and LLM chat with explicit note context across platforms.
 
 The repo uses Bun workspaces and Turbo.
 
@@ -28,7 +28,7 @@ If you need a concrete entrypoint, inspect the owning files directly:
 
 ### Working Model
 
-- The root surface stays intentionally small.
+- The product surface centers on notes, chat, files, voice, and auth.
 - Package-local behavior lives with the owning workspace.
 - Infrastructure behavior lives in Compose files, and CI/workflow definitions consume those files instead of redefining services.
 - Documentation describes ownership and architecture, not shell snippets.

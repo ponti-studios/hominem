@@ -7,10 +7,12 @@
  * Supported deep link patterns:
  *   hakumi://verify?token=<otp>        → /(auth)/verify?token=<otp>
  *   hakumi://chat?seed=<text>          → /(protected)/(tabs)/chat?seed=<text>
- *   hakumi://focus                     → /(protected)/(tabs)/focus
- *   hakumi://focus/<id>                → /(protected)/(tabs)/focus/<id>
+ *   hakumi://notes                     → /(protected)/(tabs)/notes
+ *   hakumi://notes/<id>                → /(protected)/(tabs)/notes/<id>
+ *   hakumi://focus                     → /(protected)/(tabs)/notes
+ *   hakumi://focus/<id>                → /(protected)/(tabs)/notes/<id>
  *   hakumi://account                   → /(protected)/(tabs)/account
- *   hakumi://note/add                  → /(protected)/(tabs)/focus?action=new
+ *   hakumi://note/add                  → /(protected)/(tabs)/notes?action=new
  */
 export function redirectSystemPath({
   path,
@@ -22,9 +24,9 @@ export function redirectSystemPath({
   // Strip leading slash for matching
   const normalized = path.startsWith('/') ? path.slice(1) : path;
 
-  // App Intent / Siri: note/add → focus tab with new-note action
+  // App Intent / Siri: note/add → notes tab with new-note action
   if (normalized === 'note/add') {
-    return '/(protected)/(tabs)/focus?action=new';
+    return '/(protected)/(tabs)/notes?action=new';
   }
 
   // OTP verification link: verify?token=xxx → /(auth)/verify?token=xxx
@@ -37,9 +39,12 @@ export function redirectSystemPath({
     return `/(protected)/(tabs)/${normalized}`;
   }
 
-  // Focus screen or focus item
-  if (normalized.startsWith('focus')) {
+  if (normalized.startsWith('notes')) {
     return `/(protected)/(tabs)/${normalized}`;
+  }
+
+  if (normalized.startsWith('focus')) {
+    return `/(protected)/(tabs)/${normalized.replace(/^focus/, 'notes')}`;
   }
 
   // Account screen

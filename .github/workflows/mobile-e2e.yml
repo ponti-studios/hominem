@@ -1,196 +1,136 @@
 name: Mobile · E2E Tests
 
 on:
-  push:
-    branches: [main, develop]
-    paths:
-      - 'apps/mobile/**'
-      - '.github/workflows/mobile-e2e.yml'
-  pull_request:
-    paths:
-      - 'apps/mobile/**'
-      - '.github/workflows/mobile-e2e.yml'
+    push:
+        branches: [main, develop]
+        paths:
+            - "apps/mobile/**"
+            - "packages/**"
+            - "package.json"
+            - "bun.lock"
+            - "bunfig.toml"
+            - "turbo.json"
+            - "tsconfig.json"
+            - "tsconfig.profiles/**"
+            - ".github/actions/setup-mobile/**"
+            - ".github/workflows/mobile-e2e.yml"
+    pull_request:
+        paths:
+            - "apps/mobile/**"
+            - "packages/**"
+            - "package.json"
+            - "bun.lock"
+            - "bunfig.toml"
+            - "turbo.json"
+            - "tsconfig.json"
+            - "tsconfig.profiles/**"
+            - ".github/actions/setup-mobile/**"
+            - ".github/workflows/mobile-e2e.yml"
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
 
 jobs:
-  build-e2e-app:
-    name: Build E2E App
-    runs-on: macos-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    build-e2e-app:
+        name: Build E2E App
+        runs-on: macos-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22.11.0'
+            - name: Setup mobile workspace
+              uses: ./.github/actions/setup-mobile
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
-        with:
-          bun-version: '1.3.10'
+            - name: Build E2E test app
+              run: bun run build:e2e
+              working-directory: apps/mobile
 
-      - name: Cache node_modules
-        uses: actions/cache@v4
-        with:
-          path: apps/mobile/node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('apps/mobile/package.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
+            - name: Upload E2E app
+              uses: actions/upload-artifact@v4
+              with:
+                  name: e2e-app
+                  path: apps/mobile/artifacts
+                  retention-days: 1
 
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-        working-directory: apps/mobile
+    e2e-auth:
+        name: E2E · Auth Flow
+        runs-on: macos-latest
+        needs: build-e2e-app
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
 
-      - name: Build E2E test app
-        run: bun run build:e2e
-        working-directory: apps/mobile
+            - name: Setup mobile workspace
+              uses: ./.github/actions/setup-mobile
 
-      - name: Upload E2E app
-        uses: actions/upload-artifact@v4
-        with:
-          name: e2e-app
-          path: apps/mobile/artifacts
-          retention-days: 1
+            - name: Download E2E app
+              uses: actions/download-artifact@v4
+              with:
+                  name: e2e-app
+                  path: apps/mobile/artifacts
 
-  e2e-auth:
-    name: E2E · Auth Flow
-    runs-on: macos-latest
-    needs: build-e2e-app
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+            - name: Run auth E2E tests
+              run: bun run test:e2e
+              working-directory: apps/mobile
+              timeout-minutes: 15
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22.11.0'
+    e2e-deep-links:
+        name: E2E · Deep Links
+        runs-on: macos-latest
+        needs: build-e2e-app
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
-        with:
-          bun-version: '1.3.10'
+            - name: Setup mobile workspace
+              uses: ./.github/actions/setup-mobile
 
-      - name: Cache node_modules
-        uses: actions/cache@v4
-        with:
-          path: apps/mobile/node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('apps/mobile/package.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
+            - name: Download E2E app
+              uses: actions/download-artifact@v4
+              with:
+                  name: e2e-app
+                  path: apps/mobile/artifacts
 
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-        working-directory: apps/mobile
+            - name: Run deep links E2E tests
+              run: bun run test:e2e:deep-links
+              working-directory: apps/mobile
+              timeout-minutes: 15
 
-      - name: Download E2E app
-        uses: actions/download-artifact@v4
-        with:
-          name: e2e-app
-          path: apps/mobile/artifacts
+    e2e-smoke:
+        name: E2E · Smoke Tests
+        runs-on: macos-latest
+        needs: build-e2e-app
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
 
-      - name: Run auth E2E tests
-        run: bun run test:e2e
-        working-directory: apps/mobile
-        timeout-minutes: 15
+            - name: Setup mobile workspace
+              uses: ./.github/actions/setup-mobile
 
-  e2e-deep-links:
-    name: E2E · Deep Links
-    runs-on: macos-latest
-    needs: build-e2e-app
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+            - name: Download E2E app
+              uses: actions/download-artifact@v4
+              with:
+                  name: e2e-app
+                  path: apps/mobile/artifacts
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22.11.0'
+            - name: Run smoke E2E tests
+              run: bun run test:e2e:smoke
+              working-directory: apps/mobile
+              timeout-minutes: 15
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
-        with:
-          bun-version: '1.3.10'
-
-      - name: Cache node_modules
-        uses: actions/cache@v4
-        with:
-          path: apps/mobile/node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('apps/mobile/package.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-        working-directory: apps/mobile
-
-      - name: Download E2E app
-        uses: actions/download-artifact@v4
-        with:
-          name: e2e-app
-          path: apps/mobile/artifacts
-
-      - name: Run deep links E2E tests
-        run: bun run test:e2e:deep-links
-        working-directory: apps/mobile
-        timeout-minutes: 15
-
-  e2e-smoke:
-    name: E2E · Smoke Tests
-    runs-on: macos-latest
-    needs: build-e2e-app
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22.11.0'
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
-        with:
-          bun-version: '1.3.10'
-
-      - name: Cache node_modules
-        uses: actions/cache@v4
-        with:
-          path: apps/mobile/node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('apps/mobile/package.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-        working-directory: apps/mobile
-
-      - name: Download E2E app
-        uses: actions/download-artifact@v4
-        with:
-          name: e2e-app
-          path: apps/mobile/artifacts
-
-      - name: Run smoke E2E tests
-        run: bun run test:e2e:smoke
-        working-directory: apps/mobile
-        timeout-minutes: 15
-
-  e2e-results:
-    name: E2E Results
-    runs-on: ubuntu-latest
-    needs: [e2e-auth, e2e-deep-links, e2e-smoke]
-    if: always()
-    steps:
-      - name: Check E2E status
-        run: |
-          if [ "${{ needs.e2e-auth.result }}" != "success" ] || \
-             [ "${{ needs.e2e-deep-links.result }}" != "success" ] || \
-             [ "${{ needs.e2e-smoke.result }}" != "success" ]; then
-            echo "❌ E2E tests failed"
-            exit 1
-          fi
-          echo "✅ All E2E tests passed"
+    e2e-results:
+        name: E2E Results
+        runs-on: ubuntu-latest
+        needs: [e2e-auth, e2e-deep-links, e2e-smoke]
+        if: always()
+        steps:
+            - name: Check E2E status
+              run: |
+                  if [ "${{ needs.e2e-auth.result }}" != "success" ] || \
+                     [ "${{ needs.e2e-deep-links.result }}" != "success" ] || \
+                     [ "${{ needs.e2e-smoke.result }}" != "success" ]; then
+                    echo "❌ E2E tests failed"
+                    exit 1
+                  fi
+                  echo "✅ All E2E tests passed"

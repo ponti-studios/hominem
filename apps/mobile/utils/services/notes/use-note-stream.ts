@@ -1,27 +1,21 @@
 import { useApiClient } from '@hominem/rpc/react';
+import type { Note } from '@hominem/rpc/types';
 import { useQuery } from '@tanstack/react-query';
 
-import type { InboxStreamItem } from '~/components/workspace/inbox-stream-items';
-
 import { noteKeys } from './query-keys';
-
-function toRoute(kind: 'note' | 'chat', id: string): string {
-  return kind === 'note'
-    ? `/(protected)/(tabs)/focus/${id}`
-    : `/(protected)/(tabs)/chat?chatId=${id}`;
-}
 
 export function useNoteStream({ enabled = true }: { enabled?: boolean } = {}) {
   const client = useApiClient();
 
-  return useQuery<InboxStreamItem[]>({
+  return useQuery<Note[]>({
     queryKey: noteKeys.all,
     queryFn: async () => {
-      const { items } = await client.focus.list();
-      return items.map((item) => ({
-        ...item,
-        route: toRoute(item.kind, item.id),
-      }));
+      const response = await client.notes.list({
+        sortBy: 'updatedAt',
+        sortOrder: 'desc',
+        limit: 100,
+      });
+      return response.notes;
     },
     initialData: [],
     enabled,

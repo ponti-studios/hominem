@@ -1,0 +1,42 @@
+name: Setup Mobile Workspace
+description: Install the shared toolchain and workspace dependencies for mobile workflows.
+
+inputs:
+  install-eas-cli:
+    description: Install the EAS CLI for release and release-verification workflows.
+    required: false
+    default: 'false'
+  eas-cli-version:
+    description: Version of eas-cli to install when install-eas-cli is enabled.
+    required: false
+    default: '18.4.0'
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22.11.0'
+
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v1
+      with:
+        bun-version: '1.3.10'
+
+    - name: Cache Bun install cache
+      uses: actions/cache@v4
+      with:
+        path: ~/.bun/install/cache
+        key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-bun-
+
+    - name: Install workspace dependencies
+      shell: bash
+      run: bun install --frozen-lockfile
+
+    - name: Install EAS CLI
+      if: ${{ inputs.install-eas-cli == 'true' }}
+      shell: bash
+      run: npm install --global "eas-cli@${{ inputs.eas-cli-version }}"

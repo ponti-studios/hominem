@@ -1,41 +1,36 @@
-import type { RawHonoClient } from '../core/raw-client'
+import type { RawHonoClient } from '../core/raw-client';
 import type {
   Chat,
   ChatsCreateOutput,
   ChatsGetMessagesOutput,
   ChatsGetOutput,
   ChatsSendOutput,
-  ChatsClassifyInput,
-  ChatsClassifyOutput,
-} from '../types/chat.types'
+} from '../types/chat.types';
 
 export interface ChatsCreateInput {
-  title: string
-  noteId?: string
+  title: string;
+  noteId?: string;
 }
 
 export interface ChatsListInput {
-  limit?: number
+  limit?: number;
 }
 
 export interface ChatsGetMessagesInput {
-  chatId: string
-  limit?: number
-  offset?: number
-}
-
-export interface ChatsGetByNoteInput {
-  noteId: string
+  chatId: string;
+  limit?: number;
+  offset?: number;
 }
 
 export interface ChatsSendMessageInput {
-  chatId: string
-  message: string
-  fileIds?: string[]
+  chatId: string;
+  message: string;
+  fileIds?: string[];
+  noteIds?: string[];
 }
 
 export interface ChatsArchiveInput {
-  chatId: string
+  chatId: string;
 }
 
 interface ArchiveRouteClient {
@@ -44,114 +39,89 @@ interface ArchiveRouteClient {
       ':id': {
         messages: {
           $get(args: { param: { id: string }; query?: Record<string, string> }): Promise<{
-            json(): Promise<ChatsGetMessagesOutput>
-          }>
-        }
+            json(): Promise<ChatsGetMessagesOutput>;
+          }>;
+        };
         send: {
-          $post(args: { param: { id: string }; json: { message: string; fileIds?: string[] } }): Promise<{
-            json(): Promise<ChatsSendOutput>
-          }>
-        }
-        classify: {
-          $post(args: { param: { id: string }; json: { targetType: ChatsClassifyInput['targetType'] } }): Promise<{
-            json(): Promise<ChatsClassifyOutput>
-          }>
-        }
+          $post(args: {
+            param: { id: string };
+            json: { message: string; fileIds?: string[]; noteIds?: string[] };
+          }): Promise<{
+            json(): Promise<ChatsSendOutput>;
+          }>;
+        };
         archive: {
           $post(args: { param: { id: string } }): Promise<{
-            json(): Promise<Chat>
-          }>
-        }
-      }
-    }
-  }
+            json(): Promise<Chat>;
+          }>;
+        };
+      };
+    };
+  };
 }
 
 function toMessageQuery(input: ChatsGetMessagesInput): Record<string, string> {
-  const query: Record<string, string> = {}
+  const query: Record<string, string> = {};
 
   if (typeof input.limit === 'number') {
-    query.limit = String(input.limit)
+    query.limit = String(input.limit);
   }
   if (typeof input.offset === 'number') {
-    query.offset = String(input.offset)
+    query.offset = String(input.offset);
   }
 
-  return query
+  return query;
 }
 
 export interface ChatsGetInput {
-  chatId: string
-}
-
-export interface ChatsClassifyClientInput extends ChatsClassifyInput {
-  chatId: string
-}
-
-export interface ChatsDeleteInput {
-  chatId: string
+  chatId: string;
 }
 
 export interface ChatsClient {
-  list(input: ChatsListInput): Promise<Chat[]>
-  get(input: ChatsGetInput): Promise<ChatsGetOutput>
-  getMessages(input: ChatsGetMessagesInput): Promise<ChatsGetMessagesOutput>
-  getByNote(input: ChatsGetByNoteInput): Promise<Chat>
-  create(input: ChatsCreateInput): Promise<ChatsCreateOutput>
-  archive(input: ChatsArchiveInput): Promise<Chat>
-  delete(input: ChatsDeleteInput): Promise<{ success: boolean }>
-  send(input: ChatsSendMessageInput): Promise<ChatsSendOutput>
-  classify(input: ChatsClassifyClientInput): Promise<ChatsClassifyOutput>
+  list(input: ChatsListInput): Promise<Chat[]>;
+  get(input: ChatsGetInput): Promise<ChatsGetOutput>;
+  getMessages(input: ChatsGetMessagesInput): Promise<ChatsGetMessagesOutput>;
+  create(input: ChatsCreateInput): Promise<ChatsCreateOutput>;
+  archive(input: ChatsArchiveInput): Promise<Chat>;
+  send(input: ChatsSendMessageInput): Promise<ChatsSendOutput>;
 }
 
 export function createChatsClient(rawClient: RawHonoClient): ChatsClient {
-  const routeClient = rawClient as RawHonoClient & ArchiveRouteClient
+  const routeClient = rawClient as RawHonoClient & ArchiveRouteClient;
 
   return {
     async list(input) {
-      const query: Record<string, string> = {}
+      const query: Record<string, string> = {};
       if (typeof input.limit === 'number') {
-        query.limit = String(input.limit)
+        query.limit = String(input.limit);
       }
-      const res = await rawClient.api.chats.$get({ query })
-      return res.json() as Promise<Chat[]>
+      const res = await rawClient.api.chats.$get({ query });
+      return res.json() as Promise<Chat[]>;
     },
     async get(input) {
       const res = await rawClient.api.chats[':id'].$get({
         param: { id: input.chatId },
-      })
-      return res.json() as Promise<ChatsGetOutput>
+      });
+      return res.json() as Promise<ChatsGetOutput>;
     },
     async getMessages(input) {
       const res = await routeClient.api.chats[':id'].messages.$get({
         param: { id: input.chatId },
         query: toMessageQuery(input),
-      })
-      return res.json() as Promise<ChatsGetMessagesOutput>
-    },
-    async getByNote(input) {
-      const res = await rawClient.api.chats.note[':noteId'].$get({
-        param: { noteId: input.noteId },
-      })
-      return res.json() as Promise<Chat>
+      });
+      return res.json() as Promise<ChatsGetMessagesOutput>;
     },
     async create(input) {
       const res = await rawClient.api.chats.$post({
         json: input,
-      })
-      return res.json() as Promise<ChatsCreateOutput>
+      });
+      return res.json() as Promise<ChatsCreateOutput>;
     },
     async archive(input) {
       const res = await routeClient.api.chats[':id'].archive.$post({
         param: { id: input.chatId },
-      })
-      return res.json() as Promise<Chat>
-    },
-    async delete(input) {
-      const res = await rawClient.api.chats[':id'].$delete({
-        param: { id: input.chatId },
-      })
-      return res.json() as Promise<{ success: boolean }>
+      });
+      return res.json() as Promise<Chat>;
     },
     async send(input) {
       const res = await routeClient.api.chats[':id'].send.$post({
@@ -159,16 +129,10 @@ export function createChatsClient(rawClient: RawHonoClient): ChatsClient {
         json: {
           message: input.message,
           ...(input.fileIds && input.fileIds.length > 0 ? { fileIds: input.fileIds } : {}),
+          ...(input.noteIds && input.noteIds.length > 0 ? { noteIds: input.noteIds } : {}),
         },
-      })
-      return res.json() as Promise<ChatsSendOutput>
+      });
+      return res.json() as Promise<ChatsSendOutput>;
     },
-    async classify(input) {
-      const res = await routeClient.api.chats[':id'].classify.$post({
-        param: { id: input.chatId },
-        json: { targetType: input.targetType },
-      })
-      return res.json() as Promise<ChatsClassifyOutput>
-    },
-  }
+  };
 }

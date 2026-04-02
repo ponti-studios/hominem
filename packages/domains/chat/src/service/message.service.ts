@@ -1,14 +1,13 @@
 import crypto from 'node:crypto';
 
 import { db } from '@hominem/db';
-import type { Database, Json } from '@hominem/db';
-import { logger } from '@hominem/utils/logger';
+import type { Database } from '@hominem/db';
 import type { Selectable } from 'kysely';
 
 import type { ChatMessageInput, ChatMessageOutput, ChatMessageRole } from '../contracts';
 import { ChatError } from './chat.types';
 
-type ChatMessageRow = Selectable<Database['chat_message']>;
+type ChatMessageRow = Selectable<Database['app.chat_messages']>;
 
 export type CreateMessageParams = {
   chatId: ChatMessageOutput['chatId'];
@@ -39,28 +38,21 @@ function toIsoString(value: string | Date | null | undefined): string {
   return new Date(0).toISOString();
 }
 
-function normalizeParentMessageId(parentMessageId?: string | null): string | null {
-  if (!parentMessageId) {
-    return null;
-  }
-
-  const trimmedParentMessageId = parentMessageId.trim();
-  return trimmedParentMessageId.length > 0 ? trimmedParentMessageId : null;
-}
-
 function toMessageOutput(row: ChatMessageRow): ChatMessageOutput {
   return {
     id: row.id,
     chatId: row.chat_id,
-    userId: row.user_id,
+    userId: row.author_userid ?? '',
     role: row.role as ChatMessageRole,
     content: row.content,
-    files: row.files as ChatMessageOutput['files'],
-    toolCalls: row.tool_calls as ChatMessageOutput['toolCalls'],
+    files: (Array.isArray(row.files) ? row.files : null) as ChatMessageOutput['files'],
+    toolCalls: (Array.isArray(row.tool_calls)
+      ? row.tool_calls
+      : null) as ChatMessageOutput['toolCalls'],
     reasoning: row.reasoning ?? null,
     parentMessageId: row.parent_message_id,
-    createdAt: toIsoString(row.created_at),
-    updatedAt: toIsoString(row.updated_at),
+    createdAt: toIsoString(row.createdat),
+    updatedAt: toIsoString(row.updatedat),
   };
 }
 
@@ -71,112 +63,64 @@ export class MessageService {
   }
 
   async addMessages(params: CreateMessageParams[]): Promise<ChatMessageOutput[]> {
-    try {
-      if (params.length === 0) {
-        return [];
-      }
-
-      const chatId = params[0]?.chatId;
-      if (!chatId || params.some((message) => message.chatId !== chatId)) {
-        throw new ChatError('VALIDATION_ERROR', 'Messages must target the same chat');
-      }
-
-      const insertedMessages = await db.transaction().execute(async (trx) => {
-        const newMessages = await trx
-          .insertInto('chat_message')
-          .values(
-            params.map((message) => ({
-              id: crypto.randomUUID(),
-              chat_id: message.chatId,
-              user_id: message.userId,
-              role: message.role,
-              content: message.content,
-              files: message.files as Json,
-              tool_calls: message.toolCalls as Json,
-              reasoning: message.reasoning ?? null,
-              parent_message_id: normalizeParentMessageId(message.parentMessageId),
-            })),
-          )
-          .returningAll()
-          .execute();
-
-        if (newMessages.length !== params.length) {
-          throw new ChatError('DATABASE_ERROR', 'Failed to create all messages');
-        }
-
-        await trx
-          .updateTable('chat')
-          .set({ updated_at: new Date() })
-          .where('id', '=', chatId)
-          .execute();
-
-        return newMessages;
-      });
-
-      return insertedMessages.map(toMessageOutput);
-    } catch (error) {
-      logger.error(`Failed to add message: ${error}`);
-      if (error instanceof ChatError) {
-        throw error;
-      }
-      throw new ChatError('DATABASE_ERROR', 'Failed to add message to conversation');
+    if (params.length === 0) {
+      return [];
     }
+
+    const chatId = params[0]?.chatId;
+    if (!chatId || params.some((message) => message.chatId !== chatId)) {
+      throw new ChatError('VALIDATION_ERROR', 'Messages must target the same chat');
+    }
+
+    const inserted = await db
+      .insertInto('app.chat_messages')
+      .values(
+        params.map((message) => ({
+          id: crypto.randomUUID(),
+          chat_id: message.chatId,
+          author_userid: message.userId,
+          role: message.role,
+          content: message.content,
+          files: message.files ?? null,
+          tool_calls: message.toolCalls ?? null,
+          reasoning: message.reasoning ?? null,
+          parent_message_id: message.parentMessageId ?? null,
+        })),
+      )
+      .returningAll()
+      .execute();
+
+    return inserted.map(toMessageOutput);
   }
 
-  /**
-   * Get messages for a chat conversation
-   */
   async getChatMessages(
     chatId: string,
     options: ChatMessagesOptions = { limit: 10, offset: 0, orderBy: 'asc' },
   ): Promise<ChatMessageOutput[]> {
-    try {
-      const query = db
-        .selectFrom('chat_message')
-        .selectAll()
-        .where('chat_id', '=', chatId)
-        .limit(options.limit ?? 50)
-        .offset(options.offset ?? 0)
-        .orderBy('created_at', options.orderBy === 'desc' ? 'desc' : 'asc');
+    const messages = await db
+      .selectFrom('app.chat_messages')
+      .selectAll()
+      .where('chat_id', '=', chatId)
+      .limit(options.limit ?? 50)
+      .offset(options.offset ?? 0)
+      .orderBy('createdat', options.orderBy === 'desc' ? 'desc' : 'asc')
+      .execute();
 
-      const results = await query.execute();
-      return results.map(toMessageOutput);
-    } catch (error) {
-      logger.error(`Failed to get chat messages: ${error}`);
-      throw new ChatError('DATABASE_ERROR', 'Failed to fetch chat messages');
-    }
+    return messages.map(toMessageOutput);
   }
 
-  /**
-   * Get a specific message by ID
-   */
   async getMessageById(messageId: string, userId: string): Promise<ChatMessageOutput | null> {
-    try {
-      const message = await db
-        .selectFrom('chat_message')
-        .selectAll()
-        .where('id', '=', messageId)
-        .where('user_id', '=', userId)
-        .limit(1)
-        .executeTakeFirst();
+    const message = await db
+      .selectFrom('app.chat_messages as message')
+      .innerJoin('app.chats as chat', 'chat.id', 'message.chat_id')
+      .selectAll('message')
+      .where('message.id', '=', messageId)
+      .where('chat.owner_userid', '=', userId)
+      .executeTakeFirst();
 
-      if (!message) {
-        throw new ChatError('AUTH_ERROR', 'Message not found or access denied');
-      }
-
-      return toMessageOutput(message);
-    } catch (error) {
-      logger.error(`Failed to get message by ID: ${error}`);
-      if (error instanceof ChatError) {
-        throw error;
-      }
-      throw new ChatError('DATABASE_ERROR', 'Failed to fetch message');
-    }
+    return message ? toMessageOutput(message as ChatMessageRow) : null;
   }
 
-  /**
-   * Update a message content
-   */
   async updateMessage({
     messageId,
     content,
@@ -186,87 +130,60 @@ export class MessageService {
     content: string;
     toolCalls?: ChatMessageInput['toolCalls'];
   }): Promise<ChatMessageOutput | null> {
-    try {
-      const updatedMessage = await db
-        .updateTable('chat_message')
-        .set({
-          content,
-          tool_calls: toolCalls as Json,
-          updated_at: new Date(),
-        })
-        .where('id', '=', messageId)
-        .returningAll()
-        .executeTakeFirst();
+    const message = await db
+      .updateTable('app.chat_messages')
+      .set({
+        content,
+        tool_calls: toolCalls ?? null,
+        updatedat: new Date().toISOString(),
+      })
+      .where('id', '=', messageId)
+      .returningAll()
+      .executeTakeFirst();
 
-      if (!updatedMessage) {
-        return null;
-      }
-
-      return toMessageOutput(updatedMessage);
-    } catch (error) {
-      logger.error(`Failed to update message: ${error}`);
-      if (error instanceof ChatError) {
-        throw error;
-      }
-      throw new ChatError('DATABASE_ERROR', 'Failed to update message');
-    }
+    return message ? toMessageOutput(message) : null;
   }
 
-  /**
-   * Delete a message
-   */
   async deleteMessage(messageId: string, userId: string): Promise<boolean> {
-    try {
-      await db
-        .deleteFrom('chat_message')
-        .where('id', '=', messageId)
-        .where('user_id', '=', userId)
-        .execute();
+    const message = await db
+      .selectFrom('app.chat_messages as message')
+      .innerJoin('app.chats as chat', 'chat.id', 'message.chat_id')
+      .select('message.id')
+      .where('message.id', '=', messageId)
+      .where('chat.owner_userid', '=', userId)
+      .executeTakeFirst();
 
-      return true;
-    } catch (error) {
-      logger.error(`Failed to delete message: ${error}`);
+    if (!message) {
       return false;
     }
+
+    await db.deleteFrom('app.chat_messages').where('id', '=', messageId).execute();
+    return true;
   }
 
-  /**
-   * Delete all messages in a chat created after a given timestamp
-   */
   async deleteMessagesAfter(
     chatId: string,
     afterTimestamp: string,
     userId: string,
   ): Promise<number> {
-    try {
-      // Verify chat ownership first
-      const chatData = await db
-        .selectFrom('chat')
-        .select('id')
-        .where('id', '=', chatId)
-        .where('user_id', '=', userId)
-        .limit(1)
-        .executeTakeFirst();
+    const existing = await db
+      .selectFrom('app.chats')
+      .select('id')
+      .where('id', '=', chatId)
+      .where('owner_userid', '=', userId)
+      .executeTakeFirst();
 
-      if (!chatData) {
-        throw new ChatError('AUTH_ERROR', 'Chat not found or access denied');
-      }
-
-      // Delete all messages created after the timestamp
-      const deletedMessages = await db
-        .deleteFrom('chat_message')
-        .where('chat_id', '=', chatId)
-        .where('created_at', '>', new Date(afterTimestamp))
-        .returningAll()
-        .execute();
-
-      return deletedMessages.length;
-    } catch (error) {
-      logger.error(`Failed to delete messages after timestamp: ${error}`);
-      if (error instanceof ChatError) {
-        throw error;
-      }
-      throw new ChatError('DATABASE_ERROR', 'Failed to delete subsequent messages');
+    if (!existing) {
+      throw new ChatError('AUTH_ERROR', 'Chat not found or access denied');
     }
+
+    const deleted = await db
+      .deleteFrom('app.chat_messages')
+      .where('chat_id', '=', chatId)
+      .where('createdat', '>', afterTimestamp)
+      .returning('id')
+      .execute();
+
+    return deleted.length;
   }
 }

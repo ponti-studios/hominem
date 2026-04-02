@@ -178,7 +178,7 @@ function Account() {
               CHAT HISTORY
             </Text>
             <Text color="text-tertiary" style={styles.sectionDescription}>
-              Archived chats live outside inbox so current work stays focused.
+              Archived chats live outside the main chat flow so current work stays focused.
             </Text>
             <Button title="[ARCHIVED_CHATS]" onPress={onArchivedChatsPress} />
           </View>

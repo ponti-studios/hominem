@@ -300,7 +300,7 @@ export const NoteListItem = ({
         <Link
           asChild
           href={{
-            pathname: '/(protected)/(tabs)/focus/[id]' as RelativePathString,
+            pathname: '/(protected)/(tabs)/notes/[id]' as RelativePathString,
             params: { id: item.id },
           }}
         >

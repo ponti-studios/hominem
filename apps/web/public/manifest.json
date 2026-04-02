@@ -1,7 +1,7 @@
 {
   "name": "Hakumi",
   "short_name": "Hakumi",
-  "description": "Hakumi brings notes, voice capture, and chat into one workspace.",
+  "description": "Hakumi combines notes, chat, file uploads, speech-to-text, and text-to-speech.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#FAF9F7",

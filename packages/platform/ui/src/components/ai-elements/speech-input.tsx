@@ -74,6 +74,12 @@ export function SpeechInput({
   const analyserRef = useRef<AnalyserNode | null>(null);
   const levelRafIdRef = useRef<number | null>(null);
   const levelDataRef = useRef<Uint8Array<ArrayBuffer> | null>(null);
+  const errorRestartCountRef = useRef(0);
+  const audioChunksSizeRef = useRef(0);
+  /** Max consecutive SpeechRecognition error-restarts before giving up. */
+  const MAX_ERROR_RESTARTS = 3;
+  /** 25 MB — matches server-side VOICE_TRANSCRIPTION_MAX_SIZE_BYTES. */
+  const MAX_RECORDING_BYTES = 25 * 1024 * 1024;
 
   useEffect(() => {
     onRecordingStateChange?.(isRecording);
@@ -151,6 +157,7 @@ export function SpeechInput({
       recognitionRef.current.lang = language;
 
       recognitionRef.current.onresult = (event: SpeechRecognitionEvent) => {
+        errorRestartCountRef.current = 0;
         let finalTranscript = '';
         let interimTranscript = '';
 
@@ -175,11 +182,14 @@ export function SpeechInput({
 
       recognitionRef.current.onerror = (_event: SpeechRecognitionErrorEvent) => {
         if (!isStopRequestedRef.current) {
-          try {
-            recognitionRef.current?.start();
-            return;
-          } catch {
-            // Fall through to reset state
+          errorRestartCountRef.current += 1;
+          if (errorRestartCountRef.current <= MAX_ERROR_RESTARTS) {
+            try {
+              recognitionRef.current?.start();
+              return;
+            } catch {
+              // Fall through to reset state
+            }
           }
         }
 
@@ -225,12 +235,27 @@ export function SpeechInput({
       recordingStreamRef.current = stream;
       mediaRecorderRef.current = new MediaRecorder(stream);
       audioChunksRef.current = [];
+      audioChunksSizeRef.current = 0;
       isStopRequestedRef.current = false;
 
       startAudioLevelMonitor(stream);
 
       mediaRecorderRef.current.ondataavailable = (event) => {
         if (event.data.size > 0) {
+          audioChunksSizeRef.current += event.data.size;
+          if (audioChunksSizeRef.current > MAX_RECORDING_BYTES) {
+            // Auto-stop: stop the MediaRecorder directly to prevent exceeding server limit
+            if (mediaRecorderRef.current?.state === 'recording') {
+              isStopRequestedRef.current = true;
+              recognitionRef.current?.stop();
+              mediaRecorderRef.current.stop();
+              recordingStreamRef.current?.getTracks().forEach((track) => track.stop());
+              stopAudioLevelMonitor();
+              setIsRecording(false);
+              setIsProcessing(true);
+            }
+            return;
+          }
           audioChunksRef.current.push(event.data);
         }
       };
@@ -248,6 +273,7 @@ export function SpeechInput({
       };
 
       mediaRecorderRef.current.start(100);
+      errorRestartCountRef.current = 0;
       recognitionRef.current.start();
       setIsRecording(true);
 

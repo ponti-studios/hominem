@@ -58,6 +58,7 @@ export interface AppChatMessages {
   files: Json | null;
   id: Generated<string>;
   parent_message_id: string | null;
+  referenced_note_ids: Json | null;
   reasoning: string | null;
   role: string;
   tool_calls: Json | null;
@@ -130,6 +131,21 @@ export interface AppEvents {
   starts_at: Timestamp;
   title: string;
   updatedat: Generated<Timestamp>;
+}
+
+export interface AppFiles {
+  content: string | null;
+  createdat: Generated<Timestamp>;
+  id: string;
+  metadata: Json | null;
+  mimetype: string;
+  original_name: string;
+  owner_userid: string;
+  size: number;
+  storage_key: string;
+  text_content: string | null;
+  updatedat: Generated<Timestamp>;
+  url: string;
 }
 
 export interface AppFinanceAccounts {
@@ -293,13 +309,16 @@ export interface AppMusicTracks {
 }
 
 export interface AppNotes {
+  content: string;
   createdat: Generated<Timestamp>;
   current_version_id: string | null;
+  excerpt: string | null;
   id: Generated<string>;
   is_locked: Generated<boolean>;
   owner_userid: string;
   parent_note_id: string | null;
   source: string | null;
+  title: string | null;
   updatedat: Generated<Timestamp>;
 }
 
@@ -313,6 +332,12 @@ export interface AppNoteShares {
   permission: Generated<string>;
   revokedat: Timestamp | null;
   shared_with_userid: string;
+}
+
+export interface AppNoteFiles {
+  attached_at: Generated<Timestamp>;
+  file_id: string;
+  note_id: string;
 }
 
 export interface AppNoteVersions {
@@ -704,6 +729,7 @@ export interface DB {
   "app.entity_links": AppEntityLinks;
   "app.event_attendees": AppEventAttendees;
   "app.events": AppEvents;
+  "app.files": AppFiles;
   "app.finance_accounts": AppFinanceAccounts;
   "app.finance_institutions": AppFinanceInstitutions;
   "app.finance_transactions": AppFinanceTransactions;
@@ -715,6 +741,7 @@ export interface DB {
   "app.music_playlist_tracks": AppMusicPlaylistTracks;
   "app.music_playlists": AppMusicPlaylists;
   "app.music_tracks": AppMusicTracks;
+  "app.note_files": AppNoteFiles;
   "app.note_shares": AppNoteShares;
   "app.note_versions": AppNoteVersions;
   "app.notes": AppNotes;

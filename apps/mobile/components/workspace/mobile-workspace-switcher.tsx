@@ -33,7 +33,7 @@ const iconStyle: TextStyle = {
   textAlign: 'center',
 };
 
-const INBOX_ROUTE = '/(protected)/(tabs)/focus' as Href;
+const INBOX_ROUTE = '/(protected)/(tabs)/notes' as Href;
 
 export const MobileWorkspaceSwitcher = () => {
   const router = useRouter();
@@ -66,7 +66,7 @@ export const MobileWorkspaceSwitcher = () => {
         <View style={styles.leading}>
           {isContextualView ? (
             <Pressable
-              accessibilityLabel="Return to inbox"
+              accessibilityLabel="Return to notes"
               accessibilityRole="button"
               onPress={onReturnToInbox}
               style={({ pressed }) => [styles.backButton, pressed ? styles.pressed : null]}

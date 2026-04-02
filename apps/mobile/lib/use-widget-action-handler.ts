@@ -26,7 +26,7 @@ export function useWidgetActionHandler() {
       if (!action) return;
 
       if (action === 'add-note') {
-        router.push('/(protected)/(tabs)/focus?action=new' as never);
+        router.push('/(protected)/(tabs)/notes?action=new' as never);
       } else if (action === 'open-chat') {
         router.push('/(protected)/(tabs)/chat' as never);
       }

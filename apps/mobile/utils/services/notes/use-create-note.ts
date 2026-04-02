@@ -31,6 +31,7 @@ function buildOptimisticNote(text: string, optimisticId: string): Note {
     analysis: null,
     publishingMetadata: null,
     parentNoteId: null,
+    files: [],
     versionNumber: 1,
     isLatestVersion: true,
     userId: '',

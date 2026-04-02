@@ -49,7 +49,7 @@ export default function ArchivedChatsScreen() {
             Revisit past conversations
           </Text>
           <Text variant="body" color="text-secondary">
-            Archived chats are hidden from inbox but remain available here.
+            Archived chats are hidden from the main chat flow but remain available here.
           </Text>
 
           {chats.length === 0 ? (

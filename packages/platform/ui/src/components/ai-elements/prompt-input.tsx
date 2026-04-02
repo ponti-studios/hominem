@@ -343,7 +343,7 @@ export const PromptInputTextarea = forwardRef<HTMLTextAreaElement, PromptInputTe
           'flex w-full rounded-md border bg-background px-4 py-3 text-sm ring-offset-background',
           'placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2',
           'focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
-          'min-h-[44px] max-h-[240px] resize-none',
+          'min-h-11 max-h-60 resize-none',
           isFocused && 'ring-2 ring-ring',
           className,
         )}

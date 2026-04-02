@@ -1,4 +1,3 @@
-import { Label } from '@hominem/ui/components/ui/label';
 import type * as LabelPrimitive from '@radix-ui/react-label';
 import { Slot } from '@radix-ui/react-slot';
 import * as React from 'react';
@@ -13,6 +12,7 @@ import {
 } from 'react-hook-form';
 
 import { cn } from '../../lib/utils';
+import { Label } from './label';
 
 const FormProviderRoot = FormProvider;
 
@@ -144,12 +144,12 @@ function FormMessage({ className, ...props }: React.ComponentProps<'p'>) {
 
 export {
   Form,
-  FormProviderRoot as FormProvider,
   FormControl,
   FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
+  FormProviderRoot as FormProvider,
   useFormField,
 };

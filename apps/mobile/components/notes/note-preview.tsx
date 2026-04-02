@@ -1,7 +1,7 @@
 import type { Note } from '@hominem/rpc/types';
 import { Pressable, StyleSheet, View, type ViewProps } from 'react-native';
 
-import { Text, makeStyles } from '~/theme';
+import { Text, makeStyles, theme } from '~/theme';
 import { parseInboxTimestamp } from '~/utils/date/parse-inbox-timestamp';
 
 import AppIcon from '../ui/icon';

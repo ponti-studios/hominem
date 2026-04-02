@@ -1,11 +1,13 @@
 import { useRpcMutation, useRpcQuery } from '@hominem/rpc/react';
 import type {
-  NotesListInput,
   NotesCreateInput,
   NotesCreateOutput,
+  NotesDeleteOutput,
+  NotesGetOutput,
+  NotesListInput,
+  NotesSearchOutput,
   NotesUpdateInput,
   NotesUpdateOutput,
-  NotesDeleteOutput,
 } from '@hominem/rpc/types/notes.types';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -30,10 +32,18 @@ export function useNotesList(options: NotesListInput = {}, queryOptions: UseNote
 }
 
 export function useNote(id: string) {
-  return useRpcQuery(({ notes }) => notes.get({ id }), {
+  return useRpcQuery<NotesGetOutput>(({ notes }) => notes.get({ id }), {
     queryKey: notesQueryKeys.detail(id),
     enabled: !!id,
     staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+}
+
+export function useNoteSearch(query: string, enabled = true) {
+  return useRpcQuery<NotesSearchOutput>(({ notes }) => notes.search({ query, limit: 8 }), {
+    queryKey: notesQueryKeys.search(query),
+    enabled: enabled && query.trim().length > 0,
+    staleTime: 1000 * 30,
   });
 }
 
