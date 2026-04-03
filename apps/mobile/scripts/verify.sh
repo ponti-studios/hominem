@@ -14,6 +14,7 @@ case "$VARIANT" in
 esac
 
 SCRIPTS_DIR="$(dirname "$0")"
+export APP_VARIANT="$VARIANT"
 
 header "Verification · $VARIANT"
 
