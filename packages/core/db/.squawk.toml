@@ -24,3 +24,5 @@ excluded_rules = [
     "adding-field-with-default",
     "adding-serial-primary-key-field",
 ]
+
+assume_in_transaction = true
