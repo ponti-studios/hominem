@@ -2,11 +2,6 @@ import { useCallback, useState } from 'react';
 import { Platform } from 'react-native';
 
 import { authClient } from '~/lib/auth-client';
-import { useAuth } from '~/utils/auth-provider';
-import {
-  getPersistedSessionCookieHeader,
-  persistSessionCookieHeader,
-} from '~/utils/auth/session-cookie';
 import { API_BASE_URL, E2E_AUTH_SECRET, E2E_TESTING } from '~/utils/constants';
 
 interface PasskeySignInResult {
@@ -20,17 +15,25 @@ interface PasskeySignInResult {
 interface UseMobilePasskeyAuthReturn {
   signIn: (mode?: 'real' | 'e2e-success' | 'e2e-cancel') => Promise<PasskeySignInResult | null>;
   addPasskey: (name?: string) => Promise<{ success: boolean; error?: string }>;
-  listPasskeys: () => Promise<{ id: string; name: string }[]>;
+  passkeys: { id: string; name: string }[];
   deletePasskey: (id: string) => Promise<{ success: boolean; error?: string }>;
   isLoading: boolean;
   error: string | null;
   isSupported: boolean;
 }
 
+function toErrorMessage(error: unknown, fallback: string) {
+  if (!error || typeof error !== 'object' || !('message' in error)) {
+    return fallback;
+  }
+  const message = (error as { message?: unknown }).message;
+  return typeof message === 'string' ? message : fallback;
+}
+
 export function useMobilePasskeyAuth(): UseMobilePasskeyAuthReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { getAuthHeaders } = useAuth();
+  const passkeysResult = authClient.useListPasskeys();
 
   // Passkeys require iOS 16+. Earlier versions and non-iOS platforms are not supported.
   const isSupported =
@@ -95,56 +98,26 @@ export function useMobilePasskeyAuth(): UseMobilePasskeyAuthReturn {
           };
         }
 
-        // Step 1: Sign in with passkey via Better Auth (handles native platform credential APIs).
-        // On iOS this triggers the system passkey prompt. expoClient stores the
-        // resulting Better Auth session in SecureStore automatically.
         const { data: passkeyData, error: passkeyError } = await authClient.signIn.passkey();
 
         if (passkeyError) {
-          setError(passkeyError.message || 'Passkey sign-in failed');
+          const message = toErrorMessage(passkeyError, 'Passkey sign-in failed');
+          setError(message);
           return null;
         }
 
-        if (!passkeyData) {
+        if (!passkeyData?.user?.id || !passkeyData.user.email) {
           setError('No data returned from passkey sign-in');
           return null;
         }
 
-        // Step 2: Resolve the Better Auth session into the normalized app session payload.
-        const cookieHeader = await getPersistedSessionCookieHeader();
-        const headers: Record<string, string> = {};
-        if (cookieHeader) {
-          headers['cookie'] = cookieHeader;
-        }
-
-        const tokenResponse = await fetch(new URL('/api/auth/get-session', API_BASE_URL).toString(), {
-          method: 'GET',
-          headers,
-        });
-
-        if (!tokenResponse.ok) {
-          const body = (await tokenResponse.json()) as { error?: string };
-          setError(body.error || 'Failed to restore app session after passkey sign-in');
-          return null;
-        }
-
-        const result = (await tokenResponse.json()) as
-          | {
-              user: PasskeySignInResult['user'];
-              session: { id: string };
-            }
-          | null;
-
-        if (!result?.user || !result.session?.id) {
-          setError('Failed to restore app session after passkey sign-in');
-          return null;
-        }
-
-        if (cookieHeader) {
-          await persistSessionCookieHeader(cookieHeader);
-        }
-
-        return { user: result.user };
+        return {
+          user: {
+            id: passkeyData.user.id,
+            email: passkeyData.user.email,
+            ...(passkeyData.user.name ? { name: passkeyData.user.name } : {}),
+          },
+        };
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Passkey sign-in failed';
         setError(message);
@@ -166,8 +139,9 @@ export function useMobilePasskeyAuth(): UseMobilePasskeyAuthReturn {
       });
 
       if (passkeyError) {
-        setError(passkeyError.message || 'Failed to add passkey');
-        return { success: false, error: passkeyError.message };
+        const message = toErrorMessage(passkeyError, 'Failed to add passkey');
+        setError(message);
+        return { success: false, error: message };
       }
 
       return { success: true };
@@ -180,58 +154,23 @@ export function useMobilePasskeyAuth(): UseMobilePasskeyAuthReturn {
     }
   }, []);
 
-  const listPasskeys = useCallback(async () => {
-    try {
-      const authHeaders = await getAuthHeaders();
-      if (Object.keys(authHeaders).length === 0) return [];
-
-      const response = await fetch(
-        new URL('/api/auth/passkey/list-user-passkeys', API_BASE_URL).toString(),
-        {
-          method: 'GET',
-          headers: authHeaders,
-        },
-      );
-
-      if (!response.ok) return [];
-
-      const data = (await response.json()) as { id: string; name?: string | null }[];
-      return (data ?? []).map((p) => ({
-        id: p.id,
-        name: p.name ?? 'Unnamed passkey',
-      }));
-    } catch {
-      return [];
-    }
-  }, [getAuthHeaders]);
-
   const deletePasskey = useCallback(
     async (id: string) => {
       setIsLoading(true);
       setError(null);
 
       try {
-        const authHeaders = await getAuthHeaders();
-        if (Object.keys(authHeaders).length === 0) {
-          setError('Not authenticated');
-          return { success: false, error: 'Not authenticated' };
-        }
+        const response = (await authClient.$fetch('/passkey/delete-passkey', {
+          method: 'POST',
+          body: { id },
+          throw: false,
+        })) as {
+          data: unknown;
+          error: { message?: string } | null;
+        };
 
-        const response = await fetch(
-          new URL('/api/auth/passkey/delete-passkey', API_BASE_URL).toString(),
-          {
-            method: 'POST',
-            headers: {
-              'content-type': 'application/json',
-              ...authHeaders,
-            },
-            body: JSON.stringify({ id }),
-          },
-        );
-
-        if (!response.ok) {
-          const body = (await response.json()) as { error?: string };
-          const message = body.error ?? 'Failed to delete passkey';
+        if (response.error) {
+          const message = response.error.message ?? 'Failed to delete passkey';
           setError(message);
           return { success: false, error: message };
         }
@@ -245,15 +184,18 @@ export function useMobilePasskeyAuth(): UseMobilePasskeyAuthReturn {
         setIsLoading(false);
       }
     },
-    [getAuthHeaders],
+    [],
   );
 
   return {
     signIn,
     addPasskey,
-    listPasskeys,
+    passkeys: (passkeysResult.data ?? []).map((passkey) => ({
+      id: passkey.id,
+      name: passkey.name ?? 'Unnamed passkey',
+    })),
     deletePasskey,
-    isLoading,
+    isLoading: isLoading || passkeysResult.isPending || passkeysResult.isRefetching,
     error,
     isSupported,
   };

@@ -1,8 +1,10 @@
 import { AUTH_COPY, maskEmail } from '@hominem/auth';
+import { useAuthClient } from '@hominem/auth/client';
 import { AuthScaffold, OtpVerificationForm } from '@hominem/ui';
-import { redirect, useLoaderData, useLocation, useSearchParams } from 'react-router';
+import { useCallback } from 'react';
+import { redirect, useLoaderData, useLocation, useNavigate, useSearchParams } from 'react-router';
 
-import { AUTH_CONFIG, getAuthApiBaseUrl } from './auth-config';
+import { AUTH_CONFIG } from './auth-config';
 
 export async function loader({ request }: { request: Request }) {
   const url = new URL(request.url);
@@ -14,41 +16,45 @@ export async function loader({ request }: { request: Request }) {
   return { email };
 }
 
-export async function action({ request }: { request: Request }) {
-  const formData = (await request.formData()) as unknown as { get(key: string): string | null };
-  const email = String(formData.get('email') ?? '')
-    .trim()
-    .toLowerCase();
-  const otp = String(formData.get('otp') ?? '').replace(/\D/g, '');
-  const next = String(formData.get('next') ?? AUTH_CONFIG.defaultRedirect);
-
-  if (!email || !otp) {
-    return { error: 'Email and verification code are required.' };
-  }
-
-  const response = await fetch(new URL('/api/auth/email-otp/verify', getAuthApiBaseUrl()), {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ email, otp }),
-  });
-
-  if (!response.ok) {
-    return { error: 'Verification failed. Please check your code and try again.' };
-  }
-
-  const result = (await response.json()) as { user?: { id: string } };
-  if (!result.user?.id) {
-    return { error: 'Verification failed. Missing auth token from server.' };
-  }
-
-  return redirect(next);
-}
-
 export default function Component() {
+  const authClient = useAuthClient();
   const { email } = useLoaderData<{ email: string }>();
   const location = useLocation();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const next = searchParams.get('next') ?? AUTH_CONFIG.defaultRedirect;
+  const verifyEmailOtp = useCallback(
+    async (input: { email: string; otp: string; next: string }) => {
+      if (!input.email || !input.otp) {
+        throw new Error('Email and verification code are required.');
+      }
+
+      const result = await authClient.signIn.emailOtp({
+        email: input.email,
+        otp: input.otp,
+      });
+
+      if (result.error || !result.data?.user?.id) {
+        throw new Error(result.error?.message ?? 'Verification failed. Please check your code and try again.');
+      }
+
+      navigate(input.next);
+    },
+    [authClient, navigate],
+  );
+  const resendOtp = useCallback(
+    async (resolvedEmail: string) => {
+      const result = await authClient.emailOtp.sendVerificationOtp({
+        email: resolvedEmail,
+        type: 'sign-in',
+      });
+
+      if (result.error) {
+        throw new Error(result.error.message ?? 'Failed to send verification code');
+      }
+    },
+    [authClient],
+  );
 
   return (
     <AuthScaffold
@@ -57,6 +63,8 @@ export default function Component() {
     >
       <OtpVerificationForm
         action={`/auth/verify${location.search}`}
+        onSubmit={verifyEmailOtp}
+        onResend={resendOtp}
         email={email}
         defaultNext={AUTH_CONFIG.defaultRedirect}
         onChangeEmail={() => {

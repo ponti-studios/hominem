@@ -12,11 +12,7 @@ export function getConfigPath(): string {
 
 const configV2Schema = z.object({
   version: z.literal(2),
-  auth: z
-    .object({
-      provider: z.string().default('better-auth'),
-    })
-    .default({ provider: 'better-auth' }),
+  auth: z.object({}).default({}),
   profiles: z
     .array(
       z.object({

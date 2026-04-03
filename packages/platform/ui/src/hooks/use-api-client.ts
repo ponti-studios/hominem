@@ -1,4 +1,3 @@
-import { useAuth } from '@hominem/auth/client';
 import { useCallback, useMemo, useState } from 'react';
 
 const API_URL = import.meta.env.VITE_PUBLIC_API_URL;
@@ -19,7 +18,6 @@ type ApiState = {
  * React hook for API client that handles fetch requests with authentication
  */
 export function useApiClient() {
-  useAuth();
   const [state, setState] = useState<ApiState>({
     isLoading: false,
     error: null,

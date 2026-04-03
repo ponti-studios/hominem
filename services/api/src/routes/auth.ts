@@ -1,4 +1,4 @@
-import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 
 import { db } from '@hominem/db';
 import { getSetCookieHeaders } from '@hominem/utils/headers';
@@ -11,60 +11,10 @@ import { z } from 'zod';
 import { betterAuthServer } from '../auth/better-auth';
 import { getLatestTestOtp, isTestOtpStoreEnabled } from '../auth/test-otp-store';
 
-// ─── Mock Auth Provider (dev/test only) ───────────────────────────────────────
-
-function createMockAuthProvider() {
-  return {
-    async signIn() {
-      const id = randomUUID();
-      return {
-        user: {
-          id,
-          email: `mock+${id.slice(0, 8)}@example.com`,
-          name: 'Mock User',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        session: {
-          access_token: `mock-token-${id}`,
-          token_type: 'Bearer' as const,
-          expires_in: 3600,
-          expires_at: new Date(Date.now() + 3600 * 1000).toISOString(),
-        },
-      };
-    },
-    async signOut() {
-      // no-op for mock
-    },
-  };
-}
-
 import { env } from '../env';
 import type { AppEnv } from '../server';
 
 export const authRoutes = new Hono<AppEnv>();
-
-const passkeyRegisterVerifySchema = z.object({
-  response: z.any(),
-  name: z.string().optional(),
-});
-
-const passkeyAuthVerifySchema = z.object({
-  response: z.any(),
-  action: z.string().min(1).optional(),
-});
-const emailOtpRequestSchema = z.object({
-  email: z.string().email(),
-  type: z
-    .enum(['sign-in', 'change-email', 'email-verification', 'forget-password'])
-    .default('sign-in'),
-});
-const emailOtpVerifySchema = z.object({
-  email: z.string().email(),
-  otp: z.string().min(4).max(12),
-  name: z.string().min(1).max(128).optional(),
-  image: z.string().url().optional(),
-});
 
 const deviceCodeSchema = z.object({
   client_id: z.string().min(1),
@@ -109,65 +59,12 @@ interface AuthRateLimitInput {
   max: number;
 }
 
-interface MobileE2eLoginResponse {
-  access_token: string;
-  refresh_token: string;
-  token_type: string;
-  expires_in: number;
-  session_id: string;
-  refresh_family_id: string;
-  provider: 'better-auth';
-  user: {
-    id: string;
-    email: string;
-    name?: string | null;
-  };
-}
-
-function normalizeAuthEmail(email: string) {
-  return email.trim().toLowerCase();
-}
-
-function normalizeOtpCode(otp: string) {
-  return otp.replace(/\D/g, '');
-}
-
 function isE2eAuthEnabled() {
   return env.AUTH_E2E_ENABLED && env.NODE_ENV !== 'production';
 }
 
 function isTestOtpRetrievalEnabled() {
   return isTestOtpStoreEnabled();
-}
-
-async function signInWithBetterAuthEmailOtp(
-  c: Context<AppEnv>,
-  payload: z.infer<typeof emailOtpVerifySchema>,
-) {
-  const response = await callBetterAuthPluginEndpoint({
-    request: c.req.raw,
-    path: '/sign-in/email-otp',
-    method: 'POST',
-    body: payload as Record<string, unknown>,
-  });
-  const body = await response.text();
-
-  if (!response.ok) {
-    return new Response(body, {
-      status: response.status,
-      headers: new Headers(response.headers),
-    });
-  }
-
-  try {
-    return new Response(body, {
-      status: 200,
-      headers: copyHeadersWithSetCookie(response.headers),
-    });
-  } catch (error) {
-    logger.error('[auth:email-otp] sign-in failed', { error });
-    return c.json({ error: 'sign_in_failed' }, 500);
-  }
 }
 
 async function getRedis() {
@@ -257,14 +154,14 @@ function ensureTrustedOrigin(headers: Headers) {
 
 async function callBetterAuthPluginEndpoint(input: {
   request: Request;
-  path: string;
-  method: 'GET' | 'POST';
+  path?: string | undefined;
+  method: string;
   preserveQuery?: boolean | undefined;
-  body?: Record<string, unknown> | undefined;
+  body?: BodyInit | null | undefined;
 }) {
   const url = buildBetterAuthUrl({
     request: input.request,
-    path: input.path,
+    ...(input.path ? { path: input.path } : {}),
     ...(input.preserveQuery ? { preserveQuery: true } : {}),
   });
   logger.debug('[auth:plugin] forwarding Better Auth endpoint', {
@@ -273,7 +170,7 @@ async function callBetterAuthPluginEndpoint(input: {
   });
   const headers = new Headers(input.request.headers);
   ensureTrustedOrigin(headers);
-  if (input.body) {
+  if (input.body && !headers.has('content-type')) {
     headers.set('content-type', 'application/json');
   }
 
@@ -281,39 +178,23 @@ async function callBetterAuthPluginEndpoint(input: {
     new Request(url.toString(), {
       method: input.method,
       headers,
-      ...(input.body ? { body: JSON.stringify(input.body) } : {}),
+      ...(input.body ? { body: input.body } : {}),
     }),
   );
 }
 
 async function forwardBetterAuthPluginResponse(input: {
   request: Request;
-  path: string;
-  method: 'GET' | 'POST';
+  path?: string | undefined;
+  method: string;
   preserveQuery?: boolean | undefined;
-  body?: Record<string, unknown> | undefined;
+  body?: BodyInit | null | undefined;
 }) {
   const response = await callBetterAuthPluginEndpoint(input);
-  const responseText = await response.text();
+  const responseBody = await response.arrayBuffer();
   const headers = copyHeadersWithSetCookie(response.headers);
 
-  if (input.path === '/device/token' && !headers.get('set-auth-token')) {
-    const payload = JSON.parse(responseText) as { access_token?: string };
-    if (typeof payload.access_token === 'string' && payload.access_token.length > 0) {
-      headers.set('set-auth-token', payload.access_token);
-      const exposedHeaders = headers.get('access-control-expose-headers');
-      const exposed = new Set(
-        (exposedHeaders ?? '')
-          .split(',')
-          .map((value) => value.trim())
-          .filter(Boolean),
-      );
-      exposed.add('set-auth-token');
-      headers.set('access-control-expose-headers', [...exposed].join(', '));
-    }
-  }
-
-  return new Response(responseText, {
+  return new Response(responseBody, {
     status: response.status,
     headers,
   });
@@ -399,14 +280,13 @@ authRoutes.post('/mobile/e2e/login', zValidator('json', mobileE2eLoginSchema), a
     userId: user.id,
   });
 
-  const response: MobileE2eLoginResponse = {
+  const response = {
     access_token: '',
     refresh_token: '',
     token_type: 'Bearer',
     expires_in: 0,
     session_id: '',
     refresh_family_id: '',
-    provider: 'better-auth',
     user: {
       id: user.id,
       email: user.email,
@@ -415,44 +295,6 @@ authRoutes.post('/mobile/e2e/login', zValidator('json', mobileE2eLoginSchema), a
   };
 
   return c.json(response);
-});
-
-authRoutes.post('/email-otp/send', zValidator('json', emailOtpRequestSchema), async (c) => {
-  try {
-    const payload = c.req.valid('json');
-    const normalizedPayload = {
-      ...payload,
-      email: normalizeAuthEmail(payload.email),
-    };
-    const response = await callBetterAuthPluginEndpoint({
-      request: c.req.raw,
-      path: '/email-otp/send-verification-otp',
-      method: 'POST',
-      body: normalizedPayload as Record<string, unknown>,
-    });
-    const body = await response.text();
-    return new Response(body, {
-      status: response.status,
-      headers: new Headers(response.headers),
-    });
-  } catch {
-    return c.json({ error: 'email_otp_send_failed' }, 400);
-  }
-});
-
-authRoutes.post('/email-otp/verify', zValidator('json', emailOtpVerifySchema), async (c) => {
-  try {
-    const payload = c.req.valid('json');
-    const normalizedPayload = {
-      ...payload,
-      email: normalizeAuthEmail(payload.email),
-      otp: normalizeOtpCode(payload.otp),
-    };
-
-    return signInWithBetterAuthEmailOtp(c, normalizedPayload);
-  } catch {
-    return c.json({ error: 'email_otp_verify_failed' }, 400);
-  }
 });
 
 authRoutes.get('/test/otp/latest', zValidator('query', testOtpQuerySchema), async (c) => {
@@ -484,168 +326,6 @@ authRoutes.get('/test/otp/latest', zValidator('query', testOtpQuerySchema), asyn
   });
 });
 
-authRoutes.on(['GET', 'POST'], '/get-session', async (c) => {
-  return await forwardBetterAuthPluginResponse({
-    request: c.req.raw,
-    path: '/get-session',
-    method: c.req.method === 'POST' ? 'POST' : 'GET',
-  });
-});
-
-authRoutes.post('/sign-out', async (c) => {
-  return await forwardBetterAuthPluginResponse({
-    request: c.req.raw,
-    path: '/sign-out',
-    method: 'POST',
-  });
-});
-
-authRoutes.post('/logout', async (c) => {
-  return await forwardBetterAuthPluginResponse({
-    request: c.req.raw,
-    path: '/sign-out',
-    method: 'POST',
-  });
-});
-
-authRoutes.get('/session', async (c) => {
-  return await forwardBetterAuthPluginResponse({
-    request: c.req.raw,
-    path: '/get-session',
-    method: 'GET',
-  });
-});
-
-authRoutes.post('/refresh', async (c) => {
-  void c;
-  return c.json(
-    {
-      error: 'deprecated_endpoint',
-      message:
-        'Use Better Auth session cookies for first-party apps or POST /api/auth/token for explicit refresh-token exchanges.',
-    },
-    410,
-  );
-});
-
-authRoutes.get('/passkey/generate-register-options', async (c) => {
-  return await forwardBetterAuthPluginResponse({
-    request: c.req.raw,
-    path: '/passkey/generate-register-options',
-    method: 'GET',
-  });
-});
-
-authRoutes.post('/passkey/register/options', async (c) => {
-  return await forwardBetterAuthPluginResponse({
-    request: c.req.raw,
-    path: '/passkey/generate-register-options',
-    method: 'GET',
-  });
-});
-
-authRoutes.post(
-  '/passkey/verify-registration',
-  zValidator('json', passkeyRegisterVerifySchema),
-  async (c) => {
-    return await forwardBetterAuthPluginResponse({
-      request: c.req.raw,
-      path: '/passkey/verify-registration',
-      method: 'POST',
-      body: c.req.valid('json') as Record<string, unknown>,
-    });
-  },
-);
-
-authRoutes.post(
-  '/passkey/register/verify',
-  zValidator('json', passkeyRegisterVerifySchema),
-  async (c) => {
-    return await forwardBetterAuthPluginResponse({
-      request: c.req.raw,
-      path: '/passkey/verify-registration',
-      method: 'POST',
-      body: c.req.valid('json') as Record<string, unknown>,
-    });
-  },
-);
-
-authRoutes.get('/passkey/list-user-passkeys', async (c) => {
-  return await forwardBetterAuthPluginResponse({
-    request: c.req.raw,
-    path: '/passkey/list-user-passkeys',
-    method: 'GET',
-  });
-});
-
-authRoutes.get('/passkeys', async (c) => {
-  return await forwardBetterAuthPluginResponse({
-    request: c.req.raw,
-    path: '/passkey/list-user-passkeys',
-    method: 'GET',
-  });
-});
-
-authRoutes.post(
-  '/passkey/delete-passkey',
-  zValidator('json', z.object({ id: z.string() })),
-  async (c) => {
-    return await forwardBetterAuthPluginResponse({
-      request: c.req.raw,
-      path: '/passkey/delete-passkey',
-      method: 'POST',
-      body: c.req.valid('json') as Record<string, unknown>,
-    });
-  },
-);
-
-authRoutes.delete(
-  '/passkey/delete',
-  zValidator('json', z.object({ id: z.string() })),
-  async (c) => {
-    return await forwardBetterAuthPluginResponse({
-      request: c.req.raw,
-      path: '/passkey/delete-passkey',
-      method: 'POST',
-      body: c.req.valid('json') as Record<string, unknown>,
-    });
-  },
-);
-
-authRoutes.get('/passkey/generate-authenticate-options', async (c) => {
-  return await forwardBetterAuthPluginResponse({
-    request: c.req.raw,
-    path: '/passkey/generate-authenticate-options',
-    method: 'GET',
-  });
-});
-
-authRoutes.post('/passkey/auth/options', async (c) => {
-  return await forwardBetterAuthPluginResponse({
-    request: c.req.raw,
-    path: '/passkey/generate-authenticate-options',
-    method: 'GET',
-  });
-});
-
-authRoutes.post('/passkey/verify-authentication', zValidator('json', passkeyAuthVerifySchema), async (c) => {
-  return await forwardBetterAuthPluginResponse({
-    request: c.req.raw,
-    path: '/passkey/verify-authentication',
-    method: 'POST',
-    body: { response: c.req.valid('json').response },
-  });
-});
-
-authRoutes.post('/passkey/auth/verify', zValidator('json', passkeyAuthVerifySchema), async (c) => {
-  return await forwardBetterAuthPluginResponse({
-    request: c.req.raw,
-    path: '/passkey/verify-authentication',
-    method: 'POST',
-    body: { response: c.req.valid('json').response },
-  });
-});
-
 authRoutes.post('/device/code', zValidator('json', deviceCodeSchema), async (c) => {
   const payload = c.req.valid('json');
   const deviceCodeRateLimit = await enforceAuthRateLimit(c, {
@@ -663,7 +343,7 @@ authRoutes.post('/device/code', zValidator('json', deviceCodeSchema), async (c) 
       request: c.req.raw,
       path: '/device/code',
       method: 'POST',
-      body: payload as Record<string, unknown>,
+      body: JSON.stringify(payload),
     });
     const body = await response.json();
     return c.json(body as Record<string, unknown>, response.status as 200 | 400 | 401);
@@ -692,7 +372,7 @@ authRoutes.post('/device/approve', zValidator('json', deviceApproveSchema), asyn
       request: c.req.raw,
       path: '/device/approve',
       method: 'POST',
-      body: payload as Record<string, unknown>,
+      body: JSON.stringify(payload),
     });
   } catch {
     return c.json({ error: 'device_approve_failed' }, 400);
@@ -716,93 +396,22 @@ authRoutes.post('/device/token', zValidator('json', deviceTokenSchema), async (c
       request: c.req.raw,
       path: '/device/token',
       method: 'POST',
-      body: payload as Record<string, unknown>,
+      body: JSON.stringify(payload),
     });
   } catch {
     return c.json({ error: 'device_token_failed' }, 400);
   }
 });
 
-/**
- * Mock Auth Endpoints
- * These endpoints are for local development with VITE_USE_MOCK_AUTH=true
- * They simulate auth flows without requiring real credentials
- */
+authRoutes.on(['GET', 'POST'], '/*', async (c) => {
+  const method = c.req.method;
+  const body =
+    method === 'GET' || method === 'HEAD' ? undefined : await c.req.raw.clone().text();
 
-// Check if mock auth is enabled
-function isMockAuthEnabled(): boolean {
-  return process.env.VITE_USE_MOCK_AUTH === 'true';
-}
-
-/**
- * POST /auth/mock/signin
- * Mock sign-in endpoint for local development
- * Returns a mock user and session token
- */
-authRoutes.post('/mock/signin', async (c) => {
-  if (!isMockAuthEnabled()) {
-    return c.json({ error: 'Mock auth is not enabled' }, 400);
-  }
-
-  try {
-    const provider = createMockAuthProvider();
-    const response = await provider.signIn();
-
-    return c.json(
-      {
-        user: response.user,
-        session: response.session,
-      },
-      200,
-    );
-  } catch (err) {
-    logger.error('Mock signin error:', err instanceof Error ? err : new Error(String(err)));
-    return c.json({ error: 'Mock signin failed' }, 500);
-  }
-});
-
-/**
- * GET /auth/mock/session
- * Get the current mock session (for testing session persistence)
- */
-authRoutes.get('/mock/session', async (c) => {
-  if (!isMockAuthEnabled()) {
-    return c.json({ error: 'Mock auth is not enabled' }, 400);
-  }
-
-  try {
-    // In a real implementation, we'd validate the session token
-    // For mock auth, we just check if the request has valid format
-    const authHeader = c.req.header('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return c.json({ session: null }, 200);
-    }
-
-    // Mock implementation: just return success
-    // The client should handle session validation via the token
-    return c.json({ session: { valid: true } }, 200);
-  } catch (err) {
-    logger.error('Mock session error:', err instanceof Error ? err : new Error(String(err)));
-    return c.json({ error: 'Mock session check failed' }, 500);
-  }
-});
-
-/**
- * POST /auth/mock/signout
- * Mock sign-out endpoint
- */
-authRoutes.post('/mock/signout', async (c) => {
-  if (!isMockAuthEnabled()) {
-    return c.json({ error: 'Mock auth is not enabled' }, 400);
-  }
-
-  try {
-    const provider = createMockAuthProvider();
-    await provider.signOut();
-
-    return c.json({ success: true }, 200);
-  } catch (err) {
-    logger.error('Mock signout error:', err instanceof Error ? err : new Error(String(err)));
-    return c.json({ error: 'Mock signout failed' }, 500);
-  }
+  return await forwardBetterAuthPluginResponse({
+    request: c.req.raw,
+    method,
+    preserveQuery: true,
+    ...(body ? { body } : {}),
+  });
 });

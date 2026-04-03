@@ -1,12 +1,23 @@
-import { useAuth } from '@hominem/auth/client';
+import { useAuthClient, useSession } from '@hominem/auth/client';
 import { Container } from '@hominem/ui';
 import { Button } from '@hominem/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@hominem/ui/card';
-import { useEffect } from 'react';
-import { Navigate } from 'react-router';
+import { useCallback, useEffect } from 'react';
+import { Navigate, useNavigate } from 'react-router';
 
 export default function AccountPage() {
-  const { userId, isLoading, logout } = useAuth();
+  const authClient = useAuthClient();
+  const navigate = useNavigate();
+  const session = useSession();
+  const userId = session.data?.user?.id ?? null;
+  const isLoading = session.isPending;
+  const signOut = useCallback(async () => {
+    const result = await authClient.signOut();
+    if (result.error) {
+      throw new Error(result.error.message ?? 'Unable to sign out.');
+    }
+    navigate('/auth');
+  }, [authClient, navigate]);
 
   useEffect(() => {
     // No-op: legacy Twitter connection side effects were removed with the auth rewrite.
@@ -39,7 +50,12 @@ export default function AccountPage() {
                 <h3 className="text-sm font-medium text-foreground">Sign Out</h3>
                 <p className="text-sm text-text-secondary">End your current session.</p>
               </div>
-              <Button variant="outline" onClick={() => logout()}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  void signOut();
+                }}
+              >
                 Sign Out
               </Button>
             </div>

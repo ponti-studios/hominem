@@ -80,7 +80,6 @@ interface TokenResponse {
   expires_in?: number;
   expires_at?: string;
   scope?: string;
-  provider?: 'better-auth';
 }
 
 export class AuthError extends Error {
@@ -156,7 +155,6 @@ async function migrateLegacyConfig(): Promise<void> {
     const tokens: StoredTokens = {
       tokenVersion: 2,
       accessToken: json.token,
-      provider: 'better-auth',
       issuerBaseUrl: normalizeBaseUrl(DEFAULT_AUTH_BASE),
     };
     if (json.refreshToken) tokens.refreshToken = json.refreshToken;
@@ -188,7 +186,7 @@ function toExpiresAtIso(tokenResponse: TokenResponse, fallback?: string) {
 function buildStoredTokensFromResponse(
   tokenResponse: TokenResponse,
   issuerBaseUrl: string,
-  fallback?: Partial<StoredTokens>,
+  fallback?: Pick<StoredTokens, 'accessToken' | 'expiresAt' | 'scopes'>,
 ): StoredTokens {
   const accessToken = tokenResponse.access_token ?? fallback?.accessToken;
   if (!accessToken) {
@@ -202,7 +200,6 @@ function buildStoredTokensFromResponse(
   const stored: StoredTokens = {
     tokenVersion: 2,
     accessToken,
-    provider: tokenResponse.provider ?? fallback?.provider ?? 'better-auth',
     issuedAt: new Date().toISOString(),
     issuerBaseUrl: normalizeBaseUrl(issuerBaseUrl),
   };
@@ -317,12 +314,12 @@ export async function deviceCodeLogin(_options: AuthOptions) {
     await new Promise((resolve) => setTimeout(resolve, waitMs));
 
     try {
-      const { data, headers } = await postJsonWithHeaders<TokenResponse>(tokenUrl.toString(), {
+      const { data } = await postJsonWithHeaders<TokenResponse>(tokenUrl.toString(), {
         grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
         device_code: device.device_code,
         client_id: clientId,
       });
-      const accessToken = headers.get('set-auth-token') ?? data.access_token;
+      const accessToken = data.access_token;
 
       if (!accessToken) {
         throw new AuthError({
@@ -340,7 +337,7 @@ export async function deviceCodeLogin(_options: AuthOptions) {
         },
         options.authBaseUrl,
         {
-          provider: 'better-auth',
+          accessToken,
           scopes: scope.split(' ').filter(Boolean),
         },
       );

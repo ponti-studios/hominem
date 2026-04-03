@@ -92,7 +92,7 @@ async function applyBetterAuthSession(c: {
 export const authJwtMiddleware = (): MiddlewareHandler => {
   return async (c, next) => {
     const path = c.req.path;
-    if (path.startsWith('/api/auth') || path.startsWith('/api/better-auth')) {
+    if (path.startsWith('/api/auth')) {
       return await next();
     }
 

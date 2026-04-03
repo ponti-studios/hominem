@@ -1,8 +1,10 @@
-import { useAuth } from '@hominem/auth/client';
+import { useSession } from '@hominem/auth/client';
 import { Navigate, Outlet } from 'react-router';
 
 export default function NotesLayout() {
-  const { userId, isLoading } = useAuth();
+  const session = useSession();
+  const userId = session.data?.user?.id ?? null;
+  const isLoading = session.isPending;
 
   if (isLoading) {
     return <div>Loading...</div>;

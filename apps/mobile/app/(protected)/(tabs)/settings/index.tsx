@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import type { RelativePathString } from 'expo-router';
-import { useEffect, useReducer } from 'react';
+import { useReducer } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -24,7 +24,6 @@ import { useMobilePasskeyAuth } from '~/utils/use-mobile-passkey-auth';
 interface AccountState {
   name: string;
   isSaving: boolean;
-  passkeys: { id: string; name: string }[];
   preventScreenshots: boolean;
   appLock: boolean;
 }
@@ -32,8 +31,6 @@ interface AccountState {
 type AccountAction =
   | { type: 'set-name'; name: string }
   | { type: 'set-saving'; isSaving: boolean }
-  | { type: 'set-passkeys'; passkeys: { id: string; name: string }[] }
-  | { type: 'remove-passkey'; passkeyId: string }
   | { type: 'set-prevent-screenshots'; preventScreenshots: boolean }
   | { type: 'set-app-lock'; appLock: boolean };
 
@@ -41,7 +38,6 @@ function createInitialAccountState(name: string): AccountState {
   return {
     name,
     isSaving: false,
-    passkeys: [],
     preventScreenshots: getPreventScreenshots(),
     appLock: getAppLockEnabled(),
   };
@@ -58,16 +54,6 @@ function accountReducer(state: AccountState, action: AccountAction): AccountStat
       return {
         ...state,
         isSaving: action.isSaving,
-      };
-    case 'set-passkeys':
-      return {
-        ...state,
-        passkeys: action.passkeys,
-      };
-    case 'remove-passkey':
-      return {
-        ...state,
-        passkeys: state.passkeys.filter((passkey) => passkey.id !== action.passkeyId),
       };
     case 'set-prevent-screenshots':
       return {
@@ -88,7 +74,7 @@ function Settings() {
   const { isSignedIn, signOut, currentUser, updateProfile } = useAuth();
   const {
     addPasskey,
-    listPasskeys,
+    passkeys,
     deletePasskey,
     isLoading: isPasskeyLoading,
   } = useMobilePasskeyAuth();
@@ -120,10 +106,7 @@ function Settings() {
 
   const onAddPasskeyPress = async () => {
     const result = await addPasskey();
-    if (result.success) {
-      const updated = await listPasskeys();
-      dispatch({ type: 'set-passkeys', passkeys: updated });
-    } else {
+    if (!result.success) {
       Alert.alert('Passkey error', result.error ?? 'Could not add passkey.');
     }
   };
@@ -136,27 +119,13 @@ function Settings() {
         style: 'destructive',
         onPress: async () => {
           const result = await deletePasskey(id);
-          if (result.success) {
-            dispatch({ type: 'remove-passkey', passkeyId: id });
-          } else {
+          if (!result.success) {
             Alert.alert('Error', result.error ?? 'Could not remove passkey.');
           }
         },
       },
     ]);
   };
-
-  useEffect(() => {
-    if (!MOBILE_PASSKEY_ENABLED) {
-      dispatch({ type: 'set-passkeys', passkeys: [] });
-      return;
-    }
-    if (isSignedIn) {
-      listPasskeys()
-        .then((passkeys) => dispatch({ type: 'set-passkeys', passkeys }))
-        .catch(() => undefined);
-    }
-  }, [isSignedIn, listPasskeys]);
 
   if (!isSignedIn) {
     return null;
@@ -243,12 +212,12 @@ function Settings() {
               <Text variant="cardHeader" color="foreground">
                 PASSKEYS
               </Text>
-              {state.passkeys.length === 0 ? (
+              {passkeys.length === 0 ? (
                 <Text color="text-tertiary" style={styles.noPasskeysText}>
                   No passkeys registered.
                 </Text>
               ) : (
-                state.passkeys.map((pk) => (
+                passkeys.map((pk) => (
                   <View key={pk.id} style={styles.passkeyRow}>
                     <Text color="foreground" style={styles.passkeyName}>
                       {pk.name}

@@ -1,4 +1,7 @@
-import type { Selectable, Session as DbSession, User as DbUser } from '@hominem/db';
+import type { getAuthClient } from './client/auth-client';
 
-export type User = Selectable<DbUser>;
-export type Session = Selectable<DbSession>;
+type AuthClient = ReturnType<typeof getAuthClient>;
+type SessionPayload = AuthClient['$Infer']['Session'];
+
+export type User = SessionPayload['user'];
+export type Session = SessionPayload['session'];

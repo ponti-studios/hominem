@@ -1,11 +1,22 @@
-import { useAuth } from '@hominem/auth/client';
-import { useEffect, useState } from 'react';
+import { useAuthClient, useSession } from '@hominem/auth/client';
+import { useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router';
 
 import { DESKTOP_BRAND } from './brand';
 
 export function AppShell() {
   const [isPackaged, setIsPackaged] = useState(false);
-  const { user, signOut } = useAuth();
+  const authClient = useAuthClient();
+  const navigate = useNavigate();
+  const session = useSession();
+  const user = session.data?.user ?? null;
+  const signOut = useCallback(async () => {
+    const result = await authClient.signOut();
+    if (result.error) {
+      throw new Error(result.error.message ?? 'Unable to sign out.');
+    }
+    navigate('/auth');
+  }, [authClient, navigate]);
 
   useEffect(() => {
     void window.electronAPI.isPackaged().then(setIsPackaged);

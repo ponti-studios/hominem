@@ -1,42 +1,14 @@
 import { AUTH_COPY, readAuthErrorMessage } from '@hominem/auth';
-import { usePasskeyAuth } from '@hominem/auth/client';
+import { useAuthClient, usePasskeyAuth } from '@hominem/auth/client';
 import { AuthScaffold, EmailEntryForm } from '@hominem/ui';
-import { redirect, useSearchParams } from 'react-router';
+import { useCallback } from 'react';
+import { useNavigate, useSearchParams } from 'react-router';
 
-import { AUTH_CONFIG, getAuthApiBaseUrl } from './auth-config';
-
-export async function action({ request }: { request: Request }) {
-  const formData = (await request.formData()) as unknown as { get(key: string): string | null };
-  const email = String(formData.get('email') ?? '')
-    .trim()
-    .toLowerCase();
-  const next = String(formData.get('next') ?? AUTH_CONFIG.defaultRedirect);
-
-  if (!email) {
-    return { error: 'Email is required' };
-  }
-
-  try {
-    const response = await fetch(new URL('/api/auth/email-otp/send', getAuthApiBaseUrl()), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, type: 'sign-in' }),
-    });
-
-    if (!response.ok) {
-      const error = (await response.json()) as { message?: string };
-      return { error: error.message || 'Failed to send verification code' };
-    }
-
-    return redirect(
-      `/auth/verify?email=${encodeURIComponent(email)}&next=${encodeURIComponent(next)}`,
-    );
-  } catch {
-    return { error: 'Failed to send verification code' };
-  }
-}
+import { AUTH_CONFIG } from './auth-config';
 
 export default function Component() {
+  const authClient = useAuthClient();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const next = searchParams.get('next') ?? AUTH_CONFIG.defaultRedirect;
 
@@ -45,6 +17,26 @@ export default function Component() {
     error: passkeyError,
     isSupported: isPasskeySupported,
   } = usePasskeyAuth({ redirectTo: next });
+  const submitEmail = useCallback(
+    async ({ email, next: nextPath }: { email: string; next: string | null }) => {
+      if (!email) {
+        throw new Error('Email is required');
+      }
+
+      const result = await authClient.emailOtp.sendVerificationOtp({
+        email,
+        type: 'sign-in',
+      });
+
+      if (result.error) {
+        throw new Error(result.error.message ?? 'Failed to send verification code');
+      }
+
+      const redirectTo = nextPath ?? AUTH_CONFIG.defaultRedirect;
+      navigate(`/auth/verify?email=${encodeURIComponent(email)}&next=${encodeURIComponent(redirectTo)}`);
+    },
+    [authClient, navigate],
+  );
 
   const callbackError = readAuthErrorMessage(searchParams);
   const resolvedError = callbackError ?? passkeyError ?? undefined;
@@ -53,6 +45,7 @@ export default function Component() {
     <AuthScaffold title={AUTH_CONFIG.title} helper={AUTH_COPY.emailEntry.helper}>
       <EmailEntryForm
         action="/auth"
+        onSubmit={submitEmail}
         {...(resolvedError ? { error: resolvedError } : {})}
         {...(isPasskeySupported
           ? {

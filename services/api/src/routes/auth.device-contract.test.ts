@@ -74,7 +74,7 @@ describe('auth device contract', () => {
     // Reset device auth flow sequence for isolation
     deviceAuthFlowSequence = 0;
   });
-  test('device authorization uses stable auth routes and forwards set-auth-token', async () => {
+  test('device authorization uses stable auth routes and returns native Better Auth tokens', async () => {
     const app = createServer();
     const { email, deviceCode, forwardedFor } = await createApprovedDeviceFlow(app);
 
@@ -99,7 +99,8 @@ describe('auth device contract', () => {
     });
 
     expect(tokenResponse.status).toBe(200);
-    const bearerToken = tokenResponse.headers.get('set-auth-token');
+    const tokenPayload = (await tokenResponse.json()) as { access_token?: string };
+    const bearerToken = tokenPayload.access_token;
     expect(bearerToken).toBeTruthy();
 
     const sessionResponse = await requestJson({
@@ -169,6 +170,8 @@ describe('auth device contract', () => {
     });
 
     expect(tokenResponse.status).toBe(200);
-    expect(tokenResponse.headers.get('set-auth-token')).toBeTruthy();
+    await expect(tokenResponse.json()).resolves.toMatchObject({
+      access_token: expect.any(String),
+    });
   }, 15000);
 });

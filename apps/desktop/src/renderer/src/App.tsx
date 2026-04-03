@@ -1,4 +1,4 @@
-import { type AuthConfig, AuthProvider, useAuth } from '@hominem/auth/client';
+import { type AuthConfig, AuthProvider, useSession } from '@hominem/auth/client';
 import { Navigate, Route, Routes } from 'react-router';
 
 import { desktopEnv } from '@/lib/env';
@@ -32,7 +32,9 @@ export function App() {
 }
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const session = useSession();
+  const isAuthenticated = Boolean(session.data?.user?.id);
+  const isLoading = session.isPending;
 
   if (isLoading) {
     return <div>Loading...</div>;

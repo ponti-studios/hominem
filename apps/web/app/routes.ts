@@ -7,7 +7,6 @@ export default [
   layout('routes/auth/layout.tsx', [
     route('/auth', 'routes/auth/index.tsx'),
     route('/auth/verify', 'routes/auth/verify.tsx'),
-    route('/auth/logout', 'routes/auth/logout.tsx'),
     route('/auth/passkey/callback', 'routes/auth/passkey.callback.tsx'),
   ]),
 

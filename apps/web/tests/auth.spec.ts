@@ -48,7 +48,7 @@ test('notes email + otp rejects invalid verification code', async ({ page, conte
   await submitOtpCode(page, '111111')
 
   await expect(page).toHaveURL(/\/auth\/verify\?email=/, { timeout: 30_000 })
-  await expect(page.getByText('Verification failed. Please check your code and try again.')).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByText('Invalid OTP')).toBeVisible({ timeout: 15_000 })
 })
 
 test('notes authenticated surfaces expose passkey enrollment controls', async ({ page, context }) => {

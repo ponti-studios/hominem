@@ -1,7 +1,6 @@
 import { AuthProvider } from '@hominem/auth/client';
 import { COMMON_FONT_LINKS, UpdateGuard } from '@hominem/ui';
 import type React from 'react';
-import { useCallback } from 'react';
 import {
   data,
   isRouteErrorResponse,
@@ -10,7 +9,6 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
-  useRevalidator,
 } from 'react-router';
 
 import { WEB_BRAND } from '~/lib/brand';
@@ -21,7 +19,7 @@ import type { Route } from './+types/root';
 
 import './globals.css';
 import { HonoProvider } from './lib/api';
-import { authConfig, getServerSession } from './lib/auth.server';
+import { authConfig } from './lib/auth.server';
 import { serverEnv } from './lib/env';
 import './lib/i18n';
 
@@ -56,19 +54,14 @@ const NOTES_ICON_LINKS = [
   { rel: 'manifest', href: `/manifest.json?v=${ICON_VERSION}` },
 ] as const;
 
-export async function loader({ request }: Route.LoaderArgs) {
-  const { user, session, headers } = await getServerSession(request);
-
+export async function loader(_: Route.LoaderArgs) {
   return data(
     {
-      user,
-      session,
       authEnv: {
         apiBaseUrl: authConfig.apiBaseUrl,
       },
       apiBaseUrl: serverEnv.VITE_PUBLIC_API_URL,
     },
-    { headers },
   );
 }
 
@@ -105,28 +98,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App({ loaderData }: Route.ComponentProps) {
-  const { authEnv, apiBaseUrl, session, user } = loaderData;
-  const revalidator = useRevalidator();
-  const clearOfflineCaches = useCallback(async () => {
-    if (!('caches' in window)) {
-      return;
-    }
-    const cacheNames = await caches.keys();
-    await Promise.all(cacheNames.map((name) => caches.delete(name)));
-  }, []);
-
-  const handleAuthEvent = useCallback(
-    (event: 'SIGNED_IN' | 'SIGNED_OUT' | 'TOKEN_REFRESHED') => {
-      if (event === 'SIGNED_OUT') {
-        void clearOfflineCaches();
-      }
-      revalidator.revalidate();
-    },
-    [clearOfflineCaches, revalidator],
-  );
+  const { authEnv, apiBaseUrl } = loaderData;
 
   return (
-    <AuthProvider config={authEnv} initialUser={user} initialSession={session} onAuthEvent={handleAuthEvent}>
+    <AuthProvider config={authEnv}>
       <HonoProvider baseUrl={apiBaseUrl}>
         <TelemetryProvider>
           <AnalyticsProvider>

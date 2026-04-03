@@ -71,10 +71,8 @@ describe('mobile e2e login guard', () => {
 
       expect(response.status).toBe(200);
       const body = (await response.json()) as {
-        provider: string;
         user: { id: string; email: string; name?: string | null };
       };
-      expect(body.provider).toBe('better-auth');
       expect(body.user.id.length).toBeGreaterThan(0);
       expect(body.user.email).toBe('mobile-passkey-e2e@hominem.test');
     } finally {

@@ -1,4 +1,4 @@
-import { useSafeAuth } from '@hominem/auth/client';
+import { useAuthClient, useSession } from '@hominem/auth/client';
 import { LogOut, Settings, type LucideIcon } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
@@ -30,11 +30,14 @@ function useIsActive(url: string) {
 
 function useLogout() {
   const navigate = useNavigate();
-  const authContext = useSafeAuth();
+  const authClient = useAuthClient();
   return useCallback(async () => {
-    await authContext?.logout();
-    navigate('/');
-  }, [authContext, navigate]);
+    const result = await authClient.signOut();
+    if (result.error) {
+      throw new Error(result.error.message ?? 'Unable to sign out.');
+    }
+    navigate('/auth');
+  }, [authClient, navigate]);
 }
 
 /** Tracks scroll direction. Returns true when the user is scrolling down. */
@@ -174,8 +177,9 @@ function SignInButton() {
 // ─── Main export ──────────────────────────────────────────────────────────────
 
 export function Header({ brandIcon, navItems = [] }: HeaderProps) {
-  const authContext = useSafeAuth();
-  const { isAuthenticated, isLoading } = authContext ?? {};
+  const session = useSession();
+  const isAuthenticated = Boolean(session.data?.user?.id);
+  const isLoading = session.isPending;
   const scrolledDown = useScrollDown();
 
   return (
@@ -206,16 +210,11 @@ export function Header({ brandIcon, navItems = [] }: HeaderProps) {
             {brandIcon ? brandIcon : null}
           </Link>
 
-          {authContext &&
-            !isLoading &&
-            (isAuthenticated ? <DesktopNav navItems={navItems} /> : <SignInButton />)}
+          {!isLoading && (isAuthenticated ? <DesktopNav navItems={navItems} /> : <SignInButton />)}
         </div>
       </header>
 
-      {/* Mobile bottom tab bar */}
-      {authContext && !isLoading && isAuthenticated && navItems.length > 0 && (
-        <MobileTabBar navItems={navItems} />
-      )}
+      {isAuthenticated && !isLoading && navItems.length > 0 ? <MobileTabBar navItems={navItems} /> : null}
     </>
   );
 }

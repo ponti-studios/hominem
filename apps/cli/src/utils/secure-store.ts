@@ -29,7 +29,6 @@ export interface StoredTokens {
   refreshToken?: string;
   expiresAt?: string;
   scopes?: string[];
-  provider?: 'better-auth';
   sessionId?: string;
   refreshFamilyId?: string;
   issuedAt?: string;
@@ -131,7 +130,6 @@ function normalizeStoredTokens(
     ...(input.refreshToken ? { refreshToken: input.refreshToken } : {}),
     ...(input.expiresAt ? { expiresAt: input.expiresAt } : {}),
     ...(input.scopes ? { scopes: input.scopes } : {}),
-    ...(input.provider ? { provider: input.provider } : {}),
     ...(input.sessionId ? { sessionId: input.sessionId } : {}),
     ...(input.refreshFamilyId ? { refreshFamilyId: input.refreshFamilyId } : {}),
     ...(input.issuedAt ? { issuedAt: input.issuedAt } : {}),
