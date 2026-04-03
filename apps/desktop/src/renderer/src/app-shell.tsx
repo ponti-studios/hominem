@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 
-import { useDesktopAuth } from './auth/auth-provider';
+import { useAuth } from '@hominem/auth';
 import { DESKTOP_BRAND } from './brand';
 
 export function AppShell() {
   const [isPackaged, setIsPackaged] = useState(false);
-  const { signOut, state } = useDesktopAuth();
+  const { user, signOut } = useAuth();
 
   useEffect(() => {
     void window.electronAPI.isPackaged().then(setIsPackaged);
@@ -47,7 +47,7 @@ export function AppShell() {
               Desktop auth is aligned with the rest of {DESKTOP_BRAND.appName}.
             </h2>
             <p className="desktop-shell__body">
-              Signed in as <strong>{state.user?.email ?? 'unknown user'}</strong>. The desktop app
+              Signed in as <strong>{user?.email ?? 'unknown user'}</strong>. The desktop app
               can now bootstrap auth state, restore sessions, and gate product features behind the
               same backend contract used by the other first-party apps.
             </p>
