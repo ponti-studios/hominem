@@ -2,16 +2,17 @@ import type { ChatMessage as RpcChatMessage } from '@hominem/rpc/types';
 import type React from 'react';
 
 export type ChatIconName =
-  | 'arrows-rotate'
-  | 'copy'
-  | 'magnifying-glass'
-  | 'pen-to-square'
+  | 'arrow.clockwise'
+  | 'doc.on.doc'
+  | 'ellipsis'
+  | 'magnifyingglass'
+  | 'square.and.pencil'
   | 'plus'
-  | 'share-from-square'
-  | 'speaker'
-  | 'stop'
+  | 'square.and.arrow.up'
+  | 'speaker.wave.2'
+  | 'stop.fill'
   | 'trash'
-  | 'x';
+  | 'xmark';
 
 export type ChatRenderIcon = (
   name: ChatIconName,
@@ -19,7 +20,6 @@ export type ChatRenderIcon = (
     color?: string;
     size: number;
     style?: object;
-    useSymbol?: boolean;
   },
 ) => React.ReactNode;
 

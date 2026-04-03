@@ -14,6 +14,22 @@ const { EXPO_OWNER, EXPO_PROJECT_ID, EXPO_PROJECT_SLUG, getExpoExtraConfig } = r
   }
 }
 
+function withAppVariant<T>(variant: string, callback: () => T) {
+  const previousVariant = process.env.APP_VARIANT
+
+  process.env.APP_VARIANT = variant
+
+  try {
+    return callback()
+  } finally {
+    if (previousVariant === undefined) {
+      delete process.env.APP_VARIANT
+    } else {
+      process.env.APP_VARIANT = previousVariant
+    }
+  }
+}
+
 describe('expo config helpers', () => {
   it('returns stable expo identity', () => {
     expect(EXPO_OWNER).toBe('pontistudios')
@@ -47,43 +63,30 @@ describe('expo config helpers', () => {
   })
 
   it('includes the voice transcription permission copy and omits calendar access copy', () => {
-    const previousVariant = process.env.APP_VARIANT
+    const config = withAppVariant('dev', () =>
+      appConfig({ config: {}, packageJsonPath: '', projectRoot: '', staticConfigPath: '' }),
+    )
+    const infoPlist = config.ios?.infoPlist as Record<string, unknown> | undefined
 
-    process.env.APP_VARIANT = 'dev'
-
-    const config = appConfig({ config: {}, packageJsonPath: '', projectRoot: '', staticConfigPath: '' })
-
-    expect(config.ios?.infoPlist).toMatchObject({
+    expect(infoPlist).toMatchObject({
       ITSAppUsesNonExemptEncryption: false,
       NSMicrophoneUsageDescription:
         'Allow Hakumi to access your microphone to transcribe voice notes.',
     })
-    expect(config.ios?.infoPlist?.NSCalendarsUsageDescription).toBeUndefined()
-    expect(config.ios?.infoPlist?.NSRemindersUsageDescription).toBeUndefined()
-
-    if (previousVariant === undefined) {
-      delete process.env.APP_VARIANT
-    } else {
-      process.env.APP_VARIANT = previousVariant
-    }
+    expect(infoPlist?.NSCalendarsUsageDescription).toBeUndefined()
+    expect(infoPlist?.NSRemindersUsageDescription).toBeUndefined()
   })
 
   it('keeps release variants free of dev-only apple signing config', () => {
-    const previousVariant = process.env.APP_VARIANT
     const previousTeamId = process.env.EXPO_APPLE_TEAM_ID
 
-    process.env.APP_VARIANT = 'preview'
     process.env.EXPO_APPLE_TEAM_ID = '3QHJ2KN8AL'
 
-    const config = appConfig({ config: {}, packageJsonPath: '', projectRoot: '', staticConfigPath: '' })
+    const config = withAppVariant('preview', () =>
+      appConfig({ config: {}, packageJsonPath: '', projectRoot: '', staticConfigPath: '' }),
+    )
 
     expect(config.ios?.appleTeamId).toBeUndefined()
-
-    if (previousVariant === undefined) {
-      delete process.env.APP_VARIANT
-    } else {
-      process.env.APP_VARIANT = previousVariant
-    }
 
     if (previousTeamId === undefined) {
       delete process.env.EXPO_APPLE_TEAM_ID
@@ -93,21 +96,50 @@ describe('expo config helpers', () => {
   })
 
   it('derives the app group from the active bundle identifier', () => {
-    const previousVariant = process.env.APP_VARIANT
-
-    process.env.APP_VARIANT = 'preview'
-
-    const config = appConfig({ config: {}, packageJsonPath: '', projectRoot: '', staticConfigPath: '' })
+    const config = withAppVariant('preview', () =>
+      appConfig({ config: {}, packageJsonPath: '', projectRoot: '', staticConfigPath: '' }),
+    )
 
     expect(config.ios?.bundleIdentifier).toBe('com.pontistudios.hakumi.preview')
     expect(config.ios?.entitlements?.['com.apple.security.application-groups']).toEqual([
       'group.com.pontistudios.hakumi.preview',
     ])
+  })
 
-    if (previousVariant === undefined) {
-      delete process.env.APP_VARIANT
-    } else {
-      process.env.APP_VARIANT = previousVariant
-    }
+  it.each([
+    ['dev', '../../assets/logo.hakumi.dev.png'],
+    ['e2e', '../../assets/logo.hakumi.dev.png'],
+    ['preview', '../../assets/logo.hakumi.preview.png'],
+    ['production', '../../assets/logo.hakumi.png'],
+  ] as const)('resolves Expo-managed brand assets for %s', (variant, expectedIcon) => {
+    const config = withAppVariant(variant, () =>
+      appConfig({ config: {}, packageJsonPath: '', projectRoot: '', staticConfigPath: '' }),
+    )
+
+    expect(config.icon).toBe(expectedIcon)
+    expect(config.ios?.icon).toBe(expectedIcon)
+    expect(config.android?.adaptiveIcon?.foregroundImage).toBe(expectedIcon)
+    expect(config.web?.favicon).toBe('../../assets/logo.hakumi.png')
+    expect(config.plugins).toContainEqual([
+      'expo-splash-screen',
+      {
+        backgroundColor: '#000000',
+        image: '../../assets/logo.hakumi.splash-screen.png',
+        resizeMode: 'contain',
+      },
+    ])
+  })
+
+  it('omits the custom Android notification icon override', () => {
+    const config = withAppVariant('preview', () =>
+      appConfig({ config: {}, packageJsonPath: '', projectRoot: '', staticConfigPath: '' }),
+    )
+
+    expect(config.plugins).toContainEqual([
+      'expo-notifications',
+      {
+        color: '#000000',
+      },
+    ])
   })
 })

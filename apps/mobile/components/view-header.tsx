@@ -1,5 +1,5 @@
-import { Link } from 'expo-router';
 import type { RelativePathString } from 'expo-router';
+import { Link } from 'expo-router';
 import React, { type PropsWithChildren } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -14,7 +14,7 @@ export const ViewHeader = ({ children }: PropsWithChildren) => {
       <View style={styles.navbar}>
         <Link href={'/(protected)/(tabs)/notes' as RelativePathString}>
           <View style={styles.backLink}>
-            <AppIcon name="arrow-left" size={26} color={theme.colors.foreground} />
+            <AppIcon name="arrow.left" size={26} color={theme.colors.foreground} />
             <Text variant="bodyLarge">Notes</Text>
           </View>
         </Link>

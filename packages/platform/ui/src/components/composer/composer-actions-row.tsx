@@ -118,7 +118,7 @@ export const ComposerActionsRow = memo(function ComposerActionsRow({
         <ActionButton
           intent={secondaryIntent(presentation.posture)}
           icon={
-            presentation.secondaryActionIcon === 'circle-plus' ? (
+            presentation.secondaryActionIcon === 'plus.circle' ? (
               <CirclePlus className="size-4.5" />
             ) : (
               <MessageSquare className="size-4.5" />
@@ -141,7 +141,7 @@ export const ComposerActionsRow = memo(function ComposerActionsRow({
         <ActionButton
           intent={primaryIntent(presentation.posture)}
           icon={
-            presentation.primaryActionIcon === 'circle-plus' ? (
+            presentation.primaryActionIcon === 'plus.circle' ? (
               <CirclePlus className="size-4.5" />
             ) : (
               <ArrowUp className="size-4.5" />

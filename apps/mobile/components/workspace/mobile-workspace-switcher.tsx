@@ -1,14 +1,15 @@
 import * as Haptics from 'expo-haptics';
-import { useRouter } from 'expo-router';
 import type { Href } from 'expo-router';
+import { useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import type { TextStyle } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import AppIcon from '~/components/ui/icon';
+import { getRuntimeBrandLogoSource } from '~/config/brand-assets';
 import { theme } from '~/theme';
-import { APP_NAME } from '~/utils/constants';
+import { APP_NAME, APP_VARIANT } from '~/utils/constants';
 
 import {
   MOBILE_WORKSPACE_LABELS,
@@ -21,11 +22,11 @@ const MOBILE_WORKSPACE_ICONS: Record<
   MobileWorkspaceContext,
   React.ComponentProps<typeof AppIcon>['name']
 > = {
-  inbox: 'inbox',
-  note: 'pen-to-square',
-  chat: 'comment',
-  search: 'magnifying-glass',
-  settings: 'gear',
+  inbox: 'tray',
+  note: 'square.and.pencil',
+  chat: 'bubble.left',
+  search: 'magnifyingglass',
+  settings: 'gearshape',
 };
 
 const iconStyle: TextStyle = {
@@ -71,12 +72,12 @@ export const MobileWorkspaceSwitcher = () => {
               onPress={onReturnToInbox}
               style={({ pressed }) => [styles.backButton, pressed ? styles.pressed : null]}
             >
-              <AppIcon name="arrow-left" size={16} color={theme.colors.foreground} />
+              <AppIcon name="arrow.left" size={16} color={theme.colors.foreground} />
             </Pressable>
           ) : (
             <View style={styles.logoWrap}>
               <Image
-                source={require('../../assets/logo.web.png')}
+                source={getRuntimeBrandLogoSource(APP_VARIANT)}
                 style={styles.logo}
                 resizeMode="cover"
                 accessibilityLabel={APP_NAME}
@@ -114,7 +115,6 @@ export const MobileWorkspaceSwitcher = () => {
                     size={16}
                     color={isActive ? theme.colors.background : theme.colors.foreground}
                     style={iconStyle}
-                    useSymbol
                   />
                 </Pressable>
               );

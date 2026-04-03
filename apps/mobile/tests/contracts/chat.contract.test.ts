@@ -33,6 +33,7 @@ describe('chat contract', () => {
       profile_id: '',
       focus_ids: null,
       focus_items: null,
+      toolCalls: null,
     }))
 
     client.setQueryData(queryKey(fixture.chatId), initial)
@@ -53,6 +54,7 @@ describe('chat contract', () => {
         profile_id: '',
         focus_ids: null,
         focus_items: null,
+        toolCalls: null,
       },
       {
         id: 'msg-server-assistant',
@@ -63,6 +65,7 @@ describe('chat contract', () => {
         profile_id: '',
         focus_ids: null,
         focus_items: null,
+        toolCalls: null,
       },
     ]
     client.setQueryData(
@@ -87,6 +90,7 @@ describe('chat contract', () => {
         profile_id: '',
         focus_ids: null,
         focus_items: null,
+        toolCalls: null,
       },
     ]
     const streamingFrames: MessageOutput[] = [
@@ -99,6 +103,7 @@ describe('chat contract', () => {
         profile_id: '',
         focus_ids: null,
         focus_items: null,
+        toolCalls: null,
       },
       {
         id: 'stream-1',
@@ -109,6 +114,7 @@ describe('chat contract', () => {
         profile_id: '',
         focus_ids: null,
         focus_items: null,
+        toolCalls: null,
       },
     ]
 
@@ -133,6 +139,7 @@ describe('chat contract', () => {
         profile_id: '',
         focus_ids: null,
         focus_items: null,
+        toolCalls: null,
       },
     ]
     firstClient.setQueryData(queryKey(fixture.chatId), data)
@@ -169,6 +176,7 @@ describe('chat contract', () => {
         profile_id: '',
         focus_ids: null,
         focus_items: null,
+        toolCalls: null,
       },
     ]
     client.setQueryData(queryKey(fixture.chatId), previous)
@@ -190,6 +198,7 @@ describe('chat contract', () => {
         profile_id: '',
         focus_ids: null,
         focus_items: null,
+        toolCalls: null,
       },
     ])
     expect(retried.some((message) => message.id === 'msg-retry-success')).toBe(true)

@@ -152,7 +152,7 @@ export const NoteListItem = ({
   const translateX = useSharedValue(0);
   const itemHeight = useSharedValue(64);
   const iconBackgroundColor = useSharedValue<string>(theme.colors.muted);
-  const iconName = useSharedValue<AppIconName>('check');
+  const iconName = useSharedValue<AppIconName>('checkmark.circle');
   const isMutating = useSharedValue(false);
   const errorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dueDate = item.scheduledFor ? parseScheduledForValue(item.scheduledFor) : null;
@@ -172,7 +172,7 @@ export const NoteListItem = ({
   }));
 
   const resetErrorState = useCallback(() => {
-    iconName.value = 'circle-check';
+    iconName.value = 'checkmark.circle';
     iconBackgroundColor.value = withTiming(theme.colors.muted, {
       duration: VOID_MOTION_DURATION_STANDARD,
     });
@@ -199,7 +199,7 @@ export const NoteListItem = ({
       isMutating.value = false;
     },
     onError: () => {
-      iconName.value = 'circle-xmark';
+      iconName.value = 'xmark.circle.fill';
       iconBackgroundColor.value = withTiming(theme.colors.destructive, {
         duration: VOID_MOTION_DURATION_STANDARD,
       });

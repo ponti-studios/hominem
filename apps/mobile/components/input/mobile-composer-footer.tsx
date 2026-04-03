@@ -38,7 +38,7 @@ export function MobileComposerFooter({
             style={styles.toolButton}
             testID="mobile-composer-attach"
           >
-            <AppIcon name="plus" size={18} style={styles.icon} />
+            <AppIcon name="plus.circle" size={18} style={styles.icon} />
           </Pressable>
         ) : null}
         {presentation.showsAttachmentButton ? (
@@ -59,7 +59,7 @@ export function MobileComposerFooter({
             style={styles.toolButton}
             testID="mobile-composer-voice"
           >
-            <AppIcon name="microphone" size={18} style={styles.icon} />
+            <AppIcon name="mic" size={18} style={styles.icon} />
           </Pressable>
         ) : null}
       </View>
@@ -72,7 +72,7 @@ export function MobileComposerFooter({
             testID="mobile-composer-secondary-action"
           >
             <AppIcon
-              name={activeContext === 'chat' ? 'circle-plus' : 'comment'}
+              name={activeContext === 'chat' ? 'note.text.badge.plus' : 'bubble.left'}
               size={18}
               style={styles.icon}
             />
@@ -85,7 +85,7 @@ export function MobileComposerFooter({
           testID="mobile-composer-primary-action"
         >
           <AppIcon
-            name={activeContext === 'chat' ? 'arrow-up' : 'circle-plus'}
+            name={activeContext === 'chat' ? 'arrow.up' : 'plus.circle'}
             size={18}
             style={styles.primaryIcon}
           />

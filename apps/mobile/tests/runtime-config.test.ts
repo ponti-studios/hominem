@@ -1,9 +1,17 @@
 
+type MockExpoConfig = {
+  extra: {
+    appVariant?: string
+    apiBaseUrl?: string
+  }
+  hostUri?: string
+}
+
 const mockExpoConstants = {
   expoConfig: {
     extra: {},
     hostUri: undefined,
-  },
+  } as MockExpoConfig,
   manifest2: undefined,
 }
 
@@ -37,7 +45,7 @@ describe('mobile runtime config', () => {
     mockExpoConstants.expoConfig = {
       extra: {},
       hostUri: undefined,
-    }
+    } satisfies MockExpoConfig
     mockExpoConstants.manifest2 = undefined
   })
 
@@ -48,7 +56,7 @@ describe('mobile runtime config', () => {
         appVariant: 'preview',
       },
       hostUri: undefined,
-    }
+    } satisfies MockExpoConfig
     mockIsDevice = true
 
     const { isReleaseAppVariant } = loadConstants()
@@ -64,7 +72,7 @@ describe('mobile runtime config', () => {
         appVariant: 'preview',
       },
       hostUri: undefined,
-    }
+    } satisfies MockExpoConfig
     mockIsDevice = true
 
     expect(() =>
@@ -84,7 +92,7 @@ describe('mobile runtime config', () => {
         appVariant: 'dev',
         apiBaseUrl: 'http://localhost:4040',
       },
-    }
+    } satisfies MockExpoConfig
     mockIsDevice = false
 
     const { API_BASE_URL } = loadConstants()
@@ -100,7 +108,7 @@ describe('mobile runtime config', () => {
         appVariant: 'dev',
         apiBaseUrl: 'http://localhost:4040',
       },
-    }
+    } satisfies MockExpoConfig
     mockIsDevice = true
 
     const { API_BASE_URL } = loadConstants()
@@ -114,7 +122,7 @@ describe('mobile runtime config', () => {
       extra: {
         appVariant: 'dev',
       },
-    }
+    } satisfies MockExpoConfig
     mockIsDevice = false
 
     const { API_BASE_URL } = loadConstants()

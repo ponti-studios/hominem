@@ -15,6 +15,8 @@ const baseChat: Chat = {
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
   title: 'Chat 1',
+  userId: 'user-1',
+  noteId: null,
 }
 
 describe('session-state', () => {
@@ -36,6 +38,7 @@ describe('session-state', () => {
 
   it('sorts chats by latest server activity rather than creation time', () => {
     const newerChat: Chat = {
+      ...baseChat,
       id: 'chat-2',
       archivedAt: null,
       createdAt: '2026-02-20T00:00:00.000Z',
@@ -59,6 +62,7 @@ describe('session-state', () => {
 
   it('prefers an explicit chat id over the first active chat', () => {
     const otherChat: Chat = {
+      ...baseChat,
       id: 'chat-2',
       archivedAt: null,
       createdAt: '2026-01-03T00:00:00.000Z',

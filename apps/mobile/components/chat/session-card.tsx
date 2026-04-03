@@ -1,8 +1,8 @@
 import { useApiClient } from '@hominem/rpc/react';
 import { FlashList, type ListRenderItem } from '@shopify/flash-list';
 import { useQuery } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
 import type { RelativePathString } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { memo, useCallback } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -71,7 +71,7 @@ export const SessionCard = memo(({ chat, isActive }: SessionCardProps) => {
       >
         <View style={[styles.iconWrap, isActive && styles.activeIconWrap]}>
           <AppIcon
-            name="comment"
+            name="bubble.left"
             size={14}
             color={isActive ? theme.colors.background : theme.colors['text-tertiary']}
           />
@@ -84,7 +84,7 @@ export const SessionCard = memo(({ chat, isActive }: SessionCardProps) => {
             {isActive ? 'Active' : formatAge(chat.activityAt)}
           </Text>
         </View>
-        <AppIcon name="chevron-right" size={12} color={theme.colors['text-tertiary']} />
+        <AppIcon name="chevron.right" size={12} color={theme.colors['text-tertiary']} />
       </Pressable>
     </FadeIn>
   );

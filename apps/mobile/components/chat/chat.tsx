@@ -1,5 +1,5 @@
-import { Chat as _Chat } from '@hominem/ui/chat';
 import type { SessionSource } from '@hominem/ui/chat';
+import { Chat as _Chat } from '@hominem/ui/chat';
 import { useQueryClient } from '@tanstack/react-query';
 import React from 'react';
 
@@ -20,13 +20,7 @@ type ChatProps = {
 };
 
 const renderIcon: React.ComponentProps<typeof _Chat>['renderIcon'] = (name, props) => (
-  <AppIcon
-    color={props.color}
-    name={name}
-    size={props.size}
-    style={props.style}
-    useSymbol={props.useSymbol}
-  />
+  <AppIcon color={props.color} name={name} size={props.size} style={props.style} />
 );
 
 const formatTimestamp = (value: string) => getLocalDate(new Date(value)).localDateString;

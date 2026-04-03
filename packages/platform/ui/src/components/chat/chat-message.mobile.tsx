@@ -379,11 +379,10 @@ const ChatMessage = memo(function ChatMessage({
                 style={[styles.actionButton, !canCopy ? styles.actionButtonDisabled : null]}
                 variant="ghost"
               >
-                {renderIcon('copy', {
+                {renderIcon('doc.on.doc', {
                   color: colors['text-tertiary'],
                   size: 15,
                   style: styles.actionIcon,
-                  useSymbol: true,
                 })}
               </Button>
               {canSpeak ? (
@@ -394,11 +393,10 @@ const ChatMessage = memo(function ChatMessage({
                   style={styles.actionButton}
                   variant="ghost"
                 >
-                  {renderIcon(isSpeaking ? 'stop' : 'speaker', {
+                  {renderIcon(isSpeaking ? 'stop.fill' : 'speaker.wave.2', {
                     color: colors['text-tertiary'],
                     size: 15,
                     style: styles.actionIcon,
-                    useSymbol: true,
                   })}
                 </Button>
               ) : null}
@@ -410,11 +408,10 @@ const ChatMessage = memo(function ChatMessage({
                   style={styles.actionButton}
                   variant="ghost"
                 >
-                  {renderIcon('share-from-square', {
+                  {renderIcon('square.and.arrow.up', {
                     color: colors['text-tertiary'],
                     size: 15,
                     style: styles.actionIcon,
-                    useSymbol: true,
                   })}
                 </Button>
               ) : null}
@@ -429,11 +426,10 @@ const ChatMessage = memo(function ChatMessage({
                   style={styles.actionButton}
                   variant="ghost"
                 >
-                  {renderIcon('pen-to-square', {
+                  {renderIcon('square.and.pencil', {
                     color: colors['text-tertiary'],
                     size: 15,
                     style: styles.actionIcon,
-                    useSymbol: true,
                   })}
                 </Button>
               ) : null}
@@ -445,11 +441,10 @@ const ChatMessage = memo(function ChatMessage({
                   style={styles.actionButton}
                   variant="ghost"
                 >
-                  {renderIcon('arrows-rotate', {
+                  {renderIcon('arrow.clockwise', {
                     color: colors['text-tertiary'],
                     size: 15,
                     style: styles.actionIcon,
-                    useSymbol: true,
                   })}
                 </Button>
               ) : null}
@@ -465,7 +460,6 @@ const ChatMessage = memo(function ChatMessage({
                     color: colors['text-tertiary'],
                     size: 15,
                     style: styles.actionIcon,
-                    useSymbol: true,
                   })}
                 </Button>
               ) : null}

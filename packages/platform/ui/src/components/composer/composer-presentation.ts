@@ -21,9 +21,9 @@ export interface ComposerPresentation {
   placeholder: string;
   primaryActionLabel: string;
   /** Icon name understood by the Composer — kept symbolic so the component picks the icon */
-  primaryActionIcon: 'circle-plus' | 'arrow-up';
+  primaryActionIcon: 'plus.circle' | 'arrow.up';
   secondaryActionLabel: string;
-  secondaryActionIcon: 'message-square' | 'circle-plus';
+  secondaryActionIcon: 'bubble.left' | 'plus.circle';
   showsAttachmentButton: boolean;
   showsVoiceButton: boolean;
   showsNotePicker: boolean;
@@ -38,9 +38,9 @@ export function deriveComposerPresentation(
       posture: 'note-query',
       placeholder: 'Ask about this note…',
       primaryActionLabel: 'Ask',
-      primaryActionIcon: 'arrow-up',
+      primaryActionIcon: 'arrow.up',
       secondaryActionLabel: '',
-      secondaryActionIcon: 'message-square',
+      secondaryActionIcon: 'bubble.left',
       showsAttachmentButton: false,
       showsVoiceButton: true,
       showsNotePicker: false,
@@ -52,9 +52,9 @@ export function deriveComposerPresentation(
       posture: 'reply',
       placeholder: isRecording ? 'Listening…' : 'Reply in chat',
       primaryActionLabel: 'Send',
-      primaryActionIcon: 'arrow-up',
+      primaryActionIcon: 'arrow.up',
       secondaryActionLabel: 'Save as note',
-      secondaryActionIcon: 'circle-plus',
+      secondaryActionIcon: 'plus.circle',
       showsAttachmentButton: true,
       showsVoiceButton: true,
       showsNotePicker: true,
@@ -66,9 +66,9 @@ export function deriveComposerPresentation(
     posture: 'capture',
     placeholder: isRecording ? 'Listening…' : 'Write a note, ask something, or drop a file',
     primaryActionLabel: 'Save note',
-    primaryActionIcon: 'circle-plus',
+    primaryActionIcon: 'plus.circle',
     secondaryActionLabel: 'Start chat',
-    secondaryActionIcon: 'message-square',
+    secondaryActionIcon: 'bubble.left',
     showsAttachmentButton: true,
     showsVoiceButton: true,
     showsNotePicker: false,

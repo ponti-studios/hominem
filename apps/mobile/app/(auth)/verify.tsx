@@ -16,11 +16,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '~/components/Button';
 import { FeatureErrorBoundary } from '~/components/error-boundary';
+import { getRuntimeBrandLogoSource } from '~/config/brand-assets';
 import TextInput from '~/components/text-input';
 import { posthog } from '~/lib/posthog';
 import { Box, Text, makeStyles } from '~/theme';
 import { useAuth } from '~/utils/auth-provider';
 import { isValidOtp, normalizeOtp } from '~/utils/auth/validation';
+import { APP_VARIANT } from '~/utils/constants';
 
 export function VerifyScreen() {
   const styles = useStyles();
@@ -135,7 +137,7 @@ export function VerifyScreen() {
           <Box flex={1} testID="auth-verify-screen" style={styles.screen}>
             <View style={styles.hero}>
               <Image
-                source={require('~/assets/icon.png')}
+                source={getRuntimeBrandLogoSource(APP_VARIANT)}
                 contentFit="contain"
                 style={styles.logo}
               />

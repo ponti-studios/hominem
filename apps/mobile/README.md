@@ -49,15 +49,15 @@ git push origin feature/name   # Push when all pass
 
 The app supports 4 distinct variants, each with specific configuration, environment, and branding:
 
-| Aspect | dev | e2e | preview | production |
-|--------|-----|-----|---------|------------|
-| **Purpose** | Local development | E2E testing | Internal testing | App store |
-| **API** | localhost:4040 | localhost:4040 | EAS-managed | EAS-managed |
-| **Icon** | `logo.hakumi.dev.png` | `logo.hakumi.dev.png` | `logo.hakumi.preview.png` | `logo.hakumi.png` |
-| **Environment** | `.env.development.local` | `.env.e2e.local` | EAS secrets | EAS secrets |
-| **Dev Client** | ✅ Enabled | ❌ Disabled | ❌ Disabled | ❌ Disabled |
-| **Channel** | `development` | (e2e only) | (testing) | `production` |
-| **Distribution** | N/A | simulator | TestFlight/Firebase | App Store/Play |
+| Aspect           | dev                      | e2e                   | preview                   | production        |
+| ---------------- | ------------------------ | --------------------- | ------------------------- | ----------------- |
+| **Purpose**      | Local development        | E2E testing           | Internal testing          | App store         |
+| **API**          | localhost:4040           | localhost:4040        | EAS-managed               | EAS-managed       |
+| **Icon**         | `logo.hakumi.dev.png`    | `logo.hakumi.dev.png` | `logo.hakumi.preview.png` | `logo.hakumi.png` |
+| **Environment**  | `.env.development.local` | `.env.e2e.local`      | EAS secrets               | EAS secrets       |
+| **Dev Client**   | ✅ Enabled               | ❌ Disabled           | ❌ Disabled               | ❌ Disabled       |
+| **Channel**      | `development`            | (e2e only)            | (testing)                 | `production`      |
+| **Distribution** | N/A                      | simulator             | TestFlight/Firebase       | App Store/Play    |
 
 ### Native Generation Rules
 
@@ -86,6 +86,7 @@ EXPO_PUBLIC_API_BASE_URL="http://localhost:4040"
 ```
 
 **Commands:**
+
 ```bash
 npm run dev                 # Start with verification
 npm run dev:sim            # Simulator target
@@ -101,11 +102,13 @@ EXPO_PUBLIC_API_BASE_URL="http://localhost:4040"
 ```
 
 **Detox simulator config:**
+
 - Default simulator device is configurable via `DETOX_SIMULATOR_DEVICE`
 - Default simulator OS is configurable via `DETOX_SIMULATOR_OS`
 - If unset, the build uses a safer default device instead of a hardcoded unavailable runtime
 
 **Commands:**
+
 ```bash
 npm run build:e2e              # Build test app with Detox
 npm run test:e2e               # Run auth flow tests
@@ -132,6 +135,7 @@ npm run test:e2e:smoke         # Run smoke tests
 ### Local Development Notes
 
 1. Create `.env.development.local` (git-ignored):
+
    ```bash
    EXPO_PUBLIC_API_BASE_URL="http://localhost:4040"
    ```
@@ -162,11 +166,13 @@ npm run test:e2e:smoke         # Run smoke tests
 All verification checks are consolidated in `npm run verify:VARIANT`:
 
 ### Always Checked
+
 - ✅ EAS profiles exist (all 4 required)
 - ✅ Expo configuration matches expected values
 - ✅ Design tokens used (no raw spacing numbers)
 
 ### Variant-Specific (preview/production only)
+
 - ✅ Release environment variables set in EAS
 
 ```bash
@@ -188,6 +194,7 @@ E2E tests use Detox with a simulated auth flow:
 - Detox app config in `.detoxrc.js`
 
 **Commands:**
+
 ```bash
 npm run build:e2e              # Build app for testing
 npm run test:e2e               # Run auth flow tests
@@ -395,6 +402,7 @@ npm run dev:select          # Show current target status
 ```
 
 **Details:**
+
 - `dev` - Runs verify, then starts `expo start --dev-client`
 - `dev:sim` - Updates `.env.development.local` to `localhost:4040`
 - `dev:device` - Updates `.env.development.local` to device LAN IP
@@ -410,6 +418,7 @@ npm run verify:production   # Verify production config (requires EAS_TOKEN)
 ```
 
 **Checks:**
+
 - ✅ EAS profiles valid
 - ✅ Expo config matches expected
 - ✅ Design tokens used (no raw numbers)
@@ -471,14 +480,14 @@ make pr                     # Full PR verification
 
 ### Workflows Overview
 
-| Workflow | Trigger | Purpose |
-|----------|---------|---------|
-| `mobile-lint.yml` | PR, main/develop | Linting + type checking |
-| `mobile-test.yml` | PR, main/develop | Unit + integration tests |
-| `mobile-verify.yml` | PR, main/develop | Configuration verification |
-| `mobile-e2e.yml` | PR, main/develop | E2E tests (parallel) |
-| `mobile-build-preview.yml` | Push to main | Auto-submit preview |
-| `mobile-build-production.yml` | Manual dispatch | Production build |
+| Workflow                      | Trigger          | Purpose                    |
+| ----------------------------- | ---------------- | -------------------------- |
+| `mobile-lint.yml`             | PR, main/develop | Linting + type checking    |
+| `mobile-test.yml`             | PR, main/develop | Unit + integration tests   |
+| `mobile-verify.yml`           | PR, main/develop | Configuration verification |
+| `mobile-e2e.yml`              | PR, main/develop | E2E tests (parallel)       |
+| `mobile-build-preview.yml`    | Push to main     | Auto-submit preview        |
+| `mobile-build-production.yml` | Manual dispatch  | Production build           |
 
 ### What Runs on Every PR
 
@@ -547,7 +556,6 @@ scripts/
     ├── check-expo-config.sh         # Validate Expo configuration
     ├── check-release-env.sh         # Validate release env vars
     ├── check-style-tokens.ts        # Audit design token usage
-    ├── setup-icons.sh               # Generate app icons
     ├── ensure-ios-variant.sh        # Configure iOS for variant
     └── run-variant.sh               # Execute with variant env
 ```
@@ -563,12 +571,13 @@ scripts/
 ### Script Execution Flow
 
 **Development workflow:**
+
 ```
 npm run dev
   └─ scripts/dev.sh
        ├─ scripts/verify.sh dev (parallel checks)
        │   ├─ check-eas-profiles.sh
-       │   ├─ check-expo-config.sh
+       │   ├─ validate-expo-config.ts
        │   └─ check-style-tokens.sh
        │
        └─ scripts/internal/run-variant.sh dev
@@ -576,15 +585,17 @@ npm run dev
 ```
 
 **Preview build workflow:**
+
 ```
 npm run build:preview
   └─ scripts/build-preview.sh
        ├─ scripts/verify.sh preview
        ├─ scripts/preflight.sh preview
-       │   └─ setup-icons.sh preview
        │
        └─ eas build --platform all --profile preview
 ```
+
+Expo generates launcher icons and splash assets from `app.config.ts` during prebuild/EAS Build. The canonical source images live in the repo-root `assets/` directory.
 
 ---
 
@@ -595,6 +606,7 @@ npm run build:preview
 **Cause:** One or more EAS profiles missing or misconfigured
 
 **Fix:**
+
 ```bash
 npm run verify:dev
 ```
@@ -602,6 +614,7 @@ npm run verify:dev
 Check `eas.json` has all 4 profiles: `development`, `e2e`, `preview`, `production`
 
 Each profile must have:
+
 - Correct `channel` (dev: `development`, prod: `production`)
 - Correct `APP_VARIANT` (dev, e2e, preview, or production)
 - Correct `developmentClient` setting (dev: true, others: false)
@@ -611,11 +624,13 @@ Each profile must have:
 **Cause:** Expo config doesn't match expected values
 
 **Fix:**
+
 ```bash
 bunx expo config --json --type public
 ```
 
 Compare with `config/expo-config.js`. Check:
+
 - Owner matches `EXPO_OWNER`
 - Project ID matches `EXPO_PROJECT_ID`
 - Slug matches `EXPO_PROJECT_SLUG`
@@ -626,6 +641,7 @@ Compare with `config/expo-config.js`. Check:
 **Cause:** Raw spacing numbers used instead of theme tokens
 
 **Fix:**
+
 ```bash
 # ❌ Don't do this:
 const styles = StyleSheet.create({
@@ -652,6 +668,7 @@ Run `npm run lint` to identify violations.
 **Cause:** iPhone not plugged in, not trusted, or different network
 
 **Fix:**
+
 1. Plug in iPhone
 2. Tap "Trust" on device
 3. Ensure same Wi-Fi network
@@ -667,6 +684,7 @@ Run `npm run lint` to identify violations.
 **Cause:** E2E app out of sync with code changes
 
 **Fix:**
+
 ```bash
 npm run build:e2e        # Rebuild app
 npm run test:e2e         # Re-run tests
@@ -677,6 +695,7 @@ npm run test:e2e         # Re-run tests
 **Cause:** EAS profile doesn't set `env.APP_VARIANT`
 
 **Fix:** Check `eas.json`:
+
 ```json
 {
   "build": {
@@ -694,6 +713,7 @@ npm run test:e2e         # Re-run tests
 **Cause:** Environment difference (Node version, dependencies, etc.)
 
 **Fix:**
+
 ```bash
 bun install --frozen-lockfile  # Match exact versions
 npm run test                   # Run full test suite
@@ -704,6 +724,7 @@ npm run test                   # Run full test suite
 **Cause:** EAS overloaded or network issue
 
 **Fix:**
+
 1. Check EAS status: https://expo.dev
 2. Wait a few minutes
 3. Retry the build
@@ -941,31 +962,37 @@ apps/mobile/
 ## Next Steps
 
 1. **Clone the repo** and install dependencies:
+
    ```bash
    bun install
    ```
 
 2. **Create environment file:**
+
    ```bash
    echo 'EXPO_PUBLIC_API_BASE_URL="http://localhost:4040"' > .env.development.local
    ```
 
 3. **Start developing:**
+
    ```bash
    npm run dev
    ```
 
 4. **Run tests:**
+
    ```bash
    npm run test
    ```
 
 5. **Before committing:**
+
    ```bash
    make precommit
    ```
 
 6. **Deploy preview:**
+
    ```bash
    npm run build:preview
    ```
@@ -985,6 +1012,6 @@ apps/mobile/
 ✅ **Comprehensive CI/CD:** 6 automated workflows  
 ✅ **Safety first:** Production builds require confirmation  
 ✅ **Performance optimized:** Parallel execution, artifact sharing  
-✅ **Well documented:** Troubleshooting, examples, links  
+✅ **Well documented:** Troubleshooting, examples, links
 
 Start with `npm run dev` and explore from there. All commands are self-documenting through `npm run` and `make help`.

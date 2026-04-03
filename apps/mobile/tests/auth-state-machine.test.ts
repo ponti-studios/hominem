@@ -5,14 +5,20 @@ const testUser = {
   id: 'user-1',
   email: 'test@example.com',
   name: 'Test User',
+  isAdmin: false,
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
 }
 
 describe('authStateMachine', () => {
-  it('returns initial state for unknown events', () => {
-    const state = authStateMachine(initialAuthState, { type: 'UNKNOWN_ACTION' } as { type: 'UNKNOWN_ACTION' })
-    expect(state).toEqual(initialAuthState)
+  it('clears degraded errors back to signed_out', () => {
+    const error = new Error('recoverable')
+    const state = authStateMachine(
+      { ...initialAuthState, status: 'degraded', error },
+      { type: 'CLEAR_ERROR' },
+    )
+    expect(state.status).toBe('signed_out')
+    expect(state.error).toBeNull()
   })
 
   it('transitions booting to signed_in on session load', () => {

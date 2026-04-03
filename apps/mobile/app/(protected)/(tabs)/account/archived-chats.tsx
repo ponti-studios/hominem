@@ -1,5 +1,5 @@
-import { Stack, useRouter } from 'expo-router';
 import type { RelativePathString } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
@@ -71,7 +71,7 @@ export default function ArchivedChatsScreen() {
                 style={({ pressed }) => [styles.card, pressed && styles.pressed]}
               >
                 <View style={styles.iconWrap}>
-                  <AppIcon name="box-archive" size={14} color={theme.colors['text-tertiary']} />
+                  <AppIcon name="tray" size={14} color={theme.colors['text-tertiary']} />
                 </View>
                 <View style={styles.cardContent}>
                   <Text variant="label" color="foreground" numberOfLines={1}>
@@ -81,7 +81,7 @@ export default function ArchivedChatsScreen() {
                     Archived {formatAge(chat.archivedAt ?? chat.activityAt)}
                   </Text>
                 </View>
-                <AppIcon name="chevron-right" size={12} color={theme.colors['text-tertiary']} />
+                <AppIcon name="chevron.right" size={12} color={theme.colors['text-tertiary']} />
               </Pressable>
             ))
           )}

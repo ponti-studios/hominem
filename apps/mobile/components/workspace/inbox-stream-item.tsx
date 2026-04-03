@@ -42,14 +42,13 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
                 ]}
               >
                 <AppIcon
-                  name={item.kind === 'note' ? 'pen-to-square' : 'comment'}
+                  name={item.kind === 'note' ? 'square.and.pencil' : 'bubble.left'}
                   size={11}
                   color={iconColor}
                   style={[
                     styles.cornerIcon,
                     item.kind === 'note' ? styles.noteIcon : styles.chatIcon,
                   ]}
-                  useSymbol
                 />
               </View>
               <Text numberOfLines={1} variant="body" color="foreground" style={styles.title}>

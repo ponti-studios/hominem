@@ -44,7 +44,7 @@ export function ChatHeader({
             testID="chat-search-toggle"
             variant="ghost"
           >
-            {renderIcon('magnifying-glass', {
+            {renderIcon('magnifyingglass', {
               color: colors.foreground,
               size: 14,
               style: styles.headerIcon,
@@ -57,7 +57,11 @@ export function ChatHeader({
             style={styles.headerIconButton}
             variant="ghost"
           >
-            {renderIcon('plus', { color: colors.foreground, size: 15, style: styles.headerIcon })}
+            {renderIcon('ellipsis', {
+              color: colors.foreground,
+              size: 15,
+              style: styles.headerIcon,
+            })}
           </Button>
         </View>
       </View>

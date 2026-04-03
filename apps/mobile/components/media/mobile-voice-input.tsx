@@ -3,8 +3,8 @@ import { useCallback } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View, type PressableProps } from 'react-native';
 import Animated, {
   interpolateColor,
-  useDerivedValue,
   useAnimatedStyle,
+  useDerivedValue,
   withTiming,
 } from 'react-native-reanimated';
 
@@ -97,10 +97,10 @@ export function MobileVoiceInput({
       >
         {isTranscribing ? <ActivityIndicator size="small" color={theme.colors.foreground} /> : null}
         {!isTranscribing && isRecording ? (
-          <AppIcon name="stop" size={24} color={theme.colors.foreground} useSymbol />
+          <AppIcon name="stop.fill" size={24} color={theme.colors.foreground} />
         ) : null}
         {!isTranscribing && !isRecording ? (
-          <AppIcon name="microphone" size={24} color={theme.colors.foreground} useSymbol />
+          <AppIcon name="mic" size={24} color={theme.colors.foreground} />
         ) : null}
       </AnimatedPressable>
       {hasRetryRecording && autoTranscribe ? (

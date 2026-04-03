@@ -25,7 +25,7 @@ if ! bash "$SCRIPTS_DIR/internal/check-eas-profiles.sh"; then
   exit 1
 fi
 
-if ! bash "$SCRIPTS_DIR/internal/check-expo-config.sh"; then
+if ! bun run "$SCRIPTS_DIR/internal/validate-expo-config.ts"; then
   fail "Expo configuration validation failed"
   exit 1
 fi

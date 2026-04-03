@@ -46,7 +46,7 @@ export function ChatSearchModal({
               style={styles.headerIconButton}
               variant="ghost"
             >
-              {renderIcon('x', { color: colors['text-tertiary'], size: 16 })}
+              {renderIcon('xmark', { color: colors['text-tertiary'], size: 16 })}
             </Button>
           </View>
 

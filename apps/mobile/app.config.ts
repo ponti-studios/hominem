@@ -1,6 +1,5 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
-
-type AppVariant = 'dev' | 'e2e' | 'preview' | 'production';
+import { getBrandAssetPaths, type AppVariant } from './config/brand-assets';
 
 interface VariantConfig {
   bundleIdentifier: string;
@@ -73,9 +72,18 @@ function getAppGroupId(bundleIdentifier: string) {
 export default ({ config }: ConfigContext) => {
   const appVariant = getAppVariant();
   const variantConfig = getAppVariantConfig(appVariant);
+  const brandAssets = getBrandAssetPaths(appVariant);
   const plugins: ExpoConfig['plugins'] = [
     'expo-router',
     './plugins/with-expo-dev-client-exclusion',
+    [
+      'expo-splash-screen',
+      {
+        backgroundColor: shellTheme.mobile.splashBackgroundColor,
+        image: brandAssets.splash,
+        resizeMode: 'contain',
+      },
+    ],
     [
       'expo-build-properties',
       {
@@ -118,7 +126,6 @@ export default ({ config }: ConfigContext) => {
     [
       'expo-notifications',
       {
-        icon: './assets/icon.png',
         color: shellTheme.mobile.notificationColor,
       },
     ],
@@ -173,18 +180,13 @@ export default ({ config }: ConfigContext) => {
     scheme: variantConfig.scheme,
     owner: EXPO_OWNER,
     orientation: 'portrait',
-    icon: './assets/icon.png',
+    icon: brandAssets.icon,
     userInterfaceStyle: 'light',
     assetBundlePatterns: ['**/*'],
-    splash: {
-      image: './assets/splash.png',
-      resizeMode: 'contain',
-      backgroundColor: shellTheme.mobile.splashBackgroundColor,
-    },
     web: {
       bundler: 'metro',
       output: 'static',
-      favicon: './assets/favicon.png',
+      favicon: brandAssets.favicon,
     },
     plugins,
     experiments: {
@@ -193,7 +195,7 @@ export default ({ config }: ConfigContext) => {
     },
     newArchEnabled: true,
     ios: {
-      icon: './assets/icon.png',
+      icon: brandAssets.icon,
       appleTeamId: getAppleTeamId(appVariant),
       bundleIdentifier: variantConfig.bundleIdentifier,
       supportsTablet: true,
@@ -210,7 +212,7 @@ export default ({ config }: ConfigContext) => {
     },
     android: {
       adaptiveIcon: {
-        foregroundImage: './assets/adaptive-icon.png',
+        foregroundImage: brandAssets.icon,
         backgroundColor: shellTheme.mobile.adaptiveIconBackgroundColor,
       },
       package: variantConfig.bundleIdentifier,

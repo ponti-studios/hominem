@@ -1,7 +1,7 @@
-import { MaterialIcons } from '@expo/vector-icons';
 import type { PressableProps } from 'react-native';
 import { Pressable, StyleSheet } from 'react-native';
 
+import AppIcon from '~/components/ui/icon';
 import { makeStyles, theme } from '~/theme';
 
 export const UploadFileButton = ({ style, ...props }: PressableProps) => {
@@ -15,7 +15,7 @@ export const UploadFileButton = ({ style, ...props }: PressableProps) => {
       ]}
       {...props}
     >
-      <MaterialIcons name="add" size={20} color={theme.colors.foreground} />
+      <AppIcon name="plus" size={20} color={theme.colors.foreground} />
     </Pressable>
   );
 };

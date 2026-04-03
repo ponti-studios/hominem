@@ -1,14 +1,15 @@
 import type { SessionSource } from '@hominem/rpc/types';
 import {
-  ArrowUp,
-  Globe,
   Copy,
-  Mic,
+  Globe,
   MoreVertical,
   Plus,
-  Search,
+  RotateCcw,
   Share2,
+  Square,
+  SquarePen,
   Trash2,
+  Volume2,
   X,
 } from 'lucide-react';
 
@@ -92,7 +93,6 @@ export function renderChatIcon(
     color?: string;
     size: number;
     style?: object;
-    useSymbol?: boolean;
   },
 ) {
   const iconProps = {
@@ -102,25 +102,27 @@ export function renderChatIcon(
   };
 
   switch (name) {
-    case 'arrows-rotate':
-      return <ArrowUp {...iconProps} />;
-    case 'copy':
+    case 'arrow.clockwise':
+      return <RotateCcw {...iconProps} />;
+    case 'doc.on.doc':
       return <Copy {...iconProps} />;
-    case 'magnifying-glass':
+    case 'ellipsis':
+      return <MoreVertical {...iconProps} />;
+    case 'magnifyingglass':
       return <Search {...iconProps} />;
-    case 'pen-to-square':
-      return <Share2 {...iconProps} />;
+    case 'square.and.pencil':
+      return <SquarePen {...iconProps} />;
     case 'plus':
       return <Plus {...iconProps} />;
-    case 'share-from-square':
+    case 'square.and.arrow.up':
       return <Share2 {...iconProps} />;
-    case 'speaker':
-      return <Mic {...iconProps} />;
-    case 'stop':
-      return <MoreVertical {...iconProps} />;
+    case 'speaker.wave.2':
+      return <Volume2 {...iconProps} />;
+    case 'stop.fill':
+      return <Square {...iconProps} />;
     case 'trash':
       return <Trash2 {...iconProps} />;
-    case 'x':
+    case 'xmark':
       return <X {...iconProps} />;
     default:
       return <Globe {...iconProps} />;

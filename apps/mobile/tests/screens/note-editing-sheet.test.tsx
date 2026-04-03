@@ -1,3 +1,4 @@
+import type { Note } from '@hominem/rpc/types'
 import React from 'react'
 import { fireEvent, render, screen } from '@testing-library/react-native'
 
@@ -10,7 +11,7 @@ const mockInsets = {
   left: 0,
 }
 
-const note = {
+const note: Note = {
   id: 'note-1',
   title: 'Untitled note',
   content: 'Hello',
@@ -22,6 +23,7 @@ const note = {
   analysis: null,
   publishingMetadata: null,
   parentNoteId: null,
+  files: [],
   versionNumber: 1,
   isLatestVersion: true,
   userId: 'user-1',

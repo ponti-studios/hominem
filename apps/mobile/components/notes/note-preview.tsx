@@ -57,7 +57,7 @@ const NotePreview = ({
         <AppIcon name="trash" size={24} color={theme.colors.destructive} />
       </Pressable>
       <Pressable disabled={disabled} style={[styles.icon]} onPress={onIconPress}>
-        <AppIcon name="list-tree" size={24} color={theme.colors.foreground} />
+        <AppIcon name="note.text.badge.plus" size={24} color={theme.colors.foreground} />
       </Pressable>
     </View>
   );

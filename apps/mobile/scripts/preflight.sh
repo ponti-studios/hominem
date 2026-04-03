@@ -15,9 +15,8 @@ if [[ "$CHANNEL" == "preview" || "$CHANNEL" == "production" ]] && ! command -v e
    exit 1
 fi
 
-bash "$SCRIPTS_DIR/internal/setup-icons.sh" "$CHANNEL"
 bash "$SCRIPTS_DIR/internal/check-eas-profiles.sh"
-bash "$SCRIPTS_DIR/internal/check-expo-config.sh"
+bun run "$SCRIPTS_DIR/internal/validate-expo-config.ts"
 
 if [[ "$CHANNEL" == "preview" || "$CHANNEL" == "production" ]]; then
    eas env:exec "$CHANNEL" "bash scripts/internal/check-release-env.sh $CHANNEL"

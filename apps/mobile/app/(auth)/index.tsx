@@ -15,12 +15,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '~/components/Button';
 import { FeatureErrorBoundary } from '~/components/error-boundary';
+import { getRuntimeBrandLogoSource } from '~/config/brand-assets';
 import TextInput from '~/components/text-input';
 import { posthog } from '~/lib/posthog';
 import { Box, Text, makeStyles } from '~/theme';
 import { useAuth } from '~/utils/auth-provider';
 import { isValidEmail, normalizeEmail } from '~/utils/auth/validation';
-import { E2E_TESTING, MOBILE_PASSKEY_ENABLED } from '~/utils/constants';
+import { APP_VARIANT, E2E_TESTING, MOBILE_PASSKEY_ENABLED } from '~/utils/constants';
 import { useMobilePasskeyAuth } from '~/utils/use-mobile-passkey-auth';
 
 export function AuthScreen() {
@@ -117,7 +118,7 @@ export function AuthScreen() {
           <Box flex={1} testID="auth-screen" style={styles.screen}>
             <View style={styles.hero}>
               <Image
-                source={require('~/assets/icon.png')}
+                source={getRuntimeBrandLogoSource(APP_VARIANT)}
                 contentFit="contain"
                 style={styles.logo}
               />
