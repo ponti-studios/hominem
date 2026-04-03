@@ -12,11 +12,12 @@ interface DeviceCodeResponse {
 }
 
 let deviceAuthFlowSequence = 0;
+const deviceAuthFlowSeed = `${process.pid}-${Date.now()}`;
 
 async function createApprovedDeviceFlow(app: AppRequester) {
   deviceAuthFlowSequence += 1;
   const email = createAuthTestEmail('cli-device');
-  const forwardedFor = `198.51.100.${deviceAuthFlowSequence}`;
+  const forwardedFor = `device-contract-${deviceAuthFlowSeed}-${deviceAuthFlowSequence}`;
   const { cookieHeader } = await signInWithEmailOtp(app, email);
 
   const codeResponse = await requestJson({

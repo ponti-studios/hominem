@@ -1,4 +1,4 @@
-import { useSafeAuth } from '@hominem/auth';
+import { useSafeAuth } from '@hominem/auth/client';
 import { LogOut, Settings, type LucideIcon } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';

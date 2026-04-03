@@ -1,4 +1,5 @@
 import { KeyRound, X } from 'lucide-react';
+import { hasPasskeySupport } from '@hominem/auth/client';
 import { useCallback, useEffect, useState } from 'react';
 
 const DISMISSED_KEY = 'hominem_passkey_enrollment_dismissed';
@@ -32,8 +33,7 @@ export function PasskeyEnrollmentBanner({ hasPasskeys, onEnroll }: PasskeyEnroll
   const [enrolling, setEnrolling] = useState(false);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (!window.PublicKeyCredential) return;
+    if (!hasPasskeySupport(typeof window === 'undefined' ? undefined : window)) return;
     if (localStorage.getItem(DISMISSED_KEY)) return;
     if (hasPasskeys === undefined || hasPasskeys === null) return;
 

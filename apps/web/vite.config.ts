@@ -1,12 +1,31 @@
 import { shellTheme } from '@hominem/ui/theme';
 import { reactRouter } from '@react-router/dev/vite';
 import tailwindcss from '@tailwindcss/vite';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { visualizer } from 'rollup-plugin-visualizer';
 import type { ConfigEnv, PluginOption, UserConfig } from 'vite';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 import { WEB_BRAND } from './app/lib/brand';
+
+const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const betterAuthClientAliases = {
+  'better-auth/client': path.resolve(workspaceRoot, 'node_modules/better-auth/dist/client/index.mjs'),
+  '@better-auth/passkey/client': path.resolve(
+    workspaceRoot,
+    'node_modules/@better-auth/passkey/dist/client.mjs',
+  ),
+  'better-auth/client/plugins': path.resolve(
+    workspaceRoot,
+    'node_modules/better-auth/dist/client/plugins/index.mjs',
+  ),
+  'better-auth/react': path.resolve(
+    workspaceRoot,
+    'node_modules/better-auth/dist/client/react/index.mjs',
+  ),
+};
 
 export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
   const isProd = mode === 'production';
@@ -113,6 +132,7 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
     resolve: {
       tsconfigPaths: true,
       conditions: ['browser'],
+      alias: betterAuthClientAliases,
     },
 
     build: {
@@ -178,7 +198,7 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
     },
 
     ssr: {
-      noExternal: [/^@hominem\//],
+      noExternal: [/^@hominem\//, /^better-auth(?:\/.*)?$/, /^@better-auth\/passkey(?:\/.*)?$/],
       resolve: {
         conditions: ['browser'],
       },

@@ -1,4 +1,5 @@
-import { AUTH_COPY, readAuthErrorMessage, usePasskeyAuth } from '@hominem/auth';
+import { AUTH_COPY, readAuthErrorMessage } from '@hominem/auth';
+import { usePasskeyAuth } from '@hominem/auth/client';
 import { resolveSafeAuthRedirect } from '@hominem/auth/server-utils';
 import { AuthScaffold, EmailEntryForm } from '@hominem/ui';
 import { redirect, useActionData, useLocation, useSearchParams } from 'react-router';

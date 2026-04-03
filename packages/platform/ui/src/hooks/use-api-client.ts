@@ -1,4 +1,4 @@
-import { useAuth } from '@hominem/auth';
+import { useAuth } from '@hominem/auth/client';
 import { useCallback, useMemo, useState } from 'react';
 
 const API_URL = import.meta.env.VITE_PUBLIC_API_URL;

@@ -65,6 +65,7 @@
     "./types/upload": "./src/types/upload.ts",
     "./types/chat": "./src/types/chat.ts",
     "./tokens": "./src/tokens/index.ts",
+    "./tokens/typography.native": "./src/tokens/typography.native.ts",
     "./theme": {
       "types": "./src/theme.ts",
       "node": "./shell-theme.cjs",

@@ -1,6 +1,6 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { getAuthClient } from './auth-client';
+import { hasPasskeySupport } from './passkey-support';
 import { useAuth } from './provider';
 
 interface Passkey {
@@ -9,21 +9,32 @@ interface Passkey {
   createdAt?: string | Date;
 }
 
-function getPasskeyActionError(result: { error?: { message?: string } | null }) {
-  return result.error?.message ?? null;
+function getPasskeyActionError(result: unknown) {
+  if (!result || typeof result !== 'object' || !('error' in result)) {
+    return null;
+  }
+
+  const error = (result as { error?: unknown }).error;
+  if (!error || typeof error !== 'object' || !('message' in error)) {
+    return null;
+  }
+
+  const message = (error as { message?: unknown }).message;
+  return typeof message === 'string' ? message : null;
 }
 
 export function usePasskeyAuth(input?: { redirectTo?: string }) {
   const { apiBaseUrl } = useAuth();
   const [error, setError] = useState<string | null>(null);
-  const isSupported = typeof window !== 'undefined' && 'PublicKeyCredential' in window;
-  const authClient = useMemo(() => getAuthClient(apiBaseUrl), [apiBaseUrl]);
+  const isSupported = hasPasskeySupport(typeof window === 'undefined' ? undefined : window);
 
   const authenticate = useCallback(async () => {
     if (!isSupported) {
       throw new Error('Passkeys are not supported in this browser.');
     }
     setError(null);
+    const { getAuthClient } = await import('./auth-client');
+    const authClient = getAuthClient(apiBaseUrl);
     const result = await authClient.signIn.passkey();
     const actionError = getPasskeyActionError(result);
     if (actionError) {
@@ -33,23 +44,28 @@ export function usePasskeyAuth(input?: { redirectTo?: string }) {
     if (input?.redirectTo) {
       window.location.assign(input.redirectTo);
     }
-  }, [authClient, input?.redirectTo, isSupported]);
+  }, [apiBaseUrl, input?.redirectTo, isSupported]);
 
   const register = useCallback(async () => {
     if (!isSupported) {
       throw new Error('Passkeys are not supported in this browser.');
     }
     setError(null);
+    const { getAuthClient } = await import('./auth-client');
+    const authClient = getAuthClient(apiBaseUrl);
     const result = await authClient.passkey.addPasskey();
     const actionError = getPasskeyActionError(result);
     if (actionError) {
       setError(actionError);
       throw new Error(actionError);
     }
-  }, [authClient, isSupported]);
+    window.dispatchEvent(new Event('hominem:passkeys-changed'));
+  }, [apiBaseUrl, isSupported]);
 
   const deletePasskey = useCallback(async (id: string) => {
     setError(null);
+    const { getAuthClient } = await import('./auth-client');
+    const authClient = getAuthClient(apiBaseUrl);
     const response = await authClient.$fetch('/passkey/delete-passkey', {
       method: 'POST',
       body: { id },
@@ -60,8 +76,8 @@ export function usePasskeyAuth(input?: { redirectTo?: string }) {
       setError(message);
       throw new Error(message);
     }
-    authClient.$store.notify('$listPasskeys');
-  }, [authClient]);
+    window.dispatchEvent(new Event('hominem:passkeys-changed'));
+  }, [apiBaseUrl]);
 
   return useMemo(
     () => ({ authenticate, register, deletePasskey, error, isSupported }),
@@ -71,27 +87,68 @@ export function usePasskeyAuth(input?: { redirectTo?: string }) {
 
 export function usePasskeys() {
   const { apiBaseUrl } = useAuth();
-  const authClient = useMemo(() => getAuthClient(apiBaseUrl), [apiBaseUrl]);
-  const query = authClient.useListPasskeys();
-  const data = useMemo<Passkey[]>(
-    () =>
-      ((query.data ?? []) as Array<{ id: string; name?: string | null; createdAt?: string | Date }>).map(
-        (passkey) => ({
-          id: passkey.id,
-          ...(passkey.name ? { name: passkey.name } : {}),
-          ...(passkey.createdAt ? { createdAt: passkey.createdAt } : {}),
-        }),
-      ),
-    [query.data],
-  );
+  const [data, setData] = useState<Passkey[]>([]);
+  const [error, setError] = useState<Error | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  return useMemo(
-    () => ({
-      data,
-      isLoading: query.isPending,
-      error: query.error,
-      refetch: query.refetch,
-    }),
-    [data, query.error, query.isPending, query.refetch],
-  );
+  const refetch = useCallback(async () => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const { getAuthClient } = await import('./auth-client');
+      const authClient = getAuthClient(apiBaseUrl);
+      const response = await authClient.$fetch('/passkey/list-user-passkeys', {
+        method: 'GET',
+        throw: false,
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message ?? 'Failed to load passkeys.');
+      }
+
+      const nextData = ((response.data ?? []) as Array<{
+        id: string;
+        name?: string | null;
+        createdAt?: string | Date;
+      }>).map((passkey) => ({
+        id: passkey.id,
+        ...(passkey.name ? { name: passkey.name } : {}),
+        ...(passkey.createdAt ? { createdAt: passkey.createdAt } : {}),
+      }));
+
+      setData(nextData);
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error ? caughtError : new Error('Failed to load passkeys.'),
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, [apiBaseUrl]);
+
+  useEffect(() => {
+    void refetch();
+  }, [refetch]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const handlePasskeysChanged = () => {
+      void refetch();
+    };
+
+    window.addEventListener('hominem:passkeys-changed', handlePasskeysChanged);
+    return () => {
+      window.removeEventListener('hominem:passkeys-changed', handlePasskeysChanged);
+    };
+  }, [refetch]);
+
+  return useMemo(() => ({ data, isLoading, error, refetch }), [data, error, isLoading, refetch]);
 }

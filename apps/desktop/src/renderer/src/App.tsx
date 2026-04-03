@@ -1,4 +1,4 @@
-import { type AuthConfig, AuthProvider, useAuth } from '@hominem/auth';
+import { type AuthConfig, AuthProvider, useAuth } from '@hominem/auth/client';
 import { Navigate, Route, Routes } from 'react-router';
 
 import { desktopEnv } from '@/lib/env';

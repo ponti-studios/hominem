@@ -6,10 +6,9 @@ import {
   useEffect,
   useMemo,
   useRef,
+  useState,
   type PropsWithChildren,
 } from 'react';
-
-import { getAuthClient } from './auth-client';
 
 type AuthEventName = 'SIGNED_IN' | 'SIGNED_OUT' | 'TOKEN_REFRESHED';
 
@@ -17,6 +16,17 @@ type SessionPayload = {
   user: User;
   session: Session;
 } | null;
+
+type SessionQueryResult = {
+  data?: SessionPayload;
+  isPending: boolean;
+  refetch: () => Promise<unknown>;
+};
+
+type BrowserAuthClient = {
+  useSession: () => SessionQueryResult;
+  signOut: () => Promise<unknown>;
+};
 
 export interface AuthConfig {
   apiBaseUrl: string;
@@ -43,39 +53,115 @@ export interface AuthProviderProps extends PropsWithChildren {
   onAuthEvent?: (event: AuthEventName) => void;
 }
 
-function getAuthActionError(result: { error?: { message?: string } | null }) {
-  return result.error?.message ?? null;
+function getAuthActionError(result: unknown) {
+  if (!result || typeof result !== 'object' || !('error' in result)) {
+    return null;
+  }
+
+  const error = (result as { error?: unknown }).error;
+  if (!error || typeof error !== 'object' || !('message' in error)) {
+    return null;
+  }
+
+  const message = (error as { message?: unknown }).message;
+  return typeof message === 'string' ? message : null;
+}
+
+function AuthSessionObserver({
+  authClient,
+  bootstrapSession,
+  onChange,
+}: {
+  authClient: BrowserAuthClient;
+  bootstrapSession: SessionPayload;
+  onChange: (input: {
+    resolvedSession: SessionPayload | undefined;
+    isPending: boolean;
+    refetch: () => Promise<unknown>;
+  }) => void;
+}) {
+  const sessionQuery = authClient.useSession();
+
+  useEffect(() => {
+    onChange({
+      resolvedSession: (sessionQuery.data as SessionPayload | undefined) ?? bootstrapSession,
+      isPending: sessionQuery.isPending,
+      refetch: sessionQuery.refetch,
+    });
+  }, [bootstrapSession, onChange, sessionQuery.data, sessionQuery.isPending, sessionQuery.refetch]);
+
+  return null;
 }
 
 export function AuthProvider({ children, config, initialUser = null, initialSession = null, onAuthEvent }: AuthProviderProps) {
-  const authClient = useMemo(() => getAuthClient(config.apiBaseUrl), [config.apiBaseUrl]);
-  const sessionQuery = authClient.useSession();
   const bootstrapSession = initialUser && initialSession ? { user: initialUser, session: initialSession } : null;
-  const resolvedSession = (sessionQuery.data as SessionPayload | undefined) ?? bootstrapSession;
+  const [authClient, setAuthClient] = useState<BrowserAuthClient | null>(null);
+  const [resolvedClientSession, setResolvedClientSession] = useState<SessionPayload | undefined>(bootstrapSession);
+  const [isClientSessionPending, setIsClientSessionPending] = useState(false);
+  const refetchRef = useRef<(() => Promise<unknown>) | null>(null);
+
+  useEffect(() => {
+    setAuthClient(null);
+    setResolvedClientSession(bootstrapSession);
+    setIsClientSessionPending(false);
+    refetchRef.current = null;
+
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    let isActive = true;
+
+    void import('./auth-client')
+      .then(({ getAuthClient }) => {
+        if (isActive) {
+          setAuthClient(getAuthClient(config.apiBaseUrl) as BrowserAuthClient);
+        }
+      })
+      .catch(() => {
+        if (isActive) {
+          setAuthClient(null);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [bootstrapSession, config.apiBaseUrl]);
+
+  const resolvedSession = resolvedClientSession ?? bootstrapSession;
   const user = resolvedSession?.user ?? null;
   const session = resolvedSession?.session ?? null;
   const userId = user?.id ?? null;
-  const isLoading = sessionQuery.isPending && !bootstrapSession;
+  const isLoading = isClientSessionPending && !bootstrapSession;
   const sessionSnapshot = `${userId ?? ''}:${session?.id ?? ''}:${String(session?.expiresAt ?? '')}`;
   const previousSnapshotRef = useRef(sessionSnapshot);
   const previousUserIdRef = useRef(userId);
 
   const refresh = useCallback(async () => {
-    await sessionQuery.refetch();
-  }, [sessionQuery]);
+    if (refetchRef.current) {
+      await refetchRef.current();
+    }
+  }, []);
 
   const signOut = useCallback(async () => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const { getAuthClient } = await import('./auth-client');
+    const authClient = getAuthClient(config.apiBaseUrl) as BrowserAuthClient;
     const result = await authClient.signOut();
     const error = getAuthActionError(result);
     if (error) {
       throw new Error(error);
     }
-  }, [authClient]);
+  }, [config.apiBaseUrl]);
 
   const logout = signOut;
 
   useEffect(() => {
-    if (!onAuthEvent || sessionQuery.isPending) {
+    if (!onAuthEvent || isClientSessionPending) {
       previousSnapshotRef.current = sessionSnapshot;
       previousUserIdRef.current = userId;
       return;
@@ -92,7 +178,7 @@ export function AuthProvider({ children, config, initialUser = null, initialSess
 
     previousSnapshotRef.current = sessionSnapshot;
     previousUserIdRef.current = userId;
-  }, [onAuthEvent, sessionQuery.isPending, sessionSnapshot, userId]);
+  }, [isClientSessionPending, onAuthEvent, sessionSnapshot, userId]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -109,7 +195,22 @@ export function AuthProvider({ children, config, initialUser = null, initialSess
     [config.apiBaseUrl, isLoading, logout, refresh, session, signOut, user, userId],
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {authClient ? (
+        <AuthSessionObserver
+          authClient={authClient}
+          bootstrapSession={bootstrapSession}
+          onChange={({ resolvedSession, isPending, refetch }) => {
+            refetchRef.current = refetch;
+            setResolvedClientSession(resolvedSession);
+            setIsClientSessionPending(isPending);
+          }}
+        />
+      ) : null}
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useSafeAuth() {

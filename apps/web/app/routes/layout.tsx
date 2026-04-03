@@ -1,4 +1,4 @@
-import { useAuth } from '@hominem/auth';
+import { useAuth } from '@hominem/auth/client';
 import { Toaster } from '@hominem/ui';
 import { NavLink, Outlet } from 'react-router';
 

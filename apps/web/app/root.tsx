@@ -1,4 +1,4 @@
-import { AuthProvider } from '@hominem/auth';
+import { AuthProvider } from '@hominem/auth/client';
 import { COMMON_FONT_LINKS, UpdateGuard } from '@hominem/ui';
 import type React from 'react';
 import { useCallback } from 'react';

@@ -29,7 +29,11 @@ describe('auth minimal surfaces', () => {
   });
 
   it('renders the stripped scaffold with a joyful accent', () => {
-    render(<AuthScaffold title="Sign in" helper="We’ll send a code to your email." />);
+    render(
+      <AuthScaffold title="Sign in" helper="We’ll send a code to your email.">
+        <div>Form content</div>
+      </AuthScaffold>,
+    );
 
     expect(screen.getByText('Sign in')).toBeInTheDocument();
     expect(screen.getByText('We’ll send a code to your email.')).toBeInTheDocument();

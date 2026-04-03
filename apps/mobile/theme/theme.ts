@@ -1,10 +1,10 @@
 import {
-  fontFamiliesNative,
   radiiNative,
   shadowsNative,
   colors as tokenColors,
   spacing as tokenSpacing,
 } from '@hominem/ui/tokens';
+import { fontFamiliesNative } from '@hominem/ui/tokens/typography.native';
 import { createTheme, useTheme as useRestyleTheme } from '@shopify/restyle';
 import type { ImageStyle, TextStyle, ViewStyle } from 'react-native';
 

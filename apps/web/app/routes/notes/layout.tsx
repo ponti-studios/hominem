@@ -1,4 +1,4 @@
-import { useAuth } from '@hominem/auth';
+import { useAuth } from '@hominem/auth/client';
 import { Navigate, Outlet } from 'react-router';
 
 export default function NotesLayout() {

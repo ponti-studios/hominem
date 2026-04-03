@@ -1,4 +1,4 @@
-import { useAuth } from '@hominem/auth';
+import { useAuth } from '@hominem/auth/client';
 import { useEffect, useState } from 'react';
 
 import { DESKTOP_BRAND } from './brand';

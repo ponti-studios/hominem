@@ -5,6 +5,7 @@ import {
   MoreVertical,
   Plus,
   RotateCcw,
+  Search,
   Share2,
   Square,
   SquarePen,

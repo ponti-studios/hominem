@@ -27,10 +27,6 @@ interface _SessionResponse {
 }
 
 interface VerifyOtpResponse {
-  accessToken: string;
-  refreshToken?: string;
-  expiresIn: number;
-  tokenType: string;
   user: {
     id: string;
     email: string;
@@ -143,10 +139,26 @@ describe('auth email otp contract', () => {
 
     expect(signInResponse.status).toBe(200);
     const payload = (await signInResponse.json()) as VerifyOtpResponse;
-    expect(payload.accessToken.length).toBeGreaterThan(0);
-    expect(payload.expiresIn).toBeGreaterThan(0);
-    expect(payload.tokenType).toBe('Bearer');
+    const sessionCookieHeader = toCookieHeader(getSetCookieHeaders(signInResponse.headers));
+    expect(sessionCookieHeader.length).toBeGreaterThan(0);
     expect(payload.user.email).toBe(email);
+
+    const sessionResponse = await app.request('http://localhost/api/auth/get-session', {
+      method: 'GET',
+      headers: {
+        cookie: sessionCookieHeader,
+      },
+    });
+
+    expect(sessionResponse.status).toBe(200);
+    await expect(sessionResponse.json()).resolves.toMatchObject({
+      user: {
+        email,
+      },
+      session: {
+        id: expect.any(String),
+      },
+    });
   }, 15000);
 
   test('2.2 valid otp accepts normalized email and formatted otp input', async () => {
@@ -166,7 +178,8 @@ describe('auth email otp contract', () => {
 
     expect(signInResponse.status).toBe(200);
     const payload = (await signInResponse.json()) as VerifyOtpResponse;
-    expect(payload.accessToken.length).toBeGreaterThan(0);
+    const sessionCookieHeader = toCookieHeader(getSetCookieHeaders(signInResponse.headers));
+    expect(sessionCookieHeader.length).toBeGreaterThan(0);
     expect(payload.user.email).toBe(email);
   }, 15000);
 
@@ -186,12 +199,14 @@ describe('auth email otp contract', () => {
     });
 
     expect(signInResponse.status).toBe(200);
-    const payload = (await signInResponse.json()) as VerifyOtpResponse;
+    await signInResponse.json();
+    const sessionCookieHeader = toCookieHeader(getSetCookieHeaders(signInResponse.headers));
+    expect(sessionCookieHeader.length).toBeGreaterThan(0);
 
     const sessionBeforeLogout = await app.request('http://localhost/api/auth/get-session', {
       method: 'GET',
       headers: {
-        Authorization: `Bearer ${payload.accessToken}`,
+        cookie: sessionCookieHeader,
       },
     });
     expect(sessionBeforeLogout.status).toBe(200);
@@ -199,7 +214,7 @@ describe('auth email otp contract', () => {
     const logoutResponse = await app.request('http://localhost/api/auth/logout', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${payload.accessToken}`,
+        cookie: sessionCookieHeader,
       },
     });
     expect(logoutResponse.status).toBe(200);
@@ -207,7 +222,7 @@ describe('auth email otp contract', () => {
     const sessionAfterLogout = await app.request('http://localhost/api/auth/get-session', {
       method: 'GET',
       headers: {
-        Authorization: `Bearer ${payload.accessToken}`,
+        cookie: sessionCookieHeader,
       },
     });
     expect(sessionAfterLogout.status).toBe(200);

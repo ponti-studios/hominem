@@ -1,12 +1,6 @@
-const { passkeyClient } = require('@better-auth/passkey/client') as {
-  passkeyClient: (...args: any[]) => any;
-};
-const { createAuthClient } = require('better-auth/react') as {
-  createAuthClient: (...args: any[]) => any;
-};
-const { emailOTPClient } = require('better-auth/client/plugins') as {
-  emailOTPClient: (...args: any[]) => any;
-};
+import { passkeyClient } from '@better-auth/passkey/client';
+import { emailOTPClient } from 'better-auth/client/plugins';
+import { createAuthClient } from 'better-auth/react';
 
 const authClientCache = new Map<string, ReturnType<typeof createBrowserAuthClient>>();
 
