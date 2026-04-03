@@ -8,7 +8,8 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { colors, fontFamiliesNative, fontSizes, fontWeights, spacing } from '../../tokens';
+import { colors, fontSizes, fontWeights, spacing } from '../../tokens';
+import { fontFamiliesNative } from '../../tokens/typography.native';
 import type { FieldBaseProps } from './field.types';
 
 interface NativeFieldChildProps {
@@ -66,6 +67,7 @@ function Field({
       {message ? (
         <Text
           nativeID={messageId}
+          testID={messageId}
           style={[error ? styles.errorText : styles.helpText, messageStyle]}
         >
           {message}

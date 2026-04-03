@@ -1,6 +1,7 @@
 import { Text, View, type TextProps, type ViewProps } from 'react-native';
 
-import { colors, fontFamiliesNative, fontSizes, fontWeights, spacing } from '../../tokens';
+import { colors, fontSizes, fontWeights, spacing } from '../../tokens';
+import { fontFamiliesNative } from '../../tokens/typography.native';
 
 function Card({ children, style, ...props }: ViewProps) {
   return (

@@ -1,7 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 
-import { chatTokensNative, fontFamiliesNative, fontSizes, spacing } from '../../tokens';
+import { chatTokensNative, fontSizes, spacing } from '../../tokens';
+import { fontFamiliesNative } from '../../tokens/typography.native';
 import { Text } from '../typography/text.native';
 import { renderChatMessage } from './chat-message.mobile';
 import { ChatShimmerMessage } from './chat-shimmer-message.mobile';

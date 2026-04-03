@@ -105,7 +105,7 @@ describe('auth rendered screens', () => {
 
     await press(screen.getByTestId('auth-send-otp'))
 
-    expect(await screen.findByTestId('auth-error-text')).toHaveTextContent('EMAIL IS REQUIRED.')
+    expect(await screen.findByTestId('auth-email-message')).toHaveTextContent('Email is required.')
     expect(mockRequestEmailOtp).not.toHaveBeenCalled()
   })
 
@@ -131,7 +131,7 @@ describe('auth rendered screens', () => {
     await changeText(screen.getByTestId('auth-otp-input'), '12')
     await press(screen.getByTestId('auth-verify-otp'))
 
-    expect(await screen.findByTestId('auth-error-text')).toHaveTextContent('CODE MUST BE 6 DIGITS.')
+    expect(await screen.findByTestId('auth-otp-message')).toHaveTextContent('Code must be 6 digits.')
     expect(mockVerifyEmailOtp).not.toHaveBeenCalled()
   })
 
@@ -152,20 +152,16 @@ describe('auth rendered screens', () => {
     })
   })
 
-  it('renders six OTP slots and mirrors pasted digits into the slots', async () => {
+  it('renders a single OTP field and keeps the typed code normalized', async () => {
     renderVerifyScreen()
 
     await changeText(screen.getByTestId('auth-otp-input'), '12 34-56')
 
-    expect(screen.getByTestId('auth-otp-slot-0')).toHaveTextContent('1')
-    expect(screen.getByTestId('auth-otp-slot-1')).toHaveTextContent('2')
-    expect(screen.getByTestId('auth-otp-slot-2')).toHaveTextContent('3')
-    expect(screen.getByTestId('auth-otp-slot-3')).toHaveTextContent('4')
-    expect(screen.getByTestId('auth-otp-slot-4')).toHaveTextContent('5')
-    expect(screen.getByTestId('auth-otp-slot-5')).toHaveTextContent('6')
+    expect(screen.getByTestId('auth-otp-input')).toHaveProp('value', '123456')
+    expect(screen.queryByTestId('auth-otp-slot-0')).toBeNull()
   })
 
-  it('resends the code and shows resend confirmation', async () => {
+  it('resends the code without showing extra confirmation chrome', async () => {
     mockRequestEmailOtp.mockResolvedValue(undefined)
 
     renderVerifyScreen()
@@ -176,7 +172,7 @@ describe('auth rendered screens', () => {
       expect(mockRequestEmailOtp).toHaveBeenCalledWith('mobile-test@hominem.test')
     })
 
-    expect(await screen.findByTestId('auth-resend-message')).toHaveTextContent('A new code is on the way.')
+    expect(screen.queryByText('A new code is on the way.')).toBeNull()
   })
 
   it('shows inline error and re-enables submit on OTP verify failure', async () => {
@@ -187,7 +183,7 @@ describe('auth rendered screens', () => {
     await changeText(screen.getByTestId('auth-otp-input'), '123456')
     await press(screen.getByTestId('auth-verify-otp'))
 
-    expect(await screen.findByTestId('auth-error-text')).toHaveTextContent('INVALID OR EXPIRED CODE.')
+    expect(await screen.findByTestId('auth-otp-message')).toHaveTextContent('Invalid or expired code.')
 
     await waitFor(() => {
       expect(screen.getByTestId('auth-verify-otp')).not.toBeDisabled()
@@ -261,7 +257,7 @@ describe('auth rendered screens', () => {
 
     renderAuthScreen()
 
-    expect(screen.getByTestId('auth-error-text')).toHaveTextContent('BOOT TIMED OUT')
+    expect(screen.getByTestId('auth-email-message')).toHaveTextContent('Boot timed out')
     expect(screen.queryByTestId('auth-retry-recovery')).toBeNull()
   })
 

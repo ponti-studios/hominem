@@ -11,11 +11,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   colors,
   durations,
-  fontFamiliesNative,
   fontSizes,
   radiiNative,
   spacing,
 } from '../../tokens';
+import { fontFamiliesNative } from '../../tokens/typography.native';
 import { Text } from '../typography/text.native';
 import { Button } from '../ui/button.native';
 

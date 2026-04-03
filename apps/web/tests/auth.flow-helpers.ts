@@ -47,14 +47,12 @@ export async function signInWithEmailOtp(page: Page, email: string, destinationP
 }
 
 export async function enterOtpCode(page: Page, otp: string) {
-  const digitInputs = page.locator('input[inputmode="numeric"]')
   const normalized = otp.replace(/\D/g, '').slice(0, 6)
+  const codeInput = page.getByLabel('Verification code')
 
   await expect(async () => {
-    for (let i = 0; i < 6; i++) {
-      await digitInputs.nth(i).fill(normalized[i] ?? '')
-    }
-    await expect(digitInputs.first()).toHaveValue(normalized[0] ?? '')
+    await codeInput.fill(normalized)
+    await expect(codeInput).toHaveValue(normalized)
   }).toPass({ timeout: 10_000 })
 }
 
@@ -63,19 +61,6 @@ export async function submitOtpCode(page: Page, otp: string) {
   await enterOtpCode(page, normalized)
 
   const verifyButton = page.getByRole('button', { name: 'Verify' })
-  try {
-    await expect(verifyButton).toBeEnabled({ timeout: 1_500 })
-    await verifyButton.click()
-  } catch {
-    await page.locator('input[name="otp"]').evaluate((input, value) => {
-      if (!(input instanceof HTMLInputElement)) return
-      input.value = value
-      input.dispatchEvent(new Event('input', { bubbles: true }))
-      input.dispatchEvent(new Event('change', { bubbles: true }))
-      const form = input.closest('form')
-      if (form instanceof HTMLFormElement) {
-        form.requestSubmit()
-      }
-    }, normalized)
-  }
+  await expect(verifyButton).toBeEnabled({ timeout: 1_500 })
+  await verifyButton.click()
 }

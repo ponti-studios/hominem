@@ -1,4 +1,4 @@
-import { readAuthErrorMessage, usePasskeyAuth } from '@hominem/auth';
+import { AUTH_COPY, readAuthErrorMessage, usePasskeyAuth } from '@hominem/auth';
 import { resolveSafeAuthRedirect } from '@hominem/auth/server-utils';
 import { AuthScaffold, EmailEntryForm } from '@hominem/ui';
 import { redirect, useActionData, useLocation, useSearchParams } from 'react-router';
@@ -61,7 +61,6 @@ export default function Component() {
 
   const {
     authenticate,
-    isLoading: isPasskeyLoading,
     error: passkeyError,
     isSupported: isPasskeySupported,
   } = usePasskeyAuth({ redirectTo: next });
@@ -69,7 +68,7 @@ export default function Component() {
   const resolvedError = actionData?.error ?? callbackError ?? passkeyError ?? undefined;
 
   return (
-    <AuthScaffold title={AUTH_CONFIG.title} description={AUTH_CONFIG.description}>
+    <AuthScaffold title={AUTH_CONFIG.title} helper={AUTH_COPY.emailEntry.helper}>
       <EmailEntryForm
         action="/auth"
         {...(resolvedError ? { error: resolvedError } : {})}
@@ -80,7 +79,6 @@ export default function Component() {
               },
             }
           : {})}
-        {...(isPasskeyLoading ? { loadingMessage: 'Authenticating with passkey...' } : {})}
       />
     </AuthScaffold>
   );

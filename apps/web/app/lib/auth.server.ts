@@ -1,4 +1,4 @@
-import { getServerAuth as sharedGetServerAuth } from '@hominem/auth/server';
+import { getServerAuth as sharedGetServerAuth } from '@hominem/auth/server/session';
 
 import { serverEnv } from './env';
 

@@ -10,7 +10,8 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { colors, fontFamiliesNative, fontSizes, fontWeights, spacing } from '../../tokens';
+import { colors, fontSizes, fontWeights, spacing } from '../../tokens';
+import { fontFamiliesNative } from '../../tokens/typography.native';
 import type { ButtonBaseProps, ButtonSize, ButtonVariant } from './button.types';
 
 const sizeStyles = StyleSheet.create<Record<ButtonSize, ViewStyle>>({

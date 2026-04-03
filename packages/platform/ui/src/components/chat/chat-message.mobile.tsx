@@ -5,11 +5,11 @@ import Reanimated, { FadeInDown, FadeOutUp, LinearTransition } from 'react-nativ
 import {
   chatTokensNative,
   colors,
-  fontFamiliesNative,
   fontSizes,
   radiiNative,
   spacing,
 } from '../../tokens';
+import { fontFamiliesNative } from '../../tokens/typography.native';
 import { Text } from '../typography/text.native';
 import { Button } from '../ui/button.native';
 import { TextArea } from '../ui/text-area.native';

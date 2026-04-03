@@ -1,3 +1,5 @@
+import { AUTH_COPY } from '@hominem/auth';
+
 import { Button } from '../ui/button';
 
 interface PasskeyButtonProps {
@@ -16,12 +18,13 @@ export function PasskeyButton({
   return (
     <Button
       type="button"
-      variant="outline"
+      variant="link"
+      size="xs"
       onClick={onClick}
       disabled={disabled || isLoading}
-      className={className}
+      className={`justify-start px-0 text-sm ${className ?? ''}`}
     >
-      {isLoading ? 'Authenticating…' : 'Use passkey'}
+      {isLoading ? AUTH_COPY.emailEntry.passkeyLoadingButton : AUTH_COPY.emailEntry.passkeyButton}
     </Button>
   );
 }

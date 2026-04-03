@@ -1,4 +1,4 @@
-import { AUTH_COPY, usePasskeyAuth } from '@hominem/auth';
+import { AUTH_COPY, maskEmail } from '@hominem/auth';
 import { AuthScaffold, OtpVerificationForm } from '@hominem/ui';
 import { redirect, useLoaderData, useLocation, useSearchParams } from 'react-router';
 
@@ -47,18 +47,16 @@ export default function Component() {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const next = searchParams.get('next') ?? AUTH_CONFIG.defaultRedirect;
-  const { authenticate, isSupported } = usePasskeyAuth({ redirectTo: next });
 
   return (
     <AuthScaffold
       title={AUTH_COPY.otpVerification.title}
-      description={AUTH_COPY.otpVerification.subtitle}
+      helper={AUTH_COPY.otpVerification.helper(maskEmail(email))}
     >
       <OtpVerificationForm
         action={`/auth/verify${location.search}`}
         email={email}
         defaultNext={AUTH_CONFIG.defaultRedirect}
-        {...(isSupported ? { onPasskeyClick: () => authenticate() } : {})}
         onChangeEmail={() => {
           const authUrl = new URL('/auth', window.location.origin);
           authUrl.searchParams.set('next', next);

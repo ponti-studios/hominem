@@ -17,8 +17,8 @@ type Story = StoryObj<typeof AuthScaffold>;
 
 export const Default: Story = {
   args: {
-    title: 'Sign In',
-    description: 'Enter your credentials to continue',
+    title: 'Sign in',
+    helper: 'We’ll send a code to your email.',
     children: (
       <div className="space-y-4">
         <input
@@ -40,8 +40,8 @@ export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    await expect(canvas.getByText('Sign In')).toBeInTheDocument();
-    await expect(canvas.getByText('Enter your credentials to continue')).toBeInTheDocument();
+    await expect(canvas.getByText('Sign in')).toBeInTheDocument();
+    await expect(canvas.getByText('We’ll send a code to your email.')).toBeInTheDocument();
   },
 };
 
@@ -65,8 +65,8 @@ export const WithoutDescription: Story = {
 
 export const WithLogo: Story = {
   args: {
-    title: 'Welcome',
-    description: 'Sign in to your account',
+    title: 'Verify',
+    helper: 'Code sent to you@example.com.',
     logo: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Ccircle cx="50" cy="50" r="40" fill="%23007aff"/%3E%3C/svg%3E',
     children: (
       <div className="space-y-4">
@@ -86,7 +86,7 @@ export const WithLogo: Story = {
 export const WithCustomContent: Story = {
   args: {
     title: 'Multi-Step Verification',
-    description: 'Please complete this step',
+    helper: 'Code sent to you@example.com.',
     children: (
       <div className="space-y-4">
         <div className="p-4 bg-elevated rounded-md">

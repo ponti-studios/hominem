@@ -5,4 +5,5 @@ export interface TextFieldBaseProps {
   error?: string | undefined;
   helpText?: string | undefined;
   label?: string | undefined;
+  id?: string | undefined;
 }

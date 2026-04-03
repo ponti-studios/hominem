@@ -8,7 +8,8 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { colors, fontFamiliesNative, fontSizes, spacing } from '../../tokens';
+import { colors, fontSizes, spacing } from '../../tokens';
+import { fontFamiliesNative } from '../../tokens/typography.native';
 import { Field } from './field.native';
 import type { TextFieldBaseProps, TextFieldType } from './text-field.types';
 
@@ -27,6 +28,7 @@ const TextField = React.forwardRef<TextInput, TextFieldProps>(function TextField
     editable,
     error,
     helpText,
+    id,
     label,
     placeholder,
     style,
@@ -41,7 +43,7 @@ const TextField = React.forwardRef<TextInput, TextFieldProps>(function TextField
   const secureTextEntry = type === 'password';
 
   return (
-    <Field containerStyle={containerStyle} error={error} helpText={helpText} label={label}>
+    <Field containerStyle={containerStyle} error={error} helpText={helpText} id={id} label={label}>
       <TextInput
         ref={ref}
         editable={isEditable}

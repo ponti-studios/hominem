@@ -4,6 +4,8 @@ import path from 'node:path'
 
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const reuseExistingServer = process.env.REUSE_SERVERS === 'true' || !process.env.CI
+const holdIfRunning = (url: string, command: string) =>
+  `sh -c 'curl -sf ${url} >/dev/null && while true; do sleep 60; done || ${command}'`
 
 export default defineConfig({
   testDir: './tests',
@@ -16,7 +18,10 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: 'bun run --filter @hominem/db build && bun run --filter @hominem/api dev',
+      command: holdIfRunning(
+        'http://localhost:4040/',
+        'bun run --filter @hominem/db db:migrate && bun run --filter @hominem/db build && bun run --filter @hominem/api dev',
+      ),
       cwd: workspaceRoot,
       url: 'http://localhost:4040/',
       reuseExistingServer,
@@ -34,9 +39,9 @@ export default defineConfig({
       },
     },
     {
-      command: 'bun dev --filter @hominem/web',
+      command: holdIfRunning('http://localhost:4445/logo.png', 'bun dev --filter @hominem/web'),
       cwd: workspaceRoot,
-      url: 'http://localhost:4445/',
+      url: 'http://localhost:4445/logo.png',
       reuseExistingServer,
       timeout: 60_000,
     },

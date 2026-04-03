@@ -8,28 +8,10 @@
  * - Native uses the platform system fonts
  */
 
-import { Platform } from 'react-native';
-
 /** Web font family stacks (full CSS strings). */
 export const fontFamilies = {
   primary: "'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
   mono: "'Geist Mono', ui-monospace, 'SF Mono', 'Menlo', monospace",
-} as const;
-
-/** React Native font family names (platform system fonts). */
-export const fontFamiliesNative = {
-  primary:
-    Platform.select({
-      ios: 'System',
-      android: 'sans-serif',
-      default: 'sans-serif',
-    }) ?? 'sans-serif',
-  mono:
-    Platform.select({
-      ios: 'Menlo',
-      android: 'monospace',
-      default: 'monospace',
-    }) ?? 'monospace',
 } as const;
 
 export const fontSizes = {

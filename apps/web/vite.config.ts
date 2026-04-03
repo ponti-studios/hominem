@@ -112,6 +112,7 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
 
     resolve: {
       tsconfigPaths: true,
+      conditions: ['browser'],
     },
 
     build: {
@@ -178,6 +179,9 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
 
     ssr: {
       noExternal: [/^@hominem\//],
+      resolve: {
+        conditions: ['browser'],
+      },
     },
   };
 });

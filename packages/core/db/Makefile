@@ -1,4 +1,4 @@
-DATABASE_URL = postgresql://postgres:postgres@127.0.0.1:5434/hominem
+DATABASE_URL ?= postgresql://postgres:postgres@127.0.0.1:5434/hominem
 
 .PHONY: db-migrate db-drop db-status
 

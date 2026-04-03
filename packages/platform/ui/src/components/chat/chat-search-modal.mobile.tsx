@@ -4,11 +4,11 @@ import { Modal, Pressable, StyleSheet, View, type TextInput } from 'react-native
 import {
   chatTokensNative,
   colors,
-  fontFamiliesNative,
   fontSizes,
   radiiNative,
   spacing,
 } from '../../tokens';
+import { fontFamiliesNative } from '../../tokens/typography.native';
 import { Text } from '../typography/text.native';
 import { Button } from '../ui/button.native';
 import { TextField } from '../ui/text-field.native';

@@ -17,6 +17,7 @@ interface TextFieldProps extends Omit<React.ComponentProps<'input'>, 'type'>, Te
  * <TextField label="Search" type="search" helpText="Press Enter to search" />
  */
 function TextField({
+  id,
   label,
   helpText,
   error,
@@ -30,7 +31,7 @@ function TextField({
   }
 
   return (
-    <Field label={label} helpText={helpText} error={error}>
+    <Field id={id} label={label} helpText={helpText} error={error}>
       <Input className={className} disabled={disabled} type={type} {...inputProps} />
     </Field>
   );

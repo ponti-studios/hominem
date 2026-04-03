@@ -45,6 +45,7 @@ export * from './types'
 
 // ─── Shared (browser-safe) ────────────────────────────────────────────────────
 export * from './shared/ux-contract'
+export * from './shared/mask-email'
 export * from './shared/redirect-policy'
 export * from './shared/step-up-actions'
 export * from './shared/error-contract'

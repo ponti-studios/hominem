@@ -25,9 +25,7 @@ export type AuthUxState =
 
 export interface AuthEntryCopy {
   title: string
-  subtitle: string
-  formHeading: string
-  formSubheading: string
+  helper: string
   emailPlaceholder: string
   emailLabel: string
   submitButton: string
@@ -40,13 +38,12 @@ export interface AuthEntryCopy {
 
 export interface AuthVerifyCopy {
   title: string
-  subtitle: string
-  formHeading: string
-  formSubheading: (email: string) => string
+  helper: (email: string) => string
+  codeLabel: string
+  codePlaceholder: string
   verifyButton: string
   resendButton: string
   changeEmailLink: string
-  resendSuccessMessage: string
   codeRequiredError: string
   codeLengthError: string
   verifyFailedError: string
@@ -67,28 +64,25 @@ export interface AuthCopy {
 
 export const AUTH_COPY: AuthCopy = {
   emailEntry: {
-    title: 'Welcome',
-    subtitle: 'Sign in with your email and a one-time code.',
-    formHeading: 'Sign in',
-    formSubheading: 'Use your email to receive a one-time code.',
+    title: 'Sign in',
+    helper: 'We’ll send a code to your email.',
     emailPlaceholder: 'you@example.com',
     emailLabel: 'Email address',
     submitButton: 'Continue',
     passkeyButton: 'Use passkey',
-    passkeyLoadingButton: 'Authenticating…',
+    passkeyLoadingButton: 'Connecting…',
     emailRequiredError: 'Email is required.',
     emailInvalidError: 'Enter a valid email address.',
     sendFailedError: 'Unable to send verification code.',
   },
   otpVerification: {
     title: 'Verify',
-    subtitle: 'Enter the code we sent to your email.',
-    formHeading: 'Verify',
-    formSubheading: (email: string) => `Enter the code we sent to ${email}`,
+    helper: (email: string) => `Code sent to ${email}.`,
+    codeLabel: 'Verification code',
+    codePlaceholder: '123456',
     verifyButton: 'Verify',
     resendButton: 'Resend code',
     changeEmailLink: 'Use a different email',
-    resendSuccessMessage: 'A new code is on the way.',
     codeRequiredError: 'Code is required.',
     codeLengthError: 'Code must be 6 digits.',
     verifyFailedError: 'There was a problem signing in. Our team is working on it.',

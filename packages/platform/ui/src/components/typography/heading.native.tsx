@@ -5,7 +5,8 @@ import {
   type TextStyle,
 } from 'react-native';
 
-import { colors, fontFamiliesNative, fontSizes, fontWeights } from '../../tokens';
+import { colors, fontSizes, fontWeights } from '../../tokens';
+import { fontFamiliesNative } from '../../tokens/typography.native';
 import type { ColorToken } from '../../tokens';
 import type { HeadingLevel, HeadingVariant } from './heading.types';
 

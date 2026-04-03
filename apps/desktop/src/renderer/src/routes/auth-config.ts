@@ -5,8 +5,7 @@ import { desktopEnv } from '@/lib/env';
 export const AUTH_CONFIG = {
   allowedRedirectPrefixes: NOTES_AUTH_CONFIG.allowedDestinations,
   defaultRedirect: '/app-shell',
-  description: AUTH_COPY.emailEntry.subtitle,
-  title: `Continue to ${NOTES_AUTH_CONFIG.appName}`,
+  title: AUTH_COPY.emailEntry.title,
 } as const;
 
 export function getAuthApiBaseUrl() {

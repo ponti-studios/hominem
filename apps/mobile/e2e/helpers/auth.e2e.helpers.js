@@ -145,9 +145,9 @@ async function waitForOtpStep(timeout = 20000) {
       return
     }
 
-    const hasAuthError = await waitForVisible(by.id('auth-error-text'), 1200)
+    const hasAuthError = await waitForVisible(by.id('auth-email-message'), 1200)
     if (hasAuthError) {
-      const errorText = await readVisibleText('auth-error-text')
+      const errorText = await readVisibleText('auth-email-message')
       throw new Error(`OTP request failed in app UI${errorText ? `: ${errorText}` : ''}`)
     }
 
@@ -181,9 +181,9 @@ async function triggerOtpRequest(timeout = 20000) {
       return
     }
 
-    const hasAuthError = await waitForVisible(by.id('auth-error-text'), 1200)
+    const hasAuthError = await waitForVisible(by.id('auth-email-message'), 1200)
     if (hasAuthError) {
-      const errorText = await readVisibleText('auth-error-text')
+      const errorText = await readVisibleText('auth-email-message')
       lastError = errorText ? `OTP request failed in app UI: ${errorText}` : 'OTP request failed in app UI'
 
       const hasEmailInput = await waitForVisible(by.id('auth-email-input'), 400)

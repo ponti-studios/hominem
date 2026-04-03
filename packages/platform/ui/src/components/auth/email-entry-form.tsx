@@ -1,17 +1,15 @@
+import { AUTH_COPY } from '@hominem/auth';
 import { Form, useNavigation, useSearchParams } from 'react-router';
 
 import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
-import { AuthErrorBanner } from './auth-error-banner';
 import { PasskeyButton } from './passkey-button';
+import { TextField } from '../ui/text-field';
 
 interface EmailEntryFormProps {
   action: string;
   method?: 'post' | 'get';
   error?: string;
   onPasskeyClick?: () => void | Promise<void>;
-  loadingMessage?: string;
   className?: string;
 }
 
@@ -20,7 +18,6 @@ export function EmailEntryForm({
   method = 'post',
   error,
   onPasskeyClick,
-  loadingMessage = 'Sending...',
   className,
 }: EmailEntryFormProps) {
   const navigation = useNavigation();
@@ -29,46 +26,32 @@ export function EmailEntryForm({
   const next = searchParams.get('next');
 
   const hasPasskey = onPasskeyClick !== undefined;
+  const copy = AUTH_COPY.emailEntry;
 
   return (
     <Form method={method} action={action} className={className}>
       {next ? <input type="hidden" name="next" value={next} /> : null}
       <div className="space-y-3">
-        <div>
-          <Label htmlFor="email" className="text-foreground">
-            Email address
-          </Label>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            required
-            placeholder="you@example.com"
-            disabled={isSubmitting}
-            className="mt-1 bg-muted font-mono py-3"
-          />
-        </div>
-
-        <AuthErrorBanner error={error ?? null} />
-
-        <Button
-          type="submit"
-          variant="outline"
+        <TextField
+          label={copy.emailLabel}
+          name="email"
+          type="email"
+          autoComplete="email"
+          required
+          placeholder={copy.emailPlaceholder}
           disabled={isSubmitting}
-          className="w-full uppercase"
-        >
-          {isSubmitting ? loadingMessage : 'Continue'}
+          error={error}
+        />
+
+        <Button type="submit" variant="primary" disabled={isSubmitting} className="w-full">
+          {isSubmitting ? 'Sending…' : copy.submitButton}
         </Button>
 
-        {hasPasskey && onPasskeyClick && (
-          <PasskeyButton
-            onClick={onPasskeyClick}
-            disabled={isSubmitting}
-            isLoading={false}
-            className="w-full"
-          />
-        )}
+        {hasPasskey && onPasskeyClick ? (
+          <div className="flex justify-center pt-1">
+            <PasskeyButton onClick={onPasskeyClick} disabled={isSubmitting} />
+          </div>
+        ) : null}
       </div>
     </Form>
   );
