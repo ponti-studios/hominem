@@ -13,11 +13,11 @@ export const MOBILE_WORKSPACE_LABELS: Record<MobileWorkspaceContext, string> = {
 };
 
 export const MOBILE_WORKSPACE_ROUTES: Record<MobileWorkspaceContext, Href | null> = {
-  inbox: '/(protected)/(tabs)/notes',
+  inbox: '/(protected)/(tabs)/',
   note: null,
-  chat: '/(protected)/(tabs)/chat',
+  chat: null,
   search: null,
-  settings: '/(protected)/(tabs)/account',
+  settings: '/(protected)/(tabs)/settings',
 };
 
 export function resolveVisibleWorkspaceContexts(

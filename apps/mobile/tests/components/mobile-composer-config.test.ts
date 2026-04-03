@@ -19,7 +19,7 @@ describe('mobile composer presentation', () => {
     })
   })
 
-  it('returns note drafting defaults', () => {
+  it('returns hidden posture for note context (note detail has its own editor)', () => {
     expect(
       deriveMobileComposerPresentation({
         context: 'note',
@@ -27,16 +27,16 @@ describe('mobile composer presentation', () => {
         isRecording: false,
       }),
     ).toEqual({
-      placeholder: 'Keep writing this note',
-      primaryActionLabel: 'Add to note',
-      secondaryActionLabel: 'Discuss note',
-      showsAttachmentButton: true,
-      showsVoiceButton: true,
-      posture: 'draft',
+      placeholder: '',
+      primaryActionLabel: '',
+      secondaryActionLabel: null,
+      showsAttachmentButton: false,
+      showsVoiceButton: false,
+      posture: 'hidden',
     })
   })
 
-  it('returns chat reply posture', () => {
+  it('returns hidden posture for chat context (chat screen has its own composer)', () => {
     expect(
       deriveMobileComposerPresentation({
         context: 'chat',
@@ -44,12 +44,12 @@ describe('mobile composer presentation', () => {
         isRecording: false,
       }),
     ).toEqual({
-      placeholder: 'Reply in chat',
-      primaryActionLabel: 'Send',
-      secondaryActionLabel: 'Save as note',
-      showsAttachmentButton: true,
-      showsVoiceButton: true,
-      posture: 'reply',
+      placeholder: '',
+      primaryActionLabel: '',
+      secondaryActionLabel: null,
+      showsAttachmentButton: false,
+      showsVoiceButton: false,
+      posture: 'hidden',
     })
   })
 

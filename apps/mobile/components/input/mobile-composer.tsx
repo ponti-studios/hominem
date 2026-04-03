@@ -39,7 +39,7 @@ import { MobileComposerFooter } from './mobile-composer-footer';
 export const MobileComposer = () => {
   const client = useApiClient();
   const router = useRouter();
-  const params = useLocalSearchParams<{ chatId?: string }>();
+  const params = useLocalSearchParams<{ chatId?: string; id?: string }>();
   const queryClient = useQueryClient();
   const { mutateAsync: createFocusItem } = useCreateNote();
   const { activeContext } = useMobileWorkspace();
@@ -54,7 +54,7 @@ export const MobileComposer = () => {
     setMessage,
     setMode,
   } = useInputContext();
-  const { sendChatMessage } = useSendMessage({ chatId: params.chatId ?? '' });
+  const { sendChatMessage } = useSendMessage({ chatId: params.chatId ?? params.id ?? '' });
   const { uploadAssets, uploadState, clearErrors } = useFileUpload();
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
@@ -120,7 +120,7 @@ export const MobileComposer = () => {
     );
     await invalidateInboxQueries(queryClient);
     clearDraft();
-    router.push(`/(protected)/(tabs)/chat?chatId=${chat.id}` as RelativePathString);
+    router.push(`/(protected)/(tabs)/chat/${chat.id}` as RelativePathString);
   };
 
   const handlePrimaryAction = () => {
@@ -128,7 +128,7 @@ export const MobileComposer = () => {
       const trimmedMessage = message.trim();
       const fileIds = getUploadedAttachmentIds();
 
-      if ((!trimmedMessage && fileIds.length === 0) || !params.chatId) {
+      if ((!trimmedMessage && fileIds.length === 0) || !(params.chatId ?? params.id)) {
         return;
       }
 

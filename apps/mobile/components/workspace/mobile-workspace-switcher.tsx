@@ -34,7 +34,7 @@ const iconStyle: TextStyle = {
   textAlign: 'center',
 };
 
-const INBOX_ROUTE = '/(protected)/(tabs)/notes' as Href;
+const INBOX_ROUTE = '/(protected)/(tabs)/' as Href;
 
 export const MobileWorkspaceSwitcher = () => {
   const router = useRouter();

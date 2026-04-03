@@ -29,7 +29,7 @@ describe('resolveAuthRedirect', () => {
         isSignedIn: true,
         segments: ['(auth)'],
       }),
-    ).toBe('/(protected)/(tabs)/start')
+    ).toBe('/(protected)/(tabs)/')
   })
 
   it('does not redirect signed-out users already in auth group', () => {

@@ -22,23 +22,23 @@ export function deriveMobileComposerPresentation(
 ): MobileComposerPresentation {
   if (input.context === 'note') {
     return {
-      placeholder: 'Keep writing this note',
-      primaryActionLabel: 'Add to note',
-      secondaryActionLabel: 'Discuss note',
-      showsAttachmentButton: true,
-      showsVoiceButton: true,
-      posture: 'draft',
+      placeholder: '',
+      primaryActionLabel: '',
+      secondaryActionLabel: null,
+      showsAttachmentButton: false,
+      showsVoiceButton: false,
+      posture: 'hidden',
     };
   }
 
   if (input.context === 'chat') {
     return {
-      placeholder: input.isRecording ? 'Listening…' : 'Reply in chat',
-      primaryActionLabel: 'Send',
-      secondaryActionLabel: 'Save as note',
-      showsAttachmentButton: true,
-      showsVoiceButton: true,
-      posture: 'reply',
+      placeholder: '',
+      primaryActionLabel: '',
+      secondaryActionLabel: null,
+      showsAttachmentButton: false,
+      showsVoiceButton: false,
+      posture: 'hidden',
     };
   }
 

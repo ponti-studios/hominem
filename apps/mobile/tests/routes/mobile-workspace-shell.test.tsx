@@ -80,11 +80,11 @@ describe('mobile workspace shell state', () => {
     })
 
     expect(MOBILE_WORKSPACE_ROUTES).toEqual({
-      inbox: '/(protected)/(tabs)/notes',
+      inbox: '/(protected)/(tabs)/',
       note: null,
-      chat: '/(protected)/(tabs)/chat',
+      chat: null,
       search: null,
-      settings: '/(protected)/(tabs)/account',
+      settings: '/(protected)/(tabs)/settings',
     })
   })
 

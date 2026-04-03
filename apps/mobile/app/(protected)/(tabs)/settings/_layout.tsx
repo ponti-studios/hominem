@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router';
 
-function StartStack() {
+function SettingsLayout() {
   return (
     <Stack>
       <Stack.Screen name="index" options={{ headerShown: false }} />
@@ -8,4 +8,4 @@ function StartStack() {
   );
 }
 
-export default StartStack;
+export default SettingsLayout;

@@ -21,15 +21,19 @@ function resolveRouteWorkspaceContext(
   pathname: string,
   selectedContext: MobileWorkspaceContext,
 ): MobileWorkspaceContext {
-  if (pathname.includes('/chat')) {
+  if (pathname.includes('/chat/')) {
     return 'chat';
   }
 
-  if (pathname.includes('/account')) {
+  if (pathname.includes('/settings')) {
     return 'settings';
   }
 
-  if (selectedContext === 'note' || selectedContext === 'search') {
+  if (pathname.match(/\/notes\/.+/)) {
+    return 'note';
+  }
+
+  if (selectedContext === 'search') {
     return selectedContext;
   }
 

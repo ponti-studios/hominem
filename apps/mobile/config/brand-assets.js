@@ -1,4 +1,4 @@
-const ROOT_ASSETS_DIR = '../../assets'
+const ROOT_ASSETS_DIR = '../assets'
 const SPLASH_ASSET_NAME = 'logo.hakumi.splash-screen.png'
 const FAVICON_ASSET_NAME = 'logo.hakumi.png'
 
@@ -42,11 +42,11 @@ function getBrandAssetPaths(variant) {
 function getRuntimeBrandLogoSource(variant) {
   switch (getBrandLogoAssetName(variant)) {
     case 'logo.hakumi.preview.png':
-      return require('../../../assets/logo.hakumi.preview.png')
+      return require('../assets/logo.hakumi.preview.png')
     case 'logo.hakumi.png':
-      return require('../../../assets/logo.hakumi.png')
+      return require('../assets/logo.hakumi.png')
     default:
-      return require('../../../assets/logo.hakumi.dev.png')
+      return require('../assets/logo.hakumi.dev.png')
   }
 }
 

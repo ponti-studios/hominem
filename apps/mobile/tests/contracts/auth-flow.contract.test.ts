@@ -112,7 +112,7 @@ describe('auth flow contract', () => {
 
     const signedIn = harness.dispatch({ type: 'SESSION_LOADED', user: buildAuthUser() })
     expectAuthStatus(signedIn, 'signed_in')
-    expectRedirect(harness.resolveRoute(['(auth)']), '/(protected)/(tabs)/start')
+    expectRedirect(harness.resolveRoute(['(auth)']), '/(protected)/(tabs)/')
   })
 
   it('signing out from a protected route converges to auth without preserving stale user state', () => {

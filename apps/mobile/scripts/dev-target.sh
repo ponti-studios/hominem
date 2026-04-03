@@ -82,7 +82,7 @@ case "$CMD" in
     set_api_base_url "http://localhost:${PORT}"
     ok "Switched to simulator"
     show_status
-    info "Run: bun run start"
+    info "Run: bun run dev"
     printf "\n"
     ;;
 
@@ -99,7 +99,7 @@ case "$CMD" in
     set_api_base_url "http://${LAN_IP}:${PORT}"
     ok "Switched to device"
     show_status
-    info "Run: bun run start"
+    info "Run: bun run dev"
     printf "\n"
     list_devices
     ;;

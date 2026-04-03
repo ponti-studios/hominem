@@ -5,9 +5,10 @@
  *
  * Font families diverge intentionally between platforms:
  * - Web loads Geist via Google Fonts (COMMON_FONT_LINKS)
- * - Mobile loads Inter via expo-font
- * Both platforms share Geist Mono for monospace.
+ * - Native uses the platform system fonts
  */
+
+import { Platform } from 'react-native';
 
 /** Web font family stacks (full CSS strings). */
 export const fontFamilies = {
@@ -15,10 +16,20 @@ export const fontFamilies = {
   mono: "'Geist Mono', ui-monospace, 'SF Mono', 'Menlo', monospace",
 } as const;
 
-/** React Native font family names (short names only, as loaded by expo-font). */
+/** React Native font family names (platform system fonts). */
 export const fontFamiliesNative = {
-  primary: 'Inter',
-  mono: 'Geist Mono',
+  primary:
+    Platform.select({
+      ios: 'System',
+      android: 'sans-serif',
+      default: 'sans-serif',
+    }) ?? 'sans-serif',
+  mono:
+    Platform.select({
+      ios: 'Menlo',
+      android: 'monospace',
+      default: 'monospace',
+    }) ?? 'monospace',
 } as const;
 
 export const fontSizes = {

@@ -1,7 +1,7 @@
 import React from 'react'
 import { render, waitFor } from '@testing-library/react-native'
 
-import Chat from '../../app/(protected)/(tabs)/chat/index'
+import Chat from '../../app/(protected)/(tabs)/chat/[id]'
 import {
   MobileWorkspaceProvider,
   useMobileWorkspace,
@@ -13,8 +13,8 @@ const mockRefetch = jest.fn()
 let workspaceContext = 'inbox'
 
 jest.mock('expo-router', () => ({
-  useLocalSearchParams: () => ({ chatId: 'chat-1' }),
-  usePathname: () => '/(protected)/(tabs)/chat',
+  useLocalSearchParams: () => ({ id: 'chat-1' }),
+  usePathname: () => '/(protected)/(tabs)/chat/chat-1',
   useRouter: () => ({ push: mockPush }),
 }))
 

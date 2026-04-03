@@ -30,7 +30,7 @@ const Onboarding = () => {
   }
 
   if (currentUser?.name) {
-    return <Redirect href={'/(protected)/(tabs)/notes' as RelativePathString} />;
+    return <Redirect href={'/(protected)/(tabs)/' as RelativePathString} />;
   }
 
   return (

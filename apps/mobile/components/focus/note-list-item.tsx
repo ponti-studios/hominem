@@ -1,5 +1,5 @@
 import type { Note } from '@hominem/rpc/types';
-import { fontSizes } from '@hominem/ui/tokens';
+import { fontFamiliesNative, fontSizes } from '@hominem/ui/tokens';
 import type { RelativePathString } from 'expo-router';
 import { Link } from 'expo-router';
 import { memo, useCallback, useEffect, useRef } from 'react';
@@ -134,7 +134,7 @@ const useStyles = makeStyles((t) =>
     actionText: {
       color: theme.colors.foreground,
       fontWeight: 'bold',
-      fontFamily: 'Geist Mono',
+      fontFamily: fontFamiliesNative.mono,
     },
   }),
 );

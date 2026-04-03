@@ -1,7 +1,6 @@
 import { ThemeProvider } from '@shopify/restyle';
-import { useFonts } from 'expo-font';
-import { SplashScreen, Stack, useRouter, useSegments } from 'expo-router';
 import type { RelativePathString } from 'expo-router';
+import { SplashScreen, Stack, useRouter, useSegments } from 'expo-router';
 import { PostHogProvider } from 'posthog-react-native';
 import React, { useEffect } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -14,7 +13,7 @@ import { posthog } from '~/lib/posthog';
 import { recordActiveDay } from '~/lib/review-prompt';
 import { useScreenCapture } from '~/lib/use-screen-capture';
 import { useWidgetActionHandler } from '~/lib/use-widget-action-handler';
-import { theme, makeStyles } from '~/theme';
+import { makeStyles, theme } from '~/theme';
 import { AuthProvider, useAuth } from '~/utils/auth-provider';
 import { E2E_TESTING } from '~/utils/constants';
 import { logError } from '~/utils/error-boundary/log-error';
@@ -117,12 +116,6 @@ function InnerRootLayout() {
 
 function RootLayout() {
   useScreenCapture();
-  const [fontsLoaded] = useFonts({
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    'Geist Mono': require('../assets/fonts/GeistMono-Regular.ttf'),
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    'fa-regular-400': require('../assets/fonts/icons/fa-regular-400.ttf'),
-  });
 
   useEffect(() => {
     const cleanup = initObservability();
@@ -131,10 +124,6 @@ function RootLayout() {
     void recordActiveDay();
     return cleanup;
   }, []);
-
-  if (!fontsLoaded) {
-    return null;
-  }
 
   return (
     <PostHogProvider client={posthog}>

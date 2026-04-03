@@ -1,4 +1,5 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
+
 import { getBrandAssetPaths, type AppVariant } from './config/brand-assets';
 
 interface VariantConfig {
@@ -104,16 +105,6 @@ export default ({ config }: ConfigContext) => {
             },
           },
         },
-      },
-    ],
-    [
-      'expo-font',
-      {
-        fonts: [
-          './assets/fonts/GeistMono-Regular.ttf',
-          './assets/fonts/GeistMono-SemiBold.ttf',
-          './assets/fonts/icons/fa-regular-400.ttf',
-        ],
       },
     ],
     ['expo-secure-store'],

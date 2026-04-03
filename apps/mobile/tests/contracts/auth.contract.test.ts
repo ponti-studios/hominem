@@ -83,8 +83,8 @@ describe('auth contract', () => {
       status: 'signed_in',
       user: buildAuthUser(),
     })
-    expectRedirect(signedInHarness.resolveRoute(['(auth)']), '/(protected)/(tabs)/start')
-    expectRedirect(signedInHarness.resolveRoute(['(auth)']), '/(protected)/(tabs)/start')
+    expectRedirect(signedInHarness.resolveRoute(['(auth)']), '/(protected)/(tabs)/')
+    expectRedirect(signedInHarness.resolveRoute(['(auth)']), '/(protected)/(tabs)/')
   })
 
   it('query retry backoff remains bounded for deterministic tests', () => {

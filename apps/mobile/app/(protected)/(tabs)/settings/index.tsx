@@ -82,7 +82,7 @@ function accountReducer(state: AccountState, action: AccountAction): AccountStat
   }
 }
 
-function Account() {
+function Settings() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { isSignedIn, signOut, currentUser, updateProfile } = useAuth();
@@ -115,7 +115,7 @@ function Account() {
   };
 
   const onArchivedChatsPress = () => {
-    router.push('/(protected)/(tabs)/account/archived-chats' as RelativePathString);
+    router.push('/(protected)/(tabs)/settings/archived-chats' as RelativePathString);
   };
 
   const onAddPasskeyPress = async () => {
@@ -166,11 +166,11 @@ function Account() {
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={styles.root}
-      testID="account-screen"
+      testID="settings-screen"
     >
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <Text variant="cardHeader" color="foreground">
-          ACCOUNT
+          SETTINGS
         </Text>
         <View style={styles.formSection}>
           <View style={styles.sectionCard}>
@@ -276,7 +276,7 @@ function Account() {
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
-        <Button testID="account-sign-out" title="[SIGN_OUT]" onPress={onLogoutPress} />
+        <Button testID="settings-sign-out" title="[SIGN_OUT]" onPress={onLogoutPress} />
         <Button
           title="[DELETE_ACCOUNT]"
           onPress={onDeleteAccountPress}
@@ -355,4 +355,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Account;
+export default Settings;

@@ -1,6 +1,6 @@
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { LoadingFull } from '~/components/LoadingFull';
@@ -8,22 +8,14 @@ import { CameraModal } from '~/components/media/camera-modal';
 import { MobileVoiceInput } from '~/components/media/mobile-voice-input';
 import { useTTS } from '~/components/media/use-tts';
 import { Text, theme } from '~/theme';
-import {
-  useActiveChat,
-  useChatMessages,
-  useSendMessage,
-  useStartChat,
-} from '~/utils/services/chat';
+import { useActiveChat, useChatMessages, useSendMessage } from '~/utils/services/chat';
 import { useFileUpload } from '~/utils/services/files/use-file-upload';
 import { useNoteStream } from '~/utils/services/notes/use-note-stream';
 
-export default function ChatScreen() {
-  const params = useLocalSearchParams<{ chatId?: string; noteId?: string; seed?: string }>();
-  const [activeChatId, setActiveChatId] = useState<string | null>(params.chatId ?? null);
-  const [draft, setDraft] = useState(params.seed ?? '');
-  const [selectedNoteIds, setSelectedNoteIds] = useState<string[]>(
-    params.noteId ? [params.noteId] : [],
-  );
+export default function ChatDetailScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const [draft, setDraft] = useState('');
+  const [selectedNoteIds, setSelectedNoteIds] = useState<string[]>([]);
   const [attachedFiles, setAttachedFiles] = useState<Array<{ id: string; originalName: string }>>(
     [],
   );
@@ -32,24 +24,10 @@ export default function ChatScreen() {
   const { data: notes = [] } = useNoteStream();
   const { uploadAssets, uploadState, clearErrors } = useFileUpload();
   const { speak, state: ttsState } = useTTS();
-  const { data: activeChat, isLoading: isLoadingActiveChat } = useActiveChat(activeChatId);
-  const startChat = useStartChat({
-    userMessage: '',
-    _chatMessage: '',
-    onSuccess: (chat) => {
-      setActiveChatId(chat.id);
-    },
-  });
-
-  const chatId = activeChat?.id ?? activeChatId ?? '';
+  const { data: activeChat, isLoading: isLoadingActiveChat } = useActiveChat(id);
+  const chatId = activeChat?.id ?? id;
   const messagesQuery = useChatMessages({ chatId });
   const sendMessage = useSendMessage({ chatId });
-
-  useEffect(() => {
-    if (!activeChatId && !isLoadingActiveChat) {
-      void startChat.mutateAsync();
-    }
-  }, [activeChatId, isLoadingActiveChat, startChat]);
 
   const attachFromLibrary = async () => {
     clearErrors();
@@ -102,7 +80,7 @@ export default function ChatScreen() {
             {message.role === 'assistant' ? (
               <Pressable onPress={() => void speak(message.message)} style={styles.inlineButton}>
                 <Text color="text-secondary">
-                  {ttsState === 'loading' ? 'AUDIO…' : 'PLAY AUDIO'}
+                  {ttsState === 'loading' ? 'AUDIO...' : 'PLAY AUDIO'}
                 </Text>
               </Pressable>
             ) : null}
