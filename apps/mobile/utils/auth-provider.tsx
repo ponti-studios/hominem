@@ -59,21 +59,21 @@ function toAuthUserProfile(localProfile: User | null): AuthState['user'] {
     email: localProfile.email,
     name: localProfile.name,
     image: localProfile.image,
-    isAdmin: localProfile.isAdmin,
+    emailVerified: localProfile.emailVerified,
     createdAt: localProfile.createdAt,
     updatedAt: localProfile.updatedAt,
-  } as AuthState['user'];
+  };
 }
 
 function fromSignInUser(user: { id: string; email: string; name?: string | null }): User {
   return {
     id: user.id,
     email: user.email,
-    name: user.name ?? undefined,
-    image: undefined,
-    isAdmin: false,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    name: user.name ?? '',
+    image: null,
+    emailVerified: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
   };
 }
 
@@ -472,7 +472,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     const merged: User = {
       ...current,
       ...updates,
-      updatedAt: new Date().toISOString(),
+      updatedAt: new Date(),
     };
 
     const saved = await LocalStore.upsertUserProfile(merged);
@@ -513,7 +513,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
       email: state.user.email,
       name: state.user.name,
       image: state.user.image,
-      isAdmin: state.user.isAdmin,
+      emailVerified: state.user.emailVerified,
       createdAt: state.user.createdAt,
       updatedAt: state.user.updatedAt,
     };

@@ -27,7 +27,9 @@ export async function action({ request }: { request: Request }) {
       return { error: error.message || 'Failed to send verification code' };
     }
 
-    return redirect(`/auth/verify?email=${encodeURIComponent(email)}&next=${encodeURIComponent(next)}`);
+    return redirect(
+      `/auth/verify?email=${encodeURIComponent(email)}&next=${encodeURIComponent(next)}`,
+    );
   } catch {
     return { error: 'Failed to send verification code' };
   }

@@ -12,6 +12,7 @@ import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text, makeStyles } from '~/theme';
+
 import { API_BASE_URL } from './constants';
 
 const API_STATUS_PATH = '/api/status';

@@ -1,4 +1,4 @@
-import type { User } from '@hominem/auth/server';
+import type { User } from '@hominem/auth/types';
 import type { MiddlewareHandler } from 'hono';
 
 import { betterAuthServer } from '../auth/better-auth';
@@ -24,28 +24,29 @@ interface BetterAuthSessionContext {
 function toAuthUser(user: {
   id: string;
   email: string;
-  name?: string | null;
+  emailVerified: boolean;
+  name: string;
   image?: string | null | undefined;
-  createdAt?: string | Date | null | undefined;
-  updatedAt?: string | Date | null | undefined;
+  createdAt: Date;
+  updatedAt: Date;
 }): User {
-  const createdAt = user.createdAt instanceof Date ? user.createdAt.toISOString() : user.createdAt;
-  const updatedAt = user.updatedAt instanceof Date ? user.updatedAt.toISOString() : user.updatedAt;
-
   return {
     id: user.id,
     email: user.email,
-    name: user.name ?? undefined,
-    image: user.image ?? undefined,
-    isAdmin: false,
-    createdAt: createdAt ?? new Date().toISOString(),
-    updatedAt: updatedAt ?? new Date().toISOString(),
+    emailVerified: user.emailVerified,
+    name: user.name,
+    image: user.image ?? null,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
   };
 }
 
 function setAuthContext(
   c: {
-    set: <K extends keyof BetterAuthSessionContext>(key: K, value: BetterAuthSessionContext[K]) => void;
+    set: <K extends keyof BetterAuthSessionContext>(
+      key: K,
+      value: BetterAuthSessionContext[K],
+    ) => void;
   },
   input: { user: User; sessionId: string; amr: string[]; authTime?: number },
 ) {

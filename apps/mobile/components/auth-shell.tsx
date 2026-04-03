@@ -1,11 +1,19 @@
 import { Image } from 'expo-image';
 import React, { useEffect, useMemo } from 'react';
-import { Animated, Easing, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  Animated,
+  Easing,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getRuntimeBrandLogoSource } from '~/config/brand-assets';
-import { APP_VARIANT } from '~/utils/constants';
 import { Box, Text, makeStyles } from '~/theme';
+import { APP_VARIANT } from '~/utils/constants';
 
 interface AuthShellProps {
   testID: string;

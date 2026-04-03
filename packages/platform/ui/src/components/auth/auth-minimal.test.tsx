@@ -1,5 +1,5 @@
-import React from 'react';
 import { render, screen } from '@testing-library/react';
+import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { AuthScaffold } from './auth-scaffold';
@@ -14,7 +14,9 @@ vi.mock('react-router', async () => {
 
   return {
     ...actual,
-    Form: ({ children, ...props }: React.ComponentProps<'form'>) => <form {...props}>{children}</form>,
+    Form: ({ children, ...props }: React.ComponentProps<'form'>) => (
+      <form {...props}>{children}</form>
+    ),
     useFetcher: () => ({ state: 'idle', data: undefined, submit }),
     useNavigation: () => ({ state: 'idle', formAction: null }),
     useSearchParams: () => [new URLSearchParams(), vi.fn()],

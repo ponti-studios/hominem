@@ -114,7 +114,10 @@ export function resolveComposerTarget(
   }
 
   if (pathname.includes('/chat/')) {
-    const chatId = getParamValue(params.chatId) ?? getParamValue(params.id) ?? getPathSegment(pathname, '/chat/');
+    const chatId =
+      getParamValue(params.chatId) ??
+      getParamValue(params.id) ??
+      getPathSegment(pathname, '/chat/');
 
     return {
       kind: chatId ? 'chat' : 'hidden',
@@ -240,9 +243,7 @@ export const InputProvider = ({ children }: PropsWithChildren) => {
     [updateDraft],
   );
 
-  const setAttachments = useCallback<
-    InputContextValue['setAttachments']
-  >(
+  const setAttachments = useCallback<InputContextValue['setAttachments']>(
     (value) => {
       updateDraft((draft) => ({
         ...draft,
@@ -276,8 +277,7 @@ export const InputProvider = ({ children }: PropsWithChildren) => {
     (value) => {
       updateDraft((draft) => ({
         ...draft,
-        selectedNoteIds:
-          typeof value === 'function' ? value(draft.selectedNoteIds) : value,
+        selectedNoteIds: typeof value === 'function' ? value(draft.selectedNoteIds) : value,
       }));
     },
     [updateDraft],

@@ -1,13 +1,6 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 
-import {
-  configureStepUpStore,
-  grantStepUp,
-  hasRecentStepUp,
-} from '@hominem/auth/server';
-import { STEP_UP_ACTIONS, isStepUpAction } from '@hominem/auth/step-up-actions';
 import { db } from '@hominem/db';
-import { redis } from '@hominem/services/redis';
 import { getSetCookieHeaders } from '@hominem/utils/headers';
 import { logger } from '@hominem/utils/logger';
 import { zValidator } from '@hono/zod-validator';
@@ -29,7 +22,6 @@ function createMockAuthProvider() {
           id,
           email: `mock+${id.slice(0, 8)}@example.com`,
           name: 'Mock User',
-          isAdmin: false,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         },
@@ -51,8 +43,6 @@ import { env } from '../env';
 import type { AppEnv } from '../server';
 
 export const authRoutes = new Hono<AppEnv>();
-
-configureStepUpStore(redis);
 
 const passkeyRegisterVerifySchema = z.object({
   response: z.any(),
@@ -136,14 +126,8 @@ interface MobileE2eLoginResponse {
 
 interface AppSessionResponse {
   isAuthenticated: boolean;
-  user: {
-    id: string;
-    email: string;
-    name?: string;
-    isAdmin: boolean;
-    createdAt?: string;
-    updatedAt?: string;
-  } | null;
+  user: NonNullable<BetterAuthSession>['user'] | null;
+  session?: NonNullable<BetterAuthSession>['session'] | null;
   auth?: {
     sub: string;
     sid: string;
@@ -283,14 +267,6 @@ async function userHasRegisteredPasskeys(userId: string) {
   return Boolean(existingPasskey);
 }
 
-async function requiresPasskeyRegisterStepUp(userId: string) {
-  if (!(await userHasRegisteredPasskeys(userId))) {
-    return false;
-  }
-
-  return !(await hasRecentStepUp(userId, STEP_UP_ACTIONS.PASSKEY_REGISTER));
-}
-
 function copyHeadersWithSetCookie(headers: Headers) {
   const copied = new Headers(headers);
   const setCookies = getSetCookieHeaders(headers);
@@ -319,14 +295,8 @@ function buildSessionResponse(input: {
     : undefined;
   return {
     isAuthenticated: true,
-    user: {
-      id: user.id,
-      email: user.email,
-      ...(user.name ? { name: user.name } : {}),
-      isAdmin: false,
-      ...(createdAt ? { createdAt } : {}),
-      ...(updatedAt ? { updatedAt } : {}),
-    },
+    user: session.user,
+    session: session.session,
     auth: {
       sub: user.id,
       sid: session.session.id,
@@ -632,10 +602,6 @@ authRoutes.post('/passkey/register/options', async (c) => {
     return c.json({ error: 'unauthorized' }, 401);
   }
 
-  if (await requiresPasskeyRegisterStepUp(userId)) {
-    return c.json({ error: 'step_up_required', action: STEP_UP_ACTIONS.PASSKEY_REGISTER }, 403);
-  }
-
   try {
     const response = await callBetterAuthPluginEndpoint({
       request: c.req.raw,
@@ -660,10 +626,6 @@ authRoutes.post(
     const userId = betterAuthSession?.user?.id;
     if (!userId) {
       return c.json({ error: 'unauthorized' }, 401);
-    }
-
-    if (await requiresPasskeyRegisterStepUp(userId)) {
-      return c.json({ error: 'step_up_required', action: STEP_UP_ACTIONS.PASSKEY_REGISTER }, 403);
     }
 
     try {
@@ -717,10 +679,6 @@ authRoutes.delete(
       return c.json({ error: 'unauthorized' }, 401);
     }
 
-    if (!(await hasRecentStepUp(userId, STEP_UP_ACTIONS.PASSKEY_DELETE))) {
-      return c.json({ error: 'step_up_required', action: STEP_UP_ACTIONS.PASSKEY_DELETE }, 403);
-    }
-
     try {
       const { id } = c.req.valid('json');
       const response = await callBetterAuthPluginEndpoint({
@@ -766,19 +724,6 @@ authRoutes.post('/passkey/auth/verify', zValidator('json', passkeyAuthVerifySche
     const responseText = await response.text();
 
     if (!response.ok) {
-      return new Response(responseText, {
-        status: response.status,
-        headers: copyHeadersWithSetCookie(response.headers),
-      });
-    }
-
-    // Handle step-up action grant (for authenticated users doing re-auth)
-    const betterAuthSession = await getBetterAuthSession(c);
-    const existingUserId = betterAuthSession?.user?.id;
-    const requestedAction = body.action;
-    if (existingUserId && requestedAction && isStepUpAction(requestedAction)) {
-      await grantStepUp(existingUserId, requestedAction).catch(() => null);
-      // Step-up flows just return the Better Auth response (no new tokens needed)
       return new Response(responseText, {
         status: response.status,
         headers: copyHeadersWithSetCookie(response.headers),

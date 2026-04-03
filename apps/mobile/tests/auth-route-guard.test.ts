@@ -1,4 +1,6 @@
 
+import type { AuthStatusCompat } from '../utils/auth/provider-utils'
+
 import { resolveAuthRedirect } from '../utils/navigation/auth-route-guard'
 
 describe('resolveAuthRedirect', () => {
@@ -69,7 +71,7 @@ describe('resolveAuthRedirect', () => {
     'requesting_otp',
   ] as const)(
     'redirects %s status on protected group to auth (in-flight auth, not yet signed in)',
-    (authStatus) => {
+    (authStatus: AuthStatusCompat) => {
       expect(
         resolveAuthRedirect({ authStatus, isSignedIn: false, segments: ['(protected)'] }),
       ).toBe('/(auth)')

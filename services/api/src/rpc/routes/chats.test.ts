@@ -45,9 +45,11 @@ function createUser(): User {
   return {
     id: testUserId,
     email: 'chat-upload-test@hominem.test',
-    isAdmin: false,
-    createdAt: nowIso,
-    updatedAt: nowIso,
+    emailVerified: false,
+    image: null,
+    name: 'Chat Upload Test User',
+    createdAt: new Date(nowIso),
+    updatedAt: new Date(nowIso),
   };
 }
 

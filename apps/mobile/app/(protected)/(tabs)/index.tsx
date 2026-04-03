@@ -2,8 +2,8 @@ import { useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect } from 'react';
 import { RefreshControl, StyleSheet, View } from 'react-native';
 
-import { InboxStream } from '~/components/workspace/inbox-stream';
 import { useInputContext } from '~/components/input/input-context';
+import { InboxStream } from '~/components/workspace/inbox-stream';
 import { theme } from '~/theme';
 import { useInboxStreamItems } from '~/utils/services/inbox/use-inbox-stream-items';
 
@@ -24,9 +24,16 @@ export default function FeedScreen() {
 
   return (
     <View style={styles.container}>
-      <InboxStream items={items} refreshControl={
-        <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} tintColor={theme.colors['text-tertiary']} />
-      } />
+      <InboxStream
+        items={items}
+        refreshControl={
+          <RefreshControl
+            refreshing={isLoading}
+            onRefresh={handleRefresh}
+            tintColor={theme.colors['text-tertiary']}
+          />
+        }
+      />
     </View>
   );
 }

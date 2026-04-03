@@ -17,8 +17,13 @@ import { useMobilePasskeyAuth } from '~/utils/use-mobile-passkey-auth';
 
 export function AuthScreen() {
   const styles = useStyles();
-  const { authError: bootError, authStatus, isSignedIn, completePasskeySignIn, requestEmailOtp } =
-    useAuth();
+  const {
+    authError: bootError,
+    authStatus,
+    isSignedIn,
+    completePasskeySignIn,
+    requestEmailOtp,
+  } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -81,13 +86,15 @@ export function AuthScreen() {
   }
 
   const displayError =
-    authError ||
-    passkeyError ||
-    (authStatus === 'degraded' ? (bootError?.message ?? null) : null);
+    authError || passkeyError || (authStatus === 'degraded' ? (bootError?.message ?? null) : null);
   const canUsePasskeys = MOBILE_PASSKEY_ENABLED && isPasskeySupported;
 
   return (
-    <AuthShell testID="auth-screen" title={AUTH_COPY.emailEntry.title} helper={AUTH_COPY.emailEntry.helper}>
+    <AuthShell
+      testID="auth-screen"
+      title={AUTH_COPY.emailEntry.title}
+      helper={AUTH_COPY.emailEntry.helper}
+    >
       <Box style={styles.form}>
         <View style={styles.fieldStack}>
           <TextInput
@@ -157,7 +164,9 @@ export function AuthScreen() {
                   await completePasskeySignIn(result);
                 }
               } catch (error: unknown) {
-                setAuthError(error instanceof Error ? error.message : AUTH_COPY.passkey.genericError);
+                setAuthError(
+                  error instanceof Error ? error.message : AUTH_COPY.passkey.genericError,
+                );
               } finally {
                 setIsSubmitting(false);
               }

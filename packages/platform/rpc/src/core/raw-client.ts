@@ -9,7 +9,6 @@ export type RawHonoClient = RpcTransportClient
 export function createRawHonoClient(config: ClientConfig): RawHonoClient {
   return createTransportClient(config.baseUrl, {
     fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
-      const token = await config.getAuthToken();
       const headers = new Headers(init?.headers);
       const extraHeaders = await config.getHeaders?.();
 
@@ -17,10 +16,6 @@ export function createRawHonoClient(config: ClientConfig): RawHonoClient {
         Object.entries(extraHeaders).forEach(([key, value]) => {
           headers.set(key, value);
         });
-      }
-
-      if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
       }
 
       try {

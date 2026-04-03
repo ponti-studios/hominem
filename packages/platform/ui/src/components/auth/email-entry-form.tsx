@@ -2,8 +2,8 @@ import { AUTH_COPY } from '@hominem/auth';
 import { Form, useNavigation, useSearchParams } from 'react-router';
 
 import { Button } from '../ui/button';
-import { PasskeyButton } from './passkey-button';
 import { TextField } from '../ui/text-field';
+import { PasskeyButton } from './passkey-button';
 
 interface EmailEntryFormProps {
   action: string;

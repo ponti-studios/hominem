@@ -47,7 +47,9 @@ export default function ChatDetailScreen() {
         {messagesQuery.data?.length === 0 ? (
           <View style={styles.emptyState}>
             <Text color="foreground">Start a chat.</Text>
-            <Text color="text-secondary">Use the composer below to ask something or attach a file.</Text>
+            <Text color="text-secondary">
+              Use the composer below to ask something or attach a file.
+            </Text>
           </View>
         ) : null}
       </ScrollView>

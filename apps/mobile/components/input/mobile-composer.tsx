@@ -1,6 +1,6 @@
 import { CHAT_TITLE_MAX_LENGTH } from '@hominem/chat-services/constants';
-import type { Note } from '@hominem/rpc/types';
 import { useApiClient } from '@hominem/rpc/react';
+import type { Note } from '@hominem/rpc/types';
 import { useQueryClient } from '@tanstack/react-query';
 import type { RelativePathString } from 'expo-router';
 import { useRouter } from 'expo-router';
@@ -103,7 +103,11 @@ function ComposerAttachments({
   return (
     <View style={styles.attachmentsSection}>
       {attachments.length > 0 ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.chips}
+        >
           {attachments.map((attachment) => (
             <Pressable
               key={attachment.id}
@@ -172,9 +176,7 @@ function ComposerFooter({
           disabled={!canSubmit}
           testID="mobile-composer-primary-action"
         >
-          <Text color="foreground">
-            {isSending ? 'SENDING' : presentation.primaryActionLabel}
-          </Text>
+          <Text color="foreground">{isSending ? 'SENDING' : presentation.primaryActionLabel}</Text>
         </Pressable>
       </View>
     </View>
@@ -206,19 +208,15 @@ export const MobileComposer = () => {
     enabled: target.kind === 'note' && Boolean(target.noteId),
   });
   const { sendChatMessage, isChatSending } = useSendMessage({ chatId: target.chatId ?? '' });
-  const {
-    handleCameraCapture,
-    handleVoiceTranscript,
-    pickAttachment,
-    uploadState,
-  } = useComposerMediaActions({
-    attachments,
-    setAttachments,
-    message,
-    setMessage,
-    setIsRecording,
-    setMode,
-  });
+  const { handleCameraCapture, handleVoiceTranscript, pickAttachment, uploadState } =
+    useComposerMediaActions({
+      attachments,
+      setAttachments,
+      message,
+      setMessage,
+      setIsRecording,
+      setMode,
+    });
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
 
@@ -227,13 +225,9 @@ export const MobileComposer = () => {
     message.trim().length > 0 || attachments.length > 0,
     isRecording,
   );
-  const uploadedAttachmentIds = useMemo(
-    () => getUploadedAttachmentIds(attachments),
-    [attachments],
-  );
+  const uploadedAttachmentIds = useMemo(() => getUploadedAttachmentIds(attachments), [attachments]);
   const canSubmit =
-    !uploadState.isUploading &&
-    (message.trim().length > 0 || uploadedAttachmentIds.length > 0);
+    !uploadState.isUploading && (message.trim().length > 0 || uploadedAttachmentIds.length > 0);
 
   const createNoteFromDraft = async () => {
     await createNote({

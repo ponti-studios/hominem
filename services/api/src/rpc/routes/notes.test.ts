@@ -17,9 +17,11 @@ function createUser(): User {
   return {
     id: testUserId,
     email: 'notes-test@hominem.test',
-    isAdmin: false,
-    createdAt: nowIso,
-    updatedAt: nowIso,
+    emailVerified: false,
+    image: null,
+    name: 'Notes Test User',
+    createdAt: new Date(nowIso),
+    updatedAt: new Date(nowIso),
   };
 }
 

@@ -6,8 +6,8 @@ import {
 } from 'react-native';
 
 import { colors, fontSizes, fontWeights } from '../../tokens';
-import { fontFamiliesNative } from '../../tokens/typography.native';
 import type { ColorToken } from '../../tokens';
+import { fontFamiliesNative } from '../../tokens/typography.native';
 import type { HeadingLevel, HeadingVariant } from './heading.types';
 
 const variantStyles: Record<HeadingVariant, TextStyle> = {

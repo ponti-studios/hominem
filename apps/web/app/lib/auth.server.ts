@@ -1,4 +1,4 @@
-import { getServerAuth as sharedGetServerAuth } from '@hominem/auth/server/session';
+import type { Session, User } from '@hominem/auth';
 
 import { serverEnv } from './env';
 
@@ -6,10 +6,32 @@ export const authConfig = {
   apiBaseUrl: serverEnv.VITE_PUBLIC_API_URL,
 };
 
-export const getServerAuth = (request: Request) => sharedGetServerAuth(request, authConfig);
+export async function getServerSession(request: Request) {
+  const headers = new Headers();
+  const cookie = request.headers.get('cookie');
+  if (cookie) {
+    headers.set('cookie', cookie);
+  }
 
-// Convenience wrappers - clients can use getServerAuth directly and destructure what they need
-export const getServerSession = async (request: Request) => {
-  const { user, session, headers } = await getServerAuth(request);
-  return { user, session, headers };
-};
+  const response = await fetch(new URL('/api/auth/session', authConfig.apiBaseUrl).toString(), {
+    method: 'GET',
+    headers,
+  });
+
+  if (!response.ok) {
+    return { user: null, session: null, headers: new Headers() };
+  }
+
+  const payload = (await response.json()) as {
+    user?: User | null;
+    session?: Session | null;
+  };
+
+  return {
+    user: payload.user ?? null,
+    session: payload.session ?? null,
+    headers: new Headers(),
+  };
+}
+
+export const getServerAuth = getServerSession;

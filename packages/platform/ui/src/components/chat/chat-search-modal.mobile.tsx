@@ -1,13 +1,7 @@
 import type React from 'react';
 import { Modal, Pressable, StyleSheet, View, type TextInput } from 'react-native';
 
-import {
-  chatTokensNative,
-  colors,
-  fontSizes,
-  radiiNative,
-  spacing,
-} from '../../tokens';
+import { chatTokensNative, colors, fontSizes, radiiNative, spacing } from '../../tokens';
 import { fontFamiliesNative } from '../../tokens/typography.native';
 import { Text } from '../typography/text.native';
 import { Button } from '../ui/button.native';

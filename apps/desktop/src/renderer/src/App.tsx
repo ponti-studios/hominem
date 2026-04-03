@@ -2,6 +2,7 @@ import { type AuthConfig, AuthProvider, useAuth } from '@hominem/auth';
 import { Navigate, Route, Routes } from 'react-router';
 
 import { desktopEnv } from '@/lib/env';
+
 import { AppShell } from './app-shell';
 import AuthRoute from './routes/auth';
 import AuthVerifyRoute from './routes/auth-verify';

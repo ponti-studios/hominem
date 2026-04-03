@@ -66,7 +66,9 @@ export default function NoteDetailScreen() {
         <Pressable onPress={() => router.replace('/(protected)/(tabs)/' as RelativePathString)}>
           <Text color="text-secondary">BACK</Text>
         </Pressable>
-        <Pressable onPress={() => router.push(`/(protected)/(tabs)/chat/${note.id}` as RelativePathString)}>
+        <Pressable
+          onPress={() => router.push(`/(protected)/(tabs)/chat/${note.id}` as RelativePathString)}
+        >
           <Text color="foreground">CHAT</Text>
         </Pressable>
       </View>

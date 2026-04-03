@@ -3,7 +3,6 @@ import { createRawHonoClient } from '../core/raw-client'
 
 export function createServerClient(
   baseUrl: string,
-  accessToken?: string,
   request?: Request,
 ): ApiClient {
   const cookieHeader = request?.headers.get('Cookie') ?? request?.headers.get('cookie') ?? null
@@ -11,7 +10,6 @@ export function createServerClient(
   return createApiClientFromRaw(
     createRawHonoClient({
       baseUrl,
-      getAuthToken: async () => (cookieHeader ? null : accessToken ?? null),
       getHeaders: async () => {
         return cookieHeader ? { cookie: cookieHeader } : {}
       },

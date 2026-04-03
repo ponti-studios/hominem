@@ -120,20 +120,13 @@ export default function App({ loaderData }: Route.ComponentProps) {
       if (event === 'SIGNED_OUT') {
         void clearOfflineCaches();
       }
-      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
-        revalidator.revalidate();
-      }
+      revalidator.revalidate();
     },
     [clearOfflineCaches, revalidator],
   );
 
   return (
-    <AuthProvider
-      config={authEnv}
-      onAuthEvent={handleAuthEvent}
-      initialUser={user}
-      initialSession={session}
-    >
+    <AuthProvider config={authEnv} initialUser={user} initialSession={session} onAuthEvent={handleAuthEvent}>
       <HonoProvider baseUrl={apiBaseUrl}>
         <TelemetryProvider>
           <AnalyticsProvider>

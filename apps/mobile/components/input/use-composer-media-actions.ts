@@ -1,5 +1,5 @@
-import { CHAT_UPLOAD_MAX_FILE_COUNT } from '@hominem/utils/upload';
 import type { UploadedFile } from '@hominem/ui/types/upload';
+import { CHAT_UPLOAD_MAX_FILE_COUNT } from '@hominem/utils/upload';
 import * as ImagePicker from 'expo-image-picker';
 import { Alert } from 'react-native';
 
@@ -45,7 +45,9 @@ function getAttachmentType(uploadedFile: UploadedMobileAsset['uploadedFile']): s
   return 'file';
 }
 
-export function mapUploadedAssetsToAttachments(assets: UploadedMobileAsset[]): MobileComposerAttachment[] {
+export function mapUploadedAssetsToAttachments(
+  assets: UploadedMobileAsset[],
+): MobileComposerAttachment[] {
   return assets.map((asset) => ({
     id: asset.uploadedFile.id,
     name: asset.uploadedFile.originalName,
@@ -66,7 +68,7 @@ export function appendVoiceTranscript(text: string, transcript: string): string 
 }
 
 export function exceedsAttachmentLimit(existingCount: number, nextCount: number): boolean {
-  return existingCount + nextCount > CHAT_UPLOAD_MAX_FILE_COUNT
+  return existingCount + nextCount > CHAT_UPLOAD_MAX_FILE_COUNT;
 }
 
 export function useComposerMediaActions({

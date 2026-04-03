@@ -1,7 +1,7 @@
+import type { User } from '@hominem/auth/server';
 import type { Queues } from '@hominem/services/types';
 
 import type { AuthContextEnvelope } from '../auth/types';
-import type { User } from '@hominem/auth/server';
 
 declare module 'hono' {
   interface ContextVariableMap {

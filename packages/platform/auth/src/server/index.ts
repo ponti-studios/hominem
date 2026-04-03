@@ -1,9 +1,7 @@
-// Server-only barrel for @hominem/auth.
-// Never import this from browser/client code.
+export type { Session, User } from '../types';
 
-export * from '../types'
-export * from '../contracts'
-export * from './session'
-export * from './step-up'
-export * from './user.service'
-export * from './account.service'
+export * from '../shared/step-up-actions';
+export * from '../shared/redirect-policy';
+export * from '../shared/mask-email';
+export * from '../shared/ux-contract';
+export * from '../shared/error-contract';

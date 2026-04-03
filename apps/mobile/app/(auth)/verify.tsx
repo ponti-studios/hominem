@@ -53,7 +53,9 @@ export function VerifyScreen() {
       });
       setAuthError(null);
     } catch (error: unknown) {
-      setAuthError(error instanceof Error ? error.message : AUTH_COPY.otpVerification.verifyFailedError);
+      setAuthError(
+        error instanceof Error ? error.message : AUTH_COPY.otpVerification.verifyFailedError,
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -78,7 +80,9 @@ export function VerifyScreen() {
       await requestEmailOtp(resolvedEmail);
       setOtp('');
     } catch (error: unknown) {
-      setAuthError(error instanceof Error ? error.message : AUTH_COPY.otpVerification.resendFailedError);
+      setAuthError(
+        error instanceof Error ? error.message : AUTH_COPY.otpVerification.resendFailedError,
+      );
     } finally {
       setIsResending(false);
     }

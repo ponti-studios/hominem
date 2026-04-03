@@ -1,7 +1,7 @@
-import { getServerAuth } from '@hominem/auth/server';
 import { logger } from '@hominem/utils/logger';
 import { createMiddleware } from 'hono/factory';
 
+import { betterAuthServer } from '../../auth/better-auth';
 import type { AppContext } from './auth';
 
 /**
@@ -17,29 +17,26 @@ export const contextMiddleware = createMiddleware<AppContext>(async (c, next) =>
 
   // Production: Get auth from Better Auth-backed API session
   try {
-    const request = c.req.raw;
-    const authConfig = {
-      apiBaseUrl: process.env.API_URL || 'http://localhost:3000',
-    };
-
-    const { user, headers, session, auth } = await getServerAuth(request, authConfig);
-
-    // Copy auth headers (cookies) to response headers
-    headers.forEach((value, key) => {
-      responseHeaders.append(key, value);
-    });
-
-    if (user) {
-      c.set('user', user);
-      c.set('userId', user.id);
-    }
-    if (auth) {
-      c.set('auth', auth);
-    }
-
-    // Session is available for bearer propagation where needed.
-    if (session) {
-      void session;
+    const session = await betterAuthServer.api.getSession({ headers: c.req.raw.headers });
+    if (session?.user) {
+      c.set('user', {
+        id: session.user.id,
+        email: session.user.email,
+        emailVerified: session.user.emailVerified,
+        name: session.user.name,
+        image: session.user.image ?? null,
+        createdAt: session.user.createdAt,
+        updatedAt: session.user.updatedAt,
+      });
+      c.set('userId', session.user.id);
+      c.set('auth', {
+        sub: session.user.id,
+        sid: session.session.id,
+        scope: ['api:read', 'api:write'],
+        role: 'user',
+        amr: ['better-auth-session'],
+        authTime: Math.floor(Date.now() / 1000),
+      });
     }
   } catch (error) {
     logger.error('Error in context middleware', { error });

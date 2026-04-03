@@ -16,7 +16,9 @@ export async function loader({ request }: { request: Request }) {
 
 export async function action({ request }: { request: Request }) {
   const formData = (await request.formData()) as unknown as { get(key: string): string | null };
-  const email = String(formData.get('email') ?? '').trim().toLowerCase();
+  const email = String(formData.get('email') ?? '')
+    .trim()
+    .toLowerCase();
   const otp = String(formData.get('otp') ?? '').replace(/\D/g, '');
   const next = String(formData.get('next') ?? AUTH_CONFIG.defaultRedirect);
 

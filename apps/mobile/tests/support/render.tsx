@@ -21,7 +21,7 @@ export function renderScreen(
   return render(ui)
 }
 
-export async function press(element: React.ComponentProps<typeof fireEvent> extends never ? never : Parameters<typeof fireEvent.press>[0]) {
+export async function press(element: Parameters<typeof fireEvent.press>[0]) {
   await act(async () => {
     fireEvent.press(element)
     await Promise.resolve()
