@@ -76,11 +76,11 @@ jobs:
               with:
                   install-flags: "--force"
                   install-goose: "true"
-            - name: Detect changed DB migrations
-              id: changed-migrations
+            - name: 🛡️ Validate changed DB migrations (lint)
               shell: bash
               run: |
                   set -euo pipefail
+
                   if [[ "${{ github.event_name }}" == "pull_request" ]]; then
                     BASE_SHA="${{ github.event.pull_request.base.sha }}"
                   else
@@ -89,6 +89,7 @@ jobs:
 
                   FILES=()
                   if [[ -n "$BASE_SHA" && "$BASE_SHA" != "0000000000000000000000000000000000000000" ]]; then
+                    echo "Diffing migrations against $BASE_SHA"
                     while IFS= read -r FILE; do
                       [[ -n "$FILE" ]] && FILES+=("$FILE")
                     done < <(
@@ -96,37 +97,23 @@ jobs:
                         'packages/core/db/migrations/*.sql' \
                         ':(exclude)packages/core/db/migrations/*schema_baseline.sql'
                     )
-                  else
-                    while IFS= read -r FILE; do
-                      [[ -n "$FILE" ]] && FILES+=("$FILE")
-                    done < <(
-                      git ls-files \
-                        'packages/core/db/migrations/*.sql' \
-                        ':(exclude)packages/core/db/migrations/*schema_baseline.sql'
-                    )
                   fi
 
                   if ((${#FILES[@]} == 0)); then
-                    echo "count=0" >> "$GITHUB_OUTPUT"
+                    echo "No changed DB migration files."
                     exit 0
                   fi
 
-                  echo "count=${#FILES[@]}" >> "$GITHUB_OUTPUT"
-                  {
-                    echo "files<<EOF"
-                    for FILE in "${FILES[@]}"; do
-                      echo "${FILE#packages/core/db/}"
-                    done
-                    echo "EOF"
-                  } >> "$GITHUB_OUTPUT"
-            - name: 🛡️ Validate changed DB migrations (lint)
-              if: steps.changed-migrations.outputs.count != '0'
-              run: |
+                  echo "Linting changed DB migrations:"
+                  printf '  %s\n' "${FILES[@]}"
+
                   cd packages/core/db
-                  printf '%s\n' "${{ steps.changed-migrations.outputs.files }}" | xargs -r npx --yes squawk-cli --no-error-on-unmatched-pattern
-            - name: 🛡️ Skip DB migration lint
-              if: steps.changed-migrations.outputs.count == '0'
-              run: echo "No changed DB migration files."
+                  RELATIVE_FILES=()
+                  for FILE in "${FILES[@]}"; do
+                    RELATIVE_FILES+=("${FILE#packages/core/db/}")
+                  done
+
+                  npx --yes squawk-cli --no-error-on-unmatched-pattern "${RELATIVE_FILES[@]}"
             - name: 🗄️ Validate migrations run and are idempotent
               env:
                   DATABASE_URL: postgres://postgres:postgres@localhost:4433/hominem-test?sslmode=disable
