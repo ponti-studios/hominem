@@ -124,25 +124,6 @@ interface MobileE2eLoginResponse {
   };
 }
 
-interface AppSessionResponse {
-  isAuthenticated: boolean;
-  user: NonNullable<BetterAuthSession>['user'] | null;
-  session?: NonNullable<BetterAuthSession>['session'] | null;
-  auth?: {
-    sub: string;
-    sid: string;
-    scope: string[];
-    role: 'user' | 'admin';
-    amr: string[];
-    authTime: number;
-  };
-  accessToken?: string;
-  expiresIn?: number;
-  tokenType?: 'Bearer';
-}
-
-type BetterAuthSession = Awaited<ReturnType<typeof betterAuthServer.api.getSession>>;
-
 function normalizeAuthEmail(email: string) {
   return email.trim().toLowerCase();
 }
@@ -151,33 +132,12 @@ function normalizeOtpCode(otp: string) {
   return otp.replace(/\D/g, '');
 }
 
-function jsonWithHeaders(body: Record<string, unknown>, status: number, headers?: Headers) {
-  const responseHeaders = new Headers(headers);
-  responseHeaders.set('content-type', 'application/json');
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: responseHeaders,
-  });
-}
-
-function getHeaderCarrier(c: { req: { raw: Request } }) {
-  return {
-    headers: c.req.raw.headers,
-  };
-}
-
 function isE2eAuthEnabled() {
   return env.AUTH_E2E_ENABLED && env.NODE_ENV !== 'production';
 }
 
 function isTestOtpRetrievalEnabled() {
   return isTestOtpStoreEnabled();
-}
-
-async function getBetterAuthSession(c: Context<AppEnv>): Promise<BetterAuthSession> {
-  return await betterAuthServer.api.getSession({
-    ...getHeaderCarrier(c),
-  });
 }
 
 async function signInWithBetterAuthEmailOtp(
@@ -256,17 +216,6 @@ async function enforceAuthRateLimit(c: Context<AppEnv>, input: AuthRateLimitInpu
   return null;
 }
 
-async function userHasRegisteredPasskeys(userId: string) {
-  const existingPasskey = await db
-    .selectFrom('passkey')
-    .select('id')
-    .where('userId', '=', userId)
-    .limit(1)
-    .executeTakeFirst();
-
-  return Boolean(existingPasskey);
-}
-
 function copyHeadersWithSetCookie(headers: Headers) {
   const copied = new Headers(headers);
   const setCookies = getSetCookieHeaders(headers);
@@ -279,35 +228,6 @@ function copyHeadersWithSetCookie(headers: Headers) {
   }
 
   return copied;
-}
-
-function buildSessionResponse(input: {
-  session: NonNullable<BetterAuthSession>;
-  amr: string[];
-}): AppSessionResponse {
-  const { session } = input;
-  const user = session.user;
-  const createdAt = user.createdAt instanceof Date ? user.createdAt.toISOString() : undefined;
-  const updatedAt = user.updatedAt instanceof Date ? user.updatedAt.toISOString() : undefined;
-  const expiresAt = session.session.expiresAt instanceof Date ? session.session.expiresAt : null;
-  const expiresIn = expiresAt
-    ? Math.max(1, Math.floor((expiresAt.getTime() - Date.now()) / 1000))
-    : undefined;
-  return {
-    isAuthenticated: true,
-    user: session.user,
-    session: session.session,
-    auth: {
-      sub: user.id,
-      sid: session.session.id,
-      scope: ['api:read', 'api:write'],
-      role: 'user',
-      amr: input.amr,
-      authTime: Math.floor(Date.now() / 1000),
-    },
-    accessToken: session.session.token,
-    ...(expiresIn ? { expiresIn } : {}),
-  };
 }
 
 function buildBetterAuthUrl(input: {
@@ -564,23 +484,36 @@ authRoutes.get('/test/otp/latest', zValidator('query', testOtpQuerySchema), asyn
   });
 });
 
-authRoutes.post('/logout', async (c) => {
-  const response = await callBetterAuthPluginEndpoint({
+authRoutes.on(['GET', 'POST'], '/get-session', async (c) => {
+  return await forwardBetterAuthPluginResponse({
+    request: c.req.raw,
+    path: '/get-session',
+    method: c.req.method === 'POST' ? 'POST' : 'GET',
+  });
+});
+
+authRoutes.post('/sign-out', async (c) => {
+  return await forwardBetterAuthPluginResponse({
     request: c.req.raw,
     path: '/sign-out',
     method: 'POST',
-  }).catch(() => null);
-  const headers = response ? copyHeadersWithSetCookie(response.headers) : new Headers();
-  return jsonWithHeaders({ success: true }, 200, headers);
+  });
+});
+
+authRoutes.post('/logout', async (c) => {
+  return await forwardBetterAuthPluginResponse({
+    request: c.req.raw,
+    path: '/sign-out',
+    method: 'POST',
+  });
 });
 
 authRoutes.get('/session', async (c) => {
-  const betterAuthSession = await getBetterAuthSession(c);
-  if (!betterAuthSession?.session?.id || !betterAuthSession.user?.id) {
-    return c.json({ isAuthenticated: false, user: null }, 401);
-  }
-
-  return c.json(buildSessionResponse({ session: betterAuthSession, amr: ['better-auth-session'] }));
+  return await forwardBetterAuthPluginResponse({
+    request: c.req.raw,
+    path: '/get-session',
+    method: 'GET',
+  });
 });
 
 authRoutes.post('/refresh', async (c) => {
@@ -595,148 +528,122 @@ authRoutes.post('/refresh', async (c) => {
   );
 });
 
-authRoutes.post('/passkey/register/options', async (c) => {
-  const betterAuthSession = await getBetterAuthSession(c);
-  const userId = betterAuthSession?.user?.id;
-  if (!userId) {
-    return c.json({ error: 'unauthorized' }, 401);
-  }
-
-  try {
-    const response = await callBetterAuthPluginEndpoint({
-      request: c.req.raw,
-      path: '/passkey/generate-register-options',
-      method: 'GET',
-    });
-    const body = await response.text();
-    return new Response(body, {
-      status: response.status,
-      headers: copyHeadersWithSetCookie(response.headers),
-    });
-  } catch {
-    return c.json({ error: 'passkey_options_failed' }, 400);
-  }
+authRoutes.get('/passkey/generate-register-options', async (c) => {
+  return await forwardBetterAuthPluginResponse({
+    request: c.req.raw,
+    path: '/passkey/generate-register-options',
+    method: 'GET',
+  });
 });
+
+authRoutes.post('/passkey/register/options', async (c) => {
+  return await forwardBetterAuthPluginResponse({
+    request: c.req.raw,
+    path: '/passkey/generate-register-options',
+    method: 'GET',
+  });
+});
+
+authRoutes.post(
+  '/passkey/verify-registration',
+  zValidator('json', passkeyRegisterVerifySchema),
+  async (c) => {
+    return await forwardBetterAuthPluginResponse({
+      request: c.req.raw,
+      path: '/passkey/verify-registration',
+      method: 'POST',
+      body: c.req.valid('json') as Record<string, unknown>,
+    });
+  },
+);
 
 authRoutes.post(
   '/passkey/register/verify',
   zValidator('json', passkeyRegisterVerifySchema),
   async (c) => {
-    const betterAuthSession = await getBetterAuthSession(c);
-    const userId = betterAuthSession?.user?.id;
-    if (!userId) {
-      return c.json({ error: 'unauthorized' }, 401);
-    }
-
-    try {
-      const response = await callBetterAuthPluginEndpoint({
-        request: c.req.raw,
-        path: '/passkey/verify-registration',
-        method: 'POST',
-        body: c.req.valid('json') as Record<string, unknown>,
-      });
-      const body = await response.text();
-      return new Response(body, {
-        status: response.status,
-        headers: copyHeadersWithSetCookie(response.headers),
-      });
-    } catch {
-      return c.json({ error: 'passkey_registration_failed' }, 400);
-    }
+    return await forwardBetterAuthPluginResponse({
+      request: c.req.raw,
+      path: '/passkey/verify-registration',
+      method: 'POST',
+      body: c.req.valid('json') as Record<string, unknown>,
+    });
   },
 );
 
-authRoutes.get('/passkeys', async (c) => {
-  // Returns the list of passkeys registered to the authenticated user.
-  // Used by clients to decide whether to show the passkey enrollment prompt.
-  const betterAuthSession = await getBetterAuthSession(c);
-  const userId = betterAuthSession?.user?.id;
-  if (!userId) {
-    return c.json({ error: 'unauthorized' }, 401);
-  }
-
-  try {
-    const response = await callBetterAuthPluginEndpoint({
-      request: c.req.raw,
-      path: '/passkey/list-user-passkeys',
-      method: 'GET',
-    });
-    const body = (await response.json()) as unknown;
-    return c.json(body as Record<string, unknown>, response.status as 200 | 400 | 401);
-  } catch {
-    return c.json({ error: 'passkey_list_failed' }, 400);
-  }
+authRoutes.get('/passkey/list-user-passkeys', async (c) => {
+  return await forwardBetterAuthPluginResponse({
+    request: c.req.raw,
+    path: '/passkey/list-user-passkeys',
+    method: 'GET',
+  });
 });
+
+authRoutes.get('/passkeys', async (c) => {
+  return await forwardBetterAuthPluginResponse({
+    request: c.req.raw,
+    path: '/passkey/list-user-passkeys',
+    method: 'GET',
+  });
+});
+
+authRoutes.post(
+  '/passkey/delete-passkey',
+  zValidator('json', z.object({ id: z.string() })),
+  async (c) => {
+    return await forwardBetterAuthPluginResponse({
+      request: c.req.raw,
+      path: '/passkey/delete-passkey',
+      method: 'POST',
+      body: c.req.valid('json') as Record<string, unknown>,
+    });
+  },
+);
 
 authRoutes.delete(
   '/passkey/delete',
   zValidator('json', z.object({ id: z.string() })),
   async (c) => {
-    // Deletes a passkey for the authenticated user.
-    const betterAuthSession = await getBetterAuthSession(c);
-    const userId = betterAuthSession?.user?.id;
-    if (!userId) {
-      return c.json({ error: 'unauthorized' }, 401);
-    }
-
-    try {
-      const { id } = c.req.valid('json');
-      const response = await callBetterAuthPluginEndpoint({
-        request: c.req.raw,
-        path: '/passkey/delete-user-passkey',
-        method: 'POST',
-        body: { id },
-      });
-      const body = (await response.json()) as unknown;
-      return c.json(body as Record<string, unknown>, response.status as 200 | 400 | 401);
-    } catch {
-      return c.json({ error: 'passkey_delete_failed' }, 400);
-    }
+    return await forwardBetterAuthPluginResponse({
+      request: c.req.raw,
+      path: '/passkey/delete-passkey',
+      method: 'POST',
+      body: c.req.valid('json') as Record<string, unknown>,
+    });
   },
 );
 
+authRoutes.get('/passkey/generate-authenticate-options', async (c) => {
+  return await forwardBetterAuthPluginResponse({
+    request: c.req.raw,
+    path: '/passkey/generate-authenticate-options',
+    method: 'GET',
+  });
+});
+
 authRoutes.post('/passkey/auth/options', async (c) => {
-  try {
-    const response = await callBetterAuthPluginEndpoint({
-      request: c.req.raw,
-      path: '/passkey/generate-authenticate-options',
-      method: 'GET',
-    });
-    const body = await response.text();
-    return new Response(body, {
-      status: response.status,
-      headers: copyHeadersWithSetCookie(response.headers),
-    });
-  } catch {
-    return c.json({ error: 'passkey_options_failed' }, 400);
-  }
+  return await forwardBetterAuthPluginResponse({
+    request: c.req.raw,
+    path: '/passkey/generate-authenticate-options',
+    method: 'GET',
+  });
+});
+
+authRoutes.post('/passkey/verify-authentication', zValidator('json', passkeyAuthVerifySchema), async (c) => {
+  return await forwardBetterAuthPluginResponse({
+    request: c.req.raw,
+    path: '/passkey/verify-authentication',
+    method: 'POST',
+    body: { response: c.req.valid('json').response },
+  });
 });
 
 authRoutes.post('/passkey/auth/verify', zValidator('json', passkeyAuthVerifySchema), async (c) => {
-  try {
-    const body = c.req.valid('json');
-    const response = await callBetterAuthPluginEndpoint({
-      request: c.req.raw,
-      path: '/passkey/verify-authentication',
-      method: 'POST',
-      body: { response: body.response },
-    });
-    const responseText = await response.text();
-
-    if (!response.ok) {
-      return new Response(responseText, {
-        status: response.status,
-        headers: copyHeadersWithSetCookie(response.headers),
-      });
-    }
-
-    return new Response(responseText, {
-      status: response.status,
-      headers: copyHeadersWithSetCookie(response.headers),
-    });
-  } catch {
-    return c.json({ error: 'passkey_authentication_failed' }, 401);
-  }
+  return await forwardBetterAuthPluginResponse({
+    request: c.req.raw,
+    path: '/passkey/verify-authentication',
+    method: 'POST',
+    body: { response: c.req.valid('json').response },
+  });
 });
 
 authRoutes.post('/device/code', zValidator('json', deviceCodeSchema), async (c) => {

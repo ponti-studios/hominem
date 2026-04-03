@@ -1,2 +1,3 @@
 export { AuthProvider, useAuth, useSafeAuth } from './provider';
-export { usePasskeyAuth } from './passkey';
+export type { AuthConfig } from './provider';
+export { usePasskeyAuth, usePasskeys } from './passkey';

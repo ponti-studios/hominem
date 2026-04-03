@@ -415,7 +415,7 @@ export async function hasValidStoredSession(expectedIssuerBaseUrl?: string): Pro
   }
 
   try {
-    const response = await fetch(new URL('/api/auth/session', issuerBaseUrl).toString(), {
+    const response = await fetch(new URL('/api/auth/get-session', issuerBaseUrl).toString(), {
       method: 'GET',
       headers: {
         authorization: `Bearer ${stored.accessToken}`,
@@ -426,8 +426,8 @@ export async function hasValidStoredSession(expectedIssuerBaseUrl?: string): Pro
       return false;
     }
 
-    const payload = (await response.json()) as { isAuthenticated?: boolean };
-    return payload.isAuthenticated === true;
+    const payload = (await response.json()) as { session?: { id?: string }; user?: { id?: string } } | null;
+    return Boolean(payload?.session?.id && payload.user?.id);
   } catch {
     return false;
   }

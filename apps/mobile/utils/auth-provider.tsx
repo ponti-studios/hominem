@@ -40,12 +40,14 @@ interface SignInResponse {
 }
 
 interface SessionResponse {
-  isAuthenticated: boolean;
   user: {
     id: string;
     email: string;
     name?: string | null;
-  } | null;
+  };
+  session: {
+    id: string;
+  };
 }
 
 function hasValidSignInResponse(input: SignInResponse) {
@@ -144,19 +146,18 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
             headers.cookie = sessionCookieHeader;
           }
 
-          const response = await fetch(new URL('/api/auth/session', API_BASE_URL).toString(), {
+          const response = await fetch(new URL('/api/auth/get-session', API_BASE_URL).toString(), {
             method: 'GET',
             headers,
             signal: sig,
           });
           if (response.ok) {
-            const data = (await response.json()) as SessionResponse;
-            if (data.isAuthenticated && data.user) {
+            const data = (await response.json()) as SessionResponse | null;
+            if (data?.user && data.session?.id) {
               return { user: data.user };
             }
             return null;
           }
-          if (response.status === 401) return null;
           throw new Error(`session probe failed: ${response.status}`);
         },
         clearTokens: async () => {

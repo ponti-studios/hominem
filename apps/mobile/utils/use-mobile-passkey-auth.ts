@@ -1,4 +1,3 @@
-import { STEP_UP_ACTIONS } from '@hominem/auth/step-up-actions';
 import { useCallback, useState } from 'react';
 import { Platform } from 'react-native';
 
@@ -118,7 +117,7 @@ export function useMobilePasskeyAuth(): UseMobilePasskeyAuthReturn {
           headers['cookie'] = cookieHeader;
         }
 
-        const tokenResponse = await fetch(new URL('/api/auth/session', API_BASE_URL).toString(), {
+        const tokenResponse = await fetch(new URL('/api/auth/get-session', API_BASE_URL).toString(), {
           method: 'GET',
           headers,
         });
@@ -129,13 +128,23 @@ export function useMobilePasskeyAuth(): UseMobilePasskeyAuthReturn {
           return null;
         }
 
-        const result = (await tokenResponse.json()) as PasskeySignInResult;
+        const result = (await tokenResponse.json()) as
+          | {
+              user: PasskeySignInResult['user'];
+              session: { id: string };
+            }
+          | null;
+
+        if (!result?.user || !result.session?.id) {
+          setError('Failed to restore app session after passkey sign-in');
+          return null;
+        }
 
         if (cookieHeader) {
           await persistSessionCookieHeader(cookieHeader);
         }
 
-        return result;
+        return { user: result.user };
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Passkey sign-in failed';
         setError(message);
@@ -176,10 +185,13 @@ export function useMobilePasskeyAuth(): UseMobilePasskeyAuthReturn {
       const authHeaders = await getAuthHeaders();
       if (Object.keys(authHeaders).length === 0) return [];
 
-      const response = await fetch(new URL('/api/auth/passkeys', API_BASE_URL).toString(), {
-        method: 'GET',
-        headers: authHeaders,
-      });
+      const response = await fetch(
+        new URL('/api/auth/passkey/list-user-passkeys', API_BASE_URL).toString(),
+        {
+          method: 'GET',
+          headers: authHeaders,
+        },
+      );
 
       if (!response.ok) return [];
 
@@ -199,43 +211,23 @@ export function useMobilePasskeyAuth(): UseMobilePasskeyAuthReturn {
       setError(null);
 
       try {
-        let authHeaders = await getAuthHeaders();
+        const authHeaders = await getAuthHeaders();
         if (Object.keys(authHeaders).length === 0) {
           setError('Not authenticated');
           return { success: false, error: 'Not authenticated' };
         }
 
-        const requestDelete = async (headers: Record<string, string>) => {
-          return fetch(new URL('/api/auth/passkey/delete', API_BASE_URL).toString(), {
-            method: 'DELETE',
+        const response = await fetch(
+          new URL('/api/auth/passkey/delete-passkey', API_BASE_URL).toString(),
+          {
+            method: 'POST',
             headers: {
               'content-type': 'application/json',
-              ...headers,
+              ...authHeaders,
             },
             body: JSON.stringify({ id }),
-          });
-        };
-
-        let response = await requestDelete(authHeaders);
-
-        if (response.status === 403) {
-          const body = (await response.json()) as { error?: string; action?: string };
-          if (body.error === 'step_up_required' && body.action === STEP_UP_ACTIONS.PASSKEY_DELETE) {
-            const stepUpResult = await signIn('real');
-            if (!stepUpResult) {
-              const message = 'Passkey step-up required';
-              setError(message);
-              return { success: false, error: message };
-            }
-
-            authHeaders = await getAuthHeaders();
-            response = await requestDelete(authHeaders);
-          } else {
-            const message = body.error ?? 'Failed to delete passkey';
-            setError(message);
-            return { success: false, error: message };
-          }
-        }
+          },
+        );
 
         if (!response.ok) {
           const body = (await response.json()) as { error?: string };
@@ -253,7 +245,7 @@ export function useMobilePasskeyAuth(): UseMobilePasskeyAuthReturn {
         setIsLoading(false);
       }
     },
-    [getAuthHeaders, signIn],
+    [getAuthHeaders],
   );
 
   return {

@@ -1,182 +1,97 @@
 import { useCallback, useMemo, useState } from 'react';
 
+import { getAuthClient } from './auth-client';
 import { useAuth } from './provider';
 
-function decodeBase64Url(input: string) {
-  const normalized = input.replace(/-/g, '+').replace(/_/g, '/');
-  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=');
-  const binary = atob(padded);
-  const bytes = new Uint8Array(binary.length);
-  for (let index = 0; index < binary.length; index += 1) {
-    bytes[index] = binary.charCodeAt(index);
-  }
-  return bytes.buffer;
+interface Passkey {
+  id: string;
+  name?: string;
+  createdAt?: string | Date;
 }
 
-function encodeBase64Url(buffer: ArrayBuffer) {
-  const bytes = new Uint8Array(buffer);
-  let binary = '';
-  for (const byte of bytes) {
-    binary += String.fromCharCode(byte);
-  }
-  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
-}
-
-function mapCreationOptions(input: Record<string, unknown>): PublicKeyCredentialCreationOptions {
-  const user = input.user as Record<string, unknown>;
-  const excludeCredentials = Array.isArray(input.excludeCredentials)
-    ? (input.excludeCredentials as Array<Record<string, unknown>>).map((credential) => ({
-        ...credential,
-        id: decodeBase64Url(String(credential.id)),
-      }))
-    : undefined;
-
-  return {
-    ...input,
-    challenge: decodeBase64Url(String(input.challenge)),
-    user: {
-      ...user,
-      id: decodeBase64Url(String(user.id)),
-    },
-    ...(excludeCredentials ? { excludeCredentials } : {}),
-  } as PublicKeyCredentialCreationOptions;
-}
-
-function mapRequestOptions(input: Record<string, unknown>): PublicKeyCredentialRequestOptions {
-  const allowCredentials = Array.isArray(input.allowCredentials)
-    ? (input.allowCredentials as Array<Record<string, unknown>>).map((credential) => ({
-        ...credential,
-        id: decodeBase64Url(String(credential.id)),
-      }))
-    : undefined;
-
-  return {
-    ...input,
-    challenge: decodeBase64Url(String(input.challenge)),
-    ...(allowCredentials ? { allowCredentials } : {}),
-  } as PublicKeyCredentialRequestOptions;
-}
-
-function serializeRegistration(credential: PublicKeyCredential) {
-  const response = credential.response as AuthenticatorAttestationResponse;
-  return {
-    id: credential.id,
-    rawId: encodeBase64Url(credential.rawId),
-    type: credential.type,
-    response: {
-      clientDataJSON: encodeBase64Url(response.clientDataJSON),
-      attestationObject: encodeBase64Url(response.attestationObject),
-    },
-  };
-}
-
-function serializeAuthentication(credential: PublicKeyCredential) {
-  const response = credential.response as AuthenticatorAssertionResponse;
-  return {
-    id: credential.id,
-    rawId: encodeBase64Url(credential.rawId),
-    type: credential.type,
-    response: {
-      clientDataJSON: encodeBase64Url(response.clientDataJSON),
-      authenticatorData: encodeBase64Url(response.authenticatorData),
-      signature: encodeBase64Url(response.signature),
-      userHandle: response.userHandle ? encodeBase64Url(response.userHandle) : null,
-    },
-  };
+function getPasskeyActionError(result: { error?: { message?: string } | null }) {
+  return result.error?.message ?? null;
 }
 
 export function usePasskeyAuth(input?: { redirectTo?: string }) {
-  const { apiBaseUrl, refresh } = useAuth();
+  const { apiBaseUrl } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const isSupported = typeof window !== 'undefined' && 'PublicKeyCredential' in window;
+  const authClient = useMemo(() => getAuthClient(apiBaseUrl), [apiBaseUrl]);
 
   const authenticate = useCallback(async () => {
     if (!isSupported) {
       throw new Error('Passkeys are not supported in this browser.');
     }
     setError(null);
-    const optionsResponse = await fetch(new URL('/api/auth/passkey/auth/options', apiBaseUrl).toString(), {
-      method: 'POST',
-      credentials: 'include',
-    });
-    if (!optionsResponse.ok) {
-      const message = 'Passkey sign-in failed.';
-      setError(message);
-      throw new Error(message);
+    const result = await authClient.signIn.passkey();
+    const actionError = getPasskeyActionError(result);
+    if (actionError) {
+      setError(actionError);
+      throw new Error(actionError);
     }
-    const options = mapRequestOptions((await optionsResponse.json()) as Record<string, unknown>);
-    const credential = (await navigator.credentials.get({ publicKey: options })) as PublicKeyCredential | null;
-    if (!credential) {
-      throw new Error('Passkey sign-in was cancelled.');
-    }
-    const verifyResponse = await fetch(new URL('/api/auth/passkey/auth/verify', apiBaseUrl).toString(), {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ response: serializeAuthentication(credential) }),
-    });
-    if (!verifyResponse.ok) {
-      const message = 'Passkey sign-in failed.';
-      setError(message);
-      throw new Error(message);
-    }
-    await refresh();
     if (input?.redirectTo) {
       window.location.assign(input.redirectTo);
     }
-  }, [apiBaseUrl, input?.redirectTo, isSupported, refresh]);
+  }, [authClient, input?.redirectTo, isSupported]);
 
   const register = useCallback(async () => {
     if (!isSupported) {
       throw new Error('Passkeys are not supported in this browser.');
     }
     setError(null);
-    const optionsResponse = await fetch(new URL('/api/auth/passkey/register/options', apiBaseUrl).toString(), {
-      method: 'POST',
-      credentials: 'include',
-    });
-    if (!optionsResponse.ok) {
-      const message = 'Passkey registration failed.';
-      setError(message);
-      throw new Error(message);
+    const result = await authClient.passkey.addPasskey();
+    const actionError = getPasskeyActionError(result);
+    if (actionError) {
+      setError(actionError);
+      throw new Error(actionError);
     }
-    const options = mapCreationOptions((await optionsResponse.json()) as Record<string, unknown>);
-    const credential = (await navigator.credentials.create({ publicKey: options })) as PublicKeyCredential | null;
-    if (!credential) {
-      throw new Error('Passkey registration was cancelled.');
-    }
-    const verifyResponse = await fetch(new URL('/api/auth/passkey/register/verify', apiBaseUrl).toString(), {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ response: serializeRegistration(credential) }),
-    });
-    if (!verifyResponse.ok) {
-      const message = 'Passkey registration failed.';
-      setError(message);
-      throw new Error(message);
-    }
-    await refresh();
-  }, [apiBaseUrl, isSupported, refresh]);
+  }, [authClient, isSupported]);
 
   const deletePasskey = useCallback(async (id: string) => {
     setError(null);
-    const response = await fetch(new URL('/api/auth/passkey/delete', apiBaseUrl).toString(), {
-      method: 'DELETE',
-      credentials: 'include',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ id }),
+    const response = await authClient.$fetch('/passkey/delete-passkey', {
+      method: 'POST',
+      body: { id },
+      throw: false,
     });
-    if (!response.ok) {
-      const message = 'Passkey deletion failed.';
+    if (response.error) {
+      const message = response.error.message ?? 'Passkey deletion failed.';
       setError(message);
       throw new Error(message);
     }
-    await refresh();
-  }, [apiBaseUrl, refresh]);
+    authClient.$store.notify('$listPasskeys');
+  }, [authClient]);
 
   return useMemo(
     () => ({ authenticate, register, deletePasskey, error, isSupported }),
     [authenticate, deletePasskey, error, isSupported, register],
+  );
+}
+
+export function usePasskeys() {
+  const { apiBaseUrl } = useAuth();
+  const authClient = useMemo(() => getAuthClient(apiBaseUrl), [apiBaseUrl]);
+  const query = authClient.useListPasskeys();
+  const data = useMemo<Passkey[]>(
+    () =>
+      ((query.data ?? []) as Array<{ id: string; name?: string | null; createdAt?: string | Date }>).map(
+        (passkey) => ({
+          id: passkey.id,
+          ...(passkey.name ? { name: passkey.name } : {}),
+          ...(passkey.createdAt ? { createdAt: passkey.createdAt } : {}),
+        }),
+      ),
+    [query.data],
+  );
+
+  return useMemo(
+    () => ({
+      data,
+      isLoading: query.isPending,
+      error: query.error,
+      refetch: query.refetch,
+    }),
+    [data, query.error, query.isPending, query.refetch],
   );
 }

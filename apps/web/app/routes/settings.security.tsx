@@ -1,9 +1,8 @@
-import { usePasskeyAuth } from '@hominem/auth';
+import { usePasskeyAuth, usePasskeys } from '@hominem/auth';
 import { Container, PasskeyManagement } from '@hominem/ui';
 import { useCallback } from 'react';
 import { redirect } from 'react-router';
 
-import { usePasskeys } from '~/hooks/use-passkeys';
 import { getServerAuth } from '~/lib/auth.server';
 
 export async function loader({ request }: { request: Request }) {
@@ -46,7 +45,12 @@ export default function SecuritySettingsPage() {
         </p>
       </header>
       <PasskeyManagement
-        passkeys={passkeys ?? undefined}
+        passkeys={
+          passkeys?.map((passkey) => ({
+            id: passkey.id,
+            ...(passkey.name ? { name: passkey.name } : {}),
+          })) ?? undefined
+        }
         isLoading={isLoading}
         error={error?.message ?? null}
         onAdd={handleAdd}

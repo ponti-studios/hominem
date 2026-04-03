@@ -6,17 +6,21 @@ import {
   useEffect,
   useMemo,
   useRef,
-  useState,
   type PropsWithChildren,
 } from 'react';
+
+import { getAuthClient } from './auth-client';
 
 type AuthEventName = 'SIGNED_IN' | 'SIGNED_OUT' | 'TOKEN_REFRESHED';
 
 type SessionPayload = {
-  isAuthenticated: boolean;
-  user: User | null;
-  session?: Session | null;
-};
+  user: User;
+  session: Session;
+} | null;
+
+export interface AuthConfig {
+  apiBaseUrl: string;
+}
 
 type AuthContextValue = {
   user: User | null;
@@ -26,91 +30,83 @@ type AuthContextValue = {
   isAuthenticated: boolean;
   refresh: () => Promise<void>;
   logout: () => Promise<void>;
+  signOut: () => Promise<void>;
   apiBaseUrl: string;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export interface AuthProviderProps extends PropsWithChildren {
-  config: {
-    apiBaseUrl: string;
-  };
+  config: AuthConfig;
   initialUser?: User | null;
   initialSession?: Session | null;
   onAuthEvent?: (event: AuthEventName) => void;
 }
 
-async function fetchSession(apiBaseUrl: string): Promise<SessionPayload> {
-  const response = await fetch(new URL('/api/auth/session', apiBaseUrl).toString(), {
-    method: 'GET',
-    credentials: 'include',
-  });
-
-  if (!response.ok) {
-    return { isAuthenticated: false, user: null, session: null };
-  }
-
-  return (await response.json()) as SessionPayload;
+function getAuthActionError(result: { error?: { message?: string } | null }) {
+  return result.error?.message ?? null;
 }
 
 export function AuthProvider({ children, config, initialUser = null, initialSession = null, onAuthEvent }: AuthProviderProps) {
-  const [user, setUser] = useState<User | null>(initialUser);
-  const [session, setSession] = useState<Session | null>(initialSession);
-  const [isLoading, setIsLoading] = useState(false);
-  const mountedRef = useRef(true);
-
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
+  const authClient = useMemo(() => getAuthClient(config.apiBaseUrl), [config.apiBaseUrl]);
+  const sessionQuery = authClient.useSession();
+  const bootstrapSession = initialUser && initialSession ? { user: initialUser, session: initialSession } : null;
+  const resolvedSession = (sessionQuery.data as SessionPayload | undefined) ?? bootstrapSession;
+  const user = resolvedSession?.user ?? null;
+  const session = resolvedSession?.session ?? null;
+  const userId = user?.id ?? null;
+  const isLoading = sessionQuery.isPending && !bootstrapSession;
+  const sessionSnapshot = `${userId ?? ''}:${session?.id ?? ''}:${String(session?.expiresAt ?? '')}`;
+  const previousSnapshotRef = useRef(sessionSnapshot);
+  const previousUserIdRef = useRef(userId);
 
   const refresh = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const next = await fetchSession(config.apiBaseUrl);
-      if (!mountedRef.current) return;
-      setUser(next.user ?? null);
-      setSession(next.session ?? null);
-      onAuthEvent?.(next.user ? 'TOKEN_REFRESHED' : 'SIGNED_OUT');
-    } finally {
-      if (mountedRef.current) {
-        setIsLoading(false);
-      }
-    }
-  }, [config.apiBaseUrl, onAuthEvent]);
+    await sessionQuery.refetch();
+  }, [sessionQuery]);
 
-  const logout = useCallback(async () => {
-    await fetch(new URL('/api/auth/logout', config.apiBaseUrl).toString(), {
-      method: 'POST',
-      credentials: 'include',
-    });
-    if (!mountedRef.current) return;
-    setUser(null);
-    setSession(null);
-    onAuthEvent?.('SIGNED_OUT');
-  }, [config.apiBaseUrl, onAuthEvent]);
+  const signOut = useCallback(async () => {
+    const result = await authClient.signOut();
+    const error = getAuthActionError(result);
+    if (error) {
+      throw new Error(error);
+    }
+  }, [authClient]);
+
+  const logout = signOut;
 
   useEffect(() => {
-    if (initialUser || initialSession) {
+    if (!onAuthEvent || sessionQuery.isPending) {
+      previousSnapshotRef.current = sessionSnapshot;
+      previousUserIdRef.current = userId;
       return;
     }
-    void refresh();
-  }, [initialSession, initialUser, refresh]);
+
+    const previousSnapshot = previousSnapshotRef.current;
+    const previousUserId = previousUserIdRef.current;
+
+    if (previousUserId !== userId) {
+      onAuthEvent(userId ? 'SIGNED_IN' : 'SIGNED_OUT');
+    } else if (userId && previousSnapshot !== sessionSnapshot) {
+      onAuthEvent('TOKEN_REFRESHED');
+    }
+
+    previousSnapshotRef.current = sessionSnapshot;
+    previousUserIdRef.current = userId;
+  }, [onAuthEvent, sessionQuery.isPending, sessionSnapshot, userId]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
       session,
-      userId: user?.id ?? null,
+      userId,
       isLoading,
-      isAuthenticated: Boolean(user?.id),
+      isAuthenticated: Boolean(userId),
       refresh,
       logout,
+      signOut,
       apiBaseUrl: config.apiBaseUrl,
     }),
-    [config.apiBaseUrl, isLoading, logout, refresh, session, user],
+    [config.apiBaseUrl, isLoading, logout, refresh, session, signOut, user, userId],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -103,7 +103,7 @@ describe('auth device contract', () => {
 
     const sessionResponse = await requestJson({
       app,
-      path: '/api/auth/session',
+      path: '/api/auth/get-session',
       headers: {
         authorization: `Bearer ${bearerToken}`,
       },
@@ -111,9 +111,11 @@ describe('auth device contract', () => {
 
     expect(sessionResponse.status).toBe(200);
     await expect(sessionResponse.json()).resolves.toMatchObject({
-      isAuthenticated: true,
       user: {
         email,
+      },
+      session: {
+        id: expect.any(String),
       },
     });
   }, 15_000);

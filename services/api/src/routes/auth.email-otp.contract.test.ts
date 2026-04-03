@@ -12,24 +12,18 @@ import {
 } from './test-helpers/auth';
 
 interface _SessionResponse {
-  isAuthenticated: boolean;
-  accessToken?: string;
-  expiresIn?: number;
-  auth?: {
-    sub: string;
-    sid: string;
-    scope: string[];
-    role: 'user' | 'admin';
-    amr: string[];
-    authTime: number;
-  };
-  user?: {
+  user: {
     id: string;
     email: string;
     name?: string | null;
     createdAt?: string;
     updatedAt?: string;
-  } | null;
+  };
+  session: {
+    id: string;
+    token: string;
+    expiresAt?: string;
+  };
 }
 
 interface VerifyOtpResponse {
@@ -194,7 +188,7 @@ describe('auth email otp contract', () => {
     expect(signInResponse.status).toBe(200);
     const payload = (await signInResponse.json()) as VerifyOtpResponse;
 
-    const sessionBeforeLogout = await app.request('http://localhost/api/auth/session', {
+    const sessionBeforeLogout = await app.request('http://localhost/api/auth/get-session', {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${payload.accessToken}`,
@@ -210,13 +204,14 @@ describe('auth email otp contract', () => {
     });
     expect(logoutResponse.status).toBe(200);
 
-    const sessionAfterLogout = await app.request('http://localhost/api/auth/session', {
+    const sessionAfterLogout = await app.request('http://localhost/api/auth/get-session', {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${payload.accessToken}`,
       },
     });
-    expect(sessionAfterLogout.status).toBe(401);
+    expect(sessionAfterLogout.status).toBe(200);
+    await expect(sessionAfterLogout.json()).resolves.toBeNull();
   }, 15000);
 
   test('5.1 session probe returns identity-only payload for cookie-authenticated web sessions', async () => {
@@ -238,7 +233,7 @@ describe('auth email otp contract', () => {
     const sessionCookieHeader = toCookieHeader(getSetCookieHeaders(signInResponse.headers));
     expect(sessionCookieHeader.length).toBeGreaterThan(0);
 
-    const sessionResponse = await app.request('http://localhost/api/auth/session', {
+    const sessionResponse = await app.request('http://localhost/api/auth/get-session', {
       method: 'GET',
       headers: {
         cookie: sessionCookieHeader,
@@ -247,40 +242,39 @@ describe('auth email otp contract', () => {
 
     expect(sessionResponse.status).toBe(200);
 
-    const sessionPayload = (await sessionResponse.json()) as _SessionResponse;
-    expect(sessionPayload.isAuthenticated).toBe(true);
-    expect(sessionPayload.user?.email).toBe(email);
-    expect(sessionPayload.auth?.sub).toBeTruthy();
-    expect(sessionPayload.accessToken).toBeTruthy();
-    expect(sessionPayload.expiresIn).toBeGreaterThan(0);
+    const sessionPayload = (await sessionResponse.json()) as _SessionResponse | null;
+    expect(sessionPayload?.user.email).toBe(email);
+    expect(sessionPayload?.session.id).toBeTruthy();
+    expect(sessionPayload?.session.token).toBeTruthy();
   }, 15000);
 
   test('2.2 session probe ignores legacy refresh-token cookies', async () => {
     const app = createServer();
-    const sessionResponse = await app.request('http://localhost/api/auth/session', {
+    const sessionResponse = await app.request('http://localhost/api/auth/get-session', {
       method: 'GET',
       headers: {
         cookie: 'hominem_refresh_token=legacy-refresh-token',
       },
     });
 
-    expect(sessionResponse.status).toBe(401);
-    const sessionPayload = (await sessionResponse.json()) as _SessionResponse;
-    expect(sessionPayload.isAuthenticated).toBe(false);
+    expect(sessionResponse.status).toBe(200);
+    const sessionPayload = (await sessionResponse.json()) as _SessionResponse | null;
+    expect(sessionPayload).toBeNull();
     expect(getSetCookieHeaders(sessionResponse.headers)).toHaveLength(0);
   }, 15000);
 
   test('2.2 session probe ignores legacy app-token cookies', async () => {
     const app = createServer();
 
-    const sessionResponse = await app.request('http://localhost/api/auth/session', {
+    const sessionResponse = await app.request('http://localhost/api/auth/get-session', {
       method: 'GET',
       headers: {
         cookie: 'hominem_access_token=invalid-token',
       },
     });
 
-    expect(sessionResponse.status).toBe(401);
+    expect(sessionResponse.status).toBe(200);
+    await expect(sessionResponse.json()).resolves.toBeNull();
     expect(getSetCookieHeaders(sessionResponse.headers)).toHaveLength(0);
   }, 15000);
 
@@ -306,13 +300,14 @@ describe('auth email otp contract', () => {
     });
 
     // Verify session is not created by trying with an invalid token
-    const sessionResponse = await app.request('http://localhost/api/auth/session', {
+    const sessionResponse = await app.request('http://localhost/api/auth/get-session', {
       method: 'GET',
       headers: {
         Authorization: 'Bearer invalid-token',
       },
     });
-    expect(sessionResponse.status).toBe(401);
+    expect(sessionResponse.status).toBe(200);
+    await expect(sessionResponse.json()).resolves.toBeNull();
   }, 15000);
 
   test('2.2 expired otp is rejected and session remains unauthenticated', async () => {
@@ -343,13 +338,14 @@ describe('auth email otp contract', () => {
       });
 
       // Verify session is not created by trying with an invalid token
-      const sessionResponse = await app.request('http://localhost/api/auth/session', {
+      const sessionResponse = await app.request('http://localhost/api/auth/get-session', {
         method: 'GET',
         headers: {
           Authorization: 'Bearer invalid-token',
         },
       });
-      expect(sessionResponse.status).toBe(401);
+      expect(sessionResponse.status).toBe(200);
+      await expect(sessionResponse.json()).resolves.toBeNull();
     } finally {
       vi.useRealTimers();
     }

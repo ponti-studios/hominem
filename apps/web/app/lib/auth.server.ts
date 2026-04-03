@@ -13,7 +13,7 @@ export async function getServerSession(request: Request) {
     headers.set('cookie', cookie);
   }
 
-  const response = await fetch(new URL('/api/auth/session', authConfig.apiBaseUrl).toString(), {
+  const response = await fetch(new URL('/api/auth/get-session', authConfig.apiBaseUrl).toString(), {
     method: 'GET',
     headers,
   });
@@ -22,14 +22,16 @@ export async function getServerSession(request: Request) {
     return { user: null, session: null, headers: new Headers() };
   }
 
-  const payload = (await response.json()) as {
-    user?: User | null;
-    session?: Session | null;
-  };
+  const payload = (await response.json()) as
+    | {
+        user: User;
+        session: Session;
+      }
+    | null;
 
   return {
-    user: payload.user ?? null,
-    session: payload.session ?? null,
+    user: payload?.user ?? null,
+    session: payload?.session ?? null,
     headers: new Headers(),
   };
 }
