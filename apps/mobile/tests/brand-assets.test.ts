@@ -22,9 +22,9 @@ describe('brand assets', () => {
 
   it('builds Expo asset paths from the shared branding contract', () => {
     expect(getBrandAssetPaths('preview')).toEqual({
-      favicon: '../../assets/logo.hakumi.png',
-      icon: '../../assets/logo.hakumi.preview.png',
-      splash: '../../assets/logo.hakumi.splash-screen.png',
+      favicon: './assets/logo.hakumi.png',
+      icon: './assets/logo.hakumi.preview.png',
+      splash: './assets/logo.hakumi.splash-screen.png',
     })
   })
 

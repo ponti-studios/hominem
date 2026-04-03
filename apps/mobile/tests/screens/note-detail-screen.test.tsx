@@ -1,10 +1,9 @@
 import React from 'react'
-import { act, fireEvent, render } from '@testing-library/react-native'
+import { screen } from '@testing-library/react-native'
 
 import NoteDetailScreen from '../../app/(protected)/(tabs)/notes/[id]'
+import { advanceTimersByTime, changeText, renderScreen } from '../support/render'
 
-const mockReplace = jest.fn()
-const mockPush = jest.fn()
 const mockUpdate = jest.fn()
 const mockNote = {
   id: 'note-1',
@@ -19,39 +18,9 @@ const mockNote = {
   ],
 }
 
-jest.mock('expo-router', () => ({
-  useLocalSearchParams: () => ({ id: 'note-1' }),
-  useRouter: () => ({
-    replace: mockReplace,
-    push: mockPush,
-  }),
-}))
+jest.mock('expo-router')
 
-jest.mock('../../theme', () => {
-  const React = require('react')
-  return {
-    Text: ({ children }: { children: React.ReactNode }) =>
-      React.createElement('Text', null, children),
-    theme: {
-      colors: {
-        background: '#000000',
-        foreground: '#ffffff',
-        'text-secondary': '#999999',
-        'text-tertiary': '#777777',
-        'border-default': '#333333',
-      },
-      spacing: {
-        sm_12: 12,
-        m_16: 16,
-      },
-      borderRadii: {
-        md: 12,
-      },
-    },
-  }
-})
-
-jest.mock('../../utils/services/notes/use-note-query', () => ({
+jest.mock('~/utils/services/notes/use-note-query', () => ({
   useNoteQuery: () => ({
     data: mockNote,
   }),
@@ -68,27 +37,22 @@ jest.mock('@hominem/rpc/react', () => ({
 describe('note detail screen', () => {
   beforeEach(() => {
     jest.useFakeTimers()
-    mockReplace.mockReset()
-    mockPush.mockReset()
     mockUpdate.mockReset().mockResolvedValue(undefined)
   })
 
-  afterEach(() => {
-    jest.useRealTimers()
-  })
-
   it('keeps title and body editing while removing inline media controls', async () => {
-    const screen = render(<NoteDetailScreen />)
+    renderScreen(<NoteDetailScreen />, {
+      pathname: '/(protected)/(tabs)/notes/note-1',
+      params: { id: 'note-1' },
+    })
     const [titleInput, contentInput] = screen.getAllByPlaceholderText(/Untitled note|Start writing.../)
 
     expect(screen.queryByText('LIBRARY')).toBeNull()
     expect(screen.queryByText('CAMERA')).toBeNull()
     expect(screen.queryByText('VOICE')).toBeNull()
 
-    await act(async () => {
-      fireEvent.changeText(titleInput, 'Updated title')
-      jest.advanceTimersByTime(450)
-    })
+    await changeText(titleInput, 'Updated title')
+    await advanceTimersByTime(450)
 
     expect(mockUpdate).toHaveBeenCalledWith({
       id: 'note-1',
@@ -97,10 +61,8 @@ describe('note detail screen', () => {
       fileIds: ['file-1'],
     })
 
-    await act(async () => {
-      fireEvent.changeText(contentInput, 'Updated content')
-      jest.advanceTimersByTime(450)
-    })
+    await changeText(contentInput, 'Updated content')
+    await advanceTimersByTime(450)
 
     expect(mockUpdate).toHaveBeenCalledWith({
       id: 'note-1',

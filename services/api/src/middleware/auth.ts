@@ -216,7 +216,7 @@ export const authJwtMiddleware = (): MiddlewareHandler => {
         }
 
         await db
-          .insertInto('users')
+          .insertInto('user')
           .values({
             id: testUserId,
             email: `${testUserId}@hominem.test`,

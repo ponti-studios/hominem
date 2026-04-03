@@ -12,7 +12,7 @@ describe('session store', () => {
     const userId = crypto.randomUUID();
 
     await db
-      .insertInto('users')
+      .insertInto('user')
       .values({
         id: userId,
         email: `session-store-${userId}@hominem.test`,

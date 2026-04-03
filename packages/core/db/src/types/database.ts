@@ -58,8 +58,8 @@ export interface AppChatMessages {
   files: Json | null;
   id: Generated<string>;
   parent_message_id: string | null;
-  referenced_note_ids: Json | null;
   reasoning: string | null;
+  referenced_note_ids: Json | null;
   role: string;
   tool_calls: Json | null;
   updatedat: Generated<Timestamp>;
@@ -308,8 +308,14 @@ export interface AppMusicTracks {
   updatedat: Generated<Timestamp>;
 }
 
+export interface AppNoteFiles {
+  attached_at: Generated<Timestamp>;
+  file_id: string;
+  note_id: string;
+}
+
 export interface AppNotes {
-  content: string;
+  content: Generated<string>;
   createdat: Generated<Timestamp>;
   current_version_id: string | null;
   excerpt: string | null;
@@ -332,12 +338,6 @@ export interface AppNoteShares {
   permission: Generated<string>;
   revokedat: Timestamp | null;
   shared_with_userid: string;
-}
-
-export interface AppNoteFiles {
-  attached_at: Generated<Timestamp>;
-  file_id: string;
-  note_id: string;
 }
 
 export interface AppNoteVersions {
@@ -638,49 +638,11 @@ export interface DeviceCode {
   userId: string | null;
 }
 
-export interface AuthRefreshTokens {
-  created_at: Generated<Timestamp>;
-  expires_at: Timestamp;
-  family_id: string;
-  id: string;
-  parent_id: string | null;
-  revoked_at: Timestamp | null;
-  session_id: string;
-  token_hash: string;
-  used_at: Timestamp | null;
-}
-
-export interface AuthSessions {
-  acr: string | null;
-  amr: Json | null;
-  created_at: Generated<Timestamp>;
-  id: string;
-  ip_hash: string | null;
-  last_seen_at: Generated<Timestamp>;
-  revoked_at: Timestamp | null;
-  session_state: string;
-  user_agent_hash: string | null;
-  user_id: string;
-}
-
 export interface GooseDbVersion {
   id: Generated<number>;
   is_applied: boolean;
   tstamp: Generated<Timestamp>;
   version_id: Int8;
-}
-
-export interface HealthRecords {
-  created_at: Generated<Timestamp>;
-  id: Generated<string>;
-  metadata: Json | null;
-  record_type: string;
-  recorded_at: Timestamp;
-  source: string | null;
-  unit: string | null;
-  updated_at: Generated<Timestamp>;
-  user_id: string;
-  value: string;
 }
 
 export interface Jwks {
@@ -689,57 +651,6 @@ export interface Jwks {
   id: string;
   privateKey: string;
   publicKey: string;
-}
-
-export interface UserAccount {
-  access_token: string | null;
-  access_token_expires_at: Timestamp | null;
-  account_id: string;
-  created_at: Generated<Timestamp>;
-  id: string;
-  id_token: string | null;
-  password: string | null;
-  provider_id: string;
-  refresh_token: string | null;
-  refresh_token_expires_at: Timestamp | null;
-  scope: string | null;
-  updated_at: Generated<Timestamp>;
-  user_id: string;
-}
-
-export interface UserDeviceCode {
-  client_id: string | null;
-  device_code: string;
-  expires_at: Timestamp;
-  id: string;
-  last_polled_at: Timestamp | null;
-  polling_interval: number | null;
-  scope: string | null;
-  status: string;
-  user_code: string;
-  user_id: string | null;
-}
-
-export interface UserJwks {
-  created_at: Timestamp;
-  expires_at: Timestamp | null;
-  id: string;
-  private_key: string;
-  public_key: string;
-}
-
-export interface UserPasskey {
-  aaguid: string | null;
-  backed_up: Generated<boolean>;
-  counter: Generated<number>;
-  created_at: Timestamp | null;
-  credential_id: string;
-  device_type: string;
-  id: string;
-  name: string | null;
-  public_key: string;
-  transports: string | null;
-  user_id: string;
 }
 
 export interface OpsAuditLogs {
@@ -790,17 +701,6 @@ export interface Session {
   userId: string;
 }
 
-export interface UserSession {
-  created_at: Generated<Timestamp>;
-  expires_at: Timestamp;
-  id: string;
-  ip_address: string | null;
-  token: string;
-  updated_at: Generated<Timestamp>;
-  user_agent: string | null;
-  user_id: string;
-}
-
 export interface User {
   createdAt: Generated<Timestamp>;
   email: string;
@@ -809,27 +709,6 @@ export interface User {
   image: string | null;
   name: string;
   updatedAt: Generated<Timestamp>;
-}
-
-export interface Users {
-  avatar_url: string | null;
-  better_auth_user_id: string | null;
-  created_at: Generated<Timestamp>;
-  email: string;
-  email_verified: Generated<boolean>;
-  id: string;
-  is_admin: Generated<boolean>;
-  name: string | null;
-  updated_at: Generated<Timestamp>;
-}
-
-export interface UserVerification {
-  created_at: Timestamp | null;
-  expires_at: Timestamp;
-  id: string;
-  identifier: string;
-  updated_at: Timestamp | null;
-  value: string;
 }
 
 export interface Verification {
@@ -885,23 +764,13 @@ export interface DB {
   "app.travel_trips": AppTravelTrips;
   "app.video_channels": AppVideoChannels;
   "app.video_views": AppVideoViews;
-  auth_refresh_tokens: AuthRefreshTokens;
-  auth_sessions: AuthSessions;
   deviceCode: DeviceCode;
   goose_db_version: GooseDbVersion;
-  health_records: HealthRecords;
   jwks: Jwks;
   "ops.audit_logs": OpsAuditLogs;
   "ops.search_logs": OpsSearchLogs;
   passkey: Passkey;
   session: Session;
   user: User;
-  user_account: UserAccount;
-  user_device_code: UserDeviceCode;
-  user_jwks: UserJwks;
-  user_passkey: UserPasskey;
-  user_session: UserSession;
-  user_verification: UserVerification;
-  users: Users;
   verification: Verification;
 }

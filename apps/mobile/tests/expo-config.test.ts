@@ -107,10 +107,10 @@ describe('expo config helpers', () => {
   })
 
   it.each([
-    ['dev', '../../assets/logo.hakumi.dev.png'],
-    ['e2e', '../../assets/logo.hakumi.dev.png'],
-    ['preview', '../../assets/logo.hakumi.preview.png'],
-    ['production', '../../assets/logo.hakumi.png'],
+    ['dev', './assets/logo.hakumi.dev.png'],
+    ['e2e', './assets/logo.hakumi.dev.png'],
+    ['preview', './assets/logo.hakumi.preview.png'],
+    ['production', './assets/logo.hakumi.png'],
   ] as const)('resolves Expo-managed brand assets for %s', (variant, expectedIcon) => {
     const config = withAppVariant(variant, () =>
       appConfig({ config: {}, packageJsonPath: '', projectRoot: '', staticConfigPath: '' }),
@@ -119,12 +119,12 @@ describe('expo config helpers', () => {
     expect(config.icon).toBe(expectedIcon)
     expect(config.ios?.icon).toBe(expectedIcon)
     expect(config.android?.adaptiveIcon?.foregroundImage).toBe(expectedIcon)
-    expect(config.web?.favicon).toBe('../../assets/logo.hakumi.png')
+    expect(config.web?.favicon).toBe('./assets/logo.hakumi.png')
     expect(config.plugins).toContainEqual([
       'expo-splash-screen',
       {
         backgroundColor: '#000000',
-        image: '../../assets/logo.hakumi.splash-screen.png',
+        image: './assets/logo.hakumi.splash-screen.png',
         resizeMode: 'contain',
       },
     ])

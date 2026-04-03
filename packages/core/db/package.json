@@ -33,9 +33,9 @@
     "prepare": "bun run build",
     "typecheck": "tsc --noEmit",
     "kysely-codegen": "kysely-codegen --out-file ./src/types/database.ts",
-    "goose:up": "goose -dir ./migrations postgres \"$DATABASE_URL\" up",
-    "goose:down": "goose -dir ./migrations postgres \"$DATABASE_URL\" down",
-    "goose:status": "goose -dir ./migrations postgres \"$DATABASE_URL\" status"
+    "db:migrate": "make db-migrate && bun kysely-codegen",
+    "db:rollback": "make db-rollback",
+    "db:status": "make db-status"
   },
   "dependencies": {
     "@hominem/utils": "workspace:*",

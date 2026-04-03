@@ -275,7 +275,7 @@ export async function rotateRefreshToken(refreshToken: string) {
   }
 
   const user = await db
-    .selectFrom('users')
+    .selectFrom('user')
     .select(['id', 'is_admin'])
     .where((eb) => eb('id', '=', session.user_id))
     .limit(1)

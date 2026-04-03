@@ -14,6 +14,7 @@ import { recordActiveDay } from '~/lib/review-prompt';
 import { useScreenCapture } from '~/lib/use-screen-capture';
 import { useWidgetActionHandler } from '~/lib/use-widget-action-handler';
 import { makeStyles, theme } from '~/theme';
+import { ApiConnectionProvider, ApiReconnectChip } from '~/utils/api-connection';
 import { AuthProvider, useAuth } from '~/utils/auth-provider';
 import { E2E_TESTING } from '~/utils/constants';
 import { logError } from '~/utils/error-boundary/log-error';
@@ -131,9 +132,12 @@ function RootLayout() {
         <SafeAreaProvider>
           <GestureHandlerRootView style={rootStyles.gestureRoot}>
             <RootErrorBoundary>
-              <AuthProvider>
-                <InnerRootLayout />
-              </AuthProvider>
+              <ApiConnectionProvider>
+                <AuthProvider>
+                  <InnerRootLayout />
+                </AuthProvider>
+                <ApiReconnectChip />
+              </ApiConnectionProvider>
             </RootErrorBoundary>
           </GestureHandlerRootView>
         </SafeAreaProvider>

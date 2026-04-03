@@ -345,7 +345,7 @@ async function signInWithBetterAuthEmailOtp(
     }
 
     const dbUser = await db
-      .selectFrom('users')
+      .selectFrom('user')
       .selectAll()
       .where('id', '=', userId)
       .executeTakeFirst();
@@ -686,7 +686,7 @@ authRoutes.post('/mobile/e2e/login', zValidator('json', mobileE2eLoginSchema), a
   const emailHash = createHash('sha256').update(email).digest('hex').slice(0, 16);
 
   const existingUser = await db
-    .selectFrom('users')
+    .selectFrom('user')
     .selectAll()
     .where('email', '=', email)
     .limit(1)

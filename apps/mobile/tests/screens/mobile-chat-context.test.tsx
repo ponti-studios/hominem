@@ -1,15 +1,14 @@
 import React from 'react'
-import { fireEvent, render } from '@testing-library/react-native'
+import { screen } from '@testing-library/react-native'
 
 import ChatDetailScreen from '../../app/(protected)/(tabs)/chat/[id]'
+import { press, renderScreen } from '../support/render'
 
 const mockSpeak = jest.fn()
 
-jest.mock('expo-router', () => ({
-  useLocalSearchParams: () => ({ id: 'chat-1' }),
-}))
+jest.mock('expo-router')
 
-jest.mock('../../components/media/use-tts', () => ({
+jest.mock('~/components/media/use-tts', () => ({
   useTTS: () => ({
     speak: mockSpeak,
     speakingId: null,
@@ -17,41 +16,7 @@ jest.mock('../../components/media/use-tts', () => ({
   }),
 }))
 
-jest.mock('../../components/LoadingFull', () => {
-  const React = require('react')
-  return {
-    LoadingFull: ({ children }: { children: React.ReactNode }) => children,
-  }
-})
-
-jest.mock('../../theme', () => {
-  const React = require('react')
-  return {
-    Text: ({ children }: { children: React.ReactNode }) =>
-      React.createElement('Text', null, children),
-    theme: {
-      colors: {
-        background: '#000000',
-        foreground: '#ffffff',
-        muted: '#111111',
-        'text-secondary': '#999999',
-        'text-tertiary': '#777777',
-        'border-default': '#333333',
-      },
-      spacing: {
-        xs_4: 4,
-        sm_12: 12,
-        m_16: 16,
-        ml_24: 24,
-      },
-      borderRadii: {
-        md: 12,
-      },
-    },
-  }
-})
-
-jest.mock('../../utils/services/chat', () => ({
+jest.mock('~/utils/services/chat', () => ({
   useActiveChat: () => ({
     data: {
       id: 'chat-1',
@@ -75,7 +40,10 @@ describe('mobile chat detail screen', () => {
   })
 
   it('renders messages without the inline composer controls', () => {
-    const screen = render(<ChatDetailScreen />)
+    renderScreen(<ChatDetailScreen />, {
+      pathname: '/(protected)/(tabs)/chat/chat-1',
+      params: { id: 'chat-1' },
+    })
 
     expect(screen.getByText('PLAY AUDIO')).toBeTruthy()
     expect(screen.queryByText('LIBRARY')).toBeNull()
@@ -83,10 +51,13 @@ describe('mobile chat detail screen', () => {
     expect(screen.queryByText('SEND')).toBeNull()
   })
 
-  it('routes assistant playback through the unified speech hook', () => {
-    const screen = render(<ChatDetailScreen />)
+  it('routes assistant playback through the unified speech hook', async () => {
+    renderScreen(<ChatDetailScreen />, {
+      pathname: '/(protected)/(tabs)/chat/chat-1',
+      params: { id: 'chat-1' },
+    })
 
-    fireEvent.press(screen.getByText('PLAY AUDIO'))
+    await press(screen.getByText('PLAY AUDIO'))
 
     expect(mockSpeak).toHaveBeenCalledWith('assistant-1', 'Here is a spoken answer.')
   })

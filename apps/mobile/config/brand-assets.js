@@ -1,4 +1,4 @@
-const ROOT_ASSETS_DIR = '../assets'
+const ROOT_ASSETS_DIR = './assets'
 const SPLASH_ASSET_NAME = 'logo.hakumi.splash-screen.png'
 const FAVICON_ASSET_NAME = 'logo.hakumi.png'
 

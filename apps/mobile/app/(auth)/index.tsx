@@ -27,12 +27,11 @@ import { useMobilePasskeyAuth } from '~/utils/use-mobile-passkey-auth';
 export function AuthScreen() {
   const styles = useStyles();
   const {
-    authError: recoveryError,
+    authError: bootError,
     authStatus,
     isSignedIn,
     completePasskeySignIn,
     requestEmailOtp,
-    retrySessionRecovery,
   } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -100,7 +99,7 @@ export function AuthScreen() {
   const displayError =
     authError ||
     passkeyError ||
-    (authStatus === 'degraded' ? (recoveryError?.message ?? null) : null);
+    (authStatus === 'degraded' ? (bootError?.message ?? null) : null);
   const canUsePasskeys = MOBILE_PASSKEY_ENABLED && isPasskeySupported;
 
   return (
@@ -167,17 +166,6 @@ export function AuthScreen() {
                 title={AUTH_COPY.emailEntry.submitButton.toUpperCase()}
                 style={styles.primaryButton}
               />
-              {authStatus === 'degraded' && recoveryError ? (
-                <Button
-                  onPress={() => {
-                    void retrySessionRecovery();
-                  }}
-                  disabled={isSubmitting}
-                  testID="auth-retry-recovery"
-                  title="RETRY SESSION RECOVERY"
-                  style={styles.secondaryButton}
-                />
-              ) : null}
               {canUsePasskeys ? (
                 <Button
                   onPress={handlePasskeySignIn}

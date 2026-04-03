@@ -5,9 +5,6 @@ import { resetMockRouter, setMockPathname, setMockSearchParams } from './router'
 
 export function resetRenderTestState() {
   jest.clearAllMocks()
-  try {
-    jest.runOnlyPendingTimers()
-  } catch {}
   jest.useRealTimers()
   resetMockRouter()
 }

@@ -96,8 +96,6 @@ type AuthContextType = {
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<User>) => Promise<User>;
   getAuthHeaders: () => Promise<Record<string, string>>;
-  clearError: () => void;
-  retrySessionRecovery: () => Promise<void>;
   resetAuthForE2E: () => Promise<void>;
 };
 
@@ -117,12 +115,9 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
   // Set synchronously before first await to prevent TOCTOU race on concurrent boot invocations
   const isBootingRef = useRef(false);
 
-  const bootSession = useCallback(async (input?: { force?: boolean; signal?: AbortSignal }) => {
-    if ((!input?.force && hasBootstrappedRef.current) || isBootingRef.current) return;
+  const bootSession = useCallback(async (input?: { signal?: AbortSignal }) => {
+    if (hasBootstrappedRef.current || isBootingRef.current) return;
     isBootingRef.current = true;
-    if (input?.force) {
-      hasBootstrappedRef.current = false;
-    }
 
     const startedAt = Date.now();
 
@@ -497,10 +492,6 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     return {} as Record<string, string>;
   }, []);
 
-  const clearError = useCallback(() => {
-    dispatch({ type: 'CLEAR_ERROR' });
-  }, []);
-
   const resetAuthForE2E = useCallback(async () => {
     if (!E2E_TESTING) return;
     await LocalStore.clearAllData();
@@ -540,15 +531,6 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     signOut,
     updateProfile,
     getAuthHeaders,
-    clearError,
-    retrySessionRecovery: async () => {
-      dispatch({ type: 'CLEAR_ERROR' });
-      captureAuthAnalyticsEvent('auth_session_recovery_requested', {
-        phase: 'session_recovery',
-        email: state.user?.email ?? undefined,
-      });
-      await bootSession({ force: true });
-    },
     resetAuthForE2E,
   };
 

@@ -595,7 +595,7 @@ npm run build:preview
        └─ eas build --platform all --profile preview
 ```
 
-Expo generates launcher icons and splash assets from `app.config.ts` during prebuild/EAS Build. The canonical source images live in the repo-root `assets/` directory.
+Expo generates launcher icons and splash assets from `app.config.ts` during prebuild/EAS Build. The canonical source images live in `apps/mobile/assets/`.
 
 ---
 

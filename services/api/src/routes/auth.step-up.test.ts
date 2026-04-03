@@ -54,7 +54,7 @@ describe('auth step-up enforcement', () => {
     await cleanupApiAuthTestState();
 
     await db
-      .insertInto('users')
+      .insertInto('user')
       .values([
         {
           id: STEP_UP_USER_ID,

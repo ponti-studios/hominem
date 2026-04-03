@@ -1,6 +1,4 @@
-require('@testing-library/react-native/cleanup-after-each')
-
-const React = require('react')
+const { cleanup } = require('@testing-library/react-native')
 
 jest.mock('expo-router')
 jest.mock('expo-image')
@@ -12,21 +10,26 @@ jest.mock('~/components/error-boundary', () => ({
 jest.mock('~/components/LoadingFull', () => ({
   LoadingFull: ({ children }) => children ?? null,
 }))
-jest.mock('~/components/Button', () => ({
-  Button: ({ title, testID, onPress, disabled }) =>
-    React.createElement(
-      'TouchableOpacity',
-      {
-        accessibilityRole: 'button',
-        accessibilityState: { disabled: Boolean(disabled) },
-        disabled,
-        onPress,
-        testID,
-      },
-      React.createElement('Text', null, title),
-    ),
-}))
+jest.mock('~/components/Button', () => {
+  const React = require('react')
+
+  return {
+    Button: ({ title, testID, onPress, disabled }) =>
+      React.createElement(
+        'TouchableOpacity',
+        {
+          accessibilityRole: 'button',
+          accessibilityState: { disabled: Boolean(disabled) },
+          disabled,
+          onPress,
+          testID,
+        },
+        React.createElement('Text', null, title),
+      ),
+  }
+})
 jest.mock('~/components/text-input', () => {
+  const React = require('react')
   const { forwardRef, useImperativeHandle } = React
 
   return {
@@ -41,6 +44,7 @@ jest.mock('~/components/text-input', () => {
   }
 })
 jest.mock('~/theme', () => {
+  const React = require('react')
   const theme = {
     colors: {
       background: '#000000',
@@ -59,7 +63,7 @@ jest.mock('~/theme', () => {
       'bg-base': '#111111',
       'bg-elevated': '#111111',
       'overlay-modal-high': 'rgba(0,0,0,0.8)',
-      emphasis-lower: '#222222',
+      'emphasis-lower': '#222222',
     },
     spacing: {
       xs_4: 4,
@@ -94,6 +98,9 @@ jest.mock('~/theme', () => {
 })
 
 afterEach(() => {
-  const { resetRenderTestState } = require('../support/render')
-  resetRenderTestState()
+  cleanup()
+  jest.clearAllMocks()
+  jest.useRealTimers()
+  const { resetMockRouter } = require('../support/router')
+  resetMockRouter()
 })

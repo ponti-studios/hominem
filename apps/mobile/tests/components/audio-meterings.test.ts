@@ -1,30 +1,7 @@
-
 import React from 'react'
 import { render } from '@testing-library/react-native'
 
-jest.mock('react-native-reanimated', () => {
-  const React = require('react')
-  const { View } = require('react-native')
-
-  return {
-    __esModule: true,
-    default: {
-      View,
-      createAnimatedComponent: (Component: typeof View) => Component,
-    },
-    useAnimatedStyle: (factory: () => object) => factory(),
-    useSharedValue: (value: number) => ({ value }),
-    withSpring: (value: number) => value,
-  }
-})
-
-jest.mock('../../theme', () => ({
-  theme: {
-    colors: {
-      foreground: '#ffffff',
-    },
-  },
-}))
+jest.mock('react-native-reanimated')
 
 import { AudioLevelVisualizer } from '../../components/media/audio-meterings'
 import {

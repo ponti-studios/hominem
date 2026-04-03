@@ -2,14 +2,9 @@ import React from 'react'
 import { act, render, waitFor } from '@testing-library/react-native'
 
 import { InputProvider, useInputContext } from '../../components/input/input-context'
+import { resetMockRouter, setMockPathname, setMockSearchParams } from '../support/router'
 
-let mockCurrentPathname = '/'
-let mockCurrentParams: Record<string, string> = {}
-
-jest.mock('expo-router', () => ({
-  useLocalSearchParams: () => mockCurrentParams,
-  usePathname: () => mockCurrentPathname,
-}))
+jest.mock('expo-router')
 
 interface Snapshot {
   targetKey: string
@@ -39,8 +34,7 @@ function Probe() {
 
 describe('mobile composer draft persistence', () => {
   beforeEach(() => {
-    mockCurrentPathname = '/'
-    mockCurrentParams = {}
+    resetMockRouter()
     snapshot = null
     setMessageRef = null
     toggleSelectedNoteIdRef = null
@@ -57,16 +51,16 @@ describe('mobile composer draft persistence', () => {
       setMessageRef?.('Feed draft that should survive')
     })
 
-    mockCurrentPathname = '/(protected)/(tabs)/chat/chat-1'
-    mockCurrentParams = { id: 'chat-1' }
+    setMockPathname('/(protected)/(tabs)/chat/chat-1')
+    setMockSearchParams({ id: 'chat-1' })
     rendered.rerender(
       <InputProvider>
         <Probe />
       </InputProvider>,
     )
 
-    mockCurrentPathname = '/'
-    mockCurrentParams = {}
+    setMockPathname('/')
+    setMockSearchParams({})
     rendered.rerender(
       <InputProvider>
         <Probe />
@@ -84,8 +78,8 @@ describe('mobile composer draft persistence', () => {
   })
 
   it('isolates drafts and note-chip selections per chat id', async () => {
-    mockCurrentPathname = '/(protected)/(tabs)/chat/chat-1'
-    mockCurrentParams = { id: 'chat-1' }
+    setMockPathname('/(protected)/(tabs)/chat/chat-1')
+    setMockSearchParams({ id: 'chat-1' })
 
     const rendered = render(
       <InputProvider>
@@ -98,8 +92,8 @@ describe('mobile composer draft persistence', () => {
       toggleSelectedNoteIdRef?.('note-1')
     })
 
-    mockCurrentPathname = '/(protected)/(tabs)/chat/chat-2'
-    mockCurrentParams = { id: 'chat-2' }
+    setMockPathname('/(protected)/(tabs)/chat/chat-2')
+    setMockSearchParams({ id: 'chat-2' })
     rendered.rerender(
       <InputProvider>
         <Probe />
@@ -119,8 +113,8 @@ describe('mobile composer draft persistence', () => {
       setMessageRef?.('Chat two')
     })
 
-    mockCurrentPathname = '/(protected)/(tabs)/chat/chat-1'
-    mockCurrentParams = { id: 'chat-1' }
+    setMockPathname('/(protected)/(tabs)/chat/chat-1')
+    setMockSearchParams({ id: 'chat-1' })
     rendered.rerender(
       <InputProvider>
         <Probe />
@@ -138,8 +132,8 @@ describe('mobile composer draft persistence', () => {
   })
 
   it('isolates note append drafts per note id', async () => {
-    mockCurrentPathname = '/(protected)/(tabs)/notes/note-1'
-    mockCurrentParams = { id: 'note-1' }
+    setMockPathname('/(protected)/(tabs)/notes/note-1')
+    setMockSearchParams({ id: 'note-1' })
 
     const rendered = render(
       <InputProvider>
@@ -151,8 +145,8 @@ describe('mobile composer draft persistence', () => {
       setMessageRef?.('Append to note one')
     })
 
-    mockCurrentPathname = '/(protected)/(tabs)/notes/note-2'
-    mockCurrentParams = { id: 'note-2' }
+    setMockPathname('/(protected)/(tabs)/notes/note-2')
+    setMockSearchParams({ id: 'note-2' })
     rendered.rerender(
       <InputProvider>
         <Probe />
@@ -163,8 +157,8 @@ describe('mobile composer draft persistence', () => {
       expect(snapshot?.message).toBe('')
     })
 
-    mockCurrentPathname = '/(protected)/(tabs)/notes/note-1'
-    mockCurrentParams = { id: 'note-1' }
+    setMockPathname('/(protected)/(tabs)/notes/note-1')
+    setMockSearchParams({ id: 'note-1' })
     rendered.rerender(
       <InputProvider>
         <Probe />
