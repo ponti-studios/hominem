@@ -1,40 +1,18 @@
 import React from 'react'
-import { render, waitFor } from '@testing-library/react-native'
+import { fireEvent, render } from '@testing-library/react-native'
 
-import Chat from '../../app/(protected)/(tabs)/chat/[id]'
-import {
-  MobileWorkspaceProvider,
-  useMobileWorkspace,
-} from '../../components/workspace/mobile-workspace-context'
+import ChatDetailScreen from '../../app/(protected)/(tabs)/chat/[id]'
 
-const mockPush = jest.fn()
-const mockRefetch = jest.fn()
-
-let workspaceContext = 'inbox'
+const mockSpeak = jest.fn()
 
 jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({ id: 'chat-1' }),
-  usePathname: () => '/(protected)/(tabs)/chat/chat-1',
-  useRouter: () => ({ push: mockPush }),
-}))
-
-jest.mock('../../components/media/camera-modal', () => ({
-  CameraModal: () => null,
-}))
-
-jest.mock('../../lib/use-chat-live-activity', () => ({
-  useChatLiveActivity: () => ({
-    stop: () => undefined,
-  }),
-}))
-
-jest.mock('../../components/media/mobile-voice-input', () => ({
-  MobileVoiceInput: () => null,
 }))
 
 jest.mock('../../components/media/use-tts', () => ({
   useTTS: () => ({
-    speak: jest.fn(),
+    speak: mockSpeak,
+    speakingId: null,
     state: 'idle',
   }),
 }))
@@ -51,26 +29,25 @@ jest.mock('../../theme', () => {
   return {
     Text: ({ children }: { children: React.ReactNode }) =>
       React.createElement('Text', null, children),
-    makeStyles: () => () => ({}),
     theme: {
-    colors: {
-      background: '#000000',
-      foreground: '#ffffff',
-      'text-secondary': '#999999',
-      'text-tertiary': '#777777',
-      'border-default': '#333333',
-      destructive: '#ff0000',
+      colors: {
+        background: '#000000',
+        foreground: '#ffffff',
+        muted: '#111111',
+        'text-secondary': '#999999',
+        'text-tertiary': '#777777',
+        'border-default': '#333333',
+      },
+      spacing: {
+        xs_4: 4,
+        sm_12: 12,
+        m_16: 16,
+        ml_24: 24,
+      },
+      borderRadii: {
+        md: 12,
+      },
     },
-    spacing: {
-      xs_4: 4,
-      sm_8: 8,
-      sm_12: 12,
-      m_16: 16,
-    },
-    borderRadii: {
-      md: 12,
-    },
-  },
   }
 })
 
@@ -80,65 +57,37 @@ jest.mock('../../utils/services/chat', () => ({
       id: 'chat-1',
     },
     isLoading: false,
-    refetch: mockRefetch,
   }),
   useChatMessages: () => ({
-    data: [],
-  }),
-  useSendMessage: () => ({
-    isChatSending: false,
-    sendChatMessage: jest.fn().mockResolvedValue(undefined),
-  }),
-  useStartChat: () => ({
-    mutateAsync: jest.fn(),
-    isPending: false,
-  }),
-}))
-
-jest.mock('../../utils/services/files/use-file-upload', () => ({
-  useFileUpload: () => ({
-    clearErrors: jest.fn(),
-    uploadAssets: jest.fn().mockResolvedValue([]),
-    uploadState: {
-      errors: [],
-    },
-  }),
-}))
-
-jest.mock('../../utils/services/notes/use-note-stream', () => ({
-  useNoteStream: () => ({
-    data: [],
-  }),
-}))
-
-function WorkspaceProbe() {
-  const { activeContext } = useMobileWorkspace()
-  workspaceContext = activeContext
-
-  return null
-}
-
-describe('mobile chat workspace context', () => {
-  beforeEach(() => {
-    workspaceContext = 'inbox'
-    mockPush.mockReset()
-    mockRefetch.mockResolvedValue({
-      data: {
-        id: 'chat-1',
+    data: [
+      {
+        id: 'assistant-1',
+        role: 'assistant',
+        message: 'Here is a spoken answer.',
       },
-    })
+    ],
+  }),
+}))
+
+describe('mobile chat detail screen', () => {
+  beforeEach(() => {
+    mockSpeak.mockReset()
   })
 
-  it('switches the shared workspace context to chat when the chat route mounts', async () => {
-    await render(
-      <MobileWorkspaceProvider>
-        <WorkspaceProbe />
-        <Chat />
-      </MobileWorkspaceProvider>,
-    )
+  it('renders messages without the inline composer controls', () => {
+    const screen = render(<ChatDetailScreen />)
 
-    await waitFor(() => {
-      expect(workspaceContext).toBe('chat')
-    })
+    expect(screen.getByText('PLAY AUDIO')).toBeTruthy()
+    expect(screen.queryByText('LIBRARY')).toBeNull()
+    expect(screen.queryByText('CAMERA')).toBeNull()
+    expect(screen.queryByText('SEND')).toBeNull()
+  })
+
+  it('routes assistant playback through the unified speech hook', () => {
+    const screen = render(<ChatDetailScreen />)
+
+    fireEvent.press(screen.getByText('PLAY AUDIO'))
+
+    expect(mockSpeak).toHaveBeenCalledWith('assistant-1', 'Here is a spoken answer.')
   })
 })

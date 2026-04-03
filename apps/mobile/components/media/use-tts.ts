@@ -21,11 +21,10 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return btoa(binary);
 }
 
-/** Simple string hash for cache-key generation (FNV-1a 32-bit). */
 function hashString(str: string): string {
   let hash = 0x811c9dc5;
-  for (let i = 0; i < str.length; i++) {
-    hash ^= str.charCodeAt(i);
+  for (let index = 0; index < str.length; index++) {
+    hash ^= str.charCodeAt(index);
     hash = Math.imul(hash, 0x01000193);
   }
   return (hash >>> 0).toString(36);
@@ -35,25 +34,37 @@ export function useTTS(options: UseTTSOptions = {}) {
   const client = useApiClient();
   const [state, setState] = useState<TTSState>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [speakingId, setSpeakingId] = useState<string | null>(null);
   const player = useAudioPlayer(null);
   const abortRef = useRef<AbortController | null>(null);
 
+  const stop = useCallback(() => {
+    abortRef.current?.abort();
+    player.pause();
+    setSpeakingId(null);
+    setState('idle');
+  }, [player]);
+
   const speak = useCallback(
-    async (text: string) => {
+    async (id: string, text: string) => {
+      if (speakingId === id && state === 'playing') {
+        stop();
+        return;
+      }
+
       abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;
 
       setError(null);
+      setSpeakingId(id);
       setState('loading');
 
       try {
-        // Cache key based on content so identical text reuses the cached file
         const cacheKey = hashString(`${text}:${options.voice ?? 'alloy'}:${options.speed ?? 1}`);
         const uri = `${FileSystem.cacheDirectory}tts-${cacheKey}.mp3`;
-
-        // Check cache first — skip the network call entirely on cache hit
         const info = await FileSystem.getInfoAsync(uri);
+
         if (!info.exists) {
           const buffer = await client.voice.speech({
             text,
@@ -61,32 +72,34 @@ export function useTTS(options: UseTTSOptions = {}) {
             speed: options.speed ?? 1,
           });
 
-          if (controller.signal.aborted) return;
+          if (controller.signal.aborted) {
+            return;
+          }
 
           await FileSystem.writeAsStringAsync(uri, arrayBufferToBase64(buffer), {
             encoding: FileSystem.EncodingType.Base64,
           });
         }
 
-        if (controller.signal.aborted) return;
+        if (controller.signal.aborted) {
+          return;
+        }
 
-        setState('playing');
         player.replace({ uri });
         player.play();
-      } catch (err) {
-        if (controller.signal.aborted) return;
-        setError(err instanceof Error ? err.message : 'Speech playback failed');
+        setState('playing');
+      } catch (nextError) {
+        if (controller.signal.aborted) {
+          return;
+        }
+
+        setSpeakingId(null);
+        setError(nextError instanceof Error ? nextError.message : 'Speech playback failed');
         setState('error');
       }
     },
-    [client, options.voice, options.speed, player],
+    [client, options.speed, options.voice, player, speakingId, state, stop],
   );
 
-  const stop = useCallback(() => {
-    abortRef.current?.abort();
-    player.pause();
-    setState('idle');
-  }, [player]);
-
-  return { speak, stop, state, error };
+  return { error, speak, speakingId, state, stop };
 }

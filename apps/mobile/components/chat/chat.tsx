@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import React from 'react';
 
 import { FeatureErrorBoundary } from '~/components/error-boundary';
-import { useSpeech } from '~/components/media/use-speech';
+import { useTTS } from '~/components/media/use-tts';
 import { makeStyles } from '~/theme';
 import { getLocalDate } from '~/utils/dates';
 import { useArchiveChat, useChatMessages, useSendMessage } from '~/utils/services/chat';
@@ -26,7 +26,7 @@ const renderIcon: React.ComponentProps<typeof _Chat>['renderIcon'] = (name, prop
 const formatTimestamp = (value: string) => getLocalDate(new Date(value)).localDateString;
 
 export const Chat = ({ chatId, onChatArchive, source }: ChatProps) => {
-  const { speakingId, speak } = useSpeech();
+  const { speakingId, speak } = useTTS();
   const queryClient = useQueryClient();
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const styles = useStyles();

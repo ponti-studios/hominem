@@ -1,6 +1,6 @@
 import { FlashList, type ListRenderItem } from '@shopify/flash-list';
 import React, { memo, useCallback } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, type RefreshControlProps } from 'react-native';
 
 import { Text, makeStyles } from '~/theme';
 
@@ -9,7 +9,7 @@ import type { InboxStreamItem as InboxStreamItemModel } from './inbox-stream-ite
 
 interface InboxStreamProps {
   items: InboxStreamItemModel[];
-  refreshControl?: React.ReactElement;
+  refreshControl?: React.ReactElement<RefreshControlProps>;
 }
 
 const keyExtractor = (item: InboxStreamItemModel) => `${item.kind}:${item.id}`;

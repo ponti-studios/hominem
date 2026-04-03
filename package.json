@@ -30,6 +30,7 @@
     "build": "turbo run build",
     "dev": "turbo dev",
     "dev:web": "bun run dev --filter @hominem/api --filter @hominem/web",
+    "docker:up": "docker compose -f infra/compose/base.yml -f infra/compose/dev.yml up -d",
     "format": "turbo run format",
     "knip": "knip --include files,dependencies,exports --isolate-workspaces --no-config-hints",
     "knip:fix": "knip --fix",

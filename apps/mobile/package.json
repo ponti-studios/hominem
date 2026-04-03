@@ -28,8 +28,7 @@
     "test:e2e": "detox test -c ios.sim.e2e --testPathPattern=e2e/auth.mobile.e2e.js --cleanup --retries 0",
     "test:e2e:deep-links": "detox test -c ios.sim.e2e --testPathPattern=e2e/deep-links.mobile.e2e.js --cleanup --retries 0",
     "test:e2e:smoke": "detox test -c ios.sim.e2e --testPathPattern=e2e/smoke.mobile.e2e.js --cleanup",
-    "test:e2e:build": "bash scripts/build-e2e.sh",
-    "postinstall": "node node_modules/@shopify/react-native-skia/scripts/install-libs.js"
+    "test:e2e:build": "bash scripts/build-e2e.sh"
   },
   "dependencies": {
     "@ai-sdk/react": "^1.2.12",
@@ -47,7 +46,6 @@
     "@react-native-community/netinfo": "11.5.2",
     "@react-navigation/drawer": "^7.0.0",
     "@shopify/flash-list": "2.0.2",
-    "@shopify/react-native-skia": "^2.5.3",
     "@shopify/restyle": "^2.4.4",
     "@tanstack/react-query": "^5.60.5",
     "better-auth": "^1.4.19",
@@ -83,7 +81,6 @@
     "expo-screen-capture": "^55.0.9",
     "expo-secure-store": "~55.0.9",
     "expo-sharing": "^55.0.14",
-    "expo-speech": "^55.0.9",
     "expo-splash-screen": "~55.0.15",
     "expo-sqlite": "~55.0.11",
     "expo-store-review": "^55.0.9",

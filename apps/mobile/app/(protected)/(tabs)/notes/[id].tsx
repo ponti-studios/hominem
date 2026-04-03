@@ -1,15 +1,13 @@
 import { useApiClient } from '@hominem/rpc/react';
-import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import type { RelativePathString } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
-import { CameraModal } from '~/components/media/camera-modal';
-import { MobileVoiceInput } from '~/components/media/mobile-voice-input';
 import { Text, theme } from '~/theme';
-import { useFileUpload } from '~/utils/services/files/use-file-upload';
 import { useNoteQuery } from '~/utils/services/notes/use-note-query';
+
+const COMPOSER_CLEARANCE = 240;
 
 export default function NoteDetailScreen() {
   const router = useRouter();
@@ -17,11 +15,9 @@ export default function NoteDetailScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const noteId = String(id ?? '');
   const { data: note } = useNoteQuery({ noteId, enabled: noteId.length > 0 });
-  const { uploadAssets, uploadState, clearErrors } = useFileUpload();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [files, setFiles] = useState<Array<{ id: string; originalName: string; url: string }>>([]);
-  const [isCameraOpen, setIsCameraOpen] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -64,63 +60,13 @@ export default function NoteDetailScreen() {
     }, 400);
   };
 
-  const attachPickerAssets = async () => {
-    clearErrors();
-    const result = await ImagePicker.launchImageLibraryAsync({
-      allowsMultipleSelection: true,
-      mediaTypes: 'images',
-      quality: 0.8,
-    });
-
-    if (result.canceled) {
-      return;
-    }
-
-    const uploaded = await uploadAssets(
-      result.assets.map((asset) => ({
-        assetId: asset.assetId ?? asset.uri,
-        uri: asset.uri,
-        fileName: asset.fileName ?? null,
-        mimeType: asset.mimeType ?? null,
-        type: asset.type ?? null,
-      })),
-    );
-
-    if (uploaded.length === 0) {
-      return;
-    }
-
-    const nextFiles = [
-      ...files,
-      ...uploaded.map((asset) => ({
-        id: asset.uploadedFile.id,
-        originalName: asset.uploadedFile.originalName,
-        url: asset.uploadedFile.url,
-      })),
-    ];
-
-    setFiles(nextFiles);
-    await client.notes.update({
-      id: note.id,
-      title: title || null,
-      content,
-      fileIds: nextFiles.map((file) => file.id),
-    });
-  };
-
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <Pressable
-          onPress={() => router.replace('/(protected)/(tabs)/' as RelativePathString)}
-        >
+        <Pressable onPress={() => router.replace('/(protected)/(tabs)/' as RelativePathString)}>
           <Text color="text-secondary">BACK</Text>
         </Pressable>
-        <Pressable
-          onPress={() =>
-            router.push(`/(protected)/(tabs)/chat/${note.id}` as RelativePathString)
-          }
-        >
+        <Pressable onPress={() => router.push(`/(protected)/(tabs)/chat/${note.id}` as RelativePathString)}>
           <Text color="foreground">CHAT</Text>
         </Pressable>
       </View>
@@ -148,27 +94,6 @@ export default function NoteDetailScreen() {
         style={styles.contentInput}
       />
 
-      <View style={styles.actions}>
-        <Pressable style={styles.actionButton} onPress={() => void attachPickerAssets()}>
-          <Text color="foreground">LIBRARY</Text>
-        </Pressable>
-        <Pressable style={styles.actionButton} onPress={() => setIsCameraOpen(true)}>
-          <Text color="foreground">CAMERA</Text>
-        </Pressable>
-        <MobileVoiceInput
-          autoTranscribe
-          onAudioTranscribed={(transcript) => {
-            const nextContent = `${content}\n${transcript}`.trim();
-            setContent(nextContent);
-            scheduleSave(title, nextContent);
-          }}
-        />
-      </View>
-
-      {uploadState.errors.length > 0 ? (
-        <Text color="destructive">{uploadState.errors.join(', ')}</Text>
-      ) : null}
-
       <View style={styles.filesSection}>
         <Text variant="cardHeader" color="foreground">
           FILES
@@ -193,43 +118,6 @@ export default function NoteDetailScreen() {
           </View>
         ))}
       </View>
-
-      <CameraModal
-        visible={isCameraOpen}
-        onClose={() => setIsCameraOpen(false)}
-        onCapture={(photo) => {
-          void (async () => {
-            const uploaded = await uploadAssets([
-              {
-                assetId: photo.uri,
-                uri: photo.uri,
-                fileName: photo.fileName ?? null,
-                mimeType: 'image/jpeg',
-                type: 'image',
-              },
-            ]);
-            setIsCameraOpen(false);
-            if (uploaded.length === 0) {
-              return;
-            }
-            const nextFiles = [
-              ...files,
-              ...uploaded.map((asset) => ({
-                id: asset.uploadedFile.id,
-                originalName: asset.uploadedFile.originalName,
-                url: asset.uploadedFile.url,
-              })),
-            ];
-            setFiles(nextFiles);
-            await client.notes.update({
-              id: note.id,
-              title: title || null,
-              content,
-              fileIds: nextFiles.map((file) => file.id),
-            });
-          })();
-        }}
-      />
     </ScrollView>
   );
 }
@@ -241,6 +129,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: theme.spacing.m_16,
+    paddingBottom: COMPOSER_CLEARANCE,
     gap: theme.spacing.m_16,
   },
   header: {
@@ -260,18 +149,6 @@ const styles = StyleSheet.create({
     padding: theme.spacing.m_16,
     color: theme.colors.foreground,
     textAlignVertical: 'top',
-  },
-  actions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.sm_12,
-  },
-  actionButton: {
-    borderWidth: 1,
-    borderColor: theme.colors['border-default'],
-    borderRadius: theme.borderRadii.md,
-    paddingHorizontal: theme.spacing.m_16,
-    paddingVertical: theme.spacing.sm_8,
   },
   filesSection: {
     gap: theme.spacing.sm_12,

@@ -19,6 +19,7 @@ const babelRuntimeDir = resolveBunPackageRoot('@babel/runtime')
 module.exports = {
   preset: 'jest-expo/ios',
   setupFiles: ['./tests/setup/base.js'],
+  setupFilesAfterEnv: ['./tests/setup/render.js'],
   testMatch: [
     '<rootDir>/lib/**/*.test.ts',
     '<rootDir>/tests/**/*.test.ts',
