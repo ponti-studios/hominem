@@ -1,13 +1,11 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 
 import {
-  UserAuthService,
   configureStepUpStore,
   grantStepUp,
   hasRecentStepUp,
 } from '@hominem/auth/server';
 import { STEP_UP_ACTIONS, isStepUpAction } from '@hominem/auth/step-up-actions';
-import type { StepUpAction } from '@hominem/auth/step-up-actions';
 import { db } from '@hominem/db';
 import { redis } from '@hominem/services/redis';
 import { getSetCookieHeaders } from '@hominem/utils/headers';
@@ -136,11 +134,6 @@ interface MobileE2eLoginResponse {
   };
 }
 
-interface BetterAuthSessionContext {
-  sessionId: string;
-  userId: string;
-}
-
 interface AppSessionResponse {
   isAuthenticated: boolean;
   user: {
@@ -163,6 +156,8 @@ interface AppSessionResponse {
   expiresIn?: number;
   tokenType?: 'Bearer';
 }
+
+type BetterAuthSession = Awaited<ReturnType<typeof betterAuthServer.api.getSession>>;
 
 function normalizeAuthEmail(email: string) {
   return email.trim().toLowerCase();
@@ -187,46 +182,6 @@ function getHeaderCarrier(c: { req: { raw: Request } }) {
   };
 }
 
-/**
- * Resolve the authenticated user ID for /api/auth routes.
- * The standard JWT middleware skips /api/auth paths so these routes must
- * check auth themselves.  We support two mechanisms (in priority order):
- *   1. Middleware-set context variable (set for non-/api/auth routes)
- *   2. Better Auth session cookie auth
- */
-async function resolveAuthUserId(c: {
-  get: (key: string) => string | null;
-  req: { raw: Request; header: (name: string) => string | undefined };
-}): Promise<string | null> {
-  // 1. Middleware already resolved it
-  const fromMiddleware = c.get('userId');
-  if (fromMiddleware) return fromMiddleware;
-
-  const betterAuthSession = await getBetterAuthSessionContext(c as Context<AppEnv>);
-  if (betterAuthSession) {
-    return betterAuthSession.userId;
-  }
-
-  return null;
-}
-
-async function resolveAuthSessionId(c: {
-  get: (key: string) => { sid?: string | undefined } | null;
-  req: { raw: Request; header: (name: string) => string | undefined };
-}): Promise<string | null> {
-  const fromMiddleware = c.get('auth');
-  if (fromMiddleware?.sid) {
-    return fromMiddleware.sid;
-  }
-
-  const betterAuthSession = await getBetterAuthSessionContext(c as Context<AppEnv>);
-  if (betterAuthSession) {
-    return betterAuthSession.sessionId;
-  }
-
-  return null;
-}
-
 function isE2eAuthEnabled() {
   return env.AUTH_E2E_ENABLED && env.NODE_ENV !== 'production';
 }
@@ -235,26 +190,10 @@ function isTestOtpRetrievalEnabled() {
   return isTestOtpStoreEnabled();
 }
 
-async function createEmailOtpAuthResponse(dbUser: {
-  id: string;
-  email: string;
-  name: string | null;
-}) {
-  return new Response(
-    JSON.stringify({
-      user: {
-        id: dbUser.id,
-        email: dbUser.email,
-        ...(dbUser.name ? { name: dbUser.name } : {}),
-      },
-    }),
-    {
-      status: 200,
-      headers: {
-        'content-type': 'application/json',
-      },
-    },
-  );
+async function getBetterAuthSession(c: Context<AppEnv>): Promise<BetterAuthSession> {
+  return await betterAuthServer.api.getSession({
+    ...getHeaderCarrier(c),
+  });
 }
 
 async function signInWithBetterAuthEmailOtp(
@@ -277,28 +216,10 @@ async function signInWithBetterAuthEmailOtp(
   }
 
   try {
-    const parsed = JSON.parse(body) as { user?: { id?: string } };
-    const userId = parsed.user?.id;
-
-    if (!userId) {
-      return c.json({ error: 'user_id_missing' }, 400);
-    }
-
-    const dbUser = await db
-      .selectFrom('user')
-      .selectAll()
-      .where('id', '=', userId)
-      .executeTakeFirst();
-
-    if (!dbUser) {
-      return c.json({ error: 'user_not_found' }, 400);
-    }
-
-    const authResponse = await createEmailOtpAuthResponse(dbUser);
-    const responseHeaders = copyHeadersWithSetCookie(response.headers);
-    responseHeaders.set('content-type', 'application/json');
-    const authBody = await authResponse.text();
-    return new Response(authBody, { status: 200, headers: responseHeaders });
+    return new Response(body, {
+      status: 200,
+      headers: copyHeadersWithSetCookie(response.headers),
+    });
   } catch (error) {
     logger.error('[auth:email-otp] sign-in failed', { error });
     return c.json({ error: 'sign_in_failed' }, 500);
@@ -351,14 +272,6 @@ async function enforceAuthRateLimit(c: Context<AppEnv>, input: AuthRateLimitInpu
   return null;
 }
 
-async function hasSatisfiedStepUp(c: Context<AppEnv>, userId: string, action: StepUpAction) {
-  if (await hasRecentStepUp(userId, action)) {
-    return true;
-  }
-
-  return false;
-}
-
 async function userHasRegisteredPasskeys(userId: string) {
   const existingPasskey = await db
     .selectFrom('passkey')
@@ -370,12 +283,12 @@ async function userHasRegisteredPasskeys(userId: string) {
   return Boolean(existingPasskey);
 }
 
-async function requiresPasskeyRegisterStepUp(c: Context<AppEnv>, userId: string) {
+async function requiresPasskeyRegisterStepUp(userId: string) {
   if (!(await userHasRegisteredPasskeys(userId))) {
     return false;
   }
 
-  return !(await hasSatisfiedStepUp(c, userId, STEP_UP_ACTIONS.PASSKEY_REGISTER));
+  return !(await hasRecentStepUp(userId, STEP_UP_ACTIONS.PASSKEY_REGISTER));
 }
 
 function copyHeadersWithSetCookie(headers: Headers) {
@@ -392,60 +305,39 @@ function copyHeadersWithSetCookie(headers: Headers) {
   return copied;
 }
 
-async function getBetterAuthSessionContext(
-  c: Context<AppEnv>,
-): Promise<BetterAuthSessionContext | null> {
-  const session = await betterAuthServer.api.getSession({
-    ...getHeaderCarrier(c),
-  });
-
-  if (!session?.user?.id) {
-    return null;
-  }
-
-  const sessionId = session.session?.id;
-  if (!sessionId) {
-    return null;
-  }
-
-  return {
-    sessionId,
-    userId: session.user.id,
-  };
-}
-
-async function buildSessionResponse(input: {
-  sessionId: string;
-  userId: string;
+function buildSessionResponse(input: {
+  session: NonNullable<BetterAuthSession>;
   amr: string[];
-  includeBearerToken?: boolean;
-}): Promise<AppSessionResponse | null> {
-  const userRecord = await UserAuthService.findByIdOrEmail({ id: input.userId });
-  if (!userRecord) {
-    return null;
-  }
-
-  const response: AppSessionResponse = {
+}): AppSessionResponse {
+  const { session } = input;
+  const user = session.user;
+  const createdAt = user.createdAt instanceof Date ? user.createdAt.toISOString() : undefined;
+  const updatedAt = user.updatedAt instanceof Date ? user.updatedAt.toISOString() : undefined;
+  const expiresAt = session.session.expiresAt instanceof Date ? session.session.expiresAt : null;
+  const expiresIn = expiresAt
+    ? Math.max(1, Math.floor((expiresAt.getTime() - Date.now()) / 1000))
+    : undefined;
+  return {
     isAuthenticated: true,
     user: {
-      id: userRecord.id,
-      email: userRecord.email,
-      ...(userRecord.name ? { name: userRecord.name } : {}),
+      id: user.id,
+      email: user.email,
+      ...(user.name ? { name: user.name } : {}),
       isAdmin: false,
-      ...(userRecord.createdAt ? { createdAt: userRecord.createdAt } : {}),
-      ...(userRecord.updatedAt ? { updatedAt: userRecord.updatedAt } : {}),
+      ...(createdAt ? { createdAt } : {}),
+      ...(updatedAt ? { updatedAt } : {}),
     },
     auth: {
-      sub: userRecord.id,
-      sid: input.sessionId,
+      sub: user.id,
+      sid: session.session.id,
       scope: ['api:read', 'api:write'],
       role: 'user',
       amr: input.amr,
       authTime: Math.floor(Date.now() / 1000),
     },
+    accessToken: session.session.token,
+    ...(expiresIn ? { expiresIn } : {}),
   };
-
-  return response;
 }
 
 function buildBetterAuthUrl(input: {
@@ -713,23 +605,12 @@ authRoutes.post('/logout', async (c) => {
 });
 
 authRoutes.get('/session', async (c) => {
-  const betterAuthSession = await getBetterAuthSessionContext(c);
-  if (!betterAuthSession) {
+  const betterAuthSession = await getBetterAuthSession(c);
+  if (!betterAuthSession?.session?.id || !betterAuthSession.user?.id) {
     return c.json({ isAuthenticated: false, user: null }, 401);
   }
 
-  const sessionResponse = await buildSessionResponse({
-    sessionId: betterAuthSession.sessionId,
-    userId: betterAuthSession.userId,
-    amr: ['better-auth-session'],
-    includeBearerToken: false,
-  });
-
-  if (!sessionResponse) {
-    return c.json({ isAuthenticated: false, user: null }, 401);
-  }
-
-  return c.json(sessionResponse);
+  return c.json(buildSessionResponse({ session: betterAuthSession, amr: ['better-auth-session'] }));
 });
 
 authRoutes.post('/refresh', async (c) => {
@@ -745,12 +626,13 @@ authRoutes.post('/refresh', async (c) => {
 });
 
 authRoutes.post('/passkey/register/options', async (c) => {
-  const userId = await resolveAuthUserId(c);
+  const betterAuthSession = await getBetterAuthSession(c);
+  const userId = betterAuthSession?.user?.id;
   if (!userId) {
     return c.json({ error: 'unauthorized' }, 401);
   }
 
-  if (await requiresPasskeyRegisterStepUp(c, userId)) {
+  if (await requiresPasskeyRegisterStepUp(userId)) {
     return c.json({ error: 'step_up_required', action: STEP_UP_ACTIONS.PASSKEY_REGISTER }, 403);
   }
 
@@ -774,12 +656,13 @@ authRoutes.post(
   '/passkey/register/verify',
   zValidator('json', passkeyRegisterVerifySchema),
   async (c) => {
-    const userId = await resolveAuthUserId(c);
+    const betterAuthSession = await getBetterAuthSession(c);
+    const userId = betterAuthSession?.user?.id;
     if (!userId) {
       return c.json({ error: 'unauthorized' }, 401);
     }
 
-    if (await requiresPasskeyRegisterStepUp(c, userId)) {
+    if (await requiresPasskeyRegisterStepUp(userId)) {
       return c.json({ error: 'step_up_required', action: STEP_UP_ACTIONS.PASSKEY_REGISTER }, 403);
     }
 
@@ -804,7 +687,8 @@ authRoutes.post(
 authRoutes.get('/passkeys', async (c) => {
   // Returns the list of passkeys registered to the authenticated user.
   // Used by clients to decide whether to show the passkey enrollment prompt.
-  const userId = await resolveAuthUserId(c);
+  const betterAuthSession = await getBetterAuthSession(c);
+  const userId = betterAuthSession?.user?.id;
   if (!userId) {
     return c.json({ error: 'unauthorized' }, 401);
   }
@@ -827,12 +711,13 @@ authRoutes.delete(
   zValidator('json', z.object({ id: z.string() })),
   async (c) => {
     // Deletes a passkey for the authenticated user.
-    const userId = await resolveAuthUserId(c);
+    const betterAuthSession = await getBetterAuthSession(c);
+    const userId = betterAuthSession?.user?.id;
     if (!userId) {
       return c.json({ error: 'unauthorized' }, 401);
     }
 
-    if (!(await hasSatisfiedStepUp(c, userId, STEP_UP_ACTIONS.PASSKEY_DELETE))) {
+    if (!(await hasRecentStepUp(userId, STEP_UP_ACTIONS.PASSKEY_DELETE))) {
       return c.json({ error: 'step_up_required', action: STEP_UP_ACTIONS.PASSKEY_DELETE }, 403);
     }
 
@@ -888,7 +773,8 @@ authRoutes.post('/passkey/auth/verify', zValidator('json', passkeyAuthVerifySche
     }
 
     // Handle step-up action grant (for authenticated users doing re-auth)
-    const existingUserId = await resolveAuthUserId(c);
+    const betterAuthSession = await getBetterAuthSession(c);
+    const existingUserId = betterAuthSession?.user?.id;
     const requestedAction = body.action;
     if (existingUserId && requestedAction && isStepUpAction(requestedAction)) {
       await grantStepUp(existingUserId, requestedAction).catch(() => null);

@@ -1,7 +1,7 @@
 import { logger } from '@hominem/utils/logger'
 import { getSetCookieHeaders } from '@hominem/utils/headers'
 import { resolveAuthRedirect } from '../shared/redirect-policy'
-import type { AuthConfig, AuthEnvelope, ServerAuthResult, Session, User } from '../types'
+import type { AuthConfig, AuthEnvelope, ServerAuthResult, User } from '../types'
 
 // ─── Redirect Helpers ─────────────────────────────────────────────────────────
 
@@ -41,8 +41,16 @@ interface ServerSessionPayload {
   isAuthenticated: boolean
   user: User | null
   auth: AuthEnvelope | null
-  accessToken?: string | null
-  expiresIn?: number | null
+  session?: {
+    id: string
+    token: string
+    userId: string
+    expiresAt: string
+    createdAt?: string
+    updatedAt?: string
+    ipAddress?: string | null
+    userAgent?: string | null
+  } | null
 }
 
 function getAbsoluteApiUrl(baseUrl: string, path: string) {
@@ -57,17 +65,6 @@ function appendSetCookieHeaders(target: Headers, source: Headers) {
   }
   const setCookie = source.get('set-cookie')
   if (setCookie) target.append('set-cookie', setCookie)
-}
-
-function toSession(accessToken?: string | null, expiresIn?: number | null): Session | null {
-  if (!accessToken) return null
-  const ttl = typeof expiresIn === 'number' && expiresIn > 0 ? expiresIn : 600
-  return {
-    access_token: accessToken,
-    token_type: 'Bearer',
-    expires_in: ttl,
-    expires_at: new Date(Date.now() + ttl * 1000).toISOString(),
-  }
 }
 
 // ─── getServerAuth ────────────────────────────────────────────────────────────
@@ -105,11 +102,10 @@ export async function getServerAuth(
     }
 
     const payload = (await res.json()) as ServerSessionPayload
-    const session = toSession(payload.accessToken, payload.expiresIn)
 
     return {
       user: payload.user ?? null,
-      session,
+      session: payload.session ?? null,
       auth: payload.auth ?? null,
       isAuthenticated: Boolean(payload.isAuthenticated && payload.user),
       headers,

@@ -15,38 +15,6 @@ import type { AppContext } from './auth';
 export const contextMiddleware = createMiddleware<AppContext>(async (c, next) => {
   const responseHeaders = new Headers();
 
-  // Test override for user (matching legacy RPC pattern)
-  if (process.env.NODE_ENV === 'test') {
-    const testUserId = c.req.header('x-user-id');
-    if (testUserId) {
-      const { UserAuthService } = await import('@hominem/auth/server');
-      const localUser = await UserAuthService.findByIdOrEmail({
-        id: testUserId,
-      });
-
-      if (localUser) {
-        c.set('user', {
-          id: localUser.id,
-          email: localUser.email,
-          name: localUser.name ?? undefined,
-          image: localUser.image ?? undefined,
-          isAdmin: false,
-          createdAt: localUser.createdAt ?? new Date().toISOString(),
-          updatedAt: localUser.updatedAt ?? new Date().toISOString(),
-        });
-        c.set('userId', localUser.id);
-      }
-
-      await next();
-
-      // Apply response headers
-      responseHeaders.forEach((value, key) => {
-        c.header(key, value);
-      });
-      return;
-    }
-  }
-
   // Production: Get auth from Better Auth-backed API session
   try {
     const request = c.req.raw;

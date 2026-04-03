@@ -252,8 +252,8 @@ describe('auth email otp contract', () => {
     expect(sessionPayload.isAuthenticated).toBe(true);
     expect(sessionPayload.user?.email).toBe(email);
     expect(sessionPayload.auth?.sub).toBeTruthy();
-    expect(sessionPayload.accessToken).toBeUndefined();
-    expect(sessionPayload.expiresIn).toBeUndefined();
+    expect(sessionPayload.accessToken).toBeTruthy();
+    expect(sessionPayload.expiresIn).toBeGreaterThan(0);
   }, 15000);
 
   test('2.2 session probe ignores legacy refresh-token cookies', async () => {

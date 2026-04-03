@@ -10,14 +10,17 @@ export interface User {
   updatedAt: string
 }
 
-// ─── Session Token Envelope ───────────────────────────────────────────────────
+// ─── Session Record ───────────────────────────────────────────────────────────
 
 export interface Session {
-  access_token: string
-  token_type: 'Bearer'
-  expires_in: number
-  expires_at: string
-  refresh_token?: string | undefined
+  id: string
+  userId: string
+  token: string
+  expiresAt: string
+  createdAt?: string | undefined
+  updatedAt?: string | undefined
+  ipAddress?: string | null | undefined
+  userAgent?: string | null | undefined
 }
 
 // ─── Auth State Machine ───────────────────────────────────────────────────────

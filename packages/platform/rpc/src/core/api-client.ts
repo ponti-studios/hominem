@@ -6,7 +6,6 @@ import { createRawHonoClient, type RawHonoClient } from './raw-client';
 
 export interface ClientConfig {
   baseUrl: string;
-  getAuthToken: () => Promise<string | null>;
   getHeaders?: () => Promise<Record<string, string>>;
   onError?: (error: Error) => void;
 }
