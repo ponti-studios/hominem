@@ -10,7 +10,6 @@ import { prettyJSON } from 'hono/pretty-json';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 
 import { betterAuthServer } from './auth/better-auth';
-import { getJwks } from './auth/key-store';
 import type { AuthContextEnvelope } from './auth/types';
 import { API_BRAND } from './brand';
 import { env } from './env';
@@ -21,7 +20,6 @@ import { requestLogger } from './middleware/request-logger';
 import { aiRoutes } from './routes/ai';
 import { authRoutes } from './routes/auth';
 import { componentsRoutes } from './routes/components';
-import { healthRoutes } from './routes/health';
 import { imagesRoutes } from './routes/images';
 import { statusRoutes } from './routes/status';
 import { rpcApp } from './rpc/app';
@@ -77,13 +75,8 @@ export function createServer() {
     return betterAuthServer.handler(c.req.raw);
   });
 
-  app.get('/.well-known/jwks.json', async (c) => {
-    return c.json(await getJwks());
-  });
-
   // Register other route handlers
   app.route('/api/status', statusRoutes);
-  app.route('/api/health', healthRoutes);
   app.route('/api/auth', authRoutes);
   app.route('/api/ai', aiRoutes);
   app.route('/api/images', imagesRoutes);

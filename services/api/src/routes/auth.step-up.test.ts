@@ -60,28 +60,26 @@ describe('auth step-up enforcement', () => {
           id: STEP_UP_USER_ID,
           email: 'step-up-existing@hominem.test',
           name: 'Existing Passkey User',
-          is_admin: false,
         },
         {
           id: FIRST_TIME_USER_ID,
           email: 'step-up-first-time@hominem.test',
           name: 'First Time Passkey User',
-          is_admin: false,
         },
       ])
       .execute();
 
     await db
-      .insertInto('user_passkey')
+      .insertInto('passkey')
       .values({
         id: 'step-up-passkey',
-        user_id: STEP_UP_USER_ID,
+        userId: STEP_UP_USER_ID,
         name: 'Existing Device',
-        public_key: 'public-key',
-        credential_id: 'credential-id',
+        publicKey: 'public-key',
+        credentialID: 'credential-id',
         counter: 0,
-        device_type: 'singleDevice',
-        backed_up: false,
+        deviceType: 'singleDevice',
+        backedUp: false,
         transports: 'internal',
         aaguid: 'test-aaguid',
       })

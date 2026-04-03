@@ -5,7 +5,7 @@ export interface User {
   email: string
   name?: string | undefined
   image?: string | undefined
-  isAdmin: boolean
+  isAdmin?: false
   createdAt: string
   updatedAt: string
 }

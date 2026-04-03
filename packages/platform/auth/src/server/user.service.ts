@@ -8,7 +8,7 @@ export function toUser(row: UserRow): User {
     email: row.email,
     name: row.name ?? undefined,
     image: row.image ?? undefined,
-    isAdmin: false,
+    isAdmin: false as const,
     createdAt: row.createdAt ?? new Date().toISOString(),
     updatedAt: row.updatedAt ?? new Date().toISOString(),
   }

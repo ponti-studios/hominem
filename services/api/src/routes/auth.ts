@@ -5,7 +5,6 @@ import {
   configureStepUpStore,
   grantStepUp,
   hasRecentStepUp,
-  isFreshPasskeyAuth,
 } from '@hominem/auth/server';
 import { STEP_UP_ACTIONS, isStepUpAction } from '@hominem/auth/step-up-actions';
 import type { StepUpAction } from '@hominem/auth/step-up-actions';
@@ -19,10 +18,7 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 
 import { betterAuthServer } from '../auth/better-auth';
-import { getJwks } from '../auth/key-store';
-import { isSessionRevoked, revokeSession, rotateRefreshToken } from '../auth/session-store';
 import { getLatestTestOtp, isTestOtpStoreEnabled } from '../auth/test-otp-store';
-import { issueAccessToken, verifyAccessToken } from '../auth/tokens';
 
 // ─── Mock Auth Provider (dev/test only) ───────────────────────────────────────
 
@@ -59,26 +55,6 @@ import type { AppEnv } from '../server';
 export const authRoutes = new Hono<AppEnv>();
 
 configureStepUpStore(redis);
-
-const devIssueTokenSchema = z.object({
-  userId: z.uuid(),
-  scope: z.array(z.string()).optional(),
-  role: z.enum(['user', 'admin']).optional(),
-  sid: z.uuid().optional(),
-});
-
-const refreshTokenSchema = z
-  .union([
-    z.object({
-      refresh_token: z.string().min(16),
-    }),
-    z.object({
-      refreshToken: z.string().min(16),
-    }),
-  ])
-  .transform((value) => ({
-    refreshToken: 'refresh_token' in value ? value.refresh_token : value.refreshToken,
-  }));
 
 const passkeyRegisterVerifySchema = z.object({
   response: z.any(),
@@ -214,10 +190,9 @@ function getHeaderCarrier(c: { req: { raw: Request } }) {
 /**
  * Resolve the authenticated user ID for /api/auth routes.
  * The standard JWT middleware skips /api/auth paths so these routes must
- * check auth themselves.  We support three mechanisms (in priority order):
+ * check auth themselves.  We support two mechanisms (in priority order):
  *   1. Middleware-set context variable (set for non-/api/auth routes)
- *   2. Better Auth bearer/session auth
- *   3. Legacy bearer token in the Authorization header
+ *   2. Better Auth session cookie auth
  */
 async function resolveAuthUserId(c: {
   get: (key: string) => string | null;
@@ -230,16 +205,6 @@ async function resolveAuthUserId(c: {
   const betterAuthSession = await getBetterAuthSessionContext(c as Context<AppEnv>);
   if (betterAuthSession) {
     return betterAuthSession.userId;
-  }
-
-  const authHeader = c.req.header('authorization');
-  if (authHeader?.startsWith('Bearer ')) {
-    try {
-      const claims = await verifyAccessToken(authHeader.slice(7));
-      if (claims?.sub) return claims.sub;
-    } catch {
-      // invalid token — fall through
-    }
   }
 
   return null;
@@ -259,16 +224,6 @@ async function resolveAuthSessionId(c: {
     return betterAuthSession.sessionId;
   }
 
-  const authHeader = c.req.header('authorization');
-  if (authHeader?.startsWith('Bearer ')) {
-    try {
-      const claims = await verifyAccessToken(authHeader.slice(7));
-      return claims.sid;
-    } catch {
-      return null;
-    }
-  }
-
   return null;
 }
 
@@ -284,18 +239,7 @@ async function createEmailOtpAuthResponse(dbUser: {
   id: string;
   email: string;
   name: string | null;
-  is_admin: boolean;
 }) {
-  const access = await issueAccessToken({
-    sub: dbUser.id,
-    sid: randomUUID(),
-    role: dbUser.is_admin ? 'admin' : 'user',
-    scope: ['api:read', 'api:write'],
-    amr: ['email_otp', 'better-auth-session'],
-  });
-
-  const headers = new Headers();
-
   return new Response(
     JSON.stringify({
       user: {
@@ -303,15 +247,11 @@ async function createEmailOtpAuthResponse(dbUser: {
         email: dbUser.email,
         ...(dbUser.name ? { name: dbUser.name } : {}),
       },
-      accessToken: access.accessToken,
-      expiresIn: access.expiresIn,
-      tokenType: access.tokenType,
     }),
     {
       status: 200,
       headers: {
         'content-type': 'application/json',
-        ...Object.fromEntries(headers.entries()),
       },
     },
   );
@@ -411,44 +351,19 @@ async function enforceAuthRateLimit(c: Context<AppEnv>, input: AuthRateLimitInpu
   return null;
 }
 
-function getBearerToken(headerValue?: string) {
-  if (!headerValue || !headerValue.startsWith('Bearer ')) {
-    return null;
-  }
-
-  return headerValue.slice(7);
-}
-
-async function hasRecentPasskeyBearerAuth(c: Context<AppEnv>) {
-  const bearerToken = getBearerToken(c.req.header('authorization'));
-  if (!bearerToken) {
-    return false;
-  }
-
-  try {
-    const claims = await verifyAccessToken(bearerToken);
-    return isFreshPasskeyAuth({
-      amr: claims.amr,
-      authTime: claims.auth_time,
-    });
-  } catch {
-    return false;
-  }
-}
-
 async function hasSatisfiedStepUp(c: Context<AppEnv>, userId: string, action: StepUpAction) {
   if (await hasRecentStepUp(userId, action)) {
     return true;
   }
 
-  return hasRecentPasskeyBearerAuth(c);
+  return false;
 }
 
 async function userHasRegisteredPasskeys(userId: string) {
   const existingPasskey = await db
-    .selectFrom('user_passkey')
+    .selectFrom('passkey')
     .select('id')
-    .where('user_id', '=', userId)
+    .where('userId', '=', userId)
     .limit(1)
     .executeTakeFirst();
 
@@ -529,20 +444,6 @@ async function buildSessionResponse(input: {
       authTime: Math.floor(Date.now() / 1000),
     },
   };
-
-  if (input.includeBearerToken !== false) {
-    const access = await issueAccessToken({
-      sub: userRecord.id,
-      sid: input.sessionId,
-      role: 'user',
-      scope: ['api:read', 'api:write'],
-      amr: input.amr,
-    });
-
-    response.accessToken = access.accessToken;
-    response.expiresIn = access.expiresIn;
-    response.tokenType = access.tokenType;
-  }
 
   return response;
 }
@@ -636,10 +537,6 @@ async function forwardBetterAuthPluginResponse(input: {
   });
 }
 
-authRoutes.get('/jwks', async (c) => {
-  return c.json(await getJwks());
-});
-
 authRoutes.post('/mobile/e2e/login', zValidator('json', mobileE2eLoginSchema), async (c) => {
   const clientIp = getClientIp(c);
   const userAgent = c.req.header('user-agent') ?? 'unknown';
@@ -695,14 +592,13 @@ authRoutes.post('/mobile/e2e/login', zValidator('json', mobileE2eLoginSchema), a
   const user =
     existingUser ??
     (await db
-      .insertInto('users')
+      .insertInto('user')
       .values({
         id: randomBytes(16).toString('hex'),
         email,
         name,
-        is_admin: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       })
       .returningAll()
       .executeTakeFirst());
@@ -715,37 +611,24 @@ authRoutes.post('/mobile/e2e/login', zValidator('json', mobileE2eLoginSchema), a
     return c.json({ error: 'e2e_user_create_failed' }, 500);
   }
 
-  const accessToken = await issueAccessToken({
-    sub: user.id,
-    sid: crypto.randomUUID(),
-    scope: ['api:read', 'api:write'],
-    role: user.is_admin ? 'admin' : 'user',
-    amr,
-  });
-  const refreshToken = randomBytes(32).toString('base64url');
-  const sessionId = crypto.randomUUID();
-  const refreshFamilyId = crypto.randomUUID();
-
-  logger.info('[auth:e2e:mobile] issued token pair', {
+  logger.info('[auth:e2e:mobile] user fetched', {
     ...auditContext,
     emailHash,
     userId: user.id,
-    sessionId,
-    refreshFamilyId,
   });
 
   const response: MobileE2eLoginResponse = {
-    access_token: accessToken.accessToken,
-    refresh_token: refreshToken,
-    token_type: accessToken.tokenType,
-    expires_in: accessToken.expiresIn,
-    session_id: sessionId,
-    refresh_family_id: refreshFamilyId,
+    access_token: '',
+    refresh_token: '',
+    token_type: 'Bearer',
+    expires_in: 0,
+    session_id: '',
+    refresh_family_id: '',
     provider: 'better-auth',
     user: {
       id: user.id,
       email: user.email,
-      name: user.name,
+      name: user.name ?? null,
     },
   };
 
@@ -820,10 +703,6 @@ authRoutes.get('/test/otp/latest', zValidator('query', testOtpQuerySchema), asyn
 });
 
 authRoutes.post('/logout', async (c) => {
-  const sessionId = await resolveAuthSessionId(c);
-  if (sessionId) {
-    await revokeSession(sessionId);
-  }
   const response = await callBetterAuthPluginEndpoint({
     request: c.req.raw,
     path: '/sign-out',
@@ -834,94 +713,23 @@ authRoutes.post('/logout', async (c) => {
 });
 
 authRoutes.get('/session', async (c) => {
-  // Identity-only endpoint.
-  // The JWT middleware bypasses all /api/auth/* routes, so we validate the
-  // bearer token directly here, or fall back to the Better Auth session cookie.
-
-  const authHeader = c.req.header('authorization') ?? '';
-  let bearerToken: string | null = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
-
-  if (bearerToken) {
-    try {
-      const betterAuthSession = await getBetterAuthSessionContext(c);
-      if (betterAuthSession) {
-        const sessionResponse = await buildSessionResponse({
-          sessionId: betterAuthSession.sessionId,
-          userId: betterAuthSession.userId,
-          amr: ['better-auth-session'],
-          includeBearerToken: false,
-        });
-
-        if (sessionResponse) {
-          return c.json(sessionResponse);
-        }
-      }
-    } catch {
-      // Fall through to legacy bearer validation for callers that still use it.
-    }
-
-    try {
-      const claims = await verifyAccessToken(bearerToken);
-      const revoked = await isSessionRevoked(claims.sid);
-      if (revoked) {
-        return c.json({ isAuthenticated: false, user: null }, 401);
-      }
-
-      const userRecord = await UserAuthService.findByIdOrEmail({ id: claims.sub });
-      if (!userRecord) {
-        return c.json({ isAuthenticated: false, user: null }, 401);
-      }
-
-      return c.json({
-        isAuthenticated: true,
-        user: {
-          id: userRecord.id,
-          email: userRecord.email,
-          ...(userRecord.name ? { name: userRecord.name } : {}),
-          isAdmin: claims.role === 'admin',
-          ...(userRecord.createdAt ? { createdAt: userRecord.createdAt } : {}),
-          ...(userRecord.updatedAt ? { updatedAt: userRecord.updatedAt } : {}),
-        },
-        auth: {
-          sub: claims.sub,
-          sid: claims.sid,
-          scope: claims.scope,
-          role: claims.role,
-          amr: claims.amr,
-          authTime: claims.auth_time,
-        },
-        accessToken: bearerToken,
-        expiresIn:
-          typeof claims.exp === 'number'
-            ? Math.max(claims.exp - Math.floor(Date.now() / 1000), 0)
-            : undefined,
-      });
-    } catch {
-      return c.json({ isAuthenticated: false, user: null }, 401);
-    }
-  }
-
-  try {
-    const betterAuthSession = await getBetterAuthSessionContext(c);
-    if (!betterAuthSession) {
-      return c.json({ isAuthenticated: false, user: null }, 401);
-    }
-
-    const sessionResponse = await buildSessionResponse({
-      sessionId: betterAuthSession.sessionId,
-      userId: betterAuthSession.userId,
-      amr: ['better-auth-session'],
-      includeBearerToken: false,
-    });
-
-    if (!sessionResponse) {
-      return c.json({ isAuthenticated: false, user: null }, 401);
-    }
-
-    return c.json(sessionResponse);
-  } catch {
+  const betterAuthSession = await getBetterAuthSessionContext(c);
+  if (!betterAuthSession) {
     return c.json({ isAuthenticated: false, user: null }, 401);
   }
+
+  const sessionResponse = await buildSessionResponse({
+    sessionId: betterAuthSession.sessionId,
+    userId: betterAuthSession.userId,
+    amr: ['better-auth-session'],
+    includeBearerToken: false,
+  });
+
+  if (!sessionResponse) {
+    return c.json({ isAuthenticated: false, user: null }, 401);
+  }
+
+  return c.json(sessionResponse);
 });
 
 authRoutes.post('/refresh', async (c) => {
@@ -931,109 +739,6 @@ authRoutes.post('/refresh', async (c) => {
       error: 'deprecated_endpoint',
       message:
         'Use Better Auth session cookies for first-party apps or POST /api/auth/token for explicit refresh-token exchanges.',
-    },
-    410,
-  );
-});
-
-authRoutes.post('/verify', async (c) => {
-  const authHeader = c.req.header('authorization');
-  if (!authHeader?.startsWith('Bearer ')) {
-    return c.json({ valid: false, error: 'missing_bearer_token' }, 400);
-  }
-
-  try {
-    const claims = await verifyAccessToken(authHeader.slice(7));
-    return c.json({ valid: true, claims });
-  } catch {
-    return c.json({ valid: false, error: 'invalid_token' }, 401);
-  }
-});
-
-authRoutes.post('/dev/issue-token', zValidator('json', devIssueTokenSchema), async (c) => {
-  if (!(process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test')) {
-    return c.json({ error: 'not_available' }, 404);
-  }
-
-  const { userId, scope, role, sid } = c.req.valid('json');
-  const token = await issueAccessToken({
-    sub: userId,
-    sid: sid ?? crypto.randomUUID(),
-    ...(scope ? { scope } : {}),
-    ...(role ? { role } : {}),
-    amr: ['dev'],
-  });
-
-  return c.json({
-    access_token: token.accessToken,
-    token_type: token.tokenType,
-    expires_in: token.expiresIn,
-    provider: 'better-auth' as const,
-  });
-});
-
-authRoutes.post('/token', async (c) => {
-  const contentType = c.req.header('content-type') ?? '';
-  const payload = contentType.includes('application/x-www-form-urlencoded')
-    ? Object.fromEntries(new URLSearchParams(await c.req.text()))
-    : ((await c.req.json().catch(() => ({}))) as Record<string, unknown>);
-
-  const grantType = typeof payload.grant_type === 'string' ? payload.grant_type : null;
-  if (grantType !== 'refresh_token') {
-    return c.json(
-      {
-        error: 'unsupported_grant_type',
-        message: 'Only refresh_token grant is available on this endpoint in phase 1.',
-      },
-      400,
-    );
-  }
-
-  const parsed = refreshTokenSchema.safeParse(payload);
-  const refreshToken = parsed.success ? parsed.data.refreshToken : null;
-
-  if (!refreshToken) {
-    return c.json(
-      {
-        error: 'invalid_request',
-        message: parsed.success ? 'Refresh token is required.' : parsed.error.message,
-      },
-      400,
-    );
-  }
-
-  const tokenRateLimit = await enforceAuthRateLimit(c, {
-    bucket: 'refresh-token',
-    identifier: `${getClientIp(c)}:${refreshToken.slice(0, 16)}`,
-    windowSec: AUTH_REFRESH_LIMIT_WINDOW_SECONDS,
-    max: AUTH_REFRESH_LIMIT_MAX,
-  });
-  if (tokenRateLimit) {
-    return tokenRateLimit;
-  }
-
-  const rotated = await rotateRefreshToken(refreshToken);
-  if (!rotated.ok) {
-    return c.json({ error: rotated.error }, 401);
-  }
-
-  return c.json({
-    access_token: rotated.accessToken,
-    refresh_token: rotated.refreshToken,
-    token_type: rotated.tokenType,
-    expires_in: rotated.expiresIn,
-    session_id: rotated.sessionId,
-    refresh_family_id: rotated.refreshFamilyId,
-    provider: 'better-auth' as const,
-  });
-});
-
-authRoutes.post('/token-from-session', async (c) => {
-  void c;
-  return c.json(
-    {
-      error: 'deprecated_endpoint',
-      message: 'First-party apps must use Better Auth session cookies and GET /api/auth/session.',
     },
     410,
   );
