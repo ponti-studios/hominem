@@ -28,6 +28,8 @@ process.env.RESEND_FROM_NAME = process.env.RESEND_FROM_NAME || `${API_BRAND.appN
 process.env.SEND_EMAILS = process.env.SEND_EMAILS || 'false'
 process.env.AUTH_TEST_OTP_ENABLED = process.env.AUTH_TEST_OTP_ENABLED || 'true'
 process.env.AUTH_E2E_SECRET = process.env.AUTH_E2E_SECRET || 'otp-secret'
+process.env.BETTER_AUTH_SECRET =
+  process.env.BETTER_AUTH_SECRET || 'better-auth-test-secret-local-only'
 
 beforeAll(async () => {
   // Shared test setup lives in lane-specific files.

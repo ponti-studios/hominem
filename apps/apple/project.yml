@@ -1,0 +1,124 @@
+name: HominemApple
+options:
+  bundleIdPrefix: io.hominem
+  createIntermediateGroups: true
+  deploymentTarget:
+    iOS: "17.0"
+    macOS: "14.0"
+configs:
+  Debug: debug
+  Staging: release
+  Release: release
+configFiles:
+  Debug: Config/Configurations/Debug.xcconfig
+  Staging: Config/Configurations/Staging.xcconfig
+  Release: Config/Configurations/Release.xcconfig
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    PRODUCT_NAME: "$(TARGET_NAME)"
+    CURRENT_PROJECT_VERSION: "1"
+    MARKETING_VERSION: "0.1.0"
+packages:
+  HominemAppleCore:
+    path: .
+targets:
+  HominemAppleiOS:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: iOS
+    entitlements:
+      path: Config/AppleIOS.entitlements
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.productivity
+        INFOPLIST_KEY_HOMINEM_APP_ENV: $(HOMINEM_APP_ENV)
+        INFOPLIST_KEY_HOMINEM_API_BASE_URL: $(HOMINEM_API_BASE_URL)
+        INFOPLIST_KEY_HOMINEM_ASSOCIATED_DOMAIN: $(HOMINEM_ASSOCIATED_DOMAIN)
+        INFOPLIST_KEY_HOMINEM_PASSKEY_RP_ID: $(HOMINEM_PASSKEY_RP_ID)
+        INFOPLIST_KEY_HOMINEM_ENABLE_AUTH_TEST_HOOK: $(HOMINEM_ENABLE_AUTH_TEST_HOOK)
+      configs:
+        Debug:
+          PRODUCT_BUNDLE_IDENTIFIER: io.hominem.apple.ios.debug
+          INFOPLIST_KEY_CFBundleDisplayName: Hominem Apple Debug
+          INFOPLIST_KEY_NSAppTransportSecurity:
+            NSAllowsLocalNetworking: true
+            NSExceptionDomains:
+              localhost:
+                NSIncludesSubdomains: true
+                NSTemporaryExceptionAllowsInsecureHTTPLoads: true
+        Staging:
+          PRODUCT_BUNDLE_IDENTIFIER: io.hominem.apple.ios.staging
+          INFOPLIST_KEY_CFBundleDisplayName: Hominem Apple Staging
+        Release:
+          PRODUCT_BUNDLE_IDENTIFIER: io.hominem.apple.ios
+          INFOPLIST_KEY_CFBundleDisplayName: Hominem Apple
+    dependencies:
+      - package: HominemAppleCore
+        product: HominemAppleCore
+  HominemAppleMac:
+    type: application
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: macOS
+    entitlements:
+      path: Config/AppleMac.entitlements
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.productivity
+        INFOPLIST_KEY_HOMINEM_APP_ENV: $(HOMINEM_APP_ENV)
+        INFOPLIST_KEY_HOMINEM_API_BASE_URL: $(HOMINEM_API_BASE_URL)
+        INFOPLIST_KEY_HOMINEM_ASSOCIATED_DOMAIN: $(HOMINEM_ASSOCIATED_DOMAIN)
+        INFOPLIST_KEY_HOMINEM_PASSKEY_RP_ID: $(HOMINEM_PASSKEY_RP_ID)
+        INFOPLIST_KEY_HOMINEM_ENABLE_AUTH_TEST_HOOK: $(HOMINEM_ENABLE_AUTH_TEST_HOOK)
+      configs:
+        Debug:
+          PRODUCT_BUNDLE_IDENTIFIER: io.hominem.apple.mac.debug
+          INFOPLIST_KEY_CFBundleDisplayName: Hominem Apple Debug
+          INFOPLIST_KEY_NSAppTransportSecurity:
+            NSAllowsLocalNetworking: true
+            NSExceptionDomains:
+              localhost:
+                NSIncludesSubdomains: true
+                NSTemporaryExceptionAllowsInsecureHTTPLoads: true
+        Staging:
+          PRODUCT_BUNDLE_IDENTIFIER: io.hominem.apple.mac.staging
+          INFOPLIST_KEY_CFBundleDisplayName: Hominem Apple Staging
+          ENABLE_HARDENED_RUNTIME: YES
+        Release:
+          PRODUCT_BUNDLE_IDENTIFIER: io.hominem.apple.mac
+          INFOPLIST_KEY_CFBundleDisplayName: Hominem Apple
+          ENABLE_HARDENED_RUNTIME: YES
+    dependencies:
+      - package: HominemAppleCore
+        product: HominemAppleCore
+  HominemAppleMacE2E:
+    type: bundle.ui-testing
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: macOSUITests
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: io.hominem.apple.mac.e2e
+        TEST_TARGET_NAME: HominemAppleMac
+    dependencies:
+      - target: HominemAppleMac
+schemes:
+  HominemAppleiOS:
+    build:
+      targets:
+        HominemAppleiOS: all
+  HominemAppleMac:
+    build:
+      targets:
+        HominemAppleMac: all
+    test:
+      targets:
+        - name: HominemAppleMacE2E

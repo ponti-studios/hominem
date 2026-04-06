@@ -38,6 +38,22 @@ const mobileE2eLoginSchema = z.object({
   name: z.string().min(1).max(128).optional(),
   amr: z.array(z.string()).optional(),
 });
+const emailOtpSendSchema = z.object({
+  email: z.string().email(),
+});
+const emailOtpVerifySchema = z.object({
+  email: z.string().email(),
+  otp: z.string().min(1),
+  name: z.string().min(1).max(128).optional().nullable(),
+});
+const passkeyRegisterOptionsSchema = z.object({
+  name: z.string().min(1).max(128).optional().nullable(),
+  authenticatorAttachment: z.string().min(1).optional().nullable(),
+});
+const passkeyForwardSchema = z.object({}).passthrough();
+const passkeyDeleteSchema = z.object({
+  id: z.string().min(1),
+});
 const testOtpQuerySchema = z.object({
   email: z.string().email(),
   type: z.string().min(1).optional(),
@@ -150,6 +166,11 @@ function ensureTrustedOrigin(headers: Headers) {
   }
 
   headers.set('origin', env.API_URL);
+}
+
+function withQuery(path: string, query: URLSearchParams) {
+  const search = query.toString();
+  return search.length > 0 ? `${path}?${search}` : path;
 }
 
 async function callBetterAuthPluginEndpoint(input: {
@@ -323,6 +344,118 @@ authRoutes.get('/test/otp/latest', zValidator('query', testOtpQuerySchema), asyn
     type: record.type,
     createdAt: record.createdAt,
     expiresAt: record.expiresAt,
+  });
+});
+
+authRoutes.post('/email-otp/send', zValidator('json', emailOtpSendSchema), async (c) => {
+  const payload = c.req.valid('json');
+
+  return await forwardBetterAuthPluginResponse({
+    request: c.req.raw,
+    path: '/email-otp/send-verification-otp',
+    method: 'POST',
+    body: JSON.stringify({
+      email: payload.email,
+      type: 'sign-in',
+    }),
+  });
+});
+
+authRoutes.post('/email-otp/verify', zValidator('json', emailOtpVerifySchema), async (c) => {
+  const payload = c.req.valid('json');
+
+  return await forwardBetterAuthPluginResponse({
+    request: c.req.raw,
+    path: '/sign-in/email-otp',
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+});
+
+authRoutes.get('/session', async (c) => {
+  return await forwardBetterAuthPluginResponse({
+    request: c.req.raw,
+    path: '/get-session',
+    method: 'GET',
+  });
+});
+
+authRoutes.post('/logout', async (c) => {
+  return await forwardBetterAuthPluginResponse({
+    request: c.req.raw,
+    path: '/sign-out',
+    method: 'POST',
+  });
+});
+
+authRoutes.get('/passkeys', async (c) => {
+  return await forwardBetterAuthPluginResponse({
+    request: c.req.raw,
+    path: '/passkey/list-user-passkeys',
+    method: 'GET',
+  });
+});
+
+authRoutes.post('/passkey/auth/options', async (c) => {
+  return await forwardBetterAuthPluginResponse({
+    request: c.req.raw,
+    path: '/passkey/generate-authenticate-options',
+    method: 'GET',
+  });
+});
+
+authRoutes.post('/passkey/auth/verify', zValidator('json', passkeyForwardSchema), async (c) => {
+  const payload = c.req.valid('json');
+
+  return await forwardBetterAuthPluginResponse({
+    request: c.req.raw,
+    path: '/passkey/verify-authentication',
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+});
+
+authRoutes.post(
+  '/passkey/register/options',
+  zValidator('json', passkeyRegisterOptionsSchema),
+  async (c) => {
+    const payload = c.req.valid('json');
+    const query = new URLSearchParams();
+
+    if (payload.name) {
+      query.set('name', payload.name);
+    }
+    if (payload.authenticatorAttachment) {
+      query.set('authenticatorAttachment', payload.authenticatorAttachment);
+    }
+
+    return await forwardBetterAuthPluginResponse({
+      request: c.req.raw,
+      path: withQuery('/passkey/generate-register-options', query),
+      method: 'GET',
+    });
+  },
+);
+
+authRoutes.post('/passkey/register/verify', zValidator('json', passkeyForwardSchema), async (c) => {
+  const payload = c.req.valid('json');
+
+  return await forwardBetterAuthPluginResponse({
+    request: c.req.raw,
+    path: '/passkey/verify-registration',
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+});
+
+authRoutes.delete('/passkey/delete', zValidator('json', passkeyDeleteSchema), async (c) => {
+  const payload = c.req.valid('json');
+
+  return await forwardBetterAuthPluginResponse({
+    request: c.req.raw,
+    path: '/passkey/delete-passkey',
+    method: 'POST',
+    body: JSON.stringify(payload),
   });
 });
 

@@ -1,0 +1,90 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Apple: Generate Project",
+      "type": "shell",
+      "command": "xcodegen generate",
+      "options": {
+        "cwd": "${workspaceFolder}/apps/apple"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Apple: Test Core",
+      "type": "shell",
+      "command": "swift test --package-path apps/apple",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Apple: Build macOS",
+      "type": "shell",
+      "command": "xcodebuild -project apps/apple/HominemApple.xcodeproj -scheme HominemAppleMac -destination 'generic/platform=macOS' CODE_SIGNING_ALLOWED=NO build",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "dependsOn": [
+        "Apple: Generate Project"
+      ],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Apple: Build iOS Simulator",
+      "type": "shell",
+      "command": "xcodebuild -project apps/apple/HominemApple.xcodeproj -scheme HominemAppleiOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "dependsOn": [
+        "Apple: Generate Project"
+      ],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Apple: macOS Auth E2E",
+      "type": "shell",
+      "command": "bun run test:apple:macos-e2e",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Apple: Archive macOS Release",
+      "type": "shell",
+      "command": "bun run build:apple:macos:archive",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Apple: Notarize macOS Release",
+      "type": "shell",
+      "command": "bun run build:apple:macos:notarize",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Apple: Archive iOS Release",
+      "type": "shell",
+      "command": "bun run build:apple:ios:archive",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "problemMatcher": []
+    }
+  ]
+}

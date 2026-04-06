@@ -63,6 +63,30 @@ async function cleanupDeviceCodes(userIds: string[]) {
   )
 }
 
+async function cleanupPasskeys(userIds: string[]) {
+  if (userIds.length === 0) {
+    return
+  }
+
+  await db.deleteFrom('passkey').where('userId', 'in', userIds).execute()
+}
+
+async function cleanupAccounts(userIds: string[]) {
+  if (userIds.length === 0) {
+    return
+  }
+
+  await db.deleteFrom('account').where('userId', 'in', userIds).execute()
+}
+
+async function cleanupSessions(userIds: string[]) {
+  if (userIds.length === 0) {
+    return
+  }
+
+  await db.deleteFrom('session').where('userId', 'in', userIds).execute()
+}
+
 async function cleanupVerificationRows() {
   await pool.query(
     `
@@ -72,6 +96,10 @@ async function cleanupVerificationRows() {
     `,
     [EXACT_TEST_EMAILS, TEST_EMAIL_PATTERNS],
   )
+}
+
+async function cleanupJwks() {
+  await db.deleteFrom('jwks').execute()
 }
 
 async function cleanupUsers(userIds: string[]) {
@@ -86,7 +114,11 @@ export async function cleanupApiAuthTestState() {
   const userIds = await selectAuthTestUserIds()
 
   await cleanupDeviceCodes(userIds)
+  await cleanupPasskeys(userIds)
+  await cleanupAccounts(userIds)
+  await cleanupSessions(userIds)
   await cleanupVerificationRows()
+  await cleanupJwks()
   await cleanupUsers(userIds)
 }
 

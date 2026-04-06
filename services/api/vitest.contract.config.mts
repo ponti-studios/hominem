@@ -17,6 +17,7 @@ export default defineConfig({
     clearMocks: true,
     slowTestThreshold: 1_500,
     include: [
+      'src/routes/auth.alias-routes.test.ts',
       'src/routes/auth.email-otp.contract.test.ts',
       'src/routes/auth.test-otp-route.test.ts',
       'src/routes/auth.e2e-login.test.ts',

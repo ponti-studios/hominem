@@ -1,0 +1,6 @@
+#include "Base.xcconfig"
+
+HOMINEM_APP_ENV = Staging
+HOMINEM_API_BASE_URL = https:/$()/api-staging.ponti.io
+HOMINEM_ASSOCIATED_DOMAIN = api-staging.ponti.io
+HOMINEM_PASSKEY_RP_ID = api-staging.ponti.io

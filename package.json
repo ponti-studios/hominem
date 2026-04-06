@@ -27,6 +27,10 @@
     "packages/domains/*"
   ],
   "scripts": {
+    "test:apple:macos-e2e": "zsh apps/apple/scripts/run-macos-auth-e2e.sh",
+    "build:apple:ios:archive": "zsh apps/apple/scripts/archive-ios.sh",
+    "build:apple:macos:archive": "zsh apps/apple/scripts/archive-macos.sh",
+    "build:apple:macos:notarize": "zsh apps/apple/scripts/notarize-macos.sh",
     "build": "turbo run build",
     "dev": "turbo dev",
     "dev:web": "bun run dev --filter @hominem/api --filter @hominem/web",
