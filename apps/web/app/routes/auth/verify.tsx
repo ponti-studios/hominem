@@ -6,7 +6,8 @@ import { useCallback } from 'react';
 import { redirect, useLoaderData, useLocation, useNavigate, useSearchParams } from 'react-router';
 
 import { AUTH_CONFIG } from './config';
-import { getNextRedirect, redirectAuthenticatedUser } from './shared';
+import { getNextRedirect } from './shared';
+import { redirectAuthenticatedUser } from './shared.server';
 
 export async function loader({ request }: { request: Request }) {
   const redirectResponse = await redirectAuthenticatedUser(request);

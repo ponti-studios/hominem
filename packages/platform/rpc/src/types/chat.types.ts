@@ -64,7 +64,7 @@ export interface Chat {
   updatedAt: string;
 }
 
-export interface ChatMessage {
+export interface ChatMessageDto {
   id: string;
   chatId: string;
   userId: string;
@@ -80,7 +80,7 @@ export interface ChatMessage {
 }
 
 export type ChatWithMessages = Chat & {
-  messages: ChatMessage[];
+  messages: ChatMessageDto[];
 };
 
 // ============================================================================
@@ -150,8 +150,8 @@ export type ChatsSendOutput = {
   chatId: string;
   chatTitle: string;
   messages: {
-    user: ChatMessage;
-    assistant: ChatMessage;
+    user: ChatMessageDto;
+    assistant: ChatMessageDto;
   };
   metadata: {
     startTime: number;
@@ -174,7 +174,7 @@ export type ChatsGetOutput = ChatWithMessages;
 export type ChatsCreateOutput = Chat;
 export type ChatsUpdateOutput = { success: boolean };
 export type ChatsDeleteOutput = { success: boolean };
-export type ChatsGetMessagesOutput = ChatMessage[];
+export type ChatsGetMessagesOutput = ChatMessageDto[];
 
 // ============================================================================
 // CLASSIFY (thought → artifact review)
@@ -197,13 +197,13 @@ export type ChatsClassifyInput = {
 // MESSAGES OPERATIONS
 // ============================================================================
 
-export type MessagesGetOutput = { message: ChatMessage };
+export type MessagesGetOutput = { message: ChatMessageDto };
 
 export type MessagesUpdateInput = {
   content: string;
 };
 
-export type MessagesUpdateOutput = { message: ChatMessage };
+export type MessagesUpdateOutput = { message: ChatMessageDto };
 
 export type MessagesDeleteOutput = { success: boolean };
 

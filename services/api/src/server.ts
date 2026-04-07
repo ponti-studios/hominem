@@ -16,9 +16,7 @@ import { isServiceError } from './errors';
 import { authJwtMiddleware } from './middleware/auth';
 import { blockMaliciousProbes } from './middleware/block-probes';
 import { requestLogger } from './middleware/request-logger';
-import { aiRoutes } from './routes/ai';
 import { authRoutes } from './routes/auth';
-import { componentsRoutes } from './routes/components';
 import { imagesRoutes } from './routes/images';
 import { statusRoutes } from './routes/status';
 import { rpcApp } from './rpc/app';
@@ -72,9 +70,7 @@ export function createServer() {
   // Register other route handlers
   app.route('/api/status', statusRoutes);
   app.route('/api/auth', authRoutes);
-  app.route('/api/ai', aiRoutes);
   app.route('/api/images', imagesRoutes);
-  app.route('/components', componentsRoutes);
 
   // Root health check
   app.get('/', (c) => {

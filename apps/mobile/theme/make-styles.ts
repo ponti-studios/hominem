@@ -6,7 +6,7 @@ type NamedStyles<T> = {
   [P in keyof T]: ViewStyle | TextStyle | ImageStyle;
 };
 
-export const makeStyles = <T extends NamedStyles<T> | NamedStyles<unknown>>(
+export const makeStylesInternal = <T extends NamedStyles<T> | NamedStyles<unknown>>(
   styles: (theme: Theme) => T,
 ) => {
   return () => {

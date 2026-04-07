@@ -1,4 +1,4 @@
-import type { ChatMessage as RpcChatMessage } from '@hominem/rpc/types';
+import type { ChatMessageDto as RpcChatMessage } from '@hominem/rpc/types';
 import type React from 'react';
 
 export type ChatIconName =

@@ -12,6 +12,7 @@ import { posthog } from '~/lib/posthog';
 import { Box, makeStyles, Text } from '~/theme';
 import { useAuth } from '~/utils/auth-provider';
 import { isValidOtp, normalizeOtp } from '~/utils/auth/validation';
+import { getAuthScreenBaseStyles } from './auth-screen-styles';
 
 export function VerifyScreen() {
   const styles = useStyles();
@@ -169,19 +170,7 @@ export function VerifyScreen() {
 
 const useStyles = makeStyles((t) =>
   StyleSheet.create({
-    form: {
-      width: '100%',
-      rowGap: t.spacing.m_16,
-    },
-    fieldStack: {
-      rowGap: t.spacing.xs_4,
-    },
-    errorText: {
-      color: t.colors.destructive,
-      fontSize: 12,
-      lineHeight: 16,
-      fontWeight: '500',
-    },
+    ...getAuthScreenBaseStyles(t),
     otpInput: {
       letterSpacing: 3,
       textAlign: 'center',

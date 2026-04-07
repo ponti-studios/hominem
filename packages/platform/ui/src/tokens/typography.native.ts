@@ -1,6 +1,11 @@
 import { Platform } from 'react-native';
 
-export { fontSizes, fontWeights, letterSpacing, lineHeights } from './typography.shared';
+export {
+  sharedFontSizes as fontSizes,
+  sharedFontWeights as fontWeights,
+  sharedLetterSpacing as letterSpacing,
+  sharedLineHeights as lineHeights,
+} from './typography.shared';
 
 /** React Native font family names (platform system fonts). */
 export const fontFamiliesNative = {

@@ -1,4 +1,4 @@
-export const fontSizes = {
+export const sharedFontSizes = {
   micro: 10,
   caption2: 11,
   caption1: 12,
@@ -14,20 +14,20 @@ export const fontSizes = {
   display: 28,
 } as const;
 
-export const fontWeights = {
+export const sharedFontWeights = {
   regular: '400',
   medium: '500',
   semibold: '600',
   bold: '700',
 } as const;
 
-export const lineHeights = {
+export const sharedLineHeights = {
   tight: 1.2,
   normal: 1.4,
   relaxed: 1.6,
 } as const;
 
-export const letterSpacing = {
+export const sharedLetterSpacing = {
   tight: -0.05,
   normal: 0,
   relaxed: 0.01,

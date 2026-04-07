@@ -7,14 +7,14 @@ export interface UseChatMessagesOptions {
 }
 
 export interface UseChatMessagesReturn {
-  messages: import('@hominem/rpc/types/chat.types').ChatMessage[];
+  messages: import('@hominem/rpc/types/chat.types').ChatMessageDto[];
   isLoading: boolean;
   error: Error | null;
   deleteMessage: (messageId: string) => Promise<void>;
   updateMessage: (messageId: string, content: string) => Promise<void>;
 }
 
-export type ExtendedMessage = import('@hominem/rpc/types/chat.types').ChatMessage & {
+export type ExtendedMessage = import('@hominem/rpc/types/chat.types').ChatMessageDto & {
   isStreaming?: boolean;
 };
 

@@ -7,7 +7,7 @@ import type {
 } from '@hominem/db';
 import {
   type Chat,
-  type ChatMessage,
+  type ChatMessageDto,
   type ChatMessageFile,
   chatsSendSchema,
   type ChatsArchiveOutput,
@@ -54,7 +54,7 @@ function toChatDto(record: ChatRecord): Chat {
   };
 }
 
-function toChatMessageDto(record: ChatMessageRecord): ChatMessage {
+function toChatMessageDto(record: ChatMessageRecord): ChatMessageDto {
   return {
     id: record.id,
     chatId: record.chatId,

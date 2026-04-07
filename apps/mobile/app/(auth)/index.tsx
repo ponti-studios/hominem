@@ -14,6 +14,7 @@ import { useAuth } from '~/utils/auth-provider';
 import { isValidEmail, normalizeEmail } from '~/utils/auth/validation';
 import { E2E_TESTING, MOBILE_PASSKEY_ENABLED } from '~/utils/constants';
 import { useMobilePasskeyAuth } from '~/utils/use-mobile-passkey-auth';
+import { getAuthScreenBaseStyles } from './auth-screen-styles';
 
 export function AuthScreen() {
   const styles = useStyles();
@@ -198,22 +199,7 @@ export function AuthScreen() {
 
 const useStyles = makeStyles((t) =>
   StyleSheet.create({
-    form: {
-      width: '100%',
-      rowGap: t.spacing.m_16,
-    },
-    fieldStack: {
-      rowGap: t.spacing.xs_4,
-    },
-    errorText: {
-      color: t.colors.destructive,
-      fontSize: 12,
-      lineHeight: 16,
-      fontWeight: '500',
-    },
-    primaryButton: {
-      width: '100%',
-    },
+    ...getAuthScreenBaseStyles(t),
     passkeyButton: {
       alignSelf: 'center',
     },

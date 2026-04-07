@@ -1,6 +1,6 @@
-import type { ChatMessage } from '@hominem/rpc/types/chat.types';
+import type { ChatMessageDto } from '@hominem/rpc/types/chat.types';
 
-export type ExtendedMessage = ChatMessage & {
+export type ExtendedMessage = ChatMessageDto & {
   isStreaming?: boolean;
 };
 
