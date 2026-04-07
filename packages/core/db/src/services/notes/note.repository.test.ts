@@ -1,19 +1,14 @@
 import { afterEach, beforeAll, describe, expect, test } from 'vitest';
 
 import { db, pool } from '../../db';
-import { NoteRepository } from './note.repository';
 import { getDb, runInTransaction } from '../../transaction';
+import { NoteRepository } from './note.repository';
 
 const testUserId = '00000000-0000-4000-8000-000000000001';
 const otherUserId = '00000000-0000-4000-8000-000000000002';
 const testFileId = '11111111-1111-4111-8111-111111111111';
 
-const TABLES = [
-  'app.note_files',
-  'app.files',
-  'app.notes',
-  '"user"',
-] as const;
+const TABLES = ['app.note_files', 'app.files', 'app.notes', '"user"'] as const;
 
 async function resetDb() {
   await pool.query(`TRUNCATE TABLE ${TABLES.join(', ')} RESTART IDENTITY CASCADE`);

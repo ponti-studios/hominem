@@ -2,45 +2,31 @@
  * Node.js OpenTelemetry SDK initialization
  */
 
+import { context, metrics, propagation, trace, type Span } from '@opentelemetry/api';
+import { logs } from '@opentelemetry/api-logs';
+import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 import {
-    context,
-    metrics,
-    propagation,
-    trace,
-    type Span,
-} from "@opentelemetry/api";
-import { logs } from "@opentelemetry/api-logs";
-import { AsyncHooksContextManager } from "@opentelemetry/context-async-hooks";
-import {
-    CompositePropagator,
-    W3CBaggagePropagator,
-    W3CTraceContextPropagator,
-} from "@opentelemetry/core";
-import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
-import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-http";
-import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
-import { registerInstrumentations } from "@opentelemetry/instrumentation";
-import { HttpInstrumentation } from "@opentelemetry/instrumentation-http";
-import { PgInstrumentation } from "@opentelemetry/instrumentation-pg";
-import { RedisInstrumentation } from "@opentelemetry/instrumentation-redis";
-import { CompressionAlgorithm } from "@opentelemetry/otlp-exporter-base";
-import { B3InjectEncoding, B3Propagator } from "@opentelemetry/propagator-b3";
-import { JaegerPropagator } from "@opentelemetry/propagator-jaeger";
-import {
-    BatchLogRecordProcessor,
-    LoggerProvider,
-} from "@opentelemetry/sdk-logs";
-import {
-    MeterProvider,
-    PeriodicExportingMetricReader,
-} from "@opentelemetry/sdk-metrics";
-import type { SpanProcessor } from "@opentelemetry/sdk-trace-base";
-import {
-    BatchSpanProcessor,
-    NodeTracerProvider,
-} from "@opentelemetry/sdk-trace-node";
-import type { TelemetryConfig } from "../shared/index.js";
-import { createResource, getTelemetryConfig } from "../shared/index.js";
+  CompositePropagator,
+  W3CBaggagePropagator,
+  W3CTraceContextPropagator,
+} from '@opentelemetry/core';
+import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
+import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
+import { registerInstrumentations } from '@opentelemetry/instrumentation';
+import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
+import { PgInstrumentation } from '@opentelemetry/instrumentation-pg';
+import { RedisInstrumentation } from '@opentelemetry/instrumentation-redis';
+import { CompressionAlgorithm } from '@opentelemetry/otlp-exporter-base';
+import { B3InjectEncoding, B3Propagator } from '@opentelemetry/propagator-b3';
+import { JaegerPropagator } from '@opentelemetry/propagator-jaeger';
+import { BatchLogRecordProcessor, LoggerProvider } from '@opentelemetry/sdk-logs';
+import { MeterProvider, PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
+import type { SpanProcessor } from '@opentelemetry/sdk-trace-base';
+import { BatchSpanProcessor, NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
+
+import type { TelemetryConfig } from '../shared/index.js';
+import { createResource, getTelemetryConfig } from '../shared/index.js';
 
 /**
  * Node telemetry SDK instance
@@ -55,9 +41,7 @@ export interface NodeTelemetry {
 /**
  * Initialize OpenTelemetry for Node.js services
  */
-export function initTelemetry(
-  explicitConfig?: Partial<TelemetryConfig>,
-): NodeTelemetry {
+export function initTelemetry(explicitConfig?: Partial<TelemetryConfig>): NodeTelemetry {
   const config = getTelemetryConfig(explicitConfig);
 
   // Skip all OTel setup when explicitly disabled
@@ -141,7 +125,7 @@ export function initTelemetry(
 
   // Logs provider (optional, only if explicitly enabled)
   let loggerProvider: LoggerProvider | undefined;
-  if (process.env.OTEL_LOGS_EXPORTER !== "none") {
+  if (process.env.OTEL_LOGS_EXPORTER !== 'none') {
     const logExporter = new OTLPLogExporter({
       url: `${otlpEndpoint}/v1/logs`,
       compression: CompressionAlgorithm.GZIP,
@@ -168,27 +152,17 @@ export function initTelemetry(
     instrumentations: [
       new HttpInstrumentation({
         requestHook: (span, request) => {
-          if ("headers" in request) {
-            span.setAttribute(
-              "http.request.headers",
-              JSON.stringify(request.headers),
-            );
+          if ('headers' in request) {
+            span.setAttribute('http.request.headers', JSON.stringify(request.headers));
           }
         },
         responseHook: (span, response) => {
-          if ("headers" in response) {
-            span.setAttribute(
-              "http.response.headers",
-              JSON.stringify(response.headers),
-            );
+          if ('headers' in response) {
+            span.setAttribute('http.response.headers', JSON.stringify(response.headers));
           }
         },
         applyCustomAttributesOnSpan: (span, _request, response) => {
-          if (
-            response &&
-            response.statusCode != null &&
-            response.statusCode >= 400
-          ) {
+          if (response && response.statusCode != null && response.statusCode >= 400) {
             span.setStatus({ code: 2, message: `HTTP ${response.statusCode}` });
           }
         },
@@ -199,7 +173,7 @@ export function initTelemetry(
       new RedisInstrumentation({
         dbStatementSerializer: (cmd, args) => {
           // Sanitize potentially sensitive data
-          return `${cmd} ${args?.[0] || ""}`;
+          return `${cmd} ${args?.[0] || ''}`;
         },
       }),
     ],
@@ -228,14 +202,14 @@ export function initTelemetry(
  * Middleware for Hono framework to create spans for HTTP requests
  */
 export function createHonoTelemetryMiddleware() {
-  const tracer = trace.getTracer("hominem-hono");
-  const meter = metrics.getMeter("hominem-hono");
-  const requestCounter = meter.createCounter("hominem_api_requests_total", {
-    description: "Total API requests handled by the Hono server",
+  const tracer = trace.getTracer('hominem-hono');
+  const meter = metrics.getMeter('hominem-hono');
+  const requestCounter = meter.createCounter('hominem_api_requests_total', {
+    description: 'Total API requests handled by the Hono server',
   });
-  const requestDuration = meter.createHistogram("hominem_api_request_duration_ms", {
-    description: "API request duration in milliseconds",
-    unit: "ms",
+  const requestDuration = meter.createHistogram('hominem_api_request_duration_ms', {
+    description: 'API request duration in milliseconds',
+    unit: 'ms',
   });
 
   return async (c: unknown, next: () => Promise<void>) => {
@@ -288,14 +262,12 @@ export function createHonoTelemetryMiddleware() {
       `${method} ${pathname}`,
       {
         attributes: {
-          "http.request.method": method,
-          "http.route": pathname,
-          "http.request.url": ctx.req.url,
-          "http.client_ip":
-            ctx.req.header("x-forwarded-for") ||
-            ctx.req.header("x-real-ip") ||
-            "unknown",
-          "user_agent.original": ctx.req.header("user-agent") || "unknown",
+          'http.request.method': method,
+          'http.route': pathname,
+          'http.request.url': ctx.req.url,
+          'http.client_ip':
+            ctx.req.header('x-forwarded-for') || ctx.req.header('x-real-ip') || 'unknown',
+          'user_agent.original': ctx.req.header('user-agent') || 'unknown',
         },
       },
       parentContext,
@@ -304,16 +276,16 @@ export function createHonoTelemetryMiddleware() {
           await next();
 
           // Set response attributes
-          span.setAttribute("http.response.status_code", ctx.res.status);
+          span.setAttribute('http.response.status_code', ctx.res.status);
           requestCounter.add(1, {
-            "http.request.method": method,
-            "http.route": pathname,
-            "http.response.status_code": ctx.res.status,
+            'http.request.method': method,
+            'http.route': pathname,
+            'http.response.status_code': ctx.res.status,
           });
           requestDuration.record(Math.max(0, performance.now() - startedAt), {
-            "http.request.method": method,
-            "http.route": pathname,
-            "http.response.status_code": ctx.res.status,
+            'http.request.method': method,
+            'http.route': pathname,
+            'http.response.status_code': ctx.res.status,
           });
 
           if (ctx.res.status >= 400) {
@@ -323,14 +295,14 @@ export function createHonoTelemetryMiddleware() {
           }
         } catch (error) {
           requestCounter.add(1, {
-            "http.request.method": method,
-            "http.route": pathname,
-            "http.response.status_code": 500,
+            'http.request.method': method,
+            'http.route': pathname,
+            'http.response.status_code': 500,
           });
           requestDuration.record(Math.max(0, performance.now() - startedAt), {
-            "http.request.method": method,
-            "http.route": pathname,
-            "http.response.status_code": 500,
+            'http.request.method': method,
+            'http.route': pathname,
+            'http.response.status_code': 500,
           });
           span.recordException(error as Error);
           span.setStatus({ code: 2, message: (error as Error).message });

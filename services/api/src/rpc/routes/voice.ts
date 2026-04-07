@@ -1,13 +1,13 @@
 import type {
+  MobileVoiceResponseErrorOutput,
   MobileVoiceTranscriptionErrorOutput,
   MobileVoiceTranscriptionOutput,
-  MobileVoiceResponseErrorOutput,
 } from '@hominem/rpc/types/mobile.types';
 import { generateVoiceResponse, VoiceResponseError } from '@hominem/services/voice-response';
 import { generateSpeechBuffer, VoiceSpeechError } from '@hominem/services/voice-speech';
 import {
-  VoiceTranscriptionError,
   transcribeVoiceBuffer,
+  VoiceTranscriptionError,
 } from '@hominem/services/voice-transcription';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
@@ -173,8 +173,10 @@ export const authenticatedVoiceRoutes = new Hono<AppContext>()
           error.statusCode === 400 || error.statusCode === 401 || error.statusCode === 429
             ? error.statusCode
             : 500;
+        const responseCode: MobileVoiceResponseErrorOutput['code'] =
+          error.code === 'CONTENT_POLICY' ? 'RESPONSE_FAILED' : error.code;
         return c.json<MobileVoiceResponseErrorOutput>(
-          { error: error.message, code: error.code },
+          { error: error.message, code: responseCode },
           statusCode,
         );
       }

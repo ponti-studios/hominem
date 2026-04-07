@@ -57,19 +57,22 @@ export function usePasskeyAuth(input?: { redirectTo?: string }) {
     }
   }, [authClient, isSupported]);
 
-  const deletePasskey = useCallback(async (id: string) => {
-    setError(null);
-    const response = await authClient.$fetch('/passkey/delete-passkey', {
-      method: 'POST',
-      body: { id },
-      throw: false,
-    });
-    if (response.error) {
-      const message = response.error.message ?? 'Passkey deletion failed.';
-      setError(message);
-      throw new Error(message);
-    }
-  }, [authClient]);
+  const deletePasskey = useCallback(
+    async (id: string) => {
+      setError(null);
+      const response = await authClient.$fetch('/passkey/delete-passkey', {
+        method: 'POST',
+        body: { id },
+        throw: false,
+      });
+      if (response.error) {
+        const message = response.error.message ?? 'Passkey deletion failed.';
+        setError(message);
+        throw new Error(message);
+      }
+    },
+    [authClient],
+  );
 
   return useMemo(
     () => ({ authenticate, register, deletePasskey, error, isSupported }),

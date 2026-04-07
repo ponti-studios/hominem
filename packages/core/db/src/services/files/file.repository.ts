@@ -1,8 +1,8 @@
 import type { Selectable } from 'kysely';
 
+import { NotFoundError } from '../../errors';
 import type { DbHandle } from '../../transaction';
 import type { AppFiles, JsonValue } from '../../types/database';
-import { NotFoundError } from '../_shared/errors';
 import { toRequiredIsoString } from '../_shared/mappers';
 
 // ─── Row types ───────────────────────────────────────────────────────────────
@@ -112,7 +112,7 @@ export const FileRepository = {
   async getOwnedOrThrow(handle: DbHandle, fileId: string, userId: string): Promise<FileRecord> {
     const file = await FileRepository.getOwned(handle, fileId, userId);
     if (!file) {
-      throw new NotFoundError('File', 'file', fileId);
+      throw new NotFoundError('File', { fileId });
     }
     return file;
   },
@@ -129,7 +129,7 @@ export const FileRepository = {
       .executeTakeFirst()) as { url: string } | undefined;
 
     if (!file) {
-      throw new NotFoundError('File', 'file', fileId);
+      throw new NotFoundError('File', { fileId });
     }
 
     return file.url;

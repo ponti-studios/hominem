@@ -1,9 +1,9 @@
 import type { Selectable } from 'kysely';
 
+import { NotFoundError, ValidationError } from '../../errors';
 import type { DbHandle } from '../../transaction';
 import type { AppChatMessages, AppChats } from '../../types/database';
-import { NotFoundError, ValidationError } from '../_shared/errors';
-import { toRequiredIsoString, toIsoString } from '../_shared/mappers';
+import { toIsoString, toRequiredIsoString } from '../_shared/mappers';
 
 // ─── Row types ───────────────────────────────────────────────────────────────
 
@@ -140,7 +140,7 @@ export const ChatRepository = {
       .executeTakeFirst();
 
     if (!chat) {
-      throw new NotFoundError('Chat', 'chat', chatId);
+      throw new NotFoundError('Chat', { chatId });
     }
 
     return toChatRecord(chat as ChatRow);

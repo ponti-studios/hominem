@@ -99,10 +99,7 @@ export class NoteService {
   }
 
   async archiveNote(noteId: string, userId: string): Promise<NoteRecord> {
-    await NoteRepository.update(getDb(), noteId, userId, {
-      archivedAt: new Date().toISOString(),
-    });
-    return NoteRepository.load(getDb(), noteId, userId);
+    return this.deleteNote(noteId, userId);
   }
 }
 

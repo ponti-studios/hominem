@@ -6,7 +6,7 @@
 
 import type { QueryClient } from '@tanstack/react-query';
 
-import { notesQueryKeys } from '../core/query-keys';
+import { queryKeys } from '../core/query-keys';
 
 /**
  * Default feed limit used across apps
@@ -33,15 +33,15 @@ export async function invalidateNotesCaches(
   const invalidations: Promise<void>[] = [];
 
   if (lists) {
-    invalidations.push(queryClient.invalidateQueries({ queryKey: notesQueryKeys.list() }));
+    invalidations.push(queryClient.invalidateQueries({ queryKey: queryKeys.notes.list() }));
   }
 
   if (feed) {
-    invalidations.push(queryClient.invalidateQueries({ queryKey: notesQueryKeys.feed() }));
+    invalidations.push(queryClient.invalidateQueries({ queryKey: queryKeys.notes.feed() }));
   }
 
   for (const noteId of details) {
-    invalidations.push(queryClient.invalidateQueries({ queryKey: notesQueryKeys.detail(noteId) }));
+    invalidations.push(queryClient.invalidateQueries({ queryKey: queryKeys.notes.detail(noteId) }));
   }
 
   await Promise.all(invalidations);

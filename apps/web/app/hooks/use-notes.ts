@@ -27,8 +27,6 @@ interface UseNotesListOptions {
   enabled?: boolean;
 }
 
-const DEFAULT_NOTES_FEED_LIMIT = 20;
-
 interface NotesFeedPage {
   notes: NoteFeedItem[];
   nextCursor: string | null;

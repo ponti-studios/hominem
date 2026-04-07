@@ -4,13 +4,13 @@
  * NOT for use in client applications - use @hominem/rpc instead.
  */
 
+export type { Selectable } from 'kysely';
 export { db, healthCheck, pool, sql } from './db';
 export type { DB as Database, Json, JsonArray, JsonObject, JsonValue } from './types/database';
-export type { Selectable } from 'kysely';
 
 // Transaction support
-export { runInTransaction, getDb } from './transaction';
-export type { TransactionHandle, DbHandle } from './transaction';
+export { getDb, runInTransaction } from './transaction';
+export type { DbHandle, TransactionHandle } from './transaction';
 
 // Export all database table types for use in services
 export type {
@@ -31,13 +31,13 @@ export type {
   AppMusicAlbums,
   AppMusicArtists,
   AppMusicListens,
-  AppMusicPlaylistTracks,
   AppMusicPlaylists,
+  AppMusicPlaylistTracks,
   AppMusicTracks,
   AppNoteFiles,
+  AppNotes,
   AppNoteShares,
   AppNoteVersions,
-  AppNotes,
   AppPeople,
   AppPlaces,
   AppPlaidItems,
@@ -47,8 +47,8 @@ export type {
   AppSpaceInvites,
   AppSpaceItems,
   AppSpaceMembers,
-  AppSpaceTags,
   AppSpaces,
+  AppSpaceTags,
   AppTagAliases,
   AppTagAssignments,
   AppTags,
@@ -87,13 +87,14 @@ export {
   ConflictError,
   ForbiddenError,
   InternalError,
-  NotFoundError,
-  ValidationError,
-  getErrorResponse,
-  isDbError,
   isServiceError,
-} from './services/_shared/errors';
-export type { DbError } from './services/_shared/errors';
+  NotFoundError,
+  ServiceError,
+  UnauthorizedError,
+  UnavailableError,
+  ValidationError,
+} from './errors';
+export type { ErrorCode } from './errors';
 
 // Shared mapper utilities
 export { toIsoString, toRequiredIsoString } from './services/_shared/mappers';
@@ -101,32 +102,29 @@ export { toIsoString, toRequiredIsoString } from './services/_shared/mappers';
 // Repositories
 export { NoteRepository } from './services/notes/note.repository';
 export type {
-  NoteRecord,
+  ListNoteFeedInput,
+  ListNotesInput,
+  CreateNoteInput as NoteCreateInput,
   NoteFeedPageRecord,
   NoteFeedRecord,
   NoteFileRecord,
-  CreateNoteInput as NoteCreateInput,
+  NoteRecord,
   UpdateNoteInput as NoteUpdateInput,
-  ListNoteFeedInput,
-  ListNotesInput,
-  SearchNotesInput,
   SearchNoteResult,
+  SearchNotesInput,
 } from './services/notes/note.repository';
 
 export { ChatRepository } from './services/chats/chat.repository';
 export type {
-  ChatRecord,
-  ChatMessageRecord,
   ChatMessageFileRecord,
-  ChatMessageToolCallRecord,
-  ReferencedNoteRecord,
+  ChatMessageRecord,
   ChatMessageRole,
+  ChatMessageToolCallRecord,
+  ChatRecord,
   InsertChatMessageInput,
   NoteContext,
+  ReferencedNoteRecord,
 } from './services/chats/chat.repository';
 
 export { FileRepository } from './services/files/file.repository';
-export type {
-  FileRecord,
-  UpsertFileInput,
-} from './services/files/file.repository';
+export type { FileRecord, UpsertFileInput } from './services/files/file.repository';

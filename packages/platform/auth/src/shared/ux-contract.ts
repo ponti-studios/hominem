@@ -6,10 +6,10 @@
  * underlying string values must be identical.
  */
 
-import { BRAND } from '@hominem/env/brand'
+import { BRAND } from '@hominem/env/brand';
 
 /** Single source of truth for the app brand name used across auth surfaces. */
-export const AUTH_APP_NAME = BRAND.appName
+export const AUTH_APP_NAME = BRAND.appName;
 
 // ─── UX State ─────────────────────────────────────────────────────────────────
 
@@ -19,45 +19,45 @@ export type AuthUxState =
   | 'passkey'
   | 'loading'
   | 'error'
-  | 'signed-in'
+  | 'signed-in';
 
 // ─── Copy Interfaces ──────────────────────────────────────────────────────────
 
 export interface AuthEntryCopy {
-  title: string
-  helper: string
-  emailPlaceholder: string
-  emailLabel: string
-  submitButton: string
-  passkeyButton: string
-  passkeyLoadingButton: string
-  emailRequiredError: string
-  emailInvalidError: string
-  sendFailedError: string
+  title: string;
+  helper: string;
+  emailPlaceholder: string;
+  emailLabel: string;
+  submitButton: string;
+  passkeyButton: string;
+  passkeyLoadingButton: string;
+  emailRequiredError: string;
+  emailInvalidError: string;
+  sendFailedError: string;
 }
 
 export interface AuthVerifyCopy {
-  title: string
-  helper: (email: string) => string
-  codeLabel: string
-  codePlaceholder: string
-  verifyButton: string
-  resendButton: string
-  changeEmailLink: string
-  codeRequiredError: string
-  codeLengthError: string
-  verifyFailedError: string
-  resendFailedError: string
+  title: string;
+  helper: (email: string) => string;
+  codeLabel: string;
+  codePlaceholder: string;
+  verifyButton: string;
+  resendButton: string;
+  changeEmailLink: string;
+  codeRequiredError: string;
+  codeLengthError: string;
+  verifyFailedError: string;
+  resendFailedError: string;
 }
 
 export interface AuthPasskeyCopy {
-  genericError: string
+  genericError: string;
 }
 
 export interface AuthCopy {
-  emailEntry: AuthEntryCopy
-  otpVerification: AuthVerifyCopy
-  passkey: AuthPasskeyCopy
+  emailEntry: AuthEntryCopy;
+  otpVerification: AuthVerifyCopy;
+  passkey: AuthPasskeyCopy;
 }
 
 // ─── Canonical Copy ───────────────────────────────────────────────────────────
@@ -91,19 +91,19 @@ export const AUTH_COPY: AuthCopy = {
   passkey: {
     genericError: 'Passkey sign-in failed.',
   },
-}
+};
 
 // ─── Per-App Auth Config ──────────────────────────────────────────────────────
 
 export interface AppAuthConfig {
   /** Human-readable product name shown in auth UI. */
-  appName: string
+  appName: string;
   /** Platform-specific canonical post-auth destination path. */
-  defaultPostAuthDestination: string
+  defaultPostAuthDestination: string;
   /** Allowed redirect prefixes for safe redirect validation (web only). */
-  allowedDestinations: string[]
+  allowedDestinations: string[];
   /** Copy to use for this app. Defaults to AUTH_COPY. */
-  copy: AuthCopy
+  copy: AuthCopy;
 }
 
 /** Web app auth config. */
@@ -112,7 +112,7 @@ export const NOTES_AUTH_CONFIG: AppAuthConfig = {
   defaultPostAuthDestination: '/home',
   allowedDestinations: ['/', '/home', '/chat', '/notes', '/account', '/settings'],
   copy: AUTH_COPY,
-}
+};
 
 /** Mobile app auth config. */
 export const CHAT_AUTH_CONFIG: AppAuthConfig = {
@@ -120,4 +120,4 @@ export const CHAT_AUTH_CONFIG: AppAuthConfig = {
   defaultPostAuthDestination: '/(protected)/(tabs)/start',
   allowedDestinations: ['/(protected)/(tabs)/start'],
   copy: AUTH_COPY,
-}
+};

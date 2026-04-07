@@ -4,7 +4,7 @@
  */
 
 import type { User } from '@hominem/auth/server';
-import type { Hono } from 'hono';
+import { Hono } from 'hono';
 
 import type { AppContext } from '../middleware/auth';
 import { apiErrorHandler } from '../middleware/error';
@@ -36,7 +36,7 @@ export function createTestUser(overrides?: Partial<User>): User {
 export function createTestApp(userId?: string): Hono<AppContext> {
   const app = new Hono<AppContext>().onError(apiErrorHandler);
 
-  const testUser = createTestUser({ id: userId });
+  const testUser = userId ? createTestUser({ id: userId }) : createTestUser();
 
   app.use('/*', async (c, next) => {
     c.set('user', testUser);

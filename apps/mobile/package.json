@@ -75,6 +75,7 @@
     "@types/node": "^25.4.0",
     "@types/react": "~19.2.10",
     "@types/react-dom": "~19.1.7",
+    "babel-jest": "^30.3.0",
     "babel-preset-expo": "^55.0.10",
     "detox": "^20.27.0",
     "jest": "^30.3.0",

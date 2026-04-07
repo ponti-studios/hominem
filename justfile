@@ -66,10 +66,6 @@ build-api:
 web-install-playwright:
   cd "{{WEB_DIR}}" && bunx playwright install --with-deps chromium
 
-web-generate-icons source="{{WEB_DIR}}/public/logo.web.png":
-  #!/usr/bin/env bash
-  bun "{{ROOT_DIR}}/scripts/generate-web-icons.ts" --source "{{source}}"
-
 web-test-e2e:
   {{TURBO}} run test:e2e --filter=@hominem/web
 

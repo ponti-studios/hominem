@@ -1,9 +1,9 @@
 import type { Selectable } from 'kysely';
 
-import { getDb } from '../../transaction';
+import { NotFoundError, ValidationError } from '../../errors';
 import type { DbHandle } from '../../transaction';
+import { getDb } from '../../transaction';
 import type { AppFiles, AppNoteFiles, AppNotes } from '../../types/database';
-import { NotFoundError, ValidationError } from '../_shared/errors';
 import { toIsoString, toRequiredIsoString } from '../_shared/mappers';
 
 // ─── Row types ───────────────────────────────────────────────────────────────
@@ -12,7 +12,15 @@ type NoteRow = Selectable<AppNotes>;
 
 type NoteFileSource = Pick<
   Selectable<AppFiles>,
-  'id' | 'original_name' | 'mimetype' | 'size' | 'url' | 'content' | 'text_content' | 'metadata' | 'createdat'
+  | 'id'
+  | 'original_name'
+  | 'mimetype'
+  | 'size'
+  | 'url'
+  | 'content'
+  | 'text_content'
+  | 'metadata'
+  | 'createdat'
 >;
 
 type AttachedFileRow = NoteFileSource & { noteId: string };
@@ -103,7 +111,10 @@ export interface SearchNoteResult {
   excerpt: string | null;
 }
 
-type NoteFeedRow = Pick<NoteRow, 'id' | 'title' | 'excerpt' | 'content' | 'createdat' | 'owner_userid'>;
+type NoteFeedRow = Pick<
+  NoteRow,
+  'id' | 'title' | 'excerpt' | 'content' | 'createdat' | 'owner_userid'
+>;
 
 type NoteFeedAttachmentRow = {
   noteId: string;
@@ -176,7 +187,10 @@ export const NoteRepository = {
   /**
    * Fetch attached files grouped by note ID.
    */
-  async getAttachedFiles(handle: DbHandle, noteIds: string[]): Promise<Map<string, NoteFileRecord[]>> {
+  async getAttachedFiles(
+    handle: DbHandle,
+    noteIds: string[],
+  ): Promise<Map<string, NoteFileRecord[]>> {
     if (noteIds.length === 0) {
       return new Map();
     }
@@ -230,7 +244,7 @@ export const NoteRepository = {
   async getOwnedOrThrow(handle: DbHandle, noteId: string, userId: string): Promise<NoteRow> {
     const note = await NoteRepository.getOwned(handle, noteId, userId);
     if (!note) {
-      throw new NotFoundError('Note', 'note', noteId);
+      throw new NotFoundError('Note', { noteId });
     }
     return note;
   },
@@ -248,10 +262,7 @@ export const NoteRepository = {
    * List notes for a user with filtering and sorting.
    */
   async list(handle: DbHandle, input: ListNotesInput): Promise<NoteRecord[]> {
-    let query = handle
-      .selectFrom('app.notes')
-      .selectAll()
-      .where('owner_userid', '=', input.userId);
+    let query = handle.selectFrom('app.notes').selectAll().where('owner_userid', '=', input.userId);
 
     if (input.since) {
       query = query.where('updatedat', '>=', new Date(input.since));
@@ -322,7 +333,11 @@ export const NoteRepository = {
         : ((await handle
             .selectFrom('app.note_files')
             .select('note_id as noteId')
-            .where('note_id', 'in', pageRows.map((row) => row.id))
+            .where(
+              'note_id',
+              'in',
+              pageRows.map((row) => row.id),
+            )
             .groupBy('note_id')
             .execute()) as NoteFeedAttachmentRow[]);
     const attachmentIds = new Set(attachmentRows.map((row) => row.noteId));
