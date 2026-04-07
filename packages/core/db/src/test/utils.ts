@@ -22,7 +22,7 @@ export const createDeterministicIdFactory = (prefix: string) => {
 };
 
 // Helper to extract rows from query results (handles both Kysely and raw results)
-export const extractRows = <T>(result: unknown): T[] => {
+const extractRows = <T>(result: unknown): T[] => {
   if (Array.isArray(result)) {
     return result as T[];
   }
@@ -36,7 +36,7 @@ export const extractRows = <T>(result: unknown): T[] => {
 };
 
 // Check if a table exists by name
-export const tableExists = async (tableName: string): Promise<boolean> => {
+const tableExists = async (tableName: string): Promise<boolean> => {
   try {
     const { pool } = await import('../db');
     // Use raw pool query to avoid SQL builder complexity for dynamic table names
@@ -68,7 +68,7 @@ export const ensureIntegrationUsers = async (
   return { ownerId: users[0]?.id || '', otherUserId: users[1]?.id || '' };
 };
 
-export const createTestUser = async (overrides?: {
+const createTestUser = async (overrides?: {
   id?: string;
   email?: string;
   name?: string;
@@ -88,7 +88,7 @@ export const createTestUser = async (overrides?: {
   return id;
 };
 
-export const cleanupTestData = async (userIds: string[]): Promise<void> => {
+const cleanupTestData = async (userIds: string[]): Promise<void> => {
   if (userIds.length === 0) return;
 
   const { db } = await import('../db');
@@ -99,13 +99,13 @@ export const cleanupTestData = async (userIds: string[]): Promise<void> => {
   await db.deleteFrom('user').where('id', 'in', userIds).execute();
 };
 
-export const setUserCleanup = (cleanup: (userId: string) => Promise<void>): void => {
+const setUserCleanup = (cleanup: (userId: string) => Promise<void>): void => {
   void cleanup;
   // No-op for Kysely
 };
 
 // Mock utilities for unit tests
-export const createDbMocks = () => {
+const createDbMocks = () => {
   return {
     db: {},
     client: {},
@@ -117,9 +117,9 @@ export const createDbMocks = () => {
   };
 };
 
-export const globalDbMocks = createDbMocks();
+const globalDbMocks = createDbMocks();
 
-export const createTestData = {
+const createTestData = {
   user: (overrides?: Record<string, unknown>) => ({
     id: `test-user-${Date.now()}`,
     email: 'test@example.com',
@@ -130,7 +130,7 @@ export const createTestData = {
   }),
 };
 
-export const mockDbOperations = {
+const mockDbOperations = {
   mockFindSuccess: <T>(table: string, method: string, data: T): void => {
     void table;
     void method;

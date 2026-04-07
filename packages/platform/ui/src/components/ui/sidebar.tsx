@@ -1,4 +1,3 @@
-import './sidebar.css';
 import { Slot } from '@radix-ui/react-slot';
 import { useHotkey } from '@tanstack/react-hotkeys';
 import { cva, type VariantProps } from 'class-variance-authority';
@@ -6,6 +5,7 @@ import gsap from 'gsap';
 import { PanelLeft } from 'lucide-react';
 import * as React from 'react';
 
+import './sidebar.css';
 import { useIsMobile } from '../../hooks/use-mobile';
 import { reducedMotion } from '../../lib/gsap/sequences';
 import { cn } from '../../lib/utils';
@@ -829,24 +829,13 @@ export {
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
-  SidebarGroupAction,
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
-  SidebarInput,
-  SidebarInset,
   SidebarMenu,
-  SidebarMenuAction,
-  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSkeleton,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
   SidebarProvider,
-  SidebarRail,
-  SidebarSeparator,
   SidebarTrigger,
   useSidebar,
 };

@@ -8,7 +8,6 @@ import {
   getHttpRequestInLogMessage,
   getHttpRequestLogLevel,
   getHttpRequestOutLogMessage,
-  logAtLevel,
 } from './logger.shared';
 
 type PinoInstance = ((
@@ -81,7 +80,7 @@ const pinoLogger =
       )
     : null;
 
-function toOtelAttributes(data?: object): OTelLogAttributes | undefined {
+function toOtelAttributes(data?: object) {
   if (!data) {
     return undefined;
   }

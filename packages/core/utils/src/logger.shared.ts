@@ -31,32 +31,3 @@ export function getHttpRequestInLogMessage() {
 export function getHttpRequestOutLogMessage() {
   return 'http_request_out';
 }
-
-export function logAtLevel(
-  logger: {
-    error: (message: string, data?: Error | object) => void;
-    warn: (message: string, data?: object) => void;
-    debug: (message: string, data?: object) => void;
-    info: (message: string, data?: object) => void;
-  },
-  level: LoggerLevel,
-  message: string,
-  data?: Error | object,
-) {
-  if (level === 'error') {
-    logger.error(message, data);
-    return;
-  }
-
-  if (level === 'warn') {
-    logger.warn(message, data);
-    return;
-  }
-
-  if (level === 'debug') {
-    logger.debug(message, data);
-    return;
-  }
-
-  logger.info(message, data);
-}

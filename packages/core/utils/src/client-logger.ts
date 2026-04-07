@@ -9,7 +9,6 @@ import {
   getHttpRequestInLogMessage,
   getHttpRequestLogLevel,
   getHttpRequestOutLogMessage,
-  logAtLevel,
 } from './logger.shared';
 
 export { getHttpRequestInLogMessage, getHttpRequestLogLevel, getHttpRequestOutLogMessage };
@@ -48,5 +47,3 @@ export const logger = {
     console.debug(message, redactFields(data));
   },
 };
-
-export { logAtLevel };

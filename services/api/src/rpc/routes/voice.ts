@@ -41,7 +41,7 @@ function parseVoiceRequestBody(body: Record<string, unknown>) {
   return { audioFile, language };
 }
 
-export const voiceRoutes = new Hono<AppContext>().post('/transcribe', async (c) => {
+const voiceRoutes = new Hono<AppContext>().post('/transcribe', async (c) => {
   try {
     const body = await c.req.parseBody();
     const { audioFile, language } = parseVoiceRequestBody(body);

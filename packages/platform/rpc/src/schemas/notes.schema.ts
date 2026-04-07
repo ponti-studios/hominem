@@ -1,11 +1,21 @@
-import * as z from 'zod'
+import * as z from 'zod';
 
 export const NoteContentTypeSchema = z
-  .enum(['note', 'document', 'task', 'timer', 'journal', 'tweet', 'essay', 'blog_post', 'social_post'])
-  .describe('NoteContentType')
-export const NoteStatusSchema = z.enum(['draft', 'published', 'archived']).describe('NoteStatus')
-export const AllContentTypeSchema = NoteContentTypeSchema.describe('AllContentType')
-export const ContentTagSchema = z.object({ value: z.string() })
+  .enum([
+    'note',
+    'document',
+    'task',
+    'timer',
+    'journal',
+    'tweet',
+    'essay',
+    'blog_post',
+    'social_post',
+  ])
+  .describe('NoteContentType');
+export const NoteStatusSchema = z.enum(['draft', 'published', 'archived']).describe('NoteStatus');
+const AllContentTypeSchema = NoteContentTypeSchema.describe('AllContentType');
+const ContentTagSchema = z.object({ value: z.string() });
 const PublishingMetadataSchema = z.object({
   platform: z.string().optional(),
   url: z.string().optional(),
@@ -34,14 +44,14 @@ const PublishingMetadataSchema = z.object({
   scheduledFor: z.string().optional(),
   importedAt: z.string().optional(),
   importedFrom: z.string().optional(),
-})
-export const NoteAnalysisSchema = z.object({
+});
+const NoteAnalysisSchema = z.object({
   readingTimeMinutes: z.number().optional(),
   summary: z.string().optional(),
   keywords: z.array(z.string()).optional(),
   sentiment: z.enum(['positive', 'neutral', 'negative']).optional(),
   language: z.string().optional(),
-})
+});
 export const TaskStatusSchema = z
   .enum(['todo', 'pending', 'in_progress', 'done', 'completed', 'cancelled'])
   .describe('TaskStatus');
@@ -121,7 +131,7 @@ export const NotesFeedQuerySchema = z.object({
   cursor: z.string().optional(),
 });
 
-export const PublishNoteSchema = PublishingMetadataSchema.pick({
+const PublishNoteSchema = PublishingMetadataSchema.pick({
   platform: true,
   url: true,
   externalId: true,
@@ -129,6 +139,6 @@ export const PublishNoteSchema = PublishingMetadataSchema.pick({
   seo: true,
 });
 
-export const NotesSyncSchema = z.object({
+const NotesSyncSchema = z.object({
   items: z.array(SyncNoteItemSchema),
 });
