@@ -1,6 +1,6 @@
 import { useSession } from '@hominem/auth/client';
 import { Toaster } from '@hominem/ui';
-import { NavLink, Outlet, useNavigate } from 'react-router';
+import { NavLink, Outlet } from 'react-router';
 
 import { useSignOut } from '~/lib/hooks/use-sign-out';
 
@@ -18,7 +18,6 @@ function NavItem({ to, label }: { to: string; label: string }) {
 }
 
 export default function Layout() {
-  const navigate = useNavigate();
   const session = useSession();
   const userId = session.data?.user?.id ?? null;
   const isLoading = session.isPending;

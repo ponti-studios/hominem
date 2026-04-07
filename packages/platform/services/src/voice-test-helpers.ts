@@ -6,10 +6,10 @@ export const mockVoiceEnv = {
   OPENROUTER_API_KEY: 'test-openrouter-key' as string | undefined,
 };
 
-export const mockVoiceFetch = vi.fn();
+export const mockVoiceFetch: ReturnType<typeof vi.fn> = vi.fn();
 
 export function installVoiceEnvMock(modulePath: string) {
-  vi.mock(modulePath, () => ({
+  vi.doMock(modulePath, () => ({
     get env() {
       return mockVoiceEnv;
     },
@@ -24,13 +24,21 @@ export function makeVoiceAudioStreamResponse(
   audioChunks: string[],
   transcriptChunks: string[],
   status = 200,
-) {
+): {
+  ok: boolean;
+  status: number;
+  statusText: string;
+  body: ReadableStream<Uint8Array>;
+  json: () => Promise<Record<string, never>>;
+} {
   const lines: string[] = [];
 
   for (let i = 0; i < Math.max(audioChunks.length, transcriptChunks.length); i++) {
     const audio: Record<string, string> = {};
-    if (audioChunks[i]) audio.data = audioChunks[i];
-    if (transcriptChunks[i]) audio.transcript = transcriptChunks[i];
+    const audioChunk = audioChunks[i];
+    const transcriptChunk = transcriptChunks[i];
+    if (audioChunk !== undefined) audio.data = audioChunk;
+    if (transcriptChunk !== undefined) audio.transcript = transcriptChunk;
     lines.push(`data: ${JSON.stringify({ choices: [{ delta: { audio } }] })}\n`);
   }
   lines.push('data: [DONE]\n');
@@ -60,7 +68,16 @@ export function makeVoiceAudioStreamResponse(
   };
 }
 
-export function makeVoiceErrorResponse(status: number, message: string) {
+export function makeVoiceErrorResponse(
+  status: number,
+  message: string,
+): {
+  ok: boolean;
+  status: number;
+  statusText: string;
+  body: null;
+  json: () => Promise<{ error: { message: string } }>;
+} {
   return {
     ok: false,
     status,

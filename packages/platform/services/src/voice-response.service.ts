@@ -5,7 +5,11 @@ import { join } from 'node:path';
 import { logger } from '@hominem/utils/logger';
 
 import { env } from './env';
-import { getVoiceAudioDir, logAndMapVoiceProviderError } from './voice.shared';
+import { VoiceResponseError, mapVoiceProviderError } from './voice-errors';
+import { buildVoiceLogData } from './voice-observability';
+import { getVoiceAudioDir } from './voice.shared';
+
+export { VoiceResponseError } from './voice-errors';
 
 /**
  * Voice response service — generates an AI audio reply to a user's text input.
@@ -36,27 +40,6 @@ const FORMAT_TO_MIME: Record<VoiceResponseFormat, string> = {
 const FORMAT_TO_EXT: Record<VoiceResponseFormat, string> = {
   pcm16: 'pcm',
 };
-
-export const VOICE_RESPONSE_ERROR_CODES = [
-  'AUTH',
-  'QUOTA',
-  'CONTENT_POLICY',
-  'RESPONSE_FAILED',
-] as const;
-
-export type VoiceResponseErrorCode = (typeof VOICE_RESPONSE_ERROR_CODES)[number];
-
-export class VoiceResponseError extends Error {
-  statusCode: number;
-  code: VoiceResponseErrorCode;
-
-  constructor(message: string, code: VoiceResponseErrorCode, statusCode = 500) {
-    super(message);
-    this.name = 'VoiceResponseError';
-    this.code = code;
-    this.statusCode = statusCode;
-  }
-}
 
 export interface VoiceResponseOutput {
   /** Raw audio bytes ready to stream to the client */
@@ -174,7 +157,7 @@ export async function generateVoiceResponse(
   const requestId = input.requestId ?? `vr-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
   if (!env.OPENROUTER_API_KEY) {
-    logger.error('[voice-response] Missing OPENROUTER_API_KEY', { requestId });
+    logger.error('[voice-response] Missing OPENROUTER_API_KEY', buildVoiceLogData(requestId));
     throw new VoiceResponseError('Invalid API configuration.', 'AUTH', 401);
   }
 
@@ -192,7 +175,7 @@ export async function generateVoiceResponse(
 
   // Log the request
   logger.info('[voice-response] Request started', {
-    requestId,
+    ...buildVoiceLogData(requestId),
     model: VOICE_RESPONSE_MODEL,
     textLength: input.text.length,
     textPreview: input.text.slice(0, 100),
@@ -227,7 +210,7 @@ export async function generateVoiceResponse(
   } catch (error) {
     const errorTime = performance.now() - startTime;
     logger.error('[voice-response] Fetch failed', {
-      requestId,
+      ...buildVoiceLogData(requestId),
       error: error instanceof Error ? error.message : 'Unknown error',
       durationMs: Math.round(errorTime),
     });
@@ -245,7 +228,7 @@ export async function generateVoiceResponse(
 
   // Log the HTTP response
   logger.info('[voice-response] HTTP response received', {
-    requestId,
+    ...buildVoiceLogData(requestId),
     status: response.status,
     statusText: response.statusText,
     responseTimeMs: Math.round(responseTime),
@@ -258,15 +241,18 @@ export async function generateVoiceResponse(
       | undefined;
     const totalTime = performance.now() - startTime;
 
-    const errorInfo = logAndMapVoiceProviderError({
-      logger,
-      loggerLabel: '[voice-response] API error response',
-      requestId,
+    logger.error('[voice-response] API error response', {
+      ...buildVoiceLogData(requestId),
+      status: response.status,
+      error: errorMessage ?? response.statusText,
+      totalDurationMs: Math.round(totalTime),
+    });
+
+    const errorInfo = mapVoiceProviderError({
+      kind: 'response',
       responseStatus: response.status,
       responseStatusText: response.statusText,
-      errorMessage,
-      kind: 'response',
-      totalDurationMs: totalTime,
+      ...(typeof errorMessage === 'string' ? { errorMessage } : {}),
     });
     throw new VoiceResponseError(errorInfo.message, errorInfo.code, errorInfo.statusCode);
   }
@@ -279,7 +265,7 @@ export async function generateVoiceResponse(
 
     if (!audioB64) {
       logger.error('[voice-response] No audio data in stream', {
-        requestId,
+        ...buildVoiceLogData(requestId),
         totalDurationMs: Math.round(totalTime),
       });
       throw new VoiceResponseError('No audio data received from model', 'RESPONSE_FAILED', 500);
@@ -296,13 +282,13 @@ export async function generateVoiceResponse(
         savedPath = join(audioDir, filename);
         await writeFile(savedPath, audioBuffer);
         logger.info('[voice-response] Audio saved for review', {
-          requestId,
+          ...buildVoiceLogData(requestId),
           savedPath,
           size: audioBuffer.length,
         });
       } catch (saveError) {
         logger.warn('[voice-response] Failed to save audio file', {
-          requestId,
+          ...buildVoiceLogData(requestId),
           error: saveError instanceof Error ? saveError.message : 'Unknown',
         });
       }
@@ -310,7 +296,7 @@ export async function generateVoiceResponse(
 
     // Log successful completion
     logger.info('[voice-response] Request completed successfully', {
-      requestId,
+      ...buildVoiceLogData(requestId),
       transcriptLength: transcript.length,
       transcriptPreview: transcript.slice(0, 150),
       audioSizeBytes: audioBuffer.length,
@@ -331,7 +317,7 @@ export async function generateVoiceResponse(
 
     if (error instanceof VoiceResponseError) {
       logger.error('[voice-response] Stream processing error', {
-        requestId,
+        ...buildVoiceLogData(requestId),
         code: error.code,
         totalDurationMs: Math.round(totalTime),
       });
@@ -339,7 +325,7 @@ export async function generateVoiceResponse(
     }
 
     logger.error('[voice-response] Unexpected stream error', {
-      requestId,
+      ...buildVoiceLogData(requestId),
       error: error instanceof Error ? error.message : 'Unknown error',
       totalDurationMs: Math.round(totalTime),
     });

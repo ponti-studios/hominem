@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { generateVoiceResponse, VoiceResponseError } from './voice-response.service';
 import {
-  installVoiceEnvMock,
   installVoiceFetchMock,
   makeVoiceAudioStreamResponse,
   makeVoiceErrorResponse,
@@ -11,7 +10,11 @@ import {
   mockVoiceFetch,
 } from './voice-test-helpers';
 
-installVoiceEnvMock('./env');
+vi.mock('./env', () => ({
+  get env() {
+    return mockVoiceEnv;
+  },
+}));
 installVoiceFetchMock();
 
 const mockEnv = mockVoiceEnv;

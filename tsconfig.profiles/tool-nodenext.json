@@ -1,7 +1,0 @@
-{
-  "extends": "./tool-base.json",
-  "compilerOptions": {
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext"
-  }
-}

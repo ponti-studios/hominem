@@ -1,4 +1,4 @@
-import { STEP_UP_ACTIONS, isStepUpAction, type StepUpAction } from '../shared/step-up-actions';
+import type { StepUpAction } from '../shared/step-up-actions';
 
 export const STEP_UP_TTL_SECONDS = 5 * 60;
 

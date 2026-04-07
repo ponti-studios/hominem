@@ -3,7 +3,7 @@ import { useAuthClient } from '@hominem/auth/client';
 import { resolveSafeAuthRedirect } from '@hominem/auth/server-utils';
 import { AuthScaffold, OtpVerificationForm } from '@hominem/ui';
 import { useCallback } from 'react';
-import { redirect, useLoaderData, useLocation, useNavigate, useSearchParams } from 'react-router';
+import { redirect, useLoaderData, useLocation, useNavigate } from 'react-router';
 
 import { AUTH_CONFIG } from './config';
 import { getNextRedirect } from './shared';
@@ -29,7 +29,6 @@ export default function Component() {
   const { email } = useLoaderData<{ email: string }>();
   const location = useLocation();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const next = getNextRedirect(location.search);
   const verifyEmailOtp = useCallback(
     async (input: { email: string; otp: string; next: string }) => {

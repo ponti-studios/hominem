@@ -5,7 +5,9 @@ import { join } from 'node:path';
 import { logger } from '@hominem/utils/logger';
 
 import { env } from './env';
-import { getVoiceAudioDir, logAndMapVoiceProviderError } from './voice.shared';
+import { VoiceTranscriptionError, mapVoiceProviderError } from './voice-errors';
+import { buildVoiceLogData } from './voice-observability';
+import { getVoiceAudioDir } from './voice.shared';
 
 export const VOICE_TRANSCRIPTION_MAX_SIZE_BYTES = 25 * 1024 * 1024;
 
@@ -29,16 +31,6 @@ export interface VoiceTranscriptionOutput {
   savedPath?: string | undefined;
 }
 
-export const VOICE_ERROR_CODES = [
-  'INVALID_FORMAT',
-  'TOO_LARGE',
-  'AUTH',
-  'QUOTA',
-  'TRANSCRIBE_FAILED',
-] as const;
-
-export type VoiceErrorCode = (typeof VOICE_ERROR_CODES)[number];
-
 export const VOICE_TRANSPORTS = ['hono-rpc'] as const;
 
 export type VoiceTransport = (typeof VOICE_TRANSPORTS)[number];
@@ -60,17 +52,7 @@ const MIME_TO_OPENROUTER_FORMAT: Record<string, string> = {
 const TRANSCRIPTION_MODEL = 'google/gemini-2.5-flash-lite';
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 
-export class VoiceTranscriptionError extends Error {
-  statusCode: number;
-  code: VoiceErrorCode;
-
-  constructor(message: string, code: VoiceErrorCode, statusCode = 500) {
-    super(message);
-    this.name = 'VoiceTranscriptionError';
-    this.statusCode = statusCode;
-    this.code = code;
-  }
-}
+export { VoiceTranscriptionError } from './voice-errors';
 
 export function normalizeVoiceMimeType(mimeType: string): string {
   const [baseType] = mimeType.split(';', 1);
@@ -158,13 +140,13 @@ export async function transcribeVoiceBuffer(input: {
   });
 
   if (!env.OPENROUTER_API_KEY) {
-    logger.error('[voice-transcription] Missing OPENROUTER_API_KEY', { requestId });
+    logger.error('[voice-transcription] Missing OPENROUTER_API_KEY', buildVoiceLogData(requestId));
     throw new VoiceTranscriptionError('Invalid API configuration.', 'AUTH', 401);
   }
 
   // Log the request
   logger.info('[voice-transcription] Request started', {
-    requestId,
+    ...buildVoiceLogData(requestId),
     model: TRANSCRIPTION_MODEL,
     mimeType: input.mimeType,
     normalizedMimeType,
@@ -186,13 +168,13 @@ export async function transcribeVoiceBuffer(input: {
       const buffer = Buffer.from(input.buffer);
       await writeFile(savedPath, buffer);
       logger.info('[voice-transcription] Input audio saved for review', {
-        requestId,
+        ...buildVoiceLogData(requestId),
         savedPath,
         size: buffer.length,
       });
     } catch (saveError) {
       logger.warn('[voice-transcription] Failed to save input audio', {
-        requestId,
+        ...buildVoiceLogData(requestId),
         error: saveError instanceof Error ? saveError.message : 'Unknown',
       });
     }
@@ -238,7 +220,7 @@ export async function transcribeVoiceBuffer(input: {
   } catch (error) {
     const errorTime = performance.now() - startTime;
     logger.error('[voice-transcription] Fetch failed', {
-      requestId,
+      ...buildVoiceLogData(requestId),
       error: error instanceof Error ? error.message : 'Unknown error',
       durationMs: Math.round(errorTime),
     });
@@ -247,7 +229,7 @@ export async function transcribeVoiceBuffer(input: {
 
   // Log the HTTP response
   logger.info('[voice-transcription] HTTP response received', {
-    requestId,
+    ...buildVoiceLogData(requestId),
     status: response.status,
     statusText: response.statusText,
     responseTimeMs: Math.round(responseTime),
@@ -260,15 +242,18 @@ export async function transcribeVoiceBuffer(input: {
       | undefined;
     const totalTime = performance.now() - startTime;
 
-    const errorInfo = logAndMapVoiceProviderError({
-      logger,
-      loggerLabel: '[voice-transcription] API error response',
-      requestId,
+    logger.error('[voice-transcription] API error response', {
+      ...buildVoiceLogData(requestId),
+      status: response.status,
+      error: errorMessage ?? response.statusText,
+      totalDurationMs: Math.round(totalTime),
+    });
+
+    const errorInfo = mapVoiceProviderError({
+      kind: 'transcription',
       responseStatus: response.status,
       responseStatusText: response.statusText,
-      errorMessage,
-      kind: 'transcription',
-      totalDurationMs: totalTime,
+      ...(typeof errorMessage === 'string' ? { errorMessage } : {}),
     });
     throw new VoiceTranscriptionError(errorInfo.message, errorInfo.code, errorInfo.statusCode);
   }
@@ -284,14 +269,14 @@ export async function transcribeVoiceBuffer(input: {
 
     if (!text) {
       logger.warn('[voice-transcription] Empty transcript received', {
-        requestId,
+        ...buildVoiceLogData(requestId),
         totalDurationMs: Math.round(totalTime),
       });
     }
 
     // Log successful completion
     logger.info('[voice-transcription] Request completed successfully', {
-      requestId,
+      ...buildVoiceLogData(requestId),
       transcriptLength: text.length,
       transcriptPreview: text.slice(0, 150),
       parseTimeMs: Math.round(parseTime),
@@ -305,7 +290,7 @@ export async function transcribeVoiceBuffer(input: {
 
     if (error instanceof VoiceTranscriptionError) {
       logger.error('[voice-transcription] Processing error', {
-        requestId,
+        ...buildVoiceLogData(requestId),
         code: error.code,
         totalDurationMs: Math.round(totalTime),
       });
@@ -313,7 +298,7 @@ export async function transcribeVoiceBuffer(input: {
     }
 
     logger.error('[voice-transcription] Unexpected error', {
-      requestId,
+      ...buildVoiceLogData(requestId),
       error: error instanceof Error ? error.message : 'Unknown error',
       totalDurationMs: Math.round(totalTime),
     });

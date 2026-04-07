@@ -1,6 +1,0 @@
-{
-  "extends": "./react-bundler-lib.json",
-  "compilerOptions": {
-    "types": ["node"]
-  }
-}

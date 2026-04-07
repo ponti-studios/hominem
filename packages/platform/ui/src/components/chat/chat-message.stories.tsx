@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { booleanControl, selectControl } from '../../storybook/controls';
 import type { ExtendedMessage } from '../../types/chat';
-import { ChatMessage, type ChatMessageProps } from './chat-message';
+import { ChatMessage } from './chat-message';
 import {
   mockAssistantMessage,
   mockStreamingAssistantMessage,
@@ -14,10 +14,6 @@ const messageFixtures = {
   streaming: mockStreamingAssistantMessage,
   user: mockUserMessage,
 } as const;
-
-type ChatMessageStoryArgs = ChatMessageProps & {
-  fixture: keyof typeof messageFixtures;
-};
 
 const meta = {
   title: 'Patterns/Chat/ChatMessage',

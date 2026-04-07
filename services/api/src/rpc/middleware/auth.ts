@@ -42,7 +42,7 @@ export const authMiddleware = createMiddleware<AppContext>(async (c, next) => {
   return await next();
 });
 
-const publicMiddleware = createMiddleware<AppContext>(async (_c, next) => {
+export const publicMiddleware = createMiddleware<AppContext>(async (_c, next) => {
   return await next();
 });
 

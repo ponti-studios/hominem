@@ -32,56 +32,6 @@ function toWithRelations(event: EventStoreRecord): EventWithTagsAndPeople {
   };
 }
 
-async function getPeopleForEvent(eventId: string) {
-  const event = eventsStore.get(eventId);
-  if (!event) {
-    return [];
-  }
-  return event.peopleIds.map((id) => ({ id, firstName: 'Person', lastName: null }));
-}
-
-async function getPeopleForEvents(eventIds: string[]) {
-  const map = new Map<string, Array<{ id: string; firstName: string; lastName: string | null }>>();
-  for (const id of eventIds) {
-    map.set(id, await getPeopleForEvent(id));
-  }
-  return map;
-}
-
-async function getTagsForEvent(eventId: string) {
-  const event = eventsStore.get(eventId);
-  if (!event) {
-    return [];
-  }
-  return event.tagNames.map((name) => ({ id: name, name, color: null, description: null }));
-}
-
-async function getTagsForEvents(eventIds: string[]) {
-  const map = new Map<
-    string,
-    Array<{ id: string; name: string; color: string | null; description: string | null }>
-  >();
-  for (const id of eventIds) {
-    map.set(id, await getTagsForEvent(id));
-  }
-  return map;
-}
-
-async function removeTagsFromEvent(eventId: string, tagIds?: string[]): Promise<void> {
-  const event = eventsStore.get(eventId);
-  if (!event) {
-    return;
-  }
-  if (!tagIds || tagIds.length === 0) {
-    event.tagNames = [];
-  } else {
-    const remove = new Set(tagIds);
-    event.tagNames = event.tagNames.filter((name) => !remove.has(name));
-  }
-  event.updatedAt = new Date().toISOString();
-  eventsStore.set(eventId, event);
-}
-
 export async function getEvents(filters: EventFilters = {}): Promise<EventWithTagsAndPeople[]> {
   let rows = Array.from(eventsStore.values());
 
@@ -209,16 +159,4 @@ export async function deleteEvent(id: string): Promise<boolean> {
 export async function getEventById(id: string): Promise<EventWithTagsAndPeople | null> {
   const event = eventsStore.get(id);
   return event ? toWithRelations(event) : null;
-}
-
-async function getEventByExternalId(
-  externalId: string,
-  calendarId: string,
-): Promise<EventWithTagsAndPeople | null> {
-  for (const event of eventsStore.values()) {
-    if (event.externalId === externalId && event.calendarId === calendarId) {
-      return toWithRelations(event);
-    }
-  }
-  return null;
 }

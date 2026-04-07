@@ -2,9 +2,8 @@ import type { Selectable } from 'kysely';
 
 import { NotFoundError, ValidationError } from '../../errors';
 import type { DbHandle } from '../../transaction';
-import { getDb } from '../../transaction';
-import type { AppFiles, AppNoteFiles, AppNotes } from '../../types/database';
-import { toIsoString, toRequiredIsoString } from '../_shared/mappers';
+import type { AppFiles, AppNotes } from '../../types/database';
+import { toRequiredIsoString } from '../_shared/mappers';
 
 // ─── Row types ───────────────────────────────────────────────────────────────
 

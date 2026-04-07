@@ -1,6 +1,4 @@
-import type { User } from '@hominem/auth/server';
 import { db } from '@hominem/db';
-import { Hono } from 'hono';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import {
@@ -9,15 +7,12 @@ import {
   expectSecondNoteFeedPage,
 } from '../../../../../config/testing/note-feed';
 import { resetTestDb, seedFile, seedTestUser } from '../../../test/test-db';
-import type { AppContext } from '../middleware/auth';
-import { apiErrorHandler } from '../middleware/error';
 import { notesRoutes } from './notes';
-import { createTestApp, createTestUser, patchJson, postJson } from './test-helpers';
+import { createTestApp, patchJson, postJson } from './test-helpers';
 
 const testUserId = '00000000-0000-4000-8000-000000000001';
 const otherUserId = '00000000-0000-4000-8000-000000000002';
 const testFileId = '11111111-1111-4111-8111-111111111111';
-const nowIso = '2026-04-02T12:00:00.000Z';
 
 function createApp() {
   const app = createTestApp(testUserId);

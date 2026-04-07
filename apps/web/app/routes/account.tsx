@@ -2,12 +2,11 @@ import { useSession } from '@hominem/auth/client';
 import { Container } from '@hominem/ui';
 import { Button } from '@hominem/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@hominem/ui/card';
-import { Navigate, useNavigate } from 'react-router';
+import { Navigate } from 'react-router';
 
 import { useSignOut } from '~/lib/hooks/use-sign-out';
 
 export default function AccountPage() {
-  const navigate = useNavigate();
   const session = useSession();
   const userId = session.data?.user?.id ?? null;
   const isLoading = session.isPending;
