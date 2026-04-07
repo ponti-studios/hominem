@@ -19,7 +19,7 @@ export function createAuthTestEmail(prefix: string) {
   return `${prefix}-${workerId}-${authTestSequence}@hominem.test`;
 }
 
-export async function importServer() {
+async function importServer() {
   const module = await import('../../server');
   return module.createServer;
 }
@@ -87,26 +87,39 @@ export async function fetchOtp(app: AppRequester, email: string) {
   return payload;
 }
 
-export function toCookieHeader(setCookieValues: string[]) {
+async function signInWithOtp(
+  app: AppRequester,
+  input: { email: string; otp: string; name?: string },
+) {
+  return requestJson({
+    app,
+    path: '/api/auth/sign-in/email-otp',
+    method: 'POST',
+    body: {
+      email: input.email,
+      otp: input.otp,
+      ...(input.name ? { name: input.name } : {}),
+    },
+  });
+}
+
+function toCookieHeader(setCookieValues: string[]) {
   return setCookieValues
     .map((value) => value.split(';')[0]?.trim())
     .filter((value): value is string => Boolean(value && value.length > 0))
     .join('; ');
 }
 
-export async function signInWithEmailOtp(app: AppRequester, email: string) {
+export async function signInWithEmailOtp(app: AppRequester, email: string, name?: string) {
   const otpRequest = await requestOtp(app, email);
   if (otpRequest.status !== 200) {
     throw new Error(`Expected OTP request to succeed for ${email}, got ${otpRequest.status}`);
   }
   const otp = await fetchOtp(app, email);
-  const response = await app.request('http://localhost/api/auth/sign-in/email-otp', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      email,
-      otp: otp.otp,
-    }),
+  const response = await signInWithOtp(app, {
+    email,
+    otp: otp.otp,
+    ...(name ? { name } : {}),
   });
 
   if (response.status !== 200) {

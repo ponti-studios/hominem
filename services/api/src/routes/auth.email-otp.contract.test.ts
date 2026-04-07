@@ -8,7 +8,7 @@ import {
   fetchOtp,
   importServerWithEnv,
   requestOtp,
-  toCookieHeader,
+  signInWithEmailOtp,
 } from './test-helpers/auth';
 
 interface _SessionResponse {
@@ -46,6 +46,28 @@ async function requestOtpWithoutOrigin(app: AppRequester, email: string) {
 
   request.headers.delete('origin');
   return app.request(request);
+}
+
+async function signInWithOtp(
+  app: AppRequester,
+  input: { email: string; otp: string; name?: string },
+) {
+  return app.request('http://localhost/api/auth/sign-in/email-otp', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      email: input.email,
+      otp: input.otp,
+      ...(input.name ? { name: input.name } : {}),
+    }),
+  });
+}
+
+async function getSession(app: AppRequester, headers?: Record<string, string>) {
+  return app.request('http://localhost/api/auth/get-session', {
+    method: 'GET',
+    ...(headers ? { headers } : {}),
+  });
 }
 
 describe('auth email otp contract', () => {
@@ -121,31 +143,18 @@ describe('auth email otp contract', () => {
   test('2.2 valid otp creates authenticated session', async () => {
     const app = createServer();
     const email = createAuthTestEmail('otp-signin');
-    await requestOtp(app, email);
-    const otpResponse = await fetchOtp(app, email);
-
-    const signInResponse = await app.request('http://localhost/api/auth/sign-in/email-otp', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        email,
-        otp: otpResponse.otp,
-        name: 'OTP Contract User',
-      }),
-    });
+    const { response: signInResponse, cookieHeader } = await signInWithEmailOtp(
+      app,
+      email,
+      'OTP Contract User',
+    );
 
     expect(signInResponse.status).toBe(200);
     const payload = (await signInResponse.json()) as VerifyOtpResponse;
-    const sessionCookieHeader = toCookieHeader(getSetCookieHeaders(signInResponse.headers));
-    expect(sessionCookieHeader.length).toBeGreaterThan(0);
+    expect(cookieHeader.length).toBeGreaterThan(0);
     expect(payload.user.email).toBe(email);
 
-    const sessionResponse = await app.request('http://localhost/api/auth/get-session', {
-      method: 'GET',
-      headers: {
-        cookie: sessionCookieHeader,
-      },
-    });
+    const sessionResponse = await getSession(app, { cookie: cookieHeader });
 
     expect(sessionResponse.status).toBe(200);
     await expect(sessionResponse.json()).resolves.toMatchObject({
@@ -164,13 +173,9 @@ describe('auth email otp contract', () => {
     await requestOtp(app, email);
     const otpResponse = await fetchOtp(app, email);
 
-    const signInResponse = await app.request('http://localhost/api/auth/sign-in/email-otp', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        email,
-        otp: `${otpResponse.otp.slice(0, 3)} ${otpResponse.otp.slice(3)}`,
-      }),
+    const signInResponse = await signInWithOtp(app, {
+      email,
+      otp: `${otpResponse.otp.slice(0, 3)} ${otpResponse.otp.slice(3)}`,
     });
 
     expect(signInResponse.status).toBe(400);
@@ -179,29 +184,14 @@ describe('auth email otp contract', () => {
   test('2.2 bearer logout revokes the authenticated session', async () => {
     const app = createServer();
     const email = createAuthTestEmail('otp-logout');
-    await requestOtp(app, email);
-    const otpResponse = await fetchOtp(app, email);
-
-    const signInResponse = await app.request('http://localhost/api/auth/sign-in/email-otp', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        email,
-        otp: otpResponse.otp,
-      }),
-    });
+    const { response: signInResponse, cookieHeader: sessionCookieHeader } =
+      await signInWithEmailOtp(app, email);
 
     expect(signInResponse.status).toBe(200);
     await signInResponse.json();
-    const sessionCookieHeader = toCookieHeader(getSetCookieHeaders(signInResponse.headers));
     expect(sessionCookieHeader.length).toBeGreaterThan(0);
 
-    const sessionBeforeLogout = await app.request('http://localhost/api/auth/get-session', {
-      method: 'GET',
-      headers: {
-        cookie: sessionCookieHeader,
-      },
-    });
+    const sessionBeforeLogout = await getSession(app, { cookie: sessionCookieHeader });
     expect(sessionBeforeLogout.status).toBe(200);
 
     const logoutResponse = await app.request('http://localhost/api/auth/sign-out', {
@@ -212,12 +202,7 @@ describe('auth email otp contract', () => {
     });
     expect(logoutResponse.status).toBe(200);
 
-    const sessionAfterLogout = await app.request('http://localhost/api/auth/get-session', {
-      method: 'GET',
-      headers: {
-        cookie: sessionCookieHeader,
-      },
-    });
+    const sessionAfterLogout = await getSession(app, { cookie: sessionCookieHeader });
     expect(sessionAfterLogout.status).toBe(200);
     await expect(sessionAfterLogout.json()).resolves.toBeNull();
   }, 15000);
@@ -225,28 +210,13 @@ describe('auth email otp contract', () => {
   test('5.1 session probe returns identity-only payload for cookie-authenticated web sessions', async () => {
     const app = createServer();
     const email = createAuthTestEmail('otp-web-session');
-    await requestOtp(app, email);
-    const otpResponse = await fetchOtp(app, email);
-
-    const signInResponse = await app.request('http://localhost/api/auth/sign-in/email-otp', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        email,
-        otp: otpResponse.otp,
-      }),
-    });
+    const { response: signInResponse, cookieHeader: sessionCookieHeader } =
+      await signInWithEmailOtp(app, email);
 
     expect(signInResponse.status).toBe(200);
-    const sessionCookieHeader = toCookieHeader(getSetCookieHeaders(signInResponse.headers));
     expect(sessionCookieHeader.length).toBeGreaterThan(0);
 
-    const sessionResponse = await app.request('http://localhost/api/auth/get-session', {
-      method: 'GET',
-      headers: {
-        cookie: sessionCookieHeader,
-      },
-    });
+    const sessionResponse = await getSession(app, { cookie: sessionCookieHeader });
 
     expect(sessionResponse.status).toBe(200);
 
@@ -258,11 +228,8 @@ describe('auth email otp contract', () => {
 
   test('2.2 session probe ignores legacy refresh-token cookies', async () => {
     const app = createServer();
-    const sessionResponse = await app.request('http://localhost/api/auth/get-session', {
-      method: 'GET',
-      headers: {
-        cookie: 'hominem_refresh_token=legacy-refresh-token',
-      },
+    const sessionResponse = await getSession(app, {
+      cookie: 'hominem_refresh_token=legacy-refresh-token',
     });
 
     expect(sessionResponse.status).toBe(200);
@@ -274,11 +241,8 @@ describe('auth email otp contract', () => {
   test('2.2 session probe ignores legacy app-token cookies', async () => {
     const app = createServer();
 
-    const sessionResponse = await app.request('http://localhost/api/auth/get-session', {
-      method: 'GET',
-      headers: {
-        cookie: 'hominem_access_token=invalid-token',
-      },
+    const sessionResponse = await getSession(app, {
+      cookie: 'hominem_access_token=invalid-token',
     });
 
     expect(sessionResponse.status).toBe(200);
@@ -291,14 +255,10 @@ describe('auth email otp contract', () => {
     const email = createAuthTestEmail('otp-invalid');
     await requestOtp(app, email);
 
-    const signInResponse = await app.request('http://localhost/api/auth/sign-in/email-otp', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        email,
-        otp: '000000',
-        name: 'OTP Contract User',
-      }),
+    const signInResponse = await signInWithOtp(app, {
+      email,
+      otp: '000000',
+      name: 'OTP Contract User',
     });
 
     expect(signInResponse.status).toBe(400);
@@ -308,11 +268,8 @@ describe('auth email otp contract', () => {
     });
 
     // Verify session is not created by trying with an invalid token
-    const sessionResponse = await app.request('http://localhost/api/auth/get-session', {
-      method: 'GET',
-      headers: {
-        Authorization: 'Bearer invalid-token',
-      },
+    const sessionResponse = await getSession(app, {
+      Authorization: 'Bearer invalid-token',
     });
     expect(sessionResponse.status).toBe(200);
     await expect(sessionResponse.json()).resolves.toBeNull();
@@ -330,13 +287,9 @@ describe('auth email otp contract', () => {
 
       vi.setSystemTime(new Date('2026-03-05T00:00:01.200Z'));
 
-      const signInResponse = await app.request('http://localhost/api/auth/sign-in/email-otp', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          otp: otpResponse.otp,
-        }),
+      const signInResponse = await signInWithOtp(app, {
+        email,
+        otp: otpResponse.otp,
       });
 
       expect(signInResponse.status).toBe(400);
@@ -346,11 +299,8 @@ describe('auth email otp contract', () => {
       });
 
       // Verify session is not created by trying with an invalid token
-      const sessionResponse = await app.request('http://localhost/api/auth/get-session', {
-        method: 'GET',
-        headers: {
-          Authorization: 'Bearer invalid-token',
-        },
+      const sessionResponse = await getSession(app, {
+        Authorization: 'Bearer invalid-token',
       });
       expect(sessionResponse.status).toBe(200);
       await expect(sessionResponse.json()).resolves.toBeNull();
@@ -362,26 +312,12 @@ describe('auth email otp contract', () => {
   test('2.3 replayed otp verification attempts fail deterministically in test mode', async () => {
     const app = createServer();
     const email = createAuthTestEmail('otp-replay');
-    await requestOtp(app, email);
-    const otpResponse = await fetchOtp(app, email);
-
-    const firstResponse = await app.request('http://localhost/api/auth/sign-in/email-otp', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        email,
-        otp: otpResponse.otp,
-      }),
-    });
+    const { response: firstResponse, otp: otpResponse } = await signInWithEmailOtp(app, email);
     expect(firstResponse.status).toBe(200);
 
-    const replayResponse = await app.request('http://localhost/api/auth/sign-in/email-otp', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        email,
-        otp: otpResponse.otp,
-      }),
+    const replayResponse = await signInWithOtp(app, {
+      email,
+      otp: otpResponse.otp,
     });
 
     expect(replayResponse.status).toBe(400);

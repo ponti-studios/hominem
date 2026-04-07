@@ -20,7 +20,11 @@ export function installVoiceFetchMock() {
   vi.stubGlobal('fetch', mockVoiceFetch);
 }
 
-export function makeVoiceAudioStreamResponse(audioChunks: string[], transcriptChunks: string[], status = 200) {
+export function makeVoiceAudioStreamResponse(
+  audioChunks: string[],
+  transcriptChunks: string[],
+  status = 200,
+) {
   const lines: string[] = [];
 
   for (let i = 0; i < Math.max(audioChunks.length, transcriptChunks.length); i++) {

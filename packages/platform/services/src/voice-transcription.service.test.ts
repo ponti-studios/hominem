@@ -1,12 +1,5 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  VOICE_TRANSCRIPTION_MAX_SIZE_BYTES,
-  VoiceTranscriptionError,
-  normalizeVoiceMimeType,
-  validateVoiceInput,
-  transcribeVoiceBuffer,
-} from './voice-transcription.service';
 import {
   installVoiceEnvMock,
   installVoiceFetchMock,
@@ -15,6 +8,13 @@ import {
   mockVoiceEnv,
   mockVoiceFetch,
 } from './voice-test-helpers';
+import {
+  VOICE_TRANSCRIPTION_MAX_SIZE_BYTES,
+  VoiceTranscriptionError,
+  normalizeVoiceMimeType,
+  transcribeVoiceBuffer,
+  validateVoiceInput,
+} from './voice-transcription.service';
 
 installVoiceEnvMock('./env');
 installVoiceFetchMock();

@@ -13,7 +13,7 @@ import { apiErrorHandler } from '../middleware/error';
  * Create a mock user for testing.
  * All tests use the same consistent user ID and metadata.
  */
-export function createTestUser(overrides?: Partial<User>): User {
+function createTestUser(overrides?: Partial<User>): User {
   const nowIso = '2026-04-02T12:00:00.000Z';
   const testUserId = '00000000-0000-4000-8000-000000000001';
 
@@ -84,7 +84,7 @@ export async function patchJson(
 /**
  * Make a DELETE request to the test app.
  */
-export async function deleteJson(app: Hono<AppContext>, path: string): Promise<Response> {
+async function deleteJson(app: Hono<AppContext>, path: string): Promise<Response> {
   return app.request(`http://localhost${path}`, {
     method: 'DELETE',
     headers: {
@@ -96,7 +96,7 @@ export async function deleteJson(app: Hono<AppContext>, path: string): Promise<R
 /**
  * Make a GET request to the test app.
  */
-export async function getJson(app: Hono<AppContext>, path: string): Promise<Response> {
+async function getJson(app: Hono<AppContext>, path: string): Promise<Response> {
   return app.request(`http://localhost${path}`, {
     method: 'GET',
     headers: {

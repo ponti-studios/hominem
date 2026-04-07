@@ -3,6 +3,11 @@ import { db } from '@hominem/db';
 import { Hono } from 'hono';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
+import {
+  createNoteFeedRows,
+  expectFirstNoteFeedPage,
+  expectSecondNoteFeedPage,
+} from '../../../../../config/testing/note-feed';
 import { resetTestDb, seedFile, seedTestUser } from '../../../test/test-db';
 import type { AppContext } from '../middleware/auth';
 import { apiErrorHandler } from '../middleware/error';
@@ -108,35 +113,7 @@ describe('notesRoutes', () => {
   });
 
   test('lists feed items with cursor pagination', async () => {
-    await db
-      .insertInto('app.notes')
-      .values([
-        {
-          id: '11111111-1111-4111-8111-111111111111',
-          owner_userid: testUserId,
-          title: 'Newest',
-          content: 'Newest body',
-          createdat: new Date('2026-04-02T12:02:00.000Z'),
-          updatedat: new Date('2026-04-02T12:02:00.000Z'),
-        },
-        {
-          id: '22222222-2222-4222-8222-222222222222',
-          owner_userid: testUserId,
-          title: 'Middle',
-          content: 'Middle body',
-          createdat: new Date('2026-04-02T12:01:00.000Z'),
-          updatedat: new Date('2026-04-02T12:01:00.000Z'),
-        },
-        {
-          id: '33333333-3333-4333-8333-333333333333',
-          owner_userid: testUserId,
-          title: 'Oldest',
-          content: 'Oldest body',
-          createdat: new Date('2026-04-02T12:00:00.000Z'),
-          updatedat: new Date('2026-04-02T12:00:00.000Z'),
-        },
-      ])
-      .execute();
+    await db.insertInto('app.notes').values(createNoteFeedRows(testUserId)).execute();
 
     const firstResponse = await createApp().request('http://localhost/api/notes/feed?limit=2', {
       method: 'GET',
@@ -148,12 +125,7 @@ describe('notesRoutes', () => {
       nextCursor: string | null;
     };
 
-    expect(firstPage.notes.map((note) => note.id)).toEqual([
-      '11111111-1111-4111-8111-111111111111',
-      '22222222-2222-4222-8222-222222222222',
-    ]);
-    expect(firstPage.notes[0]?.contentPreview).toBe('Newest body');
-    expect(firstPage.nextCursor).toBeTruthy();
+    expectFirstNoteFeedPage(firstPage);
 
     const secondResponse = await createApp().request(
       `http://localhost/api/notes/feed?limit=2&cursor=${encodeURIComponent(firstPage.nextCursor ?? '')}`,
@@ -168,10 +140,7 @@ describe('notesRoutes', () => {
       nextCursor: string | null;
     };
 
-    expect(secondPage.notes.map((note) => note.id)).toEqual([
-      '33333333-3333-4333-8333-333333333333',
-    ]);
-    expect(secondPage.nextCursor).toBeNull();
+    expectSecondNoteFeedPage(secondPage);
   });
 
   test('updates note attachments with real file ownership checks', async () => {
