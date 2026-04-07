@@ -13,12 +13,12 @@ interface TranscribeErrorResponse {
   code?: string;
 }
 
-export interface TranscribeVariables {
+interface TranscribeVariables {
   audioBlob: Blob;
   language?: string;
 }
 
-export interface TranscribeResult {
+interface TranscribeResult {
   text: string;
 }
 

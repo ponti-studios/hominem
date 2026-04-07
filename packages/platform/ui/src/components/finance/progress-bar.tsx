@@ -1,13 +1,13 @@
 import { cn } from '../../lib/utils';
 
-export interface ProgressBarProps {
+interface ProgressBarProps {
   className?: string;
   progress?: number;
 }
 
 export function ProgressBar({ className, progress = 0 }: ProgressBarProps) {
   return (
-    <div className={cn('h-[2px] w-full overflow-hidden border-t border-foreground', className)}>
+    <div className={cn('h-0.5 w-full overflow-hidden border-t border-foreground', className)}>
       <div
         className={cn('h-full border-t border-warning')}
         style={{

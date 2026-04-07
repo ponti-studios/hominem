@@ -3,12 +3,12 @@ import { useId } from 'react';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
-export interface TagOption {
+interface TagOption {
   id: string;
   name: string;
 }
 
-export interface TagSelectProps {
+interface TagSelectProps {
   selectedTag: string;
   onTagChange: (value: string) => void;
   tags: TagOption[];

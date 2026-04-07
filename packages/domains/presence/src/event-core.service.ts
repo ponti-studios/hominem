@@ -7,14 +7,6 @@ import type {
   EventWithTagsAndPeople,
   UpdateEventInput,
 } from './contracts';
-export type {
-  EventFilters,
-  EventInput,
-  EventOutput,
-  EventTypeEnum,
-  EventWithTagsAndPeople,
-  UpdateEventInput,
-} from './contracts';
 
 type EventStoreRecord = EventOutput & {
   tagNames: string[];

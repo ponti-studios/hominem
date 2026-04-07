@@ -8,7 +8,7 @@ export const STEP_UP_TTL_SECONDS = 5 * 60;
  * Minimal Redis-compatible interface for step-up token storage.
  * Inject your Redis client at startup via `configureStepUpStore`.
  */
-export interface StepUpStore {
+interface StepUpStore {
   get(key: string): Promise<string | null>;
   set(key: string, value: string, mode: 'EX', ttlSeconds: number): Promise<string | null>;
 }

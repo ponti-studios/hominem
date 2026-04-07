@@ -1,13 +1,13 @@
 import { existsSync } from 'node:fs';
 
-export type VoiceProviderErrorCode =
+type VoiceProviderErrorCode =
   | 'AUTH'
   | 'QUOTA'
   | 'CONTENT_POLICY'
   | 'RESPONSE_FAILED'
   | 'TRANSCRIBE_FAILED';
 
-export interface VoiceProviderErrorInfo {
+interface VoiceProviderErrorInfo {
   code: VoiceProviderErrorCode;
   message: string;
   statusCode: number;

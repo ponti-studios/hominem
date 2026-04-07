@@ -7,13 +7,13 @@ import {
   selectControl,
   textControl,
 } from '../../storybook/controls';
-import { AccountSelect, type AccountOption } from './account-select';
+import { AccountSelect } from './account-select';
 
-const accounts: AccountOption[] = [
+const accounts = [
   { id: 'all-checking', name: 'Daily Checking' },
   { id: 'travel-card', name: 'Travel Rewards Card' },
   { id: 'savings', name: 'Emergency Savings' },
-];
+] satisfies NonNullable<Parameters<typeof AccountSelect>[0]['accounts']>;
 
 const accountOptions = ['all', ...accounts.map((account) => account.id)] as const;
 

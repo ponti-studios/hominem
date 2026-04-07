@@ -4,7 +4,7 @@ import { useMutation, useQueryClient, type UseMutationResult } from '@tanstack/r
 
 import { noteKeys } from './query-keys';
 
-export interface CreateNoteInput {
+interface CreateNoteInput {
   text: string;
   fileIds?: string[];
 }

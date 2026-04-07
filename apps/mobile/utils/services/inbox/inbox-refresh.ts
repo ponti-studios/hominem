@@ -7,7 +7,7 @@ import type { ChatWithActivity } from '../chat/session-state';
 
 export const INBOX_REFRESH_QUERY_KEYS = [noteKeys.all, chatKeys.resumableSessions] as const;
 
-export interface ChatInboxRefreshSnapshot {
+interface ChatInboxRefreshSnapshot {
   chatId: string;
   noteId: string | null;
   title: string | null;

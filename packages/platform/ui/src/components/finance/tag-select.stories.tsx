@@ -7,13 +7,13 @@ import {
   selectControl,
   textControl,
 } from '../../storybook/controls';
-import { TagSelect, type TagOption } from './tag-select';
+import { TagSelect } from './tag-select';
 
-const tags: TagOption[] = [
+const tags = [
   { id: 'groceries', name: 'Groceries' },
   { id: 'travel', name: 'Travel' },
   { id: 'software', name: 'Software' },
-];
+] satisfies NonNullable<Parameters<typeof TagSelect>[0]['tags']>;
 
 const tagOptions = ['all', ...tags.map((tag) => tag.id)] as const;
 

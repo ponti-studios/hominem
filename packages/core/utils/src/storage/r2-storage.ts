@@ -13,7 +13,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { isSupportedChatUploadMimeType } from '../upload';
 import type { FileObject, PreparedUpload, StorageOptions, StoredFile } from './types';
 
-export type StorageCategory = 'csvs' | 'chats' | 'places';
+type StorageCategory = 'csvs' | 'chats' | 'places';
 
 export class R2StorageService {
   private client: S3Client;

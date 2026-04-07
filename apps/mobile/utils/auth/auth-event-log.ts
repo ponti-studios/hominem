@@ -1,4 +1,4 @@
-export interface AuthEventLogEntry {
+interface AuthEventLogEntry {
   event: string;
   phase: string;
   timestamp: number;

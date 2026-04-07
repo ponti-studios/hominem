@@ -3,7 +3,7 @@ export interface BoundaryState {
   error: Error | null;
 }
 
-export interface BoundaryLogContext {
+interface BoundaryLogContext {
   feature?: string;
   route?: string;
   userId?: string;

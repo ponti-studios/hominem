@@ -3,7 +3,7 @@ import type { TextStyle } from 'react-native';
 
 import { theme } from '~/theme';
 
-export type AppIconName = SFSymbol;
+type AppIconName = SFSymbol;
 
 const ANDROID_SYMBOL_MAP: Partial<Record<AppIconName, AndroidSymbol>> = {
   'arrow.clockwise': 'refresh',
