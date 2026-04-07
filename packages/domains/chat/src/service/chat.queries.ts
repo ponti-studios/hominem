@@ -9,15 +9,15 @@ import { ChatRepository, getDb } from '@hominem/db';
 
 import type { ChatOutput } from '../contracts';
 import type { CreateChatParams } from './chat.types';
-
-export async function createChatQuery(params: CreateChatParams): Promise<ChatOutput> {
-  const record = await ChatRepository.create(getDb(), {
-    userId: params.userId,
-    title: params.title,
-    noteId: params.noteId ?? null,
-    archivedAt: params.archivedAt ?? null,
-  });
-
+function toChatOutput(record: {
+  archivedAt: ChatOutput['archivedAt'];
+  id: string;
+  title: string;
+  userId: string;
+  noteId: string | null;
+  createdAt: ChatOutput['createdAt'];
+  updatedAt: ChatOutput['updatedAt'];
+}): ChatOutput {
   return {
     archivedAt: record.archivedAt,
     id: record.id,
@@ -29,18 +29,21 @@ export async function createChatQuery(params: CreateChatParams): Promise<ChatOut
   };
 }
 
+export async function createChatQuery(params: CreateChatParams): Promise<ChatOutput> {
+  const record = await ChatRepository.create(getDb(), {
+    userId: params.userId,
+    title: params.title,
+    noteId: params.noteId ?? null,
+    archivedAt: params.archivedAt ?? null,
+  });
+
+  return toChatOutput(record);
+}
+
 export async function getChatByIdQuery(chatId: string, userId: string): Promise<ChatOutput | null> {
   try {
     const record = await ChatRepository.getOwnedOrThrow(getDb(), chatId, userId);
-    return {
-      archivedAt: record.archivedAt,
-      id: record.id,
-      title: record.title,
-      userId: record.userId,
-      noteId: record.noteId,
-      createdAt: record.createdAt,
-      updatedAt: record.updatedAt,
-    };
+    return toChatOutput(record);
   } catch {
     return null;
   }
@@ -62,15 +65,7 @@ export async function getOrCreateActiveChatQuery(
 
 export async function getUserChatsQuery(userId: string, limit = 50): Promise<ChatOutput[]> {
   const records = await ChatRepository.listForUser(getDb(), userId, limit);
-  return records.map((record) => ({
-    archivedAt: record.archivedAt,
-    id: record.id,
-    title: record.title,
-    userId: record.userId,
-    noteId: record.noteId,
-    createdAt: record.createdAt,
-    updatedAt: record.updatedAt,
-  }));
+  return records.map(toChatOutput);
 }
 
 export async function getChatByNoteIdQuery(
@@ -80,15 +75,7 @@ export async function getChatByNoteIdQuery(
   const record = await ChatRepository.getByNoteId(getDb(), noteId, userId);
   if (!record) return null;
 
-  return {
-    archivedAt: record.archivedAt,
-    id: record.id,
-    title: record.title,
-    userId: record.userId,
-    noteId: record.noteId,
-    createdAt: record.createdAt,
-    updatedAt: record.updatedAt,
-  };
+  return toChatOutput(record);
 }
 
 export async function updateChatTitleQuery(
@@ -107,15 +94,7 @@ export async function updateChatTitleQuery(
 export async function archiveChatQuery(chatId: string, userId: string): Promise<ChatOutput | null> {
   try {
     const record = await ChatRepository.archive(getDb(), chatId, userId);
-    return {
-      archivedAt: record.archivedAt,
-      id: record.id,
-      title: record.title,
-      userId: record.userId,
-      noteId: record.noteId,
-      createdAt: record.createdAt,
-      updatedAt: record.updatedAt,
-    };
+    return toChatOutput(record);
   } catch {
     return null;
   }

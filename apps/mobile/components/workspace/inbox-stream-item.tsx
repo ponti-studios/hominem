@@ -1,3 +1,4 @@
+import { parseInboxTimestamp } from '@hominem/utils/dates';
 import type { RelativePathString } from 'expo-router';
 import { useRouter } from 'expo-router';
 import React, { memo, useCallback } from 'react';
@@ -6,9 +7,8 @@ import Reanimated, { FadeInDown, LinearTransition } from 'react-native-reanimate
 
 import AppIcon from '~/components/ui/icon';
 import { Text, makeStyles, theme } from '~/theme';
-import { parseInboxTimestamp } from '~/utils/date/parse-inbox-timestamp';
 
-import type { InboxStreamItem as InboxStreamItemModel } from './inbox-stream-items';
+import type { InboxStreamItemData as InboxStreamItemModel } from './inbox-stream-items';
 
 interface InboxStreamItemProps {
   item: InboxStreamItemModel;

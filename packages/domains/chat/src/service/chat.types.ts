@@ -1,5 +1,3 @@
-import type { ChatMessageOutput, ChatOutput } from '../contracts';
-
 export interface CreateChatParams {
   archivedAt?: string | null;
   title: string;
@@ -28,5 +26,3 @@ export class ChatError extends Error {
     this.name = 'ChatError';
   }
 }
-
-export type { ChatOutput, ChatMessageOutput };

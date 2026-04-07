@@ -1,7 +1,6 @@
 import type { Chat } from '@hominem/rpc/types';
+import { parseInboxTimestamp } from '@hominem/utils/dates';
 import { TIME_UNITS } from '@hominem/utils/time';
-
-import { parseInboxTimestamp } from '~/utils/date/parse-inbox-timestamp';
 
 export interface ChatWithActivity extends Chat {
   activityAt: string;

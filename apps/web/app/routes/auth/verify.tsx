@@ -5,20 +5,13 @@ import { AuthScaffold, OtpVerificationForm } from '@hominem/ui';
 import { useCallback } from 'react';
 import { redirect, useLoaderData, useLocation, useNavigate, useSearchParams } from 'react-router';
 
-import { getServerAuth } from '~/lib/auth.server';
-
 import { AUTH_CONFIG } from './config';
+import { getNextRedirect, redirectAuthenticatedUser } from './shared';
 
 export async function loader({ request }: { request: Request }) {
-  const { user, headers } = await getServerAuth(request);
-  if (user) {
-    const url = new URL(request.url);
-    return redirect(
-      resolveSafeAuthRedirect(url.searchParams.get('next'), AUTH_CONFIG.defaultRedirect, [
-        ...AUTH_CONFIG.allowedRedirectPrefixes,
-      ]),
-      { headers },
-    );
+  const redirectResponse = await redirectAuthenticatedUser(request);
+  if (redirectResponse) {
+    return redirectResponse;
   }
 
   const url = new URL(request.url);
@@ -36,7 +29,7 @@ export default function Component() {
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const next = searchParams.get('next') ?? AUTH_CONFIG.defaultRedirect;
+  const next = getNextRedirect(location.search);
   const verifyEmailOtp = useCallback(
     async (input: { email: string; otp: string; next: string }) => {
       const destination = resolveSafeAuthRedirect(input.next, AUTH_CONFIG.defaultRedirect, [

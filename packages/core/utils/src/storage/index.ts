@@ -1,10 +1,8 @@
 export {
-  R2StorageService,
   csvStorageService,
   fileStorageService,
   placeImagesStorageService,
-  type StoredFile,
-  type StorageOptions,
-  type FileObject,
-  type PreparedUpload,
+  R2StorageService,
 } from './r2-storage';
+
+export type { FileObject, PreparedUpload, StorageOptions, StoredFile } from './types';

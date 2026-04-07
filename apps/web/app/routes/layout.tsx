@@ -1,7 +1,8 @@
-import { useAuthClient, useSession } from '@hominem/auth/client';
+import { useSession } from '@hominem/auth/client';
 import { Toaster } from '@hominem/ui';
-import { useCallback } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router';
+
+import { useSignOut } from '~/lib/hooks/use-sign-out';
 
 function NavItem({ to, label }: { to: string; label: string }) {
   return (
@@ -17,18 +18,11 @@ function NavItem({ to, label }: { to: string; label: string }) {
 }
 
 export default function Layout() {
-  const authClient = useAuthClient();
   const navigate = useNavigate();
   const session = useSession();
   const userId = session.data?.user?.id ?? null;
   const isLoading = session.isPending;
-  const signOut = useCallback(async () => {
-    const result = await authClient.signOut();
-    if (result.error) {
-      throw new Error(result.error.message ?? 'Unable to sign out.');
-    }
-    navigate('/auth');
-  }, [authClient, navigate]);
+  const signOut = useSignOut();
 
   return (
     <div className="min-h-dvh bg-background text-foreground">

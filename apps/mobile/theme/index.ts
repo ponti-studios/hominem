@@ -1,5 +1,6 @@
 import Box from './Box';
+import { makeStyles } from './make-styles';
 import Text from './Text';
-import theme, { makeStyles } from './theme';
+import theme from './theme';
 
-export { theme, Box, Text, makeStyles };
+export { Box, makeStyles, Text, theme };

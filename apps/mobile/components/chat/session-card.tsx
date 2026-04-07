@@ -7,7 +7,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { FadeIn } from '~/components/animated/fade-in';
 import { makeStyles, Text, theme } from '~/theme';
-import { parseInboxTimestamp } from '~/utils/date/parse-inbox-timestamp';
+import { formatRelativeAge } from '~/utils/date/format-relative-age';
 import type { ChatWithActivity } from '~/utils/services/chat/session-state';
 import {
   getArchivedChatsWithActivity,
@@ -80,7 +80,7 @@ export const SessionCard = memo(({ chat, isActive }: SessionCardProps) => {
             {label}
           </Text>
           <Text variant="small" color="text-tertiary">
-            {isActive ? 'Active' : formatAge(chat.activityAt)}
+            {isActive ? 'Active' : formatRelativeAge(chat.activityAt)}
           </Text>
         </View>
         <AppIcon name="chevron.right" size={12} color={theme.colors['text-tertiary']} />
@@ -90,16 +90,6 @@ export const SessionCard = memo(({ chat, isActive }: SessionCardProps) => {
 });
 
 SessionCard.displayName = 'SessionCard';
-
-function formatAge(activityAt: string): string {
-  const parsed = parseInboxTimestamp(activityAt);
-  const diffMs = Date.now() - parsed.getTime();
-  const diffH = Math.floor(diffMs / (1000 * 60 * 60));
-  if (diffH < 1) return 'Just now';
-  if (diffH < 24) return `${diffH}h ago`;
-  const diffD = Math.floor(diffH / 24);
-  return `${diffD}d ago`;
-}
 
 const useStyles = makeStyles((t) =>
   StyleSheet.create({

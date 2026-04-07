@@ -1,15 +1,15 @@
 import { useMemo } from 'react';
 
 import { useResumableSessions } from '~/components/chat/session-card';
-import type { InboxStreamItem } from '~/components/workspace/inbox-stream-items';
+import type { InboxStreamItemData } from '~/components/workspace/inbox-stream-items';
 import { useNoteStream } from '~/utils/services/notes/use-note-stream';
 
 export function useInboxStreamItems() {
   const notes = useNoteStream();
   const sessions = useResumableSessions();
 
-  const items = useMemo<InboxStreamItem[]>(() => {
-    const noteItems: InboxStreamItem[] = (notes.data ?? []).map((note) => ({
+  const items = useMemo<InboxStreamItemData[]>(() => {
+    const noteItems: InboxStreamItemData[] = (notes.data ?? []).map((note) => ({
       kind: 'note',
       id: note.id,
       title: note.title ?? 'Untitled',
@@ -18,7 +18,7 @@ export function useInboxStreamItems() {
       route: `/(protected)/(tabs)/notes/${note.id}`,
     }));
 
-    const chatItems: InboxStreamItem[] = (sessions.data ?? []).map((chat) => ({
+    const chatItems: InboxStreamItemData[] = (sessions.data ?? []).map((chat) => ({
       kind: 'chat',
       id: chat.id,
       title: chat.title ?? 'Untitled chat',

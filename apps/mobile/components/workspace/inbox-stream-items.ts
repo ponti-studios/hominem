@@ -1,4 +1,4 @@
-export type InboxStreamItem = {
+export type InboxStreamItemData = {
   kind: 'note' | 'chat';
   id: string;
   title: string | null;

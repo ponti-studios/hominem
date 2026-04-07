@@ -85,7 +85,7 @@ export function getTelemetryConfig(explicit?: Partial<TelemetryConfig>): Telemet
   };
 }
 
-function parseOptionalNumber(value?: string): number | undefined {
+export function parseOptionalNumber(value?: string): number | undefined {
   if (!value) return undefined;
 
   const parsed = Number.parseInt(value, 10);

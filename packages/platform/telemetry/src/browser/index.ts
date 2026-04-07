@@ -21,6 +21,7 @@ import {
 } from '@opentelemetry/semantic-conventions';
 
 import type { TelemetryConfig } from '../shared/index.js';
+import { parseOptionalNumber } from '../shared/index.js';
 
 /**
  * Browser telemetry SDK instance
@@ -141,13 +142,6 @@ function getBrowserConfig(explicit?: Partial<TelemetryConfig>): TelemetryConfig 
       : {}),
     ...(explicit?.attributes !== undefined ? { attributes: explicit.attributes } : {}),
   };
-}
-
-function parseOptionalNumber(value?: string): number | undefined {
-  if (!value) return undefined;
-
-  const parsed = Number.parseInt(value, 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
 }
 
 /**

@@ -1,34 +1,11 @@
 import { Buffer } from 'node:buffer';
-import { existsSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { logger } from '@hominem/utils/logger';
 
 import { env } from './env';
-
-/**
- * Directory for saving voice audio files for team review.
- * Uses repo .tmp/voice directory for easy access.
- */
-function getVoiceAudioDir(): string {
-  // Try to find the repo root by looking for .tmp directory
-  const possiblePaths = [
-    './.tmp/voice',
-    '../.tmp/voice',
-    '../../.tmp/voice',
-    '../../../.tmp/voice',
-  ];
-
-  for (const path of possiblePaths) {
-    const dir = path.replace('/voice', '');
-    if (existsSync(dir) || existsSync(path)) {
-      return path;
-    }
-  }
-
-  return './.tmp/voice';
-}
+import { getVoiceAudioDir, logAndMapVoiceProviderError } from './voice.shared';
 
 /**
  * Voice response service — generates an AI audio reply to a user's text input.
@@ -281,27 +258,17 @@ export async function generateVoiceResponse(
       | undefined;
     const totalTime = performance.now() - startTime;
 
-    logger.error('[voice-response] API error response', {
+    const errorInfo = logAndMapVoiceProviderError({
+      logger,
+      loggerLabel: '[voice-response] API error response',
       requestId,
-      status: response.status,
-      error: errorMessage ?? response.statusText,
-      totalDurationMs: Math.round(totalTime),
+      responseStatus: response.status,
+      responseStatusText: response.statusText,
+      errorMessage,
+      kind: 'response',
+      totalDurationMs: totalTime,
     });
-
-    if (response.status === 401 || response.status === 403) {
-      throw new VoiceResponseError('Invalid API configuration.', 'AUTH', 401);
-    }
-    if (response.status === 429) {
-      throw new VoiceResponseError('API quota exceeded. Please try again later.', 'QUOTA', 429);
-    }
-    if (response.status === 400 && errorMessage?.includes('content_policy')) {
-      throw new VoiceResponseError('Content not allowed by content policy.', 'CONTENT_POLICY', 400);
-    }
-    throw new VoiceResponseError(
-      `Voice response failed: ${errorMessage ?? response.statusText}`,
-      'RESPONSE_FAILED',
-      500,
-    );
+    throw new VoiceResponseError(errorInfo.message, errorInfo.code, errorInfo.statusCode);
   }
 
   try {

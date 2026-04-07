@@ -1,26 +1,14 @@
 import { AUTH_COPY, readAuthErrorMessage } from '@hominem/auth';
 import { useAuthClient, usePasskeyAuth } from '@hominem/auth/client';
-import { resolveSafeAuthRedirect } from '@hominem/auth/server-utils';
 import { AuthScaffold, EmailEntryForm } from '@hominem/ui';
 import { useCallback } from 'react';
-import { redirect, useLocation, useNavigate, useSearchParams } from 'react-router';
-
-import { getServerAuth } from '~/lib/auth.server';
+import { useLocation, useNavigate, useSearchParams } from 'react-router';
 
 import { AUTH_CONFIG } from './config';
+import { getNextRedirect, redirectAuthenticatedUser } from './shared';
 
 export async function loader({ request }: { request: Request }) {
-  const { user, headers } = await getServerAuth(request);
-  if (user) {
-    const url = new URL(request.url);
-    return redirect(
-      resolveSafeAuthRedirect(url.searchParams.get('next'), AUTH_CONFIG.defaultRedirect, [
-        ...AUTH_CONFIG.allowedRedirectPrefixes,
-      ]),
-      { headers },
-    );
-  }
-  return null;
+  return redirectAuthenticatedUser(request);
 }
 
 export default function Component() {
@@ -28,7 +16,7 @@ export default function Component() {
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const next = searchParams.get('next') ?? AUTH_CONFIG.defaultRedirect;
+  const next = getNextRedirect(location.search);
 
   const {
     authenticate,

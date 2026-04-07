@@ -5,7 +5,7 @@ import { StyleSheet, View, type RefreshControlProps } from 'react-native';
 import { Text, makeStyles } from '~/theme';
 
 import { InboxStreamItem } from './inbox-stream-item';
-import type { InboxStreamItem as InboxStreamItemModel } from './inbox-stream-items';
+import type { InboxStreamItemData as InboxStreamItemModel } from './inbox-stream-items';
 
 interface InboxStreamProps {
   items: InboxStreamItemModel[];
