@@ -1,7 +1,3 @@
 {
-  "extends": "./package-bundler.json",
-  "compilerOptions": {
-    "lib": ["ESNext"],
-    "types": ["node"]
-  }
+  "extends": "./package-bundler.json"
 }

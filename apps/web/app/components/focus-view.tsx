@@ -1,3 +1,4 @@
+import { Text } from '@hominem/ui/text';
 import { memo } from 'react';
 import { Link } from 'react-router';
 
@@ -31,22 +32,22 @@ const FocusRow = memo(function FocusRow({ item }: { item: InboxStreamItem }) {
       className="block border-b border-border/30 px-4 py-4 transition-colors hover:bg-surface last:border-b-0"
     >
       <div className="flex items-baseline justify-between gap-3">
-        <span className="flex-1 truncate text-[15px] font-medium text-text-primary">
+        <Text as="span" variant="body-3" className="flex-1 truncate font-medium text-text-primary">
           {item.title || (isNote ? 'Untitled note' : 'Untitled chat')}
-        </span>
-        <span className="shrink-0 text-xs text-text-tertiary">
+        </Text>
+        <span className="shrink-0 text-caption-2 text-text-tertiary">
           {formatTimestamp(item.updatedAt)}
         </span>
       </div>
       {item.preview ? (
-        <p className="mt-1.5 line-clamp-2 text-[13px] leading-relaxed text-text-secondary">
+        <Text as="p" variant="body-4" className="mt-1 line-clamp-2 text-text-secondary">
           {item.preview}
-        </p>
+        </Text>
       ) : null}
       <div className="mt-2">
         <span
           className={[
-            'inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase',
+            'inline-flex items-center rounded-full px-2 py-1 text-caption-2 font-medium tracking-widest uppercase',
             isNote ? 'bg-surface text-text-tertiary' : 'bg-surface text-text-secondary',
           ].join(' ')}
         >
@@ -65,14 +66,11 @@ function FocusSkeleton() {
       {Array.from({ length: 6 }).map((_, i) => (
         <div key={i} className="border-b border-border/30 px-4 py-4 last:border-b-0">
           <div className="flex items-baseline justify-between gap-3">
-            <div
-              className="h-3.5 rounded-md bg-surface"
-              style={{ width: `${45 + (i % 3) * 15}%` }}
-            />
-            <div className="h-2.5 w-12 rounded-md bg-surface" />
+            <div className="h-4 rounded-md bg-surface" style={{ width: `${45 + (i % 3) * 15}%` }} />
+            <div className="h-2 w-12 rounded-md bg-surface" />
           </div>
           <div
-            className="mt-2 h-2.5 rounded-md bg-surface"
+            className="mt-2 h-2 rounded-md bg-surface"
             style={{ width: `${60 + (i % 4) * 8}%` }}
           />
         </div>
@@ -85,11 +83,13 @@ function FocusSkeleton() {
 
 function FocusEmpty() {
   return (
-    <div className="flex flex-col items-center justify-center gap-2 px-6 py-24 text-center">
-      <p className="text-base font-semibold text-text-primary">Start with a thought</p>
-      <p className="max-w-[32ch] text-[13px] text-text-secondary">
+    <div className="flex flex-col items-center justify-center gap-2 px-6 py-8 text-center">
+      <Text as="p" variant="body-2" className="font-semibold text-text-primary">
+        Start with a thought
+      </Text>
+      <Text as="p" variant="body-4" className="content-width-note-preview text-text-secondary">
         New notes and conversations will appear here together.
-      </p>
+      </Text>
     </div>
   );
 }

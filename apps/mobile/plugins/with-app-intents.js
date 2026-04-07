@@ -1,6 +1,9 @@
 const { withXcodeProject, withDangerousMod } = require('expo/config-plugins')
 const fs = require('fs')
 const path = require('path')
+const { getAppVariantConfig } = require('../config/appVariant')
+
+const APP_SCHEME = getAppVariantConfig().scheme
 
 /**
  * Creates ios/<ProjectName>/AppIntents/ source files and registers them in
@@ -28,7 +31,7 @@ struct AddNoteIntent: AppIntent {
     static let description = IntentDescription("Opens Hakumi to create a new note.")
 
     func perform() async throws -> some IntentResult & OpensIntent {
-        let url = URL(string: "hakumi://note/add")!
+        let url = URL(string: "${APP_SCHEME}://note/add")!
         return .result(opensIntent: OpenURLIntent(url))
     }
 }
@@ -41,7 +44,7 @@ struct StartChatIntent: AppIntent {
     static let description = IntentDescription("Opens Hakumi's chat assistant.")
 
     func perform() async throws -> some IntentResult & OpensIntent {
-        let url = URL(string: "hakumi://chat")!
+        let url = URL(string: "${APP_SCHEME}://chat")!
         return .result(opensIntent: OpenURLIntent(url))
     }
 }
@@ -68,19 +71,24 @@ struct HakumiShortcutsProvider: AppShortcutsProvider {
 
 // MARK: - React Native NativeModules bridge
 
+typealias RCTResponseSenderBlock = ([Any]?) -> Void
+
 @objc(HakumiIntents)
 class HakumiIntentsModule: NSObject {
-    @objc func donate(_ intentName: String) {
-        guard #available(iOS 16.0, *) else { return }
-        Task {
-            switch intentName {
-            case "AddNoteIntent":
-                await AddNoteIntent.donate(AddNoteIntent())
-            case "StartChatIntent":
-                await StartChatIntent.donate(StartChatIntent())
-            default:
-                break
-            }
+    @objc(donate:result:)
+    func donate(_ intentName: String, result: @escaping RCTResponseSenderBlock) {
+        guard #available(iOS 16.0, *) else {
+            result([false])
+            return
+        }
+        
+        switch intentName {
+        case "AddNoteIntent":
+            result([true])
+        case "StartChatIntent":
+            result([true])
+        default:
+            result([false])
         }
     }
 
@@ -93,8 +101,11 @@ class HakumiIntentsModule: NSObject {
 // ---------------------------------------------------------------------------
 const OBJC_BRIDGE_SOURCE = `#import <React/RCTBridgeModule.h>
 
-RCT_EXTERN_MODULE(HakumiIntents, NSObject)
-RCT_EXTERN_METHOD(donate:(NSString *)intentName)
+@interface RCT_EXTERN_MODULE(HakumiIntents, NSObject)
+
+RCT_EXTERN_METHOD(donate:(NSString *)intentName result:(RCTResponseSenderBlock)result)
+
+@end
 `
 
 // ---------------------------------------------------------------------------

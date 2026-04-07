@@ -1,3 +1,5 @@
+import { SectionIntro } from '@hominem/ui';
+
 export default function NotesHomeSection({
   eyebrow = 'Notes',
   title = 'Browse notes as one living stream instead of a pile of separate records.',
@@ -9,12 +11,8 @@ export default function NotesHomeSection({
 }) {
   return (
     <section className="flex flex-col gap-8">
-      <header className="flex flex-col gap-4 border-b border-border/30 pb-6">
-        <div className="text-xs uppercase tracking-[0.14em] text-text-tertiary">{eyebrow}</div>
-        <div className="space-y-3">
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">{title}</h1>
-          <p className="text-sm leading-relaxed text-text-secondary">{description}</p>
-        </div>
+      <header className="border-b border-border/30 pb-6">
+        <SectionIntro eyebrow={eyebrow} title={title} description={description} />
       </header>
     </section>
   );

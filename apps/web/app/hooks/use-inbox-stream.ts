@@ -1,28 +1,46 @@
-/**
- * useInboxStream
- *
- * Fetches the merged notes+chats feed from GET /api/focus.
- * A single RPC call replaces the previous two parallel queries.
- */
+import { useMemo } from 'react';
 
-import type { FocusItem } from '@hominem/rpc';
-import { useRpcQuery } from '@hominem/rpc/react';
+import { useChatsList } from './use-chats';
+import { useNotesList } from './use-notes';
 
-import { focusQueryKeys } from '~/lib/query-keys';
-
-export type { FocusItem as InboxStreamItem } from '@hominem/rpc';
+export type InboxStreamItem = {
+  kind: 'note' | 'chat';
+  id: string;
+  title: string | null;
+  preview: string | null;
+  updatedAt: string;
+};
 
 export function useInboxStream(): {
-  items: FocusItem[];
+  items: InboxStreamItem[];
   isLoading: boolean;
 } {
-  const { data, isLoading } = useRpcQuery(({ focus }) => focus.list(), {
-    queryKey: focusQueryKeys.all,
-    staleTime: 1000 * 60,
-  });
+  const notesQuery = useNotesList();
+  const chatsQuery = useChatsList();
+
+  const items = useMemo(() => {
+    const noteItems = (notesQuery.data ?? []).map<InboxStreamItem>((note) => ({
+      kind: 'note',
+      id: note.id,
+      title: note.title,
+      preview: note.excerpt ?? note.content ?? null,
+      updatedAt: note.updatedAt,
+    }));
+    const chatItems = (chatsQuery.data ?? []).map<InboxStreamItem>((chat) => ({
+      kind: 'chat',
+      id: chat.id,
+      title: chat.title,
+      preview: null,
+      updatedAt: chat.updatedAt,
+    }));
+
+    return [...noteItems, ...chatItems].sort(
+      (left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime(),
+    );
+  }, [chatsQuery.data, notesQuery.data]);
 
   return {
-    items: data?.items ?? [],
-    isLoading,
+    items,
+    isLoading: notesQuery.isLoading || chatsQuery.isLoading,
   };
 }

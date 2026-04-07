@@ -4,9 +4,9 @@
   "private": true,
   "description": "hominem",
   "keywords": [],
-  "homepage": "https://github.com/charlesponti/hominem#readme",
+  "homepage": "https://github.com/hackefeller/hominem#readme",
   "bugs": {
-    "url": "https://github.com/charlesponti/hominem/issues"
+    "url": "https://github.com/hackefeller/hominem/issues"
   },
   "license": "ISC",
   "author": {
@@ -16,67 +16,46 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/charlesponti/hominem.git"
+    "url": "git+https://github.com/hackefeller/hominem.git"
   },
   "workspaces": [
     "apps/*",
     "services/*",
     "tools/*",
-    "packages/*"
+    "packages/core/*",
+    "packages/platform/*",
+    "packages/domains/*"
   ],
-  "scripts": {
-    "build": "turbo run build",
-    "dev": "turbo dev",
-    "dev:web": "bun run dev --filter @hominem/api --filter @hominem/web",
-    "doctor": "bash scripts/dev-doctor.sh",
-    "doctor:react": "bunx react-doctor@latest . --yes --offline --verbose",
-    "format": "turbo run format",
-    "knip": "knip --include files,dependencies,exports --isolate-workspaces --no-config-hints",
-    "knip:fix": "knip --fix",
-    "lint": "make lint",
-    "test": "turbo run test",
-    "typecheck:native": "bun run ./scripts/typecheck-native.mjs",
-    "update:turbo": "bunx @turbo/codemod@latest update"
-  },
-  "dependencies": {
-    "@better-auth/kysely-adapter": "^1.5.4",
-    "@hono/standard-validator": "^0.2.2",
-    "@scalar/hono-api-reference": "^0.10.2",
-    "@standard-community/standard-json": "^0.3.5",
-    "@standard-community/standard-openapi": "^0.2.9",
-    "hono": "^4.12.7",
-    "hono-openapi": "^1.3.0",
-    "kysely": "^0.28.11",
-    "pg": "^8.20.0",
-    "postgres-interval": "^4.0.2"
-  },
+  "scripts": {},
+  "dependencies": {},
   "devDependencies": {
+    "@better-auth/passkey": "^1.5.6",
     "@types/node": "^25.4.0",
     "@types/pg": "^8.18.0",
-    "@vitest/coverage-v8": "^4.0.18",
+    "@typescript/native-preview": "7.0.0-dev.20260319.1",
+    "@vitest/coverage-v8": "4.1.2",
+    "better-auth": "^1.5.6",
     "knip": "^5.86.0",
     "oxfmt": "0.37.0",
     "oxlint": "1.52.0",
-    "quansync": "^1.0.0",
-    "turbo": "^2.8.20",
+    "png-to-ico": "^2.1.8",
+    "sharp": "^0.33.5",
+    "turbo": "^2.9.3",
     "typescript": "5.9.3",
     "vite-tsconfig-paths": "6.1.1",
-    "vitest": "4.0.18"
+    "vitest": "4.1.2"
   },
   "overrides": {
     "@hono/zod-validator": "0.7.6",
     "@types/react": "19.2.10",
     "@types/react-dom": "19.1.7",
+    "lucide-react": "0.576.0",
     "react": "19.2.0",
     "react-dom": "19.2.0",
-    "hono": "^4.12.7",
-    "vite": "7.3.1",
-    "zod": "4.3.6",
-    "axios": "^1.13.6",
-    "lucide-react": "^0.576.0",
     "react-markdown": "^10.1.0",
     "react-syntax-highlighter": "^16.1.0",
-    "tailwind-merge": "^3.2.0"
+    "tailwind-merge": "^3.2.0",
+    "zod": "4.3.6"
   },
   "engines": {
     "bun": ">=1.1.0",

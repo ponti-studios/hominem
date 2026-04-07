@@ -1,8 +1,7 @@
 import { useApiClient } from '@hominem/rpc/react';
-import { FlashList, type ListRenderItem } from '@shopify/flash-list';
 import { useQuery } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
 import type { RelativePathString } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { memo, useCallback } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -52,7 +51,7 @@ export const SessionCard = memo(({ chat, isActive }: SessionCardProps) => {
   const router = useRouter();
 
   const handlePress = useCallback(() => {
-    router.push(`/(protected)/(tabs)/chat?chatId=${chat.id}` as RelativePathString);
+    router.push(`/(protected)/(tabs)/chat/${chat.id}` as RelativePathString);
   }, [router, chat.id]);
 
   const label = chat.title ?? 'Untitled session';
@@ -71,7 +70,7 @@ export const SessionCard = memo(({ chat, isActive }: SessionCardProps) => {
       >
         <View style={[styles.iconWrap, isActive && styles.activeIconWrap]}>
           <AppIcon
-            name="comment"
+            name="bubble.left"
             size={14}
             color={isActive ? theme.colors.background : theme.colors['text-tertiary']}
           />
@@ -84,43 +83,13 @@ export const SessionCard = memo(({ chat, isActive }: SessionCardProps) => {
             {isActive ? 'Active' : formatAge(chat.activityAt)}
           </Text>
         </View>
-        <AppIcon name="chevron-right" size={12} color={theme.colors['text-tertiary']} />
+        <AppIcon name="chevron.right" size={12} color={theme.colors['text-tertiary']} />
       </Pressable>
     </FadeIn>
   );
 });
 
 SessionCard.displayName = 'SessionCard';
-
-// ─── SessionList ──────────────────────────────────────────────────────────────
-
-const keyExtractor = (item: ChatWithActivity) => item.id;
-
-export const SessionList = () => {
-  const styles = useStyles();
-  const { data: sessions } = useResumableSessions();
-
-  const renderItem = useCallback<ListRenderItem<ChatWithActivity>>(({ item, index }) => {
-    return <SessionCard chat={item} isActive={index === 0 && !item.archivedAt} />;
-  }, []);
-
-  if (!sessions || sessions.length === 0) return null;
-
-  return (
-    <View style={styles.list}>
-      <Text variant="small" color="text-tertiary" style={styles.sectionLabel}>
-        RECENT CONVERSATIONS
-      </Text>
-      <FlashList
-        data={sessions}
-        keyExtractor={keyExtractor}
-        renderItem={renderItem}
-        scrollEnabled={false}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-      />
-    </View>
-  );
-};
 
 function formatAge(activityAt: string): string {
   const parsed = parseInboxTimestamp(activityAt);
@@ -134,16 +103,6 @@ function formatAge(activityAt: string): string {
 
 const useStyles = makeStyles((t) =>
   StyleSheet.create({
-    list: {
-      gap: t.spacing.sm_8,
-    },
-    sectionLabel: {
-      letterSpacing: 1.2,
-      marginBottom: t.spacing.xs_4,
-    },
-    separator: {
-      height: t.spacing.sm_8,
-    },
     card: {
       flexDirection: 'row',
       alignItems: 'center',

@@ -5,6 +5,9 @@ export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
     name: '@hominem/api-contract',
+    fileParallelism: false,
+    maxWorkers: 1,
+    minWorkers: 1,
     deps: {
       interopDefault: true,
     },

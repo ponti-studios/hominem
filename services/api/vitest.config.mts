@@ -1,10 +1,11 @@
-import tsconfigPaths from 'vite-tsconfig-paths'
-import { defineConfig } from 'vitest/config'
+import tsconfigPaths from 'vite-tsconfig-paths';
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
     name: '@hominem/api-unit',
+    fileParallelism: false,
     deps: {
       interopDefault: true,
     },
@@ -14,7 +15,9 @@ export default defineConfig({
     clearMocks: true,
     slowTestThreshold: 250,
     include: [
+      'src/application/notes.service.test.ts',
       'src/auth/test-otp-store.test.ts',
+      'src/routes/auth-helpers.test.ts',
       'src/middleware/auth.test.ts',
       'src/middleware/request-logger.test.ts',
       'src/rpc/routes/chats.test.ts',
@@ -23,4 +26,4 @@ export default defineConfig({
     ],
     exclude: ['**/node_modules/**', '**/build/**'],
   },
-})
+});

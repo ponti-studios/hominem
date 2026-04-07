@@ -214,7 +214,7 @@ export function FileUploader({ onFilesUploaded, maxFiles = 5, className = '' }: 
                 {/* Thumbnail */}
                 {file.thumbnail && (
                   <div className="shrink-0">
-                    <img src={file.thumbnail} alt="Thumbnail" className="w-12 h-12 object-cover" />
+                    <img src={file.thumbnail} alt="Thumbnail" className="size-12 object-cover" />
                   </div>
                 )}
 

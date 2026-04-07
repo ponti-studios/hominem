@@ -1,5 +1,5 @@
-import { useRouter } from 'expo-router';
 import type { RelativePathString } from 'expo-router';
+import { useRouter } from 'expo-router';
 import React, { memo, useCallback } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Reanimated, { FadeInDown, LinearTransition } from 'react-native-reanimated';
@@ -42,14 +42,13 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
                 ]}
               >
                 <AppIcon
-                  name={item.kind === 'note' ? 'pen-to-square' : 'comment'}
+                  name={item.kind === 'note' ? 'square.and.pencil' : 'bubble.left'}
                   size={11}
                   color={iconColor}
                   style={[
                     styles.cornerIcon,
                     item.kind === 'note' ? styles.noteIcon : styles.chatIcon,
                   ]}
-                  useSymbol
                 />
               </View>
               <Text numberOfLines={1} variant="body" color="foreground" style={styles.title}>

@@ -2,14 +2,13 @@ import type { User } from '@hominem/auth/server';
 import { createHonoTelemetryMiddleware } from '@hominem/telemetry/node';
 import { logger } from '@hominem/utils/logger';
 import { apiReference } from '@scalar/hono-api-reference';
+import * as Sentry from '@sentry/node';
 import { Hono } from 'hono';
 import { openAPIRouteHandler } from 'hono-openapi';
 import { cors } from 'hono/cors';
 import { prettyJSON } from 'hono/pretty-json';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 
-import { betterAuthServer } from './auth/better-auth';
-import { getJwks } from './auth/key-store';
 import type { AuthContextEnvelope } from './auth/types';
 import { API_BRAND } from './brand';
 import { env } from './env';
@@ -20,12 +19,7 @@ import { requestLogger } from './middleware/request-logger';
 import { aiRoutes } from './routes/ai';
 import { authRoutes } from './routes/auth';
 import { componentsRoutes } from './routes/components';
-import { financeRoutes } from './routes/finance';
-import { plaidRoutes } from './routes/finance/plaid';
-import { healthRoutes } from './routes/health';
 import { imagesRoutes } from './routes/images';
-import { invitesRoutes } from './routes/invites';
-import { oauthRoutes } from './routes/oauth';
 import { statusRoutes } from './routes/status';
 import { rpcApp } from './rpc/app';
 
@@ -75,26 +69,12 @@ export function createServer() {
   // Note: honoRpcApp already includes /api prefix in its routes (e.g., /api/finance, /api/lists)
   app.route('/', rpcApp);
 
-  // Better Auth bootstrap surface during migration.
-  app.on(['GET', 'POST'], '/api/better-auth/*', (c) => {
-    return betterAuthServer.handler(c.req.raw);
-  });
-
-  app.get('/.well-known/jwks.json', async (c) => {
-    return c.json(await getJwks());
-  });
-
   // Register other route handlers
   app.route('/api/status', statusRoutes);
-  app.route('/api/health', healthRoutes);
   app.route('/api/auth', authRoutes);
   app.route('/api/ai', aiRoutes);
-  app.route('/api/oauth', oauthRoutes);
-  app.route('/api/invites', invitesRoutes);
   app.route('/api/images', imagesRoutes);
   app.route('/components', componentsRoutes);
-  app.route('/api/finance', financeRoutes);
-  app.route('/api/finance/plaid', plaidRoutes);
 
   // Root health check
   app.get('/', (c) => {
@@ -168,13 +148,16 @@ export function createServer() {
 
   // Global error handler - must be after routes
   app.onError((err, c) => {
+    Sentry.captureException(err);
     logger.error('[services/api] Error', { error: err });
 
     if (isServiceError(err)) {
       return c.json(
         {
           error: err.code.toLowerCase(),
+          code: err.code,
           message: err.message,
+          ...(err.details && { details: err.details }),
         },
         err.statusCode as ContentfulStatusCode,
       );
@@ -183,6 +166,7 @@ export function createServer() {
     return c.json(
       {
         error: 'internal_error',
+        code: 'INTERNAL_ERROR',
         message: 'An unexpected error occurred',
       },
       500,

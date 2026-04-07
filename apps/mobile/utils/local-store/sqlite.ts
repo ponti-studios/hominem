@@ -11,16 +11,17 @@ type QueryResult = {
 
 const DB_NAME = 'msc_cloud_store.db';
 
-const toISO = (value: string | null | undefined) => value ?? new Date().toISOString();
+const toISO = (value: string | Date | null | undefined) =>
+  value instanceof Date ? value.toISOString() : (value ?? new Date().toISOString());
 
 const normalizeProfile = (row: Record<string, unknown>): UserProfile => ({
   id: String(row.id),
-  name: typeof row.name === 'string' ? row.name : undefined,
+  name: typeof row.name === 'string' ? row.name : '',
   email: typeof row.email === 'string' ? row.email : '',
-  image: undefined,
-  isAdmin: false,
-  createdAt: String(row.created_at),
-  updatedAt: String(row.updated_at),
+  emailVerified: false,
+  image: null,
+  createdAt: new Date(String(row.created_at)),
+  updatedAt: new Date(String(row.updated_at)),
 });
 
 const normalizeSettings = (row: Record<string, unknown>): Settings => ({
@@ -126,23 +127,4 @@ export const createSQLiteStore = async () => {
       return true;
     },
   };
-};
-
-export const migrateInMemoryToSQLite = async (
-  store: Awaited<ReturnType<typeof createSQLiteStore>>,
-  snapshot: {
-    userProfile: UserProfile | null;
-    settings: Settings | null;
-    mediaItems: Media[];
-  },
-) => {
-  if (snapshot.userProfile) {
-    await store.upsertUserProfile(snapshot.userProfile);
-  }
-  if (snapshot.settings) {
-    await store.upsertSettings(snapshot.settings);
-  }
-  for (const item of snapshot.mediaItems) {
-    await store.upsertMedia(item);
-  }
 };

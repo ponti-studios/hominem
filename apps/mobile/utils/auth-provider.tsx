@@ -11,6 +11,8 @@ import React, {
   type PropsWithChildren,
 } from 'react';
 
+import { authClient } from '~/lib/auth-client';
+
 import { captureAuthAnalyticsEvent, captureAuthAnalyticsFailure } from './auth/auth-analytics';
 import { markAuthPhaseStart, recordAuthEvent } from './auth/auth-event-log';
 import { runAuthBoot } from './auth/boot';
@@ -18,11 +20,9 @@ import { resolveIsLoadingAuth, type AuthStatusCompat } from './auth/provider-uti
 import {
   clearPersistedSessionCookies,
   getPersistedSessionCookieHeader,
-  persistSessionCookieFromHeaders,
-  persistSessionCookieHeader,
 } from './auth/session-cookie';
 import { authStateMachine, initialAuthState, type AuthState } from './auth/types';
-import { API_BASE_URL, E2E_TESTING } from './constants';
+import { E2E_TESTING } from './constants';
 import { LocalStore } from './local-store';
 import { markStartupPhase } from './performance/startup-metrics';
 
@@ -39,15 +39,6 @@ interface SignInResponse {
   };
 }
 
-interface SessionResponse {
-  isAuthenticated: boolean;
-  user: {
-    id: string;
-    email: string;
-    name?: string | null;
-  } | null;
-}
-
 function hasValidSignInResponse(input: SignInResponse) {
   return input.user.id.length > 0 && input.user.email.length > 0;
 }
@@ -59,21 +50,21 @@ function toAuthUserProfile(localProfile: User | null): AuthState['user'] {
     email: localProfile.email,
     name: localProfile.name,
     image: localProfile.image,
-    isAdmin: localProfile.isAdmin,
+    emailVerified: localProfile.emailVerified,
     createdAt: localProfile.createdAt,
     updatedAt: localProfile.updatedAt,
-  } as AuthState['user'];
+  };
 }
 
 function fromSignInUser(user: { id: string; email: string; name?: string | null }): User {
   return {
     id: user.id,
     email: user.email,
-    name: user.name ?? undefined,
-    image: undefined,
-    isAdmin: false,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    name: user.name ?? '',
+    image: null,
+    emailVerified: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
   };
 }
 
@@ -96,8 +87,6 @@ type AuthContextType = {
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<User>) => Promise<User>;
   getAuthHeaders: () => Promise<Record<string, string>>;
-  clearError: () => void;
-  retrySessionRecovery: () => Promise<void>;
   resetAuthForE2E: () => Promise<void>;
 };
 
@@ -117,12 +106,9 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
   // Set synchronously before first await to prevent TOCTOU race on concurrent boot invocations
   const isBootingRef = useRef(false);
 
-  const bootSession = useCallback(async (input?: { force?: boolean; signal?: AbortSignal }) => {
-    if ((!input?.force && hasBootstrappedRef.current) || isBootingRef.current) return;
+  const bootSession = useCallback(async (input?: { signal?: AbortSignal }) => {
+    if (hasBootstrappedRef.current || isBootingRef.current) return;
     isBootingRef.current = true;
-    if (input?.force) {
-      hasBootstrappedRef.current = false;
-    }
 
     const startedAt = Date.now();
 
@@ -144,25 +130,19 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
           return { sessionCookieHeader };
         },
         probeSession: async ({ sessionCookieHeader, signal: sig }) => {
-          const headers: Record<string, string> = {};
-          if (sessionCookieHeader) {
-            headers.cookie = sessionCookieHeader;
-          }
-
-          const response = await fetch(new URL('/api/auth/session', API_BASE_URL).toString(), {
-            method: 'GET',
-            headers,
-            signal: sig,
+          const result = await authClient.getSession({
+            fetchOptions: {
+              signal: sig,
+              headers: sessionCookieHeader ? { cookie: sessionCookieHeader } : undefined,
+            },
           });
-          if (response.ok) {
-            const data = (await response.json()) as SessionResponse;
-            if (data.isAuthenticated && data.user) {
-              return { user: data.user };
-            }
+          if (result.data?.user && result.data.session?.id) {
+            return { user: result.data.user };
+          }
+          if (result.error?.status === 401) {
             return null;
           }
-          if (response.status === 401) return null;
-          throw new Error(`session probe failed: ${response.status}`);
+          throw new Error(result.error?.message ?? 'session probe failed');
         },
         clearTokens: async () => {
           await clearPersistedSessionCookies();
@@ -242,14 +222,18 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
       email,
     });
 
-    let response: Response;
     try {
-      response = await fetch(new URL('/api/auth/email-otp/send', API_BASE_URL).toString(), {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email, type: 'sign-in' }),
-        signal: controller.signal,
+      const result = await authClient.emailOtp.sendVerificationOtp({
+        email,
+        type: 'sign-in',
+        fetchOptions: {
+          signal: controller.signal,
+        },
       });
+
+      if (result.error) {
+        throw new Error(result.error.message ?? 'Unable to send verification code.');
+      }
     } catch (error) {
       const resolvedError =
         error instanceof Error && error.name === 'AbortError'
@@ -270,31 +254,12 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
       clearTimeout(timeoutId);
     }
 
-    if (!response.ok) {
-      let message = 'Unable to send verification code.';
-      try {
-        const payload = (await response.json()) as { message?: string; error?: string };
-        message = payload.message ?? payload.error ?? message;
-      } catch {}
-      const error = new Error(message);
-      dispatch({ type: 'OTP_REQUEST_FAILED', error });
-      captureAuthAnalyticsFailure('auth_email_otp_request_failed', {
-        phase: 'email_otp_request',
-        durationMs: Date.now() - startedAt,
-        email,
-        error,
-        failureStage: 'response',
-        statusCode: response.status,
-      });
-      throw error;
-    }
-
     dispatch({ type: 'OTP_REQUESTED' });
     captureAuthAnalyticsEvent('auth_email_otp_request_succeeded', {
       phase: 'email_otp_request',
       durationMs: Date.now() - startedAt,
       email,
-      statusCode: response.status,
+      statusCode: 200,
     });
   }, []);
 
@@ -311,32 +276,26 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
       });
 
       try {
-        const response = await fetch(
-          new URL('/api/auth/email-otp/verify', API_BASE_URL).toString(),
-          {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ email: input.email, otp: input.otp, name: input.name }),
+        const result = await authClient.signIn.emailOtp({
+          email: input.email,
+          otp: input.otp,
+          ...(input.name ? { name: input.name } : {}),
+          fetchOptions: {
             signal: controller.signal,
           },
-        );
+        });
 
-        if (!response.ok) {
-          let message = 'Verification failed. Please try again.';
-          try {
-            const payload = (await response.json()) as { message?: string; error?: string };
-            message = payload.message ?? payload.error ?? message;
-          } catch {}
-          throw new Error(message);
+        if (result.error || !result.data) {
+          throw new Error(result.error?.message ?? 'Verification failed. Please try again.');
         }
 
-        const signInData = (await response.json()) as SignInResponse;
+        const signInData = result.data as SignInResponse;
 
         if (!hasValidSignInResponse(signInData)) {
           throw new Error('Invalid sign-in response from API');
         }
 
-        const sessionCookieHeader = await persistSessionCookieFromHeaders(response.headers);
+        const sessionCookieHeader = await getPersistedSessionCookieHeader();
         if (!sessionCookieHeader) {
           throw new Error('Verification succeeded but no session cookie was returned');
         }
@@ -353,7 +312,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
           phase: 'email_otp_verify',
           durationMs: Date.now() - startedAt,
           email: input.email,
-          statusCode: response.status,
+          statusCode: 200,
         });
       } catch (error) {
         const resolvedError = error instanceof Error ? error : new Error('Sign-in failed');
@@ -393,7 +352,6 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
       }
 
       sessionCookieHeaderRef.current = sessionCookieHeader;
-      await persistSessionCookieHeader(sessionCookieHeader);
 
       dispatch({ type: 'PROFILE_SYNC_STARTED' });
       const localUser = fromSignInUser(input.user);
@@ -431,18 +389,9 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     });
 
     try {
-      const sessionCookieHeader = sessionCookieHeaderRef.current;
-      if (!sessionCookieHeader) {
-        throw new Error('Missing Better Auth session for sign-out. Please try again.');
-      }
-
-      const response = await fetch(new URL('/api/auth/logout', API_BASE_URL).toString(), {
-        method: 'POST',
-        headers: { cookie: sessionCookieHeader },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to sign out. Please try again.');
+      const result = await authClient.signOut();
+      if (result.error) {
+        throw new Error(result.error.message ?? 'Failed to sign out. Please try again.');
       }
 
       await clearPersistedSessionCookies();
@@ -453,7 +402,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
         phase: 'sign_out',
         durationMs: Date.now() - startedAt,
         email: state.user?.email ?? undefined,
-        statusCode: response.status,
+        statusCode: 200,
       });
     } catch (error) {
       const resolvedError =
@@ -477,7 +426,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     const merged: User = {
       ...current,
       ...updates,
-      updatedAt: new Date().toISOString(),
+      updatedAt: new Date(),
     };
 
     const saved = await LocalStore.upsertUserProfile(merged);
@@ -495,10 +444,6 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     }
 
     return {} as Record<string, string>;
-  }, []);
-
-  const clearError = useCallback(() => {
-    dispatch({ type: 'CLEAR_ERROR' });
   }, []);
 
   const resetAuthForE2E = useCallback(async () => {
@@ -522,7 +467,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
       email: state.user.email,
       name: state.user.name,
       image: state.user.image,
-      isAdmin: state.user.isAdmin,
+      emailVerified: state.user.emailVerified,
       createdAt: state.user.createdAt,
       updatedAt: state.user.updatedAt,
     };
@@ -540,15 +485,6 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     signOut,
     updateProfile,
     getAuthHeaders,
-    clearError,
-    retrySessionRecovery: async () => {
-      dispatch({ type: 'CLEAR_ERROR' });
-      captureAuthAnalyticsEvent('auth_session_recovery_requested', {
-        phase: 'session_recovery',
-        email: state.user?.email ?? undefined,
-      });
-      await bootSession({ force: true });
-    },
     resetAuthForE2E,
   };
 

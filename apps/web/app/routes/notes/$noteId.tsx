@@ -1,9 +1,10 @@
+import { StatePanel } from '@hominem/ui';
 import { type LoaderFunctionArgs, redirect } from 'react-router';
 
-import { LoadingScreen } from '~/components/loading';
 import { useNote } from '~/hooks/use-notes';
 import { requireAuth } from '~/lib/guards';
 
+import { LoadingScreen } from '../../components/loading';
 import { NoteEditor } from './components/note-editor';
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -26,11 +27,7 @@ export default function NoteSplitView({ loaderData }: { loaderData: { noteId: st
   }
 
   if (!note) {
-    return (
-      <div className="flex h-full items-center justify-center py-20">
-        <p className="text-sm text-text-secondary">Note not found</p>
-      </div>
-    );
+    return <StatePanel title="Note not found" className="min-h-full" />;
   }
 
   return (

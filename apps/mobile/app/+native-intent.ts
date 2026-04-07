@@ -5,12 +5,15 @@
  * Called for every incoming URL on native (iOS/Android).
  *
  * Supported deep link patterns:
- *   hakumi://verify?token=<otp>        → /(auth)/verify?token=<otp>
- *   hakumi://chat?seed=<text>          → /(protected)/(tabs)/chat?seed=<text>
- *   hakumi://focus                     → /(protected)/(tabs)/focus
- *   hakumi://focus/<id>                → /(protected)/(tabs)/focus/<id>
- *   hakumi://account                   → /(protected)/(tabs)/account
- *   hakumi://note/add                  → /(protected)/(tabs)/focus?action=new
+ *   hakumi://verify?token=<otp>        -> /(auth)/verify?token=<otp>
+ *   hakumi://chat/<id>                 -> /(protected)/(tabs)/chat/<id>
+ *   hakumi://chat?seed=<text>          -> /(protected)/(tabs)/?seed=<text>
+ *   hakumi://notes                     -> /(protected)/(tabs)/notes
+ *   hakumi://notes/<id>                -> /(protected)/(tabs)/notes/<id>
+ *   hakumi://focus                     -> /(protected)/(tabs)/
+ *   hakumi://focus/<id>                -> /(protected)/(tabs)/notes/<id>
+ *   hakumi://account                   -> /(protected)/(tabs)/settings
+ *   hakumi://note/add                  -> /(protected)/(tabs)/notes
  */
 export function redirectSystemPath({
   path,
@@ -22,29 +25,54 @@ export function redirectSystemPath({
   // Strip leading slash for matching
   const normalized = path.startsWith('/') ? path.slice(1) : path;
 
-  // App Intent / Siri: note/add → focus tab with new-note action
+  // App Intent / Siri: note/add -> notes list
   if (normalized === 'note/add') {
-    return '/(protected)/(tabs)/focus?action=new';
+    return '/(protected)/(tabs)/notes';
   }
 
-  // OTP verification link: verify?token=xxx → /(auth)/verify?token=xxx
+  // OTP verification link: verify?token=xxx -> /(auth)/verify?token=xxx
   if (normalized.startsWith('verify')) {
     return `/(auth)/${normalized}`;
   }
 
-  // Chat intent
+  // Chat with specific ID: chat/<id>
+  const chatIdMatch = normalized.match(/^chat\/([^?]+)/);
+  if (chatIdMatch) {
+    return `/(protected)/(tabs)/chat/${chatIdMatch[1]}`;
+  }
+
+  // Chat with seed (start new): chat?seed=<text> -> feed with seed
   if (normalized.startsWith('chat')) {
-    return `/(protected)/(tabs)/${normalized}`;
+    const seedParam = normalized.replace(/^chat\??/, '');
+    return `/(protected)/(tabs)/${seedParam ? `?${seedParam}` : ''}`;
   }
 
-  // Focus screen or focus item
-  if (normalized.startsWith('focus')) {
-    return `/(protected)/(tabs)/${normalized}`;
+  // Notes with specific ID
+  const notesIdMatch = normalized.match(/^notes\/(.+)/);
+  if (notesIdMatch) {
+    return `/(protected)/(tabs)/notes/${notesIdMatch[1]}`;
   }
 
-  // Account screen
+  // Notes list -> feed
+  if (normalized === 'notes') {
+    return '/(protected)/(tabs)/notes';
+  }
+
+  // Focus with specific ID -> note detail
+  const focusIdMatch = normalized.match(/^focus\/(.+)/);
+  if (focusIdMatch) {
+    return `/(protected)/(tabs)/notes/${focusIdMatch[1]}`;
+  }
+
+  // Focus list -> feed
+  if (normalized === 'focus') {
+    return '/(protected)/(tabs)/';
+  }
+
+  // Account/settings screen
   if (normalized.startsWith('account')) {
-    return `/(protected)/(tabs)/account`;
+    return '/(protected)/(tabs)/settings';
   }
+
   return path;
 }

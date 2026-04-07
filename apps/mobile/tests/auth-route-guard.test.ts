@@ -1,9 +1,10 @@
-import { describe, expect, it } from 'vitest'
+
+import type { AuthStatusCompat } from '../utils/auth/provider-utils'
 
 import { resolveAuthRedirect } from '../utils/navigation/auth-route-guard'
 
 describe('resolveAuthRedirect', () => {
-  it('does not redirect while booting', () => {
+  it('should not redirect while booting', () => {
     expect(
       resolveAuthRedirect({
         authStatus: 'booting',
@@ -13,7 +14,7 @@ describe('resolveAuthRedirect', () => {
     ).toBeNull()
   })
 
-  it('redirects signed-out users away from protected group', () => {
+  it('should redirect signed-out users away from protected group', () => {
     expect(
       resolveAuthRedirect({
         authStatus: 'signed_out',
@@ -23,17 +24,17 @@ describe('resolveAuthRedirect', () => {
     ).toBe('/(auth)')
   })
 
-  it('redirects signed-in users away from auth group', () => {
+  it('should redirect signed-in users away from auth group', () => {
     expect(
       resolveAuthRedirect({
         authStatus: 'signed_in',
         isSignedIn: true,
         segments: ['(auth)'],
       }),
-    ).toBe('/(protected)/(tabs)/start')
+    ).toBe('/(protected)/(tabs)/')
   })
 
-  it('does not redirect signed-out users already in auth group', () => {
+  it('should not redirect signed-out users already in auth group', () => {
     expect(
       resolveAuthRedirect({
         authStatus: 'signed_out',
@@ -43,7 +44,7 @@ describe('resolveAuthRedirect', () => {
     ).toBeNull()
   })
 
-  it('does not redirect signed-in users already in protected group', () => {
+  it('should not redirect signed-in users already in protected group', () => {
     expect(
       resolveAuthRedirect({
         authStatus: 'signed_in',
@@ -53,7 +54,7 @@ describe('resolveAuthRedirect', () => {
     ).toBeNull()
   })
 
-  it('does not redirect while signing_out — user stays in place until sign-out completes', () => {
+  it('should not redirect while signing out — user stays in place until complete', () => {
     expect(
       resolveAuthRedirect({
         authStatus: 'signing_out',
@@ -69,8 +70,8 @@ describe('resolveAuthRedirect', () => {
     'syncing_profile',
     'requesting_otp',
   ] as const)(
-    'redirects %s status on protected group to auth (in-flight auth, not yet signed in)',
-    (authStatus) => {
+    'should redirect %s status from protected group to auth',
+    (authStatus: AuthStatusCompat) => {
       expect(
         resolveAuthRedirect({ authStatus, isSignedIn: false, segments: ['(protected)'] }),
       ).toBe('/(auth)')
@@ -78,7 +79,7 @@ describe('resolveAuthRedirect', () => {
   )
 
   it.each(['degraded', 'terminal_error'] as const)(
-    'redirects %s status on protected group to auth',
+    'should redirect %s status from protected group to auth',
     (authStatus) => {
       expect(
         resolveAuthRedirect({ authStatus, isSignedIn: false, segments: ['(protected)'] }),
@@ -86,7 +87,7 @@ describe('resolveAuthRedirect', () => {
     },
   )
 
-  it('does not redirect degraded status on auth group', () => {
+  it('should not redirect degraded status on auth group', () => {
     expect(
       resolveAuthRedirect({
         authStatus: 'degraded',
@@ -96,7 +97,7 @@ describe('resolveAuthRedirect', () => {
     ).toBeNull()
   })
 
-  it('does not redirect terminal_error status on auth group', () => {
+  it('should not redirect terminal_error status on auth group', () => {
     expect(
       resolveAuthRedirect({
         authStatus: 'terminal_error',

@@ -1,5 +1,5 @@
 import type { Chat } from '@hominem/rpc/types';
-import { TIME_UNITS } from '@hominem/utils';
+import { TIME_UNITS } from '@hominem/utils/time';
 
 import { parseInboxTimestamp } from '~/utils/date/parse-inbox-timestamp';
 

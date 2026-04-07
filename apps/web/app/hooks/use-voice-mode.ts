@@ -85,6 +85,7 @@ export function useVoiceMode(): UseVoiceModeResult {
         method: 'POST',
         credentials: 'include',
         body: formData,
+        signal: AbortSignal.timeout(90_000),
       });
 
       if (!response.ok) {
@@ -92,7 +93,6 @@ export function useVoiceMode(): UseVoiceModeResult {
         throw new Error(payload.error ?? 'Voice response failed');
       }
 
-      const audioBuffer = await response.arrayBuffer();
       const userTranscript = decodeHeaderTranscript(response.headers.get('X-User-Transcript'));
       const aiTranscript = decodeHeaderTranscript(response.headers.get('X-AI-Transcript'));
 
@@ -103,7 +103,27 @@ export function useVoiceMode(): UseVoiceModeResult {
         pcmPlayerRef.current = new PCMPlayer();
       }
 
-      await pcmPlayerRef.current.playPcm16(audioBuffer);
+      // Stream PCM chunks to the player for immediate playback instead of
+      // buffering the entire response before starting audio.
+      const reader = response.body?.getReader();
+      if (reader) {
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            // enqueue raw PCM16 chunks for back-to-back playback
+            await pcmPlayerRef.current.enqueue(value.buffer);
+          }
+        } finally {
+          reader.releaseLock();
+        }
+        await pcmPlayerRef.current.flush();
+      } else {
+        // Fallback: buffer entire response (shouldn't happen in practice)
+        const audioBuffer = await response.arrayBuffer();
+        await pcmPlayerRef.current.playPcm16(audioBuffer);
+      }
+
       setState(isActive ? 'listening' : 'idle');
       setError(null);
     } catch (err) {

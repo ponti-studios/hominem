@@ -29,8 +29,8 @@ export const useNoteQuery = ({ noteId, enabled = true }: { noteId: string; enabl
       return note;
     },
     initialData: () => {
-      const focusItems = queryClient.getQueryData<Note[]>(noteKeys.all);
-      return focusItems?.find((item) => item.id === noteId);
+      const cachedNotes = queryClient.getQueryData<Note[]>(noteKeys.all);
+      return cachedNotes?.find((item) => item.id === noteId);
     },
     enabled: enabled && noteId.length > 0,
   });

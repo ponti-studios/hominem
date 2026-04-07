@@ -1,4 +1,3 @@
-import { describe, expect, it, vi } from 'vitest'
 
 import {
   performMobileUploads,
@@ -18,7 +17,7 @@ describe('mobile file upload helper', () => {
   })
 
   it('uploads through prepare-upload, signed PUT, and complete-upload', async () => {
-    const prepareUpload = vi.fn(async () => ({
+    const prepareUpload = jest.fn(async () => ({
       fileId: 'file-1',
       key: 'user/file-1-receipt.png',
       originalName: 'receipt.png',
@@ -29,7 +28,7 @@ describe('mobile file upload helper', () => {
         'Content-Type': 'image/png',
       },
     }))
-    const completeUpload = vi.fn(async () => ({
+    const completeUpload = jest.fn(async () => ({
       file: {
         id: 'file-1',
         originalName: 'receipt.png',
@@ -40,7 +39,7 @@ describe('mobile file upload helper', () => {
         uploadedAt: '2026-01-01T00:00:00.000Z',
       },
     }))
-    const fetchImpl: typeof fetch = vi.fn(async (input, init) => {
+    const fetchImpl: typeof fetch = jest.fn(async (input, init) => {
       const url = typeof input === 'string' ? input : input.toString()
 
       if (url === 'file:///tmp/receipt.png') {
@@ -105,8 +104,8 @@ describe('mobile file upload helper', () => {
   it('collects errors for unsupported file types without aborting the batch', async () => {
     const result = await performMobileUploads(
       {
-        prepareUpload: vi.fn(),
-        completeUpload: vi.fn(),
+        prepareUpload: jest.fn(),
+        completeUpload: jest.fn(),
       },
       [
         {
@@ -118,7 +117,7 @@ describe('mobile file upload helper', () => {
         },
       ],
       {
-        fetchImpl: vi.fn() as typeof fetch,
+        fetchImpl: jest.fn() as typeof fetch,
       },
     )
 

@@ -1,39 +1,79 @@
-import { Stack } from 'expo-router';
+import type { RelativePathString } from 'expo-router';
+import { Stack, usePathname, useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
-import { useMobileWorkspace } from '~/components/workspace/mobile-workspace-context';
-import { MobileWorkspaceSwitcher } from '~/components/workspace/mobile-workspace-switcher';
-import { resolveMobileWorkspaceView } from '~/components/workspace/mobile-workspace-view';
-import { NoteContextScreen } from '~/components/workspace/note-context-screen';
-import { SearchContextScreen } from '~/components/workspace/search-context-screen';
+import { InputProvider } from '~/components/input/input-context';
+import { MobileComposer } from '~/components/input/mobile-composer';
+import { Text, theme } from '~/theme';
 
-export default function TabsLayout() {
-  const { activeContext } = useMobileWorkspace();
-  const view = resolveMobileWorkspaceView(activeContext);
+function NavButton({ href, label }: { href: RelativePathString; label: string }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const hrefValue = String(href);
+  const isActive =
+    hrefValue === '/(protected)/(tabs)/'
+      ? pathname === '/' || pathname === ''
+      : pathname.includes(hrefValue.replace('/(protected)/(tabs)/', ''));
 
   return (
-    <View style={styles.container}>
-      <MobileWorkspaceSwitcher />
-      <View style={styles.content}>
-        {view === 'note' ? <NoteContextScreen /> : null}
-        {view === 'search' ? <SearchContextScreen /> : null}
-        {view === 'stack' ? (
+    <Pressable
+      onPress={() => router.replace(href)}
+      style={[styles.navButton, isActive && styles.navButtonActive]}
+    >
+      <Text variant="body" color={isActive ? 'foreground' : 'text-secondary'}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+export default function TabsLayout() {
+  return (
+    <InputProvider>
+      <View style={styles.container}>
+        <View style={styles.nav}>
+          <NavButton href={'/(protected)/(tabs)/' as RelativePathString} label="Feed" />
+          <NavButton href={'/(protected)/(tabs)/notes' as RelativePathString} label="Notes" />
+          <NavButton href={'/(protected)/(tabs)/settings' as RelativePathString} label="Settings" />
+        </View>
+        <View style={styles.content}>
           <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="focus" />
+            <Stack.Screen name="index" />
+            <Stack.Screen name="notes" />
             <Stack.Screen name="chat" />
-            <Stack.Screen name="start" />
-            <Stack.Screen name="account" />
+            <Stack.Screen name="settings" />
           </Stack>
-        ) : null}
+          <MobileComposer />
+        </View>
       </View>
-    </View>
+    </InputProvider>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  nav: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm_12,
+    paddingHorizontal: theme.spacing.m_16,
+    paddingTop: theme.spacing.l_32,
+    paddingBottom: theme.spacing.sm_12,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors['border-default'],
+  },
+  navButton: {
+    borderWidth: 1,
+    borderColor: theme.colors['border-default'],
+    borderRadius: theme.borderRadii.full,
+    paddingHorizontal: theme.spacing.m_16,
+    paddingVertical: theme.spacing.sm_8,
+  },
+  navButtonActive: {
+    backgroundColor: theme.colors.muted,
   },
   content: {
     flex: 1,

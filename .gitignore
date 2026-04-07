@@ -1,5 +1,6 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 .crush
+.build
 
 # Allow packages/env despite global gitignore having ENV/
 !packages/env/
@@ -53,6 +54,8 @@ bun-debug.log*
 .env.development*
 .env.test*
 .env.production*
+.claude/settings.local.json
+!/packages/core/env
 
 # TypeScript build cache
 .cache/

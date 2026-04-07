@@ -1,10 +1,8 @@
-import { describe, expect, it } from 'vitest'
-
 import {
   createChatInboxRefreshSnapshot,
   INBOX_REFRESH_QUERY_KEYS,
   upsertInboxSessionActivity,
-} from '../../utils/services/inbox/inbox-refresh'
+} from '../../utils/services/inbox/inbox-refresh';
 
 describe('mobile inbox refresh', () => {
   it('moves the touched chat session to the top of the inbox sessions cache', () => {
@@ -38,11 +36,11 @@ describe('mobile inbox refresh', () => {
         timestamp: '2026-03-18T12:00:00.000Z',
         userId: 'user-1',
       }),
-    )
+    );
 
-    expect(nextSessions.map((session) => session.id)).toEqual(['chat-older', 'chat-newer'])
-    expect(nextSessions[0]?.activityAt).toBe('2026-03-18T12:00:00.000Z')
-  })
+    expect(nextSessions.map((session) => session.id)).toEqual(['chat-older', 'chat-newer']);
+    expect(nextSessions[0]?.activityAt).toBe('2026-03-18T12:00:00.000Z');
+  });
 
   it('creates a new resumable session entry when the chat is not cached yet', () => {
     const nextSessions = upsertInboxSessionActivity(
@@ -54,7 +52,7 @@ describe('mobile inbox refresh', () => {
         timestamp: '2026-03-18T12:00:00.000Z',
         userId: 'user-1',
       }),
-    )
+    );
 
     expect(nextSessions).toEqual([
       {
@@ -67,10 +65,10 @@ describe('mobile inbox refresh', () => {
         userId: 'user-1',
         activityAt: '2026-03-18T12:00:00.000Z',
       },
-    ])
-  })
+    ]);
+  });
 
   it('declares the shared inbox query keys that must refresh together', () => {
-    expect(INBOX_REFRESH_QUERY_KEYS).toEqual([['focusItems'], ['resumableSessions']])
-  })
-})
+    expect(INBOX_REFRESH_QUERY_KEYS).toEqual([['notes'], ['chats', 'sessions']]);
+  });
+});

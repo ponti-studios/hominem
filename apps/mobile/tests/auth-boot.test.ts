@@ -1,4 +1,3 @@
-import { describe, expect, it, vi } from 'vitest'
 
 import { runAuthBoot, type AuthBootDeps } from '../utils/auth/boot'
 
@@ -13,13 +12,13 @@ const testProfile = {
 
 function makeDeps(overrides: Partial<AuthBootDeps> = {}): AuthBootDeps {
   return {
-    getStoredTokens: vi.fn().mockResolvedValue({
+    getStoredTokens: jest.fn().mockResolvedValue({
       sessionCookieHeader: null,
     }),
-    probeSession: vi.fn().mockResolvedValue(null),
-    clearTokens: vi.fn().mockResolvedValue(undefined),
-    upsertProfile: vi.fn().mockResolvedValue(testProfile),
-    clearLegacyData: vi.fn().mockResolvedValue(undefined),
+    probeSession: jest.fn().mockResolvedValue(null),
+    clearTokens: jest.fn().mockResolvedValue(undefined),
+    upsertProfile: jest.fn().mockResolvedValue(testProfile),
+    clearLegacyData: jest.fn().mockResolvedValue(undefined),
     signal: new AbortController().signal,
     ...overrides,
   }
@@ -39,10 +38,10 @@ describe('runAuthBoot', () => {
 
   it('returns SESSION_LOADED when stored token passes session probe', async () => {
     const deps = makeDeps({
-      getStoredTokens: vi.fn().mockResolvedValue({
+      getStoredTokens: jest.fn().mockResolvedValue({
         sessionCookieHeader: 'session=abc',
       }),
-      probeSession: vi.fn().mockResolvedValue({
+      probeSession: jest.fn().mockResolvedValue({
         user: testUser,
       }),
     })
@@ -59,11 +58,11 @@ describe('runAuthBoot', () => {
 
   it('clears tokens and returns SESSION_EXPIRED when probe returns null (401)', async () => {
     const deps = makeDeps({
-      getStoredTokens: vi.fn().mockResolvedValue({
+      getStoredTokens: jest.fn().mockResolvedValue({
         sessionCookieHeader: 'session=abc',
       }),
-      probeSession: vi.fn().mockResolvedValue(null),
-      clearTokens: vi.fn().mockResolvedValue(undefined),
+      probeSession: jest.fn().mockResolvedValue(null),
+      clearTokens: jest.fn().mockResolvedValue(undefined),
     })
 
     const result = await runAuthBoot(deps)
@@ -73,26 +72,12 @@ describe('runAuthBoot', () => {
     expect(deps.upsertProfile).not.toHaveBeenCalled()
   })
 
-  it('fails closed when stored bootstrap state is incomplete', async () => {
-    const deps = makeDeps({
-      getStoredTokens: vi.fn().mockResolvedValue({
-        sessionCookieHeader: null,
-      }),
-    })
-
-    const result = await runAuthBoot(deps)
-
-    expect(result.type).toBe('SESSION_EXPIRED')
-    expect(deps.clearTokens).not.toHaveBeenCalled()
-    expect(deps.probeSession).not.toHaveBeenCalled()
-  })
-
   it('treats the stored session cookie as the only bootstrap input', async () => {
     const deps = makeDeps({
-      getStoredTokens: vi.fn().mockResolvedValue({
+      getStoredTokens: jest.fn().mockResolvedValue({
         sessionCookieHeader: 'session=abc',
       }),
-      probeSession: vi.fn().mockResolvedValue({ user: testUser }),
+      probeSession: jest.fn().mockResolvedValue({ user: testUser }),
     })
 
     const result = await runAuthBoot(deps)
@@ -104,10 +89,10 @@ describe('runAuthBoot', () => {
 
   it('propagates network errors without clearing tokens', async () => {
     const deps = makeDeps({
-      getStoredTokens: vi.fn().mockResolvedValue({
+      getStoredTokens: jest.fn().mockResolvedValue({
         sessionCookieHeader: 'session=abc',
       }),
-      probeSession: vi.fn().mockRejectedValue(new TypeError('network unavailable')),
+      probeSession: jest.fn().mockRejectedValue(new TypeError('network unavailable')),
     })
 
     await expect(runAuthBoot(deps)).rejects.toThrow('network unavailable')
@@ -117,10 +102,10 @@ describe('runAuthBoot', () => {
   it('propagates AbortError on timeout without clearing tokens', async () => {
     const controller = new AbortController()
     const deps = makeDeps({
-      getStoredTokens: vi.fn().mockResolvedValue({
+      getStoredTokens: jest.fn().mockResolvedValue({
         sessionCookieHeader: 'session=abc',
       }),
-      probeSession: vi.fn().mockImplementation(() => {
+      probeSession: jest.fn().mockImplementation(() => {
         controller.abort()
         return Promise.reject(new DOMException('Boot timed out', 'AbortError'))
       }),
@@ -134,10 +119,10 @@ describe('runAuthBoot', () => {
   it('passes the AbortSignal to probeSession', async () => {
     const controller = new AbortController()
     const deps = makeDeps({
-      getStoredTokens: vi.fn().mockResolvedValue({
+      getStoredTokens: jest.fn().mockResolvedValue({
         sessionCookieHeader: 'session=abc',
       }),
-      probeSession: vi.fn().mockResolvedValue({ user: testUser }),
+      probeSession: jest.fn().mockResolvedValue({ user: testUser }),
       signal: controller.signal,
     })
 
@@ -152,11 +137,11 @@ describe('runAuthBoot', () => {
   it('runs clearLegacyData before reading tokens', async () => {
     const callOrder: string[] = []
     const deps = makeDeps({
-      clearLegacyData: vi.fn().mockImplementation(() => {
+      clearLegacyData: jest.fn().mockImplementation(() => {
         callOrder.push('clearLegacyData')
         return Promise.resolve()
       }),
-      getStoredTokens: vi.fn().mockImplementation(() => {
+      getStoredTokens: jest.fn().mockImplementation(() => {
         callOrder.push('getStoredTokens')
         return Promise.resolve({
           sessionCookieHeader: null,

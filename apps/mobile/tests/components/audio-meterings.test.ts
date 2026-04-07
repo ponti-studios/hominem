@@ -1,5 +1,9 @@
-import { describe, expect, it } from 'vitest'
+import React from 'react'
+import { render } from '@testing-library/react-native'
 
+jest.mock('react-native-reanimated')
+
+import { AudioLevelVisualizer } from '../../components/media/audio-meterings'
 import {
   buildAudioBarModels,
   normalizeDb,
@@ -19,5 +23,12 @@ describe('audio metering helpers', () => {
       { key: 'bar-8', x: 8, targetHeight: 28.5 },
       { key: 'bar-16', x: 16, targetHeight: 50 },
     ])
+  })
+
+  it('renders one animated bar per metering level', () => {
+    const screen = render(React.createElement(AudioLevelVisualizer, { levels: [-50, -25, 0] }))
+
+    expect(screen.getByTestId('audio-meter')).toBeTruthy()
+    expect(screen.getAllByTestId('audio-meter-bar')).toHaveLength(3)
   })
 })

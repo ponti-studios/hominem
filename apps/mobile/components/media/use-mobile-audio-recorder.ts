@@ -1,5 +1,5 @@
-import { emitVoiceEvent } from '@hominem/services/voice-events';
-import { AudioModule, RecordingPresets, useAudioRecorder } from 'expo-audio';
+import { emitVoiceEvent } from '@hominem/rpc/voice-events';
+import { AudioModule, RecordingPresets, useAudioRecorder, useAudioRecorderState } from 'expo-audio';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -26,13 +26,26 @@ export function useMobileAudioRecorder({
   onAudioTranscribed,
   onError,
 }: UseMobileAudioRecorderProps = {}) {
-  const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const [meterings, setMeterings] = useState<number[]>([]);
   const [lastRecordingUri, setLastRecordingUri] = useState<string | null>(null);
   const [recorderState, setRecorderState] = useState<RecorderState>('IDLE');
 
   const isMountedRef = useRef(true);
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  const recorder = useAudioRecorder({ ...RecordingPresets.HIGH_QUALITY, isMeteringEnabled: true });
+  // Poll recorder state at 100ms intervals to collect metering data for the visualizer
+  const recorderStatus = useAudioRecorderState(recorder, 100);
+
+  // Update meterings when recorder status changes
+  useEffect(() => {
+    if (recorderStatus.metering != null) {
+      setMeterings((prev) => {
+        const next = [...prev, recorderStatus.metering as number];
+        return next.length > 12 ? next.slice(-12) : next;
+      });
+    }
+  }, [recorderStatus.metering]);
 
   useEffect(() => {
     isMountedRef.current = true;

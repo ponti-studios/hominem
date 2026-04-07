@@ -1,9 +1,14 @@
-import { defineConfig, devices } from '@playwright/test'
-import { fileURLToPath } from 'node:url'
-import path from 'node:path'
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
-const reuseExistingServer = process.env.REUSE_SERVERS === 'true' || !process.env.CI
+import { defineConfig, devices } from '@playwright/test';
+
+const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const isCI = process.env.CI === 'true';
+const reuseExistingServer = process.env.REUSE_SERVERS === 'true';
+const apiServerCommand = isCI
+  ? 'bun run --filter @hominem/api start'
+  : 'bun run --filter @hominem/db db:migrate && bun run --filter @hominem/db build && bun run --filter @hominem/api dev';
 
 export default defineConfig({
   testDir: './tests',
@@ -16,7 +21,7 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: 'bun run --filter @hominem/db build && bun run --filter @hominem/api dev',
+      command: apiServerCommand,
       cwd: workspaceRoot,
       url: 'http://localhost:4040/',
       reuseExistingServer,
@@ -34,11 +39,15 @@ export default defineConfig({
       },
     },
     {
-      command: 'bun dev --filter @hominem/web',
+      command: 'bun run --filter @hominem/web build && bun run --filter @hominem/web start',
       cwd: workspaceRoot,
-      url: 'http://localhost:4445/',
+      url: 'http://localhost:4445/logo.web.png',
       reuseExistingServer,
-      timeout: 60_000,
+      timeout: 120_000,
+      env: {
+        PORT: '4445',
+        VITE_PUBLIC_API_URL: 'http://localhost:4040',
+      },
     },
   ],
-})
+});

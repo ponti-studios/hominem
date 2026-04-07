@@ -1,0 +1,705 @@
+/* ============================================
+ * Hominem Design System
+ *
+ * Anthropic × Apple Human Interface Guidelines
+ * Warm, joyous, human-first design language.
+ *
+ * Principles:
+ *   - Warmth over sterility
+ *   - Clarity over cleverness
+ *   - Motion with purpose
+ *   - Accessible by default
+ * ============================================ */
+
+@import 'tailwindcss';
+@import './animations.css';
+
+@theme {
+  /* ====== TYPOGRAPHY ====== */
+
+  /* Font families — Geist for brand consistency, Apple system stack as fallback */
+  --font-family-primary:
+    'Geist', -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  --font-family-mono: 'Geist Mono', 'SF Mono', ui-monospace, 'Menlo', monospace;
+
+  /* Apple HIG type scale — adapted for web densities */
+  --font-size-large-title: 34px;
+  --font-size-title-1: 28px;
+  --font-size-title-2: 22px;
+  --font-size-title-3: 20px;
+  --font-size-headline: 17px;
+  --font-size-body: 17px;
+  --font-size-callout: 16px;
+  --font-size-subhead: 15px;
+  --font-size-footnote: 13px;
+  --font-size-caption-1: 12px;
+  --font-size-caption-2: 11px;
+
+  /* Legacy size aliases — used by existing typography components */
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-md: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-display: 34px;
+
+  /* Weights */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Line heights — Apple HIG */
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.4;
+  --line-height-relaxed: 1.6;
+
+  /* Letter spacing */
+  --letter-spacing-tight: -0.025em;
+  --letter-spacing-normal: 0;
+  --letter-spacing-relaxed: 0.01em;
+
+  /* ====== COLORS: LIGHT MODE ====== */
+  /* Anthropic-inspired warm palette — parchment whites, warm grays, coral accent */
+
+  /* Backgrounds */
+  --color-bg-base: rgba(253, 252, 251, 1);
+  --color-bg-surface: rgba(247, 246, 243, 1);
+  --color-bg-elevated: rgba(239, 237, 232, 1);
+  --color-bg-overlay: rgba(17, 19, 24, 0.05);
+
+  /* Text — warm near-black, not pure black */
+  --color-text-primary: rgba(25, 25, 24, 1);
+  --color-text-secondary: rgba(95, 99, 109, 1);
+  --color-text-tertiary: rgba(133, 139, 152, 1);
+  --color-text-disabled: rgba(179, 184, 196, 1);
+
+  /* Borders */
+  --color-border-default: rgba(25, 25, 24, 0.16);
+  --color-border-subtle: rgba(25, 25, 24, 0.09);
+  --color-border-focus: rgba(91, 91, 214, 0.45);
+
+  /* Icons */
+  --color-icon-primary: rgba(25, 25, 24, 1);
+  --color-icon-muted: rgba(133, 139, 152, 1);
+
+  /* Semantic status */
+  --color-success: rgba(41, 151, 100, 1);
+  --color-warning: rgba(255, 178, 36, 1);
+  --color-destructive: rgba(229, 77, 46, 1);
+
+  /* Accent — Anthropic warm coral */
+  --color-accent: rgba(91, 91, 214, 1);
+  --color-accent-foreground: rgba(255, 255, 255, 1);
+
+  /* System tokens — used by shadcn/ui component internals */
+  --color-primary: rgba(0, 0, 0, 1);
+  --color-primary-foreground: rgba(255, 255, 255, 1);
+  --color-secondary: rgba(25, 25, 24, 0.08);
+  --color-secondary-foreground: rgba(43, 47, 58, 1);
+  --color-muted: rgba(25, 25, 24, 0.05);
+  --color-muted-foreground: rgba(95, 99, 109, 1);
+  --color-foreground: rgba(25, 25, 24, 1);
+  --color-background: rgba(253, 252, 251, 1);
+  --color-destructive-foreground: rgba(255, 255, 255, 1);
+  --color-popover: rgba(247, 246, 243, 1);
+  --color-popover-foreground: rgba(25, 25, 24, 1);
+  --color-input: rgba(247, 246, 243, 1);
+  --color-ring: rgba(0, 0, 0, 1);
+
+  /* Emphasis scale — layered warm black for subtle differentiation */
+  --color-emphasis-highest: rgba(25, 25, 24, 0.9);
+  --color-emphasis-high: rgba(25, 25, 24, 0.72);
+  --color-emphasis-medium: rgba(25, 25, 24, 0.52);
+  --color-emphasis-low: rgba(25, 25, 24, 0.34);
+  --color-emphasis-lower: rgba(25, 25, 24, 0.24);
+  --color-emphasis-subtle: rgba(25, 25, 24, 0.14);
+  --color-emphasis-minimal: rgba(25, 25, 24, 0.09);
+  --color-emphasis-faint: rgba(25, 25, 24, 0.05);
+
+  /* Charts — warm, distinct, accessible */
+  --color-chart-1: rgba(91, 91, 214, 1);
+  --color-chart-2: rgba(41, 151, 100, 1);
+  --color-chart-3: rgba(14, 165, 233, 1);
+  --color-chart-4: rgba(255, 178, 36, 1);
+  --color-chart-5: rgba(229, 77, 46, 1);
+
+  /* Sidebar */
+  --color-sidebar: rgba(242, 241, 238, 1);
+  --color-sidebar-foreground: rgba(25, 25, 24, 1);
+  --color-sidebar-primary: rgba(91, 91, 214, 1);
+  --color-sidebar-primary-foreground: rgba(255, 255, 255, 1);
+  --color-sidebar-accent: rgba(25, 25, 24, 0.06);
+  --color-sidebar-accent-foreground: rgba(25, 25, 24, 1);
+  --color-sidebar-border: rgba(25, 25, 24, 0.1);
+  --color-sidebar-ring: rgba(91, 91, 214, 1);
+
+  /* Chat / Prompt input */
+  --color-prompt-bg: rgba(253, 252, 251, 1);
+  --color-prompt-border: rgba(25, 25, 24, 0.16);
+  --color-prompt-border-focus: rgba(91, 91, 214, 0.45);
+
+  /* ====== SPACING: 8PT GRID ====== */
+
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-5: 24px;
+  --spacing-6: 32px;
+  --spacing-7: 48px;
+  --spacing-8: 64px;
+
+  /* Content widths */
+  --content-width-bubble: 36rem;
+  --content-width-transcript: 44rem;
+  --content-width-note-preview: 32ch;
+
+  /* ====== BORDER RADIUS — Apple continuous corners ====== */
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-icon: 22%;
+
+  /* ====== SHADOWS ====== */
+  /* Warm-tinted, multi-layer for depth without harshness */
+
+  --shadow-low: 0 1px 3px rgba(28, 25, 18, 0.06), 0 1px 2px rgba(28, 25, 18, 0.04);
+  --shadow-medium: 0 4px 16px rgba(28, 25, 18, 0.08), 0 2px 4px rgba(28, 25, 18, 0.04);
+  --shadow-high: 0 16px 48px rgba(28, 25, 18, 0.1), 0 4px 12px rgba(28, 25, 18, 0.06);
+
+  /* Glass morphism */
+  --glass-blur: 16px;
+  --glass-background: rgba(250, 249, 247, 0.85);
+
+  /* ====== MOTION ====== */
+  /* Apple spring-inspired easing */
+
+  --duration-fast: 120ms;
+  --duration-default: 200ms;
+  --duration-slow: 320ms;
+  --ease-default: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+}
+
+/* ====== DARK MODE ====== */
+/* Override warm-light tokens with warm-dark equivalents.
+   The same warmth, inverted. Deep charcoal backgrounds, cream text. */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg-base: rgba(17, 17, 19, 1);
+    --color-bg-surface: rgba(24, 25, 27, 1);
+    --color-bg-elevated: rgba(33, 34, 37, 1);
+    --color-bg-overlay: rgba(245, 246, 248, 0.06);
+
+    --color-text-primary: rgba(245, 246, 248, 1);
+    --color-text-secondary: rgba(180, 185, 195, 1);
+    --color-text-tertiary: rgba(141, 147, 161, 1);
+    --color-text-disabled: rgba(97, 103, 117, 1);
+
+    --color-border-default: rgba(245, 246, 248, 0.18);
+    --color-border-subtle: rgba(245, 246, 248, 0.11);
+    --color-border-focus: rgba(142, 141, 255, 0.5);
+
+    --color-icon-primary: rgba(245, 246, 248, 1);
+    --color-icon-muted: rgba(141, 147, 161, 1);
+
+    --color-success: rgba(61, 214, 140, 1);
+    --color-warning: rgba(255, 209, 102, 1);
+    --color-destructive: rgba(255, 123, 92, 1);
+
+    --color-accent: rgba(142, 141, 255, 1);
+    --color-accent-foreground: rgba(15, 16, 40, 1);
+
+    --color-primary: rgba(0, 0, 0, 1);
+    --color-primary-foreground: rgba(255, 255, 255, 1);
+    --color-secondary: rgba(245, 246, 248, 0.14);
+    --color-secondary-foreground: rgba(229, 232, 239, 1);
+    --color-muted: rgba(245, 246, 248, 0.08);
+    --color-muted-foreground: rgba(180, 185, 195, 1);
+    --color-foreground: rgba(245, 246, 248, 1);
+    --color-background: rgba(17, 17, 19, 1);
+    --color-destructive-foreground: rgba(29, 14, 10, 1);
+    --color-popover: rgba(24, 25, 27, 1);
+    --color-popover-foreground: rgba(245, 246, 248, 1);
+    --color-input: rgba(24, 25, 27, 1);
+    --color-ring: rgba(0, 0, 0, 1);
+
+    --color-emphasis-highest: rgba(245, 246, 248, 0.92);
+    --color-emphasis-high: rgba(245, 246, 248, 0.76);
+    --color-emphasis-medium: rgba(245, 246, 248, 0.56);
+    --color-emphasis-low: rgba(245, 246, 248, 0.38);
+    --color-emphasis-lower: rgba(245, 246, 248, 0.26);
+    --color-emphasis-subtle: rgba(245, 246, 248, 0.18);
+    --color-emphasis-minimal: rgba(245, 246, 248, 0.12);
+    --color-emphasis-faint: rgba(245, 246, 248, 0.07);
+
+    --color-chart-1: rgba(142, 141, 255, 1);
+    --color-chart-2: rgba(61, 214, 140, 1);
+    --color-chart-3: rgba(56, 189, 248, 1);
+    --color-chart-4: rgba(255, 209, 102, 1);
+    --color-chart-5: rgba(255, 123, 92, 1);
+
+    --color-sidebar: rgba(15, 16, 18, 1);
+    --color-sidebar-foreground: rgba(245, 246, 248, 1);
+    --color-sidebar-primary: rgba(142, 141, 255, 1);
+    --color-sidebar-primary-foreground: rgba(15, 16, 40, 1);
+    --color-sidebar-accent: rgba(245, 246, 248, 0.08);
+    --color-sidebar-accent-foreground: rgba(245, 246, 248, 1);
+    --color-sidebar-border: rgba(245, 246, 248, 0.14);
+    --color-sidebar-ring: rgba(142, 141, 255, 1);
+
+    --color-prompt-bg: rgba(24, 25, 27, 1);
+    --color-prompt-border: rgba(245, 246, 248, 0.18);
+    --color-prompt-border-focus: rgba(142, 141, 255, 0.5);
+
+    --glass-background: rgba(17, 17, 19, 0.82);
+  }
+}
+
+/* Manual dark mode — for apps that toggle theme explicitly (e.g. desktop) */
+:root[data-theme='dark'] {
+  --color-bg-base: rgba(17, 17, 19, 1);
+  --color-bg-surface: rgba(24, 25, 27, 1);
+  --color-bg-elevated: rgba(33, 34, 37, 1);
+  --color-bg-overlay: rgba(245, 246, 248, 0.06);
+
+  --color-text-primary: rgba(245, 246, 248, 1);
+  --color-text-secondary: rgba(180, 185, 195, 1);
+  --color-text-tertiary: rgba(141, 147, 161, 1);
+  --color-text-disabled: rgba(97, 103, 117, 1);
+
+  --color-border-default: rgba(245, 246, 248, 0.18);
+  --color-border-subtle: rgba(245, 246, 248, 0.11);
+  --color-border-focus: rgba(142, 141, 255, 0.5);
+
+  --color-icon-primary: rgba(245, 246, 248, 1);
+  --color-icon-muted: rgba(141, 147, 161, 1);
+
+  --color-success: rgba(61, 214, 140, 1);
+  --color-warning: rgba(255, 209, 102, 1);
+  --color-destructive: rgba(255, 123, 92, 1);
+
+  --color-accent: rgba(142, 141, 255, 1);
+  --color-accent-foreground: rgba(15, 16, 40, 1);
+
+  --color-primary: rgba(0, 0, 0, 1);
+  --color-primary-foreground: rgba(255, 255, 255, 1);
+  --color-secondary: rgba(245, 246, 248, 0.14);
+  --color-secondary-foreground: rgba(229, 232, 239, 1);
+  --color-muted: rgba(245, 246, 248, 0.08);
+  --color-muted-foreground: rgba(180, 185, 195, 1);
+  --color-foreground: rgba(245, 246, 248, 1);
+  --color-background: rgba(17, 17, 19, 1);
+  --color-destructive-foreground: rgba(29, 14, 10, 1);
+  --color-popover: rgba(24, 25, 27, 1);
+  --color-popover-foreground: rgba(245, 246, 248, 1);
+  --color-input: rgba(24, 25, 27, 1);
+  --color-ring: rgba(0, 0, 0, 1);
+
+  --color-emphasis-highest: rgba(245, 246, 248, 0.92);
+  --color-emphasis-high: rgba(245, 246, 248, 0.76);
+  --color-emphasis-medium: rgba(245, 246, 248, 0.56);
+  --color-emphasis-low: rgba(245, 246, 248, 0.38);
+  --color-emphasis-lower: rgba(245, 246, 248, 0.26);
+  --color-emphasis-subtle: rgba(245, 246, 248, 0.18);
+  --color-emphasis-minimal: rgba(245, 246, 248, 0.12);
+  --color-emphasis-faint: rgba(245, 246, 248, 0.07);
+
+  --color-chart-1: rgba(142, 141, 255, 1);
+  --color-chart-2: rgba(61, 214, 140, 1);
+  --color-chart-3: rgba(56, 189, 248, 1);
+  --color-chart-4: rgba(255, 209, 102, 1);
+  --color-chart-5: rgba(255, 123, 92, 1);
+
+  --color-sidebar: rgba(15, 16, 18, 1);
+  --color-sidebar-foreground: rgba(245, 246, 248, 1);
+  --color-sidebar-primary: rgba(142, 141, 255, 1);
+  --color-sidebar-primary-foreground: rgba(15, 16, 40, 1);
+  --color-sidebar-accent: rgba(245, 246, 248, 0.08);
+  --color-sidebar-accent-foreground: rgba(245, 246, 248, 1);
+  --color-sidebar-border: rgba(245, 246, 248, 0.14);
+  --color-sidebar-ring: rgba(142, 141, 255, 1);
+
+  --color-prompt-bg: rgba(24, 25, 27, 1);
+  --color-prompt-border: rgba(245, 246, 248, 0.18);
+  --color-prompt-border-focus: rgba(142, 141, 255, 0.5);
+
+  --glass-background: rgba(17, 17, 19, 0.82);
+}
+
+/* ====== SAFE AREA UTILITIES ====== */
+
+@utility pb-safe-area-inset-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@utility mb-safe-area-inset-bottom {
+  margin-bottom: env(safe-area-inset-bottom);
+}
+
+/* ====== VIEWPORT HEIGHT UTILITIES ====== */
+
+@utility min-h-screen {
+  min-height: 100vh; /* fallback */
+  min-height: 100dvh;
+}
+
+@utility min-h-screen-dynamic {
+  min-height: 100dvh;
+}
+
+@utility h-screen {
+  height: 100vh; /* fallback */
+  height: 100dvh;
+}
+
+/* ====== BASE STYLES ====== */
+
+@layer base {
+  html,
+  body {
+    font-family: var(--font-family-primary);
+    color-scheme: light;
+    background-color: var(--color-bg-base);
+    color: var(--color-text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    html,
+    body {
+      color-scheme: dark;
+    }
+  }
+
+  :root[data-theme='dark'] html,
+  :root[data-theme='dark'] body {
+    color-scheme: dark;
+  }
+
+  /* Universal focus reset — mouse/touch shows nothing, keyboard gets a ring */
+  *:focus {
+    outline: none;
+  }
+
+  *:focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+    border-radius: inherit;
+  }
+
+  /* Selective transitions — only interactive elements animate, not everything */
+  * {
+    transition: none;
+  }
+
+  *:is(button, a, input, select, textarea, [role='button'], [role='link']) {
+    transition-property: background-color, color, border-color, opacity;
+    transition-duration: var(--duration-fast);
+    transition-timing-function: var(--ease-default);
+  }
+
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-border-default, currentColor);
+  }
+
+  button {
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  /* Radix portals */
+  [data-radix-portal] {
+    z-index: 9999;
+  }
+
+  /* Headings */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-family-primary);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--letter-spacing-tight);
+  }
+
+  /* shadcn/ui CSS variable aliases */
+  :root {
+    --background: var(--color-bg-base);
+    --foreground: var(--color-text-primary);
+    --primary: var(--color-primary);
+    --primary-foreground: var(--color-primary-foreground);
+    --secondary: var(--color-secondary);
+    --secondary-foreground: var(--color-secondary-foreground);
+    --muted: var(--color-muted);
+    --muted-foreground: var(--color-muted-foreground);
+    --accent: var(--color-accent);
+    --accent-foreground: var(--color-accent-foreground);
+    --destructive: var(--color-destructive);
+    --destructive-foreground: var(--color-destructive-foreground);
+    --popover: var(--color-popover);
+    --popover-foreground: var(--color-popover-foreground);
+    --input: var(--color-input);
+    --ring: var(--color-ring);
+    --chart-1: var(--color-chart-1);
+    --chart-2: var(--color-chart-2);
+    --chart-3: var(--color-chart-3);
+    --chart-4: var(--color-chart-4);
+    --chart-5: var(--color-chart-5);
+    --success: var(--color-success);
+    --warning: var(--color-warning);
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* ====== BACKGROUND SHORTHAND UTILITIES ====== */
+/* Tailwind v4 generates bg-bg-base from --color-bg-base; these provide
+   the cleaner bg-base / bg-surface / bg-elevated names used in components. */
+
+@utility bg-base {
+  background-color: var(--color-bg-base);
+}
+
+@utility bg-surface {
+  background-color: var(--color-bg-surface);
+}
+
+@utility bg-elevated {
+  background-color: var(--color-bg-elevated);
+}
+
+/* ====== BORDER SHORTHAND UTILITIES ====== */
+/* Tailwind v4 generates border-border-default from --color-border-default;
+   these provide the cleaner border-default / border-subtle / border-focus names. */
+
+@utility border-default {
+  border-color: var(--color-border-default);
+}
+
+@utility border-subtle {
+  border-color: var(--color-border-subtle);
+}
+
+@utility border-focus {
+  border-color: var(--color-border-focus);
+}
+
+/* ====== TYPOGRAPHY UTILITIES ====== */
+/* Apple HIG type scale — multi-property composites that can't be expressed
+   as single token values. Fluid clamp() scaling for responsive web. */
+
+@utility display-1 {
+  font-size: clamp(2.5rem, 5vw, 6rem);
+  font-family: var(--font-family-primary);
+  font-weight: var(--font-weight-bold);
+  line-height: 1.1;
+  letter-spacing: var(--letter-spacing-tight);
+}
+
+@utility display-2 {
+  font-size: clamp(2rem, 3vw, 3.5rem);
+  font-family: var(--font-family-primary);
+  font-weight: var(--font-weight-bold);
+  line-height: 1.15;
+  letter-spacing: var(--letter-spacing-tight);
+}
+
+@utility heading-1 {
+  font-size: clamp(2rem, 3vw, 2.75rem);
+  font-family: var(--font-family-primary);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.2;
+  letter-spacing: var(--letter-spacing-tight);
+}
+
+@utility heading-2 {
+  font-size: clamp(1.375rem, 2vw, 1.75rem);
+  font-family: var(--font-family-primary);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+@utility heading-3 {
+  font-size: clamp(1.125rem, 1.5vw, 1.375rem);
+  font-family: var(--font-family-primary);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+}
+
+@utility heading-4 {
+  font-size: clamp(1rem, 1.25vw, 1.125rem);
+  font-family: var(--font-family-primary);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+}
+
+@utility body-1 {
+  font-size: clamp(1rem, 1.25vw, 1.0625rem);
+  font-family: var(--font-family-primary);
+  font-weight: var(--font-weight-regular);
+  line-height: 1.6;
+  letter-spacing: var(--letter-spacing-normal);
+}
+
+@utility body-2 {
+  font-size: clamp(0.875rem, 1vw, 1rem);
+  font-family: var(--font-family-primary);
+  font-weight: var(--font-weight-regular);
+  line-height: 1.5;
+  letter-spacing: var(--letter-spacing-normal);
+}
+
+@utility body-3 {
+  font-size: 0.9375rem;
+  font-family: var(--font-family-primary);
+  font-weight: var(--font-weight-regular);
+  line-height: 1.47;
+  letter-spacing: -0.015em;
+}
+
+@utility body-4 {
+  font-size: 0.8125rem;
+  font-family: var(--font-family-primary);
+  font-weight: var(--font-weight-regular);
+  line-height: 1.38;
+  letter-spacing: -0.005em;
+}
+
+@utility subheading-1 {
+  font-size: clamp(1.125rem, 1.5vw, 1.375rem);
+  font-family: var(--font-family-primary);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+}
+
+@utility subheading-2 {
+  font-size: clamp(1rem, 1.25vw, 1.25rem);
+  font-family: var(--font-family-primary);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.4;
+  letter-spacing: -0.015em;
+}
+
+@utility subheading-3 {
+  font-size: 1rem;
+  font-family: var(--font-family-primary);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.33;
+  letter-spacing: -0.01em;
+}
+
+@utility subheading-4 {
+  font-size: 0.9375rem;
+  font-family: var(--font-family-primary);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.33;
+  letter-spacing: -0.008em;
+}
+
+/* ====== FOCUS UTILITIES ====== */
+
+/* Programmatic focus ring — use when you need to force visibility */
+@utility focus-ring {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+}
+
+/* Explicit opt-in for Radix component overrides */
+@utility void-focus {
+  outline: none;
+  &:focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+}
+
+/* ====== LAYOUT UTILITIES ====== */
+
+/* list-row: full-height row where every child stretches to fill the row height.
+   Each child centers its own content. Usage: <li className="list-row"> */
+@utility list-row {
+  display: flex;
+  align-items: stretch;
+
+  & > * {
+    display: flex;
+    align-items: center;
+  }
+}
+
+/* Glass morphism — warm frosted glass */
+@utility glass {
+  background-color: var(--glass-background);
+  backdrop-filter: blur(var(--glass-blur));
+}
+
+/* Page-width constraints — used exclusively by layout primitives (Page, Container, Center).
+   Leaf components must never apply these directly. */
+@utility content-width-bubble {
+  max-inline-size: var(--content-width-bubble);
+}
+
+@utility content-width-transcript {
+  max-inline-size: var(--content-width-transcript);
+}
+
+@utility content-width-note-preview {
+  max-inline-size: var(--content-width-note-preview);
+}
+
+@utility page-width-sm {
+  max-inline-size: min(100%, 42rem);
+}
+
+@utility page-width-md {
+  max-inline-size: min(100%, 48rem);
+}
+
+@utility page-width-lg {
+  max-inline-size: min(100%, 64rem);
+}
+
+@utility page-width-xl {
+  max-inline-size: min(100%, 80rem);
+}
+
+@utility page-width-full {
+  max-inline-size: 100%;
+}
+
+@utility center-layout {
+  margin-inline: auto;
+  width: 100%;
+}
+
+@layer utilities {
+  /* Container: horizontal padding only. Centering is the layout component's job. */
+  .container {
+    @apply w-full px-4 sm:px-6;
+    margin-inline: auto;
+  }
+}

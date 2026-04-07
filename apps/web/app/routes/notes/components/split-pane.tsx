@@ -1,7 +1,7 @@
 import { Button } from '@hominem/ui/button';
 import { cn } from '@hominem/ui/lib/utils';
 import { GripVertical, PanelLeftClose, PanelRightClose } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useRef, useState, type ReactNode } from 'react';
 
 interface SplitPaneProps {
   leftPanel: ReactNode;
@@ -20,34 +20,49 @@ export function SplitPane({
   storageKey = 'notes-split-position',
   className,
 }: SplitPaneProps) {
-  const [splitPosition, setSplitPosition] = useState(defaultSplit);
+  const [splitPosition, setSplitPosition] = useState(() => {
+    if (typeof window === 'undefined') {
+      return defaultSplit;
+    }
+
+    const stored = window.localStorage.getItem(storageKey);
+    if (!stored) {
+      return defaultSplit;
+    }
+
+    const parsed = Number.parseInt(stored, 10);
+    return !Number.isNaN(parsed) && parsed > 0 && parsed < 100 ? parsed : defaultSplit;
+  });
   const [isDragging, setIsDragging] = useState(false);
   const [collapsedSide, setCollapsedSide] = useState<'left' | 'right' | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const dragCleanupRef = useRef<(() => void) | null>(null);
 
-  useEffect(() => {
-    const stored = localStorage.getItem(storageKey);
-    if (stored) {
-      const parsed = Number.parseInt(stored, 10);
-      if (!Number.isNaN(parsed) && parsed > 0 && parsed < 100) {
-        setSplitPosition(parsed);
+  const persistSplitPosition = useCallback(
+    (nextPosition: number) => {
+      if (typeof window === 'undefined') {
+        return;
       }
-    }
-  }, [storageKey]);
 
-  const handleMouseDown = useCallback(() => {
-    setIsDragging(true);
-  }, []);
+      window.localStorage.setItem(storageKey, String(Math.round(nextPosition)));
+    },
+    [storageKey],
+  );
 
-  const handleMouseUp = useCallback(() => {
+  const cleanupDrag = useCallback(() => {
+    dragCleanupRef.current?.();
+    dragCleanupRef.current = null;
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
     setIsDragging(false);
   }, []);
 
-  const handleMouseMove = useCallback(
-    (e: MouseEvent) => {
-      if (!isDragging) return;
+  const handleMouseDown = useCallback(() => {
+    const handleMouseMove = (e: MouseEvent) => {
       const container = containerRef.current;
-      if (!container) return;
+      if (!container) {
+        return;
+      }
 
       const rect = container.getBoundingClientRect();
       const newPosition = ((e.clientX - rect.left) / rect.width) * 100;
@@ -55,35 +70,31 @@ export function SplitPane({
 
       if (newPosition >= minPercent && newPosition <= 100 - minPercent) {
         setSplitPosition(newPosition);
-        localStorage.setItem(storageKey, String(Math.round(newPosition)));
+        persistSplitPosition(newPosition);
       }
-    },
-    [isDragging, minWidth, storageKey],
-  );
+    };
 
-  useEffect(() => {
-    if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      document.body.style.cursor = 'col-resize';
-      document.body.style.userSelect = 'none';
-    } else {
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-    }
+    const handleMouseUp = () => {
+      cleanupDrag();
+    };
 
-    return () => {
+    dragCleanupRef.current?.();
+    dragCleanupRef.current = () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
     };
-  }, [isDragging, handleMouseMove, handleMouseUp]);
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    setIsDragging(true);
+  }, [cleanupDrag, minWidth, persistSplitPosition]);
 
   const handleDoubleClick = useCallback(() => {
     setSplitPosition(defaultSplit);
-    localStorage.setItem(storageKey, String(defaultSplit));
-  }, [defaultSplit, storageKey]);
+    persistSplitPosition(defaultSplit);
+  }, [defaultSplit, persistSplitPosition]);
 
   const toggleCollapseLeft = useCallback(() => {
     setCollapsedSide((prev) => (prev === 'left' ? null : 'left'));
@@ -93,8 +104,19 @@ export function SplitPane({
     setCollapsedSide((prev) => (prev === 'right' ? null : 'right'));
   }, []);
 
+  const setContainerElement = useCallback(
+    (element: HTMLDivElement | null) => {
+      if (!element) {
+        cleanupDrag();
+      }
+
+      containerRef.current = element;
+    },
+    [cleanupDrag],
+  );
+
   return (
-    <div ref={containerRef} className={cn('flex h-full w-full', className)}>
+    <div ref={setContainerElement} className={cn('flex h-full w-full', className)}>
       {/* Left Panel */}
       <div
         className={cn(

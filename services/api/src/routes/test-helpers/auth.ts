@@ -54,7 +54,7 @@ export async function importServerWithEnv(envOverrides: Partial<ApiEnv>) {
 }
 
 export async function requestOtp(app: AppRequester, email: string) {
-  return app.request('http://localhost/api/auth/email-otp/send', {
+  return app.request('http://localhost/api/auth/email-otp/send-verification-otp', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
@@ -100,7 +100,7 @@ export async function signInWithEmailOtp(app: AppRequester, email: string) {
     throw new Error(`Expected OTP request to succeed for ${email}, got ${otpRequest.status}`);
   }
   const otp = await fetchOtp(app, email);
-  const response = await app.request('http://localhost/api/auth/email-otp/verify', {
+  const response = await app.request('http://localhost/api/auth/sign-in/email-otp', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({

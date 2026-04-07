@@ -1,0 +1,35 @@
+{
+  "extends": "../../../tsconfig.profiles/react-package-build.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "../../../.cache/ui.tsbuildinfo",
+    "rootDir": ".",
+    "outDir": "./build",
+    "types": [
+      "vite/client",
+      "node",
+      "vitest/globals",
+      "@testing-library/jest-dom"
+    ]
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.d.ts",
+    ".storybook/**/*.ts",
+    ".storybook/**/*.tsx",
+    "../../../types/**/*.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "build",
+    "dist",
+    ".turbo",
+    ".cache",
+    "coverage",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "**/__tests__",
+    "**/__mocks__",
+    "*.tsbuildinfo"
+  ]
+}

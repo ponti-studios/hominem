@@ -1,4 +1,4 @@
-import type { ReviewItem } from '@hominem/chat-services/types';
+import type { ReviewItem } from '@hominem/chat/types';
 
 // In-memory store for pending ReviewItems — ephemeral by design.
 // ReviewItems are reviewed within seconds; no DB persistence needed for MVP.

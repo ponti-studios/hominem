@@ -1,16 +1,16 @@
-@import '../../../packages/ui/src/styles/globals.css';
-@import '../../../packages/ui/src/styles/animations.css';
+@import '../../../packages/platform/ui/src/styles/globals.css';
+@import '../../../packages/platform/ui/src/styles/animations.css';
 
-/* Tell Tailwind to scan the packages/ui directory for classes */
-@source '../../../packages/ui/src';
+/* Tell Tailwind to scan the packages/platform/ui directory for classes */
+@source '../../../packages/platform/ui/src';
 
-/* ─── Markdown preview (note editor) ──────────────────────────────────────── */
+/* ── Markdown note preview ─────────────────────────────────────────────────── */
 
 @layer components {
   .prose-note {
     color: var(--color-text-primary);
+    font-size: var(--font-size-body);
     line-height: 1.7;
-    font-size: 1rem;
 
     h1,
     h2,
@@ -19,27 +19,27 @@
     h5,
     h6 {
       font-weight: 600;
-      letter-spacing: -0.02em;
-      margin-top: 1.5em;
-      margin-bottom: 0.5em;
+      letter-spacing: var(--letter-spacing-tight);
+      margin-top: var(--spacing-6);
+      margin-bottom: var(--spacing-2);
       color: var(--color-text-primary);
       &:first-child {
         margin-top: 0;
       }
     }
     h1 {
-      font-size: 1.5rem;
+      font-size: var(--font-size-title-2);
     }
     h2 {
-      font-size: 1.25rem;
+      font-size: var(--font-size-title-3);
     }
     h3 {
-      font-size: 1.1rem;
+      font-size: var(--font-size-headline);
     }
 
     p {
       margin-top: 0;
-      margin-bottom: 1em;
+      margin-bottom: var(--spacing-4);
       &:last-child {
         margin-bottom: 0;
       }
@@ -47,8 +47,8 @@
 
     ul,
     ol {
-      padding-left: 1.5em;
-      margin-bottom: 1em;
+      padding-left: var(--spacing-5);
+      margin-bottom: var(--spacing-4);
     }
     ul {
       list-style-type: disc;
@@ -57,47 +57,49 @@
       list-style-type: decimal;
     }
     li {
-      margin-bottom: 0.25em;
+      margin-bottom: var(--spacing-1);
     }
 
     code {
       font-family: var(--font-family-mono);
-      font-size: 0.875em;
+      font-size: var(--font-size-footnote);
       background: var(--color-emphasis-faint);
-      padding: 0.15em 0.4em;
+      padding: var(--spacing-1) var(--spacing-2);
+      border-radius: var(--radius-sm);
       color: var(--color-text-primary);
     }
 
     pre {
       background: var(--color-emphasis-faint);
-      padding: 1em;
+      padding: var(--spacing-4);
+      border-radius: var(--radius-md);
       overflow-x: auto;
-      margin-bottom: 1em;
+      margin-bottom: var(--spacing-4);
       code {
         background: none;
         padding: 0;
-        font-size: 0.875rem;
+        font-size: inherit;
       }
     }
 
     blockquote {
-      border-left: 3px solid var(--color-border-default);
-      padding-left: 1em;
+      border-left: 4px solid var(--color-border-default);
+      padding-left: var(--spacing-4);
       color: var(--color-text-secondary);
-      margin: 0 0 1em;
+      margin: 0 0 var(--spacing-4);
       font-style: italic;
     }
 
     a {
-      color: var(--color-primary);
+      color: var(--color-accent);
       text-decoration: underline;
-      text-underline-offset: 2px;
+      text-underline-offset: 0.15em;
     }
 
     hr {
       border: none;
       border-top: 1px solid var(--color-border-subtle);
-      margin: 1.5em 0;
+      margin: var(--spacing-6) 0;
     }
 
     strong {

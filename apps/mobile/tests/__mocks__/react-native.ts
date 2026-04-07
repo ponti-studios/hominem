@@ -18,12 +18,27 @@ export const View = ({ children, testID }) =>
 export const Text = ({ children, testID }) =>
   React.createElement('Text', { testID }, children)
 
+export const Button = ({ onPress, testID, title }) =>
+  React.createElement(
+    'Button',
+    {
+      accessibilityRole: 'button',
+      onPress,
+      testID,
+      title,
+    },
+    React.createElement('Text', null, title),
+  )
+
 export const KeyboardAvoidingView = ({ children, ...props }) =>
   React.createElement('KeyboardAvoidingView', props, children)
 export const Pressable = ({ children, ...props }) => React.createElement('Pressable', props, children)
 export const ScrollView = ({ children, ...props }) => React.createElement('ScrollView', props, children)
 export const TouchableOpacity = ({ children, ...props }) =>
   React.createElement('TouchableOpacity', props, children)
+export const Touchable = {
+  Mixin: {},
+}
 export const Platform = {
   OS: 'ios',
 }

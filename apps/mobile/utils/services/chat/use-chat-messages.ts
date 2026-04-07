@@ -1,4 +1,4 @@
-import { CHAT_TITLE_MAX_LENGTH } from '@hominem/chat-services/constants';
+import { CHAT_TITLE_MAX_LENGTH } from '@hominem/chat/constants';
 import type { ApiClient } from '@hominem/rpc';
 import { useApiClient } from '@hominem/rpc/react';
 import type { Chat, ChatMessage as RpcChatMessage } from '@hominem/rpc/types';
@@ -7,7 +7,6 @@ import { useMutation, useQuery, useQueryClient, type MutationOptions } from '@ta
 import { randomUUID } from 'expo-crypto';
 import { useState } from 'react';
 
-import { log } from '../../logger';
 import {
   createChatInboxRefreshSnapshot,
   invalidateInboxQueries,
@@ -29,6 +28,7 @@ type SendChatMessageOutput = {
 export interface SendChatMessageInput {
   fileIds?: string[];
   message: string;
+  noteIds?: string[];
 }
 
 function updateSessionCache(
@@ -141,7 +141,7 @@ export const useSendMessage = ({ chatId }: { chatId: string }) => {
       return { previousMessages };
     },
 
-    mutationFn: async ({ message: messageText, fileIds }) => {
+    mutationFn: async ({ message: messageText, fileIds, noteIds }) => {
       const status = await NetInfo.fetch();
       if (!status.isConnected) {
         throw new Error('offline_unavailable');
@@ -151,6 +151,7 @@ export const useSendMessage = ({ chatId }: { chatId: string }) => {
         chatId,
         message: messageText.trim(),
         ...(fileIds && fileIds.length > 0 ? { fileIds } : {}),
+        ...(noteIds && noteIds.length > 0 ? { noteIds } : {}),
       });
       setChatSendStatus('streaming');
       const mappedMessages = [payload.messages.user, payload.messages.assistant].flatMap(
@@ -181,7 +182,7 @@ export const useSendMessage = ({ chatId }: { chatId: string }) => {
 
     // Rollback on error
     onError: (error, variables, context) => {
-      log('Error sending chat message:', error);
+      console.error('Error sending chat message:', error);
       setSendChatError(true);
       setChatSendStatus('error');
       if (context?.previousMessages) {
@@ -213,6 +214,9 @@ export const useSendMessage = ({ chatId }: { chatId: string }) => {
         message: text,
         ...(resolvedInput.fileIds && resolvedInput.fileIds.length > 0
           ? { fileIds: resolvedInput.fileIds }
+          : {}),
+        ...(resolvedInput.noteIds && resolvedInput.noteIds.length > 0
+          ? { noteIds: resolvedInput.noteIds }
           : {}),
       });
       setMessage('');

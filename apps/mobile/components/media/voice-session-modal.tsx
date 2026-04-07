@@ -1,7 +1,7 @@
-import { MaterialIcons } from '@expo/vector-icons';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 
-import { Text, makeStyles } from '~/theme';
+import AppIcon from '~/components/ui/icon';
+import { Text, makeStyles, theme } from '~/theme';
 
 import { MobileVoiceInput } from './mobile-voice-input';
 
@@ -37,7 +37,7 @@ export function VoiceSessionModal({
               accessibilityLabel="Close voice input"
               accessibilityRole="button"
             >
-              <MaterialIcons name="close" size={20} color="#000" />
+              <AppIcon name="xmark" size={20} color={theme.colors.foreground} />
             </Pressable>
           </View>
 

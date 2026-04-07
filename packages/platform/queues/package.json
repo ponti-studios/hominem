@@ -1,0 +1,29 @@
+{
+  "name": "@hominem/queues",
+  "version": "0.0.1",
+  "description": "BullMQ queue initialization and import job tracking — how you enqueue and track background work.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
+    "format": "bunx oxfmt ./src",
+    "lint": "bunx oxlint ./src"
+  },
+  "dependencies": {
+    "@hominem/services": "workspace:*",
+    "@hominem/utils": "workspace:*",
+    "bullmq": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.4.0",
+    "typescript": "5.9.3",
+    "vitest": "4.0.18"
+  }
+}

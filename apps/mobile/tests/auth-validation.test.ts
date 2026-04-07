@@ -1,33 +1,62 @@
-import { describe, expect, it } from 'vitest'
 
 import { isValidEmail, isValidOtp, normalizeEmail, normalizeOtp } from '../utils/auth/validation'
 
 describe('auth validation', () => {
-  it('normalizes email and otp values', () => {
-    expect(normalizeEmail('  USER@Example.COM ')).toBe('user@example.com')
-    expect(normalizeOtp(' 123456 ')).toBe('123456')
-    expect(normalizeOtp('12 34-56')).toBe('123456')
-    expect(normalizeOtp('1234567')).toBe('123456')
+  describe('normalizeEmail', () => {
+    it('should convert to lowercase', () => {
+      expect(normalizeEmail('  USER@Example.COM ')).toBe('user@example.com')
+    })
+
+    it('should trim whitespace', () => {
+      expect(normalizeEmail('  user@example.com  ')).toBe('user@example.com')
+    })
   })
 
-  it('validates email format', () => {
-    expect(isValidEmail('person@example.com')).toBe(true)
-    expect(isValidEmail('person+test@example.co')).toBe(true)
-    expect(isValidEmail('not-an-email')).toBe(false)
-    expect(isValidEmail('foo@bar')).toBe(false)
+  describe('normalizeOtp', () => {
+    it('should trim whitespace', () => {
+      expect(normalizeOtp(' 123456 ')).toBe('123456')
+    })
+
+    it('should remove spaces and dashes', () => {
+      expect(normalizeOtp('12 34-56')).toBe('123456')
+    })
+
+    it('should truncate to 6 digits', () => {
+      expect(normalizeOtp('1234567')).toBe('123456')
+    })
   })
 
-  it('validates six-digit otp format', () => {
-    expect(isValidOtp('123456')).toBe(true)
-    expect(isValidOtp('12345')).toBe(false)
-    expect(isValidOtp('12 34-56')).toBe(true)
-    expect(isValidOtp('abcdef')).toBe(false)
+  describe('isValidEmail', () => {
+    it('should accept valid email formats', () => {
+      expect(isValidEmail('person@example.com')).toBe(true)
+      expect(isValidEmail('person+test@example.co')).toBe(true)
+    })
+
+    it('should reject invalid email formats', () => {
+      expect(isValidEmail('not-an-email')).toBe(false)
+      expect(isValidEmail('foo@bar')).toBe(false)
+    })
   })
 
-  it('accepts over-length input because isValidOtp normalizes (truncates) before testing', () => {
-    // normalizeOtp truncates to 6 digits first, so '1234567' → '123456' → valid
-    expect(isValidOtp('1234567')).toBe(true)
-    // callers should always normalize before calling isValidOtp; this documents the contract
-    expect(normalizeOtp('1234567')).toBe('123456')
+  describe('isValidOtp', () => {
+    it('should accept valid six-digit codes', () => {
+      expect(isValidOtp('123456')).toBe(true)
+    })
+
+    it('should accept formatted input (spaces and dashes)', () => {
+      expect(isValidOtp('12 34-56')).toBe(true)
+    })
+
+    it('should reject invalid length codes', () => {
+      expect(isValidOtp('12345')).toBe(false)
+    })
+
+    it('should reject non-digit input', () => {
+      expect(isValidOtp('abcdef')).toBe(false)
+    })
+
+    it('should accept over-length input that normalizes to valid', () => {
+      expect(isValidOtp('1234567')).toBe(true)
+    })
   })
 })

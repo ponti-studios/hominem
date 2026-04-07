@@ -16,7 +16,6 @@ export const ApiProvider = ({
   const { getAuthHeaders } = useAuth();
   const config: ClientConfig = {
     baseUrl: API_BASE_URL,
-    getAuthToken: async () => null,
     getHeaders: getAuthHeaders,
     onError: (error: Error) => {
       console.error('Mobile Hono RPC Error', error);

@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest'
 
 import { resolveIsLoadingAuth } from '../utils/auth/provider-utils'
+import { buildAuthUser } from './support/fixtures'
 
 describe('resolveIsLoadingAuth', () => {
   it('is true while booting', () => {
@@ -19,13 +19,7 @@ describe('resolveIsLoadingAuth', () => {
     expect(
       resolveIsLoadingAuth({
         status: 'signed_in',
-        user: {
-          id: 'user-1',
-          email: 'test@example.com',
-          name: 'Test',
-          createdAt: '2026-01-01T00:00:00.000Z',
-          updatedAt: '2026-01-01T00:00:00.000Z',
-        },
+        user: buildAuthUser(),
         error: null,
         isLoading: false,
       }),

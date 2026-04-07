@@ -23,7 +23,7 @@ export interface AuthBootDeps {
   getStoredTokens: () => Promise<AuthBootStoredTokens>;
   /**
    * Probe the session endpoint with the stored token.
-   * - Returns the authenticated user on success (2xx + isAuthenticated).
+   * - Returns the authenticated user on success (2xx + Better Auth session payload).
    * - Returns null when the token is invalid (401) — caller will clear tokens.
    * - Throws on network errors or AbortError — caller handles without clearing tokens.
    */
