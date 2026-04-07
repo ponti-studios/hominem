@@ -1,10 +1,8 @@
-import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vitest/config'
-import { VitePWA } from 'vite-plugin-pwa'
+import { VitePWA } from 'vite-plugin-pwa';
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   plugins: [
-    react(),
     VitePWA({
       registerType: 'prompt',
       injectRegister: false,
@@ -23,4 +21,4 @@ export default defineConfig({
     include: ['app/**/*.test.{ts,tsx}'],
     exclude: ['**/node_modules/**', '**/build/**', '**/dist/**', 'tests/**', '**/*.spec.ts'],
   },
-})
+});
