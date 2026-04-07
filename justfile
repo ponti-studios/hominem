@@ -51,6 +51,17 @@ lint:
 typecheck:
   {{TURBO}} run typecheck
 
+check-web:
+  bun run --filter @hominem/web lint
+  bun run --filter @hominem/web typecheck
+  bun run --filter @hominem/web test
+  bun run --filter @hominem/web build
+
+check-api:
+  bun run --filter @hominem/api lint
+  bun run --filter @hominem/api typecheck
+  bun run --filter @hominem/api test
+
 test-api:
   {{TURBO}} run test --filter=@hominem/api...
 

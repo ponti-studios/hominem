@@ -58,6 +58,10 @@
         "test/**/*.{ts,tsx,js,jsx}"
       ]
     },
+    "test:e2e": {
+      "dependsOn": ["^build"],
+      "inputs": ["app/**/*.{ts,tsx,js,jsx}", "tests/**/*.{ts,tsx,js,jsx}", "playwright.config.ts"]
+    },
     "typegen": {
       "outputs": [".react-router/**", "app/routes/+types/**/*"]
     },
