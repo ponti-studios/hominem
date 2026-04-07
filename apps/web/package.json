@@ -5,11 +5,11 @@
   "scripts": {
     "lint": "bunx oxlint ./app",
     "format": "bunx oxfmt ./app",
-    "build": "react-router build",
-    "dev": "react-router dev",
-    "start": "react-router-serve ./build/server/index.js",
+    "build": "bunx react-router build",
+    "dev": "bunx react-router dev",
+    "start": "bunx react-router-serve ./build/server/index.js",
     "typecheck": "tsc --noEmit",
-    "typegen": "react-router typegen",
+    "typegen": "bunx react-router typegen",
     "test": "vitest run --passWithNoTests",
     "test:e2e": "playwright test --config playwright.config.ts"
   },
