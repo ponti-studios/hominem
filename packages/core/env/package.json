@@ -3,22 +3,21 @@
   "version": "0.0.0",
   "description": "Unified environment variable handling with explicit client/server separation",
   "type": "module",
-  "main": "./src/index.ts",
+  "main": "./build/index.js",
   "types": "./src/index.ts",
   "exports": {
     ".": {
       "types": "./src/index.ts",
-      "import": "./src/index.ts",
-      "node": "./build/index.js"
+      "default": "./build/index.js"
     },
     "./brand": {
       "types": "./src/brand.ts",
-      "import": "./src/brand.ts",
-      "node": "./build/brand.js"
+      "default": "./build/brand.js"
     },
     "./package.json": "./package.json"
   },
   "scripts": {
+    "build": "tsc -p tsconfig.json",
     "dev": "tsc --watch --preserveWatchOutput",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
