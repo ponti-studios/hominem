@@ -161,6 +161,9 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@localhost:4433/hominem-test?sslmode=disable
       REDIS_URL: "redis://localhost:6379"
       OPENROUTER_API_KEY: "some-placeholder-key"
+      RESEND_API_KEY: "re_placeholder"
+      RESEND_FROM_EMAIL: "noreply@example.com"
+      RESEND_FROM_NAME: "Hominem Test"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       VITE_APP_BASE_URL: "https://example.com"
       VITE_GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
