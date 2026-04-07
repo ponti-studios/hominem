@@ -9,6 +9,8 @@ TURBO := "bunx turbo"
 LOCAL_DATABASE_URL := "postgresql://postgres:postgres@127.0.0.1:5434/hominem"
 LOCAL_TEST_DATABASE_URL := "postgresql://postgres:postgres@127.0.0.1:4433/hominem-test"
 
+import 'justfiles/db.just'
+
 setup install-flags="" build-packages="true" install-goose="false":
   #!/usr/bin/env bash
   NODE_ENV=development bun install --frozen-lockfile {{install-flags}}
@@ -32,25 +34,6 @@ start-compose-services compose-files services project-name="hominem" wait-timeou
     up -d --build --wait --wait-timeout "{{wait-timeout}}" \
     "${services_list[@]}"
 
-db-setup environment="test" migrations-path="packages/core/db/migrations":
-  #!/usr/bin/env bash
-  goose_bin="$(go env GOPATH)/bin/goose"
-  just goose-install
-  if [ -z "${DATABASE_URL:-}" ]; then
-    if [ "{{environment}}" = "test" ]; then
-      DATABASE_URL="{{LOCAL_TEST_DATABASE_URL}}"
-    else
-      echo "DATABASE_URL must be set"
-      exit 1
-    fi
-  fi
-  migrations_dir="{{ROOT_DIR}}/{{migrations-path}}"
-  if [ ! -d "$migrations_dir" ]; then
-    echo "Migrations directory not found: $migrations_dir"
-    exit 1
-  fi
-  "$goose_bin" -dir "$migrations_dir" postgres "$DATABASE_URL" up
-
 lint:
   {{TURBO}} run lint
 
@@ -58,15 +41,10 @@ typecheck:
   {{TURBO}} run typecheck
 
 check-web:
-  bun run --filter @hominem/web lint
-  bun run --filter @hominem/web typecheck
-  bun run --filter @hominem/web test
-  bun run --filter @hominem/web build
+  {{TURBO}} run lint typecheck test build --filter=@hominem/web
 
 check-api:
-  bun run --filter @hominem/api lint
-  bun run --filter @hominem/api typecheck
-  bun run --filter @hominem/api test
+  {{TURBO}} run lint typecheck test --filter=@hominem/api
 
 test-api:
   {{TURBO}} run test --filter=@hominem/api...
@@ -86,19 +64,6 @@ web-install-playwright:
 web-test-e2e:
   {{TURBO}} run test:e2e --filter=@hominem/web
 
-db-migrations-validate:
-  #!/usr/bin/env bash
-  goose_bin="$(go env GOPATH)/bin/goose"
-  DATABASE_URL="${DATABASE_URL:-{{LOCAL_DATABASE_URL}}}"
-  "$goose_bin" -dir "{{ROOT_DIR}}/packages/core/db/migrations" postgres "$DATABASE_URL" up
-  "$goose_bin" -dir "{{ROOT_DIR}}/packages/core/db/migrations" postgres "$DATABASE_URL" up
-  STATUS="$($goose_bin -dir "{{ROOT_DIR}}/packages/core/db/migrations" postgres "$DATABASE_URL" status)"
-  echo "$STATUS"
-  if echo "$STATUS" | grep -Ei 'Pending|pending'; then
-    echo "Pending migrations remain after goose up"
-    exit 1
-  fi
-
 docker-up:
   docker compose -f "{{ROOT_DIR}}/infra/compose/base.yml" -f "{{ROOT_DIR}}/infra/compose/dev.yml" up -d
 
@@ -107,25 +72,6 @@ docker-down:
 
 docker-kill:
   docker compose -f "{{ROOT_DIR}}/infra/compose/base.yml" -f "{{ROOT_DIR}}/infra/compose/dev.yml" down --rmi all --volumes --remove-orphans
-
-db-migrate:
-  #!/usr/bin/env bash
-  just goose-install
-  DATABASE_URL="${DATABASE_URL:-{{LOCAL_DATABASE_URL}}}"
-  goose -dir "{{ROOT_DIR}}/packages/core/db/migrations" postgres "$DATABASE_URL" up
-  bun -F "@hominem/db" kysely-codegen
-
-db-rollback:
-  #!/usr/bin/env bash
-  just goose-install
-  DATABASE_URL="${DATABASE_URL:-{{LOCAL_DATABASE_URL}}}"
-  goose -dir "{{ROOT_DIR}}/packages/core/db/migrations" postgres "$DATABASE_URL" down
-
-db-status:
-  #!/usr/bin/env bash
-  just goose-install
-  DATABASE_URL="${DATABASE_URL:-{{LOCAL_DATABASE_URL}}}"
-  goose -dir "{{ROOT_DIR}}/packages/core/db/migrations" postgres "$DATABASE_URL" status
 
 dev:
   {{TURBO}} run dev
@@ -149,14 +95,3 @@ test:
 
 ci-build:
   {{TURBO}} run build
-
-goose-install goose-version="v3.27.0":
-  #!/usr/bin/env bash
-  goose_bin="$(go env GOPATH)/bin/goose"
-  if [ ! -x "$goose_bin" ]; then
-    go install github.com/pressly/goose/v3/cmd/goose@{{goose-version}}
-  fi
-  export PATH="$(dirname "$goose_bin"):$PATH"
-  if [ -n "${GITHUB_PATH:-}" ]; then
-    echo "$(dirname "$goose_bin")" >> "$GITHUB_PATH"
-  fi

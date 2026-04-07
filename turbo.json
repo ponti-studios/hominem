@@ -62,11 +62,8 @@
       "dependsOn": ["^build"],
       "inputs": ["app/**/*.{ts,tsx,js,jsx}", "tests/**/*.{ts,tsx,js,jsx}", "playwright.config.ts"]
     },
-    "typegen": {
-      "outputs": [".react-router/**", "app/routes/+types/**/*"]
-    },
     "typecheck": {
-      "dependsOn": ["^build", "typegen"],
+      "dependsOn": ["^build"],
       "inputs": ["**/*.ts", "**/*.tsx", "tsconfig.json"]
     }
   }

@@ -8,8 +8,7 @@
     "build": "react-router build",
     "dev": "react-router dev",
     "start": "react-router-serve ./build/server/index.js",
-    "typecheck": "tsc --noEmit",
-    "typegen": "react-router typegen",
+    "typecheck": "react-router typegen && tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "test:e2e": "playwright test --config playwright.config.ts"
   },
