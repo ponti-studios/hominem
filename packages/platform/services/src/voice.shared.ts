@@ -56,7 +56,7 @@ export function getVoiceAudioDir(): string {
   return './.tmp/voice';
 }
 
-export function getVoiceProviderErrorInfo(input: {
+function getVoiceProviderErrorInfo(input: {
   errorMessage?: string;
   responseStatusText: string;
   status: number;

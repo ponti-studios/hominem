@@ -35,5 +35,3 @@ export function PageTitle({
     </div>
   );
 }
-
-export default PageTitle;

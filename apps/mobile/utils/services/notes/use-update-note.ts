@@ -58,7 +58,7 @@ export function buildUpdateNoteInput(
   };
 }
 
-export const useUpdateNote = (): UseMutationResult<Note, Error, UpdateNoteInput> => {
+function useUpdateNote(): UseMutationResult<Note, Error, UpdateNoteInput> {
   const client = useApiClient();
   const queryClient = useQueryClient();
 
@@ -87,4 +87,4 @@ export const useUpdateNote = (): UseMutationResult<Note, Error, UpdateNoteInput>
       await createNotesMutationSuccessHandler(queryClient, input.id);
     },
   });
-};
+}

@@ -49,7 +49,7 @@ export type ComposerAction =
 
 // ─── Reducer ─────────────────────────────────────────────────────────────────
 
-export function reduceComposerState(state: ComposerState, action: ComposerAction): ComposerState {
+function reduceComposerState(state: ComposerState, action: ComposerAction): ComposerState {
   switch (action.type) {
     case 'SET_DRAFT':
       return state.draft === action.text ? state : { ...state, draft: action.text };

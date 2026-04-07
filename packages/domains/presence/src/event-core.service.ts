@@ -40,7 +40,7 @@ function toWithRelations(event: EventStoreRecord): EventWithTagsAndPeople {
   };
 }
 
-export async function getPeopleForEvent(eventId: string) {
+async function getPeopleForEvent(eventId: string) {
   const event = eventsStore.get(eventId);
   if (!event) {
     return [];
@@ -48,7 +48,7 @@ export async function getPeopleForEvent(eventId: string) {
   return event.peopleIds.map((id) => ({ id, firstName: 'Person', lastName: null }));
 }
 
-export async function getPeopleForEvents(eventIds: string[]) {
+async function getPeopleForEvents(eventIds: string[]) {
   const map = new Map<string, Array<{ id: string; firstName: string; lastName: string | null }>>();
   for (const id of eventIds) {
     map.set(id, await getPeopleForEvent(id));
@@ -56,7 +56,7 @@ export async function getPeopleForEvents(eventIds: string[]) {
   return map;
 }
 
-export async function getTagsForEvent(eventId: string) {
+async function getTagsForEvent(eventId: string) {
   const event = eventsStore.get(eventId);
   if (!event) {
     return [];
@@ -64,7 +64,7 @@ export async function getTagsForEvent(eventId: string) {
   return event.tagNames.map((name) => ({ id: name, name, color: null, description: null }));
 }
 
-export async function getTagsForEvents(eventIds: string[]) {
+async function getTagsForEvents(eventIds: string[]) {
   const map = new Map<
     string,
     Array<{ id: string; name: string; color: string | null; description: string | null }>
@@ -75,7 +75,7 @@ export async function getTagsForEvents(eventIds: string[]) {
   return map;
 }
 
-export async function removeTagsFromEvent(eventId: string, tagIds?: string[]): Promise<void> {
+async function removeTagsFromEvent(eventId: string, tagIds?: string[]): Promise<void> {
   const event = eventsStore.get(eventId);
   if (!event) {
     return;
@@ -219,7 +219,7 @@ export async function getEventById(id: string): Promise<EventWithTagsAndPeople |
   return event ? toWithRelations(event) : null;
 }
 
-export async function getEventByExternalId(
+async function getEventByExternalId(
   externalId: string,
   calendarId: string,
 ): Promise<EventWithTagsAndPeople | null> {

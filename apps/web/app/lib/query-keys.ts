@@ -20,8 +20,3 @@ export const notesQueryKeys = {
   detail: (id: string) => queryKeys.notes.detail(id),
   search: (query: string) => queryKeys.notes.search(query),
 };
-
-export const filesQueryKeys = {
-  list: queryKeys.files.list,
-  detail: (fileId: string) => queryKeys.files.detail(fileId),
-};

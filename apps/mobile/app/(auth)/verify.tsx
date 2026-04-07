@@ -1,6 +1,6 @@
 import { AUTH_COPY, CHAT_AUTH_CONFIG, maskEmail } from '@hominem/auth';
-import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import type { RelativePathString } from 'expo-router';
+import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -12,6 +12,7 @@ import { posthog } from '~/lib/posthog';
 import { Box, makeStyles, Text } from '~/theme';
 import { useAuth } from '~/utils/auth-provider';
 import { isValidOtp, normalizeOtp } from '~/utils/auth/validation';
+
 import { getAuthScreenBaseStyles } from './auth-screen-styles';
 
 export function VerifyScreen() {

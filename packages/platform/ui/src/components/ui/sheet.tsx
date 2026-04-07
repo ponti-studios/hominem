@@ -111,7 +111,6 @@ function SheetDescription({
 
 export {
   Sheet,
-  SheetClose,
   SheetContent,
   SheetDescription,
   SheetFooter,

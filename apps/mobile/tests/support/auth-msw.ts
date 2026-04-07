@@ -1,17 +1,13 @@
-import { http, HttpResponse, delay } from 'msw'
+import { delay, http, HttpResponse } from 'msw';
 
-export function authRoute(path: string) {
-  return new URL(path, 'http://localhost:4040').toString()
+function authRoute(path: string) {
+  return new URL(path, 'http://localhost:4040').toString();
 }
 
-export function mockAuthBootSignedIn(input?: {
-  email?: string
-  id?: string
-  cookie?: string
-}) {
-  const email = input?.email ?? 'mobile-user@hominem.test'
-  const id = input?.id ?? 'user-mobile-1'
-  const cookie = input?.cookie ?? 'better-auth.session_token=session-token'
+export function mockAuthBootSignedIn(input?: { email?: string; id?: string; cookie?: string }) {
+  const email = input?.email ?? 'mobile-user@hominem.test';
+  const id = input?.id ?? 'user-mobile-1';
+  const cookie = input?.cookie ?? 'better-auth.session_token=session-token';
 
   return http.get(authRoute('/api/auth/get-session'), async () => {
     return HttpResponse.json(
@@ -39,43 +35,43 @@ export function mockAuthBootSignedIn(input?: {
           'set-cookie': cookie,
         },
       },
-    )
-  })
+    );
+  });
 }
 
 export function mockAuthBootSignedOut() {
   return http.get(authRoute('/api/auth/get-session'), async () => {
-    return new HttpResponse(null, { status: 401 })
-  })
+    return new HttpResponse(null, { status: 401 });
+  });
 }
 
 export function mockSendVerificationOtpSuccess() {
   return http.post(authRoute('/api/auth/email-otp/send-verification-otp'), async () => {
-    return HttpResponse.json({ ok: true })
-  })
+    return HttpResponse.json({ ok: true });
+  });
 }
 
 export function mockSendVerificationOtpError(message = 'Unable to send verification code.') {
   return http.post(authRoute('/api/auth/email-otp/send-verification-otp'), async () => {
-    return HttpResponse.json({ message }, { status: 400 })
-  })
+    return HttpResponse.json({ message }, { status: 400 });
+  });
 }
 
-export function mockSendVerificationOtpTimeout() {
+function mockSendVerificationOtpTimeout() {
   return http.post(authRoute('/api/auth/email-otp/send-verification-otp'), async () => {
-    await delay('infinite')
-    return HttpResponse.json({ ok: true })
-  })
+    await delay('infinite');
+    return HttpResponse.json({ ok: true });
+  });
 }
 
 export function mockVerifyEmailOtpSuccess(input?: {
-  email?: string
-  id?: string
-  cookie?: string
+  email?: string;
+  id?: string;
+  cookie?: string;
 }) {
-  const email = input?.email ?? 'mobile-user@hominem.test'
-  const id = input?.id ?? 'user-mobile-1'
-  const cookie = input?.cookie ?? 'better-auth.session_token=session-token'
+  const email = input?.email ?? 'mobile-user@hominem.test';
+  const id = input?.id ?? 'user-mobile-1';
+  const cookie = input?.cookie ?? 'better-auth.session_token=session-token';
 
   return http.post(authRoute('/api/auth/sign-in/email-otp'), async () => {
     return HttpResponse.json(
@@ -91,31 +87,31 @@ export function mockVerifyEmailOtpSuccess(input?: {
           'set-cookie': cookie,
         },
       },
-    )
-  })
+    );
+  });
 }
 
 export function mockVerifyEmailOtpError(message = 'Verification failed. Please try again.') {
   return http.post(authRoute('/api/auth/sign-in/email-otp'), async () => {
-    return HttpResponse.json({ message }, { status: 400 })
-  })
+    return HttpResponse.json({ message }, { status: 400 });
+  });
 }
 
-export function mockVerifyEmailOtpTimeout() {
+function mockVerifyEmailOtpTimeout() {
   return http.post(authRoute('/api/auth/sign-in/email-otp'), async () => {
-    await delay('infinite')
-    return HttpResponse.json({ ok: true })
-  })
+    await delay('infinite');
+    return HttpResponse.json({ ok: true });
+  });
 }
 
 export function mockSignOutSuccess() {
   return http.post(authRoute('/api/auth/sign-out'), async () => {
-    return HttpResponse.json({ success: true })
-  })
+    return HttpResponse.json({ success: true });
+  });
 }
 
 export function mockSignOutError(message = 'Failed to sign out. Please try again.') {
   return http.post(authRoute('/api/auth/sign-out'), async () => {
-    return HttpResponse.json({ message }, { status: 400 })
-  })
+    return HttpResponse.json({ message }, { status: 400 });
+  });
 }

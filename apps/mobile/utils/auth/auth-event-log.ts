@@ -30,7 +30,7 @@ export function getAuthPhaseElapsed(phase: string, nowMs: number = Date.now()): 
   return start !== undefined ? nowMs - start : null;
 }
 
-export function getAuthEvents(): readonly AuthEventLogEntry[] {
+function getAuthEvents(): readonly AuthEventLogEntry[] {
   return events;
 }
 

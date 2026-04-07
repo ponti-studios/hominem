@@ -154,7 +154,7 @@ export function ApiConnectionProvider({ children }: PropsWithChildren) {
   return <ApiConnectionContext.Provider value={value}>{children}</ApiConnectionContext.Provider>;
 }
 
-export function useApiConnection() {
+function useApiConnection() {
   const context = useContext(ApiConnectionContext);
   if (!context) {
     throw new Error('useApiConnection must be used within ApiConnectionProvider');

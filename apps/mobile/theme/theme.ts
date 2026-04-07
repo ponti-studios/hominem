@@ -159,10 +159,9 @@ const Shadows = {
   },
 };
 
-export const useTheme = () => {
+function useTheme() {
   return useRestyleTheme<Theme>();
-};
+}
 
 export type Theme = typeof theme;
-export { Shadows };
 export default theme;

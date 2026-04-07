@@ -10,8 +10,7 @@ const MAX_HEIGHT = 50;
 const BAR_RADIUS = 2;
 const SPRING_CONFIG = { damping: 12, stiffness: 180 };
 
-export const useNormalizedLevels = (levels: number[]) =>
-  useMemo(() => levels.map(normalizeDb), [levels]);
+const useNormalizedLevels = (levels: number[]) => useMemo(() => levels.map(normalizeDb), [levels]);
 
 function AudioBar({ targetHeight }: { targetHeight: number }) {
   const height = useSharedValue(targetHeight);
@@ -54,5 +53,3 @@ const styles = StyleSheet.create({
     width: BAR_WIDTH,
   },
 });
-
-export { Animated };

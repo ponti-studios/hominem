@@ -1,31 +1,31 @@
-import React from 'react'
-import { act, fireEvent, render, type RenderAPI } from '@testing-library/react-native'
+import { act, fireEvent, render, type RenderAPI } from '@testing-library/react-native';
+import React from 'react';
 
-import { resetMockRouter, setMockPathname, setMockSearchParams } from './router'
+import { resetMockRouter, setMockPathname, setMockSearchParams } from './router';
 
-export function resetRenderTestState() {
-  jest.clearAllMocks()
-  jest.useRealTimers()
-  resetMockRouter()
+function resetRenderTestState() {
+  jest.clearAllMocks();
+  jest.useRealTimers();
+  resetMockRouter();
 }
 
 export function renderScreen(
   ui: React.ReactElement,
   options: {
-    pathname?: string
-    params?: Record<string, unknown>
+    pathname?: string;
+    params?: Record<string, unknown>;
   } = {},
 ): RenderAPI {
-  setMockPathname(options.pathname ?? '/')
-  setMockSearchParams(options.params ?? {})
-  return render(ui)
+  setMockPathname(options.pathname ?? '/');
+  setMockSearchParams(options.params ?? {});
+  return render(ui);
 }
 
 export async function press(element: Parameters<typeof fireEvent.press>[0]) {
   await act(async () => {
-    fireEvent.press(element)
-    await Promise.resolve()
-  })
+    fireEvent.press(element);
+    await Promise.resolve();
+  });
 }
 
 export async function changeText(
@@ -33,26 +33,26 @@ export async function changeText(
   value: string,
 ) {
   await act(async () => {
-    fireEvent.changeText(element, value)
-    await Promise.resolve()
-  })
+    fireEvent.changeText(element, value);
+    await Promise.resolve();
+  });
 }
 
 export async function advanceTimersByTime(durationMs: number) {
   await act(async () => {
-    jest.advanceTimersByTime(durationMs)
-    await Promise.resolve()
-  })
+    jest.advanceTimersByTime(durationMs);
+    await Promise.resolve();
+  });
 }
 
 export function createDeferred<T = void>() {
-  let resolve!: (value: T | PromiseLike<T>) => void
-  let reject!: (reason?: unknown) => void
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  let reject!: (reason?: unknown) => void;
 
   const promise = new Promise<T>((nextResolve, nextReject) => {
-    resolve = nextResolve
-    reject = nextReject
-  })
+    resolve = nextResolve;
+    reject = nextReject;
+  });
 
-  return { promise, reject, resolve }
+  return { promise, reject, resolve };
 }

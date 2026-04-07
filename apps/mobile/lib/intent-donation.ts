@@ -46,6 +46,6 @@ export function donateAddNoteIntent(): void {
 }
 
 /** Call when the user opens the chat manually. */
-export function donateStartChatIntent(): void {
+function donateStartChatIntent(): void {
   donateIntent('StartChatIntent');
 }

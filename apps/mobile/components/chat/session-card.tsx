@@ -46,7 +46,7 @@ interface SessionCardProps {
   isActive?: boolean;
 }
 
-export const SessionCard = memo(({ chat, isActive }: SessionCardProps) => {
+const SessionCard = memo(({ chat, isActive }: SessionCardProps) => {
   const styles = useStyles();
   const router = useRouter();
 

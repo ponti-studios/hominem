@@ -226,7 +226,7 @@ export const useSendMessage = ({ chatId }: { chatId: string }) => {
 };
 
 // Simplified start chat - uses React Query retry instead of custom queue
-export const useStartChat = ({
+function useStartChat({
   userMessage,
   _chatMessage,
   _intentId,
@@ -277,9 +277,9 @@ export const useStartChat = ({
     },
     ...props,
   });
-};
+}
 
-export const useArchiveChat = ({
+function useArchiveChat({
   chatId,
   ...props
 }: { chatId: string } & MutationOptions<Chat, Error, void>) => {
@@ -313,7 +313,7 @@ export const useArchiveChat = ({
     },
     ...props,
   });
-};
+}
 
 export const useActiveChat = (chatId?: string | null) => {
   const client = useApiClient();

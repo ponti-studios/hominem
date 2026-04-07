@@ -1,6 +1,6 @@
 import { AUTH_COPY, CHAT_AUTH_CONFIG } from '@hominem/auth';
-import { Redirect, useRouter } from 'expo-router';
 import type { RelativePathString } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -14,6 +14,7 @@ import { useAuth } from '~/utils/auth-provider';
 import { isValidEmail, normalizeEmail } from '~/utils/auth/validation';
 import { E2E_TESTING, MOBILE_PASSKEY_ENABLED } from '~/utils/constants';
 import { useMobilePasskeyAuth } from '~/utils/use-mobile-passkey-auth';
+
 import { getAuthScreenBaseStyles } from './auth-screen-styles';
 
 export function AuthScreen() {
