@@ -5,13 +5,14 @@ import { useState } from 'react';
 import { Button } from './button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './collapsible';
 
-const meta: Meta<typeof Collapsible> = {
+const meta = {
   title: 'Patterns/DataDisplay/Collapsible',
   component: Collapsible,
   tags: ['autodocs'],
-};
+} satisfies Meta<typeof Collapsible>;
+
 export default meta;
-type Story = StoryObj<typeof Collapsible>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: () => {

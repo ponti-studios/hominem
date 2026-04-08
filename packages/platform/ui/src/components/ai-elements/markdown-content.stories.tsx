@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { booleanControl, hiddenControl, textControl } from '../../storybook/controls';
 import { MarkdownContent } from './markdown-content';
 
-const meta: Meta<typeof MarkdownContent> = {
+const meta = {
   title: 'Patterns/AI/MarkdownContent',
   component: MarkdownContent,
   tags: ['autodocs'],
@@ -12,23 +12,24 @@ const meta: Meta<typeof MarkdownContent> = {
     isStreaming: booleanControl('Shows the streaming caret at the end of the content', false),
     className: hiddenControl,
   },
-};
+} satisfies Meta<typeof MarkdownContent>;
+
 export default meta;
-type Story = StoryObj<typeof MarkdownContent>;
+type Story = StoryObj<typeof meta>;
 
 const prose = `
 ## Introduction
 
 This is a **bold statement** and _italic text_ in a paragraph.
 
-Here's a list of key points:
+Here&apos;s a list of key points:
 - First item with some detail
 - Second item that matters
 - Third item to round it out
 
 ### Code Example
 
-Here's some inline \`code\` and a block below:
+Here&apos;s some inline \`code\` and a block below:
 
 \`\`\`typescript
 function greet(name: string): string {

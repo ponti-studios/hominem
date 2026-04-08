@@ -3,13 +3,14 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button } from './button';
 import { ButtonGroup, ButtonGroupSeparator, ButtonGroupText } from './button-group';
 
-const meta: Meta<typeof ButtonGroup> = {
+const meta = {
   title: 'Primitives/ButtonGroup',
   component: ButtonGroup,
   tags: ['autodocs'],
-};
+} satisfies Meta<typeof ButtonGroup>;
+
 export default meta;
-type Story = StoryObj<typeof ButtonGroup>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: () => (

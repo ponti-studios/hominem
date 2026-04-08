@@ -8,13 +8,14 @@ import {
   CarouselPrevious,
 } from './carousel';
 
-const meta: Meta<typeof Carousel> = {
+const meta = {
   title: 'Patterns/DataDisplay/Carousel',
   component: Carousel,
   tags: ['autodocs'],
-};
+} satisfies Meta<typeof Carousel>;
+
 export default meta;
-type Story = StoryObj<typeof Carousel>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: () => (

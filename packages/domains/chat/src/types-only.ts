@@ -1,5 +1,5 @@
 /**
- * @hominem/chat-services/types
+ * @hominem/chat/types
  *
  * Pure-types barrel — no database imports.
  * Safe to import from React Native / Metro environments that cannot
@@ -7,5 +7,5 @@
  */
 export * from './contracts';
 export * from './lifecycle-state';
-export * from './thought-types';
 export * from './session-artifacts';
+export * from './thought-types';

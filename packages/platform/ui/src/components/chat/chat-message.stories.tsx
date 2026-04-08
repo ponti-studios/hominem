@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { booleanControl, hiddenControl, selectControl } from '../../storybook/controls';
+import { booleanControl, selectControl } from '../../storybook/controls';
 import type { ExtendedMessage } from '../../types/chat';
 import { ChatMessage, type ChatMessageProps } from './chat-message';
 import {
@@ -19,7 +19,7 @@ type ChatMessageStoryArgs = ChatMessageProps & {
   fixture: keyof typeof messageFixtures;
 };
 
-const meta: Meta<ChatMessageStoryArgs> = {
+const meta = {
   title: 'Patterns/Chat/ChatMessage',
   component: ChatMessagePreview,
   tags: ['autodocs'],
@@ -31,20 +31,9 @@ const meta: Meta<ChatMessageStoryArgs> = {
         defaultValue: 'user',
       },
     ),
-    message: hiddenControl,
-    isStreaming: hiddenControl,
-    speakingId: hiddenControl,
-    speechLoadingId: hiddenControl,
-    onRegenerate: hiddenControl,
-    onEdit: hiddenControl,
-    onDelete: hiddenControl,
-    onSpeak: hiddenControl,
     showDebug: booleanControl('Shows message metadata in the message body', false),
   },
-};
-export default meta;
-
-type Story = StoryObj<typeof meta>;
+} satisfies Meta<typeof ChatMessagePreview>;
 
 function ChatMessagePreview({
   fixture,
@@ -88,6 +77,9 @@ function ChatMessagePreview({
     </div>
   );
 }
+
+export default meta;
+type Story = StoryObj<typeof meta>;
 
 export const UserMessage: Story = {
   args: {

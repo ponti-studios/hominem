@@ -3,52 +3,71 @@ import { useState } from 'react';
 
 import { OtpCodeInput } from './otp-code-input';
 
-const meta: Meta<typeof OtpCodeInput> = {
+const meta = {
   title: 'Patterns/Auth/OtpCodeInput',
   component: OtpCodeInput,
   tags: ['autodocs'],
-};
+} satisfies Meta<typeof OtpCodeInput>;
+
 export default meta;
-type Story = StoryObj<typeof OtpCodeInput>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  render: () => {
-    const [value, setValue] = useState('');
+  args: {
+    value: '',
+    onChange: () => {},
+    autoFocus: false,
+  },
+  render: (args) => {
+    const [value, setValue] = useState(args.value);
     return (
       <div className="max-w-xs">
-        <OtpCodeInput value={value} onChange={setValue} autoFocus={false} />
+        <OtpCodeInput {...args} value={value} onChange={setValue} />
       </div>
     );
   },
 };
 
 export const WithError: Story = {
-  render: () => (
+  args: {
+    value: '12',
+    onChange: () => {},
+    error: 'Invalid code. Please try again.',
+    autoFocus: false,
+  },
+  render: (args) => (
     <div className="max-w-xs">
-      <OtpCodeInput
-        value="12"
-        onChange={() => {}}
-        error="Invalid code. Please try again."
-        autoFocus={false}
-      />
+      <OtpCodeInput {...args} />
     </div>
   ),
 };
 
 export const Disabled: Story = {
-  render: () => (
+  args: {
+    value: '123456',
+    onChange: () => {},
+    disabled: true,
+    autoFocus: false,
+  },
+  render: (args) => (
     <div className="max-w-xs">
-      <OtpCodeInput value="123456" onChange={() => {}} disabled autoFocus={false} />
+      <OtpCodeInput {...args} />
     </div>
   ),
 };
 
 export const FourDigit: Story = {
-  render: () => {
-    const [value, setValue] = useState('');
+  args: {
+    value: '',
+    onChange: () => {},
+    length: 4,
+    autoFocus: false,
+  },
+  render: (args) => {
+    const [value, setValue] = useState(args.value);
     return (
       <div className="max-w-xs">
-        <OtpCodeInput length={4} value={value} onChange={setValue} autoFocus={false} />
+        <OtpCodeInput {...args} value={value} onChange={setValue} />
       </div>
     );
   },

@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 
-import { chatTokensNative, fontSizes, spacing } from '../../tokens';
+import { fontSizes, spacing } from '../../tokens';
 import { fontFamiliesNative } from '../../tokens/typography.native';
 import { Text } from '../typography/text.native';
 import { renderChatMessage } from './chat-message.mobile';
@@ -10,6 +10,7 @@ import { ChatThinkingIndicator } from './chat-thinking-indicator.mobile';
 import type { ChatMessageItem, ChatRenderIcon, MarkdownComponent } from './chat.types';
 
 const CHAT_COMPOSER_CLEARANCE = 220;
+const CHAT_TURN_GAP = spacing[5];
 const keyExtractor = (item: ChatMessageItem) => item.id;
 
 interface ChatMessageListProps {
@@ -148,7 +149,7 @@ const styles = StyleSheet.create({
     paddingBottom: CHAT_COMPOSER_CLEARANCE,
     paddingHorizontal: spacing[4],
     paddingTop: spacing[1],
-    rowGap: chatTokensNative.turnGap,
+    rowGap: CHAT_TURN_GAP,
   },
   shimmerContainer: {
     flex: 1,

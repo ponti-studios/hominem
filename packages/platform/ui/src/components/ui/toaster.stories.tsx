@@ -4,13 +4,14 @@ import { Button } from './button';
 import { Toaster } from './toaster';
 import { useToast } from './use-toast';
 
-const meta: Meta<typeof Toaster> = {
+const meta = {
   title: 'Feedback/Toaster',
   component: Toaster,
   tags: ['autodocs'],
-};
+} satisfies Meta<typeof Toaster>;
+
 export default meta;
-type Story = StoryObj<typeof Toaster>;
+type Story = StoryObj<typeof meta>;
 
 function ToasterDemo() {
   const { toast } = useToast();

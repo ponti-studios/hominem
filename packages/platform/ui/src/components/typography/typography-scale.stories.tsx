@@ -1,12 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-const meta: Meta = {
+const meta = {
   title: 'Typography/Scale',
   tags: ['autodocs'],
-};
+} satisfies Meta<{}>;
 
 export default meta;
-type Story = StoryObj;
+type Story = StoryObj<typeof meta>;
 
 export const DisplayScale: Story = {
   render: () => (

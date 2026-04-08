@@ -148,11 +148,8 @@ function multiSelectControl<T extends boolean | number | string | null>(
 export {
   booleanControl,
   commonControlsExclude,
-  docOnlyControl,
   hiddenControl,
-  multiSelectControl,
   numberControl,
-  rangeControl,
   selectControl,
   textControl,
 };

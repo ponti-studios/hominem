@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { hiddenControl, textControl } from '../../storybook/controls';
 import { FilterChip } from './filter-chip';
 
-const meta: Meta<typeof FilterChip> = {
+const meta = {
   title: 'Patterns/Filters/FilterChip',
   component: FilterChip,
   tags: ['autodocs'],
@@ -12,9 +12,10 @@ const meta: Meta<typeof FilterChip> = {
     onRemove: hiddenControl,
     onClick: hiddenControl,
   },
-};
+} satisfies Meta<typeof FilterChip>;
+
 export default meta;
-type Story = StoryObj<typeof FilterChip>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
@@ -32,6 +33,10 @@ export const Clickable: Story = {
 };
 
 export const Multiple: Story = {
+  args: {
+    label: 'Filter',
+    onRemove: () => {},
+  },
   parameters: {
     controls: {
       disable: true,

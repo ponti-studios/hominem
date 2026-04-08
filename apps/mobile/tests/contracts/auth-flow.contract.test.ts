@@ -5,7 +5,7 @@ import {
   expectNoRedirect,
   expectRedirect,
 } from './assertions'
-import { buildAuthUser } from './fixtures'
+import { buildAuthUser } from '../support/fixtures'
 import { createAuthIntegrationHarness } from './harness'
 
 describe('auth flow contract', () => {

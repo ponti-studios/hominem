@@ -1,4 +1,3 @@
-import './sidebar.css';
 import { Slot } from '@radix-ui/react-slot';
 import { useHotkey } from '@tanstack/react-hotkeys';
 import { cva, type VariantProps } from 'class-variance-authority';
@@ -13,6 +12,8 @@ import { Button } from './button';
 import { Input } from './input';
 import { Separator, type SeparatorProps } from './separator';
 import { Sheet, SheetContent } from './sheet';
+
+import './sidebar.css';
 import { Skeleton } from './skeleton';
 import {
   Tooltip,
@@ -276,7 +277,7 @@ const Sidebar = React.forwardRef<
     if (isMobile) {
       return (
         <>
-          <SidebarTrigger className="fixed left-3 top-3 z-40 size-9 rounded-full border border-border/70 bg-background/90 backdrop-blur md:hidden supports-[backdrop-filter]:bg-background/75" />
+          <SidebarTrigger className="fixed left-3 top-3 z-40 size-9 rounded-full border border-border/70 bg-background/90 backdrop-blur md:hidden supports-backdrop-filter:bg-background/75" />
           <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
             <SheetContent
               data-sidebar="sidebar"
@@ -347,7 +348,7 @@ const Sidebar = React.forwardRef<
                 side === 'left' ? 'left-full ml-3' : 'right-full mr-3',
               )}
             >
-              <SidebarTrigger className="size-9 rounded-full border border-border/70 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75" />
+              <SidebarTrigger className="size-9 rounded-full border border-border/70 bg-background/90 backdrop-blur supports-backdrop-filter:bg-background/75" />
             </div>
           </div>
         </div>
@@ -396,7 +397,7 @@ const SidebarRail = React.forwardRef<HTMLButtonElement, React.ComponentProps<'bu
         onClick={toggleSidebar}
         title="Toggle Sidebar"
         className={cn(
-          'absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 ease-linear after:absolute after:inset-y-0 after:left-1/2 after:w-[2px] hover:after:bg-sidebar-border group-data-[side=left]:-right-4 group-data-[side=right]:left-0 sm:flex',
+          'absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 ease-linear after:absolute after:inset-y-0 after:left-1/2 after:w-0.5 hover:after:bg-sidebar-border group-data-[side=left]:-right-4 group-data-[side=right]:left-0 sm:flex',
           'in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize',
           '[[data-side=left][data-state=collapsed]_&]:cursor-e-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize',
           'group-data-[collapsible=offcanvas]:translate-x-0 group-data-[collapsible=offcanvas]:after:left-full group-data-[collapsible=offcanvas]:hover:bg-sidebar',
@@ -829,24 +830,11 @@ export {
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
-  SidebarGroupAction,
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
-  SidebarInput,
-  SidebarInset,
   SidebarMenu,
-  SidebarMenuAction,
-  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSkeleton,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
   SidebarProvider,
-  SidebarRail,
-  SidebarSeparator,
-  SidebarTrigger,
-  useSidebar,
 };

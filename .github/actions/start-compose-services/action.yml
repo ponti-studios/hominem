@@ -22,18 +22,4 @@ runs:
   steps:
     - name: Start compose services
       shell: bash
-      run: |
-        set -euo pipefail
-
-        read -r -a compose_files <<< "${{ inputs.compose-files }}"
-        read -r -a services <<< "${{ inputs.services }}"
-
-        compose_args=()
-        for compose_file in "${compose_files[@]}"; do
-          compose_args+=(-f "$GITHUB_WORKSPACE/$compose_file")
-        done
-
-        docker compose "${compose_args[@]}" \
-          --project-name "${{ inputs.project-name }}" \
-          up -d --wait --wait-timeout "${{ inputs.wait-timeout }}" \
-          "${services[@]}"
+      run: just start-compose-services "${{ inputs.compose-files }}" "${{ inputs.services }}" "${{ inputs.project-name }}" "${{ inputs.wait-timeout }}"

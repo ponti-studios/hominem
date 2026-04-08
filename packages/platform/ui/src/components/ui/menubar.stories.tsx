@@ -10,7 +10,7 @@ import {
   MenubarTrigger,
 } from './menubar';
 
-const meta: Meta<typeof Menubar> = {
+const meta = {
   title: 'Navigation/Menubar',
   component: Menubar,
   tags: ['autodocs'],
@@ -25,9 +25,10 @@ const meta: Meta<typeof Menubar> = {
       description: 'Whether keyboard navigation loops from last to first item and vice versa',
     },
   },
-};
+} satisfies Meta<typeof Menubar>;
+
 export default meta;
-type Story = StoryObj<typeof Menubar>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: () => (

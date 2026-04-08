@@ -4,15 +4,12 @@
  * Both mobile (chat/focus) and web (Notes chat) import from this module.
  * No surface may define its own state aliases for these lifecycle states.
  *
- * Types are owned by @hominem/rpc/types as the single source of truth.
- * Runtime transition logic lives here in the domain.
+ * Types are owned by this domain package as the single source of truth.
  */
 
-// Re-export canonical types from @hominem/rpc/types so all consumers
-// resolve to the same declaration and TypeScript can name them portably.
-export type { ThoughtLifecycleState, ThoughtLifecycleTransition } from '@hominem/rpc/types';
+export type { ThoughtLifecycleState, ThoughtLifecycleTransition } from './thought-types';
 
-import type { ThoughtLifecycleState, ThoughtLifecycleTransition } from '@hominem/rpc/types';
+import type { ThoughtLifecycleState, ThoughtLifecycleTransition } from './thought-types';
 
 /**
  * Every valid state transition. Any transition not listed here is forbidden.

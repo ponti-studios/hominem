@@ -1,28 +1,28 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import {
+  installVoiceEnvMock,
+  installVoiceFetchMock,
+  makeVoiceAudioBuffer,
+  makeVoiceErrorResponse,
+  mockVoiceEnv,
+  mockVoiceFetch,
+} from './voice-test-helpers';
 import {
   VOICE_TRANSCRIPTION_MAX_SIZE_BYTES,
   VoiceTranscriptionError,
   normalizeVoiceMimeType,
-  validateVoiceInput,
   transcribeVoiceBuffer,
+  validateVoiceInput,
 } from './voice-transcription.service';
 
-// ---------------------------------------------------------------------------
-// Module mocks
-// ---------------------------------------------------------------------------
+installVoiceEnvMock('./env');
+installVoiceFetchMock();
 
-const mockEnv = { OPENROUTER_API_KEY: 'test-openrouter-key' as string | undefined };
-
-vi.mock('./env', () => ({
-  get env() {
-    return mockEnv;
-  },
-}));
-
-// Mock global fetch
-const mockFetch = vi.fn();
-vi.stubGlobal('fetch', mockFetch);
+const mockEnv = mockVoiceEnv;
+const mockFetch = mockVoiceFetch;
+const makeErrorResponse = makeVoiceErrorResponse;
+const makeAudioBuffer = makeVoiceAudioBuffer;
 
 function makeOkResponse(text: string) {
   return {
@@ -32,19 +32,6 @@ function makeOkResponse(text: string) {
       choices: [{ message: { content: text } }],
     }),
   };
-}
-
-function makeErrorResponse(status: number, message: string) {
-  return {
-    ok: false,
-    status,
-    statusText: message,
-    json: vi.fn().mockResolvedValue({ error: { message } }),
-  };
-}
-
-function makeAudioBuffer(bytes = 1024): ArrayBuffer {
-  return new Uint8Array(bytes).buffer;
 }
 
 // ---------------------------------------------------------------------------

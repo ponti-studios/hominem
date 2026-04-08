@@ -15,7 +15,7 @@ import {
   SidebarMenuItem,
 } from './sidebar';
 
-const meta: Meta<typeof Sidebar> = {
+const meta = {
   title: 'Navigation/Sidebar',
   component: Sidebar,
   tags: ['autodocs'],
@@ -39,9 +39,10 @@ const meta: Meta<typeof Sidebar> = {
       table: { defaultValue: { summary: 'offcanvas' } },
     },
   },
-};
+} satisfies Meta<typeof Sidebar>;
+
 export default meta;
-type Story = StoryObj<typeof Sidebar>;
+type Story = StoryObj<typeof meta>;
 
 const menuItems = [
   { title: 'Home', icon: Home },

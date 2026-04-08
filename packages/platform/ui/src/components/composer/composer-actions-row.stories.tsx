@@ -1,15 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-const meta: Meta = {
-  title: 'Patterns/Composer/ComposerActionsRow',
-  tags: ['autodocs'],
-};
-
-export default meta;
-type Story = StoryObj;
-
-export const Default: Story = {
-  render: () => (
+function ComposerActionsRowPreview() {
+  return (
     <div className="p-4 max-w-md">
       <div className="flex gap-2 border-t border-border-subtle pt-3">
         <button className="px-3 py-1.5 text-sm border border-border-default rounded-md hover:bg-surface">
@@ -27,5 +19,16 @@ export const Default: Story = {
         </button>
       </div>
     </div>
-  ),
-};
+  );
+}
+
+const meta = {
+  title: 'Patterns/Composer/ComposerActionsRow',
+  component: ComposerActionsRowPreview,
+  tags: ['autodocs'],
+} satisfies Meta<typeof ComposerActionsRowPreview>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {};

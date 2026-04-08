@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { Source, Sources } from './sources';
 
-const meta: Meta<typeof Sources> = {
+const meta = {
   title: 'Patterns/AI/Sources',
   component: Sources,
   tags: ['autodocs'],
@@ -11,9 +11,10 @@ const meta: Meta<typeof Sources> = {
       disable: true,
     },
   },
-};
+} satisfies Meta<typeof Sources>;
+
 export default meta;
-type Story = StoryObj<typeof Sources>;
+type Story = StoryObj<typeof meta>;
 
 const sampleSources = [
   { href: 'https://example.com/article-1', title: 'Introduction to React Hooks' },

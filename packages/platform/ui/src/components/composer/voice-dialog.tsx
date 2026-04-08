@@ -121,7 +121,7 @@ export const VoiceDialog = memo(
         <div className="flex items-center gap-3">
           <SpeechInput
             aria-label="Record audio message"
-            className="h-10 w-10"
+            className="size-10"
             onAudioRecorded={handleAudioRecorded}
             onRecordingStateChange={handleRecordingStateChange}
             onProcessingStateChange={setIsProcessing}

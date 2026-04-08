@@ -4,14 +4,14 @@ import { expect, within } from 'storybook/test';
 import { Stack } from '../layout/stack';
 import { Heading } from './heading';
 
-const meta: Meta<typeof Heading> = {
+const meta = {
   title: 'Typography/Heading',
   component: Heading,
   tags: ['autodocs'],
-};
+} satisfies Meta<typeof Heading>;
 
 export default meta;
-type Story = StoryObj<typeof Heading>;
+type Story = StoryObj<typeof meta>;
 
 export const Scale: Story = {
   render: () => (

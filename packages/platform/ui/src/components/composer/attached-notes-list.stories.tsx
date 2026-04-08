@@ -1,15 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-const meta: Meta = {
-  title: 'Patterns/Composer/AttachedNotesList',
-  tags: ['autodocs'],
-};
-
-export default meta;
-type Story = StoryObj;
-
-export const Default: Story = {
-  render: () => (
+function AttachedNotesListPreview() {
+  return (
     <div className="p-4 max-w-md space-y-3">
       <h3 className="text-sm font-semibold">Attached Notes (2)</h3>
       <div className="space-y-2">
@@ -23,8 +15,19 @@ export const Default: Story = {
         </div>
       </div>
     </div>
-  ),
-};
+  );
+}
+
+const meta = {
+  title: 'Patterns/Composer/AttachedNotesList',
+  component: AttachedNotesListPreview,
+  tags: ['autodocs'],
+} satisfies Meta<typeof AttachedNotesListPreview>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {};
 
 export const Empty: Story = {
   render: () => (

@@ -1,17 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, within } from 'storybook/test';
 
-// ResendCodeButton - allows users to request a new verification code
-const meta: Meta = {
-  title: 'Patterns/Auth/ResendCodeButton',
-  tags: ['autodocs'],
-};
-
-export default meta;
-type Story = StoryObj;
-
-export const Default: Story = {
-  render: () => (
+function ResendCodeButtonPreview() {
+  return (
     <div className="p-6 max-w-md">
       <div className="mb-6">
         <p className="text-sm text-text-secondary mb-4">Enter the code sent to your email</p>
@@ -33,7 +24,19 @@ export const Default: Story = {
         </button>
       </div>
     </div>
-  ),
+  );
+}
+
+const meta = {
+  title: 'Patterns/Auth/ResendCodeButton',
+  component: ResendCodeButtonPreview,
+  tags: ['autodocs'],
+} satisfies Meta<typeof ResendCodeButtonPreview>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 

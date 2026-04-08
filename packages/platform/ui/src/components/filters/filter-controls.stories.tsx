@@ -1,16 +1,40 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { FilterControls } from './filter-controls';
+import type { ActiveFilter } from './active-filters-bar';
+import { FilterControls, type FilterControlsProps } from './filter-controls';
 
-const meta: Meta<typeof FilterControls> = {
+interface FilterControlsPreviewProps {
+  children: React.ReactNode;
+  showActiveFilters?: boolean;
+  activeFilters?: ActiveFilter[];
+}
+
+function FilterControlsPreview(props: FilterControlsPreviewProps) {
+  const { children, showActiveFilters, activeFilters, ...rest } = props;
+
+  const filterControlsProps: FilterControlsProps = {
+    children,
+    ...(showActiveFilters !== undefined && { showActiveFilters }),
+    ...(activeFilters !== undefined && { activeFilters }),
+    ...rest,
+  };
+
+  return <FilterControls {...filterControlsProps} />;
+}
+
+const meta = {
   title: 'Patterns/Filters/FilterControls',
-  component: FilterControls,
+  component: FilterControlsPreview,
   tags: ['autodocs'],
-};
+} satisfies Meta<typeof FilterControlsPreview>;
+
 export default meta;
-type Story = StoryObj<typeof FilterControls>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
+  args: {
+    children: null,
+  },
   parameters: {
     controls: {
       disable: true,
@@ -33,6 +57,9 @@ export const Default: Story = {
 };
 
 export const WithActiveFilters: Story = {
+  args: {
+    children: null,
+  },
   parameters: {
     controls: {
       disable: true,

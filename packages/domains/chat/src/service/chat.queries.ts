@@ -1,61 +1,52 @@
-import crypto from 'node:crypto';
+/**
+ * Chat queries — now delegates to ChatRepository.
+ *
+ * This module maintains the existing function signatures for ChatService
+ * compatibility but uses the centralized repository instead of raw Kysely.
+ */
 
-import { db } from '@hominem/db';
-import type { Database, Selectable } from '@hominem/db';
+import { ChatRepository, getDb } from '@hominem/db';
 
 import type { ChatOutput } from '../contracts';
 import type { CreateChatParams } from './chat.types';
-
-type ChatRow = Selectable<Database['app.chats']>;
-
-function toIsoString(value: Date | string | null | undefined): string {
-  if (value == null) {
-    return new Date().toISOString();
-  }
-
-  return value instanceof Date ? value.toISOString() : value;
-}
-
-function toChatOutput(row: ChatRow): ChatOutput {
+function toChatOutput(record: {
+  archivedAt: ChatOutput['archivedAt'];
+  id: string;
+  title: string;
+  userId: string;
+  noteId: string | null;
+  createdAt: ChatOutput['createdAt'];
+  updatedAt: ChatOutput['updatedAt'];
+}): ChatOutput {
   return {
-    archivedAt: toIsoString(row.archived_at),
-    id: row.id,
-    title: row.title,
-    userId: row.owner_userid,
-    noteId: row.note_id ?? null,
-    createdAt: toIsoString(row.createdat),
-    updatedAt: toIsoString(row.updatedat),
+    archivedAt: record.archivedAt,
+    id: record.id,
+    title: record.title,
+    userId: record.userId,
+    noteId: record.noteId,
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt,
   };
 }
 
 export async function createChatQuery(params: CreateChatParams): Promise<ChatOutput> {
-  const now = new Date().toISOString();
-  const chat = await db
-    .insertInto('app.chats')
-    .values({
-      id: crypto.randomUUID(),
-      owner_userid: params.userId,
-      title: params.title,
-      note_id: params.noteId ?? null,
-      createdat: now,
-      updatedat: now,
-      ...(params.archivedAt ? { archived_at: params.archivedAt } : {}),
-    })
-    .returningAll()
-    .executeTakeFirstOrThrow();
+  const record = await ChatRepository.create(getDb(), {
+    userId: params.userId,
+    title: params.title,
+    noteId: params.noteId ?? null,
+    archivedAt: params.archivedAt ?? null,
+  });
 
-  return toChatOutput(chat);
+  return toChatOutput(record);
 }
 
 export async function getChatByIdQuery(chatId: string, userId: string): Promise<ChatOutput | null> {
-  const chat = await db
-    .selectFrom('app.chats')
-    .selectAll()
-    .where('id', '=', chatId)
-    .where('owner_userid', '=', userId)
-    .executeTakeFirst();
-
-  return chat ? toChatOutput(chat) : null;
+  try {
+    const record = await ChatRepository.getOwnedOrThrow(getDb(), chatId, userId);
+    return toChatOutput(record);
+  } catch {
+    return null;
+  }
 }
 
 export async function getOrCreateActiveChatQuery(
@@ -73,30 +64,18 @@ export async function getOrCreateActiveChatQuery(
 }
 
 export async function getUserChatsQuery(userId: string, limit = 50): Promise<ChatOutput[]> {
-  const chats = await db
-    .selectFrom('app.chats')
-    .selectAll()
-    .where('owner_userid', '=', userId)
-    .where('archived_at', 'is', null)
-    .orderBy('last_message_at', 'desc')
-    .limit(limit)
-    .execute();
-
-  return chats.map(toChatOutput);
+  const records = await ChatRepository.listForUser(getDb(), userId, limit);
+  return records.map(toChatOutput);
 }
 
 export async function getChatByNoteIdQuery(
   noteId: string,
   userId: string,
 ): Promise<ChatOutput | null> {
-  const chat = await db
-    .selectFrom('app.chats')
-    .selectAll()
-    .where('note_id', '=', noteId)
-    .where('owner_userid', '=', userId)
-    .executeTakeFirst();
+  const record = await ChatRepository.getByNoteId(getDb(), noteId, userId);
+  if (!record) return null;
 
-  return chat ? toChatOutput(chat) : null;
+  return toChatOutput(record);
 }
 
 export async function updateChatTitleQuery(
@@ -104,52 +83,33 @@ export async function updateChatTitleQuery(
   title: string,
   userId: string,
 ): Promise<ChatOutput | null> {
-  const chat = await db
-    .updateTable('app.chats')
-    .set({
-      title,
-      updatedat: new Date().toISOString(),
-    })
-    .where('id', '=', chatId)
-    .where('owner_userid', '=', userId)
-    .returningAll()
-    .executeTakeFirst();
-
-  return chat ? toChatOutput(chat) : null;
+  try {
+    await ChatRepository.updateTitle(getDb(), chatId, userId, title);
+    return getChatByIdQuery(chatId, userId);
+  } catch {
+    return null;
+  }
 }
 
 export async function archiveChatQuery(chatId: string, userId: string): Promise<ChatOutput | null> {
-  const chat = await db
-    .updateTable('app.chats')
-    .set({
-      archived_at: new Date().toISOString(),
-      updatedat: new Date().toISOString(),
-    })
-    .where('id', '=', chatId)
-    .where('owner_userid', '=', userId)
-    .returningAll()
-    .executeTakeFirst();
-
-  return chat ? toChatOutput(chat) : null;
+  try {
+    const record = await ChatRepository.archive(getDb(), chatId, userId);
+    return toChatOutput(record);
+  } catch {
+    return null;
+  }
 }
 
 export async function deleteChatQuery(chatId: string, userId: string): Promise<boolean> {
-  const deleted = await db
-    .deleteFrom('app.chats')
-    .where('id', '=', chatId)
-    .where('owner_userid', '=', userId)
-    .returning('id')
-    .executeTakeFirst();
-
-  return Boolean(deleted);
+  try {
+    await ChatRepository.getOwnedOrThrow(getDb(), chatId, userId);
+    await ChatRepository.delete(getDb(), chatId, userId);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function clearChatMessagesQuery(chatId: string, userId: string): Promise<boolean> {
-  const existing = await getChatByIdQuery(chatId, userId);
-  if (!existing) {
-    return false;
-  }
-
-  await db.deleteFrom('app.chat_messages').where('chat_id', '=', chatId).execute();
-  return true;
+  return ChatRepository.clearMessages(getDb(), chatId, userId);
 }

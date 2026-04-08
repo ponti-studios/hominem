@@ -3,13 +3,14 @@ import { AlertCircle, Info, Terminal } from 'lucide-react';
 
 import { Alert, AlertDescription, AlertTitle } from './alert';
 
-const meta: Meta<typeof Alert> = {
+const meta = {
   title: 'Feedback/Alert',
   component: Alert,
   tags: ['autodocs'],
-};
+} satisfies Meta<typeof Alert>;
+
 export default meta;
-type Story = StoryObj<typeof Alert>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: () => (

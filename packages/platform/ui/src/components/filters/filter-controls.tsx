@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { cn } from '../../lib/utils';
 import { type ActiveFilter, ActiveFiltersBar } from './active-filters-bar';
 
-interface FilterControlsProps {
+export interface FilterControlsProps {
   children: ReactNode;
   showActiveFilters?: boolean;
   activeFilters?: ActiveFilter[];

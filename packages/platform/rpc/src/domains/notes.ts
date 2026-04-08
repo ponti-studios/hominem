@@ -4,6 +4,8 @@ import type {
   NotesCreateInput,
   NotesCreateOutput,
   NotesDeleteOutput,
+  NotesFeedInput,
+  NotesFeedOutput,
   NotesGetOutput,
   NotesListInput,
   NotesListOutput,
@@ -74,6 +76,7 @@ function toNotesQuery(input: NotesListInput): Record<string, string> {
 
 export interface NotesClient {
   list(input: NotesListInput): Promise<NotesListOutput>;
+  feed(input: NotesFeedInput): Promise<NotesFeedOutput>;
   search(input: NotesSearchInput): Promise<NotesSearchOutput>;
   get(input: NotesGetInput): Promise<NotesGetOutput>;
   create(input: NotesCreateInput): Promise<NotesCreateOutput>;
@@ -91,6 +94,20 @@ export function createNotesClient(rawClient: RawHonoClient): NotesClient {
         query: toNotesQuery(input),
       });
       return res.json() as Promise<NotesListOutput>;
+    },
+
+    async feed(input) {
+      const query: Record<string, string> = {};
+
+      if (typeof input.limit === 'number') {
+        query.limit = String(input.limit);
+      }
+      if (input.cursor) {
+        query.cursor = input.cursor;
+      }
+
+      const res = await rawClient.api.notes.feed.$get({ query });
+      return res.json() as Promise<NotesFeedOutput>;
     },
 
     async search(input) {

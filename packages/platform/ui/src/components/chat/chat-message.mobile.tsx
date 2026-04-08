@@ -2,7 +2,7 @@ import { memo, useMemo, useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import Reanimated, { FadeInDown, FadeOutUp, LinearTransition } from 'react-native-reanimated';
 
-import { chatTokensNative, colors, fontSizes, radiiNative, spacing } from '../../tokens';
+import { colors, fontSizes, radiiNative, spacing } from '../../tokens';
 import { fontFamiliesNative } from '../../tokens/typography.native';
 import { Text } from '../typography/text.native';
 import { Button } from '../ui/button.native';
@@ -31,6 +31,7 @@ type ChatMessageProps = {
 const ACTIONS_ENTERING = FadeInDown.duration(240).springify().damping(20).stiffness(220).mass(0.9);
 const ACTIONS_EXITING = FadeOutUp.duration(180).springify().damping(24).stiffness(260).mass(0.8);
 const ACTIONS_LAYOUT = LinearTransition.duration(200);
+const USER_BUBBLE_MAX_WIDTH = 544;
 
 const styles = StyleSheet.create({
   actionButton: {
@@ -69,7 +70,7 @@ const styles = StyleSheet.create({
     borderRadius: radiiNative.md,
     borderTopLeftRadius: 6,
     borderWidth: 1,
-    maxWidth: chatTokensNative.userBubbleMaxWidth,
+    maxWidth: USER_BUBBLE_MAX_WIDTH,
     paddingHorizontal: spacing[4],
     paddingVertical: spacing[3],
     width: '100%',
@@ -193,7 +194,7 @@ const styles = StyleSheet.create({
     borderColor: colors['emphasis-highest'],
     borderRadius: radiiNative.md,
     borderWidth: 1,
-    maxWidth: chatTokensNative.userBubbleMaxWidth,
+    maxWidth: USER_BUBBLE_MAX_WIDTH,
     paddingHorizontal: spacing[4],
     paddingVertical: spacing[3],
     width: '100%',

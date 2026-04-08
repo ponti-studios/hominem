@@ -1,4 +1,2 @@
-// Constants only - safe for React Native/mobile bundles
-// This file does NOT import any crypto-dependent code
-
-export const CHAT_TITLE_MAX_LENGTH = 64;
+// Re-export for backwards compatibility — canonical definition is in thought-types.ts
+export { CHAT_TITLE_MAX_LENGTH } from './thought-types';

@@ -5,13 +5,14 @@ import { Avatar, AvatarFallback, AvatarImage } from './avatar';
 import { Button } from './button';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from './hover-card';
 
-const meta: Meta<typeof HoverCard> = {
+const meta = {
   title: 'Patterns/Overlay/HoverCard',
   component: HoverCard,
   tags: ['autodocs'],
-};
+} satisfies Meta<typeof HoverCard>;
+
 export default meta;
-type Story = StoryObj<typeof HoverCard>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: () => (

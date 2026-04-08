@@ -8,6 +8,7 @@ export * from './components/finance';
 export * from './components/invites';
 export * from './components/layout';
 export * from './components/page-title';
+export * from './components/surfaces';
 export * from './components/typography';
 export * from './components/ui';
 export * from './components/update-guard';

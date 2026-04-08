@@ -30,6 +30,7 @@
         ".react-router/**",
         "build/**",
         "dist/**",
+        "app/routes/+types/**/*",
         "**/*.d.ts",
         "**/*.d.ts.map"
       ]
@@ -49,19 +50,14 @@
       "dependsOn": ["^build"]
     },
     "format": {
-      "inputs": [
-        "src/**/*.{ts,tsx,js,jsx,json,md}",
-        "app/**/*.{ts,tsx,js,jsx,json,md}"
-      ],
-      "outputs": []
+      "inputs": ["src/**/*.{ts,tsx,js,jsx,json,md}", "app/**/*.{ts,tsx,js,jsx,json,md}"]
     },
     "lint": {
       "inputs": [
         "src/**/*.{ts,tsx,js,jsx,json,md,css}",
         "app/**/*.{ts,tsx,js,jsx,json,md,css}",
         "packages/platform/ui/tools/stylelint-config-void.cjs"
-      ],
-      "outputs": []
+      ]
     },
     "start": {
       "dependsOn": ["build"]
@@ -72,8 +68,7 @@
         "src/**/*.{ts,tsx,js,jsx}",
         "app/**/*.{ts,tsx,js,jsx}",
         "test/**/*.{ts,tsx,js,jsx}"
-      ],
-      "outputs": []
+      ]
     },
     "typegen": {
       "outputs": [".react-router/**", "app/routes/+types/**/*"]

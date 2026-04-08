@@ -1,7 +1,7 @@
-import { CHAT_TITLE_MAX_LENGTH } from '@hominem/chat-services/constants';
+import { CHAT_TITLE_MAX_LENGTH } from '@hominem/chat/constants';
 import type { ApiClient } from '@hominem/rpc';
 import { useApiClient } from '@hominem/rpc/react';
-import type { Chat, ChatMessage as RpcChatMessage } from '@hominem/rpc/types';
+import type { Chat, ChatMessageDto as RpcChatMessage } from '@hominem/rpc/types';
 import NetInfo from '@react-native-community/netinfo';
 import { useMutation, useQuery, useQueryClient, type MutationOptions } from '@tanstack/react-query';
 import { randomUUID } from 'expo-crypto';
@@ -226,7 +226,7 @@ export const useSendMessage = ({ chatId }: { chatId: string }) => {
 };
 
 // Simplified start chat - uses React Query retry instead of custom queue
-export const useStartChat = ({
+function useStartChat({
   userMessage,
   _chatMessage,
   _intentId,
@@ -277,9 +277,9 @@ export const useStartChat = ({
     },
     ...props,
   });
-};
+}
 
-export const useArchiveChat = ({
+function useArchiveChat({
   chatId,
   ...props
 }: { chatId: string } & MutationOptions<Chat, Error, void>) => {
@@ -313,7 +313,7 @@ export const useArchiveChat = ({
     },
     ...props,
   });
-};
+}
 
 export const useActiveChat = (chatId?: string | null) => {
   const client = useApiClient();

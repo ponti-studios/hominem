@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from './dropdown-menu';
 
-const meta: Meta<typeof DropdownMenu> = {
+const meta = {
   title: 'Patterns/Overlay/DropdownMenu',
   component: DropdownMenu,
   tags: ['autodocs'],
@@ -37,9 +37,10 @@ const meta: Meta<typeof DropdownMenu> = {
       description: 'Reading direction of the dropdown menu',
     },
   },
-};
+} satisfies Meta<typeof DropdownMenu>;
+
 export default meta;
-type Story = StoryObj<typeof DropdownMenu>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: () => (

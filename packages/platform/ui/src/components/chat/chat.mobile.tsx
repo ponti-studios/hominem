@@ -1,7 +1,10 @@
+import type { SessionSource } from '@hominem/rpc/types';
 import { StyleSheet, View } from 'react-native';
 
-import { ChatHeader, ChatMessageList, ChatReviewOverlay, ChatSearchModal } from './index.mobile';
-import type { SessionSource } from './index.mobile';
+import { ChatHeader } from './chat-header.mobile';
+import { ChatMessageList } from './chat-message-list.mobile';
+import { ChatReviewOverlay } from './chat-review-overlay.mobile';
+import { ChatSearchModal } from './chat-search-modal.mobile';
 import { useChatController, type ChatServices } from './use-chat-controller.mobile';
 
 // These app-specific imports stay as peer dependencies provided by the host app

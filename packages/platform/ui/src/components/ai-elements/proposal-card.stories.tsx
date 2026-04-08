@@ -36,7 +36,18 @@ function ProposalCardPreview({
   );
 }
 
-const meta: Meta<ProposalCardStoryArgs> = {
+function proposalCardItem(
+  proposedType: ReviewItem['proposedType'],
+  proposedTitle: string,
+): ReviewItem {
+  return {
+    ...reviewItemTemplate,
+    proposedType,
+    proposedTitle,
+  };
+}
+
+const meta = {
   title: 'Patterns/AI/ProposalCard',
   component: ProposalCardPreview,
   tags: ['autodocs'],
@@ -48,20 +59,10 @@ const meta: Meta<ProposalCardStoryArgs> = {
     onReview: hiddenControl,
     onReject: hiddenControl,
   },
-};
+} satisfies Meta<typeof ProposalCardPreview>;
+
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-function proposalCardItem(
-  proposedType: ReviewItem['proposedType'],
-  proposedTitle: string,
-): ReviewItem {
-  return {
-    ...reviewItemTemplate,
-    proposedType,
-    proposedTitle,
-  };
-}
 
 export const Note: Story = {
   args: {
@@ -81,7 +82,13 @@ export const Task: Story = {
   },
 };
 
-export const List: StoryObj<typeof ProposalList> = {
+export const List: Story = {
+  args: {
+    proposedType: 'note',
+    proposedTitle: '',
+    onReview: () => undefined,
+    onReject: () => undefined,
+  },
   parameters: {
     controls: {
       disable: true,
@@ -103,7 +110,13 @@ export const List: StoryObj<typeof ProposalList> = {
   ),
 };
 
-export const EmptyList: StoryObj<typeof ProposalList> = {
+export const EmptyList: Story = {
+  args: {
+    proposedType: 'note',
+    proposedTitle: '',
+    onReview: () => undefined,
+    onReject: () => undefined,
+  },
   parameters: {
     controls: {
       disable: true,

@@ -9,20 +9,28 @@ import {
   InlineCitation,
 } from './context';
 
-const meta: Meta<typeof Context> = {
+function ContextPreview(props: { className?: string; children: React.ReactNode }) {
+  return <Context {...props} />;
+}
+
+const meta = {
   title: 'Patterns/AI/Context',
-  component: Context,
+  component: ContextPreview,
   tags: ['autodocs'],
   parameters: {
     controls: {
       disable: true,
     },
   },
-};
+} satisfies Meta<typeof ContextPreview>;
+
 export default meta;
-type Story = StoryObj<typeof Context>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
+  args: {
+    children: null,
+  },
   render: () => (
     <Context className="max-w-sm">
       <ContextHeader title="Context" count={2} />
@@ -45,6 +53,9 @@ export const Default: Story = {
 };
 
 export const Citations: Story = {
+  args: {
+    children: null,
+  },
   render: () => (
     <div className="space-y-4 max-w-sm">
       <p className="text-sm">

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { booleanControl, hiddenControl, selectControl } from '../../storybook/controls';
+import { booleanControl, selectControl } from '../../storybook/controls';
 import { ChatMessages } from './chat-messages';
 import { mockChatMessages } from './chat-story-data';
 
@@ -20,25 +20,12 @@ const meta = {
         defaultValue: 'conversation',
       },
     ),
-    messages: hiddenControl,
-    status: hiddenControl,
-    error: hiddenControl,
-    speakingId: hiddenControl,
-    speechLoadingId: hiddenControl,
-    onRegenerate: hiddenControl,
-    onEdit: hiddenControl,
-    onDelete: hiddenControl,
-    onSpeak: hiddenControl,
     showDebug: booleanControl('Shows message metadata in each message row', false),
   },
   parameters: {
     layout: 'fullscreen',
   },
-} satisfies Meta<ChatMessagesStoryArgs>;
-
-export default meta;
-
-type Story = StoryObj<typeof meta>;
+} satisfies Meta<typeof ChatMessagesPreview>;
 
 function ChatMessagesPreview({
   scenario,
@@ -77,6 +64,9 @@ function ChatMessagesPreview({
     </div>
   );
 }
+
+export default meta;
+type Story = StoryObj<typeof meta>;
 
 export const Conversation: Story = {
   args: {

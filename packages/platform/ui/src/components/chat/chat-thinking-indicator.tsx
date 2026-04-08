@@ -17,19 +17,19 @@ export function ChatThinkingIndicator() {
     <div className="w-full px-4 py-3">
       <div className="flex items-center gap-2">
         <span
-          className={cn('h-2 w-2 rounded-full bg-accent transition-opacity', {
+          className={cn('size-2 rounded-full bg-accent transition-opacity', {
             'opacity-100': phase === 0,
             'opacity-30': phase !== 0,
           })}
         />
         <span
-          className={cn('h-2 w-2 rounded-full bg-accent transition-opacity', {
+          className={cn('size-2 rounded-full bg-accent transition-opacity', {
             'opacity-100': phase === 1,
             'opacity-30': phase !== 1,
           })}
         />
         <span
-          className={cn('h-2 w-2 rounded-full bg-accent transition-opacity', {
+          className={cn('size-2 rounded-full bg-accent transition-opacity', {
             'opacity-100': phase === 2,
             'opacity-30': phase !== 2,
           })}

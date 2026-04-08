@@ -16,7 +16,6 @@ import { isServiceError } from './errors';
 import { authJwtMiddleware } from './middleware/auth';
 import { blockMaliciousProbes } from './middleware/block-probes';
 import { requestLogger } from './middleware/request-logger';
-import { aiRoutes } from './routes/ai';
 import { authRoutes } from './routes/auth';
 import { componentsRoutes } from './routes/components';
 import { imagesRoutes } from './routes/images';
@@ -155,7 +154,9 @@ export function createServer() {
       return c.json(
         {
           error: err.code.toLowerCase(),
+          code: err.code,
           message: err.message,
+          ...(err.details && { details: err.details }),
         },
         err.statusCode as ContentfulStatusCode,
       );
@@ -164,6 +165,7 @@ export function createServer() {
     return c.json(
       {
         error: 'internal_error',
+        code: 'INTERNAL_ERROR',
         message: 'An unexpected error occurred',
       },
       500,

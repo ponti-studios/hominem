@@ -1,5 +1,7 @@
 import Box from './Box';
+import { makeStylesInternal } from './make-styles';
 import Text from './Text';
-import theme, { makeStyles } from './theme';
+import theme from './theme';
 
-export { theme, Box, Text, makeStyles };
+export { Box, Text, theme };
+export const makeStyles = makeStylesInternal;

@@ -15,7 +15,7 @@ import {
   DrawerTrigger,
 } from './drawer';
 
-const meta: Meta<typeof Drawer> = {
+const meta = {
   title: 'Patterns/Overlay/Drawer',
   component: Drawer,
   tags: ['autodocs'],
@@ -33,9 +33,10 @@ const meta: Meta<typeof Drawer> = {
     dismissible: booleanControl('Whether the drawer can be closed by dragging it', true),
     onOpenChange: hiddenControl,
   },
-};
+} satisfies Meta<typeof Drawer>;
+
 export default meta;
-type Story = StoryObj<typeof Drawer>;
+type Story = StoryObj<typeof meta>;
 
 function DrawerPreview({
   open,

@@ -1,81 +1,78 @@
 /**
  * Shared domain types for the thought lifecycle.
  *
- * Import from @hominem/chat-services in both mobile and Notes web.
- * No surface may redefine these locally.
- *
- * Canonical UI-contract types are owned by @hominem/rpc/types as the single
- * source of truth. This module re-exports them so domain internals
- * (session-artifacts, use-chat-lifecycle, etc.) resolve to the same
- * declaration, making return types portable across packages.
+ * These are the CANONICAL definitions. @hominem/rpc re-exports them
+ * for transport consumers. No other package may redefine these.
  */
 
-// Re-export canonical types from @hominem/rpc/types as the single source of truth.
-export type {
-  ArtifactType,
-  CaptureBarProps,
-  ClassificationReviewProps,
-  ReviewItem,
-  SessionSource,
-} from '@hominem/rpc/types';
+// ─── Artifact Types ──────────────────────────────────────────────────────────
 
-// Re-export runtime values from @hominem/rpc/types.
-export { ENABLED_ARTIFACT_TYPES, isArtifactTypeEnabled } from '@hominem/rpc/types';
+export type ArtifactType = 'note' | 'task' | 'task_list' | 'tracker';
 
-import type { ArtifactType } from '@hominem/rpc/types';
+/** Artifact types enabled in the current release. */
+export const ENABLED_ARTIFACT_TYPES: ArtifactType[] = ['note'];
 
-// ─── Classification API Contract ─────────────────────────────────────────────
-
-/**
- * Request body sent to the classification endpoint.
- *
- * POST /api/chat/:chatId/classify
- */
-export interface ClassificationRequest {
-  /** The chat ID whose messages are being classified. */
-  chatId: string;
-  /**
-   * The artifact type to classify as.
-   * In v1, always 'note'. Clients must pass this explicitly; the server
-   * does not infer the type.
-   */
-  targetType: ArtifactType;
+/** Returns true if the given type is enabled for creation in the current release. */
+export function isArtifactTypeEnabled(type: ArtifactType): boolean {
+  return ENABLED_ARTIFACT_TYPES.includes(type);
 }
 
-/**
- * Response body returned by the classification endpoint on success.
- *
- * The client uses this to populate ClassificationReview.
- * In v1, proposedType is always 'note'. If the server returns anything else,
- * the client falls back to 'note' and logs a warning.
- */
-export interface ClassificationResponse {
+// ─── Session Source ──────────────────────────────────────────────────────────
+
+/** Describes where a chat session originated. */
+export type SessionSource =
+  | { kind: 'thought'; preview: string }
+  | { kind: 'artifact'; id: string; type: ArtifactType; title: string }
+  | { kind: 'new' };
+
+// ─── Lifecycle State ─────────────────────────────────────────────────────────
+
+/** The canonical thought lifecycle state machine. */
+export type ThoughtLifecycleState =
+  | 'idle'
+  | 'composing'
+  | 'recording'
+  | 'transcribing'
+  | 'classifying'
+  | 'reviewing_changes'
+  | 'persisting'
+  | 'recovering_error';
+
+export type ThoughtLifecycleTransition = [from: ThoughtLifecycleState, to: ThoughtLifecycleState];
+
+// ─── Review Item ─────────────────────────────────────────────────────────────
+
+/** A pending AI proposal awaiting user review. */
+export interface ReviewItem {
+  id: string;
+  sessionId: string;
   proposedType: ArtifactType;
   proposedTitle: string;
-  /** Ordered list of human-readable change descriptions. Max 5 items. */
   proposedChanges: string[];
-  /** Markdown string of the proposed artifact body. */
   previewContent: string;
-  /** Server-generated review item ID. Used to accept or reject via API. */
-  reviewItemId: string;
+  createdAt: string;
 }
 
-/**
- * Request body to accept a review item (persist the artifact).
- *
- * POST /api/review/:reviewItemId/accept
- */
-export interface ReviewAcceptRequest {
-  reviewItemId: string;
-  /** Optional user-edited title that overrides the proposed title. */
-  finalTitle?: string;
+// ─── UI Contract Types ───────────────────────────────────────────────────────
+
+/** Props contract for the CaptureBar component (web and mobile). */
+export interface CaptureBarProps {
+  state: ThoughtLifecycleState;
+  onSave: (text: string) => void;
+  onStartSession: (seedText: string) => void;
+  onStartRecording?: () => void;
+  placeholder?: string;
 }
 
-/**
- * Request body to reject a review item (discard the proposal).
- *
- * POST /api/review/:reviewItemId/reject
- */
-export interface ReviewRejectRequest {
-  reviewItemId: string;
+/** Props contract for the ClassificationReview component. */
+export interface ClassificationReviewProps {
+  proposedType: ArtifactType;
+  proposedTitle: string;
+  proposedChanges: string[];
+  previewContent: string;
+  onAccept: () => void;
+  onReject: () => void;
 }
+
+/** Maximum character length for a chat/artifact title. */
+export const CHAT_TITLE_MAX_LENGTH = 64;

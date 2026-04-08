@@ -3,22 +3,22 @@ import { expect, within } from 'storybook/test';
 
 import { AuthScaffold } from './auth-scaffold';
 
-const meta: Meta<typeof AuthScaffold> = {
+const meta = {
   title: 'Patterns/Auth/AuthScaffold',
   component: AuthScaffold,
   tags: ['autodocs'],
   parameters: {
     layout: 'fullscreen',
   },
-};
+} satisfies Meta<typeof AuthScaffold>;
 
 export default meta;
-type Story = StoryObj<typeof AuthScaffold>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
     title: 'Sign in',
-    helper: 'We’ll send a code to your email.',
+    helper: "We'll send a code to your email.",
     children: (
       <div className="space-y-4">
         <input
@@ -41,7 +41,7 @@ export const Default: Story = {
     const canvas = within(canvasElement);
 
     await expect(canvas.getByText('Sign in')).toBeInTheDocument();
-    await expect(canvas.getByText('We’ll send a code to your email.')).toBeInTheDocument();
+    await expect(canvas.getByText("We'll send a code to your email.")).toBeInTheDocument();
   },
 };
 

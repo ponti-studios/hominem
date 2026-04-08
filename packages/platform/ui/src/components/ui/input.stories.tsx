@@ -6,7 +6,7 @@ import { Input } from './input';
 import { Label } from './label';
 import { Textarea } from './textarea';
 
-const meta: Meta<typeof Input> = {
+const meta = {
   title: 'Forms/Input',
   component: Input,
   tags: ['autodocs'],
@@ -18,9 +18,10 @@ const meta: Meta<typeof Input> = {
     disabled: booleanControl('Prevents user interaction and applies disabled styling', false),
     required: booleanControl('Marks the input as required for form submission', false),
   },
-};
+} satisfies Meta<typeof Input>;
+
 export default meta;
-type Story = StoryObj<typeof Input>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: { placeholder: 'Enter text…' },

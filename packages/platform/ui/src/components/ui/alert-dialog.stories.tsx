@@ -12,13 +12,14 @@ import {
   AlertDialogTrigger,
 } from './alert-dialog';
 
-const meta: Meta<typeof AlertDialog> = {
+const meta = {
   title: 'Patterns/Overlay/AlertDialog',
   component: AlertDialog,
   tags: ['autodocs'],
-};
+} satisfies Meta<typeof AlertDialog>;
+
 export default meta;
-type Story = StoryObj<typeof AlertDialog>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: () => (

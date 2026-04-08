@@ -10,7 +10,7 @@ import {
   navigationMenuTriggerStyle,
 } from './navigation-menu';
 
-const meta: Meta<typeof NavigationMenu> = {
+const meta = {
   title: 'Navigation/NavigationMenu',
   component: NavigationMenu,
   tags: ['autodocs'],
@@ -38,9 +38,10 @@ const meta: Meta<typeof NavigationMenu> = {
       description: 'Reading direction of the navigation menu',
     },
   },
-};
+} satisfies Meta<typeof NavigationMenu>;
+
 export default meta;
-type Story = StoryObj<typeof NavigationMenu>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: () => (

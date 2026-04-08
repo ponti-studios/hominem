@@ -8,7 +8,7 @@
     "exactOptionalPropertyTypes": false,
     "rootDir": "src",
     "outDir": "./build",
-    "types": []
+
   },
   "include": ["src/**/*.ts", "tests/**/*.ts"],
   "exclude": [

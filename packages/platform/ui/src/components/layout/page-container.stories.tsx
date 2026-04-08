@@ -2,13 +2,21 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { PageContainer } from './page-container';
 
-const meta: Meta<typeof PageContainer> = {
+const meta = {
   title: 'Layout/PageContainer',
   component: PageContainer,
   tags: ['autodocs'],
-};
+  args: {
+    children: (
+      <div className="p-4 border rounded-md bg-muted">
+        <p className="text-sm">Standard width container (max-w-5xl)</p>
+      </div>
+    ),
+  },
+} satisfies Meta<typeof PageContainer>;
+
 export default meta;
-type Story = StoryObj<typeof PageContainer>;
+type Story = StoryObj<typeof meta>;
 
 export const Standard: Story = {
   render: () => (

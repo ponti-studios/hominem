@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useEffect, useRef, useState } from 'react';
 
-import { hiddenControl, textControl } from '../../storybook/controls';
+import { textControl } from '../../storybook/controls';
 import { ChatHeader } from './chat-header';
 
 const meta = {
@@ -10,13 +10,10 @@ const meta = {
   tags: ['autodocs'],
   argTypes: {
     searchQuery: textControl('Text shown in the search input'),
-    searchInputRef: hiddenControl,
-    onChangeSearchQuery: hiddenControl,
   },
-} satisfies Meta<typeof ChatHeader>;
+} satisfies Meta<typeof ChatHeaderPreview>;
 
 export default meta;
-
 type Story = StoryObj<typeof meta>;
 
 function ChatHeaderPreview({ searchQuery }: { searchQuery: string }) {

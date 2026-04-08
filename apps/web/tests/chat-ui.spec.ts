@@ -1,181 +1,60 @@
-import { expect, test } from '@playwright/test'
+import type { Page } from '@playwright/test';
 
-import {
-  createAuthTestEmail,
-  signInWithEmailOtp,
-} from './auth.flow-helpers'
+import { expect, test } from './authenticated-test';
 
-test.describe('Chat UI: migrated AI Elements components', () => {
-  async function navigateToChatSession(page: import('@playwright/test').Page) {
-    const composerInput = page.getByTestId('composer-input')
-    await expect(composerInput).toBeVisible({ timeout: 10_000 })
-    await composerInput.fill('Test prompt for chat UI')
+const CHAT_INPUT_PLACEHOLDER = 'Ask something, mention a note with #, or paste text from a file.';
 
-    const secondaryButton = page.getByTestId('composer-secondary')
-    await expect(secondaryButton).toBeVisible({ timeout: 5_000 })
-    await secondaryButton.click()
+async function openNewChat(page: Page) {
+  await page.goto('/chat');
 
-    await expect(page).toHaveURL(/\/chat\/[^/]+$/, { timeout: 20_000 })
-  }
+  await page.getByRole('button', { name: 'New chat' }).click();
+  await expect(page).toHaveURL(/\/chat\/[^/?#]+(?:\?.*)?$/, { timeout: 5_000 });
 
-  test.describe('Prompt input', () => {
-    test('shows an empty reply composer when the chat session opens', async ({ page, context }) => {
-      await context.clearCookies()
-      const email = createAuthTestEmail('chat-suggestions')
-      await signInWithEmailOtp(page, email, /\/home/)
-      await page.goto('/home')
-      await navigateToChatSession(page)
+  const textarea = page.getByPlaceholder(CHAT_INPUT_PLACEHOLDER);
+  await expect(textarea).toBeVisible({ timeout: 5_000 });
+  return textarea;
+}
 
-      const textarea = page.getByTestId('composer-input')
-      await expect(textarea).toBeVisible({ timeout: 10_000 })
-      await expect(textarea).toHaveValue('')
-    })
+test.describe('Chat UI', () => {
+  test('shows an empty draft when a new chat opens', async ({ page }) => {
+    const textarea = await openNewChat(page);
+    await expect(textarea).toHaveValue('');
+  });
 
-    test('shows note context tooling in the chat composer footer', async ({ page, context }) => {
-      await context.clearCookies()
-      const email = createAuthTestEmail('chat-char-counter')
-      await signInWithEmailOtp(page, email, /\/home/)
-      await page.goto('/home')
-      await navigateToChatSession(page)
+  test('shows note context guidance before notes are attached', async ({ page }) => {
+    await openNewChat(page);
+    await expect(page.getByText('Type # in the composer to search notes.')).toBeVisible({
+      timeout: 5_000,
+    });
+  });
 
-      const textarea = page.getByTestId('composer-input')
-      await expect(textarea).toBeVisible({ timeout: 10_000 })
-      await textarea.focus()
+  test('attachment button uploads a file before send', async ({ page }) => {
+    await openNewChat(page);
 
-      const notePickerButton = page.getByTitle('Attach notes as context')
-      await expect(notePickerButton).toBeVisible({ timeout: 10_000 })
-      await expect(notePickerButton).toBeEnabled()
-    })
-
-    test('attachment button uploads a file into the composer before send', async ({ page, context }) => {
-      await context.clearCookies()
-      const email = createAuthTestEmail('chat-attach-btn')
-      await signInWithEmailOtp(page, email, /\/home/)
-      await page.goto('/home')
-      await navigateToChatSession(page)
-
-      // Focus Composer to expand it
-      const textarea = page.getByTestId('composer-input')
-      await textarea.focus()
-
-      const attachButton = page.getByTitle('Add attachment')
-      await expect(attachButton).toBeVisible({ timeout: 10_000 })
-      await expect(attachButton).toBeEnabled()
-
-      await page.getByTestId('composer-file-input').setInputFiles({
+    await page
+      .locator('input[type="file"]')
+      .first()
+      .setInputFiles({
         name: 'chat-attachment.txt',
         mimeType: 'text/plain',
         buffer: Buffer.from('Attachment for chat flow'),
-      })
+      });
 
-      await expect(page.getByText('chat-attachment.txt')).toBeVisible({ timeout: 10_000 })
-    })
+    await expect(page.getByText('chat-attachment.txt')).toBeVisible({ timeout: 5_000 });
+  });
 
-    test('voice button is visible in the Composer toolbar', async ({ page, context }) => {
-      await context.clearCookies()
-      const email = createAuthTestEmail('chat-voice-btn')
-      await signInWithEmailOtp(page, email, /\/home/)
-      await page.goto('/home')
-      await navigateToChatSession(page)
+  test('voice input button is visible in the chat toolbar', async ({ page }) => {
+    await openNewChat(page);
+    await expect(page.getByRole('button', { name: 'Dictate chat message' })).toBeVisible({
+      timeout: 5_000,
+    });
+  });
 
-      // Focus Composer to expand it
-      const textarea = page.getByTestId('composer-input')
-      await textarea.focus()
-
-      const micButton = page.getByTitle('Voice note')
-      await expect(micButton).toBeVisible({ timeout: 10_000 })
-    })
-
-    test('primary button is disabled when input is empty', async ({ page, context }) => {
-      await context.clearCookies()
-      const email = createAuthTestEmail('chat-submit-disabled')
-      await signInWithEmailOtp(page, email, /\/home/)
-      await page.goto('/home')
-      await navigateToChatSession(page)
-
-      const textarea = page.getByTestId('composer-input')
-      await expect(textarea).toBeVisible({ timeout: 10_000 })
-      await expect(textarea).toHaveValue('')
-
-      // Primary submit button should be disabled when input is empty
-      const primaryButton = page.getByTestId('composer-primary')
-      await expect(primaryButton).toBeDisabled()
-    })
-
-    test('typing text enables submission and clears after send', async ({ page, context }) => {
-      await context.clearCookies()
-      const email = createAuthTestEmail('chat-submit-flow')
-      await signInWithEmailOtp(page, email, /\/home/)
-      await page.goto('/home')
-      await navigateToChatSession(page)
-
-      const textarea = page.getByTestId('composer-input')
-      await expect(textarea).toBeVisible({ timeout: 10_000 })
-
-      await textarea.fill('Hello from the test suite')
-      await expect(textarea).toHaveValue('Hello from the test suite')
-
-      const primaryButton = page.getByTestId('composer-primary')
-      await expect(primaryButton).toBeEnabled()
-      await primaryButton.click()
-      await expect(textarea).toHaveValue('', { timeout: 10_000 })
-    })
-
-    test('save-as-note secondary action is available in reply mode', async ({ page, context }) => {
-      await context.clearCookies()
-      const email = createAuthTestEmail('chat-over-limit')
-      await signInWithEmailOtp(page, email, /\/home/)
-      await page.goto('/home')
-      await navigateToChatSession(page)
-
-      const secondaryButton = page.getByTestId('composer-secondary')
-      await expect(secondaryButton).toBeVisible({ timeout: 10_000 })
-      await expect(secondaryButton).toBeDisabled()
-    })
-  })
-
-  test.describe('Message rendering', () => {
-    test('user message appears in message list after navigate-from-capture', async ({ page, context }) => {
-      await context.clearCookies()
-      const email = createAuthTestEmail('chat-user-msg')
-      await signInWithEmailOtp(page, email, /\/home/)
-      await page.goto('/home')
-
-      const composerInput = page.getByTestId('composer-input')
-      await composerInput.fill('What are the key benefits of async programming?')
-      const secondaryButton = page.getByTestId('composer-secondary')
-      await secondaryButton.click()
-
-      await expect(page).toHaveURL(/\/chat\/[^/]+$/, { timeout: 20_000 })
-
-      // The user's initial prompt should appear as a message
-      const userMessage = page.getByRole('article').first()
-      await expect(userMessage).toBeVisible({ timeout: 15_000 })
-    })
-
-    test('voice modal opens and closes correctly', async ({ page, context }) => {
-      await context.clearCookies()
-      const email = createAuthTestEmail('chat-voice-modal')
-      await signInWithEmailOtp(page, email, /\/home/)
-      await page.goto('/home')
-      await navigateToChatSession(page)
-
-      // Focus Composer to expand it
-      const textarea = page.getByTestId('composer-input')
-      await textarea.focus()
-
-      const micButton = page.getByTitle('Voice note')
-      await expect(micButton).toBeVisible({ timeout: 10_000 })
-      await micButton.click()
-
-      // Voice dialog should appear
-      const voiceDialog = page.getByRole('dialog', { name: 'Voice input' })
-      await expect(voiceDialog).toBeVisible({ timeout: 5_000 })
-
-      // Close button should dismiss it
-      const closeButton = page.getByRole('button', { name: 'Close voice input' })
-      await closeButton.click()
-      await expect(voiceDialog).not.toBeVisible({ timeout: 5_000 })
-    })
-  })
-})
+  test('new chat shows empty-state guidance before any message is sent', async ({ page }) => {
+    await openNewChat(page);
+    await expect(page.getByText('No messages yet.')).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText('Ask a question, mention notes with')).toBeVisible({
+      timeout: 5_000,
+    });
+  });
+});

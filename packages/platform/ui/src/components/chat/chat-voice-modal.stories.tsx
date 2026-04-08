@@ -42,8 +42,7 @@ const meta = {
 } satisfies Meta<typeof ChatVoiceModal>;
 
 export default meta;
-
-type Story = StoryObj<typeof ChatVoiceModal>;
+type Story = StoryObj<typeof meta>;
 
 export const Open: Story = {
   args: {

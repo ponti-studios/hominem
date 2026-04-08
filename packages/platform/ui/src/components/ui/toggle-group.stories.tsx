@@ -3,13 +3,17 @@ import { AlignCenter, AlignLeft, AlignRight, Bold, Italic, Underline } from 'luc
 
 import { ToggleGroup, ToggleGroupItem } from './toggle-group';
 
-const meta: Meta<typeof ToggleGroup> = {
+const meta = {
   title: 'Forms/ToggleGroup',
   component: ToggleGroup,
   tags: ['autodocs'],
-};
+  args: {
+    type: 'multiple',
+  },
+} satisfies Meta<typeof ToggleGroup>;
+
 export default meta;
-type Story = StoryObj<typeof ToggleGroup>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: () => (

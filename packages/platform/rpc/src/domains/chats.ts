@@ -7,7 +7,7 @@ import type {
   ChatsSendOutput,
 } from '../types/chat.types';
 
-export interface ChatsCreateInput {
+export interface ChatsCreateParams {
   title: string;
   noteId?: string;
 }
@@ -81,7 +81,7 @@ export interface ChatsClient {
   list(input: ChatsListInput): Promise<Chat[]>;
   get(input: ChatsGetInput): Promise<ChatsGetOutput>;
   getMessages(input: ChatsGetMessagesInput): Promise<ChatsGetMessagesOutput>;
-  create(input: ChatsCreateInput): Promise<ChatsCreateOutput>;
+  create(input: ChatsCreateParams): Promise<ChatsCreateOutput>;
   archive(input: ChatsArchiveInput): Promise<Chat>;
   send(input: ChatsSendMessageInput): Promise<ChatsSendOutput>;
 }

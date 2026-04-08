@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { Suggestion, Suggestions } from './suggestion';
 
-const meta: Meta<typeof Suggestions> = {
+const meta = {
   title: 'Patterns/AI/Suggestion',
   component: Suggestions,
   tags: ['autodocs'],
@@ -11,11 +11,15 @@ const meta: Meta<typeof Suggestions> = {
       disable: true,
     },
   },
-};
+} satisfies Meta<typeof Suggestions>;
+
 export default meta;
-type Story = StoryObj<typeof Suggestions>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
+  args: {
+    children: null,
+  },
   render: () => (
     <Suggestions>
       <Suggestion suggestion="How does this work?" onSuggestionClick={() => {}} />
@@ -26,5 +30,8 @@ export const Default: Story = {
 };
 
 export const SingleSuggestion: Story = {
+  args: {
+    children: null,
+  },
   render: () => <Suggestion suggestion="Tell me more" onSuggestionClick={() => {}} />,
 };

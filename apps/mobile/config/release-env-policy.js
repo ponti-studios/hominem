@@ -1,4 +1,4 @@
-const LOCAL_ENV_VARIANTS = new Set(['dev', 'e2e'])
+const LOCAL_ENV_VARIANTS = new Set(['dev'])
 const RELEASE_ENV_VARIANTS = new Set(['preview', 'production'])
 const REQUIRED_RELEASE_ENV_VARS = [
   'EXPO_PUBLIC_API_BASE_URL',

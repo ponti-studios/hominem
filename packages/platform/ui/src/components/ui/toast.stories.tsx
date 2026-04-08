@@ -10,7 +10,7 @@ import {
   ToastViewport,
 } from './toast';
 
-const meta: Meta<typeof Toast> = {
+const meta = {
   title: 'Feedback/Toast',
   component: Toast,
   tags: ['autodocs'],
@@ -22,9 +22,10 @@ const meta: Meta<typeof Toast> = {
       </ToastProvider>
     ),
   ],
-};
+} satisfies Meta<typeof Toast>;
+
 export default meta;
-type Story = StoryObj<typeof Toast>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: () => (

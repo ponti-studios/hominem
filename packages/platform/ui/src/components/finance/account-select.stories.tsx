@@ -17,7 +17,7 @@ const accounts: AccountOption[] = [
 
 const accountOptions = ['all', ...accounts.map((account) => account.id)] as const;
 
-const meta: Meta<typeof AccountSelect> = {
+const meta = {
   title: 'Patterns/Finance/AccountSelect',
   component: AccountSelect,
   tags: ['autodocs'],
@@ -40,6 +40,7 @@ const meta: Meta<typeof AccountSelect> = {
     placeholder: 'All accounts',
     label: 'Account',
     showLabel: false,
+    onAccountChange: () => {},
   },
   render: (args) => {
     const [selectedAccount, setSelectedAccount] = useState(args.selectedAccount);
@@ -56,7 +57,7 @@ const meta: Meta<typeof AccountSelect> = {
       />
     );
   },
-};
+} satisfies Meta<typeof AccountSelect>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -66,6 +67,7 @@ export const Default: Story = {};
 export const WithLabel: Story = {
   args: {
     showLabel: true,
+    onAccountChange: () => {},
   },
 };
 
@@ -74,6 +76,7 @@ export const Loading: Story = {
     accounts: [],
     isLoading: true,
     showLabel: true,
+    onAccountChange: () => {},
   },
 };
 
@@ -81,5 +84,6 @@ export const Empty: Story = {
   args: {
     accounts: [],
     showLabel: true,
+    onAccountChange: () => {},
   },
 };

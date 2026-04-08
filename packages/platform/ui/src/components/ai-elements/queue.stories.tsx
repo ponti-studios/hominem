@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { Queue, QueueContent, QueueHeader, QueueItem } from './queue';
 
-const meta: Meta<typeof Queue> = {
+const meta = {
   title: 'Patterns/AI/Queue',
   component: Queue,
   tags: ['autodocs'],
@@ -11,11 +11,15 @@ const meta: Meta<typeof Queue> = {
       disable: true,
     },
   },
-};
+} satisfies Meta<typeof Queue>;
+
 export default meta;
-type Story = StoryObj<typeof Queue>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
+  args: {
+    children: null,
+  },
   render: () => (
     <Queue className="max-w-sm">
       <QueueHeader title="Task Queue" count={3} />
@@ -44,6 +48,9 @@ export const Default: Story = {
 };
 
 export const WithError: Story = {
+  args: {
+    children: null,
+  },
   render: () => (
     <Queue className="max-w-sm">
       <QueueHeader title="Queue" count={2} />

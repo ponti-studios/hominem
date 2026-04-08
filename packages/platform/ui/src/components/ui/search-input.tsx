@@ -2,7 +2,7 @@ import { forwardRef, useCallback, useRef, useState } from 'react';
 
 import { Input } from './input';
 
-interface SearchInputProps {
+export interface SearchInputProps {
   value?: string;
   onSearchChange: (searchTerm: string) => void;
   placeholder?: string;

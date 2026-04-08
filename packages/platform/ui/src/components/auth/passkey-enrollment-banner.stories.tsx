@@ -1,20 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { PasskeyEnrollmentBanner } from './passkey-enrollment-banner';
-
-const meta: Meta<typeof PasskeyEnrollmentBanner> = {
-  title: 'Patterns/Auth/PasskeyEnrollmentBanner',
-  component: PasskeyEnrollmentBanner,
-  tags: ['autodocs'],
-};
-export default meta;
-type Story = StoryObj<typeof PasskeyEnrollmentBanner>;
-
-export const Default: Story = {
-  render: () => (
+function PasskeyEnrollmentBannerPreview() {
+  return (
     <div className="max-w-lg">
-      {/* Note: The banner only shows if WebAuthn is supported and no passkeys exist.
-          Rendered here using a static preview of the banner's internal structure. */}
       <div
         role="banner"
         className="flex items-center gap-3 border border-border bg-muted px-4 py-3 text-sm"
@@ -52,5 +40,16 @@ export const Default: Story = {
         </button>
       </div>
     </div>
-  ),
-};
+  );
+}
+
+const meta = {
+  title: 'Patterns/Auth/PasskeyEnrollmentBanner',
+  component: PasskeyEnrollmentBannerPreview,
+  tags: ['autodocs'],
+} satisfies Meta<typeof PasskeyEnrollmentBannerPreview>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {};

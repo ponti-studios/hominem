@@ -1,18 +1,26 @@
-import { QueryClient } from '@tanstack/react-query'
+import { QueryClient } from '@tanstack/react-query';
 
-import { resolveAuthRedirect, type AuthRedirectTarget } from '../../utils/navigation/auth-route-guard'
-import { authStateMachine, initialAuthState, type AuthEvent, type AuthState } from '../../utils/auth/types'
+import {
+  authStateMachine,
+  initialAuthState,
+  type AuthEvent,
+  type AuthState,
+} from '../../utils/auth/types';
+import {
+  resolveAuthRedirect,
+  type AuthRedirectTarget,
+} from '../../utils/navigation/auth-route-guard';
 
-export interface AuthRouteSnapshot {
-  authStatus: AuthState['status']
-  isSignedIn: boolean
-  segments: string[]
+interface AuthRouteSnapshot {
+  authStatus: AuthState['status'];
+  isSignedIn: boolean;
+  segments: string[];
 }
 
-export interface AuthIntegrationHarness {
-  getState: () => AuthState
-  dispatch: (event: AuthEvent) => AuthState
-  resolveRoute: (segments: string[]) => AuthRedirectTarget | null
+interface AuthIntegrationHarness {
+  getState: () => AuthState;
+  dispatch: (event: AuthEvent) => AuthState;
+  resolveRoute: (segments: string[]) => AuthRedirectTarget | null;
 }
 
 export function createIntegrationQueryClient() {
@@ -27,20 +35,20 @@ export function createIntegrationQueryClient() {
         retry: false,
       },
     },
-  })
+  });
 }
 
 export function createAuthIntegrationHarness(seed?: Partial<AuthState>): AuthIntegrationHarness {
   let state: AuthState = {
     ...initialAuthState,
     ...seed,
-  }
+  };
 
   return {
     getState: () => state,
     dispatch: (event: AuthEvent) => {
-      state = authStateMachine(state, event)
-      return state
+      state = authStateMachine(state, event);
+      return state;
     },
     resolveRoute: (segments: string[]) =>
       resolveAuthRedirect({
@@ -48,13 +56,13 @@ export function createAuthIntegrationHarness(seed?: Partial<AuthState>): AuthInt
         isSignedIn: state.status === 'signed_in',
         segments,
       }),
-  }
+  };
 }
 
-export function snapshotFromState(state: AuthState, segments: string[]): AuthRouteSnapshot {
+function snapshotFromState(state: AuthState, segments: string[]): AuthRouteSnapshot {
   return {
     authStatus: state.status,
     isSignedIn: state.status === 'signed_in',
     segments,
-  }
+  };
 }

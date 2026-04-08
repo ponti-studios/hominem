@@ -4,12 +4,12 @@
 
 import { Resource } from '@opentelemetry/resources';
 import {
-    SEMRESATTRS_DEPLOYMENT_ENVIRONMENT,
-    SEMRESATTRS_HOST_NAME,
-    SEMRESATTRS_PROCESS_PID,
-    SEMRESATTRS_SERVICE_NAME,
-    SEMRESATTRS_SERVICE_NAMESPACE,
-    SEMRESATTRS_SERVICE_VERSION,
+  SEMRESATTRS_DEPLOYMENT_ENVIRONMENT,
+  SEMRESATTRS_HOST_NAME,
+  SEMRESATTRS_PROCESS_PID,
+  SEMRESATTRS_SERVICE_NAME,
+  SEMRESATTRS_SERVICE_NAMESPACE,
+  SEMRESATTRS_SERVICE_VERSION,
 } from '@opentelemetry/semantic-conventions';
 
 /**
@@ -17,52 +17,61 @@ import {
  */
 export interface TelemetryConfig {
   /** Service name (e.g., 'hominem-api') */
-  serviceName: string
+  serviceName: string;
   /** Service version (e.g., '1.0.0') */
-  serviceVersion?: string
+  serviceVersion?: string;
   /** Service namespace (e.g., 'hominem') */
-  serviceNamespace?: string
+  serviceNamespace?: string;
   /** Environment (e.g., 'development', 'production') */
-  environment?: string
+  environment?: string;
   /** OTLP endpoint URL */
-  otlpEndpoint?: string
+  otlpEndpoint?: string;
   /** OTLP protocol: 'http/protobuf' or 'grpc' */
-  otlpProtocol?: string
+  otlpProtocol?: string;
   /** Sampling ratio (0.0 to 1.0) */
-  samplingRatio?: number
+  samplingRatio?: number;
   /** Metric export interval in milliseconds */
-  metricExportIntervalMillis?: number | undefined
+  metricExportIntervalMillis?: number | undefined;
   /** Additional resource attributes */
-  attributes?: Record<string, string>
+  attributes?: Record<string, string>;
 }
 
 /**
  * Default OTLP endpoint for local development
  */
-export const DEFAULT_OTLP_ENDPOINT = 'http://localhost:4318'
+export const DEFAULT_OTLP_ENDPOINT = 'http://localhost:4318';
 
 /**
  * Default sampling ratio for development
  */
-export const DEFAULT_SAMPLING_RATIO = 1.0
+export const DEFAULT_SAMPLING_RATIO = 1.0;
 
 /**
  * Get telemetry configuration from environment variables and explicit options
  */
 export function getTelemetryConfig(explicit?: Partial<TelemetryConfig>): TelemetryConfig {
-  const serviceName = explicit?.serviceName || process.env.OTEL_SERVICE_NAME
+  const serviceName = explicit?.serviceName || process.env.OTEL_SERVICE_NAME;
   if (!serviceName) {
-    throw new Error('OTEL_SERVICE_NAME is required. Set it via environment variable or explicit config.')
+    throw new Error(
+      'OTEL_SERVICE_NAME is required. Set it via environment variable or explicit config.',
+    );
   }
 
   return {
     serviceName,
     serviceVersion: explicit?.serviceVersion || process.env.OTEL_SERVICE_VERSION || '0.0.0',
     serviceNamespace: explicit?.serviceNamespace || process.env.OTEL_SERVICE_NAMESPACE || 'hominem',
-    environment: explicit?.environment || process.env.OTEL_DEPLOYMENT_ENVIRONMENT || process.env.NODE_ENV || 'development',
-    otlpEndpoint: explicit?.otlpEndpoint || process.env.OTEL_EXPORTER_OTLP_ENDPOINT || DEFAULT_OTLP_ENDPOINT,
-    otlpProtocol: explicit?.otlpProtocol || process.env.OTEL_EXPORTER_OTLP_PROTOCOL || 'http/protobuf',
-    samplingRatio: explicit?.samplingRatio || parseFloat(process.env.OTEL_TRACES_SAMPLER_ARG || '1.0'),
+    environment:
+      explicit?.environment ||
+      process.env.OTEL_DEPLOYMENT_ENVIRONMENT ||
+      process.env.NODE_ENV ||
+      'development',
+    otlpEndpoint:
+      explicit?.otlpEndpoint || process.env.OTEL_EXPORTER_OTLP_ENDPOINT || DEFAULT_OTLP_ENDPOINT,
+    otlpProtocol:
+      explicit?.otlpProtocol || process.env.OTEL_EXPORTER_OTLP_PROTOCOL || 'http/protobuf',
+    samplingRatio:
+      explicit?.samplingRatio || parseFloat(process.env.OTEL_TRACES_SAMPLER_ARG || '1.0'),
     attributes: parseAttributes(process.env.OTEL_RESOURCE_ATTRIBUTES),
     ...((explicit?.metricExportIntervalMillis ||
       parseOptionalNumber(process.env.OTEL_METRIC_EXPORT_INTERVAL_MILLIS)) !== undefined
@@ -73,14 +82,14 @@ export function getTelemetryConfig(explicit?: Partial<TelemetryConfig>): Telemet
         }
       : {}),
     ...explicit?.attributes,
-  }
+  };
 }
 
-function parseOptionalNumber(value?: string): number | undefined {
-  if (!value) return undefined
+export function parseOptionalNumber(value?: string): number | undefined {
+  if (!value) return undefined;
 
-  const parsed = Number.parseInt(value, 10)
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
 }
 
 /**
@@ -88,19 +97,19 @@ function parseOptionalNumber(value?: string): number | undefined {
  * Format: key1=value1,key2=value2
  */
 function parseAttributes(attrString?: string): Record<string, string> {
-  if (!attrString) return {}
-  
-  const attrs: Record<string, string> = {}
-  const pairs = attrString.split(',')
-  
+  if (!attrString) return {};
+
+  const attrs: Record<string, string> = {};
+  const pairs = attrString.split(',');
+
   for (const pair of pairs) {
-    const [key, value] = pair.split('=')
+    const [key, value] = pair.split('=');
     if (key && value) {
-      attrs[key.trim()] = value.trim()
+      attrs[key.trim()] = value.trim();
     }
   }
-  
-  return attrs
+
+  return attrs;
 }
 
 /**
@@ -115,9 +124,9 @@ export function createResource(config: TelemetryConfig): Resource {
     [SEMRESATTRS_HOST_NAME]: getHostname(),
     [SEMRESATTRS_PROCESS_PID]: process.pid,
     ...config.attributes,
-  }
+  };
 
-  return new Resource(attributes)
+  return new Resource(attributes);
 }
 
 /**
@@ -127,13 +136,13 @@ function getHostname(): string {
   try {
     // Node.js environment
     if (typeof process !== 'undefined' && process.env) {
-      const os = require('os')
-      return os.hostname()
+      const os = require('os');
+      return os.hostname();
     }
   } catch {
     // Browser environment or fallback
   }
-  return 'unknown'
+  return 'unknown';
 }
 
 /**
@@ -152,7 +161,7 @@ export const TELEMETRY_CONTEXT_KEYS = {
   TRACE_ID: 'trace.id',
   /** Span ID for log correlation */
   SPAN_ID: 'span.id',
-} as const
+} as const;
 
 /**
  * HTTP semantic convention attributes
@@ -166,7 +175,7 @@ export const HTTP_ATTRIBUTES = {
   responseSize: 'http.response.body.size',
   clientIp: 'http.client_ip',
   userAgent: 'user_agent.original',
-} as const
+} as const;
 
 /**
  * Database semantic convention attributes
@@ -177,7 +186,7 @@ export const DB_ATTRIBUTES = {
   statement: 'db.statement',
   operation: 'db.operation',
   table: 'db.sql.table',
-} as const
+} as const;
 
 /**
  * Messaging semantic convention attributes (for queues/jobs)
@@ -188,7 +197,7 @@ export const MESSAGING_ATTRIBUTES = {
   operation: 'messaging.operation',
   messageId: 'messaging.message.id',
   conversationId: 'messaging.message.conversation_id',
-} as const
+} as const;
 
 /**
  * Standard attribute values
@@ -208,28 +217,28 @@ export const ATTRIBUTE_VALUES = {
     receive: 'receive',
     process: 'process',
   },
-} as const
+} as const;
 
 /**
  * Utility to safely get current span context info for logging
  */
 export function getSpanContextForLogs(): { trace_id?: string; span_id?: string } {
   try {
-    const { trace, context } = require('@opentelemetry/api')
-    const currentSpan = trace.getSpan(context.active())
-    
+    const { trace, context } = require('@opentelemetry/api');
+    const currentSpan = trace.getSpan(context.active());
+
     if (currentSpan) {
-      const spanContext = currentSpan.spanContext()
+      const spanContext = currentSpan.spanContext();
       if (spanContext.isValid) {
         return {
           trace_id: spanContext.traceId,
           span_id: spanContext.spanId,
-        }
+        };
       }
     }
   } catch {
     // OTel not initialized or not available
   }
-  
-  return {}
+
+  return {};
 }

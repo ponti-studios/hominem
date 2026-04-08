@@ -1,33 +1,11 @@
 import { Buffer } from 'node:buffer';
-import { existsSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { logger } from '@hominem/utils/logger';
 
 import { env } from './env';
-
-/**
- * Directory for saving voice audio files for team review.
- * Uses repo .tmp/voice directory for easy access.
- */
-function getVoiceAudioDir(): string {
-  const possiblePaths = [
-    './.tmp/voice',
-    '../.tmp/voice',
-    '../../.tmp/voice',
-    '../../../.tmp/voice',
-  ];
-
-  for (const path of possiblePaths) {
-    const dir = path.replace('/voice', '');
-    if (existsSync(dir) || existsSync(path)) {
-      return path;
-    }
-  }
-
-  return './.tmp/voice';
-}
+import { getVoiceAudioDir, logAndMapVoiceProviderError } from './voice.shared';
 
 export const VOICE_TRANSCRIPTION_MAX_SIZE_BYTES = 25 * 1024 * 1024;
 
@@ -109,6 +87,28 @@ export function getVoiceFileExtension(mimeType: string): string {
     'audio/ogg': '.ogg',
   };
   return mimeToExt[mimeType] || '.webm';
+}
+
+function throwTranscriptionError(error: unknown): never {
+  if (error instanceof VoiceTranscriptionError) throw error;
+  if (error instanceof Error) {
+    if (error.message.includes('quota')) {
+      throw new VoiceTranscriptionError(
+        'API quota exceeded. Please try again later.',
+        'QUOTA',
+        429,
+      );
+    }
+    if (error.message.includes('API key') || error.message.includes('401')) {
+      throw new VoiceTranscriptionError('Invalid API configuration.', 'AUTH', 401);
+    }
+    throw new VoiceTranscriptionError(
+      `Transcription failed: ${error.message}`,
+      'TRANSCRIBE_FAILED',
+      500,
+    );
+  }
+  throw new VoiceTranscriptionError('Failed to transcribe audio', 'TRANSCRIBE_FAILED', 500);
 }
 
 export function validateVoiceInput(input: { mimeType: string; size: number }) {
@@ -219,8 +219,8 @@ export async function transcribeVoiceBuffer(input: {
     },
   ];
 
-  let response: Response;
-  let responseTime: number;
+  let response!: Response;
+  let responseTime!: number;
 
   try {
     const fetchStart = performance.now();
@@ -242,28 +242,7 @@ export async function transcribeVoiceBuffer(input: {
       error: error instanceof Error ? error.message : 'Unknown error',
       durationMs: Math.round(errorTime),
     });
-
-    if (error instanceof VoiceTranscriptionError) throw error;
-
-    if (error instanceof Error) {
-      if (error.message.includes('quota')) {
-        throw new VoiceTranscriptionError(
-          'API quota exceeded. Please try again later.',
-          'QUOTA',
-          429,
-        );
-      }
-      if (error.message.includes('API key') || error.message.includes('401')) {
-        throw new VoiceTranscriptionError('Invalid API configuration.', 'AUTH', 401);
-      }
-      throw new VoiceTranscriptionError(
-        `Transcription failed: ${error.message}`,
-        'TRANSCRIBE_FAILED',
-        500,
-      );
-    }
-
-    throw new VoiceTranscriptionError('Failed to transcribe audio', 'TRANSCRIBE_FAILED', 500);
+    throwTranscriptionError(error);
   }
 
   // Log the HTTP response
@@ -281,28 +260,17 @@ export async function transcribeVoiceBuffer(input: {
       | undefined;
     const totalTime = performance.now() - startTime;
 
-    logger.error('[voice-transcription] API error response', {
+    const errorInfo = logAndMapVoiceProviderError({
+      logger,
+      loggerLabel: '[voice-transcription] API error response',
       requestId,
-      status: response.status,
-      error: errorMessage ?? response.statusText,
-      totalDurationMs: Math.round(totalTime),
+      responseStatus: response.status,
+      responseStatusText: response.statusText,
+      errorMessage,
+      kind: 'transcription',
+      totalDurationMs: totalTime,
     });
-
-    if (response.status === 401 || response.status === 403) {
-      throw new VoiceTranscriptionError('Invalid API configuration.', 'AUTH', 401);
-    }
-    if (response.status === 429) {
-      throw new VoiceTranscriptionError(
-        'API quota exceeded. Please try again later.',
-        'QUOTA',
-        429,
-      );
-    }
-    throw new VoiceTranscriptionError(
-      `Transcription failed: ${errorMessage ?? response.statusText}`,
-      'TRANSCRIBE_FAILED',
-      500,
-    );
+    throw new VoiceTranscriptionError(errorInfo.message, errorInfo.code, errorInfo.statusCode);
   }
 
   try {
@@ -349,25 +317,6 @@ export async function transcribeVoiceBuffer(input: {
       error: error instanceof Error ? error.message : 'Unknown error',
       totalDurationMs: Math.round(totalTime),
     });
-
-    if (error instanceof Error) {
-      if (error.message.includes('quota')) {
-        throw new VoiceTranscriptionError(
-          'API quota exceeded. Please try again later.',
-          'QUOTA',
-          429,
-        );
-      }
-      if (error.message.includes('API key') || error.message.includes('401')) {
-        throw new VoiceTranscriptionError('Invalid API configuration.', 'AUTH', 401);
-      }
-      throw new VoiceTranscriptionError(
-        `Transcription failed: ${error.message}`,
-        'TRANSCRIBE_FAILED',
-        500,
-      );
-    }
-
-    throw new VoiceTranscriptionError('Failed to transcribe audio', 'TRANSCRIBE_FAILED', 500);
+    throwTranscriptionError(error);
   }
 }

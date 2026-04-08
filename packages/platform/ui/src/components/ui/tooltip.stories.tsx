@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button } from './button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tooltip';
 
-const meta: Meta<typeof Tooltip> = {
+const meta = {
   title: 'Patterns/Overlay/Tooltip',
   component: Tooltip,
   tags: ['autodocs'],
@@ -14,9 +14,10 @@ const meta: Meta<typeof Tooltip> = {
       </TooltipProvider>
     ),
   ],
-};
+} satisfies Meta<typeof Tooltip>;
+
 export default meta;
-type Story = StoryObj<typeof Tooltip>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: () => (

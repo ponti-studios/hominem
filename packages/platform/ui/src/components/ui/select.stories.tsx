@@ -10,13 +10,14 @@ import {
   SelectValue,
 } from './select';
 
-const meta: Meta<typeof Select> = {
+const meta = {
   title: 'Forms/Select',
   component: Select,
   tags: ['autodocs'],
-};
+} satisfies Meta<typeof Select>;
+
 export default meta;
-type Story = StoryObj<typeof Select>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: () => (

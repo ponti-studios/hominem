@@ -5,13 +5,14 @@ import { Separator } from './separator';
 
 const tags = Array.from({ length: 50 }).map((_, i, a) => `v1.2.${a.length - i}`);
 
-const meta: Meta<typeof ScrollArea> = {
+const meta = {
   title: 'Patterns/DataDisplay/ScrollArea',
   component: ScrollArea,
   tags: ['autodocs'],
-};
+} satisfies Meta<typeof ScrollArea>;
+
 export default meta;
-type Story = StoryObj<typeof ScrollArea>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: () => (

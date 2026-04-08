@@ -106,7 +106,7 @@ export function PasskeyManagement({
           disabled={adding}
           aria-label="Add a passkey"
         >
-          <Plus className="w-4 h-4" aria-hidden />
+          <Plus className="size-4" aria-hidden />
           {adding ? 'Adding...' : 'Add passkey'}
         </Button>
       </div>
@@ -121,7 +121,7 @@ export function PasskeyManagement({
         <p className="text-sm text-muted-foreground">Loading passkeys...</p>
       ) : passkeys.length === 0 ? (
         <div className="flex items-center gap-3 border border-dashed border-default p-4 text-sm text-text-secondary">
-          <KeyRound className="w-4 h-4 shrink-0" aria-hidden />
+          <KeyRound className="size-4 shrink-0" aria-hidden />
           <span>No passkeys registered. Add one to sign in faster.</span>
         </div>
       ) : (
@@ -132,7 +132,7 @@ export function PasskeyManagement({
               className="flex items-center justify-between border border-default px-4 py-3 text-sm"
             >
               <div className="flex items-center gap-3">
-                <KeyRound className="w-4 h-4 shrink-0 text-text-secondary" aria-hidden />
+                <KeyRound className="size-4 shrink-0 text-text-secondary" aria-hidden />
                 <div>
                   <span className="font-medium">{pk.name ?? 'Passkey'}</span>
                   {pk.createdAt && (
@@ -149,7 +149,7 @@ export function PasskeyManagement({
                 aria-label={`Remove passkey ${pk.name ?? pk.id}`}
                 className="text-muted-foreground hover:text-destructive disabled:opacity-50"
               >
-                <Trash2 className="w-4 h-4" aria-hidden />
+                <Trash2 className="size-4" aria-hidden />
               </button>
             </li>
           ))}

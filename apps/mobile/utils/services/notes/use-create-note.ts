@@ -1,4 +1,4 @@
-import { useApiClient } from '@hominem/rpc/react';
+import { createNotesMutationSuccessHandler, useApiClient } from '@hominem/rpc/react';
 import type { Note } from '@hominem/rpc/types';
 import { useMutation, useQueryClient, type UseMutationResult } from '@tanstack/react-query';
 
@@ -68,6 +68,7 @@ export const useCreateNote = (): UseMutationResult<
     },
     onMutate: async (input) => {
       await queryClient.cancelQueries({ queryKey: noteKeys.all });
+      await queryClient.cancelQueries({ queryKey: noteKeys.feed({ limit: 20 }) });
 
       const previousNotes = queryClient.getQueryData<Note[]>(noteKeys.all);
       const optimisticId = `optimistic-note-${Date.now().toString()}`;
@@ -94,7 +95,7 @@ export const useCreateNote = (): UseMutationResult<
         return [createdNote, ...withoutOptimistic];
       });
 
-      await queryClient.invalidateQueries({ queryKey: noteKeys.all });
+      await createNotesMutationSuccessHandler(queryClient, createdNote.id);
     },
   });
 };

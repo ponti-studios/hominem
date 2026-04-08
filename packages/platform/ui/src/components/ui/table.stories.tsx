@@ -33,13 +33,14 @@ const invoices = [
   },
 ];
 
-const meta: Meta<typeof Table> = {
+const meta = {
   title: 'Patterns/DataDisplay/Table',
   component: Table,
   tags: ['autodocs'],
-};
+} satisfies Meta<typeof Table>;
+
 export default meta;
-type Story = StoryObj<typeof Table>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: () => (

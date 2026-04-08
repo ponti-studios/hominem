@@ -9,13 +9,14 @@ import {
   AvatarImage,
 } from './avatar';
 
-const meta: Meta<typeof Avatar> = {
+const meta = {
   title: 'Patterns/DataDisplay/Avatar',
   component: Avatar,
   tags: ['autodocs'],
-};
+} satisfies Meta<typeof Avatar>;
+
 export default meta;
-type Story = StoryObj<typeof Avatar>;
+type Story = StoryObj<typeof meta>;
 
 export const WithImage: Story = {
   render: () => (

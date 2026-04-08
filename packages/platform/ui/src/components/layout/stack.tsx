@@ -1,7 +1,8 @@
 import * as React from 'react';
 
 import { cn } from '../../lib/utils';
-import type { StackBaseProps, GapToken } from './stack.types';
+import { interleaveChildren } from './shared';
+import type { GapToken, StackBaseProps } from './stack.types';
 
 const gapMap: Record<GapToken, string> = {
   none: 'gap-0',
@@ -14,20 +15,6 @@ const gapMap: Record<GapToken, string> = {
 
 interface StackProps extends React.ComponentProps<'div'>, StackBaseProps {
   as?: React.ElementType;
-}
-
-function interleaveChildren(children: React.ReactNode, divider: React.ReactNode) {
-  const items = React.Children.toArray(children);
-
-  return items.flatMap((child, index) => {
-    if (index === items.length - 1) {
-      return [child];
-    }
-
-    const key = React.isValidElement(child) && child.key !== null ? String(child.key) : `${index}`;
-
-    return [child, <React.Fragment key={`divider-${key}`}>{divider}</React.Fragment>];
-  });
 }
 
 /**
@@ -49,4 +36,4 @@ function Stack({
   );
 }
 
-export { Stack, type StackProps, type GapToken };
+export { Stack, type GapToken, type StackProps };

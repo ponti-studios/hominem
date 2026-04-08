@@ -10,13 +10,14 @@ import {
   PopoverTrigger,
 } from './popover';
 
-const meta: Meta<typeof Popover> = {
+const meta = {
   title: 'Patterns/Overlay/Popover',
   component: Popover,
   tags: ['autodocs'],
-};
+} satisfies Meta<typeof Popover>;
+
 export default meta;
-type Story = StoryObj<typeof Popover>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: () => (

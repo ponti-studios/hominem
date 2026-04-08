@@ -1,3 +1,4 @@
+import { hasPasskeySupport } from '@hominem/auth/client';
 import { KeyRound, X } from 'lucide-react';
 import { hasPasskeySupport } from '@hominem/auth/client';
 import { useCallback, useEffect, useState } from 'react';
@@ -69,7 +70,7 @@ export function PasskeyEnrollmentBanner({ hasPasskeys, onEnroll }: PasskeyEnroll
       role="banner"
       className="flex items-center gap-3 border border-border bg-muted px-4 py-3 text-sm"
     >
-      <KeyRound className="w-4 h-4 shrink-0 text-muted-foreground" aria-hidden />
+      <KeyRound className="size-4 shrink-0 text-muted-foreground" aria-hidden />
       <span className="grow text-muted-foreground">
         Sign in faster with a passkey — no password needed.
       </span>
@@ -87,7 +88,7 @@ export function PasskeyEnrollmentBanner({ hasPasskeys, onEnroll }: PasskeyEnroll
         aria-label="Dismiss passkey prompt"
         className="shrink-0 text-muted-foreground hover:text-foreground"
       >
-        <X className="w-4 h-4" aria-hidden />
+        <X className="size-4" aria-hidden />
       </button>
     </div>
   );

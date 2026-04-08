@@ -13,7 +13,7 @@ import {
   DialogTrigger,
 } from './dialog';
 
-const meta: Meta<typeof Dialog> = {
+const meta = {
   title: 'Patterns/Overlay/Dialog',
   component: Dialog,
   tags: ['autodocs'],
@@ -23,9 +23,10 @@ const meta: Meta<typeof Dialog> = {
     defaultOpen: hiddenControl,
     onOpenChange: hiddenControl,
   },
-};
+} satisfies Meta<typeof Dialog>;
+
 export default meta;
-type Story = StoryObj<typeof Dialog>;
+type Story = StoryObj<typeof meta>;
 
 function DialogPreview({
   open,

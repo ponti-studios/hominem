@@ -9,7 +9,6 @@ const meta = {
 } satisfies Meta<typeof ChatShimmerMessage>;
 
 export default meta;
-
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {

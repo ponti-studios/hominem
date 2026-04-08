@@ -3,10 +3,11 @@ import { Hono } from 'hono';
 
 import {
   CreateNoteInputSchema,
+  NotesFeedQuerySchema,
   NotesListQuerySchema,
   UpdateNoteInputSchema,
 } from '../schemas/notes.schema';
-import type { Note } from '../types/notes.types';
+import type { Note, NoteFeedItem } from '../types/notes.types';
 
 const stub = () => new Response(null);
 
@@ -29,6 +30,9 @@ const notesContract = new Hono()
   // List notes — query params typed via NotesListQuerySchema
   .get('/', zValidator('query', NotesListQuerySchema), (c) => {
     return c.json({ notes: [] as Note[] });
+  })
+  .get('/feed', zValidator('query', NotesFeedQuerySchema), (c) => {
+    return c.json({ notes: [] as NoteFeedItem[], nextCursor: null as string | null });
   })
   .get('/search', stub)
   // Create note

@@ -1,22 +1,17 @@
 import {
-  S3Client,
-  PutObjectCommand,
-  GetObjectCommand,
-  DeleteObjectCommand,
-  ListObjectsV2Command,
   CreateBucketCommand,
+  DeleteObjectCommand,
+  GetObjectCommand,
   HeadBucketCommand,
   HeadObjectCommand,
+  ListObjectsV2Command,
+  PutObjectCommand,
+  S3Client,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 import { isSupportedChatUploadMimeType } from '../upload';
-import * as Types from './types';
-
-export type StoredFile = Types.StoredFile;
-export type StorageOptions = Types.StorageOptions;
-export type FileObject = Types.FileObject;
-export type PreparedUpload = Types.PreparedUpload;
+import type { FileObject, PreparedUpload, StorageOptions, StoredFile } from './types';
 
 export type StorageCategory = 'csvs' | 'chats' | 'places';
 

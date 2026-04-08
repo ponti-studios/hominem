@@ -10,7 +10,7 @@ import {
   ContextMenuTrigger,
 } from './context-menu';
 
-const meta: Meta<typeof ContextMenu> = {
+const meta = {
   title: 'Patterns/Overlay/ContextMenu',
   component: ContextMenu,
   tags: ['autodocs'],
@@ -26,9 +26,10 @@ const meta: Meta<typeof ContextMenu> = {
       description: 'Reading direction of the context menu',
     },
   },
-};
+} satisfies Meta<typeof ContextMenu>;
+
 export default meta;
-type Story = StoryObj<typeof ContextMenu>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: () => (

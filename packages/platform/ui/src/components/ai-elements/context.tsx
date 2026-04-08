@@ -92,7 +92,7 @@ export function CitationMarker({ index, className, ...props }: CitationMarkerPro
   return (
     <span
       className={cn(
-        'inline-flex items-center justify-center w-5 h-5 text-xs rounded-full bg-primary/10 text-primary font-medium',
+        'inline-flex items-center justify-center size-5 text-xs rounded-full bg-primary/10 text-primary font-medium',
         className,
       )}
       {...props}

@@ -5,7 +5,7 @@ import { booleanControl, selectControl } from '../storybook/controls';
 import { loadingSizeOptions } from '../storybook/options';
 import { List } from './list';
 
-const meta: Meta<typeof List> = {
+const meta = {
   title: 'Primitives/List',
   component: List,
   tags: ['autodocs'],
@@ -15,9 +15,10 @@ const meta: Meta<typeof List> = {
       defaultValue: 'md',
     }),
   },
-};
+} satisfies Meta<typeof List>;
+
 export default meta;
-type Story = StoryObj<typeof List>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
@@ -31,7 +32,7 @@ export const Default: Story = {
       <li className="px-4 py-3 text-sm">Item three</li>
     </List>
   ),
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText('Item one')).toBeInTheDocument();
     await expect(canvas.getByText('Item three')).toBeInTheDocument();
@@ -47,7 +48,7 @@ export const Loading: Story = {
       <li className="px-4 py-3 text-sm">This won't show</li>
     </List>
   ),
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     const canvas = within(canvasElement);
     expect(canvas.queryByText("This won't show")).not.toBeInTheDocument();
   },
@@ -83,7 +84,6 @@ export const Empty: Story = {
       disable: true,
     },
   },
-  render: () => <List className="max-w-sm" />,
 };
 
 export const WithContent: Story = {
@@ -106,7 +106,7 @@ export const WithContent: Story = {
       ))}
     </List>
   ),
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText('Alice Johnson')).toBeInTheDocument();
   },

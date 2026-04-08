@@ -4,27 +4,25 @@ import { expect, within } from 'storybook/test';
 
 import { Header, type HeaderProps } from './header';
 
-const meta: Meta<typeof Header> = {
+const meta = {
   title: 'Layout/Header',
   component: Header,
   tags: ['autodocs'],
   parameters: {
     layout: 'fullscreen',
-    // Mock router to avoid routing errors in Storybook
   },
   decorators: [
     (Story) => (
-      // Wrapper to provide router context mock
       <div className="min-h-screen bg-surface">
         <Story />
         <div className="h-20" />
       </div>
     ),
   ],
-};
+} satisfies Meta<typeof Header>;
 
 export default meta;
-type Story = StoryObj<typeof Header>;
+type Story = StoryObj<typeof meta>;
 
 const navItems: HeaderProps['navItems'] = [
   { title: 'Home', url: '/home', icon: Home },

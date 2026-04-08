@@ -17,7 +17,7 @@ const tags: TagOption[] = [
 
 const tagOptions = ['all', ...tags.map((tag) => tag.id)] as const;
 
-const meta: Meta<typeof TagSelect> = {
+const meta = {
   title: 'Patterns/Finance/TagSelect',
   component: TagSelect,
   tags: ['autodocs'],
@@ -38,6 +38,7 @@ const meta: Meta<typeof TagSelect> = {
     isLoading: false,
     placeholder: 'All tags',
     label: 'Tag',
+    onTagChange: () => {},
   },
   render: (args) => {
     const [selectedTag, setSelectedTag] = useState(args.selectedTag);
@@ -48,7 +49,7 @@ const meta: Meta<typeof TagSelect> = {
 
     return <TagSelect {...args} selectedTag={selectedTag} onTagChange={setSelectedTag} />;
   },
-};
+} satisfies Meta<typeof TagSelect>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -59,11 +60,13 @@ export const Loading: Story = {
   args: {
     tags: [],
     isLoading: true,
+    onTagChange: () => {},
   },
 };
 
 export const Empty: Story = {
   args: {
     tags: [],
+    onTagChange: () => {},
   },
 };

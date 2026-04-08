@@ -3,10 +3,9 @@ import { useEffect, useState } from 'react';
 import { expect, within } from 'storybook/test';
 
 import { booleanControl, hiddenControl, textControl } from '../../storybook/controls';
-import type { SelectFieldProps } from './select-field';
 import { SelectField } from './select-field';
 
-const meta: Meta<typeof SelectField> = {
+const meta = {
   title: 'Forms/SelectField',
   component: SelectField,
   tags: ['autodocs'],
@@ -22,12 +21,12 @@ const meta: Meta<typeof SelectField> = {
     options: hiddenControl,
     onValueChange: hiddenControl,
   },
-};
+} satisfies Meta<typeof SelectField>;
 
 export default meta;
-type Story = StoryObj<typeof SelectField>;
+type Story = StoryObj<typeof meta>;
 
-function SelectFieldPreview(props: SelectFieldProps) {
+function SelectFieldPreview(props: Parameters<typeof SelectField>[0]) {
   const [value, setValue] = useState(props.value ?? props.defaultValue ?? '');
 
   useEffect(() => {
@@ -50,7 +49,7 @@ export const Default: Story = {
     options: defaultOptions,
   },
   render: (args) => <SelectFieldPreview {...args} />,
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     const canvas = within(canvasElement);
 
     await expect(canvas.getByText('Choose an option')).toBeInTheDocument();
@@ -69,7 +68,7 @@ export const WithHelpText: Story = {
     ],
   },
   render: (args) => <SelectFieldPreview {...args} />,
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     const canvas = within(canvasElement);
 
     await expect(canvas.getByText('Select the task priority level')).toBeInTheDocument();
@@ -87,7 +86,7 @@ export const Required: Story = {
     ],
   },
   render: (args) => <SelectFieldPreview {...args} />,
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     const canvas = within(canvasElement);
     const label = canvas.getByText('Status');
 
@@ -104,7 +103,7 @@ export const Error: Story = {
     placeholder: 'Choose...',
   },
   render: (args) => <SelectFieldPreview {...args} />,
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     const canvas = within(canvasElement);
 
     await expect(canvas.getByRole('alert')).toHaveTextContent('Please select a category');

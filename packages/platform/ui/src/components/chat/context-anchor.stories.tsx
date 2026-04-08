@@ -10,7 +10,6 @@ const meta = {
 } satisfies Meta<typeof ContextAnchor>;
 
 export default meta;
-
 type Story = StoryObj<typeof meta>;
 
 export const NewSession: Story = {

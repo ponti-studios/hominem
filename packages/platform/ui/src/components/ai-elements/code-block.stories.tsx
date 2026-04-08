@@ -13,9 +13,9 @@ import CodeBlock from './code-block';
 
 type CodeBlockStoryArgs = CodeBlockProps;
 
-const meta: Meta<CodeBlockStoryArgs> = {
+const meta = {
   title: 'Patterns/AI/CodeBlock',
-  component: CodeBlock,
+  component: CodeBlockWrapper,
   tags: ['autodocs'],
   parameters: {
     docs: {
@@ -38,10 +38,11 @@ const meta: Meta<CodeBlockStoryArgs> = {
     onCopy: hiddenControl,
   },
   args: {
+    language: 'javascript',
+    code: "console.log('Hello');",
     isCopied: false,
   },
-  render: (args) => <CodeBlockWrapper {...args} />,
-};
+} satisfies Meta<typeof CodeBlockWrapper>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

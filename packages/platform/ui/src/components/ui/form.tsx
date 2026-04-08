@@ -6,15 +6,12 @@ import {
   type ControllerProps,
   type FieldPath,
   type FieldValues,
-  FormProvider,
   useFormContext,
   useFormState,
 } from 'react-hook-form';
 
 import { cn } from '../../lib/utils';
 import { Label } from './label';
-
-const FormProviderRoot = FormProvider;
 
 function Form({ className, ...props }: React.ComponentProps<'form'>) {
   return <form className={cn('grid gap-4', className)} {...props} />;
@@ -142,14 +139,4 @@ function FormMessage({ className, ...props }: React.ComponentProps<'p'>) {
   );
 }
 
-export {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  FormProviderRoot as FormProvider,
-  useFormField,
-};
+export { Form };

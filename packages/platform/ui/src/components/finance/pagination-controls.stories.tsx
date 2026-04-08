@@ -2,9 +2,9 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useEffect, useState } from 'react';
 
 import { hiddenControl, numberControl } from '../../storybook/controls';
-import { PaginationControls } from './pagination-controls';
+import { PaginationControls, type PaginationControlsProps } from './pagination-controls';
 
-const meta: Meta<typeof PaginationControls> = {
+const meta = {
   title: 'Patterns/Finance/PaginationControls',
   component: PaginationControls,
   tags: ['autodocs'],
@@ -19,6 +19,7 @@ const meta: Meta<typeof PaginationControls> = {
   args: {
     currentPage: 0,
     totalPages: 5,
+    onPageChange: () => {},
   },
   render: (args) => {
     const [currentPage, setCurrentPage] = useState(args.currentPage);
@@ -33,7 +34,7 @@ const meta: Meta<typeof PaginationControls> = {
       </div>
     );
   },
-};
+} satisfies Meta<typeof PaginationControls>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -43,6 +44,7 @@ export const Default: Story = {};
 export const LastPage: Story = {
   args: {
     currentPage: 4,
+    onPageChange: () => {},
   },
 };
 
@@ -54,5 +56,6 @@ export const HiddenWhenEmpty: Story = {
   },
   args: {
     totalPages: 0,
+    onPageChange: () => {},
   },
 };

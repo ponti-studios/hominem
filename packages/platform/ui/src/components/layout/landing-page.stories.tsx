@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router';
 
 import { LandingPage } from './landing-page';
 
-const meta: Meta<typeof LandingPage> = {
+const meta = {
   title: 'Patterns/Marketing/LandingPage',
   component: LandingPage,
   tags: ['autodocs'],
@@ -18,11 +18,6 @@ const meta: Meta<typeof LandingPage> = {
       </MemoryRouter>
     ),
   ],
-};
-export default meta;
-type Story = StoryObj<typeof LandingPage>;
-
-export const Default: Story = {
   args: {
     kicker: 'Personal Knowledge',
     headline: (
@@ -66,4 +61,9 @@ export const Default: Story = {
     ],
     trustSignal: 'Free to use. No credit card required.',
   },
-};
+} satisfies Meta<typeof LandingPage>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {};

@@ -3,14 +3,14 @@ import { expect, userEvent, within } from 'storybook/test';
 
 import { TextArea } from './text-area';
 
-const meta: Meta<typeof TextArea> = {
+const meta = {
   title: 'Forms/TextAreaField',
   component: TextArea,
   tags: ['autodocs'],
-};
+} satisfies Meta<typeof TextArea>;
 
 export default meta;
-type Story = StoryObj<typeof TextArea>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {

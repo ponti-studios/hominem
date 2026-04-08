@@ -3,7 +3,7 @@ import { expect, within } from 'storybook/test';
 
 import { Center } from './center';
 
-const meta: Meta<typeof Center> = {
+const meta = {
   title: 'Layout/Center',
   component: Center,
   tags: ['autodocs'],
@@ -16,10 +16,10 @@ const meta: Meta<typeof Center> = {
       options: [undefined, 'sm', 'md', 'lg', 'xl', 'full'],
     },
   },
-};
+} satisfies Meta<typeof Center>;
 
 export default meta;
-type Story = StoryObj<typeof Center>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: () => (

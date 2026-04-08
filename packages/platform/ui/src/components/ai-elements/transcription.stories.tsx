@@ -8,21 +8,8 @@ import {
   TranscriptionSegment,
 } from './transcription';
 
-const meta: Meta<typeof Transcription> = {
-  title: 'Patterns/AI/Transcription',
-  component: Transcription,
-  tags: ['autodocs'],
-  parameters: {
-    controls: {
-      disable: true,
-    },
-  },
-};
-export default meta;
-type Story = StoryObj<typeof Transcription>;
-
-export const Default: Story = {
-  render: () => (
+function TranscriptionPreview() {
+  return (
     <Transcription className="max-w-md border rounded-md overflow-hidden">
       <TranscriptionHeader />
       <TranscriptionContent>
@@ -43,23 +30,47 @@ export const Default: Story = {
         />
       </TranscriptionContent>
     </Transcription>
-  ),
-};
+  );
+}
 
-export const Loading: Story = {
-  render: () => (
+function TranscriptionLoadingPreview() {
+  return (
     <div className="max-w-sm border rounded-md">
       <TranscriptionLoading text="Listening..." />
     </div>
-  ),
-};
+  );
+}
 
-export const SingleSegment: Story = {
-  render: () => (
+function TranscriptionSegmentPreview() {
+  return (
     <TranscriptionSegment
       speaker="user"
       timestamp="1:23"
       text="Please summarize the key points from today's meeting."
     />
-  ),
+  );
+}
+
+const meta = {
+  title: 'Patterns/AI/Transcription',
+  component: TranscriptionPreview,
+  tags: ['autodocs'],
+  parameters: {
+    controls: {
+      disable: true,
+    },
+  },
+} satisfies Meta<typeof TranscriptionPreview>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {};
+
+export const Loading: Story = {
+  render: () => <TranscriptionLoadingPreview />,
+};
+
+export const SingleSegment: Story = {
+  render: () => <TranscriptionSegmentPreview />,
 };

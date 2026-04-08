@@ -4,10 +4,13 @@ import { hiddenControl, selectControl, textControl } from '../storybook/controls
 import { PageTitle } from './page-title';
 import { Button } from './ui/button';
 
-const meta: Meta<typeof PageTitle> = {
+const meta = {
   title: 'Layout/PageTitle',
   component: PageTitle,
   tags: ['autodocs'],
+  args: {
+    title: 'Page Title',
+  },
   argTypes: {
     title: textControl('Primary heading text shown in the page title'),
     subtitle: textControl('Optional subtitle shown below the title'),
@@ -21,13 +24,12 @@ const meta: Meta<typeof PageTitle> = {
     actions: hiddenControl,
     className: hiddenControl,
   },
-};
-export default meta;
-type Story = StoryObj<typeof PageTitle>;
+} satisfies Meta<typeof PageTitle>;
 
-export const Default: Story = {
-  args: { title: 'Page Title' },
-};
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {};
 
 export const WithSubtitle: Story = {
   args: {

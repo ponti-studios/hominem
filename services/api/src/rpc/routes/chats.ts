@@ -1,9 +1,15 @@
-import { db, sql } from '@hominem/db';
+import type {
+  ChatMessageFileRecord,
+  ChatMessageRecord,
+  ChatRecord,
+  NoteContext,
+} from '@hominem/db';
+import { ChatRepository, getDb, runInTransaction } from '@hominem/db';
 import {
-  type Chat,
-  type ChatMessage,
-  type ChatMessageFile,
   chatsSendSchema,
+  type Chat,
+  type ChatMessageDto,
+  type ChatMessageFile,
   type ChatsArchiveOutput,
   type ChatsCreateOutput,
   type ChatsGetMessagesOutput,
@@ -17,7 +23,7 @@ import { generateText, type CoreMessage } from 'ai';
 import { Hono } from 'hono';
 import * as z from 'zod';
 
-import { NotFoundError, ValidationError } from '../errors';
+import { ValidationError } from '../errors';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 import { getOpenAIAdapter } from '../utils/llm';
 
@@ -34,308 +40,51 @@ const chatsMessagesQuerySchema = z.object({
   offset: z.string().optional(),
 });
 
-type ChatRow = {
-  archived_at: Date | string | null;
-  createdat: Date | string;
-  id: string;
-  note_id: string | null;
-  owner_userid: string;
-  title: string;
-  updatedat: Date | string;
-};
+// ─── DTO mappers (repository records → RPC wire types) ───────────────────────
 
-type ChatMessageRow = {
-  author_userid: string | null;
-  chat_id: string;
-  content: string;
-  createdat: Date | string;
-  files: unknown;
-  id: string;
-  parent_message_id: string | null;
-  referenced_note_ids: unknown;
-  reasoning: string | null;
-  role: ChatMessage['role'];
-  tool_calls: unknown;
-  updatedat: Date | string;
-};
-
-type NoteContext = {
-  content: string;
-  excerpt: string | null;
-  files: Array<{
-    content: string | null;
-    id: string;
-    originalName: string;
-    textContent: string | null;
-  }>;
-  id: string;
-  title: string | null;
-};
-
-function toJsonColumnValue(value: unknown[] | null): string | null {
-  return value ? JSON.stringify(value) : null;
-}
-
-function toIsoString(value: Date | string | null | undefined): string | null {
-  if (value == null) {
-    return null;
-  }
-  return value instanceof Date ? value.toISOString() : value;
-}
-
-function toChat(row: ChatRow): Chat {
+function toChatDto(record: ChatRecord): Chat {
   return {
-    archivedAt: toIsoString(row.archived_at),
-    id: row.id,
-    userId: row.owner_userid,
-    title: row.title,
-    noteId: row.note_id,
-    createdAt: toIsoString(row.createdat) ?? new Date().toISOString(),
-    updatedAt: toIsoString(row.updatedat) ?? new Date().toISOString(),
+    id: record.id,
+    userId: record.userId,
+    title: record.title,
+    noteId: record.noteId,
+    archivedAt: record.archivedAt,
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt,
   };
 }
 
-function toChatMessage(
-  row: ChatMessageRow,
-  noteTitlesById: Map<string, string | null>,
-): ChatMessage {
-  const referencedNoteIds = Array.isArray(row.referenced_note_ids)
-    ? (row.referenced_note_ids as string[])
-    : [];
-
+function toChatMessageDto(record: ChatMessageRecord): ChatMessageDto {
   return {
-    id: row.id,
-    chatId: row.chat_id,
-    userId: row.author_userid ?? '',
-    role: row.role,
-    content: row.content,
-    files: Array.isArray(row.files) ? (row.files as ChatMessageFile[]) : null,
-    referencedNotes:
-      referencedNoteIds.length > 0
-        ? referencedNoteIds.map((id) => ({
-            id,
-            title: noteTitlesById.get(id) ?? null,
-          }))
-        : null,
-    toolCalls: Array.isArray(row.tool_calls) ? (row.tool_calls as ChatMessage['toolCalls']) : null,
-    reasoning: row.reasoning,
-    parentMessageId: row.parent_message_id,
-    createdAt: toIsoString(row.createdat) ?? new Date().toISOString(),
-    updatedAt: toIsoString(row.updatedat) ?? new Date().toISOString(),
+    id: record.id,
+    chatId: record.chatId,
+    userId: record.userId,
+    role: record.role,
+    content: record.content,
+    files: record.files as ChatMessageFile[] | null,
+    referencedNotes: record.referencedNotes,
+    toolCalls: record.toolCalls,
+    reasoning: record.reasoning,
+    parentMessageId: record.parentMessageId,
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt,
   };
 }
 
-async function getChat(chatId: string, userId: string) {
-  const chat = await db
-    .selectFrom('app.chats')
-    .selectAll()
-    .where('id', '=', chatId)
-    .where('owner_userid', '=', userId)
-    .executeTakeFirst();
+// ─── Prompt builders ─────────────────────────────────────────────────────────
 
-  if (!chat) {
-    throw new NotFoundError('Chat');
-  }
-
-  return chat as ChatRow;
-}
-
-async function getNoteTitles(noteIds: string[]): Promise<Map<string, string | null>> {
-  if (noteIds.length === 0) {
-    return new Map();
-  }
-
-  const notes = (await db
-    .selectFrom('app.notes')
-    .select(['id', 'title'])
-    .where('id', 'in', noteIds)
-    .execute()) as Array<{ id: string; title: string | null }>;
-
-  return new Map(notes.map((note) => [note.id, note.title]));
-}
-
-async function getChatMessages(chatId: string, limit?: number, offset?: number) {
-  const messages = (await db
-    .selectFrom('app.chat_messages')
-    .selectAll()
-    .where('chat_id', '=', chatId)
-    .orderBy('createdat', 'asc')
-    .limit(limit ?? 100)
-    .offset(offset ?? 0)
-    .execute()) as ChatMessageRow[];
-
-  const noteIds = [
-    ...new Set(
-      messages.flatMap((message) =>
-        Array.isArray(message.referenced_note_ids) ? message.referenced_note_ids : [],
-      ),
-    ),
-  ] as string[];
-  const noteTitlesById = await getNoteTitles(noteIds);
-
-  return messages.map((message) => toChatMessage(message, noteTitlesById));
-}
-
-function slugifyNoteTitle(title: string | null): string | null {
-  const normalized = (title ?? '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-
-  return normalized.length > 0 ? normalized : null;
-}
-
-function extractMentionSlugs(message: string): string[] {
-  return [...message.matchAll(/#([a-zA-Z0-9][\w-]*)/g)].map((match) => match[1]!.toLowerCase());
-}
-
-async function resolveReferencedNotes(userId: string, explicitNoteIds: string[], message: string) {
-  const mentionedSlugs = extractMentionSlugs(message);
-  const explicitIds = [...new Set(explicitNoteIds)];
-
-  const explicitNotes = (
-    explicitIds.length > 0
-      ? await db
-          .selectFrom('app.notes')
-          .select(['id', 'title', 'content', 'excerpt'])
-          .where('owner_userid', '=', userId)
-          .where('id', 'in', explicitIds)
-          .execute()
-      : []
-  ) as Array<{ id: string; title: string | null; content: string; excerpt: string | null }>;
-
-  if (explicitNotes.length !== explicitIds.length) {
-    throw new ValidationError('One or more referenced notes are unavailable');
-  }
-
-  const candidateNotes = (
-    mentionedSlugs.length > 0
-      ? await db
-          .selectFrom('app.notes')
-          .select(['id', 'title', 'content', 'excerpt'])
-          .where('owner_userid', '=', userId)
-          .execute()
-      : []
-  ) as Array<{ id: string; title: string | null; content: string; excerpt: string | null }>;
-
-  const matchedMentionNotes = candidateNotes.filter((note) => {
-    const slug = slugifyNoteTitle(note.title);
-    return slug ? mentionedSlugs.includes(slug) : false;
-  });
-
-  const mergedNotes = [...explicitNotes, ...matchedMentionNotes].reduce<Map<string, NoteContext>>(
-    (acc, note) => {
-      acc.set(note.id, {
-        id: note.id,
-        title: note.title,
-        content: note.content,
-        excerpt: note.excerpt,
-        files: [],
-      });
-      return acc;
-    },
-    new Map(),
-  );
-
-  const noteIds = [...mergedNotes.keys()];
-
-  if (noteIds.length === 0) {
-    return [];
-  }
-
-  const files = (await db
-    .selectFrom('app.note_files as noteFile')
-    .innerJoin('app.files as file', 'file.id', 'noteFile.file_id')
-    .select([
-      'noteFile.note_id as noteId',
-      'file.id',
-      'file.original_name',
-      'file.content',
-      'file.text_content',
-    ])
-    .where('noteFile.note_id', 'in', noteIds)
-    .execute()) as Array<{
-    noteId: string;
-    id: string;
-    original_name: string;
-    content: string | null;
-    text_content: string | null;
-  }>;
-
-  for (const file of files) {
-    const note = mergedNotes.get(file.noteId);
-    if (!note) {
-      continue;
-    }
-    note.files.push({
-      id: file.id,
-      originalName: file.original_name,
-      content: file.content,
-      textContent: file.text_content,
-    });
-  }
-
-  return [...mergedNotes.values()];
-}
-
-async function resolveChatFiles(userId: string, fileIds: string[]): Promise<ChatMessageFile[]> {
-  if (fileIds.length === 0) {
-    return [];
-  }
-
-  const files = (await db
-    .selectFrom('app.files')
-    .selectAll()
-    .where('owner_userid', '=', userId)
-    .where('id', 'in', [...new Set(fileIds)])
-    .execute()) as Array<{
-    id: string;
-    mimetype: string;
-    original_name: string;
-    size: number;
-    text_content: string | null;
-    url: string;
-  }>;
-
-  if (files.length !== new Set(fileIds).size) {
-    throw new ValidationError('One or more uploaded files are unavailable');
-  }
-
-  return files.map(
-    (file): ChatMessageFile => ({
-      type: file.mimetype.startsWith('image/') ? 'image' : 'file',
-      fileId: file.id,
-      url: file.url,
-      filename: file.original_name,
-      mimeType: file.mimetype,
-      size: file.size,
-      ...(file.text_content
-        ? { metadata: { extractedText: file.text_content.slice(0, 4_000) } }
-        : {}),
-    }),
-  );
-}
-
-function getRequiredChatId(c: { req: { param: (name: string) => string | undefined } }): string {
-  const chatId = c.req.param('id');
-  if (!chatId) {
-    throw new ValidationError('Chat id is required');
-  }
-  return chatId;
-}
-
-function toCoreHistoryMessage(entry: ChatMessage): CoreMessage | null {
+function toCoreHistoryMessage(entry: ChatMessageRecord): CoreMessage | null {
   if (entry.role === 'system' || entry.role === 'user' || entry.role === 'assistant') {
-    return {
-      role: entry.role,
-      content: entry.content,
-    };
+    return { role: entry.role, content: entry.content };
   }
-
   return null;
 }
 
-function buildUserPrompt(message: string, notes: NoteContext[], files: ChatMessageFile[]) {
+function buildUserPrompt(
+  message: string,
+  notes: NoteContext[],
+  files: ChatMessageFileRecord[],
+): string {
   const sections = [message.trim()];
 
   if (notes.length > 0) {
@@ -384,92 +133,95 @@ function buildUserPrompt(message: string, notes: NoteContext[], files: ChatMessa
 function buildStoredUserMessageContent(
   message: string,
   notes: NoteContext[],
-  files: ChatMessageFile[],
-) {
+  files: ChatMessageFileRecord[],
+): string {
   const trimmed = message.trim();
-
-  if (trimmed.length > 0) {
-    return trimmed;
-  }
-
-  if (files.length > 0) {
-    return files.map((file) => file.filename ?? 'Attachment').join(', ');
-  }
-
-  if (notes.length > 0) {
-    return notes.map((note) => note.title ?? 'Untitled note').join(', ');
-  }
-
+  if (trimmed.length > 0) return trimmed;
+  if (files.length > 0) return files.map((f) => f.filename ?? 'Attachment').join(', ');
+  if (notes.length > 0) return notes.map((n) => n.title ?? 'Untitled note').join(', ');
   throw new ValidationError('Message, notes, or files are required');
 }
+
+function getRequiredChatId(c: { req: { param: (name: string) => string | undefined } }): string {
+  const chatId = c.req.param('id');
+  if (!chatId) throw new ValidationError('Chat id is required');
+  return chatId;
+}
+
+// ─── Per-chat routes ─────────────────────────────────────────────────────────
 
 const chatByIdRoutes = new Hono<AppContext>()
   .get('/', async (c) => {
     const userId = c.get('userId')!;
     const chatId = getRequiredChatId(c);
-    const chat = toChat(await getChat(chatId, userId));
-    const messages = await getChatMessages(chatId, 100, 0);
-    return c.json<ChatsGetOutput>({ ...chat, messages });
+    const db = getDb();
+
+    const chat = await ChatRepository.getOwnedOrThrow(db, chatId, userId);
+    const messages = await ChatRepository.getMessages(db, chatId, 100, 0);
+
+    return c.json<ChatsGetOutput>({
+      ...toChatDto(chat),
+      messages: messages.map(toChatMessageDto),
+    });
   })
   .delete('/', async (c) => {
     const userId = c.get('userId')!;
     const chatId = getRequiredChatId(c);
-    await getChat(chatId, userId);
-    await db
-      .deleteFrom('app.chats')
-      .where('id', '=', chatId)
-      .where('owner_userid', '=', userId)
-      .execute();
+    const db = getDb();
+
+    await ChatRepository.getOwnedOrThrow(db, chatId, userId);
+    await ChatRepository.delete(db, chatId, userId);
+
     return c.json({ success: true });
   })
   .patch('/', zValidator('json', chatsUpdateSchema), async (c) => {
     const userId = c.get('userId')!;
     const chatId = getRequiredChatId(c);
     const { title } = c.req.valid('json');
-    await getChat(chatId, userId);
-    await db
-      .updateTable('app.chats')
-      .set({ title, updatedat: new Date().toISOString() })
-      .where('id', '=', chatId)
-      .where('owner_userid', '=', userId)
-      .executeTakeFirstOrThrow();
+    const db = getDb();
+
+    await ChatRepository.getOwnedOrThrow(db, chatId, userId);
+    await ChatRepository.updateTitle(db, chatId, userId, title);
+
     return c.json<ChatsUpdateOutput>({ success: true });
   })
   .post('/archive', async (c) => {
     const userId = c.get('userId')!;
     const chatId = getRequiredChatId(c);
-    await getChat(chatId, userId);
-    const archived = await db
-      .updateTable('app.chats')
-      .set({
-        archived_at: new Date().toISOString(),
-        updatedat: new Date().toISOString(),
-      })
-      .where('id', '=', chatId)
-      .where('owner_userid', '=', userId)
-      .returningAll()
-      .executeTakeFirstOrThrow();
+    const db = getDb();
 
-    return c.json<ChatsArchiveOutput>(toChat(archived as ChatRow));
+    await ChatRepository.getOwnedOrThrow(db, chatId, userId);
+    const archived = await ChatRepository.archive(db, chatId, userId);
+
+    return c.json<ChatsArchiveOutput>(toChatDto(archived));
   })
   .get('/messages', zValidator('query', chatsMessagesQuerySchema), async (c) => {
     const userId = c.get('userId')!;
     const chatId = getRequiredChatId(c);
-    await getChat(chatId, userId);
+    const db = getDb();
+
+    await ChatRepository.getOwnedOrThrow(db, chatId, userId);
     const query = c.req.valid('query');
     const limit = query.limit ? Number.parseInt(query.limit, 10) : 100;
     const offset = query.offset ? Number.parseInt(query.offset, 10) : 0;
-    return c.json<ChatsGetMessagesOutput>(await getChatMessages(chatId, limit, offset));
+
+    const messages = await ChatRepository.getMessages(db, chatId, limit, offset);
+    return c.json<ChatsGetMessagesOutput>(messages.map(toChatMessageDto));
   })
   .post('/send', zValidator('json', chatsSendSchema), async (c) => {
     const userId = c.get('userId')!;
     const chatId = getRequiredChatId(c);
-    const chat = await getChat(chatId, userId);
+    const db = getDb();
+
+    const chat = await ChatRepository.getOwnedOrThrow(db, chatId, userId);
     const { message, fileIds = [], noteIds = [] } = c.req.valid('json');
 
-    const history = await getChatMessages(chatId, 30, 0);
-    const resolvedNotes = await resolveReferencedNotes(userId, noteIds, message);
-    const resolvedFiles = await resolveChatFiles(userId, fileIds);
+    // Resolve context data
+    const history = await ChatRepository.getMessages(db, chatId, 30, 0);
+    const resolvedNotes = await ChatRepository.resolveReferencedNotes(db, userId, noteIds, message);
+    const resolvedFiles = await ChatRepository.resolveChatFiles(db, userId, fileIds);
+
+    // Build prompt and call LLM
     const prompt = buildUserPrompt(message, resolvedNotes, resolvedFiles);
     const storedUserContent = buildStoredUserMessageContent(message, resolvedNotes, resolvedFiles);
 
@@ -480,10 +232,7 @@ const chatByIdRoutes = new Hono<AppContext>()
           'You are a helpful assistant. Answer only with the user message, explicitly referenced notes, and attached files provided in the conversation.',
       },
       ...history.map(toCoreHistoryMessage).filter((entry): entry is CoreMessage => entry !== null),
-      {
-        role: 'user',
-        content: prompt,
-      },
+      { role: 'user', content: prompt },
     ];
 
     const result = await generateText({
@@ -491,55 +240,47 @@ const chatByIdRoutes = new Hono<AppContext>()
       messages,
     });
 
+    // Persist messages + touch chat atomically
     const now = new Date().toISOString();
-    const [userMessage, assistantMessage] = await db.transaction().execute(async (trx) => {
-      const insertedUser = await trx
-        .insertInto('app.chat_messages')
-        .values({
-          chat_id: chatId,
-          author_userid: userId,
-          role: 'user',
-          content: storedUserContent,
-          files: toJsonColumnValue(resolvedFiles.length > 0 ? resolvedFiles : null),
-          referenced_note_ids: toJsonColumnValue(
-            resolvedNotes.length > 0 ? resolvedNotes.map((note) => note.id) : null,
-          ),
-        })
-        .returningAll()
-        .executeTakeFirstOrThrow();
+    const { userMsg, assistantMsg } = await runInTransaction(async (trx) => {
+      const userMsg = await ChatRepository.insertMessage(trx, {
+        chatId,
+        authorUserId: userId,
+        role: 'user',
+        content: storedUserContent,
+        files: resolvedFiles.length > 0 ? resolvedFiles : null,
+        referencedNoteIds: resolvedNotes.length > 0 ? resolvedNotes.map((n) => n.id) : null,
+      });
 
-      const insertedAssistant = await trx
-        .insertInto('app.chat_messages')
-        .values({
-          chat_id: chatId,
-          author_userid: userId,
-          role: 'assistant',
-          content: result.text,
-        })
-        .returningAll()
-        .executeTakeFirstOrThrow();
+      const assistantMsg = await ChatRepository.insertMessage(trx, {
+        chatId,
+        authorUserId: userId,
+        role: 'assistant',
+        content: result.text,
+      });
 
-      await trx
-        .updateTable('app.chats')
-        .set({
-          title: chat.title || 'Chat',
-          last_message_at: sql`GREATEST(createdat, now())`,
-        })
-        .where('id', '=', chatId)
-        .execute();
+      await ChatRepository.touchLastMessage(trx, chatId);
 
-      return [insertedUser as ChatMessageRow, insertedAssistant as ChatMessageRow];
+      return { userMsg, assistantMsg };
     });
 
-    const noteTitlesById = await getNoteTitles(resolvedNotes.map((note) => note.id));
+    // Enrich with note titles for response
+    const noteTitlesById = await ChatRepository.getNoteTitles(
+      db,
+      resolvedNotes.map((n) => n.id),
+    );
+
+    // Map raw rows to message records for DTO conversion
+    const userRecord = enrichMessageRow(userMsg, noteTitlesById);
+    const assistantRecord = enrichMessageRow(assistantMsg, noteTitlesById);
 
     return c.json<ChatsSendOutput>({
-      streamId: assistantMessage.id,
+      streamId: assistantMsg.id,
       chatId,
       chatTitle: chat.title,
       messages: {
-        user: toChatMessage(userMessage, noteTitlesById),
-        assistant: toChatMessage(assistantMessage, noteTitlesById),
+        user: toChatMessageDto(userRecord),
+        assistant: toChatMessageDto(assistantRecord),
       },
       metadata: {
         startTime: Date.now(),
@@ -548,34 +289,67 @@ const chatByIdRoutes = new Hono<AppContext>()
     });
   });
 
+/**
+ * Convert a raw inserted message row into a ChatMessageRecord.
+ */
+function enrichMessageRow(
+  row: {
+    id: string;
+    chat_id: string;
+    author_userid: string | null;
+    role: string;
+    content: string;
+    files: unknown;
+    referenced_note_ids: unknown;
+    tool_calls: unknown;
+    reasoning: string | null;
+    parent_message_id: string | null;
+    createdat: unknown;
+    updatedat: unknown;
+  },
+  noteTitlesById: Map<string, string | null>,
+): ChatMessageRecord {
+  const referencedNoteIds = Array.isArray(row.referenced_note_ids)
+    ? (row.referenced_note_ids as string[])
+    : [];
+
+  const toIso = (v: unknown): string =>
+    v instanceof Date ? v.toISOString() : typeof v === 'string' ? v : new Date().toISOString();
+
+  return {
+    id: row.id,
+    chatId: row.chat_id,
+    userId: row.author_userid ?? '',
+    role: row.role as ChatMessageRecord['role'],
+    content: row.content,
+    files: Array.isArray(row.files) ? (row.files as ChatMessageFileRecord[]) : null,
+    referencedNotes:
+      referencedNoteIds.length > 0
+        ? referencedNoteIds.map((id) => ({ id, title: noteTitlesById.get(id) ?? null }))
+        : null,
+    toolCalls: Array.isArray(row.tool_calls)
+      ? (row.tool_calls as ChatMessageRecord['toolCalls'])
+      : null,
+    reasoning: row.reasoning,
+    parentMessageId: row.parent_message_id,
+    createdAt: toIso(row.createdat),
+    updatedAt: toIso(row.updatedat),
+  };
+}
+
+// ─── Top-level chat routes ───────────────────────────────────────────────────
+
 export const chatsRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
   .get('/', async (c) => {
     const userId = c.get('userId')!;
-    const chats = (await db
-      .selectFrom('app.chats')
-      .selectAll()
-      .where('owner_userid', '=', userId)
-      .where('archived_at', 'is', null)
-      .orderBy('last_message_at', 'desc')
-      .limit(100)
-      .execute()) as ChatRow[];
-
-    return c.json<ChatsListOutput>(chats.map((chat) => toChat(chat)));
+    const chats = await ChatRepository.listForUser(getDb(), userId, 100);
+    return c.json<ChatsListOutput>(chats.map(toChatDto));
   })
   .post('/', zValidator('json', chatsCreateSchema), async (c) => {
     const userId = c.get('userId')!;
     const { title } = c.req.valid('json');
-
-    const chat = await db
-      .insertInto('app.chats')
-      .values({
-        owner_userid: userId,
-        title,
-      })
-      .returningAll()
-      .executeTakeFirstOrThrow();
-
-    return c.json<ChatsCreateOutput>(toChat(chat as ChatRow), 201);
+    const chat = await ChatRepository.create(getDb(), { userId, title });
+    return c.json<ChatsCreateOutput>(toChatDto(chat), 201);
   })
   .route('/:id', chatByIdRoutes);

@@ -2,13 +2,14 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { Separator } from './separator';
 
-const meta: Meta<typeof Separator> = {
+const meta = {
   title: 'Primitives/Separator',
   component: Separator,
   tags: ['autodocs'],
-};
+} satisfies Meta<typeof Separator>;
+
 export default meta;
-type Story = StoryObj<typeof Separator>;
+type Story = StoryObj<typeof meta>;
 
 export const Horizontal: Story = {
   render: () => (

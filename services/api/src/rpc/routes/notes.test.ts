@@ -3,60 +3,26 @@ import { db } from '@hominem/db';
 import { Hono } from 'hono';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
+import {
+  createNoteFeedRows,
+  expectFirstNoteFeedPage,
+  expectSecondNoteFeedPage,
+} from '../../../../../config/testing/note-feed';
 import { resetTestDb, seedFile, seedTestUser } from '../../../test/test-db';
 import type { AppContext } from '../middleware/auth';
 import { apiErrorHandler } from '../middleware/error';
 import { notesRoutes } from './notes';
+import { createTestApp, createTestUser, patchJson, postJson } from './test-helpers';
 
 const testUserId = '00000000-0000-4000-8000-000000000001';
 const otherUserId = '00000000-0000-4000-8000-000000000002';
 const testFileId = '11111111-1111-4111-8111-111111111111';
 const nowIso = '2026-04-02T12:00:00.000Z';
 
-function createUser(): User {
-  return {
-    id: testUserId,
-    email: 'notes-test@hominem.test',
-    emailVerified: false,
-    image: null,
-    name: 'Notes Test User',
-    createdAt: new Date(nowIso),
-    updatedAt: new Date(nowIso),
-  };
-}
-
 function createApp() {
-  const app = new Hono<AppContext>().onError(apiErrorHandler);
-
-  app.use('/api/notes/*', async (c, next) => {
-    c.set('user', createUser());
-    c.set('userId', testUserId);
-    await next();
-  });
-
+  const app = createTestApp(testUserId);
   app.route('/api/notes', notesRoutes);
-
   return app;
-}
-
-async function postJson(app: Hono<AppContext>, path: string, body: Record<string, unknown>) {
-  return app.request(`http://localhost${path}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body),
-  });
-}
-
-async function patchJson(app: Hono<AppContext>, path: string, body: Record<string, unknown>) {
-  return app.request(`http://localhost${path}`, {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body),
-  });
 }
 
 describe('notesRoutes', () => {
@@ -144,6 +110,37 @@ describe('notesRoutes', () => {
       id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
       title: 'Visible note',
     });
+  });
+
+  test('lists feed items with cursor pagination', async () => {
+    await db.insertInto('app.notes').values(createNoteFeedRows(testUserId)).execute();
+
+    const firstResponse = await createApp().request('http://localhost/api/notes/feed?limit=2', {
+      method: 'GET',
+    });
+
+    expect(firstResponse.status).toBe(200);
+    const firstPage = (await firstResponse.json()) as {
+      notes: Array<{ id: string; contentPreview: string }>;
+      nextCursor: string | null;
+    };
+
+    expectFirstNoteFeedPage(firstPage);
+
+    const secondResponse = await createApp().request(
+      `http://localhost/api/notes/feed?limit=2&cursor=${encodeURIComponent(firstPage.nextCursor ?? '')}`,
+      {
+        method: 'GET',
+      },
+    );
+
+    expect(secondResponse.status).toBe(200);
+    const secondPage = (await secondResponse.json()) as {
+      notes: Array<{ id: string }>;
+      nextCursor: string | null;
+    };
+
+    expectSecondNoteFeedPage(secondPage);
   });
 
   test('updates note attachments with real file ownership checks', async () => {

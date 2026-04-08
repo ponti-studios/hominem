@@ -48,7 +48,7 @@ export function getAttachmentLabel(data: AttachmentData): string {
   return data.name || 'Attachment';
 }
 
-interface AttachmentsProps extends HTMLAttributes<HTMLDivElement> {
+export interface AttachmentsProps extends HTMLAttributes<HTMLDivElement> {
   variant?: 'grid' | 'inline' | 'list';
 }
 
@@ -93,7 +93,7 @@ export const Attachment = forwardRef<HTMLDivElement, AttachmentProps>(function A
     <div
       ref={ref}
       className={cn(
-        'relative group flex flex-col items-center justify-center p-4 rounded-md border bg-muted/50 hover:bg-muted transition-colors',
+        'relative group flex flex-col items-center justify-center p-2 rounded-md border bg-muted/50 hover:bg-muted transition-colors',
         category === 'image' && 'aspect-square',
         className,
       )}
@@ -115,7 +115,7 @@ export const Attachment = forwardRef<HTMLDivElement, AttachmentProps>(function A
       )}
       {children || (
         <>
-          <div className="text-muted-foreground mb-2">{categoryIcons[category]}</div>
+          <div className="text-muted-foreground">{categoryIcons[category]}</div>
           <span className="text-xs text-center truncate max-w-full">
             {getAttachmentLabel(data)}
           </span>

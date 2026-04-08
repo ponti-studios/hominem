@@ -3,13 +3,14 @@ import { useState } from 'react';
 
 import { Calendar } from './calendar';
 
-const meta: Meta<typeof Calendar> = {
+const meta = {
   title: 'Patterns/DataDisplay/Calendar',
   component: Calendar,
   tags: ['autodocs'],
-};
+} satisfies Meta<typeof Calendar>;
+
 export default meta;
-type Story = StoryObj<typeof Calendar>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: () => {

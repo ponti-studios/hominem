@@ -2,7 +2,7 @@ import { BRAND } from '@hominem/env/brand';
 
 export const WEB_BRAND = {
   appName: BRAND.appName,
-  logoPath: '/logo.png',
+  logoPath: '/logo.web.png',
   meta: {
     title: BRAND.appName,
     description: BRAND.tagline,

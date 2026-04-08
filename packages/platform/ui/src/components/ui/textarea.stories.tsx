@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { booleanControl, numberControl, textControl } from '../../storybook/controls';
 import { Textarea } from './textarea';
 
-const meta: Meta<typeof Textarea> = {
+const meta = {
   title: 'Forms/Textarea',
   component: Textarea,
   tags: ['autodocs'],
@@ -13,9 +13,10 @@ const meta: Meta<typeof Textarea> = {
     required: booleanControl('Marks the textarea as required for form submission', false),
     rows: numberControl('Number of visible text lines', { min: 1, max: 20, defaultValue: 3 }),
   },
-};
+} satisfies Meta<typeof Textarea>;
+
 export default meta;
-type Story = StoryObj<typeof Textarea>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {

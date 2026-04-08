@@ -4,7 +4,7 @@ import { expect, userEvent, within } from 'storybook/test';
 import { booleanControl, numberControl, textControl } from '../../storybook/controls';
 import { NumberInput } from './number-input';
 
-const meta: Meta<typeof NumberInput> = {
+const meta = {
   title: 'Primitives/NumberInput',
   component: NumberInput,
   tags: ['autodocs'],
@@ -15,10 +15,10 @@ const meta: Meta<typeof NumberInput> = {
     success: booleanControl('Shows the success visual state and locks editing', false),
     disabled: booleanControl('Prevents user interaction and applies disabled styling', false),
   },
-};
+} satisfies Meta<typeof NumberInput>;
 
 export default meta;
-type Story = StoryObj<typeof NumberInput>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {

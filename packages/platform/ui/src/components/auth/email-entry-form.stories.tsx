@@ -1,17 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, within } from 'storybook/test';
 
-// This is likely a form component for email entry in auth flow
-const meta: Meta = {
-  title: 'Patterns/Auth/EmailEntryForm',
-  tags: ['autodocs'],
-};
-
-export default meta;
-type Story = StoryObj;
-
-export const Default: Story = {
-  render: () => (
+function EmailEntryFormPreview() {
+  return (
     <div className="max-w-md mx-auto p-6">
       <form className="space-y-4">
         <div>
@@ -30,7 +21,19 @@ export const Default: Story = {
         </button>
       </form>
     </div>
-  ),
+  );
+}
+
+const meta = {
+  title: 'Patterns/Auth/EmailEntryForm',
+  component: EmailEntryFormPreview,
+  tags: ['autodocs'],
+} satisfies Meta<typeof EmailEntryFormPreview>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const input = canvas.getByPlaceholderText('you@example.com') as HTMLInputElement;

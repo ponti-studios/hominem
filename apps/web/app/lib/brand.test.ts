@@ -15,6 +15,6 @@ describe('WEB_BRAND', () => {
   });
 
   it('points update UI at the shared Hakumi web logo asset', () => {
-    expect(WEB_BRAND.logoPath).toBe('/logo.png');
+    expect(WEB_BRAND.logoPath).toBe('/logo.web.png');
   });
 });

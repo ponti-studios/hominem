@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { hiddenControl, selectControl, textControl } from '../../storybook/controls';
 import { Task, TaskList, TaskStatusBadge } from './task';
 
-const meta: Meta<typeof Task> = {
+const meta = {
   title: 'Patterns/AI/Task',
   component: Task,
   tags: ['autodocs'],
@@ -24,9 +24,10 @@ const meta: Meta<typeof Task> = {
     assignee: textControl('Person assigned to the task'),
     onToggle: hiddenControl,
   },
-};
+} satisfies Meta<typeof Task>;
+
 export default meta;
-type Story = StoryObj<typeof Task>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
@@ -48,6 +49,10 @@ export const Completed: Story = {
 };
 
 export const TaskListStory: Story = {
+  args: {
+    title: '',
+    status: 'pending',
+  },
   parameters: {
     controls: {
       disable: true,
@@ -74,6 +79,10 @@ export const TaskListStory: Story = {
 };
 
 export const StatusBadges: Story = {
+  args: {
+    title: '',
+    status: 'pending',
+  },
   parameters: {
     controls: {
       disable: true,

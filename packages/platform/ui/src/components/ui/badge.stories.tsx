@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { Badge } from './badge';
 
-const meta: Meta<typeof Badge> = {
+const meta = {
   title: 'Primitives/Badge',
   component: Badge,
   tags: ['autodocs'],
@@ -12,9 +12,10 @@ const meta: Meta<typeof Badge> = {
       options: ['default', 'secondary', 'destructive', 'outline'],
     },
   },
-};
+} satisfies Meta<typeof Badge>;
+
 export default meta;
-type Story = StoryObj<typeof Badge>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: { children: 'Badge' },

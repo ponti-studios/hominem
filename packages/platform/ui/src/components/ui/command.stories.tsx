@@ -12,13 +12,14 @@ import {
   CommandShortcut,
 } from './command';
 
-const meta: Meta<typeof Command> = {
+const meta = {
   title: 'Patterns/Overlay/Command',
   component: Command,
   tags: ['autodocs'],
-};
+} satisfies Meta<typeof Command>;
+
 export default meta;
-type Story = StoryObj<typeof Command>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: () => (

@@ -2,11 +2,11 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { InvitesEmptyState } from './invites-empty-state';
 
-const meta: Meta<typeof InvitesEmptyState> = {
+const meta = {
   title: 'Patterns/Invites/InvitesEmptyState',
   component: InvitesEmptyState,
   tags: ['autodocs'],
-};
+} satisfies Meta<typeof InvitesEmptyState>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

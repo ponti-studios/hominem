@@ -5,7 +5,7 @@ import { booleanControl, selectControl, textControl } from '../../storybook/cont
 import { textFieldTypeOptions } from '../../storybook/options';
 import { TextField } from './text-field';
 
-const meta: Meta<typeof TextField> = {
+const meta = {
   title: 'Forms/TextField',
   component: TextField,
   tags: ['autodocs'],
@@ -20,10 +20,10 @@ const meta: Meta<typeof TextField> = {
     disabled: booleanControl('Prevents user interaction and applies disabled styling', false),
     required: booleanControl('Marks the field as required for form submission', false),
   },
-};
+} satisfies Meta<typeof TextField>;
 
 export default meta;
-type Story = StoryObj<typeof TextField>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {

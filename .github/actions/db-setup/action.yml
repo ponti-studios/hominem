@@ -1,5 +1,5 @@
 name: Initialize Database Schema with Goose
-description: Install Goose CLI and apply database migrations
+description: Apply database migrations via the repository bootstrap command
 
 inputs:
   environment:
@@ -14,26 +14,12 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Cache Goose binary
+      uses: actions/cache@v4
+      with:
+        path: ~/go/bin/goose
+        key: goose-v3.27.0
+
     - name: Install Goose CLI
       shell: bash
-      run: |
-        go install github.com/pressly/goose/v3/cmd/goose@v3.27.0
-        echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
-
-    - name: Ensure database URL available
-      shell: bash
-      run: |
-        if [ -z "$DATABASE_URL" ]; then
-          echo "DATABASE_URL must be provided by the workflow before running db-setup"
-          exit 1
-        fi
-
-    - name: Apply database migrations
-      shell: bash
-      run: |
-        MIGRATIONS_DIR="${GITHUB_WORKSPACE}/${{ inputs.migrations-path }}"
-        if [ ! -d "$MIGRATIONS_DIR" ]; then
-          echo "Migrations directory not found: $MIGRATIONS_DIR"
-          exit 1
-        fi
-        goose -dir "$MIGRATIONS_DIR" postgres "$DATABASE_URL" up
+      run: just db-setup "${{ inputs.environment }}" "${{ inputs.migrations-path }}"

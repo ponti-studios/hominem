@@ -214,7 +214,9 @@ export function Header({ brandIcon, navItems = [] }: HeaderProps) {
         </div>
       </header>
 
-      {isAuthenticated && !isLoading && navItems.length > 0 ? <MobileTabBar navItems={navItems} /> : null}
+      {isAuthenticated && !isLoading && navItems.length > 0 ? (
+        <MobileTabBar navItems={navItems} />
+      ) : null}
     </>
   );
 }

@@ -20,7 +20,6 @@ export default [
     // Notes Routes
     layout('routes/notes/layout.tsx', [
       route('notes', 'routes/notes/page.tsx'),
-      route('notes/new', 'routes/notes/new.tsx'),
       route('notes/:noteId', 'routes/notes/$noteId.tsx'),
       route('notes/:noteId/edit', 'routes/notes/$noteId_.edit.tsx'),
       route('notes/:noteId/chat', 'routes/notes/$noteId.chat.tsx'),

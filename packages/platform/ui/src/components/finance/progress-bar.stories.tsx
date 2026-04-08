@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { numberControl } from '../../storybook/controls';
 import { ProgressBar } from './progress-bar';
 
-const meta: Meta<typeof ProgressBar> = {
+const meta = {
   title: 'Patterns/Finance/ProgressBar',
   component: ProgressBar,
   tags: ['autodocs'],
@@ -17,7 +17,7 @@ const meta: Meta<typeof ProgressBar> = {
   args: {
     progress: 45,
   },
-};
+} satisfies Meta<typeof ProgressBar>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

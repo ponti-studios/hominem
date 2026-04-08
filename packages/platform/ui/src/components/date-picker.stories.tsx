@@ -3,30 +3,46 @@ import { useState } from 'react';
 
 import { DatePicker } from './date-picker';
 
-const meta: Meta<typeof DatePicker> = {
+const meta = {
   title: 'Forms/DatePicker',
   component: DatePicker,
   tags: ['autodocs'],
-};
+} satisfies Meta<typeof DatePicker>;
+
 export default meta;
-type Story = StoryObj<typeof DatePicker>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  render: () => {
-    const [date, setDate] = useState<Date | undefined>(undefined);
-    return <DatePicker value={date} onSelect={setDate} placeholder="Pick a date" />;
+  args: {
+    value: undefined,
+    onSelect: () => {},
+    placeholder: 'Pick a date',
+  },
+  render: (args) => {
+    const [date, setDate] = useState<Date | undefined>(args.value);
+    return <DatePicker {...args} value={date} onSelect={setDate} />;
   },
 };
 
 export const WithLabel: Story = {
-  render: () => {
-    const [date, setDate] = useState<Date | undefined>(new Date());
-    return <DatePicker value={date} onSelect={setDate} label="Due Date" showLabel />;
+  args: {
+    value: new Date(),
+    onSelect: () => {},
+    label: 'Due Date',
+    showLabel: true,
+  },
+  render: (args) => {
+    const [date, setDate] = useState<Date | undefined>(args.value);
+    return <DatePicker {...args} value={date} onSelect={setDate} />;
   },
 };
 
 export const Disabled: Story = {
-  render: () => (
-    <DatePicker value={new Date()} onSelect={() => {}} disabled label="Locked Date" showLabel />
-  ),
+  args: {
+    value: new Date(),
+    onSelect: () => {},
+    disabled: true,
+    label: 'Locked Date',
+    showLabel: true,
+  },
 };

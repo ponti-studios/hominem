@@ -2,13 +2,14 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { PasskeyButton } from './passkey-button';
 
-const meta: Meta<typeof PasskeyButton> = {
+const meta = {
   title: 'Patterns/Auth/PasskeyButton',
   component: PasskeyButton,
   tags: ['autodocs'],
-};
+} satisfies Meta<typeof PasskeyButton>;
+
 export default meta;
-type Story = StoryObj<typeof PasskeyButton>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {

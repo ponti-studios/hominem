@@ -1,6 +1,6 @@
 
 import { createAuthIntegrationHarness, createIntegrationQueryClient } from './harness'
-import { buildAuthUser } from './fixtures'
+import { buildAuthUser } from '../support/fixtures'
 import {
   expectAuthStatus,
   expectLoadingState,

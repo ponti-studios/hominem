@@ -357,7 +357,7 @@ export const ChatMessage = memo(function ChatMessage({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-6 w-6 p-0 text-text-tertiary hover:text-foreground"
+                    className="size-6 p-0 text-text-tertiary hover:text-foreground"
                     aria-label="Message actions"
                   >
                     <MoreVertical className="size-3.5" aria-hidden="true" />

@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { hiddenControl, textControl } from '../../storybook/controls';
 import { ActiveFiltersBar } from './active-filters-bar';
 
-const meta: Meta<typeof ActiveFiltersBar> = {
+const meta = {
   title: 'Patterns/Filters/ActiveFiltersBar',
   component: ActiveFiltersBar,
   tags: ['autodocs'],
@@ -12,9 +12,10 @@ const meta: Meta<typeof ActiveFiltersBar> = {
     filters: hiddenControl,
     className: hiddenControl,
   },
-};
+} satisfies Meta<typeof ActiveFiltersBar>;
+
 export default meta;
-type Story = StoryObj<typeof ActiveFiltersBar>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {

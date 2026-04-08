@@ -3,8 +3,12 @@
 # Includes Redis, Postgres, and Jaeger for local development.
 # Secrets: copy infra/compose/.env.example → infra/compose/.env
 
-# Combined build + logging anchor for all postgres services
+# Combined image + logging anchor for all postgres services
+# Uses pre-built image from ghcr.io (built via build-docker-images.yml workflow)
+# Falls back to building locally if image unavailable
+# To use the pre-built image in CI, ensure github.repository env var is set
 x-postgres-service: &postgres-service
+  image: ${POSTGRES_IMAGE:-postgres:latest}
   build:
     context: ../images/postgres
     dockerfile: Dockerfile

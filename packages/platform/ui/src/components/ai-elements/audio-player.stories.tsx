@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { AudioPlayer, AudioPlayerPlayButton, AudioPlayerProgress } from './audio-player';
 
-const meta: Meta<typeof AudioPlayer> = {
+const meta = {
   title: 'Patterns/AI/AudioPlayer',
   component: AudioPlayer,
   tags: ['autodocs'],
@@ -11,9 +11,10 @@ const meta: Meta<typeof AudioPlayer> = {
       disable: true,
     },
   },
-};
+} satisfies Meta<typeof AudioPlayer>;
+
 export default meta;
-type Story = StoryObj<typeof AudioPlayer>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: () => <AudioPlayer className="max-w-sm" />,

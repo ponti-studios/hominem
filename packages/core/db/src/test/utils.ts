@@ -1,119 +1,125 @@
-import { randomUUID } from 'node:crypto'
+import { randomUUID } from 'node:crypto';
 
 // Kysely-compatible test utilities
 
 export const isIntegrationDatabaseAvailable = async (): Promise<boolean> => {
   try {
-    const { pool } = await import('../db')
-    const result = await pool.query('SELECT 1')
-    return result.rowCount === 1
+    const { pool } = await import('../db');
+    const result = await pool.query('SELECT 1');
+    return result.rowCount === 1;
   } catch {
-    return false
+    return false;
   }
-}
+};
 
 export const createDeterministicIdFactory = (prefix: string) => {
-  void prefix
-  let counter = 0
+  void prefix;
+  let counter = 0;
   return () => {
-    counter += 1
-    return randomUUID()
-  }
-}
+    counter += 1;
+    return randomUUID();
+  };
+};
 
 // Helper to extract rows from query results (handles both Kysely and raw results)
-export const extractRows = <T>(result: unknown): T[] => {
+const extractRows = <T>(result: unknown): T[] => {
   if (Array.isArray(result)) {
-    return result as T[]
+    return result as T[];
   }
   if (result && typeof result === 'object' && 'rows' in result) {
-    const rows = (result as { rows?: unknown }).rows
+    const rows = (result as { rows?: unknown }).rows;
     if (Array.isArray(rows)) {
-      return rows as T[]
+      return rows as T[];
     }
   }
-  return []
-}
+  return [];
+};
 
 // Check if a table exists by name
-export const tableExists = async (tableName: string): Promise<boolean> => {
+const tableExists = async (tableName: string): Promise<boolean> => {
   try {
-    const { pool } = await import('../db')
+    const { pool } = await import('../db');
     // Use raw pool query to avoid SQL builder complexity for dynamic table names
-    const result = await pool.query(`select to_regclass('public.${tableName}') as relation_name`)
-    const rows = result.rows as Array<{ relation_name: string | null }> | undefined
-    return Boolean(rows?.[0]?.relation_name)
+    const result = await pool.query(`select to_regclass('public.${tableName}') as relation_name`);
+    const rows = result.rows as Array<{ relation_name: string | null }> | undefined;
+    return Boolean(rows?.[0]?.relation_name);
   } catch {
-    return false
+    return false;
   }
-}
+};
 
 // Create users with specific IDs (for tests that need deterministic IDs)
 export const ensureIntegrationUsers = async (
-  users: Array<{ id: string; name: string; email?: string }>
+  users: Array<{ id: string; name: string; email?: string }>,
 ): Promise<{ ownerId: string; otherUserId: string }> => {
-  const { db } = await import('../db')
-  
+  const { db } = await import('../db');
+
   for (const user of users) {
-    await db.insertInto('user').values({
-      id: user.id,
-      email: user.email ?? `${user.id}@test.com`,
-      name: user.name,
-    }).execute()
+    await db
+      .insertInto('user')
+      .values({
+        id: user.id,
+        email: user.email ?? `${user.id}@test.com`,
+        name: user.name,
+      })
+      .execute();
   }
-  
-  return { ownerId: users[0]?.id || '', otherUserId: users[1]?.id || '' }
-}
 
-export const createTestUser = async (overrides?: { id?: string; email?: string; name?: string }): Promise<string> => {
-  const { db } = await import('../db')
-  const id = overrides?.id || randomUUID()
-  
-  await db.insertInto('user').values({
-    id,
-    email: overrides?.email || `${id}@test.com`,
-    name: overrides?.name || 'Test User',
-  }).execute()
-  
-  return id
-}
+  return { ownerId: users[0]?.id || '', otherUserId: users[1]?.id || '' };
+};
 
-export const cleanupTestData = async (userIds: string[]): Promise<void> => {
-  if (userIds.length === 0) return
-  
-  const { db } = await import('../db')
-  
-  await db.deleteFrom('app.notes')
-    .where('owner_userid', 'in', userIds)
-    .execute()
-  
+const createTestUser = async (overrides?: {
+  id?: string;
+  email?: string;
+  name?: string;
+}): Promise<string> => {
+  const { db } = await import('../db');
+  const id = overrides?.id || randomUUID();
+
+  await db
+    .insertInto('user')
+    .values({
+      id,
+      email: overrides?.email || `${id}@test.com`,
+      name: overrides?.name || 'Test User',
+    })
+    .execute();
+
+  return id;
+};
+
+const cleanupTestData = async (userIds: string[]): Promise<void> => {
+  if (userIds.length === 0) return;
+
+  const { db } = await import('../db');
+
+  await db.deleteFrom('app.notes').where('owner_userid', 'in', userIds).execute();
+
   // Delete users
-  await db.deleteFrom('user')
-    .where('id', 'in', userIds)
-    .execute()
-}
+  await db.deleteFrom('user').where('id', 'in', userIds).execute();
+};
 
-export const setUserCleanup = (cleanup: (userId: string) => Promise<void>): void => {
-  void cleanup
+const setUserCleanup = (cleanup: (userId: string) => Promise<void>): void => {
+  void cleanup;
   // No-op for Kysely
-}
+};
 
 // Mock utilities for unit tests
-export const createDbMocks = () => {
+const createDbMocks = () => {
   return {
     db: {},
     client: {},
     mockQueryResult: <T>(data: T[] | T | null): Promise<T[] | T | null> => Promise.resolve(data),
-    mockMutationResult: (count = 1): Promise<{ rowCount: number; rows: unknown[] }> => 
+    mockMutationResult: (count = 1): Promise<{ rowCount: number; rows: unknown[] }> =>
       Promise.resolve({ rowCount: count, rows: [] }),
     tableQueries: {},
     mutations: {},
-  }
-}
+  };
+};
 
-export const globalDbMocks = createDbMocks()
+const globalDbMocks = createDbMocks();
 
-export const createTestData = {
+const createTestData = {
   user: (overrides?: Record<string, unknown>) => ({
     id: `test-user-${Date.now()}`,
     email: 'test@example.com',
@@ -122,30 +128,30 @@ export const createTestData = {
     updatedAt: new Date(),
     ...overrides,
   }),
-}
+};
 
-export const mockDbOperations = {
+const mockDbOperations = {
   mockFindSuccess: <T>(table: string, method: string, data: T): void => {
-    void table
-    void method
-    void data
+    void table;
+    void method;
+    void data;
   },
   mockFindNotFound: (table: string, method: string): void => {
-    void table
-    void method
+    void table;
+    void method;
   },
   mockDbError: (table: string, method: string, error?: Error): void => {
-    void table
-    void method
-    void error
+    void table;
+    void method;
+    void error;
   },
   mockInsertSuccess: <T>(data: T): void => {
-    void data
+    void data;
   },
   mockUpdateSuccess: <T>(data: T): void => {
-    void data
+    void data;
   },
   mockDeleteSuccess: (count?: number): void => {
-    void count
+    void count;
   },
-}
+};

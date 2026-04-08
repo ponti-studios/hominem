@@ -5,14 +5,17 @@ import { Field } from './field';
 import { Input } from './input';
 import { Textarea } from './textarea';
 
-const meta: Meta<typeof Field> = {
+const meta = {
   title: 'Forms/Field',
   component: Field,
   tags: ['autodocs'],
-};
+  args: {
+    children: <Input placeholder="you@example.com" />,
+  },
+} satisfies Meta<typeof Field>;
 
 export default meta;
-type Story = StoryObj<typeof Field>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: () => (

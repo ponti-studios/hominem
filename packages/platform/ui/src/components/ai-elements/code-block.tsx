@@ -44,7 +44,7 @@ export interface CodeBlockProps {
   language: string;
   code: string;
   isCopied: boolean;
-  onCopy: () => void;
+  onCopy?: () => void;
 }
 
 export default function CodeBlock({ language, code, isCopied, onCopy }: CodeBlockProps) {

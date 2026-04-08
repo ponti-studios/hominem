@@ -1,19 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-// Composer - main message/content composition component
-const meta: Meta = {
-  title: 'Patterns/Composer/Composer',
-  tags: ['autodocs'],
-  parameters: {
-    layout: 'fullscreen',
-  },
-};
-
-export default meta;
-type Story = StoryObj;
-
-export const Default: Story = {
-  render: () => (
+function ComposerPreview() {
+  return (
     <div className="min-h-screen bg-surface p-4 flex items-end justify-center">
       <div className="w-full max-w-2xl bg-base border border-border-default rounded-lg p-4 space-y-3">
         <textarea
@@ -33,8 +21,22 @@ export const Default: Story = {
         </div>
       </div>
     </div>
-  ),
-};
+  );
+}
+
+const meta = {
+  title: 'Patterns/Composer/Composer',
+  component: ComposerPreview,
+  tags: ['autodocs'],
+  parameters: {
+    layout: 'fullscreen',
+  },
+} satisfies Meta<typeof ComposerPreview>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {};
 
 export const WithAttachments: Story = {
   render: () => (

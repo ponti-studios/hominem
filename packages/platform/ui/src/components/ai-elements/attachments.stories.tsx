@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { Attachment, AttachmentEmpty, Attachments } from './attachments';
 
-const meta: Meta<typeof Attachments> = {
+const meta = {
   title: 'Patterns/AI/Attachments',
   component: Attachments,
   tags: ['autodocs'],
@@ -11,9 +11,10 @@ const meta: Meta<typeof Attachments> = {
       disable: true,
     },
   },
-};
+} satisfies Meta<typeof Attachments>;
+
 export default meta;
-type Story = StoryObj<typeof Attachments>;
+type Story = StoryObj<typeof meta>;
 
 const docAttachment = {
   id: '1',

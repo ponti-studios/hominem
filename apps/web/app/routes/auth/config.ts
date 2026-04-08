@@ -8,6 +8,6 @@ export const AUTH_CONFIG = {
   title: AUTH_COPY.emailEntry.title,
 } as const;
 
-export function getAuthApiBaseUrl() {
+function getAuthApiBaseUrl() {
   return serverEnv.VITE_PUBLIC_API_URL;
 }

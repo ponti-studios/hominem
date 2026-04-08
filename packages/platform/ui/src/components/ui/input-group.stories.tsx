@@ -3,13 +3,14 @@ import { Search } from 'lucide-react';
 
 import { InputGroup, InputGroupAddon, InputGroupInput } from './input-group';
 
-const meta: Meta<typeof InputGroup> = {
+const meta = {
   title: 'Forms/InputGroup',
   component: InputGroup,
   tags: ['autodocs'],
-};
+} satisfies Meta<typeof InputGroup>;
+
 export default meta;
-type Story = StoryObj<typeof InputGroup>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: () => (

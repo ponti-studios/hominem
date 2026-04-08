@@ -3,17 +3,17 @@ import { expect, within } from 'storybook/test';
 
 import { PasskeyManagement } from './passkey-management';
 
-const meta: Meta<typeof PasskeyManagement> = {
+const meta = {
   title: 'Patterns/Auth/PasskeyManagement',
   component: PasskeyManagement,
   tags: ['autodocs'],
   argTypes: {
     isLoading: { control: 'boolean' },
   },
-};
+} satisfies Meta<typeof PasskeyManagement>;
 
 export default meta;
-type Story = StoryObj<typeof PasskeyManagement>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
@@ -40,7 +40,6 @@ export const Empty: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    // Should show "Add passkey" option when no passkeys exist
     const addButton = canvas.queryByText(/add|register/i);
     await expect(addButton).toBeInTheDocument();
   },

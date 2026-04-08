@@ -6,7 +6,7 @@ import { checkboxStateOptions } from '../../storybook/options';
 import { Checkbox } from './checkbox';
 import { Label } from './label';
 
-const meta: Meta<typeof Checkbox> = {
+const meta = {
   title: 'Forms/Checkbox',
   component: Checkbox,
   tags: ['autodocs'],
@@ -17,9 +17,10 @@ const meta: Meta<typeof Checkbox> = {
     disabled: booleanControl('Prevents user interaction and applies disabled styling', false),
     onCheckedChange: hiddenControl,
   },
-};
+} satisfies Meta<typeof Checkbox>;
+
 export default meta;
-type Story = StoryObj<typeof Checkbox>;
+type Story = StoryObj<typeof meta>;
 
 function CheckboxPreview({
   checked,

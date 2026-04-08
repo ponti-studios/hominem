@@ -3,13 +3,14 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Label } from './label';
 import { RadioGroup, RadioGroupItem } from './radio-group';
 
-const meta: Meta<typeof RadioGroup> = {
+const meta = {
   title: 'Forms/RadioGroup',
   component: RadioGroup,
   tags: ['autodocs'],
-};
+} satisfies Meta<typeof RadioGroup>;
+
 export default meta;
-type Story = StoryObj<typeof RadioGroup>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: () => (

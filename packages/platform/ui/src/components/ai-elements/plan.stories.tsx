@@ -3,20 +3,28 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button } from '../ui/button';
 import { Plan, PlanContent, PlanFooter, PlanHeader, PlanStep } from './plan';
 
-const meta: Meta<typeof Plan> = {
+function PlanPreview(props: { className?: string; children: React.ReactNode }) {
+  return <Plan {...props} />;
+}
+
+const meta = {
   title: 'Patterns/AI/Plan',
-  component: Plan,
+  component: PlanPreview,
   tags: ['autodocs'],
   parameters: {
     controls: {
       disable: true,
     },
   },
-};
+} satisfies Meta<typeof PlanPreview>;
+
 export default meta;
-type Story = StoryObj<typeof Plan>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
+  args: {
+    children: null,
+  },
   render: () => (
     <Plan className="max-w-sm">
       <PlanHeader title="Research Plan" />

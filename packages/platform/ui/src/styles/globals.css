@@ -63,81 +63,81 @@
   /* Anthropic-inspired warm palette — parchment whites, warm grays, coral accent */
 
   /* Backgrounds */
-  --color-bg-base: #faf9f7; /* Warm off-white — primary app background */
-  --color-bg-surface: #f2efe9; /* Warm light gray — cards, panels */
-  --color-bg-elevated: #e9e5dc; /* Warmer raised surface — modals, popovers */
-  --color-bg-overlay: rgba(28, 25, 18, 0.04);
+  --color-bg-base: rgba(253, 252, 251, 1);
+  --color-bg-surface: rgba(247, 246, 243, 1);
+  --color-bg-elevated: rgba(239, 237, 232, 1);
+  --color-bg-overlay: rgba(17, 19, 24, 0.05);
 
   /* Text — warm near-black, not pure black */
-  --color-text-primary: #1c1912;
-  --color-text-secondary: #6b6555;
-  --color-text-tertiary: #9e9585;
-  --color-text-disabled: #c4bdb0;
+  --color-text-primary: rgba(25, 25, 24, 1);
+  --color-text-secondary: rgba(95, 99, 109, 1);
+  --color-text-tertiary: rgba(133, 139, 152, 1);
+  --color-text-disabled: rgba(179, 184, 196, 1);
 
   /* Borders */
-  --color-border-default: rgba(28, 25, 18, 0.1);
-  --color-border-subtle: rgba(28, 25, 18, 0.05);
-  --color-border-focus: rgba(28, 25, 18, 0.22);
+  --color-border-default: rgba(25, 25, 24, 0.16);
+  --color-border-subtle: rgba(25, 25, 24, 0.09);
+  --color-border-focus: rgba(91, 91, 214, 0.45);
 
   /* Icons */
-  --color-icon-primary: #1c1912;
-  --color-icon-muted: #9e9585;
+  --color-icon-primary: rgba(25, 25, 24, 1);
+  --color-icon-muted: rgba(133, 139, 152, 1);
 
   /* Semantic status */
-  --color-success: #2a9d63;
-  --color-warning: #d97706;
-  --color-destructive: #dc2626;
+  --color-success: rgba(41, 151, 100, 1);
+  --color-warning: rgba(255, 178, 36, 1);
+  --color-destructive: rgba(229, 77, 46, 1);
 
   /* Accent — Anthropic warm coral */
-  --color-accent: #c05a2a;
-  --color-accent-foreground: #ffffff;
+  --color-accent: rgba(91, 91, 214, 1);
+  --color-accent-foreground: rgba(255, 255, 255, 1);
 
   /* System tokens — used by shadcn/ui component internals */
-  --color-primary: #1c1912;
-  --color-primary-foreground: #faf9f7;
-  --color-secondary: rgba(28, 25, 18, 0.07);
-  --color-secondary-foreground: #6b6555;
-  --color-muted: rgba(28, 25, 18, 0.04);
-  --color-muted-foreground: #9e9585;
-  --color-foreground: #1c1912;
-  --color-background: #faf9f7;
-  --color-destructive-foreground: #ffffff;
-  --color-popover: #f2efe9;
-  --color-popover-foreground: #1c1912;
-  --color-input: #f2efe9;
-  --color-ring: #c05a2a;
+  --color-primary: rgba(0, 0, 0, 1);
+  --color-primary-foreground: rgba(255, 255, 255, 1);
+  --color-secondary: rgba(25, 25, 24, 0.08);
+  --color-secondary-foreground: rgba(43, 47, 58, 1);
+  --color-muted: rgba(25, 25, 24, 0.05);
+  --color-muted-foreground: rgba(95, 99, 109, 1);
+  --color-foreground: rgba(25, 25, 24, 1);
+  --color-background: rgba(253, 252, 251, 1);
+  --color-destructive-foreground: rgba(255, 255, 255, 1);
+  --color-popover: rgba(247, 246, 243, 1);
+  --color-popover-foreground: rgba(25, 25, 24, 1);
+  --color-input: rgba(247, 246, 243, 1);
+  --color-ring: rgba(0, 0, 0, 1);
 
   /* Emphasis scale — layered warm black for subtle differentiation */
-  --color-emphasis-highest: rgba(28, 25, 18, 0.9);
-  --color-emphasis-high: rgba(28, 25, 18, 0.7);
-  --color-emphasis-medium: rgba(28, 25, 18, 0.5);
-  --color-emphasis-low: rgba(28, 25, 18, 0.3);
-  --color-emphasis-lower: rgba(28, 25, 18, 0.2);
-  --color-emphasis-subtle: rgba(28, 25, 18, 0.12);
-  --color-emphasis-minimal: rgba(28, 25, 18, 0.07);
-  --color-emphasis-faint: rgba(28, 25, 18, 0.04);
+  --color-emphasis-highest: rgba(25, 25, 24, 0.9);
+  --color-emphasis-high: rgba(25, 25, 24, 0.72);
+  --color-emphasis-medium: rgba(25, 25, 24, 0.52);
+  --color-emphasis-low: rgba(25, 25, 24, 0.34);
+  --color-emphasis-lower: rgba(25, 25, 24, 0.24);
+  --color-emphasis-subtle: rgba(25, 25, 24, 0.14);
+  --color-emphasis-minimal: rgba(25, 25, 24, 0.09);
+  --color-emphasis-faint: rgba(25, 25, 24, 0.05);
 
   /* Charts — warm, distinct, accessible */
-  --color-chart-1: #c05a2a;
-  --color-chart-2: #2a9d63;
-  --color-chart-3: #3b82f6;
-  --color-chart-4: #d97706;
-  --color-chart-5: #9e9585;
+  --color-chart-1: rgba(91, 91, 214, 1);
+  --color-chart-2: rgba(41, 151, 100, 1);
+  --color-chart-3: rgba(14, 165, 233, 1);
+  --color-chart-4: rgba(255, 178, 36, 1);
+  --color-chart-5: rgba(229, 77, 46, 1);
 
   /* Sidebar */
-  --color-sidebar: #f2efe9;
-  --color-sidebar-foreground: #1c1912;
-  --color-sidebar-primary: #1c1912;
-  --color-sidebar-primary-foreground: #faf9f7;
-  --color-sidebar-accent: rgba(28, 25, 18, 0.06);
-  --color-sidebar-accent-foreground: #1c1912;
-  --color-sidebar-border: rgba(28, 25, 18, 0.08);
-  --color-sidebar-ring: #c05a2a;
+  --color-sidebar: rgba(242, 241, 238, 1);
+  --color-sidebar-foreground: rgba(25, 25, 24, 1);
+  --color-sidebar-primary: rgba(91, 91, 214, 1);
+  --color-sidebar-primary-foreground: rgba(255, 255, 255, 1);
+  --color-sidebar-accent: rgba(25, 25, 24, 0.06);
+  --color-sidebar-accent-foreground: rgba(25, 25, 24, 1);
+  --color-sidebar-border: rgba(25, 25, 24, 0.1);
+  --color-sidebar-ring: rgba(91, 91, 214, 1);
 
   /* Chat / Prompt input */
-  --color-prompt-bg: #faf9f7;
-  --color-prompt-border: rgba(28, 25, 18, 0.12);
-  --color-prompt-border-focus: rgba(28, 25, 18, 0.28);
+  --color-prompt-bg: rgba(253, 252, 251, 1);
+  --color-prompt-border: rgba(25, 25, 24, 0.16);
+  --color-prompt-border-focus: rgba(91, 91, 214, 0.45);
 
   /* ====== SPACING: 8PT GRID ====== */
 
@@ -191,131 +191,145 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-bg-base: #1a1814;
-    --color-bg-surface: #242019;
-    --color-bg-elevated: #2e2a22;
-    --color-bg-overlay: rgba(250, 249, 247, 0.04);
+    --color-bg-base: rgba(17, 17, 19, 1);
+    --color-bg-surface: rgba(24, 25, 27, 1);
+    --color-bg-elevated: rgba(33, 34, 37, 1);
+    --color-bg-overlay: rgba(245, 246, 248, 0.06);
 
-    --color-text-primary: #f5f2ec;
-    --color-text-secondary: #a89f90;
-    --color-text-tertiary: #6b6555;
-    --color-text-disabled: #3e3b35;
+    --color-text-primary: rgba(245, 246, 248, 1);
+    --color-text-secondary: rgba(180, 185, 195, 1);
+    --color-text-tertiary: rgba(141, 147, 161, 1);
+    --color-text-disabled: rgba(97, 103, 117, 1);
 
-    --color-border-default: rgba(250, 249, 247, 0.09);
-    --color-border-subtle: rgba(250, 249, 247, 0.05);
-    --color-border-focus: rgba(250, 249, 247, 0.2);
+    --color-border-default: rgba(245, 246, 248, 0.18);
+    --color-border-subtle: rgba(245, 246, 248, 0.11);
+    --color-border-focus: rgba(142, 141, 255, 0.5);
 
-    --color-icon-primary: #f5f2ec;
-    --color-icon-muted: #6b6555;
+    --color-icon-primary: rgba(245, 246, 248, 1);
+    --color-icon-muted: rgba(141, 147, 161, 1);
 
-    --color-success: #34c47a;
-    --color-warning: #f59e0b;
-    --color-destructive: #f05252;
+    --color-success: rgba(61, 214, 140, 1);
+    --color-warning: rgba(255, 209, 102, 1);
+    --color-destructive: rgba(255, 123, 92, 1);
 
-    --color-accent: #e0703a;
-    --color-accent-foreground: #ffffff;
+    --color-accent: rgba(142, 141, 255, 1);
+    --color-accent-foreground: rgba(15, 16, 40, 1);
 
-    --color-primary: #f5f2ec;
-    --color-primary-foreground: #1a1814;
-    --color-secondary: rgba(250, 249, 247, 0.08);
-    --color-secondary-foreground: #a89f90;
-    --color-muted: rgba(250, 249, 247, 0.05);
-    --color-muted-foreground: #6b6555;
-    --color-foreground: #f5f2ec;
-    --color-background: #1a1814;
-    --color-popover: #242019;
-    --color-popover-foreground: #f5f2ec;
-    --color-input: #242019;
-    --color-ring: #e0703a;
+    --color-primary: rgba(0, 0, 0, 1);
+    --color-primary-foreground: rgba(255, 255, 255, 1);
+    --color-secondary: rgba(245, 246, 248, 0.14);
+    --color-secondary-foreground: rgba(229, 232, 239, 1);
+    --color-muted: rgba(245, 246, 248, 0.08);
+    --color-muted-foreground: rgba(180, 185, 195, 1);
+    --color-foreground: rgba(245, 246, 248, 1);
+    --color-background: rgba(17, 17, 19, 1);
+    --color-destructive-foreground: rgba(29, 14, 10, 1);
+    --color-popover: rgba(24, 25, 27, 1);
+    --color-popover-foreground: rgba(245, 246, 248, 1);
+    --color-input: rgba(24, 25, 27, 1);
+    --color-ring: rgba(0, 0, 0, 1);
 
-    --color-emphasis-highest: rgba(250, 249, 247, 0.9);
-    --color-emphasis-high: rgba(250, 249, 247, 0.7);
-    --color-emphasis-medium: rgba(250, 249, 247, 0.5);
-    --color-emphasis-low: rgba(250, 249, 247, 0.3);
-    --color-emphasis-lower: rgba(250, 249, 247, 0.2);
-    --color-emphasis-subtle: rgba(250, 249, 247, 0.12);
-    --color-emphasis-minimal: rgba(250, 249, 247, 0.07);
-    --color-emphasis-faint: rgba(250, 249, 247, 0.04);
+    --color-emphasis-highest: rgba(245, 246, 248, 0.92);
+    --color-emphasis-high: rgba(245, 246, 248, 0.76);
+    --color-emphasis-medium: rgba(245, 246, 248, 0.56);
+    --color-emphasis-low: rgba(245, 246, 248, 0.38);
+    --color-emphasis-lower: rgba(245, 246, 248, 0.26);
+    --color-emphasis-subtle: rgba(245, 246, 248, 0.18);
+    --color-emphasis-minimal: rgba(245, 246, 248, 0.12);
+    --color-emphasis-faint: rgba(245, 246, 248, 0.07);
 
-    --color-sidebar: #1a1814;
-    --color-sidebar-foreground: #f5f2ec;
-    --color-sidebar-primary: #f5f2ec;
-    --color-sidebar-primary-foreground: #1a1814;
-    --color-sidebar-accent: rgba(250, 249, 247, 0.06);
-    --color-sidebar-accent-foreground: #f5f2ec;
-    --color-sidebar-border: rgba(250, 249, 247, 0.08);
-    --color-sidebar-ring: #e0703a;
+    --color-chart-1: rgba(142, 141, 255, 1);
+    --color-chart-2: rgba(61, 214, 140, 1);
+    --color-chart-3: rgba(56, 189, 248, 1);
+    --color-chart-4: rgba(255, 209, 102, 1);
+    --color-chart-5: rgba(255, 123, 92, 1);
 
-    --color-prompt-bg: #242019;
-    --color-prompt-border: rgba(250, 249, 247, 0.12);
-    --color-prompt-border-focus: rgba(250, 249, 247, 0.28);
+    --color-sidebar: rgba(15, 16, 18, 1);
+    --color-sidebar-foreground: rgba(245, 246, 248, 1);
+    --color-sidebar-primary: rgba(142, 141, 255, 1);
+    --color-sidebar-primary-foreground: rgba(15, 16, 40, 1);
+    --color-sidebar-accent: rgba(245, 246, 248, 0.08);
+    --color-sidebar-accent-foreground: rgba(245, 246, 248, 1);
+    --color-sidebar-border: rgba(245, 246, 248, 0.14);
+    --color-sidebar-ring: rgba(142, 141, 255, 1);
 
-    --glass-background: rgba(26, 24, 20, 0.88);
+    --color-prompt-bg: rgba(24, 25, 27, 1);
+    --color-prompt-border: rgba(245, 246, 248, 0.18);
+    --color-prompt-border-focus: rgba(142, 141, 255, 0.5);
+
+    --glass-background: rgba(17, 17, 19, 0.82);
   }
 }
 
 /* Manual dark mode — for apps that toggle theme explicitly (e.g. desktop) */
 :root[data-theme='dark'] {
-  --color-bg-base: #1a1814;
-  --color-bg-surface: #242019;
-  --color-bg-elevated: #2e2a22;
-  --color-bg-overlay: rgba(250, 249, 247, 0.04);
+  --color-bg-base: rgba(17, 17, 19, 1);
+  --color-bg-surface: rgba(24, 25, 27, 1);
+  --color-bg-elevated: rgba(33, 34, 37, 1);
+  --color-bg-overlay: rgba(245, 246, 248, 0.06);
 
-  --color-text-primary: #f5f2ec;
-  --color-text-secondary: #a89f90;
-  --color-text-tertiary: #6b6555;
-  --color-text-disabled: #3e3b35;
+  --color-text-primary: rgba(245, 246, 248, 1);
+  --color-text-secondary: rgba(180, 185, 195, 1);
+  --color-text-tertiary: rgba(141, 147, 161, 1);
+  --color-text-disabled: rgba(97, 103, 117, 1);
 
-  --color-border-default: rgba(250, 249, 247, 0.09);
-  --color-border-subtle: rgba(250, 249, 247, 0.05);
-  --color-border-focus: rgba(250, 249, 247, 0.2);
+  --color-border-default: rgba(245, 246, 248, 0.18);
+  --color-border-subtle: rgba(245, 246, 248, 0.11);
+  --color-border-focus: rgba(142, 141, 255, 0.5);
 
-  --color-icon-primary: #f5f2ec;
-  --color-icon-muted: #6b6555;
+  --color-icon-primary: rgba(245, 246, 248, 1);
+  --color-icon-muted: rgba(141, 147, 161, 1);
 
-  --color-success: #34c47a;
-  --color-warning: #f59e0b;
-  --color-destructive: #f05252;
+  --color-success: rgba(61, 214, 140, 1);
+  --color-warning: rgba(255, 209, 102, 1);
+  --color-destructive: rgba(255, 123, 92, 1);
 
-  --color-accent: #e0703a;
-  --color-accent-foreground: #ffffff;
+  --color-accent: rgba(142, 141, 255, 1);
+  --color-accent-foreground: rgba(15, 16, 40, 1);
 
-  --color-primary: #f5f2ec;
-  --color-primary-foreground: #1a1814;
-  --color-secondary: rgba(250, 249, 247, 0.08);
-  --color-secondary-foreground: #a89f90;
-  --color-muted: rgba(250, 249, 247, 0.05);
-  --color-muted-foreground: #6b6555;
-  --color-foreground: #f5f2ec;
-  --color-background: #1a1814;
-  --color-popover: #242019;
-  --color-popover-foreground: #f5f2ec;
-  --color-input: #242019;
-  --color-ring: #e0703a;
+  --color-primary: rgba(0, 0, 0, 1);
+  --color-primary-foreground: rgba(255, 255, 255, 1);
+  --color-secondary: rgba(245, 246, 248, 0.14);
+  --color-secondary-foreground: rgba(229, 232, 239, 1);
+  --color-muted: rgba(245, 246, 248, 0.08);
+  --color-muted-foreground: rgba(180, 185, 195, 1);
+  --color-foreground: rgba(245, 246, 248, 1);
+  --color-background: rgba(17, 17, 19, 1);
+  --color-destructive-foreground: rgba(29, 14, 10, 1);
+  --color-popover: rgba(24, 25, 27, 1);
+  --color-popover-foreground: rgba(245, 246, 248, 1);
+  --color-input: rgba(24, 25, 27, 1);
+  --color-ring: rgba(0, 0, 0, 1);
 
-  --color-emphasis-highest: rgba(250, 249, 247, 0.9);
-  --color-emphasis-high: rgba(250, 249, 247, 0.7);
-  --color-emphasis-medium: rgba(250, 249, 247, 0.5);
-  --color-emphasis-low: rgba(250, 249, 247, 0.3);
-  --color-emphasis-lower: rgba(250, 249, 247, 0.2);
-  --color-emphasis-subtle: rgba(250, 249, 247, 0.12);
-  --color-emphasis-minimal: rgba(250, 249, 247, 0.07);
-  --color-emphasis-faint: rgba(250, 249, 247, 0.04);
+  --color-emphasis-highest: rgba(245, 246, 248, 0.92);
+  --color-emphasis-high: rgba(245, 246, 248, 0.76);
+  --color-emphasis-medium: rgba(245, 246, 248, 0.56);
+  --color-emphasis-low: rgba(245, 246, 248, 0.38);
+  --color-emphasis-lower: rgba(245, 246, 248, 0.26);
+  --color-emphasis-subtle: rgba(245, 246, 248, 0.18);
+  --color-emphasis-minimal: rgba(245, 246, 248, 0.12);
+  --color-emphasis-faint: rgba(245, 246, 248, 0.07);
 
-  --color-sidebar: #1a1814;
-  --color-sidebar-foreground: #f5f2ec;
-  --color-sidebar-primary: #f5f2ec;
-  --color-sidebar-primary-foreground: #1a1814;
-  --color-sidebar-accent: rgba(250, 249, 247, 0.06);
-  --color-sidebar-accent-foreground: #f5f2ec;
-  --color-sidebar-border: rgba(250, 249, 247, 0.08);
-  --color-sidebar-ring: #e0703a;
+  --color-chart-1: rgba(142, 141, 255, 1);
+  --color-chart-2: rgba(61, 214, 140, 1);
+  --color-chart-3: rgba(56, 189, 248, 1);
+  --color-chart-4: rgba(255, 209, 102, 1);
+  --color-chart-5: rgba(255, 123, 92, 1);
 
-  --color-prompt-bg: #242019;
-  --color-prompt-border: rgba(250, 249, 247, 0.12);
-  --color-prompt-border-focus: rgba(250, 249, 247, 0.28);
+  --color-sidebar: rgba(15, 16, 18, 1);
+  --color-sidebar-foreground: rgba(245, 246, 248, 1);
+  --color-sidebar-primary: rgba(142, 141, 255, 1);
+  --color-sidebar-primary-foreground: rgba(15, 16, 40, 1);
+  --color-sidebar-accent: rgba(245, 246, 248, 0.08);
+  --color-sidebar-accent-foreground: rgba(245, 246, 248, 1);
+  --color-sidebar-border: rgba(245, 246, 248, 0.14);
+  --color-sidebar-ring: rgba(142, 141, 255, 1);
 
-  --glass-background: rgba(26, 24, 20, 0.88);
+  --color-prompt-bg: rgba(24, 25, 27, 1);
+  --color-prompt-border: rgba(245, 246, 248, 0.18);
+  --color-prompt-border-focus: rgba(142, 141, 255, 0.5);
+
+  --glass-background: rgba(17, 17, 19, 0.82);
 }
 
 /* ====== SAFE AREA UTILITIES ====== */

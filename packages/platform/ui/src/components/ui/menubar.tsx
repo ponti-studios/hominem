@@ -7,14 +7,6 @@ import { cn } from '../../lib/utils';
 
 const MenubarMenu: React.FC<MenubarProps> = MenubarPrimitive.Menu;
 
-const MenubarGroup = MenubarPrimitive.Group;
-
-const MenubarPortal = MenubarPrimitive.Portal;
-
-const MenubarSub = MenubarPrimitive.Sub;
-
-const MenubarRadioGroup = MenubarPrimitive.RadioGroup;
-
 const Menubar = React.forwardRef<
   React.ElementRef<typeof MenubarPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof MenubarPrimitive.Root>
@@ -196,23 +188,15 @@ const MenubarShortcut = ({ className, ...props }: React.HTMLAttributes<HTMLSpanE
     />
   );
 };
-MenubarShortcut.displayname = 'MenubarShortcut';
+
+MenubarShortcut.displayName = 'MenubarShortcut';
 
 export {
   Menubar,
-  MenubarCheckboxItem,
   MenubarContent,
-  MenubarGroup,
   MenubarItem,
-  MenubarLabel,
   MenubarMenu,
-  MenubarPortal,
-  MenubarRadioGroup,
-  MenubarRadioItem,
   MenubarSeparator,
   MenubarShortcut,
-  MenubarSub,
-  MenubarSubContent,
-  MenubarSubTrigger,
   MenubarTrigger,
 };

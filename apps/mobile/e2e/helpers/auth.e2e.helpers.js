@@ -1,5 +1,5 @@
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://localhost:4040'
-const AUTH_E2E_SECRET = process.env.EXPO_PUBLIC_E2E_AUTH_SECRET ?? 'otp-secret'
+const AUTH_E2E_SECRET = process.env.AUTH_E2E_SECRET ?? 'otp-secret'
 
 /**
  * Exponential backoff delay. Returns a promise that resolves after the

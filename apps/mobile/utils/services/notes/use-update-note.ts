@@ -1,5 +1,5 @@
 import type { NotesUpdateByIdInput } from '@hominem/rpc';
-import { useApiClient } from '@hominem/rpc/react';
+import { createNotesMutationSuccessHandler, useApiClient } from '@hominem/rpc/react';
 import type { Note } from '@hominem/rpc/types';
 import { useMutation, useQueryClient, type UseMutationResult } from '@tanstack/react-query';
 
@@ -58,7 +58,7 @@ export function buildUpdateNoteInput(
   };
 }
 
-export const useUpdateNote = (): UseMutationResult<Note, Error, UpdateNoteInput> => {
+function useUpdateNote(): UseMutationResult<Note, Error, UpdateNoteInput> {
   const client = useApiClient();
   const queryClient = useQueryClient();
 
@@ -84,10 +84,7 @@ export const useUpdateNote = (): UseMutationResult<Note, Error, UpdateNoteInput>
       });
       queryClient.setQueryData(noteKeys.detail(input.id), updatedNote);
 
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: noteKeys.all }),
-        queryClient.invalidateQueries({ queryKey: noteKeys.detail(input.id) }),
-      ]);
+      await createNotesMutationSuccessHandler(queryClient, input.id);
     },
   });
-};
+}

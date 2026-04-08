@@ -4,7 +4,7 @@ import { selectControl } from '../../storybook/controls';
 import { plaidStatusOptions } from '../../storybook/options';
 import { PlaidStatusBadge } from './plaid-status-badge';
 
-const meta: Meta<typeof PlaidStatusBadge> = {
+const meta = {
   title: 'Patterns/Finance/PlaidStatusBadge',
   component: PlaidStatusBadge,
   tags: ['autodocs'],
@@ -16,7 +16,7 @@ const meta: Meta<typeof PlaidStatusBadge> = {
   args: {
     status: 'active',
   },
-};
+} satisfies Meta<typeof PlaidStatusBadge>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

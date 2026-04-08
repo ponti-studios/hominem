@@ -4,12 +4,14 @@ import { expect, userEvent, within } from 'storybook/test';
 import { Button } from './button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './card';
 
-const meta: Meta = {
+const meta = {
   title: 'Patterns/DataDisplay/Card',
   tags: ['autodocs'],
-};
+  component: Card,
+} satisfies Meta<typeof Card>;
+
 export default meta;
-type Story = StoryObj;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: () => (

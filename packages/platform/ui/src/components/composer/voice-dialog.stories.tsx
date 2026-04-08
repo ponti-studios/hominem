@@ -1,18 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-const meta: Meta = {
-  title: 'Patterns/Composer/VoiceDialog',
-  tags: ['autodocs'],
-  parameters: {
-    layout: 'fullscreen',
-  },
-};
-
-export default meta;
-type Story = StoryObj;
-
-export const Recording: Story = {
-  render: () => (
+function VoiceDialogPreview() {
+  return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
       <div className="bg-base rounded-lg p-8 max-w-sm space-y-6 text-center">
         <h2 className="font-semibold">Voice Input</h2>
@@ -30,8 +19,22 @@ export const Recording: Story = {
         </div>
       </div>
     </div>
-  ),
-};
+  );
+}
+
+const meta = {
+  title: 'Patterns/Composer/VoiceDialog',
+  component: VoiceDialogPreview,
+  tags: ['autodocs'],
+  parameters: {
+    layout: 'fullscreen',
+  },
+} satisfies Meta<typeof VoiceDialogPreview>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Recording: Story = {};
 
 export const Ready: Story = {
   render: () => (

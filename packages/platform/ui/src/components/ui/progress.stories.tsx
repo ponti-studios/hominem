@@ -2,13 +2,14 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { Progress } from './progress';
 
-const meta: Meta<typeof Progress> = {
+const meta = {
   title: 'Feedback/Progress',
   component: Progress,
   tags: ['autodocs'],
-};
+} satisfies Meta<typeof Progress>;
+
 export default meta;
-type Story = StoryObj<typeof Progress>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {

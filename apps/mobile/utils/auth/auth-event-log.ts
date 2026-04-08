@@ -1,22 +1,22 @@
-export interface AuthEvent {
+export interface AuthEventLogEntry {
   event: string;
   phase: string;
   timestamp: number;
   durationMs: number | null;
 }
 
-const events: AuthEvent[] = [];
+const events: AuthEventLogEntry[] = [];
 const phaseStartTimes = new Map<string, number>();
 
 export function recordAuthEvent(
   event: string,
   phase: string,
   nowMs: number = Date.now(),
-): AuthEvent {
+): AuthEventLogEntry {
   const phaseStart = phaseStartTimes.get(phase);
   const durationMs = phaseStart !== undefined ? nowMs - phaseStart : null;
 
-  const entry: AuthEvent = { event, phase, timestamp: nowMs, durationMs };
+  const entry: AuthEventLogEntry = { event, phase, timestamp: nowMs, durationMs };
   events.push(entry);
   return entry;
 }
@@ -30,7 +30,7 @@ export function getAuthPhaseElapsed(phase: string, nowMs: number = Date.now()): 
   return start !== undefined ? nowMs - start : null;
 }
 
-export function getAuthEvents(): readonly AuthEvent[] {
+function getAuthEvents(): readonly AuthEventLogEntry[] {
   return events;
 }
 

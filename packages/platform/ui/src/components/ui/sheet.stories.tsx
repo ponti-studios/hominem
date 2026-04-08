@@ -11,7 +11,7 @@ import {
   SheetTrigger,
 } from './sheet';
 
-const meta: Meta<typeof Sheet> = {
+const meta = {
   title: 'Patterns/Overlay/Sheet',
   component: Sheet,
   tags: ['autodocs'],
@@ -30,9 +30,10 @@ const meta: Meta<typeof Sheet> = {
       table: { defaultValue: { summary: 'true' } },
     },
   },
-};
+} satisfies Meta<typeof Sheet>;
+
 export default meta;
-type Story = StoryObj<typeof Sheet>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: () => (

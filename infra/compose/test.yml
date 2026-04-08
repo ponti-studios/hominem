@@ -7,6 +7,7 @@
 #       Do not run this alongside dev.yml simultaneously.
 
 x-postgres-build: &postgres-build
+  image: ${POSTGRES_IMAGE:-postgres:latest}
   build:
     context: ../images/postgres
     dockerfile: Dockerfile

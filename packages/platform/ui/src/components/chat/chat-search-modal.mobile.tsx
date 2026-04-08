@@ -1,7 +1,7 @@
 import type React from 'react';
 import { Modal, Pressable, StyleSheet, View, type TextInput } from 'react-native';
 
-import { chatTokensNative, colors, fontSizes, radiiNative, spacing } from '../../tokens';
+import { colors, fontSizes, radiiNative, spacing } from '../../tokens';
 import { fontFamiliesNative } from '../../tokens/typography.native';
 import { Text } from '../typography/text.native';
 import { Button } from '../ui/button.native';
@@ -66,6 +66,8 @@ export function ChatSearchModal({
   );
 }
 
+const SEARCH_PANEL_RADIUS = 24;
+
 const styles = StyleSheet.create({
   headerIconButton: {
     backgroundColor: colors['bg-surface'],
@@ -94,7 +96,7 @@ const styles = StyleSheet.create({
   searchPanel: {
     backgroundColor: colors.background,
     borderColor: colors['border-default'],
-    borderRadius: chatTokensNative.radii.composer,
+    borderRadius: SEARCH_PANEL_RADIUS,
     borderWidth: 1,
     gap: spacing[3],
     paddingHorizontal: spacing[4],

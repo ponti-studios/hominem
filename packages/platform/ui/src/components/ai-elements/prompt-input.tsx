@@ -59,7 +59,7 @@ interface PromptInputProviderProps {
   children: ReactNode;
 }
 
-export function PromptInputProvider({ children }: PromptInputProviderProps) {
+function useFileAttachmentsState() {
   const [files, setFiles] = useState<FileUIPart[]>([]);
 
   const add = useCallback((newFiles: File[]) => {
@@ -93,6 +93,11 @@ export function PromptInputProvider({ children }: PromptInputProviderProps) {
     setFiles([]);
   }, [files]);
 
+  return { files, add, remove, clear };
+}
+
+export function PromptInputProvider({ children }: PromptInputProviderProps) {
+  const { files, add, remove, clear } = useFileAttachmentsState();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const openFileDialog = useCallback(() => {
@@ -131,44 +136,11 @@ export function usePromptInputAttachments() {
   try {
     return usePromptInputAttachmentsContext();
   } catch {
-    const [files, setFiles] = useState<FileUIPart[]>([]);
+    const { files, add, remove, clear } = useFileAttachmentsState();
     const fileInputRef = useRef<HTMLInputElement>(null);
-
-    const add = useCallback((newFiles: File[]) => {
-      const fileParts: FileUIPart[] = newFiles.map((file) => ({
-        type: 'file',
-        mimeType: file.type,
-        name: file.name,
-        url: URL.createObjectURL(file),
-        id: `${Date.now()}-${file.name}`,
-        file,
-      }));
-      setFiles((prev) => [...prev, ...fileParts]);
-    }, []);
-
-    const remove = useCallback((id: string) => {
-      setFiles((prev) => {
-        const file = prev.find((f) => f.id === id);
-        if (file?.url) {
-          URL.revokeObjectURL(file.url);
-        }
-        return prev.filter((f) => f.id !== id);
-      });
-    }, []);
-
-    const clear = useCallback(() => {
-      files.forEach((file) => {
-        if (file.url) {
-          URL.revokeObjectURL(file.url);
-        }
-      });
-      setFiles([]);
-    }, [files]);
-
     const openFileDialog = useCallback(() => {
       fileInputRef.current?.click();
     }, []);
-
     return { files, add, remove, clear, openFileDialog };
   }
 }

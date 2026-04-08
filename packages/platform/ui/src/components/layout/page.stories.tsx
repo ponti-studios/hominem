@@ -5,14 +5,14 @@ import { Heading } from '../typography/heading';
 import { Text } from '../typography/text';
 import { Page } from './page';
 
-const meta: Meta<typeof Page> = {
+const meta = {
   title: 'Layout/Page',
   component: Page,
   tags: ['autodocs'],
-};
+} satisfies Meta<typeof Page>;
 
 export default meta;
-type Story = StoryObj<typeof Page>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: () => (

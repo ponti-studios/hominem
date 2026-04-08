@@ -5,14 +5,14 @@ import { Button } from './button';
 import { Form } from './form';
 import { TextField } from './text-field';
 
-const meta: Meta<typeof Form> = {
+const meta = {
   title: 'Forms/Form',
   component: Form,
   tags: ['autodocs'],
-};
+} satisfies Meta<typeof Form>;
 
 export default meta;
-type Story = StoryObj<typeof Form>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {

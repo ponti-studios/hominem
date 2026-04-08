@@ -1,13 +1,13 @@
 import type {
+  MobileVoiceResponseErrorOutput,
   MobileVoiceTranscriptionErrorOutput,
   MobileVoiceTranscriptionOutput,
-  MobileVoiceResponseErrorOutput,
 } from '@hominem/rpc/types/mobile.types';
 import { generateVoiceResponse, VoiceResponseError } from '@hominem/services/voice-response';
 import { generateSpeechBuffer, VoiceSpeechError } from '@hominem/services/voice-speech';
 import {
-  VoiceTranscriptionError,
   transcribeVoiceBuffer,
+  VoiceTranscriptionError,
 } from '@hominem/services/voice-transcription';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
@@ -15,17 +15,36 @@ import * as z from 'zod';
 
 import { authMiddleware, type AppContext } from '../middleware/auth';
 
-export const voiceRoutes = new Hono<AppContext>().post('/transcribe', async (c) => {
+function getVoiceErrorStatusCode(error: { statusCode: number }): number {
+  return error.statusCode === 400 || error.statusCode === 401 || error.statusCode === 429
+    ? error.statusCode
+    : 500;
+}
+
+function respondWithTranscriptionError<ErrorOutput extends { error: string; code: string }>(
+  c: { json: <T>(body: T, status: number) => Response },
+  error: VoiceTranscriptionError,
+  code: ErrorOutput['code'],
+) {
+  return c.json<ErrorOutput>({ error: error.message, code }, getVoiceErrorStatusCode(error));
+}
+
+function parseVoiceRequestBody(body: Record<string, unknown>) {
+  const input = body.audio;
+  const audioFile = Array.isArray(input) ? input[0] : input;
+  const languageInput = body.language;
+  const language =
+    typeof languageInput === 'string' && languageInput.trim().length > 0
+      ? languageInput.trim()
+      : undefined;
+
+  return { audioFile, language };
+}
+
+const voiceRoutes = new Hono<AppContext>().post('/transcribe', async (c) => {
   try {
     const body = await c.req.parseBody();
-    const input = body.audio;
-
-    const audioFile = Array.isArray(input) ? input[0] : input;
-    const languageInput = body.language;
-    const language =
-      typeof languageInput === 'string' && languageInput.trim().length > 0
-        ? languageInput.trim()
-        : undefined;
+    const { audioFile, language } = parseVoiceRequestBody(body);
 
     if (!(audioFile instanceof File)) {
       return c.json<MobileVoiceTranscriptionErrorOutput>(
@@ -52,13 +71,10 @@ export const voiceRoutes = new Hono<AppContext>().post('/transcribe', async (c) 
     return c.json<MobileVoiceTranscriptionOutput>(response);
   } catch (error) {
     if (error instanceof VoiceTranscriptionError) {
-      const statusCode =
-        error.statusCode === 400 || error.statusCode === 401 || error.statusCode === 429
-          ? error.statusCode
-          : 500;
-      return c.json<MobileVoiceTranscriptionErrorOutput>(
-        { error: error.message, code: error.code },
-        statusCode,
+      return respondWithTranscriptionError<MobileVoiceTranscriptionErrorOutput>(
+        c,
+        error,
+        error.code,
       );
     }
 
@@ -104,13 +120,7 @@ export const authenticatedVoiceRoutes = new Hono<AppContext>()
   .post('/respond', async (c) => {
     try {
       const body = await c.req.parseBody();
-      const input = body.audio;
-      const audioFile = Array.isArray(input) ? input[0] : input;
-      const languageInput = body.language;
-      const language =
-        typeof languageInput === 'string' && languageInput.trim().length > 0
-          ? languageInput.trim()
-          : undefined;
+      const { audioFile, language } = parseVoiceRequestBody(body);
 
       if (!(audioFile instanceof File)) {
         return c.json<MobileVoiceResponseErrorOutput>(
@@ -159,22 +169,18 @@ export const authenticatedVoiceRoutes = new Hono<AppContext>()
       });
     } catch (error) {
       if (error instanceof VoiceTranscriptionError) {
-        const statusCode =
-          error.statusCode === 400 || error.statusCode === 401 || error.statusCode === 429
-            ? error.statusCode
-            : 500;
-        return c.json<MobileVoiceResponseErrorOutput>(
-          { error: error.message, code: 'RESPONSE_FAILED' },
-          statusCode,
+        return respondWithTranscriptionError<MobileVoiceResponseErrorOutput>(
+          c,
+          error,
+          'RESPONSE_FAILED',
         );
       }
       if (error instanceof VoiceResponseError) {
-        const statusCode =
-          error.statusCode === 400 || error.statusCode === 401 || error.statusCode === 429
-            ? error.statusCode
-            : 500;
+        const statusCode = getVoiceErrorStatusCode(error);
+        const responseCode: MobileVoiceResponseErrorOutput['code'] =
+          error.code === 'CONTENT_POLICY' ? 'RESPONSE_FAILED' : error.code;
         return c.json<MobileVoiceResponseErrorOutput>(
-          { error: error.message, code: error.code },
+          { error: error.message, code: responseCode },
           statusCode,
         );
       }

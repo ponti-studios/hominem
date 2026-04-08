@@ -3,6 +3,9 @@ import { QUEUE_NAMES } from '@hominem/utils/consts';
 import type { Queue } from 'bullmq';
 import { Queue as BullQueue } from 'bullmq';
 
+export * from './types';
+export * from './service';
+
 /**
  * Initialize BullMQ queues using consistent queue names.
  * These are singleton instances used throughout the application.

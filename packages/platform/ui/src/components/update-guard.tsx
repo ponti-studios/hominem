@@ -35,7 +35,7 @@ interface UpdateGuardProps {
 const UPDATE_INTERVAL_MS = 60 * 60 * 1000;
 
 function UpdateGuardClient({
-  logo = '/logo.png',
+  logo = '/logo.web.png',
   appName = 'App',
 }: Omit<UpdateGuardProps, 'children'>) {
   void logo;
@@ -160,7 +160,11 @@ function UpdateGuardClient({
   );
 }
 
-export function UpdateGuard({ children, logo = '/logo.png', appName = 'App' }: UpdateGuardProps) {
+export function UpdateGuard({
+  children,
+  logo = '/logo.web.png',
+  appName = 'App',
+}: UpdateGuardProps) {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {

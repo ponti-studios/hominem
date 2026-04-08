@@ -1,20 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-const meta: Meta = {
-  title: 'Patterns/AI/SpeechInput',
-  tags: ['autodocs'],
-  parameters: {
-    controls: {
-      disable: true,
-    },
-  },
-};
-
-export default meta;
-type Story = StoryObj;
-
-export const Default: Story = {
-  render: () => (
+function SpeechInputPreview() {
+  return (
     <div className="p-6 max-w-md space-y-4">
       <div className="p-4 border border-border-default rounded-lg bg-surface">
         <div className="flex items-center justify-center gap-2 mb-3">
@@ -41,8 +28,24 @@ export const Default: Story = {
         Stop Recording
       </button>
     </div>
-  ),
-};
+  );
+}
+
+const meta = {
+  title: 'Patterns/AI/SpeechInput',
+  component: SpeechInputPreview,
+  tags: ['autodocs'],
+  parameters: {
+    controls: {
+      disable: true,
+    },
+  },
+} satisfies Meta<typeof SpeechInputPreview>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {};
 
 export const Transcript: Story = {
   render: () => (

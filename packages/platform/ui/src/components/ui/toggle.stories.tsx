@@ -3,13 +3,14 @@ import { Bold, Italic, Underline } from 'lucide-react';
 
 import { Toggle } from './toggle';
 
-const meta: Meta<typeof Toggle> = {
+const meta = {
   title: 'Forms/Toggle',
   component: Toggle,
   tags: ['autodocs'],
-};
+} satisfies Meta<typeof Toggle>;
+
 export default meta;
-type Story = StoryObj<typeof Toggle>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: () => (

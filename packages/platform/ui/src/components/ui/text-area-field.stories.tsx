@@ -4,7 +4,7 @@ import { expect, userEvent, within } from 'storybook/test';
 import { booleanControl, numberControl, textControl } from '../../storybook/controls';
 import { TextAreaField } from './text-area-field';
 
-const meta: Meta<typeof TextAreaField> = {
+const meta = {
   title: 'Compound/TextAreaField',
   component: TextAreaField,
   tags: ['autodocs'],
@@ -16,10 +16,10 @@ const meta: Meta<typeof TextAreaField> = {
     rows: numberControl('Number of visible text lines', { min: 1, max: 20, defaultValue: 4 }),
     disabled: booleanControl('Prevents user interaction and applies disabled styling', false),
   },
-};
+} satisfies Meta<typeof TextAreaField>;
 
 export default meta;
-type Story = StoryObj<typeof TextAreaField>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {

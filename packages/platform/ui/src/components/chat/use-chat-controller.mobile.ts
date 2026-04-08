@@ -1,6 +1,6 @@
-import { useChatLifecycle } from '@hominem/chat-services/react';
-import type { PendingReview } from '@hominem/chat-services/react';
-import { buildNoteProposal } from '@hominem/chat-services/ui';
+import type { PendingReview } from '@hominem/chat/react';
+import { useChatLifecycle } from '@hominem/chat/react';
+import { buildNoteProposal } from '@hominem/chat/ui';
 import { useApiClient } from '@hominem/rpc/react';
 import type { ArtifactType, SessionSource, ThoughtLifecycleState } from '@hominem/rpc/types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -19,8 +19,8 @@ import {
 } from 'react';
 import { Alert, Platform, Share, type TextInput } from 'react-native';
 
-import type { ChatMessageItem } from './chat.types';
-import { loadMarkdown, type MarkdownComponent } from './index.mobile';
+import { loadMarkdown } from './chat-message.mobile';
+import type { ChatMessageItem, MarkdownComponent } from './chat.types';
 
 // ─── Injectable services ──────────────────────────────────────────────────────
 

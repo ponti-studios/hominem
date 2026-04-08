@@ -3,7 +3,7 @@ import * as TaskManager from 'expo-task-manager';
 
 import { storage } from './storage';
 
-export const BACKGROUND_SYNC_TASK = 'background-sync';
+const BACKGROUND_SYNC_TASK = 'background-sync';
 
 // Must be defined at module scope — before any component registers the task.
 TaskManager.defineTask(BACKGROUND_SYNC_TASK, async () => {

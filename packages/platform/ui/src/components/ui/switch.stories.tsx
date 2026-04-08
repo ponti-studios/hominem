@@ -6,7 +6,7 @@ import { switchSizeOptions } from '../../storybook/options';
 import { Label } from './label';
 import { Switch } from './switch';
 
-const meta: Meta<typeof Switch> = {
+const meta = {
   title: 'Forms/Switch',
   component: Switch,
   tags: ['autodocs'],
@@ -17,9 +17,10 @@ const meta: Meta<typeof Switch> = {
       defaultValue: 'default',
     }),
   },
-};
+} satisfies Meta<typeof Switch>;
+
 export default meta;
-type Story = StoryObj<typeof Switch>;
+type Story = StoryObj<typeof meta>;
 
 function SwitchPreview({
   checked,

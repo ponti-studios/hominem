@@ -10,7 +10,7 @@ import { Checkpoint, CheckpointList, CheckpointProgress } from './checkpoint';
 
 const checkpointStatusOptions = ['pending', 'in-progress', 'completed', 'error'] as const;
 
-const meta: Meta<typeof Checkpoint> = {
+const meta = {
   title: 'Patterns/AI/Checkpoint',
   component: Checkpoint,
   tags: ['autodocs'],
@@ -27,9 +27,10 @@ const meta: Meta<typeof Checkpoint> = {
     isActive: booleanControl('Highlights the checkpoint as active', false),
     children: hiddenControl,
   },
-};
+} satisfies Meta<typeof Checkpoint>;
+
 export default meta;
-type Story = StoryObj<typeof Checkpoint>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
@@ -41,6 +42,10 @@ export const Default: Story = {
 };
 
 export const Statuses: Story = {
+  args: {
+    title: '',
+    status: 'pending',
+  },
   parameters: {
     controls: {
       disable: true,
@@ -62,6 +67,10 @@ export const Statuses: Story = {
 };
 
 export const WithProgress: Story = {
+  args: {
+    title: '',
+    status: 'pending',
+  },
   parameters: {
     controls: {
       disable: true,

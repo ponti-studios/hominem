@@ -2,13 +2,14 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { AuthErrorBanner } from './auth-error-banner';
 
-const meta: Meta<typeof AuthErrorBanner> = {
+const meta = {
   title: 'Patterns/Auth/AuthErrorBanner',
   component: AuthErrorBanner,
   tags: ['autodocs'],
-};
+} satisfies Meta<typeof AuthErrorBanner>;
+
 export default meta;
-type Story = StoryObj<typeof AuthErrorBanner>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {

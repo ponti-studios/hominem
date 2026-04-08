@@ -1,9 +1,9 @@
-import type { Meta } from '@storybook/react-vite';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 
 import { FilterSelect } from './filter-select';
 
-const meta: Meta<typeof FilterSelect> = {
+const meta = {
   title: 'Patterns/Filters/FilterSelect',
   component: FilterSelect,
   tags: ['autodocs'],
@@ -12,8 +12,10 @@ const meta: Meta<typeof FilterSelect> = {
       disable: true,
     },
   },
-};
+} satisfies Meta<typeof FilterSelect>;
+
 export default meta;
+type Story = StoryObj<typeof meta>;
 
 const statusOptions = [
   { value: 'active', label: 'Active' },
@@ -21,7 +23,13 @@ const statusOptions = [
   { value: 'pending', label: 'Pending' },
 ];
 
-export const Default = {
+export const Default: Story = {
+  args: {
+    label: 'Status',
+    value: '',
+    options: statusOptions,
+    onChange: () => {},
+  },
   render: () => {
     const [value, setValue] = useState<string | ''>('');
     return (
@@ -37,7 +45,13 @@ export const Default = {
   },
 };
 
-export const WithSelection = {
+export const WithSelection: Story = {
+  args: {
+    label: 'Status',
+    value: 'active',
+    options: statusOptions,
+    onChange: () => {},
+  },
   render: () => {
     const [value, setValue] = useState<string | ''>('active');
     return (
@@ -53,7 +67,13 @@ export const WithSelection = {
   },
 };
 
-export const MultipleSelects = {
+export const MultipleSelects: Story = {
+  args: {
+    label: 'Status',
+    value: '',
+    options: statusOptions,
+    onChange: () => {},
+  },
   render: () => {
     const [status, setStatus] = useState<string | ''>('');
     const [type, setType] = useState<string | ''>('');

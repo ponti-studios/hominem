@@ -1,169 +1,169 @@
 /**
  * Canonical color tokens.
  *
- * Values MUST match the @theme block in packages/ui/src/styles/globals.css.
+ * Values MUST match the @theme block in packages/platform/ui/src/styles/globals.css.
  * Web consumes these via CSS custom properties; other platforms (e.g. mobile
  * Restyle) import this file directly.
  */
 
 export const colors = {
-  // Backgrounds — light palette per Apple HIG
-  'bg-base': '#ffffff',
-  'bg-surface': '#f5f5f7',
-  'bg-elevated': '#f2f2f7',
-  'bg-overlay': 'rgba(0, 0, 0, 0.04)',
+  // Backgrounds
+  'bg-base': 'rgba(253, 252, 251, 1)',
+  'bg-surface': 'rgba(247, 246, 243, 1)',
+  'bg-elevated': 'rgba(239, 237, 232, 1)',
+  'bg-overlay': 'rgba(17, 19, 24, 0.05)',
 
-  // Text — dark foreground per Apple HIG
-  'text-primary': '#000000',
-  'text-secondary': '#555555',
-  'text-tertiary': '#888888',
-  'text-disabled': '#cccccc',
+  // Text
+  'text-primary': 'rgba(25, 25, 24, 1)',
+  'text-secondary': 'rgba(95, 99, 109, 1)',
+  'text-tertiary': 'rgba(133, 139, 152, 1)',
+  'text-disabled': 'rgba(179, 184, 196, 1)',
 
-  // Borders — opacity scale on black
-  'border-default': 'rgba(0, 0, 0, 0.1)',
-  'border-subtle': 'rgba(0, 0, 0, 0.05)',
-  'border-focus': 'rgba(0, 0, 0, 0.15)',
+  // Borders
+  'border-default': 'rgba(25, 25, 24, 0.16)',
+  'border-subtle': 'rgba(25, 25, 24, 0.09)',
+  'border-focus': 'rgba(91, 91, 214, 0.45)',
 
   // Icons
-  'icon-primary': '#000000',
-  'icon-muted': '#888888',
+  'icon-primary': 'rgba(25, 25, 24, 1)',
+  'icon-muted': 'rgba(133, 139, 152, 1)',
 
   // Semantic status
-  success: '#34c759',
-  warning: '#ff9500',
-  destructive: '#ff3b30',
-  'destructive-muted': 'rgba(255, 59, 48, 0.65)',
+  success: 'rgba(41, 151, 100, 1)',
+  warning: 'rgba(255, 178, 36, 1)',
+  destructive: 'rgba(229, 77, 46, 1)',
+  'destructive-muted': 'rgba(229, 77, 46, 0.65)',
 
-  // Accent (Apple Blue per HIG; can be overridden per-product)
-  accent: '#007AFF',
-  'accent-foreground': '#ffffff',
+  // Accent
+  accent: 'rgba(91, 91, 214, 1)',
+  'accent-foreground': 'rgba(255, 255, 255, 1)',
 
   // Vendor colors
-  'google-maps-blue': '#4285F4', // Google Maps standard marker color
+  'google-maps-blue': 'rgba(66, 133, 244, 1)', // Google Maps standard marker color
 
   // System / backward-compat aliases
-  primary: '#000000',
-  'primary-foreground': '#ffffff',
-  secondary: 'rgba(0, 0, 0, 0.1)',
-  'secondary-foreground': '#555555',
-  muted: 'rgba(0, 0, 0, 0.05)',
-  'muted-foreground': '#888888',
-  foreground: '#000000',
-  background: '#ffffff',
-  'destructive-foreground': '#ffffff',
-  popover: '#f5f5f7',
-  'popover-foreground': '#000000',
-  input: '#f5f5f7',
-  ring: '#007AFF',
+  primary: 'rgba(0, 0, 0, 1)',
+  'primary-foreground': 'rgba(255, 255, 255, 1)',
+  secondary: 'rgba(25, 25, 24, 0.08)',
+  'secondary-foreground': 'rgba(43, 47, 58, 1)',
+  muted: 'rgba(25, 25, 24, 0.05)',
+  'muted-foreground': 'rgba(95, 99, 109, 1)',
+  foreground: 'rgba(25, 25, 24, 1)',
+  background: 'rgba(253, 252, 251, 1)',
+  'destructive-foreground': 'rgba(255, 255, 255, 1)',
+  popover: 'rgba(247, 246, 243, 1)',
+  'popover-foreground': 'rgba(25, 25, 24, 1)',
+  input: 'rgba(247, 246, 243, 1)',
+  ring: 'rgba(0, 0, 0, 1)',
 
-  // Emphasis scale — opacity layers on black
-  'emphasis-highest': 'rgba(0, 0, 0, 0.9)',
-  'emphasis-high': 'rgba(0, 0, 0, 0.7)',
-  'emphasis-medium': 'rgba(0, 0, 0, 0.5)',
-  'emphasis-low': 'rgba(0, 0, 0, 0.3)',
-  'emphasis-lower': 'rgba(0, 0, 0, 0.2)',
-  'emphasis-subtle': 'rgba(0, 0, 0, 0.15)',
-  'emphasis-minimal': 'rgba(0, 0, 0, 0.1)',
-  'emphasis-faint': 'rgba(0, 0, 0, 0.05)',
+  // Emphasis scale
+  'emphasis-highest': 'rgba(25, 25, 24, 0.9)',
+  'emphasis-high': 'rgba(25, 25, 24, 0.72)',
+  'emphasis-medium': 'rgba(25, 25, 24, 0.52)',
+  'emphasis-low': 'rgba(25, 25, 24, 0.34)',
+  'emphasis-lower': 'rgba(25, 25, 24, 0.24)',
+  'emphasis-subtle': 'rgba(25, 25, 24, 0.14)',
+  'emphasis-minimal': 'rgba(25, 25, 24, 0.09)',
+  'emphasis-faint': 'rgba(25, 25, 24, 0.05)',
 
   // Modal overlays — darkens background for sheet/modal UI
-  'overlay-modal-high': 'rgba(0, 0, 0, 0.6)',
-  'overlay-modal-medium': 'rgba(0, 0, 0, 0.45)',
+  'overlay-modal-high': 'rgba(17, 19, 24, 0.62)',
+  'overlay-modal-medium': 'rgba(17, 19, 24, 0.46)',
 
-  // Charts — opacity scale on black
-  'chart-1': 'rgba(0, 0, 0, 0.9)',
-  'chart-2': 'rgba(0, 0, 0, 0.7)',
-  'chart-3': 'rgba(0, 0, 0, 0.5)',
-  'chart-4': 'rgba(0, 0, 0, 0.3)',
-  'chart-5': 'rgba(0, 0, 0, 0.15)',
+  // Charts
+  'chart-1': 'rgba(91, 91, 214, 1)',
+  'chart-2': 'rgba(41, 151, 100, 1)',
+  'chart-3': 'rgba(14, 165, 233, 1)',
+  'chart-4': 'rgba(255, 178, 36, 1)',
+  'chart-5': 'rgba(229, 77, 46, 1)',
 
-  // Sidebar — ChatGPT-style light sidebar
-  sidebar: '#f9f9f9',
-  'sidebar-foreground': '#0d0d0d',
-  'sidebar-primary': '#0d0d0d',
-  'sidebar-primary-foreground': '#ffffff',
-  'sidebar-accent': 'rgba(0, 0, 0, 0.06)',
-  'sidebar-accent-foreground': '#0d0d0d',
-  'sidebar-border': 'rgba(0, 0, 0, 0.08)',
-  'sidebar-ring': '#0d0d0d',
+  // Sidebar
+  sidebar: 'rgba(242, 241, 238, 1)',
+  'sidebar-foreground': 'rgba(25, 25, 24, 1)',
+  'sidebar-primary': 'rgba(91, 91, 214, 1)',
+  'sidebar-primary-foreground': 'rgba(255, 255, 255, 1)',
+  'sidebar-accent': 'rgba(25, 25, 24, 0.06)',
+  'sidebar-accent-foreground': 'rgba(25, 25, 24, 1)',
+  'sidebar-border': 'rgba(25, 25, 24, 0.1)',
+  'sidebar-ring': 'rgba(91, 91, 214, 1)',
 
   // Prompt input
-  'prompt-bg': '#ffffff',
-  'prompt-border': 'rgba(0, 0, 0, 0.15)',
-  'prompt-border-focus': 'rgba(0, 0, 0, 0.25)',
+  'prompt-bg': 'rgba(253, 252, 251, 1)',
+  'prompt-border': 'rgba(25, 25, 24, 0.16)',
+  'prompt-border-focus': 'rgba(91, 91, 214, 0.45)',
 
   // Primitive values used by mobile shadow system
-  black: '#000000',
-  white: '#ffffff',
+  black: 'rgba(0, 0, 0, 1)',
+  white: 'rgba(255, 255, 255, 1)',
 } as const;
 
 export const darkColors = {
   ...colors,
-  'bg-base': '#1A1814',
-  'bg-surface': '#242019',
-  'bg-elevated': '#2E2A22',
-  'bg-overlay': 'rgba(250, 249, 247, 0.04)',
+  'bg-base': 'rgba(17, 17, 19, 1)',
+  'bg-surface': 'rgba(24, 25, 27, 1)',
+  'bg-elevated': 'rgba(33, 34, 37, 1)',
+  'bg-overlay': 'rgba(245, 246, 248, 0.06)',
 
-  'text-primary': '#F5F2EC',
-  'text-secondary': '#A89F90',
-  'text-tertiary': '#6B6555',
-  'text-disabled': '#3E3B35',
+  'text-primary': 'rgba(245, 246, 248, 1)',
+  'text-secondary': 'rgba(180, 185, 195, 1)',
+  'text-tertiary': 'rgba(141, 147, 161, 1)',
+  'text-disabled': 'rgba(97, 103, 117, 1)',
 
-  'border-default': 'rgba(250, 249, 247, 0.09)',
-  'border-subtle': 'rgba(250, 249, 247, 0.05)',
-  'border-focus': 'rgba(250, 249, 247, 0.20)',
+  'border-default': 'rgba(245, 246, 248, 0.18)',
+  'border-subtle': 'rgba(245, 246, 248, 0.11)',
+  'border-focus': 'rgba(142, 141, 255, 0.5)',
 
-  'icon-primary': '#F5F2EC',
-  'icon-muted': '#6B6555',
+  'icon-primary': 'rgba(245, 246, 248, 1)',
+  'icon-muted': 'rgba(141, 147, 161, 1)',
 
-  success: '#34C47A',
-  warning: '#F59E0B',
-  destructive: '#F05252',
+  success: 'rgba(61, 214, 140, 1)',
+  warning: 'rgba(255, 209, 102, 1)',
+  destructive: 'rgba(255, 123, 92, 1)',
 
-  accent: '#E0703A',
-  'accent-foreground': '#FFFFFF',
+  accent: 'rgba(142, 141, 255, 1)',
+  'accent-foreground': 'rgba(15, 16, 40, 1)',
 
-  primary: '#F5F2EC',
-  'primary-foreground': '#1A1814',
-  secondary: 'rgba(250, 249, 247, 0.08)',
-  'secondary-foreground': '#A89F90',
-  muted: 'rgba(250, 249, 247, 0.05)',
-  'muted-foreground': '#6B6555',
-  foreground: '#F5F2EC',
-  background: '#1A1814',
-  'destructive-foreground': '#FFFFFF',
-  popover: '#242019',
-  'popover-foreground': '#F5F2EC',
-  input: '#242019',
-  ring: '#E0703A',
+  primary: 'rgba(0, 0, 0, 1)',
+  'primary-foreground': 'rgba(255, 255, 255, 1)',
+  secondary: 'rgba(245, 246, 248, 0.14)',
+  'secondary-foreground': 'rgba(229, 232, 239, 1)',
+  muted: 'rgba(245, 246, 248, 0.08)',
+  'muted-foreground': 'rgba(180, 185, 195, 1)',
+  foreground: 'rgba(245, 246, 248, 1)',
+  background: 'rgba(17, 17, 19, 1)',
+  'destructive-foreground': 'rgba(29, 14, 10, 1)',
+  popover: 'rgba(24, 25, 27, 1)',
+  'popover-foreground': 'rgba(245, 246, 248, 1)',
+  input: 'rgba(24, 25, 27, 1)',
+  ring: 'rgba(0, 0, 0, 1)',
 
-  'emphasis-highest': 'rgba(250, 249, 247, 0.90)',
-  'emphasis-high': 'rgba(250, 249, 247, 0.70)',
-  'emphasis-medium': 'rgba(250, 249, 247, 0.50)',
-  'emphasis-low': 'rgba(250, 249, 247, 0.30)',
-  'emphasis-lower': 'rgba(250, 249, 247, 0.20)',
-  'emphasis-subtle': 'rgba(250, 249, 247, 0.12)',
-  'emphasis-minimal': 'rgba(250, 249, 247, 0.07)',
-  'emphasis-faint': 'rgba(250, 249, 247, 0.04)',
+  'emphasis-highest': 'rgba(245, 246, 248, 0.92)',
+  'emphasis-high': 'rgba(245, 246, 248, 0.76)',
+  'emphasis-medium': 'rgba(245, 246, 248, 0.56)',
+  'emphasis-low': 'rgba(245, 246, 248, 0.38)',
+  'emphasis-lower': 'rgba(245, 246, 248, 0.26)',
+  'emphasis-subtle': 'rgba(245, 246, 248, 0.18)',
+  'emphasis-minimal': 'rgba(245, 246, 248, 0.12)',
+  'emphasis-faint': 'rgba(245, 246, 248, 0.07)',
 
-  'chart-1': '#C05A2A',
-  'chart-2': '#2A9D63',
-  'chart-3': '#3B82F6',
-  'chart-4': '#D97706',
-  'chart-5': '#9E9585',
+  'chart-1': 'rgba(142, 141, 255, 1)',
+  'chart-2': 'rgba(61, 214, 140, 1)',
+  'chart-3': 'rgba(56, 189, 248, 1)',
+  'chart-4': 'rgba(255, 209, 102, 1)',
+  'chart-5': 'rgba(255, 123, 92, 1)',
 
-  sidebar: '#1A1814',
-  'sidebar-foreground': '#F5F2EC',
-  'sidebar-primary': '#F5F2EC',
-  'sidebar-primary-foreground': '#1A1814',
-  'sidebar-accent': 'rgba(250, 249, 247, 0.06)',
-  'sidebar-accent-foreground': '#F5F2EC',
-  'sidebar-border': 'rgba(250, 249, 247, 0.08)',
-  'sidebar-ring': '#E0703A',
+  sidebar: 'rgba(15, 16, 18, 1)',
+  'sidebar-foreground': 'rgba(245, 246, 248, 1)',
+  'sidebar-primary': 'rgba(142, 141, 255, 1)',
+  'sidebar-primary-foreground': 'rgba(15, 16, 40, 1)',
+  'sidebar-accent': 'rgba(245, 246, 248, 0.08)',
+  'sidebar-accent-foreground': 'rgba(245, 246, 248, 1)',
+  'sidebar-border': 'rgba(245, 246, 248, 0.14)',
+  'sidebar-ring': 'rgba(142, 141, 255, 1)',
 
-  'prompt-bg': '#242019',
-  'prompt-border': 'rgba(250, 249, 247, 0.12)',
-  'prompt-border-focus': 'rgba(250, 249, 247, 0.28)',
+  'prompt-bg': 'rgba(24, 25, 27, 1)',
+  'prompt-border': 'rgba(245, 246, 248, 0.18)',
+  'prompt-border-focus': 'rgba(142, 141, 255, 0.5)',
 } as const;
 
 export type ColorToken = keyof typeof colors;

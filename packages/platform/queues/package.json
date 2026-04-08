@@ -1,6 +1,7 @@
 {
   "name": "@hominem/queues",
   "version": "0.0.1",
+  "description": "BullMQ queue initialization and import job tracking — how you enqueue and track background work.",
   "type": "module",
   "exports": {
     ".": "./src/index.ts"
@@ -9,7 +10,6 @@
     "src"
   ],
   "scripts": {
-    "build": "tsc",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",

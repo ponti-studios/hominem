@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { hiddenControl, selectControl, textControl } from '../../storybook/controls';
 import { ConfirmationBanner } from './confirmation';
 
-const meta: Meta<typeof ConfirmationBanner> = {
+const meta = {
   title: 'Patterns/AI/Confirmation',
   component: ConfirmationBanner,
   tags: ['autodocs'],
@@ -22,9 +22,10 @@ const meta: Meta<typeof ConfirmationBanner> = {
     onConfirm: hiddenControl,
     onCancel: hiddenControl,
   },
-};
+} satisfies Meta<typeof ConfirmationBanner>;
+
 export default meta;
-type Story = StoryObj<typeof ConfirmationBanner>;
+type Story = StoryObj<typeof meta>;
 
 export const Info: Story = {
   args: {

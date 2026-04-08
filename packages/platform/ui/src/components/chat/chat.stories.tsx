@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { ComponentProps } from 'react';
 
-import { booleanControl, hiddenControl, selectControl } from '../../storybook/controls';
+import { booleanControl, selectControl } from '../../storybook/controls';
 import { Chat } from './chat';
 import { mockChatMessages, mockSessionSources, renderChatIcon } from './chat-story-data';
 
@@ -21,24 +21,6 @@ const meta = {
         defaultValue: 'note',
       },
     ),
-    source: hiddenControl,
-    resolvedSource: hiddenControl,
-    renderIcon: hiddenControl,
-    messages: hiddenControl,
-    statusCopy: hiddenControl,
-    speechErrorMessage: hiddenControl,
-    voiceModeErrorMessage: hiddenControl,
-    onDebugChange: hiddenControl,
-    onTransform: hiddenControl,
-    onArchive: hiddenControl,
-    onOpenSearch: hiddenControl,
-    onToggleVoiceMode: hiddenControl,
-    onStartVoiceModeRecording: hiddenControl,
-    onStopVoiceModeRecording: hiddenControl,
-    onDelete: hiddenControl,
-    onEdit: hiddenControl,
-    onRegenerate: hiddenControl,
-    onSpeak: hiddenControl,
     status: selectControl(['idle', 'streaming', 'submitted'] as const, 'Message stream status', {
       defaultValue: 'streaming',
     }),
@@ -53,19 +35,11 @@ const meta = {
         defaultValue: 'idle',
       },
     ),
-    topInset: hiddenControl,
-    canTransform: hiddenControl,
-    isDebugEnabled: hiddenControl,
-    isArchiving: hiddenControl,
   },
   parameters: {
     layout: 'fullscreen',
   },
-} satisfies Meta<ChatStoryArgs>;
-
-export default meta;
-
-type Story = StoryObj<typeof meta>;
+} satisfies Meta<typeof ChatPreview>;
 
 function ChatPreview({
   sourceFixture,
@@ -111,6 +85,9 @@ function ChatPreview({
     </div>
   );
 }
+
+export default meta;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {

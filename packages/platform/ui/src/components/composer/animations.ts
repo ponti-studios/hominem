@@ -12,15 +12,6 @@
 
 import gsap from 'gsap';
 
-// ─── Re-export canonical sequences ────────────────────────────────────────────
-
-export {
-  playContextSwitch,
-  playFocusExpand as playEntry,
-  playFocusCollapse,
-  playSubmitPulse,
-} from '../../lib/gsap/sequences';
-
 // ─── Mobile-specific swipe constants (kept local) ─────────────────────────────
 
 export const PILL_HEIGHT = 56;

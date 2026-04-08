@@ -1,6 +1,6 @@
 ---
 name: compose-db-refresh
-description: 'Use when you need to tear down and rebuild the local Docker Compose database stack, apply Goose migrations, or regenerate Kysely types after schema changes.'
+description: 'Use to tear down and rebuild the local database, apply migrations, or regenerate database types after schema changes.'
 argument-hint: 'Local compose stack, migration target, or codegen note'
 user-invocable: true
 disable-model-invocation: false

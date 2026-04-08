@@ -8,6 +8,6 @@
 export const BRAND = {
   appName: 'Hakumi',
   tagline: 'A notes-first personal workspace for capture, context, and chat.',
-} as const
+} as const;
 
-export type Brand = typeof BRAND
+export type Brand = typeof BRAND;

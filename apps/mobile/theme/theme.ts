@@ -6,11 +6,6 @@ import {
 } from '@hominem/ui/tokens';
 import { fontFamiliesNative } from '@hominem/ui/tokens/typography.native';
 import { createTheme, useTheme as useRestyleTheme } from '@shopify/restyle';
-import type { ImageStyle, TextStyle, ViewStyle } from 'react-native';
-
-type NamedStyles<T> = {
-  [P in keyof T]: ViewStyle | TextStyle | ImageStyle;
-};
 
 const PRIMARY_FONT = fontFamiliesNative.primary;
 const MONO_FONT = fontFamiliesNative.mono;
@@ -164,18 +159,9 @@ const Shadows = {
   },
 };
 
-export const useTheme = () => {
+function useTheme() {
   return useRestyleTheme<Theme>();
-};
-
-export const makeStyles = <T extends NamedStyles<T> | NamedStyles<unknown>>(
-  styles: (theme: Theme) => T,
-) => {
-  return () => {
-    return styles(theme);
-  };
-};
+}
 
 export type Theme = typeof theme;
-export { Shadows };
 export default theme;

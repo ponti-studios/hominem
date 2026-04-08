@@ -11,6 +11,7 @@
     { "path": "packages/core/env" },
     { "path": "packages/domains/events" },
     { "path": "packages/domains/jobs" },
+    { "path": "packages/domains/presence" },
     { "path": "packages/platform/rpc" },
     { "path": "packages/platform/services" },
     { "path": "packages/platform/ui" },

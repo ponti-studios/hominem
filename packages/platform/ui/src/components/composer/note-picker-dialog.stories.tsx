@@ -1,18 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-const meta: Meta = {
-  title: 'Patterns/Composer/NotePickerDialog',
-  tags: ['autodocs'],
-  parameters: {
-    layout: 'fullscreen',
-  },
-};
-
-export default meta;
-type Story = StoryObj;
-
-export const Default: Story = {
-  render: () => (
+function NotePickerDialogPreview() {
+  return (
     <div className="fixed inset-0 bg-black/50 flex items-end md:items-center justify-center">
       <div className="bg-base rounded-t-lg md:rounded-lg w-full md:max-w-md max-h-96 p-4 space-y-3">
         <h2 className="font-semibold">Select Notes to Attach</h2>
@@ -40,5 +29,19 @@ export const Default: Story = {
         </div>
       </div>
     </div>
-  ),
-};
+  );
+}
+
+const meta = {
+  title: 'Patterns/Composer/NotePickerDialog',
+  component: NotePickerDialogPreview,
+  tags: ['autodocs'],
+  parameters: {
+    layout: 'fullscreen',
+  },
+} satisfies Meta<typeof NotePickerDialogPreview>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {};

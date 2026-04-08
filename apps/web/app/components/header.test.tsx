@@ -44,7 +44,7 @@ describe('NotesHeader', () => {
     expect(screen.getByRole('link', { name: 'Chats' })).toHaveAttribute('href', '/chat/chat-123');
   });
 
-  it('falls back to note creation when no note exists', () => {
+  it('falls back to the notes index when no note exists', () => {
     mockedUseInboxStream.mockReturnValue({
       items: [],
       isLoading: false,
@@ -52,6 +52,6 @@ describe('NotesHeader', () => {
 
     render(<NotesHeader />);
 
-    expect(screen.getByRole('link', { name: 'Notes' })).toHaveAttribute('href', '/notes/new');
+    expect(screen.getByRole('link', { name: 'Notes' })).toHaveAttribute('href', '/notes');
   });
 });

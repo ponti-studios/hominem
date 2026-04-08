@@ -25,9 +25,9 @@ type PromptInputStoryArgs = ComponentProps<typeof PromptInput> & {
   textareaDisabled: boolean;
 };
 
-const meta: Meta<PromptInputStoryArgs> = {
+const meta = {
   title: 'Patterns/AI/PromptInput',
-  component: PromptInput,
+  component: PromptInputPreview,
   tags: ['autodocs'],
   argTypes: {
     globalDrop: booleanControl('Allows dragging files anywhere in the prompt area', false),
@@ -49,9 +49,9 @@ const meta: Meta<PromptInputStoryArgs> = {
     children: hiddenControl,
     className: hiddenControl,
   },
-};
-export default meta;
+} satisfies Meta<typeof PromptInputPreview>;
 
+export default meta;
 type Story = StoryObj<typeof meta>;
 
 function PromptInputPreview({

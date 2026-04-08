@@ -1,5 +1,5 @@
-import { db, pool } from '@hominem/db'
-import type { JsonValue } from '@hominem/db'
+import type { JsonValue } from '@hominem/db';
+import { db, pool } from '@hominem/db';
 
 const RPC_TEST_TABLES = [
   'app.chat_messages',
@@ -8,17 +8,13 @@ const RPC_TEST_TABLES = [
   'app.files',
   'app.notes',
   '"user"',
-] as const
+] as const;
 
 export async function resetTestDb() {
-  await pool.query(`TRUNCATE TABLE ${RPC_TEST_TABLES.join(', ')} RESTART IDENTITY CASCADE`)
+  await pool.query(`TRUNCATE TABLE ${RPC_TEST_TABLES.join(', ')} RESTART IDENTITY CASCADE`);
 }
 
-export async function seedTestUser(input: {
-  id: string
-  email: string
-  name?: string
-}) {
+export async function seedTestUser(input: { id: string; email: string; name?: string }) {
   await db
     .insertInto('user')
     .values({
@@ -27,15 +23,15 @@ export async function seedTestUser(input: {
       name: input.name ?? 'Test User',
       emailVerified: true,
     })
-    .execute()
+    .execute();
 }
 
 export async function seedNote(input: {
-  id: string
-  ownerUserId: string
-  title?: string | null
-  content?: string
-  excerpt?: string | null
+  id: string;
+  ownerUserId: string;
+  title?: string | null;
+  content?: string;
+  excerpt?: string | null;
 }) {
   await db
     .insertInto('app.notes')
@@ -46,20 +42,20 @@ export async function seedNote(input: {
       content: input.content ?? '',
       excerpt: input.excerpt ?? null,
     })
-    .execute()
+    .execute();
 }
 
 export async function seedFile(input: {
-  id: string
-  ownerUserId: string
-  storageKey: string
-  originalName: string
-  mimetype: string
-  size: number
-  url: string
-  content?: string | null
-  textContent?: string | null
-  metadata?: Record<string, unknown> | null
+  id: string;
+  ownerUserId: string;
+  storageKey: string;
+  originalName: string;
+  mimetype: string;
+  size: number;
+  url: string;
+  content?: string | null;
+  textContent?: string | null;
+  metadata?: Record<string, unknown> | null;
 }) {
   await db
     .insertInto('app.files')
@@ -75,7 +71,7 @@ export async function seedFile(input: {
       text_content: input.textContent ?? null,
       metadata: (input.metadata ?? null) as JsonValue | null,
     })
-    .execute()
+    .execute();
 }
 
 export async function attachFileToNote(input: { noteId: string; fileId: string }) {
@@ -85,14 +81,14 @@ export async function attachFileToNote(input: { noteId: string; fileId: string }
       note_id: input.noteId,
       file_id: input.fileId,
     })
-    .execute()
+    .execute();
 }
 
 export async function seedChat(input: {
-  id: string
-  ownerUserId: string
-  title: string
-  noteId?: string | null
+  id: string;
+  ownerUserId: string;
+  title: string;
+  noteId?: string | null;
 }) {
   await db
     .insertInto('app.chats')
@@ -102,17 +98,17 @@ export async function seedChat(input: {
       title: input.title,
       note_id: input.noteId ?? null,
     })
-    .execute()
+    .execute();
 }
 
-export async function seedChatMessage(input: {
-  id: string
-  chatId: string
-  authorUserId?: string | null
-  role: 'system' | 'user' | 'assistant' | 'tool'
-  content: string
-  files?: unknown[] | null
-  referencedNoteIds?: string[] | null
+async function seedChatMessage(input: {
+  id: string;
+  chatId: string;
+  authorUserId?: string | null;
+  role: 'system' | 'user' | 'assistant' | 'tool';
+  content: string;
+  files?: unknown[] | null;
+  referencedNoteIds?: string[] | null;
 }) {
   await db
     .insertInto('app.chat_messages')
@@ -125,5 +121,5 @@ export async function seedChatMessage(input: {
       files: (input.files ?? null) as JsonValue | null,
       referenced_note_ids: (input.referencedNoteIds ?? null) as JsonValue | null,
     })
-    .execute()
+    .execute();
 }

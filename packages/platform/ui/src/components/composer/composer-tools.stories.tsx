@@ -1,15 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-const meta: Meta = {
-  title: 'Patterns/Composer/ComposerTools',
-  tags: ['autodocs'],
-};
-
-export default meta;
-type Story = StoryObj;
-
-export const Default: Story = {
-  render: () => (
+function ComposerToolsPreview() {
+  return (
     <div className="p-4 max-w-md space-y-2">
       <h3 className="text-sm font-semibold">Tools</h3>
       <div className="grid grid-cols-2 gap-2">
@@ -27,5 +19,16 @@ export const Default: Story = {
         </button>
       </div>
     </div>
-  ),
-};
+  );
+}
+
+const meta = {
+  title: 'Patterns/Composer/ComposerTools',
+  component: ComposerToolsPreview,
+  tags: ['autodocs'],
+} satisfies Meta<typeof ComposerToolsPreview>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {};

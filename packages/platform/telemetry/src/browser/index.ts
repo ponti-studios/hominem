@@ -3,28 +3,34 @@
  */
 
 import { metrics, context as otelContext, propagation, trace, type Span } from '@opentelemetry/api';
-import { CompositePropagator, W3CBaggagePropagator, W3CTraceContextPropagator } from '@opentelemetry/core';
+import {
+  CompositePropagator,
+  W3CBaggagePropagator,
+  W3CTraceContextPropagator,
+} from '@opentelemetry/core';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { Resource } from '@opentelemetry/resources';
 import { MeterProvider, PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import { BatchSpanProcessor, WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import {
-    SEMRESATTRS_DEPLOYMENT_ENVIRONMENT,
-    SEMRESATTRS_SERVICE_NAME,
-    SEMRESATTRS_SERVICE_NAMESPACE,
-    SEMRESATTRS_SERVICE_VERSION,
+  SEMRESATTRS_DEPLOYMENT_ENVIRONMENT,
+  SEMRESATTRS_SERVICE_NAME,
+  SEMRESATTRS_SERVICE_NAMESPACE,
+  SEMRESATTRS_SERVICE_VERSION,
 } from '@opentelemetry/semantic-conventions';
+
 import type { TelemetryConfig } from '../shared/index.js';
+import { parseOptionalNumber } from '../shared/index.js';
 
 /**
  * Browser telemetry SDK instance
  */
 export interface BrowserTelemetry {
   /** Shutdown the SDK gracefully */
-  shutdown(): Promise<void>
+  shutdown(): Promise<void>;
   /** Force flush all exporters */
-  forceFlush(): Promise<void>
+  forceFlush(): Promise<void>;
 }
 
 /**
@@ -32,45 +38,44 @@ export interface BrowserTelemetry {
  */
 export function initTelemetry(explicitConfig?: Partial<TelemetryConfig>): BrowserTelemetry {
   // For browser, we need to handle the lack of process.env
-  const config = getBrowserConfig(explicitConfig)
-  const resource = createBrowserResource(config)
+  const config = getBrowserConfig(explicitConfig);
+  const resource = createBrowserResource(config);
 
   // Set up propagator (W3C standard for browser)
   const propagator = new CompositePropagator({
-    propagators: [
-      new W3CTraceContextPropagator(),
-      new W3CBaggagePropagator(),
-    ],
-  })
-  propagation.setGlobalPropagator(propagator)
+    propagators: [new W3CTraceContextPropagator(), new W3CBaggagePropagator()],
+  });
+  propagation.setGlobalPropagator(propagator);
 
   // Configure OTLP endpoint
-  const otlpEndpoint = config.otlpEndpoint
+  const otlpEndpoint = config.otlpEndpoint;
 
   // Trace exporter and provider
   const traceExporter = new OTLPTraceExporter({
     url: `${otlpEndpoint}/v1/traces`,
-  })
+  });
 
   const tracerProvider = new WebTracerProvider({
     resource,
-    spanProcessors: [new BatchSpanProcessor(traceExporter, {
-      maxQueueSize: 2048,
-      maxExportBatchSize: 512,
-      scheduledDelayMillis: 1000,
-      exportTimeoutMillis: 10000,
-    })],
-  })
+    spanProcessors: [
+      new BatchSpanProcessor(traceExporter, {
+        maxQueueSize: 2048,
+        maxExportBatchSize: 512,
+        scheduledDelayMillis: 1000,
+        exportTimeoutMillis: 10000,
+      }),
+    ],
+  });
 
-  tracerProvider.register()
-  trace.setGlobalTracerProvider(tracerProvider)
+  tracerProvider.register();
+  trace.setGlobalTracerProvider(tracerProvider);
 
   // Metrics provider
   const metricExporter = new OTLPMetricExporter({
     url: `${otlpEndpoint}/v1/metrics`,
-  })
-  const metricExportIntervalMillis = config.metricExportIntervalMillis ?? 30000
-  const metricExportTimeoutMillis = Math.min(30000, metricExportIntervalMillis)
+  });
+  const metricExportIntervalMillis = config.metricExportIntervalMillis ?? 30000;
+  const metricExportTimeoutMillis = Math.min(30000, metricExportIntervalMillis);
 
   const meterProvider = new MeterProvider({
     resource,
@@ -81,26 +86,26 @@ export function initTelemetry(explicitConfig?: Partial<TelemetryConfig>): Browse
         exportTimeoutMillis: metricExportTimeoutMillis,
       }),
     ],
-  })
-  metrics.setGlobalMeterProvider(meterProvider)
+  });
+  metrics.setGlobalMeterProvider(meterProvider);
 
   // Instrument fetch API
-  instrumentFetch(tracerProvider)
+  instrumentFetch(tracerProvider);
 
   // Instrument Web Vitals if available
-  instrumentWebVitals(meterProvider)
+  instrumentWebVitals(meterProvider);
 
   // Return control interface
   return {
     async shutdown(): Promise<void> {
-      await tracerProvider.shutdown()
-      await meterProvider.shutdown()
+      await tracerProvider.shutdown();
+      await meterProvider.shutdown();
     },
     async forceFlush(): Promise<void> {
-      await tracerProvider.forceFlush()
-      await meterProvider.forceFlush()
+      await tracerProvider.forceFlush();
+      await meterProvider.forceFlush();
     },
-  }
+  };
 }
 
 /**
@@ -108,11 +113,14 @@ export function initTelemetry(explicitConfig?: Partial<TelemetryConfig>): Browse
  */
 function getBrowserConfig(explicit?: Partial<TelemetryConfig>): TelemetryConfig {
   // In browser, we read from import.meta.env or window.ENV
-  const env = (typeof window !== 'undefined' && (window as unknown as { ENV?: Record<string, string> }).ENV) || {}
-  
-  const serviceName = explicit?.serviceName || env.OTEL_SERVICE_NAME
+  const env =
+    (typeof window !== 'undefined' &&
+      (window as unknown as { ENV?: Record<string, string> }).ENV) ||
+    {};
+
+  const serviceName = explicit?.serviceName || env.OTEL_SERVICE_NAME;
   if (!serviceName) {
-    throw new Error('OTEL_SERVICE_NAME is required for browser telemetry')
+    throw new Error('OTEL_SERVICE_NAME is required for browser telemetry');
   }
 
   return {
@@ -120,7 +128,8 @@ function getBrowserConfig(explicit?: Partial<TelemetryConfig>): TelemetryConfig 
     serviceVersion: explicit?.serviceVersion || env.OTEL_SERVICE_VERSION || '0.0.0',
     serviceNamespace: explicit?.serviceNamespace || env.OTEL_SERVICE_NAMESPACE || 'hominem',
     environment: explicit?.environment || env.OTEL_DEPLOYMENT_ENVIRONMENT || 'development',
-    otlpEndpoint: explicit?.otlpEndpoint || env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://localhost:4318',
+    otlpEndpoint:
+      explicit?.otlpEndpoint || env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://localhost:4318',
     otlpProtocol: 'http/protobuf', // Browser only supports HTTP
     samplingRatio: explicit?.samplingRatio || parseFloat(env.OTEL_TRACES_SAMPLER_ARG || '1.0'),
     ...((explicit?.metricExportIntervalMillis ||
@@ -132,14 +141,7 @@ function getBrowserConfig(explicit?: Partial<TelemetryConfig>): TelemetryConfig 
         }
       : {}),
     ...(explicit?.attributes !== undefined ? { attributes: explicit.attributes } : {}),
-  }
-}
-
-function parseOptionalNumber(value?: string): number | undefined {
-  if (!value) return undefined
-
-  const parsed = Number.parseInt(value, 10)
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined
+  };
 }
 
 /**
@@ -155,19 +157,19 @@ function createBrowserResource(config: TelemetryConfig) {
     'browser.user_agent': typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
     'browser.language': typeof navigator !== 'undefined' ? navigator.language : 'unknown',
     ...config.attributes,
-  })
+  });
 }
 
 /**
  * Instrument fetch API for automatic tracing
  */
 function instrumentFetch(_tracerProvider: WebTracerProvider) {
-  const tracer = trace.getTracer('browser-fetch')
-  const originalFetch = window.fetch
+  const tracer = trace.getTracer('browser-fetch');
+  const originalFetch = window.fetch;
 
   window.fetch = async function (input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
-    const url = typeof input === 'string' ? input : input.toString()
-    const method = init?.method || 'GET'
+    const url = typeof input === 'string' ? input : input.toString();
+    const method = init?.method || 'GET';
 
     return tracer.startActiveSpan(
       `HTTP ${method}`,
@@ -182,87 +184,87 @@ function instrumentFetch(_tracerProvider: WebTracerProvider) {
       async (span: Span) => {
         try {
           // Inject trace context into headers
-          const headers = new Headers(init?.headers || {})
-          const carrier: Record<string, string> = {}
+          const headers = new Headers(init?.headers || {});
+          const carrier: Record<string, string> = {};
           propagation.inject(otelContext.active(), carrier, {
-            set: (h, key, value) => h[key] = value,
-          })
-          
-          Object.entries(carrier).forEach(([key, value]) => {
-            headers.set(key, value)
-          })
+            set: (h, key, value) => (h[key] = value),
+          });
 
-          const fetchInput: RequestInfo = input instanceof URL ? input.toString() : input
+          Object.entries(carrier).forEach(([key, value]) => {
+            headers.set(key, value);
+          });
+
+          const fetchInput: RequestInfo = input instanceof URL ? input.toString() : input;
           const response = await originalFetch.call(window, fetchInput, {
             ...init,
             headers,
-          })
+          });
 
-          span.setAttribute('http.response.status_code', response.status)
-          
+          span.setAttribute('http.response.status_code', response.status);
+
           if (response.status >= 400) {
-            span.setStatus({ code: 2, message: `HTTP ${response.status}` })
+            span.setStatus({ code: 2, message: `HTTP ${response.status}` });
           } else {
-            span.setStatus({ code: 1 })
+            span.setStatus({ code: 1 });
           }
 
-          return response
+          return response;
         } catch (error) {
-          span.recordException(error as Error)
-          span.setStatus({ code: 2, message: (error as Error).message })
-          throw error
+          span.recordException(error as Error);
+          span.setStatus({ code: 2, message: (error as Error).message });
+          throw error;
         } finally {
-          span.end()
+          span.end();
         }
-      }
-    )
-  }
+      },
+    );
+  };
 }
 
 /**
  * Instrument Core Web Vitals
  */
 function instrumentWebVitals(meterProvider: MeterProvider) {
-  const meter = meterProvider.getMeter('web-vitals')
-  
+  const meter = meterProvider.getMeter('web-vitals');
+
   // Create histograms for each vital
   const lcpHistogram = meter.createHistogram('web_vitals_lcp', {
     description: 'Largest Contentful Paint',
     unit: 'ms',
-  })
-  
+  });
+
   const fidHistogram = meter.createHistogram('web_vitals_fid', {
     description: 'First Input Delay',
     unit: 'ms',
-  })
-  
+  });
+
   const clsHistogram = meter.createHistogram('web_vitals_cls', {
     description: 'Cumulative Layout Shift',
     unit: '1',
-  })
+  });
 
   const fcpHistogram = meter.createHistogram('web_vitals_fcp', {
     description: 'First Contentful Paint',
     unit: 'ms',
-  })
+  });
 
   const ttfbHistogram = meter.createHistogram('web_vitals_ttfb', {
     description: 'Time to First Byte',
     unit: 'ms',
-  })
+  });
 
   // Try to use web-vitals library if available, otherwise use basic Performance API
   if (typeof window !== 'undefined' && 'PerformanceObserver' in window) {
     // LCP
     try {
       const lcpObserver = new PerformanceObserver((list) => {
-        const entries = list.getEntries()
-        const lastEntry = entries[entries.length - 1]
+        const entries = list.getEntries();
+        const lastEntry = entries[entries.length - 1];
         if (lastEntry) {
-          lcpHistogram.record(lastEntry.startTime)
+          lcpHistogram.record(lastEntry.startTime);
         }
-      })
-      lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] })
+      });
+      lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] });
     } catch {
       // LCP not supported
     }
@@ -271,30 +273,33 @@ function instrumentWebVitals(meterProvider: MeterProvider) {
     try {
       const fidObserver = new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
-          const fidEntry = entry as PerformanceEventTiming
+          const fidEntry = entry as PerformanceEventTiming;
           if (fidEntry.processingStart && fidEntry.startTime) {
-            fidHistogram.record(fidEntry.processingStart - fidEntry.startTime)
+            fidHistogram.record(fidEntry.processingStart - fidEntry.startTime);
           }
         }
-      })
-      fidObserver.observe({ entryTypes: ['first-input'] })
+      });
+      fidObserver.observe({ entryTypes: ['first-input'] });
     } catch {
       // FID not supported
     }
 
     // CLS
-    let clsValue = 0
+    let clsValue = 0;
     try {
       const clsObserver = new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
-          const layoutShift = entry as PerformanceEntry & { hadRecentInput: boolean; value: number }
+          const layoutShift = entry as PerformanceEntry & {
+            hadRecentInput: boolean;
+            value: number;
+          };
           if (!layoutShift.hadRecentInput) {
-            clsValue += layoutShift.value
+            clsValue += layoutShift.value;
           }
         }
-        clsHistogram.record(clsValue)
-      })
-      clsObserver.observe({ entryTypes: ['layout-shift'] })
+        clsHistogram.record(clsValue);
+      });
+      clsObserver.observe({ entryTypes: ['layout-shift'] });
     } catch {
       // CLS not supported
     }
@@ -302,12 +307,14 @@ function instrumentWebVitals(meterProvider: MeterProvider) {
     // FCP & TTFB from navigation timing
     window.addEventListener('load', () => {
       setTimeout(() => {
-        const navEntry = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming
+        const navEntry = performance.getEntriesByType(
+          'navigation',
+        )[0] as PerformanceNavigationTiming;
         if (navEntry) {
-          fcpHistogram.record(navEntry.responseStart - navEntry.startTime)
-          ttfbHistogram.record(navEntry.responseStart - navEntry.startTime)
+          fcpHistogram.record(navEntry.responseStart - navEntry.startTime);
+          ttfbHistogram.record(navEntry.responseStart - navEntry.startTime);
         }
-      }, 0)
-    })
+      }, 0);
+    });
   }
 }
