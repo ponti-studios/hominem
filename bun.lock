@@ -263,6 +263,22 @@
         "react": "19.2.0",
       },
     },
+    "packages/platform/hooks": {
+      "name": "@hominem/hooks",
+      "version": "0.0.0",
+      "dependencies": {
+        "@hominem/utils": "workspace:*",
+        "react": "19.2.0",
+      },
+      "devDependencies": {
+        "@types/node": "^25.4.0",
+        "@types/react": "19.2.10",
+        "typescript": "5.9.3",
+      },
+      "peerDependencies": {
+        "react": "19.2.0",
+      },
+    },
     "packages/platform/queues": {
       "name": "@hominem/queues",
       "version": "0.0.1",
@@ -1074,6 +1090,8 @@
     "@hominem/db": ["@hominem/db@workspace:packages/core/db"],
 
     "@hominem/env": ["@hominem/env@workspace:packages/core/env"],
+
+    "@hominem/hooks": ["@hominem/hooks@workspace:packages/platform/hooks"],
 
     "@hominem/mobile": ["@hominem/mobile@workspace:apps/mobile"],
 
