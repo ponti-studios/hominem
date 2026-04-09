@@ -7,7 +7,7 @@ const authClientCache = new Map<string, ReturnType<typeof createBrowserAuthClien
 function createBrowserAuthClient(apiBaseUrl: string) {
   return createAuthClient({
     baseURL: apiBaseUrl,
-    plugins: [emailOTPClient(), passkeyClient()],
+    plugins: [emailOTPClient(), passkeyClient()] as any,
   });
 }
 

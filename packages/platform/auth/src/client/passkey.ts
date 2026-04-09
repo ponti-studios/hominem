@@ -24,7 +24,7 @@ function getPasskeyActionError(result: unknown) {
 }
 
 export function usePasskeyAuth(input?: { redirectTo?: string }) {
-  const authClient = useAuthClient();
+  const authClient = useAuthClient() as any;
   const [error, setError] = useState<string | null>(null);
   const isSupported = hasPasskeySupport(typeof window === 'undefined' ? undefined : window);
 
@@ -33,7 +33,7 @@ export function usePasskeyAuth(input?: { redirectTo?: string }) {
       throw new Error('Passkeys are not supported in this browser.');
     }
     setError(null);
-    const result = await authClient.signIn.passkey();
+    const result = await (authClient.signIn as any).passkey();
     const actionError = getPasskeyActionError(result);
     if (actionError) {
       setError(actionError);
@@ -49,7 +49,7 @@ export function usePasskeyAuth(input?: { redirectTo?: string }) {
       throw new Error('Passkeys are not supported in this browser.');
     }
     setError(null);
-    const result = await authClient.passkey.addPasskey();
+    const result = await (authClient as any).passkey.addPasskey();
     const actionError = getPasskeyActionError(result);
     if (actionError) {
       setError(actionError);
@@ -78,10 +78,10 @@ export function usePasskeyAuth(input?: { redirectTo?: string }) {
 }
 
 export function usePasskeys() {
-  const authClient = useAuthClient();
+  const authClient = useAuthClient() as any;
   const result = authClient.useListPasskeys();
   const data = useMemo<Passkey[]>(() => {
-    return (result.data ?? []).map((passkey) => ({
+    return (result.data ?? []).map((passkey: any) => ({
       id: passkey.id,
       ...(passkey.name ? { name: passkey.name } : {}),
       ...(passkey.createdAt ? { createdAt: passkey.createdAt } : {}),
