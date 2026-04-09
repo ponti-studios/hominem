@@ -2,6 +2,7 @@
 .crush
 .build
 .fallow 
+.openspec
 
 # Allow packages/env despite global gitignore having ENV/
 !packages/env/
