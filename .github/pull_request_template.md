@@ -12,12 +12,22 @@
 - Base branch:
 - Part of stack:
 
-## Validation
+## Pre-Push Validation ✓
 
-- [ ] `bun install`
-- [ ] `bun run lint`
-- [ ] `bun run test`
-- [ ] Targeted checks:
+**Before pushing, run the comprehensive validation script:**
+```bash
+./scripts/validate-before-push.sh
+```
+
+This validates that CI will pass (environment alignment + tests). See [LOCAL_CI_VALIDATION.md](../LOCAL_CI_VALIDATION.md) for setup.
+
+**Or manually validate with:**
+- [ ] `./scripts/check-ci-environment.sh` (verify environment parity)
+- [ ] `just format` (auto-fix formatting)
+- [ ] `just lint` (code style)
+- [ ] `just typecheck` (TypeScript)
+- [ ] `just build` (compilation)
+- [ ] Targeted checks: `just check-web` / `just check-api` / etc.
 
 ## Risks
 
