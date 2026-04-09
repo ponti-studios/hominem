@@ -22,6 +22,12 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Install just
+      shell: bash
+      run: |
+        if ! command -v just &> /dev/null; then
+          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
+        fi
     - name: Install dependencies
       shell: bash
       run: just setup "${{ inputs.install-flags }}" "${{ inputs.build-packages }}" "${{ inputs.install-goose }}"
