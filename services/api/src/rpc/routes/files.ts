@@ -139,6 +139,41 @@ export const filesRoutes = new Hono<AppContext>()
       logAndThrow(error, 'Failed to prepare upload');
     }
   })
+  .put('/upload-bytes/:fileId', async (c) => {
+    try {
+      const userId = c.get('userId')!;
+      const fileId = c.req.param('fileId');
+      
+      if (!fileId) {
+        throw new ValidationError('File ID is required');
+      }
+
+      const body = await c.req.arrayBuffer();
+      const buffer = Buffer.from(body);
+
+      if (buffer.length === 0) {
+        throw new ValidationError('Upload body cannot be empty');
+      }
+
+      // Store directly using the file ID as the filename
+      // This matches what InMemoryStorageBackend.createPreparedUpload generates
+      const storedFile = await fileStorageService.storeFile(
+        buffer, 
+        c.req.header('content-type') || 'application/octet-stream',
+        userId,
+        { filename: fileId }
+      );
+
+      return c.json({
+        success: true,
+        fileId,
+        key: storedFile.filename,
+        message: 'Bytes uploaded successfully',
+      });
+    } catch (error) {
+      logAndThrow(error, 'Failed to upload bytes');
+    }
+  })
   .post('/complete-upload', async (c) => {
     try {
       const userId = c.get('userId')!;

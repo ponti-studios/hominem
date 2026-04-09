@@ -73,7 +73,7 @@ export function useFileUpload(): UseFileUploadReturn {
 
   // Pre-load Uppy modules in test mode for deterministic behavior
   useEffect(() => {
-    if (isTestMode && !uppyPromiseRef.current) {
+    if (isTestMode() && !uppyPromiseRef.current) {
       uppyPromiseRef.current = loadUppyModules();
     }
   }, []);

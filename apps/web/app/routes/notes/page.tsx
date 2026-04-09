@@ -191,6 +191,7 @@ function NotesPage() {
     createNote: async (input) => {
       const result = await createNote.mutateAsync(input);
       handleCreated();
+      navigate(`/notes/${result.id}`);
       return result;
     },
     updateNote: async (input) => updateNote.mutateAsync(input),

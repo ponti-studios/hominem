@@ -90,24 +90,6 @@ function prependOptimisticFeedNote(
   };
 }
 
-function replaceOptimisticFeedNote(
-  current: NotesFeedData | undefined,
-  optimisticId: string,
-  createdNote: NoteFeedItem,
-): NotesFeedData | undefined {
-  if (!current) {
-    return current;
-  }
-
-  return {
-    ...current,
-    pages: current.pages.map((page) => ({
-      ...page,
-      notes: page.notes.map((note) => (note.id === optimisticId ? createdNote : note)),
-    })),
-  };
-}
-
 function removeFeedNote(
   current: NotesFeedData | undefined,
   noteId: string,
@@ -201,35 +183,16 @@ export function useCreateNote() {
         previousFeed,
       };
     },
-    onError: async (_error, _variables, context) => {
+    onError: (_error, _variables, context) => {
+      const feedQueryKey = notesQueryKeys.feed({ limit: DEFAULT_NOTES_FEED_LIMIT });
+      queryClient.setQueryData(feedQueryKey, context?.previousFeed);
+    },
+    onSuccess: async (createdNote, _variables, context) => {
       const feedQueryKey = notesQueryKeys.feed({ limit: DEFAULT_NOTES_FEED_LIMIT });
       if (context?.optimisticId) {
         await requestNotesRowExit(context.optimisticId);
       }
-      queryClient.setQueryData(feedQueryKey, context?.previousFeed);
-    },
-    onSuccess: (createdNote, _variables, context) => {
-      const feedQueryKey = notesQueryKeys.feed({ limit: DEFAULT_NOTES_FEED_LIMIT });
-      const createdFeedItem: NoteFeedItem = {
-        id: createdNote.id,
-        title: createdNote.title,
-        contentPreview: (createdNote.excerpt ?? createdNote.content ?? '')
-          .replace(/\s+/g, ' ')
-          .trim()
-          .slice(0, 240),
-        createdAt: createdNote.createdAt,
-        authorId: createdNote.userId,
-        metadata: {
-          hasAttachments: createdNote.files.length > 0,
-        },
-      };
-
-      if (context?.optimisticId) {
-        queryClient.setQueryData<NotesFeedData>(feedQueryKey, (current) =>
-          replaceOptimisticFeedNote(current, context.optimisticId, createdFeedItem),
-        );
-      }
-
+      queryClient.setQueryData(notesQueryKeys.detail(createdNote.id), createdNote);
       queryClient.invalidateQueries({ queryKey: notesQueryKeys.list() });
       queryClient.invalidateQueries({ queryKey: feedQueryKey });
     },

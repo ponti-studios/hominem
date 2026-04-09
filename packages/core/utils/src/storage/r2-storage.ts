@@ -133,7 +133,7 @@ class InMemoryStorageBackend {
       originalName,
       mimetype: input.mimetype,
       size: input.size,
-      uploadUrl: `http://localhost:4040/api/test/upload/${key}`,
+      uploadUrl: `http://localhost:4040/api/files/upload-bytes/${id}`,
       headers: {
         'content-type': input.mimetype,
       },

@@ -19,7 +19,6 @@ import { requestLogger } from './middleware/request-logger';
 import { authRoutes } from './routes/auth';
 import { imagesRoutes } from './routes/images';
 import { statusRoutes } from './routes/status';
-import { testRoutes } from './routes/test-routes';
 import { rpcApp } from './rpc/app';
 
 export type AppEnv = {
@@ -58,9 +57,6 @@ export function createServer() {
       allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     }),
   );
-
-  // Test routes - must be registered before auth middleware to bypass authentication
-  app.route('/api/test', testRoutes);
 
   // Authentication middleware
   app.use('*', authJwtMiddleware());
