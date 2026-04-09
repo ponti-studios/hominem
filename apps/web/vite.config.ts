@@ -1,3 +1,5 @@
+import path from 'node:path';
+
 import { shellTheme } from '@hominem/ui/theme';
 import { reactRouter } from '@react-router/dev/vite';
 import tailwindcss from '@tailwindcss/vite';
@@ -111,6 +113,9 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
     },
 
     resolve: {
+      alias: {
+        '~': path.resolve(import.meta.dirname, './app'),
+      },
       conditions: ['browser'],
       tsconfigPaths: true,
     },
