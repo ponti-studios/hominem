@@ -15,7 +15,9 @@ import type { FileObject, PreparedUpload, StorageOptions, StoredFile } from './t
 
 type StorageCategory = 'csvs' | 'chats' | 'places';
 
-const isTestMode = process.env.NODE_ENV === 'test';
+function getIsTestMode(): boolean {
+  return process.env.NODE_ENV === 'test';
+}
 
 class InMemoryStorageBackend {
   private files: Map<string, Buffer> = new Map();
@@ -23,6 +25,7 @@ class InMemoryStorageBackend {
   private isPublic: boolean;
   private category: StorageCategory;
   private pendingUploads: Map<string, { buffer?: Buffer; mimetype: string; size: number }> = new Map();
+  private preparedUploadKeys: Map<string, { key: string; userId: string }> = new Map();
 
   constructor(category: StorageCategory, options?: StorageOptions) {
     this.category = category;
@@ -35,7 +38,7 @@ class InMemoryStorageBackend {
    * Only available in test mode.
    */
   __testOnlyStoreFile(filePath: string, buffer: Buffer): void {
-    if (!isTestMode) {
+    if (!getIsTestMode()) {
       throw new Error('__testOnlyStoreFile is only available in test mode');
     }
     this.files.set(filePath, buffer);
@@ -49,6 +52,14 @@ class InMemoryStorageBackend {
 
   markUploadPending(filePath: string, mimetype: string, size: number): void {
     this.pendingUploads.set(filePath, { mimetype, size });
+  }
+
+  markPreparedUpload(fileId: string, key: string, userId: string): void {
+    this.preparedUploadKeys.set(fileId, { key, userId });
+  }
+
+  getPreparedUploadInfo(fileId: string): { key: string; userId: string } | undefined {
+    return this.preparedUploadKeys.get(fileId);
   }
 
   completePendingUpload(filePath: string, buffer: Buffer): void {
@@ -127,6 +138,8 @@ class InMemoryStorageBackend {
       : `${id}${extension}`;
     const key = this.getKey(userId, storedName);
 
+    this.markPreparedUpload(id, key, userId);
+
     return {
       id,
       key,
@@ -169,6 +182,7 @@ class InMemoryStorageBackend {
     );
 
     this.files.set(preparedUpload.key, buffer);
+    this.pendingUploads.delete(preparedUpload.key);
 
     return {
       id: preparedUpload.id,
@@ -295,9 +309,10 @@ export class R2StorageService {
   private maxFileSize!: number;
   private isPublic!: boolean;
   private userScoped!: boolean;
+  private preparedUploadKeys: Map<string, { key: string; userId: string }> = new Map();
 
   constructor(category: StorageCategory, options?: StorageOptions) {
-    if (isTestMode) {
+    if (getIsTestMode()) {
       const backend = new InMemoryStorageBackend(category, options);
       return new Proxy(backend as unknown as R2StorageService, {
         get(_target, prop) {
@@ -452,6 +467,9 @@ export class R2StorageService {
       ? this.createStoredName(id, input.filename, extension)
       : `${id}${extension}`;
     const key = this.getKey(userId, storedName);
+    
+    this.markPreparedUpload(id, key, userId);
+    
     const uploadUrl = await getSignedUrl(
       this.client,
       new PutObjectCommand({
@@ -696,8 +714,16 @@ export class R2StorageService {
     return isSupportedChatUploadMimeType(mimetype);
   }
 
+  markPreparedUpload(fileId: string, key: string, userId: string): void {
+    this.preparedUploadKeys.set(fileId, { key, userId });
+  }
+
+  getPreparedUploadInfo(fileId: string): { key: string; userId: string } | undefined {
+    return this.preparedUploadKeys.get(fileId);
+  }
+
   async storeFileWithExactKey(filePath: string, buffer: Buffer): Promise<void> {
-    if (isTestMode) {
+    if (getIsTestMode()) {
       throw new Error('storeFileWithExactKey is only for test mode and should be called on backend');
     }
     const command = new PutObjectCommand({
