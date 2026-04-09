@@ -2,7 +2,7 @@ import { CheckCircle } from 'lucide-react';
 
 import { Badge } from '../ui/badge';
 
-export type PlaidStatus = 'active' | 'error' | 'pending_expiration' | 'revoked' | null;
+type PlaidStatus = 'active' | 'error' | 'pending_expiration' | 'revoked' | null;
 
 interface PlaidStatusBadgeProps {
   status: PlaidStatus;

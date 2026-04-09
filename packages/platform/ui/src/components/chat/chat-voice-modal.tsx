@@ -22,7 +22,7 @@ interface TranscribeVariables {
   language?: string;
 }
 
-export interface ChatVoiceModalProps {
+interface ChatVoiceModalProps {
   show: boolean;
   onClose: () => void;
   onTranscribed: (transcript: string) => void;

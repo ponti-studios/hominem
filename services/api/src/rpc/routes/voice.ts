@@ -10,23 +10,47 @@ import {
   VoiceTranscriptionError,
 } from '@hominem/services/voice-transcription';
 import { zValidator } from '@hono/zod-validator';
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import * as z from 'zod';
 
 import { authMiddleware, type AppContext } from '../middleware/auth';
 
-function getVoiceErrorStatusCode(error: { statusCode: number }): number {
+type VoiceErrorOutput = MobileVoiceResponseErrorOutput | MobileVoiceTranscriptionErrorOutput;
+
+type VoiceErrorStatusCode = 400 | 401 | 429 | 500;
+
+function getVoiceErrorStatusCode(error: { statusCode: number }): VoiceErrorStatusCode {
   return error.statusCode === 400 || error.statusCode === 401 || error.statusCode === 429
     ? error.statusCode
     : 500;
 }
 
-function respondWithTranscriptionError<ErrorOutput extends { error: string; code: string }>(
-  c: { json: <T>(body: T, status: number) => Response },
+function mapVoiceResponseErrorCode(
+  code: VoiceResponseError['code'],
+): MobileVoiceResponseErrorOutput['code'] {
+  return code === 'CONTENT_POLICY' ? 'RESPONSE_FAILED' : code;
+}
+
+function respondWithJsonError(
+  c: Context<AppContext>,
+  body: VoiceErrorOutput,
+  statusCode: VoiceErrorStatusCode,
+): Response {
+  return c.newResponse(JSON.stringify(body), statusCode, {
+    'Content-Type': 'application/json',
+  });
+}
+
+function respondWithTranscriptionError(
+  c: Context<AppContext>,
   error: VoiceTranscriptionError,
-  code: ErrorOutput['code'],
+  code: VoiceErrorOutput['code'],
 ) {
-  return c.json<ErrorOutput>({ error: error.message, code }, getVoiceErrorStatusCode(error));
+  return respondWithJsonError(c, { error: error.message, code }, getVoiceErrorStatusCode(error));
+}
+
+function respondWithSpeechError(c: Context<AppContext>, error: VoiceSpeechError) {
+  return c.json({ error: error.message }, getVoiceErrorStatusCode(error));
 }
 
 function parseVoiceRequestBody(body: Record<string, unknown>) {
@@ -47,7 +71,8 @@ const voiceRoutes = new Hono<AppContext>().post('/transcribe', async (c) => {
     const { audioFile, language } = parseVoiceRequestBody(body);
 
     if (!(audioFile instanceof File)) {
-      return c.json<MobileVoiceTranscriptionErrorOutput>(
+      return respondWithJsonError(
+        c,
         { error: 'No audio file provided', code: 'INVALID_FORMAT' },
         400,
       );
@@ -68,17 +93,14 @@ const voiceRoutes = new Hono<AppContext>().post('/transcribe', async (c) => {
       ...(output.segments ? { segments: output.segments } : {}),
     };
 
-    return c.json<MobileVoiceTranscriptionOutput>(response);
+    return c.json(response);
   } catch (error) {
     if (error instanceof VoiceTranscriptionError) {
-      return respondWithTranscriptionError<MobileVoiceTranscriptionErrorOutput>(
-        c,
-        error,
-        error.code,
-      );
+      return respondWithTranscriptionError(c, error, error.code);
     }
 
-    return c.json<MobileVoiceTranscriptionErrorOutput>(
+    return respondWithJsonError(
+      c,
       { error: 'Failed to transcribe audio', code: 'TRANSCRIBE_FAILED' },
       500,
     );
@@ -107,11 +129,7 @@ export const authenticatedVoiceRoutes = new Hono<AppContext>()
         return c.body(audioBuffer);
       } catch (error) {
         if (error instanceof VoiceSpeechError) {
-          const statusCode =
-            error.statusCode === 400 || error.statusCode === 401 || error.statusCode === 429
-              ? error.statusCode
-              : 500;
-          return c.json({ error: error.message }, statusCode);
+          return respondWithSpeechError(c, error);
         }
         return c.json({ error: 'Failed to generate speech' }, 500);
       }
@@ -123,7 +141,8 @@ export const authenticatedVoiceRoutes = new Hono<AppContext>()
       const { audioFile, language } = parseVoiceRequestBody(body);
 
       if (!(audioFile instanceof File)) {
-        return c.json<MobileVoiceResponseErrorOutput>(
+        return respondWithJsonError(
+          c,
           { error: 'No audio file provided', code: 'RESPONSE_FAILED' },
           400,
         );
@@ -169,22 +188,18 @@ export const authenticatedVoiceRoutes = new Hono<AppContext>()
       });
     } catch (error) {
       if (error instanceof VoiceTranscriptionError) {
-        return respondWithTranscriptionError<MobileVoiceResponseErrorOutput>(
-          c,
-          error,
-          'RESPONSE_FAILED',
-        );
+        return respondWithTranscriptionError(c, error, 'RESPONSE_FAILED');
       }
       if (error instanceof VoiceResponseError) {
         const statusCode = getVoiceErrorStatusCode(error);
-        const responseCode: MobileVoiceResponseErrorOutput['code'] =
-          error.code === 'CONTENT_POLICY' ? 'RESPONSE_FAILED' : error.code;
-        return c.json<MobileVoiceResponseErrorOutput>(
-          { error: error.message, code: responseCode },
+        return respondWithJsonError(
+          c,
+          { error: error.message, code: mapVoiceResponseErrorCode(error.code) },
           statusCode,
         );
       }
-      return c.json<MobileVoiceResponseErrorOutput>(
+      return respondWithJsonError(
+        c,
         { error: 'Failed to generate voice response', code: 'RESPONSE_FAILED' },
         500,
       );

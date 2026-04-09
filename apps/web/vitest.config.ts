@@ -22,4 +22,4 @@ export default defineConfig({
     include: ['app/**/*.test.{ts,tsx}'],
     exclude: ['**/node_modules/**', '**/build/**', '**/dist/**', 'tests/**', '**/*.spec.ts'],
   },
-})
+});

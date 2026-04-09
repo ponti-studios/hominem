@@ -75,4 +75,4 @@ export function apiErrorHandler(err: unknown, c: Context<AppContext>) {
  *
  * This export remains as a pass-through for backwards compatibility in tests.
  */
-const errorMiddleware = createMiddleware<AppContext>(async (_c, next) => next());
+export const errorMiddleware = createMiddleware<AppContext>(async (_c, next) => next());

@@ -19,11 +19,6 @@ export function createAuthTestEmail(prefix: string) {
   return `${prefix}-${workerId}-${authTestSequence}@hominem.test`;
 }
 
-export async function importServer() {
-  const module = await import('../../server');
-  return module.createServer;
-}
-
 export async function importServerWithEnv(envOverrides: Partial<ApiEnv>) {
   vi.resetModules();
   vi.doMock('../../env', async () => {

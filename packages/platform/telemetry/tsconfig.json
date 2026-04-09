@@ -1,11 +1,11 @@
 {
-  "extends": "../../../tsconfig.profiles/node-lib.json",
+  "extends": "../../../tsconfig.profiles/package-bundler.json",
   "compilerOptions": {
     "tsBuildInfoFile": "../../../.cache/telemetry.tsbuildinfo",
     "rootDir": "src",
     "outDir": "./build",
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
-    "types": ["node"]
+    "types": ["node"],
   },
   "include": ["src/**/*.ts"],
   "exclude": [
@@ -19,6 +19,6 @@
     "**/*.spec.ts",
     "**/__tests__",
     "**/__mocks__",
-    "*.tsbuildinfo"
-  ]
+    "*.tsbuildinfo",
+  ],
 }

@@ -13,7 +13,7 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-export interface AuthProviderProps extends PropsWithChildren {
+interface AuthProviderProps extends PropsWithChildren {
   config: AuthConfig;
 }
 

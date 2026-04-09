@@ -1,24 +1,23 @@
 {
   "name": "@hominem/env",
   "version": "0.0.0",
-  "type": "module",
   "description": "Unified environment variable handling with explicit client/server separation",
-  "main": "./src/index.ts",
+  "type": "module",
+  "main": "./build/index.js",
   "types": "./src/index.ts",
   "exports": {
     ".": {
       "types": "./src/index.ts",
-      "node": "./build/index.js",
-      "import": "./src/index.ts"
+      "default": "./build/index.js"
     },
     "./brand": {
       "types": "./src/brand.ts",
-      "node": "./build/brand.js",
-      "import": "./src/brand.ts"
+      "default": "./build/brand.js"
     },
     "./package.json": "./package.json"
   },
   "scripts": {
+    "build": "tsc -p tsconfig.json",
     "dev": "tsc --watch --preserveWatchOutput",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",

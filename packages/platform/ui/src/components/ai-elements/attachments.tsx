@@ -48,7 +48,7 @@ export function getAttachmentLabel(data: AttachmentData): string {
   return data.name || 'Attachment';
 }
 
-export interface AttachmentsProps extends HTMLAttributes<HTMLDivElement> {
+interface AttachmentsProps extends HTMLAttributes<HTMLDivElement> {
   variant?: 'grid' | 'inline' | 'list';
 }
 

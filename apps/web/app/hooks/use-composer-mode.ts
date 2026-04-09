@@ -20,7 +20,7 @@
 import type { ComposerMode } from '@hominem/ui/composer';
 import { useMatch } from 'react-router';
 
-export interface ComposerModeResult {
+interface ComposerModeResult {
   mode: ComposerMode;
   noteId: string | null;
   chatId: string | null;

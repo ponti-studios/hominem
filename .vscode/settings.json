@@ -2,5 +2,5 @@
   "editor.insertSpaces": true,
   "editor.tabSize": 2,
   "editor.detectIndentation": false,
-  "cSpell.words": ["posthog", "pressable"],
+  "cSpell.words": ["bunx", "oxfmt", "oxlint", "posthog", "pressable"],
 }

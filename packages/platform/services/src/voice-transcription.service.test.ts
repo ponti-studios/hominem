@@ -1,13 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
-  installVoiceEnvMock,
   installVoiceFetchMock,
   makeVoiceAudioBuffer,
   makeVoiceErrorResponse,
   mockVoiceEnv,
   mockVoiceFetch,
 } from './voice-test-helpers';
+
+vi.mock('./env', () => ({
+  get env() {
+    return mockVoiceEnv;
+  },
+}));
+
 import {
   VOICE_TRANSCRIPTION_MAX_SIZE_BYTES,
   VoiceTranscriptionError,
@@ -16,7 +22,6 @@ import {
   validateVoiceInput,
 } from './voice-transcription.service';
 
-installVoiceEnvMock('./env');
 installVoiceFetchMock();
 
 const mockEnv = mockVoiceEnv;

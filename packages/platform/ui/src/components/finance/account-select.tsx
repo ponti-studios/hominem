@@ -3,12 +3,12 @@ import { useId } from 'react';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
-export interface AccountOption {
+interface AccountOption {
   id: string;
   name: string;
 }
 
-export interface AccountSelectProps {
+interface AccountSelectProps {
   selectedAccount: string;
   onAccountChange: (value: string) => void;
   accounts?: AccountOption[];
@@ -36,7 +36,7 @@ export function AccountSelect({
       <SelectTrigger id={id} className={className}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
-      <SelectContent className="max-h-[250px] overflow-y-auto">
+      <SelectContent className="max-h-62.5 overflow-y-auto">
         <SelectItem value="all">All accounts</SelectItem>
         {isLoading ? (
           <SelectItem value="loading" disabled>

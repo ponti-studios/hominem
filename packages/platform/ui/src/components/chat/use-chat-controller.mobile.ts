@@ -77,14 +77,14 @@ function mobileUiReducer(state: MobileUiState, action: MobileUiAction): MobileUi
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
-export interface UseChatControllerInput {
+interface UseChatControllerInput {
   chatId: string;
   onChatArchive: () => void;
   source: SessionSource;
   services: ChatServices;
 }
 
-export interface UseChatControllerResult {
+interface UseChatControllerResult {
   Markdown: MarkdownComponent | null;
   chatSendStatus: string;
   displayMessages: ChatMessageItem[];

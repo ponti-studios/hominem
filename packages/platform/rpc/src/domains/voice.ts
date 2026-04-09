@@ -1,13 +1,13 @@
-import type { RawHonoClient } from '../core/raw-client'
+import type { RawHonoClient } from '../core/raw-client';
 
-export interface VoiceSpeechInput {
-  text: string
-  voice?: string
-  speed?: number
+interface VoiceSpeechInput {
+  text: string;
+  voice?: string;
+  speed?: number;
 }
 
 export interface VoiceClient {
-  speech(input: VoiceSpeechInput): Promise<ArrayBuffer>
+  speech(input: VoiceSpeechInput): Promise<ArrayBuffer>;
 }
 
 export function createVoiceClient(rawClient: RawHonoClient): VoiceClient {
@@ -19,9 +19,9 @@ export function createVoiceClient(rawClient: RawHonoClient): VoiceClient {
           voice: input.voice ?? 'alloy',
           speed: input.speed ?? 1,
         },
-      })
+      });
 
-      return res.arrayBuffer()
+      return res.arrayBuffer();
     },
-  }
+  };
 }

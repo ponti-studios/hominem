@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useEffect, useState } from 'react';
 
 import { hiddenControl, numberControl } from '../../storybook/controls';
-import { PaginationControls, type PaginationControlsProps } from './pagination-controls';
+import { PaginationControls } from './pagination-controls';
 
 const meta = {
   title: 'Patterns/Finance/PaginationControls',

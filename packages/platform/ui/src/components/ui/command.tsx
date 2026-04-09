@@ -152,11 +152,13 @@ function CommandListLoading({ className, ...props }: React.ComponentProps<'div'>
 
 export {
   Command,
+  CommandDialog,
   CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
   CommandList,
+  CommandListLoading,
   CommandSeparator,
   CommandShortcut,
 };

@@ -80,27 +80,3 @@ export async function patchJson(
     body: JSON.stringify(body),
   });
 }
-
-/**
- * Make a DELETE request to the test app.
- */
-async function deleteJson(app: Hono<AppContext>, path: string): Promise<Response> {
-  return app.request(`http://localhost${path}`, {
-    method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-}
-
-/**
- * Make a GET request to the test app.
- */
-async function getJson(app: Hono<AppContext>, path: string): Promise<Response> {
-  return app.request(`http://localhost${path}`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-}

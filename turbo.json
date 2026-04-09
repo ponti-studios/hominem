@@ -70,11 +70,12 @@
         "test/**/*.{ts,tsx,js,jsx}"
       ]
     },
-    "typegen": {
-      "outputs": [".react-router/**", "app/routes/+types/**/*"]
+    "test:e2e": {
+      "dependsOn": ["^build"],
+      "inputs": ["app/**/*.{ts,tsx,js,jsx}", "tests/**/*.{ts,tsx,js,jsx}", "playwright.config.ts"]
     },
     "typecheck": {
-      "dependsOn": ["^build", "typegen"],
+      "dependsOn": ["^build"],
       "inputs": ["**/*.ts", "**/*.tsx", "tsconfig.json"]
     }
   }

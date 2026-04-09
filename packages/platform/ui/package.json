@@ -3,72 +3,149 @@
   "version": "0.0.0",
   "private": true,
   "exports": {
-    ".": "./src/index.ts",
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
     "./button": {
+      "types": "./src/components/ui/button.tsx",
       "react-native": "./src/components/ui/button.native.tsx",
       "default": "./src/components/ui/button.tsx"
     },
     "./heading": {
+      "types": "./src/components/typography/heading.tsx",
       "react-native": "./src/components/typography/heading.native.tsx",
       "default": "./src/components/typography/heading.tsx"
     },
     "./text": {
+      "types": "./src/components/typography/text.tsx",
       "react-native": "./src/components/typography/text.native.tsx",
       "default": "./src/components/typography/text.tsx"
     },
     "./text-field": {
+      "types": "./src/components/ui/text-field.tsx",
       "react-native": "./src/components/ui/text-field.native.tsx",
       "default": "./src/components/ui/text-field.tsx"
     },
     "./text-area": {
+      "types": "./src/components/ui/text-area.tsx",
       "react-native": "./src/components/ui/text-area.native.tsx",
       "default": "./src/components/ui/text-area.tsx"
     },
-    "./select-field": "./src/components/ui/select-field.tsx",
+    "./select-field": {
+      "types": "./src/components/ui/select-field.tsx",
+      "default": "./src/components/ui/select-field.tsx"
+    },
     "./field": {
+      "types": "./src/components/ui/field.tsx",
       "react-native": "./src/components/ui/field.native.tsx",
       "default": "./src/components/ui/field.tsx"
     },
     "./stack": {
+      "types": "./src/components/layout/stack.tsx",
       "react-native": "./src/components/layout/stack.native.tsx",
       "default": "./src/components/layout/stack.tsx"
     },
     "./inline": {
+      "types": "./src/components/layout/inline.tsx",
       "react-native": "./src/components/layout/inline.native.tsx",
       "default": "./src/components/layout/inline.tsx"
     },
     "./page": {
+      "types": "./src/components/layout/page.tsx",
       "react-native": "./src/components/layout/page.native.tsx",
       "default": "./src/components/layout/page.tsx"
     },
-    "./input": "./src/components/ui/input.tsx",
-    "./label": "./src/components/ui/label.tsx",
-    "./textarea": "./src/components/ui/textarea.tsx",
-    "./dialog": "./src/components/ui/dialog.tsx",
-    "./alert-dialog": "./src/components/ui/alert-dialog.tsx",
-    "./dropdown": "./src/components/ui/dropdown-menu.tsx",
+    "./input": {
+      "types": "./src/components/ui/input.tsx",
+      "default": "./src/components/ui/input.tsx"
+    },
+    "./label": {
+      "types": "./src/components/ui/label.tsx",
+      "default": "./src/components/ui/label.tsx"
+    },
+    "./textarea": {
+      "types": "./src/components/ui/textarea.tsx",
+      "default": "./src/components/ui/textarea.tsx"
+    },
+    "./dialog": {
+      "types": "./src/components/ui/dialog.tsx",
+      "default": "./src/components/ui/dialog.tsx"
+    },
+    "./alert-dialog": {
+      "types": "./src/components/ui/alert-dialog.tsx",
+      "default": "./src/components/ui/alert-dialog.tsx"
+    },
+    "./dropdown": {
+      "types": "./src/components/ui/dropdown-menu.tsx",
+      "default": "./src/components/ui/dropdown-menu.tsx"
+    },
     "./card": {
+      "types": "./src/components/ui/card.tsx",
       "react-native": "./src/components/ui/card.native.tsx",
       "default": "./src/components/ui/card.tsx"
     },
-    "./filters": "./src/components/filters/index.ts",
-    "./hooks": "./src/hooks/index.ts",
-    "./hooks/sort.types": "./src/hooks/sort.types.ts",
-    "./lib/*": "./src/lib/*.ts",
-    "./lib/gsap": "./src/lib/gsap/sequences.ts",
-    "./styles/*": "./src/styles/*",
-    "./ai-elements": "./src/components/ai-elements/index.ts",
+    "./filters": {
+      "types": "./src/components/filters/index.ts",
+      "default": "./src/components/filters/index.ts"
+    },
+    "./hooks": {
+      "types": "./src/hooks/index.ts",
+      "default": "./src/hooks/index.ts"
+    },
+    "./hooks/sort.types": {
+      "types": "./src/hooks/sort.types.ts",
+      "default": "./src/hooks/sort.types.ts"
+    },
+    "./lib/*": {
+      "types": "./src/lib/*.ts",
+      "default": "./src/lib/*.ts"
+    },
+    "./lib/gsap": {
+      "types": "./src/lib/gsap/sequences.ts",
+      "default": "./src/lib/gsap/sequences.ts"
+    },
+    "./styles/*": {
+      "types": "./src/styles/*",
+      "default": "./src/styles/*"
+    },
+    "./ai-elements": {
+      "types": "./src/components/ai-elements/index.ts",
+      "default": "./src/components/ai-elements/index.ts"
+    },
     "./chat": {
+      "types": "./src/components/chat/index.ts",
       "react-native": "./src/components/chat/index.mobile.ts",
       "default": "./src/components/chat/index.ts"
     },
-    "./composer": "./src/components/composer/index.ts",
-    "./types/upload": "./src/types/upload.ts",
-    "./types/chat": "./src/types/chat.ts",
-    "./tokens": "./src/tokens/index.ts",
-    "./tokens/notes": "./src/tokens/notes.ts",
-    "./tokens/shadows": "./src/tokens/shadows.ts",
-    "./tokens/typography.native": "./src/tokens/typography.native.ts",
+    "./composer": {
+      "types": "./src/components/composer/index.ts",
+      "default": "./src/components/composer/index.ts"
+    },
+    "./types/upload": {
+      "types": "./src/types/upload.ts",
+      "default": "./src/types/upload.ts"
+    },
+    "./types/chat": {
+      "types": "./src/types/chat.ts",
+      "default": "./src/types/chat.ts"
+    },
+    "./tokens": {
+      "types": "./src/tokens/index.ts",
+      "default": "./src/tokens/index.ts"
+    },
+    "./tokens/notes": {
+      "types": "./src/tokens/notes.ts",
+      "default": "./src/tokens/notes.ts"
+    },
+    "./tokens/shadows": {
+      "types": "./src/tokens/shadows.ts",
+      "default": "./src/tokens/shadows.ts"
+    },
+    "./tokens/typography.native": {
+      "types": "./src/tokens/typography.native.ts",
+      "default": "./src/tokens/typography.native.ts"
+    },
     "./theme": {
       "types": "./src/theme.ts",
       "node": "./shell-theme.cjs",

@@ -21,7 +21,6 @@ Use `bun run test` for fast component and route feedback while you work.
 | Check code style           | `bun run lint`      | Before commits and PRs                           |
 | Format code                | `bun run format`    | Fix formatting issues quickly                    |
 | Check TypeScript           | `bun run typecheck` | Before commits and PRs                           |
-| Generate route types       | `bun run typegen`   | After route changes or React Router updates      |
 | Run unit/integration tests | `bun run test`      | Normal coding feedback                           |
 | Run browser E2E tests      | `bun run test:e2e`  | UI or auth flow changes                          |
 
@@ -58,7 +57,7 @@ The Playwright config starts the API and web servers for you when needed.
 
 ### Quality And Type Safety
 
-`bun run lint`, `bun run format`, `bun run typecheck`, and `bun run typegen` cover the common pre-PR checks.
+`bun run lint`, `bun run format`, and `bun run typecheck` cover the common pre-PR checks.
 
 ## Configuration Model
 

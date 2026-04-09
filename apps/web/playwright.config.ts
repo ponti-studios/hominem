@@ -3,9 +3,18 @@ import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
-const reuseExistingServer = process.env.REUSE_SERVERS === 'true' || !process.env.CI
+const apiDir = path.join(workspaceRoot, 'services/api')
+const webDir = path.join(workspaceRoot, 'apps/web')
+const isCI = process.env.CI === 'true'
+const reuseExistingServer = process.env.REUSE_SERVERS === 'true' || !isCI
 const holdIfRunning = (url: string, command: string) =>
   `sh -c 'curl -sf ${url} >/dev/null && while true; do sleep 60; done || ${command}'`
+const apiBaseUrl = process.env.VITE_PUBLIC_API_URL ?? 'http://localhost:4040'
+const apiRootUrl = new URL('/', apiBaseUrl).toString()
+const apiPort = new URL(apiBaseUrl).port || '4040'
+const apiServerCommand = isCI
+  ? `cd ${apiDir} && bun run start`
+  : `bun run --filter @hominem/db db:migrate && bun run --filter @hominem/db build && cd ${apiDir} && bun run dev`
 
 export default defineConfig({
   testDir: './tests',
@@ -18,32 +27,40 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: holdIfRunning(
-        'http://localhost:4040/',
-        'bun run --filter @hominem/db db:migrate && bun run --filter @hominem/db build && bun run --filter @hominem/api dev',
-      ),
+      command: isCI
+        ? apiServerCommand
+        : holdIfRunning('http://localhost:4040/', apiServerCommand),
       cwd: workspaceRoot,
-      url: 'http://localhost:4040/',
+      url: apiRootUrl,
       reuseExistingServer,
       timeout: 120_000,
       env: {
         NODE_ENV: 'test',
-        PORT: '4040',
-        API_URL: 'http://localhost:4040',
+        PORT: apiPort,
+        API_URL: apiBaseUrl,
         NOTES_URL: 'http://localhost:4445',
         DATABASE_URL: 'postgres://postgres:postgres@localhost:4433/hominem-test',
         AUTH_TEST_OTP_ENABLED: 'true',
-        AUTH_E2E_SECRET: 'otp-secret',
+        AUTH_E2E_SECRET: process.env.AUTH_E2E_SECRET ?? 'otp-secret',
         OPENROUTER_API_KEY: 'test-openrouter-key',
         SEND_EMAILS: 'false',
+        RESEND_API_KEY: process.env.RESEND_API_KEY ?? 're_placeholder',
+        RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL ?? 'noreply@example.com',
+        RESEND_FROM_NAME: process.env.RESEND_FROM_NAME ?? 'Test',
       },
     },
     {
-      command: holdIfRunning('http://localhost:4445/logo.png', 'bun dev --filter @hominem/web'),
+      command: isCI
+        ? `cd ${webDir} && bun run build && bun run start`
+        : holdIfRunning('http://localhost:4445/logo.png', 'bun dev --filter @hominem/web'),
       cwd: workspaceRoot,
       url: 'http://localhost:4445/logo.png',
       reuseExistingServer,
-      timeout: 60_000,
+      timeout: 120_000,
+      env: {
+        PORT: '4445',
+        VITE_PUBLIC_API_URL: apiBaseUrl,
+      },
     },
   ],
 })
