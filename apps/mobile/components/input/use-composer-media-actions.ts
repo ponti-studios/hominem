@@ -4,7 +4,7 @@ import { CHAT_UPLOAD_MAX_FILE_COUNT } from '@hominem/utils/upload';
 import * as ImagePicker from 'expo-image-picker';
 import { Alert } from 'react-native';
 
-import { useFileUpload } from '~/utils/services/files/use-file-upload';
+import { useFileUpload } from '~/services/files/use-file-upload';
 
 import type { MobileComposerAttachment, MobileComposerMode } from './input-context';
 

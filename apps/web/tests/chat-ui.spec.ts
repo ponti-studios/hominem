@@ -15,6 +15,18 @@ async function openNewChat(page: Page) {
   return textarea;
 }
 
+async function attachChatFile(page: Page, filename: string, content: string) {
+  await page.getByTestId('chat-file-input').setInputFiles({
+    name: filename,
+    mimeType: 'text/plain',
+    buffer: Buffer.from(content),
+  });
+
+  await expect(page.getByRole('button', { name: new RegExp(filename) })).toBeVisible({
+    timeout: 10_000,
+  });
+}
+
 test.describe('Chat UI', () => {
   test('shows an empty draft when a new chat opens', async ({ page }) => {
     const textarea = await openNewChat(page);
@@ -29,18 +41,21 @@ test.describe('Chat UI', () => {
   });
 
   test('attachment button uploads a file before send', async ({ page }) => {
-    await openNewChat(page);
+    const textarea = await openNewChat(page);
 
-    await page
-      .locator('input[type="file"]')
-      .first()
-      .setInputFiles({
-        name: 'chat-attachment.txt',
-        mimeType: 'text/plain',
-        buffer: Buffer.from('Attachment for chat flow'),
-      });
+    await attachChatFile(page, 'chat-attachment.txt', 'Attachment for chat flow');
 
-    await expect(page.getByText('chat-attachment.txt')).toBeVisible({ timeout: 5_000 });
+    await textarea.fill('Please keep this attachment');
+    await page.getByRole('button', { name: 'Send' }).click();
+
+    await expect(page.getByRole('link', { name: 'chat-attachment.txt' })).toBeVisible({
+      timeout: 10_000,
+    });
+
+    await page.reload();
+    await expect(page.getByRole('link', { name: 'chat-attachment.txt' })).toBeVisible({
+      timeout: 10_000,
+    });
   });
 
   test('voice input button is visible in the chat toolbar', async ({ page }) => {

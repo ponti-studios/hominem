@@ -20,7 +20,7 @@ jest.mock('react-native', () => ({
   Text: 'Text',
 }));
 
-jest.mock('~/utils/constants', () => ({
+jest.mock('~/constants', () => ({
   API_BASE_URL: 'http://localhost:4040',
   E2E_AUTH_SECRET: 'e2e-secret',
   E2E_TESTING: false,

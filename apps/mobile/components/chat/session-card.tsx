@@ -7,13 +7,13 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { FadeIn } from '~/components/animated/fade-in';
 import { makeStyles, Text, theme } from '~/theme';
-import { formatRelativeAge } from '~/utils/date/format-relative-age';
-import type { ChatWithActivity } from '~/utils/services/chat/session-state';
+import { formatRelativeAge } from '~/date/format-relative-age';
+import type { ChatWithActivity } from '~/services/chat/session-state';
 import {
   getArchivedChatsWithActivity,
   getInboxChatsWithActivity,
-} from '~/utils/services/chat/session-state';
-import { chatKeys } from '~/utils/services/notes/query-keys';
+} from '~/services/chat/session-state';
+import { chatKeys } from '~/services/notes/query-keys';
 
 import AppIcon from '../ui/icon';
 

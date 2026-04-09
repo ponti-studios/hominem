@@ -301,6 +301,7 @@ export default function ChatPage({ params }: Route.ComponentProps) {
                     hidden
                     multiple
                     type="file"
+                    data-testid="chat-file-input"
                     onChange={(event) => {
                       void handleAttachFiles(event.target.files);
                       event.currentTarget.value = '';

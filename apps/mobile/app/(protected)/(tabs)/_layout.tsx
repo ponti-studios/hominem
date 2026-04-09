@@ -5,7 +5,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { InputProvider } from '~/components/input/input-context';
 import { MobileComposer } from '~/components/input/mobile-composer';
-import { Text, theme } from '~/theme';
+import { Text, makeStyles } from '~/theme';
 
 function NavButton({ href, label }: { href: RelativePathString; label: string }) {
   const router = useRouter();
@@ -29,6 +29,8 @@ function NavButton({ href, label }: { href: RelativePathString; label: string })
 }
 
 export default function TabsLayout() {
+  const styles = useStyles();
+
   return (
     <InputProvider>
       <View style={styles.container}>
@@ -51,31 +53,33 @@ export default function TabsLayout() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  nav: {
-    flexDirection: 'row',
-    gap: theme.spacing.sm_12,
-    paddingHorizontal: theme.spacing.m_16,
-    paddingTop: theme.spacing.l_32,
-    paddingBottom: theme.spacing.sm_12,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors['border-default'],
-  },
-  navButton: {
-    borderWidth: 1,
-    borderColor: theme.colors['border-default'],
-    borderRadius: theme.borderRadii.full,
-    paddingHorizontal: theme.spacing.m_16,
-    paddingVertical: theme.spacing.sm_8,
-  },
-  navButtonActive: {
-    backgroundColor: theme.colors.muted,
-  },
-  content: {
-    flex: 1,
-  },
-});
+const useStyles = makeStyles((t) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: t.colors.background,
+    },
+    nav: {
+      flexDirection: 'row',
+      gap: t.spacing.sm_12,
+      paddingHorizontal: t.spacing.m_16,
+      paddingTop: t.spacing.l_32,
+      paddingBottom: t.spacing.sm_12,
+      borderBottomWidth: 1,
+      borderBottomColor: t.colors['border-default'],
+    },
+    navButton: {
+      borderWidth: 1,
+      borderColor: t.colors['border-default'],
+      borderRadius: t.borderRadii.full,
+      paddingHorizontal: t.spacing.m_16,
+      paddingVertical: t.spacing.sm_8,
+    },
+    navButtonActive: {
+      backgroundColor: t.colors.muted,
+    },
+    content: {
+      flex: 1,
+    },
+  }),
+);

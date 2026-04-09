@@ -73,7 +73,7 @@ describe('/auth route', () => {
     );
 
     expect(response.status).toBe(302);
-    expect(response.headers.get('location')).toBe('/home');
+    expect(response.headers.get('location')).toBe('/notes');
     expect(response.headers.get('x-test')).toBe('1');
   });
 

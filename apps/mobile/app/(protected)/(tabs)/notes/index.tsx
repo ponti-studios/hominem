@@ -13,7 +13,7 @@ import {
 } from '~/components/notes/notes-surface-motion';
 import { useReducedMotion } from '~/lib/use-reduced-motion';
 import { Text, theme } from '~/theme';
-import { flattenNoteFeedPages, useNoteFeed } from '~/utils/services/notes/use-note-stream';
+import { flattenNoteFeedPages, useNoteFeed } from '~/services/notes/use-note-stream';
 
 type FeedRow = {
   id: string;

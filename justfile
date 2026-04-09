@@ -63,7 +63,7 @@ web-e2e-install:
 
 web-e2e-api-local:
   #!/usr/bin/env bash
-  cd "{{ROOT_DIR}}" && just db-setup && cd "{{ROOT_DIR}}/services/api" && bun run dev
+  cd "{{ROOT_DIR}}" && just db-setup && cd "{{ROOT_DIR}}/services/api" && bun run start
 
 web-e2e-api-ci:
   cd "{{ROOT_DIR}}/services/api" && bun run start
@@ -72,7 +72,7 @@ web-e2e-web-local:
   cd "{{WEB_DIR}}" && bun run build && bun run start
 
 web-e2e-web-ci:
-  cd "{{WEB_DIR}}" && bun run start
+  cd "{{WEB_DIR}}" && bun run build && bun run start
 
 web-e2e:
   cd "{{WEB_DIR}}" && bun run test:e2e

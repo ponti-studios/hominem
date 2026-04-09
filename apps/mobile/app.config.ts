@@ -1,39 +1,10 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 
-import { getBrandAssetPaths, type AppVariant } from './config/brand-assets';
-
-interface VariantConfig {
-  bundleIdentifier: string;
-  displayName: string;
-  updatesChannel: string | null;
-  scheme: string;
-  usesDevClient: boolean;
-}
-
-const { getAppVariant, getAppVariantConfig } = require('./config/appVariant') as {
-  getAppVariant: () => AppVariant;
-  getAppVariantConfig: (rawVariant?: string) => VariantConfig;
-};
-
-const { EXPO_OWNER, EXPO_PROJECT_ID, getExpoExtraConfig } = require('./config/expo-config.js') as {
-  EXPO_OWNER: string;
-  EXPO_PROJECT_ID: string;
-  getExpoExtraConfig: (env: Record<string, string | undefined>) => {
-    apiBaseUrl: string;
-    mobilePasskeyEnabled: string;
-  };
-};
-
-const { shellTheme } = require('./config/expo-theme.js') as {
-  shellTheme: {
-    mobile: {
-      adaptiveIconBackgroundColor: string;
-      htmlBackgroundColor: string;
-      notificationColor: string;
-      splashBackgroundColor: string;
-    };
-  };
-};
+import { getBrandAssetPaths } from './config/brand-assets';
+import type { AppVariant, VariantConfig } from './config/app-variant';
+import { getAppVariant, getAppVariantConfig } from './config/app-variant';
+import { EXPO_OWNER, EXPO_PROJECT_ID, getExpoExtraConfig } from './config/expo-config';
+import { shellTheme } from './config/expo-theme';
 
 function getUpdatesConfig(variantConfig: VariantConfig): ExpoConfig['updates'] {
   if (variantConfig.usesDevClient || variantConfig.updatesChannel === null) {
@@ -112,7 +83,6 @@ export default ({ config }: ConfigContext) => {
     'expo-asset',
     'expo-audio',
     'expo-sqlite',
-    'expo-background-task',
     [
       'expo-notifications',
       {

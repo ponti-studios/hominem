@@ -40,7 +40,7 @@ jest.mock('react-native-reanimated', () => {
   }
 })
 
-jest.mock('~/utils/services/notes/use-note-stream', () => ({
+jest.mock('~/services/notes/use-note-stream', () => ({
   flattenNoteFeedPages: (data: { pages: Array<{ notes: unknown[] }> } | undefined) =>
     data?.pages.flatMap((page) => page.notes) ?? [],
   useNoteFeed: () => mockUseNoteFeed(),

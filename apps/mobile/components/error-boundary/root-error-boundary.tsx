@@ -1,12 +1,11 @@
-import React, { Component, type ReactNode } from 'react';
+import { useCallback, useState, type ReactNode } from 'react';
+import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
 
 import {
-  createBoundaryStateFromError,
   createRootFallbackMessage,
-  resetBoundaryState,
   type BoundaryState,
-} from '~/utils/error-boundary/contracts';
-import { logError } from '~/utils/error-boundary/log-error';
+} from '~/error-boundary/error-boundary/contracts';
+import { logError } from '~/error-boundary/error-boundary/log-error';
 
 import { FullScreenErrorFallback } from './full-screen-error-fallback';
 
@@ -16,42 +15,49 @@ interface Props {
   onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
 }
 
-type State = BoundaryState;
+function RootFallback({ error, resetErrorBoundary }: FallbackProps) {
+  const err = error instanceof Error ? error : new Error(String(error));
+  return (
+    <FullScreenErrorFallback
+      actionLabel="Try Again"
+      message={createRootFallbackMessage(err)}
+      onPress={resetErrorBoundary}
+    />
+  );
+}
 
-export class RootErrorBoundary extends Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
-    this.state = { hasError: false, error: null };
+export function RootErrorBoundary({ children, fallback, onError }: Props) {
+  const [, setState] = useState<BoundaryState>({ hasError: false, error: null });
+
+  const handleError = useCallback(
+    (error: unknown, errorInfo: React.ErrorInfo) => {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logError(err, errorInfo);
+      onError?.(err, errorInfo);
+    },
+    [onError],
+  );
+
+  const handleReset = useCallback(() => {
+    setState({ hasError: false, error: null });
+  }, []);
+
+  if (fallback) {
+    return (
+      <ErrorBoundary onError={handleError} fallback={fallback}>
+        {children}
+      </ErrorBoundary>
+    );
   }
 
-  static getDerivedStateFromError(error: Error): State {
-    return createBoundaryStateFromError(error);
-  }
-
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    logError(error, errorInfo);
-    this.props.onError?.(error, errorInfo);
-  }
-
-  handleReset = () => {
-    this.setState(resetBoundaryState());
-  };
-
-  render() {
-    if (this.state.hasError) {
-      if (this.props.fallback) {
-        return this.props.fallback;
-      }
-
-      return (
-        <FullScreenErrorFallback
-          actionLabel="Try Again"
-          message={createRootFallbackMessage(this.state.error)}
-          onPress={this.handleReset}
-        />
-      );
-    }
-
-    return this.props.children;
-  }
+  return (
+    <ErrorBoundary
+      onError={handleError}
+      fallbackRender={({ error, resetErrorBoundary }) => (
+        <RootFallback error={error} resetErrorBoundary={resetErrorBoundary} />
+      )}
+    >
+      {children}
+    </ErrorBoundary>
+  );
 }

@@ -10,8 +10,8 @@ import { FeatureErrorBoundary } from '~/components/error-boundary';
 import TextInput from '~/components/text-input';
 import { posthog } from '~/lib/posthog';
 import { Box, makeStyles, Text } from '~/theme';
-import { useAuth } from '~/utils/auth-provider';
-import { isValidOtp, normalizeOtp } from '~/utils/auth/validation';
+import { useAuth } from '~/auth-provider';
+import { isValidOtp, normalizeOtp } from '~/auth/validation';
 
 import { getAuthScreenBaseStyles } from './auth-screen-styles';
 

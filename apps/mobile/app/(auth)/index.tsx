@@ -10,10 +10,10 @@ import { FeatureErrorBoundary } from '~/components/error-boundary';
 import TextInput from '~/components/text-input';
 import { posthog } from '~/lib/posthog';
 import { Box, makeStyles, Text } from '~/theme';
-import { useAuth } from '~/utils/auth-provider';
-import { isValidEmail, normalizeEmail } from '~/utils/auth/validation';
-import { E2E_TESTING, MOBILE_PASSKEY_ENABLED } from '~/utils/constants';
-import { useMobilePasskeyAuth } from '~/utils/use-mobile-passkey-auth';
+import { useAuth } from '~/auth-provider';
+import { isValidEmail, normalizeEmail } from '~/auth/validation';
+import { E2E_TESTING, MOBILE_PASSKEY_ENABLED } from '~/constants';
+import { useMobilePasskeyAuth } from '~/use-mobile-passkey-auth';
 
 import { getAuthScreenBaseStyles } from './auth-screen-styles';
 

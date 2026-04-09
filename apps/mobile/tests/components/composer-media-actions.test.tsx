@@ -17,7 +17,7 @@ jest.mock('expo-image-picker', () => ({
   launchImageLibraryAsync: (...args: unknown[]) => mockLaunchImageLibraryAsync(...args),
 }))
 
-jest.mock('~/utils/services/files/use-file-upload', () => ({
+jest.mock('~/services/files/use-file-upload', () => ({
   useFileUpload: () => ({
     uploadAssets: mockUploadAssets,
     clearErrors: mockClearErrors,

@@ -5,7 +5,7 @@ import React, { useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { Text, theme } from '~/theme';
-import { useNoteQuery } from '~/utils/services/notes/use-note-query';
+import { useNoteQuery } from '~/services/notes/use-note-query';
 
 const COMPOSER_CLEARANCE = 240;
 

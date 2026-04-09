@@ -1,69 +1,20 @@
-import React, { Component, type ReactNode } from 'react';
+import { useCallback, type ReactNode } from 'react';
+import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
 import { View, StyleSheet } from 'react-native';
 
 import { Button } from '~/components/Button';
 import { Text, makeStyles } from '~/theme';
 import {
-  createBoundaryStateFromError,
   createFeatureFallbackLabel,
-  resetBoundaryState,
   type BoundaryState,
-} from '~/utils/error-boundary/contracts';
-import { logError } from '~/utils/error-boundary/log-error';
+} from '~/error-boundary/error-boundary/contracts';
+import { logError } from '~/error-boundary/error-boundary/log-error';
 
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
   onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
   featureName?: string;
-}
-
-type State = BoundaryState;
-
-export class FeatureErrorBoundary extends Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-
-  static getDerivedStateFromError(error: Error): State {
-    return createBoundaryStateFromError(error);
-  }
-
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    logError(error, errorInfo, { feature: this.props.featureName });
-    this.props.onError?.(error, errorInfo);
-  }
-
-  handleReset = () => {
-    this.setState(resetBoundaryState());
-  };
-
-  render() {
-    if (this.state.hasError) {
-      if (this.props.fallback) {
-        return this.props.fallback;
-      }
-
-      const styles = useStyles();
-      return (
-        <View style={styles.container}>
-          <Text variant="body" color="text-tertiary">
-            {createFeatureFallbackLabel(this.props.featureName)}
-          </Text>
-          <Button
-            variant="outline"
-            size="sm"
-            style={styles.button}
-            onPress={this.handleReset}
-            title="Retry"
-          />
-        </View>
-      );
-    }
-
-    return this.props.children;
-  }
 }
 
 const useStyles = makeStyles((t) =>
@@ -83,3 +34,55 @@ const useStyles = makeStyles((t) =>
     },
   }),
 );
+
+function FeatureFallback({
+  error,
+  resetErrorBoundary,
+  featureName,
+}: FallbackProps & { featureName?: string }) {
+  const styles = useStyles();
+  return (
+    <View style={styles.container}>
+      <Text variant="body" color="text-tertiary">
+        {createFeatureFallbackLabel(featureName)}
+      </Text>
+      <Button
+        variant="outline"
+        size="sm"
+        style={styles.button}
+        onPress={resetErrorBoundary}
+        title="Retry"
+      />
+    </View>
+  );
+}
+
+export function FeatureErrorBoundary({ children, fallback, onError, featureName }: Props) {
+  const handleError = useCallback(
+    (error: unknown, errorInfo: React.ErrorInfo) => {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logError(err, errorInfo, { feature: featureName });
+      onError?.(err, errorInfo);
+    },
+    [onError, featureName],
+  );
+
+  if (fallback) {
+    return (
+      <ErrorBoundary onError={handleError} fallback={fallback}>
+        {children}
+      </ErrorBoundary>
+    );
+  }
+
+  return (
+    <ErrorBoundary
+      onError={handleError}
+      fallbackRender={(props) => (
+        <FeatureFallback {...props} featureName={featureName} />
+      )}
+    >
+      {children}
+    </ErrorBoundary>
+  );
+}

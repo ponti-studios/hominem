@@ -19,17 +19,17 @@ import {
 import { donateAddNoteIntent } from '~/lib/intent-donation';
 import { useReducedMotion } from '~/lib/use-reduced-motion';
 import { Text, theme } from '~/theme';
-import { useSendMessage } from '~/utils/services/chat';
-import type { ChatWithActivity } from '~/utils/services/chat/session-state';
+import { useSendMessage } from '~/services/chat';
+import type { ChatWithActivity } from '~/services/chat/session-state';
 import {
   createChatInboxRefreshSnapshot,
   invalidateInboxQueries,
   upsertInboxSessionActivity,
-} from '~/utils/services/inbox/inbox-refresh';
-import { chatKeys, noteKeys } from '~/utils/services/notes/query-keys';
-import { useCreateNote } from '~/utils/services/notes/use-create-note';
-import { useNoteQuery } from '~/utils/services/notes/use-note-query';
-import { useNoteStream } from '~/utils/services/notes/use-note-stream';
+} from '~/services/inbox/inbox-refresh';
+import { chatKeys, noteKeys } from '~/services/notes/query-keys';
+import { useCreateNote } from '~/services/notes/use-create-note';
+import { useNoteQuery } from '~/services/notes/use-note-query';
+import { useNoteStream } from '~/services/notes/use-note-stream';
 
 import { CameraModal } from '../media/camera-modal';
 import { VoiceSessionModal } from '../media/voice-session-modal';

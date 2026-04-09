@@ -16,7 +16,7 @@ jest.mock('~/components/media/use-tts', () => ({
   }),
 }))
 
-jest.mock('~/utils/services/chat', () => ({
+jest.mock('~/services/chat', () => ({
   useActiveChat: () => ({
     data: {
       id: 'chat-1',

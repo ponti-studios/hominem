@@ -1,11 +1,7 @@
 import type { APIRequestContext, APIResponse, BrowserContext } from '@playwright/test';
 
-import {
-  AUTH_E2E_SECRET,
-  AUTH_SEND_OTP_URL,
-  AUTH_SIGN_IN_URL,
-  AUTH_TEST_OTP_URL,
-} from './auth.shared';
+import { AUTH_E2E_SECRET, AUTH_SEND_OTP_URL, AUTH_SIGN_IN_URL, AUTH_TEST_OTP_URL } from './auth.shared';
+import { pollForOtp } from './auth.flow-helpers';
 
 interface OtpResponse {
   otp: string;
@@ -38,27 +34,27 @@ export async function requestSignInOtp(request: APIRequestContext, email: string
 }
 
 export async function fetchLatestSignInOtp(request: APIRequestContext, email: string) {
-  const response = await request.get(AUTH_TEST_OTP_URL, {
-    headers: {
-      'x-e2e-auth-secret': AUTH_E2E_SECRET,
-    },
-    params: {
-      email,
-      type: 'sign-in',
-    },
+  return pollForOtp(async () => {
+    const response = await request.get(AUTH_TEST_OTP_URL, {
+      headers: {
+        'x-e2e-auth-secret': AUTH_E2E_SECRET,
+      },
+      params: {
+        email,
+        type: 'sign-in',
+      },
+    });
+
+    if (response.status() === 200) {
+      const payload = (await response.json()) as OtpResponse;
+      return { status: response.status(), body: '', otp: payload.otp };
+    }
+
+    return {
+      status: response.status(),
+      body: await readResponseBody(response),
+    };
   });
-
-  if (response.status() !== 200) {
-    const body = await readResponseBody(response);
-    throw new Error(`OTP lookup failed for ${email} (${response.status()}): ${body}`);
-  }
-
-  const payload = (await response.json()) as OtpResponse;
-  if (!payload.otp || payload.otp.length < 4) {
-    throw new Error(`Expected OTP payload for ${email}`);
-  }
-
-  return payload.otp;
 }
 
 export async function signInWithEmailOtp(request: APIRequestContext, email: string) {

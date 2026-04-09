@@ -109,7 +109,7 @@ export interface AppAuthConfig {
 /** Web app auth config. */
 export const NOTES_AUTH_CONFIG: AppAuthConfig = {
   appName: AUTH_APP_NAME,
-  defaultPostAuthDestination: '/home',
+  defaultPostAuthDestination: '/notes',
   allowedDestinations: ['/', '/home', '/chat', '/notes', '/account', '/settings'],
   copy: AUTH_COPY,
 };

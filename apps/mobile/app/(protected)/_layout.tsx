@@ -5,10 +5,10 @@ import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'rea
 import { FeatureErrorBoundary } from '~/components/error-boundary';
 import { useAppLock } from '~/lib/use-app-lock';
 import { Text, theme } from '~/theme';
-import { ApiProvider } from '~/utils/api-provider';
-import { useAuth } from '~/utils/auth-provider';
-import { APP_NAME } from '~/utils/constants';
-import queryClient from '~/utils/query-client';
+import { ApiProvider } from '~/api-provider';
+import { useAuth } from '~/auth-provider';
+import { APP_NAME } from '~/constants';
+import queryClient from '~/query-client';
 
 const styles = StyleSheet.create({
   root: {

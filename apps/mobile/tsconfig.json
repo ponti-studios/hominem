@@ -15,7 +15,7 @@
     "types": ["jest"],
     "paths": {
       "theme": ["./theme/index.ts"],
-      "~/*": ["./*"],
+      "~/*": ["./lib/*"],
     },
     "noEmit": true,
   },
@@ -28,8 +28,6 @@
     "lib/**/*.tsx",
     "theme/**/*.ts",
     "theme/**/*.tsx",
-    "utils/**/*.ts",
-    "utils/**/*.tsx",
     "tests/**/*.ts",
     "tests/**/*.tsx",
     "app.config.ts",

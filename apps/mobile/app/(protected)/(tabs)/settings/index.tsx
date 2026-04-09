@@ -17,9 +17,9 @@ import TextInput from '~/components/text-input';
 import { getAppLockEnabled, setAppLockEnabled } from '~/lib/use-app-lock';
 import { getPreventScreenshots, setPreventScreenshots } from '~/lib/use-screen-capture';
 import { Text, theme } from '~/theme';
-import { useAuth } from '~/utils/auth-provider';
-import { MOBILE_PASSKEY_ENABLED } from '~/utils/constants';
-import { useMobilePasskeyAuth } from '~/utils/use-mobile-passkey-auth';
+import { useAuth } from '~/auth-provider';
+import { MOBILE_PASSKEY_ENABLED } from '~/constants';
+import { useMobilePasskeyAuth } from '~/use-mobile-passkey-auth';
 
 interface AccountState {
   name: string;

@@ -31,17 +31,17 @@ const authState: {
 
 jest.mock('expo-router')
 
-jest.mock('~/utils/auth-provider', () => ({
+jest.mock('~/auth-provider', () => ({
   __esModule: true,
   useAuth: () => mockUseAuth(),
 }))
 
-jest.mock('~/utils/use-mobile-passkey-auth', () => ({
+jest.mock('~/use-mobile-passkey-auth', () => ({
   __esModule: true,
   useMobilePasskeyAuth: () => mockUseMobilePasskeyAuth(),
 }))
 
-jest.mock('~/utils/constants', () => ({
+jest.mock('~/constants', () => ({
   get E2E_TESTING() {
     return mockIsE2ETesting
   },

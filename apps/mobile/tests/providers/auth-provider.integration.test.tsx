@@ -124,14 +124,14 @@ jest.mock('expo-secure-store', () => ({
   deleteItemAsync: (...args: [string]) => mockDeleteItemAsync(...args),
 }));
 
-jest.mock('~/utils/constants', () => ({
+jest.mock('~/constants', () => ({
   API_BASE_URL: 'http://localhost:4040',
   APP_SCHEME: 'hakumi-test',
   APP_VARIANT: 'test',
   E2E_TESTING: false,
 }));
 
-jest.mock('~/utils/local-store', () => ({
+jest.mock('~/local-store', () => ({
   LocalStore: {
     upsertUserProfile: (...args: unknown[]) => mockUpsertUserProfile(...args),
     clearAllData: (...args: unknown[]) => mockClearAllData(...args),

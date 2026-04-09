@@ -4,10 +4,11 @@ import { RefreshControl, StyleSheet, View } from 'react-native';
 
 import { useInputContext } from '~/components/input/input-context';
 import { InboxStream } from '~/components/workspace/inbox-stream';
-import { theme } from '~/theme';
-import { useInboxStreamItems } from '~/utils/services/inbox/use-inbox-stream-items';
+import { makeStyles } from '~/theme';
+import { useInboxStreamItems } from '~/services/inbox/use-inbox-stream-items';
 
 export default function FeedScreen() {
+  const styles = useStyles();
   const params = useLocalSearchParams<{ seed?: string }>();
   const { items, isLoading, refetch } = useInboxStreamItems();
   const { setMessage } = useInputContext();
@@ -30,7 +31,7 @@ export default function FeedScreen() {
           <RefreshControl
             refreshing={isLoading}
             onRefresh={handleRefresh}
-            tintColor={theme.colors['text-tertiary']}
+            tintColor={styles.refreshTint}
           />
         }
       />
@@ -38,9 +39,14 @@ export default function FeedScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-});
+const useStyles = makeStyles((t) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: t.colors.background,
+    },
+    refreshTint: {
+      color: t.colors['text-tertiary'],
+    },
+  }),
+);

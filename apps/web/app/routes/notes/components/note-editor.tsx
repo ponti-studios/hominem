@@ -231,6 +231,7 @@ function NoteEditorState({
             hidden
             multiple
             type="file"
+            data-testid="note-file-input"
             onChange={(event) => {
               void handleAttachFiles(event.target.files);
               event.currentTarget.value = '';

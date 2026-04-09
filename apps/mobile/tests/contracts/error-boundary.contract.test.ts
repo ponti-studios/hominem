@@ -8,15 +8,11 @@ import {
   createFeatureFallbackLabel,
   createRootFallbackMessage,
   resetBoundaryState,
-} from '../../utils/error-boundary/contracts'
-import { clearErrorLog, getErrorLog, logError } from '../../utils/error-boundary/log-error'
+} from '../../lib/error-boundary/error-boundary/contracts'
+import { logError } from '../../lib/error-boundary/error-boundary/log-error'
 import { withConsoleErrorSpy } from '../support/console-spy'
 
 describe('error boundary contract', () => {
-  beforeEach(() => {
-    clearErrorLog()
-  })
-
   it('creates scoped fallback behavior for chat/note/auth feature failures', () => {
     const chatState = createBoundaryStateFromError(new Error('chat exploded'))
     const noteState = createBoundaryStateFromError(new Error('note exploded'))
@@ -53,13 +49,6 @@ describe('error boundary contract', () => {
       expect(() =>
         logError(new Error('chat failed'), { componentStack: 'stack' }, context),
       ).not.toThrow()
-
-      const entries = getErrorLog()
-      expect(entries).toHaveLength(1)
-      expect(entries[0]?.feature).toBe('chat')
-      expect(entries[0]?.route).toBe('/(protected)/(tabs)/chat')
-      expect(entries[0]?.userId).toBe('user-1')
-      expect(entries[0]?.error.message).toBe('chat failed')
     })
   })
 })

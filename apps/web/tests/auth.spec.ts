@@ -25,15 +25,21 @@ test('notes auth falls back from passkey entry to email otp successfully', async
   await requestEmailOtp(page, email);
   const otp = await fetchLatestSignInOtp(email);
   await submitOtpCode(page, otp);
-  await expect(page).toHaveURL(/\/home$/, { timeout: 5_000 });
+  await expect(page).toHaveURL(/\/notes$/, { timeout: 30_000 });
+  await expect(page.getByRole('heading', { name: 'Notes', exact: true })).toBeVisible({
+    timeout: 5_000,
+  });
 });
 
 test('notes email + otp auth flow reaches authenticated notes view', async ({ page, context }) => {
   await context.clearCookies();
   const email = createAuthTestEmail('notes-e2e');
 
-  await signInWithEmailOtp(page, email, /\/home$/);
+  await signInWithEmailOtp(page, email, /\/notes$/);
   await expect(page).not.toHaveURL(/\/auth/);
+  await expect(page.getByRole('heading', { name: 'Notes', exact: true })).toBeVisible({
+    timeout: 5_000,
+  });
 });
 
 test('notes email + otp rejects invalid verification code', async ({ page, context }) => {
@@ -54,8 +60,8 @@ test('notes authenticated surfaces expose passkey enrollment controls', async ({
   await context.clearCookies();
   const email = createAuthTestEmail('notes-passkey-surface');
 
-  await signInWithEmailOtp(page, email, /\/home$/);
-  await expect(page).toHaveURL(/\/home$/);
+  await signInWithEmailOtp(page, email, /\/notes$/);
+  await expect(page).toHaveURL(/\/notes$/);
 
   await page.goto('/settings/security');
   await expect(page.getByRole('button', { name: /add a passkey/i })).toBeVisible({

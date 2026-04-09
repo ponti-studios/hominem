@@ -1,9 +1,12 @@
-const AUTH_API_BASE_URL = 'http://localhost:4040';
+export const AUTH_API_BASE_URL = process.env.VITE_PUBLIC_API_URL ?? 'http://localhost:4040';
 
-export const AUTH_E2E_SECRET = 'otp-secret';
+export const AUTH_E2E_SECRET = process.env.AUTH_E2E_SECRET ?? 'otp-secret';
 export const AUTH_SEND_OTP_URL = `${AUTH_API_BASE_URL}/api/auth/email-otp/send-verification-otp`;
 export const AUTH_SIGN_IN_URL = `${AUTH_API_BASE_URL}/api/auth/sign-in/email-otp`;
 export const AUTH_TEST_OTP_URL = `${AUTH_API_BASE_URL}/api/auth/test/otp/latest`;
+
+export const OTP_LOOKUP_TIMEOUT_MS = 1_000;
+export const OTP_LOOKUP_MAX_WAIT_MS = 10_000;
 
 let authTestSequence = 0;
 

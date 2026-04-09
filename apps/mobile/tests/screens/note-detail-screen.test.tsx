@@ -20,7 +20,7 @@ const mockNote = Object.freeze({
 
 jest.mock('expo-router')
 
-jest.mock('~/utils/services/notes/use-note-query', () => ({
+jest.mock('~/services/notes/use-note-query', () => ({
   useNoteQuery: () => ({
     data: mockNote,
   }),

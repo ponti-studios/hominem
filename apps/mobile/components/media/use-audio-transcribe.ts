@@ -3,8 +3,8 @@ import { useMutation } from '@tanstack/react-query';
 import * as FileSystem from 'expo-file-system/legacy';
 import { useCallback, useRef } from 'react';
 
-import { useAuth } from '~/utils/auth-provider';
-import { API_BASE_URL } from '~/utils/constants';
+import { useAuth } from '~/auth/auth-provider';
+import { API_BASE_URL } from '~/constants';
 
 /** Must match VOICE_TRANSCRIPTION_MAX_SIZE_BYTES on the server. */
 const MAX_AUDIO_SIZE_BYTES = 25 * 1024 * 1024;
