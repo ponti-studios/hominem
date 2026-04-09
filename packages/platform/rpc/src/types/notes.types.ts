@@ -132,6 +132,17 @@ export type TaskMetadata = {
 // Output Types (Inferred from returns - these are optional aliases)
 // ============================================================================
 
+export type NoteFeedItem = {
+  id: string;
+  title: string | null;
+  contentPreview: string;
+  createdAt: string;
+  authorId: string;
+  metadata: {
+    hasAttachments: boolean;
+  };
+};
+
 export type NotesListOutput = { notes: Note[] };
 export type NotesGetOutput = Note;
 export type NotesCreateOutput = Note;
@@ -141,6 +152,11 @@ export type NotesPublishOutput = Note;
 export type NotesArchiveOutput = Note;
 export type NotesVersionsOutput = { versions: Note[] };
 export type NotesSearchOutput = { notes: NoteSearchResult[] };
+export type NotesFeedOutput = { notes: NoteFeedItem[]; nextCursor: string | null };
+export type NotesFeedInput = {
+  limit?: number;
+  cursor?: string;
+};
 
 export type NotesListInput = {
   types?: NoteContentType[];
