@@ -8,7 +8,7 @@
     "test/**/*.ts",
     "**/*.test.ts",
     "**/*.spec.ts",
-    "vitest.config.mts"
+    "vitest.config.ts"
   ],
   "exclude": [
     "node_modules",

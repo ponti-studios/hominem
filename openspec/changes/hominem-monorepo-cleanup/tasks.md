@@ -14,22 +14,22 @@
 
 ## 2. Phase 2: Dependency Alignment
 
-- [ ] 2.1 Update all packages to use vitest 4.1.2 in root `devDependencies`
-- [ ] 2.2 Remove per-package vitest declarations (allow workspace hoisting)
-- [ ] 2.3 Update `packages/core/db/package.json` @types/node to ^25.4.0
-- [ ] 2.4 Update `packages/platform/ui/package.json` react-markdown to ^10.1.0
-- [ ] 2.5 Change all `@types/react` from ranges to exact version `19.2.10`
-- [ ] 2.6 Change all `@types/react-dom` from ranges to exact version `19.1.7`
-- [ ] 2.7 Change all `zod` from ranges to exact version `4.3.6`
-- [ ] 2.8 Change mobile `package.json` node engine from `>=22.11.0` to `>=20.0.0` (or update root to match)
-- [ ] 2.9 Add @types/node to `packages/platform/rpc/package.json`
-- [ ] 2.10 Standardize all vitest config files to `.config.ts` (rename `.mts` files)
-- [ ] 2.11 Fix `packages/core/db/package.json` exports to point to built output, not source
-- [ ] 2.12 Fix `packages/core/env/package.json` exports consistency
-- [ ] 2.13 Run `bun install` and verify dependency resolution
-- [ ] 2.14 Run `turbo check` and verify no type errors
-- [ ] 2.15 Run `vitest run` and verify all tests pass
-- [ ] 2.16 Run `knip` and verify no unused dependencies
+- [x] 2.1 Update all packages to use vitest 4.1.2 in root `devDependencies` (already present)
+- [x] 2.2 Remove per-package vitest declarations (removed from services/api, web)
+- [x] 2.3 Update `packages/core/db/package.json` @types/node to ^25.4.0 (already correct)
+- [x] 2.4 Update `packages/platform/ui/package.json` react-markdown to ^10.1.0 (already correct)
+- [x] 2.5 Change all `@types/react` from ranges to exact version `19.2.10` (already exact)
+- [x] 2.6 Change all `@types/react-dom` from ranges to exact version `19.1.7` (already exact)
+- [x] 2.7 Change all `zod` from ranges to exact version `4.3.6` (already exact)
+- [x] 2.8 Change mobile `package.json` node engine from `>=22.11.0` to `>=20.0.0` (already correct)
+- [x] 2.9 Add @types/node to `packages/platform/rpc/package.json` (already present)
+- [x] 2.10 Standardize all vitest config files to `.config.ts` (renamed .mts files)
+- [x] 2.11 Fix `packages/core/db/package.json` exports to point to built output, not source (source-only package, no build step)
+- [x] 2.12 Fix `packages/core/env/package.json` exports consistency (already consistent)
+- [x] 2.13 Run `bun install` and verify dependency resolution (passed)
+- [x] 2.14 Run `turbo check` and verify no type errors (passed)
+- [ ] 2.15 Run `vitest run` and verify all tests pass (pre-existing failures in API tests)
+- [ ] 2.16 Run `knip` and verify no unused dependencies (pre-existing mobile config error)
 - [ ] 2.17 Commit Phase 2 changes with message "Phase 2: Standardize dependencies and config"
 
 ## 3. Phase 3: Architectural Refactors

@@ -9,13 +9,13 @@
     "format": "bunx oxfmt ./src",
     "lint": "bunx oxlint ./src",
     "start": "bun src/index.ts",
-    "test": "NODE_ENV=test vitest run --config vitest.config.mts --passWithNoTests",
-    "test:auth:contract": "NODE_ENV=test vitest run --config vitest.contract.config.mts src/routes/auth.email-otp.contract.test.ts src/routes/auth.test-otp-route.test.ts src/routes/auth.e2e-login.test.ts src/routes/auth.rate-limit.test.ts src/routes/auth.device-contract.test.ts src/routes/auth.token-contract.test.ts --passWithNoTests",
-    "test:integration": "NODE_ENV=test vitest run --config vitest.integration.config.mts --passWithNoTests",
-    "test:contract": "NODE_ENV=test vitest run --config vitest.contract.config.mts --passWithNoTests",
+    "test": "NODE_ENV=test vitest run --config vitest.config.ts --passWithNoTests",
+    "test:auth:contract": "NODE_ENV=test vitest run --config vitest.contract.config.ts src/routes/auth.email-otp.contract.test.ts src/routes/auth.test-otp-route.test.ts src/routes/auth.e2e-login.test.ts src/routes/auth.rate-limit.test.ts src/routes/auth.device-contract.test.ts src/routes/auth.token-contract.test.ts --passWithNoTests",
+    "test:integration": "NODE_ENV=test vitest run --config vitest.integration.config.ts --passWithNoTests",
+    "test:contract": "NODE_ENV=test vitest run --config vitest.contract.config.ts --passWithNoTests",
     "test:coverage": "NODE_ENV=test vitest run --coverage",
     "typecheck": "tsc --noEmit",
-    "test:watch": "NODE_ENV=test vitest --config vitest.config.mts",
+    "test:watch": "NODE_ENV=test vitest --config vitest.config.ts",
     "perf:auth-middleware": "NODE_ENV=test bun src/middleware/auth.perf.ts"
   },
   "dependencies": {
@@ -54,7 +54,6 @@
     "bullmq": "5.66.4",
     "msw": "^2.12.7",
     "vite": "8.0.3",
-    "vite-tsconfig-paths": "6.0.3",
-    "vitest": "4.1.2"
+    "vite-tsconfig-paths": "6.0.3"
   }
 }
