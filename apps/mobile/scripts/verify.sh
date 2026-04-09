@@ -14,7 +14,11 @@ case "$VARIANT" in
 esac
 
 SCRIPTS_DIR="$(dirname "$0")"
+MOBILE_DIR="$(cd "$SCRIPTS_DIR/../.." && pwd)"
 export APP_VARIANT="$VARIANT"
+
+# cd into mobile root so relative paths in scripts resolve correctly
+cd "$MOBILE_DIR"
 
 header "Verification · $VARIANT"
 

@@ -26,13 +26,30 @@ const spacingProperties = [
 
 const targetDir = path.resolve(__dirname, '..', '..')
 const extensions = ['.ts', '.tsx']
+const ignoredDirectoryNames = new Set([
+  'node_modules',
+  'ios',
+  'android',
+  'dist',
+  'build',
+  '.next',
+  '.expo',
+  '.turbo',
+  'coverage',
+])
 let violations: string[] = []
 
 function walk(dir: string) {
   const entries = fs.readdirSync(dir, { withFileTypes: true })
   for (const ent of entries) {
+    if (ent.isSymbolicLink()) {
+      continue
+    }
     const full = path.join(dir, ent.name)
     if (ent.isDirectory()) {
+      if (ignoredDirectoryNames.has(ent.name)) {
+        continue
+      }
       walk(full)
     } else if (extensions.includes(path.extname(ent.name))) {
       scanFile(full)

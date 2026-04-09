@@ -41,6 +41,10 @@ struct HominemAppleiOSApp: App {
                 syncTask.cancel()
             }
         }
+
+        // Submit the initial background refresh request on app launch
+        // so the system knows to schedule periodic sync tasks
+        scheduleiOSBackgroundRefresh()
     }
 }
 

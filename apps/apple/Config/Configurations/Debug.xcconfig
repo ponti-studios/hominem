@@ -1,6 +1,6 @@
 #include "Base.xcconfig"
 
 HOMINEM_APP_ENV = Debug
-HOMINEM_API_BASE_URL = http:/$()/localhost:4040
+HOMINEM_API_BASE_URL = http://localhost:4040
 HOMINEM_ENABLE_AUTH_TEST_HOOK = YES
-HOMINEM_AUTH_TEST_SECRET=otp-secret
+HOMINEM_AUTH_TEST_SECRET =

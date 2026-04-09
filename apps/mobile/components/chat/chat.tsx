@@ -8,8 +8,8 @@ import { useTTS } from '~/components/media/use-tts';
 import { makeStyles } from '~/theme';
 import { getLocalDate } from '~/utils/dates';
 import { useArchiveChat, useChatMessages, useSendMessage } from '~/utils/services/chat';
+import { chatKeys } from '~/utils/services/chat/query-keys';
 import { invalidateInboxQueries } from '~/utils/services/inbox/inbox-refresh';
-import { chatKeys } from '~/utils/services/notes/query-keys';
 
 import AppIcon from '../ui/icon';
 

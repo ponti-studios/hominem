@@ -1,4 +1,4 @@
 #include "Base.xcconfig"
 
 HOMINEM_APP_ENV = Release
-HOMINEM_API_BASE_URL = https:/$()/api.ponti.io
+HOMINEM_API_BASE_URL = https://api.ponti.io
