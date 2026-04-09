@@ -16,7 +16,7 @@ vi.mock('./env', () => ({
 
 import {
   VOICE_TRANSCRIPTION_MAX_SIZE_BYTES,
-  VoiceTranscriptionError,
+  VoiceError,
   normalizeVoiceMimeType,
   transcribeVoiceBuffer,
   validateVoiceInput,
@@ -65,22 +65,22 @@ describe('validateVoiceInput', () => {
   it('rejects unsupported mime with INVALID_FORMAT code', () => {
     try {
       validateVoiceInput({ mimeType: 'audio/flac', size: 10 });
-      throw new Error('Expected VoiceTranscriptionError');
+      throw new Error('Expected VoiceError');
     } catch (error) {
-      expect(error).toBeInstanceOf(VoiceTranscriptionError);
-      expect((error as VoiceTranscriptionError).code).toBe('INVALID_FORMAT');
-      expect((error as VoiceTranscriptionError).statusCode).toBe(400);
+      expect(error).toBeInstanceOf(VoiceError);
+      expect((error as VoiceError).code).toBe('INVALID_FORMAT');
+      expect((error as VoiceError).statusCode).toBe(400);
     }
   });
 
   it('rejects oversized payload with TOO_LARGE code', () => {
     try {
       validateVoiceInput({ mimeType: 'audio/webm', size: VOICE_TRANSCRIPTION_MAX_SIZE_BYTES + 1 });
-      throw new Error('Expected VoiceTranscriptionError');
+      throw new Error('Expected VoiceError');
     } catch (error) {
-      expect(error).toBeInstanceOf(VoiceTranscriptionError);
-      expect((error as VoiceTranscriptionError).code).toBe('TOO_LARGE');
-      expect((error as VoiceTranscriptionError).statusCode).toBe(400);
+      expect(error).toBeInstanceOf(VoiceError);
+      expect((error as VoiceError).code).toBe('TOO_LARGE');
+      expect((error as VoiceError).statusCode).toBe(400);
     }
   });
 
@@ -257,11 +257,11 @@ describe('transcribeVoiceBuffer', () => {
     ).rejects.toMatchObject({ code: 'TRANSCRIBE_FAILED', statusCode: 500 });
   });
 
-  it('all errors are instances of VoiceTranscriptionError', async () => {
+  it('all errors are instances of VoiceError', async () => {
     mockFetch.mockRejectedValueOnce(new Error('network timeout'));
 
     await expect(
       transcribeVoiceBuffer({ buffer: makeAudioBuffer(), mimeType: 'audio/webm' }),
-    ).rejects.toBeInstanceOf(VoiceTranscriptionError);
+    ).rejects.toBeInstanceOf(VoiceError);
   });
 });

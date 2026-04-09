@@ -5,7 +5,8 @@ export type MobileVoiceErrorCode =
   | 'QUOTA'
   | 'CONTENT_POLICY'
   | 'TRANSCRIBE_FAILED'
-  | 'RESPONSE_FAILED';
+  | 'RESPONSE_FAILED'
+  | 'SPEECH_FAILED';
 
 export interface MobileVoiceTranscriptionOutput {
   text: string;

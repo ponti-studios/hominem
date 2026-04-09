@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { generateVoiceResponse, VoiceResponseError } from './voice-response.service';
+import { generateVoiceResponse, VoiceError } from './voice-response.service';
 import {
   installVoiceFetchMock,
   makeVoiceAudioStreamResponse,
@@ -223,11 +223,11 @@ describe('generateVoiceResponse', () => {
     });
   });
 
-  it('all errors are instances of VoiceResponseError', async () => {
+  it('all errors are instances of VoiceError', async () => {
     mockFetch.mockRejectedValueOnce(new Error('network error'));
 
     await expect(generateVoiceResponse({ text: 'test' })).rejects.toBeInstanceOf(
-      VoiceResponseError,
+      VoiceError,
     );
   });
 });

@@ -1,19 +1,5 @@
-import type { NoteFeedPageRecord, NoteRecord } from '@hominem/db';
+import type { NoteRecord } from '@hominem/db';
 import { getDb, NoteRepository, runInTransaction } from '@hominem/db';
-
-export interface ListNotesParams {
-  limit?: number;
-  offset?: number;
-  since?: string;
-  query?: string;
-  sortBy?: 'createdAt' | 'updatedAt' | 'title';
-  sortOrder?: 'asc' | 'desc';
-}
-
-export interface ListNoteFeedParams {
-  limit?: number;
-  cursor?: string;
-}
 
 export interface CreateNoteParams {
   title?: string | null | undefined;
@@ -30,26 +16,6 @@ export interface UpdateNoteParams {
 }
 
 export class NoteService {
-  async listNotes(userId: string, params: ListNotesParams): Promise<NoteRecord[]> {
-    return NoteRepository.list(getDb(), { userId, ...params });
-  }
-
-  async listNoteFeed(userId: string, params: ListNoteFeedParams): Promise<NoteFeedPageRecord> {
-    return NoteRepository.listFeed(getDb(), { userId, ...params });
-  }
-
-  async searchNotes(
-    userId: string,
-    query: string,
-    limit: number,
-  ): Promise<Array<{ id: string; title: string | null; excerpt: string | null }>> {
-    return NoteRepository.search(getDb(), { userId, query, limit });
-  }
-
-  async getNote(noteId: string, userId: string): Promise<NoteRecord> {
-    return NoteRepository.load(getDb(), noteId, userId);
-  }
-
   async createNote(userId: string, input: CreateNoteParams): Promise<NoteRecord> {
     return runInTransaction(async (trx) => {
       const content = input.content.trim();
@@ -90,18 +56,6 @@ export class NoteService {
 
       return NoteRepository.load(trx, noteId, userId);
     });
-  }
-
-  async deleteNote(noteId: string, userId: string): Promise<NoteRecord> {
-    const note = await NoteRepository.load(getDb(), noteId, userId);
-    await NoteRepository.hardDelete(getDb(), noteId, userId);
-    return note;
-  }
-
-  async archiveNote(noteId: string, userId: string): Promise<NoteRecord> {
-    const note = await NoteRepository.load(getDb(), noteId, userId);
-    await NoteRepository.archive(getDb(), noteId, userId);
-    return note;
   }
 }
 

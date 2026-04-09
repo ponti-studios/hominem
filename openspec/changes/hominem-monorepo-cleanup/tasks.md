@@ -47,11 +47,11 @@
 ### 3B: Extract Shared Hooks (Web ↔ Mobile)
 
 - [x] 3B.1 Create `packages/platform/hooks/src/use-note-editor.ts` (already exists)
-- [ ] 3B.2 Update `apps/web/app/routes/notes/components/note-editor.tsx` to use `useNoteEditor()`
-- [ ] 3B.3 Update `apps/mobile/app/(protected)/(tabs)/notes/[id].tsx` to use `useNoteEditor()`
-- [ ] 3B.4 Create `packages/platform/hooks/src/use-email-auth.ts`
-- [ ] 3B.5 Update `apps/web/app/routes/auth/*.tsx` to use `useEmailAuth()`
-- [ ] 3B.6 Update `apps/mobile/app/(auth)/*.tsx` to use `useEmailAuth()`
+- [x] 3B.2 Update `apps/web/app/routes/notes/components/note-editor.tsx` to use `useNoteEditor()`
+- [x] 3B.3 Update `apps/mobile/app/(protected)/(tabs)/notes/[id].tsx` to use `useNoteEditor()`
+- [x] 3B.4 Create `packages/platform/hooks/src/use-email-auth.ts`
+- [x] 3B.5 Update `apps/web/app/routes/auth/*.tsx` to use `useEmailAuth()`
+- [x] 3B.6 Update `apps/mobile/app/(auth)/*.tsx` to use `useEmailAuth()`
 - [x] 3B.7 Create `packages/platform/hooks/src/use-error-formatting.ts` (already exists)
 - [x] 3B.8 Create `packages/platform/hooks/index.ts` with barrel exports (already exists)
 - [ ] 3B.9 Test shared hooks work identically in both apps (run tests on both)
@@ -68,73 +68,73 @@
 
 ### 3D: Consolidate Environment Configuration
 
-- [ ] 3D.1 Create `packages/core/config/src/base.ts` with shared env schema (DB_URL, OPENROUTER_API_KEY, etc.)
-- [ ] 3D.2 Create `packages/core/config/src/api.ts` extending base schema with API-specific keys (COOKIE_SECRET, etc.)
-- [ ] 3D.3 Create `packages/core/config/src/web.ts` extending base schema with web-specific keys (VITE_*)
-- [ ] 3D.4 Create `packages/core/config/src/mobile.ts` extending base schema (if needed)
-- [ ] 3D.5 Remove Proxy pattern from `packages/core/env/src/index.ts` (replace with eager parsing)
-- [ ] 3D.6 Update `services/api/src/env.ts` to import from `@hominem/core/config`
-- [ ] 3D.7 Update `apps/web/app/lib/env.ts` to import from `@hominem/core/config`
-- [ ] 3D.8 Verify all config loading still works; run API and web app locally
-- [ ] 3D.9 Delete duplicate env schemas from `packages/platform/services/src/env.ts`
+- [x] 3D.1 Create `packages/core/config/src/base.ts` with shared env schema (DB_URL, OPENROUTER_API_KEY, etc.)
+- [x] 3D.2 Create `packages/core/config/src/api.ts` extending base schema with API-specific keys (COOKIE_SECRET, etc.)
+- [x] 3D.3 Create `packages/core/config/src/web.ts` extending base schema with web-specific keys (VITE_*)
+- [x] 3D.4 Create `packages/core/config/src/mobile.ts` extending base schema (if needed)
+- [x] 3D.5 Remove Proxy pattern from `packages/core/env/src/index.ts` (replace with eager parsing)
+- [x] 3D.6 Update `services/api/src/env.ts` to import from `@hominem/core/config`
+- [x] 3D.7 Update `apps/web/app/lib/env.ts` to import from `@hominem/core/config`
+- [x] 3D.8 Verify all config loading still works; run API and web app locally
+- [x] 3D.9 Delete duplicate env schemas from `packages/platform/services/src/env.ts`
 
 ### 3E: Simplify Voice Services
 
-- [ ] 3E.1 Create single `VoiceError` class in `packages/platform/services/src/voice.ts` with `code` field
-- [ ] 3E.2 Replace `VoiceTranscriptionError`, `VoiceSpeechError`, `VoiceResponseError` with `VoiceError`
-- [ ] 3E.3 Inline `voice-observability.ts` logging into respective voice service files
-- [ ] 3E.4 Consolidate `voice-test-helpers.ts` into simple factory functions (reduce from 97 LOC to 30)
-- [ ] 3E.5 Merge `voice.shared.ts` utilities into main voice service
-- [ ] 3E.6 Update `services/api/src/rpc/routes/voice.ts` to catch unified `VoiceError`
-- [ ] 3E.7 Delete separate voice error files (`voice-errors.ts`, `voice-observability.ts`, `voice.shared.ts`)
-- [ ] 3E.8 Run tests for voice routes; verify error handling still works
+- [x] 3E.1 Create single `VoiceError` class in `packages/platform/services/src/voice.ts` with `code` field
+- [x] 3E.2 Replace `VoiceTranscriptionError`, `VoiceSpeechError`, `VoiceResponseError` with `VoiceError`
+- [x] 3E.3 Inline `voice-observability.ts` logging into respective voice service files
+- [x] 3E.4 Consolidate `voice-test-helpers.ts` into simple factory functions (reduce from 97 LOC to 30)
+- [x] 3E.5 Merge `voice.shared.ts` utilities into main voice service
+- [x] 3E.6 Update `services/api/src/rpc/routes/voice.ts` to catch unified `VoiceError`
+- [x] 3E.7 Delete separate voice error files (`voice-errors.ts`, `voice-observability.ts`, `voice.shared.ts`)
+- [x] 3E.8 Run tests for voice routes; verify error handling still works
 
 ### 3F: Delete/Refactor Repositories
 
-- [ ] 3F.1 Review all calls to `NoteRepository.getOwnedOrThrow()`, `ChatRepository.getById()`, etc.
-- [ ] 3F.2 Create grep search for all repository usages across codebase
-- [ ] 3F.3 For each passthrough (e.g., `ChatService.getChat()` → `ChatRepository.load()`):
-  - [ ] Update route to call repository directly instead of service
-  - [ ] Delete service method if no other logic exists
-- [ ] 3F.4 Delete `packages/core/db/src/services/*` repository files (or refactor as classes with interfaces)
-- [ ] 3F.5 If keeping repositories: convert to classes with `IChatRepository` interface pattern
-- [ ] 3F.6 Update imports in all route files
-- [ ] 3F.7 Run full test suite; fix any broken routes
+- [x] 3F.1 Review all calls to `NoteRepository.getOwnedOrThrow()`, `ChatRepository.getById()`, etc.
+- [x] 3F.2 Create grep search for all repository usages across codebase
+- [x] 3F.3 For each passthrough (e.g., `ChatService.getChat()` → `ChatRepository.load()`):
+  - [x] Update route to call repository directly instead of service
+  - [x] Delete service method if no other logic exists
+- [x] 3F.4 Delete `packages/core/db/src/services/*` repository files (or refactor as classes with interfaces)
+- [x] 3F.5 If keeping repositories: convert to classes with `IChatRepository` interface pattern
+- [x] 3F.6 Update imports in all route files
+- [x] 3F.7 Run full test suite; fix any broken routes
 
 ### 3G: Simplify Service Layer
 
-- [ ] 3G.1 Audit `NoteService`: keep only `createNote()` (has orchestration logic)
-- [ ] 3G.2 Audit `ChatService`: keep only methods with business logic
-- [ ] 3G.3 Delete `listNotes()`, `getNote()`, `deleteNote()` from `NoteService`
-- [ ] 3G.4 Update routes to call repositories directly for simple CRUD
-- [ ] 3G.5 Run tests and fix routes that break from service deletion
+- [x] 3G.1 Audit `NoteService`: keep only `createNote()` (has orchestration logic)
+- [x] 3G.2 Audit `ChatService`: keep only methods with business logic
+- [x] 3G.3 Delete `listNotes()`, `getNote()`, `deleteNote()` from `NoteService`
+- [x] 3G.4 Update routes to call repositories directly for simple CRUD
+- [x] 3G.5 Run tests and fix routes that break from service deletion
 
 ### 3H: Fix Archive Bug & Soft Delete
 
-- [ ] 3H.1 Create database migration: add `archived_at: timestamp NULL` column to notes table
-- [ ] 3H.2 Create database migration: add `archived_at: timestamp NULL` column to chats table (if applicable)
-- [ ] 3H.3 Update `NoteRepository.archive()` to set `archived_at = NOW()`
-- [ ] 3H.4 Remove or fix `NoteService.archiveNote()` to call proper archive, not delete
-- [ ] 3H.5 Update all note queries to filter `archived_at IS NULL`
-- [ ] 3H.6 Create test: verify archived notes are still in database but filtered from normal queries
-- [ ] 3H.7 Create test: verify unarchiving a note clears `archived_at`
-- [ ] 3H.8 Run migration on test database and verify data integrity
+- [x] 3H.1 Create database migration: add `archived_at: timestamp NULL` column to notes table
+- [x] 3H.2 Create database migration: add `archived_at: timestamp NULL` column to chats table (if applicable)
+- [x] 3H.3 Update `NoteRepository.archive()` to set `archived_at = NOW()`
+- [x] 3H.4 Remove or fix `NoteService.archiveNote()` to call proper archive, not delete
+- [x] 3H.5 Update all note queries to filter `archived_at IS NULL`
+- [x] 3H.6 Create test: verify archived notes are still in database but filtered from normal queries
+- [x] 3H.7 Create test: verify unarchiving a note clears `archived_at`
+- [x] 3H.8 Run migration on test database and verify data integrity
 
 ### 3I: Consolidate @hominem/services Package
 
-- [ ] 3I.1 Decide: delete package or refactor into sub-packages
+- [x] 3I.1 Decide: delete package or refactor into sub-packages
 - [ ] 3I.2 If deleting:
   - [ ] Move `ai-model.ts` to `packages/platform/ai/`
   - [ ] Move voice files to consolidated `packages/platform/voice/`
   - [ ] Move infrastructure files (Redis, Resend, file processor) to `services/api/src/services/`
   - [ ] Update all imports
-- [ ] 3I.3 If keeping: populate `index.ts` with proper sub-module exports
-- [ ] 3I.4 Delete empty export statement or refactor with real exports
-- [ ] 3I.5 Run full test suite
+- [x] 3I.3 If keeping: populate `index.ts` with proper sub-module exports
+- [x] 3I.4 Delete empty export statement or refactor with real exports
+- [x] 3I.5 Run full test suite
 
 ### 3J: Delete RPC Contracts
 
-- [ ] 3J.1 Delete `packages/platform/rpc/src/contracts/app.ts`
+- [ ] 3J.1 Delete `packages/platform/rpc/src/contracts/app.ts` (skipped: would create circular dep; requires extracting route types to a separate package first)
 - [ ] 3J.2 Verify RPC client still works (types derive from implementation)
 - [ ] 3J.3 Verify web and mobile apps can still import RPC client
 - [ ] 3J.4 Run API tests and E2E tests

@@ -25,6 +25,7 @@
         "@hominem/auth": "workspace:*",
         "@hominem/chat": "workspace:*",
         "@hominem/env": "workspace:*",
+        "@hominem/hooks": "workspace:*",
         "@hominem/rpc": "workspace:*",
         "@hominem/ui": "workspace:*",
         "@hominem/utils": "workspace:*",
@@ -110,7 +111,9 @@
         "@gsap/react": "^2.1.2",
         "@hominem/auth": "workspace:*",
         "@hominem/chat": "workspace:*",
+        "@hominem/config": "workspace:*",
         "@hominem/env": "workspace:*",
+        "@hominem/hooks": "workspace:*",
         "@hominem/rpc": "workspace:*",
         "@hominem/telemetry": "workspace:*",
         "@hominem/ui": "workspace:*",
@@ -156,6 +159,17 @@
         "typescript": "5.9.3",
         "vite": "8.0.3",
         "vite-plugin-pwa": "^1.2.0",
+      },
+    },
+    "packages/core/config": {
+      "name": "@hominem/config",
+      "version": "0.0.0",
+      "dependencies": {
+        "zod": "4.3.6",
+      },
+      "devDependencies": {
+        "@types/node": "^25.4.0",
+        "typescript": "5.9.3",
       },
     },
     "packages/core/db": {
@@ -321,6 +335,8 @@
       "dependencies": {
         "@ai-sdk/openai": "^1.3.22",
         "@better-auth/kysely-adapter": "^1.5.4",
+        "@hominem/config": "workspace:*",
+        "@hominem/env": "workspace:*",
         "@hominem/telemetry": "workspace:*",
         "@hominem/utils": "workspace:*",
         "@hono/standard-validator": "^0.2.2",
@@ -489,6 +505,7 @@
         "@better-auth/passkey": "^1.4.19",
         "@hominem/auth": "workspace:*",
         "@hominem/chat": "workspace:*",
+        "@hominem/config": "workspace:*",
         "@hominem/db": "workspace:*",
         "@hominem/env": "workspace:*",
         "@hominem/presence": "workspace:*",
@@ -1085,6 +1102,8 @@
     "@hominem/auth": ["@hominem/auth@workspace:packages/platform/auth"],
 
     "@hominem/chat": ["@hominem/chat@workspace:packages/domains/chat"],
+
+    "@hominem/config": ["@hominem/config@workspace:packages/core/config"],
 
     "@hominem/db": ["@hominem/db@workspace:packages/core/db"],
 

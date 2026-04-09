@@ -8,83 +8,34 @@ export const mockVoiceEnv = {
 
 export const mockVoiceFetch: ReturnType<typeof vi.fn> = vi.fn();
 
-export function installVoiceEnvMock(modulePath: string) {
-  vi.doMock(modulePath, () => ({
-    get env() {
-      return mockVoiceEnv;
-    },
-  }));
-}
-
 export function installVoiceFetchMock() {
   vi.stubGlobal('fetch', mockVoiceFetch);
 }
 
-export function makeVoiceAudioStreamResponse(
-  audioChunks: string[],
-  transcriptChunks: string[],
-  status = 200,
-): {
-  ok: boolean;
-  status: number;
-  statusText: string;
-  body: ReadableStream<Uint8Array>;
-  json: () => Promise<Record<string, never>>;
-} {
+export function makeVoiceAudioStreamResponse(audioChunks: string[], transcriptChunks: string[], status = 200): { ok: boolean; status: number; statusText: string; body: ReadableStream<Uint8Array>; json: () => Promise<Record<string, unknown>> } {
   const lines: string[] = [];
-
   for (let i = 0; i < Math.max(audioChunks.length, transcriptChunks.length); i++) {
     const audio: Record<string, string> = {};
-    const audioChunk = audioChunks[i];
-    const transcriptChunk = transcriptChunks[i];
-    if (audioChunk !== undefined) audio.data = audioChunk;
-    if (transcriptChunk !== undefined) audio.transcript = transcriptChunk;
+    if (audioChunks[i]) audio.data = audioChunks[i] as string;
+    if (transcriptChunks[i]) audio.transcript = transcriptChunks[i] as string;
     lines.push(`data: ${JSON.stringify({ choices: [{ delta: { audio } }] })}\n`);
   }
   lines.push('data: [DONE]\n');
 
-  const body = lines.join('\n');
-  const encoder = new TextEncoder();
-  const uint8 = encoder.encode(body);
-
+  const uint8 = new TextEncoder().encode(lines.join('\n'));
   let pos = 0;
-  const stream = new ReadableStream({
-    pull(controller) {
-      if (pos < uint8.length) {
-        controller.enqueue(uint8.slice(pos, pos + 64));
-        pos += 64;
-      } else {
-        controller.close();
-      }
+  const body = new ReadableStream<Uint8Array>({
+    pull(c) {
+      if (pos < uint8.length) { c.enqueue(uint8.slice(pos, pos + 64)); pos += 64; }
+      else c.close();
     },
   });
 
-  return {
-    ok: status >= 200 && status < 300,
-    status,
-    statusText: status === 200 ? 'OK' : 'Error',
-    body: stream,
-    json: vi.fn().mockResolvedValue({}),
-  };
+  return { ok: status >= 200 && status < 300, status, statusText: status === 200 ? 'OK' : 'Error', body, json: vi.fn<() => Promise<Record<string, unknown>>>().mockResolvedValue({}) };
 }
 
-export function makeVoiceErrorResponse(
-  status: number,
-  message: string,
-): {
-  ok: boolean;
-  status: number;
-  statusText: string;
-  body: null;
-  json: () => Promise<{ error: { message: string } }>;
-} {
-  return {
-    ok: false,
-    status,
-    statusText: message,
-    body: null,
-    json: vi.fn().mockResolvedValue({ error: { message } }),
-  };
+export function makeVoiceErrorResponse(status: number, message: string): { ok: false; status: number; statusText: string; body: null; json: () => Promise<{ error: { message: string } }> } {
+  return { ok: false, status, statusText: message, body: null, json: vi.fn<() => Promise<{ error: { message: string } }>>().mockResolvedValue({ error: { message } }) };
 }
 
 export function makeVoiceAudioBuffer(bytes = 1024): ArrayBuffer {

@@ -175,4 +175,86 @@ describe('notesRoutes', () => {
     expect(body.content).toBe('New body');
     expect(body.files).toMatchObject([{ id: testFileId }]);
   });
+
+  test('archives notes without deleting them and filters them from normal queries', async () => {
+    const noteId = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
+
+    await db
+      .insertInto('app.notes')
+      .values({
+        id: noteId,
+        owner_userid: testUserId,
+        title: 'Archive me',
+        content: 'Keep me in the database',
+      })
+      .execute();
+
+    const archiveResponse = await createApp().request(`http://localhost/api/notes/${noteId}/archive`, {
+      method: 'POST',
+    });
+
+    expect(archiveResponse.status).toBe(200);
+
+    const archivedRow = await db
+      .selectFrom('app.notes')
+      .select(['id', 'archived_at'])
+      .where('id', '=', noteId)
+      .executeTakeFirstOrThrow();
+
+    expect(archivedRow.id).toBe(noteId);
+    expect(archivedRow.archived_at).not.toBeNull();
+
+    const listResponse = await createApp().request('http://localhost/api/notes', {
+      method: 'GET',
+    });
+
+    expect(listResponse.status).toBe(200);
+
+    const listBody = (await listResponse.json()) as {
+      notes: Array<{ id: string }>;
+    };
+
+    expect(listBody.notes).not.toContainEqual(expect.objectContaining({ id: noteId }));
+  });
+
+  test('unarchives a note and clears archived_at', async () => {
+    const noteId = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
+
+    await db
+      .insertInto('app.notes')
+      .values({
+        id: noteId,
+        owner_userid: testUserId,
+        title: 'Restore me',
+        content: 'Bring me back',
+        archived_at: new Date(),
+      })
+      .execute();
+
+    const response = await createApp().request(`http://localhost/api/notes/${noteId}/unarchive`, {
+      method: 'POST',
+    });
+
+    expect(response.status).toBe(200);
+
+    const row = await db
+      .selectFrom('app.notes')
+      .select(['id', 'archived_at'])
+      .where('id', '=', noteId)
+      .executeTakeFirstOrThrow();
+
+    expect(row.id).toBe(noteId);
+    expect(row.archived_at).toBeNull();
+
+    const body = (await response.json()) as { id: string };
+
+    expect(body.id).toBe(noteId);
+
+    const listResponse = await createApp().request('http://localhost/api/notes', {
+      method: 'GET',
+    });
+    const listBody = (await listResponse.json()) as { notes: Array<{ id: string }> };
+
+    expect(listBody.notes).toContainEqual(expect.objectContaining({ id: noteId }));
+  });
 });

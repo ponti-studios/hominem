@@ -3,12 +3,9 @@ import type {
   MobileVoiceTranscriptionErrorOutput,
   MobileVoiceTranscriptionOutput,
 } from '@hominem/rpc/types/mobile.types';
-import { generateVoiceResponse, VoiceResponseError } from '@hominem/services/voice-response';
-import { generateSpeechBuffer, VoiceSpeechError } from '@hominem/services/voice-speech';
-import {
-  transcribeVoiceBuffer,
-  VoiceTranscriptionError,
-} from '@hominem/services/voice-transcription';
+import { generateVoiceResponse, VoiceError } from '@hominem/services/voice-response';
+import { generateSpeechBuffer } from '@hominem/services/voice-speech';
+import { transcribeVoiceBuffer } from '@hominem/services/voice-transcription';
 import { zValidator } from '@hono/zod-validator';
 import { Hono, type Context } from 'hono';
 import * as z from 'zod';
@@ -19,16 +16,8 @@ type VoiceErrorOutput = MobileVoiceResponseErrorOutput | MobileVoiceTranscriptio
 
 type VoiceErrorStatusCode = 400 | 401 | 429 | 500;
 
-function getVoiceErrorStatusCode(error: { statusCode: number }): VoiceErrorStatusCode {
-  return error.statusCode === 400 || error.statusCode === 401 || error.statusCode === 429
-    ? error.statusCode
-    : 500;
-}
-
-function mapVoiceResponseErrorCode(
-  code: VoiceResponseError['code'],
-): MobileVoiceResponseErrorOutput['code'] {
-  return code === 'CONTENT_POLICY' ? 'RESPONSE_FAILED' : code;
+function getVoiceErrorStatusCode(statusCode: number): VoiceErrorStatusCode {
+  return statusCode === 400 || statusCode === 401 || statusCode === 429 ? statusCode : 500;
 }
 
 function respondWithJsonError(
@@ -39,18 +28,6 @@ function respondWithJsonError(
   return c.newResponse(JSON.stringify(body), statusCode, {
     'Content-Type': 'application/json',
   });
-}
-
-function respondWithTranscriptionError(
-  c: Context<AppContext>,
-  error: VoiceTranscriptionError,
-  code: VoiceErrorOutput['code'],
-) {
-  return respondWithJsonError(c, { error: error.message, code }, getVoiceErrorStatusCode(error));
-}
-
-function respondWithSpeechError(c: Context<AppContext>, error: VoiceSpeechError) {
-  return c.json({ error: error.message }, getVoiceErrorStatusCode(error));
 }
 
 function parseVoiceRequestBody(body: Record<string, unknown>) {
@@ -95,10 +72,13 @@ const voiceRoutes = new Hono<AppContext>().post('/transcribe', async (c) => {
 
     return c.json(response);
   } catch (error) {
-    if (error instanceof VoiceTranscriptionError) {
-      return respondWithTranscriptionError(c, error, error.code);
+    if (error instanceof VoiceError) {
+      return respondWithJsonError(
+        c,
+        { error: error.message, code: error.code },
+        getVoiceErrorStatusCode(error.statusCode),
+      );
     }
-
     return respondWithJsonError(
       c,
       { error: 'Failed to transcribe audio', code: 'TRANSCRIBE_FAILED' },
@@ -128,8 +108,8 @@ export const authenticatedVoiceRoutes = new Hono<AppContext>()
         c.header('Content-Length', String(audioBuffer.byteLength));
         return c.body(audioBuffer);
       } catch (error) {
-        if (error instanceof VoiceSpeechError) {
-          return respondWithSpeechError(c, error);
+        if (error instanceof VoiceError) {
+          return c.json({ error: error.message }, getVoiceErrorStatusCode(error.statusCode));
         }
         return c.json({ error: 'Failed to generate speech' }, 500);
       }
@@ -167,13 +147,12 @@ export const authenticatedVoiceRoutes = new Hono<AppContext>()
           ? body.systemPrompt
           : 'You are a helpful assistant. Respond naturally in the same language as the user.';
 
-      const responseInput = {
+      const { audioBuffer, mimeType, transcript } = await generateVoiceResponse({
         text: transcription.text,
         voice,
         format: 'pcm16' as const,
         systemPrompt,
-      };
-      const { audioBuffer, mimeType, transcript } = await generateVoiceResponse(responseInput);
+      });
 
       const ab = audioBuffer.buffer.slice(
         audioBuffer.byteOffset,
@@ -187,15 +166,11 @@ export const authenticatedVoiceRoutes = new Hono<AppContext>()
         'X-AI-Transcript': encodeURIComponent(transcript),
       });
     } catch (error) {
-      if (error instanceof VoiceTranscriptionError) {
-        return respondWithTranscriptionError(c, error, 'RESPONSE_FAILED');
-      }
-      if (error instanceof VoiceResponseError) {
-        const statusCode = getVoiceErrorStatusCode(error);
+      if (error instanceof VoiceError) {
         return respondWithJsonError(
           c,
-          { error: error.message, code: mapVoiceResponseErrorCode(error.code) },
-          statusCode,
+          { error: error.message, code: error.code as VoiceErrorOutput['code'] },
+          getVoiceErrorStatusCode(error.statusCode),
         );
       }
       return respondWithJsonError(

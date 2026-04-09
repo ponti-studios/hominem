@@ -1,7 +1,8 @@
 import { AUTH_COPY, CHAT_AUTH_CONFIG, maskEmail } from '@hominem/auth';
+import { useEmailAuth } from '@hominem/hooks';
 import type { RelativePathString } from 'expo-router';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useCallback, useMemo, useState } from 'react';
+import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { AuthShell } from '~/components/auth-shell';
@@ -19,76 +20,25 @@ export function VerifyScreen() {
   const styles = useStyles();
   const router = useRouter();
   const { isSignedIn, requestEmailOtp, verifyEmailOtp } = useAuth();
-  const { email } = useLocalSearchParams<{ email: string }>();
-  const [otp, setOtp] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isResending, setIsResending] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
-  const resolvedEmail = email ?? '';
-  const normalizedOtp = useMemo(() => normalizeOtp(otp), [otp]);
+  const { email: emailParam } = useLocalSearchParams<{ email: string }>();
+  const resolvedEmail = emailParam ?? '';
+
+  const { otp, setOtp, error: authError, isSubmitting, isResending, handleVerifyOtp, handleResendOtp } =
+    useEmailAuth(
+      {
+        sendOtp: async () => {},
+        verifyOtp: async (email, code) => {
+          await verifyEmailOtp({ email, otp: normalizeOtp(code) });
+        },
+        resendOtp: async (email) => {
+          await requestEmailOtp(email);
+        },
+      },
+    );
 
   React.useEffect(() => {
     posthog.capture('auth_verify_screen_viewed');
   }, []);
-
-  const handleVerify = useCallback(async () => {
-    posthog.capture('auth_verify_pressed');
-    if (!resolvedEmail) {
-      setAuthError(AUTH_COPY.emailEntry.emailRequiredError);
-      return;
-    }
-
-    if (!normalizedOtp) {
-      setAuthError(AUTH_COPY.otpVerification.codeRequiredError);
-      return;
-    }
-    if (!isValidOtp(normalizedOtp)) {
-      setAuthError(AUTH_COPY.otpVerification.codeLengthError);
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-      await verifyEmailOtp({
-        email: resolvedEmail,
-        otp: normalizedOtp,
-      });
-      setAuthError(null);
-    } catch (error: unknown) {
-      setAuthError(
-        error instanceof Error ? error.message : AUTH_COPY.otpVerification.verifyFailedError,
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [normalizedOtp, resolvedEmail, verifyEmailOtp]);
-
-  const handleOtpChange = useCallback((text: string) => {
-    const next = normalizeOtp(text);
-    setOtp(next);
-    setAuthError(null);
-  }, []);
-
-  const handleResend = useCallback(async () => {
-    posthog.capture('auth_resend_pressed');
-    if (!resolvedEmail) {
-      setAuthError(AUTH_COPY.emailEntry.emailRequiredError);
-      return;
-    }
-
-    try {
-      setIsResending(true);
-      setAuthError(null);
-      await requestEmailOtp(resolvedEmail);
-      setOtp('');
-    } catch (error: unknown) {
-      setAuthError(
-        error instanceof Error ? error.message : AUTH_COPY.otpVerification.resendFailedError,
-      );
-    } finally {
-      setIsResending(false);
-    }
-  }, [requestEmailOtp, resolvedEmail]);
 
   if (isSignedIn) {
     return <Redirect href={CHAT_AUTH_CONFIG.defaultPostAuthDestination as RelativePathString} />;
@@ -97,6 +47,8 @@ export function VerifyScreen() {
   if (!resolvedEmail) {
     return null;
   }
+
+  const normalizedOtp = normalizeOtp(otp);
 
   return (
     <AuthShell
@@ -118,7 +70,9 @@ export function VerifyScreen() {
             value={normalizedOtp}
             editable={!isSubmitting && !isResending}
             maxLength={6}
-            onChangeText={handleOtpChange}
+            onChangeText={(text) => {
+              setOtp(text);
+            }}
             placeholder={AUTH_COPY.otpVerification.codePlaceholder}
             style={styles.otpInput}
           />
@@ -130,7 +84,10 @@ export function VerifyScreen() {
         </View>
 
         <Button
-          onPress={handleVerify}
+          onPress={() => {
+            posthog.capture('auth_verify_pressed');
+            void handleVerifyOtp(resolvedEmail, normalizedOtp);
+          }}
           disabled={isSubmitting || normalizedOtp.length !== 6}
           isLoading={isSubmitting}
           testID="auth-verify-otp"
@@ -140,7 +97,10 @@ export function VerifyScreen() {
 
         <View style={styles.actionRow}>
           <Button
-            onPress={handleResend}
+            onPress={() => {
+              posthog.capture('auth_resend_pressed');
+              void handleResendOtp(resolvedEmail);
+            }}
             disabled={isSubmitting || isResending}
             isLoading={isResending}
             variant="link"

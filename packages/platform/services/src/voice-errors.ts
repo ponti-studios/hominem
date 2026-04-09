@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+
 export const VOICE_ERROR_CODES = [
   'INVALID_FORMAT',
   'TOO_LARGE',
@@ -11,54 +13,15 @@ export const VOICE_ERROR_CODES = [
 
 export type VoiceErrorCode = (typeof VOICE_ERROR_CODES)[number];
 
-export type VoiceResponseErrorCode = Extract<
-  VoiceErrorCode,
-  'AUTH' | 'QUOTA' | 'CONTENT_POLICY' | 'RESPONSE_FAILED'
->;
-
-export type VoiceTranscriptionErrorCode = Extract<
-  VoiceErrorCode,
-  'INVALID_FORMAT' | 'TOO_LARGE' | 'AUTH' | 'QUOTA' | 'TRANSCRIBE_FAILED'
->;
-
-export type VoiceSpeechErrorCode = Extract<
-  VoiceErrorCode,
-  'AUTH' | 'QUOTA' | 'CONTENT_POLICY' | 'SPEECH_FAILED'
->;
-
-export abstract class VoiceServiceError extends Error {
-  statusCode: number;
+export class VoiceError extends Error {
   code: VoiceErrorCode;
+  statusCode: number;
 
-  protected constructor(name: string, message: string, code: VoiceErrorCode, statusCode = 500) {
+  constructor(message: string, code: VoiceErrorCode, statusCode = 500) {
     super(message);
-    this.name = name;
+    this.name = 'VoiceError';
     this.code = code;
     this.statusCode = statusCode;
-  }
-}
-
-export class VoiceResponseError extends VoiceServiceError {
-  declare code: VoiceResponseErrorCode;
-
-  constructor(message: string, code: VoiceResponseErrorCode, statusCode = 500) {
-    super('VoiceResponseError', message, code, statusCode);
-  }
-}
-
-export class VoiceTranscriptionError extends VoiceServiceError {
-  declare code: VoiceTranscriptionErrorCode;
-
-  constructor(message: string, code: VoiceTranscriptionErrorCode, statusCode = 500) {
-    super('VoiceTranscriptionError', message, code, statusCode);
-  }
-}
-
-export class VoiceSpeechError extends VoiceServiceError {
-  declare code: VoiceSpeechErrorCode;
-
-  constructor(message: string, code: VoiceSpeechErrorCode, statusCode = 500) {
-    super('VoiceSpeechError', message, code, statusCode);
   }
 }
 
@@ -66,61 +29,14 @@ export function normalizeVoiceErrorStatusCode(statusCode: number): 400 | 401 | 4
   return statusCode === 400 || statusCode === 401 || statusCode === 429 ? statusCode : 500;
 }
 
-function getProviderFailureCode(kind: 'response' | 'transcription' | 'speech'): VoiceErrorCode {
-  if (kind === 'response') return 'RESPONSE_FAILED';
-  if (kind === 'transcription') return 'TRANSCRIBE_FAILED';
-  return 'SPEECH_FAILED';
-}
-
-export function mapVoiceProviderError(input: {
-  kind: 'response';
-  responseStatus: number;
-  responseStatusText: string;
-  errorMessage?: string | undefined;
-}): {
-  code: VoiceResponseErrorCode;
-  message: string;
-  statusCode: 400 | 401 | 429 | 500;
-};
-
-export function mapVoiceProviderError(input: {
-  kind: 'transcription';
-  responseStatus: number;
-  responseStatusText: string;
-  errorMessage?: string | undefined;
-}): {
-  code: VoiceTranscriptionErrorCode;
-  message: string;
-  statusCode: 400 | 401 | 429 | 500;
-};
-
-export function mapVoiceProviderError(input: {
-  kind: 'speech';
-  responseStatus: number;
-  responseStatusText: string;
-  errorMessage?: string | undefined;
-}): {
-  code: VoiceSpeechErrorCode;
-  message: string;
-  statusCode: 400 | 401 | 429 | 500;
-};
-
 export function mapVoiceProviderError(input: {
   kind: 'response' | 'transcription' | 'speech';
   responseStatus: number;
   responseStatusText: string;
   errorMessage?: string | undefined;
-}): {
-  code: VoiceErrorCode;
-  message: string;
-  statusCode: 400 | 401 | 429 | 500;
-} {
+}): { code: VoiceErrorCode; message: string; statusCode: 400 | 401 | 429 | 500 } {
   if (input.responseStatus === 401 || input.responseStatus === 403) {
-    return {
-      code: 'AUTH',
-      message: 'Invalid API configuration.',
-      statusCode: 401,
-    };
+    return { code: 'AUTH', message: 'Invalid API configuration.', statusCode: 401 };
   }
 
   if (input.responseStatus === 429) {
@@ -142,6 +58,13 @@ export function mapVoiceProviderError(input: {
     };
   }
 
+  const failCode: VoiceErrorCode =
+    input.kind === 'response'
+      ? 'RESPONSE_FAILED'
+      : input.kind === 'transcription'
+        ? 'TRANSCRIBE_FAILED'
+        : 'SPEECH_FAILED';
+
   const label =
     input.kind === 'response'
       ? 'Voice response'
@@ -150,8 +73,37 @@ export function mapVoiceProviderError(input: {
         : 'Speech generation';
 
   return {
-    code: getProviderFailureCode(input.kind),
+    code: failCode,
     message: `${label} failed: ${input.errorMessage ?? input.responseStatusText}`,
     statusCode: normalizeVoiceErrorStatusCode(input.responseStatus),
   };
+}
+
+export function getVoiceLogData(requestId: string, data?: object) {
+  let spanCtx: { trace_id?: string; span_id?: string } = {};
+  try {
+    const { context, trace } = require('@opentelemetry/api') as {
+      context: { active: () => unknown };
+      trace: {
+        getSpan: (
+          ctx: unknown,
+        ) => { spanContext: () => { isValid: boolean; traceId: string; spanId: string } } | undefined;
+      };
+    };
+    const span = trace.getSpan(context.active());
+    if (span) {
+      const sc = span.spanContext();
+      if (sc.isValid) spanCtx = { trace_id: sc.traceId, span_id: sc.spanId };
+    }
+  } catch {}
+  return { requestId, ...spanCtx, ...(data ?? {}) };
+}
+
+export function getVoiceAudioDir(): string {
+  const candidates = ['./.tmp/voice', '../.tmp/voice', '../../.tmp/voice', '../../../.tmp/voice'];
+  for (const p of candidates) {
+    const dir = p.replace('/voice', '');
+    if (existsSync(dir) || existsSync(p)) return p;
+  }
+  return './.tmp/voice';
 }

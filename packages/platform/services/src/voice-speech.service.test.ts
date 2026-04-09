@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
-import { VoiceSpeechError, generateSpeechBuffer } from './voice-speech.service';
+import { VoiceError, generateSpeechBuffer } from './voice-speech.service';
 
 // ---------------------------------------------------------------------------
 // Module mocks
@@ -151,9 +151,9 @@ describe('generateSpeechBuffer', () => {
     });
   });
 
-  it('result errors are instances of VoiceSpeechError', async () => {
+  it('result errors are instances of VoiceError', async () => {
     mockGenerateSpeech.mockRejectedValueOnce(new Error('quota exceeded'));
 
-    await expect(generateSpeechBuffer(defaultInput)).rejects.toBeInstanceOf(VoiceSpeechError);
+    await expect(generateSpeechBuffer(defaultInput)).rejects.toBeInstanceOf(VoiceError);
   });
 });

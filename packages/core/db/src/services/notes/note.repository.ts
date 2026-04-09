@@ -261,7 +261,11 @@ export const NoteRepository = {
    * List notes for a user with filtering and sorting.
    */
   async list(handle: DbHandle, input: ListNotesInput): Promise<NoteRecord[]> {
-    let query = handle.selectFrom('app.notes').selectAll().where('owner_userid', '=', input.userId);
+    let query = handle
+      .selectFrom('app.notes')
+      .selectAll()
+      .where('owner_userid', '=', input.userId)
+      .where('archived_at', 'is', null);
 
     if (input.since) {
       query = query.where('updatedat', '>=', new Date(input.since));
@@ -304,6 +308,7 @@ export const NoteRepository = {
       .selectFrom('app.notes')
       .select(['id', 'title', 'excerpt', 'content', 'createdat', 'owner_userid'])
       .where('owner_userid', '=', input.userId)
+      .where('archived_at', 'is', null)
       .orderBy('createdat', 'desc')
       .orderBy('id', 'desc');
 
@@ -373,6 +378,7 @@ export const NoteRepository = {
       .selectFrom('app.notes')
       .select(['id', 'title', 'excerpt'])
       .where('owner_userid', '=', input.userId)
+      .where('archived_at', 'is', null)
       .where((eb) => eb.or([eb('title', 'ilike', pattern), eb('content', 'ilike', pattern)]))
       .orderBy('updatedat', 'desc')
       .limit(limit)
@@ -437,6 +443,15 @@ export const NoteRepository = {
     await handle
       .updateTable('app.notes')
       .set({ archived_at: new Date() })
+      .where('id', '=', noteId)
+      .where('owner_userid', '=', userId)
+      .execute();
+  },
+
+  async unarchive(handle: DbHandle, noteId: string, userId: string): Promise<void> {
+    await handle
+      .updateTable('app.notes')
+      .set({ archived_at: null })
       .where('id', '=', noteId)
       .where('owner_userid', '=', userId)
       .execute();

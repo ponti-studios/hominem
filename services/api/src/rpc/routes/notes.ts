@@ -1,4 +1,5 @@
 import type { NoteRecord } from '@hominem/db';
+import { getDb, NoteRepository } from '@hominem/db';
 import {
   CreateNoteInputSchema,
   NotesFeedQuerySchema,
@@ -94,7 +95,8 @@ export const notesRoutes = new Hono<AppContext>()
     const userId = c.get('userId')!;
     const query = c.req.valid('query');
 
-    const notes = await noteService.listNotes(userId, {
+    const notes = await NoteRepository.list(getDb(), {
+      userId,
       ...(query.limit ? { limit: Number.parseInt(query.limit, 10) } : {}),
       ...(query.offset ? { offset: Number.parseInt(query.offset, 10) } : {}),
       ...(query.since ? { since: query.since } : {}),
@@ -110,7 +112,8 @@ export const notesRoutes = new Hono<AppContext>()
   .get('/feed', zValidator('query', NotesFeedQuerySchema), async (c) => {
     const userId = c.get('userId')!;
     const query = c.req.valid('query');
-    const feed = await noteService.listNoteFeed(userId, {
+    const feed = await NoteRepository.listFeed(getDb(), {
+      userId,
       ...(query.limit ? { limit: Number.parseInt(query.limit, 10) } : {}),
       ...(query.cursor ? { cursor: query.cursor } : {}),
     });
@@ -125,7 +128,7 @@ export const notesRoutes = new Hono<AppContext>()
     const query = c.req.valid('query');
     const limit = query.limit ? Math.min(Number.parseInt(query.limit, 10), 20) : 10;
 
-    const results = await noteService.searchNotes(userId, query.query, limit);
+    const results = await NoteRepository.search(getDb(), { userId, query: query.query, limit });
 
     return c.json<NotesSearchOutput>({ notes: results });
   })
@@ -144,7 +147,7 @@ export const notesRoutes = new Hono<AppContext>()
   .get('/:id', zValidator('param', noteParamSchema), async (c) => {
     const userId = c.get('userId')!;
     const { id } = c.req.valid('param');
-    const note = await noteService.getNote(id, userId);
+    const note = await NoteRepository.load(getDb(), id, userId);
     return c.json(toNoteDto(note));
   })
   .patch(
@@ -170,13 +173,22 @@ export const notesRoutes = new Hono<AppContext>()
     const userId = c.get('userId')!;
     const { id } = c.req.valid('param');
 
-    const note = await noteService.deleteNote(id, userId);
+    const note = await NoteRepository.load(getDb(), id, userId);
+    await NoteRepository.hardDelete(getDb(), id, userId);
 
     return c.json<NotesDeleteOutput>(toNoteDto(note));
   })
   .post('/:id/archive', zValidator('param', noteParamSchema), async (c) => {
     const userId = c.get('userId')!;
     const { id } = c.req.valid('param');
-    const note = await noteService.archiveNote(id, userId);
+    const note = await NoteRepository.load(getDb(), id, userId);
+    await NoteRepository.archive(getDb(), id, userId);
+    return c.json(toNoteDto(note));
+  })
+  .post('/:id/unarchive', zValidator('param', noteParamSchema), async (c) => {
+    const userId = c.get('userId')!;
+    const { id } = c.req.valid('param');
+    await NoteRepository.unarchive(getDb(), id, userId);
+    const note = await NoteRepository.load(getDb(), id, userId);
     return c.json(toNoteDto(note));
   });

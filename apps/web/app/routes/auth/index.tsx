@@ -1,7 +1,7 @@
 import { AUTH_COPY, readAuthErrorMessage } from '@hominem/auth';
 import { useAuthClient, usePasskeyAuth } from '@hominem/auth/client';
+import { useEmailAuth } from '@hominem/hooks';
 import { AuthScaffold, EmailEntryForm } from '@hominem/ui';
-import { useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 
 import { AUTH_CONFIG } from './config';
@@ -23,36 +23,35 @@ export default function Component() {
     error: passkeyError,
     isSupported: isPasskeySupported,
   } = usePasskeyAuth({ redirectTo: next });
-  const submitEmail = useCallback(
-    async ({ email, next: nextPath }: { email: string; next: string | null }) => {
-      if (!email) {
-        throw new Error('Email is required');
-      }
 
+  const { error: sendError, handleSendOtp } = useEmailAuth({
+    sendOtp: async (email) => {
       const result = await authClient.emailOtp.sendVerificationOtp({
         email,
         type: 'sign-in',
       });
-
       if (result.error) {
         throw new Error(result.error.message ?? 'Failed to send verification code');
       }
-
-      const redirectTo = nextPath ?? AUTH_CONFIG.defaultRedirect;
+      const redirectTo = next ?? AUTH_CONFIG.defaultRedirect;
       navigate(
         `/auth/verify?email=${encodeURIComponent(email)}&next=${encodeURIComponent(redirectTo)}`,
       );
     },
-    [authClient, navigate],
-  );
+    verifyOtp: async () => {},
+    resendOtp: async () => {},
+  });
+
   const callbackError = readAuthErrorMessage(new URLSearchParams(location.search));
-  const resolvedError = callbackError ?? passkeyError ?? undefined;
+  const resolvedError = callbackError ?? passkeyError ?? sendError ?? undefined;
 
   return (
     <AuthScaffold title={AUTH_CONFIG.title} helper={AUTH_COPY.emailEntry.helper}>
       <EmailEntryForm
         action="/auth"
-        onSubmit={submitEmail}
+        onSubmit={async ({ email }) => {
+          await handleSendOtp(email);
+        }}
         {...(resolvedError ? { error: resolvedError } : {})}
         {...(isPasskeySupported
           ? {

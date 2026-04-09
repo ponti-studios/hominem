@@ -1,4 +1,5 @@
 import type { Note } from '@hominem/rpc/types/notes.types';
+import { useNoteEditor } from '@hominem/hooks';
 import { SurfacePanel } from '@hominem/ui';
 import { SpeechInput } from '@hominem/ui/ai-elements';
 import {
@@ -13,7 +14,7 @@ import {
   AlertDialogTrigger,
 } from '@hominem/ui/alert-dialog';
 import { Button } from '@hominem/ui/button';
-import { useMemo, useRef, useState } from 'react';
+import { useRef } from 'react';
 import { Link, useNavigate } from 'react-router';
 
 import { useDeleteNote, useUpdateNote } from '~/hooks/use-notes';
@@ -23,8 +24,6 @@ import { useFileUpload } from '~/lib/hooks/use-file-upload';
 interface NoteEditorProps {
   note: Note;
 }
-
-type SaveStatus = 'saved' | 'saving' | 'unsaved';
 
 function slugifyTitle(title: string | null) {
   return (title ?? '')
@@ -40,85 +39,32 @@ export function NoteEditor({ note }: NoteEditorProps) {
   const transcribe = useTranscribe();
   const { uploadFiles, uploadState } = useFileUpload();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  return (
-    <NoteEditorState
-      key={note.id}
-      note={note}
-      navigate={navigate}
-      updateNote={updateNote}
-      deleteNote={deleteNote}
-      transcribe={transcribe}
-      uploadFiles={uploadFiles}
-      uploadState={uploadState}
-      fileInputRef={fileInputRef}
-      debounceRef={debounceRef}
-    />
-  );
-}
-
-interface NoteEditorStateProps {
-  note: Note;
-  navigate: ReturnType<typeof useNavigate>;
-  updateNote: ReturnType<typeof useUpdateNote>;
-  deleteNote: ReturnType<typeof useDeleteNote>;
-  transcribe: ReturnType<typeof useTranscribe>;
-  uploadFiles: ReturnType<typeof useFileUpload>['uploadFiles'];
-  uploadState: ReturnType<typeof useFileUpload>['uploadState'];
-  fileInputRef: React.RefObject<HTMLInputElement | null>;
-  debounceRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>;
-}
-
-function NoteEditorState({
-  note,
-  navigate,
-  updateNote,
-  deleteNote,
-  transcribe,
-  uploadFiles,
-  uploadState,
-  fileInputRef,
-  debounceRef,
-}: NoteEditorStateProps) {
-  const [title, setTitle] = useState(note.title || '');
-  const [content, setContent] = useState(note.content);
-  const [files, setFiles] = useState(note.files);
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved');
-
-  const attachedFileIds = useMemo(() => files.map((file) => file.id), [files]);
-
-  function scheduleSave(nextTitle: string, nextContent: string, fileIds = attachedFileIds) {
-    setSaveStatus('unsaved');
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-    }
-
-    debounceRef.current = setTimeout(async () => {
-      setSaveStatus('saving');
-      try {
-        await updateNote.mutateAsync({
-          id: note.id,
-          title: nextTitle || null,
-          content: nextContent,
-          fileIds,
-        });
-        setSaveStatus('saved');
-      } catch {
-        setSaveStatus('unsaved');
-      }
-    }, 500);
-  }
+  const { title, setTitle, content, setContent, files, setFiles, saveStatus, onSave } =
+    useNoteEditor(
+      {
+        id: note.id,
+        title: note.title,
+        content: note.content,
+        files: note.files.map((f) => ({
+          id: f.id,
+          originalName: f.originalName,
+          mimetype: f.mimetype,
+          size: f.size,
+          url: f.url,
+          uploadedAt: f.uploadedAt,
+        })),
+      },
+      async ({ id, title: t, content: c, fileIds }) => {
+        await updateNote.mutateAsync({ id, title: t, content: c, fileIds });
+      },
+    );
 
   async function handleAttachFiles(fileList: FileList | null) {
-    if (!fileList || fileList.length === 0) {
-      return;
-    }
+    if (!fileList || fileList.length === 0) return;
 
     const uploadedFiles = await uploadFiles(fileList);
-    if (uploadedFiles.length === 0) {
-      return;
-    }
+    if (uploadedFiles.length === 0) return;
 
     const nextFiles = [
       ...files,
@@ -154,18 +100,6 @@ function NoteEditorState({
     } catch {}
   }
 
-  const handleTitleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const nextTitle = event.target.value;
-    setTitle(nextTitle);
-    scheduleSave(nextTitle, content);
-  };
-
-  const handleContentChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const nextContent = event.target.value;
-    setContent(nextContent);
-    scheduleSave(title, nextContent);
-  };
-
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
       <SurfacePanel>
@@ -174,7 +108,11 @@ function NoteEditorState({
             <input
               type="text"
               value={title}
-              onChange={handleTitleChange}
+              onChange={(e) => {
+                const next = e.target.value;
+                setTitle(next);
+                void onSave(next, content, files.map((f) => f.id));
+              }}
               placeholder="Untitled note"
               aria-label="Note title"
               className="w-full border-0 bg-transparent text-3xl font-semibold outline-none placeholder:text-text-tertiary"
@@ -190,7 +128,11 @@ function NoteEditorState({
 
         <textarea
           value={content}
-          onChange={handleContentChange}
+          onChange={(e) => {
+            const next = e.target.value;
+            setContent(next);
+            void onSave(title, next, files.map((f) => f.id));
+          }}
           placeholder="Start writing..."
           aria-label="Note content"
           className="mt-6 min-h-[50vh] w-full resize-none border-0 bg-transparent text-base leading-7 outline-none placeholder:text-text-tertiary"
@@ -221,7 +163,7 @@ function NoteEditorState({
                 const result = await transcribe.mutateAsync({ audioBlob });
                 const nextContent = `${content}\n${result.text}`.trim();
                 setContent(nextContent);
-                scheduleSave(title, nextContent);
+                void onSave(title, nextContent, files.map((f) => f.id));
               }}
             />
           </div>
@@ -272,11 +214,6 @@ function NoteEditorState({
                     Detach
                   </button>
                 </div>
-                {file.textContent || file.content ? (
-                  <p className="mt-2 line-clamp-4 text-sm text-text-secondary">
-                    {file.textContent ?? file.content}
-                  </p>
-                ) : null}
               </div>
             ))}
           </div>

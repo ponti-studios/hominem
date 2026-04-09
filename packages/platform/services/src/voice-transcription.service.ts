@@ -5,9 +5,10 @@ import { join } from 'node:path';
 import { logger } from '@hominem/utils/logger';
 
 import { env } from './env';
-import { VoiceTranscriptionError, mapVoiceProviderError } from './voice-errors';
-import { buildVoiceLogData } from './voice-observability';
-import { getVoiceAudioDir } from './voice.shared';
+import { VoiceError, getVoiceAudioDir, getVoiceLogData, mapVoiceProviderError } from './voice-errors';
+
+export { VoiceError } from './voice-errors';
+export type { VoiceErrorCode } from './voice-errors';
 
 export const VOICE_TRANSCRIPTION_MAX_SIZE_BYTES = 25 * 1024 * 1024;
 
@@ -27,12 +28,10 @@ export interface VoiceTranscriptionOutput {
   duration?: number;
   words?: unknown[];
   segments?: unknown[];
-  /** Path where the input audio file was saved for review (if SAVE_VOICE_AUDIO is enabled) */
   savedPath?: string | undefined;
 }
 
 export const VOICE_TRANSPORTS = ['hono-rpc'] as const;
-
 export type VoiceTransport = (typeof VOICE_TRANSPORTS)[number];
 
 const VOICE_MIME_ALIASES: Record<string, string> = {
@@ -40,7 +39,6 @@ const VOICE_MIME_ALIASES: Record<string, string> = {
   'audio/m4a': 'audio/mp4',
 };
 
-/** Format string expected by the OpenRouter input_audio content block. */
 const MIME_TO_OPENROUTER_FORMAT: Record<string, string> = {
   'audio/webm': 'webm',
   'audio/mp4': 'mp4',
@@ -51,8 +49,6 @@ const MIME_TO_OPENROUTER_FORMAT: Record<string, string> = {
 
 const TRANSCRIPTION_MODEL = 'google/gemini-2.5-flash-lite';
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
-
-export { VoiceTranscriptionError } from './voice-errors';
 
 export function normalizeVoiceMimeType(mimeType: string): string {
   const [baseType] = mimeType.split(';', 1);
@@ -72,41 +68,32 @@ export function getVoiceFileExtension(mimeType: string): string {
 }
 
 function throwTranscriptionError(error: unknown): never {
-  if (error instanceof VoiceTranscriptionError) throw error;
+  if (error instanceof VoiceError) throw error;
   if (error instanceof Error) {
     if (error.message.includes('quota')) {
-      throw new VoiceTranscriptionError(
-        'API quota exceeded. Please try again later.',
-        'QUOTA',
-        429,
-      );
+      throw new VoiceError('API quota exceeded. Please try again later.', 'QUOTA', 429);
     }
     if (error.message.includes('API key') || error.message.includes('401')) {
-      throw new VoiceTranscriptionError('Invalid API configuration.', 'AUTH', 401);
+      throw new VoiceError('Invalid API configuration.', 'AUTH', 401);
     }
-    throw new VoiceTranscriptionError(
-      `Transcription failed: ${error.message}`,
-      'TRANSCRIBE_FAILED',
-      500,
-    );
+    throw new VoiceError(`Transcription failed: ${error.message}`, 'TRANSCRIBE_FAILED', 500);
   }
-  throw new VoiceTranscriptionError('Failed to transcribe audio', 'TRANSCRIBE_FAILED', 500);
+  throw new VoiceError('Failed to transcribe audio', 'TRANSCRIBE_FAILED', 500);
 }
 
 export function validateVoiceInput(input: { mimeType: string; size: number }) {
   const normalizedMimeType = normalizeVoiceMimeType(input.mimeType);
-  const { size } = input;
 
   if (!VOICE_TRANSCRIPTION_SUPPORTED_TYPES.includes(normalizedMimeType as VoiceMimeType)) {
-    throw new VoiceTranscriptionError(
+    throw new VoiceError(
       `Unsupported audio format: ${input.mimeType}. Supported formats: ${VOICE_TRANSCRIPTION_SUPPORTED_TYPES.join(', ')}`,
       'INVALID_FORMAT',
       400,
     );
   }
 
-  if (size > VOICE_TRANSCRIPTION_MAX_SIZE_BYTES) {
-    throw new VoiceTranscriptionError(
+  if (input.size > VOICE_TRANSCRIPTION_MAX_SIZE_BYTES) {
+    throw new VoiceError(
       `File too large. Maximum size is ${VOICE_TRANSCRIPTION_MAX_SIZE_BYTES / (1024 * 1024)}MB`,
       'TOO_LARGE',
       400,
@@ -114,14 +101,6 @@ export function validateVoiceInput(input: { mimeType: string; size: number }) {
   }
 
   return normalizedMimeType;
-}
-
-/**
- * Generate a timestamped filename for audio review
- */
-function generateAudioFilename(prefix: string, ext: string): string {
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  return `${prefix}_${timestamp}.${ext}`;
 }
 
 export async function transcribeVoiceBuffer(input: {
@@ -140,13 +119,12 @@ export async function transcribeVoiceBuffer(input: {
   });
 
   if (!env.OPENROUTER_API_KEY) {
-    logger.error('[voice-transcription] Missing OPENROUTER_API_KEY', buildVoiceLogData(requestId));
-    throw new VoiceTranscriptionError('Invalid API configuration.', 'AUTH', 401);
+    logger.error('[voice-transcription] Missing OPENROUTER_API_KEY', getVoiceLogData(requestId));
+    throw new VoiceError('Invalid API configuration.', 'AUTH', 401);
   }
 
-  // Log the request
   logger.info('[voice-transcription] Request started', {
-    ...buildVoiceLogData(requestId),
+    ...getVoiceLogData(requestId),
     model: TRANSCRIPTION_MODEL,
     mimeType: input.mimeType,
     normalizedMimeType,
@@ -157,24 +135,24 @@ export async function transcribeVoiceBuffer(input: {
     language: input.language,
   });
 
-  // Save input audio file for team review
   let savedPath: string | undefined;
   if (env.SAVE_VOICE_AUDIO === true) {
     try {
       const ext = getVoiceFileExtension(normalizedMimeType).slice(1);
-      const filename = generateAudioFilename('voice_in', ext);
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = `voice_in_${timestamp}.${ext}`;
       const audioDir = getVoiceAudioDir();
       savedPath = join(audioDir, filename);
       const buffer = Buffer.from(input.buffer);
       await writeFile(savedPath, buffer);
       logger.info('[voice-transcription] Input audio saved for review', {
-        ...buildVoiceLogData(requestId),
+        ...getVoiceLogData(requestId),
         savedPath,
         size: buffer.length,
       });
     } catch (saveError) {
       logger.warn('[voice-transcription] Failed to save input audio', {
-        ...buildVoiceLogData(requestId),
+        ...getVoiceLogData(requestId),
         error: saveError instanceof Error ? saveError.message : 'Unknown',
       });
     }
@@ -220,16 +198,15 @@ export async function transcribeVoiceBuffer(input: {
   } catch (error) {
     const errorTime = performance.now() - startTime;
     logger.error('[voice-transcription] Fetch failed', {
-      ...buildVoiceLogData(requestId),
+      ...getVoiceLogData(requestId),
       error: error instanceof Error ? error.message : 'Unknown error',
       durationMs: Math.round(errorTime),
     });
     throwTranscriptionError(error);
   }
 
-  // Log the HTTP response
   logger.info('[voice-transcription] HTTP response received', {
-    ...buildVoiceLogData(requestId),
+    ...getVoiceLogData(requestId),
     status: response.status,
     statusText: response.statusText,
     responseTimeMs: Math.round(responseTime),
@@ -243,7 +220,7 @@ export async function transcribeVoiceBuffer(input: {
     const totalTime = performance.now() - startTime;
 
     logger.error('[voice-transcription] API error response', {
-      ...buildVoiceLogData(requestId),
+      ...getVoiceLogData(requestId),
       status: response.status,
       error: errorMessage ?? response.statusText,
       totalDurationMs: Math.round(totalTime),
@@ -255,7 +232,7 @@ export async function transcribeVoiceBuffer(input: {
       responseStatusText: response.statusText,
       ...(typeof errorMessage === 'string' ? { errorMessage } : {}),
     });
-    throw new VoiceTranscriptionError(errorInfo.message, errorInfo.code, errorInfo.statusCode);
+    throw new VoiceError(errorInfo.message, errorInfo.code, errorInfo.statusCode);
   }
 
   try {
@@ -269,14 +246,13 @@ export async function transcribeVoiceBuffer(input: {
 
     if (!text) {
       logger.warn('[voice-transcription] Empty transcript received', {
-        ...buildVoiceLogData(requestId),
+        ...getVoiceLogData(requestId),
         totalDurationMs: Math.round(totalTime),
       });
     }
 
-    // Log successful completion
     logger.info('[voice-transcription] Request completed successfully', {
-      ...buildVoiceLogData(requestId),
+      ...getVoiceLogData(requestId),
       transcriptLength: text.length,
       transcriptPreview: text.slice(0, 150),
       parseTimeMs: Math.round(parseTime),
@@ -288,9 +264,9 @@ export async function transcribeVoiceBuffer(input: {
   } catch (error) {
     const totalTime = performance.now() - startTime;
 
-    if (error instanceof VoiceTranscriptionError) {
+    if (error instanceof VoiceError) {
       logger.error('[voice-transcription] Processing error', {
-        ...buildVoiceLogData(requestId),
+        ...getVoiceLogData(requestId),
         code: error.code,
         totalDurationMs: Math.round(totalTime),
       });
@@ -298,7 +274,7 @@ export async function transcribeVoiceBuffer(input: {
     }
 
     logger.error('[voice-transcription] Unexpected error', {
-      ...buildVoiceLogData(requestId),
+      ...getVoiceLogData(requestId),
       error: error instanceof Error ? error.message : 'Unknown error',
       totalDurationMs: Math.round(totalTime),
     });

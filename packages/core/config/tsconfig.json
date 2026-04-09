@@ -1,0 +1,7 @@
+{
+  "extends": "../../../tsconfig.profiles/package-bundler.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "../../../.cache/core-config.tsbuildinfo"
+  },
+  "include": ["src/**/*.ts"]
+}

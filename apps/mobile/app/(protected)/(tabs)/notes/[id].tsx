@@ -1,7 +1,8 @@
+import { useNoteEditor } from '@hominem/hooks';
 import { useApiClient } from '@hominem/rpc/react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import type { RelativePathString } from 'expo-router';
-import React, { useRef, useState } from 'react';
+import React from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { Text, theme } from '~/theme';
@@ -15,7 +16,6 @@ export default function NoteDetailScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const noteId = String(id ?? '');
   const { data: note } = useNoteQuery({ noteId, enabled: noteId.length > 0 });
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   if (!note) {
     return null;
@@ -27,7 +27,6 @@ export default function NoteDetailScreen() {
       note={note}
       client={client}
       router={router}
-      debounceRef={debounceRef}
     />
   );
 }
@@ -36,36 +35,29 @@ function NoteDetailEditor({
   note,
   client,
   router,
-  debounceRef,
 }: {
   note: NonNullable<ReturnType<typeof useNoteQuery>['data']>;
   client: ReturnType<typeof useApiClient>;
   router: ReturnType<typeof useRouter>;
-  debounceRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>;
 }) {
-  const [title, setTitle] = useState(note.title ?? '');
-  const [content, setContent] = useState(note.content);
-  const [files, setFiles] = useState<Array<{ id: string; originalName: string; url: string }>>(
-    note.files.map((file) => ({ id: file.id, originalName: file.originalName, url: file.url })),
+  const { title, setTitle, content, setContent, files, setFiles, onSave } = useNoteEditor(
+    {
+      id: note.id,
+      title: note.title,
+      content: note.content,
+      files: note.files.map((f) => ({
+        id: f.id,
+        originalName: f.originalName,
+        mimetype: '',
+        size: 0,
+        url: f.url,
+        uploadedAt: '',
+      })),
+    },
+    async ({ id: noteId, title: t, content: c, fileIds }) => {
+      await client.notes.update({ id: noteId, title: t, content: c, fileIds });
+    },
   );
-
-  const scheduleSave = (
-    nextTitle: string,
-    nextContent: string,
-    fileIds = files.map((file) => file.id),
-  ) => {
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-    }
-    debounceRef.current = setTimeout(() => {
-      void client.notes.update({
-        id: note.id,
-        title: nextTitle || null,
-        content: nextContent,
-        fileIds,
-      });
-    }, 400);
-  };
 
   const handleDetach = async (fileId: string) => {
     const nextFiles = files.filter((item) => item.id !== fileId);
@@ -95,7 +87,7 @@ function NoteDetailEditor({
         value={title}
         onChangeText={(value) => {
           setTitle(value);
-          scheduleSave(value, content);
+          void onSave(value, content, files.map((f) => f.id));
         }}
         placeholder="Untitled note"
         placeholderTextColor={theme.colors['text-tertiary']}
@@ -107,7 +99,7 @@ function NoteDetailEditor({
         value={content}
         onChangeText={(value) => {
           setContent(value);
-          scheduleSave(title, value);
+          void onSave(title, value, files.map((f) => f.id));
         }}
         placeholder="Start writing..."
         placeholderTextColor={theme.colors['text-tertiary']}
