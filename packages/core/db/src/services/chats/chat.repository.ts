@@ -1,9 +1,18 @@
 import type { Selectable } from 'kysely';
 
 import { NotFoundError, ValidationError } from '../../errors';
+import {
+  parseChatMessageFiles,
+  parseChatMessageToolCalls,
+  type ChatMessageFileRecord,
+  type ChatMessageToolCallRecord,
+} from '../../guards';
 import type { DbHandle } from '../../transaction';
 import type { AppChatMessages, AppChats } from '../../types/database';
 import { toIsoString, toRequiredIsoString } from '../_shared/mappers';
+
+// ─── Re-export guard types for backward compatibility ────────────────────────
+export type { ChatMessageFileRecord, ChatMessageToolCallRecord } from '../../guards';
 
 // ─── Row types ───────────────────────────────────────────────────────────────
 
@@ -23,23 +32,6 @@ export interface ChatRecord {
 }
 
 export type ChatMessageRole = 'system' | 'user' | 'assistant' | 'tool';
-
-export interface ChatMessageFileRecord {
-  type: 'image' | 'file';
-  fileId?: string;
-  url?: string;
-  filename?: string;
-  mimeType?: string;
-  size?: number;
-  metadata?: Record<string, unknown>;
-}
-
-export interface ChatMessageToolCallRecord {
-  toolName: string;
-  type: 'tool-call';
-  toolCallId: string;
-  args: Record<string, string>;
-}
 
 export interface ReferencedNoteRecord {
   id: string;
@@ -103,7 +95,7 @@ function toChatMessageRecord(
     userId: row.author_userid ?? '',
     role: row.role as ChatMessageRole,
     content: row.content,
-    files: Array.isArray(row.files) ? (row.files as unknown as ChatMessageFileRecord[]) : null,
+    files: parseChatMessageFiles(row.files),
     referencedNotes:
       referencedNoteIds.length > 0
         ? referencedNoteIds.map((id) => ({
@@ -111,9 +103,7 @@ function toChatMessageRecord(
             title: noteTitlesById.get(id) ?? null,
           }))
         : null,
-    toolCalls: Array.isArray(row.tool_calls)
-      ? (row.tool_calls as unknown as ChatMessageToolCallRecord[])
-      : null,
+    toolCalls: parseChatMessageToolCalls(row.tool_calls),
     reasoning: row.reasoning ?? null,
     parentMessageId: row.parent_message_id,
     createdAt: toRequiredIsoString(row.createdat),

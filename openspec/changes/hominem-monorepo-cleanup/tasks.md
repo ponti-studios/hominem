@@ -36,13 +36,13 @@
 
 ### 3A: Type Safety Improvements
 
-- [ ] 3A.1 Create `packages/core/db/src/guards.ts` with type guard functions for JSON columns
-- [ ] 3A.2 Add guard for `ChatMessageFileRecord`: validate `fileId` and `url` fields
-- [ ] 3A.3 Add guard for `ChatMessageToolCallRecord`: validate tool call shape
-- [ ] 3A.4 Update `packages/core/db/src/services/chats/chat.repository.ts` to use guards instead of double casts
-- [ ] 3A.5 Remove `as unknown as Type` patterns from chat repository
-- [ ] 3A.6 Add type guard for voice response fields in voice services
-- [ ] 3A.7 Write tests for all type guards (validate correct and invalid inputs)
+- [x] 3A.1 Create `packages/core/db/src/guards.ts` with type guard functions for JSON columns
+- [x] 3A.2 Add guard for `ChatMessageFileRecord`: validate `fileId` and `url` fields
+- [x] 3A.3 Add guard for `ChatMessageToolCallRecord`: validate tool call shape
+- [x] 3A.4 Update `packages/core/db/src/services/chats/chat.repository.ts` to use guards instead of double casts
+- [x] 3A.5 Remove `as unknown as Type` patterns from chat repository
+- [x] 3A.6 Add type guard for voice response fields in voice services (no database JSON columns in voice services)
+- [x] 3A.7 Write tests for all type guards (validate correct and invalid inputs)
 
 ### 3B: Extract Shared Hooks (Web ↔ Mobile)
 
