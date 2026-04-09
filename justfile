@@ -64,7 +64,7 @@ web-install-playwright:
 web-test-e2e-local: web-install-playwright
   cd "{{WEB_DIR}}" && bun run test:e2e
 
-web-test-e2e:
+web-test-e2e: web-install-playwright
   {{TURBO}} run test:e2e --filter=@hominem/web
 
 docker-up:

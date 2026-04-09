@@ -14,7 +14,7 @@ const apiRootUrl = new URL('/', apiBaseUrl).toString()
 const apiPort = new URL(apiBaseUrl).port || '4040'
 const apiServerCommand = isCI
   ? `cd ${apiDir} && bun run start`
-  : `cd ${workspaceRoot} && just db-setup && cd ${apiDir} && bun run dev`;
+  : `cd ${workspaceRoot} && just db-setup && cd ${apiDir} && bun run dev`
 
 export default defineConfig({
   testDir: './tests',
