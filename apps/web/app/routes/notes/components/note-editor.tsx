@@ -202,7 +202,10 @@ function NoteEditorState({
       </SurfacePanel>
 
       <aside className="space-y-4">
-        <SurfacePanel>
+        <SurfacePanel
+          data-upload-state={uploadState.state}
+          data-upload-progress={uploadState.progress}
+        >
           <h2 className="text-sm font-semibold text-foreground">Actions</h2>
           <div className="mt-3 flex flex-wrap gap-2">
             <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>

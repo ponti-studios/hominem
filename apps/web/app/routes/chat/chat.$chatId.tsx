@@ -251,7 +251,11 @@ export default function ChatPage({ params }: Route.ComponentProps) {
           ) : null}
         </div>
 
-        <div className="border-t border-border-subtle p-4">
+        <div
+          className="border-t border-border-subtle p-4"
+          data-upload-state={uploadState.state}
+          data-upload-progress={uploadState.progress}
+        >
           <div className="space-y-3">
             {suggestions.length > 0 ? (
               <div className="flex flex-wrap gap-2">

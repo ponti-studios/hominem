@@ -52,27 +52,6 @@ function logAndThrow(error: unknown, message: string): never {
 }
 
 export const filesRoutes = new Hono<AppContext>()
-  .put('/test/upload/:filePath*', async (c) => {
-    if (process.env.NODE_ENV !== 'test') {
-      return c.notFound();
-    }
-
-    try {
-      const filePath = c.req.param('filePath');
-      const buffer = await c.req.arrayBuffer();
-
-      logger.info('[files] test upload', { filePath, size: buffer.byteLength });
-
-      await (fileStorageService as any).storeFileWithExactKey(filePath, Buffer.from(buffer));
-
-      logger.info('[files] test upload completed', { filePath });
-
-      return c.json({ success: true, message: 'File uploaded successfully' });
-    } catch (error) {
-      logger.error('[files] test upload failed', { error });
-      return c.json({ error: 'Upload failed' }, 500);
-    }
-  })
   .use('*', authMiddleware)
   .get('/', async (c) => {
     try {

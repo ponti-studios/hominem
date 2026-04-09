@@ -8,7 +8,7 @@ interface TagOption {
   name: string;
 }
 
-interface TagSelectProps {
+export interface TagSelectProps {
   selectedTag: string;
   onTagChange: (value: string) => void;
   tags: TagOption[];

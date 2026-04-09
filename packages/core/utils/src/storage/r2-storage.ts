@@ -30,9 +30,21 @@ class InMemoryStorageBackend {
     this.isPublic = options?.isPublic ?? false;
   }
 
-  storeFileWithExactKey(filePath: string, buffer: Buffer): void {
+  /**
+   * Test-only method to store a file with an exact key.
+   * Only available in test mode.
+   */
+  __testOnlyStoreFile(filePath: string, buffer: Buffer): void {
+    if (!isTestMode) {
+      throw new Error('__testOnlyStoreFile is only available in test mode');
+    }
     this.files.set(filePath, buffer);
     this.pendingUploads.delete(filePath);
+  }
+
+  /** @deprecated Use __testOnlyStoreFile instead */
+  storeFileWithExactKey(filePath: string, buffer: Buffer): void {
+    this.__testOnlyStoreFile(filePath, buffer);
   }
 
   markUploadPending(filePath: string, mimetype: string, size: number): void {

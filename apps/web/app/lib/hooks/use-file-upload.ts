@@ -1,4 +1,5 @@
 import { useApiClient } from '@hominem/rpc/react';
+import { isTestMode } from '@hominem/utils/storage';
 import {
   CHAT_UPLOAD_ALLOWED_MIME_TYPES,
   CHAT_UPLOAD_MAX_FILE_COUNT,
@@ -6,9 +7,16 @@ import {
 } from '@hominem/utils/upload';
 // Lazy load Uppy types only for type checking
 import type { Body, Meta, UppyFile } from '@uppy/core';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { UploadedFile } from '~/lib/types/upload';
+
+/**
+ * Upload state machine states.
+ * Transitions: idle → preparing → uploading → completing → done
+ * Error can transition from any non-terminal state.
+ */
+export type UploadStateMachine = 'idle' | 'preparing' | 'uploading' | 'completing' | 'done' | 'error';
 
 interface UploadFileMeta extends Meta {
   fileId?: string;
@@ -21,9 +29,15 @@ interface UploadFileMeta extends Meta {
 type UploadFileBody = Body;
 
 interface UploadState {
+  /** Current state in the upload state machine */
+  state: UploadStateMachine;
+  /** Whether an upload is currently in progress (state is preparing, uploading, or completing) */
   isUploading: boolean;
+  /** Upload progress percentage (0-100) */
   progress: number;
+  /** Files that have been successfully uploaded */
   uploadedFiles: UploadedFile[];
+  /** Error messages from failed uploads */
   errors: string[];
 }
 
@@ -46,6 +60,7 @@ async function loadUppyModules() {
 export function useFileUpload(): UseFileUploadReturn {
   const apiClient = useApiClient();
   const [uploadState, setUploadState] = useState<UploadState>({
+    state: 'idle',
     isUploading: false,
     progress: 0,
     uploadedFiles: [],
@@ -55,6 +70,13 @@ export function useFileUpload(): UseFileUploadReturn {
     null,
   );
   const uppyPromiseRef = useRef<ReturnType<typeof loadUppyModules> | null>(null);
+
+  // Pre-load Uppy modules in test mode for deterministic behavior
+  useEffect(() => {
+    if (isTestMode && !uppyPromiseRef.current) {
+      uppyPromiseRef.current = loadUppyModules();
+    }
+  }, []);
 
   const getUppy = useCallback(async () => {
     if (uppyRef.current) {
@@ -125,8 +147,10 @@ export function useFileUpload(): UseFileUploadReturn {
   const uploadFiles = useCallback(async (files: FileList | File[]): Promise<UploadedFile[]> => {
     const fileArray = Array.from(files);
 
+    // Transition: idle → preparing
     setUploadState((prev) => ({
       ...prev,
+      state: 'preparing',
       isUploading: true,
       progress: 0,
       errors: [],
@@ -135,6 +159,12 @@ export function useFileUpload(): UseFileUploadReturn {
     try {
       const uppy = await getUppy();
       const completionPromises = new Map<string, Promise<UploadedFile>>();
+
+      // Transition: preparing → uploading
+      setUploadState((prev) => ({
+        ...prev,
+        state: 'uploading',
+      }));
 
       for (const file of fileArray) {
         uppy.addFile({
@@ -145,6 +175,11 @@ export function useFileUpload(): UseFileUploadReturn {
       }
 
       const handleUploadSuccess = (file: UppyFile<UploadFileMeta, UploadFileBody> | undefined) => {
+        // Transition: uploading → completing
+        setUploadState((prev) => ({
+          ...prev,
+          state: 'completing',
+        }));
         if (!file) {
           return;
         }
@@ -194,6 +229,7 @@ export function useFileUpload(): UseFileUploadReturn {
 
       setUploadState((prev) => ({
         ...prev,
+        state: uploadErrors.length > 0 ? 'error' : 'done',
         isUploading: false,
         progress: 100,
         uploadedFiles: [...prev.uploadedFiles, ...newFiles],
@@ -208,6 +244,7 @@ export function useFileUpload(): UseFileUploadReturn {
 
       setUploadState((prev) => ({
         ...prev,
+        state: 'error',
         isUploading: false,
         progress: 0,
         errors: [errorMessage],
@@ -231,6 +268,7 @@ export function useFileUpload(): UseFileUploadReturn {
     }
 
     setUploadState({
+      state: 'idle',
       isUploading: false,
       progress: 0,
       uploadedFiles: [],

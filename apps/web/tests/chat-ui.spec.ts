@@ -16,14 +16,22 @@ async function openNewChat(page: Page) {
 }
 
 async function attachChatFile(page: Page, filename: string, content: string) {
+  // Find the upload container and set file
+  const uploadContainer = page.locator('[data-upload-state]').first();
   await page.getByTestId('chat-file-input').setInputFiles({
     name: filename,
     mimeType: 'text/plain',
     buffer: Buffer.from(content),
   });
 
-  await expect(page.getByRole('button', { name: new RegExp(filename) })).toBeVisible({
+  // Wait for upload to complete via state machine attribute
+  await expect(uploadContainer).toHaveAttribute('data-upload-state', 'done', {
     timeout: 10_000,
+  });
+
+  // Verify the file appears in the UI
+  await expect(page.getByRole('button', { name: new RegExp(filename) })).toBeVisible({
+    timeout: 5_000,
   });
 }
 

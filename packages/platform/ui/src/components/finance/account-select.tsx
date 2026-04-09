@@ -8,7 +8,7 @@ interface AccountOption {
   name: string;
 }
 
-interface AccountSelectProps {
+export interface AccountSelectProps {
   selectedAccount: string;
   onAccountChange: (value: string) => void;
   accounts?: AccountOption[];

@@ -2,9 +2,9 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useEffect, useState } from 'react';
 
 import { hiddenControl, numberControl } from '../../storybook/controls';
-import { PaginationControls } from './pagination-controls';
+import { PaginationControls, type PaginationControlsProps } from './pagination-controls';
 
-const meta = {
+const meta: Meta<PaginationControlsProps> = {
   title: 'Patterns/Finance/PaginationControls',
   component: PaginationControls,
   tags: ['autodocs'],
@@ -34,7 +34,7 @@ const meta = {
       </div>
     );
   },
-} satisfies Meta<typeof PaginationControls>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

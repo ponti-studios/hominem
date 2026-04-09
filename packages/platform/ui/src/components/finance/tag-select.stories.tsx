@@ -7,17 +7,17 @@ import {
   selectControl,
   textControl,
 } from '../../storybook/controls';
-import { TagSelect } from './tag-select';
+import { TagSelect, type TagSelectProps } from './tag-select';
 
 const tags = [
   { id: 'groceries', name: 'Groceries' },
   { id: 'travel', name: 'Travel' },
   { id: 'software', name: 'Software' },
-] satisfies NonNullable<Parameters<typeof TagSelect>[0]['tags']>;
+] satisfies NonNullable<TagSelectProps['tags']>;
 
 const tagOptions = ['all', ...tags.map((tag) => tag.id)] as const;
 
-const meta = {
+const meta: Meta<TagSelectProps> = {
   title: 'Patterns/Finance/TagSelect',
   component: TagSelect,
   tags: ['autodocs'],
@@ -49,7 +49,7 @@ const meta = {
 
     return <TagSelect {...args} selectedTag={selectedTag} onTagChange={setSelectedTag} />;
   },
-} satisfies Meta<typeof TagSelect>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

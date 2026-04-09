@@ -7,17 +7,17 @@ import {
   selectControl,
   textControl,
 } from '../../storybook/controls';
-import { AccountSelect } from './account-select';
+import { AccountSelect, type AccountSelectProps } from './account-select';
 
 const accounts = [
   { id: 'all-checking', name: 'Daily Checking' },
   { id: 'travel-card', name: 'Travel Rewards Card' },
   { id: 'savings', name: 'Emergency Savings' },
-] satisfies NonNullable<Parameters<typeof AccountSelect>[0]['accounts']>;
+] satisfies NonNullable<AccountSelectProps['accounts']>;
 
 const accountOptions = ['all', ...accounts.map((account) => account.id)] as const;
 
-const meta = {
+const meta: Meta<AccountSelectProps> = {
   title: 'Patterns/Finance/AccountSelect',
   component: AccountSelect,
   tags: ['autodocs'],
@@ -57,7 +57,7 @@ const meta = {
       />
     );
   },
-} satisfies Meta<typeof AccountSelect>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;

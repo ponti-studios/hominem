@@ -3,7 +3,7 @@ import type { FC } from 'react';
 
 import { Button } from '../ui/button';
 
-interface PaginationControlsProps {
+export interface PaginationControlsProps {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;

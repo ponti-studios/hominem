@@ -21,13 +21,10 @@
   "workspaces": [
     "apps/*",
     "services/*",
-    "tools/*",
     "packages/core/*",
     "packages/platform/*",
     "packages/domains/*"
   ],
-  "scripts": {},
-  "dependencies": {},
   "devDependencies": {
     "@types/node": "^25.4.0",
     "@types/pg": "^8.18.0",

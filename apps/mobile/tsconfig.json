@@ -15,9 +15,9 @@
     "types": ["jest"],
     "paths": {
       "theme": ["./theme/index.ts"],
-      "~/*": ["./lib/*"],
+      "~/*": ["./lib/*"]
     },
-    "noEmit": true,
+    "noEmit": true
   },
   "include": [
     "app/**/*.ts",

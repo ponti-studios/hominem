@@ -4,7 +4,7 @@
     "tsBuildInfoFile": "../../../.cache/ui.tsbuildinfo",
     "rootDir": ".",
     "outDir": "./build",
-    "types": ["vite/client", "node", "vitest/globals", "@testing-library/jest-dom"],
+    "types": ["vite/client", "node", "vitest/globals", "@testing-library/jest-dom"]
   },
   "include": [
     "src/**/*.ts",
@@ -12,7 +12,7 @@
     "src/**/*.d.ts",
     ".storybook/**/*.ts",
     ".storybook/**/*.tsx",
-    "../../../types/**/*.d.ts",
+    "../../../types/**/*.d.ts"
   ],
   "exclude": [
     "node_modules",
@@ -25,6 +25,6 @@
     "**/*.spec.tsx",
     "**/__tests__",
     "**/__mocks__",
-    "*.tsbuildinfo",
-  ],
+    "*.tsbuildinfo"
+  ]
 }
