@@ -6,14 +6,11 @@ import { defineConfig, devices } from '@playwright/test';
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const apiDir = path.join(workspaceRoot, 'services/api');
 const webDir = path.join(workspaceRoot, 'apps/web');
-const isCI = process.env.CI === 'true';
 const reuseExistingServer = process.env.REUSE_SERVERS === 'true';
 const apiBaseUrl = process.env.VITE_PUBLIC_API_URL ?? 'http://localhost:4040';
 const apiRootUrl = new URL('/', apiBaseUrl).toString();
 const apiPort = new URL(apiBaseUrl).port || '4040';
-const apiServerCommand = isCI
-  ? `cd ${apiDir} && bun run start`
-  : `cd ${workspaceRoot} && just db-setup && cd ${apiDir} && bun run dev`;
+const apiServerCommand = `cd ${workspaceRoot} && just db-setup && cd ${apiDir} && bun run start`;
 
 export default defineConfig({
   testDir: './tests',
