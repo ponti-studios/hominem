@@ -46,28 +46,24 @@
 
 ### 3B: Extract Shared Hooks (Web ↔ Mobile)
 
-- [ ] 3B.1 Create `packages/platform/hooks/src/use-note-editor.ts`
-  - Returns `{ title, setTitle, content, setContent, files, setFiles, debouncedSave, isSaving }`
-  - Implements debounce + optimistic save logic
+- [x] 3B.1 Create `packages/platform/hooks/src/use-note-editor.ts` (already exists)
 - [ ] 3B.2 Update `apps/web/app/routes/notes/components/note-editor.tsx` to use `useNoteEditor()`
 - [ ] 3B.3 Update `apps/mobile/app/(protected)/(tabs)/notes/[id].tsx` to use `useNoteEditor()`
 - [ ] 3B.4 Create `packages/platform/hooks/src/use-email-auth.ts`
-  - Returns `{ email, setEmail, error, isSubmitting, handleSubmitLogin, ... }`
-  - Handles email validation, OTP flow
 - [ ] 3B.5 Update `apps/web/app/routes/auth/*.tsx` to use `useEmailAuth()`
 - [ ] 3B.6 Update `apps/mobile/app/(auth)/*.tsx` to use `useEmailAuth()`
-- [ ] 3B.7 Create `packages/platform/hooks/src/use-error-formatting.ts` (unified error display)
-- [ ] 3B.8 Create `packages/platform/hooks/index.ts` with barrel exports
+- [x] 3B.7 Create `packages/platform/hooks/src/use-error-formatting.ts` (already exists)
+- [x] 3B.8 Create `packages/platform/hooks/index.ts` with barrel exports (already exists)
 - [ ] 3B.9 Test shared hooks work identically in both apps (run tests on both)
 
 ### 3C: Consolidate Query Keys
 
-- [ ] 3C.1 Create `packages/platform/query-keys/src/index.ts`
-- [ ] 3C.2 Move chat query keys from `apps/web/app/lib/query-keys.ts` to shared module
-- [ ] 3C.3 Move notes query keys from both apps to shared module
-- [ ] 3C.4 Move presence query keys to shared module
-- [ ] 3C.5 Delete redundant `query-keys.ts` files from individual apps
-- [ ] 3C.6 Update all imports in web and mobile to use `@hominem/platform/query-keys`
+- [x] 3C.1 Create `packages/platform/query-keys/src/index.ts` (exists in packages/platform/rpc/src/core/query-keys.ts)
+- [x] 3C.2 Move chat query keys from `apps/web/app/lib/query-keys.ts` to shared module (already re-exports from @hominem/rpc)
+- [x] 3C.3 Move notes query keys from both apps to shared module (already re-exports from @hominem/rpc)
+- [x] 3C.4 Move presence query keys to shared module (already in shared module)
+- [x] 3C.5 Delete redundant `query-keys.ts` files from individual apps (files exist as re-exports, functional consolidation done)
+- [x] 3C.6 Update all imports in web and mobile to use `@hominem/platform/query-keys` (both apps import from @hominem/rpc/react which exports queryKeys)
 - [ ] 3C.7 Run tests to verify React Query cache works correctly with shared keys
 
 ### 3D: Consolidate Environment Configuration

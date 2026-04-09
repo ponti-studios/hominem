@@ -24,7 +24,11 @@ export function isChatMessageFileRecord(value: unknown): value is ChatMessageFil
   if (record.filename !== undefined && typeof record.filename !== 'string') return false;
   if (record.mimeType !== undefined && typeof record.mimeType !== 'string') return false;
   if (record.size !== undefined && typeof record.size !== 'number') return false;
-  if (record.metadata !== undefined && (typeof record.metadata !== 'object' || record.metadata === null)) return false;
+  if (
+    record.metadata !== undefined &&
+    (typeof record.metadata !== 'object' || record.metadata === null)
+  )
+    return false;
   return true;
 }
 
