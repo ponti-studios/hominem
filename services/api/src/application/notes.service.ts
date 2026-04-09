@@ -94,12 +94,14 @@ export class NoteService {
 
   async deleteNote(noteId: string, userId: string): Promise<NoteRecord> {
     const note = await NoteRepository.load(getDb(), noteId, userId);
-    await NoteRepository.delete(getDb(), noteId, userId);
+    await NoteRepository.hardDelete(getDb(), noteId, userId);
     return note;
   }
 
   async archiveNote(noteId: string, userId: string): Promise<NoteRecord> {
-    return this.deleteNote(noteId, userId);
+    const note = await NoteRepository.load(getDb(), noteId, userId);
+    await NoteRepository.archive(getDb(), noteId, userId);
+    return note;
   }
 }
 

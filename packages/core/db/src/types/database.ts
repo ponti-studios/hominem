@@ -316,6 +316,7 @@ export interface AppNoteFiles {
 }
 
 export interface AppNotes {
+  archived_at: Timestamp | null;
   content: Generated<string>;
   createdat: Generated<Timestamp>;
   current_version_id: string | null;

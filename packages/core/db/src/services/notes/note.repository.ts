@@ -232,6 +232,7 @@ export const NoteRepository = {
       .selectAll()
       .where('id', '=', noteId)
       .where('owner_userid', '=', userId)
+      .where('archived_at', 'is', null)
       .executeTakeFirst();
 
     return (note as NoteRow | undefined) ?? null;
@@ -261,7 +262,11 @@ export const NoteRepository = {
    * List notes for a user with filtering and sorting.
    */
   async list(handle: DbHandle, input: ListNotesInput): Promise<NoteRecord[]> {
-    let query = handle.selectFrom('app.notes').selectAll().where('owner_userid', '=', input.userId);
+    let query = handle
+      .selectFrom('app.notes')
+      .selectAll()
+      .where('owner_userid', '=', input.userId)
+      .where('archived_at', 'is', null);
 
     if (input.since) {
       query = query.where('updatedat', '>=', new Date(input.since));
@@ -304,6 +309,7 @@ export const NoteRepository = {
       .selectFrom('app.notes')
       .select(['id', 'title', 'excerpt', 'content', 'createdat', 'owner_userid'])
       .where('owner_userid', '=', input.userId)
+      .where('archived_at', 'is', null)
       .orderBy('createdat', 'desc')
       .orderBy('id', 'desc');
 
@@ -429,7 +435,24 @@ export const NoteRepository = {
   /**
    * Delete a note by ID with ownership enforcement.
    */
-  async delete(handle: DbHandle, noteId: string, userId: string): Promise<void> {
+  /**
+   * Soft delete (archive) a note by ID with ownership enforcement.
+   * Sets archived_at timestamp; note remains in database but is filtered from queries.
+   */
+  async archive(handle: DbHandle, noteId: string, userId: string): Promise<void> {
+    await handle
+      .updateTable('app.notes')
+      .set({ archived_at: new Date() })
+      .where('id', '=', noteId)
+      .where('owner_userid', '=', userId)
+      .execute();
+  },
+
+  /**
+   * Hard delete a note by ID with ownership enforcement.
+   * Permanently removes note from database. Use sparingly; prefer archive() for soft delete.
+   */
+  async hardDelete(handle: DbHandle, noteId: string, userId: string): Promise<void> {
     await handle
       .deleteFrom('app.notes')
       .where('id', '=', noteId)
