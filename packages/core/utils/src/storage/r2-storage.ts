@@ -24,7 +24,8 @@ class InMemoryStorageBackend {
   private maxFileSize: number;
   private isPublic: boolean;
   private category: StorageCategory;
-  private pendingUploads: Map<string, { buffer?: Buffer; mimetype: string; size: number }> = new Map();
+  private pendingUploads: Map<string, { buffer?: Buffer; mimetype: string; size: number }> =
+    new Map();
   private preparedUploadKeys: Map<string, { key: string; userId: string }> = new Map();
 
   constructor(category: StorageCategory, options?: StorageOptions) {
@@ -467,9 +468,9 @@ export class R2StorageService {
       ? this.createStoredName(id, input.filename, extension)
       : `${id}${extension}`;
     const key = this.getKey(userId, storedName);
-    
+
     this.markPreparedUpload(id, key, userId);
-    
+
     const uploadUrl = await getSignedUrl(
       this.client,
       new PutObjectCommand({
@@ -724,7 +725,9 @@ export class R2StorageService {
 
   async storeFileWithExactKey(filePath: string, buffer: Buffer): Promise<void> {
     if (getIsTestMode()) {
-      throw new Error('storeFileWithExactKey is only for test mode and should be called on backend');
+      throw new Error(
+        'storeFileWithExactKey is only for test mode and should be called on backend',
+      );
     }
     const command = new PutObjectCommand({
       Bucket: this.bucketName,

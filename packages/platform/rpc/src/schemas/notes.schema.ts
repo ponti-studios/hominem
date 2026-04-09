@@ -65,9 +65,43 @@ export type NoteAnalysis = z.infer<typeof NoteAnalysisSchema>;
 export type TaskStatus = z.infer<typeof TaskStatusSchema>;
 export type TaskPriority = z.infer<typeof TaskPrioritySchema>;
 
+const NoteFileSchema = z.object({
+  id: z.string().uuid(),
+  originalName: z.string(),
+  mimetype: z.string(),
+  size: z.number(),
+  url: z.string(),
+  uploadedAt: z.string(),
+  content: z.string().optional(),
+  textContent: z.string().optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
+
 const NoteMentionSchema = z.object({
   id: z.string(),
   name: z.string(),
+});
+
+export const NoteSchema = z.object({
+  id: z.string().uuid(),
+  userId: z.string(),
+  type: NoteContentTypeSchema,
+  status: NoteStatusSchema,
+  title: z.string().nullable(),
+  content: z.string(),
+  excerpt: z.string().nullable(),
+  tags: z.array(ContentTagSchema),
+  mentions: z.array(NoteMentionSchema).nullable(),
+  analysis: NoteAnalysisSchema.nullable(),
+  publishingMetadata: PublishingMetadataSchema.nullable(),
+  parentNoteId: z.string().nullable(),
+  files: z.array(NoteFileSchema),
+  versionNumber: z.number(),
+  isLatestVersion: z.boolean(),
+  publishedAt: z.string().nullable(),
+  scheduledFor: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
 });
 
 export const CreateNoteInputSchema = z.object({

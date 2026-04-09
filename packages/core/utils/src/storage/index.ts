@@ -5,7 +5,13 @@ export {
   R2StorageService,
 } from './r2-storage';
 
-export type { FileObject, PreparedUpload, StorageOptions, StoredFile, TestStorageService } from './types';
+export type {
+  FileObject,
+  PreparedUpload,
+  StorageOptions,
+  StoredFile,
+  TestStorageService,
+} from './types';
 
 /**
  * Whether the application is running in test mode.

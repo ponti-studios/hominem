@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Web E2E tests synchronize on canonical domain outcomes
-Critical web E2E tests SHALL synchronize on canonical domain outcomes such as canonical routes, persisted attachment records, and completed upload contracts rather than incidental DOM timing or optimistic-only UI state.
+Critical web E2E tests SHALL synchronize on canonical domain outcomes such as canonical routes, persisted attachment records, and completed canonical upload requests rather than incidental DOM timing or optimistic-only UI state.
 
 #### Scenario: Note creation test waits on canonical route
 - **WHEN** a web E2E test creates a note from the notes index
@@ -21,9 +21,9 @@ The system SHALL provide lower-level integration tests for critical web entity a
 - **THEN** they SHALL include coverage for canonical note creation success and failure semantics
 - **AND** they SHALL verify route- or entity-level success conditions independent of feed rendering details
 
-#### Scenario: Direct upload contract is tested below Playwright
+#### Scenario: Canonical upload contract is tested below Playwright
 - **WHEN** test suites run below the Playwright layer
-- **THEN** they SHALL include coverage for direct upload success and failure semantics using the real upload contract
+- **THEN** they SHALL include coverage for canonical upload success and failure semantics using the real upload contract
 
 ### Requirement: E2E failures provide domain-specific diagnostics
 Critical web E2E helpers SHALL surface failure context in terms of canonical domain states such as missing route transitions, failed completion steps, or missing persisted records.
@@ -34,4 +34,4 @@ Critical web E2E helpers SHALL surface failure context in terms of canonical dom
 
 #### Scenario: Upload completion failure is distinguishable from local UI progress
 - **WHEN** file upload does not complete in a web E2E test
-- **THEN** the failure output SHALL distinguish direct upload or completion failure from local input interaction timing
+- **THEN** the failure output SHALL distinguish canonical upload request failure from local input interaction timing

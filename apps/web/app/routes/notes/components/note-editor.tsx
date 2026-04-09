@@ -38,7 +38,7 @@ export function NoteEditor({ note }: NoteEditorProps) {
   const updateNote = useUpdateNote();
   const deleteNote = useDeleteNote();
   const transcribe = useTranscribe();
-  const { uploadFiles, uploadState, clearAll } = useFileUpload();
+  const { uploadFiles, uploadState } = useFileUpload();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -52,7 +52,6 @@ export function NoteEditor({ note }: NoteEditorProps) {
       transcribe={transcribe}
       uploadFiles={uploadFiles}
       uploadState={uploadState}
-      clearAll={clearAll}
       fileInputRef={fileInputRef}
       debounceRef={debounceRef}
     />
@@ -67,7 +66,6 @@ interface NoteEditorStateProps {
   transcribe: ReturnType<typeof useTranscribe>;
   uploadFiles: ReturnType<typeof useFileUpload>['uploadFiles'];
   uploadState: ReturnType<typeof useFileUpload>['uploadState'];
-  clearAll: ReturnType<typeof useFileUpload>['clearAll'];
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   debounceRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>;
 }
@@ -80,7 +78,6 @@ function NoteEditorState({
   transcribe,
   uploadFiles,
   uploadState,
-  clearAll,
   fileInputRef,
   debounceRef,
 }: NoteEditorStateProps) {
@@ -137,7 +134,6 @@ function NoteEditorState({
       content,
       fileIds: nextFiles.map((file) => file.id),
     });
-    clearAll();
   }
 
   async function detachFile(fileId: string) {

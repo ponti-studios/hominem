@@ -20,8 +20,7 @@ const chatsContract = new Hono()
   .post('/:id/archive', stub);
 
 const filesContract = new Hono()
-  .post('/prepare-upload', stub)
-  .post('/complete-upload', stub)
+  .post('/', stub)
   .delete('/:fileId', stub);
 
 const voiceContract = new Hono().post('/speech', stub);

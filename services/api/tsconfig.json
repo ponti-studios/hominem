@@ -16,6 +16,6 @@
     ".cache",
     "coverage",
     "*.tsbuildinfo",
-    ".react-router/cache",
+    ".react-router/cache"
   ],
 }

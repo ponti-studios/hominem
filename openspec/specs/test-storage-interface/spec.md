@@ -1,7 +1,7 @@
-## ADDED Requirements
+## MODIFIED Requirements
 
 ### Requirement: Test-only storage methods are explicitly typed
-The storage service interface SHALL expose test-only methods prefixed with `__testOnly`. These methods SHALL only be available when `NODE_ENV === 'test'`. The system SHALL provide compile-time type checking for test-only methods. Production code SHALL NOT reference test-only methods.
+The storage service interface SHALL expose test-only methods prefixed with `__testOnly` only when tests need internal storage setup or verification. These methods SHALL only be available when `NODE_ENV === 'test'`. The system SHALL provide compile-time type checking for test-only methods. Production code SHALL NOT reference test-only methods. Browser upload flows SHALL NOT depend on test-only storage methods.
 
 #### Scenario: Test code uses type-safe test method
 - **WHEN** test code calls `storage.__testOnlyStoreFile(filePath, buffer)`
@@ -24,14 +24,15 @@ The system SHALL remove the Proxy pattern that hides test-only capabilities. The
 - **WHEN** storage methods are called in test mode
 - **THEN** calls SHALL be direct (no Proxy interception)
 
-### Requirement: Remove unused test upload endpoint
-The system SHALL remove the `/test/upload/:filePath*` HTTP endpoint from the files route. The `storeFileWithExactKey` method SHALL only be accessible through the test interface, not via HTTP. E2E tests SHALL use the browser upload flow exclusively.
+### Requirement: Test storage remains an internal persistence concern
+Test storage SHALL remain an internal blob persistence implementation detail. The browser-facing upload contract SHALL terminate at the canonical upload API endpoint rather than depending on test storage protocol behavior.
 
-#### Scenario: Test endpoint returns 404
-- **WHEN** a request is made to `PUT /test/upload/any-path`
-- **THEN** the server SHALL return HTTP 404 Not Found
+#### Scenario: Browser upload in test mode uses the canonical API contract
+- **WHEN** browser-based E2E or integration tests upload files in test mode
+- **THEN** the browser SHALL send the same upload request shape to the canonical upload endpoint as production
+- **AND** test storage SHALL only participate behind that API boundary
 
-#### Scenario: E2E tests use browser upload
-- **WHEN** E2E tests upload files
-- **THEN** they SHALL use the file input element and browser upload flow
-- **AND** they SHALL NOT use the test endpoint
+#### Scenario: Test storage failures surface as canonical upload failures
+- **WHEN** test storage cannot store or expose uploaded bytes behind the upload API
+- **THEN** the canonical upload request SHALL fail through normal upload error handling
+- **AND** the system SHALL NOT silently rely on an out-of-band test shortcut

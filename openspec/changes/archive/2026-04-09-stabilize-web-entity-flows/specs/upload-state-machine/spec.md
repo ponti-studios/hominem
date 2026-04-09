@@ -1,12 +1,12 @@
 ## MODIFIED Requirements
 
 ### Requirement: Upload state machine defines explicit lifecycle states
-The upload state machine SHALL define exactly six states: `idle`, `preparing`, `uploading`, `completing`, `done`, and `error`. The system SHALL transition through states in order: `idle` → `preparing` → `uploading` → `completing` → `done`. Error states SHALL transition to `error` from any non-terminal state. The `done` state SHALL represent canonical upload completion, not merely successful local byte submission.
+The upload state machine SHALL define exactly four states: `idle`, `uploading`, `done`, and `error`. The system SHALL transition through states in order: `idle` → `uploading` → `done`. Error states SHALL transition to `error` from any non-terminal state. The `done` state SHALL represent canonical upload completion, not merely successful local byte submission.
 
 #### Scenario: Successful upload transitions through all states
 - **WHEN** user selects a file for upload
-- **THEN** state SHALL transition from `idle` → `preparing` → `uploading` → `completing` → `done` in sequence
-- **AND** `done` SHALL only be reached after the canonical completion step succeeds
+- **THEN** state SHALL transition from `idle` → `uploading` → `done` in sequence
+- **AND** `done` SHALL only be reached after the canonical upload request succeeds
 
 #### Scenario: Upload failure transitions to error state
 - **WHEN** an upload error occurs during the `uploading` state

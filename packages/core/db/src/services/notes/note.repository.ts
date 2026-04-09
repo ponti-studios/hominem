@@ -232,7 +232,6 @@ export const NoteRepository = {
       .selectAll()
       .where('id', '=', noteId)
       .where('owner_userid', '=', userId)
-      .where('archived_at', 'is', null)
       .executeTakeFirst();
 
     return (note as NoteRow | undefined) ?? null;
@@ -262,11 +261,7 @@ export const NoteRepository = {
    * List notes for a user with filtering and sorting.
    */
   async list(handle: DbHandle, input: ListNotesInput): Promise<NoteRecord[]> {
-    let query = handle
-      .selectFrom('app.notes')
-      .selectAll()
-      .where('owner_userid', '=', input.userId)
-      .where('archived_at', 'is', null);
+    let query = handle.selectFrom('app.notes').selectAll().where('owner_userid', '=', input.userId);
 
     if (input.since) {
       query = query.where('updatedat', '>=', new Date(input.since));
@@ -309,7 +304,6 @@ export const NoteRepository = {
       .selectFrom('app.notes')
       .select(['id', 'title', 'excerpt', 'content', 'createdat', 'owner_userid'])
       .where('owner_userid', '=', input.userId)
-      .where('archived_at', 'is', null)
       .orderBy('createdat', 'desc')
       .orderBy('id', 'desc');
 

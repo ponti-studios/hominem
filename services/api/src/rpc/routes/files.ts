@@ -9,22 +9,9 @@ import * as z from 'zod';
 import { InternalError, NotFoundError, ValidationError } from '../errors';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 
-// Track prepared uploads so the presigned upload endpoint can store to the correct location
-// Maps fileId -> { key, userId }
-const preparedUploadMap = new Map<string, { key: string; userId: string }>();
-
-const prepareUploadSchema = z.object({
+const uploadMetadataSchema = z.object({
   originalName: z.string().min(1),
   mimetype: z.string().min(1),
-  size: z.number().positive(),
-});
-
-const completeUploadSchema = z.object({
-  fileId: z.uuid(),
-  key: z.string().min(1),
-  originalName: z.string().min(1),
-  mimetype: z.string().min(1),
-  size: z.number().positive(),
 });
 
 function toFilePayload(file: FileRecord) {
@@ -54,56 +41,6 @@ function logAndThrow(error: unknown, message: string): never {
   }
   throw new InternalError(message);
 }
-
-// Public route for presigned-style uploads (no auth required)
-// This mimics S3 presigned URLs - the client has the right to PUT to their fileId
-export const uploadBytesRoute = new Hono<AppContext>().put('/:fileId', async (c) => {
-  try {
-    const fileId = c.req.param('fileId');
-    
-    if (!fileId) {
-      throw new ValidationError('File ID is required');
-    }
-
-    const body = await c.req.arrayBuffer();
-    const buffer = Buffer.from(body);
-
-    if (buffer.length === 0) {
-      throw new ValidationError('Upload body cannot be empty');
-    }
-
-    // Get the prepared upload info to find the key and userId
-    const preparedInfo = preparedUploadMap.get(fileId);
-    if (!preparedInfo) {
-      throw new ValidationError('File ID was not prepared. Call prepare-upload first.');
-    }
-
-    const { key, userId } = preparedInfo;
-
-    // Store the bytes directly to the prepared location
-    // In test mode, directly store to the prepared location
-    // In production, S3 would have already stored it when we PUT to the presigned URL
-    const backend = (fileStorageService as any);
-    if (backend.__testOnlyStoreFile) {
-      backend.__testOnlyStoreFile(key, Buffer.from(body));
-    } else {
-      // In production, this endpoint shouldn't be called - presigned URLs go directly to S3
-      throw new Error('uploadBytesRoute should only be called in test mode');
-    }
-
-    // Clean up the prepared upload record
-    preparedUploadMap.delete(fileId);
-
-    return c.json({
-      success: true,
-      fileId,
-      key,
-      message: 'Bytes uploaded successfully',
-    });
-  } catch (error) {
-    logAndThrow(error, 'Failed to upload bytes');
-  }
-});
 
 export const filesRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
@@ -165,79 +102,55 @@ export const filesRoutes = new Hono<AppContext>()
       logAndThrow(error, 'Failed to delete file');
     }
   })
-  .post('/prepare-upload', async (c) => {
+  .post('/', async (c) => {
     try {
       const userId = c.get('userId')!;
-      const body = await c.req.json();
-      const parsed = prepareUploadSchema.safeParse(body);
+      const body = await c.req.parseBody();
+      const file = body.file;
 
-      if (!parsed.success) {
-        throw new ValidationError(parsed.error.issues[0]?.message ?? 'Invalid upload request');
+      if (!(file instanceof File)) {
+        throw new ValidationError('File is required');
       }
 
-      const prepared = await fileStorageService.createPreparedUpload(parsed.data, userId);
-
-      // Register this prepared upload so the presigned upload endpoint knows where to store it
-      preparedUploadMap.set(prepared.id, { key: prepared.key, userId });
-
-      return c.json({
-        fileId: prepared.id,
-        key: prepared.key,
-        originalName: prepared.originalName,
-        mimetype: prepared.mimetype,
-        size: prepared.size,
-        uploadUrl: prepared.uploadUrl,
-        headers: prepared.headers,
-        url: prepared.url,
-        uploadedAt: prepared.uploadedAt.toISOString(),
-        expiresAt: prepared.expiresAt.toISOString(),
+      const parsed = uploadMetadataSchema.safeParse({
+        originalName: typeof body.originalName === 'string' ? body.originalName : file.name,
+        mimetype: typeof body.mimetype === 'string' ? body.mimetype : file.type,
       });
-    } catch (error) {
-      logAndThrow(error, 'Failed to prepare upload');
-    }
-  })
-  .post('/complete-upload', async (c) => {
-    try {
-      const userId = c.get('userId')!;
-      const body = await c.req.json();
-      const parsed = completeUploadSchema.safeParse(body);
 
       if (!parsed.success) {
-        throw new ValidationError(parsed.error.issues[0]?.message ?? 'Invalid upload completion');
+        throw new ValidationError(parsed.error.issues[0]?.message ?? 'Invalid upload metadata');
       }
 
-      if (!fileStorageService.isOwnedFilePath(userId, parsed.data.key)) {
-        throw new ValidationError('Upload key does not belong to the current user');
+      const fileBuffer = Buffer.from(await file.arrayBuffer());
+      if (fileBuffer.byteLength === 0) {
+        throw new ValidationError('Uploaded file cannot be empty');
       }
 
-      const exists = await fileStorageService.fileExists(parsed.data.key);
-      if (!exists) {
-        throw new NotFoundError('Uploaded object');
-      }
-
-      const fileBuffer = await fileStorageService.getFileByPath(parsed.data.key);
-      if (!fileBuffer) {
-        throw new NotFoundError('Uploaded object');
-      }
+      const storedFile = await fileStorageService.storeFile(
+        fileBuffer,
+        parsed.data.mimetype,
+        userId,
+        {
+          originalName: parsed.data.originalName,
+        },
+      );
 
       // TODO: Move file processing to background queue (BullMQ infra exists)
       const processed = await FileProcessorService.processFile(
         Uint8Array.from(fileBuffer).buffer,
         parsed.data.originalName,
         parsed.data.mimetype,
-        parsed.data.fileId,
+        storedFile.id,
       );
 
-      const url = fileStorageService.getPublicUrlForPath(parsed.data.key);
-
       const stored = await FileRepository.upsert(getDb(), {
-        id: parsed.data.fileId,
+        id: storedFile.id,
         userId,
-        storageKey: parsed.data.key,
+        storageKey: storedFile.filename,
         originalName: parsed.data.originalName,
         mimetype: parsed.data.mimetype,
-        size: parsed.data.size,
-        url,
+        size: fileBuffer.byteLength,
+        url: storedFile.url,
         ...(processed.content != null ? { content: processed.content } : {}),
         ...(processed.textContent != null ? { textContent: processed.textContent } : {}),
         ...(processed.metadata != null ? { metadata: processed.metadata } : {}),
@@ -246,9 +159,9 @@ export const filesRoutes = new Hono<AppContext>()
       return c.json({
         success: true,
         file: toFilePayload(stored),
-        message: 'Upload completed successfully',
+        message: 'File uploaded successfully',
       });
     } catch (error) {
-      logAndThrow(error, 'Failed to complete upload');
+      logAndThrow(error, 'Failed to upload file');
     }
   });

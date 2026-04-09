@@ -6,22 +6,14 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { resetTestDb, seedTestUser } from '../../../test/test-db';
 
 const mocks = vi.hoisted(() => ({
-  createPreparedUpload: vi.fn(),
-  fileExists: vi.fn(),
-  getFileByPath: vi.fn(),
-  getPublicUrlForPath: vi.fn(),
-  isOwnedFilePath: vi.fn(),
   loggerError: vi.fn(),
   processFile: vi.fn(),
+  storeFile: vi.fn(),
 }));
 
 vi.mock('@hominem/utils/storage', () => ({
   fileStorageService: {
-    createPreparedUpload: mocks.createPreparedUpload,
-    fileExists: mocks.fileExists,
-    getFileByPath: mocks.getFileByPath,
-    getPublicUrlForPath: mocks.getPublicUrlForPath,
-    isOwnedFilePath: mocks.isOwnedFilePath,
+    storeFile: mocks.storeFile,
   },
 }));
 
@@ -43,7 +35,6 @@ import { filesRoutes } from './files';
 
 const testUserId = '00000000-0000-4000-8000-000000000001';
 const testFileId = '11111111-1111-4111-8111-111111111111';
-const testKey = `${testUserId}/${testFileId}-report.pdf`;
 const nowIso = '2025-03-01T12:00:00.000Z';
 
 function createUser(): User {
@@ -74,21 +65,26 @@ function createApp(options: { authenticated?: boolean } = {}) {
   return app;
 }
 
-async function postJson(
-  app: Hono<AppContext>,
-  path: string,
-  body: Record<string, string | number>,
-) {
+async function postForm(app: Hono<AppContext>, path: string, formData: FormData) {
   return app.request(`http://localhost${path}`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body),
+    body: formData,
   });
 }
 
-describe('filesRoutes direct upload lifecycle', () => {
+function createUploadForm(
+  fileName = 'report.pdf',
+  type = 'application/pdf',
+  contents = 'file-body',
+) {
+  const formData = new FormData();
+  formData.append('file', new File([contents], fileName, { type }));
+  formData.append('originalName', fileName);
+  formData.append('mimetype', type);
+  return formData;
+}
+
+describe('filesRoutes canonical upload lifecycle', () => {
   beforeEach(async () => {
     await resetTestDb();
     await seedTestUser({
@@ -98,24 +94,15 @@ describe('filesRoutes direct upload lifecycle', () => {
 
     vi.clearAllMocks();
 
-    mocks.createPreparedUpload.mockResolvedValue({
+    mocks.storeFile.mockResolvedValue({
       id: testFileId,
-      key: testKey,
       originalName: 'report.pdf',
       mimetype: 'application/pdf',
       size: 512,
-      uploadUrl: 'https://uploads.example.com/signed-put',
-      headers: {
-        'Content-Type': 'application/pdf',
-      },
       url: 'https://cdn.example.com/report.pdf',
       uploadedAt: new Date(nowIso),
-      expiresAt: new Date('2025-03-01T12:05:00.000Z'),
+      filename: `users/${testUserId}/chats/${testFileId}-report.pdf`,
     });
-    mocks.isOwnedFilePath.mockReturnValue(true);
-    mocks.fileExists.mockResolvedValue(true);
-    mocks.getFileByPath.mockResolvedValue(Buffer.from('file-body'));
-    mocks.getPublicUrlForPath.mockReturnValue('https://cdn.example.com/uploads/report.pdf');
     mocks.processFile.mockResolvedValue({
       id: testFileId,
       originalName: 'report.pdf',
@@ -133,15 +120,11 @@ describe('filesRoutes direct upload lifecycle', () => {
     await resetTestDb();
   });
 
-  test('rejects prepare-upload when unauthenticated', async () => {
-    const response = await postJson(
+  test('rejects upload when unauthenticated', async () => {
+    const response = await postForm(
       createApp({ authenticated: false }),
-      '/api/files/prepare-upload',
-      {
-        originalName: 'report.pdf',
-        mimetype: 'application/pdf',
-        size: 512,
-      },
+      '/api/files',
+      createUploadForm(),
     );
 
     expect(response.status).toBe(401);
@@ -152,88 +135,41 @@ describe('filesRoutes direct upload lifecycle', () => {
     });
   });
 
-  test('returns signed upload metadata for prepare-upload', async () => {
-    const response = await postJson(createApp(), '/api/files/prepare-upload', {
-      originalName: 'report.pdf',
-      mimetype: 'application/pdf',
-      size: 512,
-    });
+  test('rejects upload when file is missing', async () => {
+    const formData = new FormData();
+    formData.append('originalName', 'report.pdf');
+    formData.append('mimetype', 'application/pdf');
 
-    expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toMatchObject({
-      fileId: testFileId,
-      key: testKey,
-      originalName: 'report.pdf',
-      mimetype: 'application/pdf',
-      size: 512,
-      uploadUrl: 'https://uploads.example.com/signed-put',
-      headers: {
-        'Content-Type': 'application/pdf',
-      },
-      url: 'https://cdn.example.com/report.pdf',
-      uploadedAt: nowIso,
-      expiresAt: '2025-03-01T12:05:00.000Z',
-    });
-    expect(mocks.createPreparedUpload).toHaveBeenCalledWith(
-      {
-        originalName: 'report.pdf',
-        mimetype: 'application/pdf',
-        size: 512,
-      },
-      testUserId,
-    );
-  });
-
-  test('rejects complete-upload for keys outside the current user scope', async () => {
-    mocks.isOwnedFilePath.mockReturnValue(false);
-
-    const response = await postJson(createApp(), '/api/files/complete-upload', {
-      fileId: testFileId,
-      key: `other-user/${testFileId}-report.pdf`,
-      originalName: 'report.pdf',
-      mimetype: 'application/pdf',
-      size: 512,
-    });
+    const response = await postForm(createApp(), '/api/files', formData);
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toMatchObject({
       code: 'VALIDATION_ERROR',
       error: 'validation_error',
-      message: 'Upload key does not belong to the current user',
+      message: 'File is required',
     });
-    expect(mocks.fileExists).not.toHaveBeenCalled();
-    expect(mocks.processFile).not.toHaveBeenCalled();
+    expect(mocks.storeFile).not.toHaveBeenCalled();
   });
 
-  test('returns not found when the uploaded object is missing during completion', async () => {
-    mocks.fileExists.mockResolvedValue(false);
+  test('rejects upload when file is empty', async () => {
+    const response = await postForm(
+      createApp(),
+      '/api/files',
+      createUploadForm('empty.txt', 'text/plain', ''),
+    );
 
-    const response = await postJson(createApp(), '/api/files/complete-upload', {
-      fileId: testFileId,
-      key: testKey,
-      originalName: 'report.pdf',
-      mimetype: 'application/pdf',
-      size: 512,
-    });
-
-    expect(response.status).toBe(404);
+    expect(response.status).toBe(400);
     await expect(response.json()).resolves.toMatchObject({
-      code: 'NOT_FOUND',
-      error: 'not_found',
-      message: 'Uploaded object not found',
+      code: 'VALIDATION_ERROR',
+      error: 'validation_error',
+      message: 'Uploaded file cannot be empty',
     });
-    expect(mocks.getFileByPath).not.toHaveBeenCalled();
+    expect(mocks.storeFile).not.toHaveBeenCalled();
     expect(mocks.processFile).not.toHaveBeenCalled();
   });
 
-  test('returns the canonical uploaded file payload after completion', async () => {
-    const response = await postJson(createApp(), '/api/files/complete-upload', {
-      fileId: testFileId,
-      key: testKey,
-      originalName: 'report.pdf',
-      mimetype: 'application/pdf',
-      size: 512,
-    });
+  test('returns the canonical uploaded file payload after upload', async () => {
+    const response = await postForm(createApp(), '/api/files', createUploadForm());
 
     expect(response.status).toBe(200);
     const body = (await response.json()) as {
@@ -253,25 +189,30 @@ describe('filesRoutes direct upload lifecycle', () => {
     };
 
     expect(body.success).toBe(true);
-    expect(body.message).toBe('Upload completed successfully');
+    expect(body.message).toBe('File uploaded successfully');
     expect(body.file).toMatchObject({
       id: testFileId,
       originalName: 'report.pdf',
       type: 'document',
       mimetype: 'application/pdf',
-      size: 512,
+      size: 9,
       textContent: 'Extracted text',
-      url: 'https://cdn.example.com/uploads/report.pdf',
+      url: 'https://cdn.example.com/report.pdf',
       vectorIds: [],
     });
     expect(Number.isNaN(Date.parse(body.file.uploadedAt))).toBe(false);
+    expect(mocks.storeFile).toHaveBeenCalledWith(
+      expect.any(Buffer),
+      'application/pdf',
+      testUserId,
+      { originalName: 'report.pdf' },
+    );
     expect(mocks.processFile).toHaveBeenCalledWith(
       expect.any(ArrayBuffer),
       'report.pdf',
       'application/pdf',
       testFileId,
     );
-    expect(mocks.getPublicUrlForPath).toHaveBeenCalledWith(testKey);
 
     const stored = await db
       .selectFrom('app.files')
@@ -281,7 +222,7 @@ describe('filesRoutes direct upload lifecycle', () => {
       .executeTakeFirstOrThrow();
 
     expect(stored.original_name).toBe('report.pdf');
-    expect(stored.size).toBe(512);
+    expect(stored.size).toBe(9);
     expect(stored.text_content).toBe('Extracted text');
     expect(stored.metadata).toEqual({ pages: 1 });
   });

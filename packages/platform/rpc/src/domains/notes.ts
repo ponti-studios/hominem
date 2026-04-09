@@ -1,5 +1,7 @@
 import type { RawHonoClient } from '../core/raw-client';
+import { NoteSchema } from '../schemas/notes.schema';
 import type {
+  Note,
   NotesArchiveOutput,
   NotesCreateInput,
   NotesCreateOutput,
@@ -13,6 +15,14 @@ import type {
   NotesUpdateInput,
   NotesUpdateOutput,
 } from '../types/notes.types';
+
+function parseNoteResponse(value: unknown): Note {
+  const parsed = NoteSchema.safeParse(value);
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message ?? 'Invalid note response');
+  }
+  return parsed.data;
+}
 
 export interface NotesGetInput {
   id: string;
@@ -123,12 +133,12 @@ export function createNotesClient(rawClient: RawHonoClient): NotesClient {
       const res = await rawClient.api.notes[':id'].$get({
         param: { id: input.id },
       });
-      return res.json() as Promise<NotesGetOutput>;
+      return parseNoteResponse(await res.json()) as NotesGetOutput;
     },
 
     async create(input) {
       const res = await rawClient.api.notes.$post({ json: input });
-      return res.json() as Promise<NotesCreateOutput>;
+      return parseNoteResponse(await res.json()) as NotesCreateOutput;
     },
 
     async update(input) {
@@ -137,21 +147,21 @@ export function createNotesClient(rawClient: RawHonoClient): NotesClient {
         param: { id },
         json: data,
       });
-      return res.json() as Promise<NotesUpdateOutput>;
+      return parseNoteResponse(await res.json()) as NotesUpdateOutput;
     },
 
     async delete(input) {
       const res = await rawClient.api.notes[':id'].$delete({
         param: { id: input.id },
       });
-      return res.json() as Promise<NotesDeleteOutput>;
+      return parseNoteResponse(await res.json()) as NotesDeleteOutput;
     },
 
     async archive(input) {
       const res = await rawClient.api.notes[':id'].archive.$post({
         param: { id: input.id },
       });
-      return res.json() as Promise<NotesArchiveOutput>;
+      return parseNoteResponse(await res.json()) as NotesArchiveOutput;
     },
   };
 }

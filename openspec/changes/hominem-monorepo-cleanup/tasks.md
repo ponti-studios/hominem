@@ -1,15 +1,15 @@
 ## 1. Phase 1: Immediate Structural Fixes
 
-- [ ] 1.1 Remove `tools/*` from root `package.json` workspaces declaration
-- [ ] 1.2 Remove empty `scripts: {}` object from root `package.json`
-- [ ] 1.3 Remove empty `dependencies: {}` object from root `package.json`
-- [ ] 1.4 Fix trailing comma in `apps/mobile/tsconfig.json` line 18
-- [ ] 1.5 Fix trailing comma in `services/api/tsconfig.json` line 7
-- [ ] 1.6 Fix trailing comma in `packages/platform/ui/tsconfig.json` line 7
-- [ ] 1.7 Investigate `.fallow/` directory purpose; document or delete
-- [ ] 1.8 Investigate `.opencode/` directory purpose; document or add to `.gitignore`
-- [ ] 1.9 Run `bun install` and verify workspace resolution succeeds
-- [ ] 1.10 Run `turbo check` and verify no type errors from config changes
+- [x] 1.1 Remove `tools/*` from root `package.json` workspaces declaration (already absent)
+- [x] 1.2 Remove empty `scripts: {}` object from root `package.json` (already absent)
+- [x] 1.3 Remove empty `dependencies: {}` object from root `package.json` (already absent)
+- [x] 1.4 Fix trailing comma in `apps/mobile/tsconfig.json` line 18
+- [x] 1.5 Fix trailing comma in `services/api/tsconfig.json` line 7
+- [x] 1.6 Fix trailing comma in `packages/platform/ui/tsconfig.json` line 7
+- [x] 1.7 Investigate `.fallow/` directory purpose; document or delete (already in .gitignore)
+- [x] 1.8 Investigate `.opencode/` directory purpose; document or add to `.gitignore` (already in .gitignore)
+- [x] 1.9 Run `bun install` and verify workspace resolution succeeds
+- [x] 1.10 Run `turbo check` and verify no type errors from config changes (used `turbo typecheck`)
 - [ ] 1.11 Commit Phase 1 changes with message "Phase 1: Fix structural config issues"
 
 ## 2. Phase 2: Dependency Alignment

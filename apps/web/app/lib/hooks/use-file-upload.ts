@@ -1,4 +1,3 @@
-import { useApiClient } from '@hominem/rpc/react';
 import { isTestMode } from '@hominem/utils/storage';
 import {
   CHAT_UPLOAD_ALLOWED_MIME_TYPES,
@@ -8,30 +7,63 @@ import {
 // Lazy load Uppy types only for type checking
 import type { Body, Meta, UppyFile } from '@uppy/core';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import * as z from 'zod';
 
 import type { UploadedFile } from '~/lib/types/upload';
 
 /**
  * Upload state machine states.
- * Transitions: idle → preparing → uploading → completing → done
+ * Transitions: idle → uploading → done
  * Error can transition from any non-terminal state.
  */
-export type UploadStateMachine = 'idle' | 'preparing' | 'uploading' | 'completing' | 'done' | 'error';
-
-interface UploadFileMeta extends Meta {
-  fileId?: string;
-  key?: string;
-  originalName?: string;
-  mimetype?: string;
-  size?: number;
-}
+export type UploadStateMachine = 'idle' | 'uploading' | 'done' | 'error';
 
 type UploadFileBody = Body;
+
+const UploadedFileSchema = z.object({
+  id: z.string().uuid(),
+  originalName: z.string().min(1),
+  type: z.enum(['image', 'document', 'audio', 'video', 'unknown']),
+  mimetype: z.string().min(1),
+  size: z.number().nonnegative(),
+  content: z.string().optional(),
+  textContent: z.string().optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+  thumbnail: z.string().optional(),
+  url: z.string().min(1),
+  uploadedAt: z.string(),
+  vectorIds: z.array(z.string()).optional(),
+});
+
+const UploadResponseSchema = z.object({
+  success: z.literal(true),
+  file: UploadedFileSchema,
+  message: z.string().min(1),
+});
+
+type UploadResponse = z.infer<typeof UploadResponseSchema>;
+
+function toUploadedFile(file: UploadResponse['file']): UploadedFile {
+  return {
+    id: file.id,
+    originalName: file.originalName,
+    type: file.type,
+    mimetype: file.mimetype,
+    size: file.size,
+    ...(file.content ? { content: file.content } : {}),
+    ...(file.textContent ? { textContent: file.textContent } : {}),
+    ...(file.metadata ? { metadata: file.metadata } : {}),
+    ...(file.thumbnail ? { thumbnail: file.thumbnail } : {}),
+    url: file.url,
+    uploadedAt: new Date(file.uploadedAt),
+    vectorIds: file.vectorIds ?? [],
+  };
+}
 
 interface UploadState {
   /** Current state in the upload state machine */
   state: UploadStateMachine;
-  /** Whether an upload is currently in progress (state is preparing, uploading, or completing) */
+  /** Whether an upload is currently in progress (state is uploading) */
   isUploading: boolean;
   /** Upload progress percentage (0-100) */
   progress: number;
@@ -50,15 +82,14 @@ interface UseFileUploadReturn {
 
 // Lazy load Uppy modules to avoid bundling on initial page load
 async function loadUppyModules() {
-  const [{ default: Uppy }, { default: AwsS3 }] = await Promise.all([
+  const [{ default: Uppy }, { default: XHRUpload }] = await Promise.all([
     import('@uppy/core'),
-    import('@uppy/aws-s3'),
+    import('@uppy/xhr-upload'),
   ]);
-  return { Uppy, AwsS3 };
+  return { Uppy, XHRUpload };
 }
 
 export function useFileUpload(): UseFileUploadReturn {
-  const apiClient = useApiClient();
   const [uploadState, setUploadState] = useState<UploadState>({
     state: 'idle',
     isUploading: false,
@@ -87,9 +118,9 @@ export function useFileUpload(): UseFileUploadReturn {
       uppyPromiseRef.current = loadUppyModules();
     }
 
-    const { Uppy, AwsS3 } = await uppyPromiseRef.current;
+    const { Uppy, XHRUpload } = await uppyPromiseRef.current;
 
-    const uppy = new Uppy<UploadFileMeta, UploadFileBody>({
+    const uppy = new Uppy<Meta, Body>({
       autoProceed: false,
       allowMultipleUploadBatches: true,
       restrictions: {
@@ -99,30 +130,30 @@ export function useFileUpload(): UseFileUploadReturn {
       },
     });
 
-    uppy.use(AwsS3, {
-      shouldUseMultipart: false,
-      async getUploadParameters(file: UppyFile<Meta, Body>) {
-        const preparedUpload = await apiClient.files.prepareUpload({
-          originalName: file.name ?? 'file',
-          mimetype: file.type || 'application/octet-stream',
-          size: file.size ?? 0,
-        });
-
-        uppy.setFileMeta(file.id, {
-          fileId: preparedUpload.fileId,
-          key: preparedUpload.key,
-          originalName: preparedUpload.originalName,
-          mimetype: preparedUpload.mimetype,
-          size: preparedUpload.size,
-        });
-
-        return {
-          method: 'PUT',
-          url: preparedUpload.uploadUrl,
-          headers: preparedUpload.headers,
-          fields: {},
-        };
+    uppy.use(XHRUpload, {
+      endpoint: `${import.meta.env.VITE_PUBLIC_API_URL}/api/files`,
+      method: 'POST',
+      formData: true,
+      fieldName: 'file',
+      withCredentials: true,
+      headers: () => ({
+        Accept: 'application/json',
+      }),
+      allowedMetaFields: ['originalName', 'mimetype'],
+      getResponseData(xhr: XMLHttpRequest) {
+        const parsed = UploadResponseSchema.safeParse(JSON.parse(xhr.responseText));
+        if (!parsed.success) {
+          throw new Error(parsed.error.issues[0]?.message ?? 'Invalid upload response');
+        }
+        return parsed.data;
       },
+    });
+
+    uppy.on('file-added', (file) => {
+      uppy.setFileMeta(file.id, {
+        originalName: file.name ?? 'file',
+        mimetype: file.type || 'application/octet-stream',
+      });
     });
 
     uppy.on('progress', (progress: number) => {
@@ -142,117 +173,79 @@ export function useFileUpload(): UseFileUploadReturn {
 
     uppyRef.current = uppy;
     return uppy;
-  }, [apiClient]);
+  }, []);
 
-  const uploadFiles = useCallback(async (files: FileList | File[]): Promise<UploadedFile[]> => {
-    const fileArray = Array.from(files);
+  const uploadFiles = useCallback(
+    async (files: FileList | File[]): Promise<UploadedFile[]> => {
+      const fileArray = Array.from(files);
 
-    // Transition: idle → preparing
-    setUploadState((prev) => ({
-      ...prev,
-      state: 'preparing',
-      isUploading: true,
-      progress: 0,
-      errors: [],
-    }));
-
-    try {
-      const uppy = await getUppy();
-      const completionPromises = new Map<string, Promise<UploadedFile>>();
-
-      // Transition: preparing → uploading
       setUploadState((prev) => ({
         ...prev,
         state: 'uploading',
+        isUploading: true,
+        progress: 0,
+        errors: [],
       }));
 
-      for (const file of fileArray) {
-        uppy.addFile({
-          name: file.name,
-          type: file.type,
-          data: file,
-        });
-      }
+      try {
+        const uppy = await getUppy();
 
-      const handleUploadSuccess = (file: UppyFile<UploadFileMeta, UploadFileBody> | undefined) => {
-        // Transition: uploading → completing
-        setUploadState((prev) => ({
-          ...prev,
-          state: 'completing',
-        }));
-        if (!file) {
-          return;
+        for (const file of fileArray) {
+          uppy.addFile({
+            name: file.name,
+            type: file.type,
+            data: file,
+          });
         }
 
-        const completionPromise = apiClient.files
-          .completeUpload({
-            fileId: file.meta.fileId || '',
-            key: file.meta.key || '',
-            originalName: file.meta.originalName ?? file.name ?? 'file',
-            mimetype: file.meta.mimetype || file.type || 'application/octet-stream',
-            size: file.meta.size || file.size || 0,
-          })
-          .then((result) => ({
-            ...result.file,
-            uploadedAt: new Date(result.file.uploadedAt),
-          }));
+        const result = await uppy.upload();
+        const newFiles = (result?.successful ?? []).flatMap((file) => {
+          const body = file.response?.body;
+          const parsed = UploadResponseSchema.safeParse(body);
+          if (!parsed.success) {
+            return [];
+          }
+          return [toUploadedFile(parsed.data.file)];
+        });
 
-        completionPromises.set(file.id, completionPromise);
-      };
+        const uploadErrors = [
+          ...(result?.failed ?? []).map((failedFile) => {
+            const errorMessage =
+              typeof failedFile.error === 'string'
+                ? failedFile.error
+                : String(failedFile.error ?? 'Upload failed');
+            return `${failedFile.name}: ${errorMessage}`;
+          }),
+        ];
 
-      uppy.on('upload-success', handleUploadSuccess);
+        setUploadState((prev) => ({
+          ...prev,
+          state: uploadErrors.length > 0 ? 'error' : 'done',
+          isUploading: false,
+          progress: 100,
+          uploadedFiles: [...prev.uploadedFiles, ...newFiles],
+          errors: uploadErrors,
+        }));
 
-      const result = await uppy.upload();
-      uppy.off('upload-success', handleUploadSuccess);
+        uppy.clear();
 
-      const completedFiles = await Promise.allSettled(completionPromises.values());
+        return newFiles;
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Upload failed';
 
-      const newFiles = completedFiles.flatMap((entry) =>
-        entry.status === 'fulfilled' ? [entry.value] : [],
-      );
-      const uploadErrors = [
-        ...(result?.failed ?? []).map((failedFile) => {
-          const errorMessage =
-            typeof failedFile.error === 'string'
-              ? failedFile.error
-              : String(failedFile.error ?? 'Upload failed');
-          return `${failedFile.name}: ${errorMessage}`;
-        }),
-        ...completedFiles.flatMap((entry, index) =>
-          entry.status === 'rejected'
-            ? [
-                `${fileArray[index]?.name || 'Unknown file'}: ${entry.reason instanceof Error ? entry.reason.message : 'Upload failed'}`,
-              ]
-            : [],
-        ),
-      ];
+        setUploadState((prev) => ({
+          ...prev,
+          state: 'error',
+          isUploading: false,
+          progress: 0,
+          errors: [errorMessage],
+        }));
 
-      setUploadState((prev) => ({
-        ...prev,
-        state: uploadErrors.length > 0 ? 'error' : 'done',
-        isUploading: false,
-        progress: 100,
-        uploadedFiles: [...prev.uploadedFiles, ...newFiles],
-        errors: uploadErrors,
-      }));
-
-      uppy.clear();
-
-      return newFiles;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Upload failed';
-
-      setUploadState((prev) => ({
-        ...prev,
-        state: 'error',
-        isUploading: false,
-        progress: 0,
-        errors: [errorMessage],
-      }));
-
-      throw error;
-    }
-  }, []);
+        throw error;
+      }
+    },
+    [getUppy],
+  );
 
   const removeFile = useCallback((fileId: string) => {
     setUploadState((prev) => ({

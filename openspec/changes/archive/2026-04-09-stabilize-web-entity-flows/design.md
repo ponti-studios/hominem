@@ -1,6 +1,6 @@
 ## Context
 
-The current web note and upload flows fail for the same structural reason: the UI is allowed to treat transitional local state as if it were canonical system state. Note creation on `/notes` depends on optimistic feed rows, cache replacement, reversed infinite-query display order, and virtualization before the user ever lands on a canonical note route. Direct uploads in test mode depend on storage behavior that diverges from the production `prepare-upload -> upload bytes -> complete-upload` protocol, which means the browser-facing contract is not actually stable across environments.
+The current web note and upload flows fail for the same structural reason: the UI is allowed to treat transitional local state as if it were canonical system state. Note creation on `/notes` depends on optimistic feed rows, cache replacement, reversed infinite-query display order, and virtualization before the user ever lands on a canonical note route. File uploads currently split browser success across `prepare-upload`, byte transfer, and `complete-upload`, which creates extra protocol surface, test-specific coordination problems, and a mismatch between local progress and persisted file truth.
 
 The result is a brittle test surface. Playwright is forced to synchronize on incidental DOM timing, title-matched feed rows, and upload state that may not correspond to a persisted file. Route tests and API tests cover pieces of the system, but the exact seams that fail in CI are not represented as explicit contracts.
 
@@ -8,7 +8,7 @@ The result is a brittle test surface. Playwright is forced to synchronize on inc
 
 **Goals:**
 - Make note creation converge on a canonical note ID and route before any feed refresh concerns.
-- Make direct uploads preserve one protocol shape in production and test environments.
+- Replace the multi-step upload protocol with one canonical browser-to-API upload contract in all environments.
 - Define stable domain-level synchronization points for web E2E tests.
 - Add lower-level integration coverage so protocol drift is caught before Playwright.
 - Improve diagnostics by validating note and upload API responses at the client boundary.
@@ -44,20 +44,21 @@ The result is a brittle test surface. Playwright is forced to synchronize on inc
 **Alternatives considered:**
 - Continue surgical optimistic replacement as the primary reconciliation strategy. Rejected because it is too easy for canonical and optimistic rows to coexist or diverge.
 
-### 3. Direct upload protocol must be environment-independent
-**Decision:** Preserve one browser-facing protocol in all environments: `prepare-upload -> upload bytes -> complete-upload`.
+### 3. File upload contract is a single canonical HTTP request
+**Decision:** Replace the multi-step direct upload lifecycle with one browser-facing HTTP upload request handled through `XHRUpload`, and define success by the canonical file record returned from that request.
 
 **Rationale:**
-- Test mode should swap the storage adapter, not the upload contract.
-- This removes the contradiction where the spec removes a test endpoint while the runtime still depends on it.
-- It enables meaningful integration tests below the Playwright layer.
+- The current attachment workload is small enough that server-handled uploads are simpler than maintaining a split prepare/upload/complete protocol.
+- This collapses browser upload success and canonical file persistence into one step.
+- Test and production environments naturally share the same browser-facing contract.
+- Uppy can own upload mechanics without the client re-implementing a separate completion phase.
 
 **Alternatives considered:**
-- Reintroduce a test-only upload HTTP shortcut as a separate protocol. Rejected because it recreates hidden drift between production and test behavior.
+- Preserve `prepare-upload -> upload bytes -> complete-upload` with a test adapter. Rejected because it adds coordination complexity disproportionate to the current attachment size and scale.
 - Make the client branch on test mode and bypass direct upload. Rejected because it teaches the browser a different protocol than production.
 
 ### 4. Upload state `done` means persisted canonical completion
-**Decision:** The `done` state SHALL mean the upload bytes were accepted through the direct upload contract and the completion step returned a canonical uploaded file record.
+**Decision:** The `done` state SHALL mean the upload request completed successfully and returned a canonical uploaded file record.
 
 **Rationale:**
 - Tests waiting on `data-upload-state="done"` should be waiting on domain truth, not just local progress.
@@ -67,11 +68,11 @@ The result is a brittle test surface. Playwright is forced to synchronize on inc
 - Keep `done` as a local-client milestone before canonical completion. Rejected because tests and users both interpret `done` as real completion.
 
 ### 5. Add a contract-testing seam below Playwright
-**Decision:** Add integration coverage for canonical note creation and direct upload lifecycle using the real app/server boundary but without the browser UI.
+**Decision:** Add integration coverage for canonical note creation and canonical file upload lifecycle using the real app/server boundary but without the browser UI.
 
 **Rationale:**
 - The current pyramid jumps from unit tests to Playwright, leaving the failing protocol seams untested.
-- Integration tests can validate route contracts, upload URLs, and completion semantics cheaply and deterministically.
+- Integration tests can validate upload request contracts and canonical persistence semantics cheaply and deterministically.
 
 **Alternatives considered:**
 - Rely on Playwright only. Rejected because full-browser failures are expensive and opaque.
@@ -91,8 +92,8 @@ The result is a brittle test surface. Playwright is forced to synchronize on inc
 **[Risk]** Canonical-note navigation may feel less instantaneous than optimistic feed insertion.
 → **Mitigation:** Keep optimism only as decoration if desired, but define success and tests around canonical navigation.
 
-**[Risk]** Preserving one upload protocol across environments may require a slightly richer in-memory test storage adapter.
-→ **Mitigation:** Limit the adapter work to the direct upload lifecycle rather than refactoring the entire storage subsystem.
+**[Risk]** Server-handled uploads increase API responsibility for attachment bytes.
+→ **Mitigation:** Keep the scope limited to current small attachment sizes and revisit direct-to-storage only if workload or cost justifies it.
 
 **[Risk]** Additional integration tests increase maintenance surface.
 → **Mitigation:** Keep them focused on protocol seams that historically break: note creation and direct upload completion.
@@ -102,16 +103,16 @@ The result is a brittle test surface. Playwright is forced to synchronize on inc
 
 ## Migration Plan
 
-1. Define canonical requirements in specs for note creation, direct uploads, and E2E synchronization.
-2. Align upload-state and test-storage specs with the single-protocol model.
+1. Define canonical requirements in specs for note creation, canonical uploads, and E2E synchronization.
+2. Align upload-state and test-storage specs with the single-request upload model.
 3. Update note creation flow so canonical route convergence is the success path.
-4. Update test-mode storage and upload completion flow to preserve the same upload protocol shape as production.
-5. Add integration tests for canonical note creation and direct upload lifecycle.
+4. Replace multi-step file upload logic with one canonical `XHRUpload` request path that returns the persisted file record.
+5. Add integration tests for canonical note creation and canonical upload lifecycle.
 6. Update Playwright helpers/specs to wait on canonical routes, persisted attachments, and domain-complete upload states.
 7. Roll back by reverting the change; no data migration is required.
 
 ## Open Questions
 
 1. Should the `/notes` page still render an optimistic feed row while awaiting canonical note creation, or should it switch to explicit pending UI only?
-2. Should the test upload target be served by the API process as a storage adapter surface, or by a separate in-memory storage harness behind the same contract?
+2. Should the upload endpoint be note/chat agnostic and return the canonical file record directly, or should it preserve separate endpoints per product surface?
 3. How broadly should runtime response validation be introduced beyond notes and file uploads in this change?

@@ -1,4 +1,3 @@
-import { useApiClient } from '@hominem/rpc/react';
 import type { UploadedFile } from '@hominem/ui/types/upload';
 import {
   CHAT_UPLOAD_MAX_FILE_COUNT,
@@ -6,24 +5,14 @@ import {
   isSupportedChatUploadMimeType,
 } from '@hominem/utils/upload';
 import { useCallback, useState } from 'react';
+import * as z from 'zod';
 
-interface PrepareUploadClient {
-  prepareUpload(input: { originalName: string; mimetype: string; size: number }): Promise<{
-    fileId: string;
-    key: string;
-    originalName: string;
-    mimetype: string;
-    size: number;
-    uploadUrl: string;
-    headers: Record<string, string>;
-  }>;
-  completeUpload(input: {
-    fileId: string;
-    key: string;
-    originalName: string;
-    mimetype: string;
-    size: number;
-  }): Promise<{
+import { API_BASE_URL } from '../../constants';
+import { useAuth } from '../../auth/auth-provider';
+
+interface UploadClient {
+  upload(formData: FormData): Promise<{
+    success: boolean;
     file: {
       id: string;
       originalName: string;
@@ -39,6 +28,43 @@ interface PrepareUploadClient {
       vectorIds?: string[];
     };
   }>;
+}
+
+const MobileUploadedFileSchema = z.object({
+  id: z.string().uuid(),
+  originalName: z.string().min(1),
+  type: z.enum(['image', 'document', 'audio', 'video', 'unknown']),
+  mimetype: z.string().min(1),
+  size: z.number().nonnegative(),
+  content: z.string().optional(),
+  textContent: z.string().optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+  thumbnail: z.string().optional(),
+  url: z.string().min(1),
+  uploadedAt: z.string(),
+  vectorIds: z.array(z.string()).optional(),
+});
+
+const MobileUploadResponseSchema = z.object({
+  success: z.literal(true),
+  file: MobileUploadedFileSchema,
+});
+
+function toUploadedFile(file: z.infer<typeof MobileUploadedFileSchema>): UploadedFile {
+  return {
+    id: file.id,
+    originalName: file.originalName,
+    type: file.type,
+    mimetype: file.mimetype,
+    size: file.size,
+    ...(file.content ? { content: file.content } : {}),
+    ...(file.textContent ? { textContent: file.textContent } : {}),
+    ...(file.metadata ? { metadata: file.metadata } : {}),
+    ...(file.thumbnail ? { thumbnail: file.thumbnail } : {}),
+    url: file.url,
+    uploadedAt: new Date(file.uploadedAt),
+    vectorIds: file.vectorIds ?? [],
+  };
 }
 
 export interface MobileUploadAsset {
@@ -117,7 +143,7 @@ async function readLocalAssetBlob(
 }
 
 export async function performMobileUploads(
-  api: PrepareUploadClient,
+  api: UploadClient,
   assets: MobileUploadAsset[],
   options?: {
     fetchImpl?: typeof fetch;
@@ -142,37 +168,17 @@ export async function performMobileUploads(
         throw new Error('File exceeds 10MB limit');
       }
 
-      const preparedUpload = await api.prepareUpload({
-        originalName,
-        mimetype,
-        size: fileBlob.size,
-      });
+      const formData = new FormData();
+      formData.append('file', fileBlob, originalName);
+      formData.append('originalName', originalName);
+      formData.append('mimetype', mimetype);
 
-      const uploadResponse = await fetchImpl(preparedUpload.uploadUrl, {
-        method: 'PUT',
-        headers: preparedUpload.headers,
-        body: fileBlob,
-      });
-
-      if (!uploadResponse.ok) {
-        throw new Error(`Upload failed (${uploadResponse.status})`);
-      }
-
-      const completion = await api.completeUpload({
-        fileId: preparedUpload.fileId,
-        key: preparedUpload.key,
-        originalName: preparedUpload.originalName,
-        mimetype: preparedUpload.mimetype,
-        size: preparedUpload.size,
-      });
+      const completion = MobileUploadResponseSchema.parse(await api.upload(formData));
 
       uploaded.push({
         assetId: asset.assetId,
         localUri: asset.uri,
-        uploadedFile: {
-          ...completion.file,
-          uploadedAt: new Date(completion.file.uploadedAt),
-        },
+        uploadedFile: toUploadedFile(completion.file),
       });
     } catch (error) {
       errors.push(`${originalName}: ${error instanceof Error ? error.message : 'Upload failed'}`);
@@ -188,7 +194,7 @@ export async function performMobileUploads(
 }
 
 export function useFileUpload() {
-  const apiClient = useApiClient();
+  const { getAuthHeaders } = useAuth();
   const [uploadState, setUploadState] = useState<MobileUploadState>({
     isUploading: false,
     progress: 0,
@@ -217,14 +223,39 @@ export function useFileUpload() {
         errors: [],
       });
 
-      const result = await performMobileUploads(apiClient.files, assets, {
-        onProgress: (progress) => {
-          setUploadState((currentState) => ({
-            ...currentState,
-            progress,
-          }));
+      const result = await performMobileUploads(
+        {
+          upload: async (formData) => {
+            const authHeaders = await getAuthHeaders();
+            const response = await fetch(`${API_BASE_URL}/api/files`, {
+              method: 'POST',
+              headers: {
+                ...authHeaders,
+                Accept: 'application/json',
+              },
+              body: formData,
+            });
+
+            if (!response.ok) {
+              const error = await response.json().catch(() => ({}));
+              throw new Error(
+                typeof error.message === 'string' ? error.message : `Upload failed (${response.status})`,
+              );
+            }
+
+            return response.json();
+          },
         },
-      });
+        assets,
+        {
+          onProgress: (progress) => {
+            setUploadState((currentState) => ({
+              ...currentState,
+              progress,
+            }));
+          },
+        },
+      );
 
       setUploadState({
         isUploading: false,
@@ -234,7 +265,7 @@ export function useFileUpload() {
 
       return result.uploaded;
     },
-    [apiClient],
+    [getAuthHeaders],
   );
 
   const clearErrors = useCallback(() => {

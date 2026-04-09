@@ -3,7 +3,7 @@ import {
   performMobileUploads,
   resolveMobileUploadMimeType,
   type MobileUploadAsset,
-} from '../../utils/services/files/use-file-upload'
+} from '../../lib/services/files/use-file-upload'
 
 describe('mobile file upload helper', () => {
   it('derives a mime type from file extension when the picker does not provide one', () => {
@@ -16,42 +16,30 @@ describe('mobile file upload helper', () => {
     })).toBe('image/png')
   })
 
-  it('uploads through prepare-upload, signed PUT, and complete-upload', async () => {
-    const prepareUpload = jest.fn(async () => ({
-      fileId: 'file-1',
-      key: 'user/file-1-receipt.png',
-      originalName: 'receipt.png',
-      mimetype: 'image/png',
-      size: 4,
-      uploadUrl: 'https://uploads.example.com/signed-put',
-      headers: {
-        'Content-Type': 'image/png',
-      },
-    }))
-    const completeUpload = jest.fn(async () => ({
-      file: {
-        id: 'file-1',
-        originalName: 'receipt.png',
-        type: 'image' as const,
-        mimetype: 'image/png',
-        size: 4,
-        url: 'https://cdn.example.com/receipt.png',
-        uploadedAt: '2026-01-01T00:00:00.000Z',
-      },
-    }))
-    const fetchImpl: typeof fetch = jest.fn(async (input, init) => {
+  it('uploads through one canonical upload request', async () => {
+    const upload = jest.fn(async (formData: FormData) => {
+      expect(formData.get('originalName')).toBe('receipt.png')
+      expect(formData.get('mimetype')).toBe('image/png')
+      expect(formData.get('file')).toBeInstanceOf(File)
+
+      return {
+        success: true,
+        file: {
+          id: 'file-1',
+          originalName: 'receipt.png',
+          type: 'image' as const,
+          mimetype: 'image/png',
+          size: 4,
+          url: 'https://cdn.example.com/receipt.png',
+          uploadedAt: '2026-01-01T00:00:00.000Z',
+        },
+      }
+    })
+    const fetchImpl: typeof fetch = jest.fn(async (input) => {
       const url = typeof input === 'string' ? input : input.toString()
 
       if (url === 'file:///tmp/receipt.png') {
         return new Response(new Blob(['data'], { type: 'image/png' }))
-      }
-
-      if (url === 'https://uploads.example.com/signed-put') {
-        expect(init?.method).toBe('PUT')
-        expect(init?.headers).toEqual({
-          'Content-Type': 'image/png',
-        })
-        return new Response(null, { status: 200 })
       }
 
       throw new Error(`Unexpected fetch url: ${url}`)
@@ -67,8 +55,7 @@ describe('mobile file upload helper', () => {
 
     const result = await performMobileUploads(
       {
-        prepareUpload,
-        completeUpload,
+        upload,
       },
       [asset],
       { fetchImpl },
@@ -87,25 +74,24 @@ describe('mobile file upload helper', () => {
       },
     })
     expect(result.uploaded[0]?.uploadedFile.uploadedAt).toBeInstanceOf(Date)
-    expect(prepareUpload).toHaveBeenCalledWith({
-      originalName: 'receipt.png',
-      mimetype: 'image/png',
-      size: 4,
-    })
-    expect(completeUpload).toHaveBeenCalledWith({
-      fileId: 'file-1',
-      key: 'user/file-1-receipt.png',
-      originalName: 'receipt.png',
-      mimetype: 'image/png',
-      size: 4,
-    })
+    expect(upload).toHaveBeenCalledTimes(1)
   })
 
   it('collects errors for unsupported file types without aborting the batch', async () => {
     const result = await performMobileUploads(
       {
-        prepareUpload: jest.fn(),
-        completeUpload: jest.fn(),
+        upload: jest.fn(async () => ({
+          success: true,
+          file: {
+            id: 'file-1',
+            originalName: 'receipt.png',
+            type: 'image' as const,
+            mimetype: 'image/png',
+            size: 4,
+            url: 'https://cdn.example.com/receipt.png',
+            uploadedAt: '2026-01-01T00:00:00.000Z',
+          },
+        })),
       },
       [
         {

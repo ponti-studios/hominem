@@ -49,7 +49,7 @@ export default function ChatPage({ params }: Route.ComponentProps) {
   const archiveChat = useArchiveChat({ chatId });
   const transcribe = useTranscribe();
   const { speakingId, loadingId, speak } = useServerSpeech();
-  const { uploadFiles, uploadState, clearAll } = useFileUpload();
+  const { uploadFiles, uploadState } = useFileUpload();
 
   const [draft, setDraft] = useState('');
   const [selectedNotes, setSelectedNotes] = useState<SelectedNote[]>([]);
@@ -112,7 +112,6 @@ export default function ChatPage({ params }: Route.ComponentProps) {
       return;
     }
     setAttachedFiles((current) => [...current, ...uploaded]);
-    clearAll();
   }
 
   async function handleSend() {

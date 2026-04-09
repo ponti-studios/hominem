@@ -10,20 +10,6 @@ async function createNote(page: Page) {
   const noteTitle = `Draft note for assistant flow ${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   await composer.fill(noteTitle);
   await page.getByRole('button', { name: 'Save note' }).click();
-
-  const createdNoteLink = page.getByRole('link', { name: new RegExp(noteTitle, 'i') }).first();
-  await expect(createdNoteLink).toBeVisible({ timeout: 5_000 });
-  await expect(createdNoteLink).toHaveAttribute('href', /\/notes\/(?!optimistic-note-)[^/?#]+$/, {
-    timeout: 5_000,
-  });
-
-  const noteHref = await createdNoteLink.getAttribute('href');
-  if (!noteHref) {
-    throw new Error('Created note link is missing an href');
-  }
-
-  await page.goto(noteHref);
-
   await expect(page).toHaveURL(/\/notes\/[^/?#]+$/, { timeout: 5_000 });
   await expect(page.getByLabel('Note title')).toBeVisible({ timeout: 5_000 });
   await expect(page.getByLabel('Note content')).toBeVisible({ timeout: 5_000 });

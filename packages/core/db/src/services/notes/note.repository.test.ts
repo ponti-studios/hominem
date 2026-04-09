@@ -194,7 +194,7 @@ describe('NoteRepository', () => {
     expect(updated.title).toBe('Updated');
     expect(updated.content).toBe('After');
 
-    await NoteRepository.delete(handle, row.id, testUserId);
+    await NoteRepository.hardDelete(handle, row.id, testUserId);
 
     await expect(NoteRepository.load(handle, row.id, testUserId)).rejects.toThrow('Note');
   });
