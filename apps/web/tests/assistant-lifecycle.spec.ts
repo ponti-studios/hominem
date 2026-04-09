@@ -7,7 +7,7 @@ async function createNote(page: Page) {
 
   const composer = page.getByLabel('Compose message or note');
   await expect(composer).toBeVisible({ timeout: 5_000 });
-  const noteTitle = 'Draft note for assistant flow';
+  const noteTitle = `Draft note for assistant flow ${Date.now()}`;
   await composer.fill(noteTitle);
   await page.getByRole('button', { name: 'Save note' }).click();
 

@@ -61,11 +61,8 @@ build-api:
 web-install-playwright:
   cd "{{WEB_DIR}}" && bunx playwright install --with-deps chromium
 
-web-test-e2e-local: web-install-playwright
-  cd "{{WEB_DIR}}" && bun run test:e2e
-
 web-test-e2e: web-install-playwright
-  {{TURBO}} run test:e2e --filter=@hominem/web
+  cd "{{WEB_DIR}}" && bun run test:e2e
 
 docker-up:
   docker compose -f "{{ROOT_DIR}}/infra/compose/base.yml" -f "{{ROOT_DIR}}/infra/compose/dev.yml" up -d
