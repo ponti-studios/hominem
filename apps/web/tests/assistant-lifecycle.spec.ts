@@ -7,8 +7,13 @@ async function createNote(page: Page) {
 
   const composer = page.getByLabel('Compose message or note');
   await expect(composer).toBeVisible({ timeout: 5_000 });
-  await composer.fill('Draft note for assistant flow');
+  const noteTitle = 'Draft note for assistant flow';
+  await composer.fill(noteTitle);
   await page.getByRole('button', { name: 'Save note' }).click();
+
+  const createdNoteLink = page.getByRole('link', { name: new RegExp(noteTitle, 'i') });
+  await expect(createdNoteLink).toBeVisible({ timeout: 5_000 });
+  await createdNoteLink.click();
 
   await expect(page).toHaveURL(/\/notes\/[^/?#]+$/, { timeout: 5_000 });
   await expect(page.getByLabel('Note title')).toBeVisible({ timeout: 5_000 });
