@@ -75,6 +75,15 @@ public actor APIClient {
         _ = try await request(method: "POST", path: path, query: [], body: nil)
     }
 
+    public func patch<RequestBody: Encodable, Response: Decodable>(
+        _ type: Response.Type,
+        path: String,
+        body: RequestBody
+    ) async throws -> Response {
+        let result = try await request(method: "PATCH", path: path, query: [], body: AnyEncodable(body))
+        return try decoder.decode(Response.self, from: result.data)
+    }
+
     public func delete<RequestBody: Encodable, Response: Decodable>(
         _ type: Response.Type,
         path: String,
@@ -82,6 +91,93 @@ public actor APIClient {
     ) async throws -> Response {
         let result = try await request(method: "DELETE", path: path, query: [], body: AnyEncodable(body))
         return try decoder.decode(Response.self, from: result.data)
+    }
+
+    /// POST with a JSON body and return the raw response bytes (e.g. audio).
+    public func postForData<RequestBody: Encodable>(
+        path: String,
+        body: RequestBody
+    ) async throws -> Data {
+        let result = try await request(method: "POST", path: path, query: [], body: AnyEncodable(body))
+        return result.data
+    }
+
+    /// PUT raw bytes to an external URL (e.g. a pre-signed S3 URL) — no auth cookies.
+    public func upload(to url: URL, data: Data, mimeType: String) async throws {
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "PUT"
+        urlRequest.setValue(mimeType, forHTTPHeaderField: "Content-Type")
+        urlRequest.httpBody = data
+
+        let (_, response) = try await session.data(for: urlRequest)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              (200..<300).contains(httpResponse.statusCode)
+        else {
+            throw APIClientError.invalidResponse
+        }
+    }
+
+    /// POST multipart/form-data — used for audio transcription.
+    public func postMultipart<Response: Decodable>(
+        _ type: Response.Type,
+        path: String,
+        fileURL: URL,
+        mimeType: String,
+        fieldName: String = "audio"
+    ) async throws -> Response {
+        let boundary = "Boundary-\(UUID().uuidString)"
+        var body = Data()
+        let filename = fileURL.lastPathComponent
+
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append(
+            "Content-Disposition: form-data; name=\"\(fieldName)\"; filename=\"\(filename)\"\r\n"
+                .data(using: .utf8)!
+        )
+        body.append("Content-Type: \(mimeType)\r\n\r\n".data(using: .utf8)!)
+        body.append(try Data(contentsOf: fileURL))
+        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+
+        guard
+            let url = URLComponents(
+                url: baseURL.appending(
+                    path: path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+                ),
+                resolvingAgainstBaseURL: false
+            )?.url
+        else {
+            throw APIClientError.invalidResponse
+        }
+
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Accept")
+        if let cookieHeader = cookieJar.headerValue {
+            urlRequest.setValue(cookieHeader, forHTTPHeaderField: "Cookie")
+        }
+        urlRequest.httpBody = body
+
+        let (data, response) = try await session.data(for: urlRequest)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIClientError.invalidResponse
+        }
+
+        let responseCookies = responseCookieHeaders(from: httpResponse)
+            .flatMap(splitSetCookieHeader)
+            .compactMap(makeStoredCookie(from:))
+        cookieJar = cookieJar.merging(responseCookies)
+        try persistCookies()
+
+        guard (200..<300).contains(httpResponse.statusCode) else {
+            let message = decodeErrorMessage(from: data)
+                ?? HTTPURLResponse.localizedString(forStatusCode: httpResponse.statusCode)
+            throw APIClientError.http(statusCode: httpResponse.statusCode, message: message)
+        }
+
+        return try decoder.decode(Response.self, from: data)
     }
 
     func request(

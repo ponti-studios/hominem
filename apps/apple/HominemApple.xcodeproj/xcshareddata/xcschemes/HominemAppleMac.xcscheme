@@ -21,6 +21,34 @@
                ReferencedContainer = "container:HominemApple.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8DF97C8F53627048B10BD89B"
+               BuildableName = "HominemAppleMacCoreTests.xctest"
+               BlueprintName = "HominemAppleMacCoreTests"
+               ReferencedContainer = "container:HominemApple.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "FFCAA6550D6923895475CC5D"
+               BuildableName = "HominemAppleMacE2E.xctest"
+               BlueprintName = "HominemAppleMacE2E"
+               ReferencedContainer = "container:HominemApple.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -39,6 +67,18 @@
          </BuildableReference>
       </MacroExpansion>
       <Testables>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES"
+            testExecutionOrdering = "random">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8DF97C8F53627048B10BD89B"
+               BuildableName = "HominemAppleMacCoreTests.xctest"
+               BlueprintName = "HominemAppleMacCoreTests"
+               ReferencedContainer = "container:HominemApple.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
          <TestableReference
             skipped = "NO"
             parallelizable = "NO">

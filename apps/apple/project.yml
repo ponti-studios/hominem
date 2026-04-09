@@ -29,33 +29,45 @@ targets:
     deploymentTarget: "17.0"
     sources:
       - path: iOS
+    # XcodeGen manages the Info.plist so we can include BGTaskSchedulerPermittedIdentifiers
+    # (an array key that cannot be set via INFOPLIST_KEY_* build settings).
+    info:
+      path: iOS/Info.plist
+      properties:
+        LSApplicationCategoryType: public.app-category.productivity
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UIBackgroundModes:
+          - fetch
+        BGTaskSchedulerPermittedIdentifiers:
+          - io.hominem.apple.ios.sync
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+          NSExceptionDomains:
+            localhost:
+              NSIncludesSubdomains: true
+              NSTemporaryExceptionAllowsInsecureHTTPLoads: true
+        HOMINEM_APP_ENV: $(HOMINEM_APP_ENV)
+        HOMINEM_API_BASE_URL: $(HOMINEM_API_BASE_URL)
+        HOMINEM_ASSOCIATED_DOMAIN: $(HOMINEM_ASSOCIATED_DOMAIN)
+        HOMINEM_PASSKEY_RP_ID: $(HOMINEM_PASSKEY_RP_ID)
+        HOMINEM_ENABLE_AUTH_TEST_HOOK: $(HOMINEM_ENABLE_AUTH_TEST_HOOK)
     entitlements:
       path: Config/AppleIOS.entitlements
     settings:
       base:
-        GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.productivity
-        INFOPLIST_KEY_HOMINEM_APP_ENV: $(HOMINEM_APP_ENV)
-        INFOPLIST_KEY_HOMINEM_API_BASE_URL: $(HOMINEM_API_BASE_URL)
-        INFOPLIST_KEY_HOMINEM_ASSOCIATED_DOMAIN: $(HOMINEM_ASSOCIATED_DOMAIN)
-        INFOPLIST_KEY_HOMINEM_PASSKEY_RP_ID: $(HOMINEM_PASSKEY_RP_ID)
-        INFOPLIST_KEY_HOMINEM_ENABLE_AUTH_TEST_HOOK: $(HOMINEM_ENABLE_AUTH_TEST_HOOK)
+        HOMINEM_BUNDLE_DISPLAY_NAME: Hominem Apple
       configs:
         Debug:
           PRODUCT_BUNDLE_IDENTIFIER: io.hominem.apple.ios.debug
-          INFOPLIST_KEY_CFBundleDisplayName: Hominem Apple Debug
-          INFOPLIST_KEY_NSAppTransportSecurity:
-            NSAllowsLocalNetworking: true
-            NSExceptionDomains:
-              localhost:
-                NSIncludesSubdomains: true
-                NSTemporaryExceptionAllowsInsecureHTTPLoads: true
+          HOMINEM_BUNDLE_DISPLAY_NAME: Hominem Apple Debug
         Staging:
           PRODUCT_BUNDLE_IDENTIFIER: io.hominem.apple.ios.staging
-          INFOPLIST_KEY_CFBundleDisplayName: Hominem Apple Staging
+          HOMINEM_BUNDLE_DISPLAY_NAME: Hominem Apple Staging
         Release:
           PRODUCT_BUNDLE_IDENTIFIER: io.hominem.apple.ios
-          INFOPLIST_KEY_CFBundleDisplayName: Hominem Apple
+          HOMINEM_BUNDLE_DISPLAY_NAME: Hominem Apple
     dependencies:
       - package: HominemAppleCore
         product: HominemAppleCore
@@ -110,15 +122,62 @@ targets:
         TEST_TARGET_NAME: HominemAppleMac
     dependencies:
       - target: HominemAppleMac
+
+  HominemAppleiOSTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: Tests/HominemAppleCoreTests
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: io.hominem.apple.ios.tests
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/HominemAppleiOS.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/HominemAppleiOS
+        BUNDLE_LOADER: $(TEST_HOST)
+    dependencies:
+      - target: HominemAppleiOS
+      - package: HominemAppleCore
+        product: HominemAppleCore
+
+  HominemAppleMacCoreTests:
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: Tests/HominemAppleCoreTests
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: io.hominem.apple.mac.coretests
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/HominemAppleMac.app/Contents/MacOS/HominemAppleMac
+        BUNDLE_LOADER: $(TEST_HOST)
+    dependencies:
+      - target: HominemAppleMac
+      - package: HominemAppleCore
+        product: HominemAppleCore
+
 schemes:
   HominemAppleiOS:
     build:
       targets:
         HominemAppleiOS: all
+        HominemAppleiOSTests: [test]
+    test:
+      targets:
+        - name: HominemAppleiOSTests
+          parallelizable: true
+          randomExecutionOrder: true
+
   HominemAppleMac:
     build:
       targets:
         HominemAppleMac: all
+        HominemAppleMacCoreTests: [test]
+        HominemAppleMacE2E: [test]
     test:
       targets:
+        - name: HominemAppleMacCoreTests
+          parallelizable: true
+          randomExecutionOrder: true
         - name: HominemAppleMacE2E

@@ -21,6 +21,20 @@
                ReferencedContainer = "container:HominemApple.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "84045B41BE398545DA39067D"
+               BuildableName = "HominemAppleiOSTests.xctest"
+               BlueprintName = "HominemAppleiOSTests"
+               ReferencedContainer = "container:HominemApple.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -39,7 +53,21 @@
          </BuildableReference>
       </MacroExpansion>
       <Testables>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES"
+            testExecutionOrdering = "random">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "84045B41BE398545DA39067D"
+               BuildableName = "HominemAppleiOSTests.xctest"
+               BlueprintName = "HominemAppleiOSTests"
+               ReferencedContainer = "container:HominemApple.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
+      <CommandLineArguments>
+      </CommandLineArguments>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"

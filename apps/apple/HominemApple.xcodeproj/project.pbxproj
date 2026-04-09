@@ -7,14 +7,46 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0889CCB59AF8D7BF8A1E980A /* ChatsServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B63E6A6B8C2DAC42E0A24D /* ChatsServiceTests.swift */; };
+		0C4AD17E1DB267DA2C398EE2 /* APIClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79589560A32E9600F5F7BF95 /* APIClientTests.swift */; };
 		14E2355195B8320EC305FAE0 /* HominemAppleiOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5E4DDBD7CDB1F25DE34DE61 /* HominemAppleiOSApp.swift */; };
+		22283F8508359C7BD7AD1BFC /* NotesServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B4D5263E7AFEF6EACCD446 /* NotesServiceTests.swift */; };
+		32A3E3FD4779C46DEA640BF3 /* AuthServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A520474F760ADD619BB10F /* AuthServiceTests.swift */; };
+		3B31B50C12C54F2FF42977E2 /* HominemAppleCore in Frameworks */ = {isa = PBXBuildFile; productRef = C7485347EA714CEE4DE46E57 /* HominemAppleCore */; };
+		40148CD3A04EBFDF832ED5A8 /* AppEnvironmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AF741C861F0FA0AAE88E304 /* AppEnvironmentTests.swift */; };
 		6558D41F1A31BA50A1A4DBF5 /* HominemAppleCore in Frameworks */ = {isa = PBXBuildFile; productRef = 7216511F709B1B26AF96518A /* HominemAppleCore */; };
+		66ACEC2B062A1182841B38D8 /* HominemAppleCore in Frameworks */ = {isa = PBXBuildFile; productRef = 07ED507F75D74A51FD0936E7 /* HominemAppleCore */; };
+		6A8469739B33C7842B4D7007 /* AppEnvironmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AF741C861F0FA0AAE88E304 /* AppEnvironmentTests.swift */; };
+		71D7972EF3F4A978AC5BB6BA /* CookieJarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35BD493F72B159467C21BD2 /* CookieJarTests.swift */; };
 		75C9F87363CD6D5FD7E73765 /* HominemAppleMacE2ETests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33247E7D6F67806A12D187F4 /* HominemAppleMacE2ETests.swift */; };
+		798B158E537C0473D129077F /* AuthStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E19C5CE07A3AD505AAC4E04 /* AuthStateTests.swift */; };
+		7DC2ACC5511002667D6EF5D8 /* APIClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79589560A32E9600F5F7BF95 /* APIClientTests.swift */; };
+		8EAE3C399B588810A2CA221B /* NotesServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B4D5263E7AFEF6EACCD446 /* NotesServiceTests.swift */; };
+		A44952FB07EB30DCF5E14988 /* ChatsServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B63E6A6B8C2DAC42E0A24D /* ChatsServiceTests.swift */; };
+		A70B387E2D597698E4E0B06B /* AudioRecorderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E92C51DDE20259EB99D0A6A /* AudioRecorderTests.swift */; };
+		AB211B613F687CAB8B6CD851 /* CookieJarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35BD493F72B159467C21BD2 /* CookieJarTests.swift */; };
 		C1D8D2FF408677A26A5D7358 /* HominemAppleMacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F9FF262A55E5F92644E5389 /* HominemAppleMacApp.swift */; };
+		CCA18831983882AF977AB1FE /* AuthServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A520474F760ADD619BB10F /* AuthServiceTests.swift */; };
+		D5F7810A832046C8A45A0760 /* AudioRecorderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E92C51DDE20259EB99D0A6A /* AudioRecorderTests.swift */; };
 		EA621A9E0B8D2D0D67F6E90F /* HominemAppleCore in Frameworks */ = {isa = PBXBuildFile; productRef = 6705C1A4B0F54E83E1E4DC3A /* HominemAppleCore */; };
+		FE8C62127E5F3B5BFC90B1A3 /* AuthStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E19C5CE07A3AD505AAC4E04 /* AuthStateTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		566689DF25BC2572CB8462DA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F2A5BD670A81B83764FF350B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7D1D523B90981846B9D51A3C;
+			remoteInfo = HominemAppleiOS;
+		};
+		7AF705C241D7E28191597757 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F2A5BD670A81B83764FF350B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2F1347260054E3C8AA83216E;
+			remoteInfo = HominemAppleMac;
+		};
 		E33020FA43926DF3FCA6E589 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = F2A5BD670A81B83764FF350B /* Project object */;
@@ -27,13 +59,23 @@
 /* Begin PBXFileReference section */
 		071DF89423EC545B07222C2E /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
 		0F9FF262A55E5F92644E5389 /* HominemAppleMacApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HominemAppleMacApp.swift; sourceTree = "<group>"; };
+		2E19C5CE07A3AD505AAC4E04 /* AuthStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthStateTests.swift; sourceTree = "<group>"; };
 		2EF8808234F6934E6DC27AB4 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
 		33247E7D6F67806A12D187F4 /* HominemAppleMacE2ETests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HominemAppleMacE2ETests.swift; sourceTree = "<group>"; };
 		36522F05A4B83896387262DD /* HominemAppleMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HominemAppleMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		3E92C51DDE20259EB99D0A6A /* AudioRecorderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRecorderTests.swift; sourceTree = "<group>"; };
+		4AF741C861F0FA0AAE88E304 /* AppEnvironmentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironmentTests.swift; sourceTree = "<group>"; };
+		6557330874A1795392092206 /* HominemAppleMacCoreTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HominemAppleMacCoreTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		79589560A32E9600F5F7BF95 /* APIClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClientTests.swift; sourceTree = "<group>"; };
+		98B26F4554A255639F32E444 /* HominemAppleiOSTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = HominemAppleiOSTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		9EB573959E609C920EE7CBFD /* Staging.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Staging.xcconfig; sourceTree = "<group>"; };
+		A35BD493F72B159467C21BD2 /* CookieJarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CookieJarTests.swift; sourceTree = "<group>"; };
+		A3B63E6A6B8C2DAC42E0A24D /* ChatsServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatsServiceTests.swift; sourceTree = "<group>"; };
+		A9B4D5263E7AFEF6EACCD446 /* NotesServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesServiceTests.swift; sourceTree = "<group>"; };
 		B5E4DDBD7CDB1F25DE34DE61 /* HominemAppleiOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HominemAppleiOSApp.swift; sourceTree = "<group>"; };
 		BC0EE9CEB2CF5A2C1C3F237D /* HominemAppleiOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = HominemAppleiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D12791CD8C562C53FD937AB2 /* apple */ = {isa = PBXFileReference; lastKnownFileType = folder; name = apple; path = .; sourceTree = SOURCE_ROOT; };
+		D1A520474F760ADD619BB10F /* AuthServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthServiceTests.swift; sourceTree = "<group>"; };
 		F4B5468DBBEB5F8046189B23 /* HominemAppleMacE2E.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HominemAppleMacE2E.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -43,6 +85,22 @@
 			buildActionMask = 2147483647;
 			files = (
 				EA621A9E0B8D2D0D67F6E90F /* HominemAppleCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		24519F95E159EAA11E5E0F8F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3B31B50C12C54F2FF42977E2 /* HominemAppleCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		92FA9741F89743166FE70866 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				66ACEC2B062A1182841B38D8 /* HominemAppleCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,8 +123,17 @@
 				D689965C690CC7CBCD6E823C /* macOS */,
 				1FC70C82731E27A26F0E4E6B /* macOSUITests */,
 				AD114AB593118FF7525C871D /* Packages */,
+				139D5146A1B382CDC677150C /* Tests */,
 				79893C4A3860A798B796B5E4 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		139D5146A1B382CDC677150C /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				28639460224059AAEBBB67ED /* HominemAppleCoreTests */,
+			);
+			path = Tests;
 			sourceTree = "<group>";
 		};
 		16146BC37B18A107B98C22A5 /* Config */ = {
@@ -83,6 +150,21 @@
 				33247E7D6F67806A12D187F4 /* HominemAppleMacE2ETests.swift */,
 			);
 			path = macOSUITests;
+			sourceTree = "<group>";
+		};
+		28639460224059AAEBBB67ED /* HominemAppleCoreTests */ = {
+			isa = PBXGroup;
+			children = (
+				79589560A32E9600F5F7BF95 /* APIClientTests.swift */,
+				4AF741C861F0FA0AAE88E304 /* AppEnvironmentTests.swift */,
+				3E92C51DDE20259EB99D0A6A /* AudioRecorderTests.swift */,
+				D1A520474F760ADD619BB10F /* AuthServiceTests.swift */,
+				2E19C5CE07A3AD505AAC4E04 /* AuthStateTests.swift */,
+				A3B63E6A6B8C2DAC42E0A24D /* ChatsServiceTests.swift */,
+				A35BD493F72B159467C21BD2 /* CookieJarTests.swift */,
+				A9B4D5263E7AFEF6EACCD446 /* NotesServiceTests.swift */,
+			);
+			path = HominemAppleCoreTests;
 			sourceTree = "<group>";
 		};
 		29590932E589A21D9454C35E /* iOS */ = {
@@ -107,7 +189,9 @@
 			isa = PBXGroup;
 			children = (
 				BC0EE9CEB2CF5A2C1C3F237D /* HominemAppleiOS.app */,
+				98B26F4554A255639F32E444 /* HominemAppleiOSTests.xctest */,
 				36522F05A4B83896387262DD /* HominemAppleMac.app */,
+				6557330874A1795392092206 /* HominemAppleMacCoreTests.xctest */,
 				F4B5468DBBEB5F8046189B23 /* HominemAppleMacE2E.xctest */,
 			);
 			name = Products;
@@ -170,6 +254,46 @@
 			productReference = BC0EE9CEB2CF5A2C1C3F237D /* HominemAppleiOS.app */;
 			productType = "com.apple.product-type.application";
 		};
+		84045B41BE398545DA39067D /* HominemAppleiOSTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9A1D5037880883858EE8D962 /* Build configuration list for PBXNativeTarget "HominemAppleiOSTests" */;
+			buildPhases = (
+				56E2FA9F58884012471DBD6F /* Sources */,
+				24519F95E159EAA11E5E0F8F /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				15563566C3FCFE4FA3E9C5CC /* PBXTargetDependency */,
+			);
+			name = HominemAppleiOSTests;
+			packageProductDependencies = (
+				C7485347EA714CEE4DE46E57 /* HominemAppleCore */,
+			);
+			productName = HominemAppleiOSTests;
+			productReference = 98B26F4554A255639F32E444 /* HominemAppleiOSTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		8DF97C8F53627048B10BD89B /* HominemAppleMacCoreTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = EF2767792E25B47E563BF441 /* Build configuration list for PBXNativeTarget "HominemAppleMacCoreTests" */;
+			buildPhases = (
+				6622897181077FF3834EE63C /* Sources */,
+				92FA9741F89743166FE70866 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				6B9933C11910B6F452A5B920 /* PBXTargetDependency */,
+			);
+			name = HominemAppleMacCoreTests;
+			packageProductDependencies = (
+				07ED507F75D74A51FD0936E7 /* HominemAppleCore */,
+			);
+			productName = HominemAppleMacCoreTests;
+			productReference = 6557330874A1795392092206 /* HominemAppleMacCoreTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		FFCAA6550D6923895475CC5D /* HominemAppleMacE2E */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 3AABCA9D570D612D06C5954F /* Build configuration list for PBXNativeTarget "HominemAppleMacE2E" */;
@@ -220,8 +344,10 @@
 			projectRoot = "";
 			targets = (
 				2F1347260054E3C8AA83216E /* HominemAppleMac */,
+				8DF97C8F53627048B10BD89B /* HominemAppleMacCoreTests */,
 				FFCAA6550D6923895475CC5D /* HominemAppleMacE2E */,
 				7D1D523B90981846B9D51A3C /* HominemAppleiOS */,
+				84045B41BE398545DA39067D /* HominemAppleiOSTests */,
 			);
 		};
 /* End PBXProject section */
@@ -232,6 +358,36 @@
 			buildActionMask = 2147483647;
 			files = (
 				C1D8D2FF408677A26A5D7358 /* HominemAppleMacApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		56E2FA9F58884012471DBD6F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0C4AD17E1DB267DA2C398EE2 /* APIClientTests.swift in Sources */,
+				40148CD3A04EBFDF832ED5A8 /* AppEnvironmentTests.swift in Sources */,
+				A70B387E2D597698E4E0B06B /* AudioRecorderTests.swift in Sources */,
+				CCA18831983882AF977AB1FE /* AuthServiceTests.swift in Sources */,
+				798B158E537C0473D129077F /* AuthStateTests.swift in Sources */,
+				A44952FB07EB30DCF5E14988 /* ChatsServiceTests.swift in Sources */,
+				AB211B613F687CAB8B6CD851 /* CookieJarTests.swift in Sources */,
+				22283F8508359C7BD7AD1BFC /* NotesServiceTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6622897181077FF3834EE63C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7DC2ACC5511002667D6EF5D8 /* APIClientTests.swift in Sources */,
+				6A8469739B33C7842B4D7007 /* AppEnvironmentTests.swift in Sources */,
+				D5F7810A832046C8A45A0760 /* AudioRecorderTests.swift in Sources */,
+				32A3E3FD4779C46DEA640BF3 /* AuthServiceTests.swift in Sources */,
+				FE8C62127E5F3B5BFC90B1A3 /* AuthStateTests.swift in Sources */,
+				0889CCB59AF8D7BF8A1E980A /* ChatsServiceTests.swift in Sources */,
+				71D7972EF3F4A978AC5BB6BA /* CookieJarTests.swift in Sources */,
+				8EAE3C399B588810A2CA221B /* NotesServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -254,10 +410,20 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		15563566C3FCFE4FA3E9C5CC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7D1D523B90981846B9D51A3C /* HominemAppleiOS */;
+			targetProxy = 566689DF25BC2572CB8462DA /* PBXContainerItemProxy */;
+		};
 		20F078DF06FD42DEC01ADF0D /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 2F1347260054E3C8AA83216E /* HominemAppleMac */;
 			targetProxy = E33020FA43926DF3FCA6E589 /* PBXContainerItemProxy */;
+		};
+		6B9933C11910B6F452A5B920 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 2F1347260054E3C8AA83216E /* HominemAppleMac */;
+			targetProxy = 7AF705C241D7E28191597757 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -357,6 +523,24 @@
 			};
 			name = Staging;
 		};
+		113CD9820F7F79C653970A51 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = io.hominem.apple.ios.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/HominemAppleiOS.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/HominemAppleiOS";
+			};
+			name = Debug;
+		};
 		1F261B5A279E29B2BA621534 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -382,6 +566,24 @@
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
+		};
+		302093F05D51F415A30BF147 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.hominem.apple.mac.coretests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/HominemAppleMac.app/Contents/MacOS/HominemAppleMac";
+			};
+			name = Release;
 		};
 		458B090D94C439A1E236B889 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -430,6 +632,24 @@
 				PRODUCT_BUNDLE_IDENTIFIER = io.hominem.apple.ios;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		5CAAC531A0203939A6DA3AE0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = io.hominem.apple.ios.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/HominemAppleiOS.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/HominemAppleiOS";
 			};
 			name = Release;
 		};
@@ -492,6 +712,42 @@
 			};
 			name = Staging;
 		};
+		71AE6BB9EE253FABACC0A0FF /* Staging */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.hominem.apple.mac.coretests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/HominemAppleMac.app/Contents/MacOS/HominemAppleMac";
+			};
+			name = Staging;
+		};
+		884D84991FF77CAD48DC1F03 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.hominem.apple.mac.coretests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/HominemAppleMac.app/Contents/MacOS/HominemAppleMac";
+			};
+			name = Debug;
+		};
 		8EBE0D00F4B8B8A69F152C89 /* Staging */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -514,6 +770,24 @@
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				PRODUCT_BUNDLE_IDENTIFIER = io.hominem.apple.mac.staging;
 				SDKROOT = macosx;
+			};
+			name = Staging;
+		};
+		9F1108EF1658EE5423D4E476 /* Staging */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = io.hominem.apple.ios.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/HominemAppleiOS.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/HominemAppleiOS";
 			};
 			name = Staging;
 		};
@@ -674,6 +948,16 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
+		9A1D5037880883858EE8D962 /* Build configuration list for PBXNativeTarget "HominemAppleiOSTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				113CD9820F7F79C653970A51 /* Debug */,
+				5CAAC531A0203939A6DA3AE0 /* Release */,
+				9F1108EF1658EE5423D4E476 /* Staging */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		C3CEE1E7A78CF48F43A1551F /* Build configuration list for PBXNativeTarget "HominemAppleMac" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -694,6 +978,16 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
+		EF2767792E25B47E563BF441 /* Build configuration list for PBXNativeTarget "HominemAppleMacCoreTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				884D84991FF77CAD48DC1F03 /* Debug */,
+				302093F05D51F415A30BF147 /* Release */,
+				71AE6BB9EE253FABACC0A0FF /* Staging */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
@@ -704,11 +998,19 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		07ED507F75D74A51FD0936E7 /* HominemAppleCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = HominemAppleCore;
+		};
 		6705C1A4B0F54E83E1E4DC3A /* HominemAppleCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = HominemAppleCore;
 		};
 		7216511F709B1B26AF96518A /* HominemAppleCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = HominemAppleCore;
+		};
+		C7485347EA714CEE4DE46E57 /* HominemAppleCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = HominemAppleCore;
 		};

@@ -14,7 +14,7 @@ public struct AppRootView: View {
                     SignedOutView(model: model)
                         .accessibilityIdentifier("auth.signedOut")
                 } else {
-                    AccountView(model: model)
+                    ContentView(model: model)
                         .accessibilityIdentifier("auth.signedIn")
                 }
             }
