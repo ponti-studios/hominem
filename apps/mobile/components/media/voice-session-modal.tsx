@@ -2,8 +2,7 @@ import { Modal, Pressable, StyleSheet, View } from 'react-native';
 
 import AppIcon from '~/components/ui/icon';
 import { Text, makeStyles, theme } from '~/theme';
-
-import { MobileVoiceInput } from './mobile-voice-input';
+import { VoiceInput } from '~/lib/components/media/voice';
 
 interface VoiceSessionModalProps {
   visible: boolean;
@@ -42,7 +41,7 @@ export function VoiceSessionModal({
           </View>
 
           <View style={styles.body}>
-            <MobileVoiceInput
+            <VoiceInput
               autoTranscribe
               onAudioTranscribed={(transcription) => {
                 onAudioTranscribed(transcription);

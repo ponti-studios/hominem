@@ -4,13 +4,13 @@ import {
   getStartupDuration,
   markStartupPhase,
   resetStartupMetrics,
-} from '../utils/performance/startup-metrics'
+} from '../lib/performance/startup-metrics'
 import {
   getAuthPhaseElapsed,
   markAuthPhaseStart,
   recordAuthEvent,
   resetAuthEventLog,
-} from '../utils/auth/auth-event-log'
+} from '../lib/auth/analytics'
 
 describe('startup metrics', () => {
   it('tracks duration between phases', () => {

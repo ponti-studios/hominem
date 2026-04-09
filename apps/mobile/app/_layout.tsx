@@ -12,8 +12,7 @@ import { posthog } from '~/lib/posthog';
 import { recordActiveDay } from '~/lib/review-prompt';
 import { useScreenCapture } from '~/lib/use-screen-capture';
 import { makeStyles, theme } from '~/theme';
-import { ApiConnectionProvider, ApiReconnectChip } from '~/api-connection';
-import { AuthProvider, useAuth } from '~/auth-provider';
+import { AuthProvider, useAuth } from '~/auth/auth-provider';
 import { E2E_TESTING } from '~/constants';
 import { logError } from '~/error-boundary/log-error';
 import { resolveAuthRedirect } from '~/navigation/auth-route-guard';
@@ -127,12 +126,9 @@ function RootLayout() {
         <SafeAreaProvider>
           <GestureHandlerRootView style={rootStyles.gestureRoot}>
             <RootErrorBoundary>
-              <ApiConnectionProvider>
-                <AuthProvider>
-                  <InnerRootLayout />
-                </AuthProvider>
-                <ApiReconnectChip />
-              </ApiConnectionProvider>
+              <AuthProvider>
+                <InnerRootLayout />
+              </AuthProvider>
             </RootErrorBoundary>
           </GestureHandlerRootView>
         </SafeAreaProvider>

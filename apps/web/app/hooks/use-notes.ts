@@ -224,16 +224,14 @@ export function useCreateNote() {
         },
       };
 
-      queryClient.setQueryData<NotesFeedData>(feedQueryKey, (current) => {
-        if (!context?.optimisticId) {
-          return prependOptimisticFeedNote(current, createdFeedItem);
-        }
-
-        return replaceOptimisticFeedNote(current, context.optimisticId, createdFeedItem);
-      });
+      if (context?.optimisticId) {
+        queryClient.setQueryData<NotesFeedData>(feedQueryKey, (current) =>
+          replaceOptimisticFeedNote(current, context.optimisticId, createdFeedItem),
+        );
+      }
 
       queryClient.invalidateQueries({ queryKey: notesQueryKeys.list() });
-      queryClient.invalidateQueries({ queryKey: notesQueryKeys.feed() });
+      queryClient.invalidateQueries({ queryKey: feedQueryKey });
     },
   });
 }
