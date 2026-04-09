@@ -174,17 +174,11 @@
 
 ### 4A: Docker & Infrastructure
 
-- [ ] 4A.1 Create `services/api/Dockerfile`
-  - Multi-stage build: dependencies, build, runtime
-  - Use Node 22 (matches engine requirement)
-  - Expose port 4040
-- [ ] 4A.2 Create `apps/web/Dockerfile`
-  - Build with Vite: `bun run build`
-  - Serve static files with nginx or Node
-  - Expose port 3000
+- [x] 4A.1 Create `services/api/Dockerfile` (already exists - multi-stage build with bun compile)
+- [x] 4A.2 Create `apps/web/Dockerfile` (created - multi-stage with Node server)
 - [ ] 4A.3 Test API Docker image locally: `docker run -p 4040:4040 hominem-api`
 - [ ] 4A.4 Test web Docker image locally: `docker run -p 3000:3000 hominem-web`
-- [ ] 4A.5 Delete empty `infra/kubernetes/README.md` or implement actual manifests
+- [x] 4A.5 Delete empty `infra/kubernetes/README.md` or implement actual manifests (deleted)
 - [ ] 4A.6 Update CI/CD to build Docker images on main branch
 
 ### 4B: Type Safety & Runtime Validation
@@ -207,7 +201,7 @@
 
 ### 4D: Error Handling Consistency
 
-- [ ] 4D.1 Create `packages/platform/utils/format-error.ts` with unified error formatter
+- [x] 4D.1 Create `packages/platform/utils/format-error.ts` with unified error formatter (exists as `use-error-formatting.ts`)
 - [ ] 4D.2 Standardize error display in web app (all errors use same UI)
 - [ ] 4D.3 Standardize error display in mobile app (all errors use same UI)
 - [ ] 4D.4 Remove console.error logging from components (use centralized error handler)
