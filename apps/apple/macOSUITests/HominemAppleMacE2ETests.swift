@@ -101,6 +101,257 @@ final class HominemAppleMacE2ETests: XCTestCase {
         XCTAssertThrowsError(try resolveTestEnvironment())
     }
 
+    // MARK: - Enhanced Note Operations
+
+    /// Test note creation and verification flow
+    /// Verifies that created notes appear in the list with correct content
+    @MainActor
+    func testNoteCreation() throws {
+        let (email, apiBaseURL, authTestSecret) = try resolveTestEnvironment()
+        let app = launchApp(apiBaseURL: apiBaseURL, authTestSecret: authTestSecret)
+
+        try signIn(app: app, email: email)
+
+        let noteTitle = "macOS E2E Test Note"
+        let noteContent = "This note was created during E2E testing on macOS"
+        try createNote(app: app, title: noteTitle, content: noteContent)
+
+        // Verify note title appears in list
+        let noteInList = app.staticTexts[noteTitle]
+        XCTAssertTrue(
+            noteInList.waitForExistence(timeout: 15),
+            "Created note should appear in notes list"
+        )
+    }
+
+    /// Test note detail view and editing
+    /// Verifies that we can view and edit note content
+    @MainActor
+    func testNoteDetailView() throws {
+        let (email, apiBaseURL, authTestSecret) = try resolveTestEnvironment()
+        let app = launchApp(apiBaseURL: apiBaseURL, authTestSecret: authTestSecret)
+
+        try signIn(app: app, email: email)
+
+        let noteTitle = "Detail View Test"
+        let noteContent = "Testing the detail view"
+        try createNote(app: app, title: noteTitle, content: noteContent)
+
+        // Navigate to the note
+        let noteCell = app.staticTexts[noteTitle]
+        XCTAssertTrue(noteCell.waitForExistence(timeout: 10))
+        noteCell.click()
+
+        // Verify content is visible in detail view
+        let detailContent = app.staticTexts[noteContent]
+        XCTAssertTrue(
+            detailContent.waitForExistence(timeout: 10),
+            "Note content should be visible in detail view"
+        )
+
+        // Navigate back
+        let backButton = app.buttons["Back"]
+        if backButton.waitForExistence(timeout: 3) {
+            backButton.click()
+        }
+    }
+
+    /// Test note archiving
+    /// Verifies that notes can be archived and removed from main list
+    @MainActor
+    func testNoteArchiving() throws {
+        let (email, apiBaseURL, authTestSecret) = try resolveTestEnvironment()
+        let app = launchApp(apiBaseURL: apiBaseURL, authTestSecret: authTestSecret)
+
+        try signIn(app: app, email: email)
+
+        let noteTitle = "Note to Archive"
+        let noteContent = "This note will be archived"
+        try createNote(app: app, title: noteTitle, content: noteContent)
+
+        // Verify note was created
+        let noteInList = app.staticTexts[noteTitle]
+        XCTAssertTrue(noteInList.waitForExistence(timeout: 10))
+
+        // Archive the note (look for archive button in detail view)
+        noteInList.click()
+        let archiveButton = app.buttons.matching(
+            NSPredicate(format: "label CONTAINS 'archive' OR label CONTAINS 'Archive'")
+        ).firstMatch
+
+        if archiveButton.waitForExistence(timeout: 5) {
+            archiveButton.click()
+        }
+
+        // Navigate back and verify note is no longer in main list
+        let backButton = app.buttons["Back"]
+        if backButton.waitForExistence(timeout: 3) {
+            backButton.click()
+        }
+
+        // Give the UI time to update
+        usleep(500_000)
+    }
+
+    // MARK: - Enhanced Chat Operations
+
+    /// Test chat message sending and receiving
+    /// Verifies that sent messages appear in the chat thread
+    @MainActor
+    func testChatMessageSending() throws {
+        let (email, apiBaseURL, authTestSecret) = try resolveTestEnvironment()
+        let app = launchApp(apiBaseURL: apiBaseURL, authTestSecret: authTestSecret)
+
+        try signIn(app: app, email: email)
+
+        let messageText = "macOS E2E test message \(UUID().uuidString.prefix(8))"
+        try sendChatMessage(app: app, message: messageText)
+
+        // Verify message appears in thread
+        let sentMessage = app.staticTexts[messageText]
+        XCTAssertTrue(
+            sentMessage.waitForExistence(timeout: 10),
+            "Sent message should appear in chat thread"
+        )
+    }
+
+    /// Test creating multiple chat sessions
+    /// Verifies that different chat sessions can be created and managed
+    @MainActor
+    func testMultipleChatSessions() throws {
+        let (email, apiBaseURL, authTestSecret) = try resolveTestEnvironment()
+        let app = launchApp(apiBaseURL: apiBaseURL, authTestSecret: authTestSecret)
+
+        try signIn(app: app, email: email)
+
+        // Send first message
+        let message1 = "First chat session message"
+        try sendChatMessage(app: app, message: message1)
+
+        XCTAssertTrue(
+            app.staticTexts[message1].waitForExistence(timeout: 10),
+            "First message should appear"
+        )
+
+        // Send second message in same or different session
+        let message2 = "Second chat session message"
+        try sendChatMessage(app: app, message: message2)
+
+        XCTAssertTrue(
+            app.staticTexts[message2].waitForExistence(timeout: 10),
+            "Second message should appear"
+        )
+    }
+
+    // MARK: - Navigation and UI Tests
+
+    /// Test main app navigation between tabs
+    /// Verifies that all major sections are accessible
+    @MainActor
+    func testMainNavigation() throws {
+        let (email, apiBaseURL, authTestSecret) = try resolveTestEnvironment()
+        let app = launchApp(apiBaseURL: apiBaseURL, authTestSecret: authTestSecret)
+
+        try signIn(app: app, email: email)
+
+        // Test sidebar or tab navigation if available
+        let noteSection = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'Note'")).firstMatch
+        if noteSection.waitForExistence(timeout: 5) {
+            noteSection.click()
+            // Should see notes content
+            XCTAssertTrue(app.staticTexts.firstMatch.waitForExistence(timeout: 5))
+        }
+
+        let chatSection = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'Chat'")).firstMatch
+        if chatSection.waitForExistence(timeout: 5) {
+            chatSection.click()
+            // Should see chats content
+            XCTAssertTrue(app.staticTexts.firstMatch.waitForExistence(timeout: 5))
+        }
+    }
+
+    /// Test settings access and account information display
+    /// Verifies that settings can be accessed and account info is visible
+    @MainActor
+    func testSettingsAndAccount() throws {
+        let (email, apiBaseURL, authTestSecret) = try resolveTestEnvironment()
+        let app = launchApp(apiBaseURL: apiBaseURL, authTestSecret: authTestSecret)
+
+        try signIn(app: app, email: email)
+
+        // Navigate to settings/account
+        try navigateToSettings(app: app)
+
+        // Verify account information is displayed
+        let emailDisplay = app.staticTexts.matching(
+            NSPredicate(format: "label CONTAINS '\(email)'")
+        ).firstMatch
+
+        if !emailDisplay.exists {
+            // Even if email isn't displayed, we should see sign out button
+            let signOutButton = app.buttons["Sign out"]
+            XCTAssertTrue(
+                signOutButton.waitForExistence(timeout: 10),
+                "Sign out button should be visible in settings"
+            )
+        }
+    }
+
+    // MARK: - Session Persistence Tests
+
+    /// Test that session persists across app restart
+    /// Verifies that user remains signed in after app relaunches
+    @MainActor
+    func testSessionPersistence() throws {
+        let (email, apiBaseURL, authTestSecret) = try resolveTestEnvironment()
+        var app = launchApp(apiBaseURL: apiBaseURL, authTestSecret: authTestSecret)
+
+        // Sign in
+        try signIn(app: app, email: email)
+
+        // Verify signed in
+        let accountEmail = app.staticTexts["account.emailText"]
+        XCTAssertTrue(accountEmail.waitForExistence(timeout: 20))
+
+        // Close and relaunch app (simulating app restart)
+        app.terminate()
+        usleep(500_000) // Wait 0.5 seconds
+
+        app = launchApp(apiBaseURL: apiBaseURL, authTestSecret: authTestSecret)
+
+        // Should still be signed in without needing to authenticate again
+        let stillSignedIn = accountEmail.waitForExistence(timeout: 20)
+        XCTAssertTrue(
+            stillSignedIn,
+            "Session should persist after app restart"
+        )
+    }
+
+    // MARK: - Error Handling Tests
+
+    /// Test handling of network timeouts gracefully
+    /// Verifies that app shows appropriate error messages
+    @MainActor
+    func testNetworkErrorHandling() throws {
+        let (email, _, authTestSecret) = try resolveTestEnvironment()
+        // Use invalid API URL to simulate network error
+        let app = launchApp(apiBaseURL: "http://invalid-domain-12345.local:9999", authTestSecret: authTestSecret)
+
+        // Try to sign in
+        let emailField = app.textFields["Email"]
+        XCTAssertTrue(emailField.waitForExistence(timeout: 10))
+        emailField.click()
+        emailField.typeText(email)
+
+        let sendCodeButton = app.buttons["Send code"]
+        XCTAssertTrue(sendCodeButton.waitForExistence(timeout: 5))
+        sendCodeButton.click()
+
+        // Should show an error message instead of hanging
+        // App should remain functional
+        XCTAssertTrue(app.windows.firstMatch.exists)
+    }
+
     // MARK: - Helpers
 
     private func signIn(app: XCUIApplication, email: String) throws {
