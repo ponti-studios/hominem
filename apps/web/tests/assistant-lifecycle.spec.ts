@@ -4,10 +4,10 @@ import { expect, test } from './authenticated-test';
 
 async function createNote(page: Page) {
   await page.goto('/notes');
-  await page.getByRole('button', { name: 'Create note' }).click();
 
-  await expect(page.getByLabel('New note content')).toBeVisible({ timeout: 5_000 });
-  await page.getByLabel('New note content').fill('Draft note for assistant flow');
+  const composer = page.getByLabel('Compose message or note');
+  await expect(composer).toBeVisible({ timeout: 5_000 });
+  await composer.fill('Draft note for assistant flow');
   await page.getByRole('button', { name: 'Save note' }).click();
 
   await expect(page).toHaveURL(/\/notes\/[^/?#]+$/, { timeout: 5_000 });
@@ -25,7 +25,7 @@ test.describe('Notes critical path', () => {
     await expect(page.getByRole('heading', { name: 'Notes', exact: true })).toBeVisible({
       timeout: 5_000,
     });
-    await expect(page.getByText('Create note')).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByLabel('Compose message or note')).toBeVisible({ timeout: 5_000 });
   });
 
   test('creating a note opens the editor', async ({ page }) => {
