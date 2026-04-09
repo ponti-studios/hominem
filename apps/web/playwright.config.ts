@@ -38,9 +38,12 @@ export default defineConfig({
         NOTES_URL: 'http://localhost:4445',
         DATABASE_URL: 'postgres://postgres:postgres@localhost:4433/hominem-test',
         AUTH_TEST_OTP_ENABLED: 'true',
-        AUTH_E2E_SECRET: 'otp-secret',
+        AUTH_E2E_SECRET: process.env.AUTH_E2E_SECRET ?? 'otp-secret',
         OPENROUTER_API_KEY: 'test-openrouter-key',
         SEND_EMAILS: 'false',
+        RESEND_API_KEY: process.env.RESEND_API_KEY ?? 're_placeholder',
+        RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL ?? 'noreply@example.com',
+        RESEND_FROM_NAME: process.env.RESEND_FROM_NAME ?? 'Test',
       },
     },
     {
