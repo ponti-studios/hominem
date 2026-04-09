@@ -61,6 +61,9 @@ build-api:
 web-install-playwright:
   cd "{{WEB_DIR}}" && bunx playwright install --with-deps chromium
 
+web-test-e2e-local: web-install-playwright
+  cd "{{WEB_DIR}}" && bun run test:e2e
+
 web-test-e2e:
   {{TURBO}} run test:e2e --filter=@hominem/web
 
@@ -95,3 +98,6 @@ test:
 
 ci-build:
   {{TURBO}} run build
+
+gh-pr-errors:
+  ./scripts/check-last-gh-actions-errors.sh
