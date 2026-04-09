@@ -1,4 +1,4 @@
-import { CHAT_TITLE_MAX_LENGTH } from '@hominem/chat-services/constants';
+import { CHAT_TITLE_MAX_LENGTH } from '@hominem/chat/constants';
 import { useApiClient } from '@hominem/rpc/react';
 import type { Note } from '@hominem/rpc/types';
 import { useQueryClient } from '@tanstack/react-query';

@@ -165,7 +165,6 @@
   },
   "dependencies": {
     "@hominem/auth": "workspace:*",
-    "@hominem/chat-services": "workspace:*",
     "@hominem/chat": "workspace:*",
     "@hominem/rpc": "workspace:*",
     "@hominem/utils": "workspace:*",

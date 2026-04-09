@@ -1,5 +1,5 @@
 {
-  "name": "@hominem/presence",
+  "name": "@hominem/events",
   "version": "0.0.0",
   "description": "Personal life tracking — habits, goals, health, visits. How you spend your time and energy.",
   "type": "module",

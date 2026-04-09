@@ -38,7 +38,6 @@
     "@better-auth/passkey": "^1.5.4",
     "@expo/vector-icons": "^15.0.3",
     "@hominem/auth": "workspace:*",
-    "@hominem/chat-services": "workspace:*",
     "@hominem/env": "workspace:*",
     "@hominem/rpc": "workspace:*",
     "@hominem/ui": "workspace:*",

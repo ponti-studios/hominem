@@ -27,7 +27,7 @@
     "@hominem/chat": "workspace:*",
     "@hominem/db": "workspace:*",
     "@hominem/env": "workspace:*",
-    "@hominem/events-services": "workspace:*",
+    "@hominem/events": "workspace:*",
     "@hominem/jobs-services": "workspace:*",
     "@hominem/presence": "workspace:*",
     "@hominem/queues": "workspace:*",

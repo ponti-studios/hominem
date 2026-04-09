@@ -1,6 +1,5 @@
 import { hasPasskeySupport } from '@hominem/auth/client';
 import { KeyRound, X } from 'lucide-react';
-import { hasPasskeySupport } from '@hominem/auth/client';
 import { useCallback, useEffect, useState } from 'react';
 
 const DISMISSED_KEY = 'hominem_passkey_enrollment_dismissed';

@@ -17,7 +17,6 @@
     "@ai-sdk/react": "^3.0.110",
     "@gsap/react": "^2.1.2",
     "@hominem/auth": "workspace:*",
-    "@hominem/chat-services": "workspace:*",
     "@hominem/env": "workspace:*",
     "@hominem/rpc": "workspace:*",
     "@hominem/telemetry": "workspace:*",
