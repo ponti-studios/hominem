@@ -4,13 +4,13 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig, devices } from '@playwright/test';
 
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const apiDir = path.join(workspaceRoot, 'services/api');
-const webDir = path.join(workspaceRoot, 'apps/web');
+const isCI = process.env.CI === 'true';
 const reuseExistingServer = process.env.REUSE_SERVERS === 'true';
 const apiBaseUrl = process.env.VITE_PUBLIC_API_URL ?? 'http://localhost:4040';
 const apiRootUrl = new URL('/', apiBaseUrl).toString();
 const apiPort = new URL(apiBaseUrl).port || '4040';
-const apiServerCommand = `cd ${workspaceRoot} && just db-setup && cd ${apiDir} && bun run start`;
+const apiServerCommand = isCI ? 'just web-e2e-api-ci' : 'just web-e2e-api-local';
+const webServerCommand = isCI ? 'just web-e2e-web-ci' : 'just web-e2e-web-local';
 
 export default defineConfig({
   testDir: './tests',
@@ -44,7 +44,7 @@ export default defineConfig({
       },
     },
     {
-      command: `cd ${webDir} && bun run build && bun run start`,
+      command: webServerCommand,
       cwd: workspaceRoot,
       url: 'http://localhost:4445/logo.web.png',
       reuseExistingServer,

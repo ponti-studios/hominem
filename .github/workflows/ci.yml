@@ -71,9 +71,8 @@ jobs:
       - uses: actions/checkout@v4
       - &setup-toolchain
         uses: ./.github/actions/setup-toolchain
-      - uses: ./.github/actions/setup
-        with:
-          install-flags: ""
+      - name: Install dependencies and build workspace packages
+        run: just setup
       - name: Run web checks
         run: just check-web
 
@@ -96,14 +95,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - *setup-toolchain
-      - uses: ./.github/actions/start-compose-services
-        with:
-          compose-files: infra/compose/base.yml infra/compose/dev.yml
-          services: redis db-test
-          project-name: ci-test-api
-      - uses: ./.github/actions/setup
-        with:
-          install-flags: ""
+      - name: Start API test services
+        run: just start-compose-services "infra/compose/base.yml infra/compose/dev.yml" "redis db-test" "ci-test-api"
+      - name: Install dependencies and build workspace packages
+        run: just setup
       - uses: ./.github/actions/db-setup
         with:
           environment: test
@@ -131,15 +126,10 @@ jobs:
       - uses: ./.github/actions/setup-toolchain
         with:
           install-node: "true"
-      - uses: ./.github/actions/start-compose-services
-        with:
-          compose-files: infra/compose/test.yml
-          services: db-test
-          project-name: ci-db-migrations
-      - uses: ./.github/actions/setup
-        with:
-          install-flags: ""
-          install-goose: "true"
+      - name: Start database test service
+        run: just start-compose-services "infra/compose/test.yml" "db-test" "ci-db-migrations"
+      - name: Install dependencies, build workspace packages, and install Goose
+        run: just setup "" true true
       - name: Validate migrations are idempotent
         run: just db-migrations-validate
 
@@ -173,17 +163,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - *setup-toolchain
-      - uses: ./.github/actions/start-compose-services
-        with:
-          compose-files: infra/compose/base.yml infra/compose/dev.yml
-          services: redis db-test
-          project-name: ci-e2e-web-auth
-      - uses: ./.github/actions/setup
-        with:
-          install-flags: ""
+      - name: Start E2E test services
+        run: just start-compose-services "infra/compose/base.yml infra/compose/dev.yml" "redis db-test" "ci-e2e-web-auth"
+      - name: Install dependencies and build workspace packages
+        run: just setup
       - uses: ./.github/actions/db-setup
         with:
           environment: test
+      - name: Build web app for E2E
+        run: just build-web
       - name: Cache Playwright browsers
         uses: actions/cache@v4
         with:
@@ -191,10 +179,10 @@ jobs:
           key: playwright-chromium-${{ hashFiles('apps/web/package.json', 'bun.lock') }}
           restore-keys: playwright-chromium-
       - name: Install Playwright browsers
-        run: just web-install-playwright
+        run: just web-e2e-install
         timeout-minutes: 20
       - name: Run web auth E2E tests
-        run: just web-test-e2e
+        run: just web-e2e
         timeout-minutes: 20
         env:
           AUTH_TEST_OTP_ENABLED: "true"

@@ -25,7 +25,7 @@ When you are working on the API or shared backend code, run the API validation l
 - `just dev-web`: run the API and web apps for product work
 - `just check-web`: lint, typecheck, test, and build the web app
 - `just check-api`: lint, typecheck, and test the API
-- `just web-test-e2e`: run the web browser suite
+- `just web-e2e`: run the web browser suite
 - `just db-migrations-validate`: validate migration idempotency
 
 ## CI Model
