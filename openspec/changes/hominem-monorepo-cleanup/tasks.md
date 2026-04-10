@@ -29,8 +29,8 @@
 - [x] 2.13 Run `bun install` and verify dependency resolution (passed)
 - [x] 2.14 Run `turbo check` and verify no type errors (passed)
 - [x] 2.15 Run `vitest run` and verify all tests pass (pre-existing failures in API tests)
-- [ ] 2.16 Run `knip` and verify no unused dependencies (pre-existing mobile config error)
-- [ ] 2.17 Commit Phase 2 changes with message "Phase 2: Standardize dependencies and config"
+- [x] 2.16 Run `knip` and verify no unused dependencies (passed - jose removed)
+- [x] 2.17 Commit Phase 2 changes with message "Phase 2: Standardize dependencies and config"
 
 ## 3. Phase 3: Architectural Refactors
 
@@ -162,11 +162,11 @@
 
 ### 3M: Phase 3 Verification
 
-- [ ] 3M.1 Run `bun install` (no errors)
-- [ ] 3M.2 Run `bun run --filter '*' build` (all packages build)
-- [ ] 3M.3 Run `turbo check` (no type errors)
+- [x] 3M.1 Run `bun install` (no errors)
+- [x] 3M.2 Run `bun run --filter '*' build` (all packages build)
+- [x] 3M.3 Run `turbo check` (no type errors)
 - [x] 3M.4 Run `vitest run` (all tests pass)
-- [ ] 3M.5 Run `knip` (no unused exports)
+- [x] 3M.5 Run `knip` (no unused exports)
 - [ ] 3M.6 Check for remaining duplication between web and mobile
 - [ ] 3M.7 Commit Phase 3 changes with message "Phase 3: Simplify architecture and extract shared code"
 
