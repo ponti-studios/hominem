@@ -3,8 +3,8 @@ import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
 
 import {
   createRootFallbackMessage,
-} from '~/components/error-boundary/error-boundary/contracts';
-import { logError } from '~/components/error-boundary/error-boundary/log-error';
+} from './contracts';
+import { logError } from './log-error';
 
 import { FullScreenErrorFallback } from './full-screen-error-fallback';
 

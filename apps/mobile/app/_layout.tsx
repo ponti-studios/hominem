@@ -14,7 +14,7 @@ import { useScreenCapture } from '~/hooks/use-screen-capture';
 import { makeStyles, theme } from '~/components/theme';
 import { AuthProvider, useAuth } from '~/services/auth/auth-provider';
 import { E2E_TESTING } from '~/constants';
-import { logError } from '~/components/error-boundary/error-boundary/log-error';
+import { logError } from '~/components/error-boundary/log-error';
 import { resolveAuthRedirect } from '~/navigation/auth-route-guard';
 import { initObservability } from '~/services/observability';
 import { markStartupPhase } from '~/services/performance/startup-metrics';

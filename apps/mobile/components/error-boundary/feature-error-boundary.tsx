@@ -3,8 +3,8 @@ import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
 import { View, StyleSheet } from 'react-native';
 
 import { makeStyles } from '~/components/theme';
-import { createFeatureFallbackLabel } from '~/components/error-boundary/error-boundary/contracts';
-import { logError } from '~/components/error-boundary/error-boundary/log-error';
+import { createFeatureFallbackLabel } from '~/components/error-boundary/contracts';
+import { logError } from '~/components/error-boundary/log-error';
 
 import { ErrorMessage } from './error-message';
 

@@ -6,7 +6,7 @@
     "skipDefaultLibCheck": true,
     "incremental": true,
     "tsBuildInfoFile": "../../.cache/app-mobile.tsbuildinfo",
-    "allowJs": false,
+    "allowJs": true,
     "checkJs": false,
     "baseUrl": ".",
     "paths": {

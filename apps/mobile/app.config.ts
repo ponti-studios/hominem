@@ -134,18 +134,9 @@ export default ({ config }: ConfigContext) => {
   const plugins: ExpoConfig['plugins'] = [
     'expo-router',
     [
-      'expo-splash-screen',
-      {
-        backgroundColor: shellTheme.mobile.splashBackgroundColor,
-        image: brandAssets.splash,
-        resizeMode: 'cover',
-      },
-    ],
-    [
       'expo-build-properties',
       {
         ios: {
-          deploymentTarget: '17.4',
           infoPlist: {
             NSAppTransportSecurity: {
               NSAllowsArbitraryLoads: false,
@@ -161,6 +152,14 @@ export default ({ config }: ConfigContext) => {
             },
           },
         },
+      },
+    ],
+    [
+      'expo-splash-screen',
+      {
+        backgroundColor: shellTheme.mobile.splashBackgroundColor,
+        image: brandAssets.splash,
+        resizeMode: 'cover',
       },
     ],
     ['expo-secure-store'],
@@ -231,7 +230,7 @@ export default ({ config }: ConfigContext) => {
     orientation: 'portrait',
     icon: brandAssets.icon,
     userInterfaceStyle: 'light',
-    assetBundlePatterns: ['**/*'],
+    assetBundlePatterns: ['assets/**/*', 'api/**/*', 'app/**/*', 'constants/**/*', 'hooks/**/*', 'navigation/**/*', 'services/**/*'],
     web: {
       bundler: 'metro',
       output: 'static',

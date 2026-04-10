@@ -60,7 +60,7 @@ export function useTranscriber({
         uri: audioUri,
         name: `recording-${Date.now()}.${mimeType.split('/')[1] || 'webm'}`,
         type: mimeType,
-      } as Blob);
+      } as unknown as Blob);
 
       emitVoiceEvent('voice_transcribe_requested', {
         platform: 'mobile-ios',

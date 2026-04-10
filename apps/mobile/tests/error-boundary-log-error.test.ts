@@ -1,4 +1,4 @@
-import { logError } from '~/components/error-boundary/error-boundary/log-error';
+import { logError } from '~/components/error-boundary/log-error';
 
 jest.mock('@hominem/utils/logger', () => ({
   logger: {

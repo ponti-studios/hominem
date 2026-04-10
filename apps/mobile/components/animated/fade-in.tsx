@@ -13,8 +13,7 @@ import {
 } from '~/components/theme/motion';
 
 /**
- * FadeIn — wraps children in the canonical enter animation.
- * opacity 0→1, translateY 6→0, 150ms decelerate.
+ * FadeIn — opacity 0→1, translateY 6→0, 150ms decelerate.
  */
 export const FadeIn = ({ children }: { children: React.ReactNode }) => {
   const opacity = useSharedValue<number>(0);
