@@ -75,20 +75,18 @@ public struct StartChatIntent: AppIntent {
 @available(iOS 18.0, *)
 public struct HakumiShortcutsProvider: AppShortcutsProvider {
   public static var appShortcuts: [AppShortcut] {
-    [
-      AppShortcut(
-        intent: AddNoteIntent(),
-        phrases: ["Add a note in \(.applicationName)", "New note in \(.applicationName)"],
-        shortTitle: "Add Note",
-        systemImageName: "square.and.pencil"
-      ),
-      AppShortcut(
-        intent: StartChatIntent(),
-        phrases: ["Chat in \(.applicationName)", "Open chat in \(.applicationName)"],
-        shortTitle: "Start Chat",
-        systemImageName: "bubble.left.and.bubble.right"
-      ),
-    ]
+    AppShortcut(
+      intent: AddNoteIntent(),
+      phrases: ["Add a note in \(.applicationName)", "New note in \(.applicationName)"],
+      shortTitle: "Add Note",
+      systemImageName: "square.and.pencil"
+    )
+    AppShortcut(
+      intent: StartChatIntent(),
+      phrases: ["Chat in \(.applicationName)", "Open chat in \(.applicationName)"],
+      shortTitle: "Start Chat",
+      systemImageName: "bubble.left.and.bubble.right"
+    )
   }
 }
 
