@@ -130,23 +130,6 @@ export const UpdateNoteInputSchema = z.object({
   analysis: NoteAnalysisSchema.optional().nullish(),
 });
 
-const SyncNoteItemSchema = z.object({
-  id: z.uuid().optional(),
-  type: NoteContentTypeSchema,
-  status: NoteStatusSchema.optional(),
-  title: z.string().nullish(),
-  content: z.string(),
-  excerpt: z.string().nullish(),
-  tags: z.array(ContentTagSchema).optional().default([]),
-  mentions: z.array(NoteMentionSchema).optional().default([]),
-  publishingMetadata: PublishingMetadataSchema.optional().nullish(),
-  analysis: NoteAnalysisSchema.optional().nullish(),
-  createdAt: z.string().optional(),
-  updatedAt: z.string().optional(),
-  publishedAt: z.string().optional(),
-  scheduledFor: z.string().optional(),
-});
-
 export const NotesListQuerySchema = z.object({
   types: z.string().optional(),
   status: z.string().optional(),
@@ -163,16 +146,4 @@ export const NotesListQuerySchema = z.object({
 export const NotesFeedQuerySchema = z.object({
   limit: z.string().optional(),
   cursor: z.string().optional(),
-});
-
-const PublishNoteSchema = PublishingMetadataSchema.pick({
-  platform: true,
-  url: true,
-  externalId: true,
-  scheduledFor: true,
-  seo: true,
-});
-
-const NotesSyncSchema = z.object({
-  items: z.array(SyncNoteItemSchema),
 });

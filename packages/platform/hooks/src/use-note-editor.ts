@@ -86,25 +86,6 @@ export function useNoteEditor(
     [note.id, onSave],
   );
 
-  /**
-   * Schedule a debounced save operation.
-   * Useful for autosaving on every keystroke without overwhelming the server.
-   */
-  const scheduleSave = useCallback(
-    (titleValue: string, contentValue: string, fileIds = attachedFileIds) => {
-      setSaveStatus('unsaved');
-
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
-
-      debounceRef.current = setTimeout(() => {
-        void handleSave(titleValue, contentValue, fileIds);
-      }, 500);
-    },
-    [attachedFileIds, handleSave],
-  );
-
   return {
     title,
     setTitle,

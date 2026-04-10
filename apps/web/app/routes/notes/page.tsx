@@ -38,11 +38,7 @@ const FEED_LOAD_MORE_THRESHOLD_INDEX = 2;
 
 type NoteFeedItem = ReturnType<typeof flattenNoteFeedPages>[number];
 
-export default function Page() {
-  return <NotesPage />;
-}
-
-function NotesPage() {
+export default function NotesPage() {
   const feedQuery = useNotesFeed({ limit: 20 });
   const notes = useMemo(() => flattenNoteFeedPages(feedQuery.data), [feedQuery.data]);
   const composerStore = useMemo(() => new ComposerStore(), []);

@@ -21,7 +21,7 @@ export {
   isArtifactTypeEnabled,
 } from '@hominem/chat/types';
 
-import type { ArtifactType, ThoughtLifecycleState } from '@hominem/chat/types';
+import type { ArtifactType } from '@hominem/chat/types';
 
 // ============================================================================
 // WIRE TYPES — transport-specific DTOs for the chat API

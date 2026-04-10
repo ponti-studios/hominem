@@ -100,26 +100,3 @@ export async function seedChat(input: {
     })
     .execute();
 }
-
-async function seedChatMessage(input: {
-  id: string;
-  chatId: string;
-  authorUserId?: string | null;
-  role: 'system' | 'user' | 'assistant' | 'tool';
-  content: string;
-  files?: unknown[] | null;
-  referencedNoteIds?: string[] | null;
-}) {
-  await db
-    .insertInto('app.chat_messages')
-    .values({
-      id: input.id,
-      chat_id: input.chatId,
-      author_userid: input.authorUserId ?? null,
-      role: input.role,
-      content: input.content,
-      files: (input.files ?? null) as JsonValue | null,
-      referenced_note_ids: (input.referencedNoteIds ?? null) as JsonValue | null,
-    })
-    .execute();
-}
