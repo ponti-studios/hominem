@@ -30,7 +30,7 @@ jobs:
 
     services:
       postgres:
-        image: pgvector/pgvector:0.8.2-pg18
+        image: ghcr.io/${{ github.repository }}/postgres:develop
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
