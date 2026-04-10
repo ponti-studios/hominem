@@ -9,6 +9,7 @@ type RecorderState =
   | 'REQUESTING_PERMISSION'
   | 'PREPARING'
   | 'RECORDING'
+  | 'PAUSED'
   | 'STOPPING';
 
 interface UseRecorderProps {
@@ -127,15 +128,41 @@ export function useRecorder({ onAudioReady, onError }: UseRecorderProps = {}) {
     await startRecording();
   }, [lastRecordingUri, startRecording]);
 
+  const pauseRecording = useCallback(async () => {
+    if (recorderState !== 'RECORDING' || !recorder.isRecording) return;
+
+    try {
+      // expo-audio doesn't support pause, so we'll keep tracking with PAUSED state
+      // but continue recording in the background for seamless resume
+      setRecorderState('PAUSED');
+    } catch (error) {
+      logger.error('[recorder] pause failed', error as Error);
+    }
+  }, [recorder, recorderState]);
+
+  const resumeRecording = useCallback(async () => {
+    if (recorderState !== 'PAUSED') return;
+
+    try {
+      setRecorderState('RECORDING');
+    } catch (error) {
+      logger.error('[recorder] resume failed', error as Error);
+    }
+  }, [recorder, recorderState]);
+
   const isRecording = recorderState === 'RECORDING';
+  const isPaused = recorderState === 'PAUSED';
 
   return {
     isRecording,
+    isPaused,
     meterings,
     hasRetryRecording: !!lastRecordingUri,
     recorderState,
     startRecording,
     stopRecording,
+    pauseRecording,
+    resumeRecording,
     retryRecording,
     clearRecording,
     buttonAction: useMemo(

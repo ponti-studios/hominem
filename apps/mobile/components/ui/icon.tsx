@@ -1,69 +1,72 @@
-import { SymbolView, type AndroidSymbol, type SFSymbol, type SymbolViewProps } from 'expo-symbols';
-import type { TextStyle } from 'react-native';
+import { LucideIcon } from 'lucide-react-native';
+import React from 'react';
 
 import { theme } from '~/components/theme';
 
-type AppIconName = SFSymbol;
+type IconName = keyof typeof iconMap;
 
-const ANDROID_SYMBOL_MAP: Partial<Record<AppIconName, AndroidSymbol>> = {
-  'arrow.clockwise': 'refresh',
-  'arrow.left': 'arrow_back',
-  'arrow.up': 'arrow_upward',
-  calendar: 'calendar_today',
-  camera: 'camera',
-  'camera.rotate': 'flip_camera_android',
-  'checkmark.circle': 'check_circle',
-  'checkmark.circle.fill': 'check_circle',
-  'chevron.right': 'chevron_right',
-  clock: 'schedule',
-  'doc.on.doc': 'content_copy',
-  ellipsis: 'more_vert',
-  gearshape: 'settings',
-  'info.circle': 'info',
-  magnifyingglass: 'search',
-  mic: 'mic',
-  'note.text': 'note',
-  'note.text.badge.plus': 'note_add',
-  'plus.circle': 'add_circle',
-  plus: 'add',
-  'speaker.wave.2': 'volume_up',
-  'square.and.arrow.up': 'share',
-  'square.and.pencil': 'edit_square',
-  'stop.fill': 'stop',
-  tray: 'inbox',
-  trash: 'delete',
-  xmark: 'close',
-  'xmark.circle.fill': 'cancel',
-  'bubble.left': 'chat_bubble',
-  circle: 'circle',
-};
+const iconMap = {
+  'arrow.clockwise': 'RotateCw',
+  'arrow.left': 'ArrowLeft',
+  'arrow.up': 'ArrowUp',
+  calendar: 'Calendar',
+  camera: 'Camera',
+  'camera.rotate': 'FlipHorizontal',
+  'checkmark.circle': 'CheckCircle',
+  'checkmark.circle.fill': 'CheckCircle',
+  'chevron.right': 'ChevronRight',
+  clock: 'Clock',
+  'doc.on.doc': 'Copy',
+  ellipsis: 'MoreVertical',
+  gearshape: 'Settings',
+  'info.circle': 'Info',
+  magnifyingglass: 'Search',
+  mic: 'Mic',
+  'note.text': 'FileText',
+  'note.text.badge.plus': 'FileText',
+  'plus.circle': 'PlusCircle',
+  plus: 'Plus',
+  'speaker.wave.2': 'Volume2',
+  'square.and.arrow.up': 'Share',
+  'square.and.pencil': 'Edit',
+  'stop.fill': 'Square',
+  tray: 'Inbox',
+  trash: 'Trash2',
+  xmark: 'X',
+  'xmark.circle.fill': 'XCircle',
+  'bubble.left': 'MessageCircle',
+  circle: 'Circle',
+} as const;
+
+const ICON_SIZE_MAP = {
+  20: 20,
+  24: 24,
+  32: 32,
+  48: 48,
+} as const;
+
+type IconSize = keyof typeof ICON_SIZE_MAP;
 
 interface IconProps {
+  name: IconName;
+  size?: IconSize | number;
   color?: string;
-  name: AppIconName;
-  size: number;
-  style?: TextStyle | TextStyle[];
 }
 
-const AppIcon = ({ color = theme.colors.foreground, name, size, style }: IconProps) => {
-  const androidSymbol = ANDROID_SYMBOL_MAP[name];
+const AppIcon = ({ name, size = 24, color }: IconProps) => {
+  const iconColor = color ?? theme.colors['icon-primary'];
+  const iconName = iconMap[name];
 
-  return (
-    <SymbolView
-      name={
-        androidSymbol
-          ? {
-              ios: name,
-              android: androidSymbol,
-              web: androidSymbol,
-            }
-          : name
-      }
-      size={size}
-      tintColor={color}
-      style={style as SymbolViewProps['style']}
-    />
-  );
+  if (!iconName) {
+    console.warn(`Icon "${name}" not found in iconMap`);
+    return null;
+  }
+
+  const IconComponent = require('lucide-react-native')[iconName] as LucideIcon;
+  const iconSize = typeof size === 'number' ? size : ICON_SIZE_MAP[size];
+
+  return <IconComponent size={iconSize} color={iconColor} />;
 };
 
 export default AppIcon;
+export type { IconProps, IconName, IconSize };

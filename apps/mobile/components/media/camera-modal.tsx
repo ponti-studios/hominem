@@ -1,9 +1,10 @@
 import * as Haptics from 'expo-haptics';
 import * as MediaLibrary from 'expo-media-library';
-import { useRef, useState } from 'react';
-import { Alert, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Camera, useCameraDevice, useCameraPermission } from 'react-native-vision-camera';
+import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 
 import AppIcon from '~/components/ui/icon';
 import { Text, theme } from '~/components/theme';
@@ -17,9 +18,10 @@ type CameraModalProps = {
   visible: boolean;
   onCapture: (photo: CapturedPhoto) => void;
   onClose: () => void;
+  bottomSheetModalRef?: React.RefObject<BottomSheetModal>;
 };
 
-export function CameraModal({ visible, onCapture, onClose }: CameraModalProps) {
+export function CameraModal({ visible, onCapture, onClose, bottomSheetModalRef }: CameraModalProps) {
   const insets = useSafeAreaInsets();
   const cameraRef = useRef<Camera>(null);
   const [facing, setFacing] = useState<'front' | 'back'>('back');
@@ -28,6 +30,7 @@ export function CameraModal({ visible, onCapture, onClose }: CameraModalProps) {
   const { hasPermission, requestPermission } = useCameraPermission();
   const [mediaPermission, requestMediaPermission] = MediaLibrary.usePermissions();
   const device = useCameraDevice(facing);
+  const snapPoints = useMemo(() => ['50%', '90%'], []);
 
   const handleCapture = async () => {
     if (!cameraRef.current || isTakingPhoto || !device) return;
@@ -71,38 +74,54 @@ export function CameraModal({ visible, onCapture, onClose }: CameraModalProps) {
     }
   };
 
+  const handleDismiss = useCallback(() => {
+    bottomSheetModalRef?.current?.dismiss();
+    onClose();
+  }, [bottomSheetModalRef, onClose]);
+
+  if (!visible) return null;
+
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <View style={[styles.container, { paddingTop: insets.top }]}>
+    <BottomSheetModal
+      ref={bottomSheetModalRef}
+      snapPoints={snapPoints}
+      enablePanDownToClose
+      handleIndicatorStyle={styles.dragHandle}
+      backgroundStyle={styles.sheetBackground}
+      onDismiss={handleDismiss}
+    >
+      <BottomSheetView style={styles.container}>
         {hasPermission && device ? (
-          <Camera ref={cameraRef} style={styles.camera} device={device} isActive={visible} photo>
-            <View style={[styles.controls, { paddingBottom: insets.bottom + 24 }]}>
-              <Pressable
-                onPress={onClose}
-                style={styles.sideButton}
-                accessibilityLabel="Close camera"
-              >
-                <AppIcon name="xmark" size={20} color={theme.colors.white} />
-              </Pressable>
+          <View style={styles.cameraContainer}>
+            <Camera ref={cameraRef} style={styles.camera} device={device} isActive={visible} photo>
+              <View style={[styles.controls, { paddingBottom: insets.bottom + 24 }]}>
+                <Pressable
+                  onPress={handleDismiss}
+                  style={styles.sideButton}
+                  accessibilityLabel="Close camera"
+                >
+                  <AppIcon name="xmark" size={20} color={theme.colors.white} />
+                </Pressable>
 
-              <Pressable
-                onPress={() => void handleCapture()}
-                disabled={isTakingPhoto}
-                style={[styles.captureButton, isTakingPhoto && styles.captureButtonDisabled]}
-                accessibilityLabel="Take photo"
-              >
-                <View style={styles.captureInner} />
-              </Pressable>
+                <Pressable
+                  onPress={() => void handleCapture()}
+                  disabled={isTakingPhoto}
+                  style={[styles.captureButton, isTakingPhoto && styles.captureButtonDisabled]}
+                  accessibilityLabel="Take photo"
+                >
+                  <View style={styles.captureInner} />
+                </Pressable>
 
-              <Pressable
-                onPress={() => setFacing((f) => (f === 'back' ? 'front' : 'back'))}
-                style={styles.sideButton}
-                accessibilityLabel="Flip camera"
-              >
-                <AppIcon name="camera.rotate" size={20} color={theme.colors.white} />
-              </Pressable>
-            </View>
-          </Camera>
+                <Pressable
+                  onPress={() => setFacing((f) => (f === 'back' ? 'front' : 'back'))}
+                  style={styles.sideButton}
+                  accessibilityLabel="Flip camera"
+                >
+                  <AppIcon name="camera.rotate" size={20} color={theme.colors.white} />
+                </Pressable>
+              </View>
+            </Camera>
+          </View>
         ) : (
           <View style={styles.permissionContainer}>
             <Text variant="body" color="foreground">
@@ -116,22 +135,33 @@ export function CameraModal({ visible, onCapture, onClose }: CameraModalProps) {
                 Grant permission
               </Text>
             </Pressable>
-            <Pressable onPress={onClose} style={styles.permissionCancel}>
+            <Pressable onPress={handleDismiss} style={styles.permissionCancel}>
               <Text variant="body" color="text-secondary">
                 Cancel
               </Text>
             </Pressable>
           </View>
         )}
-      </View>
-    </Modal>
+      </BottomSheetView>
+    </BottomSheetModal>
   );
 }
 
 const styles = StyleSheet.create({
+  sheetBackground: {
+    backgroundColor: theme.colors.black,
+  },
+  dragHandle: {
+    backgroundColor: theme.colors['border-default'],
+    width: 40,
+    height: 4,
+  },
   container: {
     flex: 1,
     backgroundColor: theme.colors.black,
+  },
+  cameraContainer: {
+    flex: 1,
   },
   camera: {
     flex: 1,

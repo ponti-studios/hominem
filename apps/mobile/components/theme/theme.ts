@@ -1,6 +1,6 @@
 import {
   radiiNative,
-  colors as tokenColors,
+  darkColors as tokenColors,
   spacing as tokenSpacing,
 } from '@hominem/ui/tokens';
 import { fontFamiliesNative } from '@hominem/ui/tokens/typography.native';

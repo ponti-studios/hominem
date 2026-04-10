@@ -1,6 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 
 import { Box, makeStyles, Text, theme } from '~/components/theme';
+import { Skeleton } from '~/components/animated/skeleton';
 
 type LoadingVariant = 'page' | 'inline' | 'skeleton';
 
@@ -24,9 +25,9 @@ export function LoadingState({ variant = 'inline', message = 'Loading...' }: Loa
   if (variant === 'skeleton') {
     return (
       <View style={styles.skeletonContainer}>
-        <View style={styles.skeletonLine} />
-        <View style={[styles.skeletonLine, styles.skeletonShort]} />
-        <View style={[styles.skeletonLine, styles.skeletonMedium]} />
+        <Skeleton height={12} width="100%" />
+        <Skeleton height={12} width="70%" />
+        <Skeleton height={12} width="85%" />
       </View>
     );
   }
@@ -71,18 +72,6 @@ const useStyles = makeStyles((t) =>
     skeletonContainer: {
       gap: t.spacing.xs_4,
       paddingVertical: t.spacing.sm_12,
-    },
-    skeletonLine: {
-      height: 12,
-      width: '100%',
-      borderRadius: t.borderRadii.md,
-      backgroundColor: t.colors.muted,
-    },
-    skeletonShort: {
-      width: '70%',
-    },
-    skeletonMedium: {
-      width: '85%',
     },
   }),
 );

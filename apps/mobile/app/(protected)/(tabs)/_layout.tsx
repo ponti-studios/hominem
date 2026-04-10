@@ -1,86 +1,113 @@
-import type { RelativePathString } from 'expo-router';
-import { Stack, usePathname, useRouter } from 'expo-router';
+import * as Haptics from 'expo-haptics';
+import { Tabs } from 'expo-router';
 import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 import { InputProvider } from '~/components/input/input-context';
 import { MobileComposer } from '~/components/input/mobile-composer';
-import { Text, makeStyles } from '~/components/theme';
-
-function NavButton({ href, label }: { href: RelativePathString; label: string }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const styles = useStyles();
-  const hrefValue = String(href);
-  const isActive =
-    hrefValue === '/(protected)/(tabs)/'
-      ? pathname === '/' || pathname === ''
-      : pathname.includes(hrefValue.replace('/(protected)/(tabs)/', ''));
-
-  return (
-    <Pressable
-      onPress={() => router.replace(href)}
-      style={[styles.navButton, isActive && styles.navButtonActive]}
-    >
-      <Text variant="body" color={isActive ? 'foreground' : 'text-secondary'}>
-        {label}
-      </Text>
-    </Pressable>
-  );
-}
+import { makeStyles, theme } from '~/components/theme';
+import AppIcon from '~/components/ui/icon';
+import { useReducedMotion } from '~/hooks/use-reduced-motion';
 
 export default function TabsLayout() {
   const styles = useStyles();
+  const prefersReducedMotion = useReducedMotion();
+
+  const handleTabPress = () => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
 
   return (
     <InputProvider>
-      <View style={styles.container}>
-        <View style={styles.nav}>
-          <NavButton href={'/(protected)/(tabs)/' as RelativePathString} label="Feed" />
-          <NavButton href={'/(protected)/(tabs)/notes' as RelativePathString} label="Notes" />
-          <NavButton href={'/(protected)/(tabs)/settings' as RelativePathString} label="Settings" />
-        </View>
-        <View style={styles.content}>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="index" />
-            <Stack.Screen name="notes" />
-            <Stack.Screen name="chat" />
-            <Stack.Screen name="settings" />
-          </Stack>
-          <MobileComposer />
-        </View>
-      </View>
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarStyle: styles.tabBar,
+          tabBarActiveTintColor: theme.colors.primary,
+          tabBarInactiveTintColor: theme.colors['text-secondary'],
+          tabBarLabelStyle: styles.tabBarLabel,
+          tabBarIconStyle: styles.tabBarIcon,
+          tabBarShowLabel: false,
+        }}
+      >
+        <Tabs.Screen
+          name="index"
+          options={{
+            tabBarLabel: 'Home',
+            tabBarIcon: ({ color }) => (
+              <AppIcon name="tray" size={24} color={color} />
+            ),
+          }}
+          listeners={{
+            tabPress: () => {
+              handleTabPress();
+            },
+          }}
+        />
+        <Tabs.Screen
+          name="notes"
+          options={{
+            tabBarLabel: 'Notes',
+            tabBarIcon: ({ color }) => (
+              <AppIcon name="note.text" size={24} color={color} />
+            ),
+          }}
+          listeners={{
+            tabPress: () => {
+              handleTabPress();
+            },
+          }}
+        />
+        <Tabs.Screen
+          name="chat"
+          options={{
+            tabBarLabel: 'Chat',
+            tabBarIcon: ({ color }) => (
+              <AppIcon name="bubble.left" size={24} color={color} />
+            ),
+          }}
+          listeners={{
+            tabPress: () => {
+              handleTabPress();
+            },
+          }}
+        />
+        <Tabs.Screen
+          name="settings"
+          options={{
+            tabBarLabel: 'Settings',
+            tabBarIcon: ({ color }) => (
+              <AppIcon name="gearshape" size={24} color={color} />
+            ),
+          }}
+          listeners={{
+            tabPress: () => {
+              handleTabPress();
+            },
+          }}
+        />
+      </Tabs>
+      <MobileComposer />
     </InputProvider>
   );
 }
 
 const useStyles = makeStyles((t) =>
   StyleSheet.create({
-    container: {
-      flex: 1,
+    tabBar: {
+      borderTopWidth: 1,
+      borderTopColor: t.colors['border-default'],
       backgroundColor: t.colors.background,
+      paddingBottom: 8,
+      paddingTop: 8,
+      height: 64,
     },
-    nav: {
-      flexDirection: 'row',
-      gap: t.spacing.sm_12,
-      paddingHorizontal: t.spacing.m_16,
-      paddingTop: t.spacing.l_32,
-      paddingBottom: t.spacing.sm_12,
-      borderBottomWidth: 1,
-      borderBottomColor: t.colors['border-default'],
+    tabBarLabel: {
+      fontSize: 12,
+      marginTop: 4,
     },
-    navButton: {
-      borderWidth: 1,
-      borderColor: t.colors['border-default'],
-      borderRadius: t.borderRadii.full,
-      paddingHorizontal: t.spacing.m_16,
-      paddingVertical: t.spacing.sm_8,
-    },
-    navButtonActive: {
-      backgroundColor: t.colors.muted,
-    },
-    content: {
-      flex: 1,
+    tabBarIcon: {
+      marginTop: 0,
     },
   }),
 );

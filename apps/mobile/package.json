@@ -6,6 +6,7 @@
   "dependencies": {
     "@bacons/apple-targets": "^4.0.6",
     "@better-auth/passkey": "^1.5.4",
+    "@gorhom/bottom-sheet": "^5.2.9",
     "@hominem/auth": "workspace:*",
     "@hominem/chat": "workspace:*",
     "@hominem/env": "workspace:*",
@@ -14,6 +15,7 @@
     "@hominem/rpc": "workspace:*",
     "@hominem/ui": "workspace:*",
     "@hominem/utils": "workspace:*",
+    "@react-native-async-storage/async-storage": "^3.0.2",
     "@react-native-community/netinfo": "11.5.2",
     "@shopify/flash-list": "2.0.2",
     "@shopify/restyle": "^2.4.4",
@@ -22,6 +24,7 @@
     "expo": "^55.0.8",
     "expo-asset": "~55.0.10",
     "expo-audio": "~55.0.9",
+    "expo-av": "^16.0.8",
     "expo-build-properties": "~55.0.10",
     "expo-camera": "^55.0.10",
     "expo-constants": "~55.0.9",
@@ -49,6 +52,7 @@
     "expo-symbols": "^55.0.5",
     "expo-system-ui": "~55.0.10",
     "expo-web-browser": "~55.0.10",
+    "lucide-react-native": "^1.8.0",
     "posthog-react-native": "^4.37.3",
     "react": "19.2.0",
     "react-dom": "19.2.0",
@@ -75,7 +79,6 @@
     "babel-preset-expo": "^55.0.10",
     "typescript": "5.9.3"
   },
-  "peerDependencies": {},
   "engines": {
     "node": ">=24.14.1"
   },
