@@ -62,7 +62,9 @@ jobs:
           version: 9.3.0
 
       - name: Setup just
-        uses: casey/install@v1.3.0
+        shell: bash
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
 
       - name: Get pnpm store directory
         id: pnpm-cache

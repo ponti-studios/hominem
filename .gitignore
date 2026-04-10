@@ -4,10 +4,6 @@
 .fallow
 .opencode
 
-# Allow packages/env despite global gitignore having ENV/
-!packages/env/
-!packages/env/**
-
 # dependencies
 node_modules
 
@@ -82,6 +78,7 @@ test-import.ts
 
 # local logs
 tmp/
+debug-storybook.log
 
 
 # git worktrees

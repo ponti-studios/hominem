@@ -4,7 +4,7 @@ import {
   createNoteFeedRows,
   expectFirstNoteFeedPage,
   expectSecondNoteFeedPage,
-} from '../../../../../../config/testing/note-feed';
+} from '../../test/note-feed';
 import { db, pool } from '../../db';
 import { getDb, runInTransaction } from '../../transaction';
 import { NoteRepository } from './note.repository';

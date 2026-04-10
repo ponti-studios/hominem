@@ -1,11 +1,10 @@
-import { db } from '@hominem/db';
-import { afterEach, beforeEach, describe, expect, test } from 'vitest';
-
 import {
   createNoteFeedRows,
   expectFirstNoteFeedPage,
   expectSecondNoteFeedPage,
-} from '../../../../../config/testing/note-feed';
+} from '@hominem/db/test/note-feed';
+import { db } from '@hominem/db';
+import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import { resetTestDb, seedFile, seedTestUser } from '../../../test/test-db';
 import { notesRoutes } from './notes';
 import { createTestApp, patchJson, postJson } from './test-helpers';
