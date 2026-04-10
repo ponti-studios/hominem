@@ -1,8 +1,13 @@
 jest.mock('~/components/error-boundary', () => ({
   FeatureErrorBoundary: ({ children }) => children,
 }))
-jest.mock('~/components/LoadingFull', () => ({
-  LoadingFull: ({ children }) => children ?? null,
+jest.mock('@hominem/auth/client', () => ({
+  AuthProvider: ({ children }) => children,
+  useAuthClient: () => ({}) ,
+  useSession: () => ({ data: null, isPending: false }),
+  usePasskeyAuth: () => ({}),
+  usePasskeys: () => ({}),
+  hasPasskeySupport: () => false,
 }))
 jest.mock('~/components/Button', () => {
   const React = require('react')
@@ -39,6 +44,7 @@ jest.mock('~/components/text-input', () => {
 })
 jest.mock('~/components/theme', () => {
   const React = require('react')
+  const { Text: RNText, View } = require('react-native')
   const theme = {
     colors: {
       background: '#000000',
@@ -84,8 +90,8 @@ jest.mock('~/components/theme', () => {
   }
 
   return {
-    Box: ({ children, testID, ...props }) => React.createElement('View', { testID, ...props }, children),
-    Text: ({ children, testID, ...props }) => React.createElement('Text', { testID, ...props }, children),
+    Box: ({ children, testID, ...props }) => React.createElement(View, { testID, ...props }, children),
+    Text: ({ children, testID, ...props }) => React.createElement(RNText, { testID, ...props }, children),
     makeStyles: (factory) => () => factory(theme),
     theme,
   }

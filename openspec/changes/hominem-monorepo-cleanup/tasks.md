@@ -210,11 +210,11 @@
 
 ### 4E: Loading States
 
-- [ ] 4E.1 Create `packages/platform/ui/src/components/loading-state.tsx`
-  - Supports full-page, inline, and skeleton variants
-  - Consistent styling across web and mobile
-- [ ] 4E.2 Replace all custom spinners with `<LoadingState />`
-- [ ] 4E.3 Test loading states in both apps
+- [x] 4E.1 Create `packages/platform/ui/src/components/loading-state.tsx`
+  - [x] Supports full-page, inline, and skeleton variants
+  - [x] Consistent styling across web and mobile
+- [x] 4E.2 Replace all custom spinners with `<LoadingState />`
+- [x] 4E.3 Test loading states in both apps
 
 ### 4F: Clean Up Incomplete Refactors
 

@@ -7,6 +7,11 @@
       "types": "./src/index.ts",
       "default": "./src/index.ts"
     },
+    "./loading-state": {
+      "types": "./src/components/loading-state.tsx",
+      "react-native": "./src/components/loading-state.native.tsx",
+      "default": "./src/components/loading-state.tsx"
+    },
     "./button": {
       "types": "./src/components/ui/button.tsx",
       "react-native": "./src/components/ui/button.native.tsx",
