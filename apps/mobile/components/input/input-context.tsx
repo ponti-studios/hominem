@@ -9,17 +9,17 @@ import React, {
   type PropsWithChildren,
 } from 'react';
 
-export type ComposerRouteKind = 'feed' | 'notes' | 'chat' | 'note' | 'hidden';
-export type MobileComposerMode = 'text' | 'voice';
+type ComposerRouteKind = 'feed' | 'notes' | 'chat' | 'note' | 'hidden';
+type MobileComposerMode = 'text' | 'voice';
 
-export interface ComposerTarget {
+interface ComposerTarget {
   kind: ComposerRouteKind;
   key: string;
   chatId: string | null;
   noteId: string | null;
 }
 
-export interface MobileComposerAttachment {
+interface MobileComposerAttachment {
   id: string;
   name: string;
   type: string;
@@ -27,7 +27,7 @@ export interface MobileComposerAttachment {
   uploadedFile?: UploadedFile;
 }
 
-export interface ComposerDraft {
+interface ComposerDraft {
   text: string;
   attachments: MobileComposerAttachment[];
   isRecording: boolean;
@@ -35,7 +35,7 @@ export interface ComposerDraft {
   selectedNoteIds: string[];
 }
 
-export interface MobileComposerPresentation {
+interface MobileComposerPresentation {
   placeholder: string;
   primaryActionLabel: string;
   secondaryActionLabel: string | null;
@@ -90,7 +90,7 @@ function getPathSegment(pathname: string, marker: '/chat/' | '/notes/'): string 
   return segment.length > 0 ? segment : null;
 }
 
-export function createEmptyComposerDraft(): ComposerDraft {
+function createEmptyComposerDraft(): ComposerDraft {
   return {
     text: '',
     attachments: [],
@@ -100,7 +100,7 @@ export function createEmptyComposerDraft(): ComposerDraft {
   };
 }
 
-export function resolveComposerTarget(
+function resolveComposerTarget(
   pathname: string,
   params: { chatId?: string | string[]; id?: string | string[] } = {},
 ): ComposerTarget {

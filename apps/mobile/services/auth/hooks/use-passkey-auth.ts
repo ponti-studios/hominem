@@ -1,7 +1,6 @@
 import type { User } from '@hominem/auth';
 import { useCallback } from 'react';
 
-import { authClient } from '~/services/auth/auth-client';
 import { captureAuthAnalyticsEvent, captureAuthAnalyticsFailure } from '~/services/auth/analytics';
 import { getPersistedSessionCookieHeader } from '~/services/auth/session-cookie';
 import type { AuthContext } from '~/services/auth/types';

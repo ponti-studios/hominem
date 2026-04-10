@@ -12,7 +12,7 @@ private let appScheme = "hakumi"
 // These definitions MUST live in this target. Extensions are separate Xcode binaries
 // and cannot reference types compiled into the main app.
 
-@available(iOS 16.0, *)
+@available(iOS 18.0, *)
 public struct AddNoteControlCenterIntent: AppIntent {
   public static let title: LocalizedStringResource = "Add Note"
   public static let description = IntentDescription("Open Hakumi to create a new note.")
@@ -25,7 +25,7 @@ public struct AddNoteControlCenterIntent: AppIntent {
   }
 }
 
-@available(iOS 16.0, *)
+@available(iOS 18.0, *)
 public struct StartChatControlCenterIntent: AppIntent {
   public static let title: LocalizedStringResource = "Start Chat"
   public static let description = IntentDescription("Open the Hakumi AI assistant.")

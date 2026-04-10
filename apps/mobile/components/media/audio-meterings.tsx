@@ -4,13 +4,11 @@ import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-na
 
 import { theme } from '~/components/theme';
 
-import { BAR_GAP, BAR_WIDTH, buildAudioBarModels, normalizeDb } from './audio-meterings-model';
+import { BAR_GAP, BAR_WIDTH, buildAudioBarModels } from './audio-meterings-model';
 
 const MAX_HEIGHT = 50;
 const BAR_RADIUS = 2;
 const SPRING_CONFIG = { damping: 12, stiffness: 180 };
-
-const useNormalizedLevels = (levels: number[]) => useMemo(() => levels.map(normalizeDb), [levels]);
 
 function AudioBar({ targetHeight }: { targetHeight: number }) {
   const height = useSharedValue(targetHeight);

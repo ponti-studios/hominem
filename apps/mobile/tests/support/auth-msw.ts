@@ -1,4 +1,4 @@
-import { delay, http, HttpResponse } from 'msw';
+import { http, HttpResponse } from 'msw';
 
 function authRoute(path: string) {
   return new URL(path, 'http://localhost:4040').toString();
@@ -57,13 +57,6 @@ export function mockSendVerificationOtpError(message = 'Unable to send verificat
   });
 }
 
-function mockSendVerificationOtpTimeout() {
-  return http.post(authRoute('/api/auth/email-otp/send-verification-otp'), async () => {
-    await delay('infinite');
-    return HttpResponse.json({ ok: true });
-  });
-}
-
 export function mockVerifyEmailOtpSuccess(input?: {
   email?: string;
   id?: string;
@@ -94,13 +87,6 @@ export function mockVerifyEmailOtpSuccess(input?: {
 export function mockVerifyEmailOtpError(message = 'Verification failed. Please try again.') {
   return http.post(authRoute('/api/auth/sign-in/email-otp'), async () => {
     return HttpResponse.json({ message }, { status: 400 });
-  });
-}
-
-function mockVerifyEmailOtpTimeout() {
-  return http.post(authRoute('/api/auth/sign-in/email-otp'), async () => {
-    await delay('infinite');
-    return HttpResponse.json({ ok: true });
   });
 }
 

@@ -2,7 +2,7 @@
   "name": "@hominem/mobile",
   "version": "1.0.0",
   "private": true,
-  "main": "expo-router/entry",
+  "main": "index.js",
   "dependencies": {
     "@bacons/apple-targets": "^4.0.6",
     "@better-auth/passkey": "^1.5.4",
@@ -38,6 +38,7 @@
     "expo-local-authentication": "^55.0.9",
     "expo-localization": "~55.0.9",
     "expo-media-library": "^55.0.10",
+    "expo-network": "^55.0.13",
     "expo-notifications": "~55.0.13",
     "expo-router": "~55.0.7",
     "expo-screen-capture": "^55.0.9",
@@ -76,6 +77,7 @@
     "@types/react-dom": "19.1.7",
     "babel-jest": "^30.3.0",
     "babel-preset-expo": "^55.0.10",
+    "detox": "20.50.1",
     "jest": "^30.3.0",
     "jest-expo": "~55.0.13",
     "msw": "^2.12.14",
@@ -102,6 +104,13 @@
         ]
       }
     }
+  },
+  "scripts": {
+    "detox:prebuild": "APP_VARIANT=e2e CI=1 EXPO_PUBLIC_APP_VARIANT=e2e EXPO_PUBLIC_POSTHOG_API_KEY='' EXPO_PUBLIC_POSTHOG_HOST='https://us.i.posthog.com' EXPO_PUBLIC_API_BASE_URL='http://localhost:4040' EXPO_PUBLIC_MOBILE_PASSKEY_ENABLED='false' pnpm exec expo prebuild --platform ios --clean",
+    "detox:build": "APP_VARIANT=e2e CI=1 EXPO_PUBLIC_APP_VARIANT=e2e EXPO_PUBLIC_POSTHOG_API_KEY='' EXPO_PUBLIC_POSTHOG_HOST='https://us.i.posthog.com' EXPO_PUBLIC_API_BASE_URL='http://localhost:4040' EXPO_PUBLIC_MOBILE_PASSKEY_ENABLED='false' xcodebuild -workspace ios/HakumiE2E.xcworkspace -scheme HakumiE2E -configuration Release -sdk iphonesimulator -derivedDataPath ios/build",
+    "detox:test": "pnpm exec detox test e2e/smoke.mobile.e2e.js --configuration ios --cleanup",
+    "detox:e2e": "pnpm detox:prebuild && pnpm detox:build && pnpm detox:test",
+    "build:e2e": "pnpm detox:prebuild"
   },
   "trustedDependencies": [
     "@clerk/shared",

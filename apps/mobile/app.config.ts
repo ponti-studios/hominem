@@ -1,10 +1,98 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 
-import { getBrandAssetPaths } from './constants/brand-assets';
-import type { AppVariant, VariantConfig } from './constants/app-variant';
-import { getAppVariant, getAppVariantConfig } from './constants/app-variant';
-import { EXPO_OWNER, EXPO_PROJECT_ID, getExpoExtraConfig } from './constants/expo-config';
-import { shellTheme } from './constants/expo-theme';
+const EXPO_OWNER = 'pontistudios';
+const EXPO_PROJECT_ID = '4dfac82b-644f-4ff3-be42-e8f941287aa1';
+
+const shellTheme = {
+  mobile: {
+    splashBackgroundColor: '#000000',
+    htmlBackgroundColor: '#000000',
+    adaptiveIconBackgroundColor: '#000000',
+    notificationColor: '#000000',
+  },
+} as const;
+
+type AppVariant = 'dev' | 'e2e' | 'preview' | 'production';
+
+interface VariantConfig {
+  bundleIdentifier: string;
+  displayName: string;
+  scheme: string;
+  usesDevClient: boolean;
+  updatesChannel: string | null;
+}
+
+const APP_VARIANTS: Readonly<Record<AppVariant, Readonly<VariantConfig>>> = Object.freeze({
+  dev: Object.freeze({
+    bundleIdentifier: 'com.pontistudios.hakumi.dev',
+    displayName: 'Hakumi Dev',
+    scheme: 'hakumi-dev',
+    usesDevClient: true,
+    updatesChannel: null,
+  }),
+  e2e: Object.freeze({
+    bundleIdentifier: 'com.pontistudios.hakumi.e2e',
+    displayName: 'Hakumi E2E',
+    scheme: 'hakumi-e2e',
+    usesDevClient: false,
+    updatesChannel: null,
+  }),
+  preview: Object.freeze({
+    bundleIdentifier: 'com.pontistudios.hakumi.preview',
+    displayName: 'Hakumi Preview',
+    scheme: 'hakumi-preview',
+    usesDevClient: false,
+    updatesChannel: 'preview',
+  }),
+  production: Object.freeze({
+    bundleIdentifier: 'com.pontistudios.hakumi',
+    displayName: 'Hakumi',
+    scheme: 'hakumi',
+    usesDevClient: false,
+    updatesChannel: 'production',
+  }),
+});
+
+function getAppVariant(rawVariant = process.env.APP_VARIANT ?? 'dev'): AppVariant {
+  if (Object.prototype.hasOwnProperty.call(APP_VARIANTS, rawVariant)) {
+    return rawVariant as AppVariant;
+  }
+  throw new Error(`Unsupported APP_VARIANT: ${rawVariant}`);
+}
+
+function getAppVariantConfig(rawVariant = process.env.APP_VARIANT ?? 'dev'): VariantConfig {
+  return { ...APP_VARIANTS[getAppVariant(rawVariant)] };
+}
+
+const ROOT_ASSETS_DIR = './assets';
+
+const VARIANT_LOGO_ASSET_NAMES: Record<AppVariant, string> = Object.freeze({
+  dev: 'logo.hakumi.dev.png',
+  e2e: 'logo.hakumi.dev.png',
+  preview: 'logo.hakumi.preview.png',
+  production: 'logo.hakumi.png',
+});
+
+function getBrandAssetPaths(variant: AppVariant): { favicon: string; icon: string; splash: string } {
+  const icon = `${ROOT_ASSETS_DIR}/${VARIANT_LOGO_ASSET_NAMES[variant]}`;
+  return {
+    favicon: `${ROOT_ASSETS_DIR}/logo.hakumi.png`,
+    icon,
+    splash: `${ROOT_ASSETS_DIR}/logo.hakumi.splash-screen.png`,
+  };
+}
+
+function getExpoExtraConfig(
+  env: Record<string, string | undefined>,
+): { apiBaseUrl: string; mobilePasskeyEnabled: string; posthogApiKey: string; posthogHost: string } {
+  const getEnvValue = (value: string | undefined, fallback: string): string => value ?? fallback;
+  return {
+    apiBaseUrl: getEnvValue(env.EXPO_PUBLIC_API_BASE_URL, ''),
+    mobilePasskeyEnabled: getEnvValue(env.EXPO_PUBLIC_MOBILE_PASSKEY_ENABLED, 'false'),
+    posthogApiKey: getEnvValue(env.EXPO_PUBLIC_POSTHOG_API_KEY, ''),
+    posthogHost: getEnvValue(env.EXPO_PUBLIC_POSTHOG_HOST, 'https://us.i.posthog.com'),
+  };
+}
 
 function getUpdatesConfig(variantConfig: VariantConfig): ExpoConfig['updates'] {
   if (variantConfig.usesDevClient || variantConfig.updatesChannel === null) {
@@ -114,10 +202,13 @@ export default ({ config }: ConfigContext) => {
         enableMicrophonePermission: false,
       },
     ],
-    './plugins/with-widget-bundle-update',
-    './plugins/with-app-intents',
-    '@bacons/apple-targets',
   ];
+
+  if (appVariant !== 'e2e') {
+    plugins.push('./plugins/with-widget-bundle-update');
+    plugins.push('./plugins/with-app-intents');
+    plugins.push('@bacons/apple-targets');
+  }
 
   if (variantConfig.usesDevClient) {
     plugins.splice(1, 0, [

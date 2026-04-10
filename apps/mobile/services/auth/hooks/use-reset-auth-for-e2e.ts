@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 
-import type { AuthEvent, AuthContext } from '~/services/auth/types';
+import type { AuthContext } from '~/services/auth/types';
 import { clearPersistedSessionCookies } from '~/services/auth/session-cookie';
 import { LocalStore } from '~/services/storage/sqlite';
 import { E2E_TESTING } from '~/constants';

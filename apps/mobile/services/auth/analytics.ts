@@ -98,17 +98,3 @@ export function recordAuthEvent(
 export function markAuthPhaseStart(phase: string, nowMs: number = Date.now()): void {
   phaseStartTimes.set(phase, nowMs);
 }
-
-export function getAuthPhaseElapsed(phase: string, nowMs: number = Date.now()): number | null {
-  const start = phaseStartTimes.get(phase);
-  return start !== undefined ? nowMs - start : null;
-}
-
-function getAuthEvents(): readonly AuthEventLogEntry[] {
-  return events;
-}
-
-export function resetAuthEventLog(): void {
-  events.length = 0;
-  phaseStartTimes.clear();
-}

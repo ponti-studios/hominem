@@ -1,36 +1,5 @@
 import type { RawHonoClient } from '../core/raw-client';
 
-export interface RpcUploadedFile {
-  id: string;
-  originalName: string;
-  type: 'image' | 'document' | 'audio' | 'video' | 'unknown';
-  mimetype: string;
-  size: number;
-  content?: string;
-  textContent?: string;
-  metadata?: Record<string, unknown>;
-  thumbnail?: string;
-  url: string;
-  uploadedAt: string;
-  vectorIds?: string[];
-}
-
-export interface FileCompleteUploadInput {
-  fileId: string;
-  key: string;
-  originalName: string;
-  mimetype: string;
-  size: number;
-}
-
-export interface FileCompleteUploadOutput {
-  success: boolean;
-  file: RpcUploadedFile;
-  message: string;
-}
-
-export interface FileUploadOutput extends FileCompleteUploadOutput {}
-
 export interface FileDeleteInput {
   fileId: string;
 }

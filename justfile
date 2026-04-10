@@ -63,10 +63,10 @@ web-e2e-install:
 
 web-e2e-api-local:
     #!/usr/bin/env bash
-    cd "{{ ROOT_DIR }}" && just db-setup && cd "{{ ROOT_DIR }}/services/api" && pnpm run start
+    cd "{{ ROOT_DIR }}" && just db-setup && DATABASE_URL="${DATABASE_URL:-{{ LOCAL_TEST_DATABASE_URL }}}" pnpm exec tsx services/api/test/setup/auth-state.cleanup.run.ts && cd "{{ ROOT_DIR }}/services/api" && pnpm run start
 
 web-e2e-api-ci:
-    cd "{{ ROOT_DIR }}/services/api" && pnpm run start
+    cd "{{ ROOT_DIR }}" && just db-setup && DATABASE_URL="${DATABASE_URL:-{{ LOCAL_TEST_DATABASE_URL }}}" pnpm exec tsx services/api/test/setup/auth-state.cleanup.run.ts && cd "{{ ROOT_DIR }}/services/api" && pnpm run start
 
 web-e2e-web-local:
     cd "{{ WEB_DIR }}" && pnpm run build && pnpm run start
@@ -106,6 +106,9 @@ format:
 test:
     {{ TURBO }} run test
 
+otel:
+    open http://localhost:16686/
+
 gh-pr-errors:
     ./.claude/skills/gh-pr-errors/scripts/check-last-gh-actions-errors.sh
 
@@ -113,8 +116,6 @@ gh-pr-errors:
 
 MOBILE_DIR := ROOT_DIR / "apps" / "mobile"
 JEST := MOBILE_DIR / "node_modules" / ".bin" / "jest"
-TSX := "npx --yes tsx"
-EXPO_CLI := MOBILE_DIR / "node_modules" / "expo" / "bin" / "cli"
 
 mobile-test:
     cd "{{ MOBILE_DIR }}" && {{ JEST }}
@@ -126,22 +127,22 @@ mobile-typecheck:
     cd "{{ MOBILE_DIR }}" && pnpm exec tsc --noEmit
 
 mobile-start:
-    cd "{{ MOBILE_DIR }}" && {{ TSX }} {{ EXPO_CLI }} start
+    cd "{{ MOBILE_DIR }}" && pnpm exec expo start --platform ios
 
 mobile-start-ios:
-    cd "{{ MOBILE_DIR }}" && {{ TSX }} {{ EXPO_CLI }} start --ios
+    cd "{{ MOBILE_DIR }}" && pnpm exec expo start --ios
 
 mobile-prebuild:
-    cd "{{ MOBILE_DIR }}" && {{ TSX }} {{ EXPO_CLI }} prebuild
+    cd "{{ MOBILE_DIR }}" && pnpm exec expo prebuild --platform ios
 
 mobile-run-ios:
-    cd "{{ MOBILE_DIR }}" && {{ TSX }} {{ EXPO_CLI }} run:ios
+    cd "{{ MOBILE_DIR }}" && pnpm exec expo run:ios
 
 mobile-doctor:
     cd "{{ MOBILE_DIR }}" && npx --yes expo-doctor
 
 mobile-lint:
-    cd "{{ MOBILE_DIR }}" && {{ TSX }} {{ EXPO_CLI }} lint
+    cd "{{ MOBILE_DIR }}" && pnpm exec expo lint
 
 # Run all mobile checks
 mobile-check: mobile-typecheck mobile-test

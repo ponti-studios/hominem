@@ -6,6 +6,7 @@ import { authClient } from '~/services/auth/auth-client';
 import { captureAuthAnalyticsEvent, captureAuthAnalyticsFailure, markAuthPhaseStart, recordAuthEvent } from '~/services/auth/analytics';
 import { runAuthBoot } from '~/services/auth/boot';
 import { clearPersistedSessionCookies, getPersistedSessionCookieHeader } from '~/services/auth/session-cookie';
+import { E2E_TESTING } from '~/constants';
 import type { AuthContext } from '~/services/auth/types';
 import { LocalStore } from '~/services/storage/sqlite';
 import { markStartupPhase } from '~/services/performance/startup-metrics';
@@ -49,6 +50,15 @@ export function useBootSequence(context: AuthContext) {
     async (input?: { signal?: AbortSignal }) => {
       if (hasBootstrappedRef.current || isBootingRef.current) return;
       isBootingRef.current = true;
+
+      if (E2E_TESTING) {
+        dispatch({ type: 'SESSION_EXPIRED' });
+        markStartupPhase('auth_boot_start');
+        markStartupPhase('auth_boot_resolved');
+        hasBootstrappedRef.current = true;
+        isBootingRef.current = false;
+        return;
+      }
 
       const startedAt = Date.now();
 

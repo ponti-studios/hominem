@@ -48,7 +48,7 @@ const fallbackApiBaseUrl =
   localHost && Device.isDevice ? `http://${localHost}:4040` : 'http://localhost:4040';
 const appVariant = extra.appVariant ?? process.env.APP_VARIANT ?? 'dev';
 export const E2E_TESTING = appVariant === 'e2e';
-export function isReleaseAppVariant(variant: string) {
+function isReleaseAppVariant(variant: string) {
   return variant === 'preview' || variant === 'production';
 }
 
