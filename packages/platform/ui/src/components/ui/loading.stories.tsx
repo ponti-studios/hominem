@@ -1,0 +1,35 @@
+import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import { Loading, LoadingScreen } from './loading';
+
+const meta = {
+  title: 'Feedback/Loading',
+  component: Loading,
+  tags: ['autodocs'],
+} satisfies Meta<typeof Loading>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {
+  args: {
+    size: 'md',
+  },
+};
+
+export const Sizes: Story = {
+  render: () => (
+    <div className="flex items-center gap-6">
+      <Loading size="sm" />
+      <Loading size="md" />
+      <Loading size="lg" />
+      <Loading size="xl" />
+      <Loading size="2xl" />
+      <Loading size="3xl" />
+    </div>
+  ),
+};
+
+export const Screen: Story = {
+  render: () => <LoadingScreen />,
+};

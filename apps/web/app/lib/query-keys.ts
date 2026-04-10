@@ -1,23 +1,22 @@
 /**
- * Centralized React Query key factories for the web app.
- * Mirrors the pattern in apps/mobile/utils/services/notes/query-keys.ts.
+ * Re-export the shared query key factory from @hominem/rpc.
+ *
+ * This replaces the local key definitions that were diverging
+ * from mobile. Both apps now share a single source of truth.
  */
-
-const MESSAGES_LIMIT = 50;
+import { queryKeys } from '@hominem/rpc/react';
 
 export const chatQueryKeys = {
-  get: (chatId: string) => ['chats', chatId] as const,
-  messages: (chatId: string) =>
-    ['chats', 'getMessages', { chatId, limit: MESSAGES_LIMIT }] as const,
+  list: queryKeys.chats.list,
+  get: (chatId: string) => queryKeys.chats.detail(chatId),
+  messages: (chatId: string) => queryKeys.chats.messages(chatId),
   note: (noteId: string) => ['chats', 'note', noteId] as const,
   sidebarList: ['chats', 'sidebar', 'list'] as const,
 };
 
 export const notesQueryKeys = {
-  list: (options: Record<string, unknown> = {}) => ['notes', 'list', options] as const,
-  detail: (id: string) => ['notes', id] as const,
-};
-
-export const focusQueryKeys = {
-  all: ['focus'] as const,
+  list: (options: Record<string, unknown> = {}) => queryKeys.notes.list(options),
+  feed: (options: Record<string, unknown> = {}) => queryKeys.notes.feed(options),
+  detail: (id: string) => queryKeys.notes.detail(id),
+  search: (query: string) => queryKeys.notes.search(query),
 };

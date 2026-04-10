@@ -1,0 +1,1 @@
+export { posthog } from './posthog';

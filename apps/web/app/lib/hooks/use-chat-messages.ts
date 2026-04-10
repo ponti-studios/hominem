@@ -1,6 +1,4 @@
-import { useRpcMutation, useRpcQuery } from '@hominem/rpc/react';
-import type { MessagesDeleteOutput, MessagesUpdateOutput } from '@hominem/rpc/types/chat.types';
-import { useQueryClient } from '@tanstack/react-query';
+import { useRpcQuery } from '@hominem/rpc/react';
 
 import { chatQueryKeys } from '~/lib/query-keys';
 
@@ -9,20 +7,18 @@ export interface UseChatMessagesOptions {
 }
 
 export interface UseChatMessagesReturn {
-  messages: import('@hominem/rpc/types/chat.types').ChatMessage[];
+  messages: import('@hominem/rpc/types/chat.types').ChatMessageDto[];
   isLoading: boolean;
   error: Error | null;
   deleteMessage: (messageId: string) => Promise<void>;
   updateMessage: (messageId: string, content: string) => Promise<void>;
 }
 
-export type ExtendedMessage = import('@hominem/rpc/types/chat.types').ChatMessage & {
+export type ExtendedMessage = import('@hominem/rpc/types/chat.types').ChatMessageDto & {
   isStreaming?: boolean;
 };
 
 export function useChatMessages({ chatId }: UseChatMessagesOptions): UseChatMessagesReturn {
-  const queryClient = useQueryClient();
-
   const messagesQuery = useRpcQuery(({ chats }) => chats.getMessages({ chatId, limit: 50 }), {
     queryKey: chatQueryKeys.messages(chatId),
     enabled: !!chatId,
@@ -34,37 +30,11 @@ export function useChatMessages({ chatId }: UseChatMessagesOptions): UseChatMess
   const isLoading = messagesQuery.isLoading;
   const error = messagesQuery.error;
 
-  const deleteMessageMutation = useRpcMutation<MessagesDeleteOutput, { messageId: string }>(
-    ({ messages }, variables) => messages.delete(variables),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: chatQueryKeys.messages(chatId) });
-      },
-    },
-  );
-
-  const updateMessageMutation = useRpcMutation<
-    MessagesUpdateOutput,
-    { messageId: string; content: string }
-  >(({ messages }, variables) => messages.update(variables), {
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: chatQueryKeys.messages(chatId) });
-    },
-  });
-
-  const deleteMessage = async (messageId: string) => {
-    await deleteMessageMutation.mutateAsync({ messageId });
-  };
-
-  const updateMessage = async (messageId: string, content: string) => {
-    await updateMessageMutation.mutateAsync({ messageId, content });
-  };
-
   return {
     messages,
     isLoading,
     error,
-    deleteMessage,
-    updateMessage,
+    deleteMessage: async () => undefined,
+    updateMessage: async () => undefined,
   };
 }

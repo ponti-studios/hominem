@@ -1,77 +1,64 @@
-import { readAuthErrorMessage, usePasskeyAuth } from '@hominem/auth';
-import { resolveSafeAuthRedirect } from '@hominem/auth/server-utils';
+'use client';
+
+import { AUTH_COPY, readAuthErrorMessage } from '@hominem/auth';
+import { useAuthClient, usePasskeyAuth } from '@hominem/auth/client';
+import { useEmailAuth } from '@hominem/hooks';
 import { AuthScaffold, EmailEntryForm } from '@hominem/ui';
-import { redirect, useActionData, useLocation, useSearchParams } from 'react-router';
-import type { ActionFunctionArgs } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 
-import { getServerAuth } from '~/lib/auth.server';
-
-import { AUTH_CONFIG, getAuthApiBaseUrl } from './config';
+import { AUTH_CONFIG } from './config';
+import { getNextRedirect } from './shared';
+import { redirectAuthenticatedUser } from './shared.server';
 
 export async function loader({ request }: { request: Request }) {
-  const { user, headers } = await getServerAuth(request);
-  if (user) {
-    const url = new URL(request.url);
-    return redirect(
-      resolveSafeAuthRedirect(url.searchParams.get('next'), AUTH_CONFIG.defaultRedirect, [
-        ...AUTH_CONFIG.allowedRedirectPrefixes,
-      ]),
-      { headers },
-    );
-  }
-  return null;
-}
-
-export async function action({ request }: ActionFunctionArgs) {
-  const formData = (await request.formData()) as unknown as { get(key: string): string | null };
-  const email = String(formData.get('email') ?? '')
-    .trim()
-    .toLowerCase();
-  const next = String(formData.get('next') ?? AUTH_CONFIG.defaultRedirect);
-
-  if (!email) {
-    return { error: 'Email is required' };
-  }
-
-  try {
-    const response = await fetch(new URL('/api/auth/email-otp/send', getAuthApiBaseUrl()), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, type: 'sign-in' }),
-    });
-
-    if (!response.ok) {
-      const error = (await response.json()) as { message?: string };
-      return { error: error.message || 'Failed to send verification code' };
-    }
-
-    return redirect(
-      `/auth/verify?email=${encodeURIComponent(email)}&next=${encodeURIComponent(next)}`,
-    );
-  } catch {
-    return { error: 'Failed to send verification code' };
-  }
+  return redirectAuthenticatedUser(request);
 }
 
 export default function Component() {
-  const actionData = useActionData<{ error?: string }>();
+  // Skip rendering on server
+  if (typeof window === 'undefined') {
+    return <div>Loading...</div>;
+  }
+
+  const authClient = useAuthClient();
   const location = useLocation();
-  const [searchParams] = useSearchParams();
-  const next = searchParams.get('next') ?? AUTH_CONFIG.defaultRedirect;
+  const navigate = useNavigate();
+  const next = getNextRedirect(location.search);
 
   const {
     authenticate,
-    isLoading: isPasskeyLoading,
     error: passkeyError,
     isSupported: isPasskeySupported,
   } = usePasskeyAuth({ redirectTo: next });
+
+  const { error: sendError, handleSendOtp } = useEmailAuth({
+    sendOtp: async (email) => {
+      const result = await authClient.emailOtp.sendVerificationOtp({
+        email,
+        type: 'sign-in',
+      });
+      if (result.error) {
+        throw new Error(result.error.message ?? 'Failed to send verification code');
+      }
+      const redirectTo = next ?? AUTH_CONFIG.defaultRedirect;
+      navigate(
+        `/auth/verify?email=${encodeURIComponent(email)}&next=${encodeURIComponent(redirectTo)}`,
+      );
+    },
+    verifyOtp: async () => {},
+    resendOtp: async () => {},
+  });
+
   const callbackError = readAuthErrorMessage(new URLSearchParams(location.search));
-  const resolvedError = actionData?.error ?? callbackError ?? passkeyError ?? undefined;
+  const resolvedError = callbackError ?? passkeyError ?? sendError ?? undefined;
 
   return (
-    <AuthScaffold title={AUTH_CONFIG.title} description={AUTH_CONFIG.description}>
+    <AuthScaffold title={AUTH_CONFIG.title} helper={AUTH_COPY.emailEntry.helper}>
       <EmailEntryForm
         action="/auth"
+        onSubmit={async ({ email }) => {
+          await handleSendOtp(email);
+        }}
         {...(resolvedError ? { error: resolvedError } : {})}
         {...(isPasskeySupported
           ? {
@@ -80,7 +67,6 @@ export default function Component() {
               },
             }
           : {})}
-        {...(isPasskeyLoading ? { loadingMessage: 'Authenticating with passkey...' } : {})}
       />
     </AuthScaffold>
   );

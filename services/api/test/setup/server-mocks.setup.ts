@@ -1,4 +1,9 @@
-import { vi } from 'vitest'
+import { vi } from 'vitest';
+
+vi.mock('@sentry/node', () => ({
+  captureException: vi.fn(),
+  init: vi.fn(),
+}));
 
 vi.mock('@hominem/utils/storage', () => ({
   csvStorageService: {
@@ -32,23 +37,23 @@ vi.mock('@hominem/utils/storage', () => ({
       uploadedAt: new Date(),
     }),
   },
-}))
+}));
 
 vi.mock('resend', () => {
-  const send = vi.fn()
+  const send = vi.fn();
   return {
     Resend: vi.fn(() => ({
       emails: { send },
     })),
-  }
-})
+  };
+});
 
 vi.mock('../src/analytics', () => ({
   track: vi.fn(),
   EVENTS: {
     USER_EVENTS: {},
   },
-}))
+}));
 
 vi.mock('googleapis', () => ({
   google: {
@@ -66,4 +71,4 @@ vi.mock('googleapis', () => ({
       },
     })),
   },
-}))
+}));

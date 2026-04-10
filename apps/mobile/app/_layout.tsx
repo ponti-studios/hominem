@@ -1,7 +1,6 @@
 import { ThemeProvider } from '@shopify/restyle';
-import { useFonts } from 'expo-font';
-import { SplashScreen, Stack, useRouter, useSegments } from 'expo-router';
 import type { RelativePathString } from 'expo-router';
+import { SplashScreen, Stack, useRouter, useSegments } from 'expo-router';
 import { PostHogProvider } from 'posthog-react-native';
 import React, { useEffect } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -9,18 +8,16 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { RootErrorBoundary } from '~/components/error-boundary/root-error-boundary';
-import { registerBackgroundSync } from '~/lib/background-sync';
-import { posthog } from '~/lib/posthog';
-import { recordActiveDay } from '~/lib/review-prompt';
-import { useScreenCapture } from '~/lib/use-screen-capture';
-import { useWidgetActionHandler } from '~/lib/use-widget-action-handler';
-import { theme, makeStyles } from '~/theme';
-import { AuthProvider, useAuth } from '~/utils/auth-provider';
-import { E2E_TESTING } from '~/utils/constants';
-import { logError } from '~/utils/error-boundary/log-error';
-import { resolveAuthRedirect } from '~/utils/navigation/auth-route-guard';
-import { initObservability } from '~/utils/observability';
-import { markStartupPhase } from '~/utils/performance/startup-metrics';
+import { posthog } from '~/services/posthog';
+import { recordActiveDay } from '~/services/review-prompt';
+import { useScreenCapture } from '~/hooks/use-screen-capture';
+import { makeStyles, theme } from '~/components/theme';
+import { AuthProvider, useAuth } from '~/services/auth/auth-provider';
+import { E2E_TESTING } from '~/constants';
+import { logError } from '~/components/error-boundary/error-boundary/log-error';
+import { resolveAuthRedirect } from '~/navigation/auth-route-guard';
+import { initObservability } from '~/services/observability';
+import { markStartupPhase } from '~/services/performance/startup-metrics';
 
 SplashScreen.preventAutoHideAsync();
 markStartupPhase('app_start');
@@ -30,8 +27,6 @@ function InnerRootLayout() {
   const segments = useSegments() as string[];
   const { authStatus, isSignedIn, currentUser, resetAuthForE2E, signOut } = useAuth();
   const hasMarkedShellReady = React.useRef(false);
-  useWidgetActionHandler();
-
   useEffect(() => {
     markStartupPhase('root_layout_mounted');
 
@@ -117,24 +112,13 @@ function InnerRootLayout() {
 
 function RootLayout() {
   useScreenCapture();
-  const [fontsLoaded] = useFonts({
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    'Geist Mono': require('../assets/fonts/GeistMono-Regular.ttf'),
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    'fa-regular-400': require('../assets/fonts/icons/fa-regular-400.ttf'),
-  });
 
   useEffect(() => {
     const cleanup = initObservability();
     posthog.capture('app_health_check', { source: 'root_layout' });
-    void registerBackgroundSync();
     void recordActiveDay();
     return cleanup;
   }, []);
-
-  if (!fontsLoaded) {
-    return null;
-  }
 
   return (
     <PostHogProvider client={posthog}>

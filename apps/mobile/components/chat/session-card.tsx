@@ -1,20 +1,19 @@
 import { useApiClient } from '@hominem/rpc/react';
-import { FlashList, type ListRenderItem } from '@shopify/flash-list';
 import { useQuery } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
 import type { RelativePathString } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { memo, useCallback } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { FadeIn } from '~/components/animated/fade-in';
-import { makeStyles, Text, theme } from '~/theme';
-import { parseInboxTimestamp } from '~/utils/date/parse-inbox-timestamp';
-import type { ChatWithActivity } from '~/utils/services/chat/session-state';
+import { makeStyles, Text, theme } from '~/components/theme';
+import { formatRelativeAge } from '~/services/date/format-relative-age';
+import type { ChatWithActivity } from '~/services/chat/session-state';
 import {
   getArchivedChatsWithActivity,
   getInboxChatsWithActivity,
-} from '~/utils/services/chat/session-state';
-import { chatKeys } from '~/utils/services/notes/query-keys';
+} from '~/services/chat/session-state';
+import { chatKeys } from '~/services/notes/query-keys';
 
 import AppIcon from '../ui/icon';
 
@@ -47,12 +46,12 @@ interface SessionCardProps {
   isActive?: boolean;
 }
 
-export const SessionCard = memo(({ chat, isActive }: SessionCardProps) => {
+const SessionCard = memo(({ chat, isActive }: SessionCardProps) => {
   const styles = useStyles();
   const router = useRouter();
 
   const handlePress = useCallback(() => {
-    router.push(`/(protected)/(tabs)/chat?chatId=${chat.id}` as RelativePathString);
+    router.push(`/(protected)/(tabs)/chat/${chat.id}` as RelativePathString);
   }, [router, chat.id]);
 
   const label = chat.title ?? 'Untitled session';
@@ -71,7 +70,7 @@ export const SessionCard = memo(({ chat, isActive }: SessionCardProps) => {
       >
         <View style={[styles.iconWrap, isActive && styles.activeIconWrap]}>
           <AppIcon
-            name="comment"
+            name="bubble.left"
             size={14}
             color={isActive ? theme.colors.background : theme.colors['text-tertiary']}
           />
@@ -81,10 +80,10 @@ export const SessionCard = memo(({ chat, isActive }: SessionCardProps) => {
             {label}
           </Text>
           <Text variant="small" color="text-tertiary">
-            {isActive ? 'Active' : formatAge(chat.activityAt)}
+            {isActive ? 'Active' : formatRelativeAge(chat.activityAt)}
           </Text>
         </View>
-        <AppIcon name="chevron-right" size={12} color={theme.colors['text-tertiary']} />
+        <AppIcon name="chevron.right" size={12} color={theme.colors['text-tertiary']} />
       </Pressable>
     </FadeIn>
   );
@@ -92,58 +91,8 @@ export const SessionCard = memo(({ chat, isActive }: SessionCardProps) => {
 
 SessionCard.displayName = 'SessionCard';
 
-// ─── SessionList ──────────────────────────────────────────────────────────────
-
-const keyExtractor = (item: ChatWithActivity) => item.id;
-
-export const SessionList = () => {
-  const styles = useStyles();
-  const { data: sessions } = useResumableSessions();
-
-  const renderItem = useCallback<ListRenderItem<ChatWithActivity>>(({ item, index }) => {
-    return <SessionCard chat={item} isActive={index === 0 && !item.archivedAt} />;
-  }, []);
-
-  if (!sessions || sessions.length === 0) return null;
-
-  return (
-    <View style={styles.list}>
-      <Text variant="small" color="text-tertiary" style={styles.sectionLabel}>
-        RECENT CONVERSATIONS
-      </Text>
-      <FlashList
-        data={sessions}
-        keyExtractor={keyExtractor}
-        renderItem={renderItem}
-        scrollEnabled={false}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-      />
-    </View>
-  );
-};
-
-function formatAge(activityAt: string): string {
-  const parsed = parseInboxTimestamp(activityAt);
-  const diffMs = Date.now() - parsed.getTime();
-  const diffH = Math.floor(diffMs / (1000 * 60 * 60));
-  if (diffH < 1) return 'Just now';
-  if (diffH < 24) return `${diffH}h ago`;
-  const diffD = Math.floor(diffH / 24);
-  return `${diffD}d ago`;
-}
-
 const useStyles = makeStyles((t) =>
   StyleSheet.create({
-    list: {
-      gap: t.spacing.sm_8,
-    },
-    sectionLabel: {
-      letterSpacing: 1.2,
-      marginBottom: t.spacing.xs_4,
-    },
-    separator: {
-      height: t.spacing.sm_8,
-    },
     card: {
       flexDirection: 'row',
       alignItems: 'center',

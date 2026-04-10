@@ -1,14 +1,15 @@
 import { FlashList, type ListRenderItem } from '@shopify/flash-list';
 import React, { memo, useCallback } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, type RefreshControlProps } from 'react-native';
 
-import { Text, makeStyles } from '~/theme';
+import { Text, makeStyles } from '~/components/theme';
 
 import { InboxStreamItem } from './inbox-stream-item';
-import type { InboxStreamItem as InboxStreamItemModel } from './inbox-stream-items';
+import type { InboxStreamItemData as InboxStreamItemModel } from './inbox-stream-items';
 
 interface InboxStreamProps {
   items: InboxStreamItemModel[];
+  refreshControl?: React.ReactElement<RefreshControlProps>;
 }
 
 const keyExtractor = (item: InboxStreamItemModel) => `${item.kind}:${item.id}`;
@@ -26,7 +27,7 @@ const RenderInboxStreamItem = memo(({ item }: { item: InboxStreamItemModel }) =>
 
 RenderInboxStreamItem.displayName = 'RenderInboxStreamItem';
 
-export const InboxStream = ({ items }: InboxStreamProps) => {
+export const InboxStream = ({ items, refreshControl }: InboxStreamProps) => {
   const styles = useStyles();
   const renderItem = useCallback<ListRenderItem<InboxStreamItemModel>>(({ item }) => {
     return <RenderInboxStreamItem item={item} />;
@@ -57,6 +58,7 @@ export const InboxStream = ({ items }: InboxStreamProps) => {
           keyExtractor={keyExtractor}
           renderItem={renderItem}
           ListFooterComponent={<View style={styles.sectionFooter} />}
+          refreshControl={refreshControl}
           showsVerticalScrollIndicator={false}
         />
       </View>

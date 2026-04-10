@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Camera, useCameraDevice, useCameraPermission } from 'react-native-vision-camera';
 
 import AppIcon from '~/components/ui/icon';
-import { Text, theme } from '~/theme';
+import { Text, theme } from '~/components/theme';
 
 type CapturedPhoto = {
   uri: string;
@@ -82,7 +82,7 @@ export function CameraModal({ visible, onCapture, onClose }: CameraModalProps) {
                 style={styles.sideButton}
                 accessibilityLabel="Close camera"
               >
-                <AppIcon name="x" size={20} color={theme.colors.white} />
+                <AppIcon name="xmark" size={20} color={theme.colors.white} />
               </Pressable>
 
               <Pressable
@@ -99,7 +99,7 @@ export function CameraModal({ visible, onCapture, onClose }: CameraModalProps) {
                 style={styles.sideButton}
                 accessibilityLabel="Flip camera"
               >
-                <AppIcon name="rotate" size={20} color={theme.colors.white} />
+                <AppIcon name="camera.rotate" size={20} color={theme.colors.white} />
               </Pressable>
             </View>
           </Camera>

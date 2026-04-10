@@ -21,7 +21,7 @@ interface UserRow {
 }
 
 async function deleteMatchingRedisKeys(
-  redis: Awaited<typeof import('../../../../packages/services/src/redis')>['redis'],
+  redis: Awaited<typeof import('@hominem/services/redis')>['redis'],
   pattern: string,
 ) {
   let cursor = '0'
@@ -39,7 +39,7 @@ async function selectAuthTestUserIds() {
   const result = await pool.query<UserRow>(
     `
       select id
-      from users
+      from "user"
       where lower(email) = any($1::text[])
         or lower(email) like any($2::text[])
     `,
@@ -51,13 +51,13 @@ async function selectAuthTestUserIds() {
 
 async function cleanupDeviceCodes(userIds: string[]) {
   if (userIds.length > 0) {
-    await db.deleteFrom('user_device_code').where('user_id', 'in', userIds).execute()
+    await db.deleteFrom('deviceCode').where('userId', 'in', userIds).execute()
   }
 
   await pool.query(
     `
-      delete from user_device_code
-      where client_id = any($1::text[])
+      delete from "deviceCode"
+      where "clientId" = any($1::text[])
     `,
     [TEST_DEVICE_CLIENT_IDS],
   )
@@ -66,7 +66,7 @@ async function cleanupDeviceCodes(userIds: string[]) {
 async function cleanupVerificationRows() {
   await pool.query(
     `
-      delete from user_verification
+      delete from verification
       where lower(identifier) = any($1::text[])
         or lower(identifier) like any($2::text[])
     `,
@@ -79,7 +79,7 @@ async function cleanupUsers(userIds: string[]) {
     return
   }
 
-  await db.deleteFrom('users').where('id', 'in', userIds).execute()
+  await db.deleteFrom('user').where('id', 'in', userIds).execute()
 }
 
 export async function cleanupApiAuthTestState() {
@@ -92,7 +92,7 @@ export async function cleanupApiAuthTestState() {
 
 export async function cleanupApiAuthRedisState() {
   try {
-    const { redis } = await import('../../../../packages/services/src/redis')
+    const { redis } = await import('@hominem/services/redis')
     for (const pattern of AUTH_REDIS_PATTERNS) {
       await deleteMatchingRedisKeys(redis, pattern)
     }

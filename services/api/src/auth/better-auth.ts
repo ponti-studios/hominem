@@ -22,63 +22,63 @@ import { sendEmail } from '../lib/email';
 import { recordTestOtp } from './test-otp-store';
 
 const userFieldMappings = {
-  emailVerified: 'email_verified',
-  createdAt: 'created_at',
-  updatedAt: 'updated_at',
+  emailVerified: 'emailVerified',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
 };
 
 const sessionFieldMappings = {
-  expiresAt: 'expires_at',
-  createdAt: 'created_at',
-  updatedAt: 'updated_at',
-  ipAddress: 'ip_address',
-  userAgent: 'user_agent',
-  userId: 'user_id',
+  expiresAt: 'expiresAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  ipAddress: 'ipAddress',
+  userAgent: 'userAgent',
+  userId: 'userId',
 };
 
 const accountFieldMappings = {
-  accountId: 'account_id',
-  providerId: 'provider_id',
-  userId: 'user_id',
-  accessToken: 'access_token',
-  refreshToken: 'refresh_token',
-  idToken: 'id_token',
-  accessTokenExpiresAt: 'access_token_expires_at',
-  refreshTokenExpiresAt: 'refresh_token_expires_at',
-  createdAt: 'created_at',
-  updatedAt: 'updated_at',
+  accountId: 'accountId',
+  providerId: 'providerId',
+  userId: 'userId',
+  accessToken: 'accessToken',
+  refreshToken: 'refreshToken',
+  idToken: 'idToken',
+  accessTokenExpiresAt: 'accessTokenExpiresAt',
+  refreshTokenExpiresAt: 'refreshTokenExpiresAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
 };
 
 const verificationFieldMappings = {
-  expiresAt: 'expires_at',
-  createdAt: 'created_at',
-  updatedAt: 'updated_at',
+  expiresAt: 'expiresAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
 };
 
 const passkeyFieldMappings = {
-  publicKey: 'public_key',
-  userId: 'user_id',
-  credentialID: 'credential_id',
-  deviceType: 'device_type',
-  backedUp: 'backed_up',
-  createdAt: 'created_at',
+  publicKey: 'publicKey',
+  userId: 'userId',
+  credentialID: 'credentialID',
+  deviceType: 'deviceType',
+  backedUp: 'backedUp',
+  createdAt: 'createdAt',
 };
 
 const jwksFieldMappings = {
-  publicKey: 'public_key',
-  privateKey: 'private_key',
-  createdAt: 'created_at',
-  expiresAt: 'expires_at',
+  publicKey: 'publicKey',
+  privateKey: 'privateKey',
+  createdAt: 'createdAt',
+  expiresAt: 'expiresAt',
 };
 
 const deviceCodeFieldMappings = {
-  deviceCode: 'device_code',
-  userCode: 'user_code',
-  userId: 'user_id',
-  expiresAt: 'expires_at',
-  lastPolledAt: 'last_polled_at',
-  pollingInterval: 'polling_interval',
-  clientId: 'client_id',
+  deviceCode: 'deviceCode',
+  userCode: 'userCode',
+  userId: 'userId',
+  expiresAt: 'expiresAt',
+  lastPolledAt: 'lastPolledAt',
+  pollingInterval: 'pollingInterval',
+  clientId: 'clientId',
 };
 
 function getTrustedOrigins() {
@@ -133,7 +133,7 @@ function getAuthPlugins() {
       origin: getTrustedOrigins(),
       schema: {
         passkey: {
-          modelName: 'user_passkey',
+          modelName: 'passkey',
           fields: passkeyFieldMappings,
         },
       },
@@ -200,7 +200,7 @@ function getAuthPlugins() {
     jwt({
       schema: {
         jwks: {
-          modelName: 'user_jwks',
+          modelName: 'jwks',
           fields: jwksFieldMappings,
         },
       },
@@ -217,7 +217,7 @@ function getAuthPlugins() {
       verificationUri: '/api/auth/device',
       schema: {
         deviceCode: {
-          modelName: 'user_device_code',
+          modelName: 'deviceCode',
           fields: deviceCodeFieldMappings,
         },
       },
@@ -237,19 +237,19 @@ const betterAuthOptions: BetterAuthOptions = {
   trustedOrigins: getTrustedOrigins(),
   advanced: getAdvancedOptions(),
   user: {
-    modelName: 'users',
+    modelName: 'user',
     fields: userFieldMappings,
   },
   session: {
-    modelName: 'user_session',
+    modelName: 'session',
     fields: sessionFieldMappings,
   },
   account: {
-    modelName: 'user_account',
+    modelName: 'account',
     fields: accountFieldMappings,
   },
   verification: {
-    modelName: 'user_verification',
+    modelName: 'verification',
     fields: verificationFieldMappings,
   },
   emailAndPassword: {

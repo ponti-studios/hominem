@@ -1,39 +1,41 @@
-import { SymbolView } from 'expo-symbols';
-import { Platform } from 'react-native';
+import { SymbolView, type AndroidSymbol, type SFSymbol, type SymbolViewProps } from 'expo-symbols';
 import type { TextStyle } from 'react-native';
-import { Text } from 'react-native';
 
-import { theme } from '~/theme';
+import { theme } from '~/components/theme';
 
-import unicodeMap from './fa-unicode-map.json';
+type AppIconName = SFSymbol;
 
-export type AppIconName = keyof typeof unicodeMap;
-
-// Maps FontAwesome icon names to SF Symbol names for key UI surfaces.
-const SF_SYMBOL_MAP: Partial<Record<AppIconName, string>> = {
-  inbox: 'tray',
-  'pen-to-square': 'square.and.pencil',
-  comment: 'bubble.left',
-  'magnifying-glass': 'magnifyingglass',
-  gear: 'gearshape',
-  'arrow-left': 'arrow.left',
-  plus: 'plus',
-  x: 'xmark',
+const ANDROID_SYMBOL_MAP: Partial<Record<AppIconName, AndroidSymbol>> = {
+  'arrow.clockwise': 'refresh',
+  'arrow.left': 'arrow_back',
+  'arrow.up': 'arrow_upward',
+  calendar: 'calendar_today',
   camera: 'camera',
-  microphone: 'mic',
-  stop: 'stop.fill',
-  share: 'square.and.arrow.up',
-  'share-from-square': 'square.and.arrow.up',
-  copy: 'doc.on.doc',
-  trash: 'trash',
-  speaker: 'speaker.wave.2',
-  'volume-high': 'speaker.wave.2',
-  pencil: 'pencil',
-  'arrows-rotate': 'arrow.clockwise',
-  calendar: 'calendar',
-  rotate: 'arrow.triangle.2.circlepath',
-  'circle-plus': 'plus.circle',
-  'arrow-up': 'arrow.up',
+  'camera.rotate': 'flip_camera_android',
+  'checkmark.circle': 'check_circle',
+  'checkmark.circle.fill': 'check_circle',
+  'chevron.right': 'chevron_right',
+  clock: 'schedule',
+  'doc.on.doc': 'content_copy',
+  ellipsis: 'more_vert',
+  gearshape: 'settings',
+  'info.circle': 'info',
+  magnifyingglass: 'search',
+  mic: 'mic',
+  'note.text': 'note',
+  'note.text.badge.plus': 'note_add',
+  'plus.circle': 'add_circle',
+  plus: 'add',
+  'speaker.wave.2': 'volume_up',
+  'square.and.arrow.up': 'share',
+  'square.and.pencil': 'edit_square',
+  'stop.fill': 'stop',
+  tray: 'inbox',
+  trash: 'delete',
+  xmark: 'close',
+  'xmark.circle.fill': 'cancel',
+  'bubble.left': 'chat_bubble',
+  circle: 'circle',
 };
 
 interface IconProps {
@@ -41,29 +43,26 @@ interface IconProps {
   name: AppIconName;
   size: number;
   style?: TextStyle | TextStyle[];
-  useSymbol?: boolean;
 }
 
-const AppIcon = ({ color = theme.colors.foreground, name, size, style, useSymbol }: IconProps) => {
-  const sfSymbol = SF_SYMBOL_MAP[name];
-
-  if (useSymbol && Platform.OS === 'ios' && sfSymbol) {
-    return (
-      <SymbolView
-        name={sfSymbol as Parameters<typeof SymbolView>[0]['name']}
-        size={size}
-        tintColor={color}
-        style={style as object}
-      />
-    );
-  }
-
-  const icon = unicodeMap[name]
-    ? String.fromCharCode(Number.parseInt(unicodeMap[name].slice(2), 16))
-    : '';
+const AppIcon = ({ color = theme.colors.foreground, name, size, style }: IconProps) => {
+  const androidSymbol = ANDROID_SYMBOL_MAP[name];
 
   return (
-    <Text style={[{ fontFamily: 'fa-regular-400', color, fontSize: size }, style]}>{icon}</Text>
+    <SymbolView
+      name={
+        androidSymbol
+          ? {
+              ios: name,
+              android: androidSymbol,
+              web: androidSymbol,
+            }
+          : name
+      }
+      size={size}
+      tintColor={color}
+      style={style as SymbolViewProps['style']}
+    />
   );
 };
 

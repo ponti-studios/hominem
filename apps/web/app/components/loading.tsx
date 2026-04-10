@@ -43,7 +43,7 @@ function Loading({
 
 export function LoadingScreen() {
   return (
-    <div className="flex items-center justify-center max-h-[300px] mx-auto w-full">
+    <div className="mx-auto flex w-full items-center justify-center py-8">
       <Loading size="lg" fullScreen={false} />
     </div>
   );

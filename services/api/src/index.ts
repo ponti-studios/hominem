@@ -1,9 +1,20 @@
 import { initTelemetry } from '@hominem/telemetry/node';
 import { logger } from '@hominem/utils/logger';
 import { serve } from '@hono/node-server';
+import * as Sentry from '@sentry/node';
 
 import { env } from './env';
 import { createServer } from './server';
+
+// Sentry: errors-only, no tracing (OTel handles that)
+if (env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: env.SENTRY_DSN,
+    environment: env.NODE_ENV,
+    tracesSampleRate: 0,
+    skipOpenTelemetrySetup: true,
+  });
+}
 
 // Initialize OpenTelemetry telemetry
 const telemetry = initTelemetry({

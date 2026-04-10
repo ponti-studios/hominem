@@ -7,7 +7,6 @@ export default [
   layout('routes/auth/layout.tsx', [
     route('/auth', 'routes/auth/index.tsx'),
     route('/auth/verify', 'routes/auth/verify.tsx'),
-    route('/auth/logout', 'routes/auth/logout.tsx'),
     route('/auth/passkey/callback', 'routes/auth/passkey.callback.tsx'),
   ]),
 
@@ -21,7 +20,6 @@ export default [
     // Notes Routes
     layout('routes/notes/layout.tsx', [
       route('notes', 'routes/notes/page.tsx'),
-      route('notes/new', 'routes/notes/new.tsx'),
       route('notes/:noteId', 'routes/notes/$noteId.tsx'),
       route('notes/:noteId/edit', 'routes/notes/$noteId_.edit.tsx'),
       route('notes/:noteId/chat', 'routes/notes/$noteId.chat.tsx'),

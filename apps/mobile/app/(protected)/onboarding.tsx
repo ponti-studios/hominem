@@ -7,8 +7,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '~/components/Button';
 import { FeedbackBlock } from '~/components/feedback-block';
 import TextInput from '~/components/text-input';
-import { Text, theme } from '~/theme';
-import { useAuth } from '~/utils/auth-provider';
+import { Text, theme } from '~/components/theme';
+import { useAuth } from '~/services/auth/auth-provider';
 
 const Onboarding = () => {
   const { isSignedIn, currentUser, updateProfile, signOut } = useAuth();
@@ -30,7 +30,7 @@ const Onboarding = () => {
   }
 
   if (currentUser?.name) {
-    return <Redirect href={'/(protected)/(tabs)/focus' as RelativePathString} />;
+    return <Redirect href={'/(protected)/(tabs)/' as RelativePathString} />;
   }
 
   return (

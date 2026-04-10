@@ -1,22 +1,31 @@
+import path from 'node:path';
+
+import { shellTheme } from '@hominem/ui/theme';
 import { reactRouter } from '@react-router/dev/vite';
 import tailwindcss from '@tailwindcss/vite';
 import { visualizer } from 'rollup-plugin-visualizer';
 import type { ConfigEnv, PluginOption, UserConfig } from 'vite';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
-import tsconfigPaths from 'vite-tsconfig-paths';
-import { WEB_BRAND } from './app/lib/brand';
 
 export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
   const isProd = mode === 'production';
   const isAnalyze = process.env.ANALYZE === 'true';
   const shouldGenerateSourceMaps = process.env.SOURCEMAP === 'true' || isAnalyze;
 
+  // Default values for WEB_BRAND to avoid module resolution issues during config loading
+  const WEB_BRAND = {
+    manifest: {
+      name: 'Hominem',
+      shortName: 'Hominem',
+      description: 'Hominem brings notes, voice capture, and chat into one workspace.',
+    },
+  };
+
   return {
     plugins: [
       tailwindcss(),
       reactRouter(),
-      tsconfigPaths(),
       VitePWA({
         registerType: 'prompt',
         injectRegister: false,
@@ -27,8 +36,8 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
           name: WEB_BRAND.manifest.name,
           short_name: WEB_BRAND.manifest.shortName,
           description: WEB_BRAND.manifest.description,
-          theme_color: '#000000',
-          background_color: '#ffffff',
+          theme_color: shellTheme.web.themeColor,
+          background_color: shellTheme.web.backgroundColor,
           display: 'standalone',
           start_url: '/',
           icons: [
@@ -110,10 +119,18 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
       strictPort: true,
     },
 
+    resolve: {
+      alias: {
+        '~': path.resolve(import.meta.dirname, './app'),
+      },
+      conditions: ['browser'],
+      tsconfigPaths: true,
+    },
+
     build: {
       cssCodeSplit: true,
       chunkSizeWarningLimit: 1200, // Allow route chunks up to 1.2MB
-      minify: isProd ? 'esbuild' : false,
+      minify: isProd ? 'oxc' : false,
       rollupOptions: {
         external: ['node:perf_hooks', 'perf_hooks'],
         output: {
@@ -148,7 +165,11 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
                 return 'vendor-syntax-highlighter';
               }
               // Markdown renderer
-              if (id.includes('/react-markdown/') || id.includes('/remark-') || id.includes('/rehype-')) {
+              if (
+                id.includes('/react-markdown/') ||
+                id.includes('/remark-') ||
+                id.includes('/rehype-')
+              ) {
                 return 'vendor-markdown';
               }
               // Uppy file upload
@@ -170,6 +191,9 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
 
     ssr: {
       noExternal: [/^@hominem\//],
+      resolve: {
+        conditions: ['browser'],
+      },
     },
   };
 });

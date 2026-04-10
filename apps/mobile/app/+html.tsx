@@ -1,3 +1,4 @@
+import { shellTheme } from '@hominem/ui/theme';
 import { ScrollViewStyleReset } from 'expo-router/html';
 
 // This file is web-only and used to configure the root HTML for every
@@ -38,5 +39,5 @@ export default function Root({ children }: { children: React.ReactNode }) {
 
 const responsiveBackground = `
 body {
-  background-color: #0F1113;
+  background-color: ${shellTheme.mobile.htmlBackgroundColor};
 }`;

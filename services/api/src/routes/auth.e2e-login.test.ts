@@ -70,9 +70,11 @@ describe('mobile e2e login guard', () => {
       });
 
       expect(response.status).toBe(200);
-      const body = (await response.json()) as { access_token: string; provider: string };
-      expect(body.access_token.length).toBeGreaterThan(10);
-      expect(body.provider).toBe('better-auth');
+      const body = (await response.json()) as {
+        user: { id: string; email: string; name?: string | null };
+      };
+      expect(body.user.id.length).toBeGreaterThan(0);
+      expect(body.user.email).toBe('mobile-passkey-e2e@hominem.test');
     } finally {
       vi.doUnmock('../../env');
     }

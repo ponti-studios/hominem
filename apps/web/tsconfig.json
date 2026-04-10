@@ -1,29 +1,18 @@
 {
   "extends": "../../tsconfig.profiles/vite-app.json",
   "compilerOptions": {
+    "rootDirs": [".", "./.react-router/types"],
     "tsBuildInfoFile": "../../.cache/app-web.tsbuildinfo",
-    "rootDirs": [
-      ".",
-      "./.react-router/types"
-    ],
-    "types": [
-      "node",
-      "vite/client",
-      "vitest/globals",
-      "@testing-library/jest-dom"
-    ],
     "paths": {
-      "~/*": [
-        "./app/*"
-      ]
-    }
+      "~/*": ["./app/*"]
+    },
+    "types": ["vite/client", "vitest/globals", "@testing-library/jest-dom"]
   },
   "include": [
     "app/**/*.ts",
     "app/**/*.tsx",
     ".react-router/types/**/*",
-    "vite.config.ts",
-    "vitest.config.ts",
+    "vite.config.ts"
   ],
   "exclude": [
     "node_modules",
@@ -33,11 +22,6 @@
     ".cache",
     "coverage",
     ".react-router/cache",
-    "tests",
-    "**/*.spec.ts",
-    "**/*.spec.tsx",
-    "**/__tests__",
-    "**/__mocks__",
     "*.tsbuildinfo"
   ]
 }

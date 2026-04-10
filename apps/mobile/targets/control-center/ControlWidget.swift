@@ -10,8 +10,9 @@ struct AddNoteControlWidget: ControlWidget {
 
   var body: some ControlWidgetConfiguration {
     StaticControlConfiguration(kind: Self.kind) {
-      ControlWidgetButton(action: AddNoteIntent()) {
+      ControlWidgetButton(action: AddNoteControlCenterIntent()) {
         Label("Add Note", systemImage: "note.text.badge.plus")
+          .accessibilityLabel("Add a new note in Hakumi")
       }
     }
     .displayName("Add Note")
@@ -25,8 +26,9 @@ struct OpenChatControlWidget: ControlWidget {
 
   var body: some ControlWidgetConfiguration {
     StaticControlConfiguration(kind: Self.kind) {
-      ControlWidgetButton(action: StartChatIntent()) {
+      ControlWidgetButton(action: StartChatControlCenterIntent()) {
         Label("Open Chat", systemImage: "sparkles")
+          .accessibilityLabel("Open Hakumi AI assistant")
       }
     }
     .displayName("Open Chat")

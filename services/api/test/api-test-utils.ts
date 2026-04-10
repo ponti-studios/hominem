@@ -102,12 +102,9 @@ export const makeAuthenticatedRequest = async (
     headers?: Record<string, string | null>
   }
 ) => {
-  const userId = options.headers?.['x-user-id'] || '00000000-0000-0000-0000-000000000001'
-
-  const headers: Record<string, string> = {
-    'x-user-id': userId,
-    ...options.headers,
-  }
+  const headers = Object.fromEntries(
+    Object.entries(options.headers ?? {}).filter(([, value]) => value !== null),
+  ) as Record<string, string>
 
   let body: string | undefined
   if (options.payload) {

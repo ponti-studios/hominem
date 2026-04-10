@@ -1,8 +1,8 @@
 {
-  "extends": "./react-bundler-lib.json",
+  "extends": "./bundler-noemit.json",
   "compilerOptions": {
-    "sourceMap": true,
-    "noEmit": true,
-    "types": ["vite/client", "node"]
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "types": ["vite/client"]
   }
 }

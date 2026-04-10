@@ -2,8 +2,8 @@ import { type PropsWithChildren } from 'react';
 import { StyleSheet, ViewStyle } from 'react-native';
 import Animated, { useAnimatedReaction, useSharedValue, withTiming } from 'react-native-reanimated';
 
-import { makeStyles } from '~/theme';
-import { VOID_EASING_ENTER, VOID_MOTION_ENTER } from '~/theme/motion';
+import { makeStyles } from '~/components/theme';
+import { VOID_EASING_ENTER, VOID_MOTION_ENTER } from '~/components/theme/motion';
 
 export const FeedbackBlock = ({
   error,

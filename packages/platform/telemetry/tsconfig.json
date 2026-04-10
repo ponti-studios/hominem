@@ -1,0 +1,19 @@
+{
+  "extends": "../../../tsconfig.profiles/package-bundler.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "./build",
+    "tsBuildInfoFile": "../../../.cache/telemetry.tsbuildinfo",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"]
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": [
+    "node_modules",
+    "build",
+    "dist",
+    ".turbo",
+    ".cache",
+    "coverage",
+    "*.tsbuildinfo"
+  ]
+}
