@@ -29,7 +29,8 @@ import {
 
 import { playEnterRow, reducedMotion } from '../../lib/gsap/sequences';
 import { useMessageEdit } from '../../lib/hooks/use-message-edit';
-import { cn, copyToClipboard } from '../../lib/utils';
+import { copyToClipboard } from '../../lib/clipboard';
+import { cn } from '../../lib/utils';
 import { contentWidths } from '../../tokens';
 import type { ExtendedMessage } from '../../types/chat';
 import { MarkdownContent, Reasoning, Tool, ToolInput } from '../ai-elements';

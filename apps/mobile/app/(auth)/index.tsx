@@ -15,7 +15,7 @@ import { isValidEmail, normalizeEmail } from '~/services/auth/validation';
 import { E2E_TESTING, MOBILE_PASSKEY_ENABLED } from '~/constants';
 import { useMobilePasskeyAuth } from '~/services/auth/hooks/use-mobile-passkey-auth';
 
-import { getAuthScreenBaseStyles } from './auth-screen-styles';
+import { getAuthScreenBaseStyles } from '~/components/auth/auth-screen-styles';
 
 export function AuthScreen() {
   const styles = useStyles();

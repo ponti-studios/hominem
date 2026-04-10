@@ -159,6 +159,7 @@ export default ({ config }: ConfigContext) => {
       {
         backgroundColor: shellTheme.mobile.splashBackgroundColor,
         image: brandAssets.splash,
+        enableFullScreenImage_legacy: true,
         resizeMode: 'cover',
       },
     ],
@@ -205,7 +206,6 @@ export default ({ config }: ConfigContext) => {
 
   if (appVariant !== 'e2e') {
     plugins.push('./plugins/with-widget-bundle-update');
-    plugins.push('./plugins/with-app-intents');
     plugins.push('@bacons/apple-targets');
   }
 

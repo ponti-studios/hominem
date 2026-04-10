@@ -6,15 +6,10 @@ import { Alert } from 'react-native';
 
 import { useFileUpload } from '~/services/files/use-file-upload';
 
-type MobileComposerMode = 'text' | 'voice';
-
-interface MobileComposerAttachment {
-  id: string;
-  name: string;
-  type: string;
-  localUri?: string;
-  uploadedFile?: UploadedFile;
-}
+import type {
+  MobileComposerAttachment,
+  MobileComposerMode,
+} from './composer-state';
 
 interface UploadedMobileAsset {
   localUri: string;

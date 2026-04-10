@@ -1,7 +1,7 @@
 import type { Virtualizer } from '@tanstack/react-virtual';
 import { useEffect, useRef } from 'react';
 
-import { scrollToBottom } from '../utils';
+import { scrollToBottom } from '../scroll';
 
 interface UseAutoScrollOptions {
   containerRef: React.RefObject<HTMLDivElement | null>;

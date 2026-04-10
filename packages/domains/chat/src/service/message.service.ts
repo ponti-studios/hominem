@@ -4,8 +4,8 @@ import { db } from '@hominem/db';
 import type { Database, JsonValue as DbJsonValue, Selectable } from '@hominem/db';
 import { logger } from '@hominem/utils/logger';
 
-import type { ChatMessageInput, ChatMessageOutput, ChatMessageRole } from '../contracts';
-import { ChatError } from './chat.types';
+import type { ChatMessageInput, ChatMessageOutput, ChatMessageRole } from '../chat.types';
+import { ChatError } from './chat.service.types';
 
 type ChatMessageRow = Selectable<Database['app.chat_messages']>;
 type ChatMessageRowLike = ChatMessageRow & {

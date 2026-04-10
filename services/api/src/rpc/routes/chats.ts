@@ -1,15 +1,7 @@
-import type {
-  ChatMessageFileRecord,
-  ChatMessageRecord,
-  ChatRecord,
-  NoteContext,
-} from '@hominem/db';
+import type { ChatMessageFileRecord, ChatMessageRecord, NoteContext } from '@hominem/db';
 import { ChatRepository, getDb, runInTransaction } from '@hominem/db';
 import {
   chatsSendSchema,
-  type Chat,
-  type ChatMessageDto,
-  type ChatMessageFile,
   type ChatsArchiveOutput,
   type ChatsCreateOutput,
   type ChatsGetMessagesOutput,
@@ -27,6 +19,12 @@ import { env } from '../../env';
 import { ValidationError } from '../errors';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 import { getOpenAIAdapter } from '../utils/llm';
+import {
+  enrichMessageRow,
+  toChatDto,
+  toChatMessageDto,
+  toStoredUserMessageContent,
+} from './chats.mapper';
 
 const chatsCreateSchema = z.object({
   title: z.string().trim().min(1).max(120),
@@ -40,37 +38,6 @@ const chatsMessagesQuerySchema = z.object({
   limit: z.string().optional(),
   offset: z.string().optional(),
 });
-
-// ─── DTO mappers (repository records → RPC wire types) ───────────────────────
-
-function toChatDto(record: ChatRecord): Chat {
-  return {
-    id: record.id,
-    userId: record.userId,
-    title: record.title,
-    noteId: record.noteId,
-    archivedAt: record.archivedAt,
-    createdAt: record.createdAt,
-    updatedAt: record.updatedAt,
-  };
-}
-
-function toChatMessageDto(record: ChatMessageRecord): ChatMessageDto {
-  return {
-    id: record.id,
-    chatId: record.chatId,
-    userId: record.userId,
-    role: record.role,
-    content: record.content,
-    files: record.files as ChatMessageFile[] | null,
-    referencedNotes: record.referencedNotes,
-    toolCalls: record.toolCalls,
-    reasoning: record.reasoning,
-    parentMessageId: record.parentMessageId,
-    createdAt: record.createdAt,
-    updatedAt: record.updatedAt,
-  };
-}
 
 // ─── Prompt builders ─────────────────────────────────────────────────────────
 
@@ -129,18 +96,6 @@ function buildUserPrompt(
   }
 
   return sections.filter(Boolean).join('\n\n');
-}
-
-function buildStoredUserMessageContent(
-  message: string,
-  notes: NoteContext[],
-  files: ChatMessageFileRecord[],
-): string {
-  const trimmed = message.trim();
-  if (trimmed.length > 0) return trimmed;
-  if (files.length > 0) return files.map((f) => f.filename ?? 'Attachment').join(', ');
-  if (notes.length > 0) return notes.map((n) => n.title ?? 'Untitled note').join(', ');
-  throw new ValidationError('Message, notes, or files are required');
 }
 
 function getRequiredChatId(c: { req: { param: (name: string) => string | undefined } }): string {
@@ -224,7 +179,10 @@ const chatByIdRoutes = new Hono<AppContext>()
 
     // Build prompt and call LLM
     const prompt = buildUserPrompt(message, resolvedNotes, resolvedFiles);
-    const storedUserContent = buildStoredUserMessageContent(message, resolvedNotes, resolvedFiles);
+    const storedUserContent = toStoredUserMessageContent(message, resolvedNotes, resolvedFiles);
+    if (!storedUserContent) {
+      throw new ValidationError('Message, notes, or files are required');
+    }
 
     const messages: CoreMessage[] = [
       {
@@ -303,54 +261,6 @@ const chatByIdRoutes = new Hono<AppContext>()
       },
     });
   });
-
-/**
- * Convert a raw inserted message row into a ChatMessageRecord.
- */
-function enrichMessageRow(
-  row: {
-    id: string;
-    chat_id: string;
-    author_userid: string | null;
-    role: string;
-    content: string;
-    files: unknown;
-    referenced_note_ids: unknown;
-    tool_calls: unknown;
-    reasoning: string | null;
-    parent_message_id: string | null;
-    createdat: unknown;
-    updatedat: unknown;
-  },
-  noteTitlesById: Map<string, string | null>,
-): ChatMessageRecord {
-  const referencedNoteIds = Array.isArray(row.referenced_note_ids)
-    ? (row.referenced_note_ids as string[])
-    : [];
-
-  const toIso = (v: unknown): string =>
-    v instanceof Date ? v.toISOString() : typeof v === 'string' ? v : new Date().toISOString();
-
-  return {
-    id: row.id,
-    chatId: row.chat_id,
-    userId: row.author_userid ?? '',
-    role: row.role as ChatMessageRecord['role'],
-    content: row.content,
-    files: Array.isArray(row.files) ? (row.files as ChatMessageFileRecord[]) : null,
-    referencedNotes:
-      referencedNoteIds.length > 0
-        ? referencedNoteIds.map((id) => ({ id, title: noteTitlesById.get(id) ?? null }))
-        : null,
-    toolCalls: Array.isArray(row.tool_calls)
-      ? (row.tool_calls as ChatMessageRecord['toolCalls'])
-      : null,
-    reasoning: row.reasoning,
-    parentMessageId: row.parent_message_id,
-    createdAt: toIso(row.createdat),
-    updatedAt: toIso(row.updatedat),
-  };
-}
 
 // ─── Top-level chat routes ───────────────────────────────────────────────────
 

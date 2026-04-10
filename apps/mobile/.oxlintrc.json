@@ -17,6 +17,14 @@
       {
         "patterns": [
           {
+            "group": ["@hominem/db", "@hominem/db/*"],
+            "message": "Mobile must not import persistence internals directly. Use RPC or domain-facing abstractions instead."
+          },
+          {
+            "group": ["@hominem/services", "@hominem/services/*"],
+            "message": "Mobile must not import server-side services directly. Use transport-safe abstractions instead."
+          },
+          {
             "group": ["expo-blur", "expo-blur/*"],
             "message": "expo-blur is not part of the approved mobile design system. Use the approved blur/overlay primitives instead."
           },

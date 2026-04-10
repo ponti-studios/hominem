@@ -7,8 +7,8 @@
 
 import { ChatRepository, getDb } from '@hominem/db';
 
-import type { ChatOutput } from '../contracts';
-import type { CreateChatParams } from './chat.types';
+import type { ChatOutput } from '../chat.types';
+import type { CreateChatParams } from './chat.service.types';
 function toChatOutput(record: {
   archivedAt: ChatOutput['archivedAt'];
   id: string;

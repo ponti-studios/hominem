@@ -111,7 +111,7 @@ async function callBetterAuthPluginEndpoint(input: {
   path?: string | undefined;
   method: string;
   preserveQuery?: boolean | undefined;
-  body?: BodyInit | null | undefined;
+  body?: string | null | undefined;
 }) {
   const url = buildBetterAuthUrl({
     request: input.request,
@@ -142,7 +142,7 @@ async function forwardBetterAuthPluginResponse(input: {
   path?: string | undefined;
   method: string;
   preserveQuery?: boolean | undefined;
-  body?: BodyInit | null | undefined;
+  body?: string | null | undefined;
 }) {
   const response = await callBetterAuthPluginEndpoint(input);
   const responseBody = await response.arrayBuffer();
