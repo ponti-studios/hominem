@@ -32,7 +32,7 @@ export function useErrorFormatting() {
       const result: ApiError = {
         message: error.message || 'An error occurred',
       };
-      const errRecord = error as unknown as Record<string, unknown>;
+      const errRecord = error as Error & Record<string, unknown>;
       if (typeof errRecord.code === 'string') {
         result.code = errRecord.code;
       }

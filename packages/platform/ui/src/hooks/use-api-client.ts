@@ -60,7 +60,7 @@ export function useApiClient() {
 
         if (stream) {
           setState((prev) => ({ ...prev, isLoading: false }));
-          return res as unknown as S;
+          return res as S;
         }
 
         const data = (await res.json()) as S;

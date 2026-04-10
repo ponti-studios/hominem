@@ -36,8 +36,6 @@ const FEED_OVERSCAN_COUNT = 6;
 const FEED_NEAR_BOTTOM_THRESHOLD = 96;
 const FEED_LOAD_MORE_THRESHOLD_INDEX = 2;
 
-type NoteFeedItem = ReturnType<typeof flattenNoteFeedPages>[number];
-
 export default function NotesPage() {
   const feedQuery = useNotesFeed({ limit: 20 });
   const notes = useMemo(() => flattenNoteFeedPages(feedQuery.data), [feedQuery.data]);
@@ -55,6 +53,7 @@ export default function NotesPage() {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const scrollObserverRef = useRef<MutationObserver | null>(null);
   const animatedRowIdsRef = useRef(new Set<string>());
+  const noteRowListenersRef = useRef(new Map<string, EventListener>());
   const lastScrollHeightRef = useRef<number | null>(null);
   const previousNoteCountRef = useRef(0);
   const isAnchoringOlderNotesRef = useRef(false);
@@ -183,6 +182,17 @@ export default function NotesPage() {
     requestAnimationFrame(scrollToBottom);
   }, [isNearBottom, scrollToBottom]);
 
+  useEffect(
+    () => () => {
+      scrollObserverRef.current?.disconnect();
+      for (const [noteId, handler] of noteRowListenersRef.current) {
+        window.removeEventListener(NOTES_ROW_EXIT_REQUEST_EVENT, handler);
+        noteRowListenersRef.current.delete(noteId);
+      }
+    },
+    [],
+  );
+
   actionsRef.current = {
     createNote: async (input) => {
       const result = await createNote.mutateAsync(input);
@@ -217,15 +227,97 @@ export default function NotesPage() {
           className="mb-5"
         />
       </div>
-      <NotesFeed
-        notes={notes}
-        isLoading={feedQuery.isLoading}
-        virtualizer={virtualizer}
-        virtualItems={virtualItems}
-        onScroll={updateNearBottom}
-        setScrollElement={setScrollElement}
-        animatedRowIdsRef={animatedRowIdsRef}
-      />
+      <SurfaceFrame className="mx-auto min-h-0 w-full flex-1 overflow-hidden rounded-3xl">
+        <div ref={setScrollElement} onScroll={updateNearBottom} className="h-full min-h-0 w-full overflow-auto">
+          {feedQuery.isLoading ? (
+            <SurfacePanel as="p" className="text-sm text-text-secondary">
+              Loading notes...
+            </SurfacePanel>
+          ) : null}
+
+          {!feedQuery.isLoading && notes.length === 0 ? (
+            <div className="p-4">
+              <StatePanel title="Start with a thought." />
+            </div>
+          ) : null}
+
+          {notes.length > 0 ? (
+            <div className="relative w-full" style={{ height: `${virtualizer.getTotalSize()}px` }}>
+              {virtualItems.map((virtualItem) => {
+                const note = notes[virtualItem.index];
+                if (!note) {
+                  return null;
+                }
+
+                const setRowElement = (element: HTMLDivElement | null) => {
+                  const existingHandler = noteRowListenersRef.current.get(note.id);
+                  if (existingHandler) {
+                    window.removeEventListener(NOTES_ROW_EXIT_REQUEST_EVENT, existingHandler);
+                    noteRowListenersRef.current.delete(note.id);
+                  }
+
+                  if (!element) {
+                    return;
+                  }
+
+                  const handleExitRequest = (event: Event) => {
+                    const customEvent = event as CustomEvent<NotesRowExitRequestDetail>;
+                    if (customEvent.detail.noteId !== note.id) {
+                      return;
+                    }
+
+                    animateNotesRowExit(element, () => completeNotesRowExit(note.id));
+                  };
+
+                  noteRowListenersRef.current.set(note.id, handleExitRequest);
+                  window.addEventListener(NOTES_ROW_EXIT_REQUEST_EVENT, handleExitRequest);
+                  virtualizer.measureElement(element);
+                  if (animatedRowIdsRef.current.has(note.id)) {
+                    return;
+                  }
+
+                  animatedRowIdsRef.current.add(note.id);
+                  animateNotesRowEnter(element);
+                };
+
+                return (
+                  <div
+                    key={virtualItem.key}
+                    ref={setRowElement}
+                    data-index={virtualItem.index}
+                    className="absolute left-0 top-0 w-full px-4 py-1"
+                    style={{ transform: `translateY(${virtualItem.start}px)` }}
+                  >
+                    <PreviewCard asChild interactive>
+                      <Link to={`/notes/${note.id}`}>
+                        <PreviewCard.Header
+                          meta={
+                            <>
+                              <div>{new Date(note.createdAt).toLocaleString()}</div>
+                              {note.metadata.hasAttachments ? (
+                                <div className="mt-2">
+                                  <MetaBadge icon={<Paperclip className="size-3" />}>Files</MetaBadge>
+                                </div>
+                              ) : null}
+                            </>
+                          }
+                        >
+                          <PreviewCard.Title className="line-clamp-2">
+                            {note.title || 'Untitled note'}
+                          </PreviewCard.Title>
+                          <PreviewCard.Description className="line-clamp-5">
+                            {note.contentPreview || 'No content yet.'}
+                          </PreviewCard.Description>
+                        </PreviewCard.Header>
+                      </Link>
+                    </PreviewCard>
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
+        </div>
+      </SurfaceFrame>
       <ComposerProvider store={composerStore} actionsRef={actionsRef}>
         <Composer
           mode={mode}
@@ -236,147 +328,6 @@ export default function NotesPage() {
           inlineVoiceEnabled={true}
         />
       </ComposerProvider>
-    </div>
-  );
-}
-
-interface NotesFeedProps {
-  notes: NoteFeedItem[];
-  isLoading: boolean;
-  virtualizer: ReturnType<typeof useVirtualizer<HTMLDivElement, Element>>;
-  virtualItems: ReturnType<
-    ReturnType<typeof useVirtualizer<HTMLDivElement, Element>>['getVirtualItems']
-  >;
-  onScroll: () => void;
-  setScrollElement: (element: HTMLDivElement | null) => void;
-  animatedRowIdsRef: React.RefObject<Set<string>>;
-}
-
-const NotesFeed = ({
-  notes,
-  isLoading,
-  virtualizer,
-  virtualItems,
-  onScroll,
-  setScrollElement,
-  animatedRowIdsRef,
-}: NotesFeedProps) => {
-  return (
-    <SurfaceFrame className="mx-auto min-h-0 w-full flex-1 overflow-hidden rounded-3xl">
-      <div
-        ref={setScrollElement}
-        onScroll={onScroll}
-        className="h-full min-h-0 w-full overflow-auto"
-      >
-        {isLoading ? (
-          <SurfacePanel as="p" className="text-sm text-text-secondary">
-            Loading notes...
-          </SurfacePanel>
-        ) : null}
-
-        {!isLoading && notes.length === 0 ? (
-          <div className="p-4">
-            <StatePanel title="Start with a thought." />
-          </div>
-        ) : null}
-
-        {notes.length > 0 ? (
-          <div className="relative w-full" style={{ height: `${virtualizer.getTotalSize()}px` }}>
-            {virtualItems.map((virtualItem) => {
-              const note = notes[virtualItem.index];
-              if (!note) {
-                return null;
-              }
-
-              return (
-                <NotesFeedRow
-                  key={virtualItem.key}
-                  note={note}
-                  virtualItem={virtualItem}
-                  virtualizer={virtualizer}
-                  animatedRowIdsRef={animatedRowIdsRef}
-                />
-              );
-            })}
-          </div>
-        ) : null}
-      </div>
-    </SurfaceFrame>
-  );
-};
-
-interface NotesFeedRowProps {
-  note: NoteFeedItem;
-  virtualItem: ReturnType<
-    ReturnType<typeof useVirtualizer<HTMLDivElement, Element>>['getVirtualItems']
-  >[number];
-  virtualizer: ReturnType<typeof useVirtualizer<HTMLDivElement, Element>>;
-  animatedRowIdsRef: React.RefObject<Set<string>>;
-}
-
-function NotesFeedRow({ note, virtualItem, virtualizer, animatedRowIdsRef }: NotesFeedRowProps) {
-  const rowRef = useRef<HTMLDivElement | null>(null);
-  const exitRequestHandlerRef = useRef<((event: Event) => void) | null>(null);
-
-  return (
-    <div
-      ref={(element) => {
-        if (rowRef.current && exitRequestHandlerRef.current) {
-          window.removeEventListener(NOTES_ROW_EXIT_REQUEST_EVENT, exitRequestHandlerRef.current);
-          exitRequestHandlerRef.current = null;
-        }
-
-        rowRef.current = element;
-        if (!element) {
-          return;
-        }
-
-        const handleExitRequest = (event: Event) => {
-          const customEvent = event as CustomEvent<NotesRowExitRequestDetail>;
-          if (customEvent.detail.noteId !== note.id) {
-            return;
-          }
-
-          animateNotesRowExit(element, () => completeNotesRowExit(note.id));
-        };
-
-        exitRequestHandlerRef.current = handleExitRequest;
-        window.addEventListener(NOTES_ROW_EXIT_REQUEST_EVENT, handleExitRequest);
-        virtualizer.measureElement(element);
-        if (animatedRowIdsRef.current.has(note.id)) {
-          return;
-        }
-
-        animatedRowIdsRef.current.add(note.id);
-        animateNotesRowEnter(element);
-      }}
-      data-index={virtualItem.index}
-      className="absolute left-0 top-0 w-full px-4 py-1"
-      style={{ transform: `translateY(${virtualItem.start}px)` }}
-    >
-      <PreviewCard asChild interactive>
-        <Link to={`/notes/${note.id}`}>
-          <PreviewCard.Header
-            meta={
-              <>
-                <div>{new Date(note.createdAt).toLocaleString()}</div>
-                {note.metadata.hasAttachments ? (
-                  <div className="mt-2">
-                    <MetaBadge icon={<Paperclip className="size-3" />}>Files</MetaBadge>
-                  </div>
-                ) : null}
-              </>
-            }
-          >
-            <PreviewCard.Title className="line-clamp-2">
-              {note.title || 'Untitled note'}
-            </PreviewCard.Title>
-            <PreviewCard.Description className="line-clamp-5">
-              {note.contentPreview || 'No content yet.'}
-            </PreviewCard.Description>
-          </PreviewCard.Header>
-        </Link>
-      </PreviewCard>
     </div>
   );
 }

@@ -2,7 +2,7 @@
 # Extends the base service image with API-specific configuration
 #
 # Build context: Repository root
-# Required files: package.json, pnpm-lock.yaml, tsconfig.json, packages/, services/api/, tools/, config/
+# Required files: package.json, pnpm-lock.yaml, tsconfig.json, packages/, services/api/
 
 # ============================================================================
 # BUILDER STAGE - Build application with pnpm
@@ -11,33 +11,25 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-ENV NODE_ENV=production \
-    TURBO_TELEMETRY_DISABLED=1 \
+ENV TURBO_TELEMETRY_DISABLED=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
 # Copy lock files first (these rarely change - best for caching)
 COPY package.json pnpm-lock.yaml tsconfig.json ./
+COPY pnpm-workspace.yaml ./
 
 # Copy workspace structure (rarely changes after setup)
 COPY packages ./packages
 COPY services/api ./services/api
-COPY tools ./tools
-COPY config ./config
 COPY tsconfig.profiles ./tsconfig.profiles
 
 # Install pnpm and all dependencies
-RUN npm install -g pnpm@9.3.0 && \
+RUN npm install -g pnpm@10.33.0 && \
     pnpm install 2>&1 | grep -v "warn\|skipped" || true
 
-# Build required workspace packages first
-RUN pnpm --filter @hominem/env run build && \
-    pnpm --filter @hominem/db run build && \
-    pnpm --filter @hominem/auth run build && \
-    pnpm --filter @hominem/rpc run build
-
-# Build the API service
-RUN pnpm --filter @hominem/api run build 2>&1 || echo "Note: API may not have build step"
+# The API runs directly from TypeScript via `tsx`, so no build step is required here.
+RUN echo "✓ API source runtime ready"
 
 # Verify build artifacts
 RUN echo "✓ Build completed successfully"
@@ -58,7 +50,7 @@ ENV NODE_ENV=production \
 RUN apk add --no-cache ca-certificates curl
 
 # Install pnpm for production
-RUN npm install -g pnpm@9.3.0
+RUN npm install -g pnpm@10.33.0
 
 # Create non-root user with minimal privileges and no shell
 RUN addgroup -g 1001 apiuser && \
@@ -67,8 +59,9 @@ RUN addgroup -g 1001 apiuser && \
 # Create necessary directories with restrictive permissions
 RUN mkdir -p /app/logs && \
     mkdir -p /tmp && \
-    chown -R hominem:apiuser /app && \
-    chmod 700 /app/logs /tmp 2>/dev/null || true
+    chown -R hominem:apiuser /app /tmp && \
+    chmod 700 /app/logs && \
+    chmod 1777 /tmp
 
 # Copy built application from builder
 COPY --from=builder --chown=hominem:apiuser /app/package.json ./package.json
