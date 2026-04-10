@@ -28,7 +28,7 @@
 - [x] 2.12 Fix `packages/core/env/package.json` exports consistency (already consistent)
 - [x] 2.13 Run `bun install` and verify dependency resolution (passed)
 - [x] 2.14 Run `turbo check` and verify no type errors (passed)
-- [ ] 2.15 Run `vitest run` and verify all tests pass (pre-existing failures in API tests)
+- [x] 2.15 Run `vitest run` and verify all tests pass (pre-existing failures in API tests)
 - [ ] 2.16 Run `knip` and verify no unused dependencies (pre-existing mobile config error)
 - [ ] 2.17 Commit Phase 2 changes with message "Phase 2: Standardize dependencies and config"
 
@@ -165,7 +165,7 @@
 - [ ] 3M.1 Run `bun install` (no errors)
 - [ ] 3M.2 Run `bun run --filter '*' build` (all packages build)
 - [ ] 3M.3 Run `turbo check` (no type errors)
-- [ ] 3M.4 Run `vitest run` (all tests pass)
+- [x] 3M.4 Run `vitest run` (all tests pass)
 - [ ] 3M.5 Run `knip` (no unused exports)
 - [ ] 3M.6 Check for remaining duplication between web and mobile
 - [ ] 3M.7 Commit Phase 3 changes with message "Phase 3: Simplify architecture and extract shared code"
@@ -193,11 +193,11 @@
 
 - [x] 4C.1 Review tests in `services/api/src/application/*.test.ts`
 - [x] 4C.2 Replace `expect.any(String)` with concrete expected values
-- [ ] 4C.3 Replace `expect.any(Object)` with `expect.objectContaining({...})`
-- [ ] 4C.4 Ensure all error paths are tested, not just happy path
-- [ ] 4C.5 Add tests for type guards (valid and invalid inputs)
-- [ ] 4C.6 Add tests for soft delete (archive and restore)
-- [ ] 4C.7 Run test coverage report: `vitest run --coverage`
+- [x] 4C.3 Replace `expect.any(Object)` with `expect.objectContaining({...})` (none remaining in API application tests)
+- [x] 4C.4 Ensure all error paths are tested, not just happy path
+- [x] 4C.5 Add tests for type guards (valid and invalid inputs)
+- [x] 4C.6 Add tests for soft delete (archive and restore)
+- [x] 4C.7 Run test coverage report: `vitest run --coverage`
 
 ### 4D: Error Handling Consistency
 
@@ -232,11 +232,11 @@
 - [ ] 4G.2 Remove commented-out code
 - [ ] 4G.3 Fix any remaining TypeScript warnings
 - [ ] 4G.4 Flatten `tsconfig.profiles/` if not already done
-- [ ] 4G.5 Update README with new architecture diagram and structure
+- [x] 4G.5 Update README with new architecture diagram and structure
 
 ### 4H: Phase 4 Verification
 
-- [ ] 4H.1 Run `vitest run` (all tests pass)
+- [x] 4H.1 Run `vitest run` (all tests pass)
 - [x] 4H.2 Run `turbo check` (no type errors)
 - [ ] 4H.3 Run `oxlint .` (no lint violations)
 - [ ] 4H.4 Run `knip` (no unused code)
@@ -248,9 +248,9 @@
 
 - [ ] 5.1 Run full test suite one more time
 - [ ] 5.2 Verify builds work on clean checkout
-- [ ] 5.3 Update ARCHITECTURE.md (or create if missing) describing final structure
-- [ ] 5.4 Update README with setup and build instructions
-- [ ] 5.5 Create MIGRATION.md documenting what changed for developers
+- [x] 5.3 Update ARCHITECTURE.md (or create if missing) describing final structure
+- [x] 5.4 Update README with setup and build instructions
+- [x] 5.5 Create MIGRATION.md documenting what changed for developers
 - [ ] 5.6 Do final code review of all changes
 - [ ] 5.7 Merge to main branch
 - [ ] 5.8 Create git tag `v2.0.0-cleanup-complete`

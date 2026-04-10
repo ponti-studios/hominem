@@ -19,8 +19,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@hominem/db": "workspace:*",
-    "@hominem/services": "workspace:*"
+    "@hominem/db": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^25.4.0",

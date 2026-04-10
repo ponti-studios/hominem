@@ -44,18 +44,14 @@
     "lint": "pnpm dlx oxlint ./src"
   },
   "dependencies": {
-    "@better-auth/expo": "^1.4.19",
-    "@better-auth/kysely-adapter": "^1.5.4",
     "@better-auth/passkey": "^1.4.19",
-    "@hominem/db": "workspace:*",
     "@hominem/env": "workspace:*",
-    "@hominem/utils": "workspace:*",
-    "better-auth": "^1.4.19",
-    "zod": "4.3.6"
+    "better-auth": "^1.4.19"
   },
   "devDependencies": {
     "@types/node": "^25.4.0",
     "@types/react": "19.2.10",
+    "jsdom": "^28.1.0",
     "react": "19.2.0",
     "typescript": "5.9.3"
   },

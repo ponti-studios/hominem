@@ -140,4 +140,19 @@ describe('NoteService', () => {
       excerpt: null,
     });
   });
+
+  it('propagates note lookup failures during update', async () => {
+    mocks.mockGetOwnedOrThrow.mockRejectedValueOnce(new Error('Note not found'));
+    mocks.mockRunInTransaction.mockImplementationOnce(async (handler) => handler({ trx: true }));
+
+    await expect(
+      service.updateNote('note-1', 'user-1', {
+        content: 'Updated body',
+      }),
+    ).rejects.toThrow('Note not found');
+
+    expect(mocks.mockUpdate).not.toHaveBeenCalled();
+    expect(mocks.mockSyncFiles).not.toHaveBeenCalled();
+    expect(mocks.mockLoad).not.toHaveBeenCalled();
+  });
 });

@@ -1,9 +1,8 @@
-import { useCallback, useState, type ReactNode } from 'react';
+import { useCallback, type ReactNode } from 'react';
 import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
 
 import {
   createRootFallbackMessage,
-  type BoundaryState,
 } from '~/components/error-boundary/error-boundary/contracts';
 import { logError } from '~/components/error-boundary/error-boundary/log-error';
 
@@ -27,8 +26,6 @@ function RootFallback({ error, resetErrorBoundary }: FallbackProps) {
 }
 
 export function RootErrorBoundary({ children, fallback, onError }: Props) {
-  const [, setState] = useState<BoundaryState>({ hasError: false, error: null });
-
   const handleError = useCallback(
     (error: unknown, errorInfo: React.ErrorInfo) => {
       const err = error instanceof Error ? error : new Error(String(error));
@@ -37,10 +34,6 @@ export function RootErrorBoundary({ children, fallback, onError }: Props) {
     },
     [onError],
   );
-
-  const handleReset = useCallback(() => {
-    setState({ hasError: false, error: null });
-  }, []);
 
   if (fallback) {
     return (

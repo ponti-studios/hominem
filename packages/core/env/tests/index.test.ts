@@ -1,5 +1,5 @@
 import * as z from 'zod'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import {
   EnvValidationError,
@@ -66,7 +66,7 @@ describe('createServerEnv', () => {
     globalThis.process = { env: {} } as unknown as typeof globalThis.process
     const env = createServerEnv(stringSchema, 'test')
     try {
-      env.STRING_VAR
+      void env.STRING_VAR
       expect.fail('should have thrown')
     } catch (err) {
       expect(err).toBeInstanceOf(EnvValidationError)

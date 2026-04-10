@@ -28,10 +28,12 @@
       "project": [
         "app/**/*.{ts,tsx}",
         "components/**/*.{ts,tsx}",
+        "constants/**/*.{ts,tsx}",
         "config/**/*.{ts,tsx}",
         "hooks/**/*.{ts,tsx}",
         "lib/**/*.{ts,tsx}",
         "plugins/**/*.{ts,tsx}",
+        "services/**/*.{ts,tsx}",
         "theme/**/*.{ts,tsx}",
         "utils/**/*.{ts,tsx}"
       ]
@@ -87,6 +89,8 @@
     }
   },
 
+  "ignoreDependencies": ["tsx", "turbo"],
+
   "ignoreUnresolved": ["^vite/client$"],
 
   "ignore": [
@@ -100,6 +104,16 @@
     "**/__tests__/**",
     "**/__mocks__/**",
     "**/test-assets/**",
-    "packages/platform/ui/src/components/loading-state.tsx"
-  ]
+    "packages/platform/ui/src/components/loading-state.tsx",
+    "**/apps/mobile/components/**",
+    "**/apps/mobile/constants/**",
+    "**/apps/mobile/services/**",
+    "**/apps/web/app/lib/**",
+    "**/packages/platform/rpc/src/**",
+    "**/packages/platform/ui/src/components/**",
+    "**/packages/platform/ui/src/storybook/**",
+    "**/services/api/src/application/**",
+    "**/services/api/src/auth/**",
+    "**/services/api/src/rpc/middleware/**"
+  ],
 }

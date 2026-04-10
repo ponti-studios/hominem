@@ -198,4 +198,30 @@ describe('NoteRepository', () => {
 
     await expect(NoteRepository.load(handle, row.id, testUserId)).rejects.toThrow('Note');
   });
+
+  test('archive and unarchive keep notes in the database but toggle visibility', async () => {
+    const handle = getDb();
+
+    const row = await NoteRepository.create(handle, {
+      userId: testUserId,
+      title: 'Archived',
+      content: 'Hidden note',
+      excerpt: null,
+    });
+
+    await NoteRepository.archive(handle, row.id, testUserId);
+
+    await expect(NoteRepository.load(handle, row.id, testUserId)).rejects.toThrow('Note');
+
+    const listedAfterArchive = await NoteRepository.list(handle, { userId: testUserId });
+    expect(listedAfterArchive.map((note) => note.id)).not.toContain(row.id);
+
+    await NoteRepository.unarchive(handle, row.id, testUserId);
+
+    const restored = await NoteRepository.load(handle, row.id, testUserId);
+    expect(restored.title).toBe('Archived');
+
+    const listedAfterRestore = await NoteRepository.list(handle, { userId: testUserId });
+    expect(listedAfterRestore.map((note) => note.id)).toContain(row.id);
+  });
 });

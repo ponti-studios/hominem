@@ -27,8 +27,9 @@ export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    await expect(canvas.getByText('MacBook Pro')).toBeInTheDocument();
-    await expect(canvas.getByText('iPhone')).toBeInTheDocument();
+    await expect(canvas.getByRole('heading', { name: 'Passkeys' })).toBeInTheDocument();
+    await expect(canvas.getByRole('list', { name: 'Registered passkeys' })).toBeInTheDocument();
+    await expect(canvas.getAllByRole('listitem')).toHaveLength(2);
   },
 };
 
@@ -40,8 +41,8 @@ export const Empty: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const addButton = canvas.queryByText(/add|register/i);
-    await expect(addButton).toBeInTheDocument();
+    await expect(canvas.getByRole('heading', { name: 'Passkeys' })).toBeInTheDocument();
+    await expect(canvas.getByRole('button', { name: 'Add a passkey' })).toBeInTheDocument();
   },
 };
 
@@ -63,7 +64,7 @@ export const WithError: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    await expect(canvas.getByText(/Failed to load passkeys/i)).toBeInTheDocument();
+    await expect(canvas.getByRole('alert')).toHaveTextContent('Failed to load passkeys. Please try again.');
   },
 };
 

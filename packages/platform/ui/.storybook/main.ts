@@ -52,30 +52,21 @@ export default defineMain({
 
     config.plugins = [tailwindcss(), ...(config.plugins ?? [])];
     config.customLogger = logger;
-    config.resolve = {
-      ...(config.resolve ?? {}),
-      tsconfigPaths: true,
-    } as typeof config.resolve & { tsconfigPaths?: boolean };
-    config.build = {
-      ...(config.build ?? {}),
-      rollupOptions: {
-        ...(config.build?.rollupOptions ?? {}),
-        onwarn(warning, warn) {
-          if (
-            warning.code === 'MODULE_LEVEL_DIRECTIVE' &&
-            warning.message.includes("'use client'")
-          ) {
-            return;
-          }
+    config.resolve = config.resolve ?? {};
+    config.resolve.tsconfigPaths = true;
+    config.build = config.build ?? {};
+    config.build.rollupOptions = config.build.rollupOptions ?? {};
+    config.build.rollupOptions.onwarn = (warning, warn) => {
+      if (warning.code === 'MODULE_LEVEL_DIRECTIVE' && warning.message.includes("'use client'")) {
+        return;
+      }
 
-          if (existingOnWarn) {
-            existingOnWarn(warning, warn);
-            return;
-          }
+      if (existingOnWarn) {
+        existingOnWarn(warning, warn);
+        return;
+      }
 
-          warn(warning);
-        },
-      },
+      warn(warning);
     };
     return config;
   },

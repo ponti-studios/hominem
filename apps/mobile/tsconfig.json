@@ -10,7 +10,9 @@
     "checkJs": false,
     "baseUrl": ".",
     "paths": {
-      "~/*": ["./*"]
+      "~/*": [
+        "./*"
+      ]
     },
     "noEmit": true
   },
@@ -24,7 +26,8 @@
     "constants/**/*.ts",
     "navigation/**/*.ts",
     "app.config.ts",
-    "expo-env.d.ts"
+    "expo-env.d.ts",
+    ".expo/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",

@@ -1,7 +1,6 @@
 import { createElement } from 'react'
 
-import { definePreview } from 'storybook/internal/csf'
-import type { WebRenderer } from 'storybook/internal/types'
+import type { Preview } from '@storybook/react-vite'
 import { sb } from 'storybook/test'
 import { initialize, mswLoader } from 'msw-storybook-addon'
 
@@ -11,10 +10,28 @@ import { commonControlsExclude } from '../src/storybook/controls'
 import '../src/styles/animations.css'
 import '../src/styles/globals.css'
 
-sb.mock(import('expo-clipboard'))
-sb.mock(import('expo-file-system/legacy'))
-sb.mock(import('expo-haptics'))
-sb.mock(import('expo-sharing'))
+sb.mock('expo-clipboard', () => ({
+  getStringAsync: async () => '',
+  setString: () => {},
+  setStringAsync: async () => {},
+}))
+sb.mock('expo-file-system/legacy', () => ({
+  EncodingType: { UTF8: 'utf8' },
+  cacheDirectory: '/tmp/',
+  readAsStringAsync: async () => '',
+  writeAsStringAsync: async () => {},
+}))
+sb.mock('expo-haptics', () => ({
+  ImpactFeedbackStyle: { Light: 'light' },
+  NotificationFeedbackType: { Warning: 'warning' },
+  impactAsync: async () => {},
+  notificationAsync: async () => {},
+  selectionAsync: async () => {},
+}))
+sb.mock('expo-sharing', () => ({
+  isAvailableAsync: async () => false,
+  shareAsync: async () => {},
+}))
 
 const ignoredMswRequestPattern = /\.(avif|css|gif|ico|jpeg|jpg|png|svg|webp)$/i
 
@@ -26,7 +43,7 @@ initialize({
   },
 })
 
-const preview = definePreview<WebRenderer, []>({
+const preview: Preview = {
   parameters: {
     backgrounds: {
       options: {
@@ -57,6 +74,6 @@ const preview = definePreview<WebRenderer, []>({
       value: 'base',
     },
   },
-})
+}
 
 export default preview

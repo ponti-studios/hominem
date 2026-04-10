@@ -4,7 +4,7 @@ import { getAuthenticatedStorageState } from './auth.session-helpers';
 import { createAuthTestEmail } from './auth.shared';
 
 export const test = base.extend<{ authEmail: string }>({
-  authEmail: async ({}, use, testInfo) => {
+  authEmail: async (_args, use, testInfo) => {
     await use(createAuthTestEmail(testInfo.titlePath.join('-')));
   },
   context: async ({ browser, playwright, authEmail }, use) => {
