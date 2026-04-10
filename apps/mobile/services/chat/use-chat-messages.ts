@@ -7,6 +7,8 @@ import { useMutation, useQuery, useQueryClient, type MutationOptions } from '@ta
 import { randomUUID } from 'expo-crypto';
 import { useState } from 'react';
 
+import { logger } from '@hominem/utils/logger';
+
 import {
   createChatInboxRefreshSnapshot,
   invalidateInboxQueries,
@@ -182,7 +184,7 @@ export const useSendMessage = ({ chatId }: { chatId: string }) => {
 
     // Rollback on error
     onError: (error, variables, context) => {
-      console.error('Error sending chat message:', error);
+      logger.error('Error sending chat message:', error);
       setSendChatError(true);
       setChatSendStatus('error');
       if (context?.previousMessages) {

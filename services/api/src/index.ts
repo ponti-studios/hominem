@@ -5,6 +5,7 @@ import * as Sentry from '@sentry/node';
 
 import { env } from './env';
 import { createServer } from './server';
+import { startFileProcessingWorker } from './workers/file-processing';
 
 // Sentry: errors-only, no tracing (OTel handles that)
 if (env.SENTRY_DSN) {
@@ -44,6 +45,7 @@ process.on('SIGINT', async () => {
 });
 
 const app = createServer();
+startFileProcessingWorker();
 const port = Number.parseInt(env.PORT, 10);
 const host = '0.0.0.0';
 

@@ -1,4 +1,5 @@
 import { initTelemetry } from '@hominem/telemetry/browser';
+import { logger } from '@hominem/utils/logger';
 import { useEffect, useRef } from 'react';
 
 /**
@@ -46,10 +47,10 @@ export function useTelemetry() {
 
       // Cleanup on page unload
       return () => {
-        telemetry.shutdown().catch(console.error);
+        telemetry.shutdown().catch((error) => logger.error('[Telemetry] Shutdown failed:', error));
       };
     } catch (error) {
-      console.error('[Telemetry] Failed to initialize OpenTelemetry:', error);
+      logger.error('[Telemetry] Failed to initialize OpenTelemetry:', error as Error);
       return undefined;
     }
   }, []);

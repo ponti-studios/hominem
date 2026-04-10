@@ -1,6 +1,6 @@
 import { FileRepository, getDb } from '@hominem/db';
 import type { FileRecord } from '@hominem/db';
-import { FileProcessorService } from '@hominem/services/files';
+import { fileProcessingQueue } from '@hominem/queues';
 import { logger } from '@hominem/utils/logger';
 import { fileStorageService } from '@hominem/utils/storage';
 import { Hono } from 'hono';
@@ -135,14 +135,6 @@ export const filesRoutes = new Hono<AppContext>()
         },
       );
 
-      // TODO: Move file processing to background queue (BullMQ infra exists)
-      const processed = await FileProcessorService.processFile(
-        Uint8Array.from(fileBuffer).buffer,
-        parsed.data.originalName,
-        parsed.data.mimetype,
-        storedFile.id,
-      );
-
       const stored = await FileRepository.upsert(getDb(), {
         id: storedFile.id,
         userId,
@@ -151,10 +143,26 @@ export const filesRoutes = new Hono<AppContext>()
         mimetype: parsed.data.mimetype,
         size: fileBuffer.byteLength,
         url: storedFile.url,
-        ...(processed.content != null ? { content: processed.content } : {}),
-        ...(processed.textContent != null ? { textContent: processed.textContent } : {}),
-        ...(processed.metadata != null ? { metadata: processed.metadata } : {}),
       });
+
+      await fileProcessingQueue.add(
+        'process-file',
+        {
+          jobId: storedFile.id,
+          userId,
+          fileId: storedFile.id,
+          storageKey: storedFile.filename,
+          url: storedFile.url,
+          originalName: parsed.data.originalName,
+          mimetype: parsed.data.mimetype,
+          size: fileBuffer.byteLength,
+        },
+        {
+          jobId: storedFile.id,
+          removeOnComplete: true,
+          removeOnFail: false,
+        },
+      );
 
       return c.json({
         success: true,

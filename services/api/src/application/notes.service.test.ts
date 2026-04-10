@@ -68,7 +68,34 @@ describe('NoteService', () => {
 
     expect(mocks.mockCreate).toHaveBeenCalledWith(
       { trx: true },
-      expect.objectContaining({ title: 'First Line' }),
+      {
+        userId: 'user-1',
+        title: 'First Line',
+        content: 'First Line\nMore content',
+        excerpt: 'First Line More content',
+      },
+    );
+  });
+
+  it('normalizes blank title and excerpt values on create', async () => {
+    mocks.mockCreate.mockResolvedValueOnce({ id: 'note-3' });
+    mocks.mockLoad.mockResolvedValueOnce({ id: 'note-3', title: 'Body text', content: 'Body text' });
+    mocks.mockRunInTransaction.mockImplementationOnce(async (handler) => handler({ trx: true }));
+
+    await service.createNote('user-1', {
+      title: '   ',
+      content: 'Body text',
+      excerpt: '   ',
+    });
+
+    expect(mocks.mockCreate).toHaveBeenCalledWith(
+      { trx: true },
+      {
+        userId: 'user-1',
+        title: null,
+        content: 'Body text',
+        excerpt: null,
+      },
     );
   });
 

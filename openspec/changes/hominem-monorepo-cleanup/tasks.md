@@ -185,14 +185,14 @@
 
 - [x] 4B.1 Search codebase for remaining `as unknown as Type` patterns
 - [x] 4B.2 Replace all double casts with type guard validations
-- [ ] 4B.3 Add runtime validation to API response parsing (voice, file upload responses)
-- [ ] 4B.4 Create `packages/platform/utils/api-response-validation.ts` with validation helpers
-- [ ] 4B.5 Test that invalid data is caught and errors are thrown appropriately
+- [x] 4B.3 Add runtime validation to API response parsing (voice, file upload responses)
+- [x] 4B.4 Create `packages/platform/utils/api-response-validation.ts` with validation helpers
+- [x] 4B.5 Test that invalid data is caught and errors are thrown appropriately
 
 ### 4C: Test Quality
 
-- [ ] 4C.1 Review tests in `services/api/src/application/*.test.ts`
-- [ ] 4C.2 Replace `expect.any(String)` with concrete expected values
+- [x] 4C.1 Review tests in `services/api/src/application/*.test.ts`
+- [x] 4C.2 Replace `expect.any(String)` with concrete expected values
 - [ ] 4C.3 Replace `expect.any(Object)` with `expect.objectContaining({...})`
 - [ ] 4C.4 Ensure all error paths are tested, not just happy path
 - [ ] 4C.5 Add tests for type guards (valid and invalid inputs)
@@ -202,11 +202,11 @@
 ### 4D: Error Handling Consistency
 
 - [x] 4D.1 Create `packages/platform/utils/format-error.ts` with unified error formatter (exists as `use-error-formatting.ts`)
-- [ ] 4D.2 Standardize error display in web app (all errors use same UI)
-- [ ] 4D.3 Standardize error display in mobile app (all errors use same UI)
-- [ ] 4D.4 Remove console.error logging from components (use centralized error handler)
-- [ ] 4D.5 Create `<ErrorBoundary />` if not already present
-- [ ] 4D.6 Test error handling in both apps
+- [x] 4D.2 Standardize error display in web app (all errors use same UI)
+- [x] 4D.3 Standardize error display in mobile app (all errors use same UI)
+- [x] 4D.4 Remove console.error logging from components (use centralized error handler)
+- [x] 4D.5 Create `<ErrorBoundary />` if not already present
+- [x] 4D.6 Test error handling in both apps
 
 ### 4E: Loading States
 
@@ -218,13 +218,13 @@
 
 ### 4F: Clean Up Incomplete Refactors
 
-- [ ] 4F.1 Search for all TODO comments in codebase
-- [ ] 4F.2 For each TODO:
-  - [ ] Complete the work, OR
-  - [ ] Create GitHub issue and link in comment
-- [ ] 4F.3 Example: "TODO: Move file processing to background queue"
-  - [ ] If completing: wire file processor to BullMQ queue
-  - [ ] If deferring: create issue and document why
+- [x] 4F.1 Search for all TODO comments in codebase
+- [x] 4F.2 For each TODO:
+  - [x] Complete the work, OR
+  - [x] Create GitHub issue and link in comment
+- [x] 4F.3 Example: "TODO: Move file processing to background queue"
+  - [x] If completing: wire file processor to BullMQ queue
+  - [x] If deferring: create issue and document why
 
 ### 4G: Final Cleanup
 
@@ -237,7 +237,7 @@
 ### 4H: Phase 4 Verification
 
 - [ ] 4H.1 Run `vitest run` (all tests pass)
-- [ ] 4H.2 Run `turbo check` (no type errors)
+- [x] 4H.2 Run `turbo check` (no type errors)
 - [ ] 4H.3 Run `oxlint .` (no lint violations)
 - [ ] 4H.4 Run `knip` (no unused code)
 - [ ] 4H.5 Run `docker build` for API and web (no errors)

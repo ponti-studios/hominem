@@ -37,6 +37,14 @@ export const QUEUE_NAMES = {
    * - background processors (processing jobs)
    */
   PLACE_PHOTO_ENRICH: 'place-photo-enrich',
+
+  /**
+   * Queue for file processing jobs
+   * Used by:
+   * - services/api/src/rpc/routes/files.ts (adding jobs)
+   * - services/api/src/workers/file-processing.ts (processing jobs)
+   */
+  FILE_PROCESSING: 'file-processing',
 } as const;
 
 /**

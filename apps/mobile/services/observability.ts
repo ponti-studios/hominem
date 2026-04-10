@@ -1,10 +1,12 @@
 import { AppState, type AppStateStatus } from 'react-native';
 
+import { logger } from '@hominem/utils/logger';
+
 import { posthog } from './posthog';
 
 function flushPostHog() {
   posthog.flush().catch((error) => {
-    console.error('[PostHog] Flush failed:', error);
+    logger.error('[PostHog] Flush failed:', error);
   });
 }
 

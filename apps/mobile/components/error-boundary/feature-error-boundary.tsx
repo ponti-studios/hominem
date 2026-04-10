@@ -2,13 +2,14 @@ import { useCallback, type ReactNode } from 'react';
 import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
 import { View, StyleSheet } from 'react-native';
 
-import { Button } from '~/components/Button';
-import { Text, makeStyles } from '~/components/theme';
+import { makeStyles } from '~/components/theme';
 import {
   createFeatureFallbackLabel,
   type BoundaryState,
 } from '~/components/error-boundary/error-boundary/contracts';
 import { logError } from '~/components/error-boundary/error-boundary/log-error';
+
+import { ErrorMessage } from './error-message';
 
 interface Props {
   children: ReactNode;
@@ -27,11 +28,6 @@ const useStyles = makeStyles((t) =>
       borderColor: t.colors['border-default'],
       alignItems: 'center',
     },
-    button: {
-      marginTop: t.spacing.sm_12,
-      backgroundColor: t.colors.background,
-      borderColor: t.colors['border-default'],
-    },
   }),
 );
 
@@ -41,17 +37,15 @@ function FeatureFallback({
   featureName,
 }: FallbackProps & { featureName?: string }) {
   const styles = useStyles();
+  const message = error instanceof Error ? error.message : String(error);
+
   return (
     <View style={styles.container}>
-      <Text variant="body" color="text-tertiary">
-        {createFeatureFallbackLabel(featureName)}
-      </Text>
-      <Button
-        variant="outline"
-        size="sm"
-        style={styles.button}
+      <ErrorMessage
+        title="Something went wrong"
+        message={`${createFeatureFallbackLabel(featureName)}. ${message}`}
+        actionLabel="Retry"
         onPress={resetErrorBoundary}
-        title="Retry"
       />
     </View>
   );
@@ -78,9 +72,7 @@ export function FeatureErrorBoundary({ children, fallback, onError, featureName 
   return (
     <ErrorBoundary
       onError={handleError}
-      fallbackRender={(props) => (
-        <FeatureFallback {...props} featureName={featureName} />
-      )}
+      fallbackRender={(props) => <FeatureFallback {...props} featureName={featureName} />}
     >
       {children}
     </ErrorBoundary>
