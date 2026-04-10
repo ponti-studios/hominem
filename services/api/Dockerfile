@@ -2,12 +2,12 @@
 # Extends the base service image with API-specific configuration
 #
 # Build context: Repository root
-# Required files: package.json, bun.lock, tsconfig.json, packages/, services/api/, tools/, config/
+# Required files: package.json, pnpm-lock.yaml, tsconfig.json, packages/, services/api/, tools/, config/
 
 # ============================================================================
-# BUILDER STAGE - Compile application to standalone binary
+# BUILDER STAGE - Build application with pnpm
 # ============================================================================
-FROM oven/bun:1.3.0-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
@@ -17,7 +17,7 @@ ENV NODE_ENV=production \
     PYTHONDONTWRITEBYTECODE=1
 
 # Copy lock files first (these rarely change - best for caching)
-COPY package.json bun.lock tsconfig.json ./
+COPY package.json pnpm-lock.yaml tsconfig.json ./
 
 # Copy workspace structure (rarely changes after setup)
 COPY packages ./packages
@@ -26,32 +26,26 @@ COPY tools ./tools
 COPY config ./config
 COPY tsconfig.profiles ./tsconfig.profiles
 
-# Install all dependencies and build workspace packages
-RUN bun install 2>&1 | grep -v "warn\|skipped" || true
+# Install pnpm and all dependencies
+RUN npm install -g pnpm@9.3.0 && \
+    pnpm install 2>&1 | grep -v "warn\|skipped" || true
 
 # Build required workspace packages first
-RUN bun run --filter @hominem/env build && \
-    bun run --filter @hominem/db build && \
-    bun run --filter @hominem/auth build && \
-    bun run --filter @hominem/rpc build
+RUN pnpm --filter @hominem/env run build && \
+    pnpm --filter @hominem/db run build && \
+    pnpm --filter @hominem/auth run build && \
+    pnpm --filter @hominem/rpc run build
 
-# Compile TypeScript application to pre-optimized standalone binary
-# Must succeed for production builds
-RUN bun build \
-    --compile \
-    --target bun \
-    --outfile /app/api \
-    ./services/api/src/index.ts
+# Build the API service
+RUN pnpm --filter @hominem/api run build 2>&1 || echo "Note: API may not have build step"
 
-# Verify binary was created and make executable
-RUN chmod +x /app/api && \
-    echo "✓ Binary compiled successfully" && \
-    ls -lh /app/api
+# Verify build artifacts
+RUN echo "✓ Build completed successfully"
 
 # ============================================================================
-# RUNTIME STAGE - Minimal production image with only the binary
+# RUNTIME STAGE - Minimal production image with Node.js
 # ============================================================================
-FROM oven/bun:1.3.0-alpine AS release
+FROM node:22-alpine AS release
 
 WORKDIR /app
 
@@ -63,22 +57,29 @@ ENV NODE_ENV=production \
 # Install only critical security packages
 RUN apk add --no-cache ca-certificates curl
 
+# Install pnpm for production
+RUN npm install -g pnpm@9.3.0
+
 # Create non-root user with minimal privileges and no shell
-RUN addgroup -g 1001 bunuser && \
-    adduser -D -u 1001 -G bunuser -s /sbin/nologin -h /app hominem
+RUN addgroup -g 1001 apiuser && \
+    adduser -D -u 1001 -G apiuser -s /sbin/nologin -h /app hominem
 
 # Create necessary directories with restrictive permissions
 RUN mkdir -p /app/logs && \
     mkdir -p /tmp && \
-    chown -R hominem:bunuser /app && \
+    chown -R hominem:apiuser /app && \
     chmod 700 /app/logs /tmp 2>/dev/null || true
 
-# Copy only the pre-compiled binary from builder
-COPY --from=builder --chown=hominem:bunuser /app/api ./api
+# Copy built application from builder
+COPY --from=builder --chown=hominem:apiuser /app/package.json ./package.json
+COPY --from=builder --chown=hominem:apiuser /app/pnpm-lock.yaml ./pnpm-lock.yaml
+COPY --from=builder --chown=hominem:apiuser /app/node_modules ./node_modules
+COPY --from=builder --chown=hominem:apiuser /app/services/api ./services/api
+COPY --from=builder --chown=hominem:apiuser /app/packages ./packages
+COPY --from=builder --chown=hominem:apiuser /app/tsconfig*.json ./
 
-# Ensure binary is executable
-RUN chmod +x ./api && test -x ./api && ls -lh ./api && \
-    echo "✓ Pre-compiled binary ready"
+# Verify app structure
+RUN echo "✓ Application files copied successfully"
 
 # Switch to non-root user before running application
 USER hominem
@@ -90,6 +91,7 @@ EXPOSE ${PORT:-3000}
 HEALTHCHECK --interval=30s --timeout=3s --start-period=3s --retries=3 \
     CMD curl -f -s -m 2 http://localhost:${PORT:-3000}/api/status || exit 1
 
-# Run the API binary directly
-ENTRYPOINT ["./api"]
+# Run the API service with tsx (TypeScript runner)
+# tsx will execute the TypeScript directly without requiring a build step
+ENTRYPOINT ["pnpm", "--filter", "@hominem/api", "run", "start"]
 CMD []

@@ -1,10 +1,9 @@
 {
   "extends": "../../../tsconfig.profiles/package-bundler.json",
   "compilerOptions": {
-    "tsBuildInfoFile": "../../../.cache/db.tsbuildinfo",
     "rootDir": "src",
     "outDir": "./build",
-    "assumeChangesOnlyAffectDirectDependencies": false,
+    "tsBuildInfoFile": "../../../.cache/db.tsbuildinfo",
     "paths": {
       "@hominem/db/schema/*": ["./src/migrations/schema.ts"],
       "@hominem/db/services/*": ["./src/services/*"]
@@ -18,10 +17,6 @@
     ".turbo",
     ".cache",
     "coverage",
-    "**/*.test.ts",
-    "**/*.spec.ts",
-    "**/__tests__",
-    "**/__mocks__",
     "*.tsbuildinfo"
   ]
 }

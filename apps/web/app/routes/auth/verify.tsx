@@ -1,3 +1,5 @@
+'use client';
+
 import { AUTH_COPY, maskEmail } from '@hominem/auth';
 import { useAuthClient } from '@hominem/auth/client';
 import { resolveSafeAuthRedirect } from '@hominem/auth/server-utils';
@@ -25,6 +27,11 @@ export async function loader({ request }: { request: Request }) {
 }
 
 export default function Component() {
+  // Skip rendering on server
+  if (typeof window === 'undefined') {
+    return <div>Loading...</div>;
+  }
+
   const authClient = useAuthClient();
   const { email: loaderEmail } = useLoaderData<{ email: string }>();
   const location = useLocation();

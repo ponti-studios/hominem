@@ -33,8 +33,8 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "format": "bunx oxfmt ./src",
-    "lint": "bunx oxlint ./src",
+    "format": "pnpm dlx oxfmt ./src",
+    "lint": "pnpm dlx oxlint ./src",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest"
   },

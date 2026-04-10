@@ -8,12 +8,19 @@ import type { ConfigEnv, PluginOption, UserConfig } from 'vite';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
-import { WEB_BRAND } from './app/lib/brand';
-
 export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
   const isProd = mode === 'production';
   const isAnalyze = process.env.ANALYZE === 'true';
   const shouldGenerateSourceMaps = process.env.SOURCEMAP === 'true' || isAnalyze;
+
+  // Default values for WEB_BRAND to avoid module resolution issues during config loading
+  const WEB_BRAND = {
+    manifest: {
+      name: 'Hominem',
+      shortName: 'Hominem',
+      description: 'Hominem brings notes, voice capture, and chat into one workspace.',
+    },
+  };
 
   return {
     plugins: [

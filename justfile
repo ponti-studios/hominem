@@ -5,7 +5,7 @@ set positional-arguments := true
 
 ROOT_DIR := justfile_directory()
 WEB_DIR := ROOT_DIR / "apps" / "web"
-TURBO := "bunx turbo"
+TURBO := "pnpm dlx turbo"
 LOCAL_DATABASE_URL := "postgresql://postgres:postgres@127.0.0.1:5434/hominem"
 LOCAL_TEST_DATABASE_URL := "postgresql://postgres:postgres@127.0.0.1:4433/hominem-test"
 
@@ -13,7 +13,7 @@ import 'justfiles/db.just'
 
 setup install-flags="" build-packages="true" install-goose="false":
   #!/usr/bin/env bash
-  NODE_ENV=development bun install --frozen-lockfile {{install-flags}}
+  NODE_ENV=development pnpm install --frozen-lockfile {{install-flags}}
   if [ "{{build-packages}}" = "true" ]; then
     {{TURBO}} run build --filter=@hominem/env --filter=@hominem/db --filter=@hominem/rpc --filter=@hominem/auth
   fi
@@ -59,23 +59,23 @@ build-api:
   {{TURBO}} run build --filter=@hominem/api
 
 web-e2e-install:
-  cd "{{WEB_DIR}}" && bunx playwright install --with-deps chromium
+  cd "{{WEB_DIR}}" && pnpm dlx playwright install --with-deps chromium
 
 web-e2e-api-local:
   #!/usr/bin/env bash
-  cd "{{ROOT_DIR}}" && just db-setup && cd "{{ROOT_DIR}}/services/api" && bun run start
+  cd "{{ROOT_DIR}}" && just db-setup && cd "{{ROOT_DIR}}/services/api" && pnpm run start
 
 web-e2e-api-ci:
-  cd "{{ROOT_DIR}}/services/api" && bun run start
+  cd "{{ROOT_DIR}}/services/api" && pnpm run start
 
 web-e2e-web-local:
-  cd "{{WEB_DIR}}" && bun run build && bun run start
+  cd "{{WEB_DIR}}" && pnpm run build && pnpm run start
 
 web-e2e-web-ci:
-  cd "{{WEB_DIR}}" && bun run build && bun run start
+  cd "{{WEB_DIR}}" && pnpm run build && pnpm run start
 
 web-e2e:
-  cd "{{WEB_DIR}}" && bun run test:e2e
+  cd "{{WEB_DIR}}" && pnpm run test:e2e
 
 docker-up:
   docker compose -f "{{ROOT_DIR}}/infra/compose/base.yml" -f "{{ROOT_DIR}}/infra/compose/dev.yml" up -d
@@ -121,25 +121,28 @@ mobile-test-watch:
   cd "{{MOBILE_DIR}}" && {{JEST}} --watch
 
 mobile-typecheck:
-  cd "{{MOBILE_DIR}}" && bunx tsc --noEmit
+  cd "{{MOBILE_DIR}}" && pnpm exec tsc --noEmit
 
 mobile-start:
-  cd "{{MOBILE_DIR}}" && bun run expo start
+  cd "{{MOBILE_DIR}}" && pnpm run expo start
 
 mobile-start-ios:
-  cd "{{MOBILE_DIR}}" && bun run expo start --ios
+  cd "{{MOBILE_DIR}}" && pnpm run expo start --ios
 
 mobile-prebuild:
-  cd "{{MOBILE_DIR}}" && bun run expo prebuild
+  cd "{{MOBILE_DIR}}" && pnpm run expo prebuild
 
 mobile-run-ios:
-  cd "{{MOBILE_DIR}}" && bun run expo run:ios
+  cd "{{MOBILE_DIR}}" && pnpm run expo run:ios
 
 mobile-doctor:
-  cd "{{MOBILE_DIR}}" && bun run expo doctor
+  cd "{{MOBILE_DIR}}" && pnpm run expo doctor
 
 mobile-lint:
-  cd "{{MOBILE_DIR}}" && bun run expo lint
+  cd "{{MOBILE_DIR}}" && pnpm run expo lint
 
 # Run all mobile checks
 mobile-check: mobile-typecheck mobile-test
+
+mobile-e2e:
+  cd "{{MOBILE_DIR}}" && pnpm exec detox test --configuration ios --cleanup

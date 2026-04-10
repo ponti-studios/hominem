@@ -1,18 +1,15 @@
 {
   "extends": "../../../tsconfig.profiles/react-bundler-lib.json",
   "compilerOptions": {
-    "tsBuildInfoFile": "../../../.cache/ui.tsbuildinfo",
     "rootDir": ".",
     "outDir": "./build",
-    "types": ["vite/client", "node", "vitest/globals", "@testing-library/jest-dom"]
+    "tsBuildInfoFile": "../../../.cache/ui.tsbuildinfo"
   },
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx",
-    "src/**/*.d.ts",
     ".storybook/**/*.ts",
-    ".storybook/**/*.tsx",
-    "../../../types/**/*.d.ts"
+    ".storybook/**/*.tsx"
   ],
   "exclude": [
     "node_modules",
@@ -21,10 +18,6 @@
     ".turbo",
     ".cache",
     "coverage",
-    "**/*.spec.ts",
-    "**/*.spec.tsx",
-    "**/__tests__",
-    "**/__mocks__",
     "*.tsbuildinfo"
   ]
 }

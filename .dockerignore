@@ -1,6 +1,7 @@
 .dockerignore
 **/node_modules
 npm-debug.log
+pnpm-debug.log*
 Dockerfile
 .git
 .gitignore

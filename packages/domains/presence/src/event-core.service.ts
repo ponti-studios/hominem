@@ -8,6 +8,9 @@ import type {
   UpdateEventInput,
 } from './contracts';
 
+// Re-export types for convenience
+export type { EventWithTagsAndPeople, UpdateEventInput };
+
 type EventStoreRecord = EventOutput & {
   tagNames: string[];
   peopleIds: string[];

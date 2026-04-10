@@ -22,8 +22,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
-    "format": "bunx oxfmt ./src",
-    "lint": "bunx oxlint ./src"
+    "format": "pnpm dlx oxfmt ./src",
+    "lint": "pnpm dlx oxlint ./src"
   },
   "dependencies": {
     "zod": "4.3.6"

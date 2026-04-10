@@ -40,8 +40,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
-    "format": "bunx oxfmt ./src",
-    "lint": "bunx oxlint ./src"
+    "format": "pnpm dlx oxfmt ./src",
+    "lint": "pnpm dlx oxlint ./src"
   },
   "dependencies": {
     "@better-auth/expo": "^1.4.19",

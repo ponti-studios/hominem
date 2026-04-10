@@ -1,3 +1,5 @@
+'use client';
+
 import { useSession } from '@hominem/auth/client';
 import { Toaster } from '@hominem/ui';
 import { NavLink, Outlet } from 'react-router';
@@ -18,6 +20,18 @@ function NavItem({ to, label }: { to: string; label: string }) {
 }
 
 export default function Layout() {
+  // Skip rendering client-only content on server
+  if (typeof window === 'undefined') {
+    return (
+      <div className="min-h-dvh bg-background text-foreground">
+        <main className="mx-auto max-w-6xl px-4 py-6">
+          <div className="py-10 text-sm text-text-secondary">Loading...</div>
+        </main>
+        <Toaster />
+      </div>
+    );
+  }
+
   const session = useSession();
   const userId = session.data?.user?.id ?? null;
   const isLoading = session.isPending;

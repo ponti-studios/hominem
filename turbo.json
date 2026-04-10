@@ -1,6 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalDependencies": ["package.json", "bun.lock", ".env.local", "**/.env.*local"],
+  "globalDependencies": ["package.json", "pnpm-lock.yaml", ".env.local", "**/.env.*local"],
   "globalEnv": [
     "R2_ENDPOINT",
     "R2_ACCESS_KEY_ID",

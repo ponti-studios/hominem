@@ -34,9 +34,9 @@ storybook-static/
 *.tsbuildinfo
 results/
 
-# bun
+# pnpm
 # Note: lockfile should be committed for monorepos to ensure consistent dependencies
-# bun.lock
+# pnpm-lock.yaml
 
 # Google credentials
 credentials.json
@@ -48,7 +48,7 @@ token.json
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-bun-debug.log*
+pnpm-debug.log*
 
 # local env files
 .env

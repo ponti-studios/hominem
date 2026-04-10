@@ -3,8 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "lint": "bunx oxlint ./app",
-    "format": "bunx oxfmt ./app",
+    "lint": "pnpm dlx oxlint ./app",
+    "format": "pnpm dlx oxfmt ./app",
     "build": "react-router build",
     "dev": "react-router dev",
     "start": "react-router-serve ./build/server/index.js",

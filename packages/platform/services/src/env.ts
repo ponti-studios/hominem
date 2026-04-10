@@ -1,6 +1,6 @@
 import 'dotenv/config';
-import { createServerEnv } from '@hominem/env';
 import { baseSchema } from '@hominem/config/base';
+import { createServerEnv } from '@hominem/env';
 import * as z from 'zod';
 
 const servicesSchema = baseSchema.extend({

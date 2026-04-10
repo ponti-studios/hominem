@@ -87,7 +87,9 @@ export function getVoiceLogData(requestId: string, data?: object) {
       trace: {
         getSpan: (
           ctx: unknown,
-        ) => { spanContext: () => { isValid: boolean; traceId: string; spanId: string } } | undefined;
+        ) =>
+          | { spanContext: () => { isValid: boolean; traceId: string; spanId: string } }
+          | undefined;
       };
     };
     const span = trace.getSpan(context.active());

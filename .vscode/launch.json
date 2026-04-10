@@ -1,28 +1,17 @@
 {
   "version": "0.2.0",
   "configurations": [
-    // ─── Bun ──────────────────────────────────────────────────────────────────
+    // ─── Node.js / TypeScript ─────────────────────────────────────────────────
     {
-      "type": "bun",
+      "type": "node",
       "request": "launch",
-      "name": "Debug Bun (current file)",
-      "program": "${file}",
-      "args": [],
+      "name": "Debug TypeScript (tsx)",
+      "program": "${workspaceFolder}/node_modules/.bin/tsx",
+      "args": ["${file}"],
       "cwd": "${workspaceFolder}",
-      "env": {},
-      "strictEnv": false,
-      "watchMode": false,
-      "stopOnEntry": false,
-      "noDebug": false,
-      "runtime": "bun",
-      "runtimeArgs": []
-    },
-    {
-      "type": "bun",
-      "request": "attach",
-      "name": "Attach to Bun",
-      // Start the target process with: bun --inspect <file>
-      "url": "ws://localhost:6499/"
+      "skipFiles": ["<node_internals>/**"],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
     },
 
     // ─── API (services/api) ───────────────────────────────────────────────────
@@ -30,9 +19,9 @@
       "type": "node",
       "request": "launch",
       "name": "Debug API",
-      "cwd": "${workspaceFolder}/services/api",
-      "runtimeExecutable": "bun",
-      "runtimeArgs": ["dev"],
+      "cwd": "${workspaceFolder}",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@hominem/api", "run", "dev"],
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
       "skipFiles": ["<node_internals>/**"],

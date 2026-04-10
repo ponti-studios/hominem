@@ -4,15 +4,10 @@
     "strict": true,
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
-    "assumeChangesOnlyAffectDirectDependencies": true,
     "incremental": true,
     "tsBuildInfoFile": "../../.cache/app-mobile.tsbuildinfo",
     "allowJs": false,
     "checkJs": false,
-    "moduleDetection": "force",
-    "maxNodeModuleJsDepth": 0,
-    "disableSourceOfProjectReferenceRedirect": true,
-    "types": ["jest"],
     "baseUrl": ".",
     "paths": {
       "~/*": ["./*"]
@@ -29,7 +24,6 @@
     "constants/**/*.ts",
     "navigation/**/*.ts",
     "app.config.ts",
-    ".expo/types/**/*.ts",
     "expo-env.d.ts"
   ],
   "exclude": [
@@ -42,10 +36,6 @@
     "ios",
     "android",
     "coverage",
-    "**/*.test.ts",
-    "**/*.test.tsx",
-    "**/__tests__",
-    "**/__mocks__",
     "*.tsbuildinfo"
   ]
 }

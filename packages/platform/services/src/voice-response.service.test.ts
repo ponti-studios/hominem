@@ -226,8 +226,6 @@ describe('generateVoiceResponse', () => {
   it('all errors are instances of VoiceError', async () => {
     mockFetch.mockRejectedValueOnce(new Error('network error'));
 
-    await expect(generateVoiceResponse({ text: 'test' })).rejects.toBeInstanceOf(
-      VoiceError,
-    );
+    await expect(generateVoiceResponse({ text: 'test' })).rejects.toBeInstanceOf(VoiceError);
   });
 });

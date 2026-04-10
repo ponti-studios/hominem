@@ -1,9 +1,9 @@
 {
   "extends": "../../../tsconfig.profiles/react-bundler-lib.json",
   "compilerOptions": {
-    "tsBuildInfoFile": "../../../.cache/hooks.tsbuildinfo",
     "rootDir": ".",
-    "outDir": "./build"
+    "outDir": "./build",
+    "tsBuildInfoFile": "../../../.cache/hooks.tsbuildinfo"
   },
   "include": [
     "src/**/*.ts",
@@ -15,6 +15,7 @@
     "dist",
     ".turbo",
     ".cache",
-    "coverage"
+    "coverage",
+    "*.tsbuildinfo"
   ]
 }

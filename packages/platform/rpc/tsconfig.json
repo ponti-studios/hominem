@@ -1,16 +1,14 @@
 {
   "extends": "../../../tsconfig.profiles/react-bundler-lib.json",
   "compilerOptions": {
-    "sourceMap": true,
-    "tsBuildInfoFile": "./node_modules/.cache/tsc/.tsbuildinfo",
+    "rootDir": "src",
     "outDir": "./dist",
-    "rootDir": "./src"
+    "tsBuildInfoFile": "../../../.cache/rpc.tsbuildinfo"
   },
   "include": ["src/**/*"],
   "exclude": [
     "node_modules",
     "dist",
-    "**/*.test.ts",
-    "**/*.test.tsx"
+    "*.tsbuildinfo"
   ]
 }

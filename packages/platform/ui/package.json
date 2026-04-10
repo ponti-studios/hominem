@@ -154,8 +154,8 @@
     }
   },
   "scripts": {
-    "format": "bunx oxfmt ./src",
-    "lint": "bunx oxlint ./src",
+    "format": "pnpm dlx oxfmt ./src",
+    "lint": "pnpm dlx oxlint ./src",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "test:storybook": "sh -c 'storybook dev -p 6006 --ci >/tmp/hominem-storybook.log 2>&1 & pid=$!; cleanup() { if kill -0 \"$pid\" 2>/dev/null; then kill \"$pid\"; wait \"$pid\" 2>/dev/null; fi; }; trap cleanup EXIT; until curl -sf http://127.0.0.1:6006 >/dev/null; do sleep 1; done; vitest run --config vitest.stories.config.mts; status=$?; cleanup; exit $status'",

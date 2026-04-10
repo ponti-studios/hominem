@@ -12,7 +12,17 @@ export function installVoiceFetchMock() {
   vi.stubGlobal('fetch', mockVoiceFetch);
 }
 
-export function makeVoiceAudioStreamResponse(audioChunks: string[], transcriptChunks: string[], status = 200): { ok: boolean; status: number; statusText: string; body: ReadableStream<Uint8Array>; json: () => Promise<Record<string, unknown>> } {
+export function makeVoiceAudioStreamResponse(
+  audioChunks: string[],
+  transcriptChunks: string[],
+  status = 200,
+): {
+  ok: boolean;
+  status: number;
+  statusText: string;
+  body: ReadableStream<Uint8Array>;
+  json: () => Promise<Record<string, unknown>>;
+} {
   const lines: string[] = [];
   for (let i = 0; i < Math.max(audioChunks.length, transcriptChunks.length); i++) {
     const audio: Record<string, string> = {};
@@ -26,16 +36,41 @@ export function makeVoiceAudioStreamResponse(audioChunks: string[], transcriptCh
   let pos = 0;
   const body = new ReadableStream<Uint8Array>({
     pull(c) {
-      if (pos < uint8.length) { c.enqueue(uint8.slice(pos, pos + 64)); pos += 64; }
-      else c.close();
+      if (pos < uint8.length) {
+        c.enqueue(uint8.slice(pos, pos + 64));
+        pos += 64;
+      } else c.close();
     },
   });
 
-  return { ok: status >= 200 && status < 300, status, statusText: status === 200 ? 'OK' : 'Error', body, json: vi.fn<() => Promise<Record<string, unknown>>>().mockResolvedValue({}) };
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    statusText: status === 200 ? 'OK' : 'Error',
+    body,
+    json: vi.fn<() => Promise<Record<string, unknown>>>().mockResolvedValue({}),
+  };
 }
 
-export function makeVoiceErrorResponse(status: number, message: string): { ok: false; status: number; statusText: string; body: null; json: () => Promise<{ error: { message: string } }> } {
-  return { ok: false, status, statusText: message, body: null, json: vi.fn<() => Promise<{ error: { message: string } }>>().mockResolvedValue({ error: { message } }) };
+export function makeVoiceErrorResponse(
+  status: number,
+  message: string,
+): {
+  ok: false;
+  status: number;
+  statusText: string;
+  body: null;
+  json: () => Promise<{ error: { message: string } }>;
+} {
+  return {
+    ok: false,
+    status,
+    statusText: message,
+    body: null,
+    json: vi
+      .fn<() => Promise<{ error: { message: string } }>>()
+      .mockResolvedValue({ error: { message } }),
+  };
 }
 
 export function makeVoiceAudioBuffer(bytes = 1024): ArrayBuffer {

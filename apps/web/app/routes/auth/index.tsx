@@ -1,3 +1,5 @@
+'use client';
+
 import { AUTH_COPY, readAuthErrorMessage } from '@hominem/auth';
 import { useAuthClient, usePasskeyAuth } from '@hominem/auth/client';
 import { useEmailAuth } from '@hominem/hooks';
@@ -13,6 +15,11 @@ export async function loader({ request }: { request: Request }) {
 }
 
 export default function Component() {
+  // Skip rendering on server
+  if (typeof window === 'undefined') {
+    return <div>Loading...</div>;
+  }
+
   const authClient = useAuthClient();
   const location = useLocation();
   const navigate = useNavigate();

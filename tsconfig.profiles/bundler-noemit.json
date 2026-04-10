@@ -1,7 +1,6 @@
 {
   "extends": "./package-bundler.json",
   "compilerOptions": {
-    "sourceMap": true,
     "noEmit": true
   }
 }

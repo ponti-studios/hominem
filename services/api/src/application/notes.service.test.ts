@@ -57,7 +57,11 @@ describe('NoteService', () => {
 
   it('derives title from first content line when title is not provided', async () => {
     mocks.mockCreate.mockResolvedValueOnce({ id: 'note-2' });
-    mocks.mockLoad.mockResolvedValueOnce({ id: 'note-2', title: 'First Line', content: 'First Line\nMore content' });
+    mocks.mockLoad.mockResolvedValueOnce({
+      id: 'note-2',
+      title: 'First Line',
+      content: 'First Line\nMore content',
+    });
     mocks.mockRunInTransaction.mockImplementationOnce(async (handler) => handler({ trx: true }));
 
     await service.createNote('user-1', { content: 'First Line\nMore content' });

@@ -11,7 +11,7 @@ Mobile testing guidelines:
 - Prefer `tests/support/router.ts` for pathname, params, and router spy control instead of redefining `expo-router` mocks in each file.
 - Keep file-local `jest.mock(...)` usage for screen-specific services or hook contracts only. Theme, router, safe-area, and common native shims should stay shared.
 - Lane commands:
-- `bun run test:logic`
-- `bun run test:render`
-- `bun run test:contracts`
-- `bun run test:file tests/screens/auth-screens.test.tsx`
+- `pnpm test:logic`
+- `pnpm test:render`
+- `pnpm test:contracts`
+- `pnpm test:file tests/screens/auth-screens.test.tsx`

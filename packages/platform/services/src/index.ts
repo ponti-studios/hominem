@@ -6,9 +6,7 @@ export * from './redis';
 export * from './resend';
 export * from './types';
 export * from './voice-errors';
-export {
-  generateSpeechBuffer,
-} from './voice-speech.service';
+export { generateSpeechBuffer } from './voice-speech.service';
 export {
   generateVoiceResponse,
   type VoiceResponseFormat,

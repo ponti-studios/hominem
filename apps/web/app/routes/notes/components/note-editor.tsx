@@ -1,5 +1,5 @@
-import type { Note } from '@hominem/rpc/types/notes.types';
 import { useNoteEditor } from '@hominem/hooks';
+import type { Note } from '@hominem/rpc/types/notes.types';
 import { SurfacePanel } from '@hominem/ui';
 import { SpeechInput } from '@hominem/ui/ai-elements';
 import {
@@ -111,7 +111,11 @@ export function NoteEditor({ note }: NoteEditorProps) {
               onChange={(e) => {
                 const next = e.target.value;
                 setTitle(next);
-                void onSave(next, content, files.map((f) => f.id));
+                void onSave(
+                  next,
+                  content,
+                  files.map((f) => f.id),
+                );
               }}
               placeholder="Untitled note"
               aria-label="Note title"
@@ -131,7 +135,11 @@ export function NoteEditor({ note }: NoteEditorProps) {
           onChange={(e) => {
             const next = e.target.value;
             setContent(next);
-            void onSave(title, next, files.map((f) => f.id));
+            void onSave(
+              title,
+              next,
+              files.map((f) => f.id),
+            );
           }}
           placeholder="Start writing..."
           aria-label="Note content"
@@ -163,7 +171,11 @@ export function NoteEditor({ note }: NoteEditorProps) {
                 const result = await transcribe.mutateAsync({ audioBlob });
                 const nextContent = `${content}\n${result.text}`.trim();
                 setContent(nextContent);
-                void onSave(title, nextContent, files.map((f) => f.id));
+                void onSave(
+                  title,
+                  nextContent,
+                  files.map((f) => f.id),
+                );
               }}
             />
           </div>

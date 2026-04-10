@@ -17,7 +17,6 @@ function Slider({
   );
 
   return (
-    // @ts-expect-error - Radix UI types don't fully support exactOptionalPropertyTypes
     <SliderPrimitive.Root
       data-slot="slider"
       defaultValue={defaultValue}

@@ -1,3 +1,5 @@
+'use client';
+
 import { useSession } from '@hominem/auth/client';
 import { Container } from '@hominem/ui';
 import { Button } from '@hominem/ui/button';
@@ -7,6 +9,11 @@ import { Navigate } from 'react-router';
 import { useSignOut } from '~/lib/hooks/use-sign-out';
 
 export default function AccountPage() {
+  // Skip rendering on server
+  if (typeof window === 'undefined') {
+    return <div>Loading...</div>;
+  }
+
   const session = useSession();
   const userId = session.data?.user?.id ?? null;
   const isLoading = session.isPending;

@@ -4,20 +4,21 @@
 # ============================================================================
 # BUILDER STAGE - Build the web application
 # ============================================================================
-FROM oven/bun:1.3.0-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
 ENV NODE_ENV=production \
     TURBO_TELEMETRY_DISABLED=1
 
-COPY package.json bun.lock ./
+COPY package.json pnpm-lock.yaml ./
 
-RUN bun install --frozen-lockfile
+RUN npm install -g pnpm@9.3.0 && \
+    pnpm install --frozen-lockfile
 
 COPY . .
 
-RUN bun run build
+RUN pnpm run build
 
 # ============================================================================
 # SERVER STAGE - Serve built files with Node

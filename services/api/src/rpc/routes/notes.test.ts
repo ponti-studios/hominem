@@ -189,9 +189,12 @@ describe('notesRoutes', () => {
       })
       .execute();
 
-    const archiveResponse = await createApp().request(`http://localhost/api/notes/${noteId}/archive`, {
-      method: 'POST',
-    });
+    const archiveResponse = await createApp().request(
+      `http://localhost/api/notes/${noteId}/archive`,
+      {
+        method: 'POST',
+      },
+    );
 
     expect(archiveResponse.status).toBe(200);
 

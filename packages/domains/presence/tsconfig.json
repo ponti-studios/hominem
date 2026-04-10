@@ -1,9 +1,9 @@
 {
   "extends": "../../../tsconfig.profiles/package-bundler.json",
   "compilerOptions": {
-    "tsBuildInfoFile": "../../../.cache/events.tsbuildinfo",
+    "rootDir": "src",
     "outDir": "./build",
-    "rootDir": "./src"
+    "tsBuildInfoFile": "../../../.cache/events.tsbuildinfo"
   },
   "include": ["src/**/*"],
   "exclude": [
@@ -13,11 +13,6 @@
     ".turbo",
     ".cache",
     "coverage",
-    "**/*.test.ts",
-    "**/*.spec.ts",
-    "**/__tests__",
-    "**/__mocks__",
-    "*.tsbuildinfo",
-    ".react-router/cache"
+    "*.tsbuildinfo"
   ]
 }
