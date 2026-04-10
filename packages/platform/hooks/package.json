@@ -23,7 +23,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@hominem/utils": "workspace:*",
     "react": "19.2.0"
   },
   "devDependencies": {

@@ -10,6 +10,9 @@ const currentDir = dirname(fileURLToPath(import.meta.url))
 const uiTsconfigPath = join(currentDir, 'tsconfig.json')
 
 export default defineConfig({
+  optimizeDeps: {
+    exclude: ['expo-clipboard', 'react-native'],
+  },
   plugins: [
     tailwindcss(),
     storybookTest({

@@ -37,28 +37,9 @@ if (typeof process !== 'undefined' && process.versions && process.versions.node)
 }
 
 const redactFields = ['email', 'password', 'token'];
-const isPrettyLoggingEnabled =
-  typeof process !== 'undefined' &&
-  process.env &&
-  process.env.NODE_ENV !== 'production' &&
-  process.env.NODE_ENV !== 'test';
 
 export { getHttpRequestInLogMessage, getHttpRequestLogLevel, getHttpRequestOutLogMessage };
 export type { HttpRequestLogData, HttpRequestStartLogData, LoggerLevel };
-
-const transport =
-  pino !== null && isPrettyLoggingEnabled
-    ? pino.transport({
-        target: 'pino-pretty',
-        options: {
-          colorize: true,
-          ignore: 'pid,hostname',
-          messageFormat: '{msg}',
-          singleLine: true,
-          translateTime: 'SYS:standard',
-        },
-      })
-    : undefined;
 
 const pinoLogger =
   pino !== null
@@ -76,7 +57,7 @@ const pinoLogger =
             },
           },
         },
-        transport,
+        undefined,
       )
     : null;
 

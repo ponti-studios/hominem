@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { AuthProvider } from '@hominem/auth/client';
 import { Home, Settings, MessageSquare } from 'lucide-react';
+import { MemoryRouter } from 'react-router';
 import { expect, within } from 'storybook/test';
 
 import { Header, type HeaderProps } from './header';
@@ -13,10 +15,14 @@ const meta = {
   },
   decorators: [
     (Story) => (
-      <div className="min-h-screen bg-surface">
-        <Story />
-        <div className="h-20" />
-      </div>
+      <AuthProvider config={{ apiBaseUrl: 'http://127.0.0.1:4040' }}>
+        <MemoryRouter>
+          <div className="min-h-screen bg-surface">
+            <Story />
+            <div className="h-20" />
+          </div>
+        </MemoryRouter>
+      </AuthProvider>
     ),
   ],
 } satisfies Meta<typeof Header>;

@@ -74,6 +74,10 @@ async function cleanupVerificationRows() {
   )
 }
 
+async function cleanupJwksRows() {
+  await pool.query('delete from jwks')
+}
+
 async function cleanupUsers(userIds: string[]) {
   if (userIds.length === 0) {
     return
@@ -87,6 +91,7 @@ export async function cleanupApiAuthTestState() {
 
   await cleanupDeviceCodes(userIds)
   await cleanupVerificationRows()
+  await cleanupJwksRows()
   await cleanupUsers(userIds)
 }
 

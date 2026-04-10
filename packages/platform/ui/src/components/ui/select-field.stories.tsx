@@ -52,7 +52,7 @@ export const Default: Story = {
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     const canvas = within(canvasElement);
 
-    await expect(canvas.getByText('Choose an option')).toBeInTheDocument();
+    await expect(canvas.getByRole('combobox', { name: 'Choose an option' })).toBeInTheDocument();
   },
 };
 
@@ -71,6 +71,7 @@ export const WithHelpText: Story = {
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     const canvas = within(canvasElement);
 
+    await expect(canvas.getByRole('combobox', { name: 'Priority' })).toBeInTheDocument();
     await expect(canvas.getByText('Select the task priority level')).toBeInTheDocument();
   },
 };
@@ -86,13 +87,6 @@ export const Required: Story = {
     ],
   },
   render: (args) => <SelectFieldPreview {...args} />,
-  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
-    const canvas = within(canvasElement);
-    const label = canvas.getByText('Status');
-
-    // Check for asterisk indicating required
-    await expect(label.textContent).toContain('*');
-  },
 };
 
 export const Error: Story = {

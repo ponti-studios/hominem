@@ -113,6 +113,8 @@ gh-pr-errors:
 
 MOBILE_DIR := ROOT_DIR / "apps" / "mobile"
 JEST := MOBILE_DIR / "node_modules" / ".bin" / "jest"
+TSX := "npx --yes tsx"
+EXPO_CLI := MOBILE_DIR / "node_modules" / "expo" / "bin" / "cli"
 
 mobile-test:
     cd "{{ MOBILE_DIR }}" && {{ JEST }}
@@ -124,22 +126,22 @@ mobile-typecheck:
     cd "{{ MOBILE_DIR }}" && pnpm exec tsc --noEmit
 
 mobile-start:
-    cd "{{ MOBILE_DIR }}" && pnpm exec expo start
+    cd "{{ MOBILE_DIR }}" && {{ TSX }} {{ EXPO_CLI }} start
 
 mobile-start-ios:
-    cd "{{ MOBILE_DIR }}" && pnpm exec expo start --ios
+    cd "{{ MOBILE_DIR }}" && {{ TSX }} {{ EXPO_CLI }} start --ios
 
 mobile-prebuild:
-    cd "{{ MOBILE_DIR }}" && pnpm exec expo prebuild
+    cd "{{ MOBILE_DIR }}" && {{ TSX }} {{ EXPO_CLI }} prebuild
 
 mobile-run-ios:
-    cd "{{ MOBILE_DIR }}" && pnpm exec expo run:ios
+    cd "{{ MOBILE_DIR }}" && {{ TSX }} {{ EXPO_CLI }} run:ios
 
 mobile-doctor:
-    cd "{{ MOBILE_DIR }}" && pnpm exec expo doctor
+    cd "{{ MOBILE_DIR }}" && npx --yes expo-doctor
 
 mobile-lint:
-    cd "{{ MOBILE_DIR }}" && pnpm exec expo lint
+    cd "{{ MOBILE_DIR }}" && {{ TSX }} {{ EXPO_CLI }} lint
 
 # Run all mobile checks
 mobile-check: mobile-typecheck mobile-test

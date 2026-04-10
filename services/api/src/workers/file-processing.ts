@@ -59,7 +59,7 @@ export function startFileProcessingWorker() {
   }
 
   worker = new Worker(QUEUE_NAMES.FILE_PROCESSING, async (job) => processFileUploadJob(job.data), {
-    connection: cache as any,
+    connection: cache,
   });
 
   worker.on('failed', (job, error) => {
