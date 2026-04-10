@@ -22,7 +22,6 @@ function getIsTestMode(): boolean {
 class InMemoryStorageBackend {
   private files: Map<string, Buffer> = new Map();
   private maxFileSize: number;
-  private isPublic: boolean;
   private category: StorageCategory;
   private pendingUploads: Map<string, { buffer?: Buffer; mimetype: string; size: number }> =
     new Map();
@@ -31,7 +30,7 @@ class InMemoryStorageBackend {
   constructor(category: StorageCategory, options?: StorageOptions) {
     this.category = category;
     this.maxFileSize = options?.maxFileSize || 50 * 1024 * 1024;
-    this.isPublic = options?.isPublic ?? false;
+    void options?.isPublic; // Note: isPublic is handled by subclass implementations
   }
 
   /**
