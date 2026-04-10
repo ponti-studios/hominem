@@ -2,10 +2,10 @@ import { useLocalSearchParams } from 'expo-router';
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { LoadingFull } from '~/components/LoadingFull';
 import { useTTS } from '~/components/media/use-tts';
 import { Text, theme } from '~/components/theme';
 import { useActiveChat, useChatMessages } from '~/services/chat';
+import { LoadingState } from '~/components/loading-state';
 
 export default function ChatDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -15,7 +15,7 @@ export default function ChatDetailScreen() {
   const messagesQuery = useChatMessages({ chatId });
 
   if (isLoadingActiveChat || !chatId) {
-    return <LoadingFull />;
+    return <LoadingState variant="page" message="Loading chat..." />;
   }
 
   return (
