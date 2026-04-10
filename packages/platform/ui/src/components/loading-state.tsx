@@ -115,16 +115,18 @@ export function LoadingState({
           </div>
         );
 
-      default:
-        const _: never = variant;
+      default: {
+        // Exhaustive check - variant must be one of the above
+        void variant;
         return null;
+      }
     }
   })();
 
   // If delay specified, wrap in conditional rendering
   if (delayMs > 0) {
     return (
-      <DelayedLoading variant={variant} delayMs={delayMs}>
+      <DelayedLoading delayMs={delayMs}>
         {content}
       </DelayedLoading>
     );
@@ -138,11 +140,9 @@ export function LoadingState({
  * Prevents showing loading indicator for quick operations
  */
 function DelayedLoading({
-  variant,
   delayMs,
   children,
 }: {
-  variant: LoadingVariant;
   delayMs: number;
   children: ReactNode;
 }) {
