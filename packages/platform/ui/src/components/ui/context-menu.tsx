@@ -83,7 +83,6 @@ const ContextMenuCheckboxItem = React.forwardRef<
   React.ElementRef<typeof ContextMenuPrimitive.CheckboxItem>,
   React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.CheckboxItem>
 >(({ className, children, checked, ...props }, ref) => (
-  // @ts-expect-error - Radix UI types don't fully support exactOptionalPropertyTypes
   <ContextMenuPrimitive.CheckboxItem
     ref={ref}
     className={cn(

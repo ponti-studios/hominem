@@ -11,7 +11,13 @@ export function createServerClient(
     createRawHonoClient({
       baseUrl,
       getHeaders: async () => {
-        return cookieHeader ? { cookie: cookieHeader } : {}
+        const headers: Record<string, string> = {}
+
+        if (cookieHeader) {
+          headers.cookie = cookieHeader
+        }
+
+        return headers
       },
       onError: (error) => {
         throw error

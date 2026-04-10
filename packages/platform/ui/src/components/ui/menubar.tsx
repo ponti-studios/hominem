@@ -112,7 +112,6 @@ const MenubarCheckboxItem = React.forwardRef<
   React.ElementRef<typeof MenubarPrimitive.CheckboxItem>,
   React.ComponentPropsWithoutRef<typeof MenubarPrimitive.CheckboxItem>
 >(({ className, children, checked, ...props }, ref) => (
-  // @ts-expect-error - Radix UI types don't fully support exactOptionalPropertyTypes
   <MenubarPrimitive.CheckboxItem
     ref={ref}
     className={cn(

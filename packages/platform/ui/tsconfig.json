@@ -3,7 +3,8 @@
   "compilerOptions": {
     "rootDir": ".",
     "outDir": "./build",
-    "tsBuildInfoFile": "../../../.cache/ui.tsbuildinfo"
+    "tsBuildInfoFile": "../../../.cache/ui.tsbuildinfo",
+    "types": ["node", "vite/client", "vitest/globals", "@testing-library/jest-dom"]
   },
   "include": [
     "src/**/*.ts",
