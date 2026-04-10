@@ -3,12 +3,20 @@
     "version": ">= 10.0.0"
   },
   "build": {
-    "development": {
+    "dev": {
       "developmentClient": true,
       "distribution": "internal",
       "ios": {
         "appleTeamId": "3QHJ2KN8AL",
         "bundleIdentifier": "com.pontistudios.hakumi.dev"
+      }
+    },
+    "e2e": {
+      "developmentClient": false,
+      "distribution": "internal",
+      "ios": {
+        "appleTeamId": "3QHJ2KN8AL",
+        "bundleIdentifier": "com.pontistudios.hakumi.e2e"
       }
     },
     "preview": {

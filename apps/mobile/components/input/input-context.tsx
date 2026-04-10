@@ -19,7 +19,7 @@ interface ComposerTarget {
   noteId: string | null;
 }
 
-interface MobileComposerAttachment {
+export interface MobileComposerAttachment {
   id: string;
   name: string;
   type: string;

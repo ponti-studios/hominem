@@ -75,7 +75,7 @@ const useStyles = makeStyles((t) =>
     skeletonLine: {
       height: 12,
       width: '100%',
-      borderRadius: t.borderRadii.sm,
+      borderRadius: t.borderRadii.md,
       backgroundColor: t.colors.muted,
     },
     skeletonShort: {

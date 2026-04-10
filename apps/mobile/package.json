@@ -68,7 +68,6 @@
   },
   "devDependencies": {
     "@babel/core": "^7.26.0",
-    "@babel/runtime": "^7.28.6",
     "@better-auth/expo": "^1.4.19",
     "@testing-library/react-native": "^13.3.3",
     "@types/jest": "^30.0.0",
@@ -80,14 +79,12 @@
     "detox": "20.50.1",
     "jest": "^30.3.0",
     "jest-expo": "~55.0.13",
-    "msw": "^2.12.14",
+    "msw": "~2.12.14",
     "typescript": "5.9.3"
   },
-  "peerDependencies": {
-    "react-native-svg": "15.15.3"
-  },
+  "peerDependencies": {},
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=24.14.1"
   },
   "packageManager": "pnpm@9.3.0",
   "expo": {
