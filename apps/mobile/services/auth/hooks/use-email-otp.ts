@@ -48,7 +48,7 @@ function toAuthUserProfile(localProfile: User | null): AuthContext['state']['use
 }
 
 export function useEmailOtp(context: AuthContext) {
-  const { state, dispatch } = context;
+  const { dispatch } = context;
 
   const requestEmailOtp = useCallback(
     async (email: string) => {

@@ -6,7 +6,7 @@ interface ResolveAuthRedirectInput {
   segments: string[];
 }
 
-export type AuthRedirectTarget = '/(auth)' | '/(protected)/(tabs)/';
+type AuthRedirectTarget = '/(auth)' | '/(protected)/(tabs)/';
 
 const NO_REDIRECT_STATUSES = new Set(['booting', 'signing_out']);
 

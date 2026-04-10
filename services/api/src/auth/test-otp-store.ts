@@ -1,6 +1,6 @@
 import { env } from '../env';
 
-export interface OtpRecord {
+interface OtpRecord {
   email: string;
   otp: string;
   type: string;

@@ -43,7 +43,3 @@ export function reconcileMessagesAfterSend(
   );
   return [...withoutOptimistic, ...newMessages];
 }
-
-export function getChatRetryDelayMs(attemptIndex: number): number {
-  return Math.min(1000 * 2 ** attemptIndex, 10000);
-}

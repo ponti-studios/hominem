@@ -24,10 +24,6 @@ const hiddenControl = {
   },
 } satisfies StorybookControl;
 
-const docOnlyControl = {
-  control: false,
-} satisfies StorybookControl;
-
 function withDefaultValue(
   control: StorybookControl,
   defaultValue?: boolean | number | string | null,
@@ -90,29 +86,6 @@ function numberControl(
   );
 }
 
-function rangeControl(
-  description: string,
-  config?: {
-    defaultValue?: number;
-    max?: number;
-    min?: number;
-    step?: number;
-  },
-): StorybookControl {
-  return withDefaultValue(
-    {
-      control: {
-        max: config?.max,
-        min: config?.min,
-        step: config?.step,
-        type: 'range',
-      },
-      description,
-    },
-    config?.defaultValue,
-  );
-}
-
 function selectControl<T extends boolean | number | string | null>(
   options: readonly T[],
   description: string,
@@ -134,25 +107,11 @@ function selectControl<T extends boolean | number | string | null>(
   );
 }
 
-function multiSelectControl<T extends boolean | number | string | null>(
-  options: readonly T[],
-  description: string,
-  config?: Omit<SelectControlConfig, 'controlType'>,
-): StorybookControl {
-  return selectControl(options, description, {
-    ...config,
-    controlType: 'multi-select',
-  });
-}
-
 export {
   booleanControl,
   commonControlsExclude,
-  docOnlyControl,
   hiddenControl,
-  multiSelectControl,
   numberControl,
-  rangeControl,
   selectControl,
   textControl,
 };

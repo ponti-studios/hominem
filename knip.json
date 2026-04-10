@@ -3,83 +3,32 @@
 
   "workspaces": {
     "apps/web": {
-      "entry": [
-        "app/root.tsx",
-        "app/routes.ts",
-        "app/env.d.ts",
-        "react-router.config.ts",
-        "vite.config.ts",
-        "vitest.config.ts",
-        "playwright.config.ts"
-      ],
+      "entry": ["app/**/*.{ts,tsx}"],
       "project": ["app/**/*.{ts,tsx}"]
     },
 
     "apps/mobile": {
-      "entry": [
-        "app/**/*.{ts,tsx}",
-        "app.config.ts",
-        "babel.config.js",
-        "metro.config.js",
-        "react-native.config.js",
-        "vitest.config.ts",
-        "e2e/**/*.{js,ts}"
-      ],
-      "project": [
-        "app/**/*.{ts,tsx}",
-        "components/**/*.{ts,tsx}",
-        "constants/**/*.{ts,tsx}",
-        "config/**/*.{ts,tsx}",
-        "hooks/**/*.{ts,tsx}",
-        "lib/**/*.{ts,tsx}",
-        "plugins/**/*.{ts,tsx}",
-        "services/**/*.{ts,tsx}",
-        "theme/**/*.{ts,tsx}",
-        "utils/**/*.{ts,tsx}"
-      ]
+      "entry": ["app/**/*.{ts,tsx}", "e2e/**/*.{js,ts}"],
+      "project": ["**/*.{ts,tsx}"]
     },
 
     "services/api": {
-      "entry": ["src/index.ts", "src/server.ts", "vitest.config.ts"],
       "project": ["src/**/*.{ts,tsx}"]
     },
 
     "packages/core/*": {
-      "entry": [
-        "src/index.ts",
-        "src/index.tsx",
-        "*.config.{ts,js,mjs,cjs}",
-        "vitest.config.ts",
-        "vite.config.ts",
-        "postcss.config.{ts,js,mjs,cjs}",
-        "tailwind.config.{ts,js,mjs,cjs}"
-      ],
       "project": ["src/**/*.{ts,tsx}"]
     },
 
     "packages/platform/*": {
-      "entry": [
-        "src/index.ts",
-        "src/index.tsx",
-        "*.config.{ts,js,mjs,cjs}",
-        "vitest.config.ts",
-        "vite.config.ts",
-        "postcss.config.{ts,js,mjs,cjs}",
-        "tailwind.config.{ts,js,mjs,cjs}"
-      ],
       "project": ["src/**/*.{ts,tsx}"]
     },
 
+    "packages/platform/utils": {
+      "project": ["*.ts"]
+    },
+
     "packages/domains/*": {
-      "entry": [
-        "src/index.ts",
-        "src/index.tsx",
-        "*.config.{ts,js,mjs,cjs}",
-        "vitest.config.ts",
-        "vite.config.ts",
-        "postcss.config.{ts,js,mjs,cjs}",
-        "tailwind.config.{ts,js,mjs,cjs}"
-      ],
       "project": ["src/**/*.{ts,tsx}"]
     },
 
@@ -93,27 +42,12 @@
 
   "ignoreUnresolved": ["^vite/client$"],
 
+  "ignoreFiles": ["apps/mobile/tests/support/**"],
+
   "ignore": [
-    "**/build/**",
-    "**/dist/**",
-    "**/.turbo/**",
-    "**/.cache/**",
-    "**/coverage/**",
-    "**/*.test.*",
-    "**/*.spec.*",
-    "**/__tests__/**",
-    "**/__mocks__/**",
-    "**/test-assets/**",
-    "packages/platform/ui/src/components/loading-state.tsx",
-    "**/apps/mobile/components/**",
-    "**/apps/mobile/constants/**",
-    "**/apps/mobile/services/**",
-    "**/apps/web/app/lib/**",
-    "**/packages/platform/rpc/src/**",
-    "**/packages/platform/ui/src/components/**",
-    "**/packages/platform/ui/src/storybook/**",
-    "**/services/api/src/application/**",
-    "**/services/api/src/auth/**",
-    "**/services/api/src/rpc/middleware/**"
   ],
+
+  "ignoreIssues": {
+    "apps/mobile/tests/support/**": ["exports"]
+  }
 }

@@ -6,7 +6,15 @@ import { Alert } from 'react-native';
 
 import { useFileUpload } from '~/services/files/use-file-upload';
 
-import type { MobileComposerAttachment, MobileComposerMode } from './input-context';
+type MobileComposerMode = 'text' | 'voice';
+
+interface MobileComposerAttachment {
+  id: string;
+  name: string;
+  type: string;
+  localUri?: string;
+  uploadedFile?: UploadedFile;
+}
 
 interface UploadedMobileAsset {
   localUri: string;
@@ -34,7 +42,7 @@ function getAttachmentType(uploadedFile: UploadedMobileAsset['uploadedFile']): s
   return classifyFileByMimeType(uploadedFile.mimetype);
 }
 
-export function mapUploadedAssetsToAttachments(
+function mapUploadedAssetsToAttachments(
   assets: UploadedMobileAsset[],
 ): MobileComposerAttachment[] {
   return assets.map((asset) => ({
@@ -46,7 +54,7 @@ export function mapUploadedAssetsToAttachments(
   }));
 }
 
-export function appendVoiceTranscript(text: string, transcript: string): string {
+function appendVoiceTranscript(text: string, transcript: string): string {
   const trimmedTranscript = transcript.trim();
 
   if (trimmedTranscript.length === 0) {
@@ -56,7 +64,7 @@ export function appendVoiceTranscript(text: string, transcript: string): string 
   return text.trim().length > 0 ? `${text}\n${trimmedTranscript}` : trimmedTranscript;
 }
 
-export function exceedsAttachmentLimit(existingCount: number, nextCount: number): boolean {
+function exceedsAttachmentLimit(existingCount: number, nextCount: number): boolean {
   return existingCount + nextCount > CHAT_UPLOAD_MAX_FILE_COUNT;
 }
 

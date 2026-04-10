@@ -25,7 +25,7 @@ const SWIFT_SOURCE = `import AppIntents
 
 // MARK: - Add Note Intent
 
-@available(iOS 16.0, *)
+@available(iOS 18.0, *)
 struct AddNoteIntent: AppIntent {
     static let title: LocalizedStringResource = "Add a Note"
     static let description = IntentDescription("Opens Hakumi to create a new note.")
@@ -38,7 +38,7 @@ struct AddNoteIntent: AppIntent {
 
 // MARK: - Start Chat Intent
 
-@available(iOS 16.0, *)
+@available(iOS 18.0, *)
 struct StartChatIntent: AppIntent {
     static let title: LocalizedStringResource = "Start a Chat"
     static let description = IntentDescription("Opens Hakumi's chat assistant.")
@@ -77,7 +77,7 @@ typealias RCTResponseSenderBlock = ([Any]?) -> Void
 class HakumiIntentsModule: NSObject {
     @objc(donate:result:)
     func donate(_ intentName: String, result: @escaping RCTResponseSenderBlock) {
-        guard #available(iOS 16.0, *) else {
+        guard #available(iOS 18.0, *) else {
             result([false])
             return
         }

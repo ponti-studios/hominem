@@ -1,9 +1,7 @@
-import { CHAT_TITLE_MAX_LENGTH } from '@hominem/chat/constants';
-import type { ApiClient } from '@hominem/rpc';
 import { useApiClient } from '@hominem/rpc/react';
 import type { Chat, ChatMessageDto as RpcChatMessage } from '@hominem/rpc/types';
 import NetInfo from '@react-native-community/netinfo';
-import { useMutation, useQuery, useQueryClient, type MutationOptions } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { randomUUID } from 'expo-crypto';
 import { useState } from 'react';
 
@@ -20,14 +18,14 @@ import {
   reconcileMessagesAfterSend,
   type MessageOutput,
 } from './chat-contract';
-import { getChatActivityAt, selectChatSession, type ChatWithActivity } from './session-state';
+import { selectChatSession, type ChatWithActivity } from './session-state';
 
 type SendChatMessageOutput = {
   messages: MessageOutput[];
   function_calls: string[];
 };
 
-export interface SendChatMessageInput {
+interface SendChatMessageInput {
   fileIds?: string[];
   message: string;
   noteIds?: string[];
@@ -87,7 +85,7 @@ export const useChatMessages = ({ chatId }: { chatId: string }) => {
   });
 };
 
-export type ChatSendStatus = 'idle' | 'submitted' | 'streaming' | 'error';
+type ChatSendStatus = 'idle' | 'submitted' | 'streaming' | 'error';
 
 // Consolidated send message with optimistic updates
 export const useSendMessage = ({ chatId }: { chatId: string }) => {
@@ -227,96 +225,6 @@ export const useSendMessage = ({ chatId }: { chatId: string }) => {
   };
 };
 
-// Simplified start chat - uses React Query retry instead of custom queue
-function useStartChat({
-  userMessage,
-  _chatMessage,
-  _intentId,
-  _seedPrompt,
-  ...props
-}: {
-  userMessage: string;
-  _chatMessage: string;
-  _intentId?: string;
-  _seedPrompt?: string;
-} & MutationOptions<Chat, Error, void>) {
-  const client = useApiClient();
-  const queryClient = useQueryClient();
-
-  return useMutation<Chat, Error, void>({
-    mutationKey: ['startChat'],
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
-
-    mutationFn: async () => {
-      const status = await NetInfo.fetch();
-      if (!status.isConnected) {
-        // React Query will handle retry when back online
-        throw new Error('offline_retry');
-      }
-
-      const chat = await startRemoteChat(client, userMessage);
-      return chat;
-    },
-
-    onSuccess: (chat) => {
-      queryClient.setQueryData(
-        chatKeys.resumableSessions,
-        (previousSessions: ChatWithActivity[] | undefined) =>
-          updateSessionCache(
-            previousSessions,
-            createChatInboxRefreshSnapshot({
-              chatId: chat.id,
-              noteId: chat.noteId,
-              title: chat.title ?? null,
-              timestamp: chat.createdAt,
-              userId: chat.userId,
-            }),
-          ),
-      );
-      queryClient.invalidateQueries({ queryKey: chatKeys.activeChat(chat.id) });
-      void invalidateInboxQueries(queryClient);
-    },
-    ...props,
-  });
-}
-
-function useArchiveChat({
-  chatId,
-  ...props
-}: { chatId: string } & MutationOptions<Chat, Error, void>) {
-  const client = useApiClient();
-  const queryClient = useQueryClient();
-
-  return useMutation<Chat, Error, void>({
-    mutationKey: ['archiveChat', chatId],
-    mutationFn: async () => {
-      return client.chats.archive({ chatId });
-    },
-    onSuccess: (chat) => {
-      const activityAt = getChatActivityAt(chat);
-      queryClient.setQueryData<ChatWithActivity[] | undefined>(
-        chatKeys.resumableSessions,
-        (previousSessions) => {
-          const previous = previousSessions ?? [];
-          const snapshot = createChatInboxRefreshSnapshot({
-            chatId: chat.id,
-            noteId: chat.noteId,
-            title: chat.title ?? null,
-            timestamp: activityAt,
-            userId: chat.userId,
-          });
-
-          return upsertInboxSessionActivity(previous, snapshot);
-        },
-      );
-      queryClient.invalidateQueries({ queryKey: chatKeys.activeChat(chatId) });
-      void invalidateInboxQueries(queryClient);
-    },
-    ...props,
-  });
-}
-
 export const useActiveChat = (chatId?: string | null) => {
   const client = useApiClient();
 
@@ -334,22 +242,5 @@ export const useActiveChat = (chatId?: string | null) => {
     },
   });
 };
-
-async function startRemoteChat(client: ApiClient, initialMessage: string): Promise<Chat> {
-  const title = initialMessage.trim().slice(0, CHAT_TITLE_MAX_LENGTH) || 'Chat session';
-
-  const chat = await client.chats.create({
-    title,
-  });
-
-  if (initialMessage.trim()) {
-    await client.chats.send({
-      chatId: chat.id,
-      message: initialMessage,
-    });
-  }
-
-  return chat;
-}
 
 const generateId = () => randomUUID();

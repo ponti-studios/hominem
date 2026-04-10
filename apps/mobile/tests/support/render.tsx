@@ -1,13 +1,7 @@
 import { act, fireEvent, render, type RenderAPI } from '@testing-library/react-native';
 import React from 'react';
 
-import { resetMockRouter, setMockPathname, setMockSearchParams } from './router';
-
-function resetRenderTestState() {
-  jest.clearAllMocks();
-  jest.useRealTimers();
-  resetMockRouter();
-}
+import { setMockPathname, setMockSearchParams } from './router';
 
 export function renderScreen(
   ui: React.ReactElement,

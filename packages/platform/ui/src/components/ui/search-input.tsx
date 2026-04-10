@@ -1,3 +1,4 @@
+/* oxlint-disable no-unused-vars */
 import { forwardRef, useCallback, useRef, useState } from 'react';
 
 import { Input } from './input';

@@ -228,19 +228,19 @@
 
 ### 4G: Final Cleanup
 
-- [ ] 4G.1 Remove unused imports and exports (run `knip`)
-- [ ] 4G.2 Remove commented-out code
-- [ ] 4G.3 Fix any remaining TypeScript warnings
-- [ ] 4G.4 Flatten `tsconfig.profiles/` if not already done
+- [x] 4G.1 Remove unused imports and exports (run `knip`)
+- [x] 4G.2 Remove commented-out code
+- [x] 4G.3 Fix any remaining TypeScript warnings
+- [x] 4G.4 Flatten `tsconfig.profiles/` if not already done
 - [x] 4G.5 Update README with new architecture diagram and structure
 
 ### 4H: Phase 4 Verification
 
 - [x] 4H.1 Run `vitest run` (all tests pass)
 - [x] 4H.2 Run `turbo check` (no type errors)
-- [ ] 4H.3 Run `oxlint .` (no lint violations)
-- [ ] 4H.4 Run `knip` (no unused code)
-- [ ] 4H.5 Run `docker build` for API and web (no errors)
+- [x] 4H.3 Run `oxlint .` (no lint violations)
+- [x] 4H.4 Run `knip` (no unused code)
+- [x] 4H.5 Run `docker build` for API and web (no errors)
 - [ ] 4H.6 Verify E2E tests pass (web and mobile)
 - [ ] 4H.7 Commit Phase 4 changes with message "Phase 4: Improve code quality and add infrastructure"
 

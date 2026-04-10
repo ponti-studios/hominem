@@ -1,14 +1,14 @@
 import { ThemeProvider } from '@shopify/restyle';
 import type { RelativePathString } from 'expo-router';
 import { SplashScreen, Stack, useRouter, useSegments } from 'expo-router';
-import { PostHogProvider } from 'posthog-react-native';
+import { PostHogProvider, type PostHog } from 'posthog-react-native';
 import React, { useEffect } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { RootErrorBoundary } from '~/components/error-boundary/root-error-boundary';
-import { posthog } from '~/services/posthog';
+import { POSTHOG_ENABLED, posthog } from '~/services/posthog';
 import { recordActiveDay } from '~/services/review-prompt';
 import { useScreenCapture } from '~/hooks/use-screen-capture';
 import { makeStyles, theme } from '~/components/theme';
@@ -114,26 +114,34 @@ function RootLayout() {
   useScreenCapture();
 
   useEffect(() => {
+    if (E2E_TESTING) {
+      return;
+    }
+
     const cleanup = initObservability();
     posthog.capture('app_health_check', { source: 'root_layout' });
     void recordActiveDay();
     return cleanup;
   }, []);
 
-  return (
-    <PostHogProvider client={posthog}>
-      <ThemeProvider theme={theme}>
-        <SafeAreaProvider>
-          <GestureHandlerRootView style={rootStyles.gestureRoot}>
-            <RootErrorBoundary>
-              <AuthProvider>
-                <InnerRootLayout />
-              </AuthProvider>
-            </RootErrorBoundary>
-          </GestureHandlerRootView>
-        </SafeAreaProvider>
-      </ThemeProvider>
-    </PostHogProvider>
+  const content = (
+    <ThemeProvider theme={theme}>
+      <SafeAreaProvider>
+        <GestureHandlerRootView style={rootStyles.gestureRoot}>
+          <RootErrorBoundary>
+            <AuthProvider>
+              <InnerRootLayout />
+            </AuthProvider>
+          </RootErrorBoundary>
+        </GestureHandlerRootView>
+      </SafeAreaProvider>
+    </ThemeProvider>
+  );
+
+  return POSTHOG_ENABLED ? (
+    <PostHogProvider client={posthog as PostHog}>{content}</PostHogProvider>
+  ) : (
+    content
   );
 }
 

@@ -139,10 +139,6 @@
       "types": "./src/tokens/index.ts",
       "default": "./src/tokens/index.ts"
     },
-    "./tokens/notes": {
-      "types": "./src/tokens/notes.ts",
-      "default": "./src/tokens/notes.ts"
-    },
     "./tokens/shadows": {
       "types": "./src/tokens/shadows.ts",
       "default": "./src/tokens/shadows.ts"

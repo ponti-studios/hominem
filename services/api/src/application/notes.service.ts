@@ -1,14 +1,14 @@
 import type { NoteRecord } from '@hominem/db';
 import { NoteRepository, runInTransaction } from '@hominem/db';
 
-export interface CreateNoteParams {
+interface CreateNoteParams {
   title?: string | null | undefined;
   content: string;
   excerpt?: string | null | undefined;
   fileIds?: string[];
 }
 
-export interface UpdateNoteParams {
+interface UpdateNoteParams {
   title?: string | null | undefined;
   content?: string;
   excerpt?: string | null | undefined;

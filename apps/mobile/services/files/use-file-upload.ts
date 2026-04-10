@@ -30,7 +30,7 @@ function toUploadedFile(file: ReturnType<typeof parseUploadResponse>['file']): U
   };
 }
 
-export interface MobileUploadAsset {
+interface MobileUploadAsset {
   assetId: string;
   uri: string;
   fileName: string | null;
@@ -38,19 +38,19 @@ export interface MobileUploadAsset {
   type: string | null;
 }
 
-export interface MobileUploadedAsset {
+interface MobileUploadedAsset {
   assetId: string;
   localUri: string;
   uploadedFile: UploadedFile;
 }
 
-export interface MobileUploadState {
+interface MobileUploadState {
   isUploading: boolean;
   progress: number;
   errors: string[];
 }
 
-export interface MobileUploadBatchResult {
+interface MobileUploadBatchResult {
   uploaded: MobileUploadedAsset[];
   errors: string[];
 }
@@ -77,7 +77,7 @@ function getFallbackFileName(uri: string): string {
   return uri.split('/').pop() ?? 'attachment';
 }
 
-export function resolveMobileUploadMimeType(asset: MobileUploadAsset): string {
+function resolveMobileUploadMimeType(asset: MobileUploadAsset): string {
   if (asset.mimeType) {
     return asset.mimeType;
   }
@@ -105,7 +105,7 @@ async function readLocalAssetBlob(
   return response.blob();
 }
 
-export async function performMobileUploads(
+async function performMobileUploads(
   api: UploadClient,
   assets: MobileUploadAsset[],
   options?: {

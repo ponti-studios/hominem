@@ -31,5 +31,10 @@ export function createApiClient(config: ClientConfig): ApiClient {
   return createApiClientFromRaw(rawClient);
 }
 
-export const createClient = createApiClient;
-export const createHonoClient = createClient;
+export function createClient(config: ClientConfig): ApiClient {
+  return createApiClient(config);
+}
+
+export function createHonoClient(config: ClientConfig): ApiClient {
+  return createApiClient(config);
+}

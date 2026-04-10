@@ -1,8 +1,6 @@
 import type { DefaultOptions } from '@tanstack/react-query';
 
-export const QUERY_PERSISTENCE_STRATEGY = 'disabled';
-
-export function shouldRetryQuery(failureCount: number, error: Error | Response): boolean {
+function shouldRetryQuery(failureCount: number, error: Error | Response): boolean {
   if (failureCount > 3) {
     return false;
   }
@@ -13,7 +11,7 @@ export function shouldRetryQuery(failureCount: number, error: Error | Response):
   return true;
 }
 
-export function getQueryRetryDelayMs(attemptIndex: number): number {
+function getQueryRetryDelayMs(attemptIndex: number): number {
   return Math.min(1000 * 2 ** attemptIndex, 30000);
 }
 

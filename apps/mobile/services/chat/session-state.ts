@@ -14,11 +14,11 @@ function parseChatActivityAt(chat: Chat): Date {
   return parseInboxTimestamp(getChatActivityAt(chat));
 }
 
-export function isChatResumable(chat: Chat, now = Date.now()): boolean {
+function isChatResumable(chat: Chat, now = Date.now()): boolean {
   return now - parseChatActivityAt(chat).getTime() <= TIME_UNITS.MONTH;
 }
 
-export function toChatsWithActivity(chats: Chat[], now = Date.now()): ChatWithActivity[] {
+function toChatsWithActivity(chats: Chat[], now = Date.now()): ChatWithActivity[] {
   return chats
     .map((chat) => ({
       ...chat,

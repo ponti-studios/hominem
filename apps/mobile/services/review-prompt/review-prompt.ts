@@ -4,6 +4,7 @@
  */
 import * as StoreReview from 'expo-store-review';
 
+import { E2E_TESTING } from '~/constants';
 import { storage } from '../storage/mmkv';
 
 const ACTIVE_DAYS_KEY = 'review_active_days';
@@ -15,6 +16,8 @@ function todayKey() {
 }
 
 export async function recordActiveDay() {
+  if (E2E_TESTING) return;
+
   const alreadyPrompted = storage.getBoolean(PROMPTED_KEY) ?? false;
   if (alreadyPrompted) return;
 

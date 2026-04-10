@@ -12,4 +12,6 @@ export function useApiClient(): ApiClient {
   return client;
 }
 
-export const useHonoClient = useApiClient;
+export function useHonoClient(): ApiClient {
+  return useApiClient();
+}

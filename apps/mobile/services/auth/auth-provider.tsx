@@ -5,9 +5,11 @@ import React, {
   useEffect,
   useMemo,
   useReducer,
+  useRef,
   type PropsWithChildren,
 } from 'react';
 
+import { E2E_TESTING } from '~/constants';
 import { useAuthHeaders, useResetAuthForE2E, useUpdateProfile } from '~/services/auth/hooks';
 import { authStateMachine, initialAuthState } from '~/services/auth/types';
 import { useBootSequence, useEmailOtp, usePasskeyAuth, useSignOut } from '~/services/auth/hooks';
@@ -44,7 +46,7 @@ export const useAuth = () => {
   return ctx;
 };
 
-export const AuthProvider = ({ children }: PropsWithChildren) => {
+function AuthProviderBody({ children }: PropsWithChildren) {
   const [state, dispatch] = useReducer(authStateMachine, initialAuthState);
 
   const authContext = useMemo(() => ({ state, dispatch }), [state, dispatch]);
@@ -107,4 +109,52 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+function E2EAuthProvider({ children }: PropsWithChildren) {
+  const [state, dispatch] = useReducer(authStateMachine, initialAuthState);
+
+  useEffect(() => {
+    dispatch({ type: 'SESSION_EXPIRED' });
+  }, []);
+
+  const authContext = useMemo(() => ({ state, dispatch }), [state, dispatch]);
+  const { requestEmailOtp, verifyEmailOtp } = useEmailOtp(authContext);
+  const { completePasskeySignIn } = usePasskeyAuth(authContext);
+  const { signOut } = useSignOut(authContext);
+  const updateProfile = useUpdateProfile();
+  const sessionCookieHeaderRef = useRef<string | null>(null);
+  const getAuthHeaders = useAuthHeaders(sessionCookieHeaderRef);
+  const resetAuthForE2E = useResetAuthForE2E(dispatch);
+
+  const value: AuthContextType = {
+    authStatus: state.status,
+    authError: state.error,
+    isLoadingAuth: resolveIsLoadingAuth(state),
+    isSignedIn: state.status === 'signed_in',
+    currentUser: state.user
+      ? {
+          id: state.user.id,
+          email: state.user.email,
+          name: state.user.name,
+          image: state.user.image,
+          emailVerified: state.user.emailVerified,
+          createdAt: state.user.createdAt,
+          updatedAt: state.user.updatedAt,
+        }
+      : null,
+    requestEmailOtp,
+    verifyEmailOtp,
+    completePasskeySignIn,
+    signOut,
+    updateProfile,
+    getAuthHeaders,
+    resetAuthForE2E,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export const AuthProvider = ({ children }: PropsWithChildren) => {
+  return E2E_TESTING ? <E2EAuthProvider>{children}</E2EAuthProvider> : <AuthProviderBody>{children}</AuthProviderBody>;
 };

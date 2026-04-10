@@ -93,4 +93,6 @@ export function createClient(baseUrl: string, options?: HonoClientOptions): RpcT
   return createTransportClient(baseUrl, options);
 }
 
-export const createHonoClient = createClient;
+export function createHonoClient(baseUrl: string, options?: HonoClientOptions): RpcTransportClient {
+  return createClient(baseUrl, options);
+}

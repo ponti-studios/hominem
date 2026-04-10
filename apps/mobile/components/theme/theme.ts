@@ -1,11 +1,10 @@
 import {
   radiiNative,
-  shadowsNative,
   colors as tokenColors,
   spacing as tokenSpacing,
 } from '@hominem/ui/tokens';
 import { fontFamiliesNative } from '@hominem/ui/tokens/typography.native';
-import { createTheme, useTheme as useRestyleTheme } from '@shopify/restyle';
+import { createTheme } from '@shopify/restyle';
 
 const PRIMARY_FONT = fontFamiliesNative.primary;
 const MONO_FONT = fontFamiliesNative.mono;
@@ -147,21 +146,6 @@ const theme = createTheme({
     },
   },
 });
-
-const Shadows = {
-  low: { ...shadowsNative.low, shadowColor: theme.colors.black },
-  medium: { ...shadowsNative.medium, shadowColor: theme.colors.black },
-  high: { ...shadowsNative.high, shadowColor: theme.colors.black },
-  dark: {
-    shadowColor: theme.colors.black,
-    shadowOffset: { width: 0, height: 0 },
-    shadowRadius: 0,
-  },
-};
-
-function useTheme() {
-  return useRestyleTheme<Theme>();
-}
 
 export type Theme = typeof theme;
 export default theme;

@@ -129,7 +129,7 @@ function MessageAnnotations({
   );
 }
 
-export interface ChatMessageProps {
+interface ChatMessageProps {
   message: ExtendedMessage;
   showDebug?: boolean;
   isStreaming?: boolean;

@@ -1,19 +1,11 @@
 import type { AppVariant } from './app-variant';
 
-const ROOT_ASSETS_DIR = './assets';
-const SPLASH_ASSET_NAME = 'logo.hakumi.splash-screen.png';
-const FAVICON_ASSET_NAME = 'logo.hakumi.png';
-
 const VARIANT_LOGO_ASSET_NAMES: Record<AppVariant, string> = Object.freeze({
   dev: 'logo.hakumi.dev.png',
   e2e: 'logo.hakumi.dev.png',
   preview: 'logo.hakumi.preview.png',
   production: 'logo.hakumi.png',
 });
-
-function joinRootAssetPath(assetName: string): string {
-  return `${ROOT_ASSETS_DIR}/${assetName}`;
-}
 
 function normalizeAppVariant(variant: string): AppVariant {
   switch (variant) {
@@ -31,20 +23,6 @@ function getBrandLogoAssetName(variant: string): string {
   return VARIANT_LOGO_ASSET_NAMES[normalizeAppVariant(variant)];
 }
 
-function getBrandAssetPaths(variant: string): {
-  favicon: string;
-  icon: string;
-  splash: string;
-} {
-  const icon = joinRootAssetPath(getBrandLogoAssetName(variant));
-
-  return {
-    favicon: joinRootAssetPath(FAVICON_ASSET_NAME),
-    icon,
-    splash: joinRootAssetPath(SPLASH_ASSET_NAME),
-  };
-}
-
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 function getRuntimeBrandLogoSource(variant: string): number {
   switch (getBrandLogoAssetName(variant)) {
@@ -60,4 +38,4 @@ function getRuntimeBrandLogoSource(variant: string): number {
   }
 }
 
-export { getBrandAssetPaths, getBrandLogoAssetName, getRuntimeBrandLogoSource, normalizeAppVariant };
+export { getRuntimeBrandLogoSource };

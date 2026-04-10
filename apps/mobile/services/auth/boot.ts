@@ -10,7 +10,7 @@ export interface AuthBootUser {
   name?: string | null;
 }
 
-export type AuthBootResult =
+type AuthBootResult =
   | {
       type: 'SESSION_LOADED';
       user: NonNullable<AuthState['user']>;

@@ -34,4 +34,6 @@ export async function getServerSession(request: Request) {
   };
 }
 
-export const getServerAuth = getServerSession;
+export function getServerAuth(request: Request) {
+  return getServerSession(request);
+}

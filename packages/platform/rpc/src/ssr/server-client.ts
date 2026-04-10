@@ -26,4 +26,6 @@ export function createServerClient(
   )
 }
 
-export const createServerHonoClient = createServerClient
+export function createServerHonoClient(baseUrl: string, request?: Request): ApiClient {
+  return createServerClient(baseUrl, request)
+}
