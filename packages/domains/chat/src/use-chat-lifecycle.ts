@@ -11,7 +11,7 @@ import { useCallback, useMemo, useReducer } from 'react';
 
 import { isBlockingState, type ThoughtLifecycleState } from './lifecycle-state';
 import { deriveSessionSource, type SessionArtifactMessage } from './session-artifacts';
-import type { ArtifactType, SessionSource } from './thought-types';
+import type { ArtifactType, ClassificationProposal, SessionSource } from './thought-types';
 
 // ─── Pending Review ───────────────────────────────────────────────────────────
 
@@ -21,12 +21,8 @@ import type { ArtifactType, SessionSource } from './thought-types';
  * `reviewItemId` is present only in the server-side classification flow (web).
  * Client-side proposals (mobile) omit it.
  */
-export interface PendingReview {
+export interface PendingReview extends ClassificationProposal {
   reviewItemId?: string;
-  proposedType: ArtifactType;
-  proposedTitle: string;
-  proposedChanges: string[];
-  previewContent: string;
 }
 
 // ─── State / Reducer ──────────────────────────────────────────────────────────

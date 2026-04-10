@@ -42,15 +42,22 @@ export type ThoughtLifecycleTransition = [from: ThoughtLifecycleState, to: Thoug
 
 // ─── Review Item ─────────────────────────────────────────────────────────────
 
-/** A pending AI proposal awaiting user review. */
-export interface ReviewItem {
-  id: string;
-  sessionId: string;
+export interface ClassificationProposal {
   proposedType: ArtifactType;
   proposedTitle: string;
   proposedChanges: string[];
   previewContent: string;
+}
+
+/** A pending AI proposal awaiting user review. */
+export interface ReviewItem extends ClassificationProposal {
+  id: string;
+  sessionId: string;
   createdAt: string;
+}
+
+export interface ClassificationResponse extends ClassificationProposal {
+  reviewItemId: string;
 }
 
 // ─── UI Contract Types ───────────────────────────────────────────────────────
@@ -65,11 +72,7 @@ export interface CaptureBarProps {
 }
 
 /** Props contract for the ClassificationReview component. */
-export interface ClassificationReviewProps {
-  proposedType: ArtifactType;
-  proposedTitle: string;
-  proposedChanges: string[];
-  previewContent: string;
+export interface ClassificationReviewProps extends ClassificationProposal {
   onAccept: () => void;
   onReject: () => void;
 }

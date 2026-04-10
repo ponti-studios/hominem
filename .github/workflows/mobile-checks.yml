@@ -4,17 +4,17 @@ on:
   push:
     branches: [main, develop]
     paths:
-      - 'apps/mobile/**'
-      - 'packages/**'
-      - 'pnpm-lock.yaml'
-      - '.github/workflows/mobile-checks.yml'
+      - "apps/mobile/**"
+      - "packages/**"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/mobile-checks.yml"
   pull_request:
     branches: [main, develop]
     paths:
-      - 'apps/mobile/**'
-      - 'packages/**'
-      - 'pnpm-lock.yaml'
-      - '.github/workflows/mobile-checks.yml'
+      - "apps/mobile/**"
+      - "packages/**"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/mobile-checks.yml"
 
 concurrency:
   group: mobile-checks-${{ github.head_ref || github.ref }}
@@ -80,8 +80,8 @@ jobs:
       - name: Setup EAS CLI
         run: npm install -g eas-cli
 
-      - name: Build with EAS
+      - name: Build with EAS (preview)
         working-directory: apps/mobile
         env:
-          EAS_TOKEN: ${{ secrets.EAS_TOKEN }}
-        run: eas build --platform ios --non-interactive
+          EAS_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: eas build --platform ios --profile preview --non-interactive
