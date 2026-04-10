@@ -58,10 +58,6 @@
         "test/**/*.{ts,tsx,js,jsx}"
       ]
     },
-    "test:e2e": {
-      "dependsOn": ["^build"],
-      "inputs": ["app/**/*.{ts,tsx,js,jsx}", "tests/**/*.{ts,tsx,js,jsx}", "playwright.config.ts"]
-    },
     "typecheck": {
       "dependsOn": ["^build"],
       "inputs": ["**/*.ts", "**/*.tsx", "tsconfig.json"]
