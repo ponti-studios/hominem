@@ -4,6 +4,7 @@ import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'rea
 
 import { FeatureErrorBoundary } from '~/components/error-boundary';
 import { useAppLock } from '~/hooks/use-app-lock';
+import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import { Text, theme } from '~/components/theme';
 import { ApiProvider } from '~/services/api/api-provider';
 import { useAuth } from '~/services/auth/auth-provider';
@@ -26,6 +27,31 @@ const styles = StyleSheet.create({
 function ProtectedShell() {
   const { authStatus, isSignedIn } = useAuth();
   const { isUnlocked, authenticate } = useAppLock();
+  const prefersReducedMotion = useReducedMotion();
+
+  const springAnimationConfig = {
+    damping: 18,
+    mass: 0.8,
+    stiffness: 200,
+    overshootClamping: false,
+  };
+
+  const screenOptions = prefersReducedMotion
+    ? {
+        animation: 'fade' as const,
+        gestureEnabled: true,
+        gestureDirection: 'horizontal' as const,
+      }
+    : {
+        animation: 'default' as const,
+        animationEnabled: true,
+        transitionSpec: {
+          open: { animation: 'spring', config: springAnimationConfig },
+          close: { animation: 'spring', config: springAnimationConfig },
+        },
+        gestureEnabled: true,
+        gestureDirection: 'horizontal' as const,
+      };
 
   if (authStatus === 'booting' || !isSignedIn) {
     return <View testID="protected-bootstrap" style={styles.root} />;
@@ -56,7 +82,10 @@ function ProtectedShell() {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={styles.root}
         >
-          <Stack initialRouteName="(tabs)">
+          <Stack
+            initialRouteName="(tabs)"
+            screenOptions={screenOptions}
+          >
             <Stack.Screen name="onboarding" options={{ headerShown: false }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           </Stack>

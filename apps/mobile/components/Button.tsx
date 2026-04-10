@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { ActivityIndicator, Pressable, Text, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
 
+import { useHaptics } from '~/hooks/useHaptics';
 import theme from '~/components/theme/theme';
 
 interface ButtonProps {
@@ -69,12 +70,18 @@ export function Button({
   accessibilityLabel,
 }: ButtonProps) {
   const compact = size === 'xs';
+  const { impact } = useHaptics();
+
+  const handlePress = () => {
+    void impact();
+    onPress?.();
+  };
 
   return (
     <Pressable
       accessibilityLabel={accessibilityLabel}
       disabled={disabled || isLoading}
-      onPress={onPress}
+      onPress={handlePress}
       testID={testID}
       style={({ pressed }) => [
         {

@@ -1,8 +1,14 @@
 import { colors, spacing } from '@hominem/ui/tokens';
 import { shadowsNative } from '@hominem/ui/tokens/shadows';
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
-import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
+import { Image } from 'expo-image';
+import Animated, {
+  useAnimatedKeyboard,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
@@ -22,8 +28,10 @@ import { useComposerSubmission } from './use-composer-submission';
 import { useComposerMediaActions } from './use-composer-media-actions';
 
 const COMPOSER_MAX_WIDTH = 500;
-const COMPOSER_MAX_HEIGHT = 150;
+const COMPOSER_MAX_HEIGHT = 300;
 const COMPOSER_INPUT_MIN_HEIGHT = 40;
+const COMPOSER_INPUT_MIN_COMPACT = 56;
+const COMPOSER_INPUT_MAX_EXPANDED = 300;
 const COMPOSER_COMPACT_INPUT_MIN_HEIGHT = 56;
 const COMPOSER_COMPACT_MIN_HEIGHT = 96;
 const COMPOSER_PANEL_RADIUS = 24;
@@ -90,10 +98,23 @@ function ComposerAttachments({
           {attachments.map((attachment) => (
             <Pressable
               key={attachment.id}
-              style={styles.chip}
+              style={styles.attachmentThumbnail}
               onPress={() => onRemoveAttachment(attachment.id)}
             >
-              <Text color="text-secondary">{attachment.name}</Text>
+              {attachment.localUri && (
+                <Image
+                  source={{ uri: attachment.localUri }}
+                  style={styles.attachmentImage}
+                  contentFit="cover"
+                />
+              )}
+              {isUploading && (
+                <View style={styles.uploadProgress}>
+                  <Text color="foreground" style={styles.progressText}>
+                    0%
+                  </Text>
+                </View>
+              )}
             </Pressable>
           ))}
         </ScrollView>
@@ -164,6 +185,9 @@ function ComposerFooter({
 
 export const MobileComposer = () => {
   const insets = useSafeAreaInsets();
+  const [inputHeight, setInputHeight] = useState(COMPOSER_INPUT_MIN_COMPACT);
+  const animatedInputHeight = useSharedValue(COMPOSER_INPUT_MIN_COMPACT);
+
   const {
     target,
     attachments,
@@ -213,6 +237,27 @@ export const MobileComposer = () => {
     isRecording,
   );
 
+  const handleInputContentSizeChange = useCallback(
+    (newHeight: number) => {
+      const clampedHeight = Math.min(
+        Math.max(newHeight, COMPOSER_INPUT_MIN_COMPACT),
+        COMPOSER_INPUT_MAX_EXPANDED,
+      );
+      setInputHeight(clampedHeight);
+      animatedInputHeight.value = withSpring(clampedHeight, {
+        damping: 18,
+        stiffness: 200,
+        mass: 0.8,
+      });
+    },
+    [animatedInputHeight],
+  );
+
+  const animatedInputStyle = useAnimatedStyle(() => ({
+    minHeight: animatedInputHeight.value,
+    maxHeight: animatedInputHeight.value,
+  }));
+
   if (presentation.isHidden) {
     return null;
   }
@@ -239,15 +284,20 @@ export const MobileComposer = () => {
           />
         ) : null}
 
-        <TextInput
-          multiline
-          onChangeText={setMessage}
-          placeholder={presentation.placeholder}
-          placeholderTextColor={theme.colors['text-tertiary']}
-          style={[styles.input, presentation.isCompact ? styles.inputCompact : null]}
-          testID="mobile-composer-input"
-          value={message}
-        />
+        <Animated.View style={animatedInputStyle}>
+          <TextInput
+            multiline
+            onChangeText={setMessage}
+            onContentSizeChange={(event) =>
+              handleInputContentSizeChange(event.nativeEvent.contentSize.height)
+            }
+            placeholder={presentation.placeholder}
+            placeholderTextColor={theme.colors['text-tertiary']}
+            style={[styles.input, presentation.isCompact ? styles.inputCompact : null]}
+            testID="mobile-composer-input"
+            value={message}
+          />
+        </Animated.View>
 
         <Animated.View layout={createNotesLayoutTransition(prefersReducedMotion)}>
           <ComposerAttachments
@@ -330,7 +380,7 @@ const styles = StyleSheet.create({
     color: theme.colors.foreground,
     fontSize: 16,
     minHeight: COMPOSER_INPUT_MIN_HEIGHT,
-    maxHeight: COMPOSER_MAX_HEIGHT,
+    maxHeight: COMPOSER_INPUT_MAX_EXPANDED,
     paddingHorizontal: 0,
     paddingVertical: 0,
     textAlignVertical: 'top',
@@ -353,6 +403,31 @@ const styles = StyleSheet.create({
   },
   chipActive: {
     backgroundColor: theme.colors.muted,
+  },
+  attachmentThumbnail: {
+    width: 48,
+    height: 48,
+    borderRadius: 4,
+    overflow: 'hidden',
+    backgroundColor: theme.colors.muted,
+    position: 'relative',
+  },
+  attachmentImage: {
+    width: 48,
+    height: 48,
+  },
+  uploadProgress: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  progressText: {
+    fontSize: 10,
   },
   footer: {
     flexDirection: 'row',

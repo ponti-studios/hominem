@@ -1,4 +1,6 @@
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { useMemo, useCallback } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 
 import AppIcon from '~/components/ui/icon';
 import { Text, makeStyles, theme } from '~/components/theme';
@@ -8,73 +10,86 @@ interface VoiceSessionModalProps {
   visible: boolean;
   onClose: () => void;
   onAudioTranscribed: (transcription: string) => void;
+  bottomSheetModalRef?: React.RefObject<BottomSheetModal>;
 }
 
 export function VoiceSessionModal({
   visible,
   onClose,
   onAudioTranscribed,
+  bottomSheetModalRef,
 }: VoiceSessionModalProps) {
   const styles = useStyles();
-  return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-      accessibilityViewIsModal
-    >
-      <View style={styles.overlay}>
-        <View style={styles.container} accessibilityRole="none">
-          <View style={styles.header}>
-            <Text variant="label" color="text-secondary">
-              Voice Input
-            </Text>
-            <Pressable
-              onPress={onClose}
-              style={styles.closeButton}
-              accessibilityLabel="Close voice input"
-              accessibilityRole="button"
-            >
-              <AppIcon name="xmark" size={20} color={theme.colors.foreground} />
-            </Pressable>
-          </View>
+  const snapPoints = useMemo(() => ['50%', '90%'], []);
 
-          <View style={styles.body}>
-            <VoiceInput
-              autoTranscribe
-              onAudioTranscribed={(transcription) => {
-                onAudioTranscribed(transcription);
-                onClose();
-              }}
-              onError={onClose}
-              style={styles.micButton}
-            />
-            <Text variant="caption" color="text-secondary" style={styles.hint}>
-              Tap to record · tap again to stop
-            </Text>
-          </View>
+  const handlePresent = useCallback(() => {
+    bottomSheetModalRef?.current?.present();
+  }, [bottomSheetModalRef]);
+
+  const handleDismiss = useCallback(() => {
+    bottomSheetModalRef?.current?.dismiss();
+    onClose();
+  }, [bottomSheetModalRef, onClose]);
+
+  if (!visible) return null;
+
+  return (
+    <BottomSheetModal
+      ref={bottomSheetModalRef}
+      snapPoints={snapPoints}
+      enablePanDownToClose
+      handleIndicatorStyle={styles.dragHandle}
+      backgroundStyle={styles.sheetBackground}
+      onDismiss={handleDismiss}
+    >
+      <BottomSheetView style={styles.container}>
+        <View style={styles.header}>
+          <Text variant="label" color="text-secondary">
+            Voice Input
+          </Text>
+          <Pressable
+            onPress={handleDismiss}
+            style={styles.closeButton}
+            accessibilityLabel="Close voice input"
+            accessibilityRole="button"
+          >
+            <AppIcon name="xmark" size={20} color={theme.colors.foreground} />
+          </Pressable>
         </View>
-      </View>
-    </Modal>
+
+        <View style={styles.body}>
+          <VoiceInput
+            autoTranscribe
+            onAudioTranscribed={(transcription) => {
+              onAudioTranscribed(transcription);
+              handleDismiss();
+            }}
+            onError={handleDismiss}
+            style={styles.micButton}
+          />
+          <Text variant="caption" color="text-secondary" style={styles.hint}>
+            Tap to record · tap again to stop
+          </Text>
+        </View>
+      </BottomSheetView>
+    </BottomSheetModal>
   );
 }
 
 const useStyles = makeStyles((t) =>
   StyleSheet.create({
-    overlay: {
-      flex: 1,
-      backgroundColor: t.colors['overlay-modal-high'],
-      justifyContent: 'flex-end',
+    sheetBackground: {
+      backgroundColor: t.colors.background,
+    },
+    dragHandle: {
+      backgroundColor: t.colors['border-default'],
+      width: 40,
+      height: 4,
     },
     container: {
-      backgroundColor: t.colors.background,
-      borderTopLeftRadius: t.borderRadii.md,
-      borderTopRightRadius: t.borderRadii.md,
-      paddingBottom: t.spacing.xl_48,
       paddingHorizontal: t.spacing.ml_24,
-      paddingTop: t.spacing.m_16,
-      minHeight: 220,
+      paddingVertical: t.spacing.m_16,
+      flex: 1,
     },
     header: {
       flexDirection: 'row',
@@ -92,7 +107,7 @@ const useStyles = makeStyles((t) =>
     micButton: {
       width: 72,
       height: 72,
-      borderRadius: t.borderRadii.full /* half of 72 for circle */,
+      borderRadius: t.borderRadii.full,
     },
     hint: {
       textAlign: 'center',
