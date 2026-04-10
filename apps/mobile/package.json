@@ -69,17 +69,10 @@
   "devDependencies": {
     "@babel/core": "^7.26.0",
     "@better-auth/expo": "^1.4.19",
-    "@testing-library/react-native": "^13.3.3",
-    "@types/jest": "^30.0.0",
     "@types/node": "^25.4.0",
     "@types/react": "19.2.10",
     "@types/react-dom": "19.1.7",
-    "babel-jest": "^30.3.0",
     "babel-preset-expo": "^55.0.10",
-    "detox": "20.50.1",
-    "jest": "^30.3.0",
-    "jest-expo": "~55.0.13",
-    "msw": "~2.12.14",
     "typescript": "5.9.3"
   },
   "peerDependencies": {},
@@ -102,13 +95,7 @@
       }
     }
   },
-  "scripts": {
-    "detox:prebuild": "APP_VARIANT=e2e CI=1 EXPO_PUBLIC_APP_VARIANT=e2e EXPO_PUBLIC_POSTHOG_API_KEY='' EXPO_PUBLIC_POSTHOG_HOST='https://us.i.posthog.com' EXPO_PUBLIC_API_BASE_URL='http://localhost:4040' EXPO_PUBLIC_MOBILE_PASSKEY_ENABLED='false' pnpm exec expo prebuild --platform ios --clean",
-    "detox:build": "APP_VARIANT=e2e CI=1 EXPO_PUBLIC_APP_VARIANT=e2e EXPO_PUBLIC_POSTHOG_API_KEY='' EXPO_PUBLIC_POSTHOG_HOST='https://us.i.posthog.com' EXPO_PUBLIC_API_BASE_URL='http://localhost:4040' EXPO_PUBLIC_MOBILE_PASSKEY_ENABLED='false' xcodebuild -workspace ios/HakumiE2E.xcworkspace -scheme HakumiE2E -configuration Release -sdk iphonesimulator -derivedDataPath ios/build",
-    "detox:test": "pnpm exec detox test e2e/smoke.mobile.e2e.js --configuration ios --cleanup",
-    "detox:e2e": "pnpm detox:prebuild && pnpm detox:build && pnpm detox:test",
-    "build:e2e": "pnpm detox:prebuild"
-  },
+  "scripts": {},
   "trustedDependencies": [
     "@clerk/shared",
     "@parcel/watcher",

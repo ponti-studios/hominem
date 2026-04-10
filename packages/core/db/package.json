@@ -26,7 +26,6 @@
   "scripts": {
     "dev": "tsc --watch --preserveWatchOutput",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests",
     "format": "pnpm dlx oxfmt ./src",
     "lint": "pnpm dlx oxlint ./src",
     "kysely-codegen": "kysely-codegen --out-file ./src/types/database.ts"

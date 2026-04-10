@@ -9,13 +9,7 @@
     "format": "pnpm dlx oxfmt ./src",
     "lint": "pnpm dlx oxlint ./src",
     "start": "tsx src/index.ts",
-    "test": "NODE_ENV=test vitest run --config vitest.config.ts --passWithNoTests",
-    "test:auth:contract": "NODE_ENV=test vitest run --config vitest.contract.config.ts src/routes/auth.email-otp.contract.test.ts src/routes/auth.test-otp-route.test.ts src/routes/auth.e2e-login.test.ts src/routes/auth.rate-limit.test.ts src/routes/auth.device-contract.test.ts src/routes/auth.token-contract.test.ts --passWithNoTests",
-    "test:integration": "NODE_ENV=test vitest run --config vitest.integration.config.ts --passWithNoTests",
-    "test:contract": "NODE_ENV=test vitest run --config vitest.contract.config.ts --passWithNoTests",
-    "test:coverage": "NODE_ENV=test vitest run --coverage",
     "typecheck": "tsc --noEmit",
-    "test:watch": "NODE_ENV=test vitest --config vitest.config.ts",
     "perf:auth-middleware": "NODE_ENV=test tsx src/middleware/auth.perf.ts"
   },
   "dependencies": {

@@ -24,8 +24,6 @@
   "scripts": {
     "lint": "pnpm dlx oxlint ./src",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests",
-    "test:watch": "vitest",
     "format": "pnpm dlx oxfmt ./src"
   },
   "dependencies": {

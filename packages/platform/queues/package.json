@@ -15,8 +15,6 @@
   ],
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests",
-    "test:watch": "vitest",
     "format": "pnpm dlx oxfmt ./src",
     "lint": "pnpm dlx oxlint ./src"
   },

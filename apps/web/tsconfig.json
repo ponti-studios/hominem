@@ -6,7 +6,7 @@
     "paths": {
       "~/*": ["./app/*"]
     },
-    "types": ["vite/client", "vitest/globals", "@testing-library/jest-dom"]
+    "types": ["vite/client"]
   },
   "include": [
     "app/**/*.ts",

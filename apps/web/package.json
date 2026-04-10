@@ -8,9 +8,7 @@
     "build": "react-router build",
     "dev": "react-router dev",
     "start": "react-router-serve ./build/server/index.js",
-    "typecheck": "react-router typegen && tsc --noEmit",
-    "test": "vitest run --passWithNoTests",
-    "test:e2e": "playwright test --config playwright.config.ts"
+    "typecheck": "react-router typegen && tsc --noEmit"
   },
   "dependencies": {
     "@hominem/auth": "workspace:*",
@@ -38,10 +36,8 @@
     "workbox-window": "^7.4.0"
   },
   "devDependencies": {
-    "@playwright/test": "^1.52.0",
     "@react-router/dev": "7.14.0",
     "@tailwindcss/vite": "^4.1.3",
-    "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^14.3.1",
     "@types/node": "^25.4.0",
     "@types/react": "19.2.10",

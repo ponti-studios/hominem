@@ -66,9 +66,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "format": "pnpm dlx oxfmt ./src",
-    "lint": "pnpm dlx oxlint ./src",
-    "test": "vitest run --passWithNoTests",
-    "test:watch": "vitest"
+    "lint": "pnpm dlx oxlint ./src"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.529.0",
