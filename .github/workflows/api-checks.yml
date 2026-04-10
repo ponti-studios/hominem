@@ -1,0 +1,93 @@
+name: API Checks
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'services/api/**'
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/api-checks.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'services/api/**'
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/api-checks.yml'
+
+concurrency:
+  group: api-checks-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api-checks:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [22.18.0]
+
+    services:
+      postgres:
+        image: ghcr.io/${{ github.repository }}/postgres:latest
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hominem-test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 4433:5432
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10.33.0
+
+      - name: Setup just
+        uses: taiki-e/install-action@just
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup Go (for migrations)
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Run database migrations
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:4433/hominem-test
+        run: just db-setup
+
+      - name: Run API checks
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:4433/hominem-test
+        run: just check-api

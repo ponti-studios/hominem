@@ -1,116 +1,278 @@
+import { useNoteEditor } from '@hominem/hooks';
 import type { Note } from '@hominem/rpc/types/notes.types';
-import { Button } from '@hominem/ui/button';
+import { SurfacePanel } from '@hominem/ui';
+import { SpeechInput } from '@hominem/ui/ai-elements';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@hominem/ui/dropdown';
-import { MoreHorizontal, Trash2 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@hominem/ui/alert-dialog';
+import { Button } from '@hominem/ui/button';
+import { useRef } from 'react';
+import { Link, useNavigate } from 'react-router';
 
 import { useDeleteNote, useUpdateNote } from '~/hooks/use-notes';
+import { useTranscribe } from '~/hooks/use-transcribe';
+import { useFileUpload } from '~/lib/hooks/use-file-upload';
 
 interface NoteEditorProps {
   note: Note;
 }
 
-type SaveStatus = 'saved' | 'saving' | 'unsaved';
+function slugifyTitle(title: string | null) {
+  return (title ?? '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
 
 export function NoteEditor({ note }: NoteEditorProps) {
-  const [title, setTitle] = useState(note.title || '');
-  const [content, setContent] = useState(note.content);
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved');
-
+  const navigate = useNavigate();
   const updateNote = useUpdateNote();
   const deleteNote = useDeleteNote();
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const transcribe = useTranscribe();
+  const { uploadFiles, uploadState } = useFileUpload();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  useEffect(
-    () => () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    },
-    [],
-  );
+  const { title, setTitle, content, setContent, files, setFiles, saveStatus, onSave } =
+    useNoteEditor(
+      {
+        id: note.id,
+        title: note.title,
+        content: note.content,
+        files: note.files.map((f) => ({
+          id: f.id,
+          originalName: f.originalName,
+          mimetype: f.mimetype,
+          size: f.size,
+          url: f.url,
+          uploadedAt: f.uploadedAt,
+        })),
+      },
+      async ({ id, title: t, content: c, fileIds }) => {
+        await updateNote.mutateAsync({ id, title: t, content: c, fileIds });
+      },
+    );
 
-  function scheduleAutoSave(newTitle: string, newContent: string) {
-    setSaveStatus('unsaved');
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(async () => {
-      setSaveStatus('saving');
-      try {
-        await updateNote.mutateAsync({ id: note.id, title: newTitle || null, content: newContent });
-        setSaveStatus('saved');
-      } catch {
-        setSaveStatus('unsaved');
-      }
-    }, 600);
+  async function handleAttachFiles(fileList: FileList | null) {
+    if (!fileList || fileList.length === 0) return;
+
+    const uploadedFiles = await uploadFiles(fileList);
+    if (uploadedFiles.length === 0) return;
+
+    const nextFiles = [
+      ...files,
+      ...uploadedFiles.map((file) => ({
+        ...file,
+        uploadedAt: file.uploadedAt.toISOString(),
+      })),
+    ];
+    setFiles(nextFiles);
+    await updateNote.mutateAsync({
+      id: note.id,
+      title: title || null,
+      content,
+      fileIds: nextFiles.map((file) => file.id),
+    });
   }
 
-  function handleTitleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const newTitle = e.target.value;
-    setTitle(newTitle);
-    scheduleAutoSave(newTitle, content);
-  }
-
-  function handleContentChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
-    const newContent = e.target.value;
-    setContent(newContent);
-    scheduleAutoSave(title, newContent);
+  async function detachFile(fileId: string) {
+    const nextFiles = files.filter((file) => file.id !== fileId);
+    setFiles(nextFiles);
+    await updateNote.mutateAsync({
+      id: note.id,
+      title: title || null,
+      content,
+      fileIds: nextFiles.map((file) => file.id),
+    });
   }
 
   async function handleDelete() {
-    await deleteNote.mutateAsync({ id: note.id });
+    try {
+      await deleteNote.mutateAsync({ id: note.id });
+      navigate('/notes');
+    } catch {}
   }
 
   return (
-    <div className="w-full rounded-xl border border-border-subtle bg-surface p-6">
-      {/* Title row */}
-      <div className="flex items-start gap-4">
-        <input
-          type="text"
-          value={title}
-          onChange={handleTitleChange}
-          placeholder="Untitled"
-          aria-label="Note title"
-          className="heading-2 min-w-0 flex-1 border-0 bg-transparent text-text-primary placeholder:text-text-tertiary outline-none"
-        />
-        <div className="flex shrink-0 items-center gap-2 pt-1">
-          <span
-            className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${
-              saveStatus === 'saving'
-                ? 'bg-elevated text-text-tertiary'
-                : saveStatus === 'unsaved'
-                  ? 'bg-warning/10 text-warning'
-                  : 'bg-success/10 text-success'
-            }`}
-          >
-            {saveStatus === 'saving' ? 'Saving…' : saveStatus === 'unsaved' ? 'Unsaved' : 'Saved'}
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <SurfacePanel>
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => {
+                const next = e.target.value;
+                setTitle(next);
+                void onSave(
+                  next,
+                  content,
+                  files.map((f) => f.id),
+                );
+              }}
+              placeholder="Untitled note"
+              aria-label="Note title"
+              className="w-full border-0 bg-transparent text-3xl font-semibold outline-none placeholder:text-text-tertiary"
+            />
+            <p className="mt-2 text-sm text-text-secondary">
+              Mention this note in chat as <code>#{slugifyTitle(title || note.title)}</code>.
+            </p>
+          </div>
+          <span className="rounded-full border border-border-subtle px-3 py-1 text-xs uppercase tracking-[0.2em] text-text-secondary">
+            {saveStatus}
           </span>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="size-7 text-text-tertiary">
-                <MoreHorizontal className="size-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleDelete} className="text-destructive">
-                <Trash2 className="size-4" />
-                Delete note
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
-      </div>
 
-      {/* Content — seamless, same surface */}
-      <textarea
-        value={content}
-        onChange={handleContentChange}
-        placeholder="Start writing…"
-        aria-label="Note content"
-        className="body-1 mt-6 w-full resize-none border-0 bg-transparent text-text-primary placeholder:text-text-tertiary outline-none field-sizing-content min-h-[50vh]"
-      />
+        <textarea
+          value={content}
+          onChange={(e) => {
+            const next = e.target.value;
+            setContent(next);
+            void onSave(
+              title,
+              next,
+              files.map((f) => f.id),
+            );
+          }}
+          placeholder="Start writing..."
+          aria-label="Note content"
+          className="mt-6 min-h-[50vh] w-full resize-none border-0 bg-transparent text-base leading-7 outline-none placeholder:text-text-tertiary"
+        />
+      </SurfacePanel>
+
+      <aside className="space-y-4">
+        <SurfacePanel
+          data-upload-state={uploadState.state}
+          data-upload-progress={uploadState.progress}
+        >
+          <h2 className="text-sm font-semibold text-foreground">Actions</h2>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
+              Attach files
+            </Button>
+            <Link
+              to={`/chat?noteId=${note.id}`}
+              className="inline-flex items-center rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background"
+            >
+              Chat with this note
+            </Link>
+          </div>
+          <div className="mt-3">
+            <SpeechInput
+              ariaLabel="Dictate note"
+              onAudioRecorded={async (audioBlob: Blob) => {
+                const result = await transcribe.mutateAsync({ audioBlob });
+                const nextContent = `${content}\n${result.text}`.trim();
+                setContent(nextContent);
+                void onSave(
+                  title,
+                  nextContent,
+                  files.map((f) => f.id),
+                );
+              }}
+            />
+          </div>
+          <input
+            ref={fileInputRef}
+            hidden
+            multiple
+            type="file"
+            data-testid="note-file-input"
+            onChange={(event) => {
+              void handleAttachFiles(event.target.files);
+              event.currentTarget.value = '';
+            }}
+          />
+          {uploadState.errors.length > 0 ? (
+            <p className="mt-3 text-sm text-destructive">{uploadState.errors.join(', ')}</p>
+          ) : null}
+        </SurfacePanel>
+
+        <SurfacePanel>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-sm font-semibold text-foreground">Files</h2>
+            <span className="text-xs text-text-tertiary">{files.length}</span>
+          </div>
+          <div className="mt-3 space-y-2">
+            {files.length === 0 ? (
+              <p className="text-sm text-text-secondary">No files attached yet.</p>
+            ) : null}
+            {files.map((file) => (
+              <div key={file.id} className="rounded-xl border border-border-subtle p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <a
+                      className="font-medium text-foreground underline"
+                      href={file.url}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {file.originalName}
+                    </a>
+                    <p className="mt-1 text-xs text-text-tertiary">{file.mimetype}</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="text-xs text-text-secondary"
+                    onClick={() => void detachFile(file.id)}
+                  >
+                    Detach
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </SurfacePanel>
+
+        <SurfacePanel>
+          <h2 className="text-sm font-semibold text-foreground">Delete</h2>
+          <p className="mt-2 text-sm text-text-secondary">
+            File deletion is available from the files API. This screen currently supports attach and
+            detach for notes.
+          </p>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-3"
+                disabled={deleteNote.isPending}
+              >
+                {deleteNote.isPending ? 'Deleting…' : 'Delete note'}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete this note?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This removes the note from your feed and cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={deleteNote.isPending}>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => void handleDelete()}
+                  disabled={deleteNote.isPending}
+                >
+                  {deleteNote.isPending ? 'Deleting…' : 'Confirm delete'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+          {deleteNote.isError ? (
+            <p className="mt-3 text-sm text-destructive">
+              Failed to delete note. Please try again.
+            </p>
+          ) : null}
+        </SurfacePanel>
+      </aside>
     </div>
   );
 }

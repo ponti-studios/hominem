@@ -3,7 +3,6 @@ import {
   getHttpRequestInLogMessage,
   getHttpRequestLogLevel,
   getHttpRequestOutLogMessage,
-  logAtLevel,
   logger,
 } from '@hominem/utils/logger';
 import type { MiddlewareHandler } from 'hono';
@@ -34,6 +33,21 @@ export function requestLogger(): MiddlewareHandler {
     const level = getHttpRequestLogLevel(data);
     const message = getHttpRequestOutLogMessage();
 
-    logAtLevel(level, message, data);
+    if (level === 'error') {
+      logger.error(message, data);
+      return;
+    }
+
+    if (level === 'warn') {
+      logger.warn(message, data);
+      return;
+    }
+
+    if (level === 'debug') {
+      logger.debug(message, data);
+      return;
+    }
+
+    logger.info(message, data);
   };
 }

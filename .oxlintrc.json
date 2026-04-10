@@ -141,5 +141,5 @@
     "builtin": true
   },
   "globals": {},
-  "ignorePatterns": []
+  "ignorePatterns": ["**/*.config.ts", "**/*.config.js", "**/vite.config.ts", "**/next.config.ts"]
 }

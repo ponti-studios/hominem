@@ -2,22 +2,6 @@
   "$schema": "https://unpkg.com/knip@5/schema.json",
 
   "workspaces": {
-    ".": {
-      "entry": [
-        "scripts/*.{ts,js,mjs,cjs}",
-        "scripts/**/*.{ts,js,mjs,cjs}"
-      ],
-      "project": [
-        "scripts/**/*.{ts,tsx,js,jsx,mjs,cjs}"
-      ],
-      "ignore": [
-        "apps/**",
-        "packages/**",
-        "services/**",
-        "tools/**"
-      ]
-    },
-
     "apps/web": {
       "entry": [
         "app/root.tsx",
@@ -28,9 +12,7 @@
         "vitest.config.ts",
         "playwright.config.ts"
       ],
-      "project": [
-        "app/**/*.{ts,tsx}"
-      ]
+      "project": ["app/**/*.{ts,tsx}"]
     },
 
     "apps/mobile": {
@@ -55,41 +37,12 @@
       ]
     },
 
-    "apps/desktop": {
-      "entry": [
-        "src/main/index.ts",
-        "src/preload/index.ts",
-        "src/renderer/src/main.tsx",
-        "electron.vite.config.ts",
-        "vite.config.ts"
-      ],
-      "project": [
-        "src/**/*.{ts,tsx}"
-      ]
-    },
-
     "services/api": {
-      "entry": [
-        "src/index.ts",
-        "src/server.ts",
-        "vitest.config.ts"
-      ],
-      "project": [
-        "src/**/*.{ts,tsx}"
-      ]
+      "entry": ["src/index.ts", "src/server.ts", "vitest.config.ts"],
+      "project": ["src/**/*.{ts,tsx}"]
     },
 
-    "services/workers": {
-      "entry": [
-        "src/index.ts",
-        "vitest.config.ts"
-      ],
-      "project": [
-        "src/**/*.{ts,tsx}"
-      ]
-    },
-
-    "packages/*": {
+    "packages/core/*": {
       "entry": [
         "src/index.ts",
         "src/index.tsx",
@@ -99,24 +52,42 @@
         "postcss.config.{ts,js,mjs,cjs}",
         "tailwind.config.{ts,js,mjs,cjs}"
       ],
-      "project": [
-        "src/**/*.{ts,tsx}"
-      ]
+      "project": ["src/**/*.{ts,tsx}"]
+    },
+
+    "packages/platform/*": {
+      "entry": [
+        "src/index.ts",
+        "src/index.tsx",
+        "*.config.{ts,js,mjs,cjs}",
+        "vitest.config.ts",
+        "vite.config.ts",
+        "postcss.config.{ts,js,mjs,cjs}",
+        "tailwind.config.{ts,js,mjs,cjs}"
+      ],
+      "project": ["src/**/*.{ts,tsx}"]
+    },
+
+    "packages/domains/*": {
+      "entry": [
+        "src/index.ts",
+        "src/index.tsx",
+        "*.config.{ts,js,mjs,cjs}",
+        "vitest.config.ts",
+        "vite.config.ts",
+        "postcss.config.{ts,js,mjs,cjs}",
+        "tailwind.config.{ts,js,mjs,cjs}"
+      ],
+      "project": ["src/**/*.{ts,tsx}"]
     },
 
     "tools/*": {
-      "entry": [
-        "src/cli.ts",
-        "src/**/*.ts",
-        "*.ts",
-        "*.mts",
-        "vitest.config.ts"
-      ],
-      "project": [
-        "src/**/*.{ts,tsx}"
-      ]
+      "entry": ["src/cli.ts", "src/**/*.ts", "*.ts", "*.mts", "vitest.config.ts"],
+      "project": ["src/**/*.{ts,tsx}"]
     }
   },
+
+  "ignoreUnresolved": ["^vite/client$"],
 
   "ignore": [
     "**/build/**",
@@ -129,9 +100,5 @@
     "**/__tests__/**",
     "**/__mocks__/**",
     "**/test-assets/**"
-  ],
-
-  "ignoreDependencies": [
-    "quansync"
   ]
 }

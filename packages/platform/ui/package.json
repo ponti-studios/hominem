@@ -1,0 +1,259 @@
+{
+  "name": "@hominem/ui",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./button": {
+      "types": "./src/components/ui/button.tsx",
+      "react-native": "./src/components/ui/button.native.tsx",
+      "default": "./src/components/ui/button.tsx"
+    },
+    "./heading": {
+      "types": "./src/components/typography/heading.tsx",
+      "react-native": "./src/components/typography/heading.native.tsx",
+      "default": "./src/components/typography/heading.tsx"
+    },
+    "./text": {
+      "types": "./src/components/typography/text.tsx",
+      "react-native": "./src/components/typography/text.native.tsx",
+      "default": "./src/components/typography/text.tsx"
+    },
+    "./text-field": {
+      "types": "./src/components/ui/text-field.tsx",
+      "react-native": "./src/components/ui/text-field.native.tsx",
+      "default": "./src/components/ui/text-field.tsx"
+    },
+    "./text-area": {
+      "types": "./src/components/ui/text-area.tsx",
+      "react-native": "./src/components/ui/text-area.native.tsx",
+      "default": "./src/components/ui/text-area.tsx"
+    },
+    "./select-field": {
+      "types": "./src/components/ui/select-field.tsx",
+      "default": "./src/components/ui/select-field.tsx"
+    },
+    "./field": {
+      "types": "./src/components/ui/field.tsx",
+      "react-native": "./src/components/ui/field.native.tsx",
+      "default": "./src/components/ui/field.tsx"
+    },
+    "./stack": {
+      "types": "./src/components/layout/stack.tsx",
+      "react-native": "./src/components/layout/stack.native.tsx",
+      "default": "./src/components/layout/stack.tsx"
+    },
+    "./inline": {
+      "types": "./src/components/layout/inline.tsx",
+      "react-native": "./src/components/layout/inline.native.tsx",
+      "default": "./src/components/layout/inline.tsx"
+    },
+    "./page": {
+      "types": "./src/components/layout/page.tsx",
+      "react-native": "./src/components/layout/page.native.tsx",
+      "default": "./src/components/layout/page.tsx"
+    },
+    "./input": {
+      "types": "./src/components/ui/input.tsx",
+      "default": "./src/components/ui/input.tsx"
+    },
+    "./label": {
+      "types": "./src/components/ui/label.tsx",
+      "default": "./src/components/ui/label.tsx"
+    },
+    "./textarea": {
+      "types": "./src/components/ui/textarea.tsx",
+      "default": "./src/components/ui/textarea.tsx"
+    },
+    "./dialog": {
+      "types": "./src/components/ui/dialog.tsx",
+      "default": "./src/components/ui/dialog.tsx"
+    },
+    "./alert-dialog": {
+      "types": "./src/components/ui/alert-dialog.tsx",
+      "default": "./src/components/ui/alert-dialog.tsx"
+    },
+    "./dropdown": {
+      "types": "./src/components/ui/dropdown-menu.tsx",
+      "default": "./src/components/ui/dropdown-menu.tsx"
+    },
+    "./card": {
+      "types": "./src/components/ui/card.tsx",
+      "react-native": "./src/components/ui/card.native.tsx",
+      "default": "./src/components/ui/card.tsx"
+    },
+    "./filters": {
+      "types": "./src/components/filters/index.ts",
+      "default": "./src/components/filters/index.ts"
+    },
+    "./hooks": {
+      "types": "./src/hooks/index.ts",
+      "default": "./src/hooks/index.ts"
+    },
+    "./hooks/sort.types": {
+      "types": "./src/hooks/sort.types.ts",
+      "default": "./src/hooks/sort.types.ts"
+    },
+    "./lib/*": {
+      "types": "./src/lib/*.ts",
+      "default": "./src/lib/*.ts"
+    },
+    "./lib/gsap": {
+      "types": "./src/lib/gsap/sequences.ts",
+      "default": "./src/lib/gsap/sequences.ts"
+    },
+    "./styles/*": {
+      "types": "./src/styles/*",
+      "default": "./src/styles/*"
+    },
+    "./ai-elements": {
+      "types": "./src/components/ai-elements/index.ts",
+      "default": "./src/components/ai-elements/index.ts"
+    },
+    "./chat": {
+      "types": "./src/components/chat/index.ts",
+      "react-native": "./src/components/chat/index.mobile.ts",
+      "default": "./src/components/chat/index.ts"
+    },
+    "./composer": {
+      "types": "./src/components/composer/index.ts",
+      "default": "./src/components/composer/index.ts"
+    },
+    "./types/upload": {
+      "types": "./src/types/upload.ts",
+      "default": "./src/types/upload.ts"
+    },
+    "./types/chat": {
+      "types": "./src/types/chat.ts",
+      "default": "./src/types/chat.ts"
+    },
+    "./tokens": {
+      "types": "./src/tokens/index.ts",
+      "default": "./src/tokens/index.ts"
+    },
+    "./tokens/notes": {
+      "types": "./src/tokens/notes.ts",
+      "default": "./src/tokens/notes.ts"
+    },
+    "./tokens/shadows": {
+      "types": "./src/tokens/shadows.ts",
+      "default": "./src/tokens/shadows.ts"
+    },
+    "./tokens/typography.native": {
+      "types": "./src/tokens/typography.native.ts",
+      "default": "./src/tokens/typography.native.ts"
+    },
+    "./theme": {
+      "types": "./src/theme.ts",
+      "node": "./shell-theme.cjs",
+      "require": "./shell-theme.cjs",
+      "default": "./src/theme.ts"
+    }
+  },
+  "scripts": {
+    "format": "pnpm dlx oxfmt ./src",
+    "lint": "pnpm dlx oxlint ./src",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "test:storybook": "sh -c 'storybook dev -p 6006 --ci >/tmp/hominem-storybook.log 2>&1 & pid=$!; cleanup() { if kill -0 \"$pid\" 2>/dev/null; then kill \"$pid\"; wait \"$pid\" 2>/dev/null; fi; }; trap cleanup EXIT; until curl -sf http://127.0.0.1:6006 >/dev/null; do sleep 1; done; vitest run --config vitest.stories.config.mts; status=$?; cleanup; exit $status'",
+    "storybook": "storybook dev -p 6006",
+    "build:storybook": "storybook build"
+  },
+  "dependencies": {
+    "@hominem/auth": "workspace:*",
+    "@hominem/chat": "workspace:*",
+    "@hominem/rpc": "workspace:*",
+    "@hominem/utils": "workspace:*",
+    "@radix-ui/react-accordion": "^1.2.12",
+    "@radix-ui/react-alert-dialog": "^1.1.15",
+    "@radix-ui/react-aspect-ratio": "^1.1.8",
+    "@radix-ui/react-avatar": "^1.1.10",
+    "@radix-ui/react-checkbox": "^1.3.3",
+    "@radix-ui/react-collapsible": "^1.1.12",
+    "@radix-ui/react-context-menu": "^2.2.16",
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-dropdown-menu": "^2.1.16",
+    "@radix-ui/react-hover-card": "^1.1.15",
+    "@radix-ui/react-label": "^2.1.8",
+    "@radix-ui/react-menubar": "^1.1.16",
+    "@radix-ui/react-navigation-menu": "^1.2.14",
+    "@radix-ui/react-popover": "^1.1.15",
+    "@radix-ui/react-progress": "^1.1.7",
+    "@radix-ui/react-radio-group": "^1.3.8",
+    "@radix-ui/react-scroll-area": "^1.2.10",
+    "@radix-ui/react-select": "^2.2.6",
+    "@radix-ui/react-separator": "^1.1.7",
+    "@radix-ui/react-slider": "^1.3.6",
+    "@radix-ui/react-slot": "^1.2.4",
+    "@radix-ui/react-switch": "^1.2.6",
+    "@radix-ui/react-tabs": "^1.1.13",
+    "@radix-ui/react-toast": "^1.2.15",
+    "@radix-ui/react-toggle": "^1.1.10",
+    "@radix-ui/react-toggle-group": "^1.1.11",
+    "@radix-ui/react-tooltip": "^1.2.8",
+    "@tanstack/react-hotkeys": "^0.4.2",
+    "@tanstack/react-query": "5.90.16",
+    "@tanstack/react-virtual": "^3.13.9",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "cmdk": "^1.1.1",
+    "date-fns": "^3.6.0",
+    "embla-carousel-react": "^8.6.0",
+    "gsap": "^3.14.2",
+    "lucide-react": "0.576.0",
+    "react": "19.2.0",
+    "react-day-picker": "8.10.1",
+    "react-hook-form": "^7.70.0",
+    "react-markdown": "^10.1.0",
+    "react-native-markdown-display": "^7.0.2",
+    "react-native-reanimated": "4.2.1",
+    "react-native-safe-area-context": "5.6.2",
+    "react-router": "7.14.0",
+    "react-syntax-highlighter": "^15.6.1",
+    "tailwind-merge": "3.2.0",
+    "tailwindcss": "^4.1.18",
+    "vaul": "^1.1.2"
+  },
+  "devDependencies": {
+    "@storybook/addon-docs": "^10.3.3",
+    "@storybook/addon-mcp": "^0.4.2",
+    "@storybook/addon-vitest": "^10.3.3",
+    "@storybook/react-vite": "^10.3.3",
+    "@tailwindcss/vite": "^4.1.3",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^14.3.1",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^25.4.0",
+    "@types/react": "19.2.10",
+    "@types/react-dom": "19.1.7",
+    "@types/react-syntax-highlighter": "^15.5.13",
+    "@vitest/browser": "4.1.2",
+    "@vitest/browser-playwright": "4.1.2",
+    "expo-clipboard": "~55.0.9",
+    "expo-file-system": "~55.0.11",
+    "expo-haptics": "^55.0.9",
+    "expo-sharing": "^55.0.14",
+    "jsdom": "^25.0.1",
+    "msw": "^2.12.13",
+    "msw-storybook-addon": "^2.0.6",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "react-native": "0.83.4",
+    "storybook": "^10.3.3",
+    "typescript": "5.9.3",
+    "vite": "8.0.3",
+    "vite-tsconfig-paths": "6.0.3"
+  },
+  "peerDependencies": {
+    "react": "19.2.0",
+    "react-dom": "19.2.0"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
+  }
+}

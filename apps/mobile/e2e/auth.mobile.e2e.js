@@ -135,7 +135,7 @@ describe('Mobile auth', () => {
 
     await triggerPasskeyCancel()
 
-    await waitFor(element(by.id('auth-error-text')))
+    await waitFor(element(by.id('auth-email-message')))
       .toBeVisible()
       .withTimeout(10000)
     await waitForAuthState('signed_out', 10000)

@@ -1,0 +1,54 @@
+{
+  "name": "@hominem/chat",
+  "version": "0.0.0",
+  "description": "Chat and messaging services",
+  "type": "module",
+  "sideEffects": false,
+  "types": "./src/public.ts",
+  "exports": {
+    ".": {
+      "types": "./src/public.ts",
+      "default": "./src/public.ts"
+    },
+    "./server": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./types": {
+      "types": "./src/types-only.ts",
+      "default": "./src/types-only.ts"
+    },
+    "./ui": {
+      "types": "./src/session-artifacts.ts",
+      "default": "./src/session-artifacts.ts"
+    },
+    "./react": {
+      "types": "./src/use-chat-lifecycle.ts",
+      "default": "./src/use-chat-lifecycle.ts"
+    },
+    "./constants": {
+      "types": "./src/constants.ts",
+      "default": "./src/constants.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "format": "pnpm dlx oxfmt ./src",
+    "lint": "pnpm dlx oxlint ./src",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@hominem/db": "workspace:*",
+    "@hominem/utils": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^25.4.0",
+    "@types/react": "19.2.10",
+    "react": "19.2.0",
+    "typescript": "5.9.3"
+  },
+  "peerDependencies": {
+    "react": "19.2.0"
+  }
+}

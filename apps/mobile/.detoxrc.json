@@ -1,0 +1,18 @@
+{
+  "apps": {
+    "ios": {
+      "type": "ios.app",
+      "binaryPath": "ios/build/Build/Products/Release-iphonesimulator/hominem.app",
+      "build": "xcodebuild -workspace ios/hominem.xcworkspace -scheme hominem -configuration Release -sdk iphonesimulator -derivedDataPath ios/build"
+    }
+  },
+  "configurations": {
+    "ios": {
+      "device": {
+        "type": "iPhone 15"
+      },
+      "app": "ios"
+    }
+  },
+  "testRunner": "jest"
+}

@@ -1,0 +1,37 @@
+{
+  "name": "@hominem/hooks",
+  "version": "0.0.0",
+  "description": "Shared React hooks for web and mobile apps",
+  "type": "module",
+  "sideEffects": false,
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./use-note-editor": {
+      "types": "./src/use-note-editor.ts",
+      "default": "./src/use-note-editor.ts"
+    },
+    "./use-error-formatting": {
+      "types": "./src/use-error-formatting.ts",
+      "default": "./src/use-error-formatting.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hominem/utils": "workspace:*",
+    "react": "19.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.4.0",
+    "@types/react": "19.2.10",
+    "typescript": "5.9.3"
+  },
+  "peerDependencies": {
+    "react": "19.2.0"
+  }
+}

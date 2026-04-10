@@ -1,9 +1,8 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 .crush
-
-# Allow packages/env despite global gitignore having ENV/
-!packages/env/
-!packages/env/**
+.build
+.fallow
+.opencode
 
 # dependencies
 node_modules
@@ -31,9 +30,9 @@ storybook-static/
 *.tsbuildinfo
 results/
 
-# bun
+# pnpm
 # Note: lockfile should be committed for monorepos to ensure consistent dependencies
-# bun.lock
+# pnpm-lock.yaml
 
 # Google credentials
 credentials.json
@@ -45,7 +44,7 @@ token.json
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-bun-debug.log*
+pnpm-debug.log*
 
 # local env files
 .env
@@ -53,6 +52,8 @@ bun-debug.log*
 .env.development*
 .env.test*
 .env.production*
+.claude/settings.local.json
+!/packages/core/env
 
 # TypeScript build cache
 .cache/
@@ -77,6 +78,7 @@ test-import.ts
 
 # local logs
 tmp/
+debug-storybook.log
 
 
 # git worktrees

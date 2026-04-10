@@ -1,95 +1,92 @@
-import { expect, test } from '@playwright/test'
+import type { Page } from '@playwright/test';
 
-import {
-  createAuthTestEmail,
-  signInWithEmailOtp,
-} from './auth.flow-helpers'
+import { expect, test } from './authenticated-test';
 
-test.describe('Notes: HomeView → chat.$chatId critical path', () => {
-  test('authenticated user reaches HomeView with Composer', async ({ page, context }) => {
-    await context.clearCookies()
-    const email = createAuthTestEmail('notes-home-lifecycle')
+async function createNote(page: Page) {
+  await page.goto('/notes');
 
-    await signInWithEmailOtp(page, email, /\/home/)
+  const composer = page.getByLabel('Compose message or note');
+  await expect(composer).toBeVisible({ timeout: 5_000 });
+  const noteTitle = `Draft note for assistant flow ${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  await composer.fill(noteTitle);
+  await page.getByRole('button', { name: 'Save note' }).click();
+  await expect(page).toHaveURL(/\/notes\/[^/?#]+$/, { timeout: 5_000 });
+  await expect(page.getByLabel('Note title')).toBeVisible({ timeout: 5_000 });
+  await expect(page.getByLabel('Note content')).toBeVisible({ timeout: 5_000 });
 
-    await page.goto('/home')
-    await expect(page).toHaveURL(/\/home/, { timeout: 15_000 })
+  return {
+    noteId: page.url().split('/').pop()?.split('?')[0] ?? '',
+    noteTitle,
+  };
+}
 
-    // Composer should be present
-    const composerInput = page.getByTestId('composer-input')
-    await expect(composerInput).toBeVisible({ timeout: 10_000 })
-  })
+async function attachNoteFile(page: Page, filename: string, content: string) {
+  // Find the upload container and set file
+  const uploadContainer = page.locator('[data-upload-state]').first();
+  await page.getByTestId('note-file-input').setInputFiles({
+    name: filename,
+    mimeType: 'text/plain',
+    buffer: Buffer.from(content),
+  });
 
-  test('Composer secondary action creates a chat and navigates to it', async ({ page, context }) => {
-    await context.clearCookies()
-    const email = createAuthTestEmail('notes-capture-think')
+  // Wait for upload to complete via state machine attribute
+  await expect(uploadContainer).toHaveAttribute('data-upload-state', 'done', {
+    timeout: 10_000,
+  });
 
-    await signInWithEmailOtp(page, email, /\/home/)
-    await page.goto('/home')
+  // Verify the file appears in the UI
+  await expect(page.getByText(filename)).toBeVisible({ timeout: 5_000 });
+}
 
-    const composerInput = page.getByTestId('composer-input')
-    await expect(composerInput).toBeVisible({ timeout: 10_000 })
-    await composerInput.fill('What should I focus on today?')
+test.describe('Notes critical path', () => {
+  test('authenticated user reaches the notes index', async ({ page }) => {
+    await page.goto('/notes');
 
-    const secondaryButton = page.getByTestId('composer-secondary')
-    await expect(secondaryButton).toBeVisible({ timeout: 5_000 })
-    await secondaryButton.click()
+    await expect(page).toHaveURL(/\/notes$/, { timeout: 5_000 });
+    await expect(page.getByRole('heading', { name: 'Notes', exact: true })).toBeVisible({
+      timeout: 5_000,
+    });
+    await expect(page.getByLabel('Compose message or note')).toBeVisible({ timeout: 5_000 });
+  });
 
-    // Should navigate to a chat session
-    await expect(page).toHaveURL(/\/chat\/[^/]+$/, { timeout: 20_000 })
+  test('creating a note opens the editor', async ({ page }) => {
+    await createNote(page);
+  });
 
-    // Chat input (Composer in chat-continuation mode) should be present
-    const chatInput = page.getByTestId('composer-input')
-    await expect(chatInput).toBeVisible({ timeout: 10_000 })
-  })
+  test('attaching a file keeps the user on the note editor', async ({ page }) => {
+    const { noteId } = await createNote(page);
 
-  test('Composer primary action saves note without navigating away', async ({ page, context }) => {
-    await context.clearCookies()
-    const email = createAuthTestEmail('notes-capture-save')
+    await attachNoteFile(page, 'note-attachment.txt', 'Attachment for note flow');
 
-    await signInWithEmailOtp(page, email, /\/home/)
-    await page.goto('/home')
+    await expect(page.getByText('note-attachment.txt')).toBeVisible({ timeout: 5_000 });
+    await expect(page).toHaveURL(/\/notes\/[^/?#]+$/, { timeout: 5_000 });
 
-    const composerInput = page.getByTestId('composer-input')
-    await expect(composerInput).toBeVisible({ timeout: 10_000 })
-    await composerInput.fill('Quick thought to save')
-    await page.getByTestId('composer-file-input').setInputFiles({
-      name: 'note-attachment.txt',
-      mimeType: 'text/plain',
-      buffer: Buffer.from('Attachment for note flow'),
-    })
-    await expect(page.getByText('note-attachment.txt')).toBeVisible({ timeout: 10_000 })
+    await page.reload();
+    await expect(page).toHaveURL(new RegExp(`/notes/${noteId}$`), { timeout: 5_000 });
+    await expect(page.getByText('note-attachment.txt')).toBeVisible({ timeout: 10_000 });
+  });
 
-    const saveButton = page.getByTestId('composer-primary')
-    await expect(saveButton).toBeVisible({ timeout: 5_000 })
-    await saveButton.click()
+  test('chat with this note opens a chat session with note context', async ({ page }) => {
+    const { noteId, noteTitle } = await createNote(page);
 
-    // Should stay on home after saving
-    await expect(page).toHaveURL(/\/home/, { timeout: 10_000 })
+    await page.getByRole('link', { name: 'Chat with this note' }).click();
+    await expect(page).toHaveURL(new RegExp(`/chat\\?noteId=${noteId}$`), { timeout: 5_000 });
+    await expect(page.getByText('This chat can start with note context from')).toBeVisible({
+      timeout: 5_000,
+    });
 
-    // Input should be cleared after save
-    await expect(composerInput).toHaveValue('', { timeout: 5_000 })
-    await expect(page.getByText('note-attachment.txt')).not.toBeVisible({ timeout: 5_000 })
-  })
+    await page.getByRole('button', { name: 'New chat' }).click();
+    await expect(page).toHaveURL(new RegExp(`/chat/[^/?#]+\\?noteId=${noteId}$`), {
+      timeout: 5_000,
+    });
 
-  test('voice input populates Composer input for review before sending', async ({ page, context }) => {
-    await context.clearCookies()
-    const email = createAuthTestEmail('notes-voice-confirm')
-
-    await signInWithEmailOtp(page, email, /\/home/)
-    await page.goto('/home')
-
-    const composerInput = page.getByTestId('composer-input')
-    await composerInput.fill('Test session for voice input')
-
-    const secondaryButton = page.getByTestId('composer-secondary')
-    await secondaryButton.click()
-
-    await expect(page).toHaveURL(/\/chat\/[^/]+$/, { timeout: 20_000 })
-
-    // Voice mic button should be visible in Composer (chat-continuation mode)
-    const micButton = page.getByTitle('Voice note')
-    await expect(micButton).toBeVisible({ timeout: 10_000 })
-    await expect(micButton).not.toBeDisabled()
-  })
-})
+    const selectedNotesSection = page.getByRole('heading', { name: 'Selected notes' }).locator('..');
+    await expect(selectedNotesSection).toBeVisible({
+      timeout: 5_000,
+    });
+    await expect(selectedNotesSection.getByText(noteTitle)).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByRole('button', { name: 'Dictate chat message' })).toBeVisible({
+      timeout: 5_000,
+    });
+  });
+});

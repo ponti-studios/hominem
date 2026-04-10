@@ -1,0 +1,47 @@
+{
+  "name": "@hominem/env",
+  "version": "0.0.0",
+  "description": "Unified environment handling, schemas, and brand identity",
+  "type": "module",
+  "main": "./build/index.js",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./build/index.js"
+    },
+    "./base": {
+      "types": "./src/base.ts",
+      "default": "./build/base.js"
+    },
+    "./api": {
+      "types": "./src/api.ts",
+      "default": "./build/api.js"
+    },
+    "./web": {
+      "types": "./src/web.ts",
+      "default": "./build/web.js"
+    },
+    "./brand": {
+      "types": "./src/brand.ts",
+      "default": "./build/brand.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc --watch --preserveWatchOutput",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
+    "format": "pnpm dlx oxfmt ./src",
+    "lint": "pnpm dlx oxlint ./src"
+  },
+  "dependencies": {
+    "zod": "4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.4.0",
+    "typescript": "5.9.3"
+  }
+}

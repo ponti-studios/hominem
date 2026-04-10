@@ -12,11 +12,12 @@ interface DeviceCodeResponse {
 }
 
 let deviceAuthFlowSequence = 0;
+const deviceAuthFlowSeed = `${process.pid}-${Date.now()}`;
 
 async function createApprovedDeviceFlow(app: AppRequester) {
   deviceAuthFlowSequence += 1;
   const email = createAuthTestEmail('cli-device');
-  const forwardedFor = `198.51.100.${deviceAuthFlowSequence}`;
+  const forwardedFor = `device-contract-${deviceAuthFlowSeed}-${deviceAuthFlowSequence}`;
   const { cookieHeader } = await signInWithEmailOtp(app, email);
 
   const codeResponse = await requestJson({
@@ -73,7 +74,7 @@ describe('auth device contract', () => {
     // Reset device auth flow sequence for isolation
     deviceAuthFlowSequence = 0;
   });
-  test('device authorization uses stable auth routes and forwards set-auth-token', async () => {
+  test('device authorization uses stable auth routes and returns native Better Auth tokens', async () => {
     const app = createServer();
     const { email, deviceCode, forwardedFor } = await createApprovedDeviceFlow(app);
 
@@ -98,12 +99,13 @@ describe('auth device contract', () => {
     });
 
     expect(tokenResponse.status).toBe(200);
-    const bearerToken = tokenResponse.headers.get('set-auth-token');
+    const tokenPayload = (await tokenResponse.json()) as { access_token?: string };
+    const bearerToken = tokenPayload.access_token;
     expect(bearerToken).toBeTruthy();
 
     const sessionResponse = await requestJson({
       app,
-      path: '/api/auth/session',
+      path: '/api/auth/get-session',
       headers: {
         authorization: `Bearer ${bearerToken}`,
       },
@@ -111,9 +113,11 @@ describe('auth device contract', () => {
 
     expect(sessionResponse.status).toBe(200);
     await expect(sessionResponse.json()).resolves.toMatchObject({
-      isAuthenticated: true,
       user: {
         email,
+      },
+      session: {
+        id: expect.any(String),
       },
     });
   }, 15_000);
@@ -166,6 +170,8 @@ describe('auth device contract', () => {
     });
 
     expect(tokenResponse.status).toBe(200);
-    expect(tokenResponse.headers.get('set-auth-token')).toBeTruthy();
+    await expect(tokenResponse.json()).resolves.toMatchObject({
+      access_token: expect.any(String),
+    });
   }, 15000);
 });

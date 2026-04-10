@@ -1,0 +1,6 @@
+{
+  "extends": "./package-bundler.json",
+  "compilerOptions": {
+    "noEmit": true
+  }
+}

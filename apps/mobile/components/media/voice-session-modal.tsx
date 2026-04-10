@@ -1,9 +1,8 @@
-import { MaterialIcons } from '@expo/vector-icons';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 
-import { Text, makeStyles } from '~/theme';
-
-import { MobileVoiceInput } from './mobile-voice-input';
+import AppIcon from '~/components/ui/icon';
+import { Text, makeStyles, theme } from '~/components/theme';
+import { VoiceInput } from '~/components/media/voice';
 
 interface VoiceSessionModalProps {
   visible: boolean;
@@ -37,12 +36,12 @@ export function VoiceSessionModal({
               accessibilityLabel="Close voice input"
               accessibilityRole="button"
             >
-              <MaterialIcons name="close" size={20} color="#000" />
+              <AppIcon name="xmark" size={20} color={theme.colors.foreground} />
             </Pressable>
           </View>
 
           <View style={styles.body}>
-            <MobileVoiceInput
+            <VoiceInput
               autoTranscribe
               onAudioTranscribed={(transcription) => {
                 onAudioTranscribed(transcription);

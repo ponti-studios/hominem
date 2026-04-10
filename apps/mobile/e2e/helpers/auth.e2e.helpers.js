@@ -1,5 +1,5 @@
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://localhost:4040'
-const AUTH_E2E_SECRET = process.env.EXPO_PUBLIC_E2E_AUTH_SECRET ?? 'otp-secret'
+const AUTH_E2E_SECRET = process.env.AUTH_E2E_SECRET ?? 'otp-secret'
 
 /**
  * Exponential backoff delay. Returns a promise that resolves after the
@@ -145,9 +145,9 @@ async function waitForOtpStep(timeout = 20000) {
       return
     }
 
-    const hasAuthError = await waitForVisible(by.id('auth-error-text'), 1200)
+    const hasAuthError = await waitForVisible(by.id('auth-email-message'), 1200)
     if (hasAuthError) {
-      const errorText = await readVisibleText('auth-error-text')
+      const errorText = await readVisibleText('auth-email-message')
       throw new Error(`OTP request failed in app UI${errorText ? `: ${errorText}` : ''}`)
     }
 
@@ -181,9 +181,9 @@ async function triggerOtpRequest(timeout = 20000) {
       return
     }
 
-    const hasAuthError = await waitForVisible(by.id('auth-error-text'), 1200)
+    const hasAuthError = await waitForVisible(by.id('auth-email-message'), 1200)
     if (hasAuthError) {
-      const errorText = await readVisibleText('auth-error-text')
+      const errorText = await readVisibleText('auth-email-message')
       lastError = errorText ? `OTP request failed in app UI: ${errorText}` : 'OTP request failed in app UI'
 
       const hasEmailInput = await waitForVisible(by.id('auth-email-input'), 400)

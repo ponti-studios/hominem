@@ -9,11 +9,11 @@
 .env.*.local
 .env.example
 
-# Dependencies (handled by RUN bun install in Dockerfile)
+# Dependencies (handled by RUN pnpm install in Dockerfile)
 node_modules
 npm-debug.log
 yarn-error.log
-bun.lock.backup
+pnpm-debug.log*
 
 # Build artifacts
 dist

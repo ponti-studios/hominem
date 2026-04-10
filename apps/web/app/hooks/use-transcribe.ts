@@ -1,4 +1,4 @@
-import type { VoiceErrorCode } from '@hominem/services/voice-transcription';
+import type { VoiceErrorCode } from '@hominem/rpc/voice-events';
 import { useMutation } from '@tanstack/react-query';
 
 // Shape returned by /api/voice/transcribe on success
@@ -13,18 +13,26 @@ interface TranscribeErrorResponse {
   code?: string;
 }
 
-export interface TranscribeVariables {
+interface TranscribeVariables {
   audioBlob: Blob;
   language?: string;
 }
 
-export interface TranscribeResult {
+interface TranscribeResult {
   text: string;
 }
+
+/** Must match VOICE_TRANSCRIPTION_MAX_SIZE_BYTES on the server. */
+const MAX_AUDIO_SIZE_BYTES = 25 * 1024 * 1024;
 
 export function useTranscribe() {
   return useMutation<TranscribeResult, Error, TranscribeVariables>({
     mutationFn: async ({ audioBlob, language }) => {
+      if (audioBlob.size > MAX_AUDIO_SIZE_BYTES) {
+        const sizeMB = Math.round(audioBlob.size / (1024 * 1024));
+        throw new Error(`Recording too large (${sizeMB}MB). Maximum is 25MB.`);
+      }
+
       const formData = new FormData();
       formData.append('audio', audioBlob, 'recording.webm');
       if (language) {
@@ -36,6 +44,7 @@ export function useTranscribe() {
         method: 'POST',
         credentials: 'include',
         body: formData,
+        signal: AbortSignal.timeout(60_000),
       });
 
       if (!response.ok) {

@@ -1,0 +1,18 @@
+{
+  "extends": "../../../tsconfig.profiles/react-bundler-lib.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "./build",
+    "tsBuildInfoFile": "../../../.cache/auth.tsbuildinfo"
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "exclude": [
+    "node_modules",
+    "build",
+    "dist",
+    ".turbo",
+    ".cache",
+    "coverage",
+    "*.tsbuildinfo"
+  ]
+}

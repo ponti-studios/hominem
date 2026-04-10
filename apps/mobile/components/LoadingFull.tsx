@@ -1,20 +1,17 @@
 import type { PropsWithChildren } from 'react';
 import { ActivityIndicator, StyleSheet } from 'react-native';
 
-import { Box, makeStyles, theme } from '~/theme';
+import { Box, makeStyles, theme } from '~/components/theme';
 
 export const LoadingFull = ({ children }: PropsWithChildren) => {
+  const styles = useStyles();
+
   return (
-    <LoadingContainer>
+    <Box style={styles.loading}>
       {children}
       <ActivityIndicator size="large" color={theme.colors.foreground} />
-    </LoadingContainer>
+    </Box>
   );
-};
-
-export const LoadingContainer = ({ children }: PropsWithChildren) => {
-  const styles = useStyles();
-  return <Box style={styles.loading}>{children}</Box>;
 };
 
 const useStyles = makeStyles((t) =>

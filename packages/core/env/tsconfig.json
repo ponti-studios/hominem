@@ -1,0 +1,18 @@
+{
+  "extends": "../../../tsconfig.profiles/package-bundler.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "./build",
+    "tsBuildInfoFile": "../../../.cache/env.tsbuildinfo"
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": [
+    "node_modules",
+    "build",
+    "dist",
+    ".turbo",
+    ".cache",
+    "coverage",
+    "*.tsbuildinfo"
+  ]
+}
