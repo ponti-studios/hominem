@@ -18,8 +18,6 @@ import type { UploadedFile } from '~/lib/types/upload';
  */
 export type UploadStateMachine = 'idle' | 'uploading' | 'done' | 'error';
 
-type UploadFileBody = Body;
-
 const UploadedFileSchema = z.object({
   id: z.string().uuid(),
   originalName: z.string().min(1),
@@ -208,15 +206,13 @@ export function useFileUpload(): UseFileUploadReturn {
           return [toUploadedFile(parsed.data.file)];
         });
 
-        const uploadErrors = [
-          ...(result?.failed ?? []).map((failedFile) => {
-            const errorMessage =
-              typeof failedFile.error === 'string'
-                ? failedFile.error
-                : String(failedFile.error ?? 'Upload failed');
-            return `${failedFile.name}: ${errorMessage}`;
-          }),
-        ];
+        const uploadErrors = (result?.failed ?? []).map((failedFile) => {
+          const errorMessage =
+            typeof failedFile.error === 'string'
+              ? failedFile.error
+              : String(failedFile.error ?? 'Upload failed');
+          return `${failedFile.name}: ${errorMessage}`;
+        });
 
         setUploadState((prev) => ({
           ...prev,

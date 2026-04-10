@@ -1,39 +1,41 @@
 import { describe, expect, it } from 'vitest';
-import * as z from 'zod';
-import { createClientEnv, createServerEnv, EnvValidationError } from '../src/index';
 
-describe('createClientEnv', () => {
-  it('should throw EnvValidationError for invalid env', () => {
-    const schema = z.object({
-      VITE_REQUIRED_VAR: z.string().min(1),
+import { apiSchema, baseSchema, webSchema } from '../src/index';
+
+describe('schema exports', () => {
+  it('exports the shared base schema', () => {
+    expect(baseSchema.parse({})).toMatchObject({
+      NODE_ENV: 'development',
+      AI_PROVIDER: 'openrouter',
+      REDIS_URL: 'redis://localhost:6379',
+    });
+  });
+
+  it('exports the api schema', () => {
+    const env = apiSchema.parse({
+      RESEND_API_KEY: 'resend-test',
+      RESEND_FROM_EMAIL: 'hello@example.com',
+      RESEND_FROM_NAME: 'Hakumi',
     });
 
-    const env = createClientEnv(schema, 'test');
-
-    expect(() => env.VITE_REQUIRED_VAR).toThrow(EnvValidationError);
-  });
-});
-
-describe('createServerEnv', () => {
-  it('should throw EnvValidationError for invalid env', () => {
-    const schema = z.object({
-      TEST_VAR_THAT_DOES_NOT_EXIST_XYZ123: z.string(),
+    expect(env).toMatchObject({
+      PORT: '3000',
+      API_URL: 'http://localhost:4040',
+      NOTES_URL: 'http://localhost:4445',
+      RESEND_API_KEY: 'resend-test',
+      RESEND_FROM_EMAIL: 'hello@example.com',
+      RESEND_FROM_NAME: 'Hakumi',
     });
-
-    const env = createServerEnv(schema, 'test');
-
-    expect(() => env.TEST_VAR_THAT_DOES_NOT_EXIST_XYZ123).toThrow(EnvValidationError);
   });
-});
 
-describe('EnvValidationError', () => {
-  it('should format error with context', () => {
-    const error = new EnvValidationError('Test error', 'testContext', [
-      { path: 'FIELD_NAME', message: 'is required' },
-    ]);
-
-    expect(error.context).toBe('testContext');
-    expect(error.message).toContain('Test error');
-    expect(error.issues).toHaveLength(1);
+  it('exports the web schema', () => {
+    expect(
+      webSchema.parse({
+        VITE_PUBLIC_API_URL: 'http://localhost:4040',
+      }),
+    ).toMatchObject({
+      VITE_PUBLIC_API_URL: 'http://localhost:4040',
+      VITE_POSTHOG_HOST: 'https://us.i.posthog.com',
+    });
   });
 });

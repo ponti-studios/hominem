@@ -1,7 +1,7 @@
 {
   "name": "@hominem/env",
   "version": "0.0.0",
-  "description": "Unified environment variable handling with explicit client/server separation",
+  "description": "Unified environment handling, schemas, and brand identity",
   "type": "module",
   "main": "./build/index.js",
   "types": "./src/index.ts",
@@ -9,6 +9,18 @@
     ".": {
       "types": "./src/index.ts",
       "default": "./build/index.js"
+    },
+    "./base": {
+      "types": "./src/base.ts",
+      "default": "./build/base.js"
+    },
+    "./api": {
+      "types": "./src/api.ts",
+      "default": "./build/api.js"
+    },
+    "./web": {
+      "types": "./src/web.ts",
+      "default": "./build/web.js"
     },
     "./brand": {
       "types": "./src/brand.ts",

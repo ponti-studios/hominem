@@ -43,7 +43,7 @@ export function createClientEnv<T extends z.ZodObject<z.ZodRawShape>>(
   let cachedError: Error | null = null;
 
   return new Proxy({} as z.infer<T>, {
-    get: (target, prop: string | symbol) => {
+    get: (_target, prop: string | symbol) => {
       if (cachedError) throw cachedError;
 
       if (!cachedEnv) {
@@ -64,7 +64,7 @@ export function createClientEnv<T extends z.ZodObject<z.ZodRawShape>>(
 
       return cachedEnv[prop as keyof typeof cachedEnv];
     },
-    has: (target, prop: string | symbol) => {
+    has: (_target, prop: string | symbol) => {
       if (cachedError) throw cachedError;
 
       if (!cachedEnv) {
@@ -85,7 +85,7 @@ export function createClientEnv<T extends z.ZodObject<z.ZodRawShape>>(
 
       return prop in cachedEnv;
     },
-    ownKeys: (target) => {
+    ownKeys: (_target) => {
       if (cachedError) throw cachedError;
 
       if (!cachedEnv) {
@@ -106,7 +106,7 @@ export function createClientEnv<T extends z.ZodObject<z.ZodRawShape>>(
 
       return Object.keys(cachedEnv);
     },
-    getOwnPropertyDescriptor: (target, prop: string | symbol) => {
+    getOwnPropertyDescriptor: (_target, prop: string | symbol) => {
       if (cachedError) throw cachedError;
 
       if (!cachedEnv) {
@@ -145,7 +145,7 @@ export function createServerEnv<T extends z.ZodObject<z.ZodRawShape>>(
   let cachedError: Error | null = null;
 
   return new Proxy({} as z.infer<T>, {
-    get: (target, prop: string | symbol) => {
+    get: (_target, prop: string | symbol) => {
       if (cachedError) throw cachedError;
 
       if (!cachedEnv) {
@@ -167,7 +167,7 @@ export function createServerEnv<T extends z.ZodObject<z.ZodRawShape>>(
 
       return cachedEnv[prop as keyof typeof cachedEnv];
     },
-    has: (target, prop: string | symbol) => {
+    has: (_target, prop: string | symbol) => {
       if (cachedError) throw cachedError;
 
       if (!cachedEnv) {
@@ -189,7 +189,7 @@ export function createServerEnv<T extends z.ZodObject<z.ZodRawShape>>(
 
       return prop in cachedEnv;
     },
-    ownKeys: (target) => {
+    ownKeys: (_target) => {
       if (cachedError) throw cachedError;
 
       if (!cachedEnv) {
@@ -211,7 +211,7 @@ export function createServerEnv<T extends z.ZodObject<z.ZodRawShape>>(
 
       return Object.keys(cachedEnv);
     },
-    getOwnPropertyDescriptor: (target, prop: string | symbol) => {
+    getOwnPropertyDescriptor: (_target, prop: string | symbol) => {
       if (cachedError) throw cachedError;
 
       if (!cachedEnv) {
@@ -239,9 +239,15 @@ export function createServerEnv<T extends z.ZodObject<z.ZodRawShape>>(
         };
       }
       return undefined;
-    },
-  });
+  },
+});
 }
 
+export { baseSchema } from './base';
+export type { BaseEnv } from './base';
+export { apiSchema } from './api';
+export type { ApiEnv } from './api';
+export { webSchema } from './web';
+export type { WebEnv } from './web';
 export { BRAND } from './brand';
 export type { Brand } from './brand';

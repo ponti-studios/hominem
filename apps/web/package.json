@@ -17,7 +17,6 @@
     "@gsap/react": "^2.1.2",
     "@hominem/auth": "workspace:*",
     "@hominem/chat": "workspace:*",
-    "@hominem/config": "workspace:*",
     "@hominem/env": "workspace:*",
     "@hominem/hooks": "workspace:*",
     "@hominem/rpc": "workspace:*",

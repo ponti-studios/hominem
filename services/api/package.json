@@ -23,7 +23,6 @@
     "@better-auth/expo": "^1.4.19",
     "@better-auth/kysely-adapter": "^1.5.4",
     "@better-auth/passkey": "^1.4.19",
-    "@hominem/config": "workspace:*",
     "@hominem/auth": "workspace:*",
     "@hominem/chat": "workspace:*",
     "@hominem/db": "workspace:*",

@@ -98,7 +98,8 @@ export function getVoiceLogData(requestId: string, data?: object) {
       if (sc.isValid) spanCtx = { trace_id: sc.traceId, span_id: sc.spanId };
     }
   } catch {}
-  return { requestId, ...spanCtx, ...(data ?? {}) };
+  if (!data) return { requestId, ...spanCtx };
+  return { requestId, ...spanCtx, ...data };
 }
 
 export function getVoiceAudioDir(): string {

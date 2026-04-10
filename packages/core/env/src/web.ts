@@ -1,4 +1,5 @@
 import * as z from 'zod';
+
 import { baseSchema } from './base';
 
 export const webSchema = baseSchema.extend({

@@ -1,6 +1,6 @@
 # @hominem/env
 
-Environment variable handling utilities with explicit client/server separation for the Hominem monorepo.
+Environment handling utilities, shared schemas, and brand identity for the Hominem monorepo.
 
 ## Problem This Solves
 
@@ -18,13 +18,13 @@ This package provides factory functions that create lazy-validated environment p
 1. **`createClientEnv()`** - Creates a client env proxy that validates on first property access
 2. **`createServerEnv()`** - Creates a server env proxy that validates on first property access
 
-Apps define their own Zod schemas - the package provides only the validation mechanics.
+Apps can import the shared schemas from this package or define their own. The package provides the validation mechanics plus the canonical base, API, and web env schemas.
 
 ## Installation
 
 ```bash
 # Already included in workspace via workspace:*
-import { createClientEnv, createServerEnv } from '@hominem/env';
+import { createClientEnv, createServerEnv, apiSchema, baseSchema, webSchema } from '@hominem/env';
 ```
 
 ## Usage
@@ -196,11 +196,13 @@ const baseUrl = serverEnv.VITE_PUBLIC_API_URL;
 ## Package Structure
 
 ```
-packages/env/
+packages/core/env/
 ├── src/
-│   ├── create-client-env.ts    # createClientEnv factory
-│   ├── create-server-env.ts    # createServerEnv factory
-│   └── index.ts               # Exports
+│   ├── base.ts
+│   ├── api.ts
+│   ├── web.ts
+│   ├── brand.ts
+│   └── index.ts
 ├── tests/
 ├── package.json
 └── README.md
