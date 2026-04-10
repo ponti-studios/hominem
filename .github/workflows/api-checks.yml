@@ -30,7 +30,7 @@ jobs:
 
     services:
       postgres:
-        image: ghcr.io/${{ github.repository }}/postgres:develop
+        image: ghcr.io/${{ github.repository }}/postgres:latest
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
