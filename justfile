@@ -107,7 +107,7 @@ test:
   {{TURBO}} run test
 
 gh-pr-errors:
-  ./scripts/check-last-gh-actions-errors.sh
+  ./.claude/skills/gh-pr-errors/scripts/check-last-gh-actions-errors.sh
 
 # Mobile (Expo)
 
