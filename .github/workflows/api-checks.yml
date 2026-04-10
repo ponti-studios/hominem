@@ -43,9 +43,7 @@ jobs:
           version: 9.3.0
 
       - name: Setup just
-        shell: bash
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
+        uses: taiki-e/install-action@just
 
       - name: Get pnpm store directory
         id: pnpm-cache
