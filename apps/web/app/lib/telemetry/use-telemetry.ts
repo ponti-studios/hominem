@@ -16,7 +16,7 @@ export function useTelemetry() {
     if (typeof window === 'undefined') return;
 
     // Get env vars from window (injected by server) or import.meta.env
-    const env = (window as unknown as { ENV?: Record<string, string> }).ENV ?? {};
+    const env = (window as Window & { ENV?: Record<string, string> }).ENV ?? {};
 
     // Check if telemetry is explicitly disabled
     if (

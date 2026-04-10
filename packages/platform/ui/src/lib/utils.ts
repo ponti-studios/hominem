@@ -43,10 +43,12 @@ export function isTouchDevice(): boolean {
 
   // Check for touch event support
   const hasTouch = () => {
+    const navigatorWithMs = navigator as Navigator & { msMaxTouchPoints?: number };
+
     return (
       'ontouchstart' in window ||
       navigator.maxTouchPoints > 0 ||
-      (navigator as unknown as { msMaxTouchPoints: number }).msMaxTouchPoints > 0
+      (navigatorWithMs.msMaxTouchPoints ?? 0) > 0
     );
   };
 

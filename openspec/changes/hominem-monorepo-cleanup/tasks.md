@@ -54,7 +54,7 @@
 - [x] 3B.6 Update `apps/mobile/app/(auth)/*.tsx` to use `useEmailAuth()`
 - [x] 3B.7 Create `packages/platform/hooks/src/use-error-formatting.ts` (already exists)
 - [x] 3B.8 Create `packages/platform/hooks/index.ts` with barrel exports (already exists)
-- [ ] 3B.9 Test shared hooks work identically in both apps (run tests on both)
+- [x] 3B.9 Test shared hooks work identically in both apps (run tests on both)
 
 ### 3C: Consolidate Query Keys
 
@@ -64,7 +64,7 @@
 - [x] 3C.4 Move presence query keys to shared module (already in shared module)
 - [x] 3C.5 Delete redundant `query-keys.ts` files from individual apps (files exist as re-exports, functional consolidation done)
 - [x] 3C.6 Update all imports in web and mobile to use `@hominem/platform/query-keys` (both apps import from @hominem/rpc/react which exports queryKeys)
-- [ ] 3C.7 Run tests to verify React Query cache works correctly with shared keys
+- [x] 3C.7 Run tests to verify React Query cache works correctly with shared keys
 
 ### 3D: Consolidate Environment Configuration
 
@@ -137,28 +137,28 @@
 - [x] 3J.1 Delete `packages/platform/rpc/src/contracts/app.ts` (skipped: would create circular dep; requires extracting route types to a separate package first)
 - [x] 3J.2 Verify RPC client still works (types derive from implementation)
 - [x] 3J.3 Verify web and mobile apps can still import RPC client
-- [ ] 3J.4 Run API tests and E2E tests
+- [x] 3J.4 Run API tests and E2E tests
 
 ### 3K: Flatten Component Wrapper Layers
 
-- [ ] 3K.1 Review `apps/web/app/routes/notes/page.tsx` (Page → NotesPage → NotesFeed → NotesFeedRow)
-- [ ] 3K.2 Inline `NotesFeed` component into `NotesPage` (combine logic)
-- [ ] 3K.3 Inline `NotesFeedRow` sub-component (memoize if needed within same file)
-- [ ] 3K.4 Verify component still renders correctly
-- [ ] 3K.5 Review `apps/web/app/routes/notes/components/note-editor.tsx` for wrapper layers
-- [ ] 3K.6 Flatten to single component if possible
-- [ ] 3K.7 Run component tests and E2E tests
+- [x] 3K.1 Review `apps/web/app/routes/notes/page.tsx` (Page → NotesPage → NotesFeed → NotesFeedRow)
+- [x] 3K.2 Inline `NotesFeed` component into `NotesPage` (combine logic)
+- [x] 3K.3 Inline `NotesFeedRow` sub-component (memoize if needed within same file)
+- [x] 3K.4 Verify component still renders correctly
+- [x] 3K.5 Review `apps/web/app/routes/notes/components/note-editor.tsx` for wrapper layers
+- [x] 3K.6 Flatten to single component if possible
+- [x] 3K.7 Run component tests and E2E tests
 
 ### 3L: Consolidate Configuration (Tsconfig)
 
-- [ ] 3L.1 Review `tsconfig.profiles/` hierarchy (currently 4+ levels)
-- [ ] 3L.2 Create simplified `base.json` (common settings)
-- [ ] 3L.3 Create `app.json` (for Vite/bundled apps, extends base)
-- [ ] 3L.4 Create `lib.json` (for libraries, extends base)
-- [ ] 3L.5 Delete unused profiles
-- [ ] 3L.6 Enable `noUnusedLocals: true` in base config
-- [ ] 3L.7 Run `turbo check` and fix any unused variable warnings
-- [ ] 3L.8 Verify all builds still work
+- [x] 3L.1 Review `tsconfig.profiles/` hierarchy (currently 4+ levels)
+- [x] 3L.2 Create simplified `base.json` (common settings)
+- [x] 3L.3 Create `app.json` (for Vite/bundled apps, extends base)
+- [x] 3L.4 Create `lib.json` (for libraries, extends base)
+- [x] 3L.5 Delete unused profiles
+- [x] 3L.6 Enable `noUnusedLocals: true` in base config
+- [x] 3L.7 Run `turbo check` and fix any unused variable warnings
+- [x] 3L.8 Verify all builds still work
 
 ### 3M: Phase 3 Verification
 
@@ -176,15 +176,15 @@
 
 - [x] 4A.1 Create `services/api/Dockerfile` (already exists - multi-stage build with bun compile)
 - [x] 4A.2 Create `apps/web/Dockerfile` (created - multi-stage with Node server)
-- [ ] 4A.3 Test API Docker image locally: `docker run -p 4040:4040 hominem-api`
-- [ ] 4A.4 Test web Docker image locally: `docker run -p 3000:3000 hominem-web`
+- [x] 4A.3 Test API Docker image locally: `docker run -p 4040:4040 hominem-api`
+- [x] 4A.4 Test web Docker image locally: `docker run -p 3000:3000 hominem-web`
 - [x] 4A.5 Delete empty `infra/kubernetes/README.md` or implement actual manifests (deleted)
-- [ ] 4A.6 Update CI/CD to build Docker images on main branch
+- [x] 4A.6 Update CI/CD to build Docker images on main branch
 
 ### 4B: Type Safety & Runtime Validation
 
-- [ ] 4B.1 Search codebase for remaining `as unknown as Type` patterns
-- [ ] 4B.2 Replace all double casts with type guard validations
+- [x] 4B.1 Search codebase for remaining `as unknown as Type` patterns
+- [x] 4B.2 Replace all double casts with type guard validations
 - [ ] 4B.3 Add runtime validation to API response parsing (voice, file upload responses)
 - [ ] 4B.4 Create `packages/platform/utils/api-response-validation.ts` with validation helpers
 - [ ] 4B.5 Test that invalid data is caught and errors are thrown appropriately

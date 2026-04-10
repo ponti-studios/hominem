@@ -20,12 +20,16 @@ function getIsTestMode(): boolean {
 }
 
 class InMemoryStorageBackend {
-  private files: Map<string, Buffer> = new Map();
-  private maxFileSize: number;
-  private category: StorageCategory;
-  private pendingUploads: Map<string, { buffer?: Buffer; mimetype: string; size: number }> =
+  client?: S3Client;
+  bucketName = 'hominem-test';
+  isPublic = false;
+  userScoped = true;
+  files: Map<string, Buffer> = new Map();
+  maxFileSize: number;
+  category: StorageCategory;
+  pendingUploads: Map<string, { buffer?: Buffer; mimetype: string; size: number }> =
     new Map();
-  private preparedUploadKeys: Map<string, { key: string; userId: string }> = new Map();
+  preparedUploadKeys: Map<string, { key: string; userId: string }> = new Map();
 
   constructor(category: StorageCategory, options?: StorageOptions) {
     this.category = category;
@@ -37,7 +41,7 @@ class InMemoryStorageBackend {
    * Test-only method to store a file with an exact key.
    * Only available in test mode.
    */
-  __testOnlyStoreFile(filePath: string, buffer: Buffer): void {
+  async __testOnlyStoreFile(filePath: string, buffer: Buffer): Promise<void> {
     if (!getIsTestMode()) {
       throw new Error('__testOnlyStoreFile is only available in test mode');
     }
@@ -46,8 +50,8 @@ class InMemoryStorageBackend {
   }
 
   /** @deprecated Use __testOnlyStoreFile instead */
-  storeFileWithExactKey(filePath: string, buffer: Buffer): void {
-    this.__testOnlyStoreFile(filePath, buffer);
+  async storeFileWithExactKey(filePath: string, buffer: Buffer): Promise<void> {
+    await this.__testOnlyStoreFile(filePath, buffer);
   }
 
   markUploadPending(filePath: string, mimetype: string, size: number): void {
@@ -67,11 +71,11 @@ class InMemoryStorageBackend {
     this.pendingUploads.delete(filePath);
   }
 
-  private getKey(userId: string, filename: string): string {
+  getKey(userId: string, filename: string): string {
     return `users/${userId}/${this.category}/${filename}`;
   }
 
-  private getFileExtension(filename: string, mimetype: string): string {
+  getFileExtension(filename: string, mimetype: string): string {
     const dotIndex = filename.lastIndexOf('.');
     if (dotIndex !== -1) {
       return filename.substring(dotIndex);
@@ -98,7 +102,7 @@ class InMemoryStorageBackend {
     return mimeToExt[mimetype] || '';
   }
 
-  private createStoredName(id: string, filename: string, extension: string): string {
+  createStoredName(id: string, filename: string, extension: string): string {
     const sanitized = filename.replace(/[^a-zA-Z0-9.-]/g, '_');
     const withExtension = sanitized.endsWith(extension) ? sanitized : `${sanitized}${extension}`;
     return `${id}-${withExtension}`;
@@ -252,6 +256,10 @@ class InMemoryStorageBackend {
     return `http://localhost:4040/files/${filePath}`;
   }
 
+  getPublicUrl(filePath: string): string {
+    return this.getPublicUrlForPath(filePath);
+  }
+
   isOwnedFilePath(userId: string, filePath: string): boolean {
     return filePath.startsWith(`users/${userId}/${this.category}/`);
   }
@@ -303,18 +311,18 @@ class InMemoryStorageBackend {
 }
 
 export class R2StorageService {
-  private client!: S3Client;
-  private bucketName!: string;
-  private category!: StorageCategory;
-  private maxFileSize!: number;
-  private isPublic!: boolean;
-  private userScoped!: boolean;
-  private preparedUploadKeys: Map<string, { key: string; userId: string }> = new Map();
+  client!: S3Client;
+  bucketName!: string;
+  category!: StorageCategory;
+  maxFileSize!: number;
+  isPublic!: boolean;
+  userScoped!: boolean;
+  preparedUploadKeys: Map<string, { key: string; userId: string }> = new Map();
 
   constructor(category: StorageCategory, options?: StorageOptions) {
     if (getIsTestMode()) {
       const backend = new InMemoryStorageBackend(category, options);
-      return new Proxy(backend as unknown as R2StorageService, {
+      return new Proxy(backend as R2StorageService, {
         get(_target, prop) {
           return Reflect.get(backend, prop);
         },
@@ -350,7 +358,7 @@ export class R2StorageService {
     this.userScoped = category !== 'places';
   }
 
-  private getKey(userId: string, filename: string): string {
+  getKey(userId: string, filename: string): string {
     if (this.userScoped) {
       return `users/${userId}/${this.category}/${filename}`;
     }
@@ -666,7 +674,7 @@ export class R2StorageService {
     });
   }
 
-  private getPublicUrl(key: string): string {
+  getPublicUrl(key: string): string {
     const endpoint = process.env.R2_ENDPOINT;
     const bucket = this.bucketName;
     if (!endpoint) {
@@ -676,7 +684,7 @@ export class R2StorageService {
     return `${url.protocol}//${bucket}.${url.host}/${key}`;
   }
 
-  private getFileExtension(filename: string, mimetype: string): string {
+  getFileExtension(filename: string, mimetype: string): string {
     const dotIndex = filename.lastIndexOf('.');
     if (dotIndex !== -1) {
       return filename.substring(dotIndex);
@@ -703,7 +711,7 @@ export class R2StorageService {
     return mimeToExt[mimetype] || '';
   }
 
-  private createStoredName(id: string, filename: string, extension: string): string {
+  createStoredName(id: string, filename: string, extension: string): string {
     const sanitized = filename.replace(/[^a-zA-Z0-9.-]/g, '_');
     const withExtension = sanitized.endsWith(extension) ? sanitized : `${sanitized}${extension}`;
 

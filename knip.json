@@ -99,6 +99,7 @@
     "**/*.spec.*",
     "**/__tests__/**",
     "**/__mocks__/**",
-    "**/test-assets/**"
+    "**/test-assets/**",
+    "packages/platform/ui/src/components/loading-state.tsx"
   ]
 }
