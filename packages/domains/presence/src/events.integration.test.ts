@@ -108,18 +108,15 @@ describeIntegration('events integration', () => {
     const deleted = await deleteEvent(created.id);
 
     const eventAfterDelete = await getEventById(created.id);
-    const peopleAfterDelete = await db.execute(sql`
-      select id from app.event_attendees where event_id = ${created.id}
-    `);
+    const peopleAfterDelete = await db
+      .selectFrom('app.event_attendees')
+      .select('id')
+      .where('event_id', '=', created.id)
+      .execute();
 
     expect(deleted).toBe(true);
     expect(eventAfterDelete).toBeNull();
-    const rows = Array.isArray(peopleAfterDelete)
-      ? peopleAfterDelete
-      : 'rows' in peopleAfterDelete
-        ? peopleAfterDelete.rows
-        : [];
-    expect(rows).toHaveLength(0);
+    expect(peopleAfterDelete).toHaveLength(0);
   });
 
   it('returns visits scoped to requesting user only', async () => {
