@@ -13,7 +13,8 @@ import { E2E_TESTING } from '~/constants';
 import { useAuthHeaders, useResetAuthForE2E, useUpdateProfile } from '~/services/auth/hooks';
 import { authStateMachine, initialAuthState } from '~/services/auth/types';
 import { useBootSequence, useEmailOtp, usePasskeyAuth, useSignOut } from '~/services/auth/hooks';
-import { resolveIsLoadingAuth, type AuthStatusCompat } from '~/services/auth/provider-utils';
+import { type AuthStatusCompat } from '~/services/auth/provider-utils';
+import { createAuthContextSnapshot } from '~/services/auth/auth-provider-state';
 
 type SignInResponse = {
   user: {
@@ -48,6 +49,7 @@ export const useAuth = () => {
 
 function AuthProviderBody({ children }: PropsWithChildren) {
   const [state, dispatch] = useReducer(authStateMachine, initialAuthState);
+  const authSnapshot = useMemo(() => createAuthContextSnapshot(state), [state]);
 
   const authContext = useMemo(() => ({ state, dispatch }), [state, dispatch]);
 
@@ -76,29 +78,8 @@ function AuthProviderBody({ children }: PropsWithChildren) {
   const getAuthHeaders = useAuthHeaders(sessionCookieHeaderRef);
   const resetAuthForE2E = useResetAuthForE2E(dispatch);
 
-  const authStatus = state.status;
-  const authError = state.error;
-  const isLoadingAuth = useMemo(() => resolveIsLoadingAuth(state), [state]);
-  const isSignedIn = state.status === 'signed_in';
-  const currentUser = useMemo(() => {
-    if (!state.user) return null;
-    return {
-      id: state.user.id,
-      email: state.user.email,
-      name: state.user.name,
-      image: state.user.image,
-      emailVerified: state.user.emailVerified,
-      createdAt: state.user.createdAt,
-      updatedAt: state.user.updatedAt,
-    };
-  }, [state.user]);
-
   const value: AuthContextType = {
-    authStatus,
-    authError,
-    isLoadingAuth,
-    isSignedIn,
-    currentUser,
+    ...authSnapshot,
     requestEmailOtp,
     verifyEmailOtp,
     completePasskeySignIn,
@@ -119,6 +100,7 @@ function E2EAuthProvider({ children }: PropsWithChildren) {
   }, []);
 
   const authContext = useMemo(() => ({ state, dispatch }), [state, dispatch]);
+  const authSnapshot = useMemo(() => createAuthContextSnapshot(state), [state]);
   const { requestEmailOtp, verifyEmailOtp } = useEmailOtp(authContext);
   const { completePasskeySignIn } = usePasskeyAuth(authContext);
   const { signOut } = useSignOut(authContext);
@@ -128,21 +110,7 @@ function E2EAuthProvider({ children }: PropsWithChildren) {
   const resetAuthForE2E = useResetAuthForE2E(dispatch);
 
   const value: AuthContextType = {
-    authStatus: state.status,
-    authError: state.error,
-    isLoadingAuth: resolveIsLoadingAuth(state),
-    isSignedIn: state.status === 'signed_in',
-    currentUser: state.user
-      ? {
-          id: state.user.id,
-          email: state.user.email,
-          name: state.user.name,
-          image: state.user.image,
-          emailVerified: state.user.emailVerified,
-          createdAt: state.user.createdAt,
-          updatedAt: state.user.updatedAt,
-        }
-      : null,
+    ...authSnapshot,
     requestEmailOtp,
     verifyEmailOtp,
     completePasskeySignIn,

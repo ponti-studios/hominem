@@ -1,12 +1,6 @@
-import { CHAT_TITLE_MAX_LENGTH } from '@hominem/chat/constants';
-import { useApiClient } from '@hominem/rpc/react';
-import type { Note } from '@hominem/rpc/types';
 import { colors, spacing } from '@hominem/ui/tokens';
 import { shadowsNative } from '@hominem/ui/tokens/shadows';
-import { useQueryClient } from '@tanstack/react-query';
-import type { RelativePathString } from 'expo-router';
-import { useRouter } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,28 +10,15 @@ import {
   createNotesExitLift,
   createNotesLayoutTransition,
 } from '~/components/notes/notes-surface-motion';
-import { donateAddNoteIntent } from '~/services/intent-donation';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import { Text, theme } from '~/components/theme';
-import { useSendMessage } from '~/services/chat';
-import type { ChatWithActivity } from '~/services/chat/session-state';
-import {
-  createChatInboxRefreshSnapshot,
-  invalidateInboxQueries,
-  upsertInboxSessionActivity,
-} from '~/services/inbox/inbox-refresh';
-import { chatKeys, noteKeys } from '~/services/notes/query-keys';
-import { useCreateNote } from '~/services/notes/use-create-note';
-import { useNoteQuery } from '~/services/notes/use-note-query';
 import { useNoteStream } from '~/services/notes/use-note-stream';
 
 import { CameraModal } from '../media/camera-modal';
 import { VoiceSessionModal } from '../media/voice-session-modal';
-import {
-  deriveMobileComposerPresentation,
-  useInputContext,
-  type MobileComposerAttachment,
-} from './input-context';
+import { useInputContext } from './input-context';
+import { deriveMobileComposerPresentation, type MobileComposerAttachment } from './composer-state';
+import { useComposerSubmission } from './use-composer-submission';
 import { useComposerMediaActions } from './use-composer-media-actions';
 
 const COMPOSER_MAX_WIDTH = 500;
@@ -47,25 +28,6 @@ const COMPOSER_COMPACT_INPUT_MIN_HEIGHT = 56;
 const COMPOSER_COMPACT_MIN_HEIGHT = 96;
 const COMPOSER_PANEL_RADIUS = 24;
 const COMPOSER_PILL_RADIUS = 9999;
-
-function getUploadedAttachmentIds(attachments: MobileComposerAttachment[]) {
-  return attachments.flatMap((attachment) =>
-    attachment.uploadedFile?.id ? [attachment.uploadedFile.id] : [],
-  );
-}
-
-function mergeNoteIntoCache(currentNotes: Note[] | undefined, updatedNote: Note) {
-  if (!currentNotes) {
-    return [updatedNote];
-  }
-
-  const hasNote = currentNotes.some((note) => note.id === updatedNote.id);
-  if (!hasNote) {
-    return [updatedNote, ...currentNotes];
-  }
-
-  return currentNotes.map((note) => (note.id === updatedNote.id ? updatedNote : note));
-}
 
 function ComposerNoteChips({
   selectedNoteIds,
@@ -201,10 +163,6 @@ function ComposerFooter({
 }
 
 export const MobileComposer = () => {
-  const client = useApiClient();
-  const router = useRouter();
-  const queryClient = useQueryClient();
-  const { mutateAsync: createNote } = useCreateNote();
   const insets = useSafeAreaInsets();
   const {
     target,
@@ -220,11 +178,6 @@ export const MobileComposer = () => {
     setMode,
     toggleSelectedNoteId,
   } = useInputContext();
-  const noteQuery = useNoteQuery({
-    noteId: target.noteId ?? '',
-    enabled: target.kind === 'note' && Boolean(target.noteId),
-  });
-  const { sendChatMessage, isChatSending } = useSendMessage({ chatId: target.chatId ?? '' });
   const { handleCameraCapture, handleVoiceTranscript, pickAttachment, uploadState } =
     useComposerMediaActions({
       attachments,
@@ -234,6 +187,21 @@ export const MobileComposer = () => {
       setIsRecording,
       setMode,
     });
+  const {
+    canSubmit,
+    handlePrimaryAction,
+    handleRemoveAttachment,
+    handleSecondaryAction,
+    isChatSending,
+  } = useComposerSubmission({
+    target,
+    attachments,
+    message,
+    selectedNoteIds,
+    isUploading: uploadState.isUploading,
+    setAttachments,
+    clearDraft,
+  });
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const keyboard = useAnimatedKeyboard();
@@ -244,131 +212,6 @@ export const MobileComposer = () => {
     message.trim().length > 0 || attachments.length > 0,
     isRecording,
   );
-  const uploadedAttachmentIds = useMemo(() => getUploadedAttachmentIds(attachments), [attachments]);
-  const canSubmit =
-    !uploadState.isUploading && (message.trim().length > 0 || uploadedAttachmentIds.length > 0);
-
-  const createNoteFromDraft = async () => {
-    await createNote({
-      text: message.trim(),
-      ...(uploadedAttachmentIds.length > 0 ? { fileIds: uploadedAttachmentIds } : {}),
-    });
-    donateAddNoteIntent();
-    await invalidateInboxQueries(queryClient);
-    clearDraft();
-  };
-
-  const createChatFromDraft = async () => {
-    const trimmedMessage = message.trim();
-    const chatTitle = trimmedMessage.slice(0, CHAT_TITLE_MAX_LENGTH) || 'New conversation';
-    const chat = await client.chats.create({
-      title: chatTitle,
-    });
-
-    if (trimmedMessage || uploadedAttachmentIds.length > 0) {
-      await client.chats.send({
-        chatId: chat.id,
-        message: trimmedMessage,
-        ...(uploadedAttachmentIds.length > 0 ? { fileIds: uploadedAttachmentIds } : {}),
-      });
-    }
-
-    queryClient.setQueryData<ChatWithActivity[] | undefined>(
-      chatKeys.resumableSessions,
-      (previousSessions) =>
-        upsertInboxSessionActivity(
-          previousSessions ?? [],
-          createChatInboxRefreshSnapshot({
-            chatId: chat.id,
-            noteId: chat.noteId,
-            title: chat.title,
-            timestamp: chat.createdAt,
-            userId: chat.userId,
-          }),
-        ),
-    );
-    await invalidateInboxQueries(queryClient);
-    clearDraft();
-    router.push(`/(protected)/(tabs)/chat/${chat.id}` as RelativePathString);
-  };
-
-  const appendToCurrentNote = async () => {
-    const note = noteQuery.data;
-
-    if (!note) {
-      return;
-    }
-
-    const trimmedMessage = message.trim();
-    const nextContent =
-      trimmedMessage.length === 0
-        ? note.content
-        : note.content.trim().length > 0
-          ? `${note.content}\n\n${trimmedMessage}`
-          : trimmedMessage;
-    const nextFileIds = Array.from(
-      new Set([...note.files.map((file) => file.id), ...uploadedAttachmentIds]),
-    );
-    const updatedNote = await client.notes.update({
-      id: note.id,
-      title: note.title ?? null,
-      content: nextContent,
-      fileIds: nextFileIds,
-    });
-
-    queryClient.setQueryData(noteKeys.detail(note.id), updatedNote);
-    queryClient.setQueryData<Note[]>(noteKeys.all, (currentNotes) =>
-      mergeNoteIntoCache(currentNotes, updatedNote),
-    );
-    await invalidateInboxQueries(queryClient);
-    clearDraft();
-  };
-
-  const handlePrimaryAction = () => {
-    if (!canSubmit) {
-      return;
-    }
-
-    if (target.kind === 'chat') {
-      void sendChatMessage({
-        message: message.trim(),
-        ...(uploadedAttachmentIds.length > 0 ? { fileIds: uploadedAttachmentIds } : {}),
-        ...(selectedNoteIds.length > 0 ? { noteIds: selectedNoteIds } : {}),
-      }).then(() => {
-        clearDraft();
-      });
-      return;
-    }
-
-    if (target.kind === 'note') {
-      void appendToCurrentNote();
-      return;
-    }
-
-    void createNoteFromDraft();
-  };
-
-  const handleSecondaryAction = () => {
-    if (target.kind === 'feed') {
-      void createChatFromDraft();
-    }
-  };
-
-  const handleRemoveAttachment = (attachmentId: string) => {
-    const attachmentToRemove = attachments.find((attachment) => attachment.id === attachmentId);
-
-    setAttachments((currentAttachments) =>
-      currentAttachments.filter((attachment) => attachment.id !== attachmentId),
-    );
-
-    if (attachmentToRemove?.uploadedFile?.id) {
-      void client.files
-        .delete({
-          fileId: attachmentToRemove.uploadedFile.id,
-        })
-        .catch(() => undefined);
-    }
-  };
 
   if (presentation.isHidden) {
     return null;

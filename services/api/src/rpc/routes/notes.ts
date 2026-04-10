@@ -1,4 +1,3 @@
-import type { NoteRecord } from '@hominem/db';
 import { getDb, NoteRepository } from '@hominem/db';
 import {
   CreateNoteInputSchema,
@@ -7,9 +6,6 @@ import {
   UpdateNoteInputSchema,
 } from '@hominem/rpc/schemas/notes.schema';
 import type {
-  NoteFeedItem,
-  Note,
-  NoteFile,
   NotesDeleteOutput,
   NotesFeedOutput,
   NotesListOutput,
@@ -21,6 +17,7 @@ import * as z from 'zod';
 
 import { NoteService } from '../../application/notes.service';
 import { authMiddleware, type AppContext } from '../middleware/auth';
+import { toNoteDto, toNoteFeedItemDto } from './notes.mapper';
 
 const noteParamSchema = z.object({ id: z.uuid() });
 const noteSearchQuerySchema = z.object({
@@ -28,64 +25,6 @@ const noteSearchQuerySchema = z.object({
   limit: z.string().optional(),
 });
 const noteService = new NoteService();
-
-// ─── DTO mappers (application record → RPC wire type) ───────────────────────
-
-function toNoteDto(record: NoteRecord): Note {
-  return {
-    id: record.id,
-    userId: record.userId,
-    type: 'note',
-    status: 'draft',
-    title: record.title,
-    content: record.content,
-    excerpt: record.excerpt,
-    tags: [],
-    mentions: [],
-    analysis: null,
-    publishingMetadata: null,
-    parentNoteId: record.parentNoteId,
-    files: record.files.map(
-      (f): NoteFile => ({
-        id: f.id,
-        originalName: f.originalName,
-        mimetype: f.mimetype,
-        size: f.size,
-        url: f.url,
-        uploadedAt: f.uploadedAt,
-        ...(f.content ? { content: f.content } : {}),
-        ...(f.textContent ? { textContent: f.textContent } : {}),
-        ...(f.metadata ? { metadata: f.metadata } : {}),
-      }),
-    ),
-    versionNumber: 1,
-    isLatestVersion: true,
-    publishedAt: null,
-    scheduledFor: null,
-    createdAt: record.createdAt,
-    updatedAt: record.updatedAt,
-  };
-}
-
-function toNoteFeedItemDto(record: {
-  id: string;
-  title: string | null;
-  contentPreview: string;
-  createdAt: string;
-  authorId: string;
-  metadata: { hasAttachments: boolean };
-}): NoteFeedItem {
-  return {
-    id: record.id,
-    title: record.title,
-    contentPreview: record.contentPreview,
-    createdAt: record.createdAt,
-    authorId: record.authorId,
-    metadata: {
-      hasAttachments: record.metadata.hasAttachments,
-    },
-  };
-}
 
 // ─── Routes ──────────────────────────────────────────────────────────────────
 

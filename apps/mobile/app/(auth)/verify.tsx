@@ -14,7 +14,7 @@ import { Box, makeStyles, Text } from '~/components/theme';
 import { useAuth } from '~/services/auth/auth-provider';
 import { normalizeOtp } from '~/services/auth/validation';
 
-import { getAuthScreenBaseStyles } from './auth-screen-styles';
+import { getAuthScreenBaseStyles } from '~/components/auth/auth-screen-styles';
 
 export function VerifyScreen() {
   const styles = useStyles();

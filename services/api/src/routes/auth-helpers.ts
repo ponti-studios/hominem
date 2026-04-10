@@ -19,7 +19,7 @@ export function getClientIp(c: RequestContextLike) {
   return c.req.header('x-real-ip') ?? 'unknown';
 }
 
-export function copyHeadersWithSetCookie(headers: Headers) {
+export function copyHeadersWithSetCookie(headers: Headers): Headers {
   const copied = new Headers(headers);
   const setCookies = getSetCookieHeaders(headers);
 

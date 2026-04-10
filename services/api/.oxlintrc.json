@@ -1,4 +1,21 @@
 {
   "extends": ["../../.oxlintrc.json"],
+  "rules": {
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": ["@hominem/ui", "@hominem/ui/*"],
+            "message": "API must not import UI components directly. Keep the transport layer UI-agnostic."
+          },
+          {
+            "group": ["@hominem/hooks", "@hominem/hooks/*"],
+            "message": "API must not import React hooks directly. Keep application logic separate from UI composition."
+          }
+        ]
+      }
+    ]
+  },
   "ignorePatterns": ["dist", "build", ".next", "node_modules"]
 }

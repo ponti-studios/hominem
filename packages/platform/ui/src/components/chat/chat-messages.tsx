@@ -4,7 +4,7 @@ import { useCallback, useMemo, useRef } from 'react';
 
 import { useAutoScroll } from '../../lib/hooks/use-auto-scroll';
 import { useScrollDetection } from '../../lib/hooks/use-scroll-detection';
-import { scrollToBottom } from '../../lib/utils';
+import { scrollToBottom } from '../../lib/scroll';
 import type { ExtendedMessage } from '../../types/chat';
 import { ChatMessage } from './chat-message';
 import { ChatShimmerMessage } from './chat-shimmer-message';

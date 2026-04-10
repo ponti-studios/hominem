@@ -22,6 +22,8 @@
     "components/**/*.ts",
     "components/**/*.tsx",
     "hooks/**/*.ts",
+    "modules/**/*.ts",
+    "modules/**/*.tsx",
     "services/**/*.ts",
     "constants/**/*.ts",
     "navigation/**/*.ts",

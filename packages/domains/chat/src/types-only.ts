@@ -5,7 +5,7 @@
  * Safe to import from React Native / Metro environments that cannot
  * bundle @hominem/db (native drivers).
  */
-export * from './contracts';
+export * from './chat.types';
 export * from './lifecycle-state';
 export * from './session-artifacts';
 export * from './thought-types';

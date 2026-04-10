@@ -1,6 +1,6 @@
 import { logger } from '@hominem/utils/logger';
 
-import type { ChatMessageOutput, ChatOutput } from '../contracts';
+import type { ChatMessageOutput, ChatOutput } from '../chat.types';
 import {
   archiveChatQuery,
   clearChatMessagesQuery,
@@ -12,10 +12,10 @@ import {
   getUserChatsQuery,
   updateChatTitleQuery,
 } from './chat.queries';
-import { type CreateChatParams, type SearchChatsParams, ChatError } from './chat.types';
+import { type CreateChatParams, type SearchChatsParams, ChatError } from './chat.service.types';
 
 // Re-export ChatError so internal modules can import it from './chat.service'
-export { ChatError } from './chat.types';
+export { ChatError } from './chat.service.types';
 
 export class ChatService {
   async createChat(params: CreateChatParams): Promise<ChatOutput> {

@@ -1,4 +1,4 @@
-export * from './contracts';
+export * from './event.types';
 export * from './habits.service';
 export * from './goals.service';
 export * from './health.service';

@@ -117,7 +117,7 @@ export const NOTES_AUTH_CONFIG: AppAuthConfig = {
 /** Mobile app auth config. */
 export const CHAT_AUTH_CONFIG: AppAuthConfig = {
   appName: AUTH_APP_NAME,
-  defaultPostAuthDestination: '/(protected)/(tabs)/start',
-  allowedDestinations: ['/(protected)/(tabs)/start'],
+  defaultPostAuthDestination: '/(protected)/(tabs)/',
+  allowedDestinations: ['/(protected)/(tabs)/'],
   copy: AUTH_COPY,
 };

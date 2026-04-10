@@ -1,0 +1,20 @@
+{
+  "$schema": "../../../node_modules/oxlint/configuration_schema.json",
+  "rules": {
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": ["@hominem/db", "@hominem/db/*"],
+            "message": "RPC must not import persistence internals directly. Keep transport shapes separate from storage concerns."
+          },
+          {
+            "group": ["@hominem/services", "@hominem/services/*"],
+            "message": "RPC must not import server-side services directly. Keep transport contracts separate from implementation details."
+          }
+        ]
+      }
+    ]
+  }
+}

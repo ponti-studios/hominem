@@ -10,7 +10,8 @@
 import { BookOpen, Camera, Plus } from 'lucide-react';
 import { memo, useEffect, useState } from 'react';
 
-import { cn, isTouchDevice } from '../../lib/utils';
+import { isTouchDevice } from '../../lib/device';
+import { cn } from '../../lib/utils';
 import type { ComposerPresentation } from './composer-presentation';
 import { useComposerSlice } from './composer-provider';
 

@@ -95,7 +95,11 @@
       }
     }
   },
-  "scripts": {},
+  "scripts": {
+    "test": "vitest run --config vitest.config.ts",
+    "test:watch": "vitest --config vitest.config.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
   "trustedDependencies": [
     "@clerk/shared",
     "@parcel/watcher",

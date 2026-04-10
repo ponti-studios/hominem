@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { getScrollDistanceFromBottom } from '../utils';
+import { getScrollDistanceFromBottom } from '../scroll';
 
 interface UseScrollDetectionOptions {
   containerRef: React.RefObject<HTMLDivElement | null>;

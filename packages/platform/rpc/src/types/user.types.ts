@@ -1,4 +1,4 @@
-import type { EmptyInput } from './utils';
+import type { EmptyInput } from './empty-input.types';
 
 export type UserDeleteAccountInput = EmptyInput;
 export type UserDeleteAccountOutput = {

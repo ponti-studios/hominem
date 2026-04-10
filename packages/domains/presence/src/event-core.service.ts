@@ -6,9 +6,8 @@ import type {
   EventOutput,
   EventWithTagsAndPeople,
   UpdateEventInput,
-} from './contracts';
+} from './event.types';
 
-// Re-export types for convenience
 export type { EventWithTagsAndPeople, UpdateEventInput };
 
 type EventStoreRecord = EventOutput & {
