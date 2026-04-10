@@ -65,12 +65,8 @@ jobs:
       - name: Run mobile checks
         run: just mobile-check
 
-  mobile-e2e:
-    runs-on: macos-latest-xlarge
-
-    strategy:
-      matrix:
-        node-version: [22.18.0]
+  eas-build:
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
@@ -79,40 +75,13 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 22.18.0
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 10.33.0
+      - name: Setup EAS CLI
+        run: npm install -g eas-cli
 
-      - name: Setup just
-        uses: taiki-e/install-action@just
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v3
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Setup Detox CLI
-        run: pnpm dlx detox-cli build-framework-cache
-
-      - name: Build Detox for iOS
+      - name: Build with EAS
         working-directory: apps/mobile
-        run: pnpm exec detox build-ios-framework
-
-      - name: Run mobile E2E tests
-        working-directory: apps/mobile
-        run: pnpm exec detox test --configuration ios --cleanup --record none
+        env:
+          EAS_TOKEN: ${{ secrets.EAS_TOKEN }}
+        run: eas build --platform ios --non-interactive
