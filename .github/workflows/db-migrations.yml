@@ -61,6 +61,9 @@ jobs:
         with:
           version: 9.3.0
 
+      - name: Setup just
+        uses: casey/install@v1.3.0
+
       - name: Get pnpm store directory
         id: pnpm-cache
         shell: bash
@@ -81,4 +84,4 @@ jobs:
       - name: Validate database migrations
         env:
           DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:4433/hominem-test
-        run: pnpm exec just db-migrations-validate
+        run: just db-migrations-validate
