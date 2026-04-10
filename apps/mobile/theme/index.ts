@@ -4,4 +4,5 @@ import Text from './Text';
 import theme from './theme';
 
 export { Box, Text, theme };
+export type Theme = typeof theme;
 export const makeStyles = makeStylesInternal;

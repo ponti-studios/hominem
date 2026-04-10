@@ -3,8 +3,8 @@ import { HonoProvider as BaseHonoProvider } from '@hominem/rpc/react';
 import type { QueryClient } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 
-import { useAuth } from './auth-provider';
-import { API_BASE_URL } from './constants';
+import { useAuth } from '../auth/auth-provider';
+import { API_BASE_URL } from '../constants';
 
 export const ApiProvider = ({
   children,

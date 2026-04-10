@@ -11,7 +11,7 @@ import { FeatureErrorBoundary } from '~/components/error-boundary';
 import TextInput from '~/components/text-input';
 import { posthog } from '~/lib/posthog';
 import { Box, makeStyles, Text } from '~/theme';
-import { useAuth } from '~/auth-provider';
+import { useAuth } from '~/lib/auth/auth-provider';
 import { isValidOtp, normalizeOtp } from '~/auth/validation';
 
 import { getAuthScreenBaseStyles } from './auth-screen-styles';

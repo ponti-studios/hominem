@@ -10,6 +10,7 @@ import { Text, makeStyles } from '~/theme';
 function NavButton({ href, label }: { href: RelativePathString; label: string }) {
   const router = useRouter();
   const pathname = usePathname();
+  const styles = useStyles();
   const hrefValue = String(href);
   const isActive =
     hrefValue === '/(protected)/(tabs)/'
@@ -35,9 +36,9 @@ export default function TabsLayout() {
     <InputProvider>
       <View style={styles.container}>
         <View style={styles.nav}>
-          <NavButton href={'/(protected)/(tabs)/' as RelativePathString} label="Feed" />
-          <NavButton href={'/(protected)/(tabs)/notes' as RelativePathString} label="Notes" />
-          <NavButton href={'/(protected)/(tabs)/settings' as RelativePathString} label="Settings" />
+          <NavButton href={'/(protected)/(tabs)/'} label="Feed" />
+          <NavButton href={'/(protected)/(tabs)/notes'} label="Notes" />
+          <NavButton href={'/(protected)/(tabs)/settings'} label="Settings" />
         </View>
         <View style={styles.content}>
           <Stack screenOptions={{ headerShown: false }}>

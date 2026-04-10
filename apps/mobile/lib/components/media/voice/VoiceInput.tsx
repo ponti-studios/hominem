@@ -11,8 +11,8 @@ import Animated, {
 import { makeStyles, Text, theme } from '~/theme';
 import { VOID_MOTION_DURATION_STANDARD } from '~/theme/motion';
 
-import AppIcon from '../../ui/icon';
-import { AudioLevelVisualizer } from '../audio-meterings';
+import AppIcon from '~/components/ui/icon';
+import { AudioLevelVisualizer } from '~/components/media/audio-meterings';
 import { useRecorder } from './use-recorder';
 import { useTranscriber } from './use-transcriber';
 

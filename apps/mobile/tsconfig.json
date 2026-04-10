@@ -13,9 +13,10 @@
     "maxNodeModuleJsDepth": 0,
     "disableSourceOfProjectReferenceRedirect": true,
     "types": ["jest"],
+    "baseUrl": ".",
     "paths": {
       "theme": ["./theme/index.ts"],
-      "~/*": ["./lib/*"]
+      "~/*": ["./*", "./lib/*"]
     },
     "noEmit": true
   },
@@ -28,11 +29,10 @@
     "lib/**/*.tsx",
     "theme/**/*.ts",
     "theme/**/*.tsx",
-    "tests/**/*.ts",
-    "tests/**/*.tsx",
     "app.config.ts",
     ".expo/types/**/*.ts",
-    "expo-env.d.ts"
+    "expo-env.d.ts",
+    "types/**/*.d.ts"
   ],
   "exclude": [
     "node_modules",
@@ -44,6 +44,8 @@
     "ios",
     "android",
     "coverage",
+    "**/*.test.ts",
+    "**/*.test.tsx",
     "**/__tests__",
     "**/__mocks__",
     "*.tsbuildinfo"

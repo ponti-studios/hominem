@@ -47,9 +47,7 @@ export interface FilesClient {
 export function createFilesClient(rawClient: RawHonoClient): FilesClient {
   return {
     async delete(input) {
-      const res = await rawClient.api.files[':fileId'].$delete({
-        param: { fileId: input.fileId },
-      });
+      const res = await rawClient.delete(`/api/files/${input.fileId}`);
       return res.json() as Promise<FileDeleteOutput>;
     },
   };

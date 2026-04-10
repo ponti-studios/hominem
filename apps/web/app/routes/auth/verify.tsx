@@ -66,6 +66,7 @@ export default function Component() {
     >
       <OtpVerificationForm
         action={`/auth/verify${location.search}`}
+        error={error ?? undefined}
         onSubmit={async ({ email, otp }) => {
           await handleVerifyOtp(email, otp);
         }}

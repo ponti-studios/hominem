@@ -100,9 +100,7 @@ export interface NotesClient {
 export function createNotesClient(rawClient: RawHonoClient): NotesClient {
   return {
     async list(input) {
-      const res = await rawClient.api.notes.$get({
-        query: toNotesQuery(input),
-      });
+      const res = await rawClient.get('/api/notes', { query: toNotesQuery(input) });
       return res.json() as Promise<NotesListOutput>;
     },
 
@@ -116,7 +114,7 @@ export function createNotesClient(rawClient: RawHonoClient): NotesClient {
         query.cursor = input.cursor;
       }
 
-      const res = await rawClient.api.notes.feed.$get({ query });
+      const res = await rawClient.get('/api/notes/feed', { query });
       return res.json() as Promise<NotesFeedOutput>;
     },
 
@@ -125,42 +123,33 @@ export function createNotesClient(rawClient: RawHonoClient): NotesClient {
       if (typeof input.limit === 'number') {
         query.limit = String(input.limit);
       }
-      const res = await rawClient.api.notes.search.$get({ query });
+      const res = await rawClient.get('/api/notes/search', { query });
       return res.json() as Promise<NotesSearchOutput>;
     },
 
     async get(input) {
-      const res = await rawClient.api.notes[':id'].$get({
-        param: { id: input.id },
-      });
+      const res = await rawClient.get(`/api/notes/${input.id}`);
       return parseNoteResponse(await res.json()) as NotesGetOutput;
     },
 
     async create(input) {
-      const res = await rawClient.api.notes.$post({ json: input });
+      const res = await rawClient.post('/api/notes', { json: input });
       return parseNoteResponse(await res.json()) as NotesCreateOutput;
     },
 
     async update(input) {
       const { id, ...data } = input;
-      const res = await rawClient.api.notes[':id'].$patch({
-        param: { id },
-        json: data,
-      });
+      const res = await rawClient.patch(`/api/notes/${id}`, { json: data });
       return parseNoteResponse(await res.json()) as NotesUpdateOutput;
     },
 
     async delete(input) {
-      const res = await rawClient.api.notes[':id'].$delete({
-        param: { id: input.id },
-      });
+      const res = await rawClient.delete(`/api/notes/${input.id}`);
       return parseNoteResponse(await res.json()) as NotesDeleteOutput;
     },
 
     async archive(input) {
-      const res = await rawClient.api.notes[':id'].archive.$post({
-        param: { id: input.id },
-      });
+      const res = await rawClient.post(`/api/notes/${input.id}/archive`);
       return parseNoteResponse(await res.json()) as NotesArchiveOutput;
     },
   };

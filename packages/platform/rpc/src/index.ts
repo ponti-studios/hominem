@@ -1,4 +1,3 @@
-export type { AppType } from './app.type';
 export {
   createApiClient,
   createApiClientFromRaw,

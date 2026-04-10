@@ -237,7 +237,7 @@ function useStartChat({
   _chatMessage: string;
   _intentId?: string;
   _seedPrompt?: string;
-} & MutationOptions<Chat, Error, void>) => {
+} & MutationOptions<Chat, Error, void>) {
   const client = useApiClient();
   const queryClient = useQueryClient();
 
@@ -282,7 +282,7 @@ function useStartChat({
 function useArchiveChat({
   chatId,
   ...props
-}: { chatId: string } & MutationOptions<Chat, Error, void>) => {
+}: { chatId: string } & MutationOptions<Chat, Error, void>) {
   const client = useApiClient();
   const queryClient = useQueryClient();
 

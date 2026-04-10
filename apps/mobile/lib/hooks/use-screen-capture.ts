@@ -1,7 +1,7 @@
 import * as ScreenCapture from 'expo-screen-capture';
 import { useEffect } from 'react';
 
-import { storage } from './storage';
+import { storage } from '../storage/mmkv';
 
 const PREVENT_SCREENSHOTS_KEY = 'prevent_screenshots';
 

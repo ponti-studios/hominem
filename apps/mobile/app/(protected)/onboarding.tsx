@@ -8,7 +8,7 @@ import { Button } from '~/components/Button';
 import { FeedbackBlock } from '~/components/feedback-block';
 import TextInput from '~/components/text-input';
 import { Text, theme } from '~/theme';
-import { useAuth } from '~/auth-provider';
+import { useAuth } from '~/lib/auth/auth-provider';
 
 const Onboarding = () => {
   const { isSignedIn, currentUser, updateProfile, signOut } = useAuth();

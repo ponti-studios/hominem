@@ -25,16 +25,16 @@ export default function FeedScreen() {
 
   return (
     <View style={styles.container}>
-      <InboxStream
-        items={items}
-        refreshControl={
-          <RefreshControl
-            refreshing={isLoading}
-            onRefresh={handleRefresh}
-            tintColor={styles.refreshTint}
-          />
-        }
-      />
+        <InboxStream
+          items={items}
+          refreshControl={
+            <RefreshControl
+              refreshing={isLoading}
+              onRefresh={handleRefresh}
+              tintColor={styles.refreshTint.color}
+            />
+          }
+        />
     </View>
   );
 }

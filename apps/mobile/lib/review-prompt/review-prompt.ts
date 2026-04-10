@@ -1,6 +1,6 @@
 import * as StoreReview from 'expo-store-review';
 
-import { storage } from './storage';
+import { storage } from '../storage/mmkv';
 
 const ACTIVE_DAYS_KEY = 'review_active_days';
 const PROMPTED_KEY = 'review_prompted';

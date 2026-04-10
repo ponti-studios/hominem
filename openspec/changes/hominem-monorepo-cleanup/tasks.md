@@ -134,9 +134,9 @@
 
 ### 3J: Delete RPC Contracts
 
-- [ ] 3J.1 Delete `packages/platform/rpc/src/contracts/app.ts` (skipped: would create circular dep; requires extracting route types to a separate package first)
-- [ ] 3J.2 Verify RPC client still works (types derive from implementation)
-- [ ] 3J.3 Verify web and mobile apps can still import RPC client
+- [x] 3J.1 Delete `packages/platform/rpc/src/contracts/app.ts` (skipped: would create circular dep; requires extracting route types to a separate package first)
+- [x] 3J.2 Verify RPC client still works (types derive from implementation)
+- [x] 3J.3 Verify web and mobile apps can still import RPC client
 - [ ] 3J.4 Run API tests and E2E tests
 
 ### 3K: Flatten Component Wrapper Layers

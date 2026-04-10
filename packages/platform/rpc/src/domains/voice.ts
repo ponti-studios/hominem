@@ -13,7 +13,7 @@ export interface VoiceClient {
 export function createVoiceClient(rawClient: RawHonoClient): VoiceClient {
   return {
     async speech(input: VoiceSpeechInput) {
-      const res = await rawClient.api.voice.speech.$post({
+      const res = await rawClient.post('/api/voice/speech', {
         json: {
           text: input.text,
           voice: input.voice ?? 'alloy',

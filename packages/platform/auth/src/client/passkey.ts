@@ -9,6 +9,20 @@ interface Passkey {
   createdAt?: string | Date;
 }
 
+function getFetchErrorMessage(result: unknown) {
+  if (!result || typeof result !== 'object' || !('error' in result)) {
+    return null;
+  }
+
+  const error = (result as { error?: unknown }).error;
+  if (!error || typeof error !== 'object' || !('message' in error)) {
+    return 'Passkey deletion failed.';
+  }
+
+  const message = (error as { message?: unknown }).message;
+  return typeof message === 'string' ? message : 'Passkey deletion failed.';
+}
+
 function getPasskeyActionError(result: unknown) {
   if (!result || typeof result !== 'object' || !('error' in result)) {
     return null;
@@ -65,8 +79,8 @@ export function usePasskeyAuth(input?: { redirectTo?: string }) {
         body: { id },
         throw: false,
       });
-      if (response.error) {
-        const message = response.error.message ?? 'Passkey deletion failed.';
+      const message = getFetchErrorMessage(response);
+      if (message) {
         setError(message);
         throw new Error(message);
       }

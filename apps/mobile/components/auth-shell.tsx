@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getRuntimeBrandLogoSource } from '~/config/brand-assets';
 import { Box, Text, makeStyles } from '~/theme';
-import { APP_VARIANT } from '~/constants';
+import { APP_VARIANT } from '~/lib/constants';
 
 interface AuthShellProps {
   testID: string;

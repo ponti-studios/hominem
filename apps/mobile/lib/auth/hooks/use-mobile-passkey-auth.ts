@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react';
 import { Platform } from 'react-native';
 
-import { authClient } from '~/lib/auth-client';
-import { API_BASE_URL, E2E_AUTH_SECRET, E2E_TESTING } from '~/constants';
+import { authClient } from '~/auth/auth-client';
+import { API_BASE_URL, E2E_AUTH_SECRET, E2E_TESTING } from '~/lib/constants';
 
 interface PasskeySignInResult {
   user: {
@@ -187,7 +187,7 @@ export function useMobilePasskeyAuth(): UseMobilePasskeyAuthReturn {
   return {
     signIn,
     addPasskey,
-    passkeys: (passkeysResult.data ?? []).map((passkey) => ({
+    passkeys: (passkeysResult.data ?? []).map((passkey: { id: string; name?: string | null }) => ({
       id: passkey.id,
       name: passkey.name ?? 'Unnamed passkey',
     })),

@@ -7,8 +7,8 @@ import { Text, makeStyles } from '~/theme';
 import {
   createFeatureFallbackLabel,
   type BoundaryState,
-} from '~/error-boundary/error-boundary/contracts';
-import { logError } from '~/error-boundary/error-boundary/log-error';
+} from '~/lib/error-boundary/error-boundary/contracts';
+import { logError } from '~/lib/error-boundary/error-boundary/log-error';
 
 interface Props {
   children: ReactNode;

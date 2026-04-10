@@ -1,8 +1,8 @@
 import type { User } from '@hominem/auth';
 import { z } from 'zod';
 
-import { SettingsSchema, MediaSchema } from '../validation/schemas';
-import type { Media, Settings } from '../validation/schemas';
+import { SettingsSchema, MediaSchema } from '../../validation/schemas';
+import type { Media, Settings } from '../../validation/schemas';
 import { createSQLiteStore } from './sqlite';
 
 let store: Awaited<ReturnType<typeof createSQLiteStore>> | null = null;
