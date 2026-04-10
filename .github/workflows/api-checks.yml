@@ -40,7 +40,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
-          version: 9.3.0
+          version: 10.33.0
 
       - name: Setup just
         uses: taiki-e/install-action@just
