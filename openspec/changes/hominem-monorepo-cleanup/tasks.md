@@ -10,7 +10,7 @@
 - [x] 1.8 Investigate `.opencode/` directory purpose; document or add to `.gitignore` (already in .gitignore)
 - [x] 1.9 Run `bun install` and verify workspace resolution succeeds
 - [x] 1.10 Run `turbo check` and verify no type errors from config changes (used `turbo typecheck`)
-- [ ] 1.11 Commit Phase 1 changes with message "Phase 1: Fix structural config issues"
+- [x] 1.11 Commit Phase 1 changes with message "Phase 1: Fix structural config issues"
 
 ## 2. Phase 2: Dependency Alignment
 
@@ -123,11 +123,7 @@
 ### 3I: Consolidate @hominem/services Package
 
 - [x] 3I.1 Decide: delete package or refactor into sub-packages
-- [ ] 3I.2 If deleting:
-  - [ ] Move `ai-model.ts` to `packages/platform/ai/`
-  - [ ] Move voice files to consolidated `packages/platform/voice/`
-  - [ ] Move infrastructure files (Redis, Resend, file processor) to `services/api/src/services/`
-  - [ ] Update all imports
+- [x] 3I.2 If deleting: (N/A - chose to keep package; index.ts populated with exports)
 - [x] 3I.3 If keeping: populate `index.ts` with proper sub-module exports
 - [x] 3I.4 Delete empty export statement or refactor with real exports
 - [x] 3I.5 Run full test suite
@@ -167,8 +163,8 @@
 - [x] 3M.3 Run `turbo check` (no type errors)
 - [x] 3M.4 Run `vitest run` (all tests pass)
 - [x] 3M.5 Run `knip` (no unused exports)
-- [ ] 3M.6 Check for remaining duplication between web and mobile
-- [ ] 3M.7 Commit Phase 3 changes with message "Phase 3: Simplify architecture and extract shared code"
+- [x] 3M.6 Check for remaining duplication between web and mobile (structures differ by design: Expo vs React Router)
+- [x] 3M.7 Commit Phase 3 changes with message "Phase 3: Simplify architecture and extract shared code"
 
 ## 4. Phase 4: Code Quality & Infrastructure
 
@@ -241,7 +237,7 @@
 - [x] 4H.3 Run `oxlint .` (no lint violations)
 - [x] 4H.4 Run `knip` (no unused code)
 - [x] 4H.5 Run `docker build` for API and web (no errors)
-- [ ] 4H.6 Verify E2E tests pass (web and mobile)
+- [x] 4H.6 Verify E2E tests pass (web and mobile) (13/13 passed)
 - [ ] 4H.7 Commit Phase 4 changes with message "Phase 4: Improve code quality and add infrastructure"
 
 ## 5. Final Verification & Documentation
