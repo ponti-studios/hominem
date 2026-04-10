@@ -83,5 +83,5 @@ jobs:
       - name: Build with EAS (preview)
         working-directory: apps/mobile
         env:
-          EAS_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: eas build --platform ios --profile preview --non-interactive
