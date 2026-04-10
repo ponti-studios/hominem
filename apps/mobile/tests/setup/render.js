@@ -1,4 +1,5 @@
 const { cleanup } = require('@testing-library/react-native')
+require('./msw-mock')
 const { mswServer } = require('../support/msw-server')
 
 require('./mocks-native')

@@ -3,12 +3,12 @@ import React from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { FeatureErrorBoundary } from '~/components/error-boundary';
-import { useAppLock } from '~/lib/use-app-lock';
-import { Text, theme } from '~/theme';
-import { ApiProvider } from '~/lib/api/api-provider';
-import { useAuth } from '~/lib/auth/auth-provider';
-import { APP_NAME } from '~/lib/constants';
-import queryClient from '~/query-client';
+import { useAppLock } from '~/hooks/use-app-lock';
+import { Text, theme } from '~/components/theme';
+import { ApiProvider } from '~/services/api/api-provider';
+import { useAuth } from '~/services/auth/auth-provider';
+import { APP_NAME } from '~/constants';
+import queryClient from '~/services/query-client';
 
 const styles = StyleSheet.create({
   root: {

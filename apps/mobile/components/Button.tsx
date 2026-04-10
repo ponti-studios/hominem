@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { ActivityIndicator, Pressable, Text, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
 
-import theme from '~/theme/theme';
+import theme from '~/components/theme/theme';
 
 interface ButtonProps {
   title?: string;

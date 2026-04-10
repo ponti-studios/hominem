@@ -8,12 +8,12 @@ import { AuthShell } from '~/components/auth-shell';
 import { Button } from '~/components/Button';
 import { FeatureErrorBoundary } from '~/components/error-boundary';
 import TextInput from '~/components/text-input';
-import { posthog } from '~/lib/posthog';
-import { Box, makeStyles, Text } from '~/theme';
-import { useAuth } from '~/lib/auth/auth-provider';
-import { isValidEmail, normalizeEmail } from '~/auth/validation';
-import { E2E_TESTING, MOBILE_PASSKEY_ENABLED } from '~/lib/constants';
-import { useMobilePasskeyAuth } from '~/lib/auth/hooks/use-mobile-passkey-auth';
+import { posthog } from '~/services/posthog';
+import { Box, makeStyles, Text } from '~/components/theme';
+import { useAuth } from '~/services/auth/auth-provider';
+import { isValidEmail, normalizeEmail } from '~/services/auth/validation';
+import { E2E_TESTING, MOBILE_PASSKEY_ENABLED } from '~/constants';
+import { useMobilePasskeyAuth } from '~/services/auth/hooks/use-mobile-passkey-auth';
 
 import { getAuthScreenBaseStyles } from './auth-screen-styles';
 

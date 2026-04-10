@@ -5,7 +5,7 @@ import type { RelativePathString } from 'expo-router';
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
-import { Text, theme } from '~/theme';
+import { Text, theme } from '~/components/theme';
 import { useNoteQuery } from '~/services/notes/use-note-query';
 
 const COMPOSER_CLEARANCE = 240;

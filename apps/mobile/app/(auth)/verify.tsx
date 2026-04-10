@@ -9,10 +9,10 @@ import { AuthShell } from '~/components/auth-shell';
 import { Button } from '~/components/Button';
 import { FeatureErrorBoundary } from '~/components/error-boundary';
 import TextInput from '~/components/text-input';
-import { posthog } from '~/lib/posthog';
-import { Box, makeStyles, Text } from '~/theme';
-import { useAuth } from '~/lib/auth/auth-provider';
-import { isValidOtp, normalizeOtp } from '~/auth/validation';
+import { posthog } from '~/services/posthog';
+import { Box, makeStyles, Text } from '~/components/theme';
+import { useAuth } from '~/services/auth/auth-provider';
+import { isValidOtp, normalizeOtp } from '~/services/auth/validation';
 
 import { getAuthScreenBaseStyles } from './auth-screen-styles';
 

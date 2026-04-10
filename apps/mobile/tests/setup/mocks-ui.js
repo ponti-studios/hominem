@@ -37,7 +37,7 @@ jest.mock('~/components/text-input', () => {
     }),
   }
 })
-jest.mock('~/theme', () => {
+jest.mock('~/components/theme', () => {
   const React = require('react')
   const theme = {
     colors: {

@@ -10,7 +10,7 @@ import {
   VOID_EASING_ENTER,
   VOID_ENTER_TRANSLATE_Y,
   VOID_MOTION_ENTER,
-} from '~/theme/motion';
+} from '~/components/theme/motion';
 
 /**
  * FadeIn — wraps children in the canonical enter animation.

@@ -1,7 +1,7 @@
 import type { PropsWithChildren } from 'react';
 import { ActivityIndicator, StyleSheet } from 'react-native';
 
-import { Box, makeStyles, theme } from '~/theme';
+import { Box, makeStyles, theme } from '~/components/theme';
 
 export const LoadingFull = ({ children }: PropsWithChildren) => {
   const styles = useStyles();

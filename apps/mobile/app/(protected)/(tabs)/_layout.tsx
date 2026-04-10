@@ -5,7 +5,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { InputProvider } from '~/components/input/input-context';
 import { MobileComposer } from '~/components/input/mobile-composer';
-import { Text, makeStyles } from '~/theme';
+import { Text, makeStyles } from '~/components/theme';
 
 function NavButton({ href, label }: { href: RelativePathString; label: string }) {
   const router = useRouter();
@@ -36,9 +36,9 @@ export default function TabsLayout() {
     <InputProvider>
       <View style={styles.container}>
         <View style={styles.nav}>
-          <NavButton href={'/(protected)/(tabs)/'} label="Feed" />
-          <NavButton href={'/(protected)/(tabs)/notes'} label="Notes" />
-          <NavButton href={'/(protected)/(tabs)/settings'} label="Settings" />
+          <NavButton href={'/(protected)/(tabs)/' as RelativePathString} label="Feed" />
+          <NavButton href={'/(protected)/(tabs)/notes' as RelativePathString} label="Notes" />
+          <NavButton href={'/(protected)/(tabs)/settings' as RelativePathString} label="Settings" />
         </View>
         <View style={styles.content}>
           <Stack screenOptions={{ headerShown: false }}>

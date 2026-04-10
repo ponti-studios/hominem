@@ -1,7 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 
 import { Button } from '~/components/Button';
-import { makeStyles, Text } from '~/theme';
+import { makeStyles, Text } from '~/components/theme';
 
 interface FullScreenErrorFallbackProps {
   actionLabel: string;

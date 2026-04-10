@@ -1,10 +1,10 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 
-import { getBrandAssetPaths } from './config/brand-assets';
-import type { AppVariant, VariantConfig } from './config/app-variant';
-import { getAppVariant, getAppVariantConfig } from './config/app-variant';
-import { EXPO_OWNER, EXPO_PROJECT_ID, getExpoExtraConfig } from './config/expo-config';
-import { shellTheme } from './config/expo-theme';
+import { getBrandAssetPaths } from './constants/brand-assets';
+import type { AppVariant, VariantConfig } from './constants/app-variant';
+import { getAppVariant, getAppVariantConfig } from './constants/app-variant';
+import { EXPO_OWNER, EXPO_PROJECT_ID, getExpoExtraConfig } from './constants/expo-config';
+import { shellTheme } from './constants/expo-theme';
 
 function getUpdatesConfig(variantConfig: VariantConfig): ExpoConfig['updates'] {
   if (variantConfig.usesDevClient || variantConfig.updatesChannel === null) {
@@ -45,7 +45,6 @@ export default ({ config }: ConfigContext) => {
   const brandAssets = getBrandAssetPaths(appVariant);
   const plugins: ExpoConfig['plugins'] = [
     'expo-router',
-    './plugins/with-expo-dev-client-exclusion',
     [
       'expo-splash-screen',
       {
@@ -77,7 +76,6 @@ export default ({ config }: ConfigContext) => {
       },
     ],
     ['expo-secure-store'],
-    './plugins/with-swift-compat',
     'expo-localization',
     'expo-web-browser',
     'expo-asset',

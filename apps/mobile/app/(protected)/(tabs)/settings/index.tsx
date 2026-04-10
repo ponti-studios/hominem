@@ -14,12 +14,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '~/components/Button';
 import TextInput from '~/components/text-input';
-import { getAppLockEnabled, setAppLockEnabled } from '~/lib/use-app-lock';
-import { getPreventScreenshots, setPreventScreenshots } from '~/lib/use-screen-capture';
-import { Text, theme } from '~/theme';
-import { useAuth } from '~/lib/auth/auth-provider';
-import { MOBILE_PASSKEY_ENABLED } from '~/lib/constants';
-import { useMobilePasskeyAuth } from '~/lib/auth/hooks/use-mobile-passkey-auth';
+import { getAppLockEnabled, setAppLockEnabled } from '~/hooks/use-app-lock';
+import { getPreventScreenshots, setPreventScreenshots } from '~/hooks/use-screen-capture';
+import { Text, theme } from '~/components/theme';
+import { useAuth } from '~/services/auth/auth-provider';
+import { MOBILE_PASSKEY_ENABLED } from '~/constants';
+import { useMobilePasskeyAuth } from '~/services/auth/hooks/use-mobile-passkey-auth';
 
 interface AccountState {
   name: string;

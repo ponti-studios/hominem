@@ -108,3 +108,38 @@ test:
 
 gh-pr-errors:
   ./scripts/check-last-gh-actions-errors.sh
+
+# Mobile (Expo)
+
+MOBILE_DIR := ROOT_DIR / "apps" / "mobile"
+JEST := MOBILE_DIR / "node_modules" / ".bin" / "jest"
+
+mobile-test:
+  cd "{{MOBILE_DIR}}" && {{JEST}}
+
+mobile-test-watch:
+  cd "{{MOBILE_DIR}}" && {{JEST}} --watch
+
+mobile-typecheck:
+  cd "{{MOBILE_DIR}}" && bunx tsc --noEmit
+
+mobile-start:
+  cd "{{MOBILE_DIR}}" && bun run expo start
+
+mobile-start-ios:
+  cd "{{MOBILE_DIR}}" && bun run expo start --ios
+
+mobile-prebuild:
+  cd "{{MOBILE_DIR}}" && bun run expo prebuild
+
+mobile-run-ios:
+  cd "{{MOBILE_DIR}}" && bun run expo run:ios
+
+mobile-doctor:
+  cd "{{MOBILE_DIR}}" && bun run expo doctor
+
+mobile-lint:
+  cd "{{MOBILE_DIR}}" && bun run expo lint
+
+# Run all mobile checks
+mobile-check: mobile-typecheck mobile-test

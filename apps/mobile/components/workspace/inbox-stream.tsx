@@ -2,7 +2,7 @@ import { FlashList, type ListRenderItem } from '@shopify/flash-list';
 import React, { memo, useCallback } from 'react';
 import { StyleSheet, View, type RefreshControlProps } from 'react-native';
 
-import { Text, makeStyles } from '~/theme';
+import { Text, makeStyles } from '~/components/theme';
 
 import { InboxStreamItem } from './inbox-stream-item';
 import type { InboxStreamItemData as InboxStreamItemModel } from './inbox-stream-items';

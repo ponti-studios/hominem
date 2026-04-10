@@ -8,8 +8,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { makeStyles, Text, theme } from '~/theme';
-import { VOID_MOTION_DURATION_STANDARD } from '~/theme/motion';
+import { makeStyles, Text, theme } from '~/components/theme';
+import { VOID_MOTION_DURATION_STANDARD } from '~/components/theme/motion';
 
 import AppIcon from '../ui/icon';
 import { AudioLevelVisualizer } from './audio-meterings';

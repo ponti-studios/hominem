@@ -4,7 +4,7 @@ import { RefreshControl, StyleSheet, View } from 'react-native';
 
 import { useInputContext } from '~/components/input/input-context';
 import { InboxStream } from '~/components/workspace/inbox-stream';
-import { makeStyles } from '~/theme';
+import { makeStyles } from '~/components/theme';
 import { useInboxStreamItems } from '~/services/inbox/use-inbox-stream-items';
 
 export default function FeedScreen() {

@@ -16,9 +16,9 @@ import {
   createNotesExitLift,
   createNotesLayoutTransition,
 } from '~/components/notes/notes-surface-motion';
-import { donateAddNoteIntent } from '~/lib/intent-donation';
-import { useReducedMotion } from '~/lib/use-reduced-motion';
-import { Text, theme } from '~/theme';
+import { donateAddNoteIntent } from '~/services/intent-donation';
+import { useReducedMotion } from '~/hooks/use-reduced-motion';
+import { Text, theme } from '~/components/theme';
 import { useSendMessage } from '~/services/chat';
 import type { ChatWithActivity } from '~/services/chat/session-state';
 import {

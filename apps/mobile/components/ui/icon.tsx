@@ -1,7 +1,7 @@
 import { SymbolView, type AndroidSymbol, type SFSymbol, type SymbolViewProps } from 'expo-symbols';
 import type { TextStyle } from 'react-native';
 
-import { theme } from '~/theme';
+import { theme } from '~/components/theme';
 
 type AppIconName = SFSymbol;
 

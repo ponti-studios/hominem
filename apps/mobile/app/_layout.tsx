@@ -8,16 +8,16 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { RootErrorBoundary } from '~/components/error-boundary/root-error-boundary';
-import { posthog } from '~/lib/posthog';
-import { recordActiveDay } from '~/lib/review-prompt';
-import { useScreenCapture } from '~/lib/use-screen-capture';
-import { makeStyles, theme } from '~/theme';
-import { AuthProvider, useAuth } from '~/auth/auth-provider';
-import { E2E_TESTING } from '~/lib/constants';
-import { logError } from '~/lib/error-boundary/error-boundary/log-error';
+import { posthog } from '~/services/posthog';
+import { recordActiveDay } from '~/services/review-prompt';
+import { useScreenCapture } from '~/hooks/use-screen-capture';
+import { makeStyles, theme } from '~/components/theme';
+import { AuthProvider, useAuth } from '~/services/auth/auth-provider';
+import { E2E_TESTING } from '~/constants';
+import { logError } from '~/components/error-boundary/error-boundary/log-error';
 import { resolveAuthRedirect } from '~/navigation/auth-route-guard';
-import { initObservability } from '~/observability';
-import { markStartupPhase } from '~/performance/startup-metrics';
+import { initObservability } from '~/services/observability';
+import { markStartupPhase } from '~/services/performance/startup-metrics';
 
 SplashScreen.preventAutoHideAsync();
 markStartupPhase('app_start');

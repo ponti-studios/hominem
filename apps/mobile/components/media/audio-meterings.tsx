@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
-import { theme } from '~/theme';
+import { theme } from '~/components/theme';
 
 import { BAR_GAP, BAR_WIDTH, buildAudioBarModels, normalizeDb } from './audio-meterings-model';
 

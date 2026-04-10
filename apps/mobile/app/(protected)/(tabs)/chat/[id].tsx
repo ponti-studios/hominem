@@ -4,7 +4,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { LoadingFull } from '~/components/LoadingFull';
 import { useTTS } from '~/components/media/use-tts';
-import { Text, theme } from '~/theme';
+import { Text, theme } from '~/components/theme';
 import { useActiveChat, useChatMessages } from '~/services/chat';
 
 export default function ChatDetailScreen() {

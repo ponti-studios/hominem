@@ -3,12 +3,12 @@ import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
 import { View, StyleSheet } from 'react-native';
 
 import { Button } from '~/components/Button';
-import { Text, makeStyles } from '~/theme';
+import { Text, makeStyles } from '~/components/theme';
 import {
   createFeatureFallbackLabel,
   type BoundaryState,
-} from '~/lib/error-boundary/error-boundary/contracts';
-import { logError } from '~/lib/error-boundary/error-boundary/log-error';
+} from '~/components/error-boundary/error-boundary/contracts';
+import { logError } from '~/components/error-boundary/error-boundary/log-error';
 
 interface Props {
   children: ReactNode;

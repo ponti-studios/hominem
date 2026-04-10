@@ -1,8 +1,8 @@
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 
 import AppIcon from '~/components/ui/icon';
-import { Text, makeStyles, theme } from '~/theme';
-import { VoiceInput } from '~/lib/components/media/voice';
+import { Text, makeStyles, theme } from '~/components/theme';
+import { VoiceInput } from '~/components/media/voice';
 
 interface VoiceSessionModalProps {
   visible: boolean;

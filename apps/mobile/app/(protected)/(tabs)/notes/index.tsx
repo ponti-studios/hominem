@@ -11,8 +11,8 @@ import {
   createNotesExitFade,
   createNotesLayoutTransition,
 } from '~/components/notes/notes-surface-motion';
-import { useReducedMotion } from '~/lib/use-reduced-motion';
-import { Text, theme } from '~/theme';
+import { useReducedMotion } from '~/hooks/use-reduced-motion';
+import { Text, theme } from '~/components/theme';
 import { flattenNoteFeedPages, useNoteFeed } from '~/services/notes/use-note-stream';
 
 type FeedRow = {

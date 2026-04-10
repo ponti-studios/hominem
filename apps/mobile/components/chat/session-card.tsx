@@ -6,8 +6,8 @@ import { memo, useCallback } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { FadeIn } from '~/components/animated/fade-in';
-import { makeStyles, Text, theme } from '~/theme';
-import { formatRelativeAge } from '~/date/format-relative-age';
+import { makeStyles, Text, theme } from '~/components/theme';
+import { formatRelativeAge } from '~/services/date/format-relative-age';
 import type { ChatWithActivity } from '~/services/chat/session-state';
 import {
   getArchivedChatsWithActivity,

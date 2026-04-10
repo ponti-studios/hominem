@@ -1,4 +1,4 @@
-import type { Theme } from '~/theme';
+import type { Theme } from '~/components/theme';
 
 export function getAuthScreenBaseStyles(t: Theme) {
   return {

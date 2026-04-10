@@ -6,7 +6,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import Reanimated, { FadeInDown, LinearTransition } from 'react-native-reanimated';
 
 import AppIcon from '~/components/ui/icon';
-import { Text, makeStyles, theme } from '~/theme';
+import { Text, makeStyles, theme } from '~/components/theme';
 
 import type { InboxStreamItemData as InboxStreamItemModel } from './inbox-stream-items';
 

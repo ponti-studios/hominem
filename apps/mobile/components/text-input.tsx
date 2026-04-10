@@ -7,8 +7,8 @@ import {
   type TextStyle,
 } from 'react-native';
 
-import { Text } from '~/theme';
-import theme from '~/theme/theme';
+import { Text } from '~/components/theme';
+import theme from '~/components/theme/theme';
 
 interface TextInputProps extends Omit<NativeTextInputProps, 'style'> {
   id?: string;

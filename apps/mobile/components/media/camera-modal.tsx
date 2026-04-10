@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Camera, useCameraDevice, useCameraPermission } from 'react-native-vision-camera';
 
 import AppIcon from '~/components/ui/icon';
-import { Text, theme } from '~/theme';
+import { Text, theme } from '~/components/theme';
 
 type CapturedPhoto = {
   uri: string;

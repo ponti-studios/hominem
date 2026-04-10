@@ -1,6 +1,6 @@
 import { Link, Stack } from 'expo-router';
 import type { RelativePathString } from 'expo-router';
-import { Text, makeStyles } from 'theme';
+import { Text, makeStyles } from '~/components/theme';
 
 import { Container } from '~/components/Container';
 
