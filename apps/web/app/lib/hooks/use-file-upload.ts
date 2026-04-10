@@ -1,4 +1,5 @@
 import { isTestMode } from '@hominem/utils/storage';
+import { parseUploadResponse } from '@hominem/platform-utils/api-response-validation';
 import {
   CHAT_UPLOAD_ALLOWED_MIME_TYPES,
   CHAT_UPLOAD_MAX_FILE_COUNT,
@@ -7,8 +8,6 @@ import {
 // Lazy load Uppy types only for type checking
 import type { Body, Meta, UppyFile } from '@uppy/core';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import * as z from 'zod';
-
 import type { UploadedFile } from '~/lib/types/upload';
 
 /**
@@ -18,30 +17,7 @@ import type { UploadedFile } from '~/lib/types/upload';
  */
 export type UploadStateMachine = 'idle' | 'uploading' | 'done' | 'error';
 
-const UploadedFileSchema = z.object({
-  id: z.string().uuid(),
-  originalName: z.string().min(1),
-  type: z.enum(['image', 'document', 'audio', 'video', 'unknown']),
-  mimetype: z.string().min(1),
-  size: z.number().nonnegative(),
-  content: z.string().optional(),
-  textContent: z.string().optional(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
-  thumbnail: z.string().optional(),
-  url: z.string().min(1),
-  uploadedAt: z.string(),
-  vectorIds: z.array(z.string()).optional(),
-});
-
-const UploadResponseSchema = z.object({
-  success: z.literal(true),
-  file: UploadedFileSchema,
-  message: z.string().min(1),
-});
-
-type UploadResponse = z.infer<typeof UploadResponseSchema>;
-
-function toUploadedFile(file: UploadResponse['file']): UploadedFile {
+function toUploadedFile(file: ReturnType<typeof parseUploadResponse>['file']): UploadedFile {
   return {
     id: file.id,
     originalName: file.originalName,
@@ -139,11 +115,7 @@ export function useFileUpload(): UseFileUploadReturn {
       }),
       allowedMetaFields: ['originalName', 'mimetype'],
       getResponseData(xhr: XMLHttpRequest) {
-        const parsed = UploadResponseSchema.safeParse(JSON.parse(xhr.responseText));
-        if (!parsed.success) {
-          throw new Error(parsed.error.issues[0]?.message ?? 'Invalid upload response');
-        }
-        return parsed.data;
+        return parseUploadResponse(JSON.parse(xhr.responseText));
       },
     });
 
@@ -199,11 +171,11 @@ export function useFileUpload(): UseFileUploadReturn {
         const result = await uppy.upload();
         const newFiles = (result?.successful ?? []).flatMap((file) => {
           const body = file.response?.body;
-          const parsed = UploadResponseSchema.safeParse(body);
-          if (!parsed.success) {
+          try {
+            return [toUploadedFile(parseUploadResponse(body).file)];
+          } catch {
             return [];
           }
-          return [toUploadedFile(parsed.data.file)];
         });
 
         const uploadErrors = (result?.failed ?? []).map((failedFile) => {

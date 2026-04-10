@@ -117,3 +117,14 @@ export interface ImportRequestResponse {
   fileName: string;
   status: JobStatus;
 }
+
+export interface FileProcessingJob {
+  jobId: string;
+  userId: string;
+  fileId: string;
+  storageKey: string;
+  url: string;
+  originalName: string;
+  mimetype: string;
+  size: number;
+}

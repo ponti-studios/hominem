@@ -24,3 +24,8 @@ export const placePhotoEnrichQueue: Queue = new BullQueue(QUEUE_NAMES.PLACE_PHOT
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   connection: redis as any,
 });
+
+export const fileProcessingQueue: Queue = new BullQueue(QUEUE_NAMES.FILE_PROCESSING, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  connection: redis as any,
+});

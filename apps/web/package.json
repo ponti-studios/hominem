@@ -19,6 +19,7 @@
     "@hominem/chat": "workspace:*",
     "@hominem/env": "workspace:*",
     "@hominem/hooks": "workspace:*",
+    "@hominem/platform-utils": "workspace:*",
     "@hominem/rpc": "workspace:*",
     "@hominem/telemetry": "workspace:*",
     "@hominem/ui": "workspace:*",

@@ -1,5 +1,6 @@
 import type { ClientConfig } from '@hominem/rpc';
 import { HonoProvider as BaseHonoProvider } from '@hominem/rpc/react';
+import { logger } from '@hominem/utils/logger';
 import type { QueryClient } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 
@@ -18,7 +19,7 @@ export const ApiProvider = ({
     baseUrl: API_BASE_URL,
     getHeaders: getAuthHeaders,
     onError: (error: Error) => {
-      console.error('Mobile Hono RPC Error', error);
+      logger.error('Mobile Hono RPC Error', error);
     },
   };
 

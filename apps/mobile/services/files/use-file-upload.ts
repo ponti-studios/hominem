@@ -4,53 +4,16 @@ import {
   CHAT_UPLOAD_MAX_FILE_SIZE_BYTES,
   isSupportedChatUploadMimeType,
 } from '@hominem/utils/upload';
+import { parseUploadResponse } from '@hominem/platform-utils/api-response-validation';
 import { useCallback, useState } from 'react';
-import * as z from 'zod';
 
 import { API_BASE_URL } from '~/constants';
 import { useAuth } from '~/services/auth/auth-provider';
-
 interface UploadClient {
-  upload(formData: FormData): Promise<{
-    success: boolean;
-    file: {
-      id: string;
-      originalName: string;
-      type: 'image' | 'document' | 'audio' | 'video' | 'unknown';
-      mimetype: string;
-      size: number;
-      content?: string;
-      textContent?: string;
-      metadata?: Record<string, unknown>;
-      thumbnail?: string;
-      url: string;
-      uploadedAt: string;
-      vectorIds?: string[];
-    };
-  }>;
+  upload(formData: FormData): Promise<unknown>;
 }
 
-const MobileUploadedFileSchema = z.object({
-  id: z.string().uuid(),
-  originalName: z.string().min(1),
-  type: z.enum(['image', 'document', 'audio', 'video', 'unknown']),
-  mimetype: z.string().min(1),
-  size: z.number().nonnegative(),
-  content: z.string().optional(),
-  textContent: z.string().optional(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
-  thumbnail: z.string().optional(),
-  url: z.string().min(1),
-  uploadedAt: z.string(),
-  vectorIds: z.array(z.string()).optional(),
-});
-
-const MobileUploadResponseSchema = z.object({
-  success: z.literal(true),
-  file: MobileUploadedFileSchema,
-});
-
-function toUploadedFile(file: z.infer<typeof MobileUploadedFileSchema>): UploadedFile {
+function toUploadedFile(file: ReturnType<typeof parseUploadResponse>['file']): UploadedFile {
   return {
     id: file.id,
     originalName: file.originalName,
@@ -173,7 +136,7 @@ export async function performMobileUploads(
       formData.append('originalName', originalName);
       formData.append('mimetype', mimetype);
 
-      const completion = MobileUploadResponseSchema.parse(await api.upload(formData));
+      const completion = parseUploadResponse(await api.upload(formData));
 
       uploaded.push({
         assetId: asset.assetId,

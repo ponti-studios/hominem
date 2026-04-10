@@ -7,7 +7,7 @@ import { resetTestDb, seedTestUser } from '../../../test/test-db';
 
 const mocks = vi.hoisted(() => ({
   loggerError: vi.fn(),
-  processFile: vi.fn(),
+  queueAdd: vi.fn(),
   storeFile: vi.fn(),
 }));
 
@@ -17,9 +17,9 @@ vi.mock('@hominem/utils/storage', () => ({
   },
 }));
 
-vi.mock('@hominem/services/files', () => ({
-  FileProcessorService: {
-    processFile: mocks.processFile,
+vi.mock('@hominem/queues', () => ({
+  fileProcessingQueue: {
+    add: mocks.queueAdd,
   },
 }));
 
@@ -98,21 +98,10 @@ describe('filesRoutes canonical upload lifecycle', () => {
       id: testFileId,
       originalName: 'report.pdf',
       mimetype: 'application/pdf',
-      size: 512,
+      size: 9,
       url: 'https://cdn.example.com/report.pdf',
       uploadedAt: new Date(nowIso),
       filename: `users/${testUserId}/chats/${testFileId}-report.pdf`,
-    });
-    mocks.processFile.mockResolvedValue({
-      id: testFileId,
-      originalName: 'report.pdf',
-      type: 'document',
-      mimetype: 'application/pdf',
-      size: 9,
-      textContent: 'Extracted text',
-      metadata: {
-        pages: 1,
-      },
     });
   });
 
@@ -165,7 +154,7 @@ describe('filesRoutes canonical upload lifecycle', () => {
       message: 'Uploaded file cannot be empty',
     });
     expect(mocks.storeFile).not.toHaveBeenCalled();
-    expect(mocks.processFile).not.toHaveBeenCalled();
+    expect(mocks.queueAdd).not.toHaveBeenCalled();
   });
 
   test('returns the canonical uploaded file payload after upload', async () => {
@@ -180,7 +169,6 @@ describe('filesRoutes canonical upload lifecycle', () => {
         type: string;
         mimetype: string;
         size: number;
-        textContent?: string;
         url: string;
         uploadedAt: string;
         vectorIds: string[];
@@ -196,7 +184,6 @@ describe('filesRoutes canonical upload lifecycle', () => {
       type: 'document',
       mimetype: 'application/pdf',
       size: 9,
-      textContent: 'Extracted text',
       url: 'https://cdn.example.com/report.pdf',
       vectorIds: [],
     });
@@ -207,11 +194,23 @@ describe('filesRoutes canonical upload lifecycle', () => {
       testUserId,
       { originalName: 'report.pdf' },
     );
-    expect(mocks.processFile).toHaveBeenCalledWith(
-      expect.any(ArrayBuffer),
-      'report.pdf',
-      'application/pdf',
-      testFileId,
+    expect(mocks.queueAdd).toHaveBeenCalledWith(
+      'process-file',
+      {
+        jobId: testFileId,
+        userId: testUserId,
+        fileId: testFileId,
+        storageKey: `users/${testUserId}/chats/${testFileId}-report.pdf`,
+        url: 'https://cdn.example.com/report.pdf',
+        originalName: 'report.pdf',
+        mimetype: 'application/pdf',
+        size: 9,
+      },
+      {
+        jobId: testFileId,
+        removeOnComplete: true,
+        removeOnFail: false,
+      },
     );
 
     const stored = await db
@@ -223,7 +222,7 @@ describe('filesRoutes canonical upload lifecycle', () => {
 
     expect(stored.original_name).toBe('report.pdf');
     expect(stored.size).toBe(9);
-    expect(stored.text_content).toBe('Extracted text');
-    expect(stored.metadata).toEqual({ pages: 1 });
+    expect(stored.text_content).toBeNull();
+    expect(stored.metadata).toBeNull();
   });
 });

@@ -1,4 +1,9 @@
 import { emitVoiceEvent, isVoiceErrorCode } from '@hominem/rpc/voice-events';
+import {
+  parseVoiceTranscribeErrorResponse,
+  parseVoiceTranscribeSuccessResponse,
+} from '@hominem/platform-utils/api-response-validation';
+import { logger } from '@hominem/utils/logger';
 import { useMutation } from '@tanstack/react-query';
 import * as FileSystem from 'expo-file-system/legacy';
 import { useCallback, useRef } from 'react';
@@ -7,15 +12,6 @@ import { useAuth } from '~/services/auth/auth-provider';
 import { API_BASE_URL } from '~/constants';
 
 const MAX_AUDIO_SIZE_BYTES = 25 * 1024 * 1024;
-
-type VoiceTranscribeResponse = {
-  text: string;
-};
-
-type VoiceTranscribeErrorResponse = {
-  error?: string;
-  code?: string;
-};
 
 function getMimeTypeFromUri(uri: string): string {
   const normalized = uri.toLowerCase();
@@ -83,7 +79,7 @@ export function useTranscriber({
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        const payload = (await response.json().catch(() => ({}))) as VoiceTranscribeErrorResponse;
+        const payload = parseVoiceTranscribeErrorResponse(await response.json().catch(() => ({})));
         emitVoiceEvent('voice_transcribe_failed', {
           platform: 'mobile-ios',
           mimeType,
@@ -92,7 +88,7 @@ export function useTranscriber({
         throw new Error(payload.error || `Voice transcription failed (${response.status})`);
       }
 
-      const data = (await response.json()) as VoiceTranscribeResponse;
+      const data = parseVoiceTranscribeSuccessResponse(await response.json());
       emitVoiceEvent('voice_transcribe_succeeded', {
         platform: 'mobile-ios',
         mimeType,
@@ -102,7 +98,7 @@ export function useTranscriber({
     onSuccess,
     onError: (error) => {
       if (error.name === 'AbortError') return;
-      console.error('[transcriber] mutation failed', error);
+      logger.error('[transcriber] mutation failed', error);
       onError?.();
     },
   });

@@ -21,6 +21,7 @@ export default defineConfig({
       'src/routes/auth-helpers.test.ts',
       'src/middleware/auth.test.ts',
       'src/middleware/request-logger.test.ts',
+      'src/workers/file-processing.test.ts',
       'src/rpc/routes/chats.test.ts',
       'src/rpc/routes/files.test.ts',
       'src/rpc/routes/notes.test.ts',

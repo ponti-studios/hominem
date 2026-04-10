@@ -62,6 +62,9 @@ importers:
       '@hominem/hooks':
         specifier: workspace:*
         version: link:../../packages/platform/hooks
+      '@hominem/platform-utils':
+        specifier: workspace:*
+        version: link:../../packages/platform/utils
       '@hominem/rpc':
         specifier: workspace:*
         version: link:../../packages/platform/rpc
@@ -297,6 +300,9 @@ importers:
       '@hominem/hooks':
         specifier: workspace:*
         version: link:../../packages/platform/hooks
+      '@hominem/platform-utils':
+        specifier: workspace:*
+        version: link:../../packages/platform/utils
       '@hominem/rpc':
         specifier: workspace:*
         version: link:../../packages/platform/rpc
@@ -1078,6 +1084,12 @@ importers:
       vite:
         specifier: 8.0.8
         version: 8.0.8(@types/node@25.5.2)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3)
+
+  packages/platform/utils:
+    dependencies:
+      zod:
+        specifier: 4.3.6
+        version: 4.3.6
 
   services/api:
     dependencies:

@@ -1,4 +1,5 @@
 import { emitVoiceEvent } from '@hominem/rpc/voice-events';
+import { logger } from '@hominem/utils/logger';
 import { AudioModule, RecordingPresets, useAudioRecorder, useAudioRecorderState } from 'expo-audio';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -70,7 +71,7 @@ export function useRecorder({ onAudioReady, onError }: UseRecorderProps = {}) {
       setRecorderState('PREPARING');
 
       activateKeepAwakeAsync().catch((error: Error) =>
-        console.error('[recorder] keep-awake activation failed', error),
+        logger.error('[recorder] keep-awake activation failed', error),
       );
 
       await recorder.prepareToRecordAsync();
@@ -85,7 +86,7 @@ export function useRecorder({ onAudioReady, onError }: UseRecorderProps = {}) {
       setRecorderState('RECORDING');
       emitVoiceEvent('voice_record_started', { platform: 'mobile-ios' });
     } catch (error) {
-      console.error('[recorder] start failed', error);
+      logger.error('[recorder] start failed', error as Error);
       if (isMountedRef.current) setRecorderState('IDLE');
       onError?.();
     }
@@ -97,11 +98,11 @@ export function useRecorder({ onAudioReady, onError }: UseRecorderProps = {}) {
     setRecorderState('STOPPING');
 
     await recorder.stop().catch((reason: Error) => {
-      console.error('[recorder] stop failed', reason);
+      logger.error('[recorder] stop failed', reason);
     });
 
     deactivateKeepAwake().catch((error: Error) =>
-      console.error('[recorder] keep-awake deactivation failed', error),
+      logger.error('[recorder] keep-awake deactivation failed', error),
     );
 
     if (!isMountedRef.current) return;

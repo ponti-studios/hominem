@@ -1,7 +1,8 @@
 import { StyleSheet, View } from 'react-native';
 
-import { Button } from '~/components/Button';
 import { makeStyles, Text } from '~/components/theme';
+
+import { ErrorMessage } from './error-message';
 
 interface FullScreenErrorFallbackProps {
   actionLabel: string;
@@ -21,10 +22,7 @@ export function FullScreenErrorFallback({
       <Text variant="header" color="foreground">
         Something went wrong
       </Text>
-      <Text variant="body" color="text-tertiary" style={styles.message}>
-        {message}
-      </Text>
-      <Button variant="primary" style={styles.button} onPress={onPress} title={actionLabel} />
+      <ErrorMessage title="" message={message} actionLabel={actionLabel} onPress={onPress} />
     </View>
   );
 }
@@ -37,15 +35,6 @@ const useStyles = makeStyles((t) =>
       alignItems: 'center',
       backgroundColor: t.colors.background,
       padding: t.spacing.ml_24,
-    },
-    message: {
-      marginTop: t.spacing.sm_12,
-      textAlign: 'center',
-      maxWidth: 300,
-    },
-    button: {
-      marginTop: t.spacing.ml_24,
-      backgroundColor: t.colors['text-primary'],
     },
   }),
 );

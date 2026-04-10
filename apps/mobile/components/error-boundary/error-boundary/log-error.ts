@@ -1,5 +1,7 @@
 import type { ErrorInfo } from 'react';
 
+import { logger } from '@hominem/utils/logger';
+
 import { posthog } from '~/services/posthog';
 
 export function logError(
@@ -11,10 +13,7 @@ export function logError(
     userId?: string;
   },
 ) {
-  if (typeof __DEV__ !== 'undefined' && __DEV__) {
-    console.error('[ErrorBoundary]', error, errorInfo);
-    return;
-  }
+  logger.error('[ErrorBoundary]', error);
 
   if (typeof posthog.captureException === 'function') {
     posthog.captureException(error, {
