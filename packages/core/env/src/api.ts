@@ -13,9 +13,6 @@ export const apiSchema = baseSchema.extend({
     ? z.string().url().default('postgresql://postgres:postgres@localhost:5432/hominem_test')
     : z.string().url(),
   NOTES_URL: z.string().url().default(defaultWebUrl),
-  COOKIE_SECRET: z.string().default('supersecret'),
-  AUTH_ISSUER: z.string().url().default('http://localhost:3000'),
-  AUTH_AUDIENCE: z.string().default('hominem-api'),
   BETTER_AUTH_SECRET: z.string().default('dev-better-auth-secret-change-me'),
   AUTH_PASSKEY_RP_ID: z.string().default('api.ponti.io'),
   AUTH_PASSKEY_ORIGIN: z.string().url().default('https://api.ponti.io'),

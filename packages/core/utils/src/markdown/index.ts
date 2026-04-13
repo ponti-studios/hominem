@@ -1,2 +1,1 @@
-export * from './markdown-processor';
-export * from './metadata.schema';
+export { splitMarkdown, type Document } from './markdown/markdown-processor';
