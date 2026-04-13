@@ -2,6 +2,12 @@
 
 Railway is the deployment source of truth for the prototype phase.
 
+Current operating mode:
+
+- Production is the only active deploy target.
+- Preview config stays in the repo for later reactivation.
+- Preview services should be configured as dormant in Railway and must not autodeploy from `preview`.
+
 Provider model:
 
 - Railway project: `hominem`
@@ -34,7 +40,7 @@ Config-as-code files:
 For each preview service:
 
 - Source repo: `hackefeller/hominem`
-- Branch: `preview`
+- Branch: any non-shipping branch, or disable autodeploy entirely
 - Root directory: `/`
 - Wait for CI: enabled
 
@@ -46,8 +52,7 @@ Config file paths:
 
 Domains:
 
-- API: `api.preview.ponti.io`
-- Web: `app.preview.ponti.io`
+- Do not attach preview custom domains while preview is paused.
 
 ## Configure The Production Environment
 
@@ -83,7 +88,13 @@ Set `OTEL_SERVICE_NAME` per service:
 
 ## Release Model
 
-Railway handles branch-based autodeploys. `preview` deploys from the `preview` branch. `production` deploys from `main`.
+Railway handles production deploys from `main`.
+
+The `preview` environment remains defined for future reuse, but it is intentionally paused:
+
+- no preview custom domains
+- no preview autodeploy from `preview`
+- no expectation that preview services are reachable or healthy
 
 The API service runs `pnpm run db:migrate:deploy` as its pre-deploy command. Because Railway deploys services independently, schema changes must stay backward-compatible across API, worker, and web rollouts.
 
@@ -93,19 +104,14 @@ If we need strict cross-service sequencing later, add a Railway API or CLI drive
 
 Mobile is already wired to the hosted API domains:
 
-- EAS `preview` -> `https://api.preview.ponti.io`
+- EAS `preview` -> `https://api.ponti.io`
 - EAS `production` -> `https://api.ponti.io`
 
-Do not cut preview or production builds until the matching Railway API domain has valid TLS and returns `200` from `/api/status`.
+Preview-profile builds remain available for insiders/TestFlight, but they talk to the production API while the shared preview environment is paused.
+
+Do not cut mobile builds until the production API domain has valid TLS and returns `200` from `/api/status`.
 
 ## Smoke Checks
-
-Preview:
-
-```sh
-curl --fail --silent --show-error https://api.preview.ponti.io/api/status
-curl --fail --silent --show-error https://app.preview.ponti.io | grep -qi '<html'
-```
 
 Production:
 

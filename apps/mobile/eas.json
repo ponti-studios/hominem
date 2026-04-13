@@ -32,7 +32,7 @@
       "distribution": "internal",
       "env": {
         "APP_VARIANT": "preview",
-        "EXPO_PUBLIC_API_BASE_URL": "https://api.preview.ponti.io",
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.ponti.io",
         "EXPO_PUBLIC_MOBILE_PASSKEY_ENABLED": "false"
       },
       "ios": {

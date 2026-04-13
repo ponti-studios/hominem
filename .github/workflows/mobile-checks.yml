@@ -65,7 +65,7 @@ jobs:
       - name: Run mobile checks
         run: just mobile-check
 
-  eas-build:
+  eas-build-testflight-production-api:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     needs: mobile-checks
@@ -82,7 +82,7 @@ jobs:
       - name: Setup EAS CLI
         run: npm install -g eas-cli
 
-      - name: Build and submit with EAS
+      - name: Build and submit with EAS (TestFlight, production API)
         working-directory: apps/mobile
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
