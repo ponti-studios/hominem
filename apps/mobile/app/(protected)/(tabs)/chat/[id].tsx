@@ -2,7 +2,18 @@ import { Image } from 'expo-image';
 import { useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useRef } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import Reanimated, { FadeIn, LinearTransition } from 'react-native-reanimated';
+import Reanimated, {
+  FadeIn,
+  FadeOut,
+  LinearTransition,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
+import { useIsMutating } from '@tanstack/react-query';
 
 import { Loading } from '~/components/Loading';
 import { useTTS } from '~/components/media/use-tts';
@@ -35,6 +46,43 @@ function EmptyChat() {
         Use the composer below to ask a question or reference your notes.
       </Text>
     </View>
+  );
+}
+
+// ─── Thinking indicator ───────────────────────────────────────────────────────
+
+function PulseDot({ delay }: { delay: number }) {
+  const opacity = useSharedValue(0.3);
+
+  useEffect(() => {
+    opacity.value = withDelay(
+      delay,
+      withRepeat(
+        withSequence(withTiming(1, { duration: 400 }), withTiming(0.3, { duration: 400 })),
+        -1,
+        false,
+      ),
+    );
+  }, [delay, opacity]);
+
+  const style = useAnimatedStyle(() => ({ opacity: opacity.value }));
+
+  return <Reanimated.View style={[styles.thinkingDot, style]} />;
+}
+
+function ThinkingIndicator() {
+  return (
+    <Reanimated.View
+      entering={FadeIn.duration(200)}
+      exiting={FadeOut.duration(150)}
+      style={styles.thinkingRow}
+    >
+      <View style={[styles.bubble, styles.bubbleAssistant, styles.thinkingBubble]}>
+        <PulseDot delay={0} />
+        <PulseDot delay={160} />
+        <PulseDot delay={320} />
+      </View>
+    </Reanimated.View>
   );
 }
 
@@ -95,6 +143,7 @@ export default function ChatDetailScreen() {
   const { data: activeChat, isLoading: isLoadingActiveChat } = useActiveChat(id);
   const chatId = activeChat?.id ?? id;
   const messagesQuery = useChatMessages({ chatId });
+  const isThinking = useIsMutating({ mutationKey: ['sendChatMessage', chatId] }) > 0;
   const scrollRef = useRef<ScrollView>(null);
 
   const messages = (messagesQuery.data ?? []).filter(
@@ -152,6 +201,7 @@ export default function ChatDetailScreen() {
             />
           ))
         )}
+        {isThinking && <ThinkingIndicator />}
       </ScrollView>
     </View>
   );
@@ -215,6 +265,25 @@ const styles = StyleSheet.create({
   },
   bubbleTextAssistant: {
     color: theme.colors.foreground,
+  },
+
+  // ── Thinking indicator ──────────────────────────────────────────────────────
+  thinkingRow: {
+    alignItems: 'flex-start',
+    marginBottom: 2,
+  },
+  thinkingBubble: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+  },
+  thinkingDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: theme.colors['text-tertiary'],
   },
 
   // ── TTS button ──────────────────────────────────────────────────────────────
