@@ -1,12 +1,17 @@
+import { useApiClient } from '@hominem/rpc/react';
+import type { Note } from '@hominem/rpc/types';
 import { parseInboxTimestamp } from '@hominem/utils/dates';
 import type { RelativePathString } from 'expo-router';
 import { useRouter } from 'expo-router';
 import React, { memo, useCallback } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { ActionSheetIOS, Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
 import Reanimated, { FadeInDown, LinearTransition } from 'react-native-reanimated';
+import { useQueryClient } from '@tanstack/react-query';
 
 import AppIcon from '~/components/ui/icon';
 import { Text, makeStyles, theme } from '~/components/theme';
+import { noteKeys, chatKeys } from '~/services/notes/query-keys';
+import type { ChatWithActivity } from '~/services/chat/session-state';
 
 import type { InboxStreamItemData as InboxStreamItemModel } from './InboxStreamItem.types';
 
@@ -17,11 +22,122 @@ interface InboxStreamItemProps {
 export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
   const styles = useStyles();
   const router = useRouter();
+  const client = useApiClient();
+  const queryClient = useQueryClient();
   const iconColor = item.kind === 'note' ? theme.colors.foreground : theme.colors['text-secondary'];
 
   const onPress = useCallback(() => {
     router.push(item.route as RelativePathString);
   }, [item.route, router]);
+
+  const handleRenameNote = useCallback(() => {
+    Alert.prompt(
+      'Rename note',
+      undefined,
+      async (newTitle) => {
+        if (newTitle === null) return;
+        const trimmed = newTitle.trim();
+        const updatedNote = await client.notes.update({
+          id: item.entityId,
+          title: trimmed.length > 0 ? trimmed : null,
+        });
+        queryClient.setQueryData<Note>(noteKeys.detail(item.entityId), updatedNote);
+        queryClient.setQueryData<Note[]>(noteKeys.all, (current) =>
+          current?.map((n) => (n.id === item.entityId ? updatedNote : n)),
+        );
+        void queryClient.invalidateQueries({ queryKey: noteKeys.feeds() });
+      },
+      'plain-text',
+      item.title ?? '',
+    );
+  }, [client, item.entityId, item.title, queryClient]);
+
+  const handleDeleteNote = useCallback(() => {
+    Alert.alert(
+      'Delete note',
+      'This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            await client.notes.delete({ id: item.entityId });
+            queryClient.setQueryData<Note[]>(noteKeys.all, (current) =>
+              current?.filter((n) => n.id !== item.entityId),
+            );
+            void queryClient.invalidateQueries({ queryKey: noteKeys.feeds() });
+          },
+        },
+      ],
+    );
+  }, [client, item.entityId, queryClient]);
+
+  const handleArchiveChat = useCallback(() => {
+    Alert.alert(
+      'Archive chat',
+      'This chat will be moved to your archive.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Archive',
+          style: 'destructive',
+          onPress: async () => {
+            await client.chats.archive({ chatId: item.entityId });
+            queryClient.setQueryData<ChatWithActivity[]>(
+              chatKeys.resumableSessions,
+              (current) => current?.filter((c) => c.id !== item.entityId),
+            );
+          },
+        },
+      ],
+    );
+  }, [client, item.entityId, queryClient]);
+
+  const onLongPress = useCallback(() => {
+    if (item.kind === 'note') {
+      if (Platform.OS === 'ios') {
+        ActionSheetIOS.showActionSheetWithOptions(
+          {
+            options: ['Cancel', 'Rename', 'Delete'],
+            destructiveButtonIndex: 2,
+            cancelButtonIndex: 0,
+          },
+          (index) => {
+            if (index === 1) handleRenameNote();
+            if (index === 2) handleDeleteNote();
+          },
+        );
+      } else {
+        Alert.alert(item.title ?? 'Note', undefined, [
+          { text: 'Rename', onPress: handleRenameNote },
+          { text: 'Delete', style: 'destructive', onPress: handleDeleteNote },
+          { text: 'Cancel', style: 'cancel' },
+        ]);
+      }
+    } else {
+      if (Platform.OS === 'ios') {
+        ActionSheetIOS.showActionSheetWithOptions(
+          {
+            options: ['Cancel', 'Archive'],
+            destructiveButtonIndex: 1,
+            cancelButtonIndex: 0,
+          },
+          (index) => {
+            if (index === 1) handleArchiveChat();
+          },
+        );
+      } else {
+        Alert.alert(item.title ?? 'Chat', undefined, [
+          { text: 'Archive', style: 'destructive', onPress: handleArchiveChat },
+          { text: 'Cancel', style: 'cancel' },
+        ]);
+      }
+    }
+  }, [item.kind, item.title, handleRenameNote, handleDeleteNote, handleArchiveChat]);
+
+  const label = item.title ?? item.preview ?? 'Untitled';
+  const hasTitle = Boolean(item.title);
 
   return (
     <Reanimated.View
@@ -30,36 +146,34 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
     >
       <Pressable
         onPress={onPress}
+        onLongPress={onLongPress}
+        delayLongPress={400}
         style={({ pressed }) => [styles.row, pressed ? styles.pressed : null]}
       >
         <View style={styles.rowInner}>
-          <View style={styles.topRow}>
-            <View style={styles.leadingRow}>
-              <View
-                style={[
-                  styles.leading,
-                  item.kind === 'note' ? styles.noteLeading : styles.chatLeading,
-                ]}
-              >
-                <AppIcon
-                  name={item.kind === 'note' ? 'square.and.pencil' : 'bubble.left'}
-                  size={11}
-                  color={iconColor}
-                />
-              </View>
-              <Text numberOfLines={1} variant="body" color="foreground" style={styles.title}>
-                {item.title}
-              </Text>
-            </View>
-            <Text numberOfLines={1} variant="small" color="text-tertiary" style={styles.metadata}>
-              {formatTimestamp(item.updatedAt)}
-            </Text>
+          <View
+            style={[
+              styles.leading,
+              item.kind === 'note' ? styles.noteLeading : styles.chatLeading,
+            ]}
+          >
+            <AppIcon
+              name={item.kind === 'note' ? 'square.and.pencil' : 'bubble.left'}
+              size={11}
+              color={iconColor}
+            />
           </View>
-          {item.preview ? (
-            <Text numberOfLines={2} variant="small" color="text-secondary" style={styles.preview}>
-              {item.preview}
-            </Text>
-          ) : null}
+          <Text
+            numberOfLines={1}
+            variant="body"
+            color="foreground"
+            style={[styles.label, !hasTitle && styles.labelUntitled]}
+          >
+            {label}
+          </Text>
+          <Text numberOfLines={1} variant="small" color="text-tertiary" style={styles.metadata}>
+            {formatTimestamp(item.updatedAt)}
+          </Text>
         </View>
       </Pressable>
     </Reanimated.View>
@@ -100,28 +214,15 @@ const useStyles = makeStyles((t) =>
       backgroundColor: 'transparent',
     },
     rowInner: {
-      gap: t.spacing.xs_4,
-      paddingHorizontal: t.spacing.m_16,
-      paddingTop: t.spacing.sm_12,
-      paddingBottom: t.spacing.sm_12,
-    },
-    topRow: {
       alignItems: 'center',
-      flexDirection: 'row',
-      gap: t.spacing.xs_4,
-      justifyContent: 'space-between',
-    },
-    leadingRow: {
-      alignItems: 'center',
-      flex: 1,
       flexDirection: 'row',
       gap: t.spacing.sm_8,
-      minWidth: 0,
+      paddingHorizontal: t.spacing.m_16,
+      paddingVertical: t.spacing.sm_12,
     },
     leading: {
       alignItems: 'center',
-      borderCurve: 'continuous',
-      borderRadius: 8,
+      flexShrink: 0,
       height: 18,
       justifyContent: 'center',
       marginTop: 1,
@@ -133,42 +234,25 @@ const useStyles = makeStyles((t) =>
     chatLeading: {
       backgroundColor: 'transparent',
     },
-    title: {
+    label: {
       color: t.colors.foreground,
       flex: 1,
-      fontWeight: '600',
-      fontSize: 17,
-      letterSpacing: -0.28,
-      lineHeight: 21,
+      fontSize: 15,
+      fontWeight: '500',
+      letterSpacing: -0.2,
+      lineHeight: 20,
+    },
+    labelUntitled: {
+      color: t.colors['text-secondary'],
+      fontWeight: '400',
     },
     metadata: {
       color: t.colors['text-tertiary'],
-      fontSize: 10,
-      lineHeight: 12,
-      opacity: 0.42,
-      paddingLeft: t.spacing.xs_4,
-      textAlign: 'right',
-    },
-    preview: {
-      color: t.colors['text-secondary'],
-      fontSize: 13,
-      lineHeight: 17,
-      opacity: 0.72,
-      paddingLeft: 26, // token-audit-ignore: calculated = icon(18) + leadingRow gap(8)
-      paddingRight: t.spacing.ml_24,
-      paddingTop: 1,
-    },
-    cornerIcon: {
-      lineHeight: 11,
-      textAlign: 'center',
-    },
-    noteIcon: {
-      color: t.colors.foreground,
-      opacity: 0.18,
-    },
-    chatIcon: {
-      color: t.colors['text-secondary'],
-      opacity: 0.16,
+      flexShrink: 0,
+      fontSize: 11,
+      letterSpacing: 0,
+      lineHeight: 14,
+      opacity: 0.5,
     },
     pressed: {
       backgroundColor: 'rgba(15, 23, 42, 0.03)',

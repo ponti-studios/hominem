@@ -13,11 +13,7 @@ import {
   upsertInboxSessionActivity,
 } from '../inbox/inbox-refresh';
 import { chatKeys } from '../notes/query-keys';
-import {
-  createOptimisticMessage,
-  reconcileMessagesAfterSend,
-  type MessageOutput,
-} from './chatMessages';
+import { createOptimisticMessage, type MessageOutput } from './chatMessages';
 import { selectChatSession, type ChatWithActivity } from './session-state';
 
 type SendChatMessageOutput = {
@@ -99,7 +95,7 @@ export const useSendMessage = ({ chatId }: { chatId: string }) => {
     SendChatMessageOutput,
     Error,
     SendChatMessageInput,
-    { previousMessages: MessageOutput[] }
+    { previousMessages: MessageOutput[]; optimisticMessageId: string }
   >({
     mutationKey: ['sendChatMessage', chatId],
 
@@ -108,7 +104,7 @@ export const useSendMessage = ({ chatId }: { chatId: string }) => {
       setChatSendStatus('submitted');
       const text = messageText.trim();
       if (!text) {
-        return { previousMessages: [] };
+        return { previousMessages: [], optimisticMessageId: '' };
       }
 
       // Cancel outgoing refetches
@@ -138,7 +134,7 @@ export const useSendMessage = ({ chatId }: { chatId: string }) => {
           ),
       );
 
-      return { previousMessages };
+      return { previousMessages, optimisticMessageId: optimisticMessage.id };
     },
 
     mutationFn: async ({ message: messageText, fileIds, noteIds }) => {
@@ -168,14 +164,29 @@ export const useSendMessage = ({ chatId }: { chatId: string }) => {
     },
 
     // On success, update cache with server data
-    onSuccess: (data) => {
+    onSuccess: (data, _variables, context) => {
       setSendChatError(false);
       setChatSendStatus('idle');
+      const optimisticId = context?.optimisticMessageId;
       queryClient.setQueryData(chatKeys.messages(chatId), (old: MessageOutput[] | undefined) => {
-        if (!old) {
-          return data.messages;
+        const previous = old ?? [];
+        const serverUserMsg = data.messages.find((m) => m.role === 'user');
+        const serverAssistantMsg = data.messages.find((m) => m.role === 'assistant');
+
+        // Replace the optimistic user message in-place, keeping its ID as the stable React key
+        // so the bubble doesn't unmount/remount and re-animate.
+        const reconciled = previous.map((msg) => {
+          if (msg.id === optimisticId && serverUserMsg) {
+            return { ...serverUserMsg, id: optimisticId };
+          }
+          return msg;
+        });
+
+        // Append the assistant message (it's always new).
+        if (serverAssistantMsg && !reconciled.some((m) => m.id === serverAssistantMsg.id)) {
+          return [...reconciled, serverAssistantMsg];
         }
-        return reconcileMessagesAfterSend(old, data.messages);
+        return reconciled;
       });
       void invalidateInboxQueries(queryClient);
     },

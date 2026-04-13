@@ -19,6 +19,7 @@ import { env } from '../../env';
 import { ValidationError } from '../errors';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 import { getOpenAIAdapter } from '../utils/llm';
+import { loadPrompt } from '../utils/load-prompt';
 import {
   enrichMessageRow,
   toChatDto,
@@ -187,8 +188,7 @@ const chatByIdRoutes = new Hono<AppContext>()
     const messages: CoreMessage[] = [
       {
         role: 'system',
-        content:
-          'You are a helpful assistant. Answer only with the user message, explicitly referenced notes, and attached files provided in the conversation.',
+        content: loadPrompt('chat-assistant'),
       },
       ...history.map(toCoreHistoryMessage).filter((entry): entry is CoreMessage => entry !== null),
       { role: 'user', content: prompt },

@@ -1,5 +1,5 @@
 import { FlashList, type ListRenderItem } from '@shopify/flash-list';
-import React, { memo, useCallback } from 'react';
+import React, { memo, useCallback, useEffect, useRef } from 'react';
 import { StyleSheet, View, type RefreshControlProps } from 'react-native';
 
 import { Text, makeStyles } from '~/components/theme';
@@ -29,6 +29,16 @@ RenderInboxStreamItem.displayName = 'RenderInboxStreamItem';
 
 export const InboxStream = ({ items, refreshControl }: InboxStreamProps) => {
   const styles = useStyles();
+  const listRef = useRef<any>(null);
+  const prevCountRef = useRef(items.length);
+
+  useEffect(() => {
+    if (items.length > prevCountRef.current) {
+      listRef.current?.scrollToOffset({ offset: 0, animated: true });
+    }
+    prevCountRef.current = items.length;
+  }, [items.length]);
+
   const renderItem = useCallback<ListRenderItem<InboxStreamItemModel>>(({ item }) => {
     return <RenderInboxStreamItem item={item} />;
   }, []);
@@ -52,6 +62,7 @@ export const InboxStream = ({ items, refreshControl }: InboxStreamProps) => {
     <View style={styles.container}>
       <View style={styles.sectionShell}>
         <FlashList
+          ref={listRef}
           contentContainerStyle={styles.listContent}
           data={items}
           ItemSeparatorComponent={InboxStreamDivider}

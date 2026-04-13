@@ -2,7 +2,7 @@ import { Image } from 'expo-image';
 import { useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useRef } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import Reanimated, { FadeInDown, LinearTransition } from 'react-native-reanimated';
+import Reanimated, { FadeIn, LinearTransition } from 'react-native-reanimated';
 
 import { Loading } from '~/components/Loading';
 import { useTTS } from '~/components/media/use-tts';
@@ -43,15 +43,16 @@ function EmptyChat() {
 interface BubbleProps {
   message: Message;
   isSpeaking: boolean;
+  isNew: boolean;
   onSpeak: () => void;
 }
 
-const MessageBubble = React.memo(({ message, isSpeaking, onSpeak }: BubbleProps) => {
+const MessageBubble = React.memo(({ message, isSpeaking, isNew, onSpeak }: BubbleProps) => {
   const isUser = message.role === 'user';
 
   return (
     <Reanimated.View
-      entering={FadeInDown.duration(240).springify().damping(22).stiffness(260)}
+      entering={isNew ? FadeIn.duration(180) : undefined}
       layout={LinearTransition.duration(160)}
       style={[styles.bubbleRow, isUser ? styles.bubbleRowRight : styles.bubbleRowLeft]}
     >
@@ -100,6 +101,14 @@ export default function ChatDetailScreen() {
     (m) => m.role === 'user' || m.role === 'assistant',
   );
 
+  // Track which message IDs were already rendered so only genuinely new
+  // messages receive the enter animation.
+  const renderedIdsRef = useRef<Set<string>>(new Set());
+  const newIds = new Set(messages.map((m) => m.id).filter((id) => !renderedIdsRef.current.has(id)));
+  useEffect(() => {
+    for (const m of messages) renderedIdsRef.current.add(m.id);
+  });
+
   // Scroll to bottom when messages arrive
   useEffect(() => {
     if (messages.length > 0) {
@@ -137,6 +146,7 @@ export default function ChatDetailScreen() {
             <MessageBubble
               key={message.id}
               message={message}
+              isNew={newIds.has(message.id)}
               isSpeaking={speakingId === message.id && ttsState === 'playing'}
               onSpeak={() => handleSpeak(message)}
             />
