@@ -71,89 +71,15 @@ Domains:
 
 ## Variables
 
-API and worker variables in `preview`:
+The Railway env shape now lives in example env files instead of this README:
 
-- `NODE_ENV=production`
-- `API_URL=https://api.preview.ponti.io`
-- `WEB_URL=https://app.preview.ponti.io`
-- `NOTES_URL=https://app.preview.ponti.io`
-- `AUTH_PASSKEY_RP_ID=api.preview.ponti.io`
-- `AUTH_PASSKEY_ORIGIN=https://api.preview.ponti.io`
-- `AUTH_COOKIE_DOMAIN=.preview.ponti.io`
-- `BETTER_AUTH_SECRET=<generated>`
-- `DATABASE_URL=<PostgreSQL DATABASE_URL reference>`
-- `REDIS_URL=<Redis URL reference>`
-- `R2_ENDPOINT=<required>`
-- `R2_BUCKET_NAME=hominem-storage`
-- `R2_ACCESS_KEY_ID=<required>`
-- `R2_SECRET_ACCESS_KEY=<required>`
-- `RESEND_API_KEY=<required>`
-- `RESEND_FROM_EMAIL=<required>`
-- `RESEND_FROM_NAME=<required>`
-- `SEND_EMAILS=true`
-- `AUTH_E2E_ENABLED=true`
-- `AUTH_E2E_SECRET=<required>`
-- `OPENROUTER_API_KEY=<required>`
-- `OTEL_EXPORTER_OTLP_ENDPOINT=<required>`
-- `OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf`
-- `OTEL_DEPLOYMENT_ENVIRONMENT=preview`
-- `OTEL_SERVICE_NAMESPACE=hominem`
-- `SENTRY_DSN=<required>`
+- Preview: [./.env.preview.example](./.env.preview.example)
+- Production: [./.env.production.example](./.env.production.example)
 
-Service-specific OTEL names:
+Set `OTEL_SERVICE_NAME` per service:
 
-- API: `OTEL_SERVICE_NAME=hominem-api`
-- Worker: `OTEL_SERVICE_NAME=hominem-worker`
-
-API and worker variables in `production`:
-
-- `NODE_ENV=production`
-- `API_URL=https://api.ponti.io`
-- `WEB_URL=https://app.ponti.io`
-- `NOTES_URL=https://app.ponti.io`
-- `AUTH_PASSKEY_RP_ID=api.ponti.io`
-- `AUTH_PASSKEY_ORIGIN=https://api.ponti.io`
-- `AUTH_COOKIE_DOMAIN=.ponti.io`
-- `BETTER_AUTH_SECRET=<generated>`
-- `DATABASE_URL=<PostgreSQL DATABASE_URL reference>`
-- `REDIS_URL=<Redis URL reference>`
-- `R2_ENDPOINT=<required>`
-- `R2_BUCKET_NAME=hominem-storage`
-- `R2_ACCESS_KEY_ID=<required>`
-- `R2_SECRET_ACCESS_KEY=<required>`
-- `RESEND_API_KEY=<required>`
-- `RESEND_FROM_EMAIL=<required>`
-- `RESEND_FROM_NAME=<required>`
-- `SEND_EMAILS=true`
-- `AUTH_E2E_ENABLED=true`
-- `AUTH_E2E_SECRET=<required>`
-- `OPENROUTER_API_KEY=<required>`
-- `OTEL_EXPORTER_OTLP_ENDPOINT=<required>`
-- `OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf`
-- `OTEL_DEPLOYMENT_ENVIRONMENT=production`
-- `OTEL_SERVICE_NAMESPACE=hominem`
-- `SENTRY_DSN=<required>`
-
-Service-specific OTEL names:
-
-- API: `OTEL_SERVICE_NAME=hominem-api`
-- Worker: `OTEL_SERVICE_NAME=hominem-worker`
-
-Web variables in `preview`:
-
-- `NODE_ENV=production`
-- `VITE_PUBLIC_API_URL=https://api.preview.ponti.io`
-- `VITE_R2_DOMAIN=<required>`
-- `VITE_POSTHOG_API_KEY=<required>`
-- `VITE_POSTHOG_HOST=https://us.i.posthog.com`
-
-Web variables in `production`:
-
-- `NODE_ENV=production`
-- `VITE_PUBLIC_API_URL=https://api.ponti.io`
-- `VITE_R2_DOMAIN=<required>`
-- `VITE_POSTHOG_API_KEY=<required>`
-- `VITE_POSTHOG_HOST=https://us.i.posthog.com`
+- API: `hominem-api`
+- Worker: `hominem-worker`
 
 ## Release Model
 

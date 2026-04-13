@@ -21,13 +21,6 @@
   "scripts": {
     "db:migrate:deploy": "goose -dir ./packages/core/db/migrations postgres \"$DATABASE_URL\" up"
   },
-  "workspaces": [
-    "apps/*",
-    "services/*",
-    "packages/core/*",
-    "packages/platform/*",
-    "packages/domains/*"
-  ],
   "devDependencies": {
     "@types/node": "^25.4.0",
     "@types/pg": "^8.18.0",

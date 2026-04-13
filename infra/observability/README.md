@@ -14,16 +14,11 @@ The stack exposes OTLP HTTP on `http://localhost:4318`, OTLP gRPC on `4317`, and
 
 ## App Configuration
 
-Point local services at OTLP HTTP on `http://localhost:4318` (the default).
+Point local services at OTLP HTTP on `http://localhost:4318` (the default). The env keys and local defaults live in [../../.env.example](../../.env.example).
 
 ## Production
 
-In preview/prod, point OTEL at Sentry's OTLP endpoint. Sentry handles both traces and errors.
-
-```
-OTEL_EXPORTER_OTLP_ENDPOINT=https://ingest.sentry.io/v1/traces
-SENTRY_DSN=https://<key>@<org>.ingest.sentry.io/<project>
-```
+In preview/prod, point OTEL at Sentry's OTLP endpoint. The deployed env examples live in [../railway/.env.preview.example](../railway/.env.preview.example) and [../railway/.env.production.example](../railway/.env.production.example).
 
 ## Notes
 
