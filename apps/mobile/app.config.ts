@@ -1,7 +1,5 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 
-import { VARIANT_ICON_NAMES } from './constants/brand-assets';
-
 const EXPO_OWNER = 'pontistudios';
 const EXPO_PROJECT_ID = '4dfac82b-644f-4ff3-be42-e8f941287aa1';
 
