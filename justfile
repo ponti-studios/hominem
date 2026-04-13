@@ -115,13 +115,11 @@ gh-pr-errors:
 # Mobile (Expo)
 
 MOBILE_DIR := ROOT_DIR / "apps" / "mobile"
-JEST := MOBILE_DIR / "node_modules" / ".bin" / "jest"
-
 mobile-test:
-    cd "{{ MOBILE_DIR }}" && {{ JEST }}
+    cd "{{ MOBILE_DIR }}" && pnpm exec vitest run --config vitest.config.ts
 
 mobile-test-watch:
-    cd "{{ MOBILE_DIR }}" && {{ JEST }} --watch
+    cd "{{ MOBILE_DIR }}" && pnpm exec vitest --config vitest.config.ts
 
 mobile-typecheck:
     cd "{{ MOBILE_DIR }}" && pnpm exec tsc --noEmit
