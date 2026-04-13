@@ -106,7 +106,7 @@ export const authenticatedVoiceRoutes = new Hono<AppContext>()
         const { audioBuffer, mediaType } = await generateSpeechBuffer({ text, voice, speed });
         c.header('Content-Type', mediaType);
         c.header('Content-Length', String(audioBuffer.byteLength));
-        return c.body(audioBuffer);
+        return c.body(new Uint8Array(audioBuffer));
       } catch (error) {
         if (error instanceof VoiceError) {
           return c.json({ error: error.message }, getVoiceErrorStatusCode(error.statusCode));

@@ -49,6 +49,8 @@ pnpm-debug.log*
 # local env files
 .env
 .env.local
+.env.preview
+.env.preview*
 .env.development*
 .env.test*
 .env.production*

@@ -4,7 +4,7 @@ export const baseSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   DATABASE_URL: z.string().url().optional(),
   OPENROUTER_API_KEY: z.string().optional(),
-  AI_PROVIDER: z.enum(['openai', 'openrouter']).default('openrouter'),
+  AI_PROVIDER: z.string().default('openrouter'),
   AI_MODEL: z.string().default('openai/gpt-4o-mini-2024-07-18'),
   AI_SDK_CHAT_WEB_ENABLED: z.coerce.boolean().default(false),
   AI_SDK_CHAT_MOBILE_ENABLED: z.coerce.boolean().default(false),
