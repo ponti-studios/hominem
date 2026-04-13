@@ -13,6 +13,8 @@ infra/
       Dockerfile
   observability/
     README.md
+  render/
+    README.md
   kubernetes/
     README.md
   terraform/

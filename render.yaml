@@ -1,0 +1,447 @@
+projects:
+  - name: hominem
+    environments:
+      - name: preview
+        services:
+          - type: web
+            runtime: docker
+            name: hominem-api-preview
+            branch: preview
+            autoDeployTrigger: off
+            dockerfilePath: ./services/api/Dockerfile
+            dockerContext: .
+            dockerCommand: pnpm --filter @hominem/api run start
+            preDeployCommand: pnpm run db:migrate:deploy
+            healthCheckPath: /api/status
+            domains:
+              - api.preview.ponti.io
+            buildFilter:
+              paths:
+                - package.json
+                - pnpm-lock.yaml
+                - pnpm-workspace.yaml
+                - turbo.json
+                - services/api/**
+                - packages/**
+                - justfile
+                - justfiles/**
+            envVars:
+              - key: NODE_ENV
+                value: production
+              - key: API_URL
+                value: https://api.preview.ponti.io
+              - key: WEB_URL
+                value: https://app.preview.ponti.io
+              - key: NOTES_URL
+                value: https://app.preview.ponti.io
+              - key: AUTH_ISSUER
+                value: https://api.preview.ponti.io
+              - key: AUTH_AUDIENCE
+                value: hominem-api
+              - key: AUTH_PASSKEY_RP_ID
+                value: api.preview.ponti.io
+              - key: AUTH_PASSKEY_ORIGIN
+                value: https://api.preview.ponti.io
+              - key: AUTH_COOKIE_DOMAIN
+                value: .preview.ponti.io
+              - key: COOKIE_SECRET
+                generateValue: true
+              - key: BETTER_AUTH_SECRET
+                generateValue: true
+              - key: DATABASE_URL
+                fromDatabase:
+                  name: hominem-db-preview
+                  property: connectionString
+              - key: REDIS_URL
+                fromService:
+                  name: hominem-kv-preview
+                  type: keyvalue
+                  property: connectionString
+              - key: R2_ENDPOINT
+                sync: false
+              - key: R2_BUCKET_NAME
+                value: hominem-storage
+              - key: R2_ACCESS_KEY_ID
+                sync: false
+              - key: R2_SECRET_ACCESS_KEY
+                sync: false
+              - key: RESEND_API_KEY
+                sync: false
+              - key: RESEND_FROM_EMAIL
+                sync: false
+              - key: RESEND_FROM_NAME
+                sync: false
+              - key: SEND_EMAILS
+                value: "true"
+              - key: AUTH_E2E_ENABLED
+                value: "true"
+              - key: AUTH_E2E_SECRET
+                sync: false
+              - key: OPENROUTER_API_KEY
+                sync: false
+              - key: OPENAI_API_KEY
+                sync: false
+              - key: GOOGLE_CLIENT_ID
+                sync: false
+              - key: GOOGLE_CLIENT_SECRET
+                sync: false
+              - key: OTEL_EXPORTER_OTLP_ENDPOINT
+                sync: false
+              - key: OTEL_EXPORTER_OTLP_PROTOCOL
+                value: http/protobuf
+              - key: OTEL_DEPLOYMENT_ENVIRONMENT
+                value: preview
+              - key: OTEL_SERVICE_NAME
+                value: hominem-api
+              - key: OTEL_SERVICE_NAMESPACE
+                value: hominem
+              - key: SENTRY_DSN
+                sync: false
+          - type: worker
+            runtime: docker
+            name: hominem-worker-preview
+            branch: preview
+            autoDeployTrigger: off
+            dockerfilePath: ./services/api/Dockerfile
+            dockerContext: .
+            dockerCommand: pnpm --filter @hominem/api run start:worker
+            maxShutdownDelaySeconds: 120
+            buildFilter:
+              paths:
+                - package.json
+                - pnpm-lock.yaml
+                - pnpm-workspace.yaml
+                - turbo.json
+                - services/api/**
+                - packages/**
+            envVars:
+              - key: NODE_ENV
+                value: production
+              - key: API_URL
+                value: https://api.preview.ponti.io
+              - key: WEB_URL
+                value: https://app.preview.ponti.io
+              - key: NOTES_URL
+                value: https://app.preview.ponti.io
+              - key: AUTH_ISSUER
+                value: https://api.preview.ponti.io
+              - key: AUTH_AUDIENCE
+                value: hominem-api
+              - key: AUTH_PASSKEY_RP_ID
+                value: api.preview.ponti.io
+              - key: AUTH_PASSKEY_ORIGIN
+                value: https://api.preview.ponti.io
+              - key: AUTH_COOKIE_DOMAIN
+                value: .preview.ponti.io
+              - key: COOKIE_SECRET
+                generateValue: true
+              - key: BETTER_AUTH_SECRET
+                generateValue: true
+              - key: DATABASE_URL
+                fromDatabase:
+                  name: hominem-db-preview
+                  property: connectionString
+              - key: REDIS_URL
+                fromService:
+                  name: hominem-kv-preview
+                  type: keyvalue
+                  property: connectionString
+              - key: R2_ENDPOINT
+                sync: false
+              - key: R2_BUCKET_NAME
+                value: hominem-storage
+              - key: R2_ACCESS_KEY_ID
+                sync: false
+              - key: R2_SECRET_ACCESS_KEY
+                sync: false
+              - key: RESEND_API_KEY
+                sync: false
+              - key: RESEND_FROM_EMAIL
+                sync: false
+              - key: RESEND_FROM_NAME
+                sync: false
+              - key: SEND_EMAILS
+                value: "true"
+              - key: AUTH_E2E_ENABLED
+                value: "true"
+              - key: AUTH_E2E_SECRET
+                sync: false
+              - key: OPENROUTER_API_KEY
+                sync: false
+              - key: OPENAI_API_KEY
+                sync: false
+              - key: GOOGLE_CLIENT_ID
+                sync: false
+              - key: GOOGLE_CLIENT_SECRET
+                sync: false
+              - key: OTEL_EXPORTER_OTLP_ENDPOINT
+                sync: false
+              - key: OTEL_EXPORTER_OTLP_PROTOCOL
+                value: http/protobuf
+              - key: OTEL_DEPLOYMENT_ENVIRONMENT
+                value: preview
+              - key: OTEL_SERVICE_NAME
+                value: hominem-worker
+              - key: OTEL_SERVICE_NAMESPACE
+                value: hominem
+              - key: SENTRY_DSN
+                sync: false
+          - type: web
+            runtime: docker
+            name: hominem-web-preview
+            branch: preview
+            autoDeployTrigger: off
+            dockerfilePath: ./apps/web/Dockerfile
+            dockerContext: .
+            dockerCommand: pnpm --filter @hominem/web run start
+            healthCheckPath: /
+            domains:
+              - app.preview.ponti.io
+            buildFilter:
+              paths:
+                - package.json
+                - pnpm-lock.yaml
+                - pnpm-workspace.yaml
+                - turbo.json
+                - apps/web/**
+                - packages/**
+            envVars:
+              - key: NODE_ENV
+                value: production
+              - key: VITE_PUBLIC_API_URL
+                value: https://api.preview.ponti.io
+              - key: VITE_R2_DOMAIN
+                sync: false
+              - key: VITE_POSTHOG_API_KEY
+                sync: false
+              - key: VITE_POSTHOG_HOST
+                value: https://us.i.posthog.com
+          - type: keyvalue
+            name: hominem-kv-preview
+            ipAllowList: []
+        databases:
+          - name: hominem-db-preview
+            databaseName: hominem
+            user: hominem
+      - name: production
+        services:
+          - type: web
+            runtime: docker
+            name: hominem-api-production
+            branch: main
+            autoDeployTrigger: off
+            dockerfilePath: ./services/api/Dockerfile
+            dockerContext: .
+            dockerCommand: pnpm --filter @hominem/api run start
+            preDeployCommand: pnpm run db:migrate:deploy
+            healthCheckPath: /api/status
+            domains:
+              - api.ponti.io
+            buildFilter:
+              paths:
+                - package.json
+                - pnpm-lock.yaml
+                - pnpm-workspace.yaml
+                - turbo.json
+                - services/api/**
+                - packages/**
+                - justfile
+                - justfiles/**
+            envVars:
+              - key: NODE_ENV
+                value: production
+              - key: API_URL
+                value: https://api.ponti.io
+              - key: WEB_URL
+                value: https://app.ponti.io
+              - key: NOTES_URL
+                value: https://app.ponti.io
+              - key: AUTH_ISSUER
+                value: https://api.ponti.io
+              - key: AUTH_AUDIENCE
+                value: hominem-api
+              - key: AUTH_PASSKEY_RP_ID
+                value: api.ponti.io
+              - key: AUTH_PASSKEY_ORIGIN
+                value: https://api.ponti.io
+              - key: AUTH_COOKIE_DOMAIN
+                value: .ponti.io
+              - key: COOKIE_SECRET
+                generateValue: true
+              - key: BETTER_AUTH_SECRET
+                generateValue: true
+              - key: DATABASE_URL
+                fromDatabase:
+                  name: hominem-db-production
+                  property: connectionString
+              - key: REDIS_URL
+                fromService:
+                  name: hominem-kv-production
+                  type: keyvalue
+                  property: connectionString
+              - key: R2_ENDPOINT
+                sync: false
+              - key: R2_BUCKET_NAME
+                value: hominem-storage
+              - key: R2_ACCESS_KEY_ID
+                sync: false
+              - key: R2_SECRET_ACCESS_KEY
+                sync: false
+              - key: RESEND_API_KEY
+                sync: false
+              - key: RESEND_FROM_EMAIL
+                sync: false
+              - key: RESEND_FROM_NAME
+                sync: false
+              - key: SEND_EMAILS
+                value: "true"
+              - key: AUTH_E2E_ENABLED
+                value: "false"
+              - key: AUTH_E2E_SECRET
+                sync: false
+              - key: OPENROUTER_API_KEY
+                sync: false
+              - key: OPENAI_API_KEY
+                sync: false
+              - key: GOOGLE_CLIENT_ID
+                sync: false
+              - key: GOOGLE_CLIENT_SECRET
+                sync: false
+              - key: OTEL_EXPORTER_OTLP_ENDPOINT
+                sync: false
+              - key: OTEL_EXPORTER_OTLP_PROTOCOL
+                value: http/protobuf
+              - key: OTEL_DEPLOYMENT_ENVIRONMENT
+                value: production
+              - key: OTEL_SERVICE_NAME
+                value: hominem-api
+              - key: OTEL_SERVICE_NAMESPACE
+                value: hominem
+              - key: SENTRY_DSN
+                sync: false
+          - type: worker
+            runtime: docker
+            name: hominem-worker-production
+            branch: main
+            autoDeployTrigger: off
+            dockerfilePath: ./services/api/Dockerfile
+            dockerContext: .
+            dockerCommand: pnpm --filter @hominem/api run start:worker
+            maxShutdownDelaySeconds: 120
+            buildFilter:
+              paths:
+                - package.json
+                - pnpm-lock.yaml
+                - pnpm-workspace.yaml
+                - turbo.json
+                - services/api/**
+                - packages/**
+            envVars:
+              - key: NODE_ENV
+                value: production
+              - key: API_URL
+                value: https://api.ponti.io
+              - key: WEB_URL
+                value: https://app.ponti.io
+              - key: NOTES_URL
+                value: https://app.ponti.io
+              - key: AUTH_ISSUER
+                value: https://api.ponti.io
+              - key: AUTH_AUDIENCE
+                value: hominem-api
+              - key: AUTH_PASSKEY_RP_ID
+                value: api.ponti.io
+              - key: AUTH_PASSKEY_ORIGIN
+                value: https://api.ponti.io
+              - key: AUTH_COOKIE_DOMAIN
+                value: .ponti.io
+              - key: COOKIE_SECRET
+                generateValue: true
+              - key: BETTER_AUTH_SECRET
+                generateValue: true
+              - key: DATABASE_URL
+                fromDatabase:
+                  name: hominem-db-production
+                  property: connectionString
+              - key: REDIS_URL
+                fromService:
+                  name: hominem-kv-production
+                  type: keyvalue
+                  property: connectionString
+              - key: R2_ENDPOINT
+                sync: false
+              - key: R2_BUCKET_NAME
+                value: hominem-storage
+              - key: R2_ACCESS_KEY_ID
+                sync: false
+              - key: R2_SECRET_ACCESS_KEY
+                sync: false
+              - key: RESEND_API_KEY
+                sync: false
+              - key: RESEND_FROM_EMAIL
+                sync: false
+              - key: RESEND_FROM_NAME
+                sync: false
+              - key: SEND_EMAILS
+                value: "true"
+              - key: AUTH_E2E_ENABLED
+                value: "false"
+              - key: AUTH_E2E_SECRET
+                sync: false
+              - key: OPENROUTER_API_KEY
+                sync: false
+              - key: OPENAI_API_KEY
+                sync: false
+              - key: GOOGLE_CLIENT_ID
+                sync: false
+              - key: GOOGLE_CLIENT_SECRET
+                sync: false
+              - key: OTEL_EXPORTER_OTLP_ENDPOINT
+                sync: false
+              - key: OTEL_EXPORTER_OTLP_PROTOCOL
+                value: http/protobuf
+              - key: OTEL_DEPLOYMENT_ENVIRONMENT
+                value: production
+              - key: OTEL_SERVICE_NAME
+                value: hominem-worker
+              - key: OTEL_SERVICE_NAMESPACE
+                value: hominem
+              - key: SENTRY_DSN
+                sync: false
+          - type: web
+            runtime: docker
+            name: hominem-web-production
+            branch: main
+            autoDeployTrigger: off
+            dockerfilePath: ./apps/web/Dockerfile
+            dockerContext: .
+            dockerCommand: pnpm --filter @hominem/web run start
+            healthCheckPath: /
+            domains:
+              - app.ponti.io
+            buildFilter:
+              paths:
+                - package.json
+                - pnpm-lock.yaml
+                - pnpm-workspace.yaml
+                - turbo.json
+                - apps/web/**
+                - packages/**
+            envVars:
+              - key: NODE_ENV
+                value: production
+              - key: VITE_PUBLIC_API_URL
+                value: https://api.ponti.io
+              - key: VITE_R2_DOMAIN
+                sync: false
+              - key: VITE_POSTHOG_API_KEY
+                sync: false
+              - key: VITE_POSTHOG_HOST
+                value: https://us.i.posthog.com
+          - type: keyvalue
+            name: hominem-kv-production
+            ipAllowList: []
+        databases:
+          - name: hominem-db-production
+            databaseName: hominem
+            user: hominem

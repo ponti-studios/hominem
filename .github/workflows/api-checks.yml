@@ -2,14 +2,14 @@ name: API Checks
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, preview]
     paths:
       - 'services/api/**'
       - 'packages/**'
       - 'pnpm-lock.yaml'
       - '.github/workflows/api-checks.yml'
   pull_request:
-    branches: [main, develop]
+    branches: [main, preview]
     paths:
       - 'services/api/**'
       - 'packages/**'
@@ -26,7 +26,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [22.18.0]
+        node-version: [24.14.1]
 
     services:
       postgres:

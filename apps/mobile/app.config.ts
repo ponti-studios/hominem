@@ -134,14 +134,6 @@ export default ({ config }: ConfigContext) => {
             NSAppTransportSecurity: {
               NSAllowsArbitraryLoads: false,
               NSAllowsLocalNetworking: allowsLocalNetworking(appVariant),
-              ...(appVariant !== 'production' && {
-                NSExceptionDomains: {
-                  'railway.app': {
-                    NSExceptionRequiresForwardSecrecy: true,
-                    NSIncludesSubdomains: true,
-                  },
-                },
-              }),
             },
           },
         },

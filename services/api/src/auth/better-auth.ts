@@ -85,6 +85,7 @@ function getTrustedOrigins() {
   const origins = new Set([
     env.API_URL,
     env.AUTH_PASSKEY_ORIGIN,
+    env.WEB_URL,
     env.NOTES_URL,
     'http://localhost:4445',
     'hakumi://',

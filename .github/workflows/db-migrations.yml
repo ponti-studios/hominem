@@ -2,13 +2,13 @@ name: DB Migrations
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, preview]
     paths:
       - 'packages/core/db/**'
       - 'pnpm-lock.yaml'
       - '.github/workflows/db-migrations.yml'
   pull_request:
-    branches: [main, develop]
+    branches: [main, preview]
     paths:
       - 'packages/core/db/**'
       - 'pnpm-lock.yaml'
@@ -24,7 +24,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [22.18.0]
+        node-version: [24.14.1]
         go-version: ['1.22']
 
     services:

@@ -31,6 +31,7 @@ export type AppEnv = {
 
 export function createServer() {
   const app = new Hono<AppEnv>();
+  const allowedOrigins = new Set([env.API_URL, env.WEB_URL, env.NOTES_URL]);
 
   // Block malicious probe requests before doing anything else.
   // Placing this ahead of the logger keeps the noise out of our logs and
@@ -50,8 +51,7 @@ export function createServer() {
     '*',
     cors({
       origin: (origin) => {
-        const allowedOrigins = [env.API_URL, env.NOTES_URL];
-        return allowedOrigins.includes(origin || '') ? origin : null;
+        return allowedOrigins.has(origin || '') ? origin : null;
       },
       credentials: true,
       allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],

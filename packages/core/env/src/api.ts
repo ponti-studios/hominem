@@ -3,14 +3,16 @@ import * as z from 'zod';
 import { baseSchema } from './base';
 
 const isTest = process.env.NODE_ENV === 'test';
+const defaultWebUrl = process.env.WEB_URL ?? process.env.NOTES_URL ?? 'http://localhost:4445';
 
 export const apiSchema = baseSchema.extend({
   PORT: z.string().default('3000'),
   API_URL: z.string().url().default('http://localhost:4040'),
+  WEB_URL: z.string().url().default(defaultWebUrl),
   DATABASE_URL: isTest
     ? z.string().url().default('postgresql://postgres:postgres@localhost:5432/hominem_test')
     : z.string().url(),
-  NOTES_URL: z.string().url().default('http://localhost:4445'),
+  NOTES_URL: z.string().url().default(defaultWebUrl),
   COOKIE_SECRET: z.string().default('supersecret'),
   AUTH_ISSUER: z.string().url().default('http://localhost:3000'),
   AUTH_AUDIENCE: z.string().default('hominem-api'),

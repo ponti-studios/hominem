@@ -18,7 +18,7 @@ Point local services at OTLP HTTP on `http://localhost:4318` (the default).
 
 ## Production
 
-In staging/prod, swap the OTLP endpoint for [Axiom](https://axiom.co) and add a `SENTRY_DSN` for error tracking. No code changes required — environment variables only.
+In preview/prod, swap the OTLP endpoint for [Axiom](https://axiom.co) and add a `SENTRY_DSN` for error tracking. No code changes required — environment variables only.
 
 ```
 OTEL_EXPORTER_OTLP_ENDPOINT=https://api.axiom.co

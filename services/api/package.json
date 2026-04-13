@@ -8,7 +8,9 @@
     "dev": "tsx --watch src/index.ts",
     "format": "pnpm dlx oxfmt ./src",
     "lint": "pnpm dlx oxlint ./src",
+    "migrate:deploy": "goose -dir ../../packages/core/db/migrations postgres \"$DATABASE_URL\" up",
     "start": "tsx src/index.ts",
+    "start:worker": "tsx src/worker.ts",
     "typecheck": "tsc --noEmit",
     "perf:auth-middleware": "NODE_ENV=test tsx src/middleware/auth.perf.ts"
   },

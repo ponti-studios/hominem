@@ -2,14 +2,14 @@ name: Web Checks
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, preview]
     paths:
       - 'apps/web/**'
       - 'packages/**'
       - 'pnpm-lock.yaml'
       - '.github/workflows/web-checks.yml'
   pull_request:
-    branches: [main, develop]
+    branches: [main, preview]
     paths:
       - 'apps/web/**'
       - 'packages/**'
@@ -26,7 +26,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [22.18.0]
+        node-version: [24.14.1]
 
     steps:
       - name: Checkout repository

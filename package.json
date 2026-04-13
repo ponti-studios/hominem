@@ -18,6 +18,9 @@
     "type": "git",
     "url": "git+https://github.com/hackefeller/hominem.git"
   },
+  "scripts": {
+    "db:migrate:deploy": "goose -dir ./packages/core/db/migrations postgres \"$DATABASE_URL\" up"
+  },
   "workspaces": [
     "apps/*",
     "services/*",
