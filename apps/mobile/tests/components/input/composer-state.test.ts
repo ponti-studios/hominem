@@ -56,7 +56,22 @@ describe('deriveComposerPresentation', () => {
       showsVoiceButton: false,
     });
   });
-
+  it('shows chat media actions in the compact chat footer', () => {
+    expect(
+      deriveComposerPresentation(
+        { kind: 'chat', key: 'chat:abc', chatId: 'abc', noteId: null },
+        false,
+        false,
+      ),
+    ).toMatchObject({
+      isHidden: false,
+      placeholder: 'Message',
+      primaryActionLabel: 'Send',
+      showsAttachmentButton: true,
+      showsVoiceButton: true,
+      showsNoteChips: true,
+    });
+  });
 });
 
 describe('createEmptyComposerDraft', () => {

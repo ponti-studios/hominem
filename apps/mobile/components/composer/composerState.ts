@@ -140,7 +140,7 @@ export function deriveComposerPresentation(
 
   if (target.kind === 'chat') {
     return {
-      placeholder: isRecording ? 'Listening…' : 'Ask something about your notes...',
+      placeholder: isRecording ? 'Listening…' : 'Message',
       primaryActionLabel: hasText ? 'Send' : 'Send',
       secondaryActionLabel: null,
       showsAttachmentButton: true,

@@ -1,5 +1,10 @@
-import { CHAT_TITLE_MAX_LENGTH } from '@hominem/chat/constants';
 import type { Note } from '@hominem/rpc/types';
+
+import {
+  DEFAULT_CHAT_TITLE,
+  isDefaultChatTitle,
+  normalizeChatTitle,
+} from '~/services/chat/chat-title';
 
 import type { ComposerTarget, ComposerAttachment } from './composerState';
 
@@ -53,9 +58,10 @@ export function canSubmitComposerDraft(input: {
 }
 
 export function buildChatTitle(message: string) {
-  const trimmed = message.trim();
-  return trimmed.slice(0, CHAT_TITLE_MAX_LENGTH) || 'New conversation';
+  return normalizeChatTitle(message);
 }
+
+export { DEFAULT_CHAT_TITLE, isDefaultChatTitle, normalizeChatTitle };
 
 export function buildNoteContent(noteContent: string, message: string) {
   const trimmedMessage = message.trim();

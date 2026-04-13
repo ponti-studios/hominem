@@ -1,4 +1,5 @@
 import { useApiClient } from '@hominem/rpc/react';
+import type { Chat } from '@hominem/rpc/types';
 import { useQueryClient } from '@tanstack/react-query';
 import type { RelativePathString } from 'expo-router';
 import { useRouter } from 'expo-router';
@@ -19,9 +20,11 @@ import {
   buildChatTitle,
   canSubmitComposerDraft,
   getUploadedAttachmentIds,
+  isDefaultChatTitle,
   resolveComposerPrimaryAction,
   resolveComposerSecondaryAction,
 } from './composerActions';
+import { updateChatTitleCaches } from '~/services/chat/chat-title';
 import type { ComposerTarget, ComposerAttachment } from './composerState';
 
 type UseComposerSubmissionOptions = {
@@ -103,6 +106,37 @@ export function useComposerSubmission({
     clearDraft();
   };
 
+  const maybeUpdateChatTitle = async (chatId: string, nextTitleSource: string) => {
+    const currentChat = queryClient.getQueryData<Chat | null>(chatKeys.activeChat(chatId));
+    if (!currentChat || !isDefaultChatTitle(currentChat.title)) {
+      return;
+    }
+
+    const nextTitle = buildChatTitle(nextTitleSource);
+    if (isDefaultChatTitle(nextTitle)) {
+      return;
+    }
+
+    const updatedAt = new Date().toISOString();
+    updateChatTitleCaches(queryClient, {
+      chatId,
+      title: nextTitle,
+      updatedAt,
+    });
+
+    try {
+      await client.chats.update({
+        chatId,
+        title: nextTitle,
+      });
+    } catch {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: chatKeys.activeChat(chatId) }),
+        invalidateInboxQueries(queryClient),
+      ]);
+    }
+  };
+
   const handlePrimaryAction = () => {
     if (!canSubmit) {
       return;
@@ -111,11 +145,15 @@ export function useComposerSubmission({
     const action = resolveComposerPrimaryAction(target.kind);
 
     if (action === 'send_chat') {
+      const trimmedMessage = message.trim();
       void sendChatMessage({
-        message: message.trim(),
+        message: trimmedMessage,
         ...(uploadedAttachmentIds.length > 0 ? { fileIds: uploadedAttachmentIds } : {}),
         ...(selectedNoteIds.length > 0 ? { noteIds: selectedNoteIds } : {}),
-      }).then(() => {
+      }).then(async () => {
+        if (target.chatId && trimmedMessage.length > 0) {
+          await maybeUpdateChatTitle(target.chatId, trimmedMessage);
+        }
         clearDraft();
       });
       return;

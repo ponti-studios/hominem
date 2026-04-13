@@ -5,6 +5,7 @@ import type {
   ChatsGetMessagesOutput,
   ChatsGetOutput,
   ChatsSendOutput,
+  ChatsUpdateOutput,
 } from '../types/chat.types';
 
 export interface ChatsCreateParams {
@@ -33,6 +34,11 @@ export interface ChatsArchiveInput {
   chatId: string;
 }
 
+export interface ChatsUpdateInput {
+  chatId: string;
+  title: string;
+}
+
 function toMessageQuery(input: ChatsGetMessagesInput): Record<string, string> {
   const query: Record<string, string> = {};
 
@@ -55,6 +61,7 @@ export interface ChatsClient {
   get(input: ChatsGetInput): Promise<ChatsGetOutput>;
   getMessages(input: ChatsGetMessagesInput): Promise<ChatsGetMessagesOutput>;
   create(input: ChatsCreateParams): Promise<ChatsCreateOutput>;
+  update(input: ChatsUpdateInput): Promise<ChatsUpdateOutput>;
   archive(input: ChatsArchiveInput): Promise<Chat>;
   send(input: ChatsSendMessageInput): Promise<ChatsSendOutput>;
 }
@@ -82,6 +89,12 @@ export function createChatsClient(rawClient: RawHonoClient): ChatsClient {
     async create(input) {
       const res = await rawClient.post('/api/chats', { json: input });
       return res.json() as Promise<ChatsCreateOutput>;
+    },
+    async update(input) {
+      const res = await rawClient.patch(`/api/chats/${input.chatId}`, {
+        json: { title: input.title },
+      });
+      return res.json() as Promise<ChatsUpdateOutput>;
     },
     async archive(input) {
       const res = await rawClient.post(`/api/chats/${input.chatId}/archive`);

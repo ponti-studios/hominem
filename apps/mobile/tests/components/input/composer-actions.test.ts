@@ -3,10 +3,12 @@ import { describe, expect, it } from 'vitest';
 import type { Note } from '@hominem/rpc/types';
 
 import {
+  DEFAULT_CHAT_TITLE,
   buildChatTitle,
   buildNoteContent,
   canSubmitComposerDraft,
   getUploadedAttachmentIds,
+  isDefaultChatTitle,
   mergeNoteIntoCache,
   mergeUniqueIds,
   resolveComposerPrimaryAction,
@@ -62,8 +64,9 @@ describe('composer actions', () => {
   });
 
   it('builds chat titles and note content', () => {
-    expect(buildChatTitle('   hello world   ')).toBe('hello world');
-    expect(buildChatTitle('   ')).toBe('New conversation');
+    expect(buildChatTitle('   hello   world   ')).toBe('hello world');
+    expect(buildChatTitle('   ')).toBe(DEFAULT_CHAT_TITLE);
+    expect(isDefaultChatTitle(DEFAULT_CHAT_TITLE)).toBe(true);
     expect(buildNoteContent('body', ' hello ')).toBe('body\n\nhello');
     expect(buildNoteContent('', ' hello ')).toBe('hello');
     expect(buildNoteContent('body', '   ')).toBe('body');

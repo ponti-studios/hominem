@@ -31,7 +31,7 @@ type ChatMessageProps = {
 const ACTIONS_ENTERING = FadeInDown.duration(240).springify().damping(20).stiffness(220).mass(0.9);
 const ACTIONS_EXITING = FadeOutUp.duration(180).springify().damping(24).stiffness(260).mass(0.8);
 const ACTIONS_LAYOUT = LinearTransition.duration(200);
-const USER_BUBBLE_MAX_WIDTH = 544;
+const MESSAGE_BUBBLE_MAX_WIDTH = '84%';
 
 const styles = StyleSheet.create({
   actionButton: {
@@ -70,10 +70,9 @@ const styles = StyleSheet.create({
     borderRadius: radiiNative.md,
     borderTopLeftRadius: 6,
     borderWidth: 1,
-    maxWidth: USER_BUBBLE_MAX_WIDTH,
+    maxWidth: MESSAGE_BUBBLE_MAX_WIDTH,
     paddingHorizontal: spacing[4],
-    paddingVertical: spacing[3],
-    width: '100%',
+    paddingVertical: 0.5,
   },
   contentColumn: {
     gap: spacing[2],
@@ -172,7 +171,7 @@ const styles = StyleSheet.create({
   },
   transcriptBlock: {
     gap: spacing[3],
-    width: '100%',
+    maxWidth: MESSAGE_BUBBLE_MAX_WIDTH,
   },
   transcriptSurface: {
     backgroundColor: colors['bg-base'],
@@ -194,10 +193,9 @@ const styles = StyleSheet.create({
     borderColor: colors['emphasis-highest'],
     borderRadius: radiiNative.md,
     borderWidth: 1,
-    maxWidth: USER_BUBBLE_MAX_WIDTH,
+    maxWidth: MESSAGE_BUBBLE_MAX_WIDTH,
     paddingHorizontal: spacing[4],
     paddingVertical: spacing[3],
-    width: '100%',
   },
 });
 

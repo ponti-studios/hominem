@@ -37,6 +37,8 @@ type ComposerContextValue = {
   setSelectedNoteIds: (value: string[] | ((currentValue: string[]) => string[])) => void;
   toggleSelectedNoteId: (noteId: string) => void;
   clearDraft: () => void;
+  composerClearance: number;
+  setComposerClearance: (value: number) => void;
 };
 
 const ComposerContext = createContext<ComposerContextValue | null>(null);
@@ -57,6 +59,7 @@ export const ComposerProvider = ({ children }: PropsWithChildren) => {
   const [drafts, setDrafts] = useState<Record<string, ComposerDraft>>(() => ({
     feed: createEmptyComposerDraft(),
   }));
+  const [composerClearance, setComposerClearance] = useState(0);
   const activeDraft = drafts[target.key] ?? createEmptyComposerDraft();
 
   const updateDraft = useCallback(
@@ -156,6 +159,8 @@ export const ComposerProvider = ({ children }: PropsWithChildren) => {
       setSelectedNoteIds,
       toggleSelectedNoteId,
       clearDraft,
+      composerClearance,
+      setComposerClearance,
     }),
     [
       activeDraft.attachments,
@@ -164,7 +169,9 @@ export const ComposerProvider = ({ children }: PropsWithChildren) => {
       activeDraft.selectedNoteIds,
       activeDraft.text,
       clearDraft,
+      composerClearance,
       setAttachments,
+      setComposerClearance,
       setIsRecording,
       setMessage,
       setMode,

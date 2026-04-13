@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import type React from 'react';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 
 import { fontSizes, spacing } from '../../tokens';
@@ -30,6 +31,8 @@ interface ChatMessageListProps {
   onShare: (message: ChatMessageItem) => void;
   renderIcon: ChatRenderIcon;
   formatTimestamp: (value: string) => string;
+  contentPaddingBottom?: number;
+  emptyState?: React.ReactElement | null;
 }
 
 export function ChatMessageList({
@@ -49,6 +52,8 @@ export function ChatMessageList({
   onShare,
   renderIcon,
   formatTimestamp,
+  contentPaddingBottom = CHAT_COMPOSER_CLEARANCE,
+  emptyState,
 }: ChatMessageListProps) {
   const hasSearchQuery = showSearch && searchQuery.length > 0;
   const [activeActionMessageId, setActiveActionMessageId] = useState<string | null>(null);
@@ -98,6 +103,12 @@ export function ChatMessageList({
     );
   }, [hasSearchQuery, searchQuery]);
 
+  const listEmptyComponent = hasSearchQuery ? emptySearch : emptyState ?? null;
+  const messagesContainerStyle = useMemo(
+    () => [styles.messagesContainer, { paddingBottom: contentPaddingBottom }],
+    [contentPaddingBottom],
+  );
+
   if (isMessagesLoading) {
     return (
       <View style={styles.shimmerContainer}>
@@ -111,13 +122,13 @@ export function ChatMessageList({
   return (
     <>
       <FlatList
-        ListEmptyComponent={emptySearch}
+        ListEmptyComponent={listEmptyComponent}
         ListFooterComponent={
           displayMessages.length > 0 ? (
             <Pressable onPress={() => setActiveActionMessageId(null)} style={styles.dismissArea} />
           ) : null
         }
-        contentContainerStyle={styles.messagesContainer}
+        contentContainerStyle={messagesContainerStyle}
         data={displayMessages}
         keyExtractor={keyExtractor}
         onScrollBeginDrag={() => setActiveActionMessageId(null)}
@@ -146,7 +157,6 @@ const styles = StyleSheet.create({
   },
   messagesContainer: {
     flexGrow: 1,
-    paddingBottom: CHAT_COMPOSER_CLEARANCE,
     paddingHorizontal: spacing[4],
     paddingTop: spacing[1],
     rowGap: CHAT_TURN_GAP,

@@ -14,9 +14,15 @@ import {
 } from '../inbox/inbox-refresh';
 import { chatKeys } from '../notes/query-keys';
 import { createOptimisticMessage, type MessageOutput } from './chatMessages';
-import { selectChatSession, type ChatWithActivity } from './session-state';
+import { getChatActivityAt, selectChatSession, type ChatWithActivity } from './session-state';
+import { updateChatTitleCaches } from './chat-title';
 
 type SendChatMessageOutput = {
+  chatTitle: string;
+  metadata: {
+    startTime: number;
+    timestamp: string;
+  };
   messages: MessageOutput[];
   function_calls: string[];
 };
@@ -158,6 +164,8 @@ export const useSendMessage = ({ chatId }: { chatId: string }) => {
       );
 
       return {
+        chatTitle: payload.chatTitle,
+        metadata: payload.metadata,
         messages: mappedMessages,
         function_calls: [],
       };
@@ -168,6 +176,11 @@ export const useSendMessage = ({ chatId }: { chatId: string }) => {
       setSendChatError(false);
       setChatSendStatus('idle');
       const optimisticId = context?.optimisticMessageId;
+      updateChatTitleCaches(queryClient, {
+        chatId,
+        title: data.chatTitle,
+        updatedAt: data.metadata.timestamp,
+      });
       queryClient.setQueryData(chatKeys.messages(chatId), (old: MessageOutput[] | undefined) => {
         const previous = old ?? [];
         const serverUserMsg = data.messages.find((m) => m.role === 'user');
@@ -234,6 +247,41 @@ export const useSendMessage = ({ chatId }: { chatId: string }) => {
       return result;
     },
   };
+};
+
+export const useArchiveChat = ({
+  chatId,
+  onSuccess,
+}: {
+  chatId: string;
+  onSuccess: () => void;
+}) => {
+  const client = useApiClient();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => client.chats.archive({ chatId }),
+    onSuccess: (archivedChat) => {
+      queryClient.setQueryData(chatKeys.activeChat(chatId), archivedChat);
+      queryClient.setQueryData<ChatWithActivity[] | undefined>(chatKeys.resumableSessions, (sessions) =>
+        sessions?.filter((session) => session.id !== chatId),
+      );
+      queryClient.setQueryData<ChatWithActivity[] | undefined>(chatKeys.archivedSessions, (sessions) => {
+        const activityAt = getChatActivityAt(archivedChat);
+        const nextArchivedChat: ChatWithActivity = {
+          ...archivedChat,
+          activityAt,
+        };
+
+        if (!sessions) {
+          return [nextArchivedChat];
+        }
+
+        return [nextArchivedChat, ...sessions.filter((session) => session.id !== chatId)];
+      });
+      onSuccess();
+    },
+  });
 };
 
 export const useActiveChat = (chatId?: string | null) => {

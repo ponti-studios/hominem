@@ -13,7 +13,7 @@
 
 import { radiiNative, shadowsNative, spacing } from '@hominem/ui/tokens';
 import { Image } from 'expo-image';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import Animated, {
   useAnimatedKeyboard,
@@ -28,18 +28,15 @@ import {
   createNotesExitLift,
   createNotesLayoutTransition,
 } from '~/components/notes/notes-surface-motion';
-import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import { theme } from '~/components/theme';
+import { useReducedMotion } from '~/hooks/use-reduced-motion';
 
 import { CameraModal } from '../media/camera-modal';
 import { VoiceSessionModal } from '../media/voice-session-modal';
 import { useComposerContext } from './ComposerContext';
-import {
-  deriveComposerPresentation,
-  type ComposerAttachment,
-} from './composerState';
-import { useComposerSubmission } from './useComposerSubmission';
+import { deriveComposerPresentation, type ComposerAttachment } from './composerState';
 import { useComposerMediaActions } from './useComposerMediaActions';
+import { useComposerSubmission } from './useComposerSubmission';
 
 // ─── Layout constants (all derived from design tokens) ───────────────────────
 
@@ -51,15 +48,15 @@ const MAX_WIDTH = 500;
  * Min = spacing[4] × 2 = 32 (one comfortable line)
  * Max = spacing[7]  × 6 = 288 ≈ 300 (six visual rows)
  */
-const INPUT_MIN_H = spacing[4] * 2;   // 32
-const INPUT_MAX_H = spacing[6] * 9;   // 288
+const INPUT_MIN_H = spacing[6] + spacing[4]; // 40
+const INPUT_MAX_H = spacing[6] * 9; // 288
 
 /**
  * Send button = spacing[4] × 2 = 32 × 32 — sits on the 8-pt grid.
  * Icon inside = spacing[3] = 12 (≈ 37 % of button — standard for filled circles).
  */
-const SEND_BTN_SIZE = spacing[4] * 2;  // 32
-const SEND_ICON_SIZE = spacing[3];     // 12
+const SEND_BTN_SIZE = spacing[4] * 2; // 32
+const SEND_ICON_SIZE = spacing[3]; // 12
 
 // ─── SendButton ──────────────────────────────────────────────────────────────
 
@@ -89,11 +86,7 @@ function SendButton({
       <Image
         source={`sf:${sf}`}
         style={styles.sendBtnIcon}
-        tintColor={
-          disabled
-            ? theme.colors['text-tertiary']
-            : theme.colors['bg-base']
-        }
+        tintColor={disabled ? theme.colors['text-tertiary'] : theme.colors['bg-base']}
         contentFit="contain"
       />
     </Pressable>
@@ -106,19 +99,23 @@ function SecondaryButton({
   sf,
   onPress,
   accessibilityLabel,
+  disabled = false,
 }: {
   sf: string;
   onPress: () => void;
   accessibilityLabel: string;
+  disabled?: boolean;
 }) {
   return (
     <Pressable
       onPress={onPress}
+      disabled={disabled}
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
       hitSlop={spacing[2]}
       style={({ pressed }) => [
         styles.secondaryBtn,
+        disabled ? styles.secondaryBtnDisabled : null,
         pressed ? styles.secondaryBtnPressed : null,
       ]}
     >
@@ -166,11 +163,7 @@ function ComposerAttachments({
               accessibilityRole="button"
             >
               {a.localUri && (
-                <Image
-                  source={{ uri: a.localUri }}
-                  style={styles.thumbImage}
-                  contentFit="cover"
-                />
+                <Image source={{ uri: a.localUri }} style={styles.thumbImage} contentFit="cover" />
               )}
               {/* Remove badge */}
               <View style={styles.thumbBadge} pointerEvents="none">
@@ -194,48 +187,53 @@ function ComposerAttachments({
   );
 }
 
-// ─── Toolbar ──────────────────────────────────────────────────────────────────
-
-function Toolbar({
-  canSubmit,
-  isSending,
-  presentation,
-  onPrimaryAction,
-  onSecondaryAction,
-}: {
-  canSubmit: boolean;
-  isSending: boolean;
-  presentation: ReturnType<typeof deriveComposerPresentation>;
-  onPrimaryAction: () => void;
-  onSecondaryAction: (() => void) | null;
-}) {
-  const primarySf =
-    presentation.primaryActionLabel === 'Send'
-      ? 'arrow.up'
-      : presentation.primaryActionLabel === 'Append'
-      ? 'text.badge.plus'
-      : 'square.and.pencil';
+function ComposerSelectionSummary({ selectedNoteIds }: { selectedNoteIds: string[] }) {
+  if (selectedNoteIds.length === 0) {
+    return null;
+  }
 
   return (
-    <View style={styles.toolbar}>
-      {presentation.secondaryActionLabel && onSecondaryAction ? (
-        <SecondaryButton
-          sf="bubble.left.and.text.bubble.right"
-          onPress={onSecondaryAction}
-          accessibilityLabel={presentation.secondaryActionLabel}
+    <View style={styles.selectionRow}>
+      <View style={styles.selectionChip}>
+        <Image
+          source="sf:bubble.left.and.text.bubble.right"
+          style={styles.selectionChipIcon}
+          tintColor={theme.colors['text-secondary']}
+          contentFit="contain"
         />
-      ) : null}
-      <SendButton
-        sf={primarySf}
-        onPress={onPrimaryAction}
-        disabled={!canSubmit || isSending}
-        accessibilityLabel={isSending ? 'Sending…' : presentation.primaryActionLabel}
-      />
+        <Animated.Text style={styles.selectionChipText}>
+          {selectedNoteIds.length} {selectedNoteIds.length === 1 ? 'note' : 'notes'} linked
+        </Animated.Text>
+      </View>
     </View>
   );
 }
 
-// ─── Composer ───────────────────────────────────────────────────────────
+function AccessoryAction({
+  label,
+  onPress,
+  disabled,
+}: {
+  label: string;
+  onPress: () => void;
+  disabled: boolean;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={({ pressed }) => [
+        styles.accessoryAction,
+        disabled ? styles.accessoryActionDisabled : null,
+        pressed && !disabled ? styles.accessoryActionPressed : null,
+      ]}
+    >
+      <Animated.Text style={styles.accessoryActionText}>{label}</Animated.Text>
+    </Pressable>
+  );
+}
 
 export const Composer = () => {
   const insets = useSafeAreaInsets();
@@ -249,9 +247,9 @@ export const Composer = () => {
     clearDraft,
     isRecording,
     message,
-    mode,
     selectedNoteIds,
     setAttachments,
+    setComposerClearance,
     setIsRecording,
     setMessage,
     setMode,
@@ -291,6 +289,12 @@ export const Composer = () => {
     message.trim().length > 0 || attachments.length > 0,
     isRecording,
   );
+  const primarySf =
+    presentation.primaryActionLabel === 'Send'
+      ? 'arrow.up'
+      : presentation.primaryActionLabel === 'Append'
+        ? 'text.badge.plus'
+        : 'square.and.pencil';
 
   const onContentSizeChange = useCallback(
     (h: number) => {
@@ -306,6 +310,7 @@ export const Composer = () => {
   );
 
   const inputStyle = useAnimatedStyle(() => ({
+    flex: 1,
     minHeight: animatedH.value,
     maxHeight: animatedH.value,
   }));
@@ -313,6 +318,14 @@ export const Composer = () => {
   const shellStyle = useAnimatedStyle(() => ({
     bottom: keyboard.height.value + Math.max(insets.bottom, spacing[2]),
   }));
+
+  useEffect(() => {
+    if (presentation.isHidden) {
+      setComposerClearance(0);
+    }
+  }, [presentation.isHidden, setComposerClearance]);
+
+  useEffect(() => () => setComposerClearance(0), [setComposerClearance]);
 
   if (presentation.isHidden) return null;
 
@@ -324,10 +337,14 @@ export const Composer = () => {
     >
       <Animated.View
         layout={createNotesLayoutTransition(prefersReducedMotion)}
+        onLayout={(event) => {
+          setComposerClearance(
+            event.nativeEvent.layout.height + Math.max(insets.bottom, spacing[2]),
+          );
+        }}
         style={styles.card}
         testID="mobile-composer"
       >
-        {/* Attachments above input */}
         <Animated.View layout={createNotesLayoutTransition(prefersReducedMotion)}>
           <ComposerAttachments
             attachments={attachments}
@@ -336,37 +353,68 @@ export const Composer = () => {
             onRemoveAttachment={handleRemoveAttachment}
           />
         </Animated.View>
-
-        {/* Text input */}
-        <Animated.View style={inputStyle}>
-          <TextInput
-            multiline
-            value={message}
-            onChangeText={setMessage}
-            onContentSizeChange={(e) =>
-              onContentSizeChange(e.nativeEvent.contentSize.height)
-            }
-            placeholder={presentation.placeholder}
-            placeholderTextColor={theme.colors['text-tertiary']}
-            cursorColor={theme.colors.accent}
-            selectionColor={theme.colors.accent}
-            style={styles.input}
-            testID="mobile-composer-input"
-            textAlignVertical="top"
-            scrollEnabled={false}
-          />
+        <ComposerSelectionSummary selectedNoteIds={selectedNoteIds} />
+        <Animated.View style={[styles.inputSurface, inputStyle]}>
+          <View style={styles.inputWrap}>
+            <TextInput
+              multiline
+              value={message}
+              onChangeText={setMessage}
+              onContentSizeChange={(e) => onContentSizeChange(e.nativeEvent.contentSize.height)}
+              placeholder={presentation.placeholder}
+              placeholderTextColor={theme.colors['text-tertiary']}
+              cursorColor={theme.colors.accent}
+              selectionColor={theme.colors.accent}
+              style={styles.input}
+              testID="mobile-composer-input"
+              textAlignVertical="top"
+              scrollEnabled={false}
+            />
+          </View>
         </Animated.View>
-
-        {/* Submit toolbar */}
-        <Toolbar
-          canSubmit={canSubmit}
-          isSending={isChatSending}
-          presentation={presentation}
-          onPrimaryAction={handlePrimaryAction}
-          onSecondaryAction={
-            presentation.secondaryActionLabel ? handleSecondaryAction : null
-          }
-        />
+        <View style={styles.accessoryRow}>
+          <View style={styles.accessoryLeft}>
+            {presentation.showsAttachmentButton ? (
+              <>
+                <SecondaryButton
+                  sf="photo"
+                  onPress={() => {
+                    void pickAttachment();
+                  }}
+                  accessibilityLabel="Choose a photo"
+                  disabled={isChatSending}
+                />
+                <SecondaryButton
+                  sf="camera"
+                  onPress={() => setIsCameraOpen(true)}
+                  accessibilityLabel="Take a photo"
+                  disabled={isChatSending}
+                />
+              </>
+            ) : null}
+            {presentation.showsVoiceButton ? (
+              <SecondaryButton
+                sf="waveform"
+                onPress={() => setIsVoiceOpen(true)}
+                accessibilityLabel="Record a voice message"
+                disabled={isChatSending}
+              />
+            ) : null}
+            {presentation.secondaryActionLabel ? (
+              <AccessoryAction
+                label={presentation.secondaryActionLabel}
+                onPress={handleSecondaryAction}
+                disabled={isChatSending}
+              />
+            ) : null}
+          </View>
+          <SendButton
+            sf={primarySf}
+            onPress={handlePrimaryAction}
+            disabled={!canSubmit || isChatSending}
+            accessibilityLabel={isChatSending ? 'Sending…' : presentation.primaryActionLabel}
+          />
+        </View>
       </Animated.View>
 
       <CameraModal
@@ -399,7 +447,7 @@ const styles = StyleSheet.create({
   shell: {
     left: 0,
     right: 0,
-    paddingHorizontal: spacing[4],   // 16 — matches screen-level padding on all other screens
+    paddingHorizontal: spacing[4],
     position: 'absolute',
     alignItems: 'center',
   },
@@ -413,19 +461,26 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: MAX_WIDTH,
     backgroundColor: theme.colors['bg-elevated'],
-    borderWidth: 1,
-    borderColor: theme.colors['border-default'],
-    borderRadius: radiiNative.icon,
+    // borderWidth: 1,
+    // borderColor: theme.colors['border-default'],
+    borderRadius: radiiNative.md,
     borderCurve: 'continuous',
-    paddingHorizontal: spacing[3],   // 12
-    paddingTop: spacing[2],          // 8
-    paddingBottom: spacing[2],       // 8
-    gap: spacing[2],                 // 8
+    paddingHorizontal: spacing[1],
+    paddingTop: spacing[1],
+    paddingBottom: spacing[3],
+    gap: spacing[2],
     overflow: 'hidden',
     ...shadowsNative.low,
   },
 
-  // Input: text-md variant (16 / 24) — same scale as body copy across the app
+  inputSurface: {
+    minHeight: INPUT_MIN_H + spacing[3],
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[2],
+  },
+  inputWrap: {
+    flex: 1,
+  },
   input: {
     color: theme.colors.foreground,
     fontSize: theme.textVariants['text-md'].fontSize,
@@ -434,17 +489,41 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
     paddingVertical: 0,
   },
-
-  // Toolbar: right-aligned, height derives from SEND_BTN_SIZE
-  toolbar: {
-    flexDirection: 'row',
+  accessoryRow: {
     alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: spacing[2],                 // 8
+    flexDirection: 'row',
+    gap: spacing[2],
+    justifyContent: 'space-between',
+  },
+  accessoryLeft: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing[1],
     minHeight: SEND_BTN_SIZE,
+    flexShrink: 1,
+  },
+  accessoryAction: {
+    alignItems: 'center',
+    backgroundColor: theme.colors['bg-surface'],
+    borderColor: theme.colors['border-default'],
+    borderRadius: radiiNative.full,
+    borderWidth: 1,
+    justifyContent: 'center',
+    minHeight: SEND_BTN_SIZE,
+    paddingHorizontal: spacing[3],
+  },
+  accessoryActionDisabled: {
+    opacity: 0.4,
+  },
+  accessoryActionPressed: {
+    opacity: 0.75,
+  },
+  accessoryActionText: {
+    color: theme.colors['text-secondary'],
+    fontSize: theme.textVariants.small.fontSize,
+    lineHeight: theme.textVariants.small.lineHeight,
   },
 
-  // Send button: spacing[4]×2 circle, filled with foreground color
   sendBtn: {
     width: SEND_BTN_SIZE,
     height: SEND_BTN_SIZE,
@@ -465,25 +544,24 @@ const styles = StyleSheet.create({
     width: SEND_ICON_SIZE,
     height: SEND_ICON_SIZE,
   },
-
-  // Secondary button: borderless icon, 36 × 36 touch target
   secondaryBtn: {
-    width: spacing[5] + spacing[3],  // 24+12 = 36
-    height: spacing[5] + spacing[3], // 36
+    width: spacing[5] + spacing[2],
+    height: spacing[5] + spacing[2],
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radiiNative.md,
     borderCurve: 'continuous',
   },
+  secondaryBtnDisabled: {
+    opacity: 0.4,
+  },
   secondaryBtnPressed: {
     backgroundColor: theme.colors['bg-surface'],
   },
   secondaryBtnIcon: {
-    width: spacing[3],               // 12
-    height: spacing[3],              // 12
+    width: spacing[4],
+    height: spacing[4],
   },
-
-  // Attachments
   attachments: {
     gap: spacing[2],
   },
@@ -491,11 +569,9 @@ const styles = StyleSheet.create({
     gap: spacing[2],
     paddingBottom: spacing[1],
   },
-
-  // Thumbnail: spacing[4]×3 = 48 × 48, radiiNative.md = 8
   thumb: {
-    width: spacing[4] * 3,          // 48
-    height: spacing[4] * 3,         // 48
+    width: spacing[4] * 3,
+    height: spacing[4] * 3,
     borderRadius: radiiNative.md,
     borderCurve: 'continuous',
     overflow: 'hidden',
@@ -507,18 +583,18 @@ const styles = StyleSheet.create({
   },
   thumbBadge: {
     position: 'absolute',
-    top: spacing[1],                 // 4
-    right: spacing[1],               // 4
-    width: spacing[2] * 2,          // 16
-    height: spacing[2] * 2,         // 16
+    top: spacing[1],
+    right: spacing[1],
+    width: spacing[2] * 2,
+    height: spacing[2] * 2,
     borderRadius: radiiNative.full,
     backgroundColor: 'rgba(0,0,0,0.6)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   thumbBadgeIcon: {
-    width: spacing[1] + 2,          // 6
-    height: spacing[1] + 2,         // 6
+    width: spacing[1] + 2,
+    height: spacing[1] + 2,
   },
   thumbDim: {
     position: 'absolute',
@@ -529,7 +605,29 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.35)',
   },
 
-  // Error text: small variant specs
+  selectionRow: {
+    flexDirection: 'row',
+  },
+  selectionChip: {
+    alignItems: 'center',
+    backgroundColor: theme.colors['bg-surface'],
+    borderColor: theme.colors['border-default'],
+    borderRadius: radiiNative.full,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: spacing[1],
+    paddingHorizontal: spacing[2],
+    paddingVertical: spacing[1],
+  },
+  selectionChipIcon: {
+    height: spacing[3],
+    width: spacing[3],
+  },
+  selectionChipText: {
+    color: theme.colors['text-secondary'],
+    fontSize: theme.textVariants.small.fontSize,
+    lineHeight: theme.textVariants.small.lineHeight,
+  },
   errorText: {
     fontSize: theme.textVariants.small.fontSize,
     lineHeight: theme.textVariants.small.lineHeight,

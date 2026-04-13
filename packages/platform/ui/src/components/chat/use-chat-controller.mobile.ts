@@ -159,7 +159,6 @@ export function useChatController({
     mutationFn: async (review: { proposedTitle: string; previewContent: string }) => {
       return client.notes.create({
         content: review.previewContent,
-        excerpt: review.previewContent.slice(0, 160),
         title: review.proposedTitle,
         type: 'note',
       });

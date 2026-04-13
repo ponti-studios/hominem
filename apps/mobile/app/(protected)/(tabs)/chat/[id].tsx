@@ -1,340 +1,221 @@
-import { Image } from 'expo-image';
-import { useLocalSearchParams } from 'expo-router';
-import React, { useCallback, useEffect, useRef } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import Reanimated, {
-  FadeIn,
-  FadeOut,
-  LinearTransition,
-  useAnimatedStyle,
-  useSharedValue,
-  withDelay,
-  withRepeat,
-  withSequence,
-  withTiming,
-} from 'react-native-reanimated';
-import { useIsMutating } from '@tanstack/react-query';
+import { useApiClient } from '@hominem/rpc/react';
+import type { SessionSource } from '@hominem/rpc/types';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import type { RelativePathString } from 'expo-router';
+import React, { useMemo } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Loading } from '~/components/Loading';
+import { useComposerContext } from '~/components/composer/ComposerContext';
+import { DEFAULT_CHAT_TITLE, resolveChatScreenTitle } from '~/services/chat';
+import { useActiveChat, useArchiveChat, useChatMessages, useSendMessage } from '~/services/chat';
 import { useTTS } from '~/components/media/use-tts';
-import { Text, theme } from '~/components/theme';
-import { useActiveChat, useChatMessages } from '~/services/chat';
+import { theme } from '~/components/theme';
+import AppIcon from '~/components/ui/icon';
+import { EmptyState } from '~/components/ui/EmptyState';
+import {
+  createChatInboxRefreshSnapshot,
+  upsertInboxSessionActivity,
+} from '~/services/inbox/inbox-refresh';
+import { chatKeys } from '~/services/notes/query-keys';
+import { formatRelativeAge } from '~/services/date/format-relative-age';
+import type { ChatWithActivity } from '~/services/chat/session-state';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+import { ChatMessageList } from '../../../../../../packages/platform/ui/src/components/chat/chat-message-list.mobile';
+import { ChatReviewOverlay } from '../../../../../../packages/platform/ui/src/components/chat/chat-review-overlay.mobile';
+import { ChatSearchModal } from '../../../../../../packages/platform/ui/src/components/chat/chat-search-modal.mobile';
+import type { ChatRenderIcon } from '../../../../../../packages/platform/ui/src/components/chat/chat.types';
+import type { ChatServices } from '../../../../../../packages/platform/ui/src/components/chat/use-chat-controller.mobile';
+import { useChatController } from '../../../../../../packages/platform/ui/src/components/chat/use-chat-controller.mobile';
 
-type Message = {
-  id: string;
-  role: string;
-  message: string;
-};
-
-// ─── Empty state ──────────────────────────────────────────────────────────────
-
-function EmptyChat() {
-  return (
-    <View style={styles.emptyState}>
-      <View style={styles.emptyIconWrap}>
-        <Image
-          source="sf:bubble.left.and.bubble.right"
-          style={styles.emptyIcon}
-          tintColor={theme.colors['text-tertiary']}
-          contentFit="contain"
-        />
-      </View>
-      <Text style={styles.emptyTitle}>Start the conversation</Text>
-      <Text style={styles.emptyBody}>
-        Use the composer below to ask a question or reference your notes.
-      </Text>
-    </View>
-  );
-}
-
-// ─── Thinking indicator ───────────────────────────────────────────────────────
-
-function PulseDot({ delay }: { delay: number }) {
-  const opacity = useSharedValue(0.3);
-
-  useEffect(() => {
-    opacity.value = withDelay(
-      delay,
-      withRepeat(
-        withSequence(withTiming(1, { duration: 400 }), withTiming(0.3, { duration: 400 })),
-        -1,
-        false,
-      ),
-    );
-  }, [delay, opacity]);
-
-  const style = useAnimatedStyle(() => ({ opacity: opacity.value }));
-
-  return <Reanimated.View style={[styles.thinkingDot, style]} />;
-}
-
-function ThinkingIndicator() {
-  return (
-    <Reanimated.View
-      entering={FadeIn.duration(200)}
-      exiting={FadeOut.duration(150)}
-      style={styles.thinkingRow}
-    >
-      <View style={[styles.bubble, styles.bubbleAssistant, styles.thinkingBubble]}>
-        <PulseDot delay={0} />
-        <PulseDot delay={160} />
-        <PulseDot delay={320} />
-      </View>
-    </Reanimated.View>
-  );
-}
-
-// ─── Message bubble ───────────────────────────────────────────────────────────
-
-interface BubbleProps {
-  message: Message;
-  isSpeaking: boolean;
-  isNew: boolean;
-  onSpeak: () => void;
-}
-
-const MessageBubble = React.memo(({ message, isSpeaking, isNew, onSpeak }: BubbleProps) => {
-  const isUser = message.role === 'user';
-
-  return (
-    <Reanimated.View
-      entering={isNew ? FadeIn.duration(180) : undefined}
-      layout={LinearTransition.duration(160)}
-      style={[styles.bubbleRow, isUser ? styles.bubbleRowRight : styles.bubbleRowLeft]}
-    >
-      <View style={[styles.bubble, isUser ? styles.bubbleUser : styles.bubbleAssistant]}>
-        <Text
-          selectable
-          style={[styles.bubbleText, isUser ? styles.bubbleTextUser : styles.bubbleTextAssistant]}
-        >
-          {message.message}
-        </Text>
-      </View>
-
-      {!isUser && (
-        <Pressable
-          onPress={onSpeak}
-          style={({ pressed }) => [styles.ttsButton, pressed && styles.ttsButtonPressed]}
-          hitSlop={10}
-          accessibilityLabel={isSpeaking ? 'Stop reading' : 'Read aloud'}
-          accessibilityRole="button"
-        >
-          <Image
-            source={isSpeaking ? 'sf:stop.circle.fill' : 'sf:waveform'}
-            style={styles.ttsIcon}
-            tintColor={isSpeaking ? theme.colors.accent : theme.colors['text-tertiary']}
-            contentFit="contain"
-          />
-        </Pressable>
-      )}
-    </Reanimated.View>
-  );
-});
-
-MessageBubble.displayName = 'MessageBubble';
-
-// ─── Screen ───────────────────────────────────────────────────────────────────
+const renderChatIcon: ChatRenderIcon = (name, props) => (
+  <View style={props.style}>
+    <AppIcon name={name as any} size={props.size} color={props.color} />
+  </View>
+);
 
 export default function ChatDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { speakingId, speak, state: ttsState } = useTTS();
-  const { data: activeChat, isLoading: isLoadingActiveChat } = useActiveChat(id);
+  const router = useRouter();
+  const client = useApiClient();
+  const queryClient = useQueryClient();
+  const { composerClearance } = useComposerContext();
+  const { speakingId, speak } = useTTS();
+  const { data: activeChat } = useActiveChat(id);
   const chatId = activeChat?.id ?? id;
-  const messagesQuery = useChatMessages({ chatId });
-  const isThinking = useIsMutating({ mutationKey: ['sendChatMessage', chatId] }) > 0;
-  const scrollRef = useRef<ScrollView>(null);
 
-  const messages = (messagesQuery.data ?? []).filter(
-    (m) => m.role === 'user' || m.role === 'assistant',
+  const services = useMemo<ChatServices>(
+    () => ({
+      useArchiveChat,
+      useChatMessages,
+      useSendMessage,
+      chatKeys: {
+        messages: chatKeys.messages,
+      },
+      speech: {
+        speak: (messageId: string, text: string) => {
+          void speak(messageId, text);
+        },
+        speakingId,
+      },
+    }),
+    [speak, speakingId],
   );
 
-  // Track which message IDs were already rendered so only genuinely new
-  // messages receive the enter animation.
-  const renderedIdsRef = useRef<Set<string>>(new Set());
-  const newIds = new Set(messages.map((m) => m.id).filter((id) => !renderedIdsRef.current.has(id)));
-  useEffect(() => {
-    for (const m of messages) renderedIdsRef.current.add(m.id);
+  const source = useMemo<SessionSource>(() => {
+    if (activeChat?.noteId) {
+      return {
+        kind: 'artifact',
+        id: activeChat.noteId,
+        title: activeChat.title,
+        type: 'note',
+      };
+    }
+
+    return { kind: 'new' };
+  }, [activeChat]);
+
+  const controller = useChatController({
+    chatId,
+    onChatArchive: () => {
+      router.replace('/(protected)/(tabs)' as RelativePathString);
+    },
+    services,
+    source,
   });
 
-  // Scroll to bottom when messages arrive
-  useEffect(() => {
-    if (messages.length > 0) {
-      requestAnimationFrame(() => {
-        scrollRef.current?.scrollToEnd({ animated: false });
-      });
-    }
-  }, [messages.length]);
+  const displayTitle = resolveChatScreenTitle(activeChat?.title, controller.resolvedSource);
 
-  const handleSpeak = useCallback(
-    (message: Message) => {
-      void speak(message.id, message.message);
+  const createChatMutation = useMutation({
+    mutationFn: async () => client.chats.create({ title: DEFAULT_CHAT_TITLE }),
+    onSuccess: (chat) => {
+      queryClient.setQueryData(chatKeys.activeChat(chat.id), chat);
+      queryClient.setQueryData<ChatWithActivity[] | undefined>(
+        chatKeys.resumableSessions,
+        (sessions) =>
+          upsertInboxSessionActivity(
+            sessions ?? [],
+            createChatInboxRefreshSnapshot({
+              chatId: chat.id,
+              noteId: chat.noteId,
+              timestamp: chat.updatedAt,
+              title: chat.title,
+              userId: chat.userId,
+            }),
+          ),
+      );
+      router.push(`/(protected)/(tabs)/chat/${chat.id}` as RelativePathString);
     },
-    [speak],
-  );
+  });
 
-  if (isLoadingActiveChat || !chatId) {
-    return <Loading variant="page" message="Loading chat…" />;
-  }
+  const emptyState = useMemo(
+    () => (
+      <EmptyState
+        sfSymbol="bubble.left"
+        title="Start the conversation"
+        description="Ask a question, attach a photo, or record a voice note."
+        bottomOffset={composerClearance}
+      />
+    ),
+    [composerClearance],
+  );
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        ref={scrollRef}
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
-        showsVerticalScrollIndicator={false}
-        keyboardDismissMode="interactive"
-      >
-        {messages.length === 0 ? (
-          <EmptyChat />
-        ) : (
-          messages.map((message) => (
-            <MessageBubble
-              key={message.id}
-              message={message}
-              isNew={newIds.has(message.id)}
-              isSpeaking={speakingId === message.id && ttsState === 'playing'}
-              onSpeak={() => handleSpeak(message)}
-            />
-          ))
-        )}
-        {isThinking && <ThinkingIndicator />}
-      </ScrollView>
+      <Stack.Screen
+        options={{
+          headerShown: true,
+          headerTitle: displayTitle,
+          headerTitleAlign: 'center',
+          headerRight: () => (
+            <View style={styles.headerActions}>
+              <Pressable
+                onPress={controller.handleOpenMenu}
+                hitSlop={8}
+                accessibilityLabel="Conversation actions"
+                style={({ pressed }) => [styles.headerButton, pressed ? styles.headerButtonPressed : null]}
+              >
+                <AppIcon color={theme.colors.foreground} name="ellipsis" size={20} />
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  if (!createChatMutation.isPending) {
+                    createChatMutation.mutate();
+                  }
+                }}
+                hitSlop={8}
+                accessibilityLabel="New chat"
+                style={({ pressed }) => [styles.headerButton, pressed ? styles.headerButtonPressed : null]}
+              >
+                <AppIcon color={theme.colors.foreground} name="square.and.pencil" size={20} />
+              </Pressable>
+            </View>
+          ),
+        }}
+      />
+      <ChatSearchModal
+        visible={controller.showSearch}
+        searchQuery={controller.searchQuery}
+        resultCount={controller.displayMessages.length}
+        searchInputRef={controller.searchInputRef}
+        onClose={controller.handleCloseSearch}
+        onChangeSearchQuery={controller.handleSearchQueryChange}
+        renderIcon={renderChatIcon}
+      />
+      <ChatMessageList
+        isMessagesLoading={controller.isMessagesLoading}
+        displayMessages={controller.displayMessages}
+        showSearch={controller.showSearch}
+        searchQuery={controller.searchQuery}
+        markdown={controller.Markdown}
+        showDebug={controller.showDebug}
+        speakingId={controller.speakingId}
+        chatSendStatus={controller.chatSendStatus as 'idle' | 'submitted' | 'streaming' | 'error'}
+        onCopy={controller.handleCopyMessage}
+        onEdit={controller.handleEditMessage}
+        onRegenerate={controller.handleRegenerate}
+        onDelete={controller.handleDeleteMessage}
+        onSpeak={controller.handleSpeakMessage}
+        onShare={(message: Parameters<typeof controller.handleShareMessage>[0]) => {
+          void controller.handleShareMessage(message);
+        }}
+        renderIcon={renderChatIcon}
+        formatTimestamp={formatRelativeAge}
+        contentPaddingBottom={composerClearance}
+        emptyState={emptyState}
+      />
+      <ChatReviewOverlay
+        pendingReview={controller.pendingReview}
+        isVisible={controller.isReviewVisible}
+        onAccept={() => {
+          void controller.handleAcceptReview();
+        }}
+        onReject={() => {
+          void controller.handleRejectReview();
+        }}
+      />
     </View>
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
-const BUBBLE_MAX_WIDTH = '78%';
-const BUBBLE_RADIUS = 20;
-const COMPOSER_CLEARANCE = 180;
-
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     backgroundColor: theme.colors.background,
-  },
-  scroll: {
     flex: 1,
   },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: COMPOSER_CLEARANCE,
+  headerActions: {
+    alignItems: 'center',
+    flexDirection: 'row',
     gap: 4,
   },
-
-  // ── Bubbles ────────────────────────────────────────────────────────────────
-  bubbleRow: {
-    flexDirection: 'column',
-    marginBottom: 2,
-  },
-  bubbleRowRight: {
-    alignItems: 'flex-end',
-  },
-  bubbleRowLeft: {
-    alignItems: 'flex-start',
-  },
-  bubble: {
-    maxWidth: BUBBLE_MAX_WIDTH,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderCurve: 'continuous',
-  },
-  bubbleUser: {
-    backgroundColor: theme.colors.foreground,
-    borderRadius: BUBBLE_RADIUS,
-    borderBottomRightRadius: 6,
-  },
-  bubbleAssistant: {
-    backgroundColor: theme.colors['bg-elevated'],
-    borderRadius: BUBBLE_RADIUS,
-    borderBottomLeftRadius: 6,
-  },
-  bubbleText: {
-    fontSize: 16,
-    lineHeight: 22,
-    letterSpacing: -0.1,
-  },
-  bubbleTextUser: {
-    color: theme.colors.background,
-  },
-  bubbleTextAssistant: {
-    color: theme.colors.foreground,
-  },
-
-  // ── Thinking indicator ──────────────────────────────────────────────────────
-  thinkingRow: {
-    alignItems: 'flex-start',
-    marginBottom: 2,
-  },
-  thinkingBubble: {
-    flexDirection: 'row',
+  headerButton: {
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 16,
-    paddingVertical: 13,
-  },
-  thinkingDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: theme.colors['text-tertiary'],
-  },
-
-  // ── TTS button ──────────────────────────────────────────────────────────────
-  ttsButton: {
-    marginTop: 5,
-    marginLeft: 4,
-    padding: 4,
-    borderRadius: 8,
-    borderCurve: 'continuous',
-  },
-  ttsButtonPressed: {
-    backgroundColor: theme.colors['bg-elevated'],
-  },
-  ttsIcon: {
-    width: 16,
-    height: 16,
-  },
-
-  // ── Empty state ─────────────────────────────────────────────────────────────
-  emptyState: {
-    flex: 1,
-    alignItems: 'center',
+    borderRadius: 16,
+    height: 32,
     justifyContent: 'center',
-    paddingHorizontal: 40,
-    paddingTop: 80,
-    gap: 12,
+    width: 32,
   },
-  emptyIconWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: theme.colors['bg-elevated'],
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 4,
-  },
-  emptyIcon: {
-    width: 26,
-    height: 26,
-  },
-  emptyTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: theme.colors.foreground,
-    letterSpacing: -0.2,
-    textAlign: 'center',
-  },
-  emptyBody: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: theme.colors['text-tertiary'],
-    textAlign: 'center',
+  headerButtonPressed: {
+    opacity: 0.5,
   },
 });
