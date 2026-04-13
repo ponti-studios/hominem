@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 
-import type { InboxStreamItemData } from '~/components/workspace/inbox-stream-items';
-import { useResumableSessions } from '~/components/chat/session-card';
+import type { InboxStreamItemData } from '~/components/workspace/InboxStreamItem.types';
+import { useResumableSessions } from '~/hooks/useResumableSessions';
 import { useNoteStream } from '~/services/notes/use-note-stream';
 
 export function useInboxStreamItems() {

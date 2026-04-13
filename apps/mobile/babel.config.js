@@ -7,12 +7,9 @@ module.exports = function (api) {
         'babel-preset-expo',
         {
           reactCompiler: true,
+          lazyImports: true,
         },
       ],
-    ],
-    plugins: [
-      'react-native-worklets/plugin',
-      'react-native-reanimated/plugin',
     ],
   };
 };

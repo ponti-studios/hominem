@@ -3,7 +3,7 @@ import { Stack, useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { useArchivedSessions } from '~/components/chat/session-card';
+import { useArchivedSessions } from '~/hooks/useArchivedSessions';
 import AppIcon from '~/components/ui/icon';
 import { Text, theme } from '~/components/theme';
 import { formatRelativeAge } from '~/services/date/format-relative-age';

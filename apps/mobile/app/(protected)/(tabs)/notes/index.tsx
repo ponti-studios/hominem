@@ -1,19 +1,18 @@
-import { colors, spacing } from '@hominem/ui/tokens';
+import { radiiNative, spacing } from '@hominem/ui/tokens';
+import { shadowsNative } from '@hominem/ui/tokens/shadows';
 import { FlashList, type ListRenderItem } from '@shopify/flash-list';
+import { Image } from 'expo-image';
 import type { RelativePathString } from 'expo-router';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Pressable, RefreshControl, StyleSheet, View } from 'react-native';
-import Reanimated from 'react-native-reanimated';
+import Reanimated, { FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated';
 
-import {
-  createNotesEnterFade,
-  createNotesExitFade,
-  createNotesLayoutTransition,
-} from '~/components/notes/notes-surface-motion';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import { Text, theme } from '~/components/theme';
 import { flattenNoteFeedPages, useNoteFeed } from '~/services/notes/use-note-stream';
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 type FeedRow = {
   id: string;
@@ -23,28 +22,89 @@ type FeedRow = {
   hasAttachments: boolean;
 };
 
-function NoteCard({ item, onPress }: { item: FeedRow; onPress: () => void }) {
-  return (
-    <Pressable style={styles.card} onPress={onPress}>
-      <View style={styles.cardHeader}>
-        <Text variant="bodyLarge" color="foreground">
-          {item.title || 'Untitled note'}
+// ─── Date formatting ──────────────────────────────────────────────────────────
+
+function formatNoteDate(iso: string): string {
+  const date = new Date(iso);
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const targetStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const diffDays = Math.round((todayStart.getTime() - targetStart.getTime()) / 86_400_000);
+
+  if (diffDays === 0) return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) return date.toLocaleDateString([], { weekday: 'short' });
+  if (diffDays < 365) return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  return date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+// ─── Row separator ────────────────────────────────────────────────────────────
+
+const RowSeparator = React.memo(() => <View style={styles.separator} />);
+RowSeparator.displayName = 'RowSeparator';
+
+// ─── Note row ─────────────────────────────────────────────────────────────────
+
+const NoteRow = React.memo(({ item, onPress }: { item: FeedRow; onPress: () => void }) => (
+  <Pressable
+    onPress={onPress}
+    style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+    accessibilityRole="button"
+    accessibilityLabel={item.title ?? 'Untitled note'}
+  >
+    <View style={styles.rowInner}>
+      <View style={styles.rowTop}>
+        <Text style={styles.rowTitle} numberOfLines={1}>
+          {item.title ?? 'Untitled note'}
         </Text>
-        <Text variant="caption" color="text-secondary">
-          {new Date(item.createdAt).toLocaleString()}
-        </Text>
+        <Text style={styles.rowDate}>{formatNoteDate(item.createdAt)}</Text>
       </View>
-      <Text variant="body" color="text-secondary">
-        {item.contentPreview || 'No content yet.'}
-      </Text>
-      {item.hasAttachments ? (
-        <Text variant="caption" color="text-secondary">
-          Has attachments
+
+      {item.contentPreview ? (
+        <Text style={styles.rowPreview} numberOfLines={2}>
+          {item.contentPreview}
         </Text>
       ) : null}
-    </Pressable>
+
+      {item.hasAttachments ? (
+        <View style={styles.attachmentRow}>
+          <Image
+            source="sf:paperclip"
+            style={styles.attachmentIcon}
+            tintColor={theme.colors['text-tertiary']}
+            contentFit="contain"
+          />
+          <Text style={styles.attachmentText}>Attachment</Text>
+        </View>
+      ) : null}
+    </View>
+  </Pressable>
+));
+
+NoteRow.displayName = 'NoteRow';
+
+// ─── Empty state ──────────────────────────────────────────────────────────────
+
+function EmptyNotes() {
+  return (
+    <Reanimated.View entering={FadeIn.duration(280)} style={styles.empty}>
+      <View style={styles.emptyIconRing}>
+        <Image
+          source="sf:note.text"
+          style={styles.emptyIcon}
+          tintColor={theme.colors['text-tertiary']}
+          contentFit="contain"
+        />
+      </View>
+      <Text style={styles.emptyTitle}>No notes yet</Text>
+      <Text style={styles.emptyBody}>
+        Use the composer below to capture your first thought.
+      </Text>
+    </Reanimated.View>
   );
 }
+
+// ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function NotesFeedScreen() {
   const router = useRouter();
@@ -52,11 +112,12 @@ export default function NotesFeedScreen() {
   const previousCountRef = useRef(0);
   const previousContentHeightRef = useRef(0);
   const previousOffsetRef = useRef(0);
-  const isAnchoringOlderNotesRef = useRef(false);
-  const isFirstContentSizeChangeRef = useRef(true);
+  const isAnchoringRef = useRef(false);
+  const isFirstRef = useRef(true);
   const feedQuery = useNoteFeed();
   const [isNearBottom, setIsNearBottom] = useState(true);
   const prefersReducedMotion = useReducedMotion();
+
   const notes = useMemo(
     () =>
       flattenNoteFeedPages(feedQuery.data).map<FeedRow>((note) => ({
@@ -71,24 +132,28 @@ export default function NotesFeedScreen() {
 
   const handleEndReached = useCallback(() => {
     if (feedQuery.hasNextPage && !feedQuery.isFetchingNextPage) {
-      isAnchoringOlderNotesRef.current = true;
+      isAnchoringRef.current = true;
       void feedQuery.fetchNextPage();
     }
   }, [feedQuery]);
 
-  const handleRefresh = useCallback(() => {
-    void feedQuery.refetch();
-  }, [feedQuery]);
+  const handleRefresh = useCallback(() => void feedQuery.refetch(), [feedQuery]);
 
   const renderItem = useCallback<ListRenderItem<FeedRow>>(
     ({ item }) => (
       <Reanimated.View
-        entering={createNotesEnterFade(prefersReducedMotion)}
-        layout={createNotesLayoutTransition(prefersReducedMotion)}
+        entering={
+          prefersReducedMotion
+            ? FadeIn.duration(120)
+            : FadeInDown.duration(220).springify().damping(22).stiffness(260)
+        }
+        layout={LinearTransition.duration(160)}
       >
-        <NoteCard
+        <NoteRow
           item={item}
-          onPress={() => router.push(`/(protected)/(tabs)/notes/${item.id}` as RelativePathString)}
+          onPress={() =>
+            router.push(`/(protected)/(tabs)/notes/${item.id}` as RelativePathString)
+          }
         />
       </Reanimated.View>
     ),
@@ -98,134 +163,215 @@ export default function NotesFeedScreen() {
   const handleScroll = useCallback((event: any) => {
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
     previousOffsetRef.current = contentOffset.y;
-    const distanceFromBottom = contentSize.height - layoutMeasurement.height - contentOffset.y;
-    setIsNearBottom(distanceFromBottom <= 96);
+    setIsNearBottom(contentSize.height - layoutMeasurement.height - contentOffset.y <= 96);
   }, []);
 
   const handleContentSizeChange = useCallback(
-    (_width: number, height: number) => {
-      const previousCount = previousCountRef.current;
+    (_w: number, height: number) => {
+      const prevCount = previousCountRef.current;
       const nextCount = notes.length;
-      const didInitialHydrate = isFirstContentSizeChangeRef.current && nextCount > 0;
-      const didAppendNewNote = nextCount > previousCount && !isAnchoringOlderNotesRef.current;
+      const initialHydrate = isFirstRef.current && nextCount > 0;
+      const newNoteAppended = nextCount > prevCount && !isAnchoringRef.current;
 
-      if (didInitialHydrate || (didAppendNewNote && isNearBottom)) {
-        requestAnimationFrame(() => {
-          listRef.current?.scrollToEnd({ animated: false });
-        });
+      if (initialHydrate || (newNoteAppended && isNearBottom)) {
+        requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: false }));
       }
 
-      if (isAnchoringOlderNotesRef.current) {
-        const heightDelta = height - previousContentHeightRef.current;
-
-        if (heightDelta > 0) {
-          requestAnimationFrame(() => {
+      if (isAnchoringRef.current) {
+        const delta = height - previousContentHeightRef.current;
+        if (delta > 0) {
+          requestAnimationFrame(() =>
             listRef.current?.scrollToOffset({
               animated: false,
-              offset: previousOffsetRef.current + heightDelta,
-            });
-          });
+              offset: previousOffsetRef.current + delta,
+            }),
+          );
         }
-
-        isAnchoringOlderNotesRef.current = false;
+        isAnchoringRef.current = false;
       }
 
       previousContentHeightRef.current = height;
       previousCountRef.current = nextCount;
-      isFirstContentSizeChangeRef.current = false;
+      isFirstRef.current = false;
     },
     [isNearBottom, notes.length],
   );
 
-  return (
-    <View style={styles.container}>
-      <Reanimated.View
-        entering={createNotesEnterFade(prefersReducedMotion)}
-        exiting={createNotesExitFade(prefersReducedMotion)}
-        style={styles.header}
-      >
-        <Text variant="title">Notes</Text>
-        <Text variant="body" color="text-secondary">
-          The composer stays below. Older notes live above it.
-        </Text>
-      </Reanimated.View>
+  const isEmpty = notes.length === 0 && !feedQuery.isLoading;
 
-      {notes.length === 0 && !feedQuery.isLoading ? (
-        <Reanimated.View
-          entering={createNotesEnterFade(prefersReducedMotion)}
-          exiting={createNotesExitFade(prefersReducedMotion)}
-          style={styles.empty}
-        >
-          <Text variant="bodyLarge" color="foreground">
-            Start with a thought
-          </Text>
-          <Text variant="body" color="text-secondary">
-            Your notes will accumulate upward from the composer.
-          </Text>
-        </Reanimated.View>
+  return (
+    <View style={styles.screen}>
+      {isEmpty ? (
+        <EmptyNotes />
       ) : (
-        <FlashList
-          ref={listRef}
-          contentContainerStyle={styles.listContent}
-          data={notes}
-          keyExtractor={(item) => item.id}
-          onContentSizeChange={handleContentSizeChange}
-          onEndReached={handleEndReached}
-          onEndReachedThreshold={0.15}
-          onScroll={handleScroll}
-          scrollEventThrottle={16}
-          refreshControl={
-            <RefreshControl
-              refreshing={feedQuery.isRefetching}
-              onRefresh={handleRefresh}
-              tintColor={theme.colors['text-tertiary']}
-            />
-          }
-          renderItem={renderItem}
-          showsVerticalScrollIndicator={false}
-        />
+        <View style={styles.shell}>
+          <FlashList
+            ref={listRef}
+            data={notes}
+            keyExtractor={(item) => item.id}
+            renderItem={renderItem}
+            ItemSeparatorComponent={RowSeparator}
+            contentContainerStyle={styles.listContent}
+            onContentSizeChange={handleContentSizeChange}
+            onEndReached={handleEndReached}
+            onEndReachedThreshold={0.15}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={feedQuery.isRefetching}
+                onRefresh={handleRefresh}
+                tintColor={theme.colors['text-tertiary']}
+              />
+            }
+          />
+        </View>
       )}
     </View>
   );
 }
 
-const PANEL_RADIUS = 24;
-const NOTES_FEED_BOTTOM_PADDING = spacing[7] + spacing[7] + spacing[7];
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
+/**
+ * Composer clearance: the absolute-positioned composer card sits roughly
+ * 140px above the bottom edge on a standard iPhone (home indicator ~34 +
+ * composer card ~100 + shell bottom padding ~8). spacing[7] = 48 × 3 = 144.
+ */
+const COMPOSER_CLEARANCE = spacing[7] * 3;
 
 const styles = StyleSheet.create({
-  container: {
+  // Page background — all screens use theme.colors.background
+  screen: {
     flex: 1,
     backgroundColor: theme.colors.background,
-    paddingHorizontal: spacing[4],
-    paddingTop: spacing[2],
+    paddingHorizontal: spacing[4],  // 16 — matches all other screens
+    paddingTop: spacing[2],         // 8
   },
-  header: {
-    gap: spacing[1],
-    paddingBottom: spacing[3],
+
+  /**
+   * Shell
+   *
+   * bg-surface = rgba(24,25,27,1) in dark — one step above background,
+   * providing real contrast without a heavy shadow.
+   *
+   * border-default = 18 % opacity border — appropriate for a surface
+   * that needs to read as a contained group.
+   *
+   * radiiNative.icon = 20 — the largest non-pill token radius.
+   *
+   * shadowsNative.low — lifts the shell just enough to separate it from the
+   * page without competing with the composer shadow.
+   */
+  shell: {
+    flex: 1,
+    backgroundColor: theme.colors['bg-surface'],
+    borderRadius: radiiNative.icon,
+    borderCurve: 'continuous',
+    borderWidth: 1,
+    borderColor: theme.colors['border-default'],
+    overflow: 'hidden',
+    ...shadowsNative.low,
   },
+
   listContent: {
-    paddingBottom: NOTES_FEED_BOTTOM_PADDING,
+    paddingBottom: COMPOSER_CLEARANCE,
   },
+
+  // ── Row ────────────────────────────────────────────────────────────────────
+  row: {
+    backgroundColor: 'transparent',
+  },
+  rowPressed: {
+    backgroundColor: theme.colors['bg-elevated'],
+  },
+  rowInner: {
+    paddingHorizontal: spacing[4],   // 16
+    paddingVertical: spacing[3],     // 12
+    gap: spacing[1],                 // 4
+  },
+  rowTop: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    gap: spacing[2],                 // 8
+  },
+  rowTitle: {
+    flex: 1,
+    fontSize: theme.textVariants.body.fontSize,     // 17
+    fontWeight: '600',
+    letterSpacing: -0.3,
+    lineHeight: theme.textVariants.body.lineHeight, // 24
+    color: theme.colors.foreground,
+  },
+  rowDate: {
+    fontSize: theme.textVariants.small.fontSize,    // 12
+    lineHeight: theme.textVariants.small.lineHeight,
+    color: theme.colors['text-tertiary'],
+    flexShrink: 0,
+  },
+  rowPreview: {
+    fontSize: theme.textVariants.small.fontSize,    // 12
+    lineHeight: 18,
+    color: theme.colors['text-secondary'],
+  },
+  attachmentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[1],                 // 4
+    marginTop: spacing[1],           // 4
+  },
+  attachmentIcon: {
+    width: spacing[3],               // 12
+    height: spacing[3],              // 12
+  },
+  attachmentText: {
+    fontSize: 11,
+    color: theme.colors['text-tertiary'],
+  },
+
+  // ── Separator ──────────────────────────────────────────────────────────────
+  // Inset to align with the text, not the container edge
+  separator: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: theme.colors['border-subtle'],
+    marginLeft: spacing[4],          // 16 — aligns with rowInner paddingHorizontal
+  },
+
+  // ── Empty state ────────────────────────────────────────────────────────────
   empty: {
-    marginTop: spacing[7],
-    borderColor: colors['border-default'],
-    borderRadius: PANEL_RADIUS,
-    borderWidth: 1,
-    gap: spacing[2],
-    paddingHorizontal: spacing[5],
-    paddingVertical: spacing[5],
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing[6],   // 32
+    paddingBottom: COMPOSER_CLEARANCE,
+    gap: spacing[2],                 // 8
   },
-  card: {
-    backgroundColor: colors['bg-base'],
-    borderColor: colors['border-subtle'],
-    borderRadius: PANEL_RADIUS,
-    borderWidth: 1,
-    gap: spacing[3],
-    marginBottom: spacing[3],
-    paddingHorizontal: spacing[5],
-    paddingVertical: spacing[5],
+  emptyIconRing: {
+    width: spacing[7] + spacing[3],  // 48+12 = 60
+    height: spacing[7] + spacing[3],
+    borderRadius: radiiNative.full,
+    backgroundColor: theme.colors['bg-elevated'],
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing[2],        // 8
   },
-  cardHeader: {
-    gap: spacing[2],
+  emptyIcon: {
+    width: spacing[4] + spacing[2],  // 16+8 = 24
+    height: spacing[4] + spacing[2],
+  },
+  emptyTitle: {
+    fontSize: theme.textVariants.title.fontSize,    // 18
+    fontWeight: '600',
+    letterSpacing: -0.2,
+    color: theme.colors.foreground,
+    textAlign: 'center',
+  },
+  emptyBody: {
+    fontSize: theme.textVariants.label.fontSize,    // 14
+    lineHeight: theme.textVariants.label.lineHeight,
+    color: theme.colors['text-tertiary'],
+    textAlign: 'center',
   },
 });

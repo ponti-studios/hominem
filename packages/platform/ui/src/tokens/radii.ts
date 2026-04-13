@@ -9,10 +9,10 @@
  */
 
 export const radii = {
-  sm: 8,
-  md: 8,
-  lg: 8,
-  xl: 8,
+  sm: 6,
+  md: 10,
+  lg: 14,
+  xl: 18,
   full: '9999px',
   /** Squircular icon shape. Web only — use radiiNative.icon on RN. */
   icon: '22%',
@@ -20,10 +20,10 @@ export const radii = {
 
 /** React Native-safe radii (no percentage strings). */
 export const radiiNative = {
-  sm: 8,
-  md: 8,
-  lg: 8,
-  xl: 8,
+  sm: 6,
+  md: 10,
+  lg: 14,
+  xl: 18,
   full: 9999,
   /** Numeric approximation of the squircular icon shape. */
   icon: 20,

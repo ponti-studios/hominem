@@ -68,6 +68,7 @@ export function useNoteStream({ enabled = true }: { enabled?: boolean } = {}) {
 
   return useQuery<Note[]>({
     queryKey: noteKeys.all,
+    staleTime: 0,
     queryFn: async () => {
       const response = await client.notes.list({
         sortBy: 'updatedAt',
@@ -81,7 +82,7 @@ export function useNoteStream({ enabled = true }: { enabled?: boolean } = {}) {
         noteKeys.feed({ limit: DEFAULT_NOTES_FEED_LIMIT }),
       );
       const feedNotes = flattenNoteFeedPages(feedData);
-      return feedNotes.length > 0 ? feedNotes.map(toNoteStub) : [];
+      return feedNotes.length > 0 ? feedNotes.map(toNoteStub) : undefined;
     },
     enabled,
   });

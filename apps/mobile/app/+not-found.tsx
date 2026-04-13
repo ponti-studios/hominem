@@ -2,7 +2,7 @@ import { Link, Stack } from 'expo-router';
 import type { RelativePathString } from 'expo-router';
 import { Text, makeStyles } from '~/components/theme';
 
-import { Container } from '~/components/Container';
+import { Screen } from '~/components/Screen';
 
 export default function NotFoundScreen() {
   const styles = useStyles();
@@ -10,7 +10,7 @@ export default function NotFoundScreen() {
   return (
     <>
       <Stack.Screen options={{ title: 'NOT_FOUND' }} />
-      <Container>
+      <Screen>
         <Text variant="title" color="foreground">
           RESOURCE_NOT_FOUND.
         </Text>
@@ -19,7 +19,7 @@ export default function NotFoundScreen() {
             RETURN_TO_ROOT
           </Text>
         </Link>
-      </Container>
+      </Screen>
     </>
   );
 }

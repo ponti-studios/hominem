@@ -27,54 +27,57 @@ const theme = createTheme({
     xl_64: tokenSpacing[8],
   },
 
-  // Border radii — named keys for Restyle, values from canonical tokens
+  // Border radii — full scale from canonical tokens
   borderRadii: {
+    sm: radiiNative.sm,
     md: radiiNative.md,
+    lg: radiiNative.lg,
+    xl: radiiNative.xl,
+    icon: radiiNative.icon,
     full: radiiNative.full,
   },
 
-  // Typography — Apple HIG aligned scales
+  // Typography — Apple HIG semantic scale
+  // Use these variant names everywhere; legacy aliases kept for migration safety.
   textVariants: {
-    extra_large: {
+    // ── Canonical Apple HIG scale ─────────────────────────────────────────
+    /** Page titles, large numerics */
+    display: {
       fontFamily: PRIMARY_FONT,
-      fontSize: 64,
+      fontSize: 28,
       fontWeight: '700',
-      lineHeight: 76,
-      letterSpacing: -0.05,
+      lineHeight: 34,
+      letterSpacing: -0.6,
       color: 'foreground',
     },
-    header: {
+    /** Section headers */
+    'title-1': {
       fontFamily: PRIMARY_FONT,
-      fontSize: 36,
+      fontSize: 22,
       fontWeight: '700',
-      lineHeight: 43,
-      letterSpacing: -0.05,
+      lineHeight: 28,
+      letterSpacing: -0.4,
       color: 'foreground',
     },
-    large: {
-      fontFamily: PRIMARY_FONT,
-      fontSize: 32,
-      fontWeight: '600',
-      lineHeight: 38,
-      letterSpacing: -0.05,
-      color: 'foreground',
-    },
-    cardHeader: {
-      fontFamily: PRIMARY_FONT,
-      fontSize: 24,
-      fontWeight: '600',
-      lineHeight: 30,
-      letterSpacing: -0.04,
-      color: 'foreground',
-    },
-    bodyLarge: {
+    /** Card headers, modal titles */
+    'title-2': {
       fontFamily: PRIMARY_FONT,
       fontSize: 18,
       fontWeight: '600',
-      lineHeight: 28,
-      letterSpacing: 0,
+      lineHeight: 24,
+      letterSpacing: -0.2,
       color: 'foreground',
     },
+    /** List row primary labels */
+    headline: {
+      fontFamily: PRIMARY_FONT,
+      fontSize: 17,
+      fontWeight: '600',
+      lineHeight: 22,
+      letterSpacing: -0.1,
+      color: 'foreground',
+    },
+    /** Standard reading text */
     body: {
       fontFamily: PRIMARY_FONT,
       fontSize: 17,
@@ -83,46 +86,43 @@ const theme = createTheme({
       letterSpacing: 0,
       color: 'text-secondary',
     },
-    'text-md': {
+    /** Input text, secondary body */
+    callout: {
       fontFamily: PRIMARY_FONT,
       fontSize: 16,
       fontWeight: '400',
-      lineHeight: 24,
+      lineHeight: 22,
+      letterSpacing: -0.1,
+      color: 'text-secondary',
+    },
+    /** Trailing values, subtext */
+    subhead: {
+      fontFamily: PRIMARY_FONT,
+      fontSize: 15,
+      fontWeight: '400',
+      lineHeight: 20,
       letterSpacing: 0,
       color: 'text-secondary',
     },
-    title: {
+    /** Section labels, timestamps */
+    footnote: {
       fontFamily: PRIMARY_FONT,
-      fontSize: 18,
-      fontWeight: '500',
-      lineHeight: 24,
-      letterSpacing: 0,
-      color: 'foreground',
-    },
-    caption: {
-      fontFamily: PRIMARY_FONT,
-      fontSize: 12,
-      fontWeight: '500',
-      lineHeight: 16,
-      letterSpacing: 0.01,
-      color: 'text-tertiary',
-    },
-    label: {
-      fontFamily: PRIMARY_FONT,
-      fontSize: 14,
-      fontWeight: '500',
+      fontSize: 13,
+      fontWeight: '400',
       lineHeight: 18,
       letterSpacing: 0,
       color: 'text-tertiary',
     },
-    small: {
+    /** Pills, badges, chip labels */
+    caption: {
       fontFamily: PRIMARY_FONT,
-      fontSize: 12,
-      fontWeight: '400',
-      lineHeight: 16,
-      letterSpacing: 0,
+      fontSize: 11,
+      fontWeight: '500',
+      lineHeight: 14,
+      letterSpacing: 0.4,
       color: 'text-tertiary',
     },
+    /** Code, IDs, monospaced values */
     mono: {
       fontFamily: MONO_FONT,
       fontSize: 12,
@@ -131,18 +131,51 @@ const theme = createTheme({
       letterSpacing: 0,
       color: 'text-secondary',
     },
+
+    // ── Legacy aliases (kept for migration safety — do not use in new code) ──
+    /** @deprecated Use title-2 */
+    title: {
+      fontFamily: PRIMARY_FONT,
+      fontSize: 18,
+      fontWeight: '500',
+      lineHeight: 24,
+      letterSpacing: 0,
+      color: 'foreground',
+    },
+    /** @deprecated Use footnote */
+    label: {
+      fontFamily: PRIMARY_FONT,
+      fontSize: 14,
+      fontWeight: '500',
+      lineHeight: 18,
+      letterSpacing: 0,
+      color: 'text-tertiary',
+    },
+    /** @deprecated Use caption */
+    small: {
+      fontFamily: PRIMARY_FONT,
+      fontSize: 12,
+      fontWeight: '400',
+      lineHeight: 16,
+      letterSpacing: 0,
+      color: 'text-tertiary',
+    },
+    /** @deprecated Use callout */
+    'text-md': {
+      fontFamily: PRIMARY_FONT,
+      fontSize: 16,
+      fontWeight: '400',
+      lineHeight: 24,
+      letterSpacing: 0,
+      color: 'text-secondary',
+    },
+    /** @deprecated Use body */
     defaults: {
       fontFamily: PRIMARY_FONT,
       fontSize: 14,
       fontWeight: '400',
       lineHeight: 20,
       color: 'text-secondary',
-    },
-    shadow: {
-      shadowColor: tokenColors.black,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.35,
-      shadowRadius: 8,
     },
   },
 });

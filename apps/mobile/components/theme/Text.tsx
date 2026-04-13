@@ -51,7 +51,7 @@ function Text({ variant = 'body-2', ...props }: TextProps) {
   const resolvedVariant = isLegacyVariant(variant) ? variantMap[variant] : variant;
   const variantStyle = theme.textVariants[
     resolvedVariant === 'body-1'
-      ? 'bodyLarge'
+      ? 'headline'
       : resolvedVariant === 'body-2'
         ? 'body'
         : resolvedVariant === 'body-3'

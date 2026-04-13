@@ -12,8 +12,12 @@ export const queryKeys = {
   // ─── Notes ───────────────────────────────────────────────────────────
   notes: {
     all: ['notes'] as const,
-    list: (options: Record<string, unknown> = {}) => ['notes', 'list', options] as const,
-    feed: (options: Record<string, unknown> = {}) => ['notes', 'feed', options] as const,
+    // Prefix keys — use these for invalidateQueries to catch all variants
+    lists: () => ['notes', 'list'] as const,
+    feeds: () => ['notes', 'feed'] as const,
+    // Specific keys — use these when registering queries (queryKey in useQuery/useInfiniteQuery)
+    list: (options: Record<string, unknown>) => ['notes', 'list', options] as const,
+    feed: (options: Record<string, unknown>) => ['notes', 'feed', options] as const,
     detail: (id: string) => ['notes', 'detail', id] as const,
     search: (query: string) => ['notes', 'search', query] as const,
   },

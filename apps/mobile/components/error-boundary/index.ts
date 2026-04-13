@@ -1,1 +1,1 @@
-export { FeatureErrorBoundary } from './feature-error-boundary';
+export { FeatureErrorBoundary } from './FeatureErrorBoundary';

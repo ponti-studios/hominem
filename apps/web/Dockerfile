@@ -4,7 +4,7 @@
 # ============================================================================
 # BUILDER STAGE - Build the web application
 # ============================================================================
-FROM node:22-alpine AS builder
+FROM node:24.14.1-alpine AS builder
 
 WORKDIR /app
 
@@ -16,16 +16,17 @@ COPY pnpm-workspace.yaml ./
 COPY packages ./packages
 COPY apps/web ./apps/web
 COPY tsconfig.profiles ./tsconfig.profiles
+COPY turbo.json ./turbo.json
 
-RUN npm install -g pnpm@10.33.0 && \
+RUN npm install -g pnpm@10.33.0 turbo@2.9.5 && \
     pnpm install --frozen-lockfile
 
-RUN pnpm --filter @hominem/web run build
+RUN turbo run build --filter=@hominem/web
 
 # ============================================================================
 # SERVER STAGE - Serve built files with Node
 # ============================================================================
-FROM node:22-alpine AS server
+FROM node:24.14.1-alpine AS server
 
 WORKDIR /app
 

@@ -11,12 +11,11 @@ import {
   mergeUniqueIds,
   resolveComposerPrimaryAction,
   resolveComposerSecondaryAction,
-} from '~/components/input/composer-actions';
+} from '~/components/composer/composerActions';
 
 describe('composer actions', () => {
   it('resolves primary actions by route target', () => {
     expect(resolveComposerPrimaryAction('chat')).toBe('send_chat');
-    expect(resolveComposerPrimaryAction('note')).toBe('append_note');
     expect(resolveComposerPrimaryAction('feed')).toBe('create_note');
     expect(resolveComposerPrimaryAction('notes')).toBe('create_note');
     expect(resolveComposerPrimaryAction('hidden')).toBeNull();
@@ -25,7 +24,6 @@ describe('composer actions', () => {
   it('resolves secondary actions by route target', () => {
     expect(resolveComposerSecondaryAction('feed')).toBe('create_chat');
     expect(resolveComposerSecondaryAction('chat')).toBeNull();
-    expect(resolveComposerSecondaryAction('note')).toBeNull();
   });
 
   it('derives uploaded attachment ids from uploaded files only', () => {

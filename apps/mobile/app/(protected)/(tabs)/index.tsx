@@ -1,17 +1,20 @@
-import { useLocalSearchParams } from 'expo-router';
+import { Image } from 'expo-image';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import type { RelativePathString } from 'expo-router';
 import React, { useCallback, useEffect } from 'react';
-import { RefreshControl, StyleSheet, View } from 'react-native';
+import { Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 
-import { useInputContext } from '~/components/input/input-context';
-import { InboxStream } from '~/components/workspace/inbox-stream';
-import { makeStyles } from '~/components/theme';
+import { useComposerContext } from '~/components/composer/ComposerContext';
+import { InboxStream } from '~/components/workspace/InboxStream';
+import { makeStyles, theme } from '~/components/theme';
 import { useInboxStreamItems } from '~/services/inbox/use-inbox-stream-items';
 
 export default function FeedScreen() {
   const styles = useStyles();
+  const router = useRouter();
   const params = useLocalSearchParams<{ seed?: string }>();
   const { items, isLoading, refetch } = useInboxStreamItems();
-  const { setMessage } = useInputContext();
+  const { setMessage } = useComposerContext();
 
   useEffect(() => {
     if (params.seed) {
@@ -25,6 +28,40 @@ export default function FeedScreen() {
 
   return (
     <View style={styles.container}>
+      <Stack.Screen
+        options={{
+          headerShown: true,
+          title: '',
+          headerLeft: () => (
+            <Pressable
+              onPress={() => router.push('/(protected)/(tabs)/notes' as RelativePathString)}
+              hitSlop={8}
+              accessibilityLabel="Notes"
+            >
+              <Image
+                source="sf:note.text"
+                style={{ width: 22, height: 22 }}
+                tintColor={theme.colors.foreground}
+                contentFit="contain"
+              />
+            </Pressable>
+          ),
+          headerRight: () => (
+            <Pressable
+              onPress={() => router.push('/(protected)/(tabs)/settings' as RelativePathString)}
+              hitSlop={8}
+              accessibilityLabel="Settings"
+            >
+              <Image
+                source="sf:gearshape"
+                style={{ width: 22, height: 22 }}
+                tintColor={theme.colors.foreground}
+                contentFit="contain"
+              />
+            </Pressable>
+          ),
+        }}
+      />
         <InboxStream
           items={items}
           refreshControl={

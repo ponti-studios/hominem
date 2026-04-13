@@ -21,10 +21,9 @@
     "@shopify/restyle": "^2.4.4",
     "@tanstack/react-query": "5.90.16",
     "better-auth": "^1.4.19",
-    "expo": "^55.0.8",
+    "expo": "^55.0.14",
     "expo-asset": "~55.0.10",
     "expo-audio": "~55.0.9",
-    "expo-av": "^16.0.8",
     "expo-build-properties": "~55.0.10",
     "expo-camera": "^55.0.10",
     "expo-constants": "~55.0.9",
@@ -77,6 +76,8 @@
     "@types/react": "19.2.10",
     "@types/react-dom": "19.1.7",
     "babel-preset-expo": "^55.0.10",
+    "eslint": "^9.0.0",
+    "eslint-config-expo": "~55.0.0",
     "typescript": "5.9.3"
   },
   "engines": {
@@ -101,7 +102,8 @@
   "scripts": {
     "test": "vitest run --config vitest.config.ts",
     "test:watch": "vitest --config vitest.config.ts",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "expo lint"
   },
   "trustedDependencies": [
     "@clerk/shared",

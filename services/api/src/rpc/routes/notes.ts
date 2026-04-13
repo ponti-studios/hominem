@@ -77,7 +77,6 @@ export const notesRoutes = new Hono<AppContext>()
     const note = await noteService.createNote(userId, {
       title: input.title ?? null,
       content: input.content,
-      excerpt: input.excerpt ?? null,
       ...(input.fileIds ? { fileIds: input.fileIds } : {}),
     });
 
@@ -101,7 +100,6 @@ export const notesRoutes = new Hono<AppContext>()
       const note = await noteService.updateNote(id, userId, {
         ...(input.title !== undefined ? { title: input.title } : {}),
         ...(input.content !== undefined ? { content: input.content } : {}),
-        ...(input.excerpt !== undefined ? { excerpt: input.excerpt } : {}),
         ...(input.fileIds ? { fileIds: input.fileIds } : {}),
       });
 

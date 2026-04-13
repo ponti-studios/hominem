@@ -5,7 +5,7 @@ import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { AuthShell } from '~/components/auth-shell';
+import { AuthLayout } from '~/components/AuthLayout';
 import { Button } from '~/components/Button';
 import { FeatureErrorBoundary } from '~/components/error-boundary';
 import TextInput from '~/components/text-input';
@@ -51,7 +51,7 @@ export function VerifyScreen() {
   const normalizedOtp = normalizeOtp(otp);
 
   return (
-    <AuthShell
+    <AuthLayout
       testID="auth-verify-screen"
       title={AUTH_COPY.otpVerification.title}
       helper={AUTH_COPY.otpVerification.helper(maskEmail(resolvedEmail))}
@@ -125,7 +125,7 @@ export function VerifyScreen() {
           />
         </View>
       </Box>
-    </AuthShell>
+    </AuthLayout>
   );
 }
 

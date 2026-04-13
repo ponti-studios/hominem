@@ -63,25 +63,32 @@ export function useNoteEditor(
   const attachedFileIds = files.map((file) => file.id);
 
   const handleSave = useCallback(
-    async (titleValue: string, contentValue: string, fileIds: string[]): Promise<void> => {
-      // Clear any pending debounce
+    (titleValue: string, contentValue: string, fileIds: string[]): Promise<void> => {
       if (debounceRef.current) {
         clearTimeout(debounceRef.current);
       }
 
-      setSaveStatus('saving');
-      try {
-        await onSave({
-          id: note.id,
-          title: titleValue || null,
-          content: contentValue,
-          fileIds,
-        });
-        setSaveStatus('saved');
-      } catch (error) {
-        setSaveStatus('unsaved');
-        throw error;
-      }
+      setSaveStatus('unsaved');
+
+      return new Promise((resolve, reject) => {
+        debounceRef.current = setTimeout(() => {
+          setSaveStatus('saving');
+          onSave({
+            id: note.id,
+            title: titleValue || null,
+            content: contentValue,
+            fileIds,
+          })
+            .then(() => {
+              setSaveStatus('saved');
+              resolve();
+            })
+            .catch((error: unknown) => {
+              setSaveStatus('unsaved');
+              reject(error);
+            });
+        }, 600);
+      });
     },
     [note.id, onSave],
   );

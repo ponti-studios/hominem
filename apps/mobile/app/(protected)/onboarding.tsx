@@ -5,7 +5,7 @@ import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '~/components/Button';
-import { FeedbackBlock } from '~/components/feedback-block';
+import { Alert } from '~/components/Alert';
 import TextInput from '~/components/text-input';
 import { Text, theme } from '~/components/theme';
 import { useAuth } from '~/services/auth/auth-provider';
@@ -56,11 +56,11 @@ const Onboarding = () => {
         <Button title="Create profile" onPress={onButtonPress} />
         <Button testID="onboarding-sign-out" title="[SIGN_OUT]" onPress={signOut} />
         {hasError ? (
-          <FeedbackBlock error>
+          <Alert error>
             <Text variant="body" color="destructive">
               PROFILE WRITE FAILED.
             </Text>
-          </FeedbackBlock>
+          </Alert>
         ) : null}
       </View>
     </SafeAreaView>

@@ -187,7 +187,6 @@ export type NotesCreateInput = {
   title?: string;
   content: string;
   fileIds?: string[];
-  excerpt?: string;
   tags?: ContentTag[];
   mentions?: NoteMention[];
   publishingMetadata?: PublishingMetadata;
@@ -204,7 +203,6 @@ export type NotesUpdateInput = {
   title?: string | null;
   content?: string;
   fileIds?: string[];
-  excerpt?: string | null;
   scheduledFor?: string | null;
   tags?: ContentTag[] | null;
   publishingMetadata?: PublishingMetadata | null;

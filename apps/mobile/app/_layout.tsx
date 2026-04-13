@@ -5,9 +5,9 @@ import { PostHogProvider, type PostHog } from 'posthog-react-native';
 import React, { useEffect } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
-import { RootErrorBoundary } from '~/components/error-boundary/root-error-boundary';
+import { RootErrorBoundary } from '~/components/error-boundary/RootErrorBoundary';
 import { POSTHOG_ENABLED, posthog } from '~/services/posthog';
 import { recordActiveDay } from '~/services/review-prompt';
 import { useScreenCapture } from '~/hooks/use-screen-capture';
@@ -72,10 +72,12 @@ function InnerRootLayout() {
     <RootErrorBoundary
       onError={(error, errorInfo) => logError(error, errorInfo, { route: segments.join('/') })}
     >
-      <Stack>
-        <Stack.Screen name="(protected)" options={{ headerShown: false }} />
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-      </Stack>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+        <Stack>
+          <Stack.Screen name="(protected)" options={{ headerShown: false }} />
+          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        </Stack>
+      </SafeAreaView>
       {E2E_TESTING ? (
         <>
           {authStatus === 'booting' ? (
@@ -158,6 +160,10 @@ const rootStyles = makeStyles((t) =>
 
 const styles = makeStyles((t) =>
   StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: t.colors.background,
+    },
     e2eIndicator: {
       position: 'absolute',
       top: t.spacing.xs_4,

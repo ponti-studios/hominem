@@ -17,7 +17,7 @@ import {
   createOptimisticMessage,
   reconcileMessagesAfterSend,
   type MessageOutput,
-} from './chat-contract';
+} from './chatMessages';
 import { selectChatSession, type ChatWithActivity } from './session-state';
 
 type SendChatMessageOutput = {

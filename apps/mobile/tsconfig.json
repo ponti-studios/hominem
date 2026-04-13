@@ -26,6 +26,7 @@
     "modules/**/*.tsx",
     "services/**/*.ts",
     "constants/**/*.ts",
+    "tests/**/*.ts",
     "navigation/**/*.ts",
     "app.config.ts",
     "expo-env.d.ts",

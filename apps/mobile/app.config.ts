@@ -1,5 +1,7 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 
+import { VARIANT_ICON_NAMES } from './constants/brand-assets';
+
 const EXPO_OWNER = 'pontistudios';
 const EXPO_PROJECT_ID = '4dfac82b-644f-4ff3-be42-e8f941287aa1';
 
@@ -66,19 +68,12 @@ function getAppVariantConfig(rawVariant = process.env.APP_VARIANT ?? 'dev'): Var
 
 const ROOT_ASSETS_DIR = './assets';
 
-const VARIANT_LOGO_ASSET_NAMES: Record<AppVariant, string> = Object.freeze({
-  dev: 'logo.hakumi.dev.png',
-  e2e: 'logo.hakumi.dev.png',
-  preview: 'logo.hakumi.preview.png',
-  production: 'logo.hakumi.png',
-});
-
 function getBrandAssetPaths(variant: AppVariant): { favicon: string; icon: string; splash: string } {
-  const icon = `${ROOT_ASSETS_DIR}/${VARIANT_LOGO_ASSET_NAMES[variant]}`;
+  const icon = `${ROOT_ASSETS_DIR}/${VARIANT_ICON_NAMES[variant]}`;
   return {
-    favicon: `${ROOT_ASSETS_DIR}/logo.hakumi.png`,
+    favicon: `${ROOT_ASSETS_DIR}/icon.png`,
     icon,
-    splash: `${ROOT_ASSETS_DIR}/logo.hakumi.splash-screen.png`,
+    splash: `${ROOT_ASSETS_DIR}/logo.splash-screen.png`,
   };
 }
 

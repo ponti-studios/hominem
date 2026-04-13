@@ -4,32 +4,43 @@ import { ActivityIndicator, Pressable, Text, type StyleProp, type TextStyle, typ
 import { useHaptics } from '~/hooks/useHaptics';
 import theme from '~/components/theme/theme';
 
+type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'link' | 'destructive' | 'default';
+type ButtonSize = 'xs' | 'sm' | 'md' | 'default';
+
 interface ButtonProps {
   title?: string;
   children?: ReactNode;
   onPress?: () => void | Promise<void>;
   disabled?: boolean;
   isLoading?: boolean;
-  variant?: 'primary' | 'outline' | 'ghost' | 'link' | 'default';
-  size?: 'xs' | 'sm' | 'md' | 'default';
+  variant?: ButtonVariant;
+  size?: ButtonSize;
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
   testID?: string;
   accessibilityLabel?: string;
 }
 
-function resolveContainerStyle(variant: NonNullable<ButtonProps['variant']>): ViewStyle {
+function resolveContainerStyle(variant: ButtonVariant): ViewStyle {
   switch (variant) {
     case 'link':
       return { paddingHorizontal: 0, paddingVertical: 4, backgroundColor: 'transparent' };
     case 'outline':
       return {
-        backgroundColor: theme.colors.background,
+        backgroundColor: theme.colors['bg-base'],
         borderWidth: 1,
         borderColor: theme.colors['border-default'],
       };
     case 'ghost':
       return { backgroundColor: 'transparent' };
+    case 'secondary':
+      return {
+        backgroundColor: theme.colors['bg-elevated'],
+        borderWidth: 1,
+        borderColor: theme.colors['border-subtle'],
+      };
+    case 'destructive':
+      return { backgroundColor: theme.colors.destructive };
     case 'default':
     case 'primary':
     default:
@@ -37,7 +48,7 @@ function resolveContainerStyle(variant: NonNullable<ButtonProps['variant']>): Vi
   }
 }
 
-function resolveTextStyle(variant: NonNullable<ButtonProps['variant']>): TextStyle {
+function resolveTextStyle(variant: ButtonVariant): TextStyle {
   switch (variant) {
     case 'link':
       return {
@@ -48,13 +59,23 @@ function resolveTextStyle(variant: NonNullable<ButtonProps['variant']>): TextSty
       };
     case 'outline':
     case 'ghost':
+    case 'secondary':
       return { color: theme.colors.foreground, fontSize: 14, fontWeight: '600' };
+    case 'destructive':
+      return { color: theme.colors['destructive-foreground'], fontSize: 14, fontWeight: '600' };
     case 'default':
     case 'primary':
     default:
       return { color: theme.colors.background, fontSize: 14, fontWeight: '600' };
   }
 }
+
+const sizeStyles: Record<ButtonSize, { minHeight: number; paddingHorizontal: number; paddingVertical: number }> = {
+  xs: { minHeight: 28, paddingHorizontal: 8, paddingVertical: 4 },
+  sm: { minHeight: 34, paddingHorizontal: 12, paddingVertical: 6 },
+  md: { minHeight: 44, paddingHorizontal: 16, paddingVertical: 10 },
+  default: { minHeight: 44, paddingHorizontal: 16, paddingVertical: 10 },
+};
 
 export function Button({
   title,
@@ -69,8 +90,8 @@ export function Button({
   testID,
   accessibilityLabel,
 }: ButtonProps) {
-  const compact = size === 'xs';
   const { impact } = useHaptics();
+  const sizing = sizeStyles[size];
 
   const handlePress = () => {
     void impact();
@@ -85,20 +106,25 @@ export function Button({
       testID={testID}
       style={({ pressed }) => [
         {
-          minHeight: compact ? 28 : 44,
           borderRadius: 999,
+          borderCurve: 'continuous',
           alignItems: 'center',
           justifyContent: 'center',
-          paddingHorizontal: compact ? 8 : 16,
-          paddingVertical: compact ? 4 : 10,
           opacity: disabled || isLoading ? 0.5 : pressed ? 0.85 : 1,
+          ...sizing,
         },
         resolveContainerStyle(variant),
         style,
       ]}
     >
       {isLoading ? (
-        <ActivityIndicator color={variant === 'link' ? theme.colors['text-secondary'] : theme.colors.background} />
+        <ActivityIndicator
+          color={
+            variant === 'link' || variant === 'outline' || variant === 'ghost' || variant === 'secondary'
+              ? theme.colors['text-secondary']
+              : theme.colors.background
+          }
+        />
       ) : typeof children === 'string' || title ? (
         <Text style={[resolveTextStyle(variant), textStyle]}>{children ?? title}</Text>
       ) : (

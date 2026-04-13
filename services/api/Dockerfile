@@ -7,7 +7,7 @@
 # ============================================================================
 # BUILDER STAGE - Build application with pnpm
 # ============================================================================
-FROM node:22-alpine AS builder
+FROM node:24.14.1-alpine AS builder
 
 WORKDIR /app
 
@@ -37,7 +37,7 @@ RUN echo "✓ Build completed successfully"
 # ============================================================================
 # RUNTIME STAGE - Minimal production image with Node.js
 # ============================================================================
-FROM node:22-alpine AS release
+FROM node:24.14.1-alpine AS release
 
 WORKDIR /app
 

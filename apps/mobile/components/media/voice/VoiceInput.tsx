@@ -13,8 +13,8 @@ import { VOID_MOTION_DURATION_STANDARD } from '~/components/theme/motion';
 
 import AppIcon from '~/components/ui/icon';
 import { WaveformVisualizer } from './WaveformVisualizer';
-import { useRecorder } from './use-recorder';
-import { useTranscriber } from './use-transcriber';
+import { useInput } from './useInput';
+import { useTranscriber } from './useTranscriber';
 
 type VoiceInputProps = PressableProps & {
   autoTranscribe?: boolean;
@@ -57,7 +57,7 @@ export function VoiceInput({
     [autoTranscribe, onAudioReady, transcribeAudio],
   );
 
-  const { isRecording, isPaused, meterings, startRecording, stopRecording, pauseRecording, resumeRecording } = useRecorder({
+  const { isRecording, isPaused, meterings, startRecording, stopRecording, pauseRecording, resumeRecording } = useInput({
     onAudioReady: handleAudioReady,
     onError,
   });

@@ -1,25 +1,28 @@
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import type { RelativePathString } from 'expo-router';
-import { useReducer } from 'react';
+import React, { useReducer } from 'react';
 import {
+  ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Switch,
+  TextInput,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Button } from '~/components/Button';
-import TextInput from '~/components/text-input';
+import { Text, theme } from '~/components/theme';
 import { getAppLockEnabled, setAppLockEnabled } from '~/hooks/use-app-lock';
 import { getPreventScreenshots, setPreventScreenshots } from '~/hooks/use-screen-capture';
-import { Text, theme } from '~/components/theme';
 import { useAuth } from '~/services/auth/auth-provider';
 import { MOBILE_PASSKEY_ENABLED } from '~/constants';
 import { useMobilePasskeyAuth } from '~/services/auth/hooks/use-mobile-passkey-auth';
+
+// ─── State ────────────────────────────────────────────────────────────────────
 
 interface AccountState {
   name: string;
@@ -46,27 +49,106 @@ function createInitialAccountState(name: string): AccountState {
 function accountReducer(state: AccountState, action: AccountAction): AccountState {
   switch (action.type) {
     case 'set-name':
-      return {
-        ...state,
-        name: action.name,
-      };
+      return { ...state, name: action.name };
     case 'set-saving':
-      return {
-        ...state,
-        isSaving: action.isSaving,
-      };
+      return { ...state, isSaving: action.isSaving };
     case 'set-prevent-screenshots':
-      return {
-        ...state,
-        preventScreenshots: action.preventScreenshots,
-      };
+      return { ...state, preventScreenshots: action.preventScreenshots };
     case 'set-app-lock':
-      return {
-        ...state,
-        appLock: action.appLock,
-      };
+      return { ...state, appLock: action.appLock };
   }
 }
+
+// ─── Section primitives ───────────────────────────────────────────────────────
+
+function SectionLabel({ children }: { children: string }) {
+  return <Text style={styles.sectionLabel}>{children}</Text>;
+}
+
+function SectionCard({ children }: { children: React.ReactNode }) {
+  return <View style={styles.sectionCard}>{children}</View>;
+}
+
+function RowSeparator() {
+  return <View style={styles.rowSeparator} />;
+}
+
+interface RowProps {
+  sf?: string;
+  sfColor?: string;
+  label: string;
+  sublabel?: string;
+  trailing?: React.ReactNode;
+  onPress?: () => void;
+  destructive?: boolean;
+  disabled?: boolean;
+}
+
+function SettingsRow({
+  sf,
+  sfColor,
+  label,
+  sublabel,
+  trailing,
+  onPress,
+  destructive = false,
+  disabled = false,
+}: RowProps) {
+  const labelColor = destructive
+    ? theme.colors.destructive
+    : theme.colors.foreground;
+
+  const inner = (
+    <View style={styles.row}>
+      {sf && (
+        <View
+          style={[
+            styles.rowIconWrap,
+            { backgroundColor: sfColor ?? theme.colors['bg-elevated'] },
+          ]}
+        >
+          <Image
+            source={`sf:${sf}`}
+            style={styles.rowIcon}
+            tintColor={destructive ? theme.colors.destructive : theme.colors['icon-primary']}
+            contentFit="contain"
+          />
+        </View>
+      )}
+      <View style={styles.rowContent}>
+        <Text style={[styles.rowLabel, { color: labelColor }]}>{label}</Text>
+        {sublabel ? <Text style={styles.rowSublabel}>{sublabel}</Text> : null}
+      </View>
+      {trailing !== undefined ? (
+        <View style={styles.rowTrailing}>{trailing}</View>
+      ) : onPress ? (
+        <Image
+          source="sf:chevron.right"
+          style={styles.chevron}
+          tintColor={theme.colors['text-tertiary']}
+          contentFit="contain"
+        />
+      ) : null}
+    </View>
+  );
+
+  if (onPress && !disabled) {
+    return (
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => [styles.rowPressable, pressed && styles.rowPressed]}
+        accessibilityRole="button"
+        accessibilityLabel={label}
+      >
+        {inner}
+      </Pressable>
+    );
+  }
+
+  return <View style={styles.rowPressable}>{inner}</View>;
+}
+
+// ─── Screen ───────────────────────────────────────────────────────────────────
 
 function Settings() {
   const insets = useSafeAreaInsets();
@@ -81,6 +163,8 @@ function Settings() {
   const initialName = currentUser?.name ?? '';
   const [state, dispatch] = useReducer(accountReducer, initialName, createInitialAccountState);
 
+  const nameChanged = state.name !== initialName;
+
   const onSavePress = () => {
     dispatch({ type: 'set-saving', isSaving: true });
     updateProfile({ name: state.name })
@@ -89,13 +173,16 @@ function Settings() {
   };
 
   const onLogoutPress = () => {
-    signOut();
+    Alert.alert('Sign out', 'Are you sure you want to sign out?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Sign out', style: 'destructive', onPress: () => signOut() },
+    ]);
   };
 
   const onDeleteAccountPress = () => {
     Alert.alert(
-      'Account deletion unavailable',
-      'Account deletion is not available in this release yet.',
+      'Delete account',
+      'Account deletion is not available in this release.',
       [{ text: 'OK', style: 'default' }],
     );
   };
@@ -107,7 +194,7 @@ function Settings() {
   const onAddPasskeyPress = async () => {
     const result = await addPasskey();
     if (!result.success) {
-      Alert.alert('Passkey error', result.error ?? 'Could not add passkey.');
+      Alert.alert('Could not add passkey', result.error ?? 'Please try again.');
     }
   };
 
@@ -127,201 +214,356 @@ function Settings() {
     ]);
   };
 
-  if (!isSignedIn) {
-    return null;
-  }
+  if (!isSignedIn) return null;
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={styles.root}
-      testID="settings-screen"
+    <ScrollView
+      style={styles.scroll}
+      contentContainerStyle={[
+        styles.scrollContent,
+        { paddingBottom: insets.bottom + 32 },
+      ]}
+      showsVerticalScrollIndicator={false}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Text variant="cardHeader" color="foreground">
-          SETTINGS
-        </Text>
-        <View style={styles.formSection}>
-          <View style={styles.sectionCard}>
-            <Text variant="cardHeader" color="foreground">
-              CHAT HISTORY
-            </Text>
-            <Text color="text-tertiary" style={styles.sectionDescription}>
-              Archived chats live outside the main chat flow so current work stays focused.
-            </Text>
-            <Button title="[ARCHIVED_CHATS]" onPress={onArchivedChatsPress} />
-          </View>
-          <View>
-            <TextInput
-              aria-disabled
-              label="Name"
-              placeholder="ENTER NAME"
-              value={state.name}
-              style={styles.inputFlex}
-              onChange={(e) => dispatch({ type: 'set-name', name: e.nativeEvent.text })}
-            />
-          </View>
-          <View>
-            <TextInput
-              aria-disabled
-              label="Email"
-              editable={false}
-              value={currentUser?.email ?? ''}
-              style={styles.inputFlex}
-            />
-          </View>
-          {state.name !== initialName ? (
-            <View style={styles.saveRow}>
-              <Button
-                title="[SAVE]"
-                disabled={state.isSaving}
-                isLoading={state.isSaving}
-                onPress={onSavePress}
+      {/* ── Account ─────────────────────────────────────────────────────── */}
+      <SectionLabel>Account</SectionLabel>
+      <SectionCard>
+        <SettingsRow
+          sf="person.crop.circle"
+          label="Name"
+          trailing={
+            <View style={styles.inlineEditRow}>
+              <TextInput
+                value={state.name}
+                onChangeText={(text) => dispatch({ type: 'set-name', name: text })}
+                style={styles.inlineInput}
+                placeholderTextColor={theme.colors['text-tertiary']}
+                placeholder="Your name"
+                returnKeyType="done"
+                onSubmitEditing={nameChanged ? onSavePress : undefined}
+                accessibilityLabel="Name"
               />
-            </View>
-          ) : null}
-
-          <View style={styles.sectionCard}>
-            <Text variant="cardHeader" color="foreground">
-              PRIVACY
-            </Text>
-            <View style={styles.settingRow}>
-              <Text color="foreground">Prevent screenshots</Text>
-              <Switch
-                value={state.preventScreenshots}
-                onValueChange={(value) => {
-                  dispatch({ type: 'set-prevent-screenshots', preventScreenshots: value });
-                  setPreventScreenshots(value);
-                }}
-              />
-            </View>
-            <View style={styles.settingRow}>
-              <Text color="foreground">Lock with Face ID</Text>
-              <Switch
-                value={state.appLock}
-                onValueChange={(value) => {
-                  dispatch({ type: 'set-app-lock', appLock: value });
-                  setAppLockEnabled(value);
-                }}
-              />
-            </View>
-          </View>
-
-          {MOBILE_PASSKEY_ENABLED ? (
-            <View style={styles.passkeysSection}>
-              <Text variant="cardHeader" color="foreground">
-                PASSKEYS
-              </Text>
-              {passkeys.length === 0 ? (
-                <Text color="text-tertiary" style={styles.noPasskeysText}>
-                  No passkeys registered.
-                </Text>
-              ) : (
-                passkeys.map((pk) => (
-                  <View key={pk.id} style={styles.passkeyRow}>
-                    <Text color="foreground" style={styles.passkeyName}>
-                      {pk.name}
-                    </Text>
-                    <Button
-                      variant="ghost"
-                      size="xs"
-                      onPress={() => onDeletePasskeyPress(pk.id, pk.name)}
-                      accessibilityLabel={`Remove passkey ${pk.name}`}
-                      style={styles.passkeyDeleteButton}
-                      title="[REMOVE]"
-                    />
-                  </View>
-                ))
+              {nameChanged && (
+                <Pressable
+                  onPress={onSavePress}
+                  disabled={state.isSaving}
+                  style={styles.inlineSaveButton}
+                  accessibilityLabel="Save name"
+                  accessibilityRole="button"
+                >
+                  {state.isSaving ? (
+                    <ActivityIndicator size="small" color={theme.colors.accent} />
+                  ) : (
+                    <Text style={styles.inlineSaveLabel}>Save</Text>
+                  )}
+                </Pressable>
               )}
-              <Button
-                title={isPasskeyLoading ? '[ADDING...]' : '[ADD_PASSKEY]'}
-                disabled={isPasskeyLoading}
-                isLoading={isPasskeyLoading}
-                onPress={onAddPasskeyPress}
-              />
             </View>
-          ) : null}
-        </View>
-      </ScrollView>
-
-      <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
-        <Button testID="settings-sign-out" title="[SIGN_OUT]" onPress={onLogoutPress} />
-        <Button
-          title="[DELETE_ACCOUNT]"
-          onPress={onDeleteAccountPress}
-          style={styles.deleteButton}
+          }
         />
+        <RowSeparator />
+        <SettingsRow
+          sf="envelope"
+          label="Email"
+          trailing={
+            <Text style={styles.trailingValue} numberOfLines={1}>
+              {currentUser?.email ?? '—'}
+            </Text>
+          }
+        />
+      </SectionCard>
+
+      {/* ── Privacy ─────────────────────────────────────────────────────── */}
+      <SectionLabel>Privacy</SectionLabel>
+      <SectionCard>
+        <SettingsRow
+          sf={Platform.OS === 'ios' ? 'faceid' : 'lock.fill'}
+          label="Lock with Face ID"
+          trailing={
+            <Switch
+              value={state.appLock}
+              onValueChange={(value) => {
+                dispatch({ type: 'set-app-lock', appLock: value });
+                setAppLockEnabled(value);
+              }}
+              accessibilityLabel="Lock with Face ID"
+            />
+          }
+        />
+        <RowSeparator />
+        <SettingsRow
+          sf="eye.slash"
+          label="Prevent screenshots"
+          trailing={
+            <Switch
+              value={state.preventScreenshots}
+              onValueChange={(value) => {
+                dispatch({ type: 'set-prevent-screenshots', preventScreenshots: value });
+                setPreventScreenshots(value);
+              }}
+              accessibilityLabel="Prevent screenshots"
+            />
+          }
+        />
+      </SectionCard>
+
+      {/* ── Chats ───────────────────────────────────────────────────────── */}
+      <SectionLabel>Chats</SectionLabel>
+      <SectionCard>
+        <SettingsRow
+          sf="archivebox"
+          label="Archived chats"
+          onPress={onArchivedChatsPress}
+        />
+      </SectionCard>
+
+      {/* ── Passkeys ────────────────────────────────────────────────────── */}
+      {MOBILE_PASSKEY_ENABLED && (
+        <>
+          <SectionLabel>Passkeys</SectionLabel>
+          <SectionCard>
+            <SettingsRow
+              sf="person.badge.key.fill"
+              label="Add passkey"
+              onPress={() => void onAddPasskeyPress()}
+              trailing={
+                isPasskeyLoading ? (
+                  <ActivityIndicator size="small" color={theme.colors['text-tertiary']} />
+                ) : undefined
+              }
+              disabled={isPasskeyLoading}
+            />
+            {passkeys.map((pk, index) => (
+              <React.Fragment key={pk.id}>
+                <RowSeparator />
+                <SettingsRow
+                  sf="key.fill"
+                  label={pk.name}
+                  trailing={
+                    <Pressable
+                      onPress={() => onDeletePasskeyPress(pk.id, pk.name)}
+                      hitSlop={8}
+                      accessibilityLabel={`Remove passkey ${pk.name}`}
+                      accessibilityRole="button"
+                    >
+                      <Image
+                        source="sf:trash"
+                        style={styles.trashIcon}
+                        tintColor={theme.colors.destructive}
+                        contentFit="contain"
+                      />
+                    </Pressable>
+                  }
+                />
+              </React.Fragment>
+            ))}
+          </SectionCard>
+        </>
+      )}
+
+      {/* ── Danger zone ─────────────────────────────────────────────────── */}
+      <View style={styles.dangerZone}>
+        <Pressable
+          onPress={onLogoutPress}
+          style={({ pressed }) => [styles.dangerButton, pressed && styles.dangerButtonPressed]}
+          testID="settings-sign-out"
+          accessibilityRole="button"
+          accessibilityLabel="Sign out"
+        >
+          <Image
+            source="sf:rectangle.portrait.and.arrow.right"
+            style={styles.dangerIcon}
+            tintColor={theme.colors.destructive}
+            contentFit="contain"
+          />
+          <Text style={styles.dangerLabel}>Sign out</Text>
+        </Pressable>
+
+        <Pressable
+          onPress={onDeleteAccountPress}
+          style={({ pressed }) => [styles.dangerButton, pressed && styles.dangerButtonPressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Delete account"
+        >
+          <Image
+            source="sf:trash"
+            style={styles.dangerIcon}
+            tintColor={theme.colors['text-tertiary']}
+            contentFit="contain"
+          />
+          <Text style={[styles.dangerLabel, styles.dangerLabelMuted]}>Delete account</Text>
+        </Pressable>
       </View>
-    </KeyboardAvoidingView>
+    </ScrollView>
   );
 }
 
+export default Settings;
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
+const ROW_HEIGHT = 50;
+const CARD_RADIUS = 14;
+
 const styles = StyleSheet.create({
-  root: {
+  scroll: {
     flex: 1,
     backgroundColor: theme.colors.background,
   },
   scrollContent: {
-    paddingHorizontal: theme.spacing.sm_12,
-    paddingTop: theme.spacing.ml_24,
-    rowGap: theme.spacing.sm_8,
-    paddingBottom: theme.spacing.m_16,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    gap: 4,
   },
-  formSection: {
-    rowGap: theme.spacing.ml_24,
-    marginTop: theme.spacing.l_32,
+
+  // ── Section label ──────────────────────────────────────────────────────────
+  sectionLabel: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: theme.colors['text-tertiary'],
+    letterSpacing: 0.1,
+    paddingHorizontal: 4,
+    paddingTop: 16,
+    paddingBottom: 6,
   },
+
+  // ── Card ───────────────────────────────────────────────────────────────────
   sectionCard: {
-    borderColor: theme.colors['border-default'],
-    borderRadius: theme.borderRadii.md,
+    backgroundColor: theme.colors['bg-base'],
+    borderRadius: CARD_RADIUS,
+    borderCurve: 'continuous',
     borderWidth: 1,
-    padding: theme.spacing.m_16,
-    rowGap: theme.spacing.sm_8,
+    borderColor: theme.colors['border-subtle'],
+    overflow: 'hidden',
   },
-  sectionDescription: {
-    fontSize: 12,
+
+  // ── Row ────────────────────────────────────────────────────────────────────
+  rowPressable: {
+    minHeight: ROW_HEIGHT,
   },
-  inputFlex: {
+  rowPressed: {
+    backgroundColor: theme.colors['bg-elevated'],
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 14,
+    minHeight: ROW_HEIGHT,
+  },
+  rowSeparator: {
+    height: 1,
+    backgroundColor: theme.colors['border-subtle'],
+    marginLeft: 14 + 32 + 12, // align with label start
+  },
+  rowIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    borderCurve: 'continuous',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  rowIcon: {
+    width: 16,
+    height: 16,
+  },
+  rowContent: {
     flex: 1,
+    gap: 2,
+    paddingVertical: 13,
   },
-  saveRow: {
-    marginTop: theme.spacing.ml_24,
+  rowLabel: {
+    fontSize: 16,
+    fontWeight: '400',
+    letterSpacing: -0.1,
+    color: theme.colors.foreground,
   },
-  passkeysSection: {
-    rowGap: theme.spacing.sm_8,
-  },
-  noPasskeysText: {
+  rowSublabel: {
     fontSize: 12,
+    color: theme.colors['text-tertiary'],
   },
-  passkeyRow: {
+  rowTrailing: {
+    flexShrink: 0,
+    alignItems: 'flex-end',
+  },
+  chevron: {
+    width: 14,
+    height: 14,
+    opacity: 0.4,
+  },
+  trailingValue: {
+    fontSize: 15,
+    color: theme.colors['text-tertiary'],
+    maxWidth: 160,
+  },
+
+  // ── Inline name edit ───────────────────────────────────────────────────────
+  inlineEditRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 8,
+  },
+  inlineInput: {
+    fontSize: 15,
+    color: theme.colors['text-secondary'],
+    textAlign: 'right',
+    minWidth: 80,
+    maxWidth: 160,
+    padding: 0,
+  },
+  inlineSaveButton: {
+    backgroundColor: theme.colors.accent,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    minWidth: 48,
+    alignItems: 'center',
+  },
+  inlineSaveLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: theme.colors['accent-foreground'],
+  },
+
+  // ── Trash icon ─────────────────────────────────────────────────────────────
+  trashIcon: {
+    width: 16,
+    height: 16,
+  },
+
+  // ── Danger zone ────────────────────────────────────────────────────────────
+  dangerZone: {
+    marginTop: 32,
+    gap: 1,
+    borderRadius: CARD_RADIUS,
+    borderCurve: 'continuous',
+    overflow: 'hidden',
     borderWidth: 1,
-    borderColor: theme.colors['border-default'],
-    padding: theme.spacing.sm_8,
+    borderColor: theme.colors['border-subtle'],
   },
-  passkeyName: {
-    fontSize: 12,
-  },
-  passkeyDeleteButton: {
-    minWidth: 72,
-  },
-  settingRow: {
+  dangerButton: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    backgroundColor: theme.colors['bg-base'],
   },
-  footer: {
-    paddingHorizontal: theme.spacing.sm_12,
-    paddingTop: theme.spacing.sm_12,
-    rowGap: theme.spacing.sm_12,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors['border-default'],
+  dangerButtonPressed: {
+    backgroundColor: theme.colors['bg-elevated'],
   },
-  deleteButton: {
-    borderColor: theme.colors.destructive,
+  dangerIcon: {
+    width: 18,
+    height: 18,
+  },
+  dangerLabel: {
+    fontSize: 16,
+    color: theme.colors.destructive,
+    fontWeight: '400',
+  },
+  dangerLabelMuted: {
+    color: theme.colors['text-tertiary'],
   },
 });
-
-export default Settings;

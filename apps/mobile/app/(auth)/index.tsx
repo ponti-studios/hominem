@@ -4,7 +4,7 @@ import { Redirect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { AuthShell } from '~/components/auth-shell';
+import { AuthLayout } from '~/components/AuthLayout';
 import { Button } from '~/components/Button';
 import { FeatureErrorBoundary } from '~/components/error-boundary';
 import TextInput from '~/components/text-input';
@@ -92,7 +92,7 @@ export function AuthScreen() {
   const canUsePasskeys = MOBILE_PASSKEY_ENABLED && isPasskeySupported;
 
   return (
-    <AuthShell
+    <AuthLayout
       testID="auth-screen"
       title={AUTH_COPY.emailEntry.title}
       helper={AUTH_COPY.emailEntry.helper}
@@ -194,7 +194,7 @@ export function AuthScreen() {
           />
         ) : null}
       </Box>
-    </AuthShell>
+    </AuthLayout>
   );
 }
 
