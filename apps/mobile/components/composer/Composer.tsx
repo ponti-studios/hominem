@@ -476,7 +476,7 @@ const styles = StyleSheet.create({
   inputSurface: {
     minHeight: INPUT_MIN_H + spacing[3],
     paddingHorizontal: spacing[3],
-    paddingVertical: spacing[2],
+    paddingVertical: 0,
   },
   inputWrap: {
     flex: 1,

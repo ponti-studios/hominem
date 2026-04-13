@@ -64,16 +64,6 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.md,
     lineHeight: fontSizes.md * 1.55,
   },
-  assistantSurface: {
-    backgroundColor: colors['bg-base'],
-    borderColor: colors['border-subtle'],
-    borderRadius: radiiNative.md,
-    borderTopLeftRadius: 6,
-    borderWidth: 1,
-    maxWidth: MESSAGE_BUBBLE_MAX_WIDTH,
-    paddingHorizontal: spacing[4],
-    paddingVertical: 0.5,
-  },
   contentColumn: {
     gap: spacing[2],
     width: '100%',
@@ -169,6 +159,14 @@ const styles = StyleSheet.create({
   toolCalls: {
     gap: spacing[1],
   },
+  messageSurface: {
+    borderColor: colors['border-subtle'],
+    borderRadius: radiiNative.md,
+    borderWidth: 1,
+    maxWidth: MESSAGE_BUBBLE_MAX_WIDTH,
+    paddingHorizontal: spacing[2],
+    paddingVertical: 0,
+  },
   transcriptBlock: {
     gap: spacing[3],
     maxWidth: MESSAGE_BUBBLE_MAX_WIDTH,
@@ -188,14 +186,13 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.md,
     lineHeight: fontSizes.md * 1.5,
   },
+  assistantSurface: {
+    backgroundColor: colors['bg-base'],
+    borderBottomLeftRadius: 0,
+  },
   userSurface: {
     backgroundColor: colors['emphasis-highest'],
-    borderColor: colors['emphasis-highest'],
-    borderRadius: radiiNative.md,
-    borderWidth: 1,
-    maxWidth: MESSAGE_BUBBLE_MAX_WIDTH,
-    paddingHorizontal: spacing[4],
-    paddingVertical: spacing[3],
+    borderBottomRightRadius: 0,
   },
 });
 
@@ -312,7 +309,7 @@ const ChatMessage = memo(function ChatMessage({
         ) : null}
 
         {isUser ? (
-          <View style={styles.userSurface}>
+          <View style={[styles.messageSurface, styles.userSurface]}>
             {Markdown ? (
               <Markdown style={markdownStyle}>{content}</Markdown>
             ) : (
@@ -321,7 +318,7 @@ const ChatMessage = memo(function ChatMessage({
           </View>
         ) : (
           <View style={styles.transcriptBlock}>
-            <View style={styles.assistantSurface}>
+            <View style={[styles.messageSurface, styles.assistantSurface]}>
               {Markdown ? (
                 <Markdown style={markdownStyle}>{content}</Markdown>
               ) : (
