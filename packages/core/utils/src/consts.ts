@@ -17,13 +17,6 @@ export const QUEUE_NAMES = {
   IMPORT_TRANSACTIONS: 'import-transaction',
 
   /**
-   * Queue for Plaid synchronization jobs
-   * Used by:
-   * - apps/api/src/routes/plaid.router.ts (adding jobs)
-   * - background processors (processing jobs)
-   */
-  PLAID_SYNC: 'plaid-sync',
-  /**
    * Queue for Google Calendar synchronization jobs
    * Used by:
    * - apps/api/src/rpc/routers/events.ts (adding jobs)

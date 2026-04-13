@@ -25,8 +25,6 @@ export const apiSchema = baseSchema.extend({
   AUTH_TEST_OTP_ENABLED: isTest ? z.coerce.boolean().default(true) : z.coerce.boolean().default(false),
   AUTH_TEST_OTP_TTL_SECONDS: z.coerce.number().int().positive().default(300),
   AUTH_EMAIL_OTP_EXPIRES_SECONDS: z.coerce.number().int().positive().default(300),
-  TWITTER_CLIENT_ID: z.string().default(''),
-  TWITTER_CLIENT_SECRET: z.string().default(''),
   RESEND_API_KEY: z.string(),
   RESEND_FROM_EMAIL: z.string(),
   RESEND_FROM_NAME: z.string(),
@@ -35,10 +33,6 @@ export const apiSchema = baseSchema.extend({
     .default('false')
     .describe('Whether to actually send emails via Resend'),
   OPENROUTER_API_KEY: isTest ? z.string().default('test-openrouter-key') : z.string().optional(),
-  PLAID_CLIENT_ID: z.string().default(''),
-  PLAID_API_KEY: z.string().default(''),
-  PLAID_ENV: z.enum(['sandbox', 'development', 'production']).default('sandbox'),
-  PLAID_WEBHOOK_SECRET: z.string().default(''),
   SENTRY_DSN: z.string().optional(),
 });
 

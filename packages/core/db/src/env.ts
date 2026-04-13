@@ -7,9 +7,6 @@ const envSchema = z.object({
   DB_MAX_CONNECTIONS: z.coerce.number().optional(),
   DB_IDLE_TIMEOUT: z.coerce.number().optional(),
   DB_MAX_LIFETIME: z.coerce.number().optional(),
-  GOOGLE_CLIENT_ID: z.string().optional(),
-  GOOGLE_CLIENT_SECRET: z.string().optional(),
-  GOOGLE_REDIRECT_URI: z.string().optional(),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);

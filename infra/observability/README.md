@@ -18,11 +18,10 @@ Point local services at OTLP HTTP on `http://localhost:4318` (the default).
 
 ## Production
 
-In preview/prod, swap the OTLP endpoint for [Axiom](https://axiom.co) and add a `SENTRY_DSN` for error tracking. No code changes required — environment variables only.
+In preview/prod, point OTEL at Sentry's OTLP endpoint. Sentry handles both traces and errors.
 
 ```
-OTEL_EXPORTER_OTLP_ENDPOINT=https://api.axiom.co
-OTEL_EXPORTER_OTLP_HEADERS=Authorization=Bearer <token>,X-Axiom-Dataset=hominem
+OTEL_EXPORTER_OTLP_ENDPOINT=https://ingest.sentry.io/v1/traces
 SENTRY_DSN=https://<key>@<org>.ingest.sentry.io/<project>
 ```
 

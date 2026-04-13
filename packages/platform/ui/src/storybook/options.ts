@@ -53,7 +53,6 @@ const codeBlockLanguageOptions = [
   'markdown',
   'graphql',
 ] as const;
-const plaidStatusOptions = ['active', 'error', 'pending_expiration', 'revoked', null] as const;
 
 export {
   buttonSizeOptions,
@@ -63,7 +62,6 @@ export {
   drawerDirectionOptions,
   inputTypeOptions,
   loadingSizeOptions,
-  plaidStatusOptions,
   switchSizeOptions,
   textFieldTypeOptions,
 };

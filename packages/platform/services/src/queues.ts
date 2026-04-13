@@ -35,7 +35,6 @@ export function getOrCreateQueues(): Queues {
     connectionOptions.tls = {};
   }
 
-  const plaidSync = new Queue(QUEUE_NAMES.PLAID_SYNC, { connection: connectionOptions });
   const importTransactions = new Queue(QUEUE_NAMES.IMPORT_TRANSACTIONS, {
     connection: connectionOptions,
   });
@@ -44,7 +43,6 @@ export function getOrCreateQueues(): Queues {
   });
 
   singleton = {
-    plaidSync,
     importTransactions,
     placePhotoEnrich,
   };

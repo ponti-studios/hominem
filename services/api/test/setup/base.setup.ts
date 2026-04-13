@@ -17,7 +17,6 @@ process.env.DATABASE_URL =
   process.env.DATABASE_URL ??
   process.env.TEST_DATABASE_URL ??
   'postgresql://postgres:postgres@127.0.0.1:4433/hominem-test'
-process.env.AUTH_CAPTCHA_SECRET_KEY = ''
 process.env.R2_ENDPOINT = 'https://test.r2.cloudflarestorage.com'
 process.env.R2_ACCESS_KEY_ID = 'test-access-key-id'
 process.env.R2_SECRET_ACCESS_KEY = 'test-secret-access-key'

@@ -97,9 +97,6 @@ API and worker variables in `preview`:
 - `AUTH_E2E_ENABLED=true`
 - `AUTH_E2E_SECRET=<required>`
 - `OPENROUTER_API_KEY=<required>`
-- `OPENAI_API_KEY=<required>`
-- `GOOGLE_CLIENT_ID=<required>`
-- `GOOGLE_CLIENT_SECRET=<required>`
 - `OTEL_EXPORTER_OTLP_ENDPOINT=<required>`
 - `OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf`
 - `OTEL_DEPLOYMENT_ENVIRONMENT=preview`
@@ -137,9 +134,6 @@ API and worker variables in `production`:
 - `AUTH_E2E_ENABLED=true`
 - `AUTH_E2E_SECRET=<required>`
 - `OPENROUTER_API_KEY=<required>`
-- `OPENAI_API_KEY=<required>`
-- `GOOGLE_CLIENT_ID=<required>`
-- `GOOGLE_CLIENT_SECRET=<required>`
 - `OTEL_EXPORTER_OTLP_ENDPOINT=<required>`
 - `OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf`
 - `OTEL_DEPLOYMENT_ENVIRONMENT=production`
