@@ -81,7 +81,7 @@ describe('createEmptyComposerDraft', () => {
       attachments: [],
       isRecording: false,
       mode: 'text',
-      selectedNoteIds: [],
+      selectedNotes: [],
     });
   });
 });

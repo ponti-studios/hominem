@@ -20,19 +20,24 @@ import { donateAddNoteIntent } from '~/services/intent-donation';
 import {
   buildChatTitle,
   canSubmitComposerDraft,
+  getSelectedNoteIds,
   getUploadedAttachmentIds,
   isDefaultChatTitle,
   resolveComposerPrimaryAction,
   resolveComposerSecondaryAction,
 } from './composerActions';
 import { updateChatTitleCaches } from '~/services/chat/chat-title';
-import type { ComposerTarget, ComposerAttachment } from './composerState';
+import type {
+  ComposerTarget,
+  ComposerAttachment,
+  ComposerSelectedNote,
+} from './composerState';
 
 type UseComposerSubmissionOptions = {
   target: ComposerTarget;
   attachments: ComposerAttachment[];
   message: string;
-  selectedNoteIds: string[];
+  selectedNotes: ComposerSelectedNote[];
   isUploading: boolean;
   setAttachments: (
     value:
@@ -46,7 +51,7 @@ export function useComposerSubmission({
   target,
   attachments,
   message,
-  selectedNoteIds,
+  selectedNotes,
   isUploading,
   setAttachments,
   clearDraft,
@@ -63,6 +68,7 @@ export function useComposerSubmission({
     isUploading,
     message,
     uploadedAttachmentIds,
+    selectedNotes,
   });
 
   const createChatFromDraft = async () => {
@@ -155,10 +161,12 @@ export function useComposerSubmission({
 
     if (action === 'send_chat') {
       const trimmedMessage = message.trim();
+      const noteIds = getSelectedNoteIds(selectedNotes);
       void sendChatMessage({
         message: trimmedMessage,
         ...(uploadedAttachmentIds.length > 0 ? { fileIds: uploadedAttachmentIds } : {}),
-        ...(selectedNoteIds.length > 0 ? { noteIds: selectedNoteIds } : {}),
+        ...(noteIds.length > 0 ? { noteIds } : {}),
+        ...(selectedNotes.length > 0 ? { referencedNotes: selectedNotes } : {}),
       }).then(async () => {
         if (target.chatId && trimmedMessage.length > 0) {
           await maybeUpdateChatTitle(target.chatId, trimmedMessage);

@@ -7,6 +7,7 @@ import {
   buildChatTitle,
   buildNoteContent,
   canSubmitComposerDraft,
+  getSelectedNoteIds,
   getUploadedAttachmentIds,
   isDefaultChatTitle,
   mergeNoteIntoCache,
@@ -43,6 +44,7 @@ describe('composer actions', () => {
         isUploading: false,
         message: '  hello  ',
         uploadedAttachmentIds: [],
+        selectedNotes: [],
       }),
     ).toBe(true);
 
@@ -51,6 +53,16 @@ describe('composer actions', () => {
         isUploading: false,
         message: '   ',
         uploadedAttachmentIds: ['file-1'],
+        selectedNotes: [],
+      }),
+    ).toBe(true);
+
+    expect(
+      canSubmitComposerDraft({
+        isUploading: false,
+        message: '   ',
+        uploadedAttachmentIds: [],
+        selectedNotes: [{ id: 'note-1', title: 'Project', excerpt: null }],
       }),
     ).toBe(true);
 
@@ -59,6 +71,7 @@ describe('composer actions', () => {
         isUploading: true,
         message: 'hello',
         uploadedAttachmentIds: [],
+        selectedNotes: [],
       }),
     ).toBe(false);
   });
@@ -79,5 +92,11 @@ describe('composer actions', () => {
     expect(mergeNoteIntoCache(undefined, updatedNote)).toEqual([updatedNote]);
     expect(mergeNoteIntoCache(currentNotes, updatedNote)).toEqual([{ id: '1' }, updatedNote]);
     expect(mergeUniqueIds(['a', 'b'], ['b', 'c'])).toEqual(['a', 'b', 'c']);
+    expect(
+      getSelectedNoteIds([
+        { id: 'note-1', title: 'Project', excerpt: null },
+        { id: 'note-2', title: 'Inbox', excerpt: 'Todo' },
+      ]),
+    ).toEqual(['note-1', 'note-2']);
   });
 });

@@ -38,6 +38,7 @@ export interface ChatMessageItem {
   focus_ids: string[] | null;
   focus_items: Array<{ id: string; text: string }> | null;
   reasoning?: string | null;
+  referencedNotes: RpcChatMessage['referencedNotes'];
   toolCalls: RpcChatMessage['toolCalls'];
   isStreaming?: boolean;
 }

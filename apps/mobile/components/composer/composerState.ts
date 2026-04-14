@@ -1,3 +1,4 @@
+import type { NoteSearchResult } from '@hominem/rpc/types';
 import type { UploadedFile } from '@hominem/ui/types/upload';
 
 type ComposerRouteKind = 'feed' | 'notes' | 'chat' | 'hidden';
@@ -11,6 +12,8 @@ export interface ComposerAttachment {
   uploadedFile?: UploadedFile;
 }
 
+export type ComposerSelectedNote = NoteSearchResult;
+
 export interface ComposerTarget {
   kind: ComposerRouteKind;
   key: string;
@@ -23,7 +26,7 @@ export interface ComposerDraft {
   attachments: ComposerAttachment[];
   isRecording: boolean;
   mode: ComposerMode;
-  selectedNoteIds: string[];
+  selectedNotes: ComposerSelectedNote[];
 }
 
 export interface ComposerPresentation {
@@ -63,7 +66,7 @@ export function createEmptyComposerDraft(): ComposerDraft {
     attachments: [],
     isRecording: false,
     mode: 'text',
-    selectedNoteIds: [],
+    selectedNotes: [],
   };
 }
 

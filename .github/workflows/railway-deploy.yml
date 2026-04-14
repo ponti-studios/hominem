@@ -1,0 +1,183 @@
+name: Railway Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/**'
+      - 'services/api/**'
+      - 'packages/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'turbo.json'
+      - 'tsconfig.json'
+      - 'tsconfig.profiles/**'
+      - 'justfile'
+      - 'justfiles/**'
+      - '.github/workflows/railway-deploy.yml'
+
+concurrency:
+  group: railway-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      api: ${{ steps.detect.outputs.api }}
+      web: ${{ steps.detect.outputs.web }}
+      workers: ${{ steps.detect.outputs.workers }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed deploy targets
+        id: detect
+        shell: bash
+        run: |
+          base="${{ github.event.before }}"
+          head="${{ github.sha }}"
+
+          if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ]; then
+            {
+              echo "api=true"
+              echo "web=true"
+              echo "workers=true"
+            } >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          api=false
+          web=false
+          workers=false
+
+          shared_change() {
+            case "$1" in
+              packages/*|package.json|pnpm-lock.yaml|pnpm-workspace.yaml|turbo.json|tsconfig.json|tsconfig.profiles/*|justfile|justfiles/*|.github/workflows/railway-deploy.yml)
+                return 0
+                ;;
+            esac
+
+            return 1
+          }
+
+          while IFS= read -r file; do
+            [ -n "$file" ] || continue
+
+            if shared_change "$file"; then
+              api=true
+              web=true
+              workers=true
+              continue
+            fi
+
+            case "$file" in
+              services/api/*)
+                api=true
+                workers=true
+                ;;
+              apps/web/*)
+                web=true
+                ;;
+            esac
+          done < <(git diff --name-only "$base" "$head")
+
+          {
+            echo "api=$api"
+            echo "web=$web"
+            echo "workers=$workers"
+          } >> "$GITHUB_OUTPUT"
+
+  deploy-api:
+    name: Deploy API
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.api == 'true'
+    timeout-minutes: 30
+    env:
+      SERVICE: ${{ vars.RAILWAY_SERVICE_API }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.1
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Validate Railway service target
+        run: test -n "$SERVICE"
+
+      - name: Deploy API to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: railway up --ci --service "$SERVICE"
+
+  deploy-web:
+    name: Deploy Web
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
+    timeout-minutes: 30
+    env:
+      SERVICE: ${{ vars.RAILWAY_SERVICE_WEB }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.1
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Validate Railway service target
+        run: test -n "$SERVICE"
+
+      - name: Deploy Web to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: railway up --ci --service "$SERVICE"
+
+  deploy-workers:
+    name: Deploy Workers
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.workers == 'true'
+    timeout-minutes: 30
+    env:
+      SERVICE: ${{ vars.RAILWAY_SERVICE_WORKERS }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.1
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Validate Railway service target
+        run: test -n "$SERVICE"
+
+      - name: Deploy Workers to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: railway up --ci --service "$SERVICE"

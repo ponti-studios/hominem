@@ -8,6 +8,7 @@ import { Text } from '../typography/text.native';
 import { Button } from '../ui/button.native';
 import { TextArea } from '../ui/text-area.native';
 import type { ChatMessageItem, ChatRenderIcon, MarkdownComponent } from './chat.types';
+import { getReferencedNoteLabel } from './referenced-notes';
 
 type ToolCall = NonNullable<ChatMessageItem['toolCalls']>[number];
 
@@ -128,6 +129,28 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.xs,
     opacity: 0.8,
   },
+  referencedNoteChip: {
+    alignItems: 'center',
+    backgroundColor: colors['bg-base'],
+    borderColor: colors['border-default'],
+    borderRadius: radiiNative.full,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: spacing[1],
+    paddingHorizontal: spacing[2],
+    paddingVertical: spacing[1],
+  },
+  referencedNoteText: {
+    color: colors['text-secondary'],
+    fontSize: fontSizes.xs,
+  },
+  referencedNotes: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing[2],
+    justifyContent: 'flex-end',
+    maxWidth: MESSAGE_BUBBLE_MAX_WIDTH,
+  },
   row: {
     paddingVertical: spacing[2],
     width: '100%',
@@ -229,6 +252,8 @@ const ChatMessage = memo(function ChatMessage({
   const canShare = !isUser && onShare !== undefined && Boolean(content?.trim());
   const hasToolCalls = Array.isArray(message.toolCalls) && message.toolCalls.length > 0;
   const hasReasoning = Boolean(message.reasoning && message.reasoning.trim().length > 0);
+  const hasReferencedNotes =
+    isUser && Array.isArray(message.referencedNotes) && message.referencedNotes.length > 0;
   const renderedToolCalls = message.toolCalls ?? [];
   const [isEditing, setIsEditing] = useState(false);
   const [draftMessage, setDraftMessage] = useState(content);
@@ -309,12 +334,23 @@ const ChatMessage = memo(function ChatMessage({
         ) : null}
 
         {isUser ? (
-          <View style={[styles.messageSurface, styles.userSurface]}>
-            {Markdown ? (
-              <Markdown style={markdownStyle}>{content}</Markdown>
-            ) : (
-              <Text style={textStyle}>{content}</Text>
-            )}
+          <View style={styles.transcriptBlock}>
+            <View style={[styles.messageSurface, styles.userSurface]}>
+              {Markdown ? (
+                <Markdown style={markdownStyle}>{content}</Markdown>
+              ) : (
+                <Text style={textStyle}>{content}</Text>
+              )}
+            </View>
+            {hasReferencedNotes ? (
+              <View style={styles.referencedNotes}>
+                {message.referencedNotes!.map((note) => (
+                  <View key={note.id} style={styles.referencedNoteChip}>
+                    <Text style={styles.referencedNoteText}>{getReferencedNoteLabel(note)}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
           </View>
         ) : (
           <View style={styles.transcriptBlock}>

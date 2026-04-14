@@ -13,6 +13,7 @@ export const noteKeys = {
   list: (options: Record<string, unknown>) => queryKeys.notes.list(options),
   feed: (options: Record<string, unknown>) => queryKeys.notes.feed(options),
   detail: (id: string) => queryKeys.notes.detail(id),
+  search: (query: string) => queryKeys.notes.search(query),
 } as const;
 
 export const chatKeys = {

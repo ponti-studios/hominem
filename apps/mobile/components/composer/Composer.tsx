@@ -1,6 +1,7 @@
+import type { NoteSearchResult } from '@hominem/rpc/types';
 import { radiiNative, shadowsNative, spacing } from '@hominem/ui/tokens';
 import { Image } from 'expo-image';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import Animated, {
   useAnimatedKeyboard,
@@ -17,11 +18,17 @@ import {
 } from '~/components/notes/notes-surface-motion';
 import { theme } from '~/components/theme';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
+import { useNoteSearch } from '~/services/notes/use-note-search';
 
 import { CameraModal } from '../media/camera-modal';
 import { VoiceSessionModal } from '../media/voice-session-modal';
 import { useComposerContext } from './ComposerContext';
-import { deriveComposerPresentation, type ComposerAttachment } from './composerState';
+import { getTrailingMentionQuery, removeTrailingMentionQuery } from './note-mentions';
+import {
+  deriveComposerPresentation,
+  type ComposerAttachment,
+  type ComposerSelectedNote,
+} from './composerState';
 import { useComposerMediaActions } from './useComposerMediaActions';
 import { useComposerSubmission } from './useComposerSubmission';
 
@@ -159,24 +166,82 @@ function ComposerAttachments({
   );
 }
 
-function ComposerSelectionSummary({ selectedNoteIds }: { selectedNoteIds: string[] }) {
-  if (selectedNoteIds.length === 0) {
+function ComposerSelectionSummary({
+  selectedNotes,
+  onRemoveNote,
+}: {
+  selectedNotes: ComposerSelectedNote[];
+  onRemoveNote: (noteId: string) => void;
+}) {
+  if (selectedNotes.length === 0) {
     return null;
   }
 
   return (
     <View style={styles.selectionRow}>
-      <View style={styles.selectionChip}>
-        <Image
-          source="sf:bubble.left.and.text.bubble.right"
-          style={styles.selectionChipIcon}
-          tintColor={theme.colors['text-secondary']}
-          contentFit="contain"
-        />
-        <Animated.Text style={styles.selectionChipText}>
-          {selectedNoteIds.length} {selectedNoteIds.length === 1 ? 'note' : 'notes'} linked
-        </Animated.Text>
-      </View>
+      {selectedNotes.map((note) => (
+        <View key={note.id} style={styles.selectionChip}>
+          <Image
+            source="sf:bubble.left.and.text.bubble.right"
+            style={styles.selectionChipIcon}
+            tintColor={theme.colors['text-secondary']}
+            contentFit="contain"
+          />
+          <Animated.Text style={styles.selectionChipText}>
+            {note.title || 'Untitled note'}
+          </Animated.Text>
+          <Pressable
+            accessibilityLabel={`Remove ${note.title ?? 'note'}`}
+            accessibilityRole="button"
+            hitSlop={spacing[2]}
+            onPress={() => onRemoveNote(note.id)}
+            style={({ pressed }) => [styles.selectionChipButton, pressed ? styles.selectionChipButtonPressed : null]}
+          >
+            <Image
+              source="sf:xmark"
+              style={styles.selectionChipButtonIcon}
+              tintColor={theme.colors['text-secondary']}
+              contentFit="contain"
+            />
+          </Pressable>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function MentionSuggestions({
+  suggestions,
+  onSelect,
+}: {
+  suggestions: NoteSearchResult[];
+  onSelect: (note: NoteSearchResult) => void;
+}) {
+  if (suggestions.length === 0) {
+    return null;
+  }
+
+  return (
+    <View style={styles.suggestions} testID="mobile-composer-mention-suggestions">
+      {suggestions.map((note) => (
+        <Pressable
+          key={note.id}
+          accessibilityLabel={`Link ${note.title ?? 'note'}`}
+          accessibilityRole="button"
+          onPress={() => onSelect(note)}
+          style={({ pressed }) => [styles.suggestionItem, pressed ? styles.suggestionItemPressed : null]}
+          testID={`mobile-composer-mention-${note.id}`}
+        >
+          <Animated.Text style={styles.suggestionTitle}>
+            {note.title || 'Untitled note'}
+          </Animated.Text>
+          {note.excerpt ? (
+            <Animated.Text numberOfLines={1} style={styles.suggestionExcerpt}>
+              {note.excerpt}
+            </Animated.Text>
+          ) : null}
+        </Pressable>
+      ))}
     </View>
   );
 }
@@ -212,14 +277,17 @@ export const Composer = () => {
   const animatedH = useSharedValue(INPUT_MIN_H);
   const keyboard = useAnimatedKeyboard();
   const prefersReducedMotion = useReducedMotion();
+  const inputRef = useRef<TextInput>(null);
 
   const {
     target,
+    addSelectedNote,
     attachments,
     clearDraft,
     isRecording,
     message,
-    selectedNoteIds,
+    removeSelectedNote,
+    selectedNotes,
     setAttachments,
     setComposerClearance,
     setIsRecording,
@@ -247,7 +315,7 @@ export const Composer = () => {
     target,
     attachments,
     message,
-    selectedNoteIds,
+    selectedNotes,
     isUploading: uploadState.isUploading,
     setAttachments,
     clearDraft,
@@ -258,8 +326,23 @@ export const Composer = () => {
 
   const presentation = deriveComposerPresentation(
     target,
-    message.trim().length > 0 || attachments.length > 0,
+    message.trim().length > 0 || attachments.length > 0 || selectedNotes.length > 0,
     isRecording,
+  );
+  const mentionQuery = useMemo(
+    () => (target.kind === 'chat' ? getTrailingMentionQuery(message) : null),
+    [message, target.kind],
+  );
+  const { data: searchResults } = useNoteSearch(
+    mentionQuery ?? '',
+    target.kind === 'chat' && mentionQuery !== null,
+  );
+  const mentionSuggestions = useMemo(
+    () =>
+      (searchResults?.notes ?? []).filter(
+        (note) => !selectedNotes.some((selectedNote) => selectedNote.id === note.id),
+      ),
+    [searchResults?.notes, selectedNotes],
   );
   const primarySf =
     presentation.primaryActionLabel === 'Send'
@@ -299,6 +382,15 @@ export const Composer = () => {
 
   useEffect(() => () => setComposerClearance(0), [setComposerClearance]);
 
+  const handleSelectMention = useCallback(
+    (note: NoteSearchResult) => {
+      setMessage(removeTrailingMentionQuery(message));
+      addSelectedNote(note);
+      inputRef.current?.focus();
+    },
+    [addSelectedNote, message, setMessage],
+  );
+
   if (presentation.isHidden) return null;
 
   return (
@@ -325,10 +417,15 @@ export const Composer = () => {
             onRemoveAttachment={handleRemoveAttachment}
           />
         </Animated.View>
-        <ComposerSelectionSummary selectedNoteIds={selectedNoteIds} />
+        <ComposerSelectionSummary
+          onRemoveNote={removeSelectedNote}
+          selectedNotes={selectedNotes}
+        />
+        <MentionSuggestions onSelect={handleSelectMention} suggestions={mentionSuggestions} />
         <Animated.View style={[styles.inputSurface, inputStyle]}>
           <View style={styles.inputWrap}>
             <TextInput
+              ref={inputRef}
               multiline
               value={message}
               onChangeText={setMessage}
@@ -570,6 +667,8 @@ const styles = StyleSheet.create({
 
   selectionRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing[2],
   },
   selectionChip: {
     alignItems: 'center',
@@ -586,7 +685,46 @@ const styles = StyleSheet.create({
     height: spacing[3],
     width: spacing[3],
   },
+  selectionChipButton: {
+    alignItems: 'center',
+    borderRadius: radiiNative.full,
+    height: spacing[4],
+    justifyContent: 'center',
+    width: spacing[4],
+  },
+  selectionChipButtonPressed: {
+    backgroundColor: theme.colors.background,
+  },
+  selectionChipButtonIcon: {
+    height: spacing[2],
+    width: spacing[2],
+  },
   selectionChipText: {
+    color: theme.colors['text-secondary'],
+    fontSize: theme.textVariants.small.fontSize,
+    lineHeight: theme.textVariants.small.lineHeight,
+  },
+  suggestions: {
+    backgroundColor: theme.colors['bg-surface'],
+    borderColor: theme.colors['border-default'],
+    borderRadius: radiiNative.md,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  suggestionItem: {
+    gap: spacing[1],
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[2],
+  },
+  suggestionItemPressed: {
+    backgroundColor: theme.colors.background,
+  },
+  suggestionTitle: {
+    color: theme.colors.foreground,
+    fontSize: theme.textVariants.small.fontSize,
+    lineHeight: theme.textVariants.small.lineHeight,
+  },
+  suggestionExcerpt: {
     color: theme.colors['text-secondary'],
     fontSize: theme.textVariants.small.fontSize,
     lineHeight: theme.textVariants.small.lineHeight,

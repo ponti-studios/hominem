@@ -6,7 +6,7 @@ import {
   normalizeChatTitle,
 } from '~/services/chat/chat-title';
 
-import type { ComposerTarget, ComposerAttachment } from './composerState';
+import type { ComposerTarget, ComposerAttachment, ComposerSelectedNote } from './composerState';
 
 export type ComposerPrimaryAction = 'send_chat' | 'create_note';
 
@@ -53,8 +53,14 @@ export function canSubmitComposerDraft(input: {
   isUploading: boolean;
   message: string;
   uploadedAttachmentIds: string[];
+  selectedNotes: ComposerSelectedNote[];
 }) {
-  return !input.isUploading && (input.message.trim().length > 0 || input.uploadedAttachmentIds.length > 0);
+  return (
+    !input.isUploading &&
+    (input.message.trim().length > 0 ||
+      input.uploadedAttachmentIds.length > 0 ||
+      input.selectedNotes.length > 0)
+  );
 }
 
 export function buildChatTitle(message: string) {
@@ -77,4 +83,8 @@ export function buildNoteContent(noteContent: string, message: string) {
 
 export function mergeUniqueIds(existingIds: string[], nextIds: string[]) {
   return Array.from(new Set([...existingIds, ...nextIds]));
+}
+
+export function getSelectedNoteIds(selectedNotes: ComposerSelectedNote[]) {
+  return selectedNotes.map((note) => note.id);
 }

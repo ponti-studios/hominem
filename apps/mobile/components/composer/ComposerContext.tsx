@@ -13,6 +13,7 @@ import {
   resolveComposerTarget,
   type ComposerAttachment,
   type ComposerDraft,
+  type ComposerSelectedNote,
   type ComposerTarget,
   type ComposerMode,
 } from './composerState';
@@ -33,9 +34,14 @@ type ComposerContextValue = {
   setIsRecording: (value: boolean) => void;
   mode: ComposerMode;
   setMode: (value: ComposerMode) => void;
-  selectedNoteIds: string[];
-  setSelectedNoteIds: (value: string[] | ((currentValue: string[]) => string[])) => void;
-  toggleSelectedNoteId: (noteId: string) => void;
+  selectedNotes: ComposerSelectedNote[];
+  setSelectedNotes: (
+    value:
+      | ComposerSelectedNote[]
+      | ((currentValue: ComposerSelectedNote[]) => ComposerSelectedNote[]),
+  ) => void;
+  addSelectedNote: (note: ComposerSelectedNote) => void;
+  removeSelectedNote: (noteId: string) => void;
   clearDraft: () => void;
   composerClearance: number;
   setComposerClearance: (value: number) => void;
@@ -115,23 +121,33 @@ export const ComposerProvider = ({ children }: PropsWithChildren) => {
     [updateDraft],
   );
 
-  const setSelectedNoteIds = useCallback<ComposerContextValue['setSelectedNoteIds']>(
+  const setSelectedNotes = useCallback<ComposerContextValue['setSelectedNotes']>(
     (value) => {
       updateDraft((draft) => ({
         ...draft,
-        selectedNoteIds: typeof value === 'function' ? value(draft.selectedNoteIds) : value,
+        selectedNotes: typeof value === 'function' ? value(draft.selectedNotes) : value,
       }));
     },
     [updateDraft],
   );
 
-  const toggleSelectedNoteId = useCallback(
+  const addSelectedNote = useCallback(
+    (note: ComposerSelectedNote) => {
+      updateDraft((draft) => ({
+        ...draft,
+        selectedNotes: draft.selectedNotes.some((currentNote) => currentNote.id === note.id)
+          ? draft.selectedNotes
+          : [...draft.selectedNotes, note],
+      }));
+    },
+    [updateDraft],
+  );
+
+  const removeSelectedNote = useCallback(
     (noteId: string) => {
       updateDraft((draft) => ({
         ...draft,
-        selectedNoteIds: draft.selectedNoteIds.includes(noteId)
-          ? draft.selectedNoteIds.filter((currentNoteId) => currentNoteId !== noteId)
-          : [...draft.selectedNoteIds, noteId],
+        selectedNotes: draft.selectedNotes.filter((currentNote) => currentNote.id !== noteId),
       }));
     },
     [updateDraft],
@@ -155,9 +171,10 @@ export const ComposerProvider = ({ children }: PropsWithChildren) => {
       setIsRecording,
       mode: activeDraft.mode,
       setMode,
-      selectedNoteIds: activeDraft.selectedNoteIds,
-      setSelectedNoteIds,
-      toggleSelectedNoteId,
+      selectedNotes: activeDraft.selectedNotes,
+      setSelectedNotes,
+      addSelectedNote,
+      removeSelectedNote,
       clearDraft,
       composerClearance,
       setComposerClearance,
@@ -166,18 +183,19 @@ export const ComposerProvider = ({ children }: PropsWithChildren) => {
       activeDraft.attachments,
       activeDraft.isRecording,
       activeDraft.mode,
-      activeDraft.selectedNoteIds,
+      activeDraft.selectedNotes,
+      addSelectedNote,
       activeDraft.text,
       clearDraft,
       composerClearance,
+      removeSelectedNote,
       setAttachments,
       setComposerClearance,
       setIsRecording,
       setMessage,
       setMode,
-      setSelectedNoteIds,
+      setSelectedNotes,
       target,
-      toggleSelectedNoteId,
     ],
   );
 
