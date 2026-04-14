@@ -17,6 +17,11 @@
       "react-native": "./src/components/ui/button.native.tsx",
       "default": "./src/components/ui/button.tsx"
     },
+    "./badge": {
+      "types": "./src/components/ui/badge.tsx",
+      "react-native": "./src/components/ui/badge.native.tsx",
+      "default": "./src/components/ui/badge.tsx"
+    },
     "./heading": {
       "types": "./src/components/typography/heading.tsx",
       "react-native": "./src/components/typography/heading.native.tsx",
@@ -61,6 +66,16 @@
       "react-native": "./src/components/layout/page.native.tsx",
       "default": "./src/components/layout/page.tsx"
     },
+    "./list-row": {
+      "types": "./src/components/mobile/list-row.native.tsx",
+      "react-native": "./src/components/mobile/list-row.native.tsx",
+      "default": "./src/components/mobile/list-row.native.tsx"
+    },
+    "./list-shell": {
+      "types": "./src/components/mobile/list-shell.native.tsx",
+      "react-native": "./src/components/mobile/list-shell.native.tsx",
+      "default": "./src/components/mobile/list-shell.native.tsx"
+    },
     "./input": {
       "types": "./src/components/ui/input.tsx",
       "default": "./src/components/ui/input.tsx"
@@ -85,10 +100,25 @@
       "types": "./src/components/ui/dropdown-menu.tsx",
       "default": "./src/components/ui/dropdown-menu.tsx"
     },
+    "./empty-state": {
+      "types": "./src/components/mobile/empty-state.native.tsx",
+      "react-native": "./src/components/mobile/empty-state.native.tsx",
+      "default": "./src/components/mobile/empty-state.native.tsx"
+    },
     "./card": {
       "types": "./src/components/ui/card.tsx",
       "react-native": "./src/components/ui/card.native.tsx",
       "default": "./src/components/ui/card.tsx"
+    },
+    "./separator": {
+      "types": "./src/components/ui/separator.tsx",
+      "react-native": "./src/components/ui/separator.native.tsx",
+      "default": "./src/components/ui/separator.tsx"
+    },
+    "./surface": {
+      "types": "./src/components/mobile/surface.native.tsx",
+      "react-native": "./src/components/mobile/surface.native.tsx",
+      "default": "./src/components/mobile/surface.native.tsx"
     },
     "./filters": {
       "types": "./src/components/filters/index.ts",
@@ -122,6 +152,10 @@
       "types": "./src/components/chat/index.ts",
       "react-native": "./src/components/chat/index.mobile.ts",
       "default": "./src/components/chat/index.ts"
+    },
+    "./chat/referenced-notes": {
+      "types": "./src/components/chat/referenced-notes.ts",
+      "default": "./src/components/chat/referenced-notes.ts"
     },
     "./composer": {
       "types": "./src/components/composer/index.ts",
@@ -203,6 +237,7 @@
     "cmdk": "^1.1.1",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.6.0",
+    "expo-symbols": "^55.0.9",
     "gsap": "^3.14.2",
     "lucide-react": "0.576.0",
     "react": "19.2.0",
@@ -232,6 +267,7 @@
     "@types/react-dom": "19.1.7",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@vitest/browser-playwright": "4.1.2",
+    "@shopify/flash-list": "2.0.2",
     "expo-clipboard": "~55.0.9",
     "expo-file-system": "~55.0.11",
     "expo-haptics": "^55.0.9",

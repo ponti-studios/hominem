@@ -1,6 +1,7 @@
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
-import { makeStyles, Text } from '~/components/theme';
+import { colors, spacing } from '@hominem/ui/tokens';
+import { Text } from '@hominem/ui/text';
 import { Skeleton } from '~/components/animated/skeleton';
 
 type LoadingVariant = 'page' | 'inline' | 'skeleton';
@@ -11,8 +12,6 @@ interface LoadingProps {
 }
 
 export function Loading({ variant = 'inline', message }: LoadingProps) {
-  const styles = useStyles();
-
   if (variant === 'page') {
     return (
       <View
@@ -52,31 +51,29 @@ export function Loading({ variant = 'inline', message }: LoadingProps) {
   );
 }
 
-const useStyles = makeStyles((t) =>
-  StyleSheet.create({
-    page: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      gap: t.spacing.sm_12,
-      backgroundColor: t.colors.background,
-    },
-    pageMessage: {
-      marginTop: t.spacing.xs_4,
-    },
-    inline: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: t.spacing.sm_8,
-      paddingVertical: t.spacing.sm_12,
-    },
-    skeletonContainer: {
-      gap: t.spacing.sm_8,
-      paddingVertical: t.spacing.sm_12,
-    },
-    // Extracts theme color for ActivityIndicator's non-style prop
-    spinnerColor: {
-      color: t.colors['text-tertiary'],
-    },
-  }),
-);
+const styles = StyleSheet.create({
+  page: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: spacing[3],
+    backgroundColor: colors.background,
+  },
+  pageMessage: {
+    marginTop: spacing[1],
+  },
+  inline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[2],
+    paddingVertical: spacing[3],
+  },
+  skeletonContainer: {
+    gap: spacing[2],
+    paddingVertical: spacing[3],
+  },
+  // Extracts token color for ActivityIndicator's non-style prop
+  spinnerColor: {
+    color: colors['text-tertiary'],
+  },
+});

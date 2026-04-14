@@ -1,7 +1,7 @@
+import { getReferencedNoteLabel } from '@hominem/ui/chat/referenced-notes';
 import { describe, expect, it } from 'vitest';
 
 import { createOptimisticMessage } from '~/services/chat/chatMessages';
-import { getReferencedNoteLabel } from '../../../../../packages/platform/ui/src/components/chat/referenced-notes';
 
 describe('chat messages', () => {
   it('preserves referenced notes on optimistic user messages', () => {

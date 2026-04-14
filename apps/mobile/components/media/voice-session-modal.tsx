@@ -44,7 +44,7 @@ export function VoiceSessionModal({
     >
       <BottomSheetView style={styles.container}>
         <View style={styles.header}>
-          <Text variant="label" color="text-secondary">
+          <Text variant="footnote" color="text-secondary">
             Voice Input
           </Text>
           <Pressable
@@ -67,7 +67,7 @@ export function VoiceSessionModal({
             onError={handleDismiss}
             style={styles.micButton}
           />
-          <Text variant="caption" color="text-secondary" style={styles.hint}>
+          <Text variant="caption1" color="text-secondary" style={styles.hint}>
             Tap to record · tap again to stop
           </Text>
         </View>

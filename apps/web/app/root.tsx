@@ -1,5 +1,5 @@
 import { AuthProvider } from '@hominem/auth/client';
-import { COMMON_FONT_LINKS, UpdateGuard } from '@hominem/ui';
+import { UpdateGuard } from '@hominem/ui';
 import type React from 'react';
 import {
   data,
@@ -72,7 +72,7 @@ export const meta: Route.MetaFunction = () => {
   ];
 };
 
-export const links: Route.LinksFunction = () => [...COMMON_FONT_LINKS, ...NOTES_ICON_LINKS];
+export const links: Route.LinksFunction = () => [...NOTES_ICON_LINKS];
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (

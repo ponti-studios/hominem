@@ -8,7 +8,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { colors, fontSizes, spacing } from '../../tokens';
+import { colors, fontSizes, radiiNative, spacing } from '../../tokens';
 import { fontFamiliesNative } from '../../tokens/typography.native';
 import { Field } from './field.native';
 import type { TextFieldBaseProps, TextFieldType } from './text-field.types';
@@ -67,11 +67,12 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: colors.muted,
     borderColor: colors['border-default'],
-    borderRadius: 10,
+    borderCurve: 'continuous',
+    borderRadius: radiiNative.xl,
     borderWidth: 1,
     color: colors.foreground,
-    fontFamily: fontFamiliesNative.mono,
-    fontSize: fontSizes.sm,
+    fontFamily: fontFamiliesNative.primary,
+    fontSize: fontSizes.body,
     minHeight: 44,
     paddingHorizontal: spacing[3],
     paddingVertical: spacing[2],

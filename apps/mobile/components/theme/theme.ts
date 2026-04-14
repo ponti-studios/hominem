@@ -1,19 +1,15 @@
 import {
+  colors as tokenColors,
   radiiNative,
-  darkColors as tokenColors,
   spacing as tokenSpacing,
 } from '@hominem/ui/tokens';
 import { fontFamiliesNative } from '@hominem/ui/tokens/typography.native';
 import { createTheme } from '@shopify/restyle';
 
-const PRIMARY_FONT = fontFamiliesNative.primary;
-const MONO_FONT = fontFamiliesNative.mono;
-
 const theme = createTheme({
   colors: {
     ...tokenColors,
   },
-
   spacing: {
     xs_4: tokenSpacing[1],
     sm_8: tokenSpacing[2],
@@ -24,7 +20,6 @@ const theme = createTheme({
     xl_48: tokenSpacing[7],
     xl_64: tokenSpacing[8],
   },
-
   borderRadii: {
     sm: radiiNative.sm,
     md: radiiNative.md,
@@ -33,142 +28,94 @@ const theme = createTheme({
     icon: radiiNative.icon,
     full: radiiNative.full,
   },
-
   textVariants: {
-    /** Page titles, large numerics */
-    display: {
-      fontFamily: PRIMARY_FONT,
+    largeTitle: {
+      color: 'foreground',
+      fontFamily: fontFamiliesNative.primary,
+      fontSize: 34,
+      fontWeight: '700',
+      letterSpacing: -0.6,
+      lineHeight: 41,
+    },
+    title1: {
+      color: 'foreground',
+      fontFamily: fontFamiliesNative.primary,
       fontSize: 28,
       fontWeight: '700',
-      lineHeight: 34,
-      letterSpacing: -0.6,
-      color: 'foreground',
-    },
-    /** Section headers */
-    'title-1': {
-      fontFamily: PRIMARY_FONT,
-      fontSize: 22,
-      fontWeight: '700',
-      lineHeight: 28,
       letterSpacing: -0.4,
-      color: 'foreground',
+      lineHeight: 34,
     },
-    /** Card headers, modal titles */
-    'title-2': {
-      fontFamily: PRIMARY_FONT,
-      fontSize: 18,
+    title2: {
+      color: 'foreground',
+      fontFamily: fontFamiliesNative.primary,
+      fontSize: 22,
       fontWeight: '600',
-      lineHeight: 24,
       letterSpacing: -0.2,
-      color: 'foreground',
+      lineHeight: 28,
     },
-    /** List row primary labels */
     headline: {
-      fontFamily: PRIMARY_FONT,
+      color: 'foreground',
+      fontFamily: fontFamiliesNative.primary,
       fontSize: 17,
       fontWeight: '600',
-      lineHeight: 22,
       letterSpacing: -0.1,
-      color: 'foreground',
+      lineHeight: 22,
     },
-    /** Standard reading text */
     body: {
-      fontFamily: PRIMARY_FONT,
+      color: 'text-secondary',
+      fontFamily: fontFamiliesNative.primary,
       fontSize: 17,
       fontWeight: '400',
-      lineHeight: 24,
       letterSpacing: 0,
-      color: 'text-secondary',
+      lineHeight: 24,
     },
-    /** Input text, secondary body */
     callout: {
-      fontFamily: PRIMARY_FONT,
+      color: 'text-secondary',
+      fontFamily: fontFamiliesNative.primary,
       fontSize: 16,
       fontWeight: '400',
-      lineHeight: 22,
       letterSpacing: -0.1,
-      color: 'text-secondary',
+      lineHeight: 22,
     },
-    /** Trailing values, subtext */
     subhead: {
-      fontFamily: PRIMARY_FONT,
+      color: 'text-secondary',
+      fontFamily: fontFamiliesNative.primary,
       fontSize: 15,
       fontWeight: '400',
-      lineHeight: 20,
       letterSpacing: 0,
-      color: 'text-secondary',
+      lineHeight: 20,
     },
-    /** Section labels, timestamps */
     footnote: {
-      fontFamily: PRIMARY_FONT,
+      color: 'text-tertiary',
+      fontFamily: fontFamiliesNative.primary,
       fontSize: 13,
       fontWeight: '400',
-      lineHeight: 18,
       letterSpacing: 0,
-      color: 'text-tertiary',
+      lineHeight: 18,
     },
-    /** Pills, badges, chip labels */
-    caption: {
-      fontFamily: PRIMARY_FONT,
+    caption1: {
+      color: 'text-tertiary',
+      fontFamily: fontFamiliesNative.primary,
+      fontSize: 12,
+      fontWeight: '400',
+      letterSpacing: 0,
+      lineHeight: 16,
+    },
+    caption2: {
+      color: 'text-tertiary',
+      fontFamily: fontFamiliesNative.primary,
       fontSize: 11,
       fontWeight: '500',
+      letterSpacing: 0.2,
       lineHeight: 14,
-      letterSpacing: 0.4,
-      color: 'text-tertiary',
     },
-    /** Code, IDs, monospaced values */
     mono: {
-      fontFamily: MONO_FONT,
+      color: 'text-secondary',
+      fontFamily: fontFamiliesNative.mono,
       fontSize: 12,
       fontWeight: '400',
+      letterSpacing: 0,
       lineHeight: 16,
-      letterSpacing: 0,
-      color: 'text-secondary',
-    },
-
-    /** @deprecated Use title-2 */
-    title: {
-      fontFamily: PRIMARY_FONT,
-      fontSize: 18,
-      fontWeight: '500',
-      lineHeight: 24,
-      letterSpacing: 0,
-      color: 'foreground',
-    },
-    /** @deprecated Use footnote */
-    label: {
-      fontFamily: PRIMARY_FONT,
-      fontSize: 14,
-      fontWeight: '500',
-      lineHeight: 18,
-      letterSpacing: 0,
-      color: 'text-tertiary',
-    },
-    /** @deprecated Use caption */
-    small: {
-      fontFamily: PRIMARY_FONT,
-      fontSize: 12,
-      fontWeight: '400',
-      lineHeight: 16,
-      letterSpacing: 0,
-      color: 'text-tertiary',
-    },
-    /** @deprecated Use callout */
-    'text-md': {
-      fontFamily: PRIMARY_FONT,
-      fontSize: 16,
-      fontWeight: '400',
-      lineHeight: 24,
-      letterSpacing: 0,
-      color: 'text-secondary',
-    },
-    /** @deprecated Use body */
-    defaults: {
-      fontFamily: PRIMARY_FONT,
-      fontSize: 14,
-      fontWeight: '400',
-      lineHeight: 20,
-      color: 'text-secondary',
     },
   },
 });

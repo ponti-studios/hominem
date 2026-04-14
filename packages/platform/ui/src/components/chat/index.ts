@@ -7,6 +7,7 @@ export { ChatSearchModal } from './chat-search-modal';
 export { ChatShimmerMessage } from './chat-shimmer-message';
 export { ChatThinkingIndicator } from './chat-thinking-indicator';
 export { ChatVoiceModal } from './chat-voice-modal';
+export { getReferencedNoteLabel } from './referenced-notes';
 export type {
   ChatIconName,
   ChatMessageItem,

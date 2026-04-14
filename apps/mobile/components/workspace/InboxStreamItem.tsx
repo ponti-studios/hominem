@@ -174,7 +174,7 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
           >
             {label}
           </Text>
-          <Text numberOfLines={1} variant="small" color="text-tertiary" style={styles.metadata}>
+          <Text numberOfLines={1} variant="caption1" color="text-tertiary" style={styles.metadata}>
             {formatTimestamp(item.updatedAt)}
           </Text>
         </View>
@@ -258,7 +258,7 @@ const useStyles = makeStyles((t) =>
       opacity: 0.5,
     },
     pressed: {
-      backgroundColor: 'rgba(15, 23, 42, 0.03)',
+      backgroundColor: t.colors['emphasis-faint'],
     },
   }),
 );

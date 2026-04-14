@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 
 import { colors, fontSizes, fontWeights, spacing } from '../../tokens';
+import { radiiNative } from '../../tokens';
 import { fontFamiliesNative } from '../../tokens/typography.native';
 import type { ButtonBaseProps, ButtonSize, ButtonVariant } from './button.types';
 
@@ -135,7 +136,8 @@ const labelStyles = StyleSheet.create<Record<ButtonVariant, TextStyle>>({
 const baseStyles = StyleSheet.create({
   button: {
     alignItems: 'center',
-    borderRadius: 10,
+    borderCurve: 'continuous',
+    borderRadius: radiiNative.full,
     columnGap: spacing[2],
     flexDirection: 'row',
     justifyContent: 'center',

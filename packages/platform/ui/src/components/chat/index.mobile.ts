@@ -9,6 +9,7 @@ export { ChatSearchModal } from './chat-search-modal.mobile';
 export { ChatShimmerMessage } from './chat-shimmer-message.mobile';
 export { ChatThinkingIndicator } from './chat-thinking-indicator.mobile';
 export { Chat } from './chat.mobile';
+export { getReferencedNoteLabel } from './referenced-notes';
 export type {
   ChatIconName,
   ChatMessageItem,

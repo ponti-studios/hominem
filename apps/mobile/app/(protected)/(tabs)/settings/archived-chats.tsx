@@ -3,9 +3,11 @@ import { Stack, useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
+import { colors, radiiNative, spacing } from '@hominem/ui/tokens';
+import { Text } from '@hominem/ui/text';
+
 import { useArchivedSessions } from '~/hooks/useArchivedSessions';
 import AppIcon from '~/components/ui/icon';
-import { Text, theme } from '~/components/theme';
 import { formatRelativeAge } from '~/services/date/format-relative-age';
 
 export default function ArchivedChatsScreen() {
@@ -32,10 +34,10 @@ export default function ArchivedChatsScreen() {
           showsVerticalScrollIndicator={false}
           testID="archived-chats-screen"
         >
-          <Text variant="caption" color="text-secondary" style={styles.label}>
+          <Text variant="caption1" color="text-secondary" style={styles.label}>
             Archived chats
           </Text>
-          <Text variant="header" color="foreground">
+          <Text variant="title1" color="foreground">
             Revisit past conversations
           </Text>
           <Text variant="body" color="text-secondary">
@@ -44,7 +46,7 @@ export default function ArchivedChatsScreen() {
 
           {chats.length === 0 ? (
             <View style={styles.emptyCard}>
-              <Text variant="bodyLarge" color="foreground">
+              <Text variant="body" color="foreground">
                 No archived chats yet
               </Text>
               <Text variant="body" color="text-secondary">
@@ -61,17 +63,17 @@ export default function ArchivedChatsScreen() {
                 style={({ pressed }) => [styles.card, pressed && styles.pressed]}
               >
                 <View style={styles.iconWrap}>
-                  <AppIcon name="tray" size={14} color={theme.colors['text-tertiary']} />
+                  <AppIcon name="tray" size={14} color={colors['text-tertiary']} />
                 </View>
                 <View style={styles.cardContent}>
-                  <Text variant="label" color="foreground" numberOfLines={1}>
+                  <Text variant="callout" color="foreground" numberOfLines={1}>
                     {chat.title ?? 'Untitled session'}
                   </Text>
-                  <Text variant="small" color="text-tertiary">
+                  <Text variant="caption1" color="text-tertiary">
                     Archived {formatRelativeAge(chat.archivedAt ?? chat.activityAt)}
                   </Text>
                 </View>
-                <AppIcon name="chevron.right" size={12} color={theme.colors['text-tertiary']} />
+                <AppIcon name="chevron.right" size={12} color={colors['text-tertiary']} />
               </Pressable>
             ))
           )}
@@ -84,45 +86,45 @@ export default function ArchivedChatsScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: colors.background,
   },
   content: {
-    gap: theme.spacing.sm_12,
-    paddingBottom: theme.spacing.xl_48,
-    paddingHorizontal: theme.spacing.m_16,
-    paddingTop: theme.spacing.m_16,
+    gap: spacing[3],
+    paddingBottom: spacing[7],
+    paddingHorizontal: spacing[4],
+    paddingTop: spacing[4],
   },
   label: {
     letterSpacing: 1,
   },
   emptyCard: {
     borderWidth: 1,
-    borderColor: theme.colors['border-default'],
-    borderRadius: theme.borderRadii.md,
-    gap: theme.spacing.sm_8,
-    marginTop: theme.spacing.sm_12,
-    paddingHorizontal: theme.spacing.m_16,
-    paddingVertical: theme.spacing.xl_64,
+    borderColor: colors['border-default'],
+    borderRadius: radiiNative.md,
+    gap: spacing[2],
+    marginTop: spacing[3],
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[8],
   },
   card: {
     alignItems: 'center',
-    backgroundColor: theme.colors.background,
-    borderColor: theme.colors['border-default'],
-    borderRadius: theme.borderRadii.md,
+    backgroundColor: colors.background,
+    borderColor: colors['border-default'],
+    borderRadius: radiiNative.md,
     borderWidth: 1,
     flexDirection: 'row',
-    gap: theme.spacing.sm_12,
-    paddingHorizontal: theme.spacing.m_16,
-    paddingVertical: theme.spacing.sm_12,
+    gap: spacing[3],
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[3],
   },
   pressed: {
     opacity: 0.7,
   },
   iconWrap: {
     alignItems: 'center',
-    backgroundColor: theme.colors['bg-surface'],
-    borderColor: theme.colors['border-default'],
-    borderRadius: theme.borderRadii.md,
+    backgroundColor: colors['bg-surface'],
+    borderColor: colors['border-default'],
+    borderRadius: radiiNative.md,
     borderWidth: 1,
     height: 32,
     justifyContent: 'center',
@@ -130,6 +132,6 @@ const styles = StyleSheet.create({
   },
   cardContent: {
     flex: 1,
-    gap: theme.spacing.xs_4,
+    gap: spacing[1],
   },
 });

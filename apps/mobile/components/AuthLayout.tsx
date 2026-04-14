@@ -100,7 +100,7 @@ export function AuthLayout({ testID, title, helper, children }: AuthLayoutProps)
                 <Accent style={[styles.accent, accentStyle]} />
               </View>
 
-              <Text variant="header" color="foreground" style={styles.title}>
+              <Text variant="title1" color="foreground" style={styles.title}>
                 {title}
               </Text>
               <Text variant="body" color="text-tertiary" style={styles.helper}>

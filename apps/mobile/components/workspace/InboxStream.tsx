@@ -2,7 +2,8 @@ import { FlashList, type FlashListRef, type ListRenderItem } from '@shopify/flas
 import React, { memo, useCallback, type RefObject } from 'react';
 import { StyleSheet, View, type RefreshControlProps } from 'react-native';
 
-import { Text, makeStyles } from '~/components/theme';
+import { colors, spacing } from '@hominem/ui/tokens';
+import { Text } from '@hominem/ui/text';
 
 import { InboxStreamItem } from './InboxStreamItem';
 import type { InboxStreamItemData as InboxStreamItemModel } from './InboxStreamItem.types';
@@ -15,8 +16,6 @@ interface InboxStreamProps {
 
 const keyExtractor = (item: InboxStreamItemModel) => `${item.kind}:${item.id}`;
 const InboxStreamDivider = memo(() => {
-  const styles = useStyles();
-
   return <View style={styles.divider} />;
 });
 
@@ -29,8 +28,6 @@ const RenderInboxStreamItem = memo(({ item }: { item: InboxStreamItemModel }) =>
 RenderInboxStreamItem.displayName = 'RenderInboxStreamItem';
 
 export const InboxStream = ({ items, listRef, refreshControl }: InboxStreamProps) => {
-  const styles = useStyles();
-
   const renderItem = useCallback<ListRenderItem<InboxStreamItemModel>>(({ item }) => {
     return <RenderInboxStreamItem item={item} />;
   }, []);
@@ -39,7 +36,7 @@ export const InboxStream = ({ items, listRef, refreshControl }: InboxStreamProps
     return (
       <View style={styles.emptyWrap}>
         <View style={styles.empty}>
-          <Text variant="bodyLarge" color="foreground">
+          <Text variant="body" color="foreground">
             Start with a thought
           </Text>
           <Text variant="body" color="text-secondary">
@@ -69,41 +66,38 @@ export const InboxStream = ({ items, listRef, refreshControl }: InboxStreamProps
   );
 };
 
-const useStyles = makeStyles((t) =>
-  StyleSheet.create({
-    container: {
-      flex: 1,
-      paddingTop: t.spacing.sm_12,
-    },
-    divider: {
-      height: StyleSheet.hairlineWidth,
-      marginLeft: t.spacing.sm_12,
-      marginRight: t.spacing.sm_12,
-      backgroundColor: t.colors['border-subtle'],
-    },
-    sectionShell: {
-      backgroundColor: t.colors['bg-base'],
-      flex: 1,
-      overflow: 'hidden',
-    },
-    listContent: {
-      paddingTop: 0,
-      paddingBottom: t.spacing.xl_64 + t.spacing.xl_64 + t.spacing.ml_24 + t.spacing.sm_12,
-    },
-    sectionFooter: {
-      height: 2,
-    },
-    emptyWrap: {
-      marginBottom:
-        t.spacing.xl_64 + t.spacing.xl_64 + t.spacing.xl_64 + t.spacing.ml_24 + t.spacing.xs_4,
-      marginHorizontal: t.spacing.m_16,
-    },
-    empty: {
-      alignItems: 'center',
-      backgroundColor: t.colors['bg-base'],
-      gap: t.spacing.xs_4,
-      paddingHorizontal: t.spacing.m_16,
-      paddingVertical: t.spacing.l_32,
-    },
-  }),
-);
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    paddingTop: spacing[3],
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    marginLeft: spacing[3],
+    marginRight: spacing[3],
+    backgroundColor: colors['border-subtle'],
+  },
+  sectionShell: {
+    backgroundColor: colors['bg-base'],
+    flex: 1,
+    overflow: 'hidden',
+  },
+  listContent: {
+    paddingTop: 0,
+    paddingBottom: spacing[8] + spacing[8] + spacing[5] + spacing[3],
+  },
+  sectionFooter: {
+    height: 2,
+  },
+  emptyWrap: {
+    marginBottom: spacing[8] + spacing[8] + spacing[8] + spacing[5] + spacing[1],
+    marginHorizontal: spacing[4],
+  },
+  empty: {
+    alignItems: 'center',
+    backgroundColor: colors['bg-base'],
+    gap: spacing[1],
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[6],
+  },
+});

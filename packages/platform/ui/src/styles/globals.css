@@ -6,8 +6,8 @@
 @theme {
 
   --font-family-primary:
-    'Geist', -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
-  --font-family-mono: 'Geist Mono', 'SF Mono', ui-monospace, 'Menlo', monospace;
+    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif;
+  --font-family-mono: 'SF Mono', 'Menlo', ui-monospace, monospace;
 
   --font-size-large-title: 34px;
   --font-size-title-1: 28px;
@@ -481,6 +481,94 @@
   font-weight: var(--font-weight-semibold);
   line-height: 1.4;
   letter-spacing: -0.01em;
+}
+
+@utility largeTitle {
+  font-size: var(--font-size-large-title);
+  font-family: var(--font-family-primary);
+  font-weight: var(--font-weight-bold);
+  line-height: 1.1;
+  letter-spacing: var(--letter-spacing-tight);
+}
+
+@utility title1 {
+  font-size: var(--font-size-title-1);
+  font-family: var(--font-family-primary);
+  font-weight: var(--font-weight-bold);
+  line-height: 1.2;
+  letter-spacing: var(--letter-spacing-tight);
+}
+
+@utility title2 {
+  font-size: var(--font-size-title-2);
+  font-family: var(--font-family-primary);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.27;
+  letter-spacing: -0.02em;
+}
+
+@utility headline {
+  font-size: var(--font-size-headline);
+  font-family: var(--font-family-primary);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+@utility body {
+  font-size: var(--font-size-body);
+  font-family: var(--font-family-primary);
+  font-weight: var(--font-weight-regular);
+  line-height: 1.4;
+  letter-spacing: var(--letter-spacing-normal);
+}
+
+@utility callout {
+  font-size: var(--font-size-callout);
+  font-family: var(--font-family-primary);
+  font-weight: var(--font-weight-regular);
+  line-height: 1.38;
+  letter-spacing: var(--letter-spacing-normal);
+}
+
+@utility subhead {
+  font-size: var(--font-size-subhead);
+  font-family: var(--font-family-primary);
+  font-weight: var(--font-weight-regular);
+  line-height: 1.33;
+  letter-spacing: var(--letter-spacing-normal);
+}
+
+@utility footnote {
+  font-size: var(--font-size-footnote);
+  font-family: var(--font-family-primary);
+  font-weight: var(--font-weight-regular);
+  line-height: 1.38;
+  letter-spacing: var(--letter-spacing-normal);
+}
+
+@utility caption1 {
+  font-size: var(--font-size-caption-1);
+  font-family: var(--font-family-primary);
+  font-weight: var(--font-weight-regular);
+  line-height: 1.33;
+  letter-spacing: var(--letter-spacing-normal);
+}
+
+@utility caption2 {
+  font-size: var(--font-size-caption-2);
+  font-family: var(--font-family-primary);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.27;
+  letter-spacing: var(--letter-spacing-normal);
+}
+
+@utility mono {
+  font-size: var(--font-size-caption-1);
+  font-family: var(--font-family-mono);
+  font-weight: var(--font-weight-regular);
+  line-height: 1.33;
+  letter-spacing: var(--letter-spacing-normal);
 }
 
 @utility body-1 {

@@ -19,7 +19,7 @@ export function FullScreenErrorFallback({
 
   return (
     <View style={styles.container}>
-      <Text variant="header" color="foreground">
+      <Text variant="title1" color="foreground">
         Something went wrong
       </Text>
       <ErrorMessage title="" message={message} actionLabel={actionLabel} onPress={onPress} />

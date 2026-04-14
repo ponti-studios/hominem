@@ -1,14 +1,14 @@
 import { AUTH_COPY, CHAT_AUTH_CONFIG, maskEmail } from '@hominem/auth';
 import { useEmailAuth } from '@hominem/hooks';
+import { Button } from '@hominem/ui/button';
+import { TextField } from '@hominem/ui/text-field';
 import type { RelativePathString } from 'expo-router';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { AuthLayout } from '~/components/AuthLayout';
-import { Button } from '~/components/Button';
 import { FeatureErrorBoundary } from '~/components/error-boundary';
-import TextInput from '~/components/text-input';
 import { posthog } from '~/services/posthog';
 import { Box, makeStyles, Text } from '~/components/theme';
 import { useAuth } from '~/services/auth/auth-provider';
@@ -58,7 +58,7 @@ export function VerifyScreen() {
     >
       <Box style={styles.form}>
         <View style={styles.fieldStack}>
-          <TextInput
+          <TextField
             testID="auth-otp-input"
             id="auth-otp"
             label={AUTH_COPY.otpVerification.codeLabel}

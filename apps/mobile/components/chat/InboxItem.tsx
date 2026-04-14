@@ -45,10 +45,10 @@ export const InboxItem = memo(({ chat, isActive }: InboxItemProps) => {
           />
         </View>
         <View style={styles.content}>
-          <Text variant="label" color="foreground" numberOfLines={1}>
+          <Text variant="callout" color="foreground" numberOfLines={1}>
             {label}
           </Text>
-          <Text variant="small" color="text-tertiary">
+          <Text variant="caption1" color="text-tertiary">
             {isActive ? 'Active' : formatRelativeAge(chat.activityAt)}
           </Text>
         </View>

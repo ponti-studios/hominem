@@ -1,13 +1,13 @@
 import { AUTH_COPY, CHAT_AUTH_CONFIG } from '@hominem/auth';
+import { Button } from '@hominem/ui/button';
+import { TextField } from '@hominem/ui/text-field';
 import type { RelativePathString } from 'expo-router';
 import { Redirect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AuthLayout } from '~/components/AuthLayout';
-import { Button } from '~/components/Button';
 import { FeatureErrorBoundary } from '~/components/error-boundary';
-import TextInput from '~/components/text-input';
 import { posthog } from '~/services/posthog';
 import { Box, makeStyles, Text } from '~/components/theme';
 import { useAuth } from '~/services/auth/auth-provider';
@@ -99,7 +99,7 @@ export function AuthScreen() {
     >
       <Box style={styles.form}>
         <View style={styles.fieldStack}>
-          <TextInput
+          <TextField
             testID="auth-email-input"
             id="auth-email"
             label={AUTH_COPY.emailEntry.emailLabel}

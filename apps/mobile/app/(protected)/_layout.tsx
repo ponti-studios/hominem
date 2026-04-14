@@ -60,7 +60,7 @@ function ProtectedShell() {
   if (!isUnlocked) {
     return (
       <View style={styles.centered}>
-        <Text variant="header" color="foreground">
+        <Text variant="title1" color="foreground">
           {APP_NAME}
         </Text>
         <Text variant="body" color="text-secondary">

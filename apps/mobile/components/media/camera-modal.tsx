@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: theme.borderRadii.md,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: theme.colors['overlay-modal-medium'],
   },
   captureButton: {
     width: 72,

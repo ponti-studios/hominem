@@ -1,5 +1,14 @@
 import { useApiClient } from '@hominem/rpc/react';
 import type { SessionSource } from '@hominem/rpc/types';
+import {
+  ChatMessageList,
+  ChatReviewOverlay,
+  ChatSearchModal,
+  ConversationActionsSheet,
+  type ChatRenderIcon,
+  type ChatServices,
+  useChatController,
+} from '@hominem/ui/chat';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import type { RelativePathString } from 'expo-router';
@@ -12,7 +21,7 @@ import { useActiveChat, useArchiveChat, useChatMessages, useSendMessage } from '
 import { useTTS } from '~/components/media/use-tts';
 import { theme } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
-import { EmptyState } from '~/components/ui/EmptyState';
+import { EmptyState } from '@hominem/ui/empty-state';
 import {
   createChatInboxRefreshSnapshot,
   upsertInboxSessionActivity,
@@ -20,14 +29,6 @@ import {
 import { chatKeys } from '~/services/notes/query-keys';
 import { formatRelativeAge } from '~/services/date/format-relative-age';
 import type { ChatWithActivity } from '~/services/chat/session-state';
-
-import { ChatMessageList } from '../../../../../../packages/platform/ui/src/components/chat/chat-message-list.mobile';
-import { ConversationActionsSheet } from '../../../../../../packages/platform/ui/src/components/chat/conversation-actions.mobile';
-import { ChatReviewOverlay } from '../../../../../../packages/platform/ui/src/components/chat/chat-review-overlay.mobile';
-import { ChatSearchModal } from '../../../../../../packages/platform/ui/src/components/chat/chat-search-modal.mobile';
-import type { ChatRenderIcon } from '../../../../../../packages/platform/ui/src/components/chat/chat.types';
-import type { ChatServices } from '../../../../../../packages/platform/ui/src/components/chat/use-chat-controller.mobile';
-import { useChatController } from '../../../../../../packages/platform/ui/src/components/chat/use-chat-controller.mobile';
 
 const renderChatIcon: ChatRenderIcon = (name, props) => (
   <View style={props.style}>

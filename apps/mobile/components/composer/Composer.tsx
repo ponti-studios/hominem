@@ -543,8 +543,8 @@ const styles = StyleSheet.create({
   },
   input: {
     color: theme.colors.foreground,
-    fontSize: theme.textVariants['text-md'].fontSize,
-    lineHeight: theme.textVariants['text-md'].lineHeight,
+    fontSize: theme.textVariants.callout.fontSize,
+    lineHeight: theme.textVariants.callout.lineHeight,
     letterSpacing: -0.1,
     paddingHorizontal: 0,
     paddingVertical: 0,
@@ -580,8 +580,8 @@ const styles = StyleSheet.create({
   },
   accessoryActionText: {
     color: theme.colors['text-secondary'],
-    fontSize: theme.textVariants.small.fontSize,
-    lineHeight: theme.textVariants.small.lineHeight,
+    fontSize: theme.textVariants.caption1.fontSize,
+    lineHeight: theme.textVariants.caption1.lineHeight,
   },
 
   sendBtn: {
@@ -648,7 +648,7 @@ const styles = StyleSheet.create({
     width: spacing[2] * 2,
     height: spacing[2] * 2,
     borderRadius: radiiNative.full,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: theme.colors['overlay-modal-high'],
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -662,7 +662,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: theme.colors['overlay-modal-medium'],
   },
 
   selectionRow: {
@@ -701,8 +701,8 @@ const styles = StyleSheet.create({
   },
   selectionChipText: {
     color: theme.colors['text-secondary'],
-    fontSize: theme.textVariants.small.fontSize,
-    lineHeight: theme.textVariants.small.lineHeight,
+    fontSize: theme.textVariants.caption1.fontSize,
+    lineHeight: theme.textVariants.caption1.lineHeight,
   },
   suggestions: {
     backgroundColor: theme.colors['bg-surface'],
@@ -721,17 +721,17 @@ const styles = StyleSheet.create({
   },
   suggestionTitle: {
     color: theme.colors.foreground,
-    fontSize: theme.textVariants.small.fontSize,
-    lineHeight: theme.textVariants.small.lineHeight,
+    fontSize: theme.textVariants.caption1.fontSize,
+    lineHeight: theme.textVariants.caption1.lineHeight,
   },
   suggestionExcerpt: {
     color: theme.colors['text-secondary'],
-    fontSize: theme.textVariants.small.fontSize,
-    lineHeight: theme.textVariants.small.lineHeight,
+    fontSize: theme.textVariants.caption1.fontSize,
+    lineHeight: theme.textVariants.caption1.lineHeight,
   },
   errorText: {
-    fontSize: theme.textVariants.small.fontSize,
-    lineHeight: theme.textVariants.small.lineHeight,
+    fontSize: theme.textVariants.caption1.fontSize,
+    lineHeight: theme.textVariants.caption1.lineHeight,
     color: theme.colors.destructive,
   },
 });

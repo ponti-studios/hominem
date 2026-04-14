@@ -1,12 +1,12 @@
+import { Button } from '@hominem/ui/button';
+import { TextField } from '@hominem/ui/text-field';
 import { Redirect } from 'expo-router';
 import type { RelativePathString } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button } from '~/components/Button';
 import { Alert } from '~/components/Alert';
-import TextInput from '~/components/text-input';
 import { Text, theme } from '~/components/theme';
 import { useAuth } from '~/services/auth/auth-provider';
 
@@ -37,15 +37,15 @@ const Onboarding = () => {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.content}>
         <View style={styles.hero}>
-          <Text variant="header" color="foreground">
+          <Text variant="title1" color="foreground">
             WELCOME
           </Text>
-          <Text variant="label" color="text-tertiary">
+          <Text variant="footnote" color="text-tertiary">
             DEFINE PROFILE IDENTIFIER.
           </Text>
         </View>
 
-        <TextInput
+        <TextField
           aria-disabled
           label="Name"
           placeholder="Enter your name"

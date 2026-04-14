@@ -1,6 +1,6 @@
+import { Button } from '@hominem/ui/button';
 import { View, StyleSheet } from 'react-native';
 
-import { Button } from '~/components/Button';
 import { makeStyles, Text } from '~/components/theme';
 
 interface ErrorMessageProps {
@@ -16,7 +16,7 @@ export function ErrorMessage({ title, message, actionLabel, onPress }: ErrorMess
   return (
     <View style={styles.content}>
       {title ? (
-        <Text variant="header" color="foreground">
+        <Text variant="title1" color="foreground">
           {title}
         </Text>
       ) : null}
