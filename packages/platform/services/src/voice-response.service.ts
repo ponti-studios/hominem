@@ -133,9 +133,6 @@ async function collectAudioStream(
   };
 }
 
-/**
- * Generate a timestamped filename for audio review
- */
 function generateAudioFilename(prefix: string, format: VoiceResponseFormat): string {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const ext = FORMAT_TO_EXT[format];

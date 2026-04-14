@@ -1,16 +1,3 @@
-/**
- * Composer
- *
- * Design-system rules:
- *   Surface    → theme.colors['bg-elevated']   (floating element, one step above bg-base)
- *   Border     → theme.colors['border-default'] (18 % opacity — elevated surfaces need more definition)
- *   Shadow     → shadowsNative.low              (low = persistent toolbar; medium/high = modals)
- *   Radii      → radiiNative.*                  (no magic numbers — icon=20, md=8, full=9999)
- *   Spacing    → spacing[n]                     (4 | 8 | 12 | 16 | 24 | 32 …)
- *   Typography → theme.textVariants directly    (16 px / 24 lh matches text-md variant)
- *   Accent     → theme.colors.accent            (cursor, selection, active states)
- */
-
 import { radiiNative, shadowsNative, spacing } from '@hominem/ui/tokens';
 import { Image } from 'expo-image';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -39,21 +26,11 @@ import { useComposerMediaActions } from './useComposerMediaActions';
 import { useComposerSubmission } from './useComposerSubmission';
 
 
-/** Maximum card width so the composer doesn't span full-width on large devices. */
 const MAX_WIDTH = 500;
 
-/**
- * Input height bounds.
- * Min = spacing[4] × 2 = 32 (one comfortable line)
- * Max = spacing[7]  × 6 = 288 ≈ 300 (six visual rows)
- */
 const INPUT_MIN_H = spacing[6] + spacing[4];
 const INPUT_MAX_H = spacing[6] * 9;
 
-/**
- * Send button = spacing[4] × 2 = 32 × 32 — sits on the 8-pt grid.
- * Icon inside = spacing[3] = 12 (≈ 37 % of button — standard for filled circles).
- */
 const SEND_BTN_SIZE = spacing[4] * 2;
 const SEND_ICON_SIZE = spacing[3];
 

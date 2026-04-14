@@ -40,7 +40,6 @@ function useLogout() {
   }, [authClient, navigate]);
 }
 
-/** Tracks scroll direction. Returns true when the user is scrolling down. */
 function useScrollDown() {
   const { pathname } = useLocation();
   const [hidden, setHidden] = useState(false);
