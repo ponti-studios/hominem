@@ -1,6 +1,7 @@
 import { createChatsClient, type ChatsClient } from '../domains/chats';
 import { createFilesClient, type FilesClient } from '../domains/files';
 import { createNotesClient, type NotesClient } from '../domains/notes';
+import { createTasksClient, type TasksClient } from '../domains/tasks';
 import { createVoiceClient, type VoiceClient } from '../domains/voice';
 import { createRawHonoClient, type RawHonoClient } from './raw-client';
 
@@ -14,6 +15,7 @@ export interface ApiClient {
   chats: ChatsClient;
   files: FilesClient;
   notes: NotesClient;
+  tasks: TasksClient;
   voice: VoiceClient;
 }
 
@@ -22,6 +24,7 @@ export function createApiClientFromRaw(rawClient: RawHonoClient): ApiClient {
     chats: createChatsClient(rawClient),
     files: createFilesClient(rawClient),
     notes: createNotesClient(rawClient),
+    tasks: createTasksClient(rawClient),
     voice: createVoiceClient(rawClient),
   };
 }

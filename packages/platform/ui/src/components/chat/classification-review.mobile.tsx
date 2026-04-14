@@ -20,6 +20,13 @@ const TYPE_LABEL: Record<ArtifactType, string> = {
   tracker: 'TRACKER',
 };
 
+const SAVE_LABEL: Record<ArtifactType, string> = {
+  note: 'SAVE NOTE',
+  task: 'SAVE TASK',
+  task_list: 'SAVE TASK LIST',
+  tracker: 'SAVE REVIEW',
+};
+
 interface ClassificationReviewProps {
   proposedType: ArtifactType;
   proposedTitle: string;
@@ -92,12 +99,12 @@ export function ClassificationReview({
 
           <View style={styles.actions}>
             <Button
-              accessibilityLabel="Save Note"
+              accessibilityLabel={SAVE_LABEL[proposedType]}
               onPress={onAccept}
               style={[styles.button, styles.primaryButton]}
               variant="primary"
             >
-              SAVE NOTE
+              {SAVE_LABEL[proposedType]}
             </Button>
             <Button
               accessibilityLabel="Discard"

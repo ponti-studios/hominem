@@ -2,6 +2,7 @@ import type { ArtifactType, ThoughtLifecycleState } from '@hominem/rpc/types';
 import { StyleSheet, View } from 'react-native';
 
 import { colors, spacing } from '../../tokens';
+import { ENABLED_ARTIFACT_TYPES } from '@hominem/chat/types';
 import { Button } from '../ui/button.native';
 
 interface ArtifactActionsProps {
@@ -17,7 +18,9 @@ const ACTIONS: { type: ArtifactType; label: string }[] = [
   { type: 'tracker', label: '→ TRACKER' },
 ];
 
-const ENABLED: ArtifactType[] = ['note'];
+const ENABLED: ArtifactType[] = ENABLED_ARTIFACT_TYPES.filter(
+  (type): type is Exclude<ArtifactType, 'tracker'> => type !== 'tracker',
+);
 const BLOCKING: ThoughtLifecycleState[] = ['classifying', 'reviewing_changes', 'persisting'];
 
 export function ArtifactActions({ state, messageCount, onTransform }: ArtifactActionsProps) {
@@ -28,31 +31,27 @@ export function ArtifactActions({ state, messageCount, onTransform }: ArtifactAc
 
   return (
     <View style={[styles.row, isComposing ? styles.dimmed : null]}>
-      {ACTIONS.map(({ type, label }) => {
-        const enabled = ENABLED.includes(type);
-        const disabled = !enabled || isBlocked;
-
-        return (
-          <Button
-            disabled={disabled}
-            key={type}
-            onPress={() => onTransform(type)}
-            size="xs"
-            style={[styles.button, disabled ? styles.buttonDisabled : null]}
-            title={label}
-            variant="outline"
-          >
-            {label}
-          </Button>
-        );
-      })}
+      {ACTIONS.filter(({ type }) => ENABLED.includes(type)).map(({ type, label }) => (
+        <Button
+          disabled={isBlocked}
+          key={type}
+          onPress={() => onTransform(type)}
+          size="xs"
+          style={[styles.button, isBlocked ? styles.buttonDisabled : null]}
+          title={label}
+          variant="outline"
+        >
+          {label}
+        </Button>
+      ))}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: colors.muted,
+    backgroundColor: colors['bg-base'],
+    flex: 1,
   },
   buttonDisabled: {
     opacity: 0.38,

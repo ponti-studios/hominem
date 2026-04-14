@@ -1,7 +1,8 @@
 import type { PendingReview } from '@hominem/chat/react';
 import { useChatLifecycle } from '@hominem/chat/react';
-import { buildNoteProposal } from '@hominem/chat/ui';
+import { buildArtifactProposal } from '@hominem/chat/ui';
 import { useApiClient } from '@hominem/rpc/react';
+import { ENABLED_ARTIFACT_TYPES } from '@hominem/rpc/types';
 import type { ArtifactType, SessionSource, ThoughtLifecycleState } from '@hominem/rpc/types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
@@ -39,12 +40,17 @@ export interface ChatServices {
   chatKeys: { messages: (chatId: string) => readonly unknown[] };
   speech: { speakingId: string | null; speak: (id: string, text: string) => void };
   onNoteCreated?: () => Promise<void>;
+  onArtifactCreated?: (artifact: {
+    source: { kind: 'artifact'; id: string; type: Exclude<ArtifactType, 'tracker'>; title: string };
+    updatedAt?: string;
+  }) => Promise<void>;
 }
 
 
 interface MobileUiState {
   showDebug: boolean;
   showSearch: boolean;
+  showActionsMenu: boolean;
   searchQuery: string;
 }
 
@@ -52,11 +58,14 @@ type MobileUiAction =
   | { type: 'toggle-debug' }
   | { type: 'open-search' }
   | { type: 'close-search' }
+  | { type: 'open-actions' }
+  | { type: 'close-actions' }
   | { type: 'set-search-query'; searchQuery: string };
 
 const initialMobileUiState: MobileUiState = {
   showDebug: false,
   showSearch: false,
+  showActionsMenu: false,
   searchQuery: '',
 };
 
@@ -68,6 +77,10 @@ function mobileUiReducer(state: MobileUiState, action: MobileUiAction): MobileUi
       return { ...state, showSearch: true };
     case 'close-search':
       return { ...state, showSearch: false, searchQuery: '' };
+    case 'open-actions':
+      return { ...state, showActionsMenu: true };
+    case 'close-actions':
+      return { ...state, showActionsMenu: false };
     case 'set-search-query':
       return { ...state, searchQuery: action.searchQuery };
   }
@@ -92,14 +105,21 @@ interface UseChatControllerResult {
   handleDeleteMessage: (messageId: string) => void;
   handleEditMessage: (messageId: string, content: string) => Promise<void>;
   handleOpenMenu: () => void;
+  handleCloseMenu: () => void;
+  handleToggleDebug: () => void;
+  handleTransformFromMenu: (type: ArtifactType) => void;
   handleOpenSearch: () => void;
   handleRegenerate: (messageId: string) => Promise<void>;
   handleRejectReview: () => Promise<void>;
   handleSearchQueryChange: (query: string) => void;
   handleShareMessage: (message: ChatMessageItem) => Promise<void>;
   handleSpeakMessage: (message: ChatMessageItem) => void;
+  enabledTransforms: Exclude<ArtifactType, 'tracker'>[];
+  canTransform: boolean;
   isMessagesLoading: boolean;
+  isArchiving: boolean;
   isReviewVisible: boolean;
+  showActionsMenu: boolean;
   lifecycleState: ThoughtLifecycleState;
   pendingReview: PendingReview | null;
   resolvedSource: SessionSource;
@@ -149,6 +169,42 @@ export function useChatController({
     [formattedMessages],
   );
 
+  const enabledTransforms = useMemo(
+    () =>
+      ENABLED_ARTIFACT_TYPES.filter(
+        (type): type is Exclude<ArtifactType, 'tracker'> => type !== 'tracker',
+      ),
+    [],
+  );
+
+  const createTask = useMutation({
+    mutationKey: ['chat-task', chatId],
+    mutationFn: async (review: {
+      proposedType: Exclude<ArtifactType, 'note' | 'tracker'>;
+      proposedTitle: string;
+      previewContent: string;
+    }) => {
+      return client.tasks.create({
+        artifactType: review.proposedType,
+        description: review.previewContent,
+        title: review.proposedTitle,
+      });
+    },
+    onSuccess: async (task) => {
+      if (services.onArtifactCreated) {
+        await services.onArtifactCreated({
+          source: {
+            kind: 'artifact',
+            id: task.id,
+            title: task.title,
+            type: task.artifactType,
+          },
+          updatedAt: task.updatedAt,
+        });
+      }
+    },
+  });
+
 
   const createNote = useMutation({
     mutationKey: ['chat-note', chatId],
@@ -180,21 +236,63 @@ export function useChatController({
   } = useChatLifecycle({
     messages: proposalMessages,
     source,
-    onTransform: async (_type: ArtifactType) => buildNoteProposal(proposalMessages),
+    onTransform: async (type: ArtifactType) =>
+      buildArtifactProposal(
+        proposalMessages,
+        type === 'tracker' ? 'note' : (type as 'note' | 'task' | 'task_list'),
+      ),
     onAcceptReview: async (review) => {
-      const note = await createNote.mutateAsync(review);
+      if (review.proposedType === 'note') {
+        const note = await createNote.mutateAsync(review);
+        if (services.onArtifactCreated) {
+          await services.onArtifactCreated({
+            source: {
+              kind: 'artifact',
+              id: note.id,
+              title: note.title || review.proposedTitle,
+              type: 'note',
+            },
+            updatedAt: note.updatedAt,
+          });
+        }
+        return {
+          kind: 'artifact' as const,
+          id: note.id,
+          type: 'note' as const,
+          title: note.title || review.proposedTitle,
+        };
+      }
+
+      if (review.proposedType !== 'task' && review.proposedType !== 'task_list') {
+        const note = await createNote.mutateAsync({
+          proposedTitle: review.proposedTitle,
+          previewContent: review.previewContent,
+        });
+        return {
+          kind: 'artifact' as const,
+          id: note.id,
+          type: 'note' as const,
+          title: note.title || review.proposedTitle,
+        };
+      }
+
+      const task = await createTask.mutateAsync({
+        proposedTitle: review.proposedTitle,
+        previewContent: review.previewContent,
+        proposedType: review.proposedType,
+      });
       return {
         kind: 'artifact' as const,
-        id: note.id,
-        type: 'note' as const,
-        title: note.title || review.proposedTitle,
+        id: task.id,
+        type: review.proposedType,
+        title: task.title,
       };
     },
     onRejectReview: async () => {
     },
     onError: (_phase, _error) => {
       Alert.alert(
-        _phase === 'accept' ? 'Could not save note' : 'Could not prepare note review',
+        _phase === 'accept' ? 'Could not save artifact' : 'Could not prepare review',
         'Please try again.',
       );
     },
@@ -315,54 +413,35 @@ export function useChatController({
     dispatch({ type: 'set-search-query', searchQuery });
   }, []);
 
+  const handleToggleDebug = useCallback(() => {
+    dispatch({ type: 'toggle-debug' });
+  }, []);
+
   const handleOpenMenu = useCallback(() => {
-    const buttons: Array<{
-      text: string;
-      onPress?: () => void;
-      style?: 'cancel' | 'default' | 'destructive';
-    }> = [
-      { text: 'Search messages', onPress: handleOpenSearch },
-      {
-        text: uiState.showDebug ? 'Hide debug metadata' : 'Show debug metadata',
-        onPress: () => dispatch({ type: 'toggle-debug' }),
-      },
-    ];
+    dispatch({ type: 'open-actions' });
+  }, []);
 
-    if (canTransform) {
-      buttons.push(
-        { text: 'Transform to note', onPress: () => handleTransform('note') },
-        { text: 'Transform to task', onPress: () => handleTransform('task') },
-        { text: 'Transform to task list', onPress: () => handleTransform('task_list') },
-        { text: 'Transform to tracker', onPress: () => handleTransform('tracker') },
-      );
-    }
+  const handleCloseMenu = useCallback(() => {
+    dispatch({ type: 'close-actions' });
+  }, []);
 
-    buttons.push(
-      {
-        text: isArchiving ? 'Archiving...' : 'Archive chat',
-        onPress: handleArchiveChat,
-        style: 'destructive',
-      },
-      { text: 'Cancel', style: 'cancel' },
-    );
-
-    Alert.alert('Conversation', undefined, buttons);
-  }, [
-    canTransform,
-    handleArchiveChat,
-    handleOpenSearch,
-    handleTransform,
-    isArchiving,
-    uiState.showDebug,
-  ]);
+  const handleTransformFromMenu = useCallback(
+    (type: ArtifactType) => {
+      handleCloseMenu();
+      void handleTransform(type);
+    },
+    [handleCloseMenu, handleTransform],
+  );
 
   return {
     Markdown,
     chatSendStatus,
     displayMessages,
+    enabledTransforms,
     handleAcceptReview,
     handleArchiveChat,
     handleCloseSearch,
+    handleCloseMenu,
     handleCopyMessage,
     handleDeleteMessage,
     handleEditMessage,
@@ -373,13 +452,18 @@ export function useChatController({
     handleSearchQueryChange,
     handleShareMessage,
     handleSpeakMessage,
+    handleTransformFromMenu,
+    handleToggleDebug,
+    canTransform,
     isMessagesLoading,
+    isArchiving,
     lifecycleState,
     pendingReview,
     resolvedSource,
     searchInputRef,
     searchQuery: uiState.searchQuery,
     showDebug: uiState.showDebug,
+    showActionsMenu: uiState.showActionsMenu,
     showSearch: uiState.showSearch,
     speakingId,
     statusCopy,

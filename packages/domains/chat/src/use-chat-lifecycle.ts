@@ -107,9 +107,9 @@ export function useChatLifecycle({
   );
 
   const statusCopy = useMemo(() => {
-    if (state.lifecycleState === 'classifying') return 'Preparing note review';
+    if (state.lifecycleState === 'classifying') return 'Preparing review';
     if (state.lifecycleState === 'reviewing_changes') return 'Review ready';
-    if (state.lifecycleState === 'persisting') return 'Saving note';
+    if (state.lifecycleState === 'persisting') return 'Saving artifact';
     if (messages.length > 0)
       return `${messages.length} ${messages.length === 1 ? 'message' : 'messages'}`;
     return 'New conversation';

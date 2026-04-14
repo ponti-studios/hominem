@@ -7,7 +7,7 @@ import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { useComposerContext } from '~/components/composer/ComposerContext';
-import { DEFAULT_CHAT_TITLE, resolveChatScreenTitle } from '~/services/chat';
+import { DEFAULT_CHAT_TITLE, resolveChatScreenTitle, updateChatTitleCaches } from '~/services/chat';
 import { useActiveChat, useArchiveChat, useChatMessages, useSendMessage } from '~/services/chat';
 import { useTTS } from '~/components/media/use-tts';
 import { theme } from '~/components/theme';
@@ -22,6 +22,7 @@ import { formatRelativeAge } from '~/services/date/format-relative-age';
 import type { ChatWithActivity } from '~/services/chat/session-state';
 
 import { ChatMessageList } from '../../../../../../packages/platform/ui/src/components/chat/chat-message-list.mobile';
+import { ConversationActionsSheet } from '../../../../../../packages/platform/ui/src/components/chat/conversation-actions.mobile';
 import { ChatReviewOverlay } from '../../../../../../packages/platform/ui/src/components/chat/chat-review-overlay.mobile';
 import { ChatSearchModal } from '../../../../../../packages/platform/ui/src/components/chat/chat-search-modal.mobile';
 import type { ChatRenderIcon } from '../../../../../../packages/platform/ui/src/components/chat/chat.types';
@@ -49,6 +50,13 @@ export default function ChatDetailScreen() {
       useArchiveChat,
       useChatMessages,
       useSendMessage,
+      onArtifactCreated: async ({ source, updatedAt }) => {
+        updateChatTitleCaches(queryClient, {
+          chatId,
+          title: source.title,
+          updatedAt,
+        });
+      },
       chatKeys: {
         messages: chatKeys.messages,
       },
@@ -59,7 +67,7 @@ export default function ChatDetailScreen() {
         speakingId,
       },
     }),
-    [speak, speakingId],
+    [chatId, queryClient, speak, speakingId],
   );
 
   const source = useMemo<SessionSource>(() => {
@@ -183,6 +191,20 @@ export default function ChatDetailScreen() {
         formatTimestamp={formatRelativeAge}
         contentPaddingBottom={composerClearance}
         emptyState={emptyState}
+      />
+      <ConversationActionsSheet
+        canTransform={controller.canTransform}
+        isArchiving={controller.isArchiving}
+        onArchive={controller.handleArchiveChat}
+        onClose={controller.handleCloseMenu}
+        onOpenSearch={controller.handleOpenSearch}
+        onToggleDebug={controller.handleToggleDebug}
+        onTransform={controller.handleTransformFromMenu}
+        transformTypes={controller.enabledTransforms}
+        showDebug={controller.showDebug}
+        statusCopy={controller.statusCopy}
+        title="Conversation"
+        visible={controller.showActionsMenu}
       />
       <ChatReviewOverlay
         pendingReview={controller.pendingReview}

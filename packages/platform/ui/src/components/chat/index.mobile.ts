@@ -1,5 +1,6 @@
 export type { SessionSource } from '@hominem/rpc/types';
 export { ArtifactActions } from './artifact-actions.mobile';
+export { ConversationActionsSheet } from './conversation-actions.mobile';
 export { ChatHeader } from './chat-header.mobile';
 export { ChatMessageList, ChatMessageList as ChatMessages } from './chat-message-list.mobile';
 export { ChatMessage, loadMarkdown, renderChatMessage } from './chat-message.mobile';

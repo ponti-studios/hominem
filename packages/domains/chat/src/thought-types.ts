@@ -9,7 +9,7 @@
 export type ArtifactType = 'note' | 'task' | 'task_list' | 'tracker';
 
 /** Artifact types enabled in the current release. */
-export const ENABLED_ARTIFACT_TYPES: ArtifactType[] = ['note'];
+export const ENABLED_ARTIFACT_TYPES: ArtifactType[] = ['note', 'task', 'task_list'];
 
 /** Returns true if the given type is enabled for creation in the current release. */
 export function isArtifactTypeEnabled(type: ArtifactType): boolean {

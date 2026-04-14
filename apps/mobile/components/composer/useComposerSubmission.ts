@@ -13,6 +13,7 @@ import {
   upsertInboxSessionActivity,
 } from '~/services/inbox/inbox-refresh';
 import { chatKeys } from '~/services/notes/query-keys';
+import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
 import { useCreateNote } from '~/services/notes/use-create-note';
 import { donateAddNoteIntent } from '~/services/intent-donation';
 
@@ -53,6 +54,7 @@ export function useComposerSubmission({
   const client = useApiClient();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { requestTopReveal } = useTopAnchoredFeed();
   const { mutateAsync: createNote } = useCreateNote();
   const { sendChatMessage, isChatSending } = useSendMessage({ chatId: target.chatId ?? '' });
 
@@ -94,9 +96,16 @@ export function useComposerSubmission({
     await invalidateInboxQueries(queryClient);
     clearDraft();
     router.push(`/(protected)/(tabs)/chat/${chat.id}` as RelativePathString);
+    if (target.kind === 'feed') {
+      requestTopReveal();
+    }
   };
 
   const createNoteFromDraft = async () => {
+    if (target.kind === 'feed') {
+      requestTopReveal();
+    }
+
     await createNote({
       text: message.trim(),
       ...(uploadedAttachmentIds.length > 0 ? { fileIds: uploadedAttachmentIds } : {}),

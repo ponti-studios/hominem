@@ -10,6 +10,7 @@ import { useQueryClient } from '@tanstack/react-query';
 
 import AppIcon from '~/components/ui/icon';
 import { Text, makeStyles, theme } from '~/components/theme';
+import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
 import { noteKeys, chatKeys } from '~/services/notes/query-keys';
 import type { ChatWithActivity } from '~/services/chat/session-state';
 
@@ -24,6 +25,7 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
   const router = useRouter();
   const client = useApiClient();
   const queryClient = useQueryClient();
+  const { requestTopReveal } = useTopAnchoredFeed();
   const iconColor = item.kind === 'note' ? theme.colors.foreground : theme.colors['text-secondary'];
 
   const onPress = useCallback(() => {
@@ -45,12 +47,13 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
         queryClient.setQueryData<Note[]>(noteKeys.all, (current) =>
           current?.map((n) => (n.id === item.entityId ? updatedNote : n)),
         );
+        requestTopReveal();
         void queryClient.invalidateQueries({ queryKey: noteKeys.feeds() });
       },
       'plain-text',
       item.title ?? '',
     );
-  }, [client, item.entityId, item.title, queryClient]);
+  }, [client, item.entityId, item.title, queryClient, requestTopReveal]);
 
   const handleDeleteNote = useCallback(() => {
     Alert.alert(

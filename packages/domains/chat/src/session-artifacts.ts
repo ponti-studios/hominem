@@ -12,6 +12,13 @@ export interface NoteProposal {
   previewContent: string;
 }
 
+export interface ArtifactProposal {
+  proposedType: Exclude<ArtifactType, 'tracker'>;
+  proposedTitle: string;
+  proposedChanges: string[];
+  previewContent: string;
+}
+
 const MAX_TITLE_LENGTH = 64;
 const MAX_THOUGHT_PREVIEW_LENGTH = 96;
 
@@ -25,6 +32,28 @@ function truncate(value: string, maxLength: number): string {
   }
 
   return `${value.slice(0, maxLength - 1).trimEnd()}…`;
+}
+
+function getArtifactTitlePrefix(type: Exclude<ArtifactType, 'tracker'>): string {
+  switch (type) {
+    case 'task':
+      return 'Untitled task';
+    case 'task_list':
+      return 'Untitled task list';
+    case 'note':
+      return 'Untitled note';
+  }
+}
+
+function getArtifactChangeLabel(type: Exclude<ArtifactType, 'tracker'>): string {
+  switch (type) {
+    case 'task':
+      return 'task';
+    case 'task_list':
+      return 'task list';
+    case 'note':
+      return 'note';
+  }
 }
 
 export function getThoughtPreview(messages: SessionArtifactMessage[]): string | null {
@@ -95,14 +124,38 @@ export function buildNoteProposal(messages: SessionArtifactMessage[]): NotePropo
   const includesAssistant = messages.some(
     (message) => message.role === 'assistant' && normalizeContent(message.content).length > 0,
   );
-  const proposedChanges = [
-    `Captured ${relevantMessageCount} message${relevantMessageCount === 1 ? '' : 's'} from this session`,
-    ...(includesAssistant ? ['Includes assistant output'] : []),
-  ];
 
   return {
     proposedType: 'note',
     proposedTitle: thoughtPreview ? truncate(thoughtPreview, MAX_TITLE_LENGTH) : 'Untitled note',
+    proposedChanges: [
+      `Captured ${relevantMessageCount} message${relevantMessageCount === 1 ? '' : 's'} into this note`,
+      ...(includesAssistant ? ['Includes assistant output'] : []),
+    ],
+    previewContent,
+  };
+}
+
+export function buildArtifactProposal(
+  messages: SessionArtifactMessage[],
+  type: Exclude<ArtifactType, 'tracker'>,
+): ArtifactProposal {
+  const previewContent = toTranscript(messages);
+  const thoughtPreview = getThoughtPreview(messages);
+  const relevantMessageCount = messages.filter(
+    (message) => normalizeContent(message.content).length > 0,
+  ).length;
+  const includesAssistant = messages.some(
+    (message) => message.role === 'assistant' && normalizeContent(message.content).length > 0,
+  );
+  const proposedChanges = [
+    `Captured ${relevantMessageCount} message${relevantMessageCount === 1 ? '' : 's'} into this ${getArtifactChangeLabel(type)}`,
+    ...(includesAssistant ? ['Includes assistant output'] : []),
+  ];
+
+  return {
+    proposedType: type,
+    proposedTitle: thoughtPreview ? truncate(thoughtPreview, MAX_TITLE_LENGTH) : getArtifactTitlePrefix(type),
     proposedChanges,
     previewContent,
   };

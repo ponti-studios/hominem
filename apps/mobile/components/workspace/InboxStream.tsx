@@ -1,5 +1,5 @@
-import { FlashList, type ListRenderItem } from '@shopify/flash-list';
-import React, { memo, useCallback, useEffect, useRef } from 'react';
+import { FlashList, type FlashListRef, type ListRenderItem } from '@shopify/flash-list';
+import React, { memo, useCallback, type RefObject } from 'react';
 import { StyleSheet, View, type RefreshControlProps } from 'react-native';
 
 import { Text, makeStyles } from '~/components/theme';
@@ -9,6 +9,7 @@ import type { InboxStreamItemData as InboxStreamItemModel } from './InboxStreamI
 
 interface InboxStreamProps {
   items: InboxStreamItemModel[];
+  listRef?: RefObject<FlashListRef<InboxStreamItemModel> | null>;
   refreshControl?: React.ReactElement<RefreshControlProps>;
 }
 
@@ -27,17 +28,8 @@ const RenderInboxStreamItem = memo(({ item }: { item: InboxStreamItemModel }) =>
 
 RenderInboxStreamItem.displayName = 'RenderInboxStreamItem';
 
-export const InboxStream = ({ items, refreshControl }: InboxStreamProps) => {
+export const InboxStream = ({ items, listRef, refreshControl }: InboxStreamProps) => {
   const styles = useStyles();
-  const listRef = useRef<any>(null);
-  const prevCountRef = useRef(items.length);
-
-  useEffect(() => {
-    if (items.length > prevCountRef.current) {
-      listRef.current?.scrollToOffset({ offset: 0, animated: true });
-    }
-    prevCountRef.current = items.length;
-  }, [items.length]);
 
   const renderItem = useCallback<ListRenderItem<InboxStreamItemModel>>(({ item }) => {
     return <RenderInboxStreamItem item={item} />;

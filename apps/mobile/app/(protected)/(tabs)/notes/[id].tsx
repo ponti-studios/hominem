@@ -9,6 +9,7 @@ import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native
 import { useQueryClient } from '@tanstack/react-query';
 
 import { Text, theme } from '~/components/theme';
+import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
 import { noteKeys } from '~/services/notes/query-keys';
 import { useNoteQuery } from '~/services/notes/use-note-query';
 
@@ -19,6 +20,7 @@ export default function NoteDetailScreen() {
   const router = useRouter();
   const client = useApiClient();
   const queryClient = useQueryClient();
+  const { requestTopReveal } = useTopAnchoredFeed();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const noteId = String(id ?? '');
   const { data: note } = useNoteQuery({ noteId, enabled: noteId.length > 0 });
@@ -39,6 +41,7 @@ export default function NoteDetailScreen() {
           if (!current) return [updatedNote];
           return current.map((n) => (n.id === updatedNote.id ? updatedNote : n));
         });
+        requestTopReveal();
         void queryClient.invalidateQueries({ queryKey: noteKeys.feeds() });
       }}
     />

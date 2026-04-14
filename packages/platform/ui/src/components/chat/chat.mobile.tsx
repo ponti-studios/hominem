@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { ChatHeader } from './chat-header.mobile';
 import { ChatMessageList } from './chat-message-list.mobile';
+import { ConversationActionsSheet } from './conversation-actions.mobile';
 import { ChatReviewOverlay } from './chat-review-overlay.mobile';
 import { ChatSearchModal } from './chat-search-modal.mobile';
 import { useChatController, type ChatServices } from './use-chat-controller.mobile';
@@ -73,6 +74,20 @@ export const Chat = ({
           void controller.handleShareMessage(message);
         }}
         renderIcon={renderIcon}
+      />
+      <ConversationActionsSheet
+        canTransform={controller.canTransform}
+        isArchiving={controller.isArchiving}
+        onArchive={controller.handleArchiveChat}
+        onClose={controller.handleCloseMenu}
+        onOpenSearch={controller.handleOpenSearch}
+        onToggleDebug={controller.handleToggleDebug}
+        onTransform={controller.handleTransformFromMenu}
+        showDebug={controller.showDebug}
+        statusCopy={controller.statusCopy}
+        title="Conversation"
+        transformTypes={controller.enabledTransforms}
+        visible={controller.showActionsMenu}
       />
       <ChatReviewOverlay
         pendingReview={controller.pendingReview}
