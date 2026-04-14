@@ -6,7 +6,6 @@ import type { StyleProp, TextStyle, ViewStyle } from 'react-native';
 import { Text, theme } from '~/components/theme';
 import { Surface } from '~/components/ui/Surface';
 
-// ─── Card ─────────────────────────────────────────────────────────────────────
 
 interface CardProps extends Pick<React.ComponentProps<typeof Surface>, 'elevation' | 'radius' | 'shadow'> {
   style?: ViewStyle;
@@ -21,7 +20,6 @@ export function Card({ elevation = 'surface', radius = 'lg', shadow = false, sty
   );
 }
 
-// ─── CardHeader ───────────────────────────────────────────────────────────────
 
 interface CardHeaderProps {
   style?: ViewStyle;
@@ -32,7 +30,6 @@ export function CardHeader({ style, children }: CardHeaderProps) {
   return <View style={[styles.header, style]}>{children}</View>;
 }
 
-// ─── CardTitle ────────────────────────────────────────────────────────────────
 
 interface CardTitleProps {
   children: string;
@@ -43,7 +40,6 @@ export function CardTitle({ children, style }: CardTitleProps) {
   return <Text style={[styles.title, style]}>{children}</Text>;
 }
 
-// ─── CardDescription ──────────────────────────────────────────────────────────
 
 interface CardDescriptionProps {
   children: string;
@@ -54,7 +50,6 @@ export function CardDescription({ children, style }: CardDescriptionProps) {
   return <Text style={[styles.description, style]}>{children}</Text>;
 }
 
-// ─── CardContent ──────────────────────────────────────────────────────────────
 
 interface CardContentProps {
   style?: ViewStyle;
@@ -65,7 +60,6 @@ export function CardContent({ style, children }: CardContentProps) {
   return <View style={[styles.content, style]}>{children}</View>;
 }
 
-// ─── CardFooter ───────────────────────────────────────────────────────────────
 
 interface CardFooterProps {
   style?: ViewStyle;
@@ -76,7 +70,6 @@ export function CardFooter({ style, children }: CardFooterProps) {
   return <View style={[styles.footer, style]}>{children}</View>;
 }
 
-// ─── CardAction ───────────────────────────────────────────────────────────────
 
 interface CardActionProps {
   style?: ViewStyle;
@@ -87,7 +80,6 @@ export function CardAction({ style, children }: CardActionProps) {
   return <View style={[styles.action, style]}>{children}</View>;
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   header: {

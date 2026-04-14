@@ -2,7 +2,6 @@ import type { StepUpAction } from '../shared/step-up-actions';
 
 export const STEP_UP_TTL_SECONDS = 5 * 60;
 
-// ─── Store Interface ──────────────────────────────────────────────────────────
 
 /**
  * Minimal Redis-compatible interface for step-up token storage.
@@ -19,13 +18,11 @@ export function configureStepUpStore(store: StepUpStore) {
   stepUpStore = store;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function getStepUpKey(userId: string, action: StepUpAction) {
   return `auth:stepup:${userId}:${action}`;
 }
 
-// ─── Grant / Check ────────────────────────────────────────────────────────────
 
 export async function grantStepUp(userId: string, action: StepUpAction) {
   if (!stepUpStore) throw new Error('step-up store not configured');

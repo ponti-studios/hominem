@@ -14,7 +14,6 @@ import { useNoteQuery } from '~/services/notes/use-note-query';
 
 const COMPOSER_CLEARANCE = 220;
 
-// ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function NoteDetailScreen() {
   const router = useRouter();
@@ -46,7 +45,6 @@ export default function NoteDetailScreen() {
   );
 }
 
-// ─── Editor ───────────────────────────────────────────────────────────────────
 
 function NoteDetailEditor({
   note,
@@ -121,7 +119,6 @@ function NoteDetailEditor({
         keyboardDismissMode="interactive"
         showsVerticalScrollIndicator={false}
       >
-        {/* Title */}
         <TextInput
           value={title ?? ''}
           onChangeText={(value) => {
@@ -136,10 +133,8 @@ function NoteDetailEditor({
           accessibilityLabel="Note title"
         />
 
-        {/* Divider */}
         <View style={styles.divider} />
 
-        {/* Body */}
         <TextInput
           multiline
           value={content}
@@ -155,7 +150,6 @@ function NoteDetailEditor({
           accessibilityLabel="Note content"
         />
 
-        {/* Attachments */}
         {files.length > 0 && (
           <View style={styles.filesSection}>
             <Text style={styles.filesLabel}>Attachments</Text>
@@ -194,7 +188,6 @@ function NoteDetailEditor({
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   container: {
@@ -211,7 +204,6 @@ const styles = StyleSheet.create({
     height: 22,
   },
 
-  // ── Title ──────────────────────────────────────────────────────────────────
   titleInput: {
     fontSize: 28,
     fontWeight: '700',
@@ -223,14 +215,12 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
 
-  // ── Divider ────────────────────────────────────────────────────────────────
   divider: {
     height: 1,
     backgroundColor: theme.colors['border-subtle'],
     marginBottom: 16,
   },
 
-  // ── Content ────────────────────────────────────────────────────────────────
   contentInput: {
     fontSize: 16,
     lineHeight: 26,
@@ -241,7 +231,6 @@ const styles = StyleSheet.create({
     minHeight: 240,
   },
 
-  // ── File pills ─────────────────────────────────────────────────────────────
   filesSection: {
     marginTop: 24,
     gap: 8,

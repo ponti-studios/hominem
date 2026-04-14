@@ -120,9 +120,7 @@ async function collectAudioStream(
           const audio = chunk.choices?.[0]?.delta?.audio;
           if (audio?.data) audioChunks.push(audio.data);
           if (audio?.transcript) transcriptChunks.push(audio.transcript);
-        } catch {
-          // Malformed chunk — skip silently
-        }
+        } catch {}
       }
     }
   } finally {
@@ -176,7 +174,6 @@ export async function generateVoiceResponse(
 
   messages.push({ role: 'user', content: input.text });
 
-  // Log the request
   logger.info('[voice-response] Request started', {
     ...getVoiceLogData(requestId),
     model: VOICE_RESPONSE_MODEL,
@@ -205,7 +202,7 @@ export async function generateVoiceResponse(
         model: VOICE_RESPONSE_MODEL,
         messages,
         modalities: ['text', 'audio'],
-        audio: { voice, format: 'pcm16' }, // Streaming requires pcm16
+        audio: { voice, format: 'pcm16' },
         stream: true,
       }),
     });
@@ -229,7 +226,6 @@ export async function generateVoiceResponse(
     throw new VoiceError('Voice response request failed', 'RESPONSE_FAILED', 500);
   }
 
-  // Log the HTTP response
   logger.info('[voice-response] HTTP response received', {
     ...getVoiceLogData(requestId),
     status: response.status,
@@ -276,7 +272,6 @@ export async function generateVoiceResponse(
 
     const audioBuffer = Buffer.from(audioB64, 'base64');
 
-    // Save audio file for team review
     let savedPath: string | undefined;
     if (env.SAVE_VOICE_AUDIO === true) {
       try {
@@ -297,7 +292,6 @@ export async function generateVoiceResponse(
       }
     }
 
-    // Log successful completion
     logger.info('[voice-response] Request completed successfully', {
       ...getVoiceLogData(requestId),
       transcriptLength: transcript.length,

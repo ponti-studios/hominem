@@ -38,7 +38,6 @@ import { deriveComposerPresentation, type ComposerAttachment } from './composerS
 import { useComposerMediaActions } from './useComposerMediaActions';
 import { useComposerSubmission } from './useComposerSubmission';
 
-// ─── Layout constants (all derived from design tokens) ───────────────────────
 
 /** Maximum card width so the composer doesn't span full-width on large devices. */
 const MAX_WIDTH = 500;
@@ -48,17 +47,16 @@ const MAX_WIDTH = 500;
  * Min = spacing[4] × 2 = 32 (one comfortable line)
  * Max = spacing[7]  × 6 = 288 ≈ 300 (six visual rows)
  */
-const INPUT_MIN_H = spacing[6] + spacing[4]; // 40
-const INPUT_MAX_H = spacing[6] * 9; // 288
+const INPUT_MIN_H = spacing[6] + spacing[4];
+const INPUT_MAX_H = spacing[6] * 9;
 
 /**
  * Send button = spacing[4] × 2 = 32 × 32 — sits on the 8-pt grid.
  * Icon inside = spacing[3] = 12 (≈ 37 % of button — standard for filled circles).
  */
-const SEND_BTN_SIZE = spacing[4] * 2; // 32
-const SEND_ICON_SIZE = spacing[3]; // 12
+const SEND_BTN_SIZE = spacing[4] * 2;
+const SEND_ICON_SIZE = spacing[3];
 
-// ─── SendButton ──────────────────────────────────────────────────────────────
 
 function SendButton({
   sf,
@@ -93,7 +91,6 @@ function SendButton({
   );
 }
 
-// ─── SecondaryButton ─────────────────────────────────────────────────────────
 
 function SecondaryButton({
   sf,
@@ -129,7 +126,6 @@ function SecondaryButton({
   );
 }
 
-// ─── Attachment strip ─────────────────────────────────────────────────────────
 
 function ComposerAttachments({
   attachments,
@@ -165,7 +161,6 @@ function ComposerAttachments({
               {a.localUri && (
                 <Image source={{ uri: a.localUri }} style={styles.thumbImage} contentFit="cover" />
               )}
-              {/* Remove badge */}
               <View style={styles.thumbBadge} pointerEvents="none">
                 <Image
                   source="sf:xmark"
@@ -440,10 +435,8 @@ export const Composer = () => {
   );
 };
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  // Shell: positions the card above the keyboard / home indicator
   shell: {
     left: 0,
     right: 0,
@@ -452,17 +445,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  // Card: the floating input surface
-  // bg-elevated = rgba(33,34,37,1) in dark — visible contrast over bg-base / background
-  // border-default = 18% opacity — elevated surfaces need more definition than border-subtle
-  // shadowsNative.low = appropriate weight for a persistent bottom toolbar (not a modal)
-  // radiiNative.icon = 20 — the largest non-pill radius defined in the token set
   card: {
     width: '100%',
     maxWidth: MAX_WIDTH,
     backgroundColor: theme.colors['bg-elevated'],
-    // borderWidth: 1,
-    // borderColor: theme.colors['border-default'],
     borderRadius: radiiNative.md,
     borderCurve: 'continuous',
     paddingHorizontal: spacing[1],

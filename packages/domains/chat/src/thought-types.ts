@@ -5,7 +5,6 @@
  * for transport consumers. No other package may redefine these.
  */
 
-// ─── Artifact Types ──────────────────────────────────────────────────────────
 
 export type ArtifactType = 'note' | 'task' | 'task_list' | 'tracker';
 
@@ -17,7 +16,6 @@ export function isArtifactTypeEnabled(type: ArtifactType): boolean {
   return ENABLED_ARTIFACT_TYPES.includes(type);
 }
 
-// ─── Session Source ──────────────────────────────────────────────────────────
 
 /** Describes where a chat session originated. */
 export type SessionSource =
@@ -25,7 +23,6 @@ export type SessionSource =
   | { kind: 'artifact'; id: string; type: ArtifactType; title: string }
   | { kind: 'new' };
 
-// ─── Lifecycle State ─────────────────────────────────────────────────────────
 
 /** The canonical thought lifecycle state machine. */
 export type ThoughtLifecycleState =
@@ -40,7 +37,6 @@ export type ThoughtLifecycleState =
 
 export type ThoughtLifecycleTransition = [from: ThoughtLifecycleState, to: ThoughtLifecycleState];
 
-// ─── Review Item ─────────────────────────────────────────────────────────────
 
 export interface ClassificationProposal {
   proposedType: ArtifactType;
@@ -60,7 +56,6 @@ export interface ClassificationResponse extends ClassificationProposal {
   reviewItemId: string;
 }
 
-// ─── UI Contract Types ───────────────────────────────────────────────────────
 
 /** Props contract for the CaptureBar component (web and mobile). */
 export interface CaptureBarProps {

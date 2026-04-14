@@ -62,7 +62,6 @@ export const ComposerTools = memo(function ComposerTools({
   const [isTouchDeviceState, setIsTouchDeviceState] = useState(() => isTouchDevice());
 
   useEffect(() => {
-    // Listen for viewport changes to update touch device state
     const mediaQuery = window.matchMedia('(max-width: 768px) and (any-hover: none)');
     const handleChange = () => {
       setIsTouchDeviceState(isTouchDevice());

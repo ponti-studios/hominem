@@ -1,28 +1,14 @@
-/* ============================================
- * Hominem Design System
- *
- * Anthropic × Apple Human Interface Guidelines
- * Warm, joyous, human-first design language.
- *
- * Principles:
- *   - Warmth over sterility
- *   - Clarity over cleverness
- *   - Motion with purpose
- *   - Accessible by default
- * ============================================ */
+
 
 @import 'tailwindcss';
 @import './animations.css';
 
 @theme {
-  /* ====== TYPOGRAPHY ====== */
 
-  /* Font families — Geist for brand consistency, Apple system stack as fallback */
   --font-family-primary:
     'Geist', -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
   --font-family-mono: 'Geist Mono', 'SF Mono', ui-monospace, 'Menlo', monospace;
 
-  /* Apple HIG type scale — adapted for web densities */
   --font-size-large-title: 34px;
   --font-size-title-1: 28px;
   --font-size-title-2: 22px;
@@ -35,7 +21,6 @@
   --font-size-caption-1: 12px;
   --font-size-caption-2: 11px;
 
-  /* Legacy size aliases — used by existing typography components */
   --font-size-xs: 12px;
   --font-size-sm: 14px;
   --font-size-md: 16px;
@@ -43,56 +28,43 @@
   --font-size-xl: 20px;
   --font-size-display: 34px;
 
-  /* Weights */
   --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
 
-  /* Line heights — Apple HIG */
   --line-height-tight: 1.2;
   --line-height-normal: 1.4;
   --line-height-relaxed: 1.6;
 
-  /* Letter spacing */
   --letter-spacing-tight: -0.025em;
   --letter-spacing-normal: 0;
   --letter-spacing-relaxed: 0.01em;
 
-  /* ====== COLORS: LIGHT MODE ====== */
-  /* Anthropic-inspired warm palette — parchment whites, warm grays, coral accent */
-
-  /* Backgrounds */
   --color-bg-base: rgba(253, 252, 251, 1);
   --color-bg-surface: rgba(247, 246, 243, 1);
   --color-bg-elevated: rgba(239, 237, 232, 1);
   --color-bg-overlay: rgba(17, 19, 24, 0.05);
 
-  /* Text — warm near-black, not pure black */
   --color-text-primary: rgba(25, 25, 24, 1);
   --color-text-secondary: rgba(95, 99, 109, 1);
   --color-text-tertiary: rgba(133, 139, 152, 1);
   --color-text-disabled: rgba(179, 184, 196, 1);
 
-  /* Borders */
   --color-border-default: rgba(25, 25, 24, 0.16);
   --color-border-subtle: rgba(25, 25, 24, 0.09);
   --color-border-focus: rgba(91, 91, 214, 0.45);
 
-  /* Icons */
   --color-icon-primary: rgba(25, 25, 24, 1);
   --color-icon-muted: rgba(133, 139, 152, 1);
 
-  /* Semantic status */
   --color-success: rgba(41, 151, 100, 1);
   --color-warning: rgba(255, 178, 36, 1);
   --color-destructive: rgba(229, 77, 46, 1);
 
-  /* Accent — Anthropic warm coral */
   --color-accent: rgba(91, 91, 214, 1);
   --color-accent-foreground: rgba(255, 255, 255, 1);
 
-  /* System tokens — used by shadcn/ui component internals */
   --color-primary: rgba(0, 0, 0, 1);
   --color-primary-foreground: rgba(255, 255, 255, 1);
   --color-secondary: rgba(25, 25, 24, 0.08);
@@ -107,7 +79,6 @@
   --color-input: rgba(247, 246, 243, 1);
   --color-ring: rgba(0, 0, 0, 1);
 
-  /* Emphasis scale — layered warm black for subtle differentiation */
   --color-emphasis-highest: rgba(25, 25, 24, 0.9);
   --color-emphasis-high: rgba(25, 25, 24, 0.72);
   --color-emphasis-medium: rgba(25, 25, 24, 0.52);
@@ -117,14 +88,12 @@
   --color-emphasis-minimal: rgba(25, 25, 24, 0.09);
   --color-emphasis-faint: rgba(25, 25, 24, 0.05);
 
-  /* Charts — warm, distinct, accessible */
   --color-chart-1: rgba(91, 91, 214, 1);
   --color-chart-2: rgba(41, 151, 100, 1);
   --color-chart-3: rgba(14, 165, 233, 1);
   --color-chart-4: rgba(255, 178, 36, 1);
   --color-chart-5: rgba(229, 77, 46, 1);
 
-  /* Sidebar */
   --color-sidebar: rgba(242, 241, 238, 1);
   --color-sidebar-foreground: rgba(25, 25, 24, 1);
   --color-sidebar-primary: rgba(91, 91, 214, 1);
@@ -134,12 +103,9 @@
   --color-sidebar-border: rgba(25, 25, 24, 0.1);
   --color-sidebar-ring: rgba(91, 91, 214, 1);
 
-  /* Chat / Prompt input */
   --color-prompt-bg: rgba(253, 252, 251, 1);
   --color-prompt-border: rgba(25, 25, 24, 0.16);
   --color-prompt-border-focus: rgba(91, 91, 214, 0.45);
-
-  /* ====== SPACING: 8PT GRID ====== */
 
   --spacing-1: 4px;
   --spacing-2: 8px;
@@ -150,12 +116,9 @@
   --spacing-7: 48px;
   --spacing-8: 64px;
 
-  /* Content widths */
   --content-width-bubble: 36rem;
   --content-width-transcript: 44rem;
   --content-width-note-preview: 32ch;
-
-  /* ====== BORDER RADIUS — Apple continuous corners ====== */
 
   --radius-sm: 6px;
   --radius-md: 10px;
@@ -163,19 +126,12 @@
   --radius-xl: 20px;
   --radius-icon: 22%;
 
-  /* ====== SHADOWS ====== */
-  /* Warm-tinted, multi-layer for depth without harshness */
-
   --shadow-low: 0 1px 3px rgba(28, 25, 18, 0.06), 0 1px 2px rgba(28, 25, 18, 0.04);
   --shadow-medium: 0 4px 16px rgba(28, 25, 18, 0.08), 0 2px 4px rgba(28, 25, 18, 0.04);
   --shadow-high: 0 16px 48px rgba(28, 25, 18, 0.1), 0 4px 12px rgba(28, 25, 18, 0.06);
 
-  /* Glass morphism */
   --glass-blur: 16px;
   --glass-background: rgba(250, 249, 247, 0.85);
-
-  /* ====== MOTION ====== */
-  /* Apple spring-inspired easing */
 
   --duration-fast: 120ms;
   --duration-default: 200ms;
@@ -184,10 +140,6 @@
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --ease-out: cubic-bezier(0, 0, 0.2, 1);
 }
-
-/* ====== DARK MODE ====== */
-/* Override warm-light tokens with warm-dark equivalents.
-   The same warmth, inverted. Deep charcoal backgrounds, cream text. */
 
 @media (prefers-color-scheme: dark) {
   :root {
@@ -261,7 +213,6 @@
   }
 }
 
-/* Manual dark mode — for apps that toggle theme explicitly (e.g. desktop) */
 :root[data-theme='dark'] {
   --color-bg-base: rgba(17, 17, 19, 1);
   --color-bg-surface: rgba(24, 25, 27, 1);
@@ -332,8 +283,6 @@
   --glass-background: rgba(17, 17, 19, 0.82);
 }
 
-/* ====== SAFE AREA UTILITIES ====== */
-
 @utility pb-safe-area-inset-bottom {
   padding-bottom: env(safe-area-inset-bottom);
 }
@@ -342,10 +291,8 @@
   margin-bottom: env(safe-area-inset-bottom);
 }
 
-/* ====== VIEWPORT HEIGHT UTILITIES ====== */
-
 @utility min-h-screen {
-  min-height: 100vh; /* fallback */
+  min-height: 100vh;
   min-height: 100dvh;
 }
 
@@ -354,11 +301,9 @@
 }
 
 @utility h-screen {
-  height: 100vh; /* fallback */
+  height: 100vh;
   height: 100dvh;
 }
-
-/* ====== BASE STYLES ====== */
 
 @layer base {
   html,
@@ -383,7 +328,6 @@
     color-scheme: dark;
   }
 
-  /* Universal focus reset — mouse/touch shows nothing, keyboard gets a ring */
   *:focus {
     outline: none;
   }
@@ -394,7 +338,6 @@
     border-radius: inherit;
   }
 
-  /* Selective transitions — only interactive elements animate, not everything */
   * {
     transition: none;
   }
@@ -418,12 +361,10 @@
     font-family: inherit;
   }
 
-  /* Radix portals */
   [data-radix-portal] {
     z-index: 9999;
   }
 
-  /* Headings */
   h1,
   h2,
   h3,
@@ -435,7 +376,6 @@
     letter-spacing: var(--letter-spacing-tight);
   }
 
-  /* shadcn/ui CSS variable aliases */
   :root {
     --background: var(--color-bg-base);
     --foreground: var(--color-text-primary);
@@ -462,7 +402,6 @@
     --warning: var(--color-warning);
   }
 
-  /* Reduced motion */
   @media (prefers-reduced-motion: reduce) {
     * {
       animation-duration: 0.01ms !important;
@@ -471,10 +410,6 @@
     }
   }
 }
-
-/* ====== BACKGROUND SHORTHAND UTILITIES ====== */
-/* Tailwind v4 generates bg-bg-base from --color-bg-base; these provide
-   the cleaner bg-base / bg-surface / bg-elevated names used in components. */
 
 @utility bg-base {
   background-color: var(--color-bg-base);
@@ -488,10 +423,6 @@
   background-color: var(--color-bg-elevated);
 }
 
-/* ====== BORDER SHORTHAND UTILITIES ====== */
-/* Tailwind v4 generates border-border-default from --color-border-default;
-   these provide the cleaner border-default / border-subtle / border-focus names. */
-
 @utility border-default {
   border-color: var(--color-border-default);
 }
@@ -503,10 +434,6 @@
 @utility border-focus {
   border-color: var(--color-border-focus);
 }
-
-/* ====== TYPOGRAPHY UTILITIES ====== */
-/* Apple HIG type scale — multi-property composites that can't be expressed
-   as single token values. Fluid clamp() scaling for responsive web. */
 
 @utility display-1 {
   font-size: clamp(2.5rem, 5vw, 6rem);
@@ -620,15 +547,11 @@
   letter-spacing: -0.008em;
 }
 
-/* ====== FOCUS UTILITIES ====== */
-
-/* Programmatic focus ring — use when you need to force visibility */
 @utility focus-ring {
   outline: 2px solid var(--color-ring);
   outline-offset: 2px;
 }
 
-/* Explicit opt-in for Radix component overrides */
 @utility void-focus {
   outline: none;
   &:focus-visible {
@@ -637,10 +560,6 @@
   }
 }
 
-/* ====== LAYOUT UTILITIES ====== */
-
-/* list-row: full-height row where every child stretches to fill the row height.
-   Each child centers its own content. Usage: <li className="list-row"> */
 @utility list-row {
   display: flex;
   align-items: stretch;
@@ -651,14 +570,11 @@
   }
 }
 
-/* Glass morphism — warm frosted glass */
 @utility glass {
   background-color: var(--glass-background);
   backdrop-filter: blur(var(--glass-blur));
 }
 
-/* Page-width constraints — used exclusively by layout primitives (Page, Container, Center).
-   Leaf components must never apply these directly. */
 @utility content-width-bubble {
   max-inline-size: var(--content-width-bubble);
 }
@@ -697,7 +613,7 @@
 }
 
 @layer utilities {
-  /* Container: horizontal padding only. Centering is the layout component's job. */
+
   .container {
     @apply w-full px-4 sm:px-6;
     margin-inline: auto;

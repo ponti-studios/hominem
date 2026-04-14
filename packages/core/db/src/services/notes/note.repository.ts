@@ -5,7 +5,6 @@ import type { DbHandle } from '../../transaction';
 import type { AppFiles, AppNotes } from '../../types/database';
 import { toRequiredIsoString } from '../_shared/mappers';
 
-// ─── Row types ───────────────────────────────────────────────────────────────
 
 type NoteRow = Selectable<AppNotes>;
 
@@ -24,7 +23,6 @@ type NoteFileSource = Pick<
 
 type AttachedFileRow = NoteFileSource & { noteId: string };
 
-// ─── Domain output types ─────────────────────────────────────────────────────
 
 export interface NoteFileRecord {
   id: string;
@@ -50,7 +48,6 @@ export interface NoteRecord {
   updatedAt: string;
 }
 
-// ─── Input types ─────────────────────────────────────────────────────────────
 
 export interface CreateNoteInput {
   userId: string;
@@ -119,7 +116,6 @@ type NoteFeedAttachmentRow = {
   noteId: string;
 };
 
-// ─── Mappers ─────────────────────────────────────────────────────────────────
 
 function toNoteFile(row: NoteFileSource): NoteFileRecord {
   return {
@@ -180,7 +176,6 @@ function buildContentPreview(excerpt: string | null, content: string): string {
   return normalized.slice(0, 240);
 }
 
-// ─── Repository ──────────────────────────────────────────────────────────────
 
 export const NoteRepository = {
   /**

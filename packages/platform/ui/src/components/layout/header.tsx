@@ -65,7 +65,6 @@ function useScrollDown() {
   return hidden;
 }
 
-// ─── Desktop: inline nav links + account dropdown ─────────────────────────────
 
 function DesktopNavLink({ item }: { item: NavItem }) {
   const isActive = useIsActive(item.url);
@@ -126,7 +125,6 @@ function DesktopNav({ navItems }: { navItems: NavItem[] }) {
   );
 }
 
-// ─── Mobile: bottom tab bar ────────────────────────────────────────────────────
 
 function MobileTabItem({ item }: { item: NavItem }) {
   const isActive = useIsActive(item.url);
@@ -165,7 +163,6 @@ function MobileTabBar({ navItems }: { navItems: NavItem[] }) {
   );
 }
 
-// ─── Sign-in button (unauthenticated state) ───────────────────────────────────
 
 function SignInButton() {
   const onSignInClick = useCallback(() => {
@@ -174,7 +171,6 @@ function SignInButton() {
   return <Button onClick={onSignInClick}>Sign in</Button>;
 }
 
-// ─── Main export ──────────────────────────────────────────────────────────────
 
 export function Header({ brandIcon, navItems = [] }: HeaderProps) {
   const session = useSession();

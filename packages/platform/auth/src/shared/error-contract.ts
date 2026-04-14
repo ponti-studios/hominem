@@ -7,7 +7,6 @@
 
 import { resolveAuthRedirect } from './redirect-policy';
 
-// ─── Error URL Builder ────────────────────────────────────────────────────────
 
 export interface AuthCallbackErrorRedirectOptions {
   next: string | null | undefined;
@@ -35,7 +34,6 @@ export function buildAuthCallbackErrorRedirect({
   return `${url.pathname}${url.search}${url.hash}`;
 }
 
-// ─── Error URL Reader ─────────────────────────────────────────────────────────
 
 /**
  * Reads a human-readable error message from URLSearchParams produced by

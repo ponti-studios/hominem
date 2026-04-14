@@ -40,7 +40,6 @@ const chatsMessagesQuerySchema = z.object({
   offset: z.string().optional(),
 });
 
-// ─── Prompt builders ─────────────────────────────────────────────────────────
 
 function toCoreHistoryMessage(entry: ChatMessageRecord): CoreMessage | null {
   if (entry.role === 'system' || entry.role === 'user' || entry.role === 'assistant') {
@@ -105,7 +104,6 @@ function getRequiredChatId(c: { req: { param: (name: string) => string | undefin
   return chatId;
 }
 
-// ─── Per-chat routes ─────────────────────────────────────────────────────────
 
 const chatByIdRoutes = new Hono<AppContext>()
   .get('/', async (c) => {
@@ -173,12 +171,10 @@ const chatByIdRoutes = new Hono<AppContext>()
     const chat = await ChatRepository.getOwnedOrThrow(db, chatId, userId);
     const { message, fileIds = [], noteIds = [] } = c.req.valid('json');
 
-    // Resolve context data
     const history = await ChatRepository.getMessages(db, chatId, 30, 0);
     const resolvedNotes = await ChatRepository.resolveReferencedNotes(db, userId, noteIds, message);
     const resolvedFiles = await ChatRepository.resolveChatFiles(db, userId, fileIds);
 
-    // Build prompt and call LLM
     const prompt = buildUserPrompt(message, resolvedNotes, resolvedFiles);
     const storedUserContent = toStoredUserMessageContent(message, resolvedNotes, resolvedFiles);
     if (!storedUserContent) {
@@ -213,7 +209,6 @@ const chatByIdRoutes = new Hono<AppContext>()
       }
     })();
 
-    // Persist messages + touch chat atomically
     const now = new Date().toISOString();
     const { userMsg, assistantMsg } = await runInTransaction(async (trx) => {
       const userMsg = await ChatRepository.insertMessage(trx, {
@@ -237,13 +232,11 @@ const chatByIdRoutes = new Hono<AppContext>()
       return { userMsg, assistantMsg };
     });
 
-    // Enrich with note titles for response
     const noteTitlesById = await ChatRepository.getNoteTitles(
       db,
       resolvedNotes.map((n) => n.id),
     );
 
-    // Map raw rows to message records for DTO conversion
     const userRecord = enrichMessageRow(userMsg, noteTitlesById);
     const assistantRecord = enrichMessageRow(assistantMsg, noteTitlesById);
 
@@ -262,7 +255,6 @@ const chatByIdRoutes = new Hono<AppContext>()
     });
   });
 
-// ─── Top-level chat routes ───────────────────────────────────────────────────
 
 export const chatsRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)

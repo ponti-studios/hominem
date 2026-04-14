@@ -12,7 +12,6 @@ import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import { Text, theme } from '~/components/theme';
 import { flattenNoteFeedPages, useNoteFeed } from '~/services/notes/use-note-stream';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 type FeedRow = {
   id: string;
@@ -22,7 +21,6 @@ type FeedRow = {
   hasAttachments: boolean;
 };
 
-// ─── Date formatting ──────────────────────────────────────────────────────────
 
 function formatNoteDate(iso: string): string {
   const date = new Date(iso);
@@ -38,12 +36,10 @@ function formatNoteDate(iso: string): string {
   return date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-// ─── Row separator ────────────────────────────────────────────────────────────
 
 const RowSeparator = React.memo(() => <View style={styles.separator} />);
 RowSeparator.displayName = 'RowSeparator';
 
-// ─── Note row ─────────────────────────────────────────────────────────────────
 
 const NoteRow = React.memo(({ item, onPress }: { item: FeedRow; onPress: () => void }) => (
   <Pressable
@@ -83,7 +79,6 @@ const NoteRow = React.memo(({ item, onPress }: { item: FeedRow; onPress: () => v
 
 NoteRow.displayName = 'NoteRow';
 
-// ─── Empty state ──────────────────────────────────────────────────────────────
 
 function EmptyNotes() {
   return (
@@ -104,7 +99,6 @@ function EmptyNotes() {
   );
 }
 
-// ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function NotesFeedScreen() {
   const router = useRouter();
@@ -232,38 +226,17 @@ export default function NotesFeedScreen() {
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
 
-/**
- * Composer clearance: the absolute-positioned composer card sits roughly
- * 140px above the bottom edge on a standard iPhone (home indicator ~34 +
- * composer card ~100 + shell bottom padding ~8). spacing[7] = 48 × 3 = 144.
- */
 const COMPOSER_CLEARANCE = spacing[7] * 3;
 
 const styles = StyleSheet.create({
-  // Page background — all screens use theme.colors.background
   screen: {
     flex: 1,
     backgroundColor: theme.colors.background,
-    paddingHorizontal: spacing[4],  // 16 — matches all other screens
-    paddingTop: spacing[2],         // 8
+    paddingHorizontal: spacing[4],
+    paddingTop: spacing[2],
   },
 
-  /**
-   * Shell
-   *
-   * bg-surface = rgba(24,25,27,1) in dark — one step above background,
-   * providing real contrast without a heavy shadow.
-   *
-   * border-default = 18 % opacity border — appropriate for a surface
-   * that needs to read as a contained group.
-   *
-   * radiiNative.icon = 20 — the largest non-pill token radius.
-   *
-   * shadowsNative.low — lifts the shell just enough to separate it from the
-   * page without competing with the composer shadow.
-   */
   shell: {
     flex: 1,
     backgroundColor: theme.colors['bg-surface'],
@@ -279,7 +252,6 @@ const styles = StyleSheet.create({
     paddingBottom: COMPOSER_CLEARANCE,
   },
 
-  // ── Row ────────────────────────────────────────────────────────────────────
   row: {
     backgroundColor: 'transparent',
   },
@@ -287,89 +259,86 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors['bg-elevated'],
   },
   rowInner: {
-    paddingHorizontal: spacing[4],   // 16
-    paddingVertical: spacing[3],     // 12
-    gap: spacing[1],                 // 4
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[3],
+    gap: spacing[1],
   },
   rowTop: {
     flexDirection: 'row',
     alignItems: 'baseline',
     justifyContent: 'space-between',
-    gap: spacing[2],                 // 8
+    gap: spacing[2],
   },
   rowTitle: {
     flex: 1,
-    fontSize: theme.textVariants.body.fontSize,     // 17
+    fontSize: theme.textVariants.body.fontSize,
     fontWeight: '600',
     letterSpacing: -0.3,
-    lineHeight: theme.textVariants.body.lineHeight, // 24
+    lineHeight: theme.textVariants.body.lineHeight,
     color: theme.colors.foreground,
   },
   rowDate: {
-    fontSize: theme.textVariants.small.fontSize,    // 12
+    fontSize: theme.textVariants.small.fontSize,
     lineHeight: theme.textVariants.small.lineHeight,
     color: theme.colors['text-tertiary'],
     flexShrink: 0,
   },
   rowPreview: {
-    fontSize: theme.textVariants.small.fontSize,    // 12
+    fontSize: theme.textVariants.small.fontSize,
     lineHeight: 18,
     color: theme.colors['text-secondary'],
   },
   attachmentRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing[1],                 // 4
-    marginTop: spacing[1],           // 4
+    gap: spacing[1],
+    marginTop: spacing[1],
   },
   attachmentIcon: {
-    width: spacing[3],               // 12
-    height: spacing[3],              // 12
+    width: spacing[3],
+    height: spacing[3],
   },
   attachmentText: {
     fontSize: 11,
     color: theme.colors['text-tertiary'],
   },
 
-  // ── Separator ──────────────────────────────────────────────────────────────
-  // Inset to align with the text, not the container edge
   separator: {
     height: StyleSheet.hairlineWidth,
     backgroundColor: theme.colors['border-subtle'],
-    marginLeft: spacing[4],          // 16 — aligns with rowInner paddingHorizontal
+    marginLeft: spacing[4],
   },
 
-  // ── Empty state ────────────────────────────────────────────────────────────
   empty: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: spacing[6],   // 32
+    paddingHorizontal: spacing[6],
     paddingBottom: COMPOSER_CLEARANCE,
-    gap: spacing[2],                 // 8
+    gap: spacing[2],
   },
   emptyIconRing: {
-    width: spacing[7] + spacing[3],  // 48+12 = 60
+    width: spacing[7] + spacing[3],
     height: spacing[7] + spacing[3],
     borderRadius: radiiNative.full,
     backgroundColor: theme.colors['bg-elevated'],
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing[2],        // 8
+    marginBottom: spacing[2],
   },
   emptyIcon: {
-    width: spacing[4] + spacing[2],  // 16+8 = 24
+    width: spacing[4] + spacing[2],
     height: spacing[4] + spacing[2],
   },
   emptyTitle: {
-    fontSize: theme.textVariants.title.fontSize,    // 18
+    fontSize: theme.textVariants.title.fontSize,
     fontWeight: '600',
     letterSpacing: -0.2,
     color: theme.colors.foreground,
     textAlign: 'center',
   },
   emptyBody: {
-    fontSize: theme.textVariants.label.fontSize,    // 14
+    fontSize: theme.textVariants.label.fontSize,
     lineHeight: theme.textVariants.label.lineHeight,
     color: theme.colors['text-tertiary'],
     textAlign: 'center',

@@ -22,7 +22,6 @@ import { Alert, Platform, Share, type TextInput } from 'react-native';
 import { loadMarkdown } from './chat-message.mobile';
 import type { ChatMessageItem, MarkdownComponent } from './chat.types';
 
-// ─── Injectable services ──────────────────────────────────────────────────────
 
 export interface ChatServices {
   useChatMessages: (args: { chatId: string }) => {
@@ -42,7 +41,6 @@ export interface ChatServices {
   onNoteCreated?: () => Promise<void>;
 }
 
-// ─── Mobile-only UI state ─────────────────────────────────────────────────────
 
 interface MobileUiState {
   showDebug: boolean;
@@ -75,7 +73,6 @@ function mobileUiReducer(state: MobileUiState, action: MobileUiAction): MobileUi
   }
 }
 
-// ─── Hook ─────────────────────────────────────────────────────────────────────
 
 interface UseChatControllerInput {
   chatId: string;
@@ -152,7 +149,6 @@ export function useChatController({
     [formattedMessages],
   );
 
-  // ─── Note creation mutation ──────────────────────────────────────────────────
 
   const createNote = useMutation({
     mutationKey: ['chat-note', chatId],
@@ -170,7 +166,6 @@ export function useChatController({
     },
   });
 
-  // ─── Shared lifecycle ────────────────────────────────────────────────────────
 
   const {
     lifecycleState,
@@ -196,7 +191,6 @@ export function useChatController({
       };
     },
     onRejectReview: async () => {
-      // No server call needed for client-side proposals
     },
     onError: (_phase, _error) => {
       Alert.alert(
@@ -206,7 +200,6 @@ export function useChatController({
     },
   });
 
-  // ─── Markdown loader ─────────────────────────────────────────────────────────
 
   const markdownLoadedRef = useRef(false);
   useEffect(() => {
@@ -228,7 +221,6 @@ export function useChatController({
     };
   }, []);
 
-  // ─── Platform-specific handlers ───────────────────────────────────────────────
 
   const handleArchiveChat = useCallback(() => {
     archiveChat();

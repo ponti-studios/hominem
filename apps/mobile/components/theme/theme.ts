@@ -11,11 +11,9 @@ const MONO_FONT = fontFamiliesNative.mono;
 
 const theme = createTheme({
   colors: {
-    // ── Canonical design system tokens ───────────────────────────────────
     ...tokenColors,
   },
 
-  // Spacing — named keys for Restyle, values from canonical tokens
   spacing: {
     xs_4: tokenSpacing[1],
     sm_8: tokenSpacing[2],
@@ -27,7 +25,6 @@ const theme = createTheme({
     xl_64: tokenSpacing[8],
   },
 
-  // Border radii — full scale from canonical tokens
   borderRadii: {
     sm: radiiNative.sm,
     md: radiiNative.md,
@@ -37,10 +34,7 @@ const theme = createTheme({
     full: radiiNative.full,
   },
 
-  // Typography — Apple HIG semantic scale
-  // Use these variant names everywhere; legacy aliases kept for migration safety.
   textVariants: {
-    // ── Canonical Apple HIG scale ─────────────────────────────────────────
     /** Page titles, large numerics */
     display: {
       fontFamily: PRIMARY_FONT,
@@ -132,7 +126,6 @@ const theme = createTheme({
       color: 'text-secondary',
     },
 
-    // ── Legacy aliases (kept for migration safety — do not use in new code) ──
     /** @deprecated Use title-2 */
     title: {
       fontFamily: PRIMARY_FONT,

@@ -11,7 +11,6 @@ import { BRAND } from '@hominem/env/brand';
 /** Single source of truth for the app brand name used across auth surfaces. */
 export const AUTH_APP_NAME = BRAND.appName;
 
-// ─── UX State ─────────────────────────────────────────────────────────────────
 
 export type AuthUxState =
   | 'email-entry'
@@ -21,7 +20,6 @@ export type AuthUxState =
   | 'error'
   | 'signed-in';
 
-// ─── Copy Interfaces ──────────────────────────────────────────────────────────
 
 export interface AuthEntryCopy {
   title: string;
@@ -60,7 +58,6 @@ export interface AuthCopy {
   passkey: AuthPasskeyCopy;
 }
 
-// ─── Canonical Copy ───────────────────────────────────────────────────────────
 
 export const AUTH_COPY: AuthCopy = {
   emailEntry: {
@@ -93,7 +90,6 @@ export const AUTH_COPY: AuthCopy = {
   },
 };
 
-// ─── Per-App Auth Config ──────────────────────────────────────────────────────
 
 export interface AppAuthConfig {
   /** Human-readable product name shown in auth UI. */

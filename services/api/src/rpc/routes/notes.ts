@@ -26,7 +26,6 @@ const noteSearchQuerySchema = z.object({
 });
 const noteService = new NoteService();
 
-// ─── Routes ──────────────────────────────────────────────────────────────────
 
 export const notesRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)

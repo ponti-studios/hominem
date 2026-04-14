@@ -1,8 +1,5 @@
 import gsap from 'gsap';
 
-// ─── Timing constants ─────────────────────────────────────────────────────────
-// Use these everywhere. Never hardcode duration or easing strings.
-
 export const GSAP_DURATION_ENTER = 0.15;
 export const GSAP_DURATION_EXIT = 0.12;
 export const GSAP_DURATION_STANDARD = 0.12;
@@ -11,16 +8,9 @@ export const GSAP_EASE_ENTER = 'power2.out';
 export const GSAP_EASE_EXIT = 'power2.in';
 export const GSAP_EASE_STANDARD = 'power2.inOut';
 
-// ─── Reduced-motion guard ────────────────────────────────────────────────────
-// Call once at app init, or call reducedMotion() inline to skip non-essential
-// sequences.
-
 export function reducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
-
-// ─── focusExpand ─────────────────────────────────────────────────────────────
-// Component expanding into view (e.g. Composer open, sheet entering).
 
 export function playFocusExpand(el: HTMLElement, onComplete?: () => void) {
   if (reducedMotion()) {
@@ -38,9 +28,6 @@ export function playFocusExpand(el: HTMLElement, onComplete?: () => void) {
   gsap.fromTo(el, { opacity: 0, y: 12 }, vars);
 }
 
-// ─── focusCollapse ────────────────────────────────────────────────────────────
-// Component collapsing out of view (e.g. Composer close, sheet exiting).
-
 export function playFocusCollapse(el: HTMLElement, onComplete?: () => void) {
   if (reducedMotion()) {
     gsap.set(el, { opacity: 0, y: 8 });
@@ -56,10 +43,6 @@ export function playFocusCollapse(el: HTMLElement, onComplete?: () => void) {
   if (onComplete) vars.onComplete = onComplete;
   gsap.to(el, vars);
 }
-
-// ─── contextSwitch ───────────────────────────────────────────────────────────
-// In-place label or content transition when context changes (e.g. Composer
-// mode switch: generic → note-aware → chat-continuation).
 
 export function playContextSwitch(els: HTMLElement | HTMLElement[]) {
   if (reducedMotion()) {
@@ -78,10 +61,6 @@ export function playContextSwitch(els: HTMLElement | HTMLElement[]) {
   );
 }
 
-// ─── submitPulse ─────────────────────────────────────────────────────────────
-// Brief scale pulse on the submit button and fade-out of the input, played
-// before the form clears.
-
 export function playSubmitPulse(btnEl: HTMLElement, inputEl: HTMLElement, onComplete?: () => void) {
   if (reducedMotion()) {
     gsap.set(inputEl, { opacity: 0 });
@@ -97,10 +76,6 @@ export function playSubmitPulse(btnEl: HTMLElement, inputEl: HTMLElement, onComp
     .to(inputEl, { opacity: 0, y: -8, duration: 0.1, ease: 'power1.in' }, '<')
     .set(inputEl, { opacity: 1, y: 0 });
 }
-
-// ─── enterRow ────────────────────────────────────────────────────────────────
-// One-shot enter for a newly rendered list row (stream card, sidebar item,
-// chat message).
 
 export function playEnterRow(el: HTMLElement, delay = 0) {
   if (reducedMotion()) {
@@ -120,9 +95,6 @@ export function playEnterRow(el: HTMLElement, delay = 0) {
   );
 }
 
-// ─── exitRow ─────────────────────────────────────────────────────────────────
-// Exit for a list row being removed.
-
 export function playExitRow(el: HTMLElement, onComplete?: () => void) {
   if (reducedMotion()) {
     gsap.set(el, { opacity: 0 });
@@ -138,10 +110,6 @@ export function playExitRow(el: HTMLElement, onComplete?: () => void) {
   if (onComplete) vars.onComplete = onComplete;
   gsap.to(el, vars);
 }
-
-// ─── shimmer ─────────────────────────────────────────────────────────────────
-// Repeating opacity shimmer for skeleton / loading states. Returns the tween
-// so the caller can kill it when loading ends.
 
 export function playShimmer(el: HTMLElement): gsap.core.Tween {
   return gsap.to(el, {

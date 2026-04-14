@@ -82,7 +82,6 @@ function toNotesQuery(input: NotesListInput): Record<string, string> {
   return query;
 }
 
-// ─── NotesClient interface ────────────────────────────────────────────────────
 
 export interface NotesClient {
   list(input: NotesListInput): Promise<NotesListOutput>;
@@ -95,7 +94,6 @@ export interface NotesClient {
   archive(input: NotesArchiveInput): Promise<NotesArchiveOutput>;
 }
 
-// ─── Factory ──────────────────────────────────────────────────────────────────
 
 export function createNotesClient(rawClient: RawHonoClient): NotesClient {
   return {

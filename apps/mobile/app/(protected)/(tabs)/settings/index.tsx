@@ -22,7 +22,6 @@ import { useAuth } from '~/services/auth/auth-provider';
 import { MOBILE_PASSKEY_ENABLED } from '~/constants';
 import { useMobilePasskeyAuth } from '~/services/auth/hooks/use-mobile-passkey-auth';
 
-// ─── State ────────────────────────────────────────────────────────────────────
 
 interface AccountState {
   name: string;
@@ -59,7 +58,6 @@ function accountReducer(state: AccountState, action: AccountAction): AccountStat
   }
 }
 
-// ─── Section primitives ───────────────────────────────────────────────────────
 
 function SectionLabel({ children }: { children: string }) {
   return <Text style={styles.sectionLabel}>{children}</Text>;
@@ -148,7 +146,6 @@ function SettingsRow({
   return <View style={styles.rowPressable}>{inner}</View>;
 }
 
-// ─── Screen ───────────────────────────────────────────────────────────────────
 
 function Settings() {
   const insets = useSafeAreaInsets();
@@ -225,7 +222,6 @@ function Settings() {
       ]}
       showsVerticalScrollIndicator={false}
     >
-      {/* ── Account ─────────────────────────────────────────────────────── */}
       <SectionLabel>Account</SectionLabel>
       <SectionCard>
         <SettingsRow
@@ -273,7 +269,6 @@ function Settings() {
         />
       </SectionCard>
 
-      {/* ── Privacy ─────────────────────────────────────────────────────── */}
       <SectionLabel>Privacy</SectionLabel>
       <SectionCard>
         <SettingsRow
@@ -307,7 +302,6 @@ function Settings() {
         />
       </SectionCard>
 
-      {/* ── Chats ───────────────────────────────────────────────────────── */}
       <SectionLabel>Chats</SectionLabel>
       <SectionCard>
         <SettingsRow
@@ -317,7 +311,6 @@ function Settings() {
         />
       </SectionCard>
 
-      {/* ── Passkeys ────────────────────────────────────────────────────── */}
       {MOBILE_PASSKEY_ENABLED && (
         <>
           <SectionLabel>Passkeys</SectionLabel>
@@ -361,7 +354,6 @@ function Settings() {
         </>
       )}
 
-      {/* ── Danger zone ─────────────────────────────────────────────────── */}
       <View style={styles.dangerZone}>
         <Pressable
           onPress={onLogoutPress}
@@ -400,7 +392,6 @@ function Settings() {
 
 export default Settings;
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
 
 const ROW_HEIGHT = 50;
 const CARD_RADIUS = 14;
@@ -416,7 +407,6 @@ const styles = StyleSheet.create({
     gap: 4,
   },
 
-  // ── Section label ──────────────────────────────────────────────────────────
   sectionLabel: {
     fontSize: 13,
     fontWeight: '500',
@@ -427,7 +417,6 @@ const styles = StyleSheet.create({
     paddingBottom: 6,
   },
 
-  // ── Card ───────────────────────────────────────────────────────────────────
   sectionCard: {
     backgroundColor: theme.colors['bg-base'],
     borderRadius: CARD_RADIUS,
@@ -437,7 +426,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
 
-  // ── Row ────────────────────────────────────────────────────────────────────
   rowPressable: {
     minHeight: ROW_HEIGHT,
   },
@@ -499,7 +487,6 @@ const styles = StyleSheet.create({
     maxWidth: 160,
   },
 
-  // ── Inline name edit ───────────────────────────────────────────────────────
   inlineEditRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -527,13 +514,11 @@ const styles = StyleSheet.create({
     color: theme.colors['accent-foreground'],
   },
 
-  // ── Trash icon ─────────────────────────────────────────────────────────────
   trashIcon: {
     width: 16,
     height: 16,
   },
 
-  // ── Danger zone ────────────────────────────────────────────────────────────
   dangerZone: {
     marginTop: 32,
     gap: 1,

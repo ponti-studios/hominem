@@ -12,13 +12,11 @@
 
 import gsap from 'gsap';
 
-// ─── Mobile-specific swipe constants (kept local) ─────────────────────────────
 
 export const PILL_HEIGHT = 56;
 export const MOBILE_EXPANDED_HEIGHT_VH = 0.7; // 70dvh fraction
 export const COMPOSER_RESTING_HEIGHT = 112;
 
-// ─── playSwipeSnap (kept local — gesture-layer only) ─────────────────────────
 
 export function playSwipeSnap(el: HTMLDivElement, targetHeight: number, onComplete?: () => void) {
   const vars: gsap.TweenVars = {

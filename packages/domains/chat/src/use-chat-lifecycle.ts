@@ -13,7 +13,6 @@ import { isBlockingState, type ThoughtLifecycleState } from './lifecycle-state';
 import { deriveSessionSource, type SessionArtifactMessage } from './session-artifacts';
 import type { ArtifactType, ClassificationProposal, SessionSource } from './thought-types';
 
-// ─── Pending Review ───────────────────────────────────────────────────────────
 
 /**
  * A review proposal awaiting user confirmation.
@@ -25,7 +24,6 @@ export interface PendingReview extends ClassificationProposal {
   reviewItemId?: string;
 }
 
-// ─── State / Reducer ──────────────────────────────────────────────────────────
 
 interface LifecycleState {
   lifecycleState: ThoughtLifecycleState;
@@ -55,7 +53,6 @@ function lifecycleReducer(state: LifecycleState, action: LifecycleAction): Lifec
   }
 }
 
-// ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export interface UseChatLifecycleInput {
   /**

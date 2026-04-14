@@ -63,7 +63,6 @@ export const NotePickerDialog = memo(
           inputRef.current?.focus();
         }}
         className={cn(
-          // Positioned above the composer via the shell's relative context
           'note-picker-panel',
           'fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+80px)] top-auto',
           'm-0 mx-auto w-[calc(100%-1rem)] max-w-191',
@@ -73,7 +72,6 @@ export const NotePickerDialog = memo(
           'backdrop:bg-transparent',
         )}
       >
-        {/* Header */}
         <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border/30 px-4 py-3">
           <h2 className="text-sm font-semibold text-foreground">Attach notes</h2>
           {attachedNotes.length > 0 && (
@@ -91,7 +89,6 @@ export const NotePickerDialog = memo(
           </button>
         </div>
 
-        {/* Search */}
         <div className="shrink-0 px-3 py-2">
           <div className="flex items-center gap-2 rounded-lg bg-surface px-3 py-2">
             <Search className="size-3.5 shrink-0 text-text-tertiary" aria-hidden="true" />
@@ -106,7 +103,6 @@ export const NotePickerDialog = memo(
           </div>
         </div>
 
-        {/* Note list */}
         <ul
           className="flex-1 overflow-y-auto overscroll-contain px-1.5 pb-1.5"
           role="listbox"
@@ -161,7 +157,6 @@ export const NotePickerDialog = memo(
           )}
         </ul>
 
-        {/* Footer — compact confirm */}
         {attachedNotes.length > 0 && (
           <div className="shrink-0 border-t border-border/30 px-3 py-2">
             <Button

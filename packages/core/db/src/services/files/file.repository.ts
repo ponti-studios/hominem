@@ -5,11 +5,9 @@ import type { DbHandle } from '../../transaction';
 import type { AppFiles, JsonValue } from '../../types/database';
 import { toRequiredIsoString } from '../_shared/mappers';
 
-// ─── Row types ───────────────────────────────────────────────────────────────
 
 type FileRow = Selectable<AppFiles>;
 
-// ─── Domain output types ─────────────────────────────────────────────────────
 
 export interface FileRecord {
   id: string;
@@ -25,7 +23,6 @@ export interface FileRecord {
   uploadedAt: string;
 }
 
-// ─── Input types ─────────────────────────────────────────────────────────────
 
 export interface UpsertFileInput {
   id: string;
@@ -40,7 +37,6 @@ export interface UpsertFileInput {
   metadata?: Record<string, unknown> | null;
 }
 
-// ─── Mappers ─────────────────────────────────────────────────────────────────
 
 function deriveFileType(mimetype: string): FileRecord['type'] {
   if (mimetype.startsWith('image/')) return 'image';
@@ -75,7 +71,6 @@ function toFileRecord(row: FileRow): FileRecord {
   };
 }
 
-// ─── Repository ──────────────────────────────────────────────────────────────
 
 export const FileRepository = {
   /**
