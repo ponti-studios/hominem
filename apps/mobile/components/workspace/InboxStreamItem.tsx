@@ -223,6 +223,8 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
                 }}
                 autoFocus
                 returnKeyType="done"
+                accessibilityLabel="Note title"
+                accessibilityHint="Enter a new title for the note"
                 onSubmitEditing={() => {
                   setRenameModalVisible(false);
                   void commitRename(renameValueRef.current);
