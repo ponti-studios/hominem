@@ -3,8 +3,17 @@ import type { Note } from '@hominem/rpc/types';
 import { parseInboxTimestamp } from '@hominem/utils/dates';
 import type { RelativePathString } from 'expo-router';
 import { useRouter } from 'expo-router';
-import React, { memo, useCallback } from 'react';
-import { ActionSheetIOS, Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
+import React, { memo, useCallback, useRef, useState } from 'react';
+import {
+  ActionSheetIOS,
+  Alert,
+  Modal,
+  Platform,
+  Pressable,
+  StyleSheet,
+  TextInput,
+  View,
+} from 'react-native';
 import Reanimated, { FadeInDown, LinearTransition } from 'react-native-reanimated';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -28,32 +37,47 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
   const { requestTopReveal } = useTopAnchoredFeed();
   const iconColor = item.kind === 'note' ? theme.colors.foreground : theme.colors['text-secondary'];
 
+  const [renameModalVisible, setRenameModalVisible] = useState(false);
+  const renameValueRef = useRef(item.title ?? '');
+
   const onPress = useCallback(() => {
     router.push(item.route as RelativePathString);
   }, [item.route, router]);
 
+  const commitRename = useCallback(
+    async (newTitle: string) => {
+      const trimmed = newTitle.trim();
+      const updatedNote = await client.notes.update({
+        id: item.entityId,
+        title: trimmed.length > 0 ? trimmed : null,
+      });
+      queryClient.setQueryData<Note>(noteKeys.detail(item.entityId), updatedNote);
+      queryClient.setQueryData<Note[]>(noteKeys.all, (current) =>
+        current?.map((n) => (n.id === item.entityId ? updatedNote : n)),
+      );
+      requestTopReveal();
+      void queryClient.invalidateQueries({ queryKey: noteKeys.feeds() });
+    },
+    [client, item.entityId, queryClient, requestTopReveal],
+  );
+
   const handleRenameNote = useCallback(() => {
-    Alert.prompt(
-      'Rename note',
-      undefined,
-      async (newTitle) => {
-        if (newTitle === null) return;
-        const trimmed = newTitle.trim();
-        const updatedNote = await client.notes.update({
-          id: item.entityId,
-          title: trimmed.length > 0 ? trimmed : null,
-        });
-        queryClient.setQueryData<Note>(noteKeys.detail(item.entityId), updatedNote);
-        queryClient.setQueryData<Note[]>(noteKeys.all, (current) =>
-          current?.map((n) => (n.id === item.entityId ? updatedNote : n)),
-        );
-        requestTopReveal();
-        void queryClient.invalidateQueries({ queryKey: noteKeys.feeds() });
-      },
-      'plain-text',
-      item.title ?? '',
-    );
-  }, [client, item.entityId, item.title, queryClient, requestTopReveal]);
+    if (Platform.OS === 'ios') {
+      Alert.prompt(
+        'Rename note',
+        undefined,
+        async (newTitle) => {
+          if (newTitle === null) return;
+          await commitRename(newTitle);
+        },
+        'plain-text',
+        item.title ?? '',
+      );
+    } else {
+      renameValueRef.current = item.title ?? '';
+      setRenameModalVisible(true);
+    }
+  }, [commitRename, item.title]);
 
   const handleDeleteNote = useCallback(() => {
     Alert.alert(
@@ -179,6 +203,56 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
           </Text>
         </View>
       </Pressable>
+      {Platform.OS !== 'ios' && (
+        <Modal
+          transparent
+          animationType="fade"
+          visible={renameModalVisible}
+          onRequestClose={() => setRenameModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <Text variant="body" color="foreground" style={styles.modalTitle}>
+                Rename note
+              </Text>
+              <TextInput
+                style={styles.modalInput}
+                defaultValue={item.title ?? ''}
+                onChangeText={(text) => {
+                  renameValueRef.current = text;
+                }}
+                autoFocus
+                returnKeyType="done"
+                onSubmitEditing={() => {
+                  setRenameModalVisible(false);
+                  void commitRename(renameValueRef.current);
+                }}
+              />
+              <View style={styles.modalActions}>
+                <Pressable
+                  style={styles.modalButton}
+                  onPress={() => setRenameModalVisible(false)}
+                >
+                  <Text variant="body" color="text-secondary">
+                    Cancel
+                  </Text>
+                </Pressable>
+                <Pressable
+                  style={styles.modalButton}
+                  onPress={() => {
+                    setRenameModalVisible(false);
+                    void commitRename(renameValueRef.current);
+                  }}
+                >
+                  <Text variant="body" color="foreground">
+                    Rename
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
     </Reanimated.View>
   );
 });
@@ -259,6 +333,40 @@ const useStyles = makeStyles((t) =>
     },
     pressed: {
       backgroundColor: t.colors['emphasis-faint'],
+    },
+    modalOverlay: {
+      alignItems: 'center',
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      flex: 1,
+      justifyContent: 'center',
+    },
+    modalContainer: {
+      backgroundColor: t.colors.background,
+      borderRadius: 12,
+      gap: t.spacing.sm_12,
+      padding: t.spacing.m_16,
+      width: '80%',
+    },
+    modalTitle: {
+      fontWeight: '600',
+      textAlign: 'center',
+    },
+    modalInput: {
+      borderColor: t.colors['border-faint'],
+      borderRadius: 8,
+      borderWidth: 1,
+      color: t.colors.foreground,
+      fontSize: 15,
+      paddingHorizontal: t.spacing.sm_12,
+      paddingVertical: t.spacing.sm_8,
+    },
+    modalActions: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      gap: t.spacing.m_16,
+    },
+    modalButton: {
+      paddingVertical: t.spacing.sm_8,
     },
   }),
 );

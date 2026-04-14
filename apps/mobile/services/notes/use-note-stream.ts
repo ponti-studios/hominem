@@ -82,7 +82,7 @@ export function useNoteStream({ enabled = true }: { enabled?: boolean } = {}) {
         noteKeys.feed({ limit: DEFAULT_NOTES_FEED_LIMIT }),
       );
       const feedNotes = flattenNoteFeedPages(feedData);
-      return feedNotes.length > 0 ? feedNotes.map(toNoteStub) : undefined;
+      return feedNotes.map(toNoteStub);
     },
     enabled,
   });
