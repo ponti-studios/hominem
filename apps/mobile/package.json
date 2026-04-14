@@ -3,6 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "main": "index.js",
+  "scripts": {
+    "test": "vitest run --config vitest.config.ts",
+    "test:watch": "vitest --config vitest.config.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "expo lint"
+  },
   "dependencies": {
     "@bacons/apple-targets": "^4.0.6",
     "@better-auth/passkey": "^1.5.4",
@@ -50,7 +56,7 @@
     "expo-splash-screen": "~55.0.15",
     "expo-sqlite": "~55.0.11",
     "expo-store-review": "^55.0.9",
-    "expo-symbols": "^55.0.5",
+    "expo-symbols": "^55.0.7",
     "expo-system-ui": "~55.0.10",
     "expo-web-browser": "~55.0.10",
     "posthog-react-native": "^4.37.3",
@@ -99,12 +105,6 @@
         ]
       }
     }
-  },
-  "scripts": {
-    "test": "vitest run --config vitest.config.ts",
-    "test:watch": "vitest --config vitest.config.ts",
-    "typecheck": "tsc --noEmit -p tsconfig.json",
-    "lint": "expo lint"
   },
   "trustedDependencies": [
     "@clerk/shared",
