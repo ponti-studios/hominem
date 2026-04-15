@@ -5,7 +5,7 @@ import { colors, fontSizes, radiiNative, spacing } from '~/components/theme/toke
 import { fontFamiliesNative } from '~/components/theme/tokens/typography.native';
 import { Text } from '../typography/Text';
 import { Button } from '../ui/Button';
-import type { ChatRenderIcon } from './chat.types';
+import type { ChatRenderIcon } from '@hominem/chat';
 import { ContextAnchor } from './context-anchor';
 
 interface ChatHeaderProps {

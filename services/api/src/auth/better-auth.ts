@@ -18,7 +18,6 @@ import {
 
 import { API_BRAND } from '../brand';
 import { env } from '../env';
-import { sendEmail } from '../lib/email';
 import { recordTestOtp } from './test-otp-store';
 
 const userFieldMappings = {
@@ -123,6 +122,47 @@ function getAdvancedOptions() {
       secure: useSecureCookies,
     },
   };
+}
+
+type SendEmailParams = {
+  to: string;
+  subject: string;
+  text: string;
+  html?: string;
+};
+
+function shouldSendEmails(): boolean {
+  if (env.SEND_EMAILS === 'true') return true;
+  if (env.NODE_ENV === 'test') return false;
+  if (env.NODE_ENV === 'development') return false;
+  if (env.NODE_ENV === 'production') return true;
+  return false;
+}
+
+async function sendEmail({ to, subject, text, html }: SendEmailParams): Promise<void> {
+  if (!shouldSendEmails()) {
+    logger.info('email_skipped', { to, subject, nodeEnv: env.NODE_ENV });
+    return;
+  }
+
+  const from = env.RESEND_FROM_NAME
+    ? `${env.RESEND_FROM_NAME} <${env.RESEND_FROM_EMAIL}>`
+    : env.RESEND_FROM_EMAIL;
+
+  if (!from) {
+    throw new Error('RESEND_FROM_EMAIL is not set');
+  }
+
+  const { Resend } = await import('resend');
+  const resend = new Resend(env.RESEND_API_KEY);
+
+  await resend.emails.send({
+    to,
+    from,
+    subject,
+    text,
+    ...(html ? { html } : {}),
+  });
 }
 
 function getAuthPlugins() {

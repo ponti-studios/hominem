@@ -19,8 +19,8 @@
     "lint": "pnpm dlx oxlint ./src"
   },
   "dependencies": {
-    "@hominem/services": "workspace:*",
     "@hominem/utils": "workspace:*",
+    "ioredis": "5.8.2",
     "bullmq": "^5.0.0"
   },
   "devDependencies": {

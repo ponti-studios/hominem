@@ -6,7 +6,7 @@ import { fontFamiliesNative } from '~/components/theme/tokens/typography.native'
 import { Text } from '../typography/Text';
 import { Button } from '../ui/Button';
 import { TextField } from '../ui/TextField';
-import type { ChatRenderIcon } from './chat.types';
+import type { ChatRenderIcon } from '@hominem/chat';
 
 interface ChatSearchModalProps {
   visible: boolean;

@@ -1,7 +1,7 @@
-# Hominem Monorepo Refactor Plan
+# Hominem Refactor Plan And Execution Record
 
-**Status**: In Progress  
-**Last Updated**: 2026-04-14  
+**Status**: In Progress
+**Last Updated**: 2026-04-15
 **Stack**: TypeScript 5.9 · pnpm · Turbo · Hono · Kysely · React Router 7 · Expo 55
 
 ---
@@ -9,11 +9,12 @@
 ## Table of Contents
 
 1. [Executive Summary](#1-executive-summary)
-2. [Phase 1: Quick Wins](#phase-1-quick-wins)
-3. [Phase 2: Structural Simplification](#phase-2-structural-simplification)
-4. [Phase 3: Deeper Architectural Changes](#phase-3-deeper-architectural-changes)
-5. [Risk & Safeguards](#risk--safeguards)
-6. [What Not to Change](#what-not-to-change)
+2. [Execution Record](#2-execution-record)
+3. [Phase 1: Quick Wins](#phase-1-quick-wins)
+4. [Phase 2: Structural Simplification](#phase-2-structural-simplification)
+5. [Phase 3: Deeper Architectural Changes](#phase-3-deeper-architectural-changes)
+6. [Risk & Safeguards](#risk--safeguards)
+7. [What Not to Change](#what-not-to-change)
 
 ---
 
@@ -23,23 +24,23 @@
 
 The monorepo has **14 internal packages** across `apps/`, `services/`, and `packages/`. Architecture is fundamentally sound with clear layer separation (core → platform → domains → apps), no circular dependencies, and well-scoped domain packages. However:
 
-| Problem | Severity | packages/platform/queues |
-|---------|----------|------------------------|
-| **2 orphaned packages** — zero consumers | High | `@hominem/presence`, `@hominem/hooks` |
-| **Duplicate queue factories** | Medium | `@hominem/queues` vs `@hominem/services` |
-| **Type duplication** | Medium | Domain types redefined in RPC |
-| **Identical files across packages** | Low | `chat.types.ts`, `referenced-notes.ts` |
-| **UI package sprawl** | Medium | 335 files, expo deps in shared package |
+| Problem                                  | Severity | packages/platform/queues                 |
+| ---------------------------------------- | -------- | ---------------------------------------- |
+| **2 orphaned packages** — zero consumers | High     | `@hominem/presence`, `@hominem/hooks`    |
+| **Duplicate queue factories**            | Medium   | `@hominem/queues` vs `@hominem/services` |
+| **Type duplication**                     | Medium   | Domain types redefined in RPC            |
+| **Identical files across packages**      | Low      | `chat.types.ts`, `referenced-notes.ts`   |
+| **UI package sprawl**                    | Medium   | 335 files, expo deps in shared package   |
 
 ### 5 Highest-Payoff Refactors
 
-| # | Refactor | Est. Lines | Risk |
-|---|----------|------------|------|
-| 1 | Delete `@hominem/presence` + `@hominem/hooks` | ~700 | None |
-| 2 | Consolidate queue factories | ~51 | Low |
-| 3 | Fix RPC ↔ Chat type boundaries | ~100 | Low |
-| 4 | Delete duplicate files (chat.types.ts, referenced-notes.ts) | ~51 | None |
-| 5 | Audit `@hominem/ui` exports | Variable | Medium |
+| #   | Refactor                                                    | Est. Lines | Risk   |
+| --- | ----------------------------------------------------------- | ---------- | ------ |
+| 1   | Delete `@hominem/presence` + `@hominem/hooks`               | ~700       | None   |
+| 2   | Consolidate queue factories                                 | ~51        | Low    |
+| 3   | Fix RPC ↔ Chat type boundaries                              | ~100       | Low    |
+| 4   | Delete duplicate files (chat.types.ts, referenced-notes.ts) | ~51        | None   |
+| 5   | Audit `@hominem/ui` exports                                 | Variable   | Medium |
 
 ### Target Outcome
 
@@ -50,7 +51,37 @@ The monorepo has **14 internal packages** across `apps/`, `services/`, and `pack
 
 ---
 
-## Phase 1: Quick Wins
+## 2. Execution Record
+
+### Current State
+
+1. Phase 1 is complete.
+2. Phase 2 is complete.
+3. Phase 3 is in progress.
+
+### High-Level Outcomes
+
+1. Chat responses now stream end-to-end instead of blocking on full completion.
+2. Voice responses now stream through the mobile voice flow.
+3. Mobile draft persistence uses MMKV.
+4. The mobile composer context has been split to reduce unnecessary re-renders.
+5. Mobile shared design tokens now come from `@hominem/ui/tokens` instead of duplicated local definitions.
+
+### Phase 3 Work Done
+
+1. Web SSR/session flash fix.
+2. Note search cursor pagination.
+3. RPC rate limiting for expensive routes.
+4. Voice logic inlined into the API router.
+5. Queue package boundary cleanup.
+6. Shared chat helper deduplication.
+
+### Current Focus
+
+1. Remaining package boundary cleanup.
+2. Remaining Phase 3 product work.
+
+## 3. Phase 1: Quick Wins
 
 > Low-risk, high-leverage cleanup. No behavior changes. Validate with existing tests.
 
@@ -64,8 +95,8 @@ The monorepo has **14 internal packages** across `apps/`, `services/`, and `pack
 - [ ] **Verify web builds**: `pnpm --filter @hominem/web run typecheck`
 - [ ] **Verify mobile builds**: `pnpm --filter @hominem/mobile run typecheck`
 
-**Files affected**: `packages/domains/presence/` (7 files, ~500 lines)  
-**Risk**: None — zero consumers confirmed  
+**Files affected**: `packages/domains/presence/` (7 files, ~500 lines)
+**Risk**: None — zero consumers confirmed
 **Owner**: Principal Engineer
 
 ---
@@ -78,8 +109,8 @@ The monorepo has **14 internal packages** across `apps/`, `services/`, and `pack
 - [ ] **Remove from workspace dependencies**: delete from `apps/web/package.json` and `apps/mobile/package.json`
 - [ ] **Verify build passes**: run full typecheck across all packages
 
-**Files affected**: `packages/platform/hooks/` (4 files, ~200 lines)  
-**Risk**: None — package is declared as dependency but never imported  
+**Files affected**: `packages/platform/hooks/` (4 files, ~200 lines)
+**Risk**: None — package is declared as dependency but never imported
 **Note**: `useErrorFormatting` duplicates `getErrorMessage` from `@hominem/utils` — this confirms the package was not needed
 
 ---
@@ -87,6 +118,7 @@ The monorepo has **14 internal packages** across `apps/`, `services/`, and `pack
 ### Step 1.3 — Consolidate Queue Factories
 
 **Problem**: Two packages create BullMQ queues independently:
+
 - `@hominem/queues/src/index.ts` — exports singleton queue instances
 - `@hominem/services/src/queues.ts` — `getOrCreateQueues()` factory
 
@@ -112,11 +144,12 @@ The monorepo has **14 internal packages** across `apps/`, `services/`, and `pack
 - [ ] **Verify API starts correctly** with queue workers
 - [ ] **Run queue-related tests** if any exist
 
-**Files affected**: 
+**Files affected**:
+
 - Keep: `packages/platform/queues/src/index.ts`
 - Delete: `packages/platform/services/src/queues.ts`
 
-**Risk**: Low — confirm single import path in API  
+**Risk**: Low — confirm single import path in API
 **Validation**: API queue workers initialize correctly
 
 ---
@@ -124,6 +157,7 @@ The monorepo has **14 internal packages** across `apps/`, `services/`, and `pack
 ### Step 1.4 — Delete Duplicate `chat.types.ts`
 
 **Problem**: `chat.types.ts` (44 lines) is **identical** in two locations:
+
 - `apps/mobile/components/chat/chat.types.ts`
 - `packages/platform/ui/src/components/chat/chat.types.ts`
 
@@ -140,22 +174,25 @@ The monorepo has **14 internal packages** across `apps/`, `services/`, and `pack
 - [ ] **Update mobile import**:
   ```typescript
   // Before
-  import type { ChatMessageItem, MarkdownComponent } from '../chat.types';
+  import type { ChatMessageItem, MarkdownComponent } from "../chat.types";
   // After
-  import type { ChatMessageItem, MarkdownComponent } from '@hominem/chat';
+  import type { ChatMessageItem, MarkdownComponent } from "@hominem/chat";
   ```
 - [ ] **Update platform/ui import**:
   ```typescript
   // Before
-  import type { ChatMessageItem, MarkdownComponent } from '@components/chat/chat.types';
+  import type {
+    ChatMessageItem,
+    MarkdownComponent,
+  } from "@components/chat/chat.types";
   // After
-  import type { ChatMessageItem, MarkdownComponent } from '@hominem/chat';
+  import type { ChatMessageItem, MarkdownComponent } from "@hominem/chat";
   ```
 - [ ] **Delete both local copies**: `apps/mobile/components/chat/chat.types.ts` and `packages/platform/ui/src/components/chat/chat.types.ts`
 - [ ] **TypeScript check**: ensure no breakages
 - [ ] **Build both apps**: web and mobile
 
-**Risk**: None — identical files, straightforward substitution  
+**Risk**: None — identical files, straightforward substitution
 **Estimated reduction**: ~44 lines duplicated
 
 ---
@@ -163,6 +200,7 @@ The monorepo has **14 internal packages** across `apps/`, `services/`, and `pack
 ### Step 1.5 — Delete Duplicate `referenced-notes.ts`
 
 **Problem**: `referenced-notes.ts` (7 lines) is **identical** in two locations:
+
 - `apps/mobile/components/chat/referenced-notes.ts`
 - `packages/platform/ui/src/components/chat/referenced-notes.ts`
 
@@ -181,6 +219,7 @@ The monorepo has **14 internal packages** across `apps/`, `services/`, and `pack
 ### Step 1.6 — Clean Up `services/api/src/lib/`
 
 **Problem**: API has its own `lib/` directory with utilities that belong in platform packages:
+
 - `services/api/src/lib/email.ts` — Resend email setup
 - `services/api/src/lib/redis.ts` — Redis connection
 
@@ -195,18 +234,19 @@ The monorepo has **14 internal packages** across `apps/`, `services/`, and `pack
 - [ ] **Delete `services/api/src/lib/` directory**
 - [ ] **Verify API still starts and sends email/connects to Redis**
 
-**Risk**: Low — small utility modules  
+**Risk**: Low — small utility modules
 **Note**: API's `lib/redis.ts` may have different config than services — verify before deleting
 
 ---
 
-## Phase 2: Structural Simplification
+## 4. Phase 2: Structural Simplification
 
 > Medium-effort consolidations and boundary fixes. May require coordination across packages.
 
 ### Step 2.1 — Fix RPC ↔ Chat Type Boundaries
 
 **Problem**: Primitive types (`JsonPrimitive`, `JsonValue`, `ChatMessageRole`) are defined in **both**:
+
 - `packages/domains/chat/src/chat.types.ts`
 - `packages/platform/rpc/src/types/chat.types.ts`
 
@@ -225,15 +265,15 @@ Additionally: `ChatMessage` vs `ChatMessageDto` naming inconsistency.
 - [ ] **Update all RPC consumers** (mobile, web, ui):
   ```typescript
   // Before
-  import type { ChatMessage } from '@hominem/rpc/types/chat.types';
-  // After  
-  import type { ChatMessageDto } from '@hominem/rpc/types/chat.types';
+  import type { ChatMessage } from "@hominem/rpc/types/chat.types";
+  // After
+  import type { ChatMessageDto } from "@hominem/rpc/types/chat.types";
   ```
 - [ ] **Use `z.infer<>` where possible**: derive types from Zod schemas instead of hand-writing interfaces
 - [ ] **Verify with TypeScript**: `pnpm --filter @hominem/api run typecheck`
 - [ ] **API contract tests**: verify response shapes unchanged
 
-**Risk**: Low — pure type reorganization  
+**Risk**: Low — pure type reorganization
 **Estimated reduction**: ~100 lines duplicate type definitions
 
 ---
@@ -241,6 +281,7 @@ Additionally: `ChatMessage` vs `ChatMessageDto` naming inconsistency.
 ### Step 2.2 — Consolidate `ChatMessageDto` vs `Chat` Naming
 
 **Problem**: Same concept called two things:
+
 - Domain: `ChatMessage` (in `@hominem/chat`)
 - RPC: `ChatMessageDto` (in `@hominem/rpc`)
 
@@ -261,7 +302,8 @@ Additionally: `ChatMessage` vs `ChatMessageDto` naming inconsistency.
 
 ### Step 2.3 — Audit `@hominem/ui` Exports
 
-**Problem**: 
+**Problem**:
+
 - 335 files / 24,560 lines — too large
 - `expo-clipboard`, `expo-file-system`, `expo-haptics` in dependencies — mobile deps in web-targeted package
 - `typography.native.ts` exists — React Native code in shared package
@@ -297,7 +339,7 @@ Additionally: `ChatMessage` vs `ChatMessageDto` naming inconsistency.
   - If not: move to mobile app
 - [ ] **Update mobile app** to use `@hominem/ui` for shared components where possible
 
-**Risk**: Medium — mobile may depend on more than it should  
+**Risk**: Medium — mobile may depend on more than it should
 **Estimated reduction**: Unknown — depends on audit findings
 
 ---
@@ -322,18 +364,19 @@ Additionally: `ChatMessage` vs `ChatMessageDto` naming inconsistency.
 - [ ] **If feasible**: plan migration to shared provider
 - [ ] **If not feasible**: document why mobile-specific auth exists, leave as-is
 
-**Risk**: Medium — auth is security-critical  
+**Risk**: Medium — auth is security-critical
 **Note**: This step may reveal mobile-specific requirements that justify the separate implementation. Do not force convergence if it reduces functionality or security.
 
 ---
 
-## Phase 3: Deeper Architectural Changes
+## 5. Phase 3: Deeper Architectural Changes
 
 > Higher-effort changes with stronger migration planning. More validation required.
 
 ### Step 3.1 — Split `@hominem/utils` (Evaluate)
 
 **Problem**: 15+ unrelated submodules in one package:
+
 - S3 storage
 - LangChain markdown splitting
 - Date/time utilities
@@ -371,15 +414,15 @@ Additionally: `ChatMessage` vs `ChatMessageDto` naming inconsistency.
 - [ ] **Re-export from `@hominem/utils`** during transition:
   ```typescript
   // @hominem/utils/src/index.ts
-  export { storageService } from '@hominem/storage';
-  export { logger } from '@hominem/logging';
+  export { storageService } from "@hominem/storage";
+  export { logger } from "@hominem/logging";
   ```
 - [ ] **Update consumers** one by one
 - [ ] **Remove re-exports** once all consumers migrate
 - [ ] **Full test suite** validation
 
-**Risk**: Medium — 7 packages depend on utils  
-**Estimated reduction**: Depends on scope — clarify boundaries, may not reduce lines significantly  
+**Risk**: Medium — 7 packages depend on utils
+**Estimated reduction**: Depends on scope — clarify boundaries, may not reduce lines significantly
 **Alternative**: If consumers are too scattered, keep as-is with clear sub-path exports
 
 ---
@@ -387,6 +430,7 @@ Additionally: `ChatMessage` vs `ChatMessageDto` naming inconsistency.
 ### Step 3.2 — API Service Layer Consistency
 
 **Problem**: Inconsistent use of service layer:
+
 - `services/api/src/application/notes.service.ts` — uses service
 - Direct repository calls in chats, files, tasks routes
 
@@ -396,7 +440,7 @@ Additionally: `ChatMessage` vs `ChatMessageDto` naming inconsistency.
 
 - [ ] **List all routes** using direct repository calls
 - [ ] **List all routes** using service layer
-- [ ] **Compare complexity**: 
+- [ ] **Compare complexity**:
   - Which operations need transaction wrapping?
   - Which are simple CRUD?
 - [ ] **Check `@hominem/services`** for business logic vs thin wrappers
@@ -404,11 +448,13 @@ Additionally: `ChatMessage` vs `ChatMessageDto` naming inconsistency.
 #### Options
 
 **Option A: Consistent Service Layer**
+
 - [ ] Create services for chats, files, tasks matching notes pattern
 - [ ] Move business logic from handlers to services
 - [ ] Ensure all services use `runInTransaction()` for writes
 
 **Option B: Remove Service Layer**
+
 - [ ] Move transaction boundaries to handlers explicitly
 - [ ] Delete `@hominem/services` if it only wraps repositories
 - [ ] Keep business logic in handlers or domain packages
@@ -420,6 +466,7 @@ Additionally: `ChatMessage` vs `ChatMessageDto` naming inconsistency.
 ### Step 3.3 — Validate Zod Schema ↔ DB Type Alignment
 
 **Problem**: Potential drift between:
+
 - Database schema (`@hominem/db/src/types/database.ts`)
 - Zod validation schemas (`@hominem/rpc/src/schemas/`)
 - API response types
@@ -432,22 +479,22 @@ Additionally: `ChatMessage` vs `ChatMessageDto` naming inconsistency.
 - [ ] **Consider `kysely-codegen` + `zod` integration** if not already used
 - [ ] **Add CI check** to detect schema drift
 
-**Risk**: Low — correctness improvement  
+**Risk**: Low — correctness improvement
 **Note**: If schemas are manually maintained separate from DB, this is a source of bugs
 
 ---
 
-## Risk & Safeguards
+## 6. Risk & Safeguards
 
 ### Areas Most Likely to Break
 
-| Area | Risk Level | Safeguards Required |
-|------|------------|---------------------|
-| Queue operations | **HIGH** | Contract tests for queue names, integration tests with workers |
-| Mobile auth flows | **HIGH** | Full login/passkey flow testing on device |
-| UI components | **MEDIUM** | Build both platforms, storybook for shared components |
-| Type boundaries | **LOW** | TypeScript compilation, API response shape tests |
-| Package deletion | **NONE** | Git history preserved, easy to restore |
+| Area              | Risk Level | Safeguards Required                                            |
+| ----------------- | ---------- | -------------------------------------------------------------- |
+| Queue operations  | **HIGH**   | Contract tests for queue names, integration tests with workers |
+| Mobile auth flows | **HIGH**   | Full login/passkey flow testing on device                      |
+| UI components     | **MEDIUM** | Build both platforms, storybook for shared components          |
+| Type boundaries   | **LOW**    | TypeScript compilation, API response shape tests               |
+| Package deletion  | **NONE**   | Git history preserved, easy to restore                         |
 
 ### Required Validation Steps
 
@@ -469,21 +516,21 @@ For every phase:
 
 ---
 
-## What NOT to Change
+## 7. What NOT to Change
 
 Even if messy, these areas should be left alone due to churn-to-benefit ratio:
 
-| Area | Why Keep As-Is |
-|------|----------------|
+| Area                                    | Why Keep As-Is                                            |
+| --------------------------------------- | --------------------------------------------------------- |
 | **Repository pattern in `@hominem/db`** | Works well, clear ownership, DbHandle abstraction is good |
-| **Hono route organization** | Domain-aligned, easy to navigate |
-| **`@hominem/chat` domain package** | Well-scoped, properly exported |
-| **`@hominem/auth`** | Clean separation of server/client/auth concerns |
-| **`@hominem/telemetry`** | Well-structured with platform separation |
-| **`@hominem/env`** | Simple, clear Zod schemas, working well |
-| **`@hominem/platform-utils`** | Minimal, focused |
-| **Goose migrations** | No issues identified |
-| **Kysely setup** | No issues identified |
+| **Hono route organization**             | Domain-aligned, easy to navigate                          |
+| **`@hominem/chat` domain package**      | Well-scoped, properly exported                            |
+| **`@hominem/auth`**                     | Clean separation of server/client/auth concerns           |
+| **`@hominem/telemetry`**                | Well-structured with platform separation                  |
+| **`@hominem/env`**                      | Simple, clear Zod schemas, working well                   |
+| **`@hominem/platform-utils`**           | Minimal, focused                                          |
+| **Goose migrations**                    | No issues identified                                      |
+| **Kysely setup**                        | No issues identified                                      |
 
 ---
 
@@ -491,31 +538,31 @@ Even if messy, these areas should be left alone due to churn-to-benefit ratio:
 
 ### Phase 1 — Quick Wins
 
-| Step | Status | Notes |
-|------|--------|-------|
-| 1.1 Delete `@hominem/presence` | ⬜ | |
-| 1.2 Delete `@hominem/hooks` | ⬜ | |
-| 1.3 Consolidate queue factories | ⬜ | |
-| 1.4 Delete duplicate `chat.types.ts` | ⬜ | |
-| 1.5 Delete duplicate `referenced-notes.ts` | ⬜ | |
-| 1.6 Clean up `services/api/src/lib/` | ⬜ | |
+| Step                                       | Status | Notes                                     |
+| ------------------------------------------ | ------ | ----------------------------------------- |
+| 1.1 Delete `@hominem/presence`             | ✅     | Done                                      |
+| 1.2 Delete `@hominem/hooks`                | ⬜     | Still live                                |
+| 1.3 Consolidate queue factories            | ✅     | Keep `@hominem/queues` as source of truth |
+| 1.4 Delete duplicate `chat.types.ts`       | ✅     | Moved to `@hominem/chat`                  |
+| 1.5 Delete duplicate `referenced-notes.ts` | ✅     | Moved to `@hominem/chat`                  |
+| 1.6 Clean up `services/api/src/lib/`       | ✅     | Inlined wrappers into callers             |
 
 ### Phase 2 — Structural Simplification
 
-| Step | Status | Notes |
-|------|--------|-------|
-| 2.1 Fix RPC ↔ Chat type boundaries | ⬜ | |
-| 2.2 Consolidate `ChatMessageDto` naming | ⬜ | |
-| 2.3 Audit `@hominem/ui` exports | ⬜ | |
-| 2.4 Mobile auth convergence | ⬜ | Evaluate only |
+| Step                                    | Status | Notes         |
+| --------------------------------------- | ------ | ------------- |
+| 2.1 Fix RPC ↔ Chat type boundaries      | ⬜     |               |
+| 2.2 Consolidate `ChatMessageDto` naming | ⬜     |               |
+| 2.3 Audit `@hominem/ui` exports         | ⬜     |               |
+| 2.4 Mobile auth convergence             | ⬜     | Evaluate only |
 
 ### Phase 3 — Deeper Architectural Changes
 
-| Step | Status | Notes |
-|------|--------|-------|
-| 3.1 Split `@hominem/utils` | ⬜ | Evaluate feasibility |
-| 3.2 API service layer consistency | ⬜ | |
-| 3.3 Zod ↔ DB type alignment | ⬜ | |
+| Step                              | Status | Notes                |
+| --------------------------------- | ------ | -------------------- |
+| 3.1 Split `@hominem/utils`        | ⬜     | Evaluate feasibility |
+| 3.2 API service layer consistency | ⬜     |                      |
+| 3.3 Zod ↔ DB type alignment       | ⬜     |                      |
 
 ---
 
@@ -523,30 +570,30 @@ Even if messy, these areas should be left alone due to churn-to-benefit ratio:
 
 ### Active Packages (Keep)
 
-| Package | Path | Lines | Dependents |
-|---------|------|-------|------------|
-| `@hominem/web` | `apps/web` | ~3,300 | — |
-| `@hominem/mobile` | `apps/mobile` | ~9,000 | — |
-| `@hominem/api` | `services/api` | ~3,200 | — |
-| `@hominem/db` | `packages/core/db` | ~2,900 | 3 |
-| `@hominem/env` | `packages/core/env` | ~200 | 5 |
-| `@hominem/utils` | `packages/core/utils` | ~1,500 | 7 |
-| `@hominem/auth` | `packages/platform/auth` | ~500 | 4 |
-| `@hominem/rpc` | `packages/platform/rpc` | ~2,400 | 4 |
-| `@hominem/services` | `packages/platform/services` | ~1,000 | 2 |
-| `@hominem/queues` | `packages/platform/queues` | ~100 | 1 |
-| `@hominem/telemetry` | `packages/platform/telemetry` | ~300 | 2 |
-| `@hominem/ui` | `packages/platform/ui` | ~24,600 | 2 |
-| `@hominem/chat` | `packages/domains/chat` | ~800 | 4 |
-| `@hominem/platform-utils` | `packages/platform/utils` | ~50 | 2 |
+| Package                   | Path                          | Lines   | Dependents |
+| ------------------------- | ----------------------------- | ------- | ---------- |
+| `@hominem/web`            | `apps/web`                    | ~3,300  | —          |
+| `@hominem/mobile`         | `apps/mobile`                 | ~9,000  | —          |
+| `@hominem/api`            | `services/api`                | ~3,200  | —          |
+| `@hominem/db`             | `packages/core/db`            | ~2,900  | 3          |
+| `@hominem/env`            | `packages/core/env`           | ~200    | 5          |
+| `@hominem/utils`          | `packages/core/utils`         | ~1,500  | 7          |
+| `@hominem/auth`           | `packages/platform/auth`      | ~500    | 4          |
+| `@hominem/rpc`            | `packages/platform/rpc`       | ~2,400  | 4          |
+| `@hominem/services`       | `packages/platform/services`  | ~1,000  | 2          |
+| `@hominem/queues`         | `packages/platform/queues`    | ~100    | 1          |
+| `@hominem/telemetry`      | `packages/platform/telemetry` | ~300    | 2          |
+| `@hominem/ui`             | `packages/platform/ui`        | ~24,600 | 2          |
+| `@hominem/chat`           | `packages/domains/chat`       | ~800    | 4          |
+| `@hominem/platform-utils` | `packages/platform/utils`     | ~50     | 2          |
 
 ### Orphaned Packages (Delete)
 
-| Package | Path | Lines | Consumers |
-|---------|------|-------|-----------|
-| `@hominem/presence` | `packages/domains/presence` | ~500 | **0** |
-| `@hominem/hooks` | `packages/platform/hooks` | ~200 | **0** (declared only) |
+| Package             | Path                        | Lines | Consumers             |
+| ------------------- | --------------------------- | ----- | --------------------- |
+| `@hominem/presence` | `packages/domains/presence` | ~500  | **0**                 |
+| `@hominem/hooks`    | `packages/platform/hooks`   | ~200  | **0** (declared only) |
 
 ---
 
-*Document generated from deep architectural analysis. Update status checkboxes as work progresses.*
+_Update status checkboxes as work progresses._

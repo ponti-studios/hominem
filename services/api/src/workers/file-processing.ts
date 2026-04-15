@@ -5,7 +5,7 @@ import { fileStorageService } from '@hominem/utils/storage';
 import { logger } from '@hominem/utils/logger';
 import { Worker } from 'bullmq';
 
-import { cache } from '../lib/redis';
+import { redis as cache } from '@hominem/services/redis';
 
 let worker: Worker | null = null;
 

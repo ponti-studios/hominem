@@ -7,13 +7,13 @@ export { ChatSearchModal } from './chat-search-modal';
 export { ChatShimmerMessage } from './chat-shimmer-message';
 export { ChatThinkingIndicator } from './chat-thinking-indicator';
 export { ChatVoiceModal } from './chat-voice-modal';
-export { getReferencedNoteLabel } from './referenced-notes';
+export { getReferencedNoteLabel } from '@hominem/chat';
 export type {
   ChatIconName,
   ChatMessageItem,
   ChatRenderIcon,
   MarkdownComponent,
-} from './chat.types';
+} from '@hominem/chat';
 export { ClassificationReview } from './classification-review';
 export { ContextAnchor } from './context-anchor';
 export { VoiceModeOverlay, type VoiceModeOverlayState } from './voice-mode-overlay';

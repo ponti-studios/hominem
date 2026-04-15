@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ExtendedMessage } from '../../types/chat';
 import { filterMessagesByQuery } from '../../types/chat';
 import { ChatMessages } from './chat-messages';
-import type { ChatRenderIcon } from './chat.types';
+import type { ChatRenderIcon } from '@hominem/chat';
 import { VoiceModeOverlay, type VoiceModeOverlayState } from './voice-mode-overlay';
 
 interface ChatProps {

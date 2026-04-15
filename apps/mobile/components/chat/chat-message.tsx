@@ -7,8 +7,8 @@ import { fontFamiliesNative } from '~/components/theme/tokens/typography.native'
 import { Text } from '../typography/Text';
 import { Button } from '../ui/Button';
 import { TextArea } from '../ui/TextArea';
-import type { ChatMessageItem, ChatRenderIcon, MarkdownComponent } from './chat.types';
-import { getReferencedNoteLabel } from './referenced-notes';
+import { getReferencedNoteLabel } from '@hominem/chat';
+import type { ChatMessageItem, ChatRenderIcon, MarkdownComponent } from '@hominem/chat';
 
 type ToolCall = NonNullable<ChatMessageItem['toolCalls']>[number];
 

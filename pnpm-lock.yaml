@@ -527,15 +527,15 @@ importers:
 
   packages/platform/queues:
     dependencies:
-      '@hominem/services':
-        specifier: workspace:*
-        version: link:../services
       '@hominem/utils':
         specifier: workspace:*
         version: link:../../core/utils
       bullmq:
         specifier: ^5.0.0
         version: 5.66.4
+      ioredis:
+        specifier: 5.8.2
+        version: 5.8.2
     devDependencies:
       '@types/node':
         specifier: ^25.4.0
@@ -580,9 +580,6 @@ importers:
       '@hominem/utils':
         specifier: workspace:*
         version: link:../../core/utils
-      '@opentelemetry/api':
-        specifier: ^1.9.0
-        version: 1.9.1
       ai:
         specifier: ^4.3.19
         version: 4.3.19(react@19.2.0)(zod@4.3.6)

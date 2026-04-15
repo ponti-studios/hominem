@@ -1,7 +1,7 @@
-import { redis } from '@hominem/services/redis';
 import { logger } from '@hominem/utils/logger';
 
 import type { BaseJob } from './types';
+import { redis } from './redis';
 
 export const IMPORT_JOBS_LIST_KEY = 'import:active-jobs';
 export const IMPORT_JOB_PREFIX = 'import:job:';
@@ -77,9 +77,11 @@ export async function getUserJobs<T extends BaseJob>(
       return { jobs: [], total, page, pages: Math.ceil(total / limit) };
     }
 
-    const jobResults = await Promise.all(jobIds.map((jobId) => getJobStatus<T>(jobId)));
+    const jobResults: Array<T | null> = await Promise.all(
+      jobIds.map((jobId: string) => getJobStatus<T>(jobId)),
+    );
 
-    const validJobs: T[] = jobResults.filter((job): job is Awaited<T> => job !== null);
+    const validJobs = jobResults.filter((job): job is T => job !== null);
 
     return {
       jobs: validJobs,

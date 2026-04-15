@@ -6,7 +6,7 @@ import type { Context } from 'hono';
 import { Hono } from 'hono';
 
 import { ValidationError, ForbiddenError, UnavailableError, InternalError } from '../errors';
-import { cache } from '../lib/redis';
+import { redis as cache } from '@hominem/services/redis';
 import type { AppEnv } from '../server';
 
 export const imagesRoutes = new Hono<AppEnv>();

@@ -21,7 +21,7 @@ import {
 import { Alert, Platform, Share, type TextInput } from 'react-native';
 
 import { loadMarkdown } from '../components/chat/chat-message';
-import type { ChatMessageItem, MarkdownComponent } from '../components/chat/chat.types';
+import type { ChatMessageItem, MarkdownComponent } from '@hominem/chat';
 
 
 export interface ChatServices {
