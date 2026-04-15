@@ -5,7 +5,7 @@ import Reanimated, { FadeIn } from 'react-native-reanimated';
 
 import { makeStyles, Text } from '~/components/theme';
 import { logError } from '~/components/error-boundary/log-error';
-import { Button } from '@hominem/ui/button';
+import { Button } from '~/components/ui/Button';
 import { SymbolView } from 'expo-symbols';
 
 const ICON_RING_SIZE = 56;

@@ -1,6 +1,6 @@
 import { Link, Stack } from 'expo-router';
 import type { RelativePathString } from 'expo-router';
-import { Screen } from '@hominem/ui/page';
+import { Screen } from '~/components/layout/Page';
 import { Text, makeStyles } from '~/components/theme';
 
 export default function NotFoundScreen() {

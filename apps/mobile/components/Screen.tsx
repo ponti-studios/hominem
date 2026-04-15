@@ -1,1 +1,1 @@
-export { Screen } from '@hominem/ui/page';
+export { Screen } from '~/components/layout/Page';

@@ -1,5 +1,5 @@
 import type { NoteSearchResult } from '@hominem/rpc/types';
-import type { UploadedFile } from '@hominem/ui/types/upload';
+import type { UploadedFile } from '~/types/upload';
 
 type ComposerRouteKind = 'feed' | 'notes' | 'chat' | 'hidden';
 export type ComposerMode = 'text' | 'voice';

@@ -1,8 +1,8 @@
-import type { ChatMessageItem } from '@hominem/ui/chat';
+import type { ChatMessageItem } from '~/components/chat';
 
 // ChatMessageItem is the canonical shared type for rendered chat messages.
 // Re-exported as MessageOutput for existing consumers.
-export type { ChatMessageItem as MessageOutput } from '@hominem/ui/chat';
+export type { ChatMessageItem as MessageOutput } from '~/components/chat';
 
 function fallbackId() {
   if (globalThis.crypto && typeof globalThis.crypto.randomUUID === 'function') {

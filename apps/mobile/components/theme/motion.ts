@@ -1,4 +1,4 @@
-import { durations, translateDistances } from '@hominem/ui/tokens';
+import { durations, translateDistances } from '~/components/theme/tokens';
 import { Easing } from 'react-native-reanimated';
 
 export const VOID_MOTION_ENTER = durations.enter;

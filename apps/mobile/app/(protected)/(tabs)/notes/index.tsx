@@ -1,5 +1,5 @@
-import { radiiNative, spacing } from '@hominem/ui/tokens';
-import { shadowsNative } from '@hominem/ui/tokens/shadows';
+import { radiiNative, spacing } from '~/components/theme/tokens';
+import { shadowsNative } from '~/components/theme/tokens/shadows';
 import { FlashList, type ListRenderItem } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import type { RelativePathString } from 'expo-router';

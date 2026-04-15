@@ -1,5 +1,5 @@
-import { Button } from '@hominem/ui/button';
-import { TextField } from '@hominem/ui/text-field';
+import { Button } from '~/components/ui/Button';
+import { TextField } from '~/components/ui/TextField';
 import { Redirect } from 'expo-router';
 import type { RelativePathString } from 'expo-router';
 import { useState } from 'react';

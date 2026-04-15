@@ -1,7 +1,7 @@
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
-import { colors, spacing } from '@hominem/ui/tokens';
-import { Text } from '@hominem/ui/text';
+import { colors, spacing } from '~/components/theme/tokens';
+import { Text } from '~/components/typography/Text';
 import { Skeleton } from '~/components/animated/skeleton';
 
 type LoadingVariant = 'page' | 'inline' | 'skeleton';

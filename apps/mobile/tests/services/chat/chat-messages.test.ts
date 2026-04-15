@@ -1,4 +1,4 @@
-import { getReferencedNoteLabel } from '@hominem/ui/chat/referenced-notes';
+import { getReferencedNoteLabel } from '~/components/chat/referenced-notes';
 import { describe, expect, it } from 'vitest';
 
 import { createOptimisticMessage } from '~/services/chat/chatMessages';

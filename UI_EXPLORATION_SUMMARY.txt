@@ -1,0 +1,271 @@
+================================================================================
+                   @hominem/ui PACKAGE EXPLORATION SUMMARY
+================================================================================
+
+EXPLORATION COMPLETED: Comprehensive analysis of the @hominem/ui component 
+library and its integration with the mobile and web applications.
+
+================================================================================
+KEY FINDINGS
+================================================================================
+
+1. PACKAGE LOCATION & STRUCTURE
+   - Main package: /packages/platform/ui
+   - Mobile app: /apps/mobile (18 unique imports from @hominem/ui)
+   - Web app: /apps/web (10 unique imports from @hominem/ui)
+   - Dual-target strategy using conditional exports in package.json
+
+2. MOBILE COMPONENTS (4 MOBILE-ONLY)
+   - ListRow: iOS-style list row with SF Symbols
+   - ListShell: List container/wrapper
+   - EmptyState: Full-screen empty state with animations
+   - Surface: Mobile surface/container component
+
+3. DUAL-PLATFORM COMPONENTS (12 COMPONENTS)
+   Shared export paths with platform-specific implementations:
+   - Button, TextField, TextArea, Card, Badge
+   - Text, Heading, Separator
+   - Stack, Inline, Page, Field
+   - Chat components (separate index.ts vs index.mobile.ts)
+
+4. WEB-ONLY COMPONENTS (40+ COMPONENTS)
+   - Dialog, AlertDialog, Dropdown menu, Tabs, Accordion
+   - Composer (rich text editing)
+   - AI Elements (code blocks, reasoning, etc.)
+   - Filters, Forms, Popovers, etc.
+
+5. SHARED ACROSS ALL PLATFORMS
+   - Design tokens (colors, spacing, typography, shadows)
+   - Type definitions (chat types, upload types)
+   - Utility functions (device, clipboard, scroll)
+   - Hooks (useApiClient, useFilterState, etc.)
+   - Theme configuration
+
+================================================================================
+MOBILE COMPONENT DETAILS
+================================================================================
+
+LISTROW
+  - Props: title, subtitle, leading, trailing, onPress, destructive, disabled
+  - Features: Auto-chevron, SF Symbols, Accessibility support
+  - File: components/mobile/list-row.native.tsx
+  - Export: @hominem/ui/list-row
+
+LISTSHELL
+  - Purpose: Container for list items
+  - File: components/mobile/list-shell.native.tsx
+  - Export: @hominem/ui/list-shell
+
+EMPTYSTATE
+  - Props: title, description, sfSymbol, action, bottomOffset
+  - Features: Fade-in animation, centered layout, optional CTA
+  - File: components/mobile/empty-state.native.tsx
+  - Export: @hominem/ui/empty-state
+
+SURFACE
+  - Purpose: Basic mobile container
+  - File: components/mobile/surface.native.tsx
+  - Export: @hominem/ui/surface
+
+================================================================================
+COMPONENTS USED IN MOBILE APP
+================================================================================
+
+Actual imports found in /apps/mobile:
+  1. @hominem/ui/button
+  2. @hominem/ui/badge
+  3. @hominem/ui/card
+  4. @hominem/ui/chat (uses index.mobile.ts)
+  5. @hominem/ui/chat/referenced-notes
+  6. @hominem/ui/empty-state
+  7. @hominem/ui/list-row
+  8. @hominem/ui/list-shell
+  9. @hominem/ui/page
+  10. @hominem/ui/separator
+  11. @hominem/ui/surface
+  12. @hominem/ui/text-field
+  13. @hominem/ui/text
+  14. @hominem/ui/theme
+  15. @hominem/ui/tokens
+  16. @hominem/ui/tokens/shadows
+  17. @hominem/ui/tokens/typography.native
+  18. @hominem/ui/types/upload
+
+================================================================================
+DESIGN TOKENS
+================================================================================
+
+Available tokens:
+  - colors: Color palette (foreground, background, primary, destructive, etc.)
+  - spacing: Scale 0-12 (0px to 64px)
+  - typography / typography.native: Font definitions
+  - radii / radiiNative: Border radius values
+  - shadowsNative: React Native shadow definitions
+  - durations: Animation durations
+
+All tokens are shared between web and mobile for consistency.
+
+================================================================================
+SHARED TYPES & UTILITIES
+================================================================================
+
+TYPES
+  - ChatTypes (src/types/chat.ts): ExtendedMessage, filterMessagesByQuery
+  - UploadTypes (src/types/upload.ts): UploadedFile, ProcessedFile, etc.
+
+HOOKS
+  - useApiClient: API client factory
+  - useFilterState: Filter state management
+  - useMediaQuery: Responsive queries
+  - useMobile: Mobile detection
+  - useCountdown: Countdown timer
+  - useMaskedInput: Input masking
+  - Advanced hooks in lib/ for chat, scroll, speech, etc.
+
+UTILITIES
+  - device.ts: Device detection
+  - clipboard.ts: Clipboard operations
+  - scroll.ts: Scroll utilities
+  - utils.ts: General utilities
+  - gsap/: Animation sequences
+
+================================================================================
+ARCHITECTURE DECISIONS
+================================================================================
+
+1. CONDITIONAL EXPORTS PATTERN
+   - package.json routes imports based on platform
+   - React Native bundlers get .native.tsx files
+   - Web bundlers get .tsx files
+   - Type definitions shared for both
+
+2. SINGLE IMPORT PATH
+   - import { Button } from '@hominem/ui/button'
+   - Works for both mobile and web
+   - Platform determined by bundler
+
+3. DESIGN SYSTEM FIRST
+   - All platforms use same tokens
+   - Ensures visual consistency
+   - Centralized theme management
+
+4. FRAMEWORK-SPECIFIC IMPLEMENTATIONS
+   - Web: Radix UI + Tailwind CSS
+   - Mobile: React Native + Expo
+
+5. CHAT COMPONENT SEPARATION
+   - index.ts: Web chat components
+   - index.mobile.ts: Mobile chat components
+   - Both share types and utilities
+
+================================================================================
+DEPENDENCIES
+================================================================================
+
+WORKSPACE PACKAGES
+  - @hominem/auth
+  - @hominem/chat
+  - @hominem/rpc
+  - @hominem/utils
+
+WEB-FOCUSED LIBRARIES
+  - Radix UI (25+ packages)
+  - Tailwind CSS
+  - GSAP (animations)
+  - React Router, React Hook Form
+
+MOBILE-FOCUSED LIBRARIES
+  - React Native, Expo
+  - React Native Reanimated
+  - Expo symbols, clipboard, file system
+
+SHARED LIBRARIES
+  - @tanstack/react-query
+  - date-fns, React Markdown
+  - class-variance-authority
+
+================================================================================
+FILES GENERATED
+================================================================================
+
+Three comprehensive documentation files have been created:
+
+1. UI_EXPLORATION_REPORT.md (Main document)
+   - Complete architecture overview
+   - Detailed component inventory
+   - Dependencies breakdown
+   - Integration points
+
+2. UI_QUICK_REFERENCE.md (Developer guide)
+   - File locations
+   - Component tables
+   - Import examples
+   - Component API reference
+
+3. UI_ARCHITECTURE_DIAGRAM.md (Visual guide)
+   - High-level architecture
+   - Component organization tree
+   - Export resolution flows
+   - Dependency diagrams
+
+================================================================================
+KEY STATISTICS
+================================================================================
+
+Total Components:
+  - Mobile-only: 4
+  - Dual-platform: 12+
+  - Web-only: 40+
+  - Chat-specific: 12+
+
+Code Organization:
+  - Total export points: 41+
+  - Component directories: 12
+  - Native variant files: 17
+
+Mobile App Integration:
+  - Direct imports: 18 export paths
+  - Component re-exports in app: 8
+  - Files using @hominem/ui: ~20 files
+
+================================================================================
+DEVELOPMENT WORKFLOW
+================================================================================
+
+Commands:
+  pnpm --filter @hominem/ui run typecheck    (Type checking)
+  pnpm --filter @hominem/ui run lint         (Linting)
+  pnpm --filter @hominem/ui run format       (Code formatting)
+  pnpm --filter @hominem/ui run storybook    (Documentation)
+  pnpm --filter @hominem/ui run test:storybook (Test stories)
+
+Testing:
+  - Storybook at http://localhost:6006
+  - Story files for all major components
+  - Vitest configuration
+
+================================================================================
+NEXT STEPS FOR DEVELOPERS
+================================================================================
+
+1. Review UI_EXPLORATION_REPORT.md for complete architecture
+2. Use UI_QUICK_REFERENCE.md for import paths and APIs
+3. Reference UI_ARCHITECTURE_DIAGRAM.md for visual understanding
+4. Run Storybook for interactive component testing
+5. Check mobile app /apps/mobile for real-world usage examples
+
+================================================================================
+CONCLUSION
+================================================================================
+
+The @hominem/ui package is a well-structured, cross-platform component library
+using sophisticated conditional exports. It successfully serves both web and
+mobile applications with platform-specific implementations while maintaining
+a shared design system. The architecture prioritizes code reuse, consistency,
+and platform-optimal implementations.
+
+Mobile app currently uses 18 distinct exports, with strong focus on essential
+UI components, form inputs, chat functionality, and design tokens. All
+components follow consistent patterns with proper TypeScript typing.
+
+================================================================================

@@ -8,7 +8,7 @@ import {
   type ChatRenderIcon,
   type ChatServices,
   useChatController,
-} from '@hominem/ui/chat';
+} from '~/components/chat';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import type { RelativePathString } from 'expo-router';
@@ -21,7 +21,7 @@ import { useActiveChat, useArchiveChat, useChatMessages, useSendMessage } from '
 import { useTTS } from '~/components/media/use-tts';
 import { theme } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
-import { EmptyState } from '@hominem/ui/empty-state';
+import { EmptyState } from '~/components/ui/EmptyState';
 import {
   createChatInboxRefreshSnapshot,
   upsertInboxSessionActivity,

@@ -2,8 +2,8 @@ import {
   colors as tokenColors,
   radiiNative,
   spacing as tokenSpacing,
-} from '@hominem/ui/tokens';
-import { fontFamiliesNative } from '@hominem/ui/tokens/typography.native';
+} from '~/components/theme/tokens';
+import { fontFamiliesNative } from '~/components/theme/tokens/typography.native';
 import { createTheme } from '@shopify/restyle';
 
 const theme = createTheme({

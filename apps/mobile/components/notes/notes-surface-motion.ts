@@ -1,4 +1,4 @@
-import { durations } from '@hominem/ui/tokens';
+import { durations } from '~/components/theme/tokens';
 import {
   FadeIn,
   FadeInDown,

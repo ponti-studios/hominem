@@ -1,4 +1,4 @@
-import { Button } from '@hominem/ui/button';
+import { Button } from '~/components/ui/Button';
 import { View, StyleSheet } from 'react-native';
 
 import { makeStyles, Text } from '~/components/theme';

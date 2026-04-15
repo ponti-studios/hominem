@@ -3,8 +3,8 @@ import { Stack, useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { colors, radiiNative, spacing } from '@hominem/ui/tokens';
-import { Text } from '@hominem/ui/text';
+import { colors, radiiNative, spacing } from '~/components/theme/tokens';
+import { Text } from '~/components/typography/Text';
 
 import { useArchivedSessions } from '~/hooks/useArchivedSessions';
 import AppIcon from '~/components/ui/icon';

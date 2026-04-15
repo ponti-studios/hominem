@@ -9,37 +9,30 @@
     },
     "./loading-state": {
       "types": "./src/components/loading-state.tsx",
-      "react-native": "./src/components/loading-state.native.tsx",
       "default": "./src/components/loading-state.tsx"
     },
     "./button": {
       "types": "./src/components/ui/button.tsx",
-      "react-native": "./src/components/ui/button.native.tsx",
       "default": "./src/components/ui/button.tsx"
     },
     "./badge": {
       "types": "./src/components/ui/badge.tsx",
-      "react-native": "./src/components/ui/badge.native.tsx",
       "default": "./src/components/ui/badge.tsx"
     },
     "./heading": {
       "types": "./src/components/typography/heading.tsx",
-      "react-native": "./src/components/typography/heading.native.tsx",
       "default": "./src/components/typography/heading.tsx"
     },
     "./text": {
       "types": "./src/components/typography/text.tsx",
-      "react-native": "./src/components/typography/text.native.tsx",
       "default": "./src/components/typography/text.tsx"
     },
     "./text-field": {
       "types": "./src/components/ui/text-field.tsx",
-      "react-native": "./src/components/ui/text-field.native.tsx",
       "default": "./src/components/ui/text-field.tsx"
     },
     "./text-area": {
       "types": "./src/components/ui/text-area.tsx",
-      "react-native": "./src/components/ui/text-area.native.tsx",
       "default": "./src/components/ui/text-area.tsx"
     },
     "./select-field": {
@@ -48,33 +41,19 @@
     },
     "./field": {
       "types": "./src/components/ui/field.tsx",
-      "react-native": "./src/components/ui/field.native.tsx",
       "default": "./src/components/ui/field.tsx"
     },
     "./stack": {
       "types": "./src/components/layout/stack.tsx",
-      "react-native": "./src/components/layout/stack.native.tsx",
       "default": "./src/components/layout/stack.tsx"
     },
     "./inline": {
       "types": "./src/components/layout/inline.tsx",
-      "react-native": "./src/components/layout/inline.native.tsx",
       "default": "./src/components/layout/inline.tsx"
     },
     "./page": {
       "types": "./src/components/layout/page.tsx",
-      "react-native": "./src/components/layout/page.native.tsx",
       "default": "./src/components/layout/page.tsx"
-    },
-    "./list-row": {
-      "types": "./src/components/mobile/list-row.native.tsx",
-      "react-native": "./src/components/mobile/list-row.native.tsx",
-      "default": "./src/components/mobile/list-row.native.tsx"
-    },
-    "./list-shell": {
-      "types": "./src/components/mobile/list-shell.native.tsx",
-      "react-native": "./src/components/mobile/list-shell.native.tsx",
-      "default": "./src/components/mobile/list-shell.native.tsx"
     },
     "./input": {
       "types": "./src/components/ui/input.tsx",
@@ -100,25 +79,13 @@
       "types": "./src/components/ui/dropdown-menu.tsx",
       "default": "./src/components/ui/dropdown-menu.tsx"
     },
-    "./empty-state": {
-      "types": "./src/components/mobile/empty-state.native.tsx",
-      "react-native": "./src/components/mobile/empty-state.native.tsx",
-      "default": "./src/components/mobile/empty-state.native.tsx"
-    },
     "./card": {
       "types": "./src/components/ui/card.tsx",
-      "react-native": "./src/components/ui/card.native.tsx",
       "default": "./src/components/ui/card.tsx"
     },
     "./separator": {
       "types": "./src/components/ui/separator.tsx",
-      "react-native": "./src/components/ui/separator.native.tsx",
       "default": "./src/components/ui/separator.tsx"
-    },
-    "./surface": {
-      "types": "./src/components/mobile/surface.native.tsx",
-      "react-native": "./src/components/mobile/surface.native.tsx",
-      "default": "./src/components/mobile/surface.native.tsx"
     },
     "./filters": {
       "types": "./src/components/filters/index.ts",
@@ -150,7 +117,6 @@
     },
     "./chat": {
       "types": "./src/components/chat/index.ts",
-      "react-native": "./src/components/chat/index.mobile.ts",
       "default": "./src/components/chat/index.ts"
     },
     "./chat/referenced-notes": {

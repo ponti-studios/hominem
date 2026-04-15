@@ -1,6 +1,6 @@
 import { AUTH_COPY, CHAT_AUTH_CONFIG } from '@hominem/auth';
-import { Button } from '@hominem/ui/button';
-import { TextField } from '@hominem/ui/text-field';
+import { Button } from '~/components/ui/Button';
+import { TextField } from '~/components/ui/TextField';
 import type { RelativePathString } from 'expo-router';
 import { Redirect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';

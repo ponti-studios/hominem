@@ -1,4 +1,4 @@
-import type { UploadedFile } from '@hominem/ui/types/upload';
+import type { UploadedFile } from '~/types/upload';
 import {
   CHAT_UPLOAD_MAX_FILE_COUNT,
   CHAT_UPLOAD_MAX_FILE_SIZE_BYTES,
