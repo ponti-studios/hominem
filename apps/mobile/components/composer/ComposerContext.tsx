@@ -68,6 +68,8 @@ export const ComposerProvider = ({ children }: PropsWithChildren) => {
     feed: createEmptyComposerDraft(),
   }));
   const [composerClearance, setComposerClearance] = useState(0);
+  const [isRecording, setIsRecording] = useState(false);
+  const [mode, setMode] = useState<ComposerMode>('text');
   const activeDraft = drafts[target.key] ?? createEmptyComposerDraft();
 
   // Draft persistence
@@ -94,6 +96,12 @@ export const ComposerProvider = ({ children }: PropsWithChildren) => {
     }
     draftPersistence.debouncedSaveDraft(activeDraft);
   }, [activeDraft, target.kind, draftPersistence]);
+
+  // Reset ephemeral state when target changes
+  useEffect(() => {
+    setIsRecording(false);
+    setMode('text');
+  }, [target.key]);
 
   const updateDraft = useCallback(
     (updater: DraftUpdater) => {
@@ -123,26 +131,6 @@ export const ComposerProvider = ({ children }: PropsWithChildren) => {
       updateDraft((draft) => ({
         ...draft,
         attachments: typeof value === 'function' ? value(draft.attachments) : value,
-      }));
-    },
-    [updateDraft],
-  );
-
-  const setIsRecording = useCallback(
-    (value: boolean) => {
-      updateDraft((draft) => ({
-        ...draft,
-        isRecording: value,
-      }));
-    },
-    [updateDraft],
-  );
-
-  const setMode = useCallback(
-    (value: ComposerMode) => {
-      updateDraft((draft) => ({
-        ...draft,
-        mode: value,
       }));
     },
     [updateDraft],
@@ -195,9 +183,9 @@ export const ComposerProvider = ({ children }: PropsWithChildren) => {
       setMessage,
       attachments: activeDraft.attachments,
       setAttachments,
-      isRecording: activeDraft.isRecording,
+      isRecording,
       setIsRecording,
-      mode: activeDraft.mode,
+      mode,
       setMode,
       selectedNotes: activeDraft.selectedNotes,
       setSelectedNotes,
@@ -209,13 +197,13 @@ export const ComposerProvider = ({ children }: PropsWithChildren) => {
     }),
     [
       activeDraft.attachments,
-      activeDraft.isRecording,
-      activeDraft.mode,
       activeDraft.selectedNotes,
       addSelectedNote,
       activeDraft.text,
       clearDraft,
       composerClearance,
+      isRecording,
+      mode,
       removeSelectedNote,
       setAttachments,
       setComposerClearance,

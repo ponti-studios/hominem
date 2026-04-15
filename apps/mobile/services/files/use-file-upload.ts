@@ -114,10 +114,9 @@ async function performMobileUploads(
   },
 ): Promise<MobileUploadBatchResult> {
   const fetchImpl = options?.fetchImpl ?? fetch;
-  const uploaded: MobileUploadedAsset[] = [];
-  const errors: string[] = [];
+  let completedCount = 0;
 
-  for (const [index, asset] of assets.entries()) {
+  const uploadAsset = async (asset: MobileUploadAsset): Promise<MobileUploadedAsset | string> => {
     const originalName = asset.fileName ?? getFallbackFileName(asset.uri);
 
     try {
@@ -138,15 +137,31 @@ async function performMobileUploads(
 
       const completion = parseUploadResponse(await api.upload(formData));
 
-      uploaded.push({
+      completedCount++;
+      options?.onProgress?.(Math.round((completedCount / assets.length) * 100));
+
+      return {
         assetId: asset.assetId,
         localUri: asset.uri,
         uploadedFile: toUploadedFile(completion.file),
-      });
+      };
     } catch (error) {
-      errors.push(`${originalName}: ${error instanceof Error ? error.message : 'Upload failed'}`);
-    } finally {
-      options?.onProgress?.(Math.round(((index + 1) / assets.length) * 100));
+      completedCount++;
+      options?.onProgress?.(Math.round((completedCount / assets.length) * 100));
+      return `${originalName}: ${error instanceof Error ? error.message : 'Upload failed'}`;
+    }
+  };
+
+  const results = await Promise.all(assets.map(uploadAsset));
+
+  const uploaded: MobileUploadedAsset[] = [];
+  const errors: string[] = [];
+
+  for (const result of results) {
+    if (typeof result === 'string') {
+      errors.push(result);
+    } else {
+      uploaded.push(result);
     }
   }
 

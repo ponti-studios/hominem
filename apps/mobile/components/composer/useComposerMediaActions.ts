@@ -125,11 +125,26 @@ export function useComposerMediaActions({
   const handleCameraCapture = async (photo: { uri: string; fileName?: string }) => {
     clearErrors();
 
+    const fileName = photo.fileName ?? photo.uri.split('/').pop() ?? 'photo';
+    const extension = fileName.split('.').pop()?.toLowerCase() ?? 'jpg';
+    
+    const mimeTypeMap: Record<string, string> = {
+      heic: 'image/heic',
+      heif: 'image/heif',
+      jpeg: 'image/jpeg',
+      jpg: 'image/jpeg',
+      png: 'image/png',
+      webp: 'image/webp',
+      gif: 'image/gif',
+    };
+
+    const mimeType = mimeTypeMap[extension] || 'image/jpeg';
+
     return appendUploadedAssets([
       {
         assetId: photo.uri,
         fileName: photo.fileName ?? null,
-        mimeType: 'image/jpeg',
+        mimeType,
         type: 'image',
         uri: photo.uri,
       },

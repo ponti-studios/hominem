@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 
@@ -19,11 +19,21 @@ export function VoiceSessionModal({
 }: VoiceSessionModalProps) {
   const styles = useStyles();
   const snapPoints = useMemo(() => ['50%', '90%'], []);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleDismiss = useCallback(() => {
+    setErrorMessage(null);
     bottomSheetModalRef.current?.dismiss();
     onClose();
   }, [bottomSheetModalRef, onClose]);
+
+  const handleError = useCallback(() => {
+    setErrorMessage('Transcription failed. Please try again.');
+  }, []);
+
+  const handleRetry = useCallback(() => {
+    setErrorMessage(null);
+  }, []);
 
   return (
     <BottomSheetModal
@@ -50,18 +60,33 @@ export function VoiceSessionModal({
         </View>
 
         <View style={styles.body}>
-          <VoiceInput
-            autoTranscribe
-            onAudioTranscribed={(transcription) => {
-              onAudioTranscribed(transcription);
-              handleDismiss();
-            }}
-            onError={handleDismiss}
-            style={styles.micButton}
-          />
-          <Text variant="caption1" color="text-secondary" style={styles.hint}>
-            Tap to record · tap again to stop
-          </Text>
+          {errorMessage ? (
+            <View style={styles.errorContainer}>
+              <Text variant="caption1" color="text-secondary" style={styles.errorText}>
+                {errorMessage}
+              </Text>
+              <Pressable onPress={handleRetry} style={styles.retryButton}>
+                <Text variant="caption1" color="foreground">
+                  Try Again
+                </Text>
+              </Pressable>
+            </View>
+          ) : (
+            <>
+              <VoiceInput
+                autoTranscribe
+                onAudioTranscribed={(transcription) => {
+                  onAudioTranscribed(transcription);
+                  handleDismiss();
+                }}
+                onError={handleError}
+                style={styles.micButton}
+              />
+              <Text variant="caption1" color="text-secondary" style={styles.hint}>
+                Tap to record · tap again to stop
+              </Text>
+            </>
+          )}
         </View>
       </BottomSheetView>
     </BottomSheetModal>
@@ -103,6 +128,22 @@ const useStyles = makeStyles((t) =>
     },
     hint: {
       textAlign: 'center',
+    },
+    errorContainer: {
+      alignItems: 'center',
+      gap: t.spacing.m_16,
+      paddingHorizontal: t.spacing.m_16,
+    },
+    errorText: {
+      textAlign: 'center',
+      color: t.colors.destructive,
+    },
+    retryButton: {
+      paddingHorizontal: t.spacing.m_16,
+      paddingVertical: t.spacing.sm_8,
+      borderRadius: t.borderRadii.sm,
+      borderWidth: 1,
+      borderColor: t.colors['border-default'],
     },
   }),
 );

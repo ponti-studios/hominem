@@ -24,8 +24,6 @@ export interface ComposerTarget {
 export interface ComposerDraft {
   text: string;
   attachments: ComposerAttachment[];
-  isRecording: boolean;
-  mode: ComposerMode;
   selectedNotes: ComposerSelectedNote[];
 }
 
@@ -64,8 +62,6 @@ export function createEmptyComposerDraft(): ComposerDraft {
   return {
     text: '',
     attachments: [],
-    isRecording: false,
-    mode: 'text',
     selectedNotes: [],
   };
 }
@@ -144,7 +140,7 @@ export function deriveComposerPresentation(
   if (target.kind === 'chat') {
     return {
       placeholder: isRecording ? 'Listening…' : 'Message',
-      primaryActionLabel: hasText ? 'Send' : 'Send',
+      primaryActionLabel: 'Send',
       secondaryActionLabel: null,
       showsAttachmentButton: true,
       showsVoiceButton: true,
