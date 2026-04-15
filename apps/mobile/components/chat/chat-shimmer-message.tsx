@@ -8,7 +8,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { colors, durations, radiiNative, spacing } from '~/components/theme/tokens';
+import { colors, durations, radii, spacing } from '~/components/theme/tokens';
 
 const SHIMMER_DURATION = durations.standard * 5;
 
@@ -62,7 +62,7 @@ export function ChatShimmerMessage({ variant = 'assistant' }: ChatShimmerMessage
 const styles = StyleSheet.create({
   line: {
     backgroundColor: colors['bg-surface'],
-    borderRadius: radiiNative.md,
+    borderRadius: radii.md,
     height: 16,
   },
   lineFull: {
@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
   },
   userBubble: {
     backgroundColor: colors['bg-surface'],
-    borderRadius: radiiNative.md,
+    borderRadius: radii.md,
     height: 56,
     maxWidth: 420,
     width: '78%',

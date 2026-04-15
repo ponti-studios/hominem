@@ -1,5 +1,5 @@
 import type { NoteSearchResult } from "@hominem/rpc/types";
-import { radiiNative, shadowsNative, spacing } from "@hominem/ui/tokens";
+import { radii, shadowsNative, spacing } from "@hominem/ui/tokens";
 import { Image } from "expo-image";
 import { type SFSymbol } from "expo-symbols";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -526,7 +526,7 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: MAX_WIDTH,
     backgroundColor: theme.colors["bg-elevated"],
-    borderRadius: radiiNative.md,
+    borderRadius: radii.md,
     borderCurve: "continuous",
     paddingHorizontal: spacing[1],
     paddingTop: spacing[1],
@@ -572,7 +572,7 @@ const styles = StyleSheet.create({
   sendBtn: {
     width: SEND_BTN_SIZE,
     height: SEND_BTN_SIZE,
-    borderRadius: radiiNative.full,
+    borderRadius: radii.full,
     backgroundColor: theme.colors.foreground,
     alignItems: "center",
     justifyContent: "center",
@@ -590,7 +590,7 @@ const styles = StyleSheet.create({
     height: SECONDARY_BTN_SIZE,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: radiiNative.md,
+    borderRadius: radii.md,
     borderCurve: "continuous",
   },
   secondaryBtnDisabled: {
@@ -609,7 +609,7 @@ const styles = StyleSheet.create({
   thumb: {
     width: spacing[4] * 3,
     height: spacing[4] * 3,
-    borderRadius: radiiNative.md,
+    borderRadius: radii.md,
     borderCurve: "continuous",
     overflow: "hidden",
     backgroundColor: theme.colors["bg-surface"],
@@ -624,7 +624,7 @@ const styles = StyleSheet.create({
     right: spacing[1],
     width: spacing[2] * 2,
     height: spacing[2] * 2,
-    borderRadius: radiiNative.full,
+    borderRadius: radii.full,
     backgroundColor: theme.colors["overlay-modal-high"],
     alignItems: "center",
     justifyContent: "center",
@@ -654,7 +654,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: theme.colors["bg-surface"],
     borderColor: theme.colors["border-default"],
-    borderRadius: radiiNative.full,
+    borderRadius: radii.full,
     borderWidth: 1,
     flexDirection: "row",
     gap: spacing[1],
@@ -663,7 +663,7 @@ const styles = StyleSheet.create({
   },
   selectionChipButton: {
     alignItems: "center",
-    borderRadius: radiiNative.full,
+    borderRadius: radii.full,
     height: spacing[4],
     justifyContent: "center",
     width: spacing[4],
@@ -679,7 +679,7 @@ const styles = StyleSheet.create({
   suggestions: {
     backgroundColor: theme.colors["bg-surface"],
     borderColor: theme.colors["border-default"],
-    borderRadius: radiiNative.md,
+    borderRadius: radii.md,
     borderWidth: 1,
     overflow: "hidden",
   },

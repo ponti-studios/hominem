@@ -2,7 +2,7 @@ import type { ArtifactType } from '@hominem/rpc/types';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors, radiiNative, spacing } from '~/components/theme/tokens';
+import { colors, radii, spacing } from '~/components/theme/tokens';
 import { Text } from '../typography/Text';
 import { Button } from '../ui/Button';
 import { buildConversationActionsModel } from './conversation-actions.model';
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
   handle: {
     alignSelf: 'center',
     backgroundColor: colors['border-default'],
-    borderRadius: radiiNative.full,
+    borderRadius: radii.full,
     height: 4,
     marginBottom: spacing[1],
     width: 36,
@@ -141,8 +141,8 @@ const styles = StyleSheet.create({
   sheet: {
     backgroundColor: colors.background,
     borderColor: colors['border-default'],
-    borderTopLeftRadius: radiiNative.md,
-    borderTopRightRadius: radiiNative.md,
+    borderTopLeftRadius: radii.md,
+    borderTopRightRadius: radii.md,
     borderTopWidth: 1,
     gap: spacing[4],
     padding: spacing[5],

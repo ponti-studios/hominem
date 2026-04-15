@@ -8,7 +8,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors, durations, fontSizes, radiiNative, spacing } from '~/components/theme/tokens';
+import { colors, durations, fontSizes, radii, spacing } from '~/components/theme/tokens';
 import { fontFamiliesNative } from '~/components/theme/tokens/typography.native';
 import { Text } from '../typography/Text';
 import { Button } from '../ui/Button';
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
   handle: {
     alignSelf: 'center',
     backgroundColor: colors['border-default'],
-    borderRadius: radiiNative.full,
+    borderRadius: radii.full,
     height: 4,
     marginBottom: spacing[1],
     width: 36,
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
   preview: {
     backgroundColor: colors.muted,
     borderColor: colors['border-default'],
-    borderRadius: radiiNative.md,
+    borderRadius: radii.md,
     borderWidth: 1,
     maxHeight: 120,
     padding: spacing[3],
@@ -182,8 +182,8 @@ const styles = StyleSheet.create({
   sheet: {
     backgroundColor: colors.background,
     borderColor: colors['border-default'],
-    borderTopLeftRadius: radiiNative.md,
-    borderTopRightRadius: radiiNative.md,
+    borderTopLeftRadius: radii.md,
+    borderTopRightRadius: radii.md,
     borderTopWidth: 1,
     gap: spacing[4],
     padding: spacing[5],

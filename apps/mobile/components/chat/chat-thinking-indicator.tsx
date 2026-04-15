@@ -9,7 +9,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { colors, durations, fontSizes, radiiNative, spacing } from '~/components/theme/tokens';
+import { colors, durations, fontSizes, radii, spacing } from '~/components/theme/tokens';
 import { Text } from '../typography/Text';
 
 const DOT_UP_DURATION = durations.enter;
@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
   },
   dot: {
     backgroundColor: colors.foreground,
-    borderRadius: radiiNative.md,
+    borderRadius: radii.md,
     height: 8,
     opacity: 0.65,
     width: 8,

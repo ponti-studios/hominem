@@ -3,7 +3,7 @@ import { FadeIn } from 'react-native-reanimated';
 import Reanimated from 'react-native-reanimated';
 import { StyleSheet, View } from 'react-native';
 
-import { radiiNative, spacing, colors } from '../theme/tokens';
+import { radii, spacing, colors } from '../theme/tokens';
 import { Button } from './Button';
 import { Text } from '../typography/Text';
 
@@ -59,7 +59,7 @@ const styles = StyleSheet.create({
   iconRing: {
     alignItems: 'center',
     backgroundColor: colors['bg-elevated'],
-    borderRadius: radiiNative.full,
+    borderRadius: radii.full,
     height: ICON_RING_SIZE,
     justifyContent: 'center',
     marginBottom: spacing[2],

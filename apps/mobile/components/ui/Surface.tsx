@@ -1,10 +1,10 @@
 import { type ReactNode } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { colors, radiiNative, shadowsNative } from '../theme/tokens';
+import { colors, radii, shadowsNative } from '../theme/tokens';
 
 type Elevation = 'surface' | 'elevated' | 'overlay';
-type Radius = keyof typeof radiiNative;
+type Radius = keyof typeof radii;
 
 export interface SurfaceProps {
   border?: boolean | undefined;
@@ -40,7 +40,7 @@ function Surface({
       style={[
         styles.base,
         elevationStyles[elevation],
-        { borderRadius: radiiNative[radius] },
+        { borderRadius: radii[radius] },
         border ? styles.border : null,
         shadow ? styles.shadow : null,
         style,

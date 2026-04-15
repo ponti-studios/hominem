@@ -287,16 +287,18 @@ Additionally: `ChatMessage` vs `ChatMessageDto` naming inconsistency.
 
 **Action**: Standardize naming.
 
-- [ ] **Decide convention**: `Dto` suffix for all wire types, or bare names for domain
-- [ ] **Propagate change across**:
+- [x] **Decide convention**: bare names for domain types, `Dto` suffix for wire types
+- [x] **Propagate change across**:
   - `packages/platform/rpc/src/types/`
   - `packages/platform/rpc/src/schemas/`
   - `services/api/src/rpc/routes/chats.ts`
   - `apps/web/` imports
   - `apps/mobile/` imports
-- [ ] **TypeScript and build verification**
+- [x] **TypeScript and build verification**
 
 **Risk**: Low — rename only, update imports
+
+**Note**: No additional code changes were needed after `2.1`; the naming convention is now explicit and consistent.
 
 ---
 
@@ -306,41 +308,42 @@ Additionally: `ChatMessage` vs `ChatMessageDto` naming inconsistency.
 
 - 335 files / 24,560 lines — too large
 - `expo-clipboard`, `expo-file-system`, `expo-haptics` in dependencies — mobile deps in web-targeted package
-- `typography.native.ts` exists — React Native code in shared package
 - Mobile has **another** `components/ui/` with duplicate components
+- `@hominem/ui` must remain platform-neutral and contain no mobile-specific logic
+- Native typography logic now lives only in the mobile app
 
 **Action**: Comprehensive audit to separate web-only from cross-platform.
 
 #### Audit Checklist
 
-- [ ] **List all exports** from `@hominem/ui/src/index.ts`
-- [ ] **Categorize each export**:
-  - [ ] Cross-platform (design tokens, base components with platform variants)
-  - [ ] Web-only (Radix UI, Tailwind-specific)
-  - [ ] Mobile deps accidentally included
-- [ ] **Identify `expo-*` dependencies** in `packages/platform/ui/package.json`:
-  - [ ] `expo-clipboard`
-  - [ ] `expo-file-system`
-  - [ ] `expo-haptics`
-  - [ ] Any others
-- [ ] **Check for `Platform.select()` usage** vs separate files (`*.native.ts`, `*.web.ts`)
-- [ ] **Audit mobile's `apps/mobile/components/ui/`**:
-  - [ ] List all components
-  - [ ] Compare with `@hominem/ui` equivalents
-  - [ ] Determine which should use shared package
+- [x] **List all exports** from `@hominem/ui/src/index.ts`
+- [x] **Categorize each export**:
+   - [x] Cross-platform (design tokens, base components with platform variants)
+   - [x] Web-only (Radix UI, Tailwind-specific)
+   - [x] Mobile deps accidentally included
+- [x] **Identify `expo-*` dependencies** in `packages/platform/ui/package.json`:
+   - [x] `expo-clipboard`
+   - [x] `expo-file-system`
+   - [x] `expo-haptics`
+   - [x] Any others
+- [x] **Check for `Platform.select()` usage** vs separate files (`*.native.ts`, `*.web.ts`)
+- [x] **Audit mobile's `apps/mobile/components/ui/`**:
+   - [x] List all components
+   - [x] Compare with `@hominem/ui` equivalents
+   - [x] Determine which should use shared package
 
 #### Refactoring Actions
 
-- [ ] **Move mobile-only components** out of `@hominem/ui` to mobile app
-- [ ] **Move web-only components** to separate export or mark clearly
-- [ ] **Remove `expo-*` dependencies** from `@hominem/ui` if truly not needed
-- [ ] **Decide on `typography.native.ts`**:
-  - If cross-platform: ensure proper `Platform.select()` usage
-  - If not: move to mobile app
-- [ ] **Update mobile app** to use `@hominem/ui` for shared components where possible
+- [x] **Move mobile-only components** out of `@hominem/ui` to mobile app
+- [x] **Move web-only components** to separate export or mark clearly
+- [x] **Remove `expo-*` dependencies** from `@hominem/ui` if truly not needed
+- [x] **Update mobile app** to use `@hominem/ui` for shared components where possible
+- [x] **Ensure `@hominem/ui` contains no mobile-specific logic**; move any native-only behavior to mobile-local code
+- [x] **Remove native typography logic from `@hominem/ui`**
+- [x] **Remove `radiiNative` split** and use shared `radii` everywhere
 
-**Risk**: Medium — mobile may depend on more than it should
-**Estimated reduction**: Unknown — depends on audit findings
+**Risk**: Low — no source imports of removed `expo-*`/native packages were found
+**Estimated reduction**: Small — unused dependency cleanup and token naming simplification
 
 ---
 
@@ -552,8 +555,8 @@ Even if messy, these areas should be left alone due to churn-to-benefit ratio:
 | Step                                    | Status | Notes         |
 | --------------------------------------- | ------ | ------------- |
 | 2.1 Fix RPC ↔ Chat type boundaries      | ✅     | Domain types re-exported from RPC |
-| 2.2 Consolidate `ChatMessageDto` naming | ⬜     |               |
-| 2.3 Audit `@hominem/ui` exports         | ⬜     |               |
+| 2.2 Consolidate `ChatMessageDto` naming | ✅     | Domain bare names, wire DTOs keep `Dto` suffix |
+| 2.3 Audit `@hominem/ui` exports         | ✅     | Removed native logic and unused deps |
 | 2.4 Mobile auth convergence             | ⬜     | Evaluate only |
 
 ### Phase 3 — Deeper Architectural Changes

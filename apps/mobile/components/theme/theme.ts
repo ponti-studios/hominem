@@ -1,6 +1,6 @@
 import {
   colors as tokenColors,
-  radiiNative,
+  radii,
   spacing as tokenSpacing,
 } from '~/components/theme/tokens';
 import { fontFamiliesNative } from '~/components/theme/tokens/typography.native';
@@ -21,12 +21,12 @@ const theme = createTheme({
     xl_64: tokenSpacing[8],
   },
   borderRadii: {
-    sm: radiiNative.sm,
-    md: radiiNative.md,
-    lg: radiiNative.lg,
-    xl: radiiNative.xl,
-    icon: radiiNative.icon,
-    full: radiiNative.full,
+    sm: radii.sm,
+    md: radii.md,
+    lg: radii.lg,
+    xl: radii.xl,
+    icon: radii.icon,
+    full: radii.full,
   },
   textVariants: {
     largeTitle: {

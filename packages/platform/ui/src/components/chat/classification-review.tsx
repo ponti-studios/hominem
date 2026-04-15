@@ -1,4 +1,4 @@
-import type { ClassificationReviewProps } from '@hominem/rpc/types';
+import type { ClassificationReviewProps } from '@hominem/chat';
 
 import { Inline } from '../layout/inline';
 import { Stack } from '../layout/stack';

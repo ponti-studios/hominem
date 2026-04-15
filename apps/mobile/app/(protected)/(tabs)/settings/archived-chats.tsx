@@ -3,7 +3,7 @@ import { Stack, useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { colors, radiiNative, spacing } from '~/components/theme/tokens';
+import { colors, radii, spacing } from '~/components/theme/tokens';
 import { Text } from '~/components/typography/Text';
 
 import { useArchivedSessions } from '~/hooks/useArchivedSessions';
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
   emptyCard: {
     borderWidth: 1,
     borderColor: colors['border-default'],
-    borderRadius: radiiNative.md,
+    borderRadius: radii.md,
     gap: spacing[2],
     marginTop: spacing[3],
     paddingHorizontal: spacing[4],
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
   card: {
     alignItems: 'center',
     borderColor: colors['border-default'],
-    borderRadius: radiiNative.md,
+    borderRadius: radii.md,
     borderWidth: 1,
     flexDirection: 'row',
     gap: spacing[3],
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors['bg-surface'],
     borderColor: colors['border-default'],
-    borderRadius: radiiNative.md,
+    borderRadius: radii.md,
     borderWidth: 1,
     height: 32,
     justifyContent: 'center',

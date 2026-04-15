@@ -1,4 +1,4 @@
-import { radiiNative, spacing } from '~/components/theme/tokens';
+import { radii, spacing } from '~/components/theme/tokens';
 import { shadowsNative } from '~/components/theme/tokens/shadows';
 import { FlashList, type ListRenderItem } from '@shopify/flash-list';
 import { Image } from 'expo-image';
@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
   shell: {
     flex: 1,
     backgroundColor: theme.colors['bg-surface'],
-    borderRadius: radiiNative.icon,
+    borderRadius: radii.icon,
     borderCurve: 'continuous',
     borderWidth: 1,
     borderColor: theme.colors['border-default'],
@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
   emptyIconRing: {
     width: spacing[7] + spacing[3],
     height: spacing[7] + spacing[3],
-    borderRadius: radiiNative.full,
+    borderRadius: radii.full,
     backgroundColor: theme.colors['bg-elevated'],
     alignItems: 'center',
     justifyContent: 'center',

@@ -1,6 +1,6 @@
 import { Text, View, type TextProps, type ViewProps } from 'react-native';
 
-import { colors, fontSizes, fontWeights, radiiNative, spacing } from '~/components/theme/tokens';
+import { colors, fontSizes, fontWeights, radii, spacing } from '~/components/theme/tokens';
 import { fontFamiliesNative } from '~/components/theme/tokens/typography.native';
 
 function Card({ children, style, ...props }: ViewProps) {
@@ -67,7 +67,7 @@ const styles = {
     backgroundColor: colors['bg-surface'],
     borderColor: colors['border-default'],
     borderCurve: 'continuous',
-    borderRadius: radiiNative.xl,
+    borderRadius: radii.xl,
     borderWidth: 1,
     gap: spacing[5],
     paddingVertical: spacing[5],

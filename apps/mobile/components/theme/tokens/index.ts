@@ -5,7 +5,7 @@ export {
   type SpacingToken,
   type ContentWidthToken,
 } from '@hominem/ui/tokens';
-export { radiiNative, type RadiusToken } from '@hominem/ui/tokens';
+export { radii, type RadiusToken } from '@hominem/ui/tokens';
 export { shadowsNative } from '@hominem/ui/tokens';
 export {
   fontSizes,

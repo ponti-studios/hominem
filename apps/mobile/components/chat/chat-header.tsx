@@ -1,7 +1,7 @@
 import type { SessionSource } from '@hominem/rpc/types';
 import { StyleSheet, View } from 'react-native';
 
-import { colors, fontSizes, radiiNative, spacing } from '~/components/theme/tokens';
+import { colors, fontSizes, radii, spacing } from '~/components/theme/tokens';
 import { fontFamiliesNative } from '~/components/theme/tokens/typography.native';
 import { Text } from '../typography/Text';
 import { Button } from '../ui/Button';
@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
   headerIconButton: {
     backgroundColor: 'transparent',
     borderColor: 'transparent',
-    borderRadius: radiiNative.full,
+    borderRadius: radii.full,
     height: 36,
     width: 36,
   },

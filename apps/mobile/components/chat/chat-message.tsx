@@ -2,7 +2,7 @@ import { memo, useMemo, useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import Reanimated, { FadeInDown, FadeOutUp, LinearTransition } from 'react-native-reanimated';
 
-import { colors, fontSizes, radiiNative, spacing } from '~/components/theme/tokens';
+import { colors, fontSizes, radii, spacing } from '~/components/theme/tokens';
 import { fontFamiliesNative } from '~/components/theme/tokens/typography.native';
 import { Text } from '../typography/Text';
 import { Button } from '../ui/Button';
@@ -38,7 +38,7 @@ const styles = StyleSheet.create({
   actionButton: {
     backgroundColor: 'transparent',
     borderColor: 'transparent',
-    borderRadius: radiiNative.full,
+    borderRadius: radii.full,
     height: 32,
     paddingHorizontal: 0,
     paddingVertical: 0,
@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
   editSheet: {
     backgroundColor: colors['bg-base'],
     borderColor: colors['border-subtle'],
-    borderRadius: radiiNative.md,
+    borderRadius: radii.md,
     borderWidth: 1,
     gap: spacing[3],
     paddingHorizontal: spacing[4],
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
   focusItem: {
     backgroundColor: colors['bg-base'],
     borderColor: colors['border-default'],
-    borderRadius: radiiNative.md,
+    borderRadius: radii.md,
     borderWidth: 1,
     paddingHorizontal: spacing[3],
     paddingVertical: spacing[2],
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors['bg-base'],
     borderColor: colors['border-default'],
-    borderRadius: radiiNative.full,
+    borderRadius: radii.full,
     borderWidth: 1,
     flexDirection: 'row',
     gap: spacing[1],
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
   toolCall: {
     backgroundColor: colors['bg-base'],
     borderColor: colors['border-subtle'],
-    borderRadius: radiiNative.md,
+    borderRadius: radii.md,
     borderWidth: 1,
     gap: spacing[1],
     padding: spacing[3],
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
   },
   messageSurface: {
     borderColor: colors['border-subtle'],
-    borderRadius: radiiNative.md,
+    borderRadius: radii.md,
     borderWidth: 1,
     maxWidth: MESSAGE_BUBBLE_MAX_WIDTH,
     paddingHorizontal: spacing[2],
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
   transcriptSurface: {
     backgroundColor: colors['bg-base'],
     borderColor: colors['border-default'],
-    borderRadius: radiiNative.md,
+    borderRadius: radii.md,
     borderWidth: 1,
     gap: spacing[1],
     paddingHorizontal: spacing[3],

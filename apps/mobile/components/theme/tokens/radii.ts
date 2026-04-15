@@ -1,1 +1,1 @@
-export { radiiNative, type RadiusToken } from '@hominem/ui/tokens';
+export { radii, type RadiusToken } from '@hominem/ui/tokens';

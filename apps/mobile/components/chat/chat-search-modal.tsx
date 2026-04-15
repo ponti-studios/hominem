@@ -1,7 +1,7 @@
 import type React from 'react';
 import { Modal, Pressable, StyleSheet, View, type TextInput } from 'react-native';
 
-import { colors, fontSizes, radiiNative, spacing } from '~/components/theme/tokens';
+import { colors, fontSizes, radii, spacing } from '~/components/theme/tokens';
 import { fontFamiliesNative } from '~/components/theme/tokens/typography.native';
 import { Text } from '../typography/Text';
 import { Button } from '../ui/Button';
@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
   headerIconButton: {
     backgroundColor: colors['bg-surface'],
     borderColor: colors['border-default'],
-    borderRadius: radiiNative.md,
+    borderRadius: radii.md,
     height: 36,
     width: 36,
   },
