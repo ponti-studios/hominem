@@ -11,6 +11,7 @@ import Reanimated, { FadeIn, FadeInDown, LinearTransition } from 'react-native-r
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import { Text, theme } from '~/components/theme';
 import { flattenNoteFeedPages, useNoteFeed } from '~/services/notes/use-note-stream';
+import { useComposerContext } from '~/components/composer/ComposerContext';
 
 
 type FeedRow = {
@@ -80,9 +81,9 @@ const NoteRow = React.memo(({ item, onPress }: { item: FeedRow; onPress: () => v
 NoteRow.displayName = 'NoteRow';
 
 
-function EmptyNotes() {
+function EmptyNotes({ composerClearance }: { composerClearance: number }) {
   return (
-    <Reanimated.View entering={FadeIn.duration(280)} style={styles.empty}>
+    <Reanimated.View entering={FadeIn.duration(280)} style={[styles.empty, { paddingBottom: composerClearance }]}>
       <View style={styles.emptyIconRing}>
         <Image
           source="sf:note.text"
@@ -102,6 +103,7 @@ function EmptyNotes() {
 
 export default function NotesFeedScreen() {
   const router = useRouter();
+  const { composerClearance } = useComposerContext();
   const listRef = useRef<any>(null);
   const previousCountRef = useRef(0);
   const previousContentHeightRef = useRef(0);
@@ -196,7 +198,7 @@ export default function NotesFeedScreen() {
   return (
     <View style={styles.screen}>
       {isEmpty ? (
-        <EmptyNotes />
+        <EmptyNotes composerClearance={composerClearance} />
       ) : (
         <View style={styles.shell}>
           <FlashList
@@ -205,7 +207,7 @@ export default function NotesFeedScreen() {
             keyExtractor={(item) => item.id}
             renderItem={renderItem}
             ItemSeparatorComponent={RowSeparator}
-            contentContainerStyle={styles.listContent}
+            contentContainerStyle={[styles.listContent, { paddingBottom: composerClearance }]}
             onContentSizeChange={handleContentSizeChange}
             onEndReached={handleEndReached}
             onEndReachedThreshold={0.15}
@@ -225,9 +227,6 @@ export default function NotesFeedScreen() {
     </View>
   );
 }
-
-
-const COMPOSER_CLEARANCE = spacing[7] * 3;
 
 const styles = StyleSheet.create({
   screen: {
@@ -249,7 +248,7 @@ const styles = StyleSheet.create({
   },
 
   listContent: {
-    paddingBottom: COMPOSER_CLEARANCE,
+    // paddingBottom is set dynamically in the component
   },
 
   row: {
@@ -314,7 +313,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing[6],
-    paddingBottom: COMPOSER_CLEARANCE,
+    // paddingBottom is set dynamically in the component
     gap: spacing[2],
   },
   emptyIconRing: {

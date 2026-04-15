@@ -3,6 +3,7 @@ import React, {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type PropsWithChildren,
@@ -17,6 +18,7 @@ import {
   type ComposerTarget,
   type ComposerMode,
 } from './composerState';
+import { useDraftPersistence } from '~/hooks/use-draft-persistence';
 
 type DraftUpdater = (draft: ComposerDraft) => ComposerDraft;
 
@@ -67,6 +69,31 @@ export const ComposerProvider = ({ children }: PropsWithChildren) => {
   }));
   const [composerClearance, setComposerClearance] = useState(0);
   const activeDraft = drafts[target.key] ?? createEmptyComposerDraft();
+
+  // Draft persistence
+  const draftPersistence = useDraftPersistence(target.key);
+
+  // Restore draft from storage on target change
+  useEffect(() => {
+    const restoreSavedDraft = async () => {
+      const savedDraft = await draftPersistence.restoreDraft();
+      if (savedDraft) {
+        setDrafts((currentDrafts) => ({
+          ...currentDrafts,
+          [target.key]: savedDraft,
+        }));
+      }
+    };
+    void restoreSavedDraft();
+  }, [target.key, draftPersistence]);
+
+  // Save draft to storage whenever it changes (debounced)
+  useEffect(() => {
+    if (target.kind === 'hidden') {
+      return;
+    }
+    draftPersistence.debouncedSaveDraft(activeDraft);
+  }, [activeDraft, target.kind, draftPersistence]);
 
   const updateDraft = useCallback(
     (updater: DraftUpdater) => {
@@ -158,7 +185,8 @@ export const ComposerProvider = ({ children }: PropsWithChildren) => {
       ...currentDrafts,
       [target.key]: createEmptyComposerDraft(),
     }));
-  }, [target.key]);
+    void draftPersistence.clearDraft();
+  }, [target.key, draftPersistence]);
 
   const value = useMemo<ComposerContextValue>(
     () => ({

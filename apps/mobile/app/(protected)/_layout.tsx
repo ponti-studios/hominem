@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router';
 import React from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { FeatureErrorBoundary } from '~/components/error-boundary';
 import { useAppLock } from '~/hooks/use-app-lock';
@@ -78,10 +78,7 @@ function ProtectedShell() {
   return (
     <FeatureErrorBoundary featureName="Protected">
       <ApiProvider queryClient={queryClient}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.root}
-        >
+        <View style={styles.root}>
           <Stack
             initialRouteName="(tabs)"
             screenOptions={screenOptions}
@@ -89,7 +86,7 @@ function ProtectedShell() {
             <Stack.Screen name="onboarding" options={{ headerShown: false }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           </Stack>
-        </KeyboardAvoidingView>
+        </View>
       </ApiProvider>
     </FeatureErrorBoundary>
   );

@@ -257,32 +257,6 @@ function MentionSuggestions({
   );
 }
 
-function AccessoryAction({
-  label,
-  onPress,
-  disabled,
-}: {
-  label: string;
-  onPress: () => void;
-  disabled: boolean;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={disabled}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      style={({ pressed }) => [
-        styles.accessoryAction,
-        disabled ? styles.accessoryActionDisabled : null,
-        pressed && !disabled ? styles.accessoryActionPressed : null,
-      ]}
-    >
-      <Animated.Text style={styles.accessoryActionText}>{label}</Animated.Text>
-    </Pressable>
-  );
-}
-
 export const Composer = () => {
   const insets = useSafeAreaInsets();
   const animatedH = useSharedValue(INPUT_MIN_H);
@@ -332,7 +306,6 @@ export const Composer = () => {
     clearDraft,
   });
 
-  const [isVoiceOpen, setIsVoiceOpen] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const voiceModalRef = useRef<BottomSheetModal>(null);
 
@@ -518,14 +491,11 @@ export const Composer = () => {
         bottomSheetModalRef={voiceModalRef}
         onAudioTranscribed={(transcript) => {
           handleVoiceTranscript(transcript);
-          setIsVoiceOpen(false);
         }}
         onClose={() => {
           setIsRecording(false);
-          setMode("text");
-          setIsVoiceOpen(false);
+          setMode('text');
         }}
-        visible={isVoiceOpen}
       />
     </Animated.View>
   );
@@ -585,21 +555,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     gap: spacing[2],
-  },
-  accessoryAction: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  accessoryActionDisabled: {
-    opacity: 0.4,
-  },
-  accessoryActionPressed: {
-    opacity: 0.75,
-  },
-  accessoryActionText: {
-    color: theme.colors["text-secondary"],
-    fontSize: theme.textVariants.caption1.fontSize,
-    lineHeight: theme.textVariants.caption1.lineHeight,
   },
 
   sendBtn: {

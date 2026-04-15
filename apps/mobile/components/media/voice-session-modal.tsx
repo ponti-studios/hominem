@@ -7,14 +7,12 @@ import { Text, makeStyles, theme } from '~/components/theme';
 import { VoiceInput } from '~/components/media/voice';
 
 interface VoiceSessionModalProps {
-  visible: boolean;
   onClose: () => void;
   onAudioTranscribed: (transcription: string) => void;
-  bottomSheetModalRef?: React.RefObject<BottomSheetModal | null>;
+  bottomSheetModalRef: React.RefObject<BottomSheetModal>;
 }
 
 export function VoiceSessionModal({
-  visible,
   onClose,
   onAudioTranscribed,
   bottomSheetModalRef,
@@ -22,16 +20,10 @@ export function VoiceSessionModal({
   const styles = useStyles();
   const snapPoints = useMemo(() => ['50%', '90%'], []);
 
-  const handlePresent = useCallback(() => {
-    bottomSheetModalRef?.current?.present();
-  }, [bottomSheetModalRef]);
-
   const handleDismiss = useCallback(() => {
-    bottomSheetModalRef?.current?.dismiss();
+    bottomSheetModalRef.current?.dismiss();
     onClose();
   }, [bottomSheetModalRef, onClose]);
-
-  if (!visible) return null;
 
   return (
     <BottomSheetModal
