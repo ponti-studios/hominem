@@ -14,15 +14,15 @@ import {
   resolveComposerTarget,
   type ComposerAttachment,
   type ComposerDraft,
+  type ComposerMode,
   type ComposerSelectedNote,
   type ComposerTarget,
-  type ComposerMode,
 } from './composerState';
 import { useDraftPersistence } from '~/hooks/use-draft-persistence';
 
 type DraftUpdater = (draft: ComposerDraft) => ComposerDraft;
 
-type ComposerContextValue = {
+type ComposerDraftContextValue = {
   target: ComposerTarget;
   message: string;
   setMessage: (value: string) => void;
@@ -32,10 +32,6 @@ type ComposerContextValue = {
       | ComposerAttachment[]
       | ((currentValue: ComposerAttachment[]) => ComposerAttachment[]),
   ) => void;
-  isRecording: boolean;
-  setIsRecording: (value: boolean) => void;
-  mode: ComposerMode;
-  setMode: (value: ComposerMode) => void;
   selectedNotes: ComposerSelectedNote[];
   setSelectedNotes: (
     value:
@@ -45,64 +41,84 @@ type ComposerContextValue = {
   addSelectedNote: (note: ComposerSelectedNote) => void;
   removeSelectedNote: (noteId: string) => void;
   clearDraft: () => void;
+};
+
+type ComposerUIContextValue = {
+  isRecording: boolean;
+  setIsRecording: (value: boolean) => void;
+  mode: ComposerMode;
+  setMode: (value: ComposerMode) => void;
   composerClearance: number;
   setComposerClearance: (value: number) => void;
 };
 
-const ComposerContext = createContext<ComposerContextValue | null>(null);
+const ComposerDraftContext = createContext<ComposerDraftContextValue | null>(null);
+const ComposerUIContext = createContext<ComposerUIContextValue | null>(null);
 
 export const useComposerContext = () => {
-  const ctx = useContext(ComposerContext);
-  if (!ctx) throw new Error('useComposerContext must be used within a ComposerProvider');
+  const draftCtx = useContext(ComposerDraftContext);
+  const uiCtx = useContext(ComposerUIContext);
+  if (!draftCtx || !uiCtx) {
+    throw new Error('useComposerContext must be used within a ComposerProvider');
+  }
+  return { ...draftCtx, ...uiCtx };
+};
+
+export const useComposerDraftContext = () => {
+  const ctx = useContext(ComposerDraftContext);
+  if (!ctx) throw new Error('useComposerDraftContext must be used within a ComposerProvider');
+  return ctx;
+};
+
+export const useComposerUIContext = () => {
+  const ctx = useContext(ComposerUIContext);
+  if (!ctx) throw new Error('useComposerUIContext must be used within a ComposerProvider');
   return ctx;
 };
 
 export const ComposerProvider = ({ children }: PropsWithChildren) => {
   const pathname = usePathname();
   const params = useLocalSearchParams<{ chatId?: string | string[]; id?: string | string[] }>();
-  
-  // Extract specific param values to avoid fragile dependency management
+
   const chatId = typeof params.chatId === 'string' ? params.chatId : params.chatId?.[0];
   const id = typeof params.id === 'string' ? params.id : params.id?.[0];
-  
+
   const target = useMemo(
     () => resolveComposerTarget(pathname, { chatId, id }),
     [pathname, chatId, id],
   );
+
   const [drafts, setDrafts] = useState<Record<string, ComposerDraft>>(() => ({
     feed: createEmptyComposerDraft(),
   }));
-  const [composerClearance, setComposerClearance] = useState(0);
+
   const [isRecording, setIsRecording] = useState(false);
   const [mode, setMode] = useState<ComposerMode>('text');
+  const [composerClearance, setComposerClearance] = useState(0);
+
   const activeDraft = drafts[target.key] ?? createEmptyComposerDraft();
 
-  // Draft persistence
-  const draftPersistence = useDraftPersistence(target.key);
+  const { restoreDraft, debouncedSaveDraft, clearDraft: clearPersistedDraft } = useDraftPersistence(
+    target.key,
+  );
 
-  // Restore draft from storage on target change
   useEffect(() => {
-    const restoreSavedDraft = async () => {
-      const savedDraft = await draftPersistence.restoreDraft();
-      if (savedDraft) {
-        setDrafts((currentDrafts) => ({
-          ...currentDrafts,
-          [target.key]: savedDraft,
-        }));
-      }
-    };
-    void restoreSavedDraft();
-  }, [target.key, draftPersistence]);
+    const savedDraft = restoreDraft();
+    if (savedDraft) {
+      setDrafts((currentDrafts) => ({
+        ...currentDrafts,
+        [target.key]: savedDraft,
+      }));
+    }
+  }, [restoreDraft, target.key]);
 
-  // Save draft to storage whenever it changes (debounced)
   useEffect(() => {
     if (target.kind === 'hidden') {
       return;
     }
-    draftPersistence.debouncedSaveDraft(activeDraft);
-  }, [activeDraft, target.kind, draftPersistence]);
+    debouncedSaveDraft(activeDraft);
+  }, [activeDraft, debouncedSaveDraft, target.kind]);
 
-  // Reset ephemeral state when target changes
   useEffect(() => {
     setIsRecording(false);
     setMode('text');
@@ -123,15 +139,12 @@ export const ComposerProvider = ({ children }: PropsWithChildren) => {
 
   const setMessage = useCallback(
     (value: string) => {
-      updateDraft((draft) => ({
-        ...draft,
-        text: value,
-      }));
+      updateDraft((draft) => ({ ...draft, text: value }));
     },
     [updateDraft],
   );
 
-  const setAttachments = useCallback<ComposerContextValue['setAttachments']>(
+  const setAttachments = useCallback<ComposerDraftContextValue['setAttachments']>(
     (value) => {
       updateDraft((draft) => ({
         ...draft,
@@ -141,7 +154,7 @@ export const ComposerProvider = ({ children }: PropsWithChildren) => {
     [updateDraft],
   );
 
-  const setSelectedNotes = useCallback<ComposerContextValue['setSelectedNotes']>(
+  const setSelectedNotes = useCallback<ComposerDraftContextValue['setSelectedNotes']>(
     (value) => {
       updateDraft((draft) => ({
         ...draft,
@@ -155,7 +168,7 @@ export const ComposerProvider = ({ children }: PropsWithChildren) => {
     (note: ComposerSelectedNote) => {
       updateDraft((draft) => ({
         ...draft,
-        selectedNotes: draft.selectedNotes.some((currentNote) => currentNote.id === note.id)
+        selectedNotes: draft.selectedNotes.some((n) => n.id === note.id)
           ? draft.selectedNotes
           : [...draft.selectedNotes, note],
       }));
@@ -167,7 +180,7 @@ export const ComposerProvider = ({ children }: PropsWithChildren) => {
     (noteId: string) => {
       updateDraft((draft) => ({
         ...draft,
-        selectedNotes: draft.selectedNotes.filter((currentNote) => currentNote.id !== noteId),
+        selectedNotes: draft.selectedNotes.filter((n) => n.id !== noteId),
       }));
     },
     [updateDraft],
@@ -178,47 +191,51 @@ export const ComposerProvider = ({ children }: PropsWithChildren) => {
       ...currentDrafts,
       [target.key]: createEmptyComposerDraft(),
     }));
-    void draftPersistence.clearDraft();
-  }, [target.key, draftPersistence]);
+    clearPersistedDraft();
+  }, [clearPersistedDraft, target.key]);
 
-  const value = useMemo<ComposerContextValue>(
+  const draftValue = useMemo<ComposerDraftContextValue>(
     () => ({
       target,
       message: activeDraft.text,
       setMessage,
       attachments: activeDraft.attachments,
       setAttachments,
-      isRecording,
-      setIsRecording,
-      mode,
-      setMode,
       selectedNotes: activeDraft.selectedNotes,
       setSelectedNotes,
       addSelectedNote,
       removeSelectedNote,
       clearDraft,
-      composerClearance,
-      setComposerClearance,
     }),
     [
-      activeDraft.attachments,
-      activeDraft.selectedNotes,
-      addSelectedNote,
-      activeDraft.text,
-      clearDraft,
-      composerClearance,
-      isRecording,
-      mode,
-      removeSelectedNote,
-      setAttachments,
-      setComposerClearance,
-      setIsRecording,
-      setMessage,
-      setMode,
-      setSelectedNotes,
       target,
+      activeDraft.text,
+      setMessage,
+      activeDraft.attachments,
+      setAttachments,
+      activeDraft.selectedNotes,
+      setSelectedNotes,
+      addSelectedNote,
+      removeSelectedNote,
+      clearDraft,
     ],
   );
 
-  return <ComposerContext.Provider value={value}>{children}</ComposerContext.Provider>;
+  const uiValue = useMemo<ComposerUIContextValue>(
+    () => ({
+      isRecording,
+      setIsRecording,
+      mode,
+      setMode,
+      composerClearance,
+      setComposerClearance,
+    }),
+    [isRecording, mode, composerClearance, setIsRecording, setMode, setComposerClearance],
+  );
+
+  return (
+    <ComposerDraftContext.Provider value={draftValue}>
+      <ComposerUIContext.Provider value={uiValue}>{children}</ComposerUIContext.Provider>
+    </ComposerDraftContext.Provider>
+  );
 };

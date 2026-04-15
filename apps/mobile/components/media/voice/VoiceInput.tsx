@@ -129,6 +129,8 @@ export function VoiceInput({
       recordingProgress.value,
       [0, 1],
       [theme.colors.muted, theme.colors.destructive],
+      'RGB',
+      { gamma: 1 },
     ),
   }));
 

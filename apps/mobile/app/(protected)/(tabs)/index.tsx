@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { Stack, useIsFocused, useLocalSearchParams, useRouter } from 'expo-router';
 import type { RelativePathString } from 'expo-router';
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import { Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 import type { FlashListRef } from '@shopify/flash-list';
 
@@ -37,41 +37,46 @@ export default function FeedScreen() {
     void refetch();
   }, [refetch]);
 
+  const handleOpenNotes = useCallback(() => {
+    router.push('/(protected)/(tabs)/notes' as RelativePathString);
+  }, [router]);
+
+  const handleOpenSettings = useCallback(() => {
+    router.push('/(protected)/(tabs)/settings' as RelativePathString);
+  }, [router]);
+
+  const screenOptions = useMemo(
+    () => ({
+      headerShown: true,
+      title: '',
+      headerLeft: () => (
+        <Pressable onPress={handleOpenNotes} hitSlop={8} accessibilityLabel="Notes">
+          <Image
+            source="sf:note.text"
+            style={{ width: 22, height: 22 }}
+            tintColor={theme.colors.foreground}
+            contentFit="contain"
+          />
+        </Pressable>
+      ),
+      headerRight: () => (
+        <Pressable onPress={handleOpenSettings} hitSlop={8} accessibilityLabel="Settings">
+          <Image
+            source="sf:gearshape"
+            style={{ width: 22, height: 22 }}
+            tintColor={theme.colors.foreground}
+            contentFit="contain"
+          />
+        </Pressable>
+      ),
+    }),
+    [handleOpenNotes, handleOpenSettings],
+  );
+
   return (
     <View style={styles.container}>
       <Stack.Screen
-        options={{
-          headerShown: true,
-          title: '',
-          headerLeft: () => (
-            <Pressable
-              onPress={() => router.push('/(protected)/(tabs)/notes' as RelativePathString)}
-              hitSlop={8}
-              accessibilityLabel="Notes"
-            >
-              <Image
-                source="sf:note.text"
-                style={{ width: 22, height: 22 }}
-                tintColor={theme.colors.foreground}
-                contentFit="contain"
-              />
-            </Pressable>
-          ),
-          headerRight: () => (
-            <Pressable
-              onPress={() => router.push('/(protected)/(tabs)/settings' as RelativePathString)}
-              hitSlop={8}
-              accessibilityLabel="Settings"
-            >
-              <Image
-                source="sf:gearshape"
-                style={{ width: 22, height: 22 }}
-                tintColor={theme.colors.foreground}
-                contentFit="contain"
-              />
-            </Pressable>
-          ),
-        }}
+        options={screenOptions}
       />
         <InboxStream
           listRef={listRef}

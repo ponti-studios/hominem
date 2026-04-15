@@ -4,7 +4,9 @@ import { SplashScreen, Stack, useRouter, useSegments } from 'expo-router';
 import { PostHogProvider, type PostHog } from 'posthog-react-native';
 import React, { useEffect } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { RootErrorBoundary } from '~/components/error-boundary/RootErrorBoundary';
@@ -25,8 +27,10 @@ markStartupPhase('app_start');
 function InnerRootLayout() {
   const router = useRouter();
   const segments = useSegments() as string[];
+  const segmentKey = segments.join('/');
   const { authStatus, isSignedIn, currentUser, resetAuthForE2E, signOut } = useAuth();
   const hasMarkedShellReady = React.useRef(false);
+  const lastRedirectSignatureRef = React.useRef<string | null>(null);
   useEffect(() => {
     markStartupPhase('root_layout_mounted');
 
@@ -63,10 +67,21 @@ function InnerRootLayout() {
       isSignedIn,
       segments,
     });
+    if (!target) {
+      lastRedirectSignatureRef.current = null;
+      return;
+    }
+
+    const redirectSignature = `${segmentKey}->${target}`;
+    if (lastRedirectSignatureRef.current === redirectSignature) {
+      return;
+    }
+
+    lastRedirectSignatureRef.current = redirectSignature;
     if (target) {
       router.replace(target as RelativePathString);
     }
-  }, [authStatus, isSignedIn, segments, router]);
+  }, [authStatus, isSignedIn, router, segmentKey, segments]);
 
   return (
     <RootErrorBoundary
@@ -130,11 +145,15 @@ function RootLayout() {
     <ThemeProvider theme={theme}>
       <SafeAreaProvider>
         <GestureHandlerRootView style={rootStyles.gestureRoot}>
-          <RootErrorBoundary>
-            <AuthProvider>
-              <InnerRootLayout />
-            </AuthProvider>
-          </RootErrorBoundary>
+          <KeyboardProvider>
+            <BottomSheetModalProvider>
+              <RootErrorBoundary>
+                <AuthProvider>
+                  <InnerRootLayout />
+                </AuthProvider>
+              </RootErrorBoundary>
+            </BottomSheetModalProvider>
+          </KeyboardProvider>
         </GestureHandlerRootView>
       </SafeAreaProvider>
     </ThemeProvider>

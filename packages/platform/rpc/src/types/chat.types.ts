@@ -146,7 +146,7 @@ export const chatsUISendSchema = z.object({
 });
 
 export type ChatsSendOutput = {
-  streamId: string;
+  assistantMessageId: string;
   chatId: string;
   chatTitle: string;
   messages: {

@@ -35,7 +35,9 @@ export function useInboxStreamItems() {
       route: `/(protected)/(tabs)/notes/${note.id}`,
     }));
 
-    return [...chatItems, ...noteItems].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    return [...chatItems, ...noteItems].sort(
+      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+    );
   }, [chats, notes]);
 
   return {

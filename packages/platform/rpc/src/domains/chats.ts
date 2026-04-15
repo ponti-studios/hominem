@@ -64,6 +64,7 @@ export interface ChatsClient {
   update(input: ChatsUpdateInput): Promise<ChatsUpdateOutput>;
   archive(input: ChatsArchiveInput): Promise<Chat>;
   send(input: ChatsSendMessageInput): Promise<ChatsSendOutput>;
+  stream(input: ChatsSendMessageInput): Promise<ReadableStream<Uint8Array>>;
 }
 
 export function createChatsClient(rawClient: RawHonoClient): ChatsClient {
@@ -109,6 +110,19 @@ export function createChatsClient(rawClient: RawHonoClient): ChatsClient {
         },
       });
       return res.json() as Promise<ChatsSendOutput>;
+    },
+    async stream(input) {
+      const res = await rawClient.post(`/api/chats/${input.chatId}/stream`, {
+        json: {
+          message: input.message,
+          ...(input.fileIds && input.fileIds.length > 0 ? { fileIds: input.fileIds } : {}),
+          ...(input.noteIds && input.noteIds.length > 0 ? { noteIds: input.noteIds } : {}),
+        },
+      });
+      if (!res.body) {
+        throw new Error('No response body');
+      }
+      return res.body;
     },
   };
 }

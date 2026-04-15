@@ -11,7 +11,7 @@ import {
   type ChatsUpdateOutput,
 } from '@hominem/rpc/types/chat.types';
 import { zValidator } from '@hono/zod-validator';
-import { generateText, type CoreMessage } from 'ai';
+import { generateText, streamText, type CoreMessage } from 'ai';
 import { Hono } from 'hono';
 import * as z from 'zod';
 
@@ -241,7 +241,7 @@ const chatByIdRoutes = new Hono<AppContext>()
     const assistantRecord = enrichMessageRow(assistantMsg, noteTitlesById);
 
     return c.json<ChatsSendOutput>({
-      streamId: assistantMsg.id,
+      assistantMessageId: assistantMsg.id,
       chatId,
       chatTitle: chat.title,
       messages: {
@@ -253,6 +253,66 @@ const chatByIdRoutes = new Hono<AppContext>()
         timestamp: now,
       },
     });
+  })
+  .post('/stream', zValidator('json', chatsSendSchema), async (c) => {
+    const userId = c.get('userId')!;
+    const chatId = getRequiredChatId(c);
+    const db = getDb();
+
+    await ChatRepository.getOwnedOrThrow(db, chatId, userId);
+    const { message, fileIds = [], noteIds = [] } = c.req.valid('json');
+
+    const history = await ChatRepository.getMessages(db, chatId, 30, 0);
+    const resolvedNotes = await ChatRepository.resolveReferencedNotes(db, userId, noteIds, message);
+    const resolvedFiles = await ChatRepository.resolveChatFiles(db, userId, fileIds);
+
+    const prompt = buildUserPrompt(message, resolvedNotes, resolvedFiles);
+    const storedUserContent = toStoredUserMessageContent(message, resolvedNotes, resolvedFiles);
+    if (!storedUserContent) {
+      throw new ValidationError('Message, notes, or files are required');
+    }
+
+    await runInTransaction(async (trx) => {
+      await ChatRepository.insertMessage(trx, {
+        chatId,
+        authorUserId: userId,
+        role: 'user',
+        content: storedUserContent,
+        files: resolvedFiles.length > 0 ? resolvedFiles : null,
+        referencedNoteIds: resolvedNotes.length > 0 ? resolvedNotes.map((n) => n.id) : null,
+      });
+    });
+
+    const messages: CoreMessage[] = [
+      { role: 'system', content: loadPrompt('chat-assistant') },
+      ...history.map(toCoreHistoryMessage).filter((entry): entry is CoreMessage => entry !== null),
+      { role: 'user', content: prompt },
+    ];
+
+    const result = await streamText({
+      model: getOpenAIAdapter(),
+      messages,
+    });
+
+    c.executionCtx.waitUntil(
+      result.text.then(async (text) => {
+        await runInTransaction(async (trx) => {
+          await ChatRepository.insertMessage(trx, {
+            chatId,
+            authorUserId: userId,
+            role: 'assistant',
+            content: text,
+          });
+          await ChatRepository.touchLastMessage(trx, chatId);
+        });
+      }),
+    );
+
+    return c.body(
+      result.textStream.pipeThrough(new TextEncoderStream()),
+      200,
+      { 'Content-Type': 'text/event-stream' },
+    );
   });
 
 

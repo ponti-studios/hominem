@@ -9,7 +9,7 @@ import { VoiceInput } from '~/components/media/voice';
 interface VoiceSessionModalProps {
   onClose: () => void;
   onAudioTranscribed: (transcription: string) => void;
-  bottomSheetModalRef: React.RefObject<BottomSheetModal>;
+  bottomSheetModalRef: React.RefObject<BottomSheetModal | null>;
 }
 
 export function VoiceSessionModal({

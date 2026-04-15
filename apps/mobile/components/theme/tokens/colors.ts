@@ -13,6 +13,7 @@ export const colors = {
 
   // Borders
   'border-default': 'rgba(245, 246, 248, 0.18)',
+  'border-faint': 'rgba(245, 246, 248, 0.07)',
   'border-subtle': 'rgba(245, 246, 248, 0.11)',
   'border-focus': 'rgba(142, 141, 255, 0.5)',
 
