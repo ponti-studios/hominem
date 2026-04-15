@@ -343,7 +343,6 @@ const useStyles = makeStyles((t) =>
       justifyContent: 'center',
     },
     modalContainer: {
-      backgroundColor: t.colors.background,
       borderRadius: 12,
       gap: t.spacing.sm_12,
       padding: t.spacing.m_16,

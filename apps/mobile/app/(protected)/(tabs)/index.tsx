@@ -92,7 +92,6 @@ const useStyles = makeStyles((t) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: t.colors.background,
     },
     refreshTint: {
       color: t.colors['text-tertiary'],

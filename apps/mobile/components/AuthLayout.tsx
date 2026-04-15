@@ -120,7 +120,6 @@ const useStyles = makeStyles((t) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: t.colors.background,
     },
     flex: {
       flex: 1,
@@ -129,7 +128,6 @@ const useStyles = makeStyles((t) =>
       flexGrow: 1,
     },
     screen: {
-      backgroundColor: t.colors.background,
       flex: 1,
       paddingHorizontal: t.spacing.m_16,
       paddingTop: t.spacing.ml_24,

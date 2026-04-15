@@ -96,7 +96,6 @@ export function VoiceSessionModal({
 const useStyles = makeStyles((t) =>
   StyleSheet.create({
     sheetBackground: {
-      backgroundColor: t.colors.background,
     },
     dragHandle: {
       backgroundColor: t.colors['border-default'],

@@ -33,7 +33,6 @@ const useStyles = makeStyles((t) =>
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
-      backgroundColor: t.colors.background,
       padding: t.spacing.ml_24,
     },
   }),

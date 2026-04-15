@@ -57,7 +57,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: spacing[3],
-    backgroundColor: colors.background,
   },
   pageMessage: {
     marginTop: spacing[1],

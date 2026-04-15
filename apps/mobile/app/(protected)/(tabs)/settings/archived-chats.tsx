@@ -86,7 +86,6 @@ export default function ArchivedChatsScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   content: {
     gap: spacing[3],
@@ -108,7 +107,6 @@ const styles = StyleSheet.create({
   },
   card: {
     alignItems: 'center',
-    backgroundColor: colors.background,
     borderColor: colors['border-default'],
     borderRadius: radiiNative.md,
     borderWidth: 1,
