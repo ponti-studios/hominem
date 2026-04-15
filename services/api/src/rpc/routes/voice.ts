@@ -15,6 +15,7 @@ import { Hono, type Context } from 'hono';
 import * as z from 'zod';
 
 import { authMiddleware, type AppContext } from '../middleware/auth';
+import { rateLimitMiddleware } from '../middleware/rate-limit';
 
 type VoiceErrorOutput = MobileVoiceResponseErrorOutput | MobileVoiceTranscriptionErrorOutput;
 
@@ -93,6 +94,18 @@ const voiceRoutes = new Hono<AppContext>().post('/transcribe', async (c) => {
 
 export const authenticatedVoiceRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
+  .use(
+    '/speech',
+    rateLimitMiddleware({ bucket: 'voice-speech', identifier: 'speech', windowSec: 60, max: 30 }),
+  )
+  .use(
+    '/respond',
+    rateLimitMiddleware({ bucket: 'voice-respond', identifier: 'respond', windowSec: 60, max: 20 }),
+  )
+  .use(
+    '/respond/stream',
+    rateLimitMiddleware({ bucket: 'voice-respond-stream', identifier: 'respond-stream', windowSec: 60, max: 20 }),
+  )
   .route('', voiceRoutes)
   .post(
     '/speech',

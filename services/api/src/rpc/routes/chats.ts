@@ -18,6 +18,7 @@ import * as z from 'zod';
 import { env } from '../../env';
 import { ValidationError } from '../errors';
 import { authMiddleware, type AppContext } from '../middleware/auth';
+import { rateLimitMiddleware } from '../middleware/rate-limit';
 import { getOpenAIAdapter } from '../utils/llm';
 import { loadPrompt } from '../utils/load-prompt';
 import {
@@ -106,6 +107,14 @@ function getRequiredChatId(c: { req: { param: (name: string) => string | undefin
 
 
 const chatByIdRoutes = new Hono<AppContext>()
+  .use(
+    '/send',
+    rateLimitMiddleware({ bucket: 'chat-send', identifier: 'send', windowSec: 60, max: 30 }),
+  )
+  .use(
+    '/stream',
+    rateLimitMiddleware({ bucket: 'chat-stream', identifier: 'stream', windowSec: 60, max: 30 }),
+  )
   .get('/', async (c) => {
     const userId = c.get('userId')!;
     const chatId = getRequiredChatId(c);
