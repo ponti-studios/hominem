@@ -1,25 +1,22 @@
-import { SymbolView, type SFSymbol } from 'expo-symbols';
+import { SymbolView, type SFSymbol } from "expo-symbols";
 
-import { theme } from '~/components/theme';
-import { appleSymbolMap } from './apple-symbols';
-
-type IconName = keyof typeof appleSymbolMap;
+import { theme } from "~/components/theme";
 
 interface IconProps {
   color?: string | undefined;
-  name: IconName;
+  name: SFSymbol;
   size?: number | undefined;
 }
 
 const AppIcon = ({ color, name, size = 24 }: IconProps) => {
   return (
     <SymbolView
-      name={appleSymbolMap[name]}
+      name={name}
       size={size}
-      tintColor={color ?? theme.colors['icon-primary']}
+      tintColor={color ?? theme.colors["icon-primary"]}
     />
   );
 };
 
 export default AppIcon;
-export type { IconName, IconProps };
+export type { IconProps };

@@ -1,3 +1,4 @@
+import type { RefObject } from 'react';
 import { useCallback } from 'react';
 
 import { authClient } from '~/services/auth/auth-client';
@@ -6,7 +7,7 @@ import { clearPersistedSessionCookies } from '~/services/auth/session-cookie';
 import type { AuthContext } from '~/services/auth/types';
 import { LocalStore } from '~/services/storage/sqlite';
 
-export function useSignOut(context: AuthContext) {
+export function useSignOut(context: AuthContext, sessionCookieHeaderRef: RefObject<string | null>) {
   const { state, dispatch } = context;
 
   const signOut = useCallback(async () => {
@@ -25,6 +26,7 @@ export function useSignOut(context: AuthContext) {
       }
 
       await clearPersistedSessionCookies();
+      sessionCookieHeaderRef.current = null;
       await LocalStore.clearAllData();
       dispatch({ type: 'SIGN_OUT_SUCCESS' });
       captureAuthAnalyticsEvent('auth_sign_out_succeeded', {

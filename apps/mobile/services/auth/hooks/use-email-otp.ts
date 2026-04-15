@@ -1,4 +1,5 @@
 import type { User } from '@hominem/auth';
+import type { RefObject } from 'react';
 import { useCallback } from 'react';
 
 import { authClient } from '~/services/auth/auth-client';
@@ -47,7 +48,7 @@ function toAuthUserProfile(localProfile: User | null): AuthContext['state']['use
   };
 }
 
-export function useEmailOtp(context: AuthContext) {
+export function useEmailOtp(context: AuthContext, sessionCookieHeaderRef: RefObject<string | null>) {
   const { dispatch } = context;
 
   const requestEmailOtp = useCallback(
@@ -141,6 +142,7 @@ export function useEmailOtp(context: AuthContext) {
         if (!sessionCookieHeader) {
           throw new Error('Verification succeeded but no session cookie was returned');
         }
+        sessionCookieHeaderRef.current = sessionCookieHeader;
 
         dispatch({ type: 'PROFILE_SYNC_STARTED' });
         const localUser = fromSignInUser(signInData.user);

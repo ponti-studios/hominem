@@ -1,54 +1,62 @@
-import type { NoteSearchResult } from '@hominem/rpc/types';
-import { radiiNative, shadowsNative, spacing } from '@hominem/ui/tokens';
-import { Image } from 'expo-image';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import type { NoteSearchResult } from "@hominem/rpc/types";
+import { radiiNative, shadowsNative, spacing } from "@hominem/ui/tokens";
+import { Image } from "expo-image";
+import { type SFSymbol } from "expo-symbols";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  ActionSheetIOS,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
+} from "react-native";
 import Animated, {
-  useAnimatedKeyboard,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
-} from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+} from "react-native-reanimated";
+import { useAnimatedKeyboard } from "react-native-keyboard-controller";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
   createNotesEnterLift,
   createNotesExitLift,
   createNotesLayoutTransition,
-} from '~/components/notes/notes-surface-motion';
-import { theme } from '~/components/theme';
-import { useReducedMotion } from '~/hooks/use-reduced-motion';
-import { useNoteSearch } from '~/services/notes/use-note-search';
+} from "~/components/notes/notes-surface-motion";
+import AppIcon from "~/components/ui/icon";
+import { theme } from "~/components/theme";
+import { useReducedMotion } from "~/hooks/use-reduced-motion";
+import { useNoteSearch } from "~/services/notes/use-note-search";
+import { BottomSheetModal } from "@gorhom/bottom-sheet";
 
-import { CameraModal } from '../media/camera-modal';
-import { VoiceSessionModal } from '../media/voice-session-modal';
-import { useComposerContext } from './ComposerContext';
-import { getTrailingMentionQuery, removeTrailingMentionQuery } from './note-mentions';
+import { CameraModal } from "../media/camera-modal";
+import { VoiceSessionModal } from "../media/voice-session-modal";
+import { useComposerContext } from "./ComposerContext";
+import { getTrailingMentionQuery, removeTrailingMentionQuery } from "./note-mentions";
 import {
   deriveComposerPresentation,
   type ComposerAttachment,
   type ComposerSelectedNote,
-} from './composerState';
-import { useComposerMediaActions } from './useComposerMediaActions';
-import { useComposerSubmission } from './useComposerSubmission';
-
+} from "./composerState";
+import { useComposerMediaActions } from "./useComposerMediaActions";
+import { useComposerSubmission } from "./useComposerSubmission";
 
 const MAX_WIDTH = 500;
 
 const INPUT_MIN_H = spacing[6] + spacing[4];
 const INPUT_MAX_H = spacing[6] * 9;
 
-const SEND_BTN_SIZE = spacing[4] * 2;
-const SEND_ICON_SIZE = spacing[3];
-
+const SEND_BTN_SIZE = spacing[6];
+const SEND_ICON_SIZE = spacing[4] + 2;
+const SECONDARY_BTN_SIZE = spacing[5] + 2;
+const SECONDARY_ICON_SIZE = spacing[4] + 4;
 
 function SendButton({
-  sf,
   onPress,
   disabled,
   accessibilityLabel,
 }: {
-  sf: string;
   onPress: () => void;
   disabled: boolean;
   accessibilityLabel: string;
@@ -65,24 +73,22 @@ function SendButton({
         pressed && !disabled ? styles.sendBtnPressed : null,
       ]}
     >
-      <Image
-        source={`sf:${sf}`}
-        style={styles.sendBtnIcon}
-        tintColor={disabled ? theme.colors['text-tertiary'] : theme.colors['bg-base']}
-        contentFit="contain"
+      <AppIcon
+        name="arrow.up"
+        size={SEND_ICON_SIZE}
+        color={disabled ? theme.colors["text-tertiary"] : theme.colors["bg-base"]}
       />
     </Pressable>
   );
 }
 
-
 function SecondaryButton({
-  sf,
+  icon,
   onPress,
   accessibilityLabel,
   disabled = false,
 }: {
-  sf: string;
+  icon: SFSymbol;
   onPress: () => void;
   accessibilityLabel: string;
   disabled?: boolean;
@@ -100,16 +106,14 @@ function SecondaryButton({
         pressed ? styles.secondaryBtnPressed : null,
       ]}
     >
-      <Image
-        source={`sf:${sf}`}
-        style={styles.secondaryBtnIcon}
-        tintColor={theme.colors['text-secondary']}
-        contentFit="contain"
+      <AppIcon
+        name={icon}
+        size={SECONDARY_ICON_SIZE}
+        color={theme.colors["text-secondary"]}
       />
     </Pressable>
   );
 }
-
 
 function ComposerAttachments({
   attachments,
@@ -143,14 +147,17 @@ function ComposerAttachments({
               accessibilityRole="button"
             >
               {a.localUri && (
-                <Image source={{ uri: a.localUri }} style={styles.thumbImage} contentFit="cover" />
+                <Image
+                  source={{ uri: a.localUri }}
+                  style={styles.thumbImage}
+                  contentFit="cover"
+                />
               )}
               <View style={styles.thumbBadge} pointerEvents="none">
-                <Image
-                  source="sf:xmark"
-                  style={styles.thumbBadgeIcon}
-                  tintColor={theme.colors.white}
-                  contentFit="contain"
+                <AppIcon
+                  name="xmark"
+                  size={spacing[2] * 2}
+                  color={theme.colors.white}
                 />
               </View>
               {isUploading && <View style={styles.thumbDim} />}
@@ -160,7 +167,7 @@ function ComposerAttachments({
       )}
 
       {errors.length > 0 && (
-        <Animated.Text style={styles.errorText}>{errors.join(' · ')}</Animated.Text>
+        <Animated.Text style={styles.errorText}>{errors.join(" · ")}</Animated.Text>
       )}
     </View>
   );
@@ -181,27 +188,28 @@ function ComposerSelectionSummary({
     <View style={styles.selectionRow}>
       {selectedNotes.map((note) => (
         <View key={note.id} style={styles.selectionChip}>
-          <Image
-            source="sf:bubble.left.and.text.bubble.right"
-            style={styles.selectionChipIcon}
-            tintColor={theme.colors['text-secondary']}
-            contentFit="contain"
+          <AppIcon
+            name="bubble.left"
+            size={spacing[3]}
+            color={theme.colors["text-secondary"]}
           />
           <Animated.Text style={styles.selectionChipText}>
-            {note.title || 'Untitled note'}
+            {note.title || "Untitled note"}
           </Animated.Text>
           <Pressable
-            accessibilityLabel={`Remove ${note.title ?? 'note'}`}
+            accessibilityLabel={`Remove ${note.title ?? "note"}`}
             accessibilityRole="button"
             hitSlop={spacing[2]}
             onPress={() => onRemoveNote(note.id)}
-            style={({ pressed }) => [styles.selectionChipButton, pressed ? styles.selectionChipButtonPressed : null]}
+            style={({ pressed }) => [
+              styles.selectionChipButton,
+              pressed ? styles.selectionChipButtonPressed : null,
+            ]}
           >
-            <Image
-              source="sf:xmark"
-              style={styles.selectionChipButtonIcon}
-              tintColor={theme.colors['text-secondary']}
-              contentFit="contain"
+            <AppIcon
+              name="xmark"
+              size={spacing[2] + 2}
+              color={theme.colors["text-secondary"]}
             />
           </Pressable>
         </View>
@@ -226,14 +234,17 @@ function MentionSuggestions({
       {suggestions.map((note) => (
         <Pressable
           key={note.id}
-          accessibilityLabel={`Link ${note.title ?? 'note'}`}
+          accessibilityLabel={`Link ${note.title ?? "note"}`}
           accessibilityRole="button"
           onPress={() => onSelect(note)}
-          style={({ pressed }) => [styles.suggestionItem, pressed ? styles.suggestionItemPressed : null]}
+          style={({ pressed }) => [
+            styles.suggestionItem,
+            pressed ? styles.suggestionItemPressed : null,
+          ]}
           testID={`mobile-composer-mention-${note.id}`}
         >
           <Animated.Text style={styles.suggestionTitle}>
-            {note.title || 'Untitled note'}
+            {note.title || "Untitled note"}
           </Animated.Text>
           {note.excerpt ? (
             <Animated.Text numberOfLines={1} style={styles.suggestionExcerpt}>
@@ -323,6 +334,7 @@ export const Composer = () => {
 
   const [isVoiceOpen, setIsVoiceOpen] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const voiceModalRef = useRef<BottomSheetModal>(null);
 
   const presentation = deriveComposerPresentation(
     target,
@@ -330,12 +342,12 @@ export const Composer = () => {
     isRecording,
   );
   const mentionQuery = useMemo(
-    () => (target.kind === 'chat' ? getTrailingMentionQuery(message) : null),
+    () => (target.kind === "chat" ? getTrailingMentionQuery(message) : null),
     [message, target.kind],
   );
   const { data: searchResults } = useNoteSearch(
-    mentionQuery ?? '',
-    target.kind === 'chat' && mentionQuery !== null,
+    mentionQuery ?? "",
+    target.kind === "chat" && mentionQuery !== null,
   );
   const mentionSuggestions = useMemo(
     () =>
@@ -344,12 +356,22 @@ export const Composer = () => {
       ),
     [searchResults?.notes, selectedNotes],
   );
-  const primarySf =
-    presentation.primaryActionLabel === 'Send'
-      ? 'arrow.up'
-      : presentation.primaryActionLabel === 'Append'
-        ? 'text.badge.plus'
-        : 'square.and.pencil';
+
+  const showPlusMenu = useCallback(() => {
+    ActionSheetIOS.showActionSheetWithOptions(
+      {
+        options: ["Cancel", "Take Photo", "Choose from Library"],
+        cancelButtonIndex: 0,
+      },
+      (buttonIndex) => {
+        if (buttonIndex === 1) {
+          setIsCameraOpen(true);
+        } else if (buttonIndex === 2) {
+          void pickAttachment();
+        }
+      },
+    );
+  }, [pickAttachment]);
 
   const onContentSizeChange = useCallback(
     (h: number) => {
@@ -421,7 +443,10 @@ export const Composer = () => {
           onRemoveNote={removeSelectedNote}
           selectedNotes={selectedNotes}
         />
-        <MentionSuggestions onSelect={handleSelectMention} suggestions={mentionSuggestions} />
+        <MentionSuggestions
+          onSelect={handleSelectMention}
+          suggestions={mentionSuggestions}
+        />
         <Animated.View style={[styles.inputSurface, inputStyle]}>
           <View style={styles.inputWrap}>
             <TextInput
@@ -429,9 +454,11 @@ export const Composer = () => {
               multiline
               value={message}
               onChangeText={setMessage}
-              onContentSizeChange={(e) => onContentSizeChange(e.nativeEvent.contentSize.height)}
+              onContentSizeChange={(e) =>
+                onContentSizeChange(e.nativeEvent.contentSize.height)
+              }
               placeholder={presentation.placeholder}
-              placeholderTextColor={theme.colors['text-tertiary']}
+              placeholderTextColor={theme.colors["text-tertiary"]}
               cursorColor={theme.colors.accent}
               selectionColor={theme.colors.accent}
               style={styles.input}
@@ -444,45 +471,39 @@ export const Composer = () => {
         <View style={styles.accessoryRow}>
           <View style={styles.accessoryLeft}>
             {presentation.showsAttachmentButton ? (
-              <>
-                <SecondaryButton
-                  sf="photo"
-                  onPress={() => {
-                    void pickAttachment();
-                  }}
-                  accessibilityLabel="Choose a photo"
-                  disabled={isChatSending}
-                />
-                <SecondaryButton
-                  sf="camera"
-                  onPress={() => setIsCameraOpen(true)}
-                  accessibilityLabel="Take a photo"
-                  disabled={isChatSending}
-                />
-              </>
+              <SecondaryButton
+                icon="plus"
+                onPress={showPlusMenu}
+                accessibilityLabel="Add attachment"
+                disabled={isChatSending}
+              />
             ) : null}
             {presentation.showsVoiceButton ? (
               <SecondaryButton
-                sf="waveform"
-                onPress={() => setIsVoiceOpen(true)}
+                icon="waveform"
+                onPress={() => voiceModalRef.current?.present()}
                 accessibilityLabel="Record a voice message"
                 disabled={isChatSending}
               />
             ) : null}
+          </View>
+          <View style={styles.accessoryRight}>
             {presentation.secondaryActionLabel ? (
-              <AccessoryAction
-                label={presentation.secondaryActionLabel}
+              <SecondaryButton
+                icon="bubble.left"
                 onPress={handleSecondaryAction}
+                accessibilityLabel={presentation.secondaryActionLabel ?? "Start chat"}
                 disabled={isChatSending}
               />
             ) : null}
+            <SendButton
+              onPress={handlePrimaryAction}
+              disabled={!canSubmit || isChatSending}
+              accessibilityLabel={
+                isChatSending ? "Sending…" : presentation.primaryActionLabel
+              }
+            />
           </View>
-          <SendButton
-            sf={primarySf}
-            onPress={handlePrimaryAction}
-            disabled={!canSubmit || isChatSending}
-            accessibilityLabel={isChatSending ? 'Sending…' : presentation.primaryActionLabel}
-          />
         </View>
       </Animated.View>
 
@@ -494,13 +515,14 @@ export const Composer = () => {
         onClose={() => setIsCameraOpen(false)}
       />
       <VoiceSessionModal
+        bottomSheetModalRef={voiceModalRef}
         onAudioTranscribed={(transcript) => {
           handleVoiceTranscript(transcript);
           setIsVoiceOpen(false);
         }}
         onClose={() => {
           setIsRecording(false);
-          setMode('text');
+          setMode("text");
           setIsVoiceOpen(false);
         }}
         visible={isVoiceOpen}
@@ -509,33 +531,31 @@ export const Composer = () => {
   );
 };
 
-
 const styles = StyleSheet.create({
   shell: {
     left: 0,
     right: 0,
     paddingHorizontal: spacing[4],
-    position: 'absolute',
-    alignItems: 'center',
+    position: "absolute",
+    alignItems: "center",
   },
 
   card: {
-    width: '100%',
+    width: "100%",
     maxWidth: MAX_WIDTH,
-    backgroundColor: theme.colors['bg-elevated'],
+    backgroundColor: theme.colors["bg-elevated"],
     borderRadius: radiiNative.md,
-    borderCurve: 'continuous',
+    borderCurve: "continuous",
     paddingHorizontal: spacing[1],
     paddingTop: spacing[1],
     paddingBottom: spacing[3],
     gap: spacing[2],
-    overflow: 'hidden',
+    overflow: "hidden",
     ...shadowsNative.low,
   },
 
   inputSurface: {
-    minHeight: INPUT_MIN_H + spacing[3],
-    paddingHorizontal: spacing[3],
+    paddingHorizontal: spacing[1],
     paddingVertical: 0,
   },
   inputWrap: {
@@ -550,27 +570,25 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
   },
   accessoryRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
+    alignItems: "center",
+    flexDirection: "row",
     gap: spacing[2],
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
   },
   accessoryLeft: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing[1],
-    minHeight: SEND_BTN_SIZE,
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing[2],
     flexShrink: 1,
   },
+  accessoryRight: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing[2],
+  },
   accessoryAction: {
-    alignItems: 'center',
-    backgroundColor: theme.colors['bg-surface'],
-    borderColor: theme.colors['border-default'],
-    borderRadius: radiiNative.full,
-    borderWidth: 1,
-    justifyContent: 'center',
-    minHeight: SEND_BTN_SIZE,
-    paddingHorizontal: spacing[3],
+    alignItems: "center",
+    justifyContent: "center",
   },
   accessoryActionDisabled: {
     opacity: 0.4,
@@ -579,7 +597,7 @@ const styles = StyleSheet.create({
     opacity: 0.75,
   },
   accessoryActionText: {
-    color: theme.colors['text-secondary'],
+    color: theme.colors["text-secondary"],
     fontSize: theme.textVariants.caption1.fontSize,
     lineHeight: theme.textVariants.caption1.lineHeight,
   },
@@ -589,38 +607,30 @@ const styles = StyleSheet.create({
     height: SEND_BTN_SIZE,
     borderRadius: radiiNative.full,
     backgroundColor: theme.colors.foreground,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   sendBtnDisabled: {
-    backgroundColor: theme.colors['bg-base'],
+    backgroundColor: theme.colors["bg-base"],
     borderWidth: 1,
-    borderColor: theme.colors['border-default'],
+    borderColor: theme.colors["border-default"],
   },
   sendBtnPressed: {
     opacity: 0.7,
   },
-  sendBtnIcon: {
-    width: SEND_ICON_SIZE,
-    height: SEND_ICON_SIZE,
-  },
   secondaryBtn: {
-    width: spacing[5] + spacing[2],
-    height: spacing[5] + spacing[2],
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: SECONDARY_BTN_SIZE,
+    height: SECONDARY_BTN_SIZE,
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: radiiNative.md,
-    borderCurve: 'continuous',
+    borderCurve: "continuous",
   },
   secondaryBtnDisabled: {
     opacity: 0.4,
   },
   secondaryBtnPressed: {
-    backgroundColor: theme.colors['bg-surface'],
-  },
-  secondaryBtnIcon: {
-    width: spacing[4],
-    height: spacing[4],
+    backgroundColor: theme.colors["bg-surface"],
   },
   attachments: {
     gap: spacing[2],
@@ -633,83 +643,71 @@ const styles = StyleSheet.create({
     width: spacing[4] * 3,
     height: spacing[4] * 3,
     borderRadius: radiiNative.md,
-    borderCurve: 'continuous',
-    overflow: 'hidden',
-    backgroundColor: theme.colors['bg-surface'],
+    borderCurve: "continuous",
+    overflow: "hidden",
+    backgroundColor: theme.colors["bg-surface"],
   },
   thumbImage: {
     width: spacing[4] * 3,
     height: spacing[4] * 3,
   },
   thumbBadge: {
-    position: 'absolute',
+    position: "absolute",
     top: spacing[1],
     right: spacing[1],
     width: spacing[2] * 2,
     height: spacing[2] * 2,
     borderRadius: radiiNative.full,
-    backgroundColor: theme.colors['overlay-modal-high'],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  thumbBadgeIcon: {
-    width: spacing[1] + 2,
-    height: spacing[1] + 2,
+    backgroundColor: theme.colors["overlay-modal-high"],
+    alignItems: "center",
+    justifyContent: "center",
   },
   thumbDim: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: theme.colors['overlay-modal-medium'],
+    backgroundColor: theme.colors["overlay-modal-medium"],
   },
 
   selectionRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: spacing[2],
   },
   selectionChip: {
-    alignItems: 'center',
-    backgroundColor: theme.colors['bg-surface'],
-    borderColor: theme.colors['border-default'],
+    alignItems: "center",
+    backgroundColor: theme.colors["bg-surface"],
+    borderColor: theme.colors["border-default"],
     borderRadius: radiiNative.full,
     borderWidth: 1,
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: spacing[1],
     paddingHorizontal: spacing[2],
     paddingVertical: spacing[1],
   },
-  selectionChipIcon: {
-    height: spacing[3],
-    width: spacing[3],
-  },
   selectionChipButton: {
-    alignItems: 'center',
+    alignItems: "center",
     borderRadius: radiiNative.full,
     height: spacing[4],
-    justifyContent: 'center',
+    justifyContent: "center",
     width: spacing[4],
   },
   selectionChipButtonPressed: {
     backgroundColor: theme.colors.background,
   },
-  selectionChipButtonIcon: {
-    height: spacing[2],
-    width: spacing[2],
-  },
   selectionChipText: {
-    color: theme.colors['text-secondary'],
+    color: theme.colors["text-secondary"],
     fontSize: theme.textVariants.caption1.fontSize,
     lineHeight: theme.textVariants.caption1.lineHeight,
   },
   suggestions: {
-    backgroundColor: theme.colors['bg-surface'],
-    borderColor: theme.colors['border-default'],
+    backgroundColor: theme.colors["bg-surface"],
+    borderColor: theme.colors["border-default"],
     borderRadius: radiiNative.md,
     borderWidth: 1,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   suggestionItem: {
     gap: spacing[1],
@@ -725,7 +723,7 @@ const styles = StyleSheet.create({
     lineHeight: theme.textVariants.caption1.lineHeight,
   },
   suggestionExcerpt: {
-    color: theme.colors['text-secondary'],
+    color: theme.colors["text-secondary"],
     fontSize: theme.textVariants.caption1.fontSize,
     lineHeight: theme.textVariants.caption1.lineHeight,
   },

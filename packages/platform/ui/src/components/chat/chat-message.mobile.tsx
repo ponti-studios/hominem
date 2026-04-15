@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   userMessageText: {
-    color: colors.white,
+    color: colors['accent-foreground'],
     fontSize: fontSizes.md,
     lineHeight: fontSizes.md * 1.5,
   },

@@ -73,7 +73,7 @@ export const useChatMessages = ({ chatId }: { chatId: string }) => {
     queryFn: async () => {
       const messages = await client.chats.getMessages({
         chatId,
-        limit: 50,
+        limit: 10,
       });
 
       const mapped = messages.flatMap((message) => {

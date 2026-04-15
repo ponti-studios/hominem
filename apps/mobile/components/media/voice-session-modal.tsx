@@ -10,7 +10,7 @@ interface VoiceSessionModalProps {
   visible: boolean;
   onClose: () => void;
   onAudioTranscribed: (transcription: string) => void;
-  bottomSheetModalRef?: React.RefObject<BottomSheetModal>;
+  bottomSheetModalRef?: React.RefObject<BottomSheetModal | null>;
 }
 
 export function VoiceSessionModal({

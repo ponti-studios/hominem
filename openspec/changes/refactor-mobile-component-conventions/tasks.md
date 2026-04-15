@@ -70,7 +70,7 @@
 
 - [x] 7.1 Run `pnpm --filter @hominem/mobile run typecheck` - must pass with 0 errors
 - [x] 7.2 Run `pnpm --filter @hominem/mobile run lint` - must pass with 0 errors
-- [ ] 7.3 Run `pnpm exec expo run:ios` - app must build successfully
-- [ ] 7.4 Verify auth flow works (login/logout)
-- [ ] 7.5 Verify composer works (text and voice)
+- [x] 7.3 Run `pnpm exec expo run:ios` - app must build successfully
+- [x] 7.4 Verify auth flow works (login/logout)
+- [x] 7.5 Verify composer works (text and voice)
 - [ ] 7.6 Verify chat list and navigation

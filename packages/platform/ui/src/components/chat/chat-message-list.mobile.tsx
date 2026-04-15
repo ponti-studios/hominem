@@ -1,6 +1,6 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import type React from 'react';
-import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, View, type FlatList as RNFlatList } from 'react-native';
 
 import { fontSizes, spacing } from '../../tokens';
 import { fontFamiliesNative } from '../../tokens/typography.native';
@@ -57,6 +57,8 @@ export function ChatMessageList({
 }: ChatMessageListProps) {
   const hasSearchQuery = showSearch && searchQuery.length > 0;
   const [activeActionMessageId, setActiveActionMessageId] = useState<string | null>(null);
+  const listRef = useRef<RNFlatList<ChatMessageItem> | null>(null);
+  const didInitialScrollRef = useRef(false);
 
   const renderItem = useCallback(
     ({ item }: { item: ChatMessageItem }) =>
@@ -122,6 +124,7 @@ export function ChatMessageList({
   return (
     <>
       <FlatList
+        ref={listRef}
         ListEmptyComponent={listEmptyComponent}
         ListFooterComponent={
           displayMessages.length > 0 ? (
@@ -131,7 +134,16 @@ export function ChatMessageList({
         contentContainerStyle={messagesContainerStyle}
         data={displayMessages}
         keyExtractor={keyExtractor}
+        inverted={false}
         onScrollBeginDrag={() => setActiveActionMessageId(null)}
+        onContentSizeChange={() => {
+          if (didInitialScrollRef.current || displayMessages.length === 0 || isMessagesLoading) return;
+
+          didInitialScrollRef.current = true;
+          requestAnimationFrame(() => {
+            listRef.current?.scrollToEnd({ animated: false });
+          });
+        }}
         removeClippedSubviews={false}
         renderItem={renderItem}
         scrollEnabled={displayMessages.length > 0}
