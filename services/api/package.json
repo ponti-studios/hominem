@@ -15,7 +15,6 @@
     "perf:auth-middleware": "NODE_ENV=test tsx src/middleware/auth.perf.ts"
   },
   "dependencies": {
-    "@better-auth/expo": "^1.4.19",
     "@better-auth/kysely-adapter": "^1.5.4",
     "@better-auth/passkey": "^1.4.19",
     "@hominem/auth": "workspace:*",
