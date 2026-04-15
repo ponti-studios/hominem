@@ -411,9 +411,6 @@ importers:
       '@opentelemetry/api-logs':
         specifier: ^0.51.0
         version: 0.51.1
-      date-fns:
-        specifier: ^3.6.0
-        version: 3.6.0
       pino:
         specifier: ^9.7.0
         version: 9.14.0
