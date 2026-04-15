@@ -34,18 +34,6 @@
       "types": "./src/ai-model.ts",
       "default": "./src/ai-model.ts"
     },
-    "./voice-transcription": {
-      "types": "./src/voice-transcription.service.ts",
-      "default": "./src/voice-transcription.service.ts"
-    },
-    "./voice-speech": {
-      "types": "./src/voice-speech.service.ts",
-      "default": "./src/voice-speech.service.ts"
-    },
-    "./voice-response": {
-      "types": "./src/voice-response.service.ts",
-      "default": "./src/voice-response.service.ts"
-    },
     "./queues": {
       "types": "./src/queues.ts",
       "default": "./src/queues.ts"
@@ -77,8 +65,7 @@
     "openai": "4.83.0",
     "pdf2json": "^3.1.6",
     "resend": "^4.0.1",
-    "zod": "4.3.6",
-    "@opentelemetry/api": "^1.9.0"
+    "zod": "4.3.6"
   },
   "devDependencies": {
     "@types/node": "^25.4.0",
