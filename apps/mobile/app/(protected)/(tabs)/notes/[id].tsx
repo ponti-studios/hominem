@@ -1,4 +1,3 @@
-import { useNoteEditor } from '@hominem/hooks';
 import { useApiClient } from '@hominem/rpc/react';
 import type { Note } from '@hominem/rpc/types';
 import { Image } from 'expo-image';
@@ -12,6 +11,8 @@ import { Text, theme } from '~/components/theme';
 import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
 import { noteKeys } from '~/services/notes/query-keys';
 import { useNoteQuery } from '~/services/notes/use-note-query';
+
+import { useNoteEditor } from './use-note-editor';
 
 const COMPOSER_CLEARANCE = 220;
 

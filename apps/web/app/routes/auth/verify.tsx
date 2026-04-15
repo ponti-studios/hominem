@@ -3,11 +3,11 @@
 import { AUTH_COPY, maskEmail } from '@hominem/auth';
 import { useAuthClient } from '@hominem/auth/client';
 import { resolveSafeAuthRedirect } from '@hominem/auth/server-utils';
-import { useEmailAuth } from '@hominem/hooks';
 import { AuthScaffold, OtpVerificationForm } from '@hominem/ui';
 import { redirect, useLoaderData, useLocation, useNavigate } from 'react-router';
 
 import { AUTH_CONFIG } from './config';
+import { useEmailAuth } from './use-email-auth';
 import { getNextRedirect } from './shared';
 import { redirectAuthenticatedUser } from './shared.server';
 

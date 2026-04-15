@@ -1,5 +1,4 @@
 import { AUTH_COPY, CHAT_AUTH_CONFIG, maskEmail } from '@hominem/auth';
-import { useEmailAuth } from '@hominem/hooks';
 import { Button } from '~/components/ui/Button';
 import { TextField } from '~/components/ui/TextField';
 import type { RelativePathString } from 'expo-router';
@@ -15,6 +14,7 @@ import { useAuth } from '~/services/auth/auth-provider';
 import { normalizeOtp } from '~/services/auth/validation';
 
 import { getAuthScreenBaseStyles } from '~/components/auth/auth-screen-styles';
+import { useEmailAuth } from './use-email-auth';
 
 export function VerifyScreen() {
   const styles = useStyles();

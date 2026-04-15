@@ -541,7 +541,7 @@ Even if messy, these areas should be left alone due to churn-to-benefit ratio:
 | Step                                       | Status | Notes                                     |
 | ------------------------------------------ | ------ | ----------------------------------------- |
 | 1.1 Delete `@hominem/presence`             | ✅     | Done                                      |
-| 1.2 Delete `@hominem/hooks`                | ⬜     | Still live                                |
+| 1.2 Delete `@hominem/hooks`                | ✅     | Removed                                   |
 | 1.3 Consolidate queue factories            | ✅     | Keep `@hominem/queues` as source of truth |
 | 1.4 Delete duplicate `chat.types.ts`       | ✅     | Moved to `@hominem/chat`                  |
 | 1.5 Delete duplicate `referenced-notes.ts` | ✅     | Moved to `@hominem/chat`                  |
@@ -551,7 +551,7 @@ Even if messy, these areas should be left alone due to churn-to-benefit ratio:
 
 | Step                                    | Status | Notes         |
 | --------------------------------------- | ------ | ------------- |
-| 2.1 Fix RPC ↔ Chat type boundaries      | ⬜     |               |
+| 2.1 Fix RPC ↔ Chat type boundaries      | ✅     | Domain types re-exported from RPC |
 | 2.2 Consolidate `ChatMessageDto` naming | ⬜     |               |
 | 2.3 Audit `@hominem/ui` exports         | ⬜     |               |
 | 2.4 Mobile auth convergence             | ⬜     | Evaluate only |

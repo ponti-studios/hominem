@@ -2,11 +2,11 @@
 
 import { AUTH_COPY, readAuthErrorMessage } from '@hominem/auth';
 import { useAuthClient, usePasskeyAuth } from '@hominem/auth/client';
-import { useEmailAuth } from '@hominem/hooks';
 import { AuthScaffold, EmailEntryForm } from '@hominem/ui';
 import { useLocation, useNavigate } from 'react-router';
 
 import { AUTH_CONFIG } from './config';
+import { useEmailAuth } from './use-email-auth';
 import { getNextRedirect } from './shared';
 import { redirectAuthenticatedUser } from './shared.server';
 

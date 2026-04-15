@@ -14,7 +14,6 @@ import {
 import { WEB_BRAND } from '~/lib/brand';
 import { AnalyticsProvider } from '~/lib/posthog';
 import { TelemetryProvider } from '~/lib/telemetry';
-import { useErrorFormatting } from '@hominem/hooks';
 import { ErrorState } from './components/error-state';
 
 import type { Route } from './+types/root';
@@ -116,7 +115,6 @@ export default function App({ loaderData }: Route.ComponentProps) {
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  const { getErrorMessage } = useErrorFormatting();
   let message = 'Oops!';
   let details = 'An unexpected error occurred.';
   let stack: string | undefined;
@@ -126,7 +124,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
     details =
       error.status === 404 ? 'The requested page could not be found.' : error.statusText || details;
   } else if (import.meta.env.DEV && error && error instanceof Error) {
-    details = getErrorMessage(error);
+    details = error.message || details;
     stack = error.stack;
   }
 
