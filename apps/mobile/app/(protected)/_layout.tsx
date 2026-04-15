@@ -14,7 +14,6 @@ import queryClient from '~/services/query-client';
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: theme.colors.background,
   },
   centered: {
     flex: 1,

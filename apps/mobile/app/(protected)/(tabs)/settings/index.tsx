@@ -399,7 +399,6 @@ const CARD_RADIUS = 14;
 const styles = StyleSheet.create({
   scroll: {
     flex: 1,
-    backgroundColor: theme.colors.background,
   },
   scrollContent: {
     paddingHorizontal: 16,

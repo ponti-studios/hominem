@@ -231,7 +231,6 @@ export default function NotesFeedScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: theme.colors.background,
     paddingHorizontal: spacing[4],
     paddingTop: spacing[2],
   },

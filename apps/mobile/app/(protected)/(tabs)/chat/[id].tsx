@@ -223,7 +223,6 @@ export default function ChatDetailScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: theme.colors.background,
     flex: 1,
   },
   headerActions: {
