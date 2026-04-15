@@ -42,6 +42,10 @@
       "types": "./src/http.ts",
       "default": "./src/http.ts"
     },
+    "./api-response-validation": {
+      "types": "./src/api-response-validation.ts",
+      "default": "./src/api-response-validation.ts"
+    },
     "./location": {
       "types": "./src/location/index.ts",
       "default": "./src/location/index.ts"

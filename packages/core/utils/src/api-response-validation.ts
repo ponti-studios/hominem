@@ -1,15 +1,15 @@
 import * as z from 'zod';
 
-const VoiceTranscribeSuccessSchema = z.object({
+export const VoiceTranscribeSuccessSchema = z.object({
   text: z.string(),
 });
 
-const VoiceTranscribeErrorSchema = z.object({
+export const VoiceTranscribeErrorSchema = z.object({
   error: z.string().optional(),
   code: z.string().optional(),
 });
 
-const UploadedFileSchema = z.object({
+export const UploadedFileSchema = z.object({
   id: z.string().uuid(),
   originalName: z.string().min(1),
   type: z.enum(['image', 'document', 'audio', 'video', 'unknown']),
@@ -24,7 +24,7 @@ const UploadedFileSchema = z.object({
   vectorIds: z.array(z.string()).optional(),
 });
 
-const UploadResponseSchema = z.object({
+export const UploadResponseSchema = z.object({
   success: z.literal(true),
   file: UploadedFileSchema,
   message: z.string().min(1),
@@ -33,15 +33,3 @@ const UploadResponseSchema = z.object({
 export type VoiceTranscribeSuccessResponse = z.infer<typeof VoiceTranscribeSuccessSchema>;
 export type VoiceTranscribeErrorResponse = z.infer<typeof VoiceTranscribeErrorSchema>;
 export type UploadResponse = z.infer<typeof UploadResponseSchema>;
-
-export function parseVoiceTranscribeSuccessResponse(data: unknown): VoiceTranscribeSuccessResponse {
-  return VoiceTranscribeSuccessSchema.parse(data);
-}
-
-export function parseVoiceTranscribeErrorResponse(data: unknown): VoiceTranscribeErrorResponse {
-  return VoiceTranscribeErrorSchema.parse(data);
-}
-
-export function parseUploadResponse(data: unknown): UploadResponse {
-  return UploadResponseSchema.parse(data);
-}

@@ -1,8 +1,8 @@
 import { emitVoiceEvent, isVoiceErrorCode } from '@hominem/rpc/voice-events';
 import {
-  parseVoiceTranscribeErrorResponse,
-  parseVoiceTranscribeSuccessResponse,
-} from '@hominem/platform-utils/api-response-validation';
+  VoiceTranscribeErrorSchema,
+  VoiceTranscribeSuccessSchema,
+} from '@hominem/utils/api-response-validation';
 import { logger } from '@hominem/utils/logger';
 import { useMutation } from '@tanstack/react-query';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -79,7 +79,7 @@ export function useTranscriber({
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        const payload = parseVoiceTranscribeErrorResponse(await response.json().catch(() => ({})));
+        const payload = VoiceTranscribeErrorSchema.parse(await response.json().catch(() => ({})));
         emitVoiceEvent('voice_transcribe_failed', {
           platform: 'mobile-ios',
           mimeType,
@@ -88,7 +88,7 @@ export function useTranscriber({
         throw new Error(payload.error || `Voice transcription failed (${response.status})`);
       }
 
-      const data = parseVoiceTranscribeSuccessResponse(await response.json());
+      const data = VoiceTranscribeSuccessSchema.parse(await response.json());
       emitVoiceEvent('voice_transcribe_succeeded', {
         platform: 'mobile-ios',
         mimeType,

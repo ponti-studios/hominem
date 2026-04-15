@@ -1,1 +1,1 @@
-export { splitMarkdown, type Document } from './markdown/markdown-processor';
+export { splitMarkdown, type Document } from './markdown-processor';

@@ -1,5 +1,5 @@
 import { isTestMode } from '@hominem/utils/storage';
-import { parseUploadResponse } from '@hominem/platform-utils/api-response-validation';
+import { UploadResponseSchema } from '@hominem/utils/api-response-validation';
 import {
   CHAT_UPLOAD_ALLOWED_MIME_TYPES,
   CHAT_UPLOAD_MAX_FILE_COUNT,
@@ -17,7 +17,7 @@ import type { UploadedFile } from '~/lib/types/upload';
  */
 export type UploadStateMachine = 'idle' | 'uploading' | 'done' | 'error';
 
-function toUploadedFile(file: ReturnType<typeof parseUploadResponse>['file']): UploadedFile {
+function toUploadedFile(file: ReturnType<typeof UploadResponseSchema.parse>['file']): UploadedFile {
   return {
     id: file.id,
     originalName: file.originalName,
@@ -115,7 +115,7 @@ export function useFileUpload(): UseFileUploadReturn {
       }),
       allowedMetaFields: ['originalName', 'mimetype'],
       getResponseData(xhr: XMLHttpRequest) {
-        return parseUploadResponse(JSON.parse(xhr.responseText));
+        return UploadResponseSchema.parse(JSON.parse(xhr.responseText));
       },
     });
 
@@ -172,7 +172,7 @@ export function useFileUpload(): UseFileUploadReturn {
         const newFiles = (result?.successful ?? []).flatMap((file) => {
           const body = file.response?.body;
           try {
-            return [toUploadedFile(parseUploadResponse(body).file)];
+            return [toUploadedFile(UploadResponseSchema.parse(body).file)];
           } catch {
             return [];
           }

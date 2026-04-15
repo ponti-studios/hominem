@@ -13,7 +13,6 @@
   "dependencies": {
     "@hominem/auth": "workspace:*",
     "@hominem/env": "workspace:*",
-    "@hominem/platform-utils": "workspace:*",
     "@hominem/rpc": "workspace:*",
     "@hominem/telemetry": "workspace:*",
     "@hominem/ui": "workspace:*",

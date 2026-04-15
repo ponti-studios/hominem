@@ -395,20 +395,20 @@ Additionally: `ChatMessage` vs `ChatMessageDto` naming inconsistency.
 
 #### Evaluation Checklist
 
-- [ ] **Audit all consumers** of `@hominem/utils`:
+- [x] **Audit all consumers** of `@hominem/utils`:
   ```bash
   rg "@hominem/utils" --type ts -l
   ```
-- [ ] **Map submodules to consumers**:
-  - Who uses `storage/`?
-  - Who uses `logger/`?
-  - Who uses `dates.ts` / `time.ts`?
-  - Who uses `markdown/`?
-- [ ] **Identify natural groupings**:
-  - Storage-bound: S3, upload helpers
-  - Observability: logging
-  - Text: markdown, date/time
-  - Integrations: Google API, HTTP
+- [x] **Map submodules to consumers**:
+   - `storage/`: API file processing, mobile upload, web upload/test helpers
+   - `logger/`: API, mobile, web, chat domain packages
+   - `dates.ts` / `time.ts`: mobile, UI, services
+   - `markdown/`: shared note/chat rendering helpers
+- [x] **Identify natural groupings**:
+   - Storage-bound: S3, upload helpers
+   - Observability: logging
+   - Text: markdown, date/time
+   - Integrations: Google API, HTTP
 
 #### If Splitting
 
@@ -429,6 +429,10 @@ Additionally: `ChatMessage` vs `ChatMessageDto` naming inconsistency.
 **Risk**: Medium — 7 packages depend on utils
 **Estimated reduction**: Depends on scope — clarify boundaries, may not reduce lines significantly
 **Alternative**: If consumers are too scattered, keep as-is with clear sub-path exports
+
+**Conclusion**: Keep `@hominem/utils` as a shared utility package for now. Its submodules are broad, but the consumers are still scattered enough that a split would create churn without a clear boundary win.
+
+**Related cleanup**: `@hominem/platform-utils` was folded into `@hominem/utils/api-response-validation` and deleted as a separate package. Response parsing now uses direct schema parsing only; no wrapper functions remain.
 
 ---
 
@@ -565,7 +569,7 @@ Even if messy, these areas should be left alone due to churn-to-benefit ratio:
 
 | Step                              | Status | Notes                |
 | --------------------------------- | ------ | -------------------- |
-| 3.1 Split `@hominem/utils`        | ⬜     | Evaluate feasibility |
+| 3.1 Split `@hominem/utils`        | ✅     | Keep as-is; folded platform-utils into utils |
 | 3.2 API service layer consistency | ⬜     |                      |
 | 3.3 Zod ↔ DB type alignment       | ⬜     |                      |
 

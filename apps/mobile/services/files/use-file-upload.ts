@@ -4,7 +4,7 @@ import {
   CHAT_UPLOAD_MAX_FILE_SIZE_BYTES,
   isSupportedChatUploadMimeType,
 } from '@hominem/utils/upload';
-import { parseUploadResponse } from '@hominem/platform-utils/api-response-validation';
+import { UploadResponseSchema } from '@hominem/utils/api-response-validation';
 import { useCallback, useState } from 'react';
 
 import { API_BASE_URL } from '~/constants';
@@ -13,7 +13,7 @@ interface UploadClient {
   upload(formData: FormData): Promise<unknown>;
 }
 
-function toUploadedFile(file: ReturnType<typeof parseUploadResponse>['file']): UploadedFile {
+function toUploadedFile(file: ReturnType<typeof UploadResponseSchema.parse>['file']): UploadedFile {
   return {
     id: file.id,
     originalName: file.originalName,
@@ -137,7 +137,7 @@ async function performMobileUploads(
       formData.append('originalName', originalName);
       formData.append('mimetype', mimetype);
 
-      const completion = parseUploadResponse(await api.upload(formData));
+      const completion = UploadResponseSchema.parse(await api.upload(formData));
 
       completedCount++;
       const overallProgress = Math.round((completedCount / assets.length) * 100);
