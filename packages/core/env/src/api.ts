@@ -31,6 +31,7 @@ export const apiSchema = baseSchema.extend({
     .describe('Whether to actually send emails via Resend'),
   OPENROUTER_API_KEY: isTest ? z.string().default('test-openrouter-key') : z.string().optional(),
   SENTRY_DSN: z.string().optional(),
+  SAVE_VOICE_AUDIO: z.coerce.boolean().default(false),
 });
 
 export type ApiEnv = z.infer<typeof apiSchema>;

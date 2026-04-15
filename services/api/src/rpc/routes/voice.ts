@@ -14,7 +14,7 @@ import { join } from 'node:path';
 import { logger } from '@hominem/utils/logger';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 import { rateLimitMiddleware } from '../middleware/rate-limit';
-import { env } from '@hominem/services/env';
+import { env } from '../../env';
 
 type VoiceErrorOutput = MobileVoiceResponseErrorOutput | MobileVoiceTranscriptionErrorOutput;
 
