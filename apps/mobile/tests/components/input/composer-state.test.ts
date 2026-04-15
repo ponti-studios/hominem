@@ -79,8 +79,6 @@ describe('createEmptyComposerDraft', () => {
     expect(createEmptyComposerDraft()).toEqual({
       text: '',
       attachments: [],
-      isRecording: false,
-      mode: 'text',
       selectedNotes: [],
     });
   });

@@ -119,11 +119,13 @@ function ComposerAttachments({
   attachments,
   errors,
   isUploading,
+  progressByAssetId,
   onRemoveAttachment,
 }: {
   attachments: ComposerAttachment[];
   errors: string[];
   isUploading: boolean;
+  progressByAssetId: Record<string, number>;
   onRemoveAttachment: (id: string) => void;
 }) {
   if (attachments.length === 0 && errors.length === 0 && !isUploading) {
@@ -138,31 +140,41 @@ function ComposerAttachments({
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.attachmentRow}
         >
-          {attachments.map((a) => (
-            <Pressable
-              key={a.id}
-              style={styles.thumb}
-              onPress={() => onRemoveAttachment(a.id)}
-              accessibilityLabel={`Remove ${a.name}`}
-              accessibilityRole="button"
-            >
-              {a.localUri && (
-                <Image
-                  source={{ uri: a.localUri }}
-                  style={styles.thumbImage}
-                  contentFit="cover"
-                />
-              )}
-              <View style={styles.thumbBadge} pointerEvents="none">
-                <AppIcon
-                  name="xmark"
-                  size={spacing[2] * 2}
-                  color={theme.colors.white}
-                />
-              </View>
-              {isUploading && <View style={styles.thumbDim} />}
-            </Pressable>
-          ))}
+           {attachments.map((a) => {
+             const progress = progressByAssetId[a.id] ?? 0;
+             const isUploading = progress > 0 && progress < 100;
+             
+             return (
+               <Pressable
+                 key={a.id}
+                 style={styles.thumb}
+                 onPress={() => onRemoveAttachment(a.id)}
+                 accessibilityLabel={`Remove ${a.name}`}
+                 accessibilityRole="button"
+               >
+                 {a.localUri && (
+                   <Image
+                     source={{ uri: a.localUri }}
+                     style={styles.thumbImage}
+                     contentFit="cover"
+                   />
+                 )}
+                 <View style={styles.thumbBadge} pointerEvents="none">
+                   <AppIcon
+                     name="xmark"
+                     size={spacing[2] * 2}
+                     color={theme.colors.white}
+                   />
+                 </View>
+                 {isUploading && (
+                   <>
+                     <View style={styles.thumbDim} />
+                     <View style={[styles.progressBar, { width: `${progress}%` }]} />
+                   </>
+                 )}
+               </Pressable>
+             );
+           })}
         </ScrollView>
       )}
 
@@ -404,14 +416,15 @@ export const Composer = () => {
         style={styles.card}
         testID="mobile-composer"
       >
-        <Animated.View layout={createNotesLayoutTransition(prefersReducedMotion)}>
+         <Animated.View layout={createNotesLayoutTransition(prefersReducedMotion)}>
           <ComposerAttachments
             attachments={attachments}
             errors={uploadState.errors}
             isUploading={uploadState.isUploading}
+            progressByAssetId={uploadState.progressByAssetId}
             onRemoveAttachment={handleRemoveAttachment}
           />
-        </Animated.View>
+         </Animated.View>
         <ComposerSelectionSummary
           onRemoveNote={removeSelectedNote}
           selectedNotes={selectedNotes}
@@ -425,6 +438,7 @@ export const Composer = () => {
             <TextInput
               ref={inputRef}
               multiline
+              scrollEnabled={false}
               value={message}
               onChangeText={setMessage}
               onContentSizeChange={(e) =>
@@ -436,8 +450,6 @@ export const Composer = () => {
               selectionColor={theme.colors.accent}
               style={styles.input}
               testID="mobile-composer-input"
-            />
-              scrollEnabled={false}
             />
           </View>
         </Animated.View>
@@ -624,6 +636,13 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     backgroundColor: theme.colors["overlay-modal-medium"],
+  },
+  progressBar: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    height: spacing[1],
+    backgroundColor: theme.colors.accent,
   },
 
   selectionRow: {

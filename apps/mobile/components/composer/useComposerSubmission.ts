@@ -3,7 +3,8 @@ import type { Chat } from '@hominem/rpc/types';
 import { useQueryClient } from '@tanstack/react-query';
 import type { RelativePathString } from 'expo-router';
 import { useRouter } from 'expo-router';
-import { Platform, useMemo } from 'react';
+import { useMemo } from 'react';
+import { Platform } from 'react-native';
 
 import { useSendMessage } from '~/services/chat';
 import type { ChatWithActivity } from '~/services/chat/session-state';

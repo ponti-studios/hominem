@@ -47,6 +47,7 @@ interface MobileUploadedAsset {
 interface MobileUploadState {
   isUploading: boolean;
   progress: number;
+  progressByAssetId: Record<string, number>;
   errors: string[];
 }
 
@@ -111,6 +112,7 @@ async function performMobileUploads(
   options?: {
     fetchImpl?: typeof fetch;
     onProgress?: (progress: number) => void;
+    onAssetProgress?: (assetId: string, progress: number) => void;
   },
 ): Promise<MobileUploadBatchResult> {
   const fetchImpl = options?.fetchImpl ?? fetch;
@@ -138,7 +140,9 @@ async function performMobileUploads(
       const completion = parseUploadResponse(await api.upload(formData));
 
       completedCount++;
-      options?.onProgress?.(Math.round((completedCount / assets.length) * 100));
+      const overallProgress = Math.round((completedCount / assets.length) * 100);
+      options?.onProgress?.(overallProgress);
+      options?.onAssetProgress?.(asset.assetId, 100);
 
       return {
         assetId: asset.assetId,
@@ -147,10 +151,17 @@ async function performMobileUploads(
       };
     } catch (error) {
       completedCount++;
-      options?.onProgress?.(Math.round((completedCount / assets.length) * 100));
+      const overallProgress = Math.round((completedCount / assets.length) * 100);
+      options?.onProgress?.(overallProgress);
+      options?.onAssetProgress?.(asset.assetId, 0);
       return `${originalName}: ${error instanceof Error ? error.message : 'Upload failed'}`;
     }
   };
+
+  // Initialize all assets to 0% progress
+  assets.forEach((asset) => {
+    options?.onAssetProgress?.(asset.assetId, 0);
+  });
 
   const results = await Promise.all(assets.map(uploadAsset));
 
@@ -176,6 +187,7 @@ export function useFileUpload(fetchImpl: typeof fetch = fetch) {
   const [uploadState, setUploadState] = useState<MobileUploadState>({
     isUploading: false,
     progress: 0,
+    progressByAssetId: {},
     errors: [],
   });
 
@@ -190,6 +202,7 @@ export function useFileUpload(fetchImpl: typeof fetch = fetch) {
         setUploadState({
           isUploading: false,
           progress: 0,
+          progressByAssetId: {},
           errors: [error],
         });
         return [];
@@ -198,6 +211,7 @@ export function useFileUpload(fetchImpl: typeof fetch = fetch) {
       setUploadState({
         isUploading: true,
         progress: 0,
+        progressByAssetId: {},
         errors: [],
       });
 
@@ -232,6 +246,15 @@ export function useFileUpload(fetchImpl: typeof fetch = fetch) {
               progress,
             }));
           },
+          onAssetProgress: (assetId, progress) => {
+            setUploadState((currentState) => ({
+              ...currentState,
+              progressByAssetId: {
+                ...currentState.progressByAssetId,
+                [assetId]: progress,
+              },
+            }));
+          },
           fetchImpl,
         },
       );
@@ -239,6 +262,7 @@ export function useFileUpload(fetchImpl: typeof fetch = fetch) {
       setUploadState({
         isUploading: false,
         progress: result.uploaded.length > 0 || result.errors.length > 0 ? 100 : 0,
+        progressByAssetId: {},
         errors: result.errors,
       });
 
