@@ -5,6 +5,7 @@ import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 import AppIcon from '~/components/ui/icon';
 import { Text, makeStyles, theme } from '~/components/theme';
 import { VoiceInput } from '~/components/media/voice';
+import { useVoiceResponse } from '~/components/media/voice/useVoiceResponse';
 
 interface VoiceSessionModalProps {
   onClose: () => void;
@@ -20,6 +21,7 @@ export function VoiceSessionModal({
   const styles = useStyles();
   const snapPoints = useMemo(() => ['50%', '90%'], []);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { respond, isLoading } = useVoiceResponse();
 
   const handleDismiss = useCallback(() => {
     setErrorMessage(null);
@@ -27,13 +29,16 @@ export function VoiceSessionModal({
     onClose();
   }, [bottomSheetModalRef, onClose]);
 
-  const handleError = useCallback(() => {
-    setErrorMessage('Transcription failed. Please try again.');
-  }, []);
-
   const handleRetry = useCallback(() => {
     setErrorMessage(null);
   }, []);
+
+  const handleAudioReady = useCallback(
+    async (audioUri: string) => {
+      return respond(audioUri);
+    },
+    [respond],
+  );
 
   return (
     <BottomSheetModal
@@ -74,14 +79,27 @@ export function VoiceSessionModal({
           ) : (
             <>
               <VoiceInput
-                autoTranscribe
-                onAudioTranscribed={(transcription) => {
-                  onAudioTranscribed(transcription);
-                  handleDismiss();
+                autoTranscribe={false}
+                onAudioReady={(audioUri) => {
+                  void handleAudioReady(audioUri)
+                    .then((transcript) => {
+                      onAudioTranscribed(transcript);
+                      handleDismiss();
+                    })
+                    .catch(() => {
+                      setErrorMessage('Voice response failed. Please try again.');
+                    });
                 }}
-                onError={handleError}
+                onError={() => {
+                  setErrorMessage('Voice response failed. Please try again.');
+                }}
                 style={styles.micButton}
               />
+              {isLoading ? (
+                <Text variant="caption1" color="text-secondary">
+                  Generating response...
+                </Text>
+              ) : null}
               <Text variant="caption1" color="text-secondary" style={styles.hint}>
                 Tap to record · tap again to stop
               </Text>

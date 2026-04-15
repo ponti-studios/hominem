@@ -6,8 +6,13 @@ interface VoiceSpeechInput {
   speed?: number;
 }
 
+interface VoiceRespondInput {
+  formData: FormData;
+}
+
 export interface VoiceClient {
   speech(input: VoiceSpeechInput): Promise<ArrayBuffer>;
+  respondStream(input: VoiceRespondInput): Promise<Response>;
 }
 
 export function createVoiceClient(rawClient: RawHonoClient): VoiceClient {
@@ -22,6 +27,11 @@ export function createVoiceClient(rawClient: RawHonoClient): VoiceClient {
       });
 
       return res.arrayBuffer();
+    },
+    async respondStream(input: VoiceRespondInput) {
+      return rawClient.post('/api/voice/respond/stream', {
+        body: input.formData,
+      });
     },
   };
 }

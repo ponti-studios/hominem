@@ -3,7 +3,11 @@ import type {
   MobileVoiceTranscriptionErrorOutput,
   MobileVoiceTranscriptionOutput,
 } from '@hominem/rpc/types/mobile.types';
-import { generateVoiceResponse, VoiceError } from '@hominem/services/voice-response';
+import {
+  generateVoiceResponse,
+  generateVoiceResponseStream,
+  VoiceError,
+} from '@hominem/services/voice-response';
 import { generateSpeechBuffer } from '@hominem/services/voice-speech';
 import { transcribeVoiceBuffer } from '@hominem/services/voice-transcription';
 import { zValidator } from '@hono/zod-validator';
@@ -180,3 +184,68 @@ export const authenticatedVoiceRoutes = new Hono<AppContext>()
       );
     }
   });
+
+authenticatedVoiceRoutes.post('/respond/stream', async (c) => {
+  try {
+    const body = await c.req.parseBody();
+    const { audioFile, language } = parseVoiceRequestBody(body);
+
+    if (!(audioFile instanceof File)) {
+      return respondWithJsonError(
+        c,
+        { error: 'No audio file provided', code: 'RESPONSE_FAILED' },
+        400,
+      );
+    }
+
+    const transcription = await transcribeVoiceBuffer({
+      buffer: await audioFile.arrayBuffer(),
+      mimeType: audioFile.type,
+      ...(audioFile.name ? { fileName: audioFile.name } : {}),
+      ...(language ? { language } : {}),
+    });
+
+    const rawVoice = typeof body.voice === 'string' ? body.voice : 'alloy';
+    const VALID_VOICES = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'] as const;
+    type Voice = (typeof VALID_VOICES)[number];
+    const voice: Voice = (VALID_VOICES as readonly string[]).includes(rawVoice)
+      ? (rawVoice as Voice)
+      : 'alloy';
+
+    const systemPrompt =
+      typeof body.systemPrompt === 'string'
+        ? body.systemPrompt
+        : 'You are a helpful assistant. Respond naturally in the same language as the user.';
+
+    const { stream, transcript, mimeType } = await generateVoiceResponseStream({
+      text: transcription.text,
+      voice,
+      format: 'pcm16' as const,
+      systemPrompt,
+    });
+
+    c.executionCtx.waitUntil(
+      transcript.catch(() => {
+        // Stream transport only needs the audio response.
+      }),
+    );
+
+    return c.body(stream, 200, {
+      'Content-Type': mimeType,
+      'X-User-Transcript': encodeURIComponent(transcription.text),
+    });
+  } catch (error) {
+    if (error instanceof VoiceError) {
+      return respondWithJsonError(
+        c,
+        { error: error.message, code: error.code as VoiceErrorOutput['code'] },
+        getVoiceErrorStatusCode(error.statusCode),
+      );
+    }
+    return respondWithJsonError(
+      c,
+      { error: 'Failed to generate voice response', code: 'RESPONSE_FAILED' },
+      500,
+    );
+  }
+});

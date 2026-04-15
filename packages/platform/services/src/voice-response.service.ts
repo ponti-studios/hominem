@@ -55,6 +55,12 @@ export interface VoiceResponseOutput {
   savedPath?: string | undefined;
 }
 
+export interface VoiceResponseStreamOutput {
+  stream: ReadableStream<Uint8Array>;
+  transcript: Promise<string>;
+  mimeType: string;
+}
+
 export interface VoiceResponseInput {
   /** The user's message or transcribed speech to respond to */
   text: string;
@@ -130,6 +136,81 @@ async function collectAudioStream(
   return {
     audioB64: audioChunks.join(''),
     transcript: transcriptChunks.join(''),
+  };
+}
+
+function createAudioStream(response: Response): VoiceResponseStreamOutput {
+  const transcriptChunks: string[] = [];
+  let resolveTranscript!: (transcript: string) => void;
+  let rejectTranscript!: (error: unknown) => void;
+
+  const transcript = new Promise<string>((resolve, reject) => {
+    resolveTranscript = resolve;
+    rejectTranscript = reject;
+  });
+
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const reader = response.body?.getReader();
+      if (!reader) {
+        const error = new VoiceError('No response body from audio stream', 'RESPONSE_FAILED', 500);
+        rejectTranscript(error);
+        controller.error(error);
+        return;
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() ?? '';
+
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            const data = line.slice('data: '.length).trim();
+            if (data === '[DONE]') continue;
+
+            try {
+              const chunk = JSON.parse(data) as AudioChunk;
+              const audio = chunk.choices?.[0]?.delta?.audio;
+              if (audio?.data) {
+                controller.enqueue(Buffer.from(audio.data, 'base64'));
+              }
+              if (audio?.transcript) {
+                transcriptChunks.push(audio.transcript);
+              }
+            } catch {
+              // Skip malformed chunks.
+            }
+          }
+        }
+
+        const final = decoder.decode();
+        if (final) {
+          buffer += final;
+        }
+
+        resolveTranscript(transcriptChunks.join(''));
+        controller.close();
+      } catch (error) {
+        rejectTranscript(error);
+        controller.error(error);
+      } finally {
+        reader.releaseLock();
+      }
+    },
+  });
+
+  return {
+    stream,
+    transcript,
+    mimeType: 'audio/pcm',
   };
 }
 
@@ -333,4 +414,58 @@ export async function generateVoiceResponse(
     }
     throw new VoiceError('Failed to process audio stream', 'RESPONSE_FAILED', 500);
   }
+}
+
+export async function generateVoiceResponseStream(
+  input: VoiceResponseInput,
+): Promise<VoiceResponseStreamOutput> {
+  const requestId = input.requestId ?? `vr-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
+  if (!env.OPENROUTER_API_KEY) {
+    logger.error('[voice-response] Missing OPENROUTER_API_KEY', getVoiceLogData(requestId));
+    throw new VoiceError('Invalid API configuration.', 'AUTH', 401);
+  }
+
+  const voice: VoiceResponseVoice = input.voice ?? 'alloy';
+  const messages: object[] = [];
+
+  if (input.systemPrompt) {
+    messages.push({ role: 'system', content: input.systemPrompt });
+  }
+
+  messages.push({ role: 'user', content: input.text });
+
+  const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
+      'Content-Type': 'application/json',
+      'HTTP-Referer': 'https://hominem.app',
+      'X-Title': 'Hominem',
+    },
+    body: JSON.stringify({
+      model: VOICE_RESPONSE_MODEL,
+      messages,
+      modalities: ['text', 'audio'],
+      audio: { voice, format: 'pcm16' },
+      stream: true,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorBody = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+    const errorMessage = (errorBody['error'] as Record<string, unknown>)?.['message'] as
+      | string
+      | undefined;
+
+    const errorInfo = mapVoiceProviderError({
+      kind: 'response',
+      responseStatus: response.status,
+      responseStatusText: response.statusText,
+      ...(typeof errorMessage === 'string' ? { errorMessage } : {}),
+    });
+    throw new VoiceError(errorInfo.message, errorInfo.code, errorInfo.statusCode);
+  }
+
+  return createAudioStream(response);
 }
