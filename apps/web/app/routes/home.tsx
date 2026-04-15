@@ -1,5 +1,5 @@
 import { NOTES_AUTH_CONFIG } from '@hominem/auth';
-import { resolveSafeAuthRedirect } from '@hominem/auth/server-utils';
+import { resolveAuthRedirect } from '@hominem/auth/server-utils';
 import type { LoaderFunctionArgs } from 'react-router';
 import { data, redirect } from 'react-router';
 
@@ -14,7 +14,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const requestUrl = new URL(request.url);
   const rawNext = requestUrl.searchParams.get('next');
   const next = rawNext
-    ? resolveSafeAuthRedirect(rawNext, '/notes', [...NOTES_AUTH_CONFIG.allowedDestinations])
+    ? resolveAuthRedirect(rawNext, '/notes', [...NOTES_AUTH_CONFIG.allowedDestinations]).safeRedirect
     : '/notes';
 
   return data({ next }, { headers });

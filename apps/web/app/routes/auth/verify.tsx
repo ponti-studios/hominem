@@ -2,7 +2,7 @@
 
 import { AUTH_COPY, maskEmail } from '@hominem/auth';
 import { useAuthClient } from '@hominem/auth/client';
-import { resolveSafeAuthRedirect } from '@hominem/auth/server-utils';
+import { resolveAuthRedirect } from '@hominem/auth/server-utils';
 import { AuthScaffold, OtpVerificationForm } from '@hominem/ui';
 import { redirect, useLoaderData, useLocation, useNavigate } from 'react-router';
 
@@ -42,9 +42,9 @@ export default function Component() {
     {
       sendOtp: async () => {},
       verifyOtp: async (email, otp) => {
-        const destination = resolveSafeAuthRedirect(next, AUTH_CONFIG.defaultRedirect, [
+        const destination = resolveAuthRedirect(next, AUTH_CONFIG.defaultRedirect, [
           ...AUTH_CONFIG.allowedRedirectPrefixes,
-        ]);
+        ]).safeRedirect;
         const result = await authClient.signIn.emailOtp({ email, otp });
         if (result.error || !result.data?.user?.id) {
           throw new Error(

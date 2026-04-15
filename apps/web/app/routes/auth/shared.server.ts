@@ -1,4 +1,4 @@
-import { resolveSafeAuthRedirect } from '@hominem/auth/server-utils';
+import { resolveAuthRedirect } from '@hominem/auth/server-utils';
 import { redirect } from 'react-router';
 
 import { getServerAuth } from '~/lib/auth.server';
@@ -13,9 +13,9 @@ export async function redirectAuthenticatedUser(request: Request) {
 
   const url = new URL(request.url);
   return redirect(
-    resolveSafeAuthRedirect(url.searchParams.get('next'), AUTH_CONFIG.defaultRedirect, [
+    resolveAuthRedirect(url.searchParams.get('next'), AUTH_CONFIG.defaultRedirect, [
       ...AUTH_CONFIG.allowedRedirectPrefixes,
-    ]),
+    ]).safeRedirect,
     { headers },
   );
 }

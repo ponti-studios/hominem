@@ -1,6 +1,6 @@
 # Local development environment
 # Usage: docker compose -f infra/compose/base.yml -f infra/compose/dev.yml up
-# Includes Redis, Postgres, and Jaeger for local development.
+# Includes Redis and Postgres for local development.
 # Secrets: copy infra/compose/.env.example → infra/compose/.env
 
 # Combined image + logging anchor for all postgres services
@@ -103,15 +103,4 @@ services:
     networks:
       - hominem
 
-  jaeger:
-    image: jaegertracing/all-in-one:1.57
-    container_name: hominem-jaeger
-    environment:
-      COLLECTOR_OTLP_ENABLED: 'true'
-    ports:
-      - '16686:16686'
-      - '4317:4317'
-      - '4318:4318'
-    restart: unless-stopped
-    networks:
-      - hominem
+

@@ -1,6 +1,6 @@
 import {
   buildAuthCallbackErrorRedirect,
-  resolveSafeAuthRedirect,
+  resolveAuthRedirect,
 } from '@hominem/auth/server-utils';
 import { redirect } from 'react-router';
 import type { ActionFunctionArgs } from 'react-router';
@@ -23,8 +23,8 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   return redirect(
-    resolveSafeAuthRedirect(payload.next, AUTH_CONFIG.defaultRedirect, [
+    resolveAuthRedirect(payload.next, AUTH_CONFIG.defaultRedirect, [
       ...AUTH_CONFIG.allowedRedirectPrefixes,
-    ]),
+    ]).safeRedirect,
   );
 }

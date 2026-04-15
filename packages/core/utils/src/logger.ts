@@ -1,5 +1,6 @@
 import { context as otelContext } from '@opentelemetry/api';
 import { logs } from '@opentelemetry/api-logs';
+import pino from 'pino';
 
 import {
   type HttpRequestLogData,
@@ -10,56 +11,24 @@ import {
   getHttpRequestOutLogMessage,
 } from './logger.shared';
 
-type PinoInstance = ((
-  options: object,
-  transport?: unknown,
-) => {
-  info: (data: object | undefined, message: string) => void;
-  error: (error: Error | object | undefined, message: string) => void;
-  warn: (data: object | undefined, message: string) => void;
-  debug: (data: object | undefined, message: string) => void;
-}) & {
-  transport: (options: object) => unknown;
-};
-
-let pino: PinoInstance | null = null;
-
-// Only import and initialize in Node.js environment
-if (typeof process !== 'undefined' && process.versions && process.versions.node) {
-  try {
-    // Using require for Node.js environments
-    // eslint-disable-next-line @typescript-eslint/no-require-imports, global-require
-    pino = require('pino');
-  } catch {
-    // Fallback if require is not available
-    pino = null;
-  }
-}
-
 const redactFields = ['email', 'password', 'token'];
 
 export { getHttpRequestInLogMessage, getHttpRequestLogLevel, getHttpRequestOutLogMessage };
 export type { HttpRequestLogData, HttpRequestStartLogData, LoggerLevel };
 
-const pinoLogger =
-  pino !== null
-    ? pino(
-        {
-          base: null,
-          level: (typeof process !== 'undefined' && process.env?.LOG_LEVEL) || 'debug',
-          redact: {
-            paths: redactFields.map((field) => `*.${field}`),
-            censor: '[REDACTED]',
-          },
-          formatters: {
-            level(label: string) {
-              return { level: label };
-            },
-          },
-        },
-        undefined,
-      )
-    : null;
+const pinoLogger = pino({
+  base: null,
+  level: (typeof process !== 'undefined' && process.env?.LOG_LEVEL) || 'debug',
+  redact: {
+    paths: redactFields.map((field) => `*.${field}`),
+    censor: '[REDACTED]',
+  },
+  formatters: {
+    level(label: string) {
+      return { level: label };
+    },
+  },
+});
 
 function toOtelAttributes(data?: object) {
   if (!data) {
@@ -103,7 +72,7 @@ function emitOtelLogRecord(
 export const logger = {
   info: (message: string, data?: object) => {
     emitOtelLogRecord('INFO', message, data);
-    if (pinoLogger) pinoLogger.info(data, message);
+    pinoLogger.info(data, message);
   },
   error: (message: string, error?: Error | object) => {
     const data =
@@ -116,14 +85,14 @@ export const logger = {
         : error;
 
     emitOtelLogRecord('ERROR', message, data as object | undefined);
-    if (pinoLogger) pinoLogger.error(error, message);
+    pinoLogger.error(error, message);
   },
   warn: (message: string, data?: object) => {
     emitOtelLogRecord('WARN', message, data);
-    if (pinoLogger) pinoLogger.warn(data, message);
+    pinoLogger.warn(data, message);
   },
   debug: (message: string, data?: object) => {
     emitOtelLogRecord('DEBUG', message, data);
-    if (pinoLogger) pinoLogger.debug(data, message);
+    pinoLogger.debug(data, message);
   },
 };

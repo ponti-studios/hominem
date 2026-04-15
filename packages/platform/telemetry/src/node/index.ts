@@ -18,8 +18,7 @@ import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { PgInstrumentation } from '@opentelemetry/instrumentation-pg';
 import { RedisInstrumentation } from '@opentelemetry/instrumentation-redis';
 import { CompressionAlgorithm } from '@opentelemetry/otlp-exporter-base';
-import { B3InjectEncoding, B3Propagator } from '@opentelemetry/propagator-b3';
-import { JaegerPropagator } from '@opentelemetry/propagator-jaeger';
+
 import { BatchLogRecordProcessor, LoggerProvider } from '@opentelemetry/sdk-logs';
 import { MeterProvider, PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import type { SpanProcessor } from '@opentelemetry/sdk-trace-base';
@@ -49,6 +48,11 @@ export function initTelemetry(explicitConfig?: Partial<TelemetryConfig>): NodeTe
     return { shutdown: async () => {}, forceFlush: async () => {} };
   }
 
+  // Skip OTel setup in development - use pino logger directly
+  if (config.environment === 'development') {
+    return { shutdown: async () => {}, forceFlush: async () => {} };
+  }
+
   const resource = createResource(config);
 
   // Set up context manager
@@ -56,14 +60,9 @@ export function initTelemetry(explicitConfig?: Partial<TelemetryConfig>): NodeTe
   contextManager.enable();
   context.setGlobalContextManager(contextManager);
 
-  // Set up propagator (supports W3C, B3, and Jaeger formats)
+  // Set up propagator (W3C standard for context and baggage)
   const propagator = new CompositePropagator({
-    propagators: [
-      new W3CTraceContextPropagator(),
-      new W3CBaggagePropagator(),
-      new B3Propagator({ injectEncoding: B3InjectEncoding.MULTI_HEADER }),
-      new JaegerPropagator(),
-    ],
+    propagators: [new W3CTraceContextPropagator(), new W3CBaggagePropagator()],
   });
   propagation.setGlobalPropagator(propagator);
 
@@ -235,15 +234,7 @@ export function createHonoTelemetryMiddleware() {
     const activeSpan = trace.getSpan(activeContext);
     const carrier: Record<string, string> = {};
 
-    for (const headerName of [
-      'traceparent',
-      'baggage',
-      'x-b3-traceid',
-      'x-b3-spanid',
-      'x-b3-sampled',
-      'x-b3-flags',
-      'uber-trace-id',
-    ]) {
+    for (const headerName of ['traceparent', 'baggage']) {
       const value = ctx.req.header(headerName);
       if (value) {
         carrier[headerName] = value;
