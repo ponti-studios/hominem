@@ -10,7 +10,7 @@ import {
 
 import { colors, fontSizes, fontWeights, spacing } from '~/components/theme/tokens';
 import { fontFamiliesNative } from '~/components/theme/tokens/typography.native';
-import type { FieldBaseProps } from './field.types';
+import type { FieldBaseProps } from './Field.types';
 
 interface NativeFieldChildProps {
   accessibilityHint?: string | undefined;

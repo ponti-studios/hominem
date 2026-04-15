@@ -99,7 +99,7 @@ export function ChatMessageList({
     return (
       <View style={styles.emptySearch}>
         <Text color="text-tertiary" style={styles.emptySearchText}>
-          No messages matching "{searchQuery}"
+          No messages matching &ldquo;{searchQuery}&rdquo;
         </Text>
       </View>
     );

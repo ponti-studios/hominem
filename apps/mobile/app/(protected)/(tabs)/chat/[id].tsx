@@ -16,12 +16,11 @@ import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { useComposerContext } from '~/components/composer/ComposerContext';
-import { DEFAULT_CHAT_TITLE, resolveChatScreenTitle, updateChatTitleCaches } from '~/services/chat';
-import { useActiveChat, useArchiveChat, useChatMessages, useSendMessage } from '~/services/chat';
+import { DEFAULT_CHAT_TITLE, resolveChatScreenTitle, updateChatTitleCaches , useActiveChat, useArchiveChat, useChatMessages, useSendMessage } from '~/services/chat';
 import { useTTS } from '~/components/media/use-tts';
 import { theme } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
-import { EmptyState } from '~/components/ui/EmptyState';
+import { EmptyState } from '~/components/ui';
 import {
   createChatInboxRefreshSnapshot,
   upsertInboxSessionActivity,

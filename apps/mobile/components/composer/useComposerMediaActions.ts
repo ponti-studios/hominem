@@ -74,13 +74,13 @@ export function useComposerMediaActions({
   const { uploadAssets, uploadState, clearErrors } = useFileUpload();
 
   const appendUploadedAssets = async (
-    assets: Array<{
+    assets: {
       assetId: string;
       fileName: string | null;
       mimeType: string | null;
       type: string | null;
       uri: string;
-    }>,
+    }[],
   ) => {
     const uploadedAssets = await uploadAssets(assets);
 

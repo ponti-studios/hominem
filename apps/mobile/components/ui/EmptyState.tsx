@@ -1,6 +1,5 @@
 import { SymbolView, type SFSymbol } from 'expo-symbols';
-import { FadeIn } from 'react-native-reanimated';
-import Reanimated from 'react-native-reanimated';
+import Reanimated, { FadeIn } from 'react-native-reanimated';
 import { StyleSheet, View } from 'react-native';
 
 import { radii, spacing, colors } from '../theme/tokens';

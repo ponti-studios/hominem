@@ -73,4 +73,4 @@
 - [x] 7.3 Run `pnpm exec expo run:ios` - app must build successfully
 - [x] 7.4 Verify auth flow works (login/logout)
 - [x] 7.5 Verify composer works (text and voice)
-- [ ] 7.6 Verify chat list and navigation
+- [x] 7.6 Verify chat list and navigation
