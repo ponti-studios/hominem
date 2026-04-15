@@ -83,6 +83,7 @@ export interface SearchNotesInput {
   userId: string;
   query: string;
   limit?: number;
+  cursor?: string;
 }
 
 export interface NoteFeedRecord {
@@ -105,6 +106,11 @@ export interface SearchNoteResult {
   id: string;
   title: string | null;
   excerpt: string | null;
+}
+
+export interface SearchNotesPageRecord {
+  notes: SearchNoteResult[];
+  nextCursor: string | null;
 }
 
 type NoteFeedRow = Pick<
@@ -164,6 +170,30 @@ function decodeNoteFeedCursor(cursor: string): { createdAt: string; id: string }
 
     return {
       createdAt: parsed.createdAt,
+      id: parsed.id,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function encodeNoteSearchCursor(updatedAt: string, id: string): string {
+  return Buffer.from(JSON.stringify({ updatedAt, id }), 'utf8').toString('base64url');
+}
+
+function decodeNoteSearchCursor(cursor: string): { updatedAt: string; id: string } | null {
+  try {
+    const parsed = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8')) as {
+      updatedAt?: unknown;
+      id?: unknown;
+    };
+
+    if (typeof parsed.updatedAt !== 'string' || typeof parsed.id !== 'string') {
+      return null;
+    }
+
+    return {
+      updatedAt: parsed.updatedAt,
       id: parsed.id,
     };
   } catch {
@@ -365,25 +395,46 @@ export const NoteRepository = {
   /**
    * Search notes by title/content text match.
    */
-  async search(handle: DbHandle, input: SearchNotesInput): Promise<SearchNoteResult[]> {
+  async search(handle: DbHandle, input: SearchNotesInput): Promise<SearchNotesPageRecord> {
     const limit = input.limit ? Math.min(input.limit, 20) : 10;
     const pattern = `%${input.query}%`;
+    const decoded = input.cursor ? decodeNoteSearchCursor(input.cursor) : null;
 
-    const notes = (await handle
+    let query = handle
       .selectFrom('app.notes')
-      .select(['id', 'title', 'excerpt'])
+      .select(['id', 'title', 'excerpt', 'updatedat'])
       .where('owner_userid', '=', input.userId)
       .where('archived_at', 'is', null)
-      .where((eb) => eb.or([eb('title', 'ilike', pattern), eb('content', 'ilike', pattern)]))
-      .orderBy('updatedat', 'desc')
-      .limit(limit)
-      .execute()) as Array<Pick<NoteRow, 'id' | 'title' | 'excerpt'>>;
+      .where((eb) => eb.or([eb('title', 'ilike', pattern), eb('content', 'ilike', pattern)]));
 
-    return notes.map((note) => ({
+    if (decoded) {
+      query = query.where((eb) =>
+        eb.or([
+          eb('updatedat', '<', new Date(decoded.updatedAt)),
+          eb('updatedat', '=', new Date(decoded.updatedAt)).and('id', '<', decoded.id),
+        ]),
+      );
+    }
+
+    const rows = (await query
+      .orderBy('updatedat', 'desc')
+      .orderBy('id', 'desc')
+      .limit(limit + 1)
+      .execute()) as Array<Pick<NoteRow, 'id' | 'title' | 'excerpt' | 'updatedat'>>;
+
+    const notes = rows.slice(0, limit).map((note) => ({
       id: note.id,
       title: note.title,
       excerpt: note.excerpt,
     }));
+
+    const lastRow = rows.at(limit - 1);
+
+    return {
+      notes,
+      nextCursor:
+        rows.length > limit && lastRow ? encodeNoteSearchCursor(toRequiredIsoString(lastRow.updatedat), lastRow.id) : null,
+    };
   },
 
   /**

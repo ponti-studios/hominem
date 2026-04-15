@@ -23,6 +23,7 @@ const noteParamSchema = z.object({ id: z.uuid() });
 const noteSearchQuerySchema = z.object({
   query: z.string().trim().min(1),
   limit: z.string().optional(),
+  cursor: z.string().optional(),
 });
 const noteService = new NoteService();
 
@@ -66,9 +67,14 @@ export const notesRoutes = new Hono<AppContext>()
     const query = c.req.valid('query');
     const limit = query.limit ? Math.min(Number.parseInt(query.limit, 10), 20) : 10;
 
-    const results = await NoteRepository.search(getDb(), { userId, query: query.query, limit });
+    const results = await NoteRepository.search(getDb(), {
+      userId,
+      query: query.query,
+      limit,
+      ...(query.cursor ? { cursor: query.cursor } : {}),
+    });
 
-    return c.json<NotesSearchOutput>({ notes: results });
+    return c.json<NotesSearchOutput>(results);
   })
   .post('/', zValidator('json', CreateNoteInputSchema), async (c) => {
     const userId = c.get('userId')!;

@@ -157,7 +157,7 @@ export type NotesDeleteOutput = Note;
 export type NotesPublishOutput = Note;
 export type NotesArchiveOutput = Note;
 export type NotesVersionsOutput = { versions: Note[] };
-export type NotesSearchOutput = { notes: NoteSearchResult[] };
+export type NotesSearchOutput = { notes: NoteSearchResult[]; nextCursor: string | null };
 
 export type NotesListInput = {
   types?: NoteContentType[];
@@ -173,6 +173,12 @@ export type NotesListInput = {
 };
 
 export type NotesFeedInput = {
+  limit?: number;
+  cursor?: string;
+};
+
+export type NotesSearchInput = {
+  query: string;
   limit?: number;
   cursor?: string;
 };

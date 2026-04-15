@@ -151,10 +151,29 @@ export function useNote(id: string) {
 }
 
 export function useNoteSearch(query: string, enabled = true) {
-  return useRpcQuery<NotesSearchOutput>(({ notes }) => notes.search({ query, limit: 8 }), {
+  return useInfiniteQuery<NotesSearchOutput, Error, NotesSearchOutput, readonly unknown[], string | null>({
     queryKey: notesQueryKeys.search(query),
+    initialPageParam: null,
     enabled: enabled && query.trim().length > 0,
     staleTime: 1000 * 30,
+    queryFn: async ({ pageParam }) => {
+      const client = useApiClient();
+      return client.notes.search({
+        query,
+        limit: 8,
+        ...(pageParam ? { cursor: pageParam } : {}),
+      });
+    },
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    select: (data) => {
+      const notes = data.pages.flatMap((page) => page.notes);
+      return {
+        pages: data.pages,
+        pageParams: data.pageParams,
+        notes,
+        nextCursor: data.pages.at(-1)?.nextCursor ?? null,
+      } as NotesSearchOutput & { pages: typeof data.pages; pageParams: typeof data.pageParams };
+    },
   });
 }
 
