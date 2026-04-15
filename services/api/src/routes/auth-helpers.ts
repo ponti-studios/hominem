@@ -1,4 +1,4 @@
-import { getSetCookieHeaders } from '@hominem/utils/headers';
+import { getSetCookieHeaders } from '@hominem/auth/server-utils';
 
 import { env } from '../env';
 

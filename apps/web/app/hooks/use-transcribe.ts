@@ -2,7 +2,7 @@ import type { VoiceErrorCode } from '@hominem/rpc/voice-events';
 import {
   VoiceTranscribeErrorSchema,
   VoiceTranscribeSuccessSchema,
-} from '@hominem/utils/api-response-validation';
+} from '@hominem/rpc/schemas/voice.schema';
 import { useMutation } from '@tanstack/react-query';
 
 interface TranscribeVariables {

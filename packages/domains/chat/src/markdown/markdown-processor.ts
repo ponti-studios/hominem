@@ -3,15 +3,11 @@ import {
   type RecursiveCharacterTextSplitterParams,
 } from '@langchain/textsplitters';
 
-// Document type from langchain
 export interface Document<Metadata extends Record<string, unknown> = Record<string, unknown>> {
   pageContent: string;
   metadata: Metadata;
 }
 
-/**
- * Utility function to split markdown content into chunks using LangChain's MarkdownTextSplitter.
- */
 export async function splitMarkdown(
   content: string,
   options?: Partial<RecursiveCharacterTextSplitterParams>,

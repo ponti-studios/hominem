@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@hominem/auth": "workspace:*",
+    "@hominem/chat": "workspace:*",
     "@hominem/env": "workspace:*",
     "@hominem/rpc": "workspace:*",
     "@hominem/telemetry": "workspace:*",

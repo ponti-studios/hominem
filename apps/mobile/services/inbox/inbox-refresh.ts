@@ -1,4 +1,4 @@
-import { parseInboxTimestamp } from '@hominem/utils/dates';
+import { parseInboxTimestamp } from '@hominem/chat';
 import type { QueryClient } from '@tanstack/react-query';
 
 import { chatKeys, noteKeys } from '~/services/notes/query-keys';

@@ -1,6 +1,6 @@
 import { FileRepository, getDb } from '@hominem/db';
 import { FileProcessorService } from '@hominem/services/files';
-import { QUEUE_NAMES } from '@hominem/utils/consts';
+import { QUEUE_NAMES } from '@hominem/queues';
 import { fileStorageService } from '@hominem/utils/storage';
 import { logger } from '@hominem/utils/logger';
 import { Worker } from 'bullmq';

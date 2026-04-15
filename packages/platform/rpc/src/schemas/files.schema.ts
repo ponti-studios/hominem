@@ -1,14 +1,5 @@
 import * as z from 'zod';
 
-export const VoiceTranscribeSuccessSchema = z.object({
-  text: z.string(),
-});
-
-export const VoiceTranscribeErrorSchema = z.object({
-  error: z.string().optional(),
-  code: z.string().optional(),
-});
-
 export const UploadedFileSchema = z.object({
   id: z.string().uuid(),
   originalName: z.string().min(1),
@@ -30,6 +21,4 @@ export const UploadResponseSchema = z.object({
   message: z.string().min(1),
 });
 
-export type VoiceTranscribeSuccessResponse = z.infer<typeof VoiceTranscribeSuccessSchema>;
-export type VoiceTranscribeErrorResponse = z.infer<typeof VoiceTranscribeErrorSchema>;
 export type UploadResponse = z.infer<typeof UploadResponseSchema>;

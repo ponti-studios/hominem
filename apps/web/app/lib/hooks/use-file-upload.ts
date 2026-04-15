@@ -1,10 +1,9 @@
-import { isTestMode } from '@hominem/utils/storage';
-import { UploadResponseSchema } from '@hominem/utils/api-response-validation';
+import { UploadResponseSchema } from '@hominem/rpc/schemas/files.schema';
 import {
   CHAT_UPLOAD_ALLOWED_MIME_TYPES,
   CHAT_UPLOAD_MAX_FILE_COUNT,
   CHAT_UPLOAD_MAX_FILE_SIZE_BYTES,
-} from '@hominem/utils/upload';
+} from '@hominem/chat';
 // Lazy load Uppy types only for type checking
 import type { Body, Meta, UppyFile } from '@uppy/core';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -52,6 +51,10 @@ interface UseFileUploadReturn {
   uploadFiles: (files: FileList | File[]) => Promise<UploadedFile[]>;
   removeFile: (fileId: string) => void;
   clearAll: () => void;
+}
+
+function isTestMode(): boolean {
+  return process.env.NODE_ENV === 'test';
 }
 
 // Lazy load Uppy modules to avoid bundling on initial page load

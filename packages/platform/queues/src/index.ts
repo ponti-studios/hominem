@@ -1,4 +1,4 @@
-import { QUEUE_NAMES } from '@hominem/utils/consts';
+import { QUEUE_NAMES } from './consts';
 import type { Queue } from 'bullmq';
 import { Queue as BullQueue } from 'bullmq';
 
@@ -6,6 +6,7 @@ import { redis } from './redis';
 
 export * from './types';
 export * from './service';
+export * from './consts';
 
 /**
  * Initialize BullMQ queues using consistent queue names.

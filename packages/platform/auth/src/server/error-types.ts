@@ -1,28 +1,12 @@
-/**
- * Semantic error types for consistent error handling and UX messaging
- */
 export type ErrorType = 'wrong-code' | 'expired' | 'too-many' | 'locked' | 'unknown';
 
 export interface ParsedError {
   type: ErrorType;
   message: string;
-  isCritical: boolean; // true for errors that block further attempts
+  isCritical: boolean;
   icon?: 'error' | 'alert' | 'lock';
 }
 
-/**
- * Parse error messages into semantic types with appropriate UX responses
- *
- * @param errorMessage - Raw error message from API
- * @param context - Domain context (future expansion for other auth types)
- * @returns Parsed error with type, message, and severity
- *
- * @example
- * const error = parseAuthError('Code has expired');
- * console.log(error.type); // 'expired'
- * console.log(error.isCritical); // false
- * console.log(error.message); // 'Your code has expired. Please request a new one.'
- */
 export function parseAuthError(
   errorMessage?: string,
   context: 'otp' | 'password' | 'passkey' = 'otp',
@@ -38,7 +22,6 @@ export function parseAuthError(
 
   const lower = errorMessage.toLowerCase();
 
-  // Expired code/token
   if (lower.includes('expired') || lower.includes('timeout')) {
     return {
       type: 'expired',
@@ -51,7 +34,6 @@ export function parseAuthError(
     };
   }
 
-  // Account locked or too many attempts
   if (lower.includes('locked') || lower.includes('too many') || lower.includes('attempt limit')) {
     return {
       type: 'too-many',
@@ -64,7 +46,6 @@ export function parseAuthError(
     };
   }
 
-  // Wrong code/credentials
   if (
     lower.includes('invalid') ||
     lower.includes('incorrect') ||
@@ -82,7 +63,6 @@ export function parseAuthError(
     };
   }
 
-  // Generic unknown error
   return {
     type: 'unknown',
     message: errorMessage,
@@ -91,13 +71,6 @@ export function parseAuthError(
   };
 }
 
-/**
- * Get user-friendly error message based on error type
- *
- * @param type - Error type
- * @param context - Domain context
- * @returns User-friendly message
- */
 export function getErrorMessage(
   type: ErrorType,
   context: 'otp' | 'password' | 'passkey' = 'otp',

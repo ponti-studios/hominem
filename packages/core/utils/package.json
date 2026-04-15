@@ -14,37 +14,17 @@
       "types": "./src/storage/index.ts",
       "default": "./src/storage/index.ts"
     },
-    "./upload": {
-      "types": "./src/upload/index.ts",
-      "default": "./src/upload/index.ts"
-    },
-    "./consts": {
-      "types": "./src/consts.ts",
-      "default": "./src/consts.ts"
-    },
     "./dates": {
       "types": "./src/dates.ts",
       "default": "./src/dates.ts"
-    },
-    "./headers": {
-      "types": "./src/headers.ts",
-      "default": "./src/headers.ts"
     },
     "./images": {
       "types": "./src/images.ts",
       "default": "./src/images.ts"
     },
-    "./google": {
-      "types": "./src/google.ts",
-      "default": "./src/google.ts"
-    },
     "./http": {
       "types": "./src/http.ts",
       "default": "./src/http.ts"
-    },
-    "./api-response-validation": {
-      "types": "./src/api-response-validation.ts",
-      "default": "./src/api-response-validation.ts"
     },
     "./location": {
       "types": "./src/location/index.ts",
@@ -57,10 +37,6 @@
     "./client-logger": {
       "types": "./src/client-logger.ts",
       "default": "./src/client-logger.ts"
-    },
-    "./markdown": {
-      "types": "./src/markdown/index.ts",
-      "default": "./src/markdown/index.ts"
     },
     "./time": {
       "types": "./src/time.ts",
@@ -79,7 +55,6 @@
     "@langchain/textsplitters": "^1.0.1",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/api-logs": "^0.51.0",
-    "date-fns": "^3.6.0",
     "pino": "^9.7.0",
     "zod": "4.3.6"
   },

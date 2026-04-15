@@ -38,7 +38,9 @@
   },
   "dependencies": {
     "@hominem/db": "workspace:*",
-    "@hominem/utils": "workspace:*"
+    "@hominem/utils": "workspace:*",
+    "@langchain/textsplitters": "^1.0.1",
+    "date-fns": "^3.6.0"
   },
   "devDependencies": {
     "@types/node": "^25.4.0",

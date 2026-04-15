@@ -1,6 +1,6 @@
 import { useApiClient } from '@hominem/rpc/react';
 import type { Note } from '@hominem/rpc/types';
-import { parseInboxTimestamp } from '@hominem/utils/dates';
+import { parseInboxTimestamp } from '@hominem/chat';
 import type { RelativePathString } from 'expo-router';
 import { useRouter } from 'expo-router';
 import React, { memo, useCallback, useRef, useState } from 'react';

@@ -1,6 +1,5 @@
 import { createHash } from 'crypto';
 
-import { isValidGoogleHost } from '@hominem/utils/google';
 import { logger } from '@hominem/utils/logger';
 import type { Context } from 'hono';
 import { Hono } from 'hono';
@@ -8,6 +7,19 @@ import { Hono } from 'hono';
 import { ValidationError, ForbiddenError, UnavailableError, InternalError } from '../errors';
 import { redis as cache } from '@hominem/services/redis';
 import type { AppEnv } from '../server';
+
+function isValidGoogleHost(input: string): boolean {
+  try {
+    const parsed = new URL(input);
+    const hostname = parsed.hostname.toLowerCase();
+    const allowedBaseDomains = ['googleapis.com', 'googleusercontent.com'];
+    return allowedBaseDomains.some((base) => {
+      return hostname === base || hostname.endsWith(`.${base}`);
+    });
+  } catch {
+    return false;
+  }
+}
 
 export const imagesRoutes = new Hono<AppEnv>();
 
