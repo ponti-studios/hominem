@@ -20,54 +20,6 @@ export function hasPasskeySupport(browser: PasskeyBrowser | undefined) {
   return Boolean(browser?.PublicKeyCredential) && browser?.navigator?.webdriver !== true;
 }
 
-function getFetchErrorMessage(result: unknown): string | null {
-  if (!result || typeof result !== 'object') {
-    return null;
-  }
-
-  const record = result as Record<string, unknown>;
-  if (!('error' in record)) {
-    return null;
-  }
-
-  const error = record.error;
-  if (!error || typeof error !== 'object') {
-    return 'Passkey deletion failed.';
-  }
-
-  const errorRecord = error as Record<string, unknown>;
-  if (!('message' in errorRecord)) {
-    return 'Passkey deletion failed.';
-  }
-
-  const message = errorRecord.message;
-  return typeof message === 'string' ? message : 'Passkey deletion failed.';
-}
-
-function getPasskeyActionError(result: unknown): string | null {
-  if (!result || typeof result !== 'object') {
-    return null;
-  }
-
-  const record = result as Record<string, unknown>;
-  if (!('error' in record)) {
-    return null;
-  }
-
-  const error = record.error;
-  if (!error || typeof error !== 'object') {
-    return null;
-  }
-
-  const errorRecord = error as Record<string, unknown>;
-  if (!('message' in errorRecord)) {
-    return null;
-  }
-
-  const message = errorRecord.message;
-  return typeof message === 'string' ? message : null;
-}
-
 export interface UsePasskeysResult {
   data: Passkey[];
   isLoading: boolean;
@@ -100,10 +52,10 @@ export function usePasskeys(): UsePasskeysResult {
     }
     setAuthError(null);
     const result = await authClient.signIn.passkey();
-    const actionError = getPasskeyActionError(result);
-    if (actionError) {
-      setAuthError(actionError);
-      throw new Error(actionError);
+    if (result.error) {
+      const error = result.error.message ?? 'Passkey sign-in failed.';
+      setAuthError(error);
+      throw new Error(error);
     }
   }, [authClient, isSupported]);
 
@@ -113,10 +65,10 @@ export function usePasskeys(): UsePasskeysResult {
     }
     setAuthError(null);
     const result = await authClient.passkey.addPasskey();
-    const actionError = getPasskeyActionError(result);
-    if (actionError) {
-      setAuthError(actionError);
-      throw new Error(actionError);
+    if (result.error) {
+      const error = result.error.message ?? 'Failed to register passkey.';
+      setAuthError(error);
+      throw new Error(error);
     }
   }, [authClient, isSupported]);
 
@@ -128,10 +80,10 @@ export function usePasskeys(): UsePasskeysResult {
         body: { id },
         throw: false,
       });
-      const message = getFetchErrorMessage(response);
-      if (message) {
-        setAuthError(message);
-        throw new Error(message);
+      const error = response.error?.message ?? 'Passkey deletion failed.';
+      if (response.error) {
+        setAuthError(error);
+        throw new Error(error);
       }
     },
     [authClient],

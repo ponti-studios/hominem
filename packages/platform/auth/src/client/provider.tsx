@@ -1,6 +1,6 @@
 import { createContext, useContext, useMemo, type PropsWithChildren } from 'react';
 
-import { getAuthClient } from './auth-client';
+import { getAuthClient, type AuthClient, type SessionHookResult } from './auth-client';
 
 export interface AuthConfig {
   apiBaseUrl: string;
@@ -8,7 +8,7 @@ export interface AuthConfig {
 
 type AuthContextValue = {
   apiBaseUrl: string;
-  authClient: ReturnType<typeof getAuthClient>;
+  authClient: AuthClient;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -28,7 +28,7 @@ export function AuthProvider({ children, config }: AuthProviderProps) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-export function useAuthClient() {
+export function useAuthClient(): AuthClient {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error('useAuthClient must be used within AuthProvider');
@@ -36,6 +36,6 @@ export function useAuthClient() {
   return context.authClient;
 }
 
-export function useSession() {
+export function useSession(): SessionHookResult {
   return useAuthClient().useSession();
 }
