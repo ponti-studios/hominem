@@ -34,10 +34,6 @@
       "types": "./src/ai-model.ts",
       "default": "./src/ai-model.ts"
     },
-    "./queues": {
-      "types": "./src/queues.ts",
-      "default": "./src/queues.ts"
-    },
     "./redis": {
       "types": "./src/redis.ts",
       "default": "./src/redis.ts"

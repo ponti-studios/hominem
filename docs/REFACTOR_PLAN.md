@@ -353,22 +353,24 @@ Additionally: `ChatMessage` vs `ChatMessageDto` naming inconsistency.
 
 **Action**: Evaluate if mobile can use shared auth provider.
 
-- [ ] **Audit mobile auth directory**:
+- [x] **Audit mobile auth directory**:
   - `boot.ts` — session boot sequence
   - `boot-session-store.ts` — session storage
   - `boot-user-profile.ts` — user profile loading
   - `passkey-hooks.ts` — passkey registration/assertion
-- [ ] **Compare with `@hominem/auth/client`**:
-  - What's in the shared provider?
-  - What's mobile-specific?
-- [ ] **Determine feasibility**:
-  - Can mobile use `AuthProvider` from `@hominem/auth/client`?
-  - Are there platform-specific reasons for separate boot sequence?
+- [x] **Compare with `@hominem/auth/client`**:
+  - Shared provider only wraps the auth client and session hook
+  - Mobile provider owns boot, cookie persistence, profile sync, analytics, and E2E behavior
+- [x] **Determine feasibility**:
+  - Can mobile use `AuthProvider` from `@hominem/auth/client`? No
+  - Are there platform-specific reasons for separate boot sequence? Yes
 - [ ] **If feasible**: plan migration to shared provider
-- [ ] **If not feasible**: document why mobile-specific auth exists, leave as-is
+- [x] **If not feasible**: document why mobile-specific auth exists, leave as-is
 
 **Risk**: Medium — auth is security-critical
 **Note**: This step may reveal mobile-specific requirements that justify the separate implementation. Do not force convergence if it reduces functionality or security.
+
+**Conclusion**: Keep `apps/mobile/services/auth/` separate. It is not a thin wrapper around the shared auth client.
 
 ---
 
@@ -557,7 +559,7 @@ Even if messy, these areas should be left alone due to churn-to-benefit ratio:
 | 2.1 Fix RPC ↔ Chat type boundaries      | ✅     | Domain types re-exported from RPC |
 | 2.2 Consolidate `ChatMessageDto` naming | ✅     | Domain bare names, wire DTOs keep `Dto` suffix |
 | 2.3 Audit `@hominem/ui` exports         | ✅     | Removed native logic and unused deps |
-| 2.4 Mobile auth convergence             | ⬜     | Evaluate only |
+| 2.4 Mobile auth convergence             | ✅     | Keep separate |
 
 ### Phase 3 — Deeper Architectural Changes
 

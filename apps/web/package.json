@@ -12,7 +12,6 @@
   },
   "dependencies": {
     "@hominem/auth": "workspace:*",
-    "@hominem/chat": "workspace:*",
     "@hominem/env": "workspace:*",
     "@hominem/platform-utils": "workspace:*",
     "@hominem/rpc": "workspace:*",

@@ -4,8 +4,6 @@ export * from './theme';
 export * from './tokens';
 
 export * from './components/auth';
-export * from './components/finance';
-export * from './components/invites';
 export * from './components/layout';
 export * from './components/loading-state';
 export * from './components/page-title';
