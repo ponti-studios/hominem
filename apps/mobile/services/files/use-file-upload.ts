@@ -171,7 +171,7 @@ async function performMobileUploads(
   };
 }
 
-export function useFileUpload() {
+export function useFileUpload(fetchImpl: typeof fetch = fetch) {
   const { getAuthHeaders } = useAuth();
   const [uploadState, setUploadState] = useState<MobileUploadState>({
     isUploading: false,
@@ -205,7 +205,7 @@ export function useFileUpload() {
         {
           upload: async (formData) => {
             const authHeaders = await getAuthHeaders();
-            const response = await fetch(`${API_BASE_URL}/api/files`, {
+            const response = await fetchImpl(`${API_BASE_URL}/api/files`, {
               method: 'POST',
               headers: {
                 ...authHeaders,
@@ -232,6 +232,7 @@ export function useFileUpload() {
               progress,
             }));
           },
+          fetchImpl,
         },
       );
 
@@ -243,7 +244,7 @@ export function useFileUpload() {
 
       return result.uploaded;
     },
-    [getAuthHeaders],
+    [getAuthHeaders, fetchImpl],
   );
 
   const clearErrors = useCallback(() => {

@@ -436,7 +436,7 @@ export const Composer = () => {
               selectionColor={theme.colors.accent}
               style={styles.input}
               testID="mobile-composer-input"
-              textAlignVertical="top"
+            />
               scrollEnabled={false}
             />
           </View>

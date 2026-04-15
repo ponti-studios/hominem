@@ -3,7 +3,7 @@ import type { Chat } from '@hominem/rpc/types';
 import { useQueryClient } from '@tanstack/react-query';
 import type { RelativePathString } from 'expo-router';
 import { useRouter } from 'expo-router';
-import { useMemo } from 'react';
+import { Platform, useMemo } from 'react';
 
 import { useSendMessage } from '~/services/chat';
 import type { ChatWithActivity } from '~/services/chat/session-state';
@@ -116,7 +116,9 @@ export function useComposerSubmission({
       text: message.trim(),
       ...(uploadedAttachmentIds.length > 0 ? { fileIds: uploadedAttachmentIds } : {}),
     });
-    donateAddNoteIntent();
+    if (Platform.OS === 'ios') {
+      donateAddNoteIntent();
+    }
     await invalidateInboxQueries(queryClient);
     clearDraft();
   };

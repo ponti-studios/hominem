@@ -18,10 +18,9 @@ type CameraModalProps = {
   visible: boolean;
   onCapture: (photo: CapturedPhoto) => void;
   onClose: () => void;
-  bottomSheetModalRef?: React.RefObject<BottomSheetModal>;
 };
 
-export function CameraModal({ visible, onCapture, onClose, bottomSheetModalRef }: CameraModalProps) {
+export function CameraModal({ visible, onCapture, onClose }: CameraModalProps) {
   const insets = useSafeAreaInsets();
   const cameraRef = useRef<Camera>(null);
   const [facing, setFacing] = useState<'front' | 'back'>('back');
@@ -75,15 +74,13 @@ export function CameraModal({ visible, onCapture, onClose, bottomSheetModalRef }
   };
 
   const handleDismiss = useCallback(() => {
-    bottomSheetModalRef?.current?.dismiss();
     onClose();
-  }, [bottomSheetModalRef, onClose]);
+  }, [onClose]);
 
   if (!visible) return null;
 
   return (
     <BottomSheetModal
-      ref={bottomSheetModalRef}
       snapPoints={snapPoints}
       enablePanDownToClose
       handleIndicatorStyle={styles.dragHandle}

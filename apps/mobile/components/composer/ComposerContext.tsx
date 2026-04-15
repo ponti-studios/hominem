@@ -60,9 +60,14 @@ export const useComposerContext = () => {
 export const ComposerProvider = ({ children }: PropsWithChildren) => {
   const pathname = usePathname();
   const params = useLocalSearchParams<{ chatId?: string | string[]; id?: string | string[] }>();
+  
+  // Extract specific param values to avoid fragile dependency management
+  const chatId = typeof params.chatId === 'string' ? params.chatId : params.chatId?.[0];
+  const id = typeof params.id === 'string' ? params.id : params.id?.[0];
+  
   const target = useMemo(
-    () => resolveComposerTarget(pathname, params),
-    [pathname, params.chatId, params.id],
+    () => resolveComposerTarget(pathname, { chatId, id }),
+    [pathname, chatId, id],
   );
   const [drafts, setDrafts] = useState<Record<string, ComposerDraft>>(() => ({
     feed: createEmptyComposerDraft(),
