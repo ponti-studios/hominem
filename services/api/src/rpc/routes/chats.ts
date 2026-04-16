@@ -41,7 +41,6 @@ const chatsMessagesQuerySchema = z.object({
   offset: z.string().optional(),
 });
 
-
 function toCoreHistoryMessage(entry: ChatMessageRecord): CoreMessage | null {
   if (entry.role === 'system' || entry.role === 'user' || entry.role === 'assistant') {
     return { role: entry.role, content: entry.content };
@@ -104,7 +103,6 @@ function getRequiredChatId(c: { req: { param: (name: string) => string | undefin
   if (!chatId) throw new ValidationError('Chat id is required');
   return chatId;
 }
-
 
 const chatByIdRoutes = new Hono<AppContext>()
   .use(
@@ -317,13 +315,10 @@ const chatByIdRoutes = new Hono<AppContext>()
       }),
     );
 
-    return c.body(
-      result.textStream.pipeThrough(new TextEncoderStream()),
-      200,
-      { 'Content-Type': 'text/event-stream' },
-    );
+    return c.body(result.textStream.pipeThrough(new TextEncoderStream()), 200, {
+      'Content-Type': 'text/event-stream',
+    });
   });
-
 
 export const chatsRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)

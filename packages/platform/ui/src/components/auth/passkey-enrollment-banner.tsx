@@ -32,7 +32,11 @@ interface PasskeyEnrollmentBannerProps {
  *
  * Place this in the authenticated app layout so it appears once after sign-in.
  */
-export function PasskeyEnrollmentBanner({ isSupported, hasPasskeys, onEnroll }: PasskeyEnrollmentBannerProps) {
+export function PasskeyEnrollmentBanner({
+  isSupported,
+  hasPasskeys,
+  onEnroll,
+}: PasskeyEnrollmentBannerProps) {
   const [enrolling, setEnrolling] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 

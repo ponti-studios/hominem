@@ -82,13 +82,13 @@ web-e2e:
     cd "{{ WEB_DIR }}" && pnpm run test:e2e
 
 docker-up:
-    docker compose -f "{{ ROOT_DIR }}/infra/compose/base.yml" -f "{{ ROOT_DIR }}/infra/compose/dev.yml" up -d
+    cd "{{ ROOT_DIR }}/../foundation" && just docker-up
 
 docker-down:
-    docker compose -f "{{ ROOT_DIR }}/infra/compose/base.yml" -f "{{ ROOT_DIR }}/infra/compose/dev.yml" down
+    cd "{{ ROOT_DIR }}/../foundation" && just docker-down
 
 docker-kill:
-    docker compose -f "{{ ROOT_DIR }}/infra/compose/base.yml" -f "{{ ROOT_DIR }}/infra/compose/dev.yml" down --rmi all --volumes --remove-orphans
+    cd "{{ ROOT_DIR }}/../foundation" && just docker-kill
 
 dev:
     {{ TURBO }} run dev

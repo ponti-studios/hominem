@@ -17,7 +17,7 @@ declare module 'hono' {
 
 interface BetterAuthSessionContext {
   auth: AuthContextEnvelope;
-    user: User;
+  user: User;
   userId: string;
 }
 

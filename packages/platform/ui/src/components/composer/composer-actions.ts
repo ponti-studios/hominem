@@ -13,7 +13,6 @@ import type { UploadedFile } from '../../types/upload';
 import { appendChatAttachmentContext, appendNoteAttachments } from './composer-attachments';
 import type { ComposerPosture } from './composer-presentation';
 
-
 export function buildNoteContext(attachedNotes: ReadonlyArray<Note>): string {
   if (attachedNotes.length === 0) return '';
   const sections = attachedNotes.map(
@@ -25,7 +24,6 @@ export function buildNoteContext(attachedNotes: ReadonlyArray<Note>): string {
 export function toNoteTitle(text: string, fallback = ''): string {
   return text.slice(0, CHAT_TITLE_MAX_LENGTH) || fallback;
 }
-
 
 interface ComposerAction {
   execute: () => Promise<void>;

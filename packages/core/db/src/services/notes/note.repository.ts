@@ -5,7 +5,6 @@ import type { DbHandle } from '../../transaction';
 import type { AppFiles, AppNotes } from '../../types/database';
 import { toRequiredIsoString } from '../_shared/mappers';
 
-
 type NoteRow = Selectable<AppNotes>;
 
 type NoteFileSource = Pick<
@@ -22,7 +21,6 @@ type NoteFileSource = Pick<
 >;
 
 type AttachedFileRow = NoteFileSource & { noteId: string };
-
 
 export interface NoteFileRecord {
   id: string;
@@ -47,7 +45,6 @@ export interface NoteRecord {
   createdAt: string;
   updatedAt: string;
 }
-
 
 export interface CreateNoteInput {
   userId: string;
@@ -121,7 +118,6 @@ type NoteFeedRow = Pick<
 type NoteFeedAttachmentRow = {
   noteId: string;
 };
-
 
 function toNoteFile(row: NoteFileSource): NoteFileRecord {
   return {
@@ -205,7 +201,6 @@ function buildContentPreview(excerpt: string | null, content: string): string {
   const normalized = (excerpt ?? content).replace(/\s+/g, ' ').trim();
   return normalized.slice(0, 240);
 }
-
 
 export const NoteRepository = {
   /**
@@ -433,7 +428,9 @@ export const NoteRepository = {
     return {
       notes,
       nextCursor:
-        rows.length > limit && lastRow ? encodeNoteSearchCursor(toRequiredIsoString(lastRow.updatedat), lastRow.id) : null,
+        rows.length > limit && lastRow
+          ? encodeNoteSearchCursor(toRequiredIsoString(lastRow.updatedat), lastRow.id)
+          : null,
     };
   },
 

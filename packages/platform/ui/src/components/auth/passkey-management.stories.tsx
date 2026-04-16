@@ -64,7 +64,9 @@ export const WithError: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    await expect(canvas.getByRole('alert')).toHaveTextContent('Failed to load passkeys. Please try again.');
+    await expect(canvas.getByRole('alert')).toHaveTextContent(
+      'Failed to load passkeys. Please try again.',
+    );
   },
 };
 

@@ -12,8 +12,8 @@ import { useTranscribe } from '~/hooks/use-transcribe';
 import { requireAuth } from '~/lib/guards';
 import { useChatMessages } from '~/lib/hooks/use-chat-messages';
 import { useFileUpload } from '~/lib/hooks/use-file-upload';
-import { useStreamMessage } from '~/lib/hooks/use-stream-message';
 import { useSendMessage } from '~/lib/hooks/use-send-message';
+import { useStreamMessage } from '~/lib/hooks/use-stream-message';
 import { chatQueryKeys } from '~/lib/query-keys';
 
 import type { Route } from './+types/chat.$chatId';

@@ -27,7 +27,6 @@ const noteSearchQuerySchema = z.object({
 });
 const noteService = new NoteService();
 
-
 export const notesRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
   .get('/', zValidator('query', NotesListQuerySchema), async (c) => {

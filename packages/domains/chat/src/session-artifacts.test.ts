@@ -26,7 +26,9 @@ describe('session artifacts', () => {
 
     expect(proposal.proposedType).toBe(type);
     expect(proposal.proposedTitle).toBe('Ship the release');
-    expect(proposal.proposedChanges[0]).toBe(`Captured 3 messages into this ${type === 'task_list' ? 'task list' : 'task'}`);
+    expect(proposal.proposedChanges[0]).toBe(
+      `Captured 3 messages into this ${type === 'task_list' ? 'task list' : 'task'}`,
+    );
     expect(proposal.previewContent).toContain('Assistant: Absolutely');
 
     const emptyProposal = buildArtifactProposal(

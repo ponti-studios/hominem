@@ -13,7 +13,6 @@ import { isBlockingState, type ThoughtLifecycleState } from './lifecycle-state';
 import { deriveSessionSource, type SessionArtifactMessage } from './session-artifacts';
 import type { ArtifactType, ClassificationProposal, SessionSource } from './thought-types';
 
-
 /**
  * A review proposal awaiting user confirmation.
  *
@@ -23,7 +22,6 @@ import type { ArtifactType, ClassificationProposal, SessionSource } from './thou
 export interface PendingReview extends ClassificationProposal {
   reviewItemId?: string;
 }
-
 
 interface LifecycleState {
   lifecycleState: ThoughtLifecycleState;
@@ -52,7 +50,6 @@ function lifecycleReducer(state: LifecycleState, action: LifecycleAction): Lifec
       return { ...state, persistedSource: action.persistedSource };
   }
 }
-
 
 export interface UseChatLifecycleInput {
   /**

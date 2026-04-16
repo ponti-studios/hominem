@@ -36,13 +36,7 @@ interface TextProps extends React.HTMLAttributes<HTMLElement> {
  * <Text variant="body-4" muted>Helper hint</Text>
  * <Text as="span" variant="body-3">Inline text</Text>
  */
-function Text({
-  variant = 'body',
-  as: Comp = 'p',
-  muted = false,
-  className,
-  ...props
-}: TextProps) {
+function Text({ variant = 'body', as: Comp = 'p', muted = false, className, ...props }: TextProps) {
   const resolvedVariant = legacyVariantMap[variant as keyof typeof legacyVariantMap] ?? variant;
   return (
     <Comp className={cn(resolvedVariant, muted && 'text-text-tertiary', className)} {...props} />

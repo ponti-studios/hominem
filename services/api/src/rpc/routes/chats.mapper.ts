@@ -4,11 +4,7 @@ import type {
   ChatRecord,
   NoteContext,
 } from '@hominem/db';
-import type {
-  Chat,
-  ChatMessageDto,
-  ChatMessageFile,
-} from '@hominem/rpc/types/chat.types';
+import type { Chat, ChatMessageDto, ChatMessageFile } from '@hominem/rpc/types/chat.types';
 
 export function toChatDto(record: ChatRecord): Chat {
   return {
@@ -61,7 +57,11 @@ export function enrichMessageRow(
     : [];
 
   const toIso = (value: unknown): string =>
-    value instanceof Date ? value.toISOString() : typeof value === 'string' ? value : new Date().toISOString();
+    value instanceof Date
+      ? value.toISOString()
+      : typeof value === 'string'
+        ? value
+        : new Date().toISOString();
 
   return {
     id: row.id,

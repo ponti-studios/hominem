@@ -1,5 +1,5 @@
-import type { ChatMessageToolCall } from '@hominem/rpc/types/chat.types';
 import { formatMessageTimestamp } from '@hominem/chat';
+import type { ChatMessageToolCall } from '@hominem/rpc/types/chat.types';
 import {
   AlertCircle,
   Check,
@@ -27,17 +27,15 @@ import {
   type ReactNode,
 } from 'react';
 
+import { copyToClipboard } from '../../lib/clipboard';
 import { playEnterRow, reducedMotion } from '../../lib/gsap/sequences';
 import { useMessageEdit } from '../../lib/hooks/use-message-edit';
-import { copyToClipboard } from '../../lib/clipboard';
 import { cn } from '../../lib/utils';
 import { contentWidths } from '../../tokens';
 import type { ExtendedMessage } from '../../types/chat';
 import { MarkdownContent } from '../ai-elements/markdown-content';
 import { Reasoning } from '../ai-elements/reasoning';
 import { Tool, ToolInput } from '../ai-elements/tool';
-import { Inline } from '../layout/inline';
-import { Stack } from '../layout/stack';
 import { Button } from '../button';
 import {
   DropdownMenu,
@@ -47,6 +45,8 @@ import {
   DropdownMenuTrigger,
 } from '../dropdown-menu';
 import { Form } from '../form';
+import { Inline } from '../layout/inline';
+import { Stack } from '../layout/stack';
 import { Textarea } from '../textarea';
 
 function Message({

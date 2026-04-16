@@ -1,7 +1,7 @@
 import { logger } from '@hominem/utils/logger';
 
-import type { BaseJob } from './types';
 import { redis } from './redis';
+import type { BaseJob } from './types';
 
 export const IMPORT_JOBS_LIST_KEY = 'import:active-jobs';
 export const IMPORT_JOB_PREFIX = 'import:job:';

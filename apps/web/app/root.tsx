@@ -14,9 +14,9 @@ import {
 import { WEB_BRAND } from '~/lib/brand';
 import { AnalyticsProvider } from '~/lib/posthog';
 import { TelemetryProvider } from '~/lib/telemetry/telemetry-provider';
-import { ErrorState } from './components/error-state';
 
 import type { Route } from './+types/root';
+import { ErrorState } from './components/error-state';
 
 import './globals.css';
 import { HonoProvider } from './lib/api';
@@ -135,7 +135,13 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
         message={details}
         actionLabel="Reload"
         onAction={() => window.location.reload()}
-        stack={stack ? <pre className="w-full p-4 overflow-x-auto"><code>{stack}</code></pre> : null}
+        stack={
+          stack ? (
+            <pre className="w-full p-4 overflow-x-auto">
+              <code>{stack}</code>
+            </pre>
+          ) : null
+        }
       />
     </main>
   );

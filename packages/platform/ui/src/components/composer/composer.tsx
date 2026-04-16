@@ -44,7 +44,6 @@ export function Composer(props: ComposerProps) {
   return <ComposerForm {...props} presentation={presentation} />;
 }
 
-
 const ComposerForm = memo(function ComposerForm({
   noteId,
   chatId,
@@ -124,7 +123,6 @@ const ComposerForm = memo(function ComposerForm({
 
     return null;
   }, null);
-
 
   async function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;

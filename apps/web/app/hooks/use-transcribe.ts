@@ -1,8 +1,8 @@
-import type { VoiceErrorCode } from '@hominem/rpc/voice-events';
 import {
   VoiceTranscribeErrorSchema,
   VoiceTranscribeSuccessSchema,
 } from '@hominem/rpc/schemas/voice.schema';
+import type { VoiceErrorCode } from '@hominem/rpc/voice-events';
 import { useMutation } from '@tanstack/react-query';
 
 interface TranscribeVariables {

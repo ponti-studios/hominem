@@ -160,11 +160,7 @@ function UpdateGuardClient({
   );
 }
 
-export function UpdateGuard({
-  children,
-  logo = '',
-  appName = 'App',
-}: UpdateGuardProps) {
+export function UpdateGuard({ children, logo = '', appName = 'App' }: UpdateGuardProps) {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {

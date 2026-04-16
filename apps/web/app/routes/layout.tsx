@@ -1,8 +1,9 @@
 import { Toaster } from '@hominem/ui/toaster';
 import { NavLink, Outlet, data } from 'react-router';
 
-import { WEB_BRAND } from '~/lib/brand';
 import { getServerSession } from '~/lib/auth.server';
+import { WEB_BRAND } from '~/lib/brand';
+
 import type { Route } from './+types/layout';
 
 function NavItem({ to, label }: { to: string; label: string }) {
@@ -32,7 +33,9 @@ export default function Layout({ loaderData }: Route.ComponentProps) {
         <header className="border-b border-border-subtle bg-background/90 backdrop-blur">
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-text-tertiary">{WEB_BRAND.appName}</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-text-tertiary">
+                {WEB_BRAND.appName}
+              </p>
             </div>
             <nav className="flex items-center gap-2">
               <NavItem to="/notes" label="Notes" />

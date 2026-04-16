@@ -1,5 +1,5 @@
-import { Button } from '@hominem/ui/button';
 import { StatePanel } from '@hominem/ui';
+import { Button } from '@hominem/ui/button';
 import type { ReactNode } from 'react';
 
 interface ErrorStateProps {

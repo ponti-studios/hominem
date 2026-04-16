@@ -1,11 +1,8 @@
-import {
-  buildAuthCallbackErrorRedirect,
-} from '@hominem/auth/shared/error-contract';
+import { buildAuthCallbackErrorRedirect } from '@hominem/auth/shared/error-contract';
 import { resolveAuthRedirect } from '@hominem/auth/shared/redirect-policy';
+import { NOTES_AUTH_CONFIG } from '@hominem/auth/shared/ux-contract';
 import { redirect } from 'react-router';
 import type { ActionFunctionArgs } from 'react-router';
-
-import { NOTES_AUTH_CONFIG } from '@hominem/auth/shared/ux-contract';
 
 export async function action({ request }: ActionFunctionArgs) {
   let payload: { next?: string };

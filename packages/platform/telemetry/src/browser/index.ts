@@ -113,7 +113,10 @@ export function initTelemetry(explicitConfig?: Partial<TelemetryConfig>): Browse
  */
 function getBrowserConfig(explicit?: Partial<TelemetryConfig>): TelemetryConfig {
   // In browser, we read from import.meta.env or window.ENV
-  const env = typeof window !== 'undefined' ? (window as Window & { ENV?: Record<string, string> }).ENV ?? {} : {};
+  const env =
+    typeof window !== 'undefined'
+      ? ((window as Window & { ENV?: Record<string, string> }).ENV ?? {})
+      : {};
 
   const serviceName = explicit?.serviceName || env.OTEL_SERVICE_NAME;
   if (!serviceName) {

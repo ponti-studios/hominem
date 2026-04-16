@@ -1,8 +1,7 @@
-import { zValidator } from '@hono/zod-validator';
-import { Hono } from 'hono';
-
 import { getDb, TaskRepository } from '@hominem/db';
 import { TasksCreateInputSchema, type TasksCreateOutput } from '@hominem/rpc/types';
+import { zValidator } from '@hono/zod-validator';
+import { Hono } from 'hono';
 
 import { authMiddleware, type AppContext } from '../middleware/auth';
 
