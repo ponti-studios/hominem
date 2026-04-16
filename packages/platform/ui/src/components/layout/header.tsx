@@ -64,7 +64,6 @@ function useScrollDown() {
   return hidden;
 }
 
-
 function DesktopNavLink({ item }: { item: NavItem }) {
   const isActive = useIsActive(item.url);
   return (
@@ -124,7 +123,6 @@ function DesktopNav({ navItems }: { navItems: NavItem[] }) {
   );
 }
 
-
 function MobileTabItem({ item }: { item: NavItem }) {
   const isActive = useIsActive(item.url);
   return (
@@ -162,14 +160,12 @@ function MobileTabBar({ navItems }: { navItems: NavItem[] }) {
   );
 }
 
-
 function SignInButton() {
   const onSignInClick = useCallback(() => {
     window.location.href = '/auth';
   }, []);
   return <Button onClick={onSignInClick}>Sign in</Button>;
 }
-
 
 export function Header({ brandIcon, navItems = [] }: HeaderProps) {
   const session = useSession();

@@ -155,7 +155,9 @@ export function buildArtifactProposal(
 
   return {
     proposedType: type,
-    proposedTitle: thoughtPreview ? truncate(thoughtPreview, MAX_TITLE_LENGTH) : getArtifactTitlePrefix(type),
+    proposedTitle: thoughtPreview
+      ? truncate(thoughtPreview, MAX_TITLE_LENGTH)
+      : getArtifactTitlePrefix(type),
     proposedChanges,
     previewContent,
   };

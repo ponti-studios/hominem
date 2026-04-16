@@ -3,8 +3,9 @@ import { Button } from '@hominem/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@hominem/ui/card';
 import { data, redirect } from 'react-router';
 
-import { useSignOut } from '~/lib/hooks/use-sign-out';
 import { getServerSession } from '~/lib/auth.server';
+import { useSignOut } from '~/lib/hooks/use-sign-out';
+
 import type { Route } from './+types/account';
 
 export async function loader({ request }: Route.LoaderArgs) {

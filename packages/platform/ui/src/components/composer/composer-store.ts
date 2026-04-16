@@ -12,7 +12,6 @@ import type { Note } from '@hominem/rpc/types/notes.types';
 
 import type { UploadedFile } from '../../types/upload';
 
-
 export interface ComposerState {
   readonly draft: string;
   readonly attachedNotes: ReadonlyArray<Note>;
@@ -31,7 +30,6 @@ export const INITIAL_COMPOSER_STATE: ComposerState = {
   uploadErrors: [],
 };
 
-
 export type ComposerAction =
   | { type: 'SET_DRAFT'; text: string }
   | { type: 'CLEAR_DRAFT' }
@@ -44,7 +42,6 @@ export type ComposerAction =
   | { type: 'SET_UPLOADING'; isUploading: boolean; progress?: number }
   | { type: 'SET_UPLOAD_ERRORS'; errors: ReadonlyArray<string> }
   | { type: 'CLEAR' };
-
 
 function reduceComposerState(state: ComposerState, action: ComposerAction): ComposerState {
   switch (action.type) {
@@ -91,7 +88,6 @@ function reduceComposerState(state: ComposerState, action: ComposerAction): Comp
       return state;
   }
 }
-
 
 export class ComposerStore {
   #state: ComposerState = INITIAL_COMPOSER_STATE;

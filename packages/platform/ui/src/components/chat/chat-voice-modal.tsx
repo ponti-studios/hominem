@@ -10,8 +10,8 @@ import {
 } from 'react';
 
 import { SpeechInput } from '../ai-elements/speech-input';
-import { Inline } from '../layout/inline';
 import { Button } from '../button';
+import { Inline } from '../layout/inline';
 
 interface TranscribeResult {
   text: string;

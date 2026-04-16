@@ -1,11 +1,10 @@
 import { FileRepository, getDb } from '@hominem/db';
-import { FileProcessorService } from '@hominem/services/files';
 import { QUEUE_NAMES } from '@hominem/queues';
-import { fileStorageService } from '@hominem/utils/storage';
-import { logger } from '@hominem/utils/logger';
-import { Worker } from 'bullmq';
-
+import { FileProcessorService } from '@hominem/services/files';
 import { redis as cache } from '@hominem/services/redis';
+import { logger } from '@hominem/utils/logger';
+import { fileStorageService } from '@hominem/utils/storage';
+import { Worker } from 'bullmq';
 
 let worker: Worker | null = null;
 

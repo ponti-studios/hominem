@@ -1,16 +1,16 @@
 'use client';
 
-import { AUTH_COPY, NOTES_AUTH_CONFIG } from '@hominem/auth/shared/ux-contract';
-import { readAuthErrorMessage } from '@hominem/auth/shared/error-contract';
-import { useAuthClient } from '@hominem/auth/client/provider';
 import { usePasskeys } from '@hominem/auth/client/passkey';
+import { useAuthClient } from '@hominem/auth/client/provider';
+import { readAuthErrorMessage } from '@hominem/auth/shared/error-contract';
+import { resolveAuthRedirect } from '@hominem/auth/shared/redirect-policy';
+import { AUTH_COPY, NOTES_AUTH_CONFIG } from '@hominem/auth/shared/ux-contract';
 import { AuthScaffold, EmailEntryForm } from '@hominem/ui';
 import { useLocation, useNavigate } from 'react-router';
 
-import { useEmailAuth } from './use-email-auth';
 import { getNextRedirect } from './shared';
-import { resolveAuthRedirect } from '@hominem/auth/shared/redirect-policy';
 import { redirectAuthenticatedUser } from './shared.server';
+import { useEmailAuth } from './use-email-auth';
 
 export async function loader({ request }: { request: Request }) {
   return redirectAuthenticatedUser(request);
@@ -27,11 +27,7 @@ export default function Component() {
   const navigate = useNavigate();
   const next = getNextRedirect(location.search);
 
-  const {
-    authenticate,
-    authError: passkeyError,
-    isSupported: isPasskeySupported,
-  } = usePasskeys();
+  const { authenticate, authError: passkeyError, isSupported: isPasskeySupported } = usePasskeys();
 
   const { error: sendError, handleSendOtp } = useEmailAuth({
     sendOtp: async (email) => {
@@ -63,16 +59,18 @@ export default function Component() {
         }}
         {...(resolvedError ? { error: resolvedError } : {})}
         {...(isPasskeySupported
-            ? {
-                onPasskeyClick: async () => {
-                  await authenticate();
-                  const { safeRedirect } = resolveAuthRedirect(next, NOTES_AUTH_CONFIG.defaultPostAuthDestination, [
-                    ...NOTES_AUTH_CONFIG.allowedDestinations,
-                  ]);
-                  navigate(safeRedirect);
-                },
-              }
-            : {})}
+          ? {
+              onPasskeyClick: async () => {
+                await authenticate();
+                const { safeRedirect } = resolveAuthRedirect(
+                  next,
+                  NOTES_AUTH_CONFIG.defaultPostAuthDestination,
+                  [...NOTES_AUTH_CONFIG.allowedDestinations],
+                );
+                navigate(safeRedirect);
+              },
+            }
+          : {})}
       />
     </AuthScaffold>
   );

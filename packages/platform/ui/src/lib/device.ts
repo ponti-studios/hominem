@@ -13,7 +13,8 @@ export function isTouchDevice(): boolean {
     );
   };
 
-  const isMobileViewport = () => window.matchMedia('(max-width: 768px) and (any-hover: none)').matches;
+  const isMobileViewport = () =>
+    window.matchMedia('(max-width: 768px) and (any-hover: none)').matches;
 
   return hasTouch() || isMobileViewport();
 }

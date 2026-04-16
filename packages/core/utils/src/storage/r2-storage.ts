@@ -50,8 +50,7 @@ class InMemoryStorageBackend {
   files: Map<string, Buffer> = new Map();
   maxFileSize: number;
   category: StorageCategory;
-  pendingUploads: Map<string, { buffer?: Buffer; mimetype: string; size: number }> =
-    new Map();
+  pendingUploads: Map<string, { buffer?: Buffer; mimetype: string; size: number }> = new Map();
   preparedUploadKeys: Map<string, { key: string; userId: string }> = new Map();
 
   constructor(category: StorageCategory, options?: StorageOptions) {

@@ -1,9 +1,9 @@
 import type { ReviewItem } from '@hominem/rpc/types';
 import { FileText } from 'lucide-react';
 
+import { Button } from '../button';
 import { Inline } from '../layout/inline';
 import { Stack } from '../layout/stack';
-import { Button } from '../button';
 
 interface ProposalCardProps {
   item: ReviewItem;

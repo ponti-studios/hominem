@@ -30,7 +30,6 @@ export interface ComposerActions {
   navigate: (path: string) => void;
 }
 
-
 const ComposerStoreCtx = createContext<ComposerStore | null>(null);
 const ComposerActionsCtx = createContext<React.MutableRefObject<ComposerActions> | null>(null);
 
@@ -39,7 +38,6 @@ function useRequired<T>(ctx: Context<T | null>, name: string): T {
   if (!value) throw new Error(`${name} must be used within ComposerProvider`);
   return value;
 }
-
 
 export interface ComposerProviderProps {
   /** Created once in the layout: useMemo(() => new ComposerStore(), []) */
@@ -57,7 +55,6 @@ export function ComposerProvider({ store, actionsRef, children }: ComposerProvid
     </ComposerStoreCtx.Provider>
   );
 }
-
 
 export function useComposerStore(): ComposerStore {
   return useRequired(ComposerStoreCtx, 'useComposerStore');

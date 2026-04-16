@@ -13,10 +13,8 @@ import { toIsoString, toRequiredIsoString } from '../_shared/mappers';
 
 export type { ChatMessageFileRecord, ChatMessageToolCallRecord } from '../../guards';
 
-
 type ChatRow = Selectable<AppChats>;
 type ChatMessageRow = Selectable<AppChatMessages>;
-
 
 export interface ChatRecord {
   id: string;
@@ -50,7 +48,6 @@ export interface ChatMessageRecord {
   updatedAt: string;
 }
 
-
 export interface InsertChatMessageInput {
   chatId: string;
   authorUserId: string;
@@ -62,7 +59,6 @@ export interface InsertChatMessageInput {
   toolCalls?: unknown[] | null;
   parentMessageId?: string | null;
 }
-
 
 function toChatRecord(row: ChatRow): ChatRecord {
   return {
@@ -109,7 +105,6 @@ function toChatMessageRecord(
 function toJsonColumnValue(value: unknown[] | null | undefined): string | null {
   return value ? JSON.stringify(value) : null;
 }
-
 
 export const ChatRepository = {
   /**
@@ -256,7 +251,6 @@ export const ChatRepository = {
       .where('id', '=', chatId)
       .execute();
   },
-
 
   /**
    * Fetch note titles for referenced note IDs (for message enrichment).
@@ -465,7 +459,6 @@ export const ChatRepository = {
     );
   },
 };
-
 
 export interface NoteContext {
   id: string;

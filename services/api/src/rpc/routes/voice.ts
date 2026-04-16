@@ -1,20 +1,21 @@
-import type {
-  MobileVoiceResponseErrorOutput,
-  MobileVoiceTranscriptionErrorOutput,
-  MobileVoiceTranscriptionOutput,
-} from '@hominem/rpc/types/mobile.types';
-import { zValidator } from '@hono/zod-validator';
-import { Hono, type Context } from 'hono';
-import * as z from 'zod';
 import { Buffer } from 'node:buffer';
 import { existsSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
+import type {
+  MobileVoiceResponseErrorOutput,
+  MobileVoiceTranscriptionErrorOutput,
+  MobileVoiceTranscriptionOutput,
+} from '@hominem/rpc/types/mobile.types';
 import { logger } from '@hominem/utils/logger';
+import { zValidator } from '@hono/zod-validator';
+import { Hono, type Context } from 'hono';
+import * as z from 'zod';
+
+import { env } from '../../env';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 import { rateLimitMiddleware } from '../middleware/rate-limit';
-import { env } from '../../env';
 
 type VoiceErrorOutput = MobileVoiceResponseErrorOutput | MobileVoiceTranscriptionErrorOutput;
 
@@ -823,11 +824,7 @@ async function collectSpeechStream(response: Response): Promise<Buffer> {
   return Buffer.from(audioB64, 'base64');
 }
 
-async function generateSpeechBuffer(input: {
-  text: string;
-  voice: string;
-  speed: number;
-}) {
+async function generateSpeechBuffer(input: { text: string; voice: string; speed: number }) {
   const requestId = `sp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
   if (!env.OPENROUTER_API_KEY) {
@@ -1016,7 +1013,12 @@ export const authenticatedVoiceRoutes = new Hono<AppContext>()
   )
   .use(
     '/respond/stream',
-    rateLimitMiddleware({ bucket: 'voice-respond-stream', identifier: 'respond-stream', windowSec: 60, max: 20 }),
+    rateLimitMiddleware({
+      bucket: 'voice-respond-stream',
+      identifier: 'respond-stream',
+      windowSec: 60,
+      max: 20,
+    }),
   )
   .route('', voiceRoutes)
   .post(
@@ -1107,7 +1109,10 @@ export const authenticatedVoiceRoutes = new Hono<AppContext>()
       }
       return respondWithJsonError(
         c,
-        { error: isErrorWithMessage(error) ? error.message : 'Failed to generate voice response', code: 'RESPONSE_FAILED' },
+        {
+          error: isErrorWithMessage(error) ? error.message : 'Failed to generate voice response',
+          code: 'RESPONSE_FAILED',
+        },
         500,
       );
     }
@@ -1172,7 +1177,10 @@ authenticatedVoiceRoutes.post('/respond/stream', async (c) => {
     }
     return respondWithJsonError(
       c,
-      { error: isErrorWithMessage(error) ? error.message : 'Failed to generate voice response', code: 'RESPONSE_FAILED' },
+      {
+        error: isErrorWithMessage(error) ? error.message : 'Failed to generate voice response',
+        code: 'RESPONSE_FAILED',
+      },
       500,
     );
   }
