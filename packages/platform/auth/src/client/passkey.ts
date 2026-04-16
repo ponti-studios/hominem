@@ -1,13 +1,21 @@
 import { useCallback, useMemo, useState } from 'react';
 
-import type { AuthError } from './auth-client';
 import { useAuthClient } from './provider';
 
-interface Passkey {
+type SessionHookResult = ReturnType<ReturnType<typeof useAuthClient>['useSession']>;
+
+type Passkey = {
   id: string;
-  name?: string;
-  createdAt?: string | Date;
-}
+  name?: string | null;
+  createdAt?: string | Date | null;
+};
+
+type AuthResult<TData = unknown> = {
+  data?: TData | null;
+  error?: {
+    message?: string;
+  } | null;
+};
 
 type PasskeyBrowser = {
   PublicKeyCredential?: typeof PublicKeyCredential;
@@ -20,10 +28,10 @@ export function hasPasskeySupport(browser: PasskeyBrowser | undefined) {
   return Boolean(browser?.PublicKeyCredential) && browser?.navigator?.webdriver !== true;
 }
 
-export interface UsePasskeysResult {
+interface UsePasskeysResult {
   data: Passkey[];
   isLoading: boolean;
-  error: AuthError | null | undefined;
+  error: SessionHookResult['error'] | null | undefined;
   refetch: () => void;
   isSupported: boolean;
   authenticate: () => Promise<void>;
@@ -75,11 +83,11 @@ export function usePasskeys(): UsePasskeysResult {
   const deletePasskey = useCallback(
     async (id: string) => {
       setAuthError(null);
-      const response = await authClient.$fetch('/passkey/delete-passkey', {
+      const response = (await authClient.$fetch('/passkey/delete-passkey', {
         method: 'POST',
         body: { id },
         throw: false,
-      });
+      })) as AuthResult;
       const error = response.error?.message ?? 'Passkey deletion failed.';
       if (response.error) {
         setAuthError(error);

@@ -1,4 +1,4 @@
-import { useAuthClient, useSession } from '@hominem/auth/client';
+import { useAuthClient, useSession } from '@hominem/auth/client/provider';
 import { LogOut, Settings, type LucideIcon } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';

@@ -1,4 +1,4 @@
-import { AuthProvider } from '@hominem/auth/client';
+import { AuthProvider } from '@hominem/auth/client/provider';
 import { UpdateGuard } from '@hominem/ui';
 import type React from 'react';
 import {

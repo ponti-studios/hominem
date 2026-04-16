@@ -1,9 +1,9 @@
 import { jsonResponse } from '~/lib/utils';
 
-import { getServerAuth } from '../../../lib/auth.server';
+import { getServerSession } from '../../../lib/auth.server';
 
 export async function loader({ request }: { request: Request }) {
-  const { user } = await getServerAuth(request);
+  const { user } = await getServerSession(request);
 
   if (!user) {
     return jsonResponse({ error: 'Not authenticated' }, { status: 401 });

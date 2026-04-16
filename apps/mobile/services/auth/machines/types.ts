@@ -1,4 +1,4 @@
-import type { User } from '@hominem/auth';
+import type { User } from '@hominem/auth/types';
 
 export type AuthStatus =
   | 'booting'

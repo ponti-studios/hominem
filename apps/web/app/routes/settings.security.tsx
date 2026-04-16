@@ -1,12 +1,12 @@
-import { usePasskeyAuth, usePasskeys } from '@hominem/auth/client';
+import { usePasskeys } from '@hominem/auth/client/passkey';
 import { Container, PasskeyManagement } from '@hominem/ui';
 import { useCallback } from 'react';
 import { redirect } from 'react-router';
 
-import { getServerAuth } from '~/lib/auth.server';
+import { getServerSession } from '~/lib/auth.server';
 
 export async function loader({ request }: { request: Request }) {
-  const { user, headers } = await getServerAuth(request);
+  const { user, headers } = await getServerSession(request);
   if (!user) {
     return redirect('/auth', { headers });
   }
@@ -14,8 +14,7 @@ export async function loader({ request }: { request: Request }) {
 }
 
 export default function SecuritySettingsPage() {
-  const { deletePasskey, register } = usePasskeyAuth();
-  const { data: passkeys, isLoading, error } = usePasskeys();
+  const { data: passkeys, isLoading, error, deletePasskey, register } = usePasskeys();
   const handleAdd = useCallback(async () => {
     try {
       await register();

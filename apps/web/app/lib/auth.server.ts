@@ -1,4 +1,4 @@
-import type { Session, User } from '@hominem/auth';
+import type { Session, User } from '@hominem/auth/types';
 
 import { serverEnv } from './env';
 
@@ -32,8 +32,4 @@ export async function getServerSession(request: Request) {
     session: payload?.session ?? null,
     headers: new Headers(),
   };
-}
-
-export function getServerAuth(request: Request) {
-  return getServerSession(request);
 }

@@ -1,4 +1,4 @@
-import type { User } from '@hominem/auth/server';
+import type { User } from '@hominem/auth/types';
 import { createHonoTelemetryMiddleware } from '@hominem/telemetry/node';
 import { logger } from '@hominem/utils/logger';
 import { apiReference } from '@scalar/hono-api-reference';

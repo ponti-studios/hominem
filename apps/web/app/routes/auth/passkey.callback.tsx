@@ -1,11 +1,11 @@
 import {
   buildAuthCallbackErrorRedirect,
-  resolveAuthRedirect,
-} from '@hominem/auth/server-utils';
+} from '@hominem/auth/shared/error-contract';
+import { resolveAuthRedirect } from '@hominem/auth/shared/redirect-policy';
 import { redirect } from 'react-router';
 import type { ActionFunctionArgs } from 'react-router';
 
-import { AUTH_CONFIG } from './config';
+import { NOTES_AUTH_CONFIG } from '@hominem/auth/shared/ux-contract';
 
 export async function action({ request }: ActionFunctionArgs) {
   let payload: { next?: string };
@@ -15,16 +15,16 @@ export async function action({ request }: ActionFunctionArgs) {
     return redirect(
       buildAuthCallbackErrorRedirect({
         next: null,
-        fallback: AUTH_CONFIG.defaultRedirect,
-        allowedPrefixes: [...AUTH_CONFIG.allowedRedirectPrefixes],
+        fallback: NOTES_AUTH_CONFIG.defaultPostAuthDestination,
+        allowedPrefixes: [...NOTES_AUTH_CONFIG.allowedDestinations],
         description: 'Passkey sign-in failed. Please try again.',
       }),
     );
   }
 
   return redirect(
-    resolveAuthRedirect(payload.next, AUTH_CONFIG.defaultRedirect, [
-      ...AUTH_CONFIG.allowedRedirectPrefixes,
+    resolveAuthRedirect(payload.next, NOTES_AUTH_CONFIG.defaultPostAuthDestination, [
+      ...NOTES_AUTH_CONFIG.allowedDestinations,
     ]).safeRedirect,
   );
 }

@@ -1,6 +1,10 @@
-import { getSetCookieHeaders } from '@hominem/auth/server-utils';
-
 import { env } from '../env';
+
+type HeadersWithGetSetCookie = Headers & { getSetCookie?(): string[] };
+
+export function getSetCookieHeaders(headers: HeadersWithGetSetCookie): string[] {
+  return typeof headers.getSetCookie === 'function' ? headers.getSetCookie() : [];
+}
 
 interface RequestHeadersLike {
   header(name: string): string | undefined;

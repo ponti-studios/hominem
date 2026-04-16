@@ -1,4 +1,4 @@
-import { AUTH_COPY } from '@hominem/auth';
+import { AUTH_COPY } from '@hominem/auth/shared/ux-contract';
 import { useEffect, useState } from 'react';
 import { Form, useFetcher, useNavigation, useSearchParams } from 'react-router';
 

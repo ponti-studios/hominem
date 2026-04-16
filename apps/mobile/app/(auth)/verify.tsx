@@ -1,4 +1,5 @@
-import { AUTH_COPY, CHAT_AUTH_CONFIG, maskEmail } from '@hominem/auth';
+import { AUTH_COPY, CHAT_AUTH_CONFIG } from '@hominem/auth/shared/ux-contract';
+import { maskEmail } from '@hominem/auth/shared/mask-email';
 import { Button } from '~/components/ui/Button';
 import { TextField } from '~/components/ui/TextField';
 import type { RelativePathString } from 'expo-router';

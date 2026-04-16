@@ -1,10 +1,14 @@
-import { hasPasskeySupport } from '@hominem/auth/client';
 import { KeyRound, X } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 
 const DISMISSED_KEY = 'hominem_passkey_enrollment_dismissed';
 
 interface PasskeyEnrollmentBannerProps {
+  /**
+   * Whether WebAuthn is supported in this browser.
+   * Obtain from `usePasskeys().isSupported`.
+   */
+  isSupported: boolean;
   /**
    * Whether the user has any passkeys registered.
    * Pass undefined to hide the banner (loading state).
@@ -28,26 +32,21 @@ interface PasskeyEnrollmentBannerProps {
  *
  * Place this in the authenticated app layout so it appears once after sign-in.
  */
-export function PasskeyEnrollmentBanner({ hasPasskeys, onEnroll }: PasskeyEnrollmentBannerProps) {
-  const [visible, setVisible] = useState(false);
+export function PasskeyEnrollmentBanner({ isSupported, hasPasskeys, onEnroll }: PasskeyEnrollmentBannerProps) {
   const [enrolling, setEnrolling] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
 
-  useEffect(() => {
-    if (!hasPasskeySupport(typeof window === 'undefined' ? undefined : window)) return;
-    if (localStorage.getItem(DISMISSED_KEY)) return;
-    if (hasPasskeys === undefined || hasPasskeys === null) return;
-
-    // Only show if user has NO passkeys registered
-    if (!hasPasskeys) {
-      setVisible(true);
-    } else {
-      setVisible(false);
-    }
-  }, [hasPasskeys]);
+  const visible =
+    isSupported &&
+    !dismissed &&
+    hasPasskeys !== undefined &&
+    hasPasskeys !== null &&
+    !hasPasskeys &&
+    !localStorage.getItem(DISMISSED_KEY);
 
   const dismiss = useCallback(() => {
     localStorage.setItem(DISMISSED_KEY, '1');
-    setVisible(false);
+    setDismissed(true);
   }, []);
 
   const handleEnroll = useCallback(async () => {
