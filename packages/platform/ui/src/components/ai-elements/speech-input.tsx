@@ -3,7 +3,7 @@ import { Mic, MicOff, Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, type ButtonHTMLAttributes } from 'react';
 
 import { cn } from '../../lib/utils';
-import { Button } from '../ui/button';
+import { Button } from '../button';
 
 interface SpeechInputProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   onAudioRecorded?: (blob: Blob) => void;

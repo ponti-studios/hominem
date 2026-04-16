@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import { Toaster } from '../ui/toaster';
+import { Toaster } from '../toaster';
 
 interface AuthRouteLayoutProps {
   children: ReactNode;

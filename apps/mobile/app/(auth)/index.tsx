@@ -7,7 +7,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AuthLayout } from '~/components/AuthLayout';
-import { FeatureErrorBoundary } from '~/components/error-boundary';
+import { FeatureErrorBoundary } from '~/components/error-boundary/FeatureErrorBoundary';
 import { posthog } from '~/services/posthog';
 import { Box, makeStyles, Text } from '~/components/theme';
 import { useAuth } from '~/services/auth/auth-provider';

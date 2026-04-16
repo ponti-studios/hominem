@@ -4,7 +4,7 @@ import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 
 import AppIcon from '~/components/ui/icon';
 import { Text, makeStyles, theme } from '~/components/theme';
-import { VoiceInput } from '~/components/media/voice';
+import { VoiceInput } from '~/components/media/voice/VoiceInput';
 import { useVoiceResponse } from '~/components/media/voice/useVoiceResponse';
 
 interface VoiceSessionModalProps {

@@ -13,7 +13,7 @@ import {
 
 import { WEB_BRAND } from '~/lib/brand';
 import { AnalyticsProvider } from '~/lib/posthog';
-import { TelemetryProvider } from '~/lib/telemetry';
+import { TelemetryProvider } from '~/lib/telemetry/telemetry-provider';
 import { ErrorState } from './components/error-state';
 
 import type { Route } from './+types/root';

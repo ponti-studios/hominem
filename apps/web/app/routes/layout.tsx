@@ -1,4 +1,4 @@
-import { Toaster } from '@hominem/ui';
+import { Toaster } from '@hominem/ui/toaster';
 import { NavLink, Outlet, data } from 'react-router';
 
 import { WEB_BRAND } from '~/lib/brand';

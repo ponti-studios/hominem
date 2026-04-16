@@ -10,9 +10,14 @@ import React, {
 } from 'react';
 
 import { E2E_TESTING } from '~/constants';
-import { useAuthHeaders, useResetAuthForE2E, useUpdateProfile } from '~/services/auth/hooks';
+import { useAuthHeaders } from '~/services/auth/hooks/use-auth-headers';
+import { useResetAuthForE2E } from '~/services/auth/hooks/use-reset-auth-for-e2e';
+import { useUpdateProfile } from '~/services/auth/hooks/use-update-profile';
 import { authStateMachine, initialAuthState } from '~/services/auth/types';
-import { useBootSequence, useEmailOtp, usePasskeyAuth, useSignOut } from '~/services/auth/hooks';
+import { useBootSequence } from '~/services/auth/hooks/use-boot-sequence';
+import { useEmailOtp } from '~/services/auth/hooks/use-email-otp';
+import { usePasskeyAuth } from '~/services/auth/hooks/use-passkey-auth';
+import { useSignOut } from '~/services/auth/hooks/use-sign-out';
 import { type AuthStatusCompat } from '~/services/auth/provider-utils';
 import { createAuthContextSnapshot } from '~/services/auth/auth-provider-state';
 

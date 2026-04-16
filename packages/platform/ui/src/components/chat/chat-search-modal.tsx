@@ -1,8 +1,8 @@
 import { Search, X } from 'lucide-react';
 
-import { Inline } from '../layout';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
+import { Inline } from '../layout/inline';
+import { Button } from '../button';
+import { Input } from '../input';
 
 interface ChatSearchModalProps {
   visible: boolean;

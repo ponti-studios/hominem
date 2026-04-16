@@ -12,12 +12,16 @@
       "default": "./src/components/loading-state.tsx"
     },
     "./button": {
-      "types": "./src/components/ui/button.tsx",
-      "default": "./src/components/ui/button.tsx"
+      "types": "./src/components/button.tsx",
+      "default": "./src/components/button.tsx"
+    },
+    "./toaster": {
+      "types": "./src/components/toaster.tsx",
+      "default": "./src/components/toaster.tsx"
     },
     "./badge": {
-      "types": "./src/components/ui/badge.tsx",
-      "default": "./src/components/ui/badge.tsx"
+      "types": "./src/components/badge.tsx",
+      "default": "./src/components/badge.tsx"
     },
     "./heading": {
       "types": "./src/components/typography/heading.tsx",
@@ -28,20 +32,20 @@
       "default": "./src/components/typography/text.tsx"
     },
     "./text-field": {
-      "types": "./src/components/ui/text-field.tsx",
-      "default": "./src/components/ui/text-field.tsx"
+      "types": "./src/components/text-field.tsx",
+      "default": "./src/components/text-field.tsx"
     },
     "./text-area": {
-      "types": "./src/components/ui/text-area.tsx",
-      "default": "./src/components/ui/text-area.tsx"
+      "types": "./src/components/text-area.tsx",
+      "default": "./src/components/text-area.tsx"
     },
     "./select-field": {
-      "types": "./src/components/ui/select-field.tsx",
-      "default": "./src/components/ui/select-field.tsx"
+      "types": "./src/components/select-field.tsx",
+      "default": "./src/components/select-field.tsx"
     },
     "./field": {
-      "types": "./src/components/ui/field.tsx",
-      "default": "./src/components/ui/field.tsx"
+      "types": "./src/components/field.tsx",
+      "default": "./src/components/field.tsx"
     },
     "./stack": {
       "types": "./src/components/layout/stack.tsx",
@@ -56,40 +60,40 @@
       "default": "./src/components/layout/page.tsx"
     },
     "./input": {
-      "types": "./src/components/ui/input.tsx",
-      "default": "./src/components/ui/input.tsx"
+      "types": "./src/components/input.tsx",
+      "default": "./src/components/input.tsx"
     },
     "./label": {
-      "types": "./src/components/ui/label.tsx",
-      "default": "./src/components/ui/label.tsx"
+      "types": "./src/components/label.tsx",
+      "default": "./src/components/label.tsx"
     },
     "./textarea": {
-      "types": "./src/components/ui/textarea.tsx",
-      "default": "./src/components/ui/textarea.tsx"
+      "types": "./src/components/textarea.tsx",
+      "default": "./src/components/textarea.tsx"
     },
     "./dialog": {
-      "types": "./src/components/ui/dialog.tsx",
-      "default": "./src/components/ui/dialog.tsx"
+      "types": "./src/components/dialog.tsx",
+      "default": "./src/components/dialog.tsx"
     },
     "./alert-dialog": {
-      "types": "./src/components/ui/alert-dialog.tsx",
-      "default": "./src/components/ui/alert-dialog.tsx"
+      "types": "./src/components/alert-dialog.tsx",
+      "default": "./src/components/alert-dialog.tsx"
     },
     "./dropdown": {
-      "types": "./src/components/ui/dropdown-menu.tsx",
-      "default": "./src/components/ui/dropdown-menu.tsx"
+      "types": "./src/components/dropdown-menu.tsx",
+      "default": "./src/components/dropdown-menu.tsx"
     },
     "./card": {
-      "types": "./src/components/ui/card.tsx",
-      "default": "./src/components/ui/card.tsx"
+      "types": "./src/components/card.tsx",
+      "default": "./src/components/card.tsx"
     },
     "./separator": {
-      "types": "./src/components/ui/separator.tsx",
-      "default": "./src/components/ui/separator.tsx"
+      "types": "./src/components/separator.tsx",
+      "default": "./src/components/separator.tsx"
     },
     "./filters": {
-      "types": "./src/components/filters/index.ts",
-      "default": "./src/components/filters/index.ts"
+      "types": "./src/components/filters/active-filters-bar.tsx",
+      "default": "./src/components/filters/active-filters-bar.tsx"
     },
     "./hooks": {
       "types": "./src/hooks/index.ts",
@@ -112,12 +116,12 @@
       "default": "./src/styles/*"
     },
     "./ai-elements": {
-      "types": "./src/components/ai-elements/index.ts",
-      "default": "./src/components/ai-elements/index.ts"
+      "types": "./src/components/ai-elements/speech-input.tsx",
+      "default": "./src/components/ai-elements/speech-input.tsx"
     },
     "./chat": {
-      "types": "./src/components/chat/index.ts",
-      "default": "./src/components/chat/index.ts"
+      "types": "./src/components/chat/chat.tsx",
+      "default": "./src/components/chat/chat.tsx"
     },
     "./chat/referenced-notes": {
       "types": "./src/components/chat/referenced-notes.ts",

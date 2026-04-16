@@ -1,7 +1,7 @@
 import { useId } from 'react';
 
 import { cn } from '../../lib/utils';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../select';
 
 interface FilterSelectOption<T extends string> {
   value: T;

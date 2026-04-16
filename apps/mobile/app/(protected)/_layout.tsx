@@ -2,7 +2,7 @@ import { Stack } from 'expo-router';
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { FeatureErrorBoundary } from '~/components/error-boundary';
+import { FeatureErrorBoundary } from '~/components/error-boundary/FeatureErrorBoundary';
 import { useAppLock } from '~/hooks/use-app-lock';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import { Text, theme } from '~/components/theme';

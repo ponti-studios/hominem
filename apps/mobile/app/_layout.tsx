@@ -11,7 +11,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { RootErrorBoundary } from '~/components/error-boundary/RootErrorBoundary';
 import { POSTHOG_ENABLED, posthog } from '~/services/posthog';
-import { recordActiveDay } from '~/services/review-prompt';
+import { recordActiveDay } from '~/services/review-prompt/review-prompt';
 import { useScreenCapture } from '~/hooks/use-screen-capture';
 import { makeStyles, theme } from '~/components/theme';
 import { AuthProvider, useAuth } from '~/services/auth/auth-provider';

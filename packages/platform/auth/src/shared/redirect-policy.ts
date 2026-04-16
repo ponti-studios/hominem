@@ -36,7 +36,7 @@ export function resolveAuthRedirect(
   fallback: string,
   allowedPrefixes: string[] = [fallback],
 ): AuthRedirectResolution {
-  const rejectedReason = getRejectedReason(next);
+  const rejectedReason = getRejectedReason(next ?? undefined);
 
   if (rejectedReason) {
     return {
@@ -46,7 +46,7 @@ export function resolveAuthRedirect(
     };
   }
 
-  const url = new URL(next, 'http://localhost');
+  const url = new URL(next!, 'http://localhost');
   if (!isAllowedRedirectPath(url.pathname, allowedPrefixes)) {
     return {
       safeRedirect: fallback,

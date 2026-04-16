@@ -9,9 +9,9 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
 
-import { SpeechInput } from '../ai-elements';
-import { Inline } from '../layout';
-import { Button } from '../ui/button';
+import { SpeechInput } from '../ai-elements/speech-input';
+import { Inline } from '../layout/inline';
+import { Button } from '../button';
 
 interface TranscribeResult {
   text: string;

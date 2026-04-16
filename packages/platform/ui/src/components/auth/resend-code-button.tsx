@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 
-import { Button } from '../ui/button';
+import { Button } from '../button';
 
 interface ResendCodeButtonProps {
   onResend: () => void;
