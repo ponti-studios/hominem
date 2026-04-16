@@ -1,31 +1,26 @@
-name: DB Migrations
+name: validate-api
 
 on:
   push:
-    branches: [main, preview]
+    branches: [main]
     paths:
-      - 'packages/core/db/**'
+      - 'services/api/**'
+      - 'packages/**'
       - 'pnpm-lock.yaml'
-      - '.github/workflows/db-migrations.yml'
+      - '.github/workflows/validate-api.yml'
   pull_request:
-    branches: [main, preview]
-    paths:
-      - 'packages/core/db/**'
-      - 'pnpm-lock.yaml'
-      - '.github/workflows/db-migrations.yml'
 
 concurrency:
-  group: db-migrations-${{ github.head_ref || github.ref }}
+  group: api-checks-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  db-migrations:
+  api-checks:
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
         node-version: [24.14.1]
-        go-version: ['1.22']
 
     services:
       postgres:
@@ -43,45 +38,50 @@ jobs:
           - 4433:5432
 
     steps:
-      - name: Checkout repository
+      - name: checkout-repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: setup-node-js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: ${{ matrix.go-version }}
-
-      - name: Setup pnpm
+      - name: setup-pnpm
         uses: pnpm/action-setup@v2
         with:
           version: 10.33.0
 
-      - name: Setup just
+      - name: setup-just
         uses: taiki-e/install-action@just
 
-      - name: Get pnpm store directory
+      - name: get-pnpm-store-directory
         id: pnpm-cache
         shell: bash
         run: |
           echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
 
-      - name: Setup pnpm cache
-        uses: actions/cache@v3
+      - name: setup-pnpm-cache
+        uses: actions/cache@v4
         with:
           path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
 
-      - name: Install dependencies
+      - name: install-dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Validate database migrations
+      - name: setup-go-for-migrations
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: run-database-migrations
         env:
           DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:4433/hominem-test
-        run: just db-migrations-validate
+        run: just db-setup
+
+      - name: run-api-checks
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:4433/hominem-test
+        run: just check-api

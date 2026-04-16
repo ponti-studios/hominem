@@ -1,21 +1,20 @@
-name: Web Checks
+name: validate-web
 
 on:
   push:
-    branches: [main, preview]
+    branches: [main]
     paths:
       - 'apps/web/**'
       - 'packages/**'
       - 'pnpm-lock.yaml'
-      - '.github/workflows/web-checks.yml'
+      - '.github/workflows/validate-web.yml'
   pull_request:
-    types: [opened, synchronize]
     branches: [main, preview]
     paths:
       - 'apps/web/**'
       - 'packages/**'
       - 'pnpm-lock.yaml'
-      - '.github/workflows/web-checks.yml'
+      - '.github/workflows/validate-web.yml'
 
 concurrency:
   group: web-checks-${{ github.head_ref || github.ref }}
@@ -30,38 +29,38 @@ jobs:
         node-version: [24.14.1]
 
     steps:
-      - name: Checkout repository
+      - name: checkout-repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: setup-node-js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Setup pnpm
+      - name: setup-pnpm
         uses: pnpm/action-setup@v2
         with:
           version: 10.33.0
 
-      - name: Setup just
+      - name: setup-just
         uses: taiki-e/install-action@just
 
-      - name: Get pnpm store directory
+      - name: get-pnpm-store-directory
         id: pnpm-cache
         shell: bash
         run: |
           echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
 
-      - name: Setup pnpm cache
-        uses: actions/cache@v3
+      - name: setup-pnpm-cache
+        uses: actions/cache@v4
         with:
           path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
 
-      - name: Install dependencies
+      - name: install-dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run web checks
+      - name: run-web-checks
         run: just check-web

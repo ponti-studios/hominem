@@ -1,0 +1,25 @@
+name: deploy-web
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/**'
+      - 'packages/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'turbo.json'
+      - 'tsconfig.json'
+      - 'tsconfig.profiles/**'
+      - 'justfile'
+      - 'justfiles/**'
+      - '.github/workflows/deploy-web.yml'
+
+jobs:
+  deploy-web:
+    uses: ./.github/workflows/railway-deploy-service.yml
+    secrets: inherit
+    with:
+      service_name: web
+      service_target: ${{ vars.RAILWAY_SERVICE_WEB }}
