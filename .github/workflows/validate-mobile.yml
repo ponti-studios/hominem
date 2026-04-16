@@ -14,14 +14,14 @@ on:
       - 'apps/mobile/**'
       - 'packages/**'
       - 'pnpm-lock.yaml'
-      - '.github/workflows/mobile-checks.yml'
+      - '.github/workflows/validate-mobile.yml'
 
 concurrency:
-  group: mobile-checks-${{ github.head_ref || github.ref }}
+  group: validate-mobile-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  mobile-checks:
+  validate-mobile:
     runs-on: ubuntu-latest
 
     strategy:
@@ -62,6 +62,6 @@ jobs:
       - name: install-dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: run-mobile-checks
-        run: just mobile-check
+      - name: run-validate-mobile
+        run: just validate-mobile
 

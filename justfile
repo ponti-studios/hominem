@@ -43,8 +43,12 @@ typecheck:
 check-web:
     {{ TURBO }} run lint typecheck test build --filter=@hominem/web
 
+validate-web: check-web
+
 check-api:
     {{ TURBO }} run lint typecheck test --filter=@hominem/api
+
+validate-api: check-api
 
 test-api:
     {{ TURBO }} run test --filter=@hominem/api...
@@ -144,6 +148,8 @@ mobile-lint:
 
 # Run all mobile checks
 mobile-check: mobile-typecheck mobile-test
+
+validate-mobile: mobile-check
 
 mobile-e2e:
     cd "{{ MOBILE_DIR }}" && pnpm exec detox test --configuration ios --cleanup

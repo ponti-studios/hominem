@@ -17,11 +17,11 @@ on:
       - '.github/workflows/validate-web.yml'
 
 concurrency:
-  group: web-checks-${{ github.head_ref || github.ref }}
+  group: validate-web-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  web-checks:
+  validate-web:
     runs-on: ubuntu-latest
 
     strategy:
@@ -62,5 +62,5 @@ jobs:
       - name: install-dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: run-web-checks
-        run: just check-web
+      - name: run-validate-web
+        run: just validate-web
