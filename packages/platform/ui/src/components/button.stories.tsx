@@ -2,8 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Plus, Trash2 } from 'lucide-react';
 import { expect, userEvent, within } from 'storybook/test';
 
-import { booleanControl, selectControl } from '../../storybook/controls';
-import { buttonSizeOptions, buttonVariantOptions } from '../../storybook/options';
+import { booleanControl, selectControl } from '../storybook/controls';
+import { buttonSizeOptions, buttonVariantOptions } from '../storybook/options';
 import { Button } from './button';
 
 const meta = {

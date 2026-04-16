@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useEffect, useState } from 'react';
 
-import { booleanControl, hiddenControl, selectControl } from '../../storybook/controls';
-import { drawerDirectionOptions } from '../../storybook/options';
+import { booleanControl, hiddenControl, selectControl } from '../storybook/controls';
+import { drawerDirectionOptions } from '../storybook/options';
 import { Button } from './button';
 import {
   Drawer,

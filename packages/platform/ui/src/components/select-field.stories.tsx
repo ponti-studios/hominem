@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useEffect, useState } from 'react';
 import { expect, within } from 'storybook/test';
 
-import { booleanControl, hiddenControl, textControl } from '../../storybook/controls';
+import { booleanControl, hiddenControl, textControl } from '../storybook/controls';
 import { SelectField } from './select-field';
 
 const meta = {

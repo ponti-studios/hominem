@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useEffect, useState } from 'react';
 
-import { booleanControl, selectControl } from '../../storybook/controls';
-import { switchSizeOptions } from '../../storybook/options';
+import { booleanControl, selectControl } from '../storybook/controls';
+import { switchSizeOptions } from '../storybook/options';
 import { Label } from './label';
 import { Switch } from './switch';
 

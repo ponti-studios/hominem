@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useEffect, useState } from 'react';
 
-import { booleanControl, hiddenControl } from '../../storybook/controls';
+import { booleanControl, hiddenControl } from '../storybook/controls';
 import { Button } from './button';
 import {
   Dialog,

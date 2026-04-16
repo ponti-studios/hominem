@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, within } from 'storybook/test';
 
-import { booleanControl, numberControl, textControl } from '../../storybook/controls';
+import { booleanControl, numberControl, textControl } from '../storybook/controls';
 import { NumberInput } from './number-input';
 
 const meta = {

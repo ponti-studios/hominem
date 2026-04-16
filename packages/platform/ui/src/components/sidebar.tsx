@@ -5,8 +5,8 @@ import gsap from 'gsap';
 import { PanelLeft } from 'lucide-react';
 import * as React from 'react';
 
-import { useIsMobile } from '../../hooks/use-mobile';
-import { reducedMotion } from '../../lib/gsap/sequences';
+import { useIsMobile } from '../hooks/use-mobile';
+import { reducedMotion } from '../lib/gsap/sequences';
 import { cn } from '../lib/utils';
 import { Button } from './button';
 import { Input } from './input';

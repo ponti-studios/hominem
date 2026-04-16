@@ -1,7 +1,7 @@
 import { forwardRef, type HTMLAttributes } from 'react';
 
 import { cn } from '../lib/utils';
-import { Loading } from './ui/loading';
+import { Loading } from './loading';
 
 type LoadingSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
 

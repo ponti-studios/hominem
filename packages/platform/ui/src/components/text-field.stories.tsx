@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, within } from 'storybook/test';
 
-import { booleanControl, selectControl, textControl } from '../../storybook/controls';
-import { textFieldTypeOptions } from '../../storybook/options';
+import { booleanControl, selectControl, textControl } from '../storybook/controls';
+import { textFieldTypeOptions } from '../storybook/options';
 import { TextField } from './text-field';
 
 const meta = {

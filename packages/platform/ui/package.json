@@ -128,8 +128,16 @@
       "default": "./src/components/chat/referenced-notes.ts"
     },
     "./composer": {
-      "types": "./src/components/composer/index.ts",
-      "default": "./src/components/composer/index.ts"
+      "types": "./src/components/composer/composer.tsx",
+      "default": "./src/components/composer/composer.tsx"
+    },
+    "./composer/composer": {
+      "types": "./src/components/composer/composer.tsx",
+      "default": "./src/components/composer/composer.tsx"
+    },
+    "./composer/composer-provider": {
+      "types": "./src/components/composer/composer-provider.tsx",
+      "default": "./src/components/composer/composer-provider.tsx"
     },
     "./types/upload": {
       "types": "./src/types/upload.ts",
