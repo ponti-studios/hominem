@@ -1,5 +1,3 @@
-import { radii, spacing } from '~/components/theme/tokens';
-import { shadowsNative } from '~/components/theme/tokens/shadows';
 import { FlashList, type ListRenderItem } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import type { RelativePathString } from 'expo-router';
@@ -8,11 +6,12 @@ import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 import Reanimated, { FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated';
 
-import { useReducedMotion } from '~/hooks/use-reduced-motion';
-import { Text, theme } from '~/components/theme';
-import { flattenNoteFeedPages, useNoteFeed } from '~/services/notes/use-note-stream';
 import { useComposerContext } from '~/components/composer/ComposerContext';
-
+import { Text, theme } from '~/components/theme';
+import { radii, spacing } from '~/components/theme/tokens';
+import { shadowsNative } from '~/components/theme/tokens/shadows';
+import { useReducedMotion } from '~/hooks/use-reduced-motion';
+import { flattenNoteFeedPages, useNoteFeed } from '~/services/notes/use-note-stream';
 
 type FeedRow = {
   id: string;
@@ -21,7 +20,6 @@ type FeedRow = {
   createdAt: string;
   hasAttachments: boolean;
 };
-
 
 function formatNoteDate(iso: string): string {
   const date = new Date(iso);
@@ -37,10 +35,8 @@ function formatNoteDate(iso: string): string {
   return date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-
 const RowSeparator = React.memo(() => <View style={styles.separator} />);
 RowSeparator.displayName = 'RowSeparator';
-
 
 const NoteRow = React.memo(({ item, onPress }: { item: FeedRow; onPress: () => void }) => (
   <Pressable
@@ -80,10 +76,12 @@ const NoteRow = React.memo(({ item, onPress }: { item: FeedRow; onPress: () => v
 
 NoteRow.displayName = 'NoteRow';
 
-
 function EmptyNotes({ composerClearance }: { composerClearance: number }) {
   return (
-    <Reanimated.View entering={FadeIn.duration(280)} style={[styles.empty, { paddingBottom: composerClearance }]}>
+    <Reanimated.View
+      entering={FadeIn.duration(280)}
+      style={[styles.empty, { paddingBottom: composerClearance }]}
+    >
       <View style={styles.emptyIconRing}>
         <Image
           source="sf:note.text"
@@ -93,13 +91,10 @@ function EmptyNotes({ composerClearance }: { composerClearance: number }) {
         />
       </View>
       <Text style={styles.emptyTitle}>No notes yet</Text>
-      <Text style={styles.emptyBody}>
-        Use the composer below to capture your first thought.
-      </Text>
+      <Text style={styles.emptyBody}>Use the composer below to capture your first thought.</Text>
     </Reanimated.View>
   );
 }
-
 
 export default function NotesFeedScreen() {
   const router = useRouter();
@@ -147,9 +142,7 @@ export default function NotesFeedScreen() {
       >
         <NoteRow
           item={item}
-          onPress={() =>
-            router.push(`/(protected)/(tabs)/notes/${item.id}` as RelativePathString)
-          }
+          onPress={() => router.push(`/(protected)/(tabs)/notes/${item.id}` as RelativePathString)}
         />
       </Reanimated.View>
     ),
@@ -318,7 +311,7 @@ const styles = StyleSheet.create({
   emptyIconRing: {
     width: spacing[7] + spacing[3],
     height: spacing[7] + spacing[3],
-    borderRadius: radii.full,
+    borderRadius: radii.sm,
     backgroundColor: theme.colors['bg-elevated'],
     alignItems: 'center',
     justifyContent: 'center',

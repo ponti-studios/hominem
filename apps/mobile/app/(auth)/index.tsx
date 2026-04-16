@@ -1,31 +1,24 @@
 import { AUTH_COPY, CHAT_AUTH_CONFIG } from '@hominem/auth/shared/ux-contract';
-import { Button } from '~/components/ui/Button';
-import { TextField } from '~/components/ui/TextField';
 import type { RelativePathString } from 'expo-router';
 import { Redirect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { getAuthScreenBaseStyles } from '~/components/auth/auth-screen-styles';
 import { AuthLayout } from '~/components/AuthLayout';
 import { FeatureErrorBoundary } from '~/components/error-boundary/FeatureErrorBoundary';
-import { posthog } from '~/services/posthog';
 import { Box, makeStyles, Text } from '~/components/theme';
-import { useAuth } from '~/services/auth/auth-provider';
-import { isValidEmail, normalizeEmail } from '~/services/auth/validation';
+import { Button } from '~/components/ui/Button';
+import { TextField } from '~/components/ui/TextField';
 import { E2E_TESTING, MOBILE_PASSKEY_ENABLED } from '~/constants';
+import { useAuth } from '~/services/auth/auth-provider';
 import { useMobilePasskeyAuth } from '~/services/auth/hooks/use-mobile-passkey-auth';
-
-import { getAuthScreenBaseStyles } from '~/components/auth/auth-screen-styles';
+import { isValidEmail, normalizeEmail } from '~/services/auth/validation';
+import { posthog } from '~/services/posthog';
 
 export function AuthScreen() {
   const styles = useStyles();
-  const {
-    authError: bootError,
-    authStatus,
-    isSignedIn,
-    completePasskeySignIn,
-    requestEmailOtp,
-  } = useAuth();
+  const { authStatus, isSignedIn, completePasskeySignIn, requestEmailOtp } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -87,8 +80,7 @@ export function AuthScreen() {
     return <Redirect href={CHAT_AUTH_CONFIG.defaultPostAuthDestination as RelativePathString} />;
   }
 
-  const displayError =
-    authError || passkeyError || (authStatus === 'degraded' ? (bootError?.message ?? null) : null);
+  const displayError = authError || passkeyError;
   const canUsePasskeys = MOBILE_PASSKEY_ENABLED && isPasskeySupported;
 
   return (
@@ -96,6 +88,7 @@ export function AuthScreen() {
       testID="auth-screen"
       title={AUTH_COPY.emailEntry.title}
       helper={AUTH_COPY.emailEntry.helper}
+      isProbing={authStatus === 'booting'}
     >
       <Box style={styles.form}>
         <View style={styles.fieldStack}>

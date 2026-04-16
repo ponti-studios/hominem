@@ -10,6 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, durations, fontSizes, radii, spacing } from '~/components/theme/tokens';
 import { fontFamiliesNative } from '~/components/theme/tokens/typography.native';
+
 import { Text } from '../typography/Text';
 import { Button } from '../ui/Button';
 
@@ -147,7 +148,7 @@ const styles = StyleSheet.create({
   handle: {
     alignSelf: 'center',
     backgroundColor: colors['border-default'],
-    borderRadius: radii.full,
+    borderRadius: radii.sm,
     height: 4,
     marginBottom: spacing[1],
     width: 36,

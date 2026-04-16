@@ -1,10 +1,10 @@
 import { SymbolView, type SFSymbol } from 'expo-symbols';
-import Reanimated, { FadeIn } from 'react-native-reanimated';
 import { StyleSheet, View } from 'react-native';
+import Reanimated, { FadeIn } from 'react-native-reanimated';
 
-import { radii, spacing, colors } from '../theme/tokens';
-import { Button } from './Button';
+import { colors, radii, spacing } from '../theme/tokens';
 import { Text } from '../typography/Text';
+import { Button } from './Button';
 
 const DEFAULT_BOTTOM_OFFSET = spacing[7] * 3;
 const ICON_RING_SIZE = spacing[7] + spacing[3];
@@ -26,7 +26,10 @@ function EmptyState({
   title,
 }: EmptyStateProps) {
   return (
-    <Reanimated.View entering={FadeIn.duration(280)} style={[styles.container, { paddingBottom: bottomOffset }]}>
+    <Reanimated.View
+      entering={FadeIn.duration(280)}
+      style={[styles.container, { paddingBottom: bottomOffset }]}
+    >
       <View style={styles.iconRing}>
         <SymbolView name={sfSymbol} size={ICON_SIZE} tintColor={colors['text-tertiary']} />
       </View>
@@ -58,7 +61,7 @@ const styles = StyleSheet.create({
   iconRing: {
     alignItems: 'center',
     backgroundColor: colors['bg-elevated'],
-    borderRadius: radii.full,
+    borderRadius: radii.sm,
     height: ICON_RING_SIZE,
     justifyContent: 'center',
     marginBottom: spacing[2],

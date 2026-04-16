@@ -3,6 +3,7 @@ import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, radii, spacing } from '~/components/theme/tokens';
+
 import { Text } from '../typography/Text';
 import { Button } from '../ui/Button';
 import { buildConversationActionsModel } from './conversation-actions.model';
@@ -60,7 +61,11 @@ export function ConversationActionsSheet({
           <View style={styles.handle} />
           <View style={styles.header}>
             <Text style={styles.title}>{title}</Text>
-            {statusCopy ? <Text color="text-tertiary" style={styles.status}>{statusCopy}</Text> : null}
+            {statusCopy ? (
+              <Text color="text-tertiary" style={styles.status}>
+                {statusCopy}
+              </Text>
+            ) : null}
           </View>
 
           {sections.map((section) => (
@@ -125,7 +130,7 @@ const styles = StyleSheet.create({
   handle: {
     alignSelf: 'center',
     backgroundColor: colors['border-default'],
-    borderRadius: radii.full,
+    borderRadius: radii.sm,
     height: 4,
     marginBottom: spacing[1],
     width: 36,

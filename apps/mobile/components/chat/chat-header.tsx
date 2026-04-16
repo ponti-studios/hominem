@@ -1,11 +1,12 @@
+import type { ChatRenderIcon } from '@hominem/chat';
 import type { SessionSource } from '@hominem/rpc/types';
 import { StyleSheet, View } from 'react-native';
 
 import { colors, fontSizes, radii, spacing } from '~/components/theme/tokens';
 import { fontFamiliesNative } from '~/components/theme/tokens/typography.native';
+
 import { Text } from '../typography/Text';
 import { Button } from '../ui/Button';
-import type { ChatRenderIcon } from '@hominem/chat';
 import { ContextAnchor } from './context-anchor';
 
 interface ChatHeaderProps {
@@ -96,7 +97,7 @@ const styles = StyleSheet.create({
   headerIconButton: {
     backgroundColor: 'transparent',
     borderColor: 'transparent',
-    borderRadius: radii.full,
+    borderRadius: radii.sm,
     height: 36,
     width: 36,
   },

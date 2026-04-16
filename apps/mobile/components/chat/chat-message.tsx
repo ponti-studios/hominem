@@ -1,14 +1,15 @@
+import type { ChatMessageItem, ChatRenderIcon, MarkdownComponent } from '@hominem/chat';
+import { getReferencedNoteLabel } from '@hominem/chat';
 import { memo, useMemo, useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import Reanimated, { FadeInDown, FadeOutUp, LinearTransition } from 'react-native-reanimated';
 
 import { colors, fontSizes, radii, spacing } from '~/components/theme/tokens';
 import { fontFamiliesNative } from '~/components/theme/tokens/typography.native';
+
 import { Text } from '../typography/Text';
 import { Button } from '../ui/Button';
 import { TextArea } from '../ui/TextArea';
-import { getReferencedNoteLabel } from '@hominem/chat';
-import type { ChatMessageItem, ChatRenderIcon, MarkdownComponent } from '@hominem/chat';
 
 type ToolCall = NonNullable<ChatMessageItem['toolCalls']>[number];
 
@@ -38,7 +39,7 @@ const styles = StyleSheet.create({
   actionButton: {
     backgroundColor: 'transparent',
     borderColor: 'transparent',
-    borderRadius: radii.full,
+    borderRadius: radii.sm,
     height: 32,
     paddingHorizontal: 0,
     paddingVertical: 0,
@@ -133,7 +134,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors['bg-base'],
     borderColor: colors['border-default'],
-    borderRadius: radii.full,
+    borderRadius: radii.sm,
     borderWidth: 1,
     flexDirection: 'row',
     gap: spacing[1],
