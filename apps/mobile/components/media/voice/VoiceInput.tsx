@@ -1,5 +1,5 @@
 import * as Haptics from 'expo-haptics';
-import { useCallback, useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View, type PressableProps } from 'react-native';
 import Animated, {
   interpolateColor,
@@ -10,11 +10,11 @@ import Animated, {
 
 import { makeStyles, Text, theme } from '~/components/theme';
 import { VOID_MOTION_DURATION_STANDARD } from '~/components/theme/motion';
-
 import AppIcon from '~/components/ui/icon';
-import { WaveformVisualizer } from './WaveformVisualizer';
+
 import { useInput } from './useInput';
 import { useTranscriber } from './useTranscriber';
+import { WaveformVisualizer } from './WaveformVisualizer';
 
 type VoiceInputProps = PressableProps & {
   autoTranscribe?: boolean;
@@ -57,7 +57,15 @@ export function VoiceInput({
     [autoTranscribe, onAudioReady, transcribeAudio],
   );
 
-  const { isRecording, isPaused, meterings, startRecording, stopRecording, pauseRecording, resumeRecording } = useInput({
+  const {
+    isRecording,
+    isPaused,
+    meterings,
+    startRecording,
+    stopRecording,
+    pauseRecording,
+    resumeRecording,
+  } = useInput({
     onAudioReady: handleAudioReady,
     onError,
   });
@@ -152,7 +160,9 @@ export function VoiceInput({
           testID={isRecording ? 'voice-stop-button' : 'voice-start-button'}
           {...props}
         >
-          {isTranscribing ? <ActivityIndicator size="small" color={theme.colors.foreground} /> : null}
+          {isTranscribing ? (
+            <ActivityIndicator size="small" color={theme.colors.foreground} />
+          ) : null}
           {!isTranscribing && isRecording ? (
             <AppIcon name="stop.fill" size={24} color={theme.colors.foreground} />
           ) : null}
@@ -160,7 +170,7 @@ export function VoiceInput({
             <AppIcon name="mic" size={24} color={theme.colors.foreground} />
           ) : null}
         </AnimatedPressable>
-        {(isRecording || isPaused) ? (
+        {isRecording || isPaused ? (
           <View style={styles.durationContainer}>
             <Text variant="body" color="text-primary">
               {formatDuration(duration)}
@@ -212,7 +222,7 @@ const useStyles = makeStyles((t) =>
     },
     speakButton: {
       padding: t.spacing.sm_8,
-      borderRadius: t.borderRadii.full,
+      borderRadius: t.borderRadii.sm,
       borderWidth: 1,
       borderColor: t.colors['border-default'],
     },

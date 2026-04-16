@@ -78,7 +78,7 @@ const useStyles = makeStyles((t) =>
     },
     playButton: {
       padding: t.spacing.sm_8,
-      borderRadius: t.borderRadii.full,
+      borderRadius: t.borderRadii.sm,
       borderWidth: 1,
       borderColor: t.colors['border-default'],
     },

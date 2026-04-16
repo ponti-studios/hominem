@@ -10,8 +10,9 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { colors, fontSizes, fontWeights, spacing , radii } from '~/components/theme/tokens';
+import { colors, fontSizes, fontWeights, radii, spacing } from '~/components/theme/tokens';
 import { fontFamiliesNative } from '~/components/theme/tokens/typography.native';
+
 import type { ButtonBaseProps, ButtonSize, ButtonVariant } from './button.types';
 
 const sizeStyles = StyleSheet.create<Record<ButtonSize, ViewStyle>>({
@@ -136,7 +137,7 @@ const baseStyles = StyleSheet.create({
   button: {
     alignItems: 'center',
     borderCurve: 'continuous',
-    borderRadius: radii.full,
+    borderRadius: radii.sm,
     columnGap: spacing[2],
     flexDirection: 'row',
     justifyContent: 'center',

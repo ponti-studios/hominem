@@ -1,10 +1,7 @@
-import {
-  colors as tokenColors,
-  radii,
-  spacing as tokenSpacing,
-} from '~/components/theme/tokens';
-import { fontFamiliesNative } from '~/components/theme/tokens/typography.native';
 import { createTheme } from '@shopify/restyle';
+
+import { radii, colors as tokenColors, spacing as tokenSpacing } from '~/components/theme/tokens';
+import { fontFamiliesNative } from '~/components/theme/tokens/typography.native';
 
 const theme = createTheme({
   colors: {
@@ -24,9 +21,7 @@ const theme = createTheme({
     sm: radii.sm,
     md: radii.md,
     lg: radii.lg,
-    xl: radii.xl,
     icon: radii.icon,
-    full: radii.full,
   },
   textVariants: {
     largeTitle: {

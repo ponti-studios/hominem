@@ -10,6 +10,7 @@ import {
 
 import { colors, fontSizes, radii, spacing } from '~/components/theme/tokens';
 import { fontFamiliesNative } from '~/components/theme/tokens/typography.native';
+
 import { Field } from './Field';
 import type { TextFieldBaseProps, TextFieldType } from './text-field.types';
 
@@ -68,7 +69,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.muted,
     borderColor: colors['border-default'],
     borderCurve: 'continuous',
-    borderRadius: radii.xl,
+    borderRadius: radii.sm,
     borderWidth: 1,
     color: colors.foreground,
     fontFamily: fontFamiliesNative.primary,

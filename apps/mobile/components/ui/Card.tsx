@@ -67,7 +67,7 @@ const styles = {
     backgroundColor: colors['bg-surface'],
     borderColor: colors['border-default'],
     borderCurve: 'continuous',
-    borderRadius: radii.xl,
+    borderRadius: radii.sm,
     borderWidth: 1,
     gap: spacing[5],
     paddingVertical: spacing[5],

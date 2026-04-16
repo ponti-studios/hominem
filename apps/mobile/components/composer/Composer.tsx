@@ -1,46 +1,35 @@
-import type { NoteSearchResult } from "@hominem/rpc/types";
-import { radii, shadowsNative, spacing } from "@hominem/ui/tokens";
-import { Image } from "expo-image";
-import { type SFSymbol } from "expo-symbols";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  ActionSheetIOS,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  TextInput,
-  View,
-} from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from "react-native-reanimated";
-import { useAnimatedKeyboard } from "react-native-keyboard-controller";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { BottomSheetModal } from '@gorhom/bottom-sheet';
+import type { NoteSearchResult } from '@hominem/rpc/types';
+import { radii, shadowsNative, spacing } from '@hominem/ui/tokens';
+import { Image } from 'expo-image';
+import { type SFSymbol } from 'expo-symbols';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ActionSheetIOS, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { useAnimatedKeyboard } from 'react-native-keyboard-controller';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
   createNotesEnterLift,
   createNotesExitLift,
   createNotesLayoutTransition,
-} from "~/components/notes/notes-surface-motion";
-import AppIcon from "~/components/ui/icon";
-import { theme } from "~/components/theme";
-import { useReducedMotion } from "~/hooks/use-reduced-motion";
-import { useNoteSearch } from "~/services/notes/use-note-search";
-import { BottomSheetModal } from "@gorhom/bottom-sheet";
+} from '~/components/notes/notes-surface-motion';
+import { theme } from '~/components/theme';
+import AppIcon from '~/components/ui/icon';
+import { useReducedMotion } from '~/hooks/use-reduced-motion';
+import { useNoteSearch } from '~/services/notes/use-note-search';
 
-import { CameraModal } from "../media/camera-modal";
-import { VoiceSessionModal } from "../media/voice-session-modal";
-import { useComposerContext } from "./ComposerContext";
-import { getTrailingMentionQuery, removeTrailingMentionQuery } from "./note-mentions";
+import { CameraModal } from '../media/camera-modal';
+import { VoiceSessionModal } from '../media/voice-session-modal';
+import { useComposerContext } from './ComposerContext';
 import {
   deriveComposerPresentation,
   type ComposerAttachment,
   type ComposerSelectedNote,
-} from "./composerState";
-import { useComposerMediaActions } from "./useComposerMediaActions";
-import { useComposerSubmission } from "./useComposerSubmission";
+} from './composerState';
+import { getTrailingMentionQuery, removeTrailingMentionQuery } from './note-mentions';
+import { useComposerMediaActions } from './useComposerMediaActions';
+import { useComposerSubmission } from './useComposerSubmission';
 
 const MAX_WIDTH = 500;
 
@@ -76,7 +65,7 @@ function SendButton({
       <AppIcon
         name="arrow.up"
         size={SEND_ICON_SIZE}
-        color={disabled ? theme.colors["text-tertiary"] : theme.colors["bg-base"]}
+        color={disabled ? theme.colors['text-tertiary'] : theme.colors['bg-base']}
       />
     </Pressable>
   );
@@ -106,11 +95,7 @@ function SecondaryButton({
         pressed ? styles.secondaryBtnPressed : null,
       ]}
     >
-      <AppIcon
-        name={icon}
-        size={SECONDARY_ICON_SIZE}
-        color={theme.colors["text-secondary"]}
-      />
+      <AppIcon name={icon} size={SECONDARY_ICON_SIZE} color={theme.colors['text-secondary']} />
     </Pressable>
   );
 }
@@ -140,46 +125,42 @@ function ComposerAttachments({
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.attachmentRow}
         >
-           {attachments.map((a) => {
-             const progress = progressByAssetId[a.id] ?? 0;
-             const isUploading = progress > 0 && progress < 100;
-             
-             return (
-               <Pressable
-                 key={a.id}
-                 style={styles.thumb}
-                 onPress={() => onRemoveAttachment(a.id)}
-                 accessibilityLabel={`Remove ${a.name}`}
-                 accessibilityRole="button"
-               >
-                 {a.localUri && (
-                   <Image
-                     source={{ uri: a.localUri }}
-                     style={styles.thumbImage}
-                     contentFit="cover"
-                   />
-                 )}
-                 <View style={styles.thumbBadge} pointerEvents="none">
-                   <AppIcon
-                     name="xmark"
-                     size={spacing[2] * 2}
-                     color={theme.colors.white}
-                   />
-                 </View>
-                 {isUploading && (
-                   <>
-                     <View style={styles.thumbDim} />
-                     <View style={[styles.progressBar, { width: `${progress}%` }]} />
-                   </>
-                 )}
-               </Pressable>
-             );
-           })}
+          {attachments.map((a) => {
+            const progress = progressByAssetId[a.id] ?? 0;
+            const isUploading = progress > 0 && progress < 100;
+
+            return (
+              <Pressable
+                key={a.id}
+                style={styles.thumb}
+                onPress={() => onRemoveAttachment(a.id)}
+                accessibilityLabel={`Remove ${a.name}`}
+                accessibilityRole="button"
+              >
+                {a.localUri && (
+                  <Image
+                    source={{ uri: a.localUri }}
+                    style={styles.thumbImage}
+                    contentFit="cover"
+                  />
+                )}
+                <View style={styles.thumbBadge} pointerEvents="none">
+                  <AppIcon name="xmark" size={spacing[2] * 2} color={theme.colors.white} />
+                </View>
+                {isUploading && (
+                  <>
+                    <View style={styles.thumbDim} />
+                    <View style={[styles.progressBar, { width: `${progress}%` }]} />
+                  </>
+                )}
+              </Pressable>
+            );
+          })}
         </ScrollView>
       )}
 
       {errors.length > 0 && (
-        <Animated.Text style={styles.errorText}>{errors.join(" · ")}</Animated.Text>
+        <Animated.Text style={styles.errorText}>{errors.join(' · ')}</Animated.Text>
       )}
     </View>
   );
@@ -200,16 +181,12 @@ function ComposerSelectionSummary({
     <View style={styles.selectionRow}>
       {selectedNotes.map((note) => (
         <View key={note.id} style={styles.selectionChip}>
-          <AppIcon
-            name="bubble.left"
-            size={spacing[3]}
-            color={theme.colors["text-secondary"]}
-          />
+          <AppIcon name="bubble.left" size={spacing[3]} color={theme.colors['text-secondary']} />
           <Animated.Text style={styles.selectionChipText}>
-            {note.title || "Untitled note"}
+            {note.title || 'Untitled note'}
           </Animated.Text>
           <Pressable
-            accessibilityLabel={`Remove ${note.title ?? "note"}`}
+            accessibilityLabel={`Remove ${note.title ?? 'note'}`}
             accessibilityRole="button"
             hitSlop={spacing[2]}
             onPress={() => onRemoveNote(note.id)}
@@ -218,11 +195,7 @@ function ComposerSelectionSummary({
               pressed ? styles.selectionChipButtonPressed : null,
             ]}
           >
-            <AppIcon
-              name="xmark"
-              size={spacing[2] + 2}
-              color={theme.colors["text-secondary"]}
-            />
+            <AppIcon name="xmark" size={spacing[2] + 2} color={theme.colors['text-secondary']} />
           </Pressable>
         </View>
       ))}
@@ -246,7 +219,7 @@ function MentionSuggestions({
       {suggestions.map((note) => (
         <Pressable
           key={note.id}
-          accessibilityLabel={`Link ${note.title ?? "note"}`}
+          accessibilityLabel={`Link ${note.title ?? 'note'}`}
           accessibilityRole="button"
           onPress={() => onSelect(note)}
           style={({ pressed }) => [
@@ -256,7 +229,7 @@ function MentionSuggestions({
           testID={`mobile-composer-mention-${note.id}`}
         >
           <Animated.Text style={styles.suggestionTitle}>
-            {note.title || "Untitled note"}
+            {note.title || 'Untitled note'}
           </Animated.Text>
           {note.excerpt ? (
             <Animated.Text numberOfLines={1} style={styles.suggestionExcerpt}>
@@ -327,12 +300,12 @@ export const Composer = () => {
     isRecording,
   );
   const mentionQuery = useMemo(
-    () => (target.kind === "chat" ? getTrailingMentionQuery(message) : null),
+    () => (target.kind === 'chat' ? getTrailingMentionQuery(message) : null),
     [message, target.kind],
   );
   const { data: searchResults } = useNoteSearch(
-    mentionQuery ?? "",
-    target.kind === "chat" && mentionQuery !== null,
+    mentionQuery ?? '',
+    target.kind === 'chat' && mentionQuery !== null,
   );
   const mentionSuggestions = useMemo(
     () =>
@@ -345,7 +318,7 @@ export const Composer = () => {
   const showPlusMenu = useCallback(() => {
     ActionSheetIOS.showActionSheetWithOptions(
       {
-        options: ["Cancel", "Take Photo", "Choose from Library"],
+        options: ['Cancel', 'Take Photo', 'Choose from Library'],
         cancelButtonIndex: 0,
       },
       (buttonIndex) => {
@@ -416,7 +389,7 @@ export const Composer = () => {
         style={styles.card}
         testID="mobile-composer"
       >
-         <Animated.View layout={createNotesLayoutTransition(prefersReducedMotion)}>
+        <Animated.View layout={createNotesLayoutTransition(prefersReducedMotion)}>
           <ComposerAttachments
             attachments={attachments}
             errors={uploadState.errors}
@@ -424,15 +397,9 @@ export const Composer = () => {
             progressByAssetId={uploadState.progressByAssetId}
             onRemoveAttachment={handleRemoveAttachment}
           />
-         </Animated.View>
-        <ComposerSelectionSummary
-          onRemoveNote={removeSelectedNote}
-          selectedNotes={selectedNotes}
-        />
-        <MentionSuggestions
-          onSelect={handleSelectMention}
-          suggestions={mentionSuggestions}
-        />
+        </Animated.View>
+        <ComposerSelectionSummary onRemoveNote={removeSelectedNote} selectedNotes={selectedNotes} />
+        <MentionSuggestions onSelect={handleSelectMention} suggestions={mentionSuggestions} />
         <Animated.View style={[styles.inputSurface, inputStyle]}>
           <View style={styles.inputWrap}>
             <TextInput
@@ -441,11 +408,9 @@ export const Composer = () => {
               scrollEnabled={false}
               value={message}
               onChangeText={setMessage}
-              onContentSizeChange={(e) =>
-                onContentSizeChange(e.nativeEvent.contentSize.height)
-              }
+              onContentSizeChange={(e) => onContentSizeChange(e.nativeEvent.contentSize.height)}
               placeholder={presentation.placeholder}
-              placeholderTextColor={theme.colors["text-tertiary"]}
+              placeholderTextColor={theme.colors['text-tertiary']}
               cursorColor={theme.colors.accent}
               selectionColor={theme.colors.accent}
               style={styles.input}
@@ -477,16 +442,14 @@ export const Composer = () => {
               <SecondaryButton
                 icon="bubble.left"
                 onPress={handleSecondaryAction}
-                accessibilityLabel={presentation.secondaryActionLabel ?? "Start chat"}
+                accessibilityLabel={presentation.secondaryActionLabel ?? 'Start chat'}
                 disabled={isChatSending}
               />
             ) : null}
             <SendButton
               onPress={handlePrimaryAction}
               disabled={!canSubmit || isChatSending}
-              accessibilityLabel={
-                isChatSending ? "Sending…" : presentation.primaryActionLabel
-              }
+              accessibilityLabel={isChatSending ? 'Sending…' : presentation.primaryActionLabel}
             />
           </View>
         </View>
@@ -518,21 +481,21 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     paddingHorizontal: spacing[4],
-    position: "absolute",
-    alignItems: "center",
+    position: 'absolute',
+    alignItems: 'center',
   },
 
   card: {
-    width: "100%",
+    width: '100%',
     maxWidth: MAX_WIDTH,
-    backgroundColor: theme.colors["bg-elevated"],
+    backgroundColor: theme.colors['bg-elevated'],
     borderRadius: radii.md,
-    borderCurve: "continuous",
+    borderCurve: 'continuous',
     paddingHorizontal: spacing[1],
     paddingTop: spacing[1],
     paddingBottom: spacing[3],
     gap: spacing[2],
-    overflow: "hidden",
+    overflow: 'hidden',
     ...shadowsNative.low,
   },
 
@@ -552,35 +515,35 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
   },
   accessoryRow: {
-    alignItems: "center",
-    flexDirection: "row",
+    alignItems: 'center',
+    flexDirection: 'row',
     gap: spacing[2],
-    justifyContent: "space-between",
+    justifyContent: 'space-between',
   },
   accessoryLeft: {
-    alignItems: "center",
-    flexDirection: "row",
+    alignItems: 'center',
+    flexDirection: 'row',
     gap: spacing[2],
     flexShrink: 1,
   },
   accessoryRight: {
-    alignItems: "center",
-    flexDirection: "row",
+    alignItems: 'center',
+    flexDirection: 'row',
     gap: spacing[2],
   },
 
   sendBtn: {
     width: SEND_BTN_SIZE,
     height: SEND_BTN_SIZE,
-    borderRadius: radii.full,
+    borderRadius: radii.sm,
     backgroundColor: theme.colors.foreground,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   sendBtnDisabled: {
-    backgroundColor: theme.colors["bg-base"],
+    backgroundColor: theme.colors['bg-base'],
     borderWidth: 1,
-    borderColor: theme.colors["border-default"],
+    borderColor: theme.colors['border-default'],
   },
   sendBtnPressed: {
     opacity: 0.7,
@@ -588,16 +551,16 @@ const styles = StyleSheet.create({
   secondaryBtn: {
     width: SECONDARY_BTN_SIZE,
     height: SECONDARY_BTN_SIZE,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: radii.md,
-    borderCurve: "continuous",
+    borderCurve: 'continuous',
   },
   secondaryBtnDisabled: {
     opacity: 0.4,
   },
   secondaryBtnPressed: {
-    backgroundColor: theme.colors["bg-surface"],
+    backgroundColor: theme.colors['bg-surface'],
   },
   attachments: {
     gap: spacing[2],
@@ -610,35 +573,35 @@ const styles = StyleSheet.create({
     width: spacing[4] * 3,
     height: spacing[4] * 3,
     borderRadius: radii.md,
-    borderCurve: "continuous",
-    overflow: "hidden",
-    backgroundColor: theme.colors["bg-surface"],
+    borderCurve: 'continuous',
+    overflow: 'hidden',
+    backgroundColor: theme.colors['bg-surface'],
   },
   thumbImage: {
     width: spacing[4] * 3,
     height: spacing[4] * 3,
   },
   thumbBadge: {
-    position: "absolute",
+    position: 'absolute',
     top: spacing[1],
     right: spacing[1],
     width: spacing[2] * 2,
     height: spacing[2] * 2,
-    borderRadius: radii.full,
-    backgroundColor: theme.colors["overlay-modal-high"],
-    alignItems: "center",
-    justifyContent: "center",
+    borderRadius: radii.sm,
+    backgroundColor: theme.colors['overlay-modal-high'],
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   thumbDim: {
-    position: "absolute",
+    position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: theme.colors["overlay-modal-medium"],
+    backgroundColor: theme.colors['overlay-modal-medium'],
   },
   progressBar: {
-    position: "absolute",
+    position: 'absolute',
     bottom: 0,
     left: 0,
     height: spacing[1],
@@ -646,42 +609,42 @@ const styles = StyleSheet.create({
   },
 
   selectionRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing[2],
   },
   selectionChip: {
-    alignItems: "center",
-    backgroundColor: theme.colors["bg-surface"],
-    borderColor: theme.colors["border-default"],
-    borderRadius: radii.full,
+    alignItems: 'center',
+    backgroundColor: theme.colors['bg-surface'],
+    borderColor: theme.colors['border-default'],
+    borderRadius: radii.sm,
     borderWidth: 1,
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: spacing[1],
     paddingHorizontal: spacing[2],
     paddingVertical: spacing[1],
   },
   selectionChipButton: {
-    alignItems: "center",
-    borderRadius: radii.full,
+    alignItems: 'center',
+    borderRadius: radii.sm,
     height: spacing[4],
-    justifyContent: "center",
+    justifyContent: 'center',
     width: spacing[4],
   },
   selectionChipButtonPressed: {
     backgroundColor: theme.colors.background,
   },
   selectionChipText: {
-    color: theme.colors["text-secondary"],
+    color: theme.colors['text-secondary'],
     fontSize: theme.textVariants.caption1.fontSize,
     lineHeight: theme.textVariants.caption1.lineHeight,
   },
   suggestions: {
-    backgroundColor: theme.colors["bg-surface"],
-    borderColor: theme.colors["border-default"],
+    backgroundColor: theme.colors['bg-surface'],
+    borderColor: theme.colors['border-default'],
     borderRadius: radii.md,
     borderWidth: 1,
-    overflow: "hidden",
+    overflow: 'hidden',
   },
   suggestionItem: {
     gap: spacing[1],
@@ -697,7 +660,7 @@ const styles = StyleSheet.create({
     lineHeight: theme.textVariants.caption1.lineHeight,
   },
   suggestionExcerpt: {
-    color: theme.colors["text-secondary"],
+    color: theme.colors['text-secondary'],
     fontSize: theme.textVariants.caption1.fontSize,
     lineHeight: theme.textVariants.caption1.lineHeight,
   },
