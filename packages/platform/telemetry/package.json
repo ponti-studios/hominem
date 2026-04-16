@@ -47,9 +47,7 @@
     "@opentelemetry/instrumentation-redis": "^0.41.0",
     "@opentelemetry/context-async-hooks": "^1.24.0"
   },
-  "devDependencies": {
-    "typescript": "5.9.3"
-  },
+  "devDependencies": {},
   "peerDependencies": {
     "pino": "^9.0.0"
   },

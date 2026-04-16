@@ -1,7 +1,7 @@
 {
   "name": "@hominem/queues",
   "version": "0.0.1",
-  "description": "BullMQ queue initialization and import job tracking — how you enqueue and track background work.",
+  "description": "BullMQ queue initialization and import job tracking \u2014 how you enqueue and track background work.",
   "type": "module",
   "types": "./src/index.ts",
   "exports": {
@@ -24,7 +24,6 @@
     "bullmq": "^5.0.0"
   },
   "devDependencies": {
-    "@types/node": "^25.4.0",
-    "typescript": "5.9.3"
+    "@types/node": "^25.4.0"
   }
 }

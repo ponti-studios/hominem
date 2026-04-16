@@ -247,7 +247,6 @@
     "react-dom": "19.2.0",
     "start-server-and-test": "^2.1.0",
     "storybook": "^10.3.3",
-    "typescript": "5.9.3",
     "vite": "8.0.8"
   },
   "peerDependencies": {

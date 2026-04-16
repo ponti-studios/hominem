@@ -83,8 +83,7 @@
     "@types/react-dom": "19.1.7",
     "babel-preset-expo": "^55.0.10",
     "eslint": "^9.0.0",
-    "eslint-config-expo": "~55.0.0",
-    "typescript": "5.9.3"
+    "eslint-config-expo": "~55.0.0"
   },
   "engines": {
     "node": ">=24.14.1"

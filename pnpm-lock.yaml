@@ -255,9 +255,6 @@ importers:
       eslint-config-expo:
         specifier: ~55.0.0
         version: 55.0.0(eslint@9.39.4(jiti@2.6.1))(typescript@5.9.3)
-      typescript:
-        specifier: 5.9.3
-        version: 5.9.3
 
   apps/web:
     dependencies:
@@ -346,9 +343,6 @@ importers:
       rollup-plugin-visualizer:
         specifier: 6.0.5
         version: 6.0.5(rolldown@1.0.0-rc.15)(rollup@2.80.0)
-      typescript:
-        specifier: 5.9.3
-        version: 5.9.3
       vite:
         specifier: 8.0.8
         version: 8.0.8(@types/node@25.5.2)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3)
@@ -374,9 +368,6 @@ importers:
       kysely-codegen:
         specifier: ^0.15.0
         version: 0.15.0(kysely@0.28.15)(pg@8.20.0)
-      typescript:
-        specifier: 5.9.3
-        version: 5.9.3
 
   packages/core/env:
     dependencies:
@@ -387,9 +378,6 @@ importers:
       '@types/node':
         specifier: ^25.4.0
         version: 25.5.2
-      typescript:
-        specifier: 5.9.3
-        version: 5.9.3
 
   packages/core/utils:
     dependencies:
@@ -417,10 +405,6 @@ importers:
       zod:
         specifier: 4.3.6
         version: 4.3.6
-    devDependencies:
-      typescript:
-        specifier: 5.9.3
-        version: 5.9.3
 
   packages/domains/chat:
     dependencies:
@@ -446,9 +430,6 @@ importers:
       react:
         specifier: 19.2.0
         version: 19.2.0
-      typescript:
-        specifier: 5.9.3
-        version: 5.9.3
 
   packages/platform/auth:
     dependencies:
@@ -474,9 +455,6 @@ importers:
       react:
         specifier: 19.2.0
         version: 19.2.0
-      typescript:
-        specifier: 5.9.3
-        version: 5.9.3
       vitest:
         specifier: 4.1.2
         version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@25.5.2)(@vitest/browser-playwright@4.1.2)(jsdom@28.1.0(@noble/hashes@2.0.1))(msw@2.13.2(@types/node@25.5.2)(typescript@5.9.3))(vite@8.0.8(@types/node@25.5.2)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3))
@@ -496,9 +474,6 @@ importers:
       '@types/node':
         specifier: ^25.4.0
         version: 25.5.2
-      typescript:
-        specifier: 5.9.3
-        version: 5.9.3
 
   packages/platform/rpc:
     dependencies:
@@ -521,9 +496,6 @@ importers:
       react:
         specifier: 19.2.0
         version: 19.2.0
-      typescript:
-        specifier: 5.9.3
-        version: 5.9.3
 
   packages/platform/services:
     dependencies:
@@ -567,9 +539,6 @@ importers:
       '@types/node':
         specifier: ^25.4.0
         version: 25.5.2
-      typescript:
-        specifier: 5.9.3
-        version: 5.9.3
 
   packages/platform/telemetry:
     dependencies:
@@ -633,10 +602,6 @@ importers:
       pino:
         specifier: ^9.0.0
         version: 9.14.0
-    devDependencies:
-      typescript:
-        specifier: 5.9.3
-        version: 5.9.3
 
   packages/platform/ui:
     dependencies:
@@ -848,9 +813,6 @@ importers:
       storybook:
         specifier: ^10.3.3
         version: 10.3.5(@testing-library/dom@9.3.4)(prettier@3.8.1)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
-      typescript:
-        specifier: 5.9.3
-        version: 5.9.3
       vite:
         specifier: 8.0.8
         version: 8.0.8(@types/node@25.5.2)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3)
