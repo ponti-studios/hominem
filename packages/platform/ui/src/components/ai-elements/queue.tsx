@@ -2,7 +2,7 @@ import { Clock, GripVertical } from 'lucide-react';
 import type { HTMLAttributes, ReactNode } from 'react';
 
 import { cn } from '../../lib/utils';
-import { Button } from '../ui/button';
+import { Button } from '../button';
 
 type QueueItemStatus = 'pending' | 'running' | 'paused' | 'completed' | 'error';
 

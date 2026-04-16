@@ -3,6 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "main": "index.js",
+  "scripts": {
+    "test": "vitest run --config vitest.config.ts",
+    "test:watch": "vitest --config vitest.config.ts",
+    "typecheck": "tsgo --noEmit -p tsconfig.json",
+    "lint": "expo lint"
+  },
   "dependencies": {
     "@bacons/apple-targets": "^4.0.6",
     "@better-auth/passkey": "^1.5.4",
@@ -10,8 +16,6 @@
     "@hominem/auth": "workspace:*",
     "@hominem/chat": "workspace:*",
     "@hominem/env": "workspace:*",
-    "@hominem/hooks": "workspace:*",
-    "@hominem/platform-utils": "workspace:*",
     "@hominem/rpc": "workspace:*",
     "@hominem/ui": "workspace:*",
     "@hominem/utils": "workspace:*",
@@ -21,12 +25,12 @@
     "@shopify/restyle": "^2.4.4",
     "@tanstack/react-query": "5.90.16",
     "better-auth": "^1.4.19",
-    "expo": "^55.0.8",
+    "expo": "^55.0.14",
     "expo-asset": "~55.0.10",
     "expo-audio": "~55.0.9",
-    "expo-av": "^16.0.8",
     "expo-build-properties": "~55.0.10",
     "expo-camera": "^55.0.10",
+    "expo-clipboard": "~55.0.9",
     "expo-constants": "~55.0.9",
     "expo-crypto": "~55.0.10",
     "expo-dev-client": "~55.0.18",
@@ -46,19 +50,21 @@
     "expo-router": "~55.0.7",
     "expo-screen-capture": "^55.0.9",
     "expo-secure-store": "~55.0.9",
+    "expo-sharing": "^55.0.14",
     "expo-splash-screen": "~55.0.15",
     "expo-sqlite": "~55.0.11",
     "expo-store-review": "^55.0.9",
-    "expo-symbols": "^55.0.5",
+    "expo-symbols": "^55.0.7",
     "expo-system-ui": "~55.0.10",
     "expo-web-browser": "~55.0.10",
-    "lucide-react-native": "^1.8.0",
     "posthog-react-native": "^4.37.3",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-error-boundary": "^6.1.1",
     "react-native": "0.83.4",
     "react-native-gesture-handler": "~2.30.0",
+    "react-native-keyboard-controller": "^1.21.5",
+    "react-native-markdown-display": "^7.0.2",
     "react-native-mmkv": "^4.2.0",
     "react-native-nitro-modules": "^0.35.2",
     "react-native-reanimated": "4.2.1",
@@ -71,13 +77,14 @@
     "zod": "4.3.6"
   },
   "devDependencies": {
-    "@babel/core": "^7.26.0",
     "@better-auth/expo": "^1.4.19",
     "@types/node": "^25.4.0",
     "@types/react": "19.2.10",
     "@types/react-dom": "19.1.7",
+    "@typescript/native-preview": "7.0.0-dev.20260415.1",
     "babel-preset-expo": "^55.0.10",
-    "typescript": "5.9.3"
+    "eslint": "^9.0.0",
+    "eslint-config-expo": "~55.0.0"
   },
   "engines": {
     "node": ">=24.14.1"
@@ -97,11 +104,6 @@
         ]
       }
     }
-  },
-  "scripts": {
-    "test": "vitest run --config vitest.config.ts",
-    "test:watch": "vitest --config vitest.config.ts",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "trustedDependencies": [
     "@clerk/shared",

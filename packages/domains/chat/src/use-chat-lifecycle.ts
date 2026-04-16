@@ -13,7 +13,6 @@ import { isBlockingState, type ThoughtLifecycleState } from './lifecycle-state';
 import { deriveSessionSource, type SessionArtifactMessage } from './session-artifacts';
 import type { ArtifactType, ClassificationProposal, SessionSource } from './thought-types';
 
-// ─── Pending Review ───────────────────────────────────────────────────────────
 
 /**
  * A review proposal awaiting user confirmation.
@@ -25,7 +24,6 @@ export interface PendingReview extends ClassificationProposal {
   reviewItemId?: string;
 }
 
-// ─── State / Reducer ──────────────────────────────────────────────────────────
 
 interface LifecycleState {
   lifecycleState: ThoughtLifecycleState;
@@ -55,7 +53,6 @@ function lifecycleReducer(state: LifecycleState, action: LifecycleAction): Lifec
   }
 }
 
-// ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export interface UseChatLifecycleInput {
   /**
@@ -110,9 +107,9 @@ export function useChatLifecycle({
   );
 
   const statusCopy = useMemo(() => {
-    if (state.lifecycleState === 'classifying') return 'Preparing note review';
+    if (state.lifecycleState === 'classifying') return 'Preparing review';
     if (state.lifecycleState === 'reviewing_changes') return 'Review ready';
-    if (state.lifecycleState === 'persisting') return 'Saving note';
+    if (state.lifecycleState === 'persisting') return 'Saving artifact';
     if (messages.length > 0)
       return `${messages.length} ${messages.length === 1 ? 'message' : 'messages'}`;
     return 'New conversation';

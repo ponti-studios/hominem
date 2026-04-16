@@ -14,17 +14,11 @@ The stack exposes OTLP HTTP on `http://localhost:4318`, OTLP gRPC on `4317`, and
 
 ## App Configuration
 
-Point local services at OTLP HTTP on `http://localhost:4318` (the default).
+Point local services at OTLP HTTP on `http://localhost:4318` (the default). The env keys and local defaults live in [../../.env.example](../../.env.example).
 
 ## Production
 
-In staging/prod, swap the OTLP endpoint for [Axiom](https://axiom.co) and add a `SENTRY_DSN` for error tracking. No code changes required — environment variables only.
-
-```
-OTEL_EXPORTER_OTLP_ENDPOINT=https://api.axiom.co
-OTEL_EXPORTER_OTLP_HEADERS=Authorization=Bearer <token>,X-Axiom-Dataset=hominem
-SENTRY_DSN=https://<key>@<org>.ingest.sentry.io/<project>
-```
+In preview/prod, point OTEL at Sentry's OTLP endpoint. The deployed env examples live in [../railway/.env.preview.example](../railway/.env.preview.example) and [../railway/.env.production.example](../railway/.env.production.example).
 
 ## Notes
 

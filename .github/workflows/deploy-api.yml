@@ -1,0 +1,25 @@
+name: deploy-api
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'services/api/**'
+      - 'packages/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'turbo.json'
+      - 'tsconfig.json'
+      - 'tsconfig.profiles/**'
+      - 'justfile'
+      - 'justfiles/**'
+      - '.github/workflows/deploy-api.yml'
+
+jobs:
+  deploy-api:
+    uses: ./.github/workflows/railway-deploy-service.yml
+    secrets: inherit
+    with:
+      service_name: api
+      service_target: ${{ vars.RAILWAY_SERVICE_API }}

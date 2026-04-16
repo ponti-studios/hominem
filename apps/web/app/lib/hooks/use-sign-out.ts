@@ -1,4 +1,4 @@
-import { useAuthClient } from '@hominem/auth/client';
+import { useAuthClient } from '@hominem/auth/client/provider';
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router';
 

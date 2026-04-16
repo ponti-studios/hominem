@@ -18,7 +18,6 @@ import { cn } from '../../lib/utils';
 import type { ComposerPresentation } from './composer-presentation';
 import { useComposerSlice } from './composer-provider';
 
-// ─── Intent mapping ───────────────────────────────────────────────────────────
 
 function primaryIntent(posture: ComposerPresentation['posture']): string {
   switch (posture) {
@@ -42,7 +41,6 @@ function secondaryIntent(posture: ComposerPresentation['posture']): string {
   }
 }
 
-// ─── Action button ────────────────────────────────────────────────────────────
 
 function ActionButton({
   intent,
@@ -85,7 +83,6 @@ function ActionButton({
   );
 }
 
-// ─── Row ──────────────────────────────────────────────────────────────────────
 
 export const ComposerActionsRow = memo(function ComposerActionsRow({
   presentation,
@@ -98,18 +95,15 @@ export const ComposerActionsRow = memo(function ComposerActionsRow({
   voiceDialogRef: React.RefObject<HTMLDialogElement | null>;
   showsVoiceButton: boolean;
 }) {
-  // Fine-grained slice — only re-renders when content availability changes
   const hasContent = useComposerSlice(
     (s) => s.draft.trim().length > 0 || s.uploadedFiles.length > 0,
   );
   const isUploading = useComposerSlice((s) => s.isUploading);
 
-  // useFormStatus provides pending from the enclosing <form> action
   const { pending: formPending } = useFormStatus();
 
   const disabled = !hasContent || isPending || formPending || isUploading;
 
-  // Show voice button when draft is empty and voice is enabled
   const showVoiceAsPrimary = showsVoiceButton && !hasContent;
 
   return (

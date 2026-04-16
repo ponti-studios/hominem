@@ -14,7 +14,7 @@ import type { UseMutationResult } from '@tanstack/react-query';
 import { Loader2, Mic, X } from 'lucide-react';
 import { forwardRef, memo, useMemo, useState, useSyncExternalStore } from 'react';
 
-import { SpeechInput } from '../ai-elements';
+import { SpeechInput } from '../ai-elements/speech-input';
 import type { ComposerStore } from './composer-store';
 import { RecordingClock } from './recording-clock';
 
@@ -38,7 +38,6 @@ export const VoiceDialog = memo(
     { store, transcribeMutation, inputRef },
     ref,
   ) {
-    // RecordingClock lives entirely outside React — useMemo creates it once
     const clock = useMemo(() => new RecordingClock(), []);
     const elapsed = useSyncExternalStore(
       clock.subscribe,
@@ -46,7 +45,6 @@ export const VoiceDialog = memo(
       clock.getServerSnapshot,
     );
 
-    // These are genuinely local UI states — not global composer state
     const [isRecording, setIsRecording] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [audioLevel, setAudioLevel] = useState(0);
@@ -85,7 +83,6 @@ export const VoiceDialog = memo(
       }
     }
 
-    // Waveform bars — derived from audioLevel, no state needed
     const waveformBars = Array.from({ length: 12 }, (_, i) => {
       const offset = ((i % 4) + 1) / 4;
       return Math.min(1, Math.max(0.12, audioLevel * offset));
@@ -95,7 +92,6 @@ export const VoiceDialog = memo(
       <dialog
         ref={ref}
         aria-label="Voice input"
-        // Native close event fires on Escape or button click — restore focus
         onClose={() => {
           clock.stop();
           setIsRecording(false);
@@ -149,7 +145,6 @@ export const VoiceDialog = memo(
             </span>
           </div>
 
-          {/* Waveform — decorative, hidden from a11y tree */}
           <div className="flex items-end gap-0.5" aria-hidden="true">
             {waveformBars.map((h, i) => (
               <span
@@ -166,7 +161,6 @@ export const VoiceDialog = memo(
 
         {error ? <p className="text-xs text-destructive">{error}</p> : null}
 
-        {/* Live region — announces recording state to screen readers */}
         <span className="sr-only" aria-live="polite" role="status">
           {isRecording ? 'Recording started' : isProcessing ? 'Transcribing audio' : ''}
         </span>

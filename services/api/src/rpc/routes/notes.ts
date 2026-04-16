@@ -23,10 +23,10 @@ const noteParamSchema = z.object({ id: z.uuid() });
 const noteSearchQuerySchema = z.object({
   query: z.string().trim().min(1),
   limit: z.string().optional(),
+  cursor: z.string().optional(),
 });
 const noteService = new NoteService();
 
-// ─── Routes ──────────────────────────────────────────────────────────────────
 
 export const notesRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
@@ -67,9 +67,14 @@ export const notesRoutes = new Hono<AppContext>()
     const query = c.req.valid('query');
     const limit = query.limit ? Math.min(Number.parseInt(query.limit, 10), 20) : 10;
 
-    const results = await NoteRepository.search(getDb(), { userId, query: query.query, limit });
+    const results = await NoteRepository.search(getDb(), {
+      userId,
+      query: query.query,
+      limit,
+      ...(query.cursor ? { cursor: query.cursor } : {}),
+    });
 
-    return c.json<NotesSearchOutput>({ notes: results });
+    return c.json<NotesSearchOutput>(results);
   })
   .post('/', zValidator('json', CreateNoteInputSchema), async (c) => {
     const userId = c.get('userId')!;
@@ -77,7 +82,6 @@ export const notesRoutes = new Hono<AppContext>()
     const note = await noteService.createNote(userId, {
       title: input.title ?? null,
       content: input.content,
-      excerpt: input.excerpt ?? null,
       ...(input.fileIds ? { fileIds: input.fileIds } : {}),
     });
 
@@ -101,7 +105,6 @@ export const notesRoutes = new Hono<AppContext>()
       const note = await noteService.updateNote(id, userId, {
         ...(input.title !== undefined ? { title: input.title } : {}),
         ...(input.content !== undefined ? { content: input.content } : {}),
-        ...(input.excerpt !== undefined ? { excerpt: input.excerpt } : {}),
         ...(input.fileIds ? { fileIds: input.fileIds } : {}),
       });
 

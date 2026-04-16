@@ -42,7 +42,6 @@ export const createTestServer = async (options: { logger?: boolean } = {}) => {
   // Override the queues middleware for testing with mock queues
   server.use('*', async (c, next) => {
     const mockQueues = {
-      plaidSync: globalMocks.queue,
       importTransactions: globalMocks.queue,
     }
     // @ts-expect-error - Using mock queues for testing

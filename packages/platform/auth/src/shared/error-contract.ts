@@ -1,26 +1,13 @@
-/**
- * Auth callback error contract.
- *
- * Helpers for encoding auth errors into redirect URLs and reading them back.
- * Used by web app routes to propagate error context through the redirect chain.
- */
-
 import { resolveAuthRedirect } from './redirect-policy';
 
-// ─── Error URL Builder ────────────────────────────────────────────────────────
-
-export interface AuthCallbackErrorRedirectOptions {
+type AuthCallbackErrorRedirectOptions = {
   next: string | null | undefined;
   fallback: string;
   allowedPrefixes?: string[];
   description?: string;
   code?: string;
-}
+};
 
-/**
- * Builds a safe redirect URL with auth error query params appended.
- * The destination path is validated against `allowedPrefixes` before use.
- */
 export function buildAuthCallbackErrorRedirect({
   next,
   fallback,
@@ -29,18 +16,13 @@ export function buildAuthCallbackErrorRedirect({
   code,
 }: AuthCallbackErrorRedirectOptions): string {
   const { safeRedirect } = resolveAuthRedirect(next, fallback, allowedPrefixes);
-  const url = new URL(safeRedirect, 'https://hominem.local');
+  const url = new URL(safeRedirect, 'http://localhost');
   if (code) url.searchParams.set('error', code);
   if (description) url.searchParams.set('description', description);
   return `${url.pathname}${url.search}${url.hash}`;
 }
 
-// ─── Error URL Reader ─────────────────────────────────────────────────────────
 
-/**
- * Reads a human-readable error message from URLSearchParams produced by
- * `buildAuthCallbackErrorRedirect`.
- */
 export function readAuthErrorMessage(params: URLSearchParams): string | null {
   const description = params.get('description') ?? params.get('error_description');
   if (description) return description;

@@ -1,45 +1,48 @@
 import * as z from 'zod';
 
-// ============================================================================
-// Re-export canonical domain types from @hominem/chat.
-// The domain package owns these; RPC re-exports for transport consumers.
-// ============================================================================
-
 export type {
   ArtifactType,
   CaptureBarProps,
-  ClassificationReviewProps,
+  Chat,
+  ChatInsert,
+  ChatIconName,
+  ChatInput,
+  ChatMessage,
+  ChatMessageFile,
+  ChatMessageInput,
+  ChatMessageItem,
+  ChatMessageOutput,
+  ChatMessageReferencedNote,
+  ChatMessageRole,
+  ChatMessageToolCall,
+  ChatOutput,
+  MarkdownComponent,
   ReviewItem,
   SessionSource,
   ThoughtLifecycleState,
   ThoughtLifecycleTransition,
+  JsonPrimitive,
+  JsonValue,
 } from '@hominem/chat/types';
 
 export {
   CHAT_TITLE_MAX_LENGTH,
   ENABLED_ARTIFACT_TYPES,
+  getReferencedNoteLabel,
   isArtifactTypeEnabled,
 } from '@hominem/chat/types';
 
-import type { ArtifactType } from '@hominem/chat/types';
+import type {
+  ArtifactType,
+  Chat,
+  ChatMessageReferencedNote,
+  ChatMessageRole,
+  ChatMessageToolCall,
+  JsonValue,
+} from '@hominem/chat/types';
 
 // ============================================================================
-// WIRE TYPES — transport-specific DTOs for the chat API
-// ============================================================================
-
-export type JsonPrimitive = string | number | boolean | null;
-export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
-
-export type ChatMessageRole = 'system' | 'user' | 'assistant' | 'tool';
-
-export interface ChatMessageToolCall {
-  toolName: string;
-  type: 'tool-call';
-  toolCallId: string;
-  args: Record<string, string>;
-}
-
-export interface ChatMessageFile {
+export interface ChatMessageFileDto {
   type: 'image' | 'file';
   fileId?: string;
   url?: string;
@@ -49,28 +52,13 @@ export interface ChatMessageFile {
   metadata?: Record<string, JsonValue>;
 }
 
-export interface ChatMessageReferencedNote {
-  id: string;
-  title: string | null;
-}
-
-export interface Chat {
-  archivedAt: string | null;
-  id: string;
-  userId: string;
-  title: string;
-  noteId: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface ChatMessageDto {
   id: string;
   chatId: string;
   userId: string;
   role: ChatMessageRole;
   content: string;
-  files: ChatMessageFile[] | null;
+  files: ChatMessageFileDto[] | null;
   referencedNotes: ChatMessageReferencedNote[] | null;
   toolCalls: ChatMessageToolCall[] | null;
   reasoning: string | null;
@@ -146,7 +134,7 @@ export const chatsUISendSchema = z.object({
 });
 
 export type ChatsSendOutput = {
-  streamId: string;
+  assistantMessageId: string;
   chatId: string;
   chatTitle: string;
   messages: {

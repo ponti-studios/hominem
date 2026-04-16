@@ -12,7 +12,6 @@ import type { Note } from '@hominem/rpc/types/notes.types';
 
 import type { UploadedFile } from '../../types/upload';
 
-// ─── State ────────────────────────────────────────────────────────────────────
 
 export interface ComposerState {
   readonly draft: string;
@@ -32,7 +31,6 @@ export const INITIAL_COMPOSER_STATE: ComposerState = {
   uploadErrors: [],
 };
 
-// ─── Actions ──────────────────────────────────────────────────────────────────
 
 export type ComposerAction =
   | { type: 'SET_DRAFT'; text: string }
@@ -45,9 +43,8 @@ export type ComposerAction =
   | { type: 'CLEAR_FILES' }
   | { type: 'SET_UPLOADING'; isUploading: boolean; progress?: number }
   | { type: 'SET_UPLOAD_ERRORS'; errors: ReadonlyArray<string> }
-  | { type: 'CLEAR' }; // draft + notes + files post-submit
+  | { type: 'CLEAR' };
 
-// ─── Reducer ─────────────────────────────────────────────────────────────────
 
 function reduceComposerState(state: ComposerState, action: ComposerAction): ComposerState {
   switch (action.type) {
@@ -87,7 +84,6 @@ function reduceComposerState(state: ComposerState, action: ComposerAction): Comp
     case 'CLEAR':
       return {
         ...INITIAL_COMPOSER_STATE,
-        // Preserve upload state — an in-flight upload should not be cancelled by submit
         isUploading: state.isUploading,
         uploadProgress: state.uploadProgress,
       };
@@ -96,7 +92,6 @@ function reduceComposerState(state: ComposerState, action: ComposerAction): Comp
   }
 }
 
-// ─── Store ────────────────────────────────────────────────────────────────────
 
 export class ComposerStore {
   #state: ComposerState = INITIAL_COMPOSER_STATE;
@@ -104,12 +99,11 @@ export class ComposerStore {
 
   dispatch = (action: ComposerAction): void => {
     const next = reduceComposerState(this.#state, action);
-    if (next === this.#state) return; // structural equality — skip notify
+    if (next === this.#state) return;
     this.#state = next;
     for (const listener of this.#listeners) listener();
   };
 
-  // useSyncExternalStore interface
   getSnapshot = (): ComposerState => this.#state;
   getServerSnapshot = (): ComposerState => INITIAL_COMPOSER_STATE;
   subscribe = (listener: () => void): (() => void) => {

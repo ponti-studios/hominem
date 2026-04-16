@@ -9,16 +9,16 @@
  */
 
 export const queryKeys = {
-  // ─── Notes ───────────────────────────────────────────────────────────
   notes: {
     all: ['notes'] as const,
-    list: (options: Record<string, unknown> = {}) => ['notes', 'list', options] as const,
-    feed: (options: Record<string, unknown> = {}) => ['notes', 'feed', options] as const,
+    lists: () => ['notes', 'list'] as const,
+    feeds: () => ['notes', 'feed'] as const,
+    list: (options: Record<string, unknown>) => ['notes', 'list', options] as const,
+    feed: (options: Record<string, unknown>) => ['notes', 'feed', options] as const,
     detail: (id: string) => ['notes', 'detail', id] as const,
     search: (query: string) => ['notes', 'search', query] as const,
   },
 
-  // ─── Chats ───────────────────────────────────────────────────────────
   chats: {
     all: ['chats'] as const,
     list: ['chats', 'list'] as const,
@@ -29,7 +29,6 @@ export const queryKeys = {
     archived: ['chats', 'archived'] as const,
   },
 
-  // ─── Files ───────────────────────────────────────────────────────────
   files: {
     all: ['files'] as const,
     list: ['files', 'list'] as const,

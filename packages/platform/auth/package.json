@@ -2,56 +2,55 @@
   "name": "@hominem/auth",
   "version": "0.0.0",
   "description": "Unified authentication package for Hominem apps (web, mobile, CLI)",
-  "types": "./src/index.ts",
+  "type": "module",
   "exports": {
-    ".": {
-      "types": "./src/index.ts",
-      "default": "./src/index.ts"
-    },
     "./types": {
       "types": "./src/types.ts",
       "default": "./src/types.ts"
     },
-    "./step-up-actions": {
-      "types": "./src/shared/step-up-actions.ts",
-      "default": "./src/shared/step-up-actions.ts"
+    "./shared/error-contract": {
+      "types": "./src/shared/error-contract.ts",
+      "default": "./src/shared/error-contract.ts"
     },
-    "./redirect-policy": {
+    "./shared/mask-email": {
+      "types": "./src/shared/mask-email.ts",
+      "default": "./src/shared/mask-email.ts"
+    },
+    "./shared/redirect-policy": {
       "types": "./src/shared/redirect-policy.ts",
       "default": "./src/shared/redirect-policy.ts"
     },
-    "./server-utils": {
-      "types": "./src/server-utils.ts",
-      "default": "./src/server-utils.ts"
-    },
-    "./ux-contract": {
+    "./shared/ux-contract": {
       "types": "./src/shared/ux-contract.ts",
       "default": "./src/shared/ux-contract.ts"
     },
-    "./server": {
-      "types": "./src/server/index.ts",
-      "default": "./src/server/index.ts"
+    "./client/provider": {
+      "types": "./src/client/provider.tsx",
+      "default": "./src/client/provider.tsx"
     },
-    "./client": {
-      "types": "./src/client/index.ts",
-      "default": "./src/client/index.ts"
+    "./client/passkey": {
+      "types": "./src/client/passkey.ts",
+      "default": "./src/client/passkey.ts"
     }
   },
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "typecheck": "tsgo --noEmit",
     "format": "pnpm dlx oxfmt ./src",
     "lint": "pnpm dlx oxlint ./src"
   },
   "dependencies": {
     "@better-auth/passkey": "^1.4.19",
+    "@hominem/db": "workspace:*",
     "@hominem/env": "workspace:*",
     "better-auth": "^1.4.19"
   },
   "devDependencies": {
     "@types/node": "^25.4.0",
     "@types/react": "19.2.10",
+    "@typescript/native-preview": "7.0.0-dev.20260415.1",
     "react": "19.2.0",
-    "typescript": "5.9.3"
+    "vitest": "4.1.2"
   },
   "peerDependencies": {
     "react": "19.2.0"

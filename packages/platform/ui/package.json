@@ -9,90 +9,95 @@
     },
     "./loading-state": {
       "types": "./src/components/loading-state.tsx",
-      "react-native": "./src/components/loading-state.native.tsx",
       "default": "./src/components/loading-state.tsx"
     },
     "./button": {
-      "types": "./src/components/ui/button.tsx",
-      "react-native": "./src/components/ui/button.native.tsx",
-      "default": "./src/components/ui/button.tsx"
+      "types": "./src/components/button.tsx",
+      "default": "./src/components/button.tsx"
+    },
+    "./toaster": {
+      "types": "./src/components/toaster.tsx",
+      "default": "./src/components/toaster.tsx"
+    },
+    "./badge": {
+      "types": "./src/components/badge.tsx",
+      "default": "./src/components/badge.tsx"
     },
     "./heading": {
       "types": "./src/components/typography/heading.tsx",
-      "react-native": "./src/components/typography/heading.native.tsx",
       "default": "./src/components/typography/heading.tsx"
     },
     "./text": {
       "types": "./src/components/typography/text.tsx",
-      "react-native": "./src/components/typography/text.native.tsx",
       "default": "./src/components/typography/text.tsx"
     },
     "./text-field": {
-      "types": "./src/components/ui/text-field.tsx",
-      "react-native": "./src/components/ui/text-field.native.tsx",
-      "default": "./src/components/ui/text-field.tsx"
+      "types": "./src/components/text-field.tsx",
+      "default": "./src/components/text-field.tsx"
     },
     "./text-area": {
-      "types": "./src/components/ui/text-area.tsx",
-      "react-native": "./src/components/ui/text-area.native.tsx",
-      "default": "./src/components/ui/text-area.tsx"
+      "types": "./src/components/text-area.tsx",
+      "default": "./src/components/text-area.tsx"
     },
     "./select-field": {
-      "types": "./src/components/ui/select-field.tsx",
-      "default": "./src/components/ui/select-field.tsx"
+      "types": "./src/components/select-field.tsx",
+      "default": "./src/components/select-field.tsx"
     },
     "./field": {
-      "types": "./src/components/ui/field.tsx",
-      "react-native": "./src/components/ui/field.native.tsx",
-      "default": "./src/components/ui/field.tsx"
+      "types": "./src/components/field.tsx",
+      "default": "./src/components/field.tsx"
     },
     "./stack": {
       "types": "./src/components/layout/stack.tsx",
-      "react-native": "./src/components/layout/stack.native.tsx",
       "default": "./src/components/layout/stack.tsx"
     },
     "./inline": {
       "types": "./src/components/layout/inline.tsx",
-      "react-native": "./src/components/layout/inline.native.tsx",
       "default": "./src/components/layout/inline.tsx"
     },
     "./page": {
       "types": "./src/components/layout/page.tsx",
-      "react-native": "./src/components/layout/page.native.tsx",
       "default": "./src/components/layout/page.tsx"
     },
     "./input": {
-      "types": "./src/components/ui/input.tsx",
-      "default": "./src/components/ui/input.tsx"
+      "types": "./src/components/input.tsx",
+      "default": "./src/components/input.tsx"
     },
     "./label": {
-      "types": "./src/components/ui/label.tsx",
-      "default": "./src/components/ui/label.tsx"
+      "types": "./src/components/label.tsx",
+      "default": "./src/components/label.tsx"
     },
     "./textarea": {
-      "types": "./src/components/ui/textarea.tsx",
-      "default": "./src/components/ui/textarea.tsx"
+      "types": "./src/components/textarea.tsx",
+      "default": "./src/components/textarea.tsx"
     },
     "./dialog": {
-      "types": "./src/components/ui/dialog.tsx",
-      "default": "./src/components/ui/dialog.tsx"
+      "types": "./src/components/dialog.tsx",
+      "default": "./src/components/dialog.tsx"
     },
     "./alert-dialog": {
-      "types": "./src/components/ui/alert-dialog.tsx",
-      "default": "./src/components/ui/alert-dialog.tsx"
+      "types": "./src/components/alert-dialog.tsx",
+      "default": "./src/components/alert-dialog.tsx"
     },
     "./dropdown": {
-      "types": "./src/components/ui/dropdown-menu.tsx",
-      "default": "./src/components/ui/dropdown-menu.tsx"
+      "types": "./src/components/dropdown-menu.tsx",
+      "default": "./src/components/dropdown-menu.tsx"
     },
     "./card": {
-      "types": "./src/components/ui/card.tsx",
-      "react-native": "./src/components/ui/card.native.tsx",
-      "default": "./src/components/ui/card.tsx"
+      "types": "./src/components/card.tsx",
+      "default": "./src/components/card.tsx"
+    },
+    "./separator": {
+      "types": "./src/components/separator.tsx",
+      "default": "./src/components/separator.tsx"
     },
     "./filters": {
-      "types": "./src/components/filters/index.ts",
-      "default": "./src/components/filters/index.ts"
+      "types": "./src/components/filters/active-filters-bar.tsx",
+      "default": "./src/components/filters/active-filters-bar.tsx"
+    },
+    "./ai-elements": {
+      "types": "./src/components/ai-elements/index.ts",
+      "default": "./src/components/ai-elements/index.ts"
     },
     "./hooks": {
       "types": "./src/hooks/index.ts",
@@ -114,18 +119,17 @@
       "types": "./src/styles/*",
       "default": "./src/styles/*"
     },
-    "./ai-elements": {
-      "types": "./src/components/ai-elements/index.ts",
-      "default": "./src/components/ai-elements/index.ts"
-    },
     "./chat": {
-      "types": "./src/components/chat/index.ts",
-      "react-native": "./src/components/chat/index.mobile.ts",
-      "default": "./src/components/chat/index.ts"
+      "types": "./src/components/chat/chat.tsx",
+      "default": "./src/components/chat/chat.tsx"
     },
     "./composer": {
-      "types": "./src/components/composer/index.ts",
-      "default": "./src/components/composer/index.ts"
+      "types": "./src/components/composer/composer.tsx",
+      "default": "./src/components/composer/composer.tsx"
+    },
+    "./composer/composer-provider": {
+      "types": "./src/components/composer/composer-provider.tsx",
+      "default": "./src/components/composer/composer-provider.tsx"
     },
     "./types/upload": {
       "types": "./src/types/upload.ts",
@@ -157,7 +161,7 @@
   "scripts": {
     "format": "pnpm dlx oxfmt ./src",
     "lint": "pnpm dlx oxlint ./src",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsgo --noEmit",
     "storybook": "storybook dev -p 6006",
     "test:storybook": "start-server-and-test storybook http://127.0.0.1:6006 test:storybook:run",
     "test:storybook:run": "test-storybook --url http://127.0.0.1:6006",
@@ -209,9 +213,6 @@
     "react-day-picker": "8.10.1",
     "react-hook-form": "^7.70.0",
     "react-markdown": "^10.1.0",
-    "react-native-markdown-display": "^7.0.2",
-    "react-native-reanimated": "4.2.1",
-    "react-native-safe-area-context": "5.6.2",
     "react-router": "7.14.0",
     "react-syntax-highlighter": "^15.6.1",
     "tailwind-merge": "3.2.0",
@@ -219,6 +220,7 @@
     "vaul": "^1.1.2"
   },
   "devDependencies": {
+    "@shopify/flash-list": "2.0.2",
     "@storybook/addon-docs": "^10.3.3",
     "@storybook/addon-mcp": "^0.4.2",
     "@storybook/addon-vitest": "^10.3.3",
@@ -231,18 +233,13 @@
     "@types/react": "19.2.10",
     "@types/react-dom": "19.1.7",
     "@types/react-syntax-highlighter": "^15.5.13",
+    "@typescript/native-preview": "7.0.0-dev.20260415.1",
     "@vitest/browser-playwright": "4.1.2",
-    "expo-clipboard": "~55.0.9",
-    "expo-file-system": "~55.0.11",
-    "expo-haptics": "^55.0.9",
-    "expo-sharing": "^55.0.14",
     "msw": "^2.12.13",
     "msw-storybook-addon": "^2.0.6",
-    "start-server-and-test": "^2.1.0",
     "react-dom": "19.2.0",
-    "react-native": "0.83.4",
+    "start-server-and-test": "^2.1.0",
     "storybook": "^10.3.3",
-    "typescript": "5.9.3",
     "vite": "8.0.8"
   },
   "peerDependencies": {

@@ -1,4 +1,3 @@
-import { useNoteEditor } from '@hominem/hooks';
 import type { Note } from '@hominem/rpc/types/notes.types';
 import { SurfacePanel } from '@hominem/ui';
 import { SpeechInput } from '@hominem/ui/ai-elements';
@@ -20,6 +19,8 @@ import { Link, useNavigate } from 'react-router';
 import { useDeleteNote, useUpdateNote } from '~/hooks/use-notes';
 import { useTranscribe } from '~/hooks/use-transcribe';
 import { useFileUpload } from '~/lib/hooks/use-file-upload';
+
+import { useNoteEditor } from './use-note-editor';
 
 interface NoteEditorProps {
   note: Note;

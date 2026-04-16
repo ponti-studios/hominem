@@ -10,8 +10,31 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
-import { isSupportedChatUploadMimeType } from '../upload';
 import type { FileObject, PreparedUpload, StorageOptions, StoredFile } from './types';
+
+const CHAT_UPLOAD_ALLOWED_MIME_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'application/pdf',
+  'text/plain',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/msword',
+  'audio/mpeg',
+  'audio/wav',
+  'audio/ogg',
+  'video/mp4',
+  'video/webm',
+  'text/csv',
+  'application/csv',
+] as const;
+
+function isSupportedChatUploadMimeType(mimetype: string): boolean {
+  return CHAT_UPLOAD_ALLOWED_MIME_TYPES.includes(
+    mimetype as (typeof CHAT_UPLOAD_ALLOWED_MIME_TYPES)[number],
+  );
+}
 
 type StorageCategory = 'csvs' | 'chats' | 'places';
 

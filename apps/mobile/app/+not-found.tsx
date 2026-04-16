@@ -1,8 +1,7 @@
 import { Link, Stack } from 'expo-router';
 import type { RelativePathString } from 'expo-router';
+import { Screen } from '~/components/layout/Page';
 import { Text, makeStyles } from '~/components/theme';
-
-import { Container } from '~/components/Container';
 
 export default function NotFoundScreen() {
   const styles = useStyles();
@@ -10,8 +9,8 @@ export default function NotFoundScreen() {
   return (
     <>
       <Stack.Screen options={{ title: 'NOT_FOUND' }} />
-      <Container>
-        <Text variant="title" color="foreground">
+      <Screen>
+        <Text variant="title2" color="foreground">
           RESOURCE_NOT_FOUND.
         </Text>
         <Link href={'/' as RelativePathString} style={styles.link}>
@@ -19,7 +18,7 @@ export default function NotFoundScreen() {
             RETURN_TO_ROOT
           </Text>
         </Link>
-      </Container>
+      </Screen>
     </>
   );
 }

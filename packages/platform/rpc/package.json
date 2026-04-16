@@ -38,7 +38,7 @@
     }
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
     "@hominem/chat": "workspace:*",
@@ -48,8 +48,8 @@
   "devDependencies": {
     "@types/node": "^25.4.0",
     "@types/react": "19.2.10",
-    "react": "19.2.0",
-    "typescript": "5.9.3"
+    "@typescript/native-preview": "7.0.0-dev.20260415.1",
+    "react": "19.2.0"
   },
   "peerDependencies": {
     "react": "19.2.0"

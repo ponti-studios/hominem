@@ -1,0 +1,42 @@
+name: deploy-service
+
+on:
+  workflow_call:
+    inputs:
+      service_name:
+        required: true
+        type: string
+      service_target:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: deploy-${{ inputs.service_name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SERVICE: ${{ inputs.service_target }}
+
+    steps:
+      - name: checkout-repository
+        uses: actions/checkout@v4
+
+      - name: setup-node-js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.1
+
+      - name: install-railway-cli
+        run: npm install -g @railway/cli
+
+      - name: validate-railway-service-target
+        run: test -n "$SERVICE"
+
+      - name: deploy-${{ inputs.service_name }}-to-railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: railway up --ci --service "$SERVICE"

@@ -2,7 +2,7 @@ import { BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
 import { useState, type HTMLAttributes } from 'react';
 
 import { cn } from '../../lib/utils';
-import { Button } from '../ui/button';
+import { Button } from '../button';
 
 interface Source {
   href: string;

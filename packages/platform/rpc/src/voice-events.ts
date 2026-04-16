@@ -39,6 +39,11 @@ export interface VoiceEventPayload {
   stage?: 'request_prepare' | 'transport_send' | 'first_token' | 'complete';
 }
 
+/**
+ * PostHog analytics integration for voice events.
+ * NOTE: This couples the RPC client to PostHog. Consider moving to a dedicated
+ * @hominem/analytics package if other domains need event emission.
+ */
 interface PostHogClientLike {
   capture: (
     event: string,

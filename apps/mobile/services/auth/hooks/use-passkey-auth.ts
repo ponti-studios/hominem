@@ -1,4 +1,5 @@
-import type { User } from '@hominem/auth';
+import type { User } from '@hominem/auth/types';
+import type { RefObject } from 'react';
 import { useCallback } from 'react';
 
 import { captureAuthAnalyticsEvent, captureAuthAnalyticsFailure } from '~/services/auth/analytics';
@@ -43,7 +44,7 @@ function toAuthUserProfile(localProfile: User | null): AuthContext['state']['use
   };
 }
 
-export function usePasskeyAuth(context: AuthContext) {
+export function usePasskeyAuth(context: AuthContext, sessionCookieHeaderRef: RefObject<string | null>) {
   const { dispatch } = context;
 
   const completePasskeySignIn = useCallback(
@@ -65,6 +66,7 @@ export function usePasskeyAuth(context: AuthContext) {
         if (!sessionCookieHeader) {
           throw new Error('Missing Better Auth session cookie after passkey sign-in');
         }
+        sessionCookieHeaderRef.current = sessionCookieHeader;
 
         dispatch({ type: 'PROFILE_SYNC_STARTED' });
         const localUser = fromSignInUser(input.user);

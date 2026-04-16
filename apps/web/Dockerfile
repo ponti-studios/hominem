@@ -1,14 +1,15 @@
-# Production Dockerfile for Hominem Web App
-# Multi-stage build with Node server for serving static files
-
-# ============================================================================
-# BUILDER STAGE - Build the web application
-# ============================================================================
-FROM node:22-alpine AS builder
+FROM node:24.14.1-alpine AS builder
 
 WORKDIR /app
 
-ENV TURBO_TELEMETRY_DISABLED=1
+ARG VITE_PUBLIC_API_URL
+ARG VITE_POSTHOG_API_KEY
+ARG VITE_POSTHOG_HOST
+
+ENV TURBO_TELEMETRY_DISABLED=1 \
+    VITE_PUBLIC_API_URL=${VITE_PUBLIC_API_URL} \
+    VITE_POSTHOG_API_KEY=${VITE_POSTHOG_API_KEY} \
+    VITE_POSTHOG_HOST=${VITE_POSTHOG_HOST}
 
 COPY package.json pnpm-lock.yaml tsconfig.json ./
 COPY pnpm-workspace.yaml ./
@@ -16,25 +17,37 @@ COPY pnpm-workspace.yaml ./
 COPY packages ./packages
 COPY apps/web ./apps/web
 COPY tsconfig.profiles ./tsconfig.profiles
+COPY turbo.json ./turbo.json
 
-RUN npm install -g pnpm@10.33.0 && \
+RUN npm install -g pnpm@10.33.0 turbo@2.9.5 && \
     pnpm install --frozen-lockfile
 
-RUN pnpm --filter @hominem/web run build
+RUN turbo run build --filter=@hominem/web
 
-# ============================================================================
-# SERVER STAGE - Serve built files with Node
-# ============================================================================
-FROM node:22-alpine AS server
+FROM node:24.14.1-alpine AS server
 
 WORKDIR /app
 
 ENV NODE_ENV=production
 
-RUN npm install -g serve
+RUN apk add --no-cache ca-certificates curl && \
+    npm install -g pnpm@10.33.0
 
-COPY --from=builder /app/apps/web/build ./build
+RUN addgroup -g 1001 webuser && \
+    adduser -D -u 1001 -G webuser -s /sbin/nologin -h /app hominem
+
+COPY --from=builder --chown=hominem:webuser /app/package.json ./package.json
+COPY --from=builder --chown=hominem:webuser /app/pnpm-lock.yaml ./pnpm-lock.yaml
+COPY --from=builder --chown=hominem:webuser /app/node_modules ./node_modules
+COPY --from=builder --chown=hominem:webuser /app/apps/web ./apps/web
+COPY --from=builder --chown=hominem:webuser /app/packages ./packages
+COPY --from=builder --chown=hominem:webuser /app/tsconfig*.json ./
+
+USER hominem
 
 EXPOSE 3000
 
-CMD ["serve", "-s", "build", "-l", "3000"]
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD curl -f -s -m 2 http://localhost:${PORT:-3000}/ || exit 1
+
+CMD ["pnpm", "--filter", "@hominem/web", "run", "start"]

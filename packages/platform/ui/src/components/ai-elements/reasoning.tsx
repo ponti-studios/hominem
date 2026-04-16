@@ -2,7 +2,7 @@ import { ChevronDown, ChevronRight, Sparkles } from 'lucide-react';
 import { useState, type HTMLAttributes, type ReactNode } from 'react';
 
 import { cn } from '../../lib/utils';
-import { Button } from '../ui/button';
+import { Button } from '../button';
 
 interface ReasoningProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;

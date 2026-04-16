@@ -1,4 +1,4 @@
-import type { User } from '@hominem/auth';
+import type { User } from '@hominem/auth/types';
 import * as SQLite from 'expo-sqlite';
 
 import type { Media, Settings } from '../../validation/schemas';

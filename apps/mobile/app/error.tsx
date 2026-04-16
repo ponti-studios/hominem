@@ -1,7 +1,7 @@
 import type { RelativePathString } from 'expo-router';
 import { useRouter } from 'expo-router';
 
-import { FullScreenErrorFallback } from '~/components/error-boundary/full-screen-error-fallback';
+import { FullScreenErrorFallback } from '~/components/error-boundary/FullScreenErrorFallback';
 
 export default function ErrorScreen({ error }: { error: Error }) {
   const router = useRouter();

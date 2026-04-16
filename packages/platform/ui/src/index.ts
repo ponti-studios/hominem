@@ -3,15 +3,33 @@ import type { LinkDescriptor } from 'react-router';
 export * from './theme';
 export * from './tokens';
 
-export * from './components/auth';
-export * from './components/finance';
-export * from './components/invites';
-export * from './components/layout';
+export { AuthScaffold } from './components/auth/auth-scaffold';
+export { AuthRouteLayout } from './components/auth/auth-route-layout';
+export { AuthErrorBanner } from './components/auth/auth-error-banner';
+export { EmailEntryForm } from './components/auth/email-entry-form';
+export { OtpVerificationForm } from './components/auth/otp-verification-form';
+export { ResendCodeButton } from './components/auth/resend-code-button';
+export { PasskeyButton } from './components/auth/passkey-button';
+export { PasskeyEnrollmentBanner } from './components/auth/passkey-enrollment-banner';
+export { PasskeyManagement } from './components/auth/passkey-management';
+export { Center, type CenterProps } from './components/layout/center';
+export { Header, type HeaderProps, type NavItem } from './components/layout/header';
+export { Inline, type InlineProps } from './components/layout/inline';
+export { LandingPage, type LandingFeature, type LandingPageProps, type LandingStep } from './components/layout/landing-page';
+export { Container, Page, Screen, type ContainerProps, type PageMaxWidth, type PageProps, type ScreenProps } from './components/layout/page';
+export { PageContainer } from './components/layout/page-container';
+export { Stack, type GapToken, type StackProps } from './components/layout/stack';
 export * from './components/loading-state';
 export * from './components/page-title';
-export * from './components/surfaces';
-export * from './components/typography';
-export * from './components/ui';
+export { MetaBadge } from './components/surfaces/meta-badge';
+export { SectionIntro } from './components/surfaces/section-intro';
+export { StatePanel } from './components/surfaces/state-panel';
+export { SurfaceFrame } from './components/surfaces/surface-frame';
+export { SurfacePanel } from './components/surfaces/surface-panel';
+export { PreviewCard, type PreviewCardHeaderProps } from './components/surfaces/preview-card';
+export { Heading, type HeadingProps, type HeadingLevel, type HeadingVariant } from './components/typography/heading';
+export { Text, type TextProps, type TextVariant } from './components/typography/text';
+
 export * from './components/update-guard';
 export * from './constants/chart-colors';
 export * from './hooks/sort.types';
@@ -20,26 +38,7 @@ export * from './hooks/use-filter-state';
 export * from './hooks/use-media-query';
 export * from './hooks/use-mobile';
 
-// Common <head> link objects for all apps
-export const COMMON_FONT_LINKS: LinkDescriptor[] = [
-  { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-  {
-    rel: 'preconnect',
-    href: 'https://fonts.gstatic.com',
-    crossOrigin: 'anonymous',
-  },
-  {
-    // Geist: Vercel's UI font — closest open web equivalent to SF Pro.
-    // Clean, legible at small sizes, designed for developer-facing products.
-    rel: 'stylesheet',
-    href: 'https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap',
-  },
-  {
-    // Geist Mono: paired monospace, replaces JetBrains Mono and SF Mono fallback.
-    rel: 'stylesheet',
-    href: 'https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&display=swap',
-  },
-];
+export const COMMON_FONT_LINKS: LinkDescriptor[] = [];
 
 export const COMMON_ICON_LINKS: LinkDescriptor[] = [
   // Favicon

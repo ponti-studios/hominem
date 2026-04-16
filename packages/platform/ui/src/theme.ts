@@ -1,4 +1,4 @@
-import { colors, darkColors } from './tokens/index';
+import { colors } from './tokens/index';
 
 export const shellTheme = {
   web: {
@@ -8,8 +8,8 @@ export const shellTheme = {
     pinnedMaskColor: colors.white,
   },
   desktop: {
-    backgroundColor: darkColors['bg-base'],
-    foregroundColor: darkColors['text-primary'],
+    backgroundColor: colors['bg-base'],
+    foregroundColor: colors['text-primary'],
   },
   mobile: {
     splashBackgroundColor: colors.black,

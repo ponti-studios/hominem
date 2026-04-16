@@ -12,6 +12,18 @@
           {
             "group": ["@hominem/services", "@hominem/services/*"],
             "message": "UI must not import server-side services directly. Keep UI code transport-facing."
+          },
+          {
+            "group": ["lucide-react-native"],
+            "message": "lucide-react-native is banned. Native files must use expo-symbols (SF Symbols) for icons."
+          },
+          {
+            "group": ["@geist-ui/*", "geist", "geist/*"],
+            "message": "Third-party font packages are banned. Use Apple system font stacks."
+          },
+          {
+            "group": ["next/font/google", "@next/font/google"],
+            "message": "Google Fonts are banned. Use Apple system font stacks."
           }
         ]
       }

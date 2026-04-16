@@ -4,14 +4,12 @@ import { NoteRepository, runInTransaction } from '@hominem/db';
 interface CreateNoteParams {
   title?: string | null | undefined;
   content: string;
-  excerpt?: string | null | undefined;
   fileIds?: string[];
 }
 
 interface UpdateNoteParams {
   title?: string | null | undefined;
   content?: string;
-  excerpt?: string | null | undefined;
   fileIds?: string[];
 }
 
@@ -19,8 +17,9 @@ export class NoteService {
   async createNote(userId: string, input: CreateNoteParams): Promise<NoteRecord> {
     return runInTransaction(async (trx) => {
       const content = input.content.trim();
-      const title = deriveTitle(input.title, content);
-      const excerpt = deriveExcerpt(input.excerpt, content);
+      // Title is only set when explicitly provided — never auto-derived from content
+      const title = input.title?.trim() || null;
+      const excerpt = deriveExcerpt(content);
 
       const created = await NoteRepository.create(trx, {
         userId,
@@ -38,11 +37,10 @@ export class NoteService {
     return runInTransaction(async (trx) => {
       const existing = await NoteRepository.getOwnedOrThrow(trx, noteId, userId);
       const nextContent = input.content !== undefined ? input.content.trim() : existing.content;
-      const nextTitle = deriveTitle(input.title, nextContent) ?? existing.title;
-      const nextExcerpt =
-        input.excerpt !== undefined
-          ? deriveExcerpt(input.excerpt, nextContent)
-          : deriveExcerpt(existing.excerpt, nextContent);
+      // Only update title when explicitly sent; never re-derive from content on updates
+      const nextTitle = input.title !== undefined ? (input.title?.trim() || null) : existing.title;
+      // Always recompute excerpt from current content
+      const nextExcerpt = deriveExcerpt(nextContent);
 
       await NoteRepository.update(trx, noteId, userId, {
         title: nextTitle,
@@ -59,26 +57,7 @@ export class NoteService {
   }
 }
 
-function deriveTitle(title: string | null | undefined, content: string): string | null {
-  if (title !== undefined) {
-    const trimmedTitle = title?.trim() ?? '';
-    return trimmedTitle.length > 0 ? trimmedTitle : null;
-  }
-
-  const firstLine = content
-    .split('\n')
-    .map((line) => line.trim())
-    .find(Boolean);
-
-  return firstLine ? firstLine.slice(0, 120) : null;
-}
-
-function deriveExcerpt(excerpt: string | null | undefined, content: string): string | null {
-  if (excerpt !== undefined) {
-    const trimmedExcerpt = excerpt?.trim() ?? '';
-    return trimmedExcerpt.length > 0 ? trimmedExcerpt : null;
-  }
-
+function deriveExcerpt(content: string): string | null {
   const normalized = content.replace(/\s+/g, ' ').trim();
   return normalized.length > 0 ? normalized.slice(0, 240) : null;
 }

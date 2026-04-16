@@ -1,13 +1,13 @@
-import { AUTH_COPY, CHAT_AUTH_CONFIG } from '@hominem/auth';
+import { AUTH_COPY, CHAT_AUTH_CONFIG } from '@hominem/auth/shared/ux-contract';
+import { Button } from '~/components/ui/Button';
+import { TextField } from '~/components/ui/TextField';
 import type { RelativePathString } from 'expo-router';
 import { Redirect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { AuthShell } from '~/components/auth-shell';
-import { Button } from '~/components/Button';
-import { FeatureErrorBoundary } from '~/components/error-boundary';
-import TextInput from '~/components/text-input';
+import { AuthLayout } from '~/components/AuthLayout';
+import { FeatureErrorBoundary } from '~/components/error-boundary/FeatureErrorBoundary';
 import { posthog } from '~/services/posthog';
 import { Box, makeStyles, Text } from '~/components/theme';
 import { useAuth } from '~/services/auth/auth-provider';
@@ -92,14 +92,14 @@ export function AuthScreen() {
   const canUsePasskeys = MOBILE_PASSKEY_ENABLED && isPasskeySupported;
 
   return (
-    <AuthShell
+    <AuthLayout
       testID="auth-screen"
       title={AUTH_COPY.emailEntry.title}
       helper={AUTH_COPY.emailEntry.helper}
     >
       <Box style={styles.form}>
         <View style={styles.fieldStack}>
-          <TextInput
+          <TextField
             testID="auth-email-input"
             id="auth-email"
             label={AUTH_COPY.emailEntry.emailLabel}
@@ -194,7 +194,7 @@ export function AuthScreen() {
           />
         ) : null}
       </Box>
-    </AuthShell>
+    </AuthLayout>
   );
 }
 

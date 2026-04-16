@@ -24,8 +24,8 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "dev": "tsc --watch --preserveWatchOutput",
-    "typecheck": "tsc --noEmit",
+    "dev": "tsgo --watch --preserveWatchOutput",
+    "typecheck": "tsgo --noEmit",
     "format": "pnpm dlx oxfmt ./src",
     "lint": "pnpm dlx oxlint ./src",
     "kysely-codegen": "kysely-codegen --out-file ./src/types/database.ts"
@@ -36,8 +36,8 @@
   },
   "devDependencies": {
     "@types/node": "^25.4.0",
+    "@typescript/native-preview": "7.0.0-dev.20260415.1",
     "dotenv": "^16.4.7",
-    "kysely-codegen": "^0.15.0",
-    "typescript": "5.9.3"
+    "kysely-codegen": "^0.15.0"
   }
 }

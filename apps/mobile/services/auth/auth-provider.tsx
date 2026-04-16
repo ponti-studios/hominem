@@ -1,4 +1,4 @@
-import type { User } from '@hominem/auth';
+import type { User } from '@hominem/auth/types';
 import React, {
   createContext,
   useContext,
@@ -10,9 +10,14 @@ import React, {
 } from 'react';
 
 import { E2E_TESTING } from '~/constants';
-import { useAuthHeaders, useResetAuthForE2E, useUpdateProfile } from '~/services/auth/hooks';
+import { useAuthHeaders } from '~/services/auth/hooks/use-auth-headers';
+import { useResetAuthForE2E } from '~/services/auth/hooks/use-reset-auth-for-e2e';
+import { useUpdateProfile } from '~/services/auth/hooks/use-update-profile';
 import { authStateMachine, initialAuthState } from '~/services/auth/types';
-import { useBootSequence, useEmailOtp, usePasskeyAuth, useSignOut } from '~/services/auth/hooks';
+import { useBootSequence } from '~/services/auth/hooks/use-boot-sequence';
+import { useEmailOtp } from '~/services/auth/hooks/use-email-otp';
+import { usePasskeyAuth } from '~/services/auth/hooks/use-passkey-auth';
+import { useSignOut } from '~/services/auth/hooks/use-sign-out';
 import { type AuthStatusCompat } from '~/services/auth/provider-utils';
 import { createAuthContextSnapshot } from '~/services/auth/auth-provider-state';
 
@@ -50,13 +55,14 @@ export const useAuth = () => {
 function AuthProviderBody({ children }: PropsWithChildren) {
   const [state, dispatch] = useReducer(authStateMachine, initialAuthState);
   const authSnapshot = useMemo(() => createAuthContextSnapshot(state), [state]);
+  const sessionCookieHeaderRef = useRef<string | null>(null);
 
   const authContext = useMemo(() => ({ state, dispatch }), [state, dispatch]);
 
-  const { sessionCookieHeaderRef, bootSession, abortControllerRef } = useBootSequence(authContext);
-  const { requestEmailOtp, verifyEmailOtp } = useEmailOtp(authContext);
-  const { completePasskeySignIn } = usePasskeyAuth(authContext);
-  const { signOut } = useSignOut(authContext);
+  const { bootSession, abortControllerRef } = useBootSequence(authContext, sessionCookieHeaderRef);
+  const { requestEmailOtp, verifyEmailOtp } = useEmailOtp(authContext, sessionCookieHeaderRef);
+  const { completePasskeySignIn } = usePasskeyAuth(authContext, sessionCookieHeaderRef);
+  const { signOut } = useSignOut(authContext, sessionCookieHeaderRef);
 
   useEffect(() => {
     return () => {
@@ -101,11 +107,11 @@ function E2EAuthProvider({ children }: PropsWithChildren) {
 
   const authContext = useMemo(() => ({ state, dispatch }), [state, dispatch]);
   const authSnapshot = useMemo(() => createAuthContextSnapshot(state), [state]);
-  const { requestEmailOtp, verifyEmailOtp } = useEmailOtp(authContext);
-  const { completePasskeySignIn } = usePasskeyAuth(authContext);
-  const { signOut } = useSignOut(authContext);
-  const updateProfile = useUpdateProfile();
   const sessionCookieHeaderRef = useRef<string | null>(null);
+  const { requestEmailOtp, verifyEmailOtp } = useEmailOtp(authContext, sessionCookieHeaderRef);
+  const { completePasskeySignIn } = usePasskeyAuth(authContext, sessionCookieHeaderRef);
+  const { signOut } = useSignOut(authContext, sessionCookieHeaderRef);
+  const updateProfile = useUpdateProfile();
   const getAuthHeaders = useAuthHeaders(sessionCookieHeaderRef);
   const resetAuthForE2E = useResetAuthForE2E(dispatch);
 

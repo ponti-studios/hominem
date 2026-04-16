@@ -1,12 +1,12 @@
+import { Button } from '~/components/ui/Button';
+import { TextField } from '~/components/ui/TextField';
 import { Redirect } from 'expo-router';
 import type { RelativePathString } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button } from '~/components/Button';
-import { FeedbackBlock } from '~/components/feedback-block';
-import TextInput from '~/components/text-input';
+import { Alert } from '~/components/Alert';
 import { Text, theme } from '~/components/theme';
 import { useAuth } from '~/services/auth/auth-provider';
 
@@ -37,15 +37,15 @@ const Onboarding = () => {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.content}>
         <View style={styles.hero}>
-          <Text variant="header" color="foreground">
+          <Text variant="title1" color="foreground">
             WELCOME
           </Text>
-          <Text variant="label" color="text-tertiary">
+          <Text variant="footnote" color="text-tertiary">
             DEFINE PROFILE IDENTIFIER.
           </Text>
         </View>
 
-        <TextInput
+        <TextField
           aria-disabled
           label="Name"
           placeholder="Enter your name"
@@ -56,11 +56,11 @@ const Onboarding = () => {
         <Button title="Create profile" onPress={onButtonPress} />
         <Button testID="onboarding-sign-out" title="[SIGN_OUT]" onPress={signOut} />
         {hasError ? (
-          <FeedbackBlock error>
+          <Alert error>
             <Text variant="body" color="destructive">
               PROFILE WRITE FAILED.
             </Text>
-          </FeedbackBlock>
+          </Alert>
         ) : null}
       </View>
     </SafeAreaView>
@@ -70,7 +70,6 @@ const Onboarding = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: theme.colors.background,
     justifyContent: 'center',
   },
   content: {

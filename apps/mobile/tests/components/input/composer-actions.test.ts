@@ -3,20 +3,22 @@ import { describe, expect, it } from 'vitest';
 import type { Note } from '@hominem/rpc/types';
 
 import {
+  DEFAULT_CHAT_TITLE,
   buildChatTitle,
   buildNoteContent,
   canSubmitComposerDraft,
+  getSelectedNoteIds,
   getUploadedAttachmentIds,
+  isDefaultChatTitle,
   mergeNoteIntoCache,
   mergeUniqueIds,
   resolveComposerPrimaryAction,
   resolveComposerSecondaryAction,
-} from '~/components/input/composer-actions';
+} from '~/components/composer/composerActions';
 
 describe('composer actions', () => {
   it('resolves primary actions by route target', () => {
     expect(resolveComposerPrimaryAction('chat')).toBe('send_chat');
-    expect(resolveComposerPrimaryAction('note')).toBe('append_note');
     expect(resolveComposerPrimaryAction('feed')).toBe('create_note');
     expect(resolveComposerPrimaryAction('notes')).toBe('create_note');
     expect(resolveComposerPrimaryAction('hidden')).toBeNull();
@@ -25,7 +27,6 @@ describe('composer actions', () => {
   it('resolves secondary actions by route target', () => {
     expect(resolveComposerSecondaryAction('feed')).toBe('create_chat');
     expect(resolveComposerSecondaryAction('chat')).toBeNull();
-    expect(resolveComposerSecondaryAction('note')).toBeNull();
   });
 
   it('derives uploaded attachment ids from uploaded files only', () => {
@@ -43,6 +44,7 @@ describe('composer actions', () => {
         isUploading: false,
         message: '  hello  ',
         uploadedAttachmentIds: [],
+        selectedNotes: [],
       }),
     ).toBe(true);
 
@@ -51,6 +53,16 @@ describe('composer actions', () => {
         isUploading: false,
         message: '   ',
         uploadedAttachmentIds: ['file-1'],
+        selectedNotes: [],
+      }),
+    ).toBe(true);
+
+    expect(
+      canSubmitComposerDraft({
+        isUploading: false,
+        message: '   ',
+        uploadedAttachmentIds: [],
+        selectedNotes: [{ id: 'note-1', title: 'Project', excerpt: null }],
       }),
     ).toBe(true);
 
@@ -59,13 +71,15 @@ describe('composer actions', () => {
         isUploading: true,
         message: 'hello',
         uploadedAttachmentIds: [],
+        selectedNotes: [],
       }),
     ).toBe(false);
   });
 
   it('builds chat titles and note content', () => {
-    expect(buildChatTitle('   hello world   ')).toBe('hello world');
-    expect(buildChatTitle('   ')).toBe('New conversation');
+    expect(buildChatTitle('   hello   world   ')).toBe('hello world');
+    expect(buildChatTitle('   ')).toBe(DEFAULT_CHAT_TITLE);
+    expect(isDefaultChatTitle(DEFAULT_CHAT_TITLE)).toBe(true);
     expect(buildNoteContent('body', ' hello ')).toBe('body\n\nhello');
     expect(buildNoteContent('', ' hello ')).toBe('hello');
     expect(buildNoteContent('body', '   ')).toBe('body');
@@ -78,5 +92,11 @@ describe('composer actions', () => {
     expect(mergeNoteIntoCache(undefined, updatedNote)).toEqual([updatedNote]);
     expect(mergeNoteIntoCache(currentNotes, updatedNote)).toEqual([{ id: '1' }, updatedNote]);
     expect(mergeUniqueIds(['a', 'b'], ['b', 'c'])).toEqual(['a', 'b', 'c']);
+    expect(
+      getSelectedNoteIds([
+        { id: 'note-1', title: 'Project', excerpt: null },
+        { id: 'note-2', title: 'Inbox', excerpt: 'Todo' },
+      ]),
+    ).toEqual(['note-1', 'note-2']);
   });
 });

@@ -1,28 +1,29 @@
-import { useCallback, useEffect, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { logger } from '@hominem/utils/logger';
+import { storage } from '~/services/storage/mmkv';
+import type { ComposerDraft } from '~/components/composer/composerState';
 
 const DRAFT_STORAGE_KEY = 'mobile-composer-draft';
 const DRAFT_SAVE_DEBOUNCE_MS = 5000;
 
-export interface ComposerDraft {
-  message: string;
-  timestamp: number;
-}
-
-export function useDraftPersistence(target: string | null) {
+export function useDraftPersistence(targetKey: string) {
   const [isSaving, setIsSaving] = useState(false);
-  const [saveTimeoutId, setSaveTimeoutId] = useState<NodeJS.Timeout | null>(null);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const getDraftKey = useCallback((t: string | null) => {
-    return t ? `${DRAFT_STORAGE_KEY}-${t}` : DRAFT_STORAGE_KEY;
+  const getDraftKey = useCallback((key: string) => {
+    return `${DRAFT_STORAGE_KEY}-${key}`;
   }, []);
 
   const saveDraft = useCallback(
-    async (message: string) => {
-      if (!message.trim()) {
+    (draft: ComposerDraft) => {
+      const isEmpty =
+        !draft.text.trim() &&
+        draft.attachments.length === 0 &&
+        draft.selectedNotes.length === 0;
+
+      if (isEmpty) {
         try {
-          await AsyncStorage.removeItem(getDraftKey(target));
+          storage.remove(getDraftKey(targetKey));
         } catch (error) {
           logger.error('[draft] failed to clear empty draft', error as Error);
         }
@@ -31,63 +32,56 @@ export function useDraftPersistence(target: string | null) {
 
       try {
         setIsSaving(true);
-        const draft: ComposerDraft = {
-          message,
-          timestamp: Date.now(),
-        };
-        await AsyncStorage.setItem(getDraftKey(target), JSON.stringify(draft));
+        storage.set(getDraftKey(targetKey), JSON.stringify(draft));
       } catch (error) {
         logger.error('[draft] failed to save draft', error as Error);
       } finally {
         setIsSaving(false);
       }
     },
-    [target, getDraftKey],
+    [targetKey, getDraftKey],
   );
 
   const debouncedSaveDraft = useCallback(
-    (message: string) => {
-      if (saveTimeoutId) {
-        clearTimeout(saveTimeoutId);
+    (draft: ComposerDraft) => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
       }
 
-      const newTimeoutId = setTimeout(() => {
-        void saveDraft(message);
+      saveTimeoutRef.current = setTimeout(() => {
+        saveDraft(draft);
       }, DRAFT_SAVE_DEBOUNCE_MS);
-
-      setSaveTimeoutId(newTimeoutId);
     },
-    [saveDraft, saveTimeoutId],
+    [saveDraft],
   );
 
-  const restoreDraft = useCallback(async (): Promise<string | null> => {
+  const restoreDraft = useCallback((): ComposerDraft | null => {
     try {
-      const draft = await AsyncStorage.getItem(getDraftKey(target));
+      const draft = storage.getString(getDraftKey(targetKey));
       if (draft) {
-        const parsed = JSON.parse(draft) as ComposerDraft;
-        return parsed.message || null;
+        return JSON.parse(draft) as ComposerDraft;
       }
     } catch (error) {
       logger.error('[draft] failed to restore draft', error as Error);
     }
     return null;
-  }, [target, getDraftKey]);
+  }, [targetKey, getDraftKey]);
 
-  const clearDraft = useCallback(async () => {
+  const clearDraft = useCallback(() => {
     try {
-      await AsyncStorage.removeItem(getDraftKey(target));
+      storage.remove(getDraftKey(targetKey));
     } catch (error) {
       logger.error('[draft] failed to clear draft', error as Error);
     }
-  }, [target, getDraftKey]);
+  }, [targetKey, getDraftKey]);
 
   useEffect(() => {
     return () => {
-      if (saveTimeoutId) {
-        clearTimeout(saveTimeoutId);
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [saveTimeoutId]);
+  }, []);
 
   return {
     isSaving,

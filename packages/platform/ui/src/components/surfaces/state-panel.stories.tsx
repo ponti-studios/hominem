@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { FileText, UserPlus } from 'lucide-react';
 
-import { Button } from '../ui/button';
+import { Button } from '../button';
 import { StatePanel } from './state-panel';
 
 const meta = {

@@ -1,8 +1,8 @@
 import type { VoiceErrorCode } from '@hominem/rpc/voice-events';
 import {
-  parseVoiceTranscribeErrorResponse,
-  parseVoiceTranscribeSuccessResponse,
-} from '@hominem/platform-utils/api-response-validation';
+  VoiceTranscribeErrorSchema,
+  VoiceTranscribeSuccessSchema,
+} from '@hominem/rpc/schemas/voice.schema';
 import { useMutation } from '@tanstack/react-query';
 
 interface TranscribeVariables {
@@ -40,7 +40,7 @@ export function useTranscribe() {
       });
 
       if (!response.ok) {
-        const err = parseVoiceTranscribeErrorResponse(await response.json().catch(() => ({})));
+        const err = VoiceTranscribeErrorSchema.parse(await response.json().catch(() => ({})));
         const error = new Error(err.error ?? 'Transcription failed');
         if (err.code) {
           (error as Error & { code?: VoiceErrorCode | string }).code = err.code;
@@ -48,7 +48,7 @@ export function useTranscribe() {
         throw error;
       }
 
-      const payload = parseVoiceTranscribeSuccessResponse(await response.json());
+      const payload = VoiceTranscribeSuccessSchema.parse(await response.json());
       return { text: payload.text };
     },
   });

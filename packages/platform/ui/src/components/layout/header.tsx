@@ -1,16 +1,16 @@
-import { useAuthClient, useSession } from '@hominem/auth/client';
+import { useAuthClient, useSession } from '@hominem/auth/client/provider';
 import { LogOut, Settings, type LucideIcon } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 
 import { cn } from '../../lib/utils';
-import { Button } from '../ui/button';
+import { Button } from '../button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '../ui/dropdown-menu';
+} from '../dropdown-menu';
 
 export interface NavItem {
   title: string;
@@ -40,7 +40,6 @@ function useLogout() {
   }, [authClient, navigate]);
 }
 
-/** Tracks scroll direction. Returns true when the user is scrolling down. */
 function useScrollDown() {
   const { pathname } = useLocation();
   const [hidden, setHidden] = useState(false);
@@ -65,7 +64,6 @@ function useScrollDown() {
   return hidden;
 }
 
-// ─── Desktop: inline nav links + account dropdown ─────────────────────────────
 
 function DesktopNavLink({ item }: { item: NavItem }) {
   const isActive = useIsActive(item.url);
@@ -126,7 +124,6 @@ function DesktopNav({ navItems }: { navItems: NavItem[] }) {
   );
 }
 
-// ─── Mobile: bottom tab bar ────────────────────────────────────────────────────
 
 function MobileTabItem({ item }: { item: NavItem }) {
   const isActive = useIsActive(item.url);
@@ -165,7 +162,6 @@ function MobileTabBar({ navItems }: { navItems: NavItem[] }) {
   );
 }
 
-// ─── Sign-in button (unauthenticated state) ───────────────────────────────────
 
 function SignInButton() {
   const onSignInClick = useCallback(() => {
@@ -174,7 +170,6 @@ function SignInButton() {
   return <Button onClick={onSignInClick}>Sign in</Button>;
 }
 
-// ─── Main export ──────────────────────────────────────────────────────────────
 
 export function Header({ brandIcon, navItems = [] }: HeaderProps) {
   const session = useSession();

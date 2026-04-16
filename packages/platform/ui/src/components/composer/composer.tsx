@@ -38,18 +38,12 @@ export interface ComposerProps {
   notes?: Note[];
 }
 
-// ─── Guard ────────────────────────────────────────────────────────────────────
-// No hooks. Returns null before ComposerForm mounts, so ComposerForm's hooks
-// are always called a consistent number of times — fixes the Rules of Hooks
-// violation from the previous early-return-after-hooks pattern.
-
 export function Composer(props: ComposerProps) {
   const presentation = deriveComposerPresentation(props.mode);
   if (presentation.posture === 'hidden') return null;
   return <ComposerForm {...props} presentation={presentation} />;
 }
 
-// ─── Form ─────────────────────────────────────────────────────────────────────
 
 const ComposerForm = memo(function ComposerForm({
   noteId,
@@ -63,18 +57,11 @@ const ComposerForm = memo(function ComposerForm({
   const store = useComposerStore();
   const actionsRef = useComposerActionsRef();
 
-  // Stable refs — never change identity, never trigger re-renders
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const voiceDialogRef = useRef<HTMLDialogElement>(null);
   const notePickerDialogRef = useRef<HTMLDialogElement>(null);
-
-  // ─── Form action ────────────────────────────────────────────────────────────
-  // Reads FormData at submission time — noteId/chatId/noteTitle via hidden inputs,
-  // attachedNotes/uploadedFiles from the store snapshot (always current).
-  // Closes over only `store` and `actionsRef` — both stable — so the action
-  // function itself is stable across renders.
 
   const [, formAction, isPending] = useActionState(async (_prevState: null, formData: FormData) => {
     const text = ((formData.get('draft') as string) ?? '').trim();
@@ -138,8 +125,6 @@ const ComposerForm = memo(function ComposerForm({
     return null;
   }, null);
 
-  // ─── File upload handler ─────────────────────────────────────────────────────
-  // Called from onChange — not an effect. Dispatches upload state to store.
 
   async function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
@@ -165,7 +150,6 @@ const ComposerForm = memo(function ComposerForm({
 
   return (
     <>
-      {/* Hidden file inputs — programmatically triggered from ComposerTools */}
       <input
         ref={fileInputRef}
         data-testid="composer-file-input"
@@ -186,7 +170,6 @@ const ComposerForm = memo(function ComposerForm({
 
       <ComposerShell>
         <form action={formAction} className="flex flex-col gap-1.5">
-          {/* Route context — read by form action from FormData */}
           <input type="hidden" name="noteId" value={noteId ?? ''} />
           <input type="hidden" name="chatId" value={chatId ?? ''} />
           <input type="hidden" name="noteTitle" value={noteTitle ?? ''} />
@@ -219,7 +202,6 @@ const ComposerForm = memo(function ComposerForm({
         </form>
       </ComposerShell>
 
-      {/* Dialogs — outside <form> but inside the React tree */}
       <VoiceDialog
         ref={voiceDialogRef}
         store={store}
@@ -230,10 +212,6 @@ const ComposerForm = memo(function ComposerForm({
     </>
   );
 });
-
-// ─── ComposerInput ────────────────────────────────────────────────────────────
-// Subscribes only to `draft` slice — re-renders on every keystroke, but ONLY
-// this component re-renders; the rest of ComposerForm is unaffected.
 
 const ComposerInput = memo(function ComposerInput({
   ref,
@@ -250,10 +228,8 @@ const ComposerInput = memo(function ComposerInput({
   const draft = useComposerSlice((s) => s.draft);
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    // Shift+Enter submits the form
     if (e.shiftKey && e.key === 'Enter') {
       e.preventDefault();
-      // Find and click the primary submit button
       const submitBtn = ref.current?.form?.querySelector('[data-testid="composer-primary"]');
       if (submitBtn && submitBtn instanceof HTMLButtonElement) {
         submitBtn.click();

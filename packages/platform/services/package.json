@@ -34,22 +34,6 @@
       "types": "./src/ai-model.ts",
       "default": "./src/ai-model.ts"
     },
-    "./voice-transcription": {
-      "types": "./src/voice-transcription.service.ts",
-      "default": "./src/voice-transcription.service.ts"
-    },
-    "./voice-speech": {
-      "types": "./src/voice-speech.service.ts",
-      "default": "./src/voice-speech.service.ts"
-    },
-    "./voice-response": {
-      "types": "./src/voice-response.service.ts",
-      "default": "./src/voice-response.service.ts"
-    },
-    "./queues": {
-      "types": "./src/queues.ts",
-      "default": "./src/queues.ts"
-    },
     "./redis": {
       "types": "./src/redis.ts",
       "default": "./src/redis.ts"
@@ -61,7 +45,7 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsgo --noEmit",
     "format": "pnpm dlx oxfmt ./src",
     "lint": "pnpm dlx oxlint ./src"
   },
@@ -77,11 +61,10 @@
     "openai": "4.83.0",
     "pdf2json": "^3.1.6",
     "resend": "^4.0.1",
-    "zod": "4.3.6",
-    "@opentelemetry/api": "^1.9.0"
+    "zod": "4.3.6"
   },
   "devDependencies": {
     "@types/node": "^25.4.0",
-    "typescript": "5.9.3"
+    "@typescript/native-preview": "7.0.0-dev.20260415.1"
   }
 }

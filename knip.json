@@ -24,9 +24,6 @@
       "project": ["src/**/*.{ts,tsx}"]
     },
 
-    "packages/platform/utils": {
-      "project": ["*.ts"]
-    },
 
     "packages/domains/*": {
       "project": ["src/**/*.{ts,tsx}"]

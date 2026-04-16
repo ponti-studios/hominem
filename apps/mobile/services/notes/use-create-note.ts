@@ -17,13 +17,12 @@ interface CreateNoteContext {
 function buildOptimisticNote(text: string, optimisticId: string): Note {
   const now = new Date().toISOString();
   const trimmed = text.trim();
-  const fallbackTitle = trimmed.slice(0, 80) || 'Untitled note';
 
   return {
     id: optimisticId,
-    title: fallbackTitle,
+    title: null,
     content: trimmed,
-    excerpt: trimmed.slice(0, 160),
+    excerpt: trimmed.replace(/\s+/g, ' ').slice(0, 240) || null,
     status: 'draft',
     type: 'note',
     tags: [],
@@ -54,13 +53,9 @@ export const useCreateNote = (): UseMutationResult<
   return useMutation<Note, Error, CreateNoteInput, CreateNoteContext>({
     mutationKey: ['createNote'],
     mutationFn: async (input) => {
-      const trimmed = input.text.trim();
-      const [firstLine = trimmed] = trimmed.split('\n');
       const createdNote = await client.notes.create({
-        content: trimmed,
+        content: input.text.trim(),
         ...(input.fileIds && input.fileIds.length > 0 ? { fileIds: input.fileIds } : {}),
-        excerpt: trimmed.slice(0, 160),
-        ...(firstLine.trim().length > 0 ? { title: firstLine.slice(0, 80) } : {}),
         type: 'note',
       });
 

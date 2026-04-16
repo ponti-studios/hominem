@@ -157,7 +157,7 @@ export type NotesDeleteOutput = Note;
 export type NotesPublishOutput = Note;
 export type NotesArchiveOutput = Note;
 export type NotesVersionsOutput = { versions: Note[] };
-export type NotesSearchOutput = { notes: NoteSearchResult[] };
+export type NotesSearchOutput = { notes: NoteSearchResult[]; nextCursor: string | null };
 
 export type NotesListInput = {
   types?: NoteContentType[];
@@ -177,6 +177,12 @@ export type NotesFeedInput = {
   cursor?: string;
 };
 
+export type NotesSearchInput = {
+  query: string;
+  limit?: number;
+  cursor?: string;
+};
+
 // ============================================================================
 // CREATE NOTE
 // ============================================================================
@@ -187,7 +193,6 @@ export type NotesCreateInput = {
   title?: string;
   content: string;
   fileIds?: string[];
-  excerpt?: string;
   tags?: ContentTag[];
   mentions?: NoteMention[];
   publishingMetadata?: PublishingMetadata;
@@ -204,7 +209,6 @@ export type NotesUpdateInput = {
   title?: string | null;
   content?: string;
   fileIds?: string[];
-  excerpt?: string | null;
   scheduledFor?: string | null;
   tags?: ContentTag[] | null;
   publishingMetadata?: PublishingMetadata | null;

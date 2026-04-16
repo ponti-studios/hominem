@@ -49,9 +49,13 @@ pnpm-debug.log*
 # local env files
 .env
 .env.local
+.env.preview
+.env.preview*
 .env.development*
 .env.test*
 .env.production*
+!infra/railway/.env.preview.example
+!infra/railway/.env.production.example
 .claude/settings.local.json
 !/packages/core/env
 

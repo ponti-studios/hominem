@@ -2,7 +2,7 @@ import { Pause, Play, SkipBack, SkipForward, Volume2, VolumeX } from 'lucide-rea
 import { useEffect, useRef, useState, type HTMLAttributes } from 'react';
 
 import { cn } from '../../lib/utils';
-import { Button } from '../ui/button';
+import { Button } from '../button';
 
 interface AudioPlayerProps {
   src?: string;

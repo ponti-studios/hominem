@@ -1,4 +1,3 @@
-import { expo } from '@better-auth/expo';
 import { kyselyAdapter } from '@better-auth/kysely-adapter';
 import { passkey } from '@better-auth/passkey';
 import { db } from '@hominem/db';
@@ -18,7 +17,6 @@ import {
 
 import { API_BRAND } from '../brand';
 import { env } from '../env';
-import { sendEmail } from '../lib/email';
 import { recordTestOtp } from './test-otp-store';
 
 const userFieldMappings = {
@@ -85,6 +83,7 @@ function getTrustedOrigins() {
   const origins = new Set([
     env.API_URL,
     env.AUTH_PASSKEY_ORIGIN,
+    env.WEB_URL,
     env.NOTES_URL,
     'http://localhost:4445',
     'hakumi://',
@@ -124,9 +123,97 @@ function getAdvancedOptions() {
   };
 }
 
+type SendEmailParams = {
+  to: string;
+  subject: string;
+  text: string;
+  html?: string;
+};
+
+type VerificationOtpType = 'sign-in' | 'email-verification' | 'forget-password' | string;
+
+const verificationOtpSubjectByType = {
+  'sign-in': 'Your sign-in code',
+  'email-verification': 'Verify your email',
+  'forget-password': 'Reset your password',
+} as const satisfies Record<string, string>;
+
+function shouldSendEmails(): boolean {
+  if (env.SEND_EMAILS === 'true') return true;
+  if (env.NODE_ENV === 'test') return false;
+  if (env.NODE_ENV === 'development') return false;
+  if (env.NODE_ENV === 'production') return true;
+  return false;
+}
+
+async function sendEmail({ to, subject, text, html }: SendEmailParams): Promise<void> {
+  if (!shouldSendEmails()) {
+    logger.info('email_skipped', { to, subject, nodeEnv: env.NODE_ENV });
+    return;
+  }
+
+  const from = env.RESEND_FROM_NAME
+    ? `${env.RESEND_FROM_NAME} <${env.RESEND_FROM_EMAIL}>`
+    : env.RESEND_FROM_EMAIL;
+
+  if (!from) {
+    throw new Error('RESEND_FROM_EMAIL is not set');
+  }
+
+  const { Resend } = await import('resend');
+  const resend = new Resend(env.RESEND_API_KEY);
+
+  await resend.emails.send({
+    to,
+    from,
+    subject,
+    text,
+    ...(html ? { html } : {}),
+  });
+}
+
+function shouldSkipVerificationOtpEmail() {
+  return env.NODE_ENV === 'development' || (env.NODE_ENV === 'test' && !env.RESEND_FROM_EMAIL);
+}
+
+function logDevelopmentVerificationOtp(input: { email: string; otp: string; type: string }) {
+  logger.info('[auth:email-otp] generated OTP', input);
+}
+
+function getVerificationOtpSubject(type: VerificationOtpType) {
+  return (verificationOtpSubjectByType as Record<string, string>)[type] ?? 'Your verification code';
+}
+
+function buildVerificationOtpEmail(input: { to: string; otp: string; type: VerificationOtpType }): SendEmailParams {
+  return {
+    to: input.to,
+    subject: getVerificationOtpSubject(input.type),
+    text: `Your verification code is: ${input.otp}. This code will expire in 5 minutes.`,
+    html: `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 12px 12px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 24px;">${API_BRAND.appName}</h1>
+  </div>
+  <div style="background: #ffffff; padding: 30px; border: 1px solid #e1e1e1; border-top: none; border-radius: 0 0 12px 12px;">
+    <p style="margin-top: 0;">Your verification code is:</p>
+    <div style="background: #f5f5f5; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 8px; border-radius: 8px; margin: 20px 0;">
+      ${input.otp}
+    </div>
+    <p style="color: #666; font-size: 14px;">This code will expire in 5 minutes.</p>
+    <p style="color: #666; font-size: 14px;">If you didn't request this code, you can safely ignore this email.</p>
+  </div>
+</body>
+</html>`,
+  };
+}
+
 function getAuthPlugins() {
   const plugins: BetterAuthPlugin[] = [
-    expo(),
     passkey({
       rpID: env.AUTH_PASSKEY_RP_ID,
       rpName: API_BRAND.appName,
@@ -143,58 +230,16 @@ function getAuthPlugins() {
       sendVerificationOTP: async ({ email, otp, type }) => {
         recordTestOtp({ email, otp, type });
 
-        // In development mode we want to see OTPs in the server logs so
-        // engineers can sign in without waiting for an email.  This uses
-        // the shared pino logger that's already used across the API.  We
-        // also bypass the real email send because the nodemailer transport
-        // isn't configured in local dev and the test harness doesn't need it.
         if (env.NODE_ENV === 'development') {
-          logger.info('[auth:email-otp] generated OTP', { email, otp, type });
+          logDevelopmentVerificationOtp({ email, otp, type });
           return;
         }
 
-        if (env.NODE_ENV === 'test' && !env.RESEND_FROM_EMAIL) {
+        if (shouldSkipVerificationOtpEmail()) {
           return;
         }
 
-        const subject =
-          type === 'sign-in'
-            ? 'Your sign-in code'
-            : type === 'email-verification'
-              ? 'Verify your email'
-              : type === 'forget-password'
-                ? 'Reset your password'
-                : 'Your verification code';
-
-        const text = `Your verification code is: ${otp}. This code will expire in 5 minutes.`;
-
-        const html = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 12px 12px 0 0;">
-    <h1 style="color: white; margin: 0; font-size: 24px;">${API_BRAND.appName}</h1>
-  </div>
-  <div style="background: #ffffff; padding: 30px; border: 1px solid #e1e1e1; border-top: none; border-radius: 0 0 12px 12px;">
-    <p style="margin-top: 0;">Your verification code is:</p>
-    <div style="background: #f5f5f5; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 8px; border-radius: 8px; margin: 20px 0;">
-      ${otp}
-    </div>
-    <p style="color: #666; font-size: 14px;">This code will expire in 5 minutes.</p>
-    <p style="color: #666; font-size: 14px;">If you didn't request this code, you can safely ignore this email.</p>
-  </div>
-</body>
-</html>`;
-
-        await sendEmail({
-          to: email,
-          subject,
-          text,
-          html,
-        });
+        await sendEmail(buildVerificationOtpEmail({ to: email, otp, type }));
       },
     }),
     jwt({

@@ -7,6 +7,7 @@ import { validationErrorMiddleware } from './middleware/validation';
 import { chatsRoutes } from './routes/chats';
 import { filesRoutes } from './routes/files';
 import { notesRoutes } from './routes/notes';
+import { tasksRoutes } from './routes/tasks';
 import { authenticatedVoiceRoutes } from './routes/voice';
 
 export const rpcApp = new Hono<AppContext>()
@@ -17,4 +18,5 @@ export const rpcApp = new Hono<AppContext>()
   .route('/chats', chatsRoutes)
   .route('/files', filesRoutes)
   .route('/notes', notesRoutes)
+  .route('/tasks', tasksRoutes)
   .route('/voice', authenticatedVoiceRoutes);

@@ -1,18 +1,25 @@
-import { useNoteEditor } from '@hominem/hooks';
 import { useApiClient } from '@hominem/rpc/react';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import type { Note } from '@hominem/rpc/types';
+import { useQueryClient } from '@tanstack/react-query';
+import { Image } from 'expo-image';
 import type { RelativePathString } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { Text, theme } from '~/components/theme';
+import { useNoteEditor } from '~/hooks/use-note-editor';
+import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
+import { noteKeys } from '~/services/notes/query-keys';
 import { useNoteQuery } from '~/services/notes/use-note-query';
 
-const COMPOSER_CLEARANCE = 240;
+const COMPOSER_CLEARANCE = 220;
 
 export default function NoteDetailScreen() {
   const router = useRouter();
   const client = useApiClient();
+  const queryClient = useQueryClient();
+  const { requestTopReveal } = useTopAnchoredFeed();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const noteId = String(id ?? '');
   const { data: note } = useNoteQuery({ noteId, enabled: noteId.length > 0 });
@@ -27,6 +34,15 @@ export default function NoteDetailScreen() {
       note={note}
       client={client}
       router={router}
+      onSaved={(updatedNote) => {
+        queryClient.setQueryData<Note>(noteKeys.detail(updatedNote.id), updatedNote);
+        queryClient.setQueryData<Note[]>(noteKeys.all, (current) => {
+          if (!current) return [updatedNote];
+          return current.map((n) => (n.id === updatedNote.id ? updatedNote : n));
+        });
+        requestTopReveal();
+        void queryClient.invalidateQueries({ queryKey: noteKeys.feeds() });
+      }}
     />
   );
 }
@@ -35,10 +51,12 @@ function NoteDetailEditor({
   note,
   client,
   router,
+  onSaved,
 }: {
   note: NonNullable<ReturnType<typeof useNoteQuery>['data']>;
   client: ReturnType<typeof useApiClient>;
   router: ReturnType<typeof useRouter>;
+  onSaved: (updatedNote: Note) => void;
 }) {
   const { title, setTitle, content, setContent, files, setFiles, onSave } = useNoteEditor(
     {
@@ -55,111 +73,207 @@ function NoteDetailEditor({
       })),
     },
     async ({ id: noteId, title: t, content: c, fileIds }) => {
-      await client.notes.update({ id: noteId, title: t, content: c, fileIds });
+      const updatedNote = await client.notes.update({ id: noteId, title: t, content: c, fileIds });
+      onSaved(updatedNote);
     },
   );
 
   const handleDetach = async (fileId: string) => {
     const nextFiles = files.filter((item) => item.id !== fileId);
     setFiles(nextFiles);
-    await client.notes.update({
+    const updatedNote = await client.notes.update({
       id: note.id,
       title: title || null,
       content,
       fileIds: nextFiles.map((item) => item.id),
     });
+    onSaved(updatedNote);
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.replace('/(protected)/(tabs)/' as RelativePathString)}>
-          <Text color="text-secondary">BACK</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => router.push(`/(protected)/(tabs)/chat/${note.id}` as RelativePathString)}
-        >
-          <Text color="foreground">CHAT</Text>
-        </Pressable>
-      </View>
-
-      <TextInput
-        value={title}
-        onChangeText={(value) => {
-          setTitle(value);
-          void onSave(value, content, files.map((f) => f.id));
-        }}
-        placeholder="Untitled note"
-        placeholderTextColor={theme.colors['text-tertiary']}
-        style={styles.titleInput}
-      />
-
-      <TextInput
-        multiline
-        value={content}
-        onChangeText={(value) => {
-          setContent(value);
-          void onSave(title, value, files.map((f) => f.id));
-        }}
-        placeholder="Start writing..."
-        placeholderTextColor={theme.colors['text-tertiary']}
-        style={styles.contentInput}
-      />
-
-      <View style={styles.filesSection}>
-        <Text variant="cardHeader" color="foreground">
-          FILES
-        </Text>
-        {files.map((file) => (
-          <View key={file.id} style={styles.fileCard}>
-            <Text color="foreground">{file.originalName}</Text>
-            <Pressable onPress={() => void handleDetach(file.id)}>
-              <Text color="text-secondary">DETACH</Text>
+    <>
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <Pressable
+              onPress={() =>
+                router.push(`/(protected)/(tabs)/chat/${note.id}` as RelativePathString)
+              }
+              hitSlop={8}
+              accessibilityLabel="Open chat for this note"
+              accessibilityRole="button"
+            >
+              <Image
+                source="sf:bubble.left"
+                style={styles.headerIcon}
+                tintColor={theme.colors.foreground}
+                contentFit="contain"
+              />
             </Pressable>
+          ),
+        }}
+      />
+
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        keyboardDismissMode="interactive"
+        showsVerticalScrollIndicator={false}
+      >
+        <TextInput
+          value={title ?? ''}
+          onChangeText={(value) => {
+            setTitle(value);
+            void onSave(
+              value,
+              content,
+              files.map((f) => f.id),
+            );
+          }}
+          placeholder="Title"
+          placeholderTextColor={theme.colors['text-tertiary']}
+          style={styles.titleInput}
+          returnKeyType="next"
+          blurOnSubmit={false}
+          accessibilityLabel="Note title"
+        />
+
+        <View style={styles.divider} />
+
+        <TextInput
+          multiline
+          value={content}
+          onChangeText={(value) => {
+            setContent(value);
+            void onSave(
+              title,
+              value,
+              files.map((f) => f.id),
+            );
+          }}
+          placeholder="Start writing…"
+          placeholderTextColor={theme.colors['text-tertiary']}
+          style={styles.contentInput}
+          textAlignVertical="top"
+          scrollEnabled={false}
+          accessibilityLabel="Note content"
+        />
+
+        {files.length > 0 && (
+          <View style={styles.filesSection}>
+            <Text style={styles.filesLabel}>Attachments</Text>
+            <View style={styles.filesList}>
+              {files.map((file) => (
+                <View key={file.id} style={styles.filePill}>
+                  <Image
+                    source="sf:paperclip"
+                    style={styles.filePillIcon}
+                    tintColor={theme.colors['text-secondary']}
+                    contentFit="contain"
+                  />
+                  <Text style={styles.filePillName} numberOfLines={1}>
+                    {file.originalName}
+                  </Text>
+                  <Pressable
+                    onPress={() => void handleDetach(file.id)}
+                    hitSlop={8}
+                    accessibilityLabel={`Remove ${file.originalName}`}
+                    accessibilityRole="button"
+                  >
+                    <Image
+                      source="sf:xmark"
+                      style={styles.filePillDetach}
+                      tintColor={theme.colors['text-tertiary']}
+                      contentFit="contain"
+                    />
+                  </Pressable>
+                </View>
+              ))}
+            </View>
           </View>
-        ))}
-      </View>
-    </ScrollView>
+        )}
+      </ScrollView>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
   },
   content: {
-    padding: theme.spacing.m_16,
+    paddingHorizontal: 20,
+    paddingTop: 8,
     paddingBottom: COMPOSER_CLEARANCE,
-    gap: theme.spacing.m_16,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  headerIcon: {
+    width: 22,
+    height: 22,
   },
+
   titleInput: {
     fontSize: 28,
-    fontWeight: '600',
+    fontWeight: '700',
+    letterSpacing: -0.6,
+    lineHeight: 34,
     color: theme.colors.foreground,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    marginBottom: 12,
   },
+
+  divider: {
+    height: 1,
+    backgroundColor: theme.colors['border-subtle'],
+    marginBottom: 16,
+  },
+
   contentInput: {
-    minHeight: 280,
-    borderWidth: 1,
-    borderColor: theme.colors['border-default'],
-    borderRadius: theme.borderRadii.md,
-    padding: theme.spacing.m_16,
+    fontSize: 16,
+    lineHeight: 26,
+    letterSpacing: -0.1,
     color: theme.colors.foreground,
-    textAlignVertical: 'top',
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    minHeight: 240,
   },
+
   filesSection: {
-    gap: theme.spacing.sm_12,
+    marginTop: 24,
+    gap: 8,
   },
-  fileCard: {
-    borderWidth: 1,
-    borderColor: theme.colors['border-default'],
-    borderRadius: theme.borderRadii.md,
-    padding: theme.spacing.m_16,
+  filesLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    letterSpacing: 0.4,
+    color: theme.colors['text-tertiary'],
+    textTransform: 'uppercase',
+  },
+  filesList: {
+    gap: 6,
+  },
+  filePill: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: theme.colors['bg-elevated'],
+    borderRadius: 10,
+    borderCurve: 'continuous',
+  },
+  filePillIcon: {
+    width: 14,
+    height: 14,
+    flexShrink: 0,
+  },
+  filePillName: {
+    flex: 1,
+    fontSize: 13,
+    color: theme.colors['text-secondary'],
+  },
+  filePillDetach: {
+    width: 12,
+    height: 12,
   },
 });

@@ -13,14 +13,16 @@ import {
   upsertInboxSessionActivity,
 } from '../inbox/inbox-refresh';
 import { chatKeys } from '../notes/query-keys';
-import {
-  createOptimisticMessage,
-  reconcileMessagesAfterSend,
-  type MessageOutput,
-} from './chat-contract';
-import { selectChatSession, type ChatWithActivity } from './session-state';
+import { createOptimisticMessage, type MessageOutput } from './chatMessages';
+import { getChatActivityAt, selectChatSession, type ChatWithActivity } from './session-state';
+import { updateChatTitleCaches } from './chat-title';
 
 type SendChatMessageOutput = {
+  chatTitle: string;
+  metadata: {
+    startTime: number;
+    timestamp: string;
+  };
   messages: MessageOutput[];
   function_calls: string[];
 };
@@ -29,6 +31,7 @@ interface SendChatMessageInput {
   fileIds?: string[];
   message: string;
   noteIds?: string[];
+  referencedNotes?: RpcChatMessage['referencedNotes'];
 }
 
 function updateSessionCache(
@@ -53,6 +56,7 @@ function toMessageOutput(message: RpcChatMessage): MessageOutput | null {
     focus_ids: null,
     focus_items: null,
     reasoning: message.reasoning,
+    referencedNotes: message.referencedNotes ?? null,
     toolCalls: message.toolCalls ?? null,
     isStreaming: false,
   };
@@ -69,7 +73,7 @@ export const useChatMessages = ({ chatId }: { chatId: string }) => {
     queryFn: async () => {
       const messages = await client.chats.getMessages({
         chatId,
-        limit: 50,
+        limit: 10,
       });
 
       const mapped = messages.flatMap((message) => {
@@ -99,16 +103,16 @@ export const useSendMessage = ({ chatId }: { chatId: string }) => {
     SendChatMessageOutput,
     Error,
     SendChatMessageInput,
-    { previousMessages: MessageOutput[] }
+    { previousMessages: MessageOutput[]; optimisticMessageId: string }
   >({
     mutationKey: ['sendChatMessage', chatId],
 
     // Optimistic update
-    onMutate: async ({ message: messageText }) => {
+    onMutate: async ({ message: messageText, referencedNotes }) => {
       setChatSendStatus('submitted');
       const text = messageText.trim();
-      if (!text) {
-        return { previousMessages: [] };
+      if (!text && (!referencedNotes || referencedNotes.length === 0)) {
+        return { previousMessages: [], optimisticMessageId: '' };
       }
 
       // Cancel outgoing refetches
@@ -118,8 +122,18 @@ export const useSendMessage = ({ chatId }: { chatId: string }) => {
       const previousMessages =
         queryClient.getQueryData<MessageOutput[]>(chatKeys.messages(chatId)) || [];
 
+      const optimisticText =
+        text ||
+        referencedNotes?.map((note) => note.title || note.id).join(', ') ||
+        '';
+
       // Optimistically add user message
-      const optimisticMessage = createOptimisticMessage(chatId, text, generateId());
+      const optimisticMessage = createOptimisticMessage(
+        chatId,
+        optimisticText,
+        referencedNotes ?? null,
+        generateId(),
+      );
       const now = new Date().toISOString();
 
       queryClient.setQueryData(chatKeys.messages(chatId), [...previousMessages, optimisticMessage]);
@@ -138,7 +152,7 @@ export const useSendMessage = ({ chatId }: { chatId: string }) => {
           ),
       );
 
-      return { previousMessages };
+      return { previousMessages, optimisticMessageId: optimisticMessage.id };
     },
 
     mutationFn: async ({ message: messageText, fileIds, noteIds }) => {
@@ -162,20 +176,42 @@ export const useSendMessage = ({ chatId }: { chatId: string }) => {
       );
 
       return {
+        chatTitle: payload.chatTitle,
+        metadata: payload.metadata,
         messages: mappedMessages,
         function_calls: [],
       };
     },
 
     // On success, update cache with server data
-    onSuccess: (data) => {
+    onSuccess: (data, _variables, context) => {
       setSendChatError(false);
       setChatSendStatus('idle');
+      const optimisticId = context?.optimisticMessageId;
+      updateChatTitleCaches(queryClient, {
+        chatId,
+        title: data.chatTitle,
+        updatedAt: data.metadata.timestamp,
+      });
       queryClient.setQueryData(chatKeys.messages(chatId), (old: MessageOutput[] | undefined) => {
-        if (!old) {
-          return data.messages;
+        const previous = old ?? [];
+        const serverUserMsg = data.messages.find((m) => m.role === 'user');
+        const serverAssistantMsg = data.messages.find((m) => m.role === 'assistant');
+
+        // Replace the optimistic user message in-place, keeping its ID as the stable React key
+        // so the bubble doesn't unmount/remount and re-animate.
+        const reconciled = previous.map((msg) => {
+          if (msg.id === optimisticId && serverUserMsg) {
+            return { ...serverUserMsg, id: optimisticId };
+          }
+          return msg;
+        });
+
+        // Append the assistant message (it's always new).
+        if (serverAssistantMsg && !reconciled.some((m) => m.id === serverAssistantMsg.id)) {
+          return [...reconciled, serverAssistantMsg];
         }
-        return reconcileMessagesAfterSend(old, data.messages);
+        return reconciled;
       });
       void invalidateInboxQueries(queryClient);
     },
@@ -204,7 +240,11 @@ export const useSendMessage = ({ chatId }: { chatId: string }) => {
           ? { message: nextMessageInput, fileIds: [] }
           : nextMessageInput;
       const text = resolvedInput.message.trim();
-      if (!text && (!resolvedInput.fileIds || resolvedInput.fileIds.length === 0)) {
+      if (
+        !text &&
+        (!resolvedInput.fileIds || resolvedInput.fileIds.length === 0) &&
+        (!resolvedInput.noteIds || resolvedInput.noteIds.length === 0)
+      ) {
         return {
           messages: [],
           function_calls: [],
@@ -218,11 +258,49 @@ export const useSendMessage = ({ chatId }: { chatId: string }) => {
         ...(resolvedInput.noteIds && resolvedInput.noteIds.length > 0
           ? { noteIds: resolvedInput.noteIds }
           : {}),
+        ...(resolvedInput.referencedNotes && resolvedInput.referencedNotes.length > 0
+          ? { referencedNotes: resolvedInput.referencedNotes }
+          : {}),
       });
       setMessage('');
       return result;
     },
   };
+};
+
+export const useArchiveChat = ({
+  chatId,
+  onSuccess,
+}: {
+  chatId: string;
+  onSuccess: () => void;
+}) => {
+  const client = useApiClient();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => client.chats.archive({ chatId }),
+    onSuccess: (archivedChat) => {
+      queryClient.setQueryData(chatKeys.activeChat(chatId), archivedChat);
+      queryClient.setQueryData<ChatWithActivity[] | undefined>(chatKeys.resumableSessions, (sessions) =>
+        sessions?.filter((session) => session.id !== chatId),
+      );
+      queryClient.setQueryData<ChatWithActivity[] | undefined>(chatKeys.archivedSessions, (sessions) => {
+        const activityAt = getChatActivityAt(archivedChat);
+        const nextArchivedChat: ChatWithActivity = {
+          ...archivedChat,
+          activityAt,
+        };
+
+        if (!sessions) {
+          return [nextArchivedChat];
+        }
+
+        return [nextArchivedChat, ...sessions.filter((session) => session.id !== chatId)];
+      });
+      onSuccess();
+    },
+  });
 };
 
 export const useActiveChat = (chatId?: string | null) => {
