@@ -22,4 +22,4 @@ jobs:
     secrets: inherit
     with:
       service_name: workers
-      service_target: ${{ vars.RAILWAY_SERVICE_WORKERS }}
+      service_target: ${{ secrets.RAILWAY_SERVICE_WORKERS }}
