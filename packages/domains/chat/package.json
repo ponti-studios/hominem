@@ -32,7 +32,7 @@
     }
   },
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsgo --noEmit",
     "format": "pnpm dlx oxfmt ./src",
     "lint": "pnpm dlx oxlint ./src"
   },
@@ -45,6 +45,7 @@
   "devDependencies": {
     "@types/node": "^25.4.0",
     "@types/react": "19.2.10",
+    "@typescript/native-preview": "7.0.0-dev.20260415.1",
     "react": "19.2.0"
   },
   "peerDependencies": {

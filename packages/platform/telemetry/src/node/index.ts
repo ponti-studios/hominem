@@ -2,6 +2,8 @@
  * Node.js OpenTelemetry SDK initialization
  */
 
+import os from 'node:os';
+
 import { context, metrics, propagation, trace, type Span } from '@opentelemetry/api';
 import { logs } from '@opentelemetry/api-logs';
 import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
@@ -18,7 +20,6 @@ import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { PgInstrumentation } from '@opentelemetry/instrumentation-pg';
 import { RedisInstrumentation } from '@opentelemetry/instrumentation-redis';
 import { CompressionAlgorithm } from '@opentelemetry/otlp-exporter-base';
-
 import { BatchLogRecordProcessor, LoggerProvider } from '@opentelemetry/sdk-logs';
 import { MeterProvider, PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import type { SpanProcessor } from '@opentelemetry/sdk-trace-base';
@@ -53,7 +54,7 @@ export function initTelemetry(explicitConfig?: Partial<TelemetryConfig>): NodeTe
     return { shutdown: async () => {}, forceFlush: async () => {} };
   }
 
-  const resource = createResource(config);
+  const resource = createResource(config, { hostname: os.hostname() });
 
   // Set up context manager
   const contextManager = new AsyncHooksContextManager();
@@ -218,6 +219,10 @@ export function createHonoTelemetryMiddleware() {
         routePath?: string;
         path: string;
         url: string;
+        import;
+        os;
+        from;
+        'node:os';
         header: (name: string) => string | undefined;
       };
       res: { status: number };

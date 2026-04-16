@@ -8,52 +8,35 @@
     "tsBuildInfoFile": "../../.cache/app-mobile.tsbuildinfo",
     "allowJs": true,
     "checkJs": false,
-    "baseUrl": ".",
     "paths": {
-      "@hominem/ui/badge": [
-        "../../packages/platform/ui/src/components/ui/badge.native.tsx"
-      ],
-      "@hominem/ui/button": [
-        "../../packages/platform/ui/src/components/ui/button.native.tsx"
-      ],
-      "@hominem/ui/chat": [
-        "../../packages/platform/ui/src/components/chat/index.mobile.ts"
-      ],
+      "@hominem/ui/badge": ["../../packages/platform/ui/src/components/ui/badge.native.tsx"],
+      "@hominem/ui/button": ["../../packages/platform/ui/src/components/ui/button.native.tsx"],
+      "@hominem/ui/chat": ["../../packages/platform/ui/src/components/chat/index.mobile.ts"],
       "@hominem/ui/empty-state": [
-        "../../packages/platform/ui/src/components/mobile/empty-state.native.tsx"
+        "../../packages/platform/ui/src/components/mobile/empty-state.native.tsx",
       ],
       "@hominem/ui/list-row": [
-        "../../packages/platform/ui/src/components/mobile/list-row.native.tsx"
+        "../../packages/platform/ui/src/components/mobile/list-row.native.tsx",
       ],
       "@hominem/ui/list-shell": [
-        "../../packages/platform/ui/src/components/mobile/list-shell.native.tsx"
+        "../../packages/platform/ui/src/components/mobile/list-shell.native.tsx",
       ],
-      "@hominem/ui/page": [
-        "../../packages/platform/ui/src/components/layout/page.native.tsx"
-      ],
+      "@hominem/ui/page": ["../../packages/platform/ui/src/components/layout/page.native.tsx"],
       "@hominem/ui/separator": [
-        "../../packages/platform/ui/src/components/ui/separator.native.tsx"
+        "../../packages/platform/ui/src/components/ui/separator.native.tsx",
       ],
       "@hominem/ui/surface": [
-        "../../packages/platform/ui/src/components/mobile/surface.native.tsx"
+        "../../packages/platform/ui/src/components/mobile/surface.native.tsx",
       ],
-      "@hominem/ui/text": [
-        "../../packages/platform/ui/src/components/typography/text.native.tsx"
-      ],
+      "@hominem/ui/text": ["../../packages/platform/ui/src/components/typography/text.native.tsx"],
       "@hominem/ui/text-field": [
-        "../../packages/platform/ui/src/components/ui/text-field.native.tsx"
+        "../../packages/platform/ui/src/components/ui/text-field.native.tsx",
       ],
-      "expo-symbols": [
-        "./node_modules/expo-symbols/build/index"
-      ],
-      "@shopify/flash-list": [
-        "./node_modules/@shopify/flash-list/dist/index"
-      ],
-      "~/*": [
-        "./*"
-      ]
+      "expo-symbols": ["./node_modules/expo-symbols/build/index"],
+      "@shopify/flash-list": ["./node_modules/@shopify/flash-list/dist/index"],
+      "~/*": ["./*"],
     },
-    "noEmit": true
+    "noEmit": true,
   },
   "include": [
     "app/**/*.ts",
@@ -69,7 +52,7 @@
     "navigation/**/*.ts",
     "app.config.ts",
     "expo-env.d.ts",
-    ".expo/types/**/*.ts"
+    ".expo/types/**/*.ts",
   ],
   "exclude": [
     "node_modules",
@@ -81,6 +64,6 @@
     "ios",
     "android",
     "coverage",
-    "*.tsbuildinfo"
-  ]
+    "*.tsbuildinfo",
+  ],
 }

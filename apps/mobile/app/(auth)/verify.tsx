@@ -5,17 +5,16 @@ import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { getAuthScreenBaseStyles } from '~/components/auth/auth-screen-styles';
-import { AuthLayout } from '~/components/AuthLayout';
-import { FeatureErrorBoundary } from '~/components/error-boundary/FeatureErrorBoundary';
-import { Box, makeStyles, Text } from '~/components/theme';
-import { Button } from '~/components/ui/Button';
-import { TextField } from '~/components/ui/TextField';
-import { useAuth } from '~/services/auth/auth-provider';
-import { normalizeOtp } from '~/services/auth/validation';
-import { posthog } from '~/services/posthog';
-
-import { useEmailAuth } from './use-email-auth';
+import { getAuthScreenBaseStyles } from '../../components/auth/auth-screen-styles';
+import { AuthLayout } from '../../components/AuthLayout';
+import { FeatureErrorBoundary } from '../../components/error-boundary/FeatureErrorBoundary';
+import { Box, makeStyles, Text } from '../../components/theme';
+import { Button } from '../../components/ui/Button';
+import { TextField } from '../../components/ui/TextField';
+import { useAuth } from '../../services/auth/auth-provider';
+import { useEmailAuth } from '../../services/auth/hooks/use-email-auth';
+import { normalizeOtp } from '../../services/auth/validation';
+import { posthog } from '../../services/posthog';
 
 export function VerifyScreen() {
   const styles = useStyles();

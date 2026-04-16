@@ -1,5 +1,3 @@
-import { Easing } from 'react-native-reanimated';
-
 export const scaleInEnterConfig = {
   damping: 12,
   stiffness: 150,

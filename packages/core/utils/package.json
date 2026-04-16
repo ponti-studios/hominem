@@ -44,7 +44,7 @@
     }
   },
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsgo --noEmit",
     "format": "pnpm dlx oxfmt ./src",
     "lint": "pnpm dlx oxlint ./src"
   },
@@ -58,5 +58,7 @@
     "pino": "^9.7.0",
     "zod": "4.3.6"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@typescript/native-preview": "7.0.0-dev.20260415.1"
+  }
 }

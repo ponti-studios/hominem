@@ -1,9 +1,11 @@
 import { useCallback } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+
 import { makeStyles, Text, theme } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
-import { WaveformVisualizer } from './WaveformVisualizer';
+
 import { useResponse } from './useResponse';
+import { WaveformVisualizer } from './WaveformVisualizer';
 
 interface VoiceResponseProps {
   audioUri: string;
@@ -11,7 +13,7 @@ interface VoiceResponseProps {
 }
 
 export function VoiceResponse({ audioUri, onDismiss }: VoiceResponseProps) {
-  const { isPlaying, duration, position, play, pause, seek, stop } = useResponse({
+  const { isPlaying, duration, position, play, pause } = useResponse({
     audioUri,
     onComplete: onDismiss,
   });
@@ -25,14 +27,6 @@ export function VoiceResponse({ audioUri, onDismiss }: VoiceResponseProps) {
       void play();
     }
   }, [isPlaying, play, pause]);
-
-  const handleSeek = useCallback(
-    (fraction: number) => {
-      const newPosition = Math.floor(duration * fraction * 1000);
-      void seek(newPosition);
-    },
-    [duration, seek],
-  );
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

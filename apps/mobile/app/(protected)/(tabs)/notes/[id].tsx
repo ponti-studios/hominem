@@ -1,21 +1,19 @@
 import { useApiClient } from '@hominem/rpc/react';
 import type { Note } from '@hominem/rpc/types';
+import { useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import type { RelativePathString } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
-import { useQueryClient } from '@tanstack/react-query';
 
 import { Text, theme } from '~/components/theme';
+import { useNoteEditor } from '~/hooks/use-note-editor';
 import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
 import { noteKeys } from '~/services/notes/query-keys';
 import { useNoteQuery } from '~/services/notes/use-note-query';
 
-import { useNoteEditor } from './use-note-editor';
-
 const COMPOSER_CLEARANCE = 220;
-
 
 export default function NoteDetailScreen() {
   const router = useRouter();
@@ -48,7 +46,6 @@ export default function NoteDetailScreen() {
     />
   );
 }
-
 
 function NoteDetailEditor({
   note,
@@ -127,7 +124,11 @@ function NoteDetailEditor({
           value={title ?? ''}
           onChangeText={(value) => {
             setTitle(value);
-            void onSave(value, content, files.map((f) => f.id));
+            void onSave(
+              value,
+              content,
+              files.map((f) => f.id),
+            );
           }}
           placeholder="Title"
           placeholderTextColor={theme.colors['text-tertiary']}
@@ -144,7 +145,11 @@ function NoteDetailEditor({
           value={content}
           onChangeText={(value) => {
             setContent(value);
-            void onSave(title, value, files.map((f) => f.id));
+            void onSave(
+              title,
+              value,
+              files.map((f) => f.id),
+            );
           }}
           placeholder="Start writing…"
           placeholderTextColor={theme.colors['text-tertiary']}
@@ -191,7 +196,6 @@ function NoteDetailEditor({
     </>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
