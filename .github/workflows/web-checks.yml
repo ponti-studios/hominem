@@ -9,6 +9,7 @@ on:
       - 'pnpm-lock.yaml'
       - '.github/workflows/web-checks.yml'
   pull_request:
+    types: [opened, synchronize]
     branches: [main, preview]
     paths:
       - 'apps/web/**'
