@@ -70,7 +70,7 @@ The standard `OTEL_*` and `SENTRY_DSN` variables are documented in the env examp
 - [../../../.env.example](../../../.env.example) for shared local defaults
 - [../../../services/api/.env.example](../../../services/api/.env.example) for API-local overrides
 - [../../../apps/web/.env.example](../../../apps/web/.env.example) for web-only flags
-- [../../../infra/railway/.env.preview.example](../../../infra/railway/.env.preview.example) and [../../../infra/railway/.env.production.example](../../../infra/railway/.env.production.example) for deployed Railway environments
+- [../../../foundation/railway/env-templates/.env.preview.example](../../../foundation/railway/env-templates/.env.preview.example) and [../../../foundation/railway/env-templates/.env.production.example](../../../foundation/railway/env-templates/.env.production.example) for deployed Railway environments
 
 Keep those files as the source of truth for variable shape and example values.
 

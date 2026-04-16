@@ -54,8 +54,6 @@ pnpm-debug.log*
 .env.development*
 .env.test*
 .env.production*
-!infra/railway/.env.preview.example
-!infra/railway/.env.production.example
 .claude/settings.local.json
 !/packages/core/env
 
