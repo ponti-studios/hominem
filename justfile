@@ -74,7 +74,7 @@ mobile-test-watch:
     cd "{{ MOBILE_DIR }}" && pnpm exec vitest --config vitest.config.ts
 
 mobile-typecheck:
-    cd "{{ MOBILE_DIR }}" && pnpm exec expo typecheck
+    cd "{{ MOBILE_DIR }}" && pnpm run typecheck
 
 mobile-start:
     cd "{{ MOBILE_DIR }}" && pnpm exec expo start --platform ios
@@ -94,6 +94,5 @@ mobile-doctor:
 mobile-lint:
     cd "{{ MOBILE_DIR }}" && pnpm exec expo lint
 
-mobile-check: mobile-typecheck mobile-test
+validate-mobile: mobile-typecheck mobile-test
 
-validate-mobile: mobile-check
