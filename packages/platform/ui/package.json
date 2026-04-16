@@ -96,8 +96,8 @@
       "default": "./src/components/filters/active-filters-bar.tsx"
     },
     "./ai-elements": {
-      "types": "./src/components/ai-elements/index.ts",
-      "default": "./src/components/ai-elements/index.ts"
+      "types": "./src/components/ai-elements.ts",
+      "default": "./src/components/ai-elements.ts"
     },
     "./hooks": {
       "types": "./src/hooks/index.ts",
@@ -233,13 +233,13 @@
     "@types/react": "19.2.10",
     "@types/react-dom": "19.1.7",
     "@types/react-syntax-highlighter": "^15.5.13",
-    "@typescript/native-preview": "7.0.0-dev.20260415.1",
     "@vitest/browser-playwright": "4.1.2",
     "msw": "^2.12.13",
     "msw-storybook-addon": "^2.0.6",
     "react-dom": "19.2.0",
     "start-server-and-test": "^2.1.0",
     "storybook": "^10.3.3",
+    "@typescript/native-preview": "7.0.0-dev.20260415.1",
     "vite": "8.0.8"
   },
   "peerDependencies": {
