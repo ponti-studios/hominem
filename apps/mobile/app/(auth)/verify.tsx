@@ -1,20 +1,20 @@
-import { AUTH_COPY, CHAT_AUTH_CONFIG } from '@hominem/auth/shared/ux-contract';
 import { maskEmail } from '@hominem/auth/shared/mask-email';
-import { Button } from '~/components/ui/Button';
-import { TextField } from '~/components/ui/TextField';
+import { AUTH_COPY, CHAT_AUTH_CONFIG } from '@hominem/auth/shared/ux-contract';
 import type { RelativePathString } from 'expo-router';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { getAuthScreenBaseStyles } from '~/components/auth/auth-screen-styles';
 import { AuthLayout } from '~/components/AuthLayout';
 import { FeatureErrorBoundary } from '~/components/error-boundary/FeatureErrorBoundary';
-import { posthog } from '~/services/posthog';
 import { Box, makeStyles, Text } from '~/components/theme';
+import { Button } from '~/components/ui/Button';
+import { TextField } from '~/components/ui/TextField';
 import { useAuth } from '~/services/auth/auth-provider';
 import { normalizeOtp } from '~/services/auth/validation';
+import { posthog } from '~/services/posthog';
 
-import { getAuthScreenBaseStyles } from '~/components/auth/auth-screen-styles';
 import { useEmailAuth } from './use-email-auth';
 
 export function VerifyScreen() {
@@ -24,18 +24,23 @@ export function VerifyScreen() {
   const { email: emailParam } = useLocalSearchParams<{ email: string }>();
   const resolvedEmail = emailParam ?? '';
 
-  const { otp, setOtp, error: authError, isSubmitting, isResending, handleVerifyOtp, handleResendOtp } =
-    useEmailAuth(
-      {
-        sendOtp: async () => {},
-        verifyOtp: async (email, code) => {
-          await verifyEmailOtp({ email, otp: normalizeOtp(code) });
-        },
-        resendOtp: async (email) => {
-          await requestEmailOtp(email);
-        },
-      },
-    );
+  const {
+    otp,
+    setOtp,
+    error: authError,
+    isSubmitting,
+    isResending,
+    handleVerifyOtp,
+    handleResendOtp,
+  } = useEmailAuth({
+    sendOtp: async () => {},
+    verifyOtp: async (email, code) => {
+      await verifyEmailOtp({ email, otp: normalizeOtp(code) });
+    },
+    resendOtp: async (email) => {
+      await requestEmailOtp(email);
+    },
+  });
 
   React.useEffect(() => {
     posthog.capture('auth_verify_screen_viewed');

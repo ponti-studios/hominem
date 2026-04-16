@@ -115,23 +115,11 @@
       "types": "./src/styles/*",
       "default": "./src/styles/*"
     },
-    "./ai-elements": {
-      "types": "./src/components/ai-elements/speech-input.tsx",
-      "default": "./src/components/ai-elements/speech-input.tsx"
-    },
     "./chat": {
       "types": "./src/components/chat/chat.tsx",
       "default": "./src/components/chat/chat.tsx"
     },
-    "./chat/referenced-notes": {
-      "types": "./src/components/chat/referenced-notes.ts",
-      "default": "./src/components/chat/referenced-notes.ts"
-    },
     "./composer": {
-      "types": "./src/components/composer/composer.tsx",
-      "default": "./src/components/composer/composer.tsx"
-    },
-    "./composer/composer": {
       "types": "./src/components/composer/composer.tsx",
       "default": "./src/components/composer/composer.tsx"
     },

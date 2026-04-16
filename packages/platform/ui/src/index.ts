@@ -3,7 +3,15 @@ import type { LinkDescriptor } from 'react-router';
 export * from './theme';
 export * from './tokens';
 
-export * from './components/auth';
+export { AuthScaffold } from './components/auth/auth-scaffold';
+export { AuthRouteLayout } from './components/auth/auth-route-layout';
+export { AuthErrorBanner } from './components/auth/auth-error-banner';
+export { EmailEntryForm } from './components/auth/email-entry-form';
+export { OtpVerificationForm } from './components/auth/otp-verification-form';
+export { ResendCodeButton } from './components/auth/resend-code-button';
+export { PasskeyButton } from './components/auth/passkey-button';
+export { PasskeyEnrollmentBanner } from './components/auth/passkey-enrollment-banner';
+export { PasskeyManagement } from './components/auth/passkey-management';
 export { Center, type CenterProps } from './components/layout/center';
 export { Header, type HeaderProps, type NavItem } from './components/layout/header';
 export { Inline, type InlineProps } from './components/layout/inline';
