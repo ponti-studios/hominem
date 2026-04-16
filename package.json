@@ -19,7 +19,7 @@
     "url": "git+https://github.com/hackefeller/hominem.git"
   },
   "scripts": {
-    "db:migrate:deploy": "goose -dir ./packages/core/db/migrations postgres \"$DATABASE_URL\" up"
+    "check": "pnpm dlx turbo run typecheck lint build test --concurrency 1 --force"
   },
   "devDependencies": {
     "@types/node": "^25.4.0",

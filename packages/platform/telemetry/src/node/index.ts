@@ -219,10 +219,6 @@ export function createHonoTelemetryMiddleware() {
         routePath?: string;
         path: string;
         url: string;
-        import;
-        os;
-        from;
-        'node:os';
         header: (name: string) => string | undefined;
       };
       res: { status: number };
