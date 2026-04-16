@@ -1,6 +1,10 @@
 import type { ColorToken } from '@hominem/ui/tokens';
 import * as React from 'react';
-import { Text as NativeText, type TextProps as NativeTextProps, type TextStyle } from 'react-native';
+import {
+  Text as NativeText,
+  type TextProps as NativeTextProps,
+  type TextStyle,
+} from 'react-native';
 
 import theme from './theme';
 
@@ -55,8 +59,8 @@ function Text({ variant = 'body-2', ...props }: TextProps) {
       : resolvedVariant === 'body-2'
         ? 'body'
         : resolvedVariant === 'body-3'
-          ? 'label'
-          : 'small'
+          ? 'subhead'
+          : 'footnote'
   ] as TextStyle;
   const colorStyle = props.color ? { color: theme.colors[props.color] } : undefined;
 
