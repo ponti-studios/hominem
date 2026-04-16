@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   eas-build-testflight-production-api:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
 
     steps:
       - name: checkout-repository
