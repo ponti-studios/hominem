@@ -16,6 +16,8 @@ import { useMobilePasskeyAuth } from '~/services/auth/hooks/use-mobile-passkey-a
 import { isValidEmail, normalizeEmail } from '~/services/auth/validation';
 import { posthog } from '~/services/posthog';
 
+import { resolveAuthScreenState } from './auth-screen-state';
+
 export function AuthScreen() {
   const styles = useStyles();
   const { authStatus, isSignedIn, completePasskeySignIn, requestEmailOtp } = useAuth();
@@ -80,7 +82,11 @@ export function AuthScreen() {
     return <Redirect href={CHAT_AUTH_CONFIG.defaultPostAuthDestination as RelativePathString} />;
   }
 
-  const displayError = authError || passkeyError;
+  const { isProbing, displayError } = resolveAuthScreenState({
+    authStatus,
+    authError,
+    passkeyError,
+  });
   const canUsePasskeys = MOBILE_PASSKEY_ENABLED && isPasskeySupported;
 
   return (
@@ -88,7 +94,7 @@ export function AuthScreen() {
       testID="auth-screen"
       title={AUTH_COPY.emailEntry.title}
       helper={AUTH_COPY.emailEntry.helper}
-      isProbing={authStatus === 'booting'}
+      isProbing={isProbing}
     >
       <Box style={styles.form}>
         <View style={styles.fieldStack}>
