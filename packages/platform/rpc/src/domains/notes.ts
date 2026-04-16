@@ -43,6 +43,7 @@ export interface NotesArchiveInput {
 export interface NotesSearchInput {
   query: string;
   limit?: number;
+  cursor?: string;
 }
 
 function toNotesQuery(input: NotesListInput): Record<string, string> {
@@ -82,7 +83,6 @@ function toNotesQuery(input: NotesListInput): Record<string, string> {
   return query;
 }
 
-// ─── NotesClient interface ────────────────────────────────────────────────────
 
 export interface NotesClient {
   list(input: NotesListInput): Promise<NotesListOutput>;
@@ -95,7 +95,6 @@ export interface NotesClient {
   archive(input: NotesArchiveInput): Promise<NotesArchiveOutput>;
 }
 
-// ─── Factory ──────────────────────────────────────────────────────────────────
 
 export function createNotesClient(rawClient: RawHonoClient): NotesClient {
   return {
@@ -122,6 +121,9 @@ export function createNotesClient(rawClient: RawHonoClient): NotesClient {
       const query: Record<string, string> = { query: input.query };
       if (typeof input.limit === 'number') {
         query.limit = String(input.limit);
+      }
+      if (input.cursor) {
+        query.cursor = input.cursor;
       }
       const res = await rawClient.get('/api/notes/search', { query });
       return res.json() as Promise<NotesSearchOutput>;

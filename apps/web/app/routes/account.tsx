@@ -1,31 +1,23 @@
-'use client';
-
-import { useSession } from '@hominem/auth/client';
 import { Container } from '@hominem/ui';
 import { Button } from '@hominem/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@hominem/ui/card';
-import { Navigate } from 'react-router';
+import { data, redirect } from 'react-router';
 
 import { useSignOut } from '~/lib/hooks/use-sign-out';
+import { getServerSession } from '~/lib/auth.server';
+import type { Route } from './+types/account';
+
+export async function loader({ request }: Route.LoaderArgs) {
+  const { user, headers } = await getServerSession(request);
+  if (!user) {
+    throw redirect('/auth', { headers });
+  }
+
+  return data({ userId: user.id }, { headers });
+}
 
 export default function AccountPage() {
-  // Skip rendering on server
-  if (typeof window === 'undefined') {
-    return <div>Loading...</div>;
-  }
-
-  const session = useSession();
-  const userId = session.data?.user?.id ?? null;
-  const isLoading = session.isPending;
   const signOut = useSignOut();
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  if (!userId) {
-    return <Navigate to="/auth" replace />;
-  }
 
   return (
     <Container maxWidth="sm" className="py-8">

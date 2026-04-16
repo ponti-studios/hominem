@@ -65,16 +65,14 @@ requestCounter.add(1, { route: '/api/users' })
 
 ## Configuration
 
-All configuration is done via environment variables:
+The standard `OTEL_*` and `SENTRY_DSN` variables are documented in the env examples:
 
-- `OTEL_EXPORTER_OTLP_ENDPOINT` - OTLP endpoint (default: http://localhost:4318)
-- `OTEL_EXPORTER_OTLP_PROTOCOL` - Protocol: http/protobuf or grpc (default: http/protobuf)
-- `OTEL_SERVICE_NAME` - Service name (required)
-- `OTEL_SERVICE_VERSION` - Service version (optional)
-- `OTEL_RESOURCE_ATTRIBUTES` - Additional resource attributes (comma-separated key=value pairs)
-- `OTEL_TRACES_SAMPLER` - Sampler: always_on, always_off, traceidratio (default: always_on)
-- `OTEL_TRACES_SAMPLER_ARG` - Sampler ratio if using traceidratio (default: 1.0)
-- `OTEL_LOG_LEVEL` - Log level for OTel SDK (default: info)
+- [../../../.env.example](../../../.env.example) for shared local defaults
+- [../../../services/api/.env.example](../../../services/api/.env.example) for API-local overrides
+- [../../../apps/web/.env.example](../../../apps/web/.env.example) for web-only flags
+- [../../../infra/railway/.env.preview.example](../../../infra/railway/.env.preview.example) and [../../../infra/railway/.env.production.example](../../../infra/railway/.env.production.example) for deployed Railway environments
+
+Keep those files as the source of truth for variable shape and example values.
 
 ## Exports
 

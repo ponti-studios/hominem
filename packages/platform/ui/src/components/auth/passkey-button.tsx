@@ -1,6 +1,6 @@
-import { AUTH_COPY } from '@hominem/auth';
+import { AUTH_COPY } from '@hominem/auth/shared/ux-contract';
 
-import { Button } from '../ui/button';
+import { Button } from '../button';
 
 interface PasskeyButtonProps {
   onClick: () => void;

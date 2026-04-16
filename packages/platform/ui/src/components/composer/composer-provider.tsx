@@ -21,11 +21,6 @@ import {
 import type { UploadedFile } from '../../types/upload';
 import { INITIAL_COMPOSER_STATE, ComposerStore, type ComposerState } from './composer-store';
 
-// ─── ComposerActions ──────────────────────────────────────────────────────────
-//
-// Platform-provided async functions injected at the layout level via a stable
-// ref. The form action always calls actionsRef.current.X — never stale.
-
 export interface ComposerActions {
   createNote: (input: { content: string; title?: string }) => Promise<unknown>;
   updateNote: (input: { id: string; content: string }) => Promise<unknown>;
@@ -35,7 +30,6 @@ export interface ComposerActions {
   navigate: (path: string) => void;
 }
 
-// ─── Contexts ─────────────────────────────────────────────────────────────────
 
 const ComposerStoreCtx = createContext<ComposerStore | null>(null);
 const ComposerActionsCtx = createContext<React.MutableRefObject<ComposerActions> | null>(null);
@@ -46,7 +40,6 @@ function useRequired<T>(ctx: Context<T | null>, name: string): T {
   return value;
 }
 
-// ─── Provider ─────────────────────────────────────────────────────────────────
 
 export interface ComposerProviderProps {
   /** Created once in the layout: useMemo(() => new ComposerStore(), []) */
@@ -65,7 +58,6 @@ export function ComposerProvider({ store, actionsRef, children }: ComposerProvid
   );
 }
 
-// ─── Hooks ────────────────────────────────────────────────────────────────────
 
 export function useComposerStore(): ComposerStore {
   return useRequired(ComposerStoreCtx, 'useComposerStore');
@@ -92,9 +84,7 @@ export function useComposerSlice<T>(selector: (state: ComposerState) => T): T {
   );
 }
 
-// Re-export store types consumed by callers
 export type { ComposerState, ComposerAction } from './composer-store';
 export { ComposerStore, INITIAL_COMPOSER_STATE } from './composer-store';
 
-// Re-export ComposerMode (used by layout and useComposerMode)
 export type ComposerMode = 'generic' | 'note-aware' | 'chat-continuation';

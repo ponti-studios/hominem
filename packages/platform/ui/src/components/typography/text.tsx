@@ -3,6 +3,13 @@ import * as React from 'react';
 import { cn } from '../../lib/utils';
 import type { TextVariant } from './text.types';
 
+const legacyVariantMap = {
+  'body-1': 'headline',
+  'body-2': 'body',
+  'body-3': 'footnote',
+  'body-4': 'caption1',
+} as const;
+
 type TextElement = 'p' | 'span' | 'div' | 'li' | 'label' | 'strong' | 'em' | 'small';
 
 interface TextProps extends React.HTMLAttributes<HTMLElement> {
@@ -30,13 +37,16 @@ interface TextProps extends React.HTMLAttributes<HTMLElement> {
  * <Text as="span" variant="body-3">Inline text</Text>
  */
 function Text({
-  variant = 'body-2',
+  variant = 'body',
   as: Comp = 'p',
   muted = false,
   className,
   ...props
 }: TextProps) {
-  return <Comp className={cn(variant, muted && 'text-text-tertiary', className)} {...props} />;
+  const resolvedVariant = legacyVariantMap[variant as keyof typeof legacyVariantMap] ?? variant;
+  return (
+    <Comp className={cn(resolvedVariant, muted && 'text-text-tertiary', className)} {...props} />
+  );
 }
 
 export { Text, type TextProps, type TextVariant };

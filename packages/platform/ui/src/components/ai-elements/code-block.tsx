@@ -15,7 +15,7 @@ import typescript from 'react-syntax-highlighter/dist/esm/languages/prism/typesc
 import yaml from 'react-syntax-highlighter/dist/esm/languages/prism/yaml';
 import oneDark from 'react-syntax-highlighter/dist/esm/styles/prism/one-dark';
 
-import { Button } from '../ui/button';
+import { Button } from '../button';
 
 // Register commonly used languages for AI chat content
 SyntaxHighlighter.registerLanguage('typescript', typescript);

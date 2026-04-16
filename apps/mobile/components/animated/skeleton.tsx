@@ -1,3 +1,4 @@
+import { durations } from '~/components/theme/tokens';
 import React, { useEffect } from 'react';
 import { StyleSheet } from 'react-native';
 import Animated, {
@@ -7,6 +8,8 @@ import Animated, {
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
+
+import { theme } from '~/components/theme';
 
 interface SkeletonProps {
   width?: number | string;
@@ -24,7 +27,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   useEffect(() => {
     shimmerValue.value = withRepeat(
       withTiming(1, {
-        duration: 1200,
+        duration: durations.breezy,
         easing: Easing.inOut(Easing.ease),
       }),
       -1,
@@ -53,7 +56,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
 
 const styles = StyleSheet.create({
   skeleton: {
-    backgroundColor: 'rgba(245, 246, 248, 0.15)',
+    backgroundColor: theme.colors['bg-elevated'],
   },
 });
 

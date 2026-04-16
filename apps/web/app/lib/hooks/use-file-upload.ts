@@ -1,10 +1,9 @@
-import { isTestMode } from '@hominem/utils/storage';
-import { parseUploadResponse } from '@hominem/platform-utils/api-response-validation';
+import { UploadResponseSchema } from '@hominem/rpc/schemas/files.schema';
 import {
   CHAT_UPLOAD_ALLOWED_MIME_TYPES,
   CHAT_UPLOAD_MAX_FILE_COUNT,
   CHAT_UPLOAD_MAX_FILE_SIZE_BYTES,
-} from '@hominem/utils/upload';
+} from '@hominem/chat';
 // Lazy load Uppy types only for type checking
 import type { Body, Meta, UppyFile } from '@uppy/core';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -17,7 +16,7 @@ import type { UploadedFile } from '~/lib/types/upload';
  */
 export type UploadStateMachine = 'idle' | 'uploading' | 'done' | 'error';
 
-function toUploadedFile(file: ReturnType<typeof parseUploadResponse>['file']): UploadedFile {
+function toUploadedFile(file: ReturnType<typeof UploadResponseSchema.parse>['file']): UploadedFile {
   return {
     id: file.id,
     originalName: file.originalName,
@@ -52,6 +51,10 @@ interface UseFileUploadReturn {
   uploadFiles: (files: FileList | File[]) => Promise<UploadedFile[]>;
   removeFile: (fileId: string) => void;
   clearAll: () => void;
+}
+
+function isTestMode(): boolean {
+  return process.env.NODE_ENV === 'test';
 }
 
 // Lazy load Uppy modules to avoid bundling on initial page load
@@ -115,7 +118,7 @@ export function useFileUpload(): UseFileUploadReturn {
       }),
       allowedMetaFields: ['originalName', 'mimetype'],
       getResponseData(xhr: XMLHttpRequest) {
-        return parseUploadResponse(JSON.parse(xhr.responseText));
+        return UploadResponseSchema.parse(JSON.parse(xhr.responseText));
       },
     });
 
@@ -172,7 +175,7 @@ export function useFileUpload(): UseFileUploadReturn {
         const newFiles = (result?.successful ?? []).flatMap((file) => {
           const body = file.response?.body;
           try {
-            return [toUploadedFile(parseUploadResponse(body).file)];
+            return [toUploadedFile(UploadResponseSchema.parse(body).file)];
           } catch {
             return [];
           }

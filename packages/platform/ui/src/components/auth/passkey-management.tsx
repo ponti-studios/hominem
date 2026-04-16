@@ -1,7 +1,7 @@
 import { KeyRound, Plus, Trash2 } from 'lucide-react';
 import { useCallback, useState } from 'react';
 
-import { Button } from '../ui/button';
+import { Button } from '../button';
 
 interface Passkey {
   id: string;

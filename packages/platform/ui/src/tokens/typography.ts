@@ -1,17 +1,7 @@
-/**
- * Typography tokens.
- *
- * Font size and weight values must match --font-* in globals.css.
- *
- * Font families diverge intentionally between platforms:
- * - Web loads Geist via Google Fonts (COMMON_FONT_LINKS)
- * - Native uses the platform system fonts
- */
-
-/** Web font family stacks (full CSS strings). */
 export const fontFamilies = {
-  primary: "'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
-  mono: "'Geist Mono', ui-monospace, 'SF Mono', 'Menlo', monospace",
+  primary:
+    "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif",
+  mono: "'SF Mono', 'Menlo', ui-monospace, monospace",
 } as const;
 
 export const fontSizes = {

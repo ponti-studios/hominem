@@ -11,15 +11,12 @@ import type { DbHandle } from '../../transaction';
 import type { AppChatMessages, AppChats } from '../../types/database';
 import { toIsoString, toRequiredIsoString } from '../_shared/mappers';
 
-// ─── Re-export guard types for backward compatibility ────────────────────────
 export type { ChatMessageFileRecord, ChatMessageToolCallRecord } from '../../guards';
 
-// ─── Row types ───────────────────────────────────────────────────────────────
 
 type ChatRow = Selectable<AppChats>;
 type ChatMessageRow = Selectable<AppChatMessages>;
 
-// ─── Domain output types ─────────────────────────────────────────────────────
 
 export interface ChatRecord {
   id: string;
@@ -53,7 +50,6 @@ export interface ChatMessageRecord {
   updatedAt: string;
 }
 
-// ─── Input types ─────────────────────────────────────────────────────────────
 
 export interface InsertChatMessageInput {
   chatId: string;
@@ -67,7 +63,6 @@ export interface InsertChatMessageInput {
   parentMessageId?: string | null;
 }
 
-// ─── Mappers ─────────────────────────────────────────────────────────────────
 
 function toChatRecord(row: ChatRow): ChatRecord {
   return {
@@ -115,7 +110,6 @@ function toJsonColumnValue(value: unknown[] | null | undefined): string | null {
   return value ? JSON.stringify(value) : null;
 }
 
-// ─── Repository ──────────────────────────────────────────────────────────────
 
 export const ChatRepository = {
   /**
@@ -263,7 +257,6 @@ export const ChatRepository = {
       .execute();
   },
 
-  // ─── Messages ────────────────────────────────────────────────────────────
 
   /**
    * Fetch note titles for referenced note IDs (for message enrichment).
@@ -473,7 +466,6 @@ export const ChatRepository = {
   },
 };
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 export interface NoteContext {
   id: string;

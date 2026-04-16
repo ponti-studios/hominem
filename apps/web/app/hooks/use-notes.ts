@@ -49,13 +49,10 @@ export function flattenNoteFeedPages(data: NotesFeedData | undefined): NoteFeedI
 function buildOptimisticFeedNote(input: NotesCreateInput): NoteFeedItem {
   const now = new Date().toISOString();
   const trimmed = input.content.trim();
-  const title = input.title?.trim()
-    ? input.title.trim()
-    : (trimmed.split('\n').find(Boolean)?.slice(0, 120) ?? null);
 
   return {
     id: `optimistic-note-${Date.now().toString()}`,
-    title,
+    title: input.title?.trim() || null,
     contentPreview: trimmed.replace(/\s+/g, ' ').trim().slice(0, 240),
     createdAt: now,
     authorId: 'optimistic-user',
@@ -154,10 +151,29 @@ export function useNote(id: string) {
 }
 
 export function useNoteSearch(query: string, enabled = true) {
-  return useRpcQuery<NotesSearchOutput>(({ notes }) => notes.search({ query, limit: 8 }), {
+  return useInfiniteQuery<NotesSearchOutput, Error, NotesSearchOutput, readonly unknown[], string | null>({
     queryKey: notesQueryKeys.search(query),
+    initialPageParam: null,
     enabled: enabled && query.trim().length > 0,
     staleTime: 1000 * 30,
+    queryFn: async ({ pageParam }) => {
+      const client = useApiClient();
+      return client.notes.search({
+        query,
+        limit: 8,
+        ...(pageParam ? { cursor: pageParam } : {}),
+      });
+    },
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    select: (data) => {
+      const notes = data.pages.flatMap((page) => page.notes);
+      return {
+        pages: data.pages,
+        pageParams: data.pageParams,
+        notes,
+        nextCursor: data.pages.at(-1)?.nextCursor ?? null,
+      } as NotesSearchOutput & { pages: typeof data.pages; pageParams: typeof data.pageParams };
+    },
   });
 }
 
@@ -188,13 +204,12 @@ export function useCreateNote() {
       queryClient.setQueryData(feedQueryKey, context?.previousFeed);
     },
     onSuccess: async (createdNote, _variables, context) => {
-      const feedQueryKey = notesQueryKeys.feed({ limit: DEFAULT_NOTES_FEED_LIMIT });
       if (context?.optimisticId) {
         await requestNotesRowExit(context.optimisticId);
       }
       queryClient.setQueryData(notesQueryKeys.detail(createdNote.id), createdNote);
-      queryClient.invalidateQueries({ queryKey: notesQueryKeys.list() });
-      queryClient.invalidateQueries({ queryKey: feedQueryKey });
+      queryClient.invalidateQueries({ queryKey: notesQueryKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: notesQueryKeys.feeds() });
     },
   });
 }

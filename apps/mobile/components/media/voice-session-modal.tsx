@@ -1,37 +1,44 @@
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 
 import AppIcon from '~/components/ui/icon';
 import { Text, makeStyles, theme } from '~/components/theme';
-import { VoiceInput } from '~/components/media/voice';
+import { VoiceInput } from '~/components/media/voice/VoiceInput';
+import { useVoiceResponse } from '~/components/media/voice/useVoiceResponse';
 
 interface VoiceSessionModalProps {
-  visible: boolean;
   onClose: () => void;
   onAudioTranscribed: (transcription: string) => void;
-  bottomSheetModalRef?: React.RefObject<BottomSheetModal>;
+  bottomSheetModalRef: React.RefObject<BottomSheetModal | null>;
 }
 
 export function VoiceSessionModal({
-  visible,
   onClose,
   onAudioTranscribed,
   bottomSheetModalRef,
 }: VoiceSessionModalProps) {
   const styles = useStyles();
   const snapPoints = useMemo(() => ['50%', '90%'], []);
-
-  const handlePresent = useCallback(() => {
-    bottomSheetModalRef?.current?.present();
-  }, [bottomSheetModalRef]);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { respond, isLoading } = useVoiceResponse();
 
   const handleDismiss = useCallback(() => {
-    bottomSheetModalRef?.current?.dismiss();
+    setErrorMessage(null);
+    bottomSheetModalRef.current?.dismiss();
     onClose();
   }, [bottomSheetModalRef, onClose]);
 
-  if (!visible) return null;
+  const handleRetry = useCallback(() => {
+    setErrorMessage(null);
+  }, []);
+
+  const handleAudioReady = useCallback(
+    async (audioUri: string) => {
+      return respond(audioUri);
+    },
+    [respond],
+  );
 
   return (
     <BottomSheetModal
@@ -44,7 +51,7 @@ export function VoiceSessionModal({
     >
       <BottomSheetView style={styles.container}>
         <View style={styles.header}>
-          <Text variant="label" color="text-secondary">
+          <Text variant="footnote" color="text-secondary">
             Voice Input
           </Text>
           <Pressable
@@ -58,18 +65,46 @@ export function VoiceSessionModal({
         </View>
 
         <View style={styles.body}>
-          <VoiceInput
-            autoTranscribe
-            onAudioTranscribed={(transcription) => {
-              onAudioTranscribed(transcription);
-              handleDismiss();
-            }}
-            onError={handleDismiss}
-            style={styles.micButton}
-          />
-          <Text variant="caption" color="text-secondary" style={styles.hint}>
-            Tap to record · tap again to stop
-          </Text>
+          {errorMessage ? (
+            <View style={styles.errorContainer}>
+              <Text variant="caption1" color="text-secondary" style={styles.errorText}>
+                {errorMessage}
+              </Text>
+              <Pressable onPress={handleRetry} style={styles.retryButton}>
+                <Text variant="caption1" color="foreground">
+                  Try Again
+                </Text>
+              </Pressable>
+            </View>
+          ) : (
+            <>
+              <VoiceInput
+                autoTranscribe={false}
+                onAudioReady={(audioUri) => {
+                  void handleAudioReady(audioUri)
+                    .then((transcript) => {
+                      onAudioTranscribed(transcript);
+                      handleDismiss();
+                    })
+                    .catch(() => {
+                      setErrorMessage('Voice response failed. Please try again.');
+                    });
+                }}
+                onError={() => {
+                  setErrorMessage('Voice response failed. Please try again.');
+                }}
+                style={styles.micButton}
+              />
+              {isLoading ? (
+                <Text variant="caption1" color="text-secondary">
+                  Generating response...
+                </Text>
+              ) : null}
+              <Text variant="caption1" color="text-secondary" style={styles.hint}>
+                Tap to record · tap again to stop
+              </Text>
+            </>
+          )}
         </View>
       </BottomSheetView>
     </BottomSheetModal>
@@ -79,7 +114,6 @@ export function VoiceSessionModal({
 const useStyles = makeStyles((t) =>
   StyleSheet.create({
     sheetBackground: {
-      backgroundColor: t.colors.background,
     },
     dragHandle: {
       backgroundColor: t.colors['border-default'],
@@ -111,6 +145,22 @@ const useStyles = makeStyles((t) =>
     },
     hint: {
       textAlign: 'center',
+    },
+    errorContainer: {
+      alignItems: 'center',
+      gap: t.spacing.m_16,
+      paddingHorizontal: t.spacing.m_16,
+    },
+    errorText: {
+      textAlign: 'center',
+      color: t.colors.destructive,
+    },
+    retryButton: {
+      paddingHorizontal: t.spacing.m_16,
+      paddingVertical: t.spacing.sm_8,
+      borderRadius: t.borderRadii.sm,
+      borderWidth: 1,
+      borderColor: t.colors['border-default'],
     },
   }),
 );

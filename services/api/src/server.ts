@@ -1,4 +1,4 @@
-import type { User } from '@hominem/auth/server';
+import type { User } from '@hominem/auth/types';
 import { createHonoTelemetryMiddleware } from '@hominem/telemetry/node';
 import { logger } from '@hominem/utils/logger';
 import { apiReference } from '@scalar/hono-api-reference';
@@ -31,48 +31,34 @@ export type AppEnv = {
 
 export function createServer() {
   const app = new Hono<AppEnv>();
+  const allowedOrigins = new Set([env.API_URL, env.WEB_URL, env.NOTES_URL]);
 
-  // Block malicious probe requests before doing anything else.
-  // Placing this ahead of the logger keeps the noise out of our logs and
-  // prevents the request from traversing any further middleware.
   app.use('*', blockMaliciousProbes());
 
-  // OpenTelemetry telemetry middleware
   app.use('*', createHonoTelemetryMiddleware());
 
   app.use('*', requestLogger());
 
-  // Pretty JSON middleware
   app.use('*', prettyJSON());
 
-  // CORS middleware
   app.use(
     '*',
     cors({
       origin: (origin) => {
-        const allowedOrigins = [env.API_URL, env.NOTES_URL];
-        return allowedOrigins.includes(origin || '') ? origin : null;
+        return allowedOrigins.has(origin || '') ? origin : null;
       },
       credentials: true,
       allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     }),
   );
 
-  // Authentication middleware
   app.use('*', authJwtMiddleware());
-
-  // RPC routes deprecated - using Hono RPC instead
-
-  // Register Hono RPC routes
-  // Note: honoRpcApp already includes /api prefix in its routes (e.g., /api/finance, /api/lists)
   app.route('/', rpcApp);
 
-  // Register other route handlers
   app.route('/api/status', statusRoutes);
   app.route('/api/auth', authRoutes);
   app.route('/api/images', imagesRoutes);
 
-  // Root health check
   app.get('/', (c) => {
     return c.json({
       status: 'ok',
@@ -81,7 +67,6 @@ export function createServer() {
     });
   });
 
-  // OpenAPI 3.1 specification endpoint with security schemes
   app.get(
     '/openapi.json',
     openAPIRouteHandler(app, {
@@ -125,7 +110,6 @@ export function createServer() {
     }),
   );
 
-  // Scalar API documentation UI
   app.get(
     '/docs',
     apiReference({
@@ -142,7 +126,6 @@ export function createServer() {
     }),
   );
 
-  // Global error handler - must be after routes
   app.onError((err, c) => {
     Sentry.captureException(err);
     logger.error('[services/api] Error', { error: err });
@@ -169,7 +152,6 @@ export function createServer() {
     );
   });
 
-  // 404 handler for unsupported routes
   app.notFound((c) => {
     return c.text('玉をなめろ', 404);
   });

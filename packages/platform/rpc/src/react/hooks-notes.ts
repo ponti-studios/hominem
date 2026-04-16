@@ -33,11 +33,11 @@ export async function invalidateNotesCaches(
   const invalidations: Promise<void>[] = [];
 
   if (lists) {
-    invalidations.push(queryClient.invalidateQueries({ queryKey: queryKeys.notes.list() }));
+    invalidations.push(queryClient.invalidateQueries({ queryKey: queryKeys.notes.lists() }));
   }
 
   if (feed) {
-    invalidations.push(queryClient.invalidateQueries({ queryKey: queryKeys.notes.feed() }));
+    invalidations.push(queryClient.invalidateQueries({ queryKey: queryKeys.notes.feeds() }));
   }
 
   for (const noteId of details) {

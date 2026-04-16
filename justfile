@@ -43,8 +43,12 @@ typecheck:
 check-web:
     {{ TURBO }} run lint typecheck test build --filter=@hominem/web
 
+validate-web: check-web
+
 check-api:
     {{ TURBO }} run lint typecheck test --filter=@hominem/api
+
+validate-api: check-api
 
 test-api:
     {{ TURBO }} run test --filter=@hominem/api...
@@ -115,16 +119,14 @@ gh-pr-errors:
 # Mobile (Expo)
 
 MOBILE_DIR := ROOT_DIR / "apps" / "mobile"
-JEST := MOBILE_DIR / "node_modules" / ".bin" / "jest"
-
 mobile-test:
-    cd "{{ MOBILE_DIR }}" && {{ JEST }}
+    cd "{{ MOBILE_DIR }}" && pnpm exec vitest run --config vitest.config.ts
 
 mobile-test-watch:
-    cd "{{ MOBILE_DIR }}" && {{ JEST }} --watch
+    cd "{{ MOBILE_DIR }}" && pnpm exec vitest --config vitest.config.ts
 
 mobile-typecheck:
-    cd "{{ MOBILE_DIR }}" && pnpm exec tsc --noEmit
+    cd "{{ MOBILE_DIR }}" && pnpm run typecheck
 
 mobile-start:
     cd "{{ MOBILE_DIR }}" && pnpm exec expo start --platform ios
@@ -146,6 +148,8 @@ mobile-lint:
 
 # Run all mobile checks
 mobile-check: mobile-typecheck mobile-test
+
+validate-mobile: mobile-check
 
 mobile-e2e:
     cd "{{ MOBILE_DIR }}" && pnpm exec detox test --configuration ios --cleanup

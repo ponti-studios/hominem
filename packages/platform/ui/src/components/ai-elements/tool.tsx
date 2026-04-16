@@ -2,7 +2,7 @@ import { ChevronDown, ChevronUp, Loader2, Wrench } from 'lucide-react';
 import { type HTMLAttributes, type ReactNode, useState } from 'react';
 
 import { cn } from '../../lib/utils';
-import { Button } from '../ui/button';
+import { Button } from '../button';
 
 interface ToolProps extends HTMLAttributes<HTMLDivElement> {
   name: string;

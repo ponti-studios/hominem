@@ -1,10 +1,10 @@
-import type { UploadedFile } from '@hominem/ui/types/upload';
+import type { UploadedFile } from '~/types/upload';
 import {
   CHAT_UPLOAD_MAX_FILE_COUNT,
   CHAT_UPLOAD_MAX_FILE_SIZE_BYTES,
   isSupportedChatUploadMimeType,
-} from '@hominem/utils/upload';
-import { parseUploadResponse } from '@hominem/platform-utils/api-response-validation';
+} from '@hominem/chat';
+import { UploadResponseSchema } from '@hominem/rpc/schemas/files.schema';
 import { useCallback, useState } from 'react';
 
 import { API_BASE_URL } from '~/constants';
@@ -13,7 +13,7 @@ interface UploadClient {
   upload(formData: FormData): Promise<unknown>;
 }
 
-function toUploadedFile(file: ReturnType<typeof parseUploadResponse>['file']): UploadedFile {
+function toUploadedFile(file: ReturnType<typeof UploadResponseSchema.parse>['file']): UploadedFile {
   return {
     id: file.id,
     originalName: file.originalName,
@@ -47,6 +47,7 @@ interface MobileUploadedAsset {
 interface MobileUploadState {
   isUploading: boolean;
   progress: number;
+  progressByAssetId: Record<string, number>;
   errors: string[];
 }
 
@@ -111,13 +112,13 @@ async function performMobileUploads(
   options?: {
     fetchImpl?: typeof fetch;
     onProgress?: (progress: number) => void;
+    onAssetProgress?: (assetId: string, progress: number) => void;
   },
 ): Promise<MobileUploadBatchResult> {
   const fetchImpl = options?.fetchImpl ?? fetch;
-  const uploaded: MobileUploadedAsset[] = [];
-  const errors: string[] = [];
+  let completedCount = 0;
 
-  for (const [index, asset] of assets.entries()) {
+  const uploadAsset = async (asset: MobileUploadAsset): Promise<MobileUploadedAsset | string> => {
     const originalName = asset.fileName ?? getFallbackFileName(asset.uri);
 
     try {
@@ -136,17 +137,42 @@ async function performMobileUploads(
       formData.append('originalName', originalName);
       formData.append('mimetype', mimetype);
 
-      const completion = parseUploadResponse(await api.upload(formData));
+      const completion = UploadResponseSchema.parse(await api.upload(formData));
 
-      uploaded.push({
+      completedCount++;
+      const overallProgress = Math.round((completedCount / assets.length) * 100);
+      options?.onProgress?.(overallProgress);
+      options?.onAssetProgress?.(asset.assetId, 100);
+
+      return {
         assetId: asset.assetId,
         localUri: asset.uri,
         uploadedFile: toUploadedFile(completion.file),
-      });
+      };
     } catch (error) {
-      errors.push(`${originalName}: ${error instanceof Error ? error.message : 'Upload failed'}`);
-    } finally {
-      options?.onProgress?.(Math.round(((index + 1) / assets.length) * 100));
+      completedCount++;
+      const overallProgress = Math.round((completedCount / assets.length) * 100);
+      options?.onProgress?.(overallProgress);
+      options?.onAssetProgress?.(asset.assetId, 0);
+      return `${originalName}: ${error instanceof Error ? error.message : 'Upload failed'}`;
+    }
+  };
+
+  // Initialize all assets to 0% progress
+  assets.forEach((asset) => {
+    options?.onAssetProgress?.(asset.assetId, 0);
+  });
+
+  const results = await Promise.all(assets.map(uploadAsset));
+
+  const uploaded: MobileUploadedAsset[] = [];
+  const errors: string[] = [];
+
+  for (const result of results) {
+    if (typeof result === 'string') {
+      errors.push(result);
+    } else {
+      uploaded.push(result);
     }
   }
 
@@ -156,11 +182,12 @@ async function performMobileUploads(
   };
 }
 
-export function useFileUpload() {
+export function useFileUpload(fetchImpl: typeof fetch = fetch) {
   const { getAuthHeaders } = useAuth();
   const [uploadState, setUploadState] = useState<MobileUploadState>({
     isUploading: false,
     progress: 0,
+    progressByAssetId: {},
     errors: [],
   });
 
@@ -175,6 +202,7 @@ export function useFileUpload() {
         setUploadState({
           isUploading: false,
           progress: 0,
+          progressByAssetId: {},
           errors: [error],
         });
         return [];
@@ -183,6 +211,7 @@ export function useFileUpload() {
       setUploadState({
         isUploading: true,
         progress: 0,
+        progressByAssetId: {},
         errors: [],
       });
 
@@ -190,7 +219,7 @@ export function useFileUpload() {
         {
           upload: async (formData) => {
             const authHeaders = await getAuthHeaders();
-            const response = await fetch(`${API_BASE_URL}/api/files`, {
+            const response = await fetchImpl(`${API_BASE_URL}/api/files`, {
               method: 'POST',
               headers: {
                 ...authHeaders,
@@ -217,18 +246,29 @@ export function useFileUpload() {
               progress,
             }));
           },
+          onAssetProgress: (assetId, progress) => {
+            setUploadState((currentState) => ({
+              ...currentState,
+              progressByAssetId: {
+                ...currentState.progressByAssetId,
+                [assetId]: progress,
+              },
+            }));
+          },
+          fetchImpl,
         },
       );
 
       setUploadState({
         isUploading: false,
         progress: result.uploaded.length > 0 || result.errors.length > 0 ? 100 : 0,
+        progressByAssetId: {},
         errors: result.errors,
       });
 
       return result.uploaded;
     },
-    [getAuthHeaders],
+    [getAuthHeaders, fetchImpl],
   );
 
   const clearErrors = useCallback(() => {

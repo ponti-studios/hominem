@@ -12,6 +12,7 @@ import { useTranscribe } from '~/hooks/use-transcribe';
 import { requireAuth } from '~/lib/guards';
 import { useChatMessages } from '~/lib/hooks/use-chat-messages';
 import { useFileUpload } from '~/lib/hooks/use-file-upload';
+import { useStreamMessage } from '~/lib/hooks/use-stream-message';
 import { useSendMessage } from '~/lib/hooks/use-send-message';
 import { chatQueryKeys } from '~/lib/query-keys';
 
@@ -46,6 +47,7 @@ export default function ChatPage({ params }: Route.ComponentProps) {
   });
   const { messages } = useChatMessages({ chatId });
   const sendMessage = useSendMessage({ chatId });
+  const streamMessage = useStreamMessage({ chatId });
   const archiveChat = useArchiveChat({ chatId });
   const transcribe = useTranscribe();
   const { speakingId, loadingId, speak } = useServerSpeech();
@@ -119,8 +121,7 @@ export default function ChatPage({ params }: Route.ComponentProps) {
       return;
     }
 
-    await sendMessage.mutateAsync({
-      chatId,
+    await streamMessage.stream({
       message: draftWithSeed,
       fileIds: attachedFiles.map((file) => file.id),
       noteIds: selectedNotesForSend.map((note) => note.id),

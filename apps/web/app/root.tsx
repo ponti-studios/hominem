@@ -1,5 +1,5 @@
-import { AuthProvider } from '@hominem/auth/client';
-import { COMMON_FONT_LINKS, UpdateGuard } from '@hominem/ui';
+import { AuthProvider } from '@hominem/auth/client/provider';
+import { UpdateGuard } from '@hominem/ui';
 import type React from 'react';
 import {
   data,
@@ -13,8 +13,7 @@ import {
 
 import { WEB_BRAND } from '~/lib/brand';
 import { AnalyticsProvider } from '~/lib/posthog';
-import { TelemetryProvider } from '~/lib/telemetry';
-import { useErrorFormatting } from '@hominem/hooks';
+import { TelemetryProvider } from '~/lib/telemetry/telemetry-provider';
 import { ErrorState } from './components/error-state';
 
 import type { Route } from './+types/root';
@@ -72,7 +71,7 @@ export const meta: Route.MetaFunction = () => {
   ];
 };
 
-export const links: Route.LinksFunction = () => [...COMMON_FONT_LINKS, ...NOTES_ICON_LINKS];
+export const links: Route.LinksFunction = () => [...NOTES_ICON_LINKS];
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -116,7 +115,6 @@ export default function App({ loaderData }: Route.ComponentProps) {
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  const { getErrorMessage } = useErrorFormatting();
   let message = 'Oops!';
   let details = 'An unexpected error occurred.';
   let stack: string | undefined;
@@ -126,7 +124,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
     details =
       error.status === 404 ? 'The requested page could not be found.' : error.statusText || details;
   } else if (import.meta.env.DEV && error && error instanceof Error) {
-    details = getErrorMessage(error);
+    details = error.message || details;
     stack = error.stack;
   }
 

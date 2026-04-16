@@ -1,0 +1,29 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "/services/api/Dockerfile",
+    "watchPatterns": [
+      "/package.json",
+      "/pnpm-lock.yaml",
+      "/pnpm-workspace.yaml",
+      "/turbo.json",
+      "/justfile",
+      "/justfiles/**",
+      "/services/api/**",
+      "/packages/**"
+    ]
+  },
+  "deploy": {
+    "startCommand": "pnpm --filter @hominem/api run start",
+    "preDeployCommand": "pnpm run db:migrate:deploy",
+    "healthcheckPath": "/api/status",
+    "healthcheckTimeout": 120,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10,
+    "sleepApplication": false,
+    "region": "us-west2",
+    "overlapSeconds": 30,
+    "drainingSeconds": 30
+  }
+}

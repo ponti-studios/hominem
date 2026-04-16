@@ -162,7 +162,7 @@ function UpdateGuardClient({
 
 export function UpdateGuard({
   children,
-  logo = '/logo.web.png',
+  logo = '',
   appName = 'App',
 }: UpdateGuardProps) {
   const [isMounted, setIsMounted] = useState(false);

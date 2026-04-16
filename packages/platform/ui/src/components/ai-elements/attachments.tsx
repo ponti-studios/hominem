@@ -3,7 +3,7 @@ import { AudioLines, FileText, Film, Image, Paperclip, X } from 'lucide-react';
 import { forwardRef, useState, type HTMLAttributes, type ReactNode } from 'react';
 
 import { cn } from '../../lib/utils';
-import { Button } from '../ui/button';
+import { Button } from '../button';
 
 type MediaCategory = 'image' | 'video' | 'audio' | 'document' | 'source' | 'unknown';
 

@@ -3,18 +3,935 @@ import type {
   MobileVoiceTranscriptionErrorOutput,
   MobileVoiceTranscriptionOutput,
 } from '@hominem/rpc/types/mobile.types';
-import { generateVoiceResponse, VoiceError } from '@hominem/services/voice-response';
-import { generateSpeechBuffer } from '@hominem/services/voice-speech';
-import { transcribeVoiceBuffer } from '@hominem/services/voice-transcription';
 import { zValidator } from '@hono/zod-validator';
 import { Hono, type Context } from 'hono';
 import * as z from 'zod';
+import { Buffer } from 'node:buffer';
+import { existsSync } from 'node:fs';
+import { writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
+import { logger } from '@hominem/utils/logger';
 import { authMiddleware, type AppContext } from '../middleware/auth';
+import { rateLimitMiddleware } from '../middleware/rate-limit';
+import { env } from '../../env';
 
 type VoiceErrorOutput = MobileVoiceResponseErrorOutput | MobileVoiceTranscriptionErrorOutput;
 
 type VoiceErrorStatusCode = 400 | 401 | 429 | 500;
+
+const VOICE_ERROR_CODES = [
+  'INVALID_FORMAT',
+  'TOO_LARGE',
+  'AUTH',
+  'QUOTA',
+  'CONTENT_POLICY',
+  'TRANSCRIBE_FAILED',
+  'RESPONSE_FAILED',
+  'SPEECH_FAILED',
+] as const;
+
+type VoiceErrorCode = (typeof VOICE_ERROR_CODES)[number];
+
+class VoiceError extends Error {
+  code: VoiceErrorCode;
+  statusCode: number;
+
+  constructor(message: string, code: VoiceErrorCode, statusCode = 500) {
+    super(message);
+    this.name = 'VoiceError';
+    this.code = code;
+    this.statusCode = statusCode;
+  }
+}
+
+function normalizeVoiceErrorStatusCode(statusCode: number): 400 | 401 | 429 | 500 {
+  return statusCode === 400 || statusCode === 401 || statusCode === 429 ? statusCode : 500;
+}
+
+function mapVoiceProviderError(input: {
+  kind: 'response' | 'transcription' | 'speech';
+  responseStatus: number;
+  responseStatusText: string;
+  errorMessage?: string | undefined;
+}): { code: VoiceErrorCode; message: string; statusCode: 400 | 401 | 429 | 500 } {
+  if (input.responseStatus === 401 || input.responseStatus === 403) {
+    return { code: 'AUTH', message: 'Invalid API configuration.', statusCode: 401 };
+  }
+
+  if (input.responseStatus === 429) {
+    return {
+      code: 'QUOTA',
+      message: 'API quota exceeded. Please try again later.',
+      statusCode: 429,
+    };
+  }
+
+  if (input.responseStatus === 400 && input.errorMessage?.includes('content_policy')) {
+    return {
+      code: 'CONTENT_POLICY',
+      message:
+        input.kind === 'speech'
+          ? 'Text content not allowed by content policy.'
+          : 'Content not allowed by content policy.',
+      statusCode: 400,
+    };
+  }
+
+  const failCode: VoiceErrorCode =
+    input.kind === 'response'
+      ? 'RESPONSE_FAILED'
+      : input.kind === 'transcription'
+        ? 'TRANSCRIBE_FAILED'
+        : 'SPEECH_FAILED';
+
+  const label =
+    input.kind === 'response'
+      ? 'Voice response'
+      : input.kind === 'transcription'
+        ? 'Transcription'
+        : 'Speech generation';
+
+  return {
+    code: failCode,
+    message: `${label} failed: ${input.errorMessage ?? input.responseStatusText}`,
+    statusCode: normalizeVoiceErrorStatusCode(input.responseStatus),
+  };
+}
+
+function getVoiceLogData(requestId: string, data?: object) {
+  let spanCtx: { trace_id?: string; span_id?: string } = {};
+  try {
+    const { context, trace } = require('@opentelemetry/api') as {
+      context: { active: () => unknown };
+      trace: {
+        getSpan: (
+          ctx: unknown,
+        ) =>
+          | { spanContext: () => { isValid: boolean; traceId: string; spanId: string } }
+          | undefined;
+      };
+    };
+    const span = trace.getSpan(context.active());
+    if (span) {
+      const sc = span.spanContext();
+      if (sc.isValid) spanCtx = { trace_id: sc.traceId, span_id: sc.spanId };
+    }
+  } catch {}
+  if (!data) return { requestId, ...spanCtx };
+  return { requestId, ...spanCtx, ...data };
+}
+
+function getVoiceAudioDir(): string {
+  const candidates = ['./.tmp/voice', '../.tmp/voice', '../../.tmp/voice', '../../../.tmp/voice'];
+  for (const p of candidates) {
+    const dir = p.replace('/voice', '');
+    if (existsSync(dir) || existsSync(p)) return p;
+  }
+  return './.tmp/voice';
+}
+
+const VOICE_TRANSCRIPTION_SUPPORTED_TYPES = [
+  'audio/webm',
+  'audio/mp4',
+  'audio/mpeg',
+  'audio/wav',
+  'audio/ogg',
+] as const;
+
+type VoiceMimeType = (typeof VOICE_TRANSCRIPTION_SUPPORTED_TYPES)[number];
+const VOICE_TRANSCRIPTION_MAX_SIZE_BYTES = 25 * 1024 * 1024;
+const VOICE_MIME_ALIASES: Record<string, string> = {
+  'audio/x-wav': 'audio/wav',
+  'audio/m4a': 'audio/mp4',
+};
+const MIME_TO_OPENROUTER_FORMAT: Record<string, string> = {
+  'audio/webm': 'webm',
+  'audio/mp4': 'mp4',
+  'audio/mpeg': 'mp3',
+  'audio/wav': 'wav',
+  'audio/ogg': 'ogg',
+};
+const TRANSCRIPTION_MODEL = 'google/gemini-2.5-flash-lite';
+const VOICE_RESPONSE_MODEL = 'openai/gpt-4o-audio-preview';
+const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
+
+function normalizeVoiceMimeType(mimeType: string): string {
+  const [baseType] = mimeType.split(';', 1);
+  const normalized = baseType?.trim().toLowerCase() ?? '';
+  return VOICE_MIME_ALIASES[normalized] ?? normalized;
+}
+
+function getVoiceFileExtension(mimeType: string): string {
+  const mimeToExt: Record<string, string> = {
+    'audio/webm': '.webm',
+    'audio/mp4': '.mp4',
+    'audio/mpeg': '.mp3',
+    'audio/wav': '.wav',
+    'audio/ogg': '.ogg',
+  };
+  return mimeToExt[mimeType] || '.webm';
+}
+
+function validateVoiceInput(input: { mimeType: string; size: number }) {
+  const normalizedMimeType = normalizeVoiceMimeType(input.mimeType);
+
+  if (!VOICE_TRANSCRIPTION_SUPPORTED_TYPES.includes(normalizedMimeType as VoiceMimeType)) {
+    throw new VoiceError(
+      `Unsupported audio format: ${input.mimeType}. Supported formats: ${VOICE_TRANSCRIPTION_SUPPORTED_TYPES.join(', ')}`,
+      'INVALID_FORMAT',
+      400,
+    );
+  }
+
+  if (input.size > VOICE_TRANSCRIPTION_MAX_SIZE_BYTES) {
+    throw new VoiceError(
+      `File too large. Maximum size is ${VOICE_TRANSCRIPTION_MAX_SIZE_BYTES / (1024 * 1024)}MB`,
+      'TOO_LARGE',
+      400,
+    );
+  }
+
+  return normalizedMimeType;
+}
+
+async function transcribeVoiceBuffer(input: {
+  buffer: ArrayBuffer;
+  mimeType: string;
+  fileName?: string;
+  language?: string;
+  requestId?: string;
+}) {
+  const startTime = performance.now();
+  const requestId = input.requestId ?? `vt-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
+  const normalizedMimeType = validateVoiceInput({
+    mimeType: input.mimeType,
+    size: input.buffer.byteLength,
+  });
+
+  if (!env.OPENROUTER_API_KEY) {
+    logger.error('[voice-transcription] Missing OPENROUTER_API_KEY', getVoiceLogData(requestId));
+    throw new VoiceError('Invalid API configuration.', 'AUTH', 401);
+  }
+
+  logger.info('[voice-transcription] Request started', {
+    ...getVoiceLogData(requestId),
+    model: TRANSCRIPTION_MODEL,
+    mimeType: input.mimeType,
+    normalizedMimeType,
+    sizeBytes: input.buffer.byteLength,
+    sizeKb: Math.round(input.buffer.byteLength / 1024),
+    fileName: input.fileName,
+    hasLanguageHint: !!input.language,
+    language: input.language,
+  });
+
+  let savedPath: string | undefined;
+  if (env.SAVE_VOICE_AUDIO === true) {
+    try {
+      const ext = getVoiceFileExtension(normalizedMimeType).slice(1);
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = `voice_in_${timestamp}.${ext}`;
+      const audioDir = getVoiceAudioDir();
+      savedPath = join(audioDir, filename);
+      const buffer = Buffer.from(input.buffer);
+      await writeFile(savedPath, buffer);
+      logger.info('[voice-transcription] Input audio saved for review', {
+        ...getVoiceLogData(requestId),
+        savedPath,
+        size: buffer.length,
+      });
+    } catch (saveError) {
+      logger.warn('[voice-transcription] Failed to save input audio', {
+        ...getVoiceLogData(requestId),
+        error: saveError instanceof Error ? saveError.message : 'Unknown',
+      });
+    }
+  }
+
+  const audioFormat = MIME_TO_OPENROUTER_FORMAT[normalizedMimeType] ?? 'mp3';
+  const base64Audio = Buffer.from(input.buffer).toString('base64');
+
+  const messages: object[] = [
+    {
+      role: 'user',
+      content: [
+        {
+          type: 'text',
+          text: input.language
+            ? `Please transcribe this audio file exactly. The spoken language is ${input.language}.`
+            : 'Please transcribe this audio file exactly. Return only the transcript, no commentary.',
+        },
+        {
+          type: 'input_audio',
+          input_audio: { data: base64Audio, format: audioFormat },
+        },
+      ],
+    },
+  ];
+
+  let response: Response;
+  let responseTime: number;
+
+  try {
+    const fetchStart = performance.now();
+    response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://hominem.app',
+        'X-Title': 'Hominem',
+      },
+      body: JSON.stringify({ model: TRANSCRIPTION_MODEL, messages }),
+    });
+    responseTime = performance.now() - fetchStart;
+  } catch (error) {
+    const errorTime = performance.now() - startTime;
+    logger.error('[voice-transcription] Fetch failed', {
+      ...getVoiceLogData(requestId),
+      error: error instanceof Error ? error.message : 'Unknown error',
+      durationMs: Math.round(errorTime),
+    });
+    if (error instanceof VoiceError) throw error;
+    if (error instanceof Error) {
+      if (error.message.includes('quota')) {
+        throw new VoiceError('API quota exceeded. Please try again later.', 'QUOTA', 429);
+      }
+      if (error.message.includes('API key') || error.message.includes('401')) {
+        throw new VoiceError('Invalid API configuration.', 'AUTH', 401);
+      }
+      throw new VoiceError(`Transcription failed: ${error.message}`, 'TRANSCRIBE_FAILED', 500);
+    }
+    throw new VoiceError('Failed to transcribe audio', 'TRANSCRIBE_FAILED', 500);
+  }
+
+  logger.info('[voice-transcription] HTTP response received', {
+    ...getVoiceLogData(requestId),
+    status: response.status,
+    statusText: response.statusText,
+    responseTimeMs: Math.round(responseTime),
+  });
+
+  if (!response.ok) {
+    const errorBody = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+    const errorMessage = (errorBody['error'] as Record<string, unknown>)?.['message'] as
+      | string
+      | undefined;
+    const totalTime = performance.now() - startTime;
+
+    logger.error('[voice-transcription] API error response', {
+      ...getVoiceLogData(requestId),
+      status: response.status,
+      error: errorMessage ?? response.statusText,
+      totalDurationMs: Math.round(totalTime),
+    });
+
+    const errorInfo = mapVoiceProviderError({
+      kind: 'transcription',
+      responseStatus: response.status,
+      responseStatusText: response.statusText,
+      ...(typeof errorMessage === 'string' ? { errorMessage } : {}),
+    });
+    throw new VoiceError(errorInfo.message, errorInfo.code, errorInfo.statusCode);
+  }
+
+  try {
+    const parseStart = performance.now();
+    const data = (await response.json()) as {
+      choices: { message: { content: string } }[];
+    };
+    const text = data.choices?.[0]?.message?.content?.trim() ?? '';
+    const parseTime = performance.now() - parseStart;
+    const totalTime = performance.now() - startTime;
+
+    if (!text) {
+      logger.warn('[voice-transcription] Empty transcript received', {
+        ...getVoiceLogData(requestId),
+        totalDurationMs: Math.round(totalTime),
+      });
+    }
+
+    logger.info('[voice-transcription] Request completed successfully', {
+      ...getVoiceLogData(requestId),
+      transcriptLength: text.length,
+      transcriptPreview: text.slice(0, 150),
+      parseTimeMs: Math.round(parseTime),
+      totalTimeMs: Math.round(totalTime),
+      savedPath,
+    });
+
+    return { text, savedPath };
+  } catch (error) {
+    const totalTime = performance.now() - startTime;
+
+    if (error instanceof VoiceError) {
+      logger.error('[voice-transcription] Processing error', {
+        ...getVoiceLogData(requestId),
+        code: error.code,
+        totalDurationMs: Math.round(totalTime),
+      });
+      throw error;
+    }
+
+    logger.error('[voice-transcription] Unexpected error', {
+      ...getVoiceLogData(requestId),
+      error: error instanceof Error ? error.message : 'Unknown error',
+      totalDurationMs: Math.round(totalTime),
+    });
+    if (error instanceof VoiceError) throw error;
+    if (error instanceof Error) {
+      if (error.message.includes('quota')) {
+        throw new VoiceError('API quota exceeded. Please try again later.', 'QUOTA', 429);
+      }
+      if (error.message.includes('API key') || error.message.includes('401')) {
+        throw new VoiceError('Invalid API configuration.', 'AUTH', 401);
+      }
+      throw new VoiceError(`Transcription failed: ${error.message}`, 'TRANSCRIBE_FAILED', 500);
+    }
+    throw new VoiceError('Failed to transcribe audio', 'TRANSCRIBE_FAILED', 500);
+  }
+}
+
+type VoiceResponseVoice = 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer';
+type VoiceResponseFormat = 'pcm16';
+
+const FORMAT_TO_MIME: Record<VoiceResponseFormat, string> = {
+  pcm16: 'audio/pcm',
+};
+
+interface AudioChunk {
+  choices?: Array<{
+    delta?: {
+      audio?: {
+        data?: string;
+        transcript?: string;
+      };
+    };
+    finish_reason?: string | null;
+  }>;
+}
+
+async function collectAudioStream(
+  response: Response,
+): Promise<{ audioB64: string; transcript: string }> {
+  const reader = response.body?.getReader();
+  if (!reader) {
+    throw new VoiceError('No response body from audio stream', 'RESPONSE_FAILED', 500);
+  }
+
+  const decoder = new TextDecoder();
+  const audioChunks: string[] = [];
+  const transcriptChunks: string[] = [];
+  let buffer = '';
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() ?? '';
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice('data: '.length).trim();
+        if (data === '[DONE]') break;
+
+        try {
+          const chunk = JSON.parse(data) as AudioChunk;
+          const audio = chunk.choices?.[0]?.delta?.audio;
+          if (audio?.data) audioChunks.push(audio.data);
+          if (audio?.transcript) transcriptChunks.push(audio.transcript);
+        } catch {}
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  return {
+    audioB64: audioChunks.join(''),
+    transcript: transcriptChunks.join(''),
+  };
+}
+
+function generateAudioFilename(prefix: string, format: VoiceResponseFormat): string {
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  return `${prefix}_${timestamp}.${format === 'pcm16' ? 'pcm' : 'pcm'}`;
+}
+
+async function generateVoiceResponse(input: {
+  text: string;
+  voice: VoiceResponseVoice;
+  format: VoiceResponseFormat;
+  systemPrompt?: string;
+  requestId?: string;
+}) {
+  const startTime = performance.now();
+  const requestId = input.requestId ?? `vr-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
+  if (!env.OPENROUTER_API_KEY) {
+    logger.error('[voice-response] Missing OPENROUTER_API_KEY', getVoiceLogData(requestId));
+    throw new VoiceError('Invalid API configuration.', 'AUTH', 401);
+  }
+
+  const voice: VoiceResponseVoice = input.voice ?? 'alloy';
+  const mimeType = FORMAT_TO_MIME[input.format ?? 'pcm16'];
+
+  const messages: object[] = [];
+
+  if (input.systemPrompt) {
+    messages.push({ role: 'system', content: input.systemPrompt });
+  }
+
+  messages.push({ role: 'user', content: input.text });
+
+  logger.info('[voice-response] Request started', {
+    ...getVoiceLogData(requestId),
+    model: VOICE_RESPONSE_MODEL,
+    textLength: input.text.length,
+    textPreview: input.text.slice(0, 100),
+    voice,
+    format: input.format,
+    hasSystemPrompt: !!input.systemPrompt,
+    messageCount: messages.length,
+  });
+
+  let response: Response;
+  let responseTime: number;
+
+  try {
+    const fetchStart = performance.now();
+    response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://hominem.app',
+        'X-Title': 'Hominem',
+      },
+      body: JSON.stringify({
+        model: VOICE_RESPONSE_MODEL,
+        messages,
+        modalities: ['text', 'audio'],
+        audio: { voice, format: 'pcm16' },
+        stream: true,
+      }),
+    });
+    responseTime = performance.now() - fetchStart;
+  } catch (error) {
+    const errorTime = performance.now() - startTime;
+    logger.error('[voice-response] Fetch failed', {
+      ...getVoiceLogData(requestId),
+      error: error instanceof Error ? error.message : 'Unknown error',
+      durationMs: Math.round(errorTime),
+    });
+
+    if (error instanceof VoiceError) throw error;
+    if (error instanceof Error) {
+      throw new VoiceError(
+        `Voice response request failed: ${error.message}`,
+        'RESPONSE_FAILED',
+        500,
+      );
+    }
+    throw new VoiceError('Voice response request failed', 'RESPONSE_FAILED', 500);
+  }
+
+  logger.info('[voice-response] HTTP response received', {
+    ...getVoiceLogData(requestId),
+    status: response.status,
+    statusText: response.statusText,
+    responseTimeMs: Math.round(responseTime),
+  });
+
+  if (!response.ok) {
+    const errorBody = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+    const errorMessage = (errorBody['error'] as Record<string, unknown>)?.['message'] as
+      | string
+      | undefined;
+    const totalTime = performance.now() - startTime;
+
+    logger.error('[voice-response] API error response', {
+      ...getVoiceLogData(requestId),
+      status: response.status,
+      error: errorMessage ?? response.statusText,
+      totalDurationMs: Math.round(totalTime),
+    });
+
+    const errorInfo = mapVoiceProviderError({
+      kind: 'response',
+      responseStatus: response.status,
+      responseStatusText: response.statusText,
+      ...(typeof errorMessage === 'string' ? { errorMessage } : {}),
+    });
+    throw new VoiceError(errorInfo.message, errorInfo.code, errorInfo.statusCode);
+  }
+
+  try {
+    const streamStart = performance.now();
+    const { audioB64, transcript } = await collectAudioStream(response);
+    const streamTime = performance.now() - streamStart;
+    const totalTime = performance.now() - startTime;
+
+    if (!audioB64) {
+      logger.error('[voice-response] No audio data in stream', {
+        ...getVoiceLogData(requestId),
+        totalDurationMs: Math.round(totalTime),
+      });
+      throw new VoiceError('No audio data received from model', 'RESPONSE_FAILED', 500);
+    }
+
+    const audioBuffer = Buffer.from(audioB64, 'base64');
+
+    let savedPath: string | undefined;
+    if (env.SAVE_VOICE_AUDIO === true) {
+      try {
+        const filename = generateAudioFilename('voice_out', input.format ?? 'pcm16');
+        const audioDir = getVoiceAudioDir();
+        savedPath = join(audioDir, filename);
+        await writeFile(savedPath, audioBuffer);
+        logger.info('[voice-response] Audio saved for review', {
+          ...getVoiceLogData(requestId),
+          savedPath,
+          size: audioBuffer.length,
+        });
+      } catch (saveError) {
+        logger.warn('[voice-response] Failed to save audio file', {
+          ...getVoiceLogData(requestId),
+          error: saveError instanceof Error ? saveError.message : 'Unknown',
+        });
+      }
+    }
+
+    logger.info('[voice-response] Request completed successfully', {
+      ...getVoiceLogData(requestId),
+      transcriptLength: transcript.length,
+      transcriptPreview: transcript.slice(0, 150),
+      audioSizeBytes: audioBuffer.length,
+      audioSizeKb: Math.round(audioBuffer.length / 1024),
+      streamTimeMs: Math.round(streamTime),
+      totalTimeMs: Math.round(totalTime),
+      savedPath,
+    });
+
+    return {
+      audioBuffer,
+      mimeType,
+      transcript,
+      savedPath,
+    };
+  } catch (error) {
+    const totalTime = performance.now() - startTime;
+
+    if (error instanceof VoiceError) {
+      logger.error('[voice-response] Stream processing error', {
+        ...getVoiceLogData(requestId),
+        code: error.code,
+        totalDurationMs: Math.round(totalTime),
+      });
+      throw error;
+    }
+
+    logger.error('[voice-response] Unexpected stream error', {
+      ...getVoiceLogData(requestId),
+      error: error instanceof Error ? error.message : 'Unknown error',
+      totalDurationMs: Math.round(totalTime),
+    });
+
+    if (error instanceof Error) {
+      throw new VoiceError(
+        `Failed to process audio stream: ${error.message}`,
+        'RESPONSE_FAILED',
+        500,
+      );
+    }
+    throw new VoiceError('Failed to process audio stream', 'RESPONSE_FAILED', 500);
+  }
+}
+
+function createAudioStream(response: Response) {
+  const transcriptChunks: string[] = [];
+  let resolveTranscript!: (transcript: string) => void;
+  let rejectTranscript!: (error: unknown) => void;
+
+  const transcript = new Promise<string>((resolve, reject) => {
+    resolveTranscript = resolve;
+    rejectTranscript = reject;
+  });
+
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const reader = response.body?.getReader();
+      if (!reader) {
+        const error = new VoiceError('No response body from audio stream', 'RESPONSE_FAILED', 500);
+        rejectTranscript(error);
+        controller.error(error);
+        return;
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() ?? '';
+
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            const data = line.slice('data: '.length).trim();
+            if (data === '[DONE]') continue;
+
+            try {
+              const chunk = JSON.parse(data) as AudioChunk;
+              const audio = chunk.choices?.[0]?.delta?.audio;
+              if (audio?.data) {
+                controller.enqueue(Buffer.from(audio.data, 'base64'));
+              }
+              if (audio?.transcript) {
+                transcriptChunks.push(audio.transcript);
+              }
+            } catch {}
+          }
+        }
+
+        const final = decoder.decode();
+        if (final) {
+          buffer += final;
+        }
+
+        resolveTranscript(transcriptChunks.join(''));
+        controller.close();
+      } catch (error) {
+        rejectTranscript(error);
+        controller.error(error);
+      } finally {
+        reader.releaseLock();
+      }
+    },
+  });
+
+  return {
+    stream,
+    transcript,
+    mimeType: 'audio/pcm',
+  };
+}
+
+async function generateVoiceResponseStream(input: {
+  text: string;
+  voice: VoiceResponseVoice;
+  format: VoiceResponseFormat;
+  systemPrompt?: string;
+  requestId?: string;
+}) {
+  const requestId = input.requestId ?? `vr-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
+  if (!env.OPENROUTER_API_KEY) {
+    logger.error('[voice-response] Missing OPENROUTER_API_KEY', getVoiceLogData(requestId));
+    throw new VoiceError('Invalid API configuration.', 'AUTH', 401);
+  }
+
+  const voice: VoiceResponseVoice = input.voice ?? 'alloy';
+  const messages: object[] = [];
+
+  if (input.systemPrompt) {
+    messages.push({ role: 'system', content: input.systemPrompt });
+  }
+
+  messages.push({ role: 'user', content: input.text });
+
+  const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
+      'Content-Type': 'application/json',
+      'HTTP-Referer': 'https://hominem.app',
+      'X-Title': 'Hominem',
+    },
+    body: JSON.stringify({
+      model: VOICE_RESPONSE_MODEL,
+      messages,
+      modalities: ['text', 'audio'],
+      audio: { voice, format: 'pcm16' },
+      stream: true,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorBody = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+    const errorMessage = (errorBody['error'] as Record<string, unknown>)?.['message'] as
+      | string
+      | undefined;
+
+    const errorInfo = mapVoiceProviderError({
+      kind: 'response',
+      responseStatus: response.status,
+      responseStatusText: response.statusText,
+      ...(typeof errorMessage === 'string' ? { errorMessage } : {}),
+    });
+    throw new VoiceError(errorInfo.message, errorInfo.code, errorInfo.statusCode);
+  }
+
+  return createAudioStream(response);
+}
+
+async function collectSpeechStream(response: Response): Promise<Buffer> {
+  const reader = response.body?.getReader();
+  if (!reader) {
+    throw new VoiceError('No response body from audio stream', 'RESPONSE_FAILED', 500);
+  }
+
+  const decoder = new TextDecoder();
+  const audioChunks: string[] = [];
+  let buffer = '';
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() ?? '';
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice('data: '.length).trim();
+        if (data === '[DONE]') break;
+
+        try {
+          const chunk = JSON.parse(data) as AudioChunk;
+          const audio = chunk.choices?.[0]?.delta?.audio;
+          if (audio?.data) audioChunks.push(audio.data);
+        } catch {}
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  const audioB64 = audioChunks.join('');
+  return Buffer.from(audioB64, 'base64');
+}
+
+async function generateSpeechBuffer(input: {
+  text: string;
+  voice: string;
+  speed: number;
+}) {
+  const requestId = `sp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
+  if (!env.OPENROUTER_API_KEY) {
+    logger.error('[voice-speech] Missing OPENROUTER_API_KEY', { requestId });
+    throw new VoiceError('Invalid API configuration.', 'AUTH', 401);
+  }
+
+  const model = 'openai/gpt-4o-audio-preview';
+
+  logger.info('[voice-speech] Request started', {
+    requestId,
+    model,
+    textLength: input.text.length,
+    voice: input.voice,
+    speed: input.speed,
+  });
+
+  let response: Response;
+
+  try {
+    response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://hominem.app',
+        'X-Title': 'Hominem',
+      },
+      body: JSON.stringify({
+        model,
+        messages: [{ role: 'user', content: input.text }],
+        modalities: ['audio'],
+        audio: { voice: input.voice, format: 'mp3' },
+        stream: true,
+      }),
+    });
+  } catch (error) {
+    logger.error('[voice-speech] Fetch failed', {
+      requestId,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+    throw new VoiceError('Speech generation request failed', 'RESPONSE_FAILED', 500);
+  }
+
+  logger.info('[voice-speech] HTTP response received', {
+    requestId,
+    status: response.status,
+    statusText: response.statusText,
+  });
+
+  if (!response.ok) {
+    const errorBody = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+    const errorMessage = (errorBody['error'] as Record<string, unknown>)?.['message'] as
+      | string
+      | undefined;
+
+    logger.error('[voice-speech] API error response', {
+      requestId,
+      status: response.status,
+      error: errorMessage ?? response.statusText,
+    });
+
+    const errorInfo = mapVoiceProviderError({
+      kind: 'speech',
+      responseStatus: response.status,
+      responseStatusText: response.statusText,
+      ...(typeof errorMessage === 'string' ? { errorMessage } : {}),
+    });
+    throw new VoiceError(errorInfo.message, errorInfo.code, errorInfo.statusCode);
+  }
+
+  try {
+    const audioBuffer = await collectSpeechStream(response);
+
+    if (!audioBuffer.length) {
+      throw new VoiceError('No audio data received from model', 'RESPONSE_FAILED', 500);
+    }
+
+    logger.info('[voice-speech] Request completed successfully', {
+      requestId,
+      audioSizeBytes: audioBuffer.length,
+    });
+
+    return {
+      audioBuffer,
+      mediaType: 'audio/mp3',
+    };
+  } catch (error) {
+    if (error instanceof VoiceError) throw error;
+    if (error instanceof Error) {
+      if (error.message.includes('quota')) {
+        throw new VoiceError('API quota exceeded. Please try again later.', 'QUOTA', 429);
+      }
+      if (error.message.includes('API key')) {
+        throw new VoiceError('Invalid API configuration.', 'AUTH', 401);
+      }
+      if (error.message.includes('content_policy')) {
+        throw new VoiceError('Text content not allowed by content policy.', 'CONTENT_POLICY', 400);
+      }
+      throw new VoiceError(`Speech generation failed: ${error.message}`, 'SPEECH_FAILED', 500);
+    }
+    throw new VoiceError('Failed to generate speech', 'SPEECH_FAILED', 500);
+  }
+}
 
 function getVoiceErrorStatusCode(statusCode: number): VoiceErrorStatusCode {
   return statusCode === 400 || statusCode === 401 || statusCode === 429 ? statusCode : 500;
@@ -28,6 +945,10 @@ function respondWithJsonError(
   return c.newResponse(JSON.stringify(body), statusCode, {
     'Content-Type': 'application/json',
   });
+}
+
+function isErrorWithMessage(error: unknown): error is Error {
+  return error instanceof Error;
 }
 
 function parseVoiceRequestBody(body: Record<string, unknown>) {
@@ -64,10 +985,6 @@ const voiceRoutes = new Hono<AppContext>().post('/transcribe', async (c) => {
 
     const response: MobileVoiceTranscriptionOutput = {
       text: output.text,
-      ...(output.language ? { language: output.language } : {}),
-      ...(typeof output.duration === 'number' ? { duration: output.duration } : {}),
-      ...(output.words ? { words: output.words } : {}),
-      ...(output.segments ? { segments: output.segments } : {}),
     };
 
     return c.json(response);
@@ -89,6 +1006,18 @@ const voiceRoutes = new Hono<AppContext>().post('/transcribe', async (c) => {
 
 export const authenticatedVoiceRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
+  .use(
+    '/speech',
+    rateLimitMiddleware({ bucket: 'voice-speech', identifier: 'speech', windowSec: 60, max: 30 }),
+  )
+  .use(
+    '/respond',
+    rateLimitMiddleware({ bucket: 'voice-respond', identifier: 'respond', windowSec: 60, max: 20 }),
+  )
+  .use(
+    '/respond/stream',
+    rateLimitMiddleware({ bucket: 'voice-respond-stream', identifier: 'respond-stream', windowSec: 60, max: 20 }),
+  )
   .route('', voiceRoutes)
   .post(
     '/speech',
@@ -106,12 +1035,15 @@ export const authenticatedVoiceRoutes = new Hono<AppContext>()
         const { audioBuffer, mediaType } = await generateSpeechBuffer({ text, voice, speed });
         c.header('Content-Type', mediaType);
         c.header('Content-Length', String(audioBuffer.byteLength));
-        return c.body(audioBuffer);
+        return c.body(new Uint8Array(audioBuffer));
       } catch (error) {
         if (error instanceof VoiceError) {
           return c.json({ error: error.message }, getVoiceErrorStatusCode(error.statusCode));
         }
-        return c.json({ error: 'Failed to generate speech' }, 500);
+        return c.json(
+          { error: isErrorWithMessage(error) ? error.message : 'Failed to generate speech' },
+          500,
+        );
       }
     },
   )
@@ -175,8 +1107,73 @@ export const authenticatedVoiceRoutes = new Hono<AppContext>()
       }
       return respondWithJsonError(
         c,
-        { error: 'Failed to generate voice response', code: 'RESPONSE_FAILED' },
+        { error: isErrorWithMessage(error) ? error.message : 'Failed to generate voice response', code: 'RESPONSE_FAILED' },
         500,
       );
     }
   });
+
+authenticatedVoiceRoutes.post('/respond/stream', async (c) => {
+  try {
+    const body = await c.req.parseBody();
+    const { audioFile, language } = parseVoiceRequestBody(body);
+
+    if (!(audioFile instanceof File)) {
+      return respondWithJsonError(
+        c,
+        { error: 'No audio file provided', code: 'RESPONSE_FAILED' },
+        400,
+      );
+    }
+
+    const transcription = await transcribeVoiceBuffer({
+      buffer: await audioFile.arrayBuffer(),
+      mimeType: audioFile.type,
+      ...(audioFile.name ? { fileName: audioFile.name } : {}),
+      ...(language ? { language } : {}),
+    });
+
+    const rawVoice = typeof body.voice === 'string' ? body.voice : 'alloy';
+    const VALID_VOICES = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'] as const;
+    type Voice = (typeof VALID_VOICES)[number];
+    const voice: Voice = (VALID_VOICES as readonly string[]).includes(rawVoice)
+      ? (rawVoice as Voice)
+      : 'alloy';
+
+    const systemPrompt =
+      typeof body.systemPrompt === 'string'
+        ? body.systemPrompt
+        : 'You are a helpful assistant. Respond naturally in the same language as the user.';
+
+    const { stream, transcript, mimeType } = await generateVoiceResponseStream({
+      text: transcription.text,
+      voice,
+      format: 'pcm16' as const,
+      systemPrompt,
+    });
+
+    c.executionCtx.waitUntil(
+      transcript.catch(() => {
+        // Stream transport only needs the audio response.
+      }),
+    );
+
+    return c.body(stream, 200, {
+      'Content-Type': mimeType,
+      'X-User-Transcript': encodeURIComponent(transcription.text),
+    });
+  } catch (error) {
+    if (error instanceof VoiceError) {
+      return respondWithJsonError(
+        c,
+        { error: error.message, code: error.code as VoiceErrorOutput['code'] },
+        getVoiceErrorStatusCode(error.statusCode),
+      );
+    }
+    return respondWithJsonError(
+      c,
+      { error: isErrorWithMessage(error) ? error.message : 'Failed to generate voice response', code: 'RESPONSE_FAILED' },
+      500,
+    );
+  }
+});

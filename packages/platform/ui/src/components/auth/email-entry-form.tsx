@@ -1,9 +1,9 @@
-import { AUTH_COPY } from '@hominem/auth';
+import { AUTH_COPY } from '@hominem/auth/shared/ux-contract';
 import { useState } from 'react';
 import { Form, useNavigation, useSearchParams } from 'react-router';
 
-import { Button } from '../ui/button';
-import { TextField } from '../ui/text-field';
+import { Button } from '../button';
+import { TextField } from '../text-field';
 import { PasskeyButton } from './passkey-button';
 
 interface EmailEntryFormProps {

@@ -16,24 +16,19 @@ import {
  * Telemetry configuration options
  */
 export interface TelemetryConfig {
-  /** Service name (e.g., 'hominem-api') */
   serviceName: string;
-  /** Service version (e.g., '1.0.0') */
   serviceVersion?: string;
-  /** Service namespace (e.g., 'hominem') */
   serviceNamespace?: string;
-  /** Environment (e.g., 'development', 'production') */
   environment?: string;
-  /** OTLP endpoint URL */
   otlpEndpoint?: string;
-  /** OTLP protocol: 'http/protobuf' or 'grpc' */
   otlpProtocol?: string;
-  /** Sampling ratio (0.0 to 1.0) */
   samplingRatio?: number;
-  /** Metric export interval in milliseconds */
   metricExportIntervalMillis?: number | undefined;
-  /** Additional resource attributes */
   attributes?: Record<string, string>;
+}
+
+export interface TelemetryResourceOptions {
+  hostname?: string;
 }
 
 /**
@@ -115,13 +110,16 @@ function parseAttributes(attrString?: string): Record<string, string> {
 /**
  * Create OpenTelemetry Resource from configuration
  */
-export function createResource(config: TelemetryConfig): Resource {
+export function createResource(
+  config: TelemetryConfig,
+  options: TelemetryResourceOptions = {},
+): Resource {
   const attributes: Record<string, string | number> = {
     [SEMRESATTRS_SERVICE_NAME]: config.serviceName,
     [SEMRESATTRS_SERVICE_VERSION]: config.serviceVersion || '0.0.0',
     [SEMRESATTRS_SERVICE_NAMESPACE]: config.serviceNamespace || 'hominem',
     [SEMRESATTRS_DEPLOYMENT_ENVIRONMENT]: config.environment || 'development',
-    [SEMRESATTRS_HOST_NAME]: getHostname(),
+    [SEMRESATTRS_HOST_NAME]: options.hostname ?? 'unknown',
     [SEMRESATTRS_PROCESS_PID]: process.pid,
     ...config.attributes,
   };
@@ -130,36 +128,14 @@ export function createResource(config: TelemetryConfig): Resource {
 }
 
 /**
- * Get hostname safely
- */
-function getHostname(): string {
-  try {
-    // Node.js environment
-    if (typeof process !== 'undefined' && process.env) {
-      const os = require('os');
-      return os.hostname();
-    }
-  } catch {
-    // Browser environment or fallback
-  }
-  return 'unknown';
-}
-
-/**
  * Telemetry context keys for correlation
  */
 export const TELEMETRY_CONTEXT_KEYS = {
-  /** Request ID for correlation */
   REQUEST_ID: 'request.id',
-  /** User ID for attribution */
   USER_ID: 'user.id',
-  /** Organization ID for multi-tenancy */
   ORG_ID: 'org.id',
-  /** Session ID for session tracking */
   SESSION_ID: 'session.id',
-  /** Trace ID for log correlation */
   TRACE_ID: 'trace.id',
-  /** Span ID for log correlation */
   SPAN_ID: 'span.id',
 } as const;
 

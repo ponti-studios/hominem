@@ -1,5 +1,5 @@
-import type { ButtonSize, ButtonVariant } from '../components/ui/button.types';
-import type { TextFieldType } from '../components/ui/text-field.types';
+import type { ButtonSize, ButtonVariant } from '../components/button.types';
+import type { TextFieldType } from '../components/text-field.types';
 
 const buttonVariantOptions = [
   'default',
@@ -53,7 +53,6 @@ const codeBlockLanguageOptions = [
   'markdown',
   'graphql',
 ] as const;
-const plaidStatusOptions = ['active', 'error', 'pending_expiration', 'revoked', null] as const;
 
 export {
   buttonSizeOptions,
@@ -63,7 +62,6 @@ export {
   drawerDirectionOptions,
   inputTypeOptions,
   loadingSizeOptions,
-  plaidStatusOptions,
   switchSizeOptions,
   textFieldTypeOptions,
 };

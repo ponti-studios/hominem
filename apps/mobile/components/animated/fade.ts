@@ -1,13 +1,18 @@
-import { Easing } from 'react-native-reanimated';
+import {
+  VOID_EASING_ENTER,
+  VOID_EASING_EXIT,
+  VOID_MOTION_ENTER,
+  VOID_MOTION_EXIT,
+} from '../theme/motion';
 
 export const fadeEnterConfig = {
-  duration: 200,
-  easing: Easing.out(Easing.ease),
+  duration: VOID_MOTION_ENTER,
+  easing: VOID_EASING_ENTER,
 };
 
 export const fadeExitConfig = {
-  duration: 150,
-  easing: Easing.in(Easing.ease),
+  duration: VOID_MOTION_EXIT,
+  easing: VOID_EASING_EXIT,
 };
 
 export const fadeEnterStyle = {

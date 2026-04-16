@@ -1,20 +1,20 @@
-import { AUTH_COPY, CHAT_AUTH_CONFIG, maskEmail } from '@hominem/auth';
-import { useEmailAuth } from '@hominem/hooks';
+import { maskEmail } from '@hominem/auth/shared/mask-email';
+import { AUTH_COPY, CHAT_AUTH_CONFIG } from '@hominem/auth/shared/ux-contract';
 import type { RelativePathString } from 'expo-router';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { AuthShell } from '~/components/auth-shell';
-import { Button } from '~/components/Button';
-import { FeatureErrorBoundary } from '~/components/error-boundary';
-import TextInput from '~/components/text-input';
-import { posthog } from '~/services/posthog';
-import { Box, makeStyles, Text } from '~/components/theme';
-import { useAuth } from '~/services/auth/auth-provider';
-import { normalizeOtp } from '~/services/auth/validation';
-
-import { getAuthScreenBaseStyles } from '~/components/auth/auth-screen-styles';
+import { getAuthScreenBaseStyles } from '../../components/auth/auth-screen-styles';
+import { AuthLayout } from '../../components/AuthLayout';
+import { FeatureErrorBoundary } from '../../components/error-boundary/FeatureErrorBoundary';
+import { Box, makeStyles, Text } from '../../components/theme';
+import { Button } from '../../components/ui/Button';
+import { TextField } from '../../components/ui/TextField';
+import { useAuth } from '../../services/auth/auth-provider';
+import { useEmailAuth } from '../../services/auth/hooks/use-email-auth';
+import { normalizeOtp } from '../../services/auth/validation';
+import { posthog } from '../../services/posthog';
 
 export function VerifyScreen() {
   const styles = useStyles();
@@ -23,18 +23,23 @@ export function VerifyScreen() {
   const { email: emailParam } = useLocalSearchParams<{ email: string }>();
   const resolvedEmail = emailParam ?? '';
 
-  const { otp, setOtp, error: authError, isSubmitting, isResending, handleVerifyOtp, handleResendOtp } =
-    useEmailAuth(
-      {
-        sendOtp: async () => {},
-        verifyOtp: async (email, code) => {
-          await verifyEmailOtp({ email, otp: normalizeOtp(code) });
-        },
-        resendOtp: async (email) => {
-          await requestEmailOtp(email);
-        },
-      },
-    );
+  const {
+    otp,
+    setOtp,
+    error: authError,
+    isSubmitting,
+    isResending,
+    handleVerifyOtp,
+    handleResendOtp,
+  } = useEmailAuth({
+    sendOtp: async () => {},
+    verifyOtp: async (email, code) => {
+      await verifyEmailOtp({ email, otp: normalizeOtp(code) });
+    },
+    resendOtp: async (email) => {
+      await requestEmailOtp(email);
+    },
+  });
 
   React.useEffect(() => {
     posthog.capture('auth_verify_screen_viewed');
@@ -51,14 +56,14 @@ export function VerifyScreen() {
   const normalizedOtp = normalizeOtp(otp);
 
   return (
-    <AuthShell
+    <AuthLayout
       testID="auth-verify-screen"
       title={AUTH_COPY.otpVerification.title}
       helper={AUTH_COPY.otpVerification.helper(maskEmail(resolvedEmail))}
     >
       <Box style={styles.form}>
         <View style={styles.fieldStack}>
-          <TextInput
+          <TextField
             testID="auth-otp-input"
             id="auth-otp"
             label={AUTH_COPY.otpVerification.codeLabel}
@@ -125,7 +130,7 @@ export function VerifyScreen() {
           />
         </View>
       </Box>
-    </AuthShell>
+    </AuthLayout>
   );
 }
 

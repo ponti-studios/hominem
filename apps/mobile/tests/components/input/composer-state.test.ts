@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import {
   createEmptyComposerDraft,
-  deriveMobileComposerPresentation,
+  deriveComposerPresentation,
   resolveComposerTarget,
-} from '~/components/input/composer-state';
+} from '~/components/composer/composerState';
 
 describe('resolveComposerTarget', () => {
   it('resolves top-level feed routes', () => {
@@ -16,12 +16,12 @@ describe('resolveComposerTarget', () => {
     });
   });
 
-  it('resolves note and chat detail routes', () => {
+  it('resolves chat detail routes and hides on note detail routes', () => {
     expect(resolveComposerTarget('/(protected)/(tabs)/notes/123')).toEqual({
-      kind: 'note',
-      key: 'note:123',
+      kind: 'hidden',
+      key: 'hidden',
       chatId: null,
-      noteId: '123',
+      noteId: null,
     });
 
     expect(resolveComposerTarget('/(protected)/(tabs)/chat/abc')).toEqual({
@@ -42,10 +42,10 @@ describe('resolveComposerTarget', () => {
   });
 });
 
-describe('deriveMobileComposerPresentation', () => {
+describe('deriveComposerPresentation', () => {
   it('hides the composer for hidden targets', () => {
     expect(
-      deriveMobileComposerPresentation(
+      deriveComposerPresentation(
         { kind: 'hidden', key: 'hidden', chatId: null, noteId: null },
         false,
         false,
@@ -56,18 +56,20 @@ describe('deriveMobileComposerPresentation', () => {
       showsVoiceButton: false,
     });
   });
-
-  it('adapts the primary action for a note target', () => {
+  it('shows chat media actions in the compact chat footer', () => {
     expect(
-      deriveMobileComposerPresentation(
-        { kind: 'note', key: 'note:1', chatId: null, noteId: '1' },
-        true,
+      deriveComposerPresentation(
+        { kind: 'chat', key: 'chat:abc', chatId: 'abc', noteId: null },
+        false,
         false,
       ),
     ).toMatchObject({
-      primaryActionLabel: 'Append',
-      isCompact: true,
-      showsNoteChips: false,
+      isHidden: false,
+      placeholder: 'Message',
+      primaryActionLabel: 'Send',
+      showsAttachmentButton: true,
+      showsVoiceButton: true,
+      showsNoteChips: true,
     });
   });
 });
@@ -77,9 +79,7 @@ describe('createEmptyComposerDraft', () => {
     expect(createEmptyComposerDraft()).toEqual({
       text: '',
       attachments: [],
-      isRecording: false,
-      mode: 'text',
-      selectedNoteIds: [],
+      selectedNotes: [],
     });
   });
 });

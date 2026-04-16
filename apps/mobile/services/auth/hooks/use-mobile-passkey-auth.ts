@@ -159,14 +159,7 @@ export function useMobilePasskeyAuth(): UseMobilePasskeyAuthReturn {
     setError(null);
 
     try {
-      const response = (await authClient.$fetch('/passkey/delete-passkey', {
-        method: 'POST',
-        body: { id },
-        throw: false,
-      })) as {
-        data: unknown;
-        error: { message?: string } | null;
-      };
+      const response = await authClient.deletePasskey({ id });
 
       if (response.error) {
         const message = response.error.message ?? 'Failed to delete passkey';

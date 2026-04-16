@@ -6,63 +6,7 @@
  * underlying string values must be identical.
  */
 
-import { BRAND } from '@hominem/env/brand';
-
-/** Single source of truth for the app brand name used across auth surfaces. */
-export const AUTH_APP_NAME = BRAND.appName;
-
-// ─── UX State ─────────────────────────────────────────────────────────────────
-
-export type AuthUxState =
-  | 'email-entry'
-  | 'otp-verification'
-  | 'passkey'
-  | 'loading'
-  | 'error'
-  | 'signed-in';
-
-// ─── Copy Interfaces ──────────────────────────────────────────────────────────
-
-export interface AuthEntryCopy {
-  title: string;
-  helper: string;
-  emailPlaceholder: string;
-  emailLabel: string;
-  submitButton: string;
-  passkeyButton: string;
-  passkeyLoadingButton: string;
-  emailRequiredError: string;
-  emailInvalidError: string;
-  sendFailedError: string;
-}
-
-export interface AuthVerifyCopy {
-  title: string;
-  helper: (email: string) => string;
-  codeLabel: string;
-  codePlaceholder: string;
-  verifyButton: string;
-  resendButton: string;
-  changeEmailLink: string;
-  codeRequiredError: string;
-  codeLengthError: string;
-  verifyFailedError: string;
-  resendFailedError: string;
-}
-
-export interface AuthPasskeyCopy {
-  genericError: string;
-}
-
-export interface AuthCopy {
-  emailEntry: AuthEntryCopy;
-  otpVerification: AuthVerifyCopy;
-  passkey: AuthPasskeyCopy;
-}
-
-// ─── Canonical Copy ───────────────────────────────────────────────────────────
-
-export const AUTH_COPY: AuthCopy = {
+export const AUTH_COPY = {
   emailEntry: {
     title: 'Sign in',
     helper: 'We’ll send a code to your email.',
@@ -93,31 +37,21 @@ export const AUTH_COPY: AuthCopy = {
   },
 };
 
-// ─── Per-App Auth Config ──────────────────────────────────────────────────────
-
-export interface AppAuthConfig {
-  /** Human-readable product name shown in auth UI. */
-  appName: string;
+type AppAuthConfig = {
   /** Platform-specific canonical post-auth destination path. */
   defaultPostAuthDestination: string;
   /** Allowed redirect prefixes for safe redirect validation (web only). */
   allowedDestinations: string[];
-  /** Copy to use for this app. Defaults to AUTH_COPY. */
-  copy: AuthCopy;
-}
+};
 
 /** Web app auth config. */
 export const NOTES_AUTH_CONFIG: AppAuthConfig = {
-  appName: AUTH_APP_NAME,
   defaultPostAuthDestination: '/notes',
   allowedDestinations: ['/', '/home', '/chat', '/notes', '/account', '/settings'],
-  copy: AUTH_COPY,
 };
 
 /** Mobile app auth config. */
 export const CHAT_AUTH_CONFIG: AppAuthConfig = {
-  appName: AUTH_APP_NAME,
   defaultPostAuthDestination: '/(protected)/(tabs)/',
   allowedDestinations: ['/(protected)/(tabs)/'],
-  copy: AUTH_COPY,
 };

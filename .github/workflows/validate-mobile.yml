@@ -1,0 +1,67 @@
+name: validate-mobile
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/mobile/**'
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/validate-mobile.yml'
+  pull_request:
+    branches: [main, preview]
+    paths:
+      - 'apps/mobile/**'
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/validate-mobile.yml'
+
+concurrency:
+  group: validate-mobile-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-mobile:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [24.14.1]
+
+    steps:
+      - name: checkout-repository
+        uses: actions/checkout@v4
+
+      - name: setup-node-js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: setup-pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10.33.0
+
+      - name: setup-just
+        uses: taiki-e/install-action@just
+
+      - name: get-pnpm-store-directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: setup-pnpm-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: install-dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: run-validate-mobile
+        run: just validate-mobile
+

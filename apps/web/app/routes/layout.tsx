@@ -1,10 +1,9 @@
-'use client';
+import { Toaster } from '@hominem/ui/toaster';
+import { NavLink, Outlet, data } from 'react-router';
 
-import { useSession } from '@hominem/auth/client';
-import { Toaster } from '@hominem/ui';
-import { NavLink, Outlet } from 'react-router';
-
-import { useSignOut } from '~/lib/hooks/use-sign-out';
+import { WEB_BRAND } from '~/lib/brand';
+import { getServerSession } from '~/lib/auth.server';
+import type { Route } from './+types/layout';
 
 function NavItem({ to, label }: { to: string; label: string }) {
   return (
@@ -19,23 +18,13 @@ function NavItem({ to, label }: { to: string; label: string }) {
   );
 }
 
-export default function Layout() {
-  // Skip rendering client-only content on server
-  if (typeof window === 'undefined') {
-    return (
-      <div className="min-h-dvh bg-background text-foreground">
-        <main className="mx-auto max-w-6xl px-4 py-6">
-          <div className="py-10 text-sm text-text-secondary">Loading...</div>
-        </main>
-        <Toaster />
-      </div>
-    );
-  }
+export async function loader({ request }: Route.LoaderArgs) {
+  const { user, headers } = await getServerSession(request);
+  return data({ userId: user?.id ?? null }, { headers });
+}
 
-  const session = useSession();
-  const userId = session.data?.user?.id ?? null;
-  const isLoading = session.isPending;
-  const signOut = useSignOut();
+export default function Layout({ loaderData }: Route.ComponentProps) {
+  const { userId } = loaderData;
 
   return (
     <div className="min-h-dvh bg-background text-foreground">
@@ -43,31 +32,18 @@ export default function Layout() {
         <header className="border-b border-border-subtle bg-background/90 backdrop-blur">
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-text-tertiary">Hominem</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-text-tertiary">{WEB_BRAND.appName}</p>
             </div>
             <nav className="flex items-center gap-2">
               <NavItem to="/notes" label="Notes" />
               <NavItem to="/chat" label="Chat" />
               <NavItem to="/account" label="Account" />
-              <button
-                type="button"
-                className="rounded-full border border-border-subtle px-3 py-1.5 text-sm text-text-secondary"
-                onClick={() => {
-                  void signOut();
-                }}
-              >
-                Sign out
-              </button>
             </nav>
           </div>
         </header>
       ) : null}
       <main className={userId ? 'mx-auto max-w-6xl px-4 py-6' : ''}>
-        {isLoading ? (
-          <div className="py-10 text-sm text-text-secondary">Loading...</div>
-        ) : (
-          <Outlet />
-        )}
+        <Outlet />
       </main>
       <Toaster />
     </div>

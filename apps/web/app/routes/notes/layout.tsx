@@ -1,26 +1,18 @@
-'use client';
+import { Outlet, data, redirect } from 'react-router';
 
-import { useSession } from '@hominem/auth/client';
-import { Navigate, Outlet } from 'react-router';
+import { getServerSession } from '~/lib/auth.server';
+import type { Route } from './+types/layout';
+
+export async function loader({ request }: Route.LoaderArgs) {
+  const { user, headers } = await getServerSession(request);
+  if (!user) {
+    throw redirect('/auth', { headers });
+  }
+
+  return data({ userId: user.id }, { headers });
+}
 
 export default function NotesLayout() {
-  // Skip rendering on server
-  if (typeof window === 'undefined') {
-    return <div>Loading...</div>;
-  }
-
-  const session = useSession();
-  const userId = session.data?.user?.id ?? null;
-  const isLoading = session.isPending;
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  if (!userId) {
-    return <Navigate to="/auth" replace />;
-  }
-
   return (
     <div className="flex flex-col h-full">
       <Outlet />

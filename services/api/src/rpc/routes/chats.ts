@@ -11,14 +11,16 @@ import {
   type ChatsUpdateOutput,
 } from '@hominem/rpc/types/chat.types';
 import { zValidator } from '@hono/zod-validator';
-import { generateText, type CoreMessage } from 'ai';
+import { generateText, streamText, type CoreMessage } from 'ai';
 import { Hono } from 'hono';
 import * as z from 'zod';
 
 import { env } from '../../env';
 import { ValidationError } from '../errors';
 import { authMiddleware, type AppContext } from '../middleware/auth';
+import { rateLimitMiddleware } from '../middleware/rate-limit';
 import { getOpenAIAdapter } from '../utils/llm';
+import { loadPrompt } from '../utils/load-prompt';
 import {
   enrichMessageRow,
   toChatDto,
@@ -39,7 +41,6 @@ const chatsMessagesQuerySchema = z.object({
   offset: z.string().optional(),
 });
 
-// ─── Prompt builders ─────────────────────────────────────────────────────────
 
 function toCoreHistoryMessage(entry: ChatMessageRecord): CoreMessage | null {
   if (entry.role === 'system' || entry.role === 'user' || entry.role === 'assistant') {
@@ -104,9 +105,16 @@ function getRequiredChatId(c: { req: { param: (name: string) => string | undefin
   return chatId;
 }
 
-// ─── Per-chat routes ─────────────────────────────────────────────────────────
 
 const chatByIdRoutes = new Hono<AppContext>()
+  .use(
+    '/send',
+    rateLimitMiddleware({ bucket: 'chat-send', identifier: 'send', windowSec: 60, max: 30 }),
+  )
+  .use(
+    '/stream',
+    rateLimitMiddleware({ bucket: 'chat-stream', identifier: 'stream', windowSec: 60, max: 30 }),
+  )
   .get('/', async (c) => {
     const userId = c.get('userId')!;
     const chatId = getRequiredChatId(c);
@@ -172,12 +180,10 @@ const chatByIdRoutes = new Hono<AppContext>()
     const chat = await ChatRepository.getOwnedOrThrow(db, chatId, userId);
     const { message, fileIds = [], noteIds = [] } = c.req.valid('json');
 
-    // Resolve context data
     const history = await ChatRepository.getMessages(db, chatId, 30, 0);
     const resolvedNotes = await ChatRepository.resolveReferencedNotes(db, userId, noteIds, message);
     const resolvedFiles = await ChatRepository.resolveChatFiles(db, userId, fileIds);
 
-    // Build prompt and call LLM
     const prompt = buildUserPrompt(message, resolvedNotes, resolvedFiles);
     const storedUserContent = toStoredUserMessageContent(message, resolvedNotes, resolvedFiles);
     if (!storedUserContent) {
@@ -187,8 +193,7 @@ const chatByIdRoutes = new Hono<AppContext>()
     const messages: CoreMessage[] = [
       {
         role: 'system',
-        content:
-          'You are a helpful assistant. Answer only with the user message, explicitly referenced notes, and attached files provided in the conversation.',
+        content: loadPrompt('chat-assistant'),
       },
       ...history.map(toCoreHistoryMessage).filter((entry): entry is CoreMessage => entry !== null),
       { role: 'user', content: prompt },
@@ -213,7 +218,6 @@ const chatByIdRoutes = new Hono<AppContext>()
       }
     })();
 
-    // Persist messages + touch chat atomically
     const now = new Date().toISOString();
     const { userMsg, assistantMsg } = await runInTransaction(async (trx) => {
       const userMsg = await ChatRepository.insertMessage(trx, {
@@ -237,18 +241,16 @@ const chatByIdRoutes = new Hono<AppContext>()
       return { userMsg, assistantMsg };
     });
 
-    // Enrich with note titles for response
     const noteTitlesById = await ChatRepository.getNoteTitles(
       db,
       resolvedNotes.map((n) => n.id),
     );
 
-    // Map raw rows to message records for DTO conversion
     const userRecord = enrichMessageRow(userMsg, noteTitlesById);
     const assistantRecord = enrichMessageRow(assistantMsg, noteTitlesById);
 
     return c.json<ChatsSendOutput>({
-      streamId: assistantMsg.id,
+      assistantMessageId: assistantMsg.id,
       chatId,
       chatTitle: chat.title,
       messages: {
@@ -260,9 +262,68 @@ const chatByIdRoutes = new Hono<AppContext>()
         timestamp: now,
       },
     });
+  })
+  .post('/stream', zValidator('json', chatsSendSchema), async (c) => {
+    const userId = c.get('userId')!;
+    const chatId = getRequiredChatId(c);
+    const db = getDb();
+
+    await ChatRepository.getOwnedOrThrow(db, chatId, userId);
+    const { message, fileIds = [], noteIds = [] } = c.req.valid('json');
+
+    const history = await ChatRepository.getMessages(db, chatId, 30, 0);
+    const resolvedNotes = await ChatRepository.resolveReferencedNotes(db, userId, noteIds, message);
+    const resolvedFiles = await ChatRepository.resolveChatFiles(db, userId, fileIds);
+
+    const prompt = buildUserPrompt(message, resolvedNotes, resolvedFiles);
+    const storedUserContent = toStoredUserMessageContent(message, resolvedNotes, resolvedFiles);
+    if (!storedUserContent) {
+      throw new ValidationError('Message, notes, or files are required');
+    }
+
+    await runInTransaction(async (trx) => {
+      await ChatRepository.insertMessage(trx, {
+        chatId,
+        authorUserId: userId,
+        role: 'user',
+        content: storedUserContent,
+        files: resolvedFiles.length > 0 ? resolvedFiles : null,
+        referencedNoteIds: resolvedNotes.length > 0 ? resolvedNotes.map((n) => n.id) : null,
+      });
+    });
+
+    const messages: CoreMessage[] = [
+      { role: 'system', content: loadPrompt('chat-assistant') },
+      ...history.map(toCoreHistoryMessage).filter((entry): entry is CoreMessage => entry !== null),
+      { role: 'user', content: prompt },
+    ];
+
+    const result = await streamText({
+      model: getOpenAIAdapter(),
+      messages,
+    });
+
+    c.executionCtx.waitUntil(
+      result.text.then(async (text) => {
+        await runInTransaction(async (trx) => {
+          await ChatRepository.insertMessage(trx, {
+            chatId,
+            authorUserId: userId,
+            role: 'assistant',
+            content: text,
+          });
+          await ChatRepository.touchLastMessage(trx, chatId);
+        });
+      }),
+    );
+
+    return c.body(
+      result.textStream.pipeThrough(new TextEncoderStream()),
+      200,
+      { 'Content-Type': 'text/event-stream' },
+    );
   });
 
-// ─── Top-level chat routes ───────────────────────────────────────────────────
 
 export const chatsRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)

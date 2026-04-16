@@ -13,6 +13,8 @@ infra/
       Dockerfile
   observability/
     README.md
+  railway/
+    README.md
   kubernetes/
     README.md
   terraform/

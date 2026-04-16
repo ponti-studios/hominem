@@ -1,6 +1,6 @@
 import { Loader2, Mic, MicOff, Volume2, XCircle } from 'lucide-react';
 
-import { Button } from '../ui/button';
+import { Button } from '../button';
 
 export type VoiceModeOverlayState = 'idle' | 'listening' | 'processing' | 'speaking' | 'error';
 

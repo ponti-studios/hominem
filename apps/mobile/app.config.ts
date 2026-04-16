@@ -66,19 +66,12 @@ function getAppVariantConfig(rawVariant = process.env.APP_VARIANT ?? 'dev'): Var
 
 const ROOT_ASSETS_DIR = './assets';
 
-const VARIANT_LOGO_ASSET_NAMES: Record<AppVariant, string> = Object.freeze({
-  dev: 'logo.hakumi.dev.png',
-  e2e: 'logo.hakumi.dev.png',
-  preview: 'logo.hakumi.preview.png',
-  production: 'logo.hakumi.png',
-});
-
 function getBrandAssetPaths(variant: AppVariant): { favicon: string; icon: string; splash: string } {
-  const icon = `${ROOT_ASSETS_DIR}/${VARIANT_LOGO_ASSET_NAMES[variant]}`;
+  const icon = `${ROOT_ASSETS_DIR}/${VARIANT_ICON_NAMES[variant]}`;
   return {
-    favicon: `${ROOT_ASSETS_DIR}/logo.hakumi.png`,
+    favicon: `${ROOT_ASSETS_DIR}/icon.png`,
     icon,
-    splash: `${ROOT_ASSETS_DIR}/logo.hakumi.splash-screen.png`,
+    splash: `${ROOT_ASSETS_DIR}/logo.splash-screen.png`,
   };
 }
 
@@ -141,14 +134,6 @@ export default ({ config }: ConfigContext) => {
             NSAppTransportSecurity: {
               NSAllowsArbitraryLoads: false,
               NSAllowsLocalNetworking: allowsLocalNetworking(appVariant),
-              ...(appVariant !== 'production' && {
-                NSExceptionDomains: {
-                  'railway.app': {
-                    NSExceptionRequiresForwardSecrecy: true,
-                    NSIncludesSubdomains: true,
-                  },
-                },
-              }),
             },
           },
         },
@@ -273,3 +258,9 @@ export default ({ config }: ConfigContext) => {
     updates: getUpdatesConfig(variantConfig),
   };
 };
+const VARIANT_ICON_NAMES = Object.freeze({
+  dev: 'icon.dev.png',
+  e2e: 'icon.dev.png',
+  preview: 'icon.preview.png',
+  production: 'icon.png',
+} as const satisfies Record<AppVariant, string>);

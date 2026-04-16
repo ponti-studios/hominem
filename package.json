@@ -18,24 +18,18 @@
     "type": "git",
     "url": "git+https://github.com/hackefeller/hominem.git"
   },
-  "workspaces": [
-    "apps/*",
-    "services/*",
-    "packages/core/*",
-    "packages/platform/*",
-    "packages/domains/*"
-  ],
+  "scripts": {
+    "check": "pnpm dlx turbo run typecheck lint build test --concurrency 1 --force"
+  },
   "devDependencies": {
     "@types/node": "^25.4.0",
     "@types/pg": "^8.18.0",
-    "@vitest/coverage-v8": "4.1.2",
-    "knip": "^5.86.0",
-    "oxfmt": "0.37.0",
+    "@typescript/native-preview": "7.0.0-dev.20260415.1",
+    "knip": "^6.4.1",
+    "oxfmt": "0.45.0",
     "oxlint": "1.52.0",
     "tsx": "^4.10.0",
     "turbo": "^2.9.3",
-    "typescript": "5.9.3",
-    "vite-tsconfig-paths": "^6.1.1",
     "vitest": "4.1.2"
   },
   "overrides": {

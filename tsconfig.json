@@ -9,7 +9,6 @@
     { "path": "packages/domains/chat" },
     { "path": "packages/core/db" },
     { "path": "packages/core/env" },
-    { "path": "packages/domains/presence" },
     { "path": "packages/platform/rpc" },
     { "path": "packages/platform/services" },
     { "path": "packages/platform/ui" },

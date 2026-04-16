@@ -1,0 +1,38 @@
+name: deploy-mobile
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/mobile/**'
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/deploy-mobile.yml'
+
+concurrency:
+  group: mobile-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  eas-build-testflight-production-api:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout-repository
+        uses: actions/checkout@v4
+
+      - name: setup-node-js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.1
+
+      - name: setup-eas-cli
+        run: npm install -g eas-cli
+
+      - name: submit-mobile-build
+        working-directory: apps/mobile
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          eas build --platform ios --profile production --non-interactive && \
+          eas submit --platform ios --latest --non-interactive

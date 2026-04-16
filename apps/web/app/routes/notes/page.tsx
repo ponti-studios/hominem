@@ -6,8 +6,9 @@ import {
   SurfacePanel,
   StatePanel,
 } from '@hominem/ui';
-import { Composer, ComposerProvider, ComposerStore } from '@hominem/ui/composer';
-import type { ComposerActions } from '@hominem/ui/composer';
+import { Composer } from '@hominem/ui/composer';
+import { ComposerProvider, ComposerStore } from '@hominem/ui/composer/composer-provider';
+import type { ComposerActions } from '@hominem/ui/composer/composer-provider';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Paperclip } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';

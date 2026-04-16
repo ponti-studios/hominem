@@ -1,10 +1,7 @@
 @import '../../../packages/platform/ui/src/styles/globals.css';
 @import '../../../packages/platform/ui/src/styles/animations.css';
 
-/* Tell Tailwind to scan the packages/platform/ui directory for classes */
 @source '../../../packages/platform/ui/src';
-
-/* ── Markdown note preview ─────────────────────────────────────────────────── */
 
 @layer components {
   .prose-note {

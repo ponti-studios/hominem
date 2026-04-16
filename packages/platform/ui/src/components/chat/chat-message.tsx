@@ -1,5 +1,5 @@
 import type { ChatMessageToolCall } from '@hominem/rpc/types/chat.types';
-import { formatMessageTimestamp } from '@hominem/utils/dates';
+import { formatMessageTimestamp } from '@hominem/chat';
 import {
   AlertCircle,
   Check,
@@ -33,18 +33,21 @@ import { copyToClipboard } from '../../lib/clipboard';
 import { cn } from '../../lib/utils';
 import { contentWidths } from '../../tokens';
 import type { ExtendedMessage } from '../../types/chat';
-import { MarkdownContent, Reasoning, Tool, ToolInput } from '../ai-elements';
-import { Inline, Stack } from '../layout';
-import { Button } from '../ui/button';
+import { MarkdownContent } from '../ai-elements/markdown-content';
+import { Reasoning } from '../ai-elements/reasoning';
+import { Tool, ToolInput } from '../ai-elements/tool';
+import { Inline } from '../layout/inline';
+import { Stack } from '../layout/stack';
+import { Button } from '../button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '../ui/dropdown-menu';
-import { Form } from '../ui/form';
-import { Textarea } from '../ui/textarea';
+} from '../dropdown-menu';
+import { Form } from '../form';
+import { Textarea } from '../textarea';
 
 function Message({
   from,

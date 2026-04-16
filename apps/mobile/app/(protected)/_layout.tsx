@@ -1,8 +1,8 @@
 import { Stack } from 'expo-router';
 import React from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
-import { FeatureErrorBoundary } from '~/components/error-boundary';
+import { FeatureErrorBoundary } from '~/components/error-boundary/FeatureErrorBoundary';
 import { useAppLock } from '~/hooks/use-app-lock';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import { Text, theme } from '~/components/theme';
@@ -14,7 +14,6 @@ import queryClient from '~/services/query-client';
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: theme.colors.background,
   },
   centered: {
     flex: 1,
@@ -60,7 +59,7 @@ function ProtectedShell() {
   if (!isUnlocked) {
     return (
       <View style={styles.centered}>
-        <Text variant="header" color="foreground">
+        <Text variant="title1" color="foreground">
           {APP_NAME}
         </Text>
         <Text variant="body" color="text-secondary">
@@ -78,10 +77,7 @@ function ProtectedShell() {
   return (
     <FeatureErrorBoundary featureName="Protected">
       <ApiProvider queryClient={queryClient}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.root}
-        >
+        <View style={styles.root}>
           <Stack
             initialRouteName="(tabs)"
             screenOptions={screenOptions}
@@ -89,7 +85,7 @@ function ProtectedShell() {
             <Stack.Screen name="onboarding" options={{ headerShown: false }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           </Stack>
-        </KeyboardAvoidingView>
+        </View>
       </ApiProvider>
     </FeatureErrorBoundary>
   );

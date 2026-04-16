@@ -1,5 +1,5 @@
-export { colors, darkColors } from './colors';
-export type { ColorToken, DarkColorToken } from './colors';
+export { colors } from './colors';
+export type { ColorToken } from './colors';
 export * from './motion';
 export * from './radii';
 export * from './shadows';

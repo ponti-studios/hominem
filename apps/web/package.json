@@ -8,14 +8,12 @@
     "build": "react-router build",
     "dev": "react-router dev",
     "start": "react-router-serve ./build/server/index.js",
-    "typecheck": "react-router typegen && tsc --noEmit"
+    "typecheck": "react-router typegen && tsgo --noEmit"
   },
   "dependencies": {
     "@hominem/auth": "workspace:*",
     "@hominem/chat": "workspace:*",
     "@hominem/env": "workspace:*",
-    "@hominem/hooks": "workspace:*",
-    "@hominem/platform-utils": "workspace:*",
     "@hominem/rpc": "workspace:*",
     "@hominem/telemetry": "workspace:*",
     "@hominem/ui": "workspace:*",
@@ -42,9 +40,8 @@
     "@types/node": "^25.4.0",
     "@types/react": "19.2.10",
     "@types/react-dom": "19.1.7",
-    "jsdom": "^28.1.0",
+    "@typescript/native-preview": "7.0.0-dev.20260415.1",
     "rollup-plugin-visualizer": "6.0.5",
-    "typescript": "5.9.3",
     "vite": "8.0.8",
     "vite-plugin-pwa": "^1.2.0"
   }

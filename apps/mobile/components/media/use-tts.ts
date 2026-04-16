@@ -1,7 +1,7 @@
 import { useApiClient } from '@hominem/rpc/react';
-import { useAudioPlayer } from 'expo-audio';
 import * as FileSystem from 'expo-file-system/legacy';
 import { useCallback, useRef, useState } from 'react';
+import { playTTS, stopTTS } from './audio.service';
 
 type TTSState = 'idle' | 'loading' | 'playing' | 'error';
 
@@ -35,15 +35,14 @@ export function useTTS(options: UseTTSOptions = {}) {
   const [state, setState] = useState<TTSState>('idle');
   const [error, setError] = useState<string | null>(null);
   const [speakingId, setSpeakingId] = useState<string | null>(null);
-  const player = useAudioPlayer(null);
   const abortRef = useRef<AbortController | null>(null);
 
   const stop = useCallback(() => {
     abortRef.current?.abort();
-    player.pause();
+    stopTTS();
     setSpeakingId(null);
     setState('idle');
-  }, [player]);
+  }, []);
 
   const speak = useCallback(
     async (id: string, text: string) => {
@@ -85,8 +84,7 @@ export function useTTS(options: UseTTSOptions = {}) {
           return;
         }
 
-        player.replace({ uri });
-        player.play();
+        await playTTS(uri);
         setState('playing');
       } catch (nextError) {
         if (controller.signal.aborted) {
@@ -98,7 +96,7 @@ export function useTTS(options: UseTTSOptions = {}) {
         setState('error');
       }
     },
-    [client, options.speed, options.voice, player, speakingId, state, stop],
+    [client, options.speed, options.voice, speakingId, state, stop],
   );
 
   return { error, speak, speakingId, state, stop };

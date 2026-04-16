@@ -1,51 +1,12 @@
-import { initTelemetry } from '@hominem/telemetry/node';
 import { logger } from '@hominem/utils/logger';
 import { serve } from '@hono/node-server';
-import * as Sentry from '@sentry/node';
 
 import { env } from './env';
+import { initRuntime } from './runtime';
 import { createServer } from './server';
-import { startFileProcessingWorker } from './workers/file-processing';
-
-// Sentry: errors-only, no tracing (OTel handles that)
-if (env.SENTRY_DSN) {
-  Sentry.init({
-    dsn: env.SENTRY_DSN,
-    environment: env.NODE_ENV,
-    tracesSampleRate: 0,
-    skipOpenTelemetrySetup: true,
-  });
-}
-
-// Initialize OpenTelemetry telemetry
-const telemetry = initTelemetry({
-  serviceName: 'hominem-api',
-  serviceVersion: process.env.npm_package_version || '0.0.0',
-  environment: env.NODE_ENV || 'development',
-  ...(process.env.OTEL_EXPORTER_OTLP_ENDPOINT
-    ? { otlpEndpoint: process.env.OTEL_EXPORTER_OTLP_ENDPOINT }
-    : {}),
-  ...(process.env.OTEL_EXPORTER_OTLP_PROTOCOL
-    ? { otlpProtocol: process.env.OTEL_EXPORTER_OTLP_PROTOCOL }
-    : {}),
-  samplingRatio: parseFloat(process.env.OTEL_TRACES_SAMPLER_ARG || '1.0'),
-});
-
-// Graceful shutdown
-process.on('SIGTERM', async () => {
-  logger.info('server_shutdown', { signal: 'SIGTERM' });
-  await telemetry.shutdown();
-  process.exit(0);
-});
-
-process.on('SIGINT', async () => {
-  logger.info('server_shutdown', { signal: 'SIGINT' });
-  await telemetry.shutdown();
-  process.exit(0);
-});
 
 const app = createServer();
-startFileProcessingWorker();
+initRuntime('hominem-api').installSignalHandlers();
 const port = Number.parseInt(env.PORT, 10);
 const host = '0.0.0.0';
 

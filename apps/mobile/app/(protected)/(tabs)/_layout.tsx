@@ -1,113 +1,37 @@
-import * as Haptics from 'expo-haptics';
-import { Tabs } from 'expo-router';
+import { Stack } from 'expo-router';
 import React from 'react';
-import { StyleSheet } from 'react-native';
 
-import { InputProvider } from '~/components/input/input-context';
-import { MobileComposer } from '~/components/input/mobile-composer';
-import { makeStyles, theme } from '~/components/theme';
-import AppIcon from '~/components/ui/icon';
-import { useReducedMotion } from '~/hooks/use-reduced-motion';
+import { ComposerProvider } from '~/components/composer/ComposerContext';
+import { Composer } from '~/components/composer/Composer';
+import { theme } from '~/components/theme';
+import { TopAnchoredFeedProvider } from '~/services/inbox/top-anchored-feed';
 
-export default function TabsLayout() {
-  const styles = useStyles();
-  const prefersReducedMotion = useReducedMotion();
+const screenOptions = {
+  headerShown: true,
+  headerStyle: { backgroundColor: theme.colors.background },
+  headerTintColor: theme.colors.foreground,
+  headerShadowVisible: false,
+  contentStyle: { backgroundColor: theme.colors.background },
+  animation: 'default' as const,
+  gestureEnabled: true,
+};
 
-  const handleTabPress = () => {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  };
 
+
+export default function AppLayout() {
   return (
-    <InputProvider>
-      <Tabs
-        screenOptions={{
-          headerShown: false,
-          tabBarStyle: styles.tabBar,
-          tabBarActiveTintColor: theme.colors.primary,
-          tabBarInactiveTintColor: theme.colors['text-secondary'],
-          tabBarLabelStyle: styles.tabBarLabel,
-          tabBarIconStyle: styles.tabBarIcon,
-          tabBarShowLabel: false,
-        }}
-      >
-        <Tabs.Screen
-          name="index"
-          options={{
-            tabBarLabel: 'Home',
-            tabBarIcon: ({ color }) => (
-              <AppIcon name="tray" size={24} color={color} />
-            ),
-          }}
-          listeners={{
-            tabPress: () => {
-              handleTabPress();
-            },
-          }}
-        />
-        <Tabs.Screen
-          name="notes"
-          options={{
-            tabBarLabel: 'Notes',
-            tabBarIcon: ({ color }) => (
-              <AppIcon name="note.text" size={24} color={color} />
-            ),
-          }}
-          listeners={{
-            tabPress: () => {
-              handleTabPress();
-            },
-          }}
-        />
-        <Tabs.Screen
-          name="chat"
-          options={{
-            tabBarLabel: 'Chat',
-            tabBarIcon: ({ color }) => (
-              <AppIcon name="bubble.left" size={24} color={color} />
-            ),
-          }}
-          listeners={{
-            tabPress: () => {
-              handleTabPress();
-            },
-          }}
-        />
-        <Tabs.Screen
-          name="settings"
-          options={{
-            tabBarLabel: 'Settings',
-            tabBarIcon: ({ color }) => (
-              <AppIcon name="gearshape" size={24} color={color} />
-            ),
-          }}
-          listeners={{
-            tabPress: () => {
-              handleTabPress();
-            },
-          }}
-        />
-      </Tabs>
-      <MobileComposer />
-    </InputProvider>
+    <ComposerProvider>
+      <TopAnchoredFeedProvider>
+        <Stack screenOptions={screenOptions}>
+          <Stack.Screen name="index" options={{ headerShown: false }} />
+          <Stack.Screen name="notes/index" options={{ title: 'Notes' }} />
+          <Stack.Screen name="notes/[id]" options={{ title: '' }} />
+          <Stack.Screen name="chat/[id]" options={{ title: '' }} />
+          <Stack.Screen name="settings/index" options={{ title: 'Settings' }} />
+          <Stack.Screen name="settings/archived-chats" options={{ title: 'Archived Chats' }} />
+        </Stack>
+        <Composer />
+      </TopAnchoredFeedProvider>
+    </ComposerProvider>
   );
 }
-
-const useStyles = makeStyles((t) =>
-  StyleSheet.create({
-    tabBar: {
-      borderTopWidth: 1,
-      borderTopColor: t.colors['border-default'],
-      backgroundColor: t.colors.background,
-      paddingBottom: 8,
-      paddingTop: 8,
-      height: 64,
-    },
-    tabBarLabel: {
-      fontSize: 12,
-      marginTop: 4,
-    },
-    tabBarIcon: {
-      marginTop: 0,
-    },
-  }),
-);
