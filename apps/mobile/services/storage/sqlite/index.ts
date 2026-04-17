@@ -43,7 +43,9 @@ function validateOrNull<T>(schema: z.ZodType<T>, data: unknown): T | null {
   try {
     return schema.parse(data);
   } catch (error) {
-    console.warn('[LocalStore] Validation failed:', error);
+    if (__DEV__) {
+      console.warn('[LocalStore] Validation failed:', error);
+    }
     return null;
   }
 }

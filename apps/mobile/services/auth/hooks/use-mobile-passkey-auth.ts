@@ -46,8 +46,13 @@ export function useMobilePasskeyAuth(): UseMobilePasskeyAuthReturn {
       setIsLoading(true);
       setError(null);
 
-      try {
-        if (E2E_TESTING && mode !== 'real') {
+        try {
+          if (E2E_TESTING && mode !== 'real') {
+          if (!E2E_AUTH_SECRET) {
+            setError('Missing EXPO_PUBLIC_E2E_AUTH_SECRET for E2E passkey sign-in');
+            return null;
+          }
+
           if (mode === 'e2e-cancel') {
             const message = 'Passkey sign-in was cancelled';
             setError(message);

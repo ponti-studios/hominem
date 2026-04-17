@@ -77,14 +77,25 @@ function getBrandAssetPaths(variant: AppVariant): { favicon: string; icon: strin
 
 function getExpoExtraConfig(
   env: Record<string, string | undefined>,
-): { apiBaseUrl: string; mobilePasskeyEnabled: string; posthogApiKey: string; posthogHost: string } {
+): {
+  apiBaseUrl: string;
+  e2eAuthSecret: string;
+  mobilePasskeyEnabled: string;
+  posthogApiKey: string;
+  posthogHost: string;
+} {
   const getEnvValue = (value: string | undefined, fallback: string): string => value ?? fallback;
   return {
     apiBaseUrl: getEnvValue(env.EXPO_PUBLIC_API_BASE_URL, ''),
+    e2eAuthSecret: getEnvValue(env.EXPO_PUBLIC_E2E_AUTH_SECRET, ''),
     mobilePasskeyEnabled: getEnvValue(env.EXPO_PUBLIC_MOBILE_PASSKEY_ENABLED, 'false'),
     posthogApiKey: getEnvValue(env.EXPO_PUBLIC_POSTHOG_API_KEY, ''),
     posthogHost: getEnvValue(env.EXPO_PUBLIC_POSTHOG_HOST, 'https://us.i.posthog.com'),
   };
+}
+
+function getAppleTeamId() {
+  return process.env.EXPO_APPLE_TEAM_ID;
 }
 
 function getUpdatesConfig(variantConfig: VariantConfig): ExpoConfig['updates'] {
@@ -106,14 +117,6 @@ function getUpdatesConfig(variantConfig: VariantConfig): ExpoConfig['updates'] {
 
 function allowsLocalNetworking(appVariant: AppVariant) {
   return appVariant !== 'production';
-}
-
-function getAppleTeamId(appVariant: AppVariant) {
-  if (appVariant !== 'dev' && appVariant !== 'e2e') {
-    return undefined;
-  }
-
-  return process.env.EXPO_APPLE_TEAM_ID;
 }
 
 function getAppGroupId(bundleIdentifier: string) {
@@ -224,13 +227,12 @@ export default ({ config }: ConfigContext) => {
     },
     plugins,
     experiments: {
-      typedRoutes: true,
       tsconfigPaths: true,
     },
     newArchEnabled: true,
     ios: {
+      appleTeamId: getAppleTeamId(),
       icon: brandAssets.icon,
-      appleTeamId: getAppleTeamId(appVariant),
       bundleIdentifier: variantConfig.bundleIdentifier,
       supportsTablet: true,
       entitlements: {
