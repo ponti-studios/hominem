@@ -22,7 +22,8 @@ COPY services/api ./services/api
 COPY tsconfig.profiles ./tsconfig.profiles
 
 RUN npm install -g pnpm@10.33.0 && \
-    pnpm install 2>&1 | grep -v "warn\|skipped" || true
+    pnpm install --frozen-lockfile --filter @hominem/api... && \
+    pnpm --filter @hominem/env build
 
 FROM node:24.14.1-alpine AS release
 

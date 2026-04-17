@@ -17,12 +17,13 @@ COPY pnpm-workspace.yaml ./
 COPY packages ./packages
 COPY apps/web ./apps/web
 COPY tsconfig.profiles ./tsconfig.profiles
-COPY turbo.json ./turbo.json
 
-RUN npm install -g pnpm@10.33.0 turbo@2.9.5 && \
-    pnpm install --frozen-lockfile
+RUN npm install -g pnpm@10.33.0 && \
+    pnpm install --frozen-lockfile --filter @hominem/web...
 
-RUN turbo run build --filter=@hominem/web
+RUN pnpm --filter @hominem/env build
+
+RUN pnpm --filter @hominem/web run build
 
 FROM node:24.14.1-alpine AS server
 
