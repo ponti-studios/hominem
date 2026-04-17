@@ -38,7 +38,7 @@ export class NoteService {
       const existing = await NoteRepository.getOwnedOrThrow(trx, noteId, userId);
       const nextContent = input.content !== undefined ? input.content.trim() : existing.content;
       // Only update title when explicitly sent; never re-derive from content on updates
-      const nextTitle = input.title !== undefined ? (input.title?.trim() || null) : existing.title;
+      const nextTitle = input.title !== undefined ? input.title?.trim() || null : existing.title;
       // Always recompute excerpt from current content
       const nextExcerpt = deriveExcerpt(nextContent);
 

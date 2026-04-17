@@ -1,6 +1,6 @@
-import { useCallback, useRef, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { useApiClient } from '@hominem/rpc/react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCallback, useRef, useState } from 'react';
 
 import { chatQueryKeys } from '~/lib/query-keys';
 

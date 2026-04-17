@@ -1,15 +1,15 @@
 'use client';
 
-import { AUTH_COPY, NOTES_AUTH_CONFIG } from '@hominem/auth/shared/ux-contract';
-import { maskEmail } from '@hominem/auth/shared/mask-email';
 import { useAuthClient } from '@hominem/auth/client/provider';
+import { maskEmail } from '@hominem/auth/shared/mask-email';
 import { resolveAuthRedirect } from '@hominem/auth/shared/redirect-policy';
+import { AUTH_COPY, NOTES_AUTH_CONFIG } from '@hominem/auth/shared/ux-contract';
 import { AuthScaffold, OtpVerificationForm } from '@hominem/ui';
 import { redirect, useLoaderData, useLocation, useNavigate } from 'react-router';
 
-import { useEmailAuth } from './use-email-auth';
 import { getNextRedirect } from './shared';
 import { redirectAuthenticatedUser } from './shared.server';
+import { useEmailAuth } from './use-email-auth';
 
 export async function loader({ request }: { request: Request }) {
   const redirectResponse = await redirectAuthenticatedUser(request);
@@ -42,9 +42,11 @@ export default function Component() {
     {
       sendOtp: async () => {},
       verifyOtp: async (email, otp) => {
-        const destination = resolveAuthRedirect(next, NOTES_AUTH_CONFIG.defaultPostAuthDestination, [
-          ...NOTES_AUTH_CONFIG.allowedDestinations,
-        ]).safeRedirect;
+        const destination = resolveAuthRedirect(
+          next,
+          NOTES_AUTH_CONFIG.defaultPostAuthDestination,
+          [...NOTES_AUTH_CONFIG.allowedDestinations],
+        ).safeRedirect;
         const result = await authClient.signIn.emailOtp({ email, otp });
         if (result.error || !result.data?.user?.id) {
           throw new Error(

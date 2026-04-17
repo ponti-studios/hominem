@@ -1,11 +1,11 @@
-import { useMemo, useCallback, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
 import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
+import { useCallback, useMemo, useState } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
 
-import AppIcon from '~/components/ui/icon';
-import { Text, makeStyles, theme } from '~/components/theme';
-import { VoiceInput } from '~/components/media/voice/VoiceInput';
 import { useVoiceResponse } from '~/components/media/voice/useVoiceResponse';
+import { VoiceInput } from '~/components/media/voice/VoiceInput';
+import { Text, makeStyles, theme } from '~/components/theme';
+import AppIcon from '~/components/ui/icon';
 
 interface VoiceSessionModalProps {
   onClose: () => void;
@@ -113,8 +113,7 @@ export function VoiceSessionModal({
 
 const useStyles = makeStyles((t) =>
   StyleSheet.create({
-    sheetBackground: {
-    },
+    sheetBackground: {},
     dragHandle: {
       backgroundColor: t.colors['border-default'],
       width: 40,
@@ -141,7 +140,7 @@ const useStyles = makeStyles((t) =>
     micButton: {
       width: 72,
       height: 72,
-      borderRadius: t.borderRadii.full,
+      borderRadius: t.borderRadii.sm,
     },
     hint: {
       textAlign: 'center',

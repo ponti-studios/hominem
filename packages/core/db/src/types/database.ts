@@ -1,8 +1,9 @@
-import type { ColumnType } from "kysely";
+import type { ColumnType } from 'kysely';
 
-export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
-  ? ColumnType<S, I | undefined, U>
-  : ColumnType<T, T | undefined, T>;
+export type Generated<T> =
+  T extends ColumnType<infer S, infer I, infer U>
+    ? ColumnType<S, I | undefined, U>
+    : ColumnType<T, T | undefined, T>;
 
 export type Int8 = ColumnType<string, bigint | number | string, bigint | number | string>;
 
@@ -723,53 +724,53 @@ export interface Verification {
 
 export interface DB {
   account: Account;
-  "app.bookmarks": AppBookmarks;
-  "app.chat_messages": AppChatMessages;
-  "app.chats": AppChats;
-  "app.entities": AppEntities;
-  "app.entity_links": AppEntityLinks;
-  "app.event_attendees": AppEventAttendees;
-  "app.events": AppEvents;
-  "app.files": AppFiles;
-  "app.finance_accounts": AppFinanceAccounts;
-  "app.finance_institutions": AppFinanceInstitutions;
-  "app.finance_transactions": AppFinanceTransactions;
-  "app.goals": AppGoals;
-  "app.key_results": AppKeyResults;
-  "app.music_albums": AppMusicAlbums;
-  "app.music_artists": AppMusicArtists;
-  "app.music_listens": AppMusicListens;
-  "app.music_playlist_tracks": AppMusicPlaylistTracks;
-  "app.music_playlists": AppMusicPlaylists;
-  "app.music_tracks": AppMusicTracks;
-  "app.note_files": AppNoteFiles;
-  "app.note_shares": AppNoteShares;
-  "app.note_versions": AppNoteVersions;
-  "app.notes": AppNotes;
-  "app.people": AppPeople;
-  "app.places": AppPlaces;
-  "app.plaid_items": AppPlaidItems;
-  "app.possession_containers": AppPossessionContainers;
-  "app.possession_events": AppPossessionEvents;
-  "app.possessions": AppPossessions;
-  "app.space_invites": AppSpaceInvites;
-  "app.space_items": AppSpaceItems;
-  "app.space_members": AppSpaceMembers;
-  "app.space_tags": AppSpaceTags;
-  "app.spaces": AppSpaces;
-  "app.tag_aliases": AppTagAliases;
-  "app.tag_assignments": AppTagAssignments;
-  "app.tags": AppTags;
-  "app.task_assignments": AppTaskAssignments;
-  "app.tasks": AppTasks;
-  "app.travel_trips": AppTravelTrips;
-  "app.video_channels": AppVideoChannels;
-  "app.video_views": AppVideoViews;
+  'app.bookmarks': AppBookmarks;
+  'app.chat_messages': AppChatMessages;
+  'app.chats': AppChats;
+  'app.entities': AppEntities;
+  'app.entity_links': AppEntityLinks;
+  'app.event_attendees': AppEventAttendees;
+  'app.events': AppEvents;
+  'app.files': AppFiles;
+  'app.finance_accounts': AppFinanceAccounts;
+  'app.finance_institutions': AppFinanceInstitutions;
+  'app.finance_transactions': AppFinanceTransactions;
+  'app.goals': AppGoals;
+  'app.key_results': AppKeyResults;
+  'app.music_albums': AppMusicAlbums;
+  'app.music_artists': AppMusicArtists;
+  'app.music_listens': AppMusicListens;
+  'app.music_playlist_tracks': AppMusicPlaylistTracks;
+  'app.music_playlists': AppMusicPlaylists;
+  'app.music_tracks': AppMusicTracks;
+  'app.note_files': AppNoteFiles;
+  'app.note_shares': AppNoteShares;
+  'app.note_versions': AppNoteVersions;
+  'app.notes': AppNotes;
+  'app.people': AppPeople;
+  'app.places': AppPlaces;
+  'app.plaid_items': AppPlaidItems;
+  'app.possession_containers': AppPossessionContainers;
+  'app.possession_events': AppPossessionEvents;
+  'app.possessions': AppPossessions;
+  'app.space_invites': AppSpaceInvites;
+  'app.space_items': AppSpaceItems;
+  'app.space_members': AppSpaceMembers;
+  'app.space_tags': AppSpaceTags;
+  'app.spaces': AppSpaces;
+  'app.tag_aliases': AppTagAliases;
+  'app.tag_assignments': AppTagAssignments;
+  'app.tags': AppTags;
+  'app.task_assignments': AppTaskAssignments;
+  'app.tasks': AppTasks;
+  'app.travel_trips': AppTravelTrips;
+  'app.video_channels': AppVideoChannels;
+  'app.video_views': AppVideoViews;
   deviceCode: DeviceCode;
   goose_db_version: GooseDbVersion;
   jwks: Jwks;
-  "ops.audit_logs": OpsAuditLogs;
-  "ops.search_logs": OpsSearchLogs;
+  'ops.audit_logs': OpsAuditLogs;
+  'ops.search_logs': OpsSearchLogs;
   passkey: Passkey;
   session: Session;
   user: User;

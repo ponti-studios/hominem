@@ -6,19 +6,6 @@
     "tsBuildInfoFile": "../../../.cache/ui.tsbuildinfo",
     "types": ["node", "vite/client"]
   },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    ".storybook/**/*.ts",
-    ".storybook/**/*.tsx"
-  ],
-  "exclude": [
-    "node_modules",
-    "build",
-    "dist",
-    ".turbo",
-    ".cache",
-    "coverage",
-    "*.tsbuildinfo"
-  ]
+  "include": ["src/**/*.ts", "src/**/*.tsx", ".storybook/**/*.ts", ".storybook/**/*.tsx"],
+  "exclude": ["node_modules", "build", "dist", ".turbo", ".cache", "coverage", "*.tsbuildinfo"]
 }

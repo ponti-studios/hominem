@@ -18,7 +18,6 @@ import { cn } from '../../lib/utils';
 import type { ComposerPresentation } from './composer-presentation';
 import { useComposerSlice } from './composer-provider';
 
-
 function primaryIntent(posture: ComposerPresentation['posture']): string {
   switch (posture) {
     case 'reply':
@@ -40,7 +39,6 @@ function secondaryIntent(posture: ComposerPresentation['posture']): string {
       return 'start-chat';
   }
 }
-
 
 function ActionButton({
   intent,
@@ -82,7 +80,6 @@ function ActionButton({
     </button>
   );
 }
-
 
 export const ComposerActionsRow = memo(function ComposerActionsRow({
   presentation,

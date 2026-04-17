@@ -1,12 +1,10 @@
-
-
 @import 'tailwindcss';
 @import './animations.css';
 
 @theme {
-
   --font-family-primary:
-    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif;
+    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Helvetica Neue', system-ui,
+    sans-serif;
   --font-family-mono: 'SF Mono', 'Menlo', ui-monospace, monospace;
 
   --font-size-large-title: 34px;
@@ -701,7 +699,6 @@
 }
 
 @layer utilities {
-
   .container {
     @apply w-full px-4 sm:px-6;
     margin-inline: auto;

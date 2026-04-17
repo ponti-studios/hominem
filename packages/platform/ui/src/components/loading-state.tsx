@@ -125,11 +125,7 @@ export function LoadingState({
 
   // If delay specified, wrap in conditional rendering
   if (delayMs > 0) {
-    return (
-      <DelayedLoading delayMs={delayMs}>
-        {content}
-      </DelayedLoading>
-    );
+    return <DelayedLoading delayMs={delayMs}>{content}</DelayedLoading>;
   }
 
   return content;
@@ -139,13 +135,7 @@ export function LoadingState({
  * Internal component to handle delayed loading state
  * Prevents showing loading indicator for quick operations
  */
-function DelayedLoading({
-  delayMs,
-  children,
-}: {
-  delayMs: number;
-  children: ReactNode;
-}) {
+function DelayedLoading({ delayMs, children }: { delayMs: number; children: ReactNode }) {
   const [isVisible, setIsVisible] = React.useState(false);
 
   React.useEffect(() => {

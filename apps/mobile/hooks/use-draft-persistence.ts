@@ -1,14 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { logger } from '@hominem/utils/logger';
-import { storage } from '~/services/storage/mmkv';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
 import type { ComposerDraft } from '~/components/composer/composerState';
+import { storage } from '~/services/storage/mmkv';
 
 const DRAFT_STORAGE_KEY = 'mobile-composer-draft';
 const DRAFT_SAVE_DEBOUNCE_MS = 5000;
 
 export function useDraftPersistence(targetKey: string) {
   const [isSaving, setIsSaving] = useState(false);
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const getDraftKey = useCallback((key: string) => {
     return `${DRAFT_STORAGE_KEY}-${key}`;
@@ -17,9 +18,7 @@ export function useDraftPersistence(targetKey: string) {
   const saveDraft = useCallback(
     (draft: ComposerDraft) => {
       const isEmpty =
-        !draft.text.trim() &&
-        draft.attachments.length === 0 &&
-        draft.selectedNotes.length === 0;
+        !draft.text.trim() && draft.attachments.length === 0 && draft.selectedNotes.length === 0;
 
       if (isEmpty) {
         try {

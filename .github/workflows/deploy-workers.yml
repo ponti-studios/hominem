@@ -15,11 +15,17 @@ on:
       - 'justfile'
       - 'justfiles/**'
       - '.github/workflows/deploy-workers.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-workers-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   deploy-workers:
     uses: ./.github/workflows/railway-deploy-service.yml
-    secrets: inherit
+    secrets:
+      service_target: ${{ secrets.RAILWAY_SERVICE_WORKERS }}
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
     with:
       service_name: workers
-      service_target: ${{ vars.RAILWAY_SERVICE_WORKERS }}

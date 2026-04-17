@@ -5,13 +5,6 @@ import {
   VOID_MOTION_EXIT,
 } from '../theme/motion';
 
-import {
-  VOID_EASING_ENTER,
-  VOID_EASING_EXIT,
-  VOID_MOTION_ENTER,
-  VOID_MOTION_EXIT,
-} from '~/components/theme/motion';
-
 export const fadeEnterConfig = {
   duration: VOID_MOTION_ENTER,
   easing: VOID_EASING_ENTER,

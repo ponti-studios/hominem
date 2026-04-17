@@ -229,7 +229,11 @@ export default function NotesPage() {
         />
       </div>
       <SurfaceFrame className="mx-auto min-h-0 w-full flex-1 overflow-hidden rounded-3xl">
-        <div ref={setScrollElement} onScroll={updateNearBottom} className="h-full min-h-0 w-full overflow-auto">
+        <div
+          ref={setScrollElement}
+          onScroll={updateNearBottom}
+          className="h-full min-h-0 w-full overflow-auto"
+        >
           {feedQuery.isLoading ? (
             <SurfacePanel as="p" className="text-sm text-text-secondary">
               Loading notes...
@@ -297,7 +301,9 @@ export default function NotesPage() {
                               <div>{new Date(note.createdAt).toLocaleString()}</div>
                               {note.metadata.hasAttachments ? (
                                 <div className="mt-2">
-                                  <MetaBadge icon={<Paperclip className="size-3" />}>Files</MetaBadge>
+                                  <MetaBadge icon={<Paperclip className="size-3" />}>
+                                    Files
+                                  </MetaBadge>
                                 </div>
                               ) : null}
                             </>

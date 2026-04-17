@@ -7,19 +7,12 @@ on:
     secrets:
       service_target:
         required: true
-      RAILWAY_TOKEN:
-        required: true
-
-concurrency:
-  group: railway-deploy-${{ inputs.service_name }}-${{ github.ref }}
-  cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
   deploy:
-    name: deploy-${{ inputs.service_name }}
     runs-on: blacksmith-4vcpu-ubuntu-2404
     container: ghcr.io/railwayapp/cli:latest
     timeout-minutes: 30

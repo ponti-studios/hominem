@@ -1,11 +1,11 @@
 import { createHash } from 'crypto';
 
+import { redis as cache } from '@hominem/services/redis';
 import { logger } from '@hominem/utils/logger';
 import type { Context } from 'hono';
 import { Hono } from 'hono';
 
 import { ValidationError, ForbiddenError, UnavailableError, InternalError } from '../errors';
-import { redis as cache } from '@hominem/services/redis';
 import type { AppEnv } from '../server';
 
 function isValidGoogleHost(input: string): boolean {

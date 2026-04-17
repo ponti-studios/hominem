@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
 import { AuthProvider } from '@hominem/auth/client/provider';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Home, Settings, MessageSquare } from 'lucide-react';
 import { MemoryRouter } from 'react-router';
 import { expect, within } from 'storybook/test';

@@ -184,7 +184,11 @@ function getVerificationOtpSubject(type: VerificationOtpType) {
   return (verificationOtpSubjectByType as Record<string, string>)[type] ?? 'Your verification code';
 }
 
-function buildVerificationOtpEmail(input: { to: string; otp: string; type: VerificationOtpType }): SendEmailParams {
+function buildVerificationOtpEmail(input: {
+  to: string;
+  otp: string;
+  type: VerificationOtpType;
+}): SendEmailParams {
   return {
     to: input.to,
     subject: getVerificationOtpSubject(input.type),

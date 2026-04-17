@@ -1,12 +1,12 @@
+import { SymbolView } from 'expo-symbols';
 import { useCallback, type ReactNode } from 'react';
 import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
 import { View, StyleSheet } from 'react-native';
 import Reanimated, { FadeIn } from 'react-native-reanimated';
 
-import { makeStyles, Text } from '~/components/theme';
 import { logError } from '~/components/error-boundary/log-error';
+import { makeStyles, Text } from '~/components/theme';
 import { Button } from '~/components/ui/Button';
-import { SymbolView } from 'expo-symbols';
 
 const ICON_RING_SIZE = 56;
 const ICON_SIZE = 24;
@@ -18,16 +18,16 @@ interface Props {
   featureName?: string;
 }
 
-  const useStyles = makeStyles((t) =>
-    StyleSheet.create({
-      container: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: t.colors.background,
-        paddingHorizontal: t.spacing.ml_24,
-        paddingVertical: t.spacing.ml_24,
-      },
+const useStyles = makeStyles((t) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: t.colors.background,
+      paddingHorizontal: t.spacing.ml_24,
+      paddingVertical: t.spacing.ml_24,
+    },
     card: {
       width: '100%',
       maxWidth: 360,
@@ -35,7 +35,7 @@ interface Props {
       alignItems: 'center',
       backgroundColor: t.colors['bg-surface'],
       borderColor: t.colors['border-subtle'],
-      borderRadius: t.borderRadii.xl,
+      borderRadius: t.borderRadii.lg,
       borderWidth: 1,
       paddingHorizontal: t.spacing.ml_24,
       paddingVertical: t.spacing.l_32,

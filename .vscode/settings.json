@@ -3,4 +3,5 @@
   "editor.tabSize": 2,
   "editor.detectIndentation": false,
   "cSpell.words": ["oxfmt", "oxlint", "posthog", "pressable", "pnpm"],
+  "js/ts.tsdk.path": "node_modules/typescript/lib"
 }

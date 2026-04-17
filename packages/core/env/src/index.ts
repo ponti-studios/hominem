@@ -149,7 +149,8 @@ export function createServerEnv<T extends z.ZodObject<z.ZodRawShape>>(
       if (cachedError) throw cachedError;
 
       if (!cachedEnv) {
-        const proc = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process;
+        const proc = (globalThis as { process?: { env?: Record<string, string | undefined> } })
+          .process;
         if (typeof proc === 'undefined') {
           cachedError = new EnvValidationError(
             'createServerEnv can only be used in Node.js context. Use createClientEnv for browser code.',
@@ -171,7 +172,8 @@ export function createServerEnv<T extends z.ZodObject<z.ZodRawShape>>(
       if (cachedError) throw cachedError;
 
       if (!cachedEnv) {
-        const proc = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process;
+        const proc = (globalThis as { process?: { env?: Record<string, string | undefined> } })
+          .process;
         if (typeof proc === 'undefined') {
           cachedError = new EnvValidationError(
             'createServerEnv can only be used in Node.js context. Use createClientEnv for browser code.',
@@ -193,7 +195,8 @@ export function createServerEnv<T extends z.ZodObject<z.ZodRawShape>>(
       if (cachedError) throw cachedError;
 
       if (!cachedEnv) {
-        const proc = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process;
+        const proc = (globalThis as { process?: { env?: Record<string, string | undefined> } })
+          .process;
         if (typeof proc === 'undefined') {
           cachedError = new EnvValidationError(
             'createServerEnv can only be used in Node.js context. Use createClientEnv for browser code.',
@@ -215,7 +218,8 @@ export function createServerEnv<T extends z.ZodObject<z.ZodRawShape>>(
       if (cachedError) throw cachedError;
 
       if (!cachedEnv) {
-        const proc = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process;
+        const proc = (globalThis as { process?: { env?: Record<string, string | undefined> } })
+          .process;
         if (typeof proc === 'undefined') {
           cachedError = new EnvValidationError(
             'createServerEnv can only be used in Node.js context. Use createClientEnv for browser code.',
@@ -239,8 +243,8 @@ export function createServerEnv<T extends z.ZodObject<z.ZodRawShape>>(
         };
       }
       return undefined;
-  },
-});
+    },
+  });
 }
 
 export { baseSchema } from './base';

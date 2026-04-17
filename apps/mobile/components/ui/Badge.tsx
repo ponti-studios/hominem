@@ -1,6 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 
 import { colors, radii, spacing } from '~/components/theme/tokens';
+
 import { Text } from '../typography/Text';
 
 type BadgeVariant = 'default' | 'success' | 'warning' | 'destructive' | 'accent';
@@ -41,7 +42,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'flex-start',
     borderCurve: 'continuous',
-    borderRadius: radii.full,
+    borderRadius: radii.sm,
     flexDirection: 'row',
     paddingHorizontal: spacing[2],
     paddingVertical: 3,

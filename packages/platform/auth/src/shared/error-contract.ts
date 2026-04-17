@@ -22,7 +22,6 @@ export function buildAuthCallbackErrorRedirect({
   return `${url.pathname}${url.search}${url.hash}`;
 }
 
-
 export function readAuthErrorMessage(params: URLSearchParams): string | null {
   const description = params.get('description') ?? params.get('error_description');
   if (description) return description;

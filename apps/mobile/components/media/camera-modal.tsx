@@ -1,13 +1,13 @@
+import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 import * as Haptics from 'expo-haptics';
 import * as MediaLibrary from 'expo-media-library';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Camera, useCameraDevice, useCameraPermission } from 'react-native-vision-camera';
-import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 
-import AppIcon from '~/components/ui/icon';
 import { Text, theme } from '~/components/theme';
+import AppIcon from '~/components/ui/icon';
 
 type CapturedPhoto = {
   uri: string;
@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
   captureButton: {
     width: 72,
     height: 72,
-    borderRadius: theme.borderRadii.full,
+    borderRadius: theme.borderRadii.sm,
     borderWidth: 4,
     borderColor: theme.colors.white,
     alignItems: 'center',

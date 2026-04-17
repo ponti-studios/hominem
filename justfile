@@ -11,29 +11,6 @@ LOCAL_TEST_DATABASE_URL := "postgresql://postgres:postgres@127.0.0.1:4433/homine
 
 import 'justfiles/db.just'
 
-setup install-flags="" build-packages="true" install-goose="false":
-    #!/usr/bin/env bash
-    NODE_ENV=development pnpm install --frozen-lockfile {{ install-flags }}
-    if [ "{{ build-packages }}" = "true" ]; then
-      {{ TURBO }} run build --filter=@hominem/env --filter=@hominem/db --filter=@hominem/rpc --filter=@hominem/auth
-    fi
-    if [ "{{ install-goose }}" = "true" ]; then
-      just goose-install
-    fi
-
-start-compose-services compose-files services project-name="hominem" wait-timeout="120":
-    #!/usr/bin/env bash
-    read -r -a compose_files <<< "{{ compose-files }}"
-    read -r -a services_list <<< "{{ services }}"
-    compose_args=()
-    for compose_file in "${compose_files[@]}"; do
-      compose_args+=(-f "{{ ROOT_DIR }}/$compose_file")
-    done
-    docker compose "${compose_args[@]}" \
-      --project-name "{{ project-name }}" \
-      up -d --build --wait --wait-timeout "{{ wait-timeout }}" \
-      "${services_list[@]}"
-
 lint:
     {{ TURBO }} run lint
 
@@ -65,31 +42,6 @@ build-api:
 web-e2e-install:
     cd "{{ WEB_DIR }}" && pnpm dlx playwright install --with-deps chromium
 
-web-e2e-api-local:
-    #!/usr/bin/env bash
-    cd "{{ ROOT_DIR }}" && just db-setup && DATABASE_URL="${DATABASE_URL:-{{ LOCAL_TEST_DATABASE_URL }}}" pnpm exec tsx services/api/test/setup/auth-state.cleanup.run.ts && cd "{{ ROOT_DIR }}/services/api" && pnpm run start
-
-web-e2e-api-ci:
-    cd "{{ ROOT_DIR }}" && just db-setup && DATABASE_URL="${DATABASE_URL:-{{ LOCAL_TEST_DATABASE_URL }}}" pnpm exec tsx services/api/test/setup/auth-state.cleanup.run.ts && cd "{{ ROOT_DIR }}/services/api" && pnpm run start
-
-web-e2e-web-local:
-    cd "{{ WEB_DIR }}" && pnpm run build && pnpm run start
-
-web-e2e-web-ci:
-    cd "{{ WEB_DIR }}" && pnpm run build && pnpm run start
-
-web-e2e:
-    cd "{{ WEB_DIR }}" && pnpm run test:e2e
-
-docker-up:
-    docker compose -f "{{ ROOT_DIR }}/infra/compose/base.yml" -f "{{ ROOT_DIR }}/infra/compose/dev.yml" up -d
-
-docker-down:
-    docker compose -f "{{ ROOT_DIR }}/infra/compose/base.yml" -f "{{ ROOT_DIR }}/infra/compose/dev.yml" down
-
-docker-kill:
-    docker compose -f "{{ ROOT_DIR }}/infra/compose/base.yml" -f "{{ ROOT_DIR }}/infra/compose/dev.yml" down --rmi all --volumes --remove-orphans
-
 dev:
     {{ TURBO }} run dev
 
@@ -110,15 +62,11 @@ format:
 test:
     {{ TURBO }} run test
 
-otel:
-    open http://localhost:16686/
-
 gh-pr-errors:
     ./.claude/skills/gh-pr-errors/scripts/check-last-gh-actions-errors.sh
 
-# Mobile (Expo)
-
 MOBILE_DIR := ROOT_DIR / "apps" / "mobile"
+
 mobile-test:
     cd "{{ MOBILE_DIR }}" && pnpm exec vitest run --config vitest.config.ts
 
@@ -146,10 +94,5 @@ mobile-doctor:
 mobile-lint:
     cd "{{ MOBILE_DIR }}" && pnpm exec expo lint
 
-# Run all mobile checks
-mobile-check: mobile-typecheck mobile-test
+validate-mobile: mobile-typecheck mobile-test
 
-validate-mobile: mobile-check
-
-mobile-e2e:
-    cd "{{ MOBILE_DIR }}" && pnpm exec detox test --configuration ios --cleanup

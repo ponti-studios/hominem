@@ -151,7 +151,13 @@ export function useNote(id: string) {
 }
 
 export function useNoteSearch(query: string, enabled = true) {
-  return useInfiniteQuery<NotesSearchOutput, Error, NotesSearchOutput, readonly unknown[], string | null>({
+  return useInfiniteQuery<
+    NotesSearchOutput,
+    Error,
+    NotesSearchOutput,
+    readonly unknown[],
+    string | null
+  >({
     queryKey: notesQueryKeys.search(query),
     initialPageParam: null,
     enabled: enabled && query.trim().length > 0,

@@ -8,11 +8,8 @@
       "distribution": "internal",
       "env": {
         "APP_VARIANT": "dev",
+        "EXPO_APPLE_TEAM_ID": "3QHJ2KN8AL",
         "EXPO_PUBLIC_MOBILE_PASSKEY_ENABLED": "false"
-      },
-      "ios": {
-        "appleTeamId": "3QHJ2KN8AL",
-        "bundleIdentifier": "com.pontistudios.hakumi.dev"
       }
     },
     "e2e": {
@@ -20,11 +17,8 @@
       "distribution": "internal",
       "env": {
         "APP_VARIANT": "e2e",
+        "EXPO_APPLE_TEAM_ID": "3QHJ2KN8AL",
         "EXPO_PUBLIC_MOBILE_PASSKEY_ENABLED": "false"
-      },
-      "ios": {
-        "appleTeamId": "3QHJ2KN8AL",
-        "bundleIdentifier": "com.pontistudios.hakumi.e2e"
       }
     },
     "preview": {
@@ -35,10 +29,6 @@
         "EXPO_PUBLIC_API_BASE_URL": "https://api.ponti.io",
         "EXPO_PUBLIC_MOBILE_PASSKEY_ENABLED": "false"
       },
-      "ios": {
-        "appleTeamId": "3QHJ2KN8AL",
-        "bundleIdentifier": "com.pontistudios.hakumi.preview"
-      },
       "channel": "preview"
     },
     "production": {
@@ -48,10 +38,6 @@
         "APP_VARIANT": "production",
         "EXPO_PUBLIC_API_BASE_URL": "https://api.ponti.io",
         "EXPO_PUBLIC_MOBILE_PASSKEY_ENABLED": "false"
-      },
-      "ios": {
-        "appleTeamId": "3QHJ2KN8AL",
-        "bundleIdentifier": "com.pontistudios.hakumi"
       },
       "channel": "production"
     }

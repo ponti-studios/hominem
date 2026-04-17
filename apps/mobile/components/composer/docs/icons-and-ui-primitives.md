@@ -26,18 +26,18 @@ const AppIcon = ({ color, name, size = 24 }: IconProps) => (
 
 ## SF Symbols used in the composer
 
-| Symbol | Usage |
-|---|---|
-| `arrow.up` | Send button |
-| `plus` | Attachment button |
-| `waveform` | Voice recording button |
-| `bubble.left` | Secondary action (start chat) / note chip icon |
-| `xmark` | Remove attachment / remove note chip / close modals |
-| `mic` | Voice input: idle state |
-| `stop.fill` | Voice input: recording state |
-| `clock` | Voice input: pause button |
-| `arrow.clockwise` | Voice input: resume button |
-| `camera.rotate` | Camera modal: flip camera |
+| Symbol            | Usage                                               |
+| ----------------- | --------------------------------------------------- |
+| `arrow.up`        | Send button                                         |
+| `plus`            | Attachment button                                   |
+| `waveform`        | Voice recording button                              |
+| `bubble.left`     | Secondary action (start chat) / note chip icon      |
+| `xmark`           | Remove attachment / remove note chip / close modals |
+| `mic`             | Voice input: idle state                             |
+| `stop.fill`       | Voice input: recording state                        |
+| `clock`           | Voice input: pause button                           |
+| `arrow.clockwise` | Voice input: resume button                          |
+| `camera.rotate`   | Camera modal: flip camera                           |
 
 ## SendButton
 
@@ -62,10 +62,12 @@ function SendButton({ onPress, disabled, accessibilityLabel }) {
 ```
 
 Sizes:
+
 - Button: `SEND_BTN_SIZE = spacing[6]` (~32px), circular
 - Icon: `SEND_ICON_SIZE = spacing[4] + 2` (~18px)
 
 States:
+
 - **Enabled**: `backgroundColor: theme.colors.foreground` (filled), icon in `bg-base`
 - **Disabled**: `backgroundColor: theme.colors['bg-base']`, `borderWidth: 1`, icon in `text-tertiary`
 - **Pressed**: `opacity: 0.7`
@@ -83,10 +85,12 @@ function SecondaryButton({ icon, onPress, accessibilityLabel, disabled }) {
 ```
 
 Sizes:
+
 - Button: `SECONDARY_BTN_SIZE = spacing[5] + 2` (~26px)
 - Icon: `SECONDARY_ICON_SIZE = spacing[4] + 4` (~20px)
 
 States:
+
 - **Pressed**: `backgroundColor: theme.colors['bg-surface']`
 - **Disabled**: `opacity: 0.4`
 
@@ -98,17 +102,17 @@ A text-label button (`Pressable` + `Animated.Text`) defined in `Composer.tsx`. C
 
 ## Theme tokens used
 
-| Token | Role |
-|---|---|
-| `theme.colors.foreground` | Send button background (enabled); input text |
-| `theme.colors['bg-base']` | Send button background (disabled); send icon color (enabled) |
-| `theme.colors['bg-elevated']` | Card background |
-| `theme.colors['bg-surface']` | Secondary button pressed background; attachment placeholder |
-| `theme.colors['text-secondary']` | Secondary button icon color |
-| `theme.colors['text-tertiary']` | Placeholder text; send icon color (disabled) |
-| `theme.colors.accent` | Input cursor and selection color |
-| `theme.colors.destructive` | Error text; recording button (active) |
-| `theme.colors['border-default']` | Send button border (disabled); selection chip border |
-| `radiiNative.md` | Card, secondary button, attachment thumbnail border radius |
-| `radiiNative.full` | Send button, selection chip border radius |
-| `shadowsNative.low` | Card drop shadow |
+| Token                            | Role                                                         |
+| -------------------------------- | ------------------------------------------------------------ |
+| `theme.colors.foreground`        | Send button background (enabled); input text                 |
+| `theme.colors['bg-base']`        | Send button background (disabled); send icon color (enabled) |
+| `theme.colors['bg-elevated']`    | Card background                                              |
+| `theme.colors['bg-surface']`     | Secondary button pressed background; attachment placeholder  |
+| `theme.colors['text-secondary']` | Secondary button icon color                                  |
+| `theme.colors['text-tertiary']`  | Placeholder text; send icon color (disabled)                 |
+| `theme.colors.accent`            | Input cursor and selection color                             |
+| `theme.colors.destructive`       | Error text; recording button (active)                        |
+| `theme.colors['border-default']` | Send button border (disabled); selection chip border         |
+| `radii.md`                       | Card, secondary button, attachment thumbnail border radius   |
+| `radii.sm`                       | Send button, selection chip border radius                    |
+| `shadowsNative.low`              | Card drop shadow                                             |

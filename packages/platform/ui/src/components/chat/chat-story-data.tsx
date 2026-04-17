@@ -1,3 +1,4 @@
+import type { ChatIconName } from '@hominem/chat';
 import type { SessionSource } from '@hominem/rpc/types';
 import {
   Copy,
@@ -15,7 +16,6 @@ import {
 } from 'lucide-react';
 
 import type { ExtendedMessage } from '../../types/chat';
-import type { ChatIconName } from '@hominem/chat';
 
 export const mockSessionSources = {
   new: { kind: 'new' },
