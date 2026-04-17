@@ -19,7 +19,7 @@ on:
 
 jobs:
   deploy-web:
-    uses: ./.github/workflows/railway-deploy-service.yml
+    uses: ./.github/templates/railway-deploy-service.yml
     secrets:
       service_target: ${{ secrets.RAILWAY_SERVICE_WEB }}
     with:
