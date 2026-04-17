@@ -19,7 +19,7 @@ on:
 jobs:
   deploy-api:
     uses: ./.github/workflows/railway-deploy-service.yml
-    secrets: inherit
+    secrets:
+      service_target: ${{ secrets.RAILWAY_SERVICE_API }}
     with:
       service_name: api
-      service_target: ${{ vars.RAILWAY_SERVICE_API }}
