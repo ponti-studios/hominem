@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveAuthScreenState } from '~/app/(auth)/auth-screen-state';
+import { resolveAuthScreenState } from '~/services/auth/auth-screen-state';
 
 describe('resolveAuthScreenState', () => {
   it('keeps the session probe silent while booting', () => {
