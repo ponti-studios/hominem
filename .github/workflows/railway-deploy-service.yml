@@ -1,0 +1,35 @@
+on:
+  workflow_call:
+    inputs:
+      service_name:
+        required: true
+        type: string
+    secrets:
+      service_target:
+        required: true
+      RAILWAY_TOKEN:
+        required: true
+
+concurrency:
+  group: railway-deploy-${{ inputs.service_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    container: ghcr.io/railwayapp/cli:latest
+    timeout-minutes: 30
+    env:
+      SERVICE: ${{ secrets.service_target }}
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: validate-env
+        run: test -n "$SERVICE" && test -n "$RAILWAY_TOKEN"
+
+      - run: railway up --ci --service "$SERVICE"
