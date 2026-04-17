@@ -1,9 +1,3 @@
-FROM golang:1.25-alpine AS goose-builder
-
-WORKDIR /src
-
-RUN go install github.com/pressly/goose/v3/cmd/goose@v3.27.0
-
 FROM node:24.14.1-alpine AS builder
 
 WORKDIR /app
@@ -53,7 +47,6 @@ COPY --from=builder --chown=hominem:apiuser /app/node_modules ./node_modules
 COPY --from=builder --chown=hominem:apiuser /app/services/api ./services/api
 COPY --from=builder --chown=hominem:apiuser /app/packages ./packages
 COPY --from=builder --chown=hominem:apiuser /app/tsconfig*.json ./
-COPY --from=goose-builder --chown=hominem:apiuser /go/bin/goose /usr/local/bin/goose
 
 USER hominem
 
