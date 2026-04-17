@@ -19,7 +19,7 @@
     "@hominem/rpc": "workspace:*",
     "@hominem/ui": "workspace:*",
     "@hominem/utils": "workspace:*",
-    "@react-native-async-storage/async-storage": "^3.0.2",
+    "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-community/netinfo": "11.5.2",
     "@shopify/flash-list": "2.0.2",
     "@shopify/restyle": "^2.4.4",
@@ -63,11 +63,11 @@
     "react-error-boundary": "^6.1.1",
     "react-native": "0.83.4",
     "react-native-gesture-handler": "~2.30.0",
-    "react-native-keyboard-controller": "^1.21.5",
+    "react-native-keyboard-controller": "^1.20.7",
     "react-native-markdown-display": "^7.0.2",
     "react-native-mmkv": "^4.2.0",
     "react-native-nitro-modules": "^0.35.2",
-    "react-native-reanimated": "4.2.1",
+    "react-native-reanimated": "4.3.0",
     "react-native-safe-area-context": "5.6.2",
     "react-native-screens": "~4.23.0",
     "react-native-svg": "15.15.3",
@@ -78,10 +78,6 @@
   },
   "devDependencies": {
     "@better-auth/expo": "^1.4.19",
-    "@types/node": "^25.4.0",
-    "@types/react": "19.2.10",
-    "@types/react-dom": "19.1.7",
-    "@typescript/native-preview": "7.0.0-dev.20260415.1",
     "babel-preset-expo": "^55.0.10",
     "eslint": "^9.0.0",
     "eslint-config-expo": "~55.0.0"
@@ -89,7 +85,7 @@
   "engines": {
     "node": ">=24.14.1"
   },
-  "packageManager": "pnpm@9.3.0",
+  "packageManager": "pnpm@10.33.0",
   "expo": {
     "install": {
       "exclude": [

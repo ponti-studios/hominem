@@ -1,5 +1,4 @@
 import { createOpenAI } from '@ai-sdk/openai';
-import type { LanguageModelV1 } from 'ai';
 import OpenAI from 'openai';
 
 import { env } from './env';
@@ -10,6 +9,8 @@ const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 interface SharedTextModelOptions {
   structuredOutputs?: boolean;
 }
+
+type SharedTextModel = ReturnType<ReturnType<typeof createOpenAI>['chat']>;
 
 function buildProviderClient(): ReturnType<typeof createOpenAI> {
   if (!env.OPENROUTER_API_KEY) {
@@ -25,14 +26,11 @@ function buildProviderClient(): ReturnType<typeof createOpenAI> {
   });
 }
 
-export function getSharedTextModel(options: SharedTextModelOptions = {}): LanguageModelV1 {
+export function getSharedTextModel(_options: SharedTextModelOptions = {}): SharedTextModel {
   const modelId = env.AI_MODEL;
 
   const client = buildProviderClient();
-
-  return options.structuredOutputs === undefined
-    ? client.chat(modelId)
-    : client.chat(modelId, { structuredOutputs: options.structuredOutputs });
+  return client.chat(modelId);
 }
 
 export function getSharedAiModelConfig() {

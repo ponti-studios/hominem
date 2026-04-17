@@ -1,4 +1,0 @@
-{
-  "extends": "../../../tsconfig.profiles/package-bundler.json",
-  "include": ["./*.ts"]
-}

@@ -12,7 +12,6 @@ import { useTranscribe } from '~/hooks/use-transcribe';
 import { requireAuth } from '~/lib/guards';
 import { useChatMessages } from '~/lib/hooks/use-chat-messages';
 import { useFileUpload } from '~/lib/hooks/use-file-upload';
-import { useSendMessage } from '~/lib/hooks/use-send-message';
 import { useStreamMessage } from '~/lib/hooks/use-stream-message';
 import { chatQueryKeys } from '~/lib/query-keys';
 
@@ -46,7 +45,6 @@ export default function ChatPage({ params }: Route.ComponentProps) {
     queryKey: chatQueryKeys.get(chatId),
   });
   const { messages } = useChatMessages({ chatId });
-  const sendMessage = useSendMessage({ chatId });
   const streamMessage = useStreamMessage({ chatId });
   const archiveChat = useArchiveChat({ chatId });
   const transcribe = useTranscribe();
@@ -325,10 +323,10 @@ export default function ChatPage({ params }: Route.ComponentProps) {
               </div>
               <Button
                 type="button"
-                disabled={sendMessage.isPending}
+                disabled={streamMessage.isStreaming}
                 onClick={() => void handleSend()}
               >
-                {sendMessage.isPending ? 'Sending...' : 'Send'}
+                {streamMessage.isStreaming ? 'Streaming...' : 'Send'}
               </Button>
             </div>
           </div>

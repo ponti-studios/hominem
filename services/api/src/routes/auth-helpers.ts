@@ -2,7 +2,7 @@ import { env } from '../env';
 
 type HeadersWithGetSetCookie = Headers & { getSetCookie?(): string[] };
 
-export function getSetCookieHeaders(headers: HeadersWithGetSetCookie): string[] {
+function getSetCookieHeaders(headers: HeadersWithGetSetCookie): string[] {
   return typeof headers.getSetCookie === 'function' ? headers.getSetCookie() : [];
 }
 

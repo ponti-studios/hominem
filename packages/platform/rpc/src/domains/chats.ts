@@ -4,7 +4,6 @@ import type {
   ChatsCreateOutput,
   ChatsGetMessagesOutput,
   ChatsGetOutput,
-  ChatsSendOutput,
   ChatsUpdateOutput,
 } from '../types/chat.types';
 
@@ -63,7 +62,6 @@ export interface ChatsClient {
   create(input: ChatsCreateParams): Promise<ChatsCreateOutput>;
   update(input: ChatsUpdateInput): Promise<ChatsUpdateOutput>;
   archive(input: ChatsArchiveInput): Promise<Chat>;
-  send(input: ChatsSendMessageInput): Promise<ChatsSendOutput>;
   stream(input: ChatsSendMessageInput): Promise<ReadableStream<Uint8Array>>;
 }
 
@@ -100,16 +98,6 @@ export function createChatsClient(rawClient: RawHonoClient): ChatsClient {
     async archive(input) {
       const res = await rawClient.post(`/api/chats/${input.chatId}/archive`);
       return res.json() as Promise<Chat>;
-    },
-    async send(input) {
-      const res = await rawClient.post(`/api/chats/${input.chatId}/send`, {
-        json: {
-          message: input.message,
-          ...(input.fileIds && input.fileIds.length > 0 ? { fileIds: input.fileIds } : {}),
-          ...(input.noteIds && input.noteIds.length > 0 ? { noteIds: input.noteIds } : {}),
-        },
-      });
-      return res.json() as Promise<ChatsSendOutput>;
     },
     async stream(input) {
       const res = await rawClient.post(`/api/chats/${input.chatId}/stream`, {

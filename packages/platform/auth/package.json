@@ -40,15 +40,11 @@
     "lint": "pnpm dlx oxlint ./src"
   },
   "dependencies": {
-    "@better-auth/passkey": "^1.4.19",
+    "@better-auth/passkey": "^1.5.4",
     "@hominem/db": "workspace:*",
-    "@hominem/env": "workspace:*",
     "better-auth": "^1.4.19"
   },
   "devDependencies": {
-    "@types/node": "^25.4.0",
-    "@types/react": "19.2.10",
-    "@typescript/native-preview": "7.0.0-dev.20260415.1",
     "react": "19.2.0",
     "vitest": "4.1.2"
   },

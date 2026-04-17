@@ -16,10 +16,6 @@
       "types": "./src/react/index.ts",
       "default": "./src/react/index.ts"
     },
-    "./ssr": {
-      "types": "./src/ssr/index.ts",
-      "default": "./src/ssr/index.ts"
-    },
     "./types": {
       "types": "./src/types/index.ts",
       "default": "./src/types/index.ts"
@@ -46,9 +42,6 @@
     "zod": "4.3.6"
   },
   "devDependencies": {
-    "@types/node": "^25.4.0",
-    "@types/react": "19.2.10",
-    "@typescript/native-preview": "7.0.0-dev.20260415.1",
     "react": "19.2.0"
   },
   "peerDependencies": {

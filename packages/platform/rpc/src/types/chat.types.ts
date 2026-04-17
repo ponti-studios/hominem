@@ -4,9 +4,9 @@ export type {
   ArtifactType,
   CaptureBarProps,
   Chat,
-  ChatInsert,
   ChatIconName,
   ChatInput,
+  ChatInsert,
   ChatMessage,
   ChatMessageFile,
   ChatMessageInput,
@@ -16,13 +16,13 @@ export type {
   ChatMessageRole,
   ChatMessageToolCall,
   ChatOutput,
+  JsonPrimitive,
+  JsonValue,
   MarkdownComponent,
   ReviewItem,
   SessionSource,
   ThoughtLifecycleState,
   ThoughtLifecycleTransition,
-  JsonPrimitive,
-  JsonValue,
 } from '@hominem/chat/types';
 
 export {
@@ -132,20 +132,6 @@ export const chatsUISendSchema = z.object({
   chatId: z.string().optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
 });
-
-export type ChatsSendOutput = {
-  assistantMessageId: string;
-  chatId: string;
-  chatTitle: string;
-  messages: {
-    user: ChatMessageDto;
-    assistant: ChatMessageDto;
-  };
-  metadata: {
-    startTime: number;
-    timestamp: string;
-  };
-};
 
 export type ChatsCreateInput = {
   title: string;

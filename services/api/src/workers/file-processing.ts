@@ -19,7 +19,7 @@ interface FileProcessingJobData {
   size: number;
 }
 
-export async function processFileUploadJob(data: FileProcessingJobData) {
+async function processFileUploadJob(data: FileProcessingJobData) {
   const storedBuffer = await fileStorageService.getFileByPath(data.storageKey);
   if (!storedBuffer) {
     logger.error('[files] processing skipped, file buffer missing', { fileId: data.fileId });

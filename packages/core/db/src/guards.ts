@@ -15,7 +15,7 @@ export interface ChatMessageToolCallRecord {
   args: Record<string, string>;
 }
 
-export function isChatMessageFileRecord(value: unknown): value is ChatMessageFileRecord {
+function isChatMessageFileRecord(value: unknown): value is ChatMessageFileRecord {
   if (typeof value !== 'object' || value === null) return false;
   const record = value as Record<string, unknown>;
   if (record.type !== 'image' && record.type !== 'file') return false;
@@ -32,7 +32,7 @@ export function isChatMessageFileRecord(value: unknown): value is ChatMessageFil
   return true;
 }
 
-export function isChatMessageToolCallRecord(value: unknown): value is ChatMessageToolCallRecord {
+function isChatMessageToolCallRecord(value: unknown): value is ChatMessageToolCallRecord {
   if (typeof value !== 'object' || value === null) return false;
   const record = value as Record<string, unknown>;
   if (typeof record.toolName !== 'string') return false;
