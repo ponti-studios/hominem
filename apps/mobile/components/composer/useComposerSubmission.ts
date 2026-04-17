@@ -7,16 +7,17 @@ import { useMemo } from 'react';
 import { Platform } from 'react-native';
 
 import { useSendMessage } from '~/services/chat';
+import { updateChatTitleCaches } from '~/services/chat/chat-title';
 import type { ChatWithActivity } from '~/services/chat/session-state';
 import {
   createChatInboxRefreshSnapshot,
   invalidateInboxQueries,
   upsertInboxSessionActivity,
 } from '~/services/inbox/inbox-refresh';
-import { chatKeys } from '~/services/notes/query-keys';
 import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
-import { useCreateNote } from '~/services/notes/use-create-note';
 import { donateAddNoteIntent } from '~/services/intent-donation';
+import { chatKeys } from '~/services/notes/query-keys';
+import { useCreateNote } from '~/services/notes/use-create-note';
 
 import {
   buildChatTitle,
@@ -27,12 +28,7 @@ import {
   resolveComposerPrimaryAction,
   resolveComposerSecondaryAction,
 } from './composerActions';
-import { updateChatTitleCaches } from '~/services/chat/chat-title';
-import type {
-  ComposerTarget,
-  ComposerAttachment,
-  ComposerSelectedNote,
-} from './composerState';
+import type { ComposerAttachment, ComposerSelectedNote, ComposerTarget } from './composerState';
 
 type UseComposerSubmissionOptions = {
   target: ComposerTarget;
@@ -41,9 +37,7 @@ type UseComposerSubmissionOptions = {
   selectedNotes: ComposerSelectedNote[];
   isUploading: boolean;
   setAttachments: (
-    value:
-      | ComposerAttachment[]
-      | ((currentValue: ComposerAttachment[]) => ComposerAttachment[]),
+    value: ComposerAttachment[] | ((currentValue: ComposerAttachment[]) => ComposerAttachment[]),
   ) => void;
   clearDraft: () => void;
 };
@@ -79,11 +73,21 @@ export function useComposerSubmission({
     });
 
     if (trimmedMessage || uploadedAttachmentIds.length > 0) {
-      await client.chats.send({
+      const body = await client.chats.stream({
         chatId: chat.id,
         message: trimmedMessage,
         ...(uploadedAttachmentIds.length > 0 ? { fileIds: uploadedAttachmentIds } : {}),
       });
+
+      const reader = body.getReader();
+      try {
+        while (true) {
+          const { done } = await reader.read();
+          if (done) break;
+        }
+      } finally {
+        reader.releaseLock();
+      }
     }
 
     queryClient.setQueryData<ChatWithActivity[] | undefined>(

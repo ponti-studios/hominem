@@ -7,11 +7,11 @@ import {
   type ChatsGetMessagesOutput,
   type ChatsGetOutput,
   type ChatsListOutput,
-  type ChatsSendOutput,
   type ChatsUpdateOutput,
 } from '@hominem/rpc/types/chat.types';
+import { getSharedTextModel } from '@hominem/services/ai-model';
 import { zValidator } from '@hono/zod-validator';
-import { generateText, streamText, type CoreMessage } from 'ai';
+import { streamText } from 'ai';
 import { Hono } from 'hono';
 import * as z from 'zod';
 
@@ -19,14 +19,8 @@ import { env } from '../../env';
 import { ValidationError } from '../errors';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 import { rateLimitMiddleware } from '../middleware/rate-limit';
-import { getOpenAIAdapter } from '../utils/llm';
 import { loadPrompt } from '../utils/load-prompt';
-import {
-  enrichMessageRow,
-  toChatDto,
-  toChatMessageDto,
-  toStoredUserMessageContent,
-} from './chats.mapper';
+import { toChatDto, toChatMessageDto, toStoredUserMessageContent } from './chats.mapper';
 
 const chatsCreateSchema = z.object({
   title: z.string().trim().min(1).max(120),
@@ -40,13 +34,6 @@ const chatsMessagesQuerySchema = z.object({
   limit: z.string().optional(),
   offset: z.string().optional(),
 });
-
-function toCoreHistoryMessage(entry: ChatMessageRecord): CoreMessage | null {
-  if (entry.role === 'system' || entry.role === 'user' || entry.role === 'assistant') {
-    return { role: entry.role, content: entry.content };
-  }
-  return null;
-}
 
 function buildUserPrompt(
   message: string,
@@ -96,6 +83,28 @@ function buildUserPrompt(
   }
 
   return sections.filter(Boolean).join('\n\n');
+}
+
+function buildConversationPrompt(
+  message: string,
+  history: ChatMessageRecord[],
+  notes: NoteContext[],
+  files: ChatMessageFileRecord[],
+): string {
+  const sections = [];
+
+  if (history.length > 0) {
+    sections.push(
+      [
+        'Conversation history:',
+        ...history.map((entry, index) => `${index + 1}. ${entry.role}: ${entry.content}`),
+      ].join('\n'),
+    );
+  }
+
+  sections.push(buildUserPrompt(message, notes, files));
+
+  return sections.join('\n\n');
 }
 
 function getRequiredChatId(c: { req: { param: (name: string) => string | undefined } }): string {
@@ -170,97 +179,6 @@ const chatByIdRoutes = new Hono<AppContext>()
     const messages = await ChatRepository.getMessages(db, chatId, limit, offset);
     return c.json<ChatsGetMessagesOutput>(messages.map(toChatMessageDto));
   })
-  .post('/send', zValidator('json', chatsSendSchema), async (c) => {
-    const userId = c.get('userId')!;
-    const chatId = getRequiredChatId(c);
-    const db = getDb();
-
-    const chat = await ChatRepository.getOwnedOrThrow(db, chatId, userId);
-    const { message, fileIds = [], noteIds = [] } = c.req.valid('json');
-
-    const history = await ChatRepository.getMessages(db, chatId, 30, 0);
-    const resolvedNotes = await ChatRepository.resolveReferencedNotes(db, userId, noteIds, message);
-    const resolvedFiles = await ChatRepository.resolveChatFiles(db, userId, fileIds);
-
-    const prompt = buildUserPrompt(message, resolvedNotes, resolvedFiles);
-    const storedUserContent = toStoredUserMessageContent(message, resolvedNotes, resolvedFiles);
-    if (!storedUserContent) {
-      throw new ValidationError('Message, notes, or files are required');
-    }
-
-    const messages: CoreMessage[] = [
-      {
-        role: 'system',
-        content: loadPrompt('chat-assistant'),
-      },
-      ...history.map(toCoreHistoryMessage).filter((entry): entry is CoreMessage => entry !== null),
-      { role: 'user', content: prompt },
-    ];
-
-    const result = await (async () => {
-      try {
-        return await generateText({
-          model: getOpenAIAdapter(),
-          messages,
-        });
-      } catch (error) {
-        if (
-          env.NODE_ENV === 'test' &&
-          error instanceof Error &&
-          error.message.includes('Missing Authentication header')
-        ) {
-          return { text: 'Test assistant reply' };
-        }
-
-        throw error;
-      }
-    })();
-
-    const now = new Date().toISOString();
-    const { userMsg, assistantMsg } = await runInTransaction(async (trx) => {
-      const userMsg = await ChatRepository.insertMessage(trx, {
-        chatId,
-        authorUserId: userId,
-        role: 'user',
-        content: storedUserContent,
-        files: resolvedFiles.length > 0 ? resolvedFiles : null,
-        referencedNoteIds: resolvedNotes.length > 0 ? resolvedNotes.map((n) => n.id) : null,
-      });
-
-      const assistantMsg = await ChatRepository.insertMessage(trx, {
-        chatId,
-        authorUserId: userId,
-        role: 'assistant',
-        content: result.text,
-      });
-
-      await ChatRepository.touchLastMessage(trx, chatId);
-
-      return { userMsg, assistantMsg };
-    });
-
-    const noteTitlesById = await ChatRepository.getNoteTitles(
-      db,
-      resolvedNotes.map((n) => n.id),
-    );
-
-    const userRecord = enrichMessageRow(userMsg, noteTitlesById);
-    const assistantRecord = enrichMessageRow(assistantMsg, noteTitlesById);
-
-    return c.json<ChatsSendOutput>({
-      assistantMessageId: assistantMsg.id,
-      chatId,
-      chatTitle: chat.title,
-      messages: {
-        user: toChatMessageDto(userRecord),
-        assistant: toChatMessageDto(assistantRecord),
-      },
-      metadata: {
-        startTime: Date.now(),
-        timestamp: now,
-      },
-    });
-  })
   .post('/stream', zValidator('json', chatsSendSchema), async (c) => {
     const userId = c.get('userId')!;
     const chatId = getRequiredChatId(c);
@@ -273,7 +191,6 @@ const chatByIdRoutes = new Hono<AppContext>()
     const resolvedNotes = await ChatRepository.resolveReferencedNotes(db, userId, noteIds, message);
     const resolvedFiles = await ChatRepository.resolveChatFiles(db, userId, fileIds);
 
-    const prompt = buildUserPrompt(message, resolvedNotes, resolvedFiles);
     const storedUserContent = toStoredUserMessageContent(message, resolvedNotes, resolvedFiles);
     if (!storedUserContent) {
       throw new ValidationError('Message, notes, or files are required');
@@ -290,33 +207,72 @@ const chatByIdRoutes = new Hono<AppContext>()
       });
     });
 
-    const messages: CoreMessage[] = [
-      { role: 'system', content: loadPrompt('chat-assistant') },
-      ...history.map(toCoreHistoryMessage).filter((entry): entry is CoreMessage => entry !== null),
-      { role: 'user', content: prompt },
-    ];
+    const prompt = buildConversationPrompt(message, history, resolvedNotes, resolvedFiles);
 
-    const result = await streamText({
-      model: getOpenAIAdapter(),
-      messages,
+    const result = await (async () => {
+      try {
+        return await streamText({
+          model: getSharedTextModel(),
+          system: loadPrompt('chat-assistant'),
+          prompt,
+        });
+      } catch (error) {
+        if (
+          env.NODE_ENV === 'test' &&
+          error instanceof Error &&
+          error.message.includes('Missing Authentication header')
+        ) {
+          return {
+            text: 'Test assistant reply',
+            textStream: new ReadableStream<string>({
+              start(controller) {
+                controller.enqueue('Test assistant reply');
+                controller.close();
+              },
+            }),
+          };
+        }
+
+        throw error;
+      }
+    })();
+
+    const responseStream = new ReadableStream<Uint8Array>({
+      async start(controller) {
+        const reader = result.textStream.getReader();
+        const encoder = new TextEncoder();
+        let assistantText = '';
+
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            assistantText += value;
+            controller.enqueue(encoder.encode(value));
+          }
+
+          await runInTransaction(async (trx) => {
+            await ChatRepository.insertMessage(trx, {
+              chatId,
+              authorUserId: userId,
+              role: 'assistant',
+              content: assistantText,
+            });
+            await ChatRepository.touchLastMessage(trx, chatId);
+          });
+
+          controller.close();
+        } catch (error) {
+          controller.error(error);
+        } finally {
+          reader.releaseLock();
+        }
+      },
     });
 
-    c.executionCtx.waitUntil(
-      result.text.then(async (text) => {
-        await runInTransaction(async (trx) => {
-          await ChatRepository.insertMessage(trx, {
-            chatId,
-            authorUserId: userId,
-            role: 'assistant',
-            content: text,
-          });
-          await ChatRepository.touchLastMessage(trx, chatId);
-        });
-      }),
-    );
-
-    return c.body(result.textStream.pipeThrough(new TextEncoderStream()), 200, {
-      'Content-Type': 'text/event-stream',
+    return c.body(responseStream, 200, {
+      'Content-Type': 'text/plain; charset=utf-8',
     });
   });
 

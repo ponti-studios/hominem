@@ -16,7 +16,7 @@
   },
   "deploy": {
     "startCommand": "pnpm --filter @hominem/api run start",
-    "preDeployCommand": "pnpm run db:migrate:deploy",
+    "preDeployCommand": "pnpm --filter @hominem/api run migrate:deploy",
     "healthcheckPath": "/api/status",
     "healthcheckTimeout": 120,
     "restartPolicyType": "ON_FAILURE",

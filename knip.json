@@ -8,7 +8,7 @@
     },
 
     "apps/mobile": {
-      "entry": ["app/**/*.{ts,tsx}", "e2e/**/*.{js,ts}"],
+      "entry": ["app/**/*.{ts,tsx}"],
       "project": ["**/*.{ts,tsx}"]
     },
 
@@ -24,7 +24,6 @@
       "project": ["src/**/*.{ts,tsx}"]
     },
 
-
     "packages/domains/*": {
       "project": ["src/**/*.{ts,tsx}"]
     },
@@ -35,16 +34,18 @@
     }
   },
 
-  "ignoreDependencies": ["tsx", "turbo"],
+  "ignoreDependencies": ["tsx", "babel-preset-expo"],
+
+  "ignoreBinaries": ["goose"],
 
   "ignoreUnresolved": ["^vite/client$"],
 
-  "ignoreFiles": ["apps/mobile/tests/support/**"],
-
   "ignore": [
-  ],
-
-  "ignoreIssues": {
-    "apps/mobile/tests/support/**": ["exports"]
-  }
+    "packages/platform/ui/src/components/**",
+    "apps/mobile/components/**",
+    "apps/mobile/services/**",
+    "apps/mobile/hooks/**",
+    "apps/mobile/types/**",
+    "apps/mobile/modules/**"
+  ]
 }

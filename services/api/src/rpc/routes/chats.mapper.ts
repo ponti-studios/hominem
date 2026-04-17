@@ -35,55 +35,6 @@ export function toChatMessageDto(record: ChatMessageRecord): ChatMessageDto {
   };
 }
 
-export function enrichMessageRow(
-  row: {
-    id: string;
-    chat_id: string;
-    author_userid: string | null;
-    role: string;
-    content: string;
-    files: unknown;
-    referenced_note_ids: unknown;
-    tool_calls: unknown;
-    reasoning: string | null;
-    parent_message_id: string | null;
-    createdat: unknown;
-    updatedat: unknown;
-  },
-  noteTitlesById: Map<string, string | null>,
-): ChatMessageRecord {
-  const referencedNoteIds = Array.isArray(row.referenced_note_ids)
-    ? (row.referenced_note_ids as string[])
-    : [];
-
-  const toIso = (value: unknown): string =>
-    value instanceof Date
-      ? value.toISOString()
-      : typeof value === 'string'
-        ? value
-        : new Date().toISOString();
-
-  return {
-    id: row.id,
-    chatId: row.chat_id,
-    userId: row.author_userid ?? '',
-    role: row.role as ChatMessageRecord['role'],
-    content: row.content,
-    files: Array.isArray(row.files) ? (row.files as ChatMessageFileRecord[]) : null,
-    referencedNotes:
-      referencedNoteIds.length > 0
-        ? referencedNoteIds.map((id) => ({ id, title: noteTitlesById.get(id) ?? null }))
-        : null,
-    toolCalls: Array.isArray(row.tool_calls)
-      ? (row.tool_calls as ChatMessageRecord['toolCalls'])
-      : null,
-    reasoning: row.reasoning,
-    parentMessageId: row.parent_message_id,
-    createdAt: toIso(row.createdat),
-    updatedAt: toIso(row.updatedat),
-  };
-}
-
 export function toStoredUserMessageContent(
   message: string,
   notes: NoteContext[],

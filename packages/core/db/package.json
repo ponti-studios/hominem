@@ -32,12 +32,11 @@
   },
   "dependencies": {
     "kysely": "^0.28.11",
+    "pg": "^8.20.0",
     "zod": "4.3.6"
   },
   "devDependencies": {
-    "@types/node": "^25.4.0",
-    "@typescript/native-preview": "7.0.0-dev.20260415.1",
-    "dotenv": "^16.4.7",
+    "dotenv": "17.2.3",
     "kysely-codegen": "^0.20.0"
   }
 }

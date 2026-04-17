@@ -1,11 +1,10 @@
 import { useApiClient } from '@hominem/rpc/react';
 import type { Chat, ChatMessageDto as RpcChatMessage } from '@hominem/rpc/types';
+import { logger } from '@hominem/utils/logger';
 import NetInfo from '@react-native-community/netinfo';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { randomUUID } from 'expo-crypto';
 import { useState } from 'react';
-
-import { logger } from '@hominem/utils/logger';
 
 import {
   createChatInboxRefreshSnapshot,
@@ -15,16 +14,9 @@ import {
 import { chatKeys } from '../notes/query-keys';
 import { createOptimisticMessage, type MessageOutput } from './chatMessages';
 import { getChatActivityAt, selectChatSession, type ChatWithActivity } from './session-state';
-import { updateChatTitleCaches } from './chat-title';
 
 type SendChatMessageOutput = {
-  chatTitle: string;
-  metadata: {
-    startTime: number;
-    timestamp: string;
-  };
-  messages: MessageOutput[];
-  function_calls: string[];
+  assistantText: string;
 };
 
 interface SendChatMessageInput {
@@ -123,9 +115,7 @@ export const useSendMessage = ({ chatId }: { chatId: string }) => {
         queryClient.getQueryData<MessageOutput[]>(chatKeys.messages(chatId)) || [];
 
       const optimisticText =
-        text ||
-        referencedNotes?.map((note) => note.title || note.id).join(', ') ||
-        '';
+        text || referencedNotes?.map((note) => note.title || note.id).join(', ') || '';
 
       // Optimistically add user message
       const optimisticMessage = createOptimisticMessage(
@@ -161,58 +151,52 @@ export const useSendMessage = ({ chatId }: { chatId: string }) => {
         throw new Error('offline_unavailable');
       }
 
-      const payload = await client.chats.send({
+      const body = await client.chats.stream({
         chatId,
         message: messageText.trim(),
         ...(fileIds && fileIds.length > 0 ? { fileIds } : {}),
         ...(noteIds && noteIds.length > 0 ? { noteIds } : {}),
       });
+
       setChatSendStatus('streaming');
-      const mappedMessages = [payload.messages.user, payload.messages.assistant].flatMap(
-        (message) => {
-          const output = toMessageOutput(message);
-          return output ? [output] : [];
-        },
-      );
+      const reader = body.getReader();
+      const decoder = new TextDecoder();
+      let assistantText = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        assistantText += decoder.decode(value, { stream: true });
+      }
+
+      const finalChunk = decoder.decode();
+      if (finalChunk) {
+        assistantText += finalChunk;
+      }
 
       return {
-        chatTitle: payload.chatTitle,
-        metadata: payload.metadata,
-        messages: mappedMessages,
-        function_calls: [],
+        assistantText,
       };
     },
 
     // On success, update cache with server data
-    onSuccess: (data, _variables, context) => {
+    onSuccess: (_data, _variables, context) => {
       setSendChatError(false);
       setChatSendStatus('idle');
       const optimisticId = context?.optimisticMessageId;
-      updateChatTitleCaches(queryClient, {
-        chatId,
-        title: data.chatTitle,
-        updatedAt: data.metadata.timestamp,
-      });
       queryClient.setQueryData(chatKeys.messages(chatId), (old: MessageOutput[] | undefined) => {
         const previous = old ?? [];
-        const serverUserMsg = data.messages.find((m) => m.role === 'user');
-        const serverAssistantMsg = data.messages.find((m) => m.role === 'assistant');
-
-        // Replace the optimistic user message in-place, keeping its ID as the stable React key
-        // so the bubble doesn't unmount/remount and re-animate.
         const reconciled = previous.map((msg) => {
-          if (msg.id === optimisticId && serverUserMsg) {
-            return { ...serverUserMsg, id: optimisticId };
+          if (msg.id === optimisticId) {
+            return { ...msg, isStreaming: false };
           }
           return msg;
         });
 
-        // Append the assistant message (it's always new).
-        if (serverAssistantMsg && !reconciled.some((m) => m.id === serverAssistantMsg.id)) {
-          return [...reconciled, serverAssistantMsg];
-        }
         return reconciled;
       });
+      void queryClient.invalidateQueries({ queryKey: chatKeys.messages(chatId) });
       void invalidateInboxQueries(queryClient);
     },
 
@@ -282,22 +266,26 @@ export const useArchiveChat = ({
     mutationFn: async () => client.chats.archive({ chatId }),
     onSuccess: (archivedChat) => {
       queryClient.setQueryData(chatKeys.activeChat(chatId), archivedChat);
-      queryClient.setQueryData<ChatWithActivity[] | undefined>(chatKeys.resumableSessions, (sessions) =>
-        sessions?.filter((session) => session.id !== chatId),
+      queryClient.setQueryData<ChatWithActivity[] | undefined>(
+        chatKeys.resumableSessions,
+        (sessions) => sessions?.filter((session) => session.id !== chatId),
       );
-      queryClient.setQueryData<ChatWithActivity[] | undefined>(chatKeys.archivedSessions, (sessions) => {
-        const activityAt = getChatActivityAt(archivedChat);
-        const nextArchivedChat: ChatWithActivity = {
-          ...archivedChat,
-          activityAt,
-        };
+      queryClient.setQueryData<ChatWithActivity[] | undefined>(
+        chatKeys.archivedSessions,
+        (sessions) => {
+          const activityAt = getChatActivityAt(archivedChat);
+          const nextArchivedChat: ChatWithActivity = {
+            ...archivedChat,
+            activityAt,
+          };
 
-        if (!sessions) {
-          return [nextArchivedChat];
-        }
+          if (!sessions) {
+            return [nextArchivedChat];
+          }
 
-        return [nextArchivedChat, ...sessions.filter((session) => session.id !== chatId)];
-      });
+          return [nextArchivedChat, ...sessions.filter((session) => session.id !== chatId)];
+        },
+      );
       onSuccess();
     },
   });

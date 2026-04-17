@@ -47,9 +47,7 @@
     "@opentelemetry/sdk-trace-web": "^1.24.0",
     "@opentelemetry/semantic-conventions": "^1.24.0"
   },
-  "devDependencies": {
-    "@typescript/native-preview": "7.0.0-dev.20260415.1"
-  },
+  "devDependencies": {},
   "peerDependencies": {
     "pino": "^9.0.0"
   },
