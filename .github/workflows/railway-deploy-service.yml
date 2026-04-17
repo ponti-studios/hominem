@@ -17,26 +17,16 @@ jobs:
   deploy:
     name: deploy-${{ inputs.service_name }}
     runs-on: ubuntu-latest
+    container: ghcr.io/railwayapp/cli:latest
     timeout-minutes: 30
     env:
       SERVICE: ${{ secrets.service_target }}
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
     steps:
-      - name: checkout-repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: setup-node-js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24.14.1
+      - name: validate-env
+        run: test -n "$SERVICE" && test -n "$RAILWAY_TOKEN"
 
-      - name: install-railway-cli
-        run: npm install -g @railway/cli
-
-      - name: validate-railway-service-target
-        run: test -n "$SERVICE"
-
-      - name: deploy-${{ inputs.service_name }}-to-railway
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: railway up --ci --service "$SERVICE"
+      - run: railway up --ci --service "$SERVICE"
