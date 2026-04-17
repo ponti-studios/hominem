@@ -1,5 +1,3 @@
-name: deploy-service
-
 on:
   workflow_call:
     inputs:
@@ -15,7 +13,6 @@ permissions:
 
 jobs:
   deploy:
-    name: deploy-${{ inputs.service_name }}
     runs-on: ubuntu-latest
     container: ghcr.io/railwayapp/cli:latest
     timeout-minutes: 30
