@@ -1,12 +1,12 @@
-import { FileRepository, getDb } from '@hominem/db';
 import type { FileRecord } from '@hominem/db';
+import { FileRepository, getDb } from '@hominem/db';
 import { fileProcessingQueue } from '@hominem/queues';
 import { logger } from '@hominem/utils/logger';
 import { fileStorageService } from '@hominem/utils/storage';
 import { Hono } from 'hono';
 import * as z from 'zod';
 
-import { InternalError, NotFoundError, ValidationError } from '../errors';
+import { InternalError, NotFoundError, UnavailableError, ValidationError } from '../errors';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 
 const uploadMetadataSchema = z.object({
@@ -30,10 +30,46 @@ function toFilePayload(file: FileRecord) {
   };
 }
 
+function toUploadServiceError(error: unknown): Error | null {
+  if (!(error instanceof Error)) {
+    return null;
+  }
+
+  const errorName = error.name.toLowerCase();
+  const errorMessage = error.message.toLowerCase();
+
+  if (errorMessage.includes('missing r2 credentials')) {
+    return new UnavailableError('File uploads are unavailable because storage is not configured.');
+  }
+
+  if (errorName.includes('s3serviceexception') || errorMessage.includes('unauthorized')) {
+    return new UnavailableError(
+      'File uploads are unavailable because storage authentication failed.',
+    );
+  }
+
+  if (
+    errorMessage.includes('timeout') ||
+    errorMessage.includes('econnrefused') ||
+    errorMessage.includes('enotfound') ||
+    errorMessage.includes('network')
+  ) {
+    return new UnavailableError(
+      'File uploads are temporarily unavailable because storage is unreachable.',
+    );
+  }
+
+  return null;
+}
+
 function logAndThrow(error: unknown, message: string): never {
   logger.error('[files] request failed', { error, message });
   if (error instanceof ValidationError || error instanceof NotFoundError) {
     throw error;
+  }
+  const uploadServiceError = toUploadServiceError(error);
+  if (uploadServiceError) {
+    throw uploadServiceError;
   }
   // Re-throw repository errors (which include NotFoundError from @hominem/db)
   if (error instanceof Error && 'code' in error) {

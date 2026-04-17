@@ -1,5 +1,7 @@
 import * as z from 'zod';
 
+type EnvSource = Record<string, string | undefined>;
+
 export class EnvValidationError extends Error {
   constructor(
     message: string,
@@ -13,7 +15,7 @@ export class EnvValidationError extends Error {
 
 function parseEnv<T extends z.ZodObject<z.ZodRawShape>>(
   schema: T,
-  source: Record<string, string | undefined>,
+  source: EnvSource,
   ctx: string,
 ): z.infer<T> {
   try {
@@ -38,220 +40,37 @@ export function createClientEnv<T extends z.ZodObject<z.ZodRawShape>>(
   schema: T,
   context = 'clientEnv',
 ): z.infer<T> {
-  const envSource = (import.meta as { env?: Record<string, string | undefined> }).env ?? {};
-  let cachedEnv: z.infer<T> | null = null;
-  let cachedError: Error | null = null;
+  if (typeof (globalThis as { window?: unknown }).window === 'undefined') {
+    throw new EnvValidationError(
+      'createClientEnv can only be used in browser context. Use createServerEnv for server-side code.',
+      context,
+    );
+  }
 
-  return new Proxy({} as z.infer<T>, {
-    get: (_target, prop: string | symbol) => {
-      if (cachedError) throw cachedError;
-
-      if (!cachedEnv) {
-        if (typeof (globalThis as { window?: unknown }).window === 'undefined') {
-          cachedError = new EnvValidationError(
-            'createClientEnv can only be used in browser context. Use createServerEnv for server-side code.',
-            context,
-          );
-          throw cachedError;
-        }
-        try {
-          cachedEnv = parseEnv(schema, envSource, context);
-        } catch (err) {
-          cachedError = err as Error;
-          throw cachedError;
-        }
-      }
-
-      return cachedEnv[prop as keyof typeof cachedEnv];
-    },
-    has: (_target, prop: string | symbol) => {
-      if (cachedError) throw cachedError;
-
-      if (!cachedEnv) {
-        if (typeof (globalThis as { window?: unknown }).window === 'undefined') {
-          cachedError = new EnvValidationError(
-            'createClientEnv can only be used in browser context. Use createServerEnv for server-side code.',
-            context,
-          );
-          throw cachedError;
-        }
-        try {
-          cachedEnv = parseEnv(schema, envSource, context);
-        } catch (err) {
-          cachedError = err as Error;
-          throw cachedError;
-        }
-      }
-
-      return prop in cachedEnv;
-    },
-    ownKeys: (_target) => {
-      if (cachedError) throw cachedError;
-
-      if (!cachedEnv) {
-        if (typeof (globalThis as { window?: unknown }).window === 'undefined') {
-          cachedError = new EnvValidationError(
-            'createClientEnv can only be used in browser context. Use createServerEnv for server-side code.',
-            context,
-          );
-          throw cachedError;
-        }
-        try {
-          cachedEnv = parseEnv(schema, envSource, context);
-        } catch (err) {
-          cachedError = err as Error;
-          throw cachedError;
-        }
-      }
-
-      return Object.keys(cachedEnv);
-    },
-    getOwnPropertyDescriptor: (_target, prop: string | symbol) => {
-      if (cachedError) throw cachedError;
-
-      if (!cachedEnv) {
-        if (typeof (globalThis as { window?: unknown }).window === 'undefined') {
-          cachedError = new EnvValidationError(
-            'createClientEnv can only be used in browser context. Use createServerEnv for server-side code.',
-            context,
-          );
-          throw cachedError;
-        }
-        try {
-          cachedEnv = parseEnv(schema, envSource, context);
-        } catch (err) {
-          cachedError = err as Error;
-          throw cachedError;
-        }
-      }
-
-      if (prop in cachedEnv) {
-        return {
-          configurable: true,
-          enumerable: true,
-          value: cachedEnv[prop as keyof typeof cachedEnv],
-        };
-      }
-      return undefined;
-    },
-  });
+  return parseEnv(schema, (import.meta as { env?: EnvSource }).env ?? {}, context);
 }
 
 export function createServerEnv<T extends z.ZodObject<z.ZodRawShape>>(
   schema: T,
   context = 'serverEnv',
 ): z.infer<T> {
-  let cachedEnv: z.infer<T> | null = null;
-  let cachedError: Error | null = null;
+  const proc = (globalThis as { process?: { env?: EnvSource } }).process;
 
-  return new Proxy({} as z.infer<T>, {
-    get: (_target, prop: string | symbol) => {
-      if (cachedError) throw cachedError;
+  if (typeof proc === 'undefined') {
+    throw new EnvValidationError(
+      'createServerEnv can only be used in Node.js context. Use createClientEnv for browser code.',
+      context,
+    );
+  }
 
-      if (!cachedEnv) {
-        const proc = (globalThis as { process?: { env?: Record<string, string | undefined> } })
-          .process;
-        if (typeof proc === 'undefined') {
-          cachedError = new EnvValidationError(
-            'createServerEnv can only be used in Node.js context. Use createClientEnv for browser code.',
-            context,
-          );
-          throw cachedError;
-        }
-        try {
-          cachedEnv = parseEnv(schema, proc.env ?? {}, context);
-        } catch (err) {
-          cachedError = err as Error;
-          throw cachedError;
-        }
-      }
-
-      return cachedEnv[prop as keyof typeof cachedEnv];
-    },
-    has: (_target, prop: string | symbol) => {
-      if (cachedError) throw cachedError;
-
-      if (!cachedEnv) {
-        const proc = (globalThis as { process?: { env?: Record<string, string | undefined> } })
-          .process;
-        if (typeof proc === 'undefined') {
-          cachedError = new EnvValidationError(
-            'createServerEnv can only be used in Node.js context. Use createClientEnv for browser code.',
-            context,
-          );
-          throw cachedError;
-        }
-        try {
-          cachedEnv = parseEnv(schema, proc.env ?? {}, context);
-        } catch (err) {
-          cachedError = err as Error;
-          throw cachedError;
-        }
-      }
-
-      return prop in cachedEnv;
-    },
-    ownKeys: (_target) => {
-      if (cachedError) throw cachedError;
-
-      if (!cachedEnv) {
-        const proc = (globalThis as { process?: { env?: Record<string, string | undefined> } })
-          .process;
-        if (typeof proc === 'undefined') {
-          cachedError = new EnvValidationError(
-            'createServerEnv can only be used in Node.js context. Use createClientEnv for browser code.',
-            context,
-          );
-          throw cachedError;
-        }
-        try {
-          cachedEnv = parseEnv(schema, proc.env ?? {}, context);
-        } catch (err) {
-          cachedError = err as Error;
-          throw cachedError;
-        }
-      }
-
-      return Object.keys(cachedEnv);
-    },
-    getOwnPropertyDescriptor: (_target, prop: string | symbol) => {
-      if (cachedError) throw cachedError;
-
-      if (!cachedEnv) {
-        const proc = (globalThis as { process?: { env?: Record<string, string | undefined> } })
-          .process;
-        if (typeof proc === 'undefined') {
-          cachedError = new EnvValidationError(
-            'createServerEnv can only be used in Node.js context. Use createClientEnv for browser code.',
-            context,
-          );
-          throw cachedError;
-        }
-        try {
-          cachedEnv = parseEnv(schema, proc.env ?? {}, context);
-        } catch (err) {
-          cachedError = err as Error;
-          throw cachedError;
-        }
-      }
-
-      if (prop in cachedEnv) {
-        return {
-          configurable: true,
-          enumerable: true,
-          value: cachedEnv[prop as keyof typeof cachedEnv],
-        };
-      }
-      return undefined;
-    },
-  });
+  return parseEnv(schema, proc.env ?? {}, context);
 }
 
-export { baseSchema } from './base';
-export type { BaseEnv } from './base';
 export { apiSchema } from './api';
 export type { ApiEnv } from './api';
-export { webSchema } from './web';
-export type { WebEnv } from './web';
+export { baseSchema } from './base';
+export type { BaseEnv } from './base';
 export { BRAND } from './brand';
 export type { Brand } from './brand';
+export { webSchema } from './web';
+export type { WebEnv } from './web';

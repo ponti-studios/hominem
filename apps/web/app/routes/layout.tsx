@@ -28,10 +28,10 @@ export default function Layout({ loaderData }: Route.ComponentProps) {
   const { userId } = loaderData;
 
   return (
-    <div className="min-h-dvh bg-background text-foreground">
+    <div className="flex h-[100dvh] w-full flex-col bg-background text-foreground">
       {userId ? (
         <header className="border-b border-border-subtle bg-background/90 backdrop-blur">
-          <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
+          <div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-4 py-4 md:px-6 lg:px-8">
             <div>
               <p className="text-xs uppercase tracking-[0.2em] text-text-tertiary">
                 {WEB_BRAND.appName}
@@ -45,7 +45,7 @@ export default function Layout({ loaderData }: Route.ComponentProps) {
           </div>
         </header>
       ) : null}
-      <main className={userId ? 'mx-auto max-w-6xl px-4 py-6' : ''}>
+      <main className="flex min-h-0 w-full flex-1 flex-col">
         <Outlet />
       </main>
       <Toaster />

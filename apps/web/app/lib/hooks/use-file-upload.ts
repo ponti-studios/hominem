@@ -54,8 +54,71 @@ interface UseFileUploadReturn {
   clearAll: () => void;
 }
 
+interface ApiErrorResponse {
+  error: string;
+  code: string;
+  message: string;
+  details?: Record<string, unknown>;
+}
+
 function isTestMode(): boolean {
   return process.env.NODE_ENV === 'test';
+}
+
+function parseApiErrorResponse(value: unknown): ApiErrorResponse | null {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+
+  const candidate = value as Partial<ApiErrorResponse>;
+  if (
+    typeof candidate.error === 'string' &&
+    typeof candidate.code === 'string' &&
+    typeof candidate.message === 'string'
+  ) {
+    return {
+      error: candidate.error,
+      code: candidate.code,
+      message: candidate.message,
+      ...(candidate.details && typeof candidate.details === 'object'
+        ? { details: candidate.details }
+        : {}),
+    };
+  }
+
+  return null;
+}
+
+function parseUploadError(xhr: XMLHttpRequest): Error {
+  try {
+    const parsed = parseApiErrorResponse(JSON.parse(xhr.responseText));
+    if (parsed) {
+      return new Error(parsed.message);
+    }
+  } catch {
+    // Fall back to generic network/xhr details.
+  }
+
+  return new Error(xhr.statusText || `Upload failed with status ${xhr.status}`);
+}
+
+function getUploadErrorMessage(value: unknown): string {
+  if (value instanceof Error) {
+    return value.message;
+  }
+
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (value && typeof value === 'object' && 'message' in value) {
+    const message = (value as { message?: unknown }).message;
+    if (typeof message === 'string') {
+      return message;
+    }
+  }
+
+  return String(value ?? 'Upload failed');
 }
 
 // Lazy load Uppy modules to avoid bundling on initial page load
@@ -118,6 +181,11 @@ export function useFileUpload(): UseFileUploadReturn {
         Accept: 'application/json',
       }),
       allowedMetaFields: ['originalName', 'mimetype'],
+      onAfterResponse(xhr: XMLHttpRequest) {
+        if (xhr.status >= 400) {
+          throw parseUploadError(xhr);
+        }
+      },
       getResponseData(xhr: XMLHttpRequest) {
         return UploadResponseSchema.parse(JSON.parse(xhr.responseText));
       },
@@ -183,10 +251,7 @@ export function useFileUpload(): UseFileUploadReturn {
         });
 
         const uploadErrors = (result?.failed ?? []).map((failedFile) => {
-          const errorMessage =
-            typeof failedFile.error === 'string'
-              ? failedFile.error
-              : String(failedFile.error ?? 'Upload failed');
+          const errorMessage = getUploadErrorMessage(failedFile.error);
           return `${failedFile.name}: ${errorMessage}`;
         });
 
