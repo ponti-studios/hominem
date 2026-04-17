@@ -8,6 +8,7 @@ on:
       - 'packages/**'
       - 'pnpm-lock.yaml'
       - '.github/workflows/deploy-mobile.yml'
+  workflow_dispatch:
 
 concurrency:
   group: mobile-deploy-${{ github.ref }}
