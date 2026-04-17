@@ -42,7 +42,7 @@
     "@types/react-dom": "19.1.7",
     "@typescript/native-preview": "7.0.0-dev.20260415.1",
     "rollup-plugin-visualizer": "6.0.5",
-    "vite": "7.1.12",
+    "vite": "7.3.2",
     "vite-plugin-pwa": "^1.2.0"
   }
 }
