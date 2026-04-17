@@ -15,6 +15,7 @@ on:
       - 'justfile'
       - 'justfiles/**'
       - '.github/workflows/deploy-api.yml'
+  workflow_dispatch:
 
 jobs:
   deploy-api:
