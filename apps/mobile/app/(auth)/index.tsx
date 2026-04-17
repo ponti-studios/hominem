@@ -12,11 +12,10 @@ import { Button } from '~/components/ui/Button';
 import { TextField } from '~/components/ui/TextField';
 import { E2E_TESTING, MOBILE_PASSKEY_ENABLED } from '~/constants';
 import { useAuth } from '~/services/auth/auth-provider';
+import { resolveAuthScreenState } from '~/services/auth/auth-screen-state';
 import { useMobilePasskeyAuth } from '~/services/auth/hooks/use-mobile-passkey-auth';
 import { isValidEmail, normalizeEmail } from '~/services/auth/validation';
 import { posthog } from '~/services/posthog';
-
-import { resolveAuthScreenState } from './auth-screen-state';
 
 export function AuthScreen() {
   const styles = useStyles();
