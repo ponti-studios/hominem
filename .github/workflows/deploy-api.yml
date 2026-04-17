@@ -17,10 +17,15 @@ on:
       - '.github/workflows/deploy-api.yml'
   workflow_dispatch:
 
+concurrency:
+  group: deploy-api-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   deploy-api:
-    uses: ./.github/templates/railway-deploy-service.yml
+    uses: ./.github/workflows/railway-deploy-service.yml
     secrets:
       service_target: ${{ secrets.RAILWAY_SERVICE_API }}
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
     with:
       service_name: api

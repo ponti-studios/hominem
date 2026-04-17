@@ -17,10 +17,15 @@ on:
       - '.github/workflows/deploy-web.yml'
   workflow_dispatch:
 
+concurrency:
+  group: deploy-web-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   deploy-web:
-    uses: ./.github/templates/railway-deploy-service.yml
+    uses: ./.github/workflows/railway-deploy-service.yml
     secrets:
       service_target: ${{ secrets.RAILWAY_SERVICE_WEB }}
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
     with:
       service_name: web
