@@ -86,10 +86,14 @@ export function createServer() {
             url: env.API_URL,
             description: 'Production API server',
           },
-          {
-            url: 'http://localhost:4040',
-            description: 'Local development server',
-          },
+          ...(env.NODE_ENV !== 'production'
+            ? [
+                {
+                  url: 'http://localhost:4040',
+                  description: 'Local development server',
+                },
+              ]
+            : []),
         ],
         components: {
           securitySchemes: {

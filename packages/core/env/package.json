@@ -3,28 +3,26 @@
   "version": "0.0.0",
   "description": "Unified environment handling, schemas, and brand identity",
   "type": "module",
-  "main": "./build/index.js",
-  "types": "./src/index.ts",
   "exports": {
     ".": {
       "types": "./src/index.ts",
-      "default": "./build/index.js"
+      "default": "./src/index.ts"
     },
     "./base": {
       "types": "./src/base.ts",
-      "default": "./build/base.js"
+      "default": "./src/base.ts"
     },
     "./api": {
       "types": "./src/api.ts",
-      "default": "./build/api.js"
+      "default": "./src/api.ts"
     },
     "./web": {
       "types": "./src/web.ts",
-      "default": "./build/web.js"
+      "default": "./src/web.ts"
     },
     "./brand": {
       "types": "./src/brand.ts",
-      "default": "./build/brand.js"
+      "default": "./src/brand.ts"
     },
     "./package.json": "./package.json"
   },

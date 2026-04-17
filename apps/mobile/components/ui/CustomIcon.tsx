@@ -19,7 +19,9 @@ const CustomIcon: React.FC<CustomIconProps> = ({
   const pathData = customIconPaths[name];
 
   if (!pathData) {
-    console.warn(`CustomIcon "${name}" not found`);
+    if (__DEV__) {
+      console.warn(`CustomIcon "${name}" not found`);
+    }
     return null;
   }
 

@@ -89,7 +89,9 @@
   "expo": {
     "install": {
       "exclude": [
-        "react-native-safe-area-context"
+        "react-native-reanimated",
+        "react-native-safe-area-context",
+        "react-native-worklets"
       ]
     },
     "doctor": {

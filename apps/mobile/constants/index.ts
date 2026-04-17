@@ -4,6 +4,7 @@ import * as Device from 'expo-device';
 
 const extra = (Constants.expoConfig?.extra ?? {}) as {
   apiBaseUrl?: string;
+  e2eAuthSecret?: string;
   mobilePasskeyEnabled?: string;
   appVariant?: string;
   appScheme?: string;
@@ -71,4 +72,4 @@ export const MOBILE_PASSKEY_ENABLED = toBooleanFlag(
   extra.mobilePasskeyEnabled || process.env.EXPO_PUBLIC_MOBILE_PASSKEY_ENABLED,
 );
 
-export const E2E_AUTH_SECRET = 'otp-secret';
+export const E2E_AUTH_SECRET = extra.e2eAuthSecret || process.env.EXPO_PUBLIC_E2E_AUTH_SECRET || '';

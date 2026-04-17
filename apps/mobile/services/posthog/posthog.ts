@@ -5,19 +5,6 @@ const host = process.env.EXPO_PUBLIC_POSTHOG_HOST ?? 'https://us.i.posthog.com';
 const disabled = __DEV__ || E2E_TESTING || !apiKey;
 export const POSTHOG_ENABLED = !disabled;
 
-console.warn('[PostHog] boot', {
-  e2e: E2E_TESTING,
-  dev: __DEV__,
-  apiKeyLength: apiKey.length,
-  enabled: POSTHOG_ENABLED,
-});
-
-if (disabled) {
-  console.warn('[PostHog] Analytics disabled — events will not be recorded.', {
-    reason: !apiKey ? 'missing EXPO_PUBLIC_POSTHOG_API_KEY' : 'DEV mode',
-  });
-}
-
 function createNoopPostHog() {
   return {
     capture() {},
@@ -27,7 +14,7 @@ function createNoopPostHog() {
     },
     identify() {},
     reset() {},
-  }
+  };
 }
 
 export const posthog = disabled
@@ -46,4 +33,4 @@ export const posthog = disabled
           },
         },
       });
-    })()
+    })();

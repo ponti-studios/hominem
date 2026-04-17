@@ -50,7 +50,7 @@ COPY --from=builder --chown=hominem:apiuser /app/tsconfig*.json ./
 
 USER hominem
 
-EXPOSE ${PORT:-3000}
+EXPOSE ${PORT:-4040}
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=3s --retries=3 \
     CMD curl -f -s -m 2 http://localhost:${PORT:-3000}/api/status || exit 1
