@@ -21,7 +21,7 @@ import { ErrorState } from './components/error-state';
 import './globals.css';
 import { HonoProvider } from './lib/api';
 import { authConfig } from './lib/auth.server';
-import { serverEnv } from './lib/env';
+import { serverEnv } from './lib/env.server';
 import './lib/i18n';
 
 const ICON_VERSION = '20260407';
@@ -81,11 +81,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `window.ENV = window.ENV || {}; Object.assign(window.ENV, { OTEL_SERVICE_NAME: 'hominem-web', OTEL_DEPLOYMENT_ENVIRONMENT: '${process.env.NODE_ENV || 'development'}', OTEL_EXPORTER_OTLP_ENDPOINT: 'http://localhost:4318' });`,
-          }}
-        />
       </head>
       <body>
         {children}

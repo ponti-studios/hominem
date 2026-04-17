@@ -1,6 +1,6 @@
 import type { Session, User } from '@hominem/auth/types';
 
-import { serverEnv } from './env';
+import { serverEnv } from './env.server';
 
 export const authConfig = {
   apiBaseUrl: serverEnv.VITE_PUBLIC_API_URL,

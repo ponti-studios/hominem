@@ -2,6 +2,8 @@ import { initTelemetry } from '@hominem/telemetry/browser';
 import { logger } from '@hominem/utils/logger';
 import { useEffect, useRef } from 'react';
 
+import { getClientEnv } from '../env.client';
+
 /**
  * Hook to initialize OpenTelemetry in the browser
  * Should be called once at app startup
@@ -16,34 +18,24 @@ export function useTelemetry() {
     // Only initialize in browser
     if (typeof window === 'undefined') return;
 
-    // Get env vars from window (injected by server) or import.meta.env
-    const env = (window as Window & { ENV?: Record<string, string> }).ENV ?? {};
+    const clientEnv = getClientEnv();
 
     // Check if telemetry is explicitly disabled
     if (
-      env.OTEL_EXPORTER_OTLP_ENDPOINT === 'none' ||
-      import.meta.env.VITE_OTEL_DISABLED === 'true'
+      clientEnv.VITE_OTEL_EXPORTER_OTLP_ENDPOINT === 'none' ||
+      clientEnv.VITE_OTEL_DISABLED === 'true'
     ) {
-      console.log('[Telemetry] OpenTelemetry is disabled');
       return;
     }
 
     try {
-      console.log('[Telemetry] Initializing with config:', {
-        serviceName: env.OTEL_SERVICE_NAME || 'hominem-web',
-        environment: env.OTEL_DEPLOYMENT_ENVIRONMENT || 'development',
-        otlpEndpoint: env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://localhost:4318',
-      });
-
       const telemetry = initTelemetry({
-        serviceName: env.OTEL_SERVICE_NAME || 'hominem-web',
-        serviceVersion: env.OTEL_SERVICE_VERSION || '0.0.0',
-        environment: env.OTEL_DEPLOYMENT_ENVIRONMENT || 'development',
-        otlpEndpoint: env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://localhost:4318',
-        samplingRatio: parseFloat(env.OTEL_TRACES_SAMPLER_ARG || '1.0'),
+        serviceName: clientEnv.VITE_OTEL_SERVICE_NAME,
+        serviceVersion: clientEnv.VITE_OTEL_SERVICE_VERSION,
+        environment: clientEnv.VITE_OTEL_DEPLOYMENT_ENVIRONMENT,
+        otlpEndpoint: clientEnv.VITE_OTEL_EXPORTER_OTLP_ENDPOINT,
+        samplingRatio: parseFloat(clientEnv.VITE_OTEL_TRACES_SAMPLER_ARG),
       });
-
-      console.log('[Telemetry] OpenTelemetry initialized for hominem-web');
 
       // Cleanup on page unload
       return () => {

@@ -1,18 +1,10 @@
-import {
-  MetaBadge,
-  PreviewCard,
-  SectionIntro,
-  SurfaceFrame,
-  SurfacePanel,
-  StatePanel,
-} from '@hominem/ui';
+import { SectionIntro, StatePanel } from '@hominem/ui';
 import { Composer } from '@hominem/ui/composer';
-import { ComposerProvider, ComposerStore } from '@hominem/ui/composer/composer-provider';
 import type { ComposerActions } from '@hominem/ui/composer/composer-provider';
+import { ComposerProvider, ComposerStore } from '@hominem/ui/composer/composer-provider';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Paperclip } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { useNavigate } from 'react-router';
 
 import { useCreateChat } from '~/hooks/use-chats';
 import { useComposerMode } from '~/hooks/use-composer-mode';
@@ -25,6 +17,7 @@ import {
 import { useTranscribe } from '~/hooks/use-transcribe';
 import { useFileUpload } from '~/lib/hooks/use-file-upload';
 
+import { NoteStreamRow } from './components/note-stream-row';
 import {
   completeNotesRowExit,
   NOTES_ROW_EXIT_REQUEST_EVENT,
@@ -32,7 +25,7 @@ import {
 } from './notes-surface-events';
 import { animateNotesRowEnter, animateNotesRowExit } from './notes-surface-motion';
 
-const FEED_ESTIMATED_ROW_HEIGHT = 140;
+const FEED_ESTIMATED_ROW_HEIGHT = 128;
 const FEED_OVERSCAN_COUNT = 6;
 const FEED_NEAR_BOTTOM_THRESHOLD = 96;
 const FEED_LOAD_MORE_THRESHOLD_INDEX = 2;
@@ -221,33 +214,35 @@ export default function NotesPage() {
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-background">
-      <div className="px-4 pt-5">
+      <div className="mx-auto w-full max-w-4xl px-4 md:px-6 lg:px-8 pt-6 pb-2">
         <SectionIntro
           title="Notes"
-          description="The page stays where your hands are. Older notes stack above you."
+          description="The stream stays anchored. New notes rise in place and stay easy to scan."
           className="mb-5"
         />
       </div>
-      <SurfaceFrame className="mx-auto min-h-0 w-full flex-1 overflow-hidden rounded-3xl">
+      <main className="flex min-h-0 w-full flex-1 flex-col border-t border-border-subtle">
         <div
           ref={setScrollElement}
           onScroll={updateNearBottom}
-          className="h-full min-h-0 w-full overflow-auto"
+          className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden"
         >
           {feedQuery.isLoading ? (
-            <SurfacePanel as="p" className="text-sm text-text-secondary">
-              Loading notes...
-            </SurfacePanel>
+            <div className="mx-auto w-full max-w-4xl px-4 py-5 text-body-4 text-text-secondary md:px-6 lg:px-8">Loading notes...</div>
           ) : null}
 
           {!feedQuery.isLoading && notes.length === 0 ? (
-            <div className="p-4">
-              <StatePanel title="Start with a thought." />
+            <div className="mx-auto w-full max-w-4xl px-4 py-5 md:px-6 lg:px-8">
+              <StatePanel
+                title="Start with a thought."
+                description="New notes and conversations will appear here together."
+              />
             </div>
           ) : null}
 
           {notes.length > 0 ? (
-            <div className="relative w-full" style={{ height: `${virtualizer.getTotalSize()}px` }}>
+            <div className="mx-auto w-full max-w-4xl px-4 md:px-6 lg:px-8">
+              <div className="relative w-full" style={{ height: `${virtualizer.getTotalSize()}px` }}>
               {virtualItems.map((virtualItem) => {
                 const note = notes[virtualItem.index];
                 if (!note) {
@@ -290,41 +285,18 @@ export default function NotesPage() {
                     key={virtualItem.key}
                     ref={setRowElement}
                     data-index={virtualItem.index}
-                    className="absolute left-0 top-0 w-full px-4 py-1"
+                    className="absolute left-0 top-0 w-full"
                     style={{ transform: `translateY(${virtualItem.start}px)` }}
                   >
-                    <PreviewCard asChild interactive>
-                      <Link to={`/notes/${note.id}`}>
-                        <PreviewCard.Header
-                          meta={
-                            <>
-                              <div>{new Date(note.createdAt).toLocaleString()}</div>
-                              {note.metadata.hasAttachments ? (
-                                <div className="mt-2">
-                                  <MetaBadge icon={<Paperclip className="size-3" />}>
-                                    Files
-                                  </MetaBadge>
-                                </div>
-                              ) : null}
-                            </>
-                          }
-                        >
-                          <PreviewCard.Title className="line-clamp-2">
-                            {note.title || 'Untitled note'}
-                          </PreviewCard.Title>
-                          <PreviewCard.Description className="line-clamp-5">
-                            {note.contentPreview || 'No content yet.'}
-                          </PreviewCard.Description>
-                        </PreviewCard.Header>
-                      </Link>
-                    </PreviewCard>
+                    <NoteStreamRow note={note} />
                   </div>
                 );
               })}
+              </div>
             </div>
           ) : null}
         </div>
-      </SurfaceFrame>
+      </main>
       <ComposerProvider store={composerStore} actionsRef={actionsRef}>
         <Composer
           mode={mode}

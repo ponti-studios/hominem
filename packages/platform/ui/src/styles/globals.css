@@ -39,179 +39,6 @@
   --letter-spacing-normal: 0;
   --letter-spacing-relaxed: 0.01em;
 
-  --color-bg-base: rgba(253, 252, 251, 1);
-  --color-bg-surface: rgba(247, 246, 243, 1);
-  --color-bg-elevated: rgba(239, 237, 232, 1);
-  --color-bg-overlay: rgba(17, 19, 24, 0.05);
-
-  --color-text-primary: rgba(25, 25, 24, 1);
-  --color-text-secondary: rgba(95, 99, 109, 1);
-  --color-text-tertiary: rgba(133, 139, 152, 1);
-  --color-text-disabled: rgba(179, 184, 196, 1);
-
-  --color-border-default: rgba(25, 25, 24, 0.16);
-  --color-border-subtle: rgba(25, 25, 24, 0.09);
-  --color-border-focus: rgba(91, 91, 214, 0.45);
-
-  --color-icon-primary: rgba(25, 25, 24, 1);
-  --color-icon-muted: rgba(133, 139, 152, 1);
-
-  --color-success: rgba(41, 151, 100, 1);
-  --color-warning: rgba(255, 178, 36, 1);
-  --color-destructive: rgba(229, 77, 46, 1);
-
-  --color-accent: rgba(91, 91, 214, 1);
-  --color-accent-foreground: rgba(255, 255, 255, 1);
-
-  --color-primary: rgba(0, 0, 0, 1);
-  --color-primary-foreground: rgba(255, 255, 255, 1);
-  --color-secondary: rgba(25, 25, 24, 0.08);
-  --color-secondary-foreground: rgba(43, 47, 58, 1);
-  --color-muted: rgba(25, 25, 24, 0.05);
-  --color-muted-foreground: rgba(95, 99, 109, 1);
-  --color-foreground: rgba(25, 25, 24, 1);
-  --color-background: rgba(253, 252, 251, 1);
-  --color-destructive-foreground: rgba(255, 255, 255, 1);
-  --color-popover: rgba(247, 246, 243, 1);
-  --color-popover-foreground: rgba(25, 25, 24, 1);
-  --color-input: rgba(247, 246, 243, 1);
-  --color-ring: rgba(0, 0, 0, 1);
-
-  --color-emphasis-highest: rgba(25, 25, 24, 0.9);
-  --color-emphasis-high: rgba(25, 25, 24, 0.72);
-  --color-emphasis-medium: rgba(25, 25, 24, 0.52);
-  --color-emphasis-low: rgba(25, 25, 24, 0.34);
-  --color-emphasis-lower: rgba(25, 25, 24, 0.24);
-  --color-emphasis-subtle: rgba(25, 25, 24, 0.14);
-  --color-emphasis-minimal: rgba(25, 25, 24, 0.09);
-  --color-emphasis-faint: rgba(25, 25, 24, 0.05);
-
-  --color-chart-1: rgba(91, 91, 214, 1);
-  --color-chart-2: rgba(41, 151, 100, 1);
-  --color-chart-3: rgba(14, 165, 233, 1);
-  --color-chart-4: rgba(255, 178, 36, 1);
-  --color-chart-5: rgba(229, 77, 46, 1);
-
-  --color-sidebar: rgba(242, 241, 238, 1);
-  --color-sidebar-foreground: rgba(25, 25, 24, 1);
-  --color-sidebar-primary: rgba(91, 91, 214, 1);
-  --color-sidebar-primary-foreground: rgba(255, 255, 255, 1);
-  --color-sidebar-accent: rgba(25, 25, 24, 0.06);
-  --color-sidebar-accent-foreground: rgba(25, 25, 24, 1);
-  --color-sidebar-border: rgba(25, 25, 24, 0.1);
-  --color-sidebar-ring: rgba(91, 91, 214, 1);
-
-  --color-prompt-bg: rgba(253, 252, 251, 1);
-  --color-prompt-border: rgba(25, 25, 24, 0.16);
-  --color-prompt-border-focus: rgba(91, 91, 214, 0.45);
-
-  --spacing-1: 4px;
-  --spacing-2: 8px;
-  --spacing-3: 12px;
-  --spacing-4: 16px;
-  --spacing-5: 24px;
-  --spacing-6: 32px;
-  --spacing-7: 48px;
-  --spacing-8: 64px;
-
-  --content-width-bubble: 36rem;
-  --content-width-transcript: 44rem;
-  --content-width-note-preview: 32ch;
-
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 20px;
-  --radius-icon: 22%;
-
-  --shadow-low: 0 1px 3px rgba(28, 25, 18, 0.06), 0 1px 2px rgba(28, 25, 18, 0.04);
-  --shadow-medium: 0 4px 16px rgba(28, 25, 18, 0.08), 0 2px 4px rgba(28, 25, 18, 0.04);
-  --shadow-high: 0 16px 48px rgba(28, 25, 18, 0.1), 0 4px 12px rgba(28, 25, 18, 0.06);
-
-  --glass-blur: 16px;
-  --glass-background: rgba(250, 249, 247, 0.85);
-
-  --duration-fast: 120ms;
-  --duration-default: 200ms;
-  --duration-slow: 320ms;
-  --ease-default: cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --ease-out: cubic-bezier(0, 0, 0.2, 1);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg-base: rgba(17, 17, 19, 1);
-    --color-bg-surface: rgba(24, 25, 27, 1);
-    --color-bg-elevated: rgba(33, 34, 37, 1);
-    --color-bg-overlay: rgba(245, 246, 248, 0.06);
-
-    --color-text-primary: rgba(245, 246, 248, 1);
-    --color-text-secondary: rgba(180, 185, 195, 1);
-    --color-text-tertiary: rgba(141, 147, 161, 1);
-    --color-text-disabled: rgba(97, 103, 117, 1);
-
-    --color-border-default: rgba(245, 246, 248, 0.18);
-    --color-border-subtle: rgba(245, 246, 248, 0.11);
-    --color-border-focus: rgba(142, 141, 255, 0.5);
-
-    --color-icon-primary: rgba(245, 246, 248, 1);
-    --color-icon-muted: rgba(141, 147, 161, 1);
-
-    --color-success: rgba(61, 214, 140, 1);
-    --color-warning: rgba(255, 209, 102, 1);
-    --color-destructive: rgba(255, 123, 92, 1);
-
-    --color-accent: rgba(142, 141, 255, 1);
-    --color-accent-foreground: rgba(15, 16, 40, 1);
-
-    --color-primary: rgba(0, 0, 0, 1);
-    --color-primary-foreground: rgba(255, 255, 255, 1);
-    --color-secondary: rgba(245, 246, 248, 0.14);
-    --color-secondary-foreground: rgba(229, 232, 239, 1);
-    --color-muted: rgba(245, 246, 248, 0.08);
-    --color-muted-foreground: rgba(180, 185, 195, 1);
-    --color-foreground: rgba(245, 246, 248, 1);
-    --color-background: rgba(17, 17, 19, 1);
-    --color-destructive-foreground: rgba(29, 14, 10, 1);
-    --color-popover: rgba(24, 25, 27, 1);
-    --color-popover-foreground: rgba(245, 246, 248, 1);
-    --color-input: rgba(24, 25, 27, 1);
-    --color-ring: rgba(0, 0, 0, 1);
-
-    --color-emphasis-highest: rgba(245, 246, 248, 0.92);
-    --color-emphasis-high: rgba(245, 246, 248, 0.76);
-    --color-emphasis-medium: rgba(245, 246, 248, 0.56);
-    --color-emphasis-low: rgba(245, 246, 248, 0.38);
-    --color-emphasis-lower: rgba(245, 246, 248, 0.26);
-    --color-emphasis-subtle: rgba(245, 246, 248, 0.18);
-    --color-emphasis-minimal: rgba(245, 246, 248, 0.12);
-    --color-emphasis-faint: rgba(245, 246, 248, 0.07);
-
-    --color-chart-1: rgba(142, 141, 255, 1);
-    --color-chart-2: rgba(61, 214, 140, 1);
-    --color-chart-3: rgba(56, 189, 248, 1);
-    --color-chart-4: rgba(255, 209, 102, 1);
-    --color-chart-5: rgba(255, 123, 92, 1);
-
-    --color-sidebar: rgba(15, 16, 18, 1);
-    --color-sidebar-foreground: rgba(245, 246, 248, 1);
-    --color-sidebar-primary: rgba(142, 141, 255, 1);
-    --color-sidebar-primary-foreground: rgba(15, 16, 40, 1);
-    --color-sidebar-accent: rgba(245, 246, 248, 0.08);
-    --color-sidebar-accent-foreground: rgba(245, 246, 248, 1);
-    --color-sidebar-border: rgba(245, 246, 248, 0.14);
-    --color-sidebar-ring: rgba(142, 141, 255, 1);
-
-    --color-prompt-bg: rgba(24, 25, 27, 1);
-    --color-prompt-border: rgba(245, 246, 248, 0.18);
-    --color-prompt-border-focus: rgba(142, 141, 255, 0.5);
-
-    --glass-background: rgba(17, 17, 19, 0.82);
-  }
-}
-
-:root[data-theme='dark'] {
   --color-bg-base: rgba(17, 17, 19, 1);
   --color-bg-surface: rgba(24, 25, 27, 1);
   --color-bg-elevated: rgba(33, 34, 37, 1);
@@ -278,7 +105,39 @@
   --color-prompt-border: rgba(245, 246, 248, 0.18);
   --color-prompt-border-focus: rgba(142, 141, 255, 0.5);
 
-  --glass-background: rgba(17, 17, 19, 0.82);
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-5: 24px;
+  --spacing-6: 32px;
+  --spacing-7: 48px;
+  --spacing-8: 64px;
+
+  --content-width-bubble: 36rem;
+  --content-width-transcript: 44rem;
+  --content-width-note-preview: 32ch;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-icon: 22%;
+
+  --shadow-low: 0 1px 3px rgba(28, 25, 18, 0.06), 0 1px 2px rgba(28, 25, 18, 0.04);
+  --shadow-medium: 0 4px 16px rgba(28, 25, 18, 0.08), 0 2px 4px rgba(28, 25, 18, 0.04);
+  --shadow-high: 0 16px 48px rgba(28, 25, 18, 0.1), 0 4px 12px rgba(28, 25, 18, 0.06);
+
+  --duration-fast: 120ms;
+  --duration-default: 200ms;
+  --duration-slow: 320ms;
+  --ease-default: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+}
+
+:root {
+  color-scheme: dark;
 }
 
 @utility pb-safe-area-inset-bottom {
@@ -654,11 +513,6 @@
     display: flex;
     align-items: center;
   }
-}
-
-@utility glass {
-  background-color: var(--glass-background);
-  backdrop-filter: blur(var(--glass-blur));
 }
 
 @utility content-width-bubble {
