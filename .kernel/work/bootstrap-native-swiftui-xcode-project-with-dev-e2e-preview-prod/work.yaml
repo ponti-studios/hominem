@@ -1,0 +1,19 @@
+id: bootstrap-native-swiftui-xcode-project-with-dev-e2e-preview-prod
+goal: Bootstrap native SwiftUI Xcode project with dev/e2e/preview/production variants
+status: active
+milestoneId: 1-1-app-bootstrap-variants-and-design-system
+createdAt: 2026-04-18T05:07:21.368Z
+updatedAt: 2026-04-18T05:07:21.368Z
+tasks:
+  - id: clarify-scope
+    title: Clarify scope and success criteria
+    done: false
+  - id: implement-core-path
+    title: Implement the core path
+    done: false
+  - id: verify-behavior
+    title: Verify behavior with tests
+    done: false
+  - id: capture-followups
+    title: Capture follow-up work
+    done: false
