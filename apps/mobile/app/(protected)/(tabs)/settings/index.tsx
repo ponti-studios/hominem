@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
 import type { RelativePathString } from 'expo-router';
-import React, { useReducer } from 'react';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useReducer, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -16,30 +16,26 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text, theme } from '~/components/theme';
+import { MOBILE_PASSKEY_ENABLED } from '~/constants';
 import { getAppLockEnabled, setAppLockEnabled } from '~/hooks/use-app-lock';
 import { getPreventScreenshots, setPreventScreenshots } from '~/hooks/use-screen-capture';
 import { useAuth } from '~/services/auth/auth-provider';
-import { MOBILE_PASSKEY_ENABLED } from '~/constants';
 import { useMobilePasskeyAuth } from '~/services/auth/hooks/use-mobile-passkey-auth';
-
 
 interface AccountState {
   name: string;
-  isSaving: boolean;
   preventScreenshots: boolean;
   appLock: boolean;
 }
 
 type AccountAction =
   | { type: 'set-name'; name: string }
-  | { type: 'set-saving'; isSaving: boolean }
   | { type: 'set-prevent-screenshots'; preventScreenshots: boolean }
   | { type: 'set-app-lock'; appLock: boolean };
 
 function createInitialAccountState(name: string): AccountState {
   return {
     name,
-    isSaving: false,
     preventScreenshots: getPreventScreenshots(),
     appLock: getAppLockEnabled(),
   };
@@ -49,15 +45,12 @@ function accountReducer(state: AccountState, action: AccountAction): AccountStat
   switch (action.type) {
     case 'set-name':
       return { ...state, name: action.name };
-    case 'set-saving':
-      return { ...state, isSaving: action.isSaving };
     case 'set-prevent-screenshots':
       return { ...state, preventScreenshots: action.preventScreenshots };
     case 'set-app-lock':
       return { ...state, appLock: action.appLock };
   }
 }
-
 
 function SectionLabel({ children }: { children: string }) {
   return <Text style={styles.sectionLabel}>{children}</Text>;
@@ -92,18 +85,13 @@ function SettingsRow({
   destructive = false,
   disabled = false,
 }: RowProps) {
-  const labelColor = destructive
-    ? theme.colors.destructive
-    : theme.colors.foreground;
+  const labelColor = destructive ? theme.colors.destructive : theme.colors.foreground;
 
   const inner = (
     <View style={styles.row}>
       {sf && (
         <View
-          style={[
-            styles.rowIconWrap,
-            { backgroundColor: sfColor ?? theme.colors['bg-elevated'] },
-          ]}
+          style={[styles.rowIconWrap, { backgroundColor: sfColor ?? theme.colors['bg-elevated'] }]}
         >
           <Image
             source={`sf:${sf}`}
@@ -146,7 +134,6 @@ function SettingsRow({
   return <View style={styles.rowPressable}>{inner}</View>;
 }
 
-
 function Settings() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -159,14 +146,47 @@ function Settings() {
   } = useMobilePasskeyAuth();
   const initialName = currentUser?.name ?? '';
   const [state, dispatch] = useReducer(accountReducer, initialName, createInitialAccountState);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [saveError, setSaveError] = useState<string | null>(null);
 
-  const nameChanged = state.name !== initialName;
+  const normalizedName = state.name.trim();
+  const initialNormalizedName = initialName.trim();
+  const nameChanged = normalizedName !== initialNormalizedName;
 
-  const onSavePress = () => {
-    dispatch({ type: 'set-saving', isSaving: true });
-    updateProfile({ name: state.name })
-      .catch(() => undefined)
-      .finally(() => dispatch({ type: 'set-saving', isSaving: false }));
+  useEffect(() => {
+    if (saveStatus !== 'saved') {
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      setSaveStatus('idle');
+    }, 1500);
+
+    return () => clearTimeout(timeout);
+  }, [saveStatus]);
+
+  const onSavePress = async () => {
+    if (!nameChanged) {
+      return;
+    }
+
+    if (!normalizedName) {
+      setSaveError('Name cannot be empty.');
+      setSaveStatus('idle');
+      return;
+    }
+
+    setSaveError(null);
+    setSaveStatus('saving');
+
+    try {
+      await updateProfile({ name: normalizedName });
+      dispatch({ type: 'set-name', name: normalizedName });
+      setSaveStatus('saved');
+    } catch (error) {
+      setSaveStatus('idle');
+      setSaveError(error instanceof Error ? error.message : 'Could not save name.');
+    }
   };
 
   const onLogoutPress = () => {
@@ -177,11 +197,9 @@ function Settings() {
   };
 
   const onDeleteAccountPress = () => {
-    Alert.alert(
-      'Delete account',
-      'Account deletion is not available in this release.',
-      [{ text: 'OK', style: 'default' }],
-    );
+    Alert.alert('Delete account', 'Account deletion is not available in this release.', [
+      { text: 'OK', style: 'default' },
+    ]);
   };
 
   const onArchivedChatsPress = () => {
@@ -216,10 +234,7 @@ function Settings() {
   return (
     <ScrollView
       style={styles.scroll}
-      contentContainerStyle={[
-        styles.scrollContent,
-        { paddingBottom: insets.bottom + 32 },
-      ]}
+      contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 32 }]}
       showsVerticalScrollIndicator={false}
     >
       <SectionLabel>Account</SectionLabel>
@@ -231,7 +246,11 @@ function Settings() {
             <View style={styles.inlineEditRow}>
               <TextInput
                 value={state.name}
-                onChangeText={(text) => dispatch({ type: 'set-name', name: text })}
+                onChangeText={(text) => {
+                  dispatch({ type: 'set-name', name: text });
+                  setSaveError(null);
+                  setSaveStatus('idle');
+                }}
                 style={styles.inlineInput}
                 placeholderTextColor={theme.colors['text-tertiary']}
                 placeholder="Your name"
@@ -242,12 +261,12 @@ function Settings() {
               {nameChanged && (
                 <Pressable
                   onPress={onSavePress}
-                  disabled={state.isSaving}
+                  disabled={saveStatus === 'saving'}
                   style={styles.inlineSaveButton}
                   accessibilityLabel="Save name"
                   accessibilityRole="button"
                 >
-                  {state.isSaving ? (
+                  {saveStatus === 'saving' ? (
                     <ActivityIndicator size="small" color={theme.colors.accent} />
                   ) : (
                     <Text style={styles.inlineSaveLabel}>Save</Text>
@@ -257,6 +276,15 @@ function Settings() {
             </View>
           }
         />
+        {saveError ? (
+          <View style={styles.inlineFeedbackRow}>
+            <Text style={styles.inlineStatusError}>{saveError}</Text>
+          </View>
+        ) : saveStatus === 'saved' ? (
+          <View style={styles.inlineFeedbackRow}>
+            <Text style={styles.inlineStatusSuccess}>Saved</Text>
+          </View>
+        ) : null}
         <RowSeparator />
         <SettingsRow
           sf="envelope"
@@ -304,11 +332,7 @@ function Settings() {
 
       <SectionLabel>Chats</SectionLabel>
       <SectionCard>
-        <SettingsRow
-          sf="archivebox"
-          label="Archived chats"
-          onPress={onArchivedChatsPress}
-        />
+        <SettingsRow sf="archivebox" label="Archived chats" onPress={onArchivedChatsPress} />
       </SectionCard>
 
       {MOBILE_PASSKEY_ENABLED && (
@@ -391,7 +415,6 @@ function Settings() {
 }
 
 export default Settings;
-
 
 const ROW_HEIGHT = 50;
 const CARD_RADIUS = 14;
@@ -511,6 +534,18 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: theme.colors['accent-foreground'],
+  },
+  inlineFeedbackRow: {
+    paddingHorizontal: 14,
+    paddingBottom: 10,
+  },
+  inlineStatusError: {
+    fontSize: 12,
+    color: theme.colors.destructive,
+  },
+  inlineStatusSuccess: {
+    fontSize: 12,
+    color: theme.colors['text-tertiary'],
   },
 
   trashIcon: {
