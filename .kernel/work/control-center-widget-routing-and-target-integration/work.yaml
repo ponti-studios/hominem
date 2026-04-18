@@ -1,0 +1,37 @@
+id: control-center-widget-routing-and-target-integration
+goal: Control Center widget routing and target integration parity
+status: active
+milestoneId: 5-3-apple-integration-parity
+createdAt: 2026-04-18T06:24:23Z
+updatedAt: 2026-04-18T06:24:23Z
+tasks:
+  - id: clarify-scope
+    title: Clarify scope and success criteria
+    done: false
+  - id: implement-core-path
+    title: Implement the core path
+    done: false
+  - id: verify-behavior
+    title: Verify behavior with tests
+    done: false
+  - id: capture-followups
+    title: Capture follow-up work
+    done: falseid: control-center-widget-routing-and-target-integration
+goal: Control Center widget routing and target integration parity
+status: active
+milestoneId: 5-3-apple-integration-parity
+createdAt: 2026-04-18T06:24:23Z
+updatedAt: 2026-04-18T06:24:23Z
+tasks:
+  - id: clarify-scope
+    title: Clarify scope and success criteria
+    done: false
+  - id: implement-core-path
+    title: Implement the core path
+    done: false
+  - id: verify-behavior
+    title: Verify behavior with tests
+    done: false
+  - id: capture-followups
+    title: Capture follow-up work
+    done: false

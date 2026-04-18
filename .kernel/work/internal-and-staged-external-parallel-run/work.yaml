@@ -1,0 +1,19 @@
+id: internal-and-staged-external-parallel-run
+goal: Internal and staged external parallel run
+status: active
+milestoneId: 6-2-parallel-run-and-rollout-proof
+createdAt: 2026-04-18T06:24:23Z
+updatedAt: 2026-04-18T06:24:23Z
+tasks:
+  - id: clarify-scope
+    title: Clarify scope and success criteria
+    done: false
+  - id: implement-core-path
+    title: Implement the core path
+    done: false
+  - id: verify-behavior
+    title: Verify behavior with tests
+    done: false
+  - id: capture-followups
+    title: Capture follow-up work
+    done: false
