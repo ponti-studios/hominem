@@ -1,3 +1,4 @@
 # Journal
 
 - 2026-04-18T06:24:23Z: Created work item `attachment-state-across-notes-chat-and-local-cache`.
+- 2026-04-19T00:00:00Z: Added `ComposerAttachment` (Identifiable/Sendable/Equatable/Hashable with `systemIcon` computed property) and `attachments: [ComposerAttachment]` to `ComposerDraft`. Added `attachments` computed property + `addAttachment`/`removeAttachment` (with server-side delete) to `ComposerState`. Updated `canSubmit` to allow attachments-only submit. Updated `submitPrimary` and `submitSecondary` to pass `fileIds` to note/chat APIs. Updated `NoteService.createNoteWithContent` and `ChatService.sendMessage` to accept `fileIds: [String]? = nil`. Enabled attachment picker in `SharedComposerCard` using `PhotosPicker` from `PhotosUI`; `handlePickedItems` loads `Data`, detects MIME, transcodes HEIC→JPEG via `UIImage`, uploads via `FileUploadService`. Added `attachmentChips` row in the card. BUILD SUCCEEDED.

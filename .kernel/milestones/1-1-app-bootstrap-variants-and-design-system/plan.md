@@ -6,53 +6,47 @@
 
 ## Approach
 
-<!-- How will the work items in this milestone be sequenced? -->
-<!-- What is the first thing to ship, and why does it come first? -->
-<!-- What is the key technical or design decision for this milestone? -->
+Bootstrap first, tokens second, components third. XcodeGen was chosen to keep the project definition in a committed `project.yml` — the `.xcodeproj` is generated and regenerated from it. Build configurations replace xcconfig files; all per-variant values (bundle IDs, display names, URL schemes) are set as build settings and injected into `Info.plist` at build time.
+
+Design tokens were extracted verbatim from `packages/platform/ui/src/tokens/` — the canonical TS source. No interpretation or adaptation.
 
 ## Work Item Breakdown
 
-<!-- List each work item, what it delivers, and any prerequisite work items. -->
-
 | Work Item | Purpose | Depends On |
 |-----------|---------|-----------|
-| <!-- work-id --> | <!-- what it delivers --> | <!-- other work-id or "none" --> |
+| bootstrap-native-swiftui-xcode-project-with-dev-e2e-preview-prod | XcodeGen project, 4 variants, entitlements, App.swift | none |
+| build-swiftui-design-token-system-color-typography-spacing-motio | Colors, typography, spacing, radii, shadows, motion in Swift | bootstrap |
+| build-swiftui-primitive-component-library-buttons-inputs-cards-t | AppButton, AppTextField/Area, Card, Surface, Toast | design tokens |
 
 ## Critical Path
 
-<!-- Which work item is the bottleneck? -->
-<!-- What must be done before any other work item can complete? -->
+Bootstrap is the bottleneck. Until `Hakumi.xcodeproj` exists and builds, no Swift code can be written.
 
 ## Sequencing Rationale
 
-<!-- Why are work items ordered the way they are? -->
-<!-- What does the first work item unlock? What must be true before the last can begin? -->
+Design tokens must precede components because components reference token values. Bootstrap unlocks both in sequence.
 
 ## Deliverables
 
-<!-- Enumerate concretely what will exist when this milestone is done. -->
-<!-- Be specific: "The /users/profile endpoint is live, documented, and covered by integration tests." -->
-
-- <!-- Deliverable 1 -->
-- <!-- Deliverable 2 -->
+- `apps/hakumi-ios/` — standalone SwiftUI app, completely separate from `apps/mobile/` (Expo)
+- `apps/hakumi-ios/project.yml` — XcodeGen spec; regenerate with `cd apps/hakumi-ios && xcodegen generate`
+- 4 schemes: Hakumi Dev / E2E / Preview / Hakumi (production) with correct bundle IDs
+- 5 build configurations: Debug Dev, Debug E2E, Debug Preview, Release Preview, Release Production
+- `Hakumi/DesignSystem/` — 6 token files (Colors, Typography, Spacing, Radii, Shadows, Motion) + 4 component files (AppButton, AppTextField+AppTextArea, Card+Surface, Toast)
+- iOS 26.0 minimum, Swift 6.0, `@Observable` architecture
 
 ## Acceptance Criteria
 
 This milestone is complete when:
 
-- [ ] All work items are archived
-- [ ] <!-- Observable outcome is verified — not a task, a state of the world -->
-- [ ] <!-- Automated tests cover the new behavior -->
+- [x] All work items are done
+- [x] `xcodebuild build -scheme "Hakumi Dev"` exits 0 with no errors
+- [x] All 4 schemes present with correct bundle IDs
+- [x] Design token files source all values from `packages/platform/ui/src/tokens/`
+- [x] AppButton, AppTextField, Card, Surface, Toast compile with Xcode Previews
 
-## Risks
+## Open Questions (resolved)
 
-| Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|------------|
-| <!-- Risk --> | <!-- High / Med / Low --> | <!-- High / Med / Low --> | <!-- Concrete response --> |
-
-## Open Questions
-
-<!-- Unresolved decisions that block or constrain work items in this milestone. -->
-<!-- Assign each to an owner with a deadline — unresolved questions become blockers. -->
-
-- <!-- Question: owner, deadline, what it blocks -->
+- **iOS minimum**: Bumped to 26.0. NavigationStack, `@Observable`, Swift 6 require it.
+- **Architecture**: `@Observable` + async/await chosen over TCA.
+- **XcodeGen vs manual project**: XcodeGen chosen for reproducibility.

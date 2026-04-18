@@ -6,45 +6,62 @@ Bootstrap native SwiftUI Xcode project with dev/e2e/preview/production variants
 
 ## Context
 
-<!-- Why is this work being done? What problem does it solve or what opportunity does it capture? -->
-<!-- What is the current state, and what will be different when this is done? -->
+The Expo app at `apps/mobile/` is the current production iOS client and remains the reference implementation throughout migration. This work item creates a **standalone native SwiftUI Xcode project** at `apps/hakumi-ios/` — completely separate from the Expo project, using XcodeGen for reproducible project generation.
+
+The Expo app must not be modified. The native project starts empty (a placeholder `ContentView`) and fills with features across Phases 2–5.
 
 ## Scope
 
 ### In scope
 
-- <!-- Specific capability, change, or fix being delivered -->
-- <!-- Add more as needed -->
+- `apps/hakumi-ios/project.yml` — XcodeGen spec for the Xcode project
+- 4 build configurations matching Expo variants: Debug Dev, Debug E2E, Debug Preview, Release Production + Release Preview
+- 4 schemes: Hakumi Dev, Hakumi E2E, Hakumi Preview, Hakumi (production)
+- Bundle IDs per variant: `com.pontistudios.hakumi.dev` / `.e2e` / `.preview` / `com.pontistudios.hakumi`
+- URL schemes per variant: `hakumi-dev`, `hakumi-e2e`, `hakumi-preview`, `hakumi`
+- Shared entitlements file using build-setting substitution for app groups and keychain
+- Entitlements: push notifications, Siri, app groups, keychain access
+- `App.swift` — `@main` SwiftUI entry point
+- `ContentView.swift` — placeholder root view
+- Minimal `Assets.xcassets` (AppIcon + AccentColor)
+- iOS 16.0 minimum deployment target (NavigationStack requires 16+)
+- Development team: `3QHJ2KN8AL`
 
 ### Out of scope
 
-- <!-- What is explicitly NOT included — prevents scope creep -->
-- <!-- If it comes up during execution, add a new work item instead -->
+- Design tokens, component library, routing — those are separate work items
+- CocoaPods or SPM packages — no dependencies in this bootstrap
+- Real screens or feature code — placeholder only
+- CI/CD integration — Phase 6
 
 ## Success Criteria
 
 The work is complete when all of the following are true:
 
-- [ ] <!-- Specific, observable criterion — something a reviewer can verify without asking -->
-- [ ] <!-- Another criterion — behavior, performance, API contract, or test result -->
+- [ ] `apps/hakumi-ios/project.yml` exists and `xcodegen generate` runs without errors
+- [ ] `xcodebuild -list -project apps/hakumi-ios/Hakumi.xcodeproj` lists all 4 schemes
+- [ ] Each scheme maps to the correct bundle identifier (verified by inspecting build settings)
+- [ ] `xcodebuild build -scheme "Hakumi Dev" -configuration "Debug Dev" -destination "generic/platform=iOS Simulator"` exits 0
 - [ ] All tasks in tasks.md are checked off
-- [ ] The implementation has been reviewed and no blockers remain
-
-<!-- Each criterion must be testable. "It works" is not a criterion. -->
-<!-- "A user can submit the form and see a confirmation message" is. -->
+- [ ] journal.md records the iOS minimum version decision
 
 ## Constraints
 
-<!-- Technical, time, or compatibility constraints that affect how this must be implemented. -->
-<!-- Examples: must not break the public API, must complete in under 200ms, must support Node 18+ -->
+- Must not modify anything under `apps/mobile/` — Expo is the live reference
+- iOS 16.0 minimum (NavigationStack; see open question in initiative plan — we're bumping from 15.1)
+- Swift 6.0
+- XcodeGen 2.x must be used (available at `/opt/homebrew/bin/xcodegen`)
+- Development team `3QHJ2KN8AL` locked from Expo project
 
 ## Dependencies
 
-<!-- External work, decisions, or systems that must be in place before this can start or ship. -->
-<!-- Unresolved dependencies are blockers — record them in journal.md if discovered during execution. -->
+- XcodeGen installed (verified: `/opt/homebrew/bin/xcodegen` v2.45.3)
+- Xcode and command-line tools installed (verified: Swift 6.3.1)
 
 ## Related Work
 
-<!-- Parent: kernel/milestones/<id>/ or kernel/projects/<id>/ -->
-<!-- Blocks: <!-- other work items that cannot start until this is done --> -->
-<!-- Blocked by: <!-- other work items that must finish first --> -->
+- Parent: `.kernel/projects/phase-1-native-foundation`
+- Milestone: `1-1-app-bootstrap-variants-and-design-system`
+- Blocks: `build-swiftui-design-token-system-color-typography-spacing-motio`
+- Blocks: `build-swiftui-primitive-component-library-buttons-inputs-cards-t`
+- Blocks: all Phase 2+ work items

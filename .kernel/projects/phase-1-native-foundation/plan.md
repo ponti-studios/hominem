@@ -6,48 +6,43 @@ Phase 1 — Native Foundation
 
 ## Approach
 
-<!-- What is the overall delivery strategy for this project? -->
-<!-- How will milestones be sequenced? What is the core technical or product bet? -->
-<!-- Why this approach over alternatives? What trade-offs are being accepted? -->
+Two milestones, strictly sequential. Milestone 1.1 delivered a buildable Xcode project and the complete design layer. Milestone 1.2 built the runtime shell on top of it: routing, deep links, and observability. No feature work was started until both milestones were closed.
+
+Key decisions made during execution:
+
+- **iOS minimum: 18.0** — validated against the APIs used in the native shell, including `ScrollPosition`. The project target and generated Xcode settings now match this baseline.
+- **XcodeGen** — `project.yml` is the single source of truth for the Xcode project. Running `xcodegen generate` in `apps/hakumi-ios/` regenerates the `.xcodeproj` at any time.
+- **Architecture: `@Observable` + async/await** — TCA was evaluated and rejected. The `@Observable` macro with structured concurrency gives us full SwiftUI integration without an external dependency and matches the existing codebase's data-flow patterns.
+- **PostHog handles crash reporting** — no Sentry. Matches Expo's pattern exactly; PLCrashReporter is pulled in transitively by the PostHog SDK.
 
 ## Milestone Breakdown
 
-<!-- Each milestone is a time-boxed, independently shippable slice of the project. -->
-<!-- Order by dependency — what must ship before what? -->
-
-| Milestone | Purpose | Depends On | Target Date |
-|----------|---------|-----------|------------|
-| <!-- milestone-id --> | <!-- what it delivers --> | <!-- other milestone-id or "none" --> | <!-- date --> |
+| Milestone                                          | Purpose                                                                          | Depends On | Status  |
+| -------------------------------------------------- | -------------------------------------------------------------------------------- | ---------- | ------- |
+| 1.1 — App bootstrap, variants, and design system   | Buildable Xcode project, 4 variants, design tokens, primitive components         | none       | ✅ done |
+| 1.2 — Routing shell, deep links, and observability | Root container, placeholder routes, deep-link parsing, PostHog + startup metrics | 1.1        | ✅ done |
 
 ## Critical Path
 
-<!-- Which milestone is the bottleneck? What does everything else depend on? -->
-<!-- If this milestone slips, the project delivery date slips. -->
+1.1 was the absolute bottleneck — nothing could be built without a compilable Xcode project. 1.2 depended on 1.1 entirely.
 
 ## Sequencing Rationale
 
-<!-- Explain the ordering. What does the first milestone unlock? -->
-<!-- What must be true before the final milestone can begin? -->
+Design tokens had to precede primitive components (tokens are consumed by components). The routing shell had to precede observability (PostHog needed a stable lifecycle to instrument). All work items were completed in dependency order with no parallel tracks needed at this phase size.
 
 ## Risks
 
-| Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|------------|
-| <!-- e.g. integration with third-party API is underspecified --> | <!-- H/M/L --> | <!-- H/M/L --> | <!-- e.g. spike in Milestone 1 before committing to design --> |
-| <!-- e.g. schema migration on live table --> | <!-- Med --> | <!-- High --> | <!-- e.g. shadow write pattern, then backfill --> |
+| Risk                                           | Likelihood | Impact | Mitigation                                                        |
+| ---------------------------------------------- | ---------- | ------ | ----------------------------------------------------------------- |
+| iOS version open question blocking API choices | High       | High   | Resolved: bumped to iOS 18.0                                      |
+| Architecture pattern (TCA vs Observation)      | High       | High   | Resolved: `@Observable` + async/await chosen                      |
+| Token drift between Expo and native            | Med        | Med    | Tokens extracted verbatim from `packages/platform/ui/src/tokens/` |
 
 ## Acceptance Criteria
 
 This project is complete when:
 
-- [ ] All milestones are done
-- [ ] <!-- Observable, testable outcome is verified -->
-- [ ] Retrospective captured in kernel/retrospectives/
-
-## Open Questions
-
-<!-- Unresolved decisions that must be answered before or during execution. -->
-<!-- Each question should have an owner and a deadline. -->
-
-- <!-- Question: owner, deadline -->
-- <!-- Question: what decision or milestone does resolving it unlock? -->
+- [x] Milestone 1.1 done — Xcode project, 4 variants, design system, primitive components
+- [x] Milestone 1.2 done — routing shell, deep links, observability
+- [x] All work items marked done
+- [ ] Retrospective captured in `kernel/retrospectives/`

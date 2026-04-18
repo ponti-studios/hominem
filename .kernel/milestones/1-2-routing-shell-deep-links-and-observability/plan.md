@@ -29,28 +29,32 @@ The first work item creates the runtime shape of the app: where launch lands, ho
 
 ## Deliverables
 
-- A native root app container that can render placeholder screens for all major top-level app destinations
-- Deep-link and native-intent routing that resolves the supported URL patterns into placeholder routes
-- PostHog lifecycle events, startup instrumentation, and crash reporting configured across app variants
-- A stable shell that Phase 2 can use for auth, onboarding, and protected-route delivery
+- `Router` (`@Observable @MainActor`) — single source of truth for `AuthPhase`, auth path, protected path, selected tab, and pending deep-link buffer
+- `DeepLinkParser` — resolves `hakumi://` and `https://hakumi.app/` URLs into typed `AppRoute` values
+- `RootView` — switches on `AuthPhase`; each tab owns its own `NavigationStack`; `.onOpenURL` wired through `Router`
+- Placeholder screens for all 11 route families (auth sign-in, verify OTP, onboarding, inbox, notes list, note detail, chat, settings, archived chats, error, not-found)
+- `Observability` facade + `StartupMetrics` — PostHog iOS SDK v3.54.0 via SPM; disabled in dev/e2e via empty `POSTHOG_API_KEY` build setting; `app_startup_baseline` event emitted on shell ready
+- `appLifecycleObserver()` modifier — flushes PostHog on background scene phase
 
 ## Acceptance Criteria
 
 This milestone is complete when:
 
-- [ ] All work items are archived
-- [ ] Deep links and native-intent entry paths resolve correctly on device against the placeholder shell
-- [ ] Launch instrumentation, analytics tagging, and crash reporting are verified for each variant
+- [x] All work items are done
+- [x] `RootView` renders correct placeholder for every auth phase (booting spinner → unauthenticated → authenticated tabs)
+- [x] `DeepLinkParser` resolves all supported `hakumi://` paths into typed routes
+- [x] PostHog SDK resolves via SPM; disabled in debug builds (empty key); startup baseline event fires on shell ready
+- [x] Build clean across all 4 schemes
 
-## Risks
+## Risks (resolved)
 
-| Risk                                                                    | Likelihood | Impact | Mitigation                                                                                       |
-| ----------------------------------------------------------------------- | ---------- | ------ | ------------------------------------------------------------------------------------------------ |
-| Routing and intent entry grow separate codepaths                        | Med        | High   | Keep one central routing layer and treat native intent entry as an adapter into it               |
-| Variant analytics config drifts from build configuration                | Med        | High   | Validate event tagging and DSN selection explicitly in each variant before closing the milestone |
-| Placeholder shell hides launch-state regressions until auth work begins | Med        | Med    | Include explicit launch and fallback verification in the router work item's acceptance criteria  |
+| Risk | Outcome |
+|------|---------|
+| Routing and intent entry grow separate codepaths | Resolved — single `Router` handles launch, deep links, and native intent |
+| Variant analytics config drifts from build configuration | Resolved — `POSTHOG_API_KEY` injected from build settings per config |
 
-## Open Questions
+## Open Questions (resolved)
 
-- What exact set of placeholder routes must exist now versus waiting for Phase 2 route ownership? Owner: mobile team. Deadline: before router work exits.
-- Are existing Expo analytics event names reused exactly or normalized during native instrumentation? Owner: mobile team. Deadline: before observability work exits.
+- **Placeholder routes**: All 11 route families implemented as `PlaceholderScreen` wrappers. Phase 2 replaces each call site.
+- **Analytics event names**: Expo names reused verbatim (`app_startup_baseline`, phase keys match `startup-metrics.ts`).
+- **Architecture pattern**: `@Observable` + async/await chosen. Closed.

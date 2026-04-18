@@ -1,13 +1,13 @@
+import type { ChatMessageItem, MarkdownComponent } from '@hominem/chat';
 import type { PendingReview } from '@hominem/chat/react';
 import { useChatLifecycle } from '@hominem/chat/react';
 import { buildArtifactProposal } from '@hominem/chat/ui';
 import { useApiClient } from '@hominem/rpc/react';
-import { ENABLED_ARTIFACT_TYPES } from '@hominem/rpc/types';
 import type { ArtifactType, SessionSource, ThoughtLifecycleState } from '@hominem/rpc/types';
+import { ENABLED_ARTIFACT_TYPES } from '@hominem/rpc/types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
 import * as FileSystem from 'expo-file-system/legacy';
-import * as Haptics from 'expo-haptics';
 import * as Sharing from 'expo-sharing';
 import {
   useCallback,
@@ -20,9 +20,9 @@ import {
 } from 'react';
 import { Alert, Platform, Share, type TextInput } from 'react-native';
 
-import { loadMarkdown } from '../components/chat/chat-message';
-import type { ChatMessageItem, MarkdownComponent } from '@hominem/chat';
+import { impactHaptic, notificationHaptic } from '~/services/haptics';
 
+import { loadMarkdown } from '../components/chat/chat-message';
 
 export interface ChatServices {
   useChatMessages: (args: { chatId: string }) => {
@@ -45,7 +45,6 @@ export interface ChatServices {
     updatedAt?: string;
   }) => Promise<void>;
 }
-
 
 interface MobileUiState {
   showDebug: boolean;
@@ -85,7 +84,6 @@ function mobileUiReducer(state: MobileUiState, action: MobileUiAction): MobileUi
       return { ...state, searchQuery: action.searchQuery };
   }
 }
-
 
 interface UseChatControllerInput {
   chatId: string;
@@ -205,7 +203,6 @@ export function useChatController({
     },
   });
 
-
   const createNote = useMutation({
     mutationKey: ['chat-note', chatId],
     mutationFn: async (review: { proposedTitle: string; previewContent: string }) => {
@@ -221,7 +218,6 @@ export function useChatController({
       }
     },
   });
-
 
   const {
     lifecycleState,
@@ -288,8 +284,7 @@ export function useChatController({
         title: task.title,
       };
     },
-    onRejectReview: async () => {
-    },
+    onRejectReview: async () => {},
     onError: (_phase, _error) => {
       Alert.alert(
         _phase === 'accept' ? 'Could not save artifact' : 'Could not prepare review',
@@ -297,7 +292,6 @@ export function useChatController({
       );
     },
   });
-
 
   const markdownLoadedRef = useRef(false);
   useEffect(() => {
@@ -319,7 +313,6 @@ export function useChatController({
     };
   }, []);
 
-
   const handleArchiveChat = useCallback(() => {
     archiveChat();
   }, [archiveChat]);
@@ -329,7 +322,7 @@ export function useChatController({
     if (!text) return;
 
     if (Platform.OS !== 'web') {
-      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      void impactHaptic('Light');
       void Clipboard.setStringAsync(text).catch(() => {
         void Share.share({ message: text, title: 'Copy message' });
       });
@@ -385,7 +378,7 @@ export function useChatController({
 
   const handleDeleteMessage = useCallback(
     (_messageId: string) => {
-      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      void notificationHaptic('Warning');
       queryClient.invalidateQueries({ queryKey: services.chatKeys.messages(chatId) });
     },
     [chatId, queryClient, services.chatKeys],
