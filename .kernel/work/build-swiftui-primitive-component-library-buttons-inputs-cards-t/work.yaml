@@ -1,6 +1,6 @@
 id: build-swiftui-primitive-component-library-buttons-inputs-cards-t
 goal: Build SwiftUI primitive component library — buttons, inputs, cards, toasts
-status: active
+status: done
 milestoneId: 1-1-app-bootstrap-variants-and-design-system
 createdAt: 2026-04-18T05:07:21.548Z
 updatedAt: 2026-04-18T05:07:21.548Z

@@ -10,6 +10,13 @@ The migration is structured as a gated phase progression: no phase starts until 
 
 The core bet is that SwiftUI-first architecture will reach parity faster than a hybrid approach. UIKit escape hatches are permitted only where SwiftUI cannot deliver the required behavior (e.g., custom camera overlays, certain scroll anchoring patterns). All escape hatches must be documented at creation time with a justification and a path back to SwiftUI.
 
+## Current Progress
+
+- Phase 1 is effectively complete in the native workspace: the XcodeGen source of truth is configured, the project builds, the app launches on simulator hardware, and the shell/design layer is verified with tests.
+- Phase 2 is partially implemented: auth boot, onboarding handoff, protected-route gating, and sign-out reset behavior are wired into the router and validated.
+- Phase 3 has started at the behavior level: inbox, notes, settings, archived chats, note autosave, and top-anchor signaling are present in native code, with tests covering the highest-risk router/feed contracts.
+- The next migration slices should continue filling in product parity on top of this verified shell rather than revisiting foundation work.
+
 The Expo app is the reference implementation throughout. It must remain running in production, unchanged, until Phase 6 completes the cutover. Every surface in the native app must have a corresponding entry in the parity matrix with passing exit evidence before the Expo client is retired.
 
 Seven projects map to phases 0 through 6. Phase 0 backfills the discovery and contract freeze work already captured in `apps/mobile/docs/swift-migration/`. Phases 1 through 4 are strictly sequential: each phase's output is a prerequisite for the next. Phase 5 can be parallelized against Phase 4 after the Phase 3 data layer stabilizes. Phase 6 is the cutover gate.

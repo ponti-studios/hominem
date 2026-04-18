@@ -1,5 +1,4 @@
 import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
-import * as Haptics from 'expo-haptics';
 import * as MediaLibrary from 'expo-media-library';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
@@ -8,6 +7,7 @@ import { Camera, useCameraDevice, useCameraPermission } from 'react-native-visio
 
 import { Text, theme } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
+import { impactHaptic } from '~/services/haptics';
 
 type CapturedPhoto = {
   uri: string;
@@ -35,7 +35,7 @@ export function CameraModal({ visible, onCapture, onClose }: CameraModalProps) {
     if (!cameraRef.current || isTakingPhoto || !device) return;
 
     setIsTakingPhoto(true);
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    void impactHaptic('Medium');
 
     try {
       const photo = await cameraRef.current.takePhoto();

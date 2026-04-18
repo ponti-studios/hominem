@@ -28,6 +28,13 @@ Deliver a native Swift iOS app with verified 1:1 parity across all 60 surfaces i
 - Push notifications, review prompts, PostHog analytics, startup instrumentation
 - Native test suite and CI/release automation (Phase 6)
 
+## Progress Update
+
+- Phase 1 native foundation is in place in the iOS workspace: XcodeGen project, iOS 18 deployment target, SwiftUI shell, design tokens, primitive UI, routing shell, and observability bootstrap are implemented and verified.
+- The native route/auth contract is now protected by tests for deep-link parsing, auth gating, sign-out reset behavior, and inbox top-anchor signaling.
+- Phase 2 work is underway in the native app: auth/bootstrap/onboarding flow, protected routing, and sign-out behavior have been wired into the shell.
+- Phase 3 groundwork is present: inbox, notes, and settings surfaces exist in native form, including note autosave protection and top-anchor scroll handling.
+
 ### Out of scope
 
 - Web fallback (`app/+html.tsx`) — remains in Expo, not migrated

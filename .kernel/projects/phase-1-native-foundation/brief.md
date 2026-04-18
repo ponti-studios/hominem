@@ -12,7 +12,7 @@ Phase 1 — Native Foundation: stand up the native iOS application shell so all 
 
 The Expo app is the current production iOS client. The migration to native Swift begins here: Phase 1 creates the Xcode project, configures all four build variants, ports the design system, builds the routing shell, and instruments observability — before any product surface is ported.
 
-Current state: the Expo app has a working CI pipeline, four build variants (dev, e2e, preview, production), a theme system in `components/theme`, and PostHog + Sentry instrumentation. The native app does not yet exist.
+Current state: the native Hakumi iOS app now exists in `apps/hakumi-ios`, with a buildable XcodeGen project, four build variants, SwiftUI design tokens and primitives, a routing shell, startup observability hooks, and validated native tests for routing/auth/feed contracts.
 
 When Phase 1 is done: the native app launches on real devices in all four variants, renders placeholder screens for every major route, has a design system that mirrors the Expo theme tokens, handles deep links, and emits telemetry. No user-visible product surfaces are implemented — that begins in Phase 2.
 
@@ -66,14 +66,14 @@ This project is complete when:
 
 ## Stakeholders
 
-| Stakeholder | Role | What They Care About |
-|------------|------|---------------------|
-| Mobile team | DRI | Correct variant config matching Expo; design token fidelity; not breaking live Expo in production |
-| End users | Informed | No visible impact — migration must be invisible until Phase 6 cutover |
+| Stakeholder | Role     | What They Care About                                                                              |
+| ----------- | -------- | ------------------------------------------------------------------------------------------------- |
+| Mobile team | DRI      | Correct variant config matching Expo; design token fidelity; not breaking live Expo in production |
+| End users   | Informed | No visible impact — migration must be invisible until Phase 6 cutover                             |
 
 ## Constraints
 
-- iOS 15.1 minimum deployment target (matches current Expo `app.config.ts`; validate all SwiftUI APIs before using anything requiring iOS 16+)
+- iOS 18.0 minimum deployment target (validated against the SwiftUI APIs currently used in the native shell, including `ScrollPosition`)
 - SwiftUI-first: UIKit is permitted only where SwiftUI cannot deliver the required behavior; every UIKit usage must be documented with justification
 - Design tokens must be derived from the Expo theme source — no ad-hoc values introduced during port
 - The Expo app must continue running in production unchanged throughout Phase 1

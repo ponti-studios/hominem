@@ -1,6 +1,6 @@
 # Tasks
 
-- [ ] Clarify scope and success criteria
-- [ ] Implement the core path
-- [ ] Verify behavior with tests
-- [ ] Capture follow-up work
+- [x] Clarify scope and success criteria
+- [x] Implement the core path
+- [x] Verify behavior with tests
+- [x] Capture follow-up work

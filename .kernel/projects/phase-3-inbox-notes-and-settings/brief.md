@@ -14,6 +14,8 @@ Phase 3 ports the primary non-conversation productivity surfaces so the native a
 
 Current state: inbox, notes, settings, archived chats, query-client behavior, and API-provider behavior all live in the Expo app. The native app needs a comparable data layer and scroll, edit, and account-management semantics before conversation work can land safely.
 
+Current native progress: the Swift app now has inbox, notes, and settings screens in place, plus note autosave guarding, inbox top-anchor signaling, archived chats routing, and settings-level account/sign-out resets. The remaining work is to close parity gaps in the data layer and flesh out the daily-use behaviors that are still placeholder or partial.
+
 When Phase 3 is done: inbox, notes, and settings behave consistently with the Expo client on real devices, including feed refresh and top anchoring, note edit and save semantics, archived-session access, and the core account-management surface.
 
 Completing Phase 3 unlocks: Phase 4, because chat, composer, and attachments rely on the same data-layer and navigation assumptions established here.

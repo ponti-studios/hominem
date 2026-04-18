@@ -14,6 +14,8 @@ Phase 2 rebuilds identity, onboarding, session recovery, and protected navigatio
 
 Current state: the Expo app contains the full auth stack, boot sequence, onboarding flow, protected route gating, tab shell, app lock preferences, and screenshot-protection settings foundations. The native app cannot host migrated product surfaces until these semantics exist outside Expo.
 
+Current native progress: the Swift app now has the session bootstrap, onboarding handoff, protected-route guard, and sign-out reset behavior wired into the router. Auth and shell parity is no longer a blank slate, but the public auth surface and remaining session edge cases still need completion before Phase 2 can be considered done.
+
 When Phase 2 is done: a signed-out user can authenticate with the same supported methods, a returning user resumes into the correct route, onboarding behaves consistently, and the protected shell is stable enough to host placeholder or migrated routes for inbox, notes, chat, and settings.
 
 Completing Phase 2 unlocks: Phase 3 and every later product phase, because all migrated surfaces depend on a working session bootstrap and protected shell.

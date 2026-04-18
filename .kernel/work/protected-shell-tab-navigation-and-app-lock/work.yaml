@@ -1,19 +1,19 @@
 id: protected-shell-tab-navigation-and-app-lock
 goal: Protected shell, tab navigation, and app lock foundation parity
-status: active
+status: done
 milestoneId: 2-3-protected-shell-readiness
 createdAt: 2026-04-18T06:24:23Z
-updatedAt: 2026-04-18T06:24:23Z
+updatedAt: 2026-04-18T09:47:37Z
 tasks:
   - id: clarify-scope
     title: Clarify scope and success criteria
-    done: false
+    done: true
   - id: implement-core-path
     title: Implement the core path
-    done: false
+    done: true
   - id: verify-behavior
     title: Verify behavior with tests
-    done: false
+    done: true
   - id: capture-followups
     title: Capture follow-up work
-    done: false
+    done: true
