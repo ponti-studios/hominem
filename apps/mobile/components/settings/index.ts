@@ -1,0 +1,11 @@
+export { AccountSection } from './AccountSection';
+export { ChatsSection } from './ChatsSection';
+export { DangerZone } from './DangerZone';
+export { NameEditor } from './NameEditor';
+export { PasskeysSection } from './PasskeysSection';
+export { PersonSaveIcon } from './PersonSaveIcon';
+export { PrivacySection } from './PrivacySection';
+export { RowSeparator } from './RowSeparator';
+export { SectionCard } from './SectionCard';
+export { SectionLabel } from './SectionLabel';
+export { SettingsRow } from './SettingsRow';
