@@ -78,8 +78,27 @@ struct RootView: View {
         .appLockObserver()
     }
 
+    /// Custom binding that fires scroll-to-top when the already-selected tab is tapped.
+    /// SwiftUI's TabView does not re-trigger `onChange` on same-value selection, so we
+    /// intercept the setter here instead.
+    private var tabBinding: Binding<ProtectedTab> {
+        Binding(
+            get: { router.selectedTab },
+            set: { newTab in
+                if newTab == router.selectedTab {
+                    switch newTab {
+                    case .inbox:    TopAnchorSignal.inbox.request()
+                    case .notes:    TopAnchorSignal.notes.request()
+                    case .settings: break
+                    }
+                }
+                router.selectedTab = newTab
+            }
+        )
+    }
+
     private var tabShell: some View {
-        TabView(selection: $router.selectedTab) {
+        TabView(selection: tabBinding) {
             Tab(value: ProtectedTab.inbox) {
                 NavigationStack(path: $router.protectedPath) {
                     InboxScreen()

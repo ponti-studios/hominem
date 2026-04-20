@@ -47,16 +47,18 @@ enum NoteService {
     // MARK: - GET /api/notes?sortBy=updatedAt&sortOrder=desc&limit=100
 
     static func fetchNotes() async throws -> [NoteItem] {
-        let url = URL(string: AuthService.apiURL("/api/notes").absoluteString
-            + "?sortBy=updatedAt&sortOrder=desc&limit=100")!
-        var request = URLRequest(url: url)
+        var components = URLComponents(url: AuthService.apiURL("/api/notes"), resolvingAgainstBaseURL: false)!
+        components.queryItems = [
+            URLQueryItem(name: "sortBy", value: "updatedAt"),
+            URLQueryItem(name: "sortOrder", value: "desc"),
+            URLQueryItem(name: "limit", value: "100")
+        ]
+        var request = URLRequest(url: components.url!)
         request.timeoutInterval = 15
-        for (k, v) in AuthProvider.shared.getAuthHeaders() { request.setValue(v, forHTTPHeaderField: k) }
+        request.applyAuthHeaders()
 
         let (data, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw NoteError.fetchFailed
-        }
+        try URLRequest.validate(response, throwing: NoteError.fetchFailed)
 
         guard
             let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -69,15 +71,12 @@ enum NoteService {
     // MARK: - GET /api/notes/:id
 
     static func fetchNote(id: String) async throws -> NoteDetail {
-        let url = AuthService.apiURL("/api/notes/\(id)")
-        var request = URLRequest(url: url)
+        var request = URLRequest(url: AuthService.apiURL("/api/notes/\(id)"))
         request.timeoutInterval = 15
-        for (k, v) in AuthProvider.shared.getAuthHeaders() { request.setValue(v, forHTTPHeaderField: k) }
+        request.applyAuthHeaders()
 
         let (data, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw NoteError.fetchFailed
-        }
+        try URLRequest.validate(response, throwing: NoteError.fetchFailed)
 
         guard
             let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -90,18 +89,15 @@ enum NoteService {
     // MARK: - POST /api/notes (empty)
 
     static func createNote() async throws -> NoteDetail {
-        let url = AuthService.apiURL("/api/notes")
-        var request = URLRequest(url: url)
+        var request = URLRequest(url: AuthService.apiURL("/api/notes"))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONEncoder().encode(["content": ""])
         request.timeoutInterval = 15
-        for (k, v) in AuthProvider.shared.getAuthHeaders() { request.setValue(v, forHTTPHeaderField: k) }
+        request.applyAuthHeaders()
 
         let (data, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw NoteError.saveFailed
-        }
+        try URLRequest.validate(response, throwing: NoteError.saveFailed)
 
         guard
             let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -115,20 +111,17 @@ enum NoteService {
 
     /// Creates a note seeded with content from the composer, optionally attaching uploaded files.
     static func createNoteWithContent(content: String, fileIds: [String]? = nil) async throws -> NoteDetail {
-        let url = AuthService.apiURL("/api/notes")
-        var request = URLRequest(url: url)
+        var request = URLRequest(url: AuthService.apiURL("/api/notes"))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         var body: [String: Any] = ["content": content]
         if let fileIds { body["fileIds"] = fileIds }
-        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
         request.timeoutInterval = 15
-        for (k, v) in AuthProvider.shared.getAuthHeaders() { request.setValue(v, forHTTPHeaderField: k) }
+        request.applyAuthHeaders()
 
         let (data, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw NoteError.saveFailed
-        }
+        try URLRequest.validate(response, throwing: NoteError.saveFailed)
 
         guard
             let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -141,12 +134,11 @@ enum NoteService {
     // MARK: - PATCH /api/notes/:id
 
     static func saveNote(id: String, title: String?, content: String, fileIds: [String]? = nil) async throws -> NoteDetail {
-        let url = AuthService.apiURL("/api/notes/\(id)")
-        var request = URLRequest(url: url)
+        var request = URLRequest(url: AuthService.apiURL("/api/notes/\(id)"))
         request.httpMethod = "PATCH"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.timeoutInterval = 15
-        for (k, v) in AuthProvider.shared.getAuthHeaders() { request.setValue(v, forHTTPHeaderField: k) }
+        request.applyAuthHeaders()
 
         var body: [String: Any] = ["content": content]
         if let title { body["title"] = title } else { body["title"] = NSNull() }
@@ -154,9 +146,7 @@ enum NoteService {
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         let (data, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw NoteError.saveFailed
-        }
+        try URLRequest.validate(response, throwing: NoteError.saveFailed)
 
         guard
             let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -166,16 +156,38 @@ enum NoteService {
         return detail
     }
 
+    // MARK: - POST /api/notes/:id/archive
+
+    static func archiveNote(id: String) async throws {
+        var request = URLRequest(url: AuthService.apiURL("/api/notes/\(id)/archive"))
+        request.httpMethod = "POST"
+        request.timeoutInterval = 15
+        request.applyAuthHeaders()
+        let (_, response) = try await URLSession.shared.data(for: request)
+        try URLRequest.validate(response, throwing: NoteError.saveFailed)
+    }
+
+    // MARK: - DELETE /api/notes/:id
+
+    static func deleteNote(id: String) async throws {
+        var request = URLRequest(url: AuthService.apiURL("/api/notes/\(id)"))
+        request.httpMethod = "DELETE"
+        request.timeoutInterval = 15
+        request.applyAuthHeaders()
+        let (_, response) = try await URLSession.shared.data(for: request)
+        try URLRequest.validate(response, throwing: NoteError.saveFailed)
+    }
+
     // MARK: - Helpers
 
     private static func noteItemFromDict(_ dict: [String: Any]) -> NoteItem? {
         guard
             let id = dict["id"] as? String,
             let updatedStr = dict["updatedAt"] as? String,
-            let updatedAt = parseDate(updatedStr)
+            let updatedAt = Date.fromISO8601(updatedStr)
         else { return nil }
 
-        let createdAt = (dict["createdAt"] as? String).flatMap(parseDate) ?? updatedAt
+        let createdAt = (dict["createdAt"] as? String).flatMap(Date.fromISO8601) ?? updatedAt
         let content = dict["content"] as? String ?? ""
         let files = dict["files"] as? [[String: Any]] ?? []
 
@@ -193,10 +205,10 @@ enum NoteService {
         guard
             let id = dict["id"] as? String,
             let updatedStr = dict["updatedAt"] as? String,
-            let updatedAt = parseDate(updatedStr)
+            let updatedAt = Date.fromISO8601(updatedStr)
         else { return nil }
 
-        let createdAt = (dict["createdAt"] as? String).flatMap(parseDate) ?? updatedAt
+        let createdAt = (dict["createdAt"] as? String).flatMap(Date.fromISO8601) ?? updatedAt
 
         let files: [NoteFile] = (dict["files"] as? [[String: Any]] ?? []).compactMap { f in
             guard let fid = f["id"] as? String,
@@ -212,15 +224,6 @@ enum NoteService {
             createdAt: createdAt,
             updatedAt: updatedAt
         )
-    }
-
-    private static func parseDate(_ string: String) -> Date? {
-        let withFrac = ISO8601DateFormatter()
-        withFrac.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let d = withFrac.date(from: string) { return d }
-        let noFrac = ISO8601DateFormatter()
-        noFrac.formatOptions = [.withInternetDateTime]
-        return noFrac.date(from: string)
     }
 }
 

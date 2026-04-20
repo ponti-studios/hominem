@@ -69,6 +69,16 @@ struct NotesScreen: View {
                     NoteRowView(note: note, isPending: isPending)
                 }
                 .disabled(isPending)
+                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                    Button(role: .destructive) {
+                        Task { await deleteNote(note) }
+                    } label: { Label("Delete", systemImage: "trash") }
+
+                    Button {
+                        Task { await archiveNote(note) }
+                    } label: { Label("Archive", systemImage: "archivebox") }
+                    .tint(.orange)
+                }
                 .listRowBackground(Color.Hakumi.bgBase)
                 .listRowInsets(EdgeInsets(top: 0, leading: Spacing.lg, bottom: 0, trailing: Spacing.lg))
             }
@@ -77,6 +87,28 @@ struct NotesScreen: View {
         .scrollContentBackground(.hidden)
         .scrollPosition($scrollPosition)
         .refreshable { await store.fetch() }
+    }
+
+    // MARK: Swipe action helpers
+
+    private func archiveNote(_ note: NoteItem) async {
+        AppStores.shared.notes.mutateData { $0.removeAll { $0.id == note.id } }
+        AppStores.shared.inbox.mutateData { $0.removeAll { $0.id == "note-\(note.id)" } }
+        do {
+            try await NoteService.archiveNote(id: note.id)
+        } catch {
+            AppStores.shared.notes.mutateData { $0.insert(note, at: 0) }
+        }
+    }
+
+    private func deleteNote(_ note: NoteItem) async {
+        AppStores.shared.notes.mutateData { $0.removeAll { $0.id == note.id } }
+        AppStores.shared.inbox.mutateData { $0.removeAll { $0.id == "note-\(note.id)" } }
+        do {
+            try await NoteService.deleteNote(id: note.id)
+        } catch {
+            AppStores.shared.notes.mutateData { $0.insert(note, at: 0) }
+        }
     }
 
     private func scrollToTopIfPending() {

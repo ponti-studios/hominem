@@ -47,16 +47,14 @@ struct ChatDetail: Sendable {
 enum ChatService {
 
     static func fetchMessages(chatId: String) async throws -> [ChatMessage] {
-        let url = AuthService.apiURL("/api/chats/\(chatId)/messages?limit=50")
-        var request = URLRequest(url: url)
+        var components = URLComponents(url: AuthService.apiURL("/api/chats/\(chatId)/messages"), resolvingAgainstBaseURL: false)!
+        components.queryItems = [URLQueryItem(name: "limit", value: "50")]
+        var request = URLRequest(url: components.url!)
         request.timeoutInterval = 15
-        let headers = AuthProvider.shared.getAuthHeaders()
-        for (k, v) in headers { request.setValue(v, forHTTPHeaderField: k) }
+        request.applyAuthHeaders()
 
         let (data, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw ChatError.fetchFailed
-        }
+        try URLRequest.validate(response, throwing: ChatError.fetchFailed)
 
         guard let arr = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
             return []
@@ -66,16 +64,12 @@ enum ChatService {
     }
 
     static func fetchChatDetail(id: String) async throws -> ChatDetail {
-        let url = AuthService.apiURL("/api/chats/\(id)")
-        var request = URLRequest(url: url)
+        var request = URLRequest(url: AuthService.apiURL("/api/chats/\(id)"))
         request.timeoutInterval = 15
-        let headers = AuthProvider.shared.getAuthHeaders()
-        for (k, v) in headers { request.setValue(v, forHTTPHeaderField: k) }
+        request.applyAuthHeaders()
 
         let (data, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw ChatError.fetchFailed
-        }
+        try URLRequest.validate(response, throwing: ChatError.fetchFailed)
 
         guard
             let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -88,68 +82,62 @@ enum ChatService {
 
     /// Sends a message and waits for the full streamed AI response to complete.
     static func sendMessage(chatId: String, text: String, fileIds: [String]? = nil) async throws {
-        let url = AuthService.apiURL("/api/chats/\(chatId)/stream")
-        var request = URLRequest(url: url)
+        var request = URLRequest(url: AuthService.apiURL("/api/chats/\(chatId)/stream"))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.timeoutInterval = 120
-        let headers = AuthProvider.shared.getAuthHeaders()
-        for (k, v) in headers { request.setValue(v, forHTTPHeaderField: k) }
+        request.applyAuthHeaders()
         var body: [String: Any] = ["message": text]
         if let fileIds, !fileIds.isEmpty { body["fileIds"] = fileIds }
-        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         let (_, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw ChatError.sendFailed
-        }
+        try URLRequest.validate(response, throwing: ChatError.sendFailed)
     }
 
     static func archiveChat(id: String) async throws {
-        let url = AuthService.apiURL("/api/chats/\(id)/archive")
-        var request = URLRequest(url: url)
+        var request = URLRequest(url: AuthService.apiURL("/api/chats/\(id)/archive"))
         request.httpMethod = "POST"
         request.timeoutInterval = 15
-        let headers = AuthProvider.shared.getAuthHeaders()
-        for (k, v) in headers { request.setValue(v, forHTTPHeaderField: k) }
+        request.applyAuthHeaders()
 
         let (_, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw ChatError.archiveFailed
-        }
+        try URLRequest.validate(response, throwing: ChatError.archiveFailed)
+    }
+
+    static func deleteChat(id: String) async throws {
+        var request = URLRequest(url: AuthService.apiURL("/api/chats/\(id)"))
+        request.httpMethod = "DELETE"
+        request.timeoutInterval = 15
+        request.applyAuthHeaders()
+
+        let (_, response) = try await URLSession.shared.data(for: request)
+        try URLRequest.validate(response, throwing: ChatError.deleteFailed)
     }
 
     static func updateChatTitle(id: String, title: String) async throws {
-        let url = AuthService.apiURL("/api/chats/\(id)")
-        var request = URLRequest(url: url)
+        var request = URLRequest(url: AuthService.apiURL("/api/chats/\(id)"))
         request.httpMethod = "PATCH"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.timeoutInterval = 15
-        let headers = AuthProvider.shared.getAuthHeaders()
-        for (k, v) in headers { request.setValue(v, forHTTPHeaderField: k) }
-        request.httpBody = try? JSONSerialization.data(withJSONObject: ["title": title])
+        request.applyAuthHeaders()
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["title": title])
 
         let (_, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw ChatError.fetchFailed
-        }
+        try URLRequest.validate(response, throwing: ChatError.fetchFailed)
     }
 
     /// Creates a note seeded with content extracted from a conversation.
     static func createNoteFromConversation(title: String, content: String) async throws -> String {
-        let url = AuthService.apiURL("/api/notes")
-        var request = URLRequest(url: url)
+        var request = URLRequest(url: AuthService.apiURL("/api/notes"))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.timeoutInterval = 15
-        let headers = AuthProvider.shared.getAuthHeaders()
-        for (k, v) in headers { request.setValue(v, forHTTPHeaderField: k) }
-        request.httpBody = try? JSONSerialization.data(withJSONObject: ["title": title, "content": content])
+        request.applyAuthHeaders()
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["title": title, "content": content])
 
         let (data, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw ChatError.fetchFailed
-        }
+        try URLRequest.validate(response, throwing: ChatError.fetchFailed)
 
         guard
             let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -160,19 +148,15 @@ enum ChatService {
     }
 
     static func createChat(title: String) async throws -> ChatDetail {
-        let url = AuthService.apiURL("/api/chats")
-        var request = URLRequest(url: url)
+        var request = URLRequest(url: AuthService.apiURL("/api/chats"))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.timeoutInterval = 15
-        let headers = AuthProvider.shared.getAuthHeaders()
-        for (k, v) in headers { request.setValue(v, forHTTPHeaderField: k) }
-        request.httpBody = try? JSONSerialization.data(withJSONObject: ["title": title])
+        request.applyAuthHeaders()
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["title": title])
 
         let (data, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw ChatError.fetchFailed
-        }
+        try URLRequest.validate(response, throwing: ChatError.fetchFailed)
 
         guard
             let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -191,21 +175,12 @@ enum ChatService {
             let role = dict["role"] as? String,
             let content = dict["content"] as? String,
             let createdStr = dict["createdAt"] as? String,
-            let createdAt = parseDate(createdStr)
+            let createdAt = Date.fromISO8601(createdStr)
         else { return nil }
 
         let chatId = dict["chatId"] as? String ?? ""
         let reasoning = dict["reasoning"] as? String
         return ChatMessage(id: id, chatId: chatId, role: role, content: content, reasoning: reasoning, createdAt: createdAt)
-    }
-
-    private static func parseDate(_ string: String) -> Date? {
-        let withFrac = ISO8601DateFormatter()
-        withFrac.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let d = withFrac.date(from: string) { return d }
-        let noFrac = ISO8601DateFormatter()
-        noFrac.formatOptions = [.withInternetDateTime]
-        return noFrac.date(from: string)
     }
 }
 
@@ -215,12 +190,14 @@ enum ChatError: LocalizedError {
     case fetchFailed
     case sendFailed
     case archiveFailed
+    case deleteFailed
 
     var errorDescription: String? {
         switch self {
         case .fetchFailed: "Failed to load messages."
         case .sendFailed: "Failed to send message. Please try again."
         case .archiveFailed: "Failed to archive conversation."
+        case .deleteFailed: "Failed to delete conversation."
         }
     }
 }

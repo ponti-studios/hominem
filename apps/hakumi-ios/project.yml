@@ -60,6 +60,7 @@ targets:
         UILaunchStoryboardName: LaunchScreen
         NSCameraUsageDescription: 'Hakumi needs camera access for photos and videos.'
         NSMicrophoneUsageDescription: 'Hakumi needs microphone access for voice recording.'
+        NSSpeechRecognitionUsageDescription: 'Hakumi uses speech recognition to convert your voice to text.'
         NSFaceIDUsageDescription: 'Hakumi uses Face ID to keep your account secure.'
         NSPhotoLibraryUsageDescription: 'Hakumi needs photo library access to share images.'
         NSPhotoLibraryAddUsageDescription: 'Hakumi needs permission to save photos to your library.'

@@ -18,17 +18,17 @@ final class AppLock {
 
     // MARK: - State
 
-    /// Whether app-lock is turned on by the user. Persisted in UserDefaults.
+    /// Whether app-lock is turned on by the user.
+    /// Stored in Keychain (not UserDefaults) so it is encrypted at rest and
+    /// inaccessible to other apps on jailbroken devices.
     var isEnabled: Bool {
-        get { UserDefaults.standard.bool(forKey: Self.enabledKey) }
-        set { UserDefaults.standard.set(newValue, forKey: Self.enabledKey) }
+        get { AppLockStore.load() }
+        set { AppLockStore.save(newValue) }
     }
 
     /// Whether the user has successfully authenticated this session.
     /// Starts as `true` when lock is disabled, `false` when enabled.
     private(set) var isUnlocked: Bool = true
-
-    private static let enabledKey = "appLockEnabled"
 
     // MARK: - Init
 

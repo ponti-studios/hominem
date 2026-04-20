@@ -8,12 +8,15 @@
 
 /* Begin PBXBuildFile section */
 		11A30E08DA5EADDA1DA3A09F /* AuthLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 704A68CEA2361E7ACFA3722D /* AuthLayout.swift */; };
+		150C7158A25E7F349FAA0C61 /* AuthFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E683D253621F84FD4361F629 /* AuthFlowTests.swift */; };
 		19BE94F75B147E23A64E0F9B /* Motion.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4E54A74A6F78B726A39AFC5 /* Motion.swift */; };
 		1E7B37D52EEB0C4D23B7075F /* PasskeyManagementService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9D0EF25CEF07B35E685A764 /* PasskeyManagementService.swift */; };
+		1E800EB56BC700B8D4830A1A /* HakumiUITestCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0567849012F0E67B9D3ED620 /* HakumiUITestCase.swift */; };
 		2F1940100FB2D268B79C78CF /* SharedComposerCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB9259629D12BE54930DF5D1 /* SharedComposerCard.swift */; };
 		2FC0FE6A0F7C4A6EFA6E783C /* Spacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9ABF0C1CD998C76FF1C7D1CE /* Spacing.swift */; };
 		3097CEC22E6BABBA2E25B16F /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = A74FDD51EE304DD0DD3F8C17 /* App.swift */; };
 		33063986C77EFDA174526966 /* BootService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC60985B9634709A84E86359 /* BootService.swift */; };
+		361768B082CF857EC90DE704 /* E2ECredentials.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46194FFCFC897D8DD40FEA81 /* E2ECredentials.swift */; };
 		364DA861BB6B4CCE14C38A8B /* ChatScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = B79E294AFC72A0FEBD2FCD5A /* ChatScreen.swift */; };
 		37FCFF4EFA557B8BD0DF07E5 /* SessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6658E7CF397336054780F1C3 /* SessionStore.swift */; };
 		3B996594E40012E0C67F10DE /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E513B9E8AB6A4274FDCBC420 /* LaunchScreen.storyboard */; };
@@ -24,10 +27,14 @@
 		617607881AD8F8D6F04A0B6A /* PasskeyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEEF2D306CF81D2A4C609331 /* PasskeyService.swift */; };
 		6A7E7E6F0DC14F3D28E283ED /* AppRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B728A2B86481C0A583F79DA /* AppRoute.swift */; };
 		6C03975D28EE3800AC5D22DF /* NoteDetailScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = A01F8C3A005338DED4297AD0 /* NoteDetailScreen.swift */; };
+		773D89DDDF89078F0C066D1B /* NoteFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 503FBE17CF4F39A33A9FC15D /* NoteFlowTests.swift */; };
+		7CB7331C41EC1C075C6A568F /* VoiceRecordingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE13D339E8DD9ECDCC257D4F /* VoiceRecordingService.swift */; };
+		7D0BA0EE637E944DCDF25491 /* URLRequest+API.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BDE140A391905FC329A0083 /* URLRequest+API.swift */; };
 		7D7CFEE9F0F3E10C6662F6AC /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 827FC87A38707FF852E07D86 /* AuthService.swift */; };
 		80CF09956798D023F701CB95 /* NoteService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9973C95D653C185F00F905E0 /* NoteService.swift */; };
 		89BA49BC6E0BD5280F592A12 /* Card.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85A539DCBD295613EC535FC1 /* Card.swift */; };
 		8EB42382144EEFB7EAB03154 /* ComposerState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 260C0918630A5C3E9DFA2AF4 /* ComposerState.swift */; };
+		9314D12B608D831AB135F4FA /* NoteScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7942881C816C1BEB85E208EF /* NoteScreens.swift */; };
 		99624A97F03FE7FFD317BFFA /* StartupMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8BBADFA2FE116306A786ECC /* StartupMetrics.swift */; };
 		9ADD145CA737A74603666D6D /* SettingsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C425255B931817B289B78BF7 /* SettingsScreen.swift */; };
 		9F254714CD775A2403AC7177 /* VerifyOTPView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5F191582E394E2A32CC0E77 /* VerifyOTPView.swift */; };
@@ -42,24 +49,36 @@
 		BDE149B4C59A5A7DE0DCD8CB /* OnboardingScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCE7BD3FA699BEEFC82317EC /* OnboardingScreen.swift */; };
 		BF6BEE6D115A49BB87280D96 /* AppStores.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7051450855F0CC5E0E6D9456 /* AppStores.swift */; };
 		C17A1F56760EF2D4F3CD3E1D /* Shadows.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94C35175AC56AFF721E6E7AE /* Shadows.swift */; };
+		C696AA14F666CC37D50FF083 /* AppLockStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84472F6DFD77A3FF51920436 /* AppLockStore.swift */; };
+		C7511D0231B7F2AD012981B4 /* ComposerAndQueryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA01D0376EF73300784403D9 /* ComposerAndQueryTests.swift */; };
 		CBC66ECBE87D19CC7A4B9200 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09EC5E1A0D2AA861E4C7BB01 /* Typography.swift */; };
 		CDC52D6407794E5E83BD834A /* Router.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82DE3DBF6E3BA8D3BBC25995 /* Router.swift */; };
 		D0362EC8A52D18CF136E6797 /* AppLock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7763DA1CCD660C6BCD8B2DFC /* AppLock.swift */; };
 		D1AA2AF8697616644D8C8E1E /* ArchivedChatsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3783F0BC1D2987D5CEF0B35B /* ArchivedChatsScreen.swift */; };
+		D247841203402954838DD63F /* Date+ISO8601.swift in Sources */ = {isa = PBXBuildFile; fileRef = 112BB33772731C94121F4E2E /* Date+ISO8601.swift */; };
 		D3B50D846006BB870BFFF526 /* FileUploadService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6F1986BBB0CE825AB1FD576 /* FileUploadService.swift */; };
 		D4FCC222A1DFF396C54C225C /* TopAnchorSignal.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD00E93CC93BE48985D54642 /* TopAnchorSignal.swift */; };
 		D51205FBA2EDC5D7F693225B /* Radii.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5232506D2175373D919F9355 /* Radii.swift */; };
 		D553F31C1D49E27226A411E8 /* AuthSignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1EF93B1DAE940243657F6D8 /* AuthSignInView.swift */; };
 		E3F0C63FBFBCFA4A827DD16E /* PlaceholderScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE0991C0CB74F44B48B25307 /* PlaceholderScreen.swift */; };
+		E52EDAC1308C338826458AC1 /* AuthScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5301C5E5BCF7503F5C015D5 /* AuthScreens.swift */; };
 		E80E9E4495A22FC31C469DFD /* AppButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B0266237A3C663694313562 /* AppButton.swift */; };
 		ED016166E4FE85D0176496A6 /* DeepLinkParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3E1F98FF860E019D9E3D2CC /* DeepLinkParser.swift */; };
 		EF7619B0D10CDF44197E4018 /* ScreenStateOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 841D139198B89FB74B94D640 /* ScreenStateOverlay.swift */; };
 		EF984FF70AF1F75DE6ACFD18 /* HakumiTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B5B845A1CB94EC386C1238A /* HakumiTests.swift */; };
 		F2353529C2C6618108E667E0 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E7E16B08EC4896F695483A0 /* ContentView.swift */; };
+		F53222D96A61BBB92A20CAA5 /* WaveformView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59C67A0FFDEACF1FA61F9DC8 /* WaveformView.swift */; };
 		F894D0229DB0389BF4508BB6 /* ChatService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DD4BB7F0F4EBE09FF0A5E89 /* ChatService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		2F0900B9EB187B528CB8185E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 5D80B821DF7243A689422828 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9C1B352B1AF0BA2E9B88CB5F;
+			remoteInfo = Hakumi;
+		};
 		C200404ECAAD212C3EA99241 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 5D80B821DF7243A689422828 /* Project object */;
@@ -70,9 +89,12 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		0567849012F0E67B9D3ED620 /* HakumiUITestCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HakumiUITestCase.swift; sourceTree = "<group>"; };
 		09ABCC99720952992F4B4EBB /* Hakumi.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Hakumi.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		09EC5E1A0D2AA861E4C7BB01 /* Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Typography.swift; sourceTree = "<group>"; };
+		112BB33772731C94121F4E2E /* Date+ISO8601.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Date+ISO8601.swift"; sourceTree = "<group>"; };
 		1B728A2B86481C0A583F79DA /* AppRoute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRoute.swift; sourceTree = "<group>"; };
+		1BDE140A391905FC329A0083 /* URLRequest+API.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "URLRequest+API.swift"; sourceTree = "<group>"; };
 		1DD4BB7F0F4EBE09FF0A5E89 /* ChatService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatService.swift; sourceTree = "<group>"; };
 		1E7E16B08EC4896F695483A0 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		260C0918630A5C3E9DFA2AF4 /* ComposerState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposerState.swift; sourceTree = "<group>"; };
@@ -81,7 +103,10 @@
 		2E21B65BD8211045823C905B /* HakumiTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = HakumiTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		31B306CD1BC5C74D74A72B85 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		3783F0BC1D2987D5CEF0B35B /* ArchivedChatsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchivedChatsScreen.swift; sourceTree = "<group>"; };
+		46194FFCFC897D8DD40FEA81 /* E2ECredentials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = E2ECredentials.swift; sourceTree = "<group>"; };
+		503FBE17CF4F39A33A9FC15D /* NoteFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteFlowTests.swift; sourceTree = "<group>"; };
 		5232506D2175373D919F9355 /* Radii.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Radii.swift; sourceTree = "<group>"; };
+		59C67A0FFDEACF1FA61F9DC8 /* WaveformView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformView.swift; sourceTree = "<group>"; };
 		6258773FDDD249E265AA6D9C /* AuthCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthCopy.swift; sourceTree = "<group>"; };
 		6408ED599DFCADECAFC2261B /* InboxScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InboxScreen.swift; sourceTree = "<group>"; };
 		6658E7CF397336054780F1C3 /* SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStore.swift; sourceTree = "<group>"; };
@@ -91,9 +116,11 @@
 		7763DA1CCD660C6BCD8B2DFC /* AppLock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLock.swift; sourceTree = "<group>"; };
 		7796A9F8181169DACF43ECAD /* AuthProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthProvider.swift; sourceTree = "<group>"; };
 		78855E15AADFF8875B8C4804 /* NotesScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesScreen.swift; sourceTree = "<group>"; };
+		7942881C816C1BEB85E208EF /* NoteScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteScreens.swift; sourceTree = "<group>"; };
 		827FC87A38707FF852E07D86 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		82DE3DBF6E3BA8D3BBC25995 /* Router.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Router.swift; sourceTree = "<group>"; };
 		841D139198B89FB74B94D640 /* ScreenStateOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenStateOverlay.swift; sourceTree = "<group>"; };
+		84472F6DFD77A3FF51920436 /* AppLockStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLockStore.swift; sourceTree = "<group>"; };
 		85A539DCBD295613EC535FC1 /* Card.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Card.swift; sourceTree = "<group>"; };
 		89A2BE45448FA22399954263 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		8B0266237A3C663694313562 /* AppButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppButton.swift; sourceTree = "<group>"; };
@@ -103,11 +130,14 @@
 		9973C95D653C185F00F905E0 /* NoteService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteService.swift; sourceTree = "<group>"; };
 		9ABF0C1CD998C76FF1C7D1CE /* Spacing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Spacing.swift; sourceTree = "<group>"; };
 		A01F8C3A005338DED4297AD0 /* NoteDetailScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteDetailScreen.swift; sourceTree = "<group>"; };
+		A5301C5E5BCF7503F5C015D5 /* AuthScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthScreens.swift; sourceTree = "<group>"; };
 		A74FDD51EE304DD0DD3F8C17 /* App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App.swift; sourceTree = "<group>"; };
+		AA01D0376EF73300784403D9 /* ComposerAndQueryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposerAndQueryTests.swift; sourceTree = "<group>"; };
 		AA14A9F44D39A6AA20DE606D /* InboxService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InboxService.swift; sourceTree = "<group>"; };
 		B79E294AFC72A0FEBD2FCD5A /* ChatScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatScreen.swift; sourceTree = "<group>"; };
 		BB1182FC3A3F047F3A2A78F7 /* Colors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Colors.swift; sourceTree = "<group>"; };
 		BEEF2D306CF81D2A4C609331 /* PasskeyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasskeyService.swift; sourceTree = "<group>"; };
+		C154C6C9B6CAD2E4B9CB2653 /* HakumiUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = HakumiUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C425255B931817B289B78BF7 /* SettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScreen.swift; sourceTree = "<group>"; };
 		C5F191582E394E2A32CC0E77 /* VerifyOTPView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerifyOTPView.swift; sourceTree = "<group>"; };
 		CCE7BD3FA699BEEFC82317EC /* OnboardingScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingScreen.swift; sourceTree = "<group>"; };
@@ -118,12 +148,14 @@
 		DB9259629D12BE54930DF5D1 /* SharedComposerCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedComposerCard.swift; sourceTree = "<group>"; };
 		DC60985B9634709A84E86359 /* BootService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BootService.swift; sourceTree = "<group>"; };
 		E513B9E8AB6A4274FDCBC420 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
+		E683D253621F84FD4361F629 /* AuthFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthFlowTests.swift; sourceTree = "<group>"; };
 		E9D0EF25CEF07B35E685A764 /* PasskeyManagementService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasskeyManagementService.swift; sourceTree = "<group>"; };
 		EE7F95B4AF03FB47D85B11B5 /* ScreenCaptureService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenCaptureService.swift; sourceTree = "<group>"; };
 		F4E54A74A6F78B726A39AFC5 /* Motion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Motion.swift; sourceTree = "<group>"; };
 		F6F1986BBB0CE825AB1FD576 /* FileUploadService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileUploadService.swift; sourceTree = "<group>"; };
 		F8BBADFA2FE116306A786ECC /* StartupMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupMetrics.swift; sourceTree = "<group>"; };
 		FD00E93CC93BE48985D54642 /* TopAnchorSignal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopAnchorSignal.swift; sourceTree = "<group>"; };
+		FE13D339E8DD9ECDCC257D4F /* VoiceRecordingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecordingService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -147,6 +179,15 @@
 				B79E294AFC72A0FEBD2FCD5A /* ChatScreen.swift */,
 			);
 			path = Chat;
+			sourceTree = "<group>";
+		};
+		08C39F4AED07844661001CCB /* Screens */ = {
+			isa = PBXGroup;
+			children = (
+				A5301C5E5BCF7503F5C015D5 /* AuthScreens.swift */,
+				7942881C816C1BEB85E208EF /* NoteScreens.swift */,
+			);
+			path = Screens;
 			sourceTree = "<group>";
 		};
 		22336F56CC90EED7D1272814 /* Notes */ = {
@@ -185,6 +226,7 @@
 				D52E22B46FC714F29F3AA7FB /* AppTextField.swift */,
 				85A539DCBD295613EC535FC1 /* Card.swift */,
 				DB9259629D12BE54930DF5D1 /* SharedComposerCard.swift */,
+				59C67A0FFDEACF1FA61F9DC8 /* WaveformView.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -193,6 +235,7 @@
 			isa = PBXGroup;
 			children = (
 				7763DA1CCD660C6BCD8B2DFC /* AppLock.swift */,
+				84472F6DFD77A3FF51920436 /* AppLockStore.swift */,
 				2E811601E8073110775ECEC2 /* Auth */,
 				CD6DE89B7F390FCEE446780B /* Chat */,
 				4657D78156B996C2AA4ADC9A /* Composer */,
@@ -202,6 +245,7 @@
 				F30232D3B2540E4D83E3FDF7 /* Observability */,
 				63D7131D1744EBADAEBC1583 /* Query */,
 				89FBF72FC744FC9E6E4E9A6C /* Settings */,
+				9DDE06E8D95452BDCCBBE802 /* Voice */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -271,9 +315,21 @@
 			path = Query;
 			sourceTree = "<group>";
 		};
+		6B3E4959B7071D881B3BAFEB /* HakumiUITests */ = {
+			isa = PBXGroup;
+			children = (
+				46194FFCFC897D8DD40FEA81 /* E2ECredentials.swift */,
+				0567849012F0E67B9D3ED620 /* HakumiUITestCase.swift */,
+				08C39F4AED07844661001CCB /* Screens */,
+				8BD505E1A4AAFD05C8A6F8E9 /* Tests */,
+			);
+			path = HakumiUITests;
+			sourceTree = "<group>";
+		};
 		6ED77E1BDDDD19BCA38283A4 /* HakumiTests */ = {
 			isa = PBXGroup;
 			children = (
+				AA01D0376EF73300784403D9 /* ComposerAndQueryTests.swift */,
 				2B5B845A1CB94EC386C1238A /* HakumiTests.swift */,
 			);
 			path = HakumiTests;
@@ -302,8 +358,18 @@
 			children = (
 				09ABCC99720952992F4B4EBB /* Hakumi.app */,
 				2E21B65BD8211045823C905B /* HakumiTests.xctest */,
+				C154C6C9B6CAD2E4B9CB2653 /* HakumiUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		8BD505E1A4AAFD05C8A6F8E9 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				E683D253621F84FD4361F629 /* AuthFlowTests.swift */,
+				503FBE17CF4F39A33A9FC15D /* NoteFlowTests.swift */,
+			);
+			path = Tests;
 			sourceTree = "<group>";
 		};
 		8BDFD99EB4D6B3BD79EF70BE /* Auth */ = {
@@ -314,6 +380,14 @@
 				C5F191582E394E2A32CC0E77 /* VerifyOTPView.swift */,
 			);
 			path = Auth;
+			sourceTree = "<group>";
+		};
+		9DDE06E8D95452BDCCBBE802 /* Voice */ = {
+			isa = PBXGroup;
+			children = (
+				FE13D339E8DD9ECDCC257D4F /* VoiceRecordingService.swift */,
+			);
+			path = Voice;
 			sourceTree = "<group>";
 		};
 		ACE598E0A1E70BD0D2299145 /* Hakumi */ = {
@@ -327,6 +401,7 @@
 				E513B9E8AB6A4274FDCBC420 /* LaunchScreen.storyboard */,
 				32FF581A331A32E58FAF728A /* DesignSystem */,
 				C46E7F3E3B8FAE02F72A9318 /* Navigation */,
+				CC3E993CA6296D51D6C1AF53 /* Networking */,
 				004B49209919352C44F218B1 /* Screens */,
 				3235E2B1FCDE25D9E24AB0E3 /* Services */,
 			);
@@ -338,6 +413,7 @@
 			children = (
 				ACE598E0A1E70BD0D2299145 /* Hakumi */,
 				6ED77E1BDDDD19BCA38283A4 /* HakumiTests */,
+				6B3E4959B7071D881B3BAFEB /* HakumiUITests */,
 				8A748695F53FCEEC17FE0E48 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -352,6 +428,15 @@
 				841D139198B89FB74B94D640 /* ScreenStateOverlay.swift */,
 			);
 			path = Navigation;
+			sourceTree = "<group>";
+		};
+		CC3E993CA6296D51D6C1AF53 /* Networking */ = {
+			isa = PBXGroup;
+			children = (
+				112BB33772731C94121F4E2E /* Date+ISO8601.swift */,
+				1BDE140A391905FC329A0083 /* URLRequest+API.swift */,
+			);
+			path = Networking;
 			sourceTree = "<group>";
 		};
 		CD6DE89B7F390FCEE446780B /* Chat */ = {
@@ -392,6 +477,24 @@
 			productReference = 2E21B65BD8211045823C905B /* HakumiTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		9991DF59ECF618291EFF5B36 /* HakumiUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 77CA1A8C4A737C926BE2AE11 /* Build configuration list for PBXNativeTarget "HakumiUITests" */;
+			buildPhases = (
+				E2CC79BA2701FB7528EB5515 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				DD1A372F7227E219DE21130D /* PBXTargetDependency */,
+			);
+			name = HakumiUITests;
+			packageProductDependencies = (
+			);
+			productName = HakumiUITests;
+			productReference = C154C6C9B6CAD2E4B9CB2653 /* HakumiUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		9C1B352B1AF0BA2E9B88CB5F /* Hakumi */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 207A68E8C0747D8195780256 /* Build configuration list for PBXNativeTarget "Hakumi" */;
@@ -422,6 +525,10 @@
 					128530F6CD1C6B92DC9495DD = {
 						DevelopmentTeam = 3QHJ2KN8AL;
 					};
+					9991DF59ECF618291EFF5B36 = {
+						DevelopmentTeam = 3QHJ2KN8AL;
+						TestTargetID = 9C1B352B1AF0BA2E9B88CB5F;
+					};
 					9C1B352B1AF0BA2E9B88CB5F = {
 						DevelopmentTeam = 3QHJ2KN8AL;
 					};
@@ -443,6 +550,7 @@
 			targets = (
 				9C1B352B1AF0BA2E9B88CB5F /* Hakumi */,
 				128530F6CD1C6B92DC9495DD /* HakumiTests */,
+				9991DF59ECF618291EFF5B36 /* HakumiUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -464,6 +572,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C7511D0231B7F2AD012981B4 /* ComposerAndQueryTests.swift in Sources */,
 				EF984FF70AF1F75DE6ACFD18 /* HakumiTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -475,6 +584,7 @@
 				3097CEC22E6BABBA2E25B16F /* App.swift in Sources */,
 				E80E9E4495A22FC31C469DFD /* AppButton.swift in Sources */,
 				D0362EC8A52D18CF136E6797 /* AppLock.swift in Sources */,
+				C696AA14F666CC37D50FF083 /* AppLockStore.swift in Sources */,
 				6A7E7E6F0DC14F3D28E283ED /* AppRoute.swift in Sources */,
 				BF6BEE6D115A49BB87280D96 /* AppStores.swift in Sources */,
 				48620D931363AE9778DA0E58 /* AppTextField.swift in Sources */,
@@ -491,6 +601,7 @@
 				45388E71292C6838C4A48A09 /* Colors.swift in Sources */,
 				8EB42382144EEFB7EAB03154 /* ComposerState.swift in Sources */,
 				F2353529C2C6618108E667E0 /* ContentView.swift in Sources */,
+				D247841203402954838DD63F /* Date+ISO8601.swift in Sources */,
 				ED016166E4FE85D0176496A6 /* DeepLinkParser.swift in Sources */,
 				D3B50D846006BB870BFFF526 /* FileUploadService.swift in Sources */,
 				AB58307D21963153E39743A5 /* InboxScreen.swift in Sources */,
@@ -518,7 +629,23 @@
 				99624A97F03FE7FFD317BFFA /* StartupMetrics.swift in Sources */,
 				D4FCC222A1DFF396C54C225C /* TopAnchorSignal.swift in Sources */,
 				CBC66ECBE87D19CC7A4B9200 /* Typography.swift in Sources */,
+				7D0BA0EE637E944DCDF25491 /* URLRequest+API.swift in Sources */,
 				9F254714CD775A2403AC7177 /* VerifyOTPView.swift in Sources */,
+				7CB7331C41EC1C075C6A568F /* VoiceRecordingService.swift in Sources */,
+				F53222D96A61BBB92A20CAA5 /* WaveformView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E2CC79BA2701FB7528EB5515 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				150C7158A25E7F349FAA0C61 /* AuthFlowTests.swift in Sources */,
+				E52EDAC1308C338826458AC1 /* AuthScreens.swift in Sources */,
+				361768B082CF857EC90DE704 /* E2ECredentials.swift in Sources */,
+				1E800EB56BC700B8D4830A1A /* HakumiUITestCase.swift in Sources */,
+				773D89DDDF89078F0C066D1B /* NoteFlowTests.swift in Sources */,
+				9314D12B608D831AB135F4FA /* NoteScreens.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -529,6 +656,11 @@
 			isa = PBXTargetDependency;
 			target = 9C1B352B1AF0BA2E9B88CB5F /* Hakumi */;
 			targetProxy = C200404ECAAD212C3EA99241 /* PBXContainerItemProxy */;
+		};
+		DD1A372F7227E219DE21130D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9C1B352B1AF0BA2E9B88CB5F /* Hakumi */;
+			targetProxy = 2F0900B9EB187B528CB8185E /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -803,6 +935,60 @@
 			};
 			name = "Debug Dev";
 		};
+		43AF314A707EA66BFFCA26B7 /* Release Preview */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.pontistudios.hakumi.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Hakumi;
+			};
+			name = "Release Preview";
+		};
+		5DB80E99BCEE253AF84C258C /* Debug Dev */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.pontistudios.hakumi.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Hakumi;
+			};
+			name = "Debug Dev";
+		};
+		5FFA28EC78EEC48B3F06E0C8 /* Debug E2E */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.pontistudios.hakumi.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Hakumi;
+			};
+			name = "Debug E2E";
+		};
 		7AAC237AB7BF3042CE764ABB /* Debug E2E */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -821,6 +1007,24 @@
 			};
 			name = "Debug E2E";
 		};
+		8A7CACB98AE010DA252AB230 /* Debug Preview */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.pontistudios.hakumi.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Hakumi;
+			};
+			name = "Debug Preview";
+		};
 		9734D68F86314DA5AC02E288 /* Release Preview */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -838,6 +1042,24 @@
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Hakumi.app/Hakumi";
 			};
 			name = "Release Preview";
+		};
+		97F5730B991D959C2A9A643A /* Release Production */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.pontistudios.hakumi.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Hakumi;
+			};
+			name = "Release Production";
 		};
 		9D89E5802961360D933A8850 /* Release Preview */ = {
 			isa = XCBuildConfiguration;
@@ -1137,6 +1359,18 @@
 				BB83955761A200DFB1DA1234 /* Debug Preview */,
 				9734D68F86314DA5AC02E288 /* Release Preview */,
 				F27D295525B76E37BC9F7A2D /* Release Production */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = "Release Production";
+		};
+		77CA1A8C4A737C926BE2AE11 /* Build configuration list for PBXNativeTarget "HakumiUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5DB80E99BCEE253AF84C258C /* Debug Dev */,
+				5FFA28EC78EEC48B3F06E0C8 /* Debug E2E */,
+				8A7CACB98AE010DA252AB230 /* Debug Preview */,
+				43AF314A707EA66BFFCA26B7 /* Release Preview */,
+				97F5730B991D959C2A9A643A /* Release Production */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = "Release Production";

@@ -61,15 +61,14 @@ enum InboxService {
     // MARK: - GET /api/chats?limit=50
 
     static func fetchChats(headers: [String: String]) async throws -> [InboxChat] {
-        let url = URL(string: AuthService.apiURL("/api/chats").absoluteString + "?limit=50")!
-        var request = URLRequest(url: url)
+        var components = URLComponents(url: AuthService.apiURL("/api/chats"), resolvingAgainstBaseURL: false)!
+        components.queryItems = [URLQueryItem(name: "limit", value: "50")]
+        var request = URLRequest(url: components.url!)
         request.timeoutInterval = 15
         for (k, v) in headers { request.setValue(v, forHTTPHeaderField: k) }
 
         let (data, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw InboxError.fetchFailed
-        }
+        try URLRequest.validate(response, throwing: InboxError.fetchFailed)
 
         guard let arr = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
             return []
@@ -80,7 +79,7 @@ enum InboxService {
                 let id = dict["id"] as? String,
                 let title = dict["title"] as? String,
                 let activityStr = dict["activityAt"] as? String,
-                let activityAt = parseDate(activityStr)
+                let activityAt = Date.fromISO8601(activityStr)
             else { return nil }
             return InboxChat(id: id, title: title, activityAt: activityAt)
         }
@@ -89,16 +88,18 @@ enum InboxService {
     // MARK: - GET /api/notes?sortBy=updatedAt&sortOrder=desc&limit=100
 
     static func fetchNotes(headers: [String: String]) async throws -> [InboxNote] {
-        let url = URL(string: AuthService.apiURL("/api/notes").absoluteString
-            + "?sortBy=updatedAt&sortOrder=desc&limit=100")!
-        var request = URLRequest(url: url)
+        var components = URLComponents(url: AuthService.apiURL("/api/notes"), resolvingAgainstBaseURL: false)!
+        components.queryItems = [
+            URLQueryItem(name: "sortBy", value: "updatedAt"),
+            URLQueryItem(name: "sortOrder", value: "desc"),
+            URLQueryItem(name: "limit", value: "100")
+        ]
+        var request = URLRequest(url: components.url!)
         request.timeoutInterval = 15
         for (k, v) in headers { request.setValue(v, forHTTPHeaderField: k) }
 
         let (data, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw InboxError.fetchFailed
-        }
+        try URLRequest.validate(response, throwing: InboxError.fetchFailed)
 
         guard
             let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -110,21 +111,10 @@ enum InboxService {
                 let id = dict["id"] as? String,
                 let title = dict["title"] as? String,
                 let updatedStr = dict["updatedAt"] as? String,
-                let updatedAt = parseDate(updatedStr)
+                let updatedAt = Date.fromISO8601(updatedStr)
             else { return nil }
             return InboxNote(id: id, title: title, excerpt: dict["excerpt"] as? String, updatedAt: updatedAt)
         }
-    }
-
-    // MARK: - Helpers
-
-    private static func parseDate(_ string: String) -> Date? {
-        let withFrac = ISO8601DateFormatter()
-        withFrac.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let d = withFrac.date(from: string) { return d }
-        let noFrac = ISO8601DateFormatter()
-        noFrac.formatOptions = [.withInternetDateTime]
-        return noFrac.date(from: string)
     }
 }
 

@@ -52,11 +52,14 @@ class HakumiUITestCase: XCTestCase {
         app.launch()
     }
 
-    /// Launch unauthenticated. If testOTP is provided it is injected as
-    /// E2E_OTP so VerifyOTPScreen auto-submits on appearance.
-    func launchUnauthenticated(testOTP: String? = E2ECredentials.testOTP) {
-        if let otp = testOTP {
-            app.launchEnvironment["E2E_OTP"] = otp
+    /// Launch unauthenticated for auth-flow tests.
+    ///
+    /// - Parameter autoSubmitOTP: When true (default), the app fetches the real OTP
+    ///   from the backend test-store endpoint and auto-submits the OTP screen.
+    ///   Pass false to leave the OTP screen for manual interaction (e.g. error path tests).
+    func launchUnauthenticated(autoSubmitOTP: Bool = true) {
+        if autoSubmitOTP {
+            app.launchEnvironment["E2E_SECRET"] = E2ECredentials.e2eSecret
         }
         app.launch()
     }

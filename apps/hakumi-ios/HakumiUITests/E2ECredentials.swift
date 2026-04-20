@@ -28,8 +28,10 @@ enum E2ECredentials {
         return "e2e+\(ts)@test.hakumi.io"
     }
 
-    /// OTP the backend always accepts for *@test.hakumi.io in E2E mode.
-    static let testOTP = "000000"
+    /// The shared secret for accessing backend E2E test endpoints
+    /// (x-e2e-auth-secret header). Must match AUTH_E2E_SECRET on the server.
+    /// Override via E2E_SECRET environment variable.
+    static let e2eSecret: String = ProcessInfo.processInfo.environment["E2E_SECRET"] ?? "otp-secret"
 
     // MARK: - Session injection (note / inbox flow tests)
 

@@ -5,23 +5,23 @@ import XCTest
 // Tests the sign-in and sign-up flows end-to-end against the E2E backend.
 //
 // Prerequisites:
-//   - The app must be built with the "Debug E2E" configuration (#if E2E enabled).
-//   - The backend must be running at the URL configured in Debug E2E.
-//   - OTP "000000" must be accepted for *@test.hakumi.io addresses.
-//   - The account e2e@test.hakumi.io must already exist (for sign-in tests).
+//   - App built with "Debug E2E" configuration (#if E2E enabled).
+//   - Backend running at the URL in Debug E2E (ponti-macpro14.local:4040).
+//   - AUTH_TEST_OTP_ENABLED=true and AUTH_E2E_SECRET set on the backend.
+//   - Run `pnpm e2e:setup` in services/api to provision e2e@test.hakumi.io.
 
 final class AuthFlowTests: HakumiUITestCase {
 
     // MARK: Sign-in
 
     func testSignInEmailScreenAppearsOnColdLaunch() {
-        launchUnauthenticated(testOTP: nil) // no OTP injection — manual test mode
+        launchUnauthenticated(autoSubmitOTP: false) // no OTP injection — manual test mode
         let signIn = SignInScreen(app: app)
         XCTAssertTrue(signIn.isVisible, "Sign-in screen should be visible on cold launch")
     }
 
     func testSignInWithEmptyEmailShowsRequiredError() {
-        launchUnauthenticated(testOTP: nil)
+        launchUnauthenticated(autoSubmitOTP: false)
         let signIn = SignInScreen(app: app)
         XCTAssertTrue(signIn.isVisible)
 
@@ -31,7 +31,7 @@ final class AuthFlowTests: HakumiUITestCase {
     }
 
     func testSignInWithInvalidEmailShowsValidationError() {
-        launchUnauthenticated(testOTP: nil)
+        launchUnauthenticated(autoSubmitOTP: false)
         let signIn = SignInScreen(app: app)
         XCTAssertTrue(signIn.isVisible)
 
@@ -41,7 +41,7 @@ final class AuthFlowTests: HakumiUITestCase {
     }
 
     func testSignInWithValidEmailNavigatesToOTPScreen() {
-        launchUnauthenticated(testOTP: nil)
+        launchUnauthenticated(autoSubmitOTP: false)
         let signIn = SignInScreen(app: app)
         XCTAssertTrue(signIn.isVisible)
 
@@ -52,7 +52,7 @@ final class AuthFlowTests: HakumiUITestCase {
     }
 
     func testSignInOTPScreenShowsEmailInHelper() {
-        launchUnauthenticated(testOTP: nil)
+        launchUnauthenticated(autoSubmitOTP: false)
         let signIn = SignInScreen(app: app)
         XCTAssertTrue(signIn.isVisible)
 
@@ -63,7 +63,7 @@ final class AuthFlowTests: HakumiUITestCase {
 
     /// Full sign-in flow: email → OTP (auto-filled via E2E_OTP) → inbox.
     func testFullSignInFlowLandsOnInbox() {
-        launchUnauthenticated() // injects testOTP = "000000"
+        launchUnauthenticated() // passes E2E_SECRET — VerifyOTPScreen fetches real OTP
         let signIn = SignInScreen(app: app)
         XCTAssertTrue(signIn.isVisible)
 
@@ -75,7 +75,7 @@ final class AuthFlowTests: HakumiUITestCase {
     }
 
     func testSignInWithWrongOTPShowsError() {
-        launchUnauthenticated(testOTP: nil)
+        launchUnauthenticated(autoSubmitOTP: false)
         let signIn = SignInScreen(app: app)
         XCTAssertTrue(signIn.isVisible)
 
@@ -92,7 +92,7 @@ final class AuthFlowTests: HakumiUITestCase {
     }
 
     func testChangeEmailLinkReturnsToSignInScreen() {
-        launchUnauthenticated(testOTP: nil)
+        launchUnauthenticated(autoSubmitOTP: false)
         let signIn = SignInScreen(app: app)
         XCTAssertTrue(signIn.isVisible)
 

@@ -58,18 +58,15 @@ enum FileUploadError: LocalizedError, Sendable {
         }
 
         let boundary = UUID().uuidString
-        let url = AuthService.apiURL("/api/files")
-        var request = URLRequest(url: url)
+        var request = URLRequest(url: AuthService.apiURL("/api/files"))
         request.httpMethod = "POST"
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         request.timeoutInterval = 60
-        for (k, v) in AuthProvider.shared.getAuthHeaders() { request.setValue(v, forHTTPHeaderField: k) }
+        request.applyAuthHeaders()
         request.httpBody = buildMultipartBody(data: data, fileName: fileName, mimeType: mimeType, boundary: boundary)
 
         let (responseData, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw FileUploadError.uploadFailed("Server returned an error.")
-        }
+        try URLRequest.validate(response, throwing: FileUploadError.uploadFailed("Server returned an error."))
 
         guard
             let json = try? JSONSerialization.jsonObject(with: responseData) as? [String: Any],
@@ -87,13 +84,21 @@ enum FileUploadError: LocalizedError, Sendable {
 
     // MARK: - Delete
 
+    /// Best-effort file deletion. Errors are logged but not propagated — callers
+    /// should not depend on this completing successfully.
     func deleteFile(id: String) async {
-        let url = AuthService.apiURL("/api/files/\(id)")
-        var request = URLRequest(url: url)
+        var request = URLRequest(url: AuthService.apiURL("/api/files/\(id)"))
         request.httpMethod = "DELETE"
         request.timeoutInterval = 15
-        for (k, v) in AuthProvider.shared.getAuthHeaders() { request.setValue(v, forHTTPHeaderField: k) }
-        _ = try? await URLSession.shared.data(for: request)
+        request.applyAuthHeaders()
+        do {
+            let (_, response) = try await URLSession.shared.data(for: request)
+            try URLRequest.validate(response, throwing: FileUploadError.uploadFailed("Delete returned non-2xx"))
+        } catch {
+            // Non-fatal — the file may already be gone or the server is unreachable.
+            // Log so it can be investigated without crashing the caller.
+            print("[FileUploadService] deleteFile(\(id)) failed: \(error.localizedDescription)")
+        }
     }
 
     // MARK: - Multipart builder

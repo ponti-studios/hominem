@@ -51,6 +51,15 @@ struct SharedComposerCard: View {
                     ))
             }
 
+            // Voice permission error banner
+            if VoiceRecordingService.shared.permissionError != nil {
+                voicePermissionBanner
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .bottom).combined(with: .opacity),
+                        removal: .opacity
+                    ))
+            }
+
             card
         }
         .padding(.horizontal, Spacing.md)
@@ -73,8 +82,12 @@ struct SharedComposerCard: View {
                 attachmentChips
             }
 
-            // Text input row
-            inputRow
+            // Text input row (replaced by waveform row during voice recording)
+            if state.isRecording {
+                voiceRecordingRow
+            } else {
+                inputRow
+            }
 
             // Accessory row
             accessoryRow
@@ -89,6 +102,26 @@ struct SharedComposerCard: View {
                 .strokeBorder(Color.Hakumi.borderDefault, lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.18), radius: 12, x: 0, y: 4)
+    }
+
+    // MARK: - Voice recording row
+
+    private var voiceRecordingRow: some View {
+        HStack(spacing: Spacing.sm) {
+            WaveformView(amplitude: VoiceRecordingService.shared.amplitude)
+                .frame(maxWidth: .infinity)
+
+            Text(state.draftText.isEmpty
+                 ? "Listening…"
+                 : state.draftText)
+                .font(.system(size: 14))
+                .foregroundStyle(Color.Hakumi.textSecondary)
+                .lineLimit(2)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(minHeight: 36)
+        .padding(.horizontal, Spacing.xs)
+        .animation(.easeInOut(duration: 0.15), value: VoiceRecordingService.shared.amplitude)
     }
 
     // MARK: - Input row
@@ -140,20 +173,27 @@ struct SharedComposerCard: View {
             }
             .accessibilityLabel("Add attachment")
 
-            // Voice placeholder (Phase 5.1)
+            // Voice input button
             Button {
-                // voice recording — Phase 5.1
+                isInputFocused = false
+                if state.isRecording {
+                    state.stopVoiceInput()
+                } else {
+                    Task { await state.startVoiceInput() }
+                }
             } label: {
-                Image(systemName: "waveform")
+                Image(systemName: state.isRecording ? "stop.fill" : "waveform")
                     .font(.system(size: 15))
-                    .foregroundStyle(Color.Hakumi.textSecondary)
+                    .foregroundStyle(state.isRecording
+                        ? Color.red
+                        : Color.Hakumi.textSecondary)
                     .frame(width: 28, height: 28)
-                    .background(Color.Hakumi.bgSurface)
+                    .background(state.isRecording
+                        ? Color.red.opacity(0.12)
+                        : Color.Hakumi.bgSurface)
                     .clipShape(RoundedRectangle(cornerRadius: Radii.md, style: .continuous))
             }
-            .disabled(true)
-            .opacity(0.45)
-            .accessibilityLabel("Voice input (coming soon)")
+            .accessibilityLabel(state.isRecording ? "Stop recording" : "Voice input")
 
             Spacer()
 
@@ -403,6 +443,25 @@ struct SharedComposerCard: View {
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 11, weight: .semibold))
+            }
+        }
+        .foregroundStyle(.white)
+        .padding(.horizontal, Spacing.md)
+        .padding(.vertical, Spacing.sm)
+        .background(Color.red.opacity(0.85))
+        .clipShape(RoundedRectangle(cornerRadius: Radii.md, style: .continuous))
+    }
+
+    // MARK: - Permission error (voice)
+
+    private var voicePermissionBanner: some View {
+        HStack(spacing: Spacing.sm) {
+            Image(systemName: "mic.slash.fill").font(.system(size: 13))
+            Text(VoiceRecordingService.shared.permissionError ?? "")
+                .font(.system(size: 13))
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Button { } label: {
+                Image(systemName: "xmark").font(.system(size: 11, weight: .semibold))
             }
         }
         .foregroundStyle(.white)

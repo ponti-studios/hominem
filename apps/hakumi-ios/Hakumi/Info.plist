@@ -53,6 +53,8 @@
 	<string>Hakumi uses Face ID to keep your account secure.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Hakumi needs microphone access for voice recording.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Hakumi uses speech recognition to convert your voice to text.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Hakumi needs permission to save photos to your library.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

@@ -130,6 +130,11 @@ enum PasskeyService {
             throw PasskeyServiceError.invalidOptions
         }
 
+        // Cancel any in-flight session before starting a new one to avoid leaking
+        // the ASAuthorizationController and its continuation.
+        activeAuthorizationSession?.cancel()
+        activeAuthorizationSession = nil
+
         return try await withCheckedThrowingContinuation { continuation in
             let session = PasskeyAuthorizationSession(
                 presentationAnchor: presentationAnchor,
@@ -203,6 +208,16 @@ private final class PasskeyAuthorizationSession: NSObject, ASAuthorizationContro
         self.options = options
         self.continuation = continuation
         self.onFinish = onFinish
+    }
+
+    func cancel() {
+        guard !didComplete else { return }
+        didComplete = true
+        // ASAuthorizationController has no public cancel API; setting controller to nil
+        // releases it and prevents its delegate callbacks from firing after this point.
+        controller = nil
+        onFinish()
+        continuation.resume(throwing: PasskeyServiceError.cancelled)
     }
 
     func start() {

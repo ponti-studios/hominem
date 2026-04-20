@@ -38,12 +38,25 @@ enum AuthService {
 
     static var apiBaseURL: URL {
         let fromBundle = Bundle.main.object(forInfoDictionaryKey: "APIBaseURL") as? String ?? ""
-        let rawURL = fromBundle.isEmpty ? "http://localhost:4040" : fromBundle
-        return URL(string: fromURL(rawURL))!
+        let rawURL = fromBundle.isEmpty ? "http://localhost:4040" : fromURL(fromBundle)
+
+        #if PRODUCTION || PREVIEW
+        if !rawURL.hasPrefix("https://") {
+            assertionFailure("APIBaseURL must use HTTPS in production/preview builds. Got: \(rawURL)")
+        }
+        #endif
+
+        // URL(string:) can only fail if rawURL is malformed (e.g. contains illegal chars).
+        // Fall back to a safe placeholder so the caller gets a network error rather than a crash.
+        return URL(string: rawURL) ?? URL(string: "http://localhost:4040")!
     }
 
     static func apiURL(_ path: String) -> URL {
-        URL(string: apiBaseURL.absoluteString + path)!
+        var components = URLComponents(url: apiBaseURL, resolvingAgainstBaseURL: false)!
+        // Preserve existing path prefix then append the new path segment
+        let existing = components.path.hasSuffix("/") ? String(components.path.dropLast()) : components.path
+        components.path = existing + path
+        return components.url ?? apiBaseURL.appendingPathComponent(path)
     }
 
     private static func fromURL(_ raw: String) -> String {

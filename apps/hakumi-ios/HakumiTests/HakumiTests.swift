@@ -115,7 +115,10 @@ struct HakumiTests {
     @Test func authServiceUsesExpectedOtpEndpoints() {
         #expect(AuthService.sendOTPPath == "/api/auth/email-otp/send-verification-otp")
         #expect(AuthService.verifyOTPPath == "/api/auth/sign-in/email-otp")
-        #expect(AuthService.apiURL(AuthService.sendOTPPath).absoluteString == "http://localhost:4040/api/auth/email-otp/send-verification-otp")
+        // Verify path structure without hardcoding the host (varies by build config).
+        let sendURL = AuthService.apiURL(AuthService.sendOTPPath)
+        #expect(sendURL.path == "/api/auth/email-otp/send-verification-otp")
+        #expect(sendURL.host != nil)
     }
 
     @Test func passkeyAuthenticationResponseEncodesWebAuthnShape() throws {

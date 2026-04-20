@@ -107,6 +107,9 @@ struct ComposerDraft: Sendable {
     /// Non-nil when the last submit failed. Cleared on the next submit attempt or when the user edits the draft.
     private(set) var submitError: String? = nil
 
+    /// True while the voice recorder is active; controls waveform UI in SharedComposerCard.
+    private(set) var isRecording = false
+
     /// Mention suggestions (shown when text ends with `@query`).
     private(set) var mentionResults: [ComposerNote] = []
     private var mentionTask: Task<Void, Never>? = nil
@@ -306,12 +309,12 @@ struct ComposerDraft: Sendable {
 
     // MARK: - Text helpers
 
-    private static func derivedTitle(from text: String) -> String {
+    nonisolated private static func derivedTitle(from text: String) -> String {
         let firstLine = text.split(separator: "\n", maxSplits: 1).first.map(String.init) ?? text
         return String(firstLine.trimmingCharacters(in: .whitespaces).prefix(80))
     }
 
-    private static func excerpt(from text: String) -> String? {
+    nonisolated private static func excerpt(from text: String) -> String? {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.count > 80 else { return nil }
         return String(trimmed.dropFirst(80).prefix(160))
@@ -359,15 +362,26 @@ struct ComposerDraft: Sendable {
 
     private func searchNotes(query: String) async {
         guard !Task.isCancelled else { return }
-        let encoded = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? query
-        let url = AuthService.apiURL("/api/notes/search?query=\(encoded)&limit=5")
+        var components = URLComponents(url: AuthService.apiURL("/api/notes/search"), resolvingAgainstBaseURL: false)!
+        components.queryItems = [
+            URLQueryItem(name: "query", value: query),
+            URLQueryItem(name: "limit", value: "5")
+        ]
+        guard let url = components.url else { return }
         var request = URLRequest(url: url)
         request.timeoutInterval = 5
-        let headers = AuthProvider.shared.getAuthHeaders()
-        for (k, v) in headers { request.setValue(v, forHTTPHeaderField: k) }
+        request.applyAuthHeaders()
 
-        guard let (data, _) = try? await URLSession.shared.data(for: request),
-              !Task.isCancelled else { return }
+        let data: Data
+        do {
+            let (responseData, _) = try await URLSession.shared.data(for: request)
+            data = responseData
+        } catch {
+            // Mention search is best-effort; a network error just leaves results empty.
+            return
+        }
+
+        guard !Task.isCancelled else { return }
 
         // Response may be `{ notes: [...] }` or a bare array
         let raw = (try? JSONSerialization.jsonObject(with: data) as? [String: Any])?["notes"]
@@ -386,6 +400,21 @@ struct ComposerDraft: Sendable {
         let before = text[..<idx]
         guard before.isEmpty || before.last?.isWhitespace == true else { return nil }
         return String(text[text.index(after: idx)...])
+    }
+
+    // MARK: - Voice input
+
+    func startVoiceInput() async {
+        isRecording = true
+        await VoiceRecordingService.shared.startRecording()
+    }
+
+    func stopVoiceInput() {
+        let text = VoiceRecordingService.shared.stopRecording()
+        isRecording = false
+        guard !text.isEmpty else { return }
+        let current = draftText
+        draftText = current.isEmpty ? text : "\(current) \(text)"
     }
 
     // MARK: - Draft persistence

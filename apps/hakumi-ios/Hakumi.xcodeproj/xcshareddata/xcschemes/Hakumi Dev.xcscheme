@@ -35,6 +35,20 @@
                ReferencedContainer = "container:Hakumi.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "9991DF59ECF618291EFF5B36"
+               BuildableName = "HakumiUITests.xctest"
+               BlueprintName = "HakumiUITests"
+               ReferencedContainer = "container:Hakumi.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -61,6 +75,17 @@
                BlueprintIdentifier = "128530F6CD1C6B92DC9495DD"
                BuildableName = "HakumiTests.xctest"
                BlueprintName = "HakumiTests"
+               ReferencedContainer = "container:Hakumi.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "9991DF59ECF618291EFF5B36"
+               BuildableName = "HakumiUITests.xctest"
+               BlueprintName = "HakumiUITests"
                ReferencedContainer = "container:Hakumi.xcodeproj">
             </BuildableReference>
          </TestableReference>

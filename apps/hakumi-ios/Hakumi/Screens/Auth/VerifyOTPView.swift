@@ -79,13 +79,53 @@ struct VerifyOTPScreen: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             #if E2E
-            if let testOTP = ProcessInfo.processInfo.environment["E2E_OTP"] {
-                otp = testOTP
-                Task { await handleVerify() }
-            }
+            e2eAutoSubmitIfNeeded()
             #endif
         }
     }
+
+    // MARK: - E2E helpers (Debug E2E builds only)
+
+    #if E2E
+    /// Called on appear when running under XCUITest.
+    /// Prefers a directly-injected E2E_OTP (CI fast path), otherwise fetches
+    /// the real OTP from the backend's test-store endpoint using E2E_SECRET.
+    private func e2eAutoSubmitIfNeeded() {
+        let env = ProcessInfo.processInfo.environment
+        if let direct = env["E2E_OTP"], !direct.isEmpty {
+            otp = direct
+            Task { await handleVerify() }
+        } else if let secret = env["E2E_SECRET"], !secret.isEmpty {
+            Task { await fetchAndAutoSubmit(secret: secret) }
+        }
+    }
+
+    /// Polls GET /api/auth/test/otp/latest until the OTP appears (up to 5 attempts),
+    /// then auto-fills and submits. The brief initial delay lets the backend finish
+    /// recording the OTP before the first poll.
+    private func fetchAndAutoSubmit(secret: String) async {
+        try? await Task.sleep(for: .milliseconds(400))
+        let encoded = email.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? email
+        let url = AuthService.apiURL("/api/auth/test/otp/latest?email=\(encoded)&type=sign-in")
+        var request = URLRequest(url: url)
+        request.setValue(secret, forHTTPHeaderField: "x-e2e-auth-secret")
+        request.timeoutInterval = 5
+
+        for _ in 0..<5 {
+            if let (data, response) = try? await URLSession.shared.data(for: request),
+               let http = response as? HTTPURLResponse,
+               http.statusCode == 200,
+               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let fetched = json["otp"] as? String,
+               !fetched.isEmpty {
+                otp = fetched
+                await handleVerify()
+                return
+            }
+            try? await Task.sleep(for: .milliseconds(500))
+        }
+    }
+    #endif
 
     // MARK: - Actions
 

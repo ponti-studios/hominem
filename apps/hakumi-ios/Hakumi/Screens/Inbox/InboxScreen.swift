@@ -57,6 +57,16 @@ struct InboxScreen: View {
                     isPending: false
                 )
             }
+            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                Button(role: .destructive) {
+                    Task { await deleteChat(chat) }
+                } label: { Label("Delete", systemImage: "trash") }
+
+                Button {
+                    Task { await archiveChat(chat) }
+                } label: { Label("Archive", systemImage: "archivebox") }
+                .tint(.orange)
+            }
         case .note(let note):
             let isPending = note.id.hasPrefix("tmp-")
             NavigationLink(value: ProtectedRoute.noteDetail(id: note.id)) {
@@ -69,6 +79,56 @@ struct InboxScreen: View {
                 )
             }
             .disabled(isPending)
+            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                Button(role: .destructive) {
+                    Task { await deleteNote(note) }
+                } label: { Label("Delete", systemImage: "trash") }
+
+                Button {
+                    Task { await archiveNote(note) }
+                } label: { Label("Archive", systemImage: "archivebox") }
+                .tint(.orange)
+            }
+        }
+    }
+
+    // MARK: Swipe action helpers
+
+    private func archiveNote(_ note: InboxNote) async {
+        AppStores.shared.inbox.mutateData { $0.removeAll { $0.id == "note-\(note.id)" } }
+        AppStores.shared.notes.mutateData { $0.removeAll { $0.id == note.id } }
+        do {
+            try await NoteService.archiveNote(id: note.id)
+        } catch {
+            AppStores.shared.inbox.mutateData { $0.insert(.note(note), at: 0) }
+        }
+    }
+
+    private func deleteNote(_ note: InboxNote) async {
+        AppStores.shared.inbox.mutateData { $0.removeAll { $0.id == "note-\(note.id)" } }
+        AppStores.shared.notes.mutateData { $0.removeAll { $0.id == note.id } }
+        do {
+            try await NoteService.deleteNote(id: note.id)
+        } catch {
+            AppStores.shared.inbox.mutateData { $0.insert(.note(note), at: 0) }
+        }
+    }
+
+    private func archiveChat(_ chat: InboxChat) async {
+        AppStores.shared.inbox.mutateData { $0.removeAll { $0.id == "chat-\(chat.id)" } }
+        do {
+            try await ChatService.archiveChat(id: chat.id)
+        } catch {
+            AppStores.shared.inbox.mutateData { $0.insert(.chat(chat), at: 0) }
+        }
+    }
+
+    private func deleteChat(_ chat: InboxChat) async {
+        AppStores.shared.inbox.mutateData { $0.removeAll { $0.id == "chat-\(chat.id)" } }
+        do {
+            try await ChatService.deleteChat(id: chat.id)
+        } catch {
+            AppStores.shared.inbox.mutateData { $0.insert(.chat(chat), at: 0) }
         }
     }
 
