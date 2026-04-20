@@ -11,6 +11,7 @@ struct AppTextField: View {
     var error: String? = nil
     var helpText: String? = nil
     var isRequired: Bool = false
+    var identifier: String? = nil
 
     @FocusState private var isFocused: Bool
 
@@ -45,8 +46,10 @@ struct AppTextField: View {
         Group {
             if isSecure {
                 SecureField(placeholder, text: $text)
+                    .accessibilityIdentifier(identifier ?? "")
             } else {
                 TextField(placeholder, text: $text)
+                    .accessibilityIdentifier(identifier ?? "")
             }
         }
         .font(.system(size: 17))

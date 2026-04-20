@@ -32,6 +32,7 @@
 		9ADD145CA737A74603666D6D /* SettingsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C425255B931817B289B78BF7 /* SettingsScreen.swift */; };
 		9F254714CD775A2403AC7177 /* VerifyOTPView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5F191582E394E2A32CC0E77 /* VerifyOTPView.swift */; };
 		AB58307D21963153E39743A5 /* InboxScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6408ED599DFCADECAFC2261B /* InboxScreen.swift */; };
+		B0A6FE18BBDA7EE4C409CC21 /* QueryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71FE5C16C7FD014DC7150417 /* QueryStore.swift */; };
 		B1332FC048367ED873509DB8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9413829AD7164A7B644AA1B1 /* Assets.xcassets */; };
 		B2D4A36AA7B75FC1E5A9E11D /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31B306CD1BC5C74D74A72B85 /* RootView.swift */; };
 		B94851F89A62BEDE8F636945 /* AuthProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7796A9F8181169DACF43ECAD /* AuthProvider.swift */; };
@@ -39,6 +40,7 @@
 		BB1621958123103D223DD3C3 /* NotesScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78855E15AADFF8875B8C4804 /* NotesScreen.swift */; };
 		BDCC7A826C6C03D838DD16C1 /* InboxService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA14A9F44D39A6AA20DE606D /* InboxService.swift */; };
 		BDE149B4C59A5A7DE0DCD8CB /* OnboardingScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCE7BD3FA699BEEFC82317EC /* OnboardingScreen.swift */; };
+		BF6BEE6D115A49BB87280D96 /* AppStores.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7051450855F0CC5E0E6D9456 /* AppStores.swift */; };
 		C17A1F56760EF2D4F3CD3E1D /* Shadows.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94C35175AC56AFF721E6E7AE /* Shadows.swift */; };
 		CBC66ECBE87D19CC7A4B9200 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09EC5E1A0D2AA861E4C7BB01 /* Typography.swift */; };
 		CDC52D6407794E5E83BD834A /* Router.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82DE3DBF6E3BA8D3BBC25995 /* Router.swift */; };
@@ -84,6 +86,8 @@
 		6408ED599DFCADECAFC2261B /* InboxScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InboxScreen.swift; sourceTree = "<group>"; };
 		6658E7CF397336054780F1C3 /* SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStore.swift; sourceTree = "<group>"; };
 		704A68CEA2361E7ACFA3722D /* AuthLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthLayout.swift; sourceTree = "<group>"; };
+		7051450855F0CC5E0E6D9456 /* AppStores.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStores.swift; sourceTree = "<group>"; };
+		71FE5C16C7FD014DC7150417 /* QueryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QueryStore.swift; sourceTree = "<group>"; };
 		7763DA1CCD660C6BCD8B2DFC /* AppLock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLock.swift; sourceTree = "<group>"; };
 		7796A9F8181169DACF43ECAD /* AuthProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthProvider.swift; sourceTree = "<group>"; };
 		78855E15AADFF8875B8C4804 /* NotesScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesScreen.swift; sourceTree = "<group>"; };
@@ -196,6 +200,7 @@
 				354A5F6DA9F6ED7F2F7EFE99 /* Inbox */,
 				22336F56CC90EED7D1272814 /* Notes */,
 				F30232D3B2540E4D83E3FDF7 /* Observability */,
+				63D7131D1744EBADAEBC1583 /* Query */,
 				89FBF72FC744FC9E6E4E9A6C /* Settings */,
 			);
 			path = Services;
@@ -255,6 +260,15 @@
 				CCE7BD3FA699BEEFC82317EC /* OnboardingScreen.swift */,
 			);
 			path = Onboarding;
+			sourceTree = "<group>";
+		};
+		63D7131D1744EBADAEBC1583 /* Query */ = {
+			isa = PBXGroup;
+			children = (
+				7051450855F0CC5E0E6D9456 /* AppStores.swift */,
+				71FE5C16C7FD014DC7150417 /* QueryStore.swift */,
+			);
+			path = Query;
 			sourceTree = "<group>";
 		};
 		6ED77E1BDDDD19BCA38283A4 /* HakumiTests */ = {
@@ -462,6 +476,7 @@
 				E80E9E4495A22FC31C469DFD /* AppButton.swift in Sources */,
 				D0362EC8A52D18CF136E6797 /* AppLock.swift in Sources */,
 				6A7E7E6F0DC14F3D28E283ED /* AppRoute.swift in Sources */,
+				BF6BEE6D115A49BB87280D96 /* AppStores.swift in Sources */,
 				48620D931363AE9778DA0E58 /* AppTextField.swift in Sources */,
 				D1AA2AF8697616644D8C8E1E /* ArchivedChatsScreen.swift in Sources */,
 				B9DE093A7CC573CA3D7228B8 /* AuthCopy.swift in Sources */,
@@ -489,6 +504,7 @@
 				1E7B37D52EEB0C4D23B7075F /* PasskeyManagementService.swift in Sources */,
 				617607881AD8F8D6F04A0B6A /* PasskeyService.swift in Sources */,
 				E3F0C63FBFBCFA4A827DD16E /* PlaceholderScreen.swift in Sources */,
+				B0A6FE18BBDA7EE4C409CC21 /* QueryStore.swift in Sources */,
 				D51205FBA2EDC5D7F693225B /* Radii.swift in Sources */,
 				B2D4A36AA7B75FC1E5A9E11D /* RootView.swift in Sources */,
 				CDC52D6407794E5E83BD834A /* Router.swift in Sources */,
@@ -764,7 +780,7 @@
 		3C9CFCCE5978469184459E42 /* Debug Dev */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				API_BASE_URL = "http://localhost:4040";
+				API_BASE_URL = "http://ponti-macpro14.local:4040";
 				APP_DISPLAY_NAME = "Hakumi Dev";
 				APP_URL_SCHEME = "hakumi-dev";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -969,7 +985,7 @@
 		AA9FD694407ADAF353476F77 /* Debug E2E */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				API_BASE_URL = "http://localhost:4040";
+				API_BASE_URL = "http://ponti-macpro14.local:4040";
 				APP_DISPLAY_NAME = "Hakumi E2E";
 				APP_URL_SCHEME = "hakumi-e2e";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -1039,7 +1055,7 @@
 		B9BE39B08EE3FC2176AD2231 /* Debug Preview */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				API_BASE_URL = "http://localhost:4040";
+				API_BASE_URL = "http://ponti-macpro14.local:4040";
 				APP_DISPLAY_NAME = "Hakumi Preview";
 				APP_URL_SCHEME = "hakumi-preview";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;

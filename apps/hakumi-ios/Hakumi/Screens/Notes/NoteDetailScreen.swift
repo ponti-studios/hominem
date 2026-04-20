@@ -54,6 +54,7 @@ struct NoteDetailScreen: View {
                     .tint(Color.Hakumi.accent)
                     .onChange(of: title) { scheduleAutosave() }
                     .padding(.bottom, Spacing.md)
+                    .accessibilityIdentifier("note.titleField")
 
                 Divider()
                     .background(Color.Hakumi.borderSubtle)
@@ -69,6 +70,7 @@ struct NoteDetailScreen: View {
                     .scrollDisabled(true)
                     .frame(minHeight: 240, alignment: .topLeading)
                     .onChange(of: content) { scheduleAutosave() }
+                    .accessibilityIdentifier("note.contentEditor")
 
                 // Attachments
                 if !files.isEmpty {

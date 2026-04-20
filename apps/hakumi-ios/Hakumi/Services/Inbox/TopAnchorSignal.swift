@@ -17,9 +17,10 @@ import Foundation
 @MainActor
 final class TopAnchorSignal {
 
-    // MARK: - Shared instance for inbox
+    // MARK: - Shared instances
 
     static let inbox = TopAnchorSignal()
+    static let notes = TopAnchorSignal()
 
     // MARK: - State
 

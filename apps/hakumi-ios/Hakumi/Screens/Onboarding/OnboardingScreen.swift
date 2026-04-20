@@ -41,7 +41,8 @@ struct OnboardingScreen: View {
                             set: { name = $0; error = nil }
                         ),
                         isDisabled: isSubmitting,
-                        error: error
+                        error: error,
+                        identifier: "onboarding.nameField"
                     )
                     .autocorrectionDisabled()
 
@@ -51,6 +52,7 @@ struct OnboardingScreen: View {
                         }
                         .disabled(!canSubmit)
                         .frame(maxWidth: .infinity)
+                        .accessibilityIdentifier("onboarding.createButton")
 
                         AppButton("Sign out", variant: .ghost) {
                             Task { await AuthProvider.shared.signOut()

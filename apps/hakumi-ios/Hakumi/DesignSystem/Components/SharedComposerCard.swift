@@ -20,12 +20,31 @@ struct SharedComposerCard: View {
     @FocusState private var isInputFocused: Bool
     @State private var pickerItems: [PhotosPickerItem] = []
     @State private var isAttachmentUploading = false
+    @State private var uploadErrorMessage: String? = nil
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: Spacing.xs) {
             // Note mention suggestions dropdown (above card)
             if !state.mentionResults.isEmpty {
                 mentionSuggestions
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .bottom).combined(with: .opacity),
+                        removal: .opacity
+                    ))
+            }
+
+            // Submit error banner (above card)
+            if let error = state.submitError {
+                submitErrorBanner(message: error)
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .bottom).combined(with: .opacity),
+                        removal: .opacity
+                    ))
+            }
+
+            // Upload error banner
+            if let error = uploadErrorMessage {
+                uploadErrorBanner(message: error)
                     .transition(.asymmetric(
                         insertion: .move(edge: .bottom).combined(with: .opacity),
                         removal: .opacity
@@ -36,6 +55,8 @@ struct SharedComposerCard: View {
         }
         .padding(.horizontal, Spacing.md)
         .padding(.bottom, Spacing.xs)
+        .animation(.spring(duration: 0.2), value: state.submitError)
+        .animation(.spring(duration: 0.2), value: uploadErrorMessage)
     }
 
     // MARK: - Card
@@ -83,6 +104,7 @@ struct SharedComposerCard: View {
         .focused($isInputFocused)
         .padding(.horizontal, Spacing.xs)
         .tint(Color.Hakumi.accent)
+        .accessibilityIdentifier("composer.textField")
     }
 
     // MARK: - Accessory row
@@ -197,6 +219,7 @@ struct SharedComposerCard: View {
             }
             .disabled(!state.canSubmit || isSending)
             .accessibilityLabel(isSending ? "Sending…" : target.primaryLabel)
+            .accessibilityIdentifier("composer.sendButton")
         }
     }
 
@@ -290,8 +313,13 @@ struct SharedComposerCard: View {
 
     private func handlePickedItems(_ items: [PhotosPickerItem]) async {
         isAttachmentUploading = true
+        var failedCount = 0
+
         for item in items {
-            guard let rawData = try? await item.loadTransferable(type: Data.self) else { continue }
+            guard let rawData = try? await item.loadTransferable(type: Data.self) else {
+                failedCount += 1
+                continue
+            }
 
             let uploadData: Data
             let mimeType: String
@@ -305,6 +333,7 @@ struct SharedComposerCard: View {
                 uploadData = jpegData
                 mimeType = "image/jpeg"
             } else {
+                failedCount += 1
                 continue
             }
 
@@ -323,9 +352,64 @@ struct SharedComposerCard: View {
                     url: result.url
                 )
                 state.addAttachment(attachment)
+            } else {
+                failedCount += 1
             }
         }
+
         isAttachmentUploading = false
+
+        if failedCount > 0 {
+            let noun = failedCount == 1 ? "attachment" : "attachments"
+            uploadErrorMessage = "Failed to upload \(failedCount) \(noun) — try again"
+        }
+    }
+
+    // MARK: - Error banners
+
+    private func submitErrorBanner(message: String) -> some View {
+        Button {
+            isSending = true
+            Task {
+                await state.submitPrimary(router: router)
+                isSending = false
+            }
+        } label: {
+            HStack(spacing: Spacing.sm) {
+                Image(systemName: "exclamationmark.circle.fill")
+                    .font(.system(size: 13))
+                Text(message)
+                    .font(.system(size: 13))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, Spacing.md)
+            .padding(.vertical, Spacing.sm)
+            .background(Color.red.opacity(0.85))
+            .clipShape(RoundedRectangle(cornerRadius: Radii.md, style: .continuous))
+        }
+        .disabled(isSending)
+    }
+
+    private func uploadErrorBanner(message: String) -> some View {
+        HStack(spacing: Spacing.sm) {
+            Image(systemName: "exclamationmark.circle.fill")
+                .font(.system(size: 13))
+            Text(message)
+                .font(.system(size: 13))
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Button {
+                uploadErrorMessage = nil
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 11, weight: .semibold))
+            }
+        }
+        .foregroundStyle(.white)
+        .padding(.horizontal, Spacing.md)
+        .padding(.vertical, Spacing.sm)
+        .background(Color.red.opacity(0.85))
+        .clipShape(RoundedRectangle(cornerRadius: Radii.md, style: .continuous))
     }
 
     // MARK: - Mention suggestions

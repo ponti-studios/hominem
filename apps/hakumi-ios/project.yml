@@ -64,6 +64,7 @@ targets:
         NSPhotoLibraryUsageDescription: 'Hakumi needs photo library access to share images.'
         NSPhotoLibraryAddUsageDescription: 'Hakumi needs permission to save photos to your library.'
         NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
           NSExceptionDomains:
             localhost:
               NSExceptionAllowsInsecureHTTPLoads: true
@@ -91,7 +92,7 @@ targets:
           PRODUCT_BUNDLE_IDENTIFIER: com.pontistudios.hakumi.dev
           APP_DISPLAY_NAME: 'Hakumi Dev'
           APP_URL_SCHEME: hakumi-dev
-          API_BASE_URL: 'http://localhost:4040'
+          API_BASE_URL: 'http://ponti-macpro14.local:4040'
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG DEV
           DEBUG_INFORMATION_FORMAT: dwarf
           ENABLE_TESTABILITY: YES
@@ -101,7 +102,7 @@ targets:
           PRODUCT_BUNDLE_IDENTIFIER: com.pontistudios.hakumi.e2e
           APP_DISPLAY_NAME: 'Hakumi E2E'
           APP_URL_SCHEME: hakumi-e2e
-          API_BASE_URL: 'http://localhost:4040'
+          API_BASE_URL: 'http://ponti-macpro14.local:4040'
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG E2E
           DEBUG_INFORMATION_FORMAT: dwarf
           ENABLE_TESTABILITY: YES
@@ -111,7 +112,7 @@ targets:
           PRODUCT_BUNDLE_IDENTIFIER: com.pontistudios.hakumi.preview
           APP_DISPLAY_NAME: 'Hakumi Preview'
           APP_URL_SCHEME: hakumi-preview
-          API_BASE_URL: 'http://localhost:4040'
+          API_BASE_URL: 'http://ponti-macpro14.local:4040'
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG PREVIEW
           DEBUG_INFORMATION_FORMAT: dwarf
           ENABLE_TESTABILITY: YES
@@ -154,18 +155,34 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.pontistudios.hakumi.tests
         GENERATE_INFOPLIST_FILE: YES
 
+  HakumiUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: '18.0'
+    sources:
+      - path: HakumiUITests
+    dependencies:
+      - target: Hakumi
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.pontistudios.hakumi.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: Hakumi
+
 schemes:
   'Hakumi Dev':
     build:
       targets:
         Hakumi: all
         HakumiTests: [test]
+        HakumiUITests: [test]
     run:
       config: 'Debug Dev'
     test:
       config: 'Debug Dev'
       targets:
         - HakumiTests
+        - HakumiUITests
     analyze:
       config: 'Debug Dev'
     archive:
@@ -174,10 +191,13 @@ schemes:
     build:
       targets:
         Hakumi: all
+        HakumiUITests: [test]
     run:
       config: 'Debug E2E'
     test:
       config: 'Debug E2E'
+      targets:
+        - HakumiUITests
     analyze:
       config: 'Debug E2E'
     archive:

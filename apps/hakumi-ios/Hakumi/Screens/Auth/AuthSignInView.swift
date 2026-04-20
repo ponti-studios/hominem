@@ -23,7 +23,8 @@ struct AuthSignInScreen: View {
                         set: { email = $0; error = nil }
                     ),
                     isDisabled: isBusy,
-                    error: error
+                    error: error,
+                    identifier: "auth.emailField"
                 )
                 .keyboardType(.emailAddress)
                 .autocorrectionDisabled()
@@ -34,6 +35,7 @@ struct AuthSignInScreen: View {
                 }
                 .disabled(isBusy)
                 .frame(maxWidth: .infinity)
+                .accessibilityIdentifier("auth.continueButton")
 
                 HStack(spacing: Spacing.sm) {
                     Rectangle()

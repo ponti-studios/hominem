@@ -4,19 +4,15 @@ import SwiftUI
 
 struct NotesScreen: View {
     @Environment(Router.self) private var router
-    @State private var notes: [NoteItem] = []
-    @State private var isLoading = false
-    @State private var errorMessage: String?
+    private var store: QueryStore<NoteItem> { AppStores.shared.notes }
     @State private var searchText = ""
     @State private var isCreating = false
-    @State private var lastFetchDate: Date?
-
-    private let staleness: TimeInterval = 30
+    @State private var scrollPosition = ScrollPosition(idType: String.self)
 
     var filteredNotes: [NoteItem] {
-        guard !searchText.isEmpty else { return notes }
+        guard !searchText.isEmpty else { return store.data }
         let q = searchText.lowercased()
-        return notes.filter {
+        return store.data.filter {
             $0.displayTitle.lowercased().contains(q) ||
             $0.contentPreview.lowercased().contains(q)
         }
@@ -24,11 +20,11 @@ struct NotesScreen: View {
 
     var body: some View {
         Group {
-            if isLoading && notes.isEmpty {
+            if store.isFirstLoad {
                 loadingView
-            } else if let msg = errorMessage, notes.isEmpty {
+            } else if let msg = store.errorMessage, store.isEmpty {
                 errorView(msg)
-            } else if notes.isEmpty {
+            } else if store.isEmpty {
                 emptyView
             } else if filteredNotes.isEmpty {
                 noResultsView
@@ -51,11 +47,16 @@ struct NotesScreen: View {
                     }
                 }
                 .disabled(isCreating)
+                .accessibilityIdentifier("notes.newButton")
+                .accessibilityLabel("New note")
             }
         }
         .background(Color.Hakumi.bgBase)
-        .task { await load() }
-        .onAppear { refreshIfStale() }
+        .task { await store.fetch() }
+        .onAppear { store.fetchIfStale() }
+        .onChange(of: TopAnchorSignal.notes.pendingRequestId) { _, _ in
+            scrollToTopIfPending()
+        }
     }
 
     // MARK: Notes list
@@ -63,16 +64,26 @@ struct NotesScreen: View {
     private var notesList: some View {
         List {
             ForEach(filteredNotes) { note in
+                let isPending = note.id.hasPrefix("tmp-")
                 NavigationLink(value: ProtectedRoute.noteDetail(id: note.id)) {
-                    NoteRowView(note: note)
+                    NoteRowView(note: note, isPending: isPending)
                 }
+                .disabled(isPending)
                 .listRowBackground(Color.Hakumi.bgBase)
                 .listRowInsets(EdgeInsets(top: 0, leading: Spacing.lg, bottom: 0, trailing: Spacing.lg))
             }
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
-        .refreshable { await load() }
+        .scrollPosition($scrollPosition)
+        .refreshable { await store.fetch() }
+    }
+
+    private func scrollToTopIfPending() {
+        guard TopAnchorSignal.notes.hasPendingReveal,
+              let firstId = store.data.first?.id else { return }
+        withAnimation { scrollPosition.scrollTo(id: firstId) }
+        TopAnchorSignal.notes.markHandled()
     }
 
     // MARK: Empty / loading / error
@@ -118,46 +129,31 @@ struct NotesScreen: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, Spacing.xl)
             AppButton("Retry", variant: .ghost, size: .sm) {
-                Task { await load() }
+                Task { await store.fetch() }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    // MARK: Data
-
-    private func load() async {
-        guard !isLoading else { return }
-        isLoading = true
-        errorMessage = nil
-        defer { isLoading = false }
-        do {
-            notes = try await NoteService.fetchNotes()
-            lastFetchDate = Date()
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-    }
-
-    private func refreshIfStale() {
-        guard let last = lastFetchDate,
-              Date().timeIntervalSince(last) > staleness else { return }
-        Task { await load() }
-    }
+    // MARK: Create and open (toolbar button)
 
     private func createAndOpen() async {
         isCreating = true
         defer { isCreating = false }
         do {
-            let note = try await NoteService.createNote()
-            notes.insert(
-                NoteItem(id: note.id, title: note.title, content: note.content,
-                         createdAt: note.createdAt, updatedAt: note.updatedAt, hasAttachments: false),
-                at: 0
+            let detail = try await NoteService.createNote()
+            let item = NoteItem(
+                id: detail.id,
+                title: detail.title,
+                content: detail.content,
+                createdAt: detail.createdAt,
+                updatedAt: detail.updatedAt,
+                hasAttachments: false
             )
-            router.notesPath.append(.noteDetail(id: note.id))
+            store.mutateData { $0.insert(item, at: 0) }
+            router.notesPath.append(.noteDetail(id: detail.id))
         } catch {
-            errorMessage = error.localizedDescription
+            // Non-fatal — toolbar button stays enabled for retry
         }
     }
 }
@@ -166,41 +162,54 @@ struct NotesScreen: View {
 
 private struct NoteRowView: View {
     let note: NoteItem
+    let isPending: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.xs) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(note.displayTitle)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(Color.Hakumi.textPrimary)
-                    .lineLimit(1)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(note.displayTitle)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(Color.Hakumi.textPrimary)
+                        .lineLimit(1)
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
-                Text(note.createdAt.noteListDateString)
-                    .font(.system(size: 12))
-                    .foregroundStyle(Color.Hakumi.textTertiary)
-                    .fixedSize()
-            }
-
-            if !note.contentPreview.isEmpty {
-                Text(note.contentPreview)
-                    .font(.system(size: 12))
-                    .foregroundStyle(Color.Hakumi.textSecondary)
-                    .lineLimit(2)
-            }
-
-            if note.hasAttachments {
-                HStack(spacing: 4) {
-                    Image(systemName: "paperclip")
-                        .font(.system(size: 10))
-                        .foregroundStyle(Color.Hakumi.textTertiary)
-                    Text("Attachment")
-                        .font(.system(size: 11))
-                        .foregroundStyle(Color.Hakumi.textTertiary)
+                    if !isPending {
+                        Text(note.createdAt.noteListDateString)
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color.Hakumi.textTertiary)
+                            .fixedSize()
+                    }
                 }
+
+                if !note.contentPreview.isEmpty {
+                    Text(note.contentPreview)
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.Hakumi.textSecondary)
+                        .lineLimit(2)
+                }
+
+                if note.hasAttachments {
+                    HStack(spacing: 4) {
+                        Image(systemName: "paperclip")
+                            .font(.system(size: 10))
+                            .foregroundStyle(Color.Hakumi.textTertiary)
+                        Text("Attachment")
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.Hakumi.textTertiary)
+                    }
+                }
+            }
+
+            if isPending {
+                ProgressView()
+                    .scaleEffect(0.7)
+                    .tint(Color.Hakumi.textTertiary)
+                    .padding(.top, 2)
             }
         }
         .padding(.vertical, Spacing.sm)
+        .opacity(isPending ? 0.6 : 1)
     }
 }
 

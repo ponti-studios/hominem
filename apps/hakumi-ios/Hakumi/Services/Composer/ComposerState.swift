@@ -44,6 +44,12 @@ struct ComposerDraft: Sendable {
 @Observable @MainActor final class ComposerState {
     static let shared = ComposerState()
 
+    private let userDefaults: UserDefaults
+
+    init(userDefaults: UserDefaults = .standard) {
+        self.userDefaults = userDefaults
+    }
+
     // MARK: - Target
 
     enum Target: Equatable {
@@ -98,6 +104,9 @@ struct ComposerDraft: Sendable {
     /// Set while `submitPrimary` is in-flight for a chat target; observed by ChatScreen for ThinkingRow.
     private(set) var sendingChatId: String? = nil
 
+    /// Non-nil when the last submit failed. Cleared on the next submit attempt or when the user edits the draft.
+    private(set) var submitError: String? = nil
+
     /// Mention suggestions (shown when text ends with `@query`).
     private(set) var mentionResults: [ComposerNote] = []
     private var mentionTask: Task<Void, Never>? = nil
@@ -111,6 +120,7 @@ struct ComposerDraft: Sendable {
             drafts[target.key]!.text = newValue
             updateMentionQuery(newValue)
             persistDraft()
+            if submitError != nil { submitError = nil }
         }
     }
 
@@ -212,20 +222,29 @@ struct ComposerDraft: Sendable {
         let fileIds = attachments.map(\.id)
         guard !text.isEmpty || !fileIds.isEmpty else { return }
 
+        submitError = nil
+
         switch target {
-        case .feed, .notes:
-            do {
-                _ = try await NoteService.createNoteWithContent(
-                    content: text,
-                    fileIds: fileIds.isEmpty ? nil : fileIds
-                )
-                clearDraft()
-                if case .feed = target {
-                    TopAnchorSignal.inbox.request()
-                }
-            } catch {
-                // Non-fatal: draft preserved for retry
+        case .feed:
+            await submitNote(text: text, fileIds: fileIds, store: AppStores.shared.inbox) { detail in
+                let title = detail.title ?? Self.derivedTitle(from: text)
+                let note = InboxNote(id: detail.id, title: title, excerpt: Self.excerpt(from: detail.content), updatedAt: detail.updatedAt)
+                return InboxItem.note(note)
+            } placeholder: {
+                let note = InboxNote(id: "tmp-\(UUID().uuidString)", title: Self.derivedTitle(from: text), excerpt: Self.excerpt(from: text), updatedAt: Date())
+                return InboxItem.note(note)
             }
+            TopAnchorSignal.inbox.request()
+
+        case .notes:
+            await submitNote(text: text, fileIds: fileIds, store: AppStores.shared.notes) { detail in
+                NoteItem(id: detail.id, title: detail.title, content: detail.content,
+                         createdAt: detail.createdAt, updatedAt: detail.updatedAt, hasAttachments: !detail.files.isEmpty)
+            } placeholder: {
+                NoteItem(id: "tmp-\(UUID().uuidString)", title: Self.derivedTitle(from: text), content: text,
+                         createdAt: Date(), updatedAt: Date(), hasAttachments: !fileIds.isEmpty)
+            }
+            TopAnchorSignal.notes.request()
 
         case .chat(let chatId):
             do {
@@ -241,12 +260,61 @@ struct ComposerDraft: Sendable {
                 messageSentCount += 1
             } catch {
                 sendingChatId = nil
-                // Non-fatal
+                submitError = "Failed to send — tap to retry"
             }
 
         case .hidden:
             break
         }
+    }
+
+    // MARK: - Note submit helper
+
+    private func submitNote<Item: Identifiable & Sendable>(
+        text: String,
+        fileIds: [String],
+        store: QueryStore<Item>,
+        commit: @escaping (NoteDetail) -> Item,
+        placeholder: () -> Item
+    ) async {
+        let capturedText = text
+        let capturedFileIds = fileIds
+        let capturedAttachments = attachments
+        let tempItem = placeholder()
+
+        // Optimistic: clear the form immediately so the user has a fresh composer
+        clearDraft()
+
+        do {
+            try await store.prepend(placeholder: tempItem) {
+                let detail = try await NoteService.createNoteWithContent(
+                    content: capturedText,
+                    fileIds: capturedFileIds.isEmpty ? nil : capturedFileIds
+                )
+                return commit(detail)
+            }
+        } catch {
+            // Roll back: restore draft and attachments so the user can retry
+            draftText = capturedText
+            if !capturedAttachments.isEmpty {
+                ensureDraft()
+                drafts[target.key]!.attachments = capturedAttachments
+            }
+            submitError = "Failed to save — tap to retry"
+        }
+    }
+
+    // MARK: - Text helpers
+
+    private static func derivedTitle(from text: String) -> String {
+        let firstLine = text.split(separator: "\n", maxSplits: 1).first.map(String.init) ?? text
+        return String(firstLine.trimmingCharacters(in: .whitespaces).prefix(80))
+    }
+
+    private static func excerpt(from text: String) -> String? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count > 80 else { return nil }
+        return String(trimmed.dropFirst(80).prefix(160))
     }
 
     // MARK: - Secondary submit (feed → start chat)
@@ -256,6 +324,8 @@ struct ComposerDraft: Sendable {
         let text = draftText.trimmingCharacters(in: .whitespaces)
         let fileIds = attachments.map(\.id)
         guard !text.isEmpty || !fileIds.isEmpty else { return }
+
+        submitError = nil
 
         do {
             let chat = try await ChatService.createChat(title: String(text.prefix(80)))
@@ -328,20 +398,20 @@ struct ComposerDraft: Sendable {
 
     private func persistDraft() {
         guard let d = drafts[target.key], !d.text.isEmpty else {
-            UserDefaults.standard.removeObject(forKey: persistKey)
+            userDefaults.removeObject(forKey: persistKey)
             return
         }
-        UserDefaults.standard.set(d.text, forKey: persistKey)
+        userDefaults.set(d.text, forKey: persistKey)
     }
 
     private func restoreDraft() {
-        guard let saved = UserDefaults.standard.string(forKey: "composer.draft.\(target.key)"),
+        guard let saved = userDefaults.string(forKey: "composer.draft.\(target.key)"),
               !saved.isEmpty else { return }
         if drafts[target.key] == nil { drafts[target.key] = ComposerDraft() }
         drafts[target.key]!.text = saved
     }
 
     private func clearPersistedDraft() {
-        UserDefaults.standard.removeObject(forKey: persistKey)
+        userDefaults.removeObject(forKey: persistKey)
     }
 }

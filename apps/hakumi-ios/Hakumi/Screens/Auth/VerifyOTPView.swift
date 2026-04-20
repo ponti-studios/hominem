@@ -31,7 +31,8 @@ struct VerifyOTPScreen: View {
                         set: { otp = $0; error = nil; resendSuccess = false }
                     ),
                     isDisabled: isBusy,
-                    error: error
+                    error: error,
+                    identifier: "auth.otpField"
                 )
                 .keyboardType(.numberPad)
                 .textContentType(.oneTimeCode)
@@ -49,6 +50,7 @@ struct VerifyOTPScreen: View {
                 }
                 .disabled(!canVerify)
                 .frame(maxWidth: .infinity)
+                .accessibilityIdentifier("auth.verifyButton")
 
                 HStack {
                     Button(AuthCopy.otpVerification.resendButton) {
@@ -75,6 +77,14 @@ struct VerifyOTPScreen: View {
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            #if E2E
+            if let testOTP = ProcessInfo.processInfo.environment["E2E_OTP"] {
+                otp = testOTP
+                Task { await handleVerify() }
+            }
+            #endif
+        }
     }
 
     // MARK: - Actions

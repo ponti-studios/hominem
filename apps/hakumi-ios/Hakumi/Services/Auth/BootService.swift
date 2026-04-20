@@ -20,6 +20,10 @@ enum BootService {
     /// 2. Probe /api/auth/session — if valid, restore; if expired, clear
     /// 3. Return the outcome for Router to act on
     static func run() async -> BootResult {
+        #if E2E
+        if let result = e2eInjectedSession() { return result }
+        #endif
+
         guard let cookie = SessionStore.load(), !cookie.isEmpty else {
             return .sessionExpired
         }
@@ -37,6 +41,23 @@ enum BootService {
             return .sessionExpired
         }
     }
+
+    // MARK: - E2E session injection
+    //
+    // When the app is launched by XCUITest with E2E_SESSION_COOKIE set in
+    // launchEnvironment, skip the normal Keychain/probe sequence entirely and
+    // restore the injected session. Only compiled into Debug E2E builds.
+
+    #if E2E
+    private static func e2eInjectedSession() -> BootResult? {
+        let env = ProcessInfo.processInfo.environment
+        guard let cookie = env["E2E_SESSION_COOKIE"], !cookie.isEmpty,
+              let userId = env["E2E_USER_ID"],
+              let email = env["E2E_USER_EMAIL"] else { return nil }
+        let user = AuthUser(id: userId, email: email, name: env["E2E_USER_NAME"])
+        return .sessionLoaded(user: user, cookie: cookie)
+    }
+    #endif
 
     // MARK: - Session probe
 
