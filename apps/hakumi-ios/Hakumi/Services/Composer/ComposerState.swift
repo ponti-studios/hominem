@@ -55,14 +55,12 @@ struct ComposerDraft: Sendable {
     enum Target: Equatable {
         case feed
         case chat(id: String)
-        case notes
         case hidden
 
         var key: String {
             switch self {
             case .feed:             "feed"
             case .chat(let id):     "chat:\(id)"
-            case .notes:            "notes"
             case .hidden:           "hidden"
             }
         }
@@ -73,7 +71,6 @@ struct ComposerDraft: Sendable {
             switch self {
             case .feed:     "Write a note, ask something…"
             case .chat:     "Message…"
-            case .notes:    "Write into your notes…"
             case .hidden:   ""
             }
         }
@@ -141,34 +138,24 @@ struct ComposerDraft: Sendable {
 
     // MARK: - Target resolution
 
-    func updateTarget(
-        selectedTab: ProtectedTab,
-        protectedPath: [ProtectedRoute],
-        notesPath: [ProtectedRoute]
-    ) {
+    /// Derives the composer target from the current sidebar selection.
+    /// - nil selection  → feed (create note or start chat from sidebar)
+    /// - .chat          → chat message input
+    /// - .noteDetail    → hidden (note is edited inline)
+    /// - .archivedChats → hidden (no composer in settings areas)
+    func updateTarget(sidebarSelection: ProtectedRoute?) {
         let resolved: Target
-        switch selectedTab {
-        case .settings:
+        switch sidebarSelection {
+        case nil:
+            resolved = .feed
+        case .chat(let id):
+            resolved = .chat(id: id)
+        case .noteDetail, .archivedChats:
             resolved = .hidden
-
-        case .notes:
-            resolved = notesPath.isEmpty ? .notes : .hidden
-
-        case .inbox:
-            // Look for a .chat route at the top of the inbox path
-            let chatRoute = protectedPath.first {
-                if case .chat = $0 { return true }; return false
-            }
-            if let chatRoute, case .chat(let id) = chatRoute {
-                resolved = .chat(id: id)
-            } else {
-                resolved = .feed
-            }
         }
 
         if resolved != target {
             target = resolved
-            // Restore persisted draft for this target
             restoreDraft()
         }
     }
@@ -238,16 +225,6 @@ struct ComposerDraft: Sendable {
                 return InboxItem.note(note)
             }
             TopAnchorSignal.inbox.request()
-
-        case .notes:
-            await submitNote(text: text, fileIds: fileIds, store: AppStores.shared.notes) { detail in
-                NoteItem(id: detail.id, title: detail.title, content: detail.content,
-                         createdAt: detail.createdAt, updatedAt: detail.updatedAt, hasAttachments: !detail.files.isEmpty)
-            } placeholder: {
-                NoteItem(id: "tmp-\(UUID().uuidString)", title: Self.derivedTitle(from: text), content: text,
-                         createdAt: Date(), updatedAt: Date(), hasAttachments: !fileIds.isEmpty)
-            }
-            TopAnchorSignal.notes.request()
 
         case .chat(let chatId):
             do {
@@ -338,8 +315,7 @@ struct ComposerDraft: Sendable {
                 fileIds: fileIds.isEmpty ? nil : fileIds
             )
             clearDraft()
-            router.selectedTab = .inbox
-            router.protectedPath = [.chat(id: chat.id)]
+            router.sidebarSelection = .chat(id: chat.id)
         } catch {
             // Non-fatal
         }

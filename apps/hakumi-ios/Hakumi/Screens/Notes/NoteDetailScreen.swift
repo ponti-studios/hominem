@@ -155,8 +155,7 @@ struct NoteDetailScreen: View {
                 // Chat handoff
                 Button {
                     autosaveTask?.cancel()
-                    router.selectedTab = .inbox
-                    router.protectedPath = [.chat(id: id)]
+                    router.sidebarSelection = .chat(id: id)
                 } label: {
                     Image(systemName: "bubble.left")
                 }

@@ -3,7 +3,7 @@ import SwiftUI
 #if DEBUG
 struct ScreenStateOverlay: View {
     let authPhase: AuthPhase
-    let selectedTab: ProtectedTab
+    let sidebarSelection: ProtectedRoute?
     let size: CGSize
     let safeAreaInsets: EdgeInsets
     let screenBounds: CGRect
@@ -14,7 +14,7 @@ struct ScreenStateOverlay: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text("phase: \(authPhaseLabel)")
-            Text("tab: \(selectedTabLabel)")
+            Text("sel: \(selectionLabel)")
             Text("size: \(Int(size.width))×\(Int(size.height))")
             Text("safe: t\(Int(safeAreaInsets.top)) b\(Int(safeAreaInsets.bottom))")
             Text("screen: \(format(screenBounds.size))")
@@ -40,11 +40,12 @@ struct ScreenStateOverlay: View {
         }
     }
 
-    private var selectedTabLabel: String {
-        switch selectedTab {
-        case .inbox: return "inbox"
-        case .notes: return "notes"
-        case .settings: return "settings"
+    private var selectionLabel: String {
+        switch sidebarSelection {
+        case nil: return "none"
+        case .noteDetail(let id): return "note:\(id.prefix(6))"
+        case .chat(let id): return "chat:\(id.prefix(6))"
+        case .archivedChats: return "archived"
         }
     }
 

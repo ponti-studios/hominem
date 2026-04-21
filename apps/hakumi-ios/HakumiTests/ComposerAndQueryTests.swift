@@ -230,19 +230,19 @@ struct ComposerStateTests {
     @Test func draftTextIsPerTarget() {
         let state = ComposerState(userDefaults: makeSuite())
 
-        state.draftText = "inbox text"
-        #expect(state.draftText == "inbox text")
+        state.draftText = "feed text"
+        #expect(state.draftText == "feed text")
 
-        // Switch to notes
-        state.updateTarget(selectedTab: .notes, protectedPath: [], notesPath: [])
-        #expect(state.draftText == "", "notes draft should start empty")
+        // Switch to chat target
+        state.updateTarget(sidebarSelection: .chat(id: "c1"))
+        #expect(state.draftText == "", "chat draft should start empty")
 
-        state.draftText = "notes text"
-        #expect(state.draftText == "notes text")
+        state.draftText = "chat text"
+        #expect(state.draftText == "chat text")
 
-        // Switch back to inbox
-        state.updateTarget(selectedTab: .inbox, protectedPath: [], notesPath: [])
-        #expect(state.draftText == "inbox text", "inbox draft should be preserved")
+        // Switch back to feed
+        state.updateTarget(sidebarSelection: nil)
+        #expect(state.draftText == "feed text", "feed draft should be preserved")
     }
 
     // MARK: Draft persistence
@@ -269,13 +269,13 @@ struct ComposerStateTests {
 
     @Test func draftTextRestoredOnTargetChange() {
         let defaults = makeSuite()
-        // Pre-seed a persisted draft for the notes target
-        defaults.set("restored text", forKey: "composer.draft.notes")
+        // Pre-seed a persisted draft for the chat target
+        defaults.set("restored text", forKey: "composer.draft.chat:c1")
 
         let state = ComposerState(userDefaults: defaults)
 
-        // Start on inbox, switch to notes — should restore the persisted draft
-        state.updateTarget(selectedTab: .notes, protectedPath: [], notesPath: [])
+        // Start on feed, switch to chat — should restore the persisted draft
+        state.updateTarget(sidebarSelection: .chat(id: "c1"))
         #expect(state.draftText == "restored text")
     }
 
@@ -372,8 +372,8 @@ struct ComposerStateTests {
         state.addAttachment(attachment)
         #expect(state.attachments.count == 1)
 
-        // Switch to notes — attachments should not carry over
-        state.updateTarget(selectedTab: .notes, protectedPath: [], notesPath: [])
+        // Switch to chat — attachments should not carry over
+        state.updateTarget(sidebarSelection: .chat(id: "c1"))
         #expect(state.attachments.isEmpty)
     }
 
@@ -404,33 +404,27 @@ struct ComposerStateTests {
 
     // MARK: Target resolution
 
-    @Test func settingsTabResolvesToHiddenTarget() {
+    @Test func noteDetailSelectionResolvesToHiddenTarget() {
         let state = ComposerState(userDefaults: makeSuite())
-        state.updateTarget(selectedTab: .settings, protectedPath: [], notesPath: [])
+        state.updateTarget(sidebarSelection: .noteDetail(id: "note-1"))
         #expect(state.target == .hidden)
     }
 
-    @Test func inboxTabWithNoChatResolvesToFeedTarget() {
+    @Test func noSelectionResolvesToFeedTarget() {
         let state = ComposerState(userDefaults: makeSuite())
-        state.updateTarget(selectedTab: .inbox, protectedPath: [], notesPath: [])
+        state.updateTarget(sidebarSelection: nil)
         #expect(state.target == .feed)
     }
 
-    @Test func inboxTabWithChatRouteResolvesToChatTarget() {
+    @Test func chatSelectionResolvesToChatTarget() {
         let state = ComposerState(userDefaults: makeSuite())
-        state.updateTarget(selectedTab: .inbox, protectedPath: [.chat(id: "thread-1")], notesPath: [])
+        state.updateTarget(sidebarSelection: .chat(id: "thread-1"))
         #expect(state.target == .chat(id: "thread-1"))
     }
 
-    @Test func notesTabWithEmptyPathResolvesToNotesTarget() {
+    @Test func archivedChatsSelectionResolvesToHiddenTarget() {
         let state = ComposerState(userDefaults: makeSuite())
-        state.updateTarget(selectedTab: .notes, protectedPath: [], notesPath: [])
-        #expect(state.target == .notes)
-    }
-
-    @Test func notesTabWithNoteDetailPathResolvesToHidden() {
-        let state = ComposerState(userDefaults: makeSuite())
-        state.updateTarget(selectedTab: .notes, protectedPath: [], notesPath: [.noteDetail(id: "note-1")])
+        state.updateTarget(sidebarSelection: .archivedChats)
         #expect(state.target == .hidden)
     }
 

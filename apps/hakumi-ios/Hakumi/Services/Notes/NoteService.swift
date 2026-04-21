@@ -44,6 +44,18 @@ struct NoteDetail: Identifiable, Sendable {
 @MainActor
 enum NoteService {
 
+    // Overridable in tests so network calls can be intercepted without touching production code.
+    #if DEBUG
+    static var _testSession: URLSession? = nil
+    #endif
+    private static var session: URLSession {
+        #if DEBUG
+        return _testSession ?? .shared
+        #else
+        return .shared
+        #endif
+    }
+
     // MARK: - GET /api/notes?sortBy=updatedAt&sortOrder=desc&limit=100
 
     static func fetchNotes() async throws -> [NoteItem] {
@@ -57,7 +69,7 @@ enum NoteService {
         request.timeoutInterval = 15
         request.applyAuthHeaders()
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
         try URLRequest.validate(response, throwing: NoteError.fetchFailed)
 
         guard
@@ -75,7 +87,7 @@ enum NoteService {
         request.timeoutInterval = 15
         request.applyAuthHeaders()
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
         try URLRequest.validate(response, throwing: NoteError.fetchFailed)
 
         guard
@@ -96,7 +108,7 @@ enum NoteService {
         request.timeoutInterval = 15
         request.applyAuthHeaders()
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
         try URLRequest.validate(response, throwing: NoteError.saveFailed)
 
         guard
@@ -120,7 +132,7 @@ enum NoteService {
         request.timeoutInterval = 15
         request.applyAuthHeaders()
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
         try URLRequest.validate(response, throwing: NoteError.saveFailed)
 
         guard
@@ -145,7 +157,7 @@ enum NoteService {
         if let fileIds { body["fileIds"] = fileIds }
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
         try URLRequest.validate(response, throwing: NoteError.saveFailed)
 
         guard
@@ -163,7 +175,7 @@ enum NoteService {
         request.httpMethod = "POST"
         request.timeoutInterval = 15
         request.applyAuthHeaders()
-        let (_, response) = try await URLSession.shared.data(for: request)
+        let (_, response) = try await session.data(for: request)
         try URLRequest.validate(response, throwing: NoteError.saveFailed)
     }
 
@@ -174,7 +186,7 @@ enum NoteService {
         request.httpMethod = "DELETE"
         request.timeoutInterval = 15
         request.applyAuthHeaders()
-        let (_, response) = try await URLSession.shared.data(for: request)
+        let (_, response) = try await session.data(for: request)
         try URLRequest.validate(response, throwing: NoteError.saveFailed)
     }
 

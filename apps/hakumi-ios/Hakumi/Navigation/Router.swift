@@ -10,12 +10,16 @@ final class Router {
     // MARK: Auth phase
     var authPhase: AuthPhase = .booting
 
-    // MARK: Stack paths
+    // MARK: Auth stack
     var authPath: [AuthRoute] = []
-    var protectedPath: [ProtectedRoute] = []   // inbox tab
-    var notesPath: [ProtectedRoute] = []       // notes tab
-    var settingsPath: [ProtectedRoute] = []    // settings tab
-    var selectedTab: ProtectedTab = .inbox
+
+    // MARK: Sidebar / detail selection
+    /// The item currently shown in the detail column. nil = empty detail (feed composer).
+    var sidebarSelection: ProtectedRoute? = nil
+
+    // MARK: Settings
+    var showSettings: Bool = false
+    var settingsPath: [ProtectedRoute] = []
 
     // MARK: Pending deep link (buffered while booting)
     private var pendingRoute: AppRoute?
@@ -46,14 +50,11 @@ final class Router {
         }
     }
 
-    /// Called after a successful sign-in. Routes to onboarding if name is unset,
-    /// otherwise directly to the protected shell.
     func completeAuthentication() {
         authPath = []
-        protectedPath = []
-        notesPath = []
+        sidebarSelection = nil
+        showSettings = false
         settingsPath = []
-        selectedTab = .inbox
         let user = AuthProvider.shared.currentUser
         let needsOnboarding = user?.name == nil || user?.name?.trimmingCharacters(in: .whitespaces).isEmpty == true
         authPhase = needsOnboarding ? .onboarding : .authenticated
@@ -66,10 +67,9 @@ final class Router {
         pendingRoute = nil
         authPhase = .unauthenticated
         authPath = []
-        protectedPath = []
-        notesPath = []
+        sidebarSelection = nil
+        showSettings = false
         settingsPath = []
-        selectedTab = .inbox
     }
 
     // MARK: - Deep link handling
@@ -85,34 +85,28 @@ final class Router {
 
     func navigate(to route: AppRoute) {
         switch route {
-        case .inbox:
+        case .inbox, .notesList:
             guard ensureAuthenticatedForProtectedRoute(route) else { return }
-            selectedTab = .inbox
-            protectedPath = []
-
-        case .notesList:
-            guard ensureAuthenticatedForProtectedRoute(route) else { return }
-            selectedTab = .notes
-            protectedPath = []
+            sidebarSelection = nil
+            showSettings = false
 
         case .noteDetail(let id):
             guard ensureAuthenticatedForProtectedRoute(route) else { return }
-            selectedTab = .notes
-            notesPath = [.noteDetail(id: id)]
+            sidebarSelection = .noteDetail(id: id)
+            showSettings = false
 
         case .chat(let id):
             guard ensureAuthenticatedForProtectedRoute(route) else { return }
-            selectedTab = .inbox
-            protectedPath = [.chat(id: id)]
+            sidebarSelection = .chat(id: id)
+            showSettings = false
 
         case .settings:
             guard ensureAuthenticatedForProtectedRoute(route) else { return }
-            selectedTab = .settings
-            settingsPath = []
+            showSettings = true
 
         case .archivedChats:
             guard ensureAuthenticatedForProtectedRoute(route) else { return }
-            selectedTab = .settings
+            showSettings = true
             settingsPath = [.archivedChats]
 
         case .auth:
@@ -123,7 +117,7 @@ final class Router {
             authPhase = .onboarding
 
         case .error, .notFound:
-            break // handled inline by RootView
+            break
         }
     }
 

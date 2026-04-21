@@ -10,14 +10,19 @@ struct InboxScreen: View {
         Group {
             if store.isFirstLoad {
                 loadingView
+                    .transition(.opacity)
             } else if let msg = store.errorMessage, store.isEmpty {
                 errorView(msg)
+                    .transition(.opacity)
             } else if store.isEmpty {
                 emptyView
+                    .transition(.opacity)
             } else {
                 feedList
+                    .transition(.opacity)
             }
         }
+        .animation(Motion.enter, value: store.isFirstLoad)
         .navigationTitle("Inbox")
         .navigationBarTitleDisplayMode(.inline)
         .background(Color.Hakumi.bgBase)
@@ -36,11 +41,13 @@ struct InboxScreen: View {
                 inboxRow(item)
                     .listRowBackground(Color.Hakumi.bgBase)
                     .listRowInsets(EdgeInsets(top: 0, leading: Spacing.lg, bottom: 0, trailing: Spacing.lg))
+                    .listRowSeparator(.hidden)
             }
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .scrollPosition($scrollPosition)
+        .animation(Motion.spring, value: store.data.count)
         .refreshable { await store.fetch() }
     }
 
@@ -146,14 +153,16 @@ struct InboxScreen: View {
     private var emptyView: some View {
         VStack(spacing: Spacing.md) {
             Image(systemName: "tray")
-                .font(.system(size: 40))
+                .font(.system(size: 38))
                 .foregroundStyle(Color.Hakumi.textTertiary)
-            Text("Nothing here yet")
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(Color.Hakumi.textPrimary)
-            Text("Chats and notes will appear here.")
-                .font(.system(size: 13))
-                .foregroundStyle(Color.Hakumi.textTertiary)
+            VStack(spacing: Spacing.xs) {
+                Text("Nothing here yet")
+                    .textStyle(AppTypography.headline)
+                    .foregroundStyle(Color.Hakumi.textPrimary)
+                Text("Chats and notes will appear here.")
+                    .textStyle(AppTypography.footnote)
+                    .foregroundStyle(Color.Hakumi.textTertiary)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -161,10 +170,10 @@ struct InboxScreen: View {
     private func errorView(_ message: String) -> some View {
         VStack(spacing: Spacing.md) {
             Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 36))
+                .font(.system(size: 34))
                 .foregroundStyle(Color.Hakumi.textTertiary)
             Text(message)
-                .font(.system(size: 14))
+                .textStyle(AppTypography.footnote)
                 .foregroundStyle(Color.Hakumi.textSecondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, Spacing.xl)
@@ -195,22 +204,23 @@ private struct InboxRowView: View {
     let isPending: Bool
 
     var body: some View {
-        HStack(alignment: .top, spacing: Spacing.md) {
+        HStack(alignment: .top, spacing: Spacing.sm2) {
             Image(systemName: icon)
-                .font(.system(size: 14))
+                .font(.system(size: 13))
                 .foregroundStyle(Color.Hakumi.textTertiary)
-                .frame(width: 20, height: 20)
+                .frame(width: 18, height: 18)
                 .padding(.top, 2)
 
-            VStack(alignment: .leading, spacing: Spacing.xs) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(title)
-                    .font(.system(size: 15, weight: .medium))
+                    .textStyle(AppTypography.subhead)
+                    .fontWeight(.medium)
                     .foregroundStyle(Color.Hakumi.textPrimary)
                     .lineLimit(2)
 
                 if let subtitle, !subtitle.isEmpty {
                     Text(subtitle)
-                        .font(.system(size: 13))
+                        .textStyle(AppTypography.footnote)
                         .foregroundStyle(Color.Hakumi.textSecondary)
                         .lineLimit(2)
                 }
@@ -224,12 +234,12 @@ private struct InboxRowView: View {
                     .padding(.top, 2)
             } else {
                 Text(date.relativeString)
-                    .font(.system(size: 12))
+                    .textStyle(AppTypography.caption1)
                     .foregroundStyle(Color.Hakumi.textTertiary)
                     .padding(.top, 2)
             }
         }
-        .padding(.vertical, Spacing.sm)
+        .padding(.vertical, Spacing.sm2)
         .opacity(isPending ? 0.6 : 1)
     }
 }

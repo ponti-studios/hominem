@@ -22,6 +22,7 @@ enum Motion {
     static var enter:    Animation { .easeOut(duration: enterDuration) }
     static var exit:     Animation { .easeIn(duration: exitDuration) }
     static var standard: Animation { .easeInOut(duration: standardDuration) }
+    static var spring:   Animation { .spring(response: 0.35, dampingFraction: 0.85) }
     static var breezy:   Animation { .easeInOut(duration: breezyDuration).repeatForever(autoreverses: true) }
     static var spin:     Animation { .linear(duration: spinDuration).repeatForever(autoreverses: false) }
 }

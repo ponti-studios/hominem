@@ -24,14 +24,6 @@ enum ProtectedRoute: Hashable {
     case archivedChats
 }
 
-// MARK: - Active protected tab
-
-enum ProtectedTab: Hashable {
-    case inbox
-    case notes
-    case settings
-}
-
 // MARK: - Top-level deep-link destination
 // Parsed from hakumi:// or https://hakumi.app/ URLs.
 // The router resolves these into AuthPhase + path changes.

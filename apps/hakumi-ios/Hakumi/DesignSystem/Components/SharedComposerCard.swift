@@ -64,8 +64,8 @@ struct SharedComposerCard: View {
         }
         .padding(.horizontal, Spacing.md)
         .padding(.bottom, Spacing.xs)
-        .animation(.spring(duration: 0.2), value: state.submitError)
-        .animation(.spring(duration: 0.2), value: uploadErrorMessage)
+        .animation(Motion.spring, value: state.submitError)
+        .animation(Motion.spring, value: uploadErrorMessage)
     }
 
     // MARK: - Card
@@ -85,23 +85,32 @@ struct SharedComposerCard: View {
             // Text input row (replaced by waveform row during voice recording)
             if state.isRecording {
                 voiceRecordingRow
+                    .transition(.asymmetric(
+                        insertion: .opacity.combined(with: .offset(y: 4)),
+                        removal: .opacity
+                    ))
             } else {
                 inputRow
+                    .transition(.asymmetric(
+                        insertion: .opacity.combined(with: .offset(y: -4)),
+                        removal: .opacity
+                    ))
             }
 
             // Accessory row
             accessoryRow
         }
-        .padding(.horizontal, Spacing.sm)
-        .padding(.top, Spacing.sm)
-        .padding(.bottom, Spacing.sm2)
+        .padding(.horizontal, Spacing.sm2)
+        .padding(.top, Spacing.sm2)
+        .padding(.bottom, Spacing.md)
         .background(Color.Hakumi.bgElevated)
         .clipShape(RoundedRectangle(cornerRadius: Radii.lg, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: Radii.lg, style: .continuous)
                 .strokeBorder(Color.Hakumi.borderDefault, lineWidth: 1)
         )
-        .shadow(color: .black.opacity(0.18), radius: 12, x: 0, y: 4)
+        .shadow(color: .black.opacity(0.22), radius: 16, x: 0, y: 6)
+        .animation(Motion.spring, value: state.isRecording)
     }
 
     // MARK: - Voice recording row
@@ -278,7 +287,7 @@ struct SharedComposerCard: View {
                             .foregroundStyle(Color.Hakumi.textSecondary)
                             .lineLimit(1)
                         Button {
-                            withAnimation(.spring(duration: 0.2)) {
+                            withAnimation(Motion.spring) {
                                 state.removeNote(id: note.id)
                             }
                         } label: {
@@ -321,7 +330,7 @@ struct SharedComposerCard: View {
                             .foregroundStyle(Color.Hakumi.textSecondary)
                             .lineLimit(1)
                         Button {
-                            withAnimation(.spring(duration: 0.2)) {
+                            withAnimation(Motion.spring) {
                                 state.removeAttachment(id: attachment.id)
                             }
                         } label: {
@@ -477,7 +486,7 @@ struct SharedComposerCard: View {
         VStack(spacing: 0) {
             ForEach(state.mentionResults) { note in
                 Button {
-                    withAnimation(.spring(duration: 0.18)) {
+                    withAnimation(Motion.spring) {
                         state.addNote(note)
                     }
                 } label: {

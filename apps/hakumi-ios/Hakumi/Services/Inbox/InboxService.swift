@@ -39,6 +39,14 @@ enum InboxItem: Identifiable, Sendable {
         case .note(let n): n.title
         }
     }
+
+    /// The `ProtectedRoute` that opens this item in the detail column.
+    var protectedRoute: ProtectedRoute {
+        switch self {
+        case .chat(let c): .chat(id: c.id)
+        case .note(let n): .noteDetail(id: n.id)
+        }
+    }
 }
 
 // MARK: - InboxService

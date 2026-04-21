@@ -22,16 +22,22 @@ struct NotesScreen: View {
         Group {
             if store.isFirstLoad {
                 loadingView
+                    .transition(.opacity)
             } else if let msg = store.errorMessage, store.isEmpty {
                 errorView(msg)
+                    .transition(.opacity)
             } else if store.isEmpty {
                 emptyView
+                    .transition(.opacity)
             } else if filteredNotes.isEmpty {
                 noResultsView
+                    .transition(.opacity)
             } else {
                 notesList
+                    .transition(.opacity)
             }
         }
+        .animation(Motion.enter, value: store.isFirstLoad)
         .navigationTitle("Notes")
         .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $searchText, prompt: "Search notes")
@@ -81,11 +87,13 @@ struct NotesScreen: View {
                 }
                 .listRowBackground(Color.Hakumi.bgBase)
                 .listRowInsets(EdgeInsets(top: 0, leading: Spacing.lg, bottom: 0, trailing: Spacing.lg))
+                .listRowSeparator(.hidden)
             }
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .scrollPosition($scrollPosition)
+        .animation(Motion.spring, value: filteredNotes.count)
         .refreshable { await store.fetch() }
     }
 
@@ -128,15 +136,17 @@ struct NotesScreen: View {
     private var emptyView: some View {
         VStack(spacing: Spacing.md) {
             Image(systemName: "note.text")
-                .font(.system(size: 40))
+                .font(.system(size: 38))
                 .foregroundStyle(Color.Hakumi.textTertiary)
-            Text("No notes yet")
-                .font(.system(size: 22, weight: .semibold))
-                .foregroundStyle(Color.Hakumi.textPrimary)
-            Text("Tap  to capture your first thought.")
-                .font(.system(size: 13))
-                .foregroundStyle(Color.Hakumi.textTertiary)
-                .multilineTextAlignment(.center)
+            VStack(spacing: Spacing.xs) {
+                Text("No notes yet")
+                    .textStyle(AppTypography.headline)
+                    .foregroundStyle(Color.Hakumi.textPrimary)
+                Text("Tap  to capture your first thought.")
+                    .textStyle(AppTypography.footnote)
+                    .foregroundStyle(Color.Hakumi.textTertiary)
+                    .multilineTextAlignment(.center)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -144,7 +154,7 @@ struct NotesScreen: View {
     private var noResultsView: some View {
         VStack(spacing: Spacing.sm) {
             Text("No results for \"\(searchText)\"")
-                .font(.system(size: 15))
+                .textStyle(AppTypography.subhead)
                 .foregroundStyle(Color.Hakumi.textSecondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -153,10 +163,10 @@ struct NotesScreen: View {
     private func errorView(_ message: String) -> some View {
         VStack(spacing: Spacing.md) {
             Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 36))
+                .font(.system(size: 34))
                 .foregroundStyle(Color.Hakumi.textTertiary)
             Text(message)
-                .font(.system(size: 14))
+                .textStyle(AppTypography.footnote)
                 .foregroundStyle(Color.Hakumi.textSecondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, Spacing.xl)
@@ -183,7 +193,7 @@ struct NotesScreen: View {
                 hasAttachments: false
             )
             store.mutateData { $0.insert(item, at: 0) }
-            router.notesPath.append(.noteDetail(id: detail.id))
+            router.sidebarSelection = .noteDetail(id: detail.id)
         } catch {
             // Non-fatal — toolbar button stays enabled for retry
         }
@@ -198,17 +208,18 @@ private struct NoteRowView: View {
 
     var body: some View {
         HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: Spacing.xs) {
-                HStack(alignment: .firstTextBaseline) {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(alignment: .firstTextBaseline, spacing: Spacing.sm) {
                     Text(note.displayTitle)
-                        .font(.system(size: 15, weight: .semibold))
+                        .textStyle(AppTypography.subhead)
+                        .fontWeight(.semibold)
                         .foregroundStyle(Color.Hakumi.textPrimary)
                         .lineLimit(1)
                         .frame(maxWidth: .infinity, alignment: .leading)
 
                     if !isPending {
                         Text(note.createdAt.noteListDateString)
-                            .font(.system(size: 12))
+                            .textStyle(AppTypography.caption1)
                             .foregroundStyle(Color.Hakumi.textTertiary)
                             .fixedSize()
                     }
@@ -216,18 +227,18 @@ private struct NoteRowView: View {
 
                 if !note.contentPreview.isEmpty {
                     Text(note.contentPreview)
-                        .font(.system(size: 12))
+                        .textStyle(AppTypography.caption1)
                         .foregroundStyle(Color.Hakumi.textSecondary)
                         .lineLimit(2)
                 }
 
                 if note.hasAttachments {
-                    HStack(spacing: 4) {
+                    HStack(spacing: Spacing.xs) {
                         Image(systemName: "paperclip")
                             .font(.system(size: 10))
                             .foregroundStyle(Color.Hakumi.textTertiary)
                         Text("Attachment")
-                            .font(.system(size: 11))
+                            .textStyle(AppTypography.caption2)
                             .foregroundStyle(Color.Hakumi.textTertiary)
                     }
                 }
@@ -240,7 +251,7 @@ private struct NoteRowView: View {
                     .padding(.top, 2)
             }
         }
-        .padding(.vertical, Spacing.sm)
+        .padding(.vertical, Spacing.sm2)
         .opacity(isPending ? 0.6 : 1)
     }
 }

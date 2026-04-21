@@ -1,14 +1,14 @@
 import SwiftUI
 import UIKit
 
-    
 // MARK: - RootView
 
 struct RootView: View {
     @State private var router = Router()
-    
+    @State private var columnVisibility: NavigationSplitViewVisibility = .automatic
+
     var body: some View {
-        ZStack {
+        Group {
             switch router.authPhase {
             case .booting:
                 bootingView
@@ -48,7 +48,6 @@ struct RootView: View {
                 }
         }
         .styledBars()
-        .toolbar(.hidden, for: .tabBar)
     }
 
     // MARK: Onboarding
@@ -58,50 +57,18 @@ struct RootView: View {
             OnboardingScreen()
         }
         .styledBars()
-        .toolbar(.hidden, for: .tabBar)
     }
 
     // MARK: Protected shell
-    // Each tab owns its own NavigationStack so the outer shell has no nav bar.
-    // Push destinations (NoteDetail, Chat, ArchivedChats) are driven by
-    // Router.protectedPath and handled inside each tab's stack via the environment.
 
     private var protectedShell: some View {
         ZStack {
-            tabShell
-
-            // App-lock overlay — shown when lock is enabled and the user hasn't authenticated
-            if AppLock.shared.isEnabled && !AppLock.shared.isUnlocked {
-                lockOverlay
-            }
-        }
-        .appLockObserver()
-    }
-
-    /// Custom binding that fires scroll-to-top when the already-selected tab is tapped.
-    /// SwiftUI's TabView does not re-trigger `onChange` on same-value selection, so we
-    /// intercept the setter here instead.
-    private var tabBinding: Binding<ProtectedTab> {
-        Binding(
-            get: { router.selectedTab },
-            set: { newTab in
-                if newTab == router.selectedTab {
-                    switch newTab {
-                    case .inbox:    TopAnchorSignal.inbox.request()
-                    case .notes:    TopAnchorSignal.notes.request()
-                    case .settings: break
-                    }
-                }
-                router.selectedTab = newTab
-            }
-        )
-    }
-
-    private var tabShell: some View {
-        TabView(selection: tabBinding) {
-            Tab(value: ProtectedTab.inbox) {
-                NavigationStack(path: $router.protectedPath) {
-                    InboxScreen()
+            NavigationSplitView(columnVisibility: $columnVisibility) {
+                SidebarView()
+                    .styledBars()
+            } detail: {
+                NavigationStack {
+                    detailContent
                         .navigationDestination(for: ProtectedRoute.self) { route in
                             protectedDestination(route)
                         }
@@ -112,28 +79,10 @@ struct RootView: View {
                         SharedComposerCard(target: ComposerState.shared.target)
                     }
                 }
-            } label: {
-                Label("Inbox", systemImage: "tray")
             }
-
-            Tab(value: ProtectedTab.notes) {
-                NavigationStack(path: $router.notesPath) {
-                    NotesScreen()
-                        .navigationDestination(for: ProtectedRoute.self) { route in
-                            protectedDestination(route)
-                        }
-                }
-                .styledBars()
-                .safeAreaInset(edge: .bottom, spacing: 0) {
-                    if !ComposerState.shared.target.isHidden {
-                        SharedComposerCard(target: ComposerState.shared.target)
-                    }
-                }
-            } label: {
-                Label("Notes", systemImage: "note.text")
-            }
-
-            Tab(value: ProtectedTab.settings) {
+            .task { updateComposerTarget() }
+            .onChange(of: router.sidebarSelection) { _, _ in updateComposerTarget() }
+            .sheet(isPresented: $router.showSettings) {
                 NavigationStack(path: $router.settingsPath) {
                     SettingsScreen()
                         .navigationDestination(for: ProtectedRoute.self) { route in
@@ -141,52 +90,22 @@ struct RootView: View {
                         }
                 }
                 .styledBars()
-            } label: {
-                Label("Settings", systemImage: "gearshape")
+            }
+
+            if AppLock.shared.isEnabled && !AppLock.shared.isUnlocked {
+                lockOverlay
             }
         }
-        .tint(Color.Hakumi.accent)
-        .toolbarBackground(.hidden, for: .tabBar)
-        .toolbar(.visible, for: .tabBar)
-        .task { updateComposerTarget() }
-        .onChange(of: router.selectedTab) { _, _ in updateComposerTarget() }
-        .onChange(of: router.protectedPath) { _, _ in updateComposerTarget() }
-        .onChange(of: router.notesPath) { _, _ in updateComposerTarget() }
+        .appLockObserver()
     }
 
-    private func updateComposerTarget() {
-        ComposerState.shared.updateTarget(
-            selectedTab: router.selectedTab,
-            protectedPath: router.protectedPath,
-            notesPath: router.notesPath
-        )
-    }
-
-    private static var windowBounds: CGRect? {
-        UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .first(where: { $0.activationState == .foregroundActive })?
-            .windows
-            .first(where: \.isKeyWindow)?
-            .bounds
-    }
-
-    private var lockOverlay: some View {
-        ZStack {
-            Color.Hakumi.bgBase.ignoresSafeArea()
-            VStack(spacing: Spacing.lg) {
-                Text("Hakumi")
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundStyle(Color.Hakumi.textPrimary)
-                Text("Unlock to continue")
-                    .font(.system(size: 15))
-                    .foregroundStyle(Color.Hakumi.textSecondary)
-                AppButton("Unlock", variant: .primary) {
-                    Task { await AppLock.shared.authenticate() }
-                }
-            }
+    @ViewBuilder
+    private var detailContent: some View {
+        if let selection = router.sidebarSelection {
+            protectedDestination(selection)
+        } else {
+            emptyDetail
         }
-        .transition(.opacity)
     }
 
     @ViewBuilder
@@ -197,6 +116,55 @@ struct RootView: View {
         case .archivedChats:      ArchivedChatsScreen()
         }
     }
+
+    private var emptyDetail: some View {
+        VStack(spacing: Spacing.md) {
+            Image(systemName: "sidebar.leading")
+                .font(.system(size: 36))
+                .foregroundStyle(Color.Hakumi.textTertiary)
+            VStack(spacing: Spacing.xs) {
+                Text("Nothing selected")
+                    .textStyle(AppTypography.headline)
+                    .foregroundStyle(Color.Hakumi.textPrimary)
+                Text("Choose a note or chat from the sidebar.")
+                    .textStyle(AppTypography.footnote)
+                    .foregroundStyle(Color.Hakumi.textTertiary)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.Hakumi.bgBase)
+    }
+
+    private var lockOverlay: some View {
+        ZStack {
+            Color.Hakumi.bgBase.ignoresSafeArea()
+            VStack(spacing: Spacing.lg) {
+                Text("Hakumi")
+                    .textStyle(AppTypography.title1)
+                    .foregroundStyle(Color.Hakumi.textPrimary)
+                Text("Unlock to continue")
+                    .textStyle(AppTypography.subhead)
+                    .foregroundStyle(Color.Hakumi.textSecondary)
+                AppButton("Unlock", variant: .primary) {
+                    Task { await AppLock.shared.authenticate() }
+                }
+            }
+        }
+        .transition(.opacity)
+    }
+
+    private func updateComposerTarget() {
+        ComposerState.shared.updateTarget(sidebarSelection: router.sidebarSelection)
+    }
+
+    private static var windowBounds: CGRect? {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first(where: { $0.activationState == .foregroundActive })?
+            .windows
+            .first(where: \.isKeyWindow)?
+            .bounds
+    }
 }
 
 // MARK: - Bar styling helper
@@ -204,7 +172,6 @@ struct RootView: View {
 private extension View {
     func styledBars() -> some View {
         self
-            // Make navigation bar transparent so app background shows through
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar(.visible, for: .navigationBar)
             .toolbarBackgroundVisibility(.hidden, for: .navigationBar)

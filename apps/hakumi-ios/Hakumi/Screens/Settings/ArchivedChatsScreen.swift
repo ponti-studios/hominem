@@ -39,8 +39,8 @@ struct ArchivedChatsScreen: View {
         List {
             ForEach(chats) { chat in
                 Button {
-                    router.selectedTab = .inbox
-                    router.protectedPath = [.chat(id: chat.id)]
+                    router.showSettings = false
+                    router.sidebarSelection = .chat(id: chat.id)
                 } label: {
                     HStack(spacing: Spacing.md) {
                         ZStack {

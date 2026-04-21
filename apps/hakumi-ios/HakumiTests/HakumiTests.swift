@@ -63,15 +63,13 @@ struct HakumiTests {
         router.handle(url: url)
 
         #expect(router.authPhase == .booting)
-        #expect(router.selectedTab == .inbox)
-        #expect(router.protectedPath.isEmpty)
+        #expect(router.sidebarSelection == nil)
 
         AuthProvider.shared.completeSignIn(user: AuthUser(id: "user-1", email: "user@example.com", name: "User"))
         router.completeAuthentication()
 
         #expect(router.authPhase == .authenticated)
-        #expect(router.selectedTab == .inbox)
-        #expect(router.protectedPath == [.chat(id: "thread-123")])
+        #expect(router.sidebarSelection == .chat(id: "thread-123"))
 
         await AuthProvider.shared.signOut()
     }
@@ -80,13 +78,11 @@ struct HakumiTests {
     @Test func routerDoesNotBypassAuthenticationForProtectedRoutes() async {
         let router = Router()
         router.authPhase = .unauthenticated
-        router.selectedTab = .settings
 
         router.navigate(to: .noteDetail(id: "note-1"))
 
         #expect(router.authPhase == .unauthenticated)
-        #expect(router.selectedTab == .settings)
-        #expect(router.notesPath.isEmpty)
+        #expect(router.sidebarSelection == nil)
         #expect(router.authPath.isEmpty)
 
         await AuthProvider.shared.signOut()
@@ -97,19 +93,17 @@ struct HakumiTests {
         let router = Router()
         router.authPhase = .authenticated
         router.authPath = [.verifyOTP(email: "user@example.com")]
-        router.protectedPath = [.chat(id: "thread-1")]
-        router.notesPath = [.noteDetail(id: "note-1")]
+        router.sidebarSelection = .chat(id: "thread-1")
         router.settingsPath = [.archivedChats]
-        router.selectedTab = .settings
+        router.showSettings = true
 
         router.resetForSignOut()
 
         #expect(router.authPhase == .unauthenticated)
         #expect(router.authPath.isEmpty)
-        #expect(router.protectedPath.isEmpty)
-        #expect(router.notesPath.isEmpty)
+        #expect(router.sidebarSelection == nil)
         #expect(router.settingsPath.isEmpty)
-        #expect(router.selectedTab == .inbox)
+        #expect(router.showSettings == false)
     }
 
     @Test func authServiceUsesExpectedOtpEndpoints() {

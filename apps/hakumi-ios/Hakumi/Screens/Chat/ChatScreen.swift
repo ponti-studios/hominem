@@ -586,8 +586,8 @@ struct ChatScreen: View {
     private func archiveChat() async {
         do {
             try await ChatService.archiveChat(id: id)
-            router.selectedTab = .inbox
-            router.protectedPath = []
+            router.sidebarSelection = nil
+            AppStores.shared.inbox.mutateData { $0.removeAll { $0.id == "chat-\(id)" } }
         } catch {
             // TODO: surface error in Phase 4.2
         }

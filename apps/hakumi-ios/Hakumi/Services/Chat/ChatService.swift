@@ -46,6 +46,17 @@ struct ChatDetail: Sendable {
 @MainActor
 enum ChatService {
 
+    #if DEBUG
+    static var _testSession: URLSession? = nil
+    #endif
+    private static var session: URLSession {
+        #if DEBUG
+        return _testSession ?? .shared
+        #else
+        return .shared
+        #endif
+    }
+
     static func fetchMessages(chatId: String) async throws -> [ChatMessage] {
         var components = URLComponents(url: AuthService.apiURL("/api/chats/\(chatId)/messages"), resolvingAgainstBaseURL: false)!
         components.queryItems = [URLQueryItem(name: "limit", value: "50")]
@@ -53,7 +64,7 @@ enum ChatService {
         request.timeoutInterval = 15
         request.applyAuthHeaders()
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
         try URLRequest.validate(response, throwing: ChatError.fetchFailed)
 
         guard let arr = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
@@ -68,7 +79,7 @@ enum ChatService {
         request.timeoutInterval = 15
         request.applyAuthHeaders()
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
         try URLRequest.validate(response, throwing: ChatError.fetchFailed)
 
         guard
@@ -91,7 +102,7 @@ enum ChatService {
         if let fileIds, !fileIds.isEmpty { body["fileIds"] = fileIds }
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (_, response) = try await URLSession.shared.data(for: request)
+        let (_, response) = try await session.data(for: request)
         try URLRequest.validate(response, throwing: ChatError.sendFailed)
     }
 
@@ -101,7 +112,7 @@ enum ChatService {
         request.timeoutInterval = 15
         request.applyAuthHeaders()
 
-        let (_, response) = try await URLSession.shared.data(for: request)
+        let (_, response) = try await session.data(for: request)
         try URLRequest.validate(response, throwing: ChatError.archiveFailed)
     }
 
@@ -111,7 +122,7 @@ enum ChatService {
         request.timeoutInterval = 15
         request.applyAuthHeaders()
 
-        let (_, response) = try await URLSession.shared.data(for: request)
+        let (_, response) = try await session.data(for: request)
         try URLRequest.validate(response, throwing: ChatError.deleteFailed)
     }
 
@@ -123,7 +134,7 @@ enum ChatService {
         request.applyAuthHeaders()
         request.httpBody = try JSONSerialization.data(withJSONObject: ["title": title])
 
-        let (_, response) = try await URLSession.shared.data(for: request)
+        let (_, response) = try await session.data(for: request)
         try URLRequest.validate(response, throwing: ChatError.fetchFailed)
     }
 
@@ -136,7 +147,7 @@ enum ChatService {
         request.applyAuthHeaders()
         request.httpBody = try JSONSerialization.data(withJSONObject: ["title": title, "content": content])
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
         try URLRequest.validate(response, throwing: ChatError.fetchFailed)
 
         guard
@@ -155,7 +166,7 @@ enum ChatService {
         request.applyAuthHeaders()
         request.httpBody = try JSONSerialization.data(withJSONObject: ["title": title])
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
         try URLRequest.validate(response, throwing: ChatError.fetchFailed)
 
         guard

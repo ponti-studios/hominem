@@ -50,9 +50,11 @@ final class VoiceRecordingService {
         }
 
         do {
+            #if !targetEnvironment(macCatalyst)
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.record, mode: .measurement, options: .duckOthers)
             try session.setActive(true, options: .notifyOthersOnDeactivation)
+            #endif
 
             let request = SFSpeechAudioBufferRecognitionRequest()
             request.shouldReportPartialResults = true
@@ -124,7 +126,9 @@ final class VoiceRecordingService {
         recognitionTask?.cancel()
         recognitionTask = nil
 
+        #if !targetEnvironment(macCatalyst)
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        #endif
 
         isRecording = false
         amplitude = 0
