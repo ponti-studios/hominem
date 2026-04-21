@@ -42,7 +42,7 @@ export interface VoiceEventPayload {
 /**
  * PostHog analytics integration for voice events.
  * NOTE: This couples the RPC client to PostHog. Consider moving to a dedicated
- * @hominem/analytics package if other domains need event emission.
+ * @hakumi/analytics package if other domains need event emission.
  */
 interface PostHogClientLike {
   capture: (

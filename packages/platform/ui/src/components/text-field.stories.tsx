@@ -77,7 +77,7 @@ export const Disabled: Story = {
   args: {
     disabled: true,
     label: 'Handle',
-    placeholder: '@hominem',
+    placeholder: '@hakumi',
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

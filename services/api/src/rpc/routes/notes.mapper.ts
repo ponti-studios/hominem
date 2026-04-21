@@ -1,5 +1,5 @@
-import type { NoteRecord } from '@hominem/db';
-import type { Note, NoteFeedItem, NoteFile } from '@hominem/rpc/types/notes.types';
+import type { NoteRecord } from '@hakumi/db';
+import type { Note, NoteFeedItem, NoteFile } from '@hakumi/rpc/types/notes.types';
 
 export function toNoteDto(record: NoteRecord): Note {
   return {

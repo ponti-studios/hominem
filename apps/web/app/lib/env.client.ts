@@ -1,5 +1,5 @@
-import { createClientEnv } from '@hominem/env';
-import { webSchema } from '@hominem/env/web';
+import { createClientEnv } from '@hakumi/env';
+import { webSchema } from '@hakumi/env/web';
 
 let cachedEnv: ReturnType<typeof createClientEnv<typeof webSchema>> | null = null;
 

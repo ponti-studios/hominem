@@ -44,7 +44,7 @@ function getIsTestMode(): boolean {
 
 class InMemoryStorageBackend {
   client?: S3Client;
-  bucketName = 'hominem-test';
+  bucketName = 'hakumi-test';
   isPublic = false;
   userScoped = true;
   files: Map<string, Buffer> = new Map();
@@ -373,7 +373,7 @@ export class R2StorageService {
       },
     });
 
-    this.bucketName = process.env.R2_BUCKET_NAME || 'hominem-storage';
+    this.bucketName = process.env.R2_BUCKET_NAME || 'hakumi-storage';
     this.category = category;
     this.maxFileSize = options?.maxFileSize || 50 * 1024 * 1024;
     this.isPublic = options?.isPublic ?? false;

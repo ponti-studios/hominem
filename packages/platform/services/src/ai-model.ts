@@ -20,8 +20,8 @@ function buildProviderClient(): ReturnType<typeof createOpenAI> {
     apiKey: env.OPENROUTER_API_KEY,
     baseURL: OPENROUTER_BASE_URL,
     headers: {
-      'HTTP-Referer': 'https://hominem.app',
-      'X-Title': 'Hominem',
+      'HTTP-Referer': 'https://hakumi.app',
+      'X-Title': 'Hakumi',
     },
   });
 }
@@ -45,8 +45,8 @@ export function getSharedOpenAIClient(): OpenAI {
     apiKey: env.OPENROUTER_API_KEY,
     baseURL: OPENROUTER_BASE_URL,
     defaultHeaders: {
-      'HTTP-Referer': 'https://hominem.app',
-      'X-Title': 'Hominem',
+      'HTTP-Referer': 'https://hakumi.app',
+      'X-Title': 'Hakumi',
     },
   });
 }

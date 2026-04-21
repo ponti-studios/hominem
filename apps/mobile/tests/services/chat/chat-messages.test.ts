@@ -1,4 +1,4 @@
-import { getReferencedNoteLabel } from '@hominem/chat';
+import { getReferencedNoteLabel } from '@hakumi/chat';
 import { describe, expect, it } from 'vitest';
 
 import { createOptimisticMessage } from '~/services/chat/chatMessages';

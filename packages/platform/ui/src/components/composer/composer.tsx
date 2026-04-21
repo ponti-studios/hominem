@@ -1,4 +1,4 @@
-import type { Note } from '@hominem/rpc/types/notes.types';
+import type { Note } from '@hakumi/rpc/types/notes.types';
 import type { UseMutationResult } from '@tanstack/react-query';
 import type { ChangeEvent } from 'react';
 import { memo, useActionState, useRef } from 'react';

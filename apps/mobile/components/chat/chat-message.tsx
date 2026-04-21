@@ -1,5 +1,5 @@
-import type { ChatMessageItem, ChatRenderIcon, MarkdownComponent } from '@hominem/chat';
-import { getReferencedNoteLabel } from '@hominem/chat';
+import type { ChatMessageItem, ChatRenderIcon, MarkdownComponent } from '@hakumi/chat';
+import { getReferencedNoteLabel } from '@hakumi/chat';
 import { memo, useMemo, useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import Reanimated, { FadeInDown, FadeOutUp, LinearTransition } from 'react-native-reanimated';

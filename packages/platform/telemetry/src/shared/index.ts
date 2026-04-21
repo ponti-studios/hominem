@@ -55,7 +55,7 @@ export function getTelemetryConfig(explicit?: Partial<TelemetryConfig>): Telemet
   return {
     serviceName,
     serviceVersion: explicit?.serviceVersion || process.env.OTEL_SERVICE_VERSION || '0.0.0',
-    serviceNamespace: explicit?.serviceNamespace || process.env.OTEL_SERVICE_NAMESPACE || 'hominem',
+    serviceNamespace: explicit?.serviceNamespace || process.env.OTEL_SERVICE_NAMESPACE || 'hakumi',
     environment:
       explicit?.environment ||
       process.env.OTEL_DEPLOYMENT_ENVIRONMENT ||
@@ -117,7 +117,7 @@ export function createResource(
   const attributes: Record<string, string | number> = {
     [SEMRESATTRS_SERVICE_NAME]: config.serviceName,
     [SEMRESATTRS_SERVICE_VERSION]: config.serviceVersion || '0.0.0',
-    [SEMRESATTRS_SERVICE_NAMESPACE]: config.serviceNamespace || 'hominem',
+    [SEMRESATTRS_SERVICE_NAMESPACE]: config.serviceNamespace || 'hakumi',
     [SEMRESATTRS_DEPLOYMENT_ENVIRONMENT]: config.environment || 'development',
     [SEMRESATTRS_HOST_NAME]: options.hostname ?? 'unknown',
     [SEMRESATTRS_PROCESS_PID]: process.pid,

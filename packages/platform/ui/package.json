@@ -1,5 +1,5 @@
 {
-  "name": "@hominem/ui",
+  "name": "@hakumi/ui",
   "version": "0.0.0",
   "private": true,
   "exports": {
@@ -164,10 +164,10 @@
     "build:storybook": "storybook build"
   },
   "dependencies": {
-    "@hominem/auth": "workspace:*",
-    "@hominem/chat": "workspace:*",
-    "@hominem/rpc": "workspace:*",
-    "@hominem/utils": "workspace:*",
+    "@hakumi/auth": "workspace:*",
+    "@hakumi/chat": "workspace:*",
+    "@hakumi/rpc": "workspace:*",
+    "@hakumi/utils": "workspace:*",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-aspect-ratio": "^1.1.8",

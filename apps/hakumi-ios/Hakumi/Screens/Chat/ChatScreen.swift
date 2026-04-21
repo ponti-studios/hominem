@@ -1,79 +1,74 @@
 import SwiftUI
 
-// MARK: - Send Status
-
-private enum SendStatus: Equatable {
-    case idle, sending, error
-}
-
 // MARK: - ChatScreen
 
 struct ChatScreen: View {
     let id: String
     @Environment(Router.self) private var router
+    @Environment(ComposerState.self) private var composerState
+    @Environment(AppStores.self) private var stores
 
-    // Load state
-    @State private var isLoading = true
-    @State private var chatTitle = "Chat"
-    @State private var messages: [ChatMessage] = []
-
-    // Local send state (used by regenerate and edit-message flows only)
-    @State private var sendStatus: SendStatus = .idle
-    @State private var sendError: String? = nil
+    @State private var vm = ChatViewModel()
 
     // UI state
     @State private var activeMessageId: String? = nil
     @State private var showActionsSheet = false
-    @State private var showSearch = false
-    @State private var searchQuery = ""
+    @State private var searchQuery: String? = nil  // nil = search hidden
     @State private var editingMessage: ChatMessage? = nil
     @State private var editDraft = ""
+    @State private var isNearBottom = true
 
     // Review overlay
-    @State private var showReviewSheet = false
-    @State private var reviewTitle = ""
-    @State private var reviewContent = ""
-    @State private var isSavingReview = false
-    @State private var reviewSaved = false
+    private struct ReviewDraft {
+        var title: String
+        var content: String
+        var isSaving = false
+        var saved = false
+    }
+    @State private var reviewDraft: ReviewDraft? = nil
 
     private var displayMessages: [ChatMessage] {
-        let visible = messages.filter { $0.role != "tool" }
-        guard !searchQuery.trimmingCharacters(in: .whitespaces).isEmpty else { return visible }
-        let q = searchQuery.lowercased()
-        return visible.filter { $0.content.lowercased().contains(q) }
+        let visible = vm.messages.filter { $0.role != .tool }
+        guard let q = searchQuery, !q.trimmingCharacters(in: .whitespaces).isEmpty else { return visible }
+        return visible.filter { $0.content.lowercased().contains(q.lowercased()) }
     }
 
     private var isSending: Bool {
-        sendStatus == .sending || ComposerState.shared.sendingChatId == id
+        vm.sendStatus == .sending || composerState.sendingChatId == id
     }
 
     private var hasAssistantMessages: Bool {
-        messages.contains { $0.role == "assistant" }
+        vm.messages.contains { $0.role == .assistant }
     }
 
     private var lastAssistantContent: String {
-        messages.last(where: { $0.role == "assistant" })?.content ?? ""
+        vm.messages.last(where: { $0.role == .assistant })?.content ?? ""
     }
 
     // MARK: - Body
 
     var body: some View {
         VStack(spacing: 0) {
-            if showSearch {
+            if searchQuery != nil {
                 searchBar
                 Color.Hakumi.borderDefault.frame(height: 1)
             }
             messageList
         }
         .background(Color.Hakumi.bgBase)
-        .navigationTitle(chatTitle)
+        .navigationTitle(vm.chatTitle)
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(Color.Hakumi.bgElevated, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
         .toolbar { chatToolbar }
         .confirmationDialog("Conversation", isPresented: $showActionsSheet, titleVisibility: .visible) {
-            Button("Archive", role: .destructive) { Task { await archiveChat() } }
-            Button("Search") { showSearch = true }
+            Button("Archive", role: .destructive) {
+                Task {
+                    await stores.archiveChat(id: id)
+                    router.sidebarSelection = nil
+                }
+            }
+            Button("Search") { searchQuery = "" }
             if hasAssistantMessages {
                 Button("Save as note…") { openReviewSheet() }
             }
@@ -84,20 +79,26 @@ struct ChatScreen: View {
                 .presentationDetents([.medium])
                 .presentationDragIndicator(.visible)
         }
-        .sheet(isPresented: $showReviewSheet) {
+        .sheet(isPresented: Binding(
+            get: { reviewDraft != nil },
+            set: { if !$0 { reviewDraft = nil } }
+        )) {
             reviewSheet
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
         }
-        .alert("Send failed", isPresented: .constant(sendError != nil)) {
-            Button("OK") { sendError = nil }
+        .alert("Send failed", isPresented: Binding(
+            get: { vm.sendError != nil },
+            set: { if !$0 { vm.clearSendError() } }
+        )) {
+            Button("OK") {}
         } message: {
-            Text(sendError ?? "")
+            Text(vm.sendError ?? "")
         }
-        .task { await load() }
-        .onChange(of: ComposerState.shared.messageSentCount) { _, _ in
-            guard ComposerState.shared.messageSentChatId == id else { return }
-            Task { await reloadMessages() }
+        .task { await vm.load(id: id) }
+        .onChange(of: composerState.messageSentCount) { _, _ in
+            guard composerState.messageSentChatId == id else { return }
+            Task { await vm.reloadMessages(id: id) }
         }
     }
 
@@ -107,11 +108,10 @@ struct ChatScreen: View {
     private var chatToolbar: some ToolbarContent {
         ToolbarItemGroup(placement: .topBarTrailing) {
             Button {
-                showSearch.toggle()
-                if !showSearch { searchQuery = "" }
+                searchQuery = searchQuery == nil ? "" : nil
             } label: {
                 Image(systemName: "magnifyingglass")
-                    .foregroundStyle(showSearch ? Color.Hakumi.accent : Color.Hakumi.textSecondary)
+                    .foregroundStyle(searchQuery != nil ? Color.Hakumi.accent : Color.Hakumi.textSecondary)
             }
             .accessibilityLabel("Search messages")
 
@@ -130,20 +130,24 @@ struct ChatScreen: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 14))
                 .foregroundStyle(Color.Hakumi.textTertiary)
-            TextField("Search messages", text: $searchQuery)
-                .font(.system(size: 15))
-                .foregroundStyle(Color.Hakumi.textPrimary)
-            if !searchQuery.isEmpty {
-                Button { searchQuery = "" } label: {
+            TextField("Search messages", text: Binding(
+                get: { searchQuery ?? "" },
+                set: { searchQuery = $0 }
+            ))
+            .textStyle(AppTypography.subhead)
+            .foregroundStyle(Color.Hakumi.textPrimary)
+            if (searchQuery ?? "").isEmpty == false {
+                Button {
+                    searchQuery = ""
+                } label: {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundStyle(Color.Hakumi.textTertiary)
                 }
             }
             Button("Done") {
-                showSearch = false
-                searchQuery = ""
+                searchQuery = nil
             }
-            .font(.system(size: 15))
+            .textStyle(AppTypography.subhead)
             .foregroundStyle(Color.Hakumi.accent)
         }
         .padding(.horizontal, Spacing.md)
@@ -157,9 +161,9 @@ struct ChatScreen: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
-                    if isLoading {
+                    if vm.isLoading {
                         loadingPlaceholder
-                    } else if displayMessages.isEmpty && !searchQuery.isEmpty {
+                    } else if displayMessages.isEmpty && searchQuery != nil {
                         searchEmptyState
                     } else if displayMessages.isEmpty {
                         conversationEmptyState
@@ -177,15 +181,21 @@ struct ChatScreen: View {
                 .padding(.top, Spacing.sm)
                 .padding(.bottom, Spacing.md)
             }
-            .onChange(of: messages) { _, _ in
-                withAnimation(.none) { proxy.scrollTo("chat-bottom", anchor: .bottom) }
+            .onScrollGeometryChange(for: Bool.self) { geo in
+                geo.contentSize.height - geo.visibleRect.maxY < 120
+            } action: { _, nearBottom in
+                isNearBottom = nearBottom
             }
-            .onChange(of: sendStatus) { _, _ in
-                withAnimation(.none) { proxy.scrollTo("chat-bottom", anchor: .bottom) }
+            .onChange(of: vm.messages.count) { _, _ in
+                if isNearBottom { scrollToBottom(proxy: proxy) }
             }
-            .onChange(of: ComposerState.shared.sendingChatId) { _, chatId in
+            .onChange(of: vm.sendStatus) { _, _ in
+                if isNearBottom { scrollToBottom(proxy: proxy) }
+            }
+            .onChange(of: composerState.sendingChatId) { _, chatId in
                 guard chatId == id else { return }
-                withAnimation(.none) { proxy.scrollTo("chat-bottom", anchor: .bottom) }
+                // Always scroll when user sends their own message
+                scrollToBottom(proxy: proxy)
             }
         }
     }
@@ -194,7 +204,7 @@ struct ChatScreen: View {
 
     @ViewBuilder
     private func messageRow(_ message: ChatMessage) -> some View {
-        let isUser = message.role == "user"
+        let isUser = message.role == .user
         let isActive = activeMessageId == message.id
 
         VStack(alignment: isUser ? .trailing : .leading, spacing: Spacing.xs) {
@@ -255,7 +265,7 @@ struct ChatScreen: View {
 
     @ViewBuilder
     private func messageActionRow(_ message: ChatMessage) -> some View {
-        let isUser = message.role == "user"
+        let isUser = message.role == .user
         HStack(spacing: Spacing.sm) {
             Text(formatDate(message.createdAt))
                 .font(.system(size: 11, design: .monospaced))
@@ -302,14 +312,14 @@ struct ChatScreen: View {
             if !isUser {
                 Button {
                     withAnimation { activeMessageId = nil }
-                    Task { await regenerate(messageId: message.id) }
+                    Task { await vm.regenerate(messageId: message.id, chatId: id) }
                 } label: {
                     Image(systemName: "arrow.clockwise")
                         .font(.system(size: 14))
                         .foregroundStyle(Color.Hakumi.textTertiary)
                 }
                 .accessibilityLabel("Regenerate response")
-                .disabled(sendStatus != .idle)
+                .disabled(vm.sendStatus != .idle)
             }
         }
         .frame(maxWidth: .infinity)
@@ -321,7 +331,7 @@ struct ChatScreen: View {
     private func editSheet(for message: ChatMessage) -> some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
             Text("Edit message")
-                .font(.system(size: 17, weight: .semibold))
+                .textStyle(AppTypography.headline)
                 .foregroundStyle(Color.Hakumi.textPrimary)
 
             TextEditor(text: $editDraft)
@@ -330,32 +340,22 @@ struct ChatScreen: View {
                 .scrollContentBackground(.hidden)
                 .frame(minHeight: 100)
                 .padding(Spacing.sm)
-                .background(Color.Hakumi.bgSurface)
-                .clipShape(RoundedRectangle(cornerRadius: Radii.md))
-                .overlay(
-                    RoundedRectangle(cornerRadius: Radii.md)
-                        .strokeBorder(Color.Hakumi.borderDefault, lineWidth: 1)
-                )
+                .cardStyle(radius: Radii.md)
 
             HStack(spacing: Spacing.sm) {
                 Spacer()
                 Button("Cancel") { editingMessage = nil }
-                    .font(.system(size: 15))
+                    .textStyle(AppTypography.subhead)
                     .foregroundStyle(Color.Hakumi.textSecondary)
                     .padding(.horizontal, Spacing.md)
                     .padding(.vertical, Spacing.sm)
-                    .background(Color.Hakumi.bgSurface)
-                    .clipShape(RoundedRectangle(cornerRadius: Radii.sm))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: Radii.sm)
-                            .strokeBorder(Color.Hakumi.borderDefault, lineWidth: 1)
-                    )
+                    .cardStyle()
 
                 Button("Send") {
                     let text = editDraft.trimmingCharacters(in: .whitespaces)
                     guard !text.isEmpty else { return }
                     editingMessage = nil
-                    Task { await send(text: text) }
+                    Task { await vm.send(text: text, chatId: id) }
                 }
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(Color.Hakumi.accentForeground)
@@ -387,7 +387,7 @@ struct ChatScreen: View {
                         .foregroundStyle(Color.Hakumi.textPrimary)
                 }
                 Spacer()
-                Button { showReviewSheet = false } label: {
+                Button { reviewDraft = nil } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 22))
                         .foregroundStyle(Color.Hakumi.textTertiary)
@@ -399,16 +399,14 @@ struct ChatScreen: View {
                     .font(.system(size: 11, weight: .semibold, design: .monospaced))
                     .foregroundStyle(Color.Hakumi.textTertiary)
                     .kerning(1)
-                TextField("Note title", text: $reviewTitle)
+                TextField("Note title", text: Binding(
+                    get: { reviewDraft?.title ?? "" },
+                    set: { reviewDraft?.title = $0 }
+                ))
                     .font(.system(size: 15))
                     .foregroundStyle(Color.Hakumi.textPrimary)
                     .padding(Spacing.sm)
-                    .background(Color.Hakumi.bgSurface)
-                    .clipShape(RoundedRectangle(cornerRadius: Radii.md))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: Radii.md)
-                            .strokeBorder(Color.Hakumi.borderDefault, lineWidth: 1)
-                    )
+                    .cardStyle(radius: Radii.md)
             }
 
             VStack(alignment: .leading, spacing: Spacing.xs) {
@@ -417,44 +415,34 @@ struct ChatScreen: View {
                     .foregroundStyle(Color.Hakumi.textTertiary)
                     .kerning(1)
                 ScrollView {
-                    Text(reviewContent)
+                    Text(reviewDraft?.content ?? "")
                         .font(.system(size: 13, design: .monospaced))
                         .foregroundStyle(Color.Hakumi.textSecondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(Spacing.sm)
                 }
                 .frame(maxHeight: 160)
-                .background(Color.Hakumi.bgSurface)
-                .clipShape(RoundedRectangle(cornerRadius: Radii.md))
-                .overlay(
-                    RoundedRectangle(cornerRadius: Radii.md)
-                        .strokeBorder(Color.Hakumi.borderDefault, lineWidth: 1)
-                )
+                .cardStyle(radius: Radii.md)
             }
 
             Spacer()
 
             HStack(spacing: Spacing.sm) {
-                Button("Discard") { showReviewSheet = false }
-                    .font(.system(size: 15))
+                Button("Discard") { reviewDraft = nil }
+                    .textStyle(AppTypography.subhead)
                     .foregroundStyle(Color.Hakumi.textSecondary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, Spacing.sm)
-                    .background(Color.Hakumi.bgSurface)
-                    .clipShape(RoundedRectangle(cornerRadius: Radii.md))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: Radii.md)
-                            .strokeBorder(Color.Hakumi.borderDefault, lineWidth: 1)
-                    )
+                    .cardStyle(radius: Radii.md)
 
                 Button {
                     Task { await saveReview() }
                 } label: {
-                    if isSavingReview {
+                    if reviewDraft?.isSaving == true {
                         ProgressView()
                             .tint(Color.Hakumi.accentForeground)
                             .frame(maxWidth: .infinity)
-                    } else if reviewSaved {
+                    } else if reviewDraft?.saved == true {
                         Label("Saved", systemImage: "checkmark")
                             .font(.system(size: 15, weight: .medium))
                             .foregroundStyle(Color.Hakumi.accentForeground)
@@ -467,9 +455,10 @@ struct ChatScreen: View {
                     }
                 }
                 .padding(.vertical, Spacing.sm)
-                .background(reviewSaved ? Color.Hakumi.success : Color.Hakumi.accent)
+                .background(reviewDraft?.saved == true ? Color.Hakumi.success : Color.Hakumi.accent)
                 .clipShape(RoundedRectangle(cornerRadius: Radii.md))
-                .disabled(isSavingReview || reviewSaved || reviewTitle.trimmingCharacters(in: .whitespaces).isEmpty)
+                .disabled(reviewDraft?.isSaving == true || reviewDraft?.saved == true
+                    || (reviewDraft?.title.trimmingCharacters(in: .whitespaces).isEmpty ?? true))
             }
         }
         .padding(Spacing.lg)
@@ -493,141 +482,53 @@ struct ChatScreen: View {
     }
 
     private var conversationEmptyState: some View {
-        VStack(spacing: Spacing.sm) {
-            Image(systemName: "bubble.left.and.bubble.right")
-                .font(.system(size: 36))
-                .foregroundStyle(Color.Hakumi.textTertiary)
-            Text("Start a conversation")
-                .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(Color.Hakumi.textSecondary)
-            Text("Type a message below to get started.")
-                .font(.system(size: 14))
-                .foregroundStyle(Color.Hakumi.textTertiary)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
+        EmptyStateView(
+            icon: "bubble.left.and.bubble.right",
+            title: "Start a conversation",
+            subtitle: "Type a message below to get started."
+        )
         .padding(.top, 80)
-        .padding(.horizontal, Spacing.lg)
+        .frame(maxHeight: nil)
     }
 
     private var searchEmptyState: some View {
-        VStack(spacing: Spacing.sm) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 36))
-                .foregroundStyle(Color.Hakumi.textTertiary)
-            Text("No results for \"\(searchQuery)\"")
-                .font(.system(size: 15))
-                .foregroundStyle(Color.Hakumi.textSecondary)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.top, 80)
-        .padding(.horizontal, Spacing.lg)
-    }
-
-    // MARK: - Async actions
-
-    private func load() async {
-        isLoading = true
-        do {
-            async let detail = ChatService.fetchChatDetail(id: id)
-            async let msgs = ChatService.fetchMessages(chatId: id)
-            let (chatDetail, fetched) = try await (detail, msgs)
-            chatTitle = chatDetail.title
-            messages = fetched
-        } catch {
-            // Non-fatal — keep placeholder title, empty list
-        }
-        isLoading = false
-    }
-
-    /// Used by regenerate and edit-message flows. SharedComposerCard sends are handled
-    /// via `ComposerState.submitPrimary`; ChatScreen reloads on `messageSentCount` change.
-    private func send(text: String) async {
-        guard !text.isEmpty, sendStatus == .idle else { return }
-
-        let optimisticId = UUID().uuidString
-        let optimistic = ChatMessage(
-            id: optimisticId,
-            chatId: id,
-            role: "user",
-            content: text,
-            createdAt: Date(),
-            isOptimistic: true
+        EmptyStateView(
+            icon: "magnifyingglass",
+            title: "No results for \"\(searchQuery ?? "")\""
         )
-        messages.append(optimistic)
-        sendStatus = .sending
-        sendError = nil
-
-        do {
-            try await ChatService.sendMessage(chatId: id, text: text)
-            sendStatus = .idle
-            await reloadMessages()
-        } catch {
-            sendStatus = .error
-            sendError = error.localizedDescription
-            messages.removeAll { $0.id == optimisticId }
-        }
+        .padding(.top, 80)
+        .frame(maxHeight: nil)
     }
 
-    private func reloadMessages() async {
-        async let freshMessages = ChatService.fetchMessages(chatId: id)
-        async let freshDetail = ChatService.fetchChatDetail(id: id)
-        if let (msgs, detail) = try? await (freshMessages, freshDetail) {
-            messages = msgs
-            if detail.title != "New conversation" || chatTitle == "Chat" {
-                chatTitle = detail.title
-            }
-        } else if let msgs = try? await ChatService.fetchMessages(chatId: id) {
-            messages = msgs
-        }
-    }
-
-    private func archiveChat() async {
-        do {
-            try await ChatService.archiveChat(id: id)
-            router.sidebarSelection = nil
-            AppStores.shared.inbox.mutateData { $0.removeAll { $0.id == "chat-\(id)" } }
-        } catch {
-            // TODO: surface error in Phase 4.2
-        }
-    }
+    // MARK: - Local actions
 
     private func openReviewSheet() {
         let assistantContent = lastAssistantContent
-        let titleBase = chatTitle == "Chat" || chatTitle == "New conversation" ? "Note from conversation" : chatTitle
-        reviewTitle = String(titleBase.prefix(80))
-        reviewContent = String(assistantContent.prefix(2000))
-        reviewSaved = false
-        isSavingReview = false
-        showReviewSheet = true
+        let titleBase = vm.chatTitle == "Chat" || vm.chatTitle == "New conversation" ? "Note from conversation" : vm.chatTitle
+        reviewDraft = ReviewDraft(
+            title: String(titleBase.prefix(80)),
+            content: String(assistantContent.prefix(2000))
+        )
     }
 
     private func saveReview() async {
-        let title = reviewTitle.trimmingCharacters(in: .whitespaces)
-        guard !title.isEmpty else { return }
-        isSavingReview = true
-        do {
-            _ = try await ChatService.createNoteFromConversation(title: title, content: reviewContent)
-            isSavingReview = false
-            reviewSaved = true
+        guard var draft = reviewDraft else { return }
+        draft.isSaving = true
+        reviewDraft = draft
+        let success = await vm.saveAsNote(title: draft.title, content: draft.content)
+        reviewDraft?.isSaving = false
+        if success {
+            reviewDraft?.saved = true
             try? await Task.sleep(for: .seconds(1.2))
-            showReviewSheet = false
-        } catch {
-            isSavingReview = false
+            reviewDraft = nil
         }
     }
 
-    private func regenerate(messageId: String) async {
-        guard let idx = messages.firstIndex(where: { $0.id == messageId }) else { return }
-        let previousUser = messages[..<idx].reversed().first(where: {
-            $0.role == "user" && !$0.content.trimmingCharacters(in: .whitespaces).isEmpty
-        })
-        guard let prevMsg = previousUser else { return }
-        await send(text: prevMsg.content)
-    }
-
     // MARK: - Helpers
+
+    private func scrollToBottom(proxy: ScrollViewProxy) {
+        withAnimation(.none) { proxy.scrollTo("chat-bottom", anchor: .bottom) }
+    }
 
     private func formatDate(_ date: Date) -> String {
         let f = DateFormatter()
@@ -688,6 +589,8 @@ private struct ThinkingDot: View {
 #Preview {
     NavigationStack {
         ChatScreen(id: "preview-id")
-            .environment(Router())
     }
+    .environment(AppStores.shared)
+    .environment(ComposerState.shared)
+    .environment(Router())
 }

@@ -1,4 +1,4 @@
-import type { Session, User } from '@hominem/auth/types';
+import type { Session, User } from '@hakumi/auth/types';
 
 import { serverEnv } from './env.server';
 

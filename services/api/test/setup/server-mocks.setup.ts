@@ -5,7 +5,7 @@ vi.mock('@sentry/node', () => ({
   init: vi.fn(),
 }));
 
-vi.mock('@hominem/utils/storage', () => ({
+vi.mock('@hakumi/utils/storage', () => ({
   csvStorageService: {
     uploadCsvFile: vi.fn().mockResolvedValue('test/path/file.csv'),
     downloadCsvFile: vi.fn().mockResolvedValue('test,data\n'),

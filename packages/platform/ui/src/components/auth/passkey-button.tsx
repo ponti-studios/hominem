@@ -1,4 +1,4 @@
-import { AUTH_COPY } from '@hominem/auth/shared/ux-contract';
+import { AUTH_COPY } from '@hakumi/auth/shared/ux-contract';
 
 import { Button } from '../button';
 

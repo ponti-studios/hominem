@@ -126,7 +126,7 @@ function getBrowserConfig(explicit?: Partial<TelemetryConfig>): TelemetryConfig 
   return {
     serviceName,
     serviceVersion: explicit?.serviceVersion || env.OTEL_SERVICE_VERSION || '0.0.0',
-    serviceNamespace: explicit?.serviceNamespace || env.OTEL_SERVICE_NAMESPACE || 'hominem',
+    serviceNamespace: explicit?.serviceNamespace || env.OTEL_SERVICE_NAMESPACE || 'hakumi',
     environment: explicit?.environment || env.OTEL_DEPLOYMENT_ENVIRONMENT || 'development',
     otlpEndpoint:
       explicit?.otlpEndpoint || env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://localhost:4318',
@@ -151,7 +151,7 @@ function createBrowserResource(config: TelemetryConfig) {
   return new Resource({
     [SEMRESATTRS_SERVICE_NAME]: config.serviceName,
     [SEMRESATTRS_SERVICE_VERSION]: config.serviceVersion || '0.0.0',
-    [SEMRESATTRS_SERVICE_NAMESPACE]: config.serviceNamespace || 'hominem',
+    [SEMRESATTRS_SERVICE_NAMESPACE]: config.serviceNamespace || 'hakumi',
     [SEMRESATTRS_DEPLOYMENT_ENVIRONMENT]: config.environment || 'development',
     'host.name': typeof window !== 'undefined' ? window.location.hostname : 'browser',
     'browser.user_agent': typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',

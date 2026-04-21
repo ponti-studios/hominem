@@ -28,7 +28,8 @@ final class VoiceRecordingService {
     // MARK: - Private
 
     private var audioEngine = AVAudioEngine()
-    private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
+    // nonisolated(unsafe): set on MainActor before tap starts, nilled after tap removed in stopEngine()
+    private nonisolated(unsafe) var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
 
     private init() {}
@@ -100,6 +101,12 @@ final class VoiceRecordingService {
             isRecording = false
             permissionError = "Could not start recording: \(error.localizedDescription)"
         }
+    }
+
+    // MARK: - Clear permission error
+
+    func clearPermissionError() {
+        permissionError = nil
     }
 
     // MARK: - Stop

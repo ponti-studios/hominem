@@ -1,4 +1,4 @@
-import { BRAND } from '@hominem/env/brand';
+import { BRAND } from '@hakumi/env/brand';
 
 export const WEB_BRAND = {
   appName: BRAND.appName,

@@ -1,8 +1,8 @@
-import type { ArtifactType, ThoughtLifecycleState } from '@hominem/rpc/types';
+import type { ArtifactType, ThoughtLifecycleState } from '@hakumi/rpc/types';
 import { StyleSheet, View } from 'react-native';
 
 import { colors, spacing } from '~/components/theme/tokens';
-import { ENABLED_ARTIFACT_TYPES } from '@hominem/chat/types';
+import { ENABLED_ARTIFACT_TYPES } from '@hakumi/chat/types';
 import { Button } from '../ui/Button';
 
 interface ArtifactActionsProps {

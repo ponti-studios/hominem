@@ -1,5 +1,5 @@
-import { useApiClient } from '@hominem/rpc/react';
-import type { Chat } from '@hominem/rpc/types';
+import { useApiClient } from '@hakumi/rpc/react';
+import type { Chat } from '@hakumi/rpc/types';
 import { useQueryClient } from '@tanstack/react-query';
 import type { RelativePathString } from 'expo-router';
 import { useRouter } from 'expo-router';

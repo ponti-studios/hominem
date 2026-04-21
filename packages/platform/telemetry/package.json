@@ -1,7 +1,7 @@
 {
-  "name": "@hominem/telemetry",
+  "name": "@hakumi/telemetry",
   "version": "0.1.0",
-  "description": "OpenTelemetry instrumentation for Hominem services and apps",
+  "description": "OpenTelemetry instrumentation for Hakumi services and apps",
   "type": "module",
   "exports": {
     ".": {

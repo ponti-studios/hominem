@@ -1,6 +1,6 @@
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
-import type { NoteSearchResult } from '@hominem/rpc/types';
-import { radii, shadowsNative, spacing } from '@hominem/ui/tokens';
+import type { NoteSearchResult } from '@hakumi/rpc/types';
+import { radii, shadowsNative, spacing } from '@hakumi/ui/tokens';
 import { Image } from 'expo-image';
 import { type SFSymbol } from 'expo-symbols';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';

@@ -5,7 +5,7 @@
  * compatibility but uses the centralized repository instead of raw Kysely.
  */
 
-import { ChatRepository, getDb } from '@hominem/db';
+import { ChatRepository, getDb } from '@hakumi/db';
 
 import type { ChatOutput } from '../chat.types';
 import type { CreateChatParams } from './chat.service.types';

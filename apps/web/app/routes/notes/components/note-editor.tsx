@@ -1,5 +1,5 @@
-import type { Note } from '@hominem/rpc/types/notes.types';
-import { SurfacePanel } from '@hominem/ui';
+import type { Note } from '@hakumi/rpc/types/notes.types';
+import { SurfacePanel } from '@hakumi/ui';
 import { useCallback } from 'react';
 
 import { useUpdateNote } from '~/hooks/use-notes';

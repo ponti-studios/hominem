@@ -1,7 +1,7 @@
-import { useRpcQuery } from '@hominem/rpc/react';
-import type { NoteSearchResult } from '@hominem/rpc/types/notes.types';
-import { SpeechInput } from '@hominem/ui/ai-elements';
-import { Button } from '@hominem/ui/button';
+import { useRpcQuery } from '@hakumi/rpc/react';
+import type { NoteSearchResult } from '@hakumi/rpc/types/notes.types';
+import { SpeechInput } from '@hakumi/ui/ai-elements';
+import { Button } from '@hakumi/ui/button';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 

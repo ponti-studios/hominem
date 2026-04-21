@@ -1,16 +1,16 @@
-import { getDb, NoteRepository } from '@hominem/db';
+import { getDb, NoteRepository } from '@hakumi/db';
 import {
   CreateNoteInputSchema,
   NotesFeedQuerySchema,
   NotesListQuerySchema,
   UpdateNoteInputSchema,
-} from '@hominem/rpc/schemas/notes.schema';
+} from '@hakumi/rpc/schemas/notes.schema';
 import type {
   NotesDeleteOutput,
   NotesFeedOutput,
   NotesListOutput,
   NotesSearchOutput,
-} from '@hominem/rpc/types/notes.types';
+} from '@hakumi/rpc/types/notes.types';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import * as z from 'zod';

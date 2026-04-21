@@ -46,9 +46,4 @@ struct AuthLayout<Content: View>: View {
         .scrollDismissesKeyboard(.interactively)
     }
 
-    private var accentBar: some View {
-        RoundedRectangle(cornerRadius: Radii.sm)
-            .fill(Color.Hakumi.accent.opacity(0.15))
-            .frame(width: 48, height: 4)
-    }
 }

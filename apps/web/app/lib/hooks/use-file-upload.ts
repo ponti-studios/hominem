@@ -2,8 +2,8 @@ import {
   CHAT_UPLOAD_ALLOWED_MIME_TYPES,
   CHAT_UPLOAD_MAX_FILE_COUNT,
   CHAT_UPLOAD_MAX_FILE_SIZE_BYTES,
-} from '@hominem/chat';
-import { UploadResponseSchema } from '@hominem/rpc/schemas/files.schema';
+} from '@hakumi/chat';
+import { UploadResponseSchema } from '@hakumi/rpc/schemas/files.schema';
 // Lazy load Uppy types only for type checking
 import type { Body, Meta, UppyFile } from '@uppy/core';
 import { useCallback, useEffect, useRef, useState } from 'react';

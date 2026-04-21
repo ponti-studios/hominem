@@ -1,10 +1,10 @@
 /**
- * Re-export the shared query key factory from @hominem/rpc.
+ * Re-export the shared query key factory from @hakumi/rpc.
  *
  * This replaces the local key definitions that were diverging
  * from mobile. Both apps now share a single source of truth.
  */
-import { queryKeys } from '@hominem/rpc/react';
+import { queryKeys } from '@hakumi/rpc/react';
 
 export const chatQueryKeys = {
   list: queryKeys.chats.list,

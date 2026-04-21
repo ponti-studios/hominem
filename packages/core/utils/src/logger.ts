@@ -56,7 +56,7 @@ function emitOtelLogRecord(
   data?: object,
 ) {
   try {
-    const logger = logs.getLogger('hominem-pino-bridge');
+    const logger = logs.getLogger('hakumi-pino-bridge');
     const attributes = toOtelAttributes(data);
     logger.emit({
       context: otelContext.active(),

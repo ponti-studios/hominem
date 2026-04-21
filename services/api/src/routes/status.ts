@@ -1,5 +1,5 @@
-import { db } from '@hominem/db';
-import { logger } from '@hominem/utils/logger';
+import { db } from '@hakumi/db';
+import { logger } from '@hakumi/utils/logger';
 import { Hono } from 'hono';
 
 import { UnavailableError } from '../errors';

@@ -10,7 +10,7 @@ export const apiSchema = baseSchema.extend({
   API_URL: z.string().url().default('http://localhost:4040'),
   WEB_URL: z.string().url().default(defaultWebUrl),
   DATABASE_URL: isTest
-    ? z.string().url().default('postgresql://postgres:postgres@localhost:5432/hominem_test')
+    ? z.string().url().default('postgresql://postgres:postgres@localhost:5432/hakumi_test')
     : z.string().url(),
   NOTES_URL: z.string().url().default(defaultWebUrl),
   BETTER_AUTH_SECRET: z.string().default('dev-better-auth-secret-change-me'),

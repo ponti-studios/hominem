@@ -22,6 +22,8 @@ struct RootView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .environment(router)
+        .environment(AppStores.shared)
+        .environment(ComposerState.shared)
         .onOpenURL { url in router.handle(url: url) }
         .task { router.bootstrap() }
     }
@@ -172,7 +174,6 @@ struct RootView: View {
 private extension View {
     func styledBars() -> some View {
         self
-            .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar(.visible, for: .navigationBar)
             .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)

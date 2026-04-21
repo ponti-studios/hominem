@@ -1,4 +1,4 @@
-import type { ArtifactType } from '@hominem/rpc/types';
+import type { ArtifactType } from '@hakumi/rpc/types';
 
 export type ConversationActionType = ArtifactType;
 

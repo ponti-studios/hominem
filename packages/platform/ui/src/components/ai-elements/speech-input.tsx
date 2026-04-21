@@ -1,4 +1,4 @@
-import { emitVoiceEvent } from '@hominem/rpc/voice-events';
+import { emitVoiceEvent } from '@hakumi/rpc/voice-events';
 import { Mic, MicOff, Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, type ButtonHTMLAttributes } from 'react';
 

@@ -1,5 +1,5 @@
 {
-  "name": "@hominem/rpc",
+  "name": "@hakumi/rpc",
   "version": "0.1.0",
   "type": "module",
   "exports": {
@@ -36,7 +36,7 @@
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
-    "@hominem/chat": "workspace:*",
+    "@hakumi/chat": "workspace:*",
     "@tanstack/react-query": "5.90.16",
     "zod": "4.3.6"
   },

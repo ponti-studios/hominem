@@ -1,5 +1,5 @@
-import { pool } from '@hominem/db'
-import { redis } from '@hominem/services/redis'
+import { pool } from '@hakumi/db'
+import { redis } from '@hakumi/services/redis'
 
 import { cleanupApiAuthRedisState, cleanupApiAuthTestState } from './auth-state.cleanup'
 

@@ -8,7 +8,7 @@
  * The reducer is a pure function — testable with zero React.
  */
 
-import type { Note } from '@hominem/rpc/types/notes.types';
+import type { Note } from '@hakumi/rpc/types/notes.types';
 
 import type { UploadedFile } from '../../types/upload';
 

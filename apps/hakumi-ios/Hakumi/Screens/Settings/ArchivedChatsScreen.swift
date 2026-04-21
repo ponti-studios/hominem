@@ -1,26 +1,17 @@
 import SwiftUI
 
-// MARK: - ArchivedChat model
-
-private struct ArchivedChat: Identifiable, Sendable {
-    let id: String
-    let title: String
-    let archivedAt: Date
-}
-
 // MARK: - ArchivedChatsScreen
 
 struct ArchivedChatsScreen: View {
     @Environment(Router.self) private var router
-    @State private var chats: [ArchivedChat] = []
+    @State private var chats: [ChatService.ArchivedChatSummary] = []
     @State private var isLoading = true
     @State private var errorMessage: String?
 
     var body: some View {
         Group {
             if isLoading {
-                VStack { Spacer(); ProgressView().tint(Color.Hakumi.textTertiary); Spacer() }
-                    .frame(maxWidth: .infinity)
+                ScreenLoadingView()
             } else if chats.isEmpty {
                 emptyView
             } else {
@@ -61,7 +52,7 @@ struct ArchivedChatsScreen: View {
                                 .font(.system(size: 15, weight: .medium))
                                 .foregroundStyle(Color.Hakumi.textPrimary)
                                 .lineLimit(1)
-                            Text("Archived \(chat.archivedAt.relativeString)")
+                            Text("Archived \(chat.archivedAt.relativeDetailString)")
                                 .font(.system(size: 12))
                                 .foregroundStyle(Color.Hakumi.textTertiary)
                         }
@@ -123,55 +114,10 @@ struct ArchivedChatsScreen: View {
         isLoading = true
         defer { isLoading = false }
         do {
-            let url = URL(string: AuthService.apiURL("/api/chats").absoluteString + "?limit=100")!
-            var request = URLRequest(url: url)
-            request.timeoutInterval = 15
-            for (k, v) in AuthProvider.shared.getAuthHeaders() { request.setValue(v, forHTTPHeaderField: k) }
-
-            let (data, response) = try await URLSession.shared.data(for: request)
-            guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-                return
-            }
-
-            guard let arr = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else { return }
-
-            let iso = ISO8601DateFormatter()
-            iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-            let isoNoFrac = ISO8601DateFormatter()
-            isoNoFrac.formatOptions = [.withInternetDateTime]
-
-            func parseDate(_ s: String) -> Date? { iso.date(from: s) ?? isoNoFrac.date(from: s) }
-
-            chats = arr.compactMap { dict -> ArchivedChat? in
-                guard
-                    let id = dict["id"] as? String,
-                    let archivedStr = dict["archivedAt"] as? String,
-                    let archivedAt = parseDate(archivedStr)
-                else { return nil }
-                let title = dict["title"] as? String ?? "Untitled chat"
-                return ArchivedChat(id: id, title: title, archivedAt: archivedAt)
-            }
-            .sorted { $0.archivedAt > $1.archivedAt }
+            chats = try await ChatService.fetchArchivedChats()
         } catch {
             errorMessage = error.localizedDescription
         }
-    }
-}
-
-// MARK: - Date helper
-
-private extension Date {
-    var relativeString: String {
-        let now = Date()
-        let diff = now.timeIntervalSince(self)
-        if diff < 60 { return "just now" }
-        if diff < 3600 { return "\(Int(diff / 60))m ago" }
-        if diff < 86400 { return "\(Int(diff / 3600))h ago" }
-        if diff < 7 * 86400 { return "\(Int(diff / 86400))d ago" }
-        let f = DateFormatter()
-        f.dateFormat = Calendar.current.isDate(self, equalTo: now, toGranularity: .year)
-            ? "MMM d" : "MMM d, yyyy"
-        return f.string(from: self)
     }
 }
 

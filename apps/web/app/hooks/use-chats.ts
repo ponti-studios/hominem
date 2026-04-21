@@ -1,5 +1,5 @@
-import { useRpcMutation, useRpcQuery } from '@hominem/rpc/react';
-import type { Chat } from '@hominem/rpc/types/chat.types';
+import { useRpcMutation, useRpcQuery } from '@hakumi/rpc/react';
+import type { Chat } from '@hakumi/rpc/types/chat.types';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { chatQueryKeys } from '~/lib/query-keys';

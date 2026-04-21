@@ -1,5 +1,5 @@
-import { createNotesMutationSuccessHandler, useApiClient } from '@hominem/rpc/react';
-import type { Note } from '@hominem/rpc/types';
+import { createNotesMutationSuccessHandler, useApiClient } from '@hakumi/rpc/react';
+import type { Note } from '@hakumi/rpc/types';
 import { useMutation, useQueryClient, type UseMutationResult } from '@tanstack/react-query';
 
 import { noteKeys } from './query-keys';

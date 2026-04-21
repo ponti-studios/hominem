@@ -1,5 +1,5 @@
 {
-  "name": "@hominem/chat",
+  "name": "@hakumi/chat",
   "version": "0.0.0",
   "description": "Chat and messaging services",
   "type": "module",
@@ -37,8 +37,8 @@
     "lint": "pnpm dlx oxlint ./src"
   },
   "dependencies": {
-    "@hominem/db": "workspace:*",
-    "@hominem/utils": "workspace:*",
+    "@hakumi/db": "workspace:*",
+    "@hakumi/utils": "workspace:*",
     "@langchain/textsplitters": "^1.0.1",
     "date-fns": "^3.6.0"
   },

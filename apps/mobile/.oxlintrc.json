@@ -17,11 +17,11 @@
       {
         "patterns": [
           {
-            "group": ["@hominem/db", "@hominem/db/*"],
+            "group": ["@hakumi/db", "@hakumi/db/*"],
             "message": "Mobile must not import persistence internals directly. Use RPC or domain-facing abstractions instead."
           },
           {
-            "group": ["@hominem/services", "@hominem/services/*"],
+            "group": ["@hakumi/services", "@hakumi/services/*"],
             "message": "Mobile must not import server-side services directly. Use transport-safe abstractions instead."
           },
           {

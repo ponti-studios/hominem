@@ -1,6 +1,6 @@
 import path from 'node:path';
 
-import { shellTheme } from '@hominem/ui/theme';
+import { shellTheme } from '@hakumi/ui/theme';
 import { reactRouter } from '@react-router/dev/vite';
 import tailwindcss from '@tailwindcss/vite';
 import { visualizer } from 'rollup-plugin-visualizer';
@@ -16,9 +16,9 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
   // Default values for WEB_BRAND to avoid module resolution issues during config loading
   const WEB_BRAND = {
     manifest: {
-      name: 'Hominem',
-      shortName: 'Hominem',
-      description: 'Hominem brings notes, voice capture, and chat into one workspace.',
+      name: 'Hakumi',
+      shortName: 'Hakumi',
+      description: 'Hakumi brings notes, voice capture, and chat into one workspace.',
     },
   };
 
@@ -190,7 +190,7 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
     },
 
     ssr: {
-      noExternal: [/^@hominem\//],
+      noExternal: [/^@hakumi\//],
       resolve: {
         conditions: ['browser'],
       },

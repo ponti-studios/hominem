@@ -1,4 +1,4 @@
-import { useApiClient } from '@hominem/rpc/react';
+import { useApiClient } from '@hakumi/rpc/react';
 import * as FileSystem from 'expo-file-system/legacy';
 import { useCallback, useRef, useState } from 'react';
 import { playTTS, stopTTS } from './audio.service';

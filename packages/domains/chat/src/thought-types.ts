@@ -1,7 +1,7 @@
 /**
  * Shared domain types for the thought lifecycle.
  *
- * These are the CANONICAL definitions. @hominem/rpc re-exports them
+ * These are the CANONICAL definitions. @hakumi/rpc re-exports them
  * for transport consumers. No other package may redefine these.
  */
 

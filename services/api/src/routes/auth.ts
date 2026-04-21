@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 
-import { db } from '@hominem/db';
-import { logger } from '@hominem/utils/logger';
+import { db } from '@hakumi/db';
+import { logger } from '@hakumi/utils/logger';
 import { zValidator } from '@hono/zod-validator';
 import type { Context } from 'hono';
 import { Hono } from 'hono';
@@ -70,7 +70,7 @@ function isTestOtpRetrievalEnabled() {
 }
 
 async function getRedis() {
-  const { redis } = await import('@hominem/services/redis');
+  const { redis } = await import('@hakumi/services/redis');
   return redis;
 }
 
@@ -194,7 +194,7 @@ authRoutes.post('/mobile/e2e/login', zValidator('json', mobileE2eLoginSchema), a
   }
 
   const payload = c.req.valid('json');
-  const email = payload.email ?? 'mobile-e2e@hominem.test';
+  const email = payload.email ?? 'mobile-e2e@hakumi.test';
   const name = payload.name ?? 'Mobile E2E User';
   const emailHash = createHash('sha256').update(email).digest('hex').slice(0, 16);
 

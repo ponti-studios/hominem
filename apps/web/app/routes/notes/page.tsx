@@ -1,7 +1,7 @@
-import { SectionIntro, StatePanel } from '@hominem/ui';
-import { Composer } from '@hominem/ui/composer';
-import type { ComposerActions } from '@hominem/ui/composer/composer-provider';
-import { ComposerProvider, ComposerStore } from '@hominem/ui/composer/composer-provider';
+import { SectionIntro, StatePanel } from '@hakumi/ui';
+import { Composer } from '@hakumi/ui/composer';
+import type { ComposerActions } from '@hakumi/ui/composer/composer-provider';
+import { ComposerProvider, ComposerStore } from '@hakumi/ui/composer/composer-provider';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
@@ -205,10 +205,10 @@ export default function NotesPage() {
   };
 
   useEffect(() => {
-    const saved = window.localStorage.getItem('hominem:web:notes:new-draft');
+    const saved = window.localStorage.getItem('hakumi:web:notes:new-draft');
     if (saved) {
       composerStore.dispatch({ type: 'SET_DRAFT', text: saved });
-      window.localStorage.removeItem('hominem:web:notes:new-draft');
+      window.localStorage.removeItem('hakumi:web:notes:new-draft');
     }
   }, [composerStore]);
 

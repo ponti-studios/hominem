@@ -59,7 +59,7 @@ export function useMobilePasskeyAuth(): UseMobilePasskeyAuthReturn {
             return null;
           }
 
-          const email = `mobile-passkey-${Date.now()}@hominem.test`;
+          const email = `mobile-passkey-${Date.now()}@hakumi.test`;
           const response = await fetch(
             new URL('/api/auth/mobile/e2e/login', API_BASE_URL).toString(),
             {

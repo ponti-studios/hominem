@@ -1,8 +1,8 @@
 import { getCookie } from '@better-auth/expo/client';
 import * as SecureStore from 'expo-secure-store';
 
-const BETTER_AUTH_COOKIE_KEY = 'hominem_cookie';
-const LEGACY_MOBILE_SESSION_COOKIE_KEY = 'hominem_mobile_session_cookie_v1';
+const BETTER_AUTH_COOKIE_KEY = 'hakumi_cookie';
+const LEGACY_MOBILE_SESSION_COOKIE_KEY = 'hakumi_mobile_session_cookie_v1';
 
 export async function getPersistedSessionCookieHeader() {
   const storedHeader = await SecureStore.getItemAsync(LEGACY_MOBILE_SESSION_COOKIE_KEY);

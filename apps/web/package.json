@@ -1,5 +1,5 @@
 {
-  "name": "@hominem/web",
+  "name": "@hakumi/web",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,13 +11,13 @@
     "typecheck": "react-router typegen && tsgo --noEmit"
   },
   "dependencies": {
-    "@hominem/auth": "workspace:*",
-    "@hominem/chat": "workspace:*",
-    "@hominem/env": "workspace:*",
-    "@hominem/rpc": "workspace:*",
-    "@hominem/telemetry": "workspace:*",
-    "@hominem/ui": "workspace:*",
-    "@hominem/utils": "workspace:*",
+    "@hakumi/auth": "workspace:*",
+    "@hakumi/chat": "workspace:*",
+    "@hakumi/env": "workspace:*",
+    "@hakumi/rpc": "workspace:*",
+    "@hakumi/telemetry": "workspace:*",
+    "@hakumi/ui": "workspace:*",
+    "@hakumi/utils": "workspace:*",
     "@react-router/node": "7.14.0",
     "@react-router/serve": "7.14.0",
     "@tanstack/react-query": "5.90.16",

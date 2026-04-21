@@ -21,9 +21,15 @@ final class AppLock {
     /// Whether app-lock is turned on by the user.
     /// Stored in Keychain (not UserDefaults) so it is encrypted at rest and
     /// inaccessible to other apps on jailbroken devices.
+    /// Cached in `_isEnabled` to avoid a Keychain read on every SwiftUI render.
+    private var _isEnabled: Bool
+
     var isEnabled: Bool {
-        get { AppLockStore.load() }
-        set { AppLockStore.save(newValue) }
+        get { _isEnabled }
+        set {
+            _isEnabled = newValue
+            AppLockStore.save(newValue)
+        }
     }
 
     /// Whether the user has successfully authenticated this session.
@@ -33,7 +39,8 @@ final class AppLock {
     // MARK: - Init
 
     private init() {
-        isUnlocked = !isEnabled
+        _isEnabled = AppLockStore.load()
+        isUnlocked = !_isEnabled
     }
 
     // MARK: - Authentication

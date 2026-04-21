@@ -1,5 +1,5 @@
-import type { ChatRenderIcon } from '@hominem/chat';
-import type { ArtifactType, SessionSource } from '@hominem/rpc/types';
+import type { ChatRenderIcon } from '@hakumi/chat';
+import type { ArtifactType, SessionSource } from '@hakumi/rpc/types';
 import { Search, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 

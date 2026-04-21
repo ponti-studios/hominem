@@ -1,10 +1,10 @@
 'use client';
 
-import { useAuthClient } from '@hominem/auth/client/provider';
-import { maskEmail } from '@hominem/auth/shared/mask-email';
-import { resolveAuthRedirect } from '@hominem/auth/shared/redirect-policy';
-import { AUTH_COPY, NOTES_AUTH_CONFIG } from '@hominem/auth/shared/ux-contract';
-import { AuthScaffold, OtpVerificationForm } from '@hominem/ui';
+import { useAuthClient } from '@hakumi/auth/client/provider';
+import { maskEmail } from '@hakumi/auth/shared/mask-email';
+import { resolveAuthRedirect } from '@hakumi/auth/shared/redirect-policy';
+import { AUTH_COPY, NOTES_AUTH_CONFIG } from '@hakumi/auth/shared/ux-contract';
+import { AuthScaffold, OtpVerificationForm } from '@hakumi/ui';
 import { redirect, useLoaderData, useLocation, useNavigate } from 'react-router';
 
 import { getNextRedirect } from './shared';

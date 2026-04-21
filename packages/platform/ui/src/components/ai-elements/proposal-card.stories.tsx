@@ -1,4 +1,4 @@
-import type { ReviewItem } from '@hominem/rpc/types';
+import type { ReviewItem } from '@hakumi/rpc/types';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { hiddenControl, selectControl, textControl } from '../../storybook/controls';

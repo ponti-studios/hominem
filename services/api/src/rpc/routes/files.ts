@@ -1,8 +1,8 @@
-import type { FileRecord } from '@hominem/db';
-import { FileRepository, getDb } from '@hominem/db';
-import { fileProcessingQueue } from '@hominem/queues';
-import { logger } from '@hominem/utils/logger';
-import { fileStorageService } from '@hominem/utils/storage';
+import type { FileRecord } from '@hakumi/db';
+import { FileRepository, getDb } from '@hakumi/db';
+import { fileProcessingQueue } from '@hakumi/queues';
+import { logger } from '@hakumi/utils/logger';
+import { fileStorageService } from '@hakumi/utils/storage';
 import { Hono } from 'hono';
 import * as z from 'zod';
 
@@ -71,7 +71,7 @@ function logAndThrow(error: unknown, message: string): never {
   if (uploadServiceError) {
     throw uploadServiceError;
   }
-  // Re-throw repository errors (which include NotFoundError from @hominem/db)
+  // Re-throw repository errors (which include NotFoundError from @hakumi/db)
   if (error instanceof Error && 'code' in error) {
     throw error;
   }

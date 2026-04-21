@@ -1,4 +1,4 @@
-import { useApiClient } from '@hominem/rpc/react';
+import { useApiClient } from '@hakumi/rpc/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useRef, useState } from 'react';
 

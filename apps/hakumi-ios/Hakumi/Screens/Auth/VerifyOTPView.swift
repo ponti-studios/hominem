@@ -7,6 +7,7 @@ struct VerifyOTPScreen: View {
 
     @Environment(Router.self) private var router
 
+    @State private var vm = AuthViewModel()
     @State private var otp = ""
     @State private var isVerifying = false
     @State private var isResending = false
@@ -87,9 +88,6 @@ struct VerifyOTPScreen: View {
     // MARK: - E2E helpers (Debug E2E builds only)
 
     #if E2E
-    /// Called on appear when running under XCUITest.
-    /// Prefers a directly-injected E2E_OTP (CI fast path), otherwise fetches
-    /// the real OTP from the backend's test-store endpoint using E2E_SECRET.
     private func e2eAutoSubmitIfNeeded() {
         let env = ProcessInfo.processInfo.environment
         if let direct = env["E2E_OTP"], !direct.isEmpty {
@@ -100,9 +98,6 @@ struct VerifyOTPScreen: View {
         }
     }
 
-    /// Polls GET /api/auth/test/otp/latest until the OTP appears (up to 5 attempts),
-    /// then auto-fills and submits. The brief initial delay lets the backend finish
-    /// recording the OTP before the first poll.
     private func fetchAndAutoSubmit(secret: String) async {
         try? await Task.sleep(for: .milliseconds(400))
         let encoded = email.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? email
@@ -134,10 +129,8 @@ struct VerifyOTPScreen: View {
         isVerifying = true
         error = nil
         defer { isVerifying = false }
-
         do {
-            let user = try await AuthService.verifyOTP(email: email, otp: normalizedOTP)
-            AuthProvider.shared.completeSignIn(user: user)
+            try await vm.verifyOTP(email: email, otp: normalizedOTP)
             router.completeAuthentication()
         } catch {
             self.error = error.localizedDescription
@@ -149,9 +142,8 @@ struct VerifyOTPScreen: View {
         error = nil
         resendSuccess = false
         defer { isResending = false }
-
         do {
-            try await AuthService.resendOTP(email: email)
+            try await vm.resendOTP(email: email)
             resendSuccess = true
             otp = ""
         } catch {

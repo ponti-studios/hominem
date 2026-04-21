@@ -1,4 +1,4 @@
-import type { ChatMessageDto } from '@hominem/rpc/types/chat.types';
+import type { ChatMessageDto } from '@hakumi/rpc/types/chat.types';
 
 export type ExtendedMessage = ChatMessageDto & {
   isStreaming?: boolean;

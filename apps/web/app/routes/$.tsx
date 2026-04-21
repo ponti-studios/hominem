@@ -1,4 +1,4 @@
-import { Button } from '@hominem/ui/button';
+import { Button } from '@hakumi/ui/button';
 import { Home } from 'lucide-react';
 import { Link } from 'react-router';
 

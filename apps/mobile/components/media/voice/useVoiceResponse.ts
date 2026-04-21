@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import * as FileSystem from 'expo-file-system/legacy';
-import { useApiClient } from '@hominem/rpc/react';
+import { useApiClient } from '@hakumi/rpc/react';
 
 import { playTTS } from '../audio.service';
 

@@ -1,5 +1,5 @@
-import { resolveAuthRedirect } from '@hominem/auth/shared/redirect-policy';
-import { NOTES_AUTH_CONFIG } from '@hominem/auth/shared/ux-contract';
+import { resolveAuthRedirect } from '@hakumi/auth/shared/redirect-policy';
+import { NOTES_AUTH_CONFIG } from '@hakumi/auth/shared/ux-contract';
 import type { LoaderFunctionArgs } from 'react-router';
 import { data, redirect } from 'react-router';
 
@@ -25,7 +25,7 @@ export default function HomePage({ loaderData }: { loaderData: { next: string } 
   return (
     <div className="mx-auto flex min-h-[70vh] max-w-3xl flex-col justify-center gap-6 px-4">
       <div>
-        <p className="text-xs uppercase tracking-[0.2em] text-text-tertiary">Hominem</p>
+        <p className="text-xs uppercase tracking-[0.2em] text-text-tertiary">Hakumi</p>
         <h1 className="mt-3 text-4xl font-semibold text-foreground">Notes, files, voice, chat.</h1>
         <p className="mt-4 max-w-2xl text-base text-text-secondary">
           Capture notes, attach files, dictate with speech-to-text, and chat with your notes as

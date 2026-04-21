@@ -70,6 +70,7 @@ final class Router {
         sidebarSelection = nil
         showSettings = false
         settingsPath = []
+        ComposerState.shared.reset()
     }
 
     // MARK: - Deep link handling

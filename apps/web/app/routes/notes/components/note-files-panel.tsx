@@ -1,4 +1,4 @@
-import { SurfacePanel } from '@hominem/ui';
+import { SurfacePanel } from '@hakumi/ui';
 import { memo } from 'react';
 
 import type { NoteFile } from './use-note-editor';

@@ -1,4 +1,4 @@
-import { logger } from '@hominem/utils/logger';
+import { logger } from '@hakumi/utils/logger';
 import type { Context } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';

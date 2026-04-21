@@ -1,6 +1,6 @@
-import type { User } from '@hominem/auth/types';
-import { createHonoTelemetryMiddleware } from '@hominem/telemetry/node';
-import { logger } from '@hominem/utils/logger';
+import type { User } from '@hakumi/auth/types';
+import { createHonoTelemetryMiddleware } from '@hakumi/telemetry/node';
+import { logger } from '@hakumi/utils/logger';
 import { apiReference } from '@scalar/hono-api-reference';
 import * as Sentry from '@sentry/node';
 import { Hono } from 'hono';
@@ -78,7 +78,7 @@ export function createServer() {
           description: API_BRAND.api.description,
           contact: {
             name: API_BRAND.api.contactName,
-            email: 'code@hominem.io',
+            email: 'code@hakumi.io',
           },
         },
         servers: [

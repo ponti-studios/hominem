@@ -1,4 +1,4 @@
-import { useApiClient } from '@hominem/rpc/react';
+import { useApiClient } from '@hakumi/rpc/react';
 import { useQuery } from '@tanstack/react-query';
 import type { ChatWithActivity } from '~/services/chat/session-state';
 import {

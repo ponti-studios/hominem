@@ -1,1 +1,1 @@
-export { shadowsNative } from '@hominem/ui/tokens';
+export { shadowsNative } from '@hakumi/ui/tokens';

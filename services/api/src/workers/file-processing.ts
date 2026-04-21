@@ -1,9 +1,9 @@
-import { FileRepository, getDb } from '@hominem/db';
-import { QUEUE_NAMES } from '@hominem/queues';
-import { FileProcessorService } from '@hominem/services/files';
-import { redis as cache } from '@hominem/services/redis';
-import { logger } from '@hominem/utils/logger';
-import { fileStorageService } from '@hominem/utils/storage';
+import { FileRepository, getDb } from '@hakumi/db';
+import { QUEUE_NAMES } from '@hakumi/queues';
+import { FileProcessorService } from '@hakumi/services/files';
+import { redis as cache } from '@hakumi/services/redis';
+import { logger } from '@hakumi/utils/logger';
+import { fileStorageService } from '@hakumi/utils/storage';
 import { Worker } from 'bullmq';
 
 let worker: Worker | null = null;

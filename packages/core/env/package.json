@@ -1,5 +1,5 @@
 {
-  "name": "@hominem/env",
+  "name": "@hakumi/env",
   "version": "0.0.0",
   "description": "Unified environment handling, schemas, and brand identity",
   "type": "module",

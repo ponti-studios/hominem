@@ -11,7 +11,7 @@ The outer shell `Animated.View` uses Reanimated entering/exiting animations from
 >
 ```
 
-These are `FadeInDown` and `FadeOutDown` respectively, each using the shared `durations.enter` / `durations.exit` token from `@hominem/ui/tokens`.
+These are `FadeInDown` and `FadeOutDown` respectively, each using the shared `durations.enter` / `durations.exit` token from `@hakumi/ui/tokens`.
 
 The composer enters/exits when `presentation.isHidden` changes — e.g. navigating to or from a settings page.
 

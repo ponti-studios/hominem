@@ -1,4 +1,4 @@
-import type { Note } from '@hominem/rpc/types';
+import type { Note } from '@hakumi/rpc/types';
 
 import {
   DEFAULT_CHAT_TITLE,

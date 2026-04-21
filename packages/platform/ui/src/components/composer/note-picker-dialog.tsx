@@ -7,8 +7,8 @@
  * State: only a local search query string.
  */
 
-import type { Note } from '@hominem/rpc/types/notes.types';
-import { getTimeAgo } from '@hominem/utils';
+import type { Note } from '@hakumi/rpc/types/notes.types';
+import { getTimeAgo } from '@hakumi/utils';
 import { Check, FileText, Search, X } from 'lucide-react';
 import { forwardRef, memo, useMemo, useState } from 'react';
 

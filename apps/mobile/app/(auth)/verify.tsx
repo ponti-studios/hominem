@@ -1,5 +1,5 @@
-import { maskEmail } from '@hominem/auth/shared/mask-email';
-import { AUTH_COPY, CHAT_AUTH_CONFIG } from '@hominem/auth/shared/ux-contract';
+import { maskEmail } from '@hakumi/auth/shared/mask-email';
+import { AUTH_COPY, CHAT_AUTH_CONFIG } from '@hakumi/auth/shared/ux-contract';
 import type { RelativePathString } from 'expo-router';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';

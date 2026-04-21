@@ -6,7 +6,7 @@
       {
         "patterns": [
           {
-            "group": ["@hominem/ui", "@hominem/ui/*"],
+            "group": ["@hakumi/ui", "@hakumi/ui/*"],
             "message": "API must not import UI components directly. Keep the transport layer UI-agnostic."
           },
         ]

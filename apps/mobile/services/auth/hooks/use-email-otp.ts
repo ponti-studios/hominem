@@ -1,4 +1,4 @@
-import type { User } from '@hominem/auth/types';
+import type { User } from '@hakumi/auth/types';
 import type { RefObject } from 'react';
 import { useCallback } from 'react';
 

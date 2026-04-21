@@ -5,6 +5,7 @@ import SwiftUI
 struct AuthSignInScreen: View {
     @Environment(Router.self) private var router
 
+    @State private var vm = AuthViewModel()
     @State private var email = ""
     @State private var isSubmitting = false
     @State private var isAuthenticatingPasskey = false
@@ -37,17 +38,7 @@ struct AuthSignInScreen: View {
                 .frame(maxWidth: .infinity)
                 .accessibilityIdentifier("auth.continueButton")
 
-                HStack(spacing: Spacing.sm) {
-                    Rectangle()
-                        .fill(Color.Hakumi.borderDefault)
-                        .frame(height: 1)
-                    Text("or")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(Color.Hakumi.textTertiary)
-                    Rectangle()
-                        .fill(Color.Hakumi.borderDefault)
-                        .frame(height: 1)
-                }
+                LabeledDivider(label: "or")
 
                 AppButton(
                     AuthCopy.emailEntry.passkeyButton,
@@ -67,22 +58,11 @@ struct AuthSignInScreen: View {
     // MARK: - Actions
 
     private func handleSendCode() async {
-        let normalized = AuthService.normalizeEmail(email)
-        guard !normalized.isEmpty else {
-            error = AuthCopy.emailEntry.emailRequiredError
-            return
-        }
-        guard AuthService.isValidEmail(normalized) else {
-            error = AuthCopy.emailEntry.emailInvalidError
-            return
-        }
-
         isSubmitting = true
         error = nil
         defer { isSubmitting = false }
-
         do {
-            try await AuthService.sendOTP(email: normalized)
+            let normalized = try await vm.sendCode(email: email)
             router.authPath.append(.verifyOTP(email: normalized))
         } catch {
             self.error = error.localizedDescription
@@ -91,19 +71,14 @@ struct AuthSignInScreen: View {
 
     private func handlePasskeySignIn() async {
         guard !isBusy else { return }
-
         isAuthenticatingPasskey = true
         error = nil
         defer { isAuthenticatingPasskey = false }
-
         do {
-            let user = try await PasskeyService.signIn()
-            AuthProvider.shared.completeSignIn(user: user)
+            try await vm.signInWithPasskey()
             router.completeAuthentication()
         } catch let serviceError as PasskeyServiceError {
-            if serviceError == .cancelled {
-                return
-            }
+            if serviceError == .cancelled { return }
             self.error = serviceError.localizedDescription
         } catch {
             self.error = error.localizedDescription

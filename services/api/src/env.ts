@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { createServerEnv } from '@hominem/env';
-import { apiSchema } from '@hominem/env/api';
+import { createServerEnv } from '@hakumi/env';
+import { apiSchema } from '@hakumi/env/api';
 
 export const env = createServerEnv(apiSchema, 'apiServer');

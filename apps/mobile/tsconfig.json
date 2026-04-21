@@ -9,27 +9,27 @@
     "allowJs": true,
     "checkJs": false,
     "paths": {
-      "@hominem/ui/badge": ["../../packages/platform/ui/src/components/ui/badge.native.tsx"],
-      "@hominem/ui/button": ["../../packages/platform/ui/src/components/ui/button.native.tsx"],
-      "@hominem/ui/chat": ["../../packages/platform/ui/src/components/chat/index.mobile.ts"],
-      "@hominem/ui/empty-state": [
+      "@hakumi/ui/badge": ["../../packages/platform/ui/src/components/ui/badge.native.tsx"],
+      "@hakumi/ui/button": ["../../packages/platform/ui/src/components/ui/button.native.tsx"],
+      "@hakumi/ui/chat": ["../../packages/platform/ui/src/components/chat/index.mobile.ts"],
+      "@hakumi/ui/empty-state": [
         "../../packages/platform/ui/src/components/mobile/empty-state.native.tsx"
       ],
-      "@hominem/ui/list-row": [
+      "@hakumi/ui/list-row": [
         "../../packages/platform/ui/src/components/mobile/list-row.native.tsx"
       ],
-      "@hominem/ui/list-shell": [
+      "@hakumi/ui/list-shell": [
         "../../packages/platform/ui/src/components/mobile/list-shell.native.tsx"
       ],
-      "@hominem/ui/page": ["../../packages/platform/ui/src/components/layout/page.native.tsx"],
-      "@hominem/ui/separator": [
+      "@hakumi/ui/page": ["../../packages/platform/ui/src/components/layout/page.native.tsx"],
+      "@hakumi/ui/separator": [
         "../../packages/platform/ui/src/components/ui/separator.native.tsx"
       ],
-      "@hominem/ui/surface": [
+      "@hakumi/ui/surface": [
         "../../packages/platform/ui/src/components/mobile/surface.native.tsx"
       ],
-      "@hominem/ui/text": ["../../packages/platform/ui/src/components/typography/text.native.tsx"],
-      "@hominem/ui/text-field": [
+      "@hakumi/ui/text": ["../../packages/platform/ui/src/components/typography/text.native.tsx"],
+      "@hakumi/ui/text-field": [
         "../../packages/platform/ui/src/components/ui/text-field.native.tsx"
       ],
       "expo-symbols": ["./node_modules/expo-symbols/build/index"],

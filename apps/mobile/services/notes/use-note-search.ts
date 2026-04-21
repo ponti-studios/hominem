@@ -1,5 +1,5 @@
-import { useApiClient } from '@hominem/rpc/react';
-import type { NotesSearchOutput } from '@hominem/rpc/types';
+import { useApiClient } from '@hakumi/rpc/react';
+import type { NotesSearchOutput } from '@hakumi/rpc/types';
 import { useInfiniteQuery } from '@tanstack/react-query';
 
 import { noteKeys } from './query-keys';

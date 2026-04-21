@@ -1,5 +1,5 @@
-import { initTelemetry } from '@hominem/telemetry/node';
-import { logger } from '@hominem/utils/logger';
+import { initTelemetry } from '@hakumi/telemetry/node';
+import { logger } from '@hakumi/utils/logger';
 import * as Sentry from '@sentry/node';
 
 import { env } from './env';

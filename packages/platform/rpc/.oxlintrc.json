@@ -6,11 +6,11 @@
       {
         "patterns": [
           {
-            "group": ["@hominem/db", "@hominem/db/*"],
+            "group": ["@hakumi/db", "@hakumi/db/*"],
             "message": "RPC must not import persistence internals directly. Keep transport shapes separate from storage concerns."
           },
           {
-            "group": ["@hominem/services", "@hominem/services/*"],
+            "group": ["@hakumi/services", "@hakumi/services/*"],
             "message": "RPC must not import server-side services directly. Keep transport contracts separate from implementation details."
           }
         ]

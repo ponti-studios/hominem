@@ -1,4 +1,4 @@
-export type { SessionSource } from '@hominem/rpc/types';
+export type { SessionSource } from '@hakumi/rpc/types';
 export { ArtifactActions } from './artifact-actions';
 export { ConversationActionsSheet } from './conversation-actions';
 export { ChatHeader } from './chat-header';
@@ -9,13 +9,13 @@ export { ChatSearchModal } from './chat-search-modal';
 export { ChatShimmerMessage } from './chat-shimmer-message';
 export { ChatThinkingIndicator } from './chat-thinking-indicator';
 export { Chat } from './chat';
-export { getReferencedNoteLabel } from '@hominem/chat';
+export { getReferencedNoteLabel } from '@hakumi/chat';
 export type {
   ChatIconName,
   ChatMessageItem,
   ChatRenderIcon,
   MarkdownComponent,
-} from '@hominem/chat';
+} from '@hakumi/chat';
 export { ClassificationReview } from './classification-review';
 export { ContextAnchor } from './context-anchor';
 export { useChatController } from './use-chat-controller';

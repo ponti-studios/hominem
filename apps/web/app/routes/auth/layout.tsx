@@ -1,4 +1,4 @@
-import { AuthRouteLayout } from '@hominem/ui';
+import { AuthRouteLayout } from '@hakumi/ui';
 import { Outlet } from 'react-router';
 
 export default function AuthLayout() {

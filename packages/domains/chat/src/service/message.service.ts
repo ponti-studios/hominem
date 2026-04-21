@@ -1,8 +1,8 @@
 import crypto from 'node:crypto';
 
-import { db } from '@hominem/db';
-import type { Database, JsonValue as DbJsonValue, Selectable } from '@hominem/db';
-import { logger } from '@hominem/utils/logger';
+import { db } from '@hakumi/db';
+import type { Database, JsonValue as DbJsonValue, Selectable } from '@hakumi/db';
+import { logger } from '@hakumi/utils/logger';
 
 import type { ChatMessageInput, ChatMessageOutput, ChatMessageRole } from '../chat.types';
 import { ChatError } from './chat.service.types';

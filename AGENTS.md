@@ -8,7 +8,7 @@
 
 ## Runbook
 
-- `pnpm --filter @hominem/api run test` runs the API test suite.
-- `pnpm --filter @hominem/api run typecheck` runs API type checks.
-- `pnpm --filter @hominem/web run test` runs the web unit tests.
-- `pnpm --filter @hominem/web run typecheck` runs web type checks.
+- `pnpm --filter @hakumi/api run test` runs the API test suite.
+- `pnpm --filter @hakumi/api run typecheck` runs API type checks.
+- `pnpm --filter @hakumi/web run test` runs the web unit tests.
+- `pnpm --filter @hakumi/web run typecheck` runs web type checks.

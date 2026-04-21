@@ -1,5 +1,5 @@
-import { formatMessageTimestamp } from '@hominem/chat';
-import type { ChatMessageToolCall } from '@hominem/rpc/types/chat.types';
+import { formatMessageTimestamp } from '@hakumi/chat';
+import type { ChatMessageToolCall } from '@hakumi/rpc/types/chat.types';
 import {
   AlertCircle,
   Check,

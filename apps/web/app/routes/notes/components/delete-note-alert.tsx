@@ -1,4 +1,4 @@
-import { SurfacePanel } from '@hominem/ui';
+import { SurfacePanel } from '@hakumi/ui';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -9,8 +9,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@hominem/ui/alert-dialog';
-import { Button } from '@hominem/ui/button';
+} from '@hakumi/ui/alert-dialog';
+import { Button } from '@hakumi/ui/button';
 import { memo } from 'react';
 import { useNavigate } from 'react-router';
 

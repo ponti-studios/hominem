@@ -6,8 +6,8 @@
  * directly via useActionState in ComposerForm — this module is the shared logic layer.
  */
 
-import { CHAT_TITLE_MAX_LENGTH } from '@hominem/rpc/types';
-import type { Note } from '@hominem/rpc/types/notes.types';
+import { CHAT_TITLE_MAX_LENGTH } from '@hakumi/rpc/types';
+import type { Note } from '@hakumi/rpc/types/notes.types';
 
 import type { UploadedFile } from '../../types/upload';
 import { appendChatAttachmentContext, appendNoteAttachments } from './composer-attachments';

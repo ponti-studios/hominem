@@ -1,4 +1,4 @@
-import type { User } from '@hominem/auth/types';
+import type { User } from '@hakumi/auth/types';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('~/services/storage/sqlite', () => ({

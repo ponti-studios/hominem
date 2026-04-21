@@ -1,4 +1,4 @@
-import { BRAND } from '@hominem/env/brand';
+import { BRAND } from '@hakumi/env/brand';
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 

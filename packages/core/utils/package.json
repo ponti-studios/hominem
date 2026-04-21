@@ -1,5 +1,5 @@
 {
-  "name": "@hominem/utils",
+  "name": "@hakumi/utils",
   "version": "0.0.0",
   "description": "Random utilities",
   "type": "module",

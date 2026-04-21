@@ -1,16 +1,16 @@
-# @hominem/telemetry
+# @hakumi/telemetry
 
-OpenTelemetry instrumentation for Hominem services and apps.
+OpenTelemetry instrumentation for Hakumi services and apps.
 
 ## Usage
 
 ### For Node.js services (API, Workers)
 
 ```typescript
-import { initTelemetry } from '@hominem/telemetry/node'
+import { initTelemetry } from '@hakumi/telemetry/node'
 
 const telemetry = initTelemetry({
-  serviceName: 'hominem-api',
+  serviceName: 'hakumi-api',
   serviceVersion: '1.0.0',
   environment: 'development',
   otlpEndpoint: process.env.OTEL_EXPORTER_OTLP_ENDPOINT
@@ -25,10 +25,10 @@ process.on('SIGTERM', async () => {
 ### For Browser apps (Web)
 
 ```typescript
-import { initTelemetry } from '@hominem/telemetry/browser'
+import { initTelemetry } from '@hakumi/telemetry/browser'
 
 initTelemetry({
-  serviceName: 'hominem-web',
+  serviceName: 'hakumi-web',
   serviceVersion: '1.0.0',
   environment: 'development',
   otlpEndpoint: 'http://localhost:4318'
@@ -76,7 +76,7 @@ Keep those files as the source of truth for variable shape and example values.
 
 ## Exports
 
-- `@hominem/telemetry` - Shared utilities and types
-- `@hominem/telemetry/node` - Node.js SDK initialization
-- `@hominem/telemetry/browser` - Browser SDK initialization
-- `@hominem/telemetry/shared` - Platform-agnostic utilities
+- `@hakumi/telemetry` - Shared utilities and types
+- `@hakumi/telemetry/node` - Node.js SDK initialization
+- `@hakumi/telemetry/browser` - Browser SDK initialization
+- `@hakumi/telemetry/shared` - Platform-agnostic utilities

@@ -4,14 +4,17 @@ import SwiftUI
 
 struct NotesScreen: View {
     @Environment(Router.self) private var router
-    private var store: QueryStore<NoteItem> { AppStores.shared.notes }
+    @Environment(AppStores.self) private var stores
+    private var store: QueryStore<NoteItem> { stores.notes }
     @State private var searchText = ""
+    @State private var debouncedSearch = ""
     @State private var isCreating = false
+    @State private var createError: String? = nil
     @State private var scrollPosition = ScrollPosition(idType: String.self)
 
     var filteredNotes: [NoteItem] {
-        guard !searchText.isEmpty else { return store.data }
-        let q = searchText.lowercased()
+        guard !debouncedSearch.isEmpty else { return store.data }
+        let q = debouncedSearch.lowercased()
         return store.data.filter {
             $0.displayTitle.lowercased().contains(q) ||
             $0.contentPreview.lowercased().contains(q)
@@ -21,17 +24,24 @@ struct NotesScreen: View {
     var body: some View {
         Group {
             if store.isFirstLoad {
-                loadingView
+                ScreenLoadingView()
                     .transition(.opacity)
             } else if let msg = store.errorMessage, store.isEmpty {
-                errorView(msg)
+                ScreenErrorView(message: msg) { Task { await store.fetch() } }
                     .transition(.opacity)
             } else if store.isEmpty {
-                emptyView
-                    .transition(.opacity)
+                EmptyStateView(
+                    icon: "note.text",
+                    title: "No notes yet",
+                    subtitle: "Tap + to capture your first thought."
+                )
+                .transition(.opacity)
             } else if filteredNotes.isEmpty {
-                noResultsView
-                    .transition(.opacity)
+                EmptyStateView(
+                    icon: "magnifyingglass",
+                    title: "No results for \"\(debouncedSearch)\""
+                )
+                .transition(.opacity)
             } else {
                 notesList
                     .transition(.opacity)
@@ -63,6 +73,23 @@ struct NotesScreen: View {
         .onChange(of: TopAnchorSignal.notes.pendingRequestId) { _, _ in
             scrollToTopIfPending()
         }
+        .onChange(of: searchText) { _, newValue in
+            let value = newValue
+            Task {
+                try? await Task.sleep(for: .milliseconds(200))
+                if searchText == value {
+                    debouncedSearch = value
+                }
+            }
+        }
+        .alert("Couldn't create note", isPresented: Binding(
+            get: { createError != nil },
+            set: { if !$0 { createError = nil } }
+        )) {
+            Button("OK") {}
+        } message: {
+            Text(createError ?? "")
+        }
     }
 
     // MARK: Notes list
@@ -74,6 +101,7 @@ struct NotesScreen: View {
                 NavigationLink(value: ProtectedRoute.noteDetail(id: note.id)) {
                     NoteRowView(note: note, isPending: isPending)
                 }
+                .accessibilityLabel("\(note.displayTitle), \(note.createdAt.relativeListString)")
                 .disabled(isPending)
                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                     Button(role: .destructive) {
@@ -100,23 +128,11 @@ struct NotesScreen: View {
     // MARK: Swipe action helpers
 
     private func archiveNote(_ note: NoteItem) async {
-        AppStores.shared.notes.mutateData { $0.removeAll { $0.id == note.id } }
-        AppStores.shared.inbox.mutateData { $0.removeAll { $0.id == "note-\(note.id)" } }
-        do {
-            try await NoteService.archiveNote(id: note.id)
-        } catch {
-            AppStores.shared.notes.mutateData { $0.insert(note, at: 0) }
-        }
+        await stores.archiveNote(id: note.id)
     }
 
     private func deleteNote(_ note: NoteItem) async {
-        AppStores.shared.notes.mutateData { $0.removeAll { $0.id == note.id } }
-        AppStores.shared.inbox.mutateData { $0.removeAll { $0.id == "note-\(note.id)" } }
-        do {
-            try await NoteService.deleteNote(id: note.id)
-        } catch {
-            AppStores.shared.notes.mutateData { $0.insert(note, at: 0) }
-        }
+        await stores.deleteNote(id: note.id)
     }
 
     private func scrollToTopIfPending() {
@@ -126,166 +142,25 @@ struct NotesScreen: View {
         TopAnchorSignal.notes.markHandled()
     }
 
-    // MARK: Empty / loading / error
-
-    private var loadingView: some View {
-        VStack { Spacer(); ProgressView().tint(Color.Hakumi.textTertiary); Spacer() }
-            .frame(maxWidth: .infinity)
-    }
-
-    private var emptyView: some View {
-        VStack(spacing: Spacing.md) {
-            Image(systemName: "note.text")
-                .font(.system(size: 38))
-                .foregroundStyle(Color.Hakumi.textTertiary)
-            VStack(spacing: Spacing.xs) {
-                Text("No notes yet")
-                    .textStyle(AppTypography.headline)
-                    .foregroundStyle(Color.Hakumi.textPrimary)
-                Text("Tap  to capture your first thought.")
-                    .textStyle(AppTypography.footnote)
-                    .foregroundStyle(Color.Hakumi.textTertiary)
-                    .multilineTextAlignment(.center)
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    private var noResultsView: some View {
-        VStack(spacing: Spacing.sm) {
-            Text("No results for \"\(searchText)\"")
-                .textStyle(AppTypography.subhead)
-                .foregroundStyle(Color.Hakumi.textSecondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    private func errorView(_ message: String) -> some View {
-        VStack(spacing: Spacing.md) {
-            Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 34))
-                .foregroundStyle(Color.Hakumi.textTertiary)
-            Text(message)
-                .textStyle(AppTypography.footnote)
-                .foregroundStyle(Color.Hakumi.textSecondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, Spacing.xl)
-            AppButton("Retry", variant: .ghost, size: .sm) {
-                Task { await store.fetch() }
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
     // MARK: Create and open (toolbar button)
 
     private func createAndOpen() async {
         isCreating = true
         defer { isCreating = false }
         do {
-            let detail = try await NoteService.createNote()
-            let item = NoteItem(
-                id: detail.id,
-                title: detail.title,
-                content: detail.content,
-                createdAt: detail.createdAt,
-                updatedAt: detail.updatedAt,
-                hasAttachments: false
-            )
-            store.mutateData { $0.insert(item, at: 0) }
+            let detail = try await stores.createNote()
             router.sidebarSelection = .noteDetail(id: detail.id)
         } catch {
-            // Non-fatal — toolbar button stays enabled for retry
+            createError = error.localizedDescription
         }
-    }
-}
-
-// MARK: - NoteRowView
-
-private struct NoteRowView: View {
-    let note: NoteItem
-    let isPending: Bool
-
-    var body: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(alignment: .firstTextBaseline, spacing: Spacing.sm) {
-                    Text(note.displayTitle)
-                        .textStyle(AppTypography.subhead)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(Color.Hakumi.textPrimary)
-                        .lineLimit(1)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-
-                    if !isPending {
-                        Text(note.createdAt.noteListDateString)
-                            .textStyle(AppTypography.caption1)
-                            .foregroundStyle(Color.Hakumi.textTertiary)
-                            .fixedSize()
-                    }
-                }
-
-                if !note.contentPreview.isEmpty {
-                    Text(note.contentPreview)
-                        .textStyle(AppTypography.caption1)
-                        .foregroundStyle(Color.Hakumi.textSecondary)
-                        .lineLimit(2)
-                }
-
-                if note.hasAttachments {
-                    HStack(spacing: Spacing.xs) {
-                        Image(systemName: "paperclip")
-                            .font(.system(size: 10))
-                            .foregroundStyle(Color.Hakumi.textTertiary)
-                        Text("Attachment")
-                            .textStyle(AppTypography.caption2)
-                            .foregroundStyle(Color.Hakumi.textTertiary)
-                    }
-                }
-            }
-
-            if isPending {
-                ProgressView()
-                    .scaleEffect(0.7)
-                    .tint(Color.Hakumi.textTertiary)
-                    .padding(.top, 2)
-            }
-        }
-        .padding(.vertical, Spacing.sm2)
-        .opacity(isPending ? 0.6 : 1)
-    }
-}
-
-// MARK: - Date formatting
-
-private extension Date {
-    var noteListDateString: String {
-        let now = Date()
-        let cal = Calendar.current
-        let diffDays = cal.dateComponents([.day],
-            from: cal.startOfDay(for: self),
-            to: cal.startOfDay(for: now)).day ?? 0
-
-        if diffDays == 0 {
-            let f = DateFormatter()
-            f.dateFormat = "h:mm a"
-            return f.string(from: self)
-        }
-        if diffDays == 1 { return "Yesterday" }
-        if diffDays < 7 {
-            let f = DateFormatter()
-            f.dateFormat = "EEE"
-            return f.string(from: self)
-        }
-        let f = DateFormatter()
-        f.dateFormat = diffDays < 365 ? "MMM d" : "MMM d, yyyy"
-        return f.string(from: self)
     }
 }
 
 #Preview {
     NavigationStack {
         NotesScreen()
-            .environment(Router())
     }
+    .environment(AppStores.shared)
+    .environment(ComposerState.shared)
+    .environment(Router())
 }

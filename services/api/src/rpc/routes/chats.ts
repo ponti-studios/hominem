@@ -1,5 +1,5 @@
-import type { ChatMessageFileRecord, ChatMessageRecord, NoteContext } from '@hominem/db';
-import { ChatRepository, getDb, runInTransaction } from '@hominem/db';
+import type { ChatMessageFileRecord, ChatMessageRecord, NoteContext } from '@hakumi/db';
+import { ChatRepository, getDb, runInTransaction } from '@hakumi/db';
 import {
   chatsSendSchema,
   type ChatsArchiveOutput,
@@ -8,8 +8,8 @@ import {
   type ChatsGetOutput,
   type ChatsListOutput,
   type ChatsUpdateOutput,
-} from '@hominem/rpc/types/chat.types';
-import { getSharedTextModel } from '@hominem/services/ai-model';
+} from '@hakumi/rpc/types/chat.types';
+import { getSharedTextModel } from '@hakumi/services/ai-model';
 import { zValidator } from '@hono/zod-validator';
 import { streamText } from 'ai';
 import { Hono } from 'hono';

@@ -1,4 +1,4 @@
-import type { User } from '@hominem/auth/types';
+import type { User } from '@hakumi/auth/types';
 import { z } from 'zod';
 
 import { SettingsSchema, MediaSchema } from '../../validation/schemas';

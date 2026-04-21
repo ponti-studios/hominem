@@ -1,4 +1,4 @@
-import type { SessionSource } from '@hominem/rpc/types';
+import type { SessionSource } from '@hakumi/rpc/types';
 
 import { cn } from '../../lib/utils';
 

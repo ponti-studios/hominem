@@ -1,6 +1,6 @@
 import * as z from 'zod';
 
-import type { ArtifactType } from '@hominem/chat/types';
+import type { ArtifactType } from '@hakumi/chat/types';
 
 export interface Task {
   id: string;

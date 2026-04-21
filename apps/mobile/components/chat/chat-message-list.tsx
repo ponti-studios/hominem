@@ -8,7 +8,7 @@ import { Text } from '../typography/Text';
 import { renderChatMessage } from './chat-message';
 import { ChatShimmerMessage } from './chat-shimmer-message';
 import { ChatThinkingIndicator } from './chat-thinking-indicator';
-import type { ChatMessageItem, ChatRenderIcon, MarkdownComponent } from '@hominem/chat';
+import type { ChatMessageItem, ChatRenderIcon, MarkdownComponent } from '@hakumi/chat';
 
 const CHAT_COMPOSER_CLEARANCE = 220;
 const CHAT_TURN_GAP = spacing[5];

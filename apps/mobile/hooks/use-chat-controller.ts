@@ -1,10 +1,10 @@
-import type { ChatMessageItem, MarkdownComponent } from '@hominem/chat';
-import type { PendingReview } from '@hominem/chat/react';
-import { useChatLifecycle } from '@hominem/chat/react';
-import { buildArtifactProposal } from '@hominem/chat/ui';
-import { useApiClient } from '@hominem/rpc/react';
-import type { ArtifactType, SessionSource, ThoughtLifecycleState } from '@hominem/rpc/types';
-import { ENABLED_ARTIFACT_TYPES } from '@hominem/rpc/types';
+import type { ChatMessageItem, MarkdownComponent } from '@hakumi/chat';
+import type { PendingReview } from '@hakumi/chat/react';
+import { useChatLifecycle } from '@hakumi/chat/react';
+import { buildArtifactProposal } from '@hakumi/chat/ui';
+import { useApiClient } from '@hakumi/rpc/react';
+import type { ArtifactType, SessionSource, ThoughtLifecycleState } from '@hakumi/rpc/types';
+import { ENABLED_ARTIFACT_TYPES } from '@hakumi/rpc/types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
 import * as FileSystem from 'expo-file-system/legacy';

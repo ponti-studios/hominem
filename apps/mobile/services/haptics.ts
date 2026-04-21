@@ -3,12 +3,12 @@ import * as Haptics from 'expo-haptics';
 
 const canUseHaptics = Device.isDevice;
 
-export async function impactHaptic(style: Haptics.ImpactFeedbackStyle) {
+export async function impactHaptic(style: keyof typeof Haptics.ImpactFeedbackStyle) {
   if (!canUseHaptics) return;
-  await Haptics.impactAsync(style);
+  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle[style]);
 }
 
-export async function notificationHaptic(type: Haptics.NotificationFeedbackType) {
+export async function notificationHaptic(type: keyof typeof Haptics.NotificationFeedbackType) {
   if (!canUseHaptics) return;
-  await Haptics.notificationAsync(type);
+  await Haptics.notificationAsync(Haptics.NotificationFeedbackType[type]);
 }

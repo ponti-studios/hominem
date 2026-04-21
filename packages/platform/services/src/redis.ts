@@ -1,4 +1,4 @@
-import { delay, TIME_UNITS } from '@hominem/utils';
+import { delay, TIME_UNITS } from '@hakumi/utils';
 import Redis from 'ioredis';
 
 import { env } from './env';

@@ -1,5 +1,5 @@
-import type { NoteRecord } from '@hominem/db';
-import { NoteRepository, runInTransaction } from '@hominem/db';
+import type { NoteRecord } from '@hakumi/db';
+import { NoteRepository, runInTransaction } from '@hakumi/db';
 
 interface CreateNoteParams {
   title?: string | null | undefined;

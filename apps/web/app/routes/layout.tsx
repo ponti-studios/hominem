@@ -1,4 +1,4 @@
-import { Toaster } from '@hominem/ui/toaster';
+import { Toaster } from '@hakumi/ui/toaster';
 import { NavLink, Outlet, data } from 'react-router';
 
 import { getServerSession } from '~/lib/auth.server';

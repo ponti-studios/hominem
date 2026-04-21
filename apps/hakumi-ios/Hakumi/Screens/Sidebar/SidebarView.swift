@@ -8,32 +8,42 @@ import SwiftUI
 
 struct SidebarView: View {
     @Environment(Router.self) private var router
-    private var store: QueryStore<InboxItem> { AppStores.shared.inbox }
+    @Environment(AppStores.self) private var stores
+    private var store: QueryStore<InboxItem> { stores.inbox }
 
     @State private var searchText = ""
+    @State private var debouncedSearch = ""
     @State private var isCreatingNote = false
+    @State private var createNoteError: String? = nil
     @State private var scrollPosition = ScrollPosition(idType: String.self)
 
     var filteredItems: [InboxItem] {
-        guard !searchText.isEmpty else { return store.data }
-        let q = searchText.lowercased()
+        guard !debouncedSearch.isEmpty else { return store.data }
+        let q = debouncedSearch.lowercased()
         return store.data.filter { $0.title.lowercased().contains(q) }
     }
 
     var body: some View {
         Group {
             if store.isFirstLoad {
-                loadingView
+                ScreenLoadingView()
                     .transition(.opacity)
             } else if let msg = store.errorMessage, store.isEmpty {
-                errorView(msg)
+                ScreenErrorView(message: msg) { Task { await store.fetch() } }
                     .transition(.opacity)
             } else if store.isEmpty {
-                emptyView
-                    .transition(.opacity)
+                EmptyStateView(
+                    icon: "tray",
+                    title: "Nothing here yet",
+                    subtitle: "Notes and chats will appear here."
+                )
+                .transition(.opacity)
             } else if filteredItems.isEmpty {
-                noResultsView
-                    .transition(.opacity)
+                EmptyStateView(
+                    icon: "magnifyingglass",
+                    title: "No results for \"\(debouncedSearch)\""
+                )
+                .transition(.opacity)
             } else {
                 itemList
                     .transition(.opacity)
@@ -71,6 +81,23 @@ struct SidebarView: View {
         .onChange(of: TopAnchorSignal.inbox.pendingRequestId) { _, _ in
             scrollToTopIfPending()
         }
+        .onChange(of: searchText) { _, newValue in
+            let value = newValue
+            Task {
+                try? await Task.sleep(for: .milliseconds(200))
+                if searchText == value {
+                    debouncedSearch = value
+                }
+            }
+        }
+        .alert("Couldn't create note", isPresented: Binding(
+            get: { createNoteError != nil },
+            set: { if !$0 { createNoteError = nil } }
+        )) {
+            Button("OK") {}
+        } message: {
+            Text(createNoteError ?? "")
+        }
     }
 
     // MARK: - List
@@ -79,8 +106,15 @@ struct SidebarView: View {
         @Bindable var routerBindable = router
         return List(selection: $routerBindable.sidebarSelection) {
             ForEach(filteredItems) { item in
+                let itemTypeLabel: String = {
+                    switch item {
+                    case .chat: return "chat"
+                    case .note: return "note"
+                    }
+                }()
                 SidebarRow(item: item)
                     .tag(item.protectedRoute)
+                    .accessibilityLabel("\(item.title), \(itemTypeLabel), \(item.updatedAt.relativeListString)")
                     .listRowBackground(Color.Hakumi.bgBase)
                     .listRowInsets(EdgeInsets(top: 0, leading: Spacing.lg, bottom: 0, trailing: Spacing.lg))
                     .listRowSeparator(.hidden)
@@ -124,55 +158,31 @@ struct SidebarView: View {
     // MARK: - Swipe action helpers
 
     private func archiveNote(_ note: InboxNote) async {
-        let itemId = "note-\(note.id)"
         if router.sidebarSelection == .noteDetail(id: note.id) {
             router.sidebarSelection = nil
         }
-        AppStores.shared.inbox.mutateData { $0.removeAll { $0.id == itemId } }
-        AppStores.shared.notes.mutateData { $0.removeAll { $0.id == note.id } }
-        do {
-            try await NoteService.archiveNote(id: note.id)
-        } catch {
-            AppStores.shared.inbox.mutateData { $0.insert(.note(note), at: 0) }
-        }
+        await stores.archiveNote(id: note.id)
     }
 
     private func deleteNote(_ note: InboxNote) async {
-        let itemId = "note-\(note.id)"
         if router.sidebarSelection == .noteDetail(id: note.id) {
             router.sidebarSelection = nil
         }
-        AppStores.shared.inbox.mutateData { $0.removeAll { $0.id == itemId } }
-        AppStores.shared.notes.mutateData { $0.removeAll { $0.id == note.id } }
-        do {
-            try await NoteService.deleteNote(id: note.id)
-        } catch {
-            AppStores.shared.inbox.mutateData { $0.insert(.note(note), at: 0) }
-        }
+        await stores.deleteNote(id: note.id)
     }
 
     private func archiveChat(_ chat: InboxChat) async {
         if router.sidebarSelection == .chat(id: chat.id) {
             router.sidebarSelection = nil
         }
-        AppStores.shared.inbox.mutateData { $0.removeAll { $0.id == "chat-\(chat.id)" } }
-        do {
-            try await ChatService.archiveChat(id: chat.id)
-        } catch {
-            AppStores.shared.inbox.mutateData { $0.insert(.chat(chat), at: 0) }
-        }
+        await stores.archiveChat(id: chat.id)
     }
 
     private func deleteChat(_ chat: InboxChat) async {
         if router.sidebarSelection == .chat(id: chat.id) {
             router.sidebarSelection = nil
         }
-        AppStores.shared.inbox.mutateData { $0.removeAll { $0.id == "chat-\(chat.id)" } }
-        do {
-            try await ChatService.deleteChat(id: chat.id)
-        } catch {
-            AppStores.shared.inbox.mutateData { $0.insert(.chat(chat), at: 0) }
-        }
+        await stores.deleteChat(id: chat.id)
     }
 
     // MARK: - Toolbar: create note
@@ -181,17 +191,10 @@ struct SidebarView: View {
         isCreatingNote = true
         defer { isCreatingNote = false }
         do {
-            let detail = try await NoteService.createNote()
-            let inboxNote = InboxNote(
-                id: detail.id,
-                title: detail.title ?? "Untitled",
-                excerpt: nil,
-                updatedAt: detail.updatedAt
-            )
-            AppStores.shared.inbox.mutateData { $0.insert(.note(inboxNote), at: 0) }
+            let detail = try await stores.createNote()
             router.sidebarSelection = .noteDetail(id: detail.id)
         } catch {
-            // Non-fatal — button stays enabled for retry
+            createNoteError = error.localizedDescription
         }
     }
 
@@ -204,55 +207,6 @@ struct SidebarView: View {
         TopAnchorSignal.inbox.markHandled()
     }
 
-    // MARK: - Empty / loading / error states
-
-    private var loadingView: some View {
-        VStack { Spacer(); ProgressView().tint(Color.Hakumi.textTertiary); Spacer() }
-            .frame(maxWidth: .infinity)
-    }
-
-    private var emptyView: some View {
-        VStack(spacing: Spacing.md) {
-            Image(systemName: "tray")
-                .font(.system(size: 38))
-                .foregroundStyle(Color.Hakumi.textTertiary)
-            VStack(spacing: Spacing.xs) {
-                Text("Nothing here yet")
-                    .textStyle(AppTypography.headline)
-                    .foregroundStyle(Color.Hakumi.textPrimary)
-                Text("Notes and chats will appear here.")
-                    .textStyle(AppTypography.footnote)
-                    .foregroundStyle(Color.Hakumi.textTertiary)
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    private var noResultsView: some View {
-        VStack(spacing: Spacing.sm) {
-            Text("No results for \"\(searchText)\"")
-                .textStyle(AppTypography.subhead)
-                .foregroundStyle(Color.Hakumi.textSecondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    private func errorView(_ message: String) -> some View {
-        VStack(spacing: Spacing.md) {
-            Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 34))
-                .foregroundStyle(Color.Hakumi.textTertiary)
-            Text(message)
-                .textStyle(AppTypography.footnote)
-                .foregroundStyle(Color.Hakumi.textSecondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, Spacing.xl)
-            AppButton("Retry", variant: .ghost, size: .sm) {
-                Task { await store.fetch() }
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
 }
 
 // MARK: - SidebarRow
@@ -284,7 +238,7 @@ private struct SidebarRow: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            Text(item.updatedAt.sidebarDateString)
+            Text(item.updatedAt.relativeListString)
                 .textStyle(AppTypography.caption1)
                 .foregroundStyle(Color.Hakumi.textTertiary)
                 .padding(.top, 2)
@@ -307,23 +261,6 @@ private struct SidebarRow: View {
     }
 }
 
-// MARK: - Date formatting
-
-private extension Date {
-    var sidebarDateString: String {
-        let now = Date()
-        let diff = now.timeIntervalSince(self)
-        if diff < 60       { return "now" }
-        if diff < 3600     { return "\(Int(diff / 60))m" }
-        if diff < 86400    { return "\(Int(diff / 3600))h" }
-        if diff < 7 * 86400 { return "\(Int(diff / 86400))d" }
-        let f = DateFormatter()
-        f.dateFormat = Calendar.current.isDate(self, equalTo: now, toGranularity: .year)
-            ? "MMM d" : "MMM d, yyyy"
-        return f.string(from: self)
-    }
-}
-
 #Preview {
     NavigationSplitView {
         SidebarView()
@@ -331,5 +268,7 @@ private extension Date {
         Text("Select an item")
             .foregroundStyle(Color.Hakumi.textTertiary)
     }
+    .environment(AppStores.shared)
+    .environment(ComposerState.shared)
     .environment(Router())
 }

@@ -1,4 +1,4 @@
-import type { SessionSource } from '@hominem/rpc/types';
+import type { SessionSource } from '@hakumi/rpc/types';
 import { StyleSheet, View } from 'react-native';
 
 import { fontSizes } from '~/components/theme/tokens';

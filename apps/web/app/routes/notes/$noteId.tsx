@@ -1,4 +1,4 @@
-import { StatePanel } from '@hominem/ui';
+import { StatePanel } from '@hakumi/ui';
 
 import { useNote } from '~/hooks/use-notes';
 

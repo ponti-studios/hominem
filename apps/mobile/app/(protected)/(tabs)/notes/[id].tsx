@@ -1,5 +1,5 @@
-import { useApiClient } from '@hominem/rpc/react';
-import type { Note } from '@hominem/rpc/types';
+import { useApiClient } from '@hakumi/rpc/react';
+import type { Note } from '@hakumi/rpc/types';
 import { useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import type { RelativePathString } from 'expo-router';

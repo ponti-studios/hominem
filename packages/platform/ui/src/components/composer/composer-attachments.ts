@@ -3,4 +3,4 @@ export {
   appendNoteAttachments,
   formatNoteAttachmentsSection,
   formatUploadedFileContext,
-} from '@hominem/chat';
+} from '@hakumi/chat';

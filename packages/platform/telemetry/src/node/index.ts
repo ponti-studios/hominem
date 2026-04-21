@@ -202,12 +202,12 @@ export function initTelemetry(explicitConfig?: Partial<TelemetryConfig>): NodeTe
  * Middleware for Hono framework to create spans for HTTP requests
  */
 export function createHonoTelemetryMiddleware() {
-  const tracer = trace.getTracer('hominem-hono');
-  const meter = metrics.getMeter('hominem-hono');
-  const requestCounter = meter.createCounter('hominem_api_requests_total', {
+  const tracer = trace.getTracer('hakumi-hono');
+  const meter = metrics.getMeter('hakumi-hono');
+  const requestCounter = meter.createCounter('hakumi_api_requests_total', {
     description: 'Total API requests handled by the Hono server',
   });
-  const requestDuration = meter.createHistogram('hominem_api_request_duration_ms', {
+  const requestDuration = meter.createHistogram('hakumi_api_request_duration_ms', {
     description: 'API request duration in milliseconds',
     unit: 'ms',
   });

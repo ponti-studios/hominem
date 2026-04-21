@@ -1,6 +1,6 @@
-import { Container } from '@hominem/ui';
-import { Button } from '@hominem/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@hominem/ui/card';
+import { Container } from '@hakumi/ui';
+import { Button } from '@hakumi/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@hakumi/ui/card';
 import { data, redirect } from 'react-router';
 
 import { getServerSession } from '~/lib/auth.server';

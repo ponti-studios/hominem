@@ -1,6 +1,6 @@
 /**
  * Sort types for use across packages
- * These types are exported from @hominem/ui for shared usage
+ * These types are exported from @hakumi/ui for shared usage
  * The useSort hook itself is web-specific and lives in apps/web
  */
 

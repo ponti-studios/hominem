@@ -3,8 +3,8 @@ import {
   CHAT_UPLOAD_MAX_FILE_COUNT,
   CHAT_UPLOAD_MAX_FILE_SIZE_BYTES,
   isSupportedChatUploadMimeType,
-} from '@hominem/chat';
-import { UploadResponseSchema } from '@hominem/rpc/schemas/files.schema';
+} from '@hakumi/chat';
+import { UploadResponseSchema } from '@hakumi/rpc/schemas/files.schema';
 import { useCallback, useState } from 'react';
 
 import { API_BASE_URL } from '~/constants';

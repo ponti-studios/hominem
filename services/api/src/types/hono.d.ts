@@ -1,5 +1,5 @@
-import type { User } from '@hominem/auth/types';
-import type { Queues } from '@hominem/services/types';
+import type { User } from '@hakumi/auth/types';
+import type { Queues } from '@hakumi/services/types';
 
 import type { AuthContextEnvelope } from '../auth/types';
 

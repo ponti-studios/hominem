@@ -1,5 +1,5 @@
-import type { ChatRenderIcon } from '@hominem/chat';
-import type { SessionSource } from '@hominem/rpc/types';
+import type { ChatRenderIcon } from '@hakumi/chat';
+import type { SessionSource } from '@hakumi/rpc/types';
 import { StyleSheet, View } from 'react-native';
 
 import { colors, fontSizes, radii, spacing } from '~/components/theme/tokens';

@@ -1,17 +1,17 @@
-# @hominem/db — public surface
+# @hakumi/db — public surface
 
-This package exposes compiled runtime and types only. Do NOT import source files from `@hominem/db/src`.
+This package exposes compiled runtime and types only. Do NOT import source files from `@hakumi/db/src`.
 
 Public surface (what consumers may import):
 
-- `@hominem/db` — runtime API (compiled `build/index.js`) and types (`build/index.d.ts`)
-- `@hominem/db/schema/*` — compiled schema objects (`build/schema/*.schema.js`)
-- `@hominem/db/types/*` — type-only imports (TypeScript declarations in `build/schema/*.types.d.ts`)
+- `@hakumi/db` — runtime API (compiled `build/index.js`) and types (`build/index.d.ts`)
+- `@hakumi/db/schema/*` — compiled schema objects (`build/schema/*.schema.js`)
+- `@hakumi/db/types/*` — type-only imports (TypeScript declarations in `build/schema/*.types.d.ts`)
 
 Migration notes
 
-- Replace `import type { X } from '@hominem/db/schema/...'` with `import type { X } from '@hominem/db/types/...'` for purely type imports.
-- Do not deep-import `@hominem/db/src/*` — those paths are internal and not exported.
+- Replace `import type { X } from '@hakumi/db/schema/...'` with `import type { X } from '@hakumi/db/types/...'` for purely type imports.
+- Do not deep-import `@hakumi/db/src/*` — those paths are internal and not exported.
 
 Migration naming and organization
 

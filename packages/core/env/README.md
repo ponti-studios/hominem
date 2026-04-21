@@ -1,6 +1,6 @@
-# @hominem/env
+# @hakumi/env
 
-Environment handling utilities, shared schemas, and brand identity for the Hominem monorepo.
+Environment handling utilities, shared schemas, and brand identity for the Hakumi monorepo.
 
 ## Problem This Solves
 
@@ -24,7 +24,7 @@ Apps can import the shared schemas from this package or define their own. The pa
 
 ```bash
 # Already included in workspace via workspace:*
-import { createClientEnv, createServerEnv, apiSchema, baseSchema, webSchema } from '@hominem/env';
+import { createClientEnv, createServerEnv, apiSchema, baseSchema, webSchema } from '@hakumi/env';
 ```
 
 ## Usage
@@ -34,7 +34,7 @@ import { createClientEnv, createServerEnv, apiSchema, baseSchema, webSchema } fr
 ```typescript
 // apps/my-app/app/lib/env.ts
 import * as z from 'zod';
-import { createClientEnv, createServerEnv } from '@hominem/env';
+import { createClientEnv, createServerEnv } from '@hakumi/env';
 
 // Define your app's schema
 const clientSchema = z.object({

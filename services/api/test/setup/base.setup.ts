@@ -16,13 +16,13 @@ process.env.NODE_ENV = 'test'
 process.env.DATABASE_URL =
   process.env.DATABASE_URL ??
   process.env.TEST_DATABASE_URL ??
-  'postgresql://postgres:postgres@127.0.0.1:4433/hominem-test'
+  'postgresql://postgres:postgres@127.0.0.1:4433/hakumi-test'
 process.env.R2_ENDPOINT = 'https://test.r2.cloudflarestorage.com'
 process.env.R2_ACCESS_KEY_ID = 'test-access-key-id'
 process.env.R2_SECRET_ACCESS_KEY = 'test-secret-access-key'
 process.env.R2_BUCKET_NAME = 'test-bucket'
 process.env.RESEND_API_KEY = process.env.RESEND_API_KEY || 're_test_key'
-process.env.RESEND_FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'noreply@hominem.test'
+process.env.RESEND_FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'noreply@hakumi.test'
 process.env.RESEND_FROM_NAME = process.env.RESEND_FROM_NAME || `${API_BRAND.appName} Test`
 process.env.SEND_EMAILS = process.env.SEND_EMAILS || 'false'
 process.env.AUTH_TEST_OTP_ENABLED = process.env.AUTH_TEST_OTP_ENABLED || 'true'

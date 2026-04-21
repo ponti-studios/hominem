@@ -1,6 +1,6 @@
 /**
  * Browser-compatible logger using native console APIs.
- * Use this in client-side code. For server-side code, use `@hominem/utils/logger`.
+ * Use this in client-side code. For server-side code, use `@hakumi/utils/logger`.
  */
 import {
   type HttpRequestLogData,

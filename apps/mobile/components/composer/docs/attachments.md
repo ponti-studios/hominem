@@ -112,6 +112,6 @@ Tapping a thumbnail calls `handleRemoveAttachment(a.id)`.
 
 | Constraint | Value | Source |
 |---|---|---|
-| Max files per upload | `CHAT_UPLOAD_MAX_FILE_COUNT` | `@hominem/utils/upload` |
-| Max file size | 10MB (`CHAT_UPLOAD_MAX_FILE_SIZE_BYTES`) | `@hominem/utils/upload` |
-| Supported MIME types | checked via `isSupportedChatUploadMimeType` | `@hominem/utils/upload` |
+| Max files per upload | `CHAT_UPLOAD_MAX_FILE_COUNT` | `@hakumi/utils/upload` |
+| Max file size | 10MB (`CHAT_UPLOAD_MAX_FILE_SIZE_BYTES`) | `@hakumi/utils/upload` |
+| Supported MIME types | checked via `isSupportedChatUploadMimeType` | `@hakumi/utils/upload` |

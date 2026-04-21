@@ -107,7 +107,7 @@ struct AppButton<Label: View>: View {
     private var cfg: ButtonConfig { buttonConfig(for: variant) }
 
     var body: some View {
-        Button(action: { if !effectivelyDisabled { action() } }) {
+        Button(action: { action() }) {
             buttonContent
         }
         .buttonStyle(AppButtonPressStyle())

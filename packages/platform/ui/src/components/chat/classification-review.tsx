@@ -1,4 +1,4 @@
-import type { ClassificationReviewProps } from '@hominem/chat';
+import type { ClassificationReviewProps } from '@hakumi/chat';
 
 import { Button } from '../button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../dialog';

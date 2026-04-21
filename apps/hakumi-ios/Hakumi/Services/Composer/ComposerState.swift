@@ -419,4 +419,21 @@ struct ComposerDraft: Sendable {
     private func clearPersistedDraft() {
         userDefaults.removeObject(forKey: persistKey)
     }
+
+    // MARK: - Reset (called on sign-out)
+
+    func reset() {
+        target = .feed
+        drafts = [:]
+        mentionResults = []
+        submitError = nil
+        isRecording = false
+        messageSentChatId = nil
+        messageSentCount = 0
+        sendingChatId = nil
+        // clear all persisted drafts
+        for key in userDefaults.dictionaryRepresentation().keys where key.hasPrefix("composer.draft.") {
+            userDefaults.removeObject(forKey: key)
+        }
+    }
 }

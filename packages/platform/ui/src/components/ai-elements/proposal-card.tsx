@@ -1,4 +1,4 @@
-import type { ReviewItem } from '@hominem/rpc/types';
+import type { ReviewItem } from '@hakumi/rpc/types';
 import { FileText } from 'lucide-react';
 
 import { Button } from '../button';

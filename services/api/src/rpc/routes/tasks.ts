@@ -1,5 +1,5 @@
-import { getDb, TaskRepository } from '@hominem/db';
-import { TasksCreateInputSchema, type TasksCreateOutput } from '@hominem/rpc/types';
+import { getDb, TaskRepository } from '@hakumi/db';
+import { TasksCreateInputSchema, type TasksCreateOutput } from '@hakumi/rpc/types';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 

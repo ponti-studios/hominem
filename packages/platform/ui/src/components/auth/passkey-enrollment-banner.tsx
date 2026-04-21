@@ -1,7 +1,7 @@
 import { KeyRound, X } from 'lucide-react';
 import { useCallback, useState } from 'react';
 
-const DISMISSED_KEY = 'hominem_passkey_enrollment_dismissed';
+const DISMISSED_KEY = 'hakumi_passkey_enrollment_dismissed';
 
 interface PasskeyEnrollmentBannerProps {
   /**

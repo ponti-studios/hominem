@@ -1,5 +1,5 @@
-import { usePasskeys } from '@hominem/auth/client/passkey';
-import { Container, PasskeyManagement } from '@hominem/ui';
+import { usePasskeys } from '@hakumi/auth/client/passkey';
+import { Container, PasskeyManagement } from '@hakumi/ui';
 import { useCallback } from 'react';
 import { redirect } from 'react-router';
 

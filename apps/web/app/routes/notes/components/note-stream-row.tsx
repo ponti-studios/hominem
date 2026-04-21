@@ -1,4 +1,4 @@
-import type { NoteFeedItem } from '@hominem/rpc/types/notes.types';
+import type { NoteFeedItem } from '@hakumi/rpc/types/notes.types';
 import { Paperclip } from 'lucide-react';
 import { memo } from 'react';
 import { Link } from 'react-router';

@@ -4,12 +4,8 @@ import SwiftUI
 
 struct SettingsScreen: View {
     @Environment(Router.self) private var router
+    @State private var vm = SettingsViewModel()
     @State private var nameText: String = ""
-    @State private var isSavingName = false
-    @State private var passkeys: [ManagedPasskey] = []
-    @State private var isLoadingPasskeys = false
-    @State private var isAddingPasskey = false
-    @State private var passkeyError: String?
     @State private var showSignOutConfirm = false
 
     private let appLock = AppLock.shared
@@ -36,7 +32,7 @@ struct SettingsScreen: View {
         .background(Color.Hakumi.bgBase.ignoresSafeArea())
         .task {
             nameText = user?.name ?? ""
-            await loadPasskeys()
+            await vm.loadPasskeys()
         }
         .confirmationDialog("Sign out", isPresented: $showSignOutConfirm, titleVisibility: .visible) {
             Button("Sign out", role: .destructive) {
@@ -55,7 +51,6 @@ struct SettingsScreen: View {
 
     private var accountSection: some View {
         SettingsSectionView(label: "Account") {
-            // Name
             HStack {
                 Image(systemName: "person")
                     .settingsIcon()
@@ -66,11 +61,14 @@ struct SettingsScreen: View {
                     .textInputAutocapitalization(.words)
                 Spacer()
                 if nameText != (user?.name ?? "") {
-                    if isSavingName {
+                    if vm.isSavingName {
                         ProgressView().scaleEffect(0.75)
                     } else {
                         Button("Save") {
-                            Task { await saveName() }
+                            Task {
+                                let success = await vm.saveName(nameText)
+                                if !success { nameText = user?.name ?? "" }
+                            }
                         }
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(Color.Hakumi.accent)
@@ -81,7 +79,6 @@ struct SettingsScreen: View {
 
             SettingsDivider()
 
-            // Email
             HStack {
                 Image(systemName: "envelope")
                     .settingsIcon()
@@ -164,9 +161,8 @@ struct SettingsScreen: View {
 
     private var passkeysSection: some View {
         SettingsSectionView(label: "Passkeys") {
-            // Add passkey row
             Button {
-                Task { await addPasskey() }
+                Task { await vm.addPasskey() }
             } label: {
                 HStack {
                     Image(systemName: "person.badge.key.fill")
@@ -175,25 +171,24 @@ struct SettingsScreen: View {
                         .font(.system(size: 15))
                         .foregroundStyle(Color.Hakumi.textPrimary)
                     Spacer()
-                    if isAddingPasskey || isLoadingPasskeys {
+                    if vm.isAddingPasskey || vm.isLoadingPasskeys {
                         ProgressView().scaleEffect(0.75)
                     }
                 }
                 .settingsRow()
             }
             .buttonStyle(.plain)
-            .disabled(isAddingPasskey || isLoadingPasskeys)
+            .disabled(vm.isAddingPasskey || vm.isLoadingPasskeys)
 
-            if let err = passkeyError {
+            if let err = vm.passkeyError {
                 Text(err)
                     .font(.system(size: 12))
-                    .foregroundStyle(.red.opacity(0.8))
+                    .foregroundStyle(Color.Hakumi.destructive)
                     .padding(.horizontal, Spacing.lg)
                     .padding(.bottom, Spacing.xs)
             }
 
-            // Existing passkeys
-            ForEach(passkeys) { passkey in
+            ForEach(vm.passkeys) { passkey in
                 SettingsDivider()
                 HStack {
                     Image(systemName: "key.fill")
@@ -203,11 +198,11 @@ struct SettingsScreen: View {
                         .foregroundStyle(Color.Hakumi.textPrimary)
                     Spacer()
                     Button {
-                        Task { await deletePasskey(passkey) }
+                        Task { await vm.deletePasskey(passkey) }
                     } label: {
                         Image(systemName: "trash")
                             .font(.system(size: 14))
-                            .foregroundStyle(Color.red.opacity(0.8))
+                            .foregroundStyle(Color.Hakumi.destructive)
                     }
                     .buttonStyle(.plain)
                 }
@@ -233,131 +228,28 @@ struct SettingsScreen: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, Spacing.md)
-                .background(
-                    RoundedRectangle(cornerRadius: Radii.sm, style: .continuous)
-                        .fill(Color.Hakumi.bgSurface)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: Radii.sm, style: .continuous)
-                                .strokeBorder(Color.Hakumi.borderDefault, lineWidth: 1)
-                        )
-                )
+                .cardStyle()
             }
             .buttonStyle(.plain)
 
             Button {
                 // Account deletion not available in this release — alert only.
-                // Matches Expo DangerZone behavior.
             } label: {
                 HStack(spacing: Spacing.sm) {
                     Image(systemName: "trash")
                         .font(.system(size: 15))
-                        .foregroundStyle(Color.Hakumi.textTertiary)
+                        .foregroundStyle(Color.Hakumi.textDisabled)
                     Text("Delete account")
                         .font(.system(size: 15))
-                        .foregroundStyle(Color.Hakumi.textTertiary)
+                        .foregroundStyle(Color.Hakumi.textDisabled)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, Spacing.md)
             }
             .buttonStyle(.plain)
+            .disabled(true)
         }
         .padding(.top, Spacing.md)
-    }
-
-    // MARK: Actions
-
-    private func saveName() async {
-        let trimmed = nameText.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty else { return }
-        isSavingName = true
-        defer { isSavingName = false }
-        do {
-            try await AuthProvider.shared.updateName(trimmed)
-        } catch {
-            nameText = user?.name ?? ""
-        }
-    }
-
-    private func loadPasskeys() async {
-        isLoadingPasskeys = true
-        defer { isLoadingPasskeys = false }
-        passkeys = (try? await PasskeyManagementService.listPasskeys()) ?? []
-    }
-
-    private func addPasskey() async {
-        isAddingPasskey = true
-        passkeyError = nil
-        defer { isAddingPasskey = false }
-        do {
-            try await PasskeyManagementService.addPasskey()
-            await loadPasskeys()
-        } catch PasskeyServiceError.cancelled {
-            // User cancelled — silent
-        } catch {
-            passkeyError = "Could not add passkey. Please try again."
-        }
-    }
-
-    private func deletePasskey(_ passkey: ManagedPasskey) async {
-        do {
-            try await PasskeyManagementService.deletePasskey(id: passkey.id)
-            passkeys.removeAll { $0.id == passkey.id }
-        } catch {
-            passkeyError = "Could not remove passkey."
-        }
-    }
-}
-
-// MARK: - Section + Row helpers
-
-private struct SettingsSectionView<Content: View>: View {
-    let label: String
-    @ViewBuilder let content: () -> Content
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.xs) {
-            Text(label.uppercased())
-                .font(.system(size: 12, weight: .medium))
-                .tracking(0.4)
-                .foregroundStyle(Color.Hakumi.textTertiary)
-                .padding(.horizontal, Spacing.xs)
-
-            VStack(spacing: 0) {
-                content()
-            }
-            .background(
-                RoundedRectangle(cornerRadius: Radii.sm, style: .continuous)
-                    .fill(Color.Hakumi.bgSurface)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: Radii.sm, style: .continuous)
-                            .strokeBorder(Color.Hakumi.borderDefault, lineWidth: 1)
-                    )
-            )
-        }
-    }
-}
-
-private struct SettingsDivider: View {
-    var body: some View {
-        Divider()
-            .background(Color.Hakumi.borderSubtle)
-            .padding(.leading, Spacing.lg + 20 + Spacing.md)
-    }
-}
-
-private extension View {
-    func settingsRow() -> some View {
-        self.padding(.horizontal, Spacing.lg)
-             .padding(.vertical, Spacing.md)
-    }
-}
-
-private extension Image {
-    func settingsIcon() -> some View {
-        self
-            .font(.system(size: 14))
-            .foregroundStyle(Color.Hakumi.textSecondary)
-            .frame(width: 20)
     }
 }
 

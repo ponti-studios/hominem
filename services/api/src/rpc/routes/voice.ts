@@ -7,8 +7,8 @@ import type {
   MobileVoiceResponseErrorOutput,
   MobileVoiceTranscriptionErrorOutput,
   MobileVoiceTranscriptionOutput,
-} from '@hominem/rpc/types/mobile.types';
-import { logger } from '@hominem/utils/logger';
+} from '@hakumi/rpc/types/mobile.types';
+import { logger } from '@hakumi/utils/logger';
 import { zValidator } from '@hono/zod-validator';
 import { Hono, type Context } from 'hono';
 import * as z from 'zod';
@@ -282,8 +282,8 @@ async function transcribeVoiceBuffer(input: {
       headers: {
         Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://hominem.app',
-        'X-Title': 'Hominem',
+        'HTTP-Referer': 'https://hakumi.app',
+        'X-Title': 'Hakumi',
       },
       body: JSON.stringify({ model: TRANSCRIPTION_MODEL, messages }),
     });
@@ -511,8 +511,8 @@ async function generateVoiceResponse(input: {
       headers: {
         Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://hominem.app',
-        'X-Title': 'Hominem',
+        'HTTP-Referer': 'https://hakumi.app',
+        'X-Title': 'Hakumi',
       },
       body: JSON.stringify({
         model: VOICE_RESPONSE_MODEL,
@@ -755,8 +755,8 @@ async function generateVoiceResponseStream(input: {
     headers: {
       Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
       'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://hominem.app',
-      'X-Title': 'Hominem',
+      'HTTP-Referer': 'https://hakumi.app',
+      'X-Title': 'Hakumi',
     },
     body: JSON.stringify({
       model: VOICE_RESPONSE_MODEL,
@@ -850,8 +850,8 @@ async function generateSpeechBuffer(input: { text: string; voice: string; speed:
       headers: {
         Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://hominem.app',
-        'X-Title': 'Hominem',
+        'HTTP-Referer': 'https://hakumi.app',
+        'X-Title': 'Hakumi',
       },
       body: JSON.stringify({
         model,

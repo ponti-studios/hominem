@@ -5,8 +5,8 @@
     "outDir": "./build",
     "tsBuildInfoFile": "../../../.cache/db.tsbuildinfo",
     "paths": {
-      "@hominem/db/schema/*": ["./src/migrations/schema.ts"],
-      "@hominem/db/services/*": ["./src/services/*"]
+      "@hakumi/db/schema/*": ["./src/migrations/schema.ts"],
+      "@hakumi/db/services/*": ["./src/services/*"]
     }
   },
   "include": ["src/**/*.ts"],

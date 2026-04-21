@@ -140,7 +140,7 @@ export const JSON: Story = {
   args: {
     language: 'json',
     code: `{
-  "name": "@hominem/ui",
+  "name": "@hakumi/ui",
   "version": "0.0.0",
   "scripts": {
     "build": "vite build",

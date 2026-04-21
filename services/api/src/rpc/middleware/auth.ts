@@ -1,4 +1,4 @@
-import type { User } from '@hominem/auth/types';
+import type { User } from '@hakumi/auth/types';
 import { createMiddleware } from 'hono/factory';
 
 import { UnauthorizedError } from '../errors';

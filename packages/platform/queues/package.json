@@ -1,5 +1,5 @@
 {
-  "name": "@hominem/queues",
+  "name": "@hakumi/queues",
   "version": "0.0.1",
   "description": "BullMQ queue initialization and import job tracking — how you enqueue and track background work.",
   "files": [
@@ -19,7 +19,7 @@
     "lint": "pnpm dlx oxlint ./src"
   },
   "dependencies": {
-    "@hominem/utils": "workspace:*",
+    "@hakumi/utils": "workspace:*",
     "bullmq": "5.66.4",
     "ioredis": "5.8.2"
   },

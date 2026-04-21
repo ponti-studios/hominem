@@ -1,4 +1,4 @@
-import { playEnterRow, playExitRow, reducedMotion } from '@hominem/ui/lib/gsap';
+import { playEnterRow, playExitRow, reducedMotion } from '@hakumi/ui/lib/gsap';
 
 export function animateNotesRowEnter(element: HTMLElement) {
   if (reducedMotion()) {

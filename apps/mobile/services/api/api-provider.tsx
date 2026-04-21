@@ -1,6 +1,6 @@
-import type { ClientConfig } from '@hominem/rpc';
-import { HonoProvider as BaseHonoProvider } from '@hominem/rpc/react';
-import { logger } from '@hominem/utils/logger';
+import type { ClientConfig } from '@hakumi/rpc';
+import { HonoProvider as BaseHonoProvider } from '@hakumi/rpc/react';
+import { logger } from '@hakumi/utils/logger';
 import type { QueryClient } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 

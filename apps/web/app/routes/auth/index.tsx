@@ -1,11 +1,11 @@
 'use client';
 
-import { usePasskeys } from '@hominem/auth/client/passkey';
-import { useAuthClient } from '@hominem/auth/client/provider';
-import { readAuthErrorMessage } from '@hominem/auth/shared/error-contract';
-import { resolveAuthRedirect } from '@hominem/auth/shared/redirect-policy';
-import { AUTH_COPY, NOTES_AUTH_CONFIG } from '@hominem/auth/shared/ux-contract';
-import { AuthScaffold, EmailEntryForm } from '@hominem/ui';
+import { usePasskeys } from '@hakumi/auth/client/passkey';
+import { useAuthClient } from '@hakumi/auth/client/provider';
+import { readAuthErrorMessage } from '@hakumi/auth/shared/error-contract';
+import { resolveAuthRedirect } from '@hakumi/auth/shared/redirect-policy';
+import { AUTH_COPY, NOTES_AUTH_CONFIG } from '@hakumi/auth/shared/ux-contract';
+import { AuthScaffold, EmailEntryForm } from '@hakumi/ui';
 import { useLocation, useNavigate } from 'react-router';
 
 import { getNextRedirect } from './shared';

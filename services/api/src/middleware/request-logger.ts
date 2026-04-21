@@ -1,10 +1,10 @@
-import { getSpanContextForLogs } from '@hominem/telemetry/shared';
+import { getSpanContextForLogs } from '@hakumi/telemetry/shared';
 import {
   getHttpRequestInLogMessage,
   getHttpRequestLogLevel,
   getHttpRequestOutLogMessage,
   logger,
-} from '@hominem/utils/logger';
+} from '@hakumi/utils/logger';
 import type { MiddlewareHandler } from 'hono';
 
 export function requestLogger(): MiddlewareHandler {

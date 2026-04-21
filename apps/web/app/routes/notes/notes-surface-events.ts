@@ -1,4 +1,4 @@
-export const NOTES_ROW_EXIT_REQUEST_EVENT = 'hominem:notes-row-exit-request';
+export const NOTES_ROW_EXIT_REQUEST_EVENT = 'hakumi:notes-row-exit-request';
 
 export interface NotesRowExitRequestDetail {
   noteId: string;

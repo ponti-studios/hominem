@@ -1,5 +1,5 @@
 {
-  "name": "@hominem/services",
+  "name": "@hakumi/services",
   "version": "0.0.0",
   "description": "Business logic and services",
   "type": "module",
@@ -51,8 +51,8 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.53",
-    "@hominem/env": "workspace:*",
-    "@hominem/utils": "workspace:*",
+    "@hakumi/env": "workspace:*",
+    "@hakumi/utils": "workspace:*",
     "bullmq": "5.66.4",
     "dotenv": "17.2.3",
     "ioredis": "5.8.2",

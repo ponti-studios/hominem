@@ -21,7 +21,7 @@ const baseAuthClient = createAuthClient({
     expoClient({
       scheme: APP_SCHEME,
       storage: SecureStore,
-      storagePrefix: 'hominem',
+      storagePrefix: 'hakumi',
     }),
     emailOTPClient(),
     passkeyClient(),

@@ -1,5 +1,5 @@
-import type { JsonValue } from '@hominem/db';
-import { db, pool } from '@hominem/db';
+import type { JsonValue } from '@hakumi/db';
+import { db, pool } from '@hakumi/db';
 
 const RPC_TEST_TABLES = [
   'app.chat_messages',

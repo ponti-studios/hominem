@@ -4,7 +4,7 @@ import {
   useApiClient,
   useRpcMutation,
   useRpcQuery,
-} from '@hominem/rpc/react';
+} from '@hakumi/rpc/react';
 import type {
   NoteFeedItem,
   NotesCreateInput,
@@ -17,7 +17,7 @@ import type {
   NotesSearchOutput,
   NotesUpdateInput,
   NotesUpdateOutput,
-} from '@hominem/rpc/types/notes.types';
+} from '@hakumi/rpc/types/notes.types';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { notesQueryKeys } from '~/lib/query-keys';

@@ -23,14 +23,14 @@ export type {
   SessionSource,
   ThoughtLifecycleState,
   ThoughtLifecycleTransition,
-} from '@hominem/chat/types';
+} from '@hakumi/chat/types';
 
 export {
   CHAT_TITLE_MAX_LENGTH,
   ENABLED_ARTIFACT_TYPES,
   getReferencedNoteLabel,
   isArtifactTypeEnabled,
-} from '@hominem/chat/types';
+} from '@hakumi/chat/types';
 
 import type {
   ArtifactType,
@@ -39,7 +39,7 @@ import type {
   ChatMessageRole,
   ChatMessageToolCall,
   JsonValue,
-} from '@hominem/chat/types';
+} from '@hakumi/chat/types';
 
 // ============================================================================
 export interface ChatMessageFileDto {

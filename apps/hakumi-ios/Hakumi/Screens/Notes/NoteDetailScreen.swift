@@ -1,44 +1,30 @@
 import SwiftUI
 
-// MARK: - SaveState
-
-private enum SaveState {
-    case idle, saving, saved, failed(String)
-}
-
-// MARK: - NoteDetailScreen
-
 struct NoteDetailScreen: View {
     let id: String
 
     @Environment(Router.self) private var router
-    @State private var note: NoteDetail?
+    @State private var vm = NoteDetailViewModel()
     @State private var title: String = ""
     @State private var content: String = ""
-    @State private var files: [NoteFile] = []
-    @State private var isLoading = true
-    @State private var hasLoaded = false
-    @State private var saveState: SaveState = .idle
-    @State private var autosaveTask: Task<Void, Never>?
-
-    // Debounce interval matching Expo's useNoteEditor (600 ms)
-    private let autosaveDelay: Duration = .milliseconds(600)
 
     var body: some View {
         Group {
-            if isLoading {
-                loadingView
-            } else if note != nil {
+            if vm.isLoading {
+                ScreenLoadingView()
+            } else if vm.note != nil {
                 editorView
             } else {
-                errorView
+                ScreenErrorView(message: "Note not found.") {
+                    Task { await loadNote() }
+                }
             }
         }
         .navigationBarTitleDisplayMode(.inline)
         .background(Color.Hakumi.bgBase)
         .toolbar { toolbarContent }
-        .task { await load() }
-        .onDisappear { autosaveTask?.cancel() }
+        .task { await loadNote() }
+        .onDisappear { vm.cancelAutosave() }
     }
 
     // MARK: Editor
@@ -46,13 +32,12 @@ struct NoteDetailScreen: View {
     private var editorView: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                // Title
                 TextField("Title", text: $title, axis: .vertical)
                     .font(.system(size: 28, weight: .bold))
                     .tracking(-0.6)
                     .foregroundStyle(Color.Hakumi.textPrimary)
                     .tint(Color.Hakumi.accent)
-                    .onChange(of: title) { scheduleAutosave() }
+                    .onChange(of: title) { vm.scheduleAutosave(id: id, title: title, content: content) }
                     .padding(.bottom, Spacing.md)
                     .accessibilityIdentifier("note.titleField")
 
@@ -60,7 +45,6 @@ struct NoteDetailScreen: View {
                     .background(Color.Hakumi.borderSubtle)
                     .padding(.bottom, Spacing.md)
 
-                // Content
                 TextEditor(text: $content)
                     .font(.system(size: 16))
                     .tracking(-0.1)
@@ -69,11 +53,10 @@ struct NoteDetailScreen: View {
                     .tint(Color.Hakumi.accent)
                     .scrollDisabled(true)
                     .frame(minHeight: 240, alignment: .topLeading)
-                    .onChange(of: content) { scheduleAutosave() }
+                    .onChange(of: content) { vm.scheduleAutosave(id: id, title: title, content: content) }
                     .accessibilityIdentifier("note.contentEditor")
 
-                // Attachments
-                if !files.isEmpty {
+                if !vm.files.isEmpty {
                     attachmentsSection
                 }
             }
@@ -93,7 +76,7 @@ struct NoteDetailScreen: View {
                 .foregroundStyle(Color.Hakumi.textTertiary)
                 .padding(.top, Spacing.xl)
 
-            ForEach(files) { file in
+            ForEach(vm.files) { file in
                 HStack(spacing: Spacing.sm) {
                     Image(systemName: "paperclip")
                         .font(.system(size: 13))
@@ -107,7 +90,7 @@ struct NoteDetailScreen: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
 
                     Button {
-                        Task { await detach(fileId: file.id) }
+                        Task { await vm.detach(noteId: id, fileId: file.id, title: title, content: content) }
                     } label: {
                         Image(systemName: "xmark")
                             .font(.system(size: 11, weight: .medium))
@@ -125,25 +108,6 @@ struct NoteDetailScreen: View {
         }
     }
 
-    // MARK: Loading / Error
-
-    private var loadingView: some View {
-        VStack { Spacer(); ProgressView().tint(Color.Hakumi.textTertiary); Spacer() }
-            .frame(maxWidth: .infinity)
-    }
-
-    private var errorView: some View {
-        VStack(spacing: Spacing.md) {
-            Text("Note not found.")
-                .font(.system(size: 14))
-                .foregroundStyle(Color.Hakumi.textSecondary)
-            AppButton("Retry", variant: .ghost, size: .sm) {
-                Task { await load() }
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
     // MARK: Toolbar
 
     @ToolbarContentBuilder
@@ -152,21 +116,23 @@ struct NoteDetailScreen: View {
             HStack(spacing: Spacing.md) {
                 saveIndicator
 
-                // Chat handoff
+                // TODO: Requires API to return an associated chatId for the note.
+                // The note `id` is not a chat ID — routing to .chat(id: noteId) opens a broken screen.
                 Button {
-                    autosaveTask?.cancel()
+                    vm.cancelAutosave()
                     router.sidebarSelection = .chat(id: id)
                 } label: {
                     Image(systemName: "bubble.left")
                 }
-                .disabled(note == nil)
+                .opacity(0)
+                .disabled(true)
             }
         }
     }
 
     @ViewBuilder
     private var saveIndicator: some View {
-        switch saveState {
+        switch vm.saveState {
         case .saving:
             ProgressView()
                 .scaleEffect(0.75)
@@ -179,76 +145,20 @@ struct NoteDetailScreen: View {
         case .failed:
             Image(systemName: "exclamationmark.circle")
                 .font(.system(size: 14))
-                .foregroundStyle(.red.opacity(0.7))
+                .foregroundStyle(Color.Hakumi.destructive)
         case .idle:
             EmptyView()
         }
     }
 
-    // MARK: Data
+    // MARK: Helpers
 
-    private func load() async {
-        isLoading = true
-        defer { isLoading = false }
-        do {
-            let loaded = try await NoteService.fetchNote(id: id)
-            note = loaded
-            title = loaded.title ?? ""
-            content = loaded.content
-            files = loaded.files
-            hasLoaded = true
-        } catch {
-            note = nil
+    private func loadNote() async {
+        await vm.load(id: id)
+        if let note = vm.note {
+            title = note.title ?? ""
+            content = note.content
         }
-    }
-
-    // MARK: Autosave
-
-    /// Schedules a debounced save. Cancels any in-flight pending save first.
-    private func scheduleAutosave() {
-        guard hasLoaded, !isLoading else { return }
-        autosaveTask?.cancel()
-        autosaveTask = Task {
-            do {
-                try await Task.sleep(for: autosaveDelay)
-            } catch {
-                return  // cancelled — a newer keystroke is pending
-            }
-            await save(fileIds: files.map(\.id))
-        }
-    }
-
-    private func save(fileIds: [String]) async {
-        guard note != nil else { return }
-        saveState = .saving
-        do {
-            let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
-            let updated = try await NoteService.saveNote(
-                id: id,
-                title: trimmedTitle.isEmpty ? nil : trimmedTitle,
-                content: content,
-                fileIds: fileIds
-            )
-            note = updated
-            files = updated.files
-            withAnimation { saveState = .saved }
-            // Fade the checkmark out after 1.5 s
-            try? await Task.sleep(for: .seconds(1.5))
-            withAnimation { if case .saved = saveState { saveState = .idle } }
-            TopAnchorSignal.inbox.request()
-        } catch {
-            withAnimation { saveState = .failed(error.localizedDescription) }
-        }
-    }
-
-    // MARK: File detachment
-
-    private func detach(fileId: String) async {
-        let newFileIds = files.filter { $0.id != fileId }.map(\.id)
-        // Optimistic update
-        files = files.filter { $0.id != fileId }
-        autosaveTask?.cancel()
-        await save(fileIds: newFileIds)
     }
 }
 

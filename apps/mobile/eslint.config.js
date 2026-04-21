@@ -16,7 +16,7 @@ module.exports = defineConfig([
           patterns: [
             {
               group: ["**/packages/platform/ui/src/**", "packages/platform/ui/src/**"],
-              message: "Import shared UI through @hominem/ui public exports.",
+              message: "Import shared UI through @hakumi/ui public exports.",
             },
             {
               group: ["lucide-react-native"],
@@ -35,7 +35,7 @@ module.exports = defineConfig([
                 "~/components/ui/ListRow",
                 "~/components/ui/ListShell",
               ],
-              message: "Import shared primitives from @hominem/ui public exports.",
+              message: "Import shared primitives from @hakumi/ui public exports.",
             },
           ],
         },

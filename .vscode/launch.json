@@ -21,7 +21,7 @@
       "name": "Debug API",
       "cwd": "${workspaceFolder}",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@hominem/api", "run", "dev"],
+      "runtimeArgs": ["--filter", "@hakumi/api", "run", "dev"],
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
       "skipFiles": ["<node_internals>/**"],

@@ -1,6 +1,6 @@
-import { useApiClient } from '@hominem/rpc/react';
-import type { Note } from '@hominem/rpc/types';
-import { parseInboxTimestamp } from '@hominem/chat';
+import { useApiClient } from '@hakumi/rpc/react';
+import type { Note } from '@hakumi/rpc/types';
+import { parseInboxTimestamp } from '@hakumi/chat';
 import type { RelativePathString } from 'expo-router';
 import { useRouter } from 'expo-router';
 import React, { memo, useCallback, useRef, useState } from 'react';

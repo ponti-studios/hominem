@@ -1,7 +1,7 @@
 {
-  "name": "@hominem/auth",
+  "name": "@hakumi/auth",
   "version": "0.0.0",
-  "description": "Unified authentication package for Hominem apps (web, mobile, CLI)",
+  "description": "Unified authentication package for Hakumi apps (web, mobile, CLI)",
   "type": "module",
   "exports": {
     "./types": {
@@ -41,7 +41,7 @@
   },
   "dependencies": {
     "@better-auth/passkey": "^1.5.4",
-    "@hominem/db": "workspace:*",
+    "@hakumi/db": "workspace:*",
     "better-auth": "^1.4.19"
   },
   "devDependencies": {

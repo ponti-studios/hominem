@@ -6,11 +6,11 @@
       {
         "patterns": [
           {
-            "group": ["@hominem/db", "@hominem/db/*"],
+            "group": ["@hakumi/db", "@hakumi/db/*"],
             "message": "UI must not import persistence internals directly. Keep UI state and presentation separate from storage concerns."
           },
           {
-            "group": ["@hominem/services", "@hominem/services/*"],
+            "group": ["@hakumi/services", "@hakumi/services/*"],
             "message": "UI must not import server-side services directly. Keep UI code transport-facing."
           },
           {

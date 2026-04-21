@@ -1,4 +1,4 @@
-import type { ArtifactType } from '@hominem/rpc/types';
+import type { ArtifactType } from '@hakumi/rpc/types';
 
 import { ClassificationReview } from './classification-review';
 

@@ -1,4 +1,4 @@
-import { Header } from '@hominem/ui';
+import { Header } from '@hakumi/ui';
 
 import { useInboxStream } from '~/hooks/use-inbox-stream';
 import { WEB_BRAND } from '~/lib/brand';

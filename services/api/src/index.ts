@@ -1,4 +1,4 @@
-import { logger } from '@hominem/utils/logger';
+import { logger } from '@hakumi/utils/logger';
 import { serve } from '@hono/node-server';
 
 import { env } from './env';
@@ -6,7 +6,7 @@ import { initRuntime } from './runtime';
 import { createServer } from './server';
 
 const app = createServer();
-initRuntime('hominem-api').installSignalHandlers();
+initRuntime('hakumi-api').installSignalHandlers();
 const port = Number.parseInt(env.PORT, 10);
 const host = '0.0.0.0';
 

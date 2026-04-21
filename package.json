@@ -1,22 +1,22 @@
 {
-  "name": "hominem",
+  "name": "hakumi",
   "version": "1.0.0",
   "private": true,
-  "description": "hominem",
+  "description": "hakumi",
   "keywords": [],
-  "homepage": "https://github.com/hackefeller/hominem#readme",
+  "homepage": "https://github.com/hackefeller/hakumi#readme",
   "bugs": {
-    "url": "https://github.com/hackefeller/hominem/issues"
+    "url": "https://github.com/hackefeller/hakumi/issues"
   },
   "license": "ISC",
   "author": {
     "name": "chase bridges",
-    "email": "code@hominem.io",
+    "email": "code@hakumi.io",
     "url": "https://ponti.io/"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hackefeller/hominem.git"
+    "url": "git+https://github.com/hackefeller/hakumi.git"
   },
   "scripts": {
     "check": "pnpm dlx turbo run typecheck lint build test --concurrency 1 --force"

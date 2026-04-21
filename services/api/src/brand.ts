@@ -1,4 +1,4 @@
-import { BRAND } from '@hominem/env/brand';
+import { BRAND } from '@hakumi/env/brand';
 
 /** Single source of truth for the API service brand strings. */
 export const API_BRAND = {

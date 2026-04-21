@@ -12,9 +12,8 @@ import UniformTypeIdentifiers
 
 struct SharedComposerCard: View {
     @Environment(Router.self) private var router
+    @Environment(ComposerState.self) private var state
     let target: ComposerState.Target
-
-    private var state: ComposerState { ComposerState.shared }
 
     @State private var isSending = false
     @FocusState private var isInputFocused: Bool
@@ -299,12 +298,7 @@ struct SharedComposerCard: View {
                     }
                     .padding(.horizontal, Spacing.sm)
                     .padding(.vertical, Spacing.xs)
-                    .background(Color.Hakumi.bgSurface)
-                    .clipShape(RoundedRectangle(cornerRadius: Radii.sm, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: Radii.sm, style: .continuous)
-                            .strokeBorder(Color.Hakumi.borderDefault, lineWidth: 1)
-                    )
+                    .cardStyle()
                     .transition(.asymmetric(
                         insertion: .scale.combined(with: .opacity),
                         removal: .scale.combined(with: .opacity)
@@ -342,12 +336,7 @@ struct SharedComposerCard: View {
                     }
                     .padding(.horizontal, Spacing.sm)
                     .padding(.vertical, Spacing.xs)
-                    .background(Color.Hakumi.bgSurface)
-                    .clipShape(RoundedRectangle(cornerRadius: Radii.sm, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: Radii.sm, style: .continuous)
-                            .strokeBorder(Color.Hakumi.borderDefault, lineWidth: 1)
-                    )
+                    .cardStyle()
                     .transition(.asymmetric(
                         insertion: .scale.combined(with: .opacity),
                         removal: .scale.combined(with: .opacity)
@@ -469,8 +458,9 @@ struct SharedComposerCard: View {
             Text(VoiceRecordingService.shared.permissionError ?? "")
                 .font(.system(size: 13))
                 .frame(maxWidth: .infinity, alignment: .leading)
-            Button { } label: {
+            Button { VoiceRecordingService.shared.clearPermissionError() } label: {
                 Image(systemName: "xmark").font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Color.Hakumi.textTertiary)
             }
         }
         .foregroundStyle(.white)
@@ -506,12 +496,7 @@ struct SharedComposerCard: View {
                 }
             }
         }
-        .background(Color.Hakumi.bgSurface)
-        .clipShape(RoundedRectangle(cornerRadius: Radii.md, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: Radii.md, style: .continuous)
-                .strokeBorder(Color.Hakumi.borderDefault, lineWidth: 1)
-        )
+        .cardStyle(radius: Radii.md)
         .shadow(color: .black.opacity(0.14), radius: 8, x: 0, y: 2)
     }
 }

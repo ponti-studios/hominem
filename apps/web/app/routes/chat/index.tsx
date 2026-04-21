@@ -1,4 +1,4 @@
-import { Button } from '@hominem/ui/button';
+import { Button } from '@hakumi/ui/button';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 
 import { useChatsList, useCreateChat } from '~/hooks/use-chats';

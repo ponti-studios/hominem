@@ -1,4 +1,4 @@
-import { useApiClient } from '@hominem/rpc/react';
+import { useApiClient } from '@hakumi/rpc/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface UseServerSpeechOptions {

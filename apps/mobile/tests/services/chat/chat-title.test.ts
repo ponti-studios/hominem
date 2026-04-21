@@ -1,4 +1,4 @@
-import type { Chat, SessionSource } from '@hominem/rpc/types';
+import type { Chat, SessionSource } from '@hakumi/rpc/types';
 import { QueryClient } from '@tanstack/react-query';
 import { describe, expect, it } from 'vitest';
 

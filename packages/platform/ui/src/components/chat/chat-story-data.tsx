@@ -1,5 +1,5 @@
-import type { ChatIconName } from '@hominem/chat';
-import type { SessionSource } from '@hominem/rpc/types';
+import type { ChatIconName } from '@hakumi/chat';
+import type { SessionSource } from '@hakumi/rpc/types';
 import {
   Copy,
   Globe,

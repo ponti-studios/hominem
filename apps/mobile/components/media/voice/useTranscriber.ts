@@ -1,9 +1,9 @@
-import { emitVoiceEvent, isVoiceErrorCode } from '@hominem/rpc/voice-events';
+import { emitVoiceEvent, isVoiceErrorCode } from '@hakumi/rpc/voice-events';
 import {
   VoiceTranscribeErrorSchema,
   VoiceTranscribeSuccessSchema,
-} from '@hominem/rpc/schemas/voice.schema';
-import { logger } from '@hominem/utils/logger';
+} from '@hakumi/rpc/schemas/voice.schema';
+import { logger } from '@hakumi/utils/logger';
 import { useMutation } from '@tanstack/react-query';
 import * as FileSystem from 'expo-file-system/legacy';
 import { useCallback, useRef } from 'react';

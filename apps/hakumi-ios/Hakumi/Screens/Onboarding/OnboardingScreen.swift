@@ -8,6 +8,7 @@ import SwiftUI
 struct OnboardingScreen: View {
     @Environment(Router.self) private var router
 
+    @State private var vm = AuthViewModel()
     @State private var name = ""
     @State private var isSubmitting = false
     @State private var error: String? = nil
@@ -55,8 +56,9 @@ struct OnboardingScreen: View {
                         .accessibilityIdentifier("onboarding.createButton")
 
                         AppButton("Sign out", variant: .ghost) {
-                            Task { await AuthProvider.shared.signOut()
-                                router.authPhase = .unauthenticated
+                            Task {
+                                await AuthProvider.shared.signOut()
+                                router.resetForSignOut()
                             }
                         }
                         .frame(maxWidth: .infinity)
@@ -84,7 +86,7 @@ struct OnboardingScreen: View {
         defer { isSubmitting = false }
 
         do {
-            try await AuthProvider.shared.updateName(trimmedName)
+            try await vm.createProfile(name: trimmedName)
             router.completeAuthentication()
         } catch {
             self.error = error.localizedDescription

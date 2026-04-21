@@ -1,5 +1,5 @@
-import { initTelemetry } from '@hominem/telemetry/browser';
-import { logger } from '@hominem/utils/logger';
+import { initTelemetry } from '@hakumi/telemetry/browser';
+import { logger } from '@hakumi/utils/logger';
 import { useEffect, useRef } from 'react';
 
 import { getClientEnv } from '../env.client';

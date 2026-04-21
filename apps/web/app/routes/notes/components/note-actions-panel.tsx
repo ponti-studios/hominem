@@ -1,6 +1,6 @@
-import { SurfacePanel } from '@hominem/ui';
-import { SpeechInput } from '@hominem/ui/ai-elements';
-import { Button } from '@hominem/ui/button';
+import { SurfacePanel } from '@hakumi/ui';
+import { SpeechInput } from '@hakumi/ui/ai-elements';
+import { Button } from '@hakumi/ui/button';
 import { memo, useRef } from 'react';
 import { Link } from 'react-router';
 

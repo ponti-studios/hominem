@@ -1,4 +1,4 @@
-import { logger } from '@hominem/utils/logger';
+import { logger } from '@hakumi/utils/logger';
 
 import type { ChatMessageOutput, ChatOutput } from '../chat.types';
 import {

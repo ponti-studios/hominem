@@ -1,7 +1,7 @@
 /**
  * Error classes for database services
  *
- * These are internal to @hominem/db - used by services that need to throw
+ * These are internal to @hakumi/db - used by services that need to throw
  * errors which get caught by the API layer.
  */
 

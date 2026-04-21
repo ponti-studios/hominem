@@ -59,22 +59,22 @@ importers:
       '@gorhom/bottom-sheet':
         specifier: ^5.2.9
         version: 5.2.9(@types/react@19.2.10)(react-native-gesture-handler@2.30.1(react-native@0.83.4(@babel/core@7.29.0)(@react-native/metro-config@0.85.1(@babel/core@7.29.0))(@types/react@19.2.10)(react@19.2.0))(react@19.2.0))(react-native-reanimated@4.3.0(react-native-worklets@0.8.1(@babel/core@7.29.0)(@react-native/metro-config@0.85.1(@babel/core@7.29.0))(react-native@0.83.4(@babel/core@7.29.0)(@react-native/metro-config@0.85.1(@babel/core@7.29.0))(@types/react@19.2.10)(react@19.2.0))(react@19.2.0))(react-native@0.83.4(@babel/core@7.29.0)(@react-native/metro-config@0.85.1(@babel/core@7.29.0))(@types/react@19.2.10)(react@19.2.0))(react@19.2.0))(react-native@0.83.4(@babel/core@7.29.0)(@react-native/metro-config@0.85.1(@babel/core@7.29.0))(@types/react@19.2.10)(react@19.2.0))(react@19.2.0)
-      '@hominem/auth':
+      '@hakumi/auth':
         specifier: workspace:*
         version: link:../../packages/platform/auth
-      '@hominem/chat':
+      '@hakumi/chat':
         specifier: workspace:*
         version: link:../../packages/domains/chat
-      '@hominem/env':
+      '@hakumi/env':
         specifier: workspace:*
         version: link:../../packages/core/env
-      '@hominem/rpc':
+      '@hakumi/rpc':
         specifier: workspace:*
         version: link:../../packages/platform/rpc
-      '@hominem/ui':
+      '@hakumi/ui':
         specifier: workspace:*
         version: link:../../packages/platform/ui
-      '@hominem/utils':
+      '@hakumi/utils':
         specifier: workspace:*
         version: link:../../packages/core/utils
       '@react-native-async-storage/async-storage':
@@ -258,25 +258,25 @@ importers:
 
   apps/web:
     dependencies:
-      '@hominem/auth':
+      '@hakumi/auth':
         specifier: workspace:*
         version: link:../../packages/platform/auth
-      '@hominem/chat':
+      '@hakumi/chat':
         specifier: workspace:*
         version: link:../../packages/domains/chat
-      '@hominem/env':
+      '@hakumi/env':
         specifier: workspace:*
         version: link:../../packages/core/env
-      '@hominem/rpc':
+      '@hakumi/rpc':
         specifier: workspace:*
         version: link:../../packages/platform/rpc
-      '@hominem/telemetry':
+      '@hakumi/telemetry':
         specifier: workspace:*
         version: link:../../packages/platform/telemetry
-      '@hominem/ui':
+      '@hakumi/ui':
         specifier: workspace:*
         version: link:../../packages/platform/ui
-      '@hominem/utils':
+      '@hakumi/utils':
         specifier: workspace:*
         version: link:../../packages/core/utils
       '@react-router/node':
@@ -383,10 +383,10 @@ importers:
 
   packages/domains/chat:
     dependencies:
-      '@hominem/db':
+      '@hakumi/db':
         specifier: workspace:*
         version: link:../../core/db
-      '@hominem/utils':
+      '@hakumi/utils':
         specifier: workspace:*
         version: link:../../core/utils
       '@langchain/textsplitters':
@@ -405,7 +405,7 @@ importers:
       '@better-auth/passkey':
         specifier: ^1.5.4
         version: 1.6.5(@better-auth/core@1.6.5(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@opentelemetry/api@1.9.1)(better-call@1.3.5(zod@4.3.6))(jose@6.2.2)(kysely@0.28.16)(nanostores@1.2.0))(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(better-auth@1.6.5(@opentelemetry/api@1.9.1)(pg@8.20.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(vitest@4.1.2))(better-call@1.3.5(zod@4.3.6))(nanostores@1.2.0)
-      '@hominem/db':
+      '@hakumi/db':
         specifier: workspace:*
         version: link:../../core/db
       better-auth:
@@ -421,7 +421,7 @@ importers:
 
   packages/platform/queues:
     dependencies:
-      '@hominem/utils':
+      '@hakumi/utils':
         specifier: workspace:*
         version: link:../../core/utils
       bullmq:
@@ -433,7 +433,7 @@ importers:
 
   packages/platform/rpc:
     dependencies:
-      '@hominem/chat':
+      '@hakumi/chat':
         specifier: workspace:*
         version: link:../../domains/chat
       '@tanstack/react-query':
@@ -452,10 +452,10 @@ importers:
       '@ai-sdk/openai':
         specifier: ^3.0.53
         version: 3.0.53(zod@4.3.6)
-      '@hominem/env':
+      '@hakumi/env':
         specifier: workspace:*
         version: link:../../core/env
-      '@hominem/utils':
+      '@hakumi/utils':
         specifier: workspace:*
         version: link:../../core/utils
       bullmq:
@@ -548,16 +548,16 @@ importers:
 
   packages/platform/ui:
     dependencies:
-      '@hominem/auth':
+      '@hakumi/auth':
         specifier: workspace:*
         version: link:../auth
-      '@hominem/chat':
+      '@hakumi/chat':
         specifier: workspace:*
         version: link:../../domains/chat
-      '@hominem/rpc':
+      '@hakumi/rpc':
         specifier: workspace:*
         version: link:../rpc
-      '@hominem/utils':
+      '@hakumi/utils':
         specifier: workspace:*
         version: link:../../core/utils
       '@radix-ui/react-accordion':
@@ -750,28 +750,28 @@ importers:
       '@better-auth/passkey':
         specifier: ^1.5.4
         version: 1.6.5(@better-auth/core@1.6.5(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@opentelemetry/api@1.9.1)(better-call@1.3.5(zod@4.3.6))(jose@6.2.2)(kysely@0.28.16)(nanostores@1.2.0))(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(better-auth@1.6.5(@opentelemetry/api@1.9.1)(pg@8.20.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(vitest@4.1.2))(better-call@1.3.5(zod@4.3.6))(nanostores@1.2.0)
-      '@hominem/auth':
+      '@hakumi/auth':
         specifier: workspace:*
         version: link:../../packages/platform/auth
-      '@hominem/db':
+      '@hakumi/db':
         specifier: workspace:*
         version: link:../../packages/core/db
-      '@hominem/env':
+      '@hakumi/env':
         specifier: workspace:*
         version: link:../../packages/core/env
-      '@hominem/queues':
+      '@hakumi/queues':
         specifier: workspace:*
         version: link:../../packages/platform/queues
-      '@hominem/rpc':
+      '@hakumi/rpc':
         specifier: workspace:*
         version: link:../../packages/platform/rpc
-      '@hominem/services':
+      '@hakumi/services':
         specifier: workspace:*
         version: link:../../packages/platform/services
-      '@hominem/telemetry':
+      '@hakumi/telemetry':
         specifier: workspace:*
         version: link:../../packages/platform/telemetry
-      '@hominem/utils':
+      '@hakumi/utils':
         specifier: workspace:*
         version: link:../../packages/core/utils
       '@hono/node-server':

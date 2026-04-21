@@ -1,4 +1,4 @@
-import { useRpcQuery } from '@hominem/rpc/react';
+import { useRpcQuery } from '@hakumi/rpc/react';
 
 import { chatQueryKeys } from '~/lib/query-keys';
 
@@ -7,14 +7,14 @@ export interface UseChatMessagesOptions {
 }
 
 export interface UseChatMessagesReturn {
-  messages: import('@hominem/rpc/types/chat.types').ChatMessageDto[];
+  messages: import('@hakumi/rpc/types/chat.types').ChatMessageDto[];
   isLoading: boolean;
   error: Error | null;
   deleteMessage: (messageId: string) => Promise<void>;
   updateMessage: (messageId: string, content: string) => Promise<void>;
 }
 
-export type ExtendedMessage = import('@hominem/rpc/types/chat.types').ChatMessageDto & {
+export type ExtendedMessage = import('@hakumi/rpc/types/chat.types').ChatMessageDto & {
   isStreaming?: boolean;
 };
 

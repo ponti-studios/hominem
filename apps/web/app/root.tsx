@@ -1,5 +1,5 @@
-import { AuthProvider } from '@hominem/auth/client/provider';
-import { UpdateGuard } from '@hominem/ui';
+import { AuthProvider } from '@hakumi/auth/client/provider';
+import { UpdateGuard } from '@hakumi/ui';
 import type React from 'react';
 import {
   data,

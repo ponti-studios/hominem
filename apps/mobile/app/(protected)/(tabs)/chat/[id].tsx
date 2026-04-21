@@ -1,5 +1,5 @@
-import { useApiClient } from '@hominem/rpc/react';
-import type { SessionSource } from '@hominem/rpc/types';
+import { useApiClient } from '@hakumi/rpc/react';
+import type { SessionSource } from '@hakumi/rpc/types';
 import {
   ChatMessageList,
   ChatReviewOverlay,

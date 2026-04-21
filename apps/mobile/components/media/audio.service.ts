@@ -1,8 +1,8 @@
 import * as Audio from 'expo-audio';
 import AudioModule from 'expo-audio/build/AudioModule';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
-import { emitVoiceEvent } from '@hominem/rpc/voice-events';
-import { logger } from '@hominem/utils/logger';
+import { emitVoiceEvent } from '@hakumi/rpc/voice-events';
+import { logger } from '@hakumi/utils/logger';
 
 export type RecorderState =
   | 'IDLE'

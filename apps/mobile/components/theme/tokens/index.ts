@@ -1,12 +1,12 @@
-export { colors, type ColorToken } from '@hominem/ui/tokens';
+export { colors, type ColorToken } from '@hakumi/ui/tokens';
 export {
   spacing,
   contentWidths,
   type SpacingToken,
   type ContentWidthToken,
-} from '@hominem/ui/tokens';
-export { radii, type RadiusToken } from '@hominem/ui/tokens';
-export { shadowsNative } from '@hominem/ui/tokens';
+} from '@hakumi/ui/tokens';
+export { radii, type RadiusToken } from '@hakumi/ui/tokens';
+export { shadowsNative } from '@hakumi/ui/tokens';
 export {
   fontSizes,
   fontWeights,
@@ -18,4 +18,4 @@ export {
   sharedLetterSpacing,
   sharedLineHeights,
 } from './typography.native';
-export { durations, translateDistances } from '@hominem/ui/tokens';
+export { durations, translateDistances } from '@hakumi/ui/tokens';

@@ -12,7 +12,7 @@ interface RateLimitInput {
 }
 
 async function getRedis() {
-  const { redis } = await import('@hominem/services/redis');
+  const { redis } = await import('@hakumi/services/redis');
   return redis;
 }
 

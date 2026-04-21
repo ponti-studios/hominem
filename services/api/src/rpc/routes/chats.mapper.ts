@@ -3,8 +3,8 @@ import type {
   ChatMessageRecord,
   ChatRecord,
   NoteContext,
-} from '@hominem/db';
-import type { Chat, ChatMessageDto, ChatMessageFile } from '@hominem/rpc/types/chat.types';
+} from '@hakumi/db';
+import type { Chat, ChatMessageDto, ChatMessageFile } from '@hakumi/rpc/types/chat.types';
 
 export function toChatDto(record: ChatRecord): Chat {
   return {

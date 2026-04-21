@@ -1,19 +1,19 @@
-import { db, pool } from '@hominem/db'
+import { db, pool } from '@hakumi/db'
 
 const EXACT_TEST_EMAILS = [
-  'mobile-e2e@hominem.test',
-  'mobile-passkey-e2e@hominem.test',
-  'step-up-existing@hominem.test',
-  'step-up-first-time@hominem.test',
+  'mobile-e2e@hakumi.test',
+  'mobile-passkey-e2e@hakumi.test',
+  'step-up-existing@hakumi.test',
+  'step-up-first-time@hakumi.test',
 ]
 
 const TEST_EMAIL_PATTERNS = [
-  'otp-%@hominem.test',
-  'cli-device-%@hominem.test',
-  'session-store-%@hominem.test',
+  'otp-%@hakumi.test',
+  'cli-device-%@hakumi.test',
+  'session-store-%@hakumi.test',
 ]
 
-const TEST_DEVICE_CLIENT_IDS = ['hominem-cli']
+const TEST_DEVICE_CLIENT_IDS = ['hakumi-cli']
 const AUTH_REDIS_PATTERNS = ['auth:session:sid:*', 'auth:revoked:sid:*', 'ratelimit:auth:*']
 
 interface UserRow {
@@ -21,7 +21,7 @@ interface UserRow {
 }
 
 async function deleteMatchingRedisKeys(
-  redis: Awaited<typeof import('@hominem/services/redis')>['redis'],
+  redis: Awaited<typeof import('@hakumi/services/redis')>['redis'],
   pattern: string,
 ) {
   let cursor = '0'
@@ -97,7 +97,7 @@ export async function cleanupApiAuthTestState() {
 
 export async function cleanupApiAuthRedisState() {
   try {
-    const { redis } = await import('@hominem/services/redis')
+    const { redis } = await import('@hakumi/services/redis')
     for (const pattern of AUTH_REDIS_PATTERNS) {
       await deleteMatchingRedisKeys(redis, pattern)
     }

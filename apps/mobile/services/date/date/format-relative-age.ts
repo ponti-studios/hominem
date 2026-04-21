@@ -1,4 +1,4 @@
-import { parseInboxTimestamp } from '@hominem/chat';
+import { parseInboxTimestamp } from '@hakumi/chat';
 
 export function formatRelativeAge(activityAt: string): string {
   const parsed = parseInboxTimestamp(activityAt);

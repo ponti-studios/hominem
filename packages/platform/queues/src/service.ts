@@ -1,4 +1,4 @@
-import { logger } from '@hominem/utils/logger';
+import { logger } from '@hakumi/utils/logger';
 
 import { redis } from './redis';
 import type { BaseJob } from './types';

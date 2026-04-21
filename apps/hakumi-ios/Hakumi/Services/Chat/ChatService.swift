@@ -1,11 +1,20 @@
 import Foundation
 
+// MARK: - MessageRole
+
+enum MessageRole: String, Codable, Sendable {
+    case user
+    case assistant
+    case tool
+    case system
+}
+
 // MARK: - Models
 
 struct ChatMessage: Identifiable, Sendable, Equatable, Hashable {
     let id: String
     let chatId: String
-    let role: String
+    let role: MessageRole
     let content: String
     let reasoning: String?
     let createdAt: Date
@@ -14,7 +23,7 @@ struct ChatMessage: Identifiable, Sendable, Equatable, Hashable {
     init(
         id: String,
         chatId: String,
-        role: String,
+        role: MessageRole,
         content: String,
         reasoning: String? = nil,
         createdAt: Date,
@@ -158,6 +167,49 @@ enum ChatService {
         return noteId
     }
 
+    // MARK: - Archived chats
+
+    struct ArchivedChatSummary: Identifiable, Sendable {
+        let id: String
+        let title: String
+        let archivedAt: Date
+    }
+
+    static func fetchArchivedChats() async throws -> [ArchivedChatSummary] {
+        var components = URLComponents(url: AuthService.apiURL("/api/chats"), resolvingAgainstBaseURL: false)!
+        components.queryItems = [
+            URLQueryItem(name: "limit", value: "100"),
+            URLQueryItem(name: "status", value: "archived")
+        ]
+        guard let url = components.url else { throw ChatError.fetchFailed }
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 15
+        request.applyAuthHeaders()
+
+        let (data, response) = try await session.data(for: request)
+        try URLRequest.validate(response, throwing: ChatError.fetchFailed)
+
+        guard let arr = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
+            return []
+        }
+
+        let iso = ISO8601DateFormatter()
+        iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let isoNoFrac = ISO8601DateFormatter()
+        isoNoFrac.formatOptions = [.withInternetDateTime]
+
+        func parseDate(_ s: String) -> Date? { iso.date(from: s) ?? isoNoFrac.date(from: s) }
+
+        return arr.compactMap { dict -> ArchivedChatSummary? in
+            guard let id = dict["id"] as? String,
+                  let archivedStr = dict["archivedAt"] as? String,
+                  let archivedAt = parseDate(archivedStr) else { return nil }
+            let title = dict["title"] as? String ?? "Untitled chat"
+            return ArchivedChatSummary(id: id, title: title, archivedAt: archivedAt)
+        }
+        .sorted { $0.archivedAt > $1.archivedAt }
+    }
+
     static func createChat(title: String) async throws -> ChatDetail {
         var request = URLRequest(url: AuthService.apiURL("/api/chats"))
         request.httpMethod = "POST"
@@ -183,12 +235,13 @@ enum ChatService {
     private static func parseMessage(_ dict: [String: Any]) -> ChatMessage? {
         guard
             let id = dict["id"] as? String,
-            let role = dict["role"] as? String,
+            let roleString = dict["role"] as? String,
             let content = dict["content"] as? String,
             let createdStr = dict["createdAt"] as? String,
             let createdAt = Date.fromISO8601(createdStr)
         else { return nil }
 
+        let role = MessageRole(rawValue: roleString) ?? .assistant
         let chatId = dict["chatId"] as? String ?? ""
         let reasoning = dict["reasoning"] as? String
         return ChatMessage(id: id, chatId: chatId, role: role, content: content, reasoning: reasoning, createdAt: createdAt)

@@ -1,4 +1,4 @@
-// Re-export canonical error hierarchy from @hominem/db
+// Re-export canonical error hierarchy from @hakumi/db
 export {
   ForbiddenError,
   InternalError,
@@ -8,4 +8,4 @@ export {
   UnavailableError,
   ValidationError,
   type ErrorCode,
-} from '@hominem/db';
+} from '@hakumi/db';

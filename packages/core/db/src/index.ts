@@ -1,7 +1,7 @@
 /**
- * @hominem/db - Database access layer for `hominem` services
+ * @hakumi/db - Database access layer for `hakumi` services
  *
- * NOT for use in client applications - use @hominem/rpc instead.
+ * NOT for use in client applications - use @hakumi/rpc instead.
  */
 
 export type { Selectable } from 'kysely';
