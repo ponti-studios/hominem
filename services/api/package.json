@@ -12,7 +12,8 @@
     "start": "tsx src/index.ts",
     "start:worker": "tsx src/worker.ts",
     "typecheck": "tsgo --noEmit",
-    "perf:auth-middleware": "NODE_ENV=test tsx src/middleware/auth.perf.ts"
+    "perf:auth-middleware": "NODE_ENV=test tsx src/middleware/auth.perf.ts",
+    "e2e:setup": "tsx scripts/e2e-setup.ts"
   },
   "dependencies": {
     "@better-auth/kysely-adapter": "^1.5.4",
