@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 
 import { db } from '@hominem/db';
-import { logger } from '@hominem/utils/logger';
+import { logger } from '@hominem/telemetry';
 import { zValidator } from '@hono/zod-validator';
 import type { Context } from 'hono';
 import { Hono } from 'hono';

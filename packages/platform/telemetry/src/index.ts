@@ -21,4 +21,10 @@ export {
 
   // Logging utilities
   getSpanContextForLogs,
+  LOG_MESSAGES,
+  type LogMessage,
+  logger,
+  getHttpRequestInLogMessage,
+  getHttpRequestLogLevel,
+  getHttpRequestOutLogMessage,
 } from './shared/index.js';

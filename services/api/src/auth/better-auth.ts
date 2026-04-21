@@ -1,7 +1,7 @@
 import { kyselyAdapter } from '@better-auth/kysely-adapter';
 import { passkey } from '@better-auth/passkey';
 import { db } from '@hominem/db';
-import { logger } from '@hominem/utils/logger';
+import { logger } from '@hominem/telemetry';
 import type { BetterAuthOptions } from 'better-auth';
 import type { BetterAuthPlugin } from 'better-auth';
 import { betterAuth } from 'better-auth';

@@ -30,10 +30,7 @@
       "types": "./src/logger.ts",
       "default": "./src/logger.ts"
     },
-    "./client-logger": {
-      "types": "./src/client-logger.ts",
-      "default": "./src/client-logger.ts"
-    },
+
     "./time": {
       "types": "./src/time.ts",
       "default": "./src/time.ts"

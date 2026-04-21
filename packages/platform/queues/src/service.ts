@@ -1,4 +1,4 @@
-import { logger } from '@hominem/utils/logger';
+import { logger } from '@hominem/telemetry';
 
 import { redis } from './redis';
 import type { BaseJob } from './types';

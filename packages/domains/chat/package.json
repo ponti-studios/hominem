@@ -38,6 +38,7 @@
   },
   "dependencies": {
     "@hominem/db": "workspace:*",
+    "@hominem/telemetry": "workspace:*",
     "@hominem/utils": "workspace:*",
     "@langchain/textsplitters": "^1.0.1",
     "date-fns": "^3.6.0"

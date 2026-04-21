@@ -1,6 +1,6 @@
 import { AppState, type AppStateStatus } from 'react-native';
 
-import { logger } from '@hominem/utils/logger';
+import { logger } from '@hominem/telemetry';
 
 import { posthog } from './posthog';
 

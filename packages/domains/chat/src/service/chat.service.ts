@@ -1,4 +1,4 @@
-import { logger } from '@hominem/utils/logger';
+import { logger } from '@hominem/telemetry';
 
 import type { ChatMessageOutput, ChatOutput } from '../chat.types';
 import {

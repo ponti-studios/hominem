@@ -2,7 +2,7 @@ import { FileRepository, getDb } from '@hominem/db';
 import { QUEUE_NAMES } from '@hominem/queues';
 import { FileProcessorService } from '@hominem/services/files';
 import { redis as cache } from '@hominem/services/redis';
-import { logger } from '@hominem/utils/logger';
+import { logger } from '@hominem/telemetry';
 import { fileStorageService } from '@hominem/utils/storage';
 import { Worker } from 'bullmq';
 

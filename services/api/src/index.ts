@@ -1,4 +1,4 @@
-import { logger } from '@hominem/utils/logger';
+import { logger } from '@hominem/telemetry';
 import { serve } from '@hono/node-server';
 
 import { env } from './env';

@@ -1,7 +1,7 @@
 import { createHash } from 'crypto';
 
 import { redis as cache } from '@hominem/services/redis';
-import { logger } from '@hominem/utils/logger';
+import { logger } from '@hominem/telemetry';
 import type { Context } from 'hono';
 import { Hono } from 'hono';
 

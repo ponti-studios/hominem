@@ -1,4 +1,4 @@
-import { logger } from '@hominem/utils/logger';
+import { logger } from '@hominem/telemetry';
 
 import { initRuntime } from './runtime';
 import { startFileProcessingWorker } from './workers/file-processing';

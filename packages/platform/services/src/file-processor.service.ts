@@ -3,6 +3,7 @@ import { Buffer } from 'node:buffer';
 import mammoth from 'mammoth';
 import PDFParser from 'pdf2json';
 
+import { logger, LOG_MESSAGES } from '@hominem/telemetry';
 import { getSharedAiModelConfig, getSharedOpenAIClient } from './ai-model';
 
 export interface ProcessedFile {
@@ -64,7 +65,7 @@ export class FileProcessorService {
           return baseFile;
       }
     } catch (error) {
-      console.error(`Error processing file ${originalName}:`, error);
+      logger.error(LOG_MESSAGES.FILE_PROCESS_ERROR, { originalName, error });
       return {
         ...baseFile,
         metadata: { error: 'Failed to process file' },
@@ -104,7 +105,7 @@ export class FileProcessorService {
 
         textContent = response.choices[0]?.message?.content || '';
       } catch (error) {
-        console.warn('Failed to analyze image with GPT-4 Vision:', error);
+        logger.warn(LOG_MESSAGES.IMAGE_ANALYZE_ERROR, { error });
       }
     }
 
@@ -172,7 +173,7 @@ export class FileProcessorService {
 
           summary = response.choices[0]?.message?.content || '';
         } catch (error) {
-          console.warn('Failed to summarize document:', error);
+          logger.warn(LOG_MESSAGES.DOCUMENT_SUMMARIZE_ERROR, { error });
         }
       }
 
@@ -187,7 +188,7 @@ export class FileProcessorService {
         },
       };
     } catch (error) {
-      console.error('Error processing document:', error);
+      logger.error(LOG_MESSAGES.DOCUMENT_PROCESS_ERROR, { error });
       return {
         ...file,
         textContent: '',

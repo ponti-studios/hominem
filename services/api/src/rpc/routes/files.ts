@@ -1,7 +1,7 @@
 import type { FileRecord } from '@hominem/db';
 import { FileRepository, getDb } from '@hominem/db';
 import { fileProcessingQueue } from '@hominem/queues';
-import { logger } from '@hominem/utils/logger';
+import { logger } from '@hominem/telemetry';
 import { fileStorageService } from '@hominem/utils/storage';
 import { Hono } from 'hono';
 import * as z from 'zod';

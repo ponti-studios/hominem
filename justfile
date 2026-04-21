@@ -96,3 +96,12 @@ mobile-lint:
 
 validate-mobile: mobile-typecheck mobile-test
 
+
+
+api:
+    #!/usr/bin/env bash
+    if [[ "$1" == "--prod" ]]; then
+        {{ TURBO }} run start --filter=@hominem/api
+    else
+        {{ TURBO }} run dev --filter=@hominem/api
+    fi

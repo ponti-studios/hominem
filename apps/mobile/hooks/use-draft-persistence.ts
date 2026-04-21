@@ -1,4 +1,4 @@
-import { logger } from '@hominem/utils/logger';
+import { logger } from '@hominem/telemetry';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { ComposerDraft } from '~/components/composer/composerState';

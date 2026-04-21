@@ -18,6 +18,7 @@
     "@hominem/chat": "workspace:*",
     "@hominem/env": "workspace:*",
     "@hominem/rpc": "workspace:*",
+    "@hominem/telemetry": "workspace:*",
     "@hominem/ui": "workspace:*",
     "@hominem/utils": "workspace:*",
     "@react-native-async-storage/async-storage": "^2.2.0",

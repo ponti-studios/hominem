@@ -1,6 +1,6 @@
 import type { User } from '@hominem/auth/types';
 import { createHonoTelemetryMiddleware } from '@hominem/telemetry/node';
-import { logger } from '@hominem/utils/logger';
+import { logger, LOG_MESSAGES } from '@hominem/telemetry';
 import { apiReference } from '@scalar/hono-api-reference';
 import * as Sentry from '@sentry/node';
 import { Hono } from 'hono';
@@ -157,7 +157,12 @@ export function createServer() {
   });
 
   app.notFound((c) => {
-    return c.text('玉をなめろ', 404);
+    logger.warn(LOG_MESSAGES.ROUTE_NOT_FOUND, {
+      path: c.req.path,
+      method: c.req.method,
+      userAgent: c.req.header('user-agent'),
+    });
+    return c.text('Not Found', 404);
   });
 
   return app;

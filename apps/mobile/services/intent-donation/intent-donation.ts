@@ -1,5 +1,7 @@
 import { Platform } from 'react-native';
 
+import { logger, LOG_MESSAGES } from '@hominem/telemetry';
+
 type IntentName = 'AddNoteIntent' | 'StartChatIntent';
 
 function donateIntent(name: IntentName): void {
@@ -11,15 +13,15 @@ function donateIntent(name: IntentName): void {
     };
     if (!HakumiIntents?.donate) {
       if (__DEV__) {
-        console.warn(
-          '[intent-donation] HakumiIntents Expo module not found. Rebuild the app to link local modules.',
-        );
+        logger.warn(LOG_MESSAGES.INTENT_DONATION_FAILED, {
+          reason: 'HakumiIntents Expo module not found',
+        });
       }
       return;
     }
     void HakumiIntents.donate(name);
   } catch (e) {
-    if (__DEV__) console.warn('[intent-donation] donate() failed:', e);
+    if (__DEV__) logger.warn(LOG_MESSAGES.INTENT_DONATION_FAILED, { error: e });
   }
 }
 

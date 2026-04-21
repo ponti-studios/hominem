@@ -3,7 +3,7 @@ import {
   VoiceTranscribeErrorSchema,
   VoiceTranscribeSuccessSchema,
 } from '@hominem/rpc/schemas/voice.schema';
-import { logger } from '@hominem/utils/logger';
+import { logger } from '@hominem/telemetry';
 import { useMutation } from '@tanstack/react-query';
 import * as FileSystem from 'expo-file-system/legacy';
 import { useCallback, useRef } from 'react';

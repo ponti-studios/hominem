@@ -1,3 +1,5 @@
+import { LOG_MESSAGES } from './log-messages';
+
 export interface HttpRequestLogData {
   durationMs: number;
   method: string;
@@ -25,9 +27,9 @@ export function getHttpRequestLogLevel({ durationMs, status }: HttpRequestLogDat
 }
 
 export function getHttpRequestInLogMessage() {
-  return 'http_request_in';
+  return LOG_MESSAGES.HTTP_REQUEST_IN;
 }
 
 export function getHttpRequestOutLogMessage() {
-  return 'http_request_out';
+  return LOG_MESSAGES.HTTP_REQUEST_OUT;
 }

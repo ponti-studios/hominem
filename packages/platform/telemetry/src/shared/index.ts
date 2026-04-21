@@ -218,3 +218,19 @@ export function getSpanContextForLogs(): { trace_id?: string; span_id?: string }
 
   return {};
 }
+
+// Re-export logger and log messages
+export {
+  logger,
+  LOG_MESSAGES,
+  type LogMessage,
+  getHttpRequestInLogMessage,
+  getHttpRequestLogLevel,
+  getHttpRequestOutLogMessage,
+} from './logger';
+
+export type {
+  HttpRequestLogData,
+  HttpRequestStartLogData,
+  LoggerLevel,
+} from './logger-shared';

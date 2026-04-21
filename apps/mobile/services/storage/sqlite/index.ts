@@ -1,4 +1,5 @@
 import type { User } from '@hominem/auth/types';
+import { logger, LOG_MESSAGES } from '@hominem/telemetry';
 import { z } from 'zod';
 
 import { SettingsSchema, MediaSchema } from '../../validation/schemas';
@@ -44,7 +45,7 @@ function validateOrNull<T>(schema: z.ZodType<T>, data: unknown): T | null {
     return schema.parse(data);
   } catch (error) {
     if (__DEV__) {
-      console.warn('[LocalStore] Validation failed:', error);
+      logger.warn(LOG_MESSAGES.LOCAL_STORE_VALIDATION_FAILED, { error });
     }
     return null;
   }

@@ -8,7 +8,7 @@ import type {
   MobileVoiceTranscriptionErrorOutput,
   MobileVoiceTranscriptionOutput,
 } from '@hominem/rpc/types/mobile.types';
-import { logger } from '@hominem/utils/logger';
+import { logger } from '@hominem/telemetry';
 import { zValidator } from '@hono/zod-validator';
 import { Hono, type Context } from 'hono';
 import * as z from 'zod';

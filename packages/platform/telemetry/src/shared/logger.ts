@@ -1,6 +1,7 @@
 import { context as otelContext } from '@opentelemetry/api';
 import { logs } from '@opentelemetry/api-logs';
 import pino from 'pino';
+import { Writable } from 'node:stream';
 
 import {
   type HttpRequestLogData,
@@ -9,26 +10,67 @@ import {
   getHttpRequestInLogMessage,
   getHttpRequestLogLevel,
   getHttpRequestOutLogMessage,
-} from './logger.shared';
+} from './logger-shared';
+import { LOG_MESSAGES, type LogMessage } from './log-messages';
+
+export {
+  LOG_MESSAGES,
+  getHttpRequestInLogMessage,
+  getHttpRequestLogLevel,
+  getHttpRequestOutLogMessage,
+};
+export type { HttpRequestLogData, HttpRequestStartLogData, LoggerLevel };
+export { type LogMessage };
 
 const redactFields = ['email', 'password', 'token'];
 
-export { getHttpRequestInLogMessage, getHttpRequestLogLevel, getHttpRequestOutLogMessage };
-export type { HttpRequestLogData, HttpRequestStartLogData, LoggerLevel };
+const isProduction = process.env.NODE_ENV === 'production';
+const defaultServiceName = process.env.OTEL_SERVICE_NAME || process.env.SERVICE_NAME || 'app';
 
-const pinoLogger = pino({
-  base: null,
-  level: (typeof process !== 'undefined' && process.env?.LOG_LEVEL) || 'debug',
-  redact: {
-    paths: redactFields.map((field) => `*.${field}`),
-    censor: '[REDACTED]',
-  },
-  formatters: {
-    level(label: string) {
-      return { level: label };
+function createHumanReadableStream(): Writable {
+  return new Writable({
+    write(chunk: string, _encoding: string, callback: () => void) {
+      try {
+        const log = JSON.parse(chunk.toString());
+        const serviceName = log.serviceName || defaultServiceName;
+        const time = log.time
+          ? new Date(log.time).toISOString().replace('T', ' ').slice(0, 19)
+          : new Date().toISOString().replace('T', ' ').slice(0, 19);
+        let message = log.msg || '';
+        if (log.signal) {
+          message = `${message} (${log.signal})`;
+        }
+        if (log.path) {
+          message = `${message} ${log.method || ''} ${log.path}`;
+          if (log.status) {
+            message = `${message} ${log.status}`;
+          }
+        }
+        process.stdout.write(`[${serviceName}][${time}] ${message}\n`);
+      } catch {
+        process.stdout.write(chunk.toString());
+      }
+      callback();
+    },
+  });
+}
+
+const pinoLogger = pino(
+  {
+    base: null,
+    level: (typeof process !== 'undefined' && process.env?.LOG_LEVEL) || 'debug',
+    redact: {
+      paths: redactFields.map((field) => `*.${field}`),
+      censor: '[REDACTED]',
+    },
+    formatters: {
+      level(label: string) {
+        return { level: label };
+      },
     },
   },
-});
+  isProduction ? undefined : createHumanReadableStream(),
+);
 
 function toOtelAttributes(data?: object) {
   if (!data) {

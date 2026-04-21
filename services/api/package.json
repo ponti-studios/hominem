@@ -5,11 +5,11 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "dev": "tsx --watch src/index.ts",
+    "dev": "SERVICE_NAME=hominem-api tsx --watch src/index.ts",
     "format": "pnpm dlx oxfmt ./src",
     "lint": "pnpm dlx oxlint ./src",
     "migrate:deploy": "goose -dir ../../packages/core/db/migrations postgres \"$DATABASE_URL\" up",
-    "start": "tsx src/index.ts",
+    "start": "SERVICE_NAME=hominem-api tsx src/index.ts",
     "start:worker": "tsx src/worker.ts",
     "typecheck": "tsgo --noEmit",
     "perf:auth-middleware": "NODE_ENV=test tsx src/middleware/auth.perf.ts",
