@@ -32,6 +32,7 @@
     "production": {
       "developmentClient": false,
       "distribution": "store",
+      "autoIncrement": true,
       "env": {
         "APP_VARIANT": "production",
         "EXPO_PUBLIC_MOBILE_PASSKEY_ENABLED": "true"
