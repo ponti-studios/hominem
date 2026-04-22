@@ -1,9 +1,10 @@
 import React from 'react';
-import { InputAccessoryView, Keyboard, Platform, Pressable, View } from 'react-native';
+import { InputAccessoryView, Keyboard, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { makeStyles } from '~/components/theme';
 import { useThemeColors } from '~/components/theme/theme';
 import { spacing } from '~/components/theme/tokens';
+import { BlurSurface } from '~/components/ui/BlurSurface';
 import AppIcon from '~/components/ui/icon';
 
 import type { FormatAction } from '~/hooks/use-note-toolbar';
@@ -50,7 +51,7 @@ function ToolbarDivider() {
   return <View style={styles.divider} />;
 }
 
-function ToolbarContent({
+function ToolbarButtons({
   onAction,
   onUndo,
   onRedo,
@@ -59,7 +60,7 @@ function ToolbarContent({
 }: NoteToolbarProps) {
   const styles = useToolbarStyles();
   return (
-    <View style={styles.container}>
+    <>
       <View style={styles.group}>
         <ToolbarButton icon="bold" label="Bold" onPress={() => onAction('bold')} />
         <ToolbarButton icon="italic" label="Italic" onPress={() => onAction('italic')} />
@@ -129,33 +130,43 @@ function ToolbarContent({
         label="Dismiss keyboard"
         onPress={() => Keyboard.dismiss()}
       />
-    </View>
+    </>
   );
 }
 
 export function NoteToolbar(props: NoteToolbarProps) {
+  const styles = useToolbarStyles();
+
   if (Platform.OS === 'ios') {
     return (
       <InputAccessoryView nativeID={NOTE_TOOLBAR_ID} backgroundColor="transparent">
-        <ToolbarContent {...props} />
+        <BlurSurface tint="chrome" style={styles.container}>
+          <ToolbarButtons {...props} />
+        </BlurSurface>
       </InputAccessoryView>
     );
   }
 
-  // Android: render inline — parent positions it above the keyboard
-  return <ToolbarContent {...props} />;
+  // Android: BlurSurface renders a semi-transparent native view; solid bg as base
+  return (
+    <View style={[styles.container, styles.containerAndroid]}>
+      <ToolbarButtons {...props} />
+    </View>
+  );
 }
 
 const useToolbarStyles = makeStyles((theme) => ({
   container: {
     alignItems: 'center',
-    backgroundColor: theme.colors['bg-elevated'],
     borderTopColor: theme.colors['border-subtle'],
-    borderTopWidth: 1,
+    borderTopWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
     gap: spacing[1],
     paddingHorizontal: spacing[3],
     paddingVertical: spacing[2],
+  },
+  containerAndroid: {
+    backgroundColor: theme.colors['bg-elevated'],
   },
   group: {
     alignItems: 'center',

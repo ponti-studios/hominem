@@ -1,5 +1,7 @@
 export { Surface } from './Surface';
 
+export { BlurSurface } from './BlurSurface';
+
 export { Separator } from './Separator';
 
 export { ListShell } from './ListShell';
