@@ -43,5 +43,8 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
-          eas build --platform ios --profile production --non-interactive && \
-          eas submit --platform ios --latest --non-interactive
+          eas build \
+            --platform ios \
+            --profile production \
+            --auto-submit \
+            --non-interactive

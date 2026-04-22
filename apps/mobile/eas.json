@@ -9,7 +9,6 @@
       "distribution": "internal",
       "env": {
         "APP_VARIANT": "dev",
-        "EXPO_APPLE_TEAM_ID": "$EXPO_APPLE_TEAM_ID",
         "EXPO_PUBLIC_MOBILE_PASSKEY_ENABLED": "false"
       }
     },
@@ -18,8 +17,6 @@
       "distribution": "internal",
       "env": {
         "APP_VARIANT": "e2e",
-        "EXPO_APPLE_TEAM_ID": "$EXPO_APPLE_TEAM_ID",
-        "EXPO_PUBLIC_E2E_AUTH_SECRET": "$EXPO_PUBLIC_E2E_AUTH_SECRET",
         "EXPO_PUBLIC_MOBILE_PASSKEY_ENABLED": "false"
       }
     },
@@ -28,8 +25,6 @@
       "distribution": "internal",
       "env": {
         "APP_VARIANT": "preview",
-        "EXPO_APPLE_TEAM_ID": "$EXPO_APPLE_TEAM_ID",
-        "EXPO_PUBLIC_API_BASE_URL": "$API_BASE_URL",
         "EXPO_PUBLIC_MOBILE_PASSKEY_ENABLED": "false"
       },
       "channel": "preview"
@@ -39,8 +34,6 @@
       "distribution": "store",
       "env": {
         "APP_VARIANT": "production",
-        "EXPO_APPLE_TEAM_ID": "$EXPO_APPLE_TEAM_ID",
-        "EXPO_PUBLIC_API_BASE_URL": "$API_BASE_URL",
         "EXPO_PUBLIC_MOBILE_PASSKEY_ENABLED": "true"
       },
       "channel": "production"
@@ -49,7 +42,7 @@
   "submit": {
     "production": {
       "ios": {
-        "appleTeamId": "$EXPO_APPLE_TEAM_ID"
+        "ascAppId": "6760221796"
       }
     }
   }
