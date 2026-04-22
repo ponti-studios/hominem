@@ -24,7 +24,7 @@ export { Button } from './Button';
 export type { ButtonProps } from './Button';
 
 export { TextField } from './TextField';
-export type { TextFieldProps } from './TextField';
+export type { TextFieldProps, TextFieldSize, TextFieldVariant } from './TextField';
 
 export { TextArea } from './TextArea';
 export type { TextAreaProps } from './TextArea';
