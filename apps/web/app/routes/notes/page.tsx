@@ -228,7 +228,9 @@ export default function NotesPage() {
           className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden"
         >
           {feedQuery.isLoading ? (
-            <div className="mx-auto w-full max-w-4xl px-4 py-5 text-body-4 text-text-secondary md:px-6 lg:px-8">Loading notes...</div>
+            <div className="mx-auto w-full max-w-4xl px-4 py-5 text-body-4 text-text-secondary md:px-6 lg:px-8">
+              Loading notes...
+            </div>
           ) : null}
 
           {!feedQuery.isLoading && notes.length === 0 ? (
@@ -242,56 +244,59 @@ export default function NotesPage() {
 
           {notes.length > 0 ? (
             <div className="mx-auto w-full max-w-4xl px-4 md:px-6 lg:px-8">
-              <div className="relative w-full" style={{ height: `${virtualizer.getTotalSize()}px` }}>
-              {virtualItems.map((virtualItem) => {
-                const note = notes[virtualItem.index];
-                if (!note) {
-                  return null;
-                }
-
-                const setRowElement = (element: HTMLDivElement | null) => {
-                  const existingHandler = noteRowListenersRef.current.get(note.id);
-                  if (existingHandler) {
-                    window.removeEventListener(NOTES_ROW_EXIT_REQUEST_EVENT, existingHandler);
-                    noteRowListenersRef.current.delete(note.id);
+              <div
+                className="relative w-full"
+                style={{ height: `${virtualizer.getTotalSize()}px` }}
+              >
+                {virtualItems.map((virtualItem) => {
+                  const note = notes[virtualItem.index];
+                  if (!note) {
+                    return null;
                   }
 
-                  if (!element) {
-                    return;
-                  }
+                  const setRowElement = (element: HTMLDivElement | null) => {
+                    const existingHandler = noteRowListenersRef.current.get(note.id);
+                    if (existingHandler) {
+                      window.removeEventListener(NOTES_ROW_EXIT_REQUEST_EVENT, existingHandler);
+                      noteRowListenersRef.current.delete(note.id);
+                    }
 
-                  const handleExitRequest = (event: Event) => {
-                    const customEvent = event as CustomEvent<NotesRowExitRequestDetail>;
-                    if (customEvent.detail.noteId !== note.id) {
+                    if (!element) {
                       return;
                     }
 
-                    animateNotesRowExit(element, () => completeNotesRowExit(note.id));
+                    const handleExitRequest = (event: Event) => {
+                      const customEvent = event as CustomEvent<NotesRowExitRequestDetail>;
+                      if (customEvent.detail.noteId !== note.id) {
+                        return;
+                      }
+
+                      animateNotesRowExit(element, () => completeNotesRowExit(note.id));
+                    };
+
+                    noteRowListenersRef.current.set(note.id, handleExitRequest);
+                    window.addEventListener(NOTES_ROW_EXIT_REQUEST_EVENT, handleExitRequest);
+                    virtualizer.measureElement(element);
+                    if (animatedRowIdsRef.current.has(note.id)) {
+                      return;
+                    }
+
+                    animatedRowIdsRef.current.add(note.id);
+                    animateNotesRowEnter(element);
                   };
 
-                  noteRowListenersRef.current.set(note.id, handleExitRequest);
-                  window.addEventListener(NOTES_ROW_EXIT_REQUEST_EVENT, handleExitRequest);
-                  virtualizer.measureElement(element);
-                  if (animatedRowIdsRef.current.has(note.id)) {
-                    return;
-                  }
-
-                  animatedRowIdsRef.current.add(note.id);
-                  animateNotesRowEnter(element);
-                };
-
-                return (
-                  <div
-                    key={virtualItem.key}
-                    ref={setRowElement}
-                    data-index={virtualItem.index}
-                    className="absolute left-0 top-0 w-full"
-                    style={{ transform: `translateY(${virtualItem.start}px)` }}
-                  >
-                    <NoteStreamRow note={note} />
-                  </div>
-                );
-              })}
+                  return (
+                    <div
+                      key={virtualItem.key}
+                      ref={setRowElement}
+                      data-index={virtualItem.index}
+                      className="absolute left-0 top-0 w-full"
+                      style={{ transform: `translateY(${virtualItem.start}px)` }}
+                    >
+                      <NoteStreamRow note={note} />
+                    </div>
+                  );
+                })}
               </div>
             </div>
           ) : null}

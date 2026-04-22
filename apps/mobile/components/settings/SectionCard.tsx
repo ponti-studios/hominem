@@ -1,7 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 
-import { sharedCardStyles } from '../../app/(protected)/(tabs)/settings/styles';
+import { sharedCardStyles } from '../styles';
 
 interface SectionCardProps {
   children: React.ReactNode;

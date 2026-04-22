@@ -1,5 +1,5 @@
+import { logger, LOG_MESSAGES } from '@hominem/telemetry';
 import { initTelemetry } from '@hominem/telemetry/node';
-import { logger } from '@hominem/telemetry';
 import * as Sentry from '@sentry/node';
 
 import { env } from './env';
@@ -31,7 +31,7 @@ export function initRuntime(serviceName: string) {
 
   const installSignalHandlers = (tasks: ShutdownTask[] = []) => {
     const shutdown = async (signal: NodeJS.Signals) => {
-      logger.info('server_shutdown', { serviceName, signal });
+      logger.info(LOG_MESSAGES.SERVER_SHUTDOWN, { serviceName, signal });
       for (const task of tasks) {
         await task();
       }

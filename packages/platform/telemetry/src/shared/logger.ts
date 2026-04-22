@@ -1,8 +1,7 @@
 import { context as otelContext } from '@opentelemetry/api';
 import { logs } from '@opentelemetry/api-logs';
-import pino from 'pino';
-import { Writable } from 'node:stream';
 
+import { LOG_MESSAGES, type LogMessage } from './log-messages';
 import {
   type HttpRequestLogData,
   type HttpRequestStartLogData,
@@ -11,7 +10,6 @@ import {
   getHttpRequestLogLevel,
   getHttpRequestOutLogMessage,
 } from './logger-shared';
-import { LOG_MESSAGES, type LogMessage } from './log-messages';
 
 export {
   LOG_MESSAGES,
@@ -23,54 +21,47 @@ export type { HttpRequestLogData, HttpRequestStartLogData, LoggerLevel };
 export { type LogMessage };
 
 const redactFields = ['email', 'password', 'token'];
-
-const isProduction = process.env.NODE_ENV === 'production';
 const defaultServiceName = process.env.OTEL_SERVICE_NAME || process.env.SERVICE_NAME || 'app';
 
-function createHumanReadableStream(): Writable {
-  return new Writable({
-    write(chunk: string, _encoding: string, callback: () => void) {
-      try {
-        const log = JSON.parse(chunk.toString());
-        const serviceName = log.serviceName || defaultServiceName;
-        const time = log.time
-          ? new Date(log.time).toISOString().replace('T', ' ').slice(0, 19)
-          : new Date().toISOString().replace('T', ' ').slice(0, 19);
-        let message = log.msg || '';
-        if (log.signal) {
-          message = `${message} (${log.signal})`;
-        }
-        if (log.path) {
-          message = `${message} ${log.method || ''} ${log.path}`;
-          if (log.status) {
-            message = `${message} ${log.status}`;
-          }
-        }
-        process.stdout.write(`[${serviceName}][${time}] ${message}\n`);
-      } catch {
-        process.stdout.write(chunk.toString());
+function redactObject<T extends object | undefined>(value: T): T {
+  if (!value) {
+    return value;
+  }
+
+  const redacted = Object.fromEntries(
+    Object.entries(value).map(([key, currentValue]) => {
+      if (redactFields.includes(key.toLowerCase())) {
+        return [key, '[REDACTED]'];
       }
-      callback();
-    },
-  });
+
+      return [key, currentValue];
+    }),
+  );
+
+  return redacted as T;
 }
 
-const pinoLogger = pino(
-  {
-    base: null,
-    level: (typeof process !== 'undefined' && process.env?.LOG_LEVEL) || 'debug',
-    redact: {
-      paths: redactFields.map((field) => `*.${field}`),
-      censor: '[REDACTED]',
-    },
-    formatters: {
-      level(label: string) {
-        return { level: label };
-      },
-    },
+function formatMessage(level: string, message: string, data?: object) {
+  const time = new Date().toISOString().replace('T', ' ').slice(0, 19);
+  const serviceName = defaultServiceName;
+  const payload = data ? ` ${JSON.stringify(redactObject(data))}` : '';
+  return `[${serviceName}][${time}][${level}] ${message}${payload}`;
+}
+
+const pinoLogger = {
+  info: (data: object | undefined, message: string) => {
+    console.info(formatMessage('info', message, data));
   },
-  isProduction ? undefined : createHumanReadableStream(),
-);
+  error: (error: Error | object | undefined, message: string) => {
+    console.error(formatMessage('error', message, error ? { error: redactObject(error as object) } : undefined));
+  },
+  warn: (data: object | undefined, message: string) => {
+    console.warn(formatMessage('warn', message, data));
+  },
+  debug: (data: object | undefined, message: string) => {
+    console.debug(formatMessage('debug', message, data));
+  },
+};
 
 function toOtelAttributes(data?: object) {
   if (!data) {

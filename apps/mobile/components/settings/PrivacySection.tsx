@@ -3,7 +3,7 @@ import { Platform, Switch } from 'react-native';
 
 import { theme } from '~/components/theme';
 
-import { styles } from '../../app/(protected)/(tabs)/settings/styles';
+import { styles } from '../styles';
 import { RowSeparator } from './RowSeparator';
 import { SectionCard } from './SectionCard';
 import { SectionLabel } from './SectionLabel';

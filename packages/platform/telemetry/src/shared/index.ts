@@ -229,8 +229,4 @@ export {
   getHttpRequestOutLogMessage,
 } from './logger';
 
-export type {
-  HttpRequestLogData,
-  HttpRequestStartLogData,
-  LoggerLevel,
-} from './logger-shared';
+export type { HttpRequestLogData, HttpRequestStartLogData, LoggerLevel } from './logger-shared';

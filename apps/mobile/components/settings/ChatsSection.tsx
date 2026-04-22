@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { styles } from '../../app/(protected)/(tabs)/settings/styles';
+import { styles } from '../styles';
 import { SectionCard } from './SectionCard';
 import { SectionLabel } from './SectionLabel';
 import { SettingsRow } from './SettingsRow';

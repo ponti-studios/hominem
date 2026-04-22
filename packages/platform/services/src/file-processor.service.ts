@@ -1,9 +1,9 @@
 import { Buffer } from 'node:buffer';
 
+import { logger, LOG_MESSAGES } from '@hominem/telemetry';
 import mammoth from 'mammoth';
 import PDFParser from 'pdf2json';
 
-import { logger, LOG_MESSAGES } from '@hominem/telemetry';
 import { getSharedAiModelConfig, getSharedOpenAIClient } from './ai-model';
 
 export interface ProcessedFile {

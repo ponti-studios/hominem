@@ -1,5 +1,5 @@
-import { initTelemetry } from '@hominem/telemetry/browser';
 import { logger, LOG_MESSAGES } from '@hominem/telemetry';
+import { initTelemetry } from '@hominem/telemetry/browser';
 import { useEffect, useRef } from 'react';
 
 import { getClientEnv } from '../env.client';
@@ -39,9 +39,9 @@ export function useTelemetry() {
 
       // Cleanup on page unload
       return () => {
-        telemetry.shutdown().catch((error) =>
-          logger.error(LOG_MESSAGES.TELEMETRY_SHUTDOWN_FAILED, { error }),
-        );
+        telemetry
+          .shutdown()
+          .catch((error) => logger.error(LOG_MESSAGES.TELEMETRY_SHUTDOWN_FAILED, { error }));
       };
     } catch (error) {
       logger.error(LOG_MESSAGES.TELEMETRY_INIT_FAILED, { error: error as Error });

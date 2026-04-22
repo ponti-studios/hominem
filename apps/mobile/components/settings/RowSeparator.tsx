@@ -1,7 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 
-import { styles } from '../../app/(protected)/(tabs)/settings/styles';
+import { styles } from '../styles';
 
 export function RowSeparator() {
   return <View style={styles.rowSeparator} />;

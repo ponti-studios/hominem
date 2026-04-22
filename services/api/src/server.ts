@@ -1,6 +1,6 @@
 import type { User } from '@hominem/auth/types';
-import { createHonoTelemetryMiddleware } from '@hominem/telemetry/node';
 import { logger, LOG_MESSAGES } from '@hominem/telemetry';
+import { createHonoTelemetryMiddleware } from '@hominem/telemetry/node';
 import { apiReference } from '@scalar/hono-api-reference';
 import * as Sentry from '@sentry/node';
 import { Hono } from 'hono';

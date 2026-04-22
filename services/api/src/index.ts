@@ -1,4 +1,4 @@
-import { logger } from '@hominem/telemetry';
+import { logger, LOG_MESSAGES } from '@hominem/telemetry';
 import { serve } from '@hono/node-server';
 
 import { env } from './env';
@@ -10,7 +10,7 @@ initRuntime('hominem-api').installSignalHandlers();
 const port = Number.parseInt(env.PORT, 10);
 const host = '0.0.0.0';
 
-logger.info('server_started', { host, port });
+logger.info(LOG_MESSAGES.SERVER_STARTED, { host, port });
 
 serve({
   fetch: app.fetch,

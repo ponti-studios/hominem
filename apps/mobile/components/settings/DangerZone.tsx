@@ -4,7 +4,7 @@ import { Pressable, View } from 'react-native';
 
 import { Text, theme } from '~/components/theme';
 
-import { styles } from '../../app/(protected)/(tabs)/settings/styles';
+import { styles } from '../styles';
 
 interface DangerZoneProps {
   onSignOut: () => void;

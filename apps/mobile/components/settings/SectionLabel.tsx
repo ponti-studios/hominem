@@ -2,7 +2,7 @@ import React from 'react';
 
 import { Text, theme } from '~/components/theme';
 
-import { styles } from '../../app/(protected)/(tabs)/settings/styles';
+import { styles } from '../styles';
 
 interface SectionLabelProps {
   children: string;
