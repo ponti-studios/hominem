@@ -13,6 +13,7 @@ ENV TURBO_TELEMETRY_DISABLED=1 \
 
 COPY package.json pnpm-lock.yaml tsconfig.json ./
 COPY pnpm-workspace.yaml ./
+COPY patches ./patches
 
 COPY packages ./packages
 COPY apps/web ./apps/web
@@ -39,6 +40,7 @@ RUN addgroup -g 1001 webuser && \
 
 COPY --from=builder --chown=hominem:webuser /app/package.json ./package.json
 COPY --from=builder --chown=hominem:webuser /app/pnpm-lock.yaml ./pnpm-lock.yaml
+COPY --from=builder --chown=hominem:webuser /app/patches ./patches
 COPY --from=builder --chown=hominem:webuser /app/node_modules ./node_modules
 COPY --from=builder --chown=hominem:webuser /app/apps/web ./apps/web
 COPY --from=builder --chown=hominem:webuser /app/packages ./packages
