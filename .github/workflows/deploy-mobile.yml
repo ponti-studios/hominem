@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  eas-build-testflight-production-api:
+  build-production:
     runs-on: ubuntu-latest
 
     steps:
@@ -35,10 +35,10 @@ jobs:
       - name: install-dependencies
         run: pnpm install
 
-      - name: setup-eas-cli
+      - name: setup-eas
         run: npm install -g eas-cli
 
-      - name: submit-mobile-build
+      - name: submit-build
         working-directory: apps/mobile
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
