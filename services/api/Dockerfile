@@ -9,6 +9,7 @@ ENV TURBO_TELEMETRY_DISABLED=1 \
 # Copy lock files first (these rarely change - best for caching)
 COPY package.json pnpm-lock.yaml tsconfig.json ./
 COPY pnpm-workspace.yaml ./
+COPY patches ./patches
 
 # Copy workspace structure (rarely changes after setup)
 COPY packages ./packages
@@ -43,6 +44,7 @@ RUN mkdir -p /app/logs && \
 
 COPY --from=builder --chown=hominem:apiuser /app/package.json ./package.json
 COPY --from=builder --chown=hominem:apiuser /app/pnpm-lock.yaml ./pnpm-lock.yaml
+COPY --from=builder --chown=hominem:apiuser /app/patches ./patches
 COPY --from=builder --chown=hominem:apiuser /app/node_modules ./node_modules
 COPY --from=builder --chown=hominem:apiuser /app/services/api ./services/api
 COPY --from=builder --chown=hominem:apiuser /app/packages ./packages
