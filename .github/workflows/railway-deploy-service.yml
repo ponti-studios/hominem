@@ -4,6 +4,10 @@ on:
       service_name:
         required: true
         type: string
+      checkout_ref:
+        required: false
+        type: string
+        default: ''
     secrets:
       service_target:
         required: true
@@ -28,6 +32,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.checkout_ref || github.sha }}
 
       - name: validate-env
         run: test -n "$SERVICE" && test -n "$RAILWAY_TOKEN"

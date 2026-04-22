@@ -1,11 +1,19 @@
 name: validate-db
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/core/db/**'
+      - 'pnpm-lock.yaml'
+      - '.github/actions/setup-pnpm-workspace/**'
+      - '.github/workflows/validate-db.yml'
   pull_request:
     branches: [main, preview]
     paths:
       - 'packages/core/db/**'
       - 'pnpm-lock.yaml'
+      - '.github/actions/setup-pnpm-workspace/**'
       - '.github/workflows/validate-db.yml'
 
 concurrency:
@@ -40,8 +48,8 @@ jobs:
       - name: checkout-repository
         uses: actions/checkout@v4
 
-      - name: setup-node-js
-        uses: actions/setup-node@v4
+      - name: setup-pnpm-workspace
+        uses: ./.github/actions/setup-pnpm-workspace
         with:
           node-version: ${{ matrix.node-version }}
 
@@ -50,32 +58,7 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
 
-      - name: setup-pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 10.33.0
-
-      - name: setup-just
-        uses: taiki-e/install-action@just
-
-      - name: get-pnpm-store-directory
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-      - name: setup-pnpm-cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: install-dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: validate-database-migrations
+      - name: validate-migrations
         env:
           DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:4433/hominem-test
-        run: just db-migrations-validate
+        run: just validate-migrations

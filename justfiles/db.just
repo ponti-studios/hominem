@@ -49,7 +49,7 @@ db-status:
     DATABASE_URL="${DATABASE_URL:-{{ LOCAL_DATABASE_URL }}}"
     goose -dir "{{ MIGRATIONS_DIR }}" postgres "$DATABASE_URL" status
 
-db-migrations-validate:
+validate-migrations:
     #!/usr/bin/env bash
     goose_bin="$(go env GOPATH)/bin/goose"
     DATABASE_URL="${DATABASE_URL:-{{ LOCAL_DATABASE_URL }}}"

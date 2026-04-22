@@ -38,7 +38,7 @@ When you are working on the API or shared backend code, run the API validation l
 - `just check-web`: lint, typecheck, test, and build the web app
 - `just check-api`: lint, typecheck, and test the API
 - `just web-e2e`: run the web browser suite
-- `just db-migrations-validate`: validate migration idempotency
+- `just validate-migrations`: validate migration idempotency
 
 ## Setup And Build
 

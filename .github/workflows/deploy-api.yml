@@ -1,20 +1,10 @@
 name: deploy-api
 
 on:
-  push:
+  workflow_run:
+    workflows: [validate-api]
+    types: [completed]
     branches: [main]
-    paths:
-      - 'services/api/**'
-      - 'packages/**'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
-      - 'pnpm-workspace.yaml'
-      - 'turbo.json'
-      - 'tsconfig.json'
-      - 'tsconfig.profiles/**'
-      - 'justfile'
-      - 'justfiles/**'
-      - '.github/workflows/deploy-api.yml'
   workflow_dispatch:
 
 concurrency:
@@ -23,9 +13,11 @@ concurrency:
 
 jobs:
   deploy-api:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     uses: ./.github/workflows/railway-deploy-service.yml
     secrets:
       service_target: ${{ secrets.RAILWAY_SERVICE_API }}
       RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
     with:
       service_name: api
+      checkout_ref: ${{ github.event.workflow_run.head_sha || github.sha }}
