@@ -1,4 +1,6 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
+import { getAppVariant, getAppVariantConfig } from './config/appVariant';
+import type { AppVariant, VariantConfig } from './config/appVariant';
 
 const EXPO_OWNER = 'pontistudios';
 const EXPO_PROJECT_ID = '4dfac82b-644f-4ff3-be42-e8f941287aa1';
@@ -11,58 +13,6 @@ const shellTheme = {
     notificationColor: '#000000',
   },
 } as const;
-
-type AppVariant = 'dev' | 'e2e' | 'preview' | 'production';
-
-interface VariantConfig {
-  bundleIdentifier: string;
-  displayName: string;
-  scheme: string;
-  usesDevClient: boolean;
-  updatesChannel: string | null;
-}
-
-const APP_VARIANTS: Readonly<Record<AppVariant, Readonly<VariantConfig>>> = Object.freeze({
-  dev: Object.freeze({
-    bundleIdentifier: 'com.pontistudios.hakumi.dev',
-    displayName: 'Hakumi Dev',
-    scheme: 'hakumi-dev',
-    usesDevClient: true,
-    updatesChannel: null,
-  }),
-  e2e: Object.freeze({
-    bundleIdentifier: 'com.pontistudios.hakumi.e2e',
-    displayName: 'Hakumi E2E',
-    scheme: 'hakumi-e2e',
-    usesDevClient: false,
-    updatesChannel: null,
-  }),
-  preview: Object.freeze({
-    bundleIdentifier: 'com.pontistudios.hakumi.preview',
-    displayName: 'Hakumi Preview',
-    scheme: 'hakumi-preview',
-    usesDevClient: false,
-    updatesChannel: 'preview',
-  }),
-  production: Object.freeze({
-    bundleIdentifier: 'com.pontistudios.hakumi',
-    displayName: 'Hakumi',
-    scheme: 'hakumi',
-    usesDevClient: false,
-    updatesChannel: 'production',
-  }),
-});
-
-function getAppVariant(rawVariant = process.env.APP_VARIANT ?? 'dev'): AppVariant {
-  if (Object.prototype.hasOwnProperty.call(APP_VARIANTS, rawVariant)) {
-    return rawVariant as AppVariant;
-  }
-  throw new Error(`Unsupported APP_VARIANT: ${rawVariant}`);
-}
-
-function getAppVariantConfig(rawVariant = process.env.APP_VARIANT ?? 'dev'): VariantConfig {
-  return { ...APP_VARIANTS[getAppVariant(rawVariant)] };
-}
 
 const ROOT_ASSETS_DIR = './assets';
 
