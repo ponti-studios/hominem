@@ -11,7 +11,7 @@ Two milestones, strictly sequential. Milestone 1.1 delivered a buildable Xcode p
 Key decisions made during execution:
 
 - **iOS minimum: 18.0** — validated against the APIs used in the native shell, including `ScrollPosition`. The project target and generated Xcode settings now match this baseline.
-- **XcodeGen** — `project.yml` is the single source of truth for the Xcode project. Running `xcodegen generate` in `apps/hakumi-ios/` regenerates the `.xcodeproj` at any time.
+- **XcodeGen** — `project.yml` is the single source of truth for the Xcode project. Running `xcodegen generate` in `apps/native/` regenerates the `.xcodeproj` at any time.
 - **Architecture: `@Observable` + async/await** — TCA was evaluated and rejected. The `@Observable` macro with structured concurrency gives us full SwiftUI integration without an external dependency and matches the existing codebase's data-flow patterns.
 - **PostHog handles crash reporting** — no Sentry. Matches Expo's pattern exactly; PLCrashReporter is pulled in transitively by the PostHog SDK.
 

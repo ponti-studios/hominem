@@ -12,7 +12,7 @@ Phase 1 — Native Foundation: stand up the native iOS application shell so all 
 
 The Expo app is the current production iOS client. The migration to native Swift begins here: Phase 1 creates the Xcode project, configures all four build variants, ports the design system, builds the routing shell, and instruments observability — before any product surface is ported.
 
-Current state: the native Hakumi iOS app now exists in `apps/hakumi-ios`, with a buildable XcodeGen project, four build variants, SwiftUI design tokens and primitives, a routing shell, startup observability hooks, and validated native tests for routing/auth/feed contracts.
+Current state: the native Hakumi iOS app now exists in `apps/native`, with a buildable XcodeGen project, four build variants, SwiftUI design tokens and primitives, a routing shell, startup observability hooks, and validated native tests for routing/auth/feed contracts.
 
 When Phase 1 is done: the native app launches on real devices in all four variants, renders placeholder screens for every major route, has a design system that mirrors the Expo theme tokens, handles deep links, and emits telemetry. No user-visible product surfaces are implemented — that begins in Phase 2.
 

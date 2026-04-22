@@ -65,7 +65,7 @@ This initiative is complete when:
 - [ ] The native app has been shipped to production and passed post-cutover stability threshold (crash-free rate ≥ Expo baseline, p95 startup ≤ Expo baseline)
 - [ ] The Expo codebase has been deleted or archived from the monorepo
 - [ ] All projects (Phases 0–6) are marked done
-- [ ] A migration retrospective has been written at `kernel/retrospectives/hakumi-ios-migration.md`
+- [ ] A migration retrospective has been written at `kernel/retrospectives/native-migration.md`
 
 ## Risks
 

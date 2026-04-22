@@ -28,8 +28,8 @@ Design tokens must precede components because components reference token values.
 
 ## Deliverables
 
-- `apps/hakumi-ios/` — standalone SwiftUI app, completely separate from `apps/mobile/` (Expo)
-- `apps/hakumi-ios/project.yml` — XcodeGen spec; regenerate with `cd apps/hakumi-ios && xcodegen generate`
+- `apps/native/` — standalone SwiftUI app, completely separate from `apps/mobile/` (Expo)
+- `apps/native/project.yml` — XcodeGen spec; regenerate with `cd apps/native && xcodegen generate`
 - 4 schemes: Hakumi Dev / E2E / Preview / Hakumi (production) with correct bundle IDs
 - 5 build configurations: Debug Dev, Debug E2E, Debug Preview, Release Preview, Release Production
 - `Hakumi/DesignSystem/` — 6 token files (Colors, Typography, Spacing, Radii, Shadows, Motion) + 4 component files (AppButton, AppTextField+AppTextArea, Card+Surface, Toast)

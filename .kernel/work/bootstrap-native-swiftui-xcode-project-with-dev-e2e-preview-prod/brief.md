@@ -6,7 +6,7 @@ Bootstrap native SwiftUI Xcode project with dev/e2e/preview/production variants
 
 ## Context
 
-The Expo app at `apps/mobile/` is the current production iOS client and remains the reference implementation throughout migration. This work item creates a **standalone native SwiftUI Xcode project** at `apps/hakumi-ios/` — completely separate from the Expo project, using XcodeGen for reproducible project generation.
+The Expo app at `apps/mobile/` is the current production iOS client and remains the reference implementation throughout migration. This work item creates a **standalone native SwiftUI Xcode project** at `apps/native/` — completely separate from the Expo project, using XcodeGen for reproducible project generation.
 
 The Expo app must not be modified. The native project starts empty (a placeholder `ContentView`) and fills with features across Phases 2–5.
 
@@ -14,7 +14,7 @@ The Expo app must not be modified. The native project starts empty (a placeholde
 
 ### In scope
 
-- `apps/hakumi-ios/project.yml` — XcodeGen spec for the Xcode project
+- `apps/native/project.yml` — XcodeGen spec for the Xcode project
 - 4 build configurations matching Expo variants: Debug Dev, Debug E2E, Debug Preview, Release Production + Release Preview
 - 4 schemes: Hakumi Dev, Hakumi E2E, Hakumi Preview, Hakumi (production)
 - Bundle IDs per variant: `com.pontistudios.hakumi.dev` / `.e2e` / `.preview` / `com.pontistudios.hakumi`
@@ -38,8 +38,8 @@ The Expo app must not be modified. The native project starts empty (a placeholde
 
 The work is complete when all of the following are true:
 
-- [ ] `apps/hakumi-ios/project.yml` exists and `xcodegen generate` runs without errors
-- [ ] `xcodebuild -list -project apps/hakumi-ios/Hakumi.xcodeproj` lists all 4 schemes
+- [ ] `apps/native/project.yml` exists and `xcodegen generate` runs without errors
+- [ ] `xcodebuild -list -project apps/native/Hakumi.xcodeproj` lists all 4 schemes
 - [ ] Each scheme maps to the correct bundle identifier (verified by inspecting build settings)
 - [ ] `xcodebuild build -scheme "Hakumi Dev" -configuration "Debug Dev" -destination "generic/platform=iOS Simulator"` exits 0
 - [ ] All tasks in tasks.md are checked off
