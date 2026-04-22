@@ -464,6 +464,9 @@ importers:
       '@hominem/env':
         specifier: workspace:*
         version: link:../../core/env
+      '@hominem/telemetry':
+        specifier: workspace:*
+        version: link:../telemetry
       '@hominem/utils':
         specifier: workspace:*
         version: link:../../core/utils
