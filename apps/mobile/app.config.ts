@@ -237,6 +237,8 @@ export default ({ config }: ConfigContext) => {
       },
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
+        NSLocationWhenInUseUsageDescription:
+          'Hakumi may use your location only when you choose media that includes location details, so it can preserve context for your notes.',
         NSMicrophoneUsageDescription:
           'Allow Hakumi to access your microphone to transcribe voice notes.',
       },
