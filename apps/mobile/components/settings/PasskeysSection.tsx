@@ -1,8 +1,8 @@
 import { Image } from 'expo-image';
 import React from 'react';
-import { ActivityIndicator, Pressable, View } from 'react-native';
+import { ActivityIndicator, Pressable } from 'react-native';
 
-import { Text, theme } from '~/components/theme';
+import { theme } from '~/components/theme';
 
 import { styles } from '../theme/styles';
 import { RowSeparator } from './RowSeparator';

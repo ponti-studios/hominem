@@ -1,6 +1,6 @@
 import { StyleSheet } from 'react-native';
 
-import { theme } from './theme';
+import theme from './theme';
 
 const CARD_RADIUS = 14;
 const ROW_HEIGHT = 50;

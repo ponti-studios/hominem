@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Text, theme } from '~/components/theme';
+import { Text } from '~/components/theme';
 
 import { styles } from '../theme/styles';
 

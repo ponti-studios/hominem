@@ -10,7 +10,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { Text, theme } from '~/components/theme';
+import { theme } from '~/components/theme';
 
 import { styles } from '../theme/styles';
 

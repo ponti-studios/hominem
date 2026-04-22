@@ -8,8 +8,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors, durations, fontSizes, radii, spacing } from '~/components/theme/tokens';
-import { fontFamiliesNative } from '~/components/theme/tokens';
+
+import { colors, durations, fontFamiliesNative, fontSizes, radii, spacing } from '~/components/theme/tokens';
 
 import { Text } from '~/components/theme';
 import { Button } from '../ui/Button';

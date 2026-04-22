@@ -2,8 +2,8 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import { FlatList, Pressable, StyleSheet, View, type FlatList as RNFlatList } from 'react-native';
 
-import { fontSizes, spacing } from '~/components/theme/tokens';
-import { fontFamiliesNative } from '~/components/theme/tokens';
+
+import { fontFamiliesNative, fontSizes, spacing } from '~/components/theme/tokens';
 import { Text } from '~/components/theme';
 import { renderChatMessage } from './chat-message';
 import { ChatShimmerMessage } from './chat-shimmer-message';

@@ -2,8 +2,8 @@ import type { ChatRenderIcon } from '@hominem/chat';
 import type { SessionSource } from '@hominem/rpc/types';
 import { StyleSheet, View } from 'react-native';
 
-import { colors, fontSizes, radii, spacing } from '~/components/theme/tokens';
-import { fontFamiliesNative } from '~/components/theme/tokens';
+
+import { colors, fontFamiliesNative, fontSizes, radii, spacing } from '~/components/theme/tokens';
 
 import { Text } from '~/components/theme';
 import { Button } from '../ui/Button';

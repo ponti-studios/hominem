@@ -8,8 +8,8 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { colors, fontSizes, spacing } from '~/components/theme/tokens';
-import { fontFamiliesNative } from '~/components/theme/tokens';
+
+import { colors, fontFamiliesNative, fontSizes, spacing } from '~/components/theme/tokens';
 import { Field } from './Field';
 import type { TextAreaBaseProps } from './text-area.types';
 

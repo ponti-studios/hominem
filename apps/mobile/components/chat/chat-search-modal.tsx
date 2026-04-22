@@ -1,8 +1,8 @@
 import type React from 'react';
 import { Modal, Pressable, StyleSheet, View, type TextInput } from 'react-native';
 
-import { colors, fontSizes, radii, spacing } from '~/components/theme/tokens';
-import { fontFamiliesNative } from '~/components/theme/tokens';
+
+import { colors, fontFamiliesNative, fontSizes, radii, spacing } from '~/components/theme/tokens';
 import { Text } from '~/components/theme';
 import { Button } from '../ui/Button';
 import { TextField } from '../ui/TextField';
