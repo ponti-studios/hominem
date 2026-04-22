@@ -5,9 +5,10 @@ import { Image } from 'expo-image';
 import type { RelativePathString } from 'expo-router';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, TextInput, View } from 'react-native';
 
-import { Text, theme } from '~/components/theme';
+import { Text, makeStyles } from '~/components/theme';
+import { useThemeColors } from '~/components/theme/theme';
 import { useNoteEditor } from '~/hooks/use-note-editor';
 import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
 import { noteKeys } from '~/services/notes/query-keys';
@@ -58,6 +59,8 @@ function NoteDetailEditor({
   router: ReturnType<typeof useRouter>;
   onSaved: (updatedNote: Note) => void;
 }) {
+  const styles = useNoteStyles();
+  const themeColors = useThemeColors();
   const { title, setTitle, content, setContent, files, setFiles, onSave } = useNoteEditor(
     {
       id: note.id,
@@ -106,7 +109,7 @@ function NoteDetailEditor({
               <Image
                 source="sf:bubble.left"
                 style={styles.headerIcon}
-                tintColor={theme.colors.foreground}
+                tintColor={themeColors.foreground}
                 contentFit="contain"
               />
             </Pressable>
@@ -131,7 +134,7 @@ function NoteDetailEditor({
             );
           }}
           placeholder="Title"
-          placeholderTextColor={theme.colors['text-tertiary']}
+          placeholderTextColor={themeColors['text-tertiary']}
           style={styles.titleInput}
           returnKeyType="next"
           blurOnSubmit={false}
@@ -152,7 +155,7 @@ function NoteDetailEditor({
             );
           }}
           placeholder="Start writing…"
-          placeholderTextColor={theme.colors['text-tertiary']}
+          placeholderTextColor={themeColors['text-tertiary']}
           style={styles.contentInput}
           textAlignVertical="top"
           scrollEnabled={false}
@@ -168,7 +171,7 @@ function NoteDetailEditor({
                   <Image
                     source="sf:paperclip"
                     style={styles.filePillIcon}
-                    tintColor={theme.colors['text-secondary']}
+                    tintColor={themeColors['text-secondary']}
                     contentFit="contain"
                   />
                   <Text style={styles.filePillName} numberOfLines={1}>
@@ -183,7 +186,7 @@ function NoteDetailEditor({
                     <Image
                       source="sf:xmark"
                       style={styles.filePillDetach}
-                      tintColor={theme.colors['text-tertiary']}
+                      tintColor={themeColors['text-tertiary']}
                       contentFit="contain"
                     />
                   </Pressable>
@@ -197,7 +200,7 @@ function NoteDetailEditor({
   );
 }
 
-const styles = StyleSheet.create({
+const useNoteStyles = makeStyles((theme) => ({
   container: {
     flex: 1,
   },
@@ -210,7 +213,6 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
   },
-
   titleInput: {
     fontSize: 28,
     fontWeight: '700',
@@ -221,13 +223,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
     marginBottom: 12,
   },
-
   divider: {
     height: 1,
     backgroundColor: theme.colors['border-subtle'],
     marginBottom: 16,
   },
-
   contentInput: {
     fontSize: 16,
     lineHeight: 26,
@@ -237,7 +237,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
     minHeight: 240,
   },
-
   filesSection: {
     marginTop: 24,
     gap: 8,
@@ -276,4 +275,4 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
   },
-});
+}));

@@ -8,7 +8,6 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  StyleSheet,
   Switch,
   TextInput,
   View,
@@ -24,7 +23,9 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Text, theme } from '~/components/theme';
+import { Text, makeStyles } from '~/components/theme';
+import { useThemeColors } from '~/components/theme/theme';
+import { Button } from '~/components/ui/Button';
 import { MOBILE_PASSKEY_ENABLED } from '~/constants';
 import { getAppLockEnabled, setAppLockEnabled } from '~/hooks/use-app-lock';
 import { getPreventScreenshots, setPreventScreenshots } from '~/hooks/use-screen-capture';
@@ -64,20 +65,29 @@ function accountReducer(state: AccountState, action: AccountAction): AccountStat
 }
 
 function SectionLabel({ children }: { children: string }) {
+  const styles = useSettingsStyles();
   return <Text style={styles.sectionLabel}>{children}</Text>;
 }
 
 function SectionCard({ children }: { children: React.ReactNode }) {
+  const styles = useSettingsStyles();
   return <View style={styles.sectionCard}>{children}</View>;
 }
 
 function RowSeparator() {
+  const styles = useSettingsStyles();
   return <View style={styles.rowSeparator} />;
 }
 
 function PersonSaveIcon({ feedback }: { feedback: 'idle' | 'success' | 'error' }) {
+  const styles = useSettingsStyles();
+  const themeColors = useThemeColors();
   const progress = useSharedValue(0);
   const shakeX = useSharedValue(0);
+
+  const successColor = themeColors.success;
+  const destructiveColor = themeColors.destructive;
+  const iconPrimaryColor = themeColors['icon-primary'];
 
   useEffect(() => {
     if (feedback === 'idle') {
@@ -114,16 +124,16 @@ function PersonSaveIcon({ feedback }: { feedback: 'idle' | 'success' | 'error' }
   const animatedProps = useAnimatedProps(() => {
     const targetColor =
       feedback === 'success'
-        ? theme.colors.success
+        ? successColor
         : feedback === 'error'
-          ? theme.colors.destructive
-          : theme.colors['icon-primary'];
+          ? destructiveColor
+          : iconPrimaryColor;
 
     return {
       tintColor: interpolateColor(
         progress.value,
         [0, 1],
-        [theme.colors['icon-primary'], targetColor],
+        [iconPrimaryColor, targetColor],
       ),
     };
   });
@@ -165,18 +175,20 @@ function SettingsRow({
   destructive = false,
   disabled = false,
 }: RowProps) {
-  const labelColor = destructive ? theme.colors.destructive : theme.colors.foreground;
+  const styles = useSettingsStyles();
+  const themeColors = useThemeColors();
+  const labelColor = destructive ? themeColors.destructive : themeColors.foreground;
 
   const inner = (
     <View style={styles.row}>
       {sf && (
         <View
-          style={[styles.rowIconWrap, { backgroundColor: sfColor ?? theme.colors['bg-elevated'] }]}
+          style={[styles.rowIconWrap, { backgroundColor: sfColor ?? themeColors['bg-elevated'] }]}
         >
           <Image
             source={`sf:${sf}`}
             style={styles.rowIcon}
-            tintColor={destructive ? theme.colors.destructive : theme.colors['icon-primary']}
+            tintColor={destructive ? themeColors.destructive : themeColors['icon-primary']}
             contentFit="contain"
           />
         </View>
@@ -191,7 +203,7 @@ function SettingsRow({
         <Image
           source="sf:chevron.right"
           style={styles.chevron}
-          tintColor={theme.colors['text-tertiary']}
+          tintColor={themeColors['text-tertiary']}
           contentFit="contain"
         />
       ) : null}
@@ -217,6 +229,8 @@ function SettingsRow({
 function Settings() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const styles = useSettingsStyles();
+  const themeColors = useThemeColors();
   const { isSignedIn, signOut, currentUser, updateProfile } = useAuth();
   const {
     addPasskey,
@@ -339,26 +353,21 @@ function Settings() {
                     setSaveStatus('idle');
                   }}
                   style={styles.inlineInput}
-                  placeholderTextColor={theme.colors['text-tertiary']}
+                  placeholderTextColor={themeColors['text-tertiary']}
                   placeholder="Your name"
                   returnKeyType="done"
                   onSubmitEditing={nameChanged ? onSavePress : undefined}
                   accessibilityLabel="Name"
                 />
                 {nameChanged && (
-                  <Pressable
-                    onPress={onSavePress}
+                  <Button
+                    onPress={() => { void onSavePress(); }}
                     disabled={saveStatus === 'saving'}
-                    style={styles.inlineSaveButton}
+                    isLoading={saveStatus === 'saving'}
+                    size="xs"
+                    title="Save"
                     accessibilityLabel="Save name"
-                    accessibilityRole="button"
-                  >
-                    {saveStatus === 'saving' ? (
-                      <ActivityIndicator size="small" color={theme.colors.accent} />
-                    ) : (
-                      <Text style={styles.inlineSaveLabel}>Save</Text>
-                    )}
-                  </Pressable>
+                  />
                 )}
               </View>
               <PersonSaveIcon feedback={saveFeedback} />
@@ -430,7 +439,7 @@ function Settings() {
               onPress={() => void onAddPasskeyPress()}
               trailing={
                 isPasskeyLoading ? (
-                  <ActivityIndicator size="small" color={theme.colors['text-tertiary']} />
+                  <ActivityIndicator size="small" color={themeColors['text-tertiary']} />
                 ) : undefined
               }
               disabled={isPasskeyLoading}
@@ -451,7 +460,7 @@ function Settings() {
                       <Image
                         source="sf:trash"
                         style={styles.trashIcon}
-                        tintColor={theme.colors.destructive}
+                        tintColor={themeColors.destructive}
                         contentFit="contain"
                       />
                     </Pressable>
@@ -474,7 +483,7 @@ function Settings() {
           <Image
             source="sf:rectangle.portrait.and.arrow.right"
             style={styles.dangerIcon}
-            tintColor={theme.colors.destructive}
+            tintColor={themeColors.destructive}
             contentFit="contain"
           />
           <Text style={styles.dangerLabel}>Sign out</Text>
@@ -489,7 +498,7 @@ function Settings() {
           <Image
             source="sf:trash"
             style={styles.dangerIcon}
-            tintColor={theme.colors['text-tertiary']}
+            tintColor={themeColors['text-tertiary']}
             contentFit="contain"
           />
           <Text style={[styles.dangerLabel, styles.dangerLabelMuted]}>Delete account</Text>
@@ -504,7 +513,7 @@ export default Settings;
 const ROW_HEIGHT = 50;
 const CARD_RADIUS = 14;
 
-const styles = StyleSheet.create({
+const useSettingsStyles = makeStyles((theme) => ({
   scroll: {
     flex: 1,
   },
@@ -513,7 +522,6 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     gap: 4,
   },
-
   sectionLabel: {
     fontSize: 13,
     fontWeight: '500',
@@ -523,7 +531,6 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 6,
   },
-
   sectionCard: {
     backgroundColor: theme.colors['bg-base'],
     borderRadius: CARD_RADIUS,
@@ -532,7 +539,6 @@ const styles = StyleSheet.create({
     borderColor: theme.colors['border-subtle'],
     overflow: 'hidden',
   },
-
   rowPressable: {
     minHeight: ROW_HEIGHT,
   },
@@ -549,7 +555,7 @@ const styles = StyleSheet.create({
   rowSeparator: {
     height: 1,
     backgroundColor: theme.colors['border-subtle'],
-    marginLeft: 14 + 32 + 12, // align with label start
+    marginLeft: 14 + 32 + 12,
   },
   rowIconWrap: {
     width: 32,
@@ -593,7 +599,6 @@ const styles = StyleSheet.create({
     color: theme.colors['text-tertiary'],
     maxWidth: 160,
   },
-
   inlineEditRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -606,19 +611,6 @@ const styles = StyleSheet.create({
     minWidth: 80,
     maxWidth: 160,
     padding: 0,
-  },
-  inlineSaveButton: {
-    backgroundColor: theme.colors.accent,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    minWidth: 48,
-    alignItems: 'center',
-  },
-  inlineSaveLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: theme.colors['accent-foreground'],
   },
   inlineErrorBanner: {
     marginHorizontal: 14,
@@ -635,12 +627,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: theme.colors.destructive,
   },
-
   trashIcon: {
     width: 16,
     height: 16,
   },
-
   dangerZone: {
     marginTop: 32,
     gap: 1,
@@ -673,4 +663,4 @@ const styles = StyleSheet.create({
   dangerLabelMuted: {
     color: theme.colors['text-tertiary'],
   },
-});
+}));
