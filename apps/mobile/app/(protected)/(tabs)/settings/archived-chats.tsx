@@ -4,7 +4,7 @@ import React, { useCallback } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { colors, radii, spacing } from '~/components/theme/tokens';
-import { Text } from '~/components/typography/Text';
+import { Text } from '~/components/theme';
 
 import { useArchivedSessions } from '~/hooks/useArchivedSessions';
 import AppIcon from '~/components/ui/icon';

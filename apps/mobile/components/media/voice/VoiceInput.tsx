@@ -9,7 +9,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { makeStyles, Text, theme } from '~/components/theme';
-import { VOID_MOTION_DURATION_STANDARD } from '~/components/theme/motion';
+import { VOID_MOTION_DURATION_STANDARD } from '~/components/theme/animations';
 import AppIcon from '~/components/ui/icon';
 
 import { useInput } from './useInput';

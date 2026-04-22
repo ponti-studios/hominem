@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import Reanimated, { FadeIn } from 'react-native-reanimated';
 
 import { colors, radii, spacing } from '../theme/tokens';
-import { Text } from '../typography/Text';
+import { Text } from '~/components/theme';
 import { Button } from './Button';
 
 const DEFAULT_BOTTOM_OFFSET = spacing[7] * 3;

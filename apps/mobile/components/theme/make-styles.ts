@@ -1,6 +1,6 @@
-import type { ImageStyle, TextStyle, ViewStyle } from 'react-native';
+import { useColorScheme, type ImageStyle, type TextStyle, type ViewStyle } from 'react-native';
 
-import theme, { type Theme } from './theme';
+import { darkTheme, lightTheme, type Theme } from './theme';
 
 type NamedStyles<T> = {
   [P in keyof T]: ViewStyle | TextStyle | ImageStyle;
@@ -9,7 +9,10 @@ type NamedStyles<T> = {
 export const makeStylesInternal = <T extends NamedStyles<T> | NamedStyles<unknown>>(
   styles: (theme: Theme) => T,
 ) => {
+  const dark = styles(darkTheme);
+  const light = styles(lightTheme);
   return () => {
-    return styles(theme);
+    const scheme = useColorScheme();
+    return scheme === 'light' ? light : dark;
   };
 };

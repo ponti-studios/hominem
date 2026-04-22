@@ -3,7 +3,7 @@ import { StyleSheet, ViewStyle } from 'react-native';
 import Animated, { useAnimatedReaction, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { makeStyles } from '~/components/theme';
-import { VOID_EASING_ENTER, VOID_MOTION_ENTER } from '~/components/theme/motion';
+import { VOID_EASING_ENTER, VOID_MOTION_ENTER } from '~/components/theme/animations';
 
 export const Alert = ({
   error,

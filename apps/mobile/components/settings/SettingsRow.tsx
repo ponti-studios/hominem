@@ -4,7 +4,7 @@ import { Pressable, View } from 'react-native';
 
 import { Text, theme } from '~/components/theme';
 
-import { styles } from '../styles';
+import { styles } from '../theme/styles';
 
 interface SettingsRowProps {
   leading?: React.ReactNode;

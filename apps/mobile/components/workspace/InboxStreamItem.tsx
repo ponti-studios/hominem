@@ -14,7 +14,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import Reanimated, { FadeInDown, LinearTransition } from 'react-native-reanimated';
+import Reanimated, { FadeIn } from 'react-native-reanimated';
 import { useQueryClient } from '@tanstack/react-query';
 
 import AppIcon from '~/components/ui/icon';
@@ -167,10 +167,7 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
   const hasTitle = Boolean(item.title);
 
   return (
-    <Reanimated.View
-      entering={FadeInDown.duration(180).springify().damping(20).stiffness(260)}
-      layout={LinearTransition.duration(160)}
-    >
+    <Reanimated.View entering={FadeIn.duration(200)}>
       <Pressable
         onPress={onPress}
         onLongPress={onLongPress}

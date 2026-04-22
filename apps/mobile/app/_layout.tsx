@@ -1,4 +1,3 @@
-import { ThemeProvider } from '@shopify/restyle';
 import type { RelativePathString } from 'expo-router';
 import { SplashScreen, Stack, useRouter, useSegments } from 'expo-router';
 import { PostHogProvider, type PostHog } from 'posthog-react-native';
@@ -13,7 +12,7 @@ import { RootErrorBoundary } from '~/components/error-boundary/RootErrorBoundary
 import { POSTHOG_ENABLED, posthog } from '~/services/posthog';
 import { recordActiveDay } from '~/services/review-prompt/review-prompt';
 import { useScreenCapture } from '~/hooks/use-screen-capture';
-import { makeStyles, theme } from '~/components/theme';
+import { makeStyles } from '~/components/theme';
 import { AuthProvider, useAuth } from '~/services/auth/auth-provider';
 import { E2E_TESTING } from '~/constants';
 import { logError } from '~/components/error-boundary/log-error';
@@ -24,7 +23,50 @@ import { markStartupPhase } from '~/services/performance/startup-metrics';
 SplashScreen.preventAutoHideAsync();
 markStartupPhase('app_start');
 
+const useInnerStyles = makeStyles((t) =>
+  StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: t.colors.background,
+    },
+    e2eIndicator: {
+      position: 'absolute',
+      top: t.spacing.xs_4,
+      left: t.spacing.xs_4,
+      width: 2,
+      height: 2,
+      opacity: 0.02,
+    },
+    e2eAction: {
+      position: 'absolute',
+      top: t.spacing.sm_8,
+      right: t.spacing.sm_8,
+      width: 16,
+      height: 16,
+      opacity: 0.02,
+    },
+    e2eActionAlt: {
+      position: 'absolute',
+      top: t.spacing.ml_24,
+      right: t.spacing.sm_8,
+      width: 16,
+      height: 16,
+      opacity: 0.02,
+    },
+  }),
+);
+
+const useRootStyles = makeStyles((t) =>
+  StyleSheet.create({
+    gestureRoot: {
+      flex: 1,
+      backgroundColor: t.colors.background,
+    },
+  }),
+);
+
 function InnerRootLayout() {
+  const styles = useInnerStyles();
   const router = useRouter();
   const segments = useSegments() as string[];
   const segmentKey = segments.join('/');
@@ -128,6 +170,7 @@ function InnerRootLayout() {
 }
 
 function RootLayout() {
+  const rootStyles = useRootStyles();
   useScreenCapture();
 
   useEffect(() => {
@@ -142,21 +185,19 @@ function RootLayout() {
   }, []);
 
   const content = (
-    <ThemeProvider theme={theme}>
-      <SafeAreaProvider>
-        <GestureHandlerRootView style={rootStyles.gestureRoot}>
-          <KeyboardProvider>
-            <BottomSheetModalProvider>
-              <RootErrorBoundary>
-                <AuthProvider>
-                  <InnerRootLayout />
-                </AuthProvider>
-              </RootErrorBoundary>
-            </BottomSheetModalProvider>
-          </KeyboardProvider>
-        </GestureHandlerRootView>
-      </SafeAreaProvider>
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <GestureHandlerRootView style={rootStyles.gestureRoot}>
+        <KeyboardProvider>
+          <BottomSheetModalProvider>
+            <RootErrorBoundary>
+              <AuthProvider>
+                <InnerRootLayout />
+              </AuthProvider>
+            </RootErrorBoundary>
+          </BottomSheetModalProvider>
+        </KeyboardProvider>
+      </GestureHandlerRootView>
+    </SafeAreaProvider>
   );
 
   return POSTHOG_ENABLED ? (
@@ -167,45 +208,3 @@ function RootLayout() {
 }
 
 export default RootLayout;
-
-const rootStyles = makeStyles((t) =>
-  StyleSheet.create({
-    gestureRoot: {
-      flex: 1,
-      backgroundColor: t.colors.background,
-    },
-  }),
-)();
-
-const styles = makeStyles((t) =>
-  StyleSheet.create({
-    safeArea: {
-      flex: 1,
-      backgroundColor: t.colors.background,
-    },
-    e2eIndicator: {
-      position: 'absolute',
-      top: t.spacing.xs_4,
-      left: t.spacing.xs_4,
-      width: 2,
-      height: 2,
-      opacity: 0.02,
-    },
-    e2eAction: {
-      position: 'absolute',
-      top: t.spacing.sm_8,
-      right: t.spacing.sm_8,
-      width: 16,
-      height: 16,
-      opacity: 0.02,
-    },
-    e2eActionAlt: {
-      position: 'absolute',
-      top: t.spacing.ml_24,
-      right: t.spacing.sm_8,
-      width: 16,
-      height: 16,
-      opacity: 0.02,
-    },
-  }),
-)();

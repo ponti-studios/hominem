@@ -8,7 +8,7 @@ import { StyleSheet, View } from 'react-native';
 import { getAuthScreenBaseStyles } from '../../components/auth/auth-screen-styles';
 import { AuthLayout } from '../../components/AuthLayout';
 import { FeatureErrorBoundary } from '../../components/error-boundary/FeatureErrorBoundary';
-import { Box, makeStyles, Text } from '../../components/theme';
+import { makeStyles, Text } from '../../components/theme';
 import { Button } from '../../components/ui/Button';
 import { TextField } from '../../components/ui/TextField';
 import { useAuth } from '../../services/auth/auth-provider';
@@ -61,7 +61,7 @@ export function VerifyScreen() {
       title={AUTH_COPY.otpVerification.title}
       helper={AUTH_COPY.otpVerification.helper(maskEmail(resolvedEmail))}
     >
-      <Box style={styles.form}>
+      <View style={styles.form}>
         <View style={styles.fieldStack}>
           <TextField
             testID="auth-otp-input"
@@ -129,7 +129,7 @@ export function VerifyScreen() {
             textStyle={styles.linkText}
           />
         </View>
-      </Box>
+      </View>
     </AuthLayout>
   );
 }

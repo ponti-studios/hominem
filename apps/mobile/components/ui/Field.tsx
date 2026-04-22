@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 
 import { colors, fontSizes, fontWeights, spacing } from '~/components/theme/tokens';
-import { fontFamiliesNative } from '~/components/theme/tokens/typography.native';
+import { fontFamiliesNative } from '~/components/theme/tokens';
 import type { FieldBaseProps } from './field.types';
 
 interface NativeFieldChildProps {

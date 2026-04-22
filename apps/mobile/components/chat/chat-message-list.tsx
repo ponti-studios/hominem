@@ -3,8 +3,8 @@ import type React from 'react';
 import { FlatList, Pressable, StyleSheet, View, type FlatList as RNFlatList } from 'react-native';
 
 import { fontSizes, spacing } from '~/components/theme/tokens';
-import { fontFamiliesNative } from '~/components/theme/tokens/typography.native';
-import { Text } from '../typography/Text';
+import { fontFamiliesNative } from '~/components/theme/tokens';
+import { Text } from '~/components/theme';
 import { renderChatMessage } from './chat-message';
 import { ChatShimmerMessage } from './chat-shimmer-message';
 import { ChatThinkingIndicator } from './chat-thinking-indicator';

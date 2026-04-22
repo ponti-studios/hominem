@@ -3,7 +3,7 @@ import { ActivityIndicator, Pressable, TextInput, View } from 'react-native';
 
 import { Text, theme } from '~/components/theme';
 
-import { styles } from '../styles';
+import { styles } from '../theme/styles';
 import { PersonSaveIcon } from './PersonSaveIcon';
 import { SettingsRow } from './SettingsRow';
 

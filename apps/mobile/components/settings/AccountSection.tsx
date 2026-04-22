@@ -2,7 +2,7 @@ import React from 'react';
 
 import { Text } from '~/components/theme';
 
-import { styles } from '../styles';
+import { styles } from '../theme/styles';
 import { NameEditor } from './NameEditor';
 import { RowSeparator } from './RowSeparator';
 import { SectionCard } from './SectionCard';

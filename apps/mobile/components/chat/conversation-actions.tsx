@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, radii, spacing } from '~/components/theme/tokens';
 
-import { Text } from '../typography/Text';
+import { Text } from '~/components/theme';
 import { Button } from '../ui/Button';
 import { buildConversationActionsModel } from './conversation-actions.model';
 

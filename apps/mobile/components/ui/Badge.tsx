@@ -2,7 +2,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { colors, radii, spacing } from '~/components/theme/tokens';
 
-import { Text } from '../typography/Text';
+import { Text } from '~/components/theme';
 
 type BadgeVariant = 'default' | 'success' | 'warning' | 'destructive' | 'accent';
 

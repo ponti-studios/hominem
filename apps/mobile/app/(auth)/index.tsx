@@ -7,7 +7,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { getAuthScreenBaseStyles } from '~/components/auth/auth-screen-styles';
 import { AuthLayout } from '~/components/AuthLayout';
 import { FeatureErrorBoundary } from '~/components/error-boundary/FeatureErrorBoundary';
-import { Box, makeStyles, Text } from '~/components/theme';
+import { makeStyles, Text } from '~/components/theme';
 import { Button } from '~/components/ui/Button';
 import { TextField } from '~/components/ui/TextField';
 import { E2E_TESTING, MOBILE_PASSKEY_ENABLED } from '~/constants';
@@ -95,7 +95,7 @@ export function AuthScreen() {
       helper={AUTH_COPY.emailEntry.helper}
       isProbing={isProbing}
     >
-      <Box style={styles.form}>
+      <View style={styles.form}>
         <View style={styles.fieldStack}>
           <TextField
             testID="auth-email-input"
@@ -191,7 +191,7 @@ export function AuthScreen() {
             testID="auth-e2e-passkey-cancel"
           />
         ) : null}
-      </Box>
+      </View>
     </AuthLayout>
   );
 }

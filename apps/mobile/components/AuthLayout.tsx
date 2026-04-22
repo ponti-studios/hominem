@@ -2,7 +2,7 @@ import React from 'react';
 import { KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
 
 import { Screen } from '~/components/layout/Page';
-import { Box, Text, makeStyles } from '~/components/theme';
+import { Text, makeStyles } from '~/components/theme';
 
 interface AuthLayoutProps {
   testID: string;
@@ -30,7 +30,7 @@ export function AuthLayout({ testID, title, helper, isProbing, children }: AuthL
         style={styles.flex}
       >
         <View style={styles.centerStage}>
-          <Box style={styles.card}>
+          <View style={styles.card}>
             <View style={styles.hero}>
               <View style={styles.brandRow}>
                 <View style={styles.accent} />
@@ -45,7 +45,7 @@ export function AuthLayout({ testID, title, helper, isProbing, children }: AuthL
             </View>
 
             {!isProbing && <View style={styles.form}>{children}</View>}
-          </Box>
+          </View>
         </View>
       </KeyboardAvoidingView>
     </Screen>

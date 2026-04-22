@@ -113,10 +113,6 @@ export function useComposerSubmission({
   };
 
   const createNoteFromDraft = async () => {
-    if (target.kind === 'feed') {
-      requestTopReveal();
-    }
-
     await createNote({
       text: message.trim(),
       ...(uploadedAttachmentIds.length > 0 ? { fileIds: uploadedAttachmentIds } : {}),
@@ -125,6 +121,9 @@ export function useComposerSubmission({
       donateAddNoteIntent();
     }
     await invalidateInboxQueries(queryClient);
+    if (target.kind === 'feed') {
+      requestTopReveal();
+    }
     clearDraft();
   };
 

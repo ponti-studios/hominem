@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 
 import { colors, fontSizes, fontWeights, radii, spacing } from '~/components/theme/tokens';
-import { fontFamiliesNative } from '~/components/theme/tokens/typography.native';
+import { fontFamiliesNative } from '~/components/theme/tokens';
 
 import type { ButtonBaseProps, ButtonSize, ButtonVariant } from './button.types';
 

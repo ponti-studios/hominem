@@ -3,7 +3,7 @@ import React, { memo, useCallback, type RefObject } from 'react';
 import { StyleSheet, View, type RefreshControlProps } from 'react-native';
 
 import { colors, spacing } from '~/components/theme/tokens';
-import { Text } from '~/components/typography/Text';
+import { Text } from '~/components/theme';
 
 import { InboxStreamItem } from './InboxStreamItem';
 import type { InboxStreamItemData as InboxStreamItemModel } from './InboxStreamItem.types';

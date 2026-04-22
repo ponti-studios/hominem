@@ -10,7 +10,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { colors, durations, fontSizes, radii, spacing } from '~/components/theme/tokens';
-import { Text } from '../typography/Text';
+import { Text } from '~/components/theme';
 
 const DOT_UP_DURATION = durations.enter;
 const DOT_DOWN_DURATION = durations.exit;

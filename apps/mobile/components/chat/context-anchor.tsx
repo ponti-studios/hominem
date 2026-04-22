@@ -2,7 +2,7 @@ import type { SessionSource } from '@hominem/rpc/types';
 import { StyleSheet, View } from 'react-native';
 
 import { fontSizes } from '~/components/theme/tokens';
-import { Text } from '../typography/Text';
+import { Text } from '~/components/theme';
 
 interface ContextAnchorProps {
   source: SessionSource;

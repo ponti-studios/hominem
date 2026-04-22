@@ -9,9 +9,9 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, durations, fontSizes, radii, spacing } from '~/components/theme/tokens';
-import { fontFamiliesNative } from '~/components/theme/tokens/typography.native';
+import { fontFamiliesNative } from '~/components/theme/tokens';
 
-import { Text } from '../typography/Text';
+import { Text } from '~/components/theme';
 import { Button } from '../ui/Button';
 
 const TYPE_LABEL: Record<ArtifactType, string> = {

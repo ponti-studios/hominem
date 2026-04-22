@@ -3,9 +3,9 @@ import type { SessionSource } from '@hominem/rpc/types';
 import { StyleSheet, View } from 'react-native';
 
 import { colors, fontSizes, radii, spacing } from '~/components/theme/tokens';
-import { fontFamiliesNative } from '~/components/theme/tokens/typography.native';
+import { fontFamiliesNative } from '~/components/theme/tokens';
 
-import { Text } from '../typography/Text';
+import { Text } from '~/components/theme';
 import { Button } from '../ui/Button';
 import { ContextAnchor } from './context-anchor';
 

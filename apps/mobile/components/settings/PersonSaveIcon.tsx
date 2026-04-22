@@ -12,7 +12,7 @@ import Animated, {
 
 import { Text, theme } from '~/components/theme';
 
-import { styles } from '../styles';
+import { styles } from '../theme/styles';
 
 const AnimatedImage = Animated.createAnimatedComponent(Image);
 

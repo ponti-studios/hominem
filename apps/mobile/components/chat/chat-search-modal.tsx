@@ -2,8 +2,8 @@ import type React from 'react';
 import { Modal, Pressable, StyleSheet, View, type TextInput } from 'react-native';
 
 import { colors, fontSizes, radii, spacing } from '~/components/theme/tokens';
-import { fontFamiliesNative } from '~/components/theme/tokens/typography.native';
-import { Text } from '../typography/Text';
+import { fontFamiliesNative } from '~/components/theme/tokens';
+import { Text } from '~/components/theme';
 import { Button } from '../ui/Button';
 import { TextField } from '../ui/TextField';
 import type { ChatRenderIcon } from '@hominem/chat';

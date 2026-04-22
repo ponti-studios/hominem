@@ -9,7 +9,7 @@ import Reanimated, { FadeIn, FadeInDown, LinearTransition } from 'react-native-r
 import { useComposerContext } from '~/components/composer/ComposerContext';
 import { Text, theme } from '~/components/theme';
 import { radii, spacing } from '~/components/theme/tokens';
-import { shadowsNative } from '~/components/theme/tokens/shadows';
+import { shadowsNative } from '~/components/theme/tokens';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import { flattenNoteFeedPages, useNoteFeed } from '~/services/notes/use-note-stream';
 

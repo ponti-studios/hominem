@@ -9,12 +9,8 @@ import { useAnimatedKeyboard } from 'react-native-keyboard-controller';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import {
-  createNotesEnterLift,
-  createNotesExitLift,
-  createNotesLayoutTransition,
-} from '~/components/notes/notes-surface-motion';
 import { theme } from '~/components/theme';
+import { createEnter, createExit, createLayoutTransition } from '~/components/theme/animations';
 import AppIcon from '~/components/ui/icon';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import { useNoteSearch } from '~/services/notes/use-note-search';
@@ -375,12 +371,12 @@ export const Composer = () => {
 
   return (
     <Animated.View
-      entering={createNotesEnterLift(prefersReducedMotion)}
-      exiting={createNotesExitLift(prefersReducedMotion)}
+      entering={createEnter(prefersReducedMotion)}
+      exiting={createExit(prefersReducedMotion)}
       style={[styles.shell, shellStyle]}
     >
       <Animated.View
-        layout={createNotesLayoutTransition(prefersReducedMotion)}
+        layout={createLayoutTransition(prefersReducedMotion)}
         onLayout={(event) => {
           setComposerClearance(
             event.nativeEvent.layout.height + Math.max(insets.bottom, spacing[2]),
@@ -389,7 +385,7 @@ export const Composer = () => {
         style={styles.card}
         testID="mobile-composer"
       >
-        <Animated.View layout={createNotesLayoutTransition(prefersReducedMotion)}>
+        <Animated.View layout={createLayoutTransition(prefersReducedMotion)}>
           <ComposerAttachments
             attachments={attachments}
             errors={uploadState.errors}

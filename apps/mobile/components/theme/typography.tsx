@@ -1,14 +1,88 @@
 import {
   Text as RNText,
+  Platform,
+  useColorScheme,
   type StyleProp,
   type TextProps as RNTextProps,
   type TextStyle,
 } from 'react-native';
+import { colors as darkColors } from '@hominem/ui/tokens';
+import type { ColorToken } from '@hominem/ui/tokens';
 
-import { colors, fontSizes, fontWeights } from '~/components/theme/tokens';
-import type { ColorToken } from '~/components/theme/tokens';
-import { fontFamiliesNative } from '~/components/theme/tokens/typography.native';
-import type { TextVariant } from './text.types';
+import { lightColors } from './tokens/colors.light';
+
+// ── Font Tokens ───────────────────────────────────────────────────────────────
+
+export const fontFamiliesNative = {
+  primary:
+    Platform.select({
+      ios: 'System',
+      android: 'sans-serif',
+      default: 'sans-serif',
+    }) ?? 'sans-serif',
+  mono:
+    Platform.select({
+      ios: 'Menlo',
+      android: 'monospace',
+      default: 'monospace',
+    }) ?? 'monospace',
+} as const;
+
+export const fontSizes = {
+  micro: 10,
+  caption2: 11,
+  caption1: 12,
+  footnote: 13,
+  xs: 12,
+  sm: 14,
+  subhead: 15,
+  md: 16,
+  body: 17,
+  lg: 18,
+  xl: 20,
+  headline: 17,
+  display: 28,
+} as const;
+
+export const fontWeights = {
+  regular: '400',
+  medium: '500',
+  semibold: '600',
+  bold: '700',
+} as const;
+
+export const lineHeights = {
+  tight: 1.2,
+  normal: 1.4,
+  relaxed: 1.6,
+} as const;
+
+export const letterSpacing = {
+  tight: -0.05,
+  normal: 0,
+  relaxed: 0.01,
+} as const;
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+export type AppleTextVariant =
+  | 'largeTitle'
+  | 'title1'
+  | 'title2'
+  | 'headline'
+  | 'body'
+  | 'callout'
+  | 'subhead'
+  | 'footnote'
+  | 'caption1'
+  | 'caption2'
+  | 'mono';
+
+export type LegacyTextVariant = 'body-1' | 'body-2' | 'body-3' | 'body-4';
+
+export type TextVariant = AppleTextVariant | LegacyTextVariant;
+
+// ── Text Component ────────────────────────────────────────────────────────────
 
 interface TextProps extends RNTextProps {
   color?: ColorToken | undefined;
@@ -17,7 +91,7 @@ interface TextProps extends RNTextProps {
   variant?: TextVariant | undefined;
 }
 
-const appleVariantStyles = {
+const variantStyles = {
   largeTitle: {
     fontFamily: fontFamiliesNative.primary,
     fontSize: 34,
@@ -105,6 +179,8 @@ const legacyVariantMap = {
 } as const;
 
 function Text({ color, muted = false, style, variant = 'body', ...props }: TextProps) {
+  const scheme = useColorScheme();
+  const colors = scheme === 'light' ? lightColors : darkColors;
   const resolvedVariant = legacyVariantMap[variant as keyof typeof legacyVariantMap] ?? variant;
   const resolvedColor = color
     ? colors[color]
@@ -114,7 +190,7 @@ function Text({ color, muted = false, style, variant = 'body', ...props }: TextP
 
   return (
     <RNText
-      style={[appleVariantStyles[resolvedVariant], { color: resolvedColor }, style]}
+      style={[variantStyles[resolvedVariant], { color: resolvedColor }, style]}
       {...props}
     />
   );
