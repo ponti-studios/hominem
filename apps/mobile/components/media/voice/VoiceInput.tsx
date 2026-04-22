@@ -1,4 +1,3 @@
-import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View, type PressableProps } from 'react-native';
 import Animated, {
@@ -11,6 +10,7 @@ import Animated, {
 import { makeStyles, Text, theme } from '~/components/theme';
 import { VOID_MOTION_DURATION_STANDARD } from '~/components/theme/animations';
 import AppIcon from '~/components/ui/icon';
+import { impactHaptic, notificationHaptic } from '~/services/haptics';
 
 import { useInput } from './useInput';
 import { useTranscriber } from './useTranscriber';
@@ -94,24 +94,24 @@ export function VoiceInput({
 
   const onPress = useCallback(async () => {
     if (isRecording) {
-      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      void notificationHaptic('Success');
       await stopRecording();
       onRecordingStateChange?.(false);
       return;
     }
 
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    void impactHaptic('Medium');
     await startRecording();
     onRecordingStateChange?.(true);
   }, [isRecording, onRecordingStateChange, startRecording, stopRecording]);
 
   const onPausePress = useCallback(async () => {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    void impactHaptic('Light');
     await pauseRecording();
   }, [pauseRecording]);
 
   const onResumePress = useCallback(async () => {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    void impactHaptic('Light');
     await resumeRecording();
   }, [resumeRecording]);
 

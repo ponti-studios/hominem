@@ -1,0 +1,204 @@
+name: Hakumi
+options:
+  bundleIdPrefix: com.pontistudios
+  deploymentTarget:
+    iOS: '18.0'
+  developmentLanguage: en
+  createIntermediateGroups: true
+  defaultConfig: 'Release Production'
+  xcodeVersion: '16'
+
+settings:
+  base:
+    SWIFT_VERSION: 6.0
+    DEVELOPMENT_TEAM: 3QHJ2KN8AL
+    MARKETING_VERSION: 1.0.0
+    CURRENT_PROJECT_VERSION: 1
+    IPHONEOS_DEPLOYMENT_TARGET: '18.0'
+    TARGETED_DEVICE_FAMILY: '1,2'
+    SUPPORTS_MACCATALYST: NO
+    CLANG_ENABLE_MODULES: YES
+    CLANG_ENABLE_OBJC_ARC: YES
+    CLANG_ENABLE_OBJC_WEAK: YES
+    ENABLE_STRICT_OBJC_MSGSEND: YES
+    GCC_NO_COMMON_BLOCKS: YES
+    MTL_FAST_MATH: YES
+    GENERATE_INFOPLIST_FILE: YES
+    SDKROOT: auto
+    SUPPORTED_PLATFORMS: 'iphoneos iphonesimulator'
+    INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+    INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
+    INFOPLIST_KEY_UIStatusBarStyle: UIStatusBarStyleDefault
+    INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: 'UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight'
+    INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: 'UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight'
+
+configs:
+  'Debug Dev': debug
+  'Debug E2E': debug
+  'Debug Preview': debug
+  'Release Preview': release
+  'Release Production': release
+
+targets:
+  Hakumi:
+    type: application
+    platform: iOS
+    deploymentTarget: '18.0'
+    sources:
+      - path: Hakumi
+    resources:
+      - path: Hakumi/LaunchScreen.storyboard
+    info:
+      path: Hakumi/Info.plist
+      properties:
+        CFBundleDisplayName: $(APP_DISPLAY_NAME)
+        CFBundleURLTypes:
+          - CFBundleURLSchemes:
+              - $(APP_URL_SCHEME)
+              - $(PRODUCT_BUNDLE_IDENTIFIER)
+        APIBaseURL: $(API_BASE_URL)
+        UILaunchStoryboardName: LaunchScreen
+        NSCameraUsageDescription: 'Hakumi needs camera access for photos and videos.'
+        NSMicrophoneUsageDescription: 'Hakumi needs microphone access for voice recording.'
+        NSFaceIDUsageDescription: 'Hakumi uses Face ID to keep your account secure.'
+        NSPhotoLibraryUsageDescription: 'Hakumi needs photo library access to share images.'
+        NSPhotoLibraryAddUsageDescription: 'Hakumi needs permission to save photos to your library.'
+        NSAppTransportSecurity:
+          NSExceptionDomains:
+            localhost:
+              NSExceptionAllowsInsecureHTTPLoads: true
+        UIBackgroundModes:
+          - audio
+          - fetch
+          - remote-notification
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        CADisableMinimumFrameDurationOnPhone: true
+    entitlements:
+      path: Hakumi/Hakumi.entitlements
+      properties:
+        aps-environment: development
+        com.apple.developer.siri: true
+        com.apple.developer.associated-domains:
+          - webcredentials:api.ponti.io
+        com.apple.security.application-groups:
+          - group.$(PRODUCT_BUNDLE_IDENTIFIER)
+        keychain-access-groups:
+          - $(AppIdentifierPrefix)$(PRODUCT_BUNDLE_IDENTIFIER)
+    settings:
+      configs:
+        'Debug Dev':
+          PRODUCT_BUNDLE_IDENTIFIER: com.pontistudios.hakumi.dev
+          APP_DISPLAY_NAME: 'Hakumi Dev'
+          APP_URL_SCHEME: hakumi-dev
+          API_BASE_URL: 'http://localhost:4040'
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG DEV
+          DEBUG_INFORMATION_FORMAT: dwarf
+          ENABLE_TESTABILITY: YES
+          MTL_ENABLE_DEBUG_INFO: INCLUDE_SOURCE
+          ONLY_ACTIVE_ARCH: YES
+        'Debug E2E':
+          PRODUCT_BUNDLE_IDENTIFIER: com.pontistudios.hakumi.e2e
+          APP_DISPLAY_NAME: 'Hakumi E2E'
+          APP_URL_SCHEME: hakumi-e2e
+          API_BASE_URL: 'http://localhost:4040'
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG E2E
+          DEBUG_INFORMATION_FORMAT: dwarf
+          ENABLE_TESTABILITY: YES
+          MTL_ENABLE_DEBUG_INFO: INCLUDE_SOURCE
+          ONLY_ACTIVE_ARCH: YES
+        'Debug Preview':
+          PRODUCT_BUNDLE_IDENTIFIER: com.pontistudios.hakumi.preview
+          APP_DISPLAY_NAME: 'Hakumi Preview'
+          APP_URL_SCHEME: hakumi-preview
+          API_BASE_URL: 'http://localhost:4040'
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG PREVIEW
+          DEBUG_INFORMATION_FORMAT: dwarf
+          ENABLE_TESTABILITY: YES
+          MTL_ENABLE_DEBUG_INFO: INCLUDE_SOURCE
+          ONLY_ACTIVE_ARCH: YES
+        'Release Preview':
+          PRODUCT_BUNDLE_IDENTIFIER: com.pontistudios.hakumi.preview
+          APP_DISPLAY_NAME: 'Hakumi Preview'
+          APP_URL_SCHEME: hakumi-preview
+          API_BASE_URL: ''
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: PREVIEW
+          DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
+          COPY_PHASE_STRIP: NO
+          VALIDATE_PRODUCT: YES
+          ENABLE_TESTABILITY: NO
+        'Release Production':
+          PRODUCT_BUNDLE_IDENTIFIER: com.pontistudios.hakumi
+          APP_DISPLAY_NAME: 'Hakumi'
+          APP_URL_SCHEME: hakumi
+          API_BASE_URL: ''
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: PRODUCTION
+          DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
+          COPY_PHASE_STRIP: NO
+          VALIDATE_PRODUCT: YES
+          ENABLE_TESTABILITY: NO
+    scheme:
+      testTargets:
+        - HakumiTests
+
+  HakumiTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: '18.0'
+    sources:
+      - path: HakumiTests
+    dependencies:
+      - target: Hakumi
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.pontistudios.hakumi.tests
+        GENERATE_INFOPLIST_FILE: YES
+
+schemes:
+  'Hakumi Dev':
+    build:
+      targets:
+        Hakumi: all
+        HakumiTests: [test]
+    run:
+      config: 'Debug Dev'
+    test:
+      config: 'Debug Dev'
+      targets:
+        - HakumiTests
+    analyze:
+      config: 'Debug Dev'
+    archive:
+      config: 'Release Production'
+  'Hakumi E2E':
+    build:
+      targets:
+        Hakumi: all
+    run:
+      config: 'Debug E2E'
+    test:
+      config: 'Debug E2E'
+    analyze:
+      config: 'Debug E2E'
+    archive:
+      config: 'Release Production'
+  'Hakumi Preview':
+    build:
+      targets:
+        Hakumi: all
+    run:
+      config: 'Debug Preview'
+    analyze:
+      config: 'Debug Preview'
+    archive:
+      config: 'Release Preview'
+  'Hakumi':
+    build:
+      targets:
+        Hakumi: all
+    run:
+      config: 'Release Production'
+    analyze:
+      config: 'Release Production'
+    archive:
+      config: 'Release Production'

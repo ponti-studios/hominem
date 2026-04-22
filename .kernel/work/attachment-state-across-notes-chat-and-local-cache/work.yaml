@@ -1,0 +1,19 @@
+id: attachment-state-across-notes-chat-and-local-cache
+goal: Shared attachment state across notes, chat, and local cache parity
+status: done
+milestoneId: 4-3-file-and-attachment-parity
+createdAt: 2026-04-18T06:24:23Z
+updatedAt: 2026-04-19T00:00:00Z
+tasks:
+  - id: clarify-scope
+    title: Clarify scope and success criteria
+    done: true
+  - id: implement-core-path
+    title: Implement the core path
+    done: true
+  - id: verify-behavior
+    title: Verify behavior with tests
+    done: true
+  - id: capture-followups
+    title: Capture follow-up work
+    done: true

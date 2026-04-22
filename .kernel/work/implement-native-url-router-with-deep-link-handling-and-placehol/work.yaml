@@ -1,0 +1,20 @@
+id: implement-native-url-router-with-deep-link-handling-and-placehol
+goal: Implement native URL router with deep-link handling and placeholder route
+  shells
+status: done
+milestoneId: 1-2-routing-shell-deep-links-and-observability
+createdAt: 2026-04-18T05:07:21.649Z
+updatedAt: 2026-04-18T05:07:21.649Z
+tasks:
+  - id: clarify-scope
+    title: Clarify scope and success criteria
+    done: false
+  - id: implement-core-path
+    title: Implement the core path
+    done: false
+  - id: verify-behavior
+    title: Verify behavior with tests
+    done: false
+  - id: capture-followups
+    title: Capture follow-up work
+    done: false

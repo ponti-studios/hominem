@@ -1,0 +1,20 @@
+# Xcode derived data and archives
+DerivedData/
+*.xcarchive
+*.ipa
+
+# CocoaPods (not used, but just in case)
+Pods/
+Podfile.lock
+
+# SPM
+.build/
+*.resolved
+
+# macOS
+.DS_Store
+
+# Xcode user settings (personal, not shared)
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist

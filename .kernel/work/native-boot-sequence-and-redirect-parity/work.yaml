@@ -1,0 +1,19 @@
+id: native-boot-sequence-and-redirect-parity
+goal: Native boot sequence and redirect parity
+status: done
+milestoneId: 2-2-session-bootstrap-parity
+createdAt: 2026-04-18T06:24:23Z
+updatedAt: 2026-04-18T09:47:37Z
+tasks:
+  - id: clarify-scope
+    title: Clarify scope and success criteria
+    done: true
+  - id: implement-core-path
+    title: Implement the core path
+    done: true
+  - id: verify-behavior
+    title: Verify behavior with tests
+    done: true
+  - id: capture-followups
+    title: Capture follow-up work
+    done: true

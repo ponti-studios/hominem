@@ -1,0 +1,9 @@
+# Journal
+
+- 2026-04-18T06:24:23Z: Created work item `chat-message-list-and-conversation-actions`.
+- 2026-04-19T00:00:00Z: Implemented chat message list and conversation actions.
+  - `ChatService` (`Services/Chat/ChatService.swift`): `@MainActor` enum with `ChatMessage` and `ChatDetail` models. `fetchMessages(chatId:)` → `GET /api/chats/:id/messages?limit=50`; `fetchChatDetail(id:)` → `GET /api/chats/:id`; `sendMessage(chatId:text:)` → `POST /api/chats/:id/stream` (waits for full streamed response); `archiveChat(id:)` → `POST /api/chats/:id/archive`; `createChat(title:)` → `POST /api/chats`.
+  - `ChatScreen` (`Screens/Chat/ChatScreen.swift`): replaces Phase 4 placeholder. Message list with `ScrollViewReader` auto-scrolling to bottom on new messages. User bubbles right-aligned (`emphasisHighest` bg), assistant bubbles left-aligned (`bgSurface` bg). Reasoning block shown above assistant message when present. Tap-to-reveal action row: copy (all), share via `ShareLink` (assistant), edit (user opens bottom sheet to resend), regenerate (assistant resends previous user message). Search bar toggled from toolbar filters `displayMessages` in-memory. Conversation actions sheet: Archive (→ `POST /api/chats/:id/archive` then navigate to inbox) and Search. Composer bar: multi-line `TextField` + send button, optimistic user message appended immediately then replaced after server reload. `ThinkingRow` with pulsing `ThinkingDot` animation shown while `sendStatus == .sending`. `editingMessage` sheet uses `sheet(item:)` pattern for clean lifecycle.
+  - Also removed duplicate `ScreenStateOverlay` from `Navigation/RootView.swift` (already extracted to `Navigation/ScreenStateOverlay.swift`).
+  - Build verified: `BUILD SUCCEEDED`.
+  - Follow-up: search/archive overlay and title sync belong in `chat-search-archive-review-overlay-and-title-sync`.

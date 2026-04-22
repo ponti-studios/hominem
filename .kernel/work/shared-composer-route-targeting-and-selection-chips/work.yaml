@@ -1,0 +1,19 @@
+id: shared-composer-route-targeting-and-selection-chips
+goal: Shared composer route targeting and selection-chip parity
+status: done
+milestoneId: 4-2-shared-composer-parity
+createdAt: 2026-04-18T06:24:23Z
+updatedAt: 2026-04-19T00:00:00Z
+tasks:
+  - id: clarify-scope
+    title: Clarify scope and success criteria
+    done: true
+  - id: implement-core-path
+    title: Implement the core path
+    done: true
+  - id: verify-behavior
+    title: Verify behavior with tests
+    done: true
+  - id: capture-followups
+    title: Capture follow-up work
+    done: true
