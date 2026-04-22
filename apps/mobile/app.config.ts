@@ -119,10 +119,6 @@ function allowsLocalNetworking(appVariant: AppVariant) {
   return appVariant !== 'production';
 }
 
-function getAppGroupId(bundleIdentifier: string) {
-  return `group.${bundleIdentifier}`;
-}
-
 export default ({ config }: ConfigContext) => {
   const appVariant = getAppVariant();
   const variantConfig = getAppVariantConfig(appVariant);
@@ -237,7 +233,6 @@ export default ({ config }: ConfigContext) => {
       supportsTablet: true,
       entitlements: {
         'com.apple.developer.siri': true,
-        'com.apple.security.application-groups': [getAppGroupId(variantConfig.bundleIdentifier)],
         'keychain-access-groups': [`$(AppIdentifierPrefix)${variantConfig.bundleIdentifier}`],
       },
       infoPlist: {
