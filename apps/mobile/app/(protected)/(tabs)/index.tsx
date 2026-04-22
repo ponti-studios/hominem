@@ -1,14 +1,14 @@
+import type { FlashListRef } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import { Stack, useIsFocused, useLocalSearchParams, useRouter } from 'expo-router';
 import type { RelativePathString } from 'expo-router';
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { Pressable, RefreshControl, StyleSheet, View } from 'react-native';
-import type { FlashListRef } from '@shopify/flash-list';
 
 import { useComposerContext } from '~/components/composer/ComposerContext';
+import { makeStyles, theme } from '~/components/theme';
 import { InboxStream } from '~/components/workspace/InboxStream';
 import type { InboxStreamItemData } from '~/components/workspace/InboxStreamItem.types';
-import { makeStyles, theme } from '~/components/theme';
 import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
 import { useInboxStreamItems } from '~/services/inbox/use-inbox-stream-items';
 
@@ -75,20 +75,18 @@ export default function FeedScreen() {
 
   return (
     <View style={styles.container}>
-      <Stack.Screen
-        options={screenOptions}
+      <Stack.Screen options={screenOptions} />
+      <InboxStream
+        listRef={listRef}
+        items={items}
+        refreshControl={
+          <RefreshControl
+            refreshing={isLoading}
+            onRefresh={handleRefresh}
+            tintColor={styles.refreshTint.color}
+          />
+        }
       />
-        <InboxStream
-          listRef={listRef}
-          items={items}
-          refreshControl={
-            <RefreshControl
-              refreshing={isLoading}
-              onRefresh={handleRefresh}
-              tintColor={styles.refreshTint.color}
-            />
-          }
-        />
     </View>
   );
 }

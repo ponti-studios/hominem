@@ -1,3 +1,4 @@
+import type { ChatMessageItem, MarkdownComponent } from '@hominem/chat';
 import type { PendingReview } from '@hominem/chat/react';
 import { useChatLifecycle } from '@hominem/chat/react';
 import { buildArtifactProposal } from '@hominem/chat/ui';
@@ -21,8 +22,6 @@ import {
 import { Alert, Platform, Share, type TextInput } from 'react-native';
 
 import { loadMarkdown } from '../components/chat/chat-message';
-import type { ChatMessageItem, MarkdownComponent } from '@hominem/chat';
-
 
 export interface ChatServices {
   useChatMessages: (args: { chatId: string }) => {
@@ -45,7 +44,6 @@ export interface ChatServices {
     updatedAt?: string;
   }) => Promise<void>;
 }
-
 
 interface MobileUiState {
   showDebug: boolean;
@@ -85,7 +83,6 @@ function mobileUiReducer(state: MobileUiState, action: MobileUiAction): MobileUi
       return { ...state, searchQuery: action.searchQuery };
   }
 }
-
 
 interface UseChatControllerInput {
   chatId: string;
@@ -205,7 +202,6 @@ export function useChatController({
     },
   });
 
-
   const createNote = useMutation({
     mutationKey: ['chat-note', chatId],
     mutationFn: async (review: { proposedTitle: string; previewContent: string }) => {
@@ -221,7 +217,6 @@ export function useChatController({
       }
     },
   });
-
 
   const {
     lifecycleState,
@@ -288,8 +283,7 @@ export function useChatController({
         title: task.title,
       };
     },
-    onRejectReview: async () => {
-    },
+    onRejectReview: async () => {},
     onError: (_phase, _error) => {
       Alert.alert(
         _phase === 'accept' ? 'Could not save artifact' : 'Could not prepare review',
@@ -297,7 +291,6 @@ export function useChatController({
       );
     },
   });
-
 
   const markdownLoadedRef = useRef(false);
   useEffect(() => {
@@ -318,7 +311,6 @@ export function useChatController({
       controller.abort();
     };
   }, []);
-
 
   const handleArchiveChat = useCallback(() => {
     archiveChat();

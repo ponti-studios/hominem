@@ -149,10 +149,7 @@ mimeType: 'image/jpeg',
 **File**: `ComposerContext.tsx:63`
 
 ```ts
-useMemo(
-  () => resolveComposerTarget(pathname, params),
-  [pathname, params.chatId, params.id],
-);
+useMemo(() => resolveComposerTarget(pathname, params), [pathname, params.chatId, params.id]);
 ```
 
 `params` is destructured at the dependency level. If a new route parameter is introduced that affects target resolution, it must be manually added to this dependency array or `resolveComposerTarget` will receive stale values.

@@ -1,5 +1,5 @@
-import { posthog } from '~/services/posthog';
 import { API_BASE_URL, APP_VARIANT } from '~/constants';
+import { posthog } from '~/services/posthog';
 
 type AuthAnalyticsPhase =
   | 'boot'

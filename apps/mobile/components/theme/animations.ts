@@ -1,4 +1,3 @@
-import { durations, translateDistances } from '~/components/theme/tokens';
 import {
   Easing,
   FadeInDown,
@@ -11,6 +10,8 @@ import {
   FadeOutUp,
   LinearTransition,
 } from 'react-native-reanimated';
+
+import { durations, translateDistances } from '~/components/theme/tokens';
 
 export const VOID_MOTION_ENTER = durations.enter;
 export const VOID_MOTION_EXIT = durations.exit;

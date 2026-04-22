@@ -1,5 +1,11 @@
 import { useApiClient } from '@hominem/rpc/react';
 import type { SessionSource } from '@hominem/rpc/types';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import type { RelativePathString } from 'expo-router';
+import React, { useMemo } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
+
 import {
   ChatMessageList,
   ChatReviewOverlay,
@@ -9,25 +15,27 @@ import {
   type ChatServices,
   useChatController,
 } from '~/components/chat';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import type { RelativePathString } from 'expo-router';
-import React, { useMemo } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
-
 import { useComposerContext } from '~/components/composer/ComposerContext';
-import { DEFAULT_CHAT_TITLE, resolveChatScreenTitle, updateChatTitleCaches , useActiveChat, useArchiveChat, useChatMessages, useSendMessage } from '~/services/chat';
 import { useTTS } from '~/components/media/use-tts';
 import { theme } from '~/components/theme';
-import AppIcon from '~/components/ui/icon';
 import { EmptyState } from '~/components/ui';
+import AppIcon from '~/components/ui/icon';
+import {
+  DEFAULT_CHAT_TITLE,
+  resolveChatScreenTitle,
+  updateChatTitleCaches,
+  useActiveChat,
+  useArchiveChat,
+  useChatMessages,
+  useSendMessage,
+} from '~/services/chat';
+import type { ChatWithActivity } from '~/services/chat/session-state';
+import { formatRelativeAge } from '~/services/date/format-relative-age';
 import {
   createChatInboxRefreshSnapshot,
   upsertInboxSessionActivity,
 } from '~/services/inbox/inbox-refresh';
 import { chatKeys } from '~/services/notes/query-keys';
-import { formatRelativeAge } from '~/services/date/format-relative-age';
-import type { ChatWithActivity } from '~/services/chat/session-state';
 
 const renderChatIcon: ChatRenderIcon = (name, props) => (
   <View style={props.style}>
@@ -141,7 +149,10 @@ export default function ChatDetailScreen() {
                 onPress={controller.handleOpenMenu}
                 hitSlop={8}
                 accessibilityLabel="Conversation actions"
-                style={({ pressed }) => [styles.headerButton, pressed ? styles.headerButtonPressed : null]}
+                style={({ pressed }) => [
+                  styles.headerButton,
+                  pressed ? styles.headerButtonPressed : null,
+                ]}
               >
                 <AppIcon color={theme.colors.foreground} name="ellipsis" size={20} />
               </Pressable>
@@ -153,7 +164,10 @@ export default function ChatDetailScreen() {
                 }}
                 hitSlop={8}
                 accessibilityLabel="New chat"
-                style={({ pressed }) => [styles.headerButton, pressed ? styles.headerButtonPressed : null]}
+                style={({ pressed }) => [
+                  styles.headerButton,
+                  pressed ? styles.headerButtonPressed : null,
+                ]}
               >
                 <AppIcon color={theme.colors.foreground} name="square.and.pencil" size={20} />
               </Pressable>

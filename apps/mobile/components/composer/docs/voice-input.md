@@ -20,6 +20,7 @@ VoiceSessionModal (BottomSheetModal, snaps: ['50%', '90%'])
 `components/media/voice-session-modal.tsx`
 
 Props:
+
 - `visible: boolean` — gates rendering (broken; see known issues)
 - `bottomSheetModalRef` — imperative ref for `present()` / `dismiss()`
 - `onAudioTranscribed(transcript)` — called with the transcript text on success
@@ -32,11 +33,13 @@ On transcription success, calls `onAudioTranscribed` then `handleDismiss`. On er
 `components/media/voice/VoiceInput.tsx`
 
 When `autoTranscribe={true}`:
+
 - On stop recording, immediately calls `useTranscriber.mutateAsync(audioUri)`
 - On transcription success, calls `onAudioTranscribed(transcript)`
 - On transcription error, calls `onError()`
 
 Controls:
+
 - `AnimatedPressable` mic/stop button — color interpolates from `muted` to `destructive` while recording
 - Duration counter — counts up in seconds using `setInterval`
 - Pause button (`clock` icon) — visible while recording
@@ -56,6 +59,7 @@ useEffect(() => {
 ```
 
 Exposes:
+
 - `isRecording` — `snapshot.state === 'RECORDING'`
 - `isPaused` — `snapshot.state === 'PAUSED'`
 - `meterings` — last 12 dB samples for the waveform
@@ -103,7 +107,7 @@ IDLE
 The recorder polls `recorder.getStatus().metering` every 100ms. The last 12 samples are retained in a rolling buffer:
 
 ```ts
-meterings: [...current.meterings, metering].slice(-12)
+meterings: [...current.meterings, metering].slice(-12);
 ```
 
 These values drive the `WaveformVisualizer` bar heights.
@@ -113,6 +117,7 @@ These values drive the `WaveformVisualizer` bar heights.
 `components/media/voice/WaveformVisualizer.tsx`
 
 Renders 12 animated bars. Each bar:
+
 - Width: 4px, border-radius: 2px
 - Height: `withTiming(isActive ? Math.max(4, level * 60) : 4, { duration: 100 })`
 - Active bars are `theme.colors.destructive`, playback bars are `theme.colors.primary`
@@ -154,9 +159,9 @@ After appending, `setIsRecording(false)` and `setMode('text')` are called.
 
 ## Haptics
 
-| Event | Haptic |
-|---|---|
-| Start recording | `ImpactFeedbackStyle.Medium` |
-| Stop recording | `NotificationFeedbackType.Success` |
-| Pause | `ImpactFeedbackStyle.Light` |
-| Resume | `ImpactFeedbackStyle.Light` |
+| Event           | Haptic                             |
+| --------------- | ---------------------------------- |
+| Start recording | `ImpactFeedbackStyle.Medium`       |
+| Stop recording  | `NotificationFeedbackType.Success` |
+| Pause           | `ImpactFeedbackStyle.Light`        |
+| Resume          | `ImpactFeedbackStyle.Light`        |

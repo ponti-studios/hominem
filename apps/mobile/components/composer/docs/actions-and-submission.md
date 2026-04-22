@@ -8,14 +8,13 @@ Computed by `canSubmitComposerDraft` from `composerActions.ts`:
 function canSubmitComposerDraft({ isUploading, message, uploadedAttachmentIds, selectedNotes }) {
   return (
     !isUploading &&
-    (message.trim().length > 0 ||
-      uploadedAttachmentIds.length > 0 ||
-      selectedNotes.length > 0)
+    (message.trim().length > 0 || uploadedAttachmentIds.length > 0 || selectedNotes.length > 0)
   );
 }
 ```
 
 The send button is disabled when:
+
 - An upload is in progress, OR
 - None of: non-empty text, at least one uploaded file, at least one selected note
 
@@ -42,12 +41,12 @@ const handlePrimaryAction = () => {
 
 `resolveComposerPrimaryAction` maps target kind to action:
 
-| Target kind | Action |
-|---|---|
-| `chat` | `'send_chat'` |
-| `feed` | `'create_note'` |
-| `notes` | `'create_note'` |
-| `hidden` | `null` |
+| Target kind | Action          |
+| ----------- | --------------- |
+| `chat`      | `'send_chat'`   |
+| `feed`      | `'create_note'` |
+| `notes`     | `'create_note'` |
+| `hidden`    | `null`          |
 
 ### send_chat
 

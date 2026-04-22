@@ -1,4 +1,3 @@
-import type { UploadedFile } from '~/types/upload';
 import {
   CHAT_UPLOAD_MAX_FILE_COUNT,
   CHAT_UPLOAD_MAX_FILE_SIZE_BYTES,
@@ -9,6 +8,7 @@ import { useCallback, useState } from 'react';
 
 import { API_BASE_URL } from '~/constants';
 import { useAuth } from '~/services/auth/auth-provider';
+import type { UploadedFile } from '~/types/upload';
 interface UploadClient {
   upload(formData: FormData): Promise<unknown>;
 }
@@ -231,7 +231,9 @@ export function useFileUpload(fetchImpl: typeof fetch = fetch) {
             if (!response.ok) {
               const error = await response.json().catch(() => ({}));
               throw new Error(
-                typeof error.message === 'string' ? error.message : `Upload failed (${response.status})`,
+                typeof error.message === 'string'
+                  ? error.message
+                  : `Upload failed (${response.status})`,
               );
             }
 

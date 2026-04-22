@@ -1,15 +1,12 @@
-import { classifyFileByMimeType } from '@hominem/rpc';
-import type { UploadedFile } from '~/types/upload';
 import { CHAT_UPLOAD_MAX_FILE_COUNT } from '@hominem/chat';
+import { classifyFileByMimeType } from '@hominem/rpc';
 import * as ImagePicker from 'expo-image-picker';
 import { Alert } from 'react-native';
 
 import { useFileUpload } from '~/services/files/use-file-upload';
+import type { UploadedFile } from '~/types/upload';
 
-import type {
-  ComposerAttachment,
-  ComposerMode,
-} from './composerState';
+import type { ComposerAttachment, ComposerMode } from './composerState';
 
 interface UploadedMobileAsset {
   localUri: string;
@@ -19,9 +16,7 @@ interface UploadedMobileAsset {
 interface UseComposerMediaActionsOptions {
   attachments: ComposerAttachment[];
   setAttachments: (
-    value:
-      | ComposerAttachment[]
-      | ((currentValue: ComposerAttachment[]) => ComposerAttachment[]),
+    value: ComposerAttachment[] | ((currentValue: ComposerAttachment[]) => ComposerAttachment[]),
   ) => void;
   message: string;
   setMessage: (value: string) => void;
@@ -37,9 +32,7 @@ function getAttachmentType(uploadedFile: UploadedMobileAsset['uploadedFile']): s
   return classifyFileByMimeType(uploadedFile.mimetype);
 }
 
-function mapUploadedAssetsToAttachments(
-  assets: UploadedMobileAsset[],
-): ComposerAttachment[] {
+function mapUploadedAssetsToAttachments(assets: UploadedMobileAsset[]): ComposerAttachment[] {
   return assets.map((asset) => ({
     id: asset.uploadedFile.id,
     name: asset.uploadedFile.originalName,
@@ -127,7 +120,7 @@ export function useComposerMediaActions({
 
     const fileName = photo.fileName ?? photo.uri.split('/').pop() ?? 'photo';
     const extension = fileName.split('.').pop()?.toLowerCase() ?? 'jpg';
-    
+
     const mimeTypeMap: Record<string, string> = {
       heic: 'image/heic',
       heif: 'image/heif',

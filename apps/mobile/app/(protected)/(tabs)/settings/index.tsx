@@ -13,7 +13,6 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   Easing,
   interpolateColor,
@@ -23,6 +22,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text, theme } from '~/components/theme';
 import { MOBILE_PASSKEY_ENABLED } from '~/constants';

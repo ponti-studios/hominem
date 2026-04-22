@@ -4,21 +4,21 @@
 
 Every tappable element in the composer has an `accessibilityLabel` and `accessibilityRole`:
 
-| Element | Label | Role |
-|---|---|---|
-| Send button | `'Sending…'` (in-flight) or `presentation.primaryActionLabel` | `'button'` |
-| Plus button | `'Add attachment'` | `'button'` |
-| Voice button | `'Record a voice message'` | `'button'` |
-| Secondary action | `presentation.secondaryActionLabel ?? 'Start chat'` | `'button'` |
-| Attachment thumbnail | `'Remove <filename>'` | `'button'` |
-| Note chip remove | `'Remove <title>'` | `'button'` |
-| Mention suggestion | `'Link <title>'` | `'button'` |
-| Voice start | `'Start voice recording'` | `'button'` |
-| Voice stop | `'Stop recording'` | `'button'` |
-| Close voice modal | `'Close voice input'` | `'button'` |
-| Close camera | `'Close camera'` | `'button'` |
-| Flip camera | `'Flip camera'` | — (no role set) |
-| Take photo | `'Take photo'` | — (no role set) |
+| Element              | Label                                                         | Role            |
+| -------------------- | ------------------------------------------------------------- | --------------- |
+| Send button          | `'Sending…'` (in-flight) or `presentation.primaryActionLabel` | `'button'`      |
+| Plus button          | `'Add attachment'`                                            | `'button'`      |
+| Voice button         | `'Record a voice message'`                                    | `'button'`      |
+| Secondary action     | `presentation.secondaryActionLabel ?? 'Start chat'`           | `'button'`      |
+| Attachment thumbnail | `'Remove <filename>'`                                         | `'button'`      |
+| Note chip remove     | `'Remove <title>'`                                            | `'button'`      |
+| Mention suggestion   | `'Link <title>'`                                              | `'button'`      |
+| Voice start          | `'Start voice recording'`                                     | `'button'`      |
+| Voice stop           | `'Stop recording'`                                            | `'button'`      |
+| Close voice modal    | `'Close voice input'`                                         | `'button'`      |
+| Close camera         | `'Close camera'`                                              | `'button'`      |
+| Flip camera          | `'Flip camera'`                                               | — (no role set) |
+| Take photo           | `'Take photo'`                                                | — (no role set) |
 
 ## Disabled state semantics
 

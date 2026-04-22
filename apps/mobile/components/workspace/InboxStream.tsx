@@ -2,8 +2,8 @@ import { FlashList, type FlashListRef, type ListRenderItem } from '@shopify/flas
 import React, { memo, useCallback, type RefObject } from 'react';
 import { StyleSheet, View, type RefreshControlProps } from 'react-native';
 
-import { colors, spacing } from '~/components/theme/tokens';
 import { Text } from '~/components/theme';
+import { colors, spacing } from '~/components/theme/tokens';
 
 import { InboxStreamItem } from './InboxStreamItem';
 import type { InboxStreamItemData as InboxStreamItemModel } from './InboxStreamItem.types';

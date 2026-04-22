@@ -5,6 +5,7 @@
 import * as StoreReview from 'expo-store-review';
 
 import { E2E_TESTING } from '~/constants';
+
 import { storage } from '../storage/mmkv';
 
 const ACTIVE_DAYS_KEY = 'review_active_days';

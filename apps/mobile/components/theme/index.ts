@@ -1,6 +1,6 @@
+import { shellTheme } from '../../types/shellTheme';
 import { makeStylesInternal } from './make-styles';
 import theme from './theme';
-import { shellTheme } from '../../types/shellTheme';
 
 export { Text } from './typography';
 export { theme, shellTheme };

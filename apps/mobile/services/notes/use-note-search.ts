@@ -7,7 +7,13 @@ import { noteKeys } from './query-keys';
 export function useNoteSearch(query: string, enabled = true) {
   const client = useApiClient();
 
-  return useInfiniteQuery<NotesSearchOutput, Error, NotesSearchOutput, readonly unknown[], string | null>({
+  return useInfiniteQuery<
+    NotesSearchOutput,
+    Error,
+    NotesSearchOutput,
+    readonly unknown[],
+    string | null
+  >({
     queryKey: noteKeys.search(query),
     enabled: enabled && query.trim().length > 0,
     staleTime: 30_000,

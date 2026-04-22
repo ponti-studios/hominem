@@ -1,6 +1,5 @@
-import { describe, expect, it } from 'vitest';
-
 import type { Note } from '@hominem/rpc/types';
+import { describe, expect, it } from 'vitest';
 
 import {
   DEFAULT_CHAT_TITLE,

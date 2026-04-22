@@ -44,7 +44,10 @@ function toAuthUserProfile(localProfile: User | null): AuthContext['state']['use
   };
 }
 
-export function usePasskeyAuth(context: AuthContext, sessionCookieHeaderRef: RefObject<string | null>) {
+export function usePasskeyAuth(
+  context: AuthContext,
+  sessionCookieHeaderRef: RefObject<string | null>,
+) {
   const { dispatch } = context;
 
   const completePasskeySignIn = useCallback(

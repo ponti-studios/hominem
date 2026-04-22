@@ -21,6 +21,8 @@ function fromSignInUser(user: SignInUser): User {
   };
 }
 
-export async function upsertBootProfile(user: SignInUser): Promise<NonNullable<AuthState['user']> | null> {
+export async function upsertBootProfile(
+  user: SignInUser,
+): Promise<NonNullable<AuthState['user']> | null> {
   return LocalStore.upsertUserProfile(fromSignInUser(user));
 }

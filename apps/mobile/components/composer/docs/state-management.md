@@ -99,7 +99,7 @@ Takes `(pathname, params)` and returns a `ComposerTarget`. See [targets-and-rout
 `Composer.tsx` holds a small amount of local state that controls modal visibility — state that doesn't need to be shared:
 
 ```ts
-const [isVoiceOpen, setIsVoiceOpen] = useState(false);   // known bug: always false
+const [isVoiceOpen, setIsVoiceOpen] = useState(false); // known bug: always false
 const [isCameraOpen, setIsCameraOpen] = useState(false);
 const voiceModalRef = useRef<BottomSheetModal>(null);
 ```
@@ -107,25 +107,25 @@ const voiceModalRef = useRef<BottomSheetModal>(null);
 It also owns two animated values:
 
 ```ts
-const animatedH = useSharedValue(INPUT_MIN_H);  // input height spring
-const keyboard = useAnimatedKeyboard();          // from react-native-keyboard-controller
+const animatedH = useSharedValue(INPUT_MIN_H); // input height spring
+const keyboard = useAnimatedKeyboard(); // from react-native-keyboard-controller
 ```
 
 ---
 
 ## State ownership summary
 
-| State | Owner | Notes |
-|---|---|---|
-| `text` | ComposerContext draft | Per target key |
-| `attachments` | ComposerContext draft | Per target key |
-| `isRecording` | ComposerContext draft | Ephemeral, should not be in draft |
-| `mode` | ComposerContext draft | `'text'` or `'voice'` |
-| `selectedNotes` | ComposerContext draft | Per target key |
-| `composerClearance` | ComposerContext | Shared to screens |
-| `target` | ComposerContext | Derived from route |
-| `isCameraOpen` | Local component state | Modal gate |
-| `isVoiceOpen` | Local component state | Unused (bug) |
-| `animatedH` | Local shared value | Input height |
-| Recording state machine | `audio.service.ts` singleton | External pub/sub store |
-| Upload state | `useFileUpload` hook | Local to media actions |
+| State                   | Owner                        | Notes                             |
+| ----------------------- | ---------------------------- | --------------------------------- |
+| `text`                  | ComposerContext draft        | Per target key                    |
+| `attachments`           | ComposerContext draft        | Per target key                    |
+| `isRecording`           | ComposerContext draft        | Ephemeral, should not be in draft |
+| `mode`                  | ComposerContext draft        | `'text'` or `'voice'`             |
+| `selectedNotes`         | ComposerContext draft        | Per target key                    |
+| `composerClearance`     | ComposerContext              | Shared to screens                 |
+| `target`                | ComposerContext              | Derived from route                |
+| `isCameraOpen`          | Local component state        | Modal gate                        |
+| `isVoiceOpen`           | Local component state        | Unused (bug)                      |
+| `animatedH`             | Local shared value           | Input height                      |
+| Recording state machine | `audio.service.ts` singleton | External pub/sub store            |
+| Upload state            | `useFileUpload` hook         | Local to media actions            |

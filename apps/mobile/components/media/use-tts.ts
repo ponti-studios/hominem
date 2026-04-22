@@ -1,6 +1,7 @@
 import { useApiClient } from '@hominem/rpc/react';
 import * as FileSystem from 'expo-file-system/legacy';
 import { useCallback, useRef, useState } from 'react';
+
 import { playTTS, stopTTS } from './audio.service';
 
 type TTSState = 'idle' | 'loading' | 'playing' | 'error';

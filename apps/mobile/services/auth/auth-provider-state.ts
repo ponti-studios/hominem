@@ -1,7 +1,7 @@
 import type { User } from '@hominem/auth/types';
 
-import type { AuthState } from './types';
 import { resolveIsLoadingAuth } from './provider-utils';
+import type { AuthState } from './types';
 
 export interface AuthContextSnapshot {
   authStatus: AuthState['status'];

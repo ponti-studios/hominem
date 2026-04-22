@@ -1,15 +1,9 @@
 import * as React from 'react';
-import {
-  StyleSheet,
-  Text,
-  View,
-  type StyleProp,
-  type TextStyle,
-  type ViewStyle,
-} from 'react-native';
+import { Text, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
 
+import { makeStyles } from '~/components/theme';
+import { fontFamiliesNative, fontSizes, fontWeights, spacing } from '~/components/theme/tokens';
 
-import { colors, fontFamiliesNative, fontSizes, fontWeights, spacing } from '~/components/theme/tokens';
 import type { FieldBaseProps } from './field.types';
 
 interface NativeFieldChildProps {
@@ -30,6 +24,36 @@ function normalizeNativeId(value: string) {
   return value.replace(/[^a-zA-Z0-9_-]/g, '');
 }
 
+const useFieldStyles = makeStyles((theme) => ({
+  label: {
+    color: theme.colors['text-secondary'],
+    fontFamily: fontFamiliesNative.primary,
+    fontSize: fontSizes.xs,
+    fontWeight: fontWeights.semibold,
+    lineHeight: Math.round(fontSizes.xs * 1.4),
+    marginBottom: spacing[2],
+  },
+  required: {
+    color: theme.colors.destructive,
+  },
+  helpText: {
+    color: theme.colors['text-tertiary'],
+    fontFamily: fontFamiliesNative.primary,
+    fontSize: fontSizes.xs,
+    fontWeight: fontWeights.regular,
+    lineHeight: Math.round(fontSizes.xs * 1.4),
+    marginTop: spacing[1],
+  },
+  errorText: {
+    color: theme.colors.destructive,
+    fontFamily: fontFamiliesNative.primary,
+    fontSize: fontSizes.xs,
+    fontWeight: fontWeights.regular,
+    lineHeight: Math.round(fontSizes.xs * 1.4),
+    marginTop: spacing[1],
+  },
+}));
+
 function Field({
   children,
   className: _className,
@@ -42,6 +66,7 @@ function Field({
   messageStyle,
   required,
 }: FieldProps) {
+  const styles = useFieldStyles();
   const generatedId = React.useId();
   const id = normalizeNativeId(externalId ?? generatedId);
   const labelId = `${id}-label`;
@@ -76,36 +101,6 @@ function Field({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  errorText: {
-    color: colors.destructive,
-    fontFamily: fontFamiliesNative.primary,
-    fontSize: fontSizes.xs,
-    fontWeight: fontWeights.regular,
-    lineHeight: Math.round(fontSizes.xs * 1.4),
-    marginTop: spacing[1],
-  },
-  helpText: {
-    color: colors['text-tertiary'],
-    fontFamily: fontFamiliesNative.primary,
-    fontSize: fontSizes.xs,
-    fontWeight: fontWeights.regular,
-    lineHeight: Math.round(fontSizes.xs * 1.4),
-    marginTop: spacing[1],
-  },
-  label: {
-    color: colors['text-secondary'],
-    fontFamily: fontFamiliesNative.primary,
-    fontSize: fontSizes.xs,
-    fontWeight: fontWeights.semibold,
-    lineHeight: Math.round(fontSizes.xs * 1.4),
-    marginBottom: spacing[2],
-  },
-  required: {
-    color: colors.destructive,
-  },
-});
 
 export { Field };
 export type { FieldProps };

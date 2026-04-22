@@ -1,7 +1,7 @@
-import { Button } from '~/components/ui/Button';
 import { View, StyleSheet } from 'react-native';
 
 import { makeStyles, Text } from '~/components/theme';
+import { Button } from '~/components/ui/Button';
 
 interface ErrorMessageProps {
   title: string;

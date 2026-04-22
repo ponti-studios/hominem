@@ -9,6 +9,8 @@ import React, {
   type PropsWithChildren,
 } from 'react';
 
+import { useDraftPersistence } from '~/hooks/use-draft-persistence';
+
 import {
   createEmptyComposerDraft,
   resolveComposerTarget,
@@ -18,7 +20,6 @@ import {
   type ComposerSelectedNote,
   type ComposerTarget,
 } from './composerState';
-import { useDraftPersistence } from '~/hooks/use-draft-persistence';
 
 type DraftUpdater = (draft: ComposerDraft) => ComposerDraft;
 
@@ -28,9 +29,7 @@ type ComposerDraftContextValue = {
   setMessage: (value: string) => void;
   attachments: ComposerAttachment[];
   setAttachments: (
-    value:
-      | ComposerAttachment[]
-      | ((currentValue: ComposerAttachment[]) => ComposerAttachment[]),
+    value: ComposerAttachment[] | ((currentValue: ComposerAttachment[]) => ComposerAttachment[]),
   ) => void;
   selectedNotes: ComposerSelectedNote[];
   setSelectedNotes: (
@@ -98,9 +97,11 @@ export const ComposerProvider = ({ children }: PropsWithChildren) => {
 
   const activeDraft = drafts[target.key] ?? createEmptyComposerDraft();
 
-  const { restoreDraft, debouncedSaveDraft, clearDraft: clearPersistedDraft } = useDraftPersistence(
-    target.key,
-  );
+  const {
+    restoreDraft,
+    debouncedSaveDraft,
+    clearDraft: clearPersistedDraft,
+  } = useDraftPersistence(target.key);
 
   useEffect(() => {
     const savedDraft = restoreDraft();

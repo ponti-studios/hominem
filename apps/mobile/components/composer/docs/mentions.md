@@ -75,7 +75,11 @@ The suggestions render as an inline list inside the card, above the text input, 
 ```tsx
 <View style={styles.suggestions} testID="mobile-composer-mention-suggestions">
   {suggestions.map((note) => (
-    <Pressable key={note.id} onPress={() => onSelect(note)} testID={`mobile-composer-mention-${note.id}`}>
+    <Pressable
+      key={note.id}
+      onPress={() => onSelect(note)}
+      testID={`mobile-composer-mention-${note.id}`}
+    >
       <Text>{note.title || 'Untitled note'}</Text>
       {note.excerpt ? <Text numberOfLines={1}>{note.excerpt}</Text> : null}
     </Pressable>
@@ -89,15 +93,16 @@ Pressing a suggestion calls `handleSelectMention`.
 
 ```ts
 const handleSelectMention = (note: NoteSearchResult) => {
-  setMessage(removeTrailingMentionQuery(message));  // strip #slug from text
-  addSelectedNote(note);                            // add to selectedNotes
-  inputRef.current?.focus();                        // keep keyboard open
+  setMessage(removeTrailingMentionQuery(message)); // strip #slug from text
+  addSelectedNote(note); // add to selectedNotes
+  inputRef.current?.focus(); // keep keyboard open
 };
 ```
 
 ## ComposerSelectionSummary
 
 Selected notes render as chips above the text input. Each chip shows:
+
 - `bubble.left` icon
 - Note title (or `'Untitled note'`)
 - `xmark` button to remove
@@ -109,7 +114,7 @@ Removing a note calls `removeSelectedNote(note.id)` which filters the note out o
 When `handlePrimaryAction` fires for a `chat` target:
 
 ```ts
-const noteIds = getSelectedNoteIds(selectedNotes);        // string[]
+const noteIds = getSelectedNoteIds(selectedNotes); // string[]
 void sendChatMessage({
   message: trimmedMessage,
   ...(noteIds.length > 0 ? { noteIds } : {}),

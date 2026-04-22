@@ -76,9 +76,7 @@ export function buildNoteContent(noteContent: string, message: string) {
     return noteContent;
   }
 
-  return noteContent.trim().length > 0
-    ? `${noteContent}\n\n${trimmedMessage}`
-    : trimmedMessage;
+  return noteContent.trim().length > 0 ? `${noteContent}\n\n${trimmedMessage}` : trimmedMessage;
 }
 
 export function mergeUniqueIds(existingIds: string[], nextIds: string[]) {

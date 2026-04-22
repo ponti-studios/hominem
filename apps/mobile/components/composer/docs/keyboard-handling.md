@@ -22,6 +22,7 @@ const shellStyle = useAnimatedStyle(() => ({
 ## Why not KeyboardAvoidingView
 
 `useAnimatedKeyboard` gives:
+
 - UI thread updates (no JS bridge round-trip)
 - Smoother animation in sync with the keyboard animation curve
 - Direct control over the exact offset formula
@@ -42,7 +43,7 @@ The net result is that the composer overshoots — it moves up twice as far as i
 `useSafeAreaInsets()` provides the bottom inset (home indicator height on notchless iPhones). The composer uses:
 
 ```ts
-Math.max(insets.bottom, spacing[2])
+Math.max(insets.bottom, spacing[2]);
 ```
 
 This ensures a minimum gap from the bottom edge even on devices with no bottom inset.

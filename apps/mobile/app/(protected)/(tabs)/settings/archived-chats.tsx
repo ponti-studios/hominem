@@ -3,11 +3,10 @@ import { Stack, useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { colors, radii, spacing } from '~/components/theme/tokens';
 import { Text } from '~/components/theme';
-
-import { useArchivedSessions } from '~/hooks/useArchivedSessions';
+import { colors, radii, spacing } from '~/components/theme/tokens';
 import AppIcon from '~/components/ui/icon';
+import { useArchivedSessions } from '~/hooks/useArchivedSessions';
 import { formatRelativeAge } from '~/services/date/format-relative-age';
 
 export default function ArchivedChatsScreen() {

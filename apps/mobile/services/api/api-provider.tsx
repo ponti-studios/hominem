@@ -4,8 +4,8 @@ import { logger } from '@hominem/telemetry';
 import type { QueryClient } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 
-import { useAuth } from '~/services/auth/auth-provider';
 import { API_BASE_URL } from '~/constants';
+import { useAuth } from '~/services/auth/auth-provider';
 
 export const ApiProvider = ({
   children,

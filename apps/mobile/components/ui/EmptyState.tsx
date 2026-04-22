@@ -2,8 +2,9 @@ import { SymbolView, type SFSymbol } from 'expo-symbols';
 import { StyleSheet, View } from 'react-native';
 import Reanimated, { FadeIn } from 'react-native-reanimated';
 
-import { colors, radii, spacing } from '../theme/tokens';
 import { Text } from '~/components/theme';
+
+import { colors, radii, spacing } from '../theme/tokens';
 import { Button } from './Button';
 
 const DEFAULT_BOTTOM_OFFSET = spacing[7] * 3;

@@ -3,9 +3,9 @@ import { StyleSheet, View } from 'react-native';
 
 import { ChatHeader } from './chat-header';
 import { ChatMessageList } from './chat-message-list';
-import { ConversationActionsSheet } from './conversation-actions';
 import { ChatReviewOverlay } from './chat-review-overlay';
 import { ChatSearchModal } from './chat-search-modal';
+import { ConversationActionsSheet } from './conversation-actions';
 import { useChatController, type ChatServices } from './use-chat-controller';
 
 // These app-specific imports stay as peer dependencies provided by the host app

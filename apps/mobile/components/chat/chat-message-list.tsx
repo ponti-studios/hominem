@@ -1,14 +1,14 @@
+import type { ChatMessageItem, ChatRenderIcon, MarkdownComponent } from '@hominem/chat';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import { FlatList, Pressable, StyleSheet, View, type FlatList as RNFlatList } from 'react-native';
 
-
-import { fontFamiliesNative, fontSizes, spacing } from '~/components/theme/tokens';
 import { Text } from '~/components/theme';
+import { fontFamiliesNative, fontSizes, spacing } from '~/components/theme/tokens';
+
 import { renderChatMessage } from './chat-message';
 import { ChatShimmerMessage } from './chat-shimmer-message';
 import { ChatThinkingIndicator } from './chat-thinking-indicator';
-import type { ChatMessageItem, ChatRenderIcon, MarkdownComponent } from '@hominem/chat';
 
 const CHAT_COMPOSER_CLEARANCE = 220;
 const CHAT_TURN_GAP = spacing[5];
@@ -105,7 +105,7 @@ export function ChatMessageList({
     );
   }, [hasSearchQuery, searchQuery]);
 
-  const listEmptyComponent = hasSearchQuery ? emptySearch : emptyState ?? null;
+  const listEmptyComponent = hasSearchQuery ? emptySearch : (emptyState ?? null);
   const messagesContainerStyle = useMemo(
     () => [styles.messagesContainer, { paddingBottom: contentPaddingBottom }],
     [contentPaddingBottom],
@@ -137,7 +137,8 @@ export function ChatMessageList({
         inverted={false}
         onScrollBeginDrag={() => setActiveActionMessageId(null)}
         onContentSizeChange={() => {
-          if (didInitialScrollRef.current || displayMessages.length === 0 || isMessagesLoading) return;
+          if (didInitialScrollRef.current || displayMessages.length === 0 || isMessagesLoading)
+            return;
 
           didInitialScrollRef.current = true;
           requestAnimationFrame(() => {

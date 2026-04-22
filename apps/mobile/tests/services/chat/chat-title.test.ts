@@ -2,8 +2,6 @@ import type { Chat, SessionSource } from '@hominem/rpc/types';
 import { QueryClient } from '@tanstack/react-query';
 import { describe, expect, it } from 'vitest';
 
-import { chatKeys } from '~/services/notes/query-keys';
-import type { ChatWithActivity } from '~/services/chat/session-state';
 import {
   DEFAULT_CHAT_TITLE,
   isDefaultChatTitle,
@@ -11,6 +9,8 @@ import {
   resolveChatScreenTitle,
   updateChatTitleCaches,
 } from '~/services/chat/chat-title';
+import type { ChatWithActivity } from '~/services/chat/session-state';
+import { chatKeys } from '~/services/notes/query-keys';
 
 describe('chat title helpers', () => {
   it('normalizes titles and recognizes the default title', () => {

@@ -3,7 +3,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 
 import { APP_NAME } from '~/constants';
-
 import { storage } from '~/services/storage/mmkv';
 
 const LOCK_ENABLED_KEY = 'app_lock_enabled';

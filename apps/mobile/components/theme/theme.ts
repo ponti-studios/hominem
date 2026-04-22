@@ -1,5 +1,10 @@
+import {
+  colors as darkColors,
+  radii,
+  spacing as tokenSpacing,
+  type ColorToken,
+} from '@hominem/ui/tokens';
 import { useColorScheme } from 'react-native';
-import { colors as darkColors, radii, spacing as tokenSpacing, type ColorToken } from '@hominem/ui/tokens';
 
 import { lightColors } from './tokens/colors.light';
 

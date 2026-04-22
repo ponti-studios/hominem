@@ -10,7 +10,15 @@ export { EmptyState } from './EmptyState';
 
 export { Badge } from './Badge';
 
-export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, CardAction } from './Card';
+export {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+  CardAction,
+} from './Card';
 
 export { Button } from './Button';
 export type { ButtonProps } from './Button';
@@ -29,4 +37,3 @@ export type { PageProps, ScreenProps } from '../layout/Page';
 
 export { default as CustomIcon } from './CustomIcon';
 export { default as icon } from './icon';
-

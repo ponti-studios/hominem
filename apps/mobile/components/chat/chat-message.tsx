@@ -4,10 +4,9 @@ import { memo, useMemo, useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import Reanimated, { FadeInDown, FadeOutUp, LinearTransition } from 'react-native-reanimated';
 
-
+import { Text } from '~/components/theme';
 import { colors, fontFamiliesNative, fontSizes, radii, spacing } from '~/components/theme/tokens';
 
-import { Text } from '~/components/theme';
 import { Button } from '../ui/Button';
 import { TextArea } from '../ui/TextArea';
 

@@ -10,9 +10,10 @@ The `plus` button shows an `ActionSheetIOS` with three options:
 ActionSheetIOS.showActionSheetWithOptions(
   { options: ['Cancel', 'Take Photo', 'Choose from Library'], cancelButtonIndex: 0 },
   (buttonIndex) => {
-    if (buttonIndex === 1) setIsCameraOpen(true);     // → CameraModal
+    if (buttonIndex === 1)
+      setIsCameraOpen(true); // → CameraModal
     else if (buttonIndex === 2) void pickAttachment(); // → ImagePicker
-  }
+  },
 );
 ```
 
@@ -78,7 +79,7 @@ Camera captures are hardcoded to `mimeType: 'image/jpeg'`.
 ```ts
 interface MobileUploadState {
   isUploading: boolean;
-  progress: number;   // 0–100, updated per file
+  progress: number; // 0–100, updated per file
   errors: string[];
 }
 ```
@@ -94,6 +95,7 @@ interface MobileUploadState {
 ```
 
 Each thumbnail:
+
 - `spacing[4] * 3` × `spacing[4] * 3` (48px × 48px)
 - `expo-image` `Image` with `contentFit="cover"`
 - `xmark` badge overlaid at top-right
@@ -110,8 +112,8 @@ Tapping a thumbnail calls `handleRemoveAttachment(a.id)`.
 
 ## Limits
 
-| Constraint | Value | Source |
-|---|---|---|
-| Max files per upload | `CHAT_UPLOAD_MAX_FILE_COUNT` | `@hominem/utils/upload` |
-| Max file size | 10MB (`CHAT_UPLOAD_MAX_FILE_SIZE_BYTES`) | `@hominem/utils/upload` |
+| Constraint           | Value                                       | Source                  |
+| -------------------- | ------------------------------------------- | ----------------------- |
+| Max files per upload | `CHAT_UPLOAD_MAX_FILE_COUNT`                | `@hominem/utils/upload` |
+| Max file size        | 10MB (`CHAT_UPLOAD_MAX_FILE_SIZE_BYTES`)    | `@hominem/utils/upload` |
 | Supported MIME types | checked via `isSupportedChatUploadMimeType` | `@hominem/utils/upload` |

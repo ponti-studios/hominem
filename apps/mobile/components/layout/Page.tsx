@@ -9,6 +9,7 @@ import {
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 
 import { spacing } from '~/components/theme/tokens';
+
 import type { PageMaxWidth } from './page.types';
 
 const maxWidthMap: Record<PageMaxWidth, number | undefined> = {

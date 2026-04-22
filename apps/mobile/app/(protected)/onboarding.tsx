@@ -1,5 +1,3 @@
-import { Button } from '~/components/ui/Button';
-import { TextField } from '~/components/ui/TextField';
 import { Redirect } from 'expo-router';
 import type { RelativePathString } from 'expo-router';
 import { useState } from 'react';
@@ -8,6 +6,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Alert } from '~/components/Alert';
 import { Text, theme } from '~/components/theme';
+import { Button } from '~/components/ui/Button';
+import { TextField } from '~/components/ui/TextField';
 import { useAuth } from '~/services/auth/auth-provider';
 
 const Onboarding = () => {

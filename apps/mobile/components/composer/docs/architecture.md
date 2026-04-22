@@ -57,11 +57,11 @@ Composer (Composer.tsx)
 ## Layout constants
 
 ```ts
-MAX_WIDTH = 500            // card max width
-INPUT_MIN_H = spacing[6] + spacing[4]   // ~48px
-INPUT_MAX_H = spacing[6] * 9            // ~288px
-SEND_BTN_SIZE = spacing[6]              // ~32px
-SECONDARY_BTN_SIZE = spacing[5] + 2    // ~26px
+MAX_WIDTH = 500; // card max width
+INPUT_MIN_H = spacing[6] + spacing[4]; // ~48px
+INPUT_MAX_H = spacing[6] * 9; // ~288px
+SEND_BTN_SIZE = spacing[6]; // ~32px
+SECONDARY_BTN_SIZE = spacing[5] + 2; // ~26px
 ```
 
 ## Card visual structure (vertical, top to bottom)

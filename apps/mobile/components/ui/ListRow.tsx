@@ -2,8 +2,9 @@ import { SymbolView, type SFSymbol } from 'expo-symbols';
 import { memo, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { colors, spacing } from '../theme/tokens';
 import { Text } from '~/components/theme';
+
+import { colors, spacing } from '../theme/tokens';
 
 const ROW_MIN_HEIGHT = 50;
 

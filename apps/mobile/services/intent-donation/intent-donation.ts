@@ -1,6 +1,5 @@
-import { Platform } from 'react-native';
-
 import { logger, LOG_MESSAGES } from '@hominem/telemetry';
+import { Platform } from 'react-native';
 
 type IntentName = 'AddNoteIntent' | 'StartChatIntent';
 

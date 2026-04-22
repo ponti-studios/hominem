@@ -1,12 +1,12 @@
+import type { ChatRenderIcon } from '@hominem/chat';
 import type React from 'react';
 import { Modal, Pressable, StyleSheet, View, type TextInput } from 'react-native';
 
-
-import { colors, fontFamiliesNative, fontSizes, radii, spacing } from '~/components/theme/tokens';
 import { Text } from '~/components/theme';
+import { colors, fontFamiliesNative, fontSizes, radii, spacing } from '~/components/theme/tokens';
+
 import { Button } from '../ui/Button';
 import { TextField } from '../ui/TextField';
-import type { ChatRenderIcon } from '@hominem/chat';
 
 interface ChatSearchModalProps {
   visible: boolean;

@@ -8,8 +8,10 @@ import { Surface } from './Surface';
 
 const DEFAULT_BOTTOM_PADDING = spacing[7] * 3;
 
-interface ListShellProps<T>
-  extends Omit<FlashListProps<T>, 'ItemSeparatorComponent' | 'contentContainerStyle'> {
+interface ListShellProps<T> extends Omit<
+  FlashListProps<T>,
+  'ItemSeparatorComponent' | 'contentContainerStyle'
+> {
   contentPaddingBottom?: number | undefined;
   data: T[];
   isRefreshing?: boolean | undefined;
@@ -27,10 +29,7 @@ function ListShell<T>({
   separatorInset,
   ...props
 }: ListShellProps<T>) {
-  const ItemSeparator = useCallback(
-    () => <Separator inset={separatorInset} />,
-    [separatorInset],
-  );
+  const ItemSeparator = useCallback(() => <Separator inset={separatorInset} />, [separatorInset]);
 
   return (
     <Surface border elevation="surface" radius="icon" shadow style={styles.shell}>

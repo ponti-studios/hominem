@@ -9,8 +9,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { colors, durations, fontSizes, radii, spacing } from '~/components/theme/tokens';
 import { Text } from '~/components/theme';
+import { colors, durations, fontSizes, radii, spacing } from '~/components/theme/tokens';
 
 const DOT_UP_DURATION = durations.enter;
 const DOT_DOWN_DURATION = durations.exit;

@@ -1,6 +1,7 @@
+import { parseInboxTimestamp } from '@hominem/chat';
 import { useApiClient } from '@hominem/rpc/react';
 import type { Note } from '@hominem/rpc/types';
-import { parseInboxTimestamp } from '@hominem/chat';
+import { useQueryClient } from '@tanstack/react-query';
 import type { RelativePathString } from 'expo-router';
 import { useRouter } from 'expo-router';
 import React, { memo, useCallback, useRef, useState } from 'react';
@@ -15,13 +16,12 @@ import {
   View,
 } from 'react-native';
 import Reanimated, { FadeIn } from 'react-native-reanimated';
-import { useQueryClient } from '@tanstack/react-query';
 
-import AppIcon from '~/components/ui/icon';
 import { Text, makeStyles, theme } from '~/components/theme';
+import AppIcon from '~/components/ui/icon';
+import type { ChatWithActivity } from '~/services/chat/session-state';
 import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
 import { noteKeys, chatKeys } from '~/services/notes/query-keys';
-import type { ChatWithActivity } from '~/services/chat/session-state';
 
 import type { InboxStreamItemData as InboxStreamItemModel } from './InboxStreamItem.types';
 
@@ -80,45 +80,36 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
   }, [commitRename, item.title]);
 
   const handleDeleteNote = useCallback(() => {
-    Alert.alert(
-      'Delete note',
-      'This cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            await client.notes.delete({ id: item.entityId });
-            queryClient.setQueryData<Note[]>(noteKeys.all, (current) =>
-              current?.filter((n) => n.id !== item.entityId),
-            );
-            void queryClient.invalidateQueries({ queryKey: noteKeys.feeds() });
-          },
+    Alert.alert('Delete note', 'This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          await client.notes.delete({ id: item.entityId });
+          queryClient.setQueryData<Note[]>(noteKeys.all, (current) =>
+            current?.filter((n) => n.id !== item.entityId),
+          );
+          void queryClient.invalidateQueries({ queryKey: noteKeys.feeds() });
         },
-      ],
-    );
+      },
+    ]);
   }, [client, item.entityId, queryClient]);
 
   const handleArchiveChat = useCallback(() => {
-    Alert.alert(
-      'Archive chat',
-      'This chat will be moved to your archive.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Archive',
-          style: 'destructive',
-          onPress: async () => {
-            await client.chats.archive({ chatId: item.entityId });
-            queryClient.setQueryData<ChatWithActivity[]>(
-              chatKeys.resumableSessions,
-              (current) => current?.filter((c) => c.id !== item.entityId),
-            );
-          },
+    Alert.alert('Archive chat', 'This chat will be moved to your archive.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Archive',
+        style: 'destructive',
+        onPress: async () => {
+          await client.chats.archive({ chatId: item.entityId });
+          queryClient.setQueryData<ChatWithActivity[]>(chatKeys.resumableSessions, (current) =>
+            current?.filter((c) => c.id !== item.entityId),
+          );
         },
-      ],
-    );
+      },
+    ]);
   }, [client, item.entityId, queryClient]);
 
   const onLongPress = useCallback(() => {
@@ -176,10 +167,7 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
       >
         <View style={styles.rowInner}>
           <View
-            style={[
-              styles.leading,
-              item.kind === 'note' ? styles.noteLeading : styles.chatLeading,
-            ]}
+            style={[styles.leading, item.kind === 'note' ? styles.noteLeading : styles.chatLeading]}
           >
             <AppIcon
               name={item.kind === 'note' ? 'square.and.pencil' : 'bubble.left'}
@@ -228,10 +216,7 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
                 }}
               />
               <View style={styles.modalActions}>
-                <Pressable
-                  style={styles.modalButton}
-                  onPress={() => setRenameModalVisible(false)}
-                >
+                <Pressable style={styles.modalButton} onPress={() => setRenameModalVisible(false)}>
                   <Text variant="body" color="text-secondary">
                     Cancel
                   </Text>

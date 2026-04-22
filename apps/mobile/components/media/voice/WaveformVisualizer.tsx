@@ -1,6 +1,7 @@
+import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
-import { useMemo } from 'react';
+
 import { makeStyles, theme } from '~/components/theme';
 
 interface WaveformVisualizerProps {
@@ -11,16 +12,17 @@ interface WaveformVisualizerProps {
 
 const BAR_COUNT = 12;
 
-export function WaveformVisualizer({ levels, isPlayback = false, playbackPosition = 0 }: WaveformVisualizerProps) {
+export function WaveformVisualizer({
+  levels,
+  isPlayback = false,
+  playbackPosition = 0,
+}: WaveformVisualizerProps) {
   const styles = useStyles();
 
   const bars = useMemo(() => {
     const filledBars = levels.length;
     const emptyBars = BAR_COUNT - filledBars;
-    return [
-      ...levels.slice(-BAR_COUNT),
-      ...Array(Math.max(0, emptyBars)).fill(0),
-    ];
+    return [...levels.slice(-BAR_COUNT), ...Array(Math.max(0, emptyBars)).fill(0)];
   }, [levels]);
 
   return (

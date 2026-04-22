@@ -1,3 +1,5 @@
+import { colors as darkColors } from '@hominem/ui/tokens';
+import type { ColorToken } from '@hominem/ui/tokens';
 import {
   Text as RNText,
   Platform,
@@ -6,8 +8,6 @@ import {
   type TextProps as RNTextProps,
   type TextStyle,
 } from 'react-native';
-import { colors as darkColors } from '@hominem/ui/tokens';
-import type { ColorToken } from '@hominem/ui/tokens';
 
 import { lightColors } from './tokens/colors.light';
 
@@ -189,10 +189,7 @@ function Text({ color, muted = false, style, variant = 'body', ...props }: TextP
       : colors['text-primary'];
 
   return (
-    <RNText
-      style={[variantStyles[resolvedVariant], { color: resolvedColor }, style]}
-      {...props}
-    />
+    <RNText style={[variantStyles[resolvedVariant], { color: resolvedColor }, style]} {...props} />
   );
 }
 

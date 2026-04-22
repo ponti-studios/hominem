@@ -63,11 +63,7 @@ export function markTopRevealHandled(state: TopAnchoredFeedState): TopAnchoredFe
   };
 }
 
-export function shouldRevealTop({
-  state,
-  headKey,
-  isFocused,
-}: ShouldRevealTopInput): boolean {
+export function shouldRevealTop({ state, headKey, isFocused }: ShouldRevealTopInput): boolean {
   return state.pendingRequestId > state.handledRequestId && isFocused && headKey !== null;
 }
 
@@ -101,7 +97,9 @@ export function TopAnchoredFeedProvider({ children }: PropsWithChildren) {
     [handleMarkTopRevealHandled, handleRequestTopReveal, state],
   );
 
-  return <TopAnchoredFeedContext.Provider value={value}>{children}</TopAnchoredFeedContext.Provider>;
+  return (
+    <TopAnchoredFeedContext.Provider value={value}>{children}</TopAnchoredFeedContext.Provider>
+  );
 }
 
 export function useTopAnchoredFeed({
@@ -109,8 +107,11 @@ export function useTopAnchoredFeed({
   headKey = null,
   isFocused = false,
 }: UseTopAnchoredFeedOptions = {}) {
-  const { state, requestTopReveal: handleRequestTopReveal, markTopRevealHandled: handleMarkTopRevealHandled } =
-    useTopAnchoredFeedContext();
+  const {
+    state,
+    requestTopReveal: handleRequestTopReveal,
+    markTopRevealHandled: handleMarkTopRevealHandled,
+  } = useTopAnchoredFeedContext();
 
   useEffect(() => {
     if (!listRef || !shouldRevealTop({ state, headKey, isFocused })) {

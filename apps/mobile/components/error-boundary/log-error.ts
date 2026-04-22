@@ -1,6 +1,5 @@
-import type { ErrorInfo } from 'react';
-
 import { logger } from '@hominem/telemetry';
+import type { ErrorInfo } from 'react';
 
 import { posthog } from '~/services/posthog';
 

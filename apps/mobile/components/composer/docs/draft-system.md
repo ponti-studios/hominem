@@ -9,7 +9,7 @@ interface ComposerDraft {
   text: string;
   attachments: ComposerAttachment[];
   isRecording: boolean;
-  mode: ComposerMode;           // 'text' | 'voice'
+  mode: ComposerMode; // 'text' | 'voice'
   selectedNotes: ComposerSelectedNote[];
 }
 ```
@@ -20,12 +20,12 @@ interface ComposerDraft {
 
 Drafts are stored in a `Record<string, ComposerDraft>` map inside `ComposerContext`. The key is `target.key`:
 
-| Route | `target.key` |
-|---|---|
-| `/feed` | `'feed'` |
-| `/notes` | `'notes'` |
+| Route          | `target.key`    |
+| -------------- | --------------- |
+| `/feed`        | `'feed'`        |
+| `/notes`       | `'notes'`       |
 | `/chat/abc123` | `'chat:abc123'` |
-| hidden routes | `'hidden'` |
+| hidden routes  | `'hidden'`      |
 
 When the user navigates from `/feed` to `/chat/abc123` and back, both drafts are independently preserved in the map. The active draft is simply read by key:
 
@@ -35,13 +35,13 @@ const activeDraft = drafts[target.key] ?? createEmptyComposerDraft();
 
 ## Draft lifecycle
 
-| Event | Effect |
-|---|---|
-| Route change | `target.key` changes; the map entry for the new key is read (or a blank draft is created) |
-| User types | `updateDraft` writes to `drafts[target.key].text` |
-| User adds attachment | `updateDraft` appends to `drafts[target.key].attachments` |
-| User submits | `clearDraft()` resets `drafts[target.key]` to `createEmptyComposerDraft()` |
-| App background/kill | Drafts are **lost** — they live only in React state |
+| Event                | Effect                                                                                    |
+| -------------------- | ----------------------------------------------------------------------------------------- |
+| Route change         | `target.key` changes; the map entry for the new key is read (or a blank draft is created) |
+| User types           | `updateDraft` writes to `drafts[target.key].text`                                         |
+| User adds attachment | `updateDraft` appends to `drafts[target.key].attachments`                                 |
+| User submits         | `clearDraft()` resets `drafts[target.key]` to `createEmptyComposerDraft()`                |
+| App background/kill  | Drafts are **lost** — they live only in React state                                       |
 
 ## Draft persistence (not yet connected)
 
@@ -57,11 +57,11 @@ This hook is fully implemented but not imported or used anywhere in the composer
 
 ```ts
 interface ComposerAttachment {
-  id: string;                          // matches uploadedFile.id once uploaded
-  name: string;                        // display name
-  type: string;                        // 'image', 'video', etc.
-  localUri?: string;                   // local file path for thumbnail
-  uploadedFile?: UploadedFile;         // populated after upload completes
+  id: string; // matches uploadedFile.id once uploaded
+  name: string; // display name
+  type: string; // 'image', 'video', etc.
+  localUri?: string; // local file path for thumbnail
+  uploadedFile?: UploadedFile; // populated after upload completes
 }
 ```
 

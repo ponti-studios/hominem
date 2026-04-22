@@ -1,7 +1,6 @@
 import React from 'react';
 import { Platform, Switch } from 'react-native';
 
-
 import { RowSeparator } from './RowSeparator';
 import { SectionCard } from './SectionCard';
 import { SectionLabel } from './SectionLabel';

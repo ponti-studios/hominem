@@ -10,8 +10,14 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-
-import { colors, fontFamiliesNative, fontSizes, fontWeights, radii, spacing } from '~/components/theme/tokens';
+import { useThemeColors } from '~/components/theme/theme';
+import {
+  fontFamiliesNative,
+  fontSizes,
+  fontWeights,
+  radii,
+  spacing,
+} from '~/components/theme/tokens';
 
 import type { ButtonBaseProps, ButtonSize, ButtonVariant } from './button.types';
 
@@ -67,72 +73,6 @@ const sizeStyles = StyleSheet.create<Record<ButtonSize, ViewStyle>>({
   },
 });
 
-const variantStyles = StyleSheet.create<Record<ButtonVariant, ViewStyle>>({
-  default: {
-    backgroundColor: colors.secondary,
-    borderColor: colors['border-default'],
-    borderWidth: 1,
-  },
-  primary: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-    borderWidth: 1,
-  },
-  destructive: {
-    backgroundColor: colors.destructive,
-    borderColor: colors.destructive,
-    borderWidth: 1,
-  },
-  ghost: {
-    backgroundColor: 'transparent',
-    borderColor: 'transparent',
-    borderWidth: 1,
-  },
-  link: {
-    backgroundColor: 'transparent',
-    borderColor: 'transparent',
-    borderWidth: 0,
-    minHeight: 0,
-    paddingHorizontal: 0,
-    paddingVertical: 0,
-  },
-  outline: {
-    backgroundColor: colors.background,
-    borderColor: colors['border-default'],
-    borderWidth: 1,
-  },
-  secondary: {
-    backgroundColor: colors.secondary,
-    borderColor: colors['border-default'],
-    borderWidth: 1,
-  },
-});
-
-const labelStyles = StyleSheet.create<Record<ButtonVariant, TextStyle>>({
-  default: {
-    color: colors['text-primary'],
-  },
-  primary: {
-    color: colors['primary-foreground'],
-  },
-  destructive: {
-    color: colors['destructive-foreground'],
-  },
-  ghost: {
-    color: colors['text-primary'],
-  },
-  link: {
-    color: colors.accent,
-    textDecorationLine: 'underline',
-  },
-  outline: {
-    color: colors['text-primary'],
-  },
-  secondary: {
-    color: colors['text-primary'],
-  },
-});
-
 const baseStyles = StyleSheet.create({
   button: {
     alignItems: 'center',
@@ -171,11 +111,55 @@ function Button({
   style,
   textStyle,
   title,
-  variant = 'default',
+  variant = 'primary',
   ...props
 }: NativeButtonProps) {
+  const themeColors = useThemeColors();
   const content = children ?? title;
   const isDisabled = disabled || isLoading;
+
+  const variantBg: Record<ButtonVariant, ViewStyle> = {
+    default: {
+      backgroundColor: themeColors.secondary,
+      borderColor: themeColors['border-default'],
+      borderWidth: 1,
+    },
+    primary: { backgroundColor: themeColors.black, borderColor: themeColors.black, borderWidth: 1 },
+    destructive: {
+      backgroundColor: themeColors.destructive,
+      borderColor: themeColors.destructive,
+      borderWidth: 1,
+    },
+    ghost: { backgroundColor: 'transparent', borderColor: 'transparent', borderWidth: 1 },
+    link: {
+      backgroundColor: 'transparent',
+      borderColor: 'transparent',
+      borderWidth: 0,
+      minHeight: 0,
+      paddingHorizontal: 0,
+      paddingVertical: 0,
+    },
+    outline: {
+      backgroundColor: themeColors.background,
+      borderColor: themeColors['border-default'],
+      borderWidth: 1,
+    },
+    secondary: {
+      backgroundColor: themeColors.secondary,
+      borderColor: themeColors['border-default'],
+      borderWidth: 1,
+    },
+  };
+
+  const variantText: Record<ButtonVariant, TextStyle> = {
+    default: { color: themeColors['text-primary'] },
+    primary: { color: themeColors.white },
+    destructive: { color: themeColors['destructive-foreground'] },
+    ghost: { color: themeColors['text-primary'] },
+    link: { color: themeColors.accent, textDecorationLine: 'underline' },
+    outline: { color: themeColors['text-primary'] },
+    secondary: { color: themeColors['text-primary'] },
+  };
 
   return (
     <Pressable
@@ -185,7 +169,7 @@ function Button({
       style={({ pressed }) => [
         baseStyles.button,
         sizeStyles[size],
-        variantStyles[variant],
+        variantBg[variant],
         pressed && !isDisabled ? { opacity: 0.85 } : null,
         isDisabled ? baseStyles.disabled : null,
         style,
@@ -193,13 +177,13 @@ function Button({
       {...props}
     >
       {typeof content === 'string' || typeof content === 'number' ? (
-        <Text style={[baseStyles.label, labelStyles[variant], textStyle]}>{content}</Text>
+        <Text style={[baseStyles.label, variantText[variant], textStyle]}>{content}</Text>
       ) : (
         content
       )}
       {isLoading ? (
         <ActivityIndicator
-          color={labelStyles[variant].color}
+          color={variantText[variant].color as string}
           size="small"
           style={baseStyles.loader}
         />

@@ -1,8 +1,8 @@
 import { Stack } from 'expo-router';
 import React from 'react';
 
-import { ComposerProvider } from '~/components/composer/ComposerContext';
 import { Composer } from '~/components/composer/Composer';
+import { ComposerProvider } from '~/components/composer/ComposerContext';
 import { theme } from '~/components/theme';
 import { TopAnchoredFeedProvider } from '~/services/inbox/top-anchored-feed';
 
@@ -15,8 +15,6 @@ const screenOptions = {
   animation: 'default' as const,
   gestureEnabled: true,
 };
-
-
 
 export default function AppLayout() {
   return (

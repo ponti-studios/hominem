@@ -26,24 +26,24 @@ app/(protected)/(tabs)/_layout.tsx
 
 The composer adapts its behavior, placeholder text, and available buttons to the current route:
 
-| Route | Target kind | Primary action | Secondary action |
-|---|---|---|---|
-| `/feed` | `feed` | Save note | Start chat |
-| `/notes` | `notes` | Save note | — |
-| `/chat/:id` | `chat` | Send | — |
-| `/notes/:id` | `hidden` | — | — |
-| `/settings` | `hidden` | — | — |
+| Route        | Target kind | Primary action | Secondary action |
+| ------------ | ----------- | -------------- | ---------------- |
+| `/feed`      | `feed`      | Save note      | Start chat       |
+| `/notes`     | `notes`     | Save note      | —                |
+| `/chat/:id`  | `chat`      | Send           | —                |
+| `/notes/:id` | `hidden`    | —              | —                |
+| `/settings`  | `hidden`    | —              | —                |
 
 When the target is `hidden`, the composer is not rendered at all.
 
 ## Files
 
-| File | Responsibility |
-|---|---|
-| `Composer.tsx` | Root component, layout, sub-components |
-| `ComposerContext.tsx` | React context, per-target draft state |
-| `composerState.ts` | Types, target resolution, presentation derivation |
-| `composerActions.ts` | Pure action helpers, `canSubmit`, title building |
-| `note-mentions.ts` | Regex helpers for `#mention` detection |
-| `useComposerSubmission.ts` | Submit, secondary action, remove attachment |
+| File                         | Responsibility                                    |
+| ---------------------------- | ------------------------------------------------- |
+| `Composer.tsx`               | Root component, layout, sub-components            |
+| `ComposerContext.tsx`        | React context, per-target draft state             |
+| `composerState.ts`           | Types, target resolution, presentation derivation |
+| `composerActions.ts`         | Pure action helpers, `canSubmit`, title building  |
+| `note-mentions.ts`           | Regex helpers for `#mention` detection            |
+| `useComposerSubmission.ts`   | Submit, secondary action, remove attachment       |
 | `useComposerMediaActions.ts` | Pick attachment, camera capture, voice transcript |

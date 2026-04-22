@@ -24,6 +24,7 @@ layout={createNotesLayoutTransition(prefersReducedMotion)}
 ```
 
 This is `LinearTransition.duration(durations.enter)`. It animates the card height when:
+
 - Attachments are added or removed
 - Note chips appear or disappear
 - Mention suggestions open or close
@@ -102,7 +103,7 @@ Each `WaveformBar` uses `withTiming` to animate height:
 height: withTiming(isActive ? Math.max(4, level * 60) : 4, {
   duration: 100,
   easing: Easing.out(Easing.ease),
-})
+});
 ```
 
 100ms timing with ease-out easing keeps the bars responsive to audio level changes without jitter.

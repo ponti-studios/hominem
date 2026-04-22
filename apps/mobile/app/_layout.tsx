@@ -1,24 +1,24 @@
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import type { RelativePathString } from 'expo-router';
 import { SplashScreen, Stack, useRouter, useSegments } from 'expo-router';
 import { PostHogProvider, type PostHog } from 'posthog-react-native';
 import React, { useEffect } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
-import { RootErrorBoundary } from '~/components/error-boundary/RootErrorBoundary';
-import { POSTHOG_ENABLED, posthog } from '~/services/posthog';
-import { recordActiveDay } from '~/services/review-prompt/review-prompt';
-import { useScreenCapture } from '~/hooks/use-screen-capture';
-import { makeStyles } from '~/components/theme';
-import { AuthProvider, useAuth } from '~/services/auth/auth-provider';
-import { E2E_TESTING } from '~/constants';
 import { logError } from '~/components/error-boundary/log-error';
+import { RootErrorBoundary } from '~/components/error-boundary/RootErrorBoundary';
+import { makeStyles } from '~/components/theme';
+import { E2E_TESTING } from '~/constants';
+import { useScreenCapture } from '~/hooks/use-screen-capture';
 import { resolveAuthRedirect } from '~/navigation/auth-route-guard';
+import { AuthProvider, useAuth } from '~/services/auth/auth-provider';
 import { initObservability } from '~/services/observability';
 import { markStartupPhase } from '~/services/performance/startup-metrics';
+import { POSTHOG_ENABLED, posthog } from '~/services/posthog';
+import { recordActiveDay } from '~/services/review-prompt/review-prompt';
 
 SplashScreen.preventAutoHideAsync();
 markStartupPhase('app_start');

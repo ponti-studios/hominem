@@ -2,8 +2,8 @@ import type { User } from '@hominem/auth/types';
 import type { RefObject } from 'react';
 import { useCallback } from 'react';
 
-import { authClient } from '~/services/auth/auth-client';
 import { captureAuthAnalyticsEvent, captureAuthAnalyticsFailure } from '~/services/auth/analytics';
+import { authClient } from '~/services/auth/auth-client';
 import { getPersistedSessionCookieHeader } from '~/services/auth/session-cookie';
 import type { AuthContext } from '~/services/auth/types';
 import { LocalStore } from '~/services/storage/sqlite';
@@ -48,7 +48,10 @@ function toAuthUserProfile(localProfile: User | null): AuthContext['state']['use
   };
 }
 
-export function useEmailOtp(context: AuthContext, sessionCookieHeaderRef: RefObject<string | null>) {
+export function useEmailOtp(
+  context: AuthContext,
+  sessionCookieHeaderRef: RefObject<string | null>,
+) {
   const { dispatch } = context;
 
   const requestEmailOtp = useCallback(

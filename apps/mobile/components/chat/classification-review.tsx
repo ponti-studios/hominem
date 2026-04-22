@@ -8,10 +8,16 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-
-import { colors, durations, fontFamiliesNative, fontSizes, radii, spacing } from '~/components/theme/tokens';
-
 import { Text } from '~/components/theme';
+import {
+  colors,
+  durations,
+  fontFamiliesNative,
+  fontSizes,
+  radii,
+  spacing,
+} from '~/components/theme/tokens';
+
 import { Button } from '../ui/Button';
 
 const TYPE_LABEL: Record<ArtifactType, string> = {

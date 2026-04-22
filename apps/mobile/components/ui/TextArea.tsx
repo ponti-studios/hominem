@@ -1,6 +1,5 @@
 import * as React from 'react';
 import {
-  StyleSheet,
   TextInput,
   type StyleProp,
   type TextInputProps,
@@ -8,8 +7,10 @@ import {
   type ViewStyle,
 } from 'react-native';
 
+import { makeStyles } from '~/components/theme';
+import { useThemeColors } from '~/components/theme/theme';
+import { fontFamiliesNative, fontSizes, radii, spacing } from '~/components/theme/tokens';
 
-import { colors, fontFamiliesNative, fontSizes, spacing } from '~/components/theme/tokens';
 import { Field } from './Field';
 import type { TextAreaBaseProps } from './text-area.types';
 
@@ -20,10 +21,33 @@ interface TextAreaProps
   style?: StyleProp<TextStyle>;
 }
 
+const useInputStyles = makeStyles((theme) => ({
+  input: {
+    backgroundColor: theme.colors.muted,
+    borderColor: theme.colors['border-default'],
+    borderRadius: radii.md,
+    borderWidth: 1,
+    color: theme.colors.foreground,
+    fontFamily: fontFamiliesNative.mono,
+    fontSize: fontSizes.sm,
+    minHeight: 120,
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[3],
+  },
+  inputDisabled: {
+    opacity: 0.5,
+  },
+  inputError: {
+    borderColor: theme.colors.destructive,
+  },
+}));
+
 const TextArea = React.forwardRef<TextInput, TextAreaProps>(function TextArea(
   { containerStyle, disabled, editable, error, helpText, label, placeholder, style, ...props },
   ref,
 ) {
+  const styles = useInputStyles();
+  const themeColors = useThemeColors();
   const isEditable = editable ?? !disabled;
 
   return (
@@ -33,7 +57,7 @@ const TextArea = React.forwardRef<TextInput, TextAreaProps>(function TextArea(
         editable={isEditable}
         multiline
         placeholder={placeholder ?? label}
-        placeholderTextColor={colors['text-tertiary']}
+        placeholderTextColor={themeColors['text-tertiary']}
         style={[
           styles.input,
           error ? styles.inputError : null,
@@ -45,27 +69,6 @@ const TextArea = React.forwardRef<TextInput, TextAreaProps>(function TextArea(
       />
     </Field>
   );
-});
-
-const styles = StyleSheet.create({
-  input: {
-    backgroundColor: colors.muted,
-    borderColor: colors['border-default'],
-    borderRadius: 10,
-    borderWidth: 1,
-    color: colors.foreground,
-    fontFamily: fontFamiliesNative.mono,
-    fontSize: fontSizes.sm,
-    minHeight: 120,
-    paddingHorizontal: spacing[3],
-    paddingVertical: spacing[3],
-  },
-  inputDisabled: {
-    opacity: 0.5,
-  },
-  inputError: {
-    borderColor: colors.destructive,
-  },
 });
 
 export { TextArea };

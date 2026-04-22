@@ -1,8 +1,8 @@
 import type { RefObject } from 'react';
 import { useCallback } from 'react';
 
-import { authClient } from '~/services/auth/auth-client';
 import { captureAuthAnalyticsEvent, captureAuthAnalyticsFailure } from '~/services/auth/analytics';
+import { authClient } from '~/services/auth/auth-client';
 import { clearPersistedSessionCookies } from '~/services/auth/session-cookie';
 import type { AuthContext } from '~/services/auth/types';
 import { LocalStore } from '~/services/storage/sqlite';

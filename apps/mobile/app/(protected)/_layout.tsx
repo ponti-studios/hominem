@@ -3,12 +3,12 @@ import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { FeatureErrorBoundary } from '~/components/error-boundary/FeatureErrorBoundary';
+import { Text, theme } from '~/components/theme';
+import { APP_NAME } from '~/constants';
 import { useAppLock } from '~/hooks/use-app-lock';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
-import { Text, theme } from '~/components/theme';
 import { ApiProvider } from '~/services/api/api-provider';
 import { useAuth } from '~/services/auth/auth-provider';
-import { APP_NAME } from '~/constants';
 import queryClient from '~/services/query-client';
 
 const styles = StyleSheet.create({
@@ -78,10 +78,7 @@ function ProtectedShell() {
     <FeatureErrorBoundary featureName="Protected">
       <ApiProvider queryClient={queryClient}>
         <View style={styles.root}>
-          <Stack
-            initialRouteName="(tabs)"
-            screenOptions={screenOptions}
-          >
+          <Stack initialRouteName="(tabs)" screenOptions={screenOptions}>
             <Stack.Screen name="onboarding" options={{ headerShown: false }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           </Stack>

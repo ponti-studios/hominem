@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react';
 import { Platform } from 'react-native';
 
-import { authClient } from '~/services/auth/auth-client';
 import { API_BASE_URL, E2E_AUTH_SECRET, E2E_TESTING } from '~/constants';
+import { authClient } from '~/services/auth/auth-client';
 
 interface PasskeySignInResult {
   user: {
@@ -46,8 +46,8 @@ export function useMobilePasskeyAuth(): UseMobilePasskeyAuthReturn {
       setIsLoading(true);
       setError(null);
 
-        try {
-          if (E2E_TESTING && mode !== 'real') {
+      try {
+        if (E2E_TESTING && mode !== 'real') {
           if (!E2E_AUTH_SECRET) {
             setError('Missing EXPO_PUBLIC_E2E_AUTH_SECRET for E2E passkey sign-in');
             return null;

@@ -12,11 +12,9 @@ The `TextInput` is rendered inside `Composer.tsx` within an `Animated.View` whos
       multiline
       value={message}
       onChangeText={setMessage}
-      onContentSizeChange={(e) =>
-        onContentSizeChange(e.nativeEvent.contentSize.height)
-      }
+      onContentSizeChange={(e) => onContentSizeChange(e.nativeEvent.contentSize.height)}
       placeholder={presentation.placeholder}
-      placeholderTextColor={theme.colors["text-tertiary"]}
+      placeholderTextColor={theme.colors['text-tertiary']}
       cursorColor={theme.colors.accent}
       selectionColor={theme.colors.accent}
       style={styles.input}
@@ -33,8 +31,8 @@ The `TextInput` is rendered inside `Composer.tsx` within an `Animated.View` whos
 The input expands vertically as the user types, clamped between `INPUT_MIN_H` and `INPUT_MAX_H`.
 
 ```ts
-const INPUT_MIN_H = spacing[6] + spacing[4];   // ~48px
-const INPUT_MAX_H = spacing[6] * 9;            // ~288px
+const INPUT_MIN_H = spacing[6] + spacing[4]; // ~48px
+const INPUT_MAX_H = spacing[6] * 9; // ~288px
 ```
 
 `onContentSizeChange` fires on every text change. The new height is clamped and applied via a spring animation:
@@ -84,11 +82,11 @@ Horizontal padding is explicitly removed (`paddingHorizontal: 0`). The card prov
 
 The placeholder is route-aware and changes based on `ComposerPresentation.placeholder` from `deriveComposerPresentation`:
 
-| Target | Idle | Recording |
-|---|---|---|
-| `feed` | `'Write a note, ask something, or drop a file'` | `'Listening…'` |
-| `notes` | `'Write into your notes…'` | `'Listening…'` |
-| `chat` | `'Message'` | `'Listening…'` |
+| Target  | Idle                                            | Recording      |
+| ------- | ----------------------------------------------- | -------------- |
+| `feed`  | `'Write a note, ask something, or drop a file'` | `'Listening…'` |
+| `notes` | `'Write into your notes…'`                      | `'Listening…'` |
+| `chat`  | `'Message'`                                     | `'Listening…'` |
 
 ## Value binding
 
@@ -106,9 +104,7 @@ The send button is enabled based on `canSubmitComposerDraft` from `composerActio
 function canSubmitComposerDraft({ isUploading, message, uploadedAttachmentIds, selectedNotes }) {
   return (
     !isUploading &&
-    (message.trim().length > 0 ||
-      uploadedAttachmentIds.length > 0 ||
-      selectedNotes.length > 0)
+    (message.trim().length > 0 || uploadedAttachmentIds.length > 0 || selectedNotes.length > 0)
   );
 }
 ```

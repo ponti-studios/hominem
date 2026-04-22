@@ -7,7 +7,7 @@ The composer adapts its behavior to the current route by resolving a `ComposerTa
 ```ts
 interface ComposerTarget {
   kind: 'feed' | 'notes' | 'chat' | 'hidden';
-  key: string;       // stable draft map key
+  key: string; // stable draft map key
   chatId: string | null;
   noteId: string | null;
 }
@@ -28,6 +28,7 @@ anything else                       → kind: 'feed',   key: 'feed'
 ```
 
 Chat ID is resolved from, in order:
+
 1. `params.chatId`
 2. `params.id`
 3. Path segment after `/chat/` extracted with `getPathSegment()`
@@ -36,13 +37,13 @@ If a chat route is matched but no chat ID can be resolved, the kind falls back t
 
 ### Example outcomes
 
-| Pathname | Params | Result |
-|---|---|---|
-| `/(tabs)/feed` | `{}` | `{ kind: 'feed', key: 'feed' }` |
-| `/(tabs)/notes` | `{}` | `{ kind: 'notes', key: 'notes' }` |
-| `/(tabs)/chat/abc123` | `{ chatId: 'abc123' }` | `{ kind: 'chat', key: 'chat:abc123', chatId: 'abc123' }` |
-| `/(tabs)/notes/abc123` | `{ id: 'abc123' }` | `{ kind: 'hidden', key: 'hidden' }` |
-| `/(tabs)/settings` | `{}` | `{ kind: 'hidden', key: 'hidden' }` |
+| Pathname               | Params                 | Result                                                   |
+| ---------------------- | ---------------------- | -------------------------------------------------------- |
+| `/(tabs)/feed`         | `{}`                   | `{ kind: 'feed', key: 'feed' }`                          |
+| `/(tabs)/notes`        | `{}`                   | `{ kind: 'notes', key: 'notes' }`                        |
+| `/(tabs)/chat/abc123`  | `{ chatId: 'abc123' }` | `{ kind: 'chat', key: 'chat:abc123', chatId: 'abc123' }` |
+| `/(tabs)/notes/abc123` | `{ id: 'abc123' }`     | `{ kind: 'hidden', key: 'hidden' }`                      |
+| `/(tabs)/settings`     | `{}`                   | `{ kind: 'hidden', key: 'hidden' }`                      |
 
 ## deriveComposerPresentation
 
@@ -63,16 +64,16 @@ interface ComposerPresentation {
 
 ### Presentation by target kind
 
-| Field | `feed` | `notes` | `chat` | `hidden` |
-|---|---|---|---|---|
-| placeholder (idle) | `'Write a note, ask something, or drop a file'` | `'Write into your notes…'` | `'Message'` | `''` |
-| placeholder (recording) | `'Listening…'` | `'Listening…'` | `'Listening…'` | `''` |
-| primaryActionLabel | `'Save note'` | `'Save note'` | `'Send'` | `''` |
-| secondaryActionLabel | `'Start chat'` | `null` | `null` | `null` |
-| showsAttachmentButton | `true` | `true` | `true` | `false` |
-| showsVoiceButton | `true` | `true` | `true` | `false` |
-| showsNoteChips | `false` | `false` | `true` | `false` |
-| isHidden | `false` | `false` | `false` | `true` |
+| Field                   | `feed`                                          | `notes`                    | `chat`         | `hidden` |
+| ----------------------- | ----------------------------------------------- | -------------------------- | -------------- | -------- |
+| placeholder (idle)      | `'Write a note, ask something, or drop a file'` | `'Write into your notes…'` | `'Message'`    | `''`     |
+| placeholder (recording) | `'Listening…'`                                  | `'Listening…'`             | `'Listening…'` | `''`     |
+| primaryActionLabel      | `'Save note'`                                   | `'Save note'`              | `'Send'`       | `''`     |
+| secondaryActionLabel    | `'Start chat'`                                  | `null`                     | `null`         | `null`   |
+| showsAttachmentButton   | `true`                                          | `true`                     | `true`         | `false`  |
+| showsVoiceButton        | `true`                                          | `true`                     | `true`         | `false`  |
+| showsNoteChips          | `false`                                         | `false`                    | `true`         | `false`  |
+| isHidden                | `false`                                         | `false`                    | `false`        | `true`   |
 
 When `isHidden` is `true`, `Composer.tsx` returns `null` immediately and resets `composerClearance` to `0`.
 
