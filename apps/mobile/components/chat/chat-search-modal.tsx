@@ -1,9 +1,10 @@
 import type { ChatRenderIcon } from '@hominem/chat';
 import type React from 'react';
-import { Modal, Pressable, StyleSheet, View, type TextInput } from 'react-native';
+import { Modal, Pressable, View, type TextInput } from 'react-native';
 
-import { Text } from '~/components/theme';
-import { colors, fontFamiliesNative, fontSizes, radii, spacing } from '~/components/theme/tokens';
+import { Text, makeStyles } from '~/components/theme';
+import { useThemeColors } from '~/components/theme/theme';
+import { fontFamiliesNative, fontSizes, radii, spacing } from '~/components/theme/tokens';
 
 import { Button } from '../ui/Button';
 import { TextField } from '../ui/TextField';
@@ -27,6 +28,9 @@ export function ChatSearchModal({
   onChangeSearchQuery,
   renderIcon,
 }: ChatSearchModalProps) {
+  const styles = useChatSearchStyles();
+  const themeColors = useThemeColors();
+
   return (
     <Modal animationType="fade" onRequestClose={onClose} transparent visible={visible}>
       <Pressable onPress={onClose} style={styles.searchBackdrop}>
@@ -40,7 +44,7 @@ export function ChatSearchModal({
               style={styles.headerIconButton}
               variant="ghost"
             >
-              {renderIcon('xmark', { color: colors['text-tertiary'], size: 16 })}
+              {renderIcon('xmark', { color: themeColors['text-tertiary'], size: 16 })}
             </Button>
           </View>
 
@@ -68,23 +72,23 @@ export function ChatSearchModal({
 
 const SEARCH_PANEL_RADIUS = 24;
 
-const styles = StyleSheet.create({
+const useChatSearchStyles = makeStyles((theme) => ({
   headerIconButton: {
-    backgroundColor: colors['bg-surface'],
-    borderColor: colors['border-default'],
+    backgroundColor: theme.colors['bg-surface'],
+    borderColor: theme.colors['border-default'],
     borderRadius: radii.md,
     height: 36,
     width: 36,
   },
   searchBackdrop: {
-    backgroundColor: colors['overlay-modal-medium'],
+    backgroundColor: theme.colors['overlay-modal-medium'],
     flex: 1,
     justifyContent: 'flex-start',
     paddingHorizontal: spacing[4],
     paddingTop: spacing[7],
   },
   searchInput: {
-    color: colors.foreground,
+    color: theme.colors.foreground,
     fontFamily: fontFamiliesNative.mono,
     fontSize: fontSizes.sm,
     minHeight: 36,
@@ -94,8 +98,8 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   searchPanel: {
-    backgroundColor: colors.background,
-    borderColor: colors['border-default'],
+    backgroundColor: theme.colors.background,
+    borderColor: theme.colors['border-default'],
     borderRadius: SEARCH_PANEL_RADIUS,
     borderWidth: 1,
     gap: spacing[3],
@@ -116,4 +120,4 @@ const styles = StyleSheet.create({
     fontSize: 17,
     lineHeight: 24,
   },
-});
+}));

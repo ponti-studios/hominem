@@ -17,7 +17,7 @@ import {
 } from '~/components/chat';
 import { useComposerContext } from '~/components/composer/ComposerContext';
 import { useTTS } from '~/components/media/use-tts';
-import { theme } from '~/components/theme';
+import { useThemeColors } from '~/components/theme/theme';
 import { EmptyState } from '~/components/ui';
 import AppIcon from '~/components/ui/icon';
 import {
@@ -48,6 +48,7 @@ export default function ChatDetailScreen() {
   const router = useRouter();
   const client = useApiClient();
   const queryClient = useQueryClient();
+  const themeColors = useThemeColors();
   const { composerClearance } = useComposerContext();
   const { speakingId, speak } = useTTS();
   const { data: activeChat } = useActiveChat(id);
@@ -154,7 +155,7 @@ export default function ChatDetailScreen() {
                   pressed ? styles.headerButtonPressed : null,
                 ]}
               >
-                <AppIcon color={theme.colors.foreground} name="ellipsis" size={20} />
+                <AppIcon color={themeColors.foreground} name="ellipsis" size={20} />
               </Pressable>
               <Pressable
                 onPress={() => {
@@ -169,7 +170,7 @@ export default function ChatDetailScreen() {
                   pressed ? styles.headerButtonPressed : null,
                 ]}
               >
-                <AppIcon color={theme.colors.foreground} name="square.and.pencil" size={20} />
+                <AppIcon color={themeColors.foreground} name="square.and.pencil" size={20} />
               </Pressable>
             </View>
           ),

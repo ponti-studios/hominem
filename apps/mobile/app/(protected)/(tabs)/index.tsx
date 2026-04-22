@@ -3,10 +3,11 @@ import { Image } from 'expo-image';
 import { Stack, useIsFocused, useLocalSearchParams, useRouter } from 'expo-router';
 import type { RelativePathString } from 'expo-router';
 import React, { useCallback, useEffect, useMemo } from 'react';
-import { Pressable, RefreshControl, StyleSheet, View } from 'react-native';
+import { Pressable, RefreshControl, View } from 'react-native';
 
 import { useComposerContext } from '~/components/composer/ComposerContext';
-import { makeStyles, theme } from '~/components/theme';
+import { makeStyles } from '~/components/theme';
+import { useThemeColors } from '~/components/theme/theme';
 import { InboxStream } from '~/components/workspace/InboxStream';
 import type { InboxStreamItemData } from '~/components/workspace/InboxStreamItem.types';
 import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
@@ -14,6 +15,7 @@ import { useInboxStreamItems } from '~/services/inbox/use-inbox-stream-items';
 
 export default function FeedScreen() {
   const styles = useStyles();
+  const themeColors = useThemeColors();
   const router = useRouter();
   const isFocused = useIsFocused();
   const params = useLocalSearchParams<{ seed?: string }>();
@@ -54,7 +56,7 @@ export default function FeedScreen() {
           <Image
             source="sf:note.text"
             style={{ width: 22, height: 22 }}
-            tintColor={theme.colors.foreground}
+            tintColor={themeColors.foreground}
             contentFit="contain"
           />
         </Pressable>
@@ -64,13 +66,13 @@ export default function FeedScreen() {
           <Image
             source="sf:gearshape"
             style={{ width: 22, height: 22 }}
-            tintColor={theme.colors.foreground}
+            tintColor={themeColors.foreground}
             contentFit="contain"
           />
         </Pressable>
       ),
     }),
-    [handleOpenNotes, handleOpenSettings],
+    [handleOpenNotes, handleOpenSettings, themeColors],
   );
 
   return (
@@ -83,7 +85,7 @@ export default function FeedScreen() {
           <RefreshControl
             refreshing={isLoading}
             onRefresh={handleRefresh}
-            tintColor={styles.refreshTint.color}
+            tintColor={themeColors['text-tertiary']}
           />
         }
       />
@@ -91,13 +93,8 @@ export default function FeedScreen() {
   );
 }
 
-const useStyles = makeStyles((t) =>
-  StyleSheet.create({
-    container: {
-      flex: 1,
-    },
-    refreshTint: {
-      color: t.colors['text-tertiary'],
-    },
-  }),
-);
+const useStyles = makeStyles(() => ({
+  container: {
+    flex: 1,
+  },
+}));

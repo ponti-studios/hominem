@@ -1,6 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 
-import { colors, spacing } from '~/components/theme/tokens';
+import { makeStyles } from '~/components/theme';
+import { spacing } from '~/components/theme/tokens';
 
 interface SeparatorProps {
   color?: 'default' | 'subtle' | undefined;
@@ -8,6 +9,7 @@ interface SeparatorProps {
 }
 
 function Separator({ color = 'subtle', inset = spacing[4] }: SeparatorProps) {
+  const styles = useSeparatorStyles();
   return (
     <View
       style={[
@@ -19,17 +21,17 @@ function Separator({ color = 'subtle', inset = spacing[4] }: SeparatorProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const useSeparatorStyles = makeStyles((theme) => ({
   line: {
     height: StyleSheet.hairlineWidth,
   },
   defaultColor: {
-    backgroundColor: colors['border-default'],
+    backgroundColor: theme.colors['border-default'],
   },
   subtleColor: {
-    backgroundColor: colors['border-subtle'],
+    backgroundColor: theme.colors['border-subtle'],
   },
-});
+}));
 
 export { Separator };
 export type { SeparatorProps };

@@ -3,24 +3,26 @@ import React from 'react';
 
 import { Composer } from '~/components/composer/Composer';
 import { ComposerProvider } from '~/components/composer/ComposerContext';
-import { theme } from '~/components/theme';
+import { useThemeColors } from '~/components/theme/theme';
 import { TopAnchoredFeedProvider } from '~/services/inbox/top-anchored-feed';
 
-const screenOptions = {
-  headerShown: true,
-  headerStyle: { backgroundColor: theme.colors.background },
-  headerTintColor: theme.colors.foreground,
-  headerShadowVisible: false,
-  contentStyle: { backgroundColor: theme.colors.background },
-  animation: 'default' as const,
-  gestureEnabled: true,
-};
-
 export default function AppLayout() {
+  const themeColors = useThemeColors();
+
   return (
     <ComposerProvider>
       <TopAnchoredFeedProvider>
-        <Stack screenOptions={screenOptions}>
+        <Stack
+          screenOptions={{
+            headerShown: true,
+            headerStyle: { backgroundColor: themeColors.background },
+            headerTintColor: themeColors.foreground,
+            headerShadowVisible: false,
+            contentStyle: { backgroundColor: themeColors.background },
+            animation: 'default',
+            gestureEnabled: true,
+          }}
+        >
           <Stack.Screen name="index" options={{ headerShown: false }} />
           <Stack.Screen name="notes/index" options={{ title: 'Notes' }} />
           <Stack.Screen name="notes/[id]" options={{ title: '' }} />

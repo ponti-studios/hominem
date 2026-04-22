@@ -1,7 +1,7 @@
 import React from 'react';
 import Svg, { Path } from 'react-native-svg';
 
-import { theme } from '~/components/theme';
+import { useThemeColors } from '~/components/theme/theme';
 
 interface CustomIconProps {
   name: string;
@@ -11,11 +11,9 @@ interface CustomIconProps {
 
 const customIconPaths: Record<string, string> = {};
 
-const CustomIcon: React.FC<CustomIconProps> = ({
-  name,
-  size = 24,
-  color = theme.colors['icon-primary'],
-}) => {
+const CustomIcon: React.FC<CustomIconProps> = ({ name, size = 24, color }) => {
+  const themeColors = useThemeColors();
+  const resolvedColor = color ?? themeColors['icon-primary'];
   const pathData = customIconPaths[name];
 
   if (!pathData) {
@@ -27,7 +25,7 @@ const CustomIcon: React.FC<CustomIconProps> = ({
 
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d={pathData} fill={color} />
+      <Path d={pathData} fill={resolvedColor} />
     </Svg>
   );
 };

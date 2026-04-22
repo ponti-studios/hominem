@@ -2,7 +2,8 @@ import { FlashList, type FlashListProps, type ListRenderItem } from '@shopify/fl
 import { useCallback } from 'react';
 import { RefreshControl, StyleSheet } from 'react-native';
 
-import { colors, spacing } from '../theme/tokens';
+import { useThemeColors } from '~/components/theme/theme';
+import { spacing } from '../theme/tokens';
 import { Separator } from './Separator';
 import { Surface } from './Surface';
 
@@ -29,6 +30,7 @@ function ListShell<T>({
   separatorInset,
   ...props
 }: ListShellProps<T>) {
+  const themeColors = useThemeColors();
   const ItemSeparator = useCallback(() => <Separator inset={separatorInset} />, [separatorInset]);
 
   return (
@@ -42,7 +44,7 @@ function ListShell<T>({
             <RefreshControl
               onRefresh={onRefresh}
               refreshing={isRefreshing}
-              tintColor={colors['text-tertiary']}
+              tintColor={themeColors['text-tertiary']}
             />
           ) : undefined
         }

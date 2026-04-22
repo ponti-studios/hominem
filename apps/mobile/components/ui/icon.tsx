@@ -1,6 +1,6 @@
 import { SymbolView, type SFSymbol } from 'expo-symbols';
 
-import { theme } from '~/components/theme';
+import { useThemeColors } from '~/components/theme/theme';
 
 interface IconProps {
   color?: string | undefined;
@@ -9,7 +9,8 @@ interface IconProps {
 }
 
 const AppIcon = ({ color, name, size = 24 }: IconProps) => {
-  return <SymbolView name={name} size={size} tintColor={color ?? theme.colors['icon-primary']} />;
+  const themeColors = useThemeColors();
+  return <SymbolView name={name} size={size} tintColor={color ?? themeColors['icon-primary']} />;
 };
 
 export default AppIcon;

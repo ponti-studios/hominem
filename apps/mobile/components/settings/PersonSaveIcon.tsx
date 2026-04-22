@@ -10,9 +10,9 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { theme } from '~/components/theme';
+import { useThemeColors } from '~/components/theme/theme';
 
-import { styles } from '../theme/styles';
+import { useSharedStyles } from '../theme/styles';
 
 const AnimatedImage = Animated.createAnimatedComponent(Image);
 
@@ -21,8 +21,15 @@ interface PersonSaveIconProps {
 }
 
 export function PersonSaveIcon({ feedback }: PersonSaveIconProps) {
+  const themeColors = useThemeColors();
+  const styles = useSharedStyles();
   const progress = useSharedValue(0);
   const shakeX = useSharedValue(0);
+
+  const successColor = themeColors.success;
+  const destructiveColor = themeColors.destructive;
+  const iconPrimaryColor = themeColors['icon-primary'];
+  const bgElevatedColor = themeColors['bg-elevated'];
 
   useEffect(() => {
     if (feedback === 'idle') {
@@ -59,17 +66,13 @@ export function PersonSaveIcon({ feedback }: PersonSaveIconProps) {
   const animatedProps = useAnimatedProps(() => {
     const targetColor =
       feedback === 'success'
-        ? theme.colors.success
+        ? successColor
         : feedback === 'error'
-          ? theme.colors.destructive
-          : theme.colors['icon-primary'];
+          ? destructiveColor
+          : iconPrimaryColor;
 
     return {
-      tintColor: interpolateColor(
-        progress.value,
-        [0, 1],
-        [theme.colors['icon-primary'], targetColor],
-      ),
+      tintColor: interpolateColor(progress.value, [0, 1], [iconPrimaryColor, targetColor]),
     };
   });
 
@@ -79,7 +82,7 @@ export function PersonSaveIcon({ feedback }: PersonSaveIconProps) {
 
   return (
     <Animated.View
-      style={[styles.rowIconWrap, { backgroundColor: theme.colors['bg-elevated'] }, animatedStyle]}
+      style={[styles.rowIconWrap, { backgroundColor: bgElevatedColor }, animatedStyle]}
     >
       <AnimatedImage
         source="sf:person.crop.circle"

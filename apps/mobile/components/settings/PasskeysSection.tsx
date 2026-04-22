@@ -2,9 +2,9 @@ import { Image } from 'expo-image';
 import React from 'react';
 import { ActivityIndicator, Pressable } from 'react-native';
 
-import { theme } from '~/components/theme';
+import { useThemeColors } from '~/components/theme/theme';
 
-import { styles } from '../theme/styles';
+import { useSharedStyles } from '../theme/styles';
 import { RowSeparator } from './RowSeparator';
 import { SectionCard } from './SectionCard';
 import { SectionLabel } from './SectionLabel';
@@ -28,6 +28,9 @@ export function PasskeysSection({
   onAddPress,
   onDeletePress,
 }: PasskeysSectionProps) {
+  const themeColors = useThemeColors();
+  const styles = useSharedStyles();
+
   return (
     <>
       <SectionLabel>Passkeys</SectionLabel>
@@ -38,7 +41,7 @@ export function PasskeysSection({
           onPress={onAddPress}
           trailing={
             isLoading ? (
-              <ActivityIndicator size="small" color={theme.colors['text-tertiary']} />
+              <ActivityIndicator size="small" color={themeColors['text-tertiary']} />
             ) : undefined
           }
           disabled={isLoading}
@@ -59,7 +62,7 @@ export function PasskeysSection({
                   <Image
                     source="sf:trash"
                     style={styles.trashIcon}
-                    tintColor={theme.colors.destructive}
+                    tintColor={themeColors.destructive}
                     contentFit="contain"
                   />
                 </Pressable>

@@ -7,7 +7,8 @@ import { Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 import Reanimated, { FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated';
 
 import { useComposerContext } from '~/components/composer/ComposerContext';
-import { Text, theme } from '~/components/theme';
+import { Text, makeStyles } from '~/components/theme';
+import { useThemeColors } from '~/components/theme/theme';
 import { radii, shadowsNative, spacing } from '~/components/theme/tokens';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import { flattenNoteFeedPages, useNoteFeed } from '~/services/notes/use-note-stream';
@@ -34,48 +35,57 @@ function formatNoteDate(iso: string): string {
   return date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-const RowSeparator = React.memo(() => <View style={styles.separator} />);
+const RowSeparator = React.memo(() => {
+  const styles = useNoteStyles();
+  return <View style={styles.separator} />;
+});
 RowSeparator.displayName = 'RowSeparator';
 
-const NoteRow = React.memo(({ item, onPress }: { item: FeedRow; onPress: () => void }) => (
-  <Pressable
-    onPress={onPress}
-    style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
-    accessibilityRole="button"
-    accessibilityLabel={item.title ?? 'Untitled note'}
-  >
-    <View style={styles.rowInner}>
-      <View style={styles.rowTop}>
-        <Text style={styles.rowTitle} numberOfLines={1}>
-          {item.title ?? 'Untitled note'}
-        </Text>
-        <Text style={styles.rowDate}>{formatNoteDate(item.createdAt)}</Text>
-      </View>
-
-      {item.contentPreview ? (
-        <Text style={styles.rowPreview} numberOfLines={2}>
-          {item.contentPreview}
-        </Text>
-      ) : null}
-
-      {item.hasAttachments ? (
-        <View style={styles.attachmentRow}>
-          <Image
-            source="sf:paperclip"
-            style={styles.attachmentIcon}
-            tintColor={theme.colors['text-tertiary']}
-            contentFit="contain"
-          />
-          <Text style={styles.attachmentText}>Attachment</Text>
+const NoteRow = React.memo(({ item, onPress }: { item: FeedRow; onPress: () => void }) => {
+  const styles = useNoteStyles();
+  const themeColors = useThemeColors();
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+      accessibilityRole="button"
+      accessibilityLabel={item.title ?? 'Untitled note'}
+    >
+      <View style={styles.rowInner}>
+        <View style={styles.rowTop}>
+          <Text style={styles.rowTitle} numberOfLines={1}>
+            {item.title ?? 'Untitled note'}
+          </Text>
+          <Text style={styles.rowDate}>{formatNoteDate(item.createdAt)}</Text>
         </View>
-      ) : null}
-    </View>
-  </Pressable>
-));
+
+        {item.contentPreview ? (
+          <Text style={styles.rowPreview} numberOfLines={2}>
+            {item.contentPreview}
+          </Text>
+        ) : null}
+
+        {item.hasAttachments ? (
+          <View style={styles.attachmentRow}>
+            <Image
+              source="sf:paperclip"
+              style={styles.attachmentIcon}
+              tintColor={themeColors['text-tertiary']}
+              contentFit="contain"
+            />
+            <Text style={styles.attachmentText}>Attachment</Text>
+          </View>
+        ) : null}
+      </View>
+    </Pressable>
+  );
+});
 
 NoteRow.displayName = 'NoteRow';
 
 function EmptyNotes({ composerClearance }: { composerClearance: number }) {
+  const styles = useNoteStyles();
+  const themeColors = useThemeColors();
   return (
     <Reanimated.View
       entering={FadeIn.duration(280)}
@@ -85,7 +95,7 @@ function EmptyNotes({ composerClearance }: { composerClearance: number }) {
         <Image
           source="sf:note.text"
           style={styles.emptyIcon}
-          tintColor={theme.colors['text-tertiary']}
+          tintColor={themeColors['text-tertiary']}
           contentFit="contain"
         />
       </View>
@@ -107,6 +117,8 @@ export default function NotesFeedScreen() {
   const feedQuery = useNoteFeed();
   const [isNearBottom, setIsNearBottom] = useState(true);
   const prefersReducedMotion = useReducedMotion();
+  const styles = useNoteStyles();
+  const themeColors = useThemeColors();
 
   const notes = useMemo(
     () =>
@@ -199,7 +211,7 @@ export default function NotesFeedScreen() {
             keyExtractor={(item) => item.id}
             renderItem={renderItem}
             ItemSeparatorComponent={RowSeparator}
-            contentContainerStyle={[styles.listContent, { paddingBottom: composerClearance }]}
+            contentContainerStyle={[staticStyles.listContent, { paddingBottom: composerClearance }]}
             onContentSizeChange={handleContentSizeChange}
             onEndReached={handleEndReached}
             onEndReachedThreshold={0.15}
@@ -210,7 +222,7 @@ export default function NotesFeedScreen() {
               <RefreshControl
                 refreshing={feedQuery.isRefetching}
                 onRefresh={handleRefresh}
-                tintColor={theme.colors['text-tertiary']}
+                tintColor={themeColors['text-tertiary']}
               />
             }
           />
@@ -220,13 +232,16 @@ export default function NotesFeedScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const staticStyles = StyleSheet.create({
+  listContent: {},
+});
+
+const useNoteStyles = makeStyles((theme) => ({
   screen: {
     flex: 1,
     paddingHorizontal: spacing[4],
     paddingTop: spacing[2],
   },
-
   shell: {
     flex: 1,
     backgroundColor: theme.colors['bg-surface'],
@@ -237,11 +252,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     ...shadowsNative.low,
   },
-
-  listContent: {
-    // paddingBottom is set dynamically in the component
-  },
-
   row: {
     backgroundColor: 'transparent',
   },
@@ -292,19 +302,16 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: theme.colors['text-tertiary'],
   },
-
   separator: {
     height: StyleSheet.hairlineWidth,
     backgroundColor: theme.colors['border-subtle'],
     marginLeft: spacing[4],
   },
-
   empty: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing[6],
-    // paddingBottom is set dynamically in the component
     gap: spacing[2],
   },
   emptyIconRing: {
@@ -333,4 +340,4 @@ const styles = StyleSheet.create({
     color: theme.colors['text-tertiary'],
     textAlign: 'center',
   },
-});
+}));

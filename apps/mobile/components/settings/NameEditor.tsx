@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, TextInput, View } from 'react-native';
 
-import { Text, theme } from '~/components/theme';
+import { Text } from '~/components/theme';
+import { useThemeColors } from '~/components/theme/theme';
 
-import { styles } from '../theme/styles';
+import { useSharedStyles } from '../theme/styles';
 import { PersonSaveIcon } from './PersonSaveIcon';
 import { SettingsRow } from './SettingsRow';
 
@@ -13,6 +14,8 @@ interface NameEditorProps {
 }
 
 export function NameEditor({ initialName, onSave }: NameEditorProps) {
+  const themeColors = useThemeColors();
+  const styles = useSharedStyles();
   const [name, setName] = useState(initialName);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -68,7 +71,7 @@ export function NameEditor({ initialName, onSave }: NameEditorProps) {
                 setSaveStatus('idle');
               }}
               style={styles.inlineInput}
-              placeholderTextColor={theme.colors['text-tertiary']}
+              placeholderTextColor={themeColors['text-tertiary']}
               placeholder="Your name"
               returnKeyType="done"
               onSubmitEditing={nameChanged ? handleSavePress : undefined}
@@ -83,7 +86,7 @@ export function NameEditor({ initialName, onSave }: NameEditorProps) {
                 accessibilityRole="button"
               >
                 {saveStatus === 'saving' ? (
-                  <ActivityIndicator size="small" color={theme.colors.accent} />
+                  <ActivityIndicator size="small" color={themeColors.accent} />
                 ) : (
                   <Text style={styles.inlineSaveLabel}>Save</Text>
                 )}

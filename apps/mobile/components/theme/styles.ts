@@ -1,11 +1,9 @@
-import { StyleSheet } from 'react-native';
-
-import theme from './theme';
+import { makeStyles } from '~/components/theme';
 
 const CARD_RADIUS = 14;
 const ROW_HEIGHT = 50;
 
-export const styles = StyleSheet.create({
+export const useSharedStyles = makeStyles((theme) => ({
   sectionLabel: {
     fontSize: 13,
     fontWeight: '500',
@@ -15,7 +13,6 @@ export const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 6,
   },
-
   rowPressable: {
     minHeight: ROW_HEIGHT,
   },
@@ -76,7 +73,6 @@ export const styles = StyleSheet.create({
     color: theme.colors['text-tertiary'],
     maxWidth: 160,
   },
-
   inlineEditRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -118,12 +114,10 @@ export const styles = StyleSheet.create({
     fontSize: 12,
     color: theme.colors.destructive,
   },
-
   trashIcon: {
     width: 16,
     height: 16,
   },
-
   dangerZone: {
     marginTop: 32,
     gap: 1,
@@ -156,9 +150,9 @@ export const styles = StyleSheet.create({
   dangerLabelMuted: {
     color: theme.colors['text-tertiary'],
   },
-});
+}));
 
-export const sharedCardStyles = StyleSheet.create({
+export const useSharedCardStyles = makeStyles((theme) => ({
   base: {
     backgroundColor: theme.colors['bg-base'],
     borderRadius: CARD_RADIUS,
@@ -167,4 +161,4 @@ export const sharedCardStyles = StyleSheet.create({
     borderColor: theme.colors['border-subtle'],
     overflow: 'hidden',
   },
-});
+}));

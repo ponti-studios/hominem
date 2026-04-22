@@ -1,5 +1,5 @@
 import type { ArtifactType } from '@hominem/rpc/types';
-import { Modal, ScrollView, StyleSheet, View } from 'react-native';
+import { Modal, ScrollView, View } from 'react-native';
 import Animated, {
   useAnimatedReaction,
   useAnimatedStyle,
@@ -8,9 +8,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Text } from '~/components/theme';
+import { Text, makeStyles } from '~/components/theme';
 import {
-  colors,
   durations,
   fontFamiliesNative,
   fontSizes,
@@ -51,6 +50,7 @@ export function ClassificationReview({
   onAccept,
   onReject,
 }: ClassificationReviewProps) {
+  const styles = useClassificationStyles();
   const insets = useSafeAreaInsets();
   const translateY = useSharedValue(80);
   const opacity = useSharedValue(0);
@@ -128,7 +128,7 @@ export function ClassificationReview({
   );
 }
 
-const styles = StyleSheet.create({
+const useClassificationStyles = makeStyles((theme) => ({
   actions: {
     flexDirection: 'row',
     gap: spacing[2],
@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
   },
   handle: {
     alignSelf: 'center',
-    backgroundColor: colors['border-default'],
+    backgroundColor: theme.colors['border-default'],
     borderRadius: radii.sm,
     height: 4,
     marginBottom: spacing[1],
@@ -163,13 +163,13 @@ const styles = StyleSheet.create({
     gap: spacing[1],
   },
   overlay: {
-    backgroundColor: colors['overlay-modal-high'],
+    backgroundColor: theme.colors['overlay-modal-high'],
     flex: 1,
     justifyContent: 'flex-end',
   },
   preview: {
-    backgroundColor: colors.muted,
-    borderColor: colors['border-default'],
+    backgroundColor: theme.colors.muted,
+    borderColor: theme.colors['border-default'],
     borderRadius: radii.md,
     borderWidth: 1,
     maxHeight: 120,
@@ -179,16 +179,16 @@ const styles = StyleSheet.create({
     fontFamily: fontFamiliesNative.mono,
   },
   primaryButton: {
-    backgroundColor: colors.foreground,
-    borderColor: colors.foreground,
+    backgroundColor: theme.colors.foreground,
+    borderColor: theme.colors.foreground,
   },
   secondaryButton: {
     backgroundColor: 'transparent',
-    borderColor: colors['border-default'],
+    borderColor: theme.colors['border-default'],
   },
   sheet: {
-    backgroundColor: colors.background,
-    borderColor: colors['border-default'],
+    backgroundColor: theme.colors.background,
+    borderColor: theme.colors['border-default'],
     borderTopLeftRadius: radii.md,
     borderTopRightRadius: radii.md,
     borderTopWidth: 1,
@@ -205,4 +205,4 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     textTransform: 'uppercase',
   },
-});
+}));

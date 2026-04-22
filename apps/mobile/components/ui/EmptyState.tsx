@@ -1,10 +1,10 @@
 import { SymbolView, type SFSymbol } from 'expo-symbols';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import Reanimated, { FadeIn } from 'react-native-reanimated';
 
-import { Text } from '~/components/theme';
-
-import { colors, radii, spacing } from '../theme/tokens';
+import { Text, makeStyles } from '~/components/theme';
+import { useThemeColors } from '~/components/theme/theme';
+import { radii, spacing } from '../theme/tokens';
 import { Button } from './Button';
 
 const DEFAULT_BOTTOM_OFFSET = spacing[7] * 3;
@@ -26,13 +26,16 @@ function EmptyState({
   sfSymbol,
   title,
 }: EmptyStateProps) {
+  const styles = useEmptyStateStyles();
+  const themeColors = useThemeColors();
+
   return (
     <Reanimated.View
       entering={FadeIn.duration(280)}
       style={[styles.container, { paddingBottom: bottomOffset }]}
     >
       <View style={styles.iconRing}>
-        <SymbolView name={sfSymbol} size={ICON_SIZE} tintColor={colors['text-tertiary']} />
+        <SymbolView name={sfSymbol} size={ICON_SIZE} tintColor={themeColors['text-tertiary']} />
       </View>
       <Text color="foreground" style={styles.title} variant="headline">
         {title}
@@ -51,7 +54,7 @@ function EmptyState({
   );
 }
 
-const styles = StyleSheet.create({
+const useEmptyStateStyles = makeStyles((theme) => ({
   container: {
     alignItems: 'center',
     flex: 1,
@@ -61,7 +64,7 @@ const styles = StyleSheet.create({
   },
   iconRing: {
     alignItems: 'center',
-    backgroundColor: colors['bg-elevated'],
+    backgroundColor: theme.colors['bg-elevated'],
     borderRadius: radii.sm,
     height: ICON_RING_SIZE,
     justifyContent: 'center',
@@ -77,7 +80,7 @@ const styles = StyleSheet.create({
   action: {
     marginTop: spacing[2],
   },
-});
+}));
 
 export { EmptyState };
 export type { EmptyStateProps };

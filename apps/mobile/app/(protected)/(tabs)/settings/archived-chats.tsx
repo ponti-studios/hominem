@@ -1,10 +1,11 @@
 import type { RelativePathString } from 'expo-router';
 import { Stack, useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 
-import { Text } from '~/components/theme';
-import { colors, radii, spacing } from '~/components/theme/tokens';
+import { Text, makeStyles } from '~/components/theme';
+import { useThemeColors } from '~/components/theme/theme';
+import { radii, spacing } from '~/components/theme/tokens';
 import AppIcon from '~/components/ui/icon';
 import { useArchivedSessions } from '~/hooks/useArchivedSessions';
 import { formatRelativeAge } from '~/services/date/format-relative-age';
@@ -12,6 +13,8 @@ import { formatRelativeAge } from '~/services/date/format-relative-age';
 export default function ArchivedChatsScreen() {
   const router = useRouter();
   const { data: chats = [] } = useArchivedSessions();
+  const styles = useArchivedChatsStyles();
+  const themeColors = useThemeColors();
 
   const onPressChat = useCallback(
     (chatId: string) => {
@@ -62,7 +65,7 @@ export default function ArchivedChatsScreen() {
                 style={({ pressed }) => [styles.card, pressed && styles.pressed]}
               >
                 <View style={styles.iconWrap}>
-                  <AppIcon name="tray" size={14} color={colors['text-tertiary']} />
+                  <AppIcon name="tray" size={14} color={themeColors['text-tertiary']} />
                 </View>
                 <View style={styles.cardContent}>
                   <Text variant="callout" color="foreground" numberOfLines={1}>
@@ -72,7 +75,7 @@ export default function ArchivedChatsScreen() {
                     Archived {formatRelativeAge(chat.archivedAt ?? chat.activityAt)}
                   </Text>
                 </View>
-                <AppIcon name="chevron.right" size={12} color={colors['text-tertiary']} />
+                <AppIcon name="chevron.right" size={12} color={themeColors['text-tertiary']} />
               </Pressable>
             ))
           )}
@@ -82,7 +85,7 @@ export default function ArchivedChatsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useArchivedChatsStyles = makeStyles((theme) => ({
   root: {
     flex: 1,
   },
@@ -97,7 +100,7 @@ const styles = StyleSheet.create({
   },
   emptyCard: {
     borderWidth: 1,
-    borderColor: colors['border-default'],
+    borderColor: theme.colors['border-default'],
     borderRadius: radii.md,
     gap: spacing[2],
     marginTop: spacing[3],
@@ -106,7 +109,7 @@ const styles = StyleSheet.create({
   },
   card: {
     alignItems: 'center',
-    borderColor: colors['border-default'],
+    borderColor: theme.colors['border-default'],
     borderRadius: radii.md,
     borderWidth: 1,
     flexDirection: 'row',
@@ -119,8 +122,8 @@ const styles = StyleSheet.create({
   },
   iconWrap: {
     alignItems: 'center',
-    backgroundColor: colors['bg-surface'],
-    borderColor: colors['border-default'],
+    backgroundColor: theme.colors['bg-surface'],
+    borderColor: theme.colors['border-default'],
     borderRadius: radii.md,
     borderWidth: 1,
     height: 32,
@@ -131,4 +134,4 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: spacing[1],
   },
-});
+}));

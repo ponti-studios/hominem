@@ -2,8 +2,8 @@ import { FlashList, type FlashListRef, type ListRenderItem } from '@shopify/flas
 import React, { memo, useCallback, type RefObject } from 'react';
 import { StyleSheet, View, type RefreshControlProps } from 'react-native';
 
-import { Text } from '~/components/theme';
-import { colors, spacing } from '~/components/theme/tokens';
+import { Text, makeStyles } from '~/components/theme';
+import { spacing } from '~/components/theme/tokens';
 
 import { InboxStreamItem } from './InboxStreamItem';
 import type { InboxStreamItemData as InboxStreamItemModel } from './InboxStreamItem.types';
@@ -15,7 +15,9 @@ interface InboxStreamProps {
 }
 
 const keyExtractor = (item: InboxStreamItemModel) => `${item.kind}:${item.id}`;
+
 const InboxStreamDivider = memo(() => {
+  const styles = useStreamStyles();
   return <View style={styles.divider} />;
 });
 
@@ -28,6 +30,8 @@ const RenderInboxStreamItem = memo(({ item }: { item: InboxStreamItemModel }) =>
 RenderInboxStreamItem.displayName = 'RenderInboxStreamItem';
 
 export const InboxStream = ({ items, listRef, refreshControl }: InboxStreamProps) => {
+  const styles = useStreamStyles();
+
   const renderItem = useCallback<ListRenderItem<InboxStreamItemModel>>(({ item }) => {
     return <RenderInboxStreamItem item={item} />;
   }, []);
@@ -52,12 +56,12 @@ export const InboxStream = ({ items, listRef, refreshControl }: InboxStreamProps
       <View style={styles.sectionShell}>
         <FlashList
           ref={listRef}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={staticStyles.listContent}
           data={items}
           ItemSeparatorComponent={InboxStreamDivider}
           keyExtractor={keyExtractor}
           renderItem={renderItem}
-          ListFooterComponent={<View style={styles.sectionFooter} />}
+          ListFooterComponent={<View style={staticStyles.sectionFooter} />}
           refreshControl={refreshControl}
           showsVerticalScrollIndicator={false}
         />
@@ -66,7 +70,7 @@ export const InboxStream = ({ items, listRef, refreshControl }: InboxStreamProps
   );
 };
 
-const styles = StyleSheet.create({
+const useStreamStyles = makeStyles((theme) => ({
   container: {
     flex: 1,
     paddingTop: spacing[3],
@@ -75,19 +79,12 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     marginLeft: spacing[3],
     marginRight: spacing[3],
-    backgroundColor: colors['border-subtle'],
+    backgroundColor: theme.colors['border-subtle'],
   },
   sectionShell: {
-    backgroundColor: colors['bg-base'],
+    backgroundColor: theme.colors['bg-base'],
     flex: 1,
     overflow: 'hidden',
-  },
-  listContent: {
-    paddingTop: 0,
-    paddingBottom: spacing[8] + spacing[8] + spacing[5] + spacing[3],
-  },
-  sectionFooter: {
-    height: 2,
   },
   emptyWrap: {
     marginBottom: spacing[8] + spacing[8] + spacing[8] + spacing[5] + spacing[1],
@@ -95,9 +92,19 @@ const styles = StyleSheet.create({
   },
   empty: {
     alignItems: 'center',
-    backgroundColor: colors['bg-base'],
+    backgroundColor: theme.colors['bg-base'],
     gap: spacing[1],
     paddingHorizontal: spacing[4],
     paddingVertical: spacing[6],
+  },
+}));
+
+const staticStyles = StyleSheet.create({
+  listContent: {
+    paddingTop: 0,
+    paddingBottom: spacing[8] + spacing[8] + spacing[5] + spacing[3],
+  },
+  sectionFooter: {
+    height: 2,
   },
 });

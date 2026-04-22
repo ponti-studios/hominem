@@ -2,9 +2,10 @@ import { Image } from 'expo-image';
 import React from 'react';
 import { Pressable, View } from 'react-native';
 
-import { Text, theme } from '~/components/theme';
+import { Text } from '~/components/theme';
+import { useThemeColors } from '~/components/theme/theme';
 
-import { styles } from '../theme/styles';
+import { useSharedStyles } from '../theme/styles';
 
 interface SettingsRowProps {
   leading?: React.ReactNode;
@@ -29,7 +30,9 @@ export function SettingsRow({
   destructive = false,
   disabled = false,
 }: SettingsRowProps) {
-  const labelColor = destructive ? theme.colors.destructive : theme.colors.foreground;
+  const themeColors = useThemeColors();
+  const styles = useSharedStyles();
+  const labelColor = destructive ? themeColors.destructive : themeColors.foreground;
 
   const inner = (
     <View style={styles.row}>
@@ -38,13 +41,13 @@ export function SettingsRow({
           <View
             style={[
               styles.rowIconWrap,
-              { backgroundColor: sfColor ?? theme.colors['bg-elevated'] },
+              { backgroundColor: sfColor ?? themeColors['bg-elevated'] },
             ]}
           >
             <Image
               source={`sf:${sf}`}
               style={styles.rowIcon}
-              tintColor={destructive ? theme.colors.destructive : theme.colors['icon-primary']}
+              tintColor={destructive ? themeColors.destructive : themeColors['icon-primary']}
               contentFit="contain"
             />
           </View>
@@ -59,7 +62,7 @@ export function SettingsRow({
         <Image
           source="sf:chevron.right"
           style={styles.chevron}
-          tintColor={theme.colors['text-tertiary']}
+          tintColor={themeColors['text-tertiary']}
           contentFit="contain"
         />
       ) : null}

@@ -1,12 +1,13 @@
 import React from 'react';
 import { View } from 'react-native';
 
-import { sharedCardStyles } from '../theme/styles';
+import { useSharedCardStyles } from '../theme/styles';
 
 interface SectionCardProps {
   children: React.ReactNode;
 }
 
 export function SectionCard({ children }: SectionCardProps) {
-  return <View style={sharedCardStyles.base}>{children}</View>;
+  const cardStyles = useSharedCardStyles();
+  return <View style={cardStyles.base}>{children}</View>;
 }

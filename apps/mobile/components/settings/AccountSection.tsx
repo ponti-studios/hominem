@@ -2,7 +2,7 @@ import React from 'react';
 
 import { Text } from '~/components/theme';
 
-import { styles } from '../theme/styles';
+import { useSharedStyles } from '../theme/styles';
 import { NameEditor } from './NameEditor';
 import { RowSeparator } from './RowSeparator';
 import { SectionCard } from './SectionCard';
@@ -16,6 +16,8 @@ interface AccountSectionProps {
 }
 
 export function AccountSection({ userEmail, initialName, onSaveName }: AccountSectionProps) {
+  const styles = useSharedStyles();
+
   return (
     <>
       <SectionLabel>Account</SectionLabel>

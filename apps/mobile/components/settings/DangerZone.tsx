@@ -2,9 +2,10 @@ import { Image } from 'expo-image';
 import React from 'react';
 import { Pressable, View } from 'react-native';
 
-import { Text, theme } from '~/components/theme';
+import { Text } from '~/components/theme';
+import { useThemeColors } from '~/components/theme/theme';
 
-import { styles } from '../theme/styles';
+import { useSharedStyles } from '../theme/styles';
 
 interface DangerZoneProps {
   onSignOut: () => void;
@@ -12,6 +13,9 @@ interface DangerZoneProps {
 }
 
 export function DangerZone({ onSignOut, onDeleteAccount }: DangerZoneProps) {
+  const themeColors = useThemeColors();
+  const styles = useSharedStyles();
+
   return (
     <View style={styles.dangerZone}>
       <Pressable
@@ -24,7 +28,7 @@ export function DangerZone({ onSignOut, onDeleteAccount }: DangerZoneProps) {
         <Image
           source="sf:rectangle.portrait.and.arrow.right"
           style={styles.dangerIcon}
-          tintColor={theme.colors.destructive}
+          tintColor={themeColors.destructive}
           contentFit="contain"
         />
         <Text style={styles.dangerLabel}>Sign out</Text>
@@ -39,7 +43,7 @@ export function DangerZone({ onSignOut, onDeleteAccount }: DangerZoneProps) {
         <Image
           source="sf:trash"
           style={styles.dangerIcon}
-          tintColor={theme.colors['text-tertiary']}
+          tintColor={themeColors['text-tertiary']}
           contentFit="contain"
         />
         <Text style={[styles.dangerLabel, styles.dangerLabelMuted]}>Delete account</Text>

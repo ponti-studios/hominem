@@ -1,8 +1,9 @@
 import React from 'react';
 import { View } from 'react-native';
 
-import { styles } from '../theme/styles';
+import { useSharedStyles } from '../theme/styles';
 
 export function RowSeparator() {
+  const styles = useSharedStyles();
   return <View style={styles.rowSeparator} />;
 }

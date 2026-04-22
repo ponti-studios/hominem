@@ -1,11 +1,12 @@
 import type { ChatMessageItem, ChatRenderIcon, MarkdownComponent } from '@hominem/chat';
 import { getReferencedNoteLabel } from '@hominem/chat';
 import { memo, useMemo, useState } from 'react';
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, View } from 'react-native';
 import Reanimated, { FadeInDown, FadeOutUp, LinearTransition } from 'react-native-reanimated';
 
-import { Text } from '~/components/theme';
-import { colors, fontFamiliesNative, fontSizes, radii, spacing } from '~/components/theme/tokens';
+import { Text, makeStyles } from '~/components/theme';
+import { useThemeColors } from '~/components/theme/theme';
+import { fontFamiliesNative, fontSizes, radii, spacing } from '~/components/theme/tokens';
 
 import { Button } from '../ui/Button';
 import { TextArea } from '../ui/TextArea';
@@ -34,191 +35,6 @@ const ACTIONS_EXITING = FadeOutUp.duration(180).springify().damping(24).stiffnes
 const ACTIONS_LAYOUT = LinearTransition.duration(200);
 const MESSAGE_BUBBLE_MAX_WIDTH = '84%';
 
-const styles = StyleSheet.create({
-  actionButton: {
-    backgroundColor: 'transparent',
-    borderColor: 'transparent',
-    borderRadius: radii.sm,
-    height: 32,
-    paddingHorizontal: 0,
-    paddingVertical: 0,
-    width: 32,
-  },
-  actionButtonDisabled: {
-    opacity: 0.3,
-  },
-  actionIcon: {
-    opacity: 0.9,
-  },
-  actions: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'nowrap',
-    gap: spacing[2],
-    justifyContent: 'flex-end',
-  },
-  actionsWrap: {
-    marginTop: spacing[1],
-  },
-  assistantMessageText: {
-    color: colors.foreground,
-    fontSize: fontSizes.md,
-    lineHeight: fontSizes.md * 1.55,
-  },
-  contentColumn: {
-    gap: spacing[2],
-    width: '100%',
-  },
-  contentColumnUser: {
-    alignItems: 'flex-end',
-  },
-  editBackdrop: {
-    alignItems: 'center',
-    backgroundColor: colors['overlay-modal-medium'],
-    bottom: 0,
-    justifyContent: 'center',
-    left: 0,
-    paddingHorizontal: spacing[5],
-    position: 'absolute',
-    right: 0,
-    top: 0,
-  },
-  editButtonRow: {
-    flexDirection: 'row',
-    gap: spacing[2],
-    justifyContent: 'flex-end',
-  },
-  editInput: {
-    minHeight: 90,
-  },
-  editSheet: {
-    backgroundColor: colors['bg-base'],
-    borderColor: colors['border-subtle'],
-    borderRadius: radii.md,
-    borderWidth: 1,
-    gap: spacing[3],
-    paddingHorizontal: spacing[4],
-    paddingVertical: spacing[4],
-    width: '100%',
-  },
-  editTitle: {
-    color: colors.foreground,
-    fontSize: 16,
-  },
-  focusItem: {
-    backgroundColor: colors['bg-base'],
-    borderColor: colors['border-default'],
-    borderRadius: radii.md,
-    borderWidth: 1,
-    paddingHorizontal: spacing[3],
-    paddingVertical: spacing[2],
-  },
-  focusItems: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing[3],
-  },
-  metadataText: {
-    color: colors['text-tertiary'],
-    fontFamily: fontFamiliesNative.mono,
-    fontSize: fontSizes.xs,
-  },
-  reasoningText: {
-    color: colors.foreground,
-    fontFamily: fontFamiliesNative.mono,
-    fontSize: fontSizes.xs,
-    opacity: 0.8,
-  },
-  referencedNoteChip: {
-    alignItems: 'center',
-    backgroundColor: colors['bg-base'],
-    borderColor: colors['border-default'],
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    flexDirection: 'row',
-    gap: spacing[1],
-    paddingHorizontal: spacing[2],
-    paddingVertical: spacing[1],
-  },
-  referencedNoteText: {
-    color: colors['text-secondary'],
-    fontSize: fontSizes.xs,
-  },
-  referencedNotes: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing[2],
-    justifyContent: 'flex-end',
-    maxWidth: MESSAGE_BUBBLE_MAX_WIDTH,
-  },
-  row: {
-    paddingVertical: spacing[2],
-    width: '100%',
-  },
-  rowAssistant: {
-    alignItems: 'flex-start',
-  },
-  rowUser: {
-    alignItems: 'flex-end',
-  },
-  toolCall: {
-    backgroundColor: colors['bg-base'],
-    borderColor: colors['border-subtle'],
-    borderRadius: radii.md,
-    borderWidth: 1,
-    gap: spacing[1],
-    padding: spacing[3],
-  },
-  toolCallArgs: {
-    color: colors['text-secondary'],
-    fontFamily: fontFamiliesNative.mono,
-    fontSize: fontSizes.xs,
-  },
-  toolCallName: {
-    color: colors.foreground,
-    fontSize: fontSizes.xs,
-    fontWeight: '600',
-  },
-  toolCalls: {
-    gap: spacing[1],
-  },
-  messageSurface: {
-    borderColor: colors['border-subtle'],
-    borderRadius: radii.md,
-    borderWidth: 1,
-    maxWidth: MESSAGE_BUBBLE_MAX_WIDTH,
-    paddingHorizontal: spacing[2],
-    paddingVertical: 0,
-  },
-  transcriptBlock: {
-    gap: spacing[3],
-    maxWidth: MESSAGE_BUBBLE_MAX_WIDTH,
-  },
-  transcriptSurface: {
-    backgroundColor: colors['bg-base'],
-    borderColor: colors['border-default'],
-    borderRadius: radii.md,
-    borderWidth: 1,
-    gap: spacing[1],
-    paddingHorizontal: spacing[3],
-    paddingVertical: spacing[3],
-    width: '100%',
-  },
-  userMessageText: {
-    color: colors['accent-foreground'],
-    fontSize: fontSizes.md,
-    lineHeight: fontSizes.md * 1.5,
-  },
-  assistantSurface: {
-    backgroundColor: colors['bg-base'],
-    borderBottomLeftRadius: 0,
-  },
-  userSurface: {
-    backgroundColor: colors['emphasis-highest'],
-    borderBottomRightRadius: 0,
-  },
-});
-
 export async function loadMarkdown() {
   const mod = await import('react-native-markdown-display');
   return mod.default as MarkdownComponent;
@@ -240,6 +56,8 @@ const ChatMessage = memo(function ChatMessage({
   renderIcon,
   formatTimestamp,
 }: ChatMessageProps) {
+  const styles = useChatMessageStyles();
+  const themeColors = useThemeColors();
   const { role, message: content } = message;
   const isUser = role.toLowerCase() === 'user';
   const textStyle = isUser ? styles.userMessageText : styles.assistantMessageText;
@@ -261,7 +79,7 @@ const ChatMessage = memo(function ChatMessage({
     () => ({
       body: isUser ? styles.userMessageText : styles.assistantMessageText,
     }),
-    [isUser],
+    [isUser, styles],
   );
 
   return (
@@ -406,7 +224,7 @@ const ChatMessage = memo(function ChatMessage({
                 variant="ghost"
               >
                 {renderIcon('doc.on.doc', {
-                  color: colors['text-tertiary'],
+                  color: themeColors['text-tertiary'],
                   size: 15,
                   style: styles.actionIcon,
                 })}
@@ -420,7 +238,7 @@ const ChatMessage = memo(function ChatMessage({
                   variant="ghost"
                 >
                   {renderIcon(isSpeaking ? 'stop.fill' : 'speaker.wave.2', {
-                    color: colors['text-tertiary'],
+                    color: themeColors['text-tertiary'],
                     size: 15,
                     style: styles.actionIcon,
                   })}
@@ -435,7 +253,7 @@ const ChatMessage = memo(function ChatMessage({
                   variant="ghost"
                 >
                   {renderIcon('square.and.arrow.up', {
-                    color: colors['text-tertiary'],
+                    color: themeColors['text-tertiary'],
                     size: 15,
                     style: styles.actionIcon,
                   })}
@@ -453,7 +271,7 @@ const ChatMessage = memo(function ChatMessage({
                   variant="ghost"
                 >
                   {renderIcon('square.and.pencil', {
-                    color: colors['text-tertiary'],
+                    color: themeColors['text-tertiary'],
                     size: 15,
                     style: styles.actionIcon,
                   })}
@@ -468,7 +286,7 @@ const ChatMessage = memo(function ChatMessage({
                   variant="ghost"
                 >
                   {renderIcon('arrow.clockwise', {
-                    color: colors['text-tertiary'],
+                    color: themeColors['text-tertiary'],
                     size: 15,
                     style: styles.actionIcon,
                   })}
@@ -483,7 +301,7 @@ const ChatMessage = memo(function ChatMessage({
                   variant="ghost"
                 >
                   {renderIcon('trash', {
-                    color: colors['text-tertiary'],
+                    color: themeColors['text-tertiary'],
                     size: 15,
                     style: styles.actionIcon,
                   })}
@@ -529,3 +347,188 @@ export function renderChatMessage(
 }
 
 export { ChatMessage };
+
+const useChatMessageStyles = makeStyles((theme) => ({
+  actionButton: {
+    backgroundColor: 'transparent',
+    borderColor: 'transparent',
+    borderRadius: radii.sm,
+    height: 32,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+    width: 32,
+  },
+  actionButtonDisabled: {
+    opacity: 0.3,
+  },
+  actionIcon: {
+    opacity: 0.9,
+  },
+  actions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'nowrap',
+    gap: spacing[2],
+    justifyContent: 'flex-end',
+  },
+  actionsWrap: {
+    marginTop: spacing[1],
+  },
+  assistantMessageText: {
+    color: theme.colors.foreground,
+    fontSize: fontSizes.md,
+    lineHeight: fontSizes.md * 1.55,
+  },
+  contentColumn: {
+    gap: spacing[2],
+    width: '100%',
+  },
+  contentColumnUser: {
+    alignItems: 'flex-end',
+  },
+  editBackdrop: {
+    alignItems: 'center',
+    backgroundColor: theme.colors['overlay-modal-medium'],
+    bottom: 0,
+    justifyContent: 'center',
+    left: 0,
+    paddingHorizontal: spacing[5],
+    position: 'absolute',
+    right: 0,
+    top: 0,
+  },
+  editButtonRow: {
+    flexDirection: 'row',
+    gap: spacing[2],
+    justifyContent: 'flex-end',
+  },
+  editInput: {
+    minHeight: 90,
+  },
+  editSheet: {
+    backgroundColor: theme.colors['bg-base'],
+    borderColor: theme.colors['border-subtle'],
+    borderRadius: radii.md,
+    borderWidth: 1,
+    gap: spacing[3],
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[4],
+    width: '100%',
+  },
+  editTitle: {
+    color: theme.colors.foreground,
+    fontSize: 16,
+  },
+  focusItem: {
+    backgroundColor: theme.colors['bg-base'],
+    borderColor: theme.colors['border-default'],
+    borderRadius: radii.md,
+    borderWidth: 1,
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[2],
+  },
+  focusItems: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing[3],
+  },
+  metadataText: {
+    color: theme.colors['text-tertiary'],
+    fontFamily: fontFamiliesNative.mono,
+    fontSize: fontSizes.xs,
+  },
+  reasoningText: {
+    color: theme.colors.foreground,
+    fontFamily: fontFamiliesNative.mono,
+    fontSize: fontSizes.xs,
+    opacity: 0.8,
+  },
+  referencedNoteChip: {
+    alignItems: 'center',
+    backgroundColor: theme.colors['bg-base'],
+    borderColor: theme.colors['border-default'],
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: spacing[1],
+    paddingHorizontal: spacing[2],
+    paddingVertical: spacing[1],
+  },
+  referencedNoteText: {
+    color: theme.colors['text-secondary'],
+    fontSize: fontSizes.xs,
+  },
+  referencedNotes: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing[2],
+    justifyContent: 'flex-end',
+    maxWidth: MESSAGE_BUBBLE_MAX_WIDTH,
+  },
+  row: {
+    paddingVertical: spacing[2],
+    width: '100%',
+  },
+  rowAssistant: {
+    alignItems: 'flex-start',
+  },
+  rowUser: {
+    alignItems: 'flex-end',
+  },
+  toolCall: {
+    backgroundColor: theme.colors['bg-base'],
+    borderColor: theme.colors['border-subtle'],
+    borderRadius: radii.md,
+    borderWidth: 1,
+    gap: spacing[1],
+    padding: spacing[3],
+  },
+  toolCallArgs: {
+    color: theme.colors['text-secondary'],
+    fontFamily: fontFamiliesNative.mono,
+    fontSize: fontSizes.xs,
+  },
+  toolCallName: {
+    color: theme.colors.foreground,
+    fontSize: fontSizes.xs,
+    fontWeight: '600',
+  },
+  toolCalls: {
+    gap: spacing[1],
+  },
+  messageSurface: {
+    borderColor: theme.colors['border-subtle'],
+    borderRadius: radii.md,
+    borderWidth: 1,
+    maxWidth: MESSAGE_BUBBLE_MAX_WIDTH,
+    paddingHorizontal: spacing[2],
+    paddingVertical: 0,
+  },
+  transcriptBlock: {
+    gap: spacing[3],
+    maxWidth: MESSAGE_BUBBLE_MAX_WIDTH,
+  },
+  transcriptSurface: {
+    backgroundColor: theme.colors['bg-base'],
+    borderColor: theme.colors['border-default'],
+    borderRadius: radii.md,
+    borderWidth: 1,
+    gap: spacing[1],
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[3],
+    width: '100%',
+  },
+  userMessageText: {
+    color: theme.colors['accent-foreground'],
+    fontSize: fontSizes.md,
+    lineHeight: fontSizes.md * 1.5,
+  },
+  assistantSurface: {
+    backgroundColor: theme.colors['bg-base'],
+    borderBottomLeftRadius: 0,
+  },
+  userSurface: {
+    backgroundColor: theme.colors['emphasis-highest'],
+    borderBottomRightRadius: 0,
+  },
+}));

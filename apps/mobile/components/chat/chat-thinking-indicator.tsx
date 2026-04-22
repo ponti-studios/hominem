@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import Animated, {
   useAnimatedReaction,
   useAnimatedStyle,
@@ -9,8 +9,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { Text } from '~/components/theme';
-import { colors, durations, fontSizes, radii, spacing } from '~/components/theme/tokens';
+import { Text, makeStyles } from '~/components/theme';
+import { durations, fontSizes, radii, spacing } from '~/components/theme/tokens';
 
 const DOT_UP_DURATION = durations.enter;
 const DOT_DOWN_DURATION = durations.exit;
@@ -48,6 +48,7 @@ function useBounceDot(delayMs: number) {
 }
 
 export function ChatThinkingIndicator() {
+  const styles = useThinkingStyles();
   const dot1Style = useBounceDot(0);
   const dot2Style = useBounceDot(STAGGER_OFFSET);
   const dot3Style = useBounceDot(STAGGER_OFFSET * 2);
@@ -68,13 +69,13 @@ export function ChatThinkingIndicator() {
   );
 }
 
-const styles = StyleSheet.create({
+const useThinkingStyles = makeStyles((theme) => ({
   content: {
     gap: spacing[2],
     width: '100%',
   },
   dot: {
-    backgroundColor: colors.foreground,
+    backgroundColor: theme.colors.foreground,
     borderRadius: radii.md,
     height: 8,
     opacity: 0.65,
@@ -93,4 +94,4 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.xs,
     marginLeft: spacing[1],
   },
-});
+}));

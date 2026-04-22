@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import Animated, {
   useAnimatedReaction,
   useAnimatedStyle,
@@ -8,7 +8,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { colors, durations, radii, spacing } from '~/components/theme/tokens';
+import { makeStyles } from '~/components/theme';
+import { durations, radii, spacing } from '~/components/theme/tokens';
 
 const SHIMMER_DURATION = durations.standard * 5;
 
@@ -39,6 +40,7 @@ interface ChatShimmerMessageProps {
 }
 
 export function ChatShimmerMessage({ variant = 'assistant' }: ChatShimmerMessageProps) {
+  const styles = useShimmerStyles();
   const animatedStyle = usePulse();
 
   if (variant === 'user') {
@@ -59,9 +61,9 @@ export function ChatShimmerMessage({ variant = 'assistant' }: ChatShimmerMessage
   );
 }
 
-const styles = StyleSheet.create({
+const useShimmerStyles = makeStyles((theme) => ({
   line: {
-    backgroundColor: colors['bg-surface'],
+    backgroundColor: theme.colors['bg-surface'],
     borderRadius: radii.md,
     height: 16,
   },
@@ -81,7 +83,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   userBubble: {
-    backgroundColor: colors['bg-surface'],
+    backgroundColor: theme.colors['bg-surface'],
     borderRadius: radii.md,
     height: 56,
     maxWidth: 420,
@@ -90,4 +92,4 @@ const styles = StyleSheet.create({
   userRow: {
     alignItems: 'flex-end',
   },
-});
+}));

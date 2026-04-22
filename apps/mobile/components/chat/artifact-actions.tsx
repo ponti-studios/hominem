@@ -1,8 +1,9 @@
 import { ENABLED_ARTIFACT_TYPES } from '@hominem/chat/types';
 import type { ArtifactType, ThoughtLifecycleState } from '@hominem/rpc/types';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
-import { colors, spacing } from '~/components/theme/tokens';
+import { makeStyles } from '~/components/theme';
+import { spacing } from '~/components/theme/tokens';
 
 import { Button } from '../ui/Button';
 
@@ -25,6 +26,7 @@ const ENABLED: ArtifactType[] = ENABLED_ARTIFACT_TYPES.filter(
 const BLOCKING: ThoughtLifecycleState[] = ['classifying', 'reviewing_changes', 'persisting'];
 
 export function ArtifactActions({ state, messageCount, onTransform }: ArtifactActionsProps) {
+  const styles = useArtifactStyles();
   if (messageCount === 0) return null;
 
   const isComposing = state === 'composing';
@@ -49,9 +51,9 @@ export function ArtifactActions({ state, messageCount, onTransform }: ArtifactAc
   );
 }
 
-const styles = StyleSheet.create({
+const useArtifactStyles = makeStyles((theme) => ({
   button: {
-    backgroundColor: colors['bg-base'],
+    backgroundColor: theme.colors['bg-base'],
     flex: 1,
   },
   buttonDisabled: {
@@ -61,12 +63,12 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   row: {
-    backgroundColor: colors.background,
-    borderTopColor: colors['border-default'],
+    backgroundColor: theme.colors.background,
+    borderTopColor: theme.colors['border-default'],
     borderTopWidth: 1,
     flexDirection: 'row',
     gap: spacing[2],
     paddingHorizontal: spacing[4],
     paddingVertical: spacing[3],
   },
-});
+}));

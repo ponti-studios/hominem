@@ -1,9 +1,9 @@
 import type { ArtifactType } from '@hominem/rpc/types';
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Text } from '~/components/theme';
-import { colors, radii, spacing } from '~/components/theme/tokens';
+import { Text, makeStyles } from '~/components/theme';
+import { radii, spacing } from '~/components/theme/tokens';
 
 import { Button } from '../ui/Button';
 import { buildConversationActionsModel } from './conversation-actions.model';
@@ -39,6 +39,7 @@ export function ConversationActionsSheet({
   onTransform,
   onArchive,
 }: ConversationActionsSheetProps) {
+  const styles = useConvActionsStyles();
   const insets = useSafeAreaInsets();
   const sections = buildConversationActionsModel({
     canTransform,
@@ -108,14 +109,14 @@ export function ConversationActionsSheet({
   );
 }
 
-const styles = StyleSheet.create({
+const useConvActionsStyles = makeStyles((theme) => ({
   actionButton: {
     alignSelf: 'stretch',
     width: '100%',
   },
   cancelButton: {
     alignSelf: 'stretch',
-    borderColor: colors['border-default'],
+    borderColor: theme.colors['border-default'],
     width: '100%',
   },
   group: {
@@ -129,7 +130,7 @@ const styles = StyleSheet.create({
   },
   handle: {
     alignSelf: 'center',
-    backgroundColor: colors['border-default'],
+    backgroundColor: theme.colors['border-default'],
     borderRadius: radii.sm,
     height: 4,
     marginBottom: spacing[1],
@@ -139,13 +140,13 @@ const styles = StyleSheet.create({
     gap: spacing[1],
   },
   overlay: {
-    backgroundColor: colors['overlay-modal-high'],
+    backgroundColor: theme.colors['overlay-modal-high'],
     flex: 1,
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: colors.background,
-    borderColor: colors['border-default'],
+    backgroundColor: theme.colors.background,
+    borderColor: theme.colors['border-default'],
     borderTopLeftRadius: radii.md,
     borderTopRightRadius: radii.md,
     borderTopWidth: 1,
@@ -159,4 +160,4 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
   },
-});
+}));

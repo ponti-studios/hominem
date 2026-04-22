@@ -2,9 +2,9 @@ import { SymbolView, type SFSymbol } from 'expo-symbols';
 import { memo, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Text } from '~/components/theme';
-
-import { colors, spacing } from '../theme/tokens';
+import { Text, makeStyles } from '~/components/theme';
+import { useThemeColors } from '~/components/theme/theme';
+import { spacing } from '../theme/tokens';
 
 const ROW_MIN_HEIGHT = 50;
 
@@ -29,7 +29,9 @@ const ListRow = memo(function ListRow({
   title,
   trailing,
 }: ListRowProps) {
-  const titleColor = destructive ? colors.destructive : colors.foreground;
+  const styles = useListRowStyles();
+  const themeColors = useThemeColors();
+  const titleColor = destructive ? themeColors.destructive : themeColors.foreground;
 
   const content = (
     <View style={[styles.row, disabled ? styles.disabled : null]}>
@@ -50,7 +52,7 @@ const ListRow = memo(function ListRow({
         <SymbolView
           name={'chevron.right' as SFSymbol}
           size={14}
-          tintColor={colors['text-tertiary']}
+          tintColor={themeColors['text-tertiary']}
           style={styles.chevron}
         />
       ) : null}
@@ -74,12 +76,12 @@ const ListRow = memo(function ListRow({
   return <View style={styles.pressable}>{content}</View>;
 });
 
-const styles = StyleSheet.create({
+const useListRowStyles = makeStyles((theme) => ({
   pressable: {
     minHeight: ROW_MIN_HEIGHT,
   },
   pressed: {
-    backgroundColor: colors['bg-elevated'],
+    backgroundColor: theme.colors['bg-elevated'],
   },
   row: {
     alignItems: 'center',
@@ -110,6 +112,6 @@ const styles = StyleSheet.create({
   chevron: {
     opacity: 0.4,
   },
-});
+}));
 
 export { ListRow };

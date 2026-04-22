@@ -4,12 +4,13 @@ import { radii, shadowsNative, spacing } from '@hominem/ui/tokens';
 import { Image } from 'expo-image';
 import { type SFSymbol } from 'expo-symbols';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActionSheetIOS, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { ActionSheetIOS, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { useAnimatedKeyboard } from 'react-native-keyboard-controller';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { theme } from '~/components/theme';
+import { makeStyles } from '~/components/theme';
+import { useThemeColors } from '~/components/theme/theme';
 import { createEnter, createExit, createLayoutTransition } from '~/components/theme/animations';
 import AppIcon from '~/components/ui/icon';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
@@ -46,6 +47,8 @@ function SendButton({
   disabled: boolean;
   accessibilityLabel: string;
 }) {
+  const themeColors = useThemeColors();
+  const styles = useComposerStyles();
   return (
     <Pressable
       onPress={onPress}
@@ -61,7 +64,7 @@ function SendButton({
       <AppIcon
         name="arrow.up"
         size={SEND_ICON_SIZE}
-        color={disabled ? theme.colors['text-tertiary'] : theme.colors['bg-base']}
+        color={disabled ? themeColors['text-tertiary'] : themeColors['bg-base']}
       />
     </Pressable>
   );
@@ -78,6 +81,8 @@ function SecondaryButton({
   accessibilityLabel: string;
   disabled?: boolean;
 }) {
+  const themeColors = useThemeColors();
+  const styles = useComposerStyles();
   return (
     <Pressable
       onPress={onPress}
@@ -91,7 +96,7 @@ function SecondaryButton({
         pressed ? styles.secondaryBtnPressed : null,
       ]}
     >
-      <AppIcon name={icon} size={SECONDARY_ICON_SIZE} color={theme.colors['text-secondary']} />
+      <AppIcon name={icon} size={SECONDARY_ICON_SIZE} color={themeColors['text-secondary']} />
     </Pressable>
   );
 }
@@ -109,6 +114,9 @@ function ComposerAttachments({
   progressByAssetId: Record<string, number>;
   onRemoveAttachment: (id: string) => void;
 }) {
+  const themeColors = useThemeColors();
+  const styles = useComposerStyles();
+
   if (attachments.length === 0 && errors.length === 0 && !isUploading) {
     return null;
   }
@@ -141,7 +149,7 @@ function ComposerAttachments({
                   />
                 )}
                 <View style={styles.thumbBadge} pointerEvents="none">
-                  <AppIcon name="xmark" size={spacing[2] * 2} color={theme.colors.white} />
+                  <AppIcon name="xmark" size={spacing[2] * 2} color={themeColors.white} />
                 </View>
                 {isUploading && (
                   <>
@@ -169,6 +177,9 @@ function ComposerSelectionSummary({
   selectedNotes: ComposerSelectedNote[];
   onRemoveNote: (noteId: string) => void;
 }) {
+  const themeColors = useThemeColors();
+  const styles = useComposerStyles();
+
   if (selectedNotes.length === 0) {
     return null;
   }
@@ -177,7 +188,7 @@ function ComposerSelectionSummary({
     <View style={styles.selectionRow}>
       {selectedNotes.map((note) => (
         <View key={note.id} style={styles.selectionChip}>
-          <AppIcon name="bubble.left" size={spacing[3]} color={theme.colors['text-secondary']} />
+          <AppIcon name="bubble.left" size={spacing[3]} color={themeColors['text-secondary']} />
           <Animated.Text style={styles.selectionChipText}>
             {note.title || 'Untitled note'}
           </Animated.Text>
@@ -191,7 +202,7 @@ function ComposerSelectionSummary({
               pressed ? styles.selectionChipButtonPressed : null,
             ]}
           >
-            <AppIcon name="xmark" size={spacing[2] + 2} color={theme.colors['text-secondary']} />
+            <AppIcon name="xmark" size={spacing[2] + 2} color={themeColors['text-secondary']} />
           </Pressable>
         </View>
       ))}
@@ -206,6 +217,8 @@ function MentionSuggestions({
   suggestions: NoteSearchResult[];
   onSelect: (note: NoteSearchResult) => void;
 }) {
+  const styles = useComposerStyles();
+
   if (suggestions.length === 0) {
     return null;
   }
@@ -244,6 +257,8 @@ export const Composer = () => {
   const keyboard = useAnimatedKeyboard();
   const prefersReducedMotion = useReducedMotion();
   const inputRef = useRef<TextInput>(null);
+  const themeColors = useThemeColors();
+  const styles = useComposerStyles();
 
   const {
     target,
@@ -406,9 +421,9 @@ export const Composer = () => {
               onChangeText={setMessage}
               onContentSizeChange={(e) => onContentSizeChange(e.nativeEvent.contentSize.height)}
               placeholder={presentation.placeholder}
-              placeholderTextColor={theme.colors['text-tertiary']}
-              cursorColor={theme.colors.accent}
-              selectionColor={theme.colors.accent}
+              placeholderTextColor={themeColors['text-tertiary']}
+              cursorColor={themeColors.accent}
+              selectionColor={themeColors.accent}
               style={styles.input}
               testID="mobile-composer-input"
             />
@@ -472,7 +487,7 @@ export const Composer = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const useComposerStyles = makeStyles((theme) => ({
   shell: {
     left: 0,
     right: 0,
@@ -480,7 +495,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     alignItems: 'center',
   },
-
   card: {
     width: '100%',
     maxWidth: MAX_WIDTH,
@@ -494,7 +508,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     ...shadowsNative.low,
   },
-
   inputSurface: {
     paddingHorizontal: spacing[1],
     paddingVertical: 0,
@@ -527,7 +540,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing[2],
   },
-
   sendBtn: {
     width: SEND_BTN_SIZE,
     height: SEND_BTN_SIZE,
@@ -603,7 +615,6 @@ const styles = StyleSheet.create({
     height: spacing[1],
     backgroundColor: theme.colors.accent,
   },
-
   selectionRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -665,4 +676,4 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     color: theme.colors.destructive,
   },
-});
+}));
