@@ -1,13 +1,12 @@
+// oxlint-disable-next-line no-restricted-imports -- BlurSurface is the approved design-system wrapper for expo-blur
 import { BlurView } from 'expo-blur';
-import { StyleSheet, View, type ViewProps } from 'react-native';
-
-import { useThemeColors } from '~/components/theme/theme';
+import { StyleSheet, type ViewProps } from 'react-native';
 
 export type BlurSurfaceTint =
-  | 'chrome'       // keyboard toolbars, navigation bars
-  | 'regular'      // cards, sheets
-  | 'thin'         // overlays, popovers
-  | 'thick';       // prominent surfaces
+  | 'chrome'    // keyboard toolbars, navigation bars
+  | 'regular'   // cards, sheets
+  | 'thin'      // overlays, popovers
+  | 'thick';    // prominent surfaces
 
 const TINT_MAP = {
   chrome: 'systemChromeMaterial',
@@ -28,13 +27,11 @@ export function BlurSurface({
   children,
   ...props
 }: BlurSurfaceProps) {
-  const themeColors = useThemeColors();
-
   return (
     <BlurView
       tint={TINT_MAP[tint]}
       intensity={intensity}
-      style={[styles.fill, style]}
+      style={[styles.base, style]}
       {...props}
     >
       {children}
@@ -42,23 +39,8 @@ export function BlurSurface({
   );
 }
 
-// Android fallback: expo-blur renders a semi-transparent view on Android,
-// but we wrap it so callers don't need platform checks.
-export function BlurSurfaceAndroidFallback({
-  style,
-  children,
-  ...props
-}: ViewProps) {
-  const themeColors = useThemeColors();
-  return (
-    <View style={[styles.fill, { backgroundColor: themeColors['bg-elevated'] }, style]} {...props}>
-      {children}
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  fill: {
+  base: {
     overflow: 'hidden',
   },
 });

@@ -62,6 +62,9 @@ jobs:
       - name: install-dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: run-validate-mobile
-        run: just validate-mobile
+      - name: lint
+        run: just mobile-lint
+
+      - name: run-tests
+        run: just mobile-test
 

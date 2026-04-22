@@ -62,5 +62,8 @@ jobs:
       - name: install-dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: run-validate-web
-        run: just validate-web
+      - name: lint
+        run: just lint
+
+      - name: typecheck
+        run: just typecheck

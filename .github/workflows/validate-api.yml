@@ -81,7 +81,7 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:4433/hominem-test
         run: just db-setup
 
-      - name: run-validate-api
+      - name: run-tests
         env:
           DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:4433/hominem-test
-        run: just validate-api
+        run: just test-api
