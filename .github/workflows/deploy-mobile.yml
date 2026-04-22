@@ -1,13 +1,10 @@
 name: deploy-mobile
 
 on:
-  push:
+  workflow_run:
+    workflows: [validate-mobile]
+    types: [completed]
     branches: [main]
-    paths:
-      - 'apps/mobile/**'
-      - 'packages/**'
-      - 'pnpm-lock.yaml'
-      - '.github/workflows/deploy-mobile.yml'
   workflow_dispatch:
 
 concurrency:
@@ -16,11 +13,14 @@ concurrency:
 
 jobs:
   build-production:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
     steps:
       - name: checkout-repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: setup-node-js
         uses: actions/setup-node@v4
