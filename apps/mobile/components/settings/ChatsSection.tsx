@@ -1,6 +1,5 @@
 import React from 'react';
 
-import { styles } from '../theme/styles';
 import { SectionCard } from './SectionCard';
 import { SectionLabel } from './SectionLabel';
 import { SettingsRow } from './SettingsRow';

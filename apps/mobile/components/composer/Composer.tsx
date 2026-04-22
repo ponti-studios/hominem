@@ -504,8 +504,8 @@ const styles = StyleSheet.create({
   },
   input: {
     color: theme.colors.foreground,
-    fontSize: theme.textVariants.callout.fontSize,
-    lineHeight: theme.textVariants.callout.lineHeight,
+    fontSize: 16,
+    lineHeight: 22,
     letterSpacing: -0.1,
     paddingHorizontal: 0,
     paddingVertical: 0,
@@ -632,8 +632,8 @@ const styles = StyleSheet.create({
   },
   selectionChipText: {
     color: theme.colors['text-secondary'],
-    fontSize: theme.textVariants.caption1.fontSize,
-    lineHeight: theme.textVariants.caption1.lineHeight,
+    fontSize: 12,
+    lineHeight: 16,
   },
   suggestions: {
     backgroundColor: theme.colors['bg-surface'],
@@ -652,17 +652,17 @@ const styles = StyleSheet.create({
   },
   suggestionTitle: {
     color: theme.colors.foreground,
-    fontSize: theme.textVariants.caption1.fontSize,
-    lineHeight: theme.textVariants.caption1.lineHeight,
+    fontSize: 12,
+    lineHeight: 16,
   },
   suggestionExcerpt: {
     color: theme.colors['text-secondary'],
-    fontSize: theme.textVariants.caption1.fontSize,
-    lineHeight: theme.textVariants.caption1.lineHeight,
+    fontSize: 12,
+    lineHeight: 16,
   },
   errorText: {
-    fontSize: theme.textVariants.caption1.fontSize,
-    lineHeight: theme.textVariants.caption1.lineHeight,
+    fontSize: 12,
+    lineHeight: 16,
     color: theme.colors.destructive,
   },
 });
