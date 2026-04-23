@@ -9,7 +9,7 @@ import {
 
 import { makeStyles } from '~/components/theme';
 import { useThemeColors } from '~/components/theme/theme';
-import { fontFamiliesNative, fontSizes, radii, spacing } from '~/components/theme/tokens';
+import { fontFamiliesNative, fontSizes, radii, spacing } from '~/components/theme';
 
 import { Field } from './Field';
 import type { TextAreaBaseProps } from './text-area.types';

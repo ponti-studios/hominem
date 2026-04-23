@@ -4,7 +4,7 @@ import type { QueryClient } from '@tanstack/react-query';
 
 import { chatKeys } from '~/services/notes/query-keys';
 
-import type { ChatWithActivity } from './session-state';
+import type { ChatWithActivity } from './session-types';
 
 export const DEFAULT_CHAT_TITLE = 'New conversation';
 

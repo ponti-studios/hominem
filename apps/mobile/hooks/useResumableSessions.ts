@@ -1,8 +1,8 @@
 import { useApiClient } from '@hominem/rpc/react';
 import { useQuery } from '@tanstack/react-query';
 
-import type { ChatWithActivity } from '~/services/chat/session-state';
-import { getInboxChatsWithActivity } from '~/services/chat/session-state';
+import { getInboxChatsWithActivity } from '~/services/chat/session-lists';
+import type { ChatWithActivity } from '~/services/chat/session-types';
 import { chatKeys } from '~/services/notes/query-keys';
 
 export const useResumableSessions = () => {

@@ -9,7 +9,7 @@ import {
   resolveChatScreenTitle,
   updateChatTitleCaches,
 } from '~/services/chat/chat-title';
-import type { ChatWithActivity } from '~/services/chat/session-state';
+import type { ChatWithActivity } from '~/services/chat/session-types';
 import { chatKeys } from '~/services/notes/query-keys';
 
 describe('chat title helpers', () => {

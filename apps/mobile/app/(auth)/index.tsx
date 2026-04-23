@@ -2,13 +2,13 @@ import { AUTH_COPY, CHAT_AUTH_CONFIG } from '@hominem/auth/shared/ux-contract';
 import type { RelativePathString } from 'expo-router';
 import { Redirect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 
-import { getAuthScreenBaseStyles } from '~/components/auth/auth-screen-styles';
 import { AuthLayout } from '~/components/AuthLayout';
 import { FeatureErrorBoundary } from '~/components/error-boundary/FeatureErrorBoundary';
-import { makeStyles, Text } from '~/components/theme';
+import { makeStyles } from '~/components/theme';
 import { Button } from '~/components/ui/Button';
+import { FieldError, FieldStack, Form } from '~/components/ui/Form';
 import { TextField } from '~/components/ui/TextField';
 import { E2E_TESTING, MOBILE_PASSKEY_ENABLED } from '~/constants';
 import { useAuth } from '~/services/auth/auth-provider';
@@ -17,7 +17,7 @@ import { useMobilePasskeyAuth } from '~/services/auth/hooks/use-mobile-passkey-a
 import { isValidEmail, normalizeEmail } from '~/services/auth/validation';
 import { posthog } from '~/services/posthog';
 
-export function AuthScreen() {
+function AuthScreen() {
   const styles = useStyles();
   const { authStatus, isSignedIn, completePasskeySignIn, requestEmailOtp } = useAuth();
   const router = useRouter();
@@ -95,8 +95,8 @@ export function AuthScreen() {
       helper={AUTH_COPY.emailEntry.helper}
       isProbing={isProbing}
     >
-      <View style={styles.form}>
-        <View style={styles.fieldStack}>
+      <Form>
+        <FieldStack>
           <TextField
             testID="auth-email-input"
             id="auth-email"
@@ -120,11 +120,9 @@ export function AuthScreen() {
             }}
           />
           {displayError ? (
-            <Text testID="auth-email-message" style={styles.errorText}>
-              {displayError}
-            </Text>
+            <FieldError testID="auth-email-message">{displayError}</FieldError>
           ) : null}
-        </View>
+        </FieldStack>
 
         <Button
           onPress={handleSendCode}
@@ -132,7 +130,7 @@ export function AuthScreen() {
           isLoading={isSubmitting}
           testID="auth-send-otp"
           title={AUTH_COPY.emailEntry.submitButton}
-          style={styles.primaryButton}
+          style={{ width: '100%' }}
         />
 
         {canUsePasskeys ? (
@@ -191,14 +189,13 @@ export function AuthScreen() {
             testID="auth-e2e-passkey-cancel"
           />
         ) : null}
-      </View>
+      </Form>
     </AuthLayout>
   );
 }
 
 const useStyles = makeStyles((t) =>
   StyleSheet.create({
-    ...getAuthScreenBaseStyles(t),
     passkeyButton: {
       alignSelf: 'center',
     },

@@ -342,36 +342,36 @@ export async function stopRecording() {
   return recording.stopRecording();
 }
 
-export function getVoiceResponseSnapshot() {
+function getVoiceResponseSnapshot() {
   return voiceResponsePlayback.getSnapshot();
 }
 
-export function subscribeVoiceResponse(listener: Listener<PlaybackSnapshot>) {
+function subscribeVoiceResponse(listener: Listener<PlaybackSnapshot>) {
   return voiceResponsePlayback.subscribe(listener);
 }
 
-export async function prepareVoiceResponse(audioUri: string) {
+async function prepareVoiceResponse(audioUri: string) {
   await voiceResponsePlayback.prepare(audioUri);
 }
 
-export async function playVoiceResponse() {
+async function playVoiceResponse() {
   await ttsPlayback.stop();
   await voiceResponsePlayback.play();
 }
 
-export function pauseVoiceResponse() {
+function pauseVoiceResponse() {
   voiceResponsePlayback.pause();
 }
 
-export async function resumeVoiceResponse() {
+async function resumeVoiceResponse() {
   await voiceResponsePlayback.play();
 }
 
-export async function seekVoiceResponse(positionMs: number) {
+async function seekVoiceResponse(positionMs: number) {
   await voiceResponsePlayback.seek(positionMs);
 }
 
-export async function stopVoiceResponse() {
+async function stopVoiceResponse() {
   await voiceResponsePlayback.stop();
 }
 

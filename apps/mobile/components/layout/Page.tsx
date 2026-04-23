@@ -3,12 +3,11 @@ import {
   View,
   type ScrollViewProps,
   type StyleProp,
-  type ViewProps,
   type ViewStyle,
 } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 
-import { spacing } from '~/components/theme/tokens';
+import { spacing } from '~/components/theme';
 
 import type { PageMaxWidth } from './page.types';
 
@@ -28,13 +27,6 @@ interface ScreenProps extends Omit<ScrollViewProps, 'contentContainerStyle' | 's
   scroll?: boolean | undefined;
   style?: StyleProp<ViewStyle>;
 }
-
-interface ContainerProps extends ViewProps {
-  maxWidth?: PageMaxWidth | undefined;
-  padded?: boolean | undefined;
-}
-
-type PageProps = ScreenProps;
 
 function getContentStyle(maxWidth: PageMaxWidth, padded: boolean): ViewStyle {
   return {
@@ -73,23 +65,11 @@ function Screen({
   );
 }
 
-function Page(props: ScreenProps) {
-  return <Screen {...props} />;
-}
-
-function Container({ children, maxWidth = 'lg', padded = true, style, ...props }: ContainerProps) {
-  return (
-    <View style={[getContentStyle(maxWidth, padded), style]} {...props}>
-      {children}
-    </View>
-  );
-}
-
 const styles = {
   safeArea: {
     flex: 1,
   } satisfies ViewStyle,
 };
 
-export { Container, Page, Screen };
-export type { ContainerProps, PageMaxWidth, PageProps, ScreenProps };
+export { Screen };
+export type { PageMaxWidth, ScreenProps };

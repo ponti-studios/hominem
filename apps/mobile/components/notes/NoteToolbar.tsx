@@ -3,10 +3,9 @@ import { InputAccessoryView, Keyboard, Platform, Pressable, StyleSheet, View } f
 
 import { makeStyles } from '~/components/theme';
 import { useThemeColors } from '~/components/theme/theme';
-import { spacing } from '~/components/theme/tokens';
+import { spacing } from '~/components/theme';
 import { BlurSurface } from '~/components/ui/BlurSurface';
 import AppIcon from '~/components/ui/icon';
-
 import type { FormatAction } from '~/hooks/use-note-toolbar';
 
 export const NOTE_TOOLBAR_ID = 'note-editor-toolbar';
@@ -51,13 +50,7 @@ function ToolbarDivider() {
   return <View style={styles.divider} />;
 }
 
-function ToolbarButtons({
-  onAction,
-  onUndo,
-  onRedo,
-  canUndo,
-  canRedo,
-}: NoteToolbarProps) {
+function ToolbarButtons({ onAction, onUndo, onRedo, canUndo, canRedo }: NoteToolbarProps) {
   const styles = useToolbarStyles();
   return (
     <>
@@ -69,36 +62,16 @@ function ToolbarButtons({
           label="Strikethrough"
           onPress={() => onAction('strikethrough')}
         />
-        <ToolbarButton
-          icon="curlybraces"
-          label="Inline code"
-          onPress={() => onAction('code')}
-        />
+        <ToolbarButton icon="curlybraces" label="Inline code" onPress={() => onAction('code')} />
       </View>
 
       <ToolbarDivider />
 
       <View style={styles.group}>
-        <ToolbarButton
-          icon="checklist"
-          label="Checklist"
-          onPress={() => onAction('checklist')}
-        />
-        <ToolbarButton
-          icon="list.bullet"
-          label="Bullet list"
-          onPress={() => onAction('bullet')}
-        />
-        <ToolbarButton
-          icon="increase.indent"
-          label="Indent"
-          onPress={() => onAction('indent')}
-        />
-        <ToolbarButton
-          icon="decrease.indent"
-          label="Outdent"
-          onPress={() => onAction('outdent')}
-        />
+        <ToolbarButton icon="checklist" label="Checklist" onPress={() => onAction('checklist')} />
+        <ToolbarButton icon="list.bullet" label="Bullet list" onPress={() => onAction('bullet')} />
+        <ToolbarButton icon="increase.indent" label="Indent" onPress={() => onAction('indent')} />
+        <ToolbarButton icon="decrease.indent" label="Outdent" onPress={() => onAction('outdent')} />
         <ToolbarButton
           icon="textformat.size.larger"
           label="Heading"

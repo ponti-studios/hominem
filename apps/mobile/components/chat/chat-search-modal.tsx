@@ -4,7 +4,7 @@ import { Modal, Pressable, View, type TextInput } from 'react-native';
 
 import { Text, makeStyles } from '~/components/theme';
 import { useThemeColors } from '~/components/theme/theme';
-import { fontFamiliesNative, fontSizes, radii, spacing } from '~/components/theme/tokens';
+import { fontFamiliesNative, fontSizes, radii, spacing } from '~/components/theme';
 
 import { Button } from '../ui/Button';
 import { TextField } from '../ui/TextField';

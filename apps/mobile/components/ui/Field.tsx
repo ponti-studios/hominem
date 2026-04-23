@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Text, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
 
 import { makeStyles } from '~/components/theme';
-import { fontFamiliesNative, fontSizes, fontWeights, spacing } from '~/components/theme/tokens';
+import { fontFamiliesNative, fontSizes, fontWeights, spacing } from '~/components/theme';
 
 import type { FieldBaseProps } from './field.types';
 

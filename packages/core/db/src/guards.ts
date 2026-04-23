@@ -15,35 +15,70 @@ export interface ChatMessageToolCallRecord {
   args: Record<string, string>;
 }
 
+type UnknownRecord = Record<string, unknown>;
+type FieldValidator = readonly [key: string, isValid: (value: unknown) => boolean];
+
+function isRecord(value: unknown): value is UnknownRecord {
+  return typeof value === 'object' && value !== null;
+}
+
+function isOptionalString(value: unknown): boolean {
+  return value === undefined || typeof value === 'string';
+}
+
+function isOptionalNumber(value: unknown): boolean {
+  return value === undefined || typeof value === 'number';
+}
+
+function isOptionalRecord(value: unknown): boolean {
+  return value === undefined || isRecord(value);
+}
+
+function isString(value: unknown): boolean {
+  return typeof value === 'string';
+}
+
+function isChatMessageFileType(value: unknown): boolean {
+  return value === 'image' || value === 'file';
+}
+
+function isToolCallType(value: unknown): boolean {
+  return value === 'tool-call';
+}
+
+function hasStringRecord(value: unknown): value is Record<string, string> {
+  return isRecord(value) && Object.values(value).every((item) => typeof item === 'string');
+}
+
+function hasValidFields(record: UnknownRecord, fields: readonly FieldValidator[]): boolean {
+  return fields.every(([key, isValid]) => isValid(record[key]));
+}
+
+const CHAT_MESSAGE_FILE_FIELDS = [
+  ['type', isChatMessageFileType],
+  ['fileId', isOptionalString],
+  ['url', isOptionalString],
+  ['filename', isOptionalString],
+  ['mimeType', isOptionalString],
+  ['size', isOptionalNumber],
+  ['metadata', isOptionalRecord],
+] as const satisfies readonly FieldValidator[];
+
+const CHAT_MESSAGE_TOOL_CALL_FIELDS = [
+  ['toolName', isString],
+  ['type', isToolCallType],
+  ['toolCallId', isString],
+  ['args', hasStringRecord],
+] as const satisfies readonly FieldValidator[];
+
 function isChatMessageFileRecord(value: unknown): value is ChatMessageFileRecord {
-  if (typeof value !== 'object' || value === null) return false;
-  const record = value as Record<string, unknown>;
-  if (record.type !== 'image' && record.type !== 'file') return false;
-  if (record.fileId !== undefined && typeof record.fileId !== 'string') return false;
-  if (record.url !== undefined && typeof record.url !== 'string') return false;
-  if (record.filename !== undefined && typeof record.filename !== 'string') return false;
-  if (record.mimeType !== undefined && typeof record.mimeType !== 'string') return false;
-  if (record.size !== undefined && typeof record.size !== 'number') return false;
-  if (
-    record.metadata !== undefined &&
-    (typeof record.metadata !== 'object' || record.metadata === null)
-  )
-    return false;
-  return true;
+  if (!isRecord(value)) return false;
+  return hasValidFields(value, CHAT_MESSAGE_FILE_FIELDS);
 }
 
 function isChatMessageToolCallRecord(value: unknown): value is ChatMessageToolCallRecord {
-  if (typeof value !== 'object' || value === null) return false;
-  const record = value as Record<string, unknown>;
-  if (typeof record.toolName !== 'string') return false;
-  if (record.type !== 'tool-call') return false;
-  if (typeof record.toolCallId !== 'string') return false;
-  if (typeof record.args !== 'object' || record.args === null) return false;
-  const args = record.args as Record<string, unknown>;
-  for (const key of Object.keys(args)) {
-    if (typeof args[key] !== 'string') return false;
-  }
-  return true;
+  if (!isRecord(value)) return false;
+  return hasValidFields(value, CHAT_MESSAGE_TOOL_CALL_FIELDS);
 }
 
 export function parseChatMessageFiles(value: unknown): ChatMessageFileRecord[] | null {

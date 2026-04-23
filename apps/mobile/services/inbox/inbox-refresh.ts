@@ -3,7 +3,7 @@ import type { QueryClient } from '@tanstack/react-query';
 
 import { chatKeys, noteKeys } from '~/services/notes/query-keys';
 
-import type { ChatWithActivity } from '../chat/session-state';
+import type { ChatWithActivity } from '../chat/session-types';
 
 const INBOX_REFRESH_QUERY_KEYS = [noteKeys.all, chatKeys.resumableSessions] as const;
 

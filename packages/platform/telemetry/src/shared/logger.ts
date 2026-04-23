@@ -53,7 +53,9 @@ const pinoLogger = {
     console.info(formatMessage('info', message, data));
   },
   error: (error: Error | object | undefined, message: string) => {
-    console.error(formatMessage('error', message, error ? { error: redactObject(error as object) } : undefined));
+    console.error(
+      formatMessage('error', message, error ? { error: redactObject(error as object) } : undefined),
+    );
   },
   warn: (data: object | undefined, message: string) => {
     console.warn(formatMessage('warn', message, data));

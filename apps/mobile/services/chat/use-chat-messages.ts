@@ -13,7 +13,8 @@ import {
 } from '../inbox/inbox-refresh';
 import { chatKeys } from '../notes/query-keys';
 import { createOptimisticMessage, type MessageOutput } from './chatMessages';
-import { getChatActivityAt, selectChatSession, type ChatWithActivity } from './session-state';
+import { getChatActivityAt, selectChatSession } from './session-activity';
+import type { ChatWithActivity } from './session-types';
 
 type SendChatMessageOutput = {
   assistantText: string;

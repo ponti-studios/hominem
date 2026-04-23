@@ -8,7 +8,7 @@ import { Platform } from 'react-native';
 
 import { useSendMessage } from '~/services/chat';
 import { updateChatTitleCaches } from '~/services/chat/chat-title';
-import type { ChatWithActivity } from '~/services/chat/session-state';
+import type { ChatWithActivity } from '~/services/chat/session-types';
 import {
   createChatInboxRefreshSnapshot,
   invalidateInboxQueries,

@@ -47,6 +47,13 @@ export default function FeedScreen() {
     router.push('/(protected)/(tabs)/settings' as RelativePathString);
   }, [router]);
 
+  const handleSelectStarter = useCallback(
+    (prompt: string) => {
+      setMessage(prompt);
+    },
+    [setMessage],
+  );
+
   const screenOptions = useMemo(
     () => ({
       headerShown: true,
@@ -81,6 +88,7 @@ export default function FeedScreen() {
       <InboxStream
         listRef={listRef}
         items={items}
+        onSelectStarter={handleSelectStarter}
         refreshControl={
           <RefreshControl
             refreshing={isLoading}

@@ -8,11 +8,11 @@
 
 export const AUTH_COPY = {
   emailEntry: {
-    title: 'Sign in',
-    helper: 'We’ll send a code to your email.',
+    title: 'Remember everything.',
+    helper: 'Capture anything; Retrieve everything.',
     emailPlaceholder: 'you@example.com',
     emailLabel: 'Email address',
-    submitButton: 'Continue',
+    submitButton: 'Continue with email',
     passkeyButton: 'Use passkey',
     passkeyLoadingButton: 'Connecting…',
     emailRequiredError: 'Email is required.',

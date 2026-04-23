@@ -19,7 +19,7 @@ import Reanimated, { FadeIn } from 'react-native-reanimated';
 
 import { Text, makeStyles, theme } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
-import type { ChatWithActivity } from '~/services/chat/session-state';
+import type { ChatWithActivity } from '~/services/chat/session-types';
 import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
 import { noteKeys, chatKeys } from '~/services/notes/query-keys';
 

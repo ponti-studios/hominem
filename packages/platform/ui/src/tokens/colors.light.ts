@@ -1,4 +1,4 @@
-import type { ColorToken } from '@hominem/ui/tokens';
+import type { ColorToken } from './colors';
 
 export const lightColors = {
   // Backgrounds

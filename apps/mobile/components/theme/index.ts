@@ -1,8 +1,34 @@
+import { useColorScheme, type ImageStyle, type TextStyle, type ViewStyle } from 'react-native';
+
 import { shellTheme } from '../../types/shellTheme';
-import { makeStylesInternal } from './make-styles';
-import theme from './theme';
+import theme, { darkTheme, lightTheme, type Theme } from './theme';
 
 export { Text } from './typography';
-export { theme, shellTheme };
-export type { Theme } from './theme';
-export const makeStyles = makeStylesInternal;
+export { fontFamiliesNative, fontSizes, fontWeights } from './typography';
+export {
+  colors,
+  durations,
+  radii,
+  shadowsNative,
+  spacing,
+  type ColorToken,
+  type RadiusToken,
+  type SpacingToken,
+} from '@hominem/ui/tokens';
+export { shellTheme, theme };
+export type { Theme };
+
+type NamedStyles<T> = {
+  [P in keyof T]: ViewStyle | TextStyle | ImageStyle;
+};
+
+export const makeStyles = <T extends NamedStyles<T> | NamedStyles<unknown>>(
+  styles: (theme: Theme) => T,
+) => {
+  const dark = styles(darkTheme);
+  const light = styles(lightTheme);
+  return () => {
+    const scheme = useColorScheme();
+    return scheme === 'light' ? light : dark;
+  };
+};

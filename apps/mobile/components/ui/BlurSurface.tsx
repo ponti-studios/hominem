@@ -3,10 +3,10 @@ import { BlurView } from 'expo-blur';
 import { StyleSheet, type ViewProps } from 'react-native';
 
 export type BlurSurfaceTint =
-  | 'chrome'    // keyboard toolbars, navigation bars
-  | 'regular'   // cards, sheets
-  | 'thin'      // overlays, popovers
-  | 'thick';    // prominent surfaces
+  | 'chrome' // keyboard toolbars, navigation bars
+  | 'regular' // cards, sheets
+  | 'thin' // overlays, popovers
+  | 'thick'; // prominent surfaces
 
 const TINT_MAP = {
   chrome: 'systemChromeMaterial',
@@ -28,12 +28,7 @@ export function BlurSurface({
   ...props
 }: BlurSurfaceProps) {
   return (
-    <BlurView
-      tint={TINT_MAP[tint]}
-      intensity={intensity}
-      style={[styles.base, style]}
-      {...props}
-    >
+    <BlurView tint={TINT_MAP[tint]} intensity={intensity} style={[styles.base, style]} {...props}>
       {children}
     </BlurView>
   );

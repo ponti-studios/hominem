@@ -1,4 +1,4 @@
-import { colors } from '../components/theme/tokens';
+import { colors } from '@hominem/ui/tokens';
 
 export const shellTheme = {
   web: {

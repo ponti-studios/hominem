@@ -1,15 +1,13 @@
-import { colors as darkColors } from '@hominem/ui/tokens';
 import type { ColorToken } from '@hominem/ui/tokens';
+import { colors as darkColors, lightColors } from '@hominem/ui/tokens';
 import {
-  Text as RNText,
   Platform,
+  Text as RNText,
   useColorScheme,
-  type StyleProp,
   type TextProps as RNTextProps,
+  type StyleProp,
   type TextStyle,
 } from 'react-native';
-
-import { lightColors } from './tokens/colors.light';
 
 // ── Font Tokens ───────────────────────────────────────────────────────────────
 
@@ -49,18 +47,6 @@ export const fontWeights = {
   medium: '500',
   semibold: '600',
   bold: '700',
-} as const;
-
-export const lineHeights = {
-  tight: 1.2,
-  normal: 1.4,
-  relaxed: 1.6,
-} as const;
-
-export const letterSpacing = {
-  tight: -0.05,
-  normal: 0,
-  relaxed: 0.01,
 } as const;
 
 // ── Types ─────────────────────────────────────────────────────────────────────

@@ -1,4 +1,9 @@
-import type { ChatMessageItem, ChatRenderIcon, MarkdownComponent } from '@hominem/chat';
+import type {
+  ChatIconName,
+  ChatMessageItem,
+  ChatRenderIcon,
+  MarkdownComponent,
+} from '@hominem/chat';
 import { getReferencedNoteLabel } from '@hominem/chat';
 import { memo, useMemo, useState } from 'react';
 import { Modal, Pressable, View } from 'react-native';
@@ -6,7 +11,7 @@ import Reanimated, { FadeInDown, FadeOutUp, LinearTransition } from 'react-nativ
 
 import { Text, makeStyles } from '~/components/theme';
 import { useThemeColors } from '~/components/theme/theme';
-import { fontFamiliesNative, fontSizes, radii, spacing } from '~/components/theme/tokens';
+import { fontFamiliesNative, fontSizes, radii, spacing } from '~/components/theme';
 
 import { Button } from '../ui/Button';
 import { TextArea } from '../ui/TextArea';
@@ -40,6 +45,313 @@ export async function loadMarkdown() {
   return mod.default as MarkdownComponent;
 }
 
+function MessageEditModal({
+  visible,
+  draftMessage,
+  content,
+  styles,
+  onChangeDraft,
+  onCancel,
+  onSave,
+}: {
+  visible: boolean;
+  draftMessage: string;
+  content: string;
+  styles: ReturnType<typeof useChatMessageStyles>;
+  onChangeDraft: (value: string) => void;
+  onCancel: () => void;
+  onSave: () => void;
+}) {
+  return (
+    <Modal animationType="fade" onRequestClose={onCancel} transparent visible={visible}>
+      <View style={styles.editBackdrop}>
+        <View style={styles.editSheet}>
+          <Text style={styles.editTitle}>Edit message</Text>
+          <TextArea
+            label="Edit message"
+            placeholder="Update your message"
+            style={styles.editInput}
+            value={draftMessage}
+            onChangeText={onChangeDraft}
+          />
+          <View style={styles.editButtonRow}>
+            <Button
+              onPress={onCancel}
+              size="sm"
+              style={styles.actionButton}
+              title="cancel"
+              variant="outline"
+            />
+            <Button
+              disabled={!draftMessage.trim() || draftMessage === content}
+              onPress={onSave}
+              size="sm"
+              style={styles.actionButton}
+              title="save"
+              variant="primary"
+            />
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function MessageToolCalls({
+  toolCalls,
+  styles,
+}: {
+  toolCalls: ToolCall[];
+  styles: ReturnType<typeof useChatMessageStyles>;
+}) {
+  if (toolCalls.length === 0) {
+    return null;
+  }
+
+  return (
+    <View style={styles.toolCalls}>
+      {toolCalls.map((toolCall: ToolCall, index: number) => (
+        <View key={toolCall.toolCallId || `tool-call-${index}`} style={styles.toolCall}>
+          <Text style={styles.toolCallName}>{toolCall.toolName}</Text>
+          <Text style={styles.toolCallArgs}>
+            {toolCall.args ? JSON.stringify(toolCall.args, null, 2) : ''}
+          </Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function ReferencedNotes({
+  message,
+  styles,
+}: {
+  message: ChatMessageItem;
+  styles: ReturnType<typeof useChatMessageStyles>;
+}) {
+  if (!Array.isArray(message.referencedNotes) || message.referencedNotes.length === 0) {
+    return null;
+  }
+
+  return (
+    <View style={styles.referencedNotes}>
+      {message.referencedNotes.map((note) => (
+        <View key={note.id} style={styles.referencedNoteChip}>
+          <Text style={styles.referencedNoteText}>{getReferencedNoteLabel(note)}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function MessageContent({
+  content,
+  isUser,
+  Markdown,
+  markdownStyle,
+  textStyle,
+  styles,
+  children,
+}: {
+  content: string;
+  isUser: boolean;
+  Markdown?: MarkdownComponent | null;
+  markdownStyle: object;
+  textStyle: object;
+  styles: ReturnType<typeof useChatMessageStyles>;
+  children?: React.ReactNode;
+}) {
+  return (
+    <View style={styles.transcriptBlock}>
+      <View style={[styles.messageSurface, isUser ? styles.userSurface : styles.assistantSurface]}>
+        {Markdown ? (
+          <Markdown style={markdownStyle}>{content}</Markdown>
+        ) : (
+          <Text style={textStyle}>{content}</Text>
+        )}
+      </View>
+      {children}
+    </View>
+  );
+}
+
+function MessageDebug({
+  message,
+  hasReasoning,
+  styles,
+}: {
+  message: ChatMessageItem;
+  hasReasoning: boolean;
+  styles: ReturnType<typeof useChatMessageStyles>;
+}) {
+  return (
+    <View style={styles.transcriptSurface}>
+      <Text style={styles.reasoningText}>ID: {message.id}</Text>
+      <Text style={styles.reasoningText}>Role: {message.role}</Text>
+      <Text style={styles.reasoningText}>Created: {message.created_at || 'unknown'}</Text>
+      <Text style={styles.reasoningText}>Reasoning: {hasReasoning ? 'present' : 'none'}</Text>
+      <Text style={styles.reasoningText}>Tool calls: {message.toolCalls?.length ?? 0}</Text>
+    </View>
+  );
+}
+
+function FocusItems({
+  message,
+  styles,
+}: {
+  message: ChatMessageItem;
+  styles: ReturnType<typeof useChatMessageStyles>;
+}) {
+  if (!message.focus_items?.length) {
+    return null;
+  }
+
+  return (
+    <View style={styles.focusItems}>
+      {message.focus_items.map((focusItem) => (
+        <View key={focusItem.id} style={styles.focusItem}>
+          <Text>{focusItem.text}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function ActiveMessageActions({
+  isActive,
+  timestamp,
+  message,
+  isSpeaking,
+  canCopy,
+  canSpeak,
+  canShare,
+  canEdit,
+  canRegenerate,
+  canDelete,
+  styles,
+  themeColors,
+  renderIcon,
+  onCopy,
+  onSpeak,
+  onShare,
+  onEdit,
+  onRegenerate,
+  onDelete,
+}: {
+  isActive: boolean;
+  timestamp: string;
+  message: ChatMessageItem;
+  isSpeaking: boolean;
+  canCopy: boolean;
+  canSpeak: boolean;
+  canShare: boolean;
+  canEdit: boolean;
+  canRegenerate: boolean;
+  canDelete: boolean;
+  styles: ReturnType<typeof useChatMessageStyles>;
+  themeColors: ReturnType<typeof useThemeColors>;
+  renderIcon: ChatRenderIcon;
+  onCopy?: (message: ChatMessageItem) => void;
+  onSpeak?: (message: ChatMessageItem) => void;
+  onShare?: (message: ChatMessageItem) => void;
+  onEdit: () => void;
+  onRegenerate?: (messageId: string) => void;
+  onDelete?: (messageId: string) => void;
+}) {
+  if (!isActive) {
+    return null;
+  }
+
+  const renderActionIcon = (name: ChatIconName) =>
+    renderIcon(name, {
+      color: themeColors['text-tertiary'],
+      size: 15,
+      style: styles.actionIcon,
+    });
+
+  return (
+    <Reanimated.View
+      entering={ACTIONS_ENTERING}
+      exiting={ACTIONS_EXITING}
+      layout={ACTIONS_LAYOUT}
+      style={styles.actionsWrap}
+    >
+      <View style={styles.actions}>
+        {timestamp ? (
+          <Text color="text-secondary" style={styles.metadataText}>
+            {timestamp}
+          </Text>
+        ) : null}
+        <Button
+          accessibilityLabel="Copy message"
+          disabled={!canCopy}
+          onPress={() => onCopy?.(message)}
+          size="icon-xs"
+          style={[styles.actionButton, !canCopy ? styles.actionButtonDisabled : null]}
+          variant="ghost"
+        >
+          {renderActionIcon('doc.on.doc')}
+        </Button>
+        {canSpeak ? (
+          <Button
+            accessibilityLabel={isSpeaking ? 'Stop reading' : 'Read aloud'}
+            onPress={() => onSpeak?.(message)}
+            size="icon-xs"
+            style={styles.actionButton}
+            variant="ghost"
+          >
+            {renderActionIcon(isSpeaking ? 'stop.fill' : 'speaker.wave.2')}
+          </Button>
+        ) : null}
+        {canShare ? (
+          <Button
+            accessibilityLabel="Share message"
+            onPress={() => onShare?.(message)}
+            size="icon-xs"
+            style={styles.actionButton}
+            variant="ghost"
+          >
+            {renderActionIcon('square.and.arrow.up')}
+          </Button>
+        ) : null}
+        {canEdit ? (
+          <Button
+            accessibilityLabel="Edit message"
+            onPress={onEdit}
+            size="icon-xs"
+            style={styles.actionButton}
+            variant="ghost"
+          >
+            {renderActionIcon('square.and.pencil')}
+          </Button>
+        ) : null}
+        {canRegenerate ? (
+          <Button
+            accessibilityLabel="Regenerate response"
+            onPress={() => onRegenerate?.(message.id)}
+            size="icon-xs"
+            style={styles.actionButton}
+            variant="ghost"
+          >
+            {renderActionIcon('arrow.clockwise')}
+          </Button>
+        ) : null}
+        {canDelete ? (
+          <Button
+            accessibilityLabel="Delete message"
+            onPress={() => onDelete?.(message.id)}
+            size="icon-xs"
+            style={styles.actionButton}
+            variant="ghost"
+          >
+            {renderActionIcon('trash')}
+          </Button>
+        ) : null}
+      </View>
+    </Reanimated.View>
+  );
+}
+
 const ChatMessage = memo(function ChatMessage({
   message,
   Markdown,
@@ -68,10 +380,7 @@ const ChatMessage = memo(function ChatMessage({
   const canCopy = onCopy !== undefined;
   const canSpeak = !isUser && onSpeak !== undefined && Boolean(content?.trim());
   const canShare = !isUser && onShare !== undefined && Boolean(content?.trim());
-  const hasToolCalls = Array.isArray(message.toolCalls) && message.toolCalls.length > 0;
   const hasReasoning = Boolean(message.reasoning && message.reasoning.trim().length > 0);
-  const hasReferencedNotes =
-    isUser && Array.isArray(message.referencedNotes) && message.referencedNotes.length > 0;
   const renderedToolCalls = message.toolCalls ?? [];
   const [isEditing, setIsEditing] = useState(false);
   const [draftMessage, setDraftMessage] = useState(content);
@@ -82,54 +391,32 @@ const ChatMessage = memo(function ChatMessage({
     [isUser, styles],
   );
 
+  const closeEdit = () => {
+    setDraftMessage(content);
+    setIsEditing(false);
+  };
+
+  const saveEdit = () => {
+    const trimmedContent = draftMessage.trim();
+    if (!trimmedContent) return;
+    onEdit?.(message.id, trimmedContent);
+    setIsEditing(false);
+  };
+
   return (
     <Pressable
       onPress={onActivate}
       style={[styles.row, isUser ? styles.rowUser : styles.rowAssistant]}
     >
-      <Modal
-        animationType="fade"
-        onRequestClose={() => setIsEditing(false)}
-        transparent
+      <MessageEditModal
+        content={content}
+        draftMessage={draftMessage}
+        onCancel={closeEdit}
+        onChangeDraft={setDraftMessage}
+        onSave={saveEdit}
+        styles={styles}
         visible={isEditing}
-      >
-        <View style={styles.editBackdrop}>
-          <View style={styles.editSheet}>
-            <Text style={styles.editTitle}>Edit message</Text>
-            <TextArea
-              label="Edit message"
-              placeholder="Update your message"
-              style={styles.editInput}
-              value={draftMessage}
-              onChangeText={setDraftMessage}
-            />
-            <View style={styles.editButtonRow}>
-              <Button
-                onPress={() => {
-                  setDraftMessage(content);
-                  setIsEditing(false);
-                }}
-                size="sm"
-                style={styles.actionButton}
-                title="cancel"
-                variant="outline"
-              />
-              <Button
-                onPress={() => {
-                  const trimmedContent = draftMessage.trim();
-                  if (!trimmedContent) return;
-                  onEdit?.(message.id, trimmedContent);
-                  setIsEditing(false);
-                }}
-                size="sm"
-                style={styles.actionButton}
-                title="save"
-                variant="primary"
-              />
-            </View>
-          </View>
-        </View>
-      </Modal>
+      />
 
       <View style={[styles.contentColumn, isUser ? styles.contentColumnUser : null]}>
         {!isUser && hasReasoning ? (
@@ -138,178 +425,49 @@ const ChatMessage = memo(function ChatMessage({
           </View>
         ) : null}
 
-        {hasToolCalls ? (
-          <View style={styles.toolCalls}>
-            {renderedToolCalls.map((toolCall: ToolCall, index: number) => (
-              <View key={toolCall.toolCallId || `tool-call-${index}`} style={styles.toolCall}>
-                <Text style={styles.toolCallName}>{toolCall.toolName}</Text>
-                <Text style={styles.toolCallArgs}>
-                  {toolCall.args ? JSON.stringify(toolCall.args, null, 2) : ''}
-                </Text>
-              </View>
-            ))}
-          </View>
-        ) : null}
+        <MessageToolCalls styles={styles} toolCalls={renderedToolCalls} />
 
-        {isUser ? (
-          <View style={styles.transcriptBlock}>
-            <View style={[styles.messageSurface, styles.userSurface]}>
-              {Markdown ? (
-                <Markdown style={markdownStyle}>{content}</Markdown>
-              ) : (
-                <Text style={textStyle}>{content}</Text>
-              )}
-            </View>
-            {hasReferencedNotes ? (
-              <View style={styles.referencedNotes}>
-                {message.referencedNotes!.map((note) => (
-                  <View key={note.id} style={styles.referencedNoteChip}>
-                    <Text style={styles.referencedNoteText}>{getReferencedNoteLabel(note)}</Text>
-                  </View>
-                ))}
-              </View>
-            ) : null}
-          </View>
-        ) : (
-          <View style={styles.transcriptBlock}>
-            <View style={[styles.messageSurface, styles.assistantSurface]}>
-              {Markdown ? (
-                <Markdown style={markdownStyle}>{content}</Markdown>
-              ) : (
-                <Text style={textStyle}>{content}</Text>
-              )}
-            </View>
-          </View>
-        )}
+        <MessageContent
+          Markdown={Markdown}
+          content={content}
+          isUser={isUser}
+          markdownStyle={markdownStyle}
+          styles={styles}
+          textStyle={textStyle}
+        >
+          {isUser ? <ReferencedNotes message={message} styles={styles} /> : null}
+        </MessageContent>
 
         {showDebug ? (
-          <View style={styles.transcriptSurface}>
-            <Text style={styles.reasoningText}>ID: {message.id}</Text>
-            <Text style={styles.reasoningText}>Role: {message.role}</Text>
-            <Text style={styles.reasoningText}>Created: {message.created_at || 'unknown'}</Text>
-            <Text style={styles.reasoningText}>Reasoning: {hasReasoning ? 'present' : 'none'}</Text>
-            <Text style={styles.reasoningText}>Tool calls: {message.toolCalls?.length ?? 0}</Text>
-          </View>
+          <MessageDebug hasReasoning={hasReasoning} message={message} styles={styles} />
         ) : null}
 
-        {message.focus_items && message.focus_items.length > 0 ? (
-          <View style={styles.focusItems}>
-            {message.focus_items.map((focusItem) => (
-              <View key={focusItem.id} style={styles.focusItem}>
-                <Text>{focusItem.text}</Text>
-              </View>
-            ))}
-          </View>
-        ) : null}
+        <FocusItems message={message} styles={styles} />
 
-        {isActive ? (
-          <Reanimated.View
-            entering={ACTIONS_ENTERING}
-            exiting={ACTIONS_EXITING}
-            layout={ACTIONS_LAYOUT}
-            style={styles.actionsWrap}
-          >
-            <View style={styles.actions}>
-              {timestamp ? (
-                <Text color="text-secondary" style={styles.metadataText}>
-                  {timestamp}
-                </Text>
-              ) : null}
-              <Button
-                accessibilityLabel="Copy message"
-                disabled={!canCopy}
-                onPress={() => onCopy?.(message)}
-                size="icon-xs"
-                style={[styles.actionButton, !canCopy ? styles.actionButtonDisabled : null]}
-                variant="ghost"
-              >
-                {renderIcon('doc.on.doc', {
-                  color: themeColors['text-tertiary'],
-                  size: 15,
-                  style: styles.actionIcon,
-                })}
-              </Button>
-              {canSpeak ? (
-                <Button
-                  accessibilityLabel={isSpeaking ? 'Stop reading' : 'Read aloud'}
-                  onPress={() => onSpeak?.(message)}
-                  size="icon-xs"
-                  style={styles.actionButton}
-                  variant="ghost"
-                >
-                  {renderIcon(isSpeaking ? 'stop.fill' : 'speaker.wave.2', {
-                    color: themeColors['text-tertiary'],
-                    size: 15,
-                    style: styles.actionIcon,
-                  })}
-                </Button>
-              ) : null}
-              {canShare ? (
-                <Button
-                  accessibilityLabel="Share message"
-                  onPress={() => onShare?.(message)}
-                  size="icon-xs"
-                  style={styles.actionButton}
-                  variant="ghost"
-                >
-                  {renderIcon('square.and.arrow.up', {
-                    color: themeColors['text-tertiary'],
-                    size: 15,
-                    style: styles.actionIcon,
-                  })}
-                </Button>
-              ) : null}
-              {canEdit ? (
-                <Button
-                  accessibilityLabel="Edit message"
-                  onPress={() => {
-                    setDraftMessage(content);
-                    setIsEditing(true);
-                  }}
-                  size="icon-xs"
-                  style={styles.actionButton}
-                  variant="ghost"
-                >
-                  {renderIcon('square.and.pencil', {
-                    color: themeColors['text-tertiary'],
-                    size: 15,
-                    style: styles.actionIcon,
-                  })}
-                </Button>
-              ) : null}
-              {canRegenerate ? (
-                <Button
-                  accessibilityLabel="Regenerate response"
-                  onPress={() => onRegenerate?.(message.id)}
-                  size="icon-xs"
-                  style={styles.actionButton}
-                  variant="ghost"
-                >
-                  {renderIcon('arrow.clockwise', {
-                    color: themeColors['text-tertiary'],
-                    size: 15,
-                    style: styles.actionIcon,
-                  })}
-                </Button>
-              ) : null}
-              {canDelete ? (
-                <Button
-                  accessibilityLabel="Delete message"
-                  onPress={() => onDelete?.(message.id)}
-                  size="icon-xs"
-                  style={styles.actionButton}
-                  variant="ghost"
-                >
-                  {renderIcon('trash', {
-                    color: themeColors['text-tertiary'],
-                    size: 15,
-                    style: styles.actionIcon,
-                  })}
-                </Button>
-              ) : null}
-            </View>
-          </Reanimated.View>
-        ) : null}
+        <ActiveMessageActions
+          canCopy={canCopy}
+          canDelete={canDelete}
+          canEdit={canEdit}
+          canRegenerate={canRegenerate}
+          canShare={canShare}
+          canSpeak={canSpeak}
+          isActive={isActive}
+          isSpeaking={isSpeaking}
+          message={message}
+          onCopy={onCopy}
+          onDelete={onDelete}
+          onEdit={() => {
+            setDraftMessage(content);
+            setIsEditing(true);
+          }}
+          onRegenerate={onRegenerate}
+          onShare={onShare}
+          onSpeak={onSpeak}
+          renderIcon={renderIcon}
+          styles={styles}
+          themeColors={themeColors}
+          timestamp={timestamp}
+        />
       </View>
     </Pressable>
   );

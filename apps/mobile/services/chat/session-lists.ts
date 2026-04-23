@@ -2,13 +2,8 @@ import { parseInboxTimestamp } from '@hominem/chat';
 import type { Chat } from '@hominem/rpc/types';
 import { TIME_UNITS } from '@hominem/utils/time';
 
-export interface ChatWithActivity extends Chat {
-  activityAt: string;
-}
-
-export function getChatActivityAt(chat: Chat): string {
-  return chat.updatedAt ?? chat.createdAt;
-}
+import { getChatActivityAt } from './session-activity';
+import type { ChatWithActivity } from './session-types';
 
 function parseChatActivityAt(chat: Chat): Date {
   return parseInboxTimestamp(getChatActivityAt(chat));
@@ -37,12 +32,4 @@ export function getInboxChatsWithActivity(chats: Chat[], now = Date.now()): Chat
 
 export function getArchivedChatsWithActivity(chats: Chat[], now = Date.now()): ChatWithActivity[] {
   return toChatsWithActivity(chats, now).filter((chat) => Boolean(chat.archivedAt));
-}
-
-export function selectChatSession(chats: Chat[], requestedChatId?: string | null): Chat | null {
-  if (requestedChatId) {
-    return chats.find((chat) => chat.id === requestedChatId) ?? null;
-  }
-
-  return chats.find((chat) => !chat.archivedAt) ?? null;
 }

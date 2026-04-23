@@ -68,21 +68,6 @@ export type {
   Verification,
 } from './types/database';
 
-// Shared service utilities (used by RPC handlers)
-export { brandId, unbrandId } from './services/_shared/ids';
-export type {
-  BookmarkId,
-  CalendarEventId,
-  FinanceAccountId,
-  FinanceCategoryId,
-  FinanceTransactionId,
-  PersonId,
-  PossessionId,
-  TagId,
-  TaskId,
-  UserId,
-} from './services/_shared/ids';
-
 export {
   ConflictError,
   ForbiddenError,

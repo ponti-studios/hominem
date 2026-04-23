@@ -9,7 +9,13 @@ import {
 
 import { makeStyles } from '~/components/theme';
 import { useThemeColors } from '~/components/theme/theme';
-import { fontFamiliesNative, fontSizes, fontWeights, radii, spacing } from '~/components/theme/tokens';
+import {
+  fontFamiliesNative,
+  fontSizes,
+  fontWeights,
+  radii,
+  spacing,
+} from '~/components/theme';
 
 import { Field } from './Field';
 import type { TextFieldBaseProps, TextFieldType } from './text-field.types';
@@ -17,8 +23,7 @@ import type { TextFieldBaseProps, TextFieldType } from './text-field.types';
 export type TextFieldSize = 'sm' | 'md' | 'lg';
 export type TextFieldVariant = 'default' | 'plain';
 
-interface TextFieldProps
-  extends Omit<TextInputProps, 'editable'>, TextFieldBaseProps {
+interface TextFieldProps extends Omit<TextInputProps, 'editable'>, TextFieldBaseProps {
   style?: StyleProp<TextStyle>;
   containerStyle?: StyleProp<ViewStyle>;
   editable?: boolean | undefined;

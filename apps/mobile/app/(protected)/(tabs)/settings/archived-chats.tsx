@@ -5,7 +5,7 @@ import { Pressable, ScrollView, View } from 'react-native';
 
 import { Text, makeStyles } from '~/components/theme';
 import { useThemeColors } from '~/components/theme/theme';
-import { radii, spacing } from '~/components/theme/tokens';
+import { radii, spacing } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
 import { useArchivedSessions } from '~/hooks/useArchivedSessions';
 import { formatRelativeAge } from '~/services/date/format-relative-age';

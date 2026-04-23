@@ -145,6 +145,320 @@ interface ChatMessageProps {
   onSpeak?: ((messageId: string, content: string) => void) | undefined;
 }
 
+function MessageToolCalls({ toolCalls }: { toolCalls: ChatMessageToolCall[] | null | undefined }) {
+  if (!toolCalls?.length) {
+    return null;
+  }
+
+  return (
+    <Stack gap="sm" className="w-full">
+      {toolCalls.map((toolCall: ChatMessageToolCall, index: number) => (
+        <Tool
+          key={toolCall.toolCallId || `tool-${index}`}
+          name={toolCall.toolName}
+          status={toolCall.type === 'tool-call' ? 'running' : 'completed'}
+        >
+          <ToolInput
+            className="my-1 overflow-x-auto bg-transparent text-xs text-text-secondary"
+            children={
+              toolCall.args && Object.keys(toolCall.args).length > 0
+                ? JSON.stringify(toolCall.args, null, 2)
+                : ''
+            }
+          />
+        </Tool>
+      ))}
+    </Stack>
+  );
+}
+
+function MessageErrorNotice() {
+  return (
+    <div className="flex items-center gap-2 py-0.5 text-sm text-destructive/60">
+      <AlertCircle className="size-3.5 shrink-0" aria-hidden="true" />
+      <span>Failed to generate a response</span>
+    </div>
+  );
+}
+
+function MessageEditForm({
+  editContent,
+  setEditContent,
+  cancelEdit,
+  saveEdit,
+  canSave,
+}: {
+  editContent: string;
+  setEditContent: (content: string) => void;
+  cancelEdit: () => void;
+  saveEdit: () => Promise<void>;
+  canSave: boolean;
+}) {
+  return (
+    <Form
+      className="flex w-full flex-col gap-3"
+      aria-label="Edit message"
+      onSubmit={(event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        void saveEdit();
+      }}
+    >
+      <Textarea
+        value={editContent}
+        onChange={(event: ChangeEvent<HTMLTextAreaElement>) => setEditContent(event.target.value)}
+        className="min-h-25 resize-none rounded-md border-default bg-background"
+        autoFocus
+        aria-label="Message content"
+        aria-describedby="edit-instructions"
+        onKeyDown={(event: KeyboardEvent<HTMLTextAreaElement>) => {
+          if (event.key === 'Escape') {
+            cancelEdit();
+          } else if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+            void saveEdit();
+          }
+        }}
+      />
+      <span id="edit-instructions" className="sr-only">
+        Press Escape to cancel, or Ctrl+Enter to save
+      </span>
+      <Inline gap="sm" justify="end">
+        <Button variant="outline" size="sm" onClick={cancelEdit} aria-label="Cancel editing">
+          <X className="mr-2 size-4" aria-hidden="true" />
+          Cancel
+        </Button>
+        <Button type="submit" size="sm" disabled={!canSave} aria-label="Save edited message">
+          <Save className="mr-2 size-4" aria-hidden="true" />
+          Save
+        </Button>
+      </Inline>
+    </Form>
+  );
+}
+
+function MessageBody({
+  isUser,
+  isErrorMessage,
+  isEditing,
+  hasContent,
+  message,
+  isStreaming,
+  editContent,
+  setEditContent,
+  cancelEdit,
+  saveEdit,
+  canSave,
+}: {
+  isUser: boolean;
+  isErrorMessage: boolean;
+  isEditing: boolean;
+  hasContent: boolean;
+  message: ExtendedMessage;
+  isStreaming: boolean;
+  editContent: string;
+  setEditContent: (content: string) => void;
+  cancelEdit: () => void;
+  saveEdit: () => Promise<void>;
+  canSave: boolean;
+}) {
+  if (isErrorMessage) {
+    return <MessageErrorNotice />;
+  }
+
+  if (isEditing && isUser) {
+    return (
+      <MessageEditForm
+        editContent={editContent}
+        setEditContent={setEditContent}
+        cancelEdit={cancelEdit}
+        saveEdit={saveEdit}
+        canSave={canSave}
+      />
+    );
+  }
+
+  if (!hasContent) {
+    return null;
+  }
+
+  if (isUser) {
+    return (
+      <div className="inline-block max-w-136 rounded-2xl border border-subtle bg-emphasis-highest px-4 py-2 text-sm text-white">
+        <MarkdownContent content={message.content} isStreaming={isStreaming} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full text-foreground">
+      <MarkdownContent content={message.content} isStreaming={isStreaming} />
+    </div>
+  );
+}
+
+function MessageDebugDetails({
+  message,
+  isStreaming,
+  hasReasoning,
+}: {
+  message: ExtendedMessage;
+  isStreaming: boolean;
+  hasReasoning: boolean;
+}) {
+  return (
+    <div className="w-full rounded-md border border-subtle bg-surface py-2 font-mono text-[11px] leading-relaxed text-text-secondary">
+      <div>ID: {message.id}</div>
+      <div>Role: {message.role}</div>
+      <div>Created: {message.createdAt}</div>
+      <div>Updated: {message.updatedAt}</div>
+      <div>Streaming: {isStreaming ? 'true' : 'false'}</div>
+      <div>Reasoning: {hasReasoning ? 'present' : 'none'}</div>
+      <div>Tool calls: {message.toolCalls?.length ?? 0}</div>
+      {message.parentMessageId && <div>Parent: {message.parentMessageId}</div>}
+    </div>
+  );
+}
+
+function MessageTimestamp({
+  isUser,
+  timestamp,
+  createdAt,
+}: {
+  isUser: boolean;
+  timestamp: string;
+  createdAt?: string | null;
+}) {
+  if (!timestamp) {
+    return null;
+  }
+
+  return (
+    <MessageAnnotations
+      className={cn(
+        'mt-0.5 text-xs text-text-tertiary/70 opacity-0 transition-opacity group-hover:opacity-100',
+        {
+          'justify-end': isUser,
+          'justify-start': !isUser,
+        },
+      )}
+    >
+      <span title={createdAt ?? undefined}>{timestamp}</span>
+    </MessageAnnotations>
+  );
+}
+
+function MessageActions({
+  isUser,
+  message,
+  copied,
+  isSpeaking,
+  isSpeechLoading,
+  onEdit,
+  onRegenerate,
+  onDelete,
+  onSpeak,
+  startEdit,
+  handleCopyMessage,
+  handleShareMessage,
+}: {
+  isUser: boolean;
+  message: ExtendedMessage;
+  copied: boolean;
+  isSpeaking: boolean;
+  isSpeechLoading: boolean;
+  onEdit?: ((messageId: string, newContent: string) => void) | undefined;
+  onRegenerate?: (() => void) | undefined;
+  onDelete?: (() => void) | undefined;
+  onSpeak?: ((messageId: string, content: string) => void) | undefined;
+  startEdit: () => void;
+  handleCopyMessage: () => Promise<void>;
+  handleShareMessage: () => Promise<void>;
+}) {
+  return (
+    <div
+      className={cn(
+        'flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100',
+        {
+          'justify-end': isUser,
+          'justify-start': !isUser,
+        },
+      )}
+    >
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="size-6 p-0 text-text-tertiary hover:text-foreground"
+            aria-label="Message actions"
+          >
+            <MoreVertical className="size-3.5" aria-hidden="true" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align={isUser ? 'end' : 'start'}>
+          <DropdownMenuItem onClick={handleCopyMessage}>
+            {copied ? (
+              <>
+                <Check className="mr-2 size-3.5" aria-hidden="true" />
+                Copied
+              </>
+            ) : (
+              <>
+                <Copy className="mr-2 size-3.5" aria-hidden="true" />
+                Copy
+              </>
+            )}
+          </DropdownMenuItem>
+          {isUser && onEdit && (
+            <DropdownMenuItem onClick={startEdit}>
+              <Edit2 className="mr-2 size-3.5" aria-hidden="true" />
+              Edit
+            </DropdownMenuItem>
+          )}
+          {!isUser && onRegenerate && (
+            <DropdownMenuItem onClick={onRegenerate}>
+              <RotateCcw className="mr-2 size-3.5" aria-hidden="true" />
+              Regenerate
+            </DropdownMenuItem>
+          )}
+          {!isUser && onSpeak && (
+            <DropdownMenuItem onClick={() => onSpeak(message.id, message.content || '')}>
+              {isSpeechLoading ? (
+                <>
+                  <Volume2 className="mr-2 size-3.5 animate-pulse" aria-hidden="true" />
+                  Loading audio
+                </>
+              ) : isSpeaking ? (
+                <>
+                  <VolumeX className="mr-2 size-3.5" aria-hidden="true" />
+                  Stop reading
+                </>
+              ) : (
+                <>
+                  <Volume2 className="mr-2 size-3.5" aria-hidden="true" />
+                  Read aloud
+                </>
+              )}
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuItem onClick={handleShareMessage}>
+            <Share2 className="mr-2 size-3.5" aria-hidden="true" />
+            Share
+          </DropdownMenuItem>
+          {onDelete && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={onDelete} className="text-destructive">
+                <Trash2 className="mr-2 size-3.5" aria-hidden="true" />
+                Delete
+              </DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+}
+
 export const ChatMessage = memo(function ChatMessage({
   message,
   showDebug = false,
@@ -158,9 +472,6 @@ export const ChatMessage = memo(function ChatMessage({
 }: ChatMessageProps) {
   const isUser = message.role === 'user';
   const hasContent = Boolean(message.content && message.content.trim().length > 0);
-  const hasToolCalls = Boolean(
-    message.toolCalls && Array.isArray(message.toolCalls) && message.toolCalls.length > 0,
-  );
   const hasReasoning = Boolean(message.reasoning && message.reasoning.trim().length > 0);
   const isErrorMessage = !isUser && message.content?.startsWith('[Error:');
   const [copied, setCopied] = useState(false);
@@ -224,211 +535,47 @@ export const ChatMessage = memo(function ChatMessage({
             </Reasoning>
           )}
 
-          {hasToolCalls && (
-            <Stack gap="sm" className="w-full">
-              {message.toolCalls!.map((toolCall: ChatMessageToolCall, index: number) => (
-                <Tool
-                  key={toolCall.toolCallId || `tool-${index}`}
-                  name={toolCall.toolName}
-                  status={toolCall.type === 'tool-call' ? 'running' : 'completed'}
-                >
-                  <ToolInput
-                    className="my-1 overflow-x-auto bg-transparent text-xs text-text-secondary"
-                    children={
-                      toolCall.args && Object.keys(toolCall.args).length > 0
-                        ? JSON.stringify(toolCall.args, null, 2)
-                        : ''
-                    }
-                  />
-                </Tool>
-              ))}
-            </Stack>
-          )}
+          <MessageToolCalls toolCalls={message.toolCalls} />
 
-          {isErrorMessage && (
-            <div className="flex items-center gap-2 py-0.5 text-sm text-destructive/60">
-              <AlertCircle className="size-3.5 shrink-0" aria-hidden="true" />
-              <span>Failed to generate a response</span>
-            </div>
-          )}
-
-          {!isErrorMessage && isEditing && isUser ? (
-            <Form
-              className="flex w-full flex-col gap-3"
-              aria-label="Edit message"
-              onSubmit={(event: FormEvent<HTMLFormElement>) => {
-                event.preventDefault();
-                void saveEdit();
-              }}
-            >
-              <Textarea
-                value={editContent}
-                onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
-                  setEditContent(event.target.value)
-                }
-                className="min-h-25 resize-none rounded-md border-default bg-background"
-                autoFocus
-                aria-label="Message content"
-                aria-describedby="edit-instructions"
-                onKeyDown={(event: KeyboardEvent<HTMLTextAreaElement>) => {
-                  if (event.key === 'Escape') {
-                    cancelEdit();
-                  } else if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
-                    void saveEdit();
-                  }
-                }}
-              />
-              <span id="edit-instructions" className="sr-only">
-                Press Escape to cancel, or Ctrl+Enter to save
-              </span>
-              <Inline gap="sm" justify="end">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={cancelEdit}
-                  aria-label="Cancel editing"
-                >
-                  <X className="mr-2 size-4" aria-hidden="true" />
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  size="sm"
-                  disabled={!canSave}
-                  aria-label="Save edited message"
-                >
-                  <Save className="mr-2 size-4" aria-hidden="true" />
-                  Save
-                </Button>
-              </Inline>
-            </Form>
-          ) : (
-            !isErrorMessage &&
-            hasContent && (
-              <>
-                {isUser ? (
-                  <div className="inline-block max-w-136 rounded-2xl border border-subtle bg-emphasis-highest px-4 py-2 text-sm text-white">
-                    <MarkdownContent content={message.content} isStreaming={isStreaming} />
-                  </div>
-                ) : (
-                  <div className="w-full text-foreground">
-                    <MarkdownContent content={message.content} isStreaming={isStreaming} />
-                  </div>
-                )}
-              </>
-            )
-          )}
+          <MessageBody
+            isUser={isUser}
+            isErrorMessage={isErrorMessage}
+            isEditing={isEditing}
+            hasContent={hasContent}
+            message={message}
+            isStreaming={isStreaming}
+            editContent={editContent}
+            setEditContent={setEditContent}
+            cancelEdit={cancelEdit}
+            saveEdit={saveEdit}
+            canSave={canSave}
+          />
 
           {showDebug && (
-            <div className="w-full rounded-md border border-subtle bg-surface py-2 font-mono text-[11px] leading-relaxed text-text-secondary">
-              <div>ID: {message.id}</div>
-              <div>Role: {message.role}</div>
-              <div>Created: {message.createdAt}</div>
-              <div>Updated: {message.updatedAt}</div>
-              <div>Streaming: {isStreaming ? 'true' : 'false'}</div>
-              <div>Reasoning: {hasReasoning ? 'present' : 'none'}</div>
-              <div>Tool calls: {message.toolCalls?.length ?? 0}</div>
-              {message.parentMessageId && <div>Parent: {message.parentMessageId}</div>}
-            </div>
+            <MessageDebugDetails
+              message={message}
+              isStreaming={isStreaming}
+              hasReasoning={hasReasoning}
+            />
           )}
 
-          {timestamp && (
-            <MessageAnnotations
-              className={cn(
-                'mt-0.5 text-xs text-text-tertiary/70 opacity-0 transition-opacity group-hover:opacity-100',
-                {
-                  'justify-end': isUser,
-                  'justify-start': !isUser,
-                },
-              )}
-            >
-              <span title={message.createdAt}>{timestamp}</span>
-            </MessageAnnotations>
-          )}
+          <MessageTimestamp isUser={isUser} timestamp={timestamp} createdAt={message.createdAt} />
 
           {!isStreaming && (
-            <div
-              className={cn(
-                'flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100',
-                {
-                  'justify-end': isUser,
-                  'justify-start': !isUser,
-                },
-              )}
-            >
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="size-6 p-0 text-text-tertiary hover:text-foreground"
-                    aria-label="Message actions"
-                  >
-                    <MoreVertical className="size-3.5" aria-hidden="true" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align={isUser ? 'end' : 'start'}>
-                  <DropdownMenuItem onClick={handleCopyMessage}>
-                    {copied ? (
-                      <>
-                        <Check className="mr-2 size-3.5" aria-hidden="true" />
-                        Copied
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="mr-2 size-3.5" aria-hidden="true" />
-                        Copy
-                      </>
-                    )}
-                  </DropdownMenuItem>
-                  {isUser && onEdit && (
-                    <DropdownMenuItem onClick={startEdit}>
-                      <Edit2 className="mr-2 size-3.5" aria-hidden="true" />
-                      Edit
-                    </DropdownMenuItem>
-                  )}
-                  {!isUser && onRegenerate && (
-                    <DropdownMenuItem onClick={onRegenerate}>
-                      <RotateCcw className="mr-2 size-3.5" aria-hidden="true" />
-                      Regenerate
-                    </DropdownMenuItem>
-                  )}
-                  {!isUser && onSpeak && (
-                    <DropdownMenuItem onClick={() => onSpeak(message.id, message.content || '')}>
-                      {isSpeechLoading ? (
-                        <>
-                          <Volume2 className="mr-2 size-3.5 animate-pulse" aria-hidden="true" />
-                          Loading audio
-                        </>
-                      ) : isSpeaking ? (
-                        <>
-                          <VolumeX className="mr-2 size-3.5" aria-hidden="true" />
-                          Stop reading
-                        </>
-                      ) : (
-                        <>
-                          <Volume2 className="mr-2 size-3.5" aria-hidden="true" />
-                          Read aloud
-                        </>
-                      )}
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem onClick={handleShareMessage}>
-                    <Share2 className="mr-2 size-3.5" aria-hidden="true" />
-                    Share
-                  </DropdownMenuItem>
-                  {onDelete && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={onDelete} className="text-destructive">
-                        <Trash2 className="mr-2 size-3.5" aria-hidden="true" />
-                        Delete
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+            <MessageActions
+              isUser={isUser}
+              message={message}
+              copied={copied}
+              isSpeaking={isSpeaking}
+              isSpeechLoading={isSpeechLoading}
+              onEdit={onEdit}
+              onRegenerate={onRegenerate}
+              onDelete={onDelete}
+              onSpeak={onSpeak}
+              startEdit={startEdit}
+              handleCopyMessage={handleCopyMessage}
+              handleShareMessage={handleShareMessage}
+            />
           )}
         </MessageContent>
       </Message>

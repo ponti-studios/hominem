@@ -5,23 +5,27 @@ import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { getAuthScreenBaseStyles } from '../../components/auth/auth-screen-styles';
 import { AuthLayout } from '../../components/AuthLayout';
 import { FeatureErrorBoundary } from '../../components/error-boundary/FeatureErrorBoundary';
-import { makeStyles, Text } from '../../components/theme';
+import { makeStyles } from '../../components/theme';
 import { Button } from '../../components/ui/Button';
+import { FieldError, FieldStack, Form } from '../../components/ui/Form';
 import { TextField } from '../../components/ui/TextField';
 import { useAuth } from '../../services/auth/auth-provider';
 import { useEmailAuth } from '../../services/auth/hooks/use-email-auth';
 import { normalizeOtp } from '../../services/auth/validation';
 import { posthog } from '../../services/posthog';
 
-export function VerifyScreen() {
+function VerifyScreen() {
   const styles = useStyles();
   const router = useRouter();
   const { isSignedIn, requestEmailOtp, verifyEmailOtp } = useAuth();
-  const { email: emailParam } = useLocalSearchParams<{ email: string }>();
+  const { email: emailParam, token: tokenParam } = useLocalSearchParams<{
+    email: string;
+    token?: string;
+  }>();
   const resolvedEmail = emailParam ?? '';
+  const autoSubmitKeyRef = React.useRef<string | null>(null);
 
   const {
     otp,
@@ -45,6 +49,19 @@ export function VerifyScreen() {
     posthog.capture('auth_verify_screen_viewed');
   }, []);
 
+  React.useEffect(() => {
+    const normalizedToken = normalizeOtp(tokenParam ?? '');
+    const submitKey = `${resolvedEmail}:${normalizedToken}`;
+    if (autoSubmitKeyRef.current === submitKey || !resolvedEmail || normalizedToken.length !== 6) {
+      return;
+    }
+
+    autoSubmitKeyRef.current = submitKey;
+    setOtp(normalizedToken);
+    posthog.capture('auth_verify_link_opened');
+    void handleVerifyOtp(resolvedEmail, normalizedToken);
+  }, [handleVerifyOtp, resolvedEmail, setOtp, tokenParam]);
+
   if (isSignedIn) {
     return <Redirect href={CHAT_AUTH_CONFIG.defaultPostAuthDestination as RelativePathString} />;
   }
@@ -61,8 +78,8 @@ export function VerifyScreen() {
       title={AUTH_COPY.otpVerification.title}
       helper={AUTH_COPY.otpVerification.helper(maskEmail(resolvedEmail))}
     >
-      <View style={styles.form}>
-        <View style={styles.fieldStack}>
+      <Form>
+        <FieldStack>
           <TextField
             testID="auth-otp-input"
             id="auth-otp"
@@ -82,11 +99,9 @@ export function VerifyScreen() {
             style={styles.otpInput}
           />
           {authError ? (
-            <Text testID="auth-otp-message" style={styles.errorText}>
-              {authError}
-            </Text>
+            <FieldError testID="auth-otp-message">{authError}</FieldError>
           ) : null}
-        </View>
+        </FieldStack>
 
         <Button
           onPress={() => {
@@ -97,7 +112,7 @@ export function VerifyScreen() {
           isLoading={isSubmitting}
           testID="auth-verify-otp"
           title={AUTH_COPY.otpVerification.verifyButton}
-          style={styles.primaryButton}
+          style={{ width: '100%' }}
         />
 
         <View style={styles.actionRow}>
@@ -129,20 +144,16 @@ export function VerifyScreen() {
             textStyle={styles.linkText}
           />
         </View>
-      </View>
+      </Form>
     </AuthLayout>
   );
 }
 
 const useStyles = makeStyles((t) =>
   StyleSheet.create({
-    ...getAuthScreenBaseStyles(t),
     otpInput: {
       letterSpacing: 3,
       textAlign: 'center',
-    },
-    primaryButton: {
-      width: '100%',
     },
     actionRow: {
       alignItems: 'center',

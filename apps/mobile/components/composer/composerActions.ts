@@ -6,7 +6,7 @@ import {
   normalizeChatTitle,
 } from '~/services/chat/chat-title';
 
-import type { ComposerTarget, ComposerAttachment, ComposerSelectedNote } from './composerState';
+import type { ComposerAttachment, ComposerSelectedNote, ComposerTarget } from './composerState';
 
 export type ComposerPrimaryAction = 'send_chat' | 'create_note';
 
@@ -67,7 +67,7 @@ export function buildChatTitle(message: string) {
   return normalizeChatTitle(message);
 }
 
-export { DEFAULT_CHAT_TITLE, isDefaultChatTitle, normalizeChatTitle };
+export { DEFAULT_CHAT_TITLE, isDefaultChatTitle };
 
 export function buildNoteContent(noteContent: string, message: string) {
   const trimmedMessage = message.trim();

@@ -26,6 +26,7 @@
   "scripts": {
     "dev": "tsgo --watch --preserveWatchOutput",
     "typecheck": "tsgo --noEmit",
+    "test": "vitest run",
     "format": "pnpm dlx oxfmt ./src",
     "lint": "pnpm dlx oxlint ./src",
     "kysely-codegen": "kysely-codegen --out-file ./src/types/database.ts"

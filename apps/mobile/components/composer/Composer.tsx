@@ -10,8 +10,8 @@ import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-na
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { makeStyles } from '~/components/theme';
-import { useThemeColors } from '~/components/theme/theme';
 import { createEnter, createExit, createLayoutTransition } from '~/components/theme/animations';
+import { useThemeColors } from '~/components/theme/theme';
 import AppIcon from '~/components/ui/icon';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import { useNoteSearch } from '~/services/notes/use-note-search';

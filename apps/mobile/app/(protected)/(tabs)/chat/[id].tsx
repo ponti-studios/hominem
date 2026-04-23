@@ -29,7 +29,7 @@ import {
   useChatMessages,
   useSendMessage,
 } from '~/services/chat';
-import type { ChatWithActivity } from '~/services/chat/session-state';
+import type { ChatWithActivity } from '~/services/chat/session-types';
 import { formatRelativeAge } from '~/services/date/format-relative-age';
 import {
   createChatInboxRefreshSnapshot,

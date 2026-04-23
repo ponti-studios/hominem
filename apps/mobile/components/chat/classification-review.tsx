@@ -15,7 +15,7 @@ import {
   fontSizes,
   radii,
   spacing,
-} from '~/components/theme/tokens';
+} from '~/components/theme';
 
 import { Button } from '../ui/Button';
 

@@ -1,12 +1,11 @@
 import {
   colors as darkColors,
+  lightColors,
   radii,
   spacing as tokenSpacing,
   type ColorToken,
 } from '@hominem/ui/tokens';
 import { useColorScheme } from 'react-native';
-
-import { lightColors } from './tokens/colors.light';
 
 const spacing = {
   xs_4: tokenSpacing[1],

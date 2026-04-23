@@ -63,18 +63,6 @@ export const useComposerContext = () => {
   return { ...draftCtx, ...uiCtx };
 };
 
-export const useComposerDraftContext = () => {
-  const ctx = useContext(ComposerDraftContext);
-  if (!ctx) throw new Error('useComposerDraftContext must be used within a ComposerProvider');
-  return ctx;
-};
-
-export const useComposerUIContext = () => {
-  const ctx = useContext(ComposerUIContext);
-  if (!ctx) throw new Error('useComposerUIContext must be used within a ComposerProvider');
-  return ctx;
-};
-
 export const ComposerProvider = ({ children }: PropsWithChildren) => {
   const pathname = usePathname();
   const params = useLocalSearchParams<{ chatId?: string | string[]; id?: string | string[] }>();

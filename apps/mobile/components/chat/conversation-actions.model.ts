@@ -22,7 +22,7 @@ export interface ConversationActionsModelInput {
   transformTypes: Exclude<ConversationActionType, 'tracker'>[];
 }
 
-export const TRANSFORM_LABELS: Record<Exclude<ConversationActionType, 'tracker'>, string> = {
+const TRANSFORM_LABELS: Record<Exclude<ConversationActionType, 'tracker'>, string> = {
   note: 'Transform to note',
   task: 'Transform to task',
   task_list: 'Transform to task list',

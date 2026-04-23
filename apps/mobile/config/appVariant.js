@@ -1,10 +1,3 @@
-const DEV_CLIENT_EXCLUDED_MODULES = [
-  'expo-dev-client',
-  'expo-dev-launcher',
-  'expo-dev-menu',
-  'expo-dev-menu-interface',
-];
-
 const APP_VARIANTS = Object.freeze({
   dev: Object.freeze({
     bundleIdentifier: 'com.pontistudios.hakumi.dev',
@@ -48,20 +41,7 @@ function getAppVariantConfig(rawVariant = process.env.APP_VARIANT ?? 'dev') {
   return { ...APP_VARIANTS[getAppVariant(rawVariant)] };
 }
 
-function getPodfileUseExpoModulesLine(rawVariant = process.env.APP_VARIANT ?? 'dev') {
-  const variantConfig = getAppVariantConfig(rawVariant);
-
-  if (variantConfig.usesDevClient) {
-    return '  use_expo_modules!';
-  }
-
-  return `  use_expo_modules!(exclude: ${JSON.stringify([...DEV_CLIENT_EXCLUDED_MODULES])})`;
-}
-
 module.exports = {
-  APP_VARIANTS,
-  DEV_CLIENT_EXCLUDED_MODULES,
   getAppVariant,
   getAppVariantConfig,
-  getPodfileUseExpoModulesLine,
 };

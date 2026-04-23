@@ -1,8 +1,11 @@
+import { Image } from 'expo-image';
 import React from 'react';
 import { KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Screen } from '~/components/layout/Page';
 import { Text, makeStyles } from '~/components/theme';
+import { useThemeColors } from '~/components/theme/theme';
 
 interface AuthLayoutProps {
   testID: string;
@@ -14,91 +17,91 @@ interface AuthLayoutProps {
 
 export function AuthLayout({ testID, title, helper, isProbing, children }: AuthLayoutProps) {
   const styles = useStyles();
+  const themeColors = useThemeColors();
 
   return (
-    <Screen
-      testID={testID}
-      maxWidth="sm"
-      padded={true}
-      edges={['top', 'right', 'bottom', 'left']}
-      style={styles.screenContainer}
-      scroll={false}
-      contentContainerStyle={styles.screenContent}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.flex}
     >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.flex}
-      >
-        <View style={styles.centerStage}>
-          <View style={styles.card}>
-            <View style={styles.hero}>
-              <View style={styles.brandRow}>
-                <View style={styles.accent} />
+      <SafeAreaView style={styles.flex} edges={['top', 'left', 'right']}>
+        <View style={styles.container} testID={testID}>
+          <View style={styles.header}>
+            <Animated.View entering={FadeInDown.delay(0).springify().damping(18)}>
+              <View style={styles.brandMark}>
+                <Image
+                  source="sf:sparkles"
+                  style={styles.brandIcon}
+                  tintColor={themeColors.foreground}
+                  contentFit="contain"
+                />
               </View>
+            </Animated.View>
 
+            <Animated.View entering={FadeInDown.delay(80).springify().damping(18)}>
               <Text variant="title1" color="foreground" style={styles.title}>
                 {title}
               </Text>
-              <Text variant="body" color="text-tertiary" style={styles.helper}>
-                {isProbing ? 'Resuming session...' : helper}
-              </Text>
-            </View>
+            </Animated.View>
 
-            {!isProbing && <View style={styles.form}>{children}</View>}
+            <Animated.View entering={FadeInDown.delay(160).springify().damping(18)}>
+              <Text variant="body" color="text-tertiary" style={styles.helper}>
+                {isProbing ? 'Resuming session…' : helper}
+              </Text>
+            </Animated.View>
           </View>
+
+          {!isProbing && (
+            <Animated.View
+              entering={FadeInDown.delay(240).springify().damping(18)}
+              style={styles.form}
+            >
+              {children}
+            </Animated.View>
+          )}
         </View>
-      </KeyboardAvoidingView>
-    </Screen>
+      </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }
 
 const useStyles = makeStyles((t) =>
   StyleSheet.create({
-    screenContainer: {
-      backgroundColor: t.colors['bg-base'],
-    },
     flex: {
       flex: 1,
     },
-    screenContent: {
-      flex: 1,
-    },
-    centerStage: {
+    container: {
       flex: 1,
       justifyContent: 'center',
-    },
-    card: {
-      flexGrow: 1,
+      paddingHorizontal: t.spacing.m_16,
+      paddingBottom: t.spacing.ml_24,
       rowGap: t.spacing.ml_24,
     },
-    hero: {
+    header: {
       alignItems: 'center',
-      rowGap: t.spacing.sm_8,
+      rowGap: t.spacing.sm_12,
     },
-    brandRow: {
+    brandMark: {
       alignItems: 'center',
-      flexDirection: 'row',
-      gap: t.spacing.sm_8,
+      backgroundColor: t.colors['bg-elevated'],
+      borderColor: t.colors['border-faint'],
+      borderCurve: 'continuous',
+      borderRadius: t.borderRadii.md,
+      borderWidth: 1,
+      height: 44,
       justifyContent: 'center',
+      width: 44,
     },
-    logo: {
-      width: 72,
-      height: 72,
-    },
-    accent: {
-      ...StyleSheet.absoluteFill,
-      backgroundColor: t.colors.accent,
-      borderRadius: t.borderRadii.lg,
-      opacity: 0.1,
-      zIndex: -1,
+    brandIcon: {
+      height: 22,
+      width: 22,
     },
     title: {
-      marginTop: t.spacing.sm_12,
       textAlign: 'center',
     },
     helper: {
       textAlign: 'center',
-      paddingHorizontal: t.spacing.ml_24,
+      paddingHorizontal: t.spacing.sm_12,
     },
     form: {
       width: '100%',

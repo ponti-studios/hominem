@@ -30,7 +30,6 @@
       "types": "./src/logger.ts",
       "default": "./src/logger.ts"
     },
-
     "./time": {
       "types": "./src/time.ts",
       "default": "./src/time.ts"
@@ -43,10 +42,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.529.0",
-    "@aws-sdk/s3-request-presigner": "^3.529.0",
-    "@opentelemetry/api": "^1.8.0",
-    "@opentelemetry/api-logs": "^0.51.0",
-    "pino": "^9.7.0"
+    "@aws-sdk/s3-request-presigner": "^3.529.0"
   },
   "devDependencies": {}
 }

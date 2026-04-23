@@ -93,7 +93,11 @@ function NoteDetailEditor({
     content,
     onContentChange: (newText) => {
       setContent(newText);
-      void onSave(title, newText, files.map((f) => f.id));
+      void onSave(
+        title,
+        newText,
+        files.map((f) => f.id),
+      );
     },
   });
 
@@ -159,7 +163,11 @@ function NoteDetailEditor({
           value={title ?? ''}
           onChangeText={(value) => {
             setTitle(value);
-            void onSave(value, content, files.map((f) => f.id));
+            void onSave(
+              value,
+              content,
+              files.map((f) => f.id),
+            );
           }}
           placeholder="Title"
           returnKeyType="next"
@@ -177,7 +185,11 @@ function NoteDetailEditor({
           onChangeText={(value) => {
             setContent(value);
             toolbar.onTypingChange(value);
-            void onSave(title, value, files.map((f) => f.id));
+            void onSave(
+              title,
+              value,
+              files.map((f) => f.id),
+            );
           }}
           onSelectionChange={toolbar.onSelectionChange}
           placeholder="Start writing…"

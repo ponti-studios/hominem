@@ -17,7 +17,7 @@ import {
   fontWeights,
   radii,
   spacing,
-} from '~/components/theme/tokens';
+} from '~/components/theme';
 
 import type { ButtonBaseProps, ButtonSize, ButtonVariant } from './button.types';
 

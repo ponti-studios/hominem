@@ -130,11 +130,7 @@ function PersonSaveIcon({ feedback }: { feedback: 'idle' | 'success' | 'error' }
           : iconPrimaryColor;
 
     return {
-      tintColor: interpolateColor(
-        progress.value,
-        [0, 1],
-        [iconPrimaryColor, targetColor],
-      ),
+      tintColor: interpolateColor(progress.value, [0, 1], [iconPrimaryColor, targetColor]),
     };
   });
 
@@ -361,7 +357,9 @@ function Settings() {
                 />
                 {nameChanged && (
                   <Button
-                    onPress={() => { void onSavePress(); }}
+                    onPress={() => {
+                      void onSavePress();
+                    }}
                     disabled={saveStatus === 'saving'}
                     isLoading={saveStatus === 'saving'}
                     size="xs"
