@@ -1,19 +1,40 @@
+import {
+  Button as SwiftUIButton,
+  Form as SwiftUIForm,
+  Host as SwiftUIHost,
+  Section as SwiftUISection,
+  Text as SwiftUIText,
+  TextField as SwiftUITextField,
+  VStack,
+} from '@expo/ui/swift-ui';
+import {
+  buttonStyle,
+  controlSize,
+  disabled as disabledModifier,
+  font,
+  foregroundStyle,
+  frame,
+  keyboardType,
+  listStyle,
+  onSubmit,
+  padding,
+  submitLabel,
+  textFieldStyle,
+  textInputAutocapitalization,
+  autocorrectionDisabled,
+} from '@expo/ui/swift-ui/modifiers';
 import type { RelativePathString } from 'expo-router';
 import { Redirect } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { StyleSheet } from 'react-native';
 
-import { Alert } from '~/components/Alert';
-import { Text, theme } from '~/components/theme';
-import { Button } from '~/components/ui/Button';
-import { TextField } from '~/components/ui/TextField';
 import { useAuth } from '~/services/auth/auth-provider';
 
 const Onboarding = () => {
   const { isSignedIn, currentUser, updateProfile, signOut } = useAuth();
   const [name, setName] = useState('');
   const [hasError, setHasError] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const saveName = async (nextName: string) => {
     if (!currentUser) return;
@@ -21,7 +42,7 @@ const Onboarding = () => {
   };
 
   const onButtonPress = async () => {
-    if (!currentUser) return;
+    if (!currentUser || isSubmitting) return;
     const trimmedName = name.trim();
     if (!trimmedName) {
       setHasError(true);
@@ -29,21 +50,27 @@ const Onboarding = () => {
     }
 
     try {
+      setIsSubmitting(true);
       setHasError(false);
       await saveName(trimmedName);
     } catch {
       setHasError(true);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const onSkipPress = async () => {
-    if (!currentUser) return;
+    if (!currentUser || isSubmitting) return;
     const fallbackName = currentUser.email?.split('@')[0] || 'Hakumi user';
     try {
+      setIsSubmitting(true);
       setHasError(false);
       await saveName(fallbackName);
     } catch {
       setHasError(true);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -56,102 +83,83 @@ const Onboarding = () => {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.content}>
-        <View style={styles.hero}>
-          <View style={styles.mark}>
-            <Text variant="headline" color="foreground">
-              H
-            </Text>
-          </View>
-          <Text variant="title1" color="foreground" style={styles.title}>
-            What should Hakumi call you?
-          </Text>
-          <Text variant="body" color="text-tertiary" style={styles.helper}>
-            This is only used to personalize your workspace. You can change it later.
-          </Text>
-        </View>
+    <SwiftUIHost style={styles.host} useViewportSizeMeasurement>
+      <SwiftUIForm modifiers={[listStyle('insetGrouped')]}>
+        <SwiftUISection>
+          <VStack spacing={8} modifiers={[padding({ vertical: 8 })]}>
+            <SwiftUIText modifiers={[font({ size: 17, weight: 'semibold' })]}>H</SwiftUIText>
+            <SwiftUIText modifiers={[font({ size: 28, weight: 'bold' })]}>
+              What should Hakumi call you?
+            </SwiftUIText>
+            <SwiftUIText
+              modifiers={[
+                font({ size: 16 }),
+                foregroundStyle({ type: 'hierarchical', style: 'secondary' }),
+              ]}
+            >
+              This is only used to personalize your workspace. You can change it later.
+            </SwiftUIText>
+          </VStack>
+        </SwiftUISection>
 
-        <TextField
-          label="Name"
-          placeholder="Wyatt"
-          value={name}
-          style={styles.inputFlex}
-          autoCapitalize="words"
-          autoCorrect={false}
-          returnKeyType="done"
-          onSubmitEditing={onButtonPress}
-          onChangeText={(text) => setName(text)}
-        />
-        <Button title="Start using Hakumi" onPress={onButtonPress} />
-        <Button
-          title="Continue without name"
-          variant="link"
-          size="xs"
-          onPress={onSkipPress}
-          textStyle={styles.skipText}
-        />
-        <Pressable testID="onboarding-sign-out" onPress={signOut} style={styles.signOutAction}>
-          <Text variant="caption1" color="text-tertiary">
-            Sign out
-          </Text>
-        </Pressable>
-        {hasError ? (
-          <Alert error>
-            <Text variant="body" color="destructive">
+        <SwiftUISection>
+          <SwiftUITextField
+            placeholder="Wyatt"
+            onValueChange={(text) => {
+              setName(text);
+              setHasError(false);
+            }}
+            modifiers={[
+              textFieldStyle('roundedBorder'),
+              keyboardType('default'),
+              textInputAutocapitalization('words'),
+              autocorrectionDisabled(true),
+              submitLabel('done'),
+              onSubmit(() => void onButtonPress()),
+              disabledModifier(isSubmitting),
+            ]}
+          />
+
+          {hasError ? (
+            <SwiftUIText
+              modifiers={[font({ size: 13 }), foregroundStyle({ type: 'color', color: 'red' })]}
+            >
               Add a name or continue without one.
-            </Text>
-          </Alert>
-        ) : null}
-      </View>
-    </SafeAreaView>
+            </SwiftUIText>
+          ) : null}
+
+          <SwiftUIButton
+            label="Start using Hakumi"
+            onPress={() => void onButtonPress()}
+            modifiers={[
+              buttonStyle('borderedProminent'),
+              controlSize('large'),
+              disabledModifier(isSubmitting),
+              frame({ maxWidth: Number.POSITIVE_INFINITY }),
+            ]}
+          />
+
+          <SwiftUIButton
+            label="Continue without name"
+            onPress={() => void onSkipPress()}
+            modifiers={[buttonStyle('plain'), controlSize('small'), disabledModifier(isSubmitting)]}
+          />
+
+          <SwiftUIButton
+            testID="onboarding-sign-out"
+            label="Sign out"
+            onPress={() => void signOut()}
+            modifiers={[buttonStyle('plain'), controlSize('small')]}
+          />
+        </SwiftUISection>
+      </SwiftUIForm>
+    </SwiftUIHost>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
+  host: {
     flex: 1,
-    justifyContent: 'center',
-  },
-  content: {
-    paddingHorizontal: theme.spacing.ml_24,
-    rowGap: theme.spacing.m_16,
-  },
-  hero: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    rowGap: theme.spacing.sm_12,
-    marginBottom: theme.spacing.m_16,
-  },
-  mark: {
-    alignItems: 'center',
-    backgroundColor: theme.colors['bg-elevated'],
-    borderColor: theme.colors['border-faint'],
-    borderCurve: 'continuous',
-    borderRadius: theme.borderRadii.md,
-    borderWidth: 1,
-    height: 48,
-    justifyContent: 'center',
-    width: 48,
-  },
-  title: {
-    textAlign: 'center',
-  },
-  helper: {
-    textAlign: 'center',
-  },
-  inputFlex: {
-    width: '100%',
-  },
-  skipText: {
-    color: theme.colors['text-tertiary'],
-    fontSize: 12,
-    fontWeight: '600',
-    textDecorationLine: 'underline',
-  },
-  signOutAction: {
-    alignItems: 'center',
-    paddingVertical: theme.spacing.sm_8,
   },
 });
 

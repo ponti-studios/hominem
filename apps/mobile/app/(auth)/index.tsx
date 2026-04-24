@@ -1,15 +1,36 @@
+import {
+  Button as SwiftUIButton,
+  Form as SwiftUIForm,
+  Host as SwiftUIHost,
+  ProgressView,
+  Section as SwiftUISection,
+  Text as SwiftUIText,
+  TextField as SwiftUITextField,
+  VStack,
+} from '@expo/ui/swift-ui';
+import {
+  buttonStyle,
+  controlSize,
+  disabled as disabledModifier,
+  font,
+  foregroundStyle,
+  frame,
+  keyboardType,
+  listStyle,
+  padding,
+  submitLabel,
+  textContentType,
+  textFieldStyle,
+  textInputAutocapitalization,
+  autocorrectionDisabled,
+} from '@expo/ui/swift-ui/modifiers';
 import { AUTH_COPY, CHAT_AUTH_CONFIG } from '@hominem/auth/shared/ux-contract';
 import type { RelativePathString } from 'expo-router';
 import { Redirect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 
-import { AuthLayout } from '~/components/AuthLayout';
 import { FeatureErrorBoundary } from '~/components/error-boundary/FeatureErrorBoundary';
-import { makeStyles } from '~/components/theme';
-import { Button } from '~/components/ui/Button';
-import { FieldError, FieldStack, Form } from '~/components/ui/Form';
-import { TextField } from '~/components/ui/TextField';
 import { E2E_TESTING, MOBILE_PASSKEY_ENABLED } from '~/constants';
 import { useAuth } from '~/services/auth/auth-provider';
 import { resolveAuthScreenState } from '~/services/auth/auth-screen-state';
@@ -18,7 +39,6 @@ import { isValidEmail, normalizeEmail } from '~/services/auth/validation';
 import { posthog } from '~/services/posthog';
 
 function AuthScreen() {
-  const styles = useStyles();
   const { authStatus, isSignedIn, completePasskeySignIn, requestEmailOtp } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -77,6 +97,24 @@ function AuthScreen() {
     }
   }, [completePasskeySignIn, signInWithPasskey]);
 
+  const handleE2EPasskey = useCallback(
+    async (mode: 'e2e-success' | 'e2e-cancel') => {
+      try {
+        setIsSubmitting(true);
+        setAuthError(null);
+        const result = await signInWithPasskey(mode);
+        if (result) {
+          await completePasskeySignIn(result);
+        }
+      } catch (error: unknown) {
+        setAuthError(error instanceof Error ? error.message : AUTH_COPY.passkey.genericError);
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [completePasskeySignIn, signInWithPasskey],
+  );
+
   if (isSignedIn) {
     return <Redirect href={CHAT_AUTH_CONFIG.defaultPostAuthDestination as RelativePathString} />;
   }
@@ -89,140 +127,139 @@ function AuthScreen() {
   const canUsePasskeys = MOBILE_PASSKEY_ENABLED && isPasskeySupported;
 
   return (
-    <AuthLayout
-      testID="auth-screen"
-      title={AUTH_COPY.emailEntry.title}
-      helper={AUTH_COPY.emailEntry.helper}
-      isProbing={isProbing}
-    >
-      <Form>
-        <FieldStack>
-          <TextField
-            testID="auth-email-input"
-            id="auth-email"
-            label={AUTH_COPY.emailEntry.emailLabel}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-            value={email}
-            editable={!isSubmitting}
-            placeholder={AUTH_COPY.emailEntry.emailPlaceholder}
-            onChangeText={(text) => {
-              setEmail(text);
-              setAuthError(null);
-            }}
-            onBlur={() => {
-              if (email.trim()) {
-                posthog.capture('auth_email_entered', {
-                  valid: isValidEmail(normalizeEmail(email)),
-                });
-              }
-            }}
-          />
-          {displayError ? (
-            <FieldError testID="auth-email-message">{displayError}</FieldError>
-          ) : null}
-        </FieldStack>
+    <>
+      <SwiftUIHost style={styles.host} testID="auth-screen" useViewportSizeMeasurement>
+        <SwiftUIForm modifiers={[listStyle('insetGrouped')]}>
+          <SwiftUISection>
+            <VStack spacing={8} modifiers={[padding({ vertical: 8 })]}>
+              <SwiftUIText modifiers={[font({ size: 28, weight: 'bold' })]}>
+                {AUTH_COPY.emailEntry.title}
+              </SwiftUIText>
+              <SwiftUIText
+                modifiers={[
+                  font({ size: 16 }),
+                  foregroundStyle({ type: 'hierarchical', style: 'secondary' }),
+                ]}
+              >
+                {isProbing ? 'Resuming session...' : AUTH_COPY.emailEntry.helper}
+              </SwiftUIText>
+            </VStack>
+          </SwiftUISection>
 
-        <Button
-          onPress={handleSendCode}
-          disabled={isSubmitting}
-          isLoading={isSubmitting}
-          testID="auth-send-otp"
-          title={AUTH_COPY.emailEntry.submitButton}
-          style={{ width: '100%' }}
-        />
+          {!isProbing ? (
+            <SwiftUISection>
+              <SwiftUITextField
+                testID="auth-email-input"
+                placeholder={AUTH_COPY.emailEntry.emailPlaceholder}
+                onValueChange={(text) => {
+                  setEmail(text);
+                  setAuthError(null);
+                }}
+                onFocusChange={(focused) => {
+                  if (!focused && email.trim()) {
+                    posthog.capture('auth_email_entered', {
+                      valid: isValidEmail(normalizeEmail(email)),
+                    });
+                  }
+                }}
+                modifiers={[
+                  textFieldStyle('roundedBorder'),
+                  keyboardType('email-address'),
+                  textContentType('emailAddress'),
+                  textInputAutocapitalization('never'),
+                  autocorrectionDisabled(true),
+                  submitLabel('continue'),
+                  disabledModifier(isSubmitting),
+                ]}
+              />
 
-        {canUsePasskeys ? (
-          <Button
-            onPress={handlePasskeySignIn}
-            disabled={isSubmitting}
-            isLoading={isPasskeyLoading}
-            variant="link"
-            size="xs"
-            style={styles.passkeyButton}
-            textStyle={styles.passkeyButtonText}
-            testID="auth-passkey-button"
-            title={
-              isPasskeyLoading
-                ? AUTH_COPY.emailEntry.passkeyLoadingButton
-                : AUTH_COPY.emailEntry.passkeyButton
-            }
-          />
-        ) : null}
+              {displayError ? (
+                <SwiftUIText
+                  testID="auth-email-message"
+                  modifiers={[font({ size: 13 }), foregroundStyle({ type: 'color', color: 'red' })]}
+                >
+                  {displayError}
+                </SwiftUIText>
+              ) : null}
 
-        {E2E_TESTING && MOBILE_PASSKEY_ENABLED ? (
-          <Pressable
-            onPress={async () => {
-              try {
-                setIsSubmitting(true);
-                setAuthError(null);
-                const result = await signInWithPasskey('e2e-success');
-                if (result) {
-                  await completePasskeySignIn(result);
+              <SwiftUIButton
+                testID="auth-send-otp"
+                label={
+                  isSubmitting
+                    ? AUTH_COPY.emailEntry.submitButton
+                    : AUTH_COPY.emailEntry.submitButton
                 }
-              } catch (error: unknown) {
-                setAuthError(
-                  error instanceof Error ? error.message : AUTH_COPY.passkey.genericError,
-                );
-              } finally {
-                setIsSubmitting(false);
-              }
-            }}
-            style={styles.e2ePasskeyAction}
-            testID="auth-e2e-passkey-success"
-          />
-        ) : null}
+                onPress={() => void handleSendCode()}
+                modifiers={[
+                  buttonStyle('borderedProminent'),
+                  controlSize('large'),
+                  disabledModifier(isSubmitting),
+                  frame({ maxWidth: Number.POSITIVE_INFINITY }),
+                ]}
+              />
+              {isSubmitting ? <ProgressView /> : null}
 
-        {E2E_TESTING && MOBILE_PASSKEY_ENABLED ? (
-          <Pressable
-            onPress={async () => {
-              try {
-                setIsSubmitting(true);
-                setAuthError(null);
-                await signInWithPasskey('e2e-cancel');
-              } finally {
-                setIsSubmitting(false);
-              }
-            }}
-            style={styles.e2ePasskeyActionAlt}
-            testID="auth-e2e-passkey-cancel"
-          />
-        ) : null}
-      </Form>
-    </AuthLayout>
+              {canUsePasskeys ? (
+                <SwiftUIButton
+                  testID="auth-passkey-button"
+                  label={
+                    isPasskeyLoading
+                      ? AUTH_COPY.emailEntry.passkeyLoadingButton
+                      : AUTH_COPY.emailEntry.passkeyButton
+                  }
+                  onPress={() => void handlePasskeySignIn()}
+                  modifiers={[
+                    buttonStyle('plain'),
+                    controlSize('small'),
+                    disabledModifier(isSubmitting || isPasskeyLoading),
+                  ]}
+                />
+              ) : null}
+            </SwiftUISection>
+          ) : null}
+        </SwiftUIForm>
+      </SwiftUIHost>
+
+      {E2E_TESTING && MOBILE_PASSKEY_ENABLED ? (
+        <Pressable
+          onPress={() => void handleE2EPasskey('e2e-success')}
+          style={styles.e2ePasskeyAction}
+          testID="auth-e2e-passkey-success"
+        />
+      ) : null}
+
+      {E2E_TESTING && MOBILE_PASSKEY_ENABLED ? (
+        <Pressable
+          onPress={() => void handleE2EPasskey('e2e-cancel')}
+          style={styles.e2ePasskeyActionAlt}
+          testID="auth-e2e-passkey-cancel"
+        />
+      ) : null}
+    </>
   );
 }
 
-const useStyles = makeStyles((t) =>
-  StyleSheet.create({
-    passkeyButton: {
-      alignSelf: 'center',
-    },
-    passkeyButtonText: {
-      color: t.colors['text-tertiary'],
-      fontSize: 12,
-      fontWeight: '600',
-      textDecorationLine: 'underline',
-    },
-    e2ePasskeyAction: {
-      position: 'absolute',
-      top: t.spacing.xs_4,
-      right: t.spacing.xs_4,
-      width: 16,
-      height: 16,
-      opacity: 0.02,
-    },
-    e2ePasskeyActionAlt: {
-      position: 'absolute',
-      top: t.spacing.ml_24,
-      right: t.spacing.xs_4,
-      width: 16,
-      height: 16,
-      opacity: 0.02,
-    },
-  }),
-);
+const styles = StyleSheet.create({
+  host: {
+    flex: 1,
+  },
+  e2ePasskeyAction: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 16,
+    height: 16,
+    opacity: 0.02,
+  },
+  e2ePasskeyActionAlt: {
+    position: 'absolute',
+    top: 24,
+    right: 4,
+    width: 16,
+    height: 16,
+    opacity: 0.02,
+  },
+});
 
 const AuthWithErrorBoundary = () => (
   <FeatureErrorBoundary featureName="Auth">

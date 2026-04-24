@@ -1,38 +1,40 @@
-import { Image } from 'expo-image';
+import {
+  Button as SwiftUIButton,
+  Form as SwiftUIForm,
+  Host as SwiftUIHost,
+  HStack,
+  Image as SwiftUIImage,
+  ProgressView,
+  Section as SwiftUISection,
+  Spacer,
+  Text as SwiftUIText,
+  TextField as SwiftUITextField,
+  Toggle as SwiftUIToggle,
+  VStack,
+} from '@expo/ui/swift-ui';
+import {
+  buttonStyle,
+  controlSize,
+  disabled as disabledModifier,
+  font,
+  foregroundStyle,
+  frame,
+  listStyle,
+  onSubmit,
+  padding,
+  submitLabel,
+  textFieldStyle,
+} from '@expo/ui/swift-ui/modifiers';
 import type { RelativePathString } from 'expo-router';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useReducer, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Platform,
-  Pressable,
-  ScrollView,
-  Switch,
-  TextInput,
-  View,
-} from 'react-native';
-import Animated, {
-  Easing,
-  interpolateColor,
-  useAnimatedProps,
-  useAnimatedStyle,
-  useSharedValue,
-  withSequence,
-  withTiming,
-} from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Alert } from 'react-native';
 
-import { Text, makeStyles } from '~/components/theme';
-import { useThemeColors } from '~/components/theme/theme';
-import { Button } from '~/components/ui/Button';
 import { MOBILE_PASSKEY_ENABLED } from '~/constants';
 import { getAppLockEnabled, setAppLockEnabled } from '~/hooks/use-app-lock';
 import { getPreventScreenshots, setPreventScreenshots } from '~/hooks/use-screen-capture';
 import { useAuth } from '~/services/auth/auth-provider';
 import { useMobilePasskeyAuth } from '~/services/auth/hooks/use-mobile-passkey-auth';
-
-const AnimatedImage = Animated.createAnimatedComponent(Image);
 
 interface AccountState {
   name: string;
@@ -64,169 +66,8 @@ function accountReducer(state: AccountState, action: AccountAction): AccountStat
   }
 }
 
-function SectionLabel({ children }: { children: string }) {
-  const styles = useSettingsStyles();
-  return <Text style={styles.sectionLabel}>{children}</Text>;
-}
-
-function SectionCard({ children }: { children: React.ReactNode }) {
-  const styles = useSettingsStyles();
-  return <View style={styles.sectionCard}>{children}</View>;
-}
-
-function RowSeparator() {
-  const styles = useSettingsStyles();
-  return <View style={styles.rowSeparator} />;
-}
-
-function PersonSaveIcon({ feedback }: { feedback: 'idle' | 'success' | 'error' }) {
-  const styles = useSettingsStyles();
-  const themeColors = useThemeColors();
-  const progress = useSharedValue(0);
-  const shakeX = useSharedValue(0);
-
-  const successColor = themeColors.success;
-  const destructiveColor = themeColors.destructive;
-  const iconPrimaryColor = themeColors['icon-primary'];
-
-  useEffect(() => {
-    if (feedback === 'idle') {
-      progress.value = 0;
-      shakeX.value = 0;
-      return;
-    }
-
-    progress.value = 0;
-
-    if (feedback === 'success') {
-      progress.value = withSequence(
-        withTiming(1, { duration: 160, easing: Easing.out(Easing.quad) }),
-        withTiming(0, { duration: 220, easing: Easing.inOut(Easing.quad) }),
-      );
-      return;
-    }
-
-    shakeX.value = withSequence(
-      withTiming(-4, { duration: 40 }),
-      withTiming(4, { duration: 40 }),
-      withTiming(-3, { duration: 36 }),
-      withTiming(3, { duration: 36 }),
-      withTiming(-2, { duration: 32 }),
-      withTiming(2, { duration: 32 }),
-      withTiming(0, { duration: 32 }),
-    );
-    progress.value = withSequence(
-      withTiming(1, { duration: 140, easing: Easing.out(Easing.quad) }),
-      withTiming(0, { duration: 220, easing: Easing.inOut(Easing.quad) }),
-    );
-  }, [feedback, progress, shakeX]);
-
-  const animatedProps = useAnimatedProps(() => {
-    const targetColor =
-      feedback === 'success'
-        ? successColor
-        : feedback === 'error'
-          ? destructiveColor
-          : iconPrimaryColor;
-
-    return {
-      tintColor: interpolateColor(progress.value, [0, 1], [iconPrimaryColor, targetColor]),
-    };
-  });
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: shakeX.value }],
-  }));
-
-  return (
-    <Animated.View style={animatedStyle}>
-      <AnimatedImage
-        source="sf:person.crop.circle"
-        style={styles.rowIcon}
-        contentFit="contain"
-        animatedProps={animatedProps}
-      />
-    </Animated.View>
-  );
-}
-
-interface RowProps {
-  sf?: string;
-  sfColor?: string;
-  label: string;
-  sublabel?: string;
-  trailing?: React.ReactNode;
-  onPress?: () => void;
-  destructive?: boolean;
-  disabled?: boolean;
-}
-
-function SettingsRow({
-  sf,
-  sfColor,
-  label,
-  sublabel,
-  trailing,
-  onPress,
-  destructive = false,
-  disabled = false,
-}: RowProps) {
-  const styles = useSettingsStyles();
-  const themeColors = useThemeColors();
-  const labelColor = destructive ? themeColors.destructive : themeColors.foreground;
-
-  const inner = (
-    <View style={styles.row}>
-      {sf && (
-        <View
-          style={[styles.rowIconWrap, { backgroundColor: sfColor ?? themeColors['bg-elevated'] }]}
-        >
-          <Image
-            source={`sf:${sf}`}
-            style={styles.rowIcon}
-            tintColor={destructive ? themeColors.destructive : themeColors['icon-primary']}
-            contentFit="contain"
-          />
-        </View>
-      )}
-      <View style={styles.rowContent}>
-        <Text style={[styles.rowLabel, { color: labelColor }]}>{label}</Text>
-        {sublabel ? <Text style={styles.rowSublabel}>{sublabel}</Text> : null}
-      </View>
-      {trailing !== undefined ? (
-        <View style={styles.rowTrailing}>{trailing}</View>
-      ) : onPress ? (
-        <Image
-          source="sf:chevron.right"
-          style={styles.chevron}
-          tintColor={themeColors['text-tertiary']}
-          contentFit="contain"
-        />
-      ) : null}
-    </View>
-  );
-
-  if (onPress && !disabled) {
-    return (
-      <Pressable
-        onPress={onPress}
-        style={({ pressed }) => [styles.rowPressable, pressed && styles.rowPressed]}
-        accessibilityRole="button"
-        accessibilityLabel={label}
-      >
-        {inner}
-      </Pressable>
-    );
-  }
-
-  return <View style={styles.rowPressable}>{inner}</View>;
-}
-
 function Settings() {
-  const insets = useSafeAreaInsets();
   const router = useRouter();
-  const styles = useSettingsStyles();
-  const themeColors = useThemeColors();
   const { isSignedIn, signOut, currentUser, updateProfile } = useAuth();
   const {
     addPasskey,
@@ -238,7 +79,6 @@ function Settings() {
   const [state, dispatch] = useReducer(accountReducer, initialName, createInitialAccountState);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [saveFeedback, setSaveFeedback] = useState<'idle' | 'success' | 'error'>('idle');
 
   const normalizedName = state.name.trim();
   const initialNormalizedName = initialName.trim();
@@ -251,7 +91,6 @@ function Settings() {
 
     const timeout = setTimeout(() => {
       setSaveStatus('idle');
-      setSaveFeedback('idle');
     }, 1500);
 
     return () => clearTimeout(timeout);
@@ -269,17 +108,14 @@ function Settings() {
     }
 
     setSaveError(null);
-    setSaveFeedback('idle');
     setSaveStatus('saving');
 
     try {
       await updateProfile({ name: normalizedName });
       dispatch({ type: 'set-name', name: normalizedName });
       setSaveStatus('saved');
-      setSaveFeedback('success');
     } catch (error) {
       setSaveStatus('idle');
-      setSaveFeedback('error');
       setSaveError(error instanceof Error ? error.message : 'Could not save name.');
     }
   };
@@ -327,338 +163,163 @@ function Settings() {
   if (!isSignedIn) return null;
 
   return (
-    <ScrollView
-      style={styles.scroll}
-      contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 32 }]}
-      showsVerticalScrollIndicator={false}
-    >
-      <SectionLabel>Account</SectionLabel>
-      <SectionCard>
-        <SettingsRow
-          sf="person.crop.circle"
-          label="Name"
-          trailing={
-            <>
-              <View style={styles.inlineEditRow}>
-                <TextInput
-                  value={state.name}
-                  onChangeText={(text) => {
-                    dispatch({ type: 'set-name', name: text });
-                    setSaveError(null);
-                    setSaveFeedback('idle');
-                    setSaveStatus('idle');
-                  }}
-                  style={styles.inlineInput}
-                  placeholderTextColor={themeColors['text-tertiary']}
-                  placeholder="Your name"
-                  returnKeyType="done"
-                  onSubmitEditing={nameChanged ? onSavePress : undefined}
-                  accessibilityLabel="Name"
-                />
-                {nameChanged && (
-                  <Button
-                    onPress={() => {
-                      void onSavePress();
-                    }}
-                    disabled={saveStatus === 'saving'}
-                    isLoading={saveStatus === 'saving'}
-                    size="xs"
-                    title="Save"
-                    accessibilityLabel="Save name"
-                  />
-                )}
-              </View>
-              <PersonSaveIcon feedback={saveFeedback} />
-            </>
-          }
-        />
-        {saveError ? (
-          <View style={styles.inlineErrorBanner}>
-            <Text style={styles.inlineStatusError}>{saveError}</Text>
-          </View>
-        ) : null}
-        <RowSeparator />
-        <SettingsRow
-          sf="envelope"
-          label="Email"
-          trailing={
-            <Text style={styles.trailingValue} numberOfLines={1}>
-              {currentUser?.email ?? '—'}
-            </Text>
-          }
-        />
-      </SectionCard>
-
-      <SectionLabel>Privacy</SectionLabel>
-      <SectionCard>
-        <SettingsRow
-          sf={Platform.OS === 'ios' ? 'faceid' : 'lock.fill'}
-          label="Lock with Face ID"
-          trailing={
-            <Switch
-              value={state.appLock}
-              onValueChange={(value) => {
-                dispatch({ type: 'set-app-lock', appLock: value });
-                setAppLockEnabled(value);
+    <SwiftUIHost style={swiftUIStyles.host} useViewportSizeMeasurement>
+      <SwiftUIForm modifiers={[listStyle('insetGrouped')]}>
+        <SwiftUISection title="Account">
+          <HStack spacing={10}>
+            <SwiftUIImage systemName="person.crop.circle" size={18} color="#8E8E93" />
+            <SwiftUIText>Name</SwiftUIText>
+            <Spacer />
+            <SwiftUITextField
+              key={`name-${currentUser?.id ?? 'anonymous'}`}
+              defaultValue={state.name}
+              placeholder="Your name"
+              onValueChange={(text) => {
+                dispatch({ type: 'set-name', name: text });
+                setSaveError(null);
+                setSaveStatus('idle');
               }}
-              accessibilityLabel="Lock with Face ID"
-            />
-          }
-        />
-        <RowSeparator />
-        <SettingsRow
-          sf="eye.slash"
-          label="Prevent screenshots"
-          trailing={
-            <Switch
-              value={state.preventScreenshots}
-              onValueChange={(value) => {
-                dispatch({ type: 'set-prevent-screenshots', preventScreenshots: value });
-                setPreventScreenshots(value);
-              }}
-              accessibilityLabel="Prevent screenshots"
-            />
-          }
-        />
-      </SectionCard>
-
-      <SectionLabel>Chats</SectionLabel>
-      <SectionCard>
-        <SettingsRow sf="archivebox" label="Archived chats" onPress={onArchivedChatsPress} />
-      </SectionCard>
-
-      {MOBILE_PASSKEY_ENABLED && (
-        <>
-          <SectionLabel>Passkeys</SectionLabel>
-          <SectionCard>
-            <SettingsRow
-              sf="person.badge.key.fill"
-              label="Add passkey"
-              onPress={() => void onAddPasskeyPress()}
-              trailing={
-                isPasskeyLoading ? (
-                  <ActivityIndicator size="small" color={themeColors['text-tertiary']} />
-                ) : undefined
-              }
-              disabled={isPasskeyLoading}
-            />
-            {passkeys.map((pk) => (
-              <React.Fragment key={pk.id}>
-                <RowSeparator />
-                <SettingsRow
-                  sf="key.fill"
-                  label={pk.name}
-                  trailing={
-                    <Pressable
-                      onPress={() => onDeletePasskeyPress(pk.id, pk.name)}
-                      hitSlop={8}
-                      accessibilityLabel={`Remove passkey ${pk.name}`}
-                      accessibilityRole="button"
-                    >
-                      <Image
-                        source="sf:trash"
-                        style={styles.trashIcon}
-                        tintColor={themeColors.destructive}
-                        contentFit="contain"
-                      />
-                    </Pressable>
+              modifiers={[
+                textFieldStyle('plain'),
+                submitLabel('done'),
+                onSubmit(() => {
+                  if (nameChanged) {
+                    void onSavePress();
                   }
+                }),
+                frame({ maxWidth: 170, alignment: 'trailing' }),
+              ]}
+            />
+            {nameChanged ? (
+              <SwiftUIButton
+                label={saveStatus === 'saving' ? 'Saving' : 'Save'}
+                onPress={() => void onSavePress()}
+                modifiers={[
+                  buttonStyle('bordered'),
+                  controlSize('small'),
+                  disabledModifier(saveStatus === 'saving'),
+                ]}
+              />
+            ) : null}
+          </HStack>
+
+          {saveStatus === 'saved' ? (
+            <SwiftUIText
+              modifiers={[
+                font({ size: 13 }),
+                foregroundStyle({ type: 'hierarchical', style: 'secondary' }),
+              ]}
+            >
+              Saved
+            </SwiftUIText>
+          ) : null}
+
+          {saveError ? (
+            <SwiftUIText
+              modifiers={[font({ size: 13 }), foregroundStyle({ type: 'color', color: 'red' })]}
+            >
+              {saveError}
+            </SwiftUIText>
+          ) : null}
+
+          <HStack spacing={10}>
+            <SwiftUIImage systemName="envelope" size={18} color="#8E8E93" />
+            <SwiftUIText>Email</SwiftUIText>
+            <Spacer />
+            <SwiftUIText
+              modifiers={[
+                font({ size: 15 }),
+                foregroundStyle({ type: 'hierarchical', style: 'secondary' }),
+              ]}
+            >
+              {currentUser?.email ?? '-'}
+            </SwiftUIText>
+          </HStack>
+        </SwiftUISection>
+
+        <SwiftUISection title="Privacy">
+          <SwiftUIToggle
+            label="Lock with Face ID"
+            systemImage="faceid"
+            isOn={state.appLock}
+            onIsOnChange={(value) => {
+              dispatch({ type: 'set-app-lock', appLock: value });
+              setAppLockEnabled(value);
+            }}
+          />
+          <SwiftUIToggle
+            label="Prevent screenshots"
+            systemImage="eye.slash"
+            isOn={state.preventScreenshots}
+            onIsOnChange={(value) => {
+              dispatch({ type: 'set-prevent-screenshots', preventScreenshots: value });
+              setPreventScreenshots(value);
+            }}
+          />
+        </SwiftUISection>
+
+        <SwiftUISection title="Chats">
+          <SwiftUIButton
+            label="Archived chats"
+            systemImage="archivebox"
+            onPress={onArchivedChatsPress}
+            modifiers={[buttonStyle('plain')]}
+          />
+        </SwiftUISection>
+
+        {MOBILE_PASSKEY_ENABLED ? (
+          <SwiftUISection title="Passkeys">
+            <SwiftUIButton
+              label={isPasskeyLoading ? 'Adding passkey' : 'Add passkey'}
+              systemImage="person.badge.key.fill"
+              onPress={() => void onAddPasskeyPress()}
+              modifiers={[buttonStyle('plain'), disabledModifier(isPasskeyLoading)]}
+            />
+            {isPasskeyLoading ? <ProgressView /> : null}
+            {passkeys.map((pk) => (
+              <HStack key={pk.id} spacing={10}>
+                <SwiftUIImage systemName="key.fill" size={16} color="#8E8E93" />
+                <SwiftUIText>{pk.name}</SwiftUIText>
+                <Spacer />
+                <SwiftUIButton
+                  label="Remove"
+                  role="destructive"
+                  systemImage="trash"
+                  onPress={() => onDeletePasskeyPress(pk.id, pk.name)}
+                  modifiers={[buttonStyle('borderless'), controlSize('small')]}
                 />
-              </React.Fragment>
+              </HStack>
             ))}
-          </SectionCard>
-        </>
-      )}
+          </SwiftUISection>
+        ) : null}
 
-      <View style={styles.dangerZone}>
-        <Pressable
-          onPress={onLogoutPress}
-          style={({ pressed }) => [styles.dangerButton, pressed && styles.dangerButtonPressed]}
-          testID="settings-sign-out"
-          accessibilityRole="button"
-          accessibilityLabel="Sign out"
-        >
-          <Image
-            source="sf:rectangle.portrait.and.arrow.right"
-            style={styles.dangerIcon}
-            tintColor={themeColors.destructive}
-            contentFit="contain"
-          />
-          <Text style={styles.dangerLabel}>Sign out</Text>
-        </Pressable>
-
-        <Pressable
-          onPress={onDeleteAccountPress}
-          style={({ pressed }) => [styles.dangerButton, pressed && styles.dangerButtonPressed]}
-          accessibilityRole="button"
-          accessibilityLabel="Delete account"
-        >
-          <Image
-            source="sf:trash"
-            style={styles.dangerIcon}
-            tintColor={themeColors['text-tertiary']}
-            contentFit="contain"
-          />
-          <Text style={[styles.dangerLabel, styles.dangerLabelMuted]}>Delete account</Text>
-        </Pressable>
-      </View>
-    </ScrollView>
+        <SwiftUISection>
+          <VStack spacing={8} modifiers={[padding({ vertical: 4 })]}>
+            <SwiftUIButton
+              label="Sign out"
+              role="destructive"
+              systemImage="rectangle.portrait.and.arrow.right"
+              onPress={onLogoutPress}
+              modifiers={[buttonStyle('bordered')]}
+            />
+            <SwiftUIButton
+              label="Delete account"
+              role="destructive"
+              systemImage="trash"
+              onPress={onDeleteAccountPress}
+              modifiers={[buttonStyle('borderless')]}
+            />
+          </VStack>
+        </SwiftUISection>
+      </SwiftUIForm>
+    </SwiftUIHost>
   );
 }
 
 export default Settings;
 
-const ROW_HEIGHT = 50;
-const CARD_RADIUS = 14;
-
-const useSettingsStyles = makeStyles((theme) => ({
-  scroll: {
+const swiftUIStyles = {
+  host: {
     flex: 1,
   },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    gap: 4,
-  },
-  sectionLabel: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: theme.colors['text-tertiary'],
-    letterSpacing: 0.1,
-    paddingHorizontal: 4,
-    paddingTop: 16,
-    paddingBottom: 6,
-  },
-  sectionCard: {
-    backgroundColor: theme.colors['bg-base'],
-    borderRadius: CARD_RADIUS,
-    borderCurve: 'continuous',
-    borderWidth: 1,
-    borderColor: theme.colors['border-subtle'],
-    overflow: 'hidden',
-  },
-  rowPressable: {
-    minHeight: ROW_HEIGHT,
-  },
-  rowPressed: {
-    backgroundColor: theme.colors['bg-elevated'],
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 14,
-    minHeight: ROW_HEIGHT,
-  },
-  rowSeparator: {
-    height: 1,
-    backgroundColor: theme.colors['border-subtle'],
-    marginLeft: 14 + 32 + 12,
-  },
-  rowIconWrap: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    borderCurve: 'continuous',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  rowIcon: {
-    width: 16,
-    height: 16,
-  },
-  rowContent: {
-    flex: 1,
-    gap: 2,
-    paddingVertical: 13,
-  },
-  rowLabel: {
-    fontSize: 16,
-    fontWeight: '400',
-    letterSpacing: -0.1,
-    color: theme.colors.foreground,
-  },
-  rowSublabel: {
-    fontSize: 12,
-    color: theme.colors['text-tertiary'],
-  },
-  rowTrailing: {
-    flexShrink: 0,
-    alignItems: 'flex-end',
-  },
-  chevron: {
-    width: 14,
-    height: 14,
-    opacity: 0.4,
-  },
-  trailingValue: {
-    fontSize: 15,
-    color: theme.colors['text-tertiary'],
-    maxWidth: 160,
-  },
-  inlineEditRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  inlineInput: {
-    fontSize: 15,
-    color: theme.colors['text-secondary'],
-    textAlign: 'right',
-    minWidth: 80,
-    maxWidth: 160,
-    padding: 0,
-  },
-  inlineErrorBanner: {
-    marginHorizontal: 14,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: theme.colors.destructive,
-    backgroundColor: theme.colors['destructive-muted'],
-    borderRadius: 10,
-    borderCurve: 'continuous',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-  },
-  inlineStatusError: {
-    fontSize: 12,
-    color: theme.colors.destructive,
-  },
-  trashIcon: {
-    width: 16,
-    height: 16,
-  },
-  dangerZone: {
-    marginTop: 32,
-    gap: 1,
-    borderRadius: CARD_RADIUS,
-    borderCurve: 'continuous',
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: theme.colors['border-subtle'],
-  },
-  dangerButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    backgroundColor: theme.colors['bg-base'],
-  },
-  dangerButtonPressed: {
-    backgroundColor: theme.colors['bg-elevated'],
-  },
-  dangerIcon: {
-    width: 18,
-    height: 18,
-  },
-  dangerLabel: {
-    fontSize: 16,
-    color: theme.colors.destructive,
-    fontWeight: '400',
-  },
-  dangerLabelMuted: {
-    color: theme.colors['text-tertiary'],
-  },
-}));
+} as const;

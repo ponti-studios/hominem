@@ -1,24 +1,46 @@
+import {
+  Button as SwiftUIButton,
+  Form as SwiftUIForm,
+  Host as SwiftUIHost,
+  ProgressView,
+  Section as SwiftUISection,
+  Text as SwiftUIText,
+  TextField as SwiftUITextField,
+  type TextFieldRef,
+  VStack,
+} from '@expo/ui/swift-ui';
+import {
+  buttonStyle,
+  controlSize,
+  disabled as disabledModifier,
+  font,
+  foregroundStyle,
+  frame,
+  keyboardType,
+  listStyle,
+  padding,
+  submitLabel,
+  textContentType,
+  textFieldStyle,
+  textInputAutocapitalization,
+  autocorrectionDisabled,
+} from '@expo/ui/swift-ui/modifiers';
 import { maskEmail } from '@hominem/auth/shared/mask-email';
 import { AUTH_COPY, CHAT_AUTH_CONFIG } from '@hominem/auth/shared/ux-contract';
 import type { RelativePathString } from 'expo-router';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 
-import { AuthLayout } from '../../components/AuthLayout';
 import { FeatureErrorBoundary } from '../../components/error-boundary/FeatureErrorBoundary';
-import { makeStyles } from '../../components/theme';
-import { Button } from '../../components/ui/Button';
-import { FieldError, FieldStack, Form } from '../../components/ui/Form';
-import { TextField } from '../../components/ui/TextField';
 import { useAuth } from '../../services/auth/auth-provider';
 import { useEmailAuth } from '../../services/auth/hooks/use-email-auth';
 import { normalizeOtp } from '../../services/auth/validation';
 import { posthog } from '../../services/posthog';
 
 function VerifyScreen() {
-  const styles = useStyles();
   const router = useRouter();
+  const otpInputRef = React.useRef<TextFieldRef>(null);
   const { isSignedIn, requestEmailOtp, verifyEmailOtp } = useAuth();
   const { email: emailParam, token: tokenParam } = useLocalSearchParams<{
     email: string;
@@ -58,6 +80,7 @@ function VerifyScreen() {
 
     autoSubmitKeyRef.current = submitKey;
     setOtp(normalizedToken);
+    void otpInputRef.current?.setText(normalizedToken);
     posthog.capture('auth_verify_link_opened');
     void handleVerifyOtp(resolvedEmail, normalizedToken);
   }, [handleVerifyOtp, resolvedEmail, setOtp, tokenParam]);
@@ -70,108 +93,110 @@ function VerifyScreen() {
     return null;
   }
 
-  const normalizedOtp = normalizeOtp(otp);
+  const normalizedOtp = normalizeOtp(otp).slice(0, 6);
+  const isBusy = isSubmitting || isResending;
 
   return (
-    <AuthLayout
-      testID="auth-verify-screen"
-      title={AUTH_COPY.otpVerification.title}
-      helper={AUTH_COPY.otpVerification.helper(maskEmail(resolvedEmail))}
-    >
-      <Form>
-        <FieldStack>
-          <TextField
+    <SwiftUIHost style={styles.host} testID="auth-verify-screen" useViewportSizeMeasurement>
+      <SwiftUIForm modifiers={[listStyle('insetGrouped')]}>
+        <SwiftUISection>
+          <VStack spacing={8} modifiers={[padding({ vertical: 8 })]}>
+            <SwiftUIText modifiers={[font({ size: 28, weight: 'bold' })]}>
+              {AUTH_COPY.otpVerification.title}
+            </SwiftUIText>
+            <SwiftUIText
+              modifiers={[
+                font({ size: 16 }),
+                foregroundStyle({ type: 'hierarchical', style: 'secondary' }),
+              ]}
+            >
+              {AUTH_COPY.otpVerification.helper(maskEmail(resolvedEmail))}
+            </SwiftUIText>
+          </VStack>
+        </SwiftUISection>
+
+        <SwiftUISection>
+          <SwiftUITextField
+            ref={otpInputRef}
             testID="auth-otp-input"
-            id="auth-otp"
-            label={AUTH_COPY.otpVerification.codeLabel}
-            keyboardType="number-pad"
-            textContentType="oneTimeCode"
-            autoComplete="sms-otp"
-            autoCapitalize="none"
-            autoCorrect={false}
-            value={normalizedOtp}
-            editable={!isSubmitting && !isResending}
-            maxLength={6}
-            onChangeText={(text) => {
-              setOtp(text);
-            }}
+            defaultValue={normalizedOtp}
             placeholder={AUTH_COPY.otpVerification.codePlaceholder}
-            style={styles.otpInput}
+            onValueChange={(value) => {
+              const nextOtp = normalizeOtp(value).slice(0, 6);
+              setOtp(nextOtp);
+              if (nextOtp !== value) {
+                void otpInputRef.current?.setText(nextOtp);
+              }
+            }}
+            modifiers={[
+              textFieldStyle('roundedBorder'),
+              keyboardType('numeric'),
+              textContentType('oneTimeCode'),
+              textInputAutocapitalization('never'),
+              autocorrectionDisabled(true),
+              submitLabel('done'),
+              disabledModifier(isBusy),
+            ]}
           />
+
           {authError ? (
-            <FieldError testID="auth-otp-message">{authError}</FieldError>
+            <SwiftUIText
+              testID="auth-otp-message"
+              modifiers={[font({ size: 13 }), foregroundStyle({ type: 'color', color: 'red' })]}
+            >
+              {authError}
+            </SwiftUIText>
           ) : null}
-        </FieldStack>
 
-        <Button
-          onPress={() => {
-            posthog.capture('auth_verify_pressed');
-            void handleVerifyOtp(resolvedEmail, normalizedOtp);
-          }}
-          disabled={isSubmitting || normalizedOtp.length !== 6}
-          isLoading={isSubmitting}
-          testID="auth-verify-otp"
-          title={AUTH_COPY.otpVerification.verifyButton}
-          style={{ width: '100%' }}
-        />
+          <SwiftUIButton
+            testID="auth-verify-otp"
+            label={AUTH_COPY.otpVerification.verifyButton}
+            onPress={() => {
+              posthog.capture('auth_verify_pressed');
+              void handleVerifyOtp(resolvedEmail, normalizedOtp);
+            }}
+            modifiers={[
+              buttonStyle('borderedProminent'),
+              controlSize('large'),
+              disabledModifier(isSubmitting || normalizedOtp.length !== 6),
+              frame({ maxWidth: Number.POSITIVE_INFINITY }),
+            ]}
+          />
+          {isSubmitting ? <ProgressView /> : null}
 
-        <View style={styles.actionRow}>
-          <Button
+          <SwiftUIButton
+            testID="auth-resend-otp"
+            label={
+              isResending
+                ? AUTH_COPY.otpVerification.resendButton
+                : AUTH_COPY.otpVerification.resendButton
+            }
             onPress={() => {
               posthog.capture('auth_resend_pressed');
               void handleResendOtp(resolvedEmail);
             }}
-            disabled={isSubmitting || isResending}
-            isLoading={isResending}
-            variant="link"
-            size="xs"
-            testID="auth-resend-otp"
-            title={AUTH_COPY.otpVerification.resendButton}
-            style={styles.linkButton}
-            textStyle={styles.linkText}
+            modifiers={[buttonStyle('plain'), controlSize('small'), disabledModifier(isBusy)]}
           />
 
-          <Button
+          <SwiftUIButton
+            label={AUTH_COPY.otpVerification.changeEmailLink}
             onPress={() => {
               posthog.capture('auth_change_email_pressed');
               router.replace('/(auth)' as RelativePathString);
             }}
-            disabled={isSubmitting || isResending}
-            variant="link"
-            size="xs"
-            title={AUTH_COPY.otpVerification.changeEmailLink}
-            style={styles.linkButton}
-            textStyle={styles.linkText}
+            modifiers={[buttonStyle('plain'), controlSize('small'), disabledModifier(isBusy)]}
           />
-        </View>
-      </Form>
-    </AuthLayout>
+        </SwiftUISection>
+      </SwiftUIForm>
+    </SwiftUIHost>
   );
 }
 
-const useStyles = makeStyles((t) =>
-  StyleSheet.create({
-    otpInput: {
-      letterSpacing: 3,
-      textAlign: 'center',
-    },
-    actionRow: {
-      alignItems: 'center',
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      gap: t.spacing.sm_12,
-    },
-    linkButton: {
-      flexShrink: 1,
-    },
-    linkText: {
-      color: t.colors['text-tertiary'],
-      fontSize: 12,
-      fontWeight: '600',
-      textDecorationLine: 'underline',
-    },
-  }),
-);
+const styles = StyleSheet.create({
+  host: {
+    flex: 1,
+  },
+});
 
 const VerifyWithErrorBoundary = () => (
   <FeatureErrorBoundary featureName="AuthVerify">

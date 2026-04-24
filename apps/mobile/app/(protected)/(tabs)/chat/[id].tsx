@@ -202,7 +202,6 @@ export default function ChatDetailScreen() {
         searchInputRef={controller.searchInputRef}
         onClose={controller.handleCloseSearch}
         onChangeSearchQuery={controller.handleSearchQueryChange}
-        renderIcon={renderChatIcon}
       />
       <ChatMessageList
         isMessagesLoading={controller.isMessagesLoading}

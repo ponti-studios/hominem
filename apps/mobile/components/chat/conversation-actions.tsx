@@ -1,11 +1,23 @@
+import {
+  Button as SwiftUIButton,
+  Host as SwiftUIHost,
+  Text as SwiftUIText,
+  VStack,
+} from '@expo/ui/swift-ui';
+import {
+  buttonStyle,
+  disabled as disabledModifier,
+  font,
+  foregroundStyle,
+  frame,
+  padding,
+} from '@expo/ui/swift-ui/modifiers';
 import type { ArtifactType } from '@hominem/rpc/types';
 import { Modal, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Text, makeStyles } from '~/components/theme';
-import { radii, spacing } from '~/components/theme';
+import { makeStyles, radii, spacing } from '~/components/theme';
 
-import { Button } from '../ui/Button';
 import { buildConversationActionsModel } from './conversation-actions.model';
 
 type ConversationActionType = ArtifactType;
@@ -60,49 +72,78 @@ export function ConversationActionsSheet({
       <Pressable onPress={onClose} style={styles.overlay}>
         <Pressable onPress={() => {}} style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
           <View style={styles.handle} />
-          <View style={styles.header}>
-            <Text style={styles.title}>{title}</Text>
-            {statusCopy ? (
-              <Text color="text-tertiary" style={styles.status}>
-                {statusCopy}
-              </Text>
-            ) : null}
-          </View>
+          <SwiftUIHost matchContents style={styles.host}>
+            <VStack spacing={16} modifiers={[padding({ horizontal: spacing[4], vertical: 4 })]}>
+              <VStack spacing={4}>
+                <SwiftUIText modifiers={[font({ size: 20, weight: 'semibold' })]}>
+                  {title}
+                </SwiftUIText>
+                {statusCopy ? (
+                  <SwiftUIText
+                    modifiers={[
+                      font({ size: 13 }),
+                      foregroundStyle({ type: 'hierarchical', style: 'secondary' }),
+                    ]}
+                  >
+                    {statusCopy}
+                  </SwiftUIText>
+                ) : null}
+              </VStack>
 
-          {sections.map((section) => (
-            <View key={section.title} style={styles.group}>
-              <Text color="text-tertiary" style={styles.groupLabel}>
-                {section.title}
-              </Text>
-              {section.items.map((item) => (
-                <Button
-                  key={`${section.title}:${item.label}`}
-                  onPress={() =>
-                    handlePress(() => {
-                      if (item.kind === 'search') {
-                        onOpenSearch();
-                      } else if (item.kind === 'toggle-debug') {
-                        onToggleDebug();
-                      } else if (item.kind === 'transform' && item.type) {
-                        onTransform(item.type);
-                      } else if (item.kind === 'archive') {
-                        onArchive();
-                      }
-                    })
-                  }
-                  style={styles.actionButton}
-                  variant={item.kind === 'archive' ? 'destructive' : 'outline'}
-                  isLoading={item.kind === 'archive' && isArchiving}
-                >
-                  {item.label}
-                </Button>
+              {sections.map((section) => (
+                <VStack key={section.title} spacing={8}>
+                  <SwiftUIText
+                    modifiers={[
+                      font({ size: 12, weight: 'semibold' }),
+                      foregroundStyle({ type: 'hierarchical', style: 'secondary' }),
+                    ]}
+                  >
+                    {section.title.toUpperCase()}
+                  </SwiftUIText>
+                  {section.items.map((item) => {
+                    const isArchiveAction = item.kind === 'archive';
+
+                    return (
+                      <SwiftUIButton
+                        key={`${section.title}:${item.label}`}
+                        label={isArchiveAction && isArchiving ? 'Archiving...' : item.label}
+                        onPress={() =>
+                          handlePress(() => {
+                            if (item.kind === 'search') {
+                              onOpenSearch();
+                            } else if (item.kind === 'toggle-debug') {
+                              onToggleDebug();
+                            } else if (item.kind === 'transform' && item.type) {
+                              onTransform(item.type);
+                            } else if (isArchiveAction) {
+                              onArchive();
+                            }
+                          })
+                        }
+                        modifiers={[
+                          buttonStyle(isArchiveAction ? 'borderedProminent' : 'bordered'),
+                          disabledModifier(isArchiveAction && isArchiving),
+                          frame({ maxWidth: Number.POSITIVE_INFINITY }),
+                          ...(isArchiveAction
+                            ? [foregroundStyle({ type: 'color', color: 'red' })]
+                            : []),
+                        ]}
+                      />
+                    );
+                  })}
+                </VStack>
               ))}
-            </View>
-          ))}
 
-          <Button onPress={onClose} style={styles.cancelButton} variant="ghost">
-            Cancel
-          </Button>
+              <SwiftUIButton
+                label="Cancel"
+                onPress={onClose}
+                modifiers={[
+                  buttonStyle('borderless'),
+                  frame({ maxWidth: Number.POSITIVE_INFINITY }),
+                ]}
+              />
+            </VStack>
+          </SwiftUIHost>
         </Pressable>
       </Pressable>
     </Modal>
@@ -110,24 +151,6 @@ export function ConversationActionsSheet({
 }
 
 const useConvActionsStyles = makeStyles((theme) => ({
-  actionButton: {
-    alignSelf: 'stretch',
-    width: '100%',
-  },
-  cancelButton: {
-    alignSelf: 'stretch',
-    borderColor: theme.colors['border-default'],
-    width: '100%',
-  },
-  group: {
-    gap: spacing[2],
-  },
-  groupLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-  },
   handle: {
     alignSelf: 'center',
     backgroundColor: theme.colors['border-default'],
@@ -136,8 +159,8 @@ const useConvActionsStyles = makeStyles((theme) => ({
     marginBottom: spacing[1],
     width: 36,
   },
-  header: {
-    gap: spacing[1],
+  host: {
+    alignSelf: 'stretch',
   },
   overlay: {
     backgroundColor: theme.colors['overlay-modal-high'],
@@ -150,14 +173,7 @@ const useConvActionsStyles = makeStyles((theme) => ({
     borderTopLeftRadius: radii.md,
     borderTopRightRadius: radii.md,
     borderTopWidth: 1,
-    gap: spacing[4],
-    padding: spacing[5],
-  },
-  status: {
-    fontSize: 12,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '600',
+    paddingHorizontal: spacing[1],
+    paddingTop: spacing[5],
   },
 }));

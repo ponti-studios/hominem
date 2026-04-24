@@ -1,5 +1,7 @@
 import type { MarkdownStyle } from '@expensify/react-native-live-markdown';
 import { MarkdownTextInput } from '@expensify/react-native-live-markdown';
+import { Host as SwiftUIHost, TextField as SwiftUITextField } from '@expo/ui/swift-ui';
+import { font, frame, submitLabel, textFieldStyle } from '@expo/ui/swift-ui/modifiers';
 import { useApiClient } from '@hominem/rpc/react';
 import type { Note } from '@hominem/rpc/types';
 import { useNavigation } from '@react-navigation/native';
@@ -13,7 +15,6 @@ import { parseNoteMarkdown } from '~/components/notes/note-markdown-parser';
 import { NOTE_TOOLBAR_ID, NoteToolbar } from '~/components/notes/NoteToolbar';
 import { Text, makeStyles } from '~/components/theme';
 import { useThemeColors } from '~/components/theme/theme';
-import { TextField } from '~/components/ui/TextField';
 import { useNoteEditor } from '~/hooks/use-note-editor';
 import { useNoteToolbar } from '~/hooks/use-note-toolbar';
 import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
@@ -169,23 +170,26 @@ function NoteDetailEditor({
         keyboardDismissMode="interactive"
         showsVerticalScrollIndicator={false}
       >
-        <TextField
-          variant="plain"
-          size="lg"
-          value={title ?? ''}
-          onChangeText={(value) => {
-            setTitle(value);
-            void onSave(
-              value,
-              content,
-              files.map((file) => file.id),
-            );
-          }}
-          placeholder="Title"
-          returnKeyType="next"
-          submitBehavior="newline"
-          containerStyle={styles.titleContainer}
-        />
+        <SwiftUIHost matchContents style={styles.titleHost}>
+          <SwiftUITextField
+            defaultValue={title ?? ''}
+            placeholder="Title"
+            onValueChange={(value) => {
+              setTitle(value);
+              void onSave(
+                value,
+                content,
+                files.map((file) => file.id),
+              );
+            }}
+            modifiers={[
+              textFieldStyle('plain'),
+              font({ size: 22, weight: 'semibold' }),
+              submitLabel('next'),
+              frame({ maxWidth: Number.POSITIVE_INFINITY }),
+            ]}
+          />
+        </SwiftUIHost>
 
         <View style={styles.divider} />
 
@@ -282,7 +286,8 @@ const useNoteStyles = makeStyles((theme) => ({
     height: 18,
     width: 18,
   },
-  titleContainer: {
+  titleHost: {
+    alignSelf: 'stretch',
     marginBottom: 12,
   },
   divider: {

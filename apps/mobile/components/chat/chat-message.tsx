@@ -1,20 +1,34 @@
-import type {
-  ChatIconName,
-  ChatMessageItem,
-  ChatRenderIcon,
-  MarkdownComponent,
-} from '@hominem/chat';
+import {
+  Button as SwiftUIButton,
+  HStack,
+  Host as SwiftUIHost,
+  Text as SwiftUIText,
+  TextField as SwiftUITextField,
+} from '@expo/ui/swift-ui';
+import {
+  buttonStyle,
+  controlSize,
+  disabled as disabledModifier,
+  font,
+  foregroundStyle,
+  frame,
+  lineLimit,
+  textFieldStyle,
+} from '@expo/ui/swift-ui/modifiers';
+import type { ChatMessageItem, ChatRenderIcon, MarkdownComponent } from '@hominem/chat';
 import { getReferencedNoteLabel } from '@hominem/chat';
 import { memo, useMemo, useState } from 'react';
 import { Modal, Pressable, View } from 'react-native';
 import Reanimated, { FadeInDown, FadeOutUp, LinearTransition } from 'react-native-reanimated';
 
-import { Text, makeStyles } from '~/components/theme';
-import { useThemeColors } from '~/components/theme/theme';
-import { fontFamiliesNative, fontSizes, radii, spacing } from '~/components/theme';
-
-import { Button } from '../ui/Button';
-import { TextArea } from '../ui/TextArea';
+import {
+  Text,
+  fontFamiliesNative,
+  fontSizes,
+  makeStyles,
+  radii,
+  spacing,
+} from '~/components/theme';
 
 type ToolCall = NonNullable<ChatMessageItem['toolCalls']>[number];
 
@@ -31,7 +45,6 @@ type ChatMessageProps = {
   onShare?: (message: ChatMessageItem) => void;
   isActive?: boolean;
   onActivate?: () => void;
-  renderIcon: ChatRenderIcon;
   formatTimestamp: (value: string) => string;
 };
 
@@ -67,30 +80,44 @@ function MessageEditModal({
       <View style={styles.editBackdrop}>
         <View style={styles.editSheet}>
           <Text style={styles.editTitle}>Edit message</Text>
-          <TextArea
-            label="Edit message"
-            placeholder="Update your message"
-            style={styles.editInput}
-            value={draftMessage}
-            onChangeText={onChangeDraft}
-          />
-          <View style={styles.editButtonRow}>
-            <Button
-              onPress={onCancel}
-              size="sm"
-              style={styles.actionButton}
-              title="cancel"
-              variant="outline"
+          <SwiftUIHost matchContents style={styles.editInputHost}>
+            <SwiftUITextField
+              key={content}
+              axis="vertical"
+              defaultValue={draftMessage}
+              onValueChange={onChangeDraft}
+              placeholder="Update your message"
+              modifiers={[
+                textFieldStyle('roundedBorder'),
+                font({ size: 16 }),
+                lineLimit({ min: 4, max: 8 }),
+                frame({ minHeight: 90, maxWidth: Number.POSITIVE_INFINITY }),
+              ]}
             />
-            <Button
-              disabled={!draftMessage.trim() || draftMessage === content}
-              onPress={onSave}
-              size="sm"
-              style={styles.actionButton}
-              title="save"
-              variant="primary"
-            />
-          </View>
+          </SwiftUIHost>
+          <SwiftUIHost matchContents style={styles.editActionsHost}>
+            <HStack spacing={spacing[2]}>
+              <SwiftUIButton
+                label="Cancel"
+                onPress={onCancel}
+                modifiers={[
+                  buttonStyle('bordered'),
+                  controlSize('small'),
+                  frame({ maxWidth: Number.POSITIVE_INFINITY }),
+                ]}
+              />
+              <SwiftUIButton
+                label="Save"
+                onPress={onSave}
+                modifiers={[
+                  buttonStyle('borderedProminent'),
+                  controlSize('small'),
+                  disabledModifier(!draftMessage.trim() || draftMessage === content),
+                  frame({ maxWidth: Number.POSITIVE_INFINITY }),
+                ]}
+              />
+            </HStack>
+          </SwiftUIHost>
         </View>
       </View>
     </Modal>
@@ -229,8 +256,6 @@ function ActiveMessageActions({
   canRegenerate,
   canDelete,
   styles,
-  themeColors,
-  renderIcon,
   onCopy,
   onSpeak,
   onShare,
@@ -249,8 +274,6 @@ function ActiveMessageActions({
   canRegenerate: boolean;
   canDelete: boolean;
   styles: ReturnType<typeof useChatMessageStyles>;
-  themeColors: ReturnType<typeof useThemeColors>;
-  renderIcon: ChatRenderIcon;
   onCopy?: (message: ChatMessageItem) => void;
   onSpeak?: (message: ChatMessageItem) => void;
   onShare?: (message: ChatMessageItem) => void;
@@ -262,13 +285,6 @@ function ActiveMessageActions({
     return null;
   }
 
-  const renderActionIcon = (name: ChatIconName) =>
-    renderIcon(name, {
-      color: themeColors['text-tertiary'],
-      size: 15,
-      style: styles.actionIcon,
-    });
-
   return (
     <Reanimated.View
       entering={ACTIONS_ENTERING}
@@ -276,78 +292,71 @@ function ActiveMessageActions({
       layout={ACTIONS_LAYOUT}
       style={styles.actionsWrap}
     >
-      <View style={styles.actions}>
-        {timestamp ? (
-          <Text color="text-secondary" style={styles.metadataText}>
-            {timestamp}
-          </Text>
-        ) : null}
-        <Button
-          accessibilityLabel="Copy message"
-          disabled={!canCopy}
-          onPress={() => onCopy?.(message)}
-          size="icon-xs"
-          style={[styles.actionButton, !canCopy ? styles.actionButtonDisabled : null]}
-          variant="ghost"
-        >
-          {renderActionIcon('doc.on.doc')}
-        </Button>
-        {canSpeak ? (
-          <Button
-            accessibilityLabel={isSpeaking ? 'Stop reading' : 'Read aloud'}
-            onPress={() => onSpeak?.(message)}
-            size="icon-xs"
-            style={styles.actionButton}
-            variant="ghost"
-          >
-            {renderActionIcon(isSpeaking ? 'stop.fill' : 'speaker.wave.2')}
-          </Button>
-        ) : null}
-        {canShare ? (
-          <Button
-            accessibilityLabel="Share message"
-            onPress={() => onShare?.(message)}
-            size="icon-xs"
-            style={styles.actionButton}
-            variant="ghost"
-          >
-            {renderActionIcon('square.and.arrow.up')}
-          </Button>
-        ) : null}
-        {canEdit ? (
-          <Button
-            accessibilityLabel="Edit message"
-            onPress={onEdit}
-            size="icon-xs"
-            style={styles.actionButton}
-            variant="ghost"
-          >
-            {renderActionIcon('square.and.pencil')}
-          </Button>
-        ) : null}
-        {canRegenerate ? (
-          <Button
-            accessibilityLabel="Regenerate response"
-            onPress={() => onRegenerate?.(message.id)}
-            size="icon-xs"
-            style={styles.actionButton}
-            variant="ghost"
-          >
-            {renderActionIcon('arrow.clockwise')}
-          </Button>
-        ) : null}
-        {canDelete ? (
-          <Button
-            accessibilityLabel="Delete message"
-            onPress={() => onDelete?.(message.id)}
-            size="icon-xs"
-            style={styles.actionButton}
-            variant="ghost"
-          >
-            {renderActionIcon('trash')}
-          </Button>
-        ) : null}
-      </View>
+      <SwiftUIHost matchContents style={styles.actionsHost}>
+        <HStack spacing={spacing[2]}>
+          {timestamp ? (
+            <SwiftUIText
+              modifiers={[
+                font({ size: 12 }),
+                foregroundStyle({ type: 'hierarchical', style: 'secondary' }),
+              ]}
+            >
+              {timestamp}
+            </SwiftUIText>
+          ) : null}
+          <SwiftUIButton
+            label=""
+            systemImage="doc.on.doc"
+            onPress={() => onCopy?.(message)}
+            modifiers={[
+              buttonStyle('borderless'),
+              controlSize('small'),
+              disabledModifier(!canCopy),
+            ]}
+          />
+          {canSpeak ? (
+            <SwiftUIButton
+              label=""
+              systemImage={isSpeaking ? 'stop.fill' : 'speaker.wave.2'}
+              onPress={() => onSpeak?.(message)}
+              modifiers={[buttonStyle('borderless'), controlSize('small')]}
+            />
+          ) : null}
+          {canShare ? (
+            <SwiftUIButton
+              label=""
+              systemImage="square.and.arrow.up"
+              onPress={() => onShare?.(message)}
+              modifiers={[buttonStyle('borderless'), controlSize('small')]}
+            />
+          ) : null}
+          {canEdit ? (
+            <SwiftUIButton
+              label=""
+              systemImage="square.and.pencil"
+              onPress={onEdit}
+              modifiers={[buttonStyle('borderless'), controlSize('small')]}
+            />
+          ) : null}
+          {canRegenerate ? (
+            <SwiftUIButton
+              label=""
+              systemImage="arrow.clockwise"
+              onPress={() => onRegenerate?.(message.id)}
+              modifiers={[buttonStyle('borderless'), controlSize('small')]}
+            />
+          ) : null}
+          {canDelete ? (
+            <SwiftUIButton
+              label=""
+              systemImage="trash"
+              role="destructive"
+              onPress={() => onDelete?.(message.id)}
+              modifiers={[buttonStyle('borderless'), controlSize('small')]}
+            />
+          ) : null}
+        </HStack>
+      </SwiftUIHost>
     </Reanimated.View>
   );
 }
@@ -365,11 +374,9 @@ const ChatMessage = memo(function ChatMessage({
   onShare,
   isActive = false,
   onActivate,
-  renderIcon,
   formatTimestamp,
 }: ChatMessageProps) {
   const styles = useChatMessageStyles();
-  const themeColors = useThemeColors();
   const { role, message: content } = message;
   const isUser = role.toLowerCase() === 'user';
   const textStyle = isUser ? styles.userMessageText : styles.assistantMessageText;
@@ -463,9 +470,7 @@ const ChatMessage = memo(function ChatMessage({
           onRegenerate={onRegenerate}
           onShare={onShare}
           onSpeak={onSpeak}
-          renderIcon={renderIcon}
           styles={styles}
-          themeColors={themeColors}
           timestamp={timestamp}
         />
       </View>
@@ -476,7 +481,7 @@ const ChatMessage = memo(function ChatMessage({
 export function renderChatMessage(
   item: ChatMessageItem,
   Markdown: MarkdownComponent | null | undefined,
-  renderIcon: ChatRenderIcon,
+  _renderIcon: ChatRenderIcon,
   formatTimestamp: (value: string) => string,
   actions?: {
     showDebug?: boolean;
@@ -498,7 +503,6 @@ export function renderChatMessage(
       formatTimestamp={formatTimestamp}
       isSpeaking={speakingId === item.id}
       message={item}
-      renderIcon={renderIcon}
       {...rest}
     />
   );
@@ -507,27 +511,8 @@ export function renderChatMessage(
 export { ChatMessage };
 
 const useChatMessageStyles = makeStyles((theme) => ({
-  actionButton: {
-    backgroundColor: 'transparent',
-    borderColor: 'transparent',
-    borderRadius: radii.sm,
-    height: 32,
-    paddingHorizontal: 0,
-    paddingVertical: 0,
-    width: 32,
-  },
-  actionButtonDisabled: {
-    opacity: 0.3,
-  },
-  actionIcon: {
-    opacity: 0.9,
-  },
-  actions: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'nowrap',
-    gap: spacing[2],
-    justifyContent: 'flex-end',
+  actionsHost: {
+    alignSelf: 'flex-end',
   },
   actionsWrap: {
     marginTop: spacing[1],
@@ -555,13 +540,11 @@ const useChatMessageStyles = makeStyles((theme) => ({
     right: 0,
     top: 0,
   },
-  editButtonRow: {
-    flexDirection: 'row',
-    gap: spacing[2],
-    justifyContent: 'flex-end',
+  editActionsHost: {
+    alignSelf: 'stretch',
   },
-  editInput: {
-    minHeight: 90,
+  editInputHost: {
+    alignSelf: 'stretch',
   },
   editSheet: {
     backgroundColor: theme.colors['bg-base'],
@@ -589,11 +572,6 @@ const useChatMessageStyles = makeStyles((theme) => ({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing[3],
-  },
-  metadataText: {
-    color: theme.colors['text-tertiary'],
-    fontFamily: fontFamiliesNative.mono,
-    fontSize: fontSizes.xs,
   },
   reasoningText: {
     color: theme.colors.foreground,

@@ -1,3 +1,5 @@
+import { Button as SwiftUIButton, HStack, Host as SwiftUIHost } from '@expo/ui/swift-ui';
+import { buttonStyle, frame } from '@expo/ui/swift-ui/modifiers';
 import type { ArtifactType } from '@hominem/rpc/types';
 import { Modal, ScrollView, View } from 'react-native';
 import Animated, {
@@ -8,16 +10,15 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Text, makeStyles } from '~/components/theme';
 import {
+  Text,
   durations,
   fontFamiliesNative,
   fontSizes,
+  makeStyles,
   radii,
   spacing,
 } from '~/components/theme';
-
-import { Button } from '../ui/Button';
 
 const TYPE_LABEL: Record<ArtifactType, string> = {
   note: 'NOTE',
@@ -104,24 +105,23 @@ export function ClassificationReview({
             </Text>
           </ScrollView>
 
-          <View style={styles.actions}>
-            <Button
-              accessibilityLabel={SAVE_LABEL[proposedType]}
-              onPress={onAccept}
-              style={[styles.button, styles.primaryButton]}
-              variant="primary"
-            >
-              {SAVE_LABEL[proposedType]}
-            </Button>
-            <Button
-              accessibilityLabel="Discard"
-              onPress={onReject}
-              style={[styles.button, styles.secondaryButton]}
-              variant="outline"
-            >
-              DISCARD
-            </Button>
-          </View>
+          <SwiftUIHost matchContents style={styles.actionsHost}>
+            <HStack spacing={spacing[2]}>
+              <SwiftUIButton
+                label={SAVE_LABEL[proposedType]}
+                onPress={onAccept}
+                modifiers={[
+                  buttonStyle('borderedProminent'),
+                  frame({ maxWidth: Number.POSITIVE_INFINITY }),
+                ]}
+              />
+              <SwiftUIButton
+                label="DISCARD"
+                onPress={onReject}
+                modifiers={[buttonStyle('bordered'), frame({ maxWidth: Number.POSITIVE_INFINITY })]}
+              />
+            </HStack>
+          </SwiftUIHost>
         </Animated.View>
       </View>
     </Modal>
@@ -129,12 +129,8 @@ export function ClassificationReview({
 }
 
 const useClassificationStyles = makeStyles((theme) => ({
-  actions: {
-    flexDirection: 'row',
-    gap: spacing[2],
-  },
-  button: {
-    flex: 1,
+  actionsHost: {
+    alignSelf: 'stretch',
   },
   changeRow: {
     alignItems: 'flex-start',
@@ -177,14 +173,6 @@ const useClassificationStyles = makeStyles((theme) => ({
   },
   previewText: {
     fontFamily: fontFamiliesNative.mono,
-  },
-  primaryButton: {
-    backgroundColor: theme.colors.foreground,
-    borderColor: theme.colors.foreground,
-  },
-  secondaryButton: {
-    backgroundColor: 'transparent',
-    borderColor: theme.colors['border-default'],
   },
   sheet: {
     backgroundColor: theme.colors.background,

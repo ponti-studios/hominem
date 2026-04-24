@@ -1,16 +1,18 @@
-import { SymbolView, type SFSymbol } from 'expo-symbols';
-import { View } from 'react-native';
+import {
+  Button as SwiftUIButton,
+  Host as SwiftUIHost,
+  Image as SwiftUIImage,
+  Text as SwiftUIText,
+  VStack,
+} from '@expo/ui/swift-ui';
+import { buttonStyle, font, foregroundStyle, frame, padding } from '@expo/ui/swift-ui/modifiers';
+import type { SFSymbol } from 'expo-symbols';
+import { StyleSheet } from 'react-native';
 import Reanimated, { FadeIn } from 'react-native-reanimated';
 
-import { Text, makeStyles } from '~/components/theme';
-import { useThemeColors } from '~/components/theme/theme';
-
-import { radii, spacing } from '../theme';
-import { Button } from './Button';
+import { spacing } from '../theme';
 
 const DEFAULT_BOTTOM_OFFSET = spacing[7] * 3;
-const ICON_RING_SIZE = spacing[7] + spacing[3];
-const ICON_SIZE = spacing[4] + spacing[2];
 
 interface EmptyStateProps {
   action?: { label: string; onPress: () => void } | undefined;
@@ -27,61 +29,57 @@ function EmptyState({
   sfSymbol,
   title,
 }: EmptyStateProps) {
-  const styles = useEmptyStateStyles();
-  const themeColors = useThemeColors();
-
   return (
     <Reanimated.View
       entering={FadeIn.duration(280)}
       style={[styles.container, { paddingBottom: bottomOffset }]}
     >
-      <View style={styles.iconRing}>
-        <SymbolView name={sfSymbol} size={ICON_SIZE} tintColor={themeColors['text-tertiary']} />
-      </View>
-      <Text color="foreground" style={styles.title} variant="headline">
-        {title}
-      </Text>
-      {description ? (
-        <Text color="text-tertiary" style={styles.description} variant="subhead">
-          {description}
-        </Text>
-      ) : null}
-      {action ? (
-        <Button onPress={action.onPress} size="sm" style={styles.action} variant="outline">
-          {action.label}
-        </Button>
-      ) : null}
+      <SwiftUIHost matchContents style={styles.host}>
+        <VStack
+          alignment="center"
+          spacing={10}
+          modifiers={[frame({ maxWidth: 320 }), padding({ horizontal: spacing[6] })]}
+        >
+          <SwiftUIImage
+            systemName={sfSymbol}
+            size={28}
+            color="#8E8E93"
+            modifiers={[padding({ bottom: 8 })]}
+          />
+          <SwiftUIText modifiers={[font({ size: 18, weight: 'semibold' })]}>{title}</SwiftUIText>
+          {description ? (
+            <SwiftUIText
+              modifiers={[
+                font({ size: 15 }),
+                foregroundStyle({ type: 'hierarchical', style: 'secondary' }),
+              ]}
+            >
+              {description}
+            </SwiftUIText>
+          ) : null}
+          {action ? (
+            <SwiftUIButton
+              label={action.label}
+              onPress={action.onPress}
+              modifiers={[buttonStyle('bordered'), padding({ top: 8 })]}
+            />
+          ) : null}
+        </VStack>
+      </SwiftUIHost>
     </Reanimated.View>
   );
 }
 
-const useEmptyStateStyles = makeStyles((theme) => ({
+const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     flex: 1,
-    gap: spacing[2],
     justifyContent: 'center',
-    paddingHorizontal: spacing[6],
   },
-  iconRing: {
-    alignItems: 'center',
-    backgroundColor: theme.colors['bg-elevated'],
-    borderRadius: radii.sm,
-    height: ICON_RING_SIZE,
-    justifyContent: 'center',
-    marginBottom: spacing[2],
-    width: ICON_RING_SIZE,
+  host: {
+    alignSelf: 'stretch',
   },
-  title: {
-    textAlign: 'center',
-  },
-  description: {
-    textAlign: 'center',
-  },
-  action: {
-    marginTop: spacing[2],
-  },
-}));
+});
 
 export { EmptyState };
 export type { EmptyStateProps };

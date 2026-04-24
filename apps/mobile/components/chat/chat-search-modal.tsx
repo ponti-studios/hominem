@@ -1,22 +1,33 @@
-import type { ChatRenderIcon } from '@hominem/chat';
+import {
+  Button as SwiftUIButton,
+  HStack,
+  Host as SwiftUIHost,
+  Text as SwiftUIText,
+  TextField as SwiftUITextField,
+  VStack,
+  type TextFieldRef,
+} from '@expo/ui/swift-ui';
+import {
+  buttonStyle,
+  font,
+  foregroundStyle,
+  frame,
+  padding,
+  submitLabel,
+  textFieldStyle,
+} from '@expo/ui/swift-ui/modifiers';
 import type React from 'react';
-import { Modal, Pressable, View, type TextInput } from 'react-native';
+import { Modal, Pressable, View } from 'react-native';
 
-import { Text, makeStyles } from '~/components/theme';
-import { useThemeColors } from '~/components/theme/theme';
-import { fontFamiliesNative, fontSizes, radii, spacing } from '~/components/theme';
-
-import { Button } from '../ui/Button';
-import { TextField } from '../ui/TextField';
+import { makeStyles, spacing } from '~/components/theme';
 
 interface ChatSearchModalProps {
   visible: boolean;
   searchQuery: string;
   resultCount: number;
-  searchInputRef: React.RefObject<TextInput | null>;
+  searchInputRef: React.RefObject<TextFieldRef | null>;
   onClose: () => void;
   onChangeSearchQuery: (value: string) => void;
-  renderIcon: ChatRenderIcon;
 }
 
 export function ChatSearchModal({
@@ -26,44 +37,55 @@ export function ChatSearchModal({
   searchInputRef,
   onClose,
   onChangeSearchQuery,
-  renderIcon,
 }: ChatSearchModalProps) {
   const styles = useChatSearchStyles();
-  const themeColors = useThemeColors();
 
   return (
     <Modal animationType="fade" onRequestClose={onClose} transparent visible={visible}>
       <Pressable onPress={onClose} style={styles.searchBackdrop}>
         <View style={styles.searchPanel}>
-          <View style={styles.searchPanelHeader}>
-            <Text style={styles.searchTitle}>Search messages</Text>
-            <Button
-              accessibilityLabel="Close search"
-              onPress={onClose}
-              size="icon-xs"
-              style={styles.headerIconButton}
-              variant="ghost"
-            >
-              {renderIcon('xmark', { color: themeColors['text-tertiary'], size: 16 })}
-            </Button>
-          </View>
+          <SwiftUIHost matchContents style={styles.host}>
+            <VStack spacing={12} modifiers={[padding({ horizontal: spacing[4], vertical: 4 })]}>
+              <HStack spacing={spacing[2]}>
+                <SwiftUIText
+                  modifiers={[font({ size: 17, weight: 'semibold' }), frame({ maxWidth: 999 })]}
+                >
+                  Search messages
+                </SwiftUIText>
+                <SwiftUIButton
+                  label=""
+                  systemImage="xmark"
+                  onPress={onClose}
+                  modifiers={[buttonStyle('borderless')]}
+                />
+              </HStack>
 
-          <TextField
-            containerStyle={styles.searchInputContainer}
-            placeholder="Search messages..."
-            ref={searchInputRef}
-            returnKeyType="search"
-            style={styles.searchInput}
-            testID="chat-search-input"
-            value={searchQuery}
-            onChangeText={onChangeSearchQuery}
-          />
+              <SwiftUITextField
+                key={visible ? 'visible' : 'hidden'}
+                ref={searchInputRef}
+                autoFocus
+                defaultValue={searchQuery}
+                placeholder="Search messages..."
+                onValueChange={onChangeSearchQuery}
+                modifiers={[
+                  textFieldStyle('roundedBorder'),
+                  submitLabel('search'),
+                  frame({ maxWidth: Number.POSITIVE_INFINITY }),
+                ]}
+              />
 
-          <Text color="text-tertiary" style={styles.searchResultCount}>
-            {searchQuery.trim().length > 0
-              ? `${resultCount} result${resultCount !== 1 ? 's' : ''}`
-              : 'Search the current conversation'}
-          </Text>
+              <SwiftUIText
+                modifiers={[
+                  font({ size: 12 }),
+                  foregroundStyle({ type: 'hierarchical', style: 'secondary' }),
+                ]}
+              >
+                {searchQuery.trim().length > 0
+                  ? `${resultCount} result${resultCount !== 1 ? 's' : ''}`
+                  : 'Search the current conversation'}
+              </SwiftUIText>
+            </VStack>
+          </SwiftUIHost>
         </View>
       </Pressable>
     </Modal>
@@ -73,12 +95,8 @@ export function ChatSearchModal({
 const SEARCH_PANEL_RADIUS = 24;
 
 const useChatSearchStyles = makeStyles((theme) => ({
-  headerIconButton: {
-    backgroundColor: theme.colors['bg-surface'],
-    borderColor: theme.colors['border-default'],
-    borderRadius: radii.md,
-    height: 36,
-    width: 36,
+  host: {
+    alignSelf: 'stretch',
   },
   searchBackdrop: {
     backgroundColor: theme.colors['overlay-modal-medium'],
@@ -87,37 +105,12 @@ const useChatSearchStyles = makeStyles((theme) => ({
     paddingHorizontal: spacing[4],
     paddingTop: spacing[7],
   },
-  searchInput: {
-    color: theme.colors.foreground,
-    fontFamily: fontFamiliesNative.mono,
-    fontSize: fontSizes.sm,
-    minHeight: 36,
-    paddingVertical: spacing[2],
-  },
-  searchInputContainer: {
-    width: '100%',
-  },
   searchPanel: {
     backgroundColor: theme.colors.background,
     borderColor: theme.colors['border-default'],
     borderRadius: SEARCH_PANEL_RADIUS,
     borderWidth: 1,
-    gap: spacing[3],
-    paddingHorizontal: spacing[4],
+    paddingHorizontal: spacing[1],
     paddingVertical: spacing[4],
-  },
-  searchPanelHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing[2],
-    justifyContent: 'space-between',
-  },
-  searchResultCount: {
-    fontFamily: fontFamiliesNative.mono,
-    fontSize: fontSizes.xs,
-  },
-  searchTitle: {
-    fontSize: 17,
-    lineHeight: 24,
   },
 }));

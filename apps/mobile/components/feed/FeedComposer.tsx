@@ -1,3 +1,5 @@
+import { Button as SwiftUIButton, Host as SwiftUIHost } from '@expo/ui/swift-ui';
+import { buttonStyle, controlSize, frame } from '@expo/ui/swift-ui/modifiers';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { useApiClient } from '@hominem/rpc/react';
 import { radii, spacing } from '@hominem/ui/tokens';
@@ -34,7 +36,6 @@ import { VoiceSessionModal } from '~/components/media/voice-session-modal';
 import { makeStyles } from '~/components/theme';
 import { createLayoutTransition } from '~/components/theme/animations';
 import { useThemeColors } from '~/components/theme/theme';
-import { IconButton } from '~/components/ui';
 import AppIcon from '~/components/ui/icon';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import type { ChatWithActivity } from '~/services/chat/session-types';
@@ -322,14 +323,32 @@ export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerPro
         {/* Action row. */}
         <View style={styles.buttonRow}>
           <View style={styles.mediaGroup}>
-            <IconButton icon="plus" onPress={showPlusMenu} accessibilityLabel="Add attachment" />
+            <SwiftUIHost matchContents style={styles.iconButtonHost}>
+              <SwiftUIButton
+                label=""
+                systemImage="plus"
+                onPress={showPlusMenu}
+                modifiers={[
+                  buttonStyle('borderless'),
+                  controlSize('small'),
+                  frame({ width: 32, height: 32 }),
+                ]}
+              />
+            </SwiftUIHost>
           </View>
           <View style={styles.actionGroup}>
-            <IconButton
-              icon="waveform"
-              onPress={() => voiceModalRef.current?.present()}
-              accessibilityLabel="Record voice"
-            />
+            <SwiftUIHost matchContents style={styles.iconButtonHost}>
+              <SwiftUIButton
+                label=""
+                systemImage="waveform"
+                onPress={() => voiceModalRef.current?.present()}
+                modifiers={[
+                  buttonStyle('borderless'),
+                  controlSize('small'),
+                  frame({ width: 32, height: 32 }),
+                ]}
+              />
+            </SwiftUIHost>
             <GlassActionButton
               onSave={() => void handleSave()}
               onChat={() => void handleChat()}
@@ -417,6 +436,10 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing[2],
+  },
+  iconButtonHost: {
+    height: 32,
+    width: 32,
   },
   actionGroup: {
     flexDirection: 'row',
