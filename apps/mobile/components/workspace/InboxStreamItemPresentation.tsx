@@ -1,8 +1,9 @@
+import { parseInboxTimestamp } from '@hominem/chat';
 import { Image } from 'expo-image';
 import React from 'react';
 import { View } from 'react-native';
 
-import { Text, makeStyles, spacing } from '~/components/theme';
+import { Text, makeStyles, radii, spacing } from '~/components/theme';
 import { useThemeColors } from '~/components/theme/theme';
 
 import type { InboxStreamItemData } from './InboxStreamItem.types';
@@ -14,6 +15,9 @@ type InboxStreamItemPresentationProps = {
   showPreview?: boolean;
 };
 
+const ICON_SIZE = 32;
+const ICON_SIZE_COMPACT = 26;
+
 export function InboxStreamItemPresentation({
   item,
   compact = false,
@@ -21,119 +25,142 @@ export function InboxStreamItemPresentation({
   showPreview = false,
 }: InboxStreamItemPresentationProps) {
   const styles = useStyles();
-  const themeColors = useThemeColors();
   const title = item.title ?? item.preview ?? 'Untitled';
-  const icon = item.kind === 'note' ? 'sf:square.and.pencil' : 'sf:bubble.left';
+  const icon = item.kind === 'note' ? 'sf:note.text' : 'sf:bubble.left.fill';
 
   return (
     <View style={[styles.row, compact && styles.rowCompact, isActive && styles.rowActive]}>
-      <View style={styles.rowTop}>
-        <View style={styles.rowTitleWrap}>
-          <Image
-            source={icon}
-            style={compact ? styles.rowIconCompact : styles.rowIcon}
-            tintColor={themeColors['text-secondary']}
-            contentFit="contain"
-          />
-          <Text style={[styles.rowTitle, compact && styles.rowTitleCompact]} numberOfLines={1}>
+      <View
+        style={[
+          styles.iconContainer,
+          compact && styles.iconContainerCompact,
+          item.kind === 'chat' && styles.iconContainerChat,
+        ]}
+      >
+        <Image
+          source={icon}
+          style={compact ? styles.iconCompact : styles.icon}
+          contentFit="contain"
+        />
+      </View>
+      <View style={styles.content}>
+        <View style={styles.topRow}>
+          <Text style={[styles.title, compact && styles.titleCompact]} numberOfLines={1}>
             {title}
           </Text>
+          <Text style={[styles.date, compact && styles.dateCompact]}>
+            {formatTimestamp(item.updatedAt)}
+          </Text>
         </View>
-        <Text style={[styles.rowDate, compact && styles.rowDateCompact]}>
-          {formatTimestamp(item.updatedAt)}
-        </Text>
+        {showPreview && item.preview ? (
+          <Text style={[styles.preview, compact && styles.previewCompact]} numberOfLines={1}>
+            {item.preview}
+          </Text>
+        ) : null}
       </View>
-      {showPreview && item.preview ? (
-        <Text style={[styles.rowPreview, compact && styles.rowPreviewCompact]} numberOfLines={1}>
-          {item.preview}
-        </Text>
-      ) : null}
     </View>
   );
 }
 
 function formatTimestamp(value: string): string {
-  const date = new Date(value);
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const targetDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const dayDiff = Math.round((today.getTime() - targetDay.getTime()) / 86400000);
+  try {
+    const date = parseInboxTimestamp(value);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const targetDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const dayDiff = Math.round((today.getTime() - targetDay.getTime()) / 86400000);
 
-  if (dayDiff === 0) {
-    return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    if (dayDiff === 0) {
+      return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    }
+    if (dayDiff === 1) {
+      return 'Yesterday';
+    }
+    if (dayDiff > 1 && dayDiff < 7) {
+      return date.toLocaleDateString([], { weekday: 'short' });
+    }
+    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  } catch {
+    return '';
   }
-
-  if (dayDiff === 1) {
-    return 'Yesterday';
-  }
-
-  if (dayDiff > 1 && dayDiff < 7) {
-    return date.toLocaleDateString([], { weekday: 'short' });
-  }
-
-  return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 
 const useStyles = makeStyles((theme) => ({
   row: {
-    gap: spacing[1],
-    paddingHorizontal: spacing[3],
-    paddingVertical: spacing[2],
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[3],
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[3],
   },
   rowCompact: {
-    borderRadius: 10,
-    paddingHorizontal: spacing[3],
+    borderRadius: radii.md,
+    paddingHorizontal: spacing[2],
     paddingVertical: spacing[2],
+    gap: spacing[2],
   },
   rowActive: {
     backgroundColor: theme.colors['bg-elevated'],
-    borderColor: theme.colors.accent,
   },
-  rowTop: {
+  iconContainer: {
+    width: ICON_SIZE,
+    height: ICON_SIZE,
+    borderRadius: radii.sm,
+    backgroundColor: theme.colors['bg-elevated'],
     alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing[2],
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    flexShrink: 0,
   },
-  rowTitleWrap: {
-    alignItems: 'center',
+  iconContainerCompact: {
+    width: ICON_SIZE_COMPACT,
+    height: ICON_SIZE_COMPACT,
+  },
+  iconContainerChat: {
+    backgroundColor: theme.colors['emphasis-minimal'],
+  },
+  icon: {
+    width: 16,
+    height: 16,
+  },
+  iconCompact: {
+    width: 13,
+    height: 13,
+  },
+  content: {
     flex: 1,
-    flexDirection: 'row',
-    gap: spacing[2],
+    gap: spacing[1],
     minWidth: 0,
   },
-  rowIcon: {
-    flexShrink: 0,
-    height: 16,
-    width: 16,
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[2],
   },
-  rowIconCompact: {
-    flexShrink: 0,
-    height: 14,
-    width: 14,
-  },
-  rowTitle: {
+  title: {
     color: theme.colors.foreground,
     flex: 1,
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
+    letterSpacing: -0.2,
   },
-  rowTitleCompact: {
+  titleCompact: {
     fontSize: 14,
   },
-  rowDate: {
+  date: {
     color: theme.colors['text-tertiary'],
     flexShrink: 0,
+    fontSize: 12,
+  },
+  dateCompact: {
     fontSize: 11,
   },
-  rowDateCompact: {
-    fontSize: 11,
-  },
-  rowPreview: {
+  preview: {
     color: theme.colors['text-secondary'],
-    fontSize: 12,
+    fontSize: 13,
+    lineHeight: 18,
   },
-  rowPreviewCompact: {
+  previewCompact: {
     fontSize: 12,
+    lineHeight: 16,
   },
 }));

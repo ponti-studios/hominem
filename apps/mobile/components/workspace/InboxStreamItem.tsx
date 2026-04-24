@@ -1,7 +1,7 @@
-import { Button, Host, Menu } from '@expo/ui/swift-ui';
-import { contentShape, frame, shapes } from '@expo/ui/swift-ui/modifiers';
+import { Button, ContextMenu, Host } from '@expo/ui/swift-ui';
 import { useRouter } from 'expo-router/build/hooks';
 import React, { memo, useCallback } from 'react';
+import { Pressable } from 'react-native';
 import Reanimated, {
   Easing,
   FadeIn,
@@ -62,30 +62,30 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
       <Reanimated.View entering={FadeIn.duration(200)}>
         <Reanimated.View style={exitStyle} pointerEvents="box-none">
           <Host style={{ width: '100%' }}>
-            <Menu
-              label={<InboxStreamItemPresentation item={item} />}
-              onPrimaryAction={onPress}
-              modifiers={[
-                frame({ maxWidth: Number.POSITIVE_INFINITY, alignment: 'leading' }),
-                contentShape(shapes.rectangle()),
-              ]}
-            >
-              {item.kind === 'note' ? (
-                <Button
-                  label="Delete"
-                  role="destructive"
-                  systemImage="trash"
-                  onPress={handleDeleteNote}
-                />
-              ) : (
-                <Button
-                  label="Archive"
-                  role="destructive"
-                  systemImage="archivebox"
-                  onPress={handleArchiveChat}
-                />
-              )}
-            </Menu>
+            <ContextMenu>
+              <ContextMenu.Trigger>
+                <Pressable onPress={onPress}>
+                  <InboxStreamItemPresentation item={item} />
+                </Pressable>
+              </ContextMenu.Trigger>
+              <ContextMenu.Items>
+                {item.kind === 'note' ? (
+                  <Button
+                    label="Delete"
+                    role="destructive"
+                    systemImage="trash"
+                    onPress={handleDeleteNote}
+                  />
+                ) : (
+                  <Button
+                    label="Archive"
+                    role="destructive"
+                    systemImage="archivebox"
+                    onPress={handleArchiveChat}
+                  />
+                )}
+              </ContextMenu.Items>
+            </ContextMenu>
           </Host>
         </Reanimated.View>
       </Reanimated.View>

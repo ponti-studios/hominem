@@ -1,11 +1,15 @@
+import {
+  Button as SwiftUIButton,
+  Host as SwiftUIHost,
+  Image as SwiftUIImage,
+} from '@expo/ui/swift-ui';
+import { buttonStyle, frame } from '@expo/ui/swift-ui/modifiers';
 import { DrawerActions } from '@react-navigation/native';
-import { Image } from 'expo-image';
 import { useNavigation, useRouter, type RelativePathString } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
 import React from 'react';
-import { Platform, Pressable } from 'react-native';
+import { Platform } from 'react-native';
 
-import { makeStyles } from '~/components/theme';
 import { useThemeColors } from '~/components/theme/theme';
 import { SidebarContent } from '~/components/workspace/SidebarContent';
 import { SidebarLayout } from '~/components/workspace/SidebarLayout';
@@ -16,64 +20,37 @@ const SIDEBAR_WIDTH_IPHONE = 320;
 
 function SidebarToggleButton({ hidden }: { hidden?: boolean }) {
   const navigation = useNavigation();
-  const themeColors = useThemeColors();
-  const headerButtonStyles = useHeaderButtonStyles();
 
   if (hidden) {
     return null;
   }
 
   return (
-    <Pressable
-      accessibilityLabel="Open sidebar"
-      hitSlop={10}
-      onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
-      style={headerButtonStyles.button}
-    >
-      <Image
-        source="sf:sidebar.left"
-        style={headerButtonStyles.icon}
-        tintColor={themeColors['icon-primary']}
-        contentFit="contain"
-      />
-    </Pressable>
+    <SwiftUIHost matchContents style={{ width: 36, height: 36 }}>
+      <SwiftUIButton
+        onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+        modifiers={[buttonStyle('glass'), frame({ width: 36, height: 36 })]}
+      >
+        <SwiftUIImage systemName="sidebar.left" size={18} />
+      </SwiftUIButton>
+    </SwiftUIHost>
   );
 }
 
 function SettingsButton() {
   const router = useRouter();
-  const themeColors = useThemeColors();
-  const headerButtonStyles = useHeaderButtonStyles();
 
   return (
-    <Pressable
-      accessibilityLabel="Settings"
-      hitSlop={10}
-      onPress={() => router.push('/(protected)/(tabs)/settings' as RelativePathString)}
-      style={headerButtonStyles.button}
-    >
-      <Image
-        source="sf:gearshape"
-        style={headerButtonStyles.icon}
-        tintColor={themeColors['icon-primary']}
-        contentFit="contain"
-      />
-    </Pressable>
+    <SwiftUIHost matchContents style={{ width: 36, height: 36 }}>
+      <SwiftUIButton
+        onPress={() => router.push('/(protected)/(tabs)/settings' as RelativePathString)}
+        modifiers={[buttonStyle('glass'), frame({ width: 36, height: 36 })]}
+      >
+        <SwiftUIImage systemName="gearshape" size={18} />
+      </SwiftUIButton>
+    </SwiftUIHost>
   );
 }
-
-const useHeaderButtonStyles = makeStyles(() => ({
-  button: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 36,
-    width: 36,
-  },
-  icon: {
-    height: 18,
-    width: 18,
-  },
-}));
 
 export default function AppLayout() {
   const themeColors = useThemeColors();
