@@ -2,8 +2,7 @@ import { kyselyAdapter } from '@better-auth/kysely-adapter';
 import { passkey } from '@better-auth/passkey';
 import { db } from '@hominem/db';
 import { logger } from '@hominem/telemetry';
-import type { BetterAuthOptions } from 'better-auth';
-import type { BetterAuthPlugin } from 'better-auth';
+import type { BetterAuthOptions, BetterAuthPlugin } from 'better-auth';
 import { betterAuth } from 'better-auth';
 import {
   bearer,
@@ -11,8 +10,8 @@ import {
   emailOTP,
   jwt,
   multiSession,
-  openAPI,
   oneTimeToken,
+  openAPI,
 } from 'better-auth/plugins';
 
 import { API_BRAND } from '../brand';
@@ -84,8 +83,6 @@ function getTrustedOrigins() {
     env.API_URL,
     env.AUTH_PASSKEY_ORIGIN,
     env.WEB_URL,
-    env.NOTES_URL,
-    'http://localhost:4445',
     'hakumi://',
     'hakumi-dev://',
     'hakumi-e2e://',

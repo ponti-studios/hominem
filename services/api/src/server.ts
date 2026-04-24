@@ -31,7 +31,7 @@ export type AppEnv = {
 
 export function createServer() {
   const app = new Hono<AppEnv>();
-  const allowedOrigins = new Set([env.API_URL, env.WEB_URL, env.NOTES_URL]);
+  const allowedOrigins = new Set([env.API_URL, env.WEB_URL]);
 
   app.use('*', blockMaliciousProbes());
 

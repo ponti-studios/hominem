@@ -19,7 +19,8 @@
     "url": "git+https://github.com/hackefeller/hominem.git"
   },
   "scripts": {
-    "check": "pnpm dlx turbo run typecheck lint build test --concurrency 1 --force"
+    "check:env": "tsx scripts/check-env-consistency.ts",
+    "check": "pnpm check:env && pnpm dlx turbo run typecheck lint build test --concurrency 1 --force"
   },
   "devDependencies": {
     "@types/node": "^25.4.0",

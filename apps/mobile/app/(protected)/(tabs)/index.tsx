@@ -1,11 +1,11 @@
 import type { FlashListRef } from '@shopify/flash-list';
 import { Image } from 'expo-image';
-import { Stack, useIsFocused, useLocalSearchParams, useRouter } from 'expo-router';
 import type { RelativePathString } from 'expo-router';
-import React, { useCallback, useEffect, useMemo } from 'react';
+import { Stack, useIsFocused, useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Pressable, RefreshControl, View } from 'react-native';
 
-import { useComposerContext } from '~/components/composer/ComposerContext';
+import { FeedComposer } from '~/components/feed/FeedComposer';
 import { makeStyles } from '~/components/theme';
 import { useThemeColors } from '~/components/theme/theme';
 import { InboxStream } from '~/components/workspace/InboxStream';
@@ -20,20 +20,14 @@ export default function FeedScreen() {
   const isFocused = useIsFocused();
   const params = useLocalSearchParams<{ seed?: string }>();
   const { items, isLoading, refetch } = useInboxStreamItems();
-  const { setMessage } = useComposerContext();
   const listRef = React.useRef<FlashListRef<InboxStreamItemData> | null>(null);
+  const [composerClearance, setComposerClearance] = useState(0);
 
   useTopAnchoredFeed({
     listRef,
     headKey: items[0]?.id ?? null,
     isFocused,
   });
-
-  useEffect(() => {
-    if (params.seed) {
-      setMessage(params.seed);
-    }
-  }, [params.seed, setMessage]);
 
   const handleRefresh = useCallback(() => {
     void refetch();
@@ -46,13 +40,6 @@ export default function FeedScreen() {
   const handleOpenSettings = useCallback(() => {
     router.push('/(protected)/(tabs)/settings' as RelativePathString);
   }, [router]);
-
-  const handleSelectStarter = useCallback(
-    (prompt: string) => {
-      setMessage(prompt);
-    },
-    [setMessage],
-  );
 
   const screenOptions = useMemo(
     () => ({
@@ -88,7 +75,7 @@ export default function FeedScreen() {
       <InboxStream
         listRef={listRef}
         items={items}
-        onSelectStarter={handleSelectStarter}
+        contentPaddingBottom={composerClearance}
         refreshControl={
           <RefreshControl
             refreshing={isLoading}
@@ -97,6 +84,7 @@ export default function FeedScreen() {
           />
         }
       />
+      <FeedComposer onClearanceChange={setComposerClearance} seedMessage={params.seed} />
     </View>
   );
 }

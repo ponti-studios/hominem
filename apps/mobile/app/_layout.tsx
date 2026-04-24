@@ -27,7 +27,6 @@ const useInnerStyles = makeStyles((t) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: t.colors.background,
     },
     e2eIndicator: {
       position: 'absolute',
@@ -130,7 +129,7 @@ function InnerRootLayout() {
       onError={(error, errorInfo) => logError(error, errorInfo, { route: segments.join('/') })}
     >
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-        <Stack>
+        <Stack screenOptions={{ contentStyle: { backgroundColor: 'transparent' } }}>
           <Stack.Screen name="(protected)" options={{ headerShown: false }} />
           <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         </Stack>
@@ -188,13 +187,13 @@ function RootLayout() {
     <SafeAreaProvider>
       <GestureHandlerRootView style={rootStyles.gestureRoot}>
         <KeyboardProvider>
-          <BottomSheetModalProvider>
-            <RootErrorBoundary>
-              <AuthProvider>
+          <RootErrorBoundary>
+            <AuthProvider>
+              <BottomSheetModalProvider>
                 <InnerRootLayout />
-              </AuthProvider>
-            </RootErrorBoundary>
-          </BottomSheetModalProvider>
+              </BottomSheetModalProvider>
+            </AuthProvider>
+          </RootErrorBoundary>
         </KeyboardProvider>
       </GestureHandlerRootView>
     </SafeAreaProvider>

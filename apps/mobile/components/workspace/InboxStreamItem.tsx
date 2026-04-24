@@ -2,6 +2,7 @@ import { parseInboxTimestamp } from '@hominem/chat';
 import { useApiClient } from '@hominem/rpc/react';
 import type { Note } from '@hominem/rpc/types';
 import { useQueryClient } from '@tanstack/react-query';
+import * as Haptics from 'expo-haptics';
 import type { RelativePathString } from 'expo-router';
 import { useRouter } from 'expo-router';
 import React, { memo, useCallback, useRef, useState } from 'react';
@@ -15,15 +16,30 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import Reanimated, { FadeIn } from 'react-native-reanimated';
+import Reanimated, {
+  Easing,
+  FadeIn,
+  interpolate,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { Text, makeStyles, theme } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
 import type { ChatWithActivity } from '~/services/chat/session-types';
 import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
-import { noteKeys, chatKeys } from '~/services/notes/query-keys';
+import { chatKeys, noteKeys } from '~/services/notes/query-keys';
 
 import type { InboxStreamItemData as InboxStreamItemModel } from './InboxStreamItem.types';
+
+// Must match delayLongPress on <Pressable>
+const LONG_PRESS_MS = 400;
+
+// Exit animation duration
+const EXIT_MS = 260;
 
 interface InboxStreamItemProps {
   item: InboxStreamItemModel;
@@ -40,10 +56,52 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
   const [renameModalVisible, setRenameModalVisible] = useState(false);
   const renameValueRef = useRef(item.title ?? '');
 
+  // ── Shared values ──────────────────────────────────────────────────────────
+  // 0 = idle → 1 = fully held (charges over LONG_PRESS_MS)
+  const pressProgress = useSharedValue(0);
+  // 0 = visible → 1 = gone (plays on archive / delete)
+  const exitProgress = useSharedValue(0);
+
+  // ── Press animation ────────────────────────────────────────────────────────
+  const handlePressIn = useCallback(() => {
+    pressProgress.value = withTiming(1, { duration: LONG_PRESS_MS, easing: Easing.linear });
+  }, [pressProgress]);
+
+  const handlePressOut = useCallback(() => {
+    pressProgress.value = withSpring(0, { damping: 20, stiffness: 300, mass: 0.8 });
+  }, [pressProgress]);
+
+  // Row sinks in as you hold — scale down + subtle tint
+  const pressStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: interpolate(pressProgress.value, [0, 1], [1, 0.972]) }],
+  }));
+
+  // ── Exit animation (archive / delete) ─────────────────────────────────────
+  // Slides right and fades — like filing something away
+  const exitStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(exitProgress.value, [0, 0.5, 1], [1, 0.6, 0]),
+    transform: [{ translateX: interpolate(exitProgress.value, [0, 1], [0, 40]) }],
+  }));
+
+  const animateExit = useCallback(
+    (onComplete: () => void) => {
+      exitProgress.value = withTiming(
+        1,
+        { duration: EXIT_MS, easing: Easing.out(Easing.cubic) },
+        (finished) => {
+          if (finished) runOnJS(onComplete)();
+        },
+      );
+    },
+    [exitProgress],
+  );
+
+  // ── Navigation ─────────────────────────────────────────────────────────────
   const onPress = useCallback(() => {
     router.push(item.route as RelativePathString);
   }, [item.route, router]);
 
+  // ── Note actions ──────────────────────────────────────────────────────────
   const commitRename = useCallback(
     async (newTitle: string) => {
       const trimmed = newTitle.trim();
@@ -85,34 +143,42 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: async () => {
-          await client.notes.delete({ id: item.entityId });
-          queryClient.setQueryData<Note[]>(noteKeys.all, (current) =>
-            current?.filter((n) => n.id !== item.entityId),
-          );
-          void queryClient.invalidateQueries({ queryKey: noteKeys.feeds() });
+        onPress: () => {
+          animateExit(async () => {
+            await client.notes.delete({ id: item.entityId });
+            queryClient.setQueryData<Note[]>(noteKeys.all, (current) =>
+              current?.filter((n) => n.id !== item.entityId),
+            );
+            void queryClient.invalidateQueries({ queryKey: noteKeys.feeds() });
+          });
         },
       },
     ]);
-  }, [client, item.entityId, queryClient]);
+  }, [animateExit, client, item.entityId, queryClient]);
 
+  // ── Chat actions ──────────────────────────────────────────────────────────
   const handleArchiveChat = useCallback(() => {
     Alert.alert('Archive chat', 'This chat will be moved to your archive.', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Archive',
         style: 'destructive',
-        onPress: async () => {
-          await client.chats.archive({ chatId: item.entityId });
-          queryClient.setQueryData<ChatWithActivity[]>(chatKeys.resumableSessions, (current) =>
-            current?.filter((c) => c.id !== item.entityId),
-          );
+        onPress: () => {
+          animateExit(async () => {
+            await client.chats.archive({ chatId: item.entityId });
+            queryClient.setQueryData<ChatWithActivity[]>(chatKeys.resumableSessions, (current) =>
+              current?.filter((c) => c.id !== item.entityId),
+            );
+          });
         },
       },
     ]);
-  }, [client, item.entityId, queryClient]);
+  }, [animateExit, client, item.entityId, queryClient]);
 
+  // ── Long-press handler ────────────────────────────────────────────────────
   const onLongPress = useCallback(() => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
     if (item.kind === 'note') {
       if (Platform.OS === 'ios') {
         ActionSheetIOS.showActionSheetWithOptions(
@@ -136,11 +202,7 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
     } else {
       if (Platform.OS === 'ios') {
         ActionSheetIOS.showActionSheetWithOptions(
-          {
-            options: ['Cancel', 'Archive'],
-            destructiveButtonIndex: 1,
-            cancelButtonIndex: 0,
-          },
+          { options: ['Cancel', 'Archive'], destructiveButtonIndex: 1, cancelButtonIndex: 0 },
           (index) => {
             if (index === 1) handleArchiveChat();
           },
@@ -159,35 +221,44 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
 
   return (
     <Reanimated.View entering={FadeIn.duration(200)}>
-      <Pressable
-        onPress={onPress}
-        onLongPress={onLongPress}
-        delayLongPress={400}
-        style={({ pressed }) => [styles.row, pressed ? styles.pressed : null]}
-      >
-        <View style={styles.rowInner}>
-          <View
-            style={[styles.leading, item.kind === 'note' ? styles.noteLeading : styles.chatLeading]}
+      <Reanimated.View style={exitStyle}>
+        <Reanimated.View style={pressStyle}>
+          <Pressable
+            onPress={onPress}
+            onLongPress={onLongPress}
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
+            delayLongPress={LONG_PRESS_MS}
           >
-            <AppIcon
-              name={item.kind === 'note' ? 'square.and.pencil' : 'bubble.left'}
-              size={11}
-              color={iconColor}
-            />
-          </View>
-          <Text
-            numberOfLines={1}
-            variant="body"
-            color="foreground"
-            style={[styles.label, !hasTitle && styles.labelUntitled]}
-          >
-            {label}
-          </Text>
-          <Text numberOfLines={1} variant="caption1" color="text-tertiary" style={styles.metadata}>
-            {formatTimestamp(item.updatedAt)}
-          </Text>
-        </View>
-      </Pressable>
+            <View style={styles.rowInner}>
+              <View
+                style={[
+                  styles.leading,
+                  item.kind === 'note' ? styles.noteLeading : styles.chatLeading,
+                ]}
+              >
+                <AppIcon
+                  name={item.kind === 'note' ? 'square.and.pencil' : 'bubble.left'}
+                  size={11}
+                  color={iconColor}
+                />
+              </View>
+              <Text
+                numberOfLines={1}
+                variant="body"
+                color="foreground"
+                style={[styles.label, !hasTitle && styles.labelUntitled]}
+              >
+                {label}
+              </Text>
+              <Text numberOfLines={1} style={styles.metadata}>
+                {formatTimestamp(item.updatedAt)}
+              </Text>
+            </View>
+          </Pressable>
+        </Reanimated.View>
+      </Reanimated.View>
+
       {Platform.OS !== 'ios' && (
         <Modal
           transparent
@@ -271,15 +342,12 @@ function formatTimestamp(value: string): string {
 
 const useStyles = makeStyles((t) =>
   StyleSheet.create({
-    row: {
-      backgroundColor: 'transparent',
-    },
     rowInner: {
       alignItems: 'center',
       flexDirection: 'row',
       gap: t.spacing.sm_8,
       paddingHorizontal: t.spacing.m_16,
-      paddingVertical: t.spacing.sm_12,
+      paddingVertical: 14,
     },
     leading: {
       alignItems: 'center',
@@ -295,28 +363,28 @@ const useStyles = makeStyles((t) =>
     chatLeading: {
       backgroundColor: 'transparent',
     },
+    // Editorial title — medium weight, tight tracking
     label: {
       color: t.colors.foreground,
       flex: 1,
       fontSize: 15,
       fontWeight: '500',
-      letterSpacing: -0.2,
+      letterSpacing: -0.4,
       lineHeight: 20,
     },
     labelUntitled: {
       color: t.colors['text-secondary'],
       fontWeight: '400',
     },
+    // Editorial dateline — uppercase, tracked out, no extra opacity
     metadata: {
       color: t.colors['text-tertiary'],
       flexShrink: 0,
       fontSize: 11,
-      letterSpacing: 0,
+      fontWeight: '500',
+      letterSpacing: 0.5,
       lineHeight: 14,
-      opacity: 0.5,
-    },
-    pressed: {
-      backgroundColor: t.colors['emphasis-faint'],
+      textTransform: 'uppercase',
     },
     modalOverlay: {
       alignItems: 'center',

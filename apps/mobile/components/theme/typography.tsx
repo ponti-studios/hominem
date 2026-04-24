@@ -64,9 +64,17 @@ export type AppleTextVariant =
   | 'caption2'
   | 'mono';
 
-export type LegacyTextVariant = 'body-1' | 'body-2' | 'body-3' | 'body-4';
+/**
+ * Editorial variants — for screen-level hierarchy.
+ *
+ * `display`  — dominant headline; large, tight tracking, bold. Use for screen
+ *              titles and primary editorial statements.
+ * `overline` — supporting label rendered uppercase with wide tracking. Use for
+ *              section descriptors, bylines, and contextual captions.
+ */
+export type EditorialTextVariant = 'display' | 'overline';
 
-export type TextVariant = AppleTextVariant | LegacyTextVariant;
+export type TextVariant = AppleTextVariant | EditorialTextVariant;
 
 // ── Text Component ────────────────────────────────────────────────────────────
 
@@ -155,19 +163,27 @@ const variantStyles = {
     lineHeight: 16,
     letterSpacing: 0,
   },
+  // ── Editorial ────────────────────────────────────────────────────────────────
+  display: {
+    fontFamily: fontFamiliesNative.primary,
+    fontSize: 40,
+    fontWeight: fontWeights.bold,
+    letterSpacing: -1.2,
+    lineHeight: 44,
+  },
+  overline: {
+    fontFamily: fontFamiliesNative.primary,
+    fontSize: 11,
+    fontWeight: fontWeights.medium,
+    letterSpacing: 0.8,
+    lineHeight: 16,
+    textTransform: 'uppercase' as const,
+  },
 } satisfies Record<string, TextStyle>;
-
-const legacyVariantMap = {
-  'body-1': 'headline',
-  'body-2': 'body',
-  'body-3': 'footnote',
-  'body-4': 'caption1',
-} as const;
 
 function Text({ color, muted = false, style, variant = 'body', ...props }: TextProps) {
   const scheme = useColorScheme();
   const colors = scheme === 'light' ? lightColors : darkColors;
-  const resolvedVariant = legacyVariantMap[variant as keyof typeof legacyVariantMap] ?? variant;
   const resolvedColor = color
     ? colors[color]
     : muted
@@ -175,7 +191,7 @@ function Text({ color, muted = false, style, variant = 'body', ...props }: TextP
       : colors['text-primary'];
 
   return (
-    <RNText style={[variantStyles[resolvedVariant], { color: resolvedColor }, style]} {...props} />
+    <RNText style={[variantStyles[variant], { color: resolvedColor }, style]} {...props} />
   );
 }
 

@@ -1,5 +1,6 @@
 import {
   ScrollView,
+  StyleSheet,
   View,
   type ScrollViewProps,
   type StyleProp,
@@ -7,7 +8,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 
-import { spacing } from '~/components/theme';
+import { makeStyles, spacing } from '~/components/theme';
 
 import type { PageMaxWidth } from './page.types';
 
@@ -38,6 +39,14 @@ function getContentStyle(maxWidth: PageMaxWidth, padded: boolean): ViewStyle {
   };
 }
 
+const useScreenStyles = makeStyles(() =>
+  StyleSheet.create({
+    safeArea: {
+      flex: 1,
+    },
+  }),
+);
+
 function Screen({
   children,
   contentContainerStyle,
@@ -48,6 +57,7 @@ function Screen({
   style,
   ...props
 }: ScreenProps) {
+  const styles = useScreenStyles();
   const contentStyle = getContentStyle(maxWidth, padded);
 
   return (
@@ -64,12 +74,6 @@ function Screen({
     </SafeAreaView>
   );
 }
-
-const styles = {
-  safeArea: {
-    flex: 1,
-  } satisfies ViewStyle,
-};
 
 export { Screen };
 export type { PageMaxWidth, ScreenProps };

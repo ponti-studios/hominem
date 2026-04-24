@@ -6,9 +6,7 @@ import {
   normalizeChatTitle,
 } from '~/services/chat/chat-title';
 
-import type { ComposerAttachment, ComposerSelectedNote, ComposerTarget } from './composerState';
-
-export type ComposerPrimaryAction = 'send_chat' | 'create_note';
+import type { ComposerAttachment, ComposerSelectedNote } from './composerState';
 
 export function getUploadedAttachmentIds(attachments: ComposerAttachment[]) {
   return attachments.flatMap((attachment) =>
@@ -27,26 +25,6 @@ export function mergeNoteIntoCache(currentNotes: Note[] | undefined, updatedNote
   }
 
   return currentNotes.map((note) => (note.id === updatedNote.id ? updatedNote : note));
-}
-
-export function resolveComposerPrimaryAction(
-  targetKind: ComposerTarget['kind'],
-): ComposerPrimaryAction | null {
-  if (targetKind === 'chat') {
-    return 'send_chat';
-  }
-
-  if (targetKind === 'feed' || targetKind === 'notes') {
-    return 'create_note';
-  }
-
-  return null;
-}
-
-export function resolveComposerSecondaryAction(
-  targetKind: ComposerTarget['kind'],
-): 'create_chat' | null {
-  return targetKind === 'feed' ? 'create_chat' : null;
 }
 
 export function canSubmitComposerDraft(input: {

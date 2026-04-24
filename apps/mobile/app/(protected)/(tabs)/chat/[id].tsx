@@ -3,7 +3,7 @@ import type { SessionSource } from '@hominem/rpc/types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import type { RelativePathString } from 'expo-router';
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import {
@@ -15,7 +15,7 @@ import {
   type ChatServices,
   useChatController,
 } from '~/components/chat';
-import { useComposerContext } from '~/components/composer/ComposerContext';
+import { ChatInput } from '~/components/chat/ChatInput';
 import { useTTS } from '~/components/media/use-tts';
 import { useThemeColors } from '~/components/theme/theme';
 import { EmptyState } from '~/components/ui';
@@ -44,12 +44,12 @@ const renderChatIcon: ChatRenderIcon = (name, props) => (
 );
 
 export default function ChatDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, initialMessage } = useLocalSearchParams<{ id: string; initialMessage?: string }>();
   const router = useRouter();
   const client = useApiClient();
   const queryClient = useQueryClient();
   const themeColors = useThemeColors();
-  const { composerClearance } = useComposerContext();
+  const [composerClearance, setComposerClearance] = useState(0);
   const { speakingId, speak } = useTTS();
   const { data: activeChat } = useActiveChat(id);
   const chatId = activeChat?.id ?? id;
@@ -231,6 +231,7 @@ export default function ChatDetailScreen() {
           void controller.handleRejectReview();
         }}
       />
+      <ChatInput chatId={chatId} initialMessage={initialMessage} onClearanceChange={setComposerClearance} />
     </View>
   );
 }

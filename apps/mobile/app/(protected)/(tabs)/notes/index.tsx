@@ -6,10 +6,8 @@ import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 import Reanimated, { FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated';
 
-import { useComposerContext } from '~/components/composer/ComposerContext';
-import { Text, makeStyles } from '~/components/theme';
+import { Text, makeStyles, radii, shadowsNative, spacing } from '~/components/theme';
 import { useThemeColors } from '~/components/theme/theme';
-import { radii, shadowsNative, spacing } from '~/components/theme';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import { flattenNoteFeedPages, useNoteFeed } from '~/services/notes/use-note-stream';
 
@@ -107,7 +105,7 @@ function EmptyNotes({ composerClearance }: { composerClearance: number }) {
 
 export default function NotesFeedScreen() {
   const router = useRouter();
-  const { composerClearance } = useComposerContext();
+  const composerClearance = 0;
   const listRef = useRef<any>(null);
   const previousCountRef = useRef(0);
   const previousContentHeightRef = useRef(0);

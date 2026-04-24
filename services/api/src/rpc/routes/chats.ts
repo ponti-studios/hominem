@@ -9,9 +9,8 @@ import {
   type ChatsListOutput,
   type ChatsUpdateOutput,
 } from '@hominem/rpc/types/chat.types';
-import { getSharedTextModel } from '@hominem/services/ai-model';
+import { getSharedAiModelConfig, getSharedOpenAIClient } from '@hominem/services/ai-model';
 import { zValidator } from '@hono/zod-validator';
-import { streamText } from 'ai';
 import { Hono } from 'hono';
 import * as z from 'zod';
 
@@ -113,6 +112,43 @@ function getRequiredChatId(c: { req: { param: (name: string) => string | undefin
   return chatId;
 }
 
+async function createAssistantTextStream(
+  system: string,
+  prompt: string,
+): Promise<AsyncIterable<string>> {
+  try {
+    const completion = await getSharedOpenAIClient().chat.completions.create({
+      model: getSharedAiModelConfig().modelId,
+      stream: true,
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user', content: prompt },
+      ],
+    });
+
+    return (async function* () {
+      for await (const chunk of completion) {
+        const text = chunk.choices[0]?.delta?.content;
+        if (typeof text === 'string' && text.length > 0) {
+          yield text;
+        }
+      }
+    })();
+  } catch (error) {
+    if (
+      env.NODE_ENV === 'test' &&
+      error instanceof Error &&
+      error.message.includes('Missing Authentication header')
+    ) {
+      return (async function* () {
+        yield 'Test assistant reply';
+      })();
+    }
+
+    throw error;
+  }
+}
+
 const chatByIdRoutes = new Hono<AppContext>()
   .use(
     '/send',
@@ -209,64 +245,34 @@ const chatByIdRoutes = new Hono<AppContext>()
 
     const prompt = buildConversationPrompt(message, history, resolvedNotes, resolvedFiles);
 
-    const result = await (async () => {
-      try {
-        return await streamText({
-          model: getSharedTextModel(),
-          system: loadPrompt('chat-assistant'),
-          prompt,
-        });
-      } catch (error) {
-        if (
-          env.NODE_ENV === 'test' &&
-          error instanceof Error &&
-          error.message.includes('Missing Authentication header')
-        ) {
-          return {
-            text: 'Test assistant reply',
-            textStream: new ReadableStream<string>({
-              start(controller) {
-                controller.enqueue('Test assistant reply');
-                controller.close();
-              },
-            }),
-          };
-        }
-
-        throw error;
-      }
-    })();
+    const assistantTextStream = await createAssistantTextStream(loadPrompt('chat-assistant'), prompt);
 
     const responseStream = new ReadableStream<Uint8Array>({
       async start(controller) {
-        const reader = result.textStream.getReader();
         const encoder = new TextEncoder();
         let assistantText = '';
 
         try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            assistantText += value;
-            controller.enqueue(encoder.encode(value));
+          for await (const chunk of assistantTextStream) {
+            assistantText += chunk;
+            controller.enqueue(encoder.encode(chunk));
           }
 
-          await runInTransaction(async (trx) => {
-            await ChatRepository.insertMessage(trx, {
-              chatId,
-              authorUserId: userId,
-              role: 'assistant',
-              content: assistantText,
+          if (assistantText.trim().length > 0) {
+            await runInTransaction(async (trx) => {
+              await ChatRepository.insertMessage(trx, {
+                chatId,
+                authorUserId: userId,
+                role: 'assistant',
+                content: assistantText,
+              });
+              await ChatRepository.touchLastMessage(trx, chatId);
             });
-            await ChatRepository.touchLastMessage(trx, chatId);
-          });
+          }
 
           controller.close();
         } catch (error) {
           controller.error(error);
-        } finally {
-          reader.releaseLock();
         }
       },
     });

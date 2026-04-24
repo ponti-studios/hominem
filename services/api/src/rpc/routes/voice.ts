@@ -205,7 +205,8 @@ function getErrorMessage(error: unknown, fallback = 'Unknown error'): string {
 }
 
 function requireOpenRouterApiKey(logPrefix: string, requestId: string): string {
-  if (env.OPENROUTER_API_KEY) return env.OPENROUTER_API_KEY;
+  const apiKey = env.OPENROUTER_API_KEY?.trim();
+  if (apiKey) return apiKey;
 
   logger.error(`${logPrefix} Missing OPENROUTER_API_KEY`, getVoiceLogData(requestId));
   throw new VoiceError('Invalid API configuration.', 'AUTH', 401);
@@ -803,11 +804,7 @@ async function generateVoiceResponseStream(input: {
   requestId?: string;
 }) {
   const requestId = input.requestId ?? `vr-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-
-  if (!env.OPENROUTER_API_KEY) {
-    logger.error('[voice-response] Missing OPENROUTER_API_KEY', getVoiceLogData(requestId));
-    throw new VoiceError('Invalid API configuration.', 'AUTH', 401);
-  }
+  const apiKey = requireOpenRouterApiKey('[voice-response]', requestId);
 
   const voice: VoiceResponseVoice = input.voice ?? 'alloy';
   const messages: object[] = [];
@@ -821,7 +818,7 @@ async function generateVoiceResponseStream(input: {
   const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
+      Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
       'HTTP-Referer': 'https://hominem.app',
       'X-Title': 'Hominem',
@@ -894,11 +891,7 @@ async function collectSpeechStream(response: Response): Promise<Buffer> {
 
 async function generateSpeechBuffer(input: { text: string; voice: string; speed: number }) {
   const requestId = `sp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-
-  if (!env.OPENROUTER_API_KEY) {
-    logger.error('[voice-speech] Missing OPENROUTER_API_KEY', { requestId });
-    throw new VoiceError('Invalid API configuration.', 'AUTH', 401);
-  }
+  const apiKey = requireOpenRouterApiKey('[voice-speech]', requestId);
 
   const model = 'openai/gpt-4o-audio-preview';
 
@@ -916,7 +909,7 @@ async function generateSpeechBuffer(input: { text: string; voice: string; speed:
     response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
+        Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': 'https://hominem.app',
         'X-Title': 'Hominem',

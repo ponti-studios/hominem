@@ -2,8 +2,7 @@ import { FlashList, type FlashListRef, type ListRenderItem } from '@shopify/flas
 import React, { memo, useCallback, type RefObject } from 'react';
 import { Pressable, StyleSheet, View, type RefreshControlProps } from 'react-native';
 
-import { Text, makeStyles } from '~/components/theme';
-import { spacing } from '~/components/theme';
+import { Text, makeStyles, spacing } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
 
 import { InboxStreamItem } from './InboxStreamItem';
@@ -14,6 +13,7 @@ interface InboxStreamProps {
   listRef?: RefObject<FlashListRef<InboxStreamItemModel> | null>;
   onSelectStarter?: (prompt: string) => void;
   refreshControl?: React.ReactElement<RefreshControlProps>;
+  contentPaddingBottom?: number;
 }
 
 const keyExtractor = (item: InboxStreamItemModel) => `${item.kind}:${item.id}`;
@@ -72,6 +72,7 @@ export const InboxStream = ({
   listRef,
   onSelectStarter,
   refreshControl,
+  contentPaddingBottom,
 }: InboxStreamProps) => {
   const styles = useStreamStyles();
 
@@ -81,7 +82,12 @@ export const InboxStream = ({
 
   if (items.length === 0) {
     return (
-      <View style={styles.emptyWrap}>
+      <View
+        style={[
+          styles.emptyWrap,
+          contentPaddingBottom != null ? { marginBottom: contentPaddingBottom } : null,
+        ]}
+      >
         <View style={styles.empty}>
           <View style={styles.emptyIcon}>
             <AppIcon name="sparkles" size={24} color={styles.emptyIconSymbol.color} />
@@ -155,7 +161,10 @@ export const InboxStream = ({
       <View style={styles.sectionShell}>
         <FlashList
           ref={listRef}
-          contentContainerStyle={staticStyles.listContent}
+          contentContainerStyle={[
+            staticStyles.listContent,
+            contentPaddingBottom != null ? { paddingBottom: contentPaddingBottom } : null,
+          ]}
           data={items}
           ItemSeparatorComponent={InboxStreamDivider}
           keyExtractor={keyExtractor}
@@ -188,7 +197,7 @@ const useStreamStyles = makeStyles((theme) => ({
   emptyWrap: {
     flex: 1,
     justifyContent: 'center',
-    marginBottom: spacing[8] + spacing[8] + spacing[5],
+    marginBottom: spacing[8],
     marginHorizontal: spacing[4],
   },
   empty: {
@@ -309,7 +318,7 @@ const useStreamStyles = makeStyles((theme) => ({
 const staticStyles = StyleSheet.create({
   listContent: {
     paddingTop: 0,
-    paddingBottom: spacing[8] + spacing[8] + spacing[5] + spacing[3],
+    paddingBottom: spacing[8],
   },
   sectionFooter: {
     height: 2,

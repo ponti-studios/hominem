@@ -3,16 +3,14 @@ import * as z from 'zod';
 import { baseSchema } from './base';
 
 const isTest = process.env.NODE_ENV === 'test';
-const defaultWebUrl = process.env.WEB_URL ?? process.env.NOTES_URL ?? 'http://localhost:4445';
 
 export const apiSchema = baseSchema.extend({
   PORT: z.string().default('3000'),
   API_URL: z.string().url().default('http://localhost:4040'),
-  WEB_URL: z.string().url().default(defaultWebUrl),
+  WEB_URL: z.string().url().default('http://localhost:4445'),
   DATABASE_URL: isTest
     ? z.string().url().default('postgresql://postgres:postgres@localhost:5432/hominem_test')
     : z.string().url(),
-  NOTES_URL: z.string().url().default(defaultWebUrl),
   BETTER_AUTH_SECRET: z.string().default('dev-better-auth-secret-change-me'),
   AUTH_PASSKEY_RP_ID: z.string().default('api.ponti.io'),
   AUTH_PASSKEY_ORIGIN: z.string().url().default('https://api.ponti.io'),

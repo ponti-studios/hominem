@@ -12,12 +12,17 @@ interface SharedTextModelOptions {
 
 type SharedTextModel = ReturnType<ReturnType<typeof createOpenAI>['chat']>;
 
-function buildProviderClient(): ReturnType<typeof createOpenAI> {
-  if (!env.OPENROUTER_API_KEY) {
+function getOpenRouterApiKey(): string {
+  const apiKey = env.OPENROUTER_API_KEY?.trim();
+  if (!apiKey) {
     throw new Error('OPENROUTER_API_KEY is required');
   }
+  return apiKey;
+}
+
+function buildProviderClient(): ReturnType<typeof createOpenAI> {
   return createOpenAI({
-    apiKey: env.OPENROUTER_API_KEY,
+    apiKey: getOpenRouterApiKey(),
     baseURL: OPENROUTER_BASE_URL,
     headers: {
       'HTTP-Referer': 'https://hominem.app',
@@ -42,7 +47,7 @@ export function getSharedAiModelConfig() {
 
 export function getSharedOpenAIClient(): OpenAI {
   return new OpenAI({
-    apiKey: env.OPENROUTER_API_KEY,
+    apiKey: getOpenRouterApiKey(),
     baseURL: OPENROUTER_BASE_URL,
     defaultHeaders: {
       'HTTP-Referer': 'https://hominem.app',
