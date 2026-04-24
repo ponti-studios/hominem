@@ -66,11 +66,10 @@ export function useTTS(options: UseTTSOptions = {}) {
         const info = await FileSystem.getInfoAsync(uri);
 
         if (!info.exists) {
-          const buffer = await client.voice.speech({
-            text,
-            voice: options.voice ?? 'alloy',
-            speed: options.speed ?? 1,
+          const res = await client.api.voice.speech.$post({
+            json: { text, voice: options.voice ?? 'alloy', speed: options.speed ?? 1 },
           });
+          const buffer = await res.arrayBuffer();
 
           if (controller.signal.aborted) {
             return;

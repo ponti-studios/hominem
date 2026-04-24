@@ -1,12 +1,11 @@
 import type { NoteRecord } from '@hominem/db';
-import type { Note, NoteFeedItem, NoteFile } from '@hominem/rpc/types/notes.types';
 
-export function toNoteDto(record: NoteRecord): Note {
+export function toNoteDto(record: NoteRecord) {
   return {
     id: record.id,
     userId: record.userId,
-    type: 'note',
-    status: 'draft',
+    type: 'note' as const,
+    status: 'draft' as const,
     title: record.title,
     content: record.content,
     excerpt: record.excerpt,
@@ -16,7 +15,7 @@ export function toNoteDto(record: NoteRecord): Note {
     publishingMetadata: null,
     parentNoteId: record.parentNoteId,
     files: record.files.map(
-      (file): NoteFile => ({
+      (file) => ({
         id: file.id,
         originalName: file.originalName,
         mimetype: file.mimetype,
@@ -44,7 +43,7 @@ export function toNoteFeedItemDto(record: {
   createdAt: string;
   authorId: string;
   metadata: { hasAttachments: boolean };
-}): NoteFeedItem {
+}) {
   return {
     id: record.id,
     title: record.title,

@@ -1,6 +1,5 @@
 export { queryKeys, type QueryKeys } from '../core/query-keys';
-export { transformDates, type TransformDates } from '../core/transformer';
-export { useApiClient, useHonoClient } from './context';
+export { useApiClient } from './context';
 export { useRpcMutation, useRpcQuery } from './hooks';
 export {
   createNotesMutationSuccessHandler,

@@ -74,11 +74,10 @@ export function useServerSpeech(options: UseServerSpeechOptions = {}): UseServer
       setLoadingId(id);
 
       try {
-        const arrayBuffer = await client.voice.speech({
-          text,
-          voice: options.voice ?? 'alloy',
-          speed: options.speed ?? 1,
+        const res = await client.api.voice.speech.$post({
+          json: { text, voice: options.voice ?? 'alloy', speed: options.speed ?? 1 },
         });
+        const arrayBuffer = await res.arrayBuffer();
 
         if (controller.signal.aborted) return;
 
@@ -114,7 +113,7 @@ export function useServerSpeech(options: UseServerSpeechOptions = {}): UseServer
     },
     [
       cleanupSource,
-      client.voice,
+      client,
       getAudioContext,
       loadingId,
       options.speed,

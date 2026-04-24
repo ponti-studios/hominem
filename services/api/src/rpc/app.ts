@@ -20,3 +20,5 @@ export const rpcApp = new Hono<AppContext>()
   .route('/notes', notesRoutes)
   .route('/tasks', tasksRoutes)
   .route('/voice', authenticatedVoiceRoutes);
+
+export type AppType = typeof rpcApp;

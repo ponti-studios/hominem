@@ -19,19 +19,25 @@ export type ExtendedMessage = import('@hominem/rpc/types/chat.types').ChatMessag
 };
 
 export function useChatMessages({ chatId }: UseChatMessagesOptions): UseChatMessagesReturn {
-  const messagesQuery = useRpcQuery(({ chats }) => chats.getMessages({ chatId, limit: 50 }), {
-    queryKey: chatQueryKeys.messages(chatId),
-    enabled: !!chatId,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-  });
+  const messagesQuery = useRpcQuery(
+    (client) =>
+      client.api.chats[':id'].messages
+        .$get({ param: { id: chatId }, query: { limit: '50' } })
+        .then((r) => r.json()),
+    {
+      queryKey: chatQueryKeys.messages(chatId),
+      enabled: !!chatId,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+    },
+  );
 
   const messages = Array.isArray(messagesQuery.data) ? messagesQuery.data : [];
   const isLoading = messagesQuery.isLoading;
   const error = messagesQuery.error;
 
   return {
-    messages,
+    messages: messages as import('@hominem/rpc/types/chat.types').ChatMessageDto[],
     isLoading,
     error,
     deleteMessage: async () => undefined,

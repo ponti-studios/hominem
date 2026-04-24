@@ -11,7 +11,8 @@ export const useResumableSessions = () => {
   return useQuery<ChatWithActivity[]>({
     queryKey: chatKeys.resumableSessions,
     queryFn: async () => {
-      const chats = await client.chats.list({ limit: 50 });
+      const res = await client.api.chats.$get({ query: { limit: '50' } });
+      const chats = await res.json();
       return getInboxChatsWithActivity(chats);
     },
     staleTime: 0,

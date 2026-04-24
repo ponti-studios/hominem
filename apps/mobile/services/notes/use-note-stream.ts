@@ -48,11 +48,12 @@ export function useNoteFeed({ enabled = true, limit = DEFAULT_NOTES_FEED_LIMIT }
   >({
     queryKey: noteKeys.feed({ limit }),
     initialPageParam: null,
-    queryFn: ({ pageParam }) =>
-      client.notes.feed({
-        limit,
-        ...(pageParam ? { cursor: pageParam } : {}),
-      }),
+    queryFn: async ({ pageParam }) => {
+      const query: Record<string, string> = { limit: String(limit) };
+      if (pageParam) query.cursor = pageParam;
+      const res = await client.api.notes.feed.$get({ query });
+      return res.json();
+    },
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     enabled,
     initialData: {
@@ -70,11 +71,10 @@ export function useNoteStream({ enabled = true }: { enabled?: boolean } = {}) {
     queryKey: noteKeys.all,
     staleTime: 0,
     queryFn: async () => {
-      const response = await client.notes.list({
-        sortBy: 'updatedAt',
-        sortOrder: 'desc',
-        limit: 100,
+      const res = await client.api.notes.$get({
+        query: { sortBy: 'updatedAt', sortOrder: 'desc', limit: '100' },
       });
+      const response = await res.json();
       return response.notes;
     },
     initialData: () => {

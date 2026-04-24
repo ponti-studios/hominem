@@ -104,7 +104,10 @@ export default function ChatDetailScreen() {
   const displayTitle = resolveChatScreenTitle(activeChat?.title, controller.resolvedSource);
 
   const createChatMutation = useMutation({
-    mutationFn: async () => client.chats.create({ title: DEFAULT_CHAT_TITLE }),
+    mutationFn: async () => {
+      const res = await client.api.chats.$post({ json: { title: DEFAULT_CHAT_TITLE } });
+      return res.json();
+    },
     onSuccess: (chat) => {
       queryClient.setQueryData(chatKeys.activeChat(chat.id), chat);
       queryClient.setQueryData<ChatWithActivity[] | undefined>(

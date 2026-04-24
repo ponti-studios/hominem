@@ -11,7 +11,8 @@ export const useNoteQuery = ({ noteId, enabled = true }: { noteId: string; enabl
   return useQuery<Note>({
     queryKey: noteKeys.detail(noteId),
     queryFn: async () => {
-      const note = await client.notes.get({ id: noteId });
+      const res = await client.api.notes[':id'].$get({ param: { id: noteId } });
+      const note = await res.json();
 
       queryClient.setQueryData<Note[]>(noteKeys.all, (current) => {
         if (!current) {

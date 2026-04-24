@@ -7,10 +7,6 @@
       "types": "./src/index.ts",
       "default": "./src/index.ts"
     },
-    "./client": {
-      "types": "./src/client.ts",
-      "default": "./src/client.ts"
-    },
     "./react": {
       "types": "./src/react/index.ts",
       "default": "./src/react/index.ts"
@@ -38,9 +34,11 @@
   "dependencies": {
     "@hominem/chat": "workspace:*",
     "@tanstack/react-query": "5.90.16",
+    "hono": "4.12.14",
     "zod": "4.3.6"
   },
   "devDependencies": {
+    "@hominem/api": "workspace:*",
     "react": "19.2.0"
   },
   "peerDependencies": {

@@ -105,10 +105,11 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
   const commitRename = useCallback(
     async (newTitle: string) => {
       const trimmed = newTitle.trim();
-      const updatedNote = await client.notes.update({
-        id: item.entityId,
-        title: trimmed.length > 0 ? trimmed : null,
+      const res = await client.api.notes[':id'].$patch({
+        param: { id: item.entityId },
+        json: { title: trimmed.length > 0 ? trimmed : null },
       });
+      const updatedNote = await res.json();
       queryClient.setQueryData<Note>(noteKeys.detail(item.entityId), updatedNote);
       queryClient.setQueryData<Note[]>(noteKeys.all, (current) =>
         current?.map((n) => (n.id === item.entityId ? updatedNote : n)),
@@ -145,7 +146,7 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
         style: 'destructive',
         onPress: () => {
           animateExit(async () => {
-            await client.notes.delete({ id: item.entityId });
+            await client.api.notes[':id'].$delete({ param: { id: item.entityId } });
             queryClient.setQueryData<Note[]>(noteKeys.all, (current) =>
               current?.filter((n) => n.id !== item.entityId),
             );
@@ -165,7 +166,7 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
         style: 'destructive',
         onPress: () => {
           animateExit(async () => {
-            await client.chats.archive({ chatId: item.entityId });
+            await client.api.chats[':id'].archive.$post({ param: { id: item.entityId } });
             queryClient.setQueryData<ChatWithActivity[]>(chatKeys.resumableSessions, (current) =>
               current?.filter((c) => c.id !== item.entityId),
             );

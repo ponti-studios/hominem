@@ -106,14 +106,38 @@ function removeFeedNote(
 
 export function useNotesList(options: NotesListInput = {}, queryOptions: UseNotesListOptions = {}) {
   return useRpcQuery(
-    async ({ notes }) => {
-      const data = await notes.list(options);
+    async (client) => {
+      const query: {
+        types?: string;
+        status?: string;
+        tags?: string;
+        query?: string;
+        since?: string;
+        sortBy?: 'createdAt' | 'updatedAt' | 'title';
+        sortOrder?: 'asc' | 'desc';
+        limit?: string;
+        offset?: string;
+        includeAllVersions?: string;
+      } = {};
+      if (options.types?.length) query.types = options.types.join(',');
+      if (options.status?.length) query.status = options.status.join(',');
+      if (options.tags?.length) query.tags = options.tags.join(',');
+      if (options.query) query.query = options.query;
+      if (options.since) query.since = options.since;
+      if (options.sortBy) query.sortBy = options.sortBy;
+      if (options.sortOrder) query.sortOrder = options.sortOrder;
+      if (options.limit != null) query.limit = String(options.limit);
+      if (options.offset != null) query.offset = String(options.offset);
+      if (options.includeAllVersions != null)
+        query.includeAllVersions = String(options.includeAllVersions);
+      const res = await client.api.notes.$get({ query });
+      const data = await res.json();
       return Array.isArray(data.notes) ? data.notes : [];
     },
     {
       enabled: queryOptions.enabled ?? true,
       queryKey: notesQueryKeys.list(options),
-      staleTime: 1000 * 60 * 1, // 1 minute
+      staleTime: 1000 * 60 * 1,
     },
   );
 }
@@ -130,10 +154,10 @@ export function useNotesFeed(
       queryKey: notesQueryKeys.feed({ limit }),
       initialPageParam: null,
       queryFn: async ({ pageParam }) => {
-        return client.notes.feed({
-          limit,
-          ...(pageParam ? { cursor: pageParam } : {}),
-        });
+        const query: { limit: string; cursor?: string } = { limit: String(limit) };
+        if (pageParam) query.cursor = pageParam;
+        const res = await client.api.notes.feed.$get({ query });
+        return res.json() as Promise<NotesFeedOutput>;
       },
       getNextPageParam: (lastPage) => lastPage.nextCursor,
       enabled: queryOptions.enabled ?? true,
@@ -143,14 +167,22 @@ export function useNotesFeed(
 }
 
 export function useNote(id: string) {
-  return useRpcQuery<NotesGetOutput>(({ notes }) => notes.get({ id }), {
-    queryKey: notesQueryKeys.detail(id),
-    enabled: !!id,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-  });
+  return useRpcQuery<NotesGetOutput>(
+    (client) =>
+      client.api.notes[':id']
+        .$get({ param: { id } })
+        .then((r) => r.json() as Promise<NotesGetOutput>),
+    {
+      queryKey: notesQueryKeys.detail(id),
+      enabled: !!id,
+      staleTime: 1000 * 60 * 5,
+    },
+  );
 }
 
 export function useNoteSearch(query: string, enabled = true) {
+  const client = useApiClient();
+
   return useInfiniteQuery<
     NotesSearchOutput,
     Error,
@@ -163,12 +195,10 @@ export function useNoteSearch(query: string, enabled = true) {
     enabled: enabled && query.trim().length > 0,
     staleTime: 1000 * 30,
     queryFn: async ({ pageParam }) => {
-      const client = useApiClient();
-      return client.notes.search({
-        query,
-        limit: 8,
-        ...(pageParam ? { cursor: pageParam } : {}),
-      });
+      const q: { query: string; limit?: string; cursor?: string } = { query, limit: '8' };
+      if (pageParam) q.cursor = pageParam;
+      const res = await client.api.notes.search.$get({ query: q });
+      return res.json() as Promise<NotesSearchOutput>;
     },
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     select: (data) => {
@@ -188,7 +218,10 @@ export function useCreateNote() {
   const queryClient = useQueryClient();
 
   return useMutation<NotesCreateOutput, Error, NotesCreateInput, CreateNoteContext>({
-    mutationFn: (variables) => client.notes.create(variables),
+    mutationFn: async (variables) => {
+      const res = await client.api.notes.$post({ json: variables as never });
+      return res.json() as Promise<NotesCreateOutput>;
+    },
     onMutate: async (variables) => {
       const optimisticNote = buildOptimisticFeedNote(variables);
       const feedQueryKey = notesQueryKeys.feed({ limit: DEFAULT_NOTES_FEED_LIMIT });
@@ -224,7 +257,14 @@ export function useUpdateNote() {
   const queryClient = useQueryClient();
 
   return useRpcMutation<NotesUpdateOutput, { id: string } & NotesUpdateInput>(
-    ({ notes }, variables) => notes.update(variables),
+    async (client, variables) => {
+      const { id, ...fields } = variables;
+      const res = await client.api.notes[':id'].$patch({
+        param: { id },
+        json: fields as never,
+      });
+      return res.json() as Promise<NotesUpdateOutput>;
+    },
     {
       onSuccess: (data) => {
         createNotesMutationSuccessHandler(queryClient, data.id);
@@ -243,7 +283,10 @@ export function useDeleteNote() {
     { id: string },
     { previousFeed: NotesFeedData | undefined }
   >({
-    mutationFn: (variables) => client.notes.delete(variables),
+    mutationFn: async (variables) => {
+      const res = await client.api.notes[':id'].$delete({ param: { id: variables.id } });
+      return res.json() as Promise<NotesDeleteOutput>;
+    },
     onMutate: async (variables) => {
       const feedQueryKey = notesQueryKeys.feed({ limit: DEFAULT_NOTES_FEED_LIMIT });
       await queryClient.cancelQueries({ queryKey: feedQueryKey });

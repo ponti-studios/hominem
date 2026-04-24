@@ -181,11 +181,14 @@ export function useChatController({
       proposedTitle: string;
       previewContent: string;
     }) => {
-      return client.tasks.create({
-        artifactType: review.proposedType,
-        description: review.previewContent,
-        title: review.proposedTitle,
+      const res = await client.api.tasks.$post({
+        json: {
+          artifactType: review.proposedType,
+          description: review.previewContent,
+          title: review.proposedTitle,
+        },
       });
+      return res.json();
     },
     onSuccess: async (task) => {
       if (services.onArtifactCreated) {
@@ -205,11 +208,10 @@ export function useChatController({
   const createNote = useMutation({
     mutationKey: ['chat-note', chatId],
     mutationFn: async (review: { proposedTitle: string; previewContent: string }) => {
-      return client.notes.create({
-        content: review.previewContent,
-        title: review.proposedTitle,
-        type: 'note',
+      const res = await client.api.notes.$post({
+        json: { content: review.previewContent, title: review.proposedTitle, type: 'note' },
       });
+      return res.json();
     },
     onSuccess: async () => {
       if (services.onNoteCreated) {

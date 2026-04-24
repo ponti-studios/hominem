@@ -47,7 +47,7 @@ export function useVoiceResponse() {
           type: mimeType,
         } as unknown as Blob);
 
-        const response = await client.voice.respondStream({ formData });
+        const response = await client.api.voice.respond.stream.$post({ form: formData } as never);
         const transcript = decodeURIComponent(response.headers.get('x-user-transcript') ?? '');
 
         if (!response.body) {

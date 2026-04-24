@@ -41,9 +41,10 @@ export default function ChatPage({ params }: Route.ComponentProps) {
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const noteId = searchParams.get('noteId') ?? '';
   const { data: seedNote } = useNote(noteId);
-  const { data: chat } = useRpcQuery(({ chats }) => chats.get({ chatId }), {
-    queryKey: chatQueryKeys.get(chatId),
-  });
+  const { data: chat } = useRpcQuery(
+    (client) => client.api.chats[':id'].$get({ param: { id: chatId } }).then((r) => r.json()),
+    { queryKey: chatQueryKeys.get(chatId) },
+  );
   const { messages } = useChatMessages({ chatId });
   const streamMessage = useStreamMessage({ chatId });
   const archiveChat = useArchiveChat({ chatId });

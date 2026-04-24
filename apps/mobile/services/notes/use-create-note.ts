@@ -53,13 +53,14 @@ export const useCreateNote = (): UseMutationResult<
   return useMutation<Note, Error, CreateNoteInput, CreateNoteContext>({
     mutationKey: ['createNote'],
     mutationFn: async (input) => {
-      const createdNote = await client.notes.create({
-        content: input.text.trim(),
-        ...(input.fileIds && input.fileIds.length > 0 ? { fileIds: input.fileIds } : {}),
-        type: 'note',
+      const res = await client.api.notes.$post({
+        json: {
+          content: input.text.trim(),
+          ...(input.fileIds && input.fileIds.length > 0 ? { fileIds: input.fileIds } : {}),
+          type: 'note',
+        },
       });
-
-      return createdNote;
+      return res.json();
     },
     onMutate: async (input) => {
       await queryClient.cancelQueries({ queryKey: noteKeys.all });

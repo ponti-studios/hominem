@@ -1,11 +1,15 @@
 import { getDb, TaskRepository } from '@hominem/db';
-import { TasksCreateInputSchema, type TasksCreateOutput } from '@hominem/rpc/types';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
+import * as z from 'zod';
 
 import { authMiddleware, type AppContext } from '../middleware/auth';
 
-const createTaskSchema = TasksCreateInputSchema;
+const createTaskSchema = z.object({
+  title: z.string().trim().min(1).max(120),
+  description: z.string().trim().optional().nullable(),
+  artifactType: z.enum(['task', 'task_list']),
+});
 
 export const tasksRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
@@ -19,5 +23,5 @@ export const tasksRoutes = new Hono<AppContext>()
       userId,
     });
 
-    return c.json<TasksCreateOutput>(task, 201);
+    return c.json(task, 201);
   });

@@ -234,7 +234,8 @@ export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerPro
     if (!canSubmit || isChatCreating) return;
     setIsChatCreating(true);
     try {
-      const chat = await client.chats.create({ title: buildChatTitle(message) });
+      const chatRes = await client.api.chats.$post({ json: { title: buildChatTitle(message) } });
+      const chat = await chatRes.json();
       queryClient.setQueryData<ChatWithActivity[] | undefined>(chatKeys.resumableSessions, (prev) =>
         upsertInboxSessionActivity(
           prev ?? [],
@@ -272,7 +273,9 @@ export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerPro
       const target = attachments.find((a) => a.id === id);
       setAttachments((prev) => prev.filter((a) => a.id !== id));
       if (target?.uploadedFile?.id) {
-        void client.files.delete({ fileId: target.uploadedFile.id }).catch(() => undefined);
+        void client.api.files[':fileId']
+          .$delete({ param: { fileId: target.uploadedFile.id } })
+          .catch(() => undefined);
       }
     },
     [attachments, client],

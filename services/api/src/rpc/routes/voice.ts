@@ -3,12 +3,17 @@ import { existsSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import type {
-  MobileVoiceResponseErrorOutput,
-  MobileVoiceTranscriptionErrorOutput,
-  MobileVoiceTranscriptionOutput,
-} from '@hominem/rpc/types/mobile.types';
 import { logger } from '@hominem/telemetry';
+
+type MobileVoiceTranscriptionOutput = {
+  text: string;
+  language?: string;
+  duration?: number;
+  words?: unknown[];
+  segments?: unknown[];
+};
+type MobileVoiceTranscriptionErrorOutput = { error: string; code: string };
+type MobileVoiceResponseErrorOutput = { error: string; code: string };
 import { zValidator } from '@hono/zod-validator';
 import { Hono, type Context } from 'hono';
 import * as z from 'zod';
@@ -1177,9 +1182,8 @@ export const authenticatedVoiceRoutes = new Hono<AppContext>()
         500,
       );
     }
-  });
-
-authenticatedVoiceRoutes.post('/respond/stream', async (c) => {
+  })
+  .post('/respond/stream', async (c) => {
   try {
     const body = await c.req.parseBody();
     const { audioFile, language } = parseVoiceRequestBody(body);

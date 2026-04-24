@@ -4,6 +4,12 @@
   "private": true,
   "license": "MIT",
   "type": "module",
+  "exports": {
+    "./types": {
+      "types": "./src/rpc/app.ts",
+      "default": "./src/rpc/app.ts"
+    }
+  },
   "scripts": {
     "dev": "SERVICE_NAME=hominem-api tsx --watch src/index.ts",
     "format": "pnpm dlx oxfmt ./src",
@@ -22,7 +28,6 @@
     "@hominem/db": "workspace:*",
     "@hominem/env": "workspace:*",
     "@hominem/queues": "workspace:*",
-    "@hominem/rpc": "workspace:*",
     "@hominem/services": "workspace:*",
     "@hominem/telemetry": "workspace:*",
     "@hominem/utils": "workspace:*",

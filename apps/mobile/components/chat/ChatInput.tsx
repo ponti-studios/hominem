@@ -372,7 +372,10 @@ export function ChatInput({ chatId, initialMessage, onClearanceChange }: ChatInp
               updatedAt,
             });
             try {
-              await client.chats.update({ chatId: resolvedChatId, title: nextTitle });
+              await client.api.chats[':id'].$patch({
+                param: { id: resolvedChatId },
+                json: { title: nextTitle },
+              });
             } catch {
               await queryClient.invalidateQueries({
                 queryKey: chatKeys.activeChat(resolvedChatId),
@@ -401,7 +404,9 @@ export function ChatInput({ chatId, initialMessage, onClearanceChange }: ChatInp
       const target = attachments.find((a) => a.id === id);
       setAttachments((prev) => prev.filter((a) => a.id !== id));
       if (target?.uploadedFile?.id) {
-        void client.files.delete({ fileId: target.uploadedFile.id }).catch(() => undefined);
+        void client.api.files[':fileId']
+          .$delete({ param: { fileId: target.uploadedFile.id } })
+          .catch(() => undefined);
       }
     },
     [attachments, client],

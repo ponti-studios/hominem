@@ -18,12 +18,12 @@ export function useNoteSearch(query: string, enabled = true) {
     enabled: enabled && query.trim().length > 0,
     staleTime: 30_000,
     initialPageParam: null,
-    queryFn: async ({ pageParam }) =>
-      client.notes.search({
-        query,
-        limit: 8,
-        ...(pageParam ? { cursor: pageParam } : {}),
-      }),
+    queryFn: async ({ pageParam }) => {
+      const q: { query: string; limit?: string; cursor?: string } = { query, limit: '8' };
+      if (pageParam) q.cursor = pageParam;
+      const res = await client.api.notes.search.$get({ query: q });
+      return res.json();
+    },
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     select: (data) => {
       const notes = data.pages.flatMap((page) => page.notes);

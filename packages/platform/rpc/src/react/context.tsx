@@ -1,17 +1,13 @@
 import { createContext, useContext } from 'react';
 
-import type { ApiClient } from '../core/api-client';
+import type { HonoClient } from '../core/api-client';
 
-export const HonoClientContext = createContext<ApiClient | null>(null);
+export const HonoClientContext = createContext<HonoClient | null>(null);
 
-export function useApiClient(): ApiClient {
+export function useApiClient(): HonoClient {
   const client = useContext(HonoClientContext);
   if (!client) {
-    throw new Error('useHonoClient must be used within HonoProvider');
+    throw new Error('useApiClient must be used within HonoProvider');
   }
   return client;
-}
-
-export function useHonoClient(): ApiClient {
-  return useApiClient();
 }

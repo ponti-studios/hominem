@@ -64,13 +64,14 @@ export const useChatMessages = ({ chatId }: { chatId: string }) => {
   return useQuery<MessageOutput[]>({
     queryKey: chatKeys.messages(chatId),
     queryFn: async () => {
-      const messages = await client.chats.getMessages({
-        chatId,
-        limit: 10,
+      const res = await client.api.chats[':id'].messages.$get({
+        param: { id: chatId },
+        query: { limit: '10' },
       });
+      const messages = await res.json();
 
       const mapped = messages.flatMap((message) => {
-        const output = toMessageOutput(message);
+        const output = toMessageOutput(message as RpcChatMessage);
         return output ? [output] : [];
       });
 
@@ -152,12 +153,16 @@ export const useSendMessage = ({ chatId }: { chatId: string }) => {
         throw new Error('offline_unavailable');
       }
 
-      const body = await client.chats.stream({
-        chatId,
-        message: messageText.trim(),
-        ...(fileIds && fileIds.length > 0 ? { fileIds } : {}),
-        ...(noteIds && noteIds.length > 0 ? { noteIds } : {}),
+      const streamRes = await client.api.chats[':id'].stream.$post({
+        param: { id: chatId },
+        json: {
+          message: messageText.trim(),
+          ...(fileIds && fileIds.length > 0 ? { fileIds } : {}),
+          ...(noteIds && noteIds.length > 0 ? { noteIds } : {}),
+        },
       });
+      const body = streamRes.body;
+      if (!body) throw new Error('No response body');
 
       setChatSendStatus('streaming');
       const reader = body.getReader();
@@ -264,7 +269,10 @@ export const useArchiveChat = ({
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async () => client.chats.archive({ chatId }),
+    mutationFn: async () => {
+      const res = await client.api.chats[':id'].archive.$post({ param: { id: chatId } });
+      return res.json();
+    },
     onSuccess: (archivedChat) => {
       queryClient.setQueryData(chatKeys.activeChat(chatId), archivedChat);
       queryClient.setQueryData<ChatWithActivity[] | undefined>(
@@ -299,12 +307,14 @@ export const useActiveChat = (chatId?: string | null) => {
     queryKey: chatKeys.activeChat(chatId ?? null),
     queryFn: async () => {
       if (chatId) {
-        const chat = await client.chats.get({ chatId });
+        const res = await client.api.chats[':id'].$get({ param: { id: chatId } });
+        const chat = await res.json();
         const { messages: _messages, ...chatRecord } = chat;
         return chatRecord;
       }
 
-      const chats = await client.chats.list({ limit: 50 });
+      const listRes = await client.api.chats.$get({ query: { limit: '50' } });
+      const chats = await listRes.json();
       return selectChatSession(chats, chatId);
     },
   });

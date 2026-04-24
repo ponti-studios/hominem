@@ -4,9 +4,8 @@ import type {
   ChatRecord,
   NoteContext,
 } from '@hominem/db';
-import type { Chat, ChatMessageDto, ChatMessageFile } from '@hominem/rpc/types/chat.types';
 
-export function toChatDto(record: ChatRecord): Chat {
+export function toChatDto(record: ChatRecord) {
   return {
     id: record.id,
     userId: record.userId,
@@ -18,14 +17,14 @@ export function toChatDto(record: ChatRecord): Chat {
   };
 }
 
-export function toChatMessageDto(record: ChatMessageRecord): ChatMessageDto {
+export function toChatMessageDto(record: ChatMessageRecord) {
   return {
     id: record.id,
     chatId: record.chatId,
     userId: record.userId,
     role: record.role,
     content: record.content,
-    files: record.files as ChatMessageFile[] | null,
+    files: record.files as Array<{ type: 'image' | 'file'; fileId?: string; url?: string; filename?: string; mimeType?: string; size?: number; metadata?: Record<string, unknown> }> | null,
     referencedNotes: record.referencedNotes,
     toolCalls: record.toolCalls,
     reasoning: record.reasoning,

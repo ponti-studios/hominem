@@ -84,7 +84,11 @@ function NoteDetailEditor({
       })),
     },
     async ({ id: noteId, title: t, content: c, fileIds }) => {
-      const updatedNote = await client.notes.update({ id: noteId, title: t, content: c, fileIds });
+      const res = await client.api.notes[':id'].$patch({
+        param: { id: noteId },
+        json: { title: t, content: c, fileIds },
+      });
+      const updatedNote = await res.json();
       onSaved(updatedNote);
     },
   );
@@ -118,12 +122,11 @@ function NoteDetailEditor({
   const handleDetach = async (fileId: string) => {
     const nextFiles = files.filter((item) => item.id !== fileId);
     setFiles(nextFiles);
-    const updatedNote = await client.notes.update({
-      id: note.id,
-      title: title || null,
-      content,
-      fileIds: nextFiles.map((item) => item.id),
+    const res = await client.api.notes[':id'].$patch({
+      param: { id: note.id },
+      json: { title: title || null, content, fileIds: nextFiles.map((item) => item.id) },
     });
+    const updatedNote = await res.json();
     onSaved(updatedNote);
   };
 

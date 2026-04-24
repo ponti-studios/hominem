@@ -11,7 +11,8 @@ export const useArchivedSessions = () => {
   return useQuery<ChatWithActivity[]>({
     queryKey: chatKeys.archivedSessions,
     queryFn: async () => {
-      const chats = await client.chats.list({ limit: 100 });
+      const res = await client.api.chats.$get({ query: { limit: '100' } });
+      const chats = await res.json();
       return getArchivedChatsWithActivity(chats);
     },
   });
