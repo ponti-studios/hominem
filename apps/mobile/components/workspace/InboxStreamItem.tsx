@@ -1,10 +1,8 @@
-import { parseInboxTimestamp } from '@hominem/chat';
 import { useApiClient } from '@hominem/rpc/react';
 import type { Note } from '@hominem/rpc/types';
 import { useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
-import type { RelativePathString } from 'expo-router';
-import { useRouter } from 'expo-router';
+import { useRouter } from 'expo-router/build/hooks';
 import React, { memo, useCallback, useRef, useState } from 'react';
 import {
   ActionSheetIOS,
@@ -27,13 +25,13 @@ import Reanimated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { Text, makeStyles, theme } from '~/components/theme';
-import AppIcon from '~/components/ui/icon';
+import { Text, makeStyles } from '~/components/theme';
 import type { ChatWithActivity } from '~/services/chat/session-types';
 import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
 import { chatKeys, noteKeys } from '~/services/notes/query-keys';
 
 import type { InboxStreamItemData as InboxStreamItemModel } from './InboxStreamItem.types';
+import { InboxStreamItemPresentation } from './InboxStreamItemPresentation';
 
 // Must match delayLongPress on <Pressable>
 const LONG_PRESS_MS = 400;
@@ -51,7 +49,6 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
   const client = useApiClient();
   const queryClient = useQueryClient();
   const { requestTopReveal } = useTopAnchoredFeed();
-  const iconColor = item.kind === 'note' ? theme.colors.foreground : theme.colors['text-secondary'];
 
   const [renameModalVisible, setRenameModalVisible] = useState(false);
   const renameValueRef = useRef(item.title ?? '');
@@ -98,7 +95,7 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
 
   // ── Navigation ─────────────────────────────────────────────────────────────
   const onPress = useCallback(() => {
-    router.push(item.route as RelativePathString);
+    router.push(item.route);
   }, [item.route, router]);
 
   // ── Note actions ──────────────────────────────────────────────────────────
@@ -217,9 +214,6 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
     }
   }, [item.kind, item.title, handleRenameNote, handleDeleteNote, handleArchiveChat]);
 
-  const label = item.title ?? item.preview ?? 'Untitled';
-  const hasTitle = Boolean(item.title);
-
   return (
     <Reanimated.View entering={FadeIn.duration(200)}>
       <Reanimated.View style={exitStyle}>
@@ -231,31 +225,7 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
             onPressOut={handlePressOut}
             delayLongPress={LONG_PRESS_MS}
           >
-            <View style={styles.rowInner}>
-              <View
-                style={[
-                  styles.leading,
-                  item.kind === 'note' ? styles.noteLeading : styles.chatLeading,
-                ]}
-              >
-                <AppIcon
-                  name={item.kind === 'note' ? 'square.and.pencil' : 'bubble.left'}
-                  size={11}
-                  color={iconColor}
-                />
-              </View>
-              <Text
-                numberOfLines={1}
-                variant="body"
-                color="foreground"
-                style={[styles.label, !hasTitle && styles.labelUntitled]}
-              >
-                {label}
-              </Text>
-              <Text numberOfLines={1} style={styles.metadata}>
-                {formatTimestamp(item.updatedAt)}
-              </Text>
-            </View>
+            <InboxStreamItemPresentation item={item} />
           </Pressable>
         </Reanimated.View>
       </Reanimated.View>
@@ -315,78 +285,8 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
 
 InboxStreamItem.displayName = 'InboxStreamItem';
 
-function toDate(value: string): Date {
-  return parseInboxTimestamp(value);
-}
-
-function formatTimestamp(value: string): string {
-  const date = toDate(value);
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const targetDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const dayDiff = Math.round((today.getTime() - targetDay.getTime()) / 86400000);
-
-  if (dayDiff === 0) {
-    return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-  }
-
-  if (dayDiff === 1) {
-    return 'Yesterday';
-  }
-
-  if (dayDiff > 1 && dayDiff < 7) {
-    return date.toLocaleDateString([], { weekday: 'short' });
-  }
-
-  return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-}
-
 const useStyles = makeStyles((t) =>
   StyleSheet.create({
-    rowInner: {
-      alignItems: 'center',
-      flexDirection: 'row',
-      gap: t.spacing.sm_8,
-      paddingHorizontal: t.spacing.m_16,
-      paddingVertical: 14,
-    },
-    leading: {
-      alignItems: 'center',
-      flexShrink: 0,
-      height: 18,
-      justifyContent: 'center',
-      marginTop: 1,
-      width: 18,
-    },
-    noteLeading: {
-      backgroundColor: 'transparent',
-    },
-    chatLeading: {
-      backgroundColor: 'transparent',
-    },
-    // Editorial title — medium weight, tight tracking
-    label: {
-      color: t.colors.foreground,
-      flex: 1,
-      fontSize: 15,
-      fontWeight: '500',
-      letterSpacing: -0.4,
-      lineHeight: 20,
-    },
-    labelUntitled: {
-      color: t.colors['text-secondary'],
-      fontWeight: '400',
-    },
-    // Editorial dateline — uppercase, tracked out, no extra opacity
-    metadata: {
-      color: t.colors['text-tertiary'],
-      flexShrink: 0,
-      fontSize: 11,
-      fontWeight: '500',
-      letterSpacing: 0.5,
-      lineHeight: 14,
-      textTransform: 'uppercase',
-    },
     modalOverlay: {
       alignItems: 'center',
       backgroundColor: 'rgba(0,0,0,0.5)',

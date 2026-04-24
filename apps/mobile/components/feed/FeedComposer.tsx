@@ -34,6 +34,7 @@ import { VoiceSessionModal } from '~/components/media/voice-session-modal';
 import { makeStyles } from '~/components/theme';
 import { createLayoutTransition } from '~/components/theme/animations';
 import { useThemeColors } from '~/components/theme/theme';
+import { IconButton } from '~/components/ui';
 import AppIcon from '~/components/ui/icon';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import type { ChatWithActivity } from '~/services/chat/session-types';
@@ -53,46 +54,6 @@ const MAX_WIDTH = 500;
 const INPUT_MIN_H = spacing[6] + spacing[4]; // 48px
 const INPUT_MAX_H = spacing[6] * 9; // 288px
 const PILL_RADIUS = 20;
-const MEDIA_BTN_SIZE = spacing[5] + 2; // 26px
-const MEDIA_BTN_ICON_SIZE = spacing[4] + 4; // 20px
-
-// ── Sub-components ────────────────────────────────────────────────────────────
-
-function MediaButton({
-  icon,
-  onPress,
-  accessibilityLabel,
-  disabled = false,
-}: {
-  icon: string;
-  onPress: () => void;
-  accessibilityLabel: string;
-  disabled?: boolean;
-}) {
-  const themeColors = useThemeColors();
-  const styles = useStyles();
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={disabled}
-      accessibilityLabel={accessibilityLabel}
-      accessibilityRole="button"
-      hitSlop={spacing[2]}
-      style={({ pressed }) => [
-        styles.mediaBtn,
-        disabled ? styles.mediaBtnDisabled : null,
-        pressed ? styles.mediaBtnPressed : null,
-      ]}
-    >
-      <AppIcon
-        name={icon as any}
-        size={MEDIA_BTN_ICON_SIZE}
-        color={themeColors['text-secondary']}
-      />
-    </Pressable>
-  );
-}
-
 function AttachmentRow({
   attachments,
   errors,
@@ -175,10 +136,11 @@ export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerPro
   const [message, setMessage] = useState(seedMessage ?? '');
   const [attachments, setAttachments] = useState<ComposerAttachment[]>([]);
   const [isRecording, setIsRecording] = useState(false);
-  const [mode, setMode] = useState<ComposerMode>('text');
+  const [_mode, setMode] = useState<ComposerMode>('text');
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isChatCreating, setIsChatCreating] = useState(false);  const { handleCameraCapture, handleVoiceTranscript, pickAttachment, uploadState } =
+  const [isChatCreating, setIsChatCreating] = useState(false);
+  const { handleCameraCapture, handleVoiceTranscript, pickAttachment, uploadState } =
     useComposerMediaActions({
       attachments,
       setAttachments,
@@ -314,21 +276,21 @@ export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerPro
   }));
 
   return (
-    <Animated.View style={[styles.shell, shellStyle]}>
+    <Animated.View style={[styles.container, shellStyle]}>
       <Animated.View
         layout={createLayoutTransition(prefersReducedMotion)}
         onLayout={(e) => {
           onClearanceChange?.(e.nativeEvent.layout.height + Math.max(insets.bottom, spacing[2]));
         }}
-        style={[styles.pill, { borderColor: pillBorderColor }]}
+        style={[styles.surface, { borderColor: pillBorderColor }]}
         testID="feed-composer"
       >
-        {/* Glass background — clipped separately so content can overflow */}
+        {/* Surface background is clipped; the outer wrapper can still overflow. */}
         <View style={[StyleSheet.absoluteFill, styles.blurClip]}>
           <BlurView intensity={24} tint={blurTint} style={StyleSheet.absoluteFill} />
           <View style={[StyleSheet.absoluteFill, { backgroundColor: pillOverlayColor }]} />
         </View>
-        {/* Specular top-edge highlight */}
+        {/* Top-edge highlight for the floating surface. */}
         <View style={styles.specHighlight} pointerEvents="none" />
 
         <Animated.View layout={createLayoutTransition(prefersReducedMotion)}>
@@ -340,7 +302,7 @@ export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerPro
             onRemove={handleRemoveAttachment}
           />
         </Animated.View>
-        {/* Text row — full width */}
+        {/* Text input row. */}
         <Animated.View style={inputStyle}>
           <TextInput
             ref={inputRef}
@@ -348,9 +310,7 @@ export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerPro
             scrollEnabled={false}
             value={message}
             onChangeText={setMessage}
-            onContentSizeChange={(e) =>
-              onContentSizeChange(e.nativeEvent.contentSize.height)
-            }
+            onContentSizeChange={(e) => onContentSizeChange(e.nativeEvent.contentSize.height)}
             placeholder={isRecording ? 'Listening…' : 'Write a note, ask something…'}
             placeholderTextColor={themeColors['text-tertiary']}
             cursorColor={themeColors.accent}
@@ -359,17 +319,13 @@ export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerPro
             testID="feed-composer-input"
           />
         </Animated.View>
-        {/* Button row — media on left, action on right */}
+        {/* Action row. */}
         <View style={styles.buttonRow}>
           <View style={styles.mediaGroup}>
-            <MediaButton
-              icon="plus"
-              onPress={showPlusMenu}
-              accessibilityLabel="Add attachment"
-            />
+            <IconButton icon="plus" onPress={showPlusMenu} accessibilityLabel="Add attachment" />
           </View>
           <View style={styles.actionGroup}>
-            <MediaButton
+            <IconButton
               icon="waveform"
               onPress={() => voiceModalRef.current?.present()}
               accessibilityLabel="Record voice"
@@ -407,15 +363,15 @@ export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerPro
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const useStyles = makeStyles((theme) => ({
-  shell: {
+  container: {
     left: 0,
     right: 0,
-    paddingHorizontal: spacing[4],
+    paddingHorizontal: spacing[2],
     position: 'absolute',
     alignItems: 'center',
   },
-  // Glass pill — the single floating surface
-  pill: {
+  // Floating surface that contains the composer content.
+  surface: {
     width: '100%',
     maxWidth: MAX_WIDTH,
     borderRadius: PILL_RADIUS,
@@ -466,21 +422,6 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing[2],
-  },
-  // Media buttons
-  mediaBtn: {
-    width: MEDIA_BTN_SIZE,
-    height: MEDIA_BTN_SIZE,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radii.md,
-    borderCurve: 'continuous',
-  },
-  mediaBtnDisabled: {
-    opacity: 0.4,
-  },
-  mediaBtnPressed: {
-    backgroundColor: theme.colors['bg-surface'],
   },
   // Attachments
   attachmentRow: {

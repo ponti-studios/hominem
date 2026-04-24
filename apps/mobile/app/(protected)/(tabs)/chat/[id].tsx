@@ -1,9 +1,10 @@
 import { useApiClient } from '@hominem/rpc/react';
 import type { SessionSource } from '@hominem/rpc/types';
+import { useNavigation } from '@react-navigation/native';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import type { RelativePathString } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import { Image } from 'expo-image';
+import { useLocalSearchParams, useRouter } from 'expo-router/build/hooks';
+import React, { useLayoutEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import {
@@ -11,9 +12,9 @@ import {
   ChatReviewOverlay,
   ChatSearchModal,
   ConversationActionsSheet,
+  useChatController,
   type ChatRenderIcon,
   type ChatServices,
-  useChatController,
 } from '~/components/chat';
 import { ChatInput } from '~/components/chat/ChatInput';
 import { useTTS } from '~/components/media/use-tts';
@@ -45,10 +46,11 @@ const renderChatIcon: ChatRenderIcon = (name, props) => (
 
 export default function ChatDetailScreen() {
   const { id, initialMessage } = useLocalSearchParams<{ id: string; initialMessage?: string }>();
+  const navigation = useNavigation();
   const router = useRouter();
   const client = useApiClient();
-  const queryClient = useQueryClient();
   const themeColors = useThemeColors();
+  const queryClient = useQueryClient();
   const [composerClearance, setComposerClearance] = useState(0);
   const { speakingId, speak } = useTTS();
   const { data: activeChat } = useActiveChat(id);
@@ -95,7 +97,7 @@ export default function ChatDetailScreen() {
   const controller = useChatController({
     chatId,
     onChatArchive: () => {
-      router.replace('/(protected)/(tabs)' as RelativePathString);
+      router.replace('/(protected)/(tabs)');
     },
     services,
     source,
@@ -124,9 +126,60 @@ export default function ChatDetailScreen() {
             }),
           ),
       );
-      router.push(`/(protected)/(tabs)/chat/${chat.id}` as RelativePathString);
+      router.push(`/(protected)/(tabs)/chat/${chat.id}`);
     },
   });
+
+  const isCreatingChat = createChatMutation.isPending;
+  const handleCreateChat = createChatMutation.mutate;
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: displayTitle,
+      headerTitleAlign: 'center',
+      headerRight: () => (
+        <View style={styles.headerActions}>
+          <Pressable
+            accessibilityLabel="Conversation actions"
+            hitSlop={10}
+            onPress={controller.handleOpenMenu}
+            style={styles.headerButton}
+          >
+            <Image
+              source="sf:ellipsis"
+              style={styles.headerIcon}
+              tintColor={themeColors.foreground}
+              contentFit="contain"
+            />
+          </Pressable>
+          <Pressable
+            accessibilityLabel="New chat"
+            hitSlop={10}
+            onPress={() => {
+              if (!isCreatingChat) {
+                handleCreateChat();
+              }
+            }}
+            style={styles.headerButton}
+          >
+            <Image
+              source="sf:square.and.pencil"
+              style={styles.headerIcon}
+              tintColor={themeColors.foreground}
+              contentFit="contain"
+            />
+          </Pressable>
+        </View>
+      ),
+    });
+  }, [
+    controller.handleOpenMenu,
+    displayTitle,
+    handleCreateChat,
+    isCreatingChat,
+    navigation,
+    themeColors.foreground,
+  ]);
 
   const emptyState = useMemo(
     () => (
@@ -142,43 +195,6 @@ export default function ChatDetailScreen() {
 
   return (
     <View style={styles.container}>
-      <Stack.Screen
-        options={{
-          headerShown: true,
-          headerTitle: displayTitle,
-          headerTitleAlign: 'center',
-          headerRight: () => (
-            <View style={styles.headerActions}>
-              <Pressable
-                onPress={controller.handleOpenMenu}
-                hitSlop={8}
-                accessibilityLabel="Conversation actions"
-                style={({ pressed }) => [
-                  styles.headerButton,
-                  pressed ? styles.headerButtonPressed : null,
-                ]}
-              >
-                <AppIcon color={themeColors.foreground} name="ellipsis" size={20} />
-              </Pressable>
-              <Pressable
-                onPress={() => {
-                  if (!createChatMutation.isPending) {
-                    createChatMutation.mutate();
-                  }
-                }}
-                hitSlop={8}
-                accessibilityLabel="New chat"
-                style={({ pressed }) => [
-                  styles.headerButton,
-                  pressed ? styles.headerButtonPressed : null,
-                ]}
-              >
-                <AppIcon color={themeColors.foreground} name="square.and.pencil" size={20} />
-              </Pressable>
-            </View>
-          ),
-        }}
-      />
       <ChatSearchModal
         visible={controller.showSearch}
         searchQuery={controller.searchQuery}
@@ -234,7 +250,11 @@ export default function ChatDetailScreen() {
           void controller.handleRejectReview();
         }}
       />
-      <ChatInput chatId={chatId} initialMessage={initialMessage} onClearanceChange={setComposerClearance} />
+      <ChatInput
+        chatId={chatId}
+        initialMessage={initialMessage}
+        onClearanceChange={setComposerClearance}
+      />
     </View>
   );
 }
@@ -244,18 +264,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerActions: {
-    alignItems: 'center',
     flexDirection: 'row',
-    gap: 4,
+    alignItems: 'center',
+    gap: 8,
   },
   headerButton: {
     alignItems: 'center',
-    borderRadius: 16,
-    height: 32,
     justifyContent: 'center',
-    width: 32,
+    height: 36,
+    width: 36,
   },
-  headerButtonPressed: {
-    opacity: 0.5,
+  headerIcon: {
+    height: 18,
+    width: 18,
   },
 });

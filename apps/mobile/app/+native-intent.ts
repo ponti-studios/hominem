@@ -8,12 +8,12 @@
  *   hakumi://verify?token=<otp>        -> /(auth)/verify?token=<otp>
  *   hakumi://chat/<id>                 -> /(protected)/(tabs)/chat/<id>
  *   hakumi://chat?seed=<text>          -> /(protected)/(tabs)/?seed=<text>
- *   hakumi://notes                     -> /(protected)/(tabs)/notes
+ *   hakumi://notes                     -> /(protected)/(tabs)
  *   hakumi://notes/<id>                -> /(protected)/(tabs)/notes/<id>
  *   hakumi://focus                     -> /(protected)/(tabs)/
  *   hakumi://focus/<id>                -> /(protected)/(tabs)/notes/<id>
  *   hakumi://account                   -> /(protected)/(tabs)/settings
- *   hakumi://note/add                  -> /(protected)/(tabs)/notes
+ *   hakumi://note/add                  -> /(protected)/(tabs)
  */
 export function redirectSystemPath({
   path,
@@ -25,9 +25,9 @@ export function redirectSystemPath({
   // Strip leading slash for matching
   const normalized = path.startsWith('/') ? path.slice(1) : path;
 
-  // App Intent / Siri: note/add -> notes list
+  // App Intent / Siri: note/add -> feed
   if (normalized === 'note/add') {
-    return '/(protected)/(tabs)/notes';
+    return '/(protected)/(tabs)';
   }
 
   // OTP verification link: verify?token=xxx -> /(auth)/verify?token=xxx
@@ -55,7 +55,7 @@ export function redirectSystemPath({
 
   // Notes list -> feed
   if (normalized === 'notes') {
-    return '/(protected)/(tabs)/notes';
+    return '/(protected)/(tabs)';
   }
 
   // Focus with specific ID -> note detail

@@ -1,9 +1,11 @@
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
-import type { RelativePathString } from 'expo-router';
-import { SplashScreen, Stack, useRouter, useSegments } from 'expo-router';
+import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { SplashScreen, Stack } from 'expo-router/build/exports';
+import { useRouter, useSegments } from 'expo-router/build/hooks';
+import type { RelativePathString } from 'expo-router/build/typed-routes/types';
 import { PostHogProvider, type PostHog } from 'posthog-react-native';
 import React, { useEffect } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View, useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
@@ -11,6 +13,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { logError } from '~/components/error-boundary/log-error';
 import { RootErrorBoundary } from '~/components/error-boundary/RootErrorBoundary';
 import { makeStyles } from '~/components/theme';
+import { darkTheme, lightTheme } from '~/components/theme/theme';
 import { E2E_TESTING } from '~/constants';
 import { useScreenCapture } from '~/hooks/use-screen-capture';
 import { resolveAuthRedirect } from '~/navigation/auth-route-guard';
@@ -128,7 +131,7 @@ function InnerRootLayout() {
     <RootErrorBoundary
       onError={(error, errorInfo) => logError(error, errorInfo, { route: segments.join('/') })}
     >
-      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+      <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
         <Stack screenOptions={{ contentStyle: { backgroundColor: 'transparent' } }}>
           <Stack.Screen name="(protected)" options={{ headerShown: false }} />
           <Stack.Screen name="(auth)" options={{ headerShown: false }} />
@@ -170,7 +173,38 @@ function InnerRootLayout() {
 
 function RootLayout() {
   const rootStyles = useRootStyles();
+  const colorScheme = useColorScheme();
   useScreenCapture();
+
+  const navigationTheme = React.useMemo(
+    () =>
+      colorScheme === 'light'
+        ? {
+            ...DefaultTheme,
+            colors: {
+              ...DefaultTheme.colors,
+              background: lightTheme.colors.background,
+              border: lightTheme.colors['border-default'],
+              card: lightTheme.colors.background,
+              notification: lightTheme.colors.accent,
+              primary: lightTheme.colors.accent,
+              text: lightTheme.colors.foreground,
+            },
+          }
+        : {
+            ...DarkTheme,
+            colors: {
+              ...DarkTheme.colors,
+              background: darkTheme.colors.background,
+              border: darkTheme.colors['border-default'],
+              card: darkTheme.colors.background,
+              notification: darkTheme.colors.accent,
+              primary: darkTheme.colors.accent,
+              text: darkTheme.colors.foreground,
+            },
+          },
+    [colorScheme],
+  );
 
   useEffect(() => {
     if (E2E_TESTING) {
@@ -184,19 +218,19 @@ function RootLayout() {
   }, []);
 
   const content = (
-    <SafeAreaProvider>
-      <GestureHandlerRootView style={rootStyles.gestureRoot}>
-        <KeyboardProvider>
-          <RootErrorBoundary>
+    <ThemeProvider value={navigationTheme}>
+      <SafeAreaProvider>
+        <GestureHandlerRootView style={rootStyles.gestureRoot}>
+          <KeyboardProvider>
             <AuthProvider>
               <BottomSheetModalProvider>
                 <InnerRootLayout />
               </BottomSheetModalProvider>
             </AuthProvider>
-          </RootErrorBoundary>
-        </KeyboardProvider>
-      </GestureHandlerRootView>
-    </SafeAreaProvider>
+          </KeyboardProvider>
+        </GestureHandlerRootView>
+      </SafeAreaProvider>
+    </ThemeProvider>
   );
 
   return POSTHOG_ENABLED ? (

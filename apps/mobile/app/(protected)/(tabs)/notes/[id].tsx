@@ -1,16 +1,16 @@
-import { MarkdownTextInput } from '@expensify/react-native-live-markdown';
 import type { MarkdownStyle } from '@expensify/react-native-live-markdown';
+import { MarkdownTextInput } from '@expensify/react-native-live-markdown';
 import { useApiClient } from '@hominem/rpc/react';
 import type { Note } from '@hominem/rpc/types';
+import { useNavigation } from '@react-navigation/native';
 import { useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
-import type { RelativePathString } from 'expo-router';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useRef } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useLayoutEffect, useRef } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 
 import { parseNoteMarkdown } from '~/components/notes/note-markdown-parser';
-import { NoteToolbar, NOTE_TOOLBAR_ID } from '~/components/notes/NoteToolbar';
+import { NOTE_TOOLBAR_ID, NoteToolbar } from '~/components/notes/NoteToolbar';
 import { Text, makeStyles } from '~/components/theme';
 import { useThemeColors } from '~/components/theme/theme';
 import { TextField } from '~/components/ui/TextField';
@@ -45,7 +45,7 @@ export default function NoteDetailScreen() {
         queryClient.setQueryData<Note>(noteKeys.detail(updatedNote.id), updatedNote);
         queryClient.setQueryData<Note[]>(noteKeys.all, (current) => {
           if (!current) return [updatedNote];
-          return current.map((n) => (n.id === updatedNote.id ? updatedNote : n));
+          return current.map((entry) => (entry.id === updatedNote.id ? updatedNote : entry));
         });
         requestTopReveal();
         void queryClient.invalidateQueries({ queryKey: noteKeys.feeds() });
@@ -67,6 +67,7 @@ function NoteDetailEditor({
 }) {
   const styles = useNoteStyles();
   const themeColors = useThemeColors();
+  const navigation = useNavigation();
   const contentInputRef = useRef<React.ComponentRef<typeof MarkdownTextInput>>(null);
 
   const { title, setTitle, content, setContent, files, setFiles, onSave } = useNoteEditor(
@@ -74,19 +75,19 @@ function NoteDetailEditor({
       id: note.id,
       title: note.title,
       content: note.content,
-      files: note.files.map((f) => ({
-        id: f.id,
-        originalName: f.originalName,
+      files: note.files.map((file) => ({
+        id: file.id,
+        originalName: file.originalName,
         mimetype: '',
         size: 0,
-        url: f.url,
+        url: file.url,
         uploadedAt: '',
       })),
     },
-    async ({ id: noteId, title: t, content: c, fileIds }) => {
+    async ({ id: noteId, title: nextTitle, content: nextContent, fileIds }) => {
       const res = await client.api.notes[':id'].$patch({
         param: { id: noteId },
-        json: { title: t, content: c, fileIds },
+        json: { title: nextTitle, content: nextContent, fileIds },
       });
       const updatedNote = await res.json();
       onSaved(updatedNote);
@@ -100,10 +101,40 @@ function NoteDetailEditor({
       void onSave(
         title,
         newText,
-        files.map((f) => f.id),
+        files.map((file) => file.id),
       );
     },
   });
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: title?.trim() || note.title || 'Note',
+      headerRight: () => (
+        <Pressable
+          accessibilityLabel="Open chat for this note"
+          hitSlop={10}
+          onPress={() => router.push(`/(protected)/(tabs)/chat/${note.id}`)}
+          style={styles.headerButton}
+        >
+          <Image
+            source="sf:bubble.left"
+            style={styles.headerIcon}
+            tintColor={themeColors.foreground}
+            contentFit="contain"
+          />
+        </Pressable>
+      ),
+    });
+  }, [
+    navigation,
+    note.id,
+    note.title,
+    router,
+    styles.headerButton,
+    styles.headerIcon,
+    themeColors.foreground,
+    title,
+  ]);
 
   const markdownStyle: MarkdownStyle = {
     syntax: { color: themeColors['text-tertiary'] },
@@ -120,11 +151,11 @@ function NoteDetailEditor({
   };
 
   const handleDetach = async (fileId: string) => {
-    const nextFiles = files.filter((item) => item.id !== fileId);
+    const nextFiles = files.filter((file) => file.id !== fileId);
     setFiles(nextFiles);
     const res = await client.api.notes[':id'].$patch({
       param: { id: note.id },
-      json: { title: title || null, content, fileIds: nextFiles.map((item) => item.id) },
+      json: { title: title || null, content, fileIds: nextFiles.map((file) => file.id) },
     });
     const updatedNote = await res.json();
     onSaved(updatedNote);
@@ -132,28 +163,6 @@ function NoteDetailEditor({
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          headerRight: () => (
-            <Pressable
-              onPress={() =>
-                router.push(`/(protected)/(tabs)/chat/${note.id}` as RelativePathString)
-              }
-              hitSlop={8}
-              accessibilityLabel="Open chat for this note"
-              accessibilityRole="button"
-            >
-              <Image
-                source="sf:bubble.left"
-                style={styles.headerIcon}
-                tintColor={themeColors.foreground}
-                contentFit="contain"
-              />
-            </Pressable>
-          ),
-        }}
-      />
-
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.content}
@@ -169,7 +178,7 @@ function NoteDetailEditor({
             void onSave(
               value,
               content,
-              files.map((f) => f.id),
+              files.map((file) => file.id),
             );
           }}
           placeholder="Title"
@@ -191,7 +200,7 @@ function NoteDetailEditor({
             void onSave(
               title,
               value,
-              files.map((f) => f.id),
+              files.map((file) => file.id),
             );
           }}
           onSelectionChange={toolbar.onSelectionChange}
@@ -208,7 +217,7 @@ function NoteDetailEditor({
           inputAccessoryViewID={NOTE_TOOLBAR_ID}
         />
 
-        {files.length > 0 && (
+        {files.length > 0 ? (
           <View style={styles.filesSection}>
             <Text style={styles.filesLabel}>Attachments</Text>
             <View style={styles.filesList}>
@@ -240,7 +249,7 @@ function NoteDetailEditor({
               ))}
             </View>
           </View>
-        )}
+        ) : null}
       </ScrollView>
 
       <NoteToolbar
@@ -263,9 +272,15 @@ const useNoteStyles = makeStyles((theme) => ({
     paddingTop: 8,
     paddingBottom: COMPOSER_CLEARANCE,
   },
+  headerButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 36,
+    width: 36,
+  },
   headerIcon: {
-    width: 22,
-    height: 22,
+    height: 18,
+    width: 18,
   },
   titleContainer: {
     marginBottom: 12,
