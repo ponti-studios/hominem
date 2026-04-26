@@ -1,6 +1,6 @@
-import 'dotenv/config';
 import { createServerEnv } from '@hominem/env';
 import { baseSchema } from '@hominem/env/base';
+import 'dotenv/config';
 import * as z from 'zod';
 
 const servicesSchema = baseSchema.extend({
@@ -8,7 +8,7 @@ const servicesSchema = baseSchema.extend({
   DB_IDLE_TIMEOUT: z.coerce.number().optional(),
   DB_MAX_LIFETIME: z.coerce.number().optional(),
 
-  APP_BASE_URL: z.string().url().optional(),
+  APP_BASE_URL: z.url().optional(),
 });
 
 export const env = createServerEnv(servicesSchema, 'services');

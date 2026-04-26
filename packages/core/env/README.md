@@ -38,12 +38,12 @@ import { createClientEnv, createServerEnv } from '@hominem/env';
 
 // Define your app's schema
 const clientSchema = z.object({
-  VITE_PUBLIC_API_URL: z.string().url(),
+  VITE_PUBLIC_API_URL: z.url(),
 });
 
 const serverSchema = z.object({
-  VITE_PUBLIC_API_URL: z.string().url(),
-  DATABASE_URL: z.string().url(),
+  VITE_PUBLIC_API_URL: z.url(),
+  DATABASE_URL: z.url(),
 });
 
 // Create validated env objects
