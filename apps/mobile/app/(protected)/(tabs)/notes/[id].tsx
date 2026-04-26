@@ -1,7 +1,12 @@
 import type { MarkdownStyle } from '@expensify/react-native-live-markdown';
 import { MarkdownTextInput } from '@expensify/react-native-live-markdown';
-import { Host as SwiftUIHost, TextField as SwiftUITextField } from '@expo/ui/swift-ui';
-import { font, frame, submitLabel, textFieldStyle } from '@expo/ui/swift-ui/modifiers';
+import {
+  Button as SwiftUIButton,
+  Host as SwiftUIHost,
+  Image as SwiftUIImage,
+  TextField as SwiftUITextField,
+} from '@expo/ui/swift-ui';
+import { buttonStyle, font, frame, submitLabel, textFieldStyle } from '@expo/ui/swift-ui/modifiers';
 import { useApiClient } from '@hominem/rpc/react';
 import type { Note } from '@hominem/rpc/types';
 import { useNavigation } from '@react-navigation/native';
@@ -111,31 +116,17 @@ function NoteDetailEditor({
     navigation.setOptions({
       title: title?.trim() || note.title || 'Note',
       headerRight: () => (
-        <Pressable
-          accessibilityLabel="Open chat for this note"
-          hitSlop={10}
-          onPress={() => router.push(`/(protected)/(tabs)/chat/${note.id}`)}
-          style={styles.headerButton}
-        >
-          <Image
-            source="sf:bubble.left"
-            style={styles.headerIcon}
-            tintColor={themeColors.foreground}
-            contentFit="contain"
-          />
-        </Pressable>
+        <SwiftUIHost style={{ width: 36, height: 36 }}>
+          <SwiftUIButton
+            onPress={() => router.push(`/(protected)/(tabs)/chat/${note.id}`)}
+            modifiers={[buttonStyle('borderless'), frame({ width: 36, height: 36 })]}
+          >
+            <SwiftUIImage systemName="bubble.left" size={18} />
+          </SwiftUIButton>
+        </SwiftUIHost>
       ),
     });
-  }, [
-    navigation,
-    note.id,
-    note.title,
-    router,
-    styles.headerButton,
-    styles.headerIcon,
-    themeColors.foreground,
-    title,
-  ]);
+  }, [navigation, note.id, note.title, router, title]);
 
   const markdownStyle: MarkdownStyle = {
     syntax: { color: themeColors['text-tertiary'] },
@@ -275,16 +266,6 @@ const useNoteStyles = makeStyles((theme) => ({
     paddingHorizontal: 20,
     paddingTop: 8,
     paddingBottom: COMPOSER_CLEARANCE,
-  },
-  headerButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 36,
-    width: 36,
-  },
-  headerIcon: {
-    height: 18,
-    width: 18,
   },
   titleHost: {
     alignSelf: 'stretch',

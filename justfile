@@ -64,8 +64,8 @@ start-ios:
 mobile-prebuild:
     cd "{{ MOBILE_DIR }}" && pnpm exec expo prebuild --platform ios
 
-run-ios:
-    cd "{{ MOBILE_DIR }}" && pnpm exec expo run:ios
+run-ios variant="dev":
+    cd "{{ MOBILE_DIR }}" && APP_VARIANT="{{ variant }}" pnpm exec expo run:ios
 
 mobile-doctor:
     cd "{{ MOBILE_DIR }}" && npx --yes expo-doctor

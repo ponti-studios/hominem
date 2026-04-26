@@ -1,4 +1,4 @@
-export { ConversationActionsSheet } from './conversation-actions';
+export { ConversationMenu } from './conversation-menu';
 export { ChatMessageList } from './chat-message-list';
 export { ChatReviewOverlay } from './chat-review-overlay';
 export { ChatSearchModal } from './chat-search-modal';

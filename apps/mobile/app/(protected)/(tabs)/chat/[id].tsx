@@ -1,24 +1,29 @@
+import {
+  HStack,
+  Button as SwiftUIButton,
+  Host as SwiftUIHost,
+  Image as SwiftUIImage,
+} from '@expo/ui/swift-ui';
+import { buttonStyle, disabled as disabledModifier, frame } from '@expo/ui/swift-ui/modifiers';
 import { useApiClient } from '@hominem/rpc/react';
 import type { SessionSource } from '@hominem/rpc/types';
 import { useNavigation } from '@react-navigation/native';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router/build/hooks';
 import React, { useLayoutEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import {
   ChatMessageList,
   ChatReviewOverlay,
   ChatSearchModal,
-  ConversationActionsSheet,
+  ConversationMenu,
   useChatController,
   type ChatRenderIcon,
   type ChatServices,
 } from '~/components/chat';
 import { ChatInput } from '~/components/chat/ChatInput';
 import { useTTS } from '~/components/media/use-tts';
-import { useThemeColors } from '~/components/theme/theme';
 import { EmptyState } from '~/components/ui';
 import AppIcon from '~/components/ui/icon';
 import {
@@ -40,7 +45,7 @@ import { chatKeys } from '~/services/notes/query-keys';
 
 const renderChatIcon: ChatRenderIcon = (name, props) => (
   <View style={props.style}>
-    <AppIcon name={name as any} size={props.size} color={props.color} />
+    <AppIcon name={name} size={props.size} color={props.color} />
   </View>
 );
 
@@ -49,7 +54,6 @@ export default function ChatDetailScreen() {
   const navigation = useNavigation();
   const router = useRouter();
   const client = useApiClient();
-  const themeColors = useThemeColors();
   const queryClient = useQueryClient();
   const [composerClearance, setComposerClearance] = useState(0);
   const { speakingId, speak } = useTTS();
@@ -138,47 +142,45 @@ export default function ChatDetailScreen() {
       title: displayTitle,
       headerTitleAlign: 'center',
       headerRight: () => (
-        <View style={styles.headerActions}>
-          <Pressable
-            accessibilityLabel="Conversation actions"
-            hitSlop={10}
-            onPress={controller.handleOpenMenu}
-            style={styles.headerButton}
-          >
-            <Image
-              source="sf:ellipsis"
-              style={styles.headerIcon}
-              tintColor={themeColors.foreground}
-              contentFit="contain"
+        <SwiftUIHost style={{ width: 88, height: 44 }}>
+          <HStack spacing={0} modifiers={[frame({ width: 88, height: 44 })]}>
+            <ConversationMenu
+              canTransform={controller.canTransform}
+              isArchiving={controller.isArchiving}
+              onArchive={controller.handleArchiveChat}
+              onOpenSearch={controller.handleOpenSearch}
+              onToggleDebug={controller.handleToggleDebug}
+              onTransform={controller.handleTransformFromMenu}
+              transformTypes={controller.enabledTransforms}
+              showDebug={controller.showDebug}
             />
-          </Pressable>
-          <Pressable
-            accessibilityLabel="New chat"
-            hitSlop={10}
-            onPress={() => {
-              if (!isCreatingChat) {
-                handleCreateChat();
-              }
-            }}
-            style={styles.headerButton}
-          >
-            <Image
-              source="sf:square.and.pencil"
-              style={styles.headerIcon}
-              tintColor={themeColors.foreground}
-              contentFit="contain"
-            />
-          </Pressable>
-        </View>
+            <SwiftUIButton
+              onPress={handleCreateChat}
+              modifiers={[
+                buttonStyle('borderless'),
+                frame({ width: 44, height: 44 }),
+                disabledModifier(isCreatingChat),
+              ]}
+            >
+              <SwiftUIImage systemName="square.and.pencil" size={18} />
+            </SwiftUIButton>
+          </HStack>
+        </SwiftUIHost>
       ),
     });
   }, [
-    controller.handleOpenMenu,
+    controller.canTransform,
+    controller.enabledTransforms,
+    controller.handleArchiveChat,
+    controller.handleOpenSearch,
+    controller.handleToggleDebug,
+    controller.handleTransformFromMenu,
+    controller.isArchiving,
+    controller.showDebug,
     displayTitle,
     handleCreateChat,
     isCreatingChat,
     navigation,
-    themeColors.foreground,
   ]);
 
   const emptyState = useMemo(
@@ -225,20 +227,6 @@ export default function ChatDetailScreen() {
         contentPaddingBottom={composerClearance}
         emptyState={emptyState}
       />
-      <ConversationActionsSheet
-        canTransform={controller.canTransform}
-        isArchiving={controller.isArchiving}
-        onArchive={controller.handleArchiveChat}
-        onClose={controller.handleCloseMenu}
-        onOpenSearch={controller.handleOpenSearch}
-        onToggleDebug={controller.handleToggleDebug}
-        onTransform={controller.handleTransformFromMenu}
-        transformTypes={controller.enabledTransforms}
-        showDebug={controller.showDebug}
-        statusCopy={controller.statusCopy}
-        title="Conversation"
-        visible={controller.showActionsMenu}
-      />
       <ChatReviewOverlay
         pendingReview={controller.pendingReview}
         isVisible={controller.isReviewVisible}
@@ -261,20 +249,5 @@ export default function ChatDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  headerButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 36,
-    width: 36,
-  },
-  headerIcon: {
-    height: 18,
-    width: 18,
   },
 });

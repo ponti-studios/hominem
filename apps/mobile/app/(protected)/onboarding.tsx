@@ -8,6 +8,7 @@ import {
   VStack,
 } from '@expo/ui/swift-ui';
 import {
+  autocorrectionDisabled,
   buttonStyle,
   controlSize,
   disabled as disabledModifier,
@@ -21,7 +22,6 @@ import {
   submitLabel,
   textFieldStyle,
   textInputAutocapitalization,
-  autocorrectionDisabled,
 } from '@expo/ui/swift-ui/modifiers';
 import type { RelativePathString } from 'expo-router';
 import { Redirect } from 'expo-router';
