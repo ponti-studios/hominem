@@ -14,17 +14,9 @@
       "types": "./src/dates.ts",
       "default": "./src/dates.ts"
     },
-    "./images": {
-      "types": "./src/images.ts",
-      "default": "./src/images.ts"
-    },
     "./http": {
       "types": "./src/http.ts",
       "default": "./src/http.ts"
-    },
-    "./logger": {
-      "types": "./src/logger.ts",
-      "default": "./src/logger.ts"
     },
     "./time": {
       "types": "./src/time.ts",

@@ -65,7 +65,6 @@
     "react-dom": "19.2.0",
     "react-error-boundary": "^6.1.1",
     "react-native": "0.83.4",
-    "react-native-drawer-layout": "^4.2.2",
     "react-native-gesture-handler": "~2.30.0",
     "react-native-keyboard-controller": "^1.20.7",
     "react-native-markdown-display": "^7.0.2",

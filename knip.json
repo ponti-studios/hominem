@@ -34,11 +34,11 @@
     }
   },
 
-  "ignoreDependencies": ["tsx", "babel-preset-expo"],
+  "ignoreDependencies": ["babel-preset-expo"],
 
-  "ignoreBinaries": ["goose"],
+  "ignoreBinaries": [],
 
-  "ignoreUnresolved": ["^vite/client$"],
+  "ignoreUnresolved": [],
 
   "ignore": [
     "packages/platform/ui/src/components/**",
