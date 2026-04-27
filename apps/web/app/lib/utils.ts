@@ -1,5 +1,3 @@
-export { cn } from '@hominem/ui/lib/utils';
-
 export function jsonResponse(data: unknown, init?: ResponseInit) {
   return new Response(JSON.stringify(data), {
     ...init,

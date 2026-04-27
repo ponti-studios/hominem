@@ -1,0 +1,26 @@
+{
+  "name": "@hominem/storage",
+  "version": "0.0.0",
+  "description": "Storage services and upload policy",
+  "type": "module",
+  "sideEffects": false,
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsgo --noEmit",
+    "format": "pnpm dlx oxfmt ./src",
+    "lint": "pnpm dlx oxlint ./src"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.529.0",
+    "@aws-sdk/s3-request-presigner": "^3.529.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.4.0"
+  }
+}

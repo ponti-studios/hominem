@@ -1,5 +1,5 @@
-import { CHAT_UPLOAD_MAX_FILE_COUNT } from '@hominem/chat';
 import { classifyFileByMimeType } from '@hominem/rpc';
+import { CHAT_UPLOAD_MAX_FILE_COUNT } from '@hominem/storage';
 import * as ImagePicker from 'expo-image-picker';
 import { Alert } from 'react-native';
 

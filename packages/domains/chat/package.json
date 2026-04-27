@@ -10,10 +10,6 @@
       "types": "./src/public.ts",
       "default": "./src/public.ts"
     },
-    "./server": {
-      "types": "./src/index.ts",
-      "default": "./src/index.ts"
-    },
     "./types": {
       "types": "./src/types-only.ts",
       "default": "./src/types-only.ts"
@@ -37,10 +33,6 @@
     "lint": "pnpm dlx oxlint ./src"
   },
   "dependencies": {
-    "@hominem/db": "workspace:*",
-    "@hominem/telemetry": "workspace:*",
-    "@hominem/utils": "workspace:*",
-    "@langchain/textsplitters": "^1.0.1",
     "date-fns": "^3.6.0"
   },
   "devDependencies": {

@@ -11,30 +11,7 @@ import {
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 import type { FileObject, PreparedUpload, StorageOptions, StoredFile } from './types';
-
-const CHAT_UPLOAD_ALLOWED_MIME_TYPES = [
-  'image/jpeg',
-  'image/png',
-  'image/gif',
-  'image/webp',
-  'application/pdf',
-  'text/plain',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/msword',
-  'audio/mpeg',
-  'audio/wav',
-  'audio/ogg',
-  'video/mp4',
-  'video/webm',
-  'text/csv',
-  'application/csv',
-] as const;
-
-function isSupportedChatUploadMimeType(mimetype: string): boolean {
-  return CHAT_UPLOAD_ALLOWED_MIME_TYPES.includes(
-    mimetype as (typeof CHAT_UPLOAD_ALLOWED_MIME_TYPES)[number],
-  );
-}
+import { isSupportedUploadMimeType } from './upload-policy';
 
 type StorageCategory = 'csvs' | 'chats' | 'places';
 
@@ -131,7 +108,7 @@ class InMemoryStorageBackend {
   }
 
   isValidFileType(mimetype: string): boolean {
-    return isSupportedChatUploadMimeType(mimetype);
+    return isSupportedUploadMimeType(mimetype);
   }
 
   async ensureBucket(): Promise<void> {
@@ -741,7 +718,7 @@ export class R2StorageService {
   }
 
   isValidFileType(mimetype: string): boolean {
-    return isSupportedChatUploadMimeType(mimetype);
+    return isSupportedUploadMimeType(mimetype);
   }
 
   markPreparedUpload(fileId: string, key: string, userId: string): void {

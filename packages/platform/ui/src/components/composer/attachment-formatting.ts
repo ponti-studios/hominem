@@ -1,13 +1,6 @@
-export interface UploadAttachmentContextFile {
-  originalName: string;
-  type: string;
-  mimetype: string;
-  url: string;
-  content?: string;
-  textContent?: string;
-}
+import type { UploadedFile } from '../../types/upload';
 
-export function formatUploadedFileContext(files: UploadAttachmentContextFile[]): string {
+function formatUploadedFileContext(files: ReadonlyArray<UploadedFile>): string {
   if (files.length === 0) return '';
 
   const body = files
@@ -28,7 +21,7 @@ export function formatUploadedFileContext(files: UploadAttachmentContextFile[]):
   return `Attached files context:\n${body}`;
 }
 
-export function formatNoteAttachmentsSection(files: UploadAttachmentContextFile[]): string {
+function formatNoteAttachmentsSection(files: ReadonlyArray<UploadedFile>): string {
   if (files.length === 0) return '';
 
   const body = files
@@ -41,10 +34,7 @@ export function formatNoteAttachmentsSection(files: UploadAttachmentContextFile[
   return `## Attachments\n${body}`;
 }
 
-export function appendNoteAttachments(
-  content: string,
-  files: UploadAttachmentContextFile[],
-): string {
+export function appendNoteAttachments(content: string, files: ReadonlyArray<UploadedFile>): string {
   const trimmedContent = content.trim();
   const attachmentSection = formatNoteAttachmentsSection(files);
   if (!attachmentSection) return trimmedContent;
@@ -54,7 +44,7 @@ export function appendNoteAttachments(
 
 export function appendChatAttachmentContext(
   message: string,
-  files: UploadAttachmentContextFile[],
+  files: ReadonlyArray<UploadedFile>,
 ): string {
   const trimmedMessage = message.trim();
   const attachmentContext = formatUploadedFileContext(files);

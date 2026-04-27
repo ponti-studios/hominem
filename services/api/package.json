@@ -29,6 +29,7 @@
     "@hominem/env": "workspace:*",
     "@hominem/queues": "workspace:*",
     "@hominem/services": "workspace:*",
+    "@hominem/storage": "workspace:*",
     "@hominem/telemetry": "workspace:*",
     "@hominem/utils": "workspace:*",
     "@hono/node-server": "^1.19.11",
