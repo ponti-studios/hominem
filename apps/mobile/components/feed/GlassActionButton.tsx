@@ -7,12 +7,12 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   interpolate,
   interpolateColor,
-  runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 
 import { useThemeColors } from '~/components/theme/theme';
 import AppIcon from '~/components/ui/icon';
@@ -49,7 +49,7 @@ export function GlassActionButton({ onSave, onChat, disabled = false }: GlassAct
     .maxDuration(300)
     .enabled(!disabled)
     .onEnd(() => {
-      runOnJS(onSave)();
+      scheduleOnRN(onSave);
     });
 
   // Hold (280ms) → reveal chat option; drag up past threshold → select chat
@@ -59,21 +59,21 @@ export function GlassActionButton({ onSave, onChat, disabled = false }: GlassAct
     .onStart(() => {
       mainScale.value = withSpring(0.9, { damping: 18, stiffness: 300 });
       chatVisible.value = withSpring(1, { damping: 16, stiffness: 260 });
-      runOnJS(triggerImpact)();
+      scheduleOnRN(triggerImpact);
     })
     .onUpdate(({ translationY }) => {
       const wasActive = chatActive.value > 0.5;
       const isNowActive = translationY <= THRESHOLD;
       if (isNowActive !== wasActive) {
         chatActive.value = withTiming(isNowActive ? 1 : 0, { duration: 120 });
-        runOnJS(triggerSelection)();
+        scheduleOnRN(triggerSelection);
       }
     })
     .onEnd(({ translationY }) => {
       if (translationY <= THRESHOLD) {
-        runOnJS(onChat)();
+        scheduleOnRN(onChat);
       } else {
-        runOnJS(onSave)();
+        scheduleOnRN(onSave);
       }
     })
     .onFinalize(() => {

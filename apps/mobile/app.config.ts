@@ -1,6 +1,10 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 import type { AppVariant, VariantConfig } from './config/appVariantConfig';
-import { getAppVariant, getAppVariantConfig } from './config/appVariantConfig';
+
+const { getAppVariant, getAppVariantConfig } = require('./config/appVariant.js') as {
+  getAppVariant(rawVariant?: string): AppVariant;
+  getAppVariantConfig(rawVariant?: string): VariantConfig;
+};
 
 const EXPO_OWNER = 'pontistudios';
 const EXPO_PROJECT_ID = '4dfac82b-644f-4ff3-be42-e8f941287aa1';

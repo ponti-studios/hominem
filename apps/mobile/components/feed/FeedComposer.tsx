@@ -1,5 +1,10 @@
-import { Button as SwiftUIButton, Host as SwiftUIHost } from '@expo/ui/swift-ui';
-import { buttonStyle, controlSize, frame } from '@expo/ui/swift-ui/modifiers';
+import { Button as SwiftUIButton, Host as SwiftUIHost, ProgressView } from '@expo/ui/swift-ui';
+import {
+  buttonStyle,
+  controlSize,
+  frame,
+  progressViewStyle,
+} from '@expo/ui/swift-ui/modifiers';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { useApiClient } from '@hominem/rpc/react';
 import { radii, spacing } from '@hominem/ui/tokens';
@@ -12,7 +17,6 @@ import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActionSheetIOS,
   Keyboard,
-  Platform,
   Pressable,
   StyleSheet,
   TextInput,
@@ -95,7 +99,12 @@ function AttachmentRow({
             {uploading && (
               <>
                 <View style={styles.thumbDim} />
-                <View style={[styles.progressBar, { width: `${progress}%` }]} />
+                <SwiftUIHost style={styles.progressHost}>
+                  <ProgressView
+                    value={progress / 100}
+                    modifiers={[progressViewStyle('linear'), frame({ height: spacing[1] })]}
+                  />
+                </SwiftUIHost>
               </>
             )}
           </Pressable>
@@ -137,7 +146,7 @@ export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerPro
   const [message, setMessage] = useState(seedMessage ?? '');
   const [attachments, setAttachments] = useState<ComposerAttachment[]>([]);
   const [isRecording, setIsRecording] = useState(false);
-  const [_mode, setMode] = useState<ComposerMode>('text');
+  const [, setMode] = useState<ComposerMode>('text');
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isChatCreating, setIsChatCreating] = useState(false);
@@ -174,7 +183,7 @@ export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerPro
         text: message.trim(),
         ...(uploadedAttachmentIds.length > 0 ? { fileIds: uploadedAttachmentIds } : {}),
       });
-      if (Platform.OS === 'ios') donateAddNoteIntent();
+      donateAddNoteIntent();
       await invalidateInboxQueries(queryClient);
       requestTopReveal();
       clearDraft();
@@ -484,12 +493,12 @@ const useStyles = makeStyles((theme) => ({
     bottom: 0,
     backgroundColor: theme.colors['overlay-modal-medium'],
   },
-  progressBar: {
+  progressHost: {
     position: 'absolute',
     bottom: 0,
     left: 0,
+    right: 0,
     height: spacing[1],
-    backgroundColor: theme.colors.accent,
   },
   errorText: {
     fontSize: 12,

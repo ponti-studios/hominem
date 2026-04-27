@@ -7,11 +7,11 @@ import Reanimated, {
   Easing,
   FadeIn,
   interpolate,
-  runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 
 import { Text, makeStyles, spacing } from '~/components/theme';
 import { useChatArchive } from '~/services/chat/use-chat-archive';
@@ -40,7 +40,7 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
         1,
         { duration: EXIT_MS, easing: Easing.out(Easing.cubic) },
         (finished) => {
-          if (finished) runOnJS(onComplete)();
+          if (finished) scheduleOnRN(onComplete);
         },
       );
     },
@@ -64,16 +64,7 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
   }, [animateExit, deleteNote]);
 
   const handleArchive = useCallback(() => {
-    Alert.alert('Archive chat', 'This chat will be moved to your archive.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Archive',
-        style: 'destructive',
-        onPress: () => {
-          animateExit(archiveChat);
-        },
-      },
-    ]);
+    animateExit(archiveChat);
   }, [animateExit, archiveChat]);
 
   // ── Animated styles ────────────────────────────────────────────────────────

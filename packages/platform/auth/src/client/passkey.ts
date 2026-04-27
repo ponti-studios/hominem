@@ -17,17 +17,6 @@ type AuthResult<TData = unknown> = {
   } | null;
 };
 
-type PasskeyBrowser = {
-  PublicKeyCredential?: typeof PublicKeyCredential;
-  navigator?: {
-    webdriver?: boolean;
-  };
-};
-
-export function hasPasskeySupport(browser: PasskeyBrowser | undefined) {
-  return Boolean(browser?.PublicKeyCredential) && browser?.navigator?.webdriver !== true;
-}
-
 interface UsePasskeysResult {
   data: Passkey[];
   isLoading: boolean;
@@ -53,7 +42,7 @@ export function usePasskeys(options: UsePasskeysOptions = {}): UsePasskeysResult
     null,
   );
   const [isPasskeysLoading, setIsPasskeysLoading] = useState(Boolean(options.enabled));
-  const isSupported = hasPasskeySupport(typeof window === 'undefined' ? undefined : window);
+  const isSupported = Boolean(window?.PublicKeyCredential && window?.navigator?.webdriver !== true);
   const shouldLoadPasskeys = options.enabled ?? false;
 
   const fetchPasskeys = useCallback(

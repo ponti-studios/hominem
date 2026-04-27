@@ -1,6 +1,8 @@
+import { Button as SwiftUIButton, Host as SwiftUIHost } from '@expo/ui/swift-ui';
+import { buttonStyle } from '@expo/ui/swift-ui/modifiers';
 import { Stack } from 'expo-router';
 import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { FeatureErrorBoundary } from '~/components/error-boundary/FeatureErrorBoundary';
 import { Text, theme } from '~/components/theme';
@@ -65,11 +67,13 @@ function ProtectedShell() {
         <Text variant="body" color="text-secondary">
           Unlock to continue
         </Text>
-        <Pressable onPress={() => void authenticate()}>
-          <Text variant="body" color="foreground">
-            Unlock
-          </Text>
-        </Pressable>
+        <SwiftUIHost matchContents>
+          <SwiftUIButton
+            label="Unlock"
+            onPress={() => void authenticate()}
+            modifiers={[buttonStyle('borderedProminent')]}
+          />
+        </SwiftUIHost>
       </View>
     );
   }

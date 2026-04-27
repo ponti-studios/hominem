@@ -6,7 +6,14 @@ import {
   Image as SwiftUIImage,
   TextField as SwiftUITextField,
 } from '@expo/ui/swift-ui';
-import { buttonStyle, font, frame, submitLabel, textFieldStyle } from '@expo/ui/swift-ui/modifiers';
+import {
+  accessibilityLabel,
+  buttonStyle,
+  font,
+  frame,
+  submitLabel,
+  textFieldStyle,
+} from '@expo/ui/swift-ui/modifiers';
 import { useApiClient } from '@hominem/rpc/react';
 import type { Note } from '@hominem/rpc/types';
 import { useNavigation } from '@react-navigation/native';
@@ -14,7 +21,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useLayoutEffect, useRef } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 
 import { parseNoteMarkdown } from '~/components/notes/note-markdown-parser';
 import { NOTE_TOOLBAR_ID, NoteToolbar } from '~/components/notes/NoteToolbar';
@@ -227,19 +234,22 @@ function NoteDetailEditor({
                   <Text style={styles.filePillName} numberOfLines={1}>
                     {file.originalName}
                   </Text>
-                  <Pressable
-                    onPress={() => void handleDetach(file.id)}
-                    hitSlop={8}
-                    accessibilityLabel={`Remove ${file.originalName}`}
-                    accessibilityRole="button"
-                  >
-                    <Image
-                      source="sf:xmark"
-                      style={styles.filePillDetach}
-                      tintColor={themeColors['text-tertiary']}
-                      contentFit="contain"
-                    />
-                  </Pressable>
+                  <SwiftUIHost matchContents style={styles.filePillDetachHost}>
+                    <SwiftUIButton
+                      onPress={() => void handleDetach(file.id)}
+                      modifiers={[
+                        accessibilityLabel(`Remove ${file.originalName}`),
+                        buttonStyle('plain'),
+                        frame({ width: 24, height: 24 }),
+                      ]}
+                    >
+                      <SwiftUIImage
+                        systemName="xmark"
+                        size={12}
+                        color={themeColors['text-tertiary']}
+                      />
+                    </SwiftUIButton>
+                  </SwiftUIHost>
                 </View>
               ))}
             </View>
@@ -319,8 +329,8 @@ const useNoteStyles = makeStyles((theme) => ({
     fontSize: 13,
     color: theme.colors['text-secondary'],
   },
-  filePillDetach: {
-    width: 12,
-    height: 12,
+  filePillDetachHost: {
+    width: 24,
+    height: 24,
   },
 }));

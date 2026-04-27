@@ -1,4 +1,6 @@
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
+import { Host as SwiftUIHost, ProgressView } from '@expo/ui/swift-ui';
+import { frame, progressViewStyle } from '@expo/ui/swift-ui/modifiers';
 import { useApiClient } from '@hominem/rpc/react';
 import type { NoteSearchResult } from '@hominem/rpc/types';
 import { radii, spacing } from '@hominem/ui/tokens';
@@ -165,7 +167,12 @@ function AttachmentRow({
                 {uploading && (
                   <>
                     <View style={styles.thumbDim} />
-                    <View style={[styles.progressBar, { width: `${progress}%` }]} />
+                    <SwiftUIHost style={styles.progressHost}>
+                      <ProgressView
+                        value={progress / 100}
+                        modifiers={[progressViewStyle('linear'), frame({ height: spacing[1] })]}
+                      />
+                    </SwiftUIHost>
                   </>
                 )}
               </Pressable>
@@ -339,10 +346,11 @@ export function ChatInput({ chatId, initialMessage, onClearanceChange }: ChatInp
 
   // Auto-send initialMessage once on mount (used when navigating from FeedComposer → chat)
   const hasSentInitial = useRef(false);
+  const initialMessageRef = useRef(initialMessage);
   const sendRef = useRef(sendChatMessage);
   sendRef.current = sendChatMessage;
   useEffect(() => {
-    const text = initialMessage?.trim();
+    const text = initialMessageRef.current?.trim();
     if (!text || hasSentInitial.current) return;
     hasSentInitial.current = true;
     void sendRef.current({ message: text });
@@ -659,12 +667,12 @@ const useStyles = makeStyles((theme) => ({
     bottom: 0,
     backgroundColor: theme.colors['overlay-modal-medium'],
   },
-  progressBar: {
+  progressHost: {
     position: 'absolute',
     bottom: 0,
     left: 0,
+    right: 0,
     height: spacing[1],
-    backgroundColor: theme.colors.accent,
   },
   selectionRow: {
     flexDirection: 'row',

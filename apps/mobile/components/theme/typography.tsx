@@ -1,7 +1,6 @@
 import type { ColorToken } from '@hominem/ui/tokens';
 import { colors as darkColors, lightColors } from '@hominem/ui/tokens';
 import {
-  Platform,
   Text as RNText,
   useColorScheme,
   type TextProps as RNTextProps,
@@ -12,18 +11,8 @@ import {
 // ── Font Tokens ───────────────────────────────────────────────────────────────
 
 export const fontFamiliesNative = {
-  primary:
-    Platform.select({
-      ios: 'System',
-      android: 'sans-serif',
-      default: 'sans-serif',
-    }) ?? 'sans-serif',
-  mono:
-    Platform.select({
-      ios: 'Menlo',
-      android: 'monospace',
-      default: 'monospace',
-    }) ?? 'monospace',
+  primary: 'System',
+  mono: 'Menlo',
 } as const;
 
 export const fontSizes = {

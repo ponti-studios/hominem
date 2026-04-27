@@ -1,11 +1,16 @@
 import React from 'react';
-import { InputAccessoryView, Keyboard, Platform, Pressable, StyleSheet, View } from 'react-native';
+import {
+  Button as SwiftUIButton,
+  Host as SwiftUIHost,
+  Image as SwiftUIImage,
+} from '@expo/ui/swift-ui';
+import { accessibilityLabel, buttonStyle, frame } from '@expo/ui/swift-ui/modifiers';
+import type { SFSymbol } from 'expo-symbols';
+import { InputAccessoryView, Keyboard, StyleSheet, View } from 'react-native';
 
-import { makeStyles } from '~/components/theme';
+import { makeStyles, spacing } from '~/components/theme';
 import { useThemeColors } from '~/components/theme/theme';
-import { spacing } from '~/components/theme';
 import { BlurSurface } from '~/components/ui/BlurSurface';
-import AppIcon from '~/components/ui/icon';
 import type { FormatAction } from '~/hooks/use-note-toolbar';
 
 export const NOTE_TOOLBAR_ID = 'note-editor-toolbar';
@@ -19,7 +24,7 @@ interface NoteToolbarProps {
 }
 
 interface ToolbarButtonProps {
-  icon: string;
+  icon: SFSymbol;
   onPress: () => void;
   disabled?: boolean;
   label: string;
@@ -29,19 +34,22 @@ function ToolbarButton({ icon, onPress, disabled = false, label }: ToolbarButton
   const themeColors = useThemeColors();
   const styles = useToolbarStyles();
   return (
-    <Pressable
-      onPress={onPress}
-      disabled={disabled}
-      accessibilityLabel={label}
-      accessibilityRole="button"
-      style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
-    >
-      <AppIcon
-        name={icon as any}
-        size={17}
-        color={disabled ? themeColors['text-tertiary'] : themeColors.foreground}
-      />
-    </Pressable>
+    <SwiftUIHost matchContents style={styles.buttonHost}>
+      <SwiftUIButton
+        onPress={disabled ? undefined : onPress}
+        modifiers={[
+          accessibilityLabel(label),
+          buttonStyle('plain'),
+          frame({ width: 36, height: 36 }),
+        ]}
+      >
+        <SwiftUIImage
+          systemName={icon}
+          size={17}
+          color={disabled ? themeColors['text-tertiary'] : themeColors.foreground}
+        />
+      </SwiftUIButton>
+    </SwiftUIHost>
   );
 }
 
@@ -109,22 +117,12 @@ function ToolbarButtons({ onAction, onUndo, onRedo, canUndo, canRedo }: NoteTool
 
 export function NoteToolbar(props: NoteToolbarProps) {
   const styles = useToolbarStyles();
-
-  if (Platform.OS === 'ios') {
-    return (
-      <InputAccessoryView nativeID={NOTE_TOOLBAR_ID} backgroundColor="transparent">
-        <BlurSurface tint="chrome" style={styles.container}>
-          <ToolbarButtons {...props} />
-        </BlurSurface>
-      </InputAccessoryView>
-    );
-  }
-
-  // Android: BlurSurface renders a semi-transparent native view; solid bg as base
   return (
-    <View style={[styles.container, styles.containerAndroid]}>
-      <ToolbarButtons {...props} />
-    </View>
+    <InputAccessoryView nativeID={NOTE_TOOLBAR_ID} backgroundColor="transparent">
+      <BlurSurface tint="chrome" style={styles.container}>
+        <ToolbarButtons {...props} />
+      </BlurSurface>
+    </InputAccessoryView>
   );
 }
 
@@ -138,23 +136,14 @@ const useToolbarStyles = makeStyles((theme) => ({
     paddingHorizontal: spacing[3],
     paddingVertical: spacing[2],
   },
-  containerAndroid: {
-    backgroundColor: theme.colors['bg-elevated'],
-  },
   group: {
     alignItems: 'center',
     flexDirection: 'row',
     gap: spacing[1],
   },
-  button: {
-    alignItems: 'center',
-    borderRadius: 8,
-    height: 36,
-    justifyContent: 'center',
+  buttonHost: {
     width: 36,
-  },
-  buttonPressed: {
-    backgroundColor: theme.colors['bg-surface'],
+    height: 36,
   },
   divider: {
     backgroundColor: theme.colors['border-subtle'],

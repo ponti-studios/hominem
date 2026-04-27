@@ -1,6 +1,8 @@
+import { Host as SwiftUIHost, ProgressView } from '@expo/ui/swift-ui';
+import { progressViewStyle } from '@expo/ui/swift-ui/modifiers';
 import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, View, type PressableProps } from 'react-native';
+import { Pressable, StyleSheet, View, type PressableProps } from 'react-native';
 import Animated, {
   interpolateColor,
   useAnimatedStyle,
@@ -161,7 +163,9 @@ export function VoiceInput({
           {...props}
         >
           {isTranscribing ? (
-            <ActivityIndicator size="small" color={theme.colors.foreground} />
+            <SwiftUIHost matchContents>
+              <ProgressView modifiers={[progressViewStyle('circular')]} />
+            </SwiftUIHost>
           ) : null}
           {!isTranscribing && isRecording ? (
             <AppIcon name="stop.fill" size={24} color={theme.colors.foreground} />
