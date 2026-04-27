@@ -1,4 +1,4 @@
-import type { ArtifactType, SessionSource } from './thought-types';
+import type { ArtifactType, SessionSource } from './capture-types';
 
 export interface SessionArtifactMessage {
   role: 'user' | 'assistant' | 'system' | 'tool';
@@ -20,7 +20,7 @@ export interface ArtifactProposal {
 }
 
 const MAX_TITLE_LENGTH = 64;
-const MAX_THOUGHT_PREVIEW_LENGTH = 96;
+const MAX_CAPTURE_PREVIEW_LENGTH = 96;
 
 function normalizeContent(content: string): string {
   return content.trim().replace(/\s+/g, ' ');
@@ -56,7 +56,7 @@ function getArtifactChangeLabel(type: Exclude<ArtifactType, 'tracker'>): string 
   }
 }
 
-export function getThoughtPreview(messages: SessionArtifactMessage[]): string | null {
+export function getCapturePreview(messages: SessionArtifactMessage[]): string | null {
   for (const message of messages) {
     if (message.role !== 'user') {
       continue;
@@ -64,7 +64,7 @@ export function getThoughtPreview(messages: SessionArtifactMessage[]): string | 
 
     const preview = normalizeContent(message.content);
     if (preview.length > 0) {
-      return truncate(preview, MAX_THOUGHT_PREVIEW_LENGTH);
+      return truncate(preview, MAX_CAPTURE_PREVIEW_LENGTH);
     }
   }
 
@@ -86,11 +86,11 @@ export function deriveSessionSource(input: {
     };
   }
 
-  const thoughtPreview = getThoughtPreview(input.messages);
-  if (thoughtPreview) {
+  const capturePreview = getCapturePreview(input.messages);
+  if (capturePreview) {
     return {
-      kind: 'thought',
-      preview: thoughtPreview,
+      kind: 'capture',
+      preview: capturePreview,
     };
   }
 
@@ -117,7 +117,7 @@ function toTranscript(messages: SessionArtifactMessage[]): string {
 
 export function buildNoteProposal(messages: SessionArtifactMessage[]): NoteProposal {
   const previewContent = toTranscript(messages);
-  const thoughtPreview = getThoughtPreview(messages);
+  const capturePreview = getCapturePreview(messages);
   const relevantMessageCount = messages.filter(
     (message) => normalizeContent(message.content).length > 0,
   ).length;
@@ -127,7 +127,7 @@ export function buildNoteProposal(messages: SessionArtifactMessage[]): NotePropo
 
   return {
     proposedType: 'note',
-    proposedTitle: thoughtPreview ? truncate(thoughtPreview, MAX_TITLE_LENGTH) : 'Untitled note',
+    proposedTitle: capturePreview ? truncate(capturePreview, MAX_TITLE_LENGTH) : 'Untitled note',
     proposedChanges: [
       `Captured ${relevantMessageCount} message${relevantMessageCount === 1 ? '' : 's'} into this note`,
       ...(includesAssistant ? ['Includes assistant output'] : []),
@@ -141,7 +141,7 @@ export function buildArtifactProposal(
   type: Exclude<ArtifactType, 'tracker'>,
 ): ArtifactProposal {
   const previewContent = toTranscript(messages);
-  const thoughtPreview = getThoughtPreview(messages);
+  const capturePreview = getCapturePreview(messages);
   const relevantMessageCount = messages.filter(
     (message) => normalizeContent(message.content).length > 0,
   ).length;
@@ -155,8 +155,8 @@ export function buildArtifactProposal(
 
   return {
     proposedType: type,
-    proposedTitle: thoughtPreview
-      ? truncate(thoughtPreview, MAX_TITLE_LENGTH)
+    proposedTitle: capturePreview
+      ? truncate(capturePreview, MAX_TITLE_LENGTH)
       : getArtifactTitlePrefix(type),
     proposedChanges,
     previewContent,

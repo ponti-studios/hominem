@@ -1,5 +1,5 @@
 /**
- * Shared domain types for the thought lifecycle.
+ * Shared domain types for the capture lifecycle.
  *
  * These are the CANONICAL definitions. @hominem/rpc re-exports them
  * for transport consumers. No other package may redefine these.
@@ -17,12 +17,12 @@ export function isArtifactTypeEnabled(type: ArtifactType): boolean {
 
 /** Describes where a chat session originated. */
 export type SessionSource =
-  | { kind: 'thought'; preview: string }
+  | { kind: 'capture'; preview: string }
   | { kind: 'artifact'; id: string; type: ArtifactType; title: string }
   | { kind: 'new' };
 
-/** The canonical thought lifecycle state machine. */
-export type ThoughtLifecycleState =
+/** The canonical capture lifecycle state machine. */
+export type CaptureLifecycleState =
   | 'idle'
   | 'composing'
   | 'recording'
@@ -32,7 +32,7 @@ export type ThoughtLifecycleState =
   | 'persisting'
   | 'recovering_error';
 
-export type ThoughtLifecycleTransition = [from: ThoughtLifecycleState, to: ThoughtLifecycleState];
+export type CaptureLifecycleTransition = [from: CaptureLifecycleState, to: CaptureLifecycleState];
 
 export interface ClassificationProposal {
   proposedType: ArtifactType;
@@ -54,7 +54,7 @@ export interface ClassificationResponse extends ClassificationProposal {
 
 /** Props contract for the CaptureBar component (web and mobile). */
 export interface CaptureBarProps {
-  state: ThoughtLifecycleState;
+  state: CaptureLifecycleState;
   onSave: (text: string) => void;
   onStartSession: (seedText: string) => void;
   onStartRecording?: () => void;

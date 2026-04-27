@@ -7,7 +7,7 @@ import { AttachedNotesList } from './attached-notes-list';
 import { buildNoteContext, toNoteTitle } from './composer-actions';
 import { ComposerActionsRow } from './composer-actions-row';
 import { ComposerAttachmentList } from './composer-attachment-list';
-import { appendChatAttachmentContext, appendNoteAttachments } from './composer-attachments';
+import { appendChatAttachmentContext, appendNoteAttachments } from '@hominem/chat';
 import type { ComposerPresentation } from './composer-presentation';
 import { deriveComposerPresentation } from './composer-presentation';
 import type { ComposerMode } from './composer-provider';

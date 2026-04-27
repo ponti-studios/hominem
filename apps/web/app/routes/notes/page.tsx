@@ -16,10 +16,9 @@ import {
   useUpdateNote,
 } from '~/hooks/use-notes';
 import { useTranscribe } from '~/hooks/use-transcribe';
-import { useFileUpload } from '~/lib/hooks/use-file-upload';
 import { getServerSession } from '~/lib/auth.server';
 import { serverEnv } from '~/lib/env.server';
-
+import { useFileUpload } from '~/lib/hooks/use-file-upload';
 
 import { NoteStreamRow } from './components/note-stream-row';
 import {
@@ -259,7 +258,7 @@ export default function NotesPage({ loaderData }: { loaderData: { feed: NotesFee
           {!feedQuery.isLoading && notes.length === 0 ? (
             <div className="mx-auto w-full max-w-4xl px-4 py-5 md:px-6 lg:px-8">
               <StatePanel
-                title="Start with a thought."
+                title="Start with a note."
                 description="New notes and conversations will appear here together."
               />
             </div>

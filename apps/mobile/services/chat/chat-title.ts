@@ -26,7 +26,7 @@ function resolveSourceTitle(source: SessionSource) {
     return normalizeWhitespace(source.title) || DEFAULT_CHAT_TITLE;
   }
 
-  if (source.kind === 'thought') {
+  if (source.kind === 'capture') {
     return normalizeChatTitle(source.preview);
   }
 

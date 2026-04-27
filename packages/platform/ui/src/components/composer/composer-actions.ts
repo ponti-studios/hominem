@@ -10,7 +10,7 @@ import { CHAT_TITLE_MAX_LENGTH } from '@hominem/rpc/types';
 import type { Note } from '@hominem/rpc/types/notes.types';
 
 import type { UploadedFile } from '../../types/upload';
-import { appendChatAttachmentContext, appendNoteAttachments } from './composer-attachments';
+import { appendChatAttachmentContext, appendNoteAttachments } from '@hominem/chat';
 import type { ComposerPosture } from './composer-presentation';
 
 export function buildNoteContext(attachedNotes: ReadonlyArray<Note>): string {

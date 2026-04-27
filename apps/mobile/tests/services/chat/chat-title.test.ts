@@ -22,7 +22,7 @@ describe('chat title helpers', () => {
 
   it('derives the screen title from the resolved source when the stored title is generic', () => {
     const source: SessionSource = {
-      kind: 'thought',
+      kind: 'capture',
       preview: 'First real message',
     };
 

@@ -6,7 +6,7 @@ import { Chat } from './chat';
 import { mockChatMessages, mockSessionSources, renderChatIcon } from './chat-story-data';
 
 type ChatStoryArgs = ComponentProps<typeof Chat> & {
-  sourceFixture: 'note' | 'thought';
+  sourceFixture: 'note' | 'capture';
 };
 
 const meta = {
@@ -15,7 +15,7 @@ const meta = {
   tags: ['autodocs'],
   argTypes: {
     sourceFixture: selectControl(
-      ['note', 'thought'] as const,
+      ['note', 'capture'] as const,
       'Session source fixture shown in the preview',
       {
         defaultValue: 'note',
@@ -60,8 +60,8 @@ function ChatPreview({
   | 'isVoiceModeRecording'
 >) {
   const source = mockSessionSources[sourceFixture];
-  const messages = sourceFixture === 'thought' ? mockChatMessages.slice(0, 2) : mockChatMessages;
-  const statusCopy = sourceFixture === 'thought' ? 'Voice mode' : 'Active conversation';
+  const messages = sourceFixture === 'capture' ? mockChatMessages.slice(0, 2) : mockChatMessages;
+  const statusCopy = sourceFixture === 'capture' ? 'Voice mode' : 'Active conversation';
 
   return (
     <div className="w-full bg-background" style={{ height: 760 }}>
@@ -103,7 +103,7 @@ export const Default: Story = {
 
 export const VoiceModeActive: Story = {
   args: {
-    sourceFixture: 'thought',
+    sourceFixture: 'capture',
     status: 'idle',
     isLoading: false,
     showDebug: false,

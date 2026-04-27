@@ -34,7 +34,7 @@ RenderInboxStreamItem.displayName = 'RenderInboxStreamItem';
 const STARTERS = [
   {
     icon: 'note.text',
-    title: 'Capture a thought',
+    title: 'Capture a note',
     prompt: 'I want to remember...',
   },
   {

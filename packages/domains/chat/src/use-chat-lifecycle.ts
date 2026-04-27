@@ -1,7 +1,7 @@
 /**
  * Shared chat lifecycle hook.
  *
- * Manages the ThoughtLifecycleState machine, pendingReview, and resolvedSource
+ * Manages the CaptureLifecycleState machine, pendingReview, and resolvedSource
  * for both mobile (chat) and web chat sessions. Platform-specific async
  * operations (classification strategy, persist mechanism) are injected via
  * callbacks so each surface stays free of the other's dependencies.
@@ -9,9 +9,9 @@
 
 import { useCallback, useMemo, useReducer } from 'react';
 
-import { isBlockingState, type ThoughtLifecycleState } from './lifecycle-state';
+import type { ArtifactType, ClassificationProposal, SessionSource } from './capture-types';
+import { isBlockingState, type CaptureLifecycleState } from './lifecycle-state';
 import { deriveSessionSource, type SessionArtifactMessage } from './session-artifacts';
-import type { ArtifactType, ClassificationProposal, SessionSource } from './thought-types';
 
 /**
  * A review proposal awaiting user confirmation.
@@ -24,13 +24,13 @@ export interface PendingReview extends ClassificationProposal {
 }
 
 interface LifecycleState {
-  lifecycleState: ThoughtLifecycleState;
+  lifecycleState: CaptureLifecycleState;
   pendingReview: PendingReview | null;
   persistedSource: SessionSource | null;
 }
 
 type LifecycleAction =
-  | { type: 'set-lifecycle'; lifecycleState: ThoughtLifecycleState }
+  | { type: 'set-lifecycle'; lifecycleState: CaptureLifecycleState }
   | { type: 'set-pending-review'; pendingReview: PendingReview | null }
   | { type: 'set-persisted-source'; persistedSource: SessionSource | null };
 

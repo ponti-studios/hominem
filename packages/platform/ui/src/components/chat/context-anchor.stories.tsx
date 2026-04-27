@@ -16,8 +16,8 @@ export const NewSession: Story = {
   args: { source: mockSessionSources.new },
 };
 
-export const FromThought: Story = {
-  args: { source: mockSessionSources.thought },
+export const FromCapture: Story = {
+  args: { source: mockSessionSources.capture },
 };
 
 export const FromNote: Story = {

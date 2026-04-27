@@ -1,5 +1,5 @@
 /**
- * Canonical thought lifecycle state machine.
+ * Canonical capture lifecycle state machine.
  *
  * Both mobile (chat/focus) and web (Notes chat) import from this module.
  * No surface may define its own state aliases for these lifecycle states.
@@ -7,9 +7,9 @@
  * Types are owned by this domain package as the single source of truth.
  */
 
-export type { ThoughtLifecycleState, ThoughtLifecycleTransition } from './thought-types';
+export type { CaptureLifecycleState, CaptureLifecycleTransition } from './capture-types';
 
-import type { ThoughtLifecycleState, ThoughtLifecycleTransition } from './thought-types';
+import type { CaptureLifecycleState, CaptureLifecycleTransition } from './capture-types';
 
 /**
  * Every valid state transition. Any transition not listed here is forbidden.
@@ -24,7 +24,7 @@ import type { ThoughtLifecycleState, ThoughtLifecycleTransition } from './though
  *           transcribing ──► composing
  *                     └────► classifying
  */
-export const ALLOWED_TRANSITIONS: ThoughtLifecycleTransition[] = [
+export const ALLOWED_TRANSITIONS: CaptureLifecycleTransition[] = [
   // Idle ↔ composing
   ['idle', 'composing'],
   ['composing', 'idle'],
@@ -57,14 +57,14 @@ export const ALLOWED_TRANSITIONS: ThoughtLifecycleTransition[] = [
 /**
  * Returns true if transitioning from `from` to `to` is permitted by the state machine.
  */
-export function isValidTransition(from: ThoughtLifecycleState, to: ThoughtLifecycleState): boolean {
+export function isValidTransition(from: CaptureLifecycleState, to: CaptureLifecycleState): boolean {
   return ALLOWED_TRANSITIONS.some(([f, t]) => f === from && t === to);
 }
 
 /**
  * Returns all states reachable from `from` in a single step.
  */
-export function reachableFrom(from: ThoughtLifecycleState): ThoughtLifecycleState[] {
+export function reachableFrom(from: CaptureLifecycleState): CaptureLifecycleState[] {
   return ALLOWED_TRANSITIONS.filter(([f]) => f === from).map(([, t]) => t);
 }
 
@@ -72,6 +72,6 @@ export function reachableFrom(from: ThoughtLifecycleState): ThoughtLifecycleStat
  * Returns true if the state represents an in-flight operation where the UI
  * should prevent new user input.
  */
-export function isBlockingState(state: ThoughtLifecycleState): boolean {
+export function isBlockingState(state: CaptureLifecycleState): boolean {
   return state === 'classifying' || state === 'persisting' || state === 'transcribing';
 }

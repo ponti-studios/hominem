@@ -20,7 +20,7 @@ export function ContextAnchor({ source, showTitle = true, className }: ContextAn
     return <div className={cn('text-sm font-medium leading-5', className)}>New conversation</div>;
   }
 
-  if (source.kind === 'thought') {
+  if (source.kind === 'capture') {
     if (!showTitle) {
       return (
         <div className={cn('text-xs uppercase tracking-[0.08em] opacity-70', className)}>

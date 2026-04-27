@@ -21,8 +21,8 @@ export type {
   MarkdownComponent,
   ReviewItem,
   SessionSource,
-  ThoughtLifecycleState,
-  ThoughtLifecycleTransition,
+  CaptureLifecycleState,
+  CaptureLifecycleTransition,
 } from '@hominem/chat/types';
 
 export {
@@ -151,7 +151,7 @@ export type ChatsDeleteOutput = { success: boolean };
 export type ChatsGetMessagesOutput = ChatMessageDto[];
 
 // ============================================================================
-// CLASSIFY (thought → artifact review)
+// CLASSIFY (capture → artifact review)
 // ============================================================================
 
 export type ChatsClassifyOutput = {

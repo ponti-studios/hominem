@@ -19,8 +19,8 @@ import type { ExtendedMessage } from '../../types/chat';
 
 export const mockSessionSources = {
   new: { kind: 'new' },
-  thought: {
-    kind: 'thought',
+  capture: {
+    kind: 'capture',
     preview: 'Ideas for the next onboarding pass and how to keep it concise',
   },
   note: {

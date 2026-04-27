@@ -5,7 +5,7 @@ import { useChatLifecycle } from '@hominem/chat/react';
 import { buildArtifactProposal } from '@hominem/chat/ui';
 import { useApiClient } from '@hominem/rpc/react';
 import { ENABLED_ARTIFACT_TYPES } from '@hominem/rpc/types';
-import type { ArtifactType, SessionSource, ThoughtLifecycleState } from '@hominem/rpc/types';
+import type { ArtifactType, SessionSource, CaptureLifecycleState } from '@hominem/rpc/types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -118,7 +118,7 @@ interface UseChatControllerResult {
   isArchiving: boolean;
   isReviewVisible: boolean;
   showActionsMenu: boolean;
-  lifecycleState: ThoughtLifecycleState;
+  lifecycleState: CaptureLifecycleState;
   pendingReview: PendingReview | null;
   resolvedSource: SessionSource;
   searchInputRef: RefObject<TextFieldRef | null>;
