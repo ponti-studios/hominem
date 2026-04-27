@@ -3,9 +3,6 @@ import { logs } from '@opentelemetry/api-logs';
 
 import { LOG_MESSAGES, type LogMessage } from './log-messages';
 import {
-  type HttpRequestLogData,
-  type HttpRequestStartLogData,
-  type LoggerLevel,
   getHttpRequestInLogMessage,
   getHttpRequestLogLevel,
   getHttpRequestOutLogMessage,
@@ -17,7 +14,6 @@ export {
   getHttpRequestLogLevel,
   getHttpRequestOutLogMessage,
 };
-export type { HttpRequestLogData, HttpRequestStartLogData, LoggerLevel };
 export { type LogMessage };
 
 const redactFields = ['email', 'password', 'token'];

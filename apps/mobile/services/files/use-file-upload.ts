@@ -1,9 +1,9 @@
 import { UploadResponseSchema } from '@hominem/rpc/schemas/files.schema';
 import {
-  CHAT_UPLOAD_MAX_FILE_COUNT,
-  CHAT_UPLOAD_MAX_FILE_SIZE_BYTES,
-  isSupportedChatUploadMimeType,
-} from '@hominem/storage';
+  UPLOAD_MAX_FILE_COUNT,
+  UPLOAD_MAX_FILE_SIZE_BYTES,
+  isSupportedUploadMimeType,
+} from '@hominem/storage/constants';
 import { useCallback, useState } from 'react';
 
 import { API_BASE_URL } from '~/constants';
@@ -123,12 +123,12 @@ async function performMobileUploads(
 
     try {
       const mimetype = resolveMobileUploadMimeType(asset);
-      if (!isSupportedChatUploadMimeType(mimetype)) {
+      if (!isSupportedUploadMimeType(mimetype)) {
         throw new Error('Unsupported file type');
       }
 
       const fileBlob = await readLocalAssetBlob(fetchImpl, asset);
-      if (fileBlob.size > CHAT_UPLOAD_MAX_FILE_SIZE_BYTES) {
+      if (fileBlob.size > UPLOAD_MAX_FILE_SIZE_BYTES) {
         throw new Error('File exceeds 10MB limit');
       }
 
@@ -197,8 +197,8 @@ export function useFileUpload(fetchImpl: typeof fetch = fetch) {
         return [];
       }
 
-      if (assets.length > CHAT_UPLOAD_MAX_FILE_COUNT) {
-        const error = `You can upload up to ${CHAT_UPLOAD_MAX_FILE_COUNT} files at a time`;
+      if (assets.length > UPLOAD_MAX_FILE_COUNT) {
+        const error = `You can upload up to ${UPLOAD_MAX_FILE_COUNT} files at a time`;
         setUploadState({
           isUploading: false,
           progress: 0,

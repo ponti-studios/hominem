@@ -1,5 +1,5 @@
 import { classifyFileByMimeType } from '@hominem/rpc';
-import { CHAT_UPLOAD_MAX_FILE_COUNT } from '@hominem/storage';
+import { UPLOAD_MAX_FILE_COUNT } from '@hominem/storage/constants';
 import * as ImagePicker from 'expo-image-picker';
 import { Alert } from 'react-native';
 
@@ -53,7 +53,7 @@ function appendVoiceTranscript(text: string, transcript: string): string {
 }
 
 function exceedsAttachmentLimit(existingCount: number, nextCount: number): boolean {
-  return existingCount + nextCount > CHAT_UPLOAD_MAX_FILE_COUNT;
+  return existingCount + nextCount > UPLOAD_MAX_FILE_COUNT;
 }
 
 export function useComposerMediaActions({
@@ -100,7 +100,7 @@ export function useComposerMediaActions({
     }
 
     if (exceedsAttachmentLimit(attachments.length, result.assets.length)) {
-      Alert.alert(`You can upload up to ${CHAT_UPLOAD_MAX_FILE_COUNT} files`);
+      Alert.alert(`You can upload up to ${UPLOAD_MAX_FILE_COUNT} files`);
       return [];
     }
 

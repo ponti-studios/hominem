@@ -38,7 +38,7 @@
 
   "ignoreBinaries": [],
 
-  "ignoreUnresolved": [],
+  "ignoreUnresolved": ["^vite/client$"],
 
   "ignore": [
     "packages/platform/ui/src/components/**",

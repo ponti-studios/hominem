@@ -1,18 +1,13 @@
 import { LOG_MESSAGES } from './log-messages';
 
-export interface HttpRequestLogData {
+interface HttpRequestLogData {
   durationMs: number;
   method: string;
   path: string;
   status: number;
 }
 
-export interface HttpRequestStartLogData {
-  method: string;
-  path: string;
-}
-
-export type LoggerLevel = 'debug' | 'error' | 'info' | 'warn';
+type LoggerLevel = 'debug' | 'error' | 'info' | 'warn';
 
 export function getHttpRequestLogLevel({ durationMs, status }: HttpRequestLogData): LoggerLevel {
   if (status >= 500) {

@@ -22,8 +22,3 @@ export const UPLOAD_MAX_FILE_COUNT = 5;
 export function isSupportedUploadMimeType(mimetype: string): boolean {
   return UPLOAD_ALLOWED_MIME_TYPES.includes(mimetype as (typeof UPLOAD_ALLOWED_MIME_TYPES)[number]);
 }
-
-export const CHAT_UPLOAD_ALLOWED_MIME_TYPES = UPLOAD_ALLOWED_MIME_TYPES;
-export const CHAT_UPLOAD_MAX_FILE_SIZE_BYTES = UPLOAD_MAX_FILE_SIZE_BYTES;
-export const CHAT_UPLOAD_MAX_FILE_COUNT = UPLOAD_MAX_FILE_COUNT;
-export const isSupportedChatUploadMimeType = isSupportedUploadMimeType;

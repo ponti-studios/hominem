@@ -9,6 +9,10 @@
     ".": {
       "types": "./src/index.ts",
       "default": "./src/index.ts"
+    },
+    "./constants": {
+      "types": "./src/upload-policy.ts",
+      "default": "./src/upload-policy.ts"
     }
   },
   "scripts": {

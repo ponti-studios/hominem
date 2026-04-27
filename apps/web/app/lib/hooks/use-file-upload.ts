@@ -1,8 +1,8 @@
 import { UploadResponseSchema } from '@hominem/rpc/schemas/files.schema';
 import {
-  CHAT_UPLOAD_ALLOWED_MIME_TYPES,
-  CHAT_UPLOAD_MAX_FILE_COUNT,
-  CHAT_UPLOAD_MAX_FILE_SIZE_BYTES,
+  UPLOAD_ALLOWED_MIME_TYPES,
+  UPLOAD_MAX_FILE_COUNT,
+  UPLOAD_MAX_FILE_SIZE_BYTES,
 } from '@hominem/storage';
 // Lazy load Uppy types only for type checking
 import type { Body, Meta, UppyFile } from '@uppy/core';
@@ -165,9 +165,9 @@ export function useFileUpload(): UseFileUploadReturn {
       autoProceed: false,
       allowMultipleUploadBatches: true,
       restrictions: {
-        allowedFileTypes: [...CHAT_UPLOAD_ALLOWED_MIME_TYPES],
-        maxFileSize: CHAT_UPLOAD_MAX_FILE_SIZE_BYTES,
-        maxNumberOfFiles: CHAT_UPLOAD_MAX_FILE_COUNT,
+        allowedFileTypes: [...UPLOAD_ALLOWED_MIME_TYPES],
+        maxFileSize: UPLOAD_MAX_FILE_SIZE_BYTES,
+        maxNumberOfFiles: UPLOAD_MAX_FILE_COUNT,
       },
     });
 
