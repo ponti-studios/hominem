@@ -1,14 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { MutableRefObject } from 'react';
+import type { NoteFile } from './note-file.types';
 
-export interface NoteFile {
-  id: string;
-  originalName: string;
-  mimetype: string;
-  size: number;
-  url: string;
-  uploadedAt: string;
-}
+export type { NoteFile };
 
 export interface UseNoteEditorInput {
   id: string;
@@ -44,11 +38,7 @@ interface DraftSnapshot {
 
 const IDLE_SAVE_DELAY_MS = 1500;
 
-function buildSnapshot(draft: {
-  title: string;
-  content: string;
-  files: NoteFile[];
-}): DraftSnapshot {
+function buildSnapshot(draft: { title: string; content: string; files: NoteFile[] }): DraftSnapshot {
   return {
     title: draft.title,
     content: draft.content,

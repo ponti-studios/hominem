@@ -1,7 +1,6 @@
-import { SurfacePanel } from '@hominem/ui';
 import { memo } from 'react';
-
-import type { NoteFile } from './use-note-editor';
+import { SurfacePanel } from '../surfaces/surface-panel';
+import type { NoteFile } from './note-file.types';
 
 interface NoteFilesPanelProps {
   files: NoteFile[];

@@ -26,7 +26,7 @@ import type { SpanProcessor } from '@opentelemetry/sdk-trace-base';
 import { BatchSpanProcessor, NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 
 import type { TelemetryConfig } from '../shared/index.js';
-import { createResource, getTelemetryConfig } from '../shared/index.js';
+import { configureLogger, createResource, getTelemetryConfig } from '../shared/index.js';
 
 /**
  * Node telemetry SDK instance
@@ -43,6 +43,7 @@ export interface NodeTelemetry {
  */
 export function initTelemetry(explicitConfig?: Partial<TelemetryConfig>): NodeTelemetry {
   const config = getTelemetryConfig(explicitConfig);
+  configureLogger({ serviceName: config.serviceName });
 
   // Skip all OTel setup when explicitly disabled
   if (config.otlpEndpoint === 'none') {

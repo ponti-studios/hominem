@@ -54,9 +54,7 @@ export function EmailEntryForm({
       </Button>
 
       {hasPasskey && onPasskeyClick ? (
-        <div className="flex justify-center pt-1">
-          <PasskeyButton onClick={onPasskeyClick} disabled={isSubmitting} />
-        </div>
+        <PasskeyButton onClick={onPasskeyClick} disabled={isSubmitting} />
       ) : null}
     </div>
   );

@@ -20,7 +20,7 @@ import { getServerSession } from '~/lib/auth.server';
 import { serverEnv } from '~/lib/env.server';
 import { useFileUpload } from '~/lib/hooks/use-file-upload';
 
-import { NoteStreamRow } from './components/note-stream-row';
+import { NoteStreamRow } from '@hominem/ui/notes';
 import {
   completeNotesRowExit,
   NOTES_ROW_EXIT_REQUEST_EVENT,

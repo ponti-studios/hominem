@@ -14,14 +14,20 @@ import { Resource } from '@opentelemetry/resources';
 import { MeterProvider, PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import { BatchSpanProcessor, WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import {
-  SEMRESATTRS_DEPLOYMENT_ENVIRONMENT,
-  SEMRESATTRS_SERVICE_NAME,
-  SEMRESATTRS_SERVICE_NAMESPACE,
-  SEMRESATTRS_SERVICE_VERSION,
+  ATTR_DEPLOYMENT_ENVIRONMENT_NAME,
+  ATTR_HOST_NAME,
+} from '@opentelemetry/semantic-conventions/incubating';
+import {
+  ATTR_SERVICE_NAME,
+  ATTR_SERVICE_NAMESPACE,
+  ATTR_SERVICE_VERSION,
 } from '@opentelemetry/semantic-conventions';
 
-import type { TelemetryConfig } from '../shared/index.js';
-import { parseOptionalNumber } from '../shared/index.js';
+import {
+  configureLogger,
+  parseOptionalNumber,
+  type TelemetryConfig,
+} from '../shared/index.js';
 
 /**
  * Browser telemetry SDK instance
@@ -39,6 +45,7 @@ export interface BrowserTelemetry {
 export function initTelemetry(explicitConfig?: Partial<TelemetryConfig>): BrowserTelemetry {
   // For browser, we need to handle the lack of process.env
   const config = getBrowserConfig(explicitConfig);
+  configureLogger({ serviceName: config.serviceName });
   const resource = createBrowserResource(config);
 
   // Set up propagator (W3C standard for browser)
@@ -149,11 +156,11 @@ function getBrowserConfig(explicit?: Partial<TelemetryConfig>): TelemetryConfig 
  */
 function createBrowserResource(config: TelemetryConfig) {
   return new Resource({
-    [SEMRESATTRS_SERVICE_NAME]: config.serviceName,
-    [SEMRESATTRS_SERVICE_VERSION]: config.serviceVersion || '0.0.0',
-    [SEMRESATTRS_SERVICE_NAMESPACE]: config.serviceNamespace || 'hominem',
-    [SEMRESATTRS_DEPLOYMENT_ENVIRONMENT]: config.environment || 'development',
-    'host.name': typeof window !== 'undefined' ? window.location.hostname : 'browser',
+    [ATTR_SERVICE_NAME]: config.serviceName,
+    [ATTR_SERVICE_VERSION]: config.serviceVersion || '0.0.0',
+    [ATTR_SERVICE_NAMESPACE]: config.serviceNamespace || 'hominem',
+    [ATTR_DEPLOYMENT_ENVIRONMENT_NAME]: config.environment || 'development',
+    [ATTR_HOST_NAME]: typeof window !== 'undefined' ? window.location.hostname : 'browser',
     'browser.user_agent': typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
     'browser.language': typeof navigator !== 'undefined' ? navigator.language : 'unknown',
     ...config.attributes,

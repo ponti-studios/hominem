@@ -9,15 +9,20 @@ import {
 } from './logger-shared';
 
 export {
-  LOG_MESSAGES,
   getHttpRequestInLogMessage,
   getHttpRequestLogLevel,
   getHttpRequestOutLogMessage,
+  LOG_MESSAGES,
+  type LogMessage,
 };
-export { type LogMessage };
 
 const redactFields = ['email', 'password', 'token'];
-const defaultServiceName = process.env.OTEL_SERVICE_NAME || process.env.SERVICE_NAME || 'app';
+const DEFAULT_SERVICE_NAME = 'app';
+let configuredServiceName = DEFAULT_SERVICE_NAME;
+
+export function configureLogger(config: { serviceName?: string } = {}) {
+  configuredServiceName = config.serviceName || DEFAULT_SERVICE_NAME;
+}
 
 function redactObject<T extends object | undefined>(value: T): T {
   if (!value) {
@@ -39,7 +44,7 @@ function redactObject<T extends object | undefined>(value: T): T {
 
 function formatMessage(level: string, message: string, data?: object) {
   const time = new Date().toISOString().replace('T', ' ').slice(0, 19);
-  const serviceName = defaultServiceName;
+  const serviceName = configuredServiceName;
   const payload = data ? ` ${JSON.stringify(redactObject(data))}` : '';
   return `[${serviceName}][${time}][${level}] ${message}${payload}`;
 }

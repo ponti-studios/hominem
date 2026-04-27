@@ -4,13 +4,15 @@
 
 import { Resource } from '@opentelemetry/resources';
 import {
-  SEMRESATTRS_DEPLOYMENT_ENVIRONMENT,
-  SEMRESATTRS_HOST_NAME,
-  SEMRESATTRS_PROCESS_PID,
-  SEMRESATTRS_SERVICE_NAME,
-  SEMRESATTRS_SERVICE_NAMESPACE,
-  SEMRESATTRS_SERVICE_VERSION,
+  ATTR_SERVICE_NAME,
+  ATTR_SERVICE_NAMESPACE,
+  ATTR_SERVICE_VERSION,
 } from '@opentelemetry/semantic-conventions';
+import {
+  ATTR_DEPLOYMENT_ENVIRONMENT_NAME,
+  ATTR_HOST_NAME,
+  ATTR_PROCESS_PID,
+} from '@opentelemetry/semantic-conventions/incubating';
 
 /**
  * Telemetry configuration options
@@ -115,12 +117,12 @@ export function createResource(
   options: TelemetryResourceOptions = {},
 ): Resource {
   const attributes: Record<string, string | number> = {
-    [SEMRESATTRS_SERVICE_NAME]: config.serviceName,
-    [SEMRESATTRS_SERVICE_VERSION]: config.serviceVersion || '0.0.0',
-    [SEMRESATTRS_SERVICE_NAMESPACE]: config.serviceNamespace || 'hominem',
-    [SEMRESATTRS_DEPLOYMENT_ENVIRONMENT]: config.environment || 'development',
-    [SEMRESATTRS_HOST_NAME]: options.hostname ?? 'unknown',
-    [SEMRESATTRS_PROCESS_PID]: process.pid,
+    [ATTR_SERVICE_NAME]: config.serviceName,
+    [ATTR_SERVICE_VERSION]: config.serviceVersion || '0.0.0',
+    [ATTR_SERVICE_NAMESPACE]: config.serviceNamespace || 'hominem',
+    [ATTR_DEPLOYMENT_ENVIRONMENT_NAME]: config.environment || 'development',
+    [ATTR_HOST_NAME]: options.hostname ?? 'unknown',
+    [ATTR_PROCESS_PID]: process.pid,
     ...config.attributes,
   };
 
@@ -221,10 +223,11 @@ export function getSpanContextForLogs(): { trace_id?: string; span_id?: string }
 
 // Re-export logger and log messages
 export {
-  logger,
-  LOG_MESSAGES,
-  type LogMessage,
+  configureLogger,
   getHttpRequestInLogMessage,
   getHttpRequestLogLevel,
   getHttpRequestOutLogMessage,
+  LOG_MESSAGES,
+  logger,
+  type LogMessage,
 } from './logger';

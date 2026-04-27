@@ -131,6 +131,10 @@
       "types": "./src/components/composer/composer-provider.tsx",
       "default": "./src/components/composer/composer-provider.tsx"
     },
+    "./notes": {
+      "types": "./src/components/notes/index.ts",
+      "default": "./src/components/notes/index.ts"
+    },
     "./types/upload": {
       "types": "./src/types/upload.ts",
       "default": "./src/types/upload.ts"

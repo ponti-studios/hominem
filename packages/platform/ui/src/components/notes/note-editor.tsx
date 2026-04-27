@@ -1,18 +1,11 @@
 import type { Note } from '@hominem/rpc/types/notes.types';
-import { SurfacePanel } from '@hominem/ui';
 import { useCallback } from 'react';
-
-import { useUpdateNote } from '~/hooks/use-notes';
-import type { UploadedFile } from '~/lib/types/upload';
-
+import { SurfacePanel } from '../surfaces/surface-panel';
+import type { UploadedFile } from '../../types/upload';
 import { DeleteNoteAlert } from './delete-note-alert';
 import { NoteActionsPanel } from './note-actions-panel';
 import { NoteFilesPanel } from './note-files-panel';
 import { useNoteEditor } from './use-note-editor';
-
-interface NoteEditorProps {
-  note: Note;
-}
 
 function slugifyTitle(title: string | null) {
   return (title ?? '')
@@ -21,8 +14,29 @@ function slugifyTitle(title: string | null) {
     .replace(/^-+|-+$/g, '');
 }
 
-export function NoteEditor({ note }: NoteEditorProps) {
-  const updateNote = useUpdateNote();
+interface NoteEditorProps {
+  note: Note;
+  onSave: (params: { id: string; title: string | null; content: string; fileIds: string[] }) => Promise<void>;
+  onUploadFiles: (files: FileList) => Promise<UploadedFile[]>;
+  onTranscribeAudio: (audioBlob: Blob) => Promise<string>;
+  onDelete: () => Promise<void>;
+  isDeleting?: boolean;
+  isDeletingError?: boolean;
+  uploadErrors?: string[];
+  isUploading?: boolean;
+}
+
+export function NoteEditor({
+  note,
+  onSave,
+  onUploadFiles,
+  onTranscribeAudio,
+  onDelete,
+  isDeleting = false,
+  isDeletingError = false,
+  uploadErrors = [],
+  isUploading = false,
+}: NoteEditorProps) {
   const {
     title,
     setTitle,
@@ -48,38 +62,38 @@ export function NoteEditor({ note }: NoteEditorProps) {
         uploadedAt: f.uploadedAt,
       })),
     },
-    async ({ id, title: nextTitle, content: nextContent, fileIds }) => {
-      await updateNote.mutateAsync({
-        id,
-        title: nextTitle,
-        content: nextContent,
-        fileIds,
-      });
-    },
+    onSave,
   );
 
-  const handleFilesUploaded = useCallback(
-    async (uploadedFiles: UploadedFile[]) => {
+  const handleAttachFiles = useCallback(
+    async (fileList: FileList) => {
+      const uploaded = await onUploadFiles(fileList);
+      if (uploaded.length === 0) return;
       const nextFiles = [
         ...draftRef.current.files,
-        ...uploadedFiles.map((file) => ({
-          ...file,
+        ...uploaded.map((file) => ({
+          id: file.id,
+          originalName: file.originalName,
+          mimetype: file.mimetype,
+          size: file.size,
+          url: file.url,
           uploadedAt: file.uploadedAt.toISOString(),
         })),
       ];
       setFiles(nextFiles);
       await flushSave();
     },
-    [draftRef, flushSave, setFiles],
+    [draftRef, flushSave, onUploadFiles, setFiles],
   );
 
   const handleTranscribed = useCallback(
-    async (text: string) => {
+    async (audioBlob: Blob) => {
+      const text = await onTranscribeAudio(audioBlob);
       const nextContent = `${draftRef.current.content}\n${text}`.trim();
       setContent(nextContent);
       await flushSave();
     },
-    [draftRef, flushSave, setContent],
+    [draftRef, flushSave, onTranscribeAudio, setContent],
   );
 
   const handleDetachFile = useCallback(
@@ -133,13 +147,19 @@ export function NoteEditor({ note }: NoteEditorProps) {
       <aside className="space-y-4">
         <NoteActionsPanel
           noteId={note.id}
-          onFilesUploaded={handleFilesUploaded}
-          onTranscribed={handleTranscribed}
+          onAttachFiles={handleAttachFiles}
+          onAudioRecorded={handleTranscribed}
+          uploadErrors={uploadErrors}
+          isUploading={isUploading}
         />
 
         <NoteFilesPanel files={files} onDetachFile={handleDetachFile} />
 
-        <DeleteNoteAlert noteId={note.id} />
+        <DeleteNoteAlert
+          onDelete={onDelete}
+          isDeleting={isDeleting}
+          isError={isDeletingError}
+        />
       </aside>
     </div>
   );

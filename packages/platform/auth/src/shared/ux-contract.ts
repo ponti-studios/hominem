@@ -12,7 +12,7 @@ export const AUTH_COPY = {
     helper: 'Capture anything; Retrieve everything.',
     emailPlaceholder: 'you@example.com',
     emailLabel: 'Email address',
-    submitButton: 'Continue with email',
+    submitButton: 'Continue',
     passkeyButton: 'Use passkey',
     passkeyLoadingButton: 'Connecting…',
     emailRequiredError: 'Email is required.',
