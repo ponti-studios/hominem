@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useAuthClient } from './provider';
 
@@ -32,7 +32,7 @@ interface UsePasskeysResult {
   data: Passkey[];
   isLoading: boolean;
   error: SessionHookResult['error'] | null | undefined;
-  refetch: () => void;
+  refetch: () => Promise<void>;
   isSupported: boolean;
   authenticate: () => Promise<void>;
   register: () => Promise<void>;
@@ -40,19 +40,71 @@ interface UsePasskeysResult {
   authError: string | null;
 }
 
-export function usePasskeys(): UsePasskeysResult {
+interface UsePasskeysOptions {
+  enabled?: boolean;
+  initialPasskeys?: Passkey[];
+}
+
+export function usePasskeys(options: UsePasskeysOptions = {}): UsePasskeysResult {
   const authClient = useAuthClient();
   const [authError, setAuthError] = useState<string | null>(null);
-  const result = authClient.useListPasskeys();
+  const [data, setData] = useState<Passkey[]>(options.initialPasskeys ?? []);
+  const [passkeysError, setPasskeysError] = useState<SessionHookResult['error'] | null | undefined>(
+    null,
+  );
+  const [isPasskeysLoading, setIsPasskeysLoading] = useState(Boolean(options.enabled));
   const isSupported = hasPasskeySupport(typeof window === 'undefined' ? undefined : window);
+  const shouldLoadPasskeys = options.enabled ?? false;
 
-  const data = useMemo<Passkey[]>(() => {
-    return (result.data ?? []).map((passkey) => ({
-      id: passkey.id,
-      ...(passkey.name ? { name: passkey.name } : {}),
-      ...(passkey.createdAt ? { createdAt: passkey.createdAt } : {}),
-    }));
-  }, [result.data]);
+  const fetchPasskeys = useCallback(
+    async (force = false) => {
+      if (!shouldLoadPasskeys && !force) {
+        return;
+      }
+
+      setIsPasskeysLoading(true);
+      setPasskeysError(null);
+
+      try {
+        const response = (await authClient.$fetch('/passkey/list-user-passkeys', {
+          method: 'GET',
+          throw: false,
+        })) as AuthResult<Passkey[]>;
+
+        if (response.error) {
+          setPasskeysError(response.error as unknown as SessionHookResult['error']);
+          if (!options.initialPasskeys?.length) {
+            setData([]);
+          }
+          return;
+        }
+
+        setData(
+          (response.data ?? []).map((passkey) => ({
+            id: passkey.id,
+            ...(passkey.name ? { name: passkey.name } : {}),
+            ...(passkey.createdAt ? { createdAt: passkey.createdAt } : {}),
+          })),
+        );
+      } catch (error) {
+        setPasskeysError(error as unknown as SessionHookResult['error']);
+        if (!options.initialPasskeys?.length) {
+          setData([]);
+        }
+      } finally {
+        setIsPasskeysLoading(false);
+      }
+    },
+    [authClient, options.initialPasskeys, shouldLoadPasskeys],
+  );
+
+  useEffect(() => {
+    if (!shouldLoadPasskeys) {
+      return;
+    }
+
+    void fetchPasskeys(true);
+  }, [fetchPasskeys, shouldLoadPasskeys]);
 
   const authenticate = useCallback(async () => {
     if (!isSupported) {
@@ -78,7 +130,8 @@ export function usePasskeys(): UsePasskeysResult {
       setAuthError(error);
       throw new Error(error);
     }
-  }, [authClient, isSupported]);
+    await fetchPasskeys(true);
+  }, [authClient, fetchPasskeys, isSupported]);
 
   const deletePasskey = useCallback(
     async (id: string) => {
@@ -93,16 +146,17 @@ export function usePasskeys(): UsePasskeysResult {
         setAuthError(error);
         throw new Error(error);
       }
+      await fetchPasskeys(true);
     },
-    [authClient],
+    [authClient, fetchPasskeys],
   );
 
   return useMemo(
     () => ({
       data,
-      isLoading: result.isPending || result.isRefetching,
-      error: result.error,
-      refetch: result.refetch,
+      isLoading: isPasskeysLoading,
+      error: passkeysError,
+      refetch: fetchPasskeys,
       isSupported,
       authenticate,
       register,
@@ -114,12 +168,11 @@ export function usePasskeys(): UsePasskeysResult {
       authError,
       data,
       deletePasskey,
+      fetchPasskeys,
+      isPasskeysLoading,
       isSupported,
+      passkeysError,
       register,
-      result.error,
-      result.isPending,
-      result.isRefetching,
-      result.refetch,
     ],
   );
 }

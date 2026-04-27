@@ -1,7 +1,7 @@
 import type { User } from '@hominem/auth/types';
 
 import type { AuthState } from '~/services/auth/types';
-import { LocalStore } from '~/services/storage/sqlite';
+import { LocalStore } from '~/services/storage/local-store';
 
 interface SignInUser {
   id: string;

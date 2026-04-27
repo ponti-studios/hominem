@@ -1,15 +1,47 @@
 import { Button } from '@hominem/ui/button';
-import { Link, useNavigate, useSearchParams } from 'react-router';
+import { Link, useNavigate, useSearchParams, data, redirect } from 'react-router';
 
-import { useChatsList, useCreateChat } from '~/hooks/use-chats';
-import { useNote } from '~/hooks/use-notes';
+import { useCreateChat } from '~/hooks/use-chats';
+import { getServerSession } from '~/lib/auth.server';
+import { serverEnv } from '~/lib/env.server';
 
-export default function ChatIndexPage() {
+
+type ChatListItem = { id: string; title: string | null; updatedAt: string };
+type NoteSummary = { id: string; title?: string | null } | null;
+
+export async function loader({ request }: { request: Request }) {
+  const { user } = await getServerSession(request);
+  if (!user) {
+    throw redirect('/auth');
+  }
+
+  const cookie = request.headers.get('cookie');
+  const headers = cookie ? { cookie } : undefined;
+
+  const chatsResponse = await fetch(
+    new URL('/api/chats?limit=100', serverEnv.VITE_PUBLIC_API_URL).toString(),
+    { headers },
+  );
+  const chats = chatsResponse.ok ? ((await chatsResponse.json()) as ChatListItem[]) : [];
+
+  const noteId = new URL(request.url).searchParams.get('noteId') ?? '';
+  let note: NoteSummary = null;
+  if (noteId) {
+    const noteResponse = await fetch(
+      new URL(`/api/notes/${noteId}`, serverEnv.VITE_PUBLIC_API_URL).toString(),
+      { headers },
+    );
+    note = noteResponse.ok ? ((await noteResponse.json()) as NoteSummary) : null;
+  }
+
+  return data({ chats, note });
+}
+
+export default function ChatIndexPage({ loaderData }: { loaderData: { chats: ChatListItem[]; note: NoteSummary } }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const noteId = searchParams.get('noteId') ?? '';
-  const { data: chats = [] } = useChatsList();
-  const { data: note } = useNote(noteId);
+  const { chats = [], note } = loaderData;
   const createChat = useCreateChat();
 
   return (

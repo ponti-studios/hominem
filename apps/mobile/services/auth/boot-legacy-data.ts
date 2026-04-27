@@ -1,6 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
 
-import { LocalStore } from '~/services/storage/sqlite';
+import { LocalStore } from '~/services/storage/local-store';
 
 const LEGACY_LOCAL_DATA_MIGRATION_KEY = 'hominem_mobile_local_migration_v1';
 

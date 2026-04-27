@@ -4,13 +4,17 @@ import type { InboxStreamItemData } from '~/components/workspace/InboxStreamItem
 import { useResumableSessions } from '~/hooks/useResumableSessions';
 import { useNoteStream } from '~/services/notes/use-note-stream';
 
-export function useInboxStreamItems() {
+interface UseInboxStreamItemsOptions {
+  enabled?: boolean;
+}
+
+export function useInboxStreamItems({ enabled = true }: UseInboxStreamItemsOptions = {}) {
   const {
     data: chats = [],
     isLoading: isLoadingChats,
     refetch: refetchChats,
-  } = useResumableSessions();
-  const notesQuery = useNoteStream();
+  } = useResumableSessions({ enabled });
+  const notesQuery = useNoteStream({ enabled });
   const notes = notesQuery.data ?? [];
 
   const items = useMemo(() => {

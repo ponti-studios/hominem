@@ -27,12 +27,12 @@ interface UseNotesListOptions {
   enabled?: boolean;
 }
 
-interface NotesFeedPage {
+export interface NotesFeedPage {
   notes: NoteFeedItem[];
   nextCursor: string | null;
 }
 
-interface NotesFeedData {
+export interface NotesFeedData {
   pages: NotesFeedPage[];
   pageParams: Array<string | null>;
 }
@@ -142,9 +142,13 @@ export function useNotesList(options: NotesListInput = {}, queryOptions: UseNote
   );
 }
 
+interface UseNotesFeedOptions extends UseNotesListOptions {
+  initialData?: NotesFeedData;
+}
+
 export function useNotesFeed(
   options: Omit<NotesFeedInput, 'cursor'> = {},
-  queryOptions: UseNotesListOptions = {},
+  queryOptions: UseNotesFeedOptions = {},
 ) {
   const client = useApiClient();
   const limit = options.limit ?? DEFAULT_NOTES_FEED_LIMIT;
@@ -162,6 +166,7 @@ export function useNotesFeed(
       getNextPageParam: (lastPage) => lastPage.nextCursor,
       enabled: queryOptions.enabled ?? true,
       staleTime: 1000 * 30,
+      ...(queryOptions.initialData ? { initialData: queryOptions.initialData } : {}),
     },
   );
 }

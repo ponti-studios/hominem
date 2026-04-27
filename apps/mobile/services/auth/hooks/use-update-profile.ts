@@ -2,7 +2,7 @@ import type { User } from '@hominem/auth/types';
 import { useCallback } from 'react';
 
 import type { AuthContext } from '~/services/auth/types';
-import { LocalStore } from '~/services/storage/sqlite';
+import { LocalStore } from '~/services/storage/local-store';
 
 export async function saveUpdatedProfile(input: {
   current: User | null;

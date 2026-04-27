@@ -63,13 +63,15 @@ export function useNoteFeed({ enabled = true, limit = DEFAULT_NOTES_FEED_LIMIT }
   });
 }
 
+const NOTE_STREAM_STALE_TIME_MS = 30_000;
+
 export function useNoteStream({ enabled = true }: { enabled?: boolean } = {}) {
   const client = useApiClient();
   const queryClient = useQueryClient();
 
   return useQuery<Note[]>({
     queryKey: noteKeys.all,
-    staleTime: 0,
+    staleTime: NOTE_STREAM_STALE_TIME_MS,
     queryFn: async () => {
       const res = await client.api.notes.$get({
         query: { sortBy: 'updatedAt', sortOrder: 'desc', limit: '100' },

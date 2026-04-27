@@ -13,7 +13,7 @@ import {
 } from '../inbox/inbox-refresh';
 import { chatKeys } from '../notes/query-keys';
 import { createOptimisticMessage, type MessageOutput } from './chatMessages';
-import { getChatActivityAt, selectChatSession } from './session-activity';
+import { selectChatSession } from './session-activity';
 import type { ChatWithActivity } from './session-types';
 
 type SendChatMessageOutput = {
@@ -56,7 +56,7 @@ function toMessageOutput(message: RpcChatMessage): MessageOutput | null {
 }
 
 // Single source of truth: React Query cache
-// SQLite is persistence layer only, updated after successful mutations
+// Local storage is persistence layer only, updated after successful mutations
 export const useChatMessages = ({ chatId }: { chatId: string }) => {
   const client = useApiClient();
   const _queryClient = useQueryClient();
@@ -256,48 +256,6 @@ export const useSendMessage = ({ chatId }: { chatId: string }) => {
       return result;
     },
   };
-};
-
-export const useArchiveChat = ({
-  chatId,
-  onSuccess,
-}: {
-  chatId: string;
-  onSuccess: () => void;
-}) => {
-  const client = useApiClient();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async () => {
-      const res = await client.api.chats[':id'].archive.$post({ param: { id: chatId } });
-      return res.json();
-    },
-    onSuccess: (archivedChat) => {
-      queryClient.setQueryData(chatKeys.activeChat(chatId), archivedChat);
-      queryClient.setQueryData<ChatWithActivity[] | undefined>(
-        chatKeys.resumableSessions,
-        (sessions) => sessions?.filter((session) => session.id !== chatId),
-      );
-      queryClient.setQueryData<ChatWithActivity[] | undefined>(
-        chatKeys.archivedSessions,
-        (sessions) => {
-          const activityAt = getChatActivityAt(archivedChat);
-          const nextArchivedChat: ChatWithActivity = {
-            ...archivedChat,
-            activityAt,
-          };
-
-          if (!sessions) {
-            return [nextArchivedChat];
-          }
-
-          return [nextArchivedChat, ...sessions.filter((session) => session.id !== chatId)];
-        },
-      );
-      onSuccess();
-    },
-  });
 };
 
 export const useActiveChat = (chatId?: string | null) => {

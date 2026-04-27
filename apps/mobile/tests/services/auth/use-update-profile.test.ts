@@ -1,7 +1,7 @@
 import type { User } from '@hominem/auth/types';
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('~/services/storage/sqlite', () => ({
+vi.mock('~/services/storage/local-store', () => ({
   LocalStore: {},
 }));
 

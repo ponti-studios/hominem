@@ -27,7 +27,8 @@ export default function Component() {
   const navigate = useNavigate();
   const next = getNextRedirect(location.search);
 
-  const { authenticate, authError: passkeyError, isSupported: isPasskeySupported } = usePasskeys();
+  const { authenticate, authError: passkeyError, isSupported: isPasskeySupported } =
+    usePasskeys({ enabled: false });
 
   const { error: sendError, handleSendOtp } = useEmailAuth({
     sendOtp: async (email) => {

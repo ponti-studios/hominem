@@ -1,20 +1,58 @@
 import { usePasskeys } from '@hominem/auth/client/passkey';
 import { Container, PasskeyManagement } from '@hominem/ui';
 import { useCallback } from 'react';
-import { redirect } from 'react-router';
+import { data, redirect } from 'react-router';
 
 import { getServerSession } from '~/lib/auth.server';
+import { serverEnv } from '~/lib/env.server';
 
-export async function loader({ request }: { request: Request }) {
-  const { user, headers } = await getServerSession(request);
-  if (!user) {
-    return redirect('/auth', { headers });
+import type { Route } from './+types/settings.security';
+
+type LoaderPasskey = {
+  id: string;
+  name?: string | null;
+  createdAt?: string | Date | null;
+};
+
+function normalizePasskeys(payload: unknown): LoaderPasskey[] {
+  if (Array.isArray(payload)) {
+    return payload as LoaderPasskey[];
   }
-  return null;
+
+  if (payload && typeof payload === 'object' && 'data' in payload) {
+    const data = (payload as { data?: unknown }).data;
+    return Array.isArray(data) ? (data as LoaderPasskey[]) : [];
+  }
+
+  return [];
 }
 
-export default function SecuritySettingsPage() {
-  const { data: passkeys, isLoading, error, deletePasskey, register } = usePasskeys();
+export async function loader({ request }: Route.LoaderArgs) {
+  const { user } = await getServerSession(request);
+  if (!user) {
+    return redirect('/auth');
+  }
+
+  const cookie = request.headers.get('cookie');
+  const headers = cookie ? { cookie } : undefined;
+  const response = await fetch(
+    new URL('/api/auth/passkey/list-user-passkeys', serverEnv.VITE_PUBLIC_API_URL).toString(),
+    { headers },
+  );
+
+  const payload = response.ok ? await response.json().catch(() => null) : null;
+
+  return data({
+    passkeys: normalizePasskeys(payload),
+  });
+}
+
+export default function SecuritySettingsPage({ loaderData }: Route.ComponentProps) {
+  const { passkeys: initialPasskeys } = loaderData;
+  const { data: passkeys, isLoading, error, deletePasskey, register } = usePasskeys({
+    enabled: false,
+    initialPasskeys,
+  });
   const handleAdd = useCallback(async () => {
     try {
       await register();

@@ -15,7 +15,7 @@ export default function FeedScreen() {
   const styles = useStyles();
   const isFocused = useIsFocused();
   const params = useLocalSearchParams<{ seed?: string }>();
-  const { items, isLoading, refetch } = useInboxStreamItems();
+  const { items, isLoading, refetch } = useInboxStreamItems({ enabled: isFocused });
   const listRef = React.useRef<FlashListRef<InboxStreamItemData> | null>(null);
   const [composerClearance, setComposerClearance] = useState(0);
 

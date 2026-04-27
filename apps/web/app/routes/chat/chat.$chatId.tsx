@@ -1,23 +1,36 @@
-import { useRpcQuery } from '@hominem/rpc/react';
 import type { NoteSearchResult } from '@hominem/rpc/types/notes.types';
 import { SpeechInput } from '@hominem/ui/ai-elements';
 import { Button } from '@hominem/ui/button';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router';
+import { Link, data } from 'react-router';
+import type { ChatMessageDto } from '@hominem/rpc/types/chat.types';
 
 import { useArchiveChat } from '~/hooks/use-chats';
-import { useNote, useNoteSearch } from '~/hooks/use-notes';
+import { useNoteSearch } from '~/hooks/use-notes';
 import { useServerSpeech } from '~/hooks/use-server-speech';
 import { useTranscribe } from '~/hooks/use-transcribe';
 import { requireAuth } from '~/lib/guards';
 import { useChatMessages } from '~/lib/hooks/use-chat-messages';
 import { useFileUpload } from '~/lib/hooks/use-file-upload';
 import { useStreamMessage } from '~/lib/hooks/use-stream-message';
-import { chatQueryKeys } from '~/lib/query-keys';
+import { serverEnv } from '~/lib/env.server';
 
 import type { Route } from './+types/chat.$chatId';
 
 type SelectedNote = NoteSearchResult;
+
+type ChatLoaderData = {
+  id: string;
+  title?: string | null;
+};
+
+type ChatMessageLoaderData = ChatMessageDto[];
+
+type NoteLoaderData = {
+  id: string;
+  title?: string | null;
+  excerpt?: string | null;
+};
 
 function slugifyTitle(title: string | null) {
   return (title ?? '')
@@ -31,21 +44,43 @@ function getMentionQuery(value: string) {
   return match?.[1] ?? '';
 }
 
-export async function loader({ request }: Route.LoaderArgs) {
+export async function loader({ request, params }: Route.LoaderArgs) {
   await requireAuth(request);
+
+  const cookie = request.headers.get('cookie');
+  const headers = cookie ? { cookie } : undefined;
+  const chatResponse = await fetch(
+    new URL(`/api/chats/${params.chatId}`, serverEnv.VITE_PUBLIC_API_URL).toString(),
+    { headers },
+  );
+  const chat = chatResponse.ok ? ((await chatResponse.json()) as ChatLoaderData) : null;
+
+  const messagesResponse = await fetch(
+    new URL(`/api/chats/${params.chatId}/messages?limit=50`, serverEnv.VITE_PUBLIC_API_URL).toString(),
+    { headers },
+  );
+  const messages = messagesResponse.ok
+    ? ((await messagesResponse.json()) as ChatMessageLoaderData)
+    : [];
+
+  const noteId = new URL(request.url).searchParams.get('noteId');
+  let seedNote: NoteLoaderData | null = null;
+  if (noteId) {
+    const noteResponse = await fetch(
+      new URL(`/api/notes/${noteId}`, serverEnv.VITE_PUBLIC_API_URL).toString(),
+      { headers },
+    );
+    seedNote = noteResponse.ok ? ((await noteResponse.json()) as NoteLoaderData) : null;
+  }
+
+  return data({ chat, seedNote, messages });
 }
 
-export default function ChatPage({ params }: Route.ComponentProps) {
+export default function ChatPage({ loaderData, params }: { loaderData: { chat: ChatLoaderData | null; seedNote: NoteLoaderData | null; messages: ChatMessageLoaderData } ; params: { chatId: string } }) {
+  const { chat, seedNote, messages: initialMessages } = loaderData;
   const { chatId } = params;
-  const [searchParams] = useSearchParams();
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
-  const noteId = searchParams.get('noteId') ?? '';
-  const { data: seedNote } = useNote(noteId);
-  const { data: chat } = useRpcQuery(
-    (client) => client.api.chats[':id'].$get({ param: { id: chatId } }).then((r) => r.json()),
-    { queryKey: chatQueryKeys.get(chatId) },
-  );
-  const { messages } = useChatMessages({ chatId });
+  const { messages } = useChatMessages({ chatId, initialData: initialMessages });
   const streamMessage = useStreamMessage({ chatId });
   const archiveChat = useArchiveChat({ chatId });
   const transcribe = useTranscribe();
@@ -76,7 +111,7 @@ export default function ChatPage({ params }: Route.ComponentProps) {
       return draft;
     }
 
-    const slug = slugifyTitle(seedNote.title);
+    const slug = slugifyTitle(seedNote.title ?? null);
     if (!slug || draft.includes(`#${slug}`)) {
       return draft;
     }

@@ -5,7 +5,13 @@ import { getInboxChatsWithActivity } from '~/services/chat/session-lists';
 import type { ChatWithActivity } from '~/services/chat/session-types';
 import { chatKeys } from '~/services/notes/query-keys';
 
-export const useResumableSessions = () => {
+interface UseResumableSessionsOptions {
+  enabled?: boolean;
+}
+
+const RESUMABLE_SESSIONS_STALE_TIME_MS = 30_000;
+
+export const useResumableSessions = ({ enabled = true }: UseResumableSessionsOptions = {}) => {
   const client = useApiClient();
 
   return useQuery<ChatWithActivity[]>({
@@ -15,6 +21,7 @@ export const useResumableSessions = () => {
       const chats = await res.json();
       return getInboxChatsWithActivity(chats);
     },
-    staleTime: 0,
+    enabled,
+    staleTime: RESUMABLE_SESSIONS_STALE_TIME_MS,
   });
 };

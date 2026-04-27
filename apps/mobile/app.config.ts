@@ -103,7 +103,6 @@ export default ({ config }: ConfigContext) => {
     'expo-web-browser',
     'expo-asset',
     'expo-audio',
-    'expo-sqlite',
     [
       'expo-notifications',
       {

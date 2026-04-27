@@ -5,7 +5,7 @@ import { useCallback } from 'react';
 import { captureAuthAnalyticsEvent, captureAuthAnalyticsFailure } from '~/services/auth/analytics';
 import { getPersistedSessionCookieHeader } from '~/services/auth/session-cookie';
 import type { AuthContext } from '~/services/auth/types';
-import { LocalStore } from '~/services/storage/sqlite';
+import { LocalStore } from '~/services/storage/local-store';
 
 interface SignInResponse {
   user: {

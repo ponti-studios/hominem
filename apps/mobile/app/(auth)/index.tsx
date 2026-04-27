@@ -49,7 +49,7 @@ function AuthScreen() {
     isLoading: isPasskeyLoading,
     error: passkeyError,
     isSupported: isPasskeySupported,
-  } = useMobilePasskeyAuth();
+  } = useMobilePasskeyAuth({ loadPasskeys: false });
 
   useEffect(() => {
     posthog.capture('auth_screen_viewed');

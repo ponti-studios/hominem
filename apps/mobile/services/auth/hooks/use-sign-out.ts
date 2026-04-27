@@ -5,7 +5,7 @@ import { captureAuthAnalyticsEvent, captureAuthAnalyticsFailure } from '~/servic
 import { authClient } from '~/services/auth/auth-client';
 import { clearPersistedSessionCookies } from '~/services/auth/session-cookie';
 import type { AuthContext } from '~/services/auth/types';
-import { LocalStore } from '~/services/storage/sqlite';
+import { LocalStore } from '~/services/storage/local-store';
 
 export function useSignOut(context: AuthContext, sessionCookieHeaderRef: RefObject<string | null>) {
   const { state, dispatch } = context;

@@ -19,13 +19,15 @@ import {
 import type { RelativePathString } from 'expo-router';
 import { Stack, useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
+import { useIsFocused } from '@react-navigation/native';
 
 import { useArchivedSessions } from '~/hooks/useArchivedSessions';
 import { formatRelativeAge } from '~/services/date/format-relative-age';
 
 export default function ArchivedChatsScreen() {
   const router = useRouter();
-  const { data: chats = [] } = useArchivedSessions();
+  const isFocused = useIsFocused();
+  const { data: chats = [] } = useArchivedSessions({ enabled: isFocused });
   const onPressChat = useCallback(
     (chatId: string) => {
       router.push(`/(protected)/(tabs)/chat/${chatId}` as RelativePathString);

@@ -1,21 +1,23 @@
 import { Button, ContextMenu, Host } from '@expo/ui/swift-ui';
+import { parseInboxTimestamp } from '@hominem/chat';
 import { useRouter } from 'expo-router/build/hooks';
 import React, { memo, useCallback } from 'react';
-import { Pressable } from 'react-native';
+import { Alert, Pressable, View } from 'react-native';
 import Reanimated, {
   Easing,
   FadeIn,
   interpolate,
   runOnJS,
   useAnimatedStyle,
-  withTiming,
   useSharedValue,
+  withTiming,
 } from 'react-native-reanimated';
 
-import { useInboxItemActions } from '~/services/inbox/use-inbox-item-actions';
+import { Text, makeStyles, spacing } from '~/components/theme';
+import { useChatArchive } from '~/services/chat/use-chat-archive';
+import { useNoteDelete } from '~/services/notes/use-note-delete';
 
 import type { InboxStreamItemData as InboxStreamItemModel } from './InboxStreamItem.types';
-import { InboxStreamItemPresentation } from './InboxStreamItemPresentation';
 
 // Exit animation duration
 const EXIT_MS = 260;
@@ -26,6 +28,8 @@ interface InboxStreamItemProps {
 
 export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
   const router = useRouter();
+  const styles = useStyles();
+  const title = item.title ?? item.preview ?? 'Untitled';
 
   // ── Animation shared values ────────────────────────────────────────────────
   const exitProgress = useSharedValue(0);
@@ -43,7 +47,34 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
     [exitProgress],
   );
 
-  const { handleDeleteNote, handleArchiveChat } = useInboxItemActions(item, animateExit);
+  const { mutate: deleteNote } = useNoteDelete({ noteId: item.entityId });
+  const { mutate: archiveChat } = useChatArchive({ chatId: item.entityId });
+
+  const handleDelete = useCallback(() => {
+    Alert.alert('Delete note', 'This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () => {
+          animateExit(deleteNote);
+        },
+      },
+    ]);
+  }, [animateExit, deleteNote]);
+
+  const handleArchive = useCallback(() => {
+    Alert.alert('Archive chat', 'This chat will be moved to your archive.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Archive',
+        style: 'destructive',
+        onPress: () => {
+          animateExit(archiveChat);
+        },
+      },
+    ]);
+  }, [animateExit, archiveChat]);
 
   // ── Animated styles ────────────────────────────────────────────────────────
   // Merging entering + exit onto one wrapper drops a layout node per row.
@@ -65,7 +96,16 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
             <ContextMenu>
               <ContextMenu.Trigger>
                 <Pressable onPress={onPress}>
-                  <InboxStreamItemPresentation item={item} />
+                  <View style={styles.row}>
+                    <View style={styles.content}>
+                      <View style={styles.topRow}>
+                        <Text style={styles.title} numberOfLines={1}>
+                          {title}
+                        </Text>
+                        <Text style={styles.date}>{formatTimestamp(item.updatedAt)}</Text>
+                      </View>
+                    </View>
+                  </View>
                 </Pressable>
               </ContextMenu.Trigger>
               <ContextMenu.Items>
@@ -74,14 +114,14 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
                     label="Delete"
                     role="destructive"
                     systemImage="trash"
-                    onPress={handleDeleteNote}
+                    onPress={handleDelete}
                   />
                 ) : (
                   <Button
                     label="Archive"
                     role="destructive"
                     systemImage="archivebox"
-                    onPress={handleArchiveChat}
+                    onPress={handleArchive}
                   />
                 )}
               </ContextMenu.Items>
@@ -94,3 +134,58 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
 });
 
 InboxStreamItem.displayName = 'InboxStreamItem';
+
+function formatTimestamp(value: string): string {
+  try {
+    const date = parseInboxTimestamp(value);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const targetDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const dayDiff = Math.round((today.getTime() - targetDay.getTime()) / 86400000);
+
+    if (dayDiff === 0) {
+      return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    }
+    if (dayDiff === 1) {
+      return 'Yesterday';
+    }
+    if (dayDiff > 1 && dayDiff < 7) {
+      return date.toLocaleDateString([], { weekday: 'short' });
+    }
+    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  } catch {
+    return '';
+  }
+}
+
+const useStyles = makeStyles((theme) => ({
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[3],
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[3],
+  },
+  content: {
+    flex: 1,
+    gap: spacing[1],
+    minWidth: 0,
+  },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[2],
+  },
+  title: {
+    color: theme.colors.foreground,
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '600',
+    letterSpacing: -0.2,
+  },
+  date: {
+    color: theme.colors['text-tertiary'],
+    flexShrink: 0,
+    fontSize: 12,
+  },
+}));

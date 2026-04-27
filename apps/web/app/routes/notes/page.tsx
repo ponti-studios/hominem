@@ -4,18 +4,22 @@ import type { ComposerActions } from '@hominem/ui/composer/composer-provider';
 import { ComposerProvider, ComposerStore } from '@hominem/ui/composer/composer-provider';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { data, redirect, useNavigate } from 'react-router';
 
 import { useCreateChat } from '~/hooks/use-chats';
 import { useComposerMode } from '~/hooks/use-composer-mode';
 import {
   flattenNoteFeedPages,
+  type NotesFeedData,
   useCreateNote,
   useNotesFeed,
   useUpdateNote,
 } from '~/hooks/use-notes';
 import { useTranscribe } from '~/hooks/use-transcribe';
 import { useFileUpload } from '~/lib/hooks/use-file-upload';
+import { getServerSession } from '~/lib/auth.server';
+import { serverEnv } from '~/lib/env.server';
+
 
 import { NoteStreamRow } from './components/note-stream-row';
 import {
@@ -30,8 +34,27 @@ const FEED_OVERSCAN_COUNT = 6;
 const FEED_NEAR_BOTTOM_THRESHOLD = 96;
 const FEED_LOAD_MORE_THRESHOLD_INDEX = 2;
 
-export default function NotesPage() {
-  const feedQuery = useNotesFeed({ limit: 20 });
+export async function loader({ request }: { request: Request }) {
+  const { user } = await getServerSession(request);
+  if (!user) {
+    throw redirect('/auth');
+  }
+
+  const cookie = request.headers.get('cookie');
+  const headers = cookie ? { cookie } : undefined;
+  const response = await fetch(
+    new URL('/api/notes/feed?limit=20', serverEnv.VITE_PUBLIC_API_URL).toString(),
+    { headers },
+  );
+  const feed: NotesFeedData = response.ok
+    ? ((await response.json()) as NotesFeedData)
+    : { pages: [], pageParams: [] };
+
+  return data({ feed });
+}
+
+export default function NotesPage({ loaderData }: { loaderData: { feed: NotesFeedData } }) {
+  const feedQuery = useNotesFeed({ limit: 20 }, { initialData: loaderData.feed });
   const notes = useMemo(() => flattenNoteFeedPages(feedQuery.data), [feedQuery.data]);
   const composerStore = useMemo(() => new ComposerStore(), []);
   const actionsRef = useRef<ComposerActions>({} as ComposerActions);

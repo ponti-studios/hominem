@@ -4,9 +4,9 @@ import { z } from 'zod';
 
 import { SettingsSchema, MediaSchema } from '../../validation/schemas';
 import type { Media, Settings } from '../../validation/schemas';
-import { createSQLiteStore } from './sqlite';
+import { createMMKVStore } from './mmkv';
 
-let store: Awaited<ReturnType<typeof createSQLiteStore>> | null = null;
+let store: Awaited<ReturnType<typeof createMMKVStore>> | null = null;
 let initializationPromise: Promise<boolean> | null = null;
 
 async function getStore() {
@@ -23,7 +23,7 @@ async function getStore() {
 async function initializeStore(): Promise<boolean> {
   if (store) return true;
 
-  store = await createSQLiteStore();
+  store = await createMMKVStore();
   return true;
 }
 

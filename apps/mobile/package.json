@@ -56,7 +56,6 @@
     "expo-secure-store": "~55.0.9",
     "expo-sharing": "^55.0.14",
     "expo-splash-screen": "~55.0.15",
-    "expo-sqlite": "~55.0.11",
     "expo-store-review": "^55.0.9",
     "expo-symbols": "^55.0.7",
     "expo-web-browser": "~55.0.10",

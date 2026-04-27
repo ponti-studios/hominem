@@ -1,9 +1,11 @@
 import { useRpcQuery } from '@hominem/rpc/react';
+import type { ChatMessageDto } from '@hominem/rpc/types/chat.types';
 
 import { chatQueryKeys } from '~/lib/query-keys';
 
 export interface UseChatMessagesOptions {
   chatId: string;
+  initialData?: ChatMessageDto[];
 }
 
 export interface UseChatMessagesReturn {
@@ -18,7 +20,7 @@ export type ExtendedMessage = import('@hominem/rpc/types/chat.types').ChatMessag
   isStreaming?: boolean;
 };
 
-export function useChatMessages({ chatId }: UseChatMessagesOptions): UseChatMessagesReturn {
+export function useChatMessages({ chatId, initialData }: UseChatMessagesOptions): UseChatMessagesReturn {
   const messagesQuery = useRpcQuery(
     (client) =>
       client.api.chats[':id'].messages
@@ -29,6 +31,8 @@ export function useChatMessages({ chatId }: UseChatMessagesOptions): UseChatMess
       enabled: !!chatId,
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
+      staleTime: 30_000,
+      ...(initialData ? { initialData } : {}),
     },
   );
 

@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Platform } from 'react-native';
 
 import { API_BASE_URL, E2E_AUTH_SECRET, E2E_TESTING } from '~/constants';
@@ -10,6 +10,10 @@ interface PasskeySignInResult {
     email: string;
     name?: string;
   };
+}
+
+interface UseMobilePasskeyAuthOptions {
+  loadPasskeys?: boolean;
 }
 
 interface UseMobilePasskeyAuthReturn {
@@ -30,14 +34,55 @@ function toErrorMessage(error: unknown, fallback: string) {
   return typeof message === 'string' ? message : fallback;
 }
 
-export function useMobilePasskeyAuth(): UseMobilePasskeyAuthReturn {
+export function useMobilePasskeyAuth(options: UseMobilePasskeyAuthOptions = {}): UseMobilePasskeyAuthReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const passkeysResult = authClient.useListPasskeys();
+  const [passkeys, setPasskeys] = useState<{ id: string; name: string }[]>([]);
+  const [passkeysLoading, setPasskeysLoading] = useState(Boolean(options.loadPasskeys));
+  const [passkeysError, setPasskeysError] = useState<string | null>(null);
 
   // Passkeys require iOS 16+. Earlier versions and non-iOS platforms are not supported.
   const isSupported =
     Platform.OS === 'ios' && Number.parseInt(Platform.Version as string, 10) >= 16;
+
+  const loadPasskeys = useCallback(async () => {
+    if (!options.loadPasskeys) {
+      return;
+    }
+
+    setPasskeysLoading(true);
+    setPasskeysError(null);
+
+    try {
+      const response = (await authClient.$fetch('/passkey/list-user-passkeys', {
+        method: 'GET',
+        throw: false,
+      })) as {
+        data?: { id: string; name?: string | null }[] | null;
+        error?: { message?: string } | null;
+      };
+
+      if (response.error) {
+        throw new Error(response.error.message ?? 'Failed to load passkeys');
+      }
+
+      setPasskeys(
+        (response.data ?? []).map((passkey) => ({
+          id: passkey.id,
+          name: passkey.name ?? 'Unnamed passkey',
+        })),
+      );
+    } catch (err) {
+      setPasskeys([]);
+      setPasskeysError(err instanceof Error ? err.message : 'Failed to load passkeys');
+    } finally {
+      setPasskeysLoading(false);
+    }
+  }, [options.loadPasskeys]);
+
+  useEffect(() => {
+    void loadPasskeys();
+  }, [loadPasskeys]);
 
   const signIn = useCallback(
     async (
@@ -149,6 +194,7 @@ export function useMobilePasskeyAuth(): UseMobilePasskeyAuthReturn {
         return { success: false, error: message };
       }
 
+      await loadPasskeys();
       return { success: true };
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to add passkey';
@@ -157,7 +203,7 @@ export function useMobilePasskeyAuth(): UseMobilePasskeyAuthReturn {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [loadPasskeys]);
 
   const deletePasskey = useCallback(async (id: string) => {
     setIsLoading(true);
@@ -172,6 +218,7 @@ export function useMobilePasskeyAuth(): UseMobilePasskeyAuthReturn {
         return { success: false, error: message };
       }
 
+      await loadPasskeys();
       return { success: true };
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete passkey';
@@ -180,18 +227,19 @@ export function useMobilePasskeyAuth(): UseMobilePasskeyAuthReturn {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [loadPasskeys]);
 
-  return {
-    signIn,
-    addPasskey,
-    passkeys: (passkeysResult.data ?? []).map((passkey: { id: string; name?: string | null }) => ({
-      id: passkey.id,
-      name: passkey.name ?? 'Unnamed passkey',
-    })),
-    deletePasskey,
-    isLoading: isLoading || passkeysResult.isPending || passkeysResult.isRefetching,
-    error,
-    isSupported,
-  };
+  return useMemo(() => {
+    const displayError = error ?? passkeysError;
+
+    return {
+      signIn,
+      addPasskey,
+      passkeys,
+      deletePasskey,
+      isLoading: isLoading || passkeysLoading,
+      error: displayError,
+      isSupported,
+    };
+  }, [addPasskey, deletePasskey, error, isLoading, isSupported, passkeys, passkeysError, passkeysLoading, signIn]);
 }

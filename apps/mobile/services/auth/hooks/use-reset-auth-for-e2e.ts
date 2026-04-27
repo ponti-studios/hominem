@@ -3,7 +3,7 @@ import { useCallback } from 'react';
 import { E2E_TESTING } from '~/constants';
 import { clearPersistedSessionCookies } from '~/services/auth/session-cookie';
 import type { AuthContext } from '~/services/auth/types';
-import { LocalStore } from '~/services/storage/sqlite';
+import { LocalStore } from '~/services/storage/local-store';
 
 export function useResetAuthForE2E(dispatch: AuthContext['dispatch']) {
   const resetAuthForE2E = useCallback(async () => {

@@ -74,7 +74,7 @@ function Settings() {
     passkeys,
     deletePasskey,
     isLoading: isPasskeyLoading,
-  } = useMobilePasskeyAuth();
+  } = useMobilePasskeyAuth({ loadPasskeys: true });
   const initialName = currentUser?.name ?? '';
   const [state, dispatch] = useReducer(accountReducer, initialName, createInitialAccountState);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
