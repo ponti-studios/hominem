@@ -4,6 +4,9 @@ import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { logger } from '@hominem/telemetry';
+import { zValidator } from '@hono/zod-validator';
+import { Hono, type Context } from 'hono';
+import * as z from 'zod';
 
 type MobileVoiceTranscriptionOutput = {
   text: string;
@@ -14,9 +17,6 @@ type MobileVoiceTranscriptionOutput = {
 };
 type MobileVoiceTranscriptionErrorOutput = { error: string; code: string };
 type MobileVoiceResponseErrorOutput = { error: string; code: string };
-import { zValidator } from '@hono/zod-validator';
-import { Hono, type Context } from 'hono';
-import * as z from 'zod';
 
 import { env } from '../../env';
 import { authMiddleware, type AppContext } from '../middleware/auth';
@@ -1026,12 +1026,44 @@ function parseVoiceRequestBody(body: Record<string, unknown>) {
   return { audioFile, language };
 }
 
+function getVoiceRequestBodySummary(body: Record<string, unknown>) {
+  const audioInput = body.audio;
+  const audioValue = Array.isArray(audioInput) ? audioInput[0] : audioInput;
+
+  return {
+    bodyKeys: Object.keys(body),
+    hasAudio: audioValue !== undefined,
+    audioType: audioValue instanceof File ? 'File' : typeof audioValue,
+    audioName: audioValue instanceof File ? audioValue.name : undefined,
+    audioMimeType: audioValue instanceof File ? audioValue.type : undefined,
+    audioSizeBytes: audioValue instanceof File ? audioValue.size : undefined,
+    language: typeof body.language === 'string' ? body.language : undefined,
+    voice: typeof body.voice === 'string' ? body.voice : undefined,
+    systemPromptPresent:
+      typeof body.systemPrompt === 'string' && body.systemPrompt.trim().length > 0,
+  };
+}
+
 const voiceRoutes = new Hono<AppContext>().post('/transcribe', async (c) => {
   try {
+    const requestId = c.get('requestId') ?? createVoiceRequestId('vr');
+    const clientRequestId = c.req.header('x-voice-request-id') ?? undefined;
     const body = await c.req.parseBody();
+    logger.info('[voice-transcription] request received', {
+      ...getVoiceLogData(requestId),
+      clientRequestId,
+      route: '/transcribe',
+      ...getVoiceRequestBodySummary(body),
+    });
     const { audioFile, language } = parseVoiceRequestBody(body);
 
     if (!(audioFile instanceof File)) {
+      logger.warn('[voice-transcription] invalid multipart body', {
+        ...getVoiceLogData(requestId),
+        clientRequestId,
+        route: '/transcribe',
+        ...getVoiceRequestBodySummary(body),
+      });
       return respondWithJsonError(
         c,
         { error: 'No audio file provided', code: 'INVALID_FORMAT' },
@@ -1044,6 +1076,15 @@ const voiceRoutes = new Hono<AppContext>().post('/transcribe', async (c) => {
       mimeType: audioFile.type,
       ...(audioFile.name ? { fileName: audioFile.name } : {}),
       ...(language ? { language } : {}),
+      requestId,
+    });
+
+    logger.info('[voice-transcription] request completed', {
+      ...getVoiceLogData(requestId),
+      clientRequestId,
+      route: '/transcribe',
+      transcriptLength: output.text.length,
+      transcriptPreview: output.text.slice(0, 120),
     });
 
     const response: MobileVoiceTranscriptionOutput = {
@@ -1052,13 +1093,29 @@ const voiceRoutes = new Hono<AppContext>().post('/transcribe', async (c) => {
 
     return c.json(response);
   } catch (error) {
+    const requestId = c.get('requestId') ?? createVoiceRequestId('vr');
+    const clientRequestId = c.req.header('x-voice-request-id') ?? undefined;
     if (error instanceof VoiceError) {
+      logger.error('[voice-transcription] request failed', {
+        ...getVoiceLogData(requestId),
+        clientRequestId,
+        route: '/transcribe',
+        code: error.code,
+        statusCode: error.statusCode,
+        message: error.message,
+      });
       return respondWithJsonError(
         c,
         { error: error.message, code: error.code },
         getVoiceErrorStatusCode(error.statusCode),
       );
     }
+    logger.error('[voice-transcription] unexpected failure', {
+      ...getVoiceLogData(requestId),
+      clientRequestId,
+      route: '/transcribe',
+      error: isErrorWithMessage(error) ? error.message : 'Unknown error',
+    });
     return respondWithJsonError(
       c,
       { error: 'Failed to transcribe audio', code: 'TRANSCRIBE_FAILED' },
@@ -1117,10 +1174,24 @@ export const authenticatedVoiceRoutes = new Hono<AppContext>()
   )
   .post('/respond', async (c) => {
     try {
+      const requestId = c.get('requestId') ?? createVoiceRequestId('vr');
+      const clientRequestId = c.req.header('x-voice-request-id') ?? undefined;
       const body = await c.req.parseBody();
+      logger.info('[voice-response] request received', {
+        ...getVoiceLogData(requestId),
+        clientRequestId,
+        route: '/respond',
+        ...getVoiceRequestBodySummary(body),
+      });
       const { audioFile, language } = parseVoiceRequestBody(body);
 
       if (!(audioFile instanceof File)) {
+        logger.warn('[voice-response] invalid multipart body', {
+          ...getVoiceLogData(requestId),
+          clientRequestId,
+          route: '/respond',
+          ...getVoiceRequestBodySummary(body),
+        });
         return respondWithJsonError(
           c,
           { error: 'No audio file provided', code: 'RESPONSE_FAILED' },
@@ -1133,6 +1204,15 @@ export const authenticatedVoiceRoutes = new Hono<AppContext>()
         mimeType: audioFile.type,
         ...(audioFile.name ? { fileName: audioFile.name } : {}),
         ...(language ? { language } : {}),
+        requestId,
+      });
+
+      logger.info('[voice-response] transcription completed', {
+        ...getVoiceLogData(requestId),
+        clientRequestId,
+        route: '/respond',
+        transcriptLength: transcription.text.length,
+        transcriptPreview: transcription.text.slice(0, 120),
       });
 
       const rawVoice = typeof body.voice === 'string' ? body.voice : 'alloy';
@@ -1152,6 +1232,7 @@ export const authenticatedVoiceRoutes = new Hono<AppContext>()
         voice,
         format: 'pcm16' as const,
         systemPrompt,
+        requestId,
       });
 
       const ab = audioBuffer.buffer.slice(
@@ -1166,13 +1247,29 @@ export const authenticatedVoiceRoutes = new Hono<AppContext>()
         'X-AI-Transcript': encodeURIComponent(transcript),
       });
     } catch (error) {
+      const requestId = c.get('requestId') ?? createVoiceRequestId('vr');
+      const clientRequestId = c.req.header('x-voice-request-id') ?? undefined;
       if (error instanceof VoiceError) {
+        logger.error('[voice-response] request failed', {
+          ...getVoiceLogData(requestId),
+          clientRequestId,
+          route: '/respond',
+          code: error.code,
+          statusCode: error.statusCode,
+          message: error.message,
+        });
         return respondWithJsonError(
           c,
           { error: error.message, code: error.code as VoiceErrorOutput['code'] },
           getVoiceErrorStatusCode(error.statusCode),
         );
       }
+      logger.error('[voice-response] unexpected failure', {
+        ...getVoiceLogData(requestId),
+        clientRequestId,
+        route: '/respond',
+        error: isErrorWithMessage(error) ? error.message : 'Unknown error',
+      });
       return respondWithJsonError(
         c,
         {
@@ -1184,69 +1281,109 @@ export const authenticatedVoiceRoutes = new Hono<AppContext>()
     }
   })
   .post('/respond/stream', async (c) => {
-  try {
-    const body = await c.req.parseBody();
-    const { audioFile, language } = parseVoiceRequestBody(body);
+    const requestId = c.get('requestId') ?? createVoiceRequestId('vr');
+    const clientRequestId = c.req.header('x-voice-request-id') ?? undefined;
+    try {
+      logger.info('[voice-response] request received', {
+        ...getVoiceLogData(requestId),
+        clientRequestId,
+        route: '/respond/stream',
+        ...getVoiceRequestBodySummary(body),
+      });
+      const body = await c.req.parseBody();
+      const { audioFile, language } = parseVoiceRequestBody(body);
 
-    if (!(audioFile instanceof File)) {
+      logger.warn('[voice-response] invalid multipart body', {
+        ...getVoiceLogData(requestId),
+        clientRequestId,
+        route: '/respond/stream',
+        ...getVoiceRequestBodySummary(body),
+      });
+      if (!(audioFile instanceof File)) {
+        return respondWithJsonError(
+          c,
+          { error: 'No audio file provided', code: 'RESPONSE_FAILED' },
+          400,
+        );
+      }
+
+      const transcription = await transcribeVoiceBuffer({
+        buffer: await audioFile.arrayBuffer(),
+        mimeType: audioFile.type,
+        ...(audioFile.name ? { fileName: audioFile.name } : {}),
+        ...(language ? { language } : {}),
+        requestId,
+      });
+
+      logger.info('[voice-response] transcription completed', {
+        ...getVoiceLogData(requestId),
+        clientRequestId,
+        route: '/respond/stream',
+        transcriptLength: transcription.text.length,
+        transcriptPreview: transcription.text.slice(0, 120),
+      });
+
+      const rawVoice = typeof body.voice === 'string' ? body.voice : 'alloy';
+      const VALID_VOICES = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'] as const;
+      type Voice = (typeof VALID_VOICES)[number];
+      const voice: Voice = (VALID_VOICES as readonly string[]).includes(rawVoice)
+        ? (rawVoice as Voice)
+        : 'alloy';
+
+      const systemPrompt =
+        typeof body.systemPrompt === 'string'
+          ? body.systemPrompt
+          : 'You are a helpful assistant. Respond naturally in the same language as the user.';
+
+      const { stream, transcript, mimeType } = await generateVoiceResponseStream({
+        text: transcription.text,
+        voice,
+        format: 'pcm16' as const,
+        systemPrompt,
+        requestId,
+      });
+
+      c.executionCtx.waitUntil(
+        transcript.catch(() => {
+          // Stream transport only needs the audio response.
+        }),
+      );
+
+      return c.body(stream, 200, {
+        'Content-Type': mimeType,
+        'X-User-Transcript': encodeURIComponent(transcription.text),
+      });
+    } catch (error) {
+      const requestId = c.get('requestId') ?? createVoiceRequestId('vr');
+      const clientRequestId = c.req.header('x-voice-request-id') ?? undefined;
+      if (error instanceof VoiceError) {
+        logger.error('[voice-response] request failed', {
+          ...getVoiceLogData(requestId),
+          clientRequestId,
+          route: '/respond/stream',
+          code: error.code,
+          statusCode: error.statusCode,
+          message: error.message,
+        });
+        return respondWithJsonError(
+          c,
+          { error: error.message, code: error.code as VoiceErrorOutput['code'] },
+          getVoiceErrorStatusCode(error.statusCode),
+        );
+      }
+      logger.error('[voice-response] unexpected failure', {
+        ...getVoiceLogData(requestId),
+        clientRequestId,
+        route: '/respond/stream',
+        error: isErrorWithMessage(error) ? error.message : 'Unknown error',
+      });
       return respondWithJsonError(
         c,
-        { error: 'No audio file provided', code: 'RESPONSE_FAILED' },
-        400,
+        {
+          error: isErrorWithMessage(error) ? error.message : 'Failed to generate voice response',
+          code: 'RESPONSE_FAILED',
+        },
+        500,
       );
     }
-
-    const transcription = await transcribeVoiceBuffer({
-      buffer: await audioFile.arrayBuffer(),
-      mimeType: audioFile.type,
-      ...(audioFile.name ? { fileName: audioFile.name } : {}),
-      ...(language ? { language } : {}),
-    });
-
-    const rawVoice = typeof body.voice === 'string' ? body.voice : 'alloy';
-    const VALID_VOICES = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'] as const;
-    type Voice = (typeof VALID_VOICES)[number];
-    const voice: Voice = (VALID_VOICES as readonly string[]).includes(rawVoice)
-      ? (rawVoice as Voice)
-      : 'alloy';
-
-    const systemPrompt =
-      typeof body.systemPrompt === 'string'
-        ? body.systemPrompt
-        : 'You are a helpful assistant. Respond naturally in the same language as the user.';
-
-    const { stream, transcript, mimeType } = await generateVoiceResponseStream({
-      text: transcription.text,
-      voice,
-      format: 'pcm16' as const,
-      systemPrompt,
-    });
-
-    c.executionCtx.waitUntil(
-      transcript.catch(() => {
-        // Stream transport only needs the audio response.
-      }),
-    );
-
-    return c.body(stream, 200, {
-      'Content-Type': mimeType,
-      'X-User-Transcript': encodeURIComponent(transcription.text),
-    });
-  } catch (error) {
-    if (error instanceof VoiceError) {
-      return respondWithJsonError(
-        c,
-        { error: error.message, code: error.code as VoiceErrorOutput['code'] },
-        getVoiceErrorStatusCode(error.statusCode),
-      );
-    }
-    return respondWithJsonError(
-      c,
-      {
-        error: isErrorWithMessage(error) ? error.message : 'Failed to generate voice response',
-        code: 'RESPONSE_FAILED',
-      },
-      500,
-    );
-  }
-});
+  });

@@ -2,7 +2,7 @@ import { Stack, useRouter, type RelativePathString } from 'expo-router';
 import React from 'react';
 import { Pressable } from 'react-native';
 
-import { useThemeColors } from '~/components/theme/theme';
+import { useThemeColors } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
 import { TopAnchoredFeedProvider } from '~/services/inbox/top-anchored-feed';
 

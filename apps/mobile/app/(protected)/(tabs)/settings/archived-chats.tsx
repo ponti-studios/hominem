@@ -4,7 +4,7 @@ import { Stack, useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { useThemeColors } from '~/components/theme/theme';
+import { useThemeColors } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
 import { useArchivedSessions } from '~/hooks/useArchivedSessions';
 import { formatRelativeAge } from '~/services/date/format-relative-age';

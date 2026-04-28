@@ -2,8 +2,7 @@ import type { SFSymbol } from 'expo-symbols';
 import { StyleSheet, Text, View } from 'react-native';
 import Reanimated, { FadeIn } from 'react-native-reanimated';
 
-import { spacing } from '../theme';
-import { useThemeColors } from '../theme/theme';
+import { spacing, useThemeColors } from '../theme';
 import { Button } from './button';
 import AppIcon from './icon';
 

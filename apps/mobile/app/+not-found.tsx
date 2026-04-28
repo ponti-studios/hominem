@@ -2,7 +2,7 @@ import type { RelativePathString } from 'expo-router';
 import { Stack, useRouter } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { useThemeColors } from '~/components/theme/theme';
+import { useThemeColors } from '~/components/theme';
 import { Button } from '~/components/ui/button';
 import AppIcon from '~/components/ui/icon';
 

@@ -1,5 +1,6 @@
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { SplashScreen, Stack } from 'expo-router/build/exports';
 import { useRouter, useSegments } from 'expo-router/build/hooks';
 import type { RelativePathString } from 'expo-router/build/typed-routes/types';
@@ -12,8 +13,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { logError } from '~/components/error-boundary/log-error';
 import { RootErrorBoundary } from '~/components/error-boundary/RootErrorBoundary';
-import { makeStyles } from '~/components/theme';
-import { darkTheme, lightTheme } from '~/components/theme/theme';
+import { darkTheme, lightTheme, makeStyles } from '~/components/theme';
 import { E2E_TESTING } from '~/constants';
 import { useScreenCapture } from '~/hooks/use-screen-capture';
 import { resolveAuthRedirect } from '~/navigation/auth-route-guard';
@@ -21,6 +21,7 @@ import { AuthProvider, useAuth } from '~/services/auth/auth-provider';
 import { initObservability } from '~/services/observability';
 import { markStartupPhase } from '~/services/performance/startup-metrics';
 import { POSTHOG_ENABLED, posthog } from '~/services/posthog';
+import queryClient from '~/services/query-client';
 import { recordActiveDay } from '~/services/review-prompt/review-prompt';
 
 SplashScreen.preventAutoHideAsync();
@@ -219,17 +220,19 @@ function RootLayout() {
 
   const content = (
     <ThemeProvider value={navigationTheme}>
-      <SafeAreaProvider>
-        <GestureHandlerRootView style={rootStyles.gestureRoot}>
-          <KeyboardProvider>
-            <AuthProvider>
-              <BottomSheetModalProvider>
-                <InnerRootLayout />
-              </BottomSheetModalProvider>
-            </AuthProvider>
-          </KeyboardProvider>
-        </GestureHandlerRootView>
-      </SafeAreaProvider>
+      <QueryClientProvider client={queryClient}>
+        <SafeAreaProvider>
+          <GestureHandlerRootView style={rootStyles.gestureRoot}>
+            <KeyboardProvider>
+              <AuthProvider>
+                <BottomSheetModalProvider>
+                  <InnerRootLayout />
+                </BottomSheetModalProvider>
+              </AuthProvider>
+            </KeyboardProvider>
+          </GestureHandlerRootView>
+        </SafeAreaProvider>
+      </QueryClientProvider>
     </ThemeProvider>
   );
 

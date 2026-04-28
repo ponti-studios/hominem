@@ -13,8 +13,7 @@ import { Pressable, ScrollView, View } from 'react-native';
 
 import { parseNoteMarkdown } from '~/components/notes/note-markdown-parser';
 import { NOTE_TOOLBAR_ID, NoteToolbar } from '~/components/notes/NoteToolbar';
-import { Text, makeStyles } from '~/components/theme';
-import { useThemeColors } from '~/components/theme/theme';
+import { Text, makeStyles, useThemeColors } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
 import { useNoteEditor } from '~/hooks/use-note-editor';
 import { useNoteToolbar } from '~/hooks/use-note-toolbar';

@@ -3,7 +3,7 @@ import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { logError } from '~/components/error-boundary/log-error';
-import { useThemeColors } from '~/components/theme/theme';
+import { useThemeColors } from '~/components/theme';
 import { Button } from '~/components/ui/button';
 import AppIcon from '~/components/ui/icon';
 

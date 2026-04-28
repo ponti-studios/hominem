@@ -3,7 +3,7 @@ import { Redirect } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { useThemeColors } from '~/components/theme/theme';
+import { useThemeColors } from '~/components/theme';
 import { Button } from '~/components/ui/button';
 import { useAuth } from '~/services/auth/auth-provider';
 

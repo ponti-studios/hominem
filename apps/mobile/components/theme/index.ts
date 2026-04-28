@@ -1,10 +1,8 @@
 import { useColorScheme, type ImageStyle, type TextStyle, type ViewStyle } from 'react-native';
 
 import { shellTheme } from '../../types/shellTheme';
-import theme, { darkTheme, lightTheme, type Theme } from './theme';
+import theme, { darkTheme, lightTheme, useThemeColors, type Theme } from './theme';
 
-export { Text } from './typography';
-export { fontFamiliesNative, fontSizes, fontWeights } from './typography';
 export {
   colors,
   durations,
@@ -15,7 +13,8 @@ export {
   type RadiusToken,
   type SpacingToken,
 } from '@hominem/ui/tokens';
-export { shellTheme, theme };
+export { fontFamiliesNative, fontSizes, fontWeights, Text } from './typography';
+export { darkTheme, lightTheme, shellTheme, theme, useThemeColors };
 export type { Theme };
 
 type NamedStyles<T> = {

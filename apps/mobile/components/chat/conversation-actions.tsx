@@ -2,8 +2,7 @@ import type { ArtifactType } from '@hominem/rpc/types';
 import { Modal, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { makeStyles, radii, spacing } from '~/components/theme';
-import { useThemeColors } from '~/components/theme/theme';
+import { makeStyles, radii, spacing, useThemeColors } from '~/components/theme';
 
 import { buildConversationActionsModel } from './conversation-actions.model';
 

@@ -237,6 +237,10 @@ function createRecordingController() {
         return { ok: false as const, reason: 'busy' as const };
       }
 
+      logger.info('[recorder] start requested', {
+        state: store.getSnapshot().state,
+      });
+
       setState('REQUESTING_PERMISSION');
 
       const permission = await Audio.requestRecordingPermissionsAsync();
@@ -261,6 +265,9 @@ function createRecordingController() {
           meterings: [],
           state: 'RECORDING',
         }));
+        logger.info('[recorder] recording started', {
+          state: 'RECORDING',
+        });
         emitVoiceEvent('voice_record_started', { platform: 'mobile-ios' });
         startPolling();
         return { ok: true as const };
@@ -279,6 +286,10 @@ function createRecordingController() {
         return null;
       }
 
+      logger.info('[recorder] stop requested', {
+        state: current.state,
+      });
+
       setState('STOPPING');
 
       try {
@@ -294,6 +305,11 @@ function createRecordingController() {
       );
 
       const fileUri = recorder?.uri ?? null;
+
+      logger.info('[recorder] recording stopped', {
+        fileUri,
+        hadRecording: !!fileUri,
+      });
 
       store.setSnapshot({
         lastRecordingUri: fileUri ?? current.lastRecordingUri,
@@ -376,11 +392,18 @@ async function stopVoiceResponse() {
 }
 
 export async function playTTS(audioUri: string) {
+  logger.info('[voice-playback] starting text-to-speech playback', {
+    audioUri,
+  });
   await voiceResponsePlayback.stop();
   await ttsPlayback.prepare(audioUri);
   await ttsPlayback.play();
+  logger.info('[voice-playback] text-to-speech playback active', {
+    audioUri,
+  });
 }
 
 export function stopTTS() {
+  logger.info('[voice-playback] stopping text-to-speech playback');
   void ttsPlayback.stop();
 }

@@ -11,10 +11,10 @@ import {
   makeStyles,
   radii,
   spacing,
+  useThemeColors,
 } from '~/components/theme';
-import { useThemeColors } from '~/components/theme/theme';
+import { AppIconButton } from '~/components/ui';
 import { Button } from '~/components/ui/button';
-import AppIcon from '~/components/ui/icon';
 
 type ToolCall = NonNullable<ChatMessageItem['toolCalls']>[number];
 
@@ -46,33 +46,24 @@ function ActionIconButton({
   onPress,
 }: {
   disabled?: boolean;
-  icon: Parameters<typeof AppIcon>[0]['name'];
+  icon: Parameters<typeof AppIconButton>[0]['icon'];
   isDestructive?: boolean;
   onPress: () => void;
 }) {
   const themeColors = useThemeColors();
 
   return (
-    <Pressable
+    <AppIconButton
+      accessibilityLabel={icon}
       disabled={disabled}
-      hitSlop={6}
+      disabledOpacity={0.35}
+      icon={icon}
+      iconSize={16}
       onPress={onPress}
-      style={({ pressed }) => [
-        {
-          alignItems: 'center',
-          height: 28,
-          justifyContent: 'center',
-          opacity: disabled ? 0.35 : pressed ? 0.65 : 1,
-          width: 28,
-        },
-      ]}
-    >
-      <AppIcon
-        color={isDestructive ? '#FF5A5F' : themeColors['icon-secondary']}
-        name={icon}
-        size={16}
-      />
-    </Pressable>
+      pressedOpacity={0.65}
+      size={28}
+      tintColor={isDestructive ? '#FF5A5F' : themeColors['icon-secondary']}
+    />
   );
 }
 

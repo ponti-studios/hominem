@@ -2,8 +2,7 @@ import type { SFSymbol } from 'expo-symbols';
 import React from 'react';
 import { InputAccessoryView, Keyboard, Pressable, StyleSheet, View } from 'react-native';
 
-import { makeStyles, spacing } from '~/components/theme';
-import { useThemeColors } from '~/components/theme/theme';
+import { makeStyles, spacing, useThemeColors } from '~/components/theme';
 import { BlurSurface } from '~/components/ui/BlurSurface';
 import AppIcon from '~/components/ui/icon';
 import type { FormatAction } from '~/hooks/use-note-toolbar';

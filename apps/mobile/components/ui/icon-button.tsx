@@ -1,21 +1,27 @@
 import type { SFSymbol } from 'expo-symbols';
 import React from 'react';
-import type { ColorValue, GestureResponderEvent, PressableProps, StyleProp, ViewStyle } from 'react-native';
+import type {
+  ColorValue,
+  GestureResponderEvent,
+  PressableProps,
+  StyleProp,
+  ViewStyle,
+} from 'react-native';
 import { Pressable, StyleSheet } from 'react-native';
 
-import { useThemeColors } from '~/components/theme/theme';
+import { useThemeColors } from '~/components/theme';
 
 import AppIcon from './icon';
 
-export interface AppIconButtonProps
-  extends Omit<PressableProps, 'children' | 'onPress' | 'style'> {
+export interface AppIconButtonProps extends Omit<PressableProps, 'children' | 'onPress' | 'style'> {
+  accessibilityLabel: string;
   icon: SFSymbol;
   iconSize?: number;
   size?: number;
   tintColor?: ColorValue;
   disabledOpacity?: number;
   pressedOpacity?: number;
-  onPress: (event: GestureResponderEvent) => void;
+  onPress?: (event: GestureResponderEvent) => void;
   style?: StyleProp<ViewStyle>;
 }
 

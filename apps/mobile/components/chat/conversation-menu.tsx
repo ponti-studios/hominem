@@ -1,9 +1,8 @@
 import { Button, Menu } from '@expo/ui/swift-ui';
 import { buttonStyle } from '@expo/ui/swift-ui/modifiers';
 import type { ArtifactType } from '@hominem/rpc/types';
-import { Pressable } from 'react-native';
 
-import AppIcon from '~/components/ui/icon';
+import { AppIconButton } from '~/components/ui';
 
 import { buildConversationActionsModel } from './conversation-actions.model';
 
@@ -53,16 +52,7 @@ export function ConversationMenu({
 
   return (
     <Menu
-      label={
-        <Pressable
-          accessibilityLabel="Conversation actions"
-          accessibilityRole="button"
-          hitSlop={8}
-          style={({ pressed }) => [styles.iconButton, pressed ? styles.iconButtonPressed : null]}
-        >
-          <AppIcon name="ellipsis" size={18} />
-        </Pressable>
-      }
+      label={<AppIconButton accessibilityLabel="Conversation actions" icon="ellipsis" />}
       modifiers={[buttonStyle('borderless')]}
     >
       {sections.flatMap((section) =>
@@ -78,15 +68,3 @@ export function ConversationMenu({
     </Menu>
   );
 }
-
-const styles = {
-  iconButton: {
-    alignItems: 'center' as const,
-    height: 32,
-    justifyContent: 'center' as const,
-    width: 32,
-  },
-  iconButtonPressed: {
-    opacity: 0.65,
-  },
-};

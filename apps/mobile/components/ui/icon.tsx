@@ -3,7 +3,7 @@ import { SymbolView } from 'expo-symbols';
 import type { ColorValue } from 'react-native';
 import { StyleSheet } from 'react-native';
 
-import { useThemeColors } from '~/components/theme/theme';
+import { useThemeColors } from '~/components/theme';
 
 type IconProps = Omit<SymbolViewProps, 'name' | 'size' | 'tintColor'> & {
   name: SFSymbol;

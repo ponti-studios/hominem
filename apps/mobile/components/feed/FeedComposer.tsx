@@ -29,12 +29,11 @@ import {
 } from '~/components/composer/composerActions';
 import type { ComposerAttachment, ComposerMode } from '~/components/composer/composerState';
 import { useComposerMediaActions } from '~/components/composer/useComposerMediaActions';
-import { GlassActionButton } from '~/components/feed/GlassActionButton';
 import { CameraModal } from '~/components/media/camera-modal';
 import { VoiceSessionModal } from '~/components/media/voice-session-modal';
-import { makeStyles } from '~/components/theme';
+import { makeStyles, useThemeColors } from '~/components/theme';
 import { createLayoutTransition } from '~/components/theme/animations';
-import { useThemeColors } from '~/components/theme/theme';
+import { AppIconButton, AppIconButtonGroup } from '~/components/ui';
 import AppIcon from '~/components/ui/icon';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import type { ChatWithActivity } from '~/services/chat/session-types';
@@ -326,39 +325,40 @@ export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerPro
         </Animated.View>
         {/* Action row. */}
         <View style={styles.buttonRow}>
-          <View style={styles.mediaGroup}>
-            <Pressable
+          <AppIconButtonGroup style={styles.mediaGroup}>
+            <AppIconButton
               accessibilityLabel="Add attachment"
-              accessibilityRole="button"
-              hitSlop={spacing[2]}
+              icon="plus"
               onPress={showPlusMenu}
-              style={({ pressed }) => [
-                styles.iconButton,
-                pressed ? styles.iconButtonPressed : null,
-              ]}
-            >
-              <AppIcon name="plus" size={18} tintColor={themeColors['text-secondary']} />
-            </Pressable>
-          </View>
-          <View style={styles.actionGroup}>
-            <Pressable
-              accessibilityLabel="Record voice note"
-              accessibilityRole="button"
-              hitSlop={spacing[2]}
-              onPress={() => voiceModalRef.current?.present()}
-              style={({ pressed }) => [
-                styles.iconButton,
-                pressed ? styles.iconButtonPressed : null,
-              ]}
-            >
-              <AppIcon name="waveform" size={18} tintColor={themeColors['text-secondary']} />
-            </Pressable>
-            <GlassActionButton
-              onSave={() => void handleSave()}
-              onChat={() => void handleChat()}
-              disabled={!canSubmit || isSaving || isChatCreating}
+              tintColor={themeColors['text-secondary']}
             />
-          </View>
+          </AppIconButtonGroup>
+          <AppIconButtonGroup style={styles.actionGroup}>
+            <AppIconButton
+              accessibilityLabel="Record voice note"
+              icon="waveform"
+              onPress={() => voiceModalRef.current?.present()}
+              tintColor={themeColors['text-secondary']}
+            />
+            <View style={styles.saveChatShell}>
+              <AppIconButtonGroup style={styles.saveChatGroup}>
+                <AppIconButton
+                  accessibilityLabel="Open chat"
+                  disabled={!canSubmit || isSaving || isChatCreating}
+                  icon="bubble.left"
+                  onPress={() => void handleChat()}
+                  tintColor={themeColors.white}
+                />
+                <AppIconButton
+                  accessibilityLabel="Save note"
+                  disabled={!canSubmit || isSaving || isChatCreating}
+                  icon="arrow.up"
+                  onPress={() => void handleSave()}
+                  tintColor={themeColors.white}
+                />
+              </AppIconButtonGroup>
+            </View>
+          </AppIconButtonGroup>
         </View>
       </Animated.View>
 
@@ -399,7 +399,7 @@ const useStyles = makeStyles((theme) => ({
     maxWidth: MAX_WIDTH,
     borderRadius: PILL_RADIUS,
     borderCurve: 'continuous',
-    overflow: 'visible', // so GlassActionButton chat option can float above
+    overflow: 'visible', // so the action cluster can extend cleanly
     borderWidth: 1,
     paddingHorizontal: spacing[3],
     paddingTop: spacing[3],
@@ -437,23 +437,18 @@ const useStyles = makeStyles((theme) => ({
     justifyContent: 'space-between',
   },
   mediaGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: spacing[2],
-  },
-  iconButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 32,
-    width: 32,
-  },
-  iconButtonPressed: {
-    opacity: 0.65,
   },
   actionGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: spacing[2],
+  },
+  saveChatShell: {
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    borderRadius: 32,
+    paddingHorizontal: 4,
+  },
+  saveChatGroup: {
+    gap: 2,
   },
   // Attachments
   attachmentRow: {

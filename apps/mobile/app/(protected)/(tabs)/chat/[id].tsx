@@ -17,7 +17,7 @@ import {
 } from '~/components/chat';
 import { ChatInput } from '~/components/chat/ChatInput';
 import { useTTS } from '~/components/media/use-tts';
-import { useThemeColors } from '~/components/theme/theme';
+import { useThemeColors } from '~/components/theme';
 import { EmptyState } from '~/components/ui';
 import AppIcon from '~/components/ui/icon';
 import {

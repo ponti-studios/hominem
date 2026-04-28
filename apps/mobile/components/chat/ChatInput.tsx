@@ -37,9 +37,8 @@ import {
 import { useComposerMediaActions } from '~/components/composer/useComposerMediaActions';
 import { CameraModal } from '~/components/media/camera-modal';
 import { VoiceSessionModal } from '~/components/media/voice-session-modal';
-import { makeStyles } from '~/components/theme';
+import { makeStyles, useThemeColors } from '~/components/theme';
 import { createLayoutTransition } from '~/components/theme/animations';
-import { useThemeColors } from '~/components/theme/theme';
 import AppIcon from '~/components/ui/icon';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import { updateChatTitleCaches, useActiveChat, useSendMessage } from '~/services/chat';
@@ -116,7 +115,7 @@ function SendButton({
       <AppIcon
         name="arrow.up"
         size={BTN_ICON_SIZE}
-        color={disabled ? themeColors['text-tertiary'] : '#ffffff'}
+        tintColor={disabled ? themeColors['text-tertiary'] : '#ffffff'}
       />
     </Pressable>
   );

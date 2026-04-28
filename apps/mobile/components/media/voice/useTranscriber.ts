@@ -13,6 +13,10 @@ import { useAuth } from '~/services/auth/auth-provider';
 
 const MAX_AUDIO_SIZE_BYTES = 25 * 1024 * 1024;
 
+function createVoiceRequestId(prefix: string) {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
 function getMimeTypeFromUri(uri: string): string {
   const normalized = uri.toLowerCase();
   if (normalized.endsWith('.mp3')) return 'audio/mpeg';
@@ -39,6 +43,7 @@ export function useTranscriber({
 
   const mutation = useMutation<string, Error, string>({
     mutationFn: async (audioUri: string) => {
+      const requestId = createVoiceRequestId('mobile-vt');
       abortControllerRef.current?.abort();
       abortControllerRef.current = new AbortController();
 
@@ -46,6 +51,11 @@ export function useTranscriber({
       if (Object.keys(authHeaders).length === 0) {
         throw new Error('Missing auth session for voice transcription');
       }
+
+      logger.info('[transcriber] request started', {
+        requestId,
+        audioUri,
+      });
 
       const fileInfo = await FileSystem.getInfoAsync(audioUri);
       if (fileInfo.exists && 'size' in fileInfo && fileInfo.size > MAX_AUDIO_SIZE_BYTES) {
@@ -62,21 +72,39 @@ export function useTranscriber({
         type: mimeType,
       } as unknown as Blob);
 
+      const requestHeaders = {
+        ...authHeaders,
+        'X-Voice-Request-Id': requestId,
+      };
+
       emitVoiceEvent('voice_transcribe_requested', {
         platform: 'mobile-ios',
         mimeType,
+        sizeBytes: fileInfo.exists && 'size' in fileInfo ? fileInfo.size : undefined,
+      });
+
+      logger.info('[transcriber] sending multipart request', {
+        requestId,
+        mimeType,
+        sizeBytes: fileInfo.exists && 'size' in fileInfo ? fileInfo.size : undefined,
       });
 
       const timeoutId = setTimeout(() => abortControllerRef.current?.abort(), 60_000);
 
       const response = await fetch(`${API_BASE_URL}/api/voice/transcribe`, {
         method: 'POST',
-        headers: authHeaders,
+        headers: requestHeaders,
         body: formData,
         signal: abortControllerRef.current.signal,
       });
 
       clearTimeout(timeoutId);
+
+      logger.info('[transcriber] response received', {
+        requestId,
+        status: response.status,
+        contentType: response.headers.get('content-type'),
+      });
 
       if (!response.ok) {
         const payload = VoiceTranscribeErrorSchema.parse(await response.json().catch(() => ({})));
@@ -85,6 +113,12 @@ export function useTranscriber({
           mimeType,
           ...(isVoiceErrorCode(payload.code) ? { errorCode: payload.code } : {}),
         });
+        logger.error('[transcriber] request failed', {
+          requestId,
+          status: response.status,
+          errorCode: payload.code,
+          error: payload.error,
+        });
         throw new Error(payload.error || `Voice transcription failed (${response.status})`);
       }
 
@@ -92,6 +126,11 @@ export function useTranscriber({
       emitVoiceEvent('voice_transcribe_succeeded', {
         platform: 'mobile-ios',
         mimeType,
+      });
+      logger.info('[transcriber] request completed successfully', {
+        requestId,
+        transcriptLength: data.text.length,
+        transcriptPreview: data.text.slice(0, 120),
       });
       return data.text;
     },
