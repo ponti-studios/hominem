@@ -1,8 +1,10 @@
 import React, { useCallback, useMemo } from 'react';
 import {
   Pressable,
+  StyleProp,
   StyleSheet,
   Text,
+  TextStyle,
   useColorScheme,
   type PressableStateCallbackType,
 } from 'react-native';
@@ -12,7 +14,7 @@ interface ButtonProps {
   onPress: () => void;
   disabled?: boolean;
   size?: 'sm' | 'md';
-  variant?: 'primary' | 'secondary' | 'tertiary';
+  variant?: 'primary' | 'secondary' | 'tertiary' | 'destructive-text';
   testID?: string;
 }
 
@@ -38,7 +40,7 @@ export function Button({
       height: 44,
     };
 
-    const variantStyles = {
+    const variantStyles: Record<string, StyleProp<TextStyle>> = {
       primary: {
         backgroundColor: isDark ? '#FFFFFF' : '#000000',
         borderWidth: 0,
@@ -52,12 +54,18 @@ export function Button({
         backgroundColor: 'transparent',
         borderWidth: 0,
       },
+      'destructive-text': {
+        backgroundColor: 'transparent',
+        borderRadius: 10,
+        fontWeight: '300',
+      },
     };
 
     const textColor = {
       primary: isDark ? '#000000' : '#FFFFFF',
       secondary: isDark ? '#FFFFFF' : '#000000',
       tertiary: isDark ? '#FFFFFF' : '#000000',
+      'destructive-text': 'red',
     };
 
     return {
@@ -80,7 +88,10 @@ export function Button({
         style={[
           styles.text,
           size === 'sm' && styles.textSm,
-          { color: resolvedStyles.text, opacity: disabled ? 0.5 : 1 },
+          {
+            color: resolvedStyles.text,
+            opacity: disabled ? 0.5 : 1,
+          },
         ]}
       >
         {label}

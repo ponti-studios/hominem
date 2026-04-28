@@ -218,7 +218,9 @@ function Settings() {
             <AppIcon name="envelope" />
             <Text style={[styles.rowLabel, { color: themeColors.foreground }]}>Email</Text>
           </View>
-          <Text style={[styles.rowValue, { color: themeColors['text-secondary'] }]}>
+          <Text
+            style={[styles.rowValue, { color: themeColors['text-secondary'], maxWidth: '75%' }]}
+          >
             {currentUser?.email ?? '-'}
           </Text>
         </View>
@@ -326,24 +328,9 @@ function Settings() {
         </View>
       ) : null}
 
-      <View
-        style={[
-          styles.sectionCard,
-          {
-            backgroundColor: themeColors['bg-surface'],
-            borderColor: themeColors['border-default'],
-          },
-        ]}
-      >
-        <View style={styles.actionStack}>
-          <Button label="Sign out" onPress={onLogoutPress} variant="secondary" />
-          <Pressable
-            onPress={onDeleteAccountPress}
-            style={({ pressed }) => [styles.deleteAction, { opacity: pressed ? 0.65 : 1 }]}
-          >
-            <Text style={styles.deleteActionText}>Delete account</Text>
-          </Pressable>
-        </View>
+      <View style={styles.actionStack}>
+        <Button label="Sign out" onPress={onLogoutPress} variant="primary" />
+        <Button label="Delete account" onPress={onDeleteAccountPress} variant="destructive-text" />
       </View>
     </ScrollView>
   );
@@ -373,7 +360,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     fontSize: 15,
     minHeight: 40,
-    minWidth: 170,
+    minWidth: '60%',
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
