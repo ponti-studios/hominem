@@ -1,5 +1,5 @@
 import type { User } from '@hominem/auth/types';
-import { logger, LOG_MESSAGES } from '@hominem/telemetry';
+import { LOG_MESSAGES, logger } from '@hominem/telemetry';
 import { createHonoTelemetryMiddleware } from '@hominem/telemetry/node';
 import { apiReference } from '@scalar/hono-api-reference';
 import * as Sentry from '@sentry/node';
@@ -58,7 +58,8 @@ export function createServer() {
 
   app.use('/api/auth/*', authRateLimitMiddleware());
   app.route('/api/status', statusRoutes);
-  app.on(['GET', 'POST'], '/api/auth/**', (c) => betterAuthServer.handler(c.req.raw));
+  app.on(['GET', 'POST'], '/api/auth', (c) => betterAuthServer.handler(c.req.raw));
+  app.on(['GET', 'POST'], '/api/auth/*', (c) => betterAuthServer.handler(c.req.raw));
   app.route('/api/images', imagesRoutes);
 
   app.get('/', (c) => {

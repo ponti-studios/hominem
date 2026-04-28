@@ -4,6 +4,7 @@ export {
   InternalError,
   isServiceError,
   NotFoundError,
+  ServiceError,
   UnauthorizedError,
   UnavailableError,
   ValidationError,

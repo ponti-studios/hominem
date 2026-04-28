@@ -6,6 +6,10 @@ import * as SecureStore from 'expo-secure-store';
 
 import { API_BASE_URL, APP_SCHEME } from '~/constants';
 
+function getAuthOriginHeader() {
+  return new URL(API_BASE_URL).origin;
+}
+
 type AuthError = {
   message?: string;
 };
@@ -17,6 +21,11 @@ type AuthResult<TData = never> = {
 
 const baseAuthClient = createAuthClient({
   baseURL: API_BASE_URL,
+  fetchOptions: {
+    headers: {
+      Origin: getAuthOriginHeader(),
+    },
+  },
   plugins: [
     expoClient({
       scheme: APP_SCHEME,
@@ -28,14 +37,18 @@ const baseAuthClient = createAuthClient({
   ],
 });
 
-export const authClient: typeof baseAuthClient & {
-  deletePasskey: (input: { id: string }) => Promise<AuthResult>;
-} = Object.assign(baseAuthClient, {
-  deletePasskey: ({ id }: { id: string }): Promise<AuthResult> => {
+type DeletePasskeyFn = (input: { id: string }) => Promise<AuthResult>;
+
+export type AuthClient = typeof baseAuthClient & {
+  deletePasskey: DeletePasskeyFn;
+};
+
+export const authClient: AuthClient = Object.assign(baseAuthClient, {
+  deletePasskey: ({ id }) => {
     return baseAuthClient.$fetch('/passkey/delete-passkey', {
       method: 'POST',
       body: { id },
       throw: false,
-    }) as Promise<AuthResult>;
+    });
   },
-});
+} as AuthClient);

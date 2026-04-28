@@ -1,6 +1,5 @@
 import { ProgressView, Host as SwiftUIHost } from '@expo/ui/swift-ui';
 import { frame, progressViewStyle } from '@expo/ui/swift-ui/modifiers';
-import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { useApiClient } from '@hominem/rpc/react';
 import { radii, spacing } from '@hominem/ui/tokens';
 import { useQueryClient } from '@tanstack/react-query';
@@ -30,7 +29,7 @@ import {
 import type { ComposerAttachment, ComposerMode } from '~/components/composer/composerState';
 import { useComposerMediaActions } from '~/components/composer/useComposerMediaActions';
 import { CameraModal } from '~/components/media/camera-modal';
-import { VoiceSessionModal } from '~/components/media/voice-session-modal';
+import { VoiceInput } from '~/components/media/voice/VoiceInput';
 import { makeStyles, useThemeColors } from '~/components/theme';
 import { createLayoutTransition } from '~/components/theme/animations';
 import { AppIconButton, AppIconButtonGroup } from '~/components/ui';
@@ -130,7 +129,6 @@ export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerPro
   const keyboard = useAnimatedKeyboard();
   const animatedH = useSharedValue(INPUT_MIN_H);
   const inputRef = useRef<TextInput>(null);
-  const voiceModalRef = useRef<BottomSheetModal>(null);
   const client = useApiClient();
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -334,11 +332,21 @@ export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerPro
             />
           </AppIconButtonGroup>
           <AppIconButtonGroup style={styles.actionGroup}>
-            <AppIconButton
+            <VoiceInput
+              autoTranscribe
               accessibilityLabel="Record voice note"
-              icon="waveform"
-              onPress={() => voiceModalRef.current?.present()}
-              tintColor={themeColors['text-secondary']}
+              idleIcon="waveform"
+              onAudioTranscribed={handleVoiceTranscript}
+              onError={() => {
+                setIsRecording(false);
+                setMode('text');
+              }}
+              onRecordingStateChange={(recording) => {
+                setIsRecording(recording);
+                setMode(recording ? 'voice' : 'text');
+              }}
+              showPostTranscriptionActions={false}
+              style={styles.voiceButton}
             />
             <View style={styles.saveChatShell}>
               <AppIconButtonGroup style={styles.saveChatGroup}>
@@ -368,16 +376,6 @@ export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerPro
           void handleCameraCapture(photo).finally(() => setIsCameraOpen(false));
         }}
         onClose={() => setIsCameraOpen(false)}
-      />
-      <VoiceSessionModal
-        bottomSheetModalRef={voiceModalRef}
-        onAudioTranscribed={(transcript) => {
-          handleVoiceTranscript(transcript);
-        }}
-        onClose={() => {
-          setIsRecording(false);
-          setMode('text');
-        }}
       />
     </Animated.View>
   );
@@ -435,6 +433,14 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  voiceButton: {
+    padding: spacing[2],
+    borderRadius: radii.full,
+    minWidth: 40,
+    minHeight: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   mediaGroup: {
     gap: spacing[2],

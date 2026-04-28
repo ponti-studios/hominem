@@ -1,6 +1,5 @@
 import { ProgressView, Host as SwiftUIHost } from '@expo/ui/swift-ui';
 import { frame, progressViewStyle } from '@expo/ui/swift-ui/modifiers';
-import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { useApiClient } from '@hominem/rpc/react';
 import type { NoteSearchResult } from '@hominem/rpc/types';
 import { radii, spacing } from '@hominem/ui/tokens';
@@ -36,7 +35,7 @@ import {
 } from '~/components/composer/note-mentions';
 import { useComposerMediaActions } from '~/components/composer/useComposerMediaActions';
 import { CameraModal } from '~/components/media/camera-modal';
-import { VoiceSessionModal } from '~/components/media/voice-session-modal';
+import { VoiceInput } from '~/components/media/voice/VoiceInput';
 import { makeStyles, useThemeColors } from '~/components/theme';
 import { createLayoutTransition } from '~/components/theme/animations';
 import AppIcon from '~/components/ui/icon';
@@ -287,7 +286,6 @@ export function ChatInput({ chatId, initialMessage, onClearanceChange }: ChatInp
   const keyboard = useAnimatedKeyboard();
   const animatedH = useSharedValue(INPUT_MIN_H);
   const inputRef = useRef<TextInput>(null);
-  const voiceModalRef = useRef<BottomSheetModal>(null);
   const client = useApiClient();
   const queryClient = useQueryClient();
   const { data: activeChat } = useActiveChat(chatId);
@@ -510,11 +508,18 @@ export function ChatInput({ chatId, initialMessage, onClearanceChange }: ChatInp
             disabled={isChatSending}
           />
           <View style={styles.actionRowSpacer} />
-          <MediaButton
-            icon="waveform"
-            onPress={() => voiceModalRef.current?.present()}
+          <VoiceInput
+            autoTranscribe
             accessibilityLabel="Record voice"
             disabled={isChatSending}
+            idleIcon="waveform"
+            onAudioTranscribed={handleVoiceTranscript}
+            onError={() => {
+              setIsRecording(false);
+            }}
+            onRecordingStateChange={setIsRecording}
+            showPostTranscriptionActions={false}
+            style={styles.voiceButton}
           />
           <SendButton
             onPress={handleSend}
@@ -530,15 +535,6 @@ export function ChatInput({ chatId, initialMessage, onClearanceChange }: ChatInp
           void handleCameraCapture(photo).finally(() => setIsCameraOpen(false));
         }}
         onClose={() => setIsCameraOpen(false)}
-      />
-      <VoiceSessionModal
-        bottomSheetModalRef={voiceModalRef}
-        onAudioTranscribed={(transcript) => {
-          handleVoiceTranscript(transcript);
-        }}
-        onClose={() => {
-          setIsRecording(false);
-        }}
       />
     </Animated.View>
   );
@@ -632,6 +628,14 @@ const useStyles = makeStyles((theme) => ({
   },
   mediaBtnPressed: {
     backgroundColor: theme.colors['bg-surface'],
+  },
+  voiceButton: {
+    padding: spacing[1],
+    borderRadius: radii.md,
+    minWidth: MEDIA_BTN_SIZE,
+    minHeight: MEDIA_BTN_SIZE,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   attachments: {
     gap: spacing[2],

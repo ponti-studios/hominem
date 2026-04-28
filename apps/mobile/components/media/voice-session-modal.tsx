@@ -2,7 +2,6 @@ import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { useVoiceResponse } from '~/components/media/voice/useVoiceResponse';
 import { VoiceInput } from '~/components/media/voice/VoiceInput';
 import { Text, makeStyles, theme } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
@@ -21,7 +20,6 @@ export function VoiceSessionModal({
   const styles = useStyles();
   const snapPoints = useMemo(() => ['50%', '90%'], []);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const { respond, isLoading } = useVoiceResponse();
 
   const handleDismiss = useCallback(() => {
     setErrorMessage(null);
@@ -32,13 +30,6 @@ export function VoiceSessionModal({
   const handleRetry = useCallback(() => {
     setErrorMessage(null);
   }, []);
-
-  const handleAudioReady = useCallback(
-    async (audioUri: string) => {
-      return respond(audioUri);
-    },
-    [respond],
-  );
 
   return (
     <BottomSheetModal
@@ -79,27 +70,16 @@ export function VoiceSessionModal({
           ) : (
             <>
               <VoiceInput
-                autoTranscribe={false}
-                onAudioReady={(audioUri) => {
-                  void handleAudioReady(audioUri)
-                    .then((transcript) => {
-                      onAudioTranscribed(transcript);
-                      handleDismiss();
-                    })
-                    .catch(() => {
-                      setErrorMessage('Voice response failed. Please try again.');
-                    });
+                autoTranscribe
+                onAudioTranscribed={(transcript) => {
+                  onAudioTranscribed(transcript);
+                  handleDismiss();
                 }}
                 onError={() => {
-                  setErrorMessage('Voice response failed. Please try again.');
+                  setErrorMessage('Voice transcription failed. Please try again.');
                 }}
                 style={styles.micButton}
               />
-              {isLoading ? (
-                <Text variant="caption1" color="text-secondary">
-                  Generating response...
-                </Text>
-              ) : null}
               <Text variant="caption1" color="text-secondary" style={styles.hint}>
                 Tap to record · tap again to stop
               </Text>

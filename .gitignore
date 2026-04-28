@@ -100,11 +100,11 @@ npm-debug.*
 *.orig.*
 web-build/
 
-# Expo
+# mobile
 dist/
 .expo/
-android
-ios
+apps/mobile/android
+apps/mobile/ios
 
 # expo router
 expo-env.d.ts

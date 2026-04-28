@@ -12,6 +12,44 @@ interface SharedTextModelOptions {
 
 type SharedTextModel = ReturnType<ReturnType<typeof createOpenAI>['chat']>;
 
+const TEST_ASSISTANT_REPLY = 'Test assistant reply';
+
+async function* createTestChatCompletionStream() {
+  yield {
+    choices: [
+      {
+        delta: {
+          content: TEST_ASSISTANT_REPLY,
+        },
+      },
+    ],
+  };
+}
+
+function createTestOpenAIClient(): OpenAI {
+  return {
+    chat: {
+      completions: {
+        create: async (input: { stream?: boolean }) => {
+          if (input.stream) {
+            return createTestChatCompletionStream();
+          }
+
+          return {
+            choices: [
+              {
+                message: {
+                  content: TEST_ASSISTANT_REPLY,
+                },
+              },
+            ],
+          };
+        },
+      },
+    },
+  } as unknown as OpenAI;
+}
+
 function getOpenRouterApiKey(): string {
   const apiKey = env.OPENROUTER_API_KEY?.trim();
   if (!apiKey) {
@@ -46,6 +84,10 @@ export function getSharedAiModelConfig() {
 }
 
 export function getSharedOpenAIClient(): OpenAI {
+  if (env.NODE_ENV === 'test') {
+    return createTestOpenAIClient();
+  }
+
   return new OpenAI({
     apiKey: getOpenRouterApiKey(),
     baseURL: OPENROUTER_BASE_URL,

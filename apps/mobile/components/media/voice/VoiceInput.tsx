@@ -1,6 +1,7 @@
 import { ProgressView, Host as SwiftUIHost } from '@expo/ui/swift-ui';
 import { progressViewStyle } from '@expo/ui/swift-ui/modifiers';
 import * as Haptics from 'expo-haptics';
+import type { SFSymbol } from 'expo-symbols';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View, type PressableProps } from 'react-native';
 import Animated, {
@@ -24,6 +25,9 @@ type VoiceInputProps = PressableProps & {
   onAudioReady?: (audioUri: string) => void;
   onAudioTranscribed?: (transcription: string) => void;
   onError?: () => void;
+  idleIcon?: SFSymbol;
+  recordingIcon?: SFSymbol;
+  showPostTranscriptionActions?: boolean;
 };
 
 export function VoiceInput({
@@ -32,6 +36,9 @@ export function VoiceInput({
   onAudioReady,
   onAudioTranscribed,
   onError,
+  idleIcon = 'mic',
+  recordingIcon = 'stop.fill',
+  showPostTranscriptionActions = true,
   style,
   ...props
 }: VoiceInputProps) {
@@ -52,11 +59,17 @@ export function VoiceInput({
     async (audioUri: string) => {
       if (autoTranscribe) {
         await transcribeAudio(audioUri);
+        if (showPostTranscriptionActions) {
+          setLastRecordingUri(audioUri);
+        } else {
+          setLastRecordingUri(null);
+        }
       } else {
+        setLastRecordingUri(audioUri);
         onAudioReady?.(audioUri);
       }
     },
-    [autoTranscribe, onAudioReady, transcribeAudio],
+    [autoTranscribe, onAudioReady, showPostTranscriptionActions, transcribeAudio],
   );
 
   const {
@@ -168,10 +181,10 @@ export function VoiceInput({
             </SwiftUIHost>
           ) : null}
           {!isTranscribing && isRecording ? (
-            <AppIcon name="stop.fill" size={24} tintColor={theme.colors.foreground} />
+            <AppIcon name={recordingIcon} size={24} tintColor={theme.colors.foreground} />
           ) : null}
           {!isTranscribing && !isRecording ? (
-            <AppIcon name="mic" size={24} tintColor={theme.colors.foreground} />
+            <AppIcon name={idleIcon} size={24} tintColor={theme.colors.foreground} />
           ) : null}
         </AnimatedPressable>
         {isRecording || isPaused ? (
@@ -192,14 +205,14 @@ export function VoiceInput({
           </Pressable>
         ) : null}
       </View>
-      {lastRecordingUri && autoTranscribe ? (
+      {showPostTranscriptionActions && lastRecordingUri && autoTranscribe ? (
         <Pressable onPress={() => void retryTranscription()} style={styles.retryButton}>
           <Text variant="body" color="text-secondary">
             RETRY
           </Text>
         </Pressable>
       ) : null}
-      {lastRecordingUri && autoTranscribe ? (
+      {showPostTranscriptionActions && lastRecordingUri && autoTranscribe ? (
         <Pressable onPress={clearRecording} style={styles.retryButton}>
           <Text variant="body" color="text-secondary">
             CLEAR

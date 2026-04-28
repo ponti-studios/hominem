@@ -26,7 +26,6 @@ const chatsSendSchema = z
     }
   });
 
-import { env } from '../../env';
 import { ValidationError } from '../errors';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 import { rateLimitMiddleware } from '../middleware/rate-limit';
@@ -124,43 +123,6 @@ function getRequiredChatId(c: { req: { param: (name: string) => string | undefin
   return chatId;
 }
 
-async function createAssistantTextStream(
-  system: string,
-  prompt: string,
-): Promise<AsyncIterable<string>> {
-  try {
-    const completion = await getSharedOpenAIClient().chat.completions.create({
-      model: getSharedAiModelConfig().modelId,
-      stream: true,
-      messages: [
-        { role: 'system', content: system },
-        { role: 'user', content: prompt },
-      ],
-    });
-
-    return (async function* () {
-      for await (const chunk of completion) {
-        const text = chunk.choices[0]?.delta?.content;
-        if (typeof text === 'string' && text.length > 0) {
-          yield text;
-        }
-      }
-    })();
-  } catch (error) {
-    if (
-      env.NODE_ENV === 'test' &&
-      error instanceof Error &&
-      error.message.includes('Missing Authentication header')
-    ) {
-      return (async function* () {
-        yield 'Test assistant reply';
-      })();
-    }
-
-    throw error;
-  }
-}
-
 const chatByIdRoutes = new Hono<AppContext>()
   .use(
     '/send',
@@ -256,11 +218,23 @@ const chatByIdRoutes = new Hono<AppContext>()
     });
 
     const prompt = buildConversationPrompt(message, history, resolvedNotes, resolvedFiles);
+    const completion = await getSharedOpenAIClient().chat.completions.create({
+      model: getSharedAiModelConfig().modelId,
+      stream: true,
+      messages: [
+        { role: 'system', content: loadPrompt('chat-assistant') },
+        { role: 'user', content: prompt },
+      ],
+    });
 
-    const assistantTextStream = await createAssistantTextStream(
-      loadPrompt('chat-assistant'),
-      prompt,
-    );
+    const assistantTextStream = (async function* () {
+      for await (const chunk of completion) {
+        const text = chunk.choices[0]?.delta?.content;
+        if (typeof text === 'string' && text.length > 0) {
+          yield text;
+        }
+      }
+    })();
 
     const responseStream = new ReadableStream<Uint8Array>({
       async start(controller) {
