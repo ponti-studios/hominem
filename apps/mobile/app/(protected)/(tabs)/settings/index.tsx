@@ -163,7 +163,11 @@ function Settings() {
         <Text style={[styles.sectionTitle, { color: themeColors['text-secondary'] }]}>Account</Text>
         <View style={styles.row}>
           <View style={styles.rowLabelGroup}>
-            <AppIcon color={themeColors['icon-secondary']} name="person.crop.circle" size={18} />
+            <AppIcon
+              name="person.crop.circle"
+              size={18}
+              tintColor={themeColors['icon-secondary']}
+            />
             <Text style={[styles.rowLabel, { color: themeColors.foreground }]}>Name</Text>
           </View>
           <View style={styles.nameControls}>
@@ -215,7 +219,7 @@ function Settings() {
 
         <View style={styles.row}>
           <View style={styles.rowLabelGroup}>
-            <AppIcon color={themeColors['icon-secondary']} name="envelope" size={18} />
+            <AppIcon name="envelope" size={18} tintColor={themeColors['icon-secondary']} />
             <Text style={[styles.rowLabel, { color: themeColors.foreground }]}>Email</Text>
           </View>
           <Text style={[styles.rowValue, { color: themeColors['text-secondary'] }]}>
@@ -236,7 +240,7 @@ function Settings() {
         <Text style={[styles.sectionTitle, { color: themeColors['text-secondary'] }]}>Privacy</Text>
         <View style={styles.row}>
           <View style={styles.rowLabelGroup}>
-            <AppIcon color={themeColors['icon-secondary']} name="faceid" size={18} />
+            <AppIcon name="faceid" size={18} tintColor={themeColors['icon-secondary']} />
             <Text style={[styles.rowLabel, { color: themeColors.foreground }]}>
               Lock with Face ID
             </Text>
@@ -251,7 +255,7 @@ function Settings() {
         </View>
         <View style={styles.row}>
           <View style={styles.rowLabelGroup}>
-            <AppIcon color={themeColors['icon-secondary']} name="eye.slash" size={18} />
+            <AppIcon name="eye.slash" size={18} tintColor={themeColors['icon-secondary']} />
             <Text style={[styles.rowLabel, { color: themeColors.foreground }]}>
               Prevent screenshots
             </Text>
@@ -281,10 +285,10 @@ function Settings() {
           style={({ pressed }) => [styles.row, { opacity: pressed ? 0.7 : 1 }]}
         >
           <View style={styles.rowLabelGroup}>
-            <AppIcon color={themeColors['icon-secondary']} name="archivebox" size={18} />
+            <AppIcon name="archivebox" size={18} tintColor={themeColors['icon-secondary']} />
             <Text style={[styles.rowLabel, { color: themeColors.foreground }]}>Archived chats</Text>
           </View>
-          <AppIcon color={themeColors['icon-tertiary']} name="chevron.right" size={12} />
+          <AppIcon name="chevron.right" size={12} tintColor={themeColors['icon-tertiary']} />
         </Pressable>
       </View>
 
@@ -311,7 +315,7 @@ function Settings() {
           {passkeys.map((pk) => (
             <View key={pk.id} style={styles.row}>
               <View style={styles.rowLabelGroup}>
-                <AppIcon color={themeColors['icon-secondary']} name="key.fill" size={16} />
+                <AppIcon name="key.fill" size={16} tintColor={themeColors['icon-secondary']} />
                 <Text style={[styles.rowLabel, { color: themeColors.foreground }]}>{pk.name}</Text>
               </View>
               <Pressable

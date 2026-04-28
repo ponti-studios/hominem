@@ -1,6 +1,9 @@
-import { Button, Image, Menu } from '@expo/ui/swift-ui';
-import { buttonStyle, frame } from '@expo/ui/swift-ui/modifiers';
+import { Button, Menu } from '@expo/ui/swift-ui';
+import { buttonStyle } from '@expo/ui/swift-ui/modifiers';
 import type { ArtifactType } from '@hominem/rpc/types';
+import { Pressable } from 'react-native';
+
+import AppIcon from '~/components/ui/icon';
 
 import { buildConversationActionsModel } from './conversation-actions.model';
 
@@ -34,7 +37,9 @@ export function ConversationMenu({
     transformTypes: transformTypes ?? ['note', 'task', 'task_list'],
   });
 
-  const handleAction = (item: ReturnType<typeof buildConversationActionsModel>[number]['items'][number]) => {
+  const handleAction = (
+    item: ReturnType<typeof buildConversationActionsModel>[number]['items'][number],
+  ) => {
     if (item.kind === 'search') {
       onOpenSearch();
     } else if (item.kind === 'toggle-debug') {
@@ -48,8 +53,17 @@ export function ConversationMenu({
 
   return (
     <Menu
-      label={<Image systemName="ellipsis" size={18} />}
-      modifiers={[buttonStyle('borderless'), frame({ width: 44, height: 44 })]}
+      label={
+        <Pressable
+          accessibilityLabel="Conversation actions"
+          accessibilityRole="button"
+          hitSlop={8}
+          style={({ pressed }) => [styles.iconButton, pressed ? styles.iconButtonPressed : null]}
+        >
+          <AppIcon name="ellipsis" size={18} />
+        </Pressable>
+      }
+      modifiers={[buttonStyle('borderless')]}
     >
       {sections.flatMap((section) =>
         section.items.map((item) => (
@@ -64,3 +78,15 @@ export function ConversationMenu({
     </Menu>
   );
 }
+
+const styles = {
+  iconButton: {
+    alignItems: 'center' as const,
+    height: 32,
+    justifyContent: 'center' as const,
+    width: 32,
+  },
+  iconButtonPressed: {
+    opacity: 0.65,
+  },
+};

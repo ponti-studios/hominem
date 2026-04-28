@@ -15,7 +15,7 @@ export default function NotFoundScreen() {
       <Stack.Screen options={{ title: 'Not found' }} />
       <View style={styles.host}>
         <View style={styles.content}>
-          <AppIcon color={themeColors['icon-secondary']} name="questionmark.circle" size={32} />
+          <AppIcon name="questionmark.circle" size={32} tintColor={themeColors['icon-secondary']} />
           <Text style={[styles.title, { color: themeColors.foreground }]}>Resource not found</Text>
           <Text style={[styles.message, { color: themeColors['text-secondary'] }]}>
             The page you opened is not available.

@@ -32,7 +32,7 @@ function EmptyState({
       style={[styles.container, { paddingBottom: bottomOffset }]}
     >
       <View style={styles.content}>
-        <AppIcon color={themeColors['icon-secondary']} name={sfSymbol} size={28} />
+        <AppIcon name={sfSymbol} size={28} tintColor={themeColors['icon-secondary']} />
         <Text style={[styles.title, { color: themeColors.foreground }]}>{title}</Text>
         {description ? (
           <Text style={[styles.description, { color: themeColors['text-secondary'] }]}>

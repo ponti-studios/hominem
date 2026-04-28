@@ -37,11 +37,14 @@ import {
 } from '~/services/inbox/inbox-refresh';
 import { chatKeys } from '~/services/notes/query-keys';
 
-const renderChatIcon: ChatRenderIcon = (name, props) => (
-  <View style={props.style}>
-    <AppIcon name={name} size={props.size} color={props.color} />
-  </View>
-);
+const renderChatIcon: ChatRenderIcon = (name, props) => {
+  const tintColor = props.color;
+  return (
+    <View style={props.style}>
+      <AppIcon name={name} size={props.size} tintColor={tintColor} />
+    </View>
+  );
+};
 
 export default function ChatDetailScreen() {
   const { id, initialMessage } = useLocalSearchParams<{ id: string; initialMessage?: string }>();
@@ -157,7 +160,7 @@ export default function ChatDetailScreen() {
               { opacity: isCreatingChat ? 0.35 : pressed ? 0.65 : 1 },
             ]}
           >
-            <AppIcon color={themeColors['icon-primary']} name="square.and.pencil" size={18} />
+            <AppIcon name="square.and.pencil" size={18} tintColor={themeColors['icon-primary']} />
           </Pressable>
         </View>
       ),

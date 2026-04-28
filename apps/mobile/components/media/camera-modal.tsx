@@ -97,7 +97,7 @@ export function CameraModal({ visible, onCapture, onClose }: CameraModalProps) {
                   style={styles.sideButton}
                   accessibilityLabel="Close camera"
                 >
-                  <AppIcon name="xmark" size={20} color={theme.colors.white} />
+                  <AppIcon name="xmark" size={20} tintColor={theme.colors.white} />
                 </Pressable>
 
                 <Pressable
@@ -114,7 +114,7 @@ export function CameraModal({ visible, onCapture, onClose }: CameraModalProps) {
                   style={styles.sideButton}
                   accessibilityLabel="Flip camera"
                 >
-                  <AppIcon name="camera.rotate" size={20} color={theme.colors.white} />
+                  <AppIcon name="camera.rotate" size={20} tintColor={theme.colors.white} />
                 </Pressable>
               </View>
             </Camera>

@@ -186,8 +186,14 @@ function AuthScreen() {
         style={[styles.container, { backgroundColor: palette.background }]}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <View pointerEvents="none" style={[styles.orbPrimary, { backgroundColor: palette.orbPrimary }]} />
-        <View pointerEvents="none" style={[styles.orbSecondary, { backgroundColor: palette.orbSecondary }]} />
+        <View
+          pointerEvents="none"
+          style={[styles.orbPrimary, { backgroundColor: palette.orbPrimary }]}
+        />
+        <View
+          pointerEvents="none"
+          style={[styles.orbSecondary, { backgroundColor: palette.orbSecondary }]}
+        />
 
         <ScrollView
           testID="auth-screen"
@@ -198,7 +204,7 @@ function AuthScreen() {
           <View style={styles.contentShell}>
             <View style={styles.card}>
               <View style={[styles.iconChip, { backgroundColor: palette.iconChip }]}>
-                <AppIcon color={palette.icon} name="envelope" size={18} />
+                <AppIcon name="envelope" size={18} tintColor={palette.icon} />
               </View>
 
               <View style={styles.copyBlock}>

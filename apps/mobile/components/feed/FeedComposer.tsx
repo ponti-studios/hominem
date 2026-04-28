@@ -89,7 +89,7 @@ function AttachmentRow({
               <Image source={{ uri: a.localUri }} style={styles.thumbImage} contentFit="cover" />
             )}
             <View style={styles.thumbBadge} pointerEvents="none">
-              <AppIcon name="xmark" size={spacing[2] * 2} color={themeColors.white} />
+              <AppIcon name="xmark" size={spacing[2] * 2} tintColor={themeColors.white} />
             </View>
             {uploading && (
               <>
@@ -337,7 +337,7 @@ export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerPro
                 pressed ? styles.iconButtonPressed : null,
               ]}
             >
-              <AppIcon name="plus" size={18} color={themeColors['text-secondary']} />
+              <AppIcon name="plus" size={18} tintColor={themeColors['text-secondary']} />
             </Pressable>
           </View>
           <View style={styles.actionGroup}>
@@ -351,7 +351,7 @@ export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerPro
                 pressed ? styles.iconButtonPressed : null,
               ]}
             >
-              <AppIcon name="waveform" size={18} color={themeColors['text-secondary']} />
+              <AppIcon name="waveform" size={18} tintColor={themeColors['text-secondary']} />
             </Pressable>
             <GlassActionButton
               onSave={() => void handleSave()}

@@ -60,7 +60,7 @@ export function VoiceSessionModal({
             accessibilityLabel="Close voice input"
             accessibilityRole="button"
           >
-            <AppIcon name="xmark" size={20} color={theme.colors.foreground} />
+            <AppIcon name="xmark" size={20} tintColor={theme.colors.foreground} />
           </Pressable>
         </View>
 

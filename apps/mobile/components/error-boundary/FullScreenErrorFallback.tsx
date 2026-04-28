@@ -20,7 +20,7 @@ export function FullScreenErrorFallback({
   return (
     <View style={styles.host}>
       <View style={styles.content}>
-        <AppIcon color="#FF7B5C" name="exclamationmark.triangle.fill" size={28} />
+        <AppIcon name="exclamationmark.triangle.fill" size={28} tintColor="#FF7B5C" />
         <Text style={[styles.title, { color: themeColors.foreground }]}>Something went wrong</Text>
         <Text style={[styles.message, { color: themeColors['text-secondary'] }]}>{message}</Text>
         <Button label={actionLabel} onPress={onPress} variant="primary" />

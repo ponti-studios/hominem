@@ -80,7 +80,11 @@ function VerifyScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const { isSignedIn, requestEmailOtp, verifyEmailOtp } = useAuth();
-  const { email: emailParam, token: tokenParam, sentAt: sentAtParam } = useLocalSearchParams<{
+  const {
+    email: emailParam,
+    token: tokenParam,
+    sentAt: sentAtParam,
+  } = useLocalSearchParams<{
     email: string;
     token?: string;
     sentAt?: string;
@@ -93,11 +97,17 @@ function VerifyScreen() {
     sentAtParam ? Number(sentAtParam) : Date.now(),
   );
   const [secondsLeft, setSecondsLeft] = React.useState(() =>
-    Math.max(0, OTP_EXPIRES_SECONDS - Math.floor((Date.now() - (sentAtParam ? Number(sentAtParam) : Date.now())) / 1000)),
+    Math.max(
+      0,
+      OTP_EXPIRES_SECONDS -
+        Math.floor((Date.now() - (sentAtParam ? Number(sentAtParam) : Date.now())) / 1000),
+    ),
   );
 
   React.useEffect(() => {
-    setSecondsLeft(Math.max(0, OTP_EXPIRES_SECONDS - Math.floor((Date.now() - tokenSentAt) / 1000)));
+    setSecondsLeft(
+      Math.max(0, OTP_EXPIRES_SECONDS - Math.floor((Date.now() - tokenSentAt) / 1000)),
+    );
     const id = setInterval(() => {
       const left = Math.max(0, OTP_EXPIRES_SECONDS - Math.floor((Date.now() - tokenSentAt) / 1000));
       setSecondsLeft(left);
@@ -194,10 +204,12 @@ function VerifyScreen() {
 
   if (verifySucceeded) {
     return (
-      <View style={[styles.container, styles.successContainer, { backgroundColor: palette.background }]}>
+      <View
+        style={[styles.container, styles.successContainer, { backgroundColor: palette.background }]}
+      >
         <Animated.View entering={FadeIn.duration(300)} style={styles.successContent}>
           <View style={[styles.successChip, { backgroundColor: palette.iconChip }]}>
-            <AppIcon color={palette.success} name="checkmark.circle.fill" size={32} />
+            <AppIcon name="checkmark.circle.fill" size={32} tintColor={palette.success} />
           </View>
           <Text style={[styles.successText, { color: palette.textPrimary }]}>Signed in</Text>
         </Animated.View>
@@ -210,8 +222,14 @@ function VerifyScreen() {
       style={[styles.container, { backgroundColor: palette.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View pointerEvents="none" style={[styles.orbPrimary, { backgroundColor: palette.orbPrimary }]} />
-      <View pointerEvents="none" style={[styles.orbSecondary, { backgroundColor: palette.orbSecondary }]} />
+      <View
+        pointerEvents="none"
+        style={[styles.orbPrimary, { backgroundColor: palette.orbPrimary }]}
+      />
+      <View
+        pointerEvents="none"
+        style={[styles.orbSecondary, { backgroundColor: palette.orbSecondary }]}
+      />
 
       <ScrollView
         testID="auth-verify-screen"
@@ -222,7 +240,7 @@ function VerifyScreen() {
         <View style={styles.contentShell}>
           <View style={styles.card}>
             <View style={[styles.iconChip, { backgroundColor: palette.iconChip }]}>
-              <AppIcon color={palette.icon} name="lock.shield" size={18} />
+              <AppIcon name="lock.shield" size={18} tintColor={palette.icon} />
             </View>
 
             <View style={styles.copyBlock}>
@@ -247,7 +265,7 @@ function VerifyScreen() {
                   <Text style={[styles.emailChipText, { color: palette.textPrimary }]}>
                     {maskEmail(resolvedEmail)}
                   </Text>
-                  <AppIcon color={palette.textSecondary} name="pencil" size={11} />
+                  <AppIcon name="pencil" size={11} tintColor={palette.textSecondary} />
                 </Pressable>
               </View>
             </View>

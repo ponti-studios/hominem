@@ -31,7 +31,7 @@ export function ChatSearchModal({
             <View style={styles.headerRow}>
               <Text style={styles.title}>Search messages</Text>
               <Pressable hitSlop={8} onPress={onClose} style={styles.closeButton}>
-                <AppIcon name="xmark" size={16} color={styles.closeIcon.color} />
+                <AppIcon name="xmark" size={16} tintColor={styles.closeIcon.color} />
               </Pressable>
             </View>
 

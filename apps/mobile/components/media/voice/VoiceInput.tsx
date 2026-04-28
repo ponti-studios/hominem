@@ -1,4 +1,4 @@
-import { Host as SwiftUIHost, ProgressView } from '@expo/ui/swift-ui';
+import { ProgressView, Host as SwiftUIHost } from '@expo/ui/swift-ui';
 import { progressViewStyle } from '@expo/ui/swift-ui/modifiers';
 import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useState } from 'react';
@@ -168,10 +168,10 @@ export function VoiceInput({
             </SwiftUIHost>
           ) : null}
           {!isTranscribing && isRecording ? (
-            <AppIcon name="stop.fill" size={24} color={theme.colors.foreground} />
+            <AppIcon name="stop.fill" size={24} tintColor={theme.colors.foreground} />
           ) : null}
           {!isTranscribing && !isRecording ? (
-            <AppIcon name="mic" size={24} color={theme.colors.foreground} />
+            <AppIcon name="mic" size={24} tintColor={theme.colors.foreground} />
           ) : null}
         </AnimatedPressable>
         {isRecording || isPaused ? (
@@ -183,12 +183,12 @@ export function VoiceInput({
         ) : null}
         {isRecording ? (
           <Pressable onPress={onPausePress} style={styles.pauseButton}>
-            <AppIcon name="clock" size={20} color={theme.colors.foreground} />
+            <AppIcon name="clock" size={20} tintColor={theme.colors.foreground} />
           </Pressable>
         ) : null}
         {isPaused ? (
           <Pressable onPress={onResumePress} style={styles.pauseButton}>
-            <AppIcon name="arrow.clockwise" size={20} color={theme.colors.foreground} />
+            <AppIcon name="arrow.clockwise" size={20} tintColor={theme.colors.foreground} />
           </Pressable>
         ) : null}
       </View>

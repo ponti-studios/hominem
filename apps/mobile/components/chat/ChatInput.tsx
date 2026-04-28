@@ -1,14 +1,23 @@
-import { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { Host as SwiftUIHost, ProgressView } from '@expo/ui/swift-ui';
+import { ProgressView, Host as SwiftUIHost } from '@expo/ui/swift-ui';
 import { frame, progressViewStyle } from '@expo/ui/swift-ui/modifiers';
+import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { useApiClient } from '@hominem/rpc/react';
 import type { NoteSearchResult } from '@hominem/rpc/types';
 import { radii, spacing } from '@hominem/ui/tokens';
 import { useQueryClient } from '@tanstack/react-query';
 import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
+import { SFSymbol } from 'expo-symbols';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActionSheetIOS, Pressable, ScrollView, StyleSheet, TextInput, View, useColorScheme } from 'react-native';
+import {
+  ActionSheetIOS,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
+  useColorScheme,
+} from 'react-native';
 import { useAnimatedKeyboard } from 'react-native-keyboard-controller';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -56,7 +65,7 @@ function MediaButton({
   accessibilityLabel,
   disabled = false,
 }: {
-  icon: string;
+  icon: SFSymbol;
   onPress: () => void;
   accessibilityLabel: string;
   disabled?: boolean;
@@ -76,11 +85,7 @@ function MediaButton({
         pressed ? styles.mediaBtnPressed : null,
       ]}
     >
-      <AppIcon
-        name={icon as any}
-        size={MEDIA_BTN_ICON_SIZE}
-        color={themeColors['text-secondary']}
-      />
+      <AppIcon name={icon} size={MEDIA_BTN_ICON_SIZE} tintColor={themeColors['text-secondary']} />
     </Pressable>
   );
 }
@@ -162,7 +167,7 @@ function AttachmentRow({
                   />
                 )}
                 <View style={styles.thumbBadge} pointerEvents="none">
-                  <AppIcon name="xmark" size={spacing[2] * 2} color={themeColors.white} />
+                  <AppIcon name="xmark" size={spacing[2] * 2} tintColor={themeColors.white} />
                 </View>
                 {uploading && (
                   <>
@@ -203,7 +208,7 @@ function SelectionSummary({
     <View style={styles.selectionRow}>
       {selectedNotes.map((note) => (
         <View key={note.id} style={styles.selectionChip}>
-          <AppIcon name="bubble.left" size={spacing[3]} color={themeColors['text-secondary']} />
+          <AppIcon name="bubble.left" size={spacing[3]} tintColor={themeColors['text-secondary']} />
           <Animated.Text style={styles.selectionChipText}>
             {note.title || 'Untitled note'}
           </Animated.Text>
@@ -217,7 +222,7 @@ function SelectionSummary({
               pressed ? styles.selectionChipButtonPressed : null,
             ]}
           >
-            <AppIcon name="xmark" size={spacing[2] + 2} color={themeColors['text-secondary']} />
+            <AppIcon name="xmark" size={spacing[2] + 2} tintColor={themeColors['text-secondary']} />
           </Pressable>
         </View>
       ))}

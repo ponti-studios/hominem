@@ -90,7 +90,7 @@ export const InboxStream = ({
       >
         <View style={styles.empty}>
           <View style={styles.emptyIcon}>
-            <AppIcon name="sparkles" size={24} color={styles.emptyIconSymbol.color} />
+            <AppIcon name="sparkles" size={24} tintColor={styles.emptyIconSymbol.color} />
           </View>
           <Text variant="title2" color="foreground" style={styles.emptyTitle}>
             Your workspace starts here
@@ -113,7 +113,7 @@ export const InboxStream = ({
               {SAMPLE_ITEMS.map((item) => (
                 <View key={item.title} style={styles.sampleRow}>
                   <View style={styles.sampleIcon}>
-                    <AppIcon name={item.icon} size={15} color={styles.sampleIconSymbol.color} />
+                    <AppIcon name={item.icon} size={15} tintColor={styles.sampleIconSymbol.color} />
                   </View>
                   <View style={styles.sampleText}>
                     <Text variant="subhead" color="foreground" numberOfLines={1}>
@@ -138,7 +138,11 @@ export const InboxStream = ({
                 style={({ pressed }) => [styles.starter, pressed ? styles.starterPressed : null]}
               >
                 <View style={styles.starterIcon}>
-                  <AppIcon name={starter.icon} size={16} color={styles.starterIconSymbol.color} />
+                  <AppIcon
+                    name={starter.icon}
+                    size={16}
+                    tintColor={styles.starterIconSymbol.color}
+                  />
                 </View>
                 <View style={styles.starterText}>
                   <Text variant="subhead" color="foreground" numberOfLines={1}>

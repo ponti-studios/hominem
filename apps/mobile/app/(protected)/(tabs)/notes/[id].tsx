@@ -123,7 +123,7 @@ function NoteDetailEditor({
             width: 36,
           })}
         >
-          <AppIcon color={themeColors['icon-primary']} name="bubble.left" size={18} />
+          <AppIcon name="bubble.left" size={18} tintColor={themeColors['icon-primary']} />
         </Pressable>
       ),
     });
@@ -238,7 +238,7 @@ function NoteDetailEditor({
                       pressed ? styles.filePillDetachButtonPressed : null,
                     ]}
                   >
-                    <AppIcon color={themeColors['text-tertiary']} name="xmark" size={12} />
+                    <AppIcon name="xmark" size={12} tintColor={themeColors['text-tertiary']} />
                   </Pressable>
                 </View>
               ))}
