@@ -1,22 +1,9 @@
-import {
-  Button as SwiftUIButton,
-  Host as SwiftUIHost,
-  Text as SwiftUIText,
-  VStack,
-} from '@expo/ui/swift-ui';
-import {
-  buttonStyle,
-  disabled as disabledModifier,
-  font,
-  foregroundStyle,
-  frame,
-  padding,
-} from '@expo/ui/swift-ui/modifiers';
 import type { ArtifactType } from '@hominem/rpc/types';
-import { Modal, Pressable, View } from 'react-native';
+import { Modal, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { makeStyles, radii, spacing } from '~/components/theme';
+import { useThemeColors } from '~/components/theme/theme';
 
 import { buildConversationActionsModel } from './conversation-actions.model';
 
@@ -35,6 +22,51 @@ interface ConversationActionsSheetProps {
   onToggleDebug: () => void;
   onTransform: (type: ConversationActionType) => void;
   onArchive: () => void;
+}
+
+function SheetActionButton({
+  disabled = false,
+  emphasized = false,
+  label,
+  onPress,
+}: {
+  disabled?: boolean;
+  emphasized?: boolean;
+  label: string;
+  onPress: () => void;
+}) {
+  const themeColors = useThemeColors();
+
+  return (
+    <Pressable
+      disabled={disabled}
+      onPress={onPress}
+      style={({ pressed }) => [
+        {
+          alignItems: 'center',
+          backgroundColor: emphasized ? themeColors.foreground : 'transparent',
+          borderColor: themeColors['border-default'],
+          borderRadius: radii.md,
+          borderWidth: 1,
+          justifyContent: 'center',
+          minHeight: 44,
+          opacity: disabled ? 0.5 : pressed ? 0.7 : 1,
+          paddingHorizontal: spacing[3],
+          paddingVertical: spacing[2],
+        },
+      ]}
+    >
+      <Text
+        style={{
+          color: emphasized ? themeColors.background : themeColors.foreground,
+          fontSize: 16,
+          fontWeight: '600',
+        }}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
 }
 
 export function ConversationActionsSheet({
@@ -72,78 +104,45 @@ export function ConversationActionsSheet({
       <Pressable onPress={onClose} style={styles.overlay}>
         <Pressable onPress={() => {}} style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
           <View style={styles.handle} />
-          <SwiftUIHost matchContents style={styles.host}>
-            <VStack spacing={16} modifiers={[padding({ horizontal: spacing[4], vertical: 4 })]}>
-              <VStack spacing={4}>
-                <SwiftUIText modifiers={[font({ size: 20, weight: 'semibold' })]}>
-                  {title}
-                </SwiftUIText>
-                {statusCopy ? (
-                  <SwiftUIText
-                    modifiers={[
-                      font({ size: 13 }),
-                      foregroundStyle({ type: 'hierarchical', style: 'secondary' }),
-                    ]}
-                  >
-                    {statusCopy}
-                  </SwiftUIText>
-                ) : null}
-              </VStack>
+          <View style={styles.content}>
+            <View style={styles.headerBlock}>
+              <Text style={styles.title}>{title}</Text>
+              {statusCopy ? <Text style={styles.statusCopy}>{statusCopy}</Text> : null}
+            </View>
 
-              {sections.map((section) => (
-                <VStack key={section.title} spacing={8}>
-                  <SwiftUIText
-                    modifiers={[
-                      font({ size: 12, weight: 'semibold' }),
-                      foregroundStyle({ type: 'hierarchical', style: 'secondary' }),
-                    ]}
-                  >
-                    {section.title.toUpperCase()}
-                  </SwiftUIText>
-                  {section.items.map((item) => {
-                    const isArchiveAction = item.kind === 'archive';
+            {sections.map((section) => (
+              <View key={section.title} style={styles.sectionBlock}>
+                <Text style={styles.sectionTitle}>{section.title.toUpperCase()}</Text>
+                {section.items.map((item) => {
+                  const isArchiveAction = item.kind === 'archive';
 
-                    return (
-                      <SwiftUIButton
-                        key={`${section.title}:${item.label}`}
-                        label={isArchiveAction && isArchiving ? 'Archiving...' : item.label}
-                        onPress={() =>
-                          handlePress(() => {
-                            if (item.kind === 'search') {
-                              onOpenSearch();
-                            } else if (item.kind === 'toggle-debug') {
-                              onToggleDebug();
-                            } else if (item.kind === 'transform' && item.type) {
-                              onTransform(item.type);
-                            } else if (isArchiveAction) {
-                              onArchive();
-                            }
-                          })
-                        }
-                        modifiers={[
-                          buttonStyle(isArchiveAction ? 'borderedProminent' : 'bordered'),
-                          disabledModifier(isArchiveAction && isArchiving),
-                          frame({ maxWidth: Number.POSITIVE_INFINITY }),
-                          ...(isArchiveAction
-                            ? [foregroundStyle({ type: 'color', color: 'red' })]
-                            : []),
-                        ]}
-                      />
-                    );
-                  })}
-                </VStack>
-              ))}
+                  return (
+                    <SheetActionButton
+                      key={`${section.title}:${item.label}`}
+                      disabled={isArchiveAction && isArchiving}
+                      emphasized={isArchiveAction}
+                      label={isArchiveAction && isArchiving ? 'Archiving...' : item.label}
+                      onPress={() =>
+                        handlePress(() => {
+                          if (item.kind === 'search') {
+                            onOpenSearch();
+                          } else if (item.kind === 'toggle-debug') {
+                            onToggleDebug();
+                          } else if (item.kind === 'transform' && item.type) {
+                            onTransform(item.type);
+                          } else if (isArchiveAction) {
+                            onArchive();
+                          }
+                        })
+                      }
+                    />
+                  );
+                })}
+              </View>
+            ))}
 
-              <SwiftUIButton
-                label="Cancel"
-                onPress={onClose}
-                modifiers={[
-                  buttonStyle('borderless'),
-                  frame({ maxWidth: Number.POSITIVE_INFINITY }),
-                ]}
-              />
-            </VStack>
-          </SwiftUIHost>
+            <SheetActionButton label="Cancel" onPress={onClose} />
+          </View>
         </Pressable>
       </Pressable>
     </Modal>
@@ -151,6 +150,11 @@ export function ConversationActionsSheet({
 }
 
 const useConvActionsStyles = makeStyles((theme) => ({
+  content: {
+    gap: 16,
+    paddingHorizontal: spacing[4],
+    paddingVertical: 4,
+  },
   handle: {
     alignSelf: 'center',
     backgroundColor: theme.colors['border-default'],
@@ -159,13 +163,21 @@ const useConvActionsStyles = makeStyles((theme) => ({
     marginBottom: spacing[1],
     width: 36,
   },
-  host: {
-    alignSelf: 'stretch',
+  headerBlock: {
+    gap: 4,
   },
   overlay: {
     backgroundColor: theme.colors['overlay-modal-high'],
     flex: 1,
     justifyContent: 'flex-end',
+  },
+  sectionBlock: {
+    gap: 8,
+  },
+  sectionTitle: {
+    color: theme.colors['text-secondary'],
+    fontSize: 12,
+    fontWeight: '600',
   },
   sheet: {
     backgroundColor: theme.colors.background,
@@ -175,5 +187,14 @@ const useConvActionsStyles = makeStyles((theme) => ({
     borderTopWidth: 1,
     paddingHorizontal: spacing[1],
     paddingTop: spacing[5],
+  },
+  statusCopy: {
+    color: theme.colors['text-secondary'],
+    fontSize: 13,
+  },
+  title: {
+    color: theme.colors.foreground,
+    fontSize: 20,
+    fontWeight: '600',
   },
 }));

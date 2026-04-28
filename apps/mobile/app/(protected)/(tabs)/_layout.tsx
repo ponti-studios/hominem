@@ -1,27 +1,29 @@
-import {
-  Button as SwiftUIButton,
-  Host as SwiftUIHost,
-  Image as SwiftUIImage,
-} from '@expo/ui/swift-ui';
-import { buttonStyle, frame } from '@expo/ui/swift-ui/modifiers';
 import { Stack, useRouter, type RelativePathString } from 'expo-router';
 import React from 'react';
+import { Pressable } from 'react-native';
 
 import { useThemeColors } from '~/components/theme/theme';
+import AppIcon from '~/components/ui/icon';
 import { TopAnchoredFeedProvider } from '~/services/inbox/top-anchored-feed';
 
 function SettingsButton() {
   const router = useRouter();
+  const themeColors = useThemeColors();
 
   return (
-    <SwiftUIHost style={{ width: 44, height: 44 }}>
-      <SwiftUIButton
-        onPress={() => router.push('/(protected)/(tabs)/settings' as RelativePathString)}
-        modifiers={[buttonStyle('borderless'), frame({ width: 44, height: 44 })]}
-      >
-        <SwiftUIImage systemName="gearshape" size={18} />
-      </SwiftUIButton>
-    </SwiftUIHost>
+    <Pressable
+      hitSlop={6}
+      onPress={() => router.push('/(protected)/(tabs)/settings' as RelativePathString)}
+      style={({ pressed }) => ({
+        alignItems: 'center',
+        height: 44,
+        justifyContent: 'center',
+        opacity: pressed ? 0.65 : 1,
+        width: 44,
+      })}
+    >
+      <AppIcon color={themeColors['icon-primary']} name="gearshape" size={18} />
+    </Pressable>
   );
 }
 

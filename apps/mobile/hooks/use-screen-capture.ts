@@ -1,5 +1,5 @@
 import * as ScreenCapture from 'expo-screen-capture';
-import { useEffect } from 'react';
+import { useCallback, useSyncExternalStore } from 'react';
 
 import { E2E_TESTING } from '~/constants';
 import { storage } from '~/services/storage/mmkv';
@@ -17,15 +17,22 @@ export function setPreventScreenshots(value: boolean) {
 export function useScreenCapture() {
   const enabled = getPreventScreenshots();
 
-  useEffect(() => {
-    if (E2E_TESTING) {
-      return;
-    }
+  const subscribe = useCallback(
+    (_onStoreChange: () => void) => {
+      if (E2E_TESTING) {
+        return () => {};
+      }
 
-    if (enabled) {
-      void ScreenCapture.preventScreenCaptureAsync();
-    } else {
-      void ScreenCapture.allowScreenCaptureAsync();
-    }
-  }, [enabled]);
+      if (enabled) {
+        void ScreenCapture.preventScreenCaptureAsync();
+      } else {
+        void ScreenCapture.allowScreenCaptureAsync();
+      }
+
+      return () => {};
+    },
+    [enabled],
+  );
+
+  useSyncExternalStore(subscribe, () => enabled, () => enabled);
 }

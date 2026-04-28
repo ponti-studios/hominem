@@ -1,6 +1,6 @@
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, type QueryClient } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
 
 interface RegisterSWOptions {
   immediate?: boolean;
@@ -32,7 +32,32 @@ interface UpdateGuardProps {
   appName?: string;
 }
 
-const UPDATE_INTERVAL_MS = 60 * 60 * 1000;
+function subscribeOnline(onStoreChange: () => void) {
+  if (typeof window === 'undefined') {
+    return () => {};
+  }
+
+  window.addEventListener('online', onStoreChange);
+  window.addEventListener('offline', onStoreChange);
+
+  return () => {
+    window.removeEventListener('online', onStoreChange);
+    window.removeEventListener('offline', onStoreChange);
+  };
+}
+
+function getOnlineSnapshot() {
+  if (typeof navigator === 'undefined') {
+    return true;
+  }
+
+  return navigator.onLine;
+}
+
+function hasStaleQueryData(queryClient: QueryClient): boolean {
+  const queries = queryClient.getQueryCache().getAll();
+  return queries.some((query) => query.state.data !== undefined && query.isStale());
+}
 
 function UpdateGuardClient({
   logo = '/logo.web.png',
@@ -41,10 +66,7 @@ function UpdateGuardClient({
   void logo;
   void appName;
 
-  const [isOnline, setIsOnline] = useState(true);
-  const [hasStaleData, setHasStaleData] = useState(false);
   const queryClient = useQueryClient();
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isDev =
     typeof import.meta !== 'undefined' &&
     typeof import.meta.env !== 'undefined' &&
@@ -56,61 +78,32 @@ function UpdateGuardClient({
     updateServiceWorker,
   } = useRegisterSW({
     immediate: true,
-    onRegistered(registration: ServiceWorkerRegistration | undefined) {
-      if (registration) {
-        intervalRef.current = setInterval(() => {
-          void registration.update();
-        }, UPDATE_INTERVAL_MS);
-      }
+    onRegistered() {
+      // Service worker refresh is intentionally managed by vite-plugin-pwa.
     },
-    onRegisterError(_error: Error) {
-      // Service worker registration errors are non-critical
+    onRegisterError() {
+      // Service worker registration errors are non-critical.
     },
   });
 
-  useEffect(() => {
-    setIsOnline(navigator.onLine);
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+  const isOnline = useSyncExternalStore(subscribeOnline, getOnlineSnapshot, () => true);
 
-    if (isDev) {
-      if ('serviceWorker' in navigator) {
-        void navigator.serviceWorker.getRegistrations().then((registrations) => {
-          for (const registration of registrations) {
-            void registration.unregister();
-          }
-        });
-      }
+  const subscribeQueryStaleState = useCallback(
+    (onStoreChange: () => void) => {
+      const unsubscribe = queryClient.getQueryCache().subscribe(() => {
+        onStoreChange();
+      });
+
       return () => {
-        window.removeEventListener('online', handleOnline);
-        window.removeEventListener('offline', handleOffline);
-        if (intervalRef.current) clearInterval(intervalRef.current);
+        unsubscribe();
       };
-    }
+    },
+    [queryClient],
+  );
 
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [isDev]);
+  const getQueryStaleSnapshot = useCallback(() => hasStaleQueryData(queryClient), [queryClient]);
 
-  useEffect(() => {
-    const updateStaleState = () => {
-      const queries = queryClient.getQueryCache().getAll();
-      const hasStale = queries.some((query) => query.state.data !== undefined && query.isStale());
-      setHasStaleData(hasStale);
-    };
-
-    updateStaleState();
-
-    const unsubscribe = queryClient.getQueryCache().subscribe(updateStaleState);
-    return () => {
-      unsubscribe();
-    };
-  }, [queryClient]);
+  const hasStaleData = useSyncExternalStore(subscribeQueryStaleState, getQueryStaleSnapshot, () => false);
 
   const closePrompt = () => {
     setOfflineReady(false);
@@ -122,8 +115,8 @@ function UpdateGuardClient({
       return null;
     }
     return hasStaleData
-      ? 'Offline — showing cached data where available'
-      : 'Offline — data may be unavailable';
+      ? 'Offline - showing cached data where available'
+      : 'Offline - data may be unavailable';
   }, [hasStaleData, isOnline]);
 
   return (
@@ -161,16 +154,12 @@ function UpdateGuardClient({
 }
 
 export function UpdateGuard({ children, logo = '', appName = 'App' }: UpdateGuardProps) {
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+  const isClient = typeof window !== 'undefined';
 
   return (
     <>
       {children}
-      {isMounted ? <UpdateGuardClient logo={logo} appName={appName} /> : null}
+      {isClient ? <UpdateGuardClient logo={logo} appName={appName} /> : null}
     </>
   );
 }

@@ -1,19 +1,7 @@
 import type { MarkdownStyle } from '@expensify/react-native-live-markdown';
 import { MarkdownTextInput } from '@expensify/react-native-live-markdown';
-import {
-  Button as SwiftUIButton,
-  Host as SwiftUIHost,
-  Image as SwiftUIImage,
-  TextField as SwiftUITextField,
-} from '@expo/ui/swift-ui';
-import {
-  accessibilityLabel,
-  buttonStyle,
-  font,
-  frame,
-  submitLabel,
-  textFieldStyle,
-} from '@expo/ui/swift-ui/modifiers';
+import { Host as SwiftUIHost, TextField as SwiftUITextField } from '@expo/ui/swift-ui';
+import { font, frame, submitLabel, textFieldStyle } from '@expo/ui/swift-ui/modifiers';
 import { useApiClient } from '@hominem/rpc/react';
 import type { Note } from '@hominem/rpc/types';
 import { useNavigation } from '@react-navigation/native';
@@ -21,12 +9,13 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useLayoutEffect, useRef } from 'react';
-import { ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 
 import { parseNoteMarkdown } from '~/components/notes/note-markdown-parser';
 import { NOTE_TOOLBAR_ID, NoteToolbar } from '~/components/notes/NoteToolbar';
 import { Text, makeStyles } from '~/components/theme';
 import { useThemeColors } from '~/components/theme/theme';
+import AppIcon from '~/components/ui/icon';
 import { useNoteEditor } from '~/hooks/use-note-editor';
 import { useNoteToolbar } from '~/hooks/use-note-toolbar';
 import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
@@ -123,17 +112,22 @@ function NoteDetailEditor({
     navigation.setOptions({
       title: title?.trim() || note.title || 'Note',
       headerRight: () => (
-        <SwiftUIHost style={{ width: 36, height: 36 }}>
-          <SwiftUIButton
-            onPress={() => router.push(`/(protected)/(tabs)/chat/${note.id}`)}
-            modifiers={[buttonStyle('borderless'), frame({ width: 36, height: 36 })]}
-          >
-            <SwiftUIImage systemName="bubble.left" size={18} />
-          </SwiftUIButton>
-        </SwiftUIHost>
+        <Pressable
+          hitSlop={6}
+          onPress={() => router.push(`/(protected)/(tabs)/chat/${note.id}`)}
+          style={({ pressed }) => ({
+            alignItems: 'center',
+            height: 36,
+            justifyContent: 'center',
+            opacity: pressed ? 0.65 : 1,
+            width: 36,
+          })}
+        >
+          <AppIcon color={themeColors['icon-primary']} name="bubble.left" size={18} />
+        </Pressable>
       ),
     });
-  }, [navigation, note.id, note.title, router, title]);
+  }, [navigation, note.id, note.title, router, themeColors, title]);
 
   const markdownStyle: MarkdownStyle = {
     syntax: { color: themeColors['text-tertiary'] },
@@ -234,22 +228,18 @@ function NoteDetailEditor({
                   <Text style={styles.filePillName} numberOfLines={1}>
                     {file.originalName}
                   </Text>
-                  <SwiftUIHost matchContents style={styles.filePillDetachHost}>
-                    <SwiftUIButton
-                      onPress={() => void handleDetach(file.id)}
-                      modifiers={[
-                        accessibilityLabel(`Remove ${file.originalName}`),
-                        buttonStyle('plain'),
-                        frame({ width: 24, height: 24 }),
-                      ]}
-                    >
-                      <SwiftUIImage
-                        systemName="xmark"
-                        size={12}
-                        color={themeColors['text-tertiary']}
-                      />
-                    </SwiftUIButton>
-                  </SwiftUIHost>
+                  <Pressable
+                    accessibilityLabel={`Remove ${file.originalName}`}
+                    accessibilityRole="button"
+                    hitSlop={6}
+                    onPress={() => void handleDetach(file.id)}
+                    style={({ pressed }) => [
+                      styles.filePillDetachButton,
+                      pressed ? styles.filePillDetachButtonPressed : null,
+                    ]}
+                  >
+                    <AppIcon color={themeColors['text-tertiary']} name="xmark" size={12} />
+                  </Pressable>
                 </View>
               ))}
             </View>
@@ -329,8 +319,13 @@ const useNoteStyles = makeStyles((theme) => ({
     fontSize: 13,
     color: theme.colors['text-secondary'],
   },
-  filePillDetachHost: {
+  filePillDetachButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
     width: 24,
     height: 24,
+  },
+  filePillDetachButtonPressed: {
+    opacity: 0.65,
   },
 }));

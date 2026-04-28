@@ -1,16 +1,11 @@
-import {
-  Button as SwiftUIButton,
-  Host as SwiftUIHost,
-  Image as SwiftUIImage,
-  Text as SwiftUIText,
-  VStack,
-} from '@expo/ui/swift-ui';
-import { buttonStyle, font, foregroundStyle, frame, padding } from '@expo/ui/swift-ui/modifiers';
 import { useCallback, type ReactNode } from 'react';
 import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { logError } from '~/components/error-boundary/log-error';
+import { useThemeColors } from '~/components/theme/theme';
+import { Button } from '~/components/ui/button';
+import AppIcon from '~/components/ui/icon';
 
 interface Props {
   children: ReactNode;
@@ -33,45 +28,26 @@ function FeatureFallback({
   featureName,
 }: FallbackProps & { featureName?: string }) {
   const message = error instanceof Error ? error.message : String(error);
+  const themeColors = useThemeColors();
 
   return (
-    <SwiftUIHost style={styles.host} useViewportSizeMeasurement>
-      <VStack
-        alignment="center"
-        spacing={12}
-        modifiers={[frame({ maxWidth: 360 }), padding({ all: 24 })]}
-      >
-        <SwiftUIImage systemName="exclamationmark.triangle.fill" size={28} color="#FF7B5C" />
-        <SwiftUIText modifiers={[font({ size: 22, weight: 'bold' })]}>
-          Something went wrong
-        </SwiftUIText>
-        <SwiftUIText
-          modifiers={[
-            font({ size: 16 }),
-            foregroundStyle({ type: 'hierarchical', style: 'secondary' }),
-          ]}
-        >
+    <View style={styles.host}>
+      <View style={styles.content}>
+        <AppIcon color="#FF7B5C" name="exclamationmark.triangle.fill" size={28} />
+        <Text style={[styles.title, { color: themeColors.foreground }]}>Something went wrong</Text>
+        <Text style={[styles.message, { color: themeColors['text-secondary'] }]}>
           {createFeatureMessage(featureName)}
-        </SwiftUIText>
+        </Text>
 
         {__DEV__ && message ? (
-          <SwiftUIText
-            modifiers={[
-              font({ size: 12, design: 'monospaced' }),
-              foregroundStyle({ type: 'hierarchical', style: 'tertiary' }),
-            ]}
-          >
+          <Text style={[styles.debugMessage, { color: themeColors['text-tertiary'] }]}>
             {message}
-          </SwiftUIText>
+          </Text>
         ) : null}
 
-        <SwiftUIButton
-          label="Try Again"
-          onPress={resetErrorBoundary}
-          modifiers={[buttonStyle('bordered'), frame({ maxWidth: Number.POSITIVE_INFINITY })]}
-        />
-      </VStack>
-    </SwiftUIHost>
+        <Button label="Try Again" onPress={resetErrorBoundary} variant="secondary" />
+      </View>
+    </View>
   );
 }
 
@@ -106,5 +82,30 @@ export function FeatureErrorBoundary({ children, fallback, onError, featureName 
 const styles = StyleSheet.create({
   host: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  content: {
+    width: '100%',
+    maxWidth: 360,
+    alignItems: 'center',
+    gap: 12,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  message: {
+    fontSize: 16,
+    lineHeight: 22,
+    textAlign: 'center',
+  },
+  debugMessage: {
+    fontSize: 12,
+    lineHeight: 18,
+    fontFamily: 'Menlo',
+    textAlign: 'center',
   },
 });

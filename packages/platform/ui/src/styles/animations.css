@@ -290,12 +290,38 @@
   animation: void-exit-right 120ms cubic-bezier(0.4, 0, 1, 1) both;
 }
 
-.animate-accordion-down {
-  animation: void-enter-bottom 150ms cubic-bezier(0, 0, 0.2, 1) both;
+@keyframes accordion-down {
+  from {
+    opacity: 0;
+    transform: scaleY(0.8);
+    transform-origin: top;
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1);
+  }
 }
 
-.animate-accordion-up {
-  animation: void-exit-top 120ms cubic-bezier(0.4, 0, 1, 1) both;
+@keyframes accordion-up {
+  from {
+    opacity: 1;
+    transform: scaleY(1);
+    transform-origin: top;
+  }
+  to {
+    opacity: 0;
+    transform: scaleY(0.8);
+  }
+}
+
+.animate-accordion-down,
+[data-state='open'].animate-accordion-down {
+  animation: accordion-down 400ms cubic-bezier(0.32, 0.72, 0.28, 1) both;
+}
+
+.animate-accordion-up,
+[data-state='closed'].animate-accordion-up {
+  animation: accordion-up 300ms cubic-bezier(0.32, 0.72, 0.28, 1) both;
 }
 
 .animate-in {

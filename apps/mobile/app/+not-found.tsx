@@ -1,51 +1,34 @@
-import {
-  Button as SwiftUIButton,
-  Host as SwiftUIHost,
-  Image as SwiftUIImage,
-  Text as SwiftUIText,
-  VStack,
-} from '@expo/ui/swift-ui';
-import { buttonStyle, font, foregroundStyle, frame, padding } from '@expo/ui/swift-ui/modifiers';
-import { Stack, useRouter } from 'expo-router';
 import type { RelativePathString } from 'expo-router';
-import { StyleSheet } from 'react-native';
+import { Stack, useRouter } from 'expo-router';
+import { StyleSheet, Text, View } from 'react-native';
+
+import { useThemeColors } from '~/components/theme/theme';
+import { Button } from '~/components/ui/button';
+import AppIcon from '~/components/ui/icon';
 
 export default function NotFoundScreen() {
   const router = useRouter();
+  const themeColors = useThemeColors();
 
   return (
     <>
       <Stack.Screen options={{ title: 'Not found' }} />
-      <SwiftUIHost style={styles.host} useViewportSizeMeasurement>
-        <VStack
-          alignment="center"
-          spacing={12}
-          modifiers={[frame({ maxWidth: 360 }), padding({ all: 24 })]}
-        >
-          <SwiftUIImage systemName="questionmark.circle" size={32} color="#8E8E93" />
-          <SwiftUIText modifiers={[font({ size: 28, weight: 'bold' })]}>
-            Resource not found
-          </SwiftUIText>
-          <SwiftUIText
-            modifiers={[
-              font({ size: 16 }),
-              foregroundStyle({ type: 'hierarchical', style: 'secondary' }),
-            ]}
-          >
+      <View style={styles.host}>
+        <View style={styles.content}>
+          <AppIcon color={themeColors['icon-secondary']} name="questionmark.circle" size={32} />
+          <Text style={[styles.title, { color: themeColors.foreground }]}>Resource not found</Text>
+          <Text style={[styles.message, { color: themeColors['text-secondary'] }]}>
             The page you opened is not available.
-          </SwiftUIText>
-          <SwiftUIButton
+          </Text>
+          <Button
             label="Return to root"
             onPress={() => {
               router.replace('/' as RelativePathString);
             }}
-            modifiers={[
-              buttonStyle('borderedProminent'),
-              frame({ maxWidth: Number.POSITIVE_INFINITY }),
-            ]}
+            variant="primary"
           />
-        </VStack>
-      </SwiftUIHost>
+        </View>
+      </View>
     </>
   );
 }
@@ -53,5 +36,24 @@ export default function NotFoundScreen() {
 const styles = StyleSheet.create({
   host: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  content: {
+    width: '100%',
+    maxWidth: 360,
+    alignItems: 'center',
+    gap: 12,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  message: {
+    fontSize: 16,
+    lineHeight: 22,
+    textAlign: 'center',
   },
 });

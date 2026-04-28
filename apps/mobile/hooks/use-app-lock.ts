@@ -1,5 +1,5 @@
 import * as LocalAuthentication from 'expo-local-authentication';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState, useSyncExternalStore } from 'react';
 import { AppState } from 'react-native';
 
 import { APP_NAME } from '~/constants';
@@ -45,25 +45,30 @@ export function useAppLock() {
     }
   }, [enabled]);
 
-  // Authenticate on mount
-  useEffect(() => {
-    void authenticate();
-  }, [authenticate]);
+  const subscribe = useCallback(
+    (_onStoreChange: () => void) => {
+      void authenticate();
 
-  // Re-lock when app returns from background
-  useEffect(() => {
-    if (!enabled) return;
-
-    const subscription = AppState.addEventListener('change', (nextState) => {
-      if (appState.current === 'background' && nextState === 'active') {
-        setIsUnlocked(false);
-        void authenticate();
+      if (!enabled) {
+        return () => {};
       }
-      appState.current = nextState;
-    });
 
-    return () => subscription.remove();
-  }, [enabled, authenticate]);
+      const subscription = AppState.addEventListener('change', (nextState) => {
+        if (appState.current === 'background' && nextState === 'active') {
+          setIsUnlocked(false);
+          void authenticate();
+        }
+        appState.current = nextState;
+      });
+
+      return () => {
+        subscription.remove();
+      };
+    },
+    [enabled, authenticate],
+  );
+
+  useSyncExternalStore(subscribe, () => 0, () => 0);
 
   return { isUnlocked, authenticate };
 }

@@ -1,26 +1,11 @@
-import {
-  Button as SwiftUIButton,
-  Form as SwiftUIForm,
-  Host as SwiftUIHost,
-  HStack,
-  Image as SwiftUIImage,
-  Section as SwiftUISection,
-  Spacer,
-  Text as SwiftUIText,
-  VStack,
-} from '@expo/ui/swift-ui';
-import {
-  buttonStyle,
-  font,
-  foregroundStyle,
-  listStyle,
-  padding,
-} from '@expo/ui/swift-ui/modifiers';
+import { useIsFocused } from '@react-navigation/native';
 import type { RelativePathString } from 'expo-router';
 import { Stack, useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
-import { useIsFocused } from '@react-navigation/native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { useThemeColors } from '~/components/theme/theme';
+import AppIcon from '~/components/ui/icon';
 import { useArchivedSessions } from '~/hooks/useArchivedSessions';
 import { formatRelativeAge } from '~/services/date/format-relative-age';
 
@@ -54,80 +39,122 @@ function ArchivedChatsSwiftUI({
   chats: NonNullable<ReturnType<typeof useArchivedSessions>['data']>;
   onPressChat: (chatId: string) => void;
 }) {
-  return (
-    <SwiftUIHost style={swiftUIStyles.host} useViewportSizeMeasurement>
-      <SwiftUIForm modifiers={[listStyle('insetGrouped')]}>
-        <SwiftUISection>
-          <VStack spacing={2} modifiers={[padding({ vertical: 4 })]}>
-            <SwiftUIText
-              modifiers={[
-                font({ size: 13 }),
-                foregroundStyle({ type: 'hierarchical', style: 'secondary' }),
-              ]}
-            >
-              Archived chats
-            </SwiftUIText>
-            <SwiftUIText modifiers={[font({ size: 28, weight: 'bold' })]}>
-              Revisit past conversations
-            </SwiftUIText>
-            <SwiftUIText
-              modifiers={[
-                font({ size: 16 }),
-                foregroundStyle({ type: 'hierarchical', style: 'secondary' }),
-              ]}
-            >
-              Archived chats are hidden from the main chat flow but remain available here.
-            </SwiftUIText>
-          </VStack>
-        </SwiftUISection>
+  const themeColors = useThemeColors();
 
-        <SwiftUISection>
-          {chats.length > 0 ? (
-            chats.map((chat) => (
-              <SwiftUIButton
-                key={chat.id}
-                onPress={() => onPressChat(chat.id)}
-                modifiers={[buttonStyle('plain')]}
-              >
-                <HStack spacing={10}>
-                  <SwiftUIImage systemName="tray" size={14} color="#8E8E93" />
-                  <VStack alignment="leading" spacing={2}>
-                    <SwiftUIText>{chat.title ?? 'Untitled session'}</SwiftUIText>
-                    <SwiftUIText
-                      modifiers={[
-                        font({ size: 12 }),
-                        foregroundStyle({ type: 'hierarchical', style: 'secondary' }),
-                      ]}
-                    >
-                      Archived {formatRelativeAge(chat.archivedAt ?? chat.activityAt)}
-                    </SwiftUIText>
-                  </VStack>
-                  <Spacer />
-                  <SwiftUIImage systemName="chevron.right" size={12} color="#C7C7CC" />
-                </HStack>
-              </SwiftUIButton>
-            ))
-          ) : (
-            <VStack spacing={2} modifiers={[padding({ vertical: 2 })]}>
-              <SwiftUIText>No archived chats yet</SwiftUIText>
-              <SwiftUIText
-                modifiers={[
-                  font({ size: 14 }),
-                  foregroundStyle({ type: 'hierarchical', style: 'secondary' }),
-                ]}
-              >
-                Chats you archive will appear here for later reference.
-              </SwiftUIText>
-            </VStack>
-          )}
-        </SwiftUISection>
-      </SwiftUIForm>
-    </SwiftUIHost>
+  return (
+    <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <View
+        style={[
+          styles.sectionCard,
+          {
+            backgroundColor: themeColors['bg-surface'],
+            borderColor: themeColors['border-default'],
+          },
+        ]}
+      >
+        <Text style={[styles.eyebrow, { color: themeColors['text-secondary'] }]}>
+          Archived chats
+        </Text>
+        <Text style={[styles.title, { color: themeColors.foreground }]}>
+          Revisit past conversations
+        </Text>
+        <Text style={[styles.helperText, { color: themeColors['text-secondary'] }]}>
+          Archived chats are hidden from the main chat flow but remain available here.
+        </Text>
+      </View>
+
+      <View
+        style={[
+          styles.sectionCard,
+          {
+            backgroundColor: themeColors['bg-surface'],
+            borderColor: themeColors['border-default'],
+          },
+        ]}
+      >
+        {chats.length > 0 ? (
+          chats.map((chat) => (
+            <Pressable
+              key={chat.id}
+              onPress={() => onPressChat(chat.id)}
+              style={({ pressed }) => [styles.chatRow, { opacity: pressed ? 0.7 : 1 }]}
+            >
+              <AppIcon color={themeColors['icon-secondary']} name="tray" size={14} />
+              <View style={styles.chatCopy}>
+                <Text style={[styles.chatTitle, { color: themeColors.foreground }]}>
+                  {chat.title ?? 'Untitled session'}
+                </Text>
+                <Text style={[styles.chatMeta, { color: themeColors['text-secondary'] }]}>
+                  Archived {formatRelativeAge(chat.archivedAt ?? chat.activityAt)}
+                </Text>
+              </View>
+              <AppIcon color={themeColors['icon-tertiary']} name="chevron.right" size={12} />
+            </Pressable>
+          ))
+        ) : (
+          <View style={styles.emptyState}>
+            <Text style={[styles.emptyTitle, { color: themeColors.foreground }]}>
+              No archived chats yet
+            </Text>
+            <Text style={[styles.emptyCopy, { color: themeColors['text-secondary'] }]}>
+              Chats you archive will appear here for later reference.
+            </Text>
+          </View>
+        )}
+      </View>
+    </ScrollView>
   );
 }
 
-const swiftUIStyles = {
-  host: {
+const styles = StyleSheet.create({
+  chatCopy: {
     flex: 1,
+    gap: 2,
   },
-} as const;
+  chatMeta: {
+    fontSize: 12,
+  },
+  chatRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+    minHeight: 52,
+    paddingVertical: 6,
+  },
+  chatTitle: {
+    fontSize: 15,
+  },
+  emptyCopy: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  emptyState: {
+    gap: 2,
+    paddingVertical: 2,
+  },
+  emptyTitle: {
+    fontSize: 15,
+  },
+  eyebrow: {
+    fontSize: 13,
+  },
+  helperText: {
+    fontSize: 16,
+    lineHeight: 22,
+  },
+  scrollContent: {
+    gap: 16,
+    padding: 16,
+  },
+  sectionCard: {
+    borderRadius: 18,
+    borderWidth: 1,
+    gap: 8,
+    padding: 16,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    lineHeight: 34,
+  },
+});

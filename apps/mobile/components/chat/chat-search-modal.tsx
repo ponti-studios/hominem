@@ -1,31 +1,14 @@
-import {
-  Button as SwiftUIButton,
-  HStack,
-  Host as SwiftUIHost,
-  Text as SwiftUIText,
-  TextField as SwiftUITextField,
-  VStack,
-  type TextFieldRef,
-} from '@expo/ui/swift-ui';
-import {
-  buttonStyle,
-  font,
-  foregroundStyle,
-  frame,
-  padding,
-  submitLabel,
-  textFieldStyle,
-} from '@expo/ui/swift-ui/modifiers';
 import type React from 'react';
-import { Modal, Pressable, View } from 'react-native';
+import { Modal, Pressable, TextInput, View } from 'react-native';
 
-import { makeStyles, spacing } from '~/components/theme';
+import { Text, makeStyles, spacing } from '~/components/theme';
+import AppIcon from '~/components/ui/icon';
 
 interface ChatSearchModalProps {
   visible: boolean;
   searchQuery: string;
   resultCount: number;
-  searchInputRef: React.RefObject<TextFieldRef | null>;
+  searchInputRef: React.RefObject<TextInput | null>;
   onClose: () => void;
   onChangeSearchQuery: (value: string) => void;
 }
@@ -44,48 +27,34 @@ export function ChatSearchModal({
     <Modal animationType="fade" onRequestClose={onClose} transparent visible={visible}>
       <Pressable onPress={onClose} style={styles.searchBackdrop}>
         <View style={styles.searchPanel}>
-          <SwiftUIHost matchContents style={styles.host}>
-            <VStack spacing={12} modifiers={[padding({ horizontal: spacing[4], vertical: 4 })]}>
-              <HStack spacing={spacing[2]}>
-                <SwiftUIText
-                  modifiers={[font({ size: 17, weight: 'semibold' }), frame({ maxWidth: 999 })]}
-                >
-                  Search messages
-                </SwiftUIText>
-                <SwiftUIButton
-                  label=""
-                  systemImage="xmark"
-                  onPress={onClose}
-                  modifiers={[buttonStyle('borderless')]}
-                />
-              </HStack>
+          <View style={styles.content}>
+            <View style={styles.headerRow}>
+              <Text style={styles.title}>Search messages</Text>
+              <Pressable hitSlop={8} onPress={onClose} style={styles.closeButton}>
+                <AppIcon name="xmark" size={16} color={styles.closeIcon.color} />
+              </Pressable>
+            </View>
 
-              <SwiftUITextField
-                key={visible ? 'visible' : 'hidden'}
-                ref={searchInputRef}
-                autoFocus
-                defaultValue={searchQuery}
-                placeholder="Search messages..."
-                onValueChange={onChangeSearchQuery}
-                modifiers={[
-                  textFieldStyle('roundedBorder'),
-                  submitLabel('search'),
-                  frame({ maxWidth: Number.POSITIVE_INFINITY }),
-                ]}
-              />
+            <TextInput
+              key={visible ? 'visible' : 'hidden'}
+              ref={searchInputRef}
+              autoFocus
+              value={searchQuery}
+              placeholder="Search messages..."
+              placeholderTextColor={styles.inputPlaceholder.color}
+              returnKeyType="search"
+              selectionColor={styles.input.color}
+              cursorColor={styles.input.color}
+              style={styles.input}
+              onChangeText={onChangeSearchQuery}
+            />
 
-              <SwiftUIText
-                modifiers={[
-                  font({ size: 12 }),
-                  foregroundStyle({ type: 'hierarchical', style: 'secondary' }),
-                ]}
-              >
-                {searchQuery.trim().length > 0
-                  ? `${resultCount} result${resultCount !== 1 ? 's' : ''}`
-                  : 'Search the current conversation'}
-              </SwiftUIText>
-            </VStack>
-          </SwiftUIHost>
+            <Text style={styles.caption}>
+              {searchQuery.trim().length > 0
+                ? `${resultCount} result${resultCount !== 1 ? 's' : ''}`
+                : 'Search the current conversation'}
+            </Text>
+          </View>
         </View>
       </Pressable>
     </Modal>
@@ -95,8 +64,49 @@ export function ChatSearchModal({
 const SEARCH_PANEL_RADIUS = 24;
 
 const useChatSearchStyles = makeStyles((theme) => ({
-  host: {
-    alignSelf: 'stretch',
+  caption: {
+    color: theme.colors['text-secondary'],
+    fontSize: 12,
+  },
+  closeButton: {
+    alignItems: 'center',
+    height: 32,
+    justifyContent: 'center',
+    width: 32,
+  },
+  closeIcon: {
+    color: theme.colors['icon-secondary'],
+  },
+  content: {
+    gap: 12,
+    paddingHorizontal: spacing[4],
+    paddingVertical: 4,
+  },
+  headerRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing[2],
+    justifyContent: 'space-between',
+  },
+  input: {
+    backgroundColor: theme.colors['bg-surface'],
+    borderColor: theme.colors['border-default'],
+    borderRadius: 12,
+    borderWidth: 1,
+    color: theme.colors.foreground,
+    fontSize: 16,
+    minHeight: 44,
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[2],
+  },
+  inputPlaceholder: {
+    color: theme.colors['text-tertiary'],
+  },
+  title: {
+    color: theme.colors.foreground,
+    flex: 1,
+    fontSize: 17,
+    fontWeight: '600',
   },
   searchBackdrop: {
     backgroundColor: theme.colors['overlay-modal-medium'],

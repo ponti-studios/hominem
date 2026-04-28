@@ -25,6 +25,7 @@
     "@hominem/telemetry": "workspace:*",
     "@hominem/ui": "workspace:*",
     "@hominem/utils": "workspace:*",
+    "@preact/signals-react": "^3.1.1",
     "@react-native-community/netinfo": "11.5.2",
     "@react-navigation/drawer": "^7.9.9",
     "@react-navigation/native": "^7.2.2",

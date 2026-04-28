@@ -6,6 +6,9 @@
  * underlying string values must be identical.
  */
 
+/** Must match AUTH_EMAIL_OTP_EXPIRES_SECONDS on the server (default 300). */
+export const OTP_EXPIRES_SECONDS = 300;
+
 export const AUTH_COPY = {
   emailEntry: {
     title: 'Remember everything.',

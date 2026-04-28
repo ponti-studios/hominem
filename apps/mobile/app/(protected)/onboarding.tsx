@@ -1,37 +1,15 @@
-import {
-  Button as SwiftUIButton,
-  Form as SwiftUIForm,
-  Host as SwiftUIHost,
-  Section as SwiftUISection,
-  Text as SwiftUIText,
-  TextField as SwiftUITextField,
-  VStack,
-} from '@expo/ui/swift-ui';
-import {
-  autocorrectionDisabled,
-  buttonStyle,
-  controlSize,
-  disabled as disabledModifier,
-  font,
-  foregroundStyle,
-  frame,
-  keyboardType,
-  listStyle,
-  onSubmit,
-  padding,
-  submitLabel,
-  textFieldStyle,
-  textInputAutocapitalization,
-} from '@expo/ui/swift-ui/modifiers';
 import type { RelativePathString } from 'expo-router';
 import { Redirect } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { useThemeColors } from '~/components/theme/theme';
+import { Button } from '~/components/ui/button';
 import { useAuth } from '~/services/auth/auth-provider';
 
 const Onboarding = () => {
   const { isSignedIn, currentUser, updateProfile, signOut } = useAuth();
+  const themeColors = useThemeColors();
   const [name, setName] = useState('');
   const [hasError, setHasError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -83,83 +61,124 @@ const Onboarding = () => {
   }
 
   return (
-    <SwiftUIHost style={styles.host} useViewportSizeMeasurement>
-      <SwiftUIForm modifiers={[listStyle('insetGrouped')]}>
-        <SwiftUISection>
-          <VStack spacing={8} modifiers={[padding({ vertical: 8 })]}>
-            <SwiftUIText modifiers={[font({ size: 17, weight: 'semibold' })]}>H</SwiftUIText>
-            <SwiftUIText modifiers={[font({ size: 28, weight: 'bold' })]}>
-              What should Hakumi call you?
-            </SwiftUIText>
-            <SwiftUIText
-              modifiers={[
-                font({ size: 16 }),
-                foregroundStyle({ type: 'hierarchical', style: 'secondary' }),
-              ]}
-            >
-              This is only used to personalize your workspace. You can change it later.
-            </SwiftUIText>
-          </VStack>
-        </SwiftUISection>
+    <ScrollView
+      contentContainerStyle={styles.scrollContent}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.card}>
+        <View style={styles.hero}>
+          <Text style={[styles.brandMark, { color: themeColors.foreground }]}>H</Text>
+          <Text style={[styles.title, { color: themeColors.foreground }]}>
+            What should Hakumi call you?
+          </Text>
+          <Text style={[styles.helperText, { color: themeColors['text-secondary'] }]}>
+            This is only used to personalize your workspace. You can change it later.
+          </Text>
+        </View>
 
-        <SwiftUISection>
-          <SwiftUITextField
+        <View style={styles.formSection}>
+          <TextInput
+            value={name}
             placeholder="Wyatt"
-            onValueChange={(text) => {
+            placeholderTextColor={themeColors['text-tertiary']}
+            autoCapitalize="words"
+            autoCorrect={false}
+            editable={!isSubmitting}
+            returnKeyType="done"
+            cursorColor={themeColors.foreground}
+            selectionColor={themeColors.foreground}
+            style={[
+              styles.input,
+              {
+                backgroundColor: themeColors['bg-surface'],
+                borderColor: themeColors['border-default'],
+                color: themeColors.foreground,
+              },
+            ]}
+            onChangeText={(text) => {
               setName(text);
               setHasError(false);
             }}
-            modifiers={[
-              textFieldStyle('roundedBorder'),
-              keyboardType('default'),
-              textInputAutocapitalization('words'),
-              autocorrectionDisabled(true),
-              submitLabel('done'),
-              onSubmit(() => void onButtonPress()),
-              disabledModifier(isSubmitting),
-            ]}
+            onSubmitEditing={() => void onButtonPress()}
           />
 
           {hasError ? (
-            <SwiftUIText
-              modifiers={[font({ size: 13 }), foregroundStyle({ type: 'color', color: 'red' })]}
-            >
+            <Text style={[styles.errorText, { color: '#FF5A5F' }]}>
               Add a name or continue without one.
-            </SwiftUIText>
+            </Text>
           ) : null}
 
-          <SwiftUIButton
+          <Button
             label="Start using Hakumi"
             onPress={() => void onButtonPress()}
-            modifiers={[
-              buttonStyle('borderedProminent'),
-              controlSize('large'),
-              disabledModifier(isSubmitting),
-              frame({ maxWidth: Number.POSITIVE_INFINITY }),
-            ]}
+            disabled={isSubmitting}
+            variant="primary"
           />
 
-          <SwiftUIButton
+          <Button
             label="Continue without name"
             onPress={() => void onSkipPress()}
-            modifiers={[buttonStyle('plain'), controlSize('small'), disabledModifier(isSubmitting)]}
+            disabled={isSubmitting}
+            variant="tertiary"
           />
 
-          <SwiftUIButton
+          <Button
             testID="onboarding-sign-out"
             label="Sign out"
             onPress={() => void signOut()}
-            modifiers={[buttonStyle('plain'), controlSize('small')]}
+            disabled={isSubmitting}
+            variant="tertiary"
           />
-        </SwiftUISection>
-      </SwiftUIForm>
-    </SwiftUIHost>
+        </View>
+      </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  host: {
-    flex: 1,
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 24,
+  },
+  card: {
+    width: '100%',
+    maxWidth: 480,
+    alignSelf: 'center',
+    gap: 24,
+  },
+  hero: {
+    gap: 8,
+  },
+  brandMark: {
+    fontSize: 17,
+    fontWeight: '600',
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    lineHeight: 34,
+  },
+  helperText: {
+    fontSize: 16,
+    lineHeight: 22,
+  },
+  formSection: {
+    gap: 12,
+  },
+  input: {
+    minHeight: 48,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 16,
+  },
+  errorText: {
+    fontSize: 13,
+    lineHeight: 18,
   },
 });
 

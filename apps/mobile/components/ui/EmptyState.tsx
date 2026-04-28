@@ -1,16 +1,11 @@
-import {
-  Button as SwiftUIButton,
-  Host as SwiftUIHost,
-  Image as SwiftUIImage,
-  Text as SwiftUIText,
-  VStack,
-} from '@expo/ui/swift-ui';
-import { buttonStyle, font, foregroundStyle, frame, padding } from '@expo/ui/swift-ui/modifiers';
 import type { SFSymbol } from 'expo-symbols';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import Reanimated, { FadeIn } from 'react-native-reanimated';
 
 import { spacing } from '../theme';
+import { useThemeColors } from '../theme/theme';
+import { Button } from './button';
+import AppIcon from './icon';
 
 const DEFAULT_BOTTOM_OFFSET = spacing[7] * 3;
 
@@ -29,43 +24,25 @@ function EmptyState({
   sfSymbol,
   title,
 }: EmptyStateProps) {
+  const themeColors = useThemeColors();
+
   return (
     <Reanimated.View
       entering={FadeIn.duration(280)}
       style={[styles.container, { paddingBottom: bottomOffset }]}
     >
-      <SwiftUIHost matchContents style={styles.host}>
-        <VStack
-          alignment="center"
-          spacing={10}
-          modifiers={[frame({ maxWidth: 320 }), padding({ horizontal: spacing[6] })]}
-        >
-          <SwiftUIImage
-            systemName={sfSymbol}
-            size={28}
-            color="#8E8E93"
-            modifiers={[padding({ bottom: 8 })]}
-          />
-          <SwiftUIText modifiers={[font({ size: 18, weight: 'semibold' })]}>{title}</SwiftUIText>
-          {description ? (
-            <SwiftUIText
-              modifiers={[
-                font({ size: 15 }),
-                foregroundStyle({ type: 'hierarchical', style: 'secondary' }),
-              ]}
-            >
-              {description}
-            </SwiftUIText>
-          ) : null}
-          {action ? (
-            <SwiftUIButton
-              label={action.label}
-              onPress={action.onPress}
-              modifiers={[buttonStyle('bordered'), padding({ top: 8 })]}
-            />
-          ) : null}
-        </VStack>
-      </SwiftUIHost>
+      <View style={styles.content}>
+        <AppIcon color={themeColors['icon-secondary']} name={sfSymbol} size={28} />
+        <Text style={[styles.title, { color: themeColors.foreground }]}>{title}</Text>
+        {description ? (
+          <Text style={[styles.description, { color: themeColors['text-secondary'] }]}>
+            {description}
+          </Text>
+        ) : null}
+        {action ? (
+          <Button label={action.label} onPress={action.onPress} variant="secondary" />
+        ) : null}
+      </View>
     </Reanimated.View>
   );
 }
@@ -76,8 +53,22 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
   },
-  host: {
-    alignSelf: 'stretch',
+  content: {
+    width: '100%',
+    maxWidth: 320,
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: spacing[6],
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  description: {
+    fontSize: 15,
+    lineHeight: 21,
+    textAlign: 'center',
   },
 });
 

@@ -1,10 +1,5 @@
-import { Button as SwiftUIButton, Host as SwiftUIHost, ProgressView } from '@expo/ui/swift-ui';
-import {
-  buttonStyle,
-  controlSize,
-  frame,
-  progressViewStyle,
-} from '@expo/ui/swift-ui/modifiers';
+import { ProgressView, Host as SwiftUIHost } from '@expo/ui/swift-ui';
+import { frame, progressViewStyle } from '@expo/ui/swift-ui/modifiers';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { useApiClient } from '@hominem/rpc/react';
 import { radii, spacing } from '@hominem/ui/tokens';
@@ -332,32 +327,32 @@ export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerPro
         {/* Action row. */}
         <View style={styles.buttonRow}>
           <View style={styles.mediaGroup}>
-            <SwiftUIHost matchContents style={styles.iconButtonHost}>
-              <SwiftUIButton
-                label=""
-                systemImage="plus"
-                onPress={showPlusMenu}
-                modifiers={[
-                  buttonStyle('borderless'),
-                  controlSize('small'),
-                  frame({ width: 32, height: 32 }),
-                ]}
-              />
-            </SwiftUIHost>
+            <Pressable
+              accessibilityLabel="Add attachment"
+              accessibilityRole="button"
+              hitSlop={spacing[2]}
+              onPress={showPlusMenu}
+              style={({ pressed }) => [
+                styles.iconButton,
+                pressed ? styles.iconButtonPressed : null,
+              ]}
+            >
+              <AppIcon name="plus" size={18} color={themeColors['text-secondary']} />
+            </Pressable>
           </View>
           <View style={styles.actionGroup}>
-            <SwiftUIHost matchContents style={styles.iconButtonHost}>
-              <SwiftUIButton
-                label=""
-                systemImage="waveform"
-                onPress={() => voiceModalRef.current?.present()}
-                modifiers={[
-                  buttonStyle('borderless'),
-                  controlSize('small'),
-                  frame({ width: 32, height: 32 }),
-                ]}
-              />
-            </SwiftUIHost>
+            <Pressable
+              accessibilityLabel="Record voice note"
+              accessibilityRole="button"
+              hitSlop={spacing[2]}
+              onPress={() => voiceModalRef.current?.present()}
+              style={({ pressed }) => [
+                styles.iconButton,
+                pressed ? styles.iconButtonPressed : null,
+              ]}
+            >
+              <AppIcon name="waveform" size={18} color={themeColors['text-secondary']} />
+            </Pressable>
             <GlassActionButton
               onSave={() => void handleSave()}
               onChat={() => void handleChat()}
@@ -446,9 +441,14 @@ const useStyles = makeStyles((theme) => ({
     alignItems: 'center',
     gap: spacing[2],
   },
-  iconButtonHost: {
+  iconButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
     height: 32,
     width: 32,
+  },
+  iconButtonPressed: {
+    opacity: 0.65,
   },
   actionGroup: {
     flexDirection: 'row',

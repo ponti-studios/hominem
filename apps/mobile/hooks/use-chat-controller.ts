@@ -1,11 +1,10 @@
-import type { TextFieldRef } from '@expo/ui/swift-ui';
 import type { ChatMessageItem, MarkdownComponent } from '@hominem/chat';
 import type { PendingReview } from '@hominem/chat/react';
 import { useChatLifecycle } from '@hominem/chat/react';
 import { buildArtifactProposal } from '@hominem/chat/ui';
 import { useApiClient } from '@hominem/rpc/react';
+import type { ArtifactType, CaptureLifecycleState, SessionSource } from '@hominem/rpc/types';
 import { ENABLED_ARTIFACT_TYPES } from '@hominem/rpc/types';
-import type { ArtifactType, SessionSource, CaptureLifecycleState } from '@hominem/rpc/types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -20,7 +19,7 @@ import {
   useState,
   type RefObject,
 } from 'react';
-import { Alert, Platform, Share } from 'react-native';
+import { Alert, Platform, Share, TextInput } from 'react-native';
 
 import { loadMarkdown } from '../components/chat/chat-message';
 
@@ -121,7 +120,7 @@ interface UseChatControllerResult {
   lifecycleState: CaptureLifecycleState;
   pendingReview: PendingReview | null;
   resolvedSource: SessionSource;
-  searchInputRef: RefObject<TextFieldRef | null>;
+  searchInputRef: RefObject<TextInput | null>;
   searchQuery: string;
   showDebug: boolean;
   showSearch: boolean;
@@ -149,7 +148,7 @@ export function useChatController({
   const { sendChatMessage, chatSendStatus } = services.useSendMessage({ chatId });
   const [Markdown, setMarkdown] = useState<MarkdownComponent | null>(null);
   const [uiState, dispatch] = useReducer(mobileUiReducer, initialMobileUiState);
-  const searchInputRef = useRef<TextFieldRef | null>(null);
+  const searchInputRef = useRef<TextInput | null>(null);
 
   const formattedMessages = useMemo(
     () => (messages && messages.length > 0 ? messages : []),

@@ -1,17 +1,10 @@
-import {
-  HStack,
-  Button as SwiftUIButton,
-  Host as SwiftUIHost,
-  Image as SwiftUIImage,
-} from '@expo/ui/swift-ui';
-import { buttonStyle, disabled as disabledModifier, frame } from '@expo/ui/swift-ui/modifiers';
 import { useApiClient } from '@hominem/rpc/react';
 import type { SessionSource } from '@hominem/rpc/types';
 import { useNavigation } from '@react-navigation/native';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router/build/hooks';
 import React, { useLayoutEffect, useMemo, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import {
   ChatMessageList,
@@ -24,6 +17,7 @@ import {
 } from '~/components/chat';
 import { ChatInput } from '~/components/chat/ChatInput';
 import { useTTS } from '~/components/media/use-tts';
+import { useThemeColors } from '~/components/theme/theme';
 import { EmptyState } from '~/components/ui';
 import AppIcon from '~/components/ui/icon';
 import {
@@ -55,6 +49,7 @@ export default function ChatDetailScreen() {
   const router = useRouter();
   const client = useApiClient();
   const queryClient = useQueryClient();
+  const themeColors = useThemeColors();
   const [composerClearance, setComposerClearance] = useState(0);
   const { speakingId, speak } = useTTS();
   const { data: activeChat } = useActiveChat(id);
@@ -142,30 +137,29 @@ export default function ChatDetailScreen() {
       title: displayTitle,
       headerTitleAlign: 'center',
       headerRight: () => (
-        <SwiftUIHost style={{ width: 88, height: 44 }}>
-          <HStack spacing={0} modifiers={[frame({ width: 88, height: 44 })]}>
-            <ConversationMenu
-              canTransform={controller.canTransform}
-              isArchiving={controller.isArchiving}
-              onArchive={controller.handleArchiveChat}
-              onOpenSearch={controller.handleOpenSearch}
-              onToggleDebug={controller.handleToggleDebug}
-              onTransform={controller.handleTransformFromMenu}
-              transformTypes={controller.enabledTransforms}
-              showDebug={controller.showDebug}
-            />
-            <SwiftUIButton
-              onPress={handleCreateChat}
-              modifiers={[
-                buttonStyle('borderless'),
-                frame({ width: 44, height: 44 }),
-                disabledModifier(isCreatingChat),
-              ]}
-            >
-              <SwiftUIImage systemName="square.and.pencil" size={18} />
-            </SwiftUIButton>
-          </HStack>
-        </SwiftUIHost>
+        <View style={styles.headerActions}>
+          <ConversationMenu
+            canTransform={controller.canTransform}
+            isArchiving={controller.isArchiving}
+            onArchive={controller.handleArchiveChat}
+            onOpenSearch={controller.handleOpenSearch}
+            onToggleDebug={controller.handleToggleDebug}
+            onTransform={controller.handleTransformFromMenu}
+            transformTypes={controller.enabledTransforms}
+            showDebug={controller.showDebug}
+          />
+          <Pressable
+            disabled={isCreatingChat}
+            hitSlop={6}
+            onPress={handleCreateChat}
+            style={({ pressed }) => [
+              styles.headerIconButton,
+              { opacity: isCreatingChat ? 0.35 : pressed ? 0.65 : 1 },
+            ]}
+          >
+            <AppIcon color={themeColors['icon-primary']} name="square.and.pencil" size={18} />
+          </Pressable>
+        </View>
       ),
     });
   }, [
@@ -181,6 +175,7 @@ export default function ChatDetailScreen() {
     handleCreateChat,
     isCreatingChat,
     navigation,
+    themeColors,
   ]);
 
   const emptyState = useMemo(
@@ -249,5 +244,16 @@ export default function ChatDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  headerActions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    width: 88,
+  },
+  headerIconButton: {
+    alignItems: 'center',
+    height: 44,
+    justifyContent: 'center',
+    width: 44,
   },
 });

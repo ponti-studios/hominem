@@ -2,10 +2,11 @@ import type { User } from '@hominem/auth/types';
 import React, {
   createContext,
   useContext,
-  useEffect,
   useMemo,
   useReducer,
   useRef,
+  useCallback,
+  useSyncExternalStore,
   type PropsWithChildren,
 } from 'react';
 
@@ -64,21 +65,23 @@ function AuthProviderBody({ children }: PropsWithChildren) {
   const { completePasskeySignIn } = usePasskeyAuth(authContext, sessionCookieHeaderRef);
   const { signOut } = useSignOut(authContext, sessionCookieHeaderRef);
 
-  useEffect(() => {
-    return () => {
-      abortControllerRef.current?.abort();
-    };
-  }, [abortControllerRef]);
+  const subscribeBootSession = useCallback(
+    (_onStoreChange: () => void) => {
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+      void bootSession({ signal: controller.signal });
 
-  useEffect(() => {
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-    void bootSession({ signal: controller.signal });
+      return () => {
+        controller.abort();
+        if (abortControllerRef.current === controller) {
+          abortControllerRef.current = null;
+        }
+      };
+    },
+    [abortControllerRef, bootSession],
+  );
 
-    return () => {
-      controller.abort();
-    };
-  }, [bootSession, abortControllerRef]);
+  useSyncExternalStore(subscribeBootSession, () => 0, () => 0);
 
   const updateProfile = useUpdateProfile({ state, dispatch });
   const getAuthHeaders = useAuthHeaders(sessionCookieHeaderRef);
@@ -101,9 +104,15 @@ function AuthProviderBody({ children }: PropsWithChildren) {
 function E2EAuthProvider({ children }: PropsWithChildren) {
   const [state, dispatch] = useReducer(authStateMachine, initialAuthState);
 
-  useEffect(() => {
-    dispatch({ type: 'SESSION_EXPIRED' });
-  }, []);
+  const subscribeE2EInit = useCallback(
+    (_onStoreChange: () => void) => {
+      dispatch({ type: 'SESSION_EXPIRED' });
+      return () => {};
+    },
+    [dispatch],
+  );
+
+  useSyncExternalStore(subscribeE2EInit, () => 0, () => 0);
 
   const authContext = useMemo(() => ({ state, dispatch }), [state, dispatch]);
   const authSnapshot = useMemo(() => createAuthContextSnapshot(state), [state]);

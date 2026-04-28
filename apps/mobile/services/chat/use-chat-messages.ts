@@ -1,11 +1,14 @@
+import { streamChatWithWsFirst, toWebSocketUrl } from '@hominem/rpc';
 import { useApiClient } from '@hominem/rpc/react';
 import type { Chat, ChatMessageDto as RpcChatMessage } from '@hominem/rpc/types';
+import type { ChatTransportPreference } from '@hominem/rpc/types';
 import { logger } from '@hominem/telemetry';
 import NetInfo from '@react-native-community/netinfo';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { randomUUID } from 'expo-crypto';
 import { useState } from 'react';
 
+import { API_BASE_URL } from '~/constants';
 import {
   createChatInboxRefreshSnapshot,
   invalidateInboxQueries,
@@ -92,6 +95,8 @@ export const useSendMessage = ({ chatId }: { chatId: string }) => {
   const [message, setMessage] = useState('');
   const [sendChatError, setSendChatError] = useState(false);
   const [chatSendStatus, setChatSendStatus] = useState<ChatSendStatus>('idle');
+  const transportPreference = (process.env.EXPO_PUBLIC_CHAT_TRANSPORT ||
+    'auto') as ChatTransportPreference;
 
   const mutation = useMutation<
     SendChatMessageOutput,
@@ -153,33 +158,58 @@ export const useSendMessage = ({ chatId }: { chatId: string }) => {
         throw new Error('offline_unavailable');
       }
 
-      const streamRes = await client.api.chats[':id'].stream.$post({
-        param: { id: chatId },
-        json: {
+      const wsUrl = toWebSocketUrl(API_BASE_URL, `/api/chats/${chatId}/ws`);
+      const { assistantText } = await streamChatWithWsFirst({
+        wsUrl,
+        transportPreference,
+        payload: {
           message: messageText.trim(),
           ...(fileIds && fileIds.length > 0 ? { fileIds } : {}),
           ...(noteIds && noteIds.length > 0 ? { noteIds } : {}),
         },
+        onStatus: (nextStatus) => {
+          if (nextStatus === 'submitted' || nextStatus === 'streaming') {
+            setChatSendStatus('streaming');
+            return;
+          }
+          if (nextStatus === 'done') {
+            setChatSendStatus('idle');
+          }
+        },
+        fallback: async () => {
+          const streamRes = await client.api.chats[':id'].stream.$post({
+            param: { id: chatId },
+            json: {
+              message: messageText.trim(),
+              ...(fileIds && fileIds.length > 0 ? { fileIds } : {}),
+              ...(noteIds && noteIds.length > 0 ? { noteIds } : {}),
+            },
+          });
+          const body = streamRes.body;
+          if (!body) throw new Error('No response body');
+
+          setChatSendStatus('streaming');
+          const reader = body.getReader();
+          const decoder = new TextDecoder();
+          let streamedAssistantText = '';
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            streamedAssistantText += decoder.decode(value, { stream: true });
+          }
+
+          const finalChunk = decoder.decode();
+          if (finalChunk) {
+            streamedAssistantText += finalChunk;
+          }
+
+          return {
+            assistantText: streamedAssistantText,
+          };
+        },
       });
-      const body = streamRes.body;
-      if (!body) throw new Error('No response body');
-
-      setChatSendStatus('streaming');
-      const reader = body.getReader();
-      const decoder = new TextDecoder();
-      let assistantText = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        assistantText += decoder.decode(value, { stream: true });
-      }
-
-      const finalChunk = decoder.decode();
-      if (finalChunk) {
-        assistantText += finalChunk;
-      }
 
       return {
         assistantText,

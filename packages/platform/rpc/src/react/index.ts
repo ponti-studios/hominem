@@ -1,6 +1,7 @@
 export { queryKeys, type QueryKeys } from '../core/query-keys';
 export { useApiClient } from './context';
 export { useRpcMutation, useRpcQuery } from './hooks';
+export { bridgeQueryDataToSignal, createDerivedSignal, createSignalStore } from './signals';
 export {
   createNotesMutationSuccessHandler,
   DEFAULT_NOTES_FEED_LIMIT,

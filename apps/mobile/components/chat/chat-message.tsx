@@ -1,24 +1,7 @@
-import {
-  Button as SwiftUIButton,
-  HStack,
-  Host as SwiftUIHost,
-  Text as SwiftUIText,
-  TextField as SwiftUITextField,
-} from '@expo/ui/swift-ui';
-import {
-  buttonStyle,
-  controlSize,
-  disabled as disabledModifier,
-  font,
-  foregroundStyle,
-  frame,
-  lineLimit,
-  textFieldStyle,
-} from '@expo/ui/swift-ui/modifiers';
 import type { ChatMessageItem, ChatRenderIcon, MarkdownComponent } from '@hominem/chat';
 import { getReferencedNoteLabel } from '@hominem/chat';
 import { memo, useMemo, useState } from 'react';
-import { Modal, Pressable, View } from 'react-native';
+import { Modal, Pressable, TextInput, View } from 'react-native';
 import Reanimated, { FadeInDown, FadeOutUp, LinearTransition } from 'react-native-reanimated';
 
 import {
@@ -29,6 +12,9 @@ import {
   radii,
   spacing,
 } from '~/components/theme';
+import { useThemeColors } from '~/components/theme/theme';
+import { Button } from '~/components/ui/button';
+import AppIcon from '~/components/ui/icon';
 
 type ToolCall = NonNullable<ChatMessageItem['toolCalls']>[number];
 
@@ -53,6 +39,43 @@ const ACTIONS_EXITING = FadeOutUp.duration(180).springify().damping(24).stiffnes
 const ACTIONS_LAYOUT = LinearTransition.duration(200);
 const MESSAGE_BUBBLE_MAX_WIDTH = '84%';
 
+function ActionIconButton({
+  disabled = false,
+  icon,
+  isDestructive = false,
+  onPress,
+}: {
+  disabled?: boolean;
+  icon: Parameters<typeof AppIcon>[0]['name'];
+  isDestructive?: boolean;
+  onPress: () => void;
+}) {
+  const themeColors = useThemeColors();
+
+  return (
+    <Pressable
+      disabled={disabled}
+      hitSlop={6}
+      onPress={onPress}
+      style={({ pressed }) => [
+        {
+          alignItems: 'center',
+          height: 28,
+          justifyContent: 'center',
+          opacity: disabled ? 0.35 : pressed ? 0.65 : 1,
+          width: 28,
+        },
+      ]}
+    >
+      <AppIcon
+        color={isDestructive ? '#FF5A5F' : themeColors['icon-secondary']}
+        name={icon}
+        size={16}
+      />
+    </Pressable>
+  );
+}
+
 export async function loadMarkdown() {
   const mod = await import('react-native-markdown-display');
   return mod.default as MarkdownComponent;
@@ -75,49 +98,43 @@ function MessageEditModal({
   onCancel: () => void;
   onSave: () => void;
 }) {
+  const themeColors = useThemeColors();
+
   return (
     <Modal animationType="fade" onRequestClose={onCancel} transparent visible={visible}>
       <View style={styles.editBackdrop}>
         <View style={styles.editSheet}>
           <Text style={styles.editTitle}>Edit message</Text>
-          <SwiftUIHost matchContents style={styles.editInputHost}>
-            <SwiftUITextField
-              key={content}
-              axis="vertical"
-              defaultValue={draftMessage}
-              onValueChange={onChangeDraft}
-              placeholder="Update your message"
-              modifiers={[
-                textFieldStyle('roundedBorder'),
-                font({ size: 16 }),
-                lineLimit({ min: 4, max: 8 }),
-                frame({ minHeight: 90, maxWidth: Number.POSITIVE_INFINITY }),
-              ]}
-            />
-          </SwiftUIHost>
-          <SwiftUIHost matchContents style={styles.editActionsHost}>
-            <HStack spacing={spacing[2]}>
-              <SwiftUIButton
-                label="Cancel"
-                onPress={onCancel}
-                modifiers={[
-                  buttonStyle('bordered'),
-                  controlSize('small'),
-                  frame({ maxWidth: Number.POSITIVE_INFINITY }),
-                ]}
-              />
-              <SwiftUIButton
+          <TextInput
+            multiline
+            value={draftMessage}
+            onChangeText={onChangeDraft}
+            placeholder="Update your message"
+            placeholderTextColor={themeColors['text-tertiary']}
+            selectionColor={themeColors.foreground}
+            cursorColor={themeColors.foreground}
+            style={[
+              styles.editInput,
+              {
+                backgroundColor: themeColors['bg-surface'],
+                borderColor: themeColors['border-default'],
+                color: themeColors.foreground,
+              },
+            ]}
+          />
+          <View style={styles.editActionsRow}>
+            <View style={styles.editActionSlot}>
+              <Button label="Cancel" onPress={onCancel} variant="secondary" />
+            </View>
+            <View style={styles.editActionSlot}>
+              <Button
                 label="Save"
                 onPress={onSave}
-                modifiers={[
-                  buttonStyle('borderedProminent'),
-                  controlSize('small'),
-                  disabledModifier(!draftMessage.trim() || draftMessage === content),
-                  frame({ maxWidth: Number.POSITIVE_INFINITY }),
-                ]}
+                disabled={!draftMessage.trim() || draftMessage === content}
+                variant="primary"
               />
-            </HStack>
-          </SwiftUIHost>
+            </View>
+          </View>
         </View>
       </View>
     </Modal>
@@ -292,71 +309,26 @@ function ActiveMessageActions({
       layout={ACTIONS_LAYOUT}
       style={styles.actionsWrap}
     >
-      <SwiftUIHost matchContents style={styles.actionsHost}>
-        <HStack spacing={spacing[2]}>
-          {timestamp ? (
-            <SwiftUIText
-              modifiers={[
-                font({ size: 12 }),
-                foregroundStyle({ type: 'hierarchical', style: 'secondary' }),
-              ]}
-            >
-              {timestamp}
-            </SwiftUIText>
-          ) : null}
-          <SwiftUIButton
-            label=""
-            systemImage="doc.on.doc"
-            onPress={() => onCopy?.(message)}
-            modifiers={[
-              buttonStyle('borderless'),
-              controlSize('small'),
-              disabledModifier(!canCopy),
-            ]}
+      <View style={styles.actionsRow}>
+        {timestamp ? <Text style={styles.actionTimestamp}>{timestamp}</Text> : null}
+        <ActionIconButton disabled={!canCopy} icon="doc.on.doc" onPress={() => onCopy?.(message)} />
+        {canSpeak ? (
+          <ActionIconButton
+            icon={isSpeaking ? 'stop.fill' : 'speaker.wave.2'}
+            onPress={() => onSpeak?.(message)}
           />
-          {canSpeak ? (
-            <SwiftUIButton
-              label=""
-              systemImage={isSpeaking ? 'stop.fill' : 'speaker.wave.2'}
-              onPress={() => onSpeak?.(message)}
-              modifiers={[buttonStyle('borderless'), controlSize('small')]}
-            />
-          ) : null}
-          {canShare ? (
-            <SwiftUIButton
-              label=""
-              systemImage="square.and.arrow.up"
-              onPress={() => onShare?.(message)}
-              modifiers={[buttonStyle('borderless'), controlSize('small')]}
-            />
-          ) : null}
-          {canEdit ? (
-            <SwiftUIButton
-              label=""
-              systemImage="square.and.pencil"
-              onPress={onEdit}
-              modifiers={[buttonStyle('borderless'), controlSize('small')]}
-            />
-          ) : null}
-          {canRegenerate ? (
-            <SwiftUIButton
-              label=""
-              systemImage="arrow.clockwise"
-              onPress={() => onRegenerate?.(message.id)}
-              modifiers={[buttonStyle('borderless'), controlSize('small')]}
-            />
-          ) : null}
-          {canDelete ? (
-            <SwiftUIButton
-              label=""
-              systemImage="trash"
-              role="destructive"
-              onPress={() => onDelete?.(message.id)}
-              modifiers={[buttonStyle('borderless'), controlSize('small')]}
-            />
-          ) : null}
-        </HStack>
-      </SwiftUIHost>
+        ) : null}
+        {canShare ? (
+          <ActionIconButton icon="square.and.arrow.up" onPress={() => onShare?.(message)} />
+        ) : null}
+        {canEdit ? <ActionIconButton icon="square.and.pencil" onPress={onEdit} /> : null}
+        {canRegenerate ? (
+          <ActionIconButton icon="arrow.clockwise" onPress={() => onRegenerate?.(message.id)} />
+        ) : null}
+        {canDelete ? (
+          <ActionIconButton icon="trash" isDestructive onPress={() => onDelete?.(message.id)} />
+        ) : null}
+      </View>
     </Reanimated.View>
   );
 }
@@ -511,8 +483,14 @@ export function renderChatMessage(
 export { ChatMessage };
 
 const useChatMessageStyles = makeStyles((theme) => ({
-  actionsHost: {
-    alignSelf: 'flex-end',
+  actionTimestamp: {
+    color: theme.colors['text-secondary'],
+    fontSize: 12,
+  },
+  actionsRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing[2],
   },
   actionsWrap: {
     marginTop: spacing[1],
@@ -540,11 +518,21 @@ const useChatMessageStyles = makeStyles((theme) => ({
     right: 0,
     top: 0,
   },
-  editActionsHost: {
-    alignSelf: 'stretch',
+  editActionSlot: {
+    flex: 1,
   },
-  editInputHost: {
-    alignSelf: 'stretch',
+  editActionsRow: {
+    flexDirection: 'row',
+    gap: spacing[2],
+  },
+  editInput: {
+    borderRadius: radii.md,
+    borderWidth: 1,
+    fontSize: 16,
+    minHeight: 90,
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[2],
+    textAlignVertical: 'top',
   },
   editSheet: {
     backgroundColor: theme.colors['bg-base'],

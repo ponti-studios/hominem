@@ -1,12 +1,8 @@
-import {
-  Button as SwiftUIButton,
-  Host as SwiftUIHost,
-  Image as SwiftUIImage,
-  Text as SwiftUIText,
-  VStack,
-} from '@expo/ui/swift-ui';
-import { buttonStyle, font, foregroundStyle, frame, padding } from '@expo/ui/swift-ui/modifiers';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+
+import { useThemeColors } from '~/components/theme/theme';
+import { Button } from '~/components/ui/button';
+import AppIcon from '~/components/ui/icon';
 
 interface FullScreenErrorFallbackProps {
   actionLabel: string;
@@ -19,40 +15,41 @@ export function FullScreenErrorFallback({
   message,
   onPress,
 }: FullScreenErrorFallbackProps) {
+  const themeColors = useThemeColors();
+
   return (
-    <SwiftUIHost style={styles.host} useViewportSizeMeasurement>
-      <VStack
-        alignment="center"
-        spacing={12}
-        modifiers={[frame({ maxWidth: 360 }), padding({ all: 24 })]}
-      >
-        <SwiftUIImage systemName="exclamationmark.triangle.fill" size={28} color="#FF7B5C" />
-        <SwiftUIText modifiers={[font({ size: 28, weight: 'bold' })]}>
-          Something went wrong
-        </SwiftUIText>
-        <SwiftUIText
-          modifiers={[
-            font({ size: 16 }),
-            foregroundStyle({ type: 'hierarchical', style: 'secondary' }),
-          ]}
-        >
-          {message}
-        </SwiftUIText>
-        <SwiftUIButton
-          label={actionLabel}
-          onPress={onPress}
-          modifiers={[
-            buttonStyle('borderedProminent'),
-            frame({ maxWidth: Number.POSITIVE_INFINITY }),
-          ]}
-        />
-      </VStack>
-    </SwiftUIHost>
+    <View style={styles.host}>
+      <View style={styles.content}>
+        <AppIcon color="#FF7B5C" name="exclamationmark.triangle.fill" size={28} />
+        <Text style={[styles.title, { color: themeColors.foreground }]}>Something went wrong</Text>
+        <Text style={[styles.message, { color: themeColors['text-secondary'] }]}>{message}</Text>
+        <Button label={actionLabel} onPress={onPress} variant="primary" />
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   host: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  content: {
+    width: '100%',
+    maxWidth: 360,
+    alignItems: 'center',
+    gap: 12,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  message: {
+    fontSize: 16,
+    lineHeight: 22,
+    textAlign: 'center',
   },
 });

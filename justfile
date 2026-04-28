@@ -5,6 +5,7 @@ set positional-arguments := true
 
 ROOT_DIR := justfile_directory()
 WEB_DIR := ROOT_DIR / "apps" / "web"
+UI_DIR := ROOT_DIR / "packages" / "platform" / "ui"
 TURBO := "pnpm dlx turbo"
 LOCAL_DATABASE_URL := "postgresql://postgres:postgres@127.0.0.1:5434/hominem"
 LOCAL_TEST_DATABASE_URL := "postgresql://postgres:postgres@127.0.0.1:4433/hominem-test"
@@ -46,6 +47,9 @@ dev:
 
 dev-api:
     {{ TURBO }} run dev --filter=@hominem/api
+
+storybook:
+    cd "{{ UI_DIR }}" && pnpm exec storybook dev -p 6006
 
 dev-web:
     {{ TURBO }} run dev --filter=@hominem/api --filter=@hominem/web

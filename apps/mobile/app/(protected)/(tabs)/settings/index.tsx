@@ -1,35 +1,21 @@
-import {
-  HStack,
-  ProgressView,
-  Spacer,
-  Button as SwiftUIButton,
-  Form as SwiftUIForm,
-  Host as SwiftUIHost,
-  Image as SwiftUIImage,
-  Section as SwiftUISection,
-  Text as SwiftUIText,
-  TextField as SwiftUITextField,
-  Toggle as SwiftUIToggle,
-  VStack,
-} from '@expo/ui/swift-ui';
-import {
-  buttonStyle,
-  controlSize,
-  disabled as disabledModifier,
-  font,
-  foregroundStyle,
-  frame,
-  listStyle,
-  onSubmit,
-  padding,
-  submitLabel,
-  textFieldStyle,
-} from '@expo/ui/swift-ui/modifiers';
 import type { RelativePathString } from 'expo-router';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useReducer, useState } from 'react';
-import { Alert } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 
+import { useThemeColors } from '~/components/theme/theme';
+import { Button } from '~/components/ui/button';
+import AppIcon from '~/components/ui/icon';
 import { MOBILE_PASSKEY_ENABLED } from '~/constants';
 import { getAppLockEnabled, setAppLockEnabled } from '~/hooks/use-app-lock';
 import { getPreventScreenshots, setPreventScreenshots } from '~/hooks/use-screen-capture';
@@ -68,6 +54,7 @@ function accountReducer(state: AccountState, action: AccountAction): AccountStat
 
 function Settings() {
   const router = useRouter();
+  const themeColors = useThemeColors();
   const { isSignedIn, signOut, currentUser, updateProfile } = useAuth();
   const {
     addPasskey,
@@ -163,163 +150,281 @@ function Settings() {
   if (!isSignedIn) return null;
 
   return (
-    <SwiftUIHost style={swiftUIStyles.host} useViewportSizeMeasurement>
-      <SwiftUIForm modifiers={[listStyle('insetGrouped')]}>
-        <SwiftUISection title="Account">
-          <HStack spacing={10}>
-            <SwiftUIImage systemName="person.crop.circle" size={18} color="#8E8E93" />
-            <SwiftUIText>Name</SwiftUIText>
-            <Spacer />
-            <SwiftUITextField
+    <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <View
+        style={[
+          styles.sectionCard,
+          {
+            backgroundColor: themeColors['bg-surface'],
+            borderColor: themeColors['border-default'],
+          },
+        ]}
+      >
+        <Text style={[styles.sectionTitle, { color: themeColors['text-secondary'] }]}>Account</Text>
+        <View style={styles.row}>
+          <View style={styles.rowLabelGroup}>
+            <AppIcon color={themeColors['icon-secondary']} name="person.crop.circle" size={18} />
+            <Text style={[styles.rowLabel, { color: themeColors.foreground }]}>Name</Text>
+          </View>
+          <View style={styles.nameControls}>
+            <TextInput
               key={`name-${currentUser?.id ?? 'anonymous'}`}
-              defaultValue={state.name}
+              value={state.name}
               placeholder="Your name"
-              onValueChange={(text) => {
+              placeholderTextColor={themeColors['text-tertiary']}
+              returnKeyType="done"
+              selectionColor={themeColors.foreground}
+              cursorColor={themeColors.foreground}
+              style={[
+                styles.inlineInput,
+                {
+                  backgroundColor: themeColors.background,
+                  borderColor: themeColors['border-default'],
+                  color: themeColors.foreground,
+                },
+              ]}
+              onChangeText={(text) => {
                 dispatch({ type: 'set-name', name: text });
                 setSaveError(null);
                 setSaveStatus('idle');
               }}
-              modifiers={[
-                textFieldStyle('plain'),
-                submitLabel('done'),
-                onSubmit(() => {
-                  if (nameChanged) {
-                    void onSavePress();
-                  }
-                }),
-                frame({ maxWidth: 170, alignment: 'trailing' }),
-              ]}
+              onSubmitEditing={() => {
+                if (nameChanged) {
+                  void onSavePress();
+                }
+              }}
             />
             {nameChanged ? (
-              <SwiftUIButton
-                label={saveStatus === 'saving' ? 'Saving' : 'Save'}
-                onPress={() => void onSavePress()}
-                modifiers={[
-                  buttonStyle('bordered'),
-                  controlSize('small'),
-                  disabledModifier(saveStatus === 'saving'),
-                ]}
-              />
+              <View style={styles.saveButtonWrap}>
+                <Button
+                  label={saveStatus === 'saving' ? 'Saving' : 'Save'}
+                  onPress={() => void onSavePress()}
+                  disabled={saveStatus === 'saving'}
+                  variant="secondary"
+                />
+              </View>
             ) : null}
-          </HStack>
+          </View>
+        </View>
 
-          {saveStatus === 'saved' ? (
-            <SwiftUIText
-              modifiers={[
-                font({ size: 13 }),
-                foregroundStyle({ type: 'hierarchical', style: 'secondary' }),
-              ]}
-            >
-              Saved
-            </SwiftUIText>
-          ) : null}
+        {saveStatus === 'saved' ? (
+          <Text style={[styles.statusText, { color: themeColors['text-secondary'] }]}>Saved</Text>
+        ) : null}
 
-          {saveError ? (
-            <SwiftUIText
-              modifiers={[font({ size: 13 }), foregroundStyle({ type: 'color', color: 'red' })]}
-            >
-              {saveError}
-            </SwiftUIText>
-          ) : null}
+        {saveError ? <Text style={[styles.statusText, styles.errorText]}>{saveError}</Text> : null}
 
-          <HStack spacing={10}>
-            <SwiftUIImage systemName="envelope" size={18} color="#8E8E93" />
-            <SwiftUIText>Email</SwiftUIText>
-            <Spacer />
-            <SwiftUIText
-              modifiers={[
-                font({ size: 15 }),
-                foregroundStyle({ type: 'hierarchical', style: 'secondary' }),
-              ]}
-            >
-              {currentUser?.email ?? '-'}
-            </SwiftUIText>
-          </HStack>
-        </SwiftUISection>
+        <View style={styles.row}>
+          <View style={styles.rowLabelGroup}>
+            <AppIcon color={themeColors['icon-secondary']} name="envelope" size={18} />
+            <Text style={[styles.rowLabel, { color: themeColors.foreground }]}>Email</Text>
+          </View>
+          <Text style={[styles.rowValue, { color: themeColors['text-secondary'] }]}>
+            {currentUser?.email ?? '-'}
+          </Text>
+        </View>
+      </View>
 
-        <SwiftUISection title="Privacy">
-          <SwiftUIToggle
-            label="Lock with Face ID"
-            systemImage="faceid"
-            isOn={state.appLock}
-            onIsOnChange={(value) => {
+      <View
+        style={[
+          styles.sectionCard,
+          {
+            backgroundColor: themeColors['bg-surface'],
+            borderColor: themeColors['border-default'],
+          },
+        ]}
+      >
+        <Text style={[styles.sectionTitle, { color: themeColors['text-secondary'] }]}>Privacy</Text>
+        <View style={styles.row}>
+          <View style={styles.rowLabelGroup}>
+            <AppIcon color={themeColors['icon-secondary']} name="faceid" size={18} />
+            <Text style={[styles.rowLabel, { color: themeColors.foreground }]}>
+              Lock with Face ID
+            </Text>
+          </View>
+          <Switch
+            value={state.appLock}
+            onValueChange={(value) => {
               dispatch({ type: 'set-app-lock', appLock: value });
               setAppLockEnabled(value);
             }}
           />
-          <SwiftUIToggle
-            label="Prevent screenshots"
-            systemImage="eye.slash"
-            isOn={state.preventScreenshots}
-            onIsOnChange={(value) => {
+        </View>
+        <View style={styles.row}>
+          <View style={styles.rowLabelGroup}>
+            <AppIcon color={themeColors['icon-secondary']} name="eye.slash" size={18} />
+            <Text style={[styles.rowLabel, { color: themeColors.foreground }]}>
+              Prevent screenshots
+            </Text>
+          </View>
+          <Switch
+            value={state.preventScreenshots}
+            onValueChange={(value) => {
               dispatch({ type: 'set-prevent-screenshots', preventScreenshots: value });
               setPreventScreenshots(value);
             }}
           />
-        </SwiftUISection>
+        </View>
+      </View>
 
-        <SwiftUISection title="Chats">
-          <SwiftUIButton
-            label="Archived chats"
-            systemImage="archivebox"
-            onPress={onArchivedChatsPress}
-            modifiers={[buttonStyle('plain')]}
+      <View
+        style={[
+          styles.sectionCard,
+          {
+            backgroundColor: themeColors['bg-surface'],
+            borderColor: themeColors['border-default'],
+          },
+        ]}
+      >
+        <Text style={[styles.sectionTitle, { color: themeColors['text-secondary'] }]}>Chats</Text>
+        <Pressable
+          onPress={onArchivedChatsPress}
+          style={({ pressed }) => [styles.row, { opacity: pressed ? 0.7 : 1 }]}
+        >
+          <View style={styles.rowLabelGroup}>
+            <AppIcon color={themeColors['icon-secondary']} name="archivebox" size={18} />
+            <Text style={[styles.rowLabel, { color: themeColors.foreground }]}>Archived chats</Text>
+          </View>
+          <AppIcon color={themeColors['icon-tertiary']} name="chevron.right" size={12} />
+        </Pressable>
+      </View>
+
+      {MOBILE_PASSKEY_ENABLED ? (
+        <View
+          style={[
+            styles.sectionCard,
+            {
+              backgroundColor: themeColors['bg-surface'],
+              borderColor: themeColors['border-default'],
+            },
+          ]}
+        >
+          <Text style={[styles.sectionTitle, { color: themeColors['text-secondary'] }]}>
+            Passkeys
+          </Text>
+          <Button
+            label={isPasskeyLoading ? 'Adding passkey' : 'Add passkey'}
+            onPress={() => void onAddPasskeyPress()}
+            disabled={isPasskeyLoading}
+            variant="secondary"
           />
-        </SwiftUISection>
+          {isPasskeyLoading ? <ActivityIndicator color={themeColors.foreground} /> : null}
+          {passkeys.map((pk) => (
+            <View key={pk.id} style={styles.row}>
+              <View style={styles.rowLabelGroup}>
+                <AppIcon color={themeColors['icon-secondary']} name="key.fill" size={16} />
+                <Text style={[styles.rowLabel, { color: themeColors.foreground }]}>{pk.name}</Text>
+              </View>
+              <Pressable
+                hitSlop={8}
+                onPress={() => onDeletePasskeyPress(pk.id, pk.name)}
+                style={({ pressed }) => ({ opacity: pressed ? 0.65 : 1 })}
+              >
+                <Text style={styles.removeText}>Remove</Text>
+              </Pressable>
+            </View>
+          ))}
+        </View>
+      ) : null}
 
-        {MOBILE_PASSKEY_ENABLED ? (
-          <SwiftUISection title="Passkeys">
-            <SwiftUIButton
-              label={isPasskeyLoading ? 'Adding passkey' : 'Add passkey'}
-              systemImage="person.badge.key.fill"
-              onPress={() => void onAddPasskeyPress()}
-              modifiers={[buttonStyle('plain'), disabledModifier(isPasskeyLoading)]}
-            />
-            {isPasskeyLoading ? <ProgressView /> : null}
-            {passkeys.map((pk) => (
-              <HStack key={pk.id} spacing={10}>
-                <SwiftUIImage systemName="key.fill" size={16} color="#8E8E93" />
-                <SwiftUIText>{pk.name}</SwiftUIText>
-                <Spacer />
-                <SwiftUIButton
-                  label="Remove"
-                  role="destructive"
-                  systemImage="trash"
-                  onPress={() => onDeletePasskeyPress(pk.id, pk.name)}
-                  modifiers={[buttonStyle('borderless'), controlSize('small')]}
-                />
-              </HStack>
-            ))}
-          </SwiftUISection>
-        ) : null}
-
-        <SwiftUISection>
-          <VStack spacing={8} modifiers={[padding({ vertical: 4 })]}>
-            <SwiftUIButton
-              label="Sign out"
-              role="destructive"
-              systemImage="rectangle.portrait.and.arrow.right"
-              onPress={onLogoutPress}
-              modifiers={[buttonStyle('bordered')]}
-            />
-            <SwiftUIButton
-              label="Delete account"
-              role="destructive"
-              systemImage="trash"
-              onPress={onDeleteAccountPress}
-              modifiers={[buttonStyle('borderless')]}
-            />
-          </VStack>
-        </SwiftUISection>
-      </SwiftUIForm>
-    </SwiftUIHost>
+      <View
+        style={[
+          styles.sectionCard,
+          {
+            backgroundColor: themeColors['bg-surface'],
+            borderColor: themeColors['border-default'],
+          },
+        ]}
+      >
+        <View style={styles.actionStack}>
+          <Button label="Sign out" onPress={onLogoutPress} variant="secondary" />
+          <Pressable
+            onPress={onDeleteAccountPress}
+            style={({ pressed }) => [styles.deleteAction, { opacity: pressed ? 0.65 : 1 }]}
+          >
+            <Text style={styles.deleteActionText}>Delete account</Text>
+          </Pressable>
+        </View>
+      </View>
+    </ScrollView>
   );
 }
 
 export default Settings;
 
-const swiftUIStyles = {
-  host: {
-    flex: 1,
+const styles = StyleSheet.create({
+  actionStack: {
+    gap: 8,
   },
-} as const;
+  deleteAction: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 40,
+  },
+  deleteActionText: {
+    color: '#FF5A5F',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  errorText: {
+    color: '#FF5A5F',
+  },
+  inlineInput: {
+    borderRadius: 12,
+    borderWidth: 1,
+    fontSize: 15,
+    minHeight: 40,
+    minWidth: 170,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  nameControls: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  removeText: {
+    color: '#FF5A5F',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  row: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+    minHeight: 48,
+  },
+  rowLabel: {
+    fontSize: 15,
+  },
+  rowLabelGroup: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flex: 1,
+    gap: 10,
+  },
+  rowValue: {
+    fontSize: 15,
+    maxWidth: '50%',
+    textAlign: 'right',
+  },
+  saveButtonWrap: {
+    minWidth: 78,
+  },
+  scrollContent: {
+    gap: 16,
+    padding: 16,
+  },
+  sectionCard: {
+    borderRadius: 18,
+    borderWidth: 1,
+    gap: 12,
+    padding: 16,
+  },
+  sectionTitle: {
+    fontSize: 13,
+  },
+  statusText: {
+    fontSize: 13,
+  },
+});

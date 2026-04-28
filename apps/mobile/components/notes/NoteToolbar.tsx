@@ -1,16 +1,11 @@
-import React from 'react';
-import {
-  Button as SwiftUIButton,
-  Host as SwiftUIHost,
-  Image as SwiftUIImage,
-} from '@expo/ui/swift-ui';
-import { accessibilityLabel, buttonStyle, frame } from '@expo/ui/swift-ui/modifiers';
 import type { SFSymbol } from 'expo-symbols';
-import { InputAccessoryView, Keyboard, StyleSheet, View } from 'react-native';
+import React from 'react';
+import { InputAccessoryView, Keyboard, Pressable, StyleSheet, View } from 'react-native';
 
 import { makeStyles, spacing } from '~/components/theme';
 import { useThemeColors } from '~/components/theme/theme';
 import { BlurSurface } from '~/components/ui/BlurSurface';
+import AppIcon from '~/components/ui/icon';
 import type { FormatAction } from '~/hooks/use-note-toolbar';
 
 export const NOTE_TOOLBAR_ID = 'note-editor-toolbar';
@@ -34,22 +29,24 @@ function ToolbarButton({ icon, onPress, disabled = false, label }: ToolbarButton
   const themeColors = useThemeColors();
   const styles = useToolbarStyles();
   return (
-    <SwiftUIHost matchContents style={styles.buttonHost}>
-      <SwiftUIButton
-        onPress={disabled ? undefined : onPress}
-        modifiers={[
-          accessibilityLabel(label),
-          buttonStyle('plain'),
-          frame({ width: 36, height: 36 }),
-        ]}
-      >
-        <SwiftUIImage
-          systemName={icon}
-          size={17}
-          color={disabled ? themeColors['text-tertiary'] : themeColors.foreground}
-        />
-      </SwiftUIButton>
-    </SwiftUIHost>
+    <Pressable
+      accessibilityLabel={label}
+      accessibilityRole="button"
+      disabled={disabled}
+      hitSlop={6}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.buttonHost,
+        disabled ? styles.buttonDisabled : null,
+        pressed && !disabled ? styles.buttonPressed : null,
+      ]}
+    >
+      <AppIcon
+        color={disabled ? themeColors['text-tertiary'] : themeColors.foreground}
+        name={icon}
+        size={17}
+      />
+    </Pressable>
   );
 }
 
@@ -142,8 +139,16 @@ const useToolbarStyles = makeStyles((theme) => ({
     gap: spacing[1],
   },
   buttonHost: {
+    alignItems: 'center',
+    justifyContent: 'center',
     width: 36,
     height: 36,
+  },
+  buttonPressed: {
+    opacity: 0.65,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
   },
   divider: {
     backgroundColor: theme.colors['border-subtle'],

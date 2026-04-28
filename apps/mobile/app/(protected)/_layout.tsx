@@ -1,11 +1,10 @@
-import { Button as SwiftUIButton, Host as SwiftUIHost } from '@expo/ui/swift-ui';
-import { buttonStyle } from '@expo/ui/swift-ui/modifiers';
 import { Stack } from 'expo-router';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { FeatureErrorBoundary } from '~/components/error-boundary/FeatureErrorBoundary';
 import { Text, theme } from '~/components/theme';
+import { Button } from '~/components/ui/button';
 import { APP_NAME } from '~/constants';
 import { useAppLock } from '~/hooks/use-app-lock';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
@@ -22,6 +21,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: theme.spacing.m_16,
+  },
+  unlockButtonWrap: {
+    minWidth: 160,
   },
 });
 
@@ -67,13 +69,9 @@ function ProtectedShell() {
         <Text variant="body" color="text-secondary">
           Unlock to continue
         </Text>
-        <SwiftUIHost matchContents>
-          <SwiftUIButton
-            label="Unlock"
-            onPress={() => void authenticate()}
-            modifiers={[buttonStyle('borderedProminent')]}
-          />
-        </SwiftUIHost>
+        <View style={styles.unlockButtonWrap}>
+          <Button label="Unlock" onPress={() => void authenticate()} variant="primary" />
+        </View>
       </View>
     );
   }

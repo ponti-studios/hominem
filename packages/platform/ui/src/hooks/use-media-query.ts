@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useSyncExternalStore } from 'react';
 
 interface MediaQueryOptions {
   width?: number;
@@ -35,21 +35,31 @@ export function mediaQuery(query: string, options?: MediaQueryOptions) {
  * @returns A boolean indicating whether the media query matches.
  */
 export function useMediaQuery(query: string) {
-  const [value, setValue] = useState(false);
+  const subscribe = useCallback(
+    (onStoreChange: () => void) => {
+      if (typeof window === 'undefined') {
+        return () => {};
+      }
 
-  useEffect(() => {
-    function onChange(e: MediaQueryListEvent | MediaQueryList) {
-      setValue(e.matches);
+      const mql = window.matchMedia(query);
+      const onChange = () => {
+        onStoreChange();
+      };
+
+      mql.addEventListener('change', onChange);
+      return () => {
+        mql.removeEventListener('change', onChange);
+      };
+    },
+    [query],
+  );
+
+  const getSnapshot = useCallback(() => {
+    if (typeof window === 'undefined') {
+      return false;
     }
-
-    const mql = window.matchMedia(query);
-    setValue(mql.matches);
-    mql.addEventListener('change', onChange);
-
-    return () => {
-      mql.removeEventListener('change', onChange);
-    };
+    return window.matchMedia(query).matches;
   }, [query]);
 
-  return value;
+  return useSyncExternalStore(subscribe, getSnapshot, () => false);
 }
