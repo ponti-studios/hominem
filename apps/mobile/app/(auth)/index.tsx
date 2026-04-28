@@ -223,7 +223,6 @@ function AuthScreen() {
                       autoCapitalize="none"
                       autoCorrect={false}
                       autoFocus
-                      returnKeyType="go"
                       editable={!isSubmitting}
                       cursorColor={palette.textPrimary}
                       selectionColor={palette.textPrimary}
@@ -247,7 +246,6 @@ function AuthScreen() {
                           });
                         }
                       }}
-                      onSubmitEditing={() => void handleSendCode()}
                       accessibilityLabel={AUTH_COPY.emailEntry.emailLabel}
                     />
                   </Animated.View>
