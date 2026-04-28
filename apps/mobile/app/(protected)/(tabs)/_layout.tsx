@@ -22,7 +22,7 @@ function SettingsButton() {
         width: 44,
       })}
     >
-      <AppIcon name="gearshape" size={18} tintColor={themeColors['icon-primary']} />
+      <AppIcon name="gearshape" />
     </Pressable>
   );
 }

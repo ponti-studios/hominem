@@ -122,7 +122,7 @@ function NoteDetailEditor({
             width: 36,
           })}
         >
-          <AppIcon name="bubble.left" size={18} tintColor={themeColors['icon-primary']} />
+          <AppIcon name="bubble.left" />
         </Pressable>
       ),
     });

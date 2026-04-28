@@ -1,16 +1,21 @@
 import type { Note } from '@hominem/rpc/types/notes.types';
-import { NoteEditor } from '@hominem/ui/notes';
 import { StatePanel } from '@hominem/ui';
+import { NoteEditor } from '@hominem/ui/notes';
+import { useNavigate } from 'react-router';
 
 import { useDeleteNote, useUpdateNote } from '~/hooks/use-notes';
 import { useTranscribe } from '~/hooks/use-transcribe';
 import { useFileUpload } from '~/lib/hooks/use-file-upload';
+
 import { noteIdLoader } from './note-id.loader';
-import { useNavigate } from 'react-router';
 
 export { noteIdLoader as loader };
 
-export default function NoteEditPage({ loaderData }: { loaderData: { noteId: string; note: Note | null } }) {
+export default function NoteEditPage({
+  loaderData,
+}: {
+  loaderData: { noteId: string; note: Note | null };
+}) {
   const { note } = loaderData;
   const navigate = useNavigate();
   const updateNote = useUpdateNote();

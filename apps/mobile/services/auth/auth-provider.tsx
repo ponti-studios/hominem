@@ -81,7 +81,11 @@ function AuthProviderBody({ children }: PropsWithChildren) {
     [abortControllerRef, bootSession],
   );
 
-  useSyncExternalStore(subscribeBootSession, () => 0, () => 0);
+  useSyncExternalStore(
+    subscribeBootSession,
+    () => 0,
+    () => 0,
+  );
 
   const updateProfile = useUpdateProfile({ state, dispatch });
   const getAuthHeaders = useAuthHeaders(sessionCookieHeaderRef);
@@ -112,7 +116,11 @@ function E2EAuthProvider({ children }: PropsWithChildren) {
     [dispatch],
   );
 
-  useSyncExternalStore(subscribeE2EInit, () => 0, () => 0);
+  useSyncExternalStore(
+    subscribeE2EInit,
+    () => 0,
+    () => 0,
+  );
 
   const authContext = useMemo(() => ({ state, dispatch }), [state, dispatch]);
   const authSnapshot = useMemo(() => createAuthContextSnapshot(state), [state]);

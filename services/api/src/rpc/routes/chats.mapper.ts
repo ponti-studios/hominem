@@ -24,7 +24,15 @@ export function toChatMessageDto(record: ChatMessageRecord) {
     userId: record.userId,
     role: record.role,
     content: record.content,
-    files: record.files as Array<{ type: 'image' | 'file'; fileId?: string; url?: string; filename?: string; mimeType?: string; size?: number; metadata?: Record<string, unknown> }> | null,
+    files: record.files as Array<{
+      type: 'image' | 'file';
+      fileId?: string;
+      url?: string;
+      filename?: string;
+      mimeType?: string;
+      size?: number;
+      metadata?: Record<string, unknown>;
+    }> | null,
     referencedNotes: record.referencedNotes,
     toolCalls: record.toolCalls,
     reasoning: record.reasoning,

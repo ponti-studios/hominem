@@ -103,7 +103,11 @@ function UpdateGuardClient({
 
   const getQueryStaleSnapshot = useCallback(() => hasStaleQueryData(queryClient), [queryClient]);
 
-  const hasStaleData = useSyncExternalStore(subscribeQueryStaleState, getQueryStaleSnapshot, () => false);
+  const hasStaleData = useSyncExternalStore(
+    subscribeQueryStaleState,
+    getQueryStaleSnapshot,
+    () => false,
+  );
 
   const closePrompt = () => {
     setOfflineReady(false);

@@ -9,14 +9,15 @@ import { cors } from 'hono/cors';
 import { prettyJSON } from 'hono/pretty-json';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 
+import { betterAuthServer } from './auth/better-auth';
 import type { AuthContextEnvelope } from './auth/types';
 import { API_BRAND } from './brand';
 import { env } from './env';
 import { isServiceError } from './errors';
 import { authJwtMiddleware } from './middleware/auth';
+import { authRateLimitMiddleware } from './middleware/auth-rate-limit';
 import { blockMaliciousProbes } from './middleware/block-probes';
 import { requestLogger } from './middleware/request-logger';
-import { authRoutes } from './routes/auth';
 import { imagesRoutes } from './routes/images';
 import { statusRoutes } from './routes/status';
 import { rpcApp } from './rpc/app';
@@ -55,8 +56,9 @@ export function createServer() {
   app.use('*', authJwtMiddleware());
   app.route('/', rpcApp);
 
+  app.use('/api/auth/*', authRateLimitMiddleware());
   app.route('/api/status', statusRoutes);
-  app.route('/api/auth', authRoutes);
+  app.on(['GET', 'POST'], '/api/auth/**', (c) => betterAuthServer.handler(c.req.raw));
   app.route('/api/images', imagesRoutes);
 
   app.get('/', (c) => {

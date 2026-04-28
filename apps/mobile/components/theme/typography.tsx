@@ -179,9 +179,7 @@ function Text({ color, muted = false, style, variant = 'body', ...props }: TextP
       ? colors['text-tertiary']
       : colors['text-primary'];
 
-  return (
-    <RNText style={[variantStyles[variant], { color: resolvedColor }, style]} {...props} />
-  );
+  return <RNText style={[variantStyles[variant], { color: resolvedColor }, style]} {...props} />;
 }
 
 export { Text };

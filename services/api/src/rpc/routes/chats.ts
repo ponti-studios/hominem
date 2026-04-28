@@ -257,7 +257,10 @@ const chatByIdRoutes = new Hono<AppContext>()
 
     const prompt = buildConversationPrompt(message, history, resolvedNotes, resolvedFiles);
 
-    const assistantTextStream = await createAssistantTextStream(loadPrompt('chat-assistant'), prompt);
+    const assistantTextStream = await createAssistantTextStream(
+      loadPrompt('chat-assistant'),
+      prompt,
+    );
 
     const responseStream = new ReadableStream<Uint8Array>({
       async start(controller) {

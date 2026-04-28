@@ -34,5 +34,9 @@ export function useScreenCapture() {
     [enabled],
   );
 
-  useSyncExternalStore(subscribe, () => enabled, () => enabled);
+  useSyncExternalStore(
+    subscribe,
+    () => enabled,
+    () => enabled,
+  );
 }

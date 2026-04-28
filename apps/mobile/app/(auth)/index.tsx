@@ -204,7 +204,7 @@ function AuthScreen() {
           <View style={styles.contentShell}>
             <View style={styles.card}>
               <View style={[styles.iconChip, { backgroundColor: palette.iconChip }]}>
-                <AppIcon name="envelope" size={18} tintColor={palette.icon} />
+                <AppIcon name="envelope" />
               </View>
 
               <View style={styles.copyBlock}>

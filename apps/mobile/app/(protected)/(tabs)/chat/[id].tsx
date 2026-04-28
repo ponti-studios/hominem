@@ -154,13 +154,13 @@ export default function ChatDetailScreen() {
           <Pressable
             disabled={isCreatingChat}
             hitSlop={6}
-            onPress={handleCreateChat}
+            onPress={() => handleCreateChat()}
             style={({ pressed }) => [
               styles.headerIconButton,
               { opacity: isCreatingChat ? 0.35 : pressed ? 0.65 : 1 },
             ]}
           >
-            <AppIcon name="square.and.pencil" size={18} tintColor={themeColors['icon-primary']} />
+            <AppIcon name="square.and.pencil" />
           </Pressable>
         </View>
       ),

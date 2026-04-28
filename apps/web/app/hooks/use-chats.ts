@@ -19,7 +19,9 @@ export function useCreateChat() {
 
   return useRpcMutation<Chat, { title: string }>(
     (client, variables) =>
-      client.api.chats.$post({ json: { title: variables.title } }).then((r) => r.json() as Promise<Chat>),
+      client.api.chats
+        .$post({ json: { title: variables.title } })
+        .then((r) => r.json() as Promise<Chat>),
     {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: chatQueryKeys.list });

@@ -16,7 +16,6 @@ import {
 
 import { API_BRAND } from '../brand';
 import { env } from '../env';
-import { recordTestOtp } from './test-otp-store';
 
 const userFieldMappings = {
   emailVerified: 'emailVerified',
@@ -135,6 +134,12 @@ const verificationOtpSubjectByType = {
   'forget-password': 'Reset your password',
 } as const satisfies Record<string, string>;
 
+export const TEST_OTP = '000000';
+
+function generateNumericOtp(length: number): string {
+  return Array.from({ length }, () => String(Math.floor(Math.random() * 10))).join('');
+}
+
 function shouldSendEmails(): boolean {
   if (env.SEND_EMAILS === 'true') return true;
   if (env.NODE_ENV === 'test') return false;
@@ -228,9 +233,8 @@ function getAuthPlugins() {
     }),
     emailOTP({
       expiresIn: env.AUTH_EMAIL_OTP_EXPIRES_SECONDS,
+      generateOTP: () => (shouldSendEmails() ? generateNumericOtp(6) : TEST_OTP),
       sendVerificationOTP: async ({ email, otp, type }) => {
-        recordTestOtp({ email, otp, type });
-
         if (env.NODE_ENV === 'development') {
           logDevelopmentVerificationOtp({ email, otp, type });
           return;

@@ -49,7 +49,13 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 export default function SecuritySettingsPage({ loaderData }: Route.ComponentProps) {
   const { passkeys: initialPasskeys } = loaderData;
-  const { data: passkeys, isLoading, error, deletePasskey, register } = usePasskeys({
+  const {
+    data: passkeys,
+    isLoading,
+    error,
+    deletePasskey,
+    register,
+  } = usePasskeys({
     enabled: false,
     initialPasskeys,
   });

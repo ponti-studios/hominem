@@ -1,7 +1,7 @@
 import { streamChatWithWsFirst, toWebSocketUrl } from '@hominem/rpc';
+import { useApiClient } from '@hominem/rpc/react';
 import type { ChatTransportPreference } from '@hominem/rpc/types';
 import { useSignal } from '@preact/signals-react';
-import { useApiClient } from '@hominem/rpc/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useRef } from 'react';
 
@@ -16,7 +16,8 @@ export function useStreamMessage({ chatId }: { chatId: string }) {
   const status = useSignal<StreamStatus>('idle');
   const error = useSignal<Error | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
-  const transportPreference = (import.meta.env['VITE_CHAT_TRANSPORT'] || 'auto') as ChatTransportPreference;
+  const transportPreference = (import.meta.env['VITE_CHAT_TRANSPORT'] ||
+    'auto') as ChatTransportPreference;
 
   const stream = useCallback(
     async (input: {
@@ -34,7 +35,10 @@ export function useStreamMessage({ chatId }: { chatId: string }) {
 
       try {
         await streamChatWithWsFirst({
-          wsUrl: toWebSocketUrl(import.meta.env.VITE_PUBLIC_API_URL as string, `/api/chats/${chatId}/ws`),
+          wsUrl: toWebSocketUrl(
+            import.meta.env.VITE_PUBLIC_API_URL as string,
+            `/api/chats/${chatId}/ws`,
+          ),
           transportPreference,
           payload: {
             message: input.message,

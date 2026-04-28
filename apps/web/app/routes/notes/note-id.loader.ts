@@ -1,7 +1,7 @@
 import { type LoaderFunctionArgs, data, redirect } from 'react-router';
 
-import { requireAuth } from '~/lib/guards';
 import { serverEnv } from '~/lib/env.server';
+import { requireAuth } from '~/lib/guards';
 
 export async function noteIdLoader({ request, params }: LoaderFunctionArgs) {
   await requireAuth(request);

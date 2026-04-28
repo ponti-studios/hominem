@@ -33,7 +33,6 @@ function getExpoExtraConfig(
   env: Record<string, string | undefined>,
 ): {
   apiBaseUrl: string;
-  e2eAuthSecret: string;
   mobilePasskeyEnabled: string;
   posthogApiKey: string;
   posthogHost: string;
@@ -41,7 +40,6 @@ function getExpoExtraConfig(
   const getEnvValue = (value: string | undefined, fallback: string): string => value ?? fallback;
   return {
     apiBaseUrl: getEnvValue(env.EXPO_PUBLIC_API_BASE_URL, ''),
-    e2eAuthSecret: getEnvValue(env.EXPO_PUBLIC_E2E_AUTH_SECRET, ''),
     mobilePasskeyEnabled: getEnvValue(env.EXPO_PUBLIC_MOBILE_PASSKEY_ENABLED, 'false'),
     posthogApiKey: getEnvValue(env.EXPO_PUBLIC_POSTHOG_API_KEY, ''),
     posthogHost: getEnvValue(env.EXPO_PUBLIC_POSTHOG_HOST, 'https://us.i.posthog.com'),

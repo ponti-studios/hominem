@@ -8,7 +8,15 @@ import { authMiddleware, type AppContext } from '../middleware/auth';
 import { toNoteDto, toNoteFeedItemDto } from './notes.mapper';
 
 const NoteContentTypeSchema = z.enum([
-  'note', 'document', 'task', 'timer', 'journal', 'tweet', 'essay', 'blog_post', 'social_post',
+  'note',
+  'document',
+  'task',
+  'timer',
+  'journal',
+  'tweet',
+  'essay',
+  'blog_post',
+  'social_post',
 ]);
 const NoteStatusSchema = z.enum(['draft', 'published', 'archived']);
 const ContentTagSchema = z.object({ value: z.string() });
@@ -17,20 +25,24 @@ const PublishingMetadataSchema = z.object({
   platform: z.string().optional(),
   url: z.string().optional(),
   externalId: z.string().optional(),
-  seo: z.object({
-    metaTitle: z.string().optional(),
-    metaDescription: z.string().optional(),
-    keywords: z.array(z.string()).optional(),
-    canonicalUrl: z.string().optional(),
-    featuredImage: z.string().optional(),
-  }).optional(),
-  metrics: z.object({
-    views: z.number().optional(),
-    likes: z.number().optional(),
-    reposts: z.number().optional(),
-    replies: z.number().optional(),
-    clicks: z.number().optional(),
-  }).optional(),
+  seo: z
+    .object({
+      metaTitle: z.string().optional(),
+      metaDescription: z.string().optional(),
+      keywords: z.array(z.string()).optional(),
+      canonicalUrl: z.string().optional(),
+      featuredImage: z.string().optional(),
+    })
+    .optional(),
+  metrics: z
+    .object({
+      views: z.number().optional(),
+      likes: z.number().optional(),
+      reposts: z.number().optional(),
+      replies: z.number().optional(),
+      clicks: z.number().optional(),
+    })
+    .optional(),
   threadPosition: z.number().optional(),
   threadId: z.string().optional(),
   inReplyTo: z.string().optional(),

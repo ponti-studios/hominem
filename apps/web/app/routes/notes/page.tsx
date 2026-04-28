@@ -2,6 +2,7 @@ import { SectionIntro, StatePanel } from '@hominem/ui';
 import { Composer } from '@hominem/ui/composer';
 import type { ComposerActions } from '@hominem/ui/composer/composer-provider';
 import { ComposerProvider, ComposerStore } from '@hominem/ui/composer/composer-provider';
+import { NoteStreamRow } from '@hominem/ui/notes';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { data, redirect, useNavigate } from 'react-router';
@@ -20,7 +21,6 @@ import { getServerSession } from '~/lib/auth.server';
 import { serverEnv } from '~/lib/env.server';
 import { useFileUpload } from '~/lib/hooks/use-file-upload';
 
-import { NoteStreamRow } from '@hominem/ui/notes';
 import {
   completeNotesRowExit,
   NOTES_ROW_EXIT_REQUEST_EVENT,

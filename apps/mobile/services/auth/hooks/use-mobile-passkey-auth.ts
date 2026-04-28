@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Platform } from 'react-native';
 
-import { API_BASE_URL, E2E_AUTH_SECRET, E2E_TESTING } from '~/constants';
+import { E2E_TESTING } from '~/constants';
 import { authClient } from '~/services/auth/auth-client';
 
 interface PasskeySignInResult {
@@ -34,7 +34,9 @@ function toErrorMessage(error: unknown, fallback: string) {
   return typeof message === 'string' ? message : fallback;
 }
 
-export function useMobilePasskeyAuth(options: UseMobilePasskeyAuthOptions = {}): UseMobilePasskeyAuthReturn {
+export function useMobilePasskeyAuth(
+  options: UseMobilePasskeyAuthOptions = {},
+): UseMobilePasskeyAuthReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [passkeys, setPasskeys] = useState<{ id: string; name: string }[]>([]);
@@ -93,57 +95,39 @@ export function useMobilePasskeyAuth(options: UseMobilePasskeyAuthOptions = {}):
 
       try {
         if (E2E_TESTING && mode !== 'real') {
-          if (!E2E_AUTH_SECRET) {
-            setError('Missing EXPO_PUBLIC_E2E_AUTH_SECRET for E2E passkey sign-in');
-            return null;
-          }
-
           if (mode === 'e2e-cancel') {
-            const message = 'Passkey sign-in was cancelled';
-            setError(message);
+            setError('Passkey sign-in was cancelled');
             return null;
           }
 
-          const email = `mobile-passkey-${Date.now()}@hominem.test`;
-          const response = await fetch(
-            new URL('/api/auth/mobile/e2e/login', API_BASE_URL).toString(),
-            {
-              method: 'POST',
-              headers: {
-                'content-type': 'application/json',
-                'x-e2e-auth-secret': E2E_AUTH_SECRET,
-              },
-              body: JSON.stringify({
-                email,
-                name: 'Mobile Passkey E2E User',
-                amr: ['passkey', 'e2e', 'mobile'],
-              }),
-            },
-          );
+          // Use the real OTP flow with the server's fixed test OTP so the
+          // BetterAuth Expo client stores a genuine session cookie.
+          const email = 'mobile-passkey-e2e@hominem.test';
+          const TEST_OTP = '000000';
 
-          if (!response.ok) {
-            const body = (await response.json()) as { error?: string };
-            setError(body.error || 'Failed to complete E2E passkey sign-in');
+          const sendResult = await authClient.emailOtp.sendVerificationOtp({
+            email,
+            type: 'sign-in',
+          });
+          if (sendResult.error) {
+            setError(sendResult.error.message ?? 'Failed to send E2E OTP');
             return null;
           }
 
-          const payload = (await response.json()) as {
-            access_token: string;
-            refresh_token: string;
-            expires_in: number;
-            token_type: 'Bearer';
-            user?: {
-              id: string;
-              email: string;
-              name?: string;
-            };
-          };
+          const signInResult = await authClient.signIn.emailOtp({ email, otp: TEST_OTP });
+          if (signInResult.error || !signInResult.data) {
+            setError(signInResult.error?.message ?? 'E2E sign-in failed');
+            return null;
+          }
 
+          const userData = (
+            signInResult.data as { user?: { id: string; email: string; name?: string | null } }
+          ).user;
           return {
-            user: payload.user ?? {
-              id: `mobile-passkey-${Date.now()}`,
-              email,
-              name: 'Mobile Passkey E2E User',
+            user: {
+              id: userData?.id ?? '',
+              email: userData?.email ?? email,
+              name: userData?.name ?? undefined,
             },
           };
         }
@@ -179,55 +163,61 @@ export function useMobilePasskeyAuth(options: UseMobilePasskeyAuthOptions = {}):
     [],
   );
 
-  const addPasskey = useCallback(async (name?: string) => {
-    setIsLoading(true);
-    setError(null);
+  const addPasskey = useCallback(
+    async (name?: string) => {
+      setIsLoading(true);
+      setError(null);
 
-    try {
-      const { error: passkeyError } = await authClient.passkey.addPasskey({
-        name,
-      });
+      try {
+        const { error: passkeyError } = await authClient.passkey.addPasskey({
+          name,
+        });
 
-      if (passkeyError) {
-        const message = toErrorMessage(passkeyError, 'Failed to add passkey');
+        if (passkeyError) {
+          const message = toErrorMessage(passkeyError, 'Failed to add passkey');
+          setError(message);
+          return { success: false, error: message };
+        }
+
+        await loadPasskeys();
+        return { success: true };
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to add passkey';
         setError(message);
         return { success: false, error: message };
+      } finally {
+        setIsLoading(false);
       }
+    },
+    [loadPasskeys],
+  );
 
-      await loadPasskeys();
-      return { success: true };
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to add passkey';
-      setError(message);
-      return { success: false, error: message };
-    } finally {
-      setIsLoading(false);
-    }
-  }, [loadPasskeys]);
+  const deletePasskey = useCallback(
+    async (id: string) => {
+      setIsLoading(true);
+      setError(null);
 
-  const deletePasskey = useCallback(async (id: string) => {
-    setIsLoading(true);
-    setError(null);
+      try {
+        const response = await authClient.deletePasskey({ id });
 
-    try {
-      const response = await authClient.deletePasskey({ id });
+        if (response.error) {
+          const message = response.error.message ?? 'Failed to delete passkey';
+          setError(message);
+          return { success: false, error: message };
+        }
 
-      if (response.error) {
-        const message = response.error.message ?? 'Failed to delete passkey';
+        await loadPasskeys();
+        return { success: true };
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to delete passkey';
         setError(message);
         return { success: false, error: message };
+      } finally {
+        setIsLoading(false);
       }
-
-      await loadPasskeys();
-      return { success: true };
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to delete passkey';
-      setError(message);
-      return { success: false, error: message };
-    } finally {
-      setIsLoading(false);
-    }
-  }, [loadPasskeys]);
+    },
+    [loadPasskeys],
+  );
 
   return useMemo(() => {
     const displayError = error ?? passkeysError;
@@ -241,5 +231,15 @@ export function useMobilePasskeyAuth(options: UseMobilePasskeyAuthOptions = {}):
       error: displayError,
       isSupported,
     };
-  }, [addPasskey, deletePasskey, error, isLoading, isSupported, passkeys, passkeysError, passkeysLoading, signIn]);
+  }, [
+    addPasskey,
+    deletePasskey,
+    error,
+    isLoading,
+    isSupported,
+    passkeys,
+    passkeysError,
+    passkeysLoading,
+    signIn,
+  ]);
 }

@@ -1,7 +1,8 @@
 import type { Note } from '@hominem/rpc/types/notes.types';
 import { useCallback } from 'react';
-import { SurfacePanel } from '../surfaces/surface-panel';
+
 import type { UploadedFile } from '../../types/upload';
+import { SurfacePanel } from '../surfaces/surface-panel';
 import { DeleteNoteAlert } from './delete-note-alert';
 import { NoteActionsPanel } from './note-actions-panel';
 import { NoteFilesPanel } from './note-files-panel';
@@ -16,7 +17,12 @@ function slugifyTitle(title: string | null) {
 
 interface NoteEditorProps {
   note: Note;
-  onSave: (params: { id: string; title: string | null; content: string; fileIds: string[] }) => Promise<void>;
+  onSave: (params: {
+    id: string;
+    title: string | null;
+    content: string;
+    fileIds: string[];
+  }) => Promise<void>;
   onUploadFiles: (files: FileList) => Promise<UploadedFile[]>;
   onTranscribeAudio: (audioBlob: Blob) => Promise<string>;
   onDelete: () => Promise<void>;
@@ -155,11 +161,7 @@ export function NoteEditor({
 
         <NoteFilesPanel files={files} onDetachFile={handleDetachFile} />
 
-        <DeleteNoteAlert
-          onDelete={onDelete}
-          isDeleting={isDeleting}
-          isError={isDeletingError}
-        />
+        <DeleteNoteAlert onDelete={onDelete} isDeleting={isDeleting} isError={isDeletingError} />
       </aside>
     </div>
   );

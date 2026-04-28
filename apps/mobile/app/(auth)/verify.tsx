@@ -240,7 +240,7 @@ function VerifyScreen() {
         <View style={styles.contentShell}>
           <View style={styles.card}>
             <View style={[styles.iconChip, { backgroundColor: palette.iconChip }]}>
-              <AppIcon name="lock.shield" size={18} tintColor={palette.icon} />
+              <AppIcon name="lock.shield" />
             </View>
 
             <View style={styles.copyBlock}>

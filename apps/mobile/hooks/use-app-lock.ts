@@ -68,7 +68,11 @@ export function useAppLock() {
     [enabled, authenticate],
   );
 
-  useSyncExternalStore(subscribe, () => 0, () => 0);
+  useSyncExternalStore(
+    subscribe,
+    () => 0,
+    () => 0,
+  );
 
   return { isUnlocked, authenticate };
 }

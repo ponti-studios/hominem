@@ -14,20 +14,16 @@ import { Resource } from '@opentelemetry/resources';
 import { MeterProvider, PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import { BatchSpanProcessor, WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import {
-  ATTR_DEPLOYMENT_ENVIRONMENT_NAME,
-  ATTR_HOST_NAME,
-} from '@opentelemetry/semantic-conventions/incubating';
-import {
   ATTR_SERVICE_NAME,
   ATTR_SERVICE_NAMESPACE,
   ATTR_SERVICE_VERSION,
 } from '@opentelemetry/semantic-conventions';
-
 import {
-  configureLogger,
-  parseOptionalNumber,
-  type TelemetryConfig,
-} from '../shared/index.js';
+  ATTR_DEPLOYMENT_ENVIRONMENT_NAME,
+  ATTR_HOST_NAME,
+} from '@opentelemetry/semantic-conventions/incubating';
+
+import { configureLogger, parseOptionalNumber, type TelemetryConfig } from '../shared/index.js';
 
 /**
  * Browser telemetry SDK instance

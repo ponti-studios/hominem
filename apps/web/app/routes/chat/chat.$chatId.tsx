@@ -1,19 +1,19 @@
+import type { ChatMessageDto } from '@hominem/rpc/types/chat.types';
 import type { NoteSearchResult } from '@hominem/rpc/types/notes.types';
 import { SpeechInput } from '@hominem/ui/ai-elements';
 import { Button } from '@hominem/ui/button';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Link, data } from 'react-router';
-import type { ChatMessageDto } from '@hominem/rpc/types/chat.types';
 
 import { useArchiveChat } from '~/hooks/use-chats';
 import { useNoteSearch } from '~/hooks/use-notes';
 import { useServerSpeech } from '~/hooks/use-server-speech';
 import { useTranscribe } from '~/hooks/use-transcribe';
+import { serverEnv } from '~/lib/env.server';
 import { requireAuth } from '~/lib/guards';
 import { useChatMessages } from '~/lib/hooks/use-chat-messages';
 import { useFileUpload } from '~/lib/hooks/use-file-upload';
 import { useStreamMessage } from '~/lib/hooks/use-stream-message';
-import { serverEnv } from '~/lib/env.server';
 
 import type { Route } from './+types/chat.$chatId';
 
@@ -56,7 +56,10 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const chat = chatResponse.ok ? ((await chatResponse.json()) as ChatLoaderData) : null;
 
   const messagesResponse = await fetch(
-    new URL(`/api/chats/${params.chatId}/messages?limit=50`, serverEnv.VITE_PUBLIC_API_URL).toString(),
+    new URL(
+      `/api/chats/${params.chatId}/messages?limit=50`,
+      serverEnv.VITE_PUBLIC_API_URL,
+    ).toString(),
     { headers },
   );
   const messages = messagesResponse.ok
@@ -76,7 +79,17 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   return data({ chat, seedNote, messages });
 }
 
-export default function ChatPage({ loaderData, params }: { loaderData: { chat: ChatLoaderData | null; seedNote: NoteLoaderData | null; messages: ChatMessageLoaderData } ; params: { chatId: string } }) {
+export default function ChatPage({
+  loaderData,
+  params,
+}: {
+  loaderData: {
+    chat: ChatLoaderData | null;
+    seedNote: NoteLoaderData | null;
+    messages: ChatMessageLoaderData;
+  };
+  params: { chatId: string };
+}) {
   const { chat, seedNote, messages: initialMessages } = loaderData;
   const { chatId } = params;
   const inputRef = useRef<HTMLTextAreaElement | null>(null);

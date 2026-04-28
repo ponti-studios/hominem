@@ -5,7 +5,6 @@ import { useCreateChat } from '~/hooks/use-chats';
 import { getServerSession } from '~/lib/auth.server';
 import { serverEnv } from '~/lib/env.server';
 
-
 type ChatListItem = { id: string; title: string | null; updatedAt: string };
 type NoteSummary = { id: string; title?: string | null } | null;
 
@@ -37,7 +36,11 @@ export async function loader({ request }: { request: Request }) {
   return data({ chats, note });
 }
 
-export default function ChatIndexPage({ loaderData }: { loaderData: { chats: ChatListItem[]; note: NoteSummary } }) {
+export default function ChatIndexPage({
+  loaderData,
+}: {
+  loaderData: { chats: ChatListItem[]; note: NoteSummary };
+}) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const noteId = searchParams.get('noteId') ?? '';

@@ -1,4 +1,5 @@
 import { memo } from 'react';
+
 import { SurfacePanel } from '../surfaces/surface-panel';
 import type { NoteFile } from './note-file.types';
 

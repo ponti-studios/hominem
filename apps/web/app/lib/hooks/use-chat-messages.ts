@@ -20,7 +20,10 @@ export type ExtendedMessage = import('@hominem/rpc/types/chat.types').ChatMessag
   isStreaming?: boolean;
 };
 
-export function useChatMessages({ chatId, initialData }: UseChatMessagesOptions): UseChatMessagesReturn {
+export function useChatMessages({
+  chatId,
+  initialData,
+}: UseChatMessagesOptions): UseChatMessagesReturn {
   const messagesQuery = useRpcQuery(
     (client) =>
       client.api.chats[':id'].messages

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { MutableRefObject } from 'react';
+
 import type { NoteFile } from './note-file.types';
 
 export type { NoteFile };
@@ -38,7 +39,11 @@ interface DraftSnapshot {
 
 const IDLE_SAVE_DELAY_MS = 1500;
 
-function buildSnapshot(draft: { title: string; content: string; files: NoteFile[] }): DraftSnapshot {
+function buildSnapshot(draft: {
+  title: string;
+  content: string;
+  files: NoteFile[];
+}): DraftSnapshot {
   return {
     title: draft.title,
     content: draft.content,
