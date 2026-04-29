@@ -1,5 +1,5 @@
 import type { MarkdownStyle } from '@expensify/react-native-live-markdown';
-import { MarkdownTextInput } from '@expensify/react-native-live-markdown';
+import { MarkdownTextInput, parseExpensiMark } from '@expensify/react-native-live-markdown';
 import { Host as SwiftUIHost, TextField as SwiftUITextField } from '@expo/ui/swift-ui';
 import { font, frame, submitLabel, textFieldStyle } from '@expo/ui/swift-ui/modifiers';
 import { useApiClient } from '@hominem/rpc/react';
@@ -8,10 +8,9 @@ import { useNavigation } from '@react-navigation/native';
 import { useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useLayoutEffect, useRef } from 'react';
+import React, { useLayoutEffect, useMemo, useRef } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 
-import { parseNoteMarkdown } from '~/components/notes/note-markdown-parser';
 import { NOTE_TOOLBAR_ID, NoteToolbar } from '~/components/notes/NoteToolbar';
 import { Text, makeStyles, useThemeColors } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
@@ -70,6 +69,15 @@ function NoteDetailEditor({
   const themeColors = useThemeColors();
   const navigation = useNavigation();
   const contentInputRef = useRef<React.ComponentRef<typeof MarkdownTextInput>>(null);
+
+  const dateline = useMemo(() => {
+    const date = new Date(note.updatedAt);
+    return date.toLocaleDateString(undefined, {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  }, [note.updatedAt]);
 
   const { title, setTitle, content, setContent, files, setFiles, onSave } = useNoteEditor(
     {
@@ -130,7 +138,13 @@ function NoteDetailEditor({
 
   const markdownStyle: MarkdownStyle = {
     syntax: { color: themeColors['text-tertiary'] },
-    h1: { fontSize: 22 },
+    h1: { fontSize: 26 },
+    blockquote: {
+      borderColor: themeColors.accent,
+      borderWidth: 3,
+      marginLeft: 0,
+      paddingLeft: 14,
+    },
     code: {
       color: themeColors['text-secondary'],
       backgroundColor: themeColors['bg-surface'],
@@ -140,6 +154,16 @@ function NoteDetailEditor({
       borderStyle: 'solid',
       padding: 2,
     },
+    pre: {
+      color: themeColors['text-secondary'],
+      backgroundColor: themeColors['bg-surface'],
+      borderColor: themeColors['border-default'],
+      borderWidth: 1,
+      borderRadius: 8,
+      borderStyle: 'solid',
+      padding: 12,
+    },
+    link: { color: themeColors.accent },
   };
 
   const handleDetach = async (fileId: string) => {
@@ -175,12 +199,16 @@ function NoteDetailEditor({
             }}
             modifiers={[
               textFieldStyle('plain'),
-              font({ size: 22, weight: 'semibold' }),
+              font({ size: 26, weight: 'bold' }),
               submitLabel('next'),
               frame({ maxWidth: Number.POSITIVE_INFINITY }),
             ]}
           />
         </SwiftUIHost>
+
+        <Text variant="overline" style={styles.dateline}>
+          {dateline}
+        </Text>
 
         <View style={styles.divider} />
 
@@ -207,7 +235,7 @@ function NoteDetailEditor({
           textAlignVertical="top"
           scrollEnabled={false}
           accessibilityLabel="Note content"
-          parser={parseNoteMarkdown}
+          parser={parseExpensiMark}
           markdownStyle={markdownStyle}
           inputAccessoryViewID={NOTE_TOOLBAR_ID}
         />
@@ -262,22 +290,26 @@ const useNoteStyles = makeStyles((theme) => ({
     flex: 1,
   },
   content: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
+    paddingHorizontal: 24,
+    paddingTop: 16,
     paddingBottom: COMPOSER_CLEARANCE,
   },
   titleHost: {
     alignSelf: 'stretch',
-    marginBottom: 12,
+    marginBottom: 6,
+  },
+  dateline: {
+    color: theme.colors['text-tertiary'],
+    marginBottom: 14,
   },
   divider: {
     height: 1,
     backgroundColor: theme.colors['border-subtle'],
-    marginBottom: 16,
+    marginBottom: 20,
   },
   contentInput: {
-    fontSize: 16,
-    lineHeight: 26,
+    fontSize: 17,
+    lineHeight: 28,
     letterSpacing: -0.1,
     color: theme.colors.foreground,
     paddingVertical: 0,
