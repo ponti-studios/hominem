@@ -15,6 +15,26 @@ describe('parseNoteMarkdown', () => {
     ]);
   });
 
+  it('marks blockquote text and syntax at the start of a line', () => {
+    expect(parseNoteMarkdown('> Quote')).toEqual([
+      { type: 'blockquote', start: 0, length: 7 },
+      { type: 'syntax', start: 0, length: 2 },
+    ]);
+
+    expect(parseNoteMarkdown('Intro\n> Pull quote here')).toEqual([
+      { type: 'blockquote', start: 6, length: 17 },
+      { type: 'syntax', start: 6, length: 2 },
+    ]);
+  });
+
+  it('marks fenced code blocks as pre with syntax ranges', () => {
+    expect(parseNoteMarkdown('```code```')).toEqual([
+      { type: 'pre', start: 0, length: 10 },
+      { type: 'syntax', start: 0, length: 3 },
+      { type: 'syntax', start: 7, length: 3 },
+    ]);
+  });
+
   it('marks paired inline delimiters and their syntax ranges', () => {
     expect(parseNoteMarkdown('**bold** _em_ ~~gone~~ `code`')).toEqual([
       { type: 'bold', start: 0, length: 8 },
@@ -42,6 +62,14 @@ describe('parseNoteMarkdown', () => {
       { type: 'code', start: 0, length: 2 },
       { type: 'syntax', start: 0, length: 1 },
       { type: 'syntax', start: 1, length: 1 },
+    ]);
+  });
+
+  it('treats triple backtick as pre, not inline code', () => {
+    expect(parseNoteMarkdown('```x```')).toEqual([
+      { type: 'pre', start: 0, length: 7 },
+      { type: 'syntax', start: 0, length: 3 },
+      { type: 'syntax', start: 4, length: 3 },
     ]);
   });
 });

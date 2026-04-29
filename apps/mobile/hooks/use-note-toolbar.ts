@@ -8,7 +8,9 @@ export type FormatAction =
   | 'strikethrough'
   | 'heading'
   | 'bullet'
+  | 'numbered-list'
   | 'checklist'
+  | 'blockquote'
   | 'indent'
   | 'outdent'
   | 'undo'
@@ -214,8 +216,14 @@ export function useNoteToolbar({ content, onContentChange }: UseNoteToolbarOptio
         case 'bullet':
           result = toggleLinePrefix(text, sel, '- ');
           break;
+        case 'numbered-list':
+          result = toggleLinePrefix(text, sel, '1. ');
+          break;
         case 'checklist':
           result = toggleLinePrefix(text, sel, '- [ ] ');
+          break;
+        case 'blockquote':
+          result = toggleLinePrefix(text, sel, '> ');
           break;
         case 'indent':
           result = indentLine(text, sel);

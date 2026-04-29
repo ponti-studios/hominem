@@ -10,6 +10,35 @@ function appendHeadingRange(text: string, ranges: MarkdownRange[], start: number
   return end;
 }
 
+function appendBlockquoteRange(
+  text: string,
+  ranges: MarkdownRange[],
+  start: number,
+  len: number,
+) {
+  'worklet';
+  const lineEnd = text.indexOf('\n', start);
+  const end = lineEnd === -1 ? len : lineEnd;
+  ranges.push({ type: 'blockquote', start, length: end - start });
+  ranges.push({ type: 'syntax', start, length: 2 });
+
+  return end;
+}
+
+function appendPreRange(text: string, ranges: MarkdownRange[], start: number, len: number) {
+  'worklet';
+  // Find the closing ``` after the opening fence
+  const closeIdx = text.indexOf('```', start + 3);
+  if (closeIdx === -1) return -1;
+
+  const end = closeIdx + 3;
+  ranges.push({ type: 'pre', start, length: end - start });
+  ranges.push({ type: 'syntax', start, length: 3 });
+  ranges.push({ type: 'syntax', start: closeIdx, length: 3 });
+
+  return end;
+}
+
 function appendDelimitedRange(
   text: string,
   ranges: MarkdownRange[],
@@ -56,6 +85,11 @@ function appendDelimitedRangeAt(
     return appendDelimitedRange(text, ranges, 'strikethrough', '~~', index, index + 2, index + 2);
   }
 
+  // Fenced code block (```) takes priority over inline code (`)
+  if (ch === '`' && index + 2 < len && text[index + 1] === '`' && text[index + 2] === '`') {
+    return appendPreRange(text, ranges, index, len);
+  }
+
   if (ch === '`') {
     return appendDelimitedRange(text, ranges, 'code', '`', index, index + 1, index);
   }
@@ -79,6 +113,12 @@ export function parseNoteMarkdown(text: string): MarkdownRange[] {
     // H1: "# " at the start of a line
     if (atLineStart && ch === '#' && i + 1 < len && text[i + 1] === ' ') {
       i = appendHeadingRange(text, ranges, i, len);
+      continue;
+    }
+
+    // Blockquote: "> " at the start of a line
+    if (atLineStart && ch === '>' && i + 1 < len && text[i + 1] === ' ') {
+      i = appendBlockquoteRange(text, ranges, i, len);
       continue;
     }
 
