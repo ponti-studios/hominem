@@ -6,6 +6,10 @@
  */
 import { queryKeys } from '@hominem/rpc/react';
 
+export const inboxKeys = {
+  all: queryKeys.inbox.all,
+} as const;
+
 export const noteKeys = {
   all: queryKeys.notes.all,
   lists: queryKeys.notes.lists,

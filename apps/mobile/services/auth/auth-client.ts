@@ -14,12 +14,12 @@ type AuthError = {
   message?: string;
 };
 
-type AuthResult<TData = never> = {
+export type AuthResult<TData = never> = {
   data?: TData | null;
   error?: AuthError | null;
 };
 
-const baseAuthClient = createAuthClient({
+export const authClient = createAuthClient({
   baseURL: API_BASE_URL,
   fetchOptions: {
     headers: {
@@ -36,19 +36,3 @@ const baseAuthClient = createAuthClient({
     passkeyClient(),
   ],
 });
-
-type DeletePasskeyFn = (input: { id: string }) => Promise<AuthResult>;
-
-export type AuthClient = typeof baseAuthClient & {
-  deletePasskey: DeletePasskeyFn;
-};
-
-export const authClient: AuthClient = Object.assign(baseAuthClient, {
-  deletePasskey: ({ id }) => {
-    return baseAuthClient.$fetch('/passkey/delete-passkey', {
-      method: 'POST',
-      body: { id },
-      throw: false,
-    });
-  },
-} as AuthClient);

@@ -3,6 +3,7 @@ import type { Note } from '@hominem/rpc/types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { noteKeys } from './query-keys';
+import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 
 interface UseNoteDeleteOptions {
   noteId: string;
@@ -21,6 +22,7 @@ export function useNoteDelete({ noteId }: UseNoteDeleteOptions) {
         current?.filter((note) => note.id !== noteId),
       );
       void queryClient.invalidateQueries({ queryKey: noteKeys.feeds() });
+      void invalidateInboxQueries(queryClient);
     },
   });
 }

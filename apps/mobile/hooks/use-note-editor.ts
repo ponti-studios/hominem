@@ -5,6 +5,7 @@ import { useCallback, useRef } from 'react';
 
 import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
 import { noteKeys } from '~/services/notes/query-keys';
+import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 
 export function useNoteEditor(noteId: string) {
   const client = useApiClient();
@@ -21,6 +22,7 @@ export function useNoteEditor(noteId: string) {
       });
       requestTopReveal();
       void queryClient.invalidateQueries({ queryKey: noteKeys.feeds() });
+      void invalidateInboxQueries(queryClient);
     },
     [queryClient, requestTopReveal],
   );

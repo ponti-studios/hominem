@@ -2,7 +2,7 @@ import { CHAT_TITLE_MAX_LENGTH } from '@hominem/rpc/types';
 import type { Chat, SessionSource } from '@hominem/rpc/types';
 import type { QueryClient } from '@tanstack/react-query';
 
-import { chatKeys } from '~/services/notes/query-keys';
+import { chatKeys, inboxKeys } from '~/services/notes/query-keys';
 
 import type { ChatWithActivity } from './session-types';
 
@@ -80,4 +80,6 @@ export function updateChatTitleCaches(
         : session,
     ),
   );
+
+  void queryClient.invalidateQueries({ queryKey: inboxKeys.all });
 }

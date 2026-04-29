@@ -8,6 +8,7 @@ import { aiRoutes } from './routes/ai';
 import { chatsRoutes } from './routes/chats';
 import { filesRoutes } from './routes/files';
 import { notesRoutes } from './routes/notes';
+import { inboxRoutes } from './routes/inbox';
 import { tasksRoutes } from './routes/tasks';
 import { authenticatedVoiceRoutes } from './routes/voice';
 
@@ -18,6 +19,7 @@ export const rpcApp = new Hono<AppContext>()
   .basePath('/api')
   .route('/ai', aiRoutes)
   .route('/chats', chatsRoutes)
+  .route('/inbox', inboxRoutes)
   .route('/files', filesRoutes)
   .route('/notes', notesRoutes)
   .route('/tasks', tasksRoutes)

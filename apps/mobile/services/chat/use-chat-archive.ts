@@ -2,6 +2,7 @@ import { useApiClient } from '@hominem/rpc/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { chatKeys } from '~/services/notes/query-keys';
+import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 
 import { getChatActivityAt } from './session-activity';
 import type { ChatWithActivity } from './session-types';
@@ -41,6 +42,7 @@ export function useChatArchive({ chatId, onSuccess }: UseChatArchiveOptions) {
           return [nextArchivedChat, ...sessions.filter((session) => session.id !== chatId)];
         },
       );
+      void invalidateInboxQueries(queryClient);
       onSuccess?.();
     },
   });

@@ -9,6 +9,10 @@
  */
 
 export const queryKeys = {
+  inbox: {
+    all: ['inbox'] as const,
+  },
+
   notes: {
     all: ['notes'] as const,
     lists: () => ['notes', 'list'] as const,

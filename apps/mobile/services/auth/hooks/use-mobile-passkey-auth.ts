@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Platform } from 'react-native';
 
 import { E2E_TESTING } from '~/constants';
-import { authClient } from '~/services/auth/auth-client';
+import { authClient, AuthResult } from '~/services/auth/auth-client';
 
 interface PasskeySignInResult {
   user: {
@@ -198,7 +198,11 @@ export function useMobilePasskeyAuth(
       setError(null);
 
       try {
-        const response = await authClient.deletePasskey({ id });
+        const response = await authClient.$fetch<AuthResult>('/passkey/delete-passkey', {
+          method: 'POST',
+          body: { id },
+          throw: false,
+        });
 
         if (response.error) {
           const message = response.error.message ?? 'Failed to delete passkey';

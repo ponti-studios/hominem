@@ -1,11 +1,11 @@
 import { parseInboxTimestamp } from '@hominem/chat';
 import type { QueryClient } from '@tanstack/react-query';
 
-import { chatKeys, noteKeys } from '~/services/notes/query-keys';
+import { chatKeys, inboxKeys, noteKeys } from '~/services/notes/query-keys';
 
 import type { ChatWithActivity } from '../chat/session-types';
 
-const INBOX_REFRESH_QUERY_KEYS = [noteKeys.all, chatKeys.resumableSessions] as const;
+const INBOX_REFRESH_QUERY_KEYS = [inboxKeys.all, noteKeys.all, chatKeys.resumableSessions] as const;
 
 interface ChatInboxRefreshSnapshot {
   chatId: string;
