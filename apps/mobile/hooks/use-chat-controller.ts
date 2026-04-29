@@ -4,7 +4,6 @@ import { useChatLifecycle } from '@hominem/chat/react';
 import { buildArtifactProposal } from '@hominem/chat/ui';
 import { useApiClient } from '@hominem/rpc/react';
 import type { ArtifactType, CaptureLifecycleState, SessionSource } from '@hominem/rpc/types';
-import { ENABLED_ARTIFACT_TYPES } from '@hominem/rpc/types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -109,7 +108,6 @@ interface UseChatControllerResult {
   handleSearchQueryChange: (query: string) => void;
   handleShareMessage: (message: ChatMessageItem) => Promise<void>;
   handleSpeakMessage: (message: ChatMessageItem) => void;
-  enabledTransforms: Exclude<ArtifactType, 'tracker'>[];
   canTransform: boolean;
   isMessagesLoading: boolean;
   isArchiving: boolean;
@@ -162,14 +160,6 @@ export function useChatController({
   const proposalMessages = useMemo(
     () => formattedMessages.map((message) => ({ role: message.role, content: message.message })),
     [formattedMessages],
-  );
-
-  const enabledTransforms = useMemo(
-    () =>
-      ENABLED_ARTIFACT_TYPES.filter(
-        (type): type is Exclude<ArtifactType, 'tracker'> => type !== 'tracker',
-      ),
-    [],
   );
 
   const createTask = useMutation({
@@ -428,7 +418,6 @@ export function useChatController({
   return {
     Markdown,
     displayMessages,
-    enabledTransforms,
     handleAcceptReview,
     handleArchiveChat,
     handleCloseSearch,

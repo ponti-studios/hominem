@@ -124,9 +124,7 @@ export function useSendMessage({ chatId }: { chatId: string }) {
     onSuccess: (_data, _input, context) => {
       streamingIdRef.current = null;
       queryClient.setQueryData<MessageOutput[]>(chatKeys.messages(chatId), (prev) =>
-        prev?.map((m) =>
-          m.id === context?.assistantMsgId ? { ...m, isStreaming: false } : m,
-        ),
+        prev?.map((m) => (m.id === context?.assistantMsgId ? { ...m, isStreaming: false } : m)),
       );
       // Background refresh to replace client-generated IDs with server IDs.
       void queryClient.invalidateQueries({ queryKey: chatKeys.messages(chatId) });

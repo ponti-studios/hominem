@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View, type RefreshControlProps } from 'react-nat
 
 import { Text, makeStyles, spacing } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
+import t from '~/translations';
 
 import { InboxStreamItem } from './InboxStreamItem';
 import type { InboxStreamItemData as InboxStreamItemModel } from './InboxStreamItem.types';
@@ -34,36 +35,36 @@ RenderInboxStreamItem.displayName = 'RenderInboxStreamItem';
 const STARTERS = [
   {
     icon: 'note.text',
-    title: 'Capture a note',
-    prompt: 'I want to remember...',
+    title: t.workspace.empty.starters.captureNote.title,
+    prompt: t.workspace.empty.starters.captureNote.prompt,
   },
   {
     icon: 'bubble.left',
-    title: 'Ask about your notes',
-    prompt: 'Help me make sense of...',
+    title: t.workspace.empty.starters.askAboutNotes.title,
+    prompt: t.workspace.empty.starters.askAboutNotes.prompt,
   },
   {
     icon: 'paperclip',
-    title: 'Drop a file',
-    prompt: 'Summarize this for me:',
+    title: t.workspace.empty.starters.dropAFile.title,
+    prompt: t.workspace.empty.starters.dropAFile.prompt,
   },
 ] as const;
 
 const SAMPLE_ITEMS = [
   {
     icon: 'note.text',
-    title: 'Ideas from today',
-    meta: 'Notes stay searchable',
+    title: t.workspace.empty.samples.ideasFromToday.title,
+    meta: t.workspace.empty.samples.ideasFromToday.meta,
   },
   {
     icon: 'bubble.left',
-    title: 'What did I decide last week?',
-    meta: 'Ask across your context',
+    title: t.workspace.empty.samples.lastWeekDecision.title,
+    meta: t.workspace.empty.samples.lastWeekDecision.meta,
   },
   {
     icon: 'doc.text',
-    title: 'Project brief.pdf',
-    meta: 'Files live beside notes',
+    title: t.workspace.empty.samples.projectBrief.title,
+    meta: t.workspace.empty.samples.projectBrief.meta,
   },
 ] as const;
 
@@ -93,20 +94,19 @@ export const InboxStream = ({
             <AppIcon name="sparkles" size={24} tintColor={styles.emptyIconSymbol.color} />
           </View>
           <Text variant="title2" color="foreground" style={styles.emptyTitle}>
-            Your workspace starts here
+            {t.workspace.empty.title}
           </Text>
           <Text variant="body" color="text-secondary" style={styles.emptyBody}>
-            Capture a note, ask Hakumi to connect the dots, or attach a file. Everything you add
-            comes back here when you need it.
+            {t.workspace.empty.description}
           </Text>
 
           <View style={styles.samplePanel}>
             <View style={styles.sampleHeader}>
               <Text variant="caption1" color="text-tertiary" style={styles.sampleLabel}>
-                Example workspace
+                {t.workspace.empty.exampleWorkspace}
               </Text>
               <Text variant="caption1" color="text-tertiary">
-                Preview
+                {t.workspace.empty.preview}
               </Text>
             </View>
             <View style={styles.sampleList}>

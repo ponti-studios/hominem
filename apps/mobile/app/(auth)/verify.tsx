@@ -25,6 +25,7 @@ import Animated, {
 
 import { FeatureErrorBoundary } from '../../components/error-boundary/FeatureErrorBoundary';
 import { Button } from '../../components/ui/button';
+import t from '~/translations';
 import AppIcon from '../../components/ui/icon';
 import { useAuth } from '../../services/auth/auth-provider';
 import { useEmailAuth } from '../../services/auth/hooks/use-email-auth';
@@ -211,7 +212,7 @@ function VerifyScreen() {
           <View style={[styles.successChip, { backgroundColor: palette.iconChip }]}>
             <AppIcon name="checkmark.circle.fill" size={32} tintColor={palette.success} />
           </View>
-          <Text style={[styles.successText, { color: palette.textPrimary }]}>Signed in</Text>
+          <Text style={[styles.successText, { color: palette.textPrimary }]}>{t.auth.verify.signedIn}</Text>
         </Animated.View>
       </View>
     );
@@ -249,7 +250,7 @@ function VerifyScreen() {
               </Text>
               <View style={styles.emailChipRow}>
                 <Text style={[styles.helperText, { color: palette.textSecondary }]}>
-                  Code sent to
+                  {t.auth.verify.codeSentTo}
                 </Text>
                 <Pressable
                   hitSlop={8}
@@ -306,14 +307,14 @@ function VerifyScreen() {
                         void handleVerifyOtp(resolvedEmail, normalizedOtp);
                       }
                     }}
-                    accessibilityLabel="One-time verification code"
+                    accessibilityLabel={t.auth.verify.oneTimeVerificationCodeA11y}
                   />
                   {secondsLeft === 0 ? (
-                    <Text style={[styles.countdown, { color: palette.error }]}>Expired</Text>
+                    <Text style={[styles.countdown, { color: palette.error }]}>{t.auth.verify.expired}</Text>
                   ) : (
                     <Text
                       style={[styles.countdown, { color: countdownColor(secondsLeft, palette) }]}
-                      accessibilityLabel={`Time remaining: ${Math.floor(secondsLeft / 60)} minutes ${secondsLeft % 60} seconds`}
+                      accessibilityLabel={t.auth.verify.timeRemainingA11y(secondsLeft)}
                     >
                       {formatCountdown(secondsLeft)}
                     </Text>

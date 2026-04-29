@@ -4,6 +4,7 @@ import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
 import { FullScreenErrorFallback } from './FullScreenErrorFallback';
 import { logError } from './log-error';
 import { createRootFallbackMessage } from './messages';
+import t from '~/translations';
 
 interface Props {
   children: ReactNode;
@@ -15,7 +16,7 @@ function RootFallback({ error, resetErrorBoundary }: FallbackProps) {
   const err = error instanceof Error ? error : new Error(String(error));
   return (
     <FullScreenErrorFallback
-      actionLabel="Try Again"
+      actionLabel={t.errors.featureFallback.tryAgain}
       message={createRootFallbackMessage(err)}
       onPress={resetErrorBoundary}
     />

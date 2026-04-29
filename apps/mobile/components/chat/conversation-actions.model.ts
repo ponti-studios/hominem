@@ -1,4 +1,6 @@
-import type { ArtifactType } from '@hominem/rpc/types';
+import { ENABLED_ARTIFACT_TYPES, type ArtifactType } from '@hominem/rpc/types';
+
+import t from '~/translations';
 
 export type ConversationActionType = ArtifactType;
 
@@ -19,13 +21,16 @@ export interface ConversationActionsModelInput {
   canTransform: boolean;
   isArchiving: boolean;
   showDebug: boolean;
-  transformTypes: Exclude<ConversationActionType, 'tracker'>[];
 }
 
+const TRANSFORM_TYPES = ENABLED_ARTIFACT_TYPES.filter(
+  (t): t is Exclude<ArtifactType, 'tracker'> => t !== 'tracker',
+);
+
 const TRANSFORM_LABELS: Record<Exclude<ConversationActionType, 'tracker'>, string> = {
-  note: 'Transform to note',
-  task: 'Transform to task',
-  task_list: 'Transform to task list',
+  note: t.chat.actions.transformToNote,
+  task: t.chat.actions.transformToTask,
+  task_list: t.chat.actions.transformToTaskList,
 };
 
 export function buildConversationActionsModel(
@@ -33,12 +38,14 @@ export function buildConversationActionsModel(
 ): ConversationActionSection[] {
   const sections: ConversationActionSection[] = [
     {
-      title: 'Conversation',
+      title: t.chat.actions.sectionConversation,
       items: [
-        { kind: 'search', label: 'Search messages' },
+        { kind: 'search', label: t.chat.actions.searchMessages },
         {
           kind: 'toggle-debug',
-          label: input.showDebug ? 'Hide debug metadata' : 'Show debug metadata',
+          label: input.showDebug
+            ? t.chat.actions.hideDebugMetadata
+            : t.chat.actions.showDebugMetadata,
         },
       ],
     },
@@ -46,8 +53,8 @@ export function buildConversationActionsModel(
 
   if (input.canTransform) {
     sections.push({
-      title: 'Transform',
-      items: input.transformTypes.map((type) => ({
+      title: t.chat.actions.sectionTransform,
+      items: TRANSFORM_TYPES.map((type) => ({
         kind: 'transform',
         label: TRANSFORM_LABELS[type],
         type,
@@ -56,11 +63,11 @@ export function buildConversationActionsModel(
   }
 
   sections.push({
-    title: 'Danger',
+    title: t.chat.actions.sectionDanger,
     items: [
       {
         kind: 'archive',
-        label: input.isArchiving ? 'Archiving…' : 'Archive chat',
+        label: input.isArchiving ? t.chat.actions.archiving : t.chat.actions.archiveChat,
       },
     ],
   });

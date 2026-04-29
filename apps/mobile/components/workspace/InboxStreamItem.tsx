@@ -16,6 +16,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 import { Text, makeStyles, spacing } from '~/components/theme';
 import { useChatArchive } from '~/services/chat/use-chat-archive';
 import { useNoteDelete } from '~/services/notes/use-note-delete';
+import t from '~/translations';
 
 import type { InboxStreamItemData as InboxStreamItemModel } from './InboxStreamItem.types';
 
@@ -29,7 +30,7 @@ interface InboxStreamItemProps {
 export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
   const router = useRouter();
   const styles = useStyles();
-  const title = item.title ?? item.preview ?? 'Untitled';
+  const title = item.title ?? item.preview ?? t.workspace.item.untitled;
 
   // ── Animation shared values ────────────────────────────────────────────────
   const exitProgress = useSharedValue(0);
@@ -51,10 +52,10 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
   const { mutate: archiveChat } = useChatArchive({ chatId: item.entityId });
 
   const handleDelete = useCallback(() => {
-    Alert.alert('Delete note', 'This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t.workspace.item.deleteNote.title, t.workspace.item.deleteNote.message, [
+      { text: t.workspace.item.deleteNote.cancel, style: 'cancel' },
       {
-        text: 'Delete',
+        text: t.workspace.item.deleteNote.confirm,
         style: 'destructive',
         onPress: () => {
           animateExit(deleteNote);
@@ -102,14 +103,14 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
               <ContextMenu.Items>
                 {item.kind === 'note' ? (
                   <Button
-                    label="Delete"
+                    label={t.workspace.item.deleteNote.confirm}
                     role="destructive"
                     systemImage="trash"
                     onPress={handleDelete}
                   />
                 ) : (
                   <Button
-                    label="Archive"
+                    label={t.workspace.item.archive}
                     role="destructive"
                     systemImage="archivebox"
                     onPress={handleArchive}
@@ -138,7 +139,7 @@ function formatTimestamp(value: string): string {
       return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
     }
     if (dayDiff === 1) {
-      return 'Yesterday';
+      return t.workspace.item.yesterday;
     }
     if (dayDiff > 1 && dayDiff < 7) {
       return date.toLocaleDateString([], { weekday: 'short' });

@@ -17,7 +17,12 @@ import {
   View,
   useColorScheme,
 } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
@@ -42,6 +47,7 @@ import { useTextEnhance } from '~/services/ai/use-text-enhance';
 import { updateChatTitleCaches, useActiveChat, useSendMessage } from '~/services/chat';
 import { chatKeys } from '~/services/notes/query-keys';
 import { useNoteSearch } from '~/services/notes/use-note-search';
+import t from '~/translations';
 
 // ── Layout constants ──────────────────────────────────────────────────────────
 
@@ -102,7 +108,7 @@ function SendButton({
     <Pressable
       onPress={onPress}
       disabled={disabled}
-      accessibilityLabel={isSending ? 'Sending…' : 'Send message'}
+      accessibilityLabel={isSending ? t.chat.input.sendingA11y : t.chat.input.sendMessageA11y}
       accessibilityRole="button"
       style={({ pressed }) => [
         styles.sendBtn,
@@ -153,7 +159,7 @@ function AttachmentRow({
                 key={a.id}
                 style={styles.thumb}
                 onPress={() => onRemove(a.id)}
-                accessibilityLabel={`Remove ${a.name}`}
+                accessibilityLabel={t.notes.editor.removeFile(a.name)}
                 accessibilityRole="button"
               >
                 {a.localUri && (
@@ -207,10 +213,12 @@ function SelectionSummary({
         <View key={note.id} style={styles.selectionChip}>
           <AppIcon name="bubble.left" size={spacing[3]} tintColor={themeColors['text-secondary']} />
           <Animated.Text style={styles.selectionChipText}>
-            {note.title || 'Untitled note'}
+            {note.title || t.workspace.item.untitledNote}
           </Animated.Text>
           <Pressable
-            accessibilityLabel={`Remove ${note.title ?? 'note'}`}
+            accessibilityLabel={t.chat.input.removeNoteA11y(
+              note.title ?? t.workspace.item.untitled,
+            )}
             accessibilityRole="button"
             hitSlop={spacing[2]}
             onPress={() => onRemove(note.id)}
@@ -243,7 +251,7 @@ function MentionSuggestions({
       {suggestions.map((note) => (
         <Pressable
           key={note.id}
-          accessibilityLabel={`Link ${note.title ?? 'note'}`}
+          accessibilityLabel={t.chat.input.linkNoteA11y(note.title ?? t.workspace.item.untitled)}
           accessibilityRole="button"
           onPress={() => onSelect(note)}
           style={({ pressed }) => [
@@ -252,7 +260,7 @@ function MentionSuggestions({
           ]}
         >
           <Animated.Text style={styles.suggestionTitle}>
-            {note.title || 'Untitled note'}
+            {note.title || t.workspace.item.untitledNote}
           </Animated.Text>
           {note.excerpt ? (
             <Animated.Text numberOfLines={1} style={styles.suggestionExcerpt}>
@@ -417,7 +425,14 @@ export function ChatInput({ chatId, initialMessage }: ChatInputProps) {
 
   const showPlusMenu = useCallback(() => {
     ActionSheetIOS.showActionSheetWithOptions(
-      { options: ['Cancel', 'Take Photo', 'Choose from Library'], cancelButtonIndex: 0 },
+      {
+        options: [
+          t.chat.input.actionSheet.cancel,
+          t.chat.input.actionSheet.takePhoto,
+          t.chat.input.actionSheet.chooseFromLibrary,
+        ],
+        cancelButtonIndex: 0,
+      },
       (i) => {
         if (i === 1) setIsCameraOpen(true);
         else if (i === 2) void pickAttachment();
@@ -486,7 +501,7 @@ export function ChatInput({ chatId, initialMessage }: ChatInputProps) {
               value={message}
               onChangeText={setMessage}
               onContentSizeChange={(e) => onContentSizeChange(e.nativeEvent.contentSize.height)}
-              placeholder="Message"
+              placeholder={t.chat.input.messagePlaceholder}
               placeholderTextColor={themeColors['text-tertiary']}
               cursorColor={themeColors.accent}
               selectionColor={themeColors.accent}
@@ -499,15 +514,18 @@ export function ChatInput({ chatId, initialMessage }: ChatInputProps) {
           <MediaButton
             icon="plus"
             onPress={showPlusMenu}
-            accessibilityLabel="Add attachment"
+            accessibilityLabel={t.chat.input.addAttachmentA11y}
             disabled={isChatSending}
           />
           <View style={styles.actionRowSpacer} />
-          <Animated.View style={wandStyle} pointerEvents={message.trim().length > 0 ? 'auto' : 'none'}>
+          <Animated.View
+            style={wandStyle}
+            pointerEvents={message.trim().length > 0 ? 'auto' : 'none'}
+          >
             <MediaButton
               icon="wand.and.sparkles"
               onPress={() => void enhance(message).then(setMessage)}
-              accessibilityLabel="Enhance text with AI"
+              accessibilityLabel={t.chat.input.enhanceTextA11y}
               disabled={isChatSending || isEnhancing}
             />
           </Animated.View>

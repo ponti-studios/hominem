@@ -6,6 +6,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { useThemeColors } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
+import t from '~/translations';
 import { useArchivedSessions } from '~/hooks/useArchivedSessions';
 import { formatRelativeAge } from '~/services/date/format-relative-age';
 
@@ -24,7 +25,7 @@ export default function ArchivedChatsScreen() {
     <>
       <Stack.Screen
         options={{
-          title: 'Archived chats',
+          title: t.settings.archivedChatsScreen.title,
         }}
       />
       <ArchivedChatsSwiftUI chats={chats} onPressChat={onPressChat} />
@@ -53,13 +54,13 @@ function ArchivedChatsSwiftUI({
         ]}
       >
         <Text style={[styles.eyebrow, { color: themeColors['text-secondary'] }]}>
-          Archived chats
+          {t.settings.archivedChatsScreen.eyebrow}
         </Text>
         <Text style={[styles.title, { color: themeColors.foreground }]}>
-          Revisit past conversations
+          {t.settings.archivedChatsScreen.title}
         </Text>
         <Text style={[styles.helperText, { color: themeColors['text-secondary'] }]}>
-          Archived chats are hidden from the main chat flow but remain available here.
+          {t.settings.archivedChatsScreen.description}
         </Text>
       </View>
 
@@ -82,7 +83,7 @@ function ArchivedChatsSwiftUI({
               <AppIcon name="tray" size={14} tintColor={themeColors['text-secondary']} />
               <View style={styles.chatCopy}>
                 <Text style={[styles.chatTitle, { color: themeColors.foreground }]}>
-                  {chat.title ?? 'Untitled session'}
+                  {chat.title ?? t.workspace.item.untitledSession}
                 </Text>
                 <Text style={[styles.chatMeta, { color: themeColors['text-secondary'] }]}>
                   Archived {formatRelativeAge(chat.archivedAt ?? chat.activityAt)}
@@ -94,10 +95,10 @@ function ArchivedChatsSwiftUI({
         ) : (
           <View style={styles.emptyState}>
             <Text style={[styles.emptyTitle, { color: themeColors.foreground }]}>
-              No archived chats yet
+              {t.settings.archivedChatsScreen.emptyTitle}
             </Text>
             <Text style={[styles.emptyCopy, { color: themeColors['text-secondary'] }]}>
-              Chats you archive will appear here for later reference.
+              {t.settings.archivedChatsScreen.emptyCopy}
             </Text>
           </View>
         )}

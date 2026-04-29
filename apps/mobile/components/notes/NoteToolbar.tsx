@@ -5,6 +5,7 @@ import { InputAccessoryView, Keyboard, Pressable, StyleSheet, View } from 'react
 import { makeStyles, spacing, useThemeColors } from '~/components/theme';
 import { BlurSurface } from '~/components/ui/BlurSurface';
 import AppIcon from '~/components/ui/icon';
+import t from '~/translations';
 import type { FormatAction } from '~/hooks/use-note-toolbar';
 
 export const NOTE_TOOLBAR_ID = 'note-editor-toolbar';
@@ -59,26 +60,26 @@ function ToolbarButtons({ onAction, onUndo, onRedo, canUndo, canRedo }: NoteTool
   return (
     <>
       <View style={styles.group}>
-        <ToolbarButton icon="bold" label="Bold" onPress={() => onAction('bold')} />
-        <ToolbarButton icon="italic" label="Italic" onPress={() => onAction('italic')} />
+        <ToolbarButton icon="bold" label={t.notes.toolbar.bold} onPress={() => onAction('bold')} />
+        <ToolbarButton icon="italic" label={t.notes.toolbar.italic} onPress={() => onAction('italic')} />
         <ToolbarButton
           icon="strikethrough"
-          label="Strikethrough"
+          label={t.notes.toolbar.strikethrough}
           onPress={() => onAction('strikethrough')}
         />
-        <ToolbarButton icon="curlybraces" label="Inline code" onPress={() => onAction('code')} />
+        <ToolbarButton icon="curlybraces" label={t.notes.toolbar.inlineCode} onPress={() => onAction('code')} />
       </View>
 
       <ToolbarDivider />
 
       <View style={styles.group}>
-        <ToolbarButton icon="checklist" label="Checklist" onPress={() => onAction('checklist')} />
-        <ToolbarButton icon="list.bullet" label="Bullet list" onPress={() => onAction('bullet')} />
-        <ToolbarButton icon="increase.indent" label="Indent" onPress={() => onAction('indent')} />
-        <ToolbarButton icon="decrease.indent" label="Outdent" onPress={() => onAction('outdent')} />
+        <ToolbarButton icon="checklist" label={t.notes.toolbar.checklist} onPress={() => onAction('checklist')} />
+        <ToolbarButton icon="list.bullet" label={t.notes.toolbar.bulletList} onPress={() => onAction('bullet')} />
+        <ToolbarButton icon="increase.indent" label={t.notes.toolbar.indent} onPress={() => onAction('indent')} />
+        <ToolbarButton icon="decrease.indent" label={t.notes.toolbar.outdent} onPress={() => onAction('outdent')} />
         <ToolbarButton
           icon="textformat.size.larger"
-          label="Heading"
+          label={t.notes.toolbar.heading}
           onPress={() => onAction('heading')}
         />
       </View>
@@ -88,13 +89,13 @@ function ToolbarButtons({ onAction, onUndo, onRedo, canUndo, canRedo }: NoteTool
       <View style={styles.group}>
         <ToolbarButton
           icon="arrow.uturn.backward"
-          label="Undo"
+          label={t.notes.toolbar.undo}
           onPress={onUndo}
           disabled={!canUndo}
         />
         <ToolbarButton
           icon="arrow.uturn.forward"
-          label="Redo"
+          label={t.notes.toolbar.redo}
           onPress={onRedo}
           disabled={!canRedo}
         />
@@ -104,7 +105,7 @@ function ToolbarButtons({ onAction, onUndo, onRedo, canUndo, canRedo }: NoteTool
 
       <ToolbarButton
         icon="keyboard.chevron.compact.down"
-        label="Dismiss keyboard"
+        label={t.notes.toolbar.dismissKeyboard}
         onPress={() => Keyboard.dismiss()}
       />
     </>

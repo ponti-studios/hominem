@@ -45,9 +45,10 @@ export function ChatShimmerMessage({ variant = 'assistant' }: ChatShimmerMessage
 
   if (variant === 'user') {
     return (
-      <View style={[styles.row, styles.userRow]}>
-        <Animated.View style={[styles.userBubble, animatedStyle]} />
-      </View>
+      <Animated.View style={[styles.row, styles.userRow, animatedStyle]}>
+        <View style={[styles.line, styles.lineFull]} />
+        <View style={[styles.line, styles.lineShort]} />
+      </Animated.View>
     );
   }
 
@@ -82,14 +83,10 @@ const useShimmerStyles = makeStyles((theme) => ({
     paddingVertical: spacing[3],
     width: '100%',
   },
-  userBubble: {
-    backgroundColor: theme.colors['bg-surface'],
-    borderRadius: radii.md,
-    height: 56,
-    maxWidth: 420,
-    width: '78%',
-  },
   userRow: {
-    alignItems: 'flex-end',
+    backgroundColor: theme.colors['bg-elevated'],
+    borderCurve: 'continuous',
+    borderRadius: radii.lg,
+    gap: spacing[2],
   },
 }));

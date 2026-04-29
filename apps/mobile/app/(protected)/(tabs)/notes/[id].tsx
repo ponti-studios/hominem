@@ -2,131 +2,92 @@ import type { MarkdownStyle } from '@expensify/react-native-live-markdown';
 import { MarkdownTextInput } from '@expensify/react-native-live-markdown';
 import { Host as SwiftUIHost, TextField as SwiftUITextField } from '@expo/ui/swift-ui';
 import { font, frame, submitLabel, textFieldStyle } from '@expo/ui/swift-ui/modifiers';
-import { useApiClient } from '@hominem/rpc/react';
-import type { Note } from '@hominem/rpc/types';
+import { spacing } from '@hominem/ui/tokens';
 import { useNavigation } from '@react-navigation/native';
-import { useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useLayoutEffect, useRef } from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 
+import { EnhanceModal } from '~/components/notes/EnhanceModal';
 import { parseNoteMarkdown } from '~/components/notes/note-markdown-parser';
 import { NOTE_TOOLBAR_ID, NoteToolbar } from '~/components/notes/NoteToolbar';
 import { Text, makeStyles, useThemeColors } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
 import { useNoteEditor } from '~/hooks/use-note-editor';
 import { useNoteToolbar } from '~/hooks/use-note-toolbar';
-import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
-import { noteKeys } from '~/services/notes/query-keys';
 import { useNoteQuery } from '~/services/notes/use-note-query';
+import t from '~/translations';
 
 const COMPOSER_CLEARANCE = 220;
 
 export default function NoteDetailScreen() {
-  const router = useRouter();
-  const client = useApiClient();
-  const queryClient = useQueryClient();
-  const { requestTopReveal } = useTopAnchoredFeed();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const noteId = String(id ?? '');
-  const { data: note } = useNoteQuery({ noteId, enabled: noteId.length > 0 });
-
-  if (!note) {
-    return null;
-  }
-
-  return (
-    <NoteDetailEditor
-      key={note.id}
-      note={note}
-      client={client}
-      router={router}
-      onSaved={(updatedNote) => {
-        queryClient.setQueryData<Note>(noteKeys.detail(updatedNote.id), updatedNote);
-        queryClient.setQueryData<Note[]>(noteKeys.all, (current) => {
-          if (!current) return [updatedNote];
-          return current.map((entry) => (entry.id === updatedNote.id ? updatedNote : entry));
-        });
-        requestTopReveal();
-        void queryClient.invalidateQueries({ queryKey: noteKeys.feeds() });
-      }}
-    />
-  );
+  if (!noteId) return null;
+  return <NoteDetailEditor key={noteId} noteId={noteId} />;
 }
 
-function NoteDetailEditor({
-  note,
-  client,
-  router,
-  onSaved,
-}: {
-  note: NonNullable<ReturnType<typeof useNoteQuery>['data']>;
-  client: ReturnType<typeof useApiClient>;
-  router: ReturnType<typeof useRouter>;
-  onSaved: (updatedNote: Note) => void;
-}) {
+function NoteDetailEditor({ noteId }: { noteId: string }) {
   const styles = useNoteStyles();
   const themeColors = useThemeColors();
   const navigation = useNavigation();
+  const router = useRouter();
   const contentInputRef = useRef<React.ComponentRef<typeof MarkdownTextInput>>(null);
+  const [enhanceModalVisible, setEnhanceModalVisible] = useState(false);
 
-  const { title, setTitle, content, setContent, files, setFiles, onSave } = useNoteEditor(
-    {
-      id: note.id,
-      title: note.title,
-      content: note.content,
-      files: note.files.map((file) => ({
-        id: file.id,
-        originalName: file.originalName,
-        mimetype: '',
-        size: 0,
-        url: file.url,
-        uploadedAt: '',
-      })),
-    },
-    async ({ id: noteId, title: nextTitle, content: nextContent, fileIds }) => {
-      const res = await client.api.notes[':id'].$patch({
-        param: { id: noteId },
-        json: { title: nextTitle, content: nextContent, fileIds },
-      });
-      const updatedNote = await res.json();
-      onSaved(updatedNote);
-    },
-  );
+  const { data: note } = useNoteQuery({ noteId });
+  const { save, updateCache, detachFile } = useNoteEditor(noteId);
 
   const toolbar = useNoteToolbar({
-    content,
+    content: note?.content ?? '',
     onContentChange: (newText) => {
-      setContent(newText);
-      void onSave(
-        title,
+      updateCache({ content: newText });
+      void save(
+        note?.title ?? null,
         newText,
-        files.map((file) => file.id),
+        (note?.files ?? []).map((f) => f.id),
       );
     },
   });
 
   useLayoutEffect(() => {
     navigation.setOptions({
-      title: title?.trim() || note.title || 'Note',
+      title: note?.title?.trim() || t.notes.editor.titleFallback,
       headerRight: () => (
-        <Pressable
-          hitSlop={6}
-          onPress={() => router.push(`/(protected)/(tabs)/chat/${note.id}`)}
-          style={({ pressed }) => ({
-            alignItems: 'center',
-            height: 36,
-            justifyContent: 'center',
-            opacity: pressed ? 0.65 : 1,
-            width: 36,
-          })}
-        >
-          <AppIcon name="bubble.left" />
-        </Pressable>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
+          <Pressable
+            hitSlop={6}
+            onPress={() => setEnhanceModalVisible(true)}
+            style={({ pressed }) => ({
+              alignItems: 'center',
+              height: 36,
+              justifyContent: 'center',
+              opacity: pressed ? 0.65 : 1,
+              width: 36,
+            })}
+          >
+            <AppIcon name="wand.and.sparkles" />
+          </Pressable>
+          <Pressable
+            hitSlop={6}
+            onPress={() => router.push(`/(protected)/(tabs)/chat/${noteId}`)}
+            style={({ pressed }) => ({
+              alignItems: 'center',
+              height: 36,
+              justifyContent: 'center',
+              opacity: pressed ? 0.65 : 1,
+              width: 36,
+            })}
+          >
+            <AppIcon name="bubble.left" />
+          </Pressable>
+        </View>
       ),
     });
-  }, [navigation, note.id, note.title, router, themeColors, title]);
+  }, [navigation, noteId, note?.title, router, themeColors]);
+
+  if (!note) return null;
 
   const markdownStyle: MarkdownStyle = {
     syntax: { color: themeColors['text-tertiary'] },
@@ -142,16 +103,7 @@ function NoteDetailEditor({
     },
   };
 
-  const handleDetach = async (fileId: string) => {
-    const nextFiles = files.filter((file) => file.id !== fileId);
-    setFiles(nextFiles);
-    const res = await client.api.notes[':id'].$patch({
-      param: { id: note.id },
-      json: { title: title || null, content, fileIds: nextFiles.map((file) => file.id) },
-    });
-    const updatedNote = await res.json();
-    onSaved(updatedNote);
-  };
+  const handleDetach = (fileId: string) => detachFile(fileId, note.files, note.title, note.content);
 
   return (
     <>
@@ -163,14 +115,14 @@ function NoteDetailEditor({
       >
         <SwiftUIHost matchContents style={styles.titleHost}>
           <SwiftUITextField
-            defaultValue={title ?? ''}
-            placeholder="Title"
+            defaultValue={note.title ?? ''}
+            placeholder={t.notes.editor.titlePlaceholder}
             onValueChange={(value) => {
-              setTitle(value);
-              void onSave(
+              updateCache({ title: value });
+              void save(
                 value,
-                content,
-                files.map((file) => file.id),
+                note.content,
+                note.files.map((f) => f.id),
               );
             }}
             modifiers={[
@@ -187,36 +139,36 @@ function NoteDetailEditor({
         <MarkdownTextInput
           ref={contentInputRef}
           multiline
-          value={content}
+          value={note.content}
           selection={toolbar.controlledSelection}
           onChangeText={(value) => {
-            setContent(value);
+            updateCache({ content: value });
             toolbar.onTypingChange(value);
-            void onSave(
-              title,
+            void save(
+              note.title,
               value,
-              files.map((file) => file.id),
+              note.files.map((f) => f.id),
             );
           }}
           onSelectionChange={toolbar.onSelectionChange}
-          placeholder="Start writing…"
+          placeholder={t.notes.editor.contentPlaceholder}
           placeholderTextColor={themeColors['text-tertiary']}
           cursorColor={themeColors.accent}
           selectionColor={themeColors.accent}
           style={styles.contentInput}
           textAlignVertical="top"
           scrollEnabled={false}
-          accessibilityLabel="Note content"
+          accessibilityLabel={t.notes.editor.contentA11yLabel}
           parser={parseNoteMarkdown}
           markdownStyle={markdownStyle}
           inputAccessoryViewID={NOTE_TOOLBAR_ID}
         />
 
-        {files.length > 0 ? (
+        {note.files.length > 0 ? (
           <View style={styles.filesSection}>
-            <Text style={styles.filesLabel}>Attachments</Text>
+            <Text style={styles.filesLabel}>{t.notes.editor.attachments}</Text>
             <View style={styles.filesList}>
-              {files.map((file) => (
+              {note.files.map((file) => (
                 <View key={file.id} style={styles.filePill}>
                   <Image
                     source="sf:paperclip"
@@ -228,7 +180,7 @@ function NoteDetailEditor({
                     {file.originalName}
                   </Text>
                   <Pressable
-                    accessibilityLabel={`Remove ${file.originalName}`}
+                    accessibilityLabel={t.notes.editor.removeFile(file.originalName)}
                     accessibilityRole="button"
                     hitSlop={6}
                     onPress={() => void handleDetach(file.id)}
@@ -252,6 +204,12 @@ function NoteDetailEditor({
         onRedo={toolbar.redo}
         canUndo={toolbar.canUndo}
         canRedo={toolbar.canRedo}
+      />
+
+      <EnhanceModal
+        noteId={noteId}
+        visible={enhanceModalVisible}
+        onClose={() => setEnhanceModalVisible(false)}
       />
     </>
   );

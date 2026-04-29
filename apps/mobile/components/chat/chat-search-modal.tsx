@@ -3,6 +3,7 @@ import { Modal, Pressable, TextInput, View } from 'react-native';
 
 import { Text, makeStyles, spacing } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
+import t from '~/translations';
 
 interface ChatSearchModalProps {
   visible: boolean;
@@ -29,7 +30,7 @@ export function ChatSearchModal({
         <View style={styles.searchPanel}>
           <View style={styles.content}>
             <View style={styles.headerRow}>
-              <Text style={styles.title}>Search messages</Text>
+              <Text style={styles.title}>{t.chat.search.title}</Text>
               <Pressable hitSlop={8} onPress={onClose} style={styles.closeButton}>
                 <AppIcon name="xmark" size={16} tintColor={styles.closeIcon.color} />
               </Pressable>
@@ -40,7 +41,7 @@ export function ChatSearchModal({
               ref={searchInputRef}
               autoFocus
               value={searchQuery}
-              placeholder="Search messages..."
+              placeholder={t.chat.search.placeholder}
               placeholderTextColor={styles.inputPlaceholder.color}
               returnKeyType="search"
               selectionColor={styles.input.color}
@@ -51,8 +52,8 @@ export function ChatSearchModal({
 
             <Text style={styles.caption}>
               {searchQuery.trim().length > 0
-                ? `${resultCount} result${resultCount !== 1 ? 's' : ''}`
-                : 'Search the current conversation'}
+                ? t.chat.search.results(resultCount)
+                : t.chat.search.emptyCaption}
             </Text>
           </View>
         </View>

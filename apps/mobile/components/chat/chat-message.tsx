@@ -4,8 +4,6 @@ import { memo, useMemo, useState } from 'react';
 import { Modal, Pressable, TextInput, View } from 'react-native';
 import Reanimated, { FadeInDown, FadeOutUp, LinearTransition } from 'react-native-reanimated';
 
-import { ChatThinkingIndicator } from './chat-thinking-indicator';
-
 import {
   Text,
   fontFamiliesNative,
@@ -17,6 +15,9 @@ import {
 } from '~/components/theme';
 import { AppIconButton } from '~/components/ui';
 import { Button } from '~/components/ui/button';
+import t from '~/translations';
+
+import { ChatThinkingIndicator } from './chat-thinking-indicator';
 
 type ToolCall = NonNullable<ChatMessageItem['toolCalls']>[number];
 
@@ -39,7 +40,6 @@ type ChatMessageProps = {
 const ACTIONS_ENTERING = FadeInDown.duration(240).springify().damping(20).stiffness(220).mass(0.9);
 const ACTIONS_EXITING = FadeOutUp.duration(180).springify().damping(24).stiffness(260).mass(0.8);
 const ACTIONS_LAYOUT = LinearTransition.duration(200);
-const MESSAGE_BUBBLE_MAX_WIDTH = '84%';
 
 function ActionIconButton({
   disabled = false,
@@ -97,12 +97,12 @@ function MessageEditModal({
     <Modal animationType="fade" onRequestClose={onCancel} transparent visible={visible}>
       <View style={styles.editBackdrop}>
         <View style={styles.editSheet}>
-          <Text style={styles.editTitle}>Edit message</Text>
+          <Text style={styles.editTitle}>{t.chat.messageEdit.title}</Text>
           <TextInput
             multiline
             value={draftMessage}
             onChangeText={onChangeDraft}
-            placeholder="Update your message"
+            placeholder={t.chat.messageEdit.placeholder}
             placeholderTextColor={themeColors['text-tertiary']}
             selectionColor={themeColors.foreground}
             cursorColor={themeColors.foreground}
@@ -117,11 +117,11 @@ function MessageEditModal({
           />
           <View style={styles.editActionsRow}>
             <View style={styles.editActionSlot}>
-              <Button label="Cancel" onPress={onCancel} variant="secondary" />
+              <Button label={t.chat.messageEdit.cancel} onPress={onCancel} variant="secondary" />
             </View>
             <View style={styles.editActionSlot}>
               <Button
-                label="Save"
+                label={t.chat.messageEdit.save}
                 onPress={onSave}
                 disabled={!draftMessage.trim() || draftMessage === content}
                 variant="primary"
@@ -183,7 +183,6 @@ function ReferencedNotes({
 
 function MessageContent({
   content,
-  isUser,
   Markdown,
   markdownStyle,
   textStyle,
@@ -200,13 +199,11 @@ function MessageContent({
 }) {
   return (
     <View style={styles.transcriptBlock}>
-      <View style={[styles.messageSurface, isUser ? styles.userSurface : styles.assistantSurface]}>
-        {Markdown ? (
-          <Markdown style={markdownStyle}>{content}</Markdown>
-        ) : (
-          <Text style={textStyle}>{content}</Text>
-        )}
-      </View>
+      {Markdown ? (
+        <Markdown style={markdownStyle}>{content}</Markdown>
+      ) : (
+        <Text style={textStyle}>{content}</Text>
+      )}
       {children}
     </View>
   );
@@ -256,6 +253,7 @@ function FocusItems({
 
 function ActiveMessageActions({
   isActive,
+  isUser,
   timestamp,
   message,
   isSpeaking,
@@ -274,6 +272,7 @@ function ActiveMessageActions({
   onDelete,
 }: {
   isActive: boolean;
+  isUser: boolean;
   timestamp: string;
   message: ChatMessageItem;
   isSpeaking: boolean;
@@ -302,7 +301,7 @@ function ActiveMessageActions({
       layout={ACTIONS_LAYOUT}
       style={styles.actionsWrap}
     >
-      <View style={styles.actionsRow}>
+      <View style={[styles.actionsRow, isUser ? styles.actionsRowUser : null]}>
         {timestamp ? <Text style={styles.actionTimestamp}>{timestamp}</Text> : null}
         <ActionIconButton disabled={!canCopy} icon="doc.on.doc" onPress={() => onCopy?.(message)} />
         {canSpeak ? (
@@ -395,7 +394,7 @@ const ChatMessage = memo(function ChatMessage({
         visible={isEditing}
       />
 
-      <View style={[styles.contentColumn, isUser ? styles.contentColumnUser : null]}>
+      <View style={styles.contentColumn}>
         {!isUser && hasReasoning ? (
           <View style={styles.transcriptSurface}>
             <Text style={styles.reasoningText}>{message.reasoning}</Text>
@@ -429,6 +428,7 @@ const ChatMessage = memo(function ChatMessage({
           canShare={canShare}
           canSpeak={canSpeak}
           isActive={isActive}
+          isUser={isUser}
           isSpeaking={isSpeaking}
           message={message}
           onCopy={onCopy}
@@ -482,7 +482,7 @@ export { ChatMessage };
 
 const useChatMessageStyles = makeStyles((theme) => ({
   actionTimestamp: {
-    color: theme.colors['text-secondary'],
+    color: theme.colors['text-tertiary'],
     fontSize: 12,
   },
   actionsRow: {
@@ -490,20 +490,20 @@ const useChatMessageStyles = makeStyles((theme) => ({
     flexDirection: 'row',
     gap: spacing[2],
   },
+  actionsRowUser: {
+    justifyContent: 'flex-end',
+  },
   actionsWrap: {
     marginTop: spacing[1],
   },
   assistantMessageText: {
     color: theme.colors.foreground,
     fontSize: fontSizes.md,
-    lineHeight: fontSizes.md * 1.55,
+    lineHeight: fontSizes.md * 1.6,
   },
   contentColumn: {
     gap: spacing[2],
     width: '100%',
-  },
-  contentColumnUser: {
-    alignItems: 'flex-end',
   },
   editBackdrop: {
     alignItems: 'center',
@@ -567,7 +567,7 @@ const useChatMessageStyles = makeStyles((theme) => ({
   },
   referencedNoteChip: {
     alignItems: 'center',
-    backgroundColor: theme.colors['bg-base'],
+    backgroundColor: theme.colors['bg-elevated'],
     borderColor: theme.colors['border-default'],
     borderRadius: radii.sm,
     borderWidth: 1,
@@ -584,18 +584,20 @@ const useChatMessageStyles = makeStyles((theme) => ({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing[2],
-    justifyContent: 'flex-end',
-    maxWidth: MESSAGE_BUBBLE_MAX_WIDTH,
   },
   row: {
     paddingVertical: spacing[2],
     width: '100%',
   },
   rowAssistant: {
-    alignItems: 'flex-start',
+    // open, no background
   },
   rowUser: {
-    alignItems: 'flex-end',
+    backgroundColor: theme.colors['bg-elevated'],
+    borderCurve: 'continuous',
+    borderRadius: radii.lg,
+    paddingHorizontal: spacing[2],
+    paddingVertical: spacing[2],
   },
   toolCall: {
     backgroundColor: theme.colors['bg-base'],
@@ -618,17 +620,9 @@ const useChatMessageStyles = makeStyles((theme) => ({
   toolCalls: {
     gap: spacing[1],
   },
-  messageSurface: {
-    borderColor: theme.colors['border-subtle'],
-    borderRadius: radii.md,
-    borderWidth: 1,
-    maxWidth: MESSAGE_BUBBLE_MAX_WIDTH,
-    paddingHorizontal: spacing[2],
-    paddingVertical: 0,
-  },
   transcriptBlock: {
-    gap: spacing[3],
-    maxWidth: MESSAGE_BUBBLE_MAX_WIDTH,
+    gap: spacing[2],
+    width: '100%',
   },
   transcriptSurface: {
     backgroundColor: theme.colors['bg-base'],
@@ -641,16 +635,8 @@ const useChatMessageStyles = makeStyles((theme) => ({
     width: '100%',
   },
   userMessageText: {
-    color: theme.colors['accent-foreground'],
+    color: theme.colors.foreground,
     fontSize: fontSizes.md,
     lineHeight: fontSizes.md * 1.5,
-  },
-  assistantSurface: {
-    backgroundColor: theme.colors['bg-base'],
-    borderBottomLeftRadius: 0,
-  },
-  userSurface: {
-    backgroundColor: theme.colors['emphasis-highest'],
-    borderBottomRightRadius: 0,
   },
 }));

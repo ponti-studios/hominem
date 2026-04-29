@@ -23,6 +23,7 @@ import Animated, {
 
 import { FeatureErrorBoundary } from '~/components/error-boundary/FeatureErrorBoundary';
 import { Button } from '~/components/ui/button';
+import t from '~/translations';
 import AppIcon from '~/components/ui/icon';
 import { E2E_TESTING, MOBILE_PASSKEY_ENABLED } from '~/constants';
 import { useAuth } from '~/services/auth/auth-provider';
@@ -212,7 +213,7 @@ function AuthScreen() {
                   {AUTH_COPY.emailEntry.title}
                 </Text>
                 <Text style={[styles.helperText, { color: palette.textSecondary }]}>
-                  {isProbing ? 'Resuming session…' : AUTH_COPY.emailEntry.helper}
+                  {isProbing ? t.auth.resumingSession : AUTH_COPY.emailEntry.helper}
                 </Text>
               </View>
 

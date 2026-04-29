@@ -6,6 +6,7 @@ import { logError } from '~/components/error-boundary/log-error';
 import { useThemeColors } from '~/components/theme';
 import { Button } from '~/components/ui/button';
 import AppIcon from '~/components/ui/icon';
+import t from '~/translations';
 
 interface Props {
   children: ReactNode;
@@ -16,10 +17,10 @@ interface Props {
 
 function createFeatureMessage(featureName?: string): string {
   if (!featureName) {
-    return "This part of the app couldn't load right now.";
+    return t.errors.featureFallback.generic;
   }
 
-  return `${featureName} couldn't load right now.`;
+  return t.errors.featureFallback.withFeature(featureName);
 }
 
 function FeatureFallback({
@@ -45,7 +46,7 @@ function FeatureFallback({
           </Text>
         ) : null}
 
-        <Button label="Try Again" onPress={resetErrorBoundary} variant="secondary" />
+        <Button label={t.errors.featureFallback.tryAgain} onPress={resetErrorBoundary} variant="secondary" />
       </View>
     </View>
   );

@@ -6,6 +6,7 @@ import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useThemeColors } from '~/components/theme';
 import { Button } from '~/components/ui/button';
 import { useAuth } from '~/services/auth/auth-provider';
+import t from '~/translations';
 
 const Onboarding = () => {
   const { isSignedIn, currentUser, updateProfile, signOut } = useAuth();
@@ -70,17 +71,17 @@ const Onboarding = () => {
         <View style={styles.hero}>
           <Text style={[styles.brandMark, { color: themeColors.foreground }]}>H</Text>
           <Text style={[styles.title, { color: themeColors.foreground }]}>
-            What should Hakumi call you?
+            {t.onboarding.title}
           </Text>
           <Text style={[styles.helperText, { color: themeColors['text-secondary'] }]}>
-            This is only used to personalize your workspace. You can change it later.
+            {t.onboarding.subtitle}
           </Text>
         </View>
 
         <View style={styles.formSection}>
           <TextInput
             value={name}
-            placeholder="Wyatt"
+            placeholder={t.onboarding.namePlaceholder}
             placeholderTextColor={themeColors['text-tertiary']}
             autoCapitalize="words"
             autoCorrect={false}
@@ -104,20 +105,18 @@ const Onboarding = () => {
           />
 
           {hasError ? (
-            <Text style={[styles.errorText, { color: '#FF5A5F' }]}>
-              Add a name or continue without one.
-            </Text>
+            <Text style={[styles.errorText, { color: '#FF5A5F' }]}>{t.onboarding.nameError}</Text>
           ) : null}
 
           <Button
-            label="Start using Hakumi"
+            label={t.onboarding.start}
             onPress={() => void onButtonPress()}
             disabled={isSubmitting}
             variant="primary"
           />
 
           <Button
-            label="Continue without name"
+            label={t.onboarding.continueWithoutName}
             onPress={() => void onSkipPress()}
             disabled={isSubmitting}
             variant="tertiary"
@@ -125,7 +124,7 @@ const Onboarding = () => {
 
           <Button
             testID="onboarding-sign-out"
-            label="Sign out"
+            label={t.onboarding.signOut}
             onPress={() => void signOut()}
             disabled={isSubmitting}
             variant="tertiary"

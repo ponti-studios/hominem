@@ -37,6 +37,7 @@ import { CameraModal } from '~/components/media/camera-modal';
 import { makeStyles, useThemeColors } from '~/components/theme';
 import { createLayoutTransition } from '~/components/theme/animations';
 import { AppIconButton, AppIconButtonGroup } from '~/components/ui';
+import t from '~/translations';
 import AppIcon from '~/components/ui/icon';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import { useTextEnhance } from '~/services/ai/use-text-enhance';
@@ -85,7 +86,7 @@ function AttachmentRow({
             key={a.id}
             style={styles.thumb}
             onPress={() => onRemove(a.id)}
-            accessibilityLabel={`Remove ${a.name}`}
+            accessibilityLabel={t.notes.editor.removeFile(a.name)}
             accessibilityRole="button"
           >
             {a.localUri && (
@@ -247,7 +248,7 @@ export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerPro
 
   const showPlusMenu = useCallback(() => {
     ActionSheetIOS.showActionSheetWithOptions(
-      { options: ['Cancel', 'Take Photo', 'Choose from Library'], cancelButtonIndex: 0 },
+      { options: [t.chat.input.actionSheet.cancel, t.chat.input.actionSheet.takePhoto, t.chat.input.actionSheet.chooseFromLibrary], cancelButtonIndex: 0 },
       (i) => {
         if (i === 1) setIsCameraOpen(true);
         else if (i === 2) void pickAttachment();
@@ -322,7 +323,7 @@ export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerPro
             value={message}
             onChangeText={setMessage}
             onContentSizeChange={(e) => onContentSizeChange(e.nativeEvent.contentSize.height)}
-            placeholder="Write a note, ask something…"
+            placeholder={t.feed.composer.placeholder}
             placeholderTextColor={themeColors['text-tertiary']}
             cursorColor={themeColors.accent}
             selectionColor={themeColors.accent}
@@ -334,7 +335,7 @@ export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerPro
         <View style={styles.buttonRow}>
           <AppIconButtonGroup style={styles.mediaGroup}>
             <AppIconButton
-              accessibilityLabel="Add attachment"
+              accessibilityLabel={t.feed.composer.addAttachmentA11y}
               icon="plus"
               onPress={showPlusMenu}
               tintColor={themeColors['text-primary']}
@@ -346,21 +347,21 @@ export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerPro
           >
             <AppIconButtonGroup style={styles.actionGroup}>
               <AppIconButton
-                accessibilityLabel="Enhance text with AI"
+                accessibilityLabel={t.feed.composer.enhanceTextA11y}
                 icon="wand.and.sparkles"
                 onPress={() => void enhance(message).then(setMessage)}
                 disabled={isEnhancing}
                 tintColor={themeColors.white}
               />
               <AppIconButton
-                accessibilityLabel="Open chat"
+                accessibilityLabel={t.feed.composer.openChatA11y}
                 disabled={!canSubmit || isSaving || isChatCreating}
                 icon="bubble.left"
                 onPress={() => void handleChat()}
                 tintColor={themeColors.white}
               />
               <AppIconButton
-                accessibilityLabel="Save note"
+                accessibilityLabel={t.feed.composer.saveNoteA11y}
                 disabled={!canSubmit || isSaving || isChatCreating}
                 icon="arrow.up"
                 onPress={() => void handleSave()}

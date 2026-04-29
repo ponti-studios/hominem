@@ -20,6 +20,7 @@ import { useTTS } from '~/components/media/use-tts';
 import { useThemeColors } from '~/components/theme';
 import { EmptyState } from '~/components/ui';
 import AppIcon from '~/components/ui/icon';
+import t from '~/translations';
 import {
   DEFAULT_CHAT_TITLE,
   resolveChatScreenTitle,
@@ -147,7 +148,6 @@ export default function ChatDetailScreen() {
             onOpenSearch={controller.handleOpenSearch}
             onToggleDebug={controller.handleToggleDebug}
             onTransform={controller.handleTransformFromMenu}
-            transformTypes={controller.enabledTransforms}
             showDebug={controller.showDebug}
           />
           <Pressable
@@ -166,7 +166,6 @@ export default function ChatDetailScreen() {
     });
   }, [
     controller.canTransform,
-    controller.enabledTransforms,
     controller.handleArchiveChat,
     controller.handleOpenSearch,
     controller.handleToggleDebug,
@@ -184,8 +183,8 @@ export default function ChatDetailScreen() {
     () => (
       <EmptyState
         sfSymbol="bubble.left"
-        title="Start the conversation"
-        description="Ask a question, attach a photo, or record a voice note."
+        title={t.chat.emptyState.title}
+        description={t.chat.emptyState.description}
       />
     ),
     [],
@@ -236,10 +235,7 @@ export default function ChatDetailScreen() {
           }}
         />
       </View>
-      <ChatInput
-        chatId={chatId}
-        initialMessage={initialMessage}
-      />
+      <ChatInput chatId={chatId} initialMessage={initialMessage} />
     </KeyboardAvoidingView>
   );
 }

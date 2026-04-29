@@ -1,74 +1,70 @@
-import { useCallback, useRef, useState } from 'react';
+import { useApiClient } from '@hominem/rpc/react';
+import type { Note } from '@hominem/rpc/types';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCallback, useRef } from 'react';
 
-export interface NoteFile {
-  id: string;
-  originalName: string;
-  mimetype: string;
-  size: number;
-  url: string;
-  uploadedAt: string;
-}
+import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
+import { noteKeys } from '~/services/notes/query-keys';
 
-export interface UseNoteEditorInput {
-  id: string;
-  title: string | null;
-  content: string;
-  files: NoteFile[];
-}
-
-export interface UseNoteEditorOutput {
-  title: string;
-  setTitle: (title: string) => void;
-  content: string;
-  setContent: (content: string) => void;
-  files: NoteFile[];
-  setFiles: (files: NoteFile[]) => void;
-  onSave: (titleValue: string, contentValue: string, fileIds: string[]) => Promise<void>;
-}
-
-interface SaveHandler {
-  (input: { id: string; title: string | null; content: string; fileIds: string[] }): Promise<void>;
-}
-
-export function useNoteEditor(note: UseNoteEditorInput, onSave: SaveHandler): UseNoteEditorOutput {
-  const [title, setTitle] = useState(note.title || '');
-  const [content, setContent] = useState(note.content);
-  const [files, setFiles] = useState(note.files);
+export function useNoteEditor(noteId: string) {
+  const client = useApiClient();
+  const queryClient = useQueryClient();
+  const { requestTopReveal } = useTopAnchoredFeed();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleSave = useCallback(
-    (titleValue: string, contentValue: string, fileIds: string[]): Promise<void> => {
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
+  const commitServerResponse = useCallback(
+    (updatedNote: Note) => {
+      queryClient.setQueryData<Note>(noteKeys.detail(updatedNote.id), updatedNote);
+      queryClient.setQueryData<Note[]>(noteKeys.all, (current) => {
+        if (!current) return [updatedNote];
+        return current.map((entry) => (entry.id === updatedNote.id ? updatedNote : entry));
+      });
+      requestTopReveal();
+      void queryClient.invalidateQueries({ queryKey: noteKeys.feeds() });
+    },
+    [queryClient, requestTopReveal],
+  );
 
+  const save = useCallback(
+    (title: string | null, content: string, fileIds: string[]): Promise<void> => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
       return new Promise((resolve, reject) => {
         debounceRef.current = setTimeout(() => {
-          onSave({
-            id: note.id,
-            title: titleValue || null,
-            content: contentValue,
-            fileIds,
-          })
-            .then(() => {
+          client.api.notes[':id']
+            .$patch({ param: { id: noteId }, json: { title: title || null, content, fileIds } })
+            .then((res) => res.json())
+            .then((updatedNote) => {
+              commitServerResponse(updatedNote);
               resolve();
             })
-            .catch((error: unknown) => {
-              reject(error);
-            });
+            .catch((error: unknown) => reject(error));
         }, 600);
       });
     },
-    [note.id, onSave],
+    [noteId, client, commitServerResponse],
   );
 
-  return {
-    title,
-    setTitle,
-    content,
-    setContent,
-    files,
-    setFiles,
-    onSave: handleSave,
-  };
+  const updateCache = useCallback(
+    (patch: Partial<Note>) => {
+      queryClient.setQueryData<Note>(noteKeys.detail(noteId), (prev) =>
+        prev ? { ...prev, ...patch } : prev,
+      );
+    },
+    [queryClient, noteId],
+  );
+
+  const detachFile = useCallback(
+    async (fileId: string, currentFiles: Note['files'], title: string | null, content: string) => {
+      const nextFiles = currentFiles.filter((f) => f.id !== fileId);
+      updateCache({ files: nextFiles });
+      const res = await client.api.notes[':id'].$patch({
+        param: { id: noteId },
+        json: { title: title || null, content, fileIds: nextFiles.map((f) => f.id) },
+      });
+      commitServerResponse(await res.json());
+    },
+    [noteId, client, updateCache, commitServerResponse],
+  );
+
+  return { save, updateCache, detachFile };
 }

@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useThemeColors } from '~/components/theme';
 import { Button } from '~/components/ui/button';
 import AppIcon from '~/components/ui/icon';
+import t from '~/translations';
 
 interface FullScreenErrorFallbackProps {
   actionLabel: string;
@@ -21,7 +22,9 @@ export function FullScreenErrorFallback({
     <View style={styles.host}>
       <View style={styles.content}>
         <AppIcon name="exclamationmark.triangle.fill" size={28} tintColor="#FF7B5C" />
-        <Text style={[styles.title, { color: themeColors.foreground }]}>Something went wrong</Text>
+        <Text style={[styles.title, { color: themeColors.foreground }]}>
+          {t.errors.somethingWentWrong}
+        </Text>
         <Text style={[styles.message, { color: themeColors['text-secondary'] }]}>{message}</Text>
         <Button label={actionLabel} onPress={onPress} variant="primary" />
       </View>

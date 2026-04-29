@@ -17,7 +17,7 @@ function getQueryRetryDelayMs(attemptIndex: number): number {
 
 export const mobileQueryDefaultOptions: DefaultOptions = {
   queries: {
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     staleTime: 60_000,
     gcTime: 10 * 60_000,

@@ -4,6 +4,7 @@ import { AppState } from 'react-native';
 
 import { APP_NAME } from '~/constants';
 import { storage } from '~/services/storage/mmkv';
+import t from '~/translations';
 
 const LOCK_ENABLED_KEY = 'app_lock_enabled';
 
@@ -35,9 +36,9 @@ export function useAppLock() {
     }
 
     const result = await LocalAuthentication.authenticateAsync({
-      promptMessage: `Unlock ${APP_NAME}`,
-      fallbackLabel: 'Use passcode',
-      cancelLabel: 'Cancel',
+      promptMessage: t.auth.unlockPrompt(APP_NAME),
+      fallbackLabel: t.auth.unlockFallbackLabel,
+      cancelLabel: t.auth.unlockCancelLabel,
     });
 
     if (result.success) {

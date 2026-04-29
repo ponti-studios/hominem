@@ -21,6 +21,7 @@ import { getAppLockEnabled, setAppLockEnabled } from '~/hooks/use-app-lock';
 import { getPreventScreenshots, setPreventScreenshots } from '~/hooks/use-screen-capture';
 import { useAuth } from '~/services/auth/auth-provider';
 import { useMobilePasskeyAuth } from '~/services/auth/hooks/use-mobile-passkey-auth';
+import t from '~/translations';
 
 interface AccountState {
   name: string;
@@ -89,7 +90,7 @@ function Settings() {
     }
 
     if (!normalizedName) {
-      setSaveError('Name cannot be empty.');
+      setSaveError(t.settings.name.errorEmpty);
       setSaveStatus('idle');
       return;
     }
@@ -103,20 +104,20 @@ function Settings() {
       setSaveStatus('saved');
     } catch (error) {
       setSaveStatus('idle');
-      setSaveError(error instanceof Error ? error.message : 'Could not save name.');
+      setSaveError(error instanceof Error ? error.message : t.settings.name.errorSave);
     }
   };
 
   const onLogoutPress = () => {
-    Alert.alert('Sign out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign out', style: 'destructive', onPress: () => signOut() },
+    Alert.alert(t.settings.signOut.alertTitle, t.settings.signOut.alertMessage, [
+      { text: t.settings.signOut.cancel, style: 'cancel' },
+      { text: t.settings.signOut.confirm, style: 'destructive', onPress: () => signOut() },
     ]);
   };
 
   const onDeleteAccountPress = () => {
-    Alert.alert('Delete account', 'Account deletion is not available in this release.', [
-      { text: 'OK', style: 'default' },
+    Alert.alert(t.settings.deleteAccount.alertTitle, t.settings.deleteAccount.alertMessage, [
+      { text: t.settings.deleteAccount.ok, style: 'default' },
     ]);
   };
 
@@ -127,24 +128,34 @@ function Settings() {
   const onAddPasskeyPress = async () => {
     const result = await addPasskey();
     if (!result.success) {
-      Alert.alert('Could not add passkey', result.error ?? 'Please try again.');
+      Alert.alert(
+        t.settings.passkeys.addErrorTitle,
+        result.error ?? t.settings.passkeys.addErrorTitle,
+      );
     }
   };
 
   const onDeletePasskeyPress = (id: string, passkeyName: string) => {
-    Alert.alert('Remove passkey', `Remove "${passkeyName}"?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Remove',
-        style: 'destructive',
-        onPress: async () => {
-          const result = await deletePasskey(id);
-          if (!result.success) {
-            Alert.alert('Error', result.error ?? 'Could not remove passkey.');
-          }
+    Alert.alert(
+      t.settings.passkeys.removeDialog.title,
+      t.settings.passkeys.removeDialog.message(passkeyName),
+      [
+        { text: t.settings.passkeys.removeDialog.cancel, style: 'cancel' },
+        {
+          text: t.settings.passkeys.removeDialog.confirm,
+          style: 'destructive',
+          onPress: async () => {
+            const result = await deletePasskey(id);
+            if (!result.success) {
+              Alert.alert(
+                t.settings.passkeys.removeDialog.errorTitle,
+                result.error ?? t.settings.passkeys.removeDialog.errorMessage,
+              );
+            }
+          },
         },
-      },
-    ]);
+      ],
+    );
   };
 
   if (!isSignedIn) return null;
@@ -160,17 +171,21 @@ function Settings() {
           },
         ]}
       >
-        <Text style={[styles.sectionTitle, { color: themeColors['text-secondary'] }]}>Account</Text>
+        <Text style={[styles.sectionTitle, { color: themeColors['text-secondary'] }]}>
+          {t.settings.sections.account}
+        </Text>
         <View style={styles.row}>
           <View style={styles.rowLabelGroup}>
             <AppIcon name="person.crop.circle" />
-            <Text style={[styles.rowLabel, { color: themeColors.foreground }]}>Name</Text>
+            <Text style={[styles.rowLabel, { color: themeColors.foreground }]}>
+              {t.settings.name.label}
+            </Text>
           </View>
           <View style={styles.nameControls}>
             <TextInput
               key={`name-${currentUser?.id ?? 'anonymous'}`}
               value={state.name}
-              placeholder="Your name"
+              placeholder={t.settings.name.placeholder}
               placeholderTextColor={themeColors['text-tertiary']}
               returnKeyType="done"
               selectionColor={themeColors.foreground}
@@ -197,7 +212,7 @@ function Settings() {
             {nameChanged ? (
               <View style={styles.saveButtonWrap}>
                 <Button
-                  label={saveStatus === 'saving' ? 'Saving' : 'Save'}
+                  label={saveStatus === 'saving' ? t.settings.name.saving : t.settings.name.save}
                   onPress={() => void onSavePress()}
                   disabled={saveStatus === 'saving'}
                   variant="secondary"
@@ -208,7 +223,9 @@ function Settings() {
         </View>
 
         {saveStatus === 'saved' ? (
-          <Text style={[styles.statusText, { color: themeColors['text-secondary'] }]}>Saved</Text>
+          <Text style={[styles.statusText, { color: themeColors['text-secondary'] }]}>
+            {t.settings.name.saved}
+          </Text>
         ) : null}
 
         {saveError ? <Text style={[styles.statusText, styles.errorText]}>{saveError}</Text> : null}
@@ -216,12 +233,14 @@ function Settings() {
         <View style={styles.row}>
           <View style={styles.rowLabelGroup}>
             <AppIcon name="envelope" />
-            <Text style={[styles.rowLabel, { color: themeColors.foreground }]}>Email</Text>
+            <Text style={[styles.rowLabel, { color: themeColors.foreground }]}>
+              {t.settings.email}
+            </Text>
           </View>
           <Text
             style={[styles.rowValue, { color: themeColors['text-secondary'], maxWidth: '75%' }]}
           >
-            {currentUser?.email ?? '-'}
+            {currentUser?.email ?? t.settings.emailMissing}
           </Text>
         </View>
       </View>
@@ -235,12 +254,14 @@ function Settings() {
           },
         ]}
       >
-        <Text style={[styles.sectionTitle, { color: themeColors['text-secondary'] }]}>Privacy</Text>
+        <Text style={[styles.sectionTitle, { color: themeColors['text-secondary'] }]}>
+          {t.settings.sections.privacy}
+        </Text>
         <View style={styles.row}>
           <View style={styles.rowLabelGroup}>
             <AppIcon name="faceid" />
             <Text style={[styles.rowLabel, { color: themeColors.foreground }]}>
-              Lock with Face ID
+              {t.settings.lockWithFaceId}
             </Text>
           </View>
           <Switch
@@ -255,7 +276,7 @@ function Settings() {
           <View style={styles.rowLabelGroup}>
             <AppIcon name="eye.slash" />
             <Text style={[styles.rowLabel, { color: themeColors.foreground }]}>
-              Prevent screenshots
+              {t.settings.preventScreenshots}
             </Text>
           </View>
           <Switch
@@ -277,14 +298,18 @@ function Settings() {
           },
         ]}
       >
-        <Text style={[styles.sectionTitle, { color: themeColors['text-secondary'] }]}>Chats</Text>
+        <Text style={[styles.sectionTitle, { color: themeColors['text-secondary'] }]}>
+          {t.settings.sections.chats}
+        </Text>
         <Pressable
           onPress={onArchivedChatsPress}
           style={({ pressed }) => [styles.row, { opacity: pressed ? 0.7 : 1 }]}
         >
           <View style={styles.rowLabelGroup}>
             <AppIcon name="archivebox" />
-            <Text style={[styles.rowLabel, { color: themeColors.foreground }]}>Archived chats</Text>
+            <Text style={[styles.rowLabel, { color: themeColors.foreground }]}>
+              {t.settings.archivedChats}
+            </Text>
           </View>
           <AppIcon name="chevron.right" size={12} tintColor={themeColors['icon-muted']} />
         </Pressable>
@@ -301,10 +326,10 @@ function Settings() {
           ]}
         >
           <Text style={[styles.sectionTitle, { color: themeColors['text-secondary'] }]}>
-            Passkeys
+            {t.settings.sections.passkeys}
           </Text>
           <Button
-            label={isPasskeyLoading ? 'Adding passkey' : 'Add passkey'}
+            label={isPasskeyLoading ? t.settings.passkeys.adding : t.settings.passkeys.add}
             onPress={() => void onAddPasskeyPress()}
             disabled={isPasskeyLoading}
             variant="secondary"
@@ -321,7 +346,7 @@ function Settings() {
                 onPress={() => onDeletePasskeyPress(pk.id, pk.name)}
                 style={({ pressed }) => ({ opacity: pressed ? 0.65 : 1 })}
               >
-                <Text style={styles.removeText}>Remove</Text>
+                <Text style={styles.removeText}>{t.settings.passkeys.remove}</Text>
               </Pressable>
             </View>
           ))}
@@ -329,8 +354,12 @@ function Settings() {
       ) : null}
 
       <View style={styles.actionStack}>
-        <Button label="Sign out" onPress={onLogoutPress} variant="primary" />
-        <Button label="Delete account" onPress={onDeleteAccountPress} variant="destructive-text" />
+        <Button label={t.settings.signOut.label} onPress={onLogoutPress} variant="primary" />
+        <Button
+          label={t.settings.deleteAccount.label}
+          onPress={onDeleteAccountPress}
+          variant="destructive-text"
+        />
       </View>
     </ScrollView>
   );

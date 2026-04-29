@@ -3,6 +3,7 @@ import { buttonStyle } from '@expo/ui/swift-ui/modifiers';
 import type { ArtifactType } from '@hominem/rpc/types';
 
 import { AppIconButton } from '~/components/ui';
+import t from '~/translations';
 
 import { buildConversationActionsModel } from './conversation-actions.model';
 
@@ -12,7 +13,6 @@ interface ConversationMenuProps {
   showDebug: boolean;
   isArchiving: boolean;
   canTransform: boolean;
-  transformTypes?: Exclude<ConversationActionType, 'tracker'>[];
   onOpenSearch: () => void;
   onToggleDebug: () => void;
   onTransform: (type: ConversationActionType) => void;
@@ -23,7 +23,6 @@ export function ConversationMenu({
   showDebug,
   isArchiving,
   canTransform,
-  transformTypes,
   onOpenSearch,
   onToggleDebug,
   onTransform,
@@ -33,7 +32,6 @@ export function ConversationMenu({
     canTransform,
     isArchiving,
     showDebug,
-    transformTypes: transformTypes ?? ['note', 'task', 'task_list'],
   });
 
   const handleAction = (
@@ -53,7 +51,9 @@ export function ConversationMenu({
   return (
     <Host>
       <Menu
-        label={<AppIconButton accessibilityLabel="Conversation actions" icon="ellipsis" />}
+        label={
+          <AppIconButton accessibilityLabel={t.chat.conversationActionsLabel} icon="ellipsis" />
+        }
         modifiers={[buttonStyle('borderless')]}
       >
         {sections.flatMap((section) =>

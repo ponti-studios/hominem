@@ -3,6 +3,7 @@ import { Modal, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { makeStyles, radii, spacing, useThemeColors } from '~/components/theme';
+import t from '~/translations';
 
 import { buildConversationActionsModel } from './conversation-actions.model';
 
@@ -15,7 +16,6 @@ interface ConversationActionsSheetProps {
   showDebug: boolean;
   isArchiving: boolean;
   canTransform: boolean;
-  transformTypes?: Exclude<ConversationActionType, 'tracker'>[];
   onClose: () => void;
   onOpenSearch: () => void;
   onToggleDebug: () => void;
@@ -75,7 +75,6 @@ export function ConversationActionsSheet({
   showDebug,
   isArchiving,
   canTransform,
-  transformTypes,
   onClose,
   onOpenSearch,
   onToggleDebug,
@@ -88,7 +87,6 @@ export function ConversationActionsSheet({
     canTransform,
     isArchiving,
     showDebug,
-    transformTypes: transformTypes ?? ['note', 'task', 'task_list'],
   });
 
   if (!visible) return null;
@@ -140,7 +138,7 @@ export function ConversationActionsSheet({
               </View>
             ))}
 
-            <SheetActionButton label="Cancel" onPress={onClose} />
+            <SheetActionButton label={t.chat.input.actionSheet.cancel} onPress={onClose} />
           </View>
         </Pressable>
       </Pressable>

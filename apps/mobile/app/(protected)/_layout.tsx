@@ -11,6 +11,7 @@ import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import { ApiProvider } from '~/services/api/api-provider';
 import { useAuth } from '~/services/auth/auth-provider';
 import queryClient from '~/services/query-client';
+import t from '~/translations';
 
 const styles = StyleSheet.create({
   root: {
@@ -67,10 +68,14 @@ function ProtectedShell() {
           {APP_NAME}
         </Text>
         <Text variant="body" color="text-secondary">
-          Unlock to continue
+          {t.auth.unlockMessage}
         </Text>
         <View style={styles.unlockButtonWrap}>
-          <Button label="Unlock" onPress={() => void authenticate()} variant="primary" />
+          <Button
+            label={t.auth.unlockButton}
+            onPress={() => void authenticate()}
+            variant="primary"
+          />
         </View>
       </View>
     );

@@ -5,6 +5,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useThemeColors } from '~/components/theme';
 import { Button } from '~/components/ui/button';
 import AppIcon from '~/components/ui/icon';
+import t from '~/translations';
 
 export default function NotFoundScreen() {
   const router = useRouter();
@@ -12,16 +13,18 @@ export default function NotFoundScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: 'Not found' }} />
+      <Stack.Screen options={{ title: t.errors.notFound.screenTitle }} />
       <View style={styles.host}>
         <View style={styles.content}>
           <AppIcon name="questionmark.circle" size={32} tintColor={themeColors['text-secondary']} />
-          <Text style={[styles.title, { color: themeColors.foreground }]}>Resource not found</Text>
+          <Text style={[styles.title, { color: themeColors.foreground }]}>
+            {t.errors.notFound.title}
+          </Text>
           <Text style={[styles.message, { color: themeColors['text-secondary'] }]}>
-            The page you opened is not available.
+            {t.errors.notFound.message}
           </Text>
           <Button
-            label="Return to root"
+            label={t.errors.notFound.returnToRoot}
             onPress={() => {
               router.replace('/' as RelativePathString);
             }}

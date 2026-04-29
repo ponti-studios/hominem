@@ -8,6 +8,7 @@ import { Camera, useCameraDevice, useCameraPermission } from 'react-native-visio
 
 import { Text, theme } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
+import t from '~/translations';
 
 type CapturedPhoto = {
   uri: string;
@@ -46,10 +47,10 @@ export function CameraModal({ visible, onCapture, onClose }: CameraModalProps) {
       };
 
       if (mediaPermission?.granted) {
-        Alert.alert('Save photo?', 'Save this photo to your camera roll.', [
-          { text: 'Skip', style: 'cancel', onPress: () => onCapture(captured) },
+        Alert.alert(t.camera.savePhoto.title, t.camera.savePhoto.message, [
+          { text: t.camera.savePhoto.skip, style: 'cancel', onPress: () => onCapture(captured) },
           {
-            text: 'Save',
+            text: t.camera.savePhoto.save,
             onPress: async () => {
               await MediaLibrary.saveToLibraryAsync(uri);
               onCapture(captured);
@@ -60,7 +61,7 @@ export function CameraModal({ visible, onCapture, onClose }: CameraModalProps) {
         onCapture(captured);
       }
     } catch {
-      Alert.alert('Camera error', 'Could not take photo. Please try again.');
+      Alert.alert(t.camera.error.title, t.camera.error.message);
     } finally {
       setIsTakingPhoto(false);
     }
@@ -95,7 +96,7 @@ export function CameraModal({ visible, onCapture, onClose }: CameraModalProps) {
                 <Pressable
                   onPress={handleDismiss}
                   style={styles.sideButton}
-                  accessibilityLabel="Close camera"
+                  accessibilityLabel={t.camera.closeA11y}
                 >
                   <AppIcon name="xmark" size={20} tintColor={theme.colors.white} />
                 </Pressable>
@@ -104,7 +105,7 @@ export function CameraModal({ visible, onCapture, onClose }: CameraModalProps) {
                   onPress={() => void handleCapture()}
                   disabled={isTakingPhoto}
                   style={[styles.captureButton, isTakingPhoto && styles.captureButtonDisabled]}
-                  accessibilityLabel="Take photo"
+                  accessibilityLabel={t.camera.takePhotoA11y}
                 >
                   <View style={styles.captureInner} />
                 </Pressable>
@@ -112,7 +113,7 @@ export function CameraModal({ visible, onCapture, onClose }: CameraModalProps) {
                 <Pressable
                   onPress={() => setFacing((f) => (f === 'back' ? 'front' : 'back'))}
                   style={styles.sideButton}
-                  accessibilityLabel="Flip camera"
+                  accessibilityLabel={t.camera.flipCameraA11y}
                 >
                   <AppIcon name="camera.rotate" size={20} tintColor={theme.colors.white} />
                 </Pressable>
@@ -122,19 +123,19 @@ export function CameraModal({ visible, onCapture, onClose }: CameraModalProps) {
         ) : (
           <View style={styles.permissionContainer}>
             <Text variant="body" color="foreground">
-              Camera access is required to take photos.
+              {t.camera.permission.message}
             </Text>
             <Pressable
               onPress={() => void handleRequestPermissions()}
               style={styles.permissionButton}
             >
               <Text variant="body" color="foreground">
-                Grant permission
+                {t.camera.permission.grant}
               </Text>
             </Pressable>
             <Pressable onPress={handleDismiss} style={styles.permissionCancel}>
               <Text variant="body" color="text-secondary">
-                Cancel
+                {t.camera.permission.cancel}
               </Text>
             </Pressable>
           </View>

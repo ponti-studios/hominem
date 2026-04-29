@@ -6,10 +6,12 @@ export function useTextEnhance() {
   const [isEnhancing, setIsEnhancing] = useState(false);
 
   const enhance = useCallback(
-    async (text: string): Promise<string> => {
+    async (text: string, instruction?: string): Promise<string> => {
       setIsEnhancing(true);
       try {
-        const response = await client.api.ai.enhance.$post({ json: { text } });
+        const response = await client.api.ai.enhance.$post({
+          json: instruction ? { text, instruction } : { text },
+        });
         const data = await response.json();
         if ('error' in data) throw new Error(data.error);
         return data.text;

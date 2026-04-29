@@ -12,6 +12,7 @@ const ENHANCE_MODEL = 'google/gemini-2.5-flash-lite';
 
 const enhanceSchema = z.object({
   text: z.string().min(1).max(8000),
+  instruction: z.string().max(500).optional(),
 });
 
 function getOpenRouterHeaders(apiKey: string): Record<string, string> {
@@ -23,16 +24,19 @@ function getOpenRouterHeaders(apiKey: string): Record<string, string> {
   };
 }
 
-const ENHANCE_SYSTEM_PROMPT = `You are a text editor. The user has dictated text using voice input and wants it cleaned up.
+const ENHANCE_SYSTEM_PROMPT = `You are a text editor. You receive text and optionally a user instruction for how to modify it.
 
-Your job:
+When no instruction is provided:
 - Fix grammar, punctuation, and capitalization
 - Remove filler words (um, uh, like, you know)
 - Break run-on sentences into clear, readable sentences
 - Preserve the user's meaning and voice exactly — do not paraphrase or add new content
-- Return only the cleaned text with no commentary, no quotes, no prefix
 
-If the input is already clean, return it unchanged.`;
+When an instruction is provided, follow it precisely while still maintaining correct grammar and punctuation.
+
+Rules:
+- Return only the modified text with no commentary, no quotes, no prefix
+- If the input is already clean and no instruction changes are needed, return it unchanged.`;
 
 export const aiRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
@@ -41,7 +45,7 @@ export const aiRoutes = new Hono<AppContext>()
     rateLimitMiddleware({ bucket: 'ai-enhance', identifier: 'enhance', windowSec: 60, max: 30 }),
   )
   .post('/enhance', zValidator('json', enhanceSchema), async (c) => {
-    const { text } = c.req.valid('json');
+    const { text, instruction } = c.req.valid('json');
     const apiKey = env.OPENROUTER_API_KEY?.trim();
 
     if (!apiKey) {
@@ -56,7 +60,10 @@ export const aiRoutes = new Hono<AppContext>()
         model: ENHANCE_MODEL,
         messages: [
           { role: 'system', content: ENHANCE_SYSTEM_PROMPT },
-          { role: 'user', content: text },
+          {
+            role: 'user',
+            content: instruction ? `Instruction: ${instruction}\n\nText:\n${text}` : text,
+          },
         ],
         temperature: 0.2,
         max_tokens: 2000,

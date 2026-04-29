@@ -11,6 +11,7 @@ import Animated, {
 
 import { Text, makeStyles } from '~/components/theme';
 import { durations, fontSizes, radii, spacing } from '~/components/theme';
+import t from '~/translations';
 
 const DOT_UP_DURATION = durations.enter;
 const DOT_DOWN_DURATION = durations.exit;
@@ -61,7 +62,7 @@ export function ChatThinkingIndicator() {
           <Animated.View style={[styles.dot, dot2Style]} />
           <Animated.View style={[styles.dot, dot3Style]} />
           <Text color="text-tertiary" style={styles.thinkingText}>
-            Thinking...
+            {t.chat.thinkingIndicator}
           </Text>
         </View>
       </View>

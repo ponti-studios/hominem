@@ -18,20 +18,7 @@ import {
   spacing,
 } from '~/components/theme';
 import { Button } from '~/components/ui/button';
-
-const TYPE_LABEL: Record<ArtifactType, string> = {
-  note: 'NOTE',
-  task: 'TASK',
-  task_list: 'TASK LIST',
-  tracker: 'TRACKER',
-};
-
-const SAVE_LABEL: Record<ArtifactType, string> = {
-  note: 'SAVE NOTE',
-  task: 'SAVE TASK',
-  task_list: 'SAVE TASK LIST',
-  tracker: 'SAVE REVIEW',
-};
+import t from '~/translations';
 
 interface ClassificationReviewProps {
   proposedType: ArtifactType;
@@ -78,7 +65,7 @@ export function ClassificationReview({
           <View style={styles.handle} />
           <View style={styles.header}>
             <Text color="text-secondary" style={styles.typeLabel}>
-              SAVE AS {TYPE_LABEL[proposedType]}
+              {t.chat.classification.saveAsPrefix} {t.chat.classification.typeLabel[proposedType]}
             </Text>
             <Text style={styles.title}>{proposedTitle}</Text>
           </View>
@@ -106,10 +93,18 @@ export function ClassificationReview({
 
           <View style={styles.actionsRow}>
             <View style={styles.actionSlot}>
-              <Button label={SAVE_LABEL[proposedType]} onPress={onAccept} variant="primary" />
+              <Button
+                label={t.chat.classification.saveLabel[proposedType]}
+                onPress={onAccept}
+                variant="primary"
+              />
             </View>
             <View style={styles.actionSlot}>
-              <Button label="DISCARD" onPress={onReject} variant="secondary" />
+              <Button
+                label={t.chat.classification.discard}
+                onPress={onReject}
+                variant="secondary"
+              />
             </View>
           </View>
         </Animated.View>

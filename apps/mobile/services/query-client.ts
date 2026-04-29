@@ -1,7 +1,16 @@
 import NetInfo from '@react-native-community/netinfo';
-import { QueryClient, onlineManager } from '@tanstack/react-query';
+import { QueryClient, focusManager, onlineManager } from '@tanstack/react-query';
+import { AppState } from 'react-native';
 
 import { mobileQueryDefaultOptions } from './query-client-config';
+
+// React Native has no browser window focus events — bridge AppState instead.
+focusManager.setEventListener((handleFocus) => {
+  const subscription = AppState.addEventListener('change', (state) => {
+    handleFocus(state === 'active');
+  });
+  return () => subscription.remove();
+});
 
 // Configure React Query to use NetInfo for online status
 onlineManager.setEventListener((setOnline) => {
