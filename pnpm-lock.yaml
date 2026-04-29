@@ -825,6 +825,9 @@ importers:
       '@types/node':
         specifier: ^25.4.0
         version: 25.6.0
+      '@types/ws':
+        specifier: ^8.18.1
+        version: 8.18.1
       goose-cli:
         specifier: 3.25.0-a
         version: 3.25.0-a
@@ -5707,6 +5710,9 @@ packages:
 
   '@types/wait-on@5.3.4':
     resolution: {integrity: sha512-EBsPjFMrFlMbbUFf9D1Fp+PAB2TwmUn7a3YtHyD9RLuTIk1jDd8SxXVAoez2Ciy+8Jsceo2MYEYZzJ/DvorOKw==}
+
+  '@types/ws@8.18.1':
+    resolution: {integrity: sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==}
 
   '@types/yargs-parser@21.0.3':
     resolution: {integrity: sha512-I4q9QU9MQv4oEOz4tAHJtNz1cwuLxn2F3xcc2iV5WdqLPpUnj30aUuxt1mAxYTG+oe8CZMV/+6rU4S4gRDzqtQ==}
@@ -17555,6 +17561,10 @@ snapshots:
   '@types/unist@3.0.3': {}
 
   '@types/wait-on@5.3.4':
+    dependencies:
+      '@types/node': 25.6.0
+
+  '@types/ws@8.18.1':
     dependencies:
       '@types/node': 25.6.0
 
