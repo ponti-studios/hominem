@@ -1,4 +1,4 @@
-import { Button, Menu } from '@expo/ui/swift-ui';
+import { Button, Host, Menu } from '@expo/ui/swift-ui';
 import { buttonStyle } from '@expo/ui/swift-ui/modifiers';
 import type { ArtifactType } from '@hominem/rpc/types';
 
@@ -51,20 +51,22 @@ export function ConversationMenu({
   };
 
   return (
-    <Menu
-      label={<AppIconButton accessibilityLabel="Conversation actions" icon="ellipsis" />}
-      modifiers={[buttonStyle('borderless')]}
-    >
-      {sections.flatMap((section) =>
-        section.items.map((item) => (
-          <Button
-            key={`${section.title}:${item.label}`}
-            label={item.label}
-            role={item.kind === 'archive' ? 'destructive' : undefined}
-            onPress={() => handleAction(item)}
-          />
-        )),
-      )}
-    </Menu>
+    <Host>
+      <Menu
+        label={<AppIconButton accessibilityLabel="Conversation actions" icon="ellipsis" />}
+        modifiers={[buttonStyle('borderless')]}
+      >
+        {sections.flatMap((section) =>
+          section.items.map((item) => (
+            <Button
+              key={`${section.title}:${item.label}`}
+              label={item.label}
+              role={item.kind === 'archive' ? 'destructive' : undefined}
+              onPress={() => handleAction(item)}
+            />
+          )),
+        )}
+      </Menu>
+    </Host>
   );
 }

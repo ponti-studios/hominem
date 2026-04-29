@@ -186,10 +186,17 @@ export const useSendMessage = ({ chatId }: { chatId: string }) => {
               ...(noteIds && noteIds.length > 0 ? { noteIds } : {}),
             },
           });
-          const body = streamRes.body;
-          if (!body) throw new Error('No response body');
 
           setChatSendStatus('streaming');
+
+          // React Native (Hermes) does not support ReadableStream — body is null.
+          // Fall back to reading the fully-buffered response as text.
+          const body = streamRes.body;
+          if (!body) {
+            const assistantText = await streamRes.text();
+            return { assistantText };
+          }
+
           const reader = body.getReader();
           const decoder = new TextDecoder();
           let streamedAssistantText = '';
@@ -197,18 +204,13 @@ export const useSendMessage = ({ chatId }: { chatId: string }) => {
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
-
             streamedAssistantText += decoder.decode(value, { stream: true });
           }
 
           const finalChunk = decoder.decode();
-          if (finalChunk) {
-            streamedAssistantText += finalChunk;
-          }
+          if (finalChunk) streamedAssistantText += finalChunk;
 
-          return {
-            assistantText: streamedAssistantText,
-          };
+          return { assistantText: streamedAssistantText };
         },
       });
 

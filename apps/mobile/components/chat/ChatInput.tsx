@@ -18,7 +18,7 @@ import {
   useColorScheme,
 } from 'react-native';
 import { useAnimatedKeyboard } from 'react-native-keyboard-controller';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
@@ -285,6 +285,7 @@ export function ChatInput({ chatId, initialMessage, onClearanceChange }: ChatInp
   const prefersReducedMotion = useReducedMotion();
   const keyboard = useAnimatedKeyboard();
   const animatedH = useSharedValue(INPUT_MIN_H);
+  const wandProgress = useSharedValue(0);
   const inputRef = useRef<TextInput>(null);
   const client = useApiClient();
   const queryClient = useQueryClient();
@@ -302,7 +303,7 @@ export function ChatInput({ chatId, initialMessage, onClearanceChange }: ChatInp
   });
 
   const { sendChatMessage, isChatSending } = useSendMessage({ chatId: resolvedChatId });
-  const { enhance, isEnhancing } = useTextEnhance({ onValueChange: setMessage });
+  const { enhance, isEnhancing } = useTextEnhance();
 
   const uploadedAttachmentIds = useMemo(() => getUploadedAttachmentIds(attachments), [attachments]);
 
@@ -449,6 +450,15 @@ export function ChatInput({ chatId, initialMessage, onClearanceChange }: ChatInp
     bottom: keyboard.height.value + Math.max(insets.bottom, spacing[2]),
   }));
 
+  useEffect(() => {
+    wandProgress.value = withTiming(message.trim().length > 0 ? 1 : 0, { duration: 180 });
+  }, [message, wandProgress]);
+
+  const wandStyle = useAnimatedStyle(() => ({
+    opacity: wandProgress.value,
+    transform: [{ translateY: (1 - wandProgress.value) * 6 }],
+  }));
+
   return (
     <Animated.View style={[styles.shell, shellStyle]}>
       <Animated.View
@@ -503,12 +513,14 @@ export function ChatInput({ chatId, initialMessage, onClearanceChange }: ChatInp
             disabled={isChatSending}
           />
           <View style={styles.actionRowSpacer} />
-          <MediaButton
-            icon="wand.and.sparkles"
-            onPress={() => enhance(message)}
-            accessibilityLabel="Enhance text with AI"
-            disabled={isChatSending || isEnhancing || !message.trim()}
-          />
+          <Animated.View style={wandStyle} pointerEvents={message.trim().length > 0 ? 'auto' : 'none'}>
+            <MediaButton
+              icon="wand.and.sparkles"
+              onPress={() => void enhance(message).then(setMessage)}
+              accessibilityLabel="Enhance text with AI"
+              disabled={isChatSending || isEnhancing}
+            />
+          </Animated.View>
           <SendButton
             onPress={handleSend}
             disabled={!canSubmit || isChatSending}

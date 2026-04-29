@@ -1,25 +1,24 @@
 import { useApiClient } from '@hominem/rpc/react';
-import { useMutation } from '@tanstack/react-query';
-import type { Dispatch, SetStateAction } from 'react';
+import { useCallback, useState } from 'react';
 
-interface UseTextEnhanceOptions {
-  onValueChange: Dispatch<SetStateAction<string>>;
-}
-
-export function useTextEnhance({ onValueChange }: UseTextEnhanceOptions) {
+export function useTextEnhance() {
   const client = useApiClient();
+  const [isEnhancing, setIsEnhancing] = useState(false);
 
-  const { mutate: enhance, isPending: isEnhancing } = useMutation({
-    mutationFn: async (text: string) => {
-      const response = await client.api.ai.enhance.$post({ json: { text } });
-      const data = await response.json();
-      if ('error' in data) throw new Error(data.error);
-      return data.text;
+  const enhance = useCallback(
+    async (text: string): Promise<string> => {
+      setIsEnhancing(true);
+      try {
+        const response = await client.api.ai.enhance.$post({ json: { text } });
+        const data = await response.json();
+        if ('error' in data) throw new Error(data.error);
+        return data.text;
+      } finally {
+        setIsEnhancing(false);
+      }
     },
-    onSuccess: (enhanced) => {
-      onValueChange(enhanced);
-    },
-  });
+    [client],
+  );
 
   return { enhance, isEnhancing };
 }

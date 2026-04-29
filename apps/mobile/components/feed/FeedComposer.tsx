@@ -7,7 +7,7 @@ import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
 import type { RelativePathString } from 'expo-router';
 import { useRouter } from 'expo-router';
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActionSheetIOS,
   Keyboard,
@@ -18,7 +18,12 @@ import {
   useColorScheme,
 } from 'react-native';
 import { useAnimatedKeyboard } from 'react-native-keyboard-controller';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
@@ -128,6 +133,7 @@ export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerPro
   const prefersReducedMotion = useReducedMotion();
   const keyboard = useAnimatedKeyboard();
   const animatedH = useSharedValue(INPUT_MIN_H);
+  const actionGroupProgress = useSharedValue(0);
   const inputRef = useRef<TextInput>(null);
   const client = useApiClient();
   const queryClient = useQueryClient();
@@ -140,7 +146,7 @@ export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerPro
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isChatCreating, setIsChatCreating] = useState(false);
-  const { enhance, isEnhancing } = useTextEnhance({ onValueChange: setMessage });
+  const { enhance, isEnhancing } = useTextEnhance();
   const { handleCameraCapture, pickAttachment, uploadState } = useComposerMediaActions({
     attachments,
     setAttachments,
@@ -271,6 +277,15 @@ export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerPro
     bottom: keyboard.height.value + Math.max(insets.bottom, spacing[2]),
   }));
 
+  useEffect(() => {
+    actionGroupProgress.value = withTiming(message.trim().length > 0 ? 1 : 0, { duration: 180 });
+  }, [message, actionGroupProgress]);
+
+  const actionGroupStyle = useAnimatedStyle(() => ({
+    opacity: actionGroupProgress.value,
+    transform: [{ translateY: (1 - actionGroupProgress.value) * 6 }],
+  }));
+
   return (
     <Animated.View style={[styles.container, shellStyle]}>
       <Animated.View
@@ -322,36 +337,37 @@ export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerPro
               accessibilityLabel="Add attachment"
               icon="plus"
               onPress={showPlusMenu}
-              tintColor={themeColors['text-secondary']}
+              tintColor={themeColors['text-primary']}
             />
           </AppIconButtonGroup>
-          <AppIconButtonGroup style={styles.actionGroup}>
-            <AppIconButton
-              accessibilityLabel="Enhance text with AI"
-              icon="wand.and.sparkles"
-              onPress={() => enhance(message)}
-              disabled={isEnhancing || !message.trim()}
-              tintColor={themeColors['text-secondary']}
-            />
-            <View style={styles.saveChatShell}>
-              <AppIconButtonGroup style={styles.saveChatGroup}>
-                <AppIconButton
-                  accessibilityLabel="Open chat"
-                  disabled={!canSubmit || isSaving || isChatCreating}
-                  icon="bubble.left"
-                  onPress={() => void handleChat()}
-                  tintColor={themeColors.white}
-                />
-                <AppIconButton
-                  accessibilityLabel="Save note"
-                  disabled={!canSubmit || isSaving || isChatCreating}
-                  icon="arrow.up"
-                  onPress={() => void handleSave()}
-                  tintColor={themeColors.white}
-                />
-              </AppIconButtonGroup>
-            </View>
-          </AppIconButtonGroup>
+          <Animated.View
+            style={actionGroupStyle}
+            pointerEvents={message.trim().length > 0 ? 'auto' : 'none'}
+          >
+            <AppIconButtonGroup style={styles.actionGroup}>
+              <AppIconButton
+                accessibilityLabel="Enhance text with AI"
+                icon="wand.and.sparkles"
+                onPress={() => void enhance(message).then(setMessage)}
+                disabled={isEnhancing}
+                tintColor={themeColors.white}
+              />
+              <AppIconButton
+                accessibilityLabel="Open chat"
+                disabled={!canSubmit || isSaving || isChatCreating}
+                icon="bubble.left"
+                onPress={() => void handleChat()}
+                tintColor={themeColors.white}
+              />
+              <AppIconButton
+                accessibilityLabel="Save note"
+                disabled={!canSubmit || isSaving || isChatCreating}
+                icon="arrow.up"
+                onPress={() => void handleSave()}
+                tintColor={themeColors.white}
+              />
+            </AppIconButtonGroup>
+          </Animated.View>
         </View>
       </Animated.View>
 
@@ -387,7 +403,7 @@ const useStyles = makeStyles((theme) => ({
     paddingHorizontal: spacing[3],
     paddingTop: spacing[3],
     paddingBottom: spacing[2],
-    gap: spacing[2],
+    gap: 0,
   },
   // Separate clipping container so blur is clipped to pill shape
   // while the outer pill can still overflow its children
@@ -409,7 +425,7 @@ const useStyles = makeStyles((theme) => ({
     color: theme.colors.foreground,
     fontSize: 16,
     lineHeight: 22,
-    letterSpacing: -0.1,
+    letterSpacing: -0.35,
     paddingHorizontal: 0,
     paddingVertical: 0,
   },
@@ -423,15 +439,10 @@ const useStyles = makeStyles((theme) => ({
     gap: spacing[2],
   },
   actionGroup: {
-    gap: spacing[2],
-  },
-  saveChatShell: {
+    gap: spacing[1],
     backgroundColor: 'rgba(0, 0, 0, 0.9)',
     borderRadius: 32,
     paddingHorizontal: 4,
-  },
-  saveChatGroup: {
-    gap: 2,
   },
   // Attachments
   attachmentRow: {
