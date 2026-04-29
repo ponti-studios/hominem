@@ -1,6 +1,6 @@
 import type { SFSymbol } from 'expo-symbols';
 import React from 'react';
-import { InputAccessoryView, Keyboard, Pressable, StyleSheet, View } from 'react-native';
+import { InputAccessoryView, Keyboard, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { makeStyles, spacing, useThemeColors } from '~/components/theme';
 import { BlurSurface } from '~/components/ui/BlurSurface';
@@ -59,30 +59,50 @@ function ToolbarButtons({ onAction, onUndo, onRedo, canUndo, canRedo }: NoteTool
   const styles = useToolbarStyles();
   return (
     <>
-      <View style={styles.group}>
-        <ToolbarButton icon="bold" label={t.notes.toolbar.bold} onPress={() => onAction('bold')} />
-        <ToolbarButton icon="italic" label={t.notes.toolbar.italic} onPress={() => onAction('italic')} />
-        <ToolbarButton
-          icon="strikethrough"
-          label={t.notes.toolbar.strikethrough}
-          onPress={() => onAction('strikethrough')}
-        />
-        <ToolbarButton icon="curlybraces" label={t.notes.toolbar.inlineCode} onPress={() => onAction('code')} />
-      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        keyboardShouldPersistTaps="always"
+        contentContainerStyle={styles.scrollContent}
+        style={styles.scroll}
+      >
+        <View style={styles.group}>
+          <ToolbarButton icon="bold" label={t.notes.toolbar.bold} onPress={() => onAction('bold')} />
+          <ToolbarButton icon="italic" label={t.notes.toolbar.italic} onPress={() => onAction('italic')} />
+          <ToolbarButton
+            icon="strikethrough"
+            label={t.notes.toolbar.strikethrough}
+            onPress={() => onAction('strikethrough')}
+          />
+          <ToolbarButton icon="curlybraces" label={t.notes.toolbar.inlineCode} onPress={() => onAction('code')} />
+        </View>
 
-      <ToolbarDivider />
+        <ToolbarDivider />
 
-      <View style={styles.group}>
-        <ToolbarButton icon="checklist" label={t.notes.toolbar.checklist} onPress={() => onAction('checklist')} />
-        <ToolbarButton icon="list.bullet" label={t.notes.toolbar.bulletList} onPress={() => onAction('bullet')} />
-        <ToolbarButton icon="increase.indent" label={t.notes.toolbar.indent} onPress={() => onAction('indent')} />
-        <ToolbarButton icon="decrease.indent" label={t.notes.toolbar.outdent} onPress={() => onAction('outdent')} />
-        <ToolbarButton
-          icon="textformat.size.larger"
-          label={t.notes.toolbar.heading}
-          onPress={() => onAction('heading')}
-        />
-      </View>
+        <View style={styles.group}>
+          <ToolbarButton
+            icon="textformat.size.larger"
+            label={t.notes.toolbar.heading}
+            onPress={() => onAction('heading')}
+          />
+          <ToolbarButton icon="text.quote" label="Blockquote" onPress={() => onAction('blockquote')} />
+        </View>
+
+        <ToolbarDivider />
+
+        <View style={styles.group}>
+          <ToolbarButton icon="checklist" label={t.notes.toolbar.checklist} onPress={() => onAction('checklist')} />
+          <ToolbarButton icon="list.bullet" label={t.notes.toolbar.bulletList} onPress={() => onAction('bullet')} />
+          <ToolbarButton icon="list.number" label="Numbered list" onPress={() => onAction('numbered-list')} />
+        </View>
+
+        <ToolbarDivider />
+
+        <View style={styles.group}>
+          <ToolbarButton icon="increase.indent" label={t.notes.toolbar.indent} onPress={() => onAction('indent')} />
+          <ToolbarButton icon="decrease.indent" label={t.notes.toolbar.outdent} onPress={() => onAction('outdent')} />
+        </View>
+      </ScrollView>
 
       <ToolbarDivider />
 
@@ -106,7 +126,7 @@ function ToolbarButtons({ onAction, onUndo, onRedo, canUndo, canRedo }: NoteTool
       <ToolbarButton
         icon="keyboard.chevron.compact.down"
         label={t.notes.toolbar.dismissKeyboard}
-        onPress={() => Keyboard.dismiss()}
+        onPress={Keyboard.dismiss}
       />
     </>
   );
@@ -129,9 +149,16 @@ const useToolbarStyles = makeStyles((theme) => ({
     borderTopColor: theme.colors['border-subtle'],
     borderTopWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
-    gap: spacing[1],
-    paddingHorizontal: spacing[3],
+    paddingHorizontal: spacing[2],
     paddingVertical: spacing[2],
+  },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing[1],
   },
   group: {
     alignItems: 'center',

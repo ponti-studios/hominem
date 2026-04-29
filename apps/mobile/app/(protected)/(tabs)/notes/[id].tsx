@@ -6,7 +6,7 @@ import { spacing } from '@hominem/ui/tokens';
 import { useNavigation } from '@react-navigation/native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useLayoutEffect, useRef, useState } from 'react';
+import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 
 import { EnhanceModal } from '~/components/notes/EnhanceModal';
@@ -51,6 +51,16 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
     },
   });
 
+  const dateline = useMemo(() => {
+    if (!note?.updatedAt) return '';
+    const date = new Date(note.updatedAt);
+    return date.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  }, [note?.updatedAt]);
+
   useLayoutEffect(() => {
     navigation.setOptions({
       title: note?.title?.trim() || t.notes.editor.titleFallback,
@@ -85,13 +95,19 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
         </View>
       ),
     });
-  }, [navigation, noteId, note?.title, router, themeColors]);
+  }, [navigation, noteId, note?.title, router]);
 
   if (!note) return null;
 
   const markdownStyle: MarkdownStyle = {
     syntax: { color: themeColors['text-tertiary'] },
-    h1: { fontSize: 22 },
+    h1: { fontSize: 26 },
+    blockquote: {
+      borderColor: themeColors.accent,
+      borderWidth: 3,
+      marginLeft: 0,
+      paddingLeft: 14,
+    },
     code: {
       color: themeColors['text-secondary'],
       backgroundColor: themeColors['bg-surface'],
@@ -100,6 +116,15 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
       borderRadius: 4,
       borderStyle: 'solid',
       padding: 2,
+    },
+    pre: {
+      color: themeColors['text-secondary'],
+      backgroundColor: themeColors['bg-surface'],
+      borderColor: themeColors['border-default'],
+      borderWidth: 1,
+      borderRadius: 8,
+      borderStyle: 'solid',
+      padding: 12,
     },
   };
 
@@ -127,12 +152,16 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
             }}
             modifiers={[
               textFieldStyle('plain'),
-              font({ size: 22, weight: 'semibold' }),
+              font({ size: 26, weight: 'bold' }),
               submitLabel('next'),
               frame({ maxWidth: Number.POSITIVE_INFINITY }),
             ]}
           />
         </SwiftUIHost>
+
+        <Text variant="overline" style={styles.dateline}>
+          {dateline}
+        </Text>
 
         <View style={styles.divider} />
 
@@ -220,22 +249,26 @@ const useNoteStyles = makeStyles((theme) => ({
     flex: 1,
   },
   content: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
+    paddingHorizontal: 24,
+    paddingTop: 16,
     paddingBottom: COMPOSER_CLEARANCE,
   },
   titleHost: {
     alignSelf: 'stretch',
-    marginBottom: 12,
+    marginBottom: 6,
+  },
+  dateline: {
+    color: theme.colors['text-tertiary'],
+    marginBottom: 14,
   },
   divider: {
     height: 1,
     backgroundColor: theme.colors['border-subtle'],
-    marginBottom: 16,
+    marginBottom: 20,
   },
   contentInput: {
-    fontSize: 16,
-    lineHeight: 26,
+    fontSize: 17,
+    lineHeight: 28,
     letterSpacing: -0.1,
     color: theme.colors.foreground,
     paddingVertical: 0,
