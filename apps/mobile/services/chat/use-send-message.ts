@@ -129,7 +129,7 @@ export function useSendMessage({ chatId }: { chatId: string }) {
         ...(noteIds?.length ? { noteIds } : {}),
       };
 
-      await streamChatWithWsFirst({
+      const { assistantText, transport } = await streamChatWithWsFirst({
         wsUrl,
         transportPreference,
         onChunk,
@@ -144,6 +144,12 @@ export function useSendMessage({ chatId }: { chatId: string }) {
           return { assistantText };
         },
       });
+
+      // HTTP fallback delivers the full response at once — onChunk was never called,
+      // so write the complete text as a single chunk before flushing.
+      if (transport === 'http-fallback') {
+        onChunk(assistantText);
+      }
 
       flushNow();
     },
