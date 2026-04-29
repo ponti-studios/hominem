@@ -1,5 +1,5 @@
 import type { MarkdownStyle } from '@expensify/react-native-live-markdown';
-import { MarkdownTextInput } from '@expensify/react-native-live-markdown';
+import { MarkdownTextInput, parseExpensiMark } from '@expensify/react-native-live-markdown';
 import { Host as SwiftUIHost, TextField as SwiftUITextField } from '@expo/ui/swift-ui';
 import { font, frame, submitLabel, textFieldStyle } from '@expo/ui/swift-ui/modifiers';
 import { spacing } from '@hominem/ui/tokens';
@@ -10,7 +10,6 @@ import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 
 import { EnhanceModal } from '~/components/notes/EnhanceModal';
-import { parseNoteMarkdown } from '~/components/notes/note-markdown-parser';
 import { NOTE_TOOLBAR_ID, NoteToolbar } from '~/components/notes/NoteToolbar';
 import { Text, makeStyles, useThemeColors } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
@@ -126,6 +125,7 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
       borderStyle: 'solid',
       padding: 12,
     },
+    link: { color: themeColors.accent },
   };
 
   const handleDetach = (fileId: string) => detachFile(fileId, note.files, note.title, note.content);
@@ -188,7 +188,7 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
           textAlignVertical="top"
           scrollEnabled={false}
           accessibilityLabel={t.notes.editor.contentA11yLabel}
-          parser={parseNoteMarkdown}
+          parser={parseExpensiMark}
           markdownStyle={markdownStyle}
           inputAccessoryViewID={NOTE_TOOLBAR_ID}
         />
