@@ -74,22 +74,38 @@ export function useStreamMessage({ chatId }: { chatId: string }) {
             const reader = body.getReader();
             const decoder = new TextDecoder();
             let accumulated = '';
+            let lineBuffer = '';
+
+            const processLine = (line: string) => {
+              if (!line.startsWith('data: ')) return;
+              const data = line.slice(6).trimEnd();
+              if (data === '[DONE]') return;
+              try {
+                const parsed = JSON.parse(data) as { chunk?: string; error?: string };
+                if (parsed.error) throw new Error(parsed.error);
+                if (typeof parsed.chunk === 'string') {
+                  accumulated += parsed.chunk;
+                  input.onChunk?.(parsed.chunk);
+                  text.value = accumulated;
+                }
+              } catch (e) {
+                if (e instanceof Error && e.message !== data) throw e;
+              }
+            };
 
             while (true) {
               const { done, value } = await reader.read();
               if (done) break;
 
-              const chunk = decoder.decode(value, { stream: true });
-              accumulated += chunk;
-              input.onChunk?.(chunk);
-              text.value = accumulated;
+              lineBuffer += decoder.decode(value, { stream: true });
+              const lines = lineBuffer.split('\n');
+              lineBuffer = lines.pop() ?? '';
+              for (const line of lines) processLine(line);
             }
 
             const final = decoder.decode();
-            if (final) {
-              accumulated += final;
-              text.value = accumulated;
-            }
+            if (final) lineBuffer += final;
+            for (const line of lineBuffer.split('\n')) processLine(line);
 
             return { assistantText: accumulated };
           },

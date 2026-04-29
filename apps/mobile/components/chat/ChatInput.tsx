@@ -17,7 +17,6 @@ import {
   View,
   useColorScheme,
 } from 'react-native';
-import { useAnimatedKeyboard } from 'react-native-keyboard-controller';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -271,10 +270,9 @@ function MentionSuggestions({
 interface ChatInputProps {
   chatId: string;
   initialMessage?: string;
-  onClearanceChange?: (height: number) => void;
 }
 
-export function ChatInput({ chatId, initialMessage, onClearanceChange }: ChatInputProps) {
+export function ChatInput({ chatId, initialMessage }: ChatInputProps) {
   const insets = useSafeAreaInsets();
   const themeColors = useThemeColors();
   const styles = useStyles();
@@ -283,7 +281,6 @@ export function ChatInput({ chatId, initialMessage, onClearanceChange }: ChatInp
   const pillOverlayColor = isDark ? 'rgba(30,30,30,0.5)' : 'rgba(255,255,255,0.6)';
   const pillBorderColor = isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.08)';
   const prefersReducedMotion = useReducedMotion();
-  const keyboard = useAnimatedKeyboard();
   const animatedH = useSharedValue(INPUT_MIN_H);
   const wandProgress = useSharedValue(0);
   const inputRef = useRef<TextInput>(null);
@@ -446,10 +443,6 @@ export function ChatInput({ chatId, initialMessage, onClearanceChange }: ChatInp
     maxHeight: animatedH.value,
   }));
 
-  const shellStyle = useAnimatedStyle(() => ({
-    bottom: keyboard.height.value + Math.max(insets.bottom, spacing[2]),
-  }));
-
   useEffect(() => {
     wandProgress.value = withTiming(message.trim().length > 0 ? 1 : 0, { duration: 180 });
   }, [message, wandProgress]);
@@ -460,12 +453,9 @@ export function ChatInput({ chatId, initialMessage, onClearanceChange }: ChatInp
   }));
 
   return (
-    <Animated.View style={[styles.shell, shellStyle]}>
+    <Animated.View style={[styles.shell, { paddingBottom: Math.max(insets.bottom, spacing[2]) }]}>
       <Animated.View
         layout={createLayoutTransition(prefersReducedMotion)}
-        onLayout={(e) => {
-          onClearanceChange?.(e.nativeEvent.layout.height + Math.max(insets.bottom, spacing[2]));
-        }}
         style={[styles.pill, { borderColor: pillBorderColor }]}
         testID="chat-input"
       >
@@ -544,10 +534,7 @@ export function ChatInput({ chatId, initialMessage, onClearanceChange }: ChatInp
 
 const useStyles = makeStyles((theme) => ({
   shell: {
-    left: 0,
-    right: 0,
     paddingHorizontal: spacing[4],
-    position: 'absolute',
     alignItems: 'center',
   },
   pill: {

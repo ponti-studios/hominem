@@ -136,6 +136,7 @@ export function ChatMessageList({
   return (
     <FlatList
       ref={listRef}
+      style={styles.list}
       ListEmptyComponent={listEmptyComponent}
       ListFooterComponent={
         displayMessages.length > 0 ? (
@@ -155,6 +156,9 @@ export function ChatMessageList({
 }
 
 const styles = StyleSheet.create({
+  list: {
+    flex: 1,
+  },
   dismissArea: {
     flexGrow: 1,
     minHeight: spacing[8],

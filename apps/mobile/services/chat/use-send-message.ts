@@ -1,15 +1,14 @@
-import { streamChatWithWsFirst, toWebSocketUrl } from '@hominem/rpc';
-import { useApiClient } from '@hominem/rpc/react';
-import type { ChatTransportPreference } from '@hominem/rpc/types';
 import NetInfo from '@react-native-community/netinfo';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { randomUUID } from 'expo-crypto';
 import { useCallback, useRef } from 'react';
 
 import { API_BASE_URL } from '~/constants';
+import { useAuth } from '~/services/auth/auth-provider';
 import { chatKeys } from '~/services/notes/query-keys';
 
 import { createOptimisticMessage, type MessageOutput } from './chatMessages';
+import { streamSSE } from './stream-sse';
 
 // Batch chunk writes at ~2 frames (60 fps) to avoid a setQueryData per token.
 const FLUSH_INTERVAL_MS = 32;
@@ -37,20 +36,8 @@ function createStreamingPlaceholder(chatId: string, id: string): MessageOutput {
   };
 }
 
-async function drainStream(body: ReadableStream<Uint8Array>): Promise<string> {
-  const reader = body.getReader();
-  const decoder = new TextDecoder();
-  let text = '';
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    text += decoder.decode(value, { stream: true });
-  }
-  return text + decoder.decode();
-}
-
 export function useSendMessage({ chatId }: { chatId: string }) {
-  const client = useApiClient();
+  const { getAuthHeaders } = useAuth();
   const queryClient = useQueryClient();
 
   const streamingIdRef = useRef<string | null>(null);
@@ -120,36 +107,16 @@ export function useSendMessage({ chatId }: { chatId: string }) {
       const net = await NetInfo.fetch();
       if (!net.isConnected) throw new Error('offline_unavailable');
 
-      const transportPreference = (process.env.EXPO_PUBLIC_CHAT_TRANSPORT ??
-        'auto') as ChatTransportPreference;
-      const wsUrl = toWebSocketUrl(API_BASE_URL, `/api/chats/${chatId}/ws`);
-      const json = {
-        message: message.trim(),
-        ...(fileIds?.length ? { fileIds } : {}),
-        ...(noteIds?.length ? { noteIds } : {}),
-      };
-
-      const { assistantText, transport } = await streamChatWithWsFirst({
-        wsUrl,
-        transportPreference,
-        onChunk,
-        payload: json,
-        fallback: async () => {
-          const res = await client.api.chats[':id'].stream.$post({
-            param: { id: chatId },
-            json,
-          });
-          // Hermes does not support ReadableStream — body is null, response is fully buffered.
-          const assistantText = res.body ? await drainStream(res.body) : await res.text();
-          return { assistantText };
+      await streamSSE({
+        url: `${API_BASE_URL}/api/chats/${chatId}/stream`,
+        payload: {
+          message: message.trim(),
+          ...(fileIds?.length ? { fileIds } : {}),
+          ...(noteIds?.length ? { noteIds } : {}),
         },
+        getHeaders: getAuthHeaders,
+        onChunk,
       });
-
-      // HTTP fallback delivers the full response at once — onChunk was never called,
-      // so write the complete text as a single chunk before flushing.
-      if (transport === 'http-fallback') {
-        onChunk(assistantText);
-      }
 
       flushNow();
     },

@@ -3,8 +3,8 @@ import type { SessionSource } from '@hominem/rpc/types';
 import { useNavigation } from '@react-navigation/native';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router/build/hooks';
-import React, { useLayoutEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import React, { useLayoutEffect, useMemo } from 'react';
+import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import {
   ChatMessageList,
@@ -53,7 +53,6 @@ export default function ChatDetailScreen() {
   const client = useApiClient();
   const queryClient = useQueryClient();
   const themeColors = useThemeColors();
-  const [composerClearance, setComposerClearance] = useState(0);
   const { speakingId, speak } = useTTS();
   const { data: activeChat } = useActiveChat(id);
   const chatId = activeChat?.id ?? id;
@@ -187,14 +186,16 @@ export default function ChatDetailScreen() {
         sfSymbol="bubble.left"
         title="Start the conversation"
         description="Ask a question, attach a photo, or record a voice note."
-        bottomOffset={composerClearance}
       />
     ),
-    [composerClearance],
+    [],
   );
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
       <ChatSearchModal
         visible={controller.showSearch}
         searchQuery={controller.searchQuery}
@@ -221,31 +222,39 @@ export default function ChatDetailScreen() {
         }}
         renderIcon={renderChatIcon}
         formatTimestamp={formatRelativeAge}
-        contentPaddingBottom={composerClearance}
         emptyState={emptyState}
       />
-      <ChatReviewOverlay
-        pendingReview={controller.pendingReview}
-        isVisible={controller.isReviewVisible}
-        onAccept={() => {
-          void controller.handleAcceptReview();
-        }}
-        onReject={() => {
-          void controller.handleRejectReview();
-        }}
-      />
+      <View style={styles.reviewOverlay}>
+        <ChatReviewOverlay
+          pendingReview={controller.pendingReview}
+          isVisible={controller.isReviewVisible}
+          onAccept={() => {
+            void controller.handleAcceptReview();
+          }}
+          onReject={() => {
+            void controller.handleRejectReview();
+          }}
+        />
+      </View>
       <ChatInput
         chatId={chatId}
         initialMessage={initialMessage}
-        onClearanceChange={setComposerClearance}
       />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  reviewOverlay: {
+    bottom: 0,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    pointerEvents: 'box-none',
   },
   headerActions: {
     alignItems: 'center',

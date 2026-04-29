@@ -3,6 +3,7 @@ import { ChatRepository, getDb, runInTransaction } from '@hominem/db';
 import { getSharedAiModelConfig, getSharedOpenAIClient } from '@hominem/services/ai-model';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
+import { streamSSE } from 'hono/streaming';
 import * as z from 'zod';
 
 const chatsSendSchema = z
@@ -227,47 +228,35 @@ const chatByIdRoutes = new Hono<AppContext>()
       ],
     });
 
-    const assistantTextStream = (async function* () {
-      for await (const chunk of completion) {
-        const text = chunk.choices[0]?.delta?.content;
-        if (typeof text === 'string' && text.length > 0) {
-          yield text;
-        }
-      }
-    })();
+    return streamSSE(c, async (stream) => {
+      let assistantText = '';
 
-    const responseStream = new ReadableStream<Uint8Array>({
-      async start(controller) {
-        const encoder = new TextEncoder();
-        let assistantText = '';
-
-        try {
-          for await (const chunk of assistantTextStream) {
-            assistantText += chunk;
-            controller.enqueue(encoder.encode(chunk));
+      try {
+        for await (const chunk of completion) {
+          const text = chunk.choices[0]?.delta?.content;
+          if (typeof text === 'string' && text.length > 0) {
+            assistantText += text;
+            await stream.writeSSE({ data: JSON.stringify({ chunk: text }) });
           }
+        }
 
-          if (assistantText.trim().length > 0) {
-            await runInTransaction(async (trx) => {
-              await ChatRepository.insertMessage(trx, {
-                chatId,
-                authorUserId: userId,
-                role: 'assistant',
-                content: assistantText,
-              });
-              await ChatRepository.touchLastMessage(trx, chatId);
+        await stream.writeSSE({ data: '[DONE]' });
+
+        if (assistantText.trim().length > 0) {
+          await runInTransaction(async (trx) => {
+            await ChatRepository.insertMessage(trx, {
+              chatId,
+              authorUserId: userId,
+              role: 'assistant',
+              content: assistantText,
             });
-          }
-
-          controller.close();
-        } catch (error) {
-          controller.error(error);
+            await ChatRepository.touchLastMessage(trx, chatId);
+          });
         }
-      },
-    });
-
-    return c.body(responseStream, 200, {
-      'Content-Type': 'text/plain; charset=utf-8',
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Stream error';
+        await stream.writeSSE({ data: JSON.stringify({ error: message }) });
+      }
     });
   });
 
