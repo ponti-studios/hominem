@@ -1,3 +1,5 @@
+import type { Server as HttpServer } from 'node:http';
+
 import { logger, LOG_MESSAGES } from '@hominem/telemetry';
 import { serve } from '@hono/node-server';
 
@@ -19,6 +21,6 @@ const nodeServer = serve({
   overrideGlobalObjects: false,
 });
 
-const detachChatRealtimeWebSocket = attachChatRealtimeWebSocketServer(nodeServer);
+const detachChatRealtimeWebSocket = attachChatRealtimeWebSocketServer(nodeServer as HttpServer);
 
 initRuntime('hominem-api').installSignalHandlers([detachChatRealtimeWebSocket]);
