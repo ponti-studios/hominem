@@ -21,16 +21,6 @@ import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
 import { noteKeys } from '~/services/notes/query-keys';
 import { useNoteQuery } from '~/services/notes/use-note-query';
 
-import { parseNoteMarkdown } from '~/components/notes/note-markdown-parser';
-import { NOTE_TOOLBAR_ID, NoteToolbar } from '~/components/notes/NoteToolbar';
-import { Text, makeStyles, useThemeColors } from '~/components/theme';
-import AppIcon from '~/components/ui/icon';
-import { useNoteEditor } from '~/hooks/use-note-editor';
-import { useNoteToolbar } from '~/hooks/use-note-toolbar';
-import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
-import { noteKeys } from '~/services/notes/query-keys';
-import { useNoteQuery } from '~/services/notes/use-note-query';
-
 const COMPOSER_CLEARANCE = 220;
 
 export default function NoteDetailScreen() {
