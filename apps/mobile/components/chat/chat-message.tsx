@@ -62,7 +62,7 @@ function ActionIconButton({
       onPress={onPress}
       pressedOpacity={0.65}
       size={28}
-      tintColor={isDestructive ? '#FF5A5F' : themeColors['icon-secondary']}
+      tintColor={isDestructive ? '#FF5A5F' : themeColors['text-secondary']}
     />
   );
 }

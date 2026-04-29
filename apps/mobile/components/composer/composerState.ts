@@ -2,8 +2,6 @@ import type { NoteSearchResult } from '@hominem/rpc/types';
 
 import type { UploadedFile } from '~/types/upload';
 
-export type ComposerMode = 'text' | 'voice';
-
 export interface ComposerAttachment {
   id: string;
   name: string;

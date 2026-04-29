@@ -75,7 +75,7 @@ const useChatSearchStyles = makeStyles((theme) => ({
     width: 32,
   },
   closeIcon: {
-    color: theme.colors['icon-secondary'],
+    color: theme.colors['text-secondary'],
   },
   content: {
     gap: 12,

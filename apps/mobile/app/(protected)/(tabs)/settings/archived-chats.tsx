@@ -79,7 +79,7 @@ function ArchivedChatsSwiftUI({
               onPress={() => onPressChat(chat.id)}
               style={({ pressed }) => [styles.chatRow, { opacity: pressed ? 0.7 : 1 }]}
             >
-              <AppIcon name="tray" size={14} tintColor={themeColors['icon-secondary']} />
+              <AppIcon name="tray" size={14} tintColor={themeColors['text-secondary']} />
               <View style={styles.chatCopy}>
                 <Text style={[styles.chatTitle, { color: themeColors.foreground }]}>
                   {chat.title ?? 'Untitled session'}
@@ -88,7 +88,7 @@ function ArchivedChatsSwiftUI({
                   Archived {formatRelativeAge(chat.archivedAt ?? chat.activityAt)}
                 </Text>
               </View>
-              <AppIcon name="chevron.right" size={12} tintColor={themeColors['icon-tertiary']} />
+              <AppIcon name="chevron.right" size={12} tintColor={themeColors['text-tertiary']} />
             </Pressable>
           ))
         ) : (

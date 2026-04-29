@@ -6,7 +6,7 @@ import { Alert } from 'react-native';
 import { useFileUpload } from '~/services/files/use-file-upload';
 import type { UploadedFile } from '~/types/upload';
 
-import type { ComposerAttachment, ComposerMode } from './composerState';
+import type { ComposerAttachment } from './composerState';
 
 interface UploadedMobileAsset {
   localUri: string;
@@ -18,10 +18,6 @@ interface UseComposerMediaActionsOptions {
   setAttachments: (
     value: ComposerAttachment[] | ((currentValue: ComposerAttachment[]) => ComposerAttachment[]),
   ) => void;
-  message: string;
-  setMessage: (value: string) => void;
-  setIsRecording: (value: boolean) => void;
-  setMode: (value: ComposerMode) => void;
 }
 
 function getAttachmentType(uploadedFile: UploadedMobileAsset['uploadedFile']): string {
@@ -42,16 +38,6 @@ function mapUploadedAssetsToAttachments(assets: UploadedMobileAsset[]): Composer
   }));
 }
 
-function appendVoiceTranscript(text: string, transcript: string): string {
-  const trimmedTranscript = transcript.trim();
-
-  if (trimmedTranscript.length === 0) {
-    return text;
-  }
-
-  return text.trim().length > 0 ? `${text}\n${trimmedTranscript}` : trimmedTranscript;
-}
-
 function exceedsAttachmentLimit(existingCount: number, nextCount: number): boolean {
   return existingCount + nextCount > UPLOAD_MAX_FILE_COUNT;
 }
@@ -59,10 +45,6 @@ function exceedsAttachmentLimit(existingCount: number, nextCount: number): boole
 export function useComposerMediaActions({
   attachments,
   setAttachments,
-  message,
-  setMessage,
-  setIsRecording,
-  setMode,
 }: UseComposerMediaActionsOptions) {
   const { uploadAssets, uploadState, clearErrors } = useFileUpload();
 
@@ -144,17 +126,10 @@ export function useComposerMediaActions({
     ]);
   };
 
-  const handleVoiceTranscript = (transcript: string) => {
-    setMessage(appendVoiceTranscript(message, transcript));
-    setIsRecording(false);
-    setMode('text');
-  };
-
   return {
     uploadState,
     clearErrors,
     pickAttachment,
     handleCameraCapture,
-    handleVoiceTranscript,
   };
 }

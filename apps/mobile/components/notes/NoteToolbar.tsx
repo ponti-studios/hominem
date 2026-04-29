@@ -41,7 +41,7 @@ function ToolbarButton({ icon, onPress, disabled = false, label }: ToolbarButton
       ]}
     >
       <AppIcon
-        color={disabled ? themeColors['text-tertiary'] : themeColors.foreground}
+        tintColor={disabled ? themeColors['text-tertiary'] : themeColors.foreground}
         name={icon}
         size={17}
       />

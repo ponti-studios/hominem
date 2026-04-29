@@ -35,11 +35,11 @@ import {
 } from '~/components/composer/note-mentions';
 import { useComposerMediaActions } from '~/components/composer/useComposerMediaActions';
 import { CameraModal } from '~/components/media/camera-modal';
-import { VoiceInput } from '~/components/media/voice/VoiceInput';
 import { makeStyles, useThemeColors } from '~/components/theme';
 import { createLayoutTransition } from '~/components/theme/animations';
 import AppIcon from '~/components/ui/icon';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
+import { useTextEnhance } from '~/services/ai/use-text-enhance';
 import { updateChatTitleCaches, useActiveChat, useSendMessage } from '~/services/chat';
 import { chatKeys } from '~/services/notes/query-keys';
 import { useNoteSearch } from '~/services/notes/use-note-search';
@@ -294,20 +294,15 @@ export function ChatInput({ chatId, initialMessage, onClearanceChange }: ChatInp
   const [message, setMessage] = useState('');
   const [attachments, setAttachments] = useState<ComposerAttachment[]>([]);
   const [selectedNotes, setSelectedNotes] = useState<ComposerSelectedNote[]>([]);
-  const [isRecording, setIsRecording] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
 
-  const { handleCameraCapture, handleVoiceTranscript, pickAttachment, uploadState } =
-    useComposerMediaActions({
-      attachments,
-      setAttachments,
-      message,
-      setMessage,
-      setIsRecording,
-      setMode: () => {},
-    });
+  const { handleCameraCapture, pickAttachment, uploadState } = useComposerMediaActions({
+    attachments,
+    setAttachments,
+  });
 
   const { sendChatMessage, isChatSending } = useSendMessage({ chatId: resolvedChatId });
+  const { enhance, isEnhancing } = useTextEnhance({ onValueChange: setMessage });
 
   const uploadedAttachmentIds = useMemo(() => getUploadedAttachmentIds(attachments), [attachments]);
 
@@ -491,7 +486,7 @@ export function ChatInput({ chatId, initialMessage, onClearanceChange }: ChatInp
               value={message}
               onChangeText={setMessage}
               onContentSizeChange={(e) => onContentSizeChange(e.nativeEvent.contentSize.height)}
-              placeholder={isRecording ? 'Listening…' : 'Message'}
+              placeholder="Message"
               placeholderTextColor={themeColors['text-tertiary']}
               cursorColor={themeColors.accent}
               selectionColor={themeColors.accent}
@@ -508,18 +503,11 @@ export function ChatInput({ chatId, initialMessage, onClearanceChange }: ChatInp
             disabled={isChatSending}
           />
           <View style={styles.actionRowSpacer} />
-          <VoiceInput
-            autoTranscribe
-            accessibilityLabel="Record voice"
-            disabled={isChatSending}
-            idleIcon="waveform"
-            onAudioTranscribed={handleVoiceTranscript}
-            onError={() => {
-              setIsRecording(false);
-            }}
-            onRecordingStateChange={setIsRecording}
-            showPostTranscriptionActions={false}
-            style={styles.voiceButton}
+          <MediaButton
+            icon="wand.and.sparkles"
+            onPress={() => enhance(message)}
+            accessibilityLabel="Enhance text with AI"
+            disabled={isChatSending || isEnhancing || !message.trim()}
           />
           <SendButton
             onPress={handleSend}
@@ -628,14 +616,6 @@ const useStyles = makeStyles((theme) => ({
   },
   mediaBtnPressed: {
     backgroundColor: theme.colors['bg-surface'],
-  },
-  voiceButton: {
-    padding: spacing[1],
-    borderRadius: radii.md,
-    minWidth: MEDIA_BTN_SIZE,
-    minHeight: MEDIA_BTN_SIZE,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   attachments: {
     gap: spacing[2],

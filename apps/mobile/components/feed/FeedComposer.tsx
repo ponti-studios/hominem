@@ -26,15 +26,15 @@ import {
   canSubmitComposerDraft,
   getUploadedAttachmentIds,
 } from '~/components/composer/composerActions';
-import type { ComposerAttachment, ComposerMode } from '~/components/composer/composerState';
+import type { ComposerAttachment } from '~/components/composer/composerState';
 import { useComposerMediaActions } from '~/components/composer/useComposerMediaActions';
 import { CameraModal } from '~/components/media/camera-modal';
-import { VoiceInput } from '~/components/media/voice/VoiceInput';
 import { makeStyles, useThemeColors } from '~/components/theme';
 import { createLayoutTransition } from '~/components/theme/animations';
 import { AppIconButton, AppIconButtonGroup } from '~/components/ui';
 import AppIcon from '~/components/ui/icon';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
+import { useTextEnhance } from '~/services/ai/use-text-enhance';
 import type { ChatWithActivity } from '~/services/chat/session-types';
 import {
   createChatInboxRefreshSnapshot,
@@ -137,20 +137,14 @@ export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerPro
 
   const [message, setMessage] = useState(seedMessage ?? '');
   const [attachments, setAttachments] = useState<ComposerAttachment[]>([]);
-  const [isRecording, setIsRecording] = useState(false);
-  const [, setMode] = useState<ComposerMode>('text');
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isChatCreating, setIsChatCreating] = useState(false);
-  const { handleCameraCapture, handleVoiceTranscript, pickAttachment, uploadState } =
-    useComposerMediaActions({
-      attachments,
-      setAttachments,
-      message,
-      setMessage,
-      setIsRecording,
-      setMode,
-    });
+  const { enhance, isEnhancing } = useTextEnhance({ onValueChange: setMessage });
+  const { handleCameraCapture, pickAttachment, uploadState } = useComposerMediaActions({
+    attachments,
+    setAttachments,
+  });
 
   const uploadedAttachmentIds = useMemo(() => getUploadedAttachmentIds(attachments), [attachments]);
 
@@ -313,7 +307,7 @@ export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerPro
             value={message}
             onChangeText={setMessage}
             onContentSizeChange={(e) => onContentSizeChange(e.nativeEvent.contentSize.height)}
-            placeholder={isRecording ? 'Listening…' : 'Write a note, ask something…'}
+            placeholder="Write a note, ask something…"
             placeholderTextColor={themeColors['text-tertiary']}
             cursorColor={themeColors.accent}
             selectionColor={themeColors.accent}
@@ -332,21 +326,12 @@ export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerPro
             />
           </AppIconButtonGroup>
           <AppIconButtonGroup style={styles.actionGroup}>
-            <VoiceInput
-              autoTranscribe
-              accessibilityLabel="Record voice note"
-              idleIcon="waveform"
-              onAudioTranscribed={handleVoiceTranscript}
-              onError={() => {
-                setIsRecording(false);
-                setMode('text');
-              }}
-              onRecordingStateChange={(recording) => {
-                setIsRecording(recording);
-                setMode(recording ? 'voice' : 'text');
-              }}
-              showPostTranscriptionActions={false}
-              style={styles.voiceButton}
+            <AppIconButton
+              accessibilityLabel="Enhance text with AI"
+              icon="wand.and.sparkles"
+              onPress={() => enhance(message)}
+              disabled={isEnhancing || !message.trim()}
+              tintColor={themeColors['text-secondary']}
             />
             <View style={styles.saveChatShell}>
               <AppIconButtonGroup style={styles.saveChatGroup}>
@@ -433,14 +418,6 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  voiceButton: {
-    padding: spacing[2],
-    borderRadius: radii.full,
-    minWidth: 40,
-    minHeight: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   mediaGroup: {
     gap: spacing[2],
