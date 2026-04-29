@@ -211,7 +211,6 @@ export default function ChatDetailScreen() {
         markdown={controller.Markdown}
         showDebug={controller.showDebug}
         speakingId={controller.speakingId}
-        chatSendStatus={controller.chatSendStatus as 'idle' | 'submitted' | 'streaming' | 'error'}
         onCopy={controller.handleCopyMessage}
         onEdit={controller.handleEditMessage}
         onRegenerate={controller.handleRegenerate}

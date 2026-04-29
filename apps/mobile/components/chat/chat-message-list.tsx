@@ -1,5 +1,5 @@
 import type { ChatMessageItem, ChatRenderIcon, MarkdownComponent } from '@hominem/chat';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import { FlatList, Pressable, StyleSheet, View, type FlatList as RNFlatList } from 'react-native';
 
@@ -8,7 +8,6 @@ import { fontFamiliesNative, fontSizes, spacing } from '~/components/theme';
 
 import { renderChatMessage } from './chat-message';
 import { ChatShimmerMessage } from './chat-shimmer-message';
-import { ChatThinkingIndicator } from './chat-thinking-indicator';
 
 const CHAT_COMPOSER_CLEARANCE = 220;
 const CHAT_TURN_GAP = spacing[5];
@@ -22,7 +21,6 @@ interface ChatMessageListProps {
   markdown: MarkdownComponent | null;
   showDebug: boolean;
   speakingId: string | null;
-  chatSendStatus: 'idle' | 'submitted' | 'streaming' | 'error';
   onCopy: (message: ChatMessageItem) => void;
   onEdit: (messageId: string, content: string) => void;
   onRegenerate: (messageId: string) => void;
@@ -43,7 +41,6 @@ export function ChatMessageList({
   markdown,
   showDebug,
   speakingId,
-  chatSendStatus,
   onCopy,
   onEdit,
   onRegenerate,
@@ -58,22 +55,37 @@ export function ChatMessageList({
   const hasSearchQuery = showSearch && searchQuery.length > 0;
   const [activeActionMessageId, setActiveActionMessageId] = useState<string | null>(null);
   const listRef = useRef<RNFlatList<ChatMessageItem> | null>(null);
-  const didInitialScrollRef = useRef(false);
+  const prevCountRef = useRef(displayMessages.length);
+
+  // Scroll to end when a new message is added or streaming content grows
+  useEffect(() => {
+    const isStreaming = displayMessages.some((m) => m.isStreaming);
+    const countChanged = displayMessages.length !== prevCountRef.current;
+    prevCountRef.current = displayMessages.length;
+
+    if (countChanged || isStreaming) {
+      requestAnimationFrame(() => {
+        listRef.current?.scrollToEnd({ animated: countChanged });
+      });
+    }
+  }, [displayMessages]);
 
   const renderItem = useCallback(
     ({ item }: { item: ChatMessageItem }) =>
       renderChatMessage(item, markdown, renderIcon, formatTimestamp, {
-        isActive: activeActionMessageId === item.id,
-        onActivate: () =>
-          setActiveActionMessageId((currentMessageId) =>
-            currentMessageId === item.id ? null : item.id,
-          ),
-        onCopy,
-        onDelete,
-        onEdit,
-        onRegenerate,
-        onShare,
-        onSpeak,
+        isActive: !item.isStreaming && activeActionMessageId === item.id,
+        onActivate: item.isStreaming
+          ? undefined
+          : () =>
+              setActiveActionMessageId((currentMessageId) =>
+                currentMessageId === item.id ? null : item.id,
+              ),
+        onCopy: item.isStreaming ? undefined : onCopy,
+        onDelete: item.isStreaming ? undefined : onDelete,
+        onEdit: item.isStreaming ? undefined : onEdit,
+        onRegenerate: item.isStreaming ? undefined : onRegenerate,
+        onShare: item.isStreaming ? undefined : onShare,
+        onSpeak: item.isStreaming ? undefined : onSpeak,
         showDebug,
         speakingId,
       }),
@@ -122,36 +134,23 @@ export function ChatMessageList({
   }
 
   return (
-    <>
-      <FlatList
-        ref={listRef}
-        ListEmptyComponent={listEmptyComponent}
-        ListFooterComponent={
-          displayMessages.length > 0 ? (
-            <Pressable onPress={() => setActiveActionMessageId(null)} style={styles.dismissArea} />
-          ) : null
-        }
-        contentContainerStyle={messagesContainerStyle}
-        data={displayMessages}
-        keyExtractor={keyExtractor}
-        inverted={false}
-        onScrollBeginDrag={() => setActiveActionMessageId(null)}
-        onContentSizeChange={() => {
-          if (didInitialScrollRef.current || displayMessages.length === 0 || isMessagesLoading)
-            return;
-
-          didInitialScrollRef.current = true;
-          requestAnimationFrame(() => {
-            listRef.current?.scrollToEnd({ animated: false });
-          });
-        }}
-        removeClippedSubviews={false}
-        renderItem={renderItem}
-        scrollEnabled={displayMessages.length > 0}
-      />
-      {chatSendStatus === 'submitted' ? <ChatShimmerMessage /> : null}
-      {chatSendStatus === 'streaming' ? <ChatThinkingIndicator /> : null}
-    </>
+    <FlatList
+      ref={listRef}
+      ListEmptyComponent={listEmptyComponent}
+      ListFooterComponent={
+        displayMessages.length > 0 ? (
+          <Pressable onPress={() => setActiveActionMessageId(null)} style={styles.dismissArea} />
+        ) : null
+      }
+      contentContainerStyle={messagesContainerStyle}
+      data={displayMessages}
+      keyExtractor={keyExtractor}
+      inverted={false}
+      onScrollBeginDrag={() => setActiveActionMessageId(null)}
+      removeClippedSubviews={false}
+      renderItem={renderItem}
+      scrollEnabled={displayMessages.length > 0}
+    />
   );
 }
 

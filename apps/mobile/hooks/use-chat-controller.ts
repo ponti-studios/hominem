@@ -30,7 +30,6 @@ export interface ChatServices {
   };
   useSendMessage: (args: { chatId: string }) => {
     sendChatMessage: (text: string) => Promise<unknown>;
-    chatSendStatus: string;
   };
   useArchiveChat: (args: { chatId: string; onSuccess: () => void }) => {
     mutate: () => void;
@@ -93,7 +92,6 @@ interface UseChatControllerInput {
 
 interface UseChatControllerResult {
   Markdown: MarkdownComponent | null;
-  chatSendStatus: string;
   displayMessages: ChatMessageItem[];
   handleAcceptReview: () => Promise<void>;
   handleArchiveChat: () => void;
@@ -145,7 +143,7 @@ export function useChatController({
       onChatArchive();
     },
   });
-  const { sendChatMessage, chatSendStatus } = services.useSendMessage({ chatId });
+  const { sendChatMessage } = services.useSendMessage({ chatId });
   const [Markdown, setMarkdown] = useState<MarkdownComponent | null>(null);
   const [uiState, dispatch] = useReducer(mobileUiReducer, initialMobileUiState);
   const searchInputRef = useRef<TextInput | null>(null);
@@ -429,7 +427,6 @@ export function useChatController({
 
   return {
     Markdown,
-    chatSendStatus,
     displayMessages,
     enabledTransforms,
     handleAcceptReview,

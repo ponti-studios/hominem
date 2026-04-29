@@ -4,6 +4,8 @@ import { memo, useMemo, useState } from 'react';
 import { Modal, Pressable, TextInput, View } from 'react-native';
 import Reanimated, { FadeInDown, FadeOutUp, LinearTransition } from 'react-native-reanimated';
 
+import { ChatThinkingIndicator } from './chat-thinking-indicator';
+
 import {
   Text,
   fontFamiliesNative,
@@ -340,16 +342,16 @@ const ChatMessage = memo(function ChatMessage({
   formatTimestamp,
 }: ChatMessageProps) {
   const styles = useChatMessageStyles();
-  const { role, message: content } = message;
+  const { role, message: content, isStreaming } = message;
   const isUser = role.toLowerCase() === 'user';
   const textStyle = isUser ? styles.userMessageText : styles.assistantMessageText;
   const timestamp = message.created_at ? formatTimestamp(message.created_at) : '';
-  const canRegenerate = !isUser && onRegenerate !== undefined;
-  const canEdit = isUser && onEdit !== undefined;
-  const canDelete = onDelete !== undefined;
-  const canCopy = onCopy !== undefined;
-  const canSpeak = !isUser && onSpeak !== undefined && Boolean(content?.trim());
-  const canShare = !isUser && onShare !== undefined && Boolean(content?.trim());
+  const canRegenerate = !isUser && !isStreaming && onRegenerate !== undefined;
+  const canEdit = isUser && !isStreaming && onEdit !== undefined;
+  const canDelete = !isStreaming && onDelete !== undefined;
+  const canCopy = !isStreaming && onCopy !== undefined;
+  const canSpeak = !isUser && !isStreaming && onSpeak !== undefined && Boolean(content?.trim());
+  const canShare = !isUser && !isStreaming && onShare !== undefined && Boolean(content?.trim());
   const hasReasoning = Boolean(message.reasoning && message.reasoning.trim().length > 0);
   const renderedToolCalls = message.toolCalls ?? [];
   const [isEditing, setIsEditing] = useState(false);
@@ -373,9 +375,14 @@ const ChatMessage = memo(function ChatMessage({
     setIsEditing(false);
   };
 
+  // Streaming placeholder with no content yet — show thinking indicator inline
+  if (isStreaming && !content) {
+    return <ChatThinkingIndicator />;
+  }
+
   return (
     <Pressable
-      onPress={onActivate}
+      onPress={isStreaming ? undefined : onActivate}
       style={[styles.row, isUser ? styles.rowUser : styles.rowAssistant]}
     >
       <MessageEditModal
@@ -398,7 +405,7 @@ const ChatMessage = memo(function ChatMessage({
         <MessageToolCalls styles={styles} toolCalls={renderedToolCalls} />
 
         <MessageContent
-          Markdown={Markdown}
+          Markdown={isStreaming ? null : Markdown}
           content={content}
           isUser={isUser}
           markdownStyle={markdownStyle}
@@ -408,11 +415,11 @@ const ChatMessage = memo(function ChatMessage({
           {isUser ? <ReferencedNotes message={message} styles={styles} /> : null}
         </MessageContent>
 
-        {showDebug ? (
+        {showDebug && !isStreaming ? (
           <MessageDebug hasReasoning={hasReasoning} message={message} styles={styles} />
         ) : null}
 
-        <FocusItems message={message} styles={styles} />
+        {!isStreaming ? <FocusItems message={message} styles={styles} /> : null}
 
         <ActiveMessageActions
           canCopy={canCopy}
