@@ -73,7 +73,7 @@ function NoteDetailEditor({
 
   const dateline = useMemo(() => {
     const date = new Date(note.updatedAt);
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleDateString(undefined, {
       month: 'long',
       day: 'numeric',
       year: 'numeric',
