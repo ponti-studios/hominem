@@ -2,6 +2,7 @@ export type ButtonVariant =
   | 'default'
   | 'primary'
   | 'destructive'
+  | 'icon'
   | 'ghost'
   | 'link'
   | 'outline'
