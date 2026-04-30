@@ -27,7 +27,7 @@ export const inboxRoutes = new Hono<AppContext>()
     const parsedLimit = query.limit ? Number.parseInt(query.limit, 10) : 50;
     const limit = Number.isFinite(parsedLimit) ? Math.min(Math.max(parsedLimit, 1), 100) : 50;
     const db = getDb();
-    const { rows: items } = await sql<InboxRow[]>`
+    const { rows: items } = await sql<InboxRow>`
         select
           'chat' as "kind",
           c.id as "id",

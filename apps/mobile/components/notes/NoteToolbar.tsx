@@ -5,13 +5,13 @@ import { InputAccessoryView, Keyboard, Pressable, ScrollView, StyleSheet, View }
 import { makeStyles, spacing, useThemeColors } from '~/components/theme';
 import { BlurSurface } from '~/components/ui/BlurSurface';
 import AppIcon from '~/components/ui/icon';
+import type { FormatCommand } from '~/components/notes/note-formatting';
 import t from '~/translations';
-import type { FormatAction } from '~/hooks/use-note-toolbar';
 
 export const NOTE_TOOLBAR_ID = 'note-editor-toolbar';
 
 interface NoteToolbarProps {
-  onAction: (action: FormatAction) => void;
+  onAction: (action: FormatCommand) => void;
   onUndo: () => void;
   onRedo: () => void;
   canUndo: boolean;
@@ -85,7 +85,11 @@ function ToolbarButtons({ onAction, onUndo, onRedo, canUndo, canRedo }: NoteTool
             label={t.notes.toolbar.heading}
             onPress={() => onAction('heading')}
           />
-          <ToolbarButton icon="text.quote" label="Blockquote" onPress={() => onAction('blockquote')} />
+          <ToolbarButton
+            icon="text.quote"
+            label={t.notes.toolbar.blockquote}
+            onPress={() => onAction('blockquote')}
+          />
         </View>
 
         <ToolbarDivider />
@@ -93,7 +97,11 @@ function ToolbarButtons({ onAction, onUndo, onRedo, canUndo, canRedo }: NoteTool
         <View style={styles.group}>
           <ToolbarButton icon="checklist" label={t.notes.toolbar.checklist} onPress={() => onAction('checklist')} />
           <ToolbarButton icon="list.bullet" label={t.notes.toolbar.bulletList} onPress={() => onAction('bullet')} />
-          <ToolbarButton icon="list.number" label="Numbered list" onPress={() => onAction('numbered-list')} />
+          <ToolbarButton
+            icon="list.number"
+            label={t.notes.toolbar.numberedList}
+            onPress={() => onAction('numbered-list')}
+          />
         </View>
 
         <ToolbarDivider />
