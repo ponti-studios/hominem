@@ -7,8 +7,8 @@ import { validationErrorMiddleware } from './middleware/validation';
 import { aiRoutes } from './routes/ai';
 import { chatsRoutes } from './routes/chats';
 import { filesRoutes } from './routes/files';
-import { notesRoutes } from './routes/notes';
 import { inboxRoutes } from './routes/inbox';
+import { notesRoutes } from './routes/notes';
 import { tasksRoutes } from './routes/tasks';
 import { authenticatedVoiceRoutes } from './routes/voice';
 

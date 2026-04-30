@@ -50,14 +50,12 @@ import { Textarea } from '../textarea';
 
 function Message({
   from,
-  className,
   children,
   ...props
 }: {
   from: 'user' | 'assistant' | 'system';
-  className?: string;
   children: ReactNode;
-} & HTMLAttributes<HTMLDivElement>) {
+} & Omit<HTMLAttributes<HTMLDivElement>, 'className'>) {
   const isUser = from === 'user';
   const isSystem = from === 'system';
 
@@ -67,7 +65,6 @@ function Message({
       className={cn(
         'flex w-full py-2',
         isSystem ? 'justify-center' : isUser ? 'justify-end' : 'justify-start',
-        className,
       )}
       {...props}
     >
@@ -78,28 +75,25 @@ function Message({
 
 function MessageContent({
   children,
-  className,
   align = 'start',
   width = 'transcript',
   style,
   ...props
 }: {
   children: ReactNode;
-  className?: string;
   align?: 'start' | 'end' | 'center';
   width?: 'transcript' | 'bubble' | 'full';
   style?: CSSProperties;
-} & HTMLAttributes<HTMLDivElement>) {
+} & Omit<HTMLAttributes<HTMLDivElement>, 'className'>) {
   return (
     <div
       className={cn(
-        'flex min-w-0 flex-col',
+        'flex min-w-0 flex-col gap-3',
         align === 'end' && 'items-end text-right',
         align === 'center' && 'items-center text-center',
         width !== 'full' && 'w-full',
         width === 'bubble' && 'content-width-bubble',
         width === 'transcript' && 'content-width-transcript',
-        className,
       )}
       style={style}
       {...props}
@@ -110,16 +104,19 @@ function MessageContent({
 }
 
 function MessageAnnotations({
+  align = 'start',
   children,
-  className,
   ...props
 }: {
+  align?: 'start' | 'end';
   children: ReactNode;
-  className?: string;
-} & HTMLAttributes<HTMLDivElement>) {
+} & Omit<HTMLAttributes<HTMLDivElement>, 'className'>) {
   return (
     <div
-      className={cn('mt-2 flex flex-wrap gap-1 body-4 text-text-tertiary', className)}
+      className={cn(
+        'mt-2 flex flex-wrap gap-1 body-4 text-text-tertiary/70 opacity-0 transition-opacity group-hover:opacity-100',
+        align === 'end' ? 'justify-end' : 'justify-start',
+      )}
       {...props}
     >
       {children}
@@ -326,15 +323,7 @@ function MessageTimestamp({
   }
 
   return (
-    <MessageAnnotations
-      className={cn(
-        'mt-0.5 text-xs text-text-tertiary/70 opacity-0 transition-opacity group-hover:opacity-100',
-        {
-          'justify-end': isUser,
-          'justify-start': !isUser,
-        },
-      )}
-    >
+    <MessageAnnotations align={isUser ? 'end' : 'start'}>
       <span title={createdAt ?? undefined}>{timestamp}</span>
     </MessageAnnotations>
   );
@@ -518,11 +507,7 @@ export const ChatMessage = memo(function ChatMessage({
       aria-label={`${isUser ? 'Your' : 'Message'}${timestamp ? ` from ${timestamp}` : ''}`}
     >
       <Message from={isUser ? 'user' : 'assistant'}>
-        <MessageContent
-          align={isUser ? 'end' : 'start'}
-          width={isUser ? 'bubble' : 'transcript'}
-          className="gap-3"
-        >
+        <MessageContent align={isUser ? 'end' : 'start'} width={isUser ? 'bubble' : 'transcript'}>
           {!isUser && hasReasoning && (
             <Reasoning className="border-l-2 border-default py-1 pl-4 my-2 text-text-tertiary">
               {message.reasoning}

@@ -6,14 +6,12 @@ interface ResendCodeButtonProps {
   onResend: () => void;
   isLoading?: boolean;
   cooldownSeconds?: number;
-  className?: string;
 }
 
 export function ResendCodeButton({
   onResend,
   isLoading = false,
   cooldownSeconds = 30,
-  className,
 }: ResendCodeButtonProps) {
   const [cooldown, setCooldown] = useState(0);
 
@@ -34,7 +32,7 @@ export function ResendCodeButton({
   }, [cooldown, isLoading, onResend, cooldownSeconds]);
 
   return (
-    <div className={`flex items-center gap-2 ${className ?? ''}`}>
+    <div className="flex items-center gap-2">
       <Button
         variant="ghost"
         size="sm"

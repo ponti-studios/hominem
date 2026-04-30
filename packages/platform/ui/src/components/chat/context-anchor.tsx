@@ -1,11 +1,8 @@
 import type { SessionSource } from '@hominem/rpc/types';
 
-import { cn } from '../../lib/utils';
-
 interface ContextAnchorProps {
   source: SessionSource;
   showTitle?: boolean;
-  className?: string;
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -15,33 +12,29 @@ const TYPE_LABELS: Record<string, string> = {
   tracker: 'TRACKER',
 };
 
-export function ContextAnchor({ source, showTitle = true, className }: ContextAnchorProps) {
+export function ContextAnchor({ source, showTitle = true }: ContextAnchorProps) {
   if (source.kind === 'new') {
-    return <div className={cn('text-sm font-medium leading-5', className)}>New conversation</div>;
+    return <div className="text-sm font-medium leading-5">New conversation</div>;
   }
 
   if (source.kind === 'capture') {
     if (!showTitle) {
-      return (
-        <div className={cn('text-xs uppercase tracking-[0.08em] opacity-70', className)}>
-          Conversation
-        </div>
-      );
+      return <div className="text-xs uppercase tracking-[0.08em] opacity-70">Conversation</div>;
     }
 
-    return <div className={cn('text-sm font-medium leading-5', className)}>{source.preview}</div>;
+    return <div className="text-sm font-medium leading-5">{source.preview}</div>;
   }
 
   if (!showTitle) {
     return (
-      <div className={cn('text-xs uppercase tracking-[0.08em] opacity-70', className)}>
+      <div className="text-xs uppercase tracking-[0.08em] opacity-70">
         {TYPE_LABELS[source.type] ?? source.type}
       </div>
     );
   }
 
   return (
-    <div className={cn('min-w-0', className)}>
+    <div className="min-w-0">
       <div className="truncate text-sm font-medium leading-5">{source.title}</div>
       <div className="truncate text-xs uppercase tracking-[0.08em] opacity-70">
         {TYPE_LABELS[source.type] ?? source.type}

@@ -8,7 +8,6 @@ interface OtpCodeInputProps {
   onChange: (value: string) => void;
   disabled?: boolean;
   autoFocus?: boolean;
-  className?: string;
   error?: string | undefined;
   onComplete?: (value: string) => void;
   maskDelay?: number;
@@ -69,7 +68,6 @@ export function OtpCodeInput({
   onChange,
   disabled = false,
   autoFocus = true,
-  className,
   error,
   onComplete,
   maskDelay = 300,
@@ -199,7 +197,7 @@ export function OtpCodeInput({
   );
 
   return (
-    <fieldset className={cn('w-full', className)}>
+    <fieldset className="w-full">
       <legend className="sr-only">Enter one-time code</legend>
       <div className="flex justify-center gap-2">
         {inputValues.map((digit, index) => (

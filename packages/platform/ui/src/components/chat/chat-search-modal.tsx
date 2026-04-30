@@ -25,9 +25,7 @@ export function ChatSearchModal({
 
   return (
     <div className="pointer-events-none absolute inset-x-0 top-4 z-20 px-4 sm:px-6">
-      <div
-        className="pointer-events-auto mx-auto w-full max-w-[45rem] rounded-md border border-border-subtle bg-background/95 p-4 backdrop-blur supports-backdrop-filter:bg-background/90"
-      >
+      <div className="pointer-events-auto mx-auto w-full max-w-[45rem] rounded-md border border-border-subtle bg-background/95 p-4 backdrop-blur supports-backdrop-filter:bg-background/90">
         <div className="mb-3 text-xs font-medium tracking-[0.05em] text-text-tertiary">
           Search messages
         </div>

@@ -20,7 +20,6 @@ import { useTTS } from '~/components/media/use-tts';
 import { useThemeColors } from '~/components/theme';
 import { EmptyState } from '~/components/ui';
 import AppIcon from '~/components/ui/icon';
-import t from '~/translations';
 import {
   DEFAULT_CHAT_TITLE,
   resolveChatScreenTitle,
@@ -37,6 +36,7 @@ import {
   upsertInboxSessionActivity,
 } from '~/services/inbox/inbox-refresh';
 import { chatKeys } from '~/services/notes/query-keys';
+import t from '~/translations';
 
 const renderChatIcon: ChatRenderIcon = (name, props) => {
   const tintColor = props.color;

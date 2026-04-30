@@ -3,9 +3,9 @@ import type { Note } from '@hominem/rpc/types';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useRef } from 'react';
 
+import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
 import { noteKeys } from '~/services/notes/query-keys';
-import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 
 export function useNoteEditor(noteId: string) {
   const client = useApiClient();

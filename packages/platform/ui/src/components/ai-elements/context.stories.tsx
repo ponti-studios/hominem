@@ -9,7 +9,7 @@ import {
   InlineCitation,
 } from './context';
 
-function ContextPreview(props: { className?: string; children: React.ReactNode }) {
+function ContextPreview(props: { children: React.ReactNode }) {
   return <Context {...props} />;
 }
 
@@ -32,23 +32,25 @@ export const Default: Story = {
     children: null,
   },
   render: () => (
-    <Context className="max-w-sm">
-      <ContextHeader title="Context" count={2} />
-      <ContextContent>
-        <ContextItem>
-          <p className="text-sm font-medium">Meeting Notes — March 2024</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Discussed Q1 planning and team capacity.
-          </p>
-        </ContextItem>
-        <ContextItem>
-          <p className="text-sm font-medium">Project Brief</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Overview of the new product feature requirements.
-          </p>
-        </ContextItem>
-      </ContextContent>
-    </Context>
+    <div className="max-w-sm">
+      <Context>
+        <ContextHeader title="Context" count={2} />
+        <ContextContent>
+          <ContextItem>
+            <p className="text-sm font-medium">Meeting Notes — March 2024</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Discussed Q1 planning and team capacity.
+            </p>
+          </ContextItem>
+          <ContextItem>
+            <p className="text-sm font-medium">Project Brief</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Overview of the new product feature requirements.
+            </p>
+          </ContextItem>
+        </ContextContent>
+      </Context>
+    </div>
   ),
 };
 

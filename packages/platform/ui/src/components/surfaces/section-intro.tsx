@@ -1,24 +1,15 @@
 import type { ReactNode } from 'react';
 
-import { cn } from '../../lib/utils';
-
 interface SectionIntroProps {
   eyebrow?: ReactNode;
   title: ReactNode;
   description?: ReactNode;
   actions?: ReactNode;
-  className?: string;
 }
 
-export function SectionIntro({
-  eyebrow,
-  title,
-  description,
-  actions,
-  className,
-}: SectionIntroProps) {
+export function SectionIntro({ eyebrow, title, description, actions }: SectionIntroProps) {
   return (
-    <div className={cn('flex items-start justify-between gap-6', className)}>
+    <div className="flex items-start justify-between gap-6">
       <div className="min-w-0 flex-1">
         {eyebrow ? (
           <div className="mb-3 text-[11px] font-medium uppercase tracking-[0.18em] text-text-tertiary">

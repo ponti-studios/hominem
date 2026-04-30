@@ -37,7 +37,6 @@ import { CameraModal } from '~/components/media/camera-modal';
 import { makeStyles, useThemeColors } from '~/components/theme';
 import { createLayoutTransition } from '~/components/theme/animations';
 import { AppIconButton, AppIconButtonGroup } from '~/components/ui';
-import t from '~/translations';
 import AppIcon from '~/components/ui/icon';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import { useTextEnhance } from '~/services/ai/use-text-enhance';
@@ -51,6 +50,7 @@ import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
 import { donateAddNoteIntent } from '~/services/intent-donation';
 import { chatKeys } from '~/services/notes/query-keys';
 import { useCreateNote } from '~/services/notes/use-create-note';
+import t from '~/translations';
 
 // ── Layout constants ──────────────────────────────────────────────────────────
 
@@ -248,7 +248,14 @@ export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerPro
 
   const showPlusMenu = useCallback(() => {
     ActionSheetIOS.showActionSheetWithOptions(
-      { options: [t.chat.input.actionSheet.cancel, t.chat.input.actionSheet.takePhoto, t.chat.input.actionSheet.chooseFromLibrary], cancelButtonIndex: 0 },
+      {
+        options: [
+          t.chat.input.actionSheet.cancel,
+          t.chat.input.actionSheet.takePhoto,
+          t.chat.input.actionSheet.chooseFromLibrary,
+        ],
+        cancelButtonIndex: 0,
+      },
       (i) => {
         if (i === 1) setIsCameraOpen(true);
         else if (i === 2) void pickAttachment();

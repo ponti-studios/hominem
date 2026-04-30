@@ -13,7 +13,16 @@ import Reanimated, {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
-import { Text, fontFamiliesNative, fontSizes, fontWeights, lineHeights, makeStyles, spacing, theme } from '~/components/theme';
+import {
+  Text,
+  fontFamiliesNative,
+  fontSizes,
+  fontWeights,
+  lineHeights,
+  makeStyles,
+  spacing,
+  theme,
+} from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
 import { useChatArchive } from '~/services/chat/use-chat-archive';
 import { useNoteDelete } from '~/services/notes/use-note-delete';

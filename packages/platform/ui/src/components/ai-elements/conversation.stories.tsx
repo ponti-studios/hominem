@@ -7,20 +7,16 @@ import {
   ConversationScrollButton,
 } from './conversation';
 
-function ConversationPreview(props: { className?: string; children: React.ReactNode }) {
-  return <Conversation {...props} />;
-}
-
 const meta = {
   title: 'Patterns/AI/Conversation',
-  component: ConversationPreview,
+  component: Conversation,
   tags: ['autodocs'],
   parameters: {
     controls: {
       disable: true,
     },
   },
-} satisfies Meta<typeof ConversationPreview>;
+} satisfies Meta<typeof Conversation>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -30,8 +26,8 @@ export const Default: Story = {
     children: null,
   },
   render: () => (
-    <Conversation className="max-w-md border rounded-md overflow-hidden">
-      <ConversationContent className="p-4">
+    <Conversation>
+      <ConversationContent>
         <div className="bg-muted rounded-md p-3 max-w-[80%] self-start">
           <p className="text-sm">Hello! How can I help you today?</p>
         </div>
@@ -53,7 +49,7 @@ export const EmptyState: Story = {
     children: null,
   },
   render: () => (
-    <div className="h-64 flex items-center justify-center">
+    <div className="flex h-64 items-center justify-center">
       <ConversationEmptyState />
     </div>
   ),
@@ -64,7 +60,7 @@ export const WithScrollButton: Story = {
     children: null,
   },
   render: () => (
-    <div className="relative h-64 flex items-end justify-center pb-4">
+    <div className="relative flex h-64 items-end justify-center pb-4">
       <ConversationScrollButton />
     </div>
   ),

@@ -9,16 +9,9 @@ interface PageTitleProps {
   subtitle?: string;
   actions?: ReactNode;
   variant?: PageTitleVariant;
-  className?: string;
 }
 
-export function PageTitle({
-  title,
-  subtitle,
-  actions,
-  variant = 'serif',
-  className,
-}: PageTitleProps) {
+export function PageTitle({ title, subtitle, actions, variant = 'serif' }: PageTitleProps) {
   const titleClasses = {
     serif: 'heading-1',
     sans: 'heading-3',
@@ -26,7 +19,7 @@ export function PageTitle({
   };
 
   return (
-    <div className={cn('flex flex-1 justify-between items-center gap-2 group pr-2', className)}>
+    <div className="flex flex-1 justify-between items-center gap-2 group pr-2">
       <div className="flex flex-col">
         <h1 className={cn('wrap-break-word', titleClasses[variant])}>{title}</h1>
         {subtitle && <p className="body-3 text-text-secondary">{subtitle}</p>}

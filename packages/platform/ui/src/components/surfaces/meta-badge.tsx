@@ -5,11 +5,10 @@ import { cn } from '../../lib/utils';
 interface MetaBadgeProps {
   children: ReactNode;
   icon?: ReactNode;
-  className?: string;
   tone?: 'neutral' | 'subtle';
 }
 
-export function MetaBadge({ children, icon, className, tone = 'neutral' }: MetaBadgeProps) {
+export function MetaBadge({ children, icon, tone = 'neutral' }: MetaBadgeProps) {
   return (
     <span
       className={cn(
@@ -17,7 +16,6 @@ export function MetaBadge({ children, icon, className, tone = 'neutral' }: MetaB
         tone === 'neutral'
           ? 'border border-subtle text-text-secondary'
           : 'bg-elevated text-text-tertiary',
-        className,
       )}
     >
       {icon ? icon : null}

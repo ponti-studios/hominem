@@ -23,9 +23,10 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import t from '~/translations';
+
 import { FeatureErrorBoundary } from '../../components/error-boundary/FeatureErrorBoundary';
 import { Button } from '../../components/ui/button';
-import t from '~/translations';
 import AppIcon from '../../components/ui/icon';
 import { useAuth } from '../../services/auth/auth-provider';
 import { useEmailAuth } from '../../services/auth/hooks/use-email-auth';
@@ -212,7 +213,9 @@ function VerifyScreen() {
           <View style={[styles.successChip, { backgroundColor: palette.iconChip }]}>
             <AppIcon name="checkmark.circle.fill" size={32} tintColor={palette.success} />
           </View>
-          <Text style={[styles.successText, { color: palette.textPrimary }]}>{t.auth.verify.signedIn}</Text>
+          <Text style={[styles.successText, { color: palette.textPrimary }]}>
+            {t.auth.verify.signedIn}
+          </Text>
         </Animated.View>
       </View>
     );
@@ -310,7 +313,9 @@ function VerifyScreen() {
                     accessibilityLabel={t.auth.verify.oneTimeVerificationCodeA11y}
                   />
                   {secondsLeft === 0 ? (
-                    <Text style={[styles.countdown, { color: palette.error }]}>{t.auth.verify.expired}</Text>
+                    <Text style={[styles.countdown, { color: palette.error }]}>
+                      {t.auth.verify.expired}
+                    </Text>
                   ) : (
                     <Text
                       style={[styles.countdown, { color: countdownColor(secondsLeft, palette) }]}

@@ -1,8 +1,6 @@
 import { ArrowRight, type LucideIcon } from 'lucide-react';
 import { Link } from 'react-router';
 
-import { cn } from '../../lib/utils';
-
 export interface LandingFeature {
   icon: LucideIcon;
   title: string;
@@ -26,8 +24,8 @@ export interface LandingPageProps {
   trustSignal?: string;
 }
 
-function Section({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <section className={cn('py-20 md:py-28', className)}>{children}</section>;
+function Section({ children }: { children: React.ReactNode }) {
+  return <section className="py-20 md:py-28">{children}</section>;
 }
 
 function FeatureCard({ feature }: { feature: LandingFeature }) {
@@ -64,14 +62,12 @@ export function LandingPage({
   return (
     <div className="text-text-primary">
       {/* Hero */}
-      <Section className="pb-20 pt-28 md:pb-28 md:pt-36">
+      <Section>
         <p className="mb-6 text-[11px] font-medium uppercase tracking-[0.18em] text-text-tertiary">
           {kicker}
         </p>
 
-        <h1
-          className="mb-6 max-w-[14ch] text-[clamp(2.25rem,5vw,4.5rem)] font-semibold leading-[1.08] tracking-[-0.04em] text-text-primary"
-        >
+        <h1 className="mb-6 max-w-[14ch] text-[clamp(2.25rem,5vw,4.5rem)] font-semibold leading-[1.08] tracking-[-0.04em] text-text-primary">
           {headline}
         </h1>
 
@@ -152,10 +148,8 @@ export function LandingPage({
       <div className="border-t border-border/20" />
 
       {/* Final CTA */}
-      <Section className="pb-32 md:pb-40">
-        <h2
-          className="mb-8 max-w-[18ch] text-[clamp(1.75rem,3.5vw,3rem)] font-semibold leading-[1.08] tracking-[-0.04em] text-text-primary"
-        >
+      <Section>
+        <h2 className="mb-8 max-w-[18ch] text-[clamp(1.75rem,3.5vw,3rem)] font-semibold leading-[1.08] tracking-[-0.04em] text-text-primary">
           Ready to start?
         </h2>
         <Link

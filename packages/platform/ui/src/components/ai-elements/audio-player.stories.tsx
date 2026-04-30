@@ -17,7 +17,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  render: () => <AudioPlayer className="max-w-sm" />,
+  render: () => <AudioPlayer />,
 };
 
 export const PlayButton: Story = {

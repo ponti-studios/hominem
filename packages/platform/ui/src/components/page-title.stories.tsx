@@ -22,7 +22,6 @@ const meta = {
       },
     ),
     actions: hiddenControl,
-    className: hiddenControl,
   },
 } satisfies Meta<typeof PageTitle>;
 

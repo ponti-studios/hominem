@@ -2,11 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { Reasoning, ReasoningContent } from './reasoning';
 
-function ReasoningPreview(props: {
-  children: React.ReactNode;
-  isOpen?: boolean;
-  className?: string;
-}) {
+function ReasoningPreview(props: { children: React.ReactNode; isOpen?: boolean }) {
   return <Reasoning {...props} />;
 }
 
@@ -29,10 +25,12 @@ export const Collapsed: Story = {
     children: null,
   },
   render: () => (
-    <ReasoningPreview className="max-w-md">
-      The user is asking about component architecture. I should consider their level of expertise
-      and provide a clear, structured explanation with examples.
-    </ReasoningPreview>
+    <div className="max-w-md">
+      <ReasoningPreview>
+        The user is asking about component architecture. I should consider their level of expertise
+        and provide a clear, structured explanation with examples.
+      </ReasoningPreview>
+    </div>
   ),
 };
 
@@ -41,12 +39,14 @@ export const Open: Story = {
     children: null,
   },
   render: () => (
-    <ReasoningPreview isOpen className="max-w-md">
-      The user is asking about component architecture. I should consider their level of expertise
-      and provide a clear, structured explanation with examples. Let me think about this step by
-      step: 1. First, understand the user's current knowledge level 2. Choose appropriate
-      terminology 3. Provide practical examples
-    </ReasoningPreview>
+    <div className="max-w-md">
+      <ReasoningPreview isOpen>
+        The user is asking about component architecture. I should consider their level of expertise
+        and provide a clear, structured explanation with examples. Let me think about this step by
+        step: 1. First, understand the user's current knowledge level 2. Choose appropriate
+        terminology 3. Provide practical examples
+      </ReasoningPreview>
+    </div>
   ),
 };
 
@@ -55,9 +55,11 @@ export const ContentOnly: Story = {
     children: null,
   },
   render: () => (
-    <ReasoningContent className="max-w-md text-sm text-muted-foreground p-4 bg-muted rounded-md">
-      Analyzing the request... The user wants to understand Storybook story patterns. I'll focus on
-      practical, copy-paste examples.
-    </ReasoningContent>
+    <div className="max-w-md">
+      <ReasoningContent className="text-sm text-muted-foreground p-4 bg-muted rounded-md">
+        Analyzing the request... The user wants to understand Storybook story patterns. I'll focus
+        on practical, copy-paste examples.
+      </ReasoningContent>
+    </div>
   ),
 };

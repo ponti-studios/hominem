@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 
 import { cn } from '../../lib/utils';
-import { SurfacePanel } from './surface-panel';
 
 interface StatePanelProps {
   icon?: ReactNode;
@@ -9,7 +8,6 @@ interface StatePanelProps {
   description?: ReactNode;
   actions?: ReactNode;
   children?: ReactNode;
-  className?: string;
   layout?: 'centered' | 'inline';
   variant?: 'default' | 'dashed';
 }
@@ -20,20 +18,19 @@ export function StatePanel({
   description,
   actions,
   children,
-  className,
   layout = 'centered',
   variant = 'default',
 }: StatePanelProps) {
   const centered = layout === 'centered';
 
   return (
-    <SurfacePanel
+    <div
       className={cn(
+        'rounded-3xl border-subtle bg-surface p-5',
         centered
           ? 'flex min-h-80 flex-col items-center justify-center text-center'
           : 'flex flex-col gap-3',
         variant === 'dashed' && 'border-2 border-dashed',
-        className,
       )}
     >
       {icon ? (
@@ -47,6 +44,6 @@ export function StatePanel({
       ) : null}
       {children ? <div className={cn(centered ? 'mt-1' : '')}>{children}</div> : null}
       {actions ? <div className={cn(centered ? 'mt-4' : 'mt-2')}>{actions}</div> : null}
-    </SurfacePanel>
+    </div>
   );
 }

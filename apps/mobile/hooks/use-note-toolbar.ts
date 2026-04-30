@@ -19,7 +19,9 @@ export function useNoteToolbar({ content, onContentChange }: UseNoteToolbarOptio
   const contentRef = useRef(content);
   contentRef.current = content;
 
-  const [controlledSelection, setControlledSelection] = useState<TextSelection | undefined>(undefined);
+  const [controlledSelection, setControlledSelection] = useState<TextSelection | undefined>(
+    undefined,
+  );
 
   const historyRef = useRef<HistoryEntry[]>([{ text: content, selection: { start: 0, end: 0 } }]);
   const historyIndexRef = useRef(0);

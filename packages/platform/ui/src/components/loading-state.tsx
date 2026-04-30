@@ -21,8 +21,6 @@ export interface LoadingStateProps {
   /**
    * Additional CSS classes
    */
-  className?: string;
-
   /**
    * For skeleton variant: number of skeleton lines
    * @default 3
@@ -70,7 +68,6 @@ export interface LoadingStateProps {
 export function LoadingState({
   variant = 'inline',
   message = 'Loading...',
-  className = '',
   skeletonLines = 3,
   skeletonLineHeight = 'h-4',
   delayMs = 0,
@@ -85,9 +82,7 @@ export function LoadingState({
     switch (variant) {
       case 'page':
         return (
-          <div
-            className={`fixed inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm ${className}`}
-          >
+          <div className="fixed inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
             <div className="flex flex-col items-center gap-3">
               <Loader2 className="loading-size-lg animate-spin text-primary" />
               {message && <p className="text-sm text-text-secondary">{message}</p>}
@@ -97,7 +92,7 @@ export function LoadingState({
 
       case 'inline':
         return (
-          <div className={`flex items-center gap-2 py-4 ${className}`}>
+          <div className="flex items-center gap-2 py-4">
             <Loader2 className="loading-size-sm animate-spin text-primary" />
             {message && <span className="text-sm text-text-secondary">{message}</span>}
           </div>
@@ -105,7 +100,7 @@ export function LoadingState({
 
       case 'skeleton':
         return (
-          <div className={`space-y-2 ${className}`}>
+          <div className="space-y-2">
             {Array.from({ length: skeletonLines }).map((_, i) => (
               <div
                 key={i}
@@ -159,23 +154,8 @@ function DelayedLoading({ delayMs, children }: { delayMs: number; children: Reac
  * @example
  * <SkeletonLoader lines={5} />
  */
-export function SkeletonLoader({
-  lines = 3,
-  height = 'h-4',
-  className = '',
-}: {
-  lines?: number;
-  height?: string;
-  className?: string;
-}) {
-  return (
-    <LoadingState
-      variant="skeleton"
-      skeletonLines={lines}
-      skeletonLineHeight={height}
-      className={className}
-    />
-  );
+export function SkeletonLoader({ lines = 3, height = 'h-4' }: { lines?: number; height?: string }) {
+  return <LoadingState variant="skeleton" skeletonLines={lines} skeletonLineHeight={height} />;
 }
 
 /**

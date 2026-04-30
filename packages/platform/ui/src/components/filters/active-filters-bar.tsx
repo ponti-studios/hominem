@@ -1,4 +1,3 @@
-import { cn } from '../../lib/utils';
 import { FilterChip } from './filter-chip';
 
 export interface ActiveFilter {
@@ -11,16 +10,15 @@ export interface ActiveFilter {
 interface ActiveFiltersBarProps {
   filters: ActiveFilter[];
   label?: string;
-  className?: string;
 }
 
-export function ActiveFiltersBar({ filters, label, className }: ActiveFiltersBarProps) {
+export function ActiveFiltersBar({ filters, label }: ActiveFiltersBarProps) {
   if (filters.length === 0) {
     return null;
   }
 
   return (
-    <div className={cn('flex flex-wrap gap-2 items-center', className)}>
+    <div className="flex flex-wrap items-center gap-2">
       {label && <span className="text-sm text-muted-foreground">{label}</span>}
       {filters.map((filter) => (
         <FilterChip

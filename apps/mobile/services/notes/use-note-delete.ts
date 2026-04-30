@@ -2,8 +2,9 @@ import { useApiClient } from '@hominem/rpc/react';
 import type { Note } from '@hominem/rpc/types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { noteKeys } from './query-keys';
 import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
+
+import { noteKeys } from './query-keys';
 
 interface UseNoteDeleteOptions {
   noteId: string;

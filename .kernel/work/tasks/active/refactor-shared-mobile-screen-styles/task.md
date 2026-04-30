@@ -96,3 +96,4 @@ This task implements the token-first style-system direction. The mobile app alre
 - 2026-04-30T19:18:00Z: Converted the shared search input and loading-state spinners to the CSS-backed loading size utilities, removing the last hard-coded spinner sizes from the shared web surface.
 - 2026-04-30T19:24:00Z: Replaced the `SearchInput` ad hoc spinner markup with the shared `LoadingSpinner` component so spinner styling stays centralized.
 - 2026-04-30T19:30:00Z: Tightened `LoadingSpinner` to a `variant`-only API and removed `className` so the shared spinner fully owns its own styling.
+- 2026-04-30T20:34:24Z: Removed remaining `className` props from the shared AI prompt input wrappers, the chat message layout helpers, and the story preview shells; shared UI typecheck passes again.

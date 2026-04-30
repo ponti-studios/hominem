@@ -6,9 +6,9 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { useThemeColors } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
-import t from '~/translations';
 import { useArchivedSessions } from '~/hooks/useArchivedSessions';
 import { formatRelativeAge } from '~/services/date/format-relative-age';
+import t from '~/translations';
 
 export default function ArchivedChatsScreen() {
   const router = useRouter();

@@ -1,6 +1,5 @@
 import { useId } from 'react';
 
-import { cn } from '../../lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../select';
 
 interface FilterSelectOption<T extends string> {
@@ -14,7 +13,6 @@ interface FilterSelectProps<T extends string> {
   options: Array<FilterSelectOption<T>>;
   onChange: (value: T | '') => void;
   placeholder?: string;
-  className?: string;
   id?: string;
 }
 
@@ -26,7 +24,6 @@ export function FilterSelect<T extends string>({
   options,
   onChange,
   placeholder = 'All',
-  className,
   id,
 }: FilterSelectProps<T>) {
   const generatedId = useId();
@@ -41,7 +38,7 @@ export function FilterSelect<T extends string>({
   };
 
   return (
-    <div className={cn('flex-1', className)}>
+    <div className="flex-1">
       <label
         htmlFor={selectId}
         className="block text-xs font-medium mb-1.5 uppercase tracking-wide text-muted-foreground"

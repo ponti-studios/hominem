@@ -1,8 +1,7 @@
-import { useMemo } from 'react';
-
 import { useApiClient } from '@hominem/rpc/react';
 import type { InboxOutput, InboxStreamItem } from '@hominem/rpc/types';
 import { useQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
 
 import type { InboxStreamItemData } from '~/components/workspace/InboxStreamItem.types';
 import { inboxKeys } from '~/services/notes/query-keys';

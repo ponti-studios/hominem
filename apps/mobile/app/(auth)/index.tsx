@@ -23,7 +23,6 @@ import Animated, {
 
 import { FeatureErrorBoundary } from '~/components/error-boundary/FeatureErrorBoundary';
 import { Button } from '~/components/ui/button';
-import t from '~/translations';
 import AppIcon from '~/components/ui/icon';
 import { E2E_TESTING, MOBILE_PASSKEY_ENABLED } from '~/constants';
 import { useAuth } from '~/services/auth/auth-provider';
@@ -31,6 +30,7 @@ import { resolveAuthScreenState } from '~/services/auth/auth-screen-state';
 import { useMobilePasskeyAuth } from '~/services/auth/hooks/use-mobile-passkey-auth';
 import { isValidEmail, normalizeEmail } from '~/services/auth/validation';
 import { posthog } from '~/services/posthog';
+import t from '~/translations';
 
 const authPalette = {
   light: {

@@ -12,7 +12,6 @@ import {
   type ReactNode,
 } from 'react';
 
-import { cn } from '../../lib/utils';
 import { Button } from '../button';
 import {
   DropdownMenu,
@@ -172,7 +171,6 @@ interface PromptInputProps {
   maxFiles?: number;
   maxFileSize?: number;
   onError?: (err: { code: string; message: string }) => void;
-  className?: string;
   children?: ReactNode;
 }
 
@@ -186,7 +184,6 @@ export const PromptInput = forwardRef<HTMLFormElement, PromptInputProps>(functio
     maxFiles: _maxFiles = 10,
     maxFileSize: _maxFileSize = 10 * 1024 * 1024,
     onError: _onError,
-    className,
     children,
     ...props
   },
@@ -252,11 +249,7 @@ export const PromptInput = forwardRef<HTMLFormElement, PromptInputProps>(functio
     <form
       ref={ref || formRef}
       onSubmit={handleSubmit}
-      className={cn(
-        'flex flex-col gap-2',
-        isDragOver && 'ring-2 ring-primary ring-offset-2',
-        className,
-      )}
+      className={`flex flex-col gap-2 ${isDragOver ? 'ring-2 ring-primary ring-offset-2' : ''}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -267,23 +260,26 @@ export const PromptInput = forwardRef<HTMLFormElement, PromptInputProps>(functio
   );
 });
 
-interface PromptInputBodyProps extends HTMLAttributes<HTMLDivElement> {}
+interface PromptInputBodyProps extends Omit<HTMLAttributes<HTMLDivElement>, 'className'> {}
 
-export function PromptInputBody({ className, children, ...props }: PromptInputBodyProps) {
+export function PromptInputBody({ children, ...props }: PromptInputBodyProps) {
   return (
-    <div className={cn('relative', className)} {...props}>
+    <div className="relative" {...props}>
       {children}
     </div>
   );
 }
 
-interface PromptInputTextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+interface PromptInputTextareaProps extends Omit<
+  React.TextareaHTMLAttributes<HTMLTextAreaElement>,
+  'className'
+> {
   onValueChange?: (value: string) => void;
 }
 
 export const PromptInputTextarea = forwardRef<HTMLTextAreaElement, PromptInputTextareaProps>(
   function PromptInputTextarea(
-    { value, onValueChange, onChange, className, placeholder, disabled, ...props },
+    { value, onValueChange, onChange, placeholder, disabled, ...props },
     ref,
   ) {
     const [isFocused, setIsFocused] = useState(false);
@@ -311,14 +307,7 @@ export const PromptInputTextarea = forwardRef<HTMLTextAreaElement, PromptInputTe
         onInput={(e) => adjustHeight(e.currentTarget)}
         placeholder={placeholder || 'Type your message...'}
         disabled={disabled}
-        className={cn(
-          'flex w-full rounded-md border bg-background px-4 py-3 text-sm ring-offset-background',
-          'placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2',
-          'focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
-          'min-h-11 max-h-60 resize-none',
-          isFocused && 'ring-2 ring-ring',
-          className,
-        )}
+        className={`flex w-full min-h-11 max-h-60 resize-none rounded-md border bg-background px-4 py-3 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 ${isFocused ? 'ring-2 ring-ring' : ''}`}
         rows={1}
         {...props}
       />
@@ -326,48 +315,46 @@ export const PromptInputTextarea = forwardRef<HTMLTextAreaElement, PromptInputTe
   },
 );
 
-interface PromptInputHeaderProps extends HTMLAttributes<HTMLDivElement> {}
+interface PromptInputHeaderProps extends Omit<HTMLAttributes<HTMLDivElement>, 'className'> {}
 
-export function PromptInputHeader({ className, children, ...props }: PromptInputHeaderProps) {
+export function PromptInputHeader({ children, ...props }: PromptInputHeaderProps) {
   return (
-    <div className={cn('flex items-center gap-2', className)} {...props}>
+    <div className="flex items-center gap-2" {...props}>
       {children}
     </div>
   );
 }
 
-interface PromptInputFooterProps extends HTMLAttributes<HTMLDivElement> {}
+interface PromptInputFooterProps extends Omit<HTMLAttributes<HTMLDivElement>, 'className'> {}
 
-export function PromptInputFooter({ className, children, ...props }: PromptInputFooterProps) {
+export function PromptInputFooter({ children, ...props }: PromptInputFooterProps) {
   return (
-    <div className={cn('flex items-center justify-between px-1 py-1', className)} {...props}>
+    <div className="flex items-center justify-between px-1 py-1" {...props}>
       {children}
     </div>
   );
 }
 
-interface PromptInputToolsProps extends HTMLAttributes<HTMLDivElement> {}
+interface PromptInputToolsProps extends Omit<HTMLAttributes<HTMLDivElement>, 'className'> {}
 
-export function PromptInputTools({ className, children, ...props }: PromptInputToolsProps) {
+export function PromptInputTools({ children, ...props }: PromptInputToolsProps) {
   return (
-    <div className={cn('flex items-center gap-1', className)} {...props}>
+    <div className="flex items-center gap-1" {...props}>
       {children}
     </div>
   );
 }
 
-interface PromptInputButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface PromptInputButtonProps extends Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  'className'
+> {
   tooltip?:
     | string
     | { content: string; shortcut?: string; side?: 'top' | 'right' | 'bottom' | 'left' };
 }
 
-export function PromptInputButton({
-  tooltip,
-  className,
-  children,
-  ...props
-}: PromptInputButtonProps) {
+export function PromptInputButton({ tooltip, children, ...props }: PromptInputButtonProps) {
   const [showTooltip, setShowTooltip] = useState(false);
 
   return (
@@ -376,7 +363,7 @@ export function PromptInputButton({
         type="button"
         variant="ghost"
         size="icon"
-        className={cn('size-8', className)}
+        className="size-8"
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
         {...props}
@@ -392,27 +379,23 @@ export function PromptInputButton({
   );
 }
 
-interface PromptInputSubmitProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface PromptInputSubmitProps extends Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  'className'
+> {
   status?: 'ready' | 'streaming' | 'disabled';
 }
 
 export function PromptInputSubmit({
   status = 'ready',
   disabled,
-  className,
   children,
   ...props
 }: PromptInputSubmitProps) {
   const isDisabled = disabled || status === 'disabled';
 
   return (
-    <Button
-      type="submit"
-      size="icon"
-      disabled={isDisabled}
-      className={cn('size-9 shrink-0', className)}
-      {...props}
-    >
+    <Button type="submit" size="icon" disabled={isDisabled} className="size-9 shrink-0" {...props}>
       {status === 'streaming' ? (
         <Sparkles className="size-4 animate-spin" />
       ) : (
@@ -423,124 +406,102 @@ export function PromptInputSubmit({
   );
 }
 
-interface PromptInputActionMenuProps extends HTMLAttributes<HTMLDivElement> {}
+interface PromptInputActionMenuProps extends Omit<HTMLAttributes<HTMLDivElement>, 'className'> {}
 
-export function PromptInputActionMenu({
-  className,
-  children,
-  ...props
-}: PromptInputActionMenuProps) {
+export function PromptInputActionMenu({ children, ...props }: PromptInputActionMenuProps) {
   return (
     <DropdownMenu>
-      <div className={cn('flex items-center gap-1', className)} {...props}>
+      <div className="flex items-center gap-1" {...props}>
         {children}
       </div>
     </DropdownMenu>
   );
 }
 
-interface PromptInputActionMenuTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
+interface PromptInputActionMenuTriggerProps extends Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  'className'
+> {}
 
 export function PromptInputActionMenuTrigger({
-  className,
   children,
   ...props
 }: PromptInputActionMenuTriggerProps) {
   return (
     <DropdownMenuTrigger asChild>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className={cn('size-8', className)}
-        {...props}
-      >
+      <Button type="button" variant="ghost" size="icon" className="size-8" {...props}>
         {children || <Paperclip className="size-4" />}
       </Button>
     </DropdownMenuTrigger>
   );
 }
 
-interface PromptInputActionMenuContentProps extends HTMLAttributes<HTMLDivElement> {}
+interface PromptInputActionMenuContentProps extends Omit<
+  HTMLAttributes<HTMLDivElement>,
+  'className'
+> {}
 
 export function PromptInputActionMenuContent({
-  className,
   children,
   ...props
 }: PromptInputActionMenuContentProps) {
-  return (
-    <DropdownMenuContent className={cn('', className)} {...props}>
-      {children}
-    </DropdownMenuContent>
-  );
+  return <DropdownMenuContent {...props}>{children}</DropdownMenuContent>;
 }
 
 export function PromptInputActionMenuItem({
-  className,
   children,
   ...props
-}: React.ComponentProps<typeof DropdownMenuItem>) {
-  return (
-    <DropdownMenuItem className={cn('', className)} {...props}>
-      {children}
-    </DropdownMenuItem>
-  );
+}: Omit<React.ComponentProps<typeof DropdownMenuItem>, 'className'>) {
+  return <DropdownMenuItem {...props}>{children}</DropdownMenuItem>;
 }
 
 interface PromptInputActionAddAttachmentsProps {
   label?: string;
-  className?: string;
 }
 
 export function PromptInputActionAddAttachments({
   label = 'Add photos or files',
-  className,
 }: PromptInputActionAddAttachmentsProps) {
   const { openFileDialog } = usePromptInputAttachments();
 
   return (
-    <PromptInputActionMenuItem
-      onSelect={openFileDialog}
-      className={cn('cursor-pointer', className)}
-    >
+    <PromptInputActionMenuItem onSelect={openFileDialog}>
       <Paperclip className="size-4 mr-2" />
       {label}
     </PromptInputActionMenuItem>
   );
 }
 
-interface PromptInputHoverCardProps extends HTMLAttributes<HTMLDivElement> {
+interface PromptInputHoverCardProps extends Omit<HTMLAttributes<HTMLDivElement>, 'className'> {
   openDelay?: number;
   closeDelay?: number;
 }
 
-export function PromptInputHoverCard({ className, children, ...props }: PromptInputHoverCardProps) {
+export function PromptInputHoverCard({ children, ...props }: PromptInputHoverCardProps) {
   return (
-    <div className={cn('relative inline-block', className)} {...props}>
+    <div className="relative inline-block" {...props}>
       {children}
     </div>
   );
 }
 
 export function PromptInputHoverCardTrigger({
-  className,
   children,
   ...props
-}: HTMLAttributes<HTMLDivElement>) {
+}: Omit<HTMLAttributes<HTMLDivElement>, 'className'>) {
   return (
-    <div className={cn('cursor-pointer', className)} {...props}>
+    <div className="cursor-pointer" {...props}>
       {children}
     </div>
   );
 }
 
 export function PromptInputHoverCardContent({
-  className,
   children,
   ...props
-}: HTMLAttributes<HTMLDivElement> & { align?: 'start' | 'center' | 'end' }) {
+}: Omit<HTMLAttributes<HTMLDivElement>, 'className'> & { align?: 'start' | 'center' | 'end' }) {
   return (
-    <div className={cn('p-2', className)} {...props}>
+    <div className="p-2" {...props}>
       {children}
     </div>
   );

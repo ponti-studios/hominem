@@ -1,39 +1,39 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { ChevronsUpDown } from 'lucide-react';
 import { useState } from 'react';
 
-import { Button } from './button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './collapsible';
 
-const meta = {
-  title: 'Patterns/DataDisplay/Collapsible',
-  component: Collapsible,
-  tags: ['autodocs'],
-} satisfies Meta<typeof Collapsible>;
+function CollapsiblePreview() {
+  const [isOpen, setIsOpen] = useState(false);
 
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const Default: Story = {
-  render: () => {
-    const [isOpen, setIsOpen] = useState(false);
-    return (
-      <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-[350px] space-y-2">
-        <div className="flex items-center justify-between space-x-4 px-4">
-          <h4 className="text-sm font-semibold">@peduarte starred 3 repositories</h4>
-          <CollapsibleTrigger asChild>
-            <Button variant="ghost" size="sm">
-              <ChevronsUpDown className="size-4" />
-              <span className="sr-only">Toggle</span>
-            </Button>
-          </CollapsibleTrigger>
-        </div>
-        <div className="rounded-md border px-4 py-2 font-mono text-sm">@radix-ui/primitives</div>
-        <CollapsibleContent className="space-y-2">
+  return (
+    <div className="w-full max-w-md">
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <CollapsibleTrigger text="@peduarte starred 3 repositories" />
+        <CollapsibleContent>
+          <div className="rounded-md border px-4 py-2 font-mono text-sm">
+            @radix-ui/primitives
+          </div>
           <div className="rounded-md border px-4 py-2 font-mono text-sm">@radix-ui/colors</div>
           <div className="rounded-md border px-4 py-2 font-mono text-sm">@stitches/react</div>
         </CollapsibleContent>
       </Collapsible>
-    );
+    </div>
+  );
+}
+
+const meta = {
+  title: 'Patterns/DataDisplay/Collapsible',
+  component: CollapsiblePreview,
+  tags: ['autodocs'],
+  parameters: {
+    controls: {
+      disable: true,
+    },
   },
-};
+} satisfies Meta<typeof CollapsiblePreview>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {};

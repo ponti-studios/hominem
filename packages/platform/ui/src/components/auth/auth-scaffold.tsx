@@ -4,14 +4,11 @@ interface AuthScaffoldProps {
   children: React.ReactNode;
   title: string;
   helperText?: string;
-  className?: string;
 }
 
-export function AuthScaffold({ children, title, helperText, className }: AuthScaffoldProps) {
+export function AuthScaffold({ children, title, helperText }: AuthScaffoldProps) {
   return (
-    <div
-      className={`min-h-screen flex items-center justify-center bg-base px-4 py-10 ${className ?? ''}`}
-    >
+    <div className="min-h-screen flex items-center justify-center bg-base px-4 py-10">
       <div className="mx-auto flex w-full max-w-sm flex-col items-center text-center">
         <div className="space-y-1">
           <h1 className="heading-2 text-text-primary">{title}</h1>

@@ -1,28 +1,20 @@
 /* oxlint-disable no-unused-vars */
 import { forwardRef, useCallback, useRef, useState } from 'react';
 
-import { LoadingSpinner } from './loading-spinner';
 import { Input } from './input';
+import { LoadingSpinner } from './loading-spinner';
 
 export interface SearchInputProps {
   value?: string;
   onSearchChange: (searchTerm: string) => void;
   placeholder?: string;
   debounceMs?: number;
-  className?: string;
   disabled?: boolean;
 }
 
 export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
   (
-    {
-      value = '',
-      onSearchChange,
-      placeholder = 'Search...',
-      debounceMs = 500,
-      className = '',
-      disabled = false,
-    },
+    { value = '', onSearchChange, placeholder = 'Search...', debounceMs = 500, disabled = false },
     ref,
   ) => {
     const timerIdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -63,7 +55,7 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
     );
 
     return (
-      <div className={`relative ${className}`}>
+      <div className="relative">
         <Input
           ref={ref}
           placeholder={placeholder}

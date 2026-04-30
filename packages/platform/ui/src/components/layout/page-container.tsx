@@ -1,8 +1,5 @@
-import { cn } from '../../lib/utils';
-
 interface PageContainerProps {
   children: React.ReactNode;
-  className?: string;
   /**
    * Use `narrow` only for focused single-column content like forms or detail views.
    * The default (`standard`) matches the shared max-w-5xl content constraint.
@@ -12,14 +9,10 @@ interface PageContainerProps {
   width?: 'narrow' | 'standard';
 }
 
-export function PageContainer({ children, className, width = 'standard' }: PageContainerProps) {
+export function PageContainer({ children, width = 'standard' }: PageContainerProps) {
   return (
     <div
-      className={cn(
-        'center-layout w-full',
-        width === 'narrow' ? 'page-width-sm' : 'page-width-lg',
-        className,
-      )}
+      className={`center-layout w-full ${width === 'narrow' ? 'page-width-sm' : 'page-width-lg'}`}
     >
       {children}
     </div>

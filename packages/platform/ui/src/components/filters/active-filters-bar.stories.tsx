@@ -10,7 +10,6 @@ const meta = {
   argTypes: {
     label: textControl('Optional label shown before the filter chips'),
     filters: hiddenControl,
-    className: hiddenControl,
   },
 } satisfies Meta<typeof ActiveFiltersBar>;
 

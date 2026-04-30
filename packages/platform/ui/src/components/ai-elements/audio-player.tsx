@@ -1,7 +1,6 @@
 import { Pause, Play, SkipBack, SkipForward, Volume2, VolumeX } from 'lucide-react';
 import { useEffect, useRef, useState, type HTMLAttributes } from 'react';
 
-import { cn } from '../../lib/utils';
 import { Button } from '../button';
 
 interface AudioPlayerProps {
@@ -9,7 +8,6 @@ interface AudioPlayerProps {
   audioRef?: React.RefObject<HTMLAudioElement>;
   onTimeUpdate?: (currentTime: number) => void;
   onEnded?: () => void;
-  className?: string;
 }
 
 export function AudioPlayer({
@@ -17,7 +15,6 @@ export function AudioPlayer({
   audioRef: externalRef,
   onTimeUpdate,
   onEnded,
-  className,
   ...props
 }: AudioPlayerProps) {
   const internalRef = useRef<HTMLAudioElement>(null);
@@ -115,7 +112,7 @@ export function AudioPlayer({
   };
 
   return (
-    <div className={cn('flex flex-col gap-2 p-3 rounded-md border', className)} {...props}>
+    <div className="flex flex-col gap-2 rounded-md border p-3" {...props}>
       {src && <audio ref={audioRef} src={src} />}
 
       <div className="flex items-center gap-3">
@@ -167,7 +164,7 @@ interface AudioPlayerProgressProps extends HTMLAttributes<HTMLDivElement> {
 
 export function AudioPlayerProgress({ progress, className, ...props }: AudioPlayerProgressProps) {
   return (
-    <div className={cn('h-1 bg-muted rounded-full overflow-hidden', className)} {...props}>
+    <div className="overflow-hidden rounded-full bg-muted" {...props}>
       <div
         className="h-full bg-primary transition-all"
         style={{ width: `${Math.min(100, Math.max(0, progress * 100))}%` }}
@@ -180,19 +177,9 @@ interface AudioPlayerPlayButtonProps extends React.ButtonHTMLAttributes<HTMLButt
   isPlaying?: boolean;
 }
 
-export function AudioPlayerPlayButton({
-  isPlaying = false,
-  className,
-  ...props
-}: AudioPlayerPlayButtonProps) {
+export function AudioPlayerPlayButton({ isPlaying = false, ...props }: AudioPlayerPlayButtonProps) {
   return (
-    <Button
-      type="button"
-      variant="default"
-      size="icon"
-      className={cn('rounded-full', className)}
-      {...props}
-    >
+    <Button type="button" variant="default" size="icon" className="rounded-full" {...props}>
       {isPlaying ? <Pause className="size-4" /> : <Play className="size-4" />}
     </Button>
   );

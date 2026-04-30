@@ -14,7 +14,6 @@ interface OtpVerificationFormProps {
   onSubmit?: (input: { email: string; otp: string; next: string }) => Promise<void>;
   onResend?: (email: string) => Promise<void>;
   onChangeEmail?: () => void;
-  className?: string;
 }
 
 export function OtpVerificationForm({
@@ -26,7 +25,6 @@ export function OtpVerificationForm({
   onSubmit,
   onResend,
   onChangeEmail,
-  className,
 }: OtpVerificationFormProps) {
   const navigation = useNavigation();
   const resendFetcher = useFetcher<{ error?: string }>();
@@ -144,7 +142,6 @@ export function OtpVerificationForm({
   if (onSubmit) {
     return (
       <form
-        className={className}
         onSubmit={(event) => {
           event.preventDefault();
           setSubmitError(null);
@@ -177,7 +174,7 @@ export function OtpVerificationForm({
   }
 
   return (
-    <Form method="post" action={action} className={className}>
+    <Form method="post" action={action}>
       <input type="hidden" name="email" value={resolvedEmail} />
       <input type="hidden" name="next" value={next} />
       <input type="hidden" name="otp" value={normalizedOtp} />

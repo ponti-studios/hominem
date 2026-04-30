@@ -1,8 +1,6 @@
 import { lazy, Suspense, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 
-import { cn } from '../../lib/utils';
-
 // Lazy load the syntax highlighter component to avoid bundling on initial load
 const LazyCodeBlock = lazy(() => import('./code-block'));
 
@@ -24,10 +22,9 @@ function CodeBlockFallback({ language }: { language: string }) {
 interface MarkdownContentProps {
   content: string | null;
   isStreaming?: boolean;
-  className?: string;
 }
 
-export function MarkdownContent({ content, isStreaming = false, className }: MarkdownContentProps) {
+export function MarkdownContent({ content, isStreaming = false }: MarkdownContentProps) {
   const [copiedCodeBlocks, setCopiedCodeBlocks] = useState<Set<string>>(new Set());
 
   if (content === null) return null;
@@ -49,7 +46,7 @@ export function MarkdownContent({ content, isStreaming = false, className }: Mar
   };
 
   return (
-    <div className={cn('max-w-none', className)}>
+    <div className="max-w-none">
       <ReactMarkdown
         components={{
           code({ className, children }) {

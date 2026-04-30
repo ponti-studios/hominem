@@ -39,7 +39,6 @@ export const Default: Story = {
         options={statusOptions}
         onChange={setValue}
         placeholder="All"
-        className="max-w-50"
       />
     );
   },
@@ -61,7 +60,6 @@ export const WithSelection: Story = {
         options={statusOptions}
         onChange={setValue}
         placeholder="All"
-        className="max-w-50"
       />
     );
   },

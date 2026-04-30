@@ -20,7 +20,6 @@ interface SelectFieldProps extends FieldBaseProps {
 }
 
 function SelectField({
-  className,
   defaultValue,
   disabled,
   error,
@@ -40,7 +39,7 @@ function SelectField({
   const describedBy = error ? errorId : helpText ? descId : undefined;
 
   return (
-    <div className={cn('flex flex-col gap-1.5', className)}>
+    <div className="flex flex-col gap-1.5">
       {label && (
         <label
           htmlFor={id}

@@ -1,10 +1,11 @@
 import { useCallback, type ReactNode } from 'react';
 import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
 
+import t from '~/translations';
+
 import { FullScreenErrorFallback } from './FullScreenErrorFallback';
 import { logError } from './log-error';
 import { createRootFallbackMessage } from './messages';
-import t from '~/translations';
 
 interface Props {
   children: ReactNode;

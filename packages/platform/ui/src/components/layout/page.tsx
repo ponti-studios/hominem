@@ -42,7 +42,12 @@ type ScreenProps = PageProps;
 function Page({ maxWidth = 'lg', padded = true, className, style, ...props }: PageProps) {
   return (
     <main
-      className={cn('center-layout w-full', maxWidthMap[maxWidth], padded && 'px-4 sm:px-6', className)}
+      className={cn(
+        'center-layout w-full',
+        maxWidthMap[maxWidth],
+        padded && 'px-4 sm:px-6',
+        className,
+      )}
       style={style}
       {...props}
     />
@@ -62,7 +67,12 @@ interface ContainerProps extends React.ComponentProps<'div'> {
 function Container({ maxWidth = 'lg', padded = true, className, style, ...props }: ContainerProps) {
   return (
     <div
-      className={cn('center-layout w-full', maxWidthMap[maxWidth], padded && 'px-4 sm:px-6', className)}
+      className={cn(
+        'center-layout w-full',
+        maxWidthMap[maxWidth],
+        padded && 'px-4 sm:px-6',
+        className,
+      )}
       style={style}
       {...props}
     />

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { booleanControl, hiddenControl, textControl } from '../../storybook/controls';
+import { booleanControl, textControl } from '../../storybook/controls';
 import { MarkdownContent } from './markdown-content';
 
 const meta = {
@@ -10,7 +10,6 @@ const meta = {
   argTypes: {
     content: textControl('Markdown content rendered in the preview'),
     isStreaming: booleanControl('Shows the streaming caret at the end of the content', false),
-    className: hiddenControl,
   },
 } satisfies Meta<typeof MarkdownContent>;
 

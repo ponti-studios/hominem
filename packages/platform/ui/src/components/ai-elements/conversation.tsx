@@ -1,62 +1,51 @@
 import { ChevronDown, Download, MessageSquare } from 'lucide-react';
 import { type ReactNode } from 'react';
 
-import { cn } from '../../lib/utils';
 import { Button } from '../button';
 
 interface ConversationProps {
   children: ReactNode;
-  className?: string;
 }
 
-export function Conversation({ children, className }: ConversationProps) {
-  return <div className={cn('flex flex-col', className)}>{children}</div>;
+export function Conversation({ children }: ConversationProps) {
+  return <div className="flex flex-col">{children}</div>;
 }
 
 interface ConversationContentProps {
   children: ReactNode;
-  className?: string;
 }
 
-export function ConversationContent({ children, className }: ConversationContentProps) {
-  return <div className={cn('flex flex-col gap-4', className)}>{children}</div>;
+export function ConversationContent({ children }: ConversationContentProps) {
+  return <div className="flex flex-col gap-4">{children}</div>;
 }
 
 interface ConversationEmptyStateProps {
   icon?: ReactNode;
   title?: string;
   description?: string;
-  className?: string;
 }
 
 export function ConversationEmptyState({
   icon,
   title = 'Start a conversation',
   description = 'Messages will appear here as the conversation progresses.',
-  className,
 }: ConversationEmptyStateProps) {
   return (
-    <div className={cn('flex flex-col items-center justify-center p-8 text-center', className)}>
-      {icon || <MessageSquare className="size-12 mb-4 text-muted-foreground" />}
-      <h3 className="text-lg font-semibold mb-2">{title}</h3>
-      <p className="text-sm text-muted-foreground max-w-sm">{description}</p>
+    <div className="flex flex-col items-center justify-center p-8 text-center">
+      {icon || <MessageSquare className="mb-4 size-12 text-muted-foreground" />}
+      <h3 className="mb-2 text-lg font-semibold">{title}</h3>
+      <p className="max-w-sm text-sm text-muted-foreground">{description}</p>
     </div>
   );
 }
 
 interface ConversationScrollButtonProps {
   onClick?: () => void;
-  className?: string;
 }
 
-export function ConversationScrollButton({ onClick, className }: ConversationScrollButtonProps) {
+export function ConversationScrollButton({ onClick }: ConversationScrollButtonProps) {
   return (
-    <Button
-      variant="outline"
-      size="icon"
-      className={cn('size-8 rounded-full', className)}
-      onClick={onClick}
-    >
+    <Button variant="outline" size="icon" className="size-8 rounded-full" onClick={onClick}>
       <ChevronDown className="size-4" />
     </Button>
   );
@@ -64,10 +53,9 @@ export function ConversationScrollButton({ onClick, className }: ConversationScr
 
 interface ConversationDownloadProps {
   messages: Array<{ role: string; content: string }>;
-  className?: string;
 }
 
-export function ConversationDownload({ messages, className }: ConversationDownloadProps) {
+export function ConversationDownload({ messages }: ConversationDownloadProps) {
   const handleDownload = () => {
     const markdown = messages
       .map((msg) => {
@@ -86,7 +74,7 @@ export function ConversationDownload({ messages, className }: ConversationDownlo
   };
 
   return (
-    <Button variant="ghost" size="sm" className={cn('gap-2', className)} onClick={handleDownload}>
+    <Button variant="ghost" size="sm" className="gap-2" onClick={handleDownload}>
       <Download className="size-4" />
       Export
     </Button>

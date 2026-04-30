@@ -1,7 +1,6 @@
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 
-import { cn } from '../lib/utils';
 import { Button } from './button';
 import { Calendar } from './calendar';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
@@ -10,7 +9,6 @@ interface DatePickerProps {
   value: Date | undefined;
   onSelect: (date: Date | undefined) => void;
   disabled?: boolean | undefined;
-  className?: string | undefined;
   id?: string | undefined;
   placeholder?: string | undefined;
   label?: string | undefined;
@@ -25,7 +23,6 @@ export function DatePicker({
   value,
   onSelect,
   disabled = false,
-  className = 'w-full justify-start text-left font-normal bg-muted border-border placeholder:text-muted-foreground backdrop-blur-sm focus:border-ring focus:ring-2 focus:ring-ring/30 ',
   id = 'date-picker',
   placeholder = 'Pick a date',
   label,
@@ -47,7 +44,7 @@ export function DatePicker({
           <Button
             variant={variant}
             disabled={disabled}
-            className={cn(className, !value && 'text-muted-foreground')}
+            className="w-full justify-start text-left font-normal bg-muted border-border placeholder:text-muted-foreground backdrop-blur-sm focus:border-ring focus:ring-2 focus:ring-ring/30"
             id={id}
           >
             <CalendarIcon className="mr-2 size-4" />

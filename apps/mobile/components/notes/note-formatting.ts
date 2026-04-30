@@ -60,11 +60,7 @@ function wrapSelection(
   };
 }
 
-function toggleLinePrefix(
-  text: string,
-  sel: TextSelection,
-  prefix: string,
-): FormatCommandResult {
+function toggleLinePrefix(text: string, sel: TextSelection, prefix: string): FormatCommandResult {
   const start = lineStart(text, sel.start);
   const hasPrefix = text.slice(start, start + prefix.length) === prefix;
 
@@ -87,11 +83,7 @@ function toggleLinePrefix(
   };
 }
 
-function indentLine(
-  text: string,
-  sel: TextSelection,
-  spaces = '  ',
-): FormatCommandResult {
+function indentLine(text: string, sel: TextSelection, spaces = '  '): FormatCommandResult {
   const start = lineStart(text, sel.start);
   const next = text.slice(0, start) + spaces + text.slice(start);
   return {

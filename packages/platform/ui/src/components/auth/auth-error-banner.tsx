@@ -1,16 +1,12 @@
 interface AuthErrorBannerProps {
   error?: string | null | undefined;
-  className?: string | undefined;
 }
 
-export function AuthErrorBanner({ error, className }: AuthErrorBannerProps) {
+export function AuthErrorBanner({ error }: AuthErrorBannerProps) {
   if (!error) return null;
 
   return (
-    <div
-      className={`p-3 rounded-[6px] bg-muted border border-destructive ${className ?? ''}`}
-      role="alert"
-    >
+    <div className="rounded-[6px] border border-destructive bg-muted p-3" role="alert">
       <span className="text-destructive text-sm font-semibold uppercase">{error}</span>
     </div>
   );

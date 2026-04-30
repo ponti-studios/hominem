@@ -6,6 +6,7 @@ import {
   type ColorToken,
 } from '@hominem/ui/tokens';
 import { useColorScheme } from 'react-native';
+
 import { fontFamiliesNative, fontSizes, fontWeights, lineHeights } from './typography';
 
 export const themeSpacing = {

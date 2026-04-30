@@ -47,7 +47,6 @@ const meta = {
     onSubmit: hiddenControl,
     onError: hiddenControl,
     children: hiddenControl,
-    className: hiddenControl,
   },
 } satisfies Meta<typeof PromptInputPreview>;
 
@@ -61,19 +60,21 @@ function PromptInputPreview({
   ...props
 }: PromptInputStoryArgs) {
   return (
-    <PromptInput {...props} className="max-w-lg border rounded-md p-2">
-      <PromptInputBody>
-        <PromptInputTextarea placeholder={placeholder} disabled={textareaDisabled} />
-      </PromptInputBody>
-      <PromptInputFooter>
-        <PromptInputTools>
-          <PromptInputButton tooltip="Attach file">
-            <Paperclip className="size-4" />
-          </PromptInputButton>
-        </PromptInputTools>
-        <PromptInputSubmit status={submitStatus} />
-      </PromptInputFooter>
-    </PromptInput>
+    <div className="max-w-lg border rounded-md p-2">
+      <PromptInput {...props}>
+        <PromptInputBody>
+          <PromptInputTextarea placeholder={placeholder} disabled={textareaDisabled} />
+        </PromptInputBody>
+        <PromptInputFooter>
+          <PromptInputTools>
+            <PromptInputButton tooltip="Attach file">
+              <Paperclip className="size-4" />
+            </PromptInputButton>
+          </PromptInputTools>
+          <PromptInputSubmit status={submitStatus} />
+        </PromptInputFooter>
+      </PromptInput>
+    </div>
   );
 }
 

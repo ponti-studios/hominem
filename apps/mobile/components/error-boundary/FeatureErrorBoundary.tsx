@@ -58,7 +58,11 @@ function FeatureFallback({
           </Text>
         ) : null}
 
-        <Button label={t.errors.featureFallback.tryAgain} onPress={resetErrorBoundary} variant="secondary" />
+        <Button
+          label={t.errors.featureFallback.tryAgain}
+          onPress={resetErrorBoundary}
+          variant="secondary"
+        />
       </View>
     </View>
   );

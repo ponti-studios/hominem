@@ -12,7 +12,6 @@ interface EmailEntryFormProps {
   error?: string;
   onSubmit?: (input: { email: string; next: string | null }) => Promise<void>;
   onPasskeyClick?: () => void | Promise<void>;
-  className?: string;
 }
 
 export function EmailEntryForm({
@@ -21,7 +20,6 @@ export function EmailEntryForm({
   error,
   onSubmit,
   onPasskeyClick,
-  className,
 }: EmailEntryFormProps) {
   const navigation = useNavigation();
   const [searchParams] = useSearchParams();
@@ -62,7 +60,6 @@ export function EmailEntryForm({
   if (onSubmit) {
     return (
       <form
-        className={className}
         onSubmit={(event) => {
           event.preventDefault();
           const formData = new FormData(event.currentTarget);
@@ -93,7 +90,7 @@ export function EmailEntryForm({
   }
 
   return (
-    <Form method={method} action={action} className={className}>
+    <Form method={method} action={action}>
       {next ? <input type="hidden" name="next" value={next} /> : null}
       {fields}
     </Form>

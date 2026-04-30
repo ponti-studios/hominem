@@ -1,8 +1,8 @@
 import { useApiClient } from '@hominem/rpc/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { chatKeys } from '~/services/notes/query-keys';
 import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
+import { chatKeys } from '~/services/notes/query-keys';
 
 import { getChatActivityAt } from './session-activity';
 import type { ChatWithActivity } from './session-types';

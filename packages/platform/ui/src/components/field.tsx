@@ -17,22 +17,14 @@ interface FieldProps extends FieldBaseProps {
  *   <Input type="email" />
  * </Field>
  */
-function Field({
-  label,
-  helpText,
-  error,
-  required,
-  children,
-  className,
-  id: externalId,
-}: FieldProps) {
+function Field({ label, helpText, error, required, children, id: externalId }: FieldProps) {
   const generatedId = React.useId();
   const id = externalId ?? generatedId;
   const descId = `${id}-desc`;
   const errorId = `${id}-error`;
 
   return (
-    <div className={cn('flex flex-col gap-1.5', className)}>
+    <div className="flex flex-col gap-1.5">
       {label && (
         <label
           htmlFor={id}
