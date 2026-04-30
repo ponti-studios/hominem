@@ -1,5 +1,5 @@
 import { Button, ContextMenu, Host } from '@expo/ui/swift-ui';
-import { parseInboxTimestamp } from '@hominem/chat';
+import { fontFamilies } from '@hominem/ui/tokens';
 import { useRouter } from 'expo-router/build/hooks';
 import React, { memo, useCallback } from 'react';
 import { Alert, Pressable, View } from 'react-native';
@@ -13,7 +13,8 @@ import Reanimated, {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
-import { Text, makeStyles, spacing } from '~/components/theme';
+import { Text, fontFamiliesNative, fontSizes, fontWeights, lineHeights, makeStyles, spacing, theme } from '~/components/theme';
+import AppIcon from '~/components/ui/icon';
 import { useChatArchive } from '~/services/chat/use-chat-archive';
 import { useNoteDelete } from '~/services/notes/use-note-delete';
 import t from '~/translations';
@@ -30,7 +31,9 @@ interface InboxStreamItemProps {
 export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
   const router = useRouter();
   const styles = useStyles();
-  const title = item.title ?? item.preview ?? t.workspace.item.untitled;
+  const primaryText = cleanText(item.title) ?? t.workspace.item.untitled;
+  const kindLabel = item.kind === 'chat' ? 'CHAT' : 'NOTE';
+  const iconName = item.kind === 'chat' ? 'bubble.left' : 'note.text';
 
   // ── Animation shared values ────────────────────────────────────────────────
   const exitProgress = useSharedValue(0);
@@ -87,16 +90,17 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
           <Host style={{ width: '100%' }}>
             <ContextMenu>
               <ContextMenu.Trigger>
-                <Pressable onPress={onPress}>
+                <Pressable
+                  accessibilityLabel={`${primaryText}, ${kindLabel}`}
+                  accessibilityRole="button"
+                  onPress={onPress}
+                  style={({ pressed }) => [styles.pressable, pressed ? styles.pressed : null]}
+                >
                   <View style={styles.row}>
-                    <View style={styles.content}>
-                      <View style={styles.topRow}>
-                        <Text style={styles.title} numberOfLines={1}>
-                          {title}
-                        </Text>
-                        <Text style={styles.date}>{formatTimestamp(item.updatedAt)}</Text>
-                      </View>
-                    </View>
+                    <AppIcon name={iconName} size={18} tintColor={theme.colors['icon-muted']} />
+                    <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
+                      {primaryText}
+                    </Text>
                   </View>
                 </Pressable>
               </ContextMenu.Trigger>
@@ -127,57 +131,44 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
 
 InboxStreamItem.displayName = 'InboxStreamItem';
 
-function formatTimestamp(value: string): string {
-  try {
-    const date = parseInboxTimestamp(value);
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const targetDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    const dayDiff = Math.round((today.getTime() - targetDay.getTime()) / 86400000);
-
-    if (dayDiff === 0) {
-      return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-    }
-    if (dayDiff === 1) {
-      return t.workspace.item.yesterday;
-    }
-    if (dayDiff > 1 && dayDiff < 7) {
-      return date.toLocaleDateString([], { weekday: 'short' });
-    }
-    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-  } catch {
-    return '';
-  }
+function cleanText(value: string | null): string | null {
+  const trimmed = value?.trim();
+  return trimmed && trimmed.length > 0 ? trimmed : null;
 }
 
 const useStyles = makeStyles((theme) => ({
+  pressable: {
+    backgroundColor: theme.colors['bg-surface'],
+    borderColor: theme.colors['border-faint'],
+    borderCurve: 'continuous',
+    borderRadius: theme.borderRadii.icon,
+    borderWidth: 1,
+    marginHorizontal: spacing[4],
+  },
+  pressed: {
+    backgroundColor: theme.colors['bg-elevated'],
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing[3],
-    paddingHorizontal: spacing[4],
-    paddingVertical: spacing[3],
+    columnGap: spacing[3],
+    minHeight: 64,
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[2],
   },
   content: {
     flex: 1,
     gap: spacing[1],
+    justifyContent: 'center',
     minWidth: 0,
-  },
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing[2],
   },
   title: {
     color: theme.colors.foreground,
     flex: 1,
-    fontSize: 15,
-    fontWeight: '600',
-    letterSpacing: -0.2,
-  },
-  date: {
-    color: theme.colors['text-tertiary'],
-    flexShrink: 0,
-    fontSize: 12,
+    fontSize: fontSizes.sm,
+    fontFamily: fontFamiliesNative.primary,
+    letterSpacing: 0,
+    lineHeight: lineHeights.bodySm,
+    fontWeight: fontWeights.semibold,
   },
 }));

@@ -17,11 +17,6 @@ export async function loader({ request }: { request: Request }) {
 }
 
 export default function Component() {
-  // Skip rendering on server
-  if (typeof window === 'undefined') {
-    return <div>Loading...</div>;
-  }
-
   const authClient = useAuthClient();
   const location = useLocation();
   const navigate = useNavigate();
@@ -55,7 +50,7 @@ export default function Component() {
   const resolvedError = callbackError ?? passkeyError ?? sendError ?? undefined;
 
   return (
-    <AuthScaffold title={AUTH_COPY.emailEntry.title} helper={AUTH_COPY.emailEntry.helper}>
+    <AuthScaffold title={AUTH_COPY.emailEntry.title} helperText={AUTH_COPY.emailEntry.helper}>
       <EmailEntryForm
         action="/auth"
         onSubmit={async ({ email }) => {

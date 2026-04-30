@@ -148,8 +148,7 @@ function MobileTabBar({ navItems }: { navItems: NavItem[] }) {
     <nav
       role="navigation"
       aria-label="Main"
-      className="fixed bottom-0 left-0 right-0 z-50 border-t border-border-subtle bg-background/95 supports-backdrop-filter:bg-background/85 supports-backdrop-filter:backdrop-blur-md md:hidden"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      className="pb-safe-area-inset-bottom fixed bottom-0 left-0 right-0 z-50 border-t border-border-subtle bg-background/95 supports-backdrop-filter:bg-background/85 supports-backdrop-filter:backdrop-blur-md md:hidden"
     >
       <ul role="list" className="mx-auto flex h-14 max-w-200 list-none px-2 py-1">
         {navItems.map((item) => (

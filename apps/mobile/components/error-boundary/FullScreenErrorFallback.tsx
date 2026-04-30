@@ -1,6 +1,13 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { useThemeColors } from '~/components/theme';
+import {
+  componentSizes,
+  fontSizes,
+  fontWeights,
+  lineHeights,
+  themeSpacing,
+  useThemeColors,
+} from '~/components/theme';
 import { Button } from '~/components/ui/button';
 import AppIcon from '~/components/ui/icon';
 import t from '~/translations';
@@ -21,7 +28,11 @@ export function FullScreenErrorFallback({
   return (
     <View style={styles.host}>
       <View style={styles.content}>
-        <AppIcon name="exclamationmark.triangle.fill" size={28} tintColor="#FF7B5C" />
+        <AppIcon
+          name="exclamationmark.triangle.fill"
+          size={componentSizes.lg}
+          tintColor="#FF7B5C"
+        />
         <Text style={[styles.title, { color: themeColors.foreground }]}>
           {t.errors.somethingWentWrong}
         </Text>
@@ -43,16 +54,16 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 360,
     alignItems: 'center',
-    gap: 12,
+    gap: themeSpacing.md,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '700',
+    fontSize: fontSizes.title1,
+    fontWeight: fontWeights.bold,
     textAlign: 'center',
   },
   message: {
-    fontSize: 16,
-    lineHeight: 22,
+    fontSize: fontSizes.md,
+    lineHeight: lineHeights.body,
     textAlign: 'center',
   },
 });

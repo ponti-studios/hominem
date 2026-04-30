@@ -2,11 +2,18 @@ import type { SFSymbol } from 'expo-symbols';
 import { StyleSheet, Text, View } from 'react-native';
 import Reanimated, { FadeIn } from 'react-native-reanimated';
 
-import { spacing, useThemeColors } from '../theme';
+import {
+  componentSizes,
+  fontSizes,
+  fontWeights,
+  lineHeights,
+  themeSpacing,
+  useThemeColors,
+} from '../theme';
 import { Button } from './button';
 import AppIcon from './icon';
 
-const DEFAULT_BOTTOM_OFFSET = spacing[7] * 3;
+const DEFAULT_BOTTOM_OFFSET = themeSpacing.xl * 3;
 
 interface EmptyStateProps {
   action?: { label: string; onPress: () => void } | undefined;
@@ -31,7 +38,11 @@ function EmptyState({
       style={[styles.container, { paddingBottom: bottomOffset }]}
     >
       <View style={styles.content}>
-        <AppIcon name={sfSymbol} size={28} tintColor={themeColors['text-secondary']} />
+        <AppIcon
+          name={sfSymbol}
+          size={componentSizes.lg}
+          tintColor={themeColors['text-secondary']}
+        />
         <Text style={[styles.title, { color: themeColors.foreground }]}>{title}</Text>
         {description ? (
           <Text style={[styles.description, { color: themeColors['text-secondary'] }]}>
@@ -56,17 +67,17 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 320,
     alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: spacing[6],
+    gap: themeSpacing.md,
+    paddingHorizontal: themeSpacing.xl,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: fontSizes.lg,
+    fontWeight: fontWeights.semibold,
     textAlign: 'center',
   },
   description: {
-    fontSize: 15,
-    lineHeight: 21,
+    fontSize: fontSizes.subhead,
+    lineHeight: lineHeights.readable,
     textAlign: 'center',
   },
 });

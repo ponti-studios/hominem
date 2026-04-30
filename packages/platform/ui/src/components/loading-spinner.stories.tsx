@@ -13,16 +13,17 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    size: 'md',
+    variant: 'md',
   },
 };
 
 export const Sizes: Story = {
   render: () => (
     <div className="flex items-center gap-4">
-      <LoadingSpinner size="sm" />
-      <LoadingSpinner size="md" />
-      <LoadingSpinner size="lg" />
+      <LoadingSpinner variant="sm" />
+      <LoadingSpinner variant="md" />
+      <LoadingSpinner variant="lg" />
+      <LoadingSpinner variant="xl" />
     </div>
   ),
 };

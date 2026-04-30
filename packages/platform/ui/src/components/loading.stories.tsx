@@ -24,8 +24,6 @@ export const Sizes: Story = {
       <Loading size="md" />
       <Loading size="lg" />
       <Loading size="xl" />
-      <Loading size="2xl" />
-      <Loading size="3xl" />
     </div>
   ),
 };

@@ -28,6 +28,8 @@ export const fontSizes = {
   lg: 18,
   xl: 20,
   headline: 17,
+  title2: 22,
+  title1: 28,
   display: 28,
 } as const;
 
@@ -36,6 +38,19 @@ export const fontWeights = {
   medium: '500',
   semibold: '600',
   bold: '700',
+} as const;
+
+export const lineHeights = {
+  tight: 14,
+  caption: 16,
+  footnote: 18,
+  bodySm: 20,
+  readable: 21,
+  body: 22,
+  bodyLg: 24,
+  title2: 28,
+  title1: 34,
+  display: 44,
 } as const;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -100,56 +115,56 @@ const variantStyles = {
     fontFamily: fontFamiliesNative.primary,
     fontSize: fontSizes.headline,
     fontWeight: fontWeights.semibold,
-    lineHeight: 22,
+    lineHeight: lineHeights.body,
     letterSpacing: -0.1,
   },
   body: {
     fontFamily: fontFamiliesNative.primary,
     fontSize: fontSizes.body,
     fontWeight: fontWeights.regular,
-    lineHeight: 24,
+    lineHeight: lineHeights.bodyLg,
     letterSpacing: 0,
   },
   callout: {
     fontFamily: fontFamiliesNative.primary,
     fontSize: fontSizes.md,
     fontWeight: fontWeights.regular,
-    lineHeight: 22,
+    lineHeight: lineHeights.body,
     letterSpacing: -0.1,
   },
   subhead: {
     fontFamily: fontFamiliesNative.primary,
     fontSize: fontSizes.subhead,
     fontWeight: fontWeights.regular,
-    lineHeight: 20,
+    lineHeight: lineHeights.bodySm,
     letterSpacing: 0,
   },
   footnote: {
     fontFamily: fontFamiliesNative.primary,
     fontSize: fontSizes.footnote,
     fontWeight: fontWeights.regular,
-    lineHeight: 18,
+    lineHeight: lineHeights.footnote,
     letterSpacing: 0,
   },
   caption1: {
     fontFamily: fontFamiliesNative.primary,
     fontSize: fontSizes.caption1,
     fontWeight: fontWeights.regular,
-    lineHeight: 16,
+    lineHeight: lineHeights.caption,
     letterSpacing: 0,
   },
   caption2: {
     fontFamily: fontFamiliesNative.primary,
     fontSize: fontSizes.caption2,
     fontWeight: fontWeights.medium,
-    lineHeight: 14,
+    lineHeight: lineHeights.tight,
     letterSpacing: 0.2,
   },
   mono: {
     fontFamily: fontFamiliesNative.mono,
     fontSize: fontSizes.caption1,
     fontWeight: fontWeights.regular,
-    lineHeight: 16,
+    lineHeight: lineHeights.caption,
     letterSpacing: 0,
   },
   // ── Editorial ────────────────────────────────────────────────────────────────
@@ -158,14 +173,14 @@ const variantStyles = {
     fontSize: 40,
     fontWeight: fontWeights.bold,
     letterSpacing: -1.2,
-    lineHeight: 44,
+    lineHeight: lineHeights.display,
   },
   overline: {
     fontFamily: fontFamiliesNative.primary,
     fontSize: 11,
     fontWeight: fontWeights.medium,
     letterSpacing: 0.8,
-    lineHeight: 16,
+    lineHeight: lineHeights.caption,
     textTransform: 'uppercase' as const,
   },
 } satisfies Record<string, TextStyle>;

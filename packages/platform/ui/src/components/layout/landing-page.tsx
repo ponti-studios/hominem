@@ -70,8 +70,7 @@ export function LandingPage({
         </p>
 
         <h1
-          className="mb-6 max-w-[14ch] font-semibold leading-[1.08] tracking-[-0.04em] text-text-primary"
-          style={{ fontSize: 'clamp(2.25rem, 5vw, 4.5rem)' }}
+          className="mb-6 max-w-[14ch] text-[clamp(2.25rem,5vw,4.5rem)] font-semibold leading-[1.08] tracking-[-0.04em] text-text-primary"
         >
           {headline}
         </h1>
@@ -155,8 +154,7 @@ export function LandingPage({
       {/* Final CTA */}
       <Section className="pb-32 md:pb-40">
         <h2
-          className="mb-8 max-w-[18ch] font-semibold leading-[1.08] tracking-[-0.04em] text-text-primary"
-          style={{ fontSize: 'clamp(1.75rem, 3.5vw, 3rem)' }}
+          className="mb-8 max-w-[18ch] text-[clamp(1.75rem,3.5vw,3rem)] font-semibold leading-[1.08] tracking-[-0.04em] text-text-primary"
         >
           Ready to start?
         </h2>

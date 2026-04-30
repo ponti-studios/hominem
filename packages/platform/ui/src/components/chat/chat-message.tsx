@@ -31,7 +31,6 @@ import { copyToClipboard } from '../../lib/clipboard';
 import { playEnterRow, reducedMotion } from '../../lib/gsap/sequences';
 import { useMessageEdit } from '../../lib/hooks/use-message-edit';
 import { cn } from '../../lib/utils';
-import { contentWidths } from '../../tokens';
 import type { ExtendedMessage } from '../../types/chat';
 import { MarkdownContent } from '../ai-elements/markdown-content';
 import { Reasoning } from '../ai-elements/reasoning';
@@ -91,13 +90,6 @@ function MessageContent({
   width?: 'transcript' | 'bubble' | 'full';
   style?: CSSProperties;
 } & HTMLAttributes<HTMLDivElement>) {
-  const maxWidth =
-    width === 'bubble'
-      ? contentWidths.bubble
-      : width === 'transcript'
-        ? contentWidths.transcript
-        : undefined;
-
   return (
     <div
       className={cn(
@@ -105,9 +97,11 @@ function MessageContent({
         align === 'end' && 'items-end text-right',
         align === 'center' && 'items-center text-center',
         width !== 'full' && 'w-full',
+        width === 'bubble' && 'content-width-bubble',
+        width === 'transcript' && 'content-width-transcript',
         className,
       )}
-      style={{ ...style, ...(maxWidth ? { maxWidth } : undefined) }}
+      style={style}
       {...props}
     >
       {children}

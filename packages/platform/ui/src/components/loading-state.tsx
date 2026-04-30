@@ -89,7 +89,7 @@ export function LoadingState({
             className={`fixed inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm ${className}`}
           >
             <div className="flex flex-col items-center gap-3">
-              <Loader2 className="size-8 animate-spin text-primary" />
+              <Loader2 className="loading-size-lg animate-spin text-primary" />
               {message && <p className="text-sm text-text-secondary">{message}</p>}
             </div>
           </div>
@@ -98,7 +98,7 @@ export function LoadingState({
       case 'inline':
         return (
           <div className={`flex items-center gap-2 py-4 ${className}`}>
-            <Loader2 className="size-5 animate-spin text-primary" />
+            <Loader2 className="loading-size-sm animate-spin text-primary" />
             {message && <span className="text-sm text-text-secondary">{message}</span>}
           </div>
         );

@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: theme.spacing.ml_24,
+    paddingHorizontal: theme.spacing.xl,
   },
   sideButton: {
     alignItems: 'center',
@@ -201,18 +201,18 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: theme.spacing.m_16,
-    paddingHorizontal: theme.spacing.ml_24,
+    gap: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.xl,
   },
   permissionButton: {
     borderWidth: 1,
     borderColor: theme.colors['border-default'],
     borderRadius: theme.borderRadii.md,
-    paddingHorizontal: theme.spacing.m_16,
-    paddingVertical: theme.spacing.sm_8,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.sm,
   },
   permissionCancel: {
-    paddingHorizontal: theme.spacing.m_16,
-    paddingVertical: theme.spacing.sm_8,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.sm,
   },
 });

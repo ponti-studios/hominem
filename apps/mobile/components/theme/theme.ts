@@ -6,16 +6,13 @@ import {
   type ColorToken,
 } from '@hominem/ui/tokens';
 import { useColorScheme } from 'react-native';
+import { fontFamiliesNative, fontSizes, fontWeights, lineHeights } from './typography';
 
-const spacing = {
-  xs_4: tokenSpacing[1],
-  sm_8: tokenSpacing[2],
-  sm_12: tokenSpacing[3],
-  m_16: tokenSpacing[4],
-  ml_24: tokenSpacing[5],
-  l_32: tokenSpacing[6],
-  xl_48: tokenSpacing[7],
-  xl_64: tokenSpacing[8],
+export const themeSpacing = {
+  sm: tokenSpacing[2],
+  md: tokenSpacing[3],
+  lg: tokenSpacing[4],
+  xl: tokenSpacing[6],
 } as const;
 
 const borderRadii = {
@@ -25,22 +22,42 @@ const borderRadii = {
   icon: radii.icon,
 } as const;
 
+export const componentSizes = {
+  sm: 16,
+  md: 24,
+  lg: 32,
+  xl: 44,
+} as const;
+
+export const typography = {
+  families: fontFamiliesNative,
+  sizes: fontSizes,
+  weights: fontWeights,
+  lineHeights,
+} as const;
+
 export const darkTheme = {
   colors: darkColors,
-  spacing,
+  spacing: themeSpacing,
   borderRadii,
+  componentSizes,
+  typography,
 } as const;
 
 export const lightTheme = {
   colors: lightColors,
-  spacing,
+  spacing: themeSpacing,
   borderRadii,
+  componentSizes,
+  typography,
 } as const;
 
 export type Theme = {
   colors: Record<ColorToken, string>;
-  spacing: typeof spacing;
+  spacing: typeof themeSpacing;
   borderRadii: typeof borderRadii;
+  componentSizes: typeof componentSizes;
+  typography: typeof typography;
 };
 
 export function useThemeColors() {

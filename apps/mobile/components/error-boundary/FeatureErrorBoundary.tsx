@@ -3,7 +3,15 @@ import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { logError } from '~/components/error-boundary/log-error';
-import { useThemeColors } from '~/components/theme';
+import {
+  componentSizes,
+  fontFamiliesNative,
+  fontSizes,
+  fontWeights,
+  lineHeights,
+  themeSpacing,
+  useThemeColors,
+} from '~/components/theme';
 import { Button } from '~/components/ui/button';
 import AppIcon from '~/components/ui/icon';
 import t from '~/translations';
@@ -34,7 +42,11 @@ function FeatureFallback({
   return (
     <View style={styles.host}>
       <View style={styles.content}>
-        <AppIcon name="exclamationmark.triangle.fill" size={28} tintColor="#FF7B5C" />
+        <AppIcon
+          name="exclamationmark.triangle.fill"
+          size={componentSizes.lg}
+          tintColor="#FF7B5C"
+        />
         <Text style={[styles.title, { color: themeColors.foreground }]}>Something went wrong</Text>
         <Text style={[styles.message, { color: themeColors['text-secondary'] }]}>
           {createFeatureMessage(featureName)}
@@ -91,22 +103,22 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 360,
     alignItems: 'center',
-    gap: 12,
+    gap: themeSpacing.md,
   },
   title: {
-    fontSize: 22,
-    fontWeight: '700',
+    fontSize: fontSizes.title2,
+    fontWeight: fontWeights.bold,
     textAlign: 'center',
   },
   message: {
-    fontSize: 16,
-    lineHeight: 22,
+    fontSize: fontSizes.md,
+    lineHeight: lineHeights.body,
     textAlign: 'center',
   },
   debugMessage: {
-    fontSize: 12,
-    lineHeight: 18,
-    fontFamily: 'Menlo',
+    fontSize: fontSizes.caption1,
+    lineHeight: lineHeights.footnote,
+    fontFamily: fontFamiliesNative.mono,
     textAlign: 'center',
   },
 });

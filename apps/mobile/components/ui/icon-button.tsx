@@ -9,7 +9,7 @@ import type {
 } from 'react-native';
 import { Pressable, StyleSheet } from 'react-native';
 
-import { useThemeColors } from '~/components/theme';
+import { componentSizes, themeSpacing, useThemeColors } from '~/components/theme';
 
 import AppIcon from './icon';
 
@@ -30,12 +30,12 @@ export function AppIconButton({
   accessibilityRole = 'button',
   disabled = false,
   disabledOpacity = 0.35,
-  hitSlop = 8,
+  hitSlop = themeSpacing.sm,
   icon,
-  iconSize = 18,
+  iconSize = componentSizes.md,
   onPress,
   pressedOpacity = 0.65,
-  size = 32,
+  size = componentSizes.lg,
   style,
   tintColor,
   ...rest

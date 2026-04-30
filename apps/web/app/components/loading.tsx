@@ -3,7 +3,7 @@ import { Loader2 } from 'lucide-react';
 
 interface LoadingProps {
   text?: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
   fullScreen?: boolean;
 }
@@ -14,16 +14,10 @@ function Loading({
   className,
   fullScreen = false,
 }: LoadingProps) {
-  const sizeClasses = {
-    sm: 'size-4',
-    md: 'size-8',
-    lg: 'size-12',
-  };
-
   const content = (
     <div className={cn('flex items-center justify-center', className)}>
       <div className="flex items-center space-x-3">
-        <Loader2 className={cn(sizeClasses[size])} />
+        <Loader2 className={cn(`loading-size-${size}`)} />
         {text && <span className="text-sm text-muted-foreground">{text}</span>}
       </div>
     </div>
@@ -43,7 +37,7 @@ function Loading({
 export function LoadingScreen() {
   return (
     <div className="mx-auto flex w-full items-center justify-center py-8">
-      <Loading size="lg" fullScreen={false} />
+      <Loading size="xl" fullScreen={false} />
     </div>
   );
 }

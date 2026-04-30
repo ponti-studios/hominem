@@ -15,7 +15,11 @@ interface PageContainerProps {
 export function PageContainer({ children, className, width = 'standard' }: PageContainerProps) {
   return (
     <div
-      className={cn('w-full', width === 'narrow' ? 'page-width-sm' : 'page-width-lg', className)}
+      className={cn(
+        'center-layout w-full',
+        width === 'narrow' ? 'page-width-sm' : 'page-width-lg',
+        className,
+      )}
     >
       {children}
     </div>

@@ -1,6 +1,7 @@
 /* oxlint-disable no-unused-vars */
 import { forwardRef, useCallback, useRef, useState } from 'react';
 
+import { LoadingSpinner } from './loading-spinner';
 import { Input } from './input';
 
 export interface SearchInputProps {
@@ -73,7 +74,7 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
         />
         {isDebouncing && (
           <div className="absolute right-2 top-2.5">
-            <div className="size-4 border-2 border-foreground/30 border-t-foreground/80 animate-spin" />
+            <LoadingSpinner variant="sm" />
           </div>
         )}
       </div>

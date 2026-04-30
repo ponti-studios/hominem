@@ -6,8 +6,11 @@ import {
   Text,
   TextStyle,
   useColorScheme,
+  ViewStyle,
   type PressableStateCallbackType,
 } from 'react-native';
+
+import { componentSizes, fontSizes, fontWeights, radii, themeSpacing } from '~/components/theme';
 
 interface ButtonProps {
   label: string;
@@ -31,16 +34,16 @@ export function Button({
 
   const resolvedStyles = useMemo(() => {
     const baseStyle = {
-      paddingVertical: 12,
-      paddingHorizontal: 16,
-      borderRadius: 10,
+      paddingVertical: themeSpacing.md,
+      paddingHorizontal: themeSpacing.lg,
+      borderRadius: radii.md,
       alignItems: 'center' as const,
       justifyContent: 'center' as const,
       alignSelf: 'stretch' as const,
-      height: 44,
+      height: componentSizes.xl,
     };
 
-    const variantStyles: Record<string, StyleProp<TextStyle>> = {
+    const variantStyles: Record<string, StyleProp<ViewStyle>> = {
       primary: {
         backgroundColor: isDark ? '#FFFFFF' : '#000000',
         borderWidth: 0,
@@ -56,8 +59,7 @@ export function Button({
       },
       'destructive-text': {
         backgroundColor: 'transparent',
-        borderRadius: 10,
-        fontWeight: '300',
+        borderRadius: radii.md,
       },
     };
 
@@ -102,11 +104,11 @@ export function Button({
 
 const styles = StyleSheet.create({
   text: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: fontSizes.md,
+    fontWeight: fontWeights.semibold,
   },
   textSm: {
-    fontSize: 13,
+    fontSize: fontSizes.footnote,
   },
   pressed: {
     opacity: 0.7,

@@ -1,6 +1,6 @@
 import { FlashList, type FlashListRef, type ListRenderItem } from '@shopify/flash-list';
 import React, { memo, useCallback, type RefObject } from 'react';
-import { Pressable, StyleSheet, View, type RefreshControlProps } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View, type RefreshControlProps } from 'react-native';
 
 import { Text, makeStyles, spacing } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
@@ -21,7 +21,7 @@ const keyExtractor = (item: InboxStreamItemModel) => `${item.kind}:${item.id}`;
 
 const InboxStreamDivider = memo(() => {
   const styles = useStreamStyles();
-  return <View style={styles.divider} />;
+  return <View style={styles.divider} pointerEvents="none" />;
 });
 
 InboxStreamDivider.displayName = 'InboxStreamDivider';
@@ -83,15 +83,17 @@ export const InboxStream = ({
 
   if (items.length === 0) {
     return (
-      <View
-        style={[
+      <ScrollView
+        contentContainerStyle={[
           styles.emptyWrap,
-          contentPaddingBottom != null ? { marginBottom: contentPaddingBottom } : null,
+          contentPaddingBottom != null ? { paddingBottom: contentPaddingBottom } : null,
         ]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.empty}>
+        <View style={styles.emptyCard}>
           <View style={styles.emptyIcon}>
-            <AppIcon name="sparkles" size={24} tintColor={styles.emptyIconSymbol.color} />
+            <AppIcon name="sparkles" size={26} tintColor={styles.emptyIconSymbol.color} />
           </View>
           <Text variant="title2" color="foreground" style={styles.emptyTitle}>
             {t.workspace.empty.title}
@@ -101,14 +103,9 @@ export const InboxStream = ({
           </Text>
 
           <View style={styles.samplePanel}>
-            <View style={styles.sampleHeader}>
-              <Text variant="caption1" color="text-tertiary" style={styles.sampleLabel}>
-                {t.workspace.empty.exampleWorkspace}
-              </Text>
-              <Text variant="caption1" color="text-tertiary">
-                {t.workspace.empty.preview}
-              </Text>
-            </View>
+            <Text variant="caption1" color="text-tertiary" style={styles.sampleLabel}>
+              {t.workspace.empty.exampleWorkspace}
+            </Text>
             <View style={styles.sampleList}>
               {SAMPLE_ITEMS.map((item) => (
                 <View key={item.title} style={styles.sampleRow}>
@@ -152,11 +149,12 @@ export const InboxStream = ({
                     {starter.prompt}
                   </Text>
                 </View>
+                <AppIcon name="chevron.right" size={13} tintColor={styles.starterChevron.color} />
               </Pressable>
             ))}
           </View>
         </View>
-      </View>
+      </ScrollView>
     );
   }
 
@@ -185,13 +183,9 @@ export const InboxStream = ({
 const useStreamStyles = makeStyles((theme) => ({
   container: {
     flex: 1,
-    paddingTop: spacing[3],
   },
   divider: {
-    height: StyleSheet.hairlineWidth,
-    marginLeft: spacing[3],
-    marginRight: spacing[3],
-    backgroundColor: theme.colors['border-subtle'],
+    height: spacing[2],
   },
   sectionShell: {
     backgroundColor: theme.colors['bg-base'],
@@ -199,14 +193,18 @@ const useStreamStyles = makeStyles((theme) => ({
     overflow: 'hidden',
   },
   emptyWrap: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: 'center',
-    marginBottom: spacing[8],
     marginHorizontal: spacing[4],
+    paddingVertical: spacing[4],
   },
-  empty: {
+  emptyCard: {
     alignItems: 'center',
-    backgroundColor: theme.colors['bg-base'],
+    backgroundColor: theme.colors['bg-surface'],
+    borderColor: theme.colors['border-faint'],
+    borderCurve: 'continuous',
+    borderRadius: 20,
+    borderWidth: 1,
     gap: spacing[3],
     paddingHorizontal: spacing[4],
     paddingVertical: spacing[5],
@@ -233,50 +231,45 @@ const useStreamStyles = makeStyles((theme) => ({
     textAlign: 'center',
   },
   samplePanel: {
-    backgroundColor: theme.colors['bg-surface'],
+    backgroundColor: theme.colors['bg-base'],
     borderColor: theme.colors['border-faint'],
     borderCurve: 'continuous',
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
     marginTop: spacing[3],
     padding: spacing[3],
     rowGap: spacing[2],
     width: '100%',
   },
-  sampleHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing[1],
-  },
   sampleLabel: {
     fontWeight: '600',
+    paddingHorizontal: spacing[1],
   },
   sampleList: {
     rowGap: spacing[1],
   },
   sampleRow: {
     alignItems: 'center',
-    backgroundColor: theme.colors.background,
+    backgroundColor: theme.colors['bg-surface'],
     borderColor: theme.colors['border-faint'],
     borderCurve: 'continuous',
-    borderRadius: 10,
+    borderRadius: 12,
     borderWidth: 1,
     columnGap: spacing[3],
     flexDirection: 'row',
-    minHeight: 56,
+    minHeight: 52,
     paddingHorizontal: spacing[3],
   },
   sampleIcon: {
     alignItems: 'center',
-    backgroundColor: theme.colors.muted,
+    backgroundColor: theme.colors['bg-elevated'],
     borderRadius: 9,
     height: 34,
     justifyContent: 'center',
     width: 34,
   },
   sampleIconSymbol: {
-    color: theme.colors['text-secondary'],
+    color: theme.colors['icon-primary'],
   },
   sampleText: {
     flex: 1,
@@ -292,11 +285,11 @@ const useStreamStyles = makeStyles((theme) => ({
     backgroundColor: theme.colors['bg-surface'],
     borderColor: theme.colors['border-faint'],
     borderCurve: 'continuous',
-    borderRadius: 10,
+    borderRadius: 14,
     borderWidth: 1,
     columnGap: spacing[3],
     flexDirection: 'row',
-    minHeight: 62,
+    minHeight: 64,
     paddingHorizontal: spacing[3],
   },
   starterPressed: {
@@ -317,14 +310,17 @@ const useStreamStyles = makeStyles((theme) => ({
     flex: 1,
     rowGap: 2,
   },
+  starterChevron: {
+    color: theme.colors['text-tertiary'],
+  },
 }));
 
 const staticStyles = StyleSheet.create({
   listContent: {
-    paddingTop: 0,
-    paddingBottom: spacing[8],
+    paddingTop: spacing[1],
+    paddingBottom: spacing[4],
   },
   sectionFooter: {
-    height: 2,
+    height: spacing[4],
   },
 });

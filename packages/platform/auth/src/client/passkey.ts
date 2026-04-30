@@ -10,6 +10,14 @@ type Passkey = {
   createdAt?: string | Date | null;
 };
 
+function getPasskeySupport(): boolean {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  return Boolean(window.PublicKeyCredential && window.navigator?.webdriver !== true);
+}
+
 type AuthResult<TData = unknown> = {
   data?: TData | null;
   error?: {
@@ -42,8 +50,12 @@ export function usePasskeys(options: UsePasskeysOptions = {}): UsePasskeysResult
     null,
   );
   const [isPasskeysLoading, setIsPasskeysLoading] = useState(Boolean(options.enabled));
-  const isSupported = Boolean(window?.PublicKeyCredential && window?.navigator?.webdriver !== true);
+  const [isSupported, setIsSupported] = useState(false);
   const shouldLoadPasskeys = options.enabled ?? false;
+
+  useEffect(() => {
+    setIsSupported(getPasskeySupport());
+  }, []);
 
   const fetchPasskeys = useCallback(
     async (force = false) => {

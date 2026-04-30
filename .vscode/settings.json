@@ -2,6 +2,7 @@
   "editor.insertSpaces": true,
   "editor.tabSize": 2,
   "editor.detectIndentation": false,
+  "css.customData": [".vscode/tailwind.custom-data.json"],
   "cSpell.words": ["oxfmt", "oxlint", "posthog", "pressable", "pnpm"],
   "js/ts.tsdk.path": "node_modules/typescript/lib"
 }

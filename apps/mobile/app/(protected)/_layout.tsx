@@ -21,7 +21,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: theme.spacing.m_16,
+    gap: theme.spacing.lg,
   },
   unlockButtonWrap: {
     minWidth: 160,

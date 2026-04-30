@@ -3,7 +3,7 @@ import { forwardRef, type HTMLAttributes } from 'react';
 import { cn } from '../lib/utils';
 import { Loading } from './loading';
 
-type LoadingSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
+type LoadingSize = 'sm' | 'md' | 'lg' | 'xl';
 
 type ListProps = HTMLAttributes<HTMLUListElement> & {
   isLoading?: boolean;

@@ -27,11 +27,6 @@ export async function loader({ request }: { request: Request }) {
 }
 
 export default function Component() {
-  // Skip rendering on server
-  if (typeof window === 'undefined') {
-    return <div>Loading...</div>;
-  }
-
   const authClient = useAuthClient();
   const { email: loaderEmail } = useLoaderData<{ email: string }>();
   const location = useLocation();
@@ -71,7 +66,7 @@ export default function Component() {
   return (
     <AuthScaffold
       title={AUTH_COPY.otpVerification.title}
-      helper={AUTH_COPY.otpVerification.helper(maskEmail(loaderEmail))}
+      helperText={AUTH_COPY.otpVerification.helper(maskEmail(loaderEmail))}
     >
       <OtpVerificationForm
         action={`/auth/verify${location.search}`}

@@ -48,8 +48,8 @@ interface CenterProps extends React.ComponentProps<'div'> {
 function Center({ as: Tag = 'div', maxWidth, className, style, ...props }: CenterProps) {
   return (
     <Tag
-      className={cn('w-full', maxWidth && widthMap[maxWidth], className)}
-      style={{ marginInline: 'auto', ...style }}
+      className={cn('center-layout w-full', maxWidth && widthMap[maxWidth], className)}
+      style={style}
       {...props}
     />
   );
