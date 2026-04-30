@@ -126,7 +126,6 @@ const preview: Preview = {
       createElement(
         'div',
         {
-          className: 'p-8',
           style: {
             backgroundColor: 'rgba(17, 17, 19, 1)',
             colorScheme: 'dark' as const,
