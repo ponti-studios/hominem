@@ -1,10 +1,11 @@
 id: extract-shared-mobile-style-primitives
 title: Thoroughly refactor shared design-system primitives
-status: active
+status: done
 goalId: deduplicate-mobile-styles-while-preserving-design-coherence
 tags:
   - mobile
   - web
   - design-system
 createdAt: 2026-04-30T18:00:05.768Z
-updatedAt: 2026-04-30T18:44:00Z
+updatedAt: 2026-04-30T21:30:37.351Z
+doneAt: 2026-04-30T21:30:37.351Z

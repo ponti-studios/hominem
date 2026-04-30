@@ -1,6 +1,6 @@
 id: refactor-shared-mobile-screen-styles
 title: Refactor shared style token consumption
-status: active
+status: archived
 goalId: deduplicate-mobile-styles-while-preserving-design-coherence
 epicId: extract-shared-mobile-style-primitives
 tags:
@@ -8,7 +8,7 @@ tags:
   - web
   - design-system
 createdAt: 2026-04-30T18:00:08.542Z
-updatedAt: 2026-04-30T19:30:00Z
+updatedAt: 2026-04-30T21:30:32.915Z
 checklist:
   - id: clarify-token-scope-and-acceptance-criteria
     title: Clarify token scope and acceptance criteria
@@ -26,3 +26,4 @@ checklist:
     title: Capture decisions and follow-ups
     done: true
     completedAt: 2026-04-30T18:15:45.319Z
+doneAt: 2026-04-30T21:30:32.915Z

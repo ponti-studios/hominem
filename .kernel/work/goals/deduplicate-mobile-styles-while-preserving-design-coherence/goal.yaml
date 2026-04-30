@@ -1,9 +1,10 @@
 id: deduplicate-mobile-styles-while-preserving-design-coherence
 title: Thoroughly refactor the cross-platform design system
-status: active
+status: done
 tags:
   - mobile
   - web
   - design-system
 createdAt: 2026-04-30T17:58:27.289Z
-updatedAt: 2026-04-30T18:44:00Z
+updatedAt: 2026-04-30T21:30:39.890Z
+doneAt: 2026-04-30T21:30:39.890Z
