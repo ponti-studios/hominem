@@ -15,7 +15,7 @@ import {
   type ChatRenderIcon,
   type ChatServices,
 } from '~/components/chat';
-import { ChatInput } from '~/components/chat/ChatInput';
+import { ChatComposer } from '~/components/chat/ChatComposer';
 import { useTTS } from '~/components/media/use-tts';
 import { useThemeColors } from '~/components/theme';
 import { EmptyState } from '~/components/ui';
@@ -205,7 +205,7 @@ export default function ChatDetailScreen() {
           }}
         />
       </View>
-      <ChatInput chatId={chatId} initialMessage={initialMessage} />
+      <ChatComposer chatId={chatId} initialMessage={initialMessage} />
     </KeyboardAvoidingView>
   );
 }

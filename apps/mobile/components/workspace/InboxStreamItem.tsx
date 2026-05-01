@@ -43,7 +43,6 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
   const kindLabel = item.kind === 'chat' ? 'CHAT' : 'NOTE';
   const iconName = item.kind === 'chat' ? 'bubble.left' : 'note.text';
 
-  // ── Animation shared values ────────────────────────────────────────────────
   const exitProgress = useSharedValue(0);
 
   const animateExit = useCallback(
@@ -79,14 +78,11 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
     animateExit(archiveChat);
   }, [animateExit, archiveChat]);
 
-  // ── Animated styles ────────────────────────────────────────────────────────
-  // Merging entering + exit onto one wrapper drops a layout node per row.
   const exitStyle = useAnimatedStyle(() => ({
     opacity: interpolate(exitProgress.value, [0, 0.5, 1], [1, 0.6, 0]),
     transform: [{ translateX: interpolate(exitProgress.value, [0, 1], [0, 40]) }],
   }));
 
-  // ── Handlers ──────────────────────────────────────────────────────────────
   const onPress = useCallback(() => {
     router.push(item.route);
   }, [item.route, router]);

@@ -13,6 +13,11 @@
     opacity: 1 !important;
     transform: none !important;
   }
+
+  .animate-loading-orbit-cw,
+  .animate-loading-orbit-ccw {
+    animation: none !important;
+  }
 }
 
 @keyframes void-enter {
@@ -225,6 +230,26 @@
   animation-delay: 480ms;
 }
 
+@keyframes loading-orbit-cw {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes loading-orbit-ccw {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+.animate-loading-orbit-cw {
+  animation: loading-orbit-cw 1.35s linear infinite;
+}
+
+.animate-loading-orbit-ccw {
+  animation: loading-orbit-ccw 1.95s linear infinite;
+}
+
 .data-\[state\=open\]\:animate-in {
   animation: void-enter 150ms cubic-bezier(0, 0, 0.2, 1) both;
 }
@@ -338,10 +363,6 @@
 
 .fade-out {
   animation: void-exit 120ms cubic-bezier(0.4, 0, 1, 1) both;
-}
-
-.animate-spin {
-  animation: void-breezy-progress 1.2s linear infinite;
 }
 
 .note-picker-panel {

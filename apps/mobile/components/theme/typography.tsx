@@ -8,8 +8,6 @@ import {
   type TextStyle,
 } from 'react-native';
 
-// ── Font Tokens ───────────────────────────────────────────────────────────────
-
 export const fontFamiliesNative = {
   primary: 'System',
   mono: 'Menlo',
@@ -53,8 +51,6 @@ export const lineHeights = {
   display: 44,
 } as const;
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-
 export type AppleTextVariant =
   | 'largeTitle'
   | 'title1'
@@ -79,8 +75,6 @@ export type AppleTextVariant =
 export type EditorialTextVariant = 'display' | 'overline';
 
 export type TextVariant = AppleTextVariant | EditorialTextVariant;
-
-// ── Text Component ────────────────────────────────────────────────────────────
 
 interface TextProps extends RNTextProps {
   color?: ColorToken | undefined;
@@ -167,7 +161,6 @@ const variantStyles = {
     lineHeight: lineHeights.caption,
     letterSpacing: 0,
   },
-  // ── Editorial ────────────────────────────────────────────────────────────────
   display: {
     fontFamily: fontFamiliesNative.primary,
     fontSize: 40,

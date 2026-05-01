@@ -1,8 +1,8 @@
-import { ChevronDown, ChevronRight, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { useState, type HTMLAttributes, type ReactNode } from 'react';
 
 import { cn } from '../../lib/utils';
-import { Button } from '../button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../collapsible';
 
 interface ReasoningProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
@@ -19,24 +19,16 @@ export function Reasoning({
 
   return (
     <div className={cn('rounded-md border bg-muted/50 px-3', className)} {...props}>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="flex w-full items-center justify-between py-2 text-muted-foreground hover:text-foreground"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <div className="flex items-center gap-2">
-          <Sparkles className="size-4" />
-          <span className="text-sm font-medium">AI Thinking</span>
-        </div>
-        {isOpen ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
-      </Button>
-
-      {isOpen && (
-        <div className="px-3 pb-3">
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <CollapsibleTrigger
+          icon={<Sparkles className="size-4" />}
+          text="AI Thinking"
+          className="gap-2 border-transparent bg-transparent px-0 py-2 text-muted-foreground hover:bg-transparent hover:text-foreground"
+        />
+        <CollapsibleContent className="px-0 pb-3 pt-0">
           <div className="text-sm whitespace-pre-wrap leading-relaxed opacity-80">{children}</div>
-        </div>
-      )}
+        </CollapsibleContent>
+      </Collapsible>
     </div>
   );
 }

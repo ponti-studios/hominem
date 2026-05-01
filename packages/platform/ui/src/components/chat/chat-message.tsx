@@ -103,27 +103,6 @@ function MessageContent({
   );
 }
 
-function MessageAnnotations({
-  align = 'start',
-  children,
-  ...props
-}: {
-  align?: 'start' | 'end';
-  children: ReactNode;
-} & Omit<HTMLAttributes<HTMLDivElement>, 'className'>) {
-  return (
-    <div
-      className={cn(
-        'mt-2 flex flex-wrap gap-1 body-4 text-text-tertiary/70 opacity-0 transition-opacity group-hover:opacity-100',
-        align === 'end' ? 'justify-end' : 'justify-start',
-      )}
-      {...props}
-    >
-      {children}
-    </div>
-  );
-}
-
 interface ChatMessageProps {
   message: ExtendedMessage;
   showDebug?: boolean;
@@ -310,11 +289,9 @@ function MessageDebugDetails({
 }
 
 function MessageTimestamp({
-  isUser,
   timestamp,
   createdAt,
 }: {
-  isUser: boolean;
   timestamp: string;
   createdAt?: string | null;
 }) {
@@ -323,14 +300,17 @@ function MessageTimestamp({
   }
 
   return (
-    <MessageAnnotations align={isUser ? 'end' : 'start'}>
-      <span title={createdAt ?? undefined}>{timestamp}</span>
-    </MessageAnnotations>
+    <time
+      className="shrink-0 text-[11px] leading-none text-text-tertiary/70"
+      dateTime={createdAt ?? undefined}
+      title={createdAt ?? undefined}
+    >
+      {timestamp}
+    </time>
   );
 }
 
 function MessageActions({
-  isUser,
   message,
   copied,
   isSpeaking,
@@ -342,8 +322,8 @@ function MessageActions({
   startEdit,
   handleCopyMessage,
   handleShareMessage,
+  className,
 }: {
-  isUser: boolean;
   message: ExtendedMessage;
   copied: boolean;
   isSpeaking: boolean;
@@ -355,29 +335,27 @@ function MessageActions({
   startEdit: () => void;
   handleCopyMessage: () => Promise<void>;
   handleShareMessage: () => Promise<void>;
+  className?: string;
 }) {
   return (
     <div
       className={cn(
-        'flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100',
-        {
-          'justify-end': isUser,
-          'justify-start': !isUser,
-        },
+        'inline-flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100',
+        className,
       )}
     >
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            size="sm"
-            className="size-6 p-0 text-text-tertiary hover:text-foreground"
+            size="icon"
+            className="size-8 rounded-full border-0 p-0 text-text-tertiary hover:text-foreground"
             aria-label="Message actions"
           >
             <MoreVertical className="size-3.5" aria-hidden="true" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align={isUser ? 'end' : 'start'}>
+        <DropdownMenuContent align={message.role === 'user' ? 'end' : 'start'}>
           <DropdownMenuItem onClick={handleCopyMessage}>
             {copied ? (
               <>
@@ -391,19 +369,19 @@ function MessageActions({
               </>
             )}
           </DropdownMenuItem>
-          {isUser && onEdit && (
+          {message.role === 'user' && onEdit && (
             <DropdownMenuItem onClick={startEdit}>
               <Edit2 className="mr-2 size-3.5" aria-hidden="true" />
               Edit
             </DropdownMenuItem>
           )}
-          {!isUser && onRegenerate && (
+          {message.role !== 'user' && onRegenerate && (
             <DropdownMenuItem onClick={onRegenerate}>
               <RotateCcw className="mr-2 size-3.5" aria-hidden="true" />
               Regenerate
             </DropdownMenuItem>
           )}
-          {!isUser && onSpeak && (
+          {message.role !== 'user' && onSpeak && (
             <DropdownMenuItem onClick={() => onSpeak(message.id, message.content || '')}>
               {isSpeechLoading ? (
                 <>
@@ -438,6 +416,72 @@ function MessageActions({
           )}
         </DropdownMenuContent>
       </DropdownMenu>
+    </div>
+  );
+}
+
+function MessageFooter({
+  isUser,
+  message,
+  timestamp,
+  copied,
+  isSpeaking,
+  isSpeechLoading,
+  onEdit,
+  onRegenerate,
+  onDelete,
+  onSpeak,
+  startEdit,
+  handleCopyMessage,
+  handleShareMessage,
+  isStreaming,
+}: {
+  isUser: boolean;
+  message: ExtendedMessage;
+  timestamp: string;
+  copied: boolean;
+  isSpeaking: boolean;
+  isSpeechLoading: boolean;
+  onEdit?: ((messageId: string, newContent: string) => void) | undefined;
+  onRegenerate?: (() => void) | undefined;
+  onDelete?: (() => void) | undefined;
+  onSpeak?: ((messageId: string, content: string) => void) | undefined;
+  startEdit: () => void;
+  handleCopyMessage: () => Promise<void>;
+  handleShareMessage: () => Promise<void>;
+  isStreaming: boolean;
+}) {
+  const showActions = !isStreaming;
+
+  if (!timestamp && !showActions) {
+    return null;
+  }
+
+  return (
+    <div
+      className={cn(
+        'mt-2 flex w-full items-center gap-2 text-xs text-text-tertiary/70',
+        isUser
+          ? 'justify-end'
+          : 'justify-between border-t border-border-subtle/60 pt-3',
+      )}
+    >
+      <MessageTimestamp timestamp={timestamp} createdAt={message.createdAt} />
+      {showActions ? (
+        <MessageActions
+          message={message}
+          copied={copied}
+          isSpeaking={isSpeaking}
+          isSpeechLoading={isSpeechLoading}
+          onEdit={onEdit}
+          onRegenerate={onRegenerate}
+          onDelete={onDelete}
+          onSpeak={onSpeak}
+          startEdit={startEdit}
+          handleCopyMessage={handleCopyMessage}
+          handleShareMessage={handleShareMessage}
+        />
+      ) : null}
     </div>
   );
 }
@@ -508,53 +552,98 @@ export const ChatMessage = memo(function ChatMessage({
     >
       <Message from={isUser ? 'user' : 'assistant'}>
         <MessageContent align={isUser ? 'end' : 'start'} width={isUser ? 'bubble' : 'transcript'}>
-          {!isUser && hasReasoning && (
-            <Reasoning className="border-l-2 border-default py-1 pl-4 my-2 text-text-tertiary">
-              {message.reasoning}
-            </Reasoning>
-          )}
+          {isUser ? (
+            <>
+              <MessageBody
+                isUser={isUser}
+                isErrorMessage={isErrorMessage}
+                isEditing={isEditing}
+                hasContent={hasContent}
+                message={message}
+                isStreaming={isStreaming}
+                editContent={editContent}
+                setEditContent={setEditContent}
+                cancelEdit={cancelEdit}
+                saveEdit={saveEdit}
+                canSave={canSave}
+              />
 
-          <MessageToolCalls toolCalls={message.toolCalls} />
+              {showDebug && (
+                <MessageDebugDetails
+                  message={message}
+                  isStreaming={isStreaming}
+                  hasReasoning={hasReasoning}
+                />
+              )}
 
-          <MessageBody
-            isUser={isUser}
-            isErrorMessage={isErrorMessage}
-            isEditing={isEditing}
-            hasContent={hasContent}
-            message={message}
-            isStreaming={isStreaming}
-            editContent={editContent}
-            setEditContent={setEditContent}
-            cancelEdit={cancelEdit}
-            saveEdit={saveEdit}
-            canSave={canSave}
-          />
+              <MessageFooter
+                isUser={isUser}
+                message={message}
+                timestamp={timestamp}
+                copied={copied}
+                isSpeaking={isSpeaking}
+                isSpeechLoading={isSpeechLoading}
+                onEdit={onEdit}
+                onRegenerate={onRegenerate}
+                onDelete={onDelete}
+                onSpeak={onSpeak}
+                startEdit={startEdit}
+                handleCopyMessage={handleCopyMessage}
+                handleShareMessage={handleShareMessage}
+                isStreaming={isStreaming}
+              />
+            </>
+          ) : (
+            <div className="relative w-full rounded-2xl border border-border-default bg-surface/80 px-4 py-3 shadow-[0_1px_0_rgba(0,0,0,0.02)]">
+              <div className="flex flex-col gap-3">
+                {hasReasoning && (
+                  <Reasoning className="border-l-2 border-default py-1 pl-4 my-2 text-text-tertiary">
+                    {message.reasoning}
+                  </Reasoning>
+                )}
 
-          {showDebug && (
-            <MessageDebugDetails
-              message={message}
-              isStreaming={isStreaming}
-              hasReasoning={hasReasoning}
-            />
-          )}
+                <MessageToolCalls toolCalls={message.toolCalls} />
 
-          <MessageTimestamp isUser={isUser} timestamp={timestamp} createdAt={message.createdAt} />
+                <MessageBody
+                  isUser={isUser}
+                  isErrorMessage={isErrorMessage}
+                  isEditing={isEditing}
+                  hasContent={hasContent}
+                  message={message}
+                  isStreaming={isStreaming}
+                  editContent={editContent}
+                  setEditContent={setEditContent}
+                  cancelEdit={cancelEdit}
+                  saveEdit={saveEdit}
+                  canSave={canSave}
+                />
 
-          {!isStreaming && (
-            <MessageActions
-              isUser={isUser}
-              message={message}
-              copied={copied}
-              isSpeaking={isSpeaking}
-              isSpeechLoading={isSpeechLoading}
-              onEdit={onEdit}
-              onRegenerate={onRegenerate}
-              onDelete={onDelete}
-              onSpeak={onSpeak}
-              startEdit={startEdit}
-              handleCopyMessage={handleCopyMessage}
-              handleShareMessage={handleShareMessage}
-            />
+                {showDebug && (
+                  <MessageDebugDetails
+                    message={message}
+                    isStreaming={isStreaming}
+                    hasReasoning={hasReasoning}
+                  />
+                )}
+
+                <MessageFooter
+                  isUser={isUser}
+                  message={message}
+                  timestamp={timestamp}
+                  copied={copied}
+                  isSpeaking={isSpeaking}
+                  isSpeechLoading={isSpeechLoading}
+                  onEdit={onEdit}
+                  onRegenerate={onRegenerate}
+                  onDelete={onDelete}
+                  onSpeak={onSpeak}
+                  startEdit={startEdit}
+                  handleCopyMessage={handleCopyMessage}
+                  handleShareMessage={handleShareMessage}
+                  isStreaming={isStreaming}
+                />
+              </div>
+            </div>
           )}
         </MessageContent>
       </Message>

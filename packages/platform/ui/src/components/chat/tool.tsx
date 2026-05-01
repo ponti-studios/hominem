@@ -1,8 +1,9 @@
-import { ChevronDown, ChevronUp, Loader2, Wrench } from 'lucide-react';
+import { Wrench } from 'lucide-react';
 import { type HTMLAttributes, type ReactNode, useState } from 'react';
 
 import { cn } from '../../lib/utils';
-import { Button } from '../button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../collapsible';
+import { LoadingSpinner } from '../loading-spinner';
 
 interface ToolProps extends HTMLAttributes<HTMLDivElement> {
   name: string;
@@ -29,31 +30,22 @@ export function Tool({
 
   const statusIcons = {
     pending: <Wrench className="size-4" />,
-    running: <Loader2 className="size-4 animate-spin" />,
+    running: <LoadingSpinner variant="sm" />,
     completed: <span className="text-success">✓</span>,
     error: <span className="text-destructive">✗</span>,
   };
 
   return (
     <div className={cn('rounded-md border', statusColors[status], 'px-3', className)} {...props}>
-      <Button
-        variant="ghost"
-        size="sm"
-        className={cn(
-          'flex w-full items-center justify-between py-2',
-          status === 'running' && 'cursor-wait',
-        )}
-        onClick={() => setIsOpen(!isOpen)}
-        disabled={status === 'running'}
-      >
-        <div className="flex items-center gap-2">
-          {statusIcons[status]}
-          <span className="font-mono text-sm">{name}</span>
-        </div>
-        {isOpen ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
-      </Button>
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <CollapsibleTrigger
+          icon={statusIcons[status]}
+          text={name}
+          className="gap-2 border-transparent bg-transparent px-0 py-2 text-inherit hover:bg-transparent hover:text-inherit"
+        />
 
-      {isOpen && <div className="px-3 pb-3">{children}</div>}
+        <CollapsibleContent className="px-0 pb-3 pt-0">{children}</CollapsibleContent>
+      </Collapsible>
     </div>
   );
 }

@@ -35,8 +35,6 @@ import { updateChatTitleCaches, useActiveChat, useSendMessage } from '~/services
 import { useNoteSearch } from '~/services/notes/use-note-search';
 import t from '~/translations';
 
-// ── Sub-components ────────────────────────────────────────────────────────────
-
 function SelectionSummary({
   selectedNotes,
   onRemove,
@@ -115,14 +113,12 @@ function MentionSuggestions({
   );
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
-
-interface ChatInputProps {
+interface ChatComposerProps {
   chatId: string;
   initialMessage?: string;
 }
 
-export function ChatInput({ chatId, initialMessage }: ChatInputProps) {
+export function ChatComposer({ chatId, initialMessage }: ChatComposerProps) {
   const insets = useSafeAreaInsets();
   const styles = useStyles();
   const client = useApiClient();
@@ -157,8 +153,6 @@ export function ChatInput({ chatId, initialMessage }: ChatInputProps) {
   });
 
   const { sendChatMessage, isChatSending } = useSendMessage({ chatId: resolvedChatId });
-
-  // ── Mention handling ───────────────────────────────────────────────────────
   const mentionQuery = useMemo(() => getTrailingMentionQuery(message), [message]);
   const { data: searchResults } = useNoteSearch(mentionQuery ?? '', mentionQuery !== null);
   const mentionSuggestions = useMemo(
@@ -181,7 +175,6 @@ export function ChatInput({ chatId, initialMessage }: ChatInputProps) {
     [],
   );
 
-  // ── Send ──────────────────────────────────────────────────────────────────
   const handleSend = useCallback(() => {
     if (!canSubmit || isChatSending) return;
     const trimmedMessage = message.trim();
@@ -228,15 +221,18 @@ export function ChatInput({ chatId, initialMessage }: ChatInputProps) {
   ]);
 
   return (
-    <Animated.View style={[styles.shell, { paddingBottom: Math.max(insets.bottom, spacing[2]) }]}>
-      <ComposerPill testID="chat-input">
+    <>
+      <ComposerPill
+        testID="chat-input"
+        style={[styles.shell, { paddingBottom: Math.max(insets.bottom, spacing[2]) }]}
+      >
         <ComposerAttachmentRow
-            attachments={attachments}
-            errors={uploadState.errors}
-            isUploading={uploadState.isUploading}
-            progressByAssetId={uploadState.progressByAssetId}
-            onRemove={handleRemoveAttachment}
-          />
+          attachments={attachments}
+          errors={uploadState.errors}
+          isUploading={uploadState.isUploading}
+          progressByAssetId={uploadState.progressByAssetId}
+          onRemove={handleRemoveAttachment}
+        />
         <SelectionSummary selectedNotes={selectedNotes} onRemove={handleRemoveNote} />
         <MentionSuggestions suggestions={mentionSuggestions} onSelect={handleSelectMention} />
         <ComposerTextInput
@@ -256,40 +252,32 @@ export function ChatInput({ chatId, initialMessage }: ChatInputProps) {
             disabled={isChatSending}
           />
           <ComposerActionGroup hasContent={message.trim().length > 0}>
-              <ActionButton
-                icon="wand.and.sparkles"
-                onPress={() => void enhance(message).then(setMessage)}
-                accessibilityLabel={t.chat.input.enhanceTextA11y}
-                disabled={isChatSending || isEnhancing}
-              />
-              <ActionButton
-                icon="arrow.up"
-                onPress={handleSend}
-                disabled={!canSubmit || isChatSending}
-                accessibilityLabel={isChatSending ? t.chat.input.sendingA11y : t.chat.input.sendMessageA11y}
-              />
-            </ComposerActionGroup>
+            <ActionButton
+              icon="wand.and.sparkles"
+              onPress={() => void enhance(message).then(setMessage)}
+              accessibilityLabel={t.chat.input.enhanceTextA11y}
+              disabled={isChatSending || isEnhancing}
+            />
+            <ActionButton
+              icon="arrow.up"
+              onPress={handleSend}
+              disabled={!canSubmit || isChatSending}
+              accessibilityLabel={isChatSending ? t.chat.input.sendingA11y : t.chat.input.sendMessageA11y}
+            />
+          </ComposerActionGroup>
         </View>
       </ComposerPill>
 
       <CameraModal
         visible={isCameraOpen}
-        onCapture={(photo) => {
-          void handleCameraCapture(photo).finally(() => setIsCameraOpen(false));
-        }}
+        onCapture={(photo) => void handleCameraCapture(photo)}
         onClose={() => setIsCameraOpen(false)}
       />
-    </Animated.View>
+    </>
   );
 }
 
-// ── Styles ────────────────────────────────────────────────────────────────────
-
 const useStyles = makeStyles((theme) => ({
-  shell: {
-    paddingHorizontal: spacing[4],
-    alignItems: 'center',
-  },
   actionRow: {
     flexDirection: 'row',
     alignItems: 'center',

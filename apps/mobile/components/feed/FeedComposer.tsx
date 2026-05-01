@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
 import { Keyboard, View } from 'react-native';
 import { useAnimatedKeyboard } from 'react-native-keyboard-controller';
-import Animated, { useAnimatedStyle } from 'react-native-reanimated';
+import { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { buildChatTitle } from '~/components/composer/composerActions';
@@ -23,8 +23,6 @@ import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
 import { donateAddNoteIntent } from '~/services/intent-donation';
 import { useCreateNote } from '~/services/notes/use-create-note';
 import t from '~/translations';
-
-// ── Main component ────────────────────────────────────────────────────────────
 
 interface FeedComposerProps {
   onClearanceChange?: (height: number) => void;
@@ -58,8 +56,6 @@ export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerPro
     inputStyle,
   } = useComposerBase({ seedMessage });
 
-  // ── Actions ───────────────────────────────────────────────────────────────
-
   const handleSave = useCallback(async () => {
     if (!canSubmit || isSaving) return;
     await createNote({
@@ -83,27 +79,26 @@ export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerPro
     requestTopReveal();
   }, [canSubmit, isChatCreating, createChat, message, clearDraft, router, requestTopReveal]);
 
-  // ── Animated shell position (tracks keyboard) ─────────────────────────────
-
   const shellStyle = useAnimatedStyle(() => ({
     bottom: keyboard.height.value + Math.max(insets.bottom, spacing[2]),
   }));
 
   return (
-    <Animated.View style={[styles.container, shellStyle]}>
+    <>
       <ComposerPill
         testID="feed-composer"
         onLayout={(e) => {
           onClearanceChange?.(e.nativeEvent.layout.height + Math.max(insets.bottom, spacing[2]));
         }}
+        style={[styles.container, shellStyle]}
       >
         <ComposerAttachmentRow
-            attachments={attachments}
-            errors={uploadState.errors}
-            isUploading={uploadState.isUploading}
-            progressByAssetId={uploadState.progressByAssetId}
-            onRemove={handleRemoveAttachment}
-          />
+          attachments={attachments}
+          errors={uploadState.errors}
+          isUploading={uploadState.isUploading}
+          progressByAssetId={uploadState.progressByAssetId}
+          onRemove={handleRemoveAttachment}
+        />
         <ComposerTextInput
           inputRef={inputRef}
           value={message}
@@ -120,40 +115,36 @@ export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerPro
             onPress={showPlusMenu}
           />
           <ComposerActionGroup hasContent={message.trim().length > 0}>
-              <ActionButton
-                accessibilityLabel={t.feed.composer.enhanceTextA11y}
-                icon="wand.and.sparkles"
-                onPress={() => void enhance(message).then(setMessage)}
-                disabled={isEnhancing}
-              />
-              <ActionButton
-                accessibilityLabel={t.feed.composer.openChatA11y}
-                disabled={!canSubmit || isSaving || isChatCreating}
-                icon="bubble.left"
-                onPress={() => void handleChat()}
-              />
-              <ActionButton
-                accessibilityLabel={t.feed.composer.saveNoteA11y}
-                disabled={!canSubmit || isSaving || isChatCreating}
-                icon="arrow.up"
-                onPress={() => void handleSave()}
-              />
-            </ComposerActionGroup>
+            <ActionButton
+              accessibilityLabel={t.feed.composer.enhanceTextA11y}
+              icon="wand.and.sparkles"
+              onPress={() => void enhance(message).then(setMessage)}
+              disabled={isEnhancing}
+            />
+            <ActionButton
+              accessibilityLabel={t.feed.composer.openChatA11y}
+              disabled={!canSubmit || isSaving || isChatCreating}
+              icon="bubble.left"
+              onPress={() => void handleChat()}
+            />
+            <ActionButton
+              accessibilityLabel={t.feed.composer.saveNoteA11y}
+              disabled={!canSubmit || isSaving || isChatCreating}
+              icon="arrow.up"
+              onPress={() => void handleSave()}
+            />
+          </ComposerActionGroup>
         </View>
       </ComposerPill>
 
       <CameraModal
         visible={isCameraOpen}
-        onCapture={(photo) => {
-          void handleCameraCapture(photo).finally(() => setIsCameraOpen(false));
-        }}
+        onCapture={(photo) => void handleCameraCapture(photo)}
         onClose={() => setIsCameraOpen(false)}
       />
-    </Animated.View>
+    </>
   );
 }
-
-// ── Styles ────────────────────────────────────────────────────────────────────
 
 const useStyles = makeStyles((theme) => ({
   container: {

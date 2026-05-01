@@ -1,7 +1,7 @@
 import { forwardRef, type HTMLAttributes } from 'react';
 
 import { cn } from '../lib/utils';
-import { Loading } from './loading';
+import { LoadingSpinner } from './loading-spinner';
 
 type LoadingSize = 'sm' | 'md' | 'lg' | 'xl';
 
@@ -23,7 +23,7 @@ const List = forwardRef<HTMLUListElement, ListProps>(
       >
         {isLoading ? (
           <li className="flex items-center justify-center py-8">
-            <Loading size={loadingSize} />
+            <LoadingSpinner variant={loadingSize} />
           </li>
         ) : (
           children

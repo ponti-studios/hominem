@@ -1,7 +1,7 @@
 import { BlurView } from 'expo-blur';
 import React from 'react';
 import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
-import Animated from 'react-native-reanimated';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useColorScheme } from 'react-native';
 import { spacing } from '@hominem/ui/tokens';
 
@@ -10,13 +10,16 @@ import { createLayoutTransition } from '~/components/theme/animations';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import { MAX_WIDTH, PILL_RADIUS } from './useComposerBase';
 
+const PILL_ENTERING = FadeInDown.duration(240).springify().damping(20).stiffness(220).mass(0.9);
+
 interface ComposerPillProps {
   onLayout?: (e: LayoutChangeEvent) => void;
   testID?: string;
+  style?: any;
   children: React.ReactNode;
 }
 
-export function ComposerPill({ onLayout, testID, children }: ComposerPillProps) {
+export function ComposerPill({ onLayout, testID, style, children }: ComposerPillProps) {
   const isDark = useColorScheme() === 'dark';
   const blurTint = isDark ? ('dark' as const) : ('light' as const);
   const pillOverlayColor = isDark ? 'rgba(30,30,30,0.5)' : 'rgba(255,255,255,0.6)';
@@ -26,9 +29,10 @@ export function ComposerPill({ onLayout, testID, children }: ComposerPillProps) 
 
   return (
     <Animated.View
+      entering={prefersReducedMotion ? undefined : PILL_ENTERING}
       layout={createLayoutTransition(prefersReducedMotion)}
       onLayout={onLayout}
-      style={[styles.pill, { borderColor: pillBorderColor }]}
+      style={[styles.pill, { borderColor: pillBorderColor }, style]}
       testID={testID}
     >
       <View style={[StyleSheet.absoluteFill, styles.blurClip]}>

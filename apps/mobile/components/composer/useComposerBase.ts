@@ -10,8 +10,6 @@ import { useComposerMediaActions } from '~/components/composer/useComposerMediaA
 import { useTextEnhance } from '~/services/ai/use-text-enhance';
 import t from '~/translations';
 
-// ── Shared layout constants ───────────────────────────────────────────────────
-
 export const MAX_WIDTH = 500;
 export const PILL_RADIUS = 20;
 export const INPUT_MIN_H = spacing[6] + spacing[4]; // 48px
@@ -23,8 +21,6 @@ const SPRING_CONFIG = {
   mass: 0.7,
   overshootClamping: false,
 } as const;
-
-// ── Hook ──────────────────────────────────────────────────────────────────────
 
 interface UseComposerBaseOptions {
   seedMessage?: string;
@@ -46,7 +42,11 @@ export function useComposerBase({
   const [isCameraOpen, setIsCameraOpen] = useState(false);
 
   const { enhance, isEnhancing } = useTextEnhance();
-  const { handleCameraCapture, pickAttachment, uploadState } = useComposerMediaActions({
+  const {
+    handleCameraCapture: handleMediaCameraCapture,
+    pickAttachment,
+    uploadState,
+  } = useComposerMediaActions({
     attachments,
     setAttachments,
   });
@@ -100,6 +100,17 @@ export function useComposerBase({
     );
   }, [pickAttachment]);
 
+  const handleCameraCapture = useCallback(
+    async (photo: { uri: string; fileName?: string }) => {
+      try {
+        await handleMediaCameraCapture(photo);
+      } finally {
+        setIsCameraOpen(false);
+      }
+    },
+    [handleMediaCameraCapture],
+  );
+
   const onContentSizeChange = useCallback(
     (h: number) => {
       const clamped = Math.min(Math.max(h, INPUT_MIN_H), INPUT_MAX_H);
@@ -132,11 +143,10 @@ export function useComposerBase({
     handleRemoveAttachment,
     showPlusMenu,
     onContentSizeChange,
+    handleCameraCapture,
     // enhance
     enhance,
     isEnhancing,
-    // camera
-    handleCameraCapture,
     // animated styles
     inputStyle,
   };
