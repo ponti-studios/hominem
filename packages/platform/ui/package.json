@@ -143,6 +143,10 @@
       "types": "./src/components/notes/index.ts",
       "default": "./src/components/notes/index.ts"
     },
+    "./inbox": {
+      "types": "./src/components/inbox/index.ts",
+      "default": "./src/components/inbox/index.ts"
+    },
     "./types/upload": {
       "types": "./src/types/upload.ts",
       "default": "./src/types/upload.ts"

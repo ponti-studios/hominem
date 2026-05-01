@@ -7,6 +7,7 @@ import {
   type QueryKey,
 } from '@tanstack/react-query';
 
+import type { InboxOutput } from '../types/inbox.types';
 import type { HonoClient } from '../core/api-client';
 
 import { useApiClient } from './context';
@@ -54,4 +55,23 @@ export function useRpcMutation<TData, TVariables = void>(
       }
     },
   });
+}
+
+interface UseInboxOptions {
+  limit?: number;
+}
+
+export function useInbox(options: UseInboxOptions = {}) {
+  return useRpcQuery(
+    async (client) => {
+      const query: { limit?: string } = {};
+      if (options.limit) query.limit = String(options.limit);
+      const res = await client.api.inbox.$get({ query });
+      return res.json() as Promise<InboxOutput>;
+    },
+    {
+      queryKey: ['inbox', options],
+      staleTime: 1000 * 30,
+    },
+  );
 }

@@ -1,6 +1,6 @@
 /* oxlint-disable no-unused-vars */
 import { AudioLines, FileText, Film, Image, Paperclip, X } from 'lucide-react';
-import { forwardRef, useState, type HTMLAttributes, type ReactNode } from 'react';
+import { forwardRef, type HTMLAttributes, type ReactNode } from 'react';
 
 import { cn } from '../../lib/utils';
 import { Button } from '../button';
@@ -94,7 +94,7 @@ export const Attachment = forwardRef<HTMLDivElement, AttachmentProps>(function A
     <div
       ref={ref}
       className={cn(
-        'relative group flex flex-col items-center justify-center p-2 rounded-md border bg-muted/50 hover:bg-muted transition-colors',
+        'relative flex flex-col items-center justify-center p-2 rounded-md border bg-muted/50 transition-colors',
         category === 'image' && 'aspect-square',
         className,
       )}
@@ -105,7 +105,7 @@ export const Attachment = forwardRef<HTMLDivElement, AttachmentProps>(function A
           type="button"
           variant="secondary"
           size="icon"
-          className="absolute top-1 right-1 opacity-0 transition-opacity group-hover:opacity-100"
+          className="absolute top-1 right-1 opacity-100 transition-opacity"
           onClick={(e) => {
             e.stopPropagation();
             onRemove();
@@ -169,33 +169,15 @@ export function AttachmentRemove({ label = 'Remove', className, ...props }: Atta
   );
 }
 
-interface AttachmentHoverCardProps extends HTMLAttributes<HTMLDivElement> {
-  openDelay?: number;
-  closeDelay?: number;
-}
+interface AttachmentHoverCardProps extends HTMLAttributes<HTMLDivElement> {}
 
-export function AttachmentHoverCard({
-  openDelay = 0,
-  closeDelay = 0,
-  className,
-  children,
-  ...props
-}: AttachmentHoverCardProps) {
-  const [isOpen, setIsOpen] = useState(false);
-
+export function AttachmentHoverCard({ className, children, ...props }: AttachmentHoverCardProps) {
   return (
-    <div
-      className={cn('relative inline-block', className)}
-      onMouseEnter={() => setTimeout(() => setIsOpen(true), openDelay)}
-      onMouseLeave={() => setTimeout(() => setIsOpen(false), closeDelay)}
-      {...props}
-    >
+    <div className={cn('relative inline-block', className)} {...props}>
       {children}
-      {isOpen && (
-        <div className="absolute z-50 bottom-full mb-2 left-0 w-48 p-2 rounded-md border bg-background">
-          Preview content
-        </div>
-      )}
+      <div className="absolute z-50 bottom-full mb-2 left-0 w-48 p-2 rounded-md border bg-background">
+        Preview content
+      </div>
     </div>
   );
 }

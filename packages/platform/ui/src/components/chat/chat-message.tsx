@@ -340,7 +340,7 @@ function MessageActions({
   return (
     <div
       className={cn(
-        'inline-flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100',
+        'inline-flex shrink-0 items-center gap-1 opacity-100 transition-opacity',
         className,
       )}
     >
