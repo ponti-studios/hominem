@@ -64,25 +64,23 @@ function ChatPreview({
   const statusCopy = sourceFixture === 'capture' ? 'Voice mode' : 'Active conversation';
 
   return (
-    <div className="w-full bg-background" style={{ height: 760 }}>
-      <Chat
-        source={source}
-        resolvedSource={source}
-        statusCopy={statusCopy}
-        renderIcon={renderChatIcon}
-        messages={messages}
-        status={status}
-        isLoading={isLoading}
-        showDebug={showDebug}
-        isVoiceModeActive={isVoiceModeActive}
-        voiceModeState={voiceModeState}
-        isVoiceModeRecording={isVoiceModeRecording}
-        onDelete={() => undefined}
-        onEdit={() => undefined}
-        onRegenerate={() => undefined}
-        onSpeak={() => undefined}
-      />
-    </div>
+    <Chat
+      source={source}
+      resolvedSource={source}
+      statusCopy={statusCopy}
+      renderIcon={renderChatIcon}
+      messages={messages}
+      status={status}
+      isLoading={isLoading}
+      showDebug={showDebug}
+      isVoiceModeActive={isVoiceModeActive}
+      voiceModeState={voiceModeState}
+      isVoiceModeRecording={isVoiceModeRecording}
+      onDelete={() => undefined}
+      onEdit={() => undefined}
+      onRegenerate={() => undefined}
+      onSpeak={() => undefined}
+    />
   );
 }
 
