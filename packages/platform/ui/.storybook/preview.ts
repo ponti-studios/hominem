@@ -88,6 +88,24 @@ const preview: Preview = {
       sort: 'requiredFirst',
       expanded: true,
     },
+    options: {
+      storySort: {
+        order: [
+          'Documentation',
+          'Patterns',
+          [
+            'Chat',
+            ['CodeBlock', 'Context', 'Conversation', 'MarkdownContent', 'Reasoning', 'Sources', 'Suggestion', 'Tool'],
+            'Composer',
+            ['Attachments', 'AudioPlayer', 'PromptInput', 'SpeechInput', 'Transcription'],
+            'Workflow',
+            ['Checkpoint', 'Plan', 'ProposalCard', 'Queue', 'Task'],
+            'Feedback',
+            ['Confirmation'],
+          ],
+        ],
+      },
+    },
     msw: {
       handlers,
     },

@@ -9,7 +9,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
 
-import { SpeechInput } from '../ai-elements/speech-input';
+import { SpeechInput } from '../composer';
 import { Button } from '../button';
 import { Inline } from '../layout/inline';
 

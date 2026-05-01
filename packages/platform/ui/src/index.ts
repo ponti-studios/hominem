@@ -33,6 +33,10 @@ export {
 export { PageContainer } from './components/layout/page-container';
 export { Stack, type GapToken, type StackProps } from './components/layout/stack';
 export * from './components/loading-state';
+export * from './components/chat';
+export * from './components/composer';
+export * from './components/workflow';
+export * from './components/feedback';
 export * from './components/page-title';
 export { MetaBadge } from './components/surfaces/meta-badge';
 export { SectionIntro } from './components/surfaces/section-intro';

@@ -14,7 +14,7 @@ function ContextPreview(props: { children: React.ReactNode }) {
 }
 
 const meta = {
-  title: 'Patterns/AI/Context',
+  title: 'Patterns/Chat/Context',
   component: ContextPreview,
   tags: ['autodocs'],
   parameters: {

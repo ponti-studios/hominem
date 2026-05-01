@@ -53,7 +53,7 @@ export function Task({
       <Button
         type="button"
         variant="ghost"
-        size="icon-xs"
+        size="icon"
         className="mt-0.5"
         onClick={onToggle}
       >

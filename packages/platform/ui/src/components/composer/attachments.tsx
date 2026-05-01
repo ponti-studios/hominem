@@ -104,7 +104,7 @@ export const Attachment = forwardRef<HTMLDivElement, AttachmentProps>(function A
         <Button
           type="button"
           variant="secondary"
-          size="icon-xs"
+          size="icon"
           className="absolute top-1 right-1 opacity-0 transition-opacity group-hover:opacity-100"
           onClick={(e) => {
             e.stopPropagation();
@@ -159,7 +159,7 @@ export function AttachmentRemove({ label = 'Remove', className, ...props }: Atta
     <Button
       type="button"
       variant="ghost"
-      size="icon-xs"
+      size="icon"
       className={cn(className)}
       aria-label={label}
       {...props}

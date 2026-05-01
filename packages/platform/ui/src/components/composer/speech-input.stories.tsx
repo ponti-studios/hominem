@@ -32,7 +32,7 @@ function SpeechInputPreview() {
 }
 
 const meta = {
-  title: 'Patterns/AI/SpeechInput',
+  title: 'Patterns/Composer/SpeechInput',
   component: SpeechInputPreview,
   tags: ['autodocs'],
   parameters: {

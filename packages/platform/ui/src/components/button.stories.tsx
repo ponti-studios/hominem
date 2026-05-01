@@ -65,15 +65,6 @@ export const Sizes: Story = {
       <Button size="icon">
         <Plus className="size-4" />
       </Button>
-      <Button size="icon-xs">
-        <Plus className="size-3" />
-      </Button>
-      <Button size="icon-sm">
-        <Plus className="size-4" />
-      </Button>
-      <Button size="icon-lg">
-        <Plus className="size-4" />
-      </Button>
     </div>
   ),
 };

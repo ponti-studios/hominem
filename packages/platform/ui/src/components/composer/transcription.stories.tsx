@@ -52,7 +52,7 @@ function TranscriptionSegmentPreview() {
 }
 
 const meta = {
-  title: 'Patterns/AI/Transcription',
+  title: 'Patterns/Composer/Transcription',
   component: TranscriptionPreview,
   tags: ['autodocs'],
   parameters: {

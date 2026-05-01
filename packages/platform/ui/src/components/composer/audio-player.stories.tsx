@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { AudioPlayer, AudioPlayerPlayButton, AudioPlayerProgress } from './audio-player';
 
 const meta = {
-  title: 'Patterns/AI/AudioPlayer',
+  title: 'Patterns/Composer/AudioPlayer',
   component: AudioPlayer,
   tags: ['autodocs'],
   parameters: {

@@ -11,7 +11,7 @@ import { Checkpoint, CheckpointList, CheckpointProgress } from './checkpoint';
 const checkpointStatusOptions = ['pending', 'in-progress', 'completed', 'error'] as const;
 
 const meta = {
-  title: 'Patterns/AI/Checkpoint',
+  title: 'Patterns/Workflow/Checkpoint',
   component: Checkpoint,
   tags: ['autodocs'],
   argTypes: {

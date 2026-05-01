@@ -4,7 +4,7 @@ import { hiddenControl, selectControl, textControl } from '../../storybook/contr
 import { ConfirmationBanner } from './confirmation';
 
 const meta = {
-  title: 'Patterns/AI/Confirmation',
+  title: 'Patterns/Feedback/Confirmation',
   component: ConfirmationBanner,
   tags: ['autodocs'],
   argTypes: {

@@ -26,7 +26,7 @@ type PromptInputStoryArgs = ComponentProps<typeof PromptInput> & {
 };
 
 const meta = {
-  title: 'Patterns/AI/PromptInput',
+  title: 'Patterns/Composer/PromptInput',
   component: PromptInputPreview,
   tags: ['autodocs'],
   argTypes: {

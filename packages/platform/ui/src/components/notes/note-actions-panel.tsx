@@ -1,7 +1,7 @@
 import { memo, useRef } from 'react';
 import { Link } from 'react-router';
 
-import { SpeechInput } from '../ai-elements';
+import { SpeechInput } from '../composer';
 import { Button } from '../button';
 import { SurfacePanel } from '../surfaces/surface-panel';
 

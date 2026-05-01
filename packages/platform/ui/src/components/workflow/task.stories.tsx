@@ -4,7 +4,7 @@ import { hiddenControl, selectControl, textControl } from '../../storybook/contr
 import { Task, TaskList, TaskStatusBadge } from './task';
 
 const meta = {
-  title: 'Patterns/AI/Task',
+  title: 'Patterns/Workflow/Task',
   component: Task,
   tags: ['autodocs'],
   argTypes: {

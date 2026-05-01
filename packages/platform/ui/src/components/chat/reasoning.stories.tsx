@@ -7,7 +7,7 @@ function ReasoningPreview(props: { children: React.ReactNode; isOpen?: boolean }
 }
 
 const meta = {
-  title: 'Patterns/AI/Reasoning',
+  title: 'Patterns/Chat/Reasoning',
   component: ReasoningPreview,
   tags: ['autodocs'],
   parameters: {

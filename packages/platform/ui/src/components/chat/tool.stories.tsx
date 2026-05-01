@@ -11,7 +11,7 @@ function ToolPreview(props: {
 }
 
 const meta = {
-  title: 'Patterns/AI/Tool',
+  title: 'Patterns/Chat/Tool',
   component: ToolPreview,
   tags: ['autodocs'],
   parameters: {

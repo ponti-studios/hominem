@@ -4,7 +4,7 @@ import { booleanControl, textControl } from '../../storybook/controls';
 import { MarkdownContent } from './markdown-content';
 
 const meta = {
-  title: 'Patterns/AI/MarkdownContent',
+  title: 'Patterns/Chat/MarkdownContent',
   component: MarkdownContent,
   tags: ['autodocs'],
   argTypes: {

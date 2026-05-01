@@ -8,7 +8,7 @@ function PlanPreview(props: { children: React.ReactNode }) {
 }
 
 const meta = {
-  title: 'Patterns/AI/Plan',
+  title: 'Patterns/Workflow/Plan',
   component: PlanPreview,
   tags: ['autodocs'],
   parameters: {

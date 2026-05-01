@@ -14,7 +14,7 @@ import CodeBlock from './code-block';
 type CodeBlockStoryArgs = CodeBlockProps;
 
 const meta = {
-  title: 'Patterns/AI/CodeBlock',
+  title: 'Patterns/Chat/CodeBlock',
   component: CodeBlockWrapper,
   tags: ['autodocs'],
   parameters: {

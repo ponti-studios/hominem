@@ -45,7 +45,7 @@ interface ConversationScrollButtonProps {
 
 export function ConversationScrollButton({ onClick }: ConversationScrollButtonProps) {
   return (
-    <Button variant="icon" size="icon-sm" onClick={onClick}>
+    <Button variant="icon" size="icon" onClick={onClick}>
       <ChevronDown className="size-4" />
     </Button>
   );

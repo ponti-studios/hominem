@@ -32,9 +32,9 @@ import { playEnterRow, reducedMotion } from '../../lib/gsap/sequences';
 import { useMessageEdit } from '../../lib/hooks/use-message-edit';
 import { cn } from '../../lib/utils';
 import type { ExtendedMessage } from '../../types/chat';
-import { MarkdownContent } from '../ai-elements/markdown-content';
-import { Reasoning } from '../ai-elements/reasoning';
-import { Tool, ToolInput } from '../ai-elements/tool';
+import { MarkdownContent } from './markdown-content';
+import { Reasoning } from './reasoning';
+import { Tool, ToolInput } from './tool';
 import { Button } from '../button';
 import {
   DropdownMenu,

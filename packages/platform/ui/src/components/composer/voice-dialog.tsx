@@ -14,7 +14,7 @@ import type { UseMutationResult } from '@tanstack/react-query';
 import { Loader2, Mic, X } from 'lucide-react';
 import { forwardRef, memo, useMemo, useState, useSyncExternalStore } from 'react';
 
-import { SpeechInput } from '../ai-elements/speech-input';
+import { SpeechInput } from '../composer';
 import type { ComposerStore } from './composer-store';
 import { RecordingClock } from './recording-clock';
 

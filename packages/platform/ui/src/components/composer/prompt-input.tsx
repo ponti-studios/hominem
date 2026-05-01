@@ -362,7 +362,7 @@ export function PromptInputButton({ tooltip, children, ...props }: PromptInputBu
       <Button
         type="button"
         variant="ghost"
-        size="icon-sm"
+        size="icon"
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
         {...props}
@@ -428,7 +428,7 @@ export function PromptInputActionMenuTrigger({
 }: PromptInputActionMenuTriggerProps) {
   return (
     <DropdownMenuTrigger asChild>
-      <Button type="button" variant="ghost" size="icon-sm" {...props}>
+      <Button type="button" variant="ghost" size="icon" {...props}>
         {children || <Paperclip className="size-4" />}
       </Button>
     </DropdownMenuTrigger>

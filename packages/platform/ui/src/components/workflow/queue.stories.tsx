@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Queue, QueueContent, QueueHeader, QueueItem } from './queue';
 
 const meta = {
-  title: 'Patterns/AI/Queue',
+  title: 'Patterns/Workflow/Queue',
   component: Queue,
   tags: ['autodocs'],
   parameters: {

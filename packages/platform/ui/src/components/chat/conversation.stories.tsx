@@ -8,7 +8,7 @@ import {
 } from './conversation';
 
 const meta = {
-  title: 'Patterns/AI/Conversation',
+  title: 'Patterns/Chat/Conversation',
   component: Conversation,
   tags: ['autodocs'],
   parameters: {

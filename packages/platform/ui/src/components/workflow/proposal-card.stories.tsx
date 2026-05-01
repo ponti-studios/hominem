@@ -48,7 +48,7 @@ function proposalCardItem(
 }
 
 const meta = {
-  title: 'Patterns/AI/ProposalCard',
+  title: 'Patterns/Workflow/ProposalCard',
   component: ProposalCardPreview,
   tags: ['autodocs'],
   argTypes: {

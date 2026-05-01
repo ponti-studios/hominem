@@ -13,15 +13,11 @@ const buttonVariantOptions = [
 ] satisfies readonly ButtonVariant[];
 
 const buttonSizeOptions = [
-  'default',
   'md',
   'xs',
   'sm',
   'lg',
   'icon',
-  'icon-xs',
-  'icon-sm',
-  'icon-lg',
 ] satisfies readonly ButtonSize[];
 
 const inputTypeOptions = ['text', 'email', 'password', 'search', 'number', 'tel', 'url'] as const;

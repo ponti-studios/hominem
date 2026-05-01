@@ -9,15 +9,11 @@ export type ButtonVariant =
   | 'secondary';
 
 export type ButtonSize =
-  | 'default'
   | 'sm'
   | 'md'
   | 'lg'
   | 'xs'
-  | 'icon'
-  | 'icon-xs'
-  | 'icon-sm'
-  | 'icon-lg';
+  | 'icon';
 
 export interface ButtonBaseProps {
   isLoading?: boolean | undefined;
