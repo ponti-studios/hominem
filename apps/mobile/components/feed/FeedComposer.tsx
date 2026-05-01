@@ -1,120 +1,28 @@
-import { ProgressView, Host as SwiftUIHost } from '@expo/ui/swift-ui';
-import { frame, progressViewStyle } from '@expo/ui/swift-ui/modifiers';
-import { useApiClient } from '@hominem/rpc/react';
-import { radii, spacing } from '@hominem/ui/tokens';
+import { spacing } from '@hominem/ui/tokens';
 import { useQueryClient } from '@tanstack/react-query';
-import { BlurView } from 'expo-blur';
-import { Image } from 'expo-image';
 import type { RelativePathString } from 'expo-router';
 import { useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ActionSheetIOS,
-  Keyboard,
-  Pressable,
-  StyleSheet,
-  TextInput,
-  View,
-  useColorScheme,
-} from 'react-native';
+import React, { useCallback } from 'react';
+import { Keyboard, View } from 'react-native';
 import { useAnimatedKeyboard } from 'react-native-keyboard-controller';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  withTiming,
-} from 'react-native-reanimated';
+import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import {
-  buildChatTitle,
-  canSubmitComposerDraft,
-  getUploadedAttachmentIds,
-} from '~/components/composer/composerActions';
-import type { ComposerAttachment } from '~/components/composer/composerState';
-import { useComposerMediaActions } from '~/components/composer/useComposerMediaActions';
+import { buildChatTitle } from '~/components/composer/composerActions';
+import { ActionButton, MediaButton } from '~/components/composer/ComposerButtons';
+import { ComposerActionGroup } from '~/components/composer/ComposerActionGroup';
+import { ComposerAttachmentRow } from '~/components/composer/ComposerAttachmentRow';
+import { ComposerPill } from '~/components/composer/ComposerPill';
+import { useComposerBase } from '~/components/composer/useComposerBase';
+import { ComposerTextInput } from '~/components/composer/ComposerTextInput';
 import { CameraModal } from '~/components/media/camera-modal';
-import { makeStyles, useThemeColors } from '~/components/theme';
-import { createLayoutTransition } from '~/components/theme/animations';
-import { AppIconButton, AppIconButtonGroup } from '~/components/ui';
-import AppIcon from '~/components/ui/icon';
-import { useReducedMotion } from '~/hooks/use-reduced-motion';
-import { useTextEnhance } from '~/services/ai/use-text-enhance';
-import type { ChatWithActivity } from '~/services/chat/session-types';
-import {
-  createChatInboxRefreshSnapshot,
-  invalidateInboxQueries,
-  upsertInboxSessionActivity,
-} from '~/services/inbox/inbox-refresh';
+import { makeStyles } from '~/components/theme';
+import { useCreateChat } from '~/services/chat/use-create-chat';
+import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
 import { donateAddNoteIntent } from '~/services/intent-donation';
-import { chatKeys } from '~/services/notes/query-keys';
 import { useCreateNote } from '~/services/notes/use-create-note';
 import t from '~/translations';
-
-// ── Layout constants ──────────────────────────────────────────────────────────
-
-const MAX_WIDTH = 500;
-const INPUT_MIN_H = spacing[6] + spacing[4]; // 48px
-const INPUT_MAX_H = spacing[6] * 9; // 288px
-const PILL_RADIUS = 20;
-function AttachmentRow({
-  attachments,
-  errors,
-  isUploading,
-  progressByAssetId,
-  onRemove,
-}: {
-  attachments: ComposerAttachment[];
-  errors: string[];
-  isUploading: boolean;
-  progressByAssetId: Record<string, number>;
-  onRemove: (id: string) => void;
-}) {
-  const themeColors = useThemeColors();
-  const styles = useStyles();
-
-  if (attachments.length === 0 && errors.length === 0 && !isUploading) return null;
-
-  return (
-    <View style={styles.attachmentRow}>
-      {attachments.map((a) => {
-        const progress = progressByAssetId[a.id] ?? 0;
-        const uploading = progress > 0 && progress < 100;
-        return (
-          <Pressable
-            key={a.id}
-            style={styles.thumb}
-            onPress={() => onRemove(a.id)}
-            accessibilityLabel={t.notes.editor.removeFile(a.name)}
-            accessibilityRole="button"
-          >
-            {a.localUri && (
-              <Image source={{ uri: a.localUri }} style={styles.thumbImage} contentFit="cover" />
-            )}
-            <View style={styles.thumbBadge} pointerEvents="none">
-              <AppIcon name="xmark" size={spacing[2] * 2} tintColor={themeColors.white} />
-            </View>
-            {uploading && (
-              <>
-                <View style={styles.thumbDim} />
-                <SwiftUIHost style={styles.progressHost}>
-                  <ProgressView
-                    value={progress / 100}
-                    modifiers={[progressViewStyle('linear'), frame({ height: spacing[1] })]}
-                  />
-                </SwiftUIHost>
-              </>
-            )}
-          </Pressable>
-        );
-      })}
-      {errors.length > 0 && (
-        <Animated.Text style={styles.errorText}>{errors.join(' · ')}</Animated.Text>
-      )}
-    </View>
-  );
-}
 
 // ── Main component ────────────────────────────────────────────────────────────
 
@@ -125,259 +33,114 @@ interface FeedComposerProps {
 
 export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerProps) {
   const insets = useSafeAreaInsets();
-  const themeColors = useThemeColors();
   const styles = useStyles();
-  const isDark = useColorScheme() === 'dark';
-  const blurTint = isDark ? ('dark' as const) : ('light' as const);
-  const pillOverlayColor = isDark ? 'rgba(30,30,30,0.5)' : 'rgba(255,255,255,0.6)';
-  const pillBorderColor = isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.08)';
-  const prefersReducedMotion = useReducedMotion();
   const keyboard = useAnimatedKeyboard();
-  const animatedH = useSharedValue(INPUT_MIN_H);
-  const actionGroupProgress = useSharedValue(0);
-  const inputRef = useRef<TextInput>(null);
-  const client = useApiClient();
   const queryClient = useQueryClient();
   const router = useRouter();
   const { requestTopReveal } = useTopAnchoredFeed();
-  const { mutateAsync: createNote } = useCreateNote();
+  const { mutateAsync: createNote, isPending: isSaving } = useCreateNote();
+  const { mutateAsync: createChat, isPending: isChatCreating } = useCreateChat();
 
-  const [message, setMessage] = useState(seedMessage ?? '');
-  const [attachments, setAttachments] = useState<ComposerAttachment[]>([]);
-  const [isCameraOpen, setIsCameraOpen] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isChatCreating, setIsChatCreating] = useState(false);
-  const { enhance, isEnhancing } = useTextEnhance();
-  const { handleCameraCapture, pickAttachment, uploadState } = useComposerMediaActions({
+  const {
+    message, setMessage,
     attachments,
-    setAttachments,
-  });
-
-  const uploadedAttachmentIds = useMemo(() => getUploadedAttachmentIds(attachments), [attachments]);
-
-  const canSubmit = canSubmitComposerDraft({
-    isUploading: uploadState.isUploading,
-    message,
+    isCameraOpen, setIsCameraOpen,
+    inputRef,
+    uploadState,
     uploadedAttachmentIds,
-    selectedNotes: [],
-  });
+    canSubmit,
+    clearDraft,
+    handleRemoveAttachment,
+    showPlusMenu,
+    onContentSizeChange,
+    enhance, isEnhancing,
+    handleCameraCapture,
+    inputStyle,
+  } = useComposerBase({ seedMessage });
 
-  const clearDraft = useCallback(() => {
-    setMessage('');
-    setAttachments([]);
-    animatedH.value = INPUT_MIN_H;
-  }, [animatedH]);
+  // ── Actions ───────────────────────────────────────────────────────────────
 
   const handleSave = useCallback(async () => {
     if (!canSubmit || isSaving) return;
-    setIsSaving(true);
-    try {
-      await createNote({
-        text: message.trim(),
-        ...(uploadedAttachmentIds.length > 0 ? { fileIds: uploadedAttachmentIds } : {}),
-      });
-      donateAddNoteIntent();
-      await invalidateInboxQueries(queryClient);
-      requestTopReveal();
-      clearDraft();
-      Keyboard.dismiss();
-    } finally {
-      setIsSaving(false);
-    }
-  }, [
-    canSubmit,
-    isSaving,
-    createNote,
-    message,
-    uploadedAttachmentIds,
-    queryClient,
-    requestTopReveal,
-    clearDraft,
-  ]);
+    await createNote({
+      text: message.trim(),
+      ...(uploadedAttachmentIds.length > 0 ? { fileIds: uploadedAttachmentIds } : {}),
+    });
+    donateAddNoteIntent();
+    await invalidateInboxQueries(queryClient);
+    requestTopReveal();
+    clearDraft();
+    Keyboard.dismiss();
+  }, [canSubmit, isSaving, createNote, message, uploadedAttachmentIds, queryClient, requestTopReveal, clearDraft]);
 
   const handleChat = useCallback(async () => {
     if (!canSubmit || isChatCreating) return;
-    setIsChatCreating(true);
-    try {
-      const chatRes = await client.api.chats.$post({ json: { title: buildChatTitle(message) } });
-      const chat = await chatRes.json();
-      queryClient.setQueryData<ChatWithActivity[] | undefined>(chatKeys.resumableSessions, (prev) =>
-        upsertInboxSessionActivity(
-          prev ?? [],
-          createChatInboxRefreshSnapshot({
-            chatId: chat.id,
-            noteId: chat.noteId,
-            title: chat.title,
-            timestamp: chat.createdAt,
-            userId: chat.userId,
-          }),
-        ),
-      );
-      void invalidateInboxQueries(queryClient);
-      clearDraft();
-      router.push(
-        `/(protected)/(tabs)/chat/${chat.id}?initialMessage=${encodeURIComponent(message.trim())}` as RelativePathString,
-      );
-      requestTopReveal();
-    } finally {
-      setIsChatCreating(false);
-    }
-  }, [
-    canSubmit,
-    isChatCreating,
-    client,
-    message,
-    queryClient,
-    clearDraft,
-    router,
-    requestTopReveal,
-  ]);
-
-  const handleRemoveAttachment = useCallback(
-    (id: string) => {
-      const target = attachments.find((a) => a.id === id);
-      setAttachments((prev) => prev.filter((a) => a.id !== id));
-      if (target?.uploadedFile?.id) {
-        void client.api.files[':fileId']
-          .$delete({ param: { fileId: target.uploadedFile.id } })
-          .catch(() => undefined);
-      }
-    },
-    [attachments, client],
-  );
-
-  const showPlusMenu = useCallback(() => {
-    ActionSheetIOS.showActionSheetWithOptions(
-      {
-        options: [
-          t.chat.input.actionSheet.cancel,
-          t.chat.input.actionSheet.takePhoto,
-          t.chat.input.actionSheet.chooseFromLibrary,
-        ],
-        cancelButtonIndex: 0,
-      },
-      (i) => {
-        if (i === 1) setIsCameraOpen(true);
-        else if (i === 2) void pickAttachment();
-      },
+    const chat = await createChat({ title: buildChatTitle(message) });
+    clearDraft();
+    router.push(
+      `/(protected)/(tabs)/chat/${chat.id}?initialMessage=${encodeURIComponent(message.trim())}` as RelativePathString,
     );
-  }, [pickAttachment]);
+    requestTopReveal();
+  }, [canSubmit, isChatCreating, createChat, message, clearDraft, router, requestTopReveal]);
 
-  const onContentSizeChange = useCallback(
-    (h: number) => {
-      const clamped = Math.min(Math.max(h, INPUT_MIN_H), INPUT_MAX_H);
-      animatedH.value = withSpring(clamped, {
-        damping: 20,
-        stiffness: 220,
-        mass: 0.7,
-        overshootClamping: false,
-      });
-    },
-    [animatedH],
-  );
-
-  const inputStyle = useAnimatedStyle(() => ({
-    minHeight: animatedH.value,
-    maxHeight: INPUT_MAX_H,
-  }));
+  // ── Animated shell position (tracks keyboard) ─────────────────────────────
 
   const shellStyle = useAnimatedStyle(() => ({
     bottom: keyboard.height.value + Math.max(insets.bottom, spacing[2]),
   }));
 
-  useEffect(() => {
-    actionGroupProgress.value = withTiming(message.trim().length > 0 ? 1 : 0, { duration: 180 });
-  }, [message, actionGroupProgress]);
-
-  const actionGroupStyle = useAnimatedStyle(() => ({
-    opacity: actionGroupProgress.value,
-    transform: [{ translateY: (1 - actionGroupProgress.value) * 6 }],
-  }));
-
   return (
     <Animated.View style={[styles.container, shellStyle]}>
-      <Animated.View
-        layout={createLayoutTransition(prefersReducedMotion)}
+      <ComposerPill
+        testID="feed-composer"
         onLayout={(e) => {
           onClearanceChange?.(e.nativeEvent.layout.height + Math.max(insets.bottom, spacing[2]));
         }}
-        style={[styles.surface, { borderColor: pillBorderColor }]}
-        testID="feed-composer"
       >
-        {/* Surface background is clipped; the outer wrapper can still overflow. */}
-        <View style={[StyleSheet.absoluteFill, styles.blurClip]}>
-          <BlurView intensity={24} tint={blurTint} style={StyleSheet.absoluteFill} />
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: pillOverlayColor }]} />
-        </View>
-        {/* Top-edge highlight for the floating surface. */}
-        <View style={styles.specHighlight} pointerEvents="none" />
-
-        <Animated.View layout={createLayoutTransition(prefersReducedMotion)}>
-          <AttachmentRow
+        <ComposerAttachmentRow
             attachments={attachments}
             errors={uploadState.errors}
             isUploading={uploadState.isUploading}
             progressByAssetId={uploadState.progressByAssetId}
             onRemove={handleRemoveAttachment}
           />
-        </Animated.View>
-        {/* Text input row. */}
-        <Animated.View style={inputStyle}>
-          <TextInput
-            ref={inputRef}
-            multiline
-            scrollEnabled={false}
-            value={message}
-            onChangeText={setMessage}
-            onContentSizeChange={(e) => onContentSizeChange(e.nativeEvent.contentSize.height)}
-            placeholder={t.feed.composer.placeholder}
-            placeholderTextColor={themeColors['text-tertiary']}
-            cursorColor={themeColors.accent}
-            selectionColor={themeColors.accent}
-            style={styles.input}
-            testID="feed-composer-input"
+        <ComposerTextInput
+          inputRef={inputRef}
+          value={message}
+          onChangeText={setMessage}
+          onContentSizeChange={onContentSizeChange}
+          placeholder={t.feed.composer.placeholder}
+          testID="feed-composer-input"
+          inputStyle={inputStyle}
+        />
+        <View style={styles.actionRow}>
+          <MediaButton
+            accessibilityLabel={t.feed.composer.addAttachmentA11y}
+            icon="plus"
+            onPress={showPlusMenu}
           />
-        </Animated.View>
-        {/* Action row. */}
-        <View style={styles.buttonRow}>
-          <AppIconButtonGroup style={styles.mediaGroup}>
-            <AppIconButton
-              accessibilityLabel={t.feed.composer.addAttachmentA11y}
-              icon="plus"
-              onPress={showPlusMenu}
-              tintColor={themeColors['text-primary']}
-            />
-          </AppIconButtonGroup>
-          <Animated.View
-            style={actionGroupStyle}
-            pointerEvents={message.trim().length > 0 ? 'auto' : 'none'}
-          >
-            <AppIconButtonGroup style={styles.actionGroup}>
-              <AppIconButton
+          <ComposerActionGroup hasContent={message.trim().length > 0}>
+              <ActionButton
                 accessibilityLabel={t.feed.composer.enhanceTextA11y}
                 icon="wand.and.sparkles"
                 onPress={() => void enhance(message).then(setMessage)}
                 disabled={isEnhancing}
-                tintColor={themeColors.white}
               />
-              <AppIconButton
+              <ActionButton
                 accessibilityLabel={t.feed.composer.openChatA11y}
                 disabled={!canSubmit || isSaving || isChatCreating}
                 icon="bubble.left"
                 onPress={() => void handleChat()}
-                tintColor={themeColors.white}
               />
-              <AppIconButton
+              <ActionButton
                 accessibilityLabel={t.feed.composer.saveNoteA11y}
                 disabled={!canSubmit || isSaving || isChatCreating}
                 icon="arrow.up"
                 onPress={() => void handleSave()}
-                tintColor={themeColors.white}
               />
-            </AppIconButtonGroup>
-          </Animated.View>
+            </ComposerActionGroup>
         </View>
-      </Animated.View>
+      </ComposerPill>
 
       <CameraModal
         visible={isCameraOpen}
@@ -400,106 +163,9 @@ const useStyles = makeStyles((theme) => ({
     position: 'absolute',
     alignItems: 'center',
   },
-  // Floating surface that contains the composer content.
-  surface: {
-    width: '100%',
-    maxWidth: MAX_WIDTH,
-    borderRadius: PILL_RADIUS,
-    borderCurve: 'continuous',
-    overflow: 'visible', // so the action cluster can extend cleanly
-    borderWidth: 1,
-    paddingHorizontal: spacing[3],
-    paddingTop: spacing[3],
-    paddingBottom: spacing[2],
-    gap: 0,
-  },
-  // Separate clipping container so blur is clipped to pill shape
-  // while the outer pill can still overflow its children
-  blurClip: {
-    borderRadius: PILL_RADIUS,
-    overflow: 'hidden',
-  },
-  specHighlight: {
-    position: 'absolute',
-    top: 0,
-    left: spacing[4],
-    right: spacing[4],
-    height: 1,
-    backgroundColor: 'rgba(255,255,255,0.45)',
-    borderRadius: 1,
-  },
-  // Active state — text row (full width)
-  input: {
-    color: theme.colors.foreground,
-    fontSize: 16,
-    lineHeight: 22,
-    letterSpacing: -0.35,
-    paddingHorizontal: 0,
-    paddingVertical: 0,
-  },
-  // Active state — button row below text
-  buttonRow: {
+  actionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  mediaGroup: {
-    gap: spacing[2],
-  },
-  actionGroup: {
-    gap: spacing[1],
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
-    borderRadius: 32,
-    paddingHorizontal: 4,
-  },
-  // Attachments
-  attachmentRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing[2],
-    paddingBottom: spacing[1],
-  },
-  thumb: {
-    width: spacing[4] * 3,
-    height: spacing[4] * 3,
-    borderRadius: radii.md,
-    borderCurve: 'continuous',
-    overflow: 'hidden',
-    backgroundColor: theme.colors['bg-surface'],
-  },
-  thumbImage: {
-    width: spacing[4] * 3,
-    height: spacing[4] * 3,
-  },
-  thumbBadge: {
-    position: 'absolute',
-    top: spacing[1],
-    right: spacing[1],
-    width: spacing[2] * 2,
-    height: spacing[2] * 2,
-    borderRadius: radii.sm,
-    backgroundColor: theme.colors['overlay-modal-high'],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  thumbDim: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: theme.colors['overlay-modal-medium'],
-  },
-  progressHost: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: spacing[1],
-  },
-  errorText: {
-    fontSize: 12,
-    lineHeight: 16,
-    color: theme.colors.destructive,
   },
 }));

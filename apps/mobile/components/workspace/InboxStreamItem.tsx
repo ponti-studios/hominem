@@ -145,24 +145,19 @@ function cleanText(value: string | null): string | null {
 }
 
 const useStyles = makeStyles((theme) => ({
-  pressable: {
-    backgroundColor: theme.colors['bg-surface'],
-    borderColor: theme.colors['border-faint'],
-    borderCurve: 'continuous',
-    borderRadius: theme.borderRadii.icon,
-    borderWidth: 1,
-    marginHorizontal: theme.spacing.lg,
-  },
+  pressable: {},
   pressed: {
-    backgroundColor: theme.colors['bg-elevated'],
+    backgroundColor: theme.colors['bg-base'],
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     columnGap: theme.spacing.md,
-    minHeight: 64,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
+    minHeight: 56,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+    borderBottomColor: theme.colors['border-faint'],
+    borderBottomWidth: 1,
   },
   content: {
     flex: 1,

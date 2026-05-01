@@ -1,0 +1,137 @@
+import { ProgressView, Host as SwiftUIHost } from '@expo/ui/swift-ui';
+import { frame, progressViewStyle } from '@expo/ui/swift-ui/modifiers';
+import { radii, spacing } from '@hominem/ui/tokens';
+import { Image } from 'expo-image';
+import React from 'react';
+import { Pressable, ScrollView, View } from 'react-native';
+import Animated from 'react-native-reanimated';
+
+import type { ComposerAttachment } from '~/components/composer/composerState';
+import { makeStyles, useThemeColors } from '~/components/theme';
+import { createLayoutTransition } from '~/components/theme/animations';
+import AppIcon from '~/components/ui/icon';
+import { useReducedMotion } from '~/hooks/use-reduced-motion';
+import t from '~/translations';
+
+interface ComposerAttachmentRowProps {
+  attachments: ComposerAttachment[];
+  errors: string[];
+  isUploading: boolean;
+  progressByAssetId: Record<string, number>;
+  onRemove: (id: string) => void;
+}
+
+export function ComposerAttachmentRow({
+  attachments,
+  errors,
+  isUploading,
+  progressByAssetId,
+  onRemove,
+}: ComposerAttachmentRowProps) {
+  const themeColors = useThemeColors();
+  const styles = useStyles();
+  const prefersReducedMotion = useReducedMotion();
+
+  if (attachments.length === 0 && errors.length === 0 && !isUploading) return null;
+
+  return (
+    <Animated.View layout={createLayoutTransition(prefersReducedMotion)}>
+      {attachments.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.row}
+        >
+          {attachments.map((a) => {
+            const progress = progressByAssetId[a.id] ?? 0;
+            const uploading = progress > 0 && progress < 100;
+            return (
+              <Pressable
+                key={a.id}
+                style={styles.thumb}
+                onPress={() => onRemove(a.id)}
+                accessibilityLabel={t.notes.editor.removeFile(a.name)}
+                accessibilityRole="button"
+              >
+                {a.localUri && (
+                  <Image
+                    source={{ uri: a.localUri }}
+                    style={styles.thumbImage}
+                    contentFit="cover"
+                  />
+                )}
+                <View style={styles.thumbBadge} pointerEvents="none">
+                  <AppIcon name="xmark" size={spacing[2] * 2} tintColor={themeColors.white} />
+                </View>
+                {uploading && (
+                  <>
+                    <View style={styles.thumbDim} />
+                    <SwiftUIHost style={styles.progressHost}>
+                      <ProgressView
+                        value={progress / 100}
+                        modifiers={[progressViewStyle('linear'), frame({ height: spacing[1] })]}
+                      />
+                    </SwiftUIHost>
+                  </>
+                )}
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      )}
+      {errors.length > 0 && (
+        <Animated.Text style={styles.errorText}>{errors.join(' · ')}</Animated.Text>
+      )}
+    </Animated.View>
+  );
+}
+
+const useStyles = makeStyles((theme) => ({
+  row: {
+    gap: spacing[2],
+    paddingBottom: spacing[1],
+  },
+  thumb: {
+    width: spacing[4] * 3,
+    height: spacing[4] * 3,
+    borderRadius: radii.md,
+    borderCurve: 'continuous',
+    overflow: 'hidden',
+    backgroundColor: theme.colors['bg-surface'],
+  },
+  thumbImage: {
+    width: spacing[4] * 3,
+    height: spacing[4] * 3,
+  },
+  thumbBadge: {
+    position: 'absolute',
+    top: spacing[1],
+    right: spacing[1],
+    width: spacing[2] * 2,
+    height: spacing[2] * 2,
+    borderRadius: radii.sm,
+    backgroundColor: theme.colors['overlay-modal-high'],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  thumbDim: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: theme.colors['overlay-modal-medium'],
+  },
+  progressHost: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: spacing[1],
+  },
+  errorText: {
+    fontSize: 12,
+    lineHeight: 16,
+    color: theme.colors.destructive,
+  },
+}));

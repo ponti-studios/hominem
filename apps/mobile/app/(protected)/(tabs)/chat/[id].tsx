@@ -1,7 +1,7 @@
 import { useApiClient } from '@hominem/rpc/react';
 import type { SessionSource } from '@hominem/rpc/types';
 import { useNavigation } from '@react-navigation/native';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router/build/hooks';
 import React, { useLayoutEffect, useMemo } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
@@ -29,12 +29,8 @@ import {
   useChatMessages,
   useSendMessage,
 } from '~/services/chat';
-import type { ChatWithActivity } from '~/services/chat/session-types';
+import { useCreateChat } from '~/services/chat/use-create-chat';
 import { formatRelativeAge } from '~/services/date/format-relative-age';
-import {
-  createChatInboxRefreshSnapshot,
-  upsertInboxSessionActivity,
-} from '~/services/inbox/inbox-refresh';
 import { chatKeys } from '~/services/notes/query-keys';
 import t from '~/translations';
 
@@ -107,33 +103,7 @@ export default function ChatDetailScreen() {
 
   const displayTitle = resolveChatScreenTitle(activeChat?.title, controller.resolvedSource);
 
-  const createChatMutation = useMutation({
-    mutationFn: async () => {
-      const res = await client.api.chats.$post({ json: { title: DEFAULT_CHAT_TITLE } });
-      return res.json();
-    },
-    onSuccess: (chat) => {
-      queryClient.setQueryData(chatKeys.activeChat(chat.id), chat);
-      queryClient.setQueryData<ChatWithActivity[] | undefined>(
-        chatKeys.resumableSessions,
-        (sessions) =>
-          upsertInboxSessionActivity(
-            sessions ?? [],
-            createChatInboxRefreshSnapshot({
-              chatId: chat.id,
-              noteId: chat.noteId,
-              timestamp: chat.updatedAt,
-              title: chat.title,
-              userId: chat.userId,
-            }),
-          ),
-      );
-      router.push(`/(protected)/(tabs)/chat/${chat.id}`);
-    },
-  });
-
-  const isCreatingChat = createChatMutation.isPending;
-  const handleCreateChat = createChatMutation.mutate;
+  const { mutate: handleCreateChat, isPending: isCreatingChat } = useCreateChat();
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -153,7 +123,7 @@ export default function ChatDetailScreen() {
           <Pressable
             disabled={isCreatingChat}
             hitSlop={6}
-            onPress={() => handleCreateChat()}
+            onPress={() => handleCreateChat({ title: DEFAULT_CHAT_TITLE })}
             style={({ pressed }) => [
               styles.headerIconButton,
               { opacity: isCreatingChat ? 0.35 : pressed ? 0.65 : 1 },

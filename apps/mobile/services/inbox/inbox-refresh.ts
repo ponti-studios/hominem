@@ -7,18 +7,12 @@ import type { ChatWithActivity } from '../chat/session-types';
 
 const INBOX_REFRESH_QUERY_KEYS = [inboxKeys.all, noteKeys.all, chatKeys.resumableSessions] as const;
 
-interface ChatInboxRefreshSnapshot {
+export interface ChatInboxRefreshSnapshot {
   chatId: string;
   noteId: string | null;
   title: string | null;
   timestamp: string;
   userId: string;
-}
-
-export function createChatInboxRefreshSnapshot(
-  input: ChatInboxRefreshSnapshot,
-): ChatInboxRefreshSnapshot {
-  return input;
 }
 
 export function upsertInboxSessionActivity(

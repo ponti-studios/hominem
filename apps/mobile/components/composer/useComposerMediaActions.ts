@@ -28,16 +28,6 @@ function getAttachmentType(uploadedFile: UploadedMobileAsset['uploadedFile']): s
   return classifyFileByMimeType(uploadedFile.mimetype);
 }
 
-function mapUploadedAssetsToAttachments(assets: UploadedMobileAsset[]): ComposerAttachment[] {
-  return assets.map((asset) => ({
-    id: asset.uploadedFile.id,
-    name: asset.uploadedFile.originalName,
-    type: getAttachmentType(asset.uploadedFile),
-    localUri: asset.localUri,
-    uploadedFile: asset.uploadedFile,
-  }));
-}
-
 function exceedsAttachmentLimit(existingCount: number, nextCount: number): boolean {
   return existingCount + nextCount > UPLOAD_MAX_FILE_COUNT;
 }
@@ -63,7 +53,14 @@ export function useComposerMediaActions({
       return [];
     }
 
-    const nextAttachments = mapUploadedAssetsToAttachments(uploadedAssets);
+    const nextAttachments = uploadedAssets.map((asset) => ({
+      id: asset.uploadedFile.id,
+      name: asset.uploadedFile.originalName,
+      type: getAttachmentType(asset.uploadedFile),
+      localUri: asset.localUri,
+      uploadedFile: asset.uploadedFile,
+    }));
+
     setAttachments((currentAttachments) => [...currentAttachments, ...nextAttachments]);
     return nextAttachments;
   };

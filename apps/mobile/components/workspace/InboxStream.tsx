@@ -19,13 +19,6 @@ interface InboxStreamProps {
 
 const keyExtractor = (item: InboxStreamItemModel) => `${item.kind}:${item.id}`;
 
-const InboxStreamDivider = memo(() => {
-  const styles = useStreamStyles();
-  return <View style={styles.divider} pointerEvents="none" />;
-});
-
-InboxStreamDivider.displayName = 'InboxStreamDivider';
-
 const RenderInboxStreamItem = memo(({ item }: { item: InboxStreamItemModel }) => {
   return <InboxStreamItem item={item} />;
 });
@@ -168,7 +161,6 @@ export const InboxStream = ({
             contentPaddingBottom != null ? { paddingBottom: contentPaddingBottom } : null,
           ]}
           data={items}
-          ItemSeparatorComponent={InboxStreamDivider}
           keyExtractor={keyExtractor}
           renderItem={renderItem}
           ListFooterComponent={<View style={staticStyles.sectionFooter} />}
@@ -184,9 +176,6 @@ const useStreamStyles = makeStyles((theme) => ({
   container: {
     flex: 1,
   },
-  divider: {
-    height: theme.spacing.sm,
-  },
   sectionShell: {
     backgroundColor: theme.colors['bg-base'],
     flex: 1,
@@ -195,33 +184,21 @@ const useStreamStyles = makeStyles((theme) => ({
   emptyWrap: {
     flexGrow: 1,
     justifyContent: 'center',
-    marginHorizontal: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.lg,
   },
   emptyCard: {
     alignItems: 'center',
-    backgroundColor: theme.colors['bg-surface'],
-    borderColor: theme.colors['border-faint'],
-    borderCurve: 'continuous',
-    borderRadius: 20,
-    borderWidth: 1,
-    gap: theme.spacing.md,
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.xl,
+    gap: theme.spacing.lg,
   },
   emptyIcon: {
     alignItems: 'center',
-    backgroundColor: theme.colors['bg-elevated'],
-    borderColor: theme.colors['border-faint'],
-    borderCurve: 'continuous',
-    borderRadius: 16,
-    borderWidth: 1,
-    height: 64,
     justifyContent: 'center',
+    height: 64,
     width: 64,
   },
   emptyIconSymbol: {
-    color: theme.colors.foreground,
+    color: theme.colors['text-tertiary'],
   },
   emptyTitle: {
     textAlign: 'center',
@@ -231,77 +208,65 @@ const useStreamStyles = makeStyles((theme) => ({
     textAlign: 'center',
   },
   samplePanel: {
-    backgroundColor: theme.colors['bg-base'],
-    borderColor: theme.colors['border-faint'],
-    borderCurve: 'continuous',
-    borderRadius: 16,
-    borderWidth: 1,
-    marginTop: theme.spacing.md,
-    padding: theme.spacing.md,
-    rowGap: theme.spacing.sm,
+    marginTop: theme.spacing.lg,
     width: '100%',
+    gap: theme.spacing.md,
   },
   sampleLabel: {
     fontWeight: '600',
-    paddingHorizontal: theme.spacing.sm,
+    color: theme.colors['text-tertiary'],
+    fontSize: 12,
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
   },
   sampleList: {
     rowGap: theme.spacing.sm,
   },
   sampleRow: {
     alignItems: 'center',
-    backgroundColor: theme.colors['bg-surface'],
-    borderColor: theme.colors['border-faint'],
-    borderCurve: 'continuous',
-    borderRadius: 12,
-    borderWidth: 1,
-    columnGap: theme.spacing.md,
     flexDirection: 'row',
-    minHeight: 52,
-    paddingHorizontal: theme.spacing.md,
+    columnGap: theme.spacing.md,
+    minHeight: 48,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.sm,
+    borderBottomColor: theme.colors['border-faint'],
+    borderBottomWidth: 1,
   },
   sampleIcon: {
     alignItems: 'center',
-    backgroundColor: theme.colors['bg-elevated'],
-    borderRadius: 9,
-    height: 34,
     justifyContent: 'center',
-    width: 34,
+    height: 32,
+    width: 32,
   },
   sampleIconSymbol: {
-    color: theme.colors['icon-primary'],
+    color: theme.colors['text-secondary'],
   },
   sampleText: {
     flex: 1,
     rowGap: 2,
   },
   starterStack: {
-    marginTop: theme.spacing.md,
-    rowGap: theme.spacing.sm,
+    marginTop: theme.spacing.lg,
     width: '100%',
   },
   starter: {
     alignItems: 'center',
-    backgroundColor: theme.colors['bg-surface'],
-    borderColor: theme.colors['border-faint'],
-    borderCurve: 'continuous',
-    borderRadius: 14,
-    borderWidth: 1,
-    columnGap: theme.spacing.md,
     flexDirection: 'row',
-    minHeight: 64,
-    paddingHorizontal: theme.spacing.md,
+    columnGap: theme.spacing.md,
+    minHeight: 56,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+    borderBottomColor: theme.colors['border-faint'],
+    borderBottomWidth: 1,
   },
   starterPressed: {
-    backgroundColor: theme.colors['bg-elevated'],
+    backgroundColor: theme.colors['bg-base'],
   },
   starterIcon: {
     alignItems: 'center',
-    backgroundColor: theme.colors.background,
-    borderRadius: 10,
-    height: 38,
     justifyContent: 'center',
-    width: 38,
+    height: 40,
+    width: 40,
   },
   starterIconSymbol: {
     color: theme.colors['text-secondary'],
@@ -317,10 +282,10 @@ const useStreamStyles = makeStyles((theme) => ({
 
 const staticStyles = StyleSheet.create({
   listContent: {
-    paddingTop: 8,
+    paddingTop: 0,
     paddingBottom: 16,
   },
   sectionFooter: {
-    height: 16,
+    height: 0,
   },
 });
