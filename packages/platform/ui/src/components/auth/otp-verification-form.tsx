@@ -107,7 +107,7 @@ export function OtpVerificationForm({
         className="tracking-[0.35em] text-center font-mono"
       />
 
-      <Button type="submit" variant="primary" disabled={!canSubmit} className="w-full">
+      <Button type="submit" variant="primary" disabled={!canSubmit} fullWidth>
         {isSubmitting ? 'Verifying…' : copy.verifyButton}
       </Button>
 

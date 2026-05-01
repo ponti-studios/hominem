@@ -74,7 +74,7 @@ export function QueueItem({
       )}
       {...props}
     >
-      <Button type="button" variant="ghost" size="icon" className="size-5 mt-0.5 cursor-grab">
+      <Button type="button" variant="ghost" size="icon-xs" className="mt-0.5 cursor-grab">
         <GripVertical className="size-3" />
       </Button>
       <div className="flex-1 min-w-0">

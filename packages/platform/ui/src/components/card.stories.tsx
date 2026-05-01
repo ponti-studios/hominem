@@ -15,7 +15,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: () => (
-    <Card className="w-80">
+    <Card>
       <CardHeader>
         <CardTitle>Card Title</CardTitle>
         <CardDescription>A short description of the card's content.</CardDescription>
@@ -48,7 +48,7 @@ export const Default: Story = {
 export const Minimal: Story = {
   render: () => (
     <Card className="w-80">
-      <CardContent className="pt-6">
+      <CardContent>
         <p className="body-2 text-text-secondary">Minimal card with only content.</p>
       </CardContent>
     </Card>

@@ -362,8 +362,7 @@ export function PromptInputButton({ tooltip, children, ...props }: PromptInputBu
       <Button
         type="button"
         variant="ghost"
-        size="icon"
-        className="size-8"
+        size="icon-sm"
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
         {...props}
@@ -395,7 +394,7 @@ export function PromptInputSubmit({
   const isDisabled = disabled || status === 'disabled';
 
   return (
-    <Button type="submit" size="icon" disabled={isDisabled} className="size-9 shrink-0" {...props}>
+    <Button type="submit" size="icon" disabled={isDisabled} {...props}>
       {status === 'streaming' ? (
         <Sparkles className="size-4 animate-spin" />
       ) : (
@@ -429,7 +428,7 @@ export function PromptInputActionMenuTrigger({
 }: PromptInputActionMenuTriggerProps) {
   return (
     <DropdownMenuTrigger asChild>
-      <Button type="button" variant="ghost" size="icon" className="size-8" {...props}>
+      <Button type="button" variant="ghost" size="icon-sm" {...props}>
         {children || <Paperclip className="size-4" />}
       </Button>
     </DropdownMenuTrigger>

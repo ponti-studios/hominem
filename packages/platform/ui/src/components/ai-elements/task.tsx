@@ -53,8 +53,8 @@ export function Task({
       <Button
         type="button"
         variant="ghost"
-        size="icon"
-        className="size-5 mt-0.5"
+        size="icon-xs"
+        className="mt-0.5"
         onClick={onToggle}
       >
         {statusIcons[status]}

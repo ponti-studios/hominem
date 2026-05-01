@@ -26,8 +26,8 @@ export function FilterChip({ label, onRemove, onClick }: FilterChipProps) {
       <span>{label}</span>
       <Button
         variant="ghost"
-        size="icon"
-        className="size-4 hover:bg-muted-foreground/20"
+        size="icon-xs"
+        className="hover:bg-muted-foreground/20"
         onClick={(e) => {
           e.stopPropagation();
           onRemove();

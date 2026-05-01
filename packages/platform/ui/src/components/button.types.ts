@@ -21,6 +21,7 @@ export type ButtonSize =
 
 export interface ButtonBaseProps {
   isLoading?: boolean | undefined;
+  fullWidth?: boolean | undefined;
   size?: ButtonSize;
   title?: string | undefined;
   variant?: ButtonVariant;

@@ -50,7 +50,7 @@ export function ClassificationReview({
         </div>
 
         <Inline gap="sm" className="pt-1">
-          <Button type="button" variant="primary" onClick={onAccept} className="flex-1">
+          <Button type="button" variant="primary" onClick={onAccept} fullWidth>
             Save Note
           </Button>
           <Button type="button" variant="outline" onClick={onReject}>

@@ -5,6 +5,7 @@ const buttonVariantOptions = [
   'default',
   'primary',
   'destructive',
+  'icon',
   'ghost',
   'link',
   'outline',

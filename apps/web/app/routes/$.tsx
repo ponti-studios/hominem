@@ -10,7 +10,7 @@ export default function NotFoundPage() {
       <p className="mt-2 max-w-md text-center text-sm text-text-secondary">
         The page you're looking for doesn't exist or has been moved.
       </p>
-      <Button asChild className="mt-8 gap-2">
+      <Button asChild className="mt-8">
         <Link to="/">
           <Home className="size-4" />
           Go Home

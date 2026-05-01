@@ -179,7 +179,7 @@ interface AudioPlayerPlayButtonProps extends React.ButtonHTMLAttributes<HTMLButt
 
 export function AudioPlayerPlayButton({ isPlaying = false, ...props }: AudioPlayerPlayButtonProps) {
   return (
-    <Button type="button" variant="default" size="icon" className="rounded-full" {...props}>
+    <Button type="button" variant="icon" size="icon" {...props}>
       {isPlaying ? <Pause className="size-4" /> : <Play className="size-4" />}
     </Button>
   );

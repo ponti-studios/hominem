@@ -47,7 +47,7 @@ export function EmailEntryForm({
         error={displayError}
       />
 
-      <Button type="submit" variant="primary" disabled={isSubmitting} className="w-full">
+      <Button type="submit" variant="primary" disabled={isSubmitting} fullWidth>
         {isSubmitting ? 'Sending…' : copy.submitButton}
       </Button>
 

@@ -17,6 +17,7 @@ const meta = {
     size: selectControl(buttonSizeOptions, 'Size variant of the button', {
       defaultValue: 'md',
     }),
+    fullWidth: booleanControl('Makes the button stretch to its container width', false),
     disabled: booleanControl('Prevents user interaction and applies disabled styling', false),
     isLoading: booleanControl('Shows the button in a loading state', false),
   },
@@ -46,6 +47,9 @@ export const Variants: Story = {
       <Button variant="primary">Primary</Button>
       <Button variant="ghost">Ghost</Button>
       <Button variant="destructive">Destructive</Button>
+      <Button variant="icon" size="icon">
+        <Plus className="size-4" />
+      </Button>
       <Button variant="link">Link</Button>
     </div>
   ),
@@ -53,11 +57,21 @@ export const Variants: Story = {
 
 export const Sizes: Story = {
   render: () => (
-    <div className="flex items-center gap-3">
+    <div className="flex flex-wrap items-center gap-3">
+      <Button size="xs">XS</Button>
       <Button size="sm">Small</Button>
       <Button size="md">Medium</Button>
       <Button size="lg">Large</Button>
       <Button size="icon">
+        <Plus className="size-4" />
+      </Button>
+      <Button size="icon-xs">
+        <Plus className="size-3" />
+      </Button>
+      <Button size="icon-sm">
+        <Plus className="size-4" />
+      </Button>
+      <Button size="icon-lg">
         <Plus className="size-4" />
       </Button>
     </div>

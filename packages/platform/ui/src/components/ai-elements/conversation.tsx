@@ -45,7 +45,7 @@ interface ConversationScrollButtonProps {
 
 export function ConversationScrollButton({ onClick }: ConversationScrollButtonProps) {
   return (
-    <Button variant="outline" size="icon" className="size-8 rounded-full" onClick={onClick}>
+    <Button variant="icon" size="icon-sm" onClick={onClick}>
       <ChevronDown className="size-4" />
     </Button>
   );
@@ -74,7 +74,7 @@ export function ConversationDownload({ messages }: ConversationDownloadProps) {
   };
 
   return (
-    <Button variant="ghost" size="sm" className="gap-2" onClick={handleDownload}>
+    <Button variant="ghost" size="sm" onClick={handleDownload}>
       <Download className="size-4" />
       Export
     </Button>
