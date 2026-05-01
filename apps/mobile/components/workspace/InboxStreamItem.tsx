@@ -20,7 +20,6 @@ import {
   fontWeights,
   lineHeights,
   makeStyles,
-  spacing,
   theme,
 } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
@@ -152,7 +151,7 @@ const useStyles = makeStyles((theme) => ({
     borderCurve: 'continuous',
     borderRadius: theme.borderRadii.icon,
     borderWidth: 1,
-    marginHorizontal: spacing[4],
+    marginHorizontal: theme.spacing.lg,
   },
   pressed: {
     backgroundColor: theme.colors['bg-elevated'],
@@ -160,14 +159,14 @@ const useStyles = makeStyles((theme) => ({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    columnGap: spacing[3],
+    columnGap: theme.spacing.md,
     minHeight: 64,
-    paddingHorizontal: spacing[3],
-    paddingVertical: spacing[2],
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
   },
   content: {
     flex: 1,
-    gap: spacing[1],
+    gap: theme.spacing.sm,
     justifyContent: 'center',
     minWidth: 0,
   },

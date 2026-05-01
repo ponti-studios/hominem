@@ -4,9 +4,10 @@ import { usePasskeys } from '@hominem/auth/client/passkey';
 import { useAuthClient } from '@hominem/auth/client/provider';
 import { readAuthErrorMessage } from '@hominem/auth/shared/error-contract';
 import { resolveAuthRedirect } from '@hominem/auth/shared/redirect-policy';
-import { NOTES_AUTH_CONFIG } from '@hominem/auth/shared/ux-contract';
 import { EmailEntryForm } from '@hominem/ui';
 import { useLocation, useNavigate } from 'react-router';
+
+import { NOTES_AUTH_CONFIG } from '~/config/auth';
 
 import { getNextRedirect } from './shared';
 import { redirectAuthenticatedUser } from './shared.server';

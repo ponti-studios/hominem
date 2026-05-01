@@ -1,7 +1,8 @@
 import { resolveAuthRedirect } from '@hominem/auth/shared/redirect-policy';
-import { NOTES_AUTH_CONFIG } from '@hominem/auth/shared/ux-contract';
 import type { LoaderFunctionArgs } from 'react-router';
 import { data, redirect } from 'react-router';
+
+import { NOTES_AUTH_CONFIG } from '~/config/auth';
 
 import { getServerSession } from '~/lib/auth.server';
 

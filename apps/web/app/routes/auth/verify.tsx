@@ -2,9 +2,10 @@
 
 import { useAuthClient } from '@hominem/auth/client/provider';
 import { resolveAuthRedirect } from '@hominem/auth/shared/redirect-policy';
-import { NOTES_AUTH_CONFIG } from '@hominem/auth/shared/ux-contract';
 import { OtpVerificationForm } from '@hominem/ui';
 import { redirect, useLoaderData, useLocation, useNavigate } from 'react-router';
+
+import { NOTES_AUTH_CONFIG } from '~/config/auth';
 
 import { getNextRedirect } from './shared';
 import { redirectAuthenticatedUser } from './shared.server';

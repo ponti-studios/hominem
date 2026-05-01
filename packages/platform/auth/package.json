@@ -20,9 +20,9 @@
       "types": "./src/shared/redirect-policy.ts",
       "default": "./src/shared/redirect-policy.ts"
     },
-    "./shared/ux-contract": {
-      "types": "./src/shared/ux-contract.ts",
-      "default": "./src/shared/ux-contract.ts"
+    "./shared/protocol": {
+      "types": "./src/shared/protocol.ts",
+      "default": "./src/shared/protocol.ts"
     },
     "./client/provider": {
       "types": "./src/client/provider.tsx",

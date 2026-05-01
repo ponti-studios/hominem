@@ -2,7 +2,7 @@ import { FlashList, type FlashListRef, type ListRenderItem } from '@shopify/flas
 import React, { memo, useCallback, type RefObject } from 'react';
 import { Pressable, ScrollView, StyleSheet, View, type RefreshControlProps } from 'react-native';
 
-import { Text, makeStyles, spacing } from '~/components/theme';
+import { Text, makeStyles } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
 import t from '~/translations';
 
@@ -185,7 +185,7 @@ const useStreamStyles = makeStyles((theme) => ({
     flex: 1,
   },
   divider: {
-    height: spacing[2],
+    height: theme.spacing.sm,
   },
   sectionShell: {
     backgroundColor: theme.colors['bg-base'],
@@ -195,8 +195,8 @@ const useStreamStyles = makeStyles((theme) => ({
   emptyWrap: {
     flexGrow: 1,
     justifyContent: 'center',
-    marginHorizontal: spacing[4],
-    paddingVertical: spacing[4],
+    marginHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.lg,
   },
   emptyCard: {
     alignItems: 'center',
@@ -205,9 +205,9 @@ const useStreamStyles = makeStyles((theme) => ({
     borderCurve: 'continuous',
     borderRadius: 20,
     borderWidth: 1,
-    gap: spacing[3],
-    paddingHorizontal: spacing[4],
-    paddingVertical: spacing[5],
+    gap: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.xl,
   },
   emptyIcon: {
     alignItems: 'center',
@@ -236,17 +236,17 @@ const useStreamStyles = makeStyles((theme) => ({
     borderCurve: 'continuous',
     borderRadius: 16,
     borderWidth: 1,
-    marginTop: spacing[3],
-    padding: spacing[3],
-    rowGap: spacing[2],
+    marginTop: theme.spacing.md,
+    padding: theme.spacing.md,
+    rowGap: theme.spacing.sm,
     width: '100%',
   },
   sampleLabel: {
     fontWeight: '600',
-    paddingHorizontal: spacing[1],
+    paddingHorizontal: theme.spacing.sm,
   },
   sampleList: {
-    rowGap: spacing[1],
+    rowGap: theme.spacing.sm,
   },
   sampleRow: {
     alignItems: 'center',
@@ -255,10 +255,10 @@ const useStreamStyles = makeStyles((theme) => ({
     borderCurve: 'continuous',
     borderRadius: 12,
     borderWidth: 1,
-    columnGap: spacing[3],
+    columnGap: theme.spacing.md,
     flexDirection: 'row',
     minHeight: 52,
-    paddingHorizontal: spacing[3],
+    paddingHorizontal: theme.spacing.md,
   },
   sampleIcon: {
     alignItems: 'center',
@@ -276,8 +276,8 @@ const useStreamStyles = makeStyles((theme) => ({
     rowGap: 2,
   },
   starterStack: {
-    marginTop: spacing[3],
-    rowGap: spacing[2],
+    marginTop: theme.spacing.md,
+    rowGap: theme.spacing.sm,
     width: '100%',
   },
   starter: {
@@ -287,10 +287,10 @@ const useStreamStyles = makeStyles((theme) => ({
     borderCurve: 'continuous',
     borderRadius: 14,
     borderWidth: 1,
-    columnGap: spacing[3],
+    columnGap: theme.spacing.md,
     flexDirection: 'row',
     minHeight: 64,
-    paddingHorizontal: spacing[3],
+    paddingHorizontal: theme.spacing.md,
   },
   starterPressed: {
     backgroundColor: theme.colors['bg-elevated'],
@@ -317,10 +317,10 @@ const useStreamStyles = makeStyles((theme) => ({
 
 const staticStyles = StyleSheet.create({
   listContent: {
-    paddingTop: spacing[1],
-    paddingBottom: spacing[4],
+    paddingTop: 8,
+    paddingBottom: 16,
   },
   sectionFooter: {
-    height: spacing[4],
+    height: 16,
   },
 });

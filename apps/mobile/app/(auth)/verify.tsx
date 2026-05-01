@@ -1,7 +1,9 @@
 import { maskEmail } from '@hominem/auth/shared/mask-email';
-import { CHAT_AUTH_CONFIG, OTP_EXPIRES_SECONDS } from '@hominem/auth/shared/ux-contract';
 import type { RelativePathString } from 'expo-router';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
+
+import { CHAT_AUTH_CONFIG } from '~/config/auth';
+import { OTP_EXPIRES_SECONDS } from '~/config/auth-protocol';
 import React from 'react';
 import {
   KeyboardAvoidingView,

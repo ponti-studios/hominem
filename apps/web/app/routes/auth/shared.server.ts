@@ -1,6 +1,7 @@
 import { resolveAuthRedirect as resolveSafeAuthRedirect } from '@hominem/auth/shared/redirect-policy';
-import { NOTES_AUTH_CONFIG } from '@hominem/auth/shared/ux-contract';
 import { redirect } from 'react-router';
+
+import { NOTES_AUTH_CONFIG } from '~/config/auth';
 
 import { getServerSession } from '~/lib/auth.server';
 

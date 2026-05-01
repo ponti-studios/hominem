@@ -1,6 +1,7 @@
-import { CHAT_AUTH_CONFIG } from '@hominem/auth/shared/ux-contract';
 import type { RelativePathString } from 'expo-router';
 import { Redirect, useRouter } from 'expo-router';
+
+import { CHAT_AUTH_CONFIG } from '~/config/auth';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
