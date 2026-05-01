@@ -1,3 +1,5 @@
+import { LoadingSpinner } from './loading-spinner';
+
 type LoadingSize = 'sm' | 'md' | 'lg' | 'xl';
 
 type LoadingProps = {
@@ -7,9 +9,7 @@ type LoadingProps = {
 export function Loading({ size = 'md' }: LoadingProps) {
   return (
     <output data-testid="loading-spinner">
-      <span
-        className={`block border-2 border-border border-t-blue-600 border-r-blue-600 loading-size-${size}`}
-      />
+      <LoadingSpinner variant={size} />
       <span className="sr-only">Loading...</span>
     </output>
   );

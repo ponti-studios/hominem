@@ -1,4 +1,4 @@
-import { AUTH_COPY, CHAT_AUTH_CONFIG } from '@hominem/auth/shared/ux-contract';
+import { CHAT_AUTH_CONFIG } from '@hominem/auth/shared/ux-contract';
 import type { RelativePathString } from 'expo-router';
 import { Redirect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -113,12 +113,12 @@ function AuthScreen() {
   const handleSendCode = useCallback(async () => {
     posthog.capture('auth_send_code_pressed');
     if (!normalizedEmail) {
-      setAuthError(AUTH_COPY.emailEntry.emailRequiredError);
+      setAuthError(t.auth.emailEntry.emailRequiredError);
       return;
     }
     if (!isValidEmail(normalizedEmail)) {
       posthog.capture('auth_email_invalid');
-      setAuthError(AUTH_COPY.emailEntry.emailInvalidError);
+      setAuthError(t.auth.emailEntry.emailInvalidError);
       return;
     }
 
@@ -128,8 +128,8 @@ function AuthScreen() {
       router.replace(
         `/(auth)/verify?email=${encodeURIComponent(normalizedEmail)}&sentAt=${Date.now()}` as RelativePathString,
       );
-    } catch (error: unknown) {
-      setAuthError(error instanceof Error ? error.message : AUTH_COPY.emailEntry.sendFailedError);
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : t.auth.emailEntry.sendFailedError);
     } finally {
       setIsSubmitting(false);
     }
@@ -144,8 +144,8 @@ function AuthScreen() {
       if (result) {
         await completePasskeySignIn(result);
       }
-    } catch (error: unknown) {
-      setAuthError(error instanceof Error ? error.message : AUTH_COPY.passkey.genericError);
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : t.auth.passkey.genericError);
     } finally {
       setIsSubmitting(false);
     }
@@ -160,8 +160,8 @@ function AuthScreen() {
         if (result) {
           await completePasskeySignIn(result);
         }
-      } catch (error: unknown) {
-        setAuthError(error instanceof Error ? error.message : AUTH_COPY.passkey.genericError);
+      } catch (error) {
+        setAuthError(error instanceof Error ? error.message : t.auth.passkey.genericError);
       } finally {
         setIsSubmitting(false);
       }
@@ -210,10 +210,10 @@ function AuthScreen() {
 
               <View style={styles.copyBlock}>
                 <Text style={[styles.title, { color: palette.textPrimary }]}>
-                  {AUTH_COPY.emailEntry.title}
+                  {t.auth.emailEntry.title}
                 </Text>
                 <Text style={[styles.helperText, { color: palette.textSecondary }]}>
-                  {isProbing ? t.auth.resumingSession : AUTH_COPY.emailEntry.helper}
+                  {isProbing ? t.auth.resumingSession : t.auth.emailEntry.helper}
                 </Text>
               </View>
 
@@ -223,7 +223,7 @@ function AuthScreen() {
                     <TextInput
                       testID="auth-email-input"
                       value={email}
-                      placeholder={AUTH_COPY.emailEntry.emailPlaceholder}
+                      placeholder={t.auth.emailEntry.emailPlaceholder}
                       placeholderTextColor={palette.inputPlaceholder}
                       keyboardType="email-address"
                       textContentType="emailAddress"
@@ -253,7 +253,7 @@ function AuthScreen() {
                           });
                         }
                       }}
-                      accessibilityLabel={AUTH_COPY.emailEntry.emailLabel}
+                      accessibilityLabel={t.auth.emailEntry.emailLabel}
                     />
                   </Animated.View>
 
@@ -274,7 +274,7 @@ function AuthScreen() {
                   >
                     <Button
                       testID="auth-send-otp"
-                      label={AUTH_COPY.emailEntry.submitButton}
+                      label={t.auth.emailEntry.submitButton}
                       onPress={() => void handleSendCode()}
                       disabled={isSubmitting}
                       variant="primary"
@@ -286,8 +286,8 @@ function AuthScreen() {
                       testID="auth-passkey-button"
                       label={
                         isPasskeyLoading
-                          ? AUTH_COPY.emailEntry.passkeyLoadingButton
-                          : AUTH_COPY.emailEntry.passkeyButton
+                          ? t.auth.emailEntry.passkeyLoadingButton
+                          : t.auth.emailEntry.passkeyButton
                       }
                       onPress={() => void handlePasskeySignIn()}
                       disabled={isSubmitting || isPasskeyLoading}

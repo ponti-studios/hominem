@@ -216,13 +216,33 @@ const t = {
     unlockFallbackLabel: 'Use passcode',
     unlockCancelLabel: 'Cancel',
     resumingSession: 'Resuming session…',
+    emailEntry: {
+      title: 'Remember everything.',
+      helper: 'Capture anything; Retrieve everything.',
+      emailPlaceholder: 'you@example.com',
+      emailLabel: 'Email address',
+      submitButton: 'Continue',
+      passkeyButton: 'Use passkey',
+      passkeyLoadingButton: 'Connecting...',
+      emailRequiredError: 'Email is required.',
+      emailInvalidError: 'Enter a valid email address.',
+      sendFailedError: 'Unable to send verification code.',
+    },
     verify: {
+      title: 'Verify',
       signedIn: 'Signed in',
       codeSentTo: 'Code sent to',
+      codePlaceholder: '123456',
+      verifyButton: 'Verify',
+      resendButton: 'Resend code',
+      changeEmailLink: 'Use a different email',
       expired: 'Expired',
       oneTimeVerificationCodeA11y: 'One-time verification code',
       timeRemainingA11y: (secondsLeft: number) =>
         `Time remaining: ${Math.floor(secondsLeft / 60)} minutes ${secondsLeft % 60} seconds`,
+    },
+    passkey: {
+      genericError: 'Passkey sign-in failed.',
     },
   },
   onboarding: {

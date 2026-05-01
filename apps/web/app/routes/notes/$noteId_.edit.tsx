@@ -24,7 +24,11 @@ export default function NoteEditPage({
   const { uploadFiles, uploadState } = useFileUpload();
 
   if (!note) {
-    return <StatePanel title="Note not found" className="min-h-full" />;
+    return (
+      <div className="min-h-full">
+        <StatePanel title="Note not found" />
+      </div>
+    );
   }
 
   return (

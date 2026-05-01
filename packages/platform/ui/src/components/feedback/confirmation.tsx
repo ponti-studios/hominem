@@ -1,85 +1,12 @@
 import { AlertTriangle, CheckCircle, HelpCircle, Info } from 'lucide-react';
-import type { HTMLAttributes, ReactNode } from 'react';
+import type { HTMLAttributes } from 'react';
 
 import { cn } from '../../lib/utils';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '../alert-dialog';
-
-interface ConfirmationProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  title?: string;
-  description?: string;
-  confirmText?: string;
-  cancelText?: string;
-  variant?: 'default' | 'destructive';
-  children?: ReactNode;
-}
-
-export function Confirmation({
-  open,
-  onOpenChange,
-  title = 'Confirm Action',
-  description = 'Are you sure you want to proceed?',
-  confirmText = 'Confirm',
-  cancelText = 'Cancel',
-  children,
-}: ConfirmationProps) {
-  return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogTrigger asChild>{children}</AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{title}</AlertDialogTitle>
-          <AlertDialogDescription>{description}</AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>{cancelText}</AlertDialogCancel>
-          <AlertDialogAction>{confirmText}</AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  );
-}
-
-interface ConfirmationTriggerProps extends HTMLAttributes<HTMLButtonElement> {
-  children: ReactNode;
-}
-
-export function ConfirmationTrigger({ children, className, ...props }: ConfirmationTriggerProps) {
-  return (
-    <AlertDialogTrigger asChild>
-      <button type="button" className={cn('', className)} {...props}>
-        {children}
-      </button>
-    </AlertDialogTrigger>
-  );
-}
-
-interface ConfirmationContentProps extends HTMLAttributes<HTMLDivElement> {
-  children: ReactNode;
-}
-
-export function ConfirmationContent({ children, className, ...props }: ConfirmationContentProps) {
-  return (
-    <AlertDialogContent className={cn('', className)} {...props}>
-      {children}
-    </AlertDialogContent>
-  );
-}
+import { Button } from '../button';
 
 type ConfirmationType = 'info' | 'success' | 'warning' | 'error' | 'question';
 
-interface ConfirmationBannerProps extends HTMLAttributes<HTMLDivElement> {
+interface ConfirmationBannerProps extends Omit<HTMLAttributes<HTMLDivElement>, 'className'> {
   type?: ConfirmationType;
   title: string;
   message?: string;
@@ -97,7 +24,6 @@ export function ConfirmationBanner({
   cancelLabel = 'Cancel',
   onConfirm,
   onCancel,
-  className,
   ...props
 }: ConfirmationBannerProps) {
   const icons = {
@@ -118,7 +44,7 @@ export function ConfirmationBanner({
 
   return (
     <div
-      className={cn('flex items-start gap-3 p-4 rounded-md border', typeStyles[type], className)}
+      className={cn('flex items-start gap-3 p-4 rounded-md border', typeStyles[type])}
       {...props}
     >
       <div className="mt-0.5">{icons[type]}</div>
@@ -126,20 +52,12 @@ export function ConfirmationBanner({
         <h4 className="text-sm font-medium">{title}</h4>
         {message && <p className="text-xs text-muted-foreground mt-1">{message}</p>}
         <div className="flex gap-2 mt-3">
-          <button
-            type="button"
-            className="text-xs px-3 py-1.5 rounded-md border hover:bg-muted"
-            onClick={onCancel}
-          >
+          <Button type="button" variant="outline" size="xs" onClick={onCancel}>
             {cancelLabel}
-          </button>
-          <button
-            type="button"
-            className="text-xs px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90"
-            onClick={onConfirm}
-          >
+          </Button>
+          <Button type="button" size="xs" onClick={onConfirm}>
             {confirmLabel}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

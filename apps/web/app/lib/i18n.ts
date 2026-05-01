@@ -1,3 +1,4 @@
+import { registerUiTranslations } from '@hominem/ui';
 import i18n from 'i18next';
 
 import enTranslations from '../locales/en.json';
@@ -15,3 +16,5 @@ i18n.init({
     escapeValue: false,
   },
 });
+
+registerUiTranslations();

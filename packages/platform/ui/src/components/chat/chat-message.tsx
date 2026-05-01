@@ -32,9 +32,6 @@ import { playEnterRow, reducedMotion } from '../../lib/gsap/sequences';
 import { useMessageEdit } from '../../lib/hooks/use-message-edit';
 import { cn } from '../../lib/utils';
 import type { ExtendedMessage } from '../../types/chat';
-import { MarkdownContent } from './markdown-content';
-import { Reasoning } from './reasoning';
-import { Tool, ToolInput } from './tool';
 import { Button } from '../button';
 import {
   DropdownMenu,
@@ -47,6 +44,9 @@ import { Form } from '../form';
 import { Inline } from '../layout/inline';
 import { Stack } from '../layout/stack';
 import { Textarea } from '../textarea';
+import { MarkdownContent } from './markdown-content';
+import { Reasoning } from './reasoning';
+import { Tool, ToolInput } from './tool';
 
 function Message({
   from,
@@ -273,7 +273,7 @@ function MessageBody({
 
   if (isUser) {
     return (
-      <div className="inline-block max-w-136 rounded-2xl border border-subtle bg-emphasis-highest px-4 py-2 text-sm text-white">
+      <div className="body-3 inline-block max-w-136 rounded-2xl border border-border-default bg-elevated px-4 py-2 text-foreground">
         <MarkdownContent content={message.content} isStreaming={isStreaming} />
       </div>
     );

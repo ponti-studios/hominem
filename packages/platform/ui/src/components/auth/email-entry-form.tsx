@@ -1,64 +1,37 @@
-import { AUTH_COPY } from '@hominem/auth/shared/ux-contract';
 import { useState } from 'react';
-import { Form, useNavigation, useSearchParams } from 'react-router';
+import { useSearchParams } from 'react-router';
 
+import { translateUi } from '../../translations';
 import { Button } from '../button';
 import { TextField } from '../text-field';
+import { AuthScaffold } from './auth-scaffold';
 import { PasskeyButton } from './passkey-button';
 
 interface EmailEntryFormProps {
-  action: string;
-  method?: 'post' | 'get';
   error?: string;
-  onSubmit?: (input: { email: string; next: string | null }) => Promise<void>;
+  onSubmit: (input: { email: string; next: string | null }) => Promise<void>;
   onPasskeyClick?: () => void | Promise<void>;
 }
 
 export function EmailEntryForm({
-  action,
-  method = 'post',
   error,
   onSubmit,
   onPasskeyClick,
 }: EmailEntryFormProps) {
-  const navigation = useNavigation();
   const [searchParams] = useSearchParams();
   const [clientError, setClientError] = useState<string | null>(null);
   const [isClientSubmitting, setIsClientSubmitting] = useState(false);
-  const isSubmitting = onSubmit
-    ? isClientSubmitting
-    : navigation.state === 'submitting' && navigation.formAction === action;
+  const isSubmitting = isClientSubmitting;
   const next = searchParams.get('next');
 
   const hasPasskey = onPasskeyClick !== undefined;
-  const copy = AUTH_COPY.emailEntry;
   const displayError = error ?? clientError ?? undefined;
 
-  const fields = (
-    <div className="space-y-3">
-      <TextField
-        label={copy.emailLabel}
-        name="email"
-        type="email"
-        autoComplete="email"
-        required
-        placeholder={copy.emailPlaceholder}
-        disabled={isSubmitting}
-        error={displayError}
-      />
-
-      <Button type="submit" variant="primary" disabled={isSubmitting} fullWidth>
-        {isSubmitting ? 'Sending…' : copy.submitButton}
-      </Button>
-
-      {hasPasskey && onPasskeyClick ? (
-        <PasskeyButton onClick={onPasskeyClick} disabled={isSubmitting} />
-      ) : null}
-    </div>
-  );
-
-  if (onSubmit) {
-    return (
+  return (
+    <AuthScaffold
+      title={translateUi('auth.emailEntry.title')}
+      helperText={translateUi('auth.emailEntry.helper')}
+    >
       <form
         onSubmit={(event) => {
           event.preventDefault();
@@ -75,7 +48,7 @@ export function EmailEntryForm({
               setClientError(
                 caughtError instanceof Error
                   ? caughtError.message
-                  : 'Failed to send verification code.',
+                  : translateUi('auth.emailEntry.sendFailedError'),
               );
             })
             .finally(() => {
@@ -84,15 +57,29 @@ export function EmailEntryForm({
         }}
       >
         {next ? <input type="hidden" name="next" value={next} /> : null}
-        {fields}
-      </form>
-    );
-  }
+        <div className="space-y-3">
+          <TextField
+            label={translateUi('auth.emailEntry.emailLabel')}
+            name="email"
+            type="email"
+            autoComplete="email"
+            required
+            placeholder={translateUi('auth.emailEntry.emailPlaceholder')}
+            disabled={isSubmitting}
+            error={displayError}
+          />
 
-  return (
-    <Form method={method} action={action}>
-      {next ? <input type="hidden" name="next" value={next} /> : null}
-      {fields}
-    </Form>
+          <Button type="submit" variant="primary" disabled={isSubmitting} fullWidth>
+            {isSubmitting
+              ? translateUi('auth.emailEntry.submitButtonLoading')
+              : translateUi('auth.emailEntry.submitButton')}
+          </Button>
+
+          {hasPasskey && onPasskeyClick ? (
+            <PasskeyButton onClick={onPasskeyClick} disabled={isSubmitting} />
+          ) : null}
+        </div>
+      </form>
+    </AuthScaffold>
   );
 }

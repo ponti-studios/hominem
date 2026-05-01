@@ -1,24 +1,22 @@
-import { AUTH_COPY } from '@hominem/auth/shared/ux-contract';
-import { useEffect, useState } from 'react';
-import { Form, useFetcher, useNavigation, useSearchParams } from 'react-router';
+import { maskEmail } from '@hominem/auth/shared/mask-email';
+import { useState } from 'react';
+import { useSearchParams } from 'react-router';
 
+import { translateUi } from '../../translations';
 import { Button } from '../button';
 import { TextField } from '../text-field';
+import { AuthScaffold } from './auth-scaffold';
 
 interface OtpVerificationFormProps {
-  action: string;
-  sendAction?: string;
   email: string;
   defaultNext?: string;
   error?: string | undefined;
-  onSubmit?: (input: { email: string; otp: string; next: string }) => Promise<void>;
-  onResend?: (email: string) => Promise<void>;
+  onSubmit: (input: { email: string; otp: string; next: string }) => Promise<void>;
+  onResend: (email: string) => Promise<void>;
   onChangeEmail?: () => void;
 }
 
 export function OtpVerificationForm({
-  action,
-  sendAction = '/auth',
   email,
   defaultNext = '/finance',
   error,
@@ -26,32 +24,19 @@ export function OtpVerificationForm({
   onResend,
   onChangeEmail,
 }: OtpVerificationFormProps) {
-  const navigation = useNavigation();
-  const resendFetcher = useFetcher<{ error?: string }>();
   const [searchParams] = useSearchParams();
   const [otp, setOtp] = useState('');
   const [resendError, setResendError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isClientSubmitting, setIsClientSubmitting] = useState(false);
   const [isClientResending, setIsClientResending] = useState(false);
-  const isSubmitting = onSubmit
-    ? isClientSubmitting
-    : navigation.state === 'submitting' && navigation.formAction === action;
+  const isSubmitting = isClientSubmitting;
   const resolvedEmail = searchParams.get('email') ?? email;
   const next = searchParams.get('next') ?? defaultNext;
-  const copy = AUTH_COPY.otpVerification;
   const normalizedOtp = otp.replace(/\D/g, '').slice(0, 6);
-  const isResending = onResend ? isClientResending : resendFetcher.state !== 'idle';
+  const isResending = isClientResending;
   const canSubmit = normalizedOtp.length === 6 && !isSubmitting && !isResending;
   const displayError = error ?? submitError ?? resendError;
-
-  useEffect(() => {
-    if (onResend || resendFetcher.state !== 'idle' || !resendFetcher.data?.error) {
-      return;
-    }
-
-    setResendError(resendFetcher.data.error);
-  }, [onResend, resendFetcher.data, resendFetcher.state]);
 
   const handleResend = () => {
     if (isResending) {
@@ -60,38 +45,30 @@ export function OtpVerificationForm({
 
     setResendError(null);
     setSubmitError(null);
-
-    if (onResend) {
-      setIsClientResending(true);
-      void onResend(resolvedEmail)
-        .catch((caughtError) => {
-          setResendError(
-            caughtError instanceof Error
-              ? caughtError.message
-              : 'Failed to resend verification code.',
-          );
-        })
-        .finally(() => {
-          setIsClientResending(false);
-        });
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append('email', resolvedEmail);
-    resendFetcher.submit(formData, { method: 'post', action: sendAction });
+    setIsClientResending(true);
+    void onResend(resolvedEmail)
+      .catch((caughtError) => {
+        setResendError(
+          caughtError instanceof Error
+            ? caughtError.message
+            : translateUi('auth.otpVerification.resendFailedError'),
+        );
+      })
+      .finally(() => {
+        setIsClientResending(false);
+      });
   };
 
   const fields = (
     <div className="space-y-3">
       <TextField
-        label={copy.codeLabel}
+        label={translateUi('auth.otpVerification.codeLabel')}
         name="otp-display"
         type="text"
         inputMode="numeric"
         autoComplete="one-time-code"
         maxLength={6}
-        placeholder={copy.codePlaceholder}
+        placeholder={translateUi('auth.otpVerification.codePlaceholder')}
         value={otp}
         disabled={isSubmitting || isResending}
         error={displayError ?? undefined}
@@ -108,7 +85,9 @@ export function OtpVerificationForm({
       />
 
       <Button type="submit" variant="primary" disabled={!canSubmit} fullWidth>
-        {isSubmitting ? 'Verifying…' : copy.verifyButton}
+        {isSubmitting
+          ? translateUi('auth.otpVerification.verifyButtonLoading')
+          : translateUi('auth.otpVerification.verifyButton')}
       </Button>
 
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-sm">
@@ -120,7 +99,9 @@ export function OtpVerificationForm({
           disabled={isResending || isSubmitting}
           className="px-0"
         >
-          {isResending ? 'Resending…' : copy.resendButton}
+          {isResending
+            ? translateUi('auth.otpVerification.resendButtonLoading')
+            : translateUi('auth.otpVerification.resendButton')}
         </Button>
 
         {onChangeEmail ? (
@@ -132,53 +113,51 @@ export function OtpVerificationForm({
             disabled={isSubmitting}
             className="px-0"
           >
-            {copy.changeEmailLink}
+            {translateUi('auth.otpVerification.changeEmailLink')}
           </Button>
         ) : null}
       </div>
     </div>
   );
 
-  if (onSubmit) {
-    return (
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          setSubmitError(null);
-          setResendError(null);
-          setIsClientSubmitting(true);
+  const form = (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        setSubmitError(null);
+        setResendError(null);
+        setIsClientSubmitting(true);
 
-          void onSubmit({
-            email: resolvedEmail,
-            otp: normalizedOtp,
-            next,
+        void onSubmit({
+          email: resolvedEmail,
+          otp: normalizedOtp,
+          next,
+        })
+          .catch((caughtError) => {
+            setSubmitError(
+              caughtError instanceof Error
+                ? caughtError.message
+                : translateUi('auth.otpVerification.verifyFailedError'),
+            );
           })
-            .catch((caughtError) => {
-              setSubmitError(
-                caughtError instanceof Error
-                  ? caughtError.message
-                  : 'Verification failed. Please try again.',
-              );
-            })
-            .finally(() => {
-              setIsClientSubmitting(false);
-            });
-        }}
-      >
-        <input type="hidden" name="email" value={resolvedEmail} />
-        <input type="hidden" name="next" value={next} />
-        <input type="hidden" name="otp" value={normalizedOtp} />
-        {fields}
-      </form>
-    );
-  }
-
-  return (
-    <Form method="post" action={action}>
+          .finally(() => {
+            setIsClientSubmitting(false);
+          });
+      }}
+    >
       <input type="hidden" name="email" value={resolvedEmail} />
       <input type="hidden" name="next" value={next} />
       <input type="hidden" name="otp" value={normalizedOtp} />
       {fields}
-    </Form>
+    </form>
+  );
+
+  return (
+    <AuthScaffold
+      title={translateUi('auth.otpVerification.title')}
+      helperText={translateUi('auth.otpVerification.helper', { email: maskEmail(resolvedEmail) })}
+    >
+      {form}
+    </AuthScaffold>
   );
 }

@@ -240,7 +240,6 @@ export default function NotesPage({ loaderData }: { loaderData: { feed: NotesFee
         <SectionIntro
           title="Notes"
           description="The stream stays anchored. New notes rise in place and stay easy to scan."
-          className="mb-5"
         />
       </div>
       <main className="flex min-h-0 w-full flex-1 flex-col border-t border-border-subtle">

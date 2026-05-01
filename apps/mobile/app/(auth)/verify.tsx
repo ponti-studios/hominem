@@ -1,5 +1,5 @@
 import { maskEmail } from '@hominem/auth/shared/mask-email';
-import { AUTH_COPY, CHAT_AUTH_CONFIG, OTP_EXPIRES_SECONDS } from '@hominem/auth/shared/ux-contract';
+import { CHAT_AUTH_CONFIG, OTP_EXPIRES_SECONDS } from '@hominem/auth/shared/ux-contract';
 import type { RelativePathString } from 'expo-router';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
@@ -249,7 +249,7 @@ function VerifyScreen() {
 
             <View style={styles.copyBlock}>
               <Text style={[styles.title, { color: palette.textPrimary }]}>
-                {AUTH_COPY.otpVerification.title}
+                {t.auth.verify.title}
               </Text>
               <View style={styles.emailChipRow}>
                 <Text style={[styles.helperText, { color: palette.textSecondary }]}>
@@ -289,7 +289,7 @@ function VerifyScreen() {
                   <TextInput
                     testID="auth-otp-input"
                     value={normalizedOtp}
-                    placeholder={AUTH_COPY.otpVerification.codePlaceholder}
+                    placeholder={t.auth.verify.codePlaceholder}
                     placeholderTextColor={palette.inputPlaceholder}
                     keyboardType="number-pad"
                     textContentType="oneTimeCode"
@@ -345,7 +345,7 @@ function VerifyScreen() {
                 {secondsLeft === 0 ? (
                   <Button
                     testID="auth-resend-otp-primary"
-                    label={AUTH_COPY.otpVerification.resendButton}
+                    label={t.auth.verify.resendButton}
                     onPress={async () => {
                       posthog.capture('auth_resend_pressed');
                       await handleResendOtp(resolvedEmail);
@@ -357,7 +357,7 @@ function VerifyScreen() {
                 ) : (
                   <Button
                     testID="auth-verify-otp"
-                    label={AUTH_COPY.otpVerification.verifyButton}
+                    label={t.auth.verify.verifyButton}
                     onPress={() => {
                       posthog.capture('auth_verify_pressed');
                       void handleVerifyOtp(resolvedEmail, normalizedOtp);
@@ -371,7 +371,7 @@ function VerifyScreen() {
               <View style={styles.tertiaryRow}>
                 <Button
                   testID="auth-resend-otp"
-                  label={AUTH_COPY.otpVerification.resendButton}
+                  label={t.auth.verify.resendButton}
                   onPress={async () => {
                     posthog.capture('auth_resend_pressed');
                     await handleResendOtp(resolvedEmail);
@@ -382,7 +382,7 @@ function VerifyScreen() {
                   size="sm"
                 />
                 <Button
-                  label={AUTH_COPY.otpVerification.changeEmailLink}
+                  label={t.auth.verify.changeEmailLink}
                   onPress={() => {
                     posthog.capture('auth_change_email_pressed');
                     router.replace('/(auth)' as RelativePathString);

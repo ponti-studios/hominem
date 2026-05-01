@@ -1,10 +1,9 @@
 'use client';
 
 import { useAuthClient } from '@hominem/auth/client/provider';
-import { maskEmail } from '@hominem/auth/shared/mask-email';
 import { resolveAuthRedirect } from '@hominem/auth/shared/redirect-policy';
-import { AUTH_COPY, NOTES_AUTH_CONFIG } from '@hominem/auth/shared/ux-contract';
-import { AuthScaffold, OtpVerificationForm } from '@hominem/ui';
+import { NOTES_AUTH_CONFIG } from '@hominem/auth/shared/ux-contract';
+import { OtpVerificationForm } from '@hominem/ui';
 import { redirect, useLoaderData, useLocation, useNavigate } from 'react-router';
 
 import { getNextRedirect } from './shared';
@@ -64,27 +63,21 @@ export default function Component() {
   );
 
   return (
-    <AuthScaffold
-      title={AUTH_COPY.otpVerification.title}
-      helperText={AUTH_COPY.otpVerification.helper(maskEmail(loaderEmail))}
-    >
-      <OtpVerificationForm
-        action={`/auth/verify${location.search}`}
-        error={error ?? undefined}
-        onSubmit={async ({ email, otp }) => {
-          await handleVerifyOtp(email, otp);
-        }}
-        onResend={async (resolvedEmail) => {
-          await handleResendOtp(resolvedEmail);
-        }}
-        email={loaderEmail}
-        defaultNext={NOTES_AUTH_CONFIG.defaultPostAuthDestination}
-        onChangeEmail={() => {
-          const authUrl = new URL('/auth', window.location.origin);
-          authUrl.searchParams.set('next', next);
-          window.location.assign(`${authUrl.pathname}${authUrl.search}`);
-        }}
-      />
-    </AuthScaffold>
+    <OtpVerificationForm
+      error={error ?? undefined}
+      onSubmit={async ({ email, otp }) => {
+        await handleVerifyOtp(email, otp);
+      }}
+      onResend={async (resolvedEmail) => {
+        await handleResendOtp(resolvedEmail);
+      }}
+      email={loaderEmail}
+      defaultNext={NOTES_AUTH_CONFIG.defaultPostAuthDestination}
+      onChangeEmail={() => {
+        const authUrl = new URL('/auth', window.location.origin);
+        authUrl.searchParams.set('next', next);
+        window.location.assign(`${authUrl.pathname}${authUrl.search}`);
+      }}
+    />
   );
 }

@@ -1,6 +1,6 @@
-import { AUTH_COPY } from '@hominem/auth/shared/ux-contract';
 import { KeyIcon } from 'lucide-react';
 
+import { translateUi } from '../../translations';
 import { Button } from '../button';
 
 interface PasskeyButtonProps {
@@ -23,7 +23,9 @@ export function PasskeyButton({
       className="gap-4"
     >
       <KeyIcon size={16} />
-      {isLoading ? AUTH_COPY.emailEntry.passkeyLoadingButton : AUTH_COPY.emailEntry.passkeyButton}
+      {isLoading
+        ? translateUi('auth.emailEntry.passkeyLoadingButton')
+        : translateUi('auth.emailEntry.passkeyButton')}
     </Button>
   );
 }

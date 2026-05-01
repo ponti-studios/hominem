@@ -9,7 +9,6 @@ export * from './chat-voice-modal.js';
 export * from './classification-review.js';
 export * from './code-block.js';
 export * from './context.js';
-export * from './conversation.js';
 export * from './markdown-content.js';
 export * from './reasoning.js';
 export * from './sources.js';

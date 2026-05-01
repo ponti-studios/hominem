@@ -1,5 +1,7 @@
-import { Loader2 } from 'lucide-react';
+import React from 'react';
 import type { ReactNode } from 'react';
+
+import { LoadingSpinner } from './loading-spinner';
 
 export type LoadingVariant = 'page' | 'inline' | 'skeleton';
 
@@ -84,7 +86,7 @@ export function LoadingState({
         return (
           <div className="fixed inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
             <div className="flex flex-col items-center gap-3">
-              <Loader2 className="loading-size-lg animate-spin text-primary" />
+              <LoadingSpinner variant="lg" />
               {message && <p className="text-sm text-text-secondary">{message}</p>}
             </div>
           </div>
@@ -93,7 +95,7 @@ export function LoadingState({
       case 'inline':
         return (
           <div className="flex items-center gap-2 py-4">
-            <Loader2 className="loading-size-sm animate-spin text-primary" />
+            <LoadingSpinner variant="sm" />
             {message && <span className="text-sm text-text-secondary">{message}</span>}
           </div>
         );
@@ -177,6 +179,3 @@ export function PageLoader({ message }: { message?: string }) {
 export function InlineLoader({ message }: { message?: string }) {
   return <LoadingState variant="inline" message={message} />;
 }
-
-// Import React for delayed loading component
-import React from 'react';

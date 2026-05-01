@@ -39,6 +39,7 @@ export function ChatMessages({
 }: ChatMessagesProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const parentRef = useRef<HTMLDivElement>(null);
+  const contentClassName = 'center-layout content-width-transcript w-full px-4 sm:px-6';
 
   const shouldUseVirtualScrolling = messages.length >= 50;
 
@@ -99,68 +100,76 @@ export function ChatMessages({
         style={shouldUseVirtualScrolling ? { height: '100%', width: '100%', overflow: 'auto' } : {}}
       >
         {error ? (
-          <div className="mb-6 w-full rounded-md border border-destructive/30 bg-destructive/5 p-4">
-            <div className="mb-1 text-sm font-semibold text-destructive">Something went wrong</div>
-            <div className="text-xs text-destructive/70">
-              {error instanceof Error ? error.message : String(error)}
+          <div className={contentClassName}>
+            <div className="mb-6 w-full rounded-xl border border-destructive/30 bg-destructive/5 p-4">
+              <div className="mb-1 text-sm font-semibold text-destructive">
+                Something went wrong
+              </div>
+              <div className="text-xs text-destructive/70">
+                {error instanceof Error ? error.message : String(error)}
+              </div>
             </div>
           </div>
         ) : null}
 
         {isLoading || (messages.length === 0 && status === 'idle') ? (
-          <div className="w-full space-y-5">
-            <ChatShimmerMessage />
-            <ChatShimmerMessage />
-            <ChatShimmerMessage />
+          <div className={contentClassName}>
+            <div className="w-full space-y-5">
+              <ChatShimmerMessage />
+              <ChatShimmerMessage />
+              <ChatShimmerMessage />
+            </div>
           </div>
         ) : null}
 
         {shouldUseVirtualScrolling ? (
-          <div className="relative w-full" style={{ height: `${virtualizer.getTotalSize()}px` }}>
-            {virtualItems?.map((virtualItem) => {
-              const message = messages[virtualItem.index];
-              if (!message) return null;
+          <div className={contentClassName}>
+            <div className="relative w-full" style={{ height: `${virtualizer.getTotalSize()}px` }}>
+              {virtualItems?.map((virtualItem) => {
+                const message = messages[virtualItem.index];
+                if (!message) return null;
 
-              return (
-                <div
-                  key={virtualItem.key}
-                  data-index={virtualItem.index}
-                  ref={virtualizer.measureElement}
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    transform: `translateY(${virtualItem.start}px)`,
-                  }}
-                >
-                  <ChatMessage
-                    message={message}
-                    showDebug={showDebug}
-                    speakingId={speakingId ?? null}
-                    speechLoadingId={speechLoadingId ?? null}
-                    isStreaming={
-                      (status === 'streaming' &&
-                        virtualItem.index === messages.length - 1 &&
-                        message.role === 'assistant') ||
-                      Boolean(message.isStreaming)
-                    }
-                    {...(message.role === 'assistant' && {
-                      onRegenerate: () => onRegenerate?.(message.id),
-                      onSpeak,
-                    })}
-                    {...(message.role === 'user' && {
-                      onEdit: (messageId: string, newContent: string) =>
-                        onEdit?.(messageId, newContent),
-                    })}
-                    onDelete={() => onDelete?.(message.id)}
-                  />
-                </div>
-              );
-            })}
+                return (
+                  <div
+                    key={virtualItem.key}
+                    data-index={virtualItem.index}
+                    ref={virtualizer.measureElement}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      transform: `translateY(${virtualItem.start}px)`,
+                    }}
+                  >
+                    <ChatMessage
+                      message={message}
+                      showDebug={showDebug}
+                      speakingId={speakingId ?? null}
+                      speechLoadingId={speechLoadingId ?? null}
+                      isStreaming={
+                        (status === 'streaming' &&
+                          virtualItem.index === messages.length - 1 &&
+                          message.role === 'assistant') ||
+                        Boolean(message.isStreaming)
+                      }
+                      {...(message.role === 'assistant' && {
+                        onRegenerate: () => onRegenerate?.(message.id),
+                        onSpeak,
+                      })}
+                      {...(message.role === 'user' && {
+                        onEdit: (messageId: string, newContent: string) =>
+                          onEdit?.(messageId, newContent),
+                      })}
+                      onDelete={() => onDelete?.(message.id)}
+                    />
+                  </div>
+                );
+              })}
+            </div>
           </div>
         ) : (
-          <div className="w-full">
+          <div className={contentClassName}>
             <div className="flex flex-col gap-6">
               {messages.length === 0
                 ? null

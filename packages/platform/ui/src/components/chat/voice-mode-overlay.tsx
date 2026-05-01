@@ -1,5 +1,6 @@
 import { Loader2, Mic, MicOff, Volume2, XCircle } from 'lucide-react';
 
+import { cn } from '../../lib/utils';
 import { Button } from '../button';
 
 export type VoiceModeOverlayState = 'idle' | 'listening' | 'processing' | 'speaking' | 'error';
@@ -35,10 +36,18 @@ export function VoiceModeOverlay({
 
   const isBusy = state === 'processing' || state === 'speaking';
   const stateCopy = getStateCopy(state);
+  const dialClassName = cn(
+    'flex size-28 items-center justify-center rounded-full border bg-surface transition-colors',
+    state === 'idle' && 'border-border-default text-text-secondary',
+    state === 'listening' && 'border-accent/60 bg-accent/10 text-accent',
+    state === 'processing' && 'border-border-default text-text-secondary',
+    state === 'speaking' && 'border-success/60 bg-success/10 text-success',
+    state === 'error' && 'border-destructive/70 bg-destructive/10 text-destructive',
+  );
 
   return (
-    <div className="absolute inset-0 z-40 flex items-center justify-center bg-background/72 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-2xl border border-border bg-elevated p-6">
+    <div className="absolute inset-0 z-40 flex items-center justify-center bg-overlay-modal-high px-4 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-2xl border border-border-default bg-elevated p-6">
         <div className="mb-4 flex items-center justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.08em] text-text-tertiary">Voice mode</p>
@@ -57,26 +66,19 @@ export function VoiceModeOverlay({
 
         <div className="mb-4 flex items-center justify-center">
           <div
-            className={[
-              'flex size-28 items-center justify-center rounded-full border transition-all',
-              state === 'listening' ? 'border-primary/70 bg-primary/10' : '',
-              state === 'processing' ? 'border-foreground/30 bg-surface animate-pulse' : '',
-              state === 'speaking' ? 'border-success/60 bg-success/10' : '',
-              state === 'error' ? 'border-destructive/70 bg-destructive/10' : '',
-              state === 'idle' ? 'border-border bg-surface' : '',
-            ].join(' ')}
+            className={dialClassName}
             role="status"
             aria-live="polite"
             aria-label={`Voice mode state: ${stateCopy}`}
           >
             {state === 'processing' ? (
-              <Loader2 className="size-8 animate-spin text-text-secondary" />
+              <Loader2 className="size-8 animate-spin" />
             ) : state === 'speaking' ? (
-              <Volume2 className="size-8 text-success" />
+              <Volume2 className="size-8" />
             ) : canStop ? (
               <MicOff className="size-8 text-destructive" />
             ) : (
-              <Mic className="size-8 text-text-secondary" />
+              <Mic className="size-8" />
             )}
           </div>
         </div>
@@ -93,7 +95,13 @@ export function VoiceModeOverlay({
               Stop and send
             </Button>
           ) : (
-            <Button type="button" onClick={onStartRecording} size="sm" disabled={isBusy}>
+            <Button
+              type="button"
+              onClick={onStartRecording}
+              size="sm"
+              disabled={isBusy}
+              className="bg-accent text-accent-foreground hover:bg-accent/90 disabled:bg-secondary disabled:text-secondary-foreground"
+            >
               Start listening
             </Button>
           )}

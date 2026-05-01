@@ -2,10 +2,9 @@ import type { LinkDescriptor } from 'react-router';
 
 export * from './theme';
 export * from './tokens';
+export * from './translations';
 
 export { AuthScaffold } from './components/auth/auth-scaffold';
-export { AuthRouteLayout } from './components/auth/auth-route-layout';
-export { AuthErrorBanner } from './components/auth/auth-error-banner';
 export { EmailEntryForm } from './components/auth/email-entry-form';
 export { OtpVerificationForm } from './components/auth/otp-verification-form';
 export { ResendCodeButton } from './components/auth/resend-code-button';
@@ -30,8 +29,8 @@ export {
   type PageProps,
   type ScreenProps,
 } from './components/layout/page';
-export { PageContainer } from './components/layout/page-container';
 export { Stack, type GapToken, type StackProps } from './components/layout/stack';
+export { Alert, AlertDescription, AlertTitle } from './components/alert';
 export * from './components/loading-state';
 export * from './components/chat';
 export * from './components/composer';

@@ -4,8 +4,8 @@ import { usePasskeys } from '@hominem/auth/client/passkey';
 import { useAuthClient } from '@hominem/auth/client/provider';
 import { readAuthErrorMessage } from '@hominem/auth/shared/error-contract';
 import { resolveAuthRedirect } from '@hominem/auth/shared/redirect-policy';
-import { AUTH_COPY, NOTES_AUTH_CONFIG } from '@hominem/auth/shared/ux-contract';
-import { AuthScaffold, EmailEntryForm } from '@hominem/ui';
+import { NOTES_AUTH_CONFIG } from '@hominem/auth/shared/ux-contract';
+import { EmailEntryForm } from '@hominem/ui';
 import { useLocation, useNavigate } from 'react-router';
 
 import { getNextRedirect } from './shared';
@@ -50,27 +50,24 @@ export default function Component() {
   const resolvedError = callbackError ?? passkeyError ?? sendError ?? undefined;
 
   return (
-    <AuthScaffold title={AUTH_COPY.emailEntry.title} helperText={AUTH_COPY.emailEntry.helper}>
-      <EmailEntryForm
-        action="/auth"
-        onSubmit={async ({ email }) => {
-          await handleSendOtp(email);
-        }}
-        {...(resolvedError ? { error: resolvedError } : {})}
-        {...(isPasskeySupported
-          ? {
-              onPasskeyClick: async () => {
-                await authenticate();
-                const { safeRedirect } = resolveAuthRedirect(
-                  next,
-                  NOTES_AUTH_CONFIG.defaultPostAuthDestination,
-                  [...NOTES_AUTH_CONFIG.allowedDestinations],
-                );
-                navigate(safeRedirect);
-              },
-            }
-          : {})}
-      />
-    </AuthScaffold>
+    <EmailEntryForm
+      onSubmit={async ({ email }) => {
+        await handleSendOtp(email);
+      }}
+      {...(resolvedError ? { error: resolvedError } : {})}
+      {...(isPasskeySupported
+        ? {
+            onPasskeyClick: async () => {
+              await authenticate();
+              const { safeRedirect } = resolveAuthRedirect(
+                next,
+                NOTES_AUTH_CONFIG.defaultPostAuthDestination,
+                [...NOTES_AUTH_CONFIG.allowedDestinations],
+              );
+              navigate(safeRedirect);
+            },
+          }
+        : {})}
+    />
   );
 }
