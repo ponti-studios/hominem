@@ -1,10 +1,9 @@
-import { useApiClient } from '@hominem/rpc/react';
 import type { SessionSource } from '@hominem/rpc/types';
 import { useNavigation } from '@react-navigation/native';
 import { useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router/build/hooks';
 import React, { useLayoutEffect, useMemo } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import {
   ChatMessageList,
@@ -47,7 +46,6 @@ export default function ChatDetailScreen() {
   const { id, initialMessage } = useLocalSearchParams<{ id: string; initialMessage?: string }>();
   const navigation = useNavigation();
   const router = useRouter();
-  const client = useApiClient();
   const queryClient = useQueryClient();
   const themeColors = useThemeColors();
   const { speakingId, speak } = useTTS();
@@ -161,10 +159,7 @@ export default function ChatDetailScreen() {
   );
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
+    <View style={styles.container}>
       <ChatSearchModal
         visible={controller.showSearch}
         searchQuery={controller.searchQuery}
@@ -206,7 +201,7 @@ export default function ChatDetailScreen() {
         />
       </View>
       <ChatComposer chatId={chatId} initialMessage={initialMessage} />
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 

@@ -1,22 +1,18 @@
-import { spacing } from '@hominem/ui/tokens';
 import { useQueryClient } from '@tanstack/react-query';
 import type { RelativePathString } from 'expo-router';
 import { useRouter } from 'expo-router';
-import React, { useCallback } from 'react';
-import { Keyboard, View } from 'react-native';
-import { useAnimatedKeyboard } from 'react-native-keyboard-controller';
-import { useAnimatedStyle } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import React, { useCallback, useRef } from 'react';
+import { Keyboard, TextInput } from 'react-native';
 
-import { buildChatTitle } from '~/components/composer/composerActions';
-import { ActionButton, MediaButton } from '~/components/composer/ComposerButtons';
 import { ComposerActionGroup } from '~/components/composer/ComposerActionGroup';
+import { buildChatTitle } from '~/components/composer/composerActions';
 import { ComposerAttachmentRow } from '~/components/composer/ComposerAttachmentRow';
-import { ComposerPill } from '~/components/composer/ComposerPill';
-import { useComposerBase } from '~/components/composer/useComposerBase';
+import { ActionButton, MediaButton } from '~/components/composer/ComposerButtons';
 import { ComposerTextInput } from '~/components/composer/ComposerTextInput';
+import { ComposerToolbar } from '~/components/composer/ComposerToolbar';
+import { useComposerBase } from '~/components/composer/useComposerBase';
+import { useComposerMediaMenu } from '~/components/composer/useComposerMediaMenu';
 import { CameraModal } from '~/components/media/camera-modal';
-import { makeStyles } from '~/components/theme';
 import { useCreateChat } from '~/services/chat/use-create-chat';
 import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
@@ -30,31 +26,28 @@ interface FeedComposerProps {
 }
 
 export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerProps) {
-  const insets = useSafeAreaInsets();
-  const styles = useStyles();
-  const keyboard = useAnimatedKeyboard();
   const queryClient = useQueryClient();
   const router = useRouter();
   const { requestTopReveal } = useTopAnchoredFeed();
   const { mutateAsync: createNote, isPending: isSaving } = useCreateNote();
   const { mutateAsync: createChat, isPending: isChatCreating } = useCreateChat();
+  const inputRef = useRef<TextInput>(null);
 
   const {
-    message, setMessage,
+    message,
+    setMessage,
     attachments,
-    isCameraOpen, setIsCameraOpen,
-    inputRef,
     uploadState,
     uploadedAttachmentIds,
     canSubmit,
     clearDraft,
     handleRemoveAttachment,
-    showPlusMenu,
-    onContentSizeChange,
-    enhance, isEnhancing,
+    pickAttachment,
+    enhance,
+    isEnhancing,
     handleCameraCapture,
-    inputStyle,
   } = useComposerBase({ seedMessage });
+  const { isCameraOpen, setIsCameraOpen, showPlusMenu } = useComposerMediaMenu({ pickAttachment });
 
   const handleSave = useCallback(async () => {
     if (!canSubmit || isSaving) return;
@@ -67,7 +60,16 @@ export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerPro
     requestTopReveal();
     clearDraft();
     Keyboard.dismiss();
-  }, [canSubmit, isSaving, createNote, message, uploadedAttachmentIds, queryClient, requestTopReveal, clearDraft]);
+  }, [
+    canSubmit,
+    isSaving,
+    createNote,
+    message,
+    uploadedAttachmentIds,
+    queryClient,
+    requestTopReveal,
+    clearDraft,
+  ]);
 
   const handleChat = useCallback(async () => {
     if (!canSubmit || isChatCreating) return;
@@ -79,84 +81,74 @@ export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerPro
     requestTopReveal();
   }, [canSubmit, isChatCreating, createChat, message, clearDraft, router, requestTopReveal]);
 
-  const shellStyle = useAnimatedStyle(() => ({
-    bottom: keyboard.height.value + Math.max(insets.bottom, spacing[2]),
-  }));
+  const hasContent = message.trim().length > 0;
+  const hasAccessory =
+    attachments.length > 0 || uploadState.errors.length > 0 || uploadState.isUploading;
 
   return (
     <>
-      <ComposerPill
-        testID="feed-composer"
-        onLayout={(e) => {
-          onClearanceChange?.(e.nativeEvent.layout.height + Math.max(insets.bottom, spacing[2]));
-        }}
-        style={[styles.container, shellStyle]}
-      >
-        <ComposerAttachmentRow
-          attachments={attachments}
-          errors={uploadState.errors}
-          isUploading={uploadState.isUploading}
-          progressByAssetId={uploadState.progressByAssetId}
-          onRemove={handleRemoveAttachment}
-        />
-        <ComposerTextInput
-          inputRef={inputRef}
-          value={message}
-          onChangeText={setMessage}
-          onContentSizeChange={onContentSizeChange}
-          placeholder={t.feed.composer.placeholder}
-          testID="feed-composer-input"
-          inputStyle={inputStyle}
-        />
-        <View style={styles.actionRow}>
-          <MediaButton
-            accessibilityLabel={t.feed.composer.addAttachmentA11y}
-            icon="plus"
-            onPress={showPlusMenu}
-          />
-          <ComposerActionGroup hasContent={message.trim().length > 0}>
+      <ComposerToolbar
+        accessory={
+          hasAccessory ? (
+            <ComposerAttachmentRow
+              attachments={attachments}
+              errors={uploadState.errors}
+              isUploading={uploadState.isUploading}
+              progressByAssetId={uploadState.progressByAssetId}
+              onRemove={handleRemoveAttachment}
+            />
+          ) : undefined
+        }
+        actions={
+          <ComposerActionGroup hasContent={hasContent}>
             <ActionButton
               accessibilityLabel={t.feed.composer.enhanceTextA11y}
               icon="wand.and.sparkles"
               onPress={() => void enhance(message).then(setMessage)}
-              disabled={isEnhancing}
+              disabled={!hasContent || isEnhancing}
+              isAnimating={isEnhancing}
             />
             <ActionButton
               accessibilityLabel={t.feed.composer.openChatA11y}
-              disabled={!canSubmit || isSaving || isChatCreating}
+              disabled={!canSubmit || isSaving || isChatCreating || isEnhancing}
               icon="bubble.left"
               onPress={() => void handleChat()}
             />
             <ActionButton
               accessibilityLabel={t.feed.composer.saveNoteA11y}
-              disabled={!canSubmit || isSaving || isChatCreating}
+              disabled={!canSubmit || isSaving || isChatCreating || isEnhancing}
               icon="arrow.up"
               onPress={() => void handleSave()}
             />
           </ComposerActionGroup>
-        </View>
-      </ComposerPill>
+        }
+        onLayout={(e) => onClearanceChange?.(e.nativeEvent.layout.height)}
+        input={
+          <ComposerTextInput
+            inputRef={inputRef}
+            value={message}
+            onChangeText={setMessage}
+            placeholder={t.feed.composer.placeholder}
+            testID="feed-composer-input"
+          />
+        }
+        leadingAction={
+          <MediaButton
+            accessibilityLabel={t.feed.composer.addAttachmentA11y}
+            icon="plus"
+            onPress={showPlusMenu}
+          />
+        }
+        testID="feed-composer"
+      />
 
       <CameraModal
         visible={isCameraOpen}
-        onCapture={(photo) => void handleCameraCapture(photo)}
+        onCapture={(photo) => {
+          void handleCameraCapture(photo).finally(() => setIsCameraOpen(false));
+        }}
         onClose={() => setIsCameraOpen(false)}
       />
     </>
   );
 }
-
-const useStyles = makeStyles((theme) => ({
-  container: {
-    left: 0,
-    right: 0,
-    paddingHorizontal: spacing[2],
-    position: 'absolute',
-    alignItems: 'center',
-  },
-  actionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-}));

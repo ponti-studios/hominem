@@ -177,7 +177,6 @@ const useStreamStyles = makeStyles((theme) => ({
     flex: 1,
   },
   sectionShell: {
-    backgroundColor: theme.colors['bg-base'],
     flex: 1,
     overflow: 'hidden',
   },

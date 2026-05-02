@@ -59,11 +59,10 @@ const useInnerStyles = makeStyles((t) =>
   }),
 );
 
-const useRootStyles = makeStyles((t) =>
+const useRootStyles = makeStyles(() =>
   StyleSheet.create({
     gestureRoot: {
       flex: 1,
-      backgroundColor: t.colors.background,
     },
   }),
 );

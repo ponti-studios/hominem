@@ -5,10 +5,10 @@ import { useQueryClient } from '@tanstack/react-query';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   Pressable,
+  TextInput,
   View,
 } from 'react-native';
 import Animated from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
   buildChatTitle,
@@ -18,8 +18,9 @@ import {
 import { ActionButton, MediaButton } from '~/components/composer/ComposerButtons';
 import { ComposerActionGroup } from '~/components/composer/ComposerActionGroup';
 import { ComposerAttachmentRow } from '~/components/composer/ComposerAttachmentRow';
-import { ComposerPill } from '~/components/composer/ComposerPill';
+import { ComposerToolbar } from '~/components/composer/ComposerToolbar';
 import type { ComposerSelectedNote } from '~/components/composer/composerState';
+import { useComposerMediaMenu } from '~/components/composer/useComposerMediaMenu';
 import {
   getTrailingMentionQuery,
   removeTrailingMentionQuery,
@@ -119,38 +120,33 @@ interface ChatComposerProps {
 }
 
 export function ChatComposer({ chatId, initialMessage }: ChatComposerProps) {
-  const insets = useSafeAreaInsets();
-  const styles = useStyles();
   const client = useApiClient();
   const queryClient = useQueryClient();
   const { data: activeChat } = useActiveChat(chatId);
   const resolvedChatId = activeChat?.id ?? chatId;
 
   const [selectedNotes, setSelectedNotes] = useState<ComposerSelectedNote[]>([]);
+  const inputRef = useRef<TextInput>(null);
 
   const {
     message,
     setMessage,
     attachments,
-    isCameraOpen,
-    setIsCameraOpen,
-    inputRef,
     uploadState,
     uploadedAttachmentIds,
     canSubmit,
     clearDraft,
     handleRemoveAttachment,
-    showPlusMenu,
-    onContentSizeChange,
+    pickAttachment,
     enhance,
     isEnhancing,
     handleCameraCapture,
-    inputStyle,
   } = useComposerBase({
     seedMessage: initialMessage,
     selectedNotes,
     onExtraClearDraft: () => setSelectedNotes([]),
   });
+  const { isCameraOpen, setIsCameraOpen, showPlusMenu } = useComposerMediaMenu({ pickAttachment });
 
   const { sendChatMessage, isChatSending } = useSendMessage({ chatId: resolvedChatId });
   const mentionQuery = useMemo(() => getTrailingMentionQuery(message), [message]);
@@ -219,44 +215,58 @@ export function ChatComposer({ chatId, initialMessage }: ChatComposerProps) {
     client,
     clearDraft,
   ]);
+  const hasAccessory =
+    attachments.length > 0 ||
+    uploadState.errors.length > 0 ||
+    uploadState.isUploading ||
+    selectedNotes.length > 0 ||
+    mentionSuggestions.length > 0;
+  const hasContent = message.trim().length > 0;
 
   return (
     <>
-      <ComposerPill
+      <ComposerToolbar
         testID="chat-input"
-        style={[styles.shell, { paddingBottom: Math.max(insets.bottom, spacing[2]) }]}
-      >
-        <ComposerAttachmentRow
-          attachments={attachments}
-          errors={uploadState.errors}
-          isUploading={uploadState.isUploading}
-          progressByAssetId={uploadState.progressByAssetId}
-          onRemove={handleRemoveAttachment}
-        />
-        <SelectionSummary selectedNotes={selectedNotes} onRemove={handleRemoveNote} />
-        <MentionSuggestions suggestions={mentionSuggestions} onSelect={handleSelectMention} />
-        <ComposerTextInput
-          inputRef={inputRef}
-          value={message}
-          onChangeText={setMessage}
-          onContentSizeChange={onContentSizeChange}
-          placeholder={t.chat.input.messagePlaceholder}
-          testID="chat-input-field"
-          inputStyle={inputStyle}
-        />
-        <View style={styles.actionRow}>
+        accessory={
+          hasAccessory ? (
+            <>
+              <ComposerAttachmentRow
+                attachments={attachments}
+                errors={uploadState.errors}
+                isUploading={uploadState.isUploading}
+                progressByAssetId={uploadState.progressByAssetId}
+                onRemove={handleRemoveAttachment}
+              />
+              <SelectionSummary selectedNotes={selectedNotes} onRemove={handleRemoveNote} />
+              <MentionSuggestions suggestions={mentionSuggestions} onSelect={handleSelectMention} />
+            </>
+          ) : undefined
+        }
+        input={
+          <ComposerTextInput
+            inputRef={inputRef}
+            value={message}
+            onChangeText={setMessage}
+            placeholder={t.chat.input.messagePlaceholder}
+            testID="chat-input-field"
+          />
+        }
+        leadingAction={
           <MediaButton
             icon="plus"
             onPress={showPlusMenu}
             accessibilityLabel={t.chat.input.addAttachmentA11y}
             disabled={isChatSending}
           />
-          <ComposerActionGroup hasContent={message.trim().length > 0}>
+        }
+        actions={
+          <ComposerActionGroup hasContent={hasContent}>
             <ActionButton
               icon="wand.and.sparkles"
               onPress={() => void enhance(message).then(setMessage)}
               accessibilityLabel={t.chat.input.enhanceTextA11y}
-              disabled={isChatSending || isEnhancing}
+              disabled={!hasContent || isChatSending || isEnhancing}
+              isAnimating={isEnhancing}
             />
             <ActionButton
               icon="arrow.up"
@@ -265,12 +275,14 @@ export function ChatComposer({ chatId, initialMessage }: ChatComposerProps) {
               accessibilityLabel={isChatSending ? t.chat.input.sendingA11y : t.chat.input.sendMessageA11y}
             />
           </ComposerActionGroup>
-        </View>
-      </ComposerPill>
+        }
+      />
 
       <CameraModal
         visible={isCameraOpen}
-        onCapture={(photo) => void handleCameraCapture(photo)}
+        onCapture={(photo) => {
+          void handleCameraCapture(photo).finally(() => setIsCameraOpen(false));
+        }}
         onClose={() => setIsCameraOpen(false)}
       />
     </>
@@ -278,11 +290,6 @@ export function ChatComposer({ chatId, initialMessage }: ChatComposerProps) {
 }
 
 const useStyles = makeStyles((theme) => ({
-  actionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing[2],
-  },
   selectionRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',

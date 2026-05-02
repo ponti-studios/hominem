@@ -8,7 +8,6 @@ import { TopAnchoredFeedProvider } from '~/services/inbox/top-anchored-feed';
 
 function SettingsButton() {
   const router = useRouter();
-  const themeColors = useThemeColors();
 
   return (
     <Pressable

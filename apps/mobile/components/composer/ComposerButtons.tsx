@@ -1,14 +1,22 @@
 import type { SFSymbol } from 'expo-symbols';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Pressable } from 'react-native';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { makeStyles, spacing, useThemeColors } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
+import { useReducedMotion } from '~/hooks/use-reduced-motion';
 
 const BTN_SIZE = spacing[6]; // 32px
 const BTN_ICON_SIZE = spacing[4] + 2; // 18px
-const MEDIA_BTN_SIZE = spacing[5] + 2; // 26px
-const MEDIA_BTN_ICON_SIZE = spacing[4] + 4; // 20px
+const MEDIA_BTN_SIZE = spacing[5]; // 24px
+const MEDIA_BTN_ICON_SIZE = spacing[4] + 2; // 18px
 
 interface MediaButtonProps {
   icon: SFSymbol;
@@ -48,6 +56,7 @@ interface ActionButtonProps {
   onPress: () => void;
   disabled: boolean;
   accessibilityLabel: string;
+  isAnimating?: boolean;
 }
 
 export function ActionButton({
@@ -55,9 +64,30 @@ export function ActionButton({
   onPress,
   disabled,
   accessibilityLabel,
+  isAnimating = false,
 }: ActionButtonProps) {
   const themeColors = useThemeColors();
   const styles = useStyles();
+  const prefersReducedMotion = useReducedMotion();
+  const rotation = useSharedValue(0);
+
+  useEffect(() => {
+    if (!isAnimating || prefersReducedMotion) {
+      rotation.value = withTiming(0, { duration: 120 });
+      return;
+    }
+
+    rotation.value = withRepeat(
+      withTiming(360, { duration: 900, easing: Easing.linear }),
+      -1,
+      false,
+    );
+  }, [isAnimating, prefersReducedMotion, rotation]);
+
+  const iconStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${rotation.value}deg` }],
+  }));
+
   return (
     <Pressable
       onPress={onPress}
@@ -71,11 +101,13 @@ export function ActionButton({
         pressed && !disabled ? styles.actionBtnPressed : null,
       ]}
     >
-      <AppIcon
-        name={icon}
-        size={BTN_ICON_SIZE}
-        tintColor={disabled ? themeColors['text-tertiary'] : themeColors.white}
-      />
+      <Animated.View style={iconStyle}>
+        <AppIcon
+          name={icon}
+          size={BTN_ICON_SIZE}
+          tintColor={disabled ? themeColors['text-tertiary'] : themeColors.white}
+        />
+      </Animated.View>
     </Pressable>
   );
 }
@@ -85,6 +117,9 @@ const useStyles = makeStyles((theme) => ({
     width: MEDIA_BTN_SIZE,
     height: MEDIA_BTN_SIZE,
     alignItems: 'center',
+    backgroundColor: theme.colors['bg-surface'],
+    borderColor: theme.colors['border-faint'],
+    borderWidth: 1,
     justifyContent: 'center',
     borderRadius: 12,
     borderCurve: 'continuous',

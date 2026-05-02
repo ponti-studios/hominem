@@ -1,7 +1,7 @@
 import { useIsFocused } from '@react-navigation/native';
 import type { FlashListRef } from '@shopify/flash-list';
 import { useLocalSearchParams } from 'expo-router/build/hooks';
-import React, { useCallback, useState } from 'react';
+import React, { useState } from 'react';
 import { RefreshControl, View } from 'react-native';
 
 import { FeedComposer } from '~/components/feed/FeedComposer';
@@ -25,17 +25,13 @@ export default function FeedScreen() {
     isFocused,
   });
 
-  const handleRefresh = useCallback(() => {
-    void refetch();
-  }, [refetch]);
-
   return (
     <View style={styles.container}>
       <InboxStream
         listRef={listRef}
         items={items}
         contentPaddingBottom={composerClearance}
-        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />}
+        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} />}
       />
       <FeedComposer onClearanceChange={setComposerClearance} seedMessage={params.seed} />
     </View>
