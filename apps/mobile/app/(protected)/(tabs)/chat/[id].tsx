@@ -2,8 +2,11 @@ import type { SessionSource } from '@hominem/rpc/types';
 import { useNavigation } from '@react-navigation/native';
 import { useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router/build/hooks';
-import React, { useLayoutEffect, useMemo } from 'react';
+import React, { useCallback, useLayoutEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import type { LayoutChangeEvent } from 'react-native';
+import { KeyboardStickyView } from 'react-native-keyboard-controller';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
   ChatMessageList,
@@ -48,9 +51,18 @@ export default function ChatDetailScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const themeColors = useThemeColors();
+  const insets = useSafeAreaInsets();
   const { speakingId, speak } = useTTS();
   const { data: activeChat } = useActiveChat(id);
   const chatId = activeChat?.id ?? id;
+  const [composerHeight, setComposerHeight] = useState(0);
+
+  const handleComposerLayout = useCallback((e: LayoutChangeEvent) => {
+    const nextHeight = e.nativeEvent.layout.height;
+    setComposerHeight((currentHeight) =>
+      currentHeight === nextHeight ? currentHeight : nextHeight,
+    );
+  }, []);
 
   const services = useMemo<ChatServices>(
     () => ({
@@ -186,8 +198,20 @@ export default function ChatDetailScreen() {
         }}
         renderIcon={renderChatIcon}
         formatTimestamp={formatRelativeAge}
+        contentPaddingBottom={composerHeight + insets.bottom}
         emptyState={emptyState}
       />
+      <KeyboardStickyView
+        offset={{ closed: insets.bottom, opened: 0 }}
+        pointerEvents="box-none"
+        style={styles.composerOverlay}
+      >
+        <ChatComposer
+          chatId={chatId}
+          initialMessage={initialMessage}
+          onLayout={handleComposerLayout}
+        />
+      </KeyboardStickyView>
       <View style={styles.reviewOverlay}>
         <ChatReviewOverlay
           pendingReview={controller.pendingReview}
@@ -200,7 +224,6 @@ export default function ChatDetailScreen() {
           }}
         />
       </View>
-      <ChatComposer chatId={chatId} initialMessage={initialMessage} />
     </View>
   );
 }
@@ -212,10 +235,16 @@ const styles = StyleSheet.create({
   reviewOverlay: {
     bottom: 0,
     left: 0,
-    position: 'absolute',
-    right: 0,
     top: 0,
     pointerEvents: 'box-none',
+    position: 'absolute',
+    right: 0,
+  },
+  composerOverlay: {
+    bottom: 0,
+    left: 0,
+    position: 'absolute',
+    right: 0,
   },
   headerActions: {
     alignItems: 'center',

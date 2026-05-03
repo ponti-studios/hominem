@@ -3,7 +3,6 @@ import type { LoaderFunctionArgs } from 'react-router';
 import { data, redirect } from 'react-router';
 
 import { NOTES_AUTH_CONFIG } from '~/config/auth';
-
 import { getServerSession } from '~/lib/auth.server';
 
 export async function loader({ request }: LoaderFunctionArgs) {

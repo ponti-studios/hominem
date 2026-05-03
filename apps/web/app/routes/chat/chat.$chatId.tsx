@@ -1,7 +1,7 @@
 import type { ChatMessageDto } from '@hominem/rpc/types/chat.types';
 import type { NoteSearchResult } from '@hominem/rpc/types/notes.types';
-import { SpeechInput } from '@hominem/ui/composer';
 import { Button } from '@hominem/ui/button';
+import { SpeechInput } from '@hominem/ui/composer';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Link, data } from 'react-router';
 

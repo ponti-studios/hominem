@@ -1,16 +1,23 @@
 import type { ChatMessageItem, ChatRenderIcon, MarkdownComponent } from '@hominem/chat';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type React from 'react';
-import { FlatList, Pressable, StyleSheet, View, type FlatList as RNFlatList } from 'react-native';
+import {
+  FlatList,
+  Pressable,
+  StyleSheet,
+  View,
+  type FlatList as RNFlatList,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+} from 'react-native';
 
-import { Text } from '~/components/theme';
-import { fontFamiliesNative, fontSizes, spacing } from '~/components/theme';
+import { Text, fontFamiliesNative, fontSizes, spacing } from '~/components/theme';
 
 import { renderChatMessage } from './chat-message';
 import { ChatShimmerMessage } from './chat-shimmer-message';
 
-const CHAT_COMPOSER_CLEARANCE = 220;
 const CHAT_TURN_GAP = spacing[5];
+const AUTO_SCROLL_END_THRESHOLD = spacing[8];
 const keyExtractor = (item: ChatMessageItem) => item.id;
 
 interface ChatMessageListProps {
@@ -49,26 +56,43 @@ export function ChatMessageList({
   onShare,
   renderIcon,
   formatTimestamp,
-  contentPaddingBottom = CHAT_COMPOSER_CLEARANCE,
+  contentPaddingBottom = 0,
   emptyState,
 }: ChatMessageListProps) {
   const hasSearchQuery = showSearch && searchQuery.length > 0;
   const [activeActionMessageId, setActiveActionMessageId] = useState<string | null>(null);
   const listRef = useRef<RNFlatList<ChatMessageItem> | null>(null);
+  const isNearEndRef = useRef(true);
   const prevCountRef = useRef(displayMessages.length);
+  const prevLastMessageIdRef = useRef(displayMessages.at(-1)?.id ?? null);
 
-  // Scroll to end when a new message is added or streaming content grows
+  const handleScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+    const distanceFromEnd = contentSize.height - (layoutMeasurement.height + contentOffset.y);
+    isNearEndRef.current = distanceFromEnd <= AUTO_SCROLL_END_THRESHOLD;
+  }, []);
+
+  // Scroll to end when new content arrives, but only if the user is already near the bottom.
   useEffect(() => {
+    const lastMessage = displayMessages.at(-1) ?? null;
     const isStreaming = displayMessages.some((m) => m.isStreaming);
     const countChanged = displayMessages.length !== prevCountRef.current;
-    prevCountRef.current = displayMessages.length;
+    const lastMessageIdChanged = lastMessage?.id !== prevLastMessageIdRef.current;
+    const shouldScrollForNewUserMessage =
+      countChanged && lastMessageIdChanged && lastMessage?.role === 'user';
+    const shouldAutoScroll =
+      !showSearch &&
+      (shouldScrollForNewUserMessage || (isNearEndRef.current && (countChanged || isStreaming)));
 
-    if (countChanged || isStreaming) {
-      requestAnimationFrame(() => {
-        listRef.current?.scrollToEnd({ animated: countChanged });
-      });
-    }
-  }, [displayMessages]);
+    prevCountRef.current = displayMessages.length;
+    prevLastMessageIdRef.current = lastMessage?.id ?? null;
+
+    if (!shouldAutoScroll) return;
+
+    requestAnimationFrame(() => {
+      listRef.current?.scrollToEnd({ animated: countChanged });
+    });
+  }, [displayMessages, showSearch]);
 
   const renderItem = useCallback(
     ({ item }: { item: ChatMessageItem }) =>
@@ -147,10 +171,12 @@ export function ChatMessageList({
       data={displayMessages}
       keyExtractor={keyExtractor}
       inverted={false}
+      onScroll={handleScroll}
       onScrollBeginDrag={() => setActiveActionMessageId(null)}
       removeClippedSubviews={false}
       renderItem={renderItem}
       scrollEnabled={displayMessages.length > 0}
+      scrollEventThrottle={16}
     />
   );
 }

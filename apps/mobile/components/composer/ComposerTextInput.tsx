@@ -34,12 +34,6 @@ export function ComposerTextInput({
   const styles = useStyles();
   const animatedH = useSharedValue(INPUT_MIN_H);
 
-  React.useEffect(() => {
-    if (value.length === 0) {
-      animatedH.value = withSpring(INPUT_MIN_H, SPRING_CONFIG);
-    }
-  }, [animatedH, value.length]);
-
   const inputContainerStyle = useAnimatedStyle(() => ({
     flex: 1,
     maxHeight: INPUT_MAX_H,
@@ -77,7 +71,7 @@ const useStyles = makeStyles((theme) => ({
     fontSize: 16,
     lineHeight: 22,
     letterSpacing: 0,
-    paddingHorizontal: 0,
+    paddingHorizontal: spacing[3],
     paddingVertical: 8,
     width: '100%',
   },

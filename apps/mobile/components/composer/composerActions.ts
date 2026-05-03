@@ -1,10 +1,6 @@
 import type { Note } from '@hominem/rpc/types';
 
-import {
-  DEFAULT_CHAT_TITLE,
-  isDefaultChatTitle,
-  normalizeChatTitle,
-} from '~/services/chat/chat-title';
+import { DEFAULT_CHAT_TITLE, isDefaultChatTitle } from '~/services/chat/chat-title';
 
 import type { ComposerAttachment, ComposerSelectedNote } from './composerState';
 
@@ -39,10 +35,6 @@ export function canSubmitComposerDraft(input: {
       input.uploadedAttachmentIds.length > 0 ||
       input.selectedNotes.length > 0)
   );
-}
-
-export function buildChatTitle(message: string) {
-  return normalizeChatTitle(message);
 }
 
 export { DEFAULT_CHAT_TITLE, isDefaultChatTitle };

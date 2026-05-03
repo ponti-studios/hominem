@@ -6,28 +6,16 @@ import React from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
-import type { ComposerAttachment } from '~/components/composer/composerState';
+import { useComposerAttachments } from '~/components/composer/ComposerContext';
 import { makeStyles, useThemeColors } from '~/components/theme';
 import { createLayoutTransition } from '~/components/theme/animations';
 import AppIcon from '~/components/ui/icon';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import t from '~/translations';
 
-interface ComposerAttachmentRowProps {
-  attachments: ComposerAttachment[];
-  errors: string[];
-  isUploading: boolean;
-  progressByAssetId: Record<string, number>;
-  onRemove: (id: string) => void;
-}
-
-export function ComposerAttachmentRow({
-  attachments,
-  errors,
-  isUploading,
-  progressByAssetId,
-  onRemove,
-}: ComposerAttachmentRowProps) {
+export function ComposerAttachmentRow() {
+  const { attachments, errors, isUploading, progressByAssetId, onRemove } =
+    useComposerAttachments();
   const themeColors = useThemeColors();
   const styles = useStyles();
   const prefersReducedMotion = useReducedMotion();

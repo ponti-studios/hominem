@@ -17,11 +17,3 @@ export interface ComposerDraft {
   attachments: ComposerAttachment[];
   selectedNotes: ComposerSelectedNote[];
 }
-
-export function createEmptyComposerDraft(): ComposerDraft {
-  return {
-    text: '',
-    attachments: [],
-    selectedNotes: [],
-  };
-}

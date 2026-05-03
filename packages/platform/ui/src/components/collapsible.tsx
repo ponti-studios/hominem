@@ -10,10 +10,7 @@ import {
 
 import { cn } from '../lib/utils';
 
-type CollapsibleRootProps = Omit<
-  ComponentProps<typeof CollapsiblePrimitive.Root>,
-  'children'
-> & {
+type CollapsibleRootProps = Omit<ComponentProps<typeof CollapsiblePrimitive.Root>, 'children'> & {
   children:
     | ReactElement<CollapsibleTriggerProps, typeof CollapsibleTrigger>
     | ReactElement<CollapsibleContentProps, typeof CollapsibleContent>
@@ -36,17 +33,29 @@ function Collapsible({ children, ...props }: CollapsibleRootProps) {
     });
   }
 
-  return <CollapsiblePrimitive.Root data-slot="collapsible" {...props}>{children}</CollapsiblePrimitive.Root>;
+  return (
+    <CollapsiblePrimitive.Root data-slot="collapsible" {...props}>
+      {children}
+    </CollapsiblePrimitive.Root>
+  );
 }
 
-interface CollapsibleTriggerProps
-  extends Omit<ComponentProps<typeof CollapsiblePrimitive.CollapsibleTrigger>, 'children'> {
+interface CollapsibleTriggerProps extends Omit<
+  ComponentProps<typeof CollapsiblePrimitive.CollapsibleTrigger>,
+  'children'
+> {
   text?: ReactNode;
   icon?: ReactNode;
   children?: ReactNode;
 }
 
-function CollapsibleTrigger({ text, icon, children, className, ...props }: CollapsibleTriggerProps) {
+function CollapsibleTrigger({
+  text,
+  icon,
+  children,
+  className,
+  ...props
+}: CollapsibleTriggerProps) {
   return (
     <CollapsiblePrimitive.CollapsibleTrigger
       data-slot="collapsible-trigger"

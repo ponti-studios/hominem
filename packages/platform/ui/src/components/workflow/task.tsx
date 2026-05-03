@@ -50,13 +50,7 @@ export function Task({
       )}
       {...props}
     >
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="mt-0.5"
-        onClick={onToggle}
-      >
+      <Button type="button" variant="ghost" size="icon" className="mt-0.5" onClick={onToggle}>
         {statusIcons[status]}
       </Button>
       <div className="flex-1 min-w-0">

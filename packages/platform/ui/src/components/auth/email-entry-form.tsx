@@ -13,11 +13,7 @@ interface EmailEntryFormProps {
   onPasskeyClick?: () => void | Promise<void>;
 }
 
-export function EmailEntryForm({
-  error,
-  onSubmit,
-  onPasskeyClick,
-}: EmailEntryFormProps) {
+export function EmailEntryForm({ error, onSubmit, onPasskeyClick }: EmailEntryFormProps) {
   const [searchParams] = useSearchParams();
   const [clientError, setClientError] = useState<string | null>(null);
   const [isClientSubmitting, setIsClientSubmitting] = useState(false);

@@ -1,9 +1,6 @@
 import { maskEmail } from '@hominem/auth/shared/mask-email';
 import type { RelativePathString } from 'expo-router';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
-
-import { CHAT_AUTH_CONFIG } from '~/config/auth';
-import { OTP_EXPIRES_SECONDS } from '~/config/auth-protocol';
 import React from 'react';
 import {
   KeyboardAvoidingView,
@@ -25,6 +22,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { CHAT_AUTH_CONFIG } from '~/config/auth';
+import { OTP_EXPIRES_SECONDS } from '~/config/auth-protocol';
 import t from '~/translations';
 
 import { FeatureErrorBoundary } from '../../components/error-boundary/FeatureErrorBoundary';

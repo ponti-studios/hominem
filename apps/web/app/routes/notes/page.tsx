@@ -1,3 +1,4 @@
+import type { InboxOutput } from '@hominem/rpc/react';
 import { SectionIntro, StatePanel } from '@hominem/ui';
 import { Composer } from '@hominem/ui/composer';
 import type { ComposerActions } from '@hominem/ui/composer/composer-provider';
@@ -15,7 +16,6 @@ import { useTranscribe } from '~/hooks/use-transcribe';
 import { getServerSession } from '~/lib/auth.server';
 import { serverEnv } from '~/lib/env.server';
 import { useFileUpload } from '~/lib/hooks/use-file-upload';
-import type { InboxOutput } from '@hominem/rpc/react';
 
 const FEED_ESTIMATED_ROW_HEIGHT = 128;
 const FEED_OVERSCAN_COUNT = 6;
@@ -33,9 +33,7 @@ export async function loader({ request }: { request: Request }) {
     new URL('/api/inbox?limit=20', serverEnv.VITE_PUBLIC_API_URL).toString(),
     { headers },
   );
-  const inbox: InboxOutput = response.ok
-    ? ((await response.json()) as InboxOutput)
-    : { items: [] };
+  const inbox: InboxOutput = response.ok ? ((await response.json()) as InboxOutput) : { items: [] };
 
   return data({ inbox });
 }

@@ -11,9 +11,7 @@ function CollapsiblePreview() {
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CollapsibleTrigger text="@peduarte starred 3 repositories" />
         <CollapsibleContent>
-          <div className="rounded-md border px-4 py-2 font-mono text-sm">
-            @radix-ui/primitives
-          </div>
+          <div className="rounded-md border px-4 py-2 font-mono text-sm">@radix-ui/primitives</div>
           <div className="rounded-md border px-4 py-2 font-mono text-sm">@radix-ui/colors</div>
           <div className="rounded-md border px-4 py-2 font-mono text-sm">@stitches/react</div>
         </CollapsibleContent>

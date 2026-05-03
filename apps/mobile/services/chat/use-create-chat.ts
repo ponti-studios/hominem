@@ -7,6 +7,7 @@ import {
   type ChatInboxRefreshSnapshot,
 } from '~/services/inbox/inbox-refresh';
 import { chatKeys } from '~/services/notes/query-keys';
+
 import type { ChatWithActivity } from './session-types';
 
 interface CreateChatInput {
@@ -24,16 +25,14 @@ export function useCreateChat() {
     },
     onSuccess: (chat) => {
       queryClient.setQueryData(chatKeys.activeChat(chat.id), chat);
-      queryClient.setQueryData<ChatWithActivity[] | undefined>(
-        chatKeys.resumableSessions,
-        (prev) =>
-          upsertInboxSessionActivity(prev ?? [], {
-            chatId: chat.id,
-            noteId: chat.noteId,
-            title: chat.title,
-            timestamp: chat.createdAt,
-            userId: chat.userId,
-          } satisfies ChatInboxRefreshSnapshot),
+      queryClient.setQueryData<ChatWithActivity[] | undefined>(chatKeys.resumableSessions, (prev) =>
+        upsertInboxSessionActivity(prev ?? [], {
+          chatId: chat.id,
+          noteId: chat.noteId,
+          title: chat.title,
+          timestamp: chat.createdAt,
+          userId: chat.userId,
+        } satisfies ChatInboxRefreshSnapshot),
       );
       void invalidateInboxQueries(queryClient);
     },

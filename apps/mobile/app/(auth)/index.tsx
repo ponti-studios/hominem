@@ -1,7 +1,5 @@
 import type { RelativePathString } from 'expo-router';
 import { Redirect, useRouter } from 'expo-router';
-
-import { CHAT_AUTH_CONFIG } from '~/config/auth';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -25,6 +23,7 @@ import Animated, {
 import { FeatureErrorBoundary } from '~/components/error-boundary/FeatureErrorBoundary';
 import { Button } from '~/components/ui/button';
 import AppIcon from '~/components/ui/icon';
+import { CHAT_AUTH_CONFIG } from '~/config/auth';
 import { E2E_TESTING, MOBILE_PASSKEY_ENABLED } from '~/constants';
 import { useAuth } from '~/services/auth/auth-provider';
 import { resolveAuthScreenState } from '~/services/auth/auth-screen-state';

@@ -3,16 +3,17 @@ import type { RelativePathString } from 'expo-router';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useRef } from 'react';
 import { Keyboard, TextInput } from 'react-native';
+import type { LayoutChangeEvent } from 'react-native';
 
+import { ComposerAccessories } from '~/components/composer/ComposerAccessories';
 import { ComposerActionGroup } from '~/components/composer/ComposerActionGroup';
-import { buildChatTitle } from '~/components/composer/composerActions';
-import { ComposerAttachmentRow } from '~/components/composer/ComposerAttachmentRow';
-import { ActionButton, MediaButton } from '~/components/composer/ComposerButtons';
+import { ActionButton } from '~/components/composer/ComposerButtons';
+import { ComposerProvider, useComposerAttachments } from '~/components/composer/ComposerContext';
+import { ComposerMedia } from '~/components/composer/ComposerMedia';
+import { ComposerSurface } from '~/components/composer/ComposerSurface';
 import { ComposerTextInput } from '~/components/composer/ComposerTextInput';
-import { ComposerToolbar } from '~/components/composer/ComposerToolbar';
-import { useComposerBase } from '~/components/composer/useComposerBase';
-import { useComposerMediaMenu } from '~/components/composer/useComposerMediaMenu';
-import { CameraModal } from '~/components/media/camera-modal';
+import { useComposer } from '~/components/composer/useComposer';
+import { normalizeChatTitle } from '~/services/chat';
 import { useCreateChat } from '~/services/chat/use-create-chat';
 import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
@@ -21,11 +22,19 @@ import { useCreateNote } from '~/services/notes/use-create-note';
 import t from '~/translations';
 
 interface FeedComposerProps {
-  onClearanceChange?: (height: number) => void;
+  onLayout?: (e: LayoutChangeEvent) => void;
   seedMessage?: string;
 }
 
-export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerProps) {
+export function FeedComposer({ onLayout, seedMessage }: FeedComposerProps) {
+  return (
+    <ComposerProvider seedMessage={seedMessage}>
+      <FeedComposerInner onLayout={onLayout} />
+    </ComposerProvider>
+  );
+}
+
+function FeedComposerInner({ onLayout }: { onLayout?: (e: LayoutChangeEvent) => void }) {
   const queryClient = useQueryClient();
   const router = useRouter();
   const { requestTopReveal } = useTopAnchoredFeed();
@@ -36,18 +45,14 @@ export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerPro
   const {
     message,
     setMessage,
-    attachments,
     uploadState,
     uploadedAttachmentIds,
     canSubmit,
     clearDraft,
-    handleRemoveAttachment,
-    pickAttachment,
     enhance,
     isEnhancing,
-    handleCameraCapture,
-  } = useComposerBase({ seedMessage });
-  const { isCameraOpen, setIsCameraOpen, showPlusMenu } = useComposerMediaMenu({ pickAttachment });
+  } = useComposer();
+  const { attachments } = useComposerAttachments();
 
   const handleSave = useCallback(async () => {
     if (!canSubmit || isSaving) return;
@@ -73,7 +78,7 @@ export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerPro
 
   const handleChat = useCallback(async () => {
     if (!canSubmit || isChatCreating) return;
-    const chat = await createChat({ title: buildChatTitle(message) });
+    const chat = await createChat({ title: normalizeChatTitle(message) });
     clearDraft();
     router.push(
       `/(protected)/(tabs)/chat/${chat.id}?initialMessage=${encodeURIComponent(message.trim())}` as RelativePathString,
@@ -82,73 +87,62 @@ export function FeedComposer({ onClearanceChange, seedMessage }: FeedComposerPro
   }, [canSubmit, isChatCreating, createChat, message, clearDraft, router, requestTopReveal]);
 
   const hasContent = message.trim().length > 0;
+
   const hasAccessory =
     attachments.length > 0 || uploadState.errors.length > 0 || uploadState.isUploading;
 
   return (
-    <>
-      <ComposerToolbar
-        accessory={
-          hasAccessory ? (
-            <ComposerAttachmentRow
-              attachments={attachments}
-              errors={uploadState.errors}
-              isUploading={uploadState.isUploading}
-              progressByAssetId={uploadState.progressByAssetId}
-              onRemove={handleRemoveAttachment}
-            />
-          ) : undefined
-        }
-        actions={
-          <ComposerActionGroup hasContent={hasContent}>
-            <ActionButton
-              accessibilityLabel={t.feed.composer.enhanceTextA11y}
-              icon="wand.and.sparkles"
-              onPress={() => void enhance(message).then(setMessage)}
-              disabled={!hasContent || isEnhancing}
-              isAnimating={isEnhancing}
-            />
-            <ActionButton
-              accessibilityLabel={t.feed.composer.openChatA11y}
-              disabled={!canSubmit || isSaving || isChatCreating || isEnhancing}
-              icon="bubble.left"
-              onPress={() => void handleChat()}
-            />
-            <ActionButton
-              accessibilityLabel={t.feed.composer.saveNoteA11y}
-              disabled={!canSubmit || isSaving || isChatCreating || isEnhancing}
-              icon="arrow.up"
-              onPress={() => void handleSave()}
-            />
-          </ComposerActionGroup>
-        }
-        onLayout={(e) => onClearanceChange?.(e.nativeEvent.layout.height)}
-        input={
-          <ComposerTextInput
-            inputRef={inputRef}
-            value={message}
-            onChangeText={setMessage}
-            placeholder={t.feed.composer.placeholder}
-            testID="feed-composer-input"
+    <ComposerSurface
+      onLayout={onLayout}
+      accessory={
+        hasAccessory ? (
+          <ComposerAccessories
+            selectedNotes={[]}
+            onRemoveNote={() => {}}
+            mentionSuggestions={[]}
+            onSelectMention={() => {}}
           />
-        }
-        leadingAction={
-          <MediaButton
-            accessibilityLabel={t.feed.composer.addAttachmentA11y}
-            icon="plus"
-            onPress={showPlusMenu}
+        ) : undefined
+      }
+      actions={
+        <ComposerActionGroup hasContent={hasContent}>
+          <ActionButton
+            accessibilityLabel={t.feed.composer.enhanceTextA11y}
+            icon="wand.and.sparkles"
+            onPress={() => void enhance(message).then(setMessage)}
+            disabled={!hasContent || isEnhancing}
+            isAnimating={isEnhancing}
           />
-        }
-        testID="feed-composer"
-      />
-
-      <CameraModal
-        visible={isCameraOpen}
-        onCapture={(photo) => {
-          void handleCameraCapture(photo).finally(() => setIsCameraOpen(false));
-        }}
-        onClose={() => setIsCameraOpen(false)}
-      />
-    </>
+          <ActionButton
+            accessibilityLabel={t.feed.composer.openChatA11y}
+            disabled={!canSubmit || isSaving || isChatCreating || isEnhancing}
+            icon="bubble.left"
+            onPress={() => void handleChat()}
+          />
+          <ActionButton
+            accessibilityLabel={t.feed.composer.saveNoteA11y}
+            disabled={!canSubmit || isSaving || isChatCreating || isEnhancing}
+            icon="arrow.up"
+            onPress={() => void handleSave()}
+          />
+        </ComposerActionGroup>
+      }
+      input={
+        <ComposerTextInput
+          inputRef={inputRef}
+          value={message}
+          onChangeText={setMessage}
+          placeholder={t.feed.composer.placeholder}
+          testID="feed-composer-input"
+        />
+      }
+      leadingAction={
+        <ComposerMedia
+          accessibilityLabel={t.feed.composer.addAttachmentA11y}
+          disabled={isSaving || isChatCreating}
+        />
+      }
+      testID="feed-composer"
+    />
   );
 }

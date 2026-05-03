@@ -8,12 +8,7 @@ export type ButtonVariant =
   | 'outline'
   | 'secondary';
 
-export type ButtonSize =
-  | 'sm'
-  | 'md'
-  | 'lg'
-  | 'xs'
-  | 'icon';
+export type ButtonSize = 'sm' | 'md' | 'lg' | 'xs' | 'icon';
 
 export interface ButtonBaseProps {
   isLoading?: boolean | undefined;

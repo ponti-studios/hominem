@@ -461,9 +461,7 @@ function MessageFooter({
     <div
       className={cn(
         'mt-2 flex w-full items-center gap-2 text-xs text-text-tertiary/70',
-        isUser
-          ? 'justify-end'
-          : 'justify-between border-t border-border-subtle/60 pt-3',
+        isUser ? 'justify-end' : 'justify-between border-t border-border-subtle/60 pt-3',
       )}
     >
       <MessageTimestamp timestamp={timestamp} createdAt={message.createdAt} />

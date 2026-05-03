@@ -15,41 +15,6 @@ import { useReducedMotion } from '~/hooks/use-reduced-motion';
 
 const BTN_SIZE = spacing[6]; // 32px
 const BTN_ICON_SIZE = spacing[4] + 2; // 18px
-const MEDIA_BTN_SIZE = spacing[5]; // 24px
-const MEDIA_BTN_ICON_SIZE = spacing[4] + 2; // 18px
-
-interface MediaButtonProps {
-  icon: SFSymbol;
-  onPress: () => void;
-  accessibilityLabel: string;
-  disabled?: boolean;
-}
-
-export function MediaButton({
-  icon,
-  onPress,
-  accessibilityLabel,
-  disabled = false,
-}: MediaButtonProps) {
-  const themeColors = useThemeColors();
-  const styles = useStyles();
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={disabled}
-      accessibilityLabel={accessibilityLabel}
-      accessibilityRole="button"
-      hitSlop={spacing[2]}
-      style={({ pressed }) => [
-        styles.mediaBtn,
-        disabled ? styles.mediaBtnDisabled : null,
-        pressed ? styles.mediaBtnPressed : null,
-      ]}
-    >
-      <AppIcon name={icon} size={MEDIA_BTN_ICON_SIZE} tintColor={themeColors['text-secondary']} />
-    </Pressable>
-  );
-}
 
 interface ActionButtonProps {
   icon: SFSymbol;
@@ -113,23 +78,6 @@ export function ActionButton({
 }
 
 const useStyles = makeStyles((theme) => ({
-  mediaBtn: {
-    width: MEDIA_BTN_SIZE,
-    height: MEDIA_BTN_SIZE,
-    alignItems: 'center',
-    backgroundColor: theme.colors['bg-surface'],
-    borderColor: theme.colors['border-faint'],
-    borderWidth: 1,
-    justifyContent: 'center',
-    borderRadius: 12,
-    borderCurve: 'continuous',
-  },
-  mediaBtnDisabled: {
-    opacity: 0.4,
-  },
-  mediaBtnPressed: {
-    backgroundColor: theme.colors['bg-surface'],
-  },
   actionBtn: {
     width: BTN_SIZE,
     height: BTN_SIZE,
