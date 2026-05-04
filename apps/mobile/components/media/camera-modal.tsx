@@ -1,10 +1,15 @@
 import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 import * as Haptics from 'expo-haptics';
 import * as MediaLibrary from 'expo-media-library';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Camera, useCameraDevice, useCameraPermission } from 'react-native-vision-camera';
+import {
+  Camera,
+  useCameraDevice,
+  useCameraPermission,
+  usePhotoOutput,
+} from 'react-native-vision-camera';
 
 import { Text, theme } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
@@ -23,24 +28,26 @@ type CameraModalProps = {
 
 export function CameraModal({ visible, onCapture, onClose }: CameraModalProps) {
   const insets = useSafeAreaInsets();
-  const cameraRef = useRef<Camera>(null);
   const [facing, setFacing] = useState<'front' | 'back'>('back');
   const [isTakingPhoto, setIsTakingPhoto] = useState(false);
 
   const { hasPermission, requestPermission } = useCameraPermission();
   const [mediaPermission, requestMediaPermission] = MediaLibrary.usePermissions();
   const device = useCameraDevice(facing);
+  const photoOutput = usePhotoOutput();
   const snapPoints = useMemo(() => ['50%', '90%'], []);
 
   const handleCapture = async () => {
-    if (!cameraRef.current || isTakingPhoto || !device) return;
+    if (isTakingPhoto || !device) return;
 
     setIsTakingPhoto(true);
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
-      const photo = await cameraRef.current.takePhoto();
-      const uri = `file://${photo.path}`;
+      const photo = await photoOutput.capturePhotoToFile({}, {});
+      const uri = photo.filePath.startsWith('file://')
+        ? photo.filePath
+        : `file://${photo.filePath}`;
       const captured: CapturedPhoto = {
         uri,
         fileName: `photo_${Date.now()}.jpg`,
@@ -91,34 +98,38 @@ export function CameraModal({ visible, onCapture, onClose }: CameraModalProps) {
       <BottomSheetView style={styles.container}>
         {hasPermission && device ? (
           <View style={styles.cameraContainer}>
-            <Camera ref={cameraRef} style={styles.camera} device={device} isActive={visible} photo>
-              <View style={[styles.controls, { paddingBottom: insets.bottom + 24 }]}>
-                <Pressable
-                  onPress={handleDismiss}
-                  style={styles.sideButton}
-                  accessibilityLabel={t.camera.closeA11y}
-                >
-                  <AppIcon name="xmark" size={20} tintColor={theme.colors.white} />
-                </Pressable>
+            <Camera
+              style={styles.camera}
+              device={device}
+              isActive={visible}
+              outputs={[photoOutput]}
+            />
+            <View style={[styles.controls, { paddingBottom: insets.bottom + 24 }]}>
+              <Pressable
+                onPress={handleDismiss}
+                style={styles.sideButton}
+                accessibilityLabel={t.camera.closeA11y}
+              >
+                <AppIcon name="xmark" size={20} tintColor={theme.colors.white} />
+              </Pressable>
 
-                <Pressable
-                  onPress={() => void handleCapture()}
-                  disabled={isTakingPhoto}
-                  style={[styles.captureButton, isTakingPhoto && styles.captureButtonDisabled]}
-                  accessibilityLabel={t.camera.takePhotoA11y}
-                >
-                  <View style={styles.captureInner} />
-                </Pressable>
+              <Pressable
+                onPress={() => void handleCapture()}
+                disabled={isTakingPhoto}
+                style={[styles.captureButton, isTakingPhoto && styles.captureButtonDisabled]}
+                accessibilityLabel={t.camera.takePhotoA11y}
+              >
+                <View style={styles.captureInner} />
+              </Pressable>
 
-                <Pressable
-                  onPress={() => setFacing((f) => (f === 'back' ? 'front' : 'back'))}
-                  style={styles.sideButton}
-                  accessibilityLabel={t.camera.flipCameraA11y}
-                >
-                  <AppIcon name="camera.rotate" size={20} tintColor={theme.colors.white} />
-                </Pressable>
-              </View>
-            </Camera>
+              <Pressable
+                onPress={() => setFacing((f) => (f === 'back' ? 'front' : 'back'))}
+                style={styles.sideButton}
+                accessibilityLabel={t.camera.flipCameraA11y}
+              >
+                <AppIcon name="camera.rotate" size={20} tintColor={theme.colors.white} />
+              </Pressable>
+            </View>
           </View>
         ) : (
           <View style={styles.permissionContainer}>
@@ -162,14 +173,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   camera: {
-    flex: 1,
-    justifyContent: 'flex-end',
+    ...StyleSheet.absoluteFillObject,
   },
   controls: {
-    flexDirection: 'row',
     alignItems: 'center',
+    bottom: 0,
+    flexDirection: 'row',
     justifyContent: 'space-between',
+    left: 0,
     paddingHorizontal: theme.spacing.xl,
+    position: 'absolute',
+    right: 0,
   },
   sideButton: {
     alignItems: 'center',

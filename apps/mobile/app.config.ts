@@ -131,13 +131,6 @@ export default ({ config }: ConfigContext) => {
         faceIDPermission: 'Allow Hakumi to use Face ID to lock your app.',
       },
     ],
-    [
-      'react-native-vision-camera',
-      {
-        cameraPermissionText: 'Allow Hakumi to access your camera to capture photos for notes.',
-        enableMicrophonePermission: false,
-      },
-    ],
   ];
 
   if (appVariant !== 'e2e') {

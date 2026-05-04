@@ -6,7 +6,6 @@ import Animated from 'react-native-reanimated';
 
 import { ComposerAttachmentRow } from '~/components/composer/ComposerAttachmentRow';
 import { useComposerAttachments } from '~/components/composer/ComposerContext';
-import type { ComposerSelectedNote } from '~/components/composer/composerState';
 import { makeStyles, useThemeColors } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
 import t from '~/translations';
@@ -14,7 +13,7 @@ import t from '~/translations';
 export { useComposerAttachments };
 
 interface ComposerAccessoriesProps {
-  selectedNotes: ComposerSelectedNote[];
+  selectedNotes: NoteSearchResult[];
   onRemoveNote: (noteId: string) => void;
   mentionSuggestions: NoteSearchResult[];
   onSelectMention: (note: NoteSearchResult) => void;
@@ -43,7 +42,7 @@ export function SelectionSummary({
   selectedNotes,
   onRemove,
 }: {
-  selectedNotes: ComposerSelectedNote[];
+  selectedNotes: NoteSearchResult[];
   onRemove: (noteId: string) => void;
 }) {
   const themeColors = useThemeColors();

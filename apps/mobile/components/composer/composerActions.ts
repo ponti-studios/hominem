@@ -1,6 +1,8 @@
+import { NoteSearchResult } from '@hominem/rpc/types';
+
 import { DEFAULT_CHAT_TITLE, isDefaultChatTitle } from '~/services/chat/chat-title';
 
-import type { ComposerAttachment, ComposerSelectedNote } from './composerState';
+import type { ComposerAttachment } from './composerState';
 
 export function getUploadedAttachmentIds(attachments: ComposerAttachment[]) {
   return attachments.flatMap((attachment) =>
@@ -12,7 +14,7 @@ export function canSubmitComposerDraft(input: {
   isUploading: boolean;
   message: string;
   uploadedAttachmentIds: string[];
-  selectedNotes: ComposerSelectedNote[];
+  selectedNotes: NoteSearchResult[];
 }) {
   return (
     !input.isUploading &&
@@ -24,20 +26,10 @@ export function canSubmitComposerDraft(input: {
 
 export { DEFAULT_CHAT_TITLE, isDefaultChatTitle };
 
-export function buildNoteContent(noteContent: string, message: string) {
-  const trimmedMessage = message.trim();
-
-  if (trimmedMessage.length === 0) {
-    return noteContent;
-  }
-
-  return noteContent.trim().length > 0 ? `${noteContent}\n\n${trimmedMessage}` : trimmedMessage;
-}
-
 export function mergeUniqueIds(existingIds: string[], nextIds: string[]) {
   return Array.from(new Set([...existingIds, ...nextIds]));
 }
 
-export function getSelectedNoteIds(selectedNotes: ComposerSelectedNote[]) {
-  return selectedNotes.map((note) => note.id);
+export function getNoteIds(notes: NoteSearchResult[]) {
+  return notes.map((note) => note.id);
 }

@@ -10,10 +10,8 @@ export interface ComposerAttachment {
   uploadedFile?: UploadedFile;
 }
 
-export type ComposerSelectedNote = NoteSearchResult;
-
 export interface ComposerDraft {
   text: string;
   attachments: ComposerAttachment[];
-  selectedNotes: ComposerSelectedNote[];
+  selectedNotes: NoteSearchResult[];
 }

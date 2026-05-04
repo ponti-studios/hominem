@@ -9,11 +9,10 @@ import {
   useComposerAttachments,
 } from '~/components/composer/ComposerAccessories';
 import { ComposerActionGroup } from '~/components/composer/ComposerActionGroup';
-import { getSelectedNoteIds, isDefaultChatTitle } from '~/components/composer/composerActions';
+import { getNoteIds, isDefaultChatTitle } from '~/components/composer/composerActions';
 import { ActionButton } from '~/components/composer/ComposerButtons';
 import { ComposerProvider } from '~/components/composer/ComposerContext';
 import { ComposerMedia } from '~/components/composer/ComposerMedia';
-import type { ComposerSelectedNote } from '~/components/composer/composerState';
 import { ComposerSurface } from '~/components/composer/ComposerSurface';
 import { ComposerTextInput } from '~/components/composer/ComposerTextInput';
 import {
@@ -50,7 +49,7 @@ function ChatComposerContent({ chatId }: { chatId: string }) {
   const { data: activeChat } = useActiveChat(chatId);
   const resolvedChatId = activeChat?.id ?? chatId;
 
-  const [selectedNotes, setSelectedNotes] = useState<ComposerSelectedNote[]>([]);
+  const [selectedNotes, setSelectedNotes] = useState<NoteSearchResult[]>([]);
   const inputRef = useRef<TextInput>(null);
 
   const {
@@ -91,7 +90,7 @@ function ChatComposerContent({ chatId }: { chatId: string }) {
   const handleSend = useCallback(async () => {
     if (!canSubmit || isChatSending) return;
     const trimmedMessage = message.trim();
-    const noteIds = getSelectedNoteIds(selectedNotes);
+    const noteIds = getNoteIds(selectedNotes);
     await sendChatMessage({
       message: trimmedMessage,
       ...(uploadedAttachmentIds.length > 0 ? { fileIds: uploadedAttachmentIds } : {}),

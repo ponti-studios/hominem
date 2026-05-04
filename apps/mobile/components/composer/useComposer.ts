@@ -1,4 +1,5 @@
 import { useApiClient } from '@hominem/rpc/react';
+import { NoteSearchResult } from '@hominem/rpc/types';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
@@ -6,11 +7,10 @@ import {
   getUploadedAttachmentIds,
 } from '~/components/composer/composerActions';
 import { useComposerContext } from '~/components/composer/ComposerContext';
-import type { ComposerSelectedNote } from '~/components/composer/composerState';
 import { useTextEnhance } from '~/services/ai/use-text-enhance';
 
 interface UseComposerOptions {
-  selectedNotes?: ComposerSelectedNote[];
+  selectedNotes?: NoteSearchResult[];
   onExtraClearDraft?: () => void;
 }
 
