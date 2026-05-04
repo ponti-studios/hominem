@@ -4,12 +4,12 @@ import { ActionSheetIOS, Pressable } from 'react-native';
 
 import { useComposerContext } from '~/components/composer/ComposerContext';
 import { CameraModal } from '~/components/media/camera-modal';
-import { makeStyles, useThemeColors } from '~/components/theme';
+import { fontSizes, makeStyles, useThemeColors } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
 import t from '~/translations';
 
-const MEDIA_BTN_SIZE = spacing[6];
-const MEDIA_BTN_ICON_SIZE = spacing[4] + 2;
+const MEDIA_BTN_SIZE = fontSizes.lg + 6;
+const MEDIA_BTN_ICON_SIZE = fontSizes.lg;
 
 interface ComposerMediaProps {
   accessibilityLabel: string;
@@ -73,7 +73,7 @@ const useStyles = makeStyles(() => ({
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.9)',
     justifyContent: 'center',
-    borderRadius: 8,
+    borderRadius: '100%',
   },
   btnDisabled: {
     opacity: 0.5,

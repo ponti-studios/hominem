@@ -4,7 +4,6 @@ import {
   StyleProp,
   StyleSheet,
   Text,
-  TextStyle,
   useColorScheme,
   ViewStyle,
   type PressableStateCallbackType,
