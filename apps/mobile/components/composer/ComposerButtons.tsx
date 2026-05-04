@@ -77,7 +77,7 @@ export function ActionButton({
   );
 }
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles(() => ({
   actionBtn: {
     width: BTN_SIZE,
     height: BTN_SIZE,

@@ -38,13 +38,13 @@ interface MobileUploadAsset {
   type: string | null;
 }
 
-interface MobileUploadedAsset {
+interface UploadedAsset {
   assetId: string;
   localUri: string;
   uploadedFile: UploadedFile;
 }
 
-interface MobileUploadState {
+interface UploadState {
   isUploading: boolean;
   progress: number;
   progressByAssetId: Record<string, number>;
@@ -52,7 +52,7 @@ interface MobileUploadState {
 }
 
 interface MobileUploadBatchResult {
-  uploaded: MobileUploadedAsset[];
+  uploaded: UploadedAsset[];
   errors: string[];
 }
 
@@ -118,7 +118,7 @@ async function performMobileUploads(
   const fetchImpl = options?.fetchImpl ?? fetch;
   let completedCount = 0;
 
-  const uploadAsset = async (asset: MobileUploadAsset): Promise<MobileUploadedAsset | string> => {
+  const uploadAsset = async (asset: MobileUploadAsset): Promise<UploadedAsset | string> => {
     const originalName = asset.fileName ?? getFallbackFileName(asset.uri);
 
     try {
@@ -165,7 +165,7 @@ async function performMobileUploads(
 
   const results = await Promise.all(assets.map(uploadAsset));
 
-  const uploaded: MobileUploadedAsset[] = [];
+  const uploaded: UploadedAsset[] = [];
   const errors: string[] = [];
 
   for (const result of results) {
@@ -184,7 +184,7 @@ async function performMobileUploads(
 
 export function useFileUpload(fetchImpl: typeof fetch = fetch) {
   const { getAuthHeaders } = useAuth();
-  const [uploadState, setUploadState] = useState<MobileUploadState>({
+  const [uploadState, setUploadState] = useState<UploadState>({
     isUploading: false,
     progress: 0,
     progressByAssetId: {},
@@ -192,7 +192,7 @@ export function useFileUpload(fetchImpl: typeof fetch = fetch) {
   });
 
   const uploadAssets = useCallback(
-    async (assets: MobileUploadAsset[]): Promise<MobileUploadedAsset[]> => {
+    async (assets: MobileUploadAsset[]): Promise<UploadedAsset[]> => {
       if (assets.length === 0) {
         return [];
       }

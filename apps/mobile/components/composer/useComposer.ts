@@ -1,79 +1,45 @@
-import { useApiClient } from '@hominem/rpc/react';
-import { NoteSearchResult } from '@hominem/rpc/types';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
-import {
-  canSubmitComposerDraft,
-  getUploadedAttachmentIds,
-} from '~/components/composer/composerActions';
 import { useComposerContext } from '~/components/composer/ComposerContext';
 import { useTextEnhance } from '~/services/ai/use-text-enhance';
 
 interface UseComposerOptions {
-  selectedNotes?: NoteSearchResult[];
   onExtraClearDraft?: () => void;
 }
 
-export function useComposer({ selectedNotes = [], onExtraClearDraft }: UseComposerOptions = {}) {
-  const client = useApiClient();
-  const context = useComposerContext();
+export function useComposer({ onExtraClearDraft }: UseComposerOptions = {}) {
+  const { attachments, errors, isUploading, progressByAssetId, clearAttachments, seedMessage } =
+    useComposerContext();
 
-  const [message, setMessage] = useState(context.seedMessage ?? '');
-
+  const [message, setMessage] = useState(seedMessage ?? '');
   const { enhance, isEnhancing } = useTextEnhance();
 
-  useEffect(() => {
-    const clientRef = client;
-    context.setOnRemove((id: string) => {
-      const target = context.attachments.find((a) => a.id === id);
-      context.setAttachments((prev) => prev.filter((a) => a.id !== id));
-      if (target?.uploadedFile?.id) {
-        void clientRef.api.files[':fileId']
-          .$delete({ param: { fileId: target.uploadedFile.id } })
-          .catch(() => undefined);
-      }
-    });
-  });
-
   const uploadState = useMemo(
-    () => ({
-      errors: context.errors,
-      isUploading: context.isUploading,
-      progressByAssetId: context.progressByAssetId,
-    }),
-    [context.errors, context.isUploading, context.progressByAssetId],
+    () => ({ errors, isUploading, progressByAssetId }),
+    [errors, isUploading, progressByAssetId],
   );
 
   const uploadedAttachmentIds = useMemo(
-    () => getUploadedAttachmentIds(context.attachments),
-    [context.attachments],
+    () => attachments.flatMap((a) => (a.uploadedFile?.id ? [a.uploadedFile.id] : [])),
+    [attachments],
   );
 
-  const canSubmit = canSubmitComposerDraft({
-    isUploading: context.isUploading,
-    message,
-    uploadedAttachmentIds,
-    selectedNotes,
-  });
+  const canSubmit =
+    !isUploading && (message.trim().length > 0 || uploadedAttachmentIds.length > 0);
 
   const clearDraft = useCallback(() => {
     setMessage('');
-    context.setAttachments([]);
+    clearAttachments();
     onExtraClearDraft?.();
-  }, [context, onExtraClearDraft]);
+  }, [clearAttachments, onExtraClearDraft]);
 
   return {
-    // state
     message,
     setMessage,
-    // upload
     uploadState,
     uploadedAttachmentIds,
-    // derived
     canSubmit,
-    // callbacks
     clearDraft,
-    // enhance
     enhance,
     isEnhancing,
   };

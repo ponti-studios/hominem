@@ -3,14 +3,13 @@ import React, { useCallback, useState } from 'react';
 import { ActionSheetIOS, Pressable } from 'react-native';
 
 import { useComposerContext } from '~/components/composer/ComposerContext';
-import { useComposerMediaActions } from '~/components/composer/useComposerMediaActions';
 import { CameraModal } from '~/components/media/camera-modal';
 import { makeStyles, useThemeColors } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
 import t from '~/translations';
 
-const MEDIA_BTN_SIZE = spacing[6]; // 32px — matches ActionButton
-const MEDIA_BTN_ICON_SIZE = spacing[4] + 2; // 18px
+const MEDIA_BTN_SIZE = spacing[6];
+const MEDIA_BTN_ICON_SIZE = spacing[4] + 2;
 
 interface ComposerMediaProps {
   accessibilityLabel: string;
@@ -18,14 +17,11 @@ interface ComposerMediaProps {
 }
 
 export function ComposerMedia({ accessibilityLabel, disabled = false }: ComposerMediaProps) {
-  const context = useComposerContext();
+  const { pickAttachment, handleCameraCapture } = useComposerContext();
   const themeColors = useThemeColors();
   const styles = useStyles();
   const [isCameraOpen, setIsCameraOpen] = useState(false);
-  const { pickAttachment, handleCameraCapture } = useComposerMediaActions({
-    attachments: context.attachments,
-    setAttachments: context.setAttachments,
-  });
+
   const showPlusMenu = useCallback(() => {
     ActionSheetIOS.showActionSheetWithOptions(
       {

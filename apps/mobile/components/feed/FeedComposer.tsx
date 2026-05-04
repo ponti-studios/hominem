@@ -4,15 +4,19 @@ import { useRouter } from 'expo-router';
 import React, { useCallback, useRef } from 'react';
 import { Keyboard, TextInput } from 'react-native';
 
-import { ComposerAccessories } from '~/components/composer/ComposerAccessories';
 import { ComposerActionGroup } from '~/components/composer/ComposerActionGroup';
 import { ActionButton } from '~/components/composer/ComposerButtons';
-import { ComposerProvider, useComposerAttachments } from '~/components/composer/ComposerContext';
+import {
+  ComposerProvider,
+  useComposerAttachments,
+  useComposerContext,
+} from '~/components/composer/ComposerContext';
+import { ComposerAttachmentRow } from '~/components/composer/ComposerAttachmentRow';
 import { ComposerMedia } from '~/components/composer/ComposerMedia';
+import { ComposerResting } from '~/components/composer/ComposerResting';
 import { ComposerSurface } from '~/components/composer/ComposerSurface';
 import { ComposerTextInput } from '~/components/composer/ComposerTextInput';
 import { useComposer } from '~/components/composer/useComposer';
-import { normalizeChatTitle } from '~/services/chat';
 import { useCreateChat } from '~/services/chat/use-create-chat';
 import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
@@ -39,6 +43,7 @@ function FeedComposerInner() {
   const { mutateAsync: createNote, isPending: isSaving } = useCreateNote();
   const { mutateAsync: createChat, isPending: isChatCreating } = useCreateChat();
   const inputRef = useRef<TextInput>(null);
+  const { isActive, activate } = useComposerContext();
 
   const {
     message,
@@ -56,27 +61,19 @@ function FeedComposerInner() {
     if (!canSubmit || isSaving) return;
     await createNote({
       text: message.trim(),
-      ...(uploadedAttachmentIds.length > 0 ? { fileIds: uploadedAttachmentIds } : {}),
+      fileIds: uploadedAttachmentIds,
     });
     donateAddNoteIntent();
     await invalidateInboxQueries(queryClient);
     requestTopReveal();
     clearDraft();
     Keyboard.dismiss();
-  }, [
-    canSubmit,
-    isSaving,
-    createNote,
-    message,
-    uploadedAttachmentIds,
-    queryClient,
-    requestTopReveal,
-    clearDraft,
-  ]);
+  }, [canSubmit, isSaving, createNote, message, uploadedAttachmentIds, queryClient, requestTopReveal, clearDraft]);
 
   const handleChat = useCallback(async () => {
     if (!canSubmit || isChatCreating) return;
-    const chat = await createChat({ title: normalizeChatTitle(message) });
+    const title = message.trim().replace(/\s+/g, ' ').slice(0, 64) || 'New conversation';
+    const chat = await createChat({ title });
     clearDraft();
     router.push(
       `/(protected)/(tabs)/chat/${chat.id}?initialMessage=${encodeURIComponent(message.trim())}` as RelativePathString,
@@ -85,22 +82,20 @@ function FeedComposerInner() {
   }, [canSubmit, isChatCreating, createChat, message, clearDraft, router, requestTopReveal]);
 
   const hasContent = message.trim().length > 0;
+  const hasAccessory = attachments.length > 0 || uploadState.errors.length > 0 || uploadState.isUploading;
 
-  const hasAccessory =
-    attachments.length > 0 || uploadState.errors.length > 0 || uploadState.isUploading;
+  if (!isActive) {
+    return (
+      <ComposerResting
+        onActivate={() => activate(inputRef)}
+        disabled={isSaving || isChatCreating}
+      />
+    );
+  }
 
   return (
     <ComposerSurface
-      accessory={
-        hasAccessory ? (
-          <ComposerAccessories
-            selectedNotes={[]}
-            onRemoveNote={() => {}}
-            mentionSuggestions={[]}
-            onSelectMention={() => {}}
-          />
-        ) : undefined
-      }
+      accessory={hasAccessory ? <ComposerAttachmentRow /> : undefined}
       actions={
         <ComposerActionGroup hasContent={hasContent}>
           <ActionButton

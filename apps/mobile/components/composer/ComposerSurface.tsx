@@ -1,8 +1,9 @@
 import { radii, spacing } from '@hominem/ui/tokens';
 import React, { useEffect } from 'react';
-import { Keyboard, View } from 'react-native';
+import { View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
+import { useComposerContext } from '~/components/composer/ComposerContext';
 import { makeStyles } from '~/components/theme';
 
 interface ComposerSurfaceProps {
@@ -21,20 +22,12 @@ export function ComposerSurface({
   testID,
 }: ComposerSurfaceProps) {
   const styles = useStyles();
-  const keyboardOpen = useSharedValue(0);
+  const { isKeyboardVisible } = useComposerContext();
+  const keyboardOpen = useSharedValue(isKeyboardVisible ? 1 : 0);
 
   useEffect(() => {
-    const show = Keyboard.addListener('keyboardWillShow', () => {
-      keyboardOpen.value = withTiming(1, { duration: 250 });
-    });
-    const hide = Keyboard.addListener('keyboardWillHide', () => {
-      keyboardOpen.value = withTiming(0, { duration: 250 });
-    });
-    return () => {
-      show.remove();
-      hide.remove();
-    };
-  }, [keyboardOpen]);
+    keyboardOpen.value = withTiming(isKeyboardVisible ? 1 : 0, { duration: 250 });
+  }, [isKeyboardVisible, keyboardOpen]);
 
   const animatedContentStyle = useAnimatedStyle(() => ({
     paddingBottom: spacing[6] - (spacing[6] - spacing[3]) * keyboardOpen.value,

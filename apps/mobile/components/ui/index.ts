@@ -1,3 +1,3 @@
 export { EmptyState } from './EmptyState';
-export { AppIconButton } from './icon-button';
-export { AppIconButtonGroup } from './icon-button-group';
+export { IconButton } from './icon-button';
+export { IconButtonGroup } from './icon-button-group';

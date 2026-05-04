@@ -4,30 +4,41 @@ import { describe, expect, it } from 'vitest';
 
 import {
   DEFAULT_CHAT_TITLE,
-  isDefaultChatTitle,
-  normalizeChatTitle,
-  resolveChatScreenTitle,
+  getChatTitle,
   updateChatTitleCaches,
 } from '~/services/chat/chat-title';
 import type { ChatWithActivity } from '~/services/chat/session-types';
 import { chatKeys } from '~/services/notes/query-keys';
 
 describe('chat title helpers', () => {
-  it('normalizes titles and recognizes the default title', () => {
-    expect(normalizeChatTitle('  hello   world  ')).toBe('hello world');
-    expect(normalizeChatTitle('   ')).toBe(DEFAULT_CHAT_TITLE);
-    expect(isDefaultChatTitle(DEFAULT_CHAT_TITLE)).toBe(true);
-    expect(isDefaultChatTitle('Something else')).toBe(false);
-  });
-
-  it('derives the screen title from the resolved source when the stored title is generic', () => {
-    const source: SessionSource = {
+  it('gets the display title - custom, source-derived, or default', () => {
+    const captureSource: SessionSource = {
       kind: 'capture',
       preview: 'First real message',
     };
+    const artifactSource: SessionSource = {
+      kind: 'artifact',
+      id: 'artifact-1',
+      type: 'note' as const,
+      title: 'Artifact title',
+    };
+    const newSource: SessionSource = {
+      kind: 'new',
+    };
 
-    expect(resolveChatScreenTitle(DEFAULT_CHAT_TITLE, source)).toBe('First real message');
-    expect(resolveChatScreenTitle('Saved title', source)).toBe('Saved title');
+    // Custom title takes precedence
+    expect(getChatTitle('Saved title', captureSource)).toBe('Saved title');
+
+    // Falls back to source-derived when title is default
+    expect(getChatTitle(DEFAULT_CHAT_TITLE, captureSource)).toBe('First real message');
+    expect(getChatTitle(null, captureSource)).toBe('First real message');
+    expect(getChatTitle(undefined, captureSource)).toBe('First real message');
+
+    // Artifact source
+    expect(getChatTitle(DEFAULT_CHAT_TITLE, artifactSource)).toBe('Artifact title');
+
+    // New chat falls back to default
+    expect(getChatTitle(null, newSource)).toBe(DEFAULT_CHAT_TITLE);
   });
 
   it('updates the active and session caches together', () => {

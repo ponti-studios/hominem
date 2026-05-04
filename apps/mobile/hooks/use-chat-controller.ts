@@ -21,6 +21,7 @@ import {
 import { Alert, Platform, Share, TextInput } from 'react-native';
 
 import { loadMarkdown } from '../components/chat/chat-message';
+import type { SendInput } from '../services/chat/use-send-message';
 
 export interface ChatServices {
   useChatMessages: (args: { chatId: string }) => {
@@ -28,7 +29,7 @@ export interface ChatServices {
     data: ChatMessageItem[] | undefined;
   };
   useSendMessage: (args: { chatId: string }) => {
-    sendChatMessage: (text: string) => Promise<unknown>;
+    sendChatMessage: (input: SendInput) => Promise<void>;
   };
   useArchiveChat: (args: { chatId: string; onSuccess: () => void }) => {
     mutate: () => void;
@@ -340,7 +341,7 @@ export function useChatController({
 
       if (!previousUserMessage) return;
 
-      await sendChatMessage(previousUserMessage.message);
+      await sendChatMessage({ message: previousUserMessage.message });
     },
     [formattedMessages, sendChatMessage],
   );
@@ -352,7 +353,7 @@ export function useChatController({
       if (!trimmedContent) return;
       if (!existingMessage || existingMessage.role !== 'user') return;
 
-      await sendChatMessage(trimmedContent);
+      await sendChatMessage({ message: trimmedContent });
     },
     [formattedMessages, sendChatMessage],
   );

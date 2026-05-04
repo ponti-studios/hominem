@@ -45,7 +45,7 @@ export default function FeedScreen() {
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} />}
       />
       <KeyboardStickyView
-        offset={{ closed: -16, opened: 0 }}
+        offset={{ closed: 0, opened: 0 }}
         pointerEvents="box-none"
         style={styles.overlay}
       >

@@ -162,6 +162,7 @@ export const InboxStream = ({
           ]}
           data={items}
           keyExtractor={keyExtractor}
+          keyboardDismissMode="on-drag"
           renderItem={renderItem}
           ListFooterComponent={<View style={staticStyles.sectionFooter} />}
           refreshControl={refreshControl}

@@ -1,33 +1,21 @@
-import { useApiClient } from '@hominem/rpc/react';
-import type { NoteSearchResult } from '@hominem/rpc/types';
 import { useQueryClient } from '@tanstack/react-query';
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useRef } from 'react';
 import { TextInput } from 'react-native';
 
-import {
-  ComposerAccessories,
-  useComposerAttachments,
-} from '~/components/composer/ComposerAccessories';
+import { ComposerAccessories } from '~/components/composer/ComposerAccessories';
 import { ComposerActionGroup } from '~/components/composer/ComposerActionGroup';
-import { getNoteIds, isDefaultChatTitle } from '~/components/composer/composerActions';
 import { ActionButton } from '~/components/composer/ComposerButtons';
-import { ComposerProvider } from '~/components/composer/ComposerContext';
+import { ComposerProvider, useComposerAttachments } from '~/components/composer/ComposerContext';
 import { ComposerMedia } from '~/components/composer/ComposerMedia';
 import { ComposerSurface } from '~/components/composer/ComposerSurface';
 import { ComposerTextInput } from '~/components/composer/ComposerTextInput';
-import {
-  getTrailingMentionQuery,
-  removeTrailingMentionQuery,
-} from '~/components/composer/note-mentions';
+import { useChatMentions } from '~/components/composer/useChatMentions';
 import { useComposer } from '~/components/composer/useComposer';
 import {
-  normalizeChatTitle,
-  updateChatTitleCaches,
   useActiveChat,
+  useAutoUpdateChatTitle,
   useSendMessage,
 } from '~/services/chat';
-import { chatKeys } from '~/services/notes/query-keys';
-import { useNoteSearch } from '~/services/notes/use-note-search';
 import t from '~/translations';
 
 interface ChatComposerProps {
@@ -44,12 +32,9 @@ export function ChatComposer({ chatId, initialMessage }: ChatComposerProps) {
 }
 
 function ChatComposerContent({ chatId }: { chatId: string }) {
-  const client = useApiClient();
-  const queryClient = useQueryClient();
   const { data: activeChat } = useActiveChat(chatId);
   const resolvedChatId = activeChat?.id ?? chatId;
 
-  const [selectedNotes, setSelectedNotes] = useState<NoteSearchResult[]>([]);
   const inputRef = useRef<TextInput>(null);
 
   const {
@@ -57,7 +42,7 @@ function ChatComposerContent({ chatId }: { chatId: string }) {
     setMessage,
     uploadState,
     uploadedAttachmentIds,
-    canSubmit,
+    canSubmit: baseCanSubmit,
     clearDraft,
     enhance,
     isEnhancing,
@@ -65,66 +50,29 @@ function ChatComposerContent({ chatId }: { chatId: string }) {
   const { attachments } = useComposerAttachments();
 
   const { sendChatMessage, isChatSending } = useSendMessage({ chatId: resolvedChatId });
-  const mentionQuery = useMemo(() => getTrailingMentionQuery(message), [message]);
-  const { data: searchResults } = useNoteSearch(mentionQuery ?? '', mentionQuery !== null);
-  const mentionSuggestions = useMemo(
-    () =>
-      (searchResults?.notes ?? []).filter((note) => !selectedNotes.some((s) => s.id === note.id)),
-    [searchResults?.notes, selectedNotes],
-  );
+  const autoUpdateTitle = useAutoUpdateChatTitle(resolvedChatId);
 
-  const handleSelectMention = useCallback(
-    (note: NoteSearchResult) => {
-      setMessage(removeTrailingMentionQuery(message));
-      setSelectedNotes((prev) => (prev.some((n) => n.id === note.id) ? prev : [...prev, note]));
-      inputRef.current?.focus();
-    },
-    [message, setMessage, inputRef],
-  );
+  const {
+    selectedNotes,
+    mentionSuggestions,
+    handleSelectMention,
+    handleRemoveNote,
+    clearSelectedNotes,
+  } = useChatMentions({ message, setMessage, inputRef });
 
-  const handleRemoveNote = useCallback(
-    (noteId: string) => setSelectedNotes((prev) => prev.filter((n) => n.id !== noteId)),
-    [],
-  );
+  const canSubmit = baseCanSubmit || selectedNotes.length > 0;
 
   const handleSend = useCallback(async () => {
     if (!canSubmit || isChatSending) return;
     const trimmedMessage = message.trim();
-    const noteIds = getNoteIds(selectedNotes);
     await sendChatMessage({
       message: trimmedMessage,
-      ...(uploadedAttachmentIds.length > 0 ? { fileIds: uploadedAttachmentIds } : {}),
-      ...(noteIds.length > 0 ? { noteIds } : {}),
-      ...(selectedNotes.length > 0 ? { referencedNotes: selectedNotes } : {}),
+      fileIds: uploadedAttachmentIds,
+      noteIds: selectedNotes.map((n) => n.id),
     });
-
-    if (trimmedMessage.length > 0) {
-      const currentChat = queryClient.getQueryData<{ title: string } | null>(
-        chatKeys.activeChat(resolvedChatId),
-      );
-      if (currentChat && isDefaultChatTitle(currentChat.title)) {
-        const nextTitle = normalizeChatTitle(trimmedMessage);
-        if (!isDefaultChatTitle(nextTitle)) {
-          const updatedAt = new Date().toISOString();
-          updateChatTitleCaches(queryClient, {
-            chatId: resolvedChatId,
-            title: nextTitle,
-            updatedAt,
-          });
-          try {
-            await client.api.chats[':id'].$patch({
-              param: { id: resolvedChatId },
-              json: { title: nextTitle },
-            });
-          } catch {
-            await queryClient.invalidateQueries({
-              queryKey: chatKeys.activeChat(resolvedChatId),
-            });
-          }
-        }
-      }
-    }
+    await autoUpdateTitle(trimmedMessage);
     clearDraft();
+    clearSelectedNotes();
   }, [
     canSubmit,
     isChatSending,
@@ -132,11 +80,11 @@ function ChatComposerContent({ chatId }: { chatId: string }) {
     selectedNotes,
     uploadedAttachmentIds,
     sendChatMessage,
-    queryClient,
-    resolvedChatId,
-    client,
+    autoUpdateTitle,
     clearDraft,
+    clearSelectedNotes,
   ]);
+
   const hasAccessory =
     attachments.length > 0 ||
     uploadState.errors.length > 0 ||

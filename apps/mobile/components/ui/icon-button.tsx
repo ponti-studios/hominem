@@ -13,7 +13,7 @@ import { componentSizes, themeSpacing, useThemeColors } from '~/components/theme
 
 import AppIcon from './icon';
 
-export interface AppIconButtonProps extends Omit<PressableProps, 'children' | 'onPress' | 'style'> {
+export interface IconButtonProps extends Omit<PressableProps, 'children' | 'onPress' | 'style'> {
   accessibilityLabel: string;
   icon: SFSymbol;
   iconSize?: number;
@@ -25,7 +25,7 @@ export interface AppIconButtonProps extends Omit<PressableProps, 'children' | 'o
   style?: StyleProp<ViewStyle>;
 }
 
-export function AppIconButton({
+export function IconButton({
   accessibilityLabel,
   accessibilityRole = 'button',
   disabled = false,
@@ -39,7 +39,7 @@ export function AppIconButton({
   style,
   tintColor,
   ...rest
-}: AppIconButtonProps) {
+}: IconButtonProps) {
   const themeColors = useThemeColors();
 
   return (

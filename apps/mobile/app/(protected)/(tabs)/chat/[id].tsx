@@ -23,7 +23,7 @@ import { EmptyState } from '~/components/ui';
 import AppIcon from '~/components/ui/icon';
 import {
   DEFAULT_CHAT_TITLE,
-  resolveChatScreenTitle,
+  getChatTitle,
   updateChatTitleCaches,
   useActiveChat,
   useArchiveChat,
@@ -109,7 +109,7 @@ export default function ChatDetailScreen() {
     source,
   });
 
-  const displayTitle = resolveChatScreenTitle(activeChat?.title, controller.resolvedSource);
+  const displayTitle = getChatTitle(activeChat?.title, controller.resolvedSource);
 
   const { mutate: handleCreateChat, isPending: isCreatingChat } = useCreateChat();
 

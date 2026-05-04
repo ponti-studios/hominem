@@ -13,7 +13,7 @@ import {
   spacing,
   useThemeColors,
 } from '~/components/theme';
-import { AppIconButton } from '~/components/ui';
+import { IconButton } from '~/components/ui';
 import { Button } from '~/components/ui/button';
 import t from '~/translations';
 
@@ -48,14 +48,14 @@ function ActionIconButton({
   onPress,
 }: {
   disabled?: boolean;
-  icon: Parameters<typeof AppIconButton>[0]['icon'];
+  icon: Parameters<typeof IconButton>[0]['icon'];
   isDestructive?: boolean;
   onPress: () => void;
 }) {
   const themeColors = useThemeColors();
 
   return (
-    <AppIconButton
+    <IconButton
       accessibilityLabel={icon}
       disabled={disabled}
       disabledOpacity={0.35}

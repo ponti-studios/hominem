@@ -12,33 +12,29 @@ function normalizeWhitespace(value: string) {
   return value.trim().replace(/\s+/g, ' ');
 }
 
-export function normalizeChatTitle(value: string) {
-  const normalized = normalizeWhitespace(value);
-  return normalized.slice(0, CHAT_TITLE_MAX_LENGTH) || DEFAULT_CHAT_TITLE;
-}
+/**
+ * Gets the display title for a chat.
+ * - If a custom title exists, returns it (normalized + truncated)
+ * - Otherwise falls back to source-derived title
+ * - Returns default title if nothing else is available
+ */
+export function getChatTitle(title: string | null | undefined, source: SessionSource) {
+  const customTitle = normalizeWhitespace(title ?? '');
 
-export function isDefaultChatTitle(title?: string | null) {
-  return normalizeWhitespace(title ?? '') === DEFAULT_CHAT_TITLE;
-}
+  if (customTitle && customTitle !== DEFAULT_CHAT_TITLE) {
+    return customTitle.slice(0, CHAT_TITLE_MAX_LENGTH);
+  }
 
-function resolveSourceTitle(source: SessionSource) {
+  // Fall back to source-derived title
   if (source.kind === 'artifact') {
     return normalizeWhitespace(source.title) || DEFAULT_CHAT_TITLE;
   }
 
   if (source.kind === 'capture') {
-    return normalizeChatTitle(source.preview);
+    return normalizeWhitespace(source.preview).slice(0, CHAT_TITLE_MAX_LENGTH) || DEFAULT_CHAT_TITLE;
   }
 
   return DEFAULT_CHAT_TITLE;
-}
-
-export function resolveChatScreenTitle(title: string | null | undefined, source: SessionSource) {
-  if (!title || isDefaultChatTitle(title)) {
-    return resolveSourceTitle(source);
-  }
-
-  return normalizeWhitespace(title) || resolveSourceTitle(source);
 }
 
 export function updateChatTitleCaches(

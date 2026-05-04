@@ -13,7 +13,7 @@ import { streamSSE } from './stream-sse';
 // Batch chunk writes at ~2 frames (60 fps) to avoid a setQueryData per token.
 const FLUSH_INTERVAL_MS = 32;
 
-interface SendInput {
+export interface SendInput {
   message: string;
   fileIds?: string[];
   noteIds?: string[];
@@ -109,11 +109,7 @@ export function useSendMessage({ chatId }: { chatId: string }) {
 
       await streamSSE({
         url: `${API_BASE_URL}/api/chats/${chatId}/stream`,
-        payload: {
-          message: message.trim(),
-          ...(fileIds?.length ? { fileIds } : {}),
-          ...(noteIds?.length ? { noteIds } : {}),
-        },
+        payload: { message: message.trim(), fileIds, noteIds },
         getHeaders: getAuthHeaders,
         onChunk,
       });
@@ -140,10 +136,9 @@ export function useSendMessage({ chatId }: { chatId: string }) {
   });
 
   const sendChatMessage = useCallback(
-    async (input: SendInput | string): Promise<void> => {
-      const resolved = typeof input === 'string' ? { message: input } : input;
-      if (!resolved.message.trim()) return;
-      await mutation.mutateAsync(resolved);
+    async (input: SendInput): Promise<void> => {
+      if (!input.message.trim()) return;
+      await mutation.mutateAsync(input);
     },
     [mutation],
   );
