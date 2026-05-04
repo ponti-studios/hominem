@@ -1,6 +1,7 @@
 import { radii, spacing } from '@hominem/ui/tokens';
-import React from 'react';
-import { View } from 'react-native';
+import React, { useEffect } from 'react';
+import { Keyboard, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { makeStyles } from '~/components/theme';
 
@@ -20,16 +21,34 @@ export function ComposerSurface({
   testID,
 }: ComposerSurfaceProps) {
   const styles = useStyles();
+  const keyboardOpen = useSharedValue(0);
+
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardWillShow', () => {
+      keyboardOpen.value = withTiming(1, { duration: 250 });
+    });
+    const hide = Keyboard.addListener('keyboardWillHide', () => {
+      keyboardOpen.value = withTiming(0, { duration: 250 });
+    });
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, [keyboardOpen]);
+
+  const animatedContentStyle = useAnimatedStyle(() => ({
+    paddingBottom: spacing[6] - (spacing[6] - spacing[3]) * keyboardOpen.value,
+  }));
 
   return (
-    <View style={[styles.surface, styles.content]} testID={testID}>
+    <Animated.View style={[styles.surface, styles.content, animatedContentStyle]} testID={testID}>
       {accessory ? <View style={styles.accessory}>{accessory}</View> : null}
       {input}
       <View style={[styles.actionRow, actions ? null : styles.actionRowCompact]}>
         <View style={styles.leadingActionSlot}>{leadingAction}</View>
         <View style={styles.actionSlot}>{actions}</View>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -48,8 +67,7 @@ const useStyles = makeStyles((theme) => ({
   },
   content: {
     gap: spacing[1],
-    paddingBottom: spacing[3],
-    paddingHorizontal: spacing[2],
+    paddingHorizontal: spacing[1],
     paddingTop: spacing[1],
   },
   accessory: {

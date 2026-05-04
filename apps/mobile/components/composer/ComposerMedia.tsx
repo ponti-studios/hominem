@@ -9,8 +9,8 @@ import { makeStyles, useThemeColors } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
 import t from '~/translations';
 
-const MEDIA_BTN_SIZE = spacing[5];
-const MEDIA_BTN_ICON_SIZE = spacing[4] + 2;
+const MEDIA_BTN_SIZE = spacing[6]; // 32px — matches ActionButton
+const MEDIA_BTN_ICON_SIZE = spacing[4] + 2; // 18px
 
 interface ComposerMediaProps {
   accessibilityLabel: string;
@@ -57,7 +57,7 @@ export function ComposerMedia({ accessibilityLabel, disabled = false }: Composer
           pressed ? styles.btnPressed : null,
         ]}
       >
-        <AppIcon name="plus" size={MEDIA_BTN_ICON_SIZE} tintColor={themeColors['text-secondary']} />
+        <AppIcon name="plus" size={MEDIA_BTN_ICON_SIZE} tintColor={themeColors['white']} />
       </Pressable>
       <CameraModal
         visible={isCameraOpen}
@@ -70,22 +70,19 @@ export function ComposerMedia({ accessibilityLabel, disabled = false }: Composer
   );
 }
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles(() => ({
   btn: {
     width: MEDIA_BTN_SIZE,
     height: MEDIA_BTN_SIZE,
     alignItems: 'center',
-    backgroundColor: theme.colors['bg-surface'],
-    borderColor: theme.colors['border-faint'],
-    borderWidth: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
     justifyContent: 'center',
-    borderRadius: 12,
-    borderCurve: 'continuous',
+    borderRadius: 8,
   },
   btnDisabled: {
-    opacity: 0.4,
+    opacity: 0.5,
   },
   btnPressed: {
-    backgroundColor: theme.colors['bg-surface'],
+    opacity: 0.7,
   },
 }));
