@@ -3,7 +3,6 @@ import type { NoteSearchResult } from '@hominem/rpc/types';
 import { useQueryClient } from '@tanstack/react-query';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { TextInput } from 'react-native';
-import type { LayoutChangeEvent } from 'react-native';
 
 import {
   ComposerAccessories,
@@ -35,24 +34,17 @@ import t from '~/translations';
 interface ChatComposerProps {
   chatId: string;
   initialMessage?: string;
-  onLayout?: (e: LayoutChangeEvent) => void;
 }
 
-export function ChatComposer({ chatId, initialMessage, onLayout }: ChatComposerProps) {
+export function ChatComposer({ chatId, initialMessage }: ChatComposerProps) {
   return (
     <ComposerProvider seedMessage={initialMessage}>
-      <ChatComposerContent chatId={chatId} onLayout={onLayout} />
+      <ChatComposerContent chatId={chatId} />
     </ComposerProvider>
   );
 }
 
-function ChatComposerContent({
-  chatId,
-  onLayout,
-}: {
-  chatId: string;
-  onLayout?: (e: LayoutChangeEvent) => void;
-}) {
+function ChatComposerContent({ chatId }: { chatId: string }) {
   const client = useApiClient();
   const queryClient = useQueryClient();
   const { data: activeChat } = useActiveChat(chatId);
@@ -156,7 +148,6 @@ function ChatComposerContent({
 
   return (
     <ComposerSurface
-      onLayout={onLayout}
       testID="chat-input"
       accessory={
         hasAccessory ? (

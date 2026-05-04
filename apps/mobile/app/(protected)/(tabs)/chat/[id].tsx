@@ -19,7 +19,6 @@ import {
 } from '~/components/chat';
 import { ChatComposer } from '~/components/chat/ChatComposer';
 import { useTTS } from '~/components/media/use-tts';
-import { useThemeColors } from '~/components/theme';
 import { EmptyState } from '~/components/ui';
 import AppIcon from '~/components/ui/icon';
 import {
@@ -50,7 +49,6 @@ export default function ChatDetailScreen() {
   const navigation = useNavigation();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const themeColors = useThemeColors();
   const insets = useSafeAreaInsets();
   const { speakingId, speak } = useTTS();
   const { data: activeChat } = useActiveChat(id);
@@ -156,7 +154,6 @@ export default function ChatDetailScreen() {
     handleCreateChat,
     isCreatingChat,
     navigation,
-    themeColors,
   ]);
 
   const emptyState = useMemo(
@@ -202,15 +199,13 @@ export default function ChatDetailScreen() {
         emptyState={emptyState}
       />
       <KeyboardStickyView
-        offset={{ closed: insets.bottom, opened: 0 }}
+        offset={{ closed: 0, opened: 0 }}
         pointerEvents="box-none"
         style={styles.composerOverlay}
       >
-        <ChatComposer
-          chatId={chatId}
-          initialMessage={initialMessage}
-          onLayout={handleComposerLayout}
-        />
+        <View onLayout={handleComposerLayout}>
+          <ChatComposer chatId={chatId} initialMessage={initialMessage} />
+        </View>
       </KeyboardStickyView>
       <View style={styles.reviewOverlay}>
         <ChatReviewOverlay

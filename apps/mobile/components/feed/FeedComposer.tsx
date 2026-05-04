@@ -3,7 +3,6 @@ import type { RelativePathString } from 'expo-router';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useRef } from 'react';
 import { Keyboard, TextInput } from 'react-native';
-import type { LayoutChangeEvent } from 'react-native';
 
 import { ComposerAccessories } from '~/components/composer/ComposerAccessories';
 import { ComposerActionGroup } from '~/components/composer/ComposerActionGroup';
@@ -22,19 +21,18 @@ import { useCreateNote } from '~/services/notes/use-create-note';
 import t from '~/translations';
 
 interface FeedComposerProps {
-  onLayout?: (e: LayoutChangeEvent) => void;
   seedMessage?: string;
 }
 
-export function FeedComposer({ onLayout, seedMessage }: FeedComposerProps) {
+export function FeedComposer({ seedMessage }: FeedComposerProps) {
   return (
     <ComposerProvider seedMessage={seedMessage}>
-      <FeedComposerInner onLayout={onLayout} />
+      <FeedComposerInner />
     </ComposerProvider>
   );
 }
 
-function FeedComposerInner({ onLayout }: { onLayout?: (e: LayoutChangeEvent) => void }) {
+function FeedComposerInner() {
   const queryClient = useQueryClient();
   const router = useRouter();
   const { requestTopReveal } = useTopAnchoredFeed();
@@ -93,7 +91,6 @@ function FeedComposerInner({ onLayout }: { onLayout?: (e: LayoutChangeEvent) => 
 
   return (
     <ComposerSurface
-      onLayout={onLayout}
       accessory={
         hasAccessory ? (
           <ComposerAccessories

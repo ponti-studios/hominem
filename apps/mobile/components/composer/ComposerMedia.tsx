@@ -1,13 +1,13 @@
 import { spacing } from '@hominem/ui/tokens';
-import React from 'react';
-import { Pressable } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { ActionSheetIOS, Pressable } from 'react-native';
 
 import { useComposerContext } from '~/components/composer/ComposerContext';
 import { useComposerMediaActions } from '~/components/composer/useComposerMediaActions';
-import { useComposerMediaMenu } from '~/components/composer/useComposerMediaMenu';
+import { CameraModal } from '~/components/media/camera-modal';
 import { makeStyles, useThemeColors } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
-import { CameraModal } from '~/components/media/camera-modal';
+import t from '~/translations';
 
 const MEDIA_BTN_SIZE = spacing[5];
 const MEDIA_BTN_ICON_SIZE = spacing[4] + 2;
@@ -21,11 +21,27 @@ export function ComposerMedia({ accessibilityLabel, disabled = false }: Composer
   const context = useComposerContext();
   const themeColors = useThemeColors();
   const styles = useStyles();
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
   const { pickAttachment, handleCameraCapture } = useComposerMediaActions({
     attachments: context.attachments,
     setAttachments: context.setAttachments,
   });
-  const { isCameraOpen, setIsCameraOpen, showPlusMenu } = useComposerMediaMenu({ pickAttachment });
+  const showPlusMenu = useCallback(() => {
+    ActionSheetIOS.showActionSheetWithOptions(
+      {
+        options: [
+          t.chat.input.actionSheet.cancel,
+          t.chat.input.actionSheet.takePhoto,
+          t.chat.input.actionSheet.chooseFromLibrary,
+        ],
+        cancelButtonIndex: 0,
+      },
+      (i) => {
+        if (i === 1) setIsCameraOpen(true);
+        else if (i === 2) void pickAttachment();
+      },
+    );
+  }, [pickAttachment]);
 
   return (
     <>

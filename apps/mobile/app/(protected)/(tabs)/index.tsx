@@ -45,11 +45,13 @@ export default function FeedScreen() {
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} />}
       />
       <KeyboardStickyView
-        offset={{ closed: insets.bottom, opened: 0 }}
+        offset={{ closed: -16, opened: 0 }}
         pointerEvents="box-none"
         style={styles.overlay}
       >
-        <FeedComposer onLayout={handleComposerLayout} seedMessage={params.seed} />
+        <View onLayout={handleComposerLayout}>
+          <FeedComposer seedMessage={params.seed} />
+        </View>
       </KeyboardStickyView>
     </View>
   );

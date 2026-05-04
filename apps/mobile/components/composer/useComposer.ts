@@ -33,7 +33,7 @@ export function useComposer({ selectedNotes = [], onExtraClearDraft }: UseCompos
           .catch(() => undefined);
       }
     });
-  }, []);
+  });
 
   const uploadState = useMemo(
     () => ({

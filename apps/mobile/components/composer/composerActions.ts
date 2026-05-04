@@ -1,5 +1,3 @@
-import type { Note } from '@hominem/rpc/types';
-
 import { DEFAULT_CHAT_TITLE, isDefaultChatTitle } from '~/services/chat/chat-title';
 
 import type { ComposerAttachment, ComposerSelectedNote } from './composerState';
@@ -8,19 +6,6 @@ export function getUploadedAttachmentIds(attachments: ComposerAttachment[]) {
   return attachments.flatMap((attachment) =>
     attachment.uploadedFile?.id ? [attachment.uploadedFile.id] : [],
   );
-}
-
-export function mergeNoteIntoCache(currentNotes: Note[] | undefined, updatedNote: Note) {
-  if (!currentNotes) {
-    return [updatedNote];
-  }
-
-  const hasNote = currentNotes.some((note) => note.id === updatedNote.id);
-  if (!hasNote) {
-    return [updatedNote, ...currentNotes];
-  }
-
-  return currentNotes.map((note) => (note.id === updatedNote.id ? updatedNote : note));
 }
 
 export function canSubmitComposerDraft(input: {

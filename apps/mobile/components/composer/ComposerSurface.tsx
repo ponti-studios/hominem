@@ -1,7 +1,6 @@
 import { radii, spacing } from '@hominem/ui/tokens';
 import React from 'react';
 import { View } from 'react-native';
-import type { LayoutChangeEvent } from 'react-native';
 
 import { makeStyles } from '~/components/theme';
 
@@ -10,7 +9,6 @@ interface ComposerSurfaceProps {
   actions?: React.ReactNode;
   input: React.ReactNode;
   leadingAction: React.ReactNode;
-  onLayout?: (e: LayoutChangeEvent) => void;
   testID?: string;
 }
 
@@ -19,13 +17,12 @@ export function ComposerSurface({
   actions,
   input,
   leadingAction,
-  onLayout,
   testID,
 }: ComposerSurfaceProps) {
   const styles = useStyles();
 
   return (
-    <View onLayout={onLayout} style={[styles.surface, styles.content]} testID={testID}>
+    <View style={[styles.surface, styles.content]} testID={testID}>
       {accessory ? <View style={styles.accessory}>{accessory}</View> : null}
       {input}
       <View style={[styles.actionRow, actions ? null : styles.actionRowCompact]}>
