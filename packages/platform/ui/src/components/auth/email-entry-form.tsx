@@ -1,3 +1,4 @@
+import { normalizeEmail } from '@hominem/auth/shared/validation';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router';
 
@@ -32,9 +33,7 @@ export function EmailEntryForm({ error, onSubmit, onPasskeyClick }: EmailEntryFo
         onSubmit={(event) => {
           event.preventDefault();
           const formData = new FormData(event.currentTarget);
-          const email = String(formData.get('email') ?? '')
-            .trim()
-            .toLowerCase();
+          const email = normalizeEmail(String(formData.get('email') ?? ''));
 
           setClientError(null);
           setIsClientSubmitting(true);

@@ -10,6 +10,8 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
+import { buildStoredFileName, formatTimestampForFileName, sanitizeFileName } from '@hominem/utils/files';
+
 import type { FileObject, PreparedUpload, StorageOptions, StoredFile } from './types';
 import { isSupportedUploadMimeType } from './upload-policy';
 
@@ -102,9 +104,7 @@ class InMemoryStorageBackend {
   }
 
   createStoredName(id: string, filename: string, extension: string): string {
-    const sanitized = filename.replace(/[^a-zA-Z0-9.-]/g, '_');
-    const withExtension = sanitized.endsWith(extension) ? sanitized : `${sanitized}${extension}`;
-    return `${id}-${withExtension}`;
+    return buildStoredFileName(id, filename, extension);
   }
 
   isValidFileType(mimetype: string): boolean {
@@ -282,9 +282,7 @@ class InMemoryStorageBackend {
     fileContent: Buffer | string,
     userId: string,
   ): Promise<string> {
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
-    const filename = `${timestamp}_${sanitizedFileName}`;
+    const filename = `${formatTimestampForFileName()}_${sanitizeFileName(fileName)}`;
     const key = this.getKey(userId, filename);
 
     const buffer = typeof fileContent === 'string' ? Buffer.from(fileContent) : fileContent;
@@ -384,9 +382,7 @@ export class R2StorageService {
   ): Promise<string> {
     await this.ensureBucket();
 
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
-    const filename = `${timestamp}_${sanitizedFileName}`;
+    const filename = `${formatTimestampForFileName()}_${sanitizeFileName(fileName)}`;
     const key = this.getKey(userId, filename);
 
     const command = new PutObjectCommand({
@@ -711,10 +707,7 @@ export class R2StorageService {
   }
 
   createStoredName(id: string, filename: string, extension: string): string {
-    const sanitized = filename.replace(/[^a-zA-Z0-9.-]/g, '_');
-    const withExtension = sanitized.endsWith(extension) ? sanitized : `${sanitized}${extension}`;
-
-    return `${id}-${withExtension}`;
+    return buildStoredFileName(id, filename, extension);
   }
 
   isValidFileType(mimetype: string): boolean {

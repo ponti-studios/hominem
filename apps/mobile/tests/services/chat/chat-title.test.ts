@@ -5,12 +5,21 @@ import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_CHAT_TITLE,
   getChatTitle,
+  isDefaultChatTitle,
+  normalizeChatTitle,
   updateChatTitleCaches,
 } from '~/services/chat/chat-title';
 import type { ChatWithActivity } from '~/services/chat/session-types';
 import { chatKeys } from '~/services/notes/query-keys';
 
 describe('chat title helpers', () => {
+  it('normalizes titles, recognizes the default title, and resolves the display title', () => {
+    expect(normalizeChatTitle('  hello   world  ')).toBe('hello world');
+    expect(normalizeChatTitle('   ')).toBe(DEFAULT_CHAT_TITLE);
+    expect(isDefaultChatTitle(DEFAULT_CHAT_TITLE)).toBe(true);
+    expect(isDefaultChatTitle('Something else')).toBe(false);
+  });
+
   it('gets the display title - custom, source-derived, or default', () => {
     const captureSource: SessionSource = {
       kind: 'capture',

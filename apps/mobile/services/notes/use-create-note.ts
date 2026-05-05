@@ -1,4 +1,5 @@
 import { createNotesMutationSuccessHandler, useApiClient } from '@hominem/rpc/react';
+import { buildContentPreview } from '@hominem/utils/text';
 import type { Note } from '@hominem/rpc/types';
 import { useMutation, useQueryClient, type UseMutationResult } from '@tanstack/react-query';
 
@@ -22,7 +23,7 @@ function buildOptimisticNote(text: string, optimisticId: string): Note {
     id: optimisticId,
     title: null,
     content: trimmed,
-    excerpt: trimmed.replace(/\s+/g, ' ').slice(0, 240) || null,
+    excerpt: buildContentPreview(null, trimmed) || null,
     status: 'draft',
     type: 'note',
     tags: [],

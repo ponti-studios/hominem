@@ -1,5 +1,6 @@
-import { classifyFileByMimeType } from '@hominem/rpc';
+import { classifyFileByMimeType, getmimeTypeFromExtension } from '@hominem/rpc';
 import { useApiClient } from '@hominem/rpc/react';
+import { getFileExtension } from '@hominem/utils/files';
 import { UPLOAD_MAX_FILE_COUNT } from '@hominem/storage/constants';
 import * as ImagePicker from 'expo-image-picker';
 import React, {
@@ -48,16 +49,6 @@ interface ComposerProviderProps {
   children: React.ReactNode;
   seedMessage?: string;
 }
-
-const MIME_TYPE_MAP: Record<string, string> = {
-  heic: 'image/heic',
-  heif: 'image/heif',
-  jpeg: 'image/jpeg',
-  jpg: 'image/jpeg',
-  png: 'image/png',
-  webp: 'image/webp',
-  gif: 'image/gif',
-};
 
 function getAttachmentType(uploadedFile: UploadedFile): string {
   return uploadedFile.type !== 'unknown'
@@ -172,8 +163,9 @@ export function ComposerProvider({ children, seedMessage }: ComposerProviderProp
     async (photo: { uri: string; fileName?: string }): Promise<ComposerAttachment[]> => {
       clearErrors();
       const fileName = photo.fileName ?? photo.uri.split('/').pop() ?? 'photo';
-      const extension = fileName.split('.').pop()?.toLowerCase() ?? 'jpg';
-      const mimeType = MIME_TYPE_MAP[extension] ?? 'image/jpeg';
+      const extension = getFileExtension(fileName) ?? 'jpg';
+      const resolvedMimeType = getmimeTypeFromExtension(extension);
+      const mimeType = resolvedMimeType === 'application/octet-stream' ? 'image/jpeg' : resolvedMimeType;
       return appendUploadedAssets([
         {
           assetId: photo.uri,

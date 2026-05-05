@@ -14,6 +14,7 @@ import { requireAuth } from '~/lib/guards';
 import { useChatMessages } from '~/lib/hooks/use-chat-messages';
 import { useFileUpload } from '~/lib/hooks/use-file-upload';
 import { useStreamMessage } from '~/lib/hooks/use-stream-message';
+import { slugifyText } from '@hominem/utils/text';
 
 import type { Route } from './+types/chat.$chatId';
 
@@ -32,12 +33,6 @@ type NoteLoaderData = {
   excerpt?: string | null;
 };
 
-function slugifyTitle(title: string | null) {
-  return (title ?? '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
 
 function getMentionQuery(value: string) {
   const match = value.match(/#([a-z0-9-]*)$/i);
@@ -124,7 +119,7 @@ export default function ChatPage({
       return draft;
     }
 
-    const slug = slugifyTitle(seedNote.title ?? null);
+    const slug = slugifyText(seedNote.title ?? null);
     if (!slug || draft.includes(`#${slug}`)) {
       return draft;
     }

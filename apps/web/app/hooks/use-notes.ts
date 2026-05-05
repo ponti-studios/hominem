@@ -20,6 +20,7 @@ import type {
 } from '@hominem/rpc/types/notes.types';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { buildContentPreview } from '@hominem/utils/text';
 import { notesQueryKeys } from '~/lib/query-keys';
 import { requestNotesRowExit } from '~/routes/notes/notes-surface-events';
 
@@ -53,7 +54,7 @@ function buildOptimisticFeedNote(input: NotesCreateInput): NoteFeedItem {
   return {
     id: `optimistic-note-${Date.now().toString()}`,
     title: input.title?.trim() || null,
-    contentPreview: trimmed.replace(/\s+/g, ' ').trim().slice(0, 240),
+    contentPreview: buildContentPreview(null, trimmed),
     createdAt: now,
     authorId: 'optimistic-user',
     metadata: {

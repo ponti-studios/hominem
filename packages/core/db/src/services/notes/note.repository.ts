@@ -3,6 +3,7 @@ import type { Selectable } from 'kysely';
 import { NotFoundError, ValidationError } from '../../errors';
 import type { DbHandle } from '../../transaction';
 import type { AppFiles, AppNotes } from '../../types/database';
+import { buildContentPreview } from '@hominem/utils/text';
 import { toRequiredIsoString } from '../_shared/mappers';
 
 type NoteRow = Selectable<AppNotes>;
@@ -197,10 +198,8 @@ function decodeNoteSearchCursor(cursor: string): { updatedAt: string; id: string
   }
 }
 
-function buildContentPreview(excerpt: string | null, content: string): string {
-  const normalized = (excerpt ?? content).replace(/\s+/g, ' ').trim();
-  return normalized.slice(0, 240);
-}
+
+
 
 export const NoteRepository = {
   /**

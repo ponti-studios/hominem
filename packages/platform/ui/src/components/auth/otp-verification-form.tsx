@@ -1,4 +1,5 @@
 import { maskEmail } from '@hominem/auth/shared/mask-email';
+import { normalizeOtp } from '@hominem/auth/shared/validation';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router';
 
@@ -33,7 +34,7 @@ export function OtpVerificationForm({
   const isSubmitting = isClientSubmitting;
   const resolvedEmail = searchParams.get('email') ?? email;
   const next = searchParams.get('next') ?? defaultNext;
-  const normalizedOtp = otp.replace(/\D/g, '').slice(0, 6);
+  const normalizedOtp = normalizeOtp(otp);
   const isResending = isClientResending;
   const canSubmit = normalizedOtp.length === 6 && !isSubmitting && !isResending;
   const displayError = error ?? submitError ?? resendError;
@@ -73,7 +74,7 @@ export function OtpVerificationForm({
         disabled={isSubmitting || isResending}
         error={displayError ?? undefined}
         onChange={(event) => {
-          setOtp(event.target.value.replace(/\D/g, '').slice(0, 6));
+          setOtp(normalizeOtp(event.target.value));
           if (resendError) {
             setResendError(null);
           }

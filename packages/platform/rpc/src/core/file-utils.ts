@@ -62,6 +62,8 @@ export function getmimeTypeFromExtension(extension: string): string {
     // Images
     jpg: 'image/jpeg',
     jpeg: 'image/jpeg',
+    heic: 'image/heic',
+    heif: 'image/heif',
     png: 'image/png',
     gif: 'image/gif',
     webp: 'image/webp',

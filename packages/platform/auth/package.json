@@ -16,6 +16,10 @@
       "types": "./src/shared/mask-email.ts",
       "default": "./src/shared/mask-email.ts"
     },
+    "./shared/validation": {
+      "types": "./src/shared/validation.ts",
+      "default": "./src/shared/validation.ts"
+    },
     "./shared/redirect-policy": {
       "types": "./src/shared/redirect-policy.ts",
       "default": "./src/shared/redirect-policy.ts"

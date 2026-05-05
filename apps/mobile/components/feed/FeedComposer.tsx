@@ -17,6 +17,7 @@ import { ComposerResting } from '~/components/composer/ComposerResting';
 import { ComposerSurface } from '~/components/composer/ComposerSurface';
 import { ComposerTextInput } from '~/components/composer/ComposerTextInput';
 import { useComposer } from '~/components/composer/useComposer';
+import { normalizeChatTitle } from '~/services/chat';
 import { useCreateChat } from '~/services/chat/use-create-chat';
 import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
@@ -72,7 +73,7 @@ function FeedComposerInner() {
 
   const handleChat = useCallback(async () => {
     if (!canSubmit || isChatCreating) return;
-    const title = message.trim().replace(/\s+/g, ' ').slice(0, 64) || 'New conversation';
+    const title = normalizeChatTitle(message);
     const chat = await createChat({ title });
     clearDraft();
     router.push(

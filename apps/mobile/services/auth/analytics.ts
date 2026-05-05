@@ -1,4 +1,5 @@
 import { API_BASE_URL, APP_VARIANT } from '~/constants';
+import { normalizeEmail } from '@hominem/auth/shared/validation';
 import { posthog } from '~/services/posthog';
 
 type AuthAnalyticsPhase =
@@ -42,7 +43,7 @@ function getEmailDomain(email?: string | null) {
     return null;
   }
 
-  const normalizedEmail = email.trim().toLowerCase();
+  const normalizedEmail = normalizeEmail(email);
   const atIndex = normalizedEmail.lastIndexOf('@');
   if (atIndex === -1 || atIndex === normalizedEmail.length - 1) {
     return null;

@@ -4,18 +4,11 @@ import { useCallback } from 'react';
 
 import { chatKeys } from '~/services/notes/query-keys';
 
-import { updateChatTitleCaches } from './chat-title';
-
-const DEFAULT_TITLE = 'New conversation';
-const MAX_LENGTH = 64;
-
-function normalizeTitle(value: string) {
-  return value.trim().replace(/\s+/g, ' ').slice(0, MAX_LENGTH) || DEFAULT_TITLE;
-}
-
-function isDefaultTitle(title?: string | null) {
-  return (title ?? '').trim() === DEFAULT_TITLE;
-}
+import {
+  isDefaultChatTitle,
+  normalizeChatTitle,
+  updateChatTitleCaches,
+} from './chat-title';
 
 export function useAutoUpdateChatTitle(chatId: string) {
   const client = useApiClient();
@@ -27,9 +20,9 @@ export function useAutoUpdateChatTitle(chatId: string) {
       const currentChat = queryClient.getQueryData<{ title: string } | null>(
         chatKeys.activeChat(chatId),
       );
-      if (!currentChat || !isDefaultTitle(currentChat.title)) return;
-      const nextTitle = normalizeTitle(message);
-      if (isDefaultTitle(nextTitle)) return;
+      if (!currentChat || !isDefaultChatTitle(currentChat.title)) return;
+      const nextTitle = normalizeChatTitle(message);
+      if (isDefaultChatTitle(nextTitle)) return;
 
       const updatedAt = new Date().toISOString();
       updateChatTitleCaches(queryClient, { chatId, title: nextTitle, updatedAt });

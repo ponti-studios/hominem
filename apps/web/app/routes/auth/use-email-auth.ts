@@ -1,3 +1,4 @@
+import { normalizeEmail, normalizeOtp } from '@hominem/auth/shared/validation';
 import { useCallback, useState } from 'react';
 
 export interface EmailAuthOperations {
@@ -37,7 +38,7 @@ export function useEmailAuth(
 
   const handleSendOtp = useCallback(
     async (emailOverride?: string) => {
-      const resolved = (emailOverride ?? email).trim();
+      const resolved = normalizeEmail(emailOverride ?? email);
       if (!resolved) {
         setError('Email is required');
         return;
@@ -59,8 +60,8 @@ export function useEmailAuth(
 
   const handleVerifyOtp = useCallback(
     async (emailOverride?: string, otpOverride?: string) => {
-      const resolvedEmail = (emailOverride ?? email).trim();
-      const resolvedOtp = (otpOverride ?? otp).trim();
+      const resolvedEmail = normalizeEmail(emailOverride ?? email);
+      const resolvedOtp = normalizeOtp(otpOverride ?? otp);
       if (!resolvedEmail) {
         setError('Email is required');
         return;
@@ -89,7 +90,7 @@ export function useEmailAuth(
 
   const handleResendOtp = useCallback(
     async (emailOverride?: string) => {
-      const resolved = (emailOverride ?? email).trim();
+      const resolved = normalizeEmail(emailOverride ?? email);
       if (!resolved) {
         setError('Email is required');
         return;

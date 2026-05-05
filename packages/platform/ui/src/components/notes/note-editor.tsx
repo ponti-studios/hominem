@@ -6,14 +6,9 @@ import { SurfacePanel } from '../surfaces/surface-panel';
 import { DeleteNoteAlert } from './delete-note-alert';
 import { NoteActionsPanel } from './note-actions-panel';
 import { NoteFilesPanel } from './note-files-panel';
+import { slugifyText } from '@hominem/utils/text';
 import { useNoteEditor } from './use-note-editor';
 
-function slugifyTitle(title: string | null) {
-  return (title ?? '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
 
 interface NoteEditorProps {
   note: Note;
@@ -129,7 +124,7 @@ export function NoteEditor({
               className="w-full border-0 bg-transparent text-3xl font-semibold outline-none placeholder:text-text-tertiary"
             />
             <p className="mt-2 text-sm text-text-secondary">
-              Mention this note in chat as <code>#{slugifyTitle(title || note.title)}</code>.
+              Mention this note in chat as <code>#{slugifyText(title || note.title)}</code>.
             </p>
           </div>
           <span className="rounded-full border border-border-subtle px-3 py-1 text-xs uppercase tracking-[0.2em] text-text-secondary">

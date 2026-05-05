@@ -21,6 +21,14 @@
     "./time": {
       "types": "./src/time.ts",
       "default": "./src/time.ts"
+    },
+    "./text": {
+      "types": "./src/text.ts",
+      "default": "./src/text.ts"
+    },
+    "./files": {
+      "types": "./src/files.ts",
+      "default": "./src/files.ts"
     }
   },
   "scripts": {

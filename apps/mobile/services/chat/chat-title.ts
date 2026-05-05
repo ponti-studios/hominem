@@ -18,20 +18,28 @@ function normalizeWhitespace(value: string) {
  * - Otherwise falls back to source-derived title
  * - Returns default title if nothing else is available
  */
+export function normalizeChatTitle(value: string) {
+  return normalizeWhitespace(value).slice(0, CHAT_TITLE_MAX_LENGTH) || DEFAULT_CHAT_TITLE;
+}
+
+export function isDefaultChatTitle(title?: string | null) {
+  return normalizeWhitespace(title ?? '') === DEFAULT_CHAT_TITLE;
+}
+
 export function getChatTitle(title: string | null | undefined, source: SessionSource) {
   const customTitle = normalizeWhitespace(title ?? '');
 
-  if (customTitle && customTitle !== DEFAULT_CHAT_TITLE) {
-    return customTitle.slice(0, CHAT_TITLE_MAX_LENGTH);
+  if (customTitle && !isDefaultChatTitle(customTitle)) {
+    return normalizeChatTitle(customTitle);
   }
 
   // Fall back to source-derived title
   if (source.kind === 'artifact') {
-    return normalizeWhitespace(source.title) || DEFAULT_CHAT_TITLE;
+    return normalizeChatTitle(source.title) || DEFAULT_CHAT_TITLE;
   }
 
   if (source.kind === 'capture') {
-    return normalizeWhitespace(source.preview).slice(0, CHAT_TITLE_MAX_LENGTH) || DEFAULT_CHAT_TITLE;
+    return normalizeChatTitle(source.preview) || DEFAULT_CHAT_TITLE;
   }
 
   return DEFAULT_CHAT_TITLE;

@@ -9,6 +9,7 @@ import {
 } from '../../guards';
 import type { DbHandle } from '../../transaction';
 import type { AppChatMessages, AppChats } from '../../types/database';
+import { slugifyText } from '@hominem/utils/text';
 import { toIsoString, toRequiredIsoString } from '../_shared/mappers';
 
 export type { ChatMessageFileRecord, ChatMessageToolCallRecord } from '../../guards';
@@ -357,7 +358,7 @@ export const ChatRepository = {
         : [];
 
     const matchedMentionNotes = candidateNotes.filter((note) => {
-      const slug = slugifyNoteTitle(note.title);
+      const slug = slugifyText(note.title);
       return slug ? mentionedSlugs.includes(slug) : false;
     });
 
@@ -473,13 +474,8 @@ export interface NoteContext {
   }>;
 }
 
-function slugifyNoteTitle(title: string | null): string | null {
-  const normalized = (title ?? '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-  return normalized.length > 0 ? normalized : null;
-}
+
+
 
 function extractMentionSlugs(message: string): string[] {
   return [...message.matchAll(/#([a-zA-Z0-9][\w-]*)/g)].map((match) => match[1]!.toLowerCase());

@@ -1,4 +1,6 @@
 import { UploadResponseSchema } from '@hominem/rpc/schemas/files.schema';
+import { getmimeTypeFromExtension } from '@hominem/rpc';
+import { getFileExtension } from '@hominem/utils/files';
 import {
   UPLOAD_MAX_FILE_COUNT,
   UPLOAD_MAX_FILE_SIZE_BYTES,
@@ -56,24 +58,6 @@ interface MobileUploadBatchResult {
   errors: string[];
 }
 
-const MIME_TYPE_BY_EXTENSION: Record<string, string> = {
-  csv: 'text/csv',
-  doc: 'application/msword',
-  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  gif: 'image/gif',
-  jpeg: 'image/jpeg',
-  jpg: 'image/jpeg',
-  mp3: 'audio/mpeg',
-  mp4: 'video/mp4',
-  ogg: 'audio/ogg',
-  pdf: 'application/pdf',
-  png: 'image/png',
-  txt: 'text/plain',
-  wav: 'audio/wav',
-  webm: 'video/webm',
-  webp: 'image/webp',
-};
-
 function getFallbackFileName(uri: string): string {
   return uri.split('/').pop() ?? 'attachment';
 }
@@ -84,10 +68,13 @@ function resolveMobileUploadMimeType(asset: MobileUploadAsset): string {
   }
 
   const fileName = asset.fileName ?? getFallbackFileName(asset.uri);
-  const extension = fileName.split('.').pop()?.toLowerCase();
+  const extension = getFileExtension(fileName);
 
-  if (extension && MIME_TYPE_BY_EXTENSION[extension]) {
-    return MIME_TYPE_BY_EXTENSION[extension];
+  if (extension) {
+    const mimeType = getmimeTypeFromExtension(extension);
+    if (mimeType !== 'application/octet-stream') {
+      return mimeType;
+    }
   }
 
   if (asset.type === 'image') return 'image/jpeg';
