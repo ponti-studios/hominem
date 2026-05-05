@@ -278,6 +278,9 @@ importers:
       '@hominem/ui':
         specifier: workspace:*
         version: link:../../packages/platform/ui
+      '@hominem/utils':
+        specifier: workspace:*
+        version: link:../../packages/core/utils
       '@preact/signals-react':
         specifier: ^3.1.1
         version: 3.10.0(react@19.2.0)
@@ -339,6 +342,9 @@ importers:
 
   packages/core/db:
     dependencies:
+      '@hominem/utils':
+        specifier: workspace:*
+        version: link:../utils
       kysely:
         specifier: ^0.28.11
         version: 0.28.16
@@ -370,6 +376,9 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: ^3.529.0
         version: 3.1031.0
+      '@hominem/utils':
+        specifier: workspace:*
+        version: link:../utils
     devDependencies:
       '@types/node':
         specifier: ^25.4.0
@@ -770,6 +779,9 @@ importers:
       '@hominem/telemetry':
         specifier: workspace:*
         version: link:../../packages/platform/telemetry
+      '@hominem/utils':
+        specifier: workspace:*
+        version: link:../../packages/core/utils
       '@hono/node-server':
         specifier: ^1.19.11
         version: 1.19.14(hono@4.12.14)

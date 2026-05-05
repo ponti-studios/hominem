@@ -18,9 +18,9 @@ import type {
   NotesUpdateInput,
   NotesUpdateOutput,
 } from '@hominem/rpc/types/notes.types';
+import { buildContentPreview } from '@hominem/utils/text';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { buildContentPreview } from '@hominem/utils/text';
 import { notesQueryKeys } from '~/lib/query-keys';
 import { requestNotesRowExit } from '~/routes/notes/notes-surface-events';
 

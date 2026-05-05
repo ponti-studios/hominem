@@ -1,7 +1,7 @@
 {
   "name": "@hominem/utils",
   "version": "0.0.0",
-  "description": "Random utilities",
+  "description": "utilities",
   "type": "module",
   "sideEffects": false,
   "types": "./src/index.ts",

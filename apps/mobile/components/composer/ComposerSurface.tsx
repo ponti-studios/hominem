@@ -60,8 +60,8 @@ const useStyles = makeStyles((theme) => ({
   },
   content: {
     gap: spacing[1],
-    paddingHorizontal: spacing[1],
-    paddingTop: spacing[1],
+    paddingHorizontal: spacing[3],
+    paddingTop: spacing[2],
   },
   accessory: {
     gap: spacing[2],

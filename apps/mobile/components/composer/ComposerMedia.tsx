@@ -1,11 +1,11 @@
 import { spacing } from '@hominem/ui/tokens';
 import React, { useCallback, useState } from 'react';
-import { ActionSheetIOS, Pressable } from 'react-native';
+import { ActionSheetIOS } from 'react-native';
 
 import { useComposerContext } from '~/components/composer/ComposerContext';
 import { CameraModal } from '~/components/media/camera-modal';
-import { fontSizes, makeStyles, useThemeColors } from '~/components/theme';
-import AppIcon from '~/components/ui/icon';
+import { fontSizes } from '~/components/theme';
+import { IconButton } from '~/components/ui/icon-button';
 import t from '~/translations';
 
 const MEDIA_BTN_SIZE = fontSizes.lg + 6;
@@ -18,8 +18,6 @@ interface ComposerMediaProps {
 
 export function ComposerMedia({ accessibilityLabel, disabled = false }: ComposerMediaProps) {
   const { pickAttachment, handleCameraCapture } = useComposerContext();
-  const themeColors = useThemeColors();
-  const styles = useStyles();
   const [isCameraOpen, setIsCameraOpen] = useState(false);
 
   const showPlusMenu = useCallback(() => {
@@ -41,20 +39,19 @@ export function ComposerMedia({ accessibilityLabel, disabled = false }: Composer
 
   return (
     <>
-      <Pressable
-        onPress={showPlusMenu}
-        disabled={disabled}
+      <IconButton
         accessibilityLabel={accessibilityLabel}
-        accessibilityRole="button"
+        icon="plus"
+        iconSize={MEDIA_BTN_ICON_SIZE}
+        size={MEDIA_BTN_SIZE}
+        variant="filled"
+        circular
+        disabled={disabled}
+        disabledOpacity={0.5}
+        pressedOpacity={0.7}
         hitSlop={spacing[2]}
-        style={({ pressed }) => [
-          styles.btn,
-          disabled ? styles.btnDisabled : null,
-          pressed ? styles.btnPressed : null,
-        ]}
-      >
-        <AppIcon name="plus" size={MEDIA_BTN_ICON_SIZE} tintColor={themeColors['white']} />
-      </Pressable>
+        onPress={showPlusMenu}
+      />
       <CameraModal
         visible={isCameraOpen}
         onCapture={(photo) => {
@@ -65,20 +62,3 @@ export function ComposerMedia({ accessibilityLabel, disabled = false }: Composer
     </>
   );
 }
-
-const useStyles = makeStyles(() => ({
-  btn: {
-    width: MEDIA_BTN_SIZE,
-    height: MEDIA_BTN_SIZE,
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
-    justifyContent: 'center',
-    borderRadius: '100%',
-  },
-  btnDisabled: {
-    opacity: 0.5,
-  },
-  btnPressed: {
-    opacity: 0.7,
-  },
-}));

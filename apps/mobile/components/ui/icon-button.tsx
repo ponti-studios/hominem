@@ -13,11 +13,17 @@ import { componentSizes, themeSpacing, useThemeColors } from '~/components/theme
 
 import AppIcon from './icon';
 
+export type IconButtonVariant = 'ghost' | 'filled';
+
+const FILLED_BACKGROUND = 'rgba(0, 0, 0, 0.9)';
+
 export interface IconButtonProps extends Omit<PressableProps, 'children' | 'onPress' | 'style'> {
   accessibilityLabel: string;
   icon: SFSymbol;
   iconSize?: number;
   size?: number;
+  variant?: IconButtonVariant;
+  circular?: boolean;
   tintColor?: ColorValue;
   disabledOpacity?: number;
   pressedOpacity?: number;
@@ -28,6 +34,7 @@ export interface IconButtonProps extends Omit<PressableProps, 'children' | 'onPr
 export function IconButton({
   accessibilityLabel,
   accessibilityRole = 'button',
+  circular = false,
   disabled = false,
   disabledOpacity = 0.35,
   hitSlop = themeSpacing.sm,
@@ -38,9 +45,18 @@ export function IconButton({
   size = componentSizes.lg,
   style,
   tintColor,
+  variant,
   ...rest
 }: IconButtonProps) {
   const themeColors = useThemeColors();
+
+  const resolvedTintColor =
+    tintColor ??
+    (variant === 'ghost'
+      ? themeColors['text-primary']
+      : variant === 'filled'
+        ? themeColors['white']
+        : themeColors['icon-primary']);
 
   return (
     <Pressable
@@ -52,12 +68,14 @@ export function IconButton({
       style={({ pressed }) => [
         styles.button,
         { height: size, width: size },
+        variant === 'filled' ? { backgroundColor: FILLED_BACKGROUND } : null,
+        circular ? { borderRadius: size / 2 } : null,
         style,
         disabled ? { opacity: disabledOpacity } : pressed ? { opacity: pressedOpacity } : null,
       ]}
       {...rest}
     >
-      <AppIcon name={icon} size={iconSize} tintColor={tintColor ?? themeColors['icon-primary']} />
+      <AppIcon name={icon} size={iconSize} tintColor={resolvedTintColor} />
     </Pressable>
   );
 }

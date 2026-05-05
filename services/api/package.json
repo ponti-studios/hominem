@@ -14,11 +14,9 @@
     "dev": "SERVICE_NAME=hominem-api tsx --watch src/index.ts",
     "format": "pnpm dlx oxfmt ./src",
     "lint": "pnpm dlx oxlint ./src",
-    "migrate:deploy": "goose -dir ../../packages/core/db/migrations postgres \"$DATABASE_URL\" up",
     "start": "SERVICE_NAME=hominem-api tsx src/index.ts",
     "start:worker": "tsx src/worker.ts",
     "typecheck": "tsgo --noEmit",
-    "perf:auth-middleware": "NODE_ENV=test tsx src/middleware/auth.perf.ts",
     "e2e:setup": "tsx scripts/e2e-setup.ts"
   },
   "dependencies": {
@@ -31,6 +29,7 @@
     "@hominem/services": "workspace:*",
     "@hominem/storage": "workspace:*",
     "@hominem/telemetry": "workspace:*",
+    "@hominem/utils": "workspace:*",
     "@hono/node-server": "^1.19.11",
     "@hono/zod-validator": "^0.7.6",
     "@opentelemetry/api": "^1.8.0",

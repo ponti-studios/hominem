@@ -71,7 +71,6 @@ const useStyles = makeStyles((theme) => ({
     fontSize: 16,
     lineHeight: 22,
     letterSpacing: 0,
-    paddingHorizontal: spacing[3],
     paddingVertical: 8,
     width: '100%',
   },

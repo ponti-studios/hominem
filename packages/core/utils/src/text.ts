@@ -1,3 +1,8 @@
+/**
+ * Replace multiple spaces with a single space.
+ * @param value The string to collapse whitespace in.
+ * @returns The string with collapsed whitespace.
+ */
 function collapseWhitespace(value: string): string {
   return value.trim().replace(/\s+/g, ' ');
 }
