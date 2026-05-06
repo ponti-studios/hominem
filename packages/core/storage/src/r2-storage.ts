@@ -10,12 +10,17 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
-import { buildStoredFileName, formatTimestampForFileName, sanitizeFileName } from '@hominem/utils/files';
+import { buildStoredFileName, formatTimestampForFileName, getExtensionFromMimeType, getFileExtension, sanitizeFileName } from '@hominem/utils/files';
 
 import type { FileObject, PreparedUpload, StorageOptions, StoredFile } from './types';
 import { isSupportedUploadMimeType } from './upload-policy';
 
 type StorageCategory = 'csvs' | 'chats' | 'places';
+
+function resolveFileExtension(filename: string, mimetype: string): string {
+  const ext = getFileExtension(filename);
+  return ext ? `.${ext}` : getExtensionFromMimeType(mimetype);
+}
 
 function getIsTestMode(): boolean {
   return process.env.NODE_ENV === 'test';
@@ -76,33 +81,6 @@ class InMemoryStorageBackend {
     return `users/${userId}/${this.category}/${filename}`;
   }
 
-  getFileExtension(filename: string, mimetype: string): string {
-    const dotIndex = filename.lastIndexOf('.');
-    if (dotIndex !== -1) {
-      return filename.substring(dotIndex);
-    }
-
-    const mimeToExt: Record<string, string> = {
-      'image/jpeg': '.jpg',
-      'image/png': '.png',
-      'image/gif': '.gif',
-      'image/webp': '.webp',
-      'application/pdf': '.pdf',
-      'text/plain': '.txt',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
-      'application/msword': '.doc',
-      'audio/mpeg': '.mp3',
-      'audio/wav': '.wav',
-      'audio/ogg': '.ogg',
-      'video/mp4': '.mp4',
-      'video/webm': '.webm',
-      'text/csv': '.csv',
-      'application/csv': '.csv',
-    };
-
-    return mimeToExt[mimetype] || '';
-  }
-
   createStoredName(id: string, filename: string, extension: string): string {
     return buildStoredFileName(id, filename, extension);
   }
@@ -135,7 +113,7 @@ class InMemoryStorageBackend {
 
     const id = crypto.randomUUID();
     const originalName = input.originalName || input.filename || 'file';
-    const extension = this.getFileExtension(originalName, input.mimetype);
+    const extension = resolveFileExtension(originalName, input.mimetype);
     const storedName = input.filename
       ? this.createStoredName(id, input.filename, extension)
       : `${id}${extension}`;
@@ -465,7 +443,7 @@ export class R2StorageService {
 
     const id = crypto.randomUUID();
     const originalName = input.originalName || input.filename || 'file';
-    const extension = this.getFileExtension(originalName, input.mimetype);
+    const extension = resolveFileExtension(originalName, input.mimetype);
     const storedName = input.filename
       ? this.createStoredName(id, input.filename, extension)
       : `${id}${extension}`;
@@ -677,33 +655,6 @@ export class R2StorageService {
     }
     const url = new URL(endpoint);
     return `${url.protocol}//${bucket}.${url.host}/${key}`;
-  }
-
-  getFileExtension(filename: string, mimetype: string): string {
-    const dotIndex = filename.lastIndexOf('.');
-    if (dotIndex !== -1) {
-      return filename.substring(dotIndex);
-    }
-
-    const mimeToExt: Record<string, string> = {
-      'image/jpeg': '.jpg',
-      'image/png': '.png',
-      'image/gif': '.gif',
-      'image/webp': '.webp',
-      'application/pdf': '.pdf',
-      'text/plain': '.txt',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
-      'application/msword': '.doc',
-      'audio/mpeg': '.mp3',
-      'audio/wav': '.wav',
-      'audio/ogg': '.ogg',
-      'video/mp4': '.mp4',
-      'video/webm': '.webm',
-      'text/csv': '.csv',
-      'application/csv': '.csv',
-    };
-
-    return mimeToExt[mimetype] || '';
   }
 
   createStoredName(id: string, filename: string, extension: string): string {
