@@ -31,7 +31,6 @@
     "packages/platform/ui/src/components/layout/header.tsx",
     "packages/platform/ui/src/components/loading-state.tsx",
     "packages/platform/ui/src/components/notes/use-note-editor.ts",
-    "packages/platform/ui/src/components/use-toast.ts",
     "packages/platform/ui/src/hooks/use-filter-state.ts",
     "packages/platform/ui/src/hooks/use-mobile.tsx",
     "packages/platform/ui/src/lib/hooks/use-auto-scroll.ts",

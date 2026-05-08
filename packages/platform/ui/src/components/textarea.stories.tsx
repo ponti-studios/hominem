@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { expect, userEvent, within } from 'storybook/test';
 
 import { booleanControl, numberControl, textControl } from '../storybook/controls';
 import { Textarea } from './textarea';
@@ -8,10 +9,12 @@ const meta = {
   component: Textarea,
   tags: ['autodocs'],
   argTypes: {
+    label: textControl('Label displayed above the textarea'),
+    helpText: textControl('Supporting text shown below the textarea'),
+    error: textControl('Validation error text shown below the textarea'),
     placeholder: textControl('Placeholder text shown when the textarea is empty'),
+    rows: numberControl('Number of visible text lines', { min: 1, max: 20, defaultValue: 4 }),
     disabled: booleanControl('Prevents user interaction and applies disabled styling', false),
-    required: booleanControl('Marks the textarea as required for form submission', false),
-    rows: numberControl('Number of visible text lines', { min: 1, max: 20, defaultValue: 3 }),
   },
 } satisfies Meta<typeof Textarea>;
 
@@ -20,26 +23,72 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    placeholder: 'Type your message here.',
+    label: 'Notes',
+    placeholder: 'Enter your notes here',
+    rows: 4,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const textarea = canvas.getByLabelText('Notes') as HTMLTextAreaElement;
+
+    await userEvent.click(textarea);
+    await userEvent.type(textarea, 'Sample note content');
+
+    await expect(textarea).toHaveValue('Sample note content');
+    await expect(textarea).toHaveFocus();
   },
 };
 
-export const WithValue: Story = {
+export const WithHelpText: Story = {
   args: {
-    defaultValue: 'This is some pre-filled content in the textarea.',
+    label: 'Description',
+    helpText: 'Markdown formatting is supported',
+    placeholder: 'Write a detailed description...',
+    rows: 5,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await expect(canvas.getByText('Markdown formatting is supported')).toBeInTheDocument();
+  },
+};
+
+export const Error: Story = {
+  args: {
+    label: 'Message',
+    error: 'Message is required and cannot be empty',
+    placeholder: 'Write something...',
+    rows: 3,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await expect(canvas.getByRole('alert')).toHaveTextContent(
+      'Message is required and cannot be empty',
+    );
   },
 };
 
 export const Disabled: Story = {
   args: {
-    placeholder: 'Cannot edit this.',
     disabled: true,
+    label: 'Archived Notes',
+    placeholder: 'This field is disabled',
+    rows: 4,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const textarea = canvas.getByLabelText('Archived Notes');
+
+    await expect(textarea).toBeDisabled();
   },
 };
 
-export const Invalid: Story = {
+export const LargeField: Story = {
   args: {
-    placeholder: 'Invalid state',
-    'aria-invalid': true,
+    label: 'Long Form Content',
+    helpText: 'Use this field for extended writing',
+    placeholder: 'Write as much as you need...',
+    rows: 8,
   },
 };

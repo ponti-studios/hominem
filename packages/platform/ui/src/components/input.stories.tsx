@@ -4,7 +4,6 @@ import { booleanControl, selectControl, textControl } from '../storybook/control
 import { inputTypeOptions } from '../storybook/options';
 import { Input } from './input';
 import { Label } from './label';
-import { Textarea } from './textarea';
 
 const meta = {
   title: 'Forms/Input',
@@ -46,12 +45,3 @@ export const States: Story = {
   ),
 };
 
-export const TextareaStory: Story = {
-  name: 'Textarea',
-  render: () => (
-    <div className="flex flex-col gap-2 w-72">
-      <Label htmlFor="notes">Notes</Label>
-      <Textarea id="notes" placeholder="Write something…" rows={4} />
-    </div>
-  ),
-};

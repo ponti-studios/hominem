@@ -1,4 +1,3 @@
-import { Toaster } from '@hominem/ui/toaster';
 import { NavLink, Outlet, data } from 'react-router';
 
 import { getServerSession } from '~/lib/auth.server';
@@ -48,7 +47,6 @@ export default function Layout({ loaderData }: Route.ComponentProps) {
       <main className="flex min-h-0 w-full flex-1 flex-col">
         <Outlet />
       </main>
-      <Toaster />
     </div>
   );
 }

@@ -3,7 +3,6 @@ import { expect, userEvent, within } from 'storybook/test';
 
 import { Field } from './field';
 import { Input } from './input';
-import { Textarea } from './textarea';
 
 const meta = {
   title: 'Forms/Field',
@@ -48,10 +47,10 @@ export const Error: Story = {
   },
 };
 
-export const TextareaField: Story = {
+export const Textarea: Story = {
   render: () => (
     <Field label="Notes" helpText="Markdown supported">
-      <Textarea rows={5} placeholder="Write something..." />
+      <textarea rows={5} placeholder="Write something..." />
     </Field>
   ),
   play: async ({ canvasElement }) => {

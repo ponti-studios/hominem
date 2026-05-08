@@ -15,10 +15,6 @@
       "types": "./src/components/button.tsx",
       "default": "./src/components/button.tsx"
     },
-    "./toaster": {
-      "types": "./src/components/toaster.tsx",
-      "default": "./src/components/toaster.tsx"
-    },
     "./badge": {
       "types": "./src/components/badge.tsx",
       "default": "./src/components/badge.tsx"
@@ -35,9 +31,9 @@
       "types": "./src/components/text-field.tsx",
       "default": "./src/components/text-field.tsx"
     },
-    "./text-area": {
-      "types": "./src/components/text-area.tsx",
-      "default": "./src/components/text-area.tsx"
+    "./textarea": {
+      "types": "./src/components/textarea.tsx",
+      "default": "./src/components/textarea.tsx"
     },
     "./select-field": {
       "types": "./src/components/select-field.tsx",
@@ -70,10 +66,6 @@
     "./label": {
       "types": "./src/components/label.tsx",
       "default": "./src/components/label.tsx"
-    },
-    "./textarea": {
-      "types": "./src/components/textarea.tsx",
-      "default": "./src/components/textarea.tsx"
     },
     "./dialog": {
       "types": "./src/components/dialog.tsx",
@@ -207,7 +199,6 @@
     "@radix-ui/react-slot": "^1.2.4",
     "@radix-ui/react-switch": "^1.2.6",
     "@radix-ui/react-tabs": "^1.1.13",
-    "@radix-ui/react-toast": "^1.2.15",
     "@radix-ui/react-toggle": "^1.1.10",
     "@radix-ui/react-toggle-group": "^1.1.11",
     "@radix-ui/react-tooltip": "^1.2.8",
