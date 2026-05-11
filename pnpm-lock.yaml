@@ -439,8 +439,8 @@ importers:
         specifier: 5.90.16
         version: 5.90.16(react@19.2.0)
       hono:
-        specifier: 4.12.14
-        version: 4.12.14
+        specifier: 4.12.18
+        version: 4.12.18
       zod:
         specifier: 4.3.6
         version: 4.3.6
@@ -781,16 +781,16 @@ importers:
         version: link:../../packages/core/utils
       '@hono/node-server':
         specifier: ^1.19.11
-        version: 1.19.14(hono@4.12.14)
+        version: 1.19.14(hono@4.12.18)
       '@hono/zod-validator':
         specifier: ^0.7.6
-        version: 0.7.6(hono@4.12.14)(zod@4.3.6)
+        version: 0.7.6(hono@4.12.18)(zod@4.3.6)
       '@opentelemetry/api':
         specifier: ^1.8.0
         version: 1.9.1
       '@scalar/hono-api-reference':
         specifier: ^0.10.2
-        version: 0.10.8(hono@4.12.14)
+        version: 0.10.8(hono@4.12.18)
       '@sentry/node':
         specifier: ^8.54.0
         version: 8.55.1
@@ -804,11 +804,11 @@ importers:
         specifier: 17.2.3
         version: 17.2.3
       hono:
-        specifier: 4.12.14
-        version: 4.12.14
+        specifier: 4.12.18
+        version: 4.12.18
       hono-openapi:
         specifier: ^1.3.0
-        version: 1.3.0(@hono/standard-validator@0.2.2(@standard-schema/spec@1.1.0)(hono@4.12.14))(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(@valibot/to-json-schema@1.6.0(valibot@1.3.1(typescript@6.0.3)))(quansync@0.2.11)(valibot@1.3.1(typescript@6.0.3))(zod@4.3.6))(@standard-community/standard-openapi@0.2.9(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(@valibot/to-json-schema@1.6.0(valibot@1.3.1(typescript@6.0.3)))(quansync@0.2.11)(valibot@1.3.1(typescript@6.0.3))(zod@4.3.6))(@standard-schema/spec@1.1.0)(openapi-types@12.1.3)(valibot@1.3.1(typescript@6.0.3))(zod@4.3.6))(@types/json-schema@7.0.15)(hono@4.12.14)(openapi-types@12.1.3)
+        version: 1.3.0(@hono/standard-validator@0.2.2(@standard-schema/spec@1.1.0)(hono@4.12.18))(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(@valibot/to-json-schema@1.6.0(valibot@1.3.1(typescript@6.0.3)))(quansync@0.2.11)(valibot@1.3.1(typescript@6.0.3))(zod@4.3.6))(@standard-community/standard-openapi@0.2.9(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(@valibot/to-json-schema@1.6.0(valibot@1.3.1(typescript@6.0.3)))(quansync@0.2.11)(valibot@1.3.1(typescript@6.0.3))(zod@4.3.6))(@standard-schema/spec@1.1.0)(openapi-types@12.1.3)(valibot@1.3.1(typescript@6.0.3))(zod@4.3.6))(@types/json-schema@7.0.15)(hono@4.12.18)(openapi-types@12.1.3)
       pg:
         specifier: ^8.20.0
         version: 8.20.0
@@ -8128,8 +8128,8 @@ packages:
       hono:
         optional: true
 
-  hono@4.12.14:
-    resolution: {integrity: sha512-am5zfg3yu6sqn5yjKBNqhnTX7Cv+m00ox+7jbaKkrLMRJ4rAdldd1xPd/JzbBWspqaQv6RSTrgFN95EsfhC+7w==}
+  hono@4.12.18:
+    resolution: {integrity: sha512-RWzP96k/yv0PQfyXnWjs6zot20TqfpfsNXhOnev8d1InAxubW93L11/oNUc3tQqn2G0bSdAOBpX+2uDFHV7kdQ==}
     engines: {node: '>=16.9.0'}
 
   hosted-git-info@7.0.2:
@@ -13918,19 +13918,19 @@ snapshots:
 
   '@hexagon/base64@1.1.28': {}
 
-  '@hono/node-server@1.19.14(hono@4.12.14)':
+  '@hono/node-server@1.19.14(hono@4.12.18)':
     dependencies:
-      hono: 4.12.14
+      hono: 4.12.18
 
-  '@hono/standard-validator@0.2.2(@standard-schema/spec@1.1.0)(hono@4.12.14)':
+  '@hono/standard-validator@0.2.2(@standard-schema/spec@1.1.0)(hono@4.12.18)':
     dependencies:
       '@standard-schema/spec': 1.1.0
-      hono: 4.12.14
+      hono: 4.12.18
     optional: true
 
-  '@hono/zod-validator@0.7.6(hono@4.12.14)(zod@4.3.6)':
+  '@hono/zod-validator@0.7.6(hono@4.12.18)(zod@4.3.6)':
     dependencies:
-      hono: 4.12.14
+      hono: 4.12.18
       zod: 4.3.6
 
   '@humanfs/core@0.19.1': {}
@@ -16539,10 +16539,10 @@ snapshots:
 
   '@scalar/helpers@0.5.0': {}
 
-  '@scalar/hono-api-reference@0.10.8(hono@4.12.14)':
+  '@scalar/hono-api-reference@0.10.8(hono@4.12.18)':
     dependencies:
       '@scalar/core': 0.5.1
-      hono: 4.12.14
+      hono: 4.12.18
 
   '@scalar/types@0.9.0':
     dependencies:
@@ -20315,17 +20315,17 @@ snapshots:
     dependencies:
       parse-passwd: 1.0.0
 
-  hono-openapi@1.3.0(@hono/standard-validator@0.2.2(@standard-schema/spec@1.1.0)(hono@4.12.14))(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(@valibot/to-json-schema@1.6.0(valibot@1.3.1(typescript@6.0.3)))(quansync@0.2.11)(valibot@1.3.1(typescript@6.0.3))(zod@4.3.6))(@standard-community/standard-openapi@0.2.9(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(@valibot/to-json-schema@1.6.0(valibot@1.3.1(typescript@6.0.3)))(quansync@0.2.11)(valibot@1.3.1(typescript@6.0.3))(zod@4.3.6))(@standard-schema/spec@1.1.0)(openapi-types@12.1.3)(valibot@1.3.1(typescript@6.0.3))(zod@4.3.6))(@types/json-schema@7.0.15)(hono@4.12.14)(openapi-types@12.1.3):
+  hono-openapi@1.3.0(@hono/standard-validator@0.2.2(@standard-schema/spec@1.1.0)(hono@4.12.18))(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(@valibot/to-json-schema@1.6.0(valibot@1.3.1(typescript@6.0.3)))(quansync@0.2.11)(valibot@1.3.1(typescript@6.0.3))(zod@4.3.6))(@standard-community/standard-openapi@0.2.9(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(@valibot/to-json-schema@1.6.0(valibot@1.3.1(typescript@6.0.3)))(quansync@0.2.11)(valibot@1.3.1(typescript@6.0.3))(zod@4.3.6))(@standard-schema/spec@1.1.0)(openapi-types@12.1.3)(valibot@1.3.1(typescript@6.0.3))(zod@4.3.6))(@types/json-schema@7.0.15)(hono@4.12.18)(openapi-types@12.1.3):
     dependencies:
       '@standard-community/standard-json': 0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(@valibot/to-json-schema@1.6.0(valibot@1.3.1(typescript@6.0.3)))(quansync@0.2.11)(valibot@1.3.1(typescript@6.0.3))(zod@4.3.6)
       '@standard-community/standard-openapi': 0.2.9(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(@valibot/to-json-schema@1.6.0(valibot@1.3.1(typescript@6.0.3)))(quansync@0.2.11)(valibot@1.3.1(typescript@6.0.3))(zod@4.3.6))(@standard-schema/spec@1.1.0)(openapi-types@12.1.3)(valibot@1.3.1(typescript@6.0.3))(zod@4.3.6)
       '@types/json-schema': 7.0.15
       openapi-types: 12.1.3
     optionalDependencies:
-      '@hono/standard-validator': 0.2.2(@standard-schema/spec@1.1.0)(hono@4.12.14)
-      hono: 4.12.14
+      '@hono/standard-validator': 0.2.2(@standard-schema/spec@1.1.0)(hono@4.12.18)
+      hono: 4.12.18
 
-  hono@4.12.14: {}
+  hono@4.12.18: {}
 
   hosted-git-info@7.0.2:
     dependencies:
