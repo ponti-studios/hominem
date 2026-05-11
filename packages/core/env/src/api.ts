@@ -9,7 +9,7 @@ export const apiSchema = baseSchema.extend({
   API_URL: z.url().default('http://localhost:4040'),
   WEB_URL: z.url().default('http://localhost:4445'),
   DATABASE_URL: isTest
-    ? z.url().default('postgresql://postgres:postgres@localhost:5432/hominem_test')
+    ? z.url().default('postgresql://postgres:postgres@localhost:5432/app_test')
     : z.url(),
   BETTER_AUTH_SECRET: z.string().default('dev-better-auth-secret-change-me'),
   AUTH_PASSKEY_RP_ID: z.string().default('api.ponti.io'),

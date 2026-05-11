@@ -11,10 +11,10 @@
     }
   },
   "scripts": {
-    "dev": "SERVICE_NAME=hominem-api tsx --watch src/index.ts",
+    "dev": "SERVICE_NAME=api tsx --watch src/index.ts",
     "format": "pnpm dlx oxfmt ./src",
     "lint": "pnpm dlx oxlint ./src",
-    "start": "SERVICE_NAME=hominem-api tsx src/index.ts",
+    "start": "SERVICE_NAME=api tsx src/index.ts",
     "start:worker": "tsx src/worker.ts",
     "typecheck": "tsgo --noEmit",
     "e2e:setup": "tsx scripts/e2e-setup.ts"

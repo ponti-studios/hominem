@@ -1,26 +1,30 @@
 import { getCookie } from '@better-auth/expo/client';
 import * as SecureStore from 'expo-secure-store';
 
-const BETTER_AUTH_COOKIE_KEY = 'hominem_cookie';
-const LEGACY_MOBILE_SESSION_COOKIE_KEY = 'hominem_mobile_session_cookie_v1';
+const BETTER_AUTH_COOKIE_KEYS = ['mobile_cookie'] as const;
+const SESSION_COOKIE_KEYS = ['mobile_session_cookie_v1'] as const;
 
 export async function getPersistedSessionCookieHeader() {
-  const storedHeader = await SecureStore.getItemAsync(LEGACY_MOBILE_SESSION_COOKIE_KEY);
-  if (storedHeader) {
-    return storedHeader;
+  for (const key of SESSION_COOKIE_KEYS) {
+    const storedHeader = await SecureStore.getItemAsync(key);
+    if (storedHeader) {
+      return storedHeader;
+    }
   }
 
-  const betterAuthCookie = await SecureStore.getItemAsync(BETTER_AUTH_COOKIE_KEY);
-  if (!betterAuthCookie) {
-    return null;
+  for (const key of BETTER_AUTH_COOKIE_KEYS) {
+    const betterAuthCookie = await SecureStore.getItemAsync(key);
+    if (betterAuthCookie) {
+      return getCookie(betterAuthCookie);
+    }
   }
 
-  return getCookie(betterAuthCookie);
+  return null;
 }
 
 export async function clearPersistedSessionCookies() {
   await Promise.all([
-    SecureStore.deleteItemAsync(LEGACY_MOBILE_SESSION_COOKIE_KEY),
-    SecureStore.deleteItemAsync(BETTER_AUTH_COOKIE_KEY),
+    ...SESSION_COOKIE_KEYS.map((key) => SecureStore.deleteItemAsync(key)),
+    ...BETTER_AUTH_COOKIE_KEYS.map((key) => SecureStore.deleteItemAsync(key)),
   ]);
 }

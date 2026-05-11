@@ -10,7 +10,7 @@ OpenTelemetry instrumentation for Hominem services and apps.
 import { initTelemetry } from '@hominem/telemetry/node'
 
 const telemetry = initTelemetry({
-  serviceName: 'hominem-api',
+  serviceName: 'api',
   serviceVersion: '1.0.0',
   environment: 'development',
   otlpEndpoint: process.env.OTEL_EXPORTER_OTLP_ENDPOINT
@@ -28,7 +28,7 @@ process.on('SIGTERM', async () => {
 import { initTelemetry } from '@hominem/telemetry/browser'
 
 initTelemetry({
-  serviceName: 'hominem-web',
+  serviceName: 'web',
   serviceVersion: '1.0.0',
   environment: 'development',
   otlpEndpoint: 'http://localhost:4318'

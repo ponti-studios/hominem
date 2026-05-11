@@ -30,7 +30,7 @@ export const authClient = createAuthClient({
     expoClient({
       scheme: APP_SCHEME,
       storage: SecureStore,
-      storagePrefix: 'hominem',
+      storagePrefix: 'mobile',
     }),
     emailOTPClient(),
     passkeyClient(),

@@ -23,4 +23,4 @@ const nodeServer = serve({
 
 const detachChatRealtimeWebSocket = attachChatRealtimeWebSocketServer(nodeServer as HttpServer);
 
-initRuntime('hominem-api').installSignalHandlers([detachChatRealtimeWebSocket]);
+initRuntime('api').installSignalHandlers([detachChatRealtimeWebSocket]);

@@ -20,6 +20,7 @@ import { useFileUpload } from '~/lib/hooks/use-file-upload';
 const FEED_ESTIMATED_ROW_HEIGHT = 128;
 const FEED_OVERSCAN_COUNT = 6;
 const FEED_NEAR_BOTTOM_THRESHOLD = 96;
+const NOTES_NEW_DRAFT_STORAGE_KEY = 'web:notes:new-draft';
 
 export async function loader({ request }: { request: Request }) {
   const { user } = await getServerSession(request);
@@ -171,6 +172,7 @@ export default function NotesPage({ loaderData }: { loaderData: { inbox: InboxOu
   actionsRef.current = {
     createNote: async (input) => {
       const result = await createNote.mutateAsync(input);
+      window.localStorage.removeItem(NOTES_NEW_DRAFT_STORAGE_KEY);
       navigate(`/notes/${result.id}`);
       return result;
     },
@@ -178,6 +180,7 @@ export default function NotesPage({ loaderData }: { loaderData: { inbox: InboxOu
     sendMessage: async (_input) => {},
     createChat: async (input) => {
       const chat = await createChat.mutateAsync({ title: input.title });
+      window.localStorage.removeItem(NOTES_NEW_DRAFT_STORAGE_KEY);
       return { id: chat.id };
     },
     uploadFiles,
@@ -185,11 +188,22 @@ export default function NotesPage({ loaderData }: { loaderData: { inbox: InboxOu
   };
 
   useEffect(() => {
-    const saved = window.localStorage.getItem('hominem:web:notes:new-draft');
+    const saved = window.localStorage.getItem(NOTES_NEW_DRAFT_STORAGE_KEY);
     if (saved) {
       composerStore.dispatch({ type: 'SET_DRAFT', text: saved });
-      window.localStorage.removeItem('hominem:web:notes:new-draft');
     }
+  }, [composerStore]);
+
+  useEffect(() => {
+    return composerStore.subscribe(() => {
+      const draft = composerStore.getSnapshot().draft;
+      if (draft.length > 0) {
+        window.localStorage.setItem(NOTES_NEW_DRAFT_STORAGE_KEY, draft);
+        return;
+      }
+
+      window.localStorage.removeItem(NOTES_NEW_DRAFT_STORAGE_KEY);
+    });
   }, [composerStore]);
 
   return (

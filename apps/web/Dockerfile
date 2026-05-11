@@ -36,17 +36,17 @@ RUN apk add --no-cache ca-certificates curl && \
     npm install -g pnpm@10.33.0
 
 RUN addgroup -g 1001 webuser && \
-    adduser -D -u 1001 -G webuser -s /sbin/nologin -h /app hominem
+    adduser -D -u 1001 -G webuser -s /sbin/nologin -h /app webuser
 
-COPY --from=builder --chown=hominem:webuser /app/package.json ./package.json
-COPY --from=builder --chown=hominem:webuser /app/pnpm-lock.yaml ./pnpm-lock.yaml
-COPY --from=builder --chown=hominem:webuser /app/patches ./patches
-COPY --from=builder --chown=hominem:webuser /app/node_modules ./node_modules
-COPY --from=builder --chown=hominem:webuser /app/apps/web ./apps/web
-COPY --from=builder --chown=hominem:webuser /app/packages ./packages
-COPY --from=builder --chown=hominem:webuser /app/tsconfig*.json ./
+COPY --from=builder --chown=webuser:webuser /app/package.json ./package.json
+COPY --from=builder --chown=webuser:webuser /app/pnpm-lock.yaml ./pnpm-lock.yaml
+COPY --from=builder --chown=webuser:webuser /app/patches ./patches
+COPY --from=builder --chown=webuser:webuser /app/node_modules ./node_modules
+COPY --from=builder --chown=webuser:webuser /app/apps/web ./apps/web
+COPY --from=builder --chown=webuser:webuser /app/packages ./packages
+COPY --from=builder --chown=webuser:webuser /app/tsconfig*.json ./
 
-USER hominem
+USER webuser
 
 EXPOSE 3000
 

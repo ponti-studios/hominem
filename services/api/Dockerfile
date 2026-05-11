@@ -34,23 +34,23 @@ RUN apk add --no-cache ca-certificates curl
 RUN npm install -g pnpm@10.33.0
 
 RUN addgroup -g 1001 apiuser && \
-    adduser -D -u 1001 -G apiuser -s /sbin/nologin -h /app hominem
+    adduser -D -u 1001 -G apiuser -s /sbin/nologin -h /app apiuser
 
 RUN mkdir -p /app/logs && \
     mkdir -p /tmp && \
-    chown -R hominem:apiuser /app /tmp && \
+    chown -R apiuser:apiuser /app /tmp && \
     chmod 700 /app/logs && \
     chmod 1777 /tmp
 
-COPY --from=builder --chown=hominem:apiuser /app/package.json ./package.json
-COPY --from=builder --chown=hominem:apiuser /app/pnpm-lock.yaml ./pnpm-lock.yaml
-COPY --from=builder --chown=hominem:apiuser /app/patches ./patches
-COPY --from=builder --chown=hominem:apiuser /app/node_modules ./node_modules
-COPY --from=builder --chown=hominem:apiuser /app/services/api ./services/api
-COPY --from=builder --chown=hominem:apiuser /app/packages ./packages
-COPY --from=builder --chown=hominem:apiuser /app/tsconfig*.json ./
+COPY --from=builder --chown=apiuser:apiuser /app/package.json ./package.json
+COPY --from=builder --chown=apiuser:apiuser /app/pnpm-lock.yaml ./pnpm-lock.yaml
+COPY --from=builder --chown=apiuser:apiuser /app/patches ./patches
+COPY --from=builder --chown=apiuser:apiuser /app/node_modules ./node_modules
+COPY --from=builder --chown=apiuser:apiuser /app/services/api ./services/api
+COPY --from=builder --chown=apiuser:apiuser /app/packages ./packages
+COPY --from=builder --chown=apiuser:apiuser /app/tsconfig*.json ./
 
-USER hominem
+USER apiuser
 
 EXPOSE ${PORT:-4040}
 

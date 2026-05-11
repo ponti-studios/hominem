@@ -35,7 +35,7 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: hominem-test
+          POSTGRES_DB: app-test
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -60,5 +60,5 @@ jobs:
 
       - name: validate-migrations
         env:
-          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:4433/hominem-test
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:4433/app-test
         run: just validate-migrations

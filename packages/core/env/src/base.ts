@@ -9,7 +9,7 @@ export const baseSchema = z.object({
   RESEND_FROM_EMAIL: z.string().optional(),
   RESEND_FROM_NAME: z.string().optional(),
   R2_ENDPOINT: z.url().optional(),
-  R2_BUCKET_NAME: z.string().default('hominem-storage'),
+  R2_BUCKET_NAME: z.string().default('storage'),
   R2_ACCESS_KEY_ID: z.string().optional(),
   R2_SECRET_ACCESS_KEY: z.string().optional(),
   REDIS_URL: z.url().optional().default('redis://localhost:6379'),
