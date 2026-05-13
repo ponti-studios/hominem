@@ -1,5 +1,3 @@
-import type { MarkdownStyle } from '@expensify/react-native-live-markdown';
-import { MarkdownTextInput, parseExpensiMark } from '@expensify/react-native-live-markdown';
 import { Host as SwiftUIHost, TextField as SwiftUITextField } from '@expo/ui/swift-ui';
 import { font, frame, submitLabel, textFieldStyle } from '@expo/ui/swift-ui/modifiers';
 import { spacing } from '@hominem/ui/tokens';
@@ -7,7 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, TextInput, View } from 'react-native';
 
 import { EnhanceModal } from '~/components/notes/EnhanceModal';
 import { NOTE_TOOLBAR_ID, NoteToolbar } from '~/components/notes/NoteToolbar';
@@ -32,7 +30,7 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
   const themeColors = useThemeColors();
   const navigation = useNavigation();
   const router = useRouter();
-  const contentInputRef = useRef<React.ComponentRef<typeof MarkdownTextInput>>(null);
+  const contentInputRef = useRef<TextInput>(null);
   const [enhanceModalVisible, setEnhanceModalVisible] = useState(false);
 
   const { data: note } = useNoteQuery({ noteId });
@@ -98,36 +96,6 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
 
   if (!note) return null;
 
-  const markdownStyle: MarkdownStyle = {
-    syntax: { color: themeColors['text-tertiary'] },
-    h1: { fontSize: 26 },
-    blockquote: {
-      borderColor: themeColors.accent,
-      borderWidth: 3,
-      marginLeft: 0,
-      paddingLeft: 14,
-    },
-    code: {
-      color: themeColors['text-secondary'],
-      backgroundColor: themeColors['bg-surface'],
-      borderColor: themeColors['border-default'],
-      borderWidth: 1,
-      borderRadius: 4,
-      borderStyle: 'solid',
-      padding: 2,
-    },
-    pre: {
-      color: themeColors['text-secondary'],
-      backgroundColor: themeColors['bg-surface'],
-      borderColor: themeColors['border-default'],
-      borderWidth: 1,
-      borderRadius: 8,
-      borderStyle: 'solid',
-      padding: 12,
-    },
-    link: { color: themeColors.accent },
-  };
-
   const handleDetach = (fileId: string) => detachFile(fileId, note.files, note.title, note.content);
 
   return (
@@ -165,7 +133,7 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
 
         <View style={styles.divider} />
 
-        <MarkdownTextInput
+        <TextInput
           ref={contentInputRef}
           multiline
           value={note.content}
@@ -188,8 +156,6 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
           textAlignVertical="top"
           scrollEnabled={false}
           accessibilityLabel={t.notes.editor.contentA11yLabel}
-          parser={parseExpensiMark}
-          markdownStyle={markdownStyle}
           inputAccessoryViewID={NOTE_TOOLBAR_ID}
         />
 

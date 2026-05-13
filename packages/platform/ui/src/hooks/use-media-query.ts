@@ -30,7 +30,7 @@ export function mediaQuery(query: string, options?: MediaQueryOptions) {
 }
 
 /**
- * A custom hook that listens for changes to a media query and returns its current value.
+ * Listens for changes to a media query and returns a boolean indicating whether the query matches.
  * @param query - The media query string to listen for.
  * @returns A boolean indicating whether the media query matches.
  */

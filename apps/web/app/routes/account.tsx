@@ -1,4 +1,3 @@
-import { Container } from '@hominem/ui';
 import { Button } from '@hominem/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@hominem/ui/card';
 import { data, redirect } from 'react-router';
@@ -21,7 +20,7 @@ export default function AccountPage() {
   const signOut = useSignOut();
 
   return (
-    <Container maxWidth="sm" className="py-8">
+    <main className="container mx-auto w-full px-4 py-8 sm:px-6">
       <header className="mb-8">
         <h1 className="text-xl font-semibold text-foreground">Profile</h1>
         <p className="mt-1 text-sm text-text-secondary">Manage your account</p>
@@ -51,6 +50,6 @@ export default function AccountPage() {
           </CardContent>
         </Card>
       </div>
-    </Container>
+    </main>
   );
 }

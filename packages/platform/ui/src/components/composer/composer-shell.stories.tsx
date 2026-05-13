@@ -28,7 +28,7 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   render: () => (
     <div className="min-h-screen bg-bg-base pb-32 pt-8">
-      <div className="page-width-lg mx-auto px-4">
+      <div className="container mx-auto w-full px-4 sm:px-6">
         <h1 className="text-xl font-semibold mb-4">Message Composer Demo</h1>
         <p className="text-text-secondary mb-8">
           Scroll down to see the composer shell fixed at the bottom of the viewport.
@@ -65,7 +65,7 @@ export const Default: Story = {
 export const WithMultilineInput: Story = {
   render: () => (
     <div className="min-h-screen bg-bg-base pb-40 pt-8">
-      <div className="page-width-lg mx-auto px-4">
+      <div className="container mx-auto w-full px-4 sm:px-6">
         <h1 className="text-xl font-semibold mb-4">Multiline Message</h1>
         <p className="text-text-secondary">
           The composer can expand to show longer messages while staying fixed at the bottom.
@@ -88,7 +88,7 @@ export const WithMultilineInput: Story = {
 export const WithToolbar: Story = {
   render: () => (
     <div className="min-h-screen bg-bg-base pb-40 pt-8">
-      <div className="page-width-lg mx-auto px-4">
+      <div className="container mx-auto w-full px-4 sm:px-6">
         <h1 className="text-xl font-semibold mb-4">With Action Buttons</h1>
         <p className="text-text-secondary">
           The composer can include additional action buttons for attachments, voice, etc.
@@ -170,7 +170,7 @@ export const MobileView: Story = {
 export const WithLoadingState: Story = {
   render: () => (
     <div className="min-h-screen bg-bg-base pb-32 pt-8">
-      <div className="page-width-lg mx-auto px-4">
+      <div className="container mx-auto w-full px-4 sm:px-6">
         <h1 className="text-xl font-semibold mb-4">Sending Message</h1>
         <p className="text-text-secondary">The composer can show a loading state while sending.</p>
       </div>
@@ -196,7 +196,7 @@ export const WithLoadingState: Story = {
 export const Compact: Story = {
   render: () => (
     <div className="min-h-screen bg-bg-base pb-32 pt-8">
-      <div className="page-width-lg mx-auto px-4">
+      <div className="container mx-auto w-full px-4 sm:px-6">
         <h1 className="text-xl font-semibold mb-4">Compact Composer</h1>
         <p className="text-text-secondary">Minimal composer for quick message input.</p>
       </div>

@@ -1,99 +1,20 @@
 import path from 'node:path';
 
-import { shellTheme } from '@hominem/ui/theme';
 import { reactRouter } from '@react-router/dev/vite';
 import tailwindcss from '@tailwindcss/vite';
 import { visualizer } from 'rollup-plugin-visualizer';
 import type { ConfigEnv, PluginOption, UserConfig } from 'vite';
 import { defineConfig } from 'vite';
-import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
   const isProd = mode === 'production';
   const isAnalyze = process.env.ANALYZE === 'true';
   const shouldGenerateSourceMaps = process.env.SOURCEMAP === 'true' || isAnalyze;
 
-  // Default values for WEB_BRAND to avoid module resolution issues during config loading
-  const WEB_BRAND = {
-    manifest: {
-      name: 'Hominem',
-      shortName: 'Hominem',
-      description: 'Hominem brings notes, voice capture, and chat into one workspace.',
-    },
-  };
-
   return {
     plugins: [
       tailwindcss(),
       reactRouter(),
-      VitePWA({
-        registerType: 'prompt',
-        injectRegister: false,
-        devOptions: {
-          enabled: false,
-        },
-        manifest: {
-          name: WEB_BRAND.manifest.name,
-          short_name: WEB_BRAND.manifest.shortName,
-          description: WEB_BRAND.manifest.description,
-          theme_color: shellTheme.web.themeColor,
-          background_color: shellTheme.web.backgroundColor,
-          display: 'standalone',
-          start_url: '/',
-          icons: [
-            {
-              src: '/icons/icon-192x192.png',
-              sizes: '192x192',
-              type: 'image/png',
-            },
-            {
-              src: '/icons/icon-512x512.png',
-              sizes: '512x512',
-              type: 'image/png',
-            },
-          ],
-        },
-        workbox: {
-          skipWaiting: false,
-          clientsClaim: false,
-          cleanupOutdatedCaches: true,
-          navigateFallback: '/',
-          navigateFallbackDenylist: [/^\/api\//],
-          runtimeCaching: [
-            {
-              urlPattern: ({ url, request }) =>
-                request.method === 'GET' && url.pathname.startsWith('/api/'),
-              handler: 'NetworkFirst',
-              options: {
-                cacheName: 'api-cache',
-                networkTimeoutSeconds: 5,
-                expiration: {
-                  maxEntries: 200,
-                  maxAgeSeconds: 60 * 60 * 24,
-                },
-                cacheableResponse: {
-                  statuses: [0, 200],
-                },
-              },
-            },
-            {
-              urlPattern: ({ request }) => request.destination === 'image',
-              handler: 'CacheFirst',
-              options: {
-                cacheName: 'image-cache',
-                expiration: {
-                  maxEntries: 200,
-                  maxAgeSeconds: 60 * 60 * 24 * 30,
-                },
-                cacheableResponse: {
-                  statuses: [0, 200],
-                },
-              },
-            },
-          ],
-        },
-      }),
-
       // Add bundle analyzer when ANALYZE flag is set
       isAnalyze &&
         visualizer({

@@ -527,31 +527,6 @@
   max-inline-size: var(--content-width-note-preview);
 }
 
-@utility page-width-sm {
-  max-inline-size: min(100%, 42rem);
-}
-
-@utility page-width-md {
-  max-inline-size: min(100%, 48rem);
-}
-
-@utility page-width-lg {
-  max-inline-size: min(100%, 64rem);
-}
-
-@utility page-width-xl {
-  max-inline-size: min(100%, 80rem);
-}
-
-@utility page-width-full {
-  max-inline-size: 100%;
-}
-
-@utility center-layout {
-  margin-inline: auto;
-  width: 100%;
-}
-
 @utility loading-size-sm {
   width: 1rem;
   height: 1rem;

@@ -1,6 +1,6 @@
 import { useQueryClient, type QueryClient } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
-import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 
 interface RegisterSWOptions {
   immediate?: boolean;
@@ -15,14 +15,129 @@ interface RegisterSWResult {
 }
 
 function useRegisterSW(options?: RegisterSWOptions): RegisterSWResult {
-  void options;
   const [offlineReady, setOfflineReady] = useState(false);
   const [needRefresh, setNeedRefresh] = useState(false);
+  const registrationRef = useRef<ServiceWorkerRegistration | undefined>(undefined);
+  const shouldReloadRef = useRef(false);
+  const hasReloadedRef = useRef(false);
+  const onRegisteredRef = useRef(options?.onRegistered);
+  const onRegisterErrorRef = useRef(options?.onRegisterError);
+
+  useEffect(() => {
+    onRegisteredRef.current = options?.onRegistered;
+    onRegisterErrorRef.current = options?.onRegisterError;
+  }, [options?.onRegistered, options?.onRegisterError]);
+
+  useEffect(() => {
+    if (
+      typeof window === 'undefined' ||
+      !('serviceWorker' in navigator) ||
+      !window.isSecureContext
+    ) {
+      return;
+    }
+
+    let isMounted = true;
+
+    const handleControllerChange = () => {
+      if (!shouldReloadRef.current || hasReloadedRef.current) {
+        return;
+      }
+
+      hasReloadedRef.current = true;
+      window.location.reload();
+    };
+
+    navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
+
+    const handleWaitingServiceWorker = (registration: ServiceWorkerRegistration) => {
+      registrationRef.current = registration;
+
+      if (!isMounted) {
+        return;
+      }
+
+      setNeedRefresh(true);
+      setOfflineReady(false);
+    };
+
+    const handleInstalledServiceWorker = (registration: ServiceWorkerRegistration) => {
+      registrationRef.current = registration;
+
+      if (!isMounted) {
+        return;
+      }
+
+      if (navigator.serviceWorker.controller) {
+        setNeedRefresh(true);
+        setOfflineReady(false);
+        return;
+      }
+
+      setOfflineReady(true);
+    };
+
+    const trackRegistration = (registration: ServiceWorkerRegistration) => {
+      registrationRef.current = registration;
+      onRegisteredRef.current?.(registration);
+
+      if (registration.waiting) {
+        handleWaitingServiceWorker(registration);
+      }
+
+      registration.addEventListener('updatefound', () => {
+        const installingWorker = registration.installing;
+        if (!installingWorker) {
+          return;
+        }
+
+        installingWorker.addEventListener('statechange', () => {
+          if (installingWorker.state !== 'installed') {
+            return;
+          }
+
+          handleInstalledServiceWorker(registration);
+        });
+      });
+    };
+
+    void navigator.serviceWorker
+      .register('/sw.js')
+      .then((registration) => {
+        if (!isMounted) {
+          return;
+        }
+
+        trackRegistration(registration);
+        return navigator.serviceWorker.ready.then(() => {
+          if (!isMounted || navigator.serviceWorker.controller) {
+            return;
+          }
+
+          setOfflineReady(true);
+        });
+      })
+      .catch((error: Error) => {
+        if (!isMounted) {
+          return;
+        }
+
+        onRegisterErrorRef.current?.(error);
+      });
+
+    return () => {
+      isMounted = false;
+      navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
+    };
+  }, []);
 
   return {
     offlineReady: [offlineReady, setOfflineReady],
     needRefresh: [needRefresh, setNeedRefresh],
-    updateServiceWorker: () => {},
+    updateServiceWorker: (reload = true) => {
+      shouldReloadRef.current = reload;
+      registrationRef.current?.waiting?.postMessage({ type: 'SKIP_WAITING' });
+    },
   };
 }
 

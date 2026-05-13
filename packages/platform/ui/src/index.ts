@@ -11,7 +11,6 @@ export { ResendCodeButton } from './components/auth/resend-code-button';
 export { PasskeyButton } from './components/auth/passkey-button';
 export { PasskeyEnrollmentBanner } from './components/auth/passkey-enrollment-banner';
 export { PasskeyManagement } from './components/auth/passkey-management';
-export { Center, type CenterProps } from './components/layout/center';
 export { Header, type HeaderProps, type NavItem } from './components/layout/header';
 export { Inline, type InlineProps } from './components/layout/inline';
 export {
@@ -20,44 +19,21 @@ export {
   type LandingPageProps,
   type LandingStep,
 } from './components/layout/landing-page';
-export {
-  Container,
-  Page,
-  Screen,
-  type ContainerProps,
-  type PageMaxWidth,
-  type PageProps,
-  type ScreenProps,
-} from './components/layout/page';
 export { Stack, type GapToken, type StackProps } from './components/layout/stack';
 export { Alert, AlertDescription, AlertTitle } from './components/alert';
 export * from './components/loading-state';
-export * from './components/chat';
 export * from './components/composer';
 export * from './components/workflow';
 export * from './components/feedback';
-export * from './components/page-title';
 export { MetaBadge } from './components/surfaces/meta-badge';
 export { SectionIntro } from './components/surfaces/section-intro';
 export { StatePanel } from './components/surfaces/state-panel';
 export { SurfaceFrame } from './components/surfaces/surface-frame';
 export { SurfacePanel } from './components/surfaces/surface-panel';
 export { PreviewCard, type PreviewCardHeaderProps } from './components/surfaces/preview-card';
-export {
-  Heading,
-  type HeadingProps,
-  type HeadingLevel,
-  type HeadingVariant,
-} from './components/typography/heading';
-export { Text, type TextProps, type TextVariant } from './components/typography/text';
 
 export * from './components/update-guard';
 export * from './constants/chart-colors';
-export * from './hooks/sort.types';
-export * from './hooks/use-api-client';
-export * from './hooks/use-filter-state';
-export * from './hooks/use-media-query';
-export * from './hooks/use-mobile';
 
 export const COMMON_FONT_LINKS: LinkDescriptor[] = [];
 
