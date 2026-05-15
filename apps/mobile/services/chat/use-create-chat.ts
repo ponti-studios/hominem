@@ -7,6 +7,7 @@ import {
   type ChatInboxRefreshSnapshot,
 } from '~/services/inbox/inbox-refresh';
 import { chatKeys } from '~/services/notes/query-keys';
+import { writeCachedChat } from '~/services/workspace/content-cache';
 
 import type { ChatWithActivity } from './session-types';
 
@@ -24,6 +25,7 @@ export function useCreateChat() {
       return res.json();
     },
     onSuccess: (chat) => {
+      writeCachedChat(chat);
       queryClient.setQueryData(chatKeys.activeChat(chat.id), chat);
       queryClient.setQueryData<ChatWithActivity[] | undefined>(chatKeys.resumableSessions, (prev) =>
         upsertInboxSessionActivity(prev ?? [], {

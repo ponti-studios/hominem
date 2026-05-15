@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 import { chatKeys } from '~/services/notes/query-keys';
+import { writeCachedChat } from '~/services/workspace/content-cache';
 
 import { getChatActivityAt } from './session-activity';
 import type { ChatWithActivity } from './session-types';
@@ -22,6 +23,7 @@ export function useChatArchive({ chatId, onSuccess }: UseChatArchiveOptions) {
       return res.json();
     },
     onSuccess: (archivedChat) => {
+      writeCachedChat(archivedChat);
       queryClient.setQueryData(chatKeys.activeChat(chatId), archivedChat);
       queryClient.setQueryData<ChatWithActivity[] | undefined>(
         chatKeys.resumableSessions,

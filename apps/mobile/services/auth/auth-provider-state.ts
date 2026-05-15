@@ -1,6 +1,6 @@
 import type { User } from '@hominem/auth/types';
 
-import { resolveIsLoadingAuth } from './provider-utils';
+import { resolveIsLoadingAuth, resolveIsSignedIn } from './provider-utils';
 import type { AuthState } from './types';
 
 export interface AuthContextSnapshot {
@@ -32,7 +32,7 @@ export function createAuthContextSnapshot(state: AuthState): AuthContextSnapshot
     authStatus: state.status,
     authError: state.error,
     isLoadingAuth: resolveIsLoadingAuth(state),
-    isSignedIn: state.status === 'signed_in',
+    isSignedIn: resolveIsSignedIn(state),
     currentUser: mapAuthUser(state.user),
   };
 }

@@ -2,18 +2,10 @@
   "$schema": "https://railway.com/railway.schema.json",
   "build": {
     "builder": "DOCKERFILE",
-    "dockerfilePath": "/apps/web/Dockerfile",
-    "watchPatterns": [
-      "/package.json",
-      "/pnpm-lock.yaml",
-      "/pnpm-workspace.yaml",
-      "/turbo.json",
-      "/apps/web/**",
-      "/packages/**"
-    ]
+    "dockerfilePath": "/apps/web/Dockerfile"
   },
   "deploy": {
-    "startCommand": "pnpm --filter @hominem/web run start",
+    "startCommand": "node_modules/.bin/react-router-serve apps/web/build/server/index.js",
     "healthcheckPath": "/",
     "healthcheckTimeout": 120,
     "restartPolicyType": "ON_FAILURE",
