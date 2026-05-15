@@ -26,3 +26,7 @@ export async function upsertBootProfile(
 ): Promise<NonNullable<AuthState['user']> | null> {
   return LocalStore.upsertUserProfile(fromSignInUser(user));
 }
+
+export async function getBootProfile(): Promise<NonNullable<AuthState['user']> | null> {
+  return LocalStore.getUserProfile();
+}

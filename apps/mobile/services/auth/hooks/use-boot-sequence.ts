@@ -8,11 +8,12 @@ import {
   markAuthPhaseStart,
   recordAuthEvent,
 } from '~/services/auth/analytics';
-import { runAuthBoot } from '~/services/auth/boot';
+import { restoreStoredSessionSnapshot, runAuthBoot } from '~/services/auth/boot';
 import { clearLegacyDataOnce } from '~/services/auth/boot-legacy-data';
 import { probeAuthSession } from '~/services/auth/boot-session-probe';
 import { getStoredSessionTokens } from '~/services/auth/boot-session-store';
-import { upsertBootProfile } from '~/services/auth/boot-user-profile';
+import { getBootProfile, upsertBootProfile } from '~/services/auth/boot-user-profile';
+import { clearPersistedSessionCookies } from '~/services/auth/session-cookie';
 import type { AuthContext } from '~/services/auth/types';
 import { markStartupPhase } from '~/services/performance/startup-metrics';
 
@@ -42,6 +43,7 @@ export function useBootSequence(
       }
 
       const startedAt = Date.now();
+      let restoredFromLocal = false;
 
       markStartupPhase('auth_boot_start');
       markAuthPhaseStart('boot');
@@ -55,11 +57,26 @@ export function useBootSequence(
       const timeoutId = setTimeout(() => controller.abort(), AUTH_BOOT_TIMEOUT_MS);
 
       try {
+        const storedSession = await restoreStoredSessionSnapshot({
+          getStoredTokens: getStoredSessionTokens,
+          getStoredProfile: getBootProfile,
+          clearLegacyData: clearLegacyDataOnce,
+        });
+
+        if (storedSession) {
+          restoredFromLocal = true;
+          sessionCookieHeaderRef.current = storedSession.sessionCookieHeader;
+          dispatch({ type: 'SESSION_LOADED', user: storedSession.user });
+          dispatch({ type: 'SYNC_STARTED' });
+        }
+
         const result = await runAuthBoot({
           getStoredTokens: getStoredSessionTokens,
+          getStoredProfile: getBootProfile,
           probeSession: probeAuthSession,
           clearTokens: async () => {
             sessionCookieHeaderRef.current = null;
+            await clearPersistedSessionCookies();
           },
           upsertProfile: upsertBootProfile,
           clearLegacyData: clearLegacyDataOnce,
@@ -89,7 +106,7 @@ export function useBootSequence(
       } catch (error) {
         const resolvedError =
           error instanceof Error ? error : new Error('Unable to recover your session right now.');
-        dispatch({ type: 'SESSION_RECOVERY_FAILED', error: resolvedError });
+
         recordAuthEvent('auth_boot_resolved:error', 'boot');
         captureAuthAnalyticsFailure('auth_boot_failed', {
           phase: 'boot',
@@ -97,6 +114,15 @@ export function useBootSequence(
           error: resolvedError,
           failureStage: 'network',
         });
+
+        if (restoredFromLocal) {
+          dispatch({ type: 'SYNC_COMPLETED' });
+          markStartupPhase('auth_boot_resolved');
+          hasBootstrappedRef.current = true;
+          return;
+        }
+
+        dispatch({ type: 'SESSION_RECOVERY_FAILED', error: resolvedError });
         markStartupPhase('auth_boot_resolved');
         hasBootstrappedRef.current = true;
       } finally {
