@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveIsLoadingAuth } from '~/services/auth/provider-utils';
+import { resolveIsLoadingAuth, resolveIsSignedIn } from '~/services/auth/provider-utils';
 
 describe('resolveIsLoadingAuth', () => {
   it('treats booting as loading even when state says otherwise', () => {
@@ -24,6 +24,24 @@ describe('resolveIsLoadingAuth', () => {
       resolveIsLoadingAuth({
         status: 'signed_out',
         isLoading: false,
+      } as never),
+    ).toBe(false);
+  });
+
+  it('treats locally restored sessions as signed in during background validation', () => {
+    expect(
+      resolveIsSignedIn({
+        status: 'signed_in',
+        isLoading: true,
+        user: { id: 'user-1' },
+      } as never),
+    ).toBe(true);
+
+    expect(
+      resolveIsSignedIn({
+        status: 'signing_out',
+        isLoading: true,
+        user: { id: 'user-1' },
       } as never),
     ).toBe(false);
   });

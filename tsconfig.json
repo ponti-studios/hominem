@@ -14,6 +14,7 @@
     { "path": "packages/platform/services" },
     { "path": "packages/platform/ui" },
     { "path": "packages/core/utils" },
+    { "path": "packages/platform/queues" },
     { "path": "packages/platform/telemetry" },
     { "path": "services/api" },
     { "path": "apps/mobile" },

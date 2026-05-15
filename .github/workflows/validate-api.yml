@@ -9,6 +9,8 @@ on:
       - 'package.json'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
+      - '.npmrc'
+      - '.dockerignore'
       - 'turbo.json'
       - 'tsconfig.json'
       - 'tsconfig.profiles/**'
