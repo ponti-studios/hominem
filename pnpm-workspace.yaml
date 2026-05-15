@@ -10,7 +10,7 @@ overrides:
   prismjs: '>=1.30.0'
   markdown-it: '>=12.3.2'
   serialize-javascript: '>=7.0.3'
-  '@xmldom/xmldom': '>=0.8.12'
+  '@xmldom/xmldom': '>=0.8.13'
   fast-xml-parser: '>=5.7.0'
   postcss: '>=8.5.10'
   uuid: '>=11.1.1'
@@ -18,6 +18,7 @@ overrides:
   fast-xml-builder: '>=1.1.6'
   kysely: '>=0.28.17'
   '@protobufjs/utf8': '>=1.1.1'
+  protobufjs: '>=7.5.6'
 
 nodeVersion: 24.14.1
 engineStrict: true
