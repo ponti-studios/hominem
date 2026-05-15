@@ -17,15 +17,15 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: setup-node-js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ inputs.node-version }}
-
     - name: setup-pnpm
       uses: pnpm/action-setup@v4
       with:
         version: ${{ inputs.pnpm-version }}
+
+    - name: setup-node-js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
 
     - name: setup-just
       uses: taiki-e/install-action@just
