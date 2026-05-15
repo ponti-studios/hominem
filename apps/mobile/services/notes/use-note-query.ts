@@ -3,16 +3,23 @@ import type { Note } from '@hominem/rpc/types';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { noteKeys } from './query-keys';
+import {
+  hasDefinedData,
+  resolveRestoredQueryState,
+} from '~/services/query/restored-query-state';
+import { readCachedNote, writeCachedNote } from '~/services/workspace/content-cache';
 
 export const useNoteQuery = ({ noteId, enabled = true }: { noteId: string; enabled?: boolean }) => {
   const client = useApiClient();
   const queryClient = useQueryClient();
+  const cachedNote = readCachedNote(noteId);
 
-  return useQuery<Note>({
+  const noteQuery = useQuery<Note>({
     queryKey: noteKeys.detail(noteId),
     queryFn: async () => {
       const res = await client.api.notes[':id'].$get({ param: { id: noteId } });
       const note = await res.json();
+      writeCachedNote(note);
 
       queryClient.setQueryData<Note[]>(noteKeys.all, (current) => {
         if (!current) {
@@ -30,9 +37,27 @@ export const useNoteQuery = ({ noteId, enabled = true }: { noteId: string; enabl
       return note;
     },
     initialData: () => {
+      if (cachedNote) {
+        return cachedNote;
+      }
+
       const cachedNotes = queryClient.getQueryData<Note[]>(noteKeys.all);
       return cachedNotes?.find((item) => item.id === noteId);
     },
     enabled: enabled && noteId.length > 0,
   });
+
+  const restoredState = resolveRestoredQueryState({
+    data: noteQuery.data,
+    isPending: noteQuery.isPending,
+    isFetching: noteQuery.isFetching,
+    hasUsableData: hasDefinedData,
+  });
+
+  return {
+    ...noteQuery,
+    hasUsableData: restoredState.hasUsableData,
+    isInitialLoading: restoredState.isInitialLoading,
+    isRefreshing: restoredState.isRefreshing,
+  };
 };

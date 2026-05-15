@@ -147,7 +147,7 @@ export function ChatMessageList({
     [contentPaddingBottom],
   );
 
-  if (isMessagesLoading) {
+  if (isMessagesLoading && displayMessages.length === 0) {
     return (
       <View style={styles.shimmerContainer}>
         <ChatShimmerMessage />

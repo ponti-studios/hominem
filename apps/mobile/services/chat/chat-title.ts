@@ -3,6 +3,7 @@ import type { Chat, SessionSource } from '@hominem/rpc/types';
 import type { QueryClient } from '@tanstack/react-query';
 
 import { chatKeys, inboxKeys } from '~/services/notes/query-keys';
+import { writeCachedChat } from '~/services/workspace/content-cache';
 
 import type { ChatWithActivity } from './session-types';
 
@@ -53,11 +54,15 @@ export function updateChatTitleCaches(
 
   queryClient.setQueryData<Chat | null>(chatKeys.activeChat(chatId), (currentChat) =>
     currentChat
-      ? {
-          ...currentChat,
-          title,
-          ...(updatedAt ? { updatedAt } : null),
-        }
+      ? (() => {
+          const nextChat = {
+            ...currentChat,
+            title,
+            ...(updatedAt ? { updatedAt } : null),
+          };
+          writeCachedChat(nextChat);
+          return nextChat;
+        })()
       : currentChat,
   );
 

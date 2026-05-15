@@ -6,6 +6,7 @@ import { useCallback, useRef } from 'react';
 import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
 import { noteKeys } from '~/services/notes/query-keys';
+import { writeCachedNote } from '~/services/workspace/content-cache';
 
 export function useNoteEditor(noteId: string) {
   const client = useApiClient();
@@ -15,6 +16,7 @@ export function useNoteEditor(noteId: string) {
 
   const commitServerResponse = useCallback(
     (updatedNote: Note) => {
+      writeCachedNote(updatedNote);
       queryClient.setQueryData<Note>(noteKeys.detail(updatedNote.id), updatedNote);
       queryClient.setQueryData<Note[]>(noteKeys.all, (current) => {
         if (!current) return [updatedNote];
@@ -49,7 +51,11 @@ export function useNoteEditor(noteId: string) {
   const updateCache = useCallback(
     (patch: Partial<Note>) => {
       queryClient.setQueryData<Note>(noteKeys.detail(noteId), (prev) =>
-        prev ? { ...prev, ...patch } : prev,
+        prev ? (() => {
+          const nextNote = { ...prev, ...patch };
+          writeCachedNote(nextNote);
+          return nextNote;
+        })() : prev,
       );
     },
     [queryClient, noteId],
