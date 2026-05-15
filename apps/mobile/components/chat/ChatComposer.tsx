@@ -16,6 +16,7 @@ import {
   useAutoUpdateChatTitle,
   useSendMessage,
 } from '~/services/chat';
+import { clearChatDraft, readChatDraft, writeChatDraft } from '~/services/workspace/launch-state';
 import t from '~/translations';
 
 interface ChatComposerProps {
@@ -46,7 +47,11 @@ function ChatComposerContent({ chatId }: { chatId: string }) {
     clearDraft,
     enhance,
     isEnhancing,
-  } = useComposer();
+  } = useComposer({
+    initialDraft: readChatDraft(resolvedChatId),
+    onDraftChange: (nextMessage) => writeChatDraft(resolvedChatId, nextMessage),
+    onExtraClearDraft: () => clearChatDraft(resolvedChatId),
+  });
   const { attachments } = useComposerAttachments();
 
   const { sendChatMessage, isChatSending } = useSendMessage({ chatId: resolvedChatId });

@@ -3,6 +3,7 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { FeatureErrorBoundary } from '~/components/error-boundary/FeatureErrorBoundary';
+import { ProtectedRouteFallback } from '~/components/protected/protected-route-fallback';
 import { Text, theme } from '~/components/theme';
 import { Button } from '~/components/ui/button';
 import { APP_NAME } from '~/constants';
@@ -57,7 +58,11 @@ function ProtectedShell() {
         gestureDirection: 'horizontal' as const,
       };
 
-  if (authStatus === 'booting' || !isSignedIn) {
+  if (authStatus === 'booting') {
+    return <ProtectedRouteFallback />;
+  }
+
+  if (!isSignedIn) {
     return <View testID="protected-bootstrap" style={styles.root} />;
   }
 

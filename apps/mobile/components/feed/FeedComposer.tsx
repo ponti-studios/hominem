@@ -22,6 +22,7 @@ import { useCreateChat } from '~/services/chat/use-create-chat';
 import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
 import { donateAddNoteIntent } from '~/services/intent-donation';
+import { clearFeedDraft, readFeedDraft, writeFeedDraft } from '~/services/workspace/launch-state';
 import { useCreateNote } from '~/services/notes/use-create-note';
 import t from '~/translations';
 
@@ -55,7 +56,11 @@ function FeedComposerInner() {
     clearDraft,
     enhance,
     isEnhancing,
-  } = useComposer();
+  } = useComposer({
+    initialDraft: readFeedDraft(),
+    onDraftChange: writeFeedDraft,
+    onExtraClearDraft: clearFeedDraft,
+  });
   const { attachments } = useComposerAttachments();
 
   const handleSave = useCallback(async () => {

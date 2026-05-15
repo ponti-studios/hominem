@@ -2,7 +2,7 @@ import type { SessionSource } from '@hominem/rpc/types';
 import { useNavigation } from '@react-navigation/native';
 import { useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router/build/hooks';
-import React, { useCallback, useLayoutEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import type { LayoutChangeEvent } from 'react-native';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
@@ -33,6 +33,8 @@ import {
 import { useCreateChat } from '~/services/chat/use-create-chat';
 import { formatRelativeAge } from '~/services/date/format-relative-age';
 import { chatKeys } from '~/services/notes/query-keys';
+import { recordWorkspaceScreenReady } from '~/services/performance/startup-metrics';
+import { writeLastOpenWorkspaceRoute } from '~/services/workspace/launch-state';
 import t from '~/translations';
 
 const renderChatIcon: ChatRenderIcon = (name, props) => {
@@ -54,6 +56,14 @@ export default function ChatDetailScreen() {
   const { data: activeChat } = useActiveChat(id);
   const chatId = activeChat?.id ?? id;
   const [composerHeight, setComposerHeight] = useState(0);
+
+  useEffect(() => {
+    writeLastOpenWorkspaceRoute(`/(protected)/(tabs)/chat/${chatId}`);
+    recordWorkspaceScreenReady({
+      target: 'chat',
+      restoreSource: 'last_open_route',
+    });
+  }, [chatId]);
 
   const handleComposerLayout = useCallback((e: LayoutChangeEvent) => {
     const nextHeight = e.nativeEvent.layout.height;
