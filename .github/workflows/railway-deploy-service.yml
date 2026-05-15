@@ -8,6 +8,10 @@ on:
         required: false
         type: string
         default: ''
+      working_directory:
+        required: false
+        type: string
+        default: '.'
     secrets:
       service_target:
         required: true
@@ -42,3 +46,4 @@ jobs:
         run: test -n "$SERVICE" && test -n "$RAILWAY_TOKEN"
 
       - run: railway up --ci --service "$SERVICE"
+        working-directory: ${{ inputs.working_directory }}

@@ -6,8 +6,6 @@
   },
   "deploy": {
     "startCommand": "node dist/worker.mjs",
-    "healthcheckPath": "/health",
-    "healthcheckTimeout": 60,
     "restartPolicyType": "ALWAYS",
     "restartPolicyMaxRetries": 10,
     "sleepApplication": false,
