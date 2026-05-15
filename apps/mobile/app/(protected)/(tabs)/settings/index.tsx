@@ -13,12 +13,14 @@ import {
   View,
 } from 'react-native';
 
+import { ProtectedRouteFallback } from '~/components/protected/protected-route-fallback';
 import { useThemeColors } from '~/components/theme';
 import { Button } from '~/components/ui/button';
 import AppIcon from '~/components/ui/icon';
 import { MOBILE_PASSKEY_ENABLED } from '~/constants';
 import { getAppLockEnabled, setAppLockEnabled } from '~/hooks/use-app-lock';
 import { getPreventScreenshots, setPreventScreenshots } from '~/hooks/use-screen-capture';
+import { resolveProtectedRouteState } from '~/services/auth/protected-route-state';
 import { useAuth } from '~/services/auth/auth-provider';
 import { useMobilePasskeyAuth } from '~/services/auth/hooks/use-mobile-passkey-auth';
 import t from '~/translations';
@@ -56,7 +58,7 @@ function accountReducer(state: AccountState, action: AccountAction): AccountStat
 function Settings() {
   const router = useRouter();
   const themeColors = useThemeColors();
-  const { isSignedIn, signOut, currentUser, updateProfile } = useAuth();
+  const { authStatus, isSignedIn, signOut, currentUser, updateProfile } = useAuth();
   const {
     addPasskey,
     passkeys,
@@ -158,7 +160,11 @@ function Settings() {
     );
   };
 
-  if (!isSignedIn) return null;
+  const protectedRouteState = resolveProtectedRouteState({ authStatus, isSignedIn });
+
+  if (protectedRouteState.showFallback) {
+    return <ProtectedRouteFallback />;
+  }
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>

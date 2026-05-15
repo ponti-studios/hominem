@@ -5,6 +5,12 @@ import { useQuery } from '@tanstack/react-query';
 import { chatKeys } from '../notes/query-keys';
 import { type MessageOutput } from './chatMessages';
 import { selectChatSession } from './session-activity';
+import {
+  readCachedChat,
+  readCachedChatMessages,
+  writeCachedChat,
+  writeCachedChatMessages,
+} from '~/services/workspace/content-cache';
 
 function toMessageOutput(message: RpcChatMessage): MessageOutput | null {
   if (message.role === 'tool') {
@@ -29,6 +35,7 @@ function toMessageOutput(message: RpcChatMessage): MessageOutput | null {
 
 export const useChatMessages = ({ chatId }: { chatId: string }) => {
   const client = useApiClient();
+  const cachedMessages = readCachedChatMessages(chatId);
 
   return useQuery<MessageOutput[]>({
     queryKey: chatKeys.messages(chatId),
@@ -39,12 +46,15 @@ export const useChatMessages = ({ chatId }: { chatId: string }) => {
       });
       const messages = await res.json();
 
-      return messages.flatMap((message) => {
+      const nextMessages = messages.flatMap((message) => {
         const output = toMessageOutput(message as RpcChatMessage);
         return output ? [output] : [];
       });
+      writeCachedChatMessages(chatId, nextMessages);
+      return nextMessages;
     },
     enabled: Boolean(chatId),
+    initialData: cachedMessages.length > 0 ? cachedMessages : undefined,
     refetchOnWindowFocus: false,
     staleTime: 30_000,
   });
@@ -52,6 +62,7 @@ export const useChatMessages = ({ chatId }: { chatId: string }) => {
 
 export const useActiveChat = (chatId?: string | null) => {
   const client = useApiClient();
+  const cachedChat = chatId ? readCachedChat(chatId) : null;
 
   return useQuery<Chat | null>({
     queryKey: chatKeys.activeChat(chatId ?? null),
@@ -60,6 +71,7 @@ export const useActiveChat = (chatId?: string | null) => {
         const res = await client.api.chats[':id'].$get({ param: { id: chatId } });
         const chat = await res.json();
         const { messages: _messages, ...chatRecord } = chat;
+        writeCachedChat(chatRecord);
         return chatRecord;
       }
 
@@ -67,5 +79,6 @@ export const useActiveChat = (chatId?: string | null) => {
       const chats = await listRes.json();
       return selectChatSession(chats, chatId);
     },
+    initialData: cachedChat,
   });
 };

@@ -1,0 +1,18 @@
+{
+  "currentGoalId": "cicd-goal-01",
+  "currentTaskId": null,
+  "goals": [
+    "cicd-goal-01"
+  ],
+  "activeTasks": [
+    "cicd-task-01",
+    "cicd-task-02",
+    "cicd-task-03",
+    "cicd-task-04",
+    "cicd-task-05",
+    "cicd-task-06",
+    "cicd-task-07",
+    "cicd-task-08",
+    "cicd-task-09"
+  ]
+}

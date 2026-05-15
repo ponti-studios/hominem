@@ -4,7 +4,7 @@ import { spacing } from '@hominem/ui/tokens';
 import { useNavigation } from '@react-navigation/native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, TextInput, View } from 'react-native';
 
 import { EnhanceModal } from '~/components/notes/EnhanceModal';
@@ -14,9 +14,39 @@ import AppIcon from '~/components/ui/icon';
 import { useNoteEditor } from '~/hooks/use-note-editor';
 import { useNoteToolbar } from '~/hooks/use-note-toolbar';
 import { useNoteQuery } from '~/services/notes/use-note-query';
+import { recordWorkspaceScreenReady } from '~/services/performance/startup-metrics';
+import { writeLastOpenWorkspaceRoute } from '~/services/workspace/launch-state';
 import t from '~/translations';
 
 const COMPOSER_CLEARANCE = 220;
+
+function NoteDetailPlaceholder() {
+  const styles = useNoteStyles();
+
+  return (
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      keyboardDismissMode="interactive"
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.placeholderTitle} />
+      <View style={styles.placeholderDateline} />
+      <View style={styles.divider} />
+      <View style={styles.placeholderBody}>
+        {Array.from({ length: 6 }, (_, index) => (
+          <View
+            key={`note-placeholder-line-${index.toString()}`}
+            style={[
+              styles.placeholderLine,
+              index === 5 ? styles.placeholderLineShort : null,
+            ]}
+          />
+        ))}
+      </View>
+    </ScrollView>
+  );
+}
 
 export default function NoteDetailScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -33,8 +63,16 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
   const contentInputRef = useRef<TextInput>(null);
   const [enhanceModalVisible, setEnhanceModalVisible] = useState(false);
 
-  const { data: note } = useNoteQuery({ noteId });
+  const { data: note, isInitialLoading } = useNoteQuery({ noteId });
   const { save, updateCache, detachFile } = useNoteEditor(noteId);
+
+  useEffect(() => {
+    writeLastOpenWorkspaceRoute(`/(protected)/(tabs)/notes/${noteId}`);
+    recordWorkspaceScreenReady({
+      target: 'note',
+      restoreSource: 'last_open_route',
+    });
+  }, [noteId]);
 
   const toolbar = useNoteToolbar({
     content: note?.content ?? '',
@@ -94,7 +132,9 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
     });
   }, [navigation, noteId, note?.title, router]);
 
-  if (!note) return null;
+  if (isInitialLoading || !note) {
+    return <NoteDetailPlaceholder />;
+  }
 
   const handleDetach = (fileId: string) => detachFile(fileId, note.files, note.title, note.content);
 
@@ -222,6 +262,34 @@ const useNoteStyles = makeStyles((theme) => ({
   titleHost: {
     alignSelf: 'stretch',
     marginBottom: 6,
+  },
+  placeholderTitle: {
+    alignSelf: 'stretch',
+    backgroundColor: theme.colors['border-subtle'],
+    borderRadius: theme.borderRadii.sm,
+    height: 32,
+    marginBottom: 12,
+    width: '72%',
+  },
+  placeholderDateline: {
+    backgroundColor: theme.colors['border-faint'],
+    borderRadius: theme.borderRadii.sm,
+    height: 12,
+    marginBottom: 14,
+    width: '36%',
+  },
+  placeholderBody: {
+    gap: 14,
+    paddingTop: 4,
+  },
+  placeholderLine: {
+    backgroundColor: theme.colors['border-faint'],
+    borderRadius: theme.borderRadii.sm,
+    height: 16,
+    width: '100%',
+  },
+  placeholderLineShort: {
+    width: '58%',
   },
   dateline: {
     color: theme.colors['text-tertiary'],

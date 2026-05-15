@@ -4,6 +4,11 @@ export interface AuthBootStoredTokens {
   sessionCookieHeader: string | null;
 }
 
+export interface AuthBootStoredSnapshot {
+  sessionCookieHeader: string;
+  user: NonNullable<AuthState['user']>;
+}
+
 export interface AuthBootUser {
   id: string;
   email: string;
@@ -20,6 +25,7 @@ type AuthBootResult =
 
 export interface AuthBootDeps {
   getStoredTokens: () => Promise<AuthBootStoredTokens>;
+  getStoredProfile: () => Promise<NonNullable<AuthState['user']> | null>;
   probeSession: (input: {
     sessionCookieHeader: string | null;
     signal: AbortSignal;
@@ -28,6 +34,28 @@ export interface AuthBootDeps {
   upsertProfile: (user: AuthBootUser) => Promise<NonNullable<AuthState['user']> | null>;
   clearLegacyData: () => Promise<void>;
   signal: AbortSignal;
+}
+
+export async function restoreStoredSessionSnapshot(
+  deps: Pick<AuthBootDeps, 'clearLegacyData' | 'getStoredProfile' | 'getStoredTokens'>,
+): Promise<AuthBootStoredSnapshot | null> {
+  const { clearLegacyData, getStoredProfile, getStoredTokens } = deps;
+
+  await clearLegacyData();
+
+  const [{ sessionCookieHeader }, user] = await Promise.all([
+    getStoredTokens(),
+    getStoredProfile(),
+  ]);
+
+  if (!sessionCookieHeader || !user) {
+    return null;
+  }
+
+  return {
+    sessionCookieHeader,
+    user,
+  };
 }
 
 export async function runAuthBoot(deps: AuthBootDeps): Promise<AuthBootResult> {

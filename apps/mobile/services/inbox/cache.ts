@@ -1,0 +1,62 @@
+import type { InboxStreamItem } from '@hominem/rpc/types';
+
+import { storage } from '~/services/storage/mmkv';
+
+const INBOX_CACHE_KEY = 'inbox-stream-cache-v1';
+
+interface CachedInboxSnapshot {
+  items: InboxStreamItem[];
+  savedAt: string;
+}
+
+function isInboxKind(value: unknown): value is InboxStreamItem['kind'] {
+  return value === 'note' || value === 'chat';
+}
+
+function isInboxItem(value: unknown): value is InboxStreamItem {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const item = value as Record<string, unknown>;
+
+  return (
+    typeof item.id === 'string' &&
+    typeof item.entityId === 'string' &&
+    isInboxKind(item.kind) &&
+    typeof item.updatedAt === 'string' &&
+    typeof item.route === 'string' &&
+    (item.title === null || typeof item.title === 'string') &&
+    (item.preview === null || typeof item.preview === 'string')
+  );
+}
+
+export function readCachedInboxItems(): InboxStreamItem[] {
+  const raw = storage.getString(INBOX_CACHE_KEY);
+  if (!raw) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as { items?: unknown };
+    if (!Array.isArray(parsed.items)) {
+      storage.remove(INBOX_CACHE_KEY);
+      return [];
+    }
+
+    const items = parsed.items.filter(isInboxItem);
+    return items.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
+  } catch {
+    storage.remove(INBOX_CACHE_KEY);
+    return [];
+  }
+}
+
+export function writeCachedInboxItems(items: InboxStreamItem[]) {
+  const snapshot: CachedInboxSnapshot = {
+    items,
+    savedAt: new Date().toISOString(),
+  };
+
+  storage.set(INBOX_CACHE_KEY, JSON.stringify(snapshot));
+}

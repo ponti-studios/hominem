@@ -11,6 +11,7 @@ import type { InboxStreamItemData as InboxStreamItemModel } from './InboxStreamI
 
 interface InboxStreamProps {
   items: InboxStreamItemModel[];
+  isLoading?: boolean;
   listRef?: RefObject<FlashListRef<InboxStreamItemModel> | null>;
   onSelectStarter?: (prompt: string) => void;
   refreshControl?: React.ReactElement<RefreshControlProps>;
@@ -63,6 +64,7 @@ const SAMPLE_ITEMS = [
 
 export const InboxStream = ({
   items,
+  isLoading = false,
   listRef,
   onSelectStarter,
   refreshControl,
@@ -73,6 +75,28 @@ export const InboxStream = ({
   const renderItem = useCallback<ListRenderItem<InboxStreamItemModel>>(({ item }) => {
     return <RenderInboxStreamItem item={item} />;
   }, []);
+
+  if (isLoading && items.length === 0) {
+    return (
+      <ScrollView
+        contentContainerStyle={[
+          styles.loadingWrap,
+          contentPaddingBottom != null ? { paddingBottom: contentPaddingBottom } : null,
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
+        {Array.from({ length: 5 }, (_, index) => (
+          <View key={`inbox-loading-row-${index.toString()}`} style={styles.loadingRow}>
+            <View style={styles.loadingIcon} />
+            <View style={styles.loadingCopy}>
+              <View style={styles.loadingTitle} />
+              <View style={styles.loadingMeta} />
+            </View>
+          </View>
+        ))}
+      </ScrollView>
+    );
+  }
 
   if (items.length === 0) {
     return (
@@ -186,6 +210,42 @@ const useStreamStyles = makeStyles((theme) => ({
     justifyContent: 'center',
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.lg,
+  },
+  loadingWrap: {
+    flexGrow: 1,
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.md,
+    paddingBottom: theme.spacing.lg,
+    rowGap: theme.spacing.md,
+  },
+  loadingRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    columnGap: theme.spacing.md,
+    minHeight: 56,
+    paddingVertical: theme.spacing.sm,
+  },
+  loadingIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.colors['border-subtle'],
+  },
+  loadingCopy: {
+    flex: 1,
+    rowGap: theme.spacing.sm,
+  },
+  loadingTitle: {
+    height: 13,
+    width: '58%',
+    borderRadius: theme.borderRadii.sm,
+    backgroundColor: theme.colors['border-subtle'],
+  },
+  loadingMeta: {
+    height: 11,
+    width: '36%',
+    borderRadius: theme.borderRadii.sm,
+    backgroundColor: theme.colors['border-faint'],
   },
   emptyCard: {
     alignItems: 'center',

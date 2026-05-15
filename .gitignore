@@ -35,6 +35,7 @@ results/
 # pnpm
 # Note: lockfile should be committed for monorepos to ensure consistent dependencies
 # pnpm-lock.yaml
+.pnpm-store/
 
 # Google credentials
 credentials.json

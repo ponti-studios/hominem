@@ -93,12 +93,12 @@ function InnerRootLayout() {
   }, []);
 
   useEffect(() => {
-    if (authStatus === 'signed_in' && currentUser?.id) {
+    if (isSignedIn && currentUser?.id) {
       posthog.identify(currentUser.id, { email: currentUser.email ?? null });
     } else if (authStatus === 'signed_out') {
       posthog.reset();
     }
-  }, [authStatus, currentUser]);
+  }, [authStatus, currentUser, isSignedIn]);
 
   useEffect(() => {
     if (!hasMarkedShellReady.current && authStatus !== 'booting') {
@@ -148,7 +148,7 @@ function InnerRootLayout() {
           authStatus === 'degraded' ? (
             <View testID="auth-state-signed-out" style={styles.e2eIndicator} />
           ) : null}
-          {authStatus === 'signed_in' || authStatus === 'signing_out' ? (
+          {isSignedIn || authStatus === 'signing_out' ? (
             <View testID="auth-state-signed-in" style={styles.e2eIndicator} />
           ) : null}
           <Pressable

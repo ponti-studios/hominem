@@ -1,0 +1,54 @@
+import { describe, expect, it } from 'vitest';
+
+import {
+  hasDefinedData,
+  hasNonEmptyListData,
+  resolveRestoredQueryState,
+} from '~/services/query/restored-query-state';
+
+describe('resolveRestoredQueryState', () => {
+  it('treats cached chat messages as ready while a refetch is pending', () => {
+    expect(
+      resolveRestoredQueryState({
+        data: [{ id: 'msg-1' }],
+        isPending: false,
+        isFetching: true,
+        hasUsableData: hasNonEmptyListData,
+      }),
+    ).toEqual({
+      hasUsableData: true,
+      isInitialLoading: false,
+      isRefreshing: true,
+    });
+  });
+
+  it('keeps the feed in first-load mode until it has usable items', () => {
+    expect(
+      resolveRestoredQueryState({
+        data: undefined,
+        isPending: true,
+        isFetching: true,
+        hasUsableData: hasNonEmptyListData,
+      }),
+    ).toEqual({
+      hasUsableData: false,
+      isInitialLoading: true,
+      isRefreshing: false,
+    });
+  });
+
+  it('treats a cached note as render-ready during background sync', () => {
+    expect(
+      resolveRestoredQueryState({
+        data: { id: 'note-1', title: 'Draft' },
+        isPending: false,
+        isFetching: true,
+        hasUsableData: hasDefinedData,
+      }),
+    ).toEqual({
+      hasUsableData: true,
+      isInitialLoading: false,
+      isRefreshing: true,
+    });
+  });
+});

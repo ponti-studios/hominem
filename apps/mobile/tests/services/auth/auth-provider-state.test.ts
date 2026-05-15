@@ -66,5 +66,26 @@ describe('createAuthContextSnapshot', () => {
         email: 'user@example.com',
       },
     });
+
+    expect(
+      createAuthContextSnapshot({
+        status: 'signed_in',
+        isLoading: true,
+        error: null,
+        user: {
+          id: 'user-1',
+          email: 'user@example.com',
+          name: null,
+          image: null,
+          emailVerified: false,
+          createdAt: new Date('2024-01-01T00:00:00.000Z'),
+          updatedAt: new Date('2024-01-02T00:00:00.000Z'),
+        },
+      } as never),
+    ).toMatchObject({
+      authStatus: 'signed_in',
+      isLoadingAuth: true,
+      isSignedIn: true,
+    });
   });
 });
