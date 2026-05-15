@@ -11,7 +11,7 @@ ENV TURBO_TELEMETRY_DISABLED=1 \
     VITE_POSTHOG_API_KEY=${VITE_POSTHOG_API_KEY} \
     VITE_POSTHOG_HOST=${VITE_POSTHOG_HOST}
 
-COPY package.json pnpm-lock.yaml tsconfig.json ./
+COPY package.json pnpm-lock.yaml tsconfig.json .npmrc ./
 COPY pnpm-workspace.yaml ./
 COPY patches ./patches
 
@@ -40,6 +40,7 @@ RUN addgroup -g 1001 webuser && \
 
 COPY --from=builder --chown=webuser:webuser /app/package.json ./package.json
 COPY --from=builder --chown=webuser:webuser /app/pnpm-lock.yaml ./pnpm-lock.yaml
+COPY --from=builder --chown=webuser:webuser /app/.npmrc ./.npmrc
 COPY --from=builder --chown=webuser:webuser /app/patches ./patches
 COPY --from=builder --chown=webuser:webuser /app/node_modules ./node_modules
 COPY --from=builder --chown=webuser:webuser /app/apps/web ./apps/web
