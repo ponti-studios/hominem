@@ -15,6 +15,7 @@ jobs:
   build-production:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 60
 
     steps:
       - name: checkout-repository
@@ -22,21 +23,13 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
-      - name: setup-pnpm
-        uses: pnpm/action-setup@v4
+      - name: setup-pnpm-workspace
+        uses: ./.github/actions/setup-pnpm-workspace
         with:
-          version: 11.1.1
-
-      - name: setup-node-js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24.14.1
-
-      - name: install-dependencies
-        run: pnpm install
+          node-version: '24.14.1'
 
       - name: setup-eas
-        run: npm install -g eas-cli
+        run: npm install -g eas-cli@18
 
       - name: submit-build
         working-directory: apps/mobile

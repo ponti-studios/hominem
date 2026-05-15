@@ -1,0 +1,84 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.example
+
+# Dependencies
+node_modules
+npm-debug.log
+pnpm-debug.log*
+
+# Build artifacts
+dist
+build
+.turbo
+.react-router
+storybook-static
+*.tsbuildinfo
+
+# Testing
+test
+tests
+*.test.ts
+*.spec.ts
+vitest.config.*
+coverage
+.nyc_output
+
+# IDE & Editor files
+.vscode
+.idea
+.sublime-project
+.sublime-workspace
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.circleci
+
+# Documentation
+README.md
+CHANGELOG.md
+docs
+*.md
+
+# Sensitive/Private directories
+.auth
+.cache
+.claude
+.codex
+.crush
+
+# Logs
+logs
+*.log
+
+# OS files
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+
+# Docker files
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Source maps
+*.js.map
+*.ts.map
+
+# Miscellaneous
+.oxlintrc.json
+.oxfmtrc.json

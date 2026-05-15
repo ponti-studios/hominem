@@ -14,6 +14,8 @@
   },
   "deploy": {
     "startCommand": "pnpm --filter @hominem/api run start:worker",
+    "healthcheckPath": "/health",
+    "healthcheckTimeout": 60,
     "restartPolicyType": "ALWAYS",
     "restartPolicyMaxRetries": 10,
     "sleepApplication": false,

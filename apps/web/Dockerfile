@@ -19,7 +19,7 @@ COPY packages ./packages
 COPY apps/web ./apps/web
 COPY tsconfig.profiles ./tsconfig.profiles
 
-RUN npm install -g pnpm@10.33.0 && \
+RUN npm install -g pnpm@11.1.1 && \
     pnpm install --frozen-lockfile --filter @hominem/web...
 
 RUN pnpm --filter @hominem/env build
@@ -33,7 +33,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 RUN apk add --no-cache ca-certificates curl && \
-    npm install -g pnpm@10.33.0
+    npm install -g pnpm@11.1.1
 
 RUN addgroup -g 1001 webuser && \
     adduser -D -u 1001 -G webuser -s /sbin/nologin -h /app webuser

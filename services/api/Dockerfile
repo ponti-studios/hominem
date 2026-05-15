@@ -16,7 +16,7 @@ COPY packages ./packages
 COPY services/api ./services/api
 COPY tsconfig.profiles ./tsconfig.profiles
 
-RUN npm install -g pnpm@10.33.0 && \
+RUN npm install -g pnpm@11.1.1 && \
     pnpm install --frozen-lockfile --filter @hominem/api... && \
     pnpm --filter @hominem/env build
 
@@ -31,7 +31,7 @@ ENV NODE_ENV=production \
 
 RUN apk add --no-cache ca-certificates curl
 
-RUN npm install -g pnpm@10.33.0
+RUN npm install -g pnpm@11.1.1
 
 RUN addgroup -g 1001 apiuser && \
     adduser -D -u 1001 -G apiuser -s /sbin/nologin -h /app apiuser
