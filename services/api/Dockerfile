@@ -1,4 +1,4 @@
-FROM node:24.14.1-alpine AS builder
+FROM node:26.1.0-alpine AS builder
 
 WORKDIR /app
 
@@ -20,7 +20,7 @@ RUN pnpm --filter @hominem/api run build
 # Create a clean production node_modules (npm deps only, no dev deps, no workspace symlinks)
 RUN pnpm --filter @hominem/api deploy /app/api-deploy
 
-FROM node:24.14.1-alpine AS release
+FROM node:26.1.0-alpine AS release
 
 WORKDIR /app
 
