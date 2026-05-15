@@ -4,15 +4,29 @@ import { useComposerContext } from '~/components/composer/ComposerContext';
 import { useTextEnhance } from '~/services/ai/use-text-enhance';
 
 interface UseComposerOptions {
+  initialDraft?: string;
+  onDraftChange?: (message: string) => void;
   onExtraClearDraft?: () => void;
 }
 
-export function useComposer({ onExtraClearDraft }: UseComposerOptions = {}) {
+export function useComposer({
+  initialDraft,
+  onDraftChange,
+  onExtraClearDraft,
+}: UseComposerOptions = {}) {
   const { attachments, errors, isUploading, progressByAssetId, clearAttachments, seedMessage } =
     useComposerContext();
 
-  const [message, setMessage] = useState(seedMessage ?? '');
+  const [message, setMessageState] = useState(initialDraft ?? seedMessage ?? '');
   const { enhance, isEnhancing } = useTextEnhance();
+
+  const setMessage = useCallback(
+    (nextMessage: string) => {
+      setMessageState(nextMessage);
+      onDraftChange?.(nextMessage);
+    },
+    [onDraftChange],
+  );
 
   const uploadState = useMemo(
     () => ({ errors, isUploading, progressByAssetId }),
@@ -31,7 +45,7 @@ export function useComposer({ onExtraClearDraft }: UseComposerOptions = {}) {
     setMessage('');
     clearAttachments();
     onExtraClearDraft?.();
-  }, [clearAttachments, onExtraClearDraft]);
+  }, [clearAttachments, onExtraClearDraft, setMessage]);
 
   return {
     message,

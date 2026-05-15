@@ -22,9 +22,14 @@ import { Alert, Platform, Share, TextInput } from 'react-native';
 
 import { loadMarkdown } from '../components/chat/chat-message';
 import type { SendInput } from '../services/chat/use-send-message';
+import {
+  hasNonEmptyListData,
+  resolveRestoredQueryState,
+} from '../services/query/restored-query-state';
 
 export interface ChatServices {
   useChatMessages: (args: { chatId: string }) => {
+    isFetching: boolean;
     isPending: boolean;
     data: ChatMessageItem[] | undefined;
   };
@@ -134,7 +139,11 @@ export function useChatController({
   const { speakingId, speak } = services.speech;
   const client = useApiClient();
   const queryClient = useQueryClient();
-  const { isPending: isMessagesLoading, data: messages } = services.useChatMessages({ chatId });
+  const {
+    isFetching: isMessagesFetching,
+    isPending: isMessagesPending,
+    data: messages,
+  } = services.useChatMessages({ chatId });
   const { mutate: archiveChat, isPending: isArchiving } = services.useArchiveChat({
     chatId,
     onSuccess: () => {
@@ -151,6 +160,12 @@ export function useChatController({
     () => (messages && messages.length > 0 ? messages : []),
     [messages],
   );
+  const messagesState = resolveRestoredQueryState({
+    data: messages,
+    isPending: isMessagesPending,
+    isFetching: isMessagesFetching,
+    hasUsableData: hasNonEmptyListData,
+  });
 
   const displayMessages = useMemo(() => {
     if (!uiState.searchQuery.trim()) return formattedMessages;
@@ -436,7 +451,7 @@ export function useChatController({
     handleTransformFromMenu,
     handleToggleDebug,
     canTransform,
-    isMessagesLoading,
+    isMessagesLoading: messagesState.isInitialLoading,
     isArchiving,
     lifecycleState,
     pendingReview,

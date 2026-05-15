@@ -2,15 +2,7 @@
   "$schema": "https://railway.com/railway.schema.json",
   "build": {
     "builder": "DOCKERFILE",
-    "dockerfilePath": "/apps/web/Dockerfile",
-    "watchPatterns": [
-      "/package.json",
-      "/pnpm-lock.yaml",
-      "/pnpm-workspace.yaml",
-      "/turbo.json",
-      "/apps/web/**",
-      "/packages/**"
-    ]
+    "dockerfilePath": "/apps/web/Dockerfile"
   },
   "deploy": {
     "startCommand": "node_modules/.bin/react-router-serve apps/web/build/server/index.js",
