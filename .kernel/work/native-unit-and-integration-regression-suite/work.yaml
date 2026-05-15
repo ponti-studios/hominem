@@ -1,0 +1,19 @@
+id: native-unit-and-integration-regression-suite
+goal: Native unit and integration regression suite
+status: active
+milestoneId: 6-1-test-and-regression-parity
+createdAt: 2026-04-18T06:24:23Z
+updatedAt: 2026-04-18T06:24:23Z
+tasks:
+  - id: clarify-scope
+    title: Clarify scope and success criteria
+    done: false
+  - id: implement-core-path
+    title: Implement the core path
+    done: false
+  - id: verify-behavior
+    title: Verify behavior with tests
+    done: false
+  - id: capture-followups
+    title: Capture follow-up work
+    done: false
