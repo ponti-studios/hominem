@@ -13,7 +13,7 @@
     ]
   },
   "deploy": {
-    "startCommand": "pnpm --filter @hominem/web run start",
+    "startCommand": "node_modules/.bin/react-router-serve apps/web/build/server/index.js",
     "healthcheckPath": "/",
     "healthcheckTimeout": 120,
     "restartPolicyType": "ON_FAILURE",
