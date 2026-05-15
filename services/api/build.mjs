@@ -14,11 +14,11 @@ await Promise.all([
   build({
     ...sharedConfig,
     input: 'src/index.ts',
-    output: { file: 'dist/index.mjs', format: 'esm' },
+    output: { file: 'dist/index.mjs', format: 'esm', codeSplitting: false },
   }),
   build({
     ...sharedConfig,
     input: 'src/worker.ts',
-    output: { file: 'dist/worker.mjs', format: 'esm' },
+    output: { file: 'dist/worker.mjs', format: 'esm', codeSplitting: false },
   }),
 ]);
