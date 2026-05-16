@@ -8,10 +8,10 @@ on:
         required: false
         type: string
         default: ''
-      working_directory:
+      config_path:
         required: false
         type: string
-        default: '.'
+        default: ''
     secrets:
       service_target:
         required: true
@@ -45,5 +45,8 @@ jobs:
       - name: validate-env
         run: test -n "$SERVICE" && test -n "$RAILWAY_TOKEN"
 
+      - name: stage-railway-config
+        if: inputs.config_path != ''
+        run: cp "${{ inputs.config_path }}" railway.json
+
       - run: railway up --ci --service "$SERVICE"
-        working-directory: ${{ inputs.working_directory }}

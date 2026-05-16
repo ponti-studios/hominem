@@ -21,4 +21,4 @@ jobs:
     with:
       service_name: workers
       checkout_ref: ${{ github.event.workflow_run.head_sha || github.sha }}
-      working_directory: services/api/worker
+      config_path: services/api/worker/railway.json

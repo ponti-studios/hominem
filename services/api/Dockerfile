@@ -18,7 +18,7 @@ RUN npm install -g pnpm@11.1.1 && \
 RUN pnpm --filter @hominem/api run build
 
 # Create a clean production node_modules (npm deps only, no dev deps, no workspace symlinks)
-RUN pnpm --filter @hominem/api deploy /app/api-deploy
+RUN pnpm --filter @hominem/api deploy --legacy /app/api-deploy
 
 FROM node:26.1.0-alpine AS release
 
