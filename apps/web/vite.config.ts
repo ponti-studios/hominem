@@ -111,7 +111,7 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
     },
 
     ssr: {
-      noExternal: [/^@hominem\//],
+      noExternal: true,
       resolve: {
         conditions: ['browser'],
       },
