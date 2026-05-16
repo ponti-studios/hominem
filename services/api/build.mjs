@@ -2,12 +2,10 @@ import { build } from 'rolldown';
 
 const sharedConfig = {
   platform: 'node',
-  // Bundle @hominem/* workspace packages into the artifact.
-  // Keep all other npm packages external so they resolve from node_modules at runtime.
-  external(id) {
-    if (id.startsWith('@hominem/')) return false;
-    return /^[^./]/.test(id);
-  },
+  // Bundle all npm packages into a self-contained artifact.
+  // Node.js builtins are automatically external via platform: 'node'.
+  // Exclude optional native add-ons that are try/catch required by pg and ws.
+  external: ['pg-native', 'bufferutil', 'utf-8-validate'],
 };
 
 await Promise.all([

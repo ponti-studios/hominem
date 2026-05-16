@@ -14,11 +14,8 @@ COPY tsconfig.json ./
 RUN npm install -g pnpm@11.1.1 && \
     pnpm install --frozen-lockfile --filter @hominem/api...
 
-# Bundle API + all @hominem/* workspace packages into dist/
+# Bundle API + all npm dependencies into dist/ (fully self-contained)
 RUN pnpm --filter @hominem/api run build
-
-# Create a clean production node_modules (npm deps only, no dev deps, no workspace symlinks)
-RUN pnpm --filter @hominem/api deploy --legacy /app/api-deploy
 
 FROM node:26.1.0-alpine AS release
 
@@ -36,10 +33,7 @@ RUN apk add --no-cache ca-certificates curl && \
     chmod 700 /app/logs && \
     chmod 1777 /tmp
 
-# Production npm deps (resolves external imports in the bundle at runtime)
-COPY --from=builder --chown=apiuser:apiuser /app/api-deploy/node_modules ./node_modules
-
-# Bundled application — no source files, no pnpm, no workspace packages needed
+# Fully bundled application — no node_modules needed at runtime
 COPY --from=builder --chown=apiuser:apiuser /app/services/api/dist ./dist
 
 USER apiuser
