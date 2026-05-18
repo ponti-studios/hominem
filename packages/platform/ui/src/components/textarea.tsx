@@ -28,7 +28,12 @@ function Textarea({
 }: TextareaProps) {
   if (!label && !helpText && !error) {
     return (
-      <textarea id={id} data-slot="textarea" className={cn(textareaClassName, className)} {...textareaProps} />
+      <textarea
+        id={id}
+        data-slot="textarea"
+        className={cn(textareaClassName, className)}
+        {...textareaProps}
+      />
     );
   }
 

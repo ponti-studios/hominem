@@ -358,39 +358,6 @@ export async function stopRecording() {
   return recording.stopRecording();
 }
 
-function getVoiceResponseSnapshot() {
-  return voiceResponsePlayback.getSnapshot();
-}
-
-function subscribeVoiceResponse(listener: Listener<PlaybackSnapshot>) {
-  return voiceResponsePlayback.subscribe(listener);
-}
-
-async function prepareVoiceResponse(audioUri: string) {
-  await voiceResponsePlayback.prepare(audioUri);
-}
-
-async function playVoiceResponse() {
-  await ttsPlayback.stop();
-  await voiceResponsePlayback.play();
-}
-
-function pauseVoiceResponse() {
-  voiceResponsePlayback.pause();
-}
-
-async function resumeVoiceResponse() {
-  await voiceResponsePlayback.play();
-}
-
-async function seekVoiceResponse(positionMs: number) {
-  await voiceResponsePlayback.seek(positionMs);
-}
-
-async function stopVoiceResponse() {
-  await voiceResponsePlayback.stop();
-}
-
 export async function playTTS(audioUri: string) {
   logger.info('[voice-playback] starting text-to-speech playback', {
     audioUri,

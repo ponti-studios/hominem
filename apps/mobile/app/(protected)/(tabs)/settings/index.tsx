@@ -20,9 +20,9 @@ import AppIcon from '~/components/ui/icon';
 import { MOBILE_PASSKEY_ENABLED } from '~/constants';
 import { getAppLockEnabled, setAppLockEnabled } from '~/hooks/use-app-lock';
 import { getPreventScreenshots, setPreventScreenshots } from '~/hooks/use-screen-capture';
-import { resolveProtectedRouteState } from '~/services/auth/protected-route-state';
 import { useAuth } from '~/services/auth/auth-provider';
 import { useMobilePasskeyAuth } from '~/services/auth/hooks/use-mobile-passkey-auth';
+import { resolveProtectedRouteState } from '~/services/auth/protected-route-state';
 import t from '~/translations';
 
 interface AccountState {

@@ -8,8 +8,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { makeStyles } from '~/components/theme';
-import { durations, radii, spacing } from '~/components/theme';
+import { durations, makeStyles, radii, spacing } from '~/components/theme';
 
 const SHIMMER_DURATION = durations.standard * 5;
 

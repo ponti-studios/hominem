@@ -1,10 +1,9 @@
 import { useIsFocused } from '@react-navigation/native';
 import type { FlashListRef } from '@shopify/flash-list';
 import { useLocalSearchParams, useRouter } from 'expo-router/build/hooks';
-import React, { useCallback, useState } from 'react';
-import { useEffect } from 'react';
-import { RefreshControl, View } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
 import type { LayoutChangeEvent } from 'react-native';
+import { RefreshControl, View } from 'react-native';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 

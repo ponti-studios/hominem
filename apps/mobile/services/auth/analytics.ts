@@ -1,5 +1,6 @@
-import { API_BASE_URL, APP_VARIANT } from '~/constants';
 import { normalizeEmail } from '@hominem/auth/shared/validation';
+
+import { API_BASE_URL, APP_VARIANT } from '~/constants';
 import { posthog } from '~/services/posthog';
 
 type AuthAnalyticsPhase =

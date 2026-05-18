@@ -37,10 +37,7 @@ function NoteDetailPlaceholder() {
         {Array.from({ length: 6 }, (_, index) => (
           <View
             key={`note-placeholder-line-${index.toString()}`}
-            style={[
-              styles.placeholderLine,
-              index === 5 ? styles.placeholderLineShort : null,
-            ]}
+            style={[styles.placeholderLine, index === 5 ? styles.placeholderLineShort : null]}
           />
         ))}
       </View>
@@ -150,7 +147,7 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
           <SwiftUITextField
             defaultValue={note.title ?? ''}
             placeholder={t.notes.editor.titlePlaceholder}
-            onValueChange={(value) => {
+            onValueChange={(value: string) => {
               updateCache({ title: value });
               void save(
                 value,

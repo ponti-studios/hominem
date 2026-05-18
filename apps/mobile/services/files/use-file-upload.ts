@@ -1,11 +1,11 @@
-import { UploadResponseSchema } from '@hominem/rpc/schemas/files.schema';
 import { getmimeTypeFromExtension } from '@hominem/rpc';
-import { getFileExtension } from '@hominem/utils/files';
+import { UploadResponseSchema } from '@hominem/rpc/schemas/files.schema';
 import {
   UPLOAD_MAX_FILE_COUNT,
   UPLOAD_MAX_FILE_SIZE_BYTES,
   isSupportedUploadMimeType,
 } from '@hominem/storage/constants';
+import { getFileExtension } from '@hominem/utils/files';
 import { useCallback, useState } from 'react';
 
 import { API_BASE_URL } from '~/constants';

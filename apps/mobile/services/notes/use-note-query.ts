@@ -2,12 +2,10 @@ import { useApiClient } from '@hominem/rpc/react';
 import type { Note } from '@hominem/rpc/types';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { noteKeys } from './query-keys';
-import {
-  hasDefinedData,
-  resolveRestoredQueryState,
-} from '~/services/query/restored-query-state';
+import { hasDefinedData, resolveRestoredQueryState } from '~/services/query/restored-query-state';
 import { readCachedNote, writeCachedNote } from '~/services/workspace/content-cache';
+
+import { noteKeys } from './query-keys';
 
 export const useNoteQuery = ({ noteId, enabled = true }: { noteId: string; enabled?: boolean }) => {
   const client = useApiClient();

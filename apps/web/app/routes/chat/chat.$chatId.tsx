@@ -2,6 +2,7 @@ import type { ChatMessageDto } from '@hominem/rpc/types/chat.types';
 import type { NoteSearchResult } from '@hominem/rpc/types/notes.types';
 import { Button } from '@hominem/ui/button';
 import { SpeechInput } from '@hominem/ui/composer';
+import { slugifyText } from '@hominem/utils/text';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Link, data } from 'react-router';
 
@@ -14,7 +15,6 @@ import { requireAuth } from '~/lib/guards';
 import { useChatMessages } from '~/lib/hooks/use-chat-messages';
 import { useFileUpload } from '~/lib/hooks/use-file-upload';
 import { useStreamMessage } from '~/lib/hooks/use-stream-message';
-import { slugifyText } from '@hominem/utils/text';
 
 import type { Route } from './+types/chat.$chatId';
 
@@ -32,7 +32,6 @@ type NoteLoaderData = {
   title?: string | null;
   excerpt?: string | null;
 };
-
 
 function getMentionQuery(value: string) {
   const match = value.match(/#([a-z0-9-]*)$/i);

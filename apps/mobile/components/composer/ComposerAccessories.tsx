@@ -5,11 +5,9 @@ import { Pressable, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import { ComposerAttachmentRow } from '~/components/composer/ComposerAttachmentRow';
-
 import { makeStyles, useThemeColors } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
 import t from '~/translations';
-
 
 interface ComposerAccessoriesProps {
   selectedNotes: NoteSearchResult[];

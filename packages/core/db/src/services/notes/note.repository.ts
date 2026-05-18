@@ -1,9 +1,9 @@
+import { buildContentPreview } from '@hominem/utils/text';
 import type { Selectable } from 'kysely';
 
 import { NotFoundError, ValidationError } from '../../errors';
 import type { DbHandle } from '../../transaction';
 import type { AppFiles, AppNotes } from '../../types/database';
-import { buildContentPreview } from '@hominem/utils/text';
 import { toRequiredIsoString } from '../_shared/mappers';
 
 type NoteRow = Selectable<AppNotes>;
@@ -197,9 +197,6 @@ function decodeNoteSearchCursor(cursor: string): { updatedAt: string; id: string
     return null;
   }
 }
-
-
-
 
 export const NoteRepository = {
   /**

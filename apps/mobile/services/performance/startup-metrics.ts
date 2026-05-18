@@ -54,9 +54,7 @@ export function markStartupPhase(phase: StartupPhase, nowMs: number = Date.now()
   return { phase, atMs: nowMs };
 }
 
-export function updateStartupContext(
-  nextContext: Partial<typeof startupContext>,
-) {
+export function updateStartupContext(nextContext: Partial<typeof startupContext>) {
   Object.assign(startupContext, nextContext);
 }
 

@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildStoredFileName, formatTimestampForFileName, getExtensionFromMimeType, getFileExtension, sanitizeFileName } from './files';
+import {
+  buildStoredFileName,
+  formatTimestampForFileName,
+  getExtensionFromMimeType,
+  getFileExtension,
+  sanitizeFileName,
+} from './files';
 
 describe('file helpers', () => {
   it('extracts file extensions safely', () => {

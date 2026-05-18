@@ -38,8 +38,7 @@ export function useComposer({
     [attachments],
   );
 
-  const canSubmit =
-    !isUploading && (message.trim().length > 0 || uploadedAttachmentIds.length > 0);
+  const canSubmit = !isUploading && (message.trim().length > 0 || uploadedAttachmentIds.length > 0);
 
   const clearDraft = useCallback(() => {
     setMessage('');

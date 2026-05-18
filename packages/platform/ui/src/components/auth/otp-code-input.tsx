@@ -1,6 +1,5 @@
-import * as React from 'react';
-
 import { normalizeOtp } from '@hominem/auth/shared/validation';
+import * as React from 'react';
 
 import { cn } from '../../lib/utils';
 

@@ -5,13 +5,13 @@ import React, { useCallback, useRef } from 'react';
 import { Keyboard, TextInput } from 'react-native';
 
 import { ComposerActionGroup } from '~/components/composer/ComposerActionGroup';
+import { ComposerAttachmentRow } from '~/components/composer/ComposerAttachmentRow';
 import { ActionButton } from '~/components/composer/ComposerButtons';
 import {
   ComposerProvider,
   useComposerAttachments,
   useComposerContext,
 } from '~/components/composer/ComposerContext';
-import { ComposerAttachmentRow } from '~/components/composer/ComposerAttachmentRow';
 import { ComposerMedia } from '~/components/composer/ComposerMedia';
 import { ComposerResting } from '~/components/composer/ComposerResting';
 import { ComposerSurface } from '~/components/composer/ComposerSurface';
@@ -22,8 +22,8 @@ import { useCreateChat } from '~/services/chat/use-create-chat';
 import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
 import { donateAddNoteIntent } from '~/services/intent-donation';
-import { clearFeedDraft, readFeedDraft, writeFeedDraft } from '~/services/workspace/launch-state';
 import { useCreateNote } from '~/services/notes/use-create-note';
+import { clearFeedDraft, readFeedDraft, writeFeedDraft } from '~/services/workspace/launch-state';
 import t from '~/translations';
 
 interface FeedComposerProps {
@@ -74,7 +74,16 @@ function FeedComposerInner() {
     requestTopReveal();
     clearDraft();
     Keyboard.dismiss();
-  }, [canSubmit, isSaving, createNote, message, uploadedAttachmentIds, queryClient, requestTopReveal, clearDraft]);
+  }, [
+    canSubmit,
+    isSaving,
+    createNote,
+    message,
+    uploadedAttachmentIds,
+    queryClient,
+    requestTopReveal,
+    clearDraft,
+  ]);
 
   const handleChat = useCallback(async () => {
     if (!canSubmit || isChatCreating) return;
@@ -88,7 +97,8 @@ function FeedComposerInner() {
   }, [canSubmit, isChatCreating, createChat, message, clearDraft, router, requestTopReveal]);
 
   const hasContent = message.trim().length > 0;
-  const hasAccessory = attachments.length > 0 || uploadState.errors.length > 0 || uploadState.isUploading;
+  const hasAccessory =
+    attachments.length > 0 || uploadState.errors.length > 0 || uploadState.isUploading;
 
   if (!isActive) {
     return (

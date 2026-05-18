@@ -1,4 +1,3 @@
-import { useQueryClient } from '@tanstack/react-query';
 import React, { useCallback, useRef } from 'react';
 import { TextInput } from 'react-native';
 
@@ -11,11 +10,7 @@ import { ComposerSurface } from '~/components/composer/ComposerSurface';
 import { ComposerTextInput } from '~/components/composer/ComposerTextInput';
 import { useChatMentions } from '~/components/composer/useChatMentions';
 import { useComposer } from '~/components/composer/useComposer';
-import {
-  useActiveChat,
-  useAutoUpdateChatTitle,
-  useSendMessage,
-} from '~/services/chat';
+import { useActiveChat, useAutoUpdateChatTitle, useSendMessage } from '~/services/chat';
 import { clearChatDraft, readChatDraft, writeChatDraft } from '~/services/workspace/launch-state';
 import t from '~/translations';
 

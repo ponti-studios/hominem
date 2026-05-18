@@ -4,11 +4,7 @@ import { useCallback } from 'react';
 
 import { chatKeys } from '~/services/notes/query-keys';
 
-import {
-  isDefaultChatTitle,
-  normalizeChatTitle,
-  updateChatTitleCaches,
-} from './chat-title';
+import { isDefaultChatTitle, normalizeChatTitle, updateChatTitleCaches } from './chat-title';
 
 export function useAutoUpdateChatTitle(chatId: string) {
   const client = useApiClient();

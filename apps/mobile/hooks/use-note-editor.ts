@@ -51,11 +51,13 @@ export function useNoteEditor(noteId: string) {
   const updateCache = useCallback(
     (patch: Partial<Note>) => {
       queryClient.setQueryData<Note>(noteKeys.detail(noteId), (prev) =>
-        prev ? (() => {
-          const nextNote = { ...prev, ...patch };
-          writeCachedNote(nextNote);
-          return nextNote;
-        })() : prev,
+        prev
+          ? (() => {
+              const nextNote = { ...prev, ...patch };
+              writeCachedNote(nextNote);
+              return nextNote;
+            })()
+          : prev,
       );
     },
     [queryClient, noteId],

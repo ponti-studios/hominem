@@ -1,7 +1,7 @@
 import { classifyFileByMimeType, getmimeTypeFromExtension } from '@hominem/rpc';
 import { useApiClient } from '@hominem/rpc/react';
-import { getFileExtension } from '@hominem/utils/files';
 import { UPLOAD_MAX_FILE_COUNT } from '@hominem/storage/constants';
+import { getFileExtension } from '@hominem/utils/files';
 import * as ImagePicker from 'expo-image-picker';
 import React, {
   createContext,
@@ -165,7 +165,8 @@ export function ComposerProvider({ children, seedMessage }: ComposerProviderProp
       const fileName = photo.fileName ?? photo.uri.split('/').pop() ?? 'photo';
       const extension = getFileExtension(fileName) ?? 'jpg';
       const resolvedMimeType = getmimeTypeFromExtension(extension);
-      const mimeType = resolvedMimeType === 'application/octet-stream' ? 'image/jpeg' : resolvedMimeType;
+      const mimeType =
+        resolvedMimeType === 'application/octet-stream' ? 'image/jpeg' : resolvedMimeType;
       return appendUploadedAssets([
         {
           assetId: photo.uri,
@@ -220,12 +221,6 @@ export function useComposerContext() {
 }
 
 export function useComposerAttachments() {
-  const {
-    attachments,
-    errors,
-    isUploading,
-    progressByAssetId,
-    onRemove,
-  } = useComposerContext();
+  const { attachments, errors, isUploading, progressByAssetId, onRemove } = useComposerContext();
   return { attachments, errors, isUploading, progressByAssetId, onRemove };
 }

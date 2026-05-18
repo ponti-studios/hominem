@@ -1,6 +1,6 @@
 import { createNotesMutationSuccessHandler, useApiClient } from '@hominem/rpc/react';
-import { buildContentPreview } from '@hominem/utils/text';
 import type { Note } from '@hominem/rpc/types';
+import { buildContentPreview } from '@hominem/utils/text';
 import { useMutation, useQueryClient, type UseMutationResult } from '@tanstack/react-query';
 
 import { noteKeys } from './query-keys';

@@ -2,15 +2,16 @@ import { useApiClient } from '@hominem/rpc/react';
 import type { Chat, ChatMessageDto as RpcChatMessage } from '@hominem/rpc/types';
 import { useQuery } from '@tanstack/react-query';
 
-import { chatKeys } from '../notes/query-keys';
-import { type MessageOutput } from './chatMessages';
-import { selectChatSession } from './session-activity';
 import {
   readCachedChat,
   readCachedChatMessages,
   writeCachedChat,
   writeCachedChatMessages,
 } from '~/services/workspace/content-cache';
+
+import { chatKeys } from '../notes/query-keys';
+import { type MessageOutput } from './chatMessages';
+import { selectChatSession } from './session-activity';
 
 function toMessageOutput(message: RpcChatMessage): MessageOutput | null {
   if (message.role === 'tool') {

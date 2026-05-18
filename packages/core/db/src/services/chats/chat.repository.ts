@@ -1,3 +1,4 @@
+import { slugifyText } from '@hominem/utils/text';
 import type { Selectable } from 'kysely';
 
 import { NotFoundError, ValidationError } from '../../errors';
@@ -9,7 +10,6 @@ import {
 } from '../../guards';
 import type { DbHandle } from '../../transaction';
 import type { AppChatMessages, AppChats } from '../../types/database';
-import { slugifyText } from '@hominem/utils/text';
 import { toIsoString, toRequiredIsoString } from '../_shared/mappers';
 
 export type { ChatMessageFileRecord, ChatMessageToolCallRecord } from '../../guards';
@@ -473,9 +473,6 @@ export interface NoteContext {
     textContent: string | null;
   }>;
 }
-
-
-
 
 function extractMentionSlugs(message: string): string[] {
   return [...message.matchAll(/#([a-zA-Z0-9][\w-]*)/g)].map((match) => match[1]!.toLowerCase());
