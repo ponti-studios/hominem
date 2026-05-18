@@ -12,7 +12,6 @@ ENV TURBO_TELEMETRY_DISABLED=1 \
     VITE_POSTHOG_HOST=${VITE_POSTHOG_HOST}
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
-COPY patches ./patches
 COPY packages ./packages
 COPY apps/web ./apps/web
 COPY tsconfig.profiles ./tsconfig.profiles
