@@ -48,6 +48,7 @@
     "expo-local-authentication": "^55.0.14",
     "expo-localization": "~55.0.14",
     "expo-media-library": "^55.0.17",
+    "expo-network": "~55.0.14",
     "expo-notifications": "~55.0.23",
     "expo-router": "~55.0.14",
     "expo-screen-capture": "^55.0.14",
