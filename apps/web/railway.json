@@ -5,7 +5,6 @@
     "dockerfilePath": "/apps/web/Dockerfile"
   },
   "deploy": {
-    "startCommand": "node_modules/.bin/react-router-serve apps/web/build/server/index.js",
     "healthcheckPath": "/",
     "healthcheckTimeout": 120,
     "restartPolicyType": "ON_FAILURE",
