@@ -1,4 +1,4 @@
-FROM node:26.1.0-alpine AS builder
+FROM node:26.2.0-alpine AS builder
 
 WORKDIR /app
 
@@ -21,7 +21,7 @@ RUN npm install -g pnpm@11.1.1 && \
 # react-router build bundles all @hominem/* packages into build/server and build/client
 RUN pnpm --filter @hominem/web run build
 
-FROM node:26.1.0-alpine AS server
+FROM node:26.2.0-alpine AS server
 
 WORKDIR /app
 
