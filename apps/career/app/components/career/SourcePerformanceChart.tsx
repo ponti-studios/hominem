@@ -1,4 +1,4 @@
-import { PercentageProgressBar, VolumeProgressBar } from '~/components/ui/ProgressBar';
+import { PercentageProgressBar, VolumeProgressBar } from '@hominem/ui/progress';
 
 interface SourceMetric {
   source: string;

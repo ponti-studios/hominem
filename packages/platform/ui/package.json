@@ -51,6 +51,10 @@
       "types": "./src/components/field.tsx",
       "default": "./src/components/field.tsx"
     },
+    "./progress": {
+      "types": "./src/components/progress.tsx",
+      "default": "./src/components/progress.tsx"
+    },
     "./translations": {
       "types": "./src/translations/index.ts",
       "default": "./src/translations/index.ts"

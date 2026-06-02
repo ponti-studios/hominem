@@ -1,7 +1,9 @@
+import { Badge } from '@hominem/ui/badge';
 import { Button } from '@hominem/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
 import { Input } from '@hominem/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
+import { Textarea } from '@hominem/ui/textarea';
 import { useState } from 'react';
 import { Form } from 'react-router';
 
@@ -17,14 +19,14 @@ export function ApplicationTimelineTab({ application, applicationId }: TimelineT
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Application Timeline</h3>
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-lg font-semibold text-foreground">Application Timeline</h3>
         <Button onClick={() => setShowAddInterview(true)}>Add Interview</Button>
       </div>
 
       {/* Add Interview Form */}
       {showAddInterview && (
-        <Card>
+        <Card className="border-border bg-card shadow-sm">
           <CardHeader>
             <CardTitle>Add Interview</CardTitle>
           </CardHeader>
@@ -34,7 +36,7 @@ export function ApplicationTimelineTab({ application, applicationId }: TimelineT
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="interviewType" className="text-sm font-medium text-gray-700">
+                  <label htmlFor="interviewType" className="text-sm font-medium text-foreground">
                     Interview Type
                   </label>
                   <Select name="interviewType" defaultValue="phone">
@@ -52,7 +54,7 @@ export function ApplicationTimelineTab({ application, applicationId }: TimelineT
                 </div>
 
                 <div>
-                  <label htmlFor="interviewDate" className="text-sm font-medium text-gray-700">
+                  <label htmlFor="interviewDate" className="text-sm font-medium text-foreground">
                     Date & Time
                   </label>
                   <Input name="interviewDate" type="datetime-local" required />
@@ -60,20 +62,19 @@ export function ApplicationTimelineTab({ application, applicationId }: TimelineT
               </div>
 
               <div>
-                <label htmlFor="interviewer" className="text-sm font-medium text-gray-700">
+                <label htmlFor="interviewer" className="text-sm font-medium text-foreground">
                   Interviewer
                 </label>
                 <Input name="interviewer" placeholder="Name or role of interviewer" />
               </div>
 
               <div>
-                <label htmlFor="interviewNotes" className="text-sm font-medium text-gray-700">
+                <label htmlFor="interviewNotes" className="text-sm font-medium text-foreground">
                   Notes
                 </label>
-                <textarea
+                <Textarea
                   name="interviewNotes"
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Any additional notes about the interview"
                 />
               </div>
@@ -92,41 +93,49 @@ export function ApplicationTimelineTab({ application, applicationId }: TimelineT
       {/* Timeline Display */}
       <div className="space-y-4">
         {/* Application Date */}
-        <div className="flex items-start space-x-4 p-4 bg-white rounded-lg border">
-          <div className="w-3 h-3 bg-blue-500 rounded-full mt-2 flex-shrink-0" />
-          <div className="flex-1">
-            <div className="flex items-center justify-between">
-              <h4 className="font-medium text-gray-900">Application Submitted</h4>
-              <span className="text-sm text-gray-500">
-                {new Date(application.startDate).toLocaleDateString()}
-              </span>
+        <Card className="border-border bg-card shadow-sm">
+          <CardContent className="flex items-start gap-4 p-4">
+            <div className="mt-1 size-3 shrink-0 rounded-full bg-primary" />
+            <div className="flex-1 space-y-1">
+              <div className="flex items-center justify-between gap-3">
+                <h4 className="font-medium text-foreground">Application Submitted</h4>
+                <span className="text-sm text-muted-foreground">
+                  {new Date(application.startDate).toLocaleDateString()}
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground">Initial application submitted</p>
             </div>
-            <p className="text-sm text-gray-600">Initial application submitted</p>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Interviews */}
         {application.interviewDates?.map((interview, index) => (
-          <div
-            key={interview.date}
-            className="flex items-start space-x-4 p-4 bg-white rounded-lg border"
-          >
-            <div className="w-3 h-3 bg-purple-500 rounded-full mt-2 flex-shrink-0" />
-            <div className="flex-1">
-              <div className="flex items-center justify-between">
-                <h4 className="font-medium text-gray-900">
-                  {interview.type.replace(/(\b\w)/g, (l) => l.toUpperCase())} Interview
-                </h4>
-                <span className="text-sm text-gray-500">
-                  {new Date(interview.date).toLocaleDateString()}
-                </span>
+          <Card key={interview.date} className="border-border bg-card shadow-sm">
+            <CardContent className="flex items-start gap-4 p-4">
+              <div className="mt-1 size-3 shrink-0 rounded-full bg-purple-500" />
+              <div className="flex-1 space-y-2">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-foreground">
+                      {interview.type.replace(/(\b\w)/g, (l) => l.toUpperCase())} Interview
+                    </h4>
+                    <Badge variant="outline" className="border-purple-200 bg-purple-50 text-purple-700">
+                      {interview.type.replace(/_/g, ' ')}
+                    </Badge>
+                  </div>
+                  <span className="text-sm text-muted-foreground">
+                    {new Date(interview.date).toLocaleDateString()}
+                  </span>
+                </div>
+                {interview.interviewer ? (
+                  <p className="text-sm text-muted-foreground">with {interview.interviewer}</p>
+                ) : null}
+                {interview.notes ? (
+                  <p className="mt-1 text-sm text-foreground/90">{interview.notes}</p>
+                ) : null}
               </div>
-              {interview.interviewer && (
-                <p className="text-sm text-gray-600">with {interview.interviewer}</p>
-              )}
-              {interview.notes && <p className="text-sm text-gray-700 mt-1">{interview.notes}</p>}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
     </div>

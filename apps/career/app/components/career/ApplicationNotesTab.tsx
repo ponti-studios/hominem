@@ -1,7 +1,9 @@
+import { Badge } from '@hominem/ui/badge';
 import { Button } from '@hominem/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
 import { Input } from '@hominem/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
+import { Textarea } from '@hominem/ui/textarea';
 import { useState } from 'react';
 import { Form } from 'react-router';
 
@@ -15,16 +17,29 @@ interface NotesTabProps {
 export function ApplicationNotesTab({ notes, applicationId }: NotesTabProps) {
   const [showAddNote, setShowAddNote] = useState(false);
 
+  const getNoteTone = (type: string) => {
+    switch (type) {
+      case 'interview':
+        return 'border-purple-200 bg-purple-50 text-purple-700';
+      case 'research':
+        return 'border-blue-200 bg-blue-50 text-blue-700';
+      case 'follow_up':
+        return 'border-yellow-200 bg-yellow-50 text-yellow-700';
+      default:
+        return 'border-border bg-muted text-muted-foreground';
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Notes & Feedback</h3>
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-lg font-semibold text-foreground">Notes & Feedback</h3>
         <Button onClick={() => setShowAddNote(true)}>Add Note</Button>
       </div>
 
       {/* Add Note Form */}
       {showAddNote && (
-        <Card>
+        <Card className="border-border bg-card shadow-sm">
           <CardHeader>
             <CardTitle>Add Note</CardTitle>
           </CardHeader>
@@ -34,7 +49,7 @@ export function ApplicationNotesTab({ notes, applicationId }: NotesTabProps) {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="noteType" className="text-sm font-medium text-gray-700">
+                  <label htmlFor="noteType" className="text-sm font-medium text-foreground">
                     Note Type
                   </label>
                   <Select name="noteType" defaultValue="general">
@@ -52,7 +67,7 @@ export function ApplicationNotesTab({ notes, applicationId }: NotesTabProps) {
                 </div>
 
                 <div>
-                  <label htmlFor="noteTitle" className="text-sm font-medium text-gray-700">
+                  <label htmlFor="noteTitle" className="text-sm font-medium text-foreground">
                     Title (Optional)
                   </label>
                   <Input name="noteTitle" placeholder="Note title" />
@@ -60,14 +75,13 @@ export function ApplicationNotesTab({ notes, applicationId }: NotesTabProps) {
               </div>
 
               <div>
-                <label htmlFor="noteContent" className="text-sm font-medium text-gray-700">
+                <label htmlFor="noteContent" className="text-sm font-medium text-foreground">
                   Content
                 </label>
-                <textarea
+                <Textarea
                   name="noteContent"
                   rows={4}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Write your note here..."
                 />
               </div>
@@ -86,32 +100,22 @@ export function ApplicationNotesTab({ notes, applicationId }: NotesTabProps) {
       {/* Notes List */}
       <div className="space-y-4">
         {notes.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
+          <div className="py-8 text-center text-muted-foreground">
             No notes yet. Add your first note above.
           </div>
         ) : (
           notes.map((note) => (
-            <Card key={note.id}>
+            <Card key={note.id} className="border-border bg-card shadow-sm">
               <CardContent className="p-4">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    {note.title && <h4 className="font-medium">{note.title}</h4>}
-                    <span
-                      className={`text-xs px-2 py-1 rounded-full ${
-                        note.type === 'interview'
-                          ? 'bg-purple-100 text-purple-800'
-                          : note.type === 'research'
-                            ? 'bg-blue-100 text-blue-800'
-                            : note.type === 'follow_up'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-gray-100 text-gray-800'
-                      }`}
-                    >
-                      {note.type}
-                    </span>
+                <div className="mb-2 flex items-start justify-between gap-3">
+                  <div className="space-y-2">
+                    {note.title ? <h4 className="font-medium text-foreground">{note.title}</h4> : null}
+                    <Badge variant="outline" className={getNoteTone(note.type)}>
+                      {note.type.replace('_', ' ')}
+                    </Badge>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-muted-foreground">
                       {new Date(note.createdAt).toLocaleDateString()}
                     </span>
                     <Form method="post" className="inline">
@@ -130,7 +134,7 @@ export function ApplicationNotesTab({ notes, applicationId }: NotesTabProps) {
                     </Form>
                   </div>
                 </div>
-                <p className="text-sm text-gray-700 whitespace-pre-wrap">{note.content}</p>
+                <p className="whitespace-pre-wrap text-sm text-foreground/90">{note.content}</p>
               </CardContent>
             </Card>
           ))

@@ -1,3 +1,4 @@
+import { Badge } from '@hominem/ui/badge';
 import { Button, buttonVariants } from '@hominem/ui/button';
 import { Card, CardContent } from '@hominem/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
@@ -34,10 +35,10 @@ export function ApplicationCards({
 }: ApplicationCardsProps) {
   if (!applications || applications.length === 0) {
     return (
-      <div className={`text-center py-8 text-gray-500 ${className}`}>
-        <div className="text-4xl mb-4">📝</div>
-        <p className="font-medium">{emptyTitle}</p>
-        <p className="text-sm mt-1">{emptyDescription}</p>
+      <div className={`py-8 text-center text-muted-foreground ${className}`}>
+        <div className="mb-4 text-4xl">📝</div>
+        <p className="font-medium text-foreground">{emptyTitle}</p>
+        <p className="mt-1 text-sm">{emptyDescription}</p>
       </div>
     );
   }
@@ -97,20 +98,20 @@ function ApplicationCard({
   const getStatusColor = (status: string) => {
     switch (status) {
       case JobApplicationStatus.APPLIED:
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return 'border-blue-200 bg-blue-50 text-blue-700';
       case JobApplicationStatus.PHONE_SCREEN:
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'border-yellow-200 bg-yellow-50 text-yellow-700';
       case JobApplicationStatus.INTERVIEW:
-        return 'bg-purple-100 text-purple-800 border-purple-200';
+        return 'border-purple-200 bg-purple-50 text-purple-700';
       case JobApplicationStatus.OFFER:
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'border-green-200 bg-green-50 text-green-700';
       case JobApplicationStatus.ACCEPTED:
-        return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+        return 'border-emerald-200 bg-emerald-50 text-emerald-700';
       case JobApplicationStatus.REJECTED:
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'border-red-200 bg-red-50 text-red-700';
       case JobApplicationStatus.WITHDRAWN:
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'border-border bg-muted text-muted-foreground';
     }
   };
 
@@ -133,127 +134,120 @@ function ApplicationCard({
   const companyName = getCompanyName(application.company);
 
   return (
-    <Card className="hover:shadow-xl transition-all duration-200 border-0 bg-white/80 backdrop-blur-sm group hover:scale-[1.02]">
-      <CardContent>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-              {application.position}
-            </h3>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white text-sm font-semibold">
+    <Card className="group border-border bg-card shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+      <CardContent className="space-y-4 p-5">
+        <div className="space-y-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <h3 className="text-lg font-semibold text-foreground transition-colors group-hover:text-primary">
+                {application.position}
+              </h3>
+              <div className="mt-2 flex items-center gap-2">
+                <div className="flex size-8 items-center justify-center rounded-md bg-primary/10 text-sm font-semibold text-primary">
                   {companyName.charAt(0)?.toUpperCase() || 'C'}
-                </span>
+                </div>
+                <span className="truncate font-medium text-foreground/90">{companyName}</span>
               </div>
-              <span className="text-gray-700 font-medium">{companyName}</span>
             </div>
-          </div>
-
-          {/* Status Badge */}
-          <div className="flex items-center justify-between">
-            <span
-              className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(application.status)}`}
-            >
+            <Badge variant="outline" className={getStatusColor(application.status)}>
               {application.status.replace(/_/g, ' ')}
-            </span>
-            {showActions && (
-              <Select value={application.status} onValueChange={handleStatusChange}>
-                <SelectTrigger className="h-8 w-28 text-xs">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.values(JobApplicationStatus).map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {status.replace(/_/g, ' ')}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+            </Badge>
           </div>
 
-          {/* Details */}
-          <div className="space-y-3 text-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-500 flex items-center gap-2">
-                <CalendarIcon className="size-4" />
-                Applied
+          {showActions ? (
+            <Select value={application.status} onValueChange={handleStatusChange}>
+              <SelectTrigger className="h-8 w-32 text-xs">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.values(JobApplicationStatus).map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {status.replace(/_/g, ' ')}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : null}
+        </div>
+
+        <div className="space-y-3 text-sm">
+          <div className="flex items-center justify-between gap-3">
+            <span className="flex items-center gap-2 text-muted-foreground">
+              <CalendarIcon className="size-4" />
+              Applied
+            </span>
+            <span className="font-medium text-foreground">
+              {formatDate(application.applicationDate || application.startDate)}
+            </span>
+          </div>
+
+          {application.location ? (
+            <div className="flex items-center justify-between gap-3">
+              <span className="flex items-center gap-2 text-muted-foreground">
+                <MapPinIcon className="size-4" />
+                Location
               </span>
-              <span className="text-gray-900 font-medium">
-                {formatDate(application.applicationDate || application.startDate)}
+              <span className="max-w-32 truncate text-right font-medium text-foreground">
+                {application.location}
               </span>
             </div>
+          ) : null}
 
-            {application.location && (
-              <div className="flex items-center justify-between">
-                <span className="text-gray-500 flex items-center gap-2">
-                  <MapPinIcon className="size-4" />
-                  Location
-                </span>
-                <span className="text-gray-900 font-medium text-right max-w-32 truncate">
-                  {application.location}
-                </span>
-              </div>
-            )}
+          {application.salaryQuoted || application.salaryOffered ? (
+            <div className="flex items-center justify-between gap-3">
+              <span className="flex items-center gap-2 text-muted-foreground">
+                <DollarSignIcon className="size-4" />
+                Salary
+              </span>
+              <span className="max-w-32 truncate text-right font-medium text-foreground">
+                {typeof application.salaryQuoted === 'string'
+                  ? application.salaryQuoted
+                  : application.salaryOffered
+                    ? formatCurrency(centsToDollars(application.salaryOffered))
+                    : application.salaryQuoted
+                      ? formatCurrency(centsToDollars(application.salaryQuoted))
+                      : '—'}
+              </span>
+            </div>
+          ) : null}
+        </div>
 
-            {(application.salaryQuoted || application.salaryOffered) && (
-              <div className="flex items-center justify-between">
-                <span className="text-gray-500 flex items-center gap-2">
-                  <DollarSignIcon className="size-4" />
-                  Salary
-                </span>
-                <span className="text-gray-900 font-medium text-right max-w-32 truncate">
-                  {typeof application.salaryQuoted === 'string'
-                    ? application.salaryQuoted
-                    : application.salaryOffered
-                      ? formatCurrency(centsToDollars(application.salaryOffered))
-                      : application.salaryQuoted
-                        ? formatCurrency(centsToDollars(application.salaryQuoted))
-                        : '—'}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Actions */}
-          {showActions && (
-            <div className="flex gap-2 pt-2 border-t border-gray-100">
-              <Link
-                to={`/job-applications/${application.id}`}
+        {showActions ? (
+          <div className="flex gap-2 border-t border-border pt-2">
+            <Link
+              to={`/job-applications/${application.id}`}
+              className={buttonVariants({
+                variant: 'outline',
+                size: 'sm',
+                className: 'h-8 flex-1 text-xs',
+              })}
+            >
+              View Details
+            </Link>
+            {application.jobPosting ? (
+              <a
+                href={application.jobPosting}
+                target="_blank"
+                rel="noopener noreferrer"
                 className={buttonVariants({
                   variant: 'outline',
                   size: 'sm',
-                  className: 'flex-1 h-8 text-xs',
+                  className: 'h-8 px-3 text-xs',
                 })}
               >
-                View Details
-              </Link>
-              {application.jobPosting && (
-                <a
-                  href={application.jobPosting}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={buttonVariants({
-                    variant: 'outline',
-                    size: 'sm',
-                    className: 'h-8 text-xs px-3',
-                  })}
-                >
-                  Job Post
-                </a>
-              )}
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={handleDelete}
-                className="h-8 text-xs"
-              >
-                Delete
-              </Button>
-            </div>
-          )}
-        </div>
+                Job Post
+              </a>
+            ) : null}
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleDelete}
+              className="h-8 text-xs"
+            >
+              Delete
+            </Button>
+          </div>
+        ) : null}
       </CardContent>
     </Card>
   );
