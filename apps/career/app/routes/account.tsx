@@ -1,13 +1,14 @@
-import { CareerRepository, getDb } from '@hominem/db'
-import { useAuthClient } from '@hominem/auth/client/provider'
-import { Download, Edit, ExternalLink, LogOut, Trash2, Upload } from 'lucide-react'
-import { useState } from 'react'
-import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router'
-import { useActionData, useLoaderData, useNavigate, useSubmit } from 'react-router'
-import { Button } from '~/components/ui/button'
-import { ProfileImageUpload } from '../components/ProfileImageUpload'
-import { SlugEditor } from '../components/SlugEditor'
-import { getFullUserPortfolio } from '../lib/portfolio.server'
+import { useAuthClient } from '@hominem/auth/client/provider';
+import { CareerRepository, getDb } from '@hominem/db';
+import { Button } from '@hominem/ui/button';
+import { Download, Edit, ExternalLink, LogOut, Trash2, Upload } from 'lucide-react';
+import { useState } from 'react';
+import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
+import { useActionData, useLoaderData, useNavigate, useSubmit } from 'react-router';
+
+import { ProfileImageUpload } from '../components/ProfileImageUpload';
+import { SlugEditor } from '../components/SlugEditor';
+import { getFullUserPortfolio } from '../lib/portfolio.server';
 import {
   createErrorResponse,
   createSuccessResponse,
@@ -15,14 +16,14 @@ import {
   withAuthAction,
   withAuthLoader,
   withMockDataFallback,
-} from '../lib/route-utils'
+} from '../lib/route-utils';
 import {
   FILE_VALIDATION_PRESETS,
   deleteFile,
   uploadFile,
   validateFile,
-} from '../lib/services/storage.service'
-import { getMockPortfolioForForms } from '../lib/utils/mock-data'
+} from '../lib/services/storage.service';
+import { getMockPortfolioForForms } from '../lib/utils/mock-data';
 
 // Account loader - migrated from Svelte layout server
 export async function loader(args: LoaderFunctionArgs) {
@@ -30,7 +31,7 @@ export async function loader(args: LoaderFunctionArgs) {
     return withMockDataFallback(
       request,
       async (request) => {
-        const mockData = await getMockPortfolioForForms(request)
+        const mockData = await getMockPortfolioForForms(request);
         // Convert mock data to PortfolioSummary format
         const mockSummary = {
           id: mockData.portfolioId,
@@ -43,15 +44,15 @@ export async function loader(args: LoaderFunctionArgs) {
           isActive: true,
           updatedAt: new Date(),
           profileImageUrl: undefined,
-        }
+        };
         return {
           user,
           portfolios: [mockSummary],
           hasPortfolio: true,
-        }
+        };
       },
       async () => {
-        const fullPortfolio = await getFullUserPortfolio(user.id)
+        const fullPortfolio = await getFullUserPortfolio(user.id);
         const portfolios: Portfolio[] = fullPortfolio
           ? [
               {
@@ -67,186 +68,190 @@ export async function loader(args: LoaderFunctionArgs) {
                 profileImageUrl: fullPortfolio.profileImageUrl || undefined,
               },
             ]
-          : []
+          : [];
         return {
           user,
           portfolios,
           hasPortfolio: portfolios.length > 0,
-        }
-      }
-    )
-  })
+        };
+      },
+    );
+  });
 }
 
 // Server action for portfolio operations
 export async function action(args: ActionFunctionArgs) {
   return withAuthAction(args, async ({ user }) => {
-    const formData = await args.request.formData()
-    const action = formData.get('action')
-    const portfolioId = formData.get('portfolioId')
+    const formData = await args.request.formData();
+    const action = formData.get('action');
+    const portfolioId = formData.get('portfolioId');
 
     if (action === 'delete' && portfolioId) {
       return tryAsync(async () => {
-        await CareerRepository.deletePortfolio(getDb(), user.id, portfolioId as string)
+        await CareerRepository.deletePortfolio(getDb(), user.id, portfolioId as string);
 
-        return createSuccessResponse(null, 'Portfolio deleted successfully')
-      }, 'Failed to delete portfolio')
+        return createSuccessResponse(null, 'Portfolio deleted successfully');
+      }, 'Failed to delete portfolio');
     }
 
     if (action === 'upload-profile-image') {
       return tryAsync(async () => {
-        const imageFile = formData.get('image') as File | null
+        const imageFile = formData.get('image') as File | null;
 
         if (!imageFile) {
-          return createErrorResponse('No image file provided')
+          return createErrorResponse('No image file provided');
         }
 
-        const validation = validateFile(imageFile, FILE_VALIDATION_PRESETS.PROFILE_IMAGE)
+        const validation = validateFile(imageFile, FILE_VALIDATION_PRESETS.PROFILE_IMAGE);
         if (!validation.valid) {
-          return createErrorResponse(validation.error || 'Invalid file')
+          return createErrorResponse(validation.error || 'Invalid file');
         }
 
-        const uploadResult = await uploadFile(imageFile, user.id, 'profile-images')
+        const uploadResult = await uploadFile(imageFile, user.id, 'profile-images');
 
         if (!uploadResult.success) {
-          return createErrorResponse(uploadResult.error || 'Failed to upload image')
+          return createErrorResponse(uploadResult.error || 'Failed to upload image');
         }
 
         try {
-          await CareerRepository.updatePortfolioProfileImage(getDb(), user.id, uploadResult.publicUrl ?? '')
+          await CareerRepository.updatePortfolioProfileImage(
+            getDb(),
+            user.id,
+            uploadResult.publicUrl ?? '',
+          );
         } catch (updateError) {
-          console.error('Database update error:', updateError)
+          console.error('Database update error:', updateError);
           if (uploadResult.fileId) {
-            await deleteFile(uploadResult.fileId, user.id, 'profile-images')
+            await deleteFile(uploadResult.fileId, user.id, 'profile-images');
           }
-          return createErrorResponse('Failed to update portfolio')
+          return createErrorResponse('Failed to update portfolio');
         }
 
         return createSuccessResponse(
           { imageUrl: uploadResult.publicUrl },
-          'Profile image updated successfully'
-        )
-      }, 'Failed to upload profile image')
+          'Profile image updated successfully',
+        );
+      }, 'Failed to upload profile image');
     }
 
     if (action === 'update-slug') {
       return tryAsync(async () => {
-        const newSlug = formData.get('slug') as string
-        const portfolioId = formData.get('portfolioId') as string
+        const newSlug = formData.get('slug') as string;
+        const portfolioId = formData.get('portfolioId') as string;
 
         if (!newSlug || !portfolioId) {
-          return createErrorResponse('Slug and portfolio ID are required')
+          return createErrorResponse('Slug and portfolio ID are required');
         }
 
         // Basic slug validation
         if (!/^[a-z0-9-]+$/.test(newSlug)) {
           return createErrorResponse(
-            'Slug can only contain lowercase letters, numbers, and hyphens'
-          )
+            'Slug can only contain lowercase letters, numbers, and hyphens',
+          );
         }
 
         if (newSlug.length < 3) {
-          return createErrorResponse('Slug must be at least 3 characters long')
+          return createErrorResponse('Slug must be at least 3 characters long');
         }
 
         if (newSlug.length > 50) {
-          return createErrorResponse('Slug must be less than 50 characters long')
+          return createErrorResponse('Slug must be less than 50 characters long');
         }
 
-        const isAvailable = await CareerRepository.isSlugAvailable(getDb(), newSlug, portfolioId)
+        const isAvailable = await CareerRepository.isSlugAvailable(getDb(), newSlug, portfolioId);
 
         if (!isAvailable) {
-          return createErrorResponse('Slug is already taken')
+          return createErrorResponse('Slug is already taken');
         }
 
-        await CareerRepository.updatePortfolioSlug(getDb(), user.id, portfolioId, newSlug)
+        await CareerRepository.updatePortfolioSlug(getDb(), user.id, portfolioId, newSlug);
 
-        return createSuccessResponse({ slug: newSlug }, 'Portfolio URL updated successfully')
-      }, 'Failed to update portfolio URL')
+        return createSuccessResponse({ slug: newSlug }, 'Portfolio URL updated successfully');
+      }, 'Failed to update portfolio URL');
     }
 
-    return createErrorResponse('Invalid action')
-  })
+    return createErrorResponse('Invalid action');
+  });
 }
 
 interface Portfolio {
-  id: string
-  title: string
-  slug: string
-  isPublic: boolean
-  isActive: boolean
-  updatedAt: string | Date
-  name?: string
-  jobTitle?: string
-  bio?: string
-  profileImageUrl?: string
+  id: string;
+  title: string;
+  slug: string;
+  isPublic: boolean;
+  isActive: boolean;
+  updatedAt: string | Date;
+  name?: string;
+  jobTitle?: string;
+  bio?: string;
+  profileImageUrl?: string;
 }
 
 export function meta() {
   return [
     { title: 'Account - Craftd' },
     { name: 'description', content: 'Manage your portfolio and account settings' },
-  ]
+  ];
 }
 
 export default function Account() {
-  const navigate = useNavigate()
-  const submit = useSubmit()
-  const authClient = useAuthClient()
-  const loaderData = useLoaderData<typeof loader>()
-  const actionData = useActionData<typeof action>()
-  const [isSigningOut, setIsSigningOut] = useState(false)
+  const navigate = useNavigate();
+  const submit = useSubmit();
+  const authClient = useAuthClient();
+  const loaderData = useLoaderData<typeof loader>();
+  const actionData = useActionData<typeof action>();
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
-  const { user, portfolios, hasPortfolio } = loaderData
+  const { user, portfolios, hasPortfolio } = loaderData;
 
-  const portfolio = portfolios[0]
-  const [profileImageUrl, setProfileImageUrl] = useState(portfolio?.profileImageUrl || undefined)
-  const [uploadError, setUploadError] = useState<string | null>(null)
-  const [pdfGenerating, setPdfGenerating] = useState(false)
-  const [pdfError, setPdfError] = useState<string | null>(null)
+  const portfolio = portfolios[0];
+  const [profileImageUrl, setProfileImageUrl] = useState(portfolio?.profileImageUrl || undefined);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [pdfGenerating, setPdfGenerating] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
 
   const handleSignOut = async () => {
     try {
-      setIsSigningOut(true)
-      await authClient.signOut()
-      navigate('/')
+      setIsSigningOut(true);
+      await authClient.signOut();
+      navigate('/');
     } catch (error) {
-      console.error('Error signing out:', error)
+      console.error('Error signing out:', error);
     } finally {
-      setIsSigningOut(false)
+      setIsSigningOut(false);
     }
-  }
+  };
 
   const handleDeletePortfolio = (portfolioId: string) => {
     if (confirm('Are you sure you want to delete this portfolio? This action cannot be undone.')) {
-      const formData = new FormData()
-      formData.append('action', 'delete')
-      formData.append('portfolioId', portfolioId)
+      const formData = new FormData();
+      formData.append('action', 'delete');
+      formData.append('portfolioId', portfolioId);
 
-      submit(formData, { method: 'post' })
+      submit(formData, { method: 'post' });
     }
-  }
+  };
 
   const handleImageUpload = (imageUrl: string) => {
-    setProfileImageUrl(imageUrl)
-    setUploadError(null)
-  }
+    setProfileImageUrl(imageUrl);
+    setUploadError(null);
+  };
 
   const handleImageError = (error: string) => {
-    setUploadError(error)
-  }
+    setUploadError(error);
+  };
 
   const handleDownloadPdf = async () => {
     if (!portfolio?.slug || !portfolio.isPublic) {
-      setPdfError('Portfolio must be public to generate PDF')
-      return
+      setPdfError('Portfolio must be public to generate PDF');
+      return;
     }
 
     try {
-      setPdfGenerating(true)
-      setPdfError(null)
+      setPdfGenerating(true);
+      setPdfError(null);
 
-      const portfolioUrl = `${window.location.origin}/p/${portfolio.slug}`
+      const portfolioUrl = `${window.location.origin}/p/${portfolio.slug}`;
 
       const response = await fetch('https://craftd-worker.fly.dev/trigger-task', {
         method: 'POST',
@@ -257,31 +262,31 @@ export default function Account() {
           url: portfolioUrl,
           userId: user.id,
         }),
-      })
+      });
 
-      const result = await response.json()
+      const result = await response.json();
 
       if (result.success && result.pdfUrl) {
         // Open the PDF in a new tab for download
-        window.open(result.pdfUrl, '_blank')
+        window.open(result.pdfUrl, '_blank');
       } else {
-        setPdfError(result.message || 'Failed to generate PDF')
+        setPdfError(result.message || 'Failed to generate PDF');
       }
     } catch (error) {
-      console.error('PDF generation error:', error)
-      setPdfError('Failed to generate PDF. Please try again.')
+      console.error('PDF generation error:', error);
+      setPdfError('Failed to generate PDF. Please try again.');
     } finally {
-      setPdfGenerating(false)
+      setPdfGenerating(false);
     }
-  }
+  };
 
   // User should be available from loader (requireAuth ensures this)
   if (!user) {
-    navigate('/login')
-    return null
+    navigate('/login');
+    return null;
   }
 
-  const userDisplayName = String(user.name || user.email)
+  const userDisplayName = String(user.name || user.email);
 
   return (
     <div className="py-8">
@@ -495,5 +500,5 @@ export default function Account() {
         </div>
       </div>
     </div>
-  )
+  );
 }

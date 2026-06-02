@@ -1,8 +1,9 @@
-import { type RouteConfig, index, layout, prefix, route } from '@react-router/dev/routes'
+import { type RouteConfig, index, layout, prefix, route } from '@react-router/dev/routes';
 
 export default [
   index('routes/home.tsx'),
   route('/login', 'routes/login.tsx'),
+  route('/login/verify', 'routes/login/verify.tsx'),
   route('/account', 'routes/account.tsx'),
   route('/health', 'routes/health.ts'),
   route('/api/applications/create', 'routes/api.applications.create.ts'),
@@ -10,7 +11,6 @@ export default [
   route('/api/portfolio/:userId', 'routes/api.portfolio.$userId.ts'),
   route('/api/resume/convert', 'routes/api.resume.convert.ts'),
   route('/api/validate-slug', 'routes/api.validate-slug.ts'),
-  route('/auth/callback', 'routes/auth.callback.ts'),
   ...prefix('/career', [
     index('routes/career.tsx'),
     route('/applications', 'routes/career.applications.tsx'),
@@ -36,4 +36,4 @@ export default [
     route('/editor/projects', 'routes/editor.projects.tsx'),
     route('/editor/testimonials', 'routes/editor.testimonials.tsx'),
   ]),
-] satisfies RouteConfig
+] satisfies RouteConfig;

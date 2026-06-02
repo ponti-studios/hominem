@@ -1,5 +1,6 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import type { LoaderFunctionArgs } from 'react-router'
+import { AuthProvider } from '@hominem/auth/client/provider';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { LoaderFunctionArgs } from 'react-router';
 import {
   isRouteErrorResponse,
   Link,
@@ -8,13 +9,13 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
-} from 'react-router'
+} from 'react-router';
 
-import { ToastProvider } from './hooks/useToast'
+import Navigation from './components/Navigation';
 
-import './app.css'
-import Navigation from './components/Navigation'
-import { getAuthenticatedUser } from './lib/auth.server'
+import './app.css';
+import { ToastProvider } from './hooks/useToast';
+import { getAuthenticatedUser } from './lib/auth.server';
 
 export const links = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -65,7 +66,7 @@ export const links = () => [
 
   // Web Manifest
   { rel: 'manifest', href: '/manifest.json' },
-]
+];
 
 export const meta = () => [
   // Theme Color
@@ -86,18 +87,20 @@ export const meta = () => [
   // Twitter Card
   { name: 'twitter:card', content: 'summary_large_image' },
   { name: 'twitter:image', content: '/icons/twitter-card.jpg' },
-]
+];
+
+const API_URL = process.env.VITE_PUBLIC_API_URL || process.env.API_URL || 'http://localhost:3000';
 
 // Root loader to get authenticated user
 export async function loader({ request }: LoaderFunctionArgs) {
-  const user = await getAuthenticatedUser(request)
-  return { user }
+  const user = await getAuthenticatedUser(request);
+  return { user, apiBaseUrl: API_URL };
 }
 
 // Add route handle to enable accessing loader data from child routes
 export const handle = {
   id: 'root',
-}
+};
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -114,30 +117,33 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Scripts />
       </body>
     </html>
-  )
+  );
 }
 
 // Instantiate a single QueryClient for the app
-const queryClient = new QueryClient()
+const queryClient = new QueryClient();
 
-export default function App() {
+export default function App({ loaderData }: { loaderData: { apiBaseUrl: string; user: unknown } }) {
+  const { apiBaseUrl } = loaderData;
   return (
-    <QueryClientProvider client={queryClient}>
-      <ToastProvider>
-        <div className="flex flex-col min-h-screen overflow-hidden">
-          <Navigation />
-          <div className="w-full max-w-6xl mx-auto font-sans mt-24 pt-8 flex-1 flex flex-col">
-            <Outlet />
+    <AuthProvider config={{ apiBaseUrl }}>
+      <QueryClientProvider client={queryClient}>
+        <ToastProvider>
+          <div className="flex flex-col min-h-screen overflow-hidden">
+            <Navigation />
+            <div className="w-full max-w-6xl mx-auto font-sans mt-24 pt-8 flex-1 flex flex-col">
+              <Outlet />
+            </div>
           </div>
-        </div>
-      </ToastProvider>
-    </QueryClientProvider>
-  )
+        </ToastProvider>
+      </QueryClientProvider>
+    </AuthProvider>
+  );
 }
 
 export function ErrorBoundary({ error }: { error: unknown }) {
   if (isRouteErrorResponse(error)) {
-    const err = error
+    const err = error;
     if (err.status === 404) {
       return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-linear-to-br from-blue-50 via-white to-purple-50">
@@ -150,7 +156,7 @@ export function ErrorBoundary({ error }: { error: unknown }) {
             Go Home
           </Link>
         </div>
-      )
+      );
     }
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-red-50">
@@ -160,11 +166,11 @@ export function ErrorBoundary({ error }: { error: unknown }) {
           Go Home
         </Link>
       </div>
-    )
+    );
   }
-  const isDev = import.meta.env.DEV
-  const message = isDev && error instanceof Error ? error.message : 'An unexpected error occurred.'
-  const stack = isDev && error instanceof Error ? error.stack : null
+  const isDev = import.meta.env.DEV;
+  const message = isDev && error instanceof Error ? error.message : 'An unexpected error occurred.';
+  const stack = isDev && error instanceof Error ? error.stack : null;
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4">
       <h1 className="text-4xl font-bold text-gray-900 mb-4">Oops!</h1>
@@ -178,5 +184,5 @@ export function ErrorBoundary({ error }: { error: unknown }) {
         Go Home
       </Link>
     </div>
-  )
+  );
 }

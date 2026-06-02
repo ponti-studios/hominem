@@ -1,7 +1,8 @@
-import type { LoaderFunctionArgs, MetaFunction } from 'react-router'
-import { Link } from 'react-router'
-import { JobScrapingResumeCustomizer } from '~/components/JobScrapingResumeCustomizer'
-import { withAuthLoader } from '~/lib/route-utils'
+import type { LoaderFunctionArgs, MetaFunction } from 'react-router';
+import { Link } from 'react-router';
+
+import { JobScrapingResumeCustomizer } from '~/components/JobScrapingResumeCustomizer';
+import { withAuthLoader } from '~/lib/route-utils';
 
 export const meta: MetaFunction = () => {
   return [
@@ -10,13 +11,13 @@ export const meta: MetaFunction = () => {
       name: 'description',
       content: 'Create tailored resumes from job postings',
     },
-  ]
-}
+  ];
+};
 
 export async function loader(args: LoaderFunctionArgs) {
   return withAuthLoader(args, async ({ user }) => {
-    return { user }
-  })
+    return { user };
+  });
 }
 
 export default function EnhancedResumeCustomizerPage() {
@@ -51,5 +52,5 @@ export default function EnhancedResumeCustomizerPage() {
         <JobScrapingResumeCustomizer />
       </div>
     </div>
-  )
+  );
 }

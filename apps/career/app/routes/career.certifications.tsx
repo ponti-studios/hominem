@@ -1,31 +1,32 @@
-import { DatePicker } from '@hominem/ui/date-picker'
-import { CheckIcon, PencilIcon, PlusIcon, TrashIcon, XIcon } from 'lucide-react'
-import { useState } from 'react'
-import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router'
-import { useLoaderData } from 'react-router'
-import { Button } from '~/components/ui/button'
-import type { Certification, CertificationSummary } from '~/types/career-data'
-import { createSuccessResponse, withAuthLoader } from '~/lib/route-utils'
+import { Button } from '@hominem/ui/button';
+import { DatePicker } from '@hominem/ui/date-picker';
+import { CheckIcon, PencilIcon, PlusIcon, TrashIcon, XIcon } from 'lucide-react';
+import { useState } from 'react';
+import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
+import { useLoaderData } from 'react-router';
+
+import { createSuccessResponse, withAuthLoader } from '~/lib/route-utils';
+import type { Certification, CertificationSummary } from '~/types/career-data';
 
 const formatDateValue = (value: Date | undefined) => {
   if (!value) {
-    return ''
+    return '';
   }
 
-  return value.toISOString().split('T')[0] ?? ''
-}
+  return value.toISOString().split('T')[0] ?? '';
+};
 
 interface LoaderData {
-  user: { id: string; email?: string | null; name?: string | null }
-  certifications: Certification[]
-  summary: CertificationSummary
+  user: { id: string; email?: string | null; name?: string | null };
+  certifications: Certification[];
+  summary: CertificationSummary;
 }
 
 export async function loader(args: LoaderFunctionArgs) {
   return withAuthLoader(args, async ({ user }) => {
     try {
       // For now, return empty data - we'll implement the queries later
-      const certifications: Certification[] = []
+      const certifications: Certification[] = [];
       const summary: CertificationSummary = {
         totalCertifications: 0,
         activeCertifications: 0,
@@ -35,55 +36,55 @@ export async function loader(args: LoaderFunctionArgs) {
         totalInvestment: 0,
         upcomingRenewals: [],
         certificationsByYear: [],
-      }
+      };
 
       return createSuccessResponse({
         user,
         certifications,
         summary,
-      })
+      });
     } catch (error) {
-      console.error('Error loading certifications:', error)
-      throw new Response('Error loading certifications', { status: 500 })
+      console.error('Error loading certifications:', error);
+      throw new Response('Error loading certifications', { status: 500 });
     }
-  })
+  });
 }
 
 export async function action(args: ActionFunctionArgs) {
   return withAuthLoader(args, async ({ user, request }) => {
-    const formData = await request.formData()
-    const operation = formData.get('operation') as string
+    const formData = await request.formData();
+    const operation = formData.get('operation') as string;
 
     try {
       if (operation === 'create') {
         // TODO: Implement certification creation
-        return createSuccessResponse({ success: true }, 'Certification created successfully')
+        return createSuccessResponse({ success: true }, 'Certification created successfully');
       }
 
       if (operation === 'update') {
         // TODO: Implement certification update
-        return createSuccessResponse({ success: true }, 'Certification updated successfully')
+        return createSuccessResponse({ success: true }, 'Certification updated successfully');
       }
 
       if (operation === 'delete') {
         // TODO: Implement certification deletion
-        return createSuccessResponse({ success: true }, 'Certification deleted successfully')
+        return createSuccessResponse({ success: true }, 'Certification deleted successfully');
       }
 
-      throw new Response('Invalid operation', { status: 400 })
+      throw new Response('Invalid operation', { status: 400 });
     } catch (error) {
-      console.error('Error handling certification operation:', error)
-      throw new Response('Error processing certification request', { status: 500 })
+      console.error('Error handling certification operation:', error);
+      throw new Response('Error processing certification request', { status: 500 });
     }
-  })
+  });
 }
 
 export default function CertificationsPage() {
-  const response = useLoaderData<{ success: boolean; data: LoaderData }>()
-  const data = response?.data || {}
-  const { certifications, summary } = data
+  const response = useLoaderData<{ success: boolean; data: LoaderData }>();
+  const data = response?.data || {};
+  const { certifications, summary } = data;
 
-  const [showCreateForm, setShowCreateForm] = useState(false)
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   return (
     <div className="bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
@@ -182,15 +183,15 @@ export default function CertificationsPage() {
         {showCreateForm && <CreateCertificationModal onClose={() => setShowCreateForm(false)} />}
       </div>
     </div>
-  )
+  );
 }
 
 interface CertificationCardProps {
-  certification: Certification
+  certification: Certification;
 }
 
 function CertificationCard({ certification }: CertificationCardProps) {
-  const [isEditing, setIsEditing] = useState(false)
+  const [isEditing, setIsEditing] = useState(false);
 
   return (
     <div className="p-6">
@@ -239,16 +240,16 @@ function CertificationCard({ certification }: CertificationCardProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 interface CreateCertificationModalProps {
-  onClose: () => void
+  onClose: () => void;
 }
 
 function CreateCertificationModal({ onClose }: CreateCertificationModalProps) {
-  const [issueDate, setIssueDate] = useState<Date | undefined>()
-  const [expirationDate, setExpirationDate] = useState<Date | undefined>()
+  const [issueDate, setIssueDate] = useState<Date | undefined>();
+  const [expirationDate, setExpirationDate] = useState<Date | undefined>();
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -316,7 +317,7 @@ function CreateCertificationModal({ onClose }: CreateCertificationModalProps) {
                 value={issueDate}
                 onSelect={(nextDate) => {
                   if (nextDate) {
-                    setIssueDate(nextDate)
+                    setIssueDate(nextDate);
                   }
                 }}
                 placeholder="Pick issue date"
@@ -333,11 +334,7 @@ function CreateCertificationModal({ onClose }: CreateCertificationModalProps) {
                 placeholder="Pick expiration date"
                 containerClassName="min-w-0"
               />
-              <input
-                type="hidden"
-                name="expirationDate"
-                value={formatDateValue(expirationDate)}
-              />
+              <input type="hidden" name="expirationDate" value={formatDateValue(expirationDate)} />
             </div>
             <div>
               <label htmlFor="cost" className="block text-sm font-medium text-slate-700 mb-2">
@@ -408,5 +405,5 @@ function CreateCertificationModal({ onClose }: CreateCertificationModalProps) {
         </form>
       </div>
     </div>
-  )
+  );
 }

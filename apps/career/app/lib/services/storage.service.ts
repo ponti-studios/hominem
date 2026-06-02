@@ -1,187 +1,95 @@
-import type { SupabaseClient } from '@supabase/supabase-js'
+import { createStorageService } from '@hominem/storage';
 
-export interface UploadFileOptions {
-  file: File
-  userId: string
-  folder: 'resumes' | 'profile-images' | 'documents'
-  bucketName?: string
-  upsert?: boolean
-  cacheControl?: string
+export type CareerStorageCategory = 'profile-images' | 'resumes' | 'documents';
+
+const storageServices: Record<CareerStorageCategory, ReturnType<typeof createStorageService>> = {
+  'profile-images': createStorageService('images', {
+    maxFileSize: 5 * 1024 * 1024,
+    isPublic: true,
+  }),
+  resumes: createStorageService('documents', { maxFileSize: 10 * 1024 * 1024, isPublic: false }),
+  documents: createStorageService('documents', { maxFileSize: 25 * 1024 * 1024, isPublic: false }),
+};
+
+export interface UploadResult {
+  success: boolean;
+  fileId?: string;
+  publicUrl?: string;
+  error?: string;
 }
 
-export interface UploadFileResult {
-  success: boolean
-  filePath?: string
-  publicUrl?: string
-  error?: string
-}
-
-/**
- * Centralized file upload helper to ensure consistent folder structure
- * and prevent developers from uploading to wrong folders
- */
 export async function uploadFile(
-  supabase: SupabaseClient,
-  options: UploadFileOptions
-): Promise<UploadFileResult> {
-  const {
-    file,
-    userId,
-    folder,
-    bucketName = 'craftd',
-    upsert = true,
-    cacheControl = '3600',
-  } = options
-
+  file: File | Blob,
+  userId: string,
+  category: CareerStorageCategory,
+  originalName?: string,
+): Promise<UploadResult> {
   try {
-    // Generate unique filename with timestamp to prevent conflicts
-    const timestamp = Date.now()
-    const fileExtension = getFileExtension(file)
-    const sanitizedOriginalName = sanitizeFileName(file.name)
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const mimetype = file.type || 'application/octet-stream';
+    const name = file instanceof File ? file.name : (originalName ?? 'file');
 
-    let fileName: string
-    switch (folder) {
-      case 'resumes':
-        fileName = `resume-${timestamp}-${sanitizedOriginalName}`
-        break
-      case 'profile-images':
-        fileName = `profile-${timestamp}.${fileExtension}`
-        break
-      case 'documents':
-        fileName = `doc-${timestamp}-${sanitizedOriginalName}`
-        break
-      default:
-        fileName = `file-${timestamp}-${sanitizedOriginalName}`
-    }
-
-    const filePath = `public/${userId}/${folder}/${fileName}`
-
-    console.log(`Uploading ${folder} file to ${bucketName}/${filePath}`)
-
-    const { error: uploadError } = await supabase.storage.from(bucketName).upload(filePath, file, {
-      cacheControl,
-      upsert,
-    })
-
-    if (uploadError) {
-      console.error('Supabase upload error:', uploadError)
-      return {
-        success: false,
-        error: `Upload failed: ${uploadError.message}`,
-      }
-    }
-
-    // Get public URL using the same bucket we uploaded to
-    const { data: urlData } = supabase.storage.from(bucketName).getPublicUrl(filePath)
+    const stored = await storageServices[category].storeFile(buffer, mimetype, userId, {
+      originalName: name,
+    });
 
     return {
       success: true,
-      filePath,
-      publicUrl: urlData.publicUrl,
-    }
+      fileId: stored.id,
+      publicUrl: stored.url,
+    };
   } catch (error) {
-    console.error('File upload error:', error)
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown upload error',
-    }
+      error: error instanceof Error ? error.message : 'Upload failed',
+    };
   }
 }
 
-/**
- * Delete a file from storage
- */
 export async function deleteFile(
-  supabase: SupabaseClient,
-  filePath: string,
-  bucketName = 'craftd'
+  fileId: string,
+  userId: string,
+  category: CareerStorageCategory,
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const { error } = await supabase.storage.from(bucketName).remove([filePath])
-
-    if (error) {
-      console.error('File deletion error:', error)
-      return {
-        success: false,
-        error: error.message,
-      }
-    }
-
-    return { success: true }
+    const deleted = await storageServices[category].deleteFile(fileId, userId);
+    return deleted ? { success: true } : { success: false, error: 'File not found' };
   } catch (error) {
-    console.error('File deletion error:', error)
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown deletion error',
-    }
+      error: error instanceof Error ? error.message : 'Delete failed',
+    };
   }
 }
 
-/**
- * Validate file before upload
- */
 export function validateFile(
   file: File,
-  options: {
-    maxSizeBytes: number
-    allowedTypes: readonly string[]
-  }
+  options: { maxSizeBytes: number; allowedTypes: readonly string[] },
 ): { valid: boolean; error?: string } {
   if (file.size > options.maxSizeBytes) {
-    const maxSizeMB = options.maxSizeBytes / (1024 * 1024)
-    return {
-      valid: false,
-      error: `File size must be less than ${maxSizeMB}MB`,
-    }
+    const maxSizeMB = options.maxSizeBytes / (1024 * 1024);
+    return { valid: false, error: `File size must be less than ${maxSizeMB}MB` };
   }
-
   if (!options.allowedTypes.includes(file.type)) {
     return {
       valid: false,
       error: `File type not allowed. Allowed types: ${options.allowedTypes.join(', ')}`,
-    }
+    };
   }
-
-  return { valid: true }
+  return { valid: true };
 }
 
-/**
- * Helper to get file extension from file
- */
-function getFileExtension(file: File): string {
-  if (file.type.startsWith('image/')) {
-    return file.type.split('/')[1] || 'jpg'
-  }
-
-  const name = file.name
-  const lastDot = name.lastIndexOf('.')
-  return lastDot > 0 ? name.substring(lastDot + 1) : 'bin'
-}
-
-/**
- * Sanitize filename to prevent path traversal and special characters
- */
-function sanitizeFileName(fileName: string): string {
-  return fileName
-    .replace(/[^a-zA-Z0-9.-]/g, '_') // Replace special chars with underscore
-    .replace(/_{2,}/g, '_') // Replace multiple underscores with single
-    .toLowerCase()
-}
-
-/**
- * Predefined validation options for common file types
- */
 export const FILE_VALIDATION_PRESETS = {
   PDF_RESUME: {
-    maxSizeBytes: 10 * 1024 * 1024, // 10MB
+    maxSizeBytes: 10 * 1024 * 1024,
     allowedTypes: ['application/pdf'],
   },
   PROFILE_IMAGE: {
-    maxSizeBytes: 5 * 1024 * 1024, // 5MB
+    maxSizeBytes: 5 * 1024 * 1024,
     allowedTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
   },
   DOCUMENT: {
-    maxSizeBytes: 25 * 1024 * 1024, // 25MB
+    maxSizeBytes: 25 * 1024 * 1024,
     allowedTypes: [
       'application/pdf',
       'application/msword',
@@ -189,4 +97,4 @@ export const FILE_VALIDATION_PRESETS = {
       'text/plain',
     ],
   },
-} as const
+} as const;

@@ -1,9 +1,10 @@
-import { BarChart3, Briefcase, Code, FolderOpen, Link2, MessageSquare, User } from 'lucide-react'
-import type { LoaderFunctionArgs, MetaFunction } from 'react-router'
-import { Link, Outlet, redirect, useLoaderData, useLocation } from 'react-router'
-import type { FullPortfolio } from '../lib/portfolio.server'
-import { getFullUserPortfolio } from '../lib/portfolio.server'
-import { withAuthLoader } from '../lib/route-utils'
+import { BarChart3, Briefcase, Code, FolderOpen, Link2, MessageSquare, User } from 'lucide-react';
+import type { LoaderFunctionArgs, MetaFunction } from 'react-router';
+import { Link, Outlet, redirect, useLoaderData, useLocation } from 'react-router';
+
+import type { FullPortfolio } from '../lib/portfolio.server';
+import { getFullUserPortfolio } from '../lib/portfolio.server';
+import { withAuthLoader } from '../lib/route-utils';
 
 export const meta: MetaFunction = () => {
   return [
@@ -12,20 +13,20 @@ export const meta: MetaFunction = () => {
       name: 'description',
       content: 'Edit and customize your professional portfolio',
     },
-  ]
-}
+  ];
+};
 
 /**
  * Loader for wizard editor: ensure the user has a portfolio or redirect to onboarding
  */
 export async function loader(args: LoaderFunctionArgs) {
   return withAuthLoader(args, async ({ user }) => {
-    const portfolio = await getFullUserPortfolio(user.id)
+    const portfolio = await getFullUserPortfolio(user.id);
     if (!portfolio) {
-      throw redirect('/onboarding')
+      throw redirect('/onboarding');
     }
-    return portfolio
-  })
+    return portfolio;
+  });
 }
 
 const editorSteps = [
@@ -71,13 +72,13 @@ const editorSteps = [
     label: 'Testimonials',
     icon: MessageSquare,
   },
-]
+];
 
 export default function EditorLayout() {
-  const location = useLocation()
-  const portfolio = useLoaderData<FullPortfolio>()
+  const location = useLocation();
+  const portfolio = useLoaderData<FullPortfolio>();
 
-  const currentStepIndex = editorSteps.findIndex((step) => location.pathname.startsWith(step.path))
+  const currentStepIndex = editorSteps.findIndex((step) => location.pathname.startsWith(step.path));
 
   return (
     <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-4 gap-8">
@@ -86,9 +87,9 @@ export default function EditorLayout() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-8">
           <nav className="space-y-2">
             {editorSteps.map((step, index) => {
-              const isActive = step.value === location.pathname.split('/').pop()
-              const isCompleted = index < currentStepIndex
-              const Icon = step.icon
+              const isActive = step.value === location.pathname.split('/').pop();
+              const isCompleted = index < currentStepIndex;
+              const Icon = step.icon;
 
               return (
                 <Link
@@ -121,7 +122,7 @@ export default function EditorLayout() {
                     </div>
                   </div>
                 </Link>
-              )
+              );
             })}
           </nav>
         </div>
@@ -132,5 +133,5 @@ export default function EditorLayout() {
         <Outlet context={portfolio} />
       </div>
     </div>
-  )
+  );
 }

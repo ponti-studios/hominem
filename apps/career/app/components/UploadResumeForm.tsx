@@ -1,12 +1,13 @@
-import { FileText, Upload } from 'lucide-react'
-import { useRef, useState } from 'react'
-import type { ConvertedResumeData, UploadResumeResponse } from '../types/resume'
-import { ErrorMessage } from './ui/ErrorMessage'
+import { Alert, AlertDescription, AlertTitle } from '@hominem/ui';
+import { FileText, Upload } from 'lucide-react';
+import { useRef, useState } from 'react';
+
+import type { ConvertedResumeData, UploadResumeResponse } from '../types/resume';
 
 interface UploadResumeFormProps {
-  onUploadStart: () => void
-  onUploadComplete: (data: ConvertedResumeData) => void
-  onUploadError?: (error: string) => void
+  onUploadStart: () => void;
+  onUploadComplete: (data: ConvertedResumeData) => void;
+  onUploadError?: (error: string) => void;
 }
 
 export function UploadResumeForm({
@@ -14,108 +15,108 @@ export function UploadResumeForm({
   onUploadComplete,
   onUploadError,
 }: UploadResumeFormProps) {
-  const [files, setFiles] = useState<FileList | null>(null)
-  const [isDragging, setIsDragging] = useState(false)
-  const [isUploading, setIsUploading] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState(0)
-  const [error, setError] = useState<string | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [files, setFiles] = useState<FileList | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDragOver = (event: React.DragEvent) => {
-    event.preventDefault()
-    setIsDragging(true)
-  }
+    event.preventDefault();
+    setIsDragging(true);
+  };
 
   const handleDragLeave = () => {
-    setIsDragging(false)
-  }
+    setIsDragging(false);
+  };
 
   const handleDrop = (event: React.DragEvent) => {
-    event.preventDefault()
-    setIsDragging(false)
-    const droppedFiles = event.dataTransfer?.files
+    event.preventDefault();
+    setIsDragging(false);
+    const droppedFiles = event.dataTransfer?.files;
     if (droppedFiles && droppedFiles.length > 0) {
-      setFiles(droppedFiles)
+      setFiles(droppedFiles);
     }
-  }
+  };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setFiles(event.target.files)
-  }
+    setFiles(event.target.files);
+  };
 
   const uploadResume = async () => {
-    setError(null)
+    setError(null);
     if (!files || files.length === 0) {
-      const msg = 'Please select a PDF file'
-      setError(msg)
-      onUploadError?.(msg)
-      return
+      const msg = 'Please select a PDF file';
+      setError(msg);
+      onUploadError?.(msg);
+      return;
     }
-    const file = files[0]
+    const file = files[0];
     if (file.type !== 'application/pdf') {
-      const msg = 'Please select a PDF file'
-      setError(msg)
-      onUploadError?.(msg)
-      return
+      const msg = 'Please select a PDF file';
+      setError(msg);
+      onUploadError?.(msg);
+      return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      const msg = 'File size must be less than 10MB'
-      setError(msg)
-      onUploadError?.(msg)
-      return
+      const msg = 'File size must be less than 10MB';
+      setError(msg);
+      onUploadError?.(msg);
+      return;
     }
 
-    setIsUploading(true)
-    setUploadProgress(0)
-    onUploadStart()
+    setIsUploading(true);
+    setUploadProgress(0);
+    onUploadStart();
 
     // Simulate progress for better UX
     const progressInterval = setInterval(() => {
       setUploadProgress((prev) => {
         if (prev < 90) {
-          return prev + Math.random() * 10
+          return prev + Math.random() * 10;
         }
-        return prev
-      })
-    }, 200)
+        return prev;
+      });
+    }, 200);
 
     try {
-      const formData = new FormData()
-      formData.append('pdf', file)
+      const formData = new FormData();
+      formData.append('pdf', file);
       const res = await fetch('/api/resume/convert', {
         method: 'POST',
         credentials: 'same-origin',
         body: formData,
-      })
-      const result = (await res.json()) as UploadResumeResponse
+      });
+      const result = (await res.json()) as UploadResumeResponse;
 
-      clearInterval(progressInterval)
-      setUploadProgress(100)
-      setIsUploading(false)
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+      setIsUploading(false);
 
       if (!res.ok || !result.success) {
-        let msg = result.success ? 'Conversion failed' : result.error
+        let msg = result.success ? 'Conversion failed' : result.error;
 
         // Handle authentication errors specifically
         if (res.status === 401 || res.status === 403) {
-          msg = 'Please log in to upload your resume'
+          msg = 'Please log in to upload your resume';
         }
 
-        setError(msg)
-        onUploadError?.(msg)
-        return
+        setError(msg);
+        onUploadError?.(msg);
+        return;
       }
-      onUploadComplete(result.data)
+      onUploadComplete(result.data);
     } catch {
-      clearInterval(progressInterval)
-      setIsUploading(false)
-      const msg = 'Upload failed'
-      setError(msg)
-      onUploadError?.(msg)
+      clearInterval(progressInterval);
+      setIsUploading(false);
+      const msg = 'Upload failed';
+      setError(msg);
+      onUploadError?.(msg);
     }
-  }
+  };
 
-  const selectedFile = files?.[0]
+  const selectedFile = files?.[0];
 
   return (
     <div className="max-w-2xl mx-auto px-6">
@@ -194,7 +195,12 @@ export function UploadResumeForm({
         )}
 
         {/* Error Message */}
-        {error && <ErrorMessage message={error} />}
+        {error ? (
+          <Alert variant="destructive">
+            <AlertTitle>Upload failed</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        ) : null}
 
         {/* Upload Button */}
         <div className="mt-8 flex justify-center">
@@ -209,5 +215,5 @@ export function UploadResumeForm({
         </div>
       </div>
     </div>
-  )
+  );
 }

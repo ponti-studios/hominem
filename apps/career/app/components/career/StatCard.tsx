@@ -1,9 +1,9 @@
 interface StatCardProps {
-  title: string
-  value: string | number
-  subtitle?: string
-  trend?: 'up' | 'down' | 'neutral'
-  icon?: React.ReactNode
+  title: string;
+  value: string | number;
+  subtitle?: string;
+  trend?: 'up' | 'down' | 'neutral';
+  icon?: React.ReactNode;
 }
 
 export function StatCard({ title, value, subtitle, trend, icon }: StatCardProps) {
@@ -11,7 +11,7 @@ export function StatCard({ title, value, subtitle, trend, icon }: StatCardProps)
     up: 'text-emerald-600',
     down: 'text-red-500',
     neutral: 'text-slate-500',
-  }
+  };
 
   return (
     <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200/50 hover:shadow-lg transition-all duration-300 hover:border-slate-300/50">
@@ -32,5 +32,5 @@ export function StatCard({ title, value, subtitle, trend, icon }: StatCardProps)
         {icon && <div className="text-slate-400 opacity-60">{icon}</div>}
       </div>
     </div>
-  )
+  );
 }

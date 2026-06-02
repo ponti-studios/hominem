@@ -20,7 +20,7 @@ import {
 import type { FileObject, PreparedUpload, StorageOptions, StoredFile } from './types';
 import { isSupportedUploadMimeType } from './upload-policy';
 
-type StorageCategory = 'csvs' | 'chats' | 'places';
+export type StorageCategory = 'csvs' | 'chats' | 'places' | 'images' | 'documents';
 
 function resolveFileExtension(filename: string, mimetype: string): string {
   const ext = getFileExtension(filename);
@@ -731,3 +731,10 @@ export const csvStorageService = createLazyStorageService(createCsvStorageServic
 export const fileStorageService = createLazyStorageService(createFileStorageService);
 
 export const placeImagesStorageService = createLazyStorageService(createPlaceImagesStorageService);
+
+export function createStorageService(
+  category: StorageCategory,
+  options?: StorageOptions,
+): R2StorageService {
+  return createLazyStorageService(() => new R2StorageService(category, options));
+}

@@ -1,53 +1,53 @@
-import { createContext, useCallback, useContext, useState, type ReactNode } from 'react'
-import { Button } from '~/components/ui/button'
+import { Button } from '@hominem/ui/button';
+import { createContext, useCallback, useContext, useState, type ReactNode } from 'react';
 
 interface ToastMessage {
-  id: string
-  message: string
-  type: 'success' | 'error' | 'info'
-  duration?: number
+  id: string;
+  message: string;
+  type: 'success' | 'error' | 'info';
+  duration?: number;
 }
 
 interface ToastContextType {
-  toasts: ToastMessage[]
-  addToast: (message: string, type: 'success' | 'error' | 'info', duration?: number) => void
-  removeToast: (id: string) => void
+  toasts: ToastMessage[];
+  addToast: (message: string, type: 'success' | 'error' | 'info', duration?: number) => void;
+  removeToast: (id: string) => void;
 }
 
-const ToastContext = createContext<ToastContextType | undefined>(undefined)
+const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const [toasts, setToasts] = useState<ToastMessage[]>([])
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   const addToast = useCallback(
     (message: string, type: 'success' | 'error' | 'info', duration = 5000) => {
-      const id = Math.random().toString(36).substring(2, 9)
-      const toast: ToastMessage = { id, message, type, duration }
+      const id = Math.random().toString(36).substring(2, 9);
+      const toast: ToastMessage = { id, message, type, duration };
 
-      setToasts((prev) => [...prev, toast])
+      setToasts((prev) => [...prev, toast]);
 
       // Auto remove toast after duration
       setTimeout(() => {
-        setToasts((prev) => prev.filter((t) => t.id !== id))
-      }, duration)
+        setToasts((prev) => prev.filter((t) => t.id !== id));
+      }, duration);
     },
-    []
-  )
+    [],
+  );
 
   const removeToast = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id))
-  }, [])
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
 
   return (
     <ToastContext.Provider value={{ toasts, addToast, removeToast }}>
       {children}
       <ToastContainer />
     </ToastContext.Provider>
-  )
+  );
 }
 
 function ToastContainer() {
-  const { toasts, removeToast } = useToast()
+  const { toasts, removeToast } = useToast();
 
   return (
     <div className="fixed bottom-4 right-4 z-50 space-y-2">
@@ -128,13 +128,13 @@ function ToastContainer() {
         </div>
       ))}
     </div>
-  )
+  );
 }
 
 export function useToast() {
-  const context = useContext(ToastContext)
+  const context = useContext(ToastContext);
   if (!context) {
-    throw new Error('useToast must be used within a ToastProvider')
+    throw new Error('useToast must be used within a ToastProvider');
   }
-  return context
+  return context;
 }

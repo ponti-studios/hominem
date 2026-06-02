@@ -1,65 +1,70 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hominem/ui/tabs'
-import { Briefcase, Calendar, ChevronLeft, MessageSquare, Paperclip, UserPlus } from 'lucide-react'
-import { useState } from 'react'
-import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router'
-import { Link, useActionData, useFetcher, useLoaderData, useParams } from 'react-router'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hominem/ui/tabs';
+import { Briefcase, Calendar, ChevronLeft, MessageSquare, Paperclip, UserPlus } from 'lucide-react';
+import { useState } from 'react';
+import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
+import { Link, useActionData, useFetcher, useLoaderData, useParams } from 'react-router';
+
 import {
   ApplicationFilesTab,
   ApplicationNotesTab,
   ApplicationOverviewTab,
   ApplicationTimelineTab,
   QuickActionsDropdown,
-} from '~/components/career'
-import type { ApplicationWithRelations, InterviewEntry, JobApplicationUpdate } from '~/types/career-data'
+} from '~/components/career';
 import {
   createErrorResponse,
   createSuccessResponse,
   withAuthAction,
   withAuthLoader,
-} from '~/lib/route-utils'
-import { JobApplicationsService } from '~/lib/services/job-applications.service'
-import { formatStatusText, getStatusColor } from '~/lib/utils/applicationUtils'
+} from '~/lib/route-utils';
+import { JobApplicationsService } from '~/lib/services/job-applications.service';
+import { formatStatusText, getStatusColor } from '~/lib/utils/applicationUtils';
+import type {
+  ApplicationWithRelations,
+  InterviewEntry,
+  JobApplicationUpdate,
+} from '~/types/career-data';
 
 export async function loader(args: LoaderFunctionArgs) {
   return withAuthLoader(args, async ({ user }) => {
-    const { id } = args.params
+    const { id } = args.params;
 
     if (!id) {
-      return createErrorResponse('Application ID is required')
+      return createErrorResponse('Application ID is required');
     }
 
     try {
-      const data = await JobApplicationsService.getApplicationDetail(id, user.id)
-      return createSuccessResponse(data)
+      const data = await JobApplicationsService.getApplicationDetail(id, user.id);
+      return createSuccessResponse(data);
     } catch (error) {
-      console.error('Error fetching application details:', error)
+      console.error('Error fetching application details:', error);
       if (error instanceof Error && error.message === 'Application not found') {
-        return createErrorResponse('Application not found')
+        return createErrorResponse('Application not found');
       }
-      return createErrorResponse('Failed to fetch application details')
+      return createErrorResponse('Failed to fetch application details');
     }
-  })
+  });
 }
 
 export async function action(args: ActionFunctionArgs) {
   return withAuthAction(args, async ({ user, request }) => {
-    const { id } = args.params
-    const formData = await request.formData()
-    const operation = formData.get('operation') as string
+    const { id } = args.params;
+    const formData = await request.formData();
+    const operation = formData.get('operation') as string;
 
     if (!id) {
-      return createErrorResponse('Application ID is required')
+      return createErrorResponse('Application ID is required');
     }
 
     try {
       // Verify ownership
-      const hasOwnership = await JobApplicationsService.verifyOwnership(id, user.id)
+      const hasOwnership = await JobApplicationsService.verifyOwnership(id, user.id);
       if (!hasOwnership) {
-        return createErrorResponse('Application not found or access denied')
+        return createErrorResponse('Application not found or access denied');
       }
 
       if (operation === 'update_application') {
-        const updates: JobApplicationUpdate = {}
+        const updates: JobApplicationUpdate = {};
 
         // Get all possible fields from form
         const fields = [
@@ -74,46 +79,46 @@ export async function action(args: ActionFunctionArgs) {
           'recruiterName',
           'recruiterEmail',
           'recruiterLinkedin',
-        ] as const
+        ] as const;
 
         for (const field of fields) {
-          const value = formData.get(field)
+          const value = formData.get(field);
           if (value !== null) {
-            updates[field] = value as string | undefined
+            updates[field] = value as string | undefined;
           }
         }
 
-        await JobApplicationsService.updateApplication(id, updates)
-        return createSuccessResponse(null, 'Application updated successfully')
+        await JobApplicationsService.updateApplication(id, updates);
+        return createSuccessResponse(null, 'Application updated successfully');
       }
 
       if (operation === 'add_note') {
-        const type = formData.get('noteType') as string
-        const title = formData.get('noteTitle') as string
-        const content = formData.get('noteContent') as string
+        const type = formData.get('noteType') as string;
+        const title = formData.get('noteTitle') as string;
+        const content = formData.get('noteContent') as string;
 
         if (!content) {
-          return createErrorResponse('Note content is required')
+          return createErrorResponse('Note content is required');
         }
 
-        await JobApplicationsService.addNote(id, type, title, content)
-        return createSuccessResponse(null, 'Note added successfully')
+        await JobApplicationsService.addNote(id, type, title, content);
+        return createSuccessResponse(null, 'Note added successfully');
       }
 
       if (operation === 'delete_note') {
-        const noteId = formData.get('noteId') as string
-        await JobApplicationsService.deleteNote(noteId)
-        return createSuccessResponse(null, 'Note deleted successfully')
+        const noteId = formData.get('noteId') as string;
+        await JobApplicationsService.deleteNote(noteId);
+        return createSuccessResponse(null, 'Note deleted successfully');
       }
 
       if (operation === 'add_interview') {
-        const interviewType = formData.get('interviewType') as InterviewEntry['type']
-        const interviewDate = formData.get('interviewDate') as string
-        const interviewer = formData.get('interviewer') as string
-        const notes = formData.get('interviewNotes') as string
+        const interviewType = formData.get('interviewType') as InterviewEntry['type'];
+        const interviewDate = formData.get('interviewDate') as string;
+        const interviewer = formData.get('interviewer') as string;
+        const notes = formData.get('interviewNotes') as string;
 
         if (!interviewDate) {
-          return createErrorResponse('Interview date is required')
+          return createErrorResponse('Interview date is required');
         }
 
         const newInterview: InterviewEntry = {
@@ -121,30 +126,30 @@ export async function action(args: ActionFunctionArgs) {
           date: interviewDate,
           interviewer: interviewer || undefined,
           notes: notes || undefined,
-        }
+        };
 
-        await JobApplicationsService.addInterview(id, newInterview)
-        return createSuccessResponse(null, 'Interview added successfully')
+        await JobApplicationsService.addInterview(id, newInterview);
+        return createSuccessResponse(null, 'Interview added successfully');
       }
 
-      return createErrorResponse('Invalid operation')
+      return createErrorResponse('Invalid operation');
     } catch (error) {
-      console.error('Error in application detail action:', error)
-      return createErrorResponse('Failed to process request')
+      console.error('Error in application detail action:', error);
+      return createErrorResponse('Failed to process request');
     }
-  })
+  });
 }
 
 export default function ApplicationDetail() {
-  const loaderData = useLoaderData() as { success: boolean; data?: ApplicationWithRelations }
-  const actionData = useActionData()
-  const params = useParams()
-  const fetcher = useFetcher()
-  type TabId = 'overview' | 'timeline' | 'notes' | 'files'
-  const [activeTab, setActiveTab] = useState<TabId>('overview')
-  const [showStatusUpdate, setShowStatusUpdate] = useState(false)
-  const [showAddNote, setShowAddNote] = useState(false)
-  const [showAddInterview, setShowAddInterview] = useState(false)
+  const loaderData = useLoaderData() as { success: boolean; data?: ApplicationWithRelations };
+  const actionData = useActionData();
+  const params = useParams();
+  const fetcher = useFetcher();
+  type TabId = 'overview' | 'timeline' | 'notes' | 'files';
+  const [activeTab, setActiveTab] = useState<TabId>('overview');
+  const [showStatusUpdate, setShowStatusUpdate] = useState(false);
+  const [showAddNote, setShowAddNote] = useState(false);
+  const [showAddInterview, setShowAddInterview] = useState(false);
 
   if (!loaderData.success || !loaderData.data) {
     return (
@@ -165,18 +170,18 @@ export default function ApplicationDetail() {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
-  const { application, notes, files } = loaderData.data
-  const { company } = application
+  const { application, notes, files } = loaderData.data;
+  const { company } = application;
 
   const tabItems = [
     { id: 'overview', label: 'Overview', icon: Briefcase },
     { id: 'timeline', label: 'Timeline', icon: Calendar },
     { id: 'notes', label: 'Notes', icon: MessageSquare },
     { id: 'files', label: 'Files', icon: Paperclip },
-  ]
+  ];
 
   const quickActions = [
     {
@@ -203,7 +208,7 @@ export default function ApplicationDetail() {
       icon: Calendar,
       onClick: () => setActiveTab('timeline'),
     },
-  ]
+  ];
 
   return (
     <div className="space-y-6 p-4">
@@ -266,5 +271,5 @@ export default function ApplicationDetail() {
         </div>
       </Tabs>
     </div>
-  )
+  );
 }

@@ -1,20 +1,20 @@
-import { formatCurrency } from '~/lib/utils'
+import { formatCurrency } from '~/lib/utils';
 
 export interface CareerTimelineItem {
-  date: string
-  type: string
-  title: string
-  description: string
-  company?: string
-  role?: string
-  salary?: number
-  salaryChange?: number
-  percentage?: string
+  date: string;
+  type: string;
+  title: string;
+  description: string;
+  company?: string;
+  role?: string;
+  salary?: number;
+  salaryChange?: number;
+  percentage?: string;
 }
 
 interface CareerTimelineItemProps {
-  item: CareerTimelineItem
-  index: number
+  item: CareerTimelineItem;
+  index: number;
 }
 
 export function CareerTimelineItem({ item, index }: CareerTimelineItemProps) {
@@ -24,9 +24,9 @@ export function CareerTimelineItem({ item, index }: CareerTimelineItemProps) {
     promotion: 'bg-purple-100 text-purple-700 border-purple-200',
     raise: 'bg-blue-100 text-blue-700 border-blue-200',
     default: 'bg-slate-100 text-slate-700 border-slate-200',
-  }
+  };
 
-  const style = typeStyles[item.type as keyof typeof typeStyles] || typeStyles.default
+  const style = typeStyles[item.type as keyof typeof typeStyles] || typeStyles.default;
 
   return (
     <div className="relative pb-8">
@@ -57,5 +57,5 @@ export function CareerTimelineItem({ item, index }: CareerTimelineItemProps) {
       </div>
       {index > 0 && <div className="absolute left-1.5 top-3 bottom-0 w-0.5 bg-slate-200" />}
     </div>
-  )
+  );
 }

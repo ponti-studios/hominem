@@ -5,8 +5,8 @@ import { useSearchParams } from 'react-router';
 
 import { translateUi } from '../../translations';
 import { Button } from '../button';
-import { OtpCodeInput } from './otp-code-input';
 import { AuthScaffold } from './auth-scaffold';
+import { OtpCodeInput } from './otp-code-input';
 
 interface OtpVerificationFormProps {
   email: string;

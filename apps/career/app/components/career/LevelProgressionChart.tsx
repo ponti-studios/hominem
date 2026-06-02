@@ -1,14 +1,14 @@
 interface LevelProgressionChartProps {
   data: Array<{
-    level: string
-    duration: number
-    startDate: string
-    endDate?: string
-  }>
+    level: string;
+    duration: number;
+    startDate: string;
+    endDate?: string;
+  }>;
 }
 
 export function LevelProgressionChart({ data }: LevelProgressionChartProps) {
-  if (data.length === 0) return null
+  if (data.length === 0) return null;
 
   return (
     <div className="space-y-6">
@@ -33,5 +33,5 @@ export function LevelProgressionChart({ data }: LevelProgressionChartProps) {
         </div>
       ))}
     </div>
-  )
+  );
 }

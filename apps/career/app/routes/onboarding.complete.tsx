@@ -1,3 +1,4 @@
+import { Button } from '@hominem/ui/button';
 import {
   ArrowRight,
   CheckCircle2,
@@ -9,11 +10,10 @@ import {
   Star,
   Trophy,
   Users,
-} from 'lucide-react'
-import { useEffect, useState } from 'react'
-import type { MetaFunction } from 'react-router'
-import { useNavigate } from 'react-router'
-import { Button } from '~/components/ui/button'
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
+import type { MetaFunction } from 'react-router';
+import { useNavigate } from 'react-router';
 
 export const meta: MetaFunction = () => {
   return [
@@ -22,33 +22,33 @@ export const meta: MetaFunction = () => {
       name: 'description',
       content: 'Congratulations! Your professional portfolio is now live and ready to share.',
     },
-  ]
-}
+  ];
+};
 
 export default function OnboardingComplete() {
-  const navigate = useNavigate()
-  const [showCelebration, setShowCelebration] = useState(false)
-  const [justCompleted] = useState(true)
+  const navigate = useNavigate();
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [justCompleted] = useState(true);
 
   useEffect(() => {
     if (justCompleted) {
-      setShowCelebration(true)
+      setShowCelebration(true);
       // Auto hide after 5 seconds
       const timer = setTimeout(() => {
-        setShowCelebration(false)
-      }, 5000)
-      return () => clearTimeout(timer)
+        setShowCelebration(false);
+      }, 5000);
+      return () => clearTimeout(timer);
     }
-  }, [justCompleted])
+  }, [justCompleted]);
 
   const goToPortfolio = () => {
-    navigate('/account')
-  }
+    navigate('/account');
+  };
 
   const shareTips = () => {
     // Scroll to sharing section
-    document.getElementById('sharing-tips')?.scrollIntoView({ behavior: 'smooth' })
-  }
+    document.getElementById('sharing-tips')?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   return (
     <>
@@ -268,5 +268,5 @@ export default function OnboardingComplete() {
         </div>
       </div>
     </>
-  )
+  );
 }

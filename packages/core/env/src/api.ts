@@ -7,6 +7,7 @@ const isTest = process.env.NODE_ENV === 'test';
 export const apiSchema = baseSchema.extend({
   PORT: z.string().default('3000'),
   API_URL: z.url().default('http://localhost:4040'),
+  CAREER_URL: z.url().default('http://localhost:4451'),
   WEB_URL: z.url().default('http://localhost:4445'),
   DATABASE_URL: isTest
     ? z.url().default('postgresql://postgres:postgres@localhost:5432/app_test')

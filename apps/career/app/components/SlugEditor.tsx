@@ -1,48 +1,49 @@
-import { Check, Loader2, X } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
-import { useSubmit } from 'react-router'
-import { Button } from '~/components/ui/button'
-import { cn } from '~/lib/utils'
+import { Button } from '@hominem/ui/button';
+import { Check, Loader2, X } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { useSubmit } from 'react-router';
+
+import { cn } from '~/lib/utils';
 
 interface SlugEditorProps {
-  portfolioId: string
-  initialSlug: string
-  onSave?: (newSlug: string) => void
-  onCancel?: () => void
+  portfolioId: string;
+  initialSlug: string;
+  onSave?: (newSlug: string) => void;
+  onCancel?: () => void;
 }
 
 interface ValidationState {
-  isChecking: boolean
-  isAvailable: boolean | null
-  message: string
-  isValid: boolean
+  isChecking: boolean;
+  isAvailable: boolean | null;
+  message: string;
+  isValid: boolean;
 }
 
 export function SlugEditor({ portfolioId, initialSlug, onSave, onCancel }: SlugEditorProps) {
-  const submit = useSubmit()
+  const submit = useSubmit();
 
   // Component state
-  const [slugValue, setSlugValue] = useState(initialSlug)
-  const [isSaving, setIsSaving] = useState(false)
+  const [slugValue, setSlugValue] = useState(initialSlug);
+  const [isSaving, setIsSaving] = useState(false);
   const [validation, setValidation] = useState<ValidationState>({
     isChecking: false,
     isAvailable: null,
     message: '',
     isValid: true,
-  })
+  });
 
   // Reset slug value when initialSlug changes (from successful save)
   useEffect(() => {
-    setSlugValue(initialSlug)
-  }, [initialSlug])
+    setSlugValue(initialSlug);
+  }, [initialSlug]);
 
   // Debounced slug validation
   const validateSlug = useCallback(
     async (slug: string) => {
       // Reset validation if empty or same as initial
       if (!slug || slug === initialSlug) {
-        setValidation({ isChecking: false, isAvailable: null, message: '', isValid: true })
-        return
+        setValidation({ isChecking: false, isAvailable: null, message: '', isValid: true });
+        return;
       }
 
       // Basic client-side validation
@@ -52,8 +53,8 @@ export function SlugEditor({ portfolioId, initialSlug, onSave, onCancel }: SlugE
           isAvailable: false,
           message: 'Slug must be at least 3 characters long',
           isValid: false,
-        })
-        return
+        });
+        return;
       }
 
       if (slug.length > 50) {
@@ -62,8 +63,8 @@ export function SlugEditor({ portfolioId, initialSlug, onSave, onCancel }: SlugE
           isAvailable: false,
           message: 'Slug must be less than 50 characters long',
           isValid: false,
-        })
-        return
+        });
+        return;
       }
 
       // Server-side availability check
@@ -72,17 +73,17 @@ export function SlugEditor({ portfolioId, initialSlug, onSave, onCancel }: SlugE
         isAvailable: null,
         message: 'Checking availability...',
         isValid: true,
-      })
+      });
 
       try {
         const response = await fetch(
-          `/api/validate-slug?slug=${encodeURIComponent(slug)}&currentId=${encodeURIComponent(portfolioId)}`
-        )
+          `/api/validate-slug?slug=${encodeURIComponent(slug)}&currentId=${encodeURIComponent(portfolioId)}`,
+        );
         const data = (await response.json()) as {
-          success: boolean
-          data?: { isAvailable: boolean; message: string }
-          error?: string
-        }
+          success: boolean;
+          data?: { isAvailable: boolean; message: string };
+          error?: string;
+        };
 
         if (data.success && data.data) {
           setValidation({
@@ -90,14 +91,14 @@ export function SlugEditor({ portfolioId, initialSlug, onSave, onCancel }: SlugE
             isAvailable: data.data.isAvailable,
             message: data.data.message,
             isValid: data.data.isAvailable,
-          })
+          });
         } else {
           setValidation({
             isChecking: false,
             isAvailable: false,
             message: data.error || 'Invalid slug format',
             isValid: false,
-          })
+          });
         }
       } catch (error) {
         setValidation({
@@ -105,83 +106,83 @@ export function SlugEditor({ portfolioId, initialSlug, onSave, onCancel }: SlugE
           isAvailable: false,
           message: 'Error checking availability',
           isValid: false,
-        })
+        });
       }
     },
-    [portfolioId, initialSlug]
-  )
+    [portfolioId, initialSlug],
+  );
 
   // Debounce validation calls
   useEffect(() => {
     const timer = setTimeout(() => {
-      validateSlug(slugValue)
-    }, 500)
+      validateSlug(slugValue);
+    }, 500);
 
-    return () => clearTimeout(timer)
-  }, [slugValue, validateSlug])
+    return () => clearTimeout(timer);
+  }, [slugValue, validateSlug]);
 
   // Event handlers
   const handleSave = async () => {
     if (!validation.isValid || !validation.isAvailable || slugValue === initialSlug || isSaving) {
-      return
+      return;
     }
 
-    setIsSaving(true)
+    setIsSaving(true);
 
     try {
-      const formData = new FormData()
-      formData.append('action', 'update-slug')
-      formData.append('slug', slugValue)
-      formData.append('portfolioId', portfolioId)
+      const formData = new FormData();
+      formData.append('action', 'update-slug');
+      formData.append('slug', slugValue);
+      formData.append('portfolioId', portfolioId);
 
-      submit(formData, { method: 'post' })
+      submit(formData, { method: 'post' });
 
       // Let the parent component handle the success state
-      onSave?.(slugValue)
+      onSave?.(slugValue);
     } catch (error) {
-      console.error('Failed to save slug:', error)
+      console.error('Failed to save slug:', error);
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Transform input to valid slug format
-    const newValue = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '')
-    setSlugValue(newValue)
-  }
+    const newValue = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+    setSlugValue(newValue);
+  };
 
   // Determine if save button should be enabled
   const canSave =
-    validation.isValid && validation.isAvailable && slugValue !== initialSlug && !isSaving
+    validation.isValid && validation.isAvailable && slugValue !== initialSlug && !isSaving;
 
   // Get status icon and styling
   const getValidationStatus = () => {
-    if (!slugValue || slugValue === initialSlug) return null
+    if (!slugValue || slugValue === initialSlug) return null;
 
     if (validation.isChecking) {
-      return <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
+      return <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />;
     }
 
     if (validation.isAvailable) {
-      return <Check className="w-4 h-4 text-green-500" />
+      return <Check className="w-4 h-4 text-green-500" />;
     }
 
     if (validation.isAvailable === false) {
-      return <X className="w-4 h-4 text-red-500" />
+      return <X className="w-4 h-4 text-red-500" />;
     }
 
-    return null
-  }
+    return null;
+  };
 
   // Get message styling
   const getMessageStyling = () => {
-    if (!validation.message) return ''
+    if (!validation.message) return '';
 
-    if (validation.isChecking) return 'text-blue-600'
-    if (validation.isAvailable) return 'text-green-600'
-    return 'text-red-600'
-  }
+    if (validation.isChecking) return 'text-blue-600';
+    if (validation.isAvailable) return 'text-green-600';
+    return 'text-red-600';
+  };
 
   return (
     <div className="space-y-2">
@@ -201,7 +202,7 @@ export function SlugEditor({ portfolioId, initialSlug, onSave, onCancel }: SlugE
               onChange={handleInputChange}
               className={cn(
                 'input rounded-l-none pr-8 font-mono h-8',
-                !validation.isValid ? 'input-error' : ''
+                !validation.isValid ? 'input-error' : '',
               )}
               placeholder="your-portfolio-name"
             />
@@ -217,8 +218,8 @@ export function SlugEditor({ portfolioId, initialSlug, onSave, onCancel }: SlugE
             onClick={handleSave}
             disabled={!canSave}
             variant="outline"
-            size="xs"
-            className="border-green-300 text-green-700 hover:bg-green-50"
+            size="sm"
+            className="h-8 border-green-300 px-2 text-xs text-green-700 hover:bg-green-50"
           >
             {isSaving ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : null}
             Save
@@ -231,5 +232,5 @@ export function SlugEditor({ portfolioId, initialSlug, onSave, onCancel }: SlugE
         <p className={`text-xs ${getMessageStyling()}`}>{validation.message}</p>
       )}
     </div>
-  )
+  );
 }

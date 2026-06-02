@@ -1,3 +1,5 @@
+import type { CareerProjectRecord as Project } from '@hominem/db';
+import { Button } from '@hominem/ui/button';
 import {
   CheckIcon,
   ExternalLinkIcon,
@@ -6,34 +8,33 @@ import {
   PlusIcon,
   TrashIcon,
   XIcon,
-} from 'lucide-react'
-import { useState } from 'react'
-import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router'
-import { useLoaderData } from 'react-router'
-import { Button } from '~/components/ui/button'
-import type { CareerProjectRecord as Project } from '@hominem/db'
-import { createSuccessResponse, withAuthLoader } from '~/lib/route-utils'
+} from 'lucide-react';
+import { useState } from 'react';
+import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
+import { useLoaderData } from 'react-router';
+
+import { createSuccessResponse, withAuthLoader } from '~/lib/route-utils';
 
 interface ProjectSummary {
-  totalProjects: number
-  completedProjects: number
-  inProgressProjects: number
-  plannedProjects: number
-  portfolioProjects: number
-  workLinkedProjects: number
+  totalProjects: number;
+  completedProjects: number;
+  inProgressProjects: number;
+  plannedProjects: number;
+  portfolioProjects: number;
+  workLinkedProjects: number;
 }
 
 interface LoaderData {
-  user: { id: string; email?: string | null; name?: string | null }
-  projects: (Project & { workExperience?: { company: string; role: string } })[]
-  summary: ProjectSummary
+  user: { id: string; email?: string | null; name?: string | null };
+  projects: (Project & { workExperience?: { company: string; role: string } })[];
+  summary: ProjectSummary;
 }
 
 export async function loader(args: LoaderFunctionArgs) {
   return withAuthLoader(args, async ({ user }) => {
     try {
       // For now, return empty data - we'll implement the queries later
-      const projects: (Project & { workExperience?: { company: string; role: string } })[] = []
+      const projects: (Project & { workExperience?: { company: string; role: string } })[] = [];
       const summary: ProjectSummary = {
         totalProjects: 0,
         completedProjects: 0,
@@ -41,55 +42,55 @@ export async function loader(args: LoaderFunctionArgs) {
         plannedProjects: 0,
         portfolioProjects: 0,
         workLinkedProjects: 0,
-      }
+      };
 
       return createSuccessResponse({
         user,
         projects,
         summary,
-      })
+      });
     } catch (error) {
-      console.error('Error loading projects:', error)
-      throw new Response('Error loading projects', { status: 500 })
+      console.error('Error loading projects:', error);
+      throw new Response('Error loading projects', { status: 500 });
     }
-  })
+  });
 }
 
 export async function action(args: ActionFunctionArgs) {
   return withAuthLoader(args, async ({ user, request }) => {
-    const formData = await request.formData()
-    const operation = formData.get('operation') as string
+    const formData = await request.formData();
+    const operation = formData.get('operation') as string;
 
     try {
       if (operation === 'create') {
         // TODO: Implement project creation
-        return createSuccessResponse({ success: true }, 'Project created successfully')
+        return createSuccessResponse({ success: true }, 'Project created successfully');
       }
 
       if (operation === 'update') {
         // TODO: Implement project update
-        return createSuccessResponse({ success: true }, 'Project updated successfully')
+        return createSuccessResponse({ success: true }, 'Project updated successfully');
       }
 
       if (operation === 'delete') {
         // TODO: Implement project deletion
-        return createSuccessResponse({ success: true }, 'Project deleted successfully')
+        return createSuccessResponse({ success: true }, 'Project deleted successfully');
       }
 
-      throw new Response('Invalid operation', { status: 400 })
+      throw new Response('Invalid operation', { status: 400 });
     } catch (error) {
-      console.error('Error handling project operation:', error)
-      throw new Response('Error processing project request', { status: 500 })
+      console.error('Error handling project operation:', error);
+      throw new Response('Error processing project request', { status: 500 });
     }
-  })
+  });
 }
 
 export default function ProjectsPage() {
-  const response = useLoaderData<{ success: boolean; data: LoaderData }>()
-  const data = response?.data || {}
-  const { projects, summary } = data
+  const response = useLoaderData<{ success: boolean; data: LoaderData }>();
+  const data = response?.data || {};
+  const { projects, summary } = data;
 
-  const [showCreateForm, setShowCreateForm] = useState(false)
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   return (
     <div className="space-y-8">
@@ -202,15 +203,15 @@ export default function ProjectsPage() {
         {showCreateForm && <CreateProjectModal onClose={() => setShowCreateForm(false)} />}
       </div>
     </div>
-  )
+  );
 }
 
 interface ProjectCardProps {
-  project: Project & { workExperience?: { company: string; role: string } }
+  project: Project & { workExperience?: { company: string; role: string } };
 }
 
 function ProjectCard({ project }: ProjectCardProps) {
-  const [isEditing, setIsEditing] = useState(false)
+  const [isEditing, setIsEditing] = useState(false);
 
   const statusColors = {
     planned: 'bg-amber-100 text-amber-800',
@@ -218,7 +219,7 @@ function ProjectCard({ project }: ProjectCardProps) {
     on_hold: 'bg-gray-100 text-gray-800',
     completed: 'bg-green-100 text-green-800',
     cancelled: 'bg-red-100 text-red-800',
-  }
+  };
 
   return (
     <div className="p-6">
@@ -311,11 +312,11 @@ function ProjectCard({ project }: ProjectCardProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 function ProjectMobileCard({ project }: ProjectCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const statusColors = {
     planned: 'bg-amber-100 text-amber-800',
@@ -323,11 +324,11 @@ function ProjectMobileCard({ project }: ProjectCardProps) {
     on_hold: 'bg-gray-100 text-gray-800',
     completed: 'bg-green-100 text-green-800',
     cancelled: 'bg-red-100 text-red-800',
-  }
+  };
 
   const formatStatusText = (status: string) => {
-    return status.replace('_', ' ').replace('-', ' ')
-  }
+    return status.replace('_', ' ').replace('-', ' ');
+  };
 
   return (
     <div className="block">
@@ -409,9 +410,9 @@ function ProjectMobileCard({ project }: ProjectCardProps) {
                   <button
                     type="button"
                     onClick={(e) => {
-                      e.stopPropagation()
+                      e.stopPropagation();
                       if (project.liveUrl) {
-                        window.open(project.liveUrl, '_blank', 'noopener,noreferrer')
+                        window.open(project.liveUrl, '_blank', 'noopener,noreferrer');
                       }
                     }}
                     className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
@@ -437,9 +438,9 @@ function ProjectMobileCard({ project }: ProjectCardProps) {
                   <button
                     type="button"
                     onClick={(e) => {
-                      e.stopPropagation()
+                      e.stopPropagation();
                       if (project.githubUrl) {
-                        window.open(project.githubUrl, '_blank', 'noopener,noreferrer')
+                        window.open(project.githubUrl, '_blank', 'noopener,noreferrer');
                       }
                     }}
                     className="p-1 text-gray-400 hover:text-gray-700 transition-colors"
@@ -461,11 +462,11 @@ function ProjectMobileCard({ project }: ProjectCardProps) {
         </div>
       )}
     </div>
-  )
+  );
 }
 
 interface CreateProjectModalProps {
-  onClose: () => void
+  onClose: () => void;
 }
 
 function CreateProjectModal({ onClose }: CreateProjectModalProps) {
@@ -658,5 +659,5 @@ function CreateProjectModal({ onClose }: CreateProjectModalProps) {
         </form>
       </div>
     </div>
-  )
+  );
 }

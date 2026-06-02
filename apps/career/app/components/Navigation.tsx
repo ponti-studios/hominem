@@ -1,18 +1,21 @@
-import { BriefcaseIcon, FileTextIcon, MenuIcon, PencilIcon, XIcon } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { Link, useLocation, useNavigation } from 'react-router'
-import { Button, getButtonClasses } from '~/components/ui/button'
-import { cn } from '~/lib/utils'
-import { useUser } from '../hooks/useAuth'
-import { createClient } from '../lib/supabase/client'
-import { Avatar } from './Avatar'
-import styles from './Navigation.module.css'
+import { useAuthClient } from '@hominem/auth/client/provider';
+import { Avatar, AvatarFallback } from '@hominem/ui/avatar';
+import { Button, buttonVariants } from '@hominem/ui/button';
+import { BriefcaseIcon, FileTextIcon, MenuIcon, PencilIcon, XIcon } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link, useLocation, useNavigation } from 'react-router';
+
+import { cn } from '~/lib/utils';
+
+import { useUser } from '../hooks/useAuth';
+
+import styles from './Navigation.module.css';
 
 // Navigation item interface
 interface NavItem {
-  href: string
-  label: string
-  icon?: React.ComponentType<{ className?: string }>
+  href: string;
+  label: string;
+  icon?: React.ComponentType<{ className?: string }>;
 }
 
 const AUTH_LINKS: { authenticated: NavItem[]; unauthenticated: NavItem[] } = {
@@ -25,7 +28,7 @@ const AUTH_LINKS: { authenticated: NavItem[]; unauthenticated: NavItem[] } = {
     { href: '/login', label: 'Log In' },
     { href: '/onboarding', label: 'Sign Up' },
   ],
-}
+};
 
 const NavLink = ({
   href,
@@ -35,31 +38,31 @@ const NavLink = ({
   onClick,
   variant = 'desktop',
 }: {
-  href: string
-  label: string
-  icon?: React.ComponentType<{ className?: string }>
-  isCurrentPage: (href: string) => boolean
-  onClick?: () => void
-  variant?: 'desktop' | 'mobile'
+  href: string;
+  label: string;
+  icon?: React.ComponentType<{ className?: string }>;
+  isCurrentPage: (href: string) => boolean;
+  onClick?: () => void;
+  variant?: 'desktop' | 'mobile';
 }) => {
-  const baseClasses = getButtonClasses({
+  const baseClasses = buttonVariants({
     variant: 'ghost',
-    size: variant === 'desktop' ? 'sm' : 'default',
-  })
+    size: variant === 'desktop' ? 'sm' : 'md',
+  });
   const desktopClasses = cn(
     baseClasses,
     'inline-flex gap-2 items-center',
     isCurrentPage(href)
       ? 'bg-accent text-accent-foreground'
-      : 'text-muted-foreground hover:text-foreground'
-  )
+      : 'text-muted-foreground hover:text-foreground',
+  );
 
   const mobileClasses = cn(
     'flex items-center gap-2 px-md py-sm text-base font-medium rounded-md transition-fast',
     isCurrentPage(href)
       ? 'bg-accent text-accent-foreground'
-      : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-  )
+      : 'text-muted-foreground hover:text-foreground hover:bg-accent',
+  );
 
   return (
     <Link
@@ -70,69 +73,69 @@ const NavLink = ({
       {Icon && <Icon className={variant === 'desktop' ? 'w-4 h-4' : 'size-4'} />}
       {label}
     </Link>
-  )
-}
+  );
+};
 
 export default function Navigation() {
-  const user = useUser()
-  const navigation = useNavigation()
-  const isNavigating = navigation.state === 'loading'
+  const user = useUser();
+  const authClient = useAuthClient();
+  const navigation = useNavigation();
+  const isNavigating = navigation.state === 'loading';
 
-  const location = useLocation()
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [isScrolled, setIsScrolled] = useState(false)
-  const [isNavHidden, setIsNavHidden] = useState(false)
-  const [lastScrollY, setLastScrollY] = useState(0)
+  const location = useLocation();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isNavHidden, setIsNavHidden] = useState(false);
+  const [lastScrollY, setLastScrollY] = useState(0);
 
   // Navigation links - conditional based on user state
-  const navLinks = user ? [] : [{ href: '/demo', label: 'Demo' }]
+  const navLinks = user ? [] : [{ href: '/demo', label: 'Demo' }];
 
   // Handle scroll for background blur effect and hide/show nav on scroll
   useEffect(() => {
-    if (typeof window === 'undefined') return
+    if (typeof window === 'undefined') return;
 
     const handleScroll = () => {
-      const currentScrollY = window.scrollY
+      const currentScrollY = window.scrollY;
 
       // Check if scrolled down
-      setIsScrolled(currentScrollY > 10)
+      setIsScrolled(currentScrollY > 10);
 
       // Hide navigation when scrolling down, show when scrolling up
       if (currentScrollY > lastScrollY + 10 && currentScrollY > 100) {
-        setIsNavHidden(true)
+        setIsNavHidden(true);
       } else if (currentScrollY < lastScrollY - 10 || currentScrollY < 50) {
-        setIsNavHidden(false)
+        setIsNavHidden(false);
       }
 
-      setLastScrollY(currentScrollY)
-    }
+      setLastScrollY(currentScrollY);
+    };
 
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [lastScrollY])
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
 
   // Close menu when clicking outside or on link
   const closeMenu = () => {
-    setIsMenuOpen(false)
-  }
+    setIsMenuOpen(false);
+  };
 
   // Check if current page
   const isCurrentPage = (href: string) => {
     if (href === '/') {
-      return location.pathname === '/'
+      return location.pathname === '/';
     }
-    return location.pathname === href
-  }
+    return location.pathname === href;
+  };
 
   const handleSignOut = async () => {
     try {
-      const supabase = await createClient()
-      await supabase.auth.signOut()
-      closeMenu()
+      await authClient.signOut();
+      closeMenu();
     } catch (error) {
-      console.error('Error signing out:', error)
+      console.error('Error signing out:', error);
     }
-  }
+  };
 
   // Helper function to get container classes
   const getContainerClasses = () =>
@@ -142,8 +145,8 @@ export default function Navigation() {
       isNavigating && styles.animatedBorder,
       isScrolled
         ? 'backdrop-blur-2xl bg-background/60 border border-white/20 shadow-2xl shadow-black/10'
-        : 'backdrop-blur-xl bg-background/40 border border-white/10 shadow-xl shadow-black/5'
-    )
+        : 'backdrop-blur-xl bg-background/40 border border-white/10 shadow-xl shadow-black/5',
+    );
 
   return (
     <>
@@ -151,7 +154,7 @@ export default function Navigation() {
       <nav
         className={cn(
           'fixed top-0 left-0 right-0 z-50 transition-base px-4',
-          isNavHidden ? '-translate-y-full' : 'translate-y-0'
+          isNavHidden ? '-translate-y-full' : 'translate-y-0',
         )}
       >
         <div className={getContainerClasses()}>
@@ -208,17 +211,21 @@ export default function Navigation() {
                     className="flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-fast px-sm py-xs rounded-md hover:bg-accent"
                   >
                     <span className="mr-2">Account</span>
-                    <Avatar user={user} />
+                    <Avatar className="size-8 border border-input">
+                      <AvatarFallback>
+                        {(user.name || user.email || 'U')[0]?.toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
                   </Link>
                 </div>
               ) : (
                 <div className="hidden md:flex items-center gap-2">
-                  <Link to="/login" className={getButtonClasses({ variant: 'ghost', size: 'sm' })}>
+                  <Link to="/login" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
                     Log In
                   </Link>
                   <Link
                     to="/onboarding"
-                    className={getButtonClasses({ variant: 'primary', size: 'sm' })}
+                    className={buttonVariants({ variant: 'primary', size: 'sm' })}
                   >
                     Sign Up
                   </Link>
@@ -267,7 +274,11 @@ export default function Navigation() {
                       onClick={closeMenu}
                       className="flex items-center gap-2 px-md py-sm text-base font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-fast"
                     >
-                      <Avatar user={user} className="size-8" />
+                      <Avatar className="size-8 border border-input">
+                        <AvatarFallback>
+                          {(user.name || user.email || 'U')[0]?.toUpperCase() || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
                       My Account
                     </Link>
                     {AUTH_LINKS.authenticated.map((link) => (
@@ -299,8 +310,8 @@ export default function Navigation() {
                         onClick={closeMenu}
                         className={cn(
                           link.href === '/onboarding'
-                            ? `${getButtonClasses({ variant: 'primary', size: 'default' })} block mx-md my-sm text-center`
-                            : 'block px-md py-sm text-base font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-fast'
+                            ? `${buttonVariants({ variant: 'primary', size: 'md' })} block mx-md my-sm text-center`
+                            : 'block px-md py-sm text-base font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-fast',
                         )}
                       >
                         {link.label}
@@ -324,5 +335,5 @@ export default function Navigation() {
         />
       )}
     </>
-  )
+  );
 }

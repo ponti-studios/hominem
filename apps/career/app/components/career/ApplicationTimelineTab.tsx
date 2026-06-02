@@ -1,18 +1,19 @@
-import { useState } from 'react'
-import { Form } from 'react-router'
-import { Button } from '~/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/Card'
-import { Input } from '~/components/ui/input'
-import { Select } from '~/components/ui/select'
-import type { ApplicationWithCompany } from '~/types/career-data'
+import { Button } from '@hominem/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
+import { Input } from '@hominem/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
+import { useState } from 'react';
+import { Form } from 'react-router';
+
+import type { ApplicationWithCompany } from '~/types/career-data';
 
 interface TimelineTabProps {
-  application: ApplicationWithCompany
-  applicationId: string
+  application: ApplicationWithCompany;
+  applicationId: string;
 }
 
 export function ApplicationTimelineTab({ application, applicationId }: TimelineTabProps) {
-  const [showAddInterview, setShowAddInterview] = useState(false)
+  const [showAddInterview, setShowAddInterview] = useState(false);
 
   return (
     <div className="space-y-6">
@@ -37,11 +38,16 @@ export function ApplicationTimelineTab({ application, applicationId }: TimelineT
                     Interview Type
                   </label>
                   <Select name="interviewType" defaultValue="phone">
-                    <option value="phone">Phone Screen</option>
-                    <option value="video">Video Interview</option>
-                    <option value="onsite">Onsite Interview</option>
-                    <option value="technical">Technical Interview</option>
-                    <option value="final">Final Interview</option>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select interview type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="phone">Phone Screen</SelectItem>
+                      <SelectItem value="video">Video Interview</SelectItem>
+                      <SelectItem value="onsite">Onsite Interview</SelectItem>
+                      <SelectItem value="technical">Technical Interview</SelectItem>
+                      <SelectItem value="final">Final Interview</SelectItem>
+                    </SelectContent>
                   </Select>
                 </div>
 
@@ -124,5 +130,5 @@ export function ApplicationTimelineTab({ application, applicationId }: TimelineT
         ))}
       </div>
     </div>
-  )
+  );
 }

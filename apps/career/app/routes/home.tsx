@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
-import type { LoaderFunctionArgs, MetaFunction } from 'react-router'
-import { Link } from 'react-router'
+import { useEffect, useState } from 'react';
+import type { LoaderFunctionArgs, MetaFunction } from 'react-router';
+import { Link } from 'react-router';
 
 export const meta: MetaFunction = () => {
   return [
@@ -16,23 +16,23 @@ export const meta: MetaFunction = () => {
       content:
         'Create stunning portfolios in minutes, not hours. Our AI-powered builder makes professional portfolio creation simple and beautiful.',
     },
-  ]
-}
+  ];
+};
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { getAuthenticatedUser, redirectIfAuthenticated } = await import('../lib/auth.server')
-  const user = await getAuthenticatedUser(request)
-  redirectIfAuthenticated(user, '/account')
-  return null
+  const { getAuthenticatedUser, redirectIfAuthenticated } = await import('../lib/auth.server');
+  const user = await getAuthenticatedUser(request);
+  redirectIfAuthenticated(user, '/account');
+  return null;
 }
 
 export default function Home() {
-  const [loading, setLoading] = useState(true)
-  const [hoveredFeature, setHoveredFeature] = useState<number | null>(null)
+  const [loading, setLoading] = useState(true);
+  const [hoveredFeature, setHoveredFeature] = useState<number | null>(null);
 
   useEffect(() => {
-    setLoading(false)
-  }, [])
+    setLoading(false);
+  }, []);
 
   const features = [
     {
@@ -76,7 +76,7 @@ export default function Home() {
         'Enterprise-grade security with 99.9% uptime guarantee. Your data is always safe.',
       gradient: 'from-red-400 to-pink-500',
     },
-  ]
+  ];
 
   const testimonials = [
     {
@@ -102,14 +102,14 @@ export default function Home() {
       content: 'Clean, professional, and mobile-optimized. My portfolio has never looked better.',
       initials: 'ET',
     },
-  ]
+  ];
 
   const stats = [
     { label: 'Portfolios Created', value: '50K+', icon: '💼' },
     { label: 'Job Offers Generated', value: '12K+', icon: '⭐' },
     { label: 'Happy Creators', value: '25K+', icon: '👥' },
     { label: 'Countries Reached', value: '120+', icon: '🌍' },
-  ]
+  ];
 
   if (loading) {
     return (
@@ -119,7 +119,7 @@ export default function Home() {
           <p className="text-gray-600">Loading...</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -348,5 +348,5 @@ export default function Home() {
         </div>
       </footer>
     </div>
-  )
+  );
 }

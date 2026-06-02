@@ -1,37 +1,38 @@
-import type { CareerTestimonialRecord as Testimonial } from '@hominem/db'
-import { CareerRepository, getDb } from '@hominem/db'
-import { MessageSquare, PlusIcon } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import type { SubmitHandler } from 'react-hook-form'
-import { useForm } from 'react-hook-form'
-import type { ActionFunctionArgs, MetaFunction } from 'react-router'
-import { useFetcher, useOutletContext } from 'react-router'
-import { Button } from '~/components/ui/button'
-import { useToast } from '../hooks/useToast'
-import type { FullPortfolio } from '../lib/portfolio.server'
+import type { CareerTestimonialRecord as Testimonial } from '@hominem/db';
+import { CareerRepository, getDb } from '@hominem/db';
+import { Button } from '@hominem/ui/button';
+import { MessageSquare, PlusIcon } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import type { SubmitHandler } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
+import type { ActionFunctionArgs, MetaFunction } from 'react-router';
+import { useFetcher, useOutletContext } from 'react-router';
+
+import { useToast } from '../hooks/useToast';
+import type { FullPortfolio } from '../lib/portfolio.server';
 import {
   createErrorResponse,
   createSuccessResponse,
   parseFormData,
   tryAsync,
   withAuthAction,
-} from '../lib/route-utils'
+} from '../lib/route-utils';
 
 interface TestimonialFormValues {
-  id?: string
-  name: string
-  title?: string
-  content: string
-  company?: string
-  rating?: number
-  avatarUrl?: string
-  linkedinUrl?: string
-  portfolioId: string
+  id?: string;
+  name: string;
+  title?: string;
+  content: string;
+  company?: string;
+  rating?: number;
+  avatarUrl?: string;
+  linkedinUrl?: string;
+  portfolioId: string;
 }
 
 interface TestimonialsEditorSectionProps {
-  testimonials?: Testimonial[] | null
-  portfolioId: string
+  testimonials?: Testimonial[] | null;
+  portfolioId: string;
 }
 
 function TestimonialForm({
@@ -39,13 +40,13 @@ function TestimonialForm({
   portfolioId,
   onDelete,
 }: {
-  testimonial?: Testimonial
-  portfolioId: string
-  onDelete?: () => void
+  testimonial?: Testimonial;
+  portfolioId: string;
+  onDelete?: () => void;
 }) {
-  const fetcher = useFetcher()
-  const { addToast } = useToast()
-  const isNew = !testimonial?.id
+  const fetcher = useFetcher();
+  const { addToast } = useToast();
+  const isNew = !testimonial?.id;
 
   const {
     register,
@@ -65,19 +66,19 @@ function TestimonialForm({
       portfolioId,
     },
     mode: 'onChange',
-  })
+  });
 
   // Handle fetcher responses
   useEffect(() => {
     if (fetcher.state === 'idle' && fetcher.data) {
       const result = fetcher.data as {
-        success: boolean
-        error?: string
-        message?: string
-        data?: Testimonial
-      }
+        success: boolean;
+        error?: string;
+        message?: string;
+        data?: Testimonial;
+      };
       if (result.success) {
-        addToast(result.message || 'Testimonial saved successfully!', 'success')
+        addToast(result.message || 'Testimonial saved successfully!', 'success');
         if (result.data && isNew) {
           // Reset form with the returned data (including new ID)
           reset({
@@ -90,54 +91,54 @@ function TestimonialForm({
             avatarUrl: result.data.avatarUrl || '',
             linkedinUrl: result.data.linkedinUrl || '',
             portfolioId: result.data.portfolioId,
-          })
+          });
         }
       } else {
-        addToast(`Failed to save testimonial: ${result.error || 'Unknown error'}`, 'error')
+        addToast(`Failed to save testimonial: ${result.error || 'Unknown error'}`, 'error');
       }
     }
-  }, [fetcher.state, fetcher.data, reset, addToast, isNew])
+  }, [fetcher.state, fetcher.data, reset, addToast, isNew]);
 
   const onSubmit: SubmitHandler<TestimonialFormValues> = (formData) => {
     if (!isDirty && !isNew) {
-      addToast('No changes to save.', 'info')
-      return
+      addToast('No changes to save.', 'info');
+      return;
     }
 
     if (!formData.name || !formData.content) {
-      addToast('Please fill in all required fields.', 'error')
-      return
+      addToast('Please fill in all required fields.', 'error');
+      return;
     }
 
-    const formDataToSubmit = new FormData()
-    formDataToSubmit.append('operation', isNew ? 'create' : 'update')
-    formDataToSubmit.append('testimonialData', JSON.stringify(formData))
+    const formDataToSubmit = new FormData();
+    formDataToSubmit.append('operation', isNew ? 'create' : 'update');
+    formDataToSubmit.append('testimonialData', JSON.stringify(formData));
 
     fetcher.submit(formDataToSubmit, {
       method: 'POST',
       action: '/editor/testimonials',
-    })
-  }
+    });
+  };
 
   const handleDelete = () => {
-    if (!testimonial?.id) return
+    if (!testimonial?.id) return;
 
     if (confirm('Are you sure you want to delete this testimonial?')) {
-      const formData = new FormData()
-      formData.append('operation', 'delete')
-      formData.append('id', testimonial.id)
-      formData.append('portfolioId', portfolioId)
+      const formData = new FormData();
+      formData.append('operation', 'delete');
+      formData.append('id', testimonial.id);
+      formData.append('portfolioId', portfolioId);
 
       fetcher.submit(formData, {
         method: 'POST',
         action: '/editor/testimonials',
-      })
+      });
 
-      onDelete?.()
+      onDelete?.();
     }
-  }
+  };
 
-  const isSaving = fetcher.state === 'submitting'
+  const isSaving = fetcher.state === 'submitting';
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="card bg-muted/50 space-y-4">
@@ -267,28 +268,28 @@ function TestimonialForm({
         </div>
       </div>
     </form>
-  )
+  );
 }
 
 function TestimonialsEditorSection({
   testimonials: initialTestimonials,
   portfolioId,
 }: TestimonialsEditorSectionProps) {
-  const [showNewForm, setShowNewForm] = useState(false)
-  const [testimonials, setTestimonials] = useState(initialTestimonials || [])
+  const [showNewForm, setShowNewForm] = useState(false);
+  const [testimonials, setTestimonials] = useState(initialTestimonials || []);
 
   // Update testimonials when initialTestimonials changes
   useEffect(() => {
-    setTestimonials(initialTestimonials || [])
-  }, [initialTestimonials])
+    setTestimonials(initialTestimonials || []);
+  }, [initialTestimonials]);
 
   const handleAddNew = () => {
-    setShowNewForm(true)
-  }
+    setShowNewForm(true);
+  };
 
   const handleDelete = (testimonialId: string) => {
-    setTestimonials((prev) => prev.filter((testimonial) => testimonial.id !== testimonialId))
-  }
+    setTestimonials((prev) => prev.filter((testimonial) => testimonial.id !== testimonialId));
+  };
 
   return (
     <section className="container flex flex-col gap-8 mx-auto">
@@ -340,38 +341,38 @@ function TestimonialsEditorSection({
         )}
       </div>
     </section>
-  )
+  );
 }
 
-export const meta: MetaFunction = () => [{ title: 'Testimonials - Portfolio Editor | Craftd' }]
+export const meta: MetaFunction = () => [{ title: 'Testimonials - Portfolio Editor | Craftd' }];
 
 export async function action(args: ActionFunctionArgs) {
   return withAuthAction(args, async ({ user }) => {
-    const formData = await args.request.formData()
-    const operation = formData.get('operation') as string
+    const formData = await args.request.formData();
+    const operation = formData.get('operation') as string;
 
     switch (operation) {
       case 'create':
       case 'update': {
         const testimonialDataResult = parseFormData<TestimonialFormValues>(
           formData,
-          'testimonialData'
-        )
+          'testimonialData',
+        );
 
         if ('success' in testimonialDataResult && !testimonialDataResult.success) {
-          return testimonialDataResult
+          return testimonialDataResult;
         }
 
-        const testimonialData = testimonialDataResult as TestimonialFormValues
+        const testimonialData = testimonialDataResult as TestimonialFormValues;
 
         if (!testimonialData.portfolioId) {
-          return createErrorResponse('Missing portfolioId')
+          return createErrorResponse('Missing portfolioId');
         }
 
         return tryAsync(async () => {
           if (operation === 'create') {
             // Insert new testimonial
-            const { id: _id, ...insertData } = testimonialData
+            const { id: _id, ...insertData } = testimonialData;
 
             const newTestimonial = await CareerRepository.createTestimonial(getDb(), user.id, {
               portfolioId: insertData.portfolioId,
@@ -382,14 +383,14 @@ export async function action(args: ActionFunctionArgs) {
               avatarUrl: insertData.avatarUrl,
               linkedinUrl: insertData.linkedinUrl,
               rating: insertData.rating,
-            })
+            });
 
-            return createSuccessResponse(newTestimonial, 'Testimonial created successfully')
+            return createSuccessResponse(newTestimonial, 'Testimonial created successfully');
           }
 
           // Update existing testimonial
-          const { id, ...updateData } = testimonialData
-          if (!id) return createErrorResponse('Missing testimonial ID for update')
+          const { id, ...updateData } = testimonialData;
+          if (!id) return createErrorResponse('Missing testimonial ID for update');
 
           await CareerRepository.updateTestimonial(
             getDb(),
@@ -404,39 +405,39 @@ export async function action(args: ActionFunctionArgs) {
               avatarUrl: updateData.avatarUrl,
               linkedinUrl: updateData.linkedinUrl,
               rating: updateData.rating,
-            }
-          )
+            },
+          );
 
-          return createSuccessResponse(null, 'Testimonial updated successfully')
-        }, `Failed to ${operation} testimonial`)
+          return createSuccessResponse(null, 'Testimonial updated successfully');
+        }, `Failed to ${operation} testimonial`);
       }
 
       case 'delete': {
-        const id = formData.get('id') as string
-        const portfolioId = formData.get('portfolioId') as string
+        const id = formData.get('id') as string;
+        const portfolioId = formData.get('portfolioId') as string;
 
         if (!id || !portfolioId) {
-          return createErrorResponse('Missing required fields for deletion')
+          return createErrorResponse('Missing required fields for deletion');
         }
 
         return tryAsync(async () => {
-          await CareerRepository.deleteTestimonial(getDb(), user.id, id, portfolioId)
+          await CareerRepository.deleteTestimonial(getDb(), user.id, id, portfolioId);
 
-          return createSuccessResponse(null, 'Testimonial deleted successfully')
-        }, 'Failed to delete testimonial')
+          return createSuccessResponse(null, 'Testimonial deleted successfully');
+        }, 'Failed to delete testimonial');
       }
 
       default:
-        return createErrorResponse('Invalid operation')
+        return createErrorResponse('Invalid operation');
     }
-  })
+  });
 }
 
 export default function EditorTestimonials() {
   // Consume portfolio provided by parent editor layout loader via outlet context
-  const portfolio = useOutletContext<FullPortfolio>()
+  const portfolio = useOutletContext<FullPortfolio>();
 
   return (
     <TestimonialsEditorSection testimonials={portfolio.testimonials} portfolioId={portfolio.id} />
-  )
+  );
 }

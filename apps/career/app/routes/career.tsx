@@ -1,52 +1,54 @@
-import type { LoaderFunctionArgs } from 'react-router'
-import { Link, useLoaderData } from 'react-router'
-import { CareerHistory } from '~/components/career/CareerHistory'
-import { SalaryChart } from '~/components/career/SalaryChart'
-import { StatCard } from '~/components/career/StatCard'
+import type { LoaderFunctionArgs } from 'react-router';
+import { Link, useLoaderData } from 'react-router';
+
+import { CareerHistory } from '~/components/career/CareerHistory';
+import { SalaryChart } from '~/components/career/SalaryChart';
+import { StatCard } from '~/components/career/StatCard';
 import {
   getCareerProgressionSummary,
   getCareerTimeline,
   getWorkExperiencesWithFinancials,
-} from '~/lib/career/queries/career-progression'
-import type { CareerProgressionSummary, WorkExperienceWithFinancials } from '~/types/career-data'
-import { createSuccessResponse, withAuthLoader } from '~/lib/route-utils'
-import { formatCurrency, formatPercentage } from '~/lib/utils'
+} from '~/lib/career/queries/career-progression';
+import { createSuccessResponse, withAuthLoader } from '~/lib/route-utils';
+import { formatCurrency, formatPercentage } from '~/lib/utils';
+import type { CareerProgressionSummary, WorkExperienceWithFinancials } from '~/types/career-data';
 
 interface LoaderData {
-  user: { id: string; email?: string | null; name?: string | null }
-  careerSummary: CareerProgressionSummary
-  workExperiences: WorkExperienceWithFinancials[]
+  user: { id: string; email?: string | null; name?: string | null };
+  careerSummary: CareerProgressionSummary;
+  workExperiences: WorkExperienceWithFinancials[];
   careerTimeline: Array<{
-    date: string
-    type: string
-    title: string
-    description: string
-    company?: string
-    role?: string
-    salary?: number
-    salaryChange?: number
-    percentage?: string
-  }>
+    date: string;
+    type: string;
+    title: string;
+    description: string;
+    company?: string;
+    role?: string;
+    salary?: number;
+    salaryChange?: number;
+    percentage?: string;
+  }>;
 }
 
 export async function loader(args: LoaderFunctionArgs) {
   return withAuthLoader(args, async ({ user }) => {
     try {
       // Import the base functions here to avoid module issues
-      const { getUserCareerEvents, getUserWorkExperiences } = await import('~/lib/career/queries/base')
+      const { getUserCareerEvents, getUserWorkExperiences } =
+        await import('~/lib/career/queries/base');
 
       // Make single calls to get the base data
       const [experiencesResult, eventsResult] = await Promise.all([
         getUserWorkExperiences(user.id),
         getUserCareerEvents(user.id),
-      ])
+      ]);
 
       // Pass the data to the processing functions
       const [careerSummary, workExperiences, careerTimeline] = [
         getCareerProgressionSummary(experiencesResult, eventsResult),
         getWorkExperiencesWithFinancials(experiencesResult),
         getCareerTimeline(experiencesResult, eventsResult),
-      ]
+      ];
 
       // Convert dates to strings to avoid serialization issues
       const serializedWorkExperiences = workExperiences.map((exp) => ({
@@ -55,23 +57,23 @@ export async function loader(args: LoaderFunctionArgs) {
         endDate: exp.endDate ? new Date(exp.endDate).toISOString() : null,
         createdAt: exp.createdAt ? new Date(exp.createdAt).toISOString() : null,
         updatedAt: exp.updatedAt ? new Date(exp.updatedAt).toISOString() : null,
-      }))
+      }));
 
       const serializedCareerTimeline = careerTimeline.map((item) => ({
         ...item,
         date: typeof item.date === 'string' ? item.date : new Date(item.date).toISOString(),
-      }))
+      }));
 
       const responseData = {
         user,
         careerSummary,
         workExperiences: serializedWorkExperiences,
         careerTimeline: serializedCareerTimeline,
-      }
+      };
 
-      return createSuccessResponse(responseData)
+      return createSuccessResponse(responseData);
     } catch (error) {
-      console.error('Error loading career data:', error)
+      console.error('Error loading career data:', error);
       return createSuccessResponse({
         user,
         careerSummary: {
@@ -91,15 +93,15 @@ export async function loader(args: LoaderFunctionArgs) {
         },
         workExperiences: [],
         careerTimeline: [],
-      })
+      });
     }
-  })
+  });
 }
 
 export default function CareerDashboard() {
-  const response = useLoaderData<{ success: boolean; data: LoaderData }>()
-  const data = response?.data || {}
-  const { careerSummary, workExperiences, careerTimeline } = data
+  const response = useLoaderData<{ success: boolean; data: LoaderData }>();
+  const data = response?.data || {};
+  const { careerSummary, workExperiences, careerTimeline } = data;
 
   // Provide default values if data is missing
   const defaultSummary: CareerProgressionSummary = {
@@ -116,11 +118,11 @@ export default function CareerDashboard() {
     salaryByYear: [],
     currentLevel: '',
     levelProgression: [],
-  }
+  };
 
-  const summary = careerSummary || defaultSummary
-  const experiences = workExperiences || []
-  const timeline = careerTimeline || []
+  const summary = careerSummary || defaultSummary;
+  const experiences = workExperiences || [];
+  const timeline = careerTimeline || [];
 
   return (
     <div className="space-y-8">
@@ -213,5 +215,5 @@ export default function CareerDashboard() {
       {/* Career History - Combined Timeline and Experiences */}
       <CareerHistory workExperiences={experiences} careerTimeline={timeline} />
     </div>
-  )
+  );
 }

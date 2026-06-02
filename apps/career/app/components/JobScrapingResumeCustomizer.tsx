@@ -1,121 +1,122 @@
-import { useState } from 'react'
-import type { JobPosting, ScrapedJobPostingResponse } from '~/types/applications'
-import { Button } from './ui/button'
-import { Input } from './ui/input'
-import { Select } from './ui/select'
+import { Button } from '@hominem/ui/button';
+import { Input } from '@hominem/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
+import { useState } from 'react';
+
+import type { JobPosting, ScrapedJobPostingResponse } from '~/types/applications';
 
 interface JobAnalysis {
-  requiredSkills: string[]
-  qualifications: string[]
-  cultureKeywords: string[]
-  recommendedKeywords: string[]
+  requiredSkills: string[];
+  qualifications: string[];
+  cultureKeywords: string[];
+  recommendedKeywords: string[];
 }
 
 interface CustomizeResumeResponse {
-  success: boolean
-  customizedResume: string
-  jobAnalysis: JobAnalysis | null
+  success: boolean;
+  customizedResume: string;
+  jobAnalysis: JobAnalysis | null;
   metadata: {
-    format: string
-    targetLength: string
-    focusAreas: string[]
-    generatedAt: string
-    portfolioId: string
-    jobPostingSource: string
-    jobPostingUrl?: string
-    jobPostingWordCount: number
+    format: string;
+    targetLength: string;
+    focusAreas: string[];
+    generatedAt: string;
+    portfolioId: string;
+    jobPostingSource: string;
+    jobPostingUrl?: string;
+    jobPostingWordCount: number;
     jobPostingMetadata: {
-      jobTitle?: string
-      companyName?: string
-      requirements?: string[]
-      skills?: string[]
-    }
-  }
-  error?: string
+      jobTitle?: string;
+      companyName?: string;
+      requirements?: string[];
+      skills?: string[];
+    };
+  };
+  error?: string;
 }
 
-type Step = 'scrape' | 'review' | 'generate' | 'result'
+type Step = 'scrape' | 'review' | 'generate' | 'result';
 
 interface JobScrapingResumeCustomizerProps {
-  onScrapedData?: (data: JobPosting) => void
-  showResumeGeneration?: boolean
+  onScrapedData?: (data: JobPosting) => void;
+  showResumeGeneration?: boolean;
 }
 
 export function JobScrapingResumeCustomizer({
   onScrapedData,
   showResumeGeneration = true,
 }: JobScrapingResumeCustomizerProps) {
-  const [step, setStep] = useState<Step>('scrape')
-  const [jobUrl, setJobUrl] = useState('')
-  const [isScraping, setIsScraping] = useState(false)
-  const [scrapedJob, setScrapedJob] = useState<JobPosting | null>(null)
-  const [scrapingError, setScrapingError] = useState<string | null>(null)
+  const [step, setStep] = useState<Step>('scrape');
+  const [jobUrl, setJobUrl] = useState('');
+  const [isScraping, setIsScraping] = useState(false);
+  const [scrapedJob, setScrapedJob] = useState<JobPosting | null>(null);
+  const [scrapingError, setScrapingError] = useState<string | null>(null);
 
   // Resume generation state
   const [resumeFormat, setResumeFormat] = useState<
     'professional' | 'modern' | 'technical' | 'executive'
-  >('professional')
-  const [targetLength, setTargetLength] = useState<'concise' | 'standard' | 'detailed'>('standard')
-  const [focusAreas, setFocusAreas] = useState<string>('')
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [resumeResult, setResumeResult] = useState<CustomizeResumeResponse | null>(null)
-  const [generationError, setGenerationError] = useState<string | null>(null)
+  >('professional');
+  const [targetLength, setTargetLength] = useState<'concise' | 'standard' | 'detailed'>('standard');
+  const [focusAreas, setFocusAreas] = useState<string>('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [resumeResult, setResumeResult] = useState<CustomizeResumeResponse | null>(null);
+  const [generationError, setGenerationError] = useState<string | null>(null);
 
   // Application saving state
-  const [isSaving, setIsSaving] = useState(false)
+  const [isSaving, setIsSaving] = useState(false);
   const [savedApplication, setSavedApplication] = useState<{
-    id: string
-    [key: string]: unknown
-  } | null>(null)
-  const [saveError, setSaveError] = useState<string | null>(null)
+    id: string;
+    [key: string]: unknown;
+  } | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const handleScrape = async () => {
     if (!jobUrl.trim()) {
-      setScrapingError('Please enter a job posting URL')
-      return
+      setScrapingError('Please enter a job posting URL');
+      return;
     }
 
-    setIsScraping(true)
-    setScrapingError(null)
-    setScrapedJob(null)
+    setIsScraping(true);
+    setScrapingError(null);
+    setScrapedJob(null);
 
     try {
-      const formData = new FormData()
-      formData.append('jobUrl', jobUrl.trim())
+      const formData = new FormData();
+      formData.append('jobUrl', jobUrl.trim());
 
       const response = await fetch('/api/job/scrape', {
         method: 'POST',
         body: formData,
-      })
+      });
 
-      const data: ScrapedJobPostingResponse = await response.json()
+      const data: ScrapedJobPostingResponse = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to scrape job posting')
+        throw new Error(data.error || 'Failed to scrape job posting');
       }
 
       if (data.jobPosting) {
-        setScrapedJob(data.jobPosting)
+        setScrapedJob(data.jobPosting);
         if (onScrapedData) {
-          onScrapedData(data.jobPosting)
+          onScrapedData(data.jobPosting);
         } else {
-          setStep('review')
+          setStep('review');
         }
       } else {
-        throw new Error('No job posting data received')
+        throw new Error('No job posting data received');
       }
     } catch (err) {
-      setScrapingError(err instanceof Error ? err.message : 'An error occurred')
+      setScrapingError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
-      setIsScraping(false)
+      setIsScraping(false);
     }
-  }
+  };
 
   const handleSaveApplication = async () => {
-    if (!scrapedJob) return
+    if (!scrapedJob) return;
 
-    setIsSaving(true)
-    setSaveError(null)
+    setIsSaving(true);
+    setSaveError(null);
 
     try {
       const response = await fetch('/api/applications/create', {
@@ -124,29 +125,29 @@ export function JobScrapingResumeCustomizer({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ jobPosting: scrapedJob }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to save application')
+        throw new Error(data.error || 'Failed to save application');
       }
 
-      setSavedApplication(data.application)
-      setStep('generate')
+      setSavedApplication(data.application);
+      setStep('generate');
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'An error occurred')
+      setSaveError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  };
 
   const handleGenerateResume = async () => {
-    if (!scrapedJob) return
+    if (!scrapedJob) return;
 
-    setIsGenerating(true)
-    setGenerationError(null)
-    setResumeResult(null)
+    setIsGenerating(true);
+    setGenerationError(null);
+    setResumeResult(null);
 
     try {
       const response = await fetch('/api/resume/customize', {
@@ -165,53 +166,53 @@ export function JobScrapingResumeCustomizer({
                 .filter(Boolean)
             : [],
         }),
-      })
+      });
 
-      const data: CustomizeResumeResponse = await response.json()
+      const data: CustomizeResumeResponse = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to customize resume')
+        throw new Error(data.error || 'Failed to customize resume');
       }
 
-      setResumeResult(data)
-      setStep('result')
+      setResumeResult(data);
+      setStep('result');
     } catch (err) {
-      setGenerationError(err instanceof Error ? err.message : 'An error occurred')
+      setGenerationError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
-      setIsGenerating(false)
+      setIsGenerating(false);
     }
-  }
+  };
 
   const handleCopyResume = () => {
     if (resumeResult?.customizedResume) {
-      navigator.clipboard.writeText(resumeResult.customizedResume)
+      navigator.clipboard.writeText(resumeResult.customizedResume);
     }
-  }
+  };
 
   const handleDownloadResume = () => {
     if (resumeResult?.customizedResume) {
-      const blob = new Blob([resumeResult.customizedResume], { type: 'text/markdown' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `customized-resume-${Date.now()}.md`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
+      const blob = new Blob([resumeResult.customizedResume], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `customized-resume-${Date.now()}.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     }
-  }
+  };
 
   const resetFlow = () => {
-    setStep('scrape')
-    setJobUrl('')
-    setScrapedJob(null)
-    setScrapingError(null)
-    setResumeResult(null)
-    setGenerationError(null)
-    setSavedApplication(null)
-    setSaveError(null)
-  }
+    setStep('scrape');
+    setJobUrl('');
+    setScrapedJob(null);
+    setScrapingError(null);
+    setResumeResult(null);
+    setGenerationError(null);
+    setSavedApplication(null);
+    setSaveError(null);
+  };
 
   return (
     <div className="space-y-12">
@@ -424,16 +425,22 @@ export function JobScrapingResumeCustomizer({
                   Format
                 </label>
                 <Select
-                  id="resumeFormat"
                   value={resumeFormat}
                   onValueChange={(value) => setResumeFormat(value as typeof resumeFormat)}
                   disabled={isGenerating}
-                  className="w-full border-0 border-b-2 border-gray-300 focus:border-black focus:ring-0 rounded-none"
                 >
-                  <option value="professional">Professional</option>
-                  <option value="modern">Modern</option>
-                  <option value="technical">Technical</option>
-                  <option value="executive">Executive</option>
+                  <SelectTrigger
+                    id="resumeFormat"
+                    className="w-full rounded-none border-0 border-b-2 border-gray-300 px-0 focus:ring-0"
+                  >
+                    <SelectValue placeholder="Select format" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="professional">Professional</SelectItem>
+                    <SelectItem value="modern">Modern</SelectItem>
+                    <SelectItem value="technical">Technical</SelectItem>
+                    <SelectItem value="executive">Executive</SelectItem>
+                  </SelectContent>
                 </Select>
               </div>
 
@@ -445,15 +452,21 @@ export function JobScrapingResumeCustomizer({
                   Length
                 </label>
                 <Select
-                  id="targetLength"
                   value={targetLength}
                   onValueChange={(value) => setTargetLength(value as typeof targetLength)}
                   disabled={isGenerating}
-                  className="w-full border-0 border-b-2 border-gray-300 focus:border-black focus:ring-0 rounded-none"
                 >
-                  <option value="concise">Concise</option>
-                  <option value="standard">Standard</option>
-                  <option value="detailed">Detailed</option>
+                  <SelectTrigger
+                    id="targetLength"
+                    className="w-full rounded-none border-0 border-b-2 border-gray-300 px-0 focus:ring-0"
+                  >
+                    <SelectValue placeholder="Select length" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="concise">Concise</SelectItem>
+                    <SelectItem value="standard">Standard</SelectItem>
+                    <SelectItem value="detailed">Detailed</SelectItem>
+                  </SelectContent>
                 </Select>
               </div>
             </div>
@@ -611,5 +624,5 @@ export function JobScrapingResumeCustomizer({
         </div>
       )}
     </div>
-  )
+  );
 }

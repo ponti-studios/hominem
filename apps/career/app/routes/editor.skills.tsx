@@ -1,47 +1,48 @@
-import type { CareerSkillRecord } from '@hominem/db'
-import { CareerRepository, runInTransaction } from '@hominem/db'
-import { LoaderPinwheel, PlusIcon, XIcon, Zap } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
-import type { ActionFunctionArgs, MetaFunction } from 'react-router'
-import { useFetcher, useOutletContext } from 'react-router'
-import { Button } from '~/components/ui/button'
-import { useToast } from '../hooks/useToast'
-import type { FullPortfolio } from '../lib/portfolio.server'
+import type { CareerSkillRecord } from '@hominem/db';
+import { CareerRepository, runInTransaction } from '@hominem/db';
+import { Button } from '@hominem/ui/button';
+import { LoaderPinwheel, PlusIcon, XIcon, Zap } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import type { ActionFunctionArgs, MetaFunction } from 'react-router';
+import { useFetcher, useOutletContext } from 'react-router';
+
+import { useToast } from '../hooks/useToast';
+import type { FullPortfolio } from '../lib/portfolio.server';
 import {
   createErrorResponse,
   createSuccessResponse,
   parseFormData,
   tryAsync,
   withAuthAction,
-} from '../lib/route-utils'
+} from '../lib/route-utils';
 
 export const meta: MetaFunction = () => {
-  return [{ title: 'Skills - Portfolio Editor | Craftd' }]
-}
+  return [{ title: 'Skills - Portfolio Editor | Craftd' }];
+};
 
 interface NewSkillForm {
-  name: string
-  category: string
-  level: number
+  name: string;
+  category: string;
+  level: number;
 }
 
 type EditableSkill = Partial<CareerSkillRecord> & {
-  name: string
-  level: number
-  portfolioId: string
-}
+  name: string;
+  level: number;
+  portfolioId: string;
+};
 
 interface SkillsEditorSectionProps {
-  skills?: CareerSkillRecord[] | null
-  portfolioId: string
+  skills?: CareerSkillRecord[] | null;
+  portfolioId: string;
 }
 
 function SkillsEditorSection({ skills: initialSkills, portfolioId }: SkillsEditorSectionProps) {
-  const [skills, setSkills] = useState<EditableSkill[]>(initialSkills || [])
-  const [isAddingSkill, setIsAddingSkill] = useState(false)
-  const fetcher = useFetcher()
-  const { addToast } = useToast()
+  const [skills, setSkills] = useState<EditableSkill[]>(initialSkills || []);
+  const [isAddingSkill, setIsAddingSkill] = useState(false);
+  const fetcher = useFetcher();
+  const { addToast } = useToast();
 
   const {
     register: registerNewSkill,
@@ -53,27 +54,27 @@ function SkillsEditorSection({ skills: initialSkills, portfolioId }: SkillsEdito
       category: '',
       level: 50,
     },
-  })
+  });
 
   useEffect(() => {
-    setSkills(initialSkills || [])
-  }, [initialSkills])
+    setSkills(initialSkills || []);
+  }, [initialSkills]);
 
   // Group skills by category
   const skillsByCategory = skills.reduce(
     (acc, skill) => {
-      const category = skill.category || 'Uncategorized'
+      const category = skill.category || 'Uncategorized';
       if (!acc[category]) {
-        acc[category] = []
+        acc[category] = [];
       }
-      acc[category].push(skill)
-      return acc
+      acc[category].push(skill);
+      return acc;
     },
-    {} as Record<string, EditableSkill[]>
-  )
+    {} as Record<string, EditableSkill[]>,
+  );
 
   // Get existing categories for the dropdown
-  const existingCategories = Array.from(new Set(skills.map((s) => s.category).filter(Boolean)))
+  const existingCategories = Array.from(new Set(skills.map((s) => s.category).filter(Boolean)));
 
   const saveSkills = (updatedSkills: EditableSkill[]) => {
     // Only send the essential fields, let the database handle timestamps
@@ -83,34 +84,34 @@ function SkillsEditorSection({ skills: initialSkills, portfolioId }: SkillsEdito
       category: skill.category,
       level: skill.level,
       portfolioId: skill.portfolioId,
-    }))
+    }));
 
-    const formData = new FormData()
-    formData.append('skillsData', JSON.stringify(skillsToSave))
+    const formData = new FormData();
+    formData.append('skillsData', JSON.stringify(skillsToSave));
 
     fetcher.submit(formData, {
       method: 'POST',
       action: '/editor/skills',
-    })
-  }
+    });
+  };
 
   // Handle fetcher errors
   useEffect(() => {
     if (fetcher.state === 'idle' && fetcher.data) {
-      const result = fetcher.data as { success: boolean; error?: string }
+      const result = fetcher.data as { success: boolean; error?: string };
       if (!result.success) {
-        addToast(`Failed to save skills: ${result.error || 'Unknown error'}`, 'error')
+        addToast(`Failed to save skills: ${result.error || 'Unknown error'}`, 'error');
       }
     }
-  }, [fetcher.state, fetcher.data, addToast])
+  }, [fetcher.state, fetcher.data, addToast]);
 
   const handleRemoveSkill = (skillToRemove: EditableSkill) => {
     const updatedSkills = skills.filter((skill) =>
-      skill.id ? skill.id !== skillToRemove.id : skill !== skillToRemove
-    )
-    setSkills(updatedSkills)
-    saveSkills(updatedSkills)
-  }
+      skill.id ? skill.id !== skillToRemove.id : skill !== skillToRemove,
+    );
+    setSkills(updatedSkills);
+    saveSkills(updatedSkills);
+  };
 
   const handleAddSkill = (data: NewSkillForm) => {
     const newSkill: EditableSkill = {
@@ -120,23 +121,23 @@ function SkillsEditorSection({ skills: initialSkills, portfolioId }: SkillsEdito
       portfolioId,
       isVisible: true,
       sortOrder: skills.length,
-    }
+    };
 
-    const updatedSkills = [...skills, newSkill]
-    setSkills(updatedSkills)
-    saveSkills(updatedSkills)
-    resetNewSkillForm()
-    setIsAddingSkill(false)
-  }
+    const updatedSkills = [...skills, newSkill];
+    setSkills(updatedSkills);
+    saveSkills(updatedSkills);
+    resetNewSkillForm();
+    setIsAddingSkill(false);
+  };
 
   const getSkillLevelColor = (level: number) => {
-    if (level >= 80) return 'bg-green-100 text-green-800 border-green-200'
-    if (level >= 60) return 'bg-blue-100 text-blue-800 border-blue-200'
-    if (level >= 40) return 'bg-yellow-100 text-yellow-800 border-yellow-200'
-    return 'bg-gray-100 text-gray-800 border-gray-200'
-  }
+    if (level >= 80) return 'bg-green-100 text-green-800 border-green-200';
+    if (level >= 60) return 'bg-blue-100 text-blue-800 border-blue-200';
+    if (level >= 40) return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+    return 'bg-gray-100 text-gray-800 border-gray-200';
+  };
 
-  const isSaving = fetcher.state === 'submitting'
+  const isSaving = fetcher.state === 'submitting';
 
   return (
     <section className="container flex flex-col gap-8 mx-auto">
@@ -226,8 +227,8 @@ function SkillsEditorSection({ skills: initialSkills, portfolioId }: SkillsEdito
               <Button
                 type="button"
                 onClick={() => {
-                  setIsAddingSkill(false)
-                  resetNewSkillForm()
+                  setIsAddingSkill(false);
+                  resetNewSkillForm();
                 }}
                 variant="outline"
               >
@@ -274,44 +275,49 @@ function SkillsEditorSection({ skills: initialSkills, portfolioId }: SkillsEdito
         ))}
       </div>
     </section>
-  )
+  );
 }
 
 export default function EditorSkills() {
   // Use portfolio from parent editor layout via outlet context
-  const portfolio = useOutletContext<FullPortfolio>()
+  const portfolio = useOutletContext<FullPortfolio>();
 
   return (
     <div className="container mx-auto">
       <SkillsEditorSection skills={portfolio.skills} portfolioId={portfolio.id} />
     </div>
-  )
+  );
 }
 
 export async function action(args: ActionFunctionArgs) {
   return withAuthAction(args, async ({ user }) => {
-    const formData = await args.request.formData()
-    const skillsDataResult = parseFormData<Array<{ id?: string; name: string; category?: string | null; level: number; portfolioId: string }>>(
-      formData,
-      'skillsData'
-    )
+    const formData = await args.request.formData();
+    const skillsDataResult = parseFormData<
+      Array<{
+        id?: string;
+        name: string;
+        category?: string | null;
+        level: number;
+        portfolioId: string;
+      }>
+    >(formData, 'skillsData');
     if ('success' in skillsDataResult && !skillsDataResult.success) {
-      return skillsDataResult
+      return skillsDataResult;
     }
     let skillsData = skillsDataResult as Array<{
-      id?: string
-      name: string
-      category?: string | null
-      level: number
-      portfolioId: string
-    }>
+      id?: string;
+      name: string;
+      category?: string | null;
+      level: number;
+      portfolioId: string;
+    }>;
     if (!Array.isArray(skillsData)) {
-      return createErrorResponse('Invalid skills data')
+      return createErrorResponse('Invalid skills data');
     }
     // Ensure all skills have portfolioId and level is a number
-    const portfolioId = skillsData[0]?.portfolioId
-    if (!portfolioId) return createErrorResponse('Missing portfolioId')
-    skillsData = skillsData.map((s) => ({ ...s, portfolioId, level: Number(s.level) }))
+    const portfolioId = skillsData[0]?.portfolioId;
+    if (!portfolioId) return createErrorResponse('Missing portfolioId');
+    skillsData = skillsData.map((s) => ({ ...s, portfolioId, level: Number(s.level) }));
     return tryAsync(async () => {
       await runInTransaction((tx) =>
         CareerRepository.replaceSkills(
@@ -323,10 +329,10 @@ export async function action(args: ActionFunctionArgs) {
             name: skill.name,
             category: skill.category,
             level: Number(skill.level),
-          }))
-        )
-      )
-      return createSuccessResponse(null, 'Skills saved successfully')
-    }, 'Failed to save skills')
-  })
+          })),
+        ),
+      );
+      return createSuccessResponse(null, 'Skills saved successfully');
+    }, 'Failed to save skills');
+  });
 }

@@ -1,47 +1,48 @@
-import type { CareerProjectRecord as Project } from '@hominem/db'
-import { CareerRepository, getDb } from '@hominem/db'
-import { FolderOpen, PlusIcon } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import type { SubmitHandler } from 'react-hook-form'
-import { useForm } from 'react-hook-form'
-import type { ActionFunctionArgs, MetaFunction } from 'react-router'
-import { useFetcher, useOutletContext } from 'react-router'
-import { Button } from '~/components/ui/button'
-import { useToast } from '../hooks/useToast'
-import type { FullPortfolio } from '../lib/portfolio.server'
+import type { CareerProjectRecord as Project } from '@hominem/db';
+import { CareerRepository, getDb } from '@hominem/db';
+import { Button } from '@hominem/ui/button';
+import { FolderOpen, PlusIcon } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import type { SubmitHandler } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
+import type { ActionFunctionArgs, MetaFunction } from 'react-router';
+import { useFetcher, useOutletContext } from 'react-router';
+
+import { useToast } from '../hooks/useToast';
+import type { FullPortfolio } from '../lib/portfolio.server';
 import {
   createErrorResponse,
   createSuccessResponse,
   parseFormData,
   tryAsync,
   withAuthAction,
-} from '../lib/route-utils'
-import { formatDateForInput, nullArrayToUndefined, stringToDate } from '../lib/utils'
+} from '../lib/route-utils';
+import { formatDateForInput, nullArrayToUndefined, stringToDate } from '../lib/utils';
 
-export const meta: MetaFunction = () => [{ title: 'Projects - Portfolio Editor | Craftd' }]
+export const meta: MetaFunction = () => [{ title: 'Projects - Portfolio Editor | Craftd' }];
 
 interface ProjectFormValues {
-  id?: string
-  title: string
-  description: string
-  shortDescription?: string
-  liveUrl?: string
-  githubUrl?: string
-  imageUrl?: string
-  videoUrl?: string
-  technologies?: string[]
-  status?: string
-  startDate?: string
-  endDate?: string
-  isFeatured?: boolean
-  isVisible?: boolean
-  sortOrder?: number
-  portfolioId: string
+  id?: string;
+  title: string;
+  description: string;
+  shortDescription?: string;
+  liveUrl?: string;
+  githubUrl?: string;
+  imageUrl?: string;
+  videoUrl?: string;
+  technologies?: string[];
+  status?: string;
+  startDate?: string;
+  endDate?: string;
+  isFeatured?: boolean;
+  isVisible?: boolean;
+  sortOrder?: number;
+  portfolioId: string;
 }
 
 interface ProjectsEditorSectionProps {
-  projects?: Project[] | null
-  portfolioId: string
+  projects?: Project[] | null;
+  portfolioId: string;
 }
 
 function ProjectForm({
@@ -49,13 +50,13 @@ function ProjectForm({
   portfolioId,
   onDelete,
 }: {
-  project?: Project
-  portfolioId: string
-  onDelete?: () => void
+  project?: Project;
+  portfolioId: string;
+  onDelete?: () => void;
 }) {
-  const fetcher = useFetcher()
-  const { addToast } = useToast()
-  const isNew = !project?.id
+  const fetcher = useFetcher();
+  const { addToast } = useToast();
+  const isNew = !project?.id;
 
   const {
     register,
@@ -82,19 +83,19 @@ function ProjectForm({
       portfolioId,
     },
     mode: 'onChange',
-  })
+  });
 
   // Handle fetcher responses
   useEffect(() => {
     if (fetcher.state === 'idle' && fetcher.data) {
       const result = fetcher.data as {
-        success: boolean
-        error?: string
-        message?: string
-        data?: Project
-      }
+        success: boolean;
+        error?: string;
+        message?: string;
+        data?: Project;
+      };
       if (result.success) {
-        addToast(result.message || 'Project saved successfully!', 'success')
+        addToast(result.message || 'Project saved successfully!', 'success');
         if (result.data && isNew) {
           // Reset form with the returned data (including new ID)
           reset({
@@ -114,54 +115,54 @@ function ProjectForm({
             isVisible: result.data.isVisible !== false,
             sortOrder: result.data.sortOrder || 0,
             portfolioId: result.data.portfolioId,
-          })
+          });
         }
       } else {
-        addToast(`Failed to save project: ${result.error || 'Unknown error'}`, 'error')
+        addToast(`Failed to save project: ${result.error || 'Unknown error'}`, 'error');
       }
     }
-  }, [fetcher.state, fetcher.data, reset, addToast, isNew])
+  }, [fetcher.state, fetcher.data, reset, addToast, isNew]);
 
   const onSubmit: SubmitHandler<ProjectFormValues> = (formData) => {
     if (!isDirty && !isNew) {
-      addToast('No changes to save.', 'info')
-      return
+      addToast('No changes to save.', 'info');
+      return;
     }
 
     if (!formData.title || !formData.description) {
-      addToast('Please fill in all required fields.', 'error')
-      return
+      addToast('Please fill in all required fields.', 'error');
+      return;
     }
 
-    const formDataToSubmit = new FormData()
-    formDataToSubmit.append('operation', isNew ? 'create' : 'update')
-    formDataToSubmit.append('projectData', JSON.stringify(formData))
+    const formDataToSubmit = new FormData();
+    formDataToSubmit.append('operation', isNew ? 'create' : 'update');
+    formDataToSubmit.append('projectData', JSON.stringify(formData));
 
     fetcher.submit(formDataToSubmit, {
       method: 'POST',
       action: '/editor/projects',
-    })
-  }
+    });
+  };
 
   const handleDelete = () => {
-    if (!project?.id) return
+    if (!project?.id) return;
 
     if (confirm('Are you sure you want to delete this project?')) {
-      const formData = new FormData()
-      formData.append('operation', 'delete')
-      formData.append('id', project.id)
-      formData.append('portfolioId', portfolioId)
+      const formData = new FormData();
+      formData.append('operation', 'delete');
+      formData.append('id', project.id);
+      formData.append('portfolioId', portfolioId);
 
       fetcher.submit(formData, {
         method: 'POST',
         action: '/editor/projects',
-      })
+      });
 
-      onDelete?.()
+      onDelete?.();
     }
-  }
+  };
 
-  const isSaving = fetcher.state === 'submitting'
+  const isSaving = fetcher.state === 'submitting';
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="card bg-muted/50 space-y-4">
@@ -349,28 +350,28 @@ function ProjectForm({
         </div>
       </div>
     </form>
-  )
+  );
 }
 
 function ProjectsEditorSection({
   projects: initialProjects,
   portfolioId,
 }: ProjectsEditorSectionProps) {
-  const [showNewForm, setShowNewForm] = useState(false)
-  const [projects, setProjects] = useState(initialProjects || [])
+  const [showNewForm, setShowNewForm] = useState(false);
+  const [projects, setProjects] = useState(initialProjects || []);
 
   // Update projects when initialProjects changes
   useEffect(() => {
-    setProjects(initialProjects || [])
-  }, [initialProjects])
+    setProjects(initialProjects || []);
+  }, [initialProjects]);
 
   const handleAddNew = () => {
-    setShowNewForm(true)
-  }
+    setShowNewForm(true);
+  };
 
   const handleDelete = (projectId: string) => {
-    setProjects((prev) => prev.filter((project) => project.id !== projectId))
-  }
+    setProjects((prev) => prev.filter((project) => project.id !== projectId));
+  };
 
   return (
     <section className="container flex flex-col gap-8 mx-auto">
@@ -418,38 +419,38 @@ function ProjectsEditorSection({
         )}
       </div>
     </section>
-  )
+  );
 }
 
 export async function action(args: ActionFunctionArgs) {
   return withAuthAction(args, async ({ user }) => {
-    const formData = await args.request.formData()
-    const operation = formData.get('operation') as string
+    const formData = await args.request.formData();
+    const operation = formData.get('operation') as string;
 
     switch (operation) {
       case 'create':
       case 'update': {
-        const projectDataResult = parseFormData<ProjectFormValues>(formData, 'projectData')
+        const projectDataResult = parseFormData<ProjectFormValues>(formData, 'projectData');
 
         if ('success' in projectDataResult && !projectDataResult.success) {
-          return projectDataResult
+          return projectDataResult;
         }
 
-        const projectData = projectDataResult as ProjectFormValues
+        const projectData = projectDataResult as ProjectFormValues;
 
         if (!projectData.portfolioId) {
-          return createErrorResponse('Missing portfolioId')
+          return createErrorResponse('Missing portfolioId');
         }
 
         return tryAsync(async () => {
           // Convert technologies string to array if needed
           const technologiesArray = Array.isArray(projectData.technologies)
             ? projectData.technologies
-            : []
+            : [];
 
           if (operation === 'create') {
             // Insert new project
-            const { id: _id, ...insertData } = projectData
+            const { id: _id, ...insertData } = projectData;
 
             // Convert date strings to Date objects for database
             const dbData = {
@@ -457,7 +458,7 @@ export async function action(args: ActionFunctionArgs) {
               technologies: technologiesArray,
               startDate: stringToDate(insertData.startDate),
               endDate: stringToDate(insertData.endDate),
-            }
+            };
 
             const newProject = await CareerRepository.createProject(getDb(), user.id, {
               portfolioId: dbData.portfolioId,
@@ -475,14 +476,14 @@ export async function action(args: ActionFunctionArgs) {
               isFeatured: dbData.isFeatured,
               isVisible: dbData.isVisible,
               sortOrder: dbData.sortOrder,
-            })
+            });
 
-            return createSuccessResponse(newProject, 'Project created successfully')
+            return createSuccessResponse(newProject, 'Project created successfully');
           }
 
           // Update existing project
-          const { id, ...updateData } = projectData
-          if (!id) return createErrorResponse('Missing project ID for update')
+          const { id, ...updateData } = projectData;
+          if (!id) return createErrorResponse('Missing project ID for update');
 
           // Convert date strings to Date objects for database
           const dbData = {
@@ -490,7 +491,7 @@ export async function action(args: ActionFunctionArgs) {
             technologies: technologiesArray,
             startDate: stringToDate(updateData.startDate),
             endDate: stringToDate(updateData.endDate),
-          }
+          };
 
           await CareerRepository.updateProject(getDb(), user.id, id, projectData.portfolioId, {
             title: dbData.title,
@@ -507,36 +508,36 @@ export async function action(args: ActionFunctionArgs) {
             isFeatured: dbData.isFeatured,
             isVisible: dbData.isVisible,
             sortOrder: dbData.sortOrder,
-          })
+          });
 
-          return createSuccessResponse(null, 'Project updated successfully')
-        }, `Failed to ${operation} project`)
+          return createSuccessResponse(null, 'Project updated successfully');
+        }, `Failed to ${operation} project`);
       }
 
       case 'delete': {
-        const id = formData.get('id') as string
-        const portfolioId = formData.get('portfolioId') as string
+        const id = formData.get('id') as string;
+        const portfolioId = formData.get('portfolioId') as string;
 
         if (!id || !portfolioId) {
-          return createErrorResponse('Missing required fields for deletion')
+          return createErrorResponse('Missing required fields for deletion');
         }
 
         return tryAsync(async () => {
-          await CareerRepository.deleteProject(getDb(), user.id, id, portfolioId)
+          await CareerRepository.deleteProject(getDb(), user.id, id, portfolioId);
 
-          return createSuccessResponse(null, 'Project deleted successfully')
-        }, 'Failed to delete project')
+          return createSuccessResponse(null, 'Project deleted successfully');
+        }, 'Failed to delete project');
       }
 
       default:
-        return createErrorResponse('Invalid operation')
+        return createErrorResponse('Invalid operation');
     }
-  })
+  });
 }
 
 export default function EditorProjects() {
   // Consume portfolio provided by parent editor layout loader via outlet context
-  const portfolio = useOutletContext<FullPortfolio>()
+  const portfolio = useOutletContext<FullPortfolio>();
 
-  return <ProjectsEditorSection projects={portfolio.projects} portfolioId={portfolio.id} />
+  return <ProjectsEditorSection projects={portfolio.projects} portfolioId={portfolio.id} />;
 }

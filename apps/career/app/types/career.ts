@@ -22,71 +22,71 @@ export enum JobApplicationStage {
 }
 
 export interface JobApplicationStageEntry {
-  stage: JobApplicationStage
-  date: string
-  notes?: string
+  stage: JobApplicationStage;
+  date: string;
+  notes?: string;
 }
 
 export interface JobApplication {
-  id: string
-  userId: string
-  position: string
-  companyId: string
-  company?: string
-  status: JobApplicationStatus
-  startDate: Date
-  endDate?: Date | null
-  location?: string
-  jobPosting?: string
-  salaryQuoted?: string
-  salaryAccepted?: string | null
-  coverLetter?: string | null
-  resume?: string | null
-  jobId?: string | null
-  link?: string | null
-  phoneScreen?: string | null
-  reference: boolean
-  stages: JobApplicationStageEntry[]
+  id: string;
+  userId: string;
+  position: string;
+  companyId: string;
+  company?: string;
+  status: JobApplicationStatus;
+  startDate: Date;
+  endDate?: Date | null;
+  location?: string;
+  jobPosting?: string;
+  salaryQuoted?: string;
+  salaryAccepted?: string | null;
+  coverLetter?: string | null;
+  resume?: string | null;
+  jobId?: string | null;
+  link?: string | null;
+  phoneScreen?: string | null;
+  reference: boolean;
+  stages: JobApplicationStageEntry[];
   // Recruiter Information
-  recruiterName?: string | null
-  recruiterEmail?: string | null
-  recruiterLinkedin?: string | null
-  createdAt?: Date
-  updatedAt?: Date
+  recruiterName?: string | null;
+  recruiterEmail?: string | null;
+  recruiterLinkedin?: string | null;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface JobApplicationInsert {
-  userId: string
-  position: string
-  companyId: string
-  status: JobApplicationStatus
-  startDate?: Date
-  endDate?: Date | null
-  location?: string
-  jobPosting?: string
-  salaryQuoted?: string
-  salaryAccepted?: string | null
-  coverLetter?: string | null
-  resume?: string | null
-  jobId?: string | null
-  link?: string | null
-  phoneScreen?: string | null
-  reference: boolean
-  stages: JobApplicationStageEntry[]
+  userId: string;
+  position: string;
+  companyId: string;
+  status: JobApplicationStatus;
+  startDate?: Date;
+  endDate?: Date | null;
+  location?: string;
+  jobPosting?: string;
+  salaryQuoted?: string;
+  salaryAccepted?: string | null;
+  coverLetter?: string | null;
+  resume?: string | null;
+  jobId?: string | null;
+  link?: string | null;
+  phoneScreen?: string | null;
+  reference: boolean;
+  stages: JobApplicationStageEntry[];
   // Recruiter Information
-  recruiterName?: string | null
-  recruiterEmail?: string | null
-  recruiterLinkedin?: string | null
+  recruiterName?: string | null;
+  recruiterEmail?: string | null;
+  recruiterLinkedin?: string | null;
 }
 
 export interface Company {
-  id: string
-  name: string
-  website?: string
-  industry?: string
-  size?: string
-  location?: string
-  description?: string
-  createdAt?: Date
-  updatedAt?: Date
+  id: string;
+  name: string;
+  website?: string;
+  industry?: string;
+  size?: string;
+  location?: string;
+  description?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }

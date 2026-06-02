@@ -1,11 +1,12 @@
-import { useState } from 'react'
-import { JobScrapingResumeCustomizer } from '~/components/JobScrapingResumeCustomizer'
-import { Button } from '~/components/ui/button'
-import { Card, CardContent } from '~/components/ui/Card'
+import { Button } from '@hominem/ui/button';
+import { Card, CardContent } from '@hominem/ui/card';
+import { useState } from 'react';
+
+import { JobScrapingResumeCustomizer } from '~/components/JobScrapingResumeCustomizer';
 
 export default function ResumeCustomizer() {
-  const [inputMethod, setInputMethod] = useState<'url' | 'paste'>('url')
-  const [pastedDescription, setPastedDescription] = useState('')
+  const [inputMethod, setInputMethod] = useState<'url' | 'paste'>('url');
+  const [pastedDescription, setPastedDescription] = useState('');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
@@ -118,5 +119,5 @@ export default function ResumeCustomizer() {
         </div>
       </div>
     </div>
-  )
+  );
 }

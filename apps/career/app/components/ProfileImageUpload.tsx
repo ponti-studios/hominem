@@ -1,189 +1,190 @@
-import { Edit, ImageIcon, Upload, User, X } from 'lucide-react'
-import { useCallback, useRef, useState } from 'react'
-import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from 'react-image-crop'
-import 'react-image-crop/dist/ReactCrop.css'
-import { Button } from '~/components/ui/button'
+import { Button } from '@hominem/ui/button';
+import { Edit, ImageIcon, Upload, User, X } from 'lucide-react';
+import { useCallback, useRef, useState } from 'react';
+
+import 'react-image-crop/dist/ReactCrop.css';
+import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from 'react-image-crop';
 
 interface ProfileImageUploadProps {
-  currentImageUrl?: string | null | undefined
-  onImageUploaded: (imageUrl: string) => void
-  onError?: (error: string) => void
+  currentImageUrl?: string | null | undefined;
+  onImageUploaded: (imageUrl: string) => void;
+  onError?: (error: string) => void;
 }
 
-const ASPECT_RATIO = 1 // Square crop
-const MIN_DIMENSION = 150
+const ASPECT_RATIO = 1; // Square crop
+const MIN_DIMENSION = 150;
 
 export function ProfileImageUpload({
   currentImageUrl,
   onImageUploaded,
   onError,
 }: ProfileImageUploadProps) {
-  const [imgSrc, setImgSrc] = useState<string>(currentImageUrl || '')
-  const [crop, setCrop] = useState<Crop>()
-  const [isUploading, setIsUploading] = useState(false)
-  const [showCropper, setShowCropper] = useState(false)
-  const [isDragging, setIsDragging] = useState(false)
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [showUploadZone, setShowUploadZone] = useState(false)
-  const imgRef = useRef<HTMLImageElement>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [imgSrc, setImgSrc] = useState<string>(currentImageUrl || '');
+  const [crop, setCrop] = useState<Crop>();
+  const [isUploading, setIsUploading] = useState(false);
+  const [showCropper, setShowCropper] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [showUploadZone, setShowUploadZone] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDragOver = (event: React.DragEvent) => {
-    event.preventDefault()
-    setIsDragging(true)
-  }
+    event.preventDefault();
+    setIsDragging(true);
+  };
 
   const handleDragLeave = (event: React.DragEvent) => {
-    event.preventDefault()
-    setIsDragging(false)
-  }
+    event.preventDefault();
+    setIsDragging(false);
+  };
 
   const handleDrop = (event: React.DragEvent) => {
-    event.preventDefault()
-    setIsDragging(false)
-    const droppedFiles = event.dataTransfer?.files
+    event.preventDefault();
+    setIsDragging(false);
+    const droppedFiles = event.dataTransfer?.files;
     if (droppedFiles && droppedFiles.length > 0) {
-      processFile(droppedFiles[0])
+      processFile(droppedFiles[0]);
     }
-  }
+  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      processFile(e.target.files[0])
+      processFile(e.target.files[0]);
     }
-  }
+  };
 
   const processFile = (file: File) => {
     // Validate file
     if (!file.type.startsWith('image/')) {
-      onError?.('Please select an image file')
-      return
+      onError?.('Please select an image file');
+      return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
       // 5MB limit
-      onError?.('Image must be less than 5MB')
-      return
+      onError?.('Image must be less than 5MB');
+      return;
     }
 
-    setSelectedFile(file)
-    setCrop(undefined) // Makes crop preview update between images.
-    const reader = new FileReader()
-    reader.addEventListener('load', () => setImgSrc(reader.result?.toString() || ''))
-    reader.readAsDataURL(file)
-    setShowCropper(true)
-  }
+    setSelectedFile(file);
+    setCrop(undefined); // Makes crop preview update between images.
+    const reader = new FileReader();
+    reader.addEventListener('load', () => setImgSrc(reader.result?.toString() || ''));
+    reader.readAsDataURL(file);
+    setShowCropper(true);
+  };
 
   function onImageLoad(e: React.SyntheticEvent<HTMLImageElement>) {
-    const { width, height } = e.currentTarget
-    setCrop(centerAspectCrop(width, height, ASPECT_RATIO))
+    const { width, height } = e.currentTarget;
+    setCrop(centerAspectCrop(width, height, ASPECT_RATIO));
   }
 
   const generateCroppedImage = useCallback(async () => {
-    const image = imgRef.current
-    const currentCrop = crop
+    const image = imgRef.current;
+    const currentCrop = crop;
 
     if (!image || !currentCrop || !currentCrop.width || !currentCrop.height) {
-      throw new Error('Image or crop data is missing')
+      throw new Error('Image or crop data is missing');
     }
 
     // Calculate the scale factors between the displayed image and natural image size
-    const scaleX = image.naturalWidth / image.width
-    const scaleY = image.naturalHeight / image.height
+    const scaleX = image.naturalWidth / image.width;
+    const scaleY = image.naturalHeight / image.height;
 
     // Calculate crop dimensions in natural image pixels
-    const cropX = currentCrop.x * scaleX
-    const cropY = currentCrop.y * scaleY
-    const cropWidth = currentCrop.width * scaleX
-    const cropHeight = currentCrop.height * scaleY
+    const cropX = currentCrop.x * scaleX;
+    const cropY = currentCrop.y * scaleY;
+    const cropWidth = currentCrop.width * scaleX;
+    const cropHeight = currentCrop.height * scaleY;
 
     // Create canvas for cropping
-    const canvas = document.createElement('canvas')
-    const ctx = canvas.getContext('2d')
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
 
     if (!ctx) {
-      throw new Error('Unable to get canvas context')
+      throw new Error('Unable to get canvas context');
     }
 
     // Set canvas dimensions to crop size
-    canvas.width = cropWidth
-    canvas.height = cropHeight
+    canvas.width = cropWidth;
+    canvas.height = cropHeight;
 
     // Draw the cropped portion of the image
-    ctx.drawImage(image, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight)
+    ctx.drawImage(image, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
 
     // Convert canvas to blob
     return new Promise<Blob>((resolve, reject) => {
       canvas.toBlob(
         (blob) => {
           if (blob) {
-            resolve(blob)
+            resolve(blob);
           } else {
-            reject(new Error('Failed to create blob from canvas'))
+            reject(new Error('Failed to create blob from canvas'));
           }
         },
         'image/jpeg',
-        0.8
-      )
-    })
-  }, [crop])
+        0.8,
+      );
+    });
+  }, [crop]);
 
   const handleUpload = async () => {
-    if (!crop) return
+    if (!crop) return;
 
     try {
-      setIsUploading(true)
+      setIsUploading(true);
 
       // Generate cropped image blob
-      const croppedImageBlob = await generateCroppedImage()
+      const croppedImageBlob = await generateCroppedImage();
 
       // Create form data
-      const formData = new FormData()
-      formData.append('image', croppedImageBlob, 'profile-image.jpg')
-      formData.append('action', 'upload-profile-image')
+      const formData = new FormData();
+      formData.append('image', croppedImageBlob, 'profile-image.jpg');
+      formData.append('action', 'upload-profile-image');
 
       // Upload to server
       const response = await fetch('/account', {
         method: 'POST',
         body: formData,
-      })
+      });
 
       const result = (await response.json()) as {
-        success: boolean
-        error?: string
-        data?: { imageUrl: string }
-      }
+        success: boolean;
+        error?: string;
+        data?: { imageUrl: string };
+      };
 
       if (!response.ok || !result.success) {
-        throw new Error(result.error || 'Upload failed')
+        throw new Error(result.error || 'Upload failed');
       }
 
       // Success - only call if we have a valid URL
-      const imageUrl = result.data?.imageUrl
+      const imageUrl = result.data?.imageUrl;
       if (imageUrl) {
-        onImageUploaded(imageUrl)
-        setShowCropper(false)
-        setImgSrc('')
-        setSelectedFile(null)
-        setShowUploadZone(false)
+        onImageUploaded(imageUrl);
+        setShowCropper(false);
+        setImgSrc('');
+        setSelectedFile(null);
+        setShowUploadZone(false);
       } else {
-        throw new Error('No image URL returned from server')
+        throw new Error('No image URL returned from server');
       }
     } catch (error) {
-      console.error('Upload error:', error)
-      onError?.(error instanceof Error ? error.message : 'Upload failed')
+      console.error('Upload error:', error);
+      onError?.(error instanceof Error ? error.message : 'Upload failed');
     } finally {
-      setIsUploading(false)
+      setIsUploading(false);
     }
-  }
+  };
 
   const handleCancel = () => {
-    setShowCropper(false)
-    setImgSrc('')
-    setCrop(undefined)
-    setSelectedFile(null)
-    setShowUploadZone(false)
-  }
+    setShowCropper(false);
+    setImgSrc('');
+    setCrop(undefined);
+    setSelectedFile(null);
+    setShowUploadZone(false);
+  };
 
   if (showCropper) {
     return (
@@ -249,7 +250,7 @@ export function ProfileImageUpload({
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -340,7 +341,7 @@ export function ProfileImageUpload({
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 // Helper function to create aspect crop
@@ -353,9 +354,9 @@ function centerAspectCrop(mediaWidth: number, mediaHeight: number, aspect: numbe
       },
       aspect,
       mediaWidth,
-      mediaHeight
+      mediaHeight,
     ),
     mediaWidth,
-    mediaHeight
-  )
+    mediaHeight,
+  );
 }

@@ -1,55 +1,56 @@
-import { CareerRepository, getDb } from '@hominem/db'
-import { Switch } from '@hominem/ui/switch'
-import { useEffect } from 'react'
-import { Controller, useForm, type SubmitHandler } from 'react-hook-form'
-import type { ActionFunctionArgs, MetaFunction } from 'react-router'
-import { useFetcher, useOutletContext } from 'react-router'
-import { Button } from '~/components/ui/button'
-import { useToast } from '../hooks/useToast'
-import type { FullPortfolio } from '../lib/portfolio.server'
-import { createSuccessResponse, parseFormData, withAuthAction } from '../lib/route-utils'
+import { CareerRepository, getDb } from '@hominem/db';
+import { Button } from '@hominem/ui/button';
+import { Switch } from '@hominem/ui/switch';
+import { useEffect } from 'react';
+import { Controller, useForm, type SubmitHandler } from 'react-hook-form';
+import type { ActionFunctionArgs, MetaFunction } from 'react-router';
+import { useFetcher, useOutletContext } from 'react-router';
+
+import { useToast } from '../hooks/useToast';
+import type { FullPortfolio } from '../lib/portfolio.server';
+import { createSuccessResponse, parseFormData, withAuthAction } from '../lib/route-utils';
 
 export interface BasicInfoFormValues {
-  name: string
-  initials?: string | null
-  title?: string | null
-  jobTitle: string
-  bio: string
-  tagline: string
-  currentLocation: string
-  locationTagline?: string | null
-  email: string
-  phone?: string | null
-  availabilityStatus?: boolean
-  availabilityMessage?: string | null
-  isPublic?: boolean
-  isActive?: boolean
+  name: string;
+  initials?: string | null;
+  title?: string | null;
+  jobTitle: string;
+  bio: string;
+  tagline: string;
+  currentLocation: string;
+  locationTagline?: string | null;
+  email: string;
+  phone?: string | null;
+  availabilityStatus?: boolean;
+  availabilityMessage?: string | null;
+  isPublic?: boolean;
+  isActive?: boolean;
 }
 
 export const meta: MetaFunction = () => {
-  return [{ title: 'Basic Info - Portfolio Editor | Craftd' }]
-}
+  return [{ title: 'Basic Info - Portfolio Editor | Craftd' }];
+};
 
 // Server action to save portfolio data
 export async function action(args: ActionFunctionArgs) {
   return withAuthAction(args, async ({ user }) => {
-    const formData = await args.request.formData()
-    const portfolioDataResult = parseFormData<BasicInfoFormValues>(formData, 'portfolioData')
+    const formData = await args.request.formData();
+    const portfolioDataResult = parseFormData<BasicInfoFormValues>(formData, 'portfolioData');
     if ('success' in portfolioDataResult && !portfolioDataResult.success) {
-      return portfolioDataResult
+      return portfolioDataResult;
     }
-    const portfolioData = portfolioDataResult as BasicInfoFormValues
+    const portfolioData = portfolioDataResult as BasicInfoFormValues;
 
-    await CareerRepository.savePortfolioBasics(getDb(), user.id, portfolioData)
-    return createSuccessResponse(null, 'Portfolio saved successfully')
-  })
+    await CareerRepository.savePortfolioBasics(getDb(), user.id, portfolioData);
+    return createSuccessResponse(null, 'Portfolio saved successfully');
+  });
 }
 
 export default function EditorBasic() {
   // Consume portfolio provided by parent editor layout loader via outlet context
-  const portfolio = useOutletContext<FullPortfolio>()
-  const fetcher = useFetcher()
-  const { addToast } = useToast()
+  const portfolio = useOutletContext<FullPortfolio>();
+  const fetcher = useFetcher();
+  const { addToast } = useToast();
 
   const {
     register,
@@ -75,7 +76,7 @@ export default function EditorBasic() {
       isPublic: portfolio.isPublic,
       isActive: portfolio.isActive,
     },
-  })
+  });
 
   useEffect(() => {
     reset({
@@ -93,25 +94,25 @@ export default function EditorBasic() {
       availabilityMessage: portfolio.availabilityMessage || '',
       isPublic: portfolio.isPublic,
       isActive: portfolio.isActive,
-    })
-  }, [portfolio, reset])
+    });
+  }, [portfolio, reset]);
 
   // Handle fetcher errors and success
   useEffect(() => {
     if (fetcher.state === 'idle' && fetcher.data) {
-      const result = fetcher.data as { success: boolean; error?: string; message?: string }
+      const result = fetcher.data as { success: boolean; error?: string; message?: string };
       if (result.success) {
-        addToast(result.message || 'Basic info updated successfully!', 'success')
+        addToast(result.message || 'Basic info updated successfully!', 'success');
       } else {
-        addToast(`Failed to update basic info: ${result.error || 'Unknown error'}`, 'error')
+        addToast(`Failed to update basic info: ${result.error || 'Unknown error'}`, 'error');
       }
     }
-  }, [fetcher.state, fetcher.data, addToast])
+  }, [fetcher.state, fetcher.data, addToast]);
 
   const onSubmit: SubmitHandler<BasicInfoFormValues> = (formData) => {
     if (!isDirty) {
-      addToast('No changes made to submit.', 'info')
-      return
+      addToast('No changes made to submit.', 'info');
+      return;
     }
 
     // Clean up the data - only send essential fields
@@ -130,18 +131,18 @@ export default function EditorBasic() {
       availabilityMessage: formData.availabilityMessage,
       isPublic: portfolio.isPublic,
       isActive: portfolio.isActive,
-    }
+    };
 
-    const formData2 = new FormData()
-    formData2.append('portfolioData', JSON.stringify(portfolioToSave))
+    const formData2 = new FormData();
+    formData2.append('portfolioData', JSON.stringify(portfolioToSave));
 
     fetcher.submit(formData2, {
       method: 'POST',
       action: '/editor/basic',
-    })
-  }
+    });
+  };
 
-  const isSaving = fetcher.state === 'submitting'
+  const isSaving = fetcher.state === 'submitting';
 
   return (
     <section className="flex flex-col gap-8 mx-auto">
@@ -311,5 +312,5 @@ export default function EditorBasic() {
         </div>
       </form>
     </section>
-  )
+  );
 }

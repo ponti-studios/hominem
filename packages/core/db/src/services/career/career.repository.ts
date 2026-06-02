@@ -1008,7 +1008,11 @@ export const CareerRepository = {
       .executeTakeFirstOrThrow();
   },
 
-  async deleteJobApplication(handle: DbHandle, userId: string, applicationId: string): Promise<void> {
+  async deleteJobApplication(
+    handle: DbHandle,
+    userId: string,
+    applicationId: string,
+  ): Promise<void> {
     await handle
       .deleteFrom('app.job_applications')
       .where('id', '=', applicationId)
@@ -1422,12 +1426,15 @@ export const CareerRepository = {
           .where('portfolio_id', '=', portfolioId)
           .execute();
       } else {
-        await handle.insertInto('app.portfolio_stats').values({
-          portfolio_id: portfolioId,
-          label: stat.label,
-          value: stat.value,
-          sort_order: stat.sortOrder ?? index,
-        }).execute();
+        await handle
+          .insertInto('app.portfolio_stats')
+          .values({
+            portfolio_id: portfolioId,
+            label: stat.label,
+            value: stat.value,
+            sort_order: stat.sortOrder ?? index,
+          })
+          .execute();
       }
     }
   },
@@ -1472,13 +1479,16 @@ export const CareerRepository = {
           .where('portfolio_id', '=', portfolioId)
           .execute();
       } else {
-        await handle.insertInto('app.skills').values({
-          portfolio_id: portfolioId,
-          name: skill.name,
-          category: skill.category ?? null,
-          level: skill.level,
-          sort_order: index,
-        }).execute();
+        await handle
+          .insertInto('app.skills')
+          .values({
+            portfolio_id: portfolioId,
+            name: skill.name,
+            category: skill.category ?? null,
+            level: skill.level,
+            sort_order: index,
+          })
+          .execute();
       }
     }
   },

@@ -1,31 +1,68 @@
-import { getMockPortfolioData } from '../auth.server'
+import { defaultTestPortfolio } from '../test/mock-data';
+
+/**
+ * Get mock portfolio data for test users (e2e testing)
+ */
+export function getMockPortfolioData(request: Request) {
+  const cookieHeader = request.headers.get('Cookie');
+  const testAuthCookie = cookieHeader
+    ?.split(';')
+    .find((c) => c.trim().startsWith('test-auth-user='))
+    ?.split('=')[1];
+
+  if (!testAuthCookie) return null;
+
+  try {
+    const testUserData = JSON.parse(decodeURIComponent(testAuthCookie));
+    const userId = testUserData.id || '00000000-0000-0000-0000-000000000000';
+    const portfolioId = 'test-portfolio-id';
+
+    return {
+      portfolio: { ...defaultTestPortfolio, id: portfolioId, userId },
+      completePortfolio: {
+        ...defaultTestPortfolio,
+        id: portfolioId,
+        userId,
+        workExperience: defaultTestPortfolio.workExperiences.map((we) => ({
+          ...we,
+          portfolioId,
+        })),
+        skills: defaultTestPortfolio.skills.map((skill) => ({ ...skill, portfolioId })),
+      },
+      workExperience: defaultTestPortfolio.workExperiences.map((we) => ({ ...we, portfolioId })),
+      skills: defaultTestPortfolio.skills.map((skill) => ({ ...skill, portfolioId })),
+    };
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Check if user is a test user
  */
 export function isTestUser(userId: string): boolean {
-  return userId === '00000000-0000-0000-0000-000000000000'
+  return userId === '00000000-0000-0000-0000-000000000000';
 }
 
 /**
  * Check if request should use mock data
  */
 export function shouldUseMockData(request: Request): boolean {
-  const cookieHeader = request.headers.get('Cookie')
+  const cookieHeader = request.headers.get('Cookie');
   const testAuthCookie = cookieHeader
     ?.split(';')
     .find((c) => c.trim().startsWith('test-auth-user='))
-    ?.split('=')[1]
-  return !!testAuthCookie
+    ?.split('=')[1];
+  return !!testAuthCookie;
 }
 
 /**
  * Get mock data with forms for editor
  */
 export async function getMockDataWithForms(request: Request) {
-  const mockData = getMockPortfolioData(request)
+  const mockData = getMockPortfolioData(request);
   if (!mockData) {
-    throw new Error('No mock data available')
+    throw new Error('No mock data available');
   }
 
   return {
@@ -54,12 +91,12 @@ export async function getMockDataWithForms(request: Request) {
     },
     socialLinksData: {},
     statsData: [],
-  }
+  };
 }
 
 /**
  * Get mock portfolio for forms
  */
 export function getMockPortfolioForForms(request: Request) {
-  return getMockDataWithForms(request)
+  return getMockDataWithForms(request);
 }

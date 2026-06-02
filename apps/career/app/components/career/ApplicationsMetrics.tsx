@@ -1,15 +1,16 @@
-import { ChevronDownIcon, ChevronUpIcon } from 'lucide-react'
-import { useState } from 'react'
-import type { JobApplicationMetrics } from '~/types/career-data'
-import { centsToDollars, formatPercentage } from '~/lib/utils'
+import { ChevronDownIcon, ChevronUpIcon } from 'lucide-react';
+import { useState } from 'react';
+
+import { centsToDollars, formatPercentage } from '~/lib/utils';
+import type { JobApplicationMetrics } from '~/types/career-data';
 
 interface ApplicationsMetricsProps {
-  metrics: JobApplicationMetrics
+  metrics: JobApplicationMetrics;
 }
 
 export function ApplicationsMetrics({ metrics }: ApplicationsMetricsProps) {
-  const [isExpanded, setIsExpanded] = useState(false)
-  const [showSalaryDetails, setShowSalaryDetails] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [showSalaryDetails, setShowSalaryDetails] = useState(false);
 
   const performanceMetrics = [
     {
@@ -36,7 +37,7 @@ export function ApplicationsMetrics({ metrics }: ApplicationsMetricsProps) {
       icon: '📊',
       color: 'text-gray-600',
     },
-  ]
+  ];
 
   const timingMetrics = [
     {
@@ -63,9 +64,9 @@ export function ApplicationsMetrics({ metrics }: ApplicationsMetricsProps) {
       icon: '✅',
       color: 'text-green-600',
     },
-  ]
+  ];
 
-  const hasSalaryData = metrics.salaryMetrics.averageOffered > 0
+  const hasSalaryData = metrics.salaryMetrics.averageOffered > 0;
 
   return (
     <div className="bg-white shadow-lg rounded-lg border border-gray-200">
@@ -184,5 +185,5 @@ export function ApplicationsMetrics({ metrics }: ApplicationsMetricsProps) {
         </div>
       )}
     </div>
-  )
+  );
 }

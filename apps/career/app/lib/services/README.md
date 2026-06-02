@@ -7,14 +7,14 @@ The storage service provides centralized file upload functionality for the appli
 ### Basic Upload
 
 ```typescript
-import { uploadFile, validateFile, FILE_VALIDATION_PRESETS } from '../lib/services/storage.service'
+import { uploadFile, validateFile, FILE_VALIDATION_PRESETS } from '../lib/services/storage.service';
 
 // Validate file before upload
-const validation = validateFile(file, FILE_VALIDATION_PRESETS.PDF_RESUME)
+const validation = validateFile(file, FILE_VALIDATION_PRESETS.PDF_RESUME);
 if (!validation.valid) {
   // Handle validation error
-  console.error(validation.error)
-  return
+  console.error(validation.error);
+  return;
 }
 
 // Upload file
@@ -23,13 +23,13 @@ const result = await uploadFile(supabase, {
   userId: user.supabaseUser?.id || '',
   folder: 'resumes', // 'resumes' | 'profile-images' | 'documents'
   upsert: false, // Optional: default true
-})
+});
 
 if (result.success) {
   // Use result.publicUrl and result.filePath
-  console.log('File uploaded:', result.publicUrl)
+  console.log('File uploaded:', result.publicUrl);
 } else {
-  console.error('Upload failed:', result.error)
+  console.error('Upload failed:', result.error);
 }
 ```
 
@@ -57,13 +57,13 @@ public/
 ### Delete Files
 
 ```typescript
-import { deleteFile } from '../lib/services/storage.service'
+import { deleteFile } from '../lib/services/storage.service';
 
-const result = await deleteFile(supabase, filePath)
+const result = await deleteFile(supabase, filePath);
 if (result.success) {
-  console.log('File deleted successfully')
+  console.log('File deleted successfully');
 } else {
-  console.error('Delete failed:', result.error)
+  console.error('Delete failed:', result.error);
 }
 ```
 
@@ -80,20 +80,22 @@ if (result.success) {
 Replace manual Supabase storage calls with the helper functions:
 
 ### Before:
+
 ```typescript
-const fileName = `resume-${Date.now()}-${file.name}`
-const filePath = `public/${userId}/${fileName}`
+const fileName = `resume-${Date.now()}-${file.name}`;
+const filePath = `public/${userId}/${fileName}`;
 const { error } = await supabase.storage
-  .from("crafted")
-  .upload(filePath, file, { cacheControl: "3600", upsert: false })
+  .from('crafted')
+  .upload(filePath, file, { cacheControl: '3600', upsert: false });
 ```
 
 ### After:
+
 ```typescript
 const result = await uploadFile(supabase, {
   file,
   userId,
   folder: 'resumes',
   upsert: false,
-})
-``` 
+});
+```

@@ -1,10 +1,11 @@
-import { Button } from '~/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/Card'
-import type { ApplicationWithCompany } from '~/types/career-data'
+import { Button } from '@hominem/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
+
+import type { ApplicationWithCompany } from '~/types/career-data';
 
 interface FilesTabProps {
-  application: ApplicationWithCompany
-  applicationId: string
+  application: ApplicationWithCompany;
+  applicationId: string;
 }
 
 export function ApplicationFilesTab({ application, applicationId }: FilesTabProps) {
@@ -50,5 +51,5 @@ export function ApplicationFilesTab({ application, applicationId }: FilesTabProp
         </div>
       )}
     </div>
-  )
+  );
 }

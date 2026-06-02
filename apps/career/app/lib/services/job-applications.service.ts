@@ -1,17 +1,18 @@
-import { getDb } from '@hominem/db'
-import type { CareerCompanyRecord as Company } from '@hominem/db'
+import { getDb } from '@hominem/db';
+import type { CareerCompanyRecord as Company } from '@hominem/db';
+
 import type {
   ApplicationFile,
   ApplicationNote,
   ApplicationWithCompany,
   InterviewEntry,
   JobApplicationUpdate,
-} from '~/types/career-data'
+} from '~/types/career-data';
 
 export interface ApplicationDetailData {
-  application: ApplicationWithCompany
-  notes: ApplicationNote[]
-  files: ApplicationFile[]
+  application: ApplicationWithCompany;
+  notes: ApplicationNote[];
+  files: ApplicationFile[];
 }
 
 export class JobApplicationsService {
@@ -20,9 +21,9 @@ export class JobApplicationsService {
    */
   static async getApplicationDetail(
     applicationId: string,
-    userId: string
+    userId: string,
   ): Promise<ApplicationDetailData> {
-    const db = getDb()
+    const db = getDb();
 
     const applicationData = await db
       .selectFrom('app.job_applications as application')
@@ -91,10 +92,10 @@ export class JobApplicationsService {
       ])
       .where('application.id', '=', applicationId)
       .where('application.owner_userid', '=', userId)
-      .executeTakeFirst()
+      .executeTakeFirst();
 
     if (!applicationData) {
-      throw new Error('Application not found')
+      throw new Error('Application not found');
     }
 
     const notesResult = await db
@@ -102,7 +103,7 @@ export class JobApplicationsService {
       .selectAll()
       .where('application_id', '=', applicationId)
       .orderBy('createdat', 'asc')
-      .execute()
+      .execute();
 
     const company = applicationData.companyId
       ? ({
@@ -117,7 +118,7 @@ export class JobApplicationsService {
           createdAt: new Date(),
           updatedAt: new Date(),
         } as Company)
-      : null
+      : null;
 
     const application = {
       id: applicationData.id,
@@ -180,7 +181,7 @@ export class JobApplicationsService {
       createdAt: applicationData.createdat ? new Date(applicationData.createdat) : new Date(),
       updatedAt: applicationData.updatedat ? new Date(applicationData.updatedat) : new Date(),
       company,
-    } as unknown as ApplicationWithCompany
+    } as unknown as ApplicationWithCompany;
 
     const notes = notesResult.map(
       (note) =>
@@ -193,14 +194,14 @@ export class JobApplicationsService {
           isPrivate: note.is_private,
           createdAt: note.createdat ? new Date(note.createdat) : new Date(),
           updatedAt: note.updatedat ? new Date(note.updatedat) : new Date(),
-        }) as ApplicationNote
-    )
+        }) as ApplicationNote,
+    );
 
     return {
       application,
       notes,
       files: [],
-    }
+    };
   }
 
   /**
@@ -212,9 +213,9 @@ export class JobApplicationsService {
       .select('id')
       .where('id', '=', applicationId)
       .where('owner_userid', '=', userId)
-      .executeTakeFirst()
+      .executeTakeFirst();
 
-    return Boolean(application)
+    return Boolean(application);
   }
 
   /**
@@ -223,10 +224,10 @@ export class JobApplicationsService {
   static async updateApplication(
     applicationId: string,
     updates: JobApplicationUpdate,
-    userId?: string
+    userId?: string,
   ): Promise<void> {
     if (Object.keys(updates).length === 0) {
-      return
+      return;
     }
 
     let query = getDb()
@@ -252,13 +253,13 @@ export class JobApplicationsService {
           ? { recruiter_linkedin: updates.recruiterLinkedin }
           : {}),
       })
-      .where('id', '=', applicationId)
+      .where('id', '=', applicationId);
 
     if (userId) {
-      query = query.where('owner_userid', '=', userId)
+      query = query.where('owner_userid', '=', userId);
     }
 
-    await query.executeTakeFirstOrThrow()
+    await query.executeTakeFirstOrThrow();
   }
 
   /**
@@ -268,7 +269,7 @@ export class JobApplicationsService {
     applicationId: string,
     type: string,
     title: string | null,
-    content: string
+    content: string,
   ): Promise<void> {
     await getDb()
       .insertInto('app.application_notes')
@@ -278,14 +279,14 @@ export class JobApplicationsService {
         title,
         content,
       })
-      .execute()
+      .execute();
   }
 
   /**
    * Delete a note
    */
   static async deleteNote(noteId: string): Promise<void> {
-    await getDb().deleteFrom('app.application_notes').where('id', '=', noteId).execute()
+    await getDb().deleteFrom('app.application_notes').where('id', '=', noteId).execute();
   }
 
   /**
@@ -296,11 +297,11 @@ export class JobApplicationsService {
       .selectFrom('app.job_applications')
       .select('interview_dates')
       .where('id', '=', applicationId)
-      .executeTakeFirst()
+      .executeTakeFirst();
 
     const currentInterviews = Array.isArray(currentApplication?.interview_dates)
       ? (currentApplication.interview_dates as unknown as InterviewEntry[])
-      : []
+      : [];
 
     await getDb()
       .updateTable('app.job_applications')
@@ -308,7 +309,7 @@ export class JobApplicationsService {
         interview_dates: [...currentInterviews, interview] as unknown as never,
       })
       .where('id', '=', applicationId)
-      .executeTakeFirstOrThrow()
+      .executeTakeFirstOrThrow();
   }
 
   /**
@@ -320,8 +321,8 @@ export class JobApplicationsService {
       .selectAll()
       .where('id', '=', applicationId)
       .where('owner_userid', '=', userId)
-      .executeTakeFirst()
+      .executeTakeFirst();
 
-    return application || null
+    return application || null;
   }
 }

@@ -1,35 +1,37 @@
-import type { CareerSocialLinksRecord } from '@hominem/db'
-import { CareerRepository, getDb } from '@hominem/db'
-import { Github, Globe, Link2, Linkedin, Twitter } from 'lucide-react'
-import { useEffect } from 'react'
-import { useForm, type SubmitHandler } from 'react-hook-form'
-import type { ActionFunctionArgs, MetaFunction } from 'react-router'
-import { useFetcher, useOutletContext } from 'react-router'
-import { Button } from '~/components/ui/button'
-import { cn } from '~/lib/utils'
-import { useToast } from '../hooks/useToast'
-import type { FullPortfolio } from '../lib/portfolio.server'
-import { createSuccessResponse, parseFormData, withAuthAction } from '../lib/route-utils'
+import type { CareerSocialLinksRecord } from '@hominem/db';
+import { CareerRepository, getDb } from '@hominem/db';
+import { Button } from '@hominem/ui/button';
+import { Github, Globe, Link2, Linkedin, Twitter } from 'lucide-react';
+import { useEffect } from 'react';
+import { useForm, type SubmitHandler } from 'react-hook-form';
+import type { ActionFunctionArgs, MetaFunction } from 'react-router';
+import { useFetcher, useOutletContext } from 'react-router';
+
+import { cn } from '~/lib/utils';
+
+import { useToast } from '../hooks/useToast';
+import type { FullPortfolio } from '../lib/portfolio.server';
+import { createSuccessResponse, parseFormData, withAuthAction } from '../lib/route-utils';
 
 interface SocialLinksFormValues {
-  id?: string
-  github?: string | null
-  linkedin?: string | null
-  twitter?: string | null
-  website?: string | null
+  id?: string;
+  github?: string | null;
+  linkedin?: string | null;
+  twitter?: string | null;
+  website?: string | null;
 }
 
 interface SocialLinksEditorSectionProps {
-  socialLinks?: CareerSocialLinksRecord | null
-  portfolioId: string
+  socialLinks?: CareerSocialLinksRecord | null;
+  portfolioId: string;
 }
 
 function SocialLinksEditorSection({
   socialLinks: initialSocialLinks,
   portfolioId,
 }: SocialLinksEditorSectionProps) {
-  const fetcher = useFetcher()
-  const { addToast } = useToast()
+  const fetcher = useFetcher();
+  const { addToast } = useToast();
   const {
     register,
     handleSubmit,
@@ -39,30 +41,30 @@ function SocialLinksEditorSection({
   } = useForm<SocialLinksFormValues>({
     defaultValues: initialSocialLinks || {},
     mode: 'onChange',
-  })
+  });
 
-  const watchedValues = watch()
+  const watchedValues = watch();
 
   useEffect(() => {
-    reset(initialSocialLinks || {})
-  }, [initialSocialLinks, reset])
+    reset(initialSocialLinks || {});
+  }, [initialSocialLinks, reset]);
 
   // Handle fetcher errors and success
   useEffect(() => {
     if (fetcher.state === 'idle' && fetcher.data) {
-      const result = fetcher.data as { success: boolean; error?: string; message?: string }
+      const result = fetcher.data as { success: boolean; error?: string; message?: string };
       if (result.success) {
-        addToast(result.message || 'Social links saved successfully!', 'success')
+        addToast(result.message || 'Social links saved successfully!', 'success');
       } else {
-        addToast(`Failed to save social links: ${result.error || 'Unknown error'}`, 'error')
+        addToast(`Failed to save social links: ${result.error || 'Unknown error'}`, 'error');
       }
     }
-  }, [fetcher.state, fetcher.data, addToast])
+  }, [fetcher.state, fetcher.data, addToast]);
 
   const onSubmit: SubmitHandler<SocialLinksFormValues> = (formData) => {
     if (!isDirty) {
-      addToast('No changes to save in social links.', 'info')
-      return
+      addToast('No changes to save in social links.', 'info');
+      return;
     }
 
     // Clean up the data - only send essential fields
@@ -73,18 +75,18 @@ function SocialLinksEditorSection({
       twitter: formData.twitter,
       website: formData.website,
       portfolioId,
-    }
+    };
 
-    const formData2 = new FormData()
-    formData2.append('socialLinksData', JSON.stringify([socialLinksToSave]))
+    const formData2 = new FormData();
+    formData2.append('socialLinksData', JSON.stringify([socialLinksToSave]));
 
     fetcher.submit(formData2, {
       method: 'POST',
       action: '/editor/social',
-    })
-  }
+    });
+  };
 
-  const isSaving = fetcher.state === 'submitting'
+  const isSaving = fetcher.state === 'submitting';
 
   return (
     <section className="container flex flex-col gap-4 mx-auto">
@@ -160,7 +162,7 @@ function SocialLinksEditorSection({
                 placeholder="johnsmith"
                 className={cn(
                   'input rounded-l-none border-l-0',
-                  errors.linkedin ? 'input-error' : ''
+                  errors.linkedin ? 'input-error' : '',
                 )}
                 {...register('linkedin', {
                   pattern: {
@@ -258,30 +260,29 @@ function SocialLinksEditorSection({
         )}
       </form>
     </section>
-  )
+  );
 }
 
-export const meta: MetaFunction = () => [{ title: 'Social - Portfolio Editor | Craftd' }]
+export const meta: MetaFunction = () => [{ title: 'Social - Portfolio Editor | Craftd' }];
 
 export async function action(args: ActionFunctionArgs) {
   return withAuthAction(args, async ({ user }) => {
-    const formData = await args.request.formData()
+    const formData = await args.request.formData();
 
-    const socialLinksDataResult = parseFormData<Array<SocialLinksFormValues & { portfolioId: string }>>(
-      formData,
-      'socialLinksData'
-    )
+    const socialLinksDataResult = parseFormData<
+      Array<SocialLinksFormValues & { portfolioId: string }>
+    >(formData, 'socialLinksData');
     if ('success' in socialLinksDataResult && !socialLinksDataResult.success) {
-      return socialLinksDataResult
+      return socialLinksDataResult;
     }
 
     const socialLinksData = socialLinksDataResult as Array<
       SocialLinksFormValues & { portfolioId: string }
-    >
-    const socialLinksPayload = socialLinksData[0]
+    >;
+    const socialLinksPayload = socialLinksData[0];
 
     if (!socialLinksPayload?.portfolioId) {
-      throw new Error('Missing portfolioId')
+      throw new Error('Missing portfolioId');
     }
 
     await CareerRepository.saveSocialLinks(getDb(), user.id, socialLinksPayload.portfolioId, {
@@ -290,14 +291,16 @@ export async function action(args: ActionFunctionArgs) {
       linkedin: socialLinksPayload.linkedin,
       twitter: socialLinksPayload.twitter,
       website: socialLinksPayload.website,
-    })
+    });
 
-    return createSuccessResponse(null, 'Social links saved successfully')
-  })
+    return createSuccessResponse(null, 'Social links saved successfully');
+  });
 }
 
 export default function EditorSocial() {
-  const portfolio = useOutletContext<FullPortfolio>()
+  const portfolio = useOutletContext<FullPortfolio>();
 
-  return <SocialLinksEditorSection socialLinks={portfolio.socialLinks} portfolioId={portfolio.id} />
+  return (
+    <SocialLinksEditorSection socialLinks={portfolio.socialLinks} portfolioId={portfolio.id} />
+  );
 }

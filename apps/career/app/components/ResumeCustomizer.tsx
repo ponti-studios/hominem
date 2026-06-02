@@ -1,71 +1,71 @@
-import { useState } from 'react'
-import { Button } from './ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from './ui/Card'
-import { Input } from './ui/input'
-import { Select } from './ui/select'
+import { Button } from '@hominem/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
+import { Input } from '@hominem/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
+import { useState } from 'react';
 
 interface JobAnalysis {
-  requiredSkills: string[]
-  qualifications: string[]
-  cultureKeywords: string[]
-  recommendedKeywords: string[]
+  requiredSkills: string[];
+  qualifications: string[];
+  cultureKeywords: string[];
+  recommendedKeywords: string[];
 }
 
 interface CustomizeResumeResponse {
-  success: boolean
-  customizedResume: string
-  jobAnalysis: JobAnalysis | null
+  success: boolean;
+  customizedResume: string;
+  jobAnalysis: JobAnalysis | null;
   metadata: {
-    format: string
-    targetLength: string
-    focusAreas: string[]
-    generatedAt: string
-    portfolioId: string
-  }
-  error?: string
+    format: string;
+    targetLength: string;
+    focusAreas: string[];
+    generatedAt: string;
+    portfolioId: string;
+  };
+  error?: string;
 }
 
 interface ResumeCustomizerProps {
-  applicationId?: string
-  initialJobPosting?: string
+  applicationId?: string;
+  initialJobPosting?: string;
 }
 
 export function ResumeCustomizer({ applicationId, initialJobPosting = '' }: ResumeCustomizerProps) {
-  const [jobPosting, setJobPosting] = useState(initialJobPosting)
-  const [jobPostingUrl, setJobPostingUrl] = useState('')
-  const [inputMethod, setInputMethod] = useState<'text' | 'url'>('text')
+  const [jobPosting, setJobPosting] = useState(initialJobPosting);
+  const [jobPostingUrl, setJobPostingUrl] = useState('');
+  const [inputMethod, setInputMethod] = useState<'text' | 'url'>('text');
   const [resumeFormat, setResumeFormat] = useState<
     'professional' | 'modern' | 'technical' | 'executive'
-  >('professional')
-  const [targetLength, setTargetLength] = useState<'concise' | 'standard' | 'detailed'>('standard')
-  const [focusAreas, setFocusAreas] = useState<string>('')
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [result, setResult] = useState<CustomizeResumeResponse | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [isFormCollapsed, setIsFormCollapsed] = useState(false)
+  >('professional');
+  const [targetLength, setTargetLength] = useState<'concise' | 'standard' | 'detailed'>('standard');
+  const [focusAreas, setFocusAreas] = useState<string>('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [result, setResult] = useState<CustomizeResumeResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isFormCollapsed, setIsFormCollapsed] = useState(false);
 
   const handleGenerate = async () => {
     if (inputMethod === 'text' && !jobPosting.trim()) {
-      setError('Please paste the job posting content')
-      return
+      setError('Please paste the job posting content');
+      return;
     }
 
     if (inputMethod === 'url' && !jobPostingUrl.trim()) {
-      setError('Please enter a job posting URL')
-      return
+      setError('Please enter a job posting URL');
+      return;
     }
 
-    setIsGenerating(true)
-    setError(null)
-    setResult(null)
+    setIsGenerating(true);
+    setError(null);
+    setResult(null);
 
     try {
       const requestBody: {
-        resumeFormat: typeof resumeFormat
-        targetLength: typeof targetLength
-        focusAreas: string[]
-        jobPosting?: string
-        jobPostingUrl?: string
+        resumeFormat: typeof resumeFormat;
+        targetLength: typeof targetLength;
+        focusAreas: string[];
+        jobPosting?: string;
+        jobPostingUrl?: string;
       } = {
         resumeFormat,
         targetLength,
@@ -75,13 +75,13 @@ export function ResumeCustomizer({ applicationId, initialJobPosting = '' }: Resu
               .map((s) => s.trim())
               .filter(Boolean)
           : [],
-      }
+      };
 
       // Add the appropriate field based on input method
       if (inputMethod === 'text') {
-        requestBody.jobPosting = jobPosting.trim()
+        requestBody.jobPosting = jobPosting.trim();
       } else {
-        requestBody.jobPostingUrl = jobPostingUrl.trim()
+        requestBody.jobPostingUrl = jobPostingUrl.trim();
       }
 
       const response = await fetch('/api/resume/customize', {
@@ -90,43 +90,43 @@ export function ResumeCustomizer({ applicationId, initialJobPosting = '' }: Resu
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(requestBody),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to customize resume')
+        throw new Error(data.error || 'Failed to customize resume');
       }
 
-      setResult(data)
-      setIsFormCollapsed(true) // Collapse form when results are available
+      setResult(data);
+      setIsFormCollapsed(true); // Collapse form when results are available
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
+      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
-      setIsGenerating(false)
+      setIsGenerating(false);
     }
-  }
+  };
 
   const handleCopyResume = () => {
     if (result?.customizedResume) {
-      navigator.clipboard.writeText(result.customizedResume)
+      navigator.clipboard.writeText(result.customizedResume);
       // You could add a toast notification here
     }
-  }
+  };
 
   const handleDownloadResume = () => {
     if (result?.customizedResume) {
-      const blob = new Blob([result.customizedResume], { type: 'text/markdown' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `customized-resume-${Date.now()}.md`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
+      const blob = new Blob([result.customizedResume], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `customized-resume-${Date.now()}.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
@@ -268,15 +268,19 @@ export function ResumeCustomizer({ applicationId, initialJobPosting = '' }: Resu
                 Resume Format
               </label>
               <Select
-                id="resumeFormat"
                 value={resumeFormat}
                 onValueChange={(value) => setResumeFormat(value as typeof resumeFormat)}
                 disabled={isGenerating}
               >
-                <option value="professional">Professional</option>
-                <option value="modern">Modern</option>
-                <option value="technical">Technical</option>
-                <option value="executive">Executive</option>
+                <SelectTrigger id="resumeFormat" className="w-full">
+                  <SelectValue placeholder="Select format" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="professional">Professional</SelectItem>
+                  <SelectItem value="modern">Modern</SelectItem>
+                  <SelectItem value="technical">Technical</SelectItem>
+                  <SelectItem value="executive">Executive</SelectItem>
+                </SelectContent>
               </Select>
             </div>
 
@@ -288,14 +292,18 @@ export function ResumeCustomizer({ applicationId, initialJobPosting = '' }: Resu
                 Target Length
               </label>
               <Select
-                id="targetLength"
                 value={targetLength}
                 onValueChange={(value) => setTargetLength(value as typeof targetLength)}
                 disabled={isGenerating}
               >
-                <option value="concise">Concise (1 page)</option>
-                <option value="standard">Standard (1-2 pages)</option>
-                <option value="detailed">Detailed (2+ pages)</option>
+                <SelectTrigger id="targetLength" className="w-full">
+                  <SelectValue placeholder="Select length" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="concise">Concise (1 page)</SelectItem>
+                  <SelectItem value="standard">Standard (1-2 pages)</SelectItem>
+                  <SelectItem value="detailed">Detailed (2+ pages)</SelectItem>
+                </SelectContent>
               </Select>
             </div>
 
@@ -448,5 +456,5 @@ export function ResumeCustomizer({ applicationId, initialJobPosting = '' }: Resu
         </div>
       )}
     </div>
-  )
+  );
 }

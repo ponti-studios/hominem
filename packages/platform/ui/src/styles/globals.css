@@ -356,14 +356,6 @@
   letter-spacing: var(--letter-spacing-tight);
 }
 
-@utility title2 {
-  font-size: var(--font-size-title-2);
-  font-family: var(--font-family-primary);
-  font-weight: var(--font-weight-semibold);
-  line-height: 1.27;
-  letter-spacing: -0.02em;
-}
-
 @utility headline {
   font-size: var(--font-size-headline);
   font-family: var(--font-family-primary);

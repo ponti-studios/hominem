@@ -1,23 +1,24 @@
-import { CheckCircle2 } from 'lucide-react'
-import { useState } from 'react'
-import { useNavigate } from 'react-router'
-import { AIProcessingAnimation } from '../components/AIProcessingAnimation'
-import { UploadResumeForm } from '../components/UploadResumeForm'
-import type { ConvertedResumeData } from '../types/resume'
+import { CheckCircle2 } from 'lucide-react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router';
+
+import { AIProcessingAnimation } from '../components/AIProcessingAnimation';
+import { UploadResumeForm } from '../components/UploadResumeForm';
+import type { ConvertedResumeData } from '../types/resume';
 
 export default function Onboarding() {
-  const [currentStep, setCurrentStep] = useState(0)
-  const [conversion, setConversion] = useState<ConvertedResumeData | null>(null)
-  const navigate = useNavigate()
+  const [currentStep, setCurrentStep] = useState(0);
+  const [conversion, setConversion] = useState<ConvertedResumeData | null>(null);
+  const navigate = useNavigate();
 
-  const handleUploadStart = () => setCurrentStep(1)
+  const handleUploadStart = () => setCurrentStep(1);
   const handleUploadComplete = (data: ConvertedResumeData) => {
-    navigate('/onboarding/complete?completed=true')
-  }
+    navigate('/onboarding/complete?completed=true');
+  };
   const handleUploadError = (error: string) => {
     // Reset to upload step so user can try again
-    setCurrentStep(0)
-  }
+    setCurrentStep(0);
+  };
 
   return (
     <div className="flex flex-col items-center justify-center">
@@ -39,5 +40,5 @@ export default function Onboarding() {
         </div>
       )}
     </div>
-  )
+  );
 }

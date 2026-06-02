@@ -1,127 +1,128 @@
-import { useState } from 'react'
-import { useContainerWidth } from '~/hooks/useContainerWidth'
-import { useWindowSize } from '~/hooks/useWindowSize'
-import type { ApplicationWithCompany } from '~/types/applications'
+import { useState } from 'react';
+
+import { useContainerWidth } from '~/hooks/useContainerWidth';
+import { useWindowSize } from '~/hooks/useWindowSize';
+import type { ApplicationWithCompany } from '~/types/applications';
 
 interface ApplicationsHeatmapProps {
-  applications: ApplicationWithCompany[]
+  applications: ApplicationWithCompany[];
 }
 
 interface DayData {
-  date: string
-  count: number
-  applications: ApplicationWithCompany[]
+  date: string;
+  count: number;
+  applications: ApplicationWithCompany[];
 }
 
 interface EmptyDay {
-  date: string
-  count: 0
-  isEmpty: true
+  date: string;
+  count: 0;
+  isEmpty: true;
 }
 
 export function ApplicationsHeatmap({ applications }: ApplicationsHeatmapProps) {
-  const [selectedDay, setSelectedDay] = useState<DayData | null>(null)
-  const { width: windowWidth } = useWindowSize()
-  const [containerRef, containerWidth] = useContainerWidth<HTMLDivElement>()
+  const [selectedDay, setSelectedDay] = useState<DayData | null>(null);
+  const { width: windowWidth } = useWindowSize();
+  const [containerRef, containerWidth] = useContainerWidth<HTMLDivElement>();
 
   // Responsive calculation
-  const containerPadding = 48 // p-6 = 24px left + 24px right
-  const weekdayLabelsWidth = 40 // Estimated width for "Sun", "Mon", etc. labels + margin
-  const gridGap = 8 // space-x-2 between labels and grid
-  const weekColWidth = 16 // 12px box + 4px gap
+  const containerPadding = 48; // p-6 = 24px left + 24px right
+  const weekdayLabelsWidth = 40; // Estimated width for "Sun", "Mon", etc. labels + margin
+  const gridGap = 8; // space-x-2 between labels and grid
+  const weekColWidth = 16; // 12px box + 4px gap
 
   const availableWidth = Math.max(
     0,
-    (containerWidth || 320) - containerPadding - weekdayLabelsWidth - gridGap
-  )
-  const maxWeeks = Math.floor(availableWidth / weekColWidth)
-  const weeksToShow = Math.max(1, Math.min(52, maxWeeks)) // show at least 1 week
+    (containerWidth || 320) - containerPadding - weekdayLabelsWidth - gridGap,
+  );
+  const maxWeeks = Math.floor(availableWidth / weekColWidth);
+  const weeksToShow = Math.max(1, Math.min(52, maxWeeks)); // show at least 1 week
 
   // Generate the last 365 days
   const generateDays = (): DayData[] => {
-    const days: DayData[] = []
-    const today = new Date()
+    const days: DayData[] = [];
+    const today = new Date();
 
     for (let i = 364; i >= 0; i--) {
-      const date = new Date(today)
-      date.setDate(date.getDate() - i)
-      const dateString = date.toISOString().split('T')[0]
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dateString = date.toISOString().split('T')[0];
 
       // Find applications for this date
       const dayApplications = applications.filter((app) => {
-        const appDate = app.applicationDate || app.startDate
-        if (!appDate) return false
+        const appDate = app.applicationDate || app.startDate;
+        if (!appDate) return false;
 
-        const appDateString = new Date(appDate).toISOString().split('T')[0]
-        return appDateString === dateString
-      })
+        const appDateString = new Date(appDate).toISOString().split('T')[0];
+        return appDateString === dateString;
+      });
 
       days.push({
         date: dateString,
         count: dayApplications.length,
         applications: dayApplications,
-      })
+      });
     }
 
-    return days
-  }
+    return days;
+  };
 
-  const days = generateDays()
+  const days = generateDays();
 
-  const allWeeks: (DayData | EmptyDay)[][] = []
+  const allWeeks: (DayData | EmptyDay)[][] = [];
   if (days.length > 0) {
-    const firstDate = new Date(`${days[0].date}T00:00:00`)
-    const firstDayOfWeek = firstDate.getUTCDay()
+    const firstDate = new Date(`${days[0].date}T00:00:00`);
+    const firstDayOfWeek = firstDate.getUTCDay();
 
-    const paddedDays: (DayData | EmptyDay)[] = []
+    const paddedDays: (DayData | EmptyDay)[] = [];
     for (let i = 0; i < firstDayOfWeek; i++) {
-      const emptyDate = new Date(firstDate)
-      emptyDate.setDate(emptyDate.getDate() - (firstDayOfWeek - i))
+      const emptyDate = new Date(firstDate);
+      emptyDate.setDate(emptyDate.getDate() - (firstDayOfWeek - i));
       paddedDays.push({
         date: `empty-${emptyDate.toISOString().split('T')[0]}`,
         count: 0,
         isEmpty: true,
-      })
+      });
     }
-    paddedDays.push(...days)
+    paddedDays.push(...days);
 
     for (let i = 0; i < paddedDays.length; i += 7) {
-      allWeeks.push(paddedDays.slice(i, i + 7))
+      allWeeks.push(paddedDays.slice(i, i + 7));
     }
   }
-  const weeks = allWeeks.slice(-weeksToShow)
-  const maxCount = Math.max(0, ...days.map((d) => d.count))
+  const weeks = allWeeks.slice(-weeksToShow);
+  const maxCount = Math.max(0, ...days.map((d) => d.count));
 
   const getColorClass = (count: number): string => {
-    if (count === 0) return 'bg-gray-100'
-    if (count === 1) return 'bg-green-200'
-    if (count === 2) return 'bg-green-300'
-    if (count === 3) return 'bg-green-400'
-    return 'bg-green-500'
-  }
+    if (count === 0) return 'bg-gray-100';
+    if (count === 1) return 'bg-green-200';
+    if (count === 2) return 'bg-green-300';
+    if (count === 3) return 'bg-green-400';
+    return 'bg-green-500';
+  };
 
   const formatDate = (dateString: string): string => {
-    const date = new Date(dateString)
+    const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
       day: 'numeric',
-    })
-  }
+    });
+  };
 
   const getWeekdayLabel = (dayIndex: number): string => {
-    const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-    return weekdays[dayIndex]
-  }
+    const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    return weekdays[dayIndex];
+  };
 
   const getCompanyName = (company: ApplicationWithCompany['company']): string => {
-    if (typeof company === 'string') return company
+    if (typeof company === 'string') return company;
     if (company && typeof company === 'object' && company !== null && 'name' in company) {
-      return (company as { name: string }).name
+      return (company as { name: string }).name;
     }
-    return 'Unknown'
-  }
+    return 'Unknown';
+  };
 
   return (
     <div
@@ -160,7 +161,7 @@ export function ApplicationsHeatmap({ applications }: ApplicationsHeatmapProps) 
                     onMouseLeave={() => setSelectedDay(null)}
                     title={`${formatDate(day.date)}: ${day.count} application${day.count !== 1 ? 's' : ''}`}
                   />
-                )
+                ),
               )}
             </div>
           ))}
@@ -224,5 +225,5 @@ export function ApplicationsHeatmap({ applications }: ApplicationsHeatmapProps) 
         </div>
       </div>
     </div>
-  )
+  );
 }

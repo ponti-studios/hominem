@@ -1,42 +1,42 @@
-import type { FullPortfolio } from '../portfolio.server'
+import type { FullPortfolio } from '../portfolio.server';
 
 export interface TestUser {
-  id: string
-  email: string
-  name: string
+  id: string;
+  email: string;
+  name: string;
   supabaseUser: {
-    id: string
-    email: string
+    id: string;
+    email: string;
     user_metadata: {
-      full_name: string
-      provider: string
-    }
-    app_metadata: Record<string, unknown>
-    aud: string
-    created_at: string
-    updated_at: string
-    email_confirmed_at: string
-    last_sign_in_at: string
-    role: string
-    confirmation_sent_at?: string
-    confirmed_at: string
-    email_change_sent_at?: string
-    new_email?: string
-    invited_at?: string
-    action_link?: string
-    recovery_sent_at?: string
-    phone?: string
-    phone_confirmed_at?: string
-    phone_change_sent_at?: string
-    new_phone?: string
-    identities: unknown[]
-    factors: unknown[]
-    is_anonymous: boolean
-  }
+      full_name: string;
+      provider: string;
+    };
+    app_metadata: Record<string, unknown>;
+    aud: string;
+    created_at: string;
+    updated_at: string;
+    email_confirmed_at: string;
+    last_sign_in_at: string;
+    role: string;
+    confirmation_sent_at?: string;
+    confirmed_at: string;
+    email_change_sent_at?: string;
+    new_email?: string;
+    invited_at?: string;
+    action_link?: string;
+    recovery_sent_at?: string;
+    phone?: string;
+    phone_confirmed_at?: string;
+    phone_change_sent_at?: string;
+    new_phone?: string;
+    identities: unknown[];
+    factors: unknown[];
+    is_anonymous: boolean;
+  };
 }
 
 export const createTestUser = (overrides: Partial<TestUser> = {}): TestUser => {
-  const now = new Date().toISOString()
+  const now = new Date().toISOString();
 
   return {
     id: '00000000-0000-0000-0000-000000000000',
@@ -72,10 +72,10 @@ export const createTestUser = (overrides: Partial<TestUser> = {}): TestUser => {
       is_anonymous: false,
     },
     ...overrides,
-  }
-}
+  };
+};
 
-export const defaultTestUser = createTestUser()
+export const defaultTestUser = createTestUser();
 
 // Use FullPortfolio directly for test portfolio
 export const defaultTestPortfolio: FullPortfolio = {
@@ -252,4 +252,4 @@ export const defaultTestPortfolio: FullPortfolio = {
       updatedAt: new Date(),
     },
   ],
-}
+};

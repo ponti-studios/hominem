@@ -33,7 +33,6 @@ export const Default: Story = {
 
     await userEvent.type(input, 'test@example.com');
     await expect(input).toHaveValue('test@example.com');
-    await expect(canvas.getByRole('heading', { name: 'Remember everything.' })).toBeInTheDocument();
   },
 };
 

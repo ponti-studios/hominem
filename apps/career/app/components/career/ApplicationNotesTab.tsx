@@ -1,18 +1,19 @@
-import { useState } from 'react'
-import { Form } from 'react-router'
-import { Button } from '~/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/Card'
-import { Input } from '~/components/ui/input'
-import { Select } from '~/components/ui/select'
-import type { ApplicationNote } from '~/types/career-data'
+import { Button } from '@hominem/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
+import { Input } from '@hominem/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
+import { useState } from 'react';
+import { Form } from 'react-router';
+
+import type { ApplicationNote } from '~/types/career-data';
 
 interface NotesTabProps {
-  notes: ApplicationNote[]
-  applicationId: string
+  notes: ApplicationNote[];
+  applicationId: string;
 }
 
 export function ApplicationNotesTab({ notes, applicationId }: NotesTabProps) {
-  const [showAddNote, setShowAddNote] = useState(false)
+  const [showAddNote, setShowAddNote] = useState(false);
 
   return (
     <div className="space-y-6">
@@ -37,11 +38,16 @@ export function ApplicationNotesTab({ notes, applicationId }: NotesTabProps) {
                     Note Type
                   </label>
                   <Select name="noteType" defaultValue="general">
-                    <option value="general">General</option>
-                    <option value="interview">Interview</option>
-                    <option value="feedback">Feedback</option>
-                    <option value="research">Research</option>
-                    <option value="follow_up">Follow Up</option>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select note type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="general">General</SelectItem>
+                      <SelectItem value="interview">Interview</SelectItem>
+                      <SelectItem value="feedback">Feedback</SelectItem>
+                      <SelectItem value="research">Research</SelectItem>
+                      <SelectItem value="follow_up">Follow Up</SelectItem>
+                    </SelectContent>
                   </Select>
                 </div>
 
@@ -116,7 +122,7 @@ export function ApplicationNotesTab({ notes, applicationId }: NotesTabProps) {
                         variant="destructive"
                         size="sm"
                         onClick={(e) => {
-                          if (!confirm('Delete this note?')) e.preventDefault()
+                          if (!confirm('Delete this note?')) e.preventDefault();
                         }}
                       >
                         Delete
@@ -131,5 +137,5 @@ export function ApplicationNotesTab({ notes, applicationId }: NotesTabProps) {
         )}
       </div>
     </div>
-  )
+  );
 }

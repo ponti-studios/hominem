@@ -1,8 +1,8 @@
-import { type ClassValue, clsx } from 'clsx'
-import { twMerge } from 'tailwind-merge'
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 /**
@@ -13,9 +13,9 @@ export function cn(...inputs: ClassValue[]) {
  */
 export function formatPercentage(value: number, decimals = 1): string {
   if (value === null || value === undefined || Number.isNaN(value)) {
-    return '0.0%'
+    return '0.0%';
   }
-  return `${(value * 100).toFixed(decimals)}%`
+  return `${(value * 100).toFixed(decimals)}%`;
 }
 
 /**
@@ -24,7 +24,7 @@ export function formatPercentage(value: number, decimals = 1): string {
  * @returns Amount in dollars
  */
 export function centsToDollars(cents: number): number {
-  return cents / 100
+  return cents / 100;
 }
 
 /**
@@ -39,7 +39,7 @@ export function formatCurrency(amount: number, currency = 'USD'): string {
     currency,
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(amount)
+  }).format(amount);
 }
 
 /**
@@ -49,15 +49,15 @@ export function formatCurrency(amount: number, currency = 'USD'): string {
  */
 export function formatNumber(num: number): string {
   if (num >= 1_000_000_000) {
-    return `${(num / 1_000_000_000).toFixed(1)}B`
+    return `${(num / 1_000_000_000).toFixed(1)}B`;
   }
   if (num >= 1_000_000) {
-    return `${(num / 1_000_000).toFixed(1)}M`
+    return `${(num / 1_000_000).toFixed(1)}M`;
   }
   if (num >= 1_000) {
-    return `${(num / 1_000).toFixed(1)}K`
+    return `${(num / 1_000).toFixed(1)}K`;
   }
-  return num.toString()
+  return num.toString();
 }
 
 /**
@@ -67,8 +67,8 @@ export function formatNumber(num: number): string {
  * @returns Number of days
  */
 export function daysBetween(startDate: Date, endDate = new Date()): number {
-  const timeDiff = endDate.getTime() - startDate.getTime()
-  return Math.ceil(timeDiff / (1000 * 3600 * 24))
+  const timeDiff = endDate.getTime() - startDate.getTime();
+  return Math.ceil(timeDiff / (1000 * 3600 * 24));
 }
 
 // Form utilities for handling nullable database values
@@ -78,42 +78,42 @@ export function daysBetween(startDate: Date, endDate = new Date()): number {
  * Converts Date objects or date strings to YYYY-MM-DD format
  */
 export const formatDateForInput = (date: string | Date | null | undefined): string | undefined => {
-  if (!date) return undefined
+  if (!date) return undefined;
   try {
-    const dateObj = typeof date === 'string' ? new Date(date) : date
-    if (Number.isNaN(dateObj.getTime())) return undefined
-    return dateObj.toISOString().split('T')[0] // Returns YYYY-MM-DD format
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    if (Number.isNaN(dateObj.getTime())) return undefined;
+    return dateObj.toISOString().split('T')[0]; // Returns YYYY-MM-DD format
   } catch {
-    return undefined
+    return undefined;
   }
-}
+};
 
 /**
  * Helper function to safely convert nullable string to undefined
  * Useful for form default values where null should become undefined
  */
 export const nullToUndefined = (value: string | null | undefined): string | undefined => {
-  return value === null ? undefined : value
-}
+  return value === null ? undefined : value;
+};
 
 /**
  * Helper function to safely convert nullable array to undefined
  * Useful for form default values where null arrays should become undefined
  */
 export const nullArrayToUndefined = (value: string[] | null | undefined): string[] | undefined => {
-  return value === null ? undefined : value
-}
+  return value === null ? undefined : value;
+};
 
 /**
  * Helper function to convert date string to Date object
  * Returns undefined for invalid dates
  */
 export const stringToDate = (dateString?: string): Date | undefined => {
-  if (!dateString) return undefined
-  const date = new Date(dateString)
-  return Number.isNaN(date.getTime()) ? undefined : date
-}
+  if (!dateString) return undefined;
+  const date = new Date(dateString);
+  return Number.isNaN(date.getTime()) ? undefined : date;
+};
 
 export const normalizeString = (str: string): string => {
-  return str.toLocaleLowerCase().replace(/\s+/g, '-')
-}
+  return str.toLocaleLowerCase().replace(/\s+/g, '-');
+};

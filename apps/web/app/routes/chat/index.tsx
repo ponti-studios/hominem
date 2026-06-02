@@ -55,7 +55,9 @@ export default function ChatIndexPage({
       return chats;
     }
 
-    return chats.filter((chat) => (chat.title ?? 'untitled chat').toLowerCase().includes(normalizedQuery));
+    return chats.filter((chat) =>
+      (chat.title ?? 'untitled chat').toLowerCase().includes(normalizedQuery),
+    );
   }, [chatSearch, chats]);
 
   return (
@@ -90,11 +92,7 @@ export default function ChatIndexPage({
       ) : null}
 
       <div className="grid gap-3">
-        <SearchInput
-          value={chatSearch}
-          onSearchChange={setChatSearch}
-          placeholder="Search chats"
-        />
+        <SearchInput value={chatSearch} onSearchChange={setChatSearch} placeholder="Search chats" />
 
         {filteredChats.map((chat) => (
           <Link

@@ -7,13 +7,7 @@ import {
   AccordionTrigger,
 } from '@hominem/ui/accordion';
 import { Button } from '@hominem/ui/button';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-} from '@hominem/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '@hominem/ui/command';
 import { SpeechInput } from '@hominem/ui/composer';
 import { slugifyText } from '@hominem/utils/text';
 import { useCallback, useMemo, useRef, useState } from 'react';

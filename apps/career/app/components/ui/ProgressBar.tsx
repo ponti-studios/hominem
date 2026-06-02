@@ -1,14 +1,14 @@
-import { cn } from '~/lib/utils'
+import { cn } from '~/lib/utils';
 
 interface ProgressBarProps {
-  label: string
-  value: string | number
-  percentage: number
-  color?: string
-  backgroundColor?: string
-  size?: 'sm' | 'md' | 'lg'
-  valueColor?: string
-  className?: string
+  label: string;
+  value: string | number;
+  percentage: number;
+  color?: string;
+  backgroundColor?: string;
+  size?: 'sm' | 'md' | 'lg';
+  valueColor?: string;
+  className?: string;
 }
 
 export function ProgressBar({
@@ -25,9 +25,9 @@ export function ProgressBar({
     sm: 'h-1.5',
     md: 'h-2',
     lg: 'h-3',
-  }
+  };
 
-  const barHeight = sizeClasses[size]
+  const barHeight = sizeClasses[size];
 
   // Auto-determine value color based on the bar color if not provided
   const defaultValueColor = color.includes('blue')
@@ -40,9 +40,9 @@ export function ProgressBar({
           ? 'text-red-600'
           : color.includes('gray')
             ? 'text-gray-600'
-            : 'text-gray-600'
+            : 'text-gray-600';
 
-  const finalValueColor = valueColor || defaultValueColor
+  const finalValueColor = valueColor || defaultValueColor;
 
   return (
     <div className={cn('space-y-1', className)}>
@@ -60,7 +60,7 @@ export function ProgressBar({
         />
       </div>
     </div>
-  )
+  );
 }
 
 // Convenience component for common progress bar with percentage
@@ -72,12 +72,12 @@ export function PercentageProgressBar({
   decimals = 1,
   className,
 }: {
-  label: string
-  percentage: number
-  color?: string
-  size?: 'sm' | 'md' | 'lg'
-  decimals?: number
-  className?: string
+  label: string;
+  percentage: number;
+  color?: string;
+  size?: 'sm' | 'md' | 'lg';
+  decimals?: number;
+  className?: string;
 }) {
   return (
     <ProgressBar
@@ -88,7 +88,7 @@ export function PercentageProgressBar({
       size={size}
       className={className}
     />
-  )
+  );
 }
 
 // Convenience component for volume-based progress bars
@@ -100,14 +100,14 @@ export function VolumeProgressBar({
   size = 'md',
   className,
 }: {
-  label: string
-  count: number
-  maxCount: number
-  color?: string
-  size?: 'sm' | 'md' | 'lg'
-  className?: string
+  label: string;
+  count: number;
+  maxCount: number;
+  color?: string;
+  size?: 'sm' | 'md' | 'lg';
+  className?: string;
 }) {
-  const percentage = maxCount > 0 ? (count / maxCount) * 100 : 0
+  const percentage = maxCount > 0 ? (count / maxCount) * 100 : 0;
 
   return (
     <ProgressBar
@@ -118,5 +118,5 @@ export function VolumeProgressBar({
       size={size}
       className={className}
     />
-  )
+  );
 }

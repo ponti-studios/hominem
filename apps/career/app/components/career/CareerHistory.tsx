@@ -1,21 +1,22 @@
-import { BriefcaseIcon } from 'lucide-react'
-import { Link } from 'react-router'
-import type { WorkExperienceWithFinancials } from '~/types/career-data'
-import { formatCurrency, formatPercentage } from '~/lib/utils'
+import { BriefcaseIcon } from 'lucide-react';
+import { Link } from 'react-router';
+
+import { formatCurrency, formatPercentage } from '~/lib/utils';
+import type { WorkExperienceWithFinancials } from '~/types/career-data';
 
 interface CareerHistoryProps {
-  workExperiences: WorkExperienceWithFinancials[]
+  workExperiences: WorkExperienceWithFinancials[];
   careerTimeline: Array<{
-    date: string
-    type: string
-    title: string
-    description: string
-    company?: string
-    role?: string
-    salary?: number
-    salaryChange?: number
-    percentage?: string
-  }>
+    date: string;
+    type: string;
+    title: string;
+    description: string;
+    company?: string;
+    role?: string;
+    salary?: number;
+    salaryChange?: number;
+    percentage?: string;
+  }>;
 }
 
 export function CareerHistory({ workExperiences }: CareerHistoryProps) {
@@ -23,46 +24,46 @@ export function CareerHistory({ workExperiences }: CareerHistoryProps) {
   const sortedExperiences = workExperiences
     .filter((exp) => exp.startDate) // Only include experiences with start dates
     .sort((a, b) => {
-      const dateA = a.startDate ? new Date(a.startDate).getTime() : 0
-      const dateB = b.startDate ? new Date(b.startDate).getTime() : 0
-      return dateB - dateA // Descending order (most recent first)
-    })
+      const dateA = a.startDate ? new Date(a.startDate).getTime() : 0;
+      const dateB = b.startDate ? new Date(b.startDate).getTime() : 0;
+      return dateB - dateA; // Descending order (most recent first)
+    });
 
   const formatDuration = (startDate: string | Date, endDate?: string | Date | null) => {
-    const start = new Date(startDate)
-    const end = endDate ? new Date(endDate) : new Date()
-    const years = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 365.25)
+    const start = new Date(startDate);
+    const end = endDate ? new Date(endDate) : new Date();
+    const years = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 365.25);
 
     if (years < 1) {
-      const months = Math.round(years * 12)
-      return `${months} month${months !== 1 ? 's' : ''}`
+      const months = Math.round(years * 12);
+      return `${months} month${months !== 1 ? 's' : ''}`;
     }
 
-    const wholeYears = Math.floor(years)
-    const remainingMonths = Math.round((years - wholeYears) * 12)
+    const wholeYears = Math.floor(years);
+    const remainingMonths = Math.round((years - wholeYears) * 12);
 
     if (remainingMonths === 0) {
-      return `${wholeYears} year${wholeYears !== 1 ? 's' : ''}`
+      return `${wholeYears} year${wholeYears !== 1 ? 's' : ''}`;
     }
 
-    return `${wholeYears}y ${remainingMonths}m`
-  }
+    return `${wholeYears}y ${remainingMonths}m`;
+  };
 
   const formatDateRange = (startDate: string | Date, endDate?: string | Date | null) => {
-    const start = new Date(startDate)
-    const end = endDate ? new Date(endDate) : null
+    const start = new Date(startDate);
+    const end = endDate ? new Date(endDate) : null;
 
     const startFormatted = start.toLocaleDateString('en-US', {
       month: 'short',
       year: 'numeric',
-    })
+    });
 
     const endFormatted = end
       ? end.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
-      : 'Present'
+      : 'Present';
 
-    return `${startFormatted} - ${endFormatted}`
-  }
+    return `${startFormatted} - ${endFormatted}`;
+  };
 
   return (
     <div data-testid="career-history">
@@ -295,7 +296,7 @@ export function CareerHistory({ workExperiences }: CareerHistoryProps) {
         </div>
       )}
     </div>
-  )
+  );
 }
 
 const KeyStat = ({ label, value }: { label: string; value: string }) => {
@@ -311,5 +312,5 @@ const KeyStat = ({ label, value }: { label: string; value: string }) => {
         {value}
       </span>
     </div>
-  )
-}
+  );
+};

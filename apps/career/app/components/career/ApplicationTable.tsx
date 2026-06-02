@@ -1,15 +1,11 @@
-import { SearchInput } from '@hominem/ui/search-input'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@hominem/ui/table'
-import { PlusIcon } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router'
+import { Checkbox } from '@hominem/ui/checkbox';
+import { FilterControls, FilterSelect } from '@hominem/ui/filters';
+import { SearchInput } from '@hominem/ui/search-input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@hominem/ui/table';
+import { PlusIcon } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router';
+
 import {
   formatApplicationDate,
   formatApplicationSalary,
@@ -19,29 +15,29 @@ import {
   getUniqueSources,
   getUniqueStatuses,
   hasActiveFilters,
-} from '~/lib/utils/applicationUtils'
-import type { ApplicationWithCompany } from '~/types/applications'
+} from '~/lib/utils/applicationUtils';
+import type { ApplicationWithCompany } from '~/types/applications';
 
 interface PaginationInfo {
-  page: number
-  limit: number
-  total: number
-  totalPages: number
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
 }
 
 interface FiltersInfo {
-  search?: string
-  statuses?: string[]
-  source?: string
+  search?: string;
+  statuses?: string[];
+  source?: string;
 }
 
 interface ApplicationTableProps {
-  applications: ApplicationWithCompany[]
-  pagination: PaginationInfo
-  filters: FiltersInfo
-  emptyTitle?: string
-  emptyDescription?: string
-  className?: string
+  applications: ApplicationWithCompany[];
+  pagination: PaginationInfo;
+  filters: FiltersInfo;
+  emptyTitle?: string;
+  emptyDescription?: string;
+  className?: string;
 }
 
 export function ApplicationTable({
@@ -52,72 +48,101 @@ export function ApplicationTable({
   emptyDescription = 'Start tracking your job applications to see them here',
   className = '',
 }: ApplicationTableProps) {
-  const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false)
-  const statusDropdownRef = useRef<HTMLDivElement>(null)
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
+  const statusDropdownRef = useRef<HTMLDivElement>(null);
 
   // Get unique statuses and sources from current applications for filter options
-  const uniqueStatuses = getUniqueStatuses(applications)
-  const uniqueSources = getUniqueSources(applications)
+  const uniqueStatuses = getUniqueStatuses(applications);
+  const uniqueSources = getUniqueSources(applications);
 
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target as Node)) {
-        setIsStatusDropdownOpen(false)
+        setIsStatusDropdownOpen(false);
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const updateSearchParams = (updates: Record<string, string | string[] | null>) => {
-    const newSearchParams = new URLSearchParams(searchParams)
+    const newSearchParams = new URLSearchParams(searchParams);
 
     for (const [key, value] of Object.entries(updates)) {
       if (value === null || value === '' || (Array.isArray(value) && value.length === 0)) {
-        newSearchParams.delete(key)
+        newSearchParams.delete(key);
       } else if (Array.isArray(value)) {
-        newSearchParams.delete(key)
+        newSearchParams.delete(key);
         for (const v of value) {
-          newSearchParams.append(key, v)
+          newSearchParams.append(key, v);
         }
       } else {
-        newSearchParams.set(key, value)
+        newSearchParams.set(key, value);
       }
     }
 
-    navigate(`?${newSearchParams.toString()}`)
-  }
+    navigate(`?${newSearchParams.toString()}`);
+  };
 
   const handleSearchChange = (search: string) => {
-    updateSearchParams({ search: search || null, page: '1' })
-  }
+    updateSearchParams({ search: search || null, page: '1' });
+  };
 
   const handleStatusToggle = (status: string) => {
-    const currentStatuses = filters.statuses || []
+    const currentStatuses = filters.statuses || [];
     const newStatuses = currentStatuses.includes(status)
       ? currentStatuses.filter((s) => s !== status)
-      : [...currentStatuses, status]
+      : [...currentStatuses, status];
 
-    updateSearchParams({ status: newStatuses, page: '1' })
-  }
+    updateSearchParams({ status: newStatuses, page: '1' });
+  };
 
   const handleSourceChange = (source: string) => {
-    updateSearchParams({ source: source === 'ALL' ? null : source, page: '1' })
-  }
+    updateSearchParams({ source: source === 'ALL' ? null : source, page: '1' });
+  };
 
   const handlePageChange = (page: number) => {
-    updateSearchParams({ page: page.toString() })
-  }
+    updateSearchParams({ page: page.toString() });
+  };
 
   const clearAllFilters = () => {
-    updateSearchParams({ search: null, status: [], source: null, page: '1' })
-  }
+    updateSearchParams({ search: null, status: [], source: null, page: '1' });
+  };
 
-  const activeFilters = hasActiveFilters(filters)
+  const activeFilters = hasActiveFilters(filters);
+  const filterChips = useMemo(() => {
+    const chips = [];
+
+    if (filters.search) {
+      chips.push({
+        id: 'search',
+        label: `Search: ${filters.search}`,
+        onRemove: () => updateSearchParams({ search: null, page: '1' }),
+      });
+    }
+
+    for (const status of filters.statuses || []) {
+      chips.push({
+        id: `status:${status}`,
+        label: formatStatusText(status),
+        onRemove: () => handleStatusToggle(status),
+      });
+    }
+
+    if (filters.source) {
+      chips.push({
+        id: 'source',
+        label: `Source: ${filters.source}`,
+        onRemove: () => updateSearchParams({ source: null, page: '1' }),
+      });
+    }
+
+    return chips;
+  }, [filters.search, filters.source, filters.statuses, handleStatusToggle]);
 
   if (!applications || applications.length === 0) {
     return (
@@ -133,15 +158,14 @@ export function ApplicationTable({
           Add Application
         </Link>
       </div>
-    )
+    );
   }
 
   return (
     <div className={`space-y-4 ${className}`}>
       {/* Search and Filter Section */}
       <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-        <div className="flex flex-col sm:flex-row gap-4">
-          {/* Search Input */}
+        <FilterControls showActiveFilters={activeFilters} activeFilters={filterChips}>
           <div className="flex-1">
             <label htmlFor="search" className="mb-1 block text-sm font-medium text-gray-700">
               Search
@@ -153,11 +177,10 @@ export function ApplicationTable({
             />
           </div>
 
-          {/* Status Filter - Multi-select */}
-          <div className="sm:w-48 relative" ref={statusDropdownRef}>
+          <div className="relative sm:w-48" ref={statusDropdownRef}>
             <label
               htmlFor="status-dropdown"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="mb-1 block text-sm font-medium text-gray-700"
             >
               Status ({(filters.statuses || []).length} selected)
             </label>
@@ -165,7 +188,7 @@ export function ApplicationTable({
               id="status-dropdown"
               type="button"
               onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
-              className="w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-left flex items-center justify-between"
+              className="flex w-full items-center justify-between rounded-md border border-gray-300 bg-white px-3 py-2 text-left text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500"
             >
               <span className="truncate">
                 {!filters.statuses || filters.statuses.length === 0
@@ -191,21 +214,21 @@ export function ApplicationTable({
             </button>
 
             {isStatusDropdownOpen && (
-              <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg">
-                <div className="py-1 max-h-60 overflow-auto">
-                  <div className="px-3 py-2 border-b border-gray-200">
+              <div className="absolute z-10 mt-1 w-full rounded-md border border-gray-300 bg-white shadow-lg">
+                <div className="max-h-60 overflow-auto py-1">
+                  <div className="border-b border-gray-200 px-3 py-2">
                     <button
                       type="button"
                       onClick={() => updateSearchParams({ status: [], page: '1' })}
-                      className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                      className="font-medium text-blue-600 hover:text-blue-800 text-sm"
                     >
                       Clear all
                     </button>
-                    <span className="text-gray-400 mx-2">|</span>
+                    <span className="mx-2 text-gray-400">|</span>
                     <button
                       type="button"
                       onClick={() => updateSearchParams({ status: uniqueStatuses, page: '1' })}
-                      className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                      className="font-medium text-blue-600 hover:text-blue-800 text-sm"
                     >
                       Select all
                     </button>
@@ -213,15 +236,14 @@ export function ApplicationTable({
                   {uniqueStatuses.map((status) => (
                     <label
                       key={status}
-                      className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer"
+                      className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-gray-50"
                     >
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         checked={(filters.statuses || []).includes(status)}
-                        onChange={() => handleStatusToggle(status)}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        onCheckedChange={() => handleStatusToggle(status)}
+                        className="border-gray-300 data-[state=checked]:border-blue-600 data-[state=checked]:bg-blue-600"
                       />
-                      <span className="ml-2 text-sm text-gray-900">{formatStatusText(status)}</span>
+                      <span className="text-sm text-gray-900">{formatStatusText(status)}</span>
                     </label>
                   ))}
                 </div>
@@ -229,26 +251,20 @@ export function ApplicationTable({
             )}
           </div>
 
-          {/* Source Filter */}
           <div className="sm:w-48">
-            <label htmlFor="source-filter" className="block text-sm font-medium text-gray-700 mb-1">
-              Source
-            </label>
-            <select
+            <FilterSelect
+              label="Source"
+              value={filters.source || ''}
+              options={uniqueSources.map((source) => ({
+                value: source || '',
+                label: source || 'Unknown',
+              }))}
+              onChange={handleSourceChange}
+              placeholder="All Sources"
               id="source-filter"
-              value={filters.source || 'ALL'}
-              onChange={(e) => handleSourceChange(e.target.value)}
-              className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-            >
-              <option value="ALL">All Sources</option>
-              {uniqueSources.map((source) => (
-                <option key={source} value={source || ''}>
-                  {source}
-                </option>
-              ))}
-            </select>
+            />
           </div>
-        </div>
+        </FilterControls>
 
         {/* Results Summary and Pagination Controls */}
         <div className="mt-3 flex items-center justify-between text-sm text-gray-500">
@@ -340,7 +356,10 @@ export function ApplicationTable({
                 {applications.map((app) => (
                   <TableRow key={app.id} className="transition-colors hover:bg-gray-50">
                     <TableCell className="px-6 whitespace-nowrap">
-                      <Link to={`/career/applications/${app.id}`} className="block hover:text-blue-600">
+                      <Link
+                        to={`/career/applications/${app.id}`}
+                        className="block hover:text-blue-600"
+                      >
                         <div className="text-sm font-medium text-gray-900">{app.position}</div>
                         <div className="text-sm text-gray-500">{getCompanyName(app.company)}</div>
                       </Link>
@@ -417,5 +436,5 @@ export function ApplicationTable({
         </>
       )}
     </div>
-  )
+  );
 }

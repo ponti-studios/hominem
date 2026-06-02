@@ -1,47 +1,46 @@
-import { CareerRepository, getDb } from '@hominem/db'
-import { PlusIcon } from 'lucide-react'
+import { CareerRepository, getDb } from '@hominem/db';
+import { PlusIcon } from 'lucide-react';
 import {
   Link,
   useActionData,
   useLoaderData,
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
-} from 'react-router'
+} from 'react-router';
 
-import { ApplicationTable } from '~/components/career/ApplicationTable'
-import { ApplicationsHeatmap } from '~/components/career/ApplicationsHeatmap'
-
-import { useToast } from '~/hooks/useToast'
-import { getAllApplicationsWithCompany } from '~/lib/career/queries/job-applications'
+import { ApplicationsHeatmap } from '~/components/career/ApplicationsHeatmap';
+import { ApplicationTable } from '~/components/career/ApplicationTable';
+import { useToast } from '~/hooks/useToast';
+import { getAllApplicationsWithCompany } from '~/lib/career/queries/job-applications';
 import {
   createErrorResponse,
   createSuccessResponse,
   withAuthAction,
   withAuthLoader,
-} from '~/lib/route-utils'
-import { JobApplicationStage, type JobApplicationStatus } from '~/types/career'
+} from '~/lib/route-utils';
+import { JobApplicationStage, type JobApplicationStatus } from '~/types/career';
 
 export async function loader(args: LoaderFunctionArgs) {
   return withAuthLoader(args, async ({ user, request }) => {
     try {
-      const url = new URL(request.url)
-      const searchParams = url.searchParams
+      const url = new URL(request.url);
+      const searchParams = url.searchParams;
 
       // Extract pagination and filter parameters
-      const page = Math.max(1, Number.parseInt(searchParams.get('page') || '1'))
-      const limit = Math.max(1, Math.min(100, Number.parseInt(searchParams.get('limit') || '10'))) // Default 10, max 100
-      const offset = (page - 1) * limit
+      const page = Math.max(1, Number.parseInt(searchParams.get('page') || '1'));
+      const limit = Math.max(1, Math.min(100, Number.parseInt(searchParams.get('limit') || '10'))); // Default 10, max 100
+      const offset = (page - 1) * limit;
 
-      const searchQuery = searchParams.get('search') || undefined
-      const selectedStatuses = searchParams.getAll('status').filter(Boolean)
-      const source = searchParams.get('source') || undefined
+      const searchQuery = searchParams.get('search') || undefined;
+      const selectedStatuses = searchParams.getAll('status').filter(Boolean);
+      const source = searchParams.get('source') || undefined;
 
       // Build filter object
       const filter = {
         ...(selectedStatuses.length > 0 && { statuses: selectedStatuses }),
         ...(source && source !== 'ALL' && { source }),
         ...(searchQuery && { search: searchQuery }),
-      }
+      };
 
       // Build pagination object
       const pagination = {
@@ -54,13 +53,17 @@ export async function loader(args: LoaderFunctionArgs) {
           | 'companyName'
           | 'position',
         orderDirection: (searchParams.get('orderDirection') as 'asc' | 'desc') || 'desc',
-      }
+      };
 
       // Get all applications for the heatmap
-      const allApplications = await getAllApplicationsWithCompany(user.id)
+      const allApplications = await getAllApplicationsWithCompany(user.id);
 
       // Get applications with company data using server-side filtering/pagination
-      const paginatedApplications = await getAllApplicationsWithCompany(user.id, filter, pagination)
+      const paginatedApplications = await getAllApplicationsWithCompany(
+        user.id,
+        filter,
+        pagination,
+      );
 
       return createSuccessResponse({
         user,
@@ -77,9 +80,9 @@ export async function loader(args: LoaderFunctionArgs) {
           statuses: selectedStatuses,
           source: source && source !== 'ALL' ? source : undefined,
         },
-      })
+      });
     } catch (error) {
-      console.error('Error loading job applications data:', error)
+      console.error('Error loading job applications data:', error);
       return createSuccessResponse({
         user,
         allApplications: [],
@@ -92,36 +95,36 @@ export async function loader(args: LoaderFunctionArgs) {
         },
         filters: {},
         error: 'Failed to load job applications data',
-      })
+      });
     }
-  })
+  });
 }
 
 export async function action(args: ActionFunctionArgs) {
   return withAuthAction(args, async ({ user, request }) => {
     try {
-      const formData = await request.formData()
-      const operation = formData.get('operation') as string
+      const formData = await request.formData();
+      const operation = formData.get('operation') as string;
 
       if (operation === 'create') {
-        const position = formData.get('position') as string
-        const companyName = formData.get('company') as string
-        const status = formData.get('status') as string
-        const startDate = formData.get('startDate') as string
-        const location = formData.get('location') as string
-        const jobPosting = formData.get('jobPosting') as string
-        const salaryQuoted = formData.get('salaryQuoted') as string
-        const recruiterName = formData.get('recruiterName') as string
-        const recruiterEmail = formData.get('recruiterEmail') as string
-        const recruiterLinkedin = formData.get('recruiterLinkedin') as string
+        const position = formData.get('position') as string;
+        const companyName = formData.get('company') as string;
+        const status = formData.get('status') as string;
+        const startDate = formData.get('startDate') as string;
+        const location = formData.get('location') as string;
+        const jobPosting = formData.get('jobPosting') as string;
+        const salaryQuoted = formData.get('salaryQuoted') as string;
+        const recruiterName = formData.get('recruiterName') as string;
+        const recruiterEmail = formData.get('recruiterEmail') as string;
+        const recruiterLinkedin = formData.get('recruiterLinkedin') as string;
 
         if (!position || !companyName) {
-          return createErrorResponse('Position and company are required')
+          return createErrorResponse('Position and company are required');
         }
 
         const company = await CareerRepository.findOrCreateCompany(getDb(), user.id, {
           name: companyName,
-        })
+        });
 
         const newApplication = await CareerRepository.createJobApplication(getDb(), user.id, {
           companyId: company.id,
@@ -141,53 +144,53 @@ export async function action(args: ActionFunctionArgs) {
               date: new Date().toISOString(),
             },
           ],
-        })
+        });
 
-        return createSuccessResponse(newApplication, 'Job application created successfully')
+        return createSuccessResponse(newApplication, 'Job application created successfully');
       }
 
       if (operation === 'update') {
-        const applicationId = formData.get('applicationId') as string
-        const status = formData.get('status') as string
+        const applicationId = formData.get('applicationId') as string;
+        const status = formData.get('status') as string;
 
         await CareerRepository.updateJobApplicationStatus(
           getDb(),
           user.id,
           applicationId,
-          status as JobApplicationStatus
-        )
+          status as JobApplicationStatus,
+        );
 
-        return createSuccessResponse(null, 'Job application updated successfully')
+        return createSuccessResponse(null, 'Job application updated successfully');
       }
 
       if (operation === 'delete') {
-        const applicationId = formData.get('applicationId') as string
+        const applicationId = formData.get('applicationId') as string;
 
-        await CareerRepository.deleteJobApplication(getDb(), user.id, applicationId)
+        await CareerRepository.deleteJobApplication(getDb(), user.id, applicationId);
 
-        return createSuccessResponse({ success: true }, 'Job application deleted successfully')
+        return createSuccessResponse({ success: true }, 'Job application deleted successfully');
       }
 
-      return createErrorResponse('Invalid operation')
+      return createErrorResponse('Invalid operation');
     } catch (error) {
-      console.error('Error in job applications action:', error)
-      return createErrorResponse('Failed to process job application request')
+      console.error('Error in job applications action:', error);
+      return createErrorResponse('Failed to process job application request');
     }
-  })
+  });
 }
 
 export default function CareerApplications() {
-  const loaderData = useLoaderData<typeof loader>()
-  const actionData = useActionData()
-  const { addToast } = useToast()
+  const loaderData = useLoaderData<typeof loader>();
+  const actionData = useActionData();
+  const { addToast } = useToast();
 
   // Handle action responses
   if (actionData) {
-    const result = actionData as { success: boolean; error?: string; message?: string }
+    const result = actionData as { success: boolean; error?: string; message?: string };
     if (result.success) {
-      addToast(result.message || 'Operation completed successfully!', 'success')
+      addToast(result.message || 'Operation completed successfully!', 'success');
     } else {
-      addToast(`Error: ${result.error}`, 'error')
+      addToast(`Error: ${result.error}`, 'error');
     }
   }
 
@@ -199,7 +202,7 @@ export default function CareerApplications() {
           <p className="text-red-700 font-sans">Failed to load job applications data</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (loaderData?.error) {
@@ -211,7 +214,7 @@ export default function CareerApplications() {
           Make sure you have job application data in your database.
         </p>
       </div>
-    )
+    );
   }
 
   if (!loaderData.data) {
@@ -226,10 +229,10 @@ export default function CareerApplications() {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
-  const { allApplications, applications, pagination, filters } = loaderData.data
+  const { allApplications, applications, pagination, filters } = loaderData.data;
 
   return (
     <div className="space-y-8 px-2 sm:px-0">
@@ -262,5 +265,5 @@ export default function CareerApplications() {
         />
       </div>
     </div>
-  )
+  );
 }

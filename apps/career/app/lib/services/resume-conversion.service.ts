@@ -1,18 +1,19 @@
-import { getDb, runInTransaction } from '@hominem/db'
-import type { ConvertedResumeData } from '../../types/resume'
+import { getDb, runInTransaction } from '@hominem/db';
+
+import type { ConvertedResumeData } from '../../types/resume';
 
 export interface SaveResumeResult {
-  portfolioId: string
+  portfolioId: string;
 }
 
 export async function saveResumeToDatabase(
   userId: string,
-  data: ConvertedResumeData
+  data: ConvertedResumeData,
 ): Promise<SaveResumeResult> {
   return runInTransaction(async (tx) => {
-    await tx.deleteFrom('app.portfolios').where('owner_userid', '=', userId).execute()
+    await tx.deleteFrom('app.portfolios').where('owner_userid', '=', userId).execute();
 
-    const slug = await generateUniqueSlug(data.portfolio.slug)
+    const slug = await generateUniqueSlug(data.portfolio.slug);
 
     const createdPortfolio = await tx
       .insertInto('app.portfolios')
@@ -35,9 +36,9 @@ export async function saveResumeToDatabase(
         phone: data.portfolio.phone ?? null,
       })
       .returning(['id'])
-      .executeTakeFirstOrThrow()
+      .executeTakeFirstOrThrow();
 
-    const portfolioId = createdPortfolio.id
+    const portfolioId = createdPortfolio.id;
 
     if (data.socialLinks) {
       await tx
@@ -49,7 +50,7 @@ export async function saveResumeToDatabase(
           twitter: data.socialLinks.twitter ?? null,
           website: data.socialLinks.website ?? null,
         })
-        .execute()
+        .execute();
     }
 
     for (const [index, stat] of data.stats.entries()) {
@@ -61,7 +62,7 @@ export async function saveResumeToDatabase(
           value: stat.value,
           sort_order: index,
         })
-        .execute()
+        .execute();
     }
 
     for (const [index, workExperience] of data.workExperience.entries()) {
@@ -76,7 +77,7 @@ export async function saveResumeToDatabase(
           end_date: workExperience.endDate ? new Date(workExperience.endDate) : null,
           sort_order: index,
         })
-        .execute()
+        .execute();
     }
 
     for (const [index, skill] of data.skills.entries()) {
@@ -91,7 +92,7 @@ export async function saveResumeToDatabase(
           years_of_experience: skill.yearsOfExperience ?? null,
           sort_order: index,
         })
-        .execute()
+        .execute();
     }
 
     for (const [index, project] of data.projects.entries()) {
@@ -113,24 +114,24 @@ export async function saveResumeToDatabase(
           sort_order: index,
           is_featured: false,
         })
-        .execute()
+        .execute();
     }
 
-    return { portfolioId }
-  })
+    return { portfolioId };
+  });
 }
 
 export async function generateUniqueSlug(base: string): Promise<string> {
   const slug = base
     .toLowerCase()
     .replace(/\s+/g, '-')
-    .replace(/[^a-z0-9-]/g, '')
+    .replace(/[^a-z0-9-]/g, '');
 
   const existing = await getDb()
     .selectFrom('app.portfolios')
     .select('id')
     .where('slug', '=', slug)
-    .executeTakeFirst()
+    .executeTakeFirst();
 
-  return existing ? `${slug}-${Math.random().toString(36).slice(2, 8)}` : slug
+  return existing ? `${slug}-${Math.random().toString(36).slice(2, 8)}` : slug;
 }

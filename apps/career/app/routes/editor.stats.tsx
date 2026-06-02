@@ -1,38 +1,39 @@
-import type { CareerPortfolioStatRecord } from '@hominem/db'
-import { CareerRepository, runInTransaction } from '@hominem/db'
-import { BarChart3, PlusIcon } from 'lucide-react'
-import { useEffect } from 'react'
-import { useFieldArray, useForm } from 'react-hook-form'
-import type { ActionFunctionArgs, MetaFunction } from 'react-router'
-import { useFetcher, useOutletContext } from 'react-router'
-import { Button } from '~/components/ui/button'
-import { Input } from '~/components/ui/input'
-import { useToast } from '../hooks/useToast'
-import type { FullPortfolio } from '../lib/portfolio.server'
+import type { CareerPortfolioStatRecord } from '@hominem/db';
+import { CareerRepository, runInTransaction } from '@hominem/db';
+import { Button } from '@hominem/ui/button';
+import { Input } from '@hominem/ui/input';
+import { BarChart3, PlusIcon } from 'lucide-react';
+import { useEffect } from 'react';
+import { useFieldArray, useForm } from 'react-hook-form';
+import type { ActionFunctionArgs, MetaFunction } from 'react-router';
+import { useFetcher, useOutletContext } from 'react-router';
+
+import { useToast } from '../hooks/useToast';
+import type { FullPortfolio } from '../lib/portfolio.server';
 import {
   createErrorResponse,
   createSuccessResponse,
   parseFormData,
   withAuthAction,
-} from '../lib/route-utils'
+} from '../lib/route-utils';
 
-type PortfolioStat = CareerPortfolioStatRecord
+type PortfolioStat = CareerPortfolioStatRecord;
 
 interface PortfolioStatsFormValues {
-  stats: Array<Partial<PortfolioStat> & { label?: string; value?: string }>
+  stats: Array<Partial<PortfolioStat> & { label?: string; value?: string }>;
 }
 
 interface PortfolioStatsEditorSectionProps {
-  stats?: PortfolioStat[] | null
-  portfolioId: string
+  stats?: PortfolioStat[] | null;
+  portfolioId: string;
 }
 
 function PortfolioStatsEditorSection({
   stats: initialStats,
   portfolioId,
 }: PortfolioStatsEditorSectionProps) {
-  const fetcher = useFetcher()
-  const { addToast } = useToast()
+  const fetcher = useFetcher();
+  const { addToast } = useToast();
   const {
     register,
     control,
@@ -44,47 +45,47 @@ function PortfolioStatsEditorSection({
       stats: initialStats || [],
     },
     mode: 'onChange',
-  })
+  });
 
   useEffect(() => {
-    reset({ stats: initialStats || [] })
-  }, [initialStats, reset])
+    reset({ stats: initialStats || [] });
+  }, [initialStats, reset]);
 
   const { fields, append, remove } = useFieldArray({
     control,
     name: 'stats',
-  })
+  });
 
   // Handle fetcher errors and success
   useEffect(() => {
     if (fetcher.state === 'idle' && fetcher.data) {
-      const result = fetcher.data as { success: boolean; error?: string; message?: string }
+      const result = fetcher.data as { success: boolean; error?: string; message?: string };
       if (result.success) {
-        addToast(result.message || 'Portfolio stats saved successfully!', 'success')
+        addToast(result.message || 'Portfolio stats saved successfully!', 'success');
       } else {
-        addToast(`Failed to save portfolio stats: ${result.error || 'Unknown error'}`, 'error')
+        addToast(`Failed to save portfolio stats: ${result.error || 'Unknown error'}`, 'error');
       }
     }
-  }, [fetcher.state, fetcher.data, addToast])
+  }, [fetcher.state, fetcher.data, addToast]);
 
   const handleAddNewStat = () => {
-    append({ label: '', value: '' })
-  }
+    append({ label: '', value: '' });
+  };
 
   const handleRemoveStat = (index: number, statId?: string) => {
     if (statId) {
       if (confirm('Are you sure you want to delete this stat? This action is permanent.')) {
-        remove(index)
+        remove(index);
       }
     } else {
-      remove(index)
+      remove(index);
     }
-  }
+  };
 
   const onSubmit = (formData: PortfolioStatsFormValues) => {
     if (!isDirty) {
-      addToast('No changes to save in portfolio stats.', 'info')
-      return
+      addToast('No changes to save in portfolio stats.', 'info');
+      return;
     }
 
     // Clean up the data - only send essential fields
@@ -93,18 +94,18 @@ function PortfolioStatsEditorSection({
       label: s.label,
       value: s.value,
       portfolioId,
-    }))
+    }));
 
-    const formData2 = new FormData()
-    formData2.append('statsData', JSON.stringify(statsToSave))
+    const formData2 = new FormData();
+    formData2.append('statsData', JSON.stringify(statsToSave));
 
     fetcher.submit(formData2, {
       method: 'POST',
       action: '/editor/stats',
-    })
-  }
+    });
+  };
 
-  const isSaving = fetcher.state === 'submitting'
+  const isSaving = fetcher.state === 'submitting';
 
   return (
     <section className="flex flex-col gap-4">
@@ -183,37 +184,36 @@ function PortfolioStatsEditorSection({
         ))}
       </form>
     </section>
-  )
+  );
 }
 
-export const meta: MetaFunction = () => [{ title: 'Portfolio Stats - Portfolio Editor | Craftd' }]
+export const meta: MetaFunction = () => [{ title: 'Portfolio Stats - Portfolio Editor | Craftd' }];
 
 export async function action(args: ActionFunctionArgs) {
   return withAuthAction(args, async ({ user }) => {
-    const formData = await args.request.formData()
-    const statsDataResult = parseFormData<Array<{ id?: string; label: string; value: string; portfolioId: string }>>(
-      formData,
-      'statsData'
-    )
+    const formData = await args.request.formData();
+    const statsDataResult = parseFormData<
+      Array<{ id?: string; label: string; value: string; portfolioId: string }>
+    >(formData, 'statsData');
     if ('success' in statsDataResult && !statsDataResult.success) {
-      return statsDataResult
+      return statsDataResult;
     }
     const statsData = statsDataResult as Array<{
-      id?: string
-      label: string
-      value: string
-      portfolioId: string
-    }>
+      id?: string;
+      label: string;
+      value: string;
+      portfolioId: string;
+    }>;
     if (!Array.isArray(statsData)) {
-      return createErrorResponse('Invalid stats data')
+      return createErrorResponse('Invalid stats data');
     }
     if (statsData.length === 0) {
       // Nothing to do
-      return createSuccessResponse(null, 'No stats to save')
+      return createSuccessResponse(null, 'No stats to save');
     }
     // Ensure portfolioId exists
-    const portfolioId = statsData[0]?.portfolioId
-    if (!portfolioId) return createErrorResponse('Missing portfolioId')
+    const portfolioId = statsData[0]?.portfolioId;
+    if (!portfolioId) return createErrorResponse('Missing portfolioId');
     await runInTransaction((tx) =>
       CareerRepository.replacePortfolioStats(
         tx,
@@ -224,16 +224,18 @@ export async function action(args: ActionFunctionArgs) {
           label: stat.label,
           value: stat.value,
           sortOrder: index,
-        }))
-      )
-    )
-    return createSuccessResponse(null, 'Portfolio stats saved successfully')
-  })
+        })),
+      ),
+    );
+    return createSuccessResponse(null, 'Portfolio stats saved successfully');
+  });
 }
 
 export default function EditorStats() {
   // Consume portfolio from parent editor layout loader via outlet context
-  const portfolio = useOutletContext<FullPortfolio>()
+  const portfolio = useOutletContext<FullPortfolio>();
 
-  return <PortfolioStatsEditorSection stats={portfolio.portfolioStats} portfolioId={portfolio.id} />
+  return (
+    <PortfolioStatsEditorSection stats={portfolio.portfolioStats} portfolioId={portfolio.id} />
+  );
 }

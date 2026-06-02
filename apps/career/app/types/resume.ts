@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from 'zod';
 
 export const resumeSchema = z.object({
   portfolio: z.object({
@@ -34,7 +34,7 @@ export const resumeSchema = z.object({
       role: z.string(),
       startDate: z.string().optional().nullable(),
       endDate: z.string().optional().nullable(),
-    })
+    }),
   ),
   skills: z.array(
     z.object({
@@ -44,7 +44,7 @@ export const resumeSchema = z.object({
       description: z.string().optional().nullable(),
       yearsOfExperience: z.number().optional().nullable(),
       certifications: z.array(z.string()),
-    })
+    }),
   ),
   projects: z.array(
     z.object({
@@ -55,25 +55,25 @@ export const resumeSchema = z.object({
       liveUrl: z.string().optional().nullable(),
       githubUrl: z.string().optional().nullable(),
       status: z.enum(['in-progress', 'completed', 'archived']),
-    })
+    }),
   ),
   stats: z.array(
     z.object({
       label: z.string(),
       value: z.string(),
-    })
+    }),
   ),
-})
+});
 
-export type ConvertedResumeData = z.infer<typeof resumeSchema>
+export type ConvertedResumeData = z.infer<typeof resumeSchema>;
 
 export type UploadResumeResponse =
   | {
-      success: true
-      message: string
-      data: ConvertedResumeData
-      saved: true
-      portfolioId: string
-      fileUrl: string
+      success: true;
+      message: string;
+      data: ConvertedResumeData;
+      saved: true;
+      portfolioId: string;
+      fileUrl: string;
     }
-  | { success: false; error: string }
+  | { success: false; error: string };

@@ -1,24 +1,25 @@
-import { CheckIcon, PencilIcon, PlusIcon, TrashIcon, XIcon } from 'lucide-react'
-import { memo, useState } from 'react'
-import { Button } from '~/components/ui/button'
-import { normalizeString } from '~/lib/utils'
+import { Button } from '@hominem/ui/button';
+import { CheckIcon, PencilIcon, PlusIcon, TrashIcon, XIcon } from 'lucide-react';
+import { memo, useState } from 'react';
+
+import { normalizeString } from '~/lib/utils';
 
 interface EditableArrayFieldProps {
-  label: string
-  value: string[]
-  field: string
-  placeholder?: string
-  className?: string
-  onSave?: (field: string, value: string[]) => void
+  label: string;
+  value: string[];
+  field: string;
+  placeholder?: string;
+  className?: string;
+  onSave?: (field: string, value: string[]) => void;
 }
 
 interface ArrayItemProps {
-  value: string
-  index: number
-  placeholder?: string
-  onUpdate: (index: number, value: string) => void
-  onRemove: (index: number) => void
-  onKeyDown: (e: React.KeyboardEvent, index: number) => void
+  value: string;
+  index: number;
+  placeholder?: string;
+  onUpdate: (index: number, value: string) => void;
+  onRemove: (index: number) => void;
+  onKeyDown: (e: React.KeyboardEvent, index: number) => void;
 }
 
 const ArrayItem = memo(function ArrayItem({
@@ -30,9 +31,9 @@ const ArrayItem = memo(function ArrayItem({
   onKeyDown,
 }: ArrayItemProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value
-    onUpdate(index, newValue)
-  }
+    const newValue = e.target.value;
+    onUpdate(index, newValue);
+  };
 
   return (
     <div className="flex items-center gap-2" data-testid={`array-item-${normalizeString(value)}`}>
@@ -57,8 +58,8 @@ const ArrayItem = memo(function ArrayItem({
         <TrashIcon className="w-4 h-4" />
       </Button>
     </div>
-  )
-})
+  );
+});
 
 export function EditableArrayField({
   label,
@@ -68,79 +69,79 @@ export function EditableArrayField({
   className = '',
   onSave,
 }: EditableArrayFieldProps) {
-  const [isEditing, setIsEditing] = useState(false)
-  const [editValues, setEditValues] = useState(value)
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValues, setEditValues] = useState(value);
 
   // Reset edit values when entering edit mode
   const handleEdit = () => {
-    setEditValues(value)
-    setIsEditing(true)
-  }
+    setEditValues(value);
+    setIsEditing(true);
+  };
 
   const handleSave = () => {
-    const filteredValues = editValues.map((v) => v.trim()).filter((v) => v !== '')
+    const filteredValues = editValues.map((v) => v.trim()).filter((v) => v !== '');
 
     if (onSave) {
-      onSave(field, filteredValues)
+      onSave(field, filteredValues);
     } else {
-      const form = document.createElement('form')
-      form.method = 'POST'
-      form.style.display = 'none'
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.style.display = 'none';
 
-      const fieldInput = document.createElement('input')
-      fieldInput.name = 'field'
-      fieldInput.value = field
+      const fieldInput = document.createElement('input');
+      fieldInput.name = 'field';
+      fieldInput.value = field;
 
-      const valueInput = document.createElement('input')
-      valueInput.name = 'value'
-      valueInput.value = JSON.stringify(filteredValues)
+      const valueInput = document.createElement('input');
+      valueInput.name = 'value';
+      valueInput.value = JSON.stringify(filteredValues);
 
-      form.appendChild(fieldInput)
-      form.appendChild(valueInput)
-      document.body.appendChild(form)
+      form.appendChild(fieldInput);
+      form.appendChild(valueInput);
+      document.body.appendChild(form);
 
       try {
-        form.submit()
+        form.submit();
       } catch (error) {
-        console.error('Form submission attempted:', { field, value: filteredValues })
-        console.error(error)
+        console.error('Form submission attempted:', { field, value: filteredValues });
+        console.error(error);
       }
 
-      document.body.removeChild(form)
+      document.body.removeChild(form);
     }
 
-    setIsEditing(false)
-  }
+    setIsEditing(false);
+  };
 
   const handleCancel = () => {
-    setEditValues(value)
-    setIsEditing(false)
-  }
+    setEditValues(value);
+    setIsEditing(false);
+  };
 
   const addItem = () => {
-    setEditValues((prev) => [...prev, ''])
-  }
+    setEditValues((prev) => [...prev, '']);
+  };
 
   const removeItem = (index: number) => {
-    setEditValues((prev) => prev.filter((_, i) => i !== index))
-  }
+    setEditValues((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const updateItem = (index: number, newValue: string) => {
     setEditValues((prev) => {
-      const updated = [...prev]
-      updated[index] = newValue
-      return updated
-    })
-  }
+      const updated = [...prev];
+      updated[index] = newValue;
+      return updated;
+    });
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent, index: number) => {
     if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
+      e.preventDefault();
       if (index === editValues.length - 1 && editValues[index].trim() !== '') {
-        addItem()
+        addItem();
       }
     }
-  }
+  };
 
   if (isEditing) {
     return (
@@ -194,7 +195,7 @@ export function EditableArrayField({
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -236,5 +237,5 @@ export function EditableArrayField({
         </div>
       </div>
     </div>
-  )
+  );
 }

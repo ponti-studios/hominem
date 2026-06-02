@@ -1,27 +1,28 @@
-import { CalendarIcon, DollarSignIcon, MapPinIcon } from 'lucide-react'
-import { Link, useFetcher } from 'react-router'
-import { Button, getButtonClasses } from '~/components/ui/button'
-import { Card, CardContent } from '~/components/ui/Card'
-import { Select } from '~/components/ui/select'
-import { useToast } from '~/hooks/useToast'
-import { centsToDollars, formatCurrency } from '~/lib/utils'
-import type { JobApplication } from '~/types/career'
-import { JobApplicationStatus } from '~/types/career'
+import { Button, buttonVariants } from '@hominem/ui/button';
+import { Card, CardContent } from '@hominem/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
+import { CalendarIcon, DollarSignIcon, MapPinIcon } from 'lucide-react';
+import { Link, useFetcher } from 'react-router';
+
+import { useToast } from '~/hooks/useToast';
+import { centsToDollars, formatCurrency } from '~/lib/utils';
+import type { JobApplication } from '~/types/career';
+import { JobApplicationStatus } from '~/types/career';
 
 type ApplicationWithCompany = JobApplication & {
-  company?: string | { name: string; [key: string]: unknown } | null
-  applicationDate?: Date | null
-  responseDate?: Date | null
-  salaryOffered?: number | null
-  source?: string | null
-}
+  company?: string | { name: string; [key: string]: unknown } | null;
+  applicationDate?: Date | null;
+  responseDate?: Date | null;
+  salaryOffered?: number | null;
+  source?: string | null;
+};
 
 interface ApplicationCardsProps {
-  applications: ApplicationWithCompany[]
-  showActions?: boolean
-  emptyTitle?: string
-  emptyDescription?: string
-  className?: string
+  applications: ApplicationWithCompany[];
+  showActions?: boolean;
+  emptyTitle?: string;
+  emptyDescription?: string;
+  className?: string;
 }
 
 export function ApplicationCards({
@@ -38,7 +39,7 @@ export function ApplicationCards({
         <p className="font-medium">{emptyTitle}</p>
         <p className="text-sm mt-1">{emptyDescription}</p>
       </div>
-    )
+    );
   }
 
   return (
@@ -47,89 +48,89 @@ export function ApplicationCards({
         <ApplicationCard key={app.id} application={app} showActions={showActions} />
       ))}
     </div>
-  )
+  );
 }
 
 function ApplicationCard({
   application,
   showActions = false,
 }: {
-  application: ApplicationWithCompany
-  showActions?: boolean
+  application: ApplicationWithCompany;
+  showActions?: boolean;
 }) {
-  const fetcher = useFetcher()
-  const { addToast } = useToast()
+  const fetcher = useFetcher();
+  const { addToast } = useToast();
 
   const handleStatusChange = (newStatus: string) => {
-    if (!showActions) return
+    if (!showActions) return;
 
-    const formData = new FormData()
-    formData.append('operation', 'update')
-    formData.append('applicationId', application.id)
-    formData.append('status', newStatus)
+    const formData = new FormData();
+    formData.append('operation', 'update');
+    formData.append('applicationId', application.id);
+    formData.append('status', newStatus);
 
-    fetcher.submit(formData, { method: 'POST' })
-  }
+    fetcher.submit(formData, { method: 'POST' });
+  };
 
   const handleDelete = () => {
-    if (!showActions) return
+    if (!showActions) return;
 
     if (confirm('Are you sure you want to delete this application?')) {
-      const formData = new FormData()
-      formData.append('operation', 'delete')
-      formData.append('applicationId', application.id)
+      const formData = new FormData();
+      formData.append('operation', 'delete');
+      formData.append('applicationId', application.id);
 
-      fetcher.submit(formData, { method: 'POST' })
+      fetcher.submit(formData, { method: 'POST' });
     }
-  }
+  };
 
   // Handle fetcher responses
   if (fetcher.state === 'idle' && fetcher.data && showActions) {
-    const result = fetcher.data as { success: boolean; error?: string; message?: string }
+    const result = fetcher.data as { success: boolean; error?: string; message?: string };
     if (result.success) {
-      addToast(result.message || 'Application updated successfully!', 'success')
+      addToast(result.message || 'Application updated successfully!', 'success');
     } else {
-      addToast(`Error: ${result.error}`, 'error')
+      addToast(`Error: ${result.error}`, 'error');
     }
   }
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case JobApplicationStatus.APPLIED:
-        return 'bg-blue-100 text-blue-800 border-blue-200'
+        return 'bg-blue-100 text-blue-800 border-blue-200';
       case JobApplicationStatus.PHONE_SCREEN:
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200'
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case JobApplicationStatus.INTERVIEW:
-        return 'bg-purple-100 text-purple-800 border-purple-200'
+        return 'bg-purple-100 text-purple-800 border-purple-200';
       case JobApplicationStatus.OFFER:
-        return 'bg-green-100 text-green-800 border-green-200'
+        return 'bg-green-100 text-green-800 border-green-200';
       case JobApplicationStatus.ACCEPTED:
-        return 'bg-emerald-100 text-emerald-800 border-emerald-200'
+        return 'bg-emerald-100 text-emerald-800 border-emerald-200';
       case JobApplicationStatus.REJECTED:
-        return 'bg-red-100 text-red-800 border-red-200'
+        return 'bg-red-100 text-red-800 border-red-200';
       case JobApplicationStatus.WITHDRAWN:
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200'
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
-  }
+  };
 
   const formatDate = (date: Date | string | null | undefined) => {
-    if (!date) return '—'
-    const dateObj = typeof date === 'string' ? new Date(date) : date
+    if (!date) return '—';
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
     return dateObj.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
-    })
-  }
+    });
+  };
 
   const getCompanyName = (company: string | { name: string } | null | undefined) => {
-    if (!company) return 'Unknown Company'
-    if (typeof company === 'string') return company
-    return company.name || 'Unknown Company'
-  }
+    if (!company) return 'Unknown Company';
+    if (typeof company === 'string') return company;
+    return company.name || 'Unknown Company';
+  };
 
-  const companyName = getCompanyName(application.company)
+  const companyName = getCompanyName(application.company);
 
   return (
     <Card className="hover:shadow-xl transition-all duration-200 border-0 bg-white/80 backdrop-blur-sm group hover:scale-[1.02]">
@@ -157,17 +158,17 @@ function ApplicationCard({
               {application.status.replace(/_/g, ' ')}
             </span>
             {showActions && (
-              <Select
-                value={application.status}
-                onValueChange={handleStatusChange}
-                size="sm"
-                className="w-24 h-8 text-xs"
-              >
-                {Object.values(JobApplicationStatus).map((status) => (
-                  <option key={status} value={status}>
-                    {status.replace(/_/g, ' ')}
-                  </option>
-                ))}
+              <Select value={application.status} onValueChange={handleStatusChange}>
+                <SelectTrigger className="h-8 w-28 text-xs">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.values(JobApplicationStatus).map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {status.replace(/_/g, ' ')}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             )}
           </div>
@@ -220,7 +221,7 @@ function ApplicationCard({
             <div className="flex gap-2 pt-2 border-t border-gray-100">
               <Link
                 to={`/job-applications/${application.id}`}
-                className={getButtonClasses({
+                className={buttonVariants({
                   variant: 'outline',
                   size: 'sm',
                   className: 'flex-1 h-8 text-xs',
@@ -233,7 +234,7 @@ function ApplicationCard({
                   href={application.jobPosting}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={getButtonClasses({
+                  className={buttonVariants({
                     variant: 'outline',
                     size: 'sm',
                     className: 'h-8 text-xs px-3',
@@ -255,5 +256,5 @@ function ApplicationCard({
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

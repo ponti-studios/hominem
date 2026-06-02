@@ -1,13 +1,15 @@
-import { openai } from '@ai-sdk/openai'
-import { generateObject, generateText } from 'ai'
-import type { ActionFunction } from 'react-router'
-import { z } from 'zod'
-import { jobScrapingService } from '~/lib/services/job-scraping.service'
-import { getAuthenticatedUser, requireAuth } from '../lib/auth.server'
-import { getFullUserPortfolio } from '../lib/portfolio.server'
-import { formatPortfolioForLLM } from '../lib/utils/portfolio-formatter'
+import { openai } from '@ai-sdk/openai';
+import { generateObject, generateText } from 'ai';
+import type { ActionFunction } from 'react-router';
+import { z } from 'zod';
 
-const model = openai('gpt-4o')
+import { jobScrapingService } from '~/lib/services/job-scraping.service';
+
+import { getAuthenticatedUser, requireAuth } from '../lib/auth.server';
+import { getFullUserPortfolio } from '../lib/portfolio.server';
+import { formatPortfolioForLLM } from '../lib/utils/portfolio-formatter';
+
+const model = openai('gpt-4o');
 
 // Input validation schema
 const customizeResumeSchema = z.object({
@@ -31,7 +33,7 @@ const customizeResumeSchema = z.object({
     .default('professional'),
   focusAreas: z.array(z.string()).optional().default([]),
   targetLength: z.enum(['concise', 'standard', 'detailed']).default('standard'),
-})
+});
 
 // Job analysis schema
 const jobAnalysisSchema = z.object({
@@ -41,26 +43,26 @@ const jobAnalysisSchema = z.object({
   recommendedKeywords: z
     .array(z.string())
     .describe('Keywords to include in the resume for ATS optimization'),
-})
+});
 
-export type JobAnalysis = z.infer<typeof jobAnalysisSchema>
+export type JobAnalysis = z.infer<typeof jobAnalysisSchema>;
 
 export const action: ActionFunction = async ({ request }) => {
   try {
-    const sessionUser = await getAuthenticatedUser(request)
-    const user = requireAuth(sessionUser)
+    const sessionUser = await getAuthenticatedUser(request);
+    const user = requireAuth(sessionUser);
 
     // Validate request method
     if (request.method !== 'POST') {
       return new Response(JSON.stringify({ error: 'Method not allowed' }), {
         status: 405,
         headers: { 'Content-Type': 'application/json' },
-      })
+      });
     }
 
     // Parse and validate input
-    const body = await request.json()
-    const validation = customizeResumeSchema.safeParse(body)
+    const body = await request.json();
+    const validation = customizeResumeSchema.safeParse(body);
 
     if (!validation.success) {
       return new Response(
@@ -71,35 +73,35 @@ export const action: ActionFunction = async ({ request }) => {
         {
           status: 400,
           headers: { 'Content-Type': 'application/json' },
-        }
-      )
+        },
+      );
     }
 
     const { jobPosting, jobPostingUrl, jobPostingData, resumeFormat, focusAreas, targetLength } =
-      validation.data
+      validation.data;
 
     // Handle job posting input - either direct text, URL to scrape, or structured data
-    let finalJobPosting: string
-    let jobPostingSource: 'text' | 'scraped' | 'structured' = 'text'
+    let finalJobPosting: string;
+    let jobPostingSource: 'text' | 'scraped' | 'structured' = 'text';
     let jobPostingMetadata: {
-      jobTitle?: string
-      companyName?: string
-      requirements?: string[]
-      skills?: string[]
-    } = {}
+      jobTitle?: string;
+      companyName?: string;
+      requirements?: string[];
+      skills?: string[];
+    } = {};
 
     if (jobPostingData) {
       // Use provided structured job posting data
-      finalJobPosting = jobPostingData.fullText
-      jobPostingSource = 'structured'
+      finalJobPosting = jobPostingData.fullText;
+      jobPostingSource = 'structured';
       jobPostingMetadata = {
         jobTitle: jobPostingData.jobTitle,
         companyName: jobPostingData.companyName,
         requirements: jobPostingData.requirements,
         skills: jobPostingData.skills,
-      }
+      };
     } else if (jobPostingUrl) {
-      const scrapingResult = await jobScrapingService.scrapeAndValidateJobPosting(jobPostingUrl)
+      const scrapingResult = await jobScrapingService.scrapeAndValidateJobPosting(jobPostingUrl);
 
       if (!scrapingResult.success || !scrapingResult.jobPosting) {
         return new Response(
@@ -110,21 +112,21 @@ export const action: ActionFunction = async ({ request }) => {
           {
             status: 400,
             headers: { 'Content-Type': 'application/json' },
-          }
-        )
+          },
+        );
       }
 
-      finalJobPosting = scrapingResult.jobPosting.fullText
-      jobPostingSource = 'scraped'
+      finalJobPosting = scrapingResult.jobPosting.fullText;
+      jobPostingSource = 'scraped';
       jobPostingMetadata = {
         jobTitle: scrapingResult.jobPosting.jobTitle,
         companyName: scrapingResult.jobPosting.companyName,
         requirements: scrapingResult.jobPosting.requirements,
         skills: scrapingResult.jobPosting.skills,
-      }
+      };
     } else if (jobPosting) {
       // Use provided job posting text
-      finalJobPosting = jobPosting
+      finalJobPosting = jobPosting;
     } else {
       return new Response(
         JSON.stringify({
@@ -134,12 +136,12 @@ export const action: ActionFunction = async ({ request }) => {
         {
           status: 400,
           headers: { 'Content-Type': 'application/json' },
-        }
-      )
+        },
+      );
     }
 
     // Fetch user's portfolio data
-    const portfolio = await getFullUserPortfolio(user.id)
+    const portfolio = await getFullUserPortfolio(user.id);
 
     if (!portfolio) {
       return new Response(
@@ -149,12 +151,12 @@ export const action: ActionFunction = async ({ request }) => {
         {
           status: 404,
           headers: { 'Content-Type': 'application/json' },
-        }
-      )
+        },
+      );
     }
 
     // Format portfolio data for better LLM consumption using utility function
-    const portfolioContext = formatPortfolioForLLM(portfolio)
+    const portfolioContext = formatPortfolioForLLM(portfolio);
 
     // Create AI prompt for resume customization
     const systemPrompt = `You are an expert resume writer and career advisor. Your task is to create a customized resume based on the user's portfolio data and a specific job posting.
@@ -172,7 +174,7 @@ Resume Format: ${resumeFormat}
 Target Length: ${targetLength}
 ${focusAreas.length > 0 ? `Focus Areas: ${focusAreas.join(', ')}` : ''}
 
-Return a complete, professional resume in markdown format that is specifically tailored to this job opportunity.`
+Return a complete, professional resume in markdown format that is specifically tailored to this job opportunity.`;
 
     const userPrompt = `JOB POSTING:
 ${finalJobPosting}
@@ -180,7 +182,7 @@ ${finalJobPosting}
 USER PORTFOLIO DATA:
 ${portfolioContext}
 
-Please create a customized resume that highlights the most relevant experience and skills for this specific job opportunity.`
+Please create a customized resume that highlights the most relevant experience and skills for this specific job opportunity.`;
 
     // Generate customized resume using AI
     const result = await generateText({
@@ -189,7 +191,7 @@ Please create a customized resume that highlights the most relevant experience a
       prompt: userPrompt,
       maxTokens: 4000,
       temperature: 0.3, // Lower temperature for more consistent, professional output
-    })
+    });
 
     // Extract key insights from the job posting for additional context
     const analysisResult = await generateObject({
@@ -201,14 +203,14 @@ Please create a customized resume that highlights the most relevant experience a
 
 ${finalJobPosting}`,
       temperature: 0.1,
-    })
+    });
 
     const { success: analysisSuccess, data: jobAnalysis } = jobAnalysisSchema.safeParse(
-      analysisResult.object
-    )
+      analysisResult.object,
+    );
 
     if (!analysisSuccess) {
-      console.warn('Failed to parse job analysis with schema')
+      console.warn('Failed to parse job analysis with schema');
     }
 
     // Return the customized resume
@@ -227,14 +229,14 @@ ${finalJobPosting}`,
         jobPostingWordCount: finalJobPosting.split(/\s+/).length,
         jobPostingMetadata,
       },
-    }
+    };
 
     return new Response(JSON.stringify(responseData), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
-    })
+    });
   } catch (error) {
-    console.error('Resume customization error:', error)
+    console.error('Resume customization error:', error);
 
     return new Response(
       JSON.stringify({
@@ -244,7 +246,7 @@ ${finalJobPosting}`,
       {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
-      }
-    )
+      },
+    );
   }
-}
+};

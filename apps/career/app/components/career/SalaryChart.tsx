@@ -1,77 +1,77 @@
-import { formatCurrency } from '~/lib/utils'
+import { formatCurrency } from '~/lib/utils';
 
 interface SalaryChartProps {
   data: Array<{
-    year: number
-    salary: number
-    totalComp: number
-    company: string
-    title: string
-  }>
+    year: number;
+    salary: number;
+    totalComp: number;
+    company: string;
+    title: string;
+  }>;
 }
 
 export function SalaryChart({ data }: SalaryChartProps) {
-  if (data.length === 0) return null
+  if (data.length === 0) return null;
 
   // Consolidate data by year - take the highest salary per year
   const consolidatedData = data.reduce(
     (acc, item) => {
-      const existing = acc.find((d) => d.year === item.year)
+      const existing = acc.find((d) => d.year === item.year);
       if (!existing) {
-        acc.push(item)
+        acc.push(item);
       } else if (item.salary > existing.salary) {
         // Replace with higher salary entry
-        const index = acc.indexOf(existing)
-        acc[index] = item
+        const index = acc.indexOf(existing);
+        acc[index] = item;
       }
-      return acc
+      return acc;
     },
-    [] as typeof data
-  )
+    [] as typeof data,
+  );
 
   // Sort by year
-  const sortedData = consolidatedData.sort((a, b) => a.year - b.year)
+  const sortedData = consolidatedData.sort((a, b) => a.year - b.year);
 
-  if (sortedData.length === 0) return null
+  if (sortedData.length === 0) return null;
 
-  const minSalary = Math.min(...sortedData.map((d) => d.salary))
-  const maxSalary = Math.max(...sortedData.map((d) => d.salary))
-  const salaryRange = maxSalary - minSalary
+  const minSalary = Math.min(...sortedData.map((d) => d.salary));
+  const maxSalary = Math.max(...sortedData.map((d) => d.salary));
+  const salaryRange = maxSalary - minSalary;
 
   // Chart dimensions
-  const width = 800
-  const height = 300
-  const padding = 60
-  const chartWidth = width - 2 * padding
-  const chartHeight = height - 2 * padding
+  const width = 800;
+  const height = 300;
+  const padding = 60;
+  const chartWidth = width - 2 * padding;
+  const chartHeight = height - 2 * padding;
 
   // Calculate positions
-  const getX = (index: number) => padding + (index / (sortedData.length - 1)) * chartWidth
+  const getX = (index: number) => padding + (index / (sortedData.length - 1)) * chartWidth;
   const getY = (salary: number) => {
-    if (salaryRange === 0) return height - padding - chartHeight / 2
-    return height - padding - ((salary - minSalary) / salaryRange) * chartHeight
-  }
+    if (salaryRange === 0) return height - padding - chartHeight / 2;
+    return height - padding - ((salary - minSalary) / salaryRange) * chartHeight;
+  };
 
   // Create path for the line
   const pathData = sortedData
     .map((item, index) => {
-      const x = getX(index)
-      const y = getY(item.salary)
-      return `${index === 0 ? 'M' : 'L'} ${x} ${y}`
+      const x = getX(index);
+      const y = getY(item.salary);
+      return `${index === 0 ? 'M' : 'L'} ${x} ${y}`;
     })
-    .join(' ')
+    .join(' ');
 
   // Create gradient area path
   const areaPath = `${sortedData
     .map((item, index) => {
-      const x = getX(index)
-      const y = getY(item.salary)
+      const x = getX(index);
+      const y = getY(item.salary);
       if (index === 0) {
-        return `M ${x} ${height - padding} L ${x} ${y}`
+        return `M ${x} ${height - padding} L ${x} ${y}`;
       }
-      return `L ${x} ${y}`
+      return `L ${x} ${y}`;
     })
-    .join(' ')} L ${getX(sortedData.length - 1)} ${height - padding} Z`
+    .join(' ')} L ${getX(sortedData.length - 1)} ${height - padding} Z`;
 
   return (
     <div className="w-full">
@@ -92,8 +92,8 @@ export function SalaryChart({ data }: SalaryChartProps) {
 
         {/* Grid lines */}
         {[0, 0.25, 0.5, 0.75, 1].map((fraction) => {
-          const y = height - padding - fraction * chartHeight
-          const salary = minSalary + fraction * salaryRange
+          const y = height - padding - fraction * chartHeight;
+          const salary = minSalary + fraction * salaryRange;
           return (
             <g key={fraction}>
               <line
@@ -113,7 +113,7 @@ export function SalaryChart({ data }: SalaryChartProps) {
                 {formatCurrency(salary / 100)}
               </text>
             </g>
-          )
+          );
         })}
 
         {/* Area under the line */}
@@ -131,8 +131,8 @@ export function SalaryChart({ data }: SalaryChartProps) {
 
         {/* Data points */}
         {sortedData.map((item, index) => {
-          const x = getX(index)
-          const y = getY(item.salary)
+          const x = getX(index);
+          const y = getY(item.salary);
           return (
             <g key={`${item.year}-${index}`}>
               <circle cx={x} cy={y} r="6" fill="white" stroke="rgb(99, 102, 241)" strokeWidth="3" />
@@ -146,9 +146,9 @@ export function SalaryChart({ data }: SalaryChartProps) {
                 {item.year}
               </text>
             </g>
-          )
+          );
         })}
       </svg>
     </div>
-  )
+  );
 }

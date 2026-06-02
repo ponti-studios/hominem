@@ -1,6 +1,6 @@
-import { ArrowLeft } from 'lucide-react'
-import type { MetaFunction } from 'react-router'
-import { Link } from 'react-router'
+import { ArrowLeft } from 'lucide-react';
+import type { MetaFunction } from 'react-router';
+import { Link } from 'react-router';
 
 export const meta: MetaFunction = () => {
   return [
@@ -9,8 +9,8 @@ export const meta: MetaFunction = () => {
       name: 'description',
       content: 'Demo portfolio showcasing our minimal, Apple-inspired resume design',
     },
-  ]
-}
+  ];
+};
 
 // Demo portfolio data
 const demoPortfolio = {
@@ -101,7 +101,7 @@ const demoPortfolio = {
       featured: true,
     },
   ],
-}
+};
 
 export default function Demo() {
   return (
@@ -258,5 +258,5 @@ export default function Demo() {
         </div>
       </div>
     </>
-  )
+  );
 }

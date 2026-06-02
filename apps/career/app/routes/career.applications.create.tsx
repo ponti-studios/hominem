@@ -1,78 +1,79 @@
-import { CareerRepository, getDb } from '@hominem/db'
-import { DatePicker } from '@hominem/ui/date-picker'
-import { useState } from 'react'
-import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router'
-import { Form, Link, redirect, useActionData } from 'react-router'
-import { Button } from '~/components/ui/button'
-import { Card, CardContent } from '~/components/ui/Card'
-import { Input } from '~/components/ui/input'
-import { LoadingSpinner } from '~/components/ui/LoadingSpinner'
-import { Select } from '~/components/ui/select'
+import { CareerRepository, getDb } from '@hominem/db';
+import { Button } from '@hominem/ui/button';
+import { Card, CardContent } from '@hominem/ui/card';
+import { DatePicker } from '@hominem/ui/date-picker';
+import { Input } from '@hominem/ui/input';
+import { LoadingSpinner } from '@hominem/ui/loading-spinner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
+import { useState } from 'react';
+import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
+import { Form, Link, redirect, useActionData } from 'react-router';
+
 import {
   createErrorResponse,
   createSuccessResponse,
   withAuthAction,
   withAuthLoader,
-} from '~/lib/route-utils'
-import type { JobPosting, ScrapedJobPostingResponse } from '~/types/applications'
-import { JobApplicationStage, JobApplicationStatus } from '~/types/career'
+} from '~/lib/route-utils';
+import type { JobPosting, ScrapedJobPostingResponse } from '~/types/applications';
+import { JobApplicationStage, JobApplicationStatus } from '~/types/career';
 
 const formatDateValue = (value: Date | undefined) => {
   if (!value) {
-    return ''
+    return '';
   }
 
-  return value.toISOString().split('T')[0] ?? ''
-}
+  return value.toISOString().split('T')[0] ?? '';
+};
 
 export async function loader(args: LoaderFunctionArgs) {
   return withAuthLoader(args, async ({ user }) => {
-    return createSuccessResponse({ user })
-  })
+    return createSuccessResponse({ user });
+  });
 }
 
 export async function action(args: ActionFunctionArgs) {
   return withAuthAction(args, async ({ user, request }) => {
-    const formData = await request.formData()
-    const position = formData.get('position') as string
-    const companyName = formData.get('company') as string
-    const startDate = formData.get('startDate') as string
-    const status = formData.get('status') as JobApplicationStatus
-    const location = formData.get('location') as string
-    const jobPosting = formData.get('jobPosting') as string
-    const jobPostingData = formData.get('jobPostingData') as string
-    const salaryQuoted = formData.get('salaryQuoted') as string
-    const recruiterName = formData.get('recruiterName') as string
-    const recruiterEmail = formData.get('recruiterEmail') as string
-    const recruiterLinkedin = formData.get('recruiterLinkedin') as string
+    const formData = await request.formData();
+    const position = formData.get('position') as string;
+    const companyName = formData.get('company') as string;
+    const startDate = formData.get('startDate') as string;
+    const status = formData.get('status') as JobApplicationStatus;
+    const location = formData.get('location') as string;
+    const jobPosting = formData.get('jobPosting') as string;
+    const jobPostingData = formData.get('jobPostingData') as string;
+    const salaryQuoted = formData.get('salaryQuoted') as string;
+    const recruiterName = formData.get('recruiterName') as string;
+    const recruiterEmail = formData.get('recruiterEmail') as string;
+    const recruiterLinkedin = formData.get('recruiterLinkedin') as string;
 
     try {
       if (!position || !companyName) {
-        return createErrorResponse('Position and company are required')
+        return createErrorResponse('Position and company are required');
       }
 
       const company = await CareerRepository.findOrCreateCompany(getDb(), user.id, {
         name: companyName,
-      })
+      });
 
       // Use structured data if available, otherwise use the job description text
-      const jobPostingToStore = jobPostingData || jobPosting
+      const jobPostingToStore = jobPostingData || jobPosting;
 
       // Parse the structured data if available
-      let requirements: string[] = []
-      let skills: string[] = []
-      let jobPostingUrl: string | null = null
-      let jobPostingWordCount: number | null = null
+      let requirements: string[] = [];
+      let skills: string[] = [];
+      let jobPostingUrl: string | null = null;
+      let jobPostingWordCount: number | null = null;
 
       if (jobPostingData) {
         try {
-          const parsedData = JSON.parse(jobPostingData) as JobPosting
-          requirements = parsedData.requirements || []
-          skills = parsedData.skills || []
-          jobPostingUrl = parsedData.url || null
-          jobPostingWordCount = parsedData.wordCount || null
+          const parsedData = JSON.parse(jobPostingData) as JobPosting;
+          requirements = parsedData.requirements || [];
+          skills = parsedData.skills || [];
+          jobPostingUrl = parsedData.url || null;
+          jobPostingWordCount = parsedData.wordCount || null;
         } catch (error) {
-          console.error('Error parsing job posting data:', error)
+          console.error('Error parsing job posting data:', error);
         }
       }
 
@@ -98,57 +99,57 @@ export async function action(args: ActionFunctionArgs) {
             date: new Date().toISOString(),
           },
         ],
-      })
+      });
 
-      return redirect('/career/applications')
+      return redirect('/career/applications');
     } catch (error) {
-      console.error('Error creating job application:', error)
-      return createErrorResponse('Failed to create job application. Please try again.')
+      console.error('Error creating job application:', error);
+      return createErrorResponse('Failed to create job application. Please try again.');
     }
-  })
+  });
 }
 
 export default function CreateJobApplication() {
-  const actionData = useActionData<{ success: boolean; error?: string }>()
-  const [inputMethod, setInputMethod] = useState<'manual' | 'url' | 'paste' | null>(null)
-  const [scrapedData, setScrapedData] = useState<JobPosting | null>(null)
-  const [pastedDescription, setPastedDescription] = useState('')
-  const [url, setUrl] = useState('')
-  const [isScraping, setIsScraping] = useState(false)
-  const [scrapingError, setScrapingError] = useState<string | null>(null)
-  const [applicationDate, setApplicationDate] = useState(() => new Date())
+  const actionData = useActionData<{ success: boolean; error?: string }>();
+  const [inputMethod, setInputMethod] = useState<'manual' | 'url' | 'paste' | null>(null);
+  const [scrapedData, setScrapedData] = useState<JobPosting | null>(null);
+  const [pastedDescription, setPastedDescription] = useState('');
+  const [url, setUrl] = useState('');
+  const [isScraping, setIsScraping] = useState(false);
+  const [scrapingError, setScrapingError] = useState<string | null>(null);
+  const [applicationDate, setApplicationDate] = useState(() => new Date());
 
   const handleScrapedData = (data: JobPosting) => {
-    setScrapedData(data)
-    setInputMethod('manual')
-  }
+    setScrapedData(data);
+    setInputMethod('manual');
+  };
 
   const handleScrape = async () => {
-    if (!url.trim()) return
-    setIsScraping(true)
-    setScrapingError(null)
+    if (!url.trim()) return;
+    setIsScraping(true);
+    setScrapingError(null);
 
     try {
       const response = await fetch('/api/job/scrape', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url }),
-      })
+      });
 
-      const result: ScrapedJobPostingResponse = await response.json()
+      const result: ScrapedJobPostingResponse = await response.json();
 
       if (result.success && result.jobPosting) {
-        handleScrapedData(result.jobPosting)
+        handleScrapedData(result.jobPosting);
       } else {
-        setScrapingError(result.error || 'Failed to scrape job posting.')
+        setScrapingError(result.error || 'Failed to scrape job posting.');
       }
     } catch (error) {
-      console.error('Scraping error:', error)
-      setScrapingError('An unexpected error occurred.')
+      console.error('Scraping error:', error);
+      setScrapingError('An unexpected error occurred.');
     } finally {
-      setIsScraping(false)
+      setIsScraping(false);
     }
-  }
+  };
 
   const handlePasteDescription = () => {
     if (pastedDescription.trim()) {
@@ -165,11 +166,11 @@ export default function CreateJobApplication() {
         url: '',
         scrapedAt: new Date().toISOString(),
         wordCount: pastedDescription.split(' ').length,
-      }
-      setScrapedData(basicJobPosting)
-      setInputMethod('manual')
+      };
+      setScrapedData(basicJobPosting);
+      setInputMethod('manual');
     }
-  }
+  };
 
   return (
     <div>
@@ -252,7 +253,7 @@ export default function CreateJobApplication() {
                       className="h-11"
                       variant="default"
                     >
-                      {isScraping ? <LoadingSpinner size="sm" /> : 'Scrape'}
+                      {isScraping ? <LoadingSpinner variant="sm" /> : 'Scrape'}
                     </Button>
                   </div>
                   {scrapingError && <p className="text-red-500 text-sm mt-2">{scrapingError}</p>}
@@ -422,13 +423,17 @@ export default function CreateJobApplication() {
                         value={applicationDate}
                         onSelect={(nextDate) => {
                           if (nextDate) {
-                            setApplicationDate(nextDate)
+                            setApplicationDate(nextDate);
                           }
                         }}
                         placeholder="Pick application date"
                         containerClassName="min-w-0"
                       />
-                      <input type="hidden" name="startDate" value={formatDateValue(applicationDate)} />
+                      <input
+                        type="hidden"
+                        name="startDate"
+                        value={formatDateValue(applicationDate)}
+                      />
                     </div>
 
                     <div className="space-y-2">
@@ -436,14 +441,16 @@ export default function CreateJobApplication() {
                         Status
                       </label>
                       <Select name="status" defaultValue={JobApplicationStatus.APPLIED}>
-                        <option value="" disabled>
-                          Select Status
-                        </option>
-                        {Object.values(JobApplicationStatus).map((status) => (
-                          <option key={status} value={status}>
-                            {status.replace(/_/g, ' ')}
-                          </option>
-                        ))}
+                        <SelectTrigger id="status" className="w-full">
+                          <SelectValue placeholder="Select Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.values(JobApplicationStatus).map((status) => (
+                            <SelectItem key={status} value={status}>
+                              {status.replace(/_/g, ' ')}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
                       </Select>
                     </div>
                   </div>
@@ -568,5 +575,5 @@ export default function CreateJobApplication() {
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest'
-import type { FullPortfolio } from '../portfolio.server'
-import { formatPortfolioForLLM } from './portfolio-formatter'
+import { describe, expect, it } from 'vitest';
+
+import type { FullPortfolio } from '../portfolio.server';
+import { formatPortfolioForLLM } from './portfolio-formatter';
 
 // Mock portfolio data for testing
 const createMockPortfolio = (overrides: Partial<FullPortfolio> = {}): FullPortfolio => ({
@@ -235,61 +236,61 @@ const createMockPortfolio = (overrides: Partial<FullPortfolio> = {}): FullPortfo
   ],
   testimonials: [],
   ...overrides,
-})
+});
 
 describe('formatPortfolioForLLM', () => {
   it('should format complete portfolio data correctly', () => {
-    const portfolio = createMockPortfolio()
-    const result = formatPortfolioForLLM(portfolio)
+    const portfolio = createMockPortfolio();
+    const result = formatPortfolioForLLM(portfolio);
 
-    expect(result).toContain('CANDIDATE PROFILE:')
-    expect(result).toContain('Name: John Doe')
-    expect(result).toContain('Current Role: Senior Software Engineer')
-    expect(result).toContain('Location: San Francisco, CA')
-    expect(result).toContain('Email: john.doe@example.com')
-    expect(result).toContain('Phone: +1 (555) 123-4567')
-  })
+    expect(result).toContain('CANDIDATE PROFILE:');
+    expect(result).toContain('Name: John Doe');
+    expect(result).toContain('Current Role: Senior Software Engineer');
+    expect(result).toContain('Location: San Francisco, CA');
+    expect(result).toContain('Email: john.doe@example.com');
+    expect(result).toContain('Phone: +1 (555) 123-4567');
+  });
 
   it('should include professional summary', () => {
-    const portfolio = createMockPortfolio()
-    const result = formatPortfolioForLLM(portfolio)
+    const portfolio = createMockPortfolio();
+    const result = formatPortfolioForLLM(portfolio);
 
-    expect(result).toContain('PROFESSIONAL SUMMARY:')
-    expect(result).toContain('Passionate full-stack developer with 5+ years')
-  })
+    expect(result).toContain('PROFESSIONAL SUMMARY:');
+    expect(result).toContain('Passionate full-stack developer with 5+ years');
+  });
 
   it('should format social links correctly', () => {
-    const portfolio = createMockPortfolio()
-    const result = formatPortfolioForLLM(portfolio)
+    const portfolio = createMockPortfolio();
+    const result = formatPortfolioForLLM(portfolio);
 
-    expect(result).toContain('CONTACT LINKS:')
-    expect(result).toContain('- LinkedIn: https://linkedin.com/in/johndoe')
-    expect(result).toContain('- GitHub: https://github.com/johndoe')
-    expect(result).toContain('- Website: https://johndoe.dev')
-    expect(result).toContain('- Twitter: https://twitter.com/johndoe')
-  })
+    expect(result).toContain('CONTACT LINKS:');
+    expect(result).toContain('- LinkedIn: https://linkedin.com/in/johndoe');
+    expect(result).toContain('- GitHub: https://github.com/johndoe');
+    expect(result).toContain('- Website: https://johndoe.dev');
+    expect(result).toContain('- Twitter: https://twitter.com/johndoe');
+  });
 
   it('should handle missing social links gracefully', () => {
     const portfolio = createMockPortfolio({
       socialLinks: null,
-    })
-    const result = formatPortfolioForLLM(portfolio)
+    });
+    const result = formatPortfolioForLLM(portfolio);
 
-    expect(result).toContain('CONTACT LINKS:')
-    expect(result).not.toContain('- LinkedIn:')
-    expect(result).not.toContain('- GitHub:')
-  })
+    expect(result).toContain('CONTACT LINKS:');
+    expect(result).not.toContain('- LinkedIn:');
+    expect(result).not.toContain('- GitHub:');
+  });
 
   it('should format work experience with dates', () => {
-    const portfolio = createMockPortfolio()
-    const result = formatPortfolioForLLM(portfolio)
+    const portfolio = createMockPortfolio();
+    const result = formatPortfolioForLLM(portfolio);
 
-    expect(result).toContain('WORK EXPERIENCE:')
-    expect(result).toContain('1. Senior Full Stack Developer at TechCorp Inc (Dec 2021 - Present)')
-    expect(result).toContain('2. Frontend Developer at StartupXYZ (May 2020 - Dec 2021)')
-    expect(result).toContain('Key Metrics: Led team of 5, improved performance by 40%')
-    expect(result).toContain('Technologies: React, Node.js, TypeScript, PostgreSQL')
-  })
+    expect(result).toContain('WORK EXPERIENCE:');
+    expect(result).toContain('1. Senior Full Stack Developer at TechCorp Inc (Dec 2021 - Present)');
+    expect(result).toContain('2. Frontend Developer at StartupXYZ (May 2020 - Dec 2021)');
+    expect(result).toContain('Key Metrics: Led team of 5, improved performance by 40%');
+    expect(result).toContain('Technologies: React, Node.js, TypeScript, PostgreSQL');
+  });
 
   it('should handle missing work experience dates', () => {
     const portfolio = createMockPortfolio({
@@ -300,71 +301,71 @@ describe('formatPortfolioForLLM', () => {
           endDate: null,
         },
       ],
-    })
-    const result = formatPortfolioForLLM(portfolio)
+    });
+    const result = formatPortfolioForLLM(portfolio);
 
-    expect(result).toContain('(Unknown - Present)')
-  })
+    expect(result).toContain('(Unknown - Present)');
+  });
 
   it('should categorize skills correctly', () => {
-    const portfolio = createMockPortfolio()
-    const result = formatPortfolioForLLM(portfolio)
+    const portfolio = createMockPortfolio();
+    const result = formatPortfolioForLLM(portfolio);
 
-    expect(result).toContain('SKILLS:')
-    expect(result).toContain('Frontend:')
-    expect(result).toContain('- React (90% proficiency) - 5 years - Expert in React development')
-    expect(result).toContain('Backend:')
+    expect(result).toContain('SKILLS:');
+    expect(result).toContain('Frontend:');
+    expect(result).toContain('- React (90% proficiency) - 5 years - Expert in React development');
+    expect(result).toContain('Backend:');
     expect(result).toContain(
-      '- Node.js (85% proficiency) - 4 years - Strong backend development skills'
-    )
-    expect(result).toContain('Other:')
-    expect(result).toContain('- Docker (75% proficiency)')
-  })
+      '- Node.js (85% proficiency) - 4 years - Strong backend development skills',
+    );
+    expect(result).toContain('Other:');
+    expect(result).toContain('- Docker (75% proficiency)');
+  });
 
   it('should format projects with technologies and URLs', () => {
-    const portfolio = createMockPortfolio()
-    const result = formatPortfolioForLLM(portfolio)
+    const portfolio = createMockPortfolio();
+    const result = formatPortfolioForLLM(portfolio);
 
-    expect(result).toContain('PROJECTS:')
-    expect(result).toContain('1. E-commerce Platform (completed)')
-    expect(result).toContain('Technologies: React, Node.js, PostgreSQL, Stripe')
-    expect(result).toContain('Live URL: https://ecommerce-demo.com')
-    expect(result).toContain('GitHub: https://github.com/johndoe/ecommerce')
+    expect(result).toContain('PROJECTS:');
+    expect(result).toContain('1. E-commerce Platform (completed)');
+    expect(result).toContain('Technologies: React, Node.js, PostgreSQL, Stripe');
+    expect(result).toContain('Live URL: https://ecommerce-demo.com');
+    expect(result).toContain('GitHub: https://github.com/johndoe/ecommerce');
 
-    expect(result).toContain('2. Task Management App (in-progress)')
-    expect(result).toContain('Technologies: Vue.js, Express, Socket.io')
-    expect(result).toContain('GitHub: https://github.com/johndoe/task-manager')
-    expect(result).not.toContain('Live URL: null')
-  })
+    expect(result).toContain('2. Task Management App (in-progress)');
+    expect(result).toContain('Technologies: Vue.js, Express, Socket.io');
+    expect(result).toContain('GitHub: https://github.com/johndoe/task-manager');
+    expect(result).not.toContain('Live URL: null');
+  });
 
   it('should include portfolio statistics', () => {
-    const portfolio = createMockPortfolio()
-    const result = formatPortfolioForLLM(portfolio)
+    const portfolio = createMockPortfolio();
+    const result = formatPortfolioForLLM(portfolio);
 
-    expect(result).toContain('KEY STATISTICS:')
-    expect(result).toContain('- Years Experience: 5+')
-    expect(result).toContain('- Projects Completed: 50+')
-  })
+    expect(result).toContain('KEY STATISTICS:');
+    expect(result).toContain('- Years Experience: 5+');
+    expect(result).toContain('- Projects Completed: 50+');
+  });
 
   it('should handle empty portfolio stats gracefully', () => {
     const portfolio = createMockPortfolio({
       portfolioStats: [],
-    })
-    const result = formatPortfolioForLLM(portfolio)
+    });
+    const result = formatPortfolioForLLM(portfolio);
 
-    expect(result).not.toContain('KEY STATISTICS:')
-  })
+    expect(result).not.toContain('KEY STATISTICS:');
+  });
 
   it('should handle missing phone number', () => {
     const portfolio = createMockPortfolio({
       phone: null,
-    })
-    const result = formatPortfolioForLLM(portfolio)
+    });
+    const result = formatPortfolioForLLM(portfolio);
 
-    expect(result).toContain('Name: John Doe')
-    expect(result).toContain('Email: john.doe@example.com')
-    expect(result).not.toContain('Phone:')
-  })
+    expect(result).toContain('Name: John Doe');
+    expect(result).toContain('Email: john.doe@example.com');
+    expect(result).not.toContain('Phone:');
+  });
 
   it('should handle empty arrays gracefully', () => {
     const portfolio = createMockPortfolio({
@@ -372,15 +373,15 @@ describe('formatPortfolioForLLM', () => {
       skills: [],
       projects: [],
       portfolioStats: [],
-    })
-    const result = formatPortfolioForLLM(portfolio)
+    });
+    const result = formatPortfolioForLLM(portfolio);
 
-    expect(result).toContain('CANDIDATE PROFILE:')
-    expect(result).toContain('WORK EXPERIENCE:')
-    expect(result).toContain('SKILLS:')
-    expect(result).toContain('PROJECTS:')
-    expect(result).not.toContain('KEY STATISTICS:')
-  })
+    expect(result).toContain('CANDIDATE PROFILE:');
+    expect(result).toContain('WORK EXPERIENCE:');
+    expect(result).toContain('SKILLS:');
+    expect(result).toContain('PROJECTS:');
+    expect(result).not.toContain('KEY STATISTICS:');
+  });
 
   it('should handle skills without optional fields', () => {
     const portfolio = createMockPortfolio({
@@ -400,13 +401,13 @@ describe('formatPortfolioForLLM', () => {
           updatedAt: new Date('2024-01-01'),
         },
       ],
-    })
-    const result = formatPortfolioForLLM(portfolio)
+    });
+    const result = formatPortfolioForLLM(portfolio);
 
-    expect(result).toContain('Programming:')
-    expect(result).toContain('- JavaScript (80% proficiency)')
-    expect(result).not.toContain('- JavaScript (80% proficiency) - ')
-  })
+    expect(result).toContain('Programming:');
+    expect(result).toContain('- JavaScript (80% proficiency)');
+    expect(result).not.toContain('- JavaScript (80% proficiency) - ');
+  });
 
   it('should handle projects without optional URLs', () => {
     const portfolio = createMockPortfolio({
@@ -433,12 +434,12 @@ describe('formatPortfolioForLLM', () => {
           updatedAt: new Date('2024-01-01'),
         },
       ],
-    })
-    const result = formatPortfolioForLLM(portfolio)
+    });
+    const result = formatPortfolioForLLM(portfolio);
 
-    expect(result).toContain('1. Simple App (completed)')
-    expect(result).toContain('Description: A basic application')
-    expect(result).not.toContain('Live URL:')
+    expect(result).toContain('1. Simple App (completed)');
+    expect(result).toContain('Description: A basic application');
+    expect(result).not.toContain('Live URL:');
     // Note: GitHub appears in CONTACT LINKS section from social links, not project section
-  })
-})
+  });
+});

@@ -1,114 +1,115 @@
-import { ArrowLeftIcon, CheckIcon, PencilIcon, XIcon } from 'lucide-react'
-import { useState } from 'react'
-import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router'
-import { useLoaderData, useNavigate } from 'react-router'
-import { EditableArrayField } from '~/components/EditableArrayField'
-import { Button } from '~/components/ui/button'
-import type { CareerWorkExperienceRecord as WorkExperience } from '@hominem/db'
-import { createSuccessResponse, withAuthLoader } from '~/lib/route-utils'
+import type { CareerWorkExperienceRecord as WorkExperience } from '@hominem/db';
+import { Button } from '@hominem/ui/button';
+import { ArrowLeftIcon, CheckIcon, PencilIcon, XIcon } from 'lucide-react';
+import { useState } from 'react';
+import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
+import { useLoaderData, useNavigate } from 'react-router';
+
+import { EditableArrayField } from '~/components/EditableArrayField';
+import { createSuccessResponse, withAuthLoader } from '~/lib/route-utils';
 
 interface LoaderData {
-  workExperience: WorkExperience
+  workExperience: WorkExperience;
 }
 
 export async function loader(args: LoaderFunctionArgs) {
   return withAuthLoader(args, async ({ user }) => {
-    const { id } = args.params
+    const { id } = args.params;
     if (!id) {
-      throw new Response('Work experience ID is required', { status: 400 })
+      throw new Response('Work experience ID is required', { status: 400 });
     }
 
     try {
-      const { getWorkExperienceById } = await import('~/lib/career/queries/base')
-      const workExperience = await getWorkExperienceById(user.id, id)
+      const { getWorkExperienceById } = await import('~/lib/career/queries/base');
+      const workExperience = await getWorkExperienceById(user.id, id);
 
       if (!workExperience) {
-        throw new Response('Work experience not found', { status: 404 })
+        throw new Response('Work experience not found', { status: 404 });
       }
 
-      return createSuccessResponse({ workExperience })
+      return createSuccessResponse({ workExperience });
     } catch (error) {
-      console.error('Error loading work experience:', error)
-      throw new Response('Error loading work experience', { status: 500 })
+      console.error('Error loading work experience:', error);
+      throw new Response('Error loading work experience', { status: 500 });
     }
-  })
+  });
 }
 
 export async function action(args: ActionFunctionArgs) {
   return withAuthLoader(args, async ({ user, request }) => {
-    const { id } = args.params
+    const { id } = args.params;
     if (!id) {
-      throw new Response('Work experience ID is required', { status: 400 })
+      throw new Response('Work experience ID is required', { status: 400 });
     }
 
-    const formData = await request.formData()
-    const field = formData.get('field') as string
-    const value = formData.get('value') as string
+    const formData = await request.formData();
+    const field = formData.get('field') as string;
+    const value = formData.get('value') as string;
 
     try {
-      const { updateWorkExperience } = await import('~/lib/career/queries/base')
+      const { updateWorkExperience } = await import('~/lib/career/queries/base');
 
       // Convert the value to appropriate type based on field
-      let processedValue: string | number | Date | null = value
+      let processedValue: string | number | Date | null = value;
 
       if (
         ['baseSalary', 'totalCompensation', 'equityValue', 'signingBonus', 'annualBonus'].includes(
-          field
+          field,
         )
       ) {
-        processedValue = value ? Number.parseInt(value) * 100 : null // Convert to cents
+        processedValue = value ? Number.parseInt(value) * 100 : null; // Convert to cents
       } else if (['teamSize', 'directReports'].includes(field)) {
-        processedValue = value ? Number.parseInt(value) : null
+        processedValue = value ? Number.parseInt(value) : null;
       } else if (['startDate', 'endDate'].includes(field)) {
-        processedValue = value ? new Date(value) : null
+        processedValue = value ? new Date(value) : null;
       }
 
       // Now determine how to update the database
       if (field.startsWith('metadata.')) {
-        const { getWorkExperienceById } = await import('~/lib/career/queries/base')
-        const currentExperience = await getWorkExperienceById(user.id, id)
+        const { getWorkExperienceById } = await import('~/lib/career/queries/base');
+        const currentExperience = await getWorkExperienceById(user.id, id);
 
         if (currentExperience) {
-          const metadataField = field.replace('metadata.', '')
-          const currentMetadata = currentExperience.metadata || {}
+          const metadataField = field.replace('metadata.', '');
+          const currentMetadata = currentExperience.metadata || {};
 
           // Parse JSON values for array fields like achievements, projects, etc.
-          let parsedValue = processedValue
+          let parsedValue = processedValue;
           try {
             // Try to parse as JSON in case it's an array from EditableArrayField
-            parsedValue = JSON.parse(value)
+            parsedValue = JSON.parse(value);
           } catch {
             // If parsing fails, use the original string value
-            parsedValue = processedValue
+            parsedValue = processedValue;
           }
 
           const updatedMetadata = {
             ...currentMetadata,
             [metadataField]: parsedValue,
-          }
+          };
 
-          await updateWorkExperience(user.id, id, { metadata: updatedMetadata })
+          await updateWorkExperience(user.id, id, { metadata: updatedMetadata });
         }
       } else {
-        await updateWorkExperience(user.id, id, { [field]: processedValue })
+        await updateWorkExperience(user.id, id, { [field]: processedValue });
       }
 
-      return createSuccessResponse({ success: true })
+      return createSuccessResponse({ success: true });
     } catch (error) {
-      console.error('Error updating work experience:', error)
-      throw new Response('Error updating work experience', { status: 500 })
+      console.error('Error updating work experience:', error);
+      throw new Response('Error updating work experience', { status: 500 });
     }
-  })
+  });
 }
 
 export default function WorkExperienceDetail() {
-  const response = useLoaderData<{ success: boolean; data: LoaderData }>()
-  const data = response?.data || {}
-  const { workExperience } = data
-  const navigate = useNavigate()
+  const response = useLoaderData<{ success: boolean; data: LoaderData }>();
+  const data = response?.data || {};
+  const { workExperience } = data;
+  const navigate = useNavigate();
 
   if (!workExperience) {
-    return <div>Work experience not found</div>
+    return <div>Work experience not found</div>;
   }
 
   return (
@@ -393,12 +394,12 @@ export default function WorkExperienceDetail() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 interface SectionProps {
-  title: string
-  children: React.ReactNode
+  title: string;
+  children: React.ReactNode;
 }
 
 function Section({ title, children }: SectionProps) {
@@ -407,19 +408,19 @@ function Section({ title, children }: SectionProps) {
       <h2 className="text-2xl font-light text-slate-900 font-serif mb-6">{title}</h2>
       {children}
     </div>
-  )
+  );
 }
 
 interface EditableFieldProps {
-  label: string
-  value: string
-  field: string
-  workExperienceId: string
-  type?: 'text' | 'number' | 'date' | 'textarea' | 'select'
-  options?: string[]
-  prefix?: string
-  placeholder?: string
-  className?: string
+  label: string;
+  value: string;
+  field: string;
+  workExperienceId: string;
+  type?: 'text' | 'number' | 'date' | 'textarea' | 'select';
+  options?: string[];
+  prefix?: string;
+  placeholder?: string;
+  className?: string;
 }
 
 function EditableField({
@@ -432,47 +433,47 @@ function EditableField({
   placeholder,
   className = '',
 }: EditableFieldProps) {
-  const [isEditing, setIsEditing] = useState(false)
-  const [editValue, setEditValue] = useState(value)
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(value);
 
   const handleSave = () => {
-    const form = document.createElement('form')
-    form.method = 'POST'
-    form.style.display = 'none'
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.style.display = 'none';
 
-    const fieldInput = document.createElement('input')
-    fieldInput.name = 'field'
-    fieldInput.value = field
+    const fieldInput = document.createElement('input');
+    fieldInput.name = 'field';
+    fieldInput.value = field;
 
     // Use textarea for multiline content to preserve line breaks
     if (type === 'textarea') {
-      const valueTextarea = document.createElement('textarea')
-      valueTextarea.name = 'value'
-      valueTextarea.value = editValue
-      valueTextarea.style.display = 'none'
-      form.appendChild(valueTextarea)
+      const valueTextarea = document.createElement('textarea');
+      valueTextarea.name = 'value';
+      valueTextarea.value = editValue;
+      valueTextarea.style.display = 'none';
+      form.appendChild(valueTextarea);
     } else {
-      const valueInput = document.createElement('input')
-      valueInput.name = 'value'
-      valueInput.value = editValue
-      form.appendChild(valueInput)
+      const valueInput = document.createElement('input');
+      valueInput.name = 'value';
+      valueInput.value = editValue;
+      form.appendChild(valueInput);
     }
 
-    form.appendChild(fieldInput)
-    document.body.appendChild(form)
+    form.appendChild(fieldInput);
+    document.body.appendChild(form);
 
-    form.submit()
-    document.body.removeChild(form)
+    form.submit();
+    document.body.removeChild(form);
 
-    setIsEditing(false)
-  }
+    setIsEditing(false);
+  };
 
   const handleCancel = () => {
-    setEditValue(value)
-    setIsEditing(false)
-  }
+    setEditValue(value);
+    setIsEditing(false);
+  };
 
-  const displayValue = value || 'Not set'
+  const displayValue = value || 'Not set';
 
   if (isEditing) {
     return (
@@ -535,7 +536,7 @@ function EditableField({
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -568,5 +569,5 @@ function EditableField({
         )}
       </div>
     </div>
-  )
+  );
 }

@@ -11,6 +11,10 @@
       "types": "./src/components/loading-state.tsx",
       "default": "./src/components/loading-state.tsx"
     },
+    "./loading-spinner": {
+      "types": "./src/components/loading-spinner.tsx",
+      "default": "./src/components/loading-spinner.tsx"
+    },
     "./button": {
       "types": "./src/components/button.tsx",
       "default": "./src/components/button.tsx"
@@ -67,6 +71,22 @@
       "types": "./src/components/input.tsx",
       "default": "./src/components/input.tsx"
     },
+    "./select": {
+      "types": "./src/components/select.tsx",
+      "default": "./src/components/select.tsx"
+    },
+    "./checkbox": {
+      "types": "./src/components/checkbox.tsx",
+      "default": "./src/components/checkbox.tsx"
+    },
+    "./switch": {
+      "types": "./src/components/switch.tsx",
+      "default": "./src/components/switch.tsx"
+    },
+    "./date-picker": {
+      "types": "./src/components/date-picker.tsx",
+      "default": "./src/components/date-picker.tsx"
+    },
     "./table": {
       "types": "./src/components/table.tsx",
       "default": "./src/components/table.tsx"
@@ -112,8 +132,8 @@
       "default": "./src/components/tabs.tsx"
     },
     "./filters": {
-      "types": "./src/components/filters/active-filters-bar.tsx",
-      "default": "./src/components/filters/active-filters-bar.tsx"
+      "types": "./src/components/filters/index.ts",
+      "default": "./src/components/filters/index.ts"
     },
     "./hooks": {
       "types": "./src/hooks/index.ts",

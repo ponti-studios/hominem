@@ -1,5 +1,6 @@
-import { memo, useEffect, useMemo, useState } from 'react'
-import styles from './AIProcessingAnimation.module.css'
+import { memo, useEffect, useMemo, useState } from 'react';
+
+import styles from './AIProcessingAnimation.module.css';
 
 const dataElements = [
   'experience',
@@ -25,14 +26,14 @@ const dataElements = [
   'deployment',
   'optimization',
   'innovation',
-]
+];
 
 interface DataColumn {
-  id: number
-  words: string
-  speed: number
-  offset: number
-  isReverse: boolean
+  id: number;
+  words: string;
+  speed: number;
+  offset: number;
+  isReverse: boolean;
 }
 
 const MatrixColumn = memo(({ column }: { column: DataColumn }) => (
@@ -48,21 +49,21 @@ const MatrixColumn = memo(({ column }: { column: DataColumn }) => (
   >
     {column.words}
   </div>
-))
+));
 
-MatrixColumn.displayName = 'MatrixColumn'
+MatrixColumn.displayName = 'MatrixColumn';
 
 export const AIProcessingAnimation = memo(() => {
-  const [columns, setColumns] = useState<DataColumn[]>([])
+  const [columns, setColumns] = useState<DataColumn[]>([]);
 
   const generateColumns = useMemo(
     () => () => {
-      const newColumns: DataColumn[] = []
+      const newColumns: DataColumn[] = [];
       for (let i = 0; i < 6; i++) {
         const words = Array.from(
           { length: 10 },
-          () => dataElements[Math.floor(Math.random() * dataElements.length)]
-        ).join('\n')
+          () => dataElements[Math.floor(Math.random() * dataElements.length)],
+        ).join('\n');
 
         newColumns.push({
           id: i,
@@ -70,18 +71,18 @@ export const AIProcessingAnimation = memo(() => {
           speed: 4 + Math.random() * 3,
           offset: Math.random() * 2,
           isReverse: i % 2 === 1,
-        })
+        });
       }
-      setColumns(newColumns)
+      setColumns(newColumns);
     },
-    []
-  )
+    [],
+  );
 
   useEffect(() => {
-    generateColumns()
-    const interval = setInterval(generateColumns, 6000)
-    return () => clearInterval(interval)
-  }, [generateColumns])
+    generateColumns();
+    const interval = setInterval(generateColumns, 6000);
+    return () => clearInterval(interval);
+  }, [generateColumns]);
 
   return (
     <div className={styles.container}>
@@ -114,7 +115,7 @@ export const AIProcessingAnimation = memo(() => {
         <div className={styles.statusSubtitle}>Extracting • Structuring • Optimizing</div>
       </div>
     </div>
-  )
-})
+  );
+});
 
-AIProcessingAnimation.displayName = 'AIProcessingAnimation'
+AIProcessingAnimation.displayName = 'AIProcessingAnimation';

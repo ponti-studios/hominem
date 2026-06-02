@@ -1,7 +1,7 @@
-import type { TopCompany } from '~/lib/career/queries/job-applications'
+import type { TopCompany } from '~/lib/career/queries/job-applications';
 
 interface TopCompaniesTableProps {
-  companies: TopCompany[]
+  companies: TopCompany[];
 }
 
 export function TopCompaniesTable({ companies }: TopCompaniesTableProps) {
@@ -12,28 +12,28 @@ export function TopCompaniesTable({ companies }: TopCompaniesTableProps) {
         <p>No company data available</p>
         <p className="text-sm mt-1">Start applying to see company insights</p>
       </div>
-    )
+    );
   }
 
   const getRateColor = (rate: number) => {
-    if (rate >= 80) return 'text-green-600'
-    if (rate >= 50) return 'text-blue-600'
-    if (rate >= 20) return 'text-yellow-600'
-    return 'text-red-600'
-  }
+    if (rate >= 80) return 'text-green-600';
+    if (rate >= 50) return 'text-blue-600';
+    if (rate >= 20) return 'text-yellow-600';
+    return 'text-red-600';
+  };
 
   const getPerformanceBadge = (offerRate: number, interviewRate: number) => {
-    const avgRate = (offerRate + interviewRate) / 2
-    if (avgRate >= 70) return { label: 'Excellent', color: 'bg-green-100 text-green-800' }
-    if (avgRate >= 50) return { label: 'Good', color: 'bg-blue-100 text-blue-800' }
-    if (avgRate >= 30) return { label: 'Fair', color: 'bg-yellow-100 text-yellow-800' }
-    return { label: 'Poor', color: 'bg-red-100 text-red-800' }
-  }
+    const avgRate = (offerRate + interviewRate) / 2;
+    if (avgRate >= 70) return { label: 'Excellent', color: 'bg-green-100 text-green-800' };
+    if (avgRate >= 50) return { label: 'Good', color: 'bg-blue-100 text-blue-800' };
+    if (avgRate >= 30) return { label: 'Fair', color: 'bg-yellow-100 text-yellow-800' };
+    return { label: 'Poor', color: 'bg-red-100 text-red-800' };
+  };
 
   return (
     <div className="space-y-4">
       {companies.map((company) => {
-        const badge = getPerformanceBadge(company.offerRate, company.interviewRate)
+        const badge = getPerformanceBadge(company.offerRate, company.interviewRate);
 
         return (
           <div key={company.company} className="border border-gray-200 rounded-lg p-4">
@@ -100,7 +100,7 @@ export function TopCompaniesTable({ companies }: TopCompaniesTableProps) {
               </div>
             </div>
           </div>
-        )
+        );
       })}
 
       {/* Summary */}
@@ -113,7 +113,7 @@ export function TopCompaniesTable({ companies }: TopCompaniesTableProps) {
               <span className="font-medium">
                 {
                   companies.reduce((best, company) =>
-                    company.offerRate > best.offerRate ? company : best
+                    company.offerRate > best.offerRate ? company : best,
                   ).company
                 }
               </span>
@@ -131,5 +131,5 @@ export function TopCompaniesTable({ companies }: TopCompaniesTableProps) {
         </div>
       )}
     </div>
-  )
+  );
 }

@@ -1,72 +1,72 @@
-import { ArrowLeftIcon, CheckIcon, PencilIcon, PlusIcon, TrashIcon, XIcon } from 'lucide-react'
-import { useState } from 'react'
-import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router'
-import { useLoaderData, useNavigate } from 'react-router'
-import { Button } from '~/components/ui/button'
 import type {
   CareerProjectRecord as Project,
   CareerWorkExperienceRecord as WorkExperience,
-} from '@hominem/db'
-import { createSuccessResponse, withAuthLoader } from '~/lib/route-utils'
+} from '@hominem/db';
+import { Button } from '@hominem/ui/button';
+import { ArrowLeftIcon, CheckIcon, PencilIcon, PlusIcon, TrashIcon, XIcon } from 'lucide-react';
+import { useState } from 'react';
+import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
+import { useLoaderData, useNavigate } from 'react-router';
+
+import { createSuccessResponse, withAuthLoader } from '~/lib/route-utils';
 
 interface LoaderData {
-  workExperience: WorkExperience
-  projects: Project[]
+  workExperience: WorkExperience;
+  projects: Project[];
 }
 
 export async function loader(args: LoaderFunctionArgs) {
   return withAuthLoader(args, async ({ user }) => {
-    const { id } = args.params
+    const { id } = args.params;
     if (!id) {
-      throw new Response('Work experience ID is required', { status: 400 })
+      throw new Response('Work experience ID is required', { status: 400 });
     }
 
     try {
-      const { getWorkExperienceById } = await import('~/lib/career/queries/base')
-      const { getProjectsByWorkExperience } = await import('~/lib/career/queries/projects')
+      const { getWorkExperienceById } = await import('~/lib/career/queries/base');
+      const { getProjectsByWorkExperience } = await import('~/lib/career/queries/projects');
 
-      const workExperience = await getWorkExperienceById(user.id, id)
+      const workExperience = await getWorkExperienceById(user.id, id);
       if (!workExperience) {
-        throw new Response('Work experience not found', { status: 404 })
+        throw new Response('Work experience not found', { status: 404 });
       }
 
-      const projects = await getProjectsByWorkExperience(workExperience.portfolioId, id)
+      const projects = await getProjectsByWorkExperience(workExperience.portfolioId, id);
 
-      return createSuccessResponse({ workExperience, projects })
+      return createSuccessResponse({ workExperience, projects });
     } catch (error) {
-      console.error('Error loading work experience projects:', error)
-      throw new Response('Error loading work experience projects', { status: 500 })
+      console.error('Error loading work experience projects:', error);
+      throw new Response('Error loading work experience projects', { status: 500 });
     }
-  })
+  });
 }
 
 export async function action(args: ActionFunctionArgs) {
   return withAuthLoader(args, async ({ user, request }) => {
-    const { id } = args.params
+    const { id } = args.params;
     if (!id) {
-      throw new Response('Work experience ID is required', { status: 400 })
+      throw new Response('Work experience ID is required', { status: 400 });
     }
 
-    const formData = await request.formData()
-    const actionType = formData.get('actionType') as string
+    const formData = await request.formData();
+    const actionType = formData.get('actionType') as string;
 
     try {
-      const { getWorkExperienceById } = await import('~/lib/career/queries/base')
-      const { createProject, updateProject, deleteProject } = await import(
-        '~/lib/career/queries/projects'
-      )
+      const { getWorkExperienceById } = await import('~/lib/career/queries/base');
+      const { createProject, updateProject, deleteProject } =
+        await import('~/lib/career/queries/projects');
 
-      const currentExperience = await getWorkExperienceById(user.id, id)
+      const currentExperience = await getWorkExperienceById(user.id, id);
       if (!currentExperience) {
-        throw new Response('Work experience not found', { status: 404 })
+        throw new Response('Work experience not found', { status: 404 });
       }
 
       if (actionType === 'add') {
-        const title = formData.get('title') as string
-        const description = formData.get('description') as string
-        const status = formData.get('status') as string
-        const technologies = formData.get('technologies') as string
-        const shortDescription = formData.get('shortDescription') as string
+        const title = formData.get('title') as string;
+        const description = formData.get('description') as string;
+        const status = formData.get('status') as string;
+        const technologies = formData.get('technologies') as string;
+        const shortDescription = formData.get('shortDescription') as string;
 
         await createProject(user.id, {
           portfolioId: currentExperience.portfolioId,
@@ -79,14 +79,14 @@ export async function action(args: ActionFunctionArgs) {
           isVisible: true,
           isFeatured: false,
           sortOrder: 0,
-        })
+        });
       } else if (actionType === 'update') {
-        const projectId = formData.get('projectId') as string
-        const title = formData.get('title') as string
-        const description = formData.get('description') as string
-        const status = formData.get('status') as string
-        const technologies = formData.get('technologies') as string
-        const shortDescription = formData.get('shortDescription') as string
+        const projectId = formData.get('projectId') as string;
+        const title = formData.get('title') as string;
+        const description = formData.get('description') as string;
+        const status = formData.get('status') as string;
+        const technologies = formData.get('technologies') as string;
+        const shortDescription = formData.get('shortDescription') as string;
 
         await updateProject(user.id, projectId, currentExperience.portfolioId, {
           title,
@@ -94,29 +94,29 @@ export async function action(args: ActionFunctionArgs) {
           shortDescription: shortDescription || null,
           status,
           technologies: technologies ? technologies.split(',').map((t) => t.trim()) : [],
-        })
+        });
       } else if (actionType === 'delete') {
-        const projectId = formData.get('projectId') as string
-        await deleteProject(user.id, projectId, currentExperience.portfolioId)
+        const projectId = formData.get('projectId') as string;
+        await deleteProject(user.id, projectId, currentExperience.portfolioId);
       }
 
-      return createSuccessResponse({ success: true })
+      return createSuccessResponse({ success: true });
     } catch (error) {
-      console.error('Error managing project:', error)
-      throw new Response('Error managing project', { status: 500 })
+      console.error('Error managing project:', error);
+      throw new Response('Error managing project', { status: 500 });
     }
-  })
+  });
 }
 
 export default function WorkExperienceProjects() {
-  const response = useLoaderData<{ success: boolean; data: LoaderData }>()
-  const data = response?.data || {}
-  const { workExperience, projects = [] } = data
-  const navigate = useNavigate()
-  const [showAddForm, setShowAddForm] = useState(false)
+  const response = useLoaderData<{ success: boolean; data: LoaderData }>();
+  const data = response?.data || {};
+  const { workExperience, projects = [] } = data;
+  const navigate = useNavigate();
+  const [showAddForm, setShowAddForm] = useState(false);
 
   if (!workExperience) {
-    return <div>Work experience not found</div>
+    return <div>Work experience not found</div>;
   }
 
   return (
@@ -180,12 +180,12 @@ export default function WorkExperienceProjects() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 interface ProjectFormProps {
-  project?: Project
-  onCancel: () => void
+  project?: Project;
+  onCancel: () => void;
 }
 
 function ProjectForm({ project, onCancel }: ProjectFormProps) {
@@ -195,38 +195,38 @@ function ProjectForm({ project, onCancel }: ProjectFormProps) {
     shortDescription: project?.shortDescription || '',
     status: project?.status || 'in-progress',
     technologies: project?.technologies?.join(', ') || '',
-  })
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    const form = document.createElement('form')
-    form.method = 'POST'
-    form.style.display = 'none'
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.style.display = 'none';
 
-    const actionInput = document.createElement('input')
-    actionInput.name = 'actionType'
-    actionInput.value = project ? 'update' : 'add'
-    form.appendChild(actionInput)
+    const actionInput = document.createElement('input');
+    actionInput.name = 'actionType';
+    actionInput.value = project ? 'update' : 'add';
+    form.appendChild(actionInput);
 
     if (project) {
-      const projectIdInput = document.createElement('input')
-      projectIdInput.name = 'projectId'
-      projectIdInput.value = project.id
-      form.appendChild(projectIdInput)
+      const projectIdInput = document.createElement('input');
+      projectIdInput.name = 'projectId';
+      projectIdInput.value = project.id;
+      form.appendChild(projectIdInput);
     }
 
     for (const [key, value] of Object.entries(formData)) {
-      const input = document.createElement('input')
-      input.name = key
-      input.value = value || ''
-      form.appendChild(input)
+      const input = document.createElement('input');
+      input.name = key;
+      input.value = value || '';
+      form.appendChild(input);
     }
 
-    document.body.appendChild(form)
-    form.submit()
-    document.body.removeChild(form)
-  }
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+  };
 
   return (
     <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200/50">
@@ -331,53 +331,53 @@ function ProjectForm({ project, onCancel }: ProjectFormProps) {
         </div>
       </form>
     </div>
-  )
+  );
 }
 
 interface ProjectCardProps {
-  project: Project
+  project: Project;
 }
 
 function ProjectCard({ project }: ProjectCardProps) {
-  const [isEditing, setIsEditing] = useState(false)
+  const [isEditing, setIsEditing] = useState(false);
 
   const handleDelete = () => {
     if (confirm('Are you sure you want to delete this project?')) {
-      const form = document.createElement('form')
-      form.method = 'POST'
-      form.style.display = 'none'
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.style.display = 'none';
 
-      const actionInput = document.createElement('input')
-      actionInput.name = 'actionType'
-      actionInput.value = 'delete'
-      form.appendChild(actionInput)
+      const actionInput = document.createElement('input');
+      actionInput.name = 'actionType';
+      actionInput.value = 'delete';
+      form.appendChild(actionInput);
 
-      const projectIdInput = document.createElement('input')
-      projectIdInput.name = 'projectId'
-      projectIdInput.value = project.id
-      form.appendChild(projectIdInput)
+      const projectIdInput = document.createElement('input');
+      projectIdInput.name = 'projectId';
+      projectIdInput.value = project.id;
+      form.appendChild(projectIdInput);
 
-      document.body.appendChild(form)
-      form.submit()
-      document.body.removeChild(form)
+      document.body.appendChild(form);
+      form.submit();
+      document.body.removeChild(form);
     }
-  }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
-        return 'bg-green-100 text-green-800'
+        return 'bg-green-100 text-green-800';
       case 'in-progress':
-        return 'bg-blue-100 text-blue-800'
+        return 'bg-blue-100 text-blue-800';
       case 'archived':
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-gray-100 text-gray-800';
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-gray-100 text-gray-800';
     }
-  }
+  };
 
   if (isEditing) {
-    return <ProjectForm project={project} onCancel={() => setIsEditing(false)} />
+    return <ProjectForm project={project} onCancel={() => setIsEditing(false)} />;
   }
 
   return (
@@ -446,5 +446,5 @@ function ProjectCard({ project }: ProjectCardProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }

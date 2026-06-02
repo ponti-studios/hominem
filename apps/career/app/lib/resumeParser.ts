@@ -1,34 +1,34 @@
 // Mock resume parser for demonstration
 export interface ParsedResumeData {
-  name: string
-  title: string
-  email: string
-  phone?: string
-  location?: string
-  bio: string
+  name: string;
+  title: string;
+  email: string;
+  phone?: string;
+  location?: string;
+  bio: string;
   workExperiences: {
-    jobTitle: string
-    companyName: string
-    startDate: string
-    endDate?: string
-    description: string
-    location?: string
-  }[]
+    jobTitle: string;
+    companyName: string;
+    startDate: string;
+    endDate?: string;
+    description: string;
+    location?: string;
+  }[];
   skills: {
-    name: string
-    category: string
-    proficiency: 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert'
-  }[]
+    name: string;
+    category: string;
+    proficiency: 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
+  }[];
   socialLinks: {
-    platform: string
-    url: string
-  }[]
+    platform: string;
+    url: string;
+  }[];
 }
 
 // Mock function to simulate parsing a PDF resume
 export async function parseResume(file: File): Promise<ParsedResumeData> {
   // Simulate processing time
-  await new Promise((resolve) => setTimeout(resolve, 2000))
+  await new Promise((resolve) => setTimeout(resolve, 2000));
 
   // Return mock parsed data
   return {
@@ -86,12 +86,12 @@ export async function parseResume(file: File): Promise<ParsedResumeData> {
       { platform: 'linkedin', url: 'https://linkedin.com/in/johndoe' },
       { platform: 'github', url: 'https://github.com/johndoe' },
     ],
-  }
+  };
 }
 
 // Function to save parsed resume data to the database
 export async function saveResumeData(userId: string, data: ParsedResumeData): Promise<boolean> {
   // This would save the data to Supabase
   // For now, just return true to simulate success
-  return true
+  return true;
 }

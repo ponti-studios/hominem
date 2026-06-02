@@ -1,24 +1,24 @@
-import { PercentageProgressBar, VolumeProgressBar } from '~/components/ui/ProgressBar'
+import { PercentageProgressBar, VolumeProgressBar } from '~/components/ui/ProgressBar';
 
 interface SourceMetric {
-  source: string
-  count: number
-  responseRate: number
-  offerRate: number
+  source: string;
+  count: number;
+  responseRate: number;
+  offerRate: number;
 }
 
 interface SourcePerformanceChartProps {
-  data: SourceMetric[]
+  data: SourceMetric[];
 }
 
 export function SourcePerformanceChart({ data }: SourcePerformanceChartProps) {
   if (!data || data.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">No source performance data available</div>
-    )
+    );
   }
 
-  const maxCount = Math.max(...data.map((source) => source.count))
+  const maxCount = Math.max(...data.map((source) => source.count));
 
   return (
     <div className="space-y-4">
@@ -85,23 +85,23 @@ export function SourcePerformanceChart({ data }: SourcePerformanceChartProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 function calculatePerformanceScore(responseRate: number, offerRate: number): string {
-  const score = responseRate * 0.4 + offerRate * 0.6
+  const score = responseRate * 0.4 + offerRate * 0.6;
 
-  if (score >= 80) return 'Excellent'
-  if (score >= 60) return 'Good'
-  if (score >= 40) return 'Fair'
-  return 'Needs Improvement'
+  if (score >= 80) return 'Excellent';
+  if (score >= 60) return 'Good';
+  if (score >= 40) return 'Fair';
+  return 'Needs Improvement';
 }
 
 function getScoreColor(responseRate: number, offerRate: number): string {
-  const score = responseRate * 0.4 + offerRate * 0.6
+  const score = responseRate * 0.4 + offerRate * 0.6;
 
-  if (score >= 80) return 'text-green-600'
-  if (score >= 60) return 'text-blue-600'
-  if (score >= 40) return 'text-yellow-600'
-  return 'text-red-600'
+  if (score >= 80) return 'text-green-600';
+  if (score >= 60) return 'text-blue-600';
+  if (score >= 40) return 'text-yellow-600';
+  return 'text-red-600';
 }

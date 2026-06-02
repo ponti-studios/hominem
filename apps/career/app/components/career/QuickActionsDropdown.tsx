@@ -1,44 +1,44 @@
-import { ChevronDown, Plus } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { Button } from '~/components/ui/button'
+import { Button } from '@hominem/ui/button';
+import { ChevronDown, Plus } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface QuickAction {
-  id: string
-  label: string
-  icon: React.ComponentType<{ className?: string }> | (() => React.ReactElement)
-  onClick: () => void
+  id: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }> | (() => React.ReactElement);
+  onClick: () => void;
 }
 
 interface QuickActionsDropdownProps {
-  actions: QuickAction[]
-  className?: string
+  actions: QuickAction[];
+  className?: string;
 }
 
 export function QuickActionsDropdown({ actions, className = '' }: QuickActionsDropdownProps) {
-  const [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(false);
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Element
+      const target = event.target as Element;
       if (!target.closest('.quick-actions-dropdown')) {
-        setIsOpen(false)
+        setIsOpen(false);
       }
-    }
+    };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [isOpen])
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
 
   const handleActionClick = (action: QuickAction) => {
-    action.onClick()
-    setIsOpen(false)
-  }
+    action.onClick();
+    setIsOpen(false);
+  };
 
   return (
     <div className={`relative quick-actions-dropdown ${className}`}>
@@ -57,7 +57,7 @@ export function QuickActionsDropdown({ actions, className = '' }: QuickActionsDr
         <div className="absolute right-0 top-full mt-1 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
           <div className="py-1">
             {actions.map((action) => {
-              const Icon = action.icon
+              const Icon = action.icon;
               return (
                 <button
                   key={action.id}
@@ -72,11 +72,11 @@ export function QuickActionsDropdown({ actions, className = '' }: QuickActionsDr
                   )}
                   {action.label}
                 </button>
-              )
+              );
             })}
           </div>
         </div>
       )}
     </div>
-  )
+  );
 }

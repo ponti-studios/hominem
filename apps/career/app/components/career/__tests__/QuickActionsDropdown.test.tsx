@@ -1,7 +1,8 @@
-import { fireEvent, render, screen } from '@testing-library/react'
-import { Calendar, MessageSquare } from 'lucide-react'
-import { describe, expect, it, vi } from 'vitest'
-import { QuickActionsDropdown } from '../QuickActionsDropdown'
+import { fireEvent, render, screen } from '@testing-library/react';
+import { Calendar, MessageSquare } from 'lucide-react';
+import { describe, expect, it, vi } from 'vitest';
+
+import { QuickActionsDropdown } from '../QuickActionsDropdown';
 
 describe('QuickActionsDropdown', () => {
   const mockActions = [
@@ -23,54 +24,54 @@ describe('QuickActionsDropdown', () => {
       icon: () => <span data-testid="custom-icon">•</span>,
       onClick: vi.fn(),
     },
-  ]
+  ];
 
   it('renders the dropdown button', () => {
-    render(<QuickActionsDropdown actions={mockActions} />)
-    expect(screen.getByText('Quick Actions')).toBeInTheDocument()
-  })
+    render(<QuickActionsDropdown actions={mockActions} />);
+    expect(screen.getByText('Quick Actions')).toBeInTheDocument();
+  });
 
   it('shows dropdown menu when clicked', () => {
-    render(<QuickActionsDropdown actions={mockActions} />)
+    render(<QuickActionsDropdown actions={mockActions} />);
 
-    const button = screen.getByText('Quick Actions')
-    fireEvent.click(button)
+    const button = screen.getByText('Quick Actions');
+    fireEvent.click(button);
 
-    expect(screen.getByText('Test Action 1')).toBeInTheDocument()
-    expect(screen.getByText('Test Action 2')).toBeInTheDocument()
-    expect(screen.getByText('Test Action 3')).toBeInTheDocument()
-  })
+    expect(screen.getByText('Test Action 1')).toBeInTheDocument();
+    expect(screen.getByText('Test Action 2')).toBeInTheDocument();
+    expect(screen.getByText('Test Action 3')).toBeInTheDocument();
+  });
 
   it('calls onClick when action is clicked', () => {
-    render(<QuickActionsDropdown actions={mockActions} />)
+    render(<QuickActionsDropdown actions={mockActions} />);
 
-    const button = screen.getByText('Quick Actions')
-    fireEvent.click(button)
+    const button = screen.getByText('Quick Actions');
+    fireEvent.click(button);
 
-    const actionButton = screen.getByText('Test Action 1')
-    fireEvent.click(actionButton)
+    const actionButton = screen.getByText('Test Action 1');
+    fireEvent.click(actionButton);
 
-    expect(mockActions[0].onClick).toHaveBeenCalledTimes(1)
-  })
+    expect(mockActions[0].onClick).toHaveBeenCalledTimes(1);
+  });
 
   it('closes dropdown after action is clicked', () => {
-    render(<QuickActionsDropdown actions={mockActions} />)
+    render(<QuickActionsDropdown actions={mockActions} />);
 
-    const button = screen.getByText('Quick Actions')
-    fireEvent.click(button)
+    const button = screen.getByText('Quick Actions');
+    fireEvent.click(button);
 
-    const actionButton = screen.getByText('Test Action 1')
-    fireEvent.click(actionButton)
+    const actionButton = screen.getByText('Test Action 1');
+    fireEvent.click(actionButton);
 
-    expect(screen.queryByText('Test Action 1')).not.toBeInTheDocument()
-  })
+    expect(screen.queryByText('Test Action 1')).not.toBeInTheDocument();
+  });
 
   it('renders custom icon components', () => {
-    render(<QuickActionsDropdown actions={mockActions} />)
+    render(<QuickActionsDropdown actions={mockActions} />);
 
-    const button = screen.getByText('Quick Actions')
-    fireEvent.click(button)
+    const button = screen.getByText('Quick Actions');
+    fireEvent.click(button);
 
-    expect(screen.getByTestId('custom-icon')).toBeInTheDocument()
-  })
-})
+    expect(screen.getByTestId('custom-icon')).toBeInTheDocument();
+  });
+});

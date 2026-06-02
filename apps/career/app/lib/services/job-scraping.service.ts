@@ -1,23 +1,23 @@
-import { getServerEnv } from '~/lib/env'
-import type { JobPosting, ScrapedJobPostingResponse } from '~/types/applications'
+import { getServerEnv } from '~/lib/env';
+import type { JobPosting, ScrapedJobPostingResponse } from '~/types/applications';
 
 export class JobScrapingService {
-  private readonly cloudflareAccountId: string
-  private readonly cloudflareApiToken: string
+  private readonly cloudflareAccountId: string;
+  private readonly cloudflareApiToken: string;
 
   constructor() {
     try {
-      const env = getServerEnv()
-      this.cloudflareAccountId = env.VITE_CLOUDFLARE_ACCOUNT_ID || ''
-      this.cloudflareApiToken = env.VITE_CLOUDFLARE_API_TOKEN || ''
+      const env = getServerEnv();
+      this.cloudflareAccountId = env.VITE_CLOUDFLARE_ACCOUNT_ID || '';
+      this.cloudflareApiToken = env.VITE_CLOUDFLARE_API_TOKEN || '';
     } catch (error) {
       // If we're on the client side, these will be empty
-      this.cloudflareAccountId = ''
-      this.cloudflareApiToken = ''
+      this.cloudflareAccountId = '';
+      this.cloudflareApiToken = '';
     }
 
     if (!this.cloudflareAccountId || !this.cloudflareApiToken) {
-      console.warn('Cloudflare credentials not configured. Job scraping will not work.')
+      console.warn('Cloudflare credentials not configured. Job scraping will not work.');
     }
   }
 
@@ -27,7 +27,7 @@ export class JobScrapingService {
   async scrapeJobPosting(jobUrl: string): Promise<ScrapedJobPostingResponse> {
     try {
       if (!this.cloudflareAccountId || !this.cloudflareApiToken) {
-        throw new Error('Cloudflare credentials not configured')
+        throw new Error('Cloudflare credentials not configured');
       }
 
       const response = await fetch(
@@ -86,29 +86,29 @@ export class JobScrapingService {
               },
             },
           }),
-        }
-      )
+        },
+      );
 
       if (!response.ok) {
-        const errorText = await response.text()
+        const errorText = await response.text();
         throw new Error(
-          `Cloudflare API error: ${response.status} ${response.statusText} - ${errorText}`
-        )
+          `Cloudflare API error: ${response.status} ${response.statusText} - ${errorText}`,
+        );
       }
 
-      const result = await response.json()
+      const result = await response.json();
 
       if (!result.success) {
         throw new Error(
-          `Cloudflare API returned error: ${result.errors?.[0]?.message || 'Unknown error'}`
-        )
+          `Cloudflare API returned error: ${result.errors?.[0]?.message || 'Unknown error'}`,
+        );
       }
 
-      const extractedData = result.result
-      const fullText = extractedData.fullText || ''
+      const extractedData = result.result;
+      const fullText = extractedData.fullText || '';
 
       // Clean up the text content
-      const cleanedText = this.cleanJobPostingText(fullText)
+      const cleanedText = this.cleanJobPostingText(fullText);
 
       const jobPosting: JobPosting = {
         jobTitle: extractedData.jobTitle || 'Unknown Position',
@@ -122,18 +122,18 @@ export class JobScrapingService {
         url: jobUrl,
         scrapedAt: new Date().toISOString(),
         wordCount: cleanedText.split(/\s+/).length,
-      }
+      };
 
       return {
         success: true,
         jobPosting,
-      }
+      };
     } catch (error) {
-      console.error('Job posting scraping failed:', error)
+      console.error('Job posting scraping failed:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred',
-      }
+      };
     }
   }
 
@@ -143,7 +143,7 @@ export class JobScrapingService {
   async checkHealth(): Promise<{ status: string; runtime?: string; timestamp?: string }> {
     try {
       if (!this.cloudflareAccountId || !this.cloudflareApiToken) {
-        return { status: 'unhealthy', runtime: 'direct-api', timestamp: new Date().toISOString() }
+        return { status: 'unhealthy', runtime: 'direct-api', timestamp: new Date().toISOString() };
       }
 
       // Test with a simple request
@@ -168,17 +168,17 @@ export class JobScrapingService {
               },
             },
           }),
-        }
-      )
+        },
+      );
 
       if (!response.ok) {
-        return { status: 'unhealthy', runtime: 'direct-api', timestamp: new Date().toISOString() }
+        return { status: 'unhealthy', runtime: 'direct-api', timestamp: new Date().toISOString() };
       }
 
-      return { status: 'healthy', runtime: 'direct-api', timestamp: new Date().toISOString() }
+      return { status: 'healthy', runtime: 'direct-api', timestamp: new Date().toISOString() };
     } catch (error) {
-      console.error('Health check failed:', error)
-      return { status: 'unhealthy', runtime: 'direct-api', timestamp: new Date().toISOString() }
+      console.error('Health check failed:', error);
+      return { status: 'unhealthy', runtime: 'direct-api', timestamp: new Date().toISOString() };
     }
   }
 
@@ -186,34 +186,34 @@ export class JobScrapingService {
    * Scrape job posting and validate the content
    */
   async scrapeAndValidateJobPosting(jobUrl: string): Promise<ScrapedJobPostingResponse> {
-    const result = await this.scrapeJobPosting(jobUrl)
+    const result = await this.scrapeJobPosting(jobUrl);
 
     if (result.success && result.jobPosting) {
       // Basic validation - ensure we got meaningful content
-      const wordCount = result.jobPosting.wordCount
+      const wordCount = result.jobPosting.wordCount;
 
       if (wordCount < 50) {
         return {
           success: false,
           error: 'Job posting appears to be too short or empty. Please check the URL.',
-        }
+        };
       }
 
       // Check for common job posting indicators
       const hasJobContent =
         /(job|position|role|responsibilities|requirements|qualifications)/i.test(
-          result.jobPosting.fullText
-        )
+          result.jobPosting.fullText,
+        );
 
       if (!hasJobContent) {
         return {
           success: false,
           error: "The page doesn't appear to contain job posting content. Please verify the URL.",
-        }
+        };
       }
     }
 
-    return result
+    return result;
   }
 
   /**
@@ -237,9 +237,9 @@ export class JobScrapingService {
         .replace(/[.!?]{2,}/g, '.')
         // Trim whitespace
         .trim()
-    )
+    );
   }
 }
 
 // Export a singleton instance
-export const jobScrapingService = new JobScrapingService()
+export const jobScrapingService = new JobScrapingService();

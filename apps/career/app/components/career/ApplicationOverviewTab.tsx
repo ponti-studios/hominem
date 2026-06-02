@@ -1,19 +1,20 @@
-import { Briefcase, Calendar, DollarSign, MapPin, TrendingUp } from 'lucide-react'
-import { useState } from 'react'
-import { Form } from 'react-router'
-import { Button } from '~/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/Card'
-import { Input } from '~/components/ui/input'
-import type { ApplicationWithCompany } from '~/types/career-data'
-import { formatApplicationDate } from '~/lib/utils/applicationUtils'
+import { Button } from '@hominem/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
+import { Input } from '@hominem/ui/input';
+import { Briefcase, Calendar, DollarSign, MapPin, TrendingUp } from 'lucide-react';
+import { useState } from 'react';
+import { Form } from 'react-router';
+
+import { formatApplicationDate } from '~/lib/utils/applicationUtils';
+import type { ApplicationWithCompany } from '~/types/career-data';
 
 interface OverviewTabProps {
-  application: ApplicationWithCompany
-  company: ApplicationWithCompany['company']
+  application: ApplicationWithCompany;
+  company: ApplicationWithCompany['company'];
 }
 
 export function ApplicationOverviewTab({ application, company }: OverviewTabProps) {
-  const [isEditingRecruiter, setIsEditingRecruiter] = useState(false)
+  const [isEditingRecruiter, setIsEditingRecruiter] = useState(false);
 
   return (
     <div className="space-y-2">
@@ -252,5 +253,5 @@ export function ApplicationOverviewTab({ application, company }: OverviewTabProp
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

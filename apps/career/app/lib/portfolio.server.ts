@@ -1,14 +1,14 @@
-import type { CareerFullPortfolioRecord } from '@hominem/db'
-import { CareerRepository, getDb } from '@hominem/db'
+import type { CareerFullPortfolioRecord } from '@hominem/db';
+import { CareerRepository, getDb } from '@hominem/db';
 
 export interface FullPortfolio extends CareerFullPortfolioRecord {}
 
 export async function getFullUserPortfolio(userId: string): Promise<FullPortfolio | null> {
-  return CareerRepository.loadFullPortfolioByUserId(getDb(), userId)
+  return CareerRepository.loadFullPortfolioByUserId(getDb(), userId);
 }
 
 export async function getFullPortfolioBySlug(slug: string): Promise<FullPortfolio | null> {
-  return CareerRepository.loadFullPortfolioBySlug(getDb(), slug)
+  return CareerRepository.loadFullPortfolioBySlug(getDb(), slug);
 }
 
 /**
@@ -23,5 +23,5 @@ export async function getFullPortfolioBySlug(slug: string): Promise<FullPortfoli
  * - analytics
  */
 export async function deleteUserPortfolio(userId: string): Promise<void> {
-  return CareerRepository.deletePortfolioByUserId(getDb(), userId)
+  return CareerRepository.deletePortfolioByUserId(getDb(), userId);
 }

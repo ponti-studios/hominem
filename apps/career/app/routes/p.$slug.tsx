@@ -1,14 +1,15 @@
-import type { LoaderFunctionArgs, MetaFunction } from 'react-router'
-import { getMockPortfolioData } from '../lib/auth.server'
-import { getFullPortfolioBySlug } from '../lib/portfolio.server'
-import { withMockDataFallback } from '../lib/route-utils'
+import type { LoaderFunctionArgs, MetaFunction } from 'react-router';
+
+import { getFullPortfolioBySlug } from '../lib/portfolio.server';
+import { withMockDataFallback } from '../lib/route-utils';
+import { getMockPortfolioData } from '../lib/utils/mock-data';
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   if (!data) {
     return [
       { title: 'Portfolio Not Found | Craftd' },
       { name: 'description', content: 'The requested portfolio could not be found.' },
-    ]
+    ];
   }
 
   return [
@@ -26,41 +27,43 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
       content: `${data.portfolio.name} - ${data.portfolio.jobTitle}`,
     },
     { name: 'twitter:description', content: data.portfolio.bio },
-  ]
-}
+  ];
+};
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
-  const { slug } = params
+  const { slug } = params;
 
   if (!slug) {
-    throw new Response('Portfolio not found', { status: 404 })
+    throw new Response('Portfolio not found', { status: 404 });
   }
 
   return withMockDataFallback(
     request,
     async (request) => {
       // Return mock data for testing
-      const mockData = getMockPortfolioData(request)
+      const mockData = getMockPortfolioData(request);
       if (mockData) {
-        return { portfolio: mockData.portfolio }
+        return { portfolio: mockData.portfolio };
       }
-      throw new Response('Portfolio not found', { status: 404 })
+      throw new Response('Portfolio not found', { status: 404 });
     },
     async () => {
       // Fetch real portfolio data
-      const portfolio = await getFullPortfolioBySlug(slug)
+      const portfolio = await getFullPortfolioBySlug(slug);
       if (!portfolio) {
-        throw new Response('Portfolio not found', { status: 404 })
+        throw new Response('Portfolio not found', { status: 404 });
       }
-      return { portfolio }
-    }
-  )
+      return { portfolio };
+    },
+  );
 }
 
 export default function Portfolio({
   loaderData,
-}: { loaderData: Awaited<ReturnType<typeof loader>> }) {
-  const { portfolio } = loaderData
+}: {
+  loaderData: Awaited<ReturnType<typeof loader>>;
+}) {
+  const { portfolio } = loaderData;
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-12">
@@ -195,5 +198,5 @@ export default function Portfolio({
         </section>
       )}
     </div>
-  )
+  );
 }
