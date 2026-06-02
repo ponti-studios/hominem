@@ -2,6 +2,7 @@ import { Button } from '@hominem/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@hominem/ui/card';
 import { data, redirect } from 'react-router';
 
+import { SettingsPageLayout } from '~/components/settings-page-layout';
 import { getServerSession } from '~/lib/auth.server';
 import { useSignOut } from '~/lib/hooks/use-sign-out';
 
@@ -20,12 +21,11 @@ export default function AccountPage() {
   const signOut = useSignOut();
 
   return (
-    <main className="container mx-auto w-full px-4 py-8 sm:px-6">
-      <header className="mb-8">
-        <h1 className="text-xl font-semibold text-foreground">Profile</h1>
-        <p className="mt-1 text-sm text-text-secondary">Manage your account</p>
-      </header>
-
+    <SettingsPageLayout
+      currentTab="account"
+      title="Profile"
+      description="Manage your account and active session."
+    >
       <div className="space-y-6">
         <Card>
           <CardHeader>
@@ -38,18 +38,13 @@ export default function AccountPage() {
                 <h3 className="text-sm font-medium text-foreground">Sign Out</h3>
                 <p className="text-sm text-text-secondary">End your current session.</p>
               </div>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  void signOut();
-                }}
-              >
+              <Button variant="outline" onClick={() => void signOut()}>
                 Sign Out
               </Button>
             </div>
           </CardContent>
         </Card>
       </div>
-    </main>
+    </SettingsPageLayout>
   );
 }

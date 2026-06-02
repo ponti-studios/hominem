@@ -5,7 +5,7 @@ import { useSearchParams } from 'react-router';
 
 import { translateUi } from '../../translations';
 import { Button } from '../button';
-import { TextField } from '../text-field';
+import { OtpCodeInput } from './otp-code-input';
 import { AuthScaffold } from './auth-scaffold';
 
 interface OtpVerificationFormProps {
@@ -62,28 +62,36 @@ export function OtpVerificationForm({
 
   const fields = (
     <div className="space-y-3">
-      <TextField
-        label={translateUi('auth.otpVerification.codeLabel')}
-        name="otp-display"
-        type="text"
-        inputMode="numeric"
-        autoComplete="one-time-code"
-        maxLength={6}
-        placeholder={translateUi('auth.otpVerification.codePlaceholder')}
-        value={otp}
-        disabled={isSubmitting || isResending}
-        error={displayError ?? undefined}
-        onChange={(event) => {
-          setOtp(normalizeOtp(event.target.value));
-          if (resendError) {
-            setResendError(null);
-          }
-          if (submitError) {
-            setSubmitError(null);
-          }
-        }}
-        className="tracking-[0.35em] text-center font-mono"
-      />
+      <div className="flex flex-col gap-1.5">
+        <label className="body-3 font-medium text-text-primary" htmlFor="otp-verification-code">
+          {translateUi('auth.otpVerification.codeLabel')}
+        </label>
+        <OtpCodeInput
+          id="otp-verification-code"
+          value={otp}
+          disabled={isSubmitting || isResending}
+          error={displayError ?? undefined}
+          autoFocus
+          onChange={(nextOtp) => {
+            setOtp(nextOtp);
+            if (resendError) {
+              setResendError(null);
+            }
+            if (submitError) {
+              setSubmitError(null);
+            }
+          }}
+        />
+        {displayError ? (
+          <p className="body-4 text-destructive" role="alert">
+            {displayError}
+          </p>
+        ) : (
+          <p className="body-4 text-text-tertiary">
+            {translateUi('auth.otpVerification.codePlaceholder')}
+          </p>
+        )}
+      </div>
 
       <Button type="submit" variant="primary" disabled={!canSubmit} fullWidth>
         {isSubmitting

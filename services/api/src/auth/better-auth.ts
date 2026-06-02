@@ -128,6 +128,28 @@ type SendEmailParams = {
 
 type VerificationOtpType = 'sign-in' | 'email-verification' | 'forget-password' | string;
 
+type BetterAuthSession = {
+  user: {
+    id: string;
+    email: string;
+    emailVerified: boolean;
+    name: string;
+    image?: string | null | undefined;
+    createdAt: Date;
+    updatedAt: Date;
+  };
+  session: {
+    id: string;
+  };
+} | null;
+
+type BetterAuthServer = {
+  handler: (request: Request) => Promise<Response>;
+  api: {
+    getSession: (input: { headers: Headers }) => Promise<BetterAuthSession>;
+  };
+};
+
 const verificationOtpSubjectByType = {
   'sign-in': 'Your sign-in code',
   'email-verification': 'Verify your email',
@@ -309,7 +331,9 @@ const betterAuthOptions: BetterAuthOptions = {
   plugins: getAuthPlugins(),
 };
 
-export const betterAuthServer = betterAuth({
+const inferredBetterAuthServer = betterAuth({
   ...betterAuthOptions,
   database: kyselyAdapter(db),
 });
+
+export const betterAuthServer: BetterAuthServer = inferredBetterAuthServer;

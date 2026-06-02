@@ -1,0 +1,650 @@
+{
+  "name": "AI_NoObjectGeneratedError",
+  "cause": {
+    "name": "AI_TypeValidationError",
+    "cause": {
+      "issues": [
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 0, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 1, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 2, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 3, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 4, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 5, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 6, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 7, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 8, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 9, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 10, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 11, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 12, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 13, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 14, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 15, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 16, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 17, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 18, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 19, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 20, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 21, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 22, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 23, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 24, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 25, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 26, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 27, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 28, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 29, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 30, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 31, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 32, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 33, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 34, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 35, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 36, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 37, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 38, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 39, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 40, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 41, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 42, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 43, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 44, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 45, "certifications"],
+          "message": "Required"
+        },
+        {
+          "code": "invalid_type",
+          "expected": "array",
+          "received": "undefined",
+          "path": ["skills", 46, "certifications"],
+          "message": "Required"
+        }
+      ],
+      "name": "ZodError"
+    },
+    "value": {
+      "portfolio": {
+        "slug": "charles-ponti",
+        "title": "Lead Product Engineer & Product Manager",
+        "name": "Charles Ponti",
+        "jobTitle": "Lead Product Engineer & Product Manager",
+        "bio": "Data- and results-driven product leader and engineer with 10+ years of translating user needs into high-impact products that drive engagement and revenue. Proven expertise in full-stack development and cross-functional leadership. Committed to building technology that meaningfully and measurably improves human lives.",
+        "tagline": "Product Leader & Engineer",
+        "currentLocation": "Los Angeles, California",
+        "email": "cj@ponti.io",
+        "phone": "857 445-3365",
+        "availabilityStatus": true,
+        "isPublic": true,
+        "isActive": true
+      },
+      "workExperience": [
+        {
+          "title": "Lead Product Manager & Lead Software Engineer",
+          "subtitle": "StreamYard",
+          "description": "Drove end-to-end development of consumer Teams and enterprise Business plans, implementing role-based access control and collaboration features that unlocked $15M+ in new ARR and 13% consumer user growth. Developed a two-sided creator marketplace platform serving 20K+ monthly active users, utilizing vector-based recommendations and generative AI conversation starters, resulting in a 40% increase in user engagement and 300% YoY growth in creator collaborations. Established a data-driven, user-led product development workflow incorporating daily user interviews and in-product surveys, leading to increased user satisfaction and feature adoption rates. Led cross-functional alignment across Design, Research, Customer Service, Marketing, and Trust & Safety teams, implementing quarterly design sprints that improved product vision alignment and sprint velocity.",
+          "role": "Lead Product Manager & Lead Software Engineer",
+          "startDate": "2020-10",
+          "endDate": "2024-05"
+        },
+        {
+          "title": "Product Engineer",
+          "subtitle": "Ponti Studios",
+          "description": "Revrock: Built an end-to-end platform for independent musicians to optimize tours and finances. Key features: intelligent route planning (reducing tour costs), comprehensive financial dashboards, automated venue discovery, and Spotify integration for audience insights. Technologies: Next.js, PostgreSQL, MongoDB, Redis, and deployed on Vercel. Prolog: Led engineering of a web application enabling producers to efficiently triage writer submissions, including an LLM-powered email parser for automated data extraction and vector-based similarity search for rapid candidate evaluation. Technologies: Python, Django, React, React Native, OpenAI, AWS. Whistle: Managed product, design, and engineering for a privacy-focused video conferencing platform tailored for movement-based education. Used by a prestigious NYC ballet school to maintain operations during COVID-19. Technologies: React, React Native, Electron, Jitsi.",
+          "role": "Product Engineer",
+          "startDate": "2020-03",
+          "endDate": "Present"
+        },
+        {
+          "title": "Head of Data Engineering",
+          "subtitle": "Kensho",
+          "description": "Led architecture transformation from proprietary ETL platform to a modern data stack (AWS S3, Spark, and Airflow), reducing ETL processing time, increasing scalability, and reducing maintenance issues. Led a high-performing team of 15 engineers across 2 locations, fostering a culture of innovation through the implementation of best practices, comprehensive documentation, and clear roadmap alignment.",
+          "role": "Head of Data Engineering",
+          "startDate": "2019-05",
+          "endDate": "2020-03"
+        },
+        {
+          "title": "Lead Software Engineer",
+          "subtitle": "Humana",
+          "description": "Led engineering for mobile, voice, and chat applications to enable holistic senior healthcare solutions. Conducted user research interviews to ensure roadmaps maintained high value-driven prioritization.",
+          "role": "Lead Software Engineer",
+          "startDate": "2018-12",
+          "endDate": "2019-05"
+        },
+        {
+          "title": "Senior Software Engineer",
+          "subtitle": "Mimecast",
+          "description": "Led web application development for an enterprise email and security management product. Developed a scalable and performant white-label styling system and an internationalization/translation library.",
+          "role": "Senior Software Engineer",
+          "startDate": "2018-03",
+          "endDate": "2018-12"
+        },
+        {
+          "title": "Software Engineer",
+          "subtitle": "Thomson Reuters",
+          "description": "Designed and engineered a web application for global application deployment, management, and monitoring. Enhanced security and regulatory compliance by implementing a fine-grained Role-Based Access Control. Improved high-risk decision-making by developing personalized data dashboards. Elevated cross-team code quality standards by leading monthly technical debt and code review sessions.",
+          "role": "Software Engineer",
+          "startDate": "2015-02",
+          "endDate": "2018-02"
+        },
+        {
+          "title": "Software Developer",
+          "subtitle": "Glow Digital",
+          "description": "Contributed to the development of a web application for creating and auto-optimizing social ad campaigns. Decreased third-party API requests by 90% without compromising data integrity or accuracy through optimized user-specific data retrieval strategies. Developed an automation system to save users several hours per week of repetitive data entry.",
+          "role": "Software Developer",
+          "startDate": "2013-09",
+          "endDate": "2015-02"
+        }
+      ],
+      "skills": [
+        {
+          "name": "JavaScript/TypeScript",
+          "level": 90
+        },
+        {
+          "name": "Python",
+          "level": 85
+        },
+        {
+          "name": "Ruby",
+          "level": 80
+        },
+        {
+          "name": "React",
+          "level": 90
+        },
+        {
+          "name": "React Native",
+          "level": 85
+        },
+        {
+          "name": "Next.js",
+          "level": 80
+        },
+        {
+          "name": "Angular",
+          "level": 75
+        },
+        {
+          "name": "Express.js",
+          "level": 80
+        },
+        {
+          "name": "Fastify",
+          "level": 75
+        },
+        {
+          "name": "Hapi",
+          "level": 75
+        },
+        {
+          "name": "Django",
+          "level": 80
+        },
+        {
+          "name": "FastAPI",
+          "level": 75
+        },
+        {
+          "name": "PostgreSQL",
+          "level": 85
+        },
+        {
+          "name": "MySQL",
+          "level": 80
+        },
+        {
+          "name": "MongoDB",
+          "level": 80
+        },
+        {
+          "name": "Google Datastore",
+          "level": 70
+        },
+        {
+          "name": "Redis",
+          "level": 80
+        },
+        {
+          "name": "Pinecone",
+          "level": 70
+        },
+        {
+          "name": "Chroma",
+          "level": 70
+        },
+        {
+          "name": "Kafka",
+          "level": 70
+        },
+        {
+          "name": "RabbitMQ",
+          "level": 70
+        },
+        {
+          "name": "Jest",
+          "level": 80
+        },
+        {
+          "name": "Vitest",
+          "level": 75
+        },
+        {
+          "name": "Pytest",
+          "level": 75
+        },
+        {
+          "name": "Cypress",
+          "level": 75
+        },
+        {
+          "name": "Playwright",
+          "level": 75
+        },
+        {
+          "name": "AWS",
+          "level": 85
+        },
+        {
+          "name": "Google Cloud",
+          "level": 80
+        },
+        {
+          "name": "Vercel",
+          "level": 80
+        },
+        {
+          "name": "Railway",
+          "level": 70
+        },
+        {
+          "name": "Docker",
+          "level": 75
+        },
+        {
+          "name": "LLMs",
+          "level": 80
+        },
+        {
+          "name": "RAG",
+          "level": 75
+        },
+        {
+          "name": "Vector Databases",
+          "level": 75
+        },
+        {
+          "name": "Recommendation systems",
+          "level": 75
+        },
+        {
+          "name": "Market research",
+          "level": 80
+        },
+        {
+          "name": "User Research",
+          "level": 80
+        },
+        {
+          "name": "0-1 Product Development",
+          "level": 85
+        },
+        {
+          "name": "A/B Testing",
+          "level": 80
+        },
+        {
+          "name": "Copywriting",
+          "level": 75
+        },
+        {
+          "name": "Segment",
+          "level": 75
+        },
+        {
+          "name": "Amplitude",
+          "level": 75
+        },
+        {
+          "name": "BigQuery",
+          "level": 70
+        },
+        {
+          "name": "Google Data Studio",
+          "level": 70
+        },
+        {
+          "name": "Jira",
+          "level": 80
+        },
+        {
+          "name": "Linear",
+          "level": 75
+        },
+        {
+          "name": "GitHub",
+          "level": 80
+        }
+      ],
+      "projects": [
+        {
+          "title": "Revrock",
+          "description": "Built an end-to-end platform for independent musicians to optimize tours and finances. Key features: intelligent route planning (reducing tour costs), comprehensive financial dashboards, automated venue discovery, and Spotify integration for audience insights. Technologies: Next.js, PostgreSQL, MongoDB, Redis, and deployed on Vercel.",
+          "technologies": ["Next.js", "PostgreSQL", "MongoDB", "Redis"],
+          "status": "completed"
+        },
+        {
+          "title": "Prolog",
+          "description": "Led engineering of a web application enabling producers to efficiently triage writer submissions, including an LLM-powered email parser for automated data extraction and vector-based similarity search for rapid candidate evaluation. Technologies: Python, Django, React, React Native, OpenAI, AWS.",
+          "technologies": ["Python", "Django", "React", "React Native", "OpenAI", "AWS"],
+          "status": "completed"
+        },
+        {
+          "title": "Whistle",
+          "description": "Managed product, design, and engineering for a privacy-focused video conferencing platform tailored for movement-based education. Used by a prestigious NYC ballet school to maintain operations during COVID-19. Technologies: React, React Native, Electron, Jitsi.",
+          "technologies": ["React", "React Native", "Electron", "Jitsi"],
+          "status": "completed"
+        }
+      ],
+      "stats": [
+        {
+          "label": "Years of Experience",
+          "value": "10+"
+        },
+        {
+          "label": "Projects Completed",
+          "value": "3"
+        },
+        {
+          "label": "Teams Led",
+          "value": "15"
+        }
+      ]
+    }
+  },
+  "text": "{\"portfolio\":{\"slug\":\"charles-ponti\",\"title\":\"Lead Product Engineer & Product Manager\",\"name\":\"Charles Ponti\",\"jobTitle\":\"Lead Product Engineer & Product Manager\",\"bio\":\"Data- and results-driven product leader and engineer with 10+ years of translating user needs into high-impact products that drive engagement and revenue. Proven expertise in full-stack development and cross-functional leadership. Committed to building technology that meaningfully and measurably improves human lives.\",\"tagline\":\"Product Leader & Engineer\",\"currentLocation\":\"Los Angeles, California\",\"email\":\"cj@ponti.io\",\"phone\":\"857 445-3365\",\"availabilityStatus\":true,\"isPublic\":true,\"isActive\":true},\"workExperience\":[{\"title\":\"Lead Product Manager & Lead Software Engineer\",\"subtitle\":\"StreamYard\",\"description\":\"Drove end-to-end development of consumer Teams and enterprise Business plans, implementing role-based access control and collaboration features that unlocked $15M+ in new ARR and 13% consumer user growth. Developed a two-sided creator marketplace platform serving 20K+ monthly active users, utilizing vector-based recommendations and generative AI conversation starters, resulting in a 40% increase in user engagement and 300% YoY growth in creator collaborations. Established a data-driven, user-led product development workflow incorporating daily user interviews and in-product surveys, leading to increased user satisfaction and feature adoption rates. Led cross-functional alignment across Design, Research, Customer Service, Marketing, and Trust & Safety teams, implementing quarterly design sprints that improved product vision alignment and sprint velocity.\",\"role\":\"Lead Product Manager & Lead Software Engineer\",\"startDate\":\"2020-10\",\"endDate\":\"2024-05\"},{\"title\":\"Product Engineer\",\"subtitle\":\"Ponti Studios\",\"description\":\"Revrock: Built an end-to-end platform for independent musicians to optimize tours and finances. Key features: intelligent route planning (reducing tour costs), comprehensive financial dashboards, automated venue discovery, and Spotify integration for audience insights. Technologies: Next.js, PostgreSQL, MongoDB, Redis, and deployed on Vercel. Prolog: Led engineering of a web application enabling producers to efficiently triage writer submissions, including an LLM-powered email parser for automated data extraction and vector-based similarity search for rapid candidate evaluation. Technologies: Python, Django, React, React Native, OpenAI, AWS. Whistle: Managed product, design, and engineering for a privacy-focused video conferencing platform tailored for movement-based education. Used by a prestigious NYC ballet school to maintain operations during COVID-19. Technologies: React, React Native, Electron, Jitsi.\",\"role\":\"Product Engineer\",\"startDate\":\"2020-03\",\"endDate\":\"Present\"},{\"title\":\"Head of Data Engineering\",\"subtitle\":\"Kensho\",\"description\":\"Led architecture transformation from proprietary ETL platform to a modern data stack (AWS S3, Spark, and Airflow), reducing ETL processing time, increasing scalability, and reducing maintenance issues. Led a high-performing team of 15 engineers across 2 locations, fostering a culture of innovation through the implementation of best practices, comprehensive documentation, and clear roadmap alignment.\",\"role\":\"Head of Data Engineering\",\"startDate\":\"2019-05\",\"endDate\":\"2020-03\"},{\"title\":\"Lead Software Engineer\",\"subtitle\":\"Humana\",\"description\":\"Led engineering for mobile, voice, and chat applications to enable holistic senior healthcare solutions. Conducted user research interviews to ensure roadmaps maintained high value-driven prioritization.\",\"role\":\"Lead Software Engineer\",\"startDate\":\"2018-12\",\"endDate\":\"2019-05\"},{\"title\":\"Senior Software Engineer\",\"subtitle\":\"Mimecast\",\"description\":\"Led web application development for an enterprise email and security management product. Developed a scalable and performant white-label styling system and an internationalization/translation library.\",\"role\":\"Senior Software Engineer\",\"startDate\":\"2018-03\",\"endDate\":\"2018-12\"},{\"title\":\"Software Engineer\",\"subtitle\":\"Thomson Reuters\",\"description\":\"Designed and engineered a web application for global application deployment, management, and monitoring. Enhanced security and regulatory compliance by implementing a fine-grained Role-Based Access Control. Improved high-risk decision-making by developing personalized data dashboards. Elevated cross-team code quality standards by leading monthly technical debt and code review sessions.\",\"role\":\"Software Engineer\",\"startDate\":\"2015-02\",\"endDate\":\"2018-02\"},{\"title\":\"Software Developer\",\"subtitle\":\"Glow Digital\",\"description\":\"Contributed to the development of a web application for creating and auto-optimizing social ad campaigns. Decreased third-party API requests by 90% without compromising data integrity or accuracy through optimized user-specific data retrieval strategies. Developed an automation system to save users several hours per week of repetitive data entry.\",\"role\":\"Software Developer\",\"startDate\":\"2013-09\",\"endDate\":\"2015-02\"}],\"skills\":[{\"name\":\"JavaScript/TypeScript\",\"level\":90},{\"name\":\"Python\",\"level\":85},{\"name\":\"Ruby\",\"level\":80},{\"name\":\"React\",\"level\":90},{\"name\":\"React Native\",\"level\":85},{\"name\":\"Next.js\",\"level\":80},{\"name\":\"Angular\",\"level\":75},{\"name\":\"Express.js\",\"level\":80},{\"name\":\"Fastify\",\"level\":75},{\"name\":\"Hapi\",\"level\":75},{\"name\":\"Django\",\"level\":80},{\"name\":\"FastAPI\",\"level\":75},{\"name\":\"PostgreSQL\",\"level\":85},{\"name\":\"MySQL\",\"level\":80},{\"name\":\"MongoDB\",\"level\":80},{\"name\":\"Google Datastore\",\"level\":70},{\"name\":\"Redis\",\"level\":80},{\"name\":\"Pinecone\",\"level\":70},{\"name\":\"Chroma\",\"level\":70},{\"name\":\"Kafka\",\"level\":70},{\"name\":\"RabbitMQ\",\"level\":70},{\"name\":\"Jest\",\"level\":80},{\"name\":\"Vitest\",\"level\":75},{\"name\":\"Pytest\",\"level\":75},{\"name\":\"Cypress\",\"level\":75},{\"name\":\"Playwright\",\"level\":75},{\"name\":\"AWS\",\"level\":85},{\"name\":\"Google Cloud\",\"level\":80},{\"name\":\"Vercel\",\"level\":80},{\"name\":\"Railway\",\"level\":70},{\"name\":\"Docker\",\"level\":75},{\"name\":\"LLMs\",\"level\":80},{\"name\":\"RAG\",\"level\":75},{\"name\":\"Vector Databases\",\"level\":75},{\"name\":\"Recommendation systems\",\"level\":75},{\"name\":\"Market research\",\"level\":80},{\"name\":\"User Research\",\"level\":80},{\"name\":\"0-1 Product Development\",\"level\":85},{\"name\":\"A/B Testing\",\"level\":80},{\"name\":\"Copywriting\",\"level\":75},{\"name\":\"Segment\",\"level\":75},{\"name\":\"Amplitude\",\"level\":75},{\"name\":\"BigQuery\",\"level\":70},{\"name\":\"Google Data Studio\",\"level\":70},{\"name\":\"Jira\",\"level\":80},{\"name\":\"Linear\",\"level\":75},{\"name\":\"GitHub\",\"level\":80}],\"projects\":[{\"title\":\"Revrock\",\"description\":\"Built an end-to-end platform for independent musicians to optimize tours and finances. Key features: intelligent route planning (reducing tour costs), comprehensive financial dashboards, automated venue discovery, and Spotify integration for audience insights. Technologies: Next.js, PostgreSQL, MongoDB, Redis, and deployed on Vercel.\",\"technologies\":[\"Next.js\",\"PostgreSQL\",\"MongoDB\",\"Redis\"],\"status\":\"completed\"},{\"title\":\"Prolog\",\"description\":\"Led engineering of a web application enabling producers to efficiently triage writer submissions, including an LLM-powered email parser for automated data extraction and vector-based similarity search for rapid candidate evaluation. Technologies: Python, Django, React, React Native, OpenAI, AWS.\",\"technologies\":[\"Python\",\"Django\",\"React\",\"React Native\",\"OpenAI\",\"AWS\"],\"status\":\"completed\"},{\"title\":\"Whistle\",\"description\":\"Managed product, design, and engineering for a privacy-focused video conferencing platform tailored for movement-based education. Used by a prestigious NYC ballet school to maintain operations during COVID-19. Technologies: React, React Native, Electron, Jitsi.\",\"technologies\":[\"React\",\"React Native\",\"Electron\",\"Jitsi\"],\"status\":\"completed\"}],\"stats\":[{\"label\":\"Years of Experience\",\"value\":\"10+\"},{\"label\":\"Projects Completed\",\"value\":\"3\"},{\"label\":\"Teams Led\",\"value\":\"15\"}]}",
+  "response": {
+    "id": "chatcmpl-BfiZEPRmBmqNiV4TapqZ2ZEIH6Dri",
+    "timestamp": "2025-06-07T07:47:44.000Z",
+    "modelId": "gpt-4o-mini-2024-07-18"
+  },
+  "usage": {
+    "promptTokens": 1575,
+    "completionTokens": 1679,
+    "totalTokens": 3254
+  },
+  "finishReason": "stop"
+}

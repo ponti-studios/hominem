@@ -4,6 +4,7 @@ import * as React from 'react';
 import { cn } from '../../lib/utils';
 
 interface OtpCodeInputProps {
+  id?: string;
   length?: number;
   value: string;
   onChange: (value: string) => void;
@@ -15,6 +16,7 @@ interface OtpCodeInputProps {
 }
 
 export function OtpCodeInput({
+  id,
   length = 6,
   value,
   onChange,
@@ -67,6 +69,7 @@ export function OtpCodeInput({
         )}
       >
         <input
+          id={id}
           ref={inputRef}
           type="text"
           inputMode="numeric"

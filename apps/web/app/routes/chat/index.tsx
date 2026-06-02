@@ -1,4 +1,6 @@
 import { Button } from '@hominem/ui/button';
+import { SearchInput } from '@hominem/ui/search-input';
+import { useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams, data, redirect } from 'react-router';
 
 import { useCreateChat } from '~/hooks/use-chats';
@@ -46,6 +48,15 @@ export default function ChatIndexPage({
   const noteId = searchParams.get('noteId') ?? '';
   const { chats = [], note } = loaderData;
   const createChat = useCreateChat();
+  const [chatSearch, setChatSearch] = useState('');
+  const filteredChats = useMemo(() => {
+    const normalizedQuery = chatSearch.trim().toLowerCase();
+    if (!normalizedQuery) {
+      return chats;
+    }
+
+    return chats.filter((chat) => (chat.title ?? 'untitled chat').toLowerCase().includes(normalizedQuery));
+  }, [chatSearch, chats]);
 
   return (
     <div className="space-y-6">
@@ -79,7 +90,13 @@ export default function ChatIndexPage({
       ) : null}
 
       <div className="grid gap-3">
-        {chats.map((chat) => (
+        <SearchInput
+          value={chatSearch}
+          onSearchChange={setChatSearch}
+          placeholder="Search chats"
+        />
+
+        {filteredChats.map((chat) => (
           <Link
             key={chat.id}
             to={`/chat/${chat.id}`}
@@ -103,6 +120,13 @@ export default function ChatIndexPage({
           <p className="mt-2 text-sm text-text-secondary">
             Create one and mention a note with <code>#note-title</code>.
           </p>
+        </div>
+      ) : null}
+
+      {chats.length > 0 && filteredChats.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-border-subtle bg-surface p-10 text-center">
+          <p className="text-base text-foreground">No chats match “{chatSearch}”.</p>
+          <p className="mt-2 text-sm text-text-secondary">Try a different title search.</p>
         </div>
       ) : null}
     </div>

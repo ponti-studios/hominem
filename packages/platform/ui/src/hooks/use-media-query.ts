@@ -11,7 +11,7 @@ interface MediaQueryOptions {
  * @param options - Optional width and height values for testing
  * @returns A boolean indicating whether the media query matches.
  */
-export function mediaQuery(query: string, options?: MediaQueryOptions) {
+function mediaQuery(query: string, options?: MediaQueryOptions) {
   if (options?.width !== undefined) {
     // For test environment where we provide custom dimensions
     const minWidthMatch = query.match(/\(min-width:\s*(\d+)px\)/);
@@ -58,7 +58,7 @@ export function useMediaQuery(query: string) {
     if (typeof window === 'undefined') {
       return false;
     }
-    return window.matchMedia(query).matches;
+    return mediaQuery(query);
   }, [query]);
 
   return useSyncExternalStore(subscribe, getSnapshot, () => false);

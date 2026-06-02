@@ -1,6 +1,19 @@
 import type { ChatMessageDto } from '@hominem/rpc/types/chat.types';
 import type { NoteSearchResult } from '@hominem/rpc/types/notes.types';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@hominem/ui/accordion';
 import { Button } from '@hominem/ui/button';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandList,
+} from '@hominem/ui/command';
 import { SpeechInput } from '@hominem/ui/composer';
 import { slugifyText } from '@hominem/utils/text';
 import { useCallback, useMemo, useRef, useState } from 'react';
@@ -141,9 +154,9 @@ export default function ChatPage({
     setSelectedNotes((current) =>
       current.some((selected) => selected.id === note.id) ? current : [...current, note],
     );
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
+    const mentionSlug = slugifyText(note.title ?? note.id);
+    setDraft((current) => current.replace(/#([a-z0-9-]*)$/i, `#${mentionSlug} `));
+    inputRef.current?.focus();
   }, []);
 
   async function handleAttachFiles(fileList: FileList | null) {
@@ -174,46 +187,58 @@ export default function ChatPage({
 
   return (
     <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-      <aside className="space-y-4">
-        <div className="rounded-2xl border border-border-subtle bg-surface p-4">
-          <p className="text-xs uppercase tracking-[0.2em] text-text-tertiary">Current chat</p>
-          <h2 className="mt-2 text-xl font-semibold text-foreground">{chat?.title || 'Chat'}</h2>
-          <p className="mt-2 text-sm text-text-secondary">
-            Explicitly selected notes and uploaded files are the only extra context sent with each
-            turn.
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Link to="/chat" className="text-sm text-text-secondary underline">
-              Back to chats
-            </Link>
-            <button
-              type="button"
-              className="text-sm text-text-secondary underline"
-              onClick={() => archiveChat.mutate({ chatId })}
-            >
-              Archive chat
-            </button>
-          </div>
-        </div>
+      <aside>
+        <Accordion type="multiple" defaultValue={['chat', 'notes']} className="space-y-3">
+          <AccordionItem value="chat" className="rounded-2xl border-border-subtle bg-surface">
+            <AccordionTrigger className="rounded-2xl px-4 py-4 text-base hover:bg-muted/40">
+              Current chat
+            </AccordionTrigger>
+            <AccordionContent className="space-y-4 px-4 pb-4 pt-0">
+              <div>
+                <h2 className="text-xl font-semibold text-foreground">{chat?.title || 'Chat'}</h2>
+                <p className="mt-2 text-sm text-text-secondary">
+                  Explicitly selected notes and uploaded files are the only extra context sent with
+                  each turn.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Link to="/chat" className="text-sm text-text-secondary underline">
+                  Back to chats
+                </Link>
+                <button
+                  type="button"
+                  className="text-sm text-text-secondary underline"
+                  onClick={() => archiveChat.mutate({ chatId })}
+                >
+                  Archive chat
+                </button>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
 
-        <div className="rounded-2xl border border-border-subtle bg-surface p-4">
-          <h3 className="text-sm font-semibold text-foreground">Selected notes</h3>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {selectedNotesForSend.length === 0 ? (
-              <p className="text-sm text-text-secondary">
-                Type <code>#</code> in the composer to search notes.
-              </p>
-            ) : null}
-            {selectedNotesForSend.map((note) => (
-              <span
-                key={note.id}
-                className="rounded-full border border-border-subtle px-3 py-1 text-xs text-text-secondary"
-              >
-                {note.title || 'Untitled note'}
-              </span>
-            ))}
-          </div>
-        </div>
+          <AccordionItem value="notes" className="rounded-2xl border-border-subtle bg-surface">
+            <AccordionTrigger className="rounded-2xl px-4 py-4 text-base hover:bg-muted/40">
+              Selected notes ({selectedNotesForSend.length})
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-4 pt-0">
+              <div className="flex flex-wrap gap-2">
+                {selectedNotesForSend.length === 0 ? (
+                  <p className="text-sm text-text-secondary">
+                    Type <code>#</code> in the composer to search notes.
+                  </p>
+                ) : null}
+                {selectedNotesForSend.map((note) => (
+                  <span
+                    key={note.id}
+                    className="rounded-full border border-border-subtle px-3 py-1 text-xs text-text-secondary"
+                  >
+                    {note.title || 'Untitled note'}
+                  </span>
+                ))}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       </aside>
 
       <div className="flex min-h-[70vh] flex-col rounded-2xl border border-border-subtle bg-surface">
@@ -298,19 +323,32 @@ export default function ChatPage({
           data-upload-progress={uploadState.progress}
         >
           <div className="space-y-3">
-            {suggestions.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {suggestions.map((note) => (
-                  <button
-                    key={note.id}
-                    type="button"
-                    className="rounded-full border border-border-subtle px-3 py-1 text-xs text-text-secondary"
-                    onClick={() => handleSelectSuggestion(note)}
-                  >
-                    {note.title || 'Untitled note'}
-                  </button>
-                ))}
-              </div>
+            {mentionQuery.length > 0 ? (
+              <Command className="rounded-2xl border border-border-subtle bg-background">
+                <CommandList>
+                  <CommandEmpty>No matching notes for “{mentionQuery}”.</CommandEmpty>
+                  <CommandGroup heading="Matching notes">
+                    {suggestions.map((note) => (
+                      <CommandItem
+                        key={note.id}
+                        value={`${note.title ?? ''} ${note.excerpt ?? ''}`.trim()}
+                        onSelect={() => handleSelectSuggestion(note)}
+                      >
+                        <div className="flex flex-col gap-1 py-1">
+                          <span className="text-sm font-medium text-foreground">
+                            {note.title || 'Untitled note'}
+                          </span>
+                          {note.excerpt ? (
+                            <span className="line-clamp-2 text-xs text-text-secondary">
+                              {note.excerpt}
+                            </span>
+                          ) : null}
+                        </div>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
             ) : null}
 
             {attachedFiles.length > 0 ? (

@@ -19,6 +19,10 @@
       "types": "./src/components/badge.tsx",
       "default": "./src/components/badge.tsx"
     },
+    "./avatar": {
+      "types": "./src/components/avatar.tsx",
+      "default": "./src/components/avatar.tsx"
+    },
     "./heading": {
       "types": "./src/components/typography/heading.tsx",
       "default": "./src/components/typography/heading.tsx"
@@ -63,6 +67,14 @@
       "types": "./src/components/input.tsx",
       "default": "./src/components/input.tsx"
     },
+    "./table": {
+      "types": "./src/components/table.tsx",
+      "default": "./src/components/table.tsx"
+    },
+    "./search-input": {
+      "types": "./src/components/search-input.tsx",
+      "default": "./src/components/search-input.tsx"
+    },
     "./label": {
       "types": "./src/components/label.tsx",
       "default": "./src/components/label.tsx"
@@ -70,6 +82,10 @@
     "./dialog": {
       "types": "./src/components/dialog.tsx",
       "default": "./src/components/dialog.tsx"
+    },
+    "./accordion": {
+      "types": "./src/components/accordion.tsx",
+      "default": "./src/components/accordion.tsx"
     },
     "./alert-dialog": {
       "types": "./src/components/alert-dialog.tsx",
@@ -79,6 +95,10 @@
       "types": "./src/components/dropdown-menu.tsx",
       "default": "./src/components/dropdown-menu.tsx"
     },
+    "./command": {
+      "types": "./src/components/command.tsx",
+      "default": "./src/components/command.tsx"
+    },
     "./card": {
       "types": "./src/components/card.tsx",
       "default": "./src/components/card.tsx"
@@ -86,6 +106,10 @@
     "./separator": {
       "types": "./src/components/separator.tsx",
       "default": "./src/components/separator.tsx"
+    },
+    "./tabs": {
+      "types": "./src/components/tabs.tsx",
+      "default": "./src/components/tabs.tsx"
     },
     "./filters": {
       "types": "./src/components/filters/active-filters-bar.tsx",

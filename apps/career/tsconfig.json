@@ -1,0 +1,38 @@
+{
+  "extends": "../../tsconfig.profiles/vite-app.json",
+  "compilerOptions": {
+    "rootDirs": [".", "./.react-router/types"],
+    "tsBuildInfoFile": "../../.cache/app-career.tsbuildinfo",
+    "noImplicitReturns": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "paths": {
+      "~/*": ["./app/*"]
+    },
+    "types": ["vite/client", "node"]
+  },
+  "include": [
+    "app/**/*.ts",
+    "app/**/*.tsx",
+    "scripts/**/*.ts",
+    "tests/**/*.ts",
+    "tests/**/*.tsx",
+    ".react-router/types/**/*",
+    "drizzle.config.ts",
+    "playwright.config.ts",
+    "react-router.config.ts",
+    "vite.config.ts",
+    "vitest.config.ts",
+    "vitest.setup.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "build",
+    "dist",
+    ".turbo",
+    ".cache",
+    "coverage",
+    ".react-router/cache",
+    "*.tsbuildinfo"
+  ]
+}

@@ -3,6 +3,7 @@ import { PasskeyManagement } from '@hominem/ui';
 import { useCallback } from 'react';
 import { data, redirect } from 'react-router';
 
+import { SettingsPageLayout } from '~/components/settings-page-layout';
 import { getServerSession } from '~/lib/auth.server';
 import { serverEnv } from '~/lib/env.server';
 
@@ -80,13 +81,11 @@ export default function SecuritySettingsPage({ loaderData }: Route.ComponentProp
   );
 
   return (
-    <main className="container mx-auto w-full px-4 py-8 sm:px-6">
-      <header className="mb-8">
-        <h1 className="text-xl font-semibold text-foreground">Security</h1>
-        <p className="mt-1 text-sm text-text-secondary">
-          Manage sign-in methods and authentication settings.
-        </p>
-      </header>
+    <SettingsPageLayout
+      currentTab="security"
+      title="Security"
+      description="Manage sign-in methods and authentication settings."
+    >
       <PasskeyManagement
         passkeys={
           passkeys?.map((passkey) => ({
@@ -99,6 +98,6 @@ export default function SecuritySettingsPage({ loaderData }: Route.ComponentProp
         onAdd={handleAdd}
         onDelete={handleDelete}
       />
-    </main>
+    </SettingsPageLayout>
   );
 }
