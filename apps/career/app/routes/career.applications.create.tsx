@@ -1,4 +1,5 @@
-import { eq } from 'drizzle-orm'
+import { CareerRepository, getDb } from '@hominem/db'
+import { DatePicker } from '@hominem/ui/date-picker'
 import { useState } from 'react'
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router'
 import { Form, Link, redirect, useActionData } from 'react-router'
@@ -7,8 +8,6 @@ import { Card, CardContent } from '~/components/ui/Card'
 import { Input } from '~/components/ui/input'
 import { LoadingSpinner } from '~/components/ui/LoadingSpinner'
 import { Select } from '~/components/ui/select'
-import { db } from '~/lib/db'
-import { companies, jobApplications } from '~/lib/db/schema'
 import {
   createErrorResponse,
   createSuccessResponse,
@@ -17,6 +16,14 @@ import {
 } from '~/lib/route-utils'
 import type { JobPosting, ScrapedJobPostingResponse } from '~/types/applications'
 import { JobApplicationStage, JobApplicationStatus } from '~/types/career'
+
+const formatDateValue = (value: Date | undefined) => {
+  if (!value) {
+    return ''
+  }
+
+  return value.toISOString().split('T')[0] ?? ''
+}
 
 export async function loader(args: LoaderFunctionArgs) {
   return withAuthLoader(args, async ({ user }) => {
@@ -44,17 +51,9 @@ export async function action(args: ActionFunctionArgs) {
         return createErrorResponse('Position and company are required')
       }
 
-      // Find or create company
-      let company = await db
-        .select()
-        .from(companies)
-        .where(eq(companies.name, companyName))
-        .limit(1)
-
-      if (company.length === 0) {
-        const [newCompany] = await db.insert(companies).values({ name: companyName }).returning()
-        company = [newCompany]
-      }
+      const company = await CareerRepository.findOrCreateCompany(getDb(), user.id, {
+        name: companyName,
+      })
 
       // Use structured data if available, otherwise use the job description text
       const jobPostingToStore = jobPostingData || jobPosting
@@ -77,34 +76,29 @@ export async function action(args: ActionFunctionArgs) {
         }
       }
 
-      // Create job application
-      const [newApplication] = await db
-        .insert(jobApplications)
-        .values({
-          userId: user.id,
-          position,
-          companyId: company[0].id,
-          status,
-          startDate: new Date(startDate),
-          location: location || null,
-          jobPosting: jobPostingToStore || null,
-          requirements,
-          skills,
-          jobPostingUrl,
-          jobPostingWordCount,
-          salaryQuoted: salaryQuoted || null,
-          recruiterName: recruiterName || null,
-          recruiterEmail: recruiterEmail || null,
-          recruiterLinkedin: recruiterLinkedin || null,
-          reference: false,
-          stages: [
-            {
-              stage: JobApplicationStage.APPLICATION,
-              date: new Date().toISOString(),
-            },
-          ],
-        })
-        .returning()
+      await CareerRepository.createJobApplication(getDb(), user.id, {
+        companyId: company.id,
+        position,
+        status,
+        startDate: new Date(startDate),
+        location: location || null,
+        jobPosting: jobPostingToStore || null,
+        requirements,
+        skills,
+        jobPostingUrl,
+        jobPostingWordCount,
+        salaryQuoted: salaryQuoted || null,
+        recruiterName: recruiterName || null,
+        recruiterEmail: recruiterEmail || null,
+        recruiterLinkedin: recruiterLinkedin || null,
+        reference: false,
+        stages: [
+          {
+            stage: JobApplicationStage.APPLICATION,
+            date: new Date().toISOString(),
+          },
+        ],
+      })
 
       return redirect('/career/applications')
     } catch (error) {
@@ -122,6 +116,7 @@ export default function CreateJobApplication() {
   const [url, setUrl] = useState('')
   const [isScraping, setIsScraping] = useState(false)
   const [scrapingError, setScrapingError] = useState<string | null>(null)
+  const [applicationDate, setApplicationDate] = useState(() => new Date())
 
   const handleScrapedData = (data: JobPosting) => {
     setScrapedData(data)
@@ -421,17 +416,19 @@ export default function CreateJobApplication() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <label htmlFor="startDate" className="text-sm font-medium text-gray-700">
-                        Application Date *
-                      </label>
-                      <Input
+                      <DatePicker
                         id="startDate"
-                        name="startDate"
-                        type="date"
-                        required
-                        defaultValue={new Date().toISOString().split('T')[0]}
-                        className="h-11"
+                        label="Application Date *"
+                        value={applicationDate}
+                        onSelect={(nextDate) => {
+                          if (nextDate) {
+                            setApplicationDate(nextDate)
+                          }
+                        }}
+                        placeholder="Pick application date"
+                        containerClassName="min-w-0"
                       />
+                      <input type="hidden" name="startDate" value={formatDateValue(applicationDate)} />
                     </div>
 
                     <div className="space-y-2">

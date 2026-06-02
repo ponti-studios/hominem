@@ -1,6 +1,6 @@
 import { ChevronDownIcon, ChevronUpIcon } from 'lucide-react'
 import { useState } from 'react'
-import type { JobApplicationMetrics } from '~/lib/db/schema'
+import type { JobApplicationMetrics } from '~/types/career-data'
 import { centsToDollars, formatPercentage } from '~/lib/utils'
 
 interface ApplicationsMetricsProps {

@@ -4,7 +4,7 @@ import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/Card'
 import { Input } from '~/components/ui/input'
 import { Select } from '~/components/ui/select'
-import type { ApplicationWithCompany } from '~/lib/db/schema'
+import type { ApplicationWithCompany } from '~/types/career-data'
 
 interface TimelineTabProps {
   application: ApplicationWithCompany

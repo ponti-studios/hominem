@@ -10,11 +10,7 @@ import {
   ApplicationTimelineTab,
   QuickActionsDropdown,
 } from '~/components/career'
-import type {
-  ApplicationWithRelations,
-  InterviewEntry,
-  JobApplicationUpdate,
-} from '~/lib/db/schema'
+import type { ApplicationWithRelations, InterviewEntry, JobApplicationUpdate } from '~/types/career-data'
 import {
   createErrorResponse,
   createSuccessResponse,

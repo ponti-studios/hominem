@@ -1,23 +1,26 @@
-import { and, eq, inArray } from 'drizzle-orm'
+import type { CareerSocialLinksRecord } from '@hominem/db'
+import { CareerRepository, getDb } from '@hominem/db'
 import { Github, Globe, Link2, Linkedin, Twitter } from 'lucide-react'
 import { useEffect } from 'react'
 import { useForm, type SubmitHandler } from 'react-hook-form'
 import type { ActionFunctionArgs, MetaFunction } from 'react-router'
 import { useFetcher, useOutletContext } from 'react-router'
 import { Button } from '~/components/ui/button'
-import { db } from '~/lib/db'
-import type { NewSocialLinks, SocialLinks } from '~/lib/db/schema'
-import { socialLinks } from '~/lib/db/schema'
 import { cn } from '~/lib/utils'
 import { useToast } from '../hooks/useToast'
 import type { FullPortfolio } from '../lib/portfolio.server'
 import { createSuccessResponse, parseFormData, withAuthAction } from '../lib/route-utils'
 
-// Use schema types
-interface SocialLinksFormValues extends Partial<NewSocialLinks> {}
+interface SocialLinksFormValues {
+  id?: string
+  github?: string | null
+  linkedin?: string | null
+  twitter?: string | null
+  website?: string | null
+}
 
 interface SocialLinksEditorSectionProps {
-  socialLinks?: SocialLinks | null
+  socialLinks?: CareerSocialLinksRecord | null
   portfolioId: string
 }
 
@@ -260,46 +263,35 @@ function SocialLinksEditorSection({
 
 export const meta: MetaFunction = () => [{ title: 'Social - Portfolio Editor | Craftd' }]
 
-type SocialLinkInsert = typeof socialLinks.$inferInsert
-
 export async function action(args: ActionFunctionArgs) {
   return withAuthAction(args, async ({ user }) => {
     const formData = await args.request.formData()
 
-    const socialLinksDataResult = parseFormData<SocialLinkInsert[]>(formData, 'socialLinksData')
+    const socialLinksDataResult = parseFormData<Array<SocialLinksFormValues & { portfolioId: string }>>(
+      formData,
+      'socialLinksData'
+    )
     if ('success' in socialLinksDataResult && !socialLinksDataResult.success) {
       return socialLinksDataResult
     }
-    const socialLinksData = socialLinksDataResult as SocialLinkInsert[]
-    // Get all current social link IDs for this portfolio
-    const current = await db
-      .select({ id: socialLinks.id })
-      .from(socialLinks)
-      .where(eq(socialLinks.portfolioId, socialLinksData[0]?.portfolioId))
-    const currentIds = current.map((l) => l.id)
-    const submittedIds = socialLinksData.filter((l) => l.id).map((l) => l.id)
-    // Delete removed links
-    if (currentIds.length > 0) {
-      const toDelete = currentIds.filter((id) => !submittedIds.includes(id))
-      if (toDelete.length > 0) {
-        await db
-          .delete(socialLinks)
-          .where(
-            and(
-              eq(socialLinks.portfolioId, socialLinksData[0]?.portfolioId),
-              inArray(socialLinks.id, toDelete)
-            )
-          )
-      }
+
+    const socialLinksData = socialLinksDataResult as Array<
+      SocialLinksFormValues & { portfolioId: string }
+    >
+    const socialLinksPayload = socialLinksData[0]
+
+    if (!socialLinksPayload?.portfolioId) {
+      throw new Error('Missing portfolioId')
     }
-    // Upsert (insert or update)
-    for (const link of socialLinksData) {
-      if (link.id) {
-        await db.update(socialLinks).set(link).where(eq(socialLinks.id, link.id))
-      } else {
-        await db.insert(socialLinks).values(link)
-      }
-    }
+
+    await CareerRepository.saveSocialLinks(getDb(), user.id, socialLinksPayload.portfolioId, {
+      id: socialLinksPayload.id,
+      github: socialLinksPayload.github,
+      linkedin: socialLinksPayload.linkedin,
+      twitter: socialLinksPayload.twitter,
+      website: socialLinksPayload.website,
+    })
+
     return createSuccessResponse(null, 'Social links saved successfully')
   })
 }

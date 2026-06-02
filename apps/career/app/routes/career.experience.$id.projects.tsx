@@ -3,7 +3,10 @@ import { useState } from 'react'
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router'
 import { useLoaderData, useNavigate } from 'react-router'
 import { Button } from '~/components/ui/button'
-import type { Project, WorkExperience } from '~/lib/db/schema'
+import type {
+  CareerProjectRecord as Project,
+  CareerWorkExperienceRecord as WorkExperience,
+} from '@hominem/db'
 import { createSuccessResponse, withAuthLoader } from '~/lib/route-utils'
 
 interface LoaderData {
@@ -19,8 +22,8 @@ export async function loader(args: LoaderFunctionArgs) {
     }
 
     try {
-      const { getWorkExperienceById } = await import('~/lib/db/queries/base')
-      const { getProjectsByWorkExperience } = await import('~/lib/db/queries/projects')
+      const { getWorkExperienceById } = await import('~/lib/career/queries/base')
+      const { getProjectsByWorkExperience } = await import('~/lib/career/queries/projects')
 
       const workExperience = await getWorkExperienceById(user.id, id)
       if (!workExperience) {
@@ -48,9 +51,9 @@ export async function action(args: ActionFunctionArgs) {
     const actionType = formData.get('actionType') as string
 
     try {
-      const { getWorkExperienceById } = await import('~/lib/db/queries/base')
+      const { getWorkExperienceById } = await import('~/lib/career/queries/base')
       const { createProject, updateProject, deleteProject } = await import(
-        '~/lib/db/queries/projects'
+        '~/lib/career/queries/projects'
       )
 
       const currentExperience = await getWorkExperienceById(user.id, id)
@@ -65,7 +68,7 @@ export async function action(args: ActionFunctionArgs) {
         const technologies = formData.get('technologies') as string
         const shortDescription = formData.get('shortDescription') as string
 
-        await createProject({
+        await createProject(user.id, {
           portfolioId: currentExperience.portfolioId,
           workExperienceId: id,
           title,
@@ -85,7 +88,7 @@ export async function action(args: ActionFunctionArgs) {
         const technologies = formData.get('technologies') as string
         const shortDescription = formData.get('shortDescription') as string
 
-        await updateProject(projectId, {
+        await updateProject(user.id, projectId, currentExperience.portfolioId, {
           title,
           description,
           shortDescription: shortDescription || null,
@@ -94,7 +97,7 @@ export async function action(args: ActionFunctionArgs) {
         })
       } else if (actionType === 'delete') {
         const projectId = formData.get('projectId') as string
-        await deleteProject(projectId)
+        await deleteProject(user.id, projectId, currentExperience.portfolioId)
       }
 
       return createSuccessResponse({ success: true })

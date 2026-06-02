@@ -11,7 +11,7 @@ import { useState } from 'react'
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router'
 import { useLoaderData } from 'react-router'
 import { Button } from '~/components/ui/button'
-import type { Project } from '~/lib/db/schema'
+import type { CareerProjectRecord as Project } from '@hominem/db'
 import { createSuccessResponse, withAuthLoader } from '~/lib/route-utils'
 
 interface ProjectSummary {

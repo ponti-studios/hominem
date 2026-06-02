@@ -1,12 +1,10 @@
 #!/usr/bin/env tsx
 /* eslint-disable no-console */
 
+import { CareerRepository, getDb, pool } from '@hominem/db'
 import { parse } from 'csv-parse/sync'
-import { eq } from 'drizzle-orm'
 import { readFileSync } from 'node:fs'
-import { client, db, schema } from '../app/lib/db'
 
-// Define the CSV row structure
 interface CSVRow {
   Position: string
   Company: string
@@ -23,7 +21,6 @@ interface CSVRow {
   salary_quoted: string
 }
 
-// Map CSV status to database status
 function mapStatus(csvStatus: string): string {
   const statusMap: Record<string, string> = {
     Application: 'APPLIED',
@@ -39,61 +36,50 @@ function mapStatus(csvStatus: string): string {
   return statusMap[csvStatus] || 'APPLIED'
 }
 
-// Clean company name from CSV (remove Notion-style references)
 function cleanCompanyName(companyStr: string): string {
-  // Remove everything after the first opening parenthesis or comma
   return companyStr.split('(')[0].split(',')[0].trim()
 }
 
-// Parse date string to Date object
 function parseDate(dateStr: string): Date | null {
   if (!dateStr || dateStr.trim() === '') return null
 
   try {
-    // Handle various date formats
     if (dateStr.includes(',')) {
-      // Format: "January 2, 2025" or "January 2, 2025 5:15 AM (PST)"
       const datePart = dateStr.split(' at ')[0].split(' 5:')[0]
       return new Date(datePart)
     }
 
-    // Try direct parsing
     return new Date(dateStr)
-  } catch (error) {
+  } catch {
     console.warn(`Could not parse date: ${dateStr}`)
     return null
   }
 }
 
-// Parse salary string to cents
 function parseSalary(salaryStr: string): number | null {
   if (!salaryStr || salaryStr.trim() === '') return null
 
-  // Remove currency symbols and commas
   const cleanSalary = salaryStr.replace(/[$,]/g, '')
   const salary = Number.parseFloat(cleanSalary)
 
   if (Number.isNaN(salary)) return null
 
-  // Convert to cents
   return Math.round(salary * 100)
 }
 
-// Parse stages into structured format
 function parseStages(stagesStr: string): Array<{ stage: string; date: string; notes?: string }> {
   if (!stagesStr || stagesStr.trim() === '') return []
 
-  const stages = stagesStr
+  return stagesStr
     .split(',')
-    .map((s) => s.trim())
+    .map((stage) => stage.trim())
     .filter(Boolean)
-  return stages.map((stage) => ({
-    stage,
-    date: new Date().toISOString(), // Default to current date since we don't have stage dates
-  }))
+    .map((stage) => ({
+      stage,
+      date: new Date().toISOString(),
+    }))
 }
 
-// Parse interview dates (simplified since we don't have detailed interview data)
 function parseInterviewDates(
   phoneScreen: string,
   stages: string
@@ -114,7 +100,7 @@ function parseInterviewDates(
 
   if (phoneScreen && phoneScreen.toLowerCase() === 'true') {
     interviews.push({
-      type: 'phone' as const,
+      type: 'phone',
       date: new Date().toISOString(),
       notes: 'Phone screen conducted',
     })
@@ -122,7 +108,7 @@ function parseInterviewDates(
 
   if (stages?.includes('interview')) {
     interviews.push({
-      type: 'video' as const,
+      type: 'video',
       date: new Date().toISOString(),
       notes: 'Interview conducted',
     })
@@ -134,10 +120,8 @@ function parseInterviewDates(
 async function main() {
   console.info('🚀 Starting job applications data injection...')
 
-  // Read and parse CSV file
   let csvContent = readFileSync('./job-applications.csv', 'utf-8')
 
-  // Remove BOM if present
   if (csvContent.charCodeAt(0) === 0xfeff) {
     csvContent = csvContent.slice(1)
   }
@@ -152,10 +136,12 @@ async function main() {
 
   console.info(`📄 Found ${records.length} job applications in CSV`)
 
-  // Get or create a default user (you may need to adjust this)
-  const user = await db.query.users.findFirst({
-    where: eq(schema.users.email, 'thecharlesponti@gmail.com'),
-  })
+  const db = getDb()
+  const user = await db
+    .selectFrom('user')
+    .select(['id', 'email', 'name'])
+    .where('email', '=', 'thecharlesponti@gmail.com')
+    .executeTakeFirst()
 
   if (!user) {
     throw new Error('User not found. Please create a user first.')
@@ -172,12 +158,10 @@ async function main() {
     try {
       recordIndex++
 
-      // Access properties directly since we know the CSV structure
       const position = record.Position
       const companyName = record.Company
       const status = record.status
 
-      // Skip empty rows - be more specific about what's empty
       if (!position || position.trim() === '' || !companyName || companyName.trim() === '') {
         console.warn(
           `⚠️  Skipping #${recordIndex} due to missing data - Position: "${position}", Company: "${companyName}"`
@@ -189,60 +173,51 @@ async function main() {
 
       const cleanedCompanyName = cleanCompanyName(companyName)
 
-      // Get or create company
-      let companyRecord = await db.query.companies.findFirst({
-        where: eq(schema.companies.name, cleanedCompanyName),
+      const existingCompany = await db
+        .selectFrom('app.companies')
+        .select('id')
+        .where('owner_userid', '=', user.id)
+        .where(({ eb, fn }) => eb(fn('lower', ['name']), '=', cleanedCompanyName.toLowerCase()))
+        .executeTakeFirst()
+
+      const companyRecord = await CareerRepository.findOrCreateCompany(db, user.id, {
+        name: cleanedCompanyName,
+        website: record.company_url || null,
+        location: record.location || null,
       })
 
-      if (!companyRecord) {
-        const [newCompany] = await db
-          .insert(schema.companies)
-          .values({
-            name: cleanedCompanyName,
-            website: record.company_url || null,
-            location: record.location || null,
-          })
-          .returning()
-        companyRecord = newCompany
+      if (!existingCompany) {
         companiesCreated++
       }
 
-      // Parse dates
       const applicationDate = parseDate(record.date)
       const endDate = parseDate(record.end_date)
-
-      // Parse salaries
       const salaryQuoted = parseSalary(record.salary_quoted)
       const salaryAccepted = parseSalary(record.salary_accepted)
-
-      // Parse stages and interviews
       const stages = parseStages(record.stages)
       const interviewDates = parseInterviewDates(record.phone_screen, record.stages)
 
-      // Create job application
-      await db.insert(schema.jobApplications).values({
-        userId: user.id,
+      await CareerRepository.createJobApplication(db, user.id, {
         companyId: companyRecord.id,
-        position: position,
+        position,
         status: mapStatus(status),
-        startDate: applicationDate || new Date(), // Use application date or current date
-        endDate: endDate,
+        startDate: applicationDate || new Date(),
+        endDate,
         location: record.location || null,
         jobPosting: record.job_posting || null,
         salaryQuoted: record.salary_quoted || null,
         salaryAccepted: record.salary_accepted || null,
         salaryOffered: salaryQuoted,
         salaryFinal: salaryAccepted,
-        applicationDate: applicationDate,
+        applicationDate,
         source: record.job_posting ? 'company_website' : 'other',
         reference: record.Reference?.toLowerCase() === 'true',
-        stages: stages,
-        interviewDates: interviewDates,
+        stages,
+        interviewDates,
       })
 
       applicationsCreated++
 
-      // Show progress every 10 records
       if (applicationsCreated % 10 === 0) {
         console.info(`📈 Progress: ${applicationsCreated} applications created`)
       }
@@ -259,12 +234,10 @@ async function main() {
   console.warn(`⚠️  Applications skipped: ${applicationsSkipped}`)
   console.info(`📈 Total processed: ${records.length}`)
 
-  // Close database connection
-  await client.end()
+  await pool.end()
   console.info('\n🎉 Data injection completed!')
 }
 
-// Handle errors and run the script
 main().catch((error) => {
   console.error('❌ Script failed:', error)
   process.exit(1)

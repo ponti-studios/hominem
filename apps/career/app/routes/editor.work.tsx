@@ -1,4 +1,5 @@
-import { and, eq } from 'drizzle-orm'
+import type { CareerWorkExperienceRecord as WorkExperience } from '@hominem/db'
+import { CareerRepository, getDb } from '@hominem/db'
 import { Briefcase, PlusIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { SubmitHandler } from 'react-hook-form'
@@ -6,9 +7,7 @@ import { useFieldArray, useForm } from 'react-hook-form'
 import type { ActionFunctionArgs } from 'react-router'
 import { useFetcher, useOutletContext } from 'react-router'
 import { Button } from '~/components/ui/button'
-import { db } from '~/lib/db'
-import type { NewWorkExperience, WorkExperience, WorkExperienceMetadata } from '~/lib/db/schema'
-import { workExperiences } from '~/lib/db/schema'
+import type { WorkExperienceMetadata } from '~/types/career-data'
 import { useToast } from '../hooks/useToast'
 import type { FullPortfolio } from '../lib/portfolio.server'
 import {
@@ -414,7 +413,7 @@ export async function action(args: ActionFunctionArgs) {
         return tryAsync(async () => {
           if (operation === 'create') {
             // Insert new experience
-            const { id, ...insertData } = workExperienceData
+            const { id: _id, ...insertData } = workExperienceData
 
             // Convert date strings to Date objects for database
             const dbData = {
@@ -423,10 +422,19 @@ export async function action(args: ActionFunctionArgs) {
               endDate: stringToDate(insertData.endDate),
             }
 
-            const [newExperience] = await db
-              .insert(workExperiences)
-              .values(dbData as NewWorkExperience)
-              .returning()
+            const newExperience = await CareerRepository.createWorkExperience(getDb(), user.id, {
+              portfolioId: dbData.portfolioId,
+              role: dbData.role,
+              company: dbData.company,
+              description: dbData.description,
+              startDate: dbData.startDate,
+              endDate: dbData.endDate,
+              action: dbData.action,
+              tags: dbData.tags,
+              metadata: dbData.metadata as Record<string, unknown> | undefined,
+              sortOrder: dbData.sortOrder,
+              isVisible: dbData.isVisible,
+            })
 
             return createSuccessResponse(newExperience, 'Work experience created successfully')
           }
@@ -442,15 +450,18 @@ export async function action(args: ActionFunctionArgs) {
             endDate: stringToDate(updateData.endDate),
           }
 
-          await db
-            .update(workExperiences)
-            .set(dbData)
-            .where(
-              and(
-                eq(workExperiences.id, id),
-                eq(workExperiences.portfolioId, workExperienceData.portfolioId)
-              )
-            )
+          await CareerRepository.updateWorkExperience(getDb(), user.id, id, {
+            role: dbData.role,
+            company: dbData.company,
+            description: dbData.description,
+            startDate: dbData.startDate,
+            endDate: dbData.endDate,
+            action: dbData.action,
+            tags: dbData.tags,
+            metadata: dbData.metadata as Record<string, unknown> | undefined,
+            sortOrder: dbData.sortOrder,
+            isVisible: dbData.isVisible,
+          })
 
           return createSuccessResponse(null, 'Work experience updated successfully')
         }, `Failed to ${operation} work experience`)
@@ -465,9 +476,7 @@ export async function action(args: ActionFunctionArgs) {
         }
 
         return tryAsync(async () => {
-          await db
-            .delete(workExperiences)
-            .where(and(eq(workExperiences.id, id), eq(workExperiences.portfolioId, portfolioId)))
+          await CareerRepository.deleteWorkExperience(getDb(), user.id, id, portfolioId)
 
           return createSuccessResponse(null, 'Work experience deleted successfully')
         }, 'Failed to delete work experience')

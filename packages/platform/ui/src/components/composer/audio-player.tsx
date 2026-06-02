@@ -162,7 +162,7 @@ interface AudioPlayerProgressProps extends HTMLAttributes<HTMLDivElement> {
   progress: number;
 }
 
-export function AudioPlayerProgress({ progress, className, ...props }: AudioPlayerProgressProps) {
+export function AudioPlayerProgress({ progress, ...props }: AudioPlayerProgressProps) {
   return (
     <div className="overflow-hidden rounded-full bg-muted" {...props}>
       <div

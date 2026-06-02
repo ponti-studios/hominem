@@ -1,6 +1,6 @@
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/Card'
-import type { ApplicationWithCompany } from '~/lib/db/schema'
+import type { ApplicationWithCompany } from '~/types/career-data'
 
 interface FilesTabProps {
   application: ApplicationWithCompany

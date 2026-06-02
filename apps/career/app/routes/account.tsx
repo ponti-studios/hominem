@@ -1,4 +1,5 @@
-import { and, eq, ne } from 'drizzle-orm'
+import { CareerRepository, getDb } from '@hominem/db'
+import { useAuthClient } from '@hominem/auth/client/provider'
 import { Download, Edit, ExternalLink, LogOut, Trash2, Upload } from 'lucide-react'
 import { useState } from 'react'
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router'
@@ -6,8 +7,6 @@ import { useActionData, useLoaderData, useNavigate, useSubmit } from 'react-rout
 import { Button } from '~/components/ui/button'
 import { ProfileImageUpload } from '../components/ProfileImageUpload'
 import { SlugEditor } from '../components/SlugEditor'
-import { db } from '../lib/db'
-import { portfolios } from '../lib/db/schema'
 import { getFullUserPortfolio } from '../lib/portfolio.server'
 import {
   createErrorResponse,
@@ -23,7 +22,6 @@ import {
   uploadFile,
   validateFile,
 } from '../lib/services/storage.service'
-import { createClient } from '../lib/supabase/client'
 import { getMockPortfolioForForms } from '../lib/utils/mock-data'
 
 // Account loader - migrated from Svelte layout server
@@ -82,18 +80,14 @@ export async function loader(args: LoaderFunctionArgs) {
 
 // Server action for portfolio operations
 export async function action(args: ActionFunctionArgs) {
-  return withAuthAction(args, async ({ supabase, user }) => {
+  return withAuthAction(args, async ({ user }) => {
     const formData = await args.request.formData()
     const action = formData.get('action')
     const portfolioId = formData.get('portfolioId')
 
     if (action === 'delete' && portfolioId) {
       return tryAsync(async () => {
-        const { error } = await supabase.from('portfolios').delete().eq('id', portfolioId)
-
-        if (error) {
-          return createErrorResponse(error.message)
-        }
+        await CareerRepository.deletePortfolio(getDb(), user.id, portfolioId as string)
 
         return createSuccessResponse(null, 'Portfolio deleted successfully')
       }, 'Failed to delete portfolio')
@@ -107,42 +101,23 @@ export async function action(args: ActionFunctionArgs) {
           return createErrorResponse('No image file provided')
         }
 
-        // Use centralized file validation
         const validation = validateFile(imageFile, FILE_VALIDATION_PRESETS.PROFILE_IMAGE)
         if (!validation.valid) {
           return createErrorResponse(validation.error || 'Invalid file')
         }
 
-        // Generate unique filename - use Supabase auth user ID for RLS policy
-        const supabaseUserId = user.supabaseUser?.id
-        if (!supabaseUserId) {
-          return createErrorResponse('User authentication required')
-        }
-
-        // Use centralized upload helper
-        const uploadResult = await uploadFile(supabase, {
-          file: imageFile,
-          userId: supabaseUserId,
-          folder: 'profile-images',
-          upsert: true,
-        })
+        const uploadResult = await uploadFile(imageFile, user.id, 'profile-images')
 
         if (!uploadResult.success) {
-          console.error('Supabase upload error:', uploadResult.error)
           return createErrorResponse(uploadResult.error || 'Failed to upload image')
         }
 
-        // Update portfolio with new profile image URL using Drizzle
         try {
-          await db
-            .update(portfolios)
-            .set({ profileImageUrl: uploadResult.publicUrl })
-            .where(eq(portfolios.userId, user.id))
+          await CareerRepository.updatePortfolioProfileImage(getDb(), user.id, uploadResult.publicUrl ?? '')
         } catch (updateError) {
           console.error('Database update error:', updateError)
-          // Clean up uploaded file on database error
-          if (uploadResult.filePath) {
-            await deleteFile(supabase, uploadResult.filePath)
+          if (uploadResult.fileId) {
+            await deleteFile(uploadResult.fileId, user.id, 'profile-images')
           }
           return createErrorResponse('Failed to update portfolio')
         }
@@ -178,22 +153,13 @@ export async function action(args: ActionFunctionArgs) {
           return createErrorResponse('Slug must be less than 50 characters long')
         }
 
-        // Check if slug already exists (excluding current portfolio)
-        const existingPortfolio = await db
-          .select({ id: portfolios.id })
-          .from(portfolios)
-          .where(and(eq(portfolios.slug, newSlug), ne(portfolios.id, portfolioId)))
-          .limit(1)
+        const isAvailable = await CareerRepository.isSlugAvailable(getDb(), newSlug, portfolioId)
 
-        if (existingPortfolio.length > 0) {
+        if (!isAvailable) {
           return createErrorResponse('Slug is already taken')
         }
 
-        // Update portfolio slug
-        await db
-          .update(portfolios)
-          .set({ slug: newSlug })
-          .where(and(eq(portfolios.id, portfolioId), eq(portfolios.userId, user.id)))
+        await CareerRepository.updatePortfolioSlug(getDb(), user.id, portfolioId, newSlug)
 
         return createSuccessResponse({ slug: newSlug }, 'Portfolio URL updated successfully')
       }, 'Failed to update portfolio URL')
@@ -226,6 +192,7 @@ export function meta() {
 export default function Account() {
   const navigate = useNavigate()
   const submit = useSubmit()
+  const authClient = useAuthClient()
   const loaderData = useLoaderData<typeof loader>()
   const actionData = useActionData<typeof action>()
   const [isSigningOut, setIsSigningOut] = useState(false)
@@ -241,8 +208,7 @@ export default function Account() {
   const handleSignOut = async () => {
     try {
       setIsSigningOut(true)
-      const supabase = await createClient()
-      await supabase.auth.signOut()
+      await authClient.signOut()
       navigate('/')
     } catch (error) {
       console.error('Error signing out:', error)
@@ -315,8 +281,7 @@ export default function Account() {
     return null
   }
 
-  const userDisplayName = String(user.supabaseUser?.user_metadata?.full_name || user.name || user.email)
-  const userAvatar = user.supabaseUser?.user_metadata?.avatar_url
+  const userDisplayName = String(user.name || user.email)
 
   return (
     <div className="py-8">

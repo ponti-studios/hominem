@@ -4,7 +4,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router'
 import { useLoaderData, useNavigate } from 'react-router'
 import { EditableArrayField } from '~/components/EditableArrayField'
 import { Button } from '~/components/ui/button'
-import type { WorkExperience } from '~/lib/db/schema'
+import type { CareerWorkExperienceRecord as WorkExperience } from '@hominem/db'
 import { createSuccessResponse, withAuthLoader } from '~/lib/route-utils'
 
 interface LoaderData {
@@ -19,7 +19,7 @@ export async function loader(args: LoaderFunctionArgs) {
     }
 
     try {
-      const { getWorkExperienceById } = await import('~/lib/db/queries/base')
+      const { getWorkExperienceById } = await import('~/lib/career/queries/base')
       const workExperience = await getWorkExperienceById(user.id, id)
 
       if (!workExperience) {
@@ -46,7 +46,7 @@ export async function action(args: ActionFunctionArgs) {
     const value = formData.get('value') as string
 
     try {
-      const { updateWorkExperience } = await import('~/lib/db/queries/base')
+      const { updateWorkExperience } = await import('~/lib/career/queries/base')
 
       // Convert the value to appropriate type based on field
       let processedValue: string | number | Date | null = value
@@ -65,7 +65,7 @@ export async function action(args: ActionFunctionArgs) {
 
       // Now determine how to update the database
       if (field.startsWith('metadata.')) {
-        const { getWorkExperienceById } = await import('~/lib/db/queries/base')
+        const { getWorkExperienceById } = await import('~/lib/career/queries/base')
         const currentExperience = await getWorkExperienceById(user.id, id)
 
         if (currentExperience) {
@@ -322,14 +322,14 @@ export default function WorkExperienceDetail() {
             <div className="space-y-6">
               <EditableArrayField
                 label="Key Achievements"
-                value={workExperience.metadata?.achievements || []}
+                value={(workExperience.metadata?.achievements as string[] | undefined) || []}
                 field="metadata.achievements"
                 placeholder="Describe a key achievement or accomplishment"
               />
 
               <EditableArrayField
                 label="Technologies Used"
-                value={workExperience.metadata?.technologies || []}
+                value={(workExperience.metadata?.technologies as string[] | undefined) || []}
                 field="metadata.technologies"
                 placeholder="Technology, framework, or tool"
               />

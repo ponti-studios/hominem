@@ -1,4 +1,5 @@
-import { and, eq } from 'drizzle-orm'
+import type { CareerProjectRecord as Project } from '@hominem/db'
+import { CareerRepository, getDb } from '@hominem/db'
 import { FolderOpen, PlusIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { SubmitHandler } from 'react-hook-form'
@@ -6,8 +7,6 @@ import { useForm } from 'react-hook-form'
 import type { ActionFunctionArgs, MetaFunction } from 'react-router'
 import { useFetcher, useOutletContext } from 'react-router'
 import { Button } from '~/components/ui/button'
-import { db } from '~/lib/db'
-import { projects, type NewProject, type Project } from '~/lib/db/schema'
 import { useToast } from '../hooks/useToast'
 import type { FullPortfolio } from '../lib/portfolio.server'
 import {
@@ -450,7 +449,7 @@ export async function action(args: ActionFunctionArgs) {
 
           if (operation === 'create') {
             // Insert new project
-            const { id, ...insertData } = projectData
+            const { id: _id, ...insertData } = projectData
 
             // Convert date strings to Date objects for database
             const dbData = {
@@ -460,10 +459,23 @@ export async function action(args: ActionFunctionArgs) {
               endDate: stringToDate(insertData.endDate),
             }
 
-            const [newProject] = await db
-              .insert(projects)
-              .values(dbData as NewProject)
-              .returning()
+            const newProject = await CareerRepository.createProject(getDb(), user.id, {
+              portfolioId: dbData.portfolioId,
+              title: dbData.title,
+              description: dbData.description,
+              shortDescription: dbData.shortDescription,
+              liveUrl: dbData.liveUrl,
+              githubUrl: dbData.githubUrl,
+              imageUrl: dbData.imageUrl,
+              videoUrl: dbData.videoUrl,
+              technologies: dbData.technologies,
+              status: dbData.status,
+              startDate: dbData.startDate,
+              endDate: dbData.endDate,
+              isFeatured: dbData.isFeatured,
+              isVisible: dbData.isVisible,
+              sortOrder: dbData.sortOrder,
+            })
 
             return createSuccessResponse(newProject, 'Project created successfully')
           }
@@ -480,10 +492,22 @@ export async function action(args: ActionFunctionArgs) {
             endDate: stringToDate(updateData.endDate),
           }
 
-          await db
-            .update(projects)
-            .set(dbData)
-            .where(and(eq(projects.id, id), eq(projects.portfolioId, projectData.portfolioId)))
+          await CareerRepository.updateProject(getDb(), user.id, id, projectData.portfolioId, {
+            title: dbData.title,
+            description: dbData.description,
+            shortDescription: dbData.shortDescription,
+            liveUrl: dbData.liveUrl,
+            githubUrl: dbData.githubUrl,
+            imageUrl: dbData.imageUrl,
+            videoUrl: dbData.videoUrl,
+            technologies: dbData.technologies,
+            status: dbData.status,
+            startDate: dbData.startDate,
+            endDate: dbData.endDate,
+            isFeatured: dbData.isFeatured,
+            isVisible: dbData.isVisible,
+            sortOrder: dbData.sortOrder,
+          })
 
           return createSuccessResponse(null, 'Project updated successfully')
         }, `Failed to ${operation} project`)
@@ -498,9 +522,7 @@ export async function action(args: ActionFunctionArgs) {
         }
 
         return tryAsync(async () => {
-          await db
-            .delete(projects)
-            .where(and(eq(projects.id, id), eq(projects.portfolioId, portfolioId)))
+          await CareerRepository.deleteProject(getDb(), user.id, id, portfolioId)
 
           return createSuccessResponse(null, 'Project deleted successfully')
         }, 'Failed to delete project')

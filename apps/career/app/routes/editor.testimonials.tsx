@@ -1,4 +1,5 @@
-import { and, eq } from 'drizzle-orm'
+import type { CareerTestimonialRecord as Testimonial } from '@hominem/db'
+import { CareerRepository, getDb } from '@hominem/db'
 import { MessageSquare, PlusIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { SubmitHandler } from 'react-hook-form'
@@ -6,9 +7,6 @@ import { useForm } from 'react-hook-form'
 import type { ActionFunctionArgs, MetaFunction } from 'react-router'
 import { useFetcher, useOutletContext } from 'react-router'
 import { Button } from '~/components/ui/button'
-import { db } from '~/lib/db'
-import type { NewTestimonial, Testimonial } from '~/lib/db/schema'
-import { testimonials } from '~/lib/db/schema'
 import { useToast } from '../hooks/useToast'
 import type { FullPortfolio } from '../lib/portfolio.server'
 import {
@@ -373,12 +371,18 @@ export async function action(args: ActionFunctionArgs) {
         return tryAsync(async () => {
           if (operation === 'create') {
             // Insert new testimonial
-            const { id, ...insertData } = testimonialData
+            const { id: _id, ...insertData } = testimonialData
 
-            const [newTestimonial] = await db
-              .insert(testimonials)
-              .values(insertData as NewTestimonial)
-              .returning()
+            const newTestimonial = await CareerRepository.createTestimonial(getDb(), user.id, {
+              portfolioId: insertData.portfolioId,
+              name: insertData.name,
+              title: insertData.title,
+              company: insertData.company,
+              content: insertData.content,
+              avatarUrl: insertData.avatarUrl,
+              linkedinUrl: insertData.linkedinUrl,
+              rating: insertData.rating,
+            })
 
             return createSuccessResponse(newTestimonial, 'Testimonial created successfully')
           }
@@ -387,15 +391,21 @@ export async function action(args: ActionFunctionArgs) {
           const { id, ...updateData } = testimonialData
           if (!id) return createErrorResponse('Missing testimonial ID for update')
 
-          await db
-            .update(testimonials)
-            .set(updateData)
-            .where(
-              and(
-                eq(testimonials.id, id),
-                eq(testimonials.portfolioId, testimonialData.portfolioId)
-              )
-            )
+          await CareerRepository.updateTestimonial(
+            getDb(),
+            user.id,
+            id,
+            testimonialData.portfolioId,
+            {
+              name: updateData.name,
+              title: updateData.title,
+              company: updateData.company,
+              content: updateData.content,
+              avatarUrl: updateData.avatarUrl,
+              linkedinUrl: updateData.linkedinUrl,
+              rating: updateData.rating,
+            }
+          )
 
           return createSuccessResponse(null, 'Testimonial updated successfully')
         }, `Failed to ${operation} testimonial`)
@@ -410,9 +420,7 @@ export async function action(args: ActionFunctionArgs) {
         }
 
         return tryAsync(async () => {
-          await db
-            .delete(testimonials)
-            .where(and(eq(testimonials.id, id), eq(testimonials.portfolioId, portfolioId)))
+          await CareerRepository.deleteTestimonial(getDb(), user.id, id, portfolioId)
 
           return createSuccessResponse(null, 'Testimonial deleted successfully')
         }, 'Failed to delete testimonial')

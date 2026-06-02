@@ -12,6 +12,8 @@ pnpm --filter @hominem/career db:migrate
 pnpm --filter @hominem/career dev
 ```
 
+`db:migrate` now runs the shared monorepo migrations from `packages/core/db/migrations`.
+
 The dev server runs on `http://localhost:4451`.
 
 ## Configuration
@@ -38,11 +40,11 @@ VITE_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 | Test                    | `pnpm --filter @hominem/career test`     |
 | Start local Postgres    | `pnpm --filter @hominem/career db:up`    |
 | Stop local Postgres     | `pnpm --filter @hominem/career db:down`  |
-| Generate migrations     | `pnpm --filter @hominem/career db:generate` |
-| Run migrations          | `pnpm --filter @hominem/career db:migrate` |
+| Run shared migrations   | `pnpm --filter @hominem/career db:migrate` |
+| Inject job CSV data     | `pnpm --filter @hominem/career db:inject-jobs` |
 
 ## Notes
 
 - Auth remains on Supabase for this migration.
-- Database access remains on the copied Drizzle schema and migrations under `app/lib/db`.
+- Database access now goes through `@hominem/db` and the shared `packages/core/db` migrations.
 - Deployment uses the Railway/Docker shape used by `apps/web`.

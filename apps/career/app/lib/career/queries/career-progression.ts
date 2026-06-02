@@ -1,4 +1,5 @@
-import type { CareerEvent, CareerProgressionSummary, WorkExperienceWithFinancials } from '../schema'
+import type { CareerEventRecord as CareerEvent } from '@hominem/db'
+import type { CareerProgressionSummary, WorkExperienceWithFinancials } from '~/types/career-data'
 import {
   extractWorkExperiences,
   type getUserCareerEvents,
@@ -6,9 +7,9 @@ import {
 } from './base'
 import { calculatePercentageChange, getCurrentSalary, safeParseJson, yearsBetween } from './utils'
 
-/**
- * Career progression and experience tracking queries
- */
+function toDate(value: Date | string | null | undefined) {
+  return value ? new Date(value) : null
+}
 
 export function getCareerProgressionSummary(
   experiencesResult: Awaited<ReturnType<typeof getUserWorkExperiences>>,
@@ -39,37 +40,21 @@ export function getCareerProgressionSummary(
 
   const workExps = extractWorkExperiences(experiencesResult)
   const events = eventsResult
-
-  // Calculate basic metrics
   const firstExp = workExps[0]
-  const currentExp = workExps.find((e) => !e.endDate) || workExps[workExps.length - 1]
-
+  const currentExp = workExps.find((experience) => !experience.endDate) || workExps[workExps.length - 1]
   const firstSalary = firstExp.baseSalary || 0
   const currentSalary = getCurrentSalary(currentExp)
   const totalSalaryGrowth = currentSalary - firstSalary
   const salaryGrowthPercentage = calculatePercentageChange(firstSalary, currentSalary)
-
-  // Calculate total experience
   const careerStart = firstExp.startDate ? new Date(firstExp.startDate) : new Date()
   const totalExperience = yearsBetween(careerStart)
-
   const averageAnnualGrowth = totalExperience > 0 ? salaryGrowthPercentage / totalExperience : 0
-
-  // Count promotions and job changes
-  const promotionEvents = events.filter((e) => e.eventType === 'promotion')
+  const promotionEvents = events.filter((event) => event.eventType === 'promotion')
   const jobChangeCount = workExps.length - 1
-
-  // Calculate average tenure
   const { totalTenure, completedJobs } = calculateTotalTenure(workExps)
   const averageTenurePerJob = completedJobs > 0 ? totalTenure / completedJobs : 0
-
-  // Find highest salary increase
   const highestIncrease = findHighestSalaryIncrease(events)
-
-  // Build salary by year
   const salaryByYear = buildSalaryByYear(workExps)
-
-  // Build level progression
   const levelProgression = buildLevelProgression(workExps)
 
   return {
@@ -97,8 +82,7 @@ function calculateTotalTenure(workExps: ReturnType<typeof extractWorkExperiences
     if (exp.startDate) {
       const endDate = exp.endDate ? new Date(exp.endDate) : new Date()
       const startDate = new Date(exp.startDate)
-      const tenure = yearsBetween(startDate, endDate)
-      totalTenure += tenure
+      totalTenure += yearsBetween(startDate, endDate)
       completedJobs++
     }
   }
@@ -120,7 +104,7 @@ function findHighestSalaryIncrease(events: CareerEvent[]) {
         amount: event.salaryIncrease,
         percentage: Number.parseFloat(event.increasePercentage || '0'),
         reason: event.eventType || '',
-        date: event.eventDate?.toISOString() || '',
+        date: toDate(event.eventDate)?.toISOString() || '',
       }
     }
   }
@@ -137,23 +121,13 @@ function buildSalaryByYear(workExps: ReturnType<typeof extractWorkExperiences>) 
     const startDate = new Date(exp.startDate)
     const endDate = exp.endDate ? new Date(exp.endDate) : new Date()
 
-    const startYear = startDate.getFullYear()
-    const endYear = endDate.getFullYear()
-
-    for (let year = startYear; year <= endYear; year++) {
-      // Calculate the actual months worked in this year
-      const yearStart = new Date(year, 0, 1) // January 1st of the year
-      const yearEnd = new Date(year, 11, 31) // December 31st of the year
-
-      // Find the overlap between the employment period and this year
+    for (let year = startDate.getFullYear(); year <= endDate.getFullYear(); year++) {
+      const yearStart = new Date(year, 0, 1)
+      const yearEnd = new Date(year, 11, 31)
       const periodStart = startDate > yearStart ? startDate : yearStart
       const periodEnd = endDate < yearEnd ? endDate : yearEnd
-
-      // Calculate months worked in this year
       const monthsWorked = calculateMonthsWorked(periodStart, periodEnd)
       const monthlyFraction = monthsWorked / 12
-
-      // Prorate the salary and total compensation
       const annualSalary = getCurrentSalary(exp)
       const annualTotalComp = exp.totalCompensation || annualSalary
 
@@ -174,32 +148,23 @@ function calculateMonthsWorked(startDate: Date, endDate: Date): number {
   const startYear = startDate.getFullYear()
   const startMonth = startDate.getMonth()
   const startDay = startDate.getDate()
-
   const endYear = endDate.getFullYear()
   const endMonth = endDate.getMonth()
   const endDay = endDate.getDate()
 
-  // Calculate total months between the dates
   let months = (endYear - startYear) * 12 + (endMonth - startMonth)
 
-  // Add partial months based on days
-  // If the end day is greater than or equal to start day, we have a full month
-  // Otherwise, we need to subtract a fraction
   if (endDay >= startDay) {
-    months += 1 // Include the final month
+    months += 1
   } else {
-    // Calculate the fraction of the final month
     const daysInEndMonth = new Date(endYear, endMonth + 1, 0).getDate()
-    const fractionOfMonth = endDay / daysInEndMonth
-    months += fractionOfMonth
+    months += endDay / daysInEndMonth
   }
 
-  // Handle the starting month fraction
   if (startDay > 1) {
     const daysInStartMonth = new Date(startYear, startMonth + 1, 0).getDate()
     const daysWorkedInStartMonth = daysInStartMonth - startDay + 1
-    const startMonthFraction = daysWorkedInStartMonth / daysInStartMonth
-    months = months - 1 + startMonthFraction
+    months = months - 1 + daysWorkedInStartMonth / daysInStartMonth
   }
 
   return Math.max(0, months)
@@ -208,21 +173,20 @@ function calculateMonthsWorked(startDate: Date, endDate: Date): number {
 function buildLevelProgression(workExps: ReturnType<typeof extractWorkExperiences>) {
   const levelProgression: CareerProgressionSummary['levelProgression'] = []
 
-  for (let i = 0; i < workExps.length; i++) {
-    const exp = workExps[i]
+  for (let index = 0; index < workExps.length; index++) {
+    const exp = workExps[index]
     if (exp.seniorityLevel && exp.startDate) {
-      const nextExp = workExps[i + 1]
+      const nextExp = workExps[index + 1]
       const startDate = exp.startDate
       const endDate = exp.endDate || nextExp?.startDate || null
-
       const duration = endDate
         ? Math.round(yearsBetween(new Date(startDate), new Date(endDate)) * 12)
         : Math.round(yearsBetween(new Date(startDate)) * 12)
 
       levelProgression.push({
         level: exp.seniorityLevel,
-        startDate: startDate.toISOString(),
-        endDate: endDate?.toISOString() || undefined,
+        startDate: new Date(startDate).toISOString(),
+        endDate: endDate ? new Date(endDate).toISOString() : undefined,
         duration,
       })
     }
@@ -240,22 +204,16 @@ export function getWorkExperiencesWithFinancials(
     const startDate = exp.startDate ? new Date(exp.startDate) : new Date()
     const endDate = exp.endDate ? new Date(exp.endDate) : new Date()
     const totalTenure = Math.round(yearsBetween(startDate, endDate) * 365)
-
-    // Calculate annualized salary accounting for raises
     const currentSalary = getCurrentSalary(exp)
-
-    // Calculate total compensation received
     const bonuses = safeParseJson(exp.bonusHistory, []) as Array<{
       type: 'annual' | 'signing' | 'performance' | 'retention' | 'spot'
       amount: number
       date: string
       description?: string
     }>
-    const totalBonuses = bonuses.reduce((sum: number, b) => sum + (b.amount || 0), 0)
+    const totalBonuses = bonuses.reduce((sum: number, bonus) => sum + (bonus.amount || 0), 0)
     const yearsWorked = yearsBetween(startDate, endDate)
     const totalCompensationReceived = currentSalary * yearsWorked + totalBonuses
-
-    // Calculate average annual raise
     const adjustments = safeParseJson(exp.salaryAdjustments, []) as Array<{
       effectiveDate: string
       previousSalary: number
@@ -273,38 +231,20 @@ export function getWorkExperiencesWithFinancials(
     }>
     const averageAnnualRaise =
       adjustments.length > 0
-        ? adjustments.reduce((sum: number, adj) => sum + adj.increasePercentage, 0) /
+        ? adjustments.reduce((sum: number, adjustment) => sum + adjustment.increasePercentage, 0) /
           adjustments.length
         : 0
-
-    // Count promotions
-    const promotionCount = adjustments.filter((adj) => adj.reason === 'promotion').length
-
-    // Extract skills from metadata
+    const promotionCount = adjustments.filter((adjustment) => adjustment.reason === 'promotion').length
     const metadata = safeParseJson(exp.metadata, {}) as {
-      company_size?: string
-      industry?: string
-      location?: string
-      website?: string
       achievements?: string[]
       technologies?: string[]
-      projects?: Array<{
-        id: string
-        title: string
-        description: string
-        status: string
-        technologies: string[]
-        impact: string
-        createdAt: string
-        updatedAt?: string
-      }>
+      projects?: Array<{ technologies: string[] }>
       certifications_earned?: string[]
     }
     const skillsAcquired = [
       ...(metadata.technologies || []),
       ...(metadata.certifications_earned || []),
-      // Extract technologies from projects
-      ...(metadata.projects?.flatMap((p) => p.technologies) || []),
+      ...(metadata.projects?.flatMap((project) => project.technologies) || []),
     ]
 
     return {
@@ -325,11 +265,8 @@ export function getCareerTimeline(
 ) {
   const workExps = extractWorkExperiences(experiencesResult)
   const events = eventsResult
-
-  // Combine work experiences and career events into a timeline
   const timelineItems = []
 
-  // Add work experience start/end events
   for (const exp of workExps) {
     if (exp.startDate) {
       timelineItems.push({
@@ -354,7 +291,6 @@ export function getCareerTimeline(
     }
   }
 
-  // Add career events
   for (const event of events) {
     if (event.eventDate) {
       timelineItems.push({
@@ -368,6 +304,5 @@ export function getCareerTimeline(
     }
   }
 
-  // Sort by date
-  return timelineItems.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+  return timelineItems.sort((left, right) => new Date(left.date).getTime() - new Date(right.date).getTime())
 }

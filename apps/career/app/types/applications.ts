@@ -1,12 +1,6 @@
-import type { JobApplication } from './career'
+import type { CareerJobApplicationRecord } from '@hominem/db'
 
-export type ApplicationWithCompany = JobApplication & {
-  company?: string | { name: string; [key: string]: unknown } | null
-  applicationDate?: Date | null
-  responseDate?: Date | null
-  salaryOffered?: number | null
-  source?: string | null
-}
+export type ApplicationWithCompany = CareerJobApplicationRecord
 
 export interface JobPosting {
   jobTitle: string

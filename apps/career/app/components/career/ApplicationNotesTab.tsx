@@ -4,7 +4,7 @@ import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/Card'
 import { Input } from '~/components/ui/input'
 import { Select } from '~/components/ui/select'
-import type { ApplicationNote } from '~/lib/db/schema'
+import type { ApplicationNote } from '~/types/career-data'
 
 interface NotesTabProps {
   notes: ApplicationNote[]

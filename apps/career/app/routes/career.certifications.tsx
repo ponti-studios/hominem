@@ -1,10 +1,19 @@
+import { DatePicker } from '@hominem/ui/date-picker'
 import { CheckIcon, PencilIcon, PlusIcon, TrashIcon, XIcon } from 'lucide-react'
 import { useState } from 'react'
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router'
 import { useLoaderData } from 'react-router'
 import { Button } from '~/components/ui/button'
-import type { Certification, CertificationSummary } from '~/lib/db/schema'
+import type { Certification, CertificationSummary } from '~/types/career-data'
 import { createSuccessResponse, withAuthLoader } from '~/lib/route-utils'
+
+const formatDateValue = (value: Date | undefined) => {
+  if (!value) {
+    return ''
+  }
+
+  return value.toISOString().split('T')[0] ?? ''
+}
 
 interface LoaderData {
   user: { id: string; email?: string | null; name?: string | null }
@@ -238,6 +247,9 @@ interface CreateCertificationModalProps {
 }
 
 function CreateCertificationModal({ onClose }: CreateCertificationModalProps) {
+  const [issueDate, setIssueDate] = useState<Date | undefined>()
+  const [expirationDate, setExpirationDate] = useState<Date | undefined>()
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -296,31 +308,35 @@ function CreateCertificationModal({ onClose }: CreateCertificationModalProps) {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             <div>
-              <label htmlFor="issue-date" className="block text-sm font-medium text-slate-700 mb-2">
-                Issue Date *
-              </label>
-              <input
+              <DatePicker
                 id="issue-date"
-                type="date"
-                name="issueDate"
-                required
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
+                label="Issue Date *"
+                value={issueDate}
+                onSelect={(nextDate) => {
+                  if (nextDate) {
+                    setIssueDate(nextDate)
+                  }
+                }}
+                placeholder="Pick issue date"
+                containerClassName="min-w-0"
               />
+              <input type="hidden" name="issueDate" value={formatDateValue(issueDate)} />
             </div>
             <div>
-              <label
-                htmlFor="expiration-date"
-                className="block text-sm font-medium text-slate-700 mb-2"
-              >
-                Expiration Date
-              </label>
-              <input
+              <DatePicker
                 id="expiration-date"
-                type="date"
+                label="Expiration Date"
+                value={expirationDate}
+                onSelect={setExpirationDate}
+                placeholder="Pick expiration date"
+                containerClassName="min-w-0"
+              />
+              <input
+                type="hidden"
                 name="expirationDate"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
+                value={formatDateValue(expirationDate)}
               />
             </div>
             <div>

@@ -1,6 +1,6 @@
 import { BriefcaseIcon } from 'lucide-react'
 import { Link } from 'react-router'
-import type { WorkExperienceWithFinancials } from '~/lib/db/schema'
+import type { WorkExperienceWithFinancials } from '~/types/career-data'
 import { formatCurrency, formatPercentage } from '~/lib/utils'
 
 interface CareerHistoryProps {

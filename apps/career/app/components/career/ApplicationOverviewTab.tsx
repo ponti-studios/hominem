@@ -4,12 +4,12 @@ import { Form } from 'react-router'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/Card'
 import { Input } from '~/components/ui/input'
-import type { ApplicationWithCompany, Company } from '~/lib/db/schema'
+import type { ApplicationWithCompany } from '~/types/career-data'
 import { formatApplicationDate } from '~/lib/utils/applicationUtils'
 
 interface OverviewTabProps {
   application: ApplicationWithCompany
-  company: Company | null
+  company: ApplicationWithCompany['company']
 }
 
 export function ApplicationOverviewTab({ application, company }: OverviewTabProps) {

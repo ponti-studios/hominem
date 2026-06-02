@@ -1,18 +1,30 @@
-import { eq } from 'drizzle-orm'
+import { CareerRepository, getDb } from '@hominem/db'
+import { Switch } from '@hominem/ui/switch'
 import { useEffect } from 'react'
 import { Controller, useForm, type SubmitHandler } from 'react-hook-form'
 import type { ActionFunctionArgs, MetaFunction } from 'react-router'
 import { useFetcher, useOutletContext } from 'react-router'
 import { Button } from '~/components/ui/button'
-import { Switch } from '~/components/ui/switch'
-import { db } from '~/lib/db'
-import type { NewPortfolio } from '~/lib/db/schema'
-import { portfolios } from '~/lib/db/schema'
 import { useToast } from '../hooks/useToast'
 import type { FullPortfolio } from '../lib/portfolio.server'
 import { createSuccessResponse, parseFormData, withAuthAction } from '../lib/route-utils'
 
-export type BasicInfoFormValues = NewPortfolio
+export interface BasicInfoFormValues {
+  name: string
+  initials?: string | null
+  title?: string | null
+  jobTitle: string
+  bio: string
+  tagline: string
+  currentLocation: string
+  locationTagline?: string | null
+  email: string
+  phone?: string | null
+  availabilityStatus?: boolean
+  availabilityMessage?: string | null
+  isPublic?: boolean
+  isActive?: boolean
+}
 
 export const meta: MetaFunction = () => {
   return [{ title: 'Basic Info - Portfolio Editor | Craftd' }]
@@ -22,70 +34,13 @@ export const meta: MetaFunction = () => {
 export async function action(args: ActionFunctionArgs) {
   return withAuthAction(args, async ({ user }) => {
     const formData = await args.request.formData()
-    // Use Drizzle inferInsert type for type safety
-    type PortfolioInsert = typeof portfolios.$inferInsert
-    const portfolioDataResult = parseFormData<PortfolioInsert>(formData, 'portfolioData')
+    const portfolioDataResult = parseFormData<BasicInfoFormValues>(formData, 'portfolioData')
     if ('success' in portfolioDataResult && !portfolioDataResult.success) {
       return portfolioDataResult
     }
-    const portfolioData = portfolioDataResult as PortfolioInsert
-    // Check if portfolio exists
-    const existingPortfolio = await db.query.portfolios.findFirst({
-      where: eq(portfolios.userId, user.id),
-      columns: { id: true },
-    })
-    if (existingPortfolio) {
-      await db
-        .update(portfolios)
-        .set({
-          name: portfolioData.name,
-          initials: portfolioData.initials,
-          jobTitle: portfolioData.jobTitle,
-          title: portfolioData.title,
-          bio: portfolioData.bio,
-          tagline: portfolioData.tagline,
-          currentLocation: portfolioData.currentLocation,
-          locationTagline: portfolioData.locationTagline,
-          availabilityStatus: portfolioData.availabilityStatus,
-          availabilityMessage: portfolioData.availabilityMessage,
-          email: portfolioData.email,
-          phone: portfolioData.phone,
-          theme: portfolioData.theme,
-          copyright: portfolioData.copyright,
-          isPublic: portfolioData.isPublic,
-          isActive: portfolioData.isActive,
-          updatedAt: new Date(),
-        })
-        .where(eq(portfolios.id, existingPortfolio.id))
-    } else {
-      await db.insert(portfolios).values({
-        userId: user.id,
-        name: portfolioData.name,
-        initials: portfolioData.initials,
-        jobTitle: portfolioData.jobTitle,
-        title: portfolioData.title,
-        bio: portfolioData.bio,
-        tagline: portfolioData.tagline,
-        currentLocation: portfolioData.currentLocation,
-        locationTagline: portfolioData.locationTagline,
-        availabilityStatus: portfolioData.availabilityStatus,
-        availabilityMessage: portfolioData.availabilityMessage,
-        email: portfolioData.email,
-        phone: portfolioData.phone,
-        theme: portfolioData.theme,
-        copyright: portfolioData.copyright,
-        isPublic: portfolioData.isPublic ?? false,
-        isActive: portfolioData.isActive ?? true,
-        slug:
-          portfolioData.slug ??
-          portfolioData.name
-            ?.toLowerCase()
-            .replace(/\s+/g, '-')
-            .replace(/[^a-z0-9-]/g, ''),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
-    }
+    const portfolioData = portfolioDataResult as BasicInfoFormValues
+
+    await CareerRepository.savePortfolioBasics(getDb(), user.id, portfolioData)
     return createSuccessResponse(null, 'Portfolio saved successfully')
   })
 }
@@ -107,6 +62,7 @@ export default function EditorBasic() {
     defaultValues: {
       name: portfolio.name || '',
       initials: portfolio.initials || '',
+      title: portfolio.title || '',
       jobTitle: portfolio.jobTitle || '',
       bio: portfolio.bio || '',
       tagline: portfolio.tagline || '',
@@ -116,7 +72,8 @@ export default function EditorBasic() {
       phone: portfolio.phone || '',
       availabilityStatus: portfolio.availabilityStatus || false,
       availabilityMessage: portfolio.availabilityMessage || '',
-      // Add more fields as needed from the schema
+      isPublic: portfolio.isPublic,
+      isActive: portfolio.isActive,
     },
   })
 
@@ -124,6 +81,7 @@ export default function EditorBasic() {
     reset({
       name: portfolio.name || '',
       initials: portfolio.initials || '',
+      title: portfolio.title || '',
       jobTitle: portfolio.jobTitle || '',
       bio: portfolio.bio || '',
       tagline: portfolio.tagline || '',
@@ -133,6 +91,8 @@ export default function EditorBasic() {
       phone: portfolio.phone || '',
       availabilityStatus: portfolio.availabilityStatus || false,
       availabilityMessage: portfolio.availabilityMessage || '',
+      isPublic: portfolio.isPublic,
+      isActive: portfolio.isActive,
     })
   }, [portfolio, reset])
 
@@ -155,10 +115,10 @@ export default function EditorBasic() {
     }
 
     // Clean up the data - only send essential fields
-    const portfolioToSave = {
-      id: portfolio.id,
+    const portfolioToSave: BasicInfoFormValues = {
       name: formData.name,
       initials: formData.initials,
+      title: formData.title,
       jobTitle: formData.jobTitle,
       bio: formData.bio,
       tagline: formData.tagline,
@@ -168,6 +128,8 @@ export default function EditorBasic() {
       phone: formData.phone,
       availabilityStatus: formData.availabilityStatus,
       availabilityMessage: formData.availabilityMessage,
+      isPublic: portfolio.isPublic,
+      isActive: portfolio.isActive,
     }
 
     const formData2 = new FormData()

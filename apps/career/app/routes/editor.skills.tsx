@@ -1,12 +1,11 @@
-import { and, eq, inArray } from 'drizzle-orm'
+import type { CareerSkillRecord } from '@hominem/db'
+import { CareerRepository, runInTransaction } from '@hominem/db'
 import { LoaderPinwheel, PlusIcon, XIcon, Zap } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import type { ActionFunctionArgs, MetaFunction } from 'react-router'
 import { useFetcher, useOutletContext } from 'react-router'
 import { Button } from '~/components/ui/button'
-import { db } from '~/lib/db'
-import { skills, type NewSkill } from '~/lib/db/schema'
 import { useToast } from '../hooks/useToast'
 import type { FullPortfolio } from '../lib/portfolio.server'
 import {
@@ -27,13 +26,19 @@ interface NewSkillForm {
   level: number
 }
 
+type EditableSkill = Partial<CareerSkillRecord> & {
+  name: string
+  level: number
+  portfolioId: string
+}
+
 interface SkillsEditorSectionProps {
-  skills?: NewSkill[] | null
+  skills?: CareerSkillRecord[] | null
   portfolioId: string
 }
 
 function SkillsEditorSection({ skills: initialSkills, portfolioId }: SkillsEditorSectionProps) {
-  const [skills, setSkills] = useState<NewSkill[]>(initialSkills || [])
+  const [skills, setSkills] = useState<EditableSkill[]>(initialSkills || [])
   const [isAddingSkill, setIsAddingSkill] = useState(false)
   const fetcher = useFetcher()
   const { addToast } = useToast()
@@ -64,13 +69,13 @@ function SkillsEditorSection({ skills: initialSkills, portfolioId }: SkillsEdito
       acc[category].push(skill)
       return acc
     },
-    {} as Record<string, NewSkill[]>
+    {} as Record<string, EditableSkill[]>
   )
 
   // Get existing categories for the dropdown
   const existingCategories = Array.from(new Set(skills.map((s) => s.category).filter(Boolean)))
 
-  const saveSkills = (updatedSkills: NewSkill[]) => {
+  const saveSkills = (updatedSkills: EditableSkill[]) => {
     // Only send the essential fields, let the database handle timestamps
     const skillsToSave = updatedSkills.map((skill) => ({
       id: skill.id,
@@ -99,7 +104,7 @@ function SkillsEditorSection({ skills: initialSkills, portfolioId }: SkillsEdito
     }
   }, [fetcher.state, fetcher.data, addToast])
 
-  const handleRemoveSkill = (skillToRemove: NewSkill) => {
+  const handleRemoveSkill = (skillToRemove: EditableSkill) => {
     const updatedSkills = skills.filter((skill) =>
       skill.id ? skill.id !== skillToRemove.id : skill !== skillToRemove
     )
@@ -108,11 +113,13 @@ function SkillsEditorSection({ skills: initialSkills, portfolioId }: SkillsEdito
   }
 
   const handleAddSkill = (data: NewSkillForm) => {
-    const newSkill: NewSkill = {
+    const newSkill: EditableSkill = {
       name: data.name.trim(),
       category: data.category.trim() || null,
       level: data.level,
       portfolioId,
+      isVisible: true,
+      sortOrder: skills.length,
     }
 
     const updatedSkills = [...skills, newSkill]
@@ -284,12 +291,20 @@ export default function EditorSkills() {
 export async function action(args: ActionFunctionArgs) {
   return withAuthAction(args, async ({ user }) => {
     const formData = await args.request.formData()
-    type SkillInsert = typeof skills.$inferInsert
-    const skillsDataResult = parseFormData<SkillInsert[]>(formData, 'skillsData')
+    const skillsDataResult = parseFormData<Array<{ id?: string; name: string; category?: string | null; level: number; portfolioId: string }>>(
+      formData,
+      'skillsData'
+    )
     if ('success' in skillsDataResult && !skillsDataResult.success) {
       return skillsDataResult
     }
-    let skillsData = skillsDataResult as SkillInsert[]
+    let skillsData = skillsDataResult as Array<{
+      id?: string
+      name: string
+      category?: string | null
+      level: number
+      portfolioId: string
+    }>
     if (!Array.isArray(skillsData)) {
       return createErrorResponse('Invalid skills data')
     }
@@ -298,34 +313,19 @@ export async function action(args: ActionFunctionArgs) {
     if (!portfolioId) return createErrorResponse('Missing portfolioId')
     skillsData = skillsData.map((s) => ({ ...s, portfolioId, level: Number(s.level) }))
     return tryAsync(async () => {
-      // Fetch existing skills for this portfolio
-      const existingSkills = await db
-        .select({ id: skills.id })
-        .from(skills)
-        .where(eq(skills.portfolioId, portfolioId))
-      const existingIds = (existingSkills || []).map((s) => s.id)
-      const submittedIds = skillsData.filter((s) => s.id).map((s) => s.id)
-      // Delete removed skills
-      const idsToDelete = existingIds.filter((id: string) => !submittedIds.includes(id))
-      if (idsToDelete.length > 0) {
-        await db
-          .delete(skills)
-          .where(and(eq(skills.portfolioId, portfolioId), inArray(skills.id, idsToDelete)))
-      }
-      // Upsert (insert/update) all submitted skills
-      for (const skill of skillsData) {
-        if (skill.id) {
-          // Update
-          const { id, ...updateData } = skill
-          await db
-            .update(skills)
-            .set(updateData)
-            .where(and(eq(skills.id, id), eq(skills.portfolioId, portfolioId)))
-        } else {
-          // Insert
-          await db.insert(skills).values({ ...skill, portfolioId })
-        }
-      }
+      await runInTransaction((tx) =>
+        CareerRepository.replaceSkills(
+          tx,
+          user.id,
+          portfolioId,
+          skillsData.map((skill) => ({
+            id: skill.id,
+            name: skill.name,
+            category: skill.category,
+            level: Number(skill.level),
+          }))
+        )
+      )
       return createSuccessResponse(null, 'Skills saved successfully')
     }, 'Failed to save skills')
   })

@@ -1,7 +1,5 @@
-import { and, eq, ne } from 'drizzle-orm'
+import { CareerRepository, getDb } from '@hominem/db'
 import type { LoaderFunctionArgs } from 'react-router'
-import { db } from '../lib/db'
-import { portfolios } from '../lib/db/schema'
 import { createErrorResponse, createSuccessResponse, withAuthLoader } from '../lib/route-utils'
 
 export async function loader(args: LoaderFunctionArgs) {
@@ -29,17 +27,11 @@ export async function loader(args: LoaderFunctionArgs) {
 
     // Check if slug already exists (excluding current portfolio if editing)
     try {
-      const existingPortfolio = await db
-        .select({ id: portfolios.id })
-        .from(portfolios)
-        .where(
-          currentPortfolioId
-            ? and(eq(portfolios.slug, slug), ne(portfolios.id, currentPortfolioId))
-            : eq(portfolios.slug, slug)
-        )
-        .limit(1)
-
-      const isAvailable = existingPortfolio.length === 0
+      const isAvailable = await CareerRepository.isSlugAvailable(
+        getDb(),
+        slug,
+        currentPortfolioId || undefined
+      )
 
       return createSuccessResponse({
         slug,

@@ -1,18 +1,13 @@
+import { CareerRepository, getDb } from '@hominem/db'
 import type { ActionFunction } from 'react-router'
-import { createClient } from '~/lib/supabase/server'
+import { getAuthenticatedUser } from '~/lib/auth.server'
 import type { JobPosting } from '~/types/applications'
 
 export const action: ActionFunction = async ({ request }) => {
   try {
-    const { supabase } = createClient(request)
+    const user = await getAuthenticatedUser(request)
 
-    // Get the current user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
+    if (!user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { 'Content-Type': 'application/json' },
@@ -29,72 +24,33 @@ export const action: ActionFunction = async ({ request }) => {
       })
     }
 
-    // First, create or find the company
-    let companyId: string
+    const websiteOrigin = jobPosting.url
+      ? (() => {
+          try {
+            return new URL(jobPosting.url).origin
+          } catch {
+            return null
+          }
+        })()
+      : null
 
-    // Check if company already exists
-    const { data: existingCompany } = await supabase
-      .from('companies')
-      .select('id')
-      .eq('name', jobPosting.companyName)
-      .single()
+    const company = await CareerRepository.findOrCreateCompany(getDb(), user.id, {
+      name: jobPosting.companyName,
+      website: websiteOrigin,
+      description: jobPosting.companyDescription || null,
+    })
 
-    if (existingCompany) {
-      companyId = existingCompany.id
-    } else {
-      // Create new company
-      const { data: newCompany, error: companyError } = await supabase
-        .from('companies')
-        .insert({
-          name: jobPosting.companyName,
-          website: jobPosting.url ? new URL(jobPosting.url).origin : null,
-          description: jobPosting.companyDescription || null,
-        })
-        .select('id')
-        .single()
-
-      if (companyError) {
-        console.error('Error creating company:', companyError)
-        return new Response(
-          JSON.stringify({
-            error: 'Failed to create company',
-            success: false,
-          }),
-          { status: 500, headers: { 'Content-Type': 'application/json' } }
-        )
-      }
-
-      companyId = newCompany.id
-    }
-
-    // Save the job posting as an application
-    const { data: application, error: insertError } = await supabase
-      .from('job_applications')
-      .insert({
-        user_id: user.id,
-        company_id: companyId,
-        position: jobPosting.jobTitle,
-        status: 'APPLIED',
-        start_date: new Date().toISOString(),
-        job_posting: JSON.stringify(jobPosting),
-        location: jobPosting.location || null,
-        source: 'scraped',
-        application_date: new Date().toISOString(),
-        link: jobPosting.url || null,
-      })
-      .select()
-      .single()
-
-    if (insertError) {
-      console.error('Error saving application:', insertError)
-      return new Response(
-        JSON.stringify({
-          error: 'Failed to save application',
-          success: false,
-        }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
-      )
-    }
+    const application = await CareerRepository.createJobApplication(getDb(), user.id, {
+      companyId: company.id,
+      position: jobPosting.jobTitle,
+      status: 'APPLIED',
+      startDate: new Date(),
+      jobPosting: JSON.stringify(jobPosting),
+      location: jobPosting.location || null,
+      source: 'scraped',
+      applicationDate: new Date(),
+      link: jobPosting.url || null,
+    })
 
     return new Response(
       JSON.stringify({

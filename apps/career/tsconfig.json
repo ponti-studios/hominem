@@ -18,7 +18,6 @@
     "tests/**/*.ts",
     "tests/**/*.tsx",
     ".react-router/types/**/*",
-    "drizzle.config.ts",
     "playwright.config.ts",
     "react-router.config.ts",
     "vite.config.ts",

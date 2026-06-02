@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm'
+import { CareerRepository, getDb } from '@hominem/db'
 import { PlusIcon } from 'lucide-react'
 import {
   Link,
@@ -12,9 +12,7 @@ import { ApplicationTable } from '~/components/career/ApplicationTable'
 import { ApplicationsHeatmap } from '~/components/career/ApplicationsHeatmap'
 
 import { useToast } from '~/hooks/useToast'
-import { db } from '~/lib/db'
-import { getAllApplicationsWithCompany } from '~/lib/db/queries/job-applications'
-import { companies, jobApplications } from '~/lib/db/schema'
+import { getAllApplicationsWithCompany } from '~/lib/career/queries/job-applications'
 import {
   createErrorResponse,
   createSuccessResponse,
@@ -121,42 +119,29 @@ export async function action(args: ActionFunctionArgs) {
           return createErrorResponse('Position and company are required')
         }
 
-        // Create or find company
-        let company = await db
-          .select()
-          .from(companies)
-          .where(eq(companies.name, companyName))
-          .limit(1)
+        const company = await CareerRepository.findOrCreateCompany(getDb(), user.id, {
+          name: companyName,
+        })
 
-        if (company.length === 0) {
-          const [newCompany] = await db.insert(companies).values({ name: companyName }).returning()
-          company = [newCompany]
-        }
-
-        // Create job application
-        const [newApplication] = await db
-          .insert(jobApplications)
-          .values({
-            userId: user.id,
-            position,
-            companyId: company[0].id,
-            status: status as JobApplicationStatus,
-            startDate: new Date(startDate),
-            location: location || null,
-            jobPosting: jobPosting || null,
-            salaryQuoted: salaryQuoted || null,
-            recruiterName: recruiterName || null,
-            recruiterEmail: recruiterEmail || null,
-            recruiterLinkedin: recruiterLinkedin || null,
-            reference: false,
-            stages: [
-              {
-                stage: JobApplicationStage.APPLICATION,
-                date: new Date().toISOString(),
-              },
-            ],
-          })
-          .returning()
+        const newApplication = await CareerRepository.createJobApplication(getDb(), user.id, {
+          companyId: company.id,
+          position,
+          status: status as JobApplicationStatus,
+          startDate: new Date(startDate),
+          location: location || null,
+          jobPosting: jobPosting || null,
+          salaryQuoted: salaryQuoted || null,
+          recruiterName: recruiterName || null,
+          recruiterEmail: recruiterEmail || null,
+          recruiterLinkedin: recruiterLinkedin || null,
+          reference: false,
+          stages: [
+            {
+              stage: JobApplicationStage.APPLICATION,
+              date: new Date().toISOString(),
+            },
+          ],
+        })
 
         return createSuccessResponse(newApplication, 'Job application created successfully')
       }
@@ -165,33 +150,20 @@ export async function action(args: ActionFunctionArgs) {
         const applicationId = formData.get('applicationId') as string
         const status = formData.get('status') as string
 
-        const [updatedApplication] = await db
-          .update(jobApplications)
-          .set({
-            status: status as JobApplicationStatus,
-            updatedAt: new Date(),
-          })
-          .where(and(eq(jobApplications.id, applicationId), eq(jobApplications.userId, user.id)))
-          .returning()
+        await CareerRepository.updateJobApplicationStatus(
+          getDb(),
+          user.id,
+          applicationId,
+          status as JobApplicationStatus
+        )
 
-        if (!updatedApplication) {
-          return createErrorResponse('Job application not found or access denied')
-        }
-
-        return createSuccessResponse(updatedApplication, 'Job application updated successfully')
+        return createSuccessResponse(null, 'Job application updated successfully')
       }
 
       if (operation === 'delete') {
         const applicationId = formData.get('applicationId') as string
 
-        const [deletedApplication] = await db
-          .delete(jobApplications)
-          .where(and(eq(jobApplications.id, applicationId), eq(jobApplications.userId, user.id)))
-          .returning()
-
-        if (!deletedApplication) {
-          return createErrorResponse('Job application not found or access denied')
-        }
+        await CareerRepository.deleteJobApplication(getDb(), user.id, applicationId)
 
         return createSuccessResponse({ success: true }, 'Job application deleted successfully')
       }

@@ -1,4 +1,4 @@
-import type { TopCompany } from '~/lib/db/queries/job-applications'
+import type { TopCompany } from '~/lib/career/queries/job-applications'
 
 interface TopCompaniesTableProps {
   companies: TopCompany[]

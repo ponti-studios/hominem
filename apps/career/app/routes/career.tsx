@@ -7,8 +7,8 @@ import {
   getCareerProgressionSummary,
   getCareerTimeline,
   getWorkExperiencesWithFinancials,
-} from '~/lib/db/queries/career-progression'
-import type { CareerProgressionSummary, WorkExperienceWithFinancials } from '~/lib/db/schema'
+} from '~/lib/career/queries/career-progression'
+import type { CareerProgressionSummary, WorkExperienceWithFinancials } from '~/types/career-data'
 import { createSuccessResponse, withAuthLoader } from '~/lib/route-utils'
 import { formatCurrency, formatPercentage } from '~/lib/utils'
 
@@ -33,7 +33,7 @@ export async function loader(args: LoaderFunctionArgs) {
   return withAuthLoader(args, async ({ user }) => {
     try {
       // Import the base functions here to avoid module issues
-      const { getUserCareerEvents, getUserWorkExperiences } = await import('~/lib/db/queries/base')
+      const { getUserCareerEvents, getUserWorkExperiences } = await import('~/lib/career/queries/base')
 
       // Make single calls to get the base data
       const [experiencesResult, eventsResult] = await Promise.all([
@@ -51,10 +51,10 @@ export async function loader(args: LoaderFunctionArgs) {
       // Convert dates to strings to avoid serialization issues
       const serializedWorkExperiences = workExperiences.map((exp) => ({
         ...exp,
-        startDate: exp.startDate?.toISOString() || null,
-        endDate: exp.endDate?.toISOString() || null,
-        createdAt: exp.createdAt?.toISOString() || null,
-        updatedAt: exp.updatedAt?.toISOString() || null,
+        startDate: exp.startDate ? new Date(exp.startDate).toISOString() : null,
+        endDate: exp.endDate ? new Date(exp.endDate).toISOString() : null,
+        createdAt: exp.createdAt ? new Date(exp.createdAt).toISOString() : null,
+        updatedAt: exp.updatedAt ? new Date(exp.updatedAt).toISOString() : null,
       }))
 
       const serializedCareerTimeline = careerTimeline.map((item) => ({

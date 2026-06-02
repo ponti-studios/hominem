@@ -1,4 +1,5 @@
-import { and, eq, inArray } from 'drizzle-orm'
+import type { CareerPortfolioStatRecord } from '@hominem/db'
+import { CareerRepository, runInTransaction } from '@hominem/db'
 import { BarChart3, PlusIcon } from 'lucide-react'
 import { useEffect } from 'react'
 import { useFieldArray, useForm } from 'react-hook-form'
@@ -6,9 +7,6 @@ import type { ActionFunctionArgs, MetaFunction } from 'react-router'
 import { useFetcher, useOutletContext } from 'react-router'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
-import { db } from '~/lib/db'
-import type { NewPortfolioStats } from '~/lib/db/schema'
-import { portfolioStats } from '~/lib/db/schema'
 import { useToast } from '../hooks/useToast'
 import type { FullPortfolio } from '../lib/portfolio.server'
 import {
@@ -18,11 +16,10 @@ import {
   withAuthAction,
 } from '../lib/route-utils'
 
-// Use schema types
-type PortfolioStat = NewPortfolioStats
+type PortfolioStat = CareerPortfolioStatRecord
 
 interface PortfolioStatsFormValues {
-  stats: Partial<PortfolioStat>[]
+  stats: Array<Partial<PortfolioStat> & { label?: string; value?: string }>
 }
 
 interface PortfolioStatsEditorSectionProps {
@@ -194,13 +191,19 @@ export const meta: MetaFunction = () => [{ title: 'Portfolio Stats - Portfolio E
 export async function action(args: ActionFunctionArgs) {
   return withAuthAction(args, async ({ user }) => {
     const formData = await args.request.formData()
-    // Use Drizzle-generated insert type for safety
-    type StatInsert = typeof portfolioStats.$inferInsert
-    const statsDataResult = parseFormData<StatInsert[]>(formData, 'statsData')
+    const statsDataResult = parseFormData<Array<{ id?: string; label: string; value: string; portfolioId: string }>>(
+      formData,
+      'statsData'
+    )
     if ('success' in statsDataResult && !statsDataResult.success) {
       return statsDataResult
     }
-    const statsData = statsDataResult as StatInsert[]
+    const statsData = statsDataResult as Array<{
+      id?: string
+      label: string
+      value: string
+      portfolioId: string
+    }>
     if (!Array.isArray(statsData)) {
       return createErrorResponse('Invalid stats data')
     }
@@ -211,31 +214,19 @@ export async function action(args: ActionFunctionArgs) {
     // Ensure portfolioId exists
     const portfolioId = statsData[0]?.portfolioId
     if (!portfolioId) return createErrorResponse('Missing portfolioId')
-    // Fetch existing stat IDs
-    const current = await db
-      .select({ id: portfolioStats.id })
-      .from(portfolioStats)
-      .where(eq(portfolioStats.portfolioId, portfolioId))
-    const currentIds = current.map((s) => s.id)
-    const submittedIds = statsData.filter((s) => s.id).map((s) => s.id)
-    // Delete removed stats
-    const toDelete = currentIds.filter((id) => !submittedIds.includes(id))
-    if (toDelete.length > 0) {
-      await db
-        .delete(portfolioStats)
-        .where(
-          and(eq(portfolioStats.portfolioId, portfolioId), inArray(portfolioStats.id, toDelete))
-        )
-    }
-    // Upsert (insert or update)
-    for (const stat of statsData) {
-      if (stat.id) {
-        const { id, ...updateData } = stat
-        await db.update(portfolioStats).set(updateData).where(eq(portfolioStats.id, id))
-      } else {
-        await db.insert(portfolioStats).values(stat)
-      }
-    }
+    await runInTransaction((tx) =>
+      CareerRepository.replacePortfolioStats(
+        tx,
+        user.id,
+        portfolioId,
+        statsData.map((stat, index) => ({
+          id: stat.id,
+          label: stat.label,
+          value: stat.value,
+          sortOrder: index,
+        }))
+      )
+    )
     return createSuccessResponse(null, 'Portfolio stats saved successfully')
   })
 }

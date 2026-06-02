@@ -1,12 +1,12 @@
-import { normalizeEmail } from '@hominem/auth/shared/validation';
-import { useState } from 'react';
-import { useSearchParams } from 'react-router';
+import { normalizeEmail } from "@hominem/auth/shared/validation";
+import { useState } from "react";
+import { useSearchParams } from "react-router";
 
-import { translateUi } from '../../translations';
-import { Button } from '../button';
-import { TextField } from '../text-field';
-import { AuthScaffold } from './auth-scaffold';
-import { PasskeyButton } from './passkey-button';
+import { translateUi } from "../../translations";
+import { Button } from "../button";
+import { TextField } from "../text-field";
+import { AuthScaffold } from "./auth-scaffold";
+import { PasskeyButton } from "./passkey-button";
 
 interface EmailEntryFormProps {
   error?: string;
@@ -19,7 +19,7 @@ export function EmailEntryForm({ error, onSubmit, onPasskeyClick }: EmailEntryFo
   const [clientError, setClientError] = useState<string | null>(null);
   const [isClientSubmitting, setIsClientSubmitting] = useState(false);
   const isSubmitting = isClientSubmitting;
-  const next = searchParams.get('next');
+  const next = searchParams.get("next");
 
   const hasPasskey = onPasskeyClick !== undefined;
   const displayError = error ?? clientError ?? undefined;
@@ -33,7 +33,7 @@ export function EmailEntryForm({ error, onSubmit, onPasskeyClick }: EmailEntryFo
         onSubmit={(event) => {
           event.preventDefault();
           const formData = new FormData(event.currentTarget);
-          const email = normalizeEmail(String(formData.get('email') ?? ''));
+          const email = normalizeEmail(String(formData.get("email") ?? ""));
 
           setClientError(null);
           setIsClientSubmitting(true);
@@ -43,7 +43,7 @@ export function EmailEntryForm({ error, onSubmit, onPasskeyClick }: EmailEntryFo
               setClientError(
                 caughtError instanceof Error
                   ? caughtError.message
-                  : translateUi('auth.emailEntry.sendFailedError'),
+                  : translateUi("auth.emailEntry.sendFailedError"),
               );
             })
             .finally(() => {
@@ -54,20 +54,20 @@ export function EmailEntryForm({ error, onSubmit, onPasskeyClick }: EmailEntryFo
         {next ? <input type="hidden" name="next" value={next} /> : null}
         <div className="space-y-3">
           <TextField
-            label={translateUi('auth.emailEntry.emailLabel')}
+            label={translateUi("auth.emailEntry.emailLabel")}
             name="email"
             type="email"
             autoComplete="email"
             required
-            placeholder={translateUi('auth.emailEntry.emailPlaceholder')}
+            placeholder={translateUi("auth.emailEntry.emailPlaceholder")}
             disabled={isSubmitting}
             error={displayError}
           />
 
           <Button type="submit" variant="primary" disabled={isSubmitting} fullWidth>
             {isSubmitting
-              ? translateUi('auth.emailEntry.submitButtonLoading')
-              : translateUi('auth.emailEntry.submitButton')}
+              ? translateUi("auth.emailEntry.submitButtonLoading")
+              : translateUi("auth.emailEntry.submitButton")}
           </Button>
 
           {hasPasskey && onPasskeyClick ? (
