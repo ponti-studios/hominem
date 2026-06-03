@@ -1,10 +1,15 @@
-import { getDb, runInTransaction } from '@hominem/db';
+import { runInTransaction, sql, type DbHandle } from '@hominem/db';
 
 import type { ConvertedResumeData } from '../../types/resume';
+import { normalizePortfolioSlug } from '../../types/resume';
 
 export interface SaveResumeResult {
   portfolioId: string;
   portfolioSlug: string;
+}
+
+function serializeJsonColumn(value: unknown): string {
+  return JSON.stringify(value);
 }
 
 export async function saveResumeToDatabase(
@@ -14,7 +19,7 @@ export async function saveResumeToDatabase(
   return runInTransaction(async (tx) => {
     await tx.deleteFrom('app.portfolios').where('owner_userid', '=', userId).execute();
 
-    const slug = await generateUniqueSlug(data.portfolio.slug);
+    const slug = await generateUniqueSlug(tx, data.portfolio.slug, data.portfolio.name);
 
     const createdPortfolio = await tx
       .insertInto('app.portfolios')
@@ -109,7 +114,7 @@ export async function saveResumeToDatabase(
           github_url: project.githubUrl ?? null,
           image_url: null,
           video_url: null,
-          technologies: project.technologies,
+          technologies: serializeJsonColumn(project.technologies),
           status: project.status,
           is_visible: true,
           sort_order: index,
@@ -122,17 +127,31 @@ export async function saveResumeToDatabase(
   });
 }
 
-export async function generateUniqueSlug(base: string): Promise<string> {
-  const slug = base
-    .toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/[^a-z0-9-]/g, '');
+function truncateSlugBase(slug: string, suffix = ''): string {
+  const maxBaseLength = 50 - suffix.length;
+  return slug.slice(0, maxBaseLength).replace(/-$/g, '') || 'portfolio';
+}
 
-  const existing = await getDb()
-    .selectFrom('app.portfolios')
-    .select('id')
-    .where('slug', '=', slug)
-    .executeTakeFirst();
+export async function generateUniqueSlug(
+  handle: DbHandle,
+  base: string,
+  fallbackBase = 'portfolio',
+): Promise<string> {
+  const normalizedBase =
+    normalizePortfolioSlug(base) || normalizePortfolioSlug(fallbackBase) || 'portfolio';
+  const root = truncateSlugBase(normalizedBase);
 
-  return existing ? `${slug}-${Math.random().toString(36).slice(2, 8)}` : slug;
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    const suffix = attempt === 0 ? '' : `-${attempt + 1}`;
+    const candidate = `${truncateSlugBase(root, suffix)}${suffix}`;
+    const existing = await handle
+      .selectFrom('app.portfolios')
+      .select('id')
+      .where(sql<string>`lower(slug)`, '=', candidate.toLowerCase())
+      .executeTakeFirst();
+
+    if (!existing) return candidate;
+  }
+
+  throw new Error('Could not generate a unique portfolio slug.');
 }

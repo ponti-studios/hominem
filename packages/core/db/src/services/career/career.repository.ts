@@ -14,7 +14,6 @@ import type {
   AppSocialLinks,
   AppTestimonials,
   AppWorkExperiences,
-  JsonValue,
 } from '../../types/database';
 
 type PortfolioRow = Selectable<AppPortfolios>;
@@ -27,6 +26,10 @@ type TestimonialRow = Selectable<AppTestimonials>;
 type CompanyRow = Selectable<AppCompanies>;
 type JobApplicationRow = Selectable<AppJobApplications>;
 type CareerEventRow = Selectable<AppCareerEvents>;
+
+function serializeJsonColumn(value: unknown): string | null {
+  return value === null ? null : JSON.stringify(value);
+}
 
 export interface CareerPortfolioTheme {
   primaryColor?: string;
@@ -970,8 +973,8 @@ export const CareerRepository = {
         end_date: input.endDate ? new Date(input.endDate) : null,
         location: input.location ?? null,
         job_posting: input.jobPosting ?? null,
-        requirements: (input.requirements ?? []) as JsonValue,
-        skills: (input.skills ?? []) as JsonValue,
+        requirements: serializeJsonColumn(input.requirements ?? []),
+        skills: serializeJsonColumn(input.skills ?? []),
         job_posting_url: input.jobPostingUrl ?? null,
         job_posting_word_count: input.jobPostingWordCount ?? null,
         salary_quoted: input.salaryQuoted ?? null,
@@ -985,8 +988,8 @@ export const CareerRepository = {
         recruiter_email: input.recruiterEmail ?? null,
         recruiter_linkedin: input.recruiterLinkedin ?? null,
         reference: input.reference ?? false,
-        stages: (input.stages ?? []) as unknown as JsonValue,
-        interview_dates: (input.interviewDates ?? []) as unknown as JsonValue,
+        stages: serializeJsonColumn(input.stages ?? []),
+        interview_dates: serializeJsonColumn(input.interviewDates ?? []),
       })
       .returningAll()
       .executeTakeFirstOrThrow();
@@ -1076,9 +1079,9 @@ export const CareerRepository = {
           ? { end_date: updates.endDate ? new Date(updates.endDate) : null }
           : {}),
         ...(updates.action !== undefined ? { action: updates.action } : {}),
-        ...(updates.tags !== undefined ? { tags: updates.tags as unknown as JsonValue } : {}),
+        ...(updates.tags !== undefined ? { tags: serializeJsonColumn(updates.tags) } : {}),
         ...(updates.metadata !== undefined
-          ? { metadata: updates.metadata as unknown as JsonValue }
+          ? { metadata: serializeJsonColumn(updates.metadata ?? null) }
           : {}),
         ...(updates.sortOrder !== undefined ? { sort_order: updates.sortOrder } : {}),
         ...(updates.isVisible !== undefined ? { is_visible: updates.isVisible } : {}),
@@ -1296,7 +1299,9 @@ export const CareerRepository = {
           phone: input.phone ?? null,
           availability_status: input.availabilityStatus ?? false,
           availability_message: input.availabilityMessage ?? null,
-          ...(input.theme !== undefined ? { theme: input.theme as JsonValue } : {}),
+          ...(input.theme !== undefined
+            ? { theme: serializeJsonColumn(input.theme ?? null) }
+            : {}),
           ...(input.copyright !== undefined ? { copyright: input.copyright } : {}),
           ...(input.isPublic !== undefined ? { is_public: input.isPublic } : {}),
           ...(input.isActive !== undefined ? { is_active: input.isActive } : {}),
@@ -1325,7 +1330,9 @@ export const CareerRepository = {
         phone: input.phone ?? null,
         availability_status: input.availabilityStatus ?? false,
         availability_message: input.availabilityMessage ?? null,
-        ...(input.theme !== undefined ? { theme: input.theme as JsonValue } : {}),
+        ...(input.theme !== undefined
+          ? { theme: serializeJsonColumn(input.theme ?? null) }
+          : {}),
         ...(input.copyright !== undefined ? { copyright: input.copyright } : {}),
         ...(input.isPublic !== undefined ? { is_public: input.isPublic } : {}),
         ...(input.isActive !== undefined ? { is_active: input.isActive } : {}),
@@ -1529,7 +1536,7 @@ export const CareerRepository = {
         github_url: input.githubUrl ?? null,
         image_url: input.imageUrl ?? null,
         video_url: input.videoUrl ?? null,
-        technologies: (input.technologies ?? []) as JsonValue,
+        technologies: serializeJsonColumn(input.technologies ?? []),
         status: input.status ?? 'completed',
         start_date: input.startDate ? new Date(input.startDate) : null,
         end_date: input.endDate ? new Date(input.endDate) : null,
@@ -1578,7 +1585,7 @@ export const CareerRepository = {
         github_url: input.githubUrl ?? null,
         image_url: input.imageUrl ?? null,
         video_url: input.videoUrl ?? null,
-        technologies: (input.technologies ?? []) as JsonValue,
+        technologies: serializeJsonColumn(input.technologies ?? []),
         status: input.status ?? 'completed',
         work_experience_id: input.workExperienceId ?? null,
         start_date: input.startDate ? new Date(input.startDate) : null,
@@ -1718,8 +1725,10 @@ export const CareerRepository = {
         start_date: input.startDate ? new Date(input.startDate) : null,
         end_date: input.endDate ? new Date(input.endDate) : null,
         action: input.action ?? null,
-        ...(input.tags !== undefined ? { tags: input.tags as JsonValue } : {}),
-        ...(input.metadata !== undefined ? { metadata: input.metadata as JsonValue } : {}),
+        ...(input.tags !== undefined ? { tags: serializeJsonColumn(input.tags) } : {}),
+        ...(input.metadata !== undefined
+          ? { metadata: serializeJsonColumn(input.metadata ?? null) }
+          : {}),
         sort_order: input.sortOrder ?? 0,
         is_visible: input.isVisible ?? true,
       })

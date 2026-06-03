@@ -3,42 +3,11 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { makeUploadResumeResponse } from '~/test/factories/resume';
+
 import { UploadResumeForm } from '../UploadResumeForm';
 
-const uploadResponse = {
-  message: 'ok',
-  data: {
-    portfolio: {
-      slug: 'charles-ponti',
-      title: 'Portfolio',
-      name: 'Charles Ponti',
-      initials: 'CP',
-      jobTitle: 'Engineer',
-      bio: 'Bio',
-      tagline: 'Tagline',
-      currentLocation: 'Los Angeles',
-      locationTagline: null,
-      email: 'charles@example.com',
-      phone: null,
-      availabilityStatus: true,
-      availabilityMessage: null,
-      isPublic: true,
-      isActive: true,
-    },
-    socialLinks: null,
-    workExperience: [],
-    skills: [],
-    projects: [],
-    stats: [],
-  },
-  saved: true,
-  portfolioId: 'portfolio-id',
-  portfolioSlug: 'charles-ponti',
-  portfolioUrl: '/p/charles-ponti',
-  fileUrl: 'http://localhost/resume.pdf',
-  stage: 'complete',
-  retryable: false,
-} as const;
+const uploadResponse = makeUploadResumeResponse();
 
 function renderForm() {
   const onUploadStart = vi.fn();
@@ -62,8 +31,19 @@ function fileInput(): HTMLInputElement {
   return input;
 }
 
-function selectFile(file: File) {
-  fireEvent.change(fileInput(), { target: { files: [file] } });
+async function selectFile(user: ReturnType<typeof userEvent.setup>, file: File) {
+  await user.upload(fileInput(), file);
+}
+
+function expectUploadRequestField(
+  fetchMock: ReturnType<typeof vi.fn>,
+  callIndex: number,
+  field: string,
+  value: string,
+) {
+  const body = fetchMock.mock.calls[callIndex]?.[1]?.body;
+  expect(body).toBeInstanceOf(FormData);
+  expect((body as FormData).get(field)).toBe(value);
 }
 
 describe('UploadResumeForm', () => {
@@ -88,7 +68,7 @@ describe('UploadResumeForm', () => {
   it('rejects a non-PDF file', async () => {
     const user = userEvent.setup();
     const { onUploadError } = renderForm();
-    selectFile(new File(['hello'], 'resume.txt', { type: 'text/plain' }));
+    await selectFile(user, new File(['hello'], 'resume.txt', { type: 'text/plain' }));
 
     await user.click(screen.getByRole('button', { name: /upload resume/i }));
 
@@ -101,7 +81,7 @@ describe('UploadResumeForm', () => {
     const fetchMock = vi.fn(async () => Response.json(uploadResponse));
     vi.stubGlobal('fetch', fetchMock);
     const { onUploadComplete } = renderForm();
-    selectFile(new File(['pdf'], 'resume.pdf', { type: '' }));
+    await selectFile(user, new File(['pdf'], 'resume.pdf', { type: '' }));
 
     await user.click(screen.getByRole('button', { name: /upload resume/i }));
 
@@ -112,7 +92,7 @@ describe('UploadResumeForm', () => {
   it('rejects a PDF larger than 10MB', async () => {
     const user = userEvent.setup();
     const { onUploadError } = renderForm();
-    selectFile(new File([new Uint8Array(10 * 1024 * 1024 + 1)], 'resume.pdf', {
+    await selectFile(user, new File([new Uint8Array(10 * 1024 * 1024 + 1)], 'resume.pdf', {
       type: 'application/pdf',
     }));
 
@@ -134,7 +114,7 @@ describe('UploadResumeForm', () => {
       ),
     );
     renderForm();
-    selectFile(new File(['pdf'], 'resume.pdf', { type: 'application/pdf' }));
+    await selectFile(user, new File(['pdf'], 'resume.pdf', { type: 'application/pdf' }));
 
     await user.click(screen.getByRole('button', { name: /upload resume/i }));
 
@@ -162,7 +142,7 @@ describe('UploadResumeForm', () => {
       .mockResolvedValueOnce(Response.json(uploadResponse));
     vi.stubGlobal('fetch', fetchMock);
     const { onUploadComplete } = renderForm();
-    selectFile(new File(['pdf'], 'resume.pdf', { type: 'application/pdf' }));
+    await selectFile(user, new File(['pdf'], 'resume.pdf', { type: 'application/pdf' }));
 
     await user.click(screen.getByRole('button', { name: /upload resume/i }));
 
@@ -175,16 +155,101 @@ describe('UploadResumeForm', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
+  it('asks for confirmation before replacing an existing portfolio', async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn(async () =>
+      Response.json(
+        {
+          error: 'Uploading this resume will replace your existing portfolio.',
+          stage: 'replace-confirmation',
+          retryable: false,
+          existingPortfolio: { slug: 'existing', title: 'Existing Portfolio' },
+        },
+        { status: 409 },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const { onUploadError } = renderForm();
+    await selectFile(user, new File(['pdf'], 'resume.pdf', { type: 'application/pdf' }));
+
+    await user.click(screen.getByRole('button', { name: /upload resume/i }));
+
+    expect(await screen.findByText('Replace existing portfolio?')).toBeInTheDocument();
+    expect(
+      screen.getByText(/current portfolio: existing portfolio at \/p\/existing/i),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /replace portfolio/i })).toBeEnabled();
+    expect(onUploadError).not.toHaveBeenCalled();
+  });
+
+  it('resubmits with replaceExisting when replacement is confirmed', async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json(
+          {
+            error: 'Uploading this resume will replace your existing portfolio.',
+            stage: 'replace-confirmation',
+            retryable: false,
+            existingPortfolio: { slug: 'existing', title: 'Existing Portfolio' },
+          },
+          { status: 409 },
+        ),
+      )
+      .mockResolvedValueOnce(Response.json(uploadResponse));
+    vi.stubGlobal('fetch', fetchMock);
+    const { onUploadComplete } = renderForm();
+    await selectFile(user, new File(['pdf'], 'resume.pdf', { type: 'application/pdf' }));
+
+    await user.click(screen.getByRole('button', { name: /upload resume/i }));
+    await user.click(await screen.findByRole('button', { name: /replace portfolio/i }));
+
+    await waitFor(() => expect(onUploadComplete).toHaveBeenCalledWith(uploadResponse));
+    expectUploadRequestField(fetchMock, 1, 'replaceExisting', 'true');
+  });
+
+  it('clears replacement confirmation when choosing a different PDF', async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        Response.json(
+          {
+            error: 'Uploading this resume will replace your existing portfolio.',
+            stage: 'replace-confirmation',
+            retryable: false,
+            existingPortfolio: { slug: 'existing', title: 'Existing Portfolio' },
+          },
+          { status: 409 },
+        ),
+      ),
+    );
+    renderForm();
+    await selectFile(user, new File(['pdf'], 'resume.pdf', { type: 'application/pdf' }));
+
+    await user.click(screen.getByRole('button', { name: /upload resume/i }));
+    expect(await screen.findByText('Replace existing portfolio?')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /use a different pdf/i }));
+
+    expect(screen.queryByText('Replace existing portfolio?')).not.toBeInTheDocument();
+    expect(screen.queryByText('resume.pdf')).not.toBeInTheDocument();
+  });
+
   it('clears file and error state when choosing a different PDF', async () => {
     const user = userEvent.setup();
     vi.stubGlobal(
       'fetch',
       vi.fn(async () =>
-        Response.json({ error: 'Storage failed', stage: 'storage', retryable: true }, { status: 503 }),
+        Response.json(
+          { error: 'Storage failed', stage: 'storage', retryable: true },
+          { status: 503 },
+        ),
       ),
     );
     renderForm();
-    selectFile(new File(['pdf'], 'resume.pdf', { type: 'application/pdf' }));
+    await selectFile(user, new File(['pdf'], 'resume.pdf', { type: 'application/pdf' }));
 
     await user.click(screen.getByRole('button', { name: /upload resume/i }));
     expect(await screen.findByText('Storage failed')).toBeInTheDocument();
@@ -199,11 +264,13 @@ describe('UploadResumeForm', () => {
     const user = userEvent.setup();
     vi.stubGlobal('fetch', vi.fn(async () => new Response('oops', { status: 500 })));
     renderForm();
-    selectFile(new File(['pdf'], 'resume.pdf', { type: 'application/pdf' }));
+    await selectFile(user, new File(['pdf'], 'resume.pdf', { type: 'application/pdf' }));
 
     await user.click(screen.getByRole('button', { name: /upload resume/i }));
 
-    expect(await screen.findByText('Server returned an unreadable error response. Try again.')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Server returned an unreadable error response. Try again.'),
+    ).toBeInTheDocument();
   });
 
   it('selects the first dropped file and shows a notice for multiple files', () => {
@@ -239,7 +306,7 @@ describe('UploadResumeForm', () => {
       ),
     );
     renderForm();
-    selectFile(new File(['pdf'], 'resume.pdf', { type: 'application/pdf' }));
+    await selectFile(user, new File(['pdf'], 'resume.pdf', { type: 'application/pdf' }));
 
     await user.click(screen.getByRole('button', { name: /upload resume/i }));
     expect(await screen.findByRole('button', { name: /cancel/i })).toBeInTheDocument();

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import {
   formatApplicationDate,
@@ -10,12 +10,6 @@ import {
   getUniqueStatuses,
   hasActiveFilters,
 } from '../applicationUtils';
-
-// Mock the utils module
-vi.mock('~/lib/utils', () => ({
-  centsToDollars: vi.fn((cents: number) => cents / 100),
-  formatCurrency: vi.fn((amount: number) => `$${amount.toLocaleString()}`),
-}));
 
 describe('Application Utils', () => {
   describe('getCompanyName', () => {
@@ -197,8 +191,8 @@ describe('Application Utils', () => {
       expect(formatStatusText('')).toBe('');
     });
 
-    it('should only replace the first underscore', () => {
-      expect(formatStatusText('TEST_STATUS_WITH_MULTIPLE')).toBe('TEST STATUS_WITH_MULTIPLE');
+    it('should replace all underscores', () => {
+      expect(formatStatusText('TEST_STATUS_WITH_MULTIPLE')).toBe('TEST STATUS WITH MULTIPLE');
     });
   });
 });

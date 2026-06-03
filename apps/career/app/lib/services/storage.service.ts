@@ -23,10 +23,11 @@ export async function uploadFile(
   userId: string,
   category: CareerStorageCategory,
   originalName?: string,
+  mimetypeOverride?: string,
 ): Promise<UploadResult> {
   try {
     const buffer = Buffer.from(await file.arrayBuffer());
-    const mimetype = file.type || 'application/octet-stream';
+    const mimetype = mimetypeOverride || file.type || 'application/octet-stream';
     const name = file instanceof File ? file.name : (originalName ?? 'file');
 
     const stored = await storageServices[category].storeFile(buffer, mimetype, userId, {
@@ -70,13 +71,27 @@ export function validateFile(
     const maxSizeMB = options.maxSizeBytes / (1024 * 1024);
     return { valid: false, error: `File size must be less than ${maxSizeMB}MB` };
   }
-  if (!options.allowedTypes.includes(file.type)) {
+  if (!isAllowedFileType(file, options.allowedTypes)) {
     return {
       valid: false,
       error: `File type not allowed. Allowed types: ${options.allowedTypes.join(', ')}`,
     };
   }
   return { valid: true };
+}
+
+export function isAllowedFileType(file: File, allowedTypes: readonly string[]): boolean {
+  if (allowedTypes.includes(file.type)) return true;
+
+  return (
+    !file.type &&
+    allowedTypes.includes('application/pdf') &&
+    file.name.toLowerCase().endsWith('.pdf')
+  );
+}
+
+export function resolveUploadMimeType(file: File, fallbackMimeType = 'application/pdf'): string {
+  return file.type || (file.name.toLowerCase().endsWith('.pdf') ? fallbackMimeType : '');
 }
 
 export const FILE_VALIDATION_PRESETS = {

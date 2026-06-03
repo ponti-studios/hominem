@@ -4,8 +4,8 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { QuickActionsDropdown } from '../QuickActionsDropdown';
 
-describe('QuickActionsDropdown', () => {
-  const mockActions = [
+function createActions() {
+  return [
     {
       id: 'test-action-1',
       label: 'Test Action 1',
@@ -25,9 +25,17 @@ describe('QuickActionsDropdown', () => {
       onClick: vi.fn(),
     },
   ];
+}
+
+describe('QuickActionsDropdown', () => {
+  function renderDropdown() {
+    const actions = createActions();
+    render(<QuickActionsDropdown actions={actions} />);
+    return { actions };
+  }
 
   it('renders the dropdown button', () => {
-    render(<QuickActionsDropdown actions={mockActions} />);
+    renderDropdown();
     expect(screen.getByText('Quick Actions')).toBeInTheDocument();
   });
 
@@ -36,7 +44,7 @@ describe('QuickActionsDropdown', () => {
   };
 
   it('shows dropdown menu when clicked', async () => {
-    render(<QuickActionsDropdown actions={mockActions} />);
+    renderDropdown();
 
     openMenu();
 
@@ -46,18 +54,18 @@ describe('QuickActionsDropdown', () => {
   });
 
   it('calls onClick when action is clicked', async () => {
-    render(<QuickActionsDropdown actions={mockActions} />);
+    const { actions } = renderDropdown();
 
     openMenu();
 
     const actionButton = await screen.findByText('Test Action 1');
     fireEvent.click(actionButton);
 
-    expect(mockActions[0].onClick).toHaveBeenCalledTimes(1);
+    expect(actions[0].onClick).toHaveBeenCalledTimes(1);
   });
 
   it('closes dropdown after action is clicked', async () => {
-    render(<QuickActionsDropdown actions={mockActions} />);
+    renderDropdown();
 
     openMenu();
 
@@ -68,7 +76,7 @@ describe('QuickActionsDropdown', () => {
   });
 
   it('renders custom icon components', async () => {
-    render(<QuickActionsDropdown actions={mockActions} />);
+    renderDropdown();
 
     openMenu();
 

@@ -1,13 +1,27 @@
+import { CareerRepository, getDb } from '@hominem/db';
 import { getSharedAiModelConfig, getSharedOpenAIClient } from '@hominem/services/ai-model';
 import type { ActionFunction } from 'react-router';
 
 import { getAuthenticatedUser } from '../lib/auth.server';
 import { logger } from '../lib/logger';
+import { getRateLimitHeaders, resumeConvertRateLimit } from '../lib/rate-limit';
 import { extractPdfText } from '../lib/services/pdf-text.server';
 import { saveResumeToDatabase } from '../lib/services/resume-conversion.service';
-import { FILE_VALIDATION_PRESETS, uploadFile, validateFile } from '../lib/services/storage.service';
+import {
+  deleteFile,
+  FILE_VALIDATION_PRESETS,
+  resolveUploadMimeType,
+  uploadFile,
+  validateFile,
+} from '../lib/services/storage.service';
 import type { ConvertedResumeData, ResumeConvertStage, UploadResumeResponse } from '../types/resume';
 import { resumeSchema } from '../types/resume';
+
+const MAX_EXTRACTED_RESUME_TEXT_LENGTH = 80_000;
+const RESUME_PARSER_SYSTEM_PROMPT =
+  'You are an expert resume parser. Return only valid JSON matching the requested resume schema. ' +
+  'Required strings must not be blank. Dates must be YYYY-MM-DD, YYYY-MM, or null; use null for present/current roles. ' +
+  'Repeatable sections must be arrays, using empty arrays when absent. Slugs must be lowercase kebab-case, 3 to 50 characters.';
 
 function parseJsonObject(content: string): unknown {
   const trimmed = content.trim();
@@ -15,10 +29,10 @@ function parseJsonObject(content: string): unknown {
   return JSON.parse(jsonMatch?.[1] ?? trimmed);
 }
 
-function jsonResponse(data: unknown, status = 200): Response {
+function jsonResponse(data: unknown, status = 200, headers?: HeadersInit): Response {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...headers },
   });
 }
 
@@ -27,8 +41,14 @@ function errorResponse(
   status: number,
   stage: ResumeConvertStage,
   retryable: boolean,
+  extra?: Omit<UploadResumeResponse, 'error' | 'stage' | 'retryable'>,
+  headers?: HeadersInit,
 ): Response {
-  return jsonResponse({ error, stage, retryable } satisfies UploadResumeResponse, status);
+  return jsonResponse(
+    { error, stage, retryable, ...extra } satisfies UploadResumeResponse,
+    status,
+    headers,
+  );
 }
 
 function storageFailureMessage(): string {
@@ -115,6 +135,25 @@ export const action: ActionFunction = async ({ request }) => {
     const user = sessionUser;
     userId = user.id;
 
+    const rateLimit = resumeConvertRateLimit.isAllowed(user.id);
+    const rateLimitHeaders = getRateLimitHeaders(rateLimit, resumeConvertRateLimit);
+    if (!rateLimit.allowed) {
+      return errorResponse(
+        'Too many resume conversion attempts. Try again later.',
+        429,
+        'rate-limit',
+        true,
+        {
+          rateLimit: {
+            limit: resumeConvertRateLimit.maxRequests,
+            remaining: rateLimit.remaining,
+            reset: Math.ceil(rateLimit.resetTime / 1000),
+          },
+        },
+        rateLimitHeaders,
+      );
+    }
+
     const contentType = request.headers.get('content-type') || '';
     if (!contentType.includes('multipart/form-data')) {
       return errorResponse(
@@ -127,6 +166,7 @@ export const action: ActionFunction = async ({ request }) => {
 
     const formData = await request.formData();
     const file = formData.get('pdf') as File | null;
+    const replaceExisting = formData.get('replaceExisting') === 'true';
     if (!file) {
       return errorResponse(
         'No PDF file was attached. Choose a resume PDF and try again.',
@@ -136,7 +176,22 @@ export const action: ActionFunction = async ({ request }) => {
       );
     }
 
-    // Use centralized file validation
+    const existingPortfolio = await CareerRepository.getPortfolioByUserId(getDb(), user.id);
+    if (existingPortfolio && !replaceExisting) {
+      return errorResponse(
+        'Uploading this resume will replace your existing portfolio.',
+        409,
+        'replace-confirmation',
+        false,
+        {
+          existingPortfolio: {
+            slug: existingPortfolio.slug,
+            title: existingPortfolio.title,
+          },
+        },
+      );
+    }
+
     const validation = validateFile(file, FILE_VALIDATION_PRESETS.PDF_RESUME);
     if (!validation.valid) {
       return errorResponse(
@@ -146,6 +201,7 @@ export const action: ActionFunction = async ({ request }) => {
         true,
       );
     }
+    const uploadMimeType = resolveUploadMimeType(file);
 
     let pdfText: string;
     try {
@@ -173,6 +229,15 @@ export const action: ActionFunction = async ({ request }) => {
       );
     }
 
+    if (pdfText.length > MAX_EXTRACTED_RESUME_TEXT_LENGTH) {
+      return errorResponse(
+        'This resume contains too much text to process safely. Try a shorter resume PDF.',
+        400,
+        'pdf-extraction',
+        true,
+      );
+    }
+
     let aiContent: string;
     try {
       const result = await getSharedOpenAIClient().chat.completions.create({
@@ -181,8 +246,7 @@ export const action: ActionFunction = async ({ request }) => {
         messages: [
           {
             role: 'system',
-            content:
-              'You are an expert resume parser. Return only valid JSON matching the requested resume schema.',
+            content: RESUME_PARSER_SYSTEM_PROMPT,
           },
           {
             role: 'user',
@@ -257,7 +321,7 @@ ${pdfText}`,
       );
     }
 
-    const uploadResult = await uploadFile(file, user.id, 'resumes');
+    const uploadResult = await uploadFile(file, user.id, 'resumes', file.name, uploadMimeType);
 
     if (!uploadResult.success) {
       logger.error('Resume file upload failed', undefined, {
@@ -279,6 +343,25 @@ ${pdfText}`,
         userId: user.id,
         fileName: file.name,
       });
+      if (uploadResult.fileId) {
+        try {
+          const deleteResult = await deleteFile(uploadResult.fileId, user.id, 'resumes');
+          if (!deleteResult.success) {
+            logger.error('Resume upload cleanup after database failure failed', undefined, {
+              userId: user.id,
+              fileName: file.name,
+              fileId: uploadResult.fileId,
+              error: deleteResult.error,
+            });
+          }
+        } catch (cleanupError) {
+          logRouteError('Resume upload cleanup after database failure threw', cleanupError, {
+            userId: user.id,
+            fileName: file.name,
+            fileId: uploadResult.fileId,
+          });
+        }
+      }
       return errorResponse(
         'Resume was parsed and uploaded, but saving the portfolio failed. Check the database connection and migrations.',
         500,

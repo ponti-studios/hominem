@@ -83,5 +83,5 @@ export function hasActiveFilters(filters: {
  * Format status text for display (replace underscores with spaces)
  */
 export function formatStatusText(status: string): string {
-  return status.replace('_', ' ');
+  return status.replace(/_/g, ' ');
 }

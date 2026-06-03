@@ -65,6 +65,10 @@ class RateLimiter {
       }
     }
   }
+
+  reset() {
+    this.store.clear();
+  }
 }
 
 // Default rate limiters
@@ -78,18 +82,27 @@ export const authRateLimit = new RateLimiter({
   maxRequests: 5, // 5 auth attempts per 15 minutes
 });
 
+export const resumeConvertRateLimit = new RateLimiter({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  maxRequests: 3, // 3 resume conversions per 15 minutes
+});
+
 // Cleanup every 5 minutes
 setInterval(
   () => {
     apiRateLimit.cleanup();
     authRateLimit.cleanup();
+    resumeConvertRateLimit.cleanup();
   },
   5 * 60 * 1000,
 );
 
-export function getRateLimitHeaders(result: ReturnType<RateLimiter['isAllowed']>) {
+export function getRateLimitHeaders(
+  result: ReturnType<RateLimiter['isAllowed']>,
+  limiter = apiRateLimit,
+) {
   return {
-    'X-RateLimit-Limit': String(apiRateLimit.maxRequests),
+    'X-RateLimit-Limit': String(limiter.maxRequests),
     'X-RateLimit-Remaining': String(result.remaining),
     'X-RateLimit-Reset': String(Math.ceil(result.resetTime / 1000)),
   };

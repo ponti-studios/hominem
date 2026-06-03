@@ -1,14 +1,13 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import type { ApplicationWithCompany } from '~/types/applications';
+import { makeApplicationWithCompany } from '~/test/factories/applications';
 import { JobApplicationStatus } from '~/types/career';
 
 import { ApplicationsHeatmap } from '../ApplicationsHeatmap';
 
-// Mock data for testing
-const mockApplications: ApplicationWithCompany[] = [
-  {
+const mockApplications = [
+  makeApplicationWithCompany({
     id: '1',
     userId: 'user1',
     position: 'Software Engineer',
@@ -17,20 +16,11 @@ const mockApplications: ApplicationWithCompany[] = [
       id: 'company1',
       ownerUserId: 'user1',
       name: 'Tech Corp',
-      website: null,
-      industry: null,
-      size: null,
-      location: null,
-      description: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
     },
     status: JobApplicationStatus.APPLIED,
-    startDate: new Date('2024-01-15'),
-    reference: false,
-    stages: [],
-  } as unknown as ApplicationWithCompany,
-  {
+    startDate: new Date('2024-01-15T00:00:00.000Z'),
+  }),
+  makeApplicationWithCompany({
     id: '2',
     userId: 'user1',
     position: 'Frontend Developer',
@@ -39,20 +29,11 @@ const mockApplications: ApplicationWithCompany[] = [
       id: 'company2',
       ownerUserId: 'user1',
       name: 'Startup Inc',
-      website: null,
-      industry: null,
-      size: null,
-      location: null,
-      description: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
     },
     status: JobApplicationStatus.APPLIED,
-    startDate: new Date('2024-01-15'),
-    reference: false,
-    stages: [],
-  } as unknown as ApplicationWithCompany,
-  {
+    startDate: new Date('2024-01-15T00:00:00.000Z'),
+  }),
+  makeApplicationWithCompany({
     id: '3',
     userId: 'user1',
     position: 'Full Stack Developer',
@@ -61,19 +42,10 @@ const mockApplications: ApplicationWithCompany[] = [
       id: 'company3',
       ownerUserId: 'user1',
       name: 'Big Tech',
-      website: null,
-      industry: null,
-      size: null,
-      location: null,
-      description: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
     },
     status: JobApplicationStatus.APPLIED,
-    startDate: new Date('2024-01-20'),
-    reference: false,
-    stages: [],
-  } as unknown as ApplicationWithCompany,
+    startDate: new Date('2024-01-20T00:00:00.000Z'),
+  }),
 ];
 
 describe('ApplicationsHeatmap', () => {
