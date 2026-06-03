@@ -24,7 +24,7 @@ export function ApplicationFilesTab({ application, applicationId }: FilesTabProp
               <CardTitle className="text-sm">Resume</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="bg-gray-50 p-3 rounded text-xs font-mono max-h-40 overflow-y-auto">
+              <div className="bg-muted p-3 rounded text-xs font-mono max-h-40 overflow-y-auto">
                 {application.resume}
               </div>
             </CardContent>
@@ -37,7 +37,7 @@ export function ApplicationFilesTab({ application, applicationId }: FilesTabProp
               <CardTitle className="text-sm">Cover Letter</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="bg-gray-50 p-3 rounded text-xs font-mono max-h-40 overflow-y-auto">
+              <div className="bg-muted p-3 rounded text-xs font-mono max-h-40 overflow-y-auto">
                 {application.coverLetter}
               </div>
             </CardContent>
@@ -46,7 +46,7 @@ export function ApplicationFilesTab({ application, applicationId }: FilesTabProp
       </div>
 
       {!application.resume && !application.coverLetter && (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-muted-foreground">
           No files uploaded yet. File upload functionality coming soon.
         </div>
       )}

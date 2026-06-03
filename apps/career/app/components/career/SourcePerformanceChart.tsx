@@ -14,7 +14,9 @@ interface SourcePerformanceChartProps {
 export function SourcePerformanceChart({ data }: SourcePerformanceChartProps) {
   if (!data || data.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500">No source performance data available</div>
+      <div className="text-center py-8 text-muted-foreground">
+        No source performance data available
+      </div>
     );
   }
 
@@ -23,11 +25,11 @@ export function SourcePerformanceChart({ data }: SourcePerformanceChartProps) {
   return (
     <div className="space-y-4">
       {data.map((source) => (
-        <div key={source.source} className="border border-gray-200 rounded-lg p-4">
+        <div key={source.source} className="border border-border rounded-lg p-4">
           {/* Source Header */}
           <div className="flex justify-between items-center mb-3">
-            <h4 className="font-medium text-gray-900 capitalize">{source.source}</h4>
-            <span className="text-sm text-gray-500">{source.count} applications</span>
+            <h4 className="font-medium text-foreground capitalize">{source.source}</h4>
+            <span className="text-sm text-muted-foreground">{source.count} applications</span>
           </div>
 
           {/* Performance Bars */}
@@ -35,27 +37,27 @@ export function SourcePerformanceChart({ data }: SourcePerformanceChartProps) {
             <PercentageProgressBar
               label="Response Rate"
               percentage={source.responseRate}
-              color="bg-blue-500"
+              color="bg-accent/100"
             />
 
             <PercentageProgressBar
               label="Offer Rate"
               percentage={source.offerRate}
-              color="bg-green-500"
+              color="bg-success/100"
             />
 
             <VolumeProgressBar
               label="Volume (relative)"
               count={source.count}
               maxCount={maxCount}
-              color="bg-gray-500"
+              color="bg-muted0"
             />
           </div>
 
           {/* Performance Score */}
-          <div className="mt-3 pt-3 border-t border-gray-100">
+          <div className="mt-3 pt-3 border-t border-border">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Overall Score</span>
+              <span className="text-sm text-muted-foreground">Overall Score</span>
               <span
                 className={`text-sm font-medium ${getScoreColor(source.responseRate, source.offerRate)}`}
               >
@@ -68,19 +70,19 @@ export function SourcePerformanceChart({ data }: SourcePerformanceChartProps) {
 
       {/* Legend */}
       <div className="mt-6 p-4 rounded-lg">
-        <h4 className="font-medium text-gray-900 mb-2">Performance Guide</h4>
+        <h4 className="font-medium text-foreground mb-2">Performance Guide</h4>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
           <div className="flex items-center">
-            <div className="w-3 h-3 bg-blue-500 rounded mr-2" />
-            <span className="text-gray-600">Response Rate</span>
+            <div className="w-3 h-3 bg-accent/100 rounded mr-2" />
+            <span className="text-muted-foreground">Response Rate</span>
           </div>
           <div className="flex items-center">
-            <div className="w-3 h-3 bg-green-500 rounded mr-2" />
-            <span className="text-gray-600">Offer Rate</span>
+            <div className="w-3 h-3 bg-success/100 rounded mr-2" />
+            <span className="text-muted-foreground">Offer Rate</span>
           </div>
           <div className="flex items-center">
             <div className="w-3 h-30 rounded mr-2" />
-            <span className="text-gray-600">Application Volume</span>
+            <span className="text-muted-foreground">Application Volume</span>
           </div>
         </div>
       </div>
@@ -100,8 +102,8 @@ function calculatePerformanceScore(responseRate: number, offerRate: number): str
 function getScoreColor(responseRate: number, offerRate: number): string {
   const score = responseRate * 0.4 + offerRate * 0.6;
 
-  if (score >= 80) return 'text-green-600';
-  if (score >= 60) return 'text-blue-600';
+  if (score >= 80) return 'text-success';
+  if (score >= 60) return 'text-primary';
   if (score >= 40) return 'text-yellow-600';
-  return 'text-red-600';
+  return 'text-destructive';
 }

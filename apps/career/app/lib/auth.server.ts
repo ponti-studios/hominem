@@ -1,90 +1,90 @@
-import { CareerRepository, getDb, runInTransaction } from '@hominem/db';
+import type { Session, User } from '@hominem/auth/types';
 import { redirect } from 'react-router';
 
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-}
+export type { User };
 
 const API_URL = process.env.VITE_PUBLIC_API_URL || process.env.API_URL || 'http://localhost:3000';
 
-export async function getServerSession(request: Request) {
-  const headers = new Headers();
-  const cookie = request.headers.get('cookie');
-  if (cookie) {
-    headers.set('cookie', cookie);
-  }
+function getTestAuthUser(cookieHeader: string | null): User | null {
+  const testAuthCookie = cookieHeader
+    ?.split(';')
+    .find((cookie) => cookie.trim().startsWith('test-auth-user='))
+    ?.split('=')[1];
+
+  if (!testAuthCookie) return null;
 
   try {
-    const response = await fetch(new URL('/api/auth/get-session', API_URL).toString(), {
-      method: 'GET',
-      headers,
-    });
-    if (!response.ok) return { user: null, session: null };
-    const payload = (await response.json()) as {
-      user: { id: string; email: string; name?: string | null } | null;
-      session: unknown;
-    } | null;
-    return {
-      user: payload?.user ?? null,
-      session: payload?.session ?? null,
-    };
+    return JSON.parse(decodeURIComponent(testAuthCookie)) as User;
   } catch {
-    return { user: null, session: null };
-  }
-}
-
-export async function getAuthenticatedUser(request: Request): Promise<User | null> {
-  try {
-    const { user: authUser } = await getServerSession(request);
-    if (!authUser?.email) return null;
-
-    const db = getDb();
-
-    let dbUser = await db
-      .selectFrom('user')
-      .select(['id', 'email', 'name'])
-      .where('email', '=', authUser.email)
-      .limit(1)
-      .execute();
-
-    if (dbUser.length === 0) {
-      const result = await runInTransaction(async (tx) => {
-        const name = authUser.name || 'User';
-        const newUser = await tx
-          .insertInto('user')
-          .values([{ id: crypto.randomUUID(), email: authUser.email, name }])
-          .returning(['id', 'email', 'name'])
-          .execute();
-
-        await CareerRepository.createDefaultPortfolio(tx, {
-          userId: newUser[0].id,
-          email: authUser.email,
-          name,
-        });
-
-        return newUser;
-      });
-      dbUser = result;
-    }
-
-    return { id: dbUser[0].id, email: dbUser[0].email, name: dbUser[0].name };
-  } catch (error) {
-    console.error('Auth error:', error);
     return null;
   }
 }
 
-export function requireAuth(user: User | null): User {
+export async function getServerSession(request: Request) {
+  const headers = new Headers();
+  const cookie = request.headers.get('cookie');
+  const testUser = getTestAuthUser(cookie);
+
+  if (testUser) {
+    return {
+      user: testUser,
+      session: {
+        id: 'test-session',
+        token: 'test-session',
+        userId: testUser.id,
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        ipAddress: null,
+        userAgent: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } satisfies Session,
+      headers: new Headers(),
+    };
+  }
+
+  if (cookie) {
+    headers.set('cookie', cookie);
+  }
+
+  const response = await fetch(new URL('/api/auth/get-session', API_URL).toString(), {
+    method: 'GET',
+    headers,
+  });
+
+  if (!response.ok) {
+    return { user: null, session: null, headers: new Headers() };
+  }
+
+  const payload = (await response.json()) as {
+    user: User;
+    session: Session;
+  } | null;
+
+  return {
+    user: payload?.user ?? null,
+    session: payload?.session ?? null,
+    headers: new Headers(),
+  };
+}
+
+export async function getAuthenticatedUser(request: Request): Promise<User | null> {
+  const { user } = await getServerSession(request);
+  return user;
+}
+
+export function requireAuth(user: User | null, headers?: Headers): User {
   if (!user) {
-    throw redirect('/login');
+    throw redirect('/login', headers ? { headers } : undefined);
   }
   return user;
 }
 
-export function redirectIfAuthenticated(user: User | null, redirectTo = '/account') {
+export function redirectIfAuthenticated(
+  user: User | null,
+  redirectTo = '/account',
+  headers?: Headers,
+) {
   if (user) {
-    throw redirect(redirectTo);
+    throw redirect(redirectTo, headers ? { headers } : undefined);
   }
 }

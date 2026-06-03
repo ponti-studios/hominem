@@ -71,6 +71,8 @@
   --color-muted-foreground: rgba(180, 185, 195, 1);
   --color-foreground: rgba(245, 246, 248, 1);
   --color-background: rgba(17, 17, 19, 1);
+  --color-card: rgba(24, 25, 27, 1);
+  --color-card-foreground: rgba(245, 246, 248, 1);
   --color-destructive-foreground: rgba(29, 14, 10, 1);
   --color-popover: rgba(24, 25, 27, 1);
   --color-popover-foreground: rgba(245, 246, 248, 1);
@@ -236,6 +238,8 @@
   :root {
     --background: var(--color-bg-base);
     --foreground: var(--color-text-primary);
+    --card: var(--color-card);
+    --card-foreground: var(--color-card-foreground);
     --primary: var(--color-primary);
     --primary-foreground: var(--color-primary-foreground);
     --secondary: var(--color-secondary);

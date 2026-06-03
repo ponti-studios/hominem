@@ -16,9 +16,9 @@ export const meta: MetaFunction = () => {
 };
 
 export async function loader({ request }: { request: Request }) {
-  const { user } = await getServerSession(request);
+  const { user, headers } = await getServerSession(request);
   if (user) {
-    throw redirect('/account');
+    throw redirect('/account', { headers });
   }
   return null;
 }

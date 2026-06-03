@@ -54,12 +54,12 @@ function ToastContainer() {
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className={`max-w-sm p-4 rounded-lg shadow-lg border transition-all duration-300 ease-in-out transform animate-in slide-in-from-right-5 ${
+          className={`max-w-sm p-4 rounded-md  border transition-all duration-300 ease-in-out transform animate-in slide-in-from-right-5 ${
             toast.type === 'success'
-              ? 'bg-green-50 border-green-200 text-green-800'
+              ? 'bg-success/10 border-success/30 text-foreground'
               : toast.type === 'error'
-                ? 'bg-red-50 border-red-200 text-red-800'
-                : 'bg-blue-50 border-blue-200 text-blue-800'
+                ? 'bg-destructive/10 border-destructive/30 text-foreground'
+                : 'bg-accent/10 border-accent/30 text-foreground'
           }`}
         >
           <div className="flex items-start gap-3">
@@ -113,7 +113,7 @@ function ToastContainer() {
               onClick={() => removeToast(toast.id)}
               variant="ghost"
               size="sm"
-              className="flex-shrink-0 text-gray-400 hover:text-gray-600 p-1 h-auto"
+              className="flex-shrink-0 text-muted-foreground hover:text-muted-foreground p-1 h-auto"
               aria-label="Close notification"
             >
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">

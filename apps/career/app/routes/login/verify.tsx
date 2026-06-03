@@ -8,14 +8,14 @@ import { getServerSession } from '~/lib/auth.server';
 export const meta: MetaFunction = () => [{ title: 'Verify - Craftd' }];
 
 export async function loader({ request }: { request: Request }) {
-  const { user } = await getServerSession(request);
+  const { user, headers } = await getServerSession(request);
   if (user) {
-    throw redirect('/account');
+    throw redirect('/account', { headers });
   }
   const url = new URL(request.url);
   const email = url.searchParams.get('email');
   if (!email) {
-    throw redirect('/login');
+    throw redirect('/login', { headers });
   }
   return { email };
 }

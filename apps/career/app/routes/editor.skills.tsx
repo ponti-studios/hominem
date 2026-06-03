@@ -131,10 +131,10 @@ function SkillsEditorSection({ skills: initialSkills, portfolioId }: SkillsEdito
   };
 
   const getSkillLevelColor = (level: number) => {
-    if (level >= 80) return 'bg-green-100 text-green-800 border-green-200';
-    if (level >= 60) return 'bg-blue-100 text-blue-800 border-blue-200';
-    if (level >= 40) return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-    return 'bg-gray-100 text-gray-800 border-gray-200';
+    if (level >= 80) return 'bg-success/10 text-foreground border-success/30';
+    if (level >= 60) return 'bg-accent/20 text-foreground border-accent/30';
+    if (level >= 40) return 'bg-warning/10 text-foreground border-warning/30';
+    return 'bg-muted text-foreground border-border';
   };
 
   const isSaving = fetcher.state === 'submitting';
@@ -143,15 +143,15 @@ function SkillsEditorSection({ skills: initialSkills, portfolioId }: SkillsEdito
     <section className="container flex flex-col gap-8 mx-auto">
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-            <Zap className="w-5 h-5 text-blue-600" />
+          <div className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center">
+            <Zap className="w-5 h-5 text-primary" />
           </div>
-          <h2 className="text-2xl font-semibold text-gray-900">Skills</h2>
+          <h2 className="text-2xl font-semibold text-foreground">Skills</h2>
         </div>
         <div>
           {isSaving && (
-            <div className="mt-6 pt-4 border-t border-gray-200">
-              <div className="flex items-center justify-center text-sm text-gray-600">
+            <div className="mt-6 pt-4 border-t border-border">
+              <div className="flex items-center justify-center text-sm text-muted-foreground">
                 <LoaderPinwheel className="size-4 animate-spin" />
                 Saving changes...
               </div>
@@ -170,30 +170,36 @@ function SkillsEditorSection({ skills: initialSkills, portfolioId }: SkillsEdito
       </div>
       {/* Add new skill section */}
       {isAddingSkill ? (
-        <div className="card my-8 border border-dashed border-gray-400 py-2 px-4">
+        <div className="rounded-md border border-border bg-card p-4 my-8 border border-dashed border-border py-2 px-4">
           <form onSubmit={handleNewSkillSubmit(handleAddSkill)} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="name"
+                  className="block text-sm font-medium text-muted-foreground mb-1"
+                >
                   Skill Name *
                 </label>
                 <input
                   id="name"
                   {...registerNewSkill('name', { required: 'Skill name is required' })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                  className="w-full px-3 py-2 border border-border rounded-md  focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-ring text-sm"
                   placeholder="e.g., React"
                 />
               </div>
 
               <div>
-                <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="category"
+                  className="block text-sm font-medium text-muted-foreground mb-1"
+                >
                   Category
                 </label>
                 <input
                   id="category"
                   {...registerNewSkill('category')}
                   list="existing-categories"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                  className="w-full px-3 py-2 border border-border rounded-md  focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-ring text-sm"
                   placeholder="e.g., Frontend"
                 />
                 <datalist id="existing-categories">
@@ -204,7 +210,10 @@ function SkillsEditorSection({ skills: initialSkills, portfolioId }: SkillsEdito
               </div>
 
               <div>
-                <label htmlFor="level" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="level"
+                  className="block text-sm font-medium text-muted-foreground mb-1"
+                >
                   Level (1-100)
                 </label>
                 <input
@@ -217,7 +226,7 @@ function SkillsEditorSection({ skills: initialSkills, portfolioId }: SkillsEdito
                     min: { value: 1, message: 'Level must be at least 1' },
                     max: { value: 100, message: 'Level cannot exceed 100' },
                   })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                  className="w-full px-3 py-2 border border-border rounded-md  focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-ring text-sm"
                   placeholder="50"
                 />
               </div>
@@ -243,10 +252,10 @@ function SkillsEditorSection({ skills: initialSkills, portfolioId }: SkillsEdito
       ) : null}
 
       {/* Skills grouped by category */}
-      <div className="card space-y-6">
+      <div className="rounded-md border border-border bg-card p-4 space-y-6">
         {Object.entries(skillsByCategory).map(([category, categorySkills]) => (
           <div key={category} className="space-y-3">
-            <h3 className="text-lg font-medium text-gray-700 border-b border-gray-200 pb-2">
+            <h3 className="text-lg font-medium text-muted-foreground border-b border-border pb-2">
               {category}
             </h3>
             <div className="flex flex-wrap gap-2">
@@ -255,14 +264,14 @@ function SkillsEditorSection({ skills: initialSkills, portfolioId }: SkillsEdito
                   key={skill.id || `${category}-${index}`}
                   className={`inline-flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium transition-colors ${getSkillLevelColor(skill.level || 50)}`}
                 >
-                  <span className="border-b border-gray-200">{skill.name}</span>
+                  <span className="border-b border-border">{skill.name}</span>
                   <span className="text-xs opacity-75">({skill.level || 50}%)</span>
                   <Button
                     type="button"
                     onClick={() => handleRemoveSkill(skill)}
                     variant="ghost"
                     size="icon"
-                    className="ml-1 hover:bg-black hover:bg-opacity-10 rounded-full p-0.5 h-6 w-6"
+                    className="ml-1 hover:bg-muted rounded-full p-0.5 h-6 w-6"
                     title="Remove skill"
                     aria-label="Remove skill"
                   >

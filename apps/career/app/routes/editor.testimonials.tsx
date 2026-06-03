@@ -141,7 +141,10 @@ function TestimonialForm({
   const isSaving = fetcher.state === 'submitting';
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="card bg-muted/50 space-y-4">
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="rounded-md border border-border bg-card p-4 bg-muted/50 space-y-4"
+    >
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium text-foreground">
           {isNew ? 'New Testimonial' : 'Testimonial'}
@@ -170,7 +173,7 @@ function TestimonialForm({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="form-group">
+        <div className="flex flex-col gap-2">
           <label htmlFor={`name-${testimonial?.id || 'new'}`} className="label">
             Name *
           </label>
@@ -178,11 +181,11 @@ function TestimonialForm({
             id={`name-${testimonial?.id || 'new'}`}
             type="text"
             {...register('name', { required: true })}
-            className="input"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
             placeholder="Client's full name"
           />
         </div>
-        <div className="form-group">
+        <div className="flex flex-col gap-2">
           <label htmlFor={`title-${testimonial?.id || 'new'}`} className="label">
             Job Title
           </label>
@@ -190,14 +193,14 @@ function TestimonialForm({
             id={`title-${testimonial?.id || 'new'}`}
             type="text"
             {...register('title')}
-            className="input"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
             placeholder="e.g., Senior Developer"
           />
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="form-group">
+        <div className="flex flex-col gap-2">
           <label htmlFor={`company-${testimonial?.id || 'new'}`} className="label">
             Company
           </label>
@@ -205,11 +208,11 @@ function TestimonialForm({
             id={`company-${testimonial?.id || 'new'}`}
             type="text"
             {...register('company')}
-            className="input"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
             placeholder="Company name"
           />
         </div>
-        <div className="form-group">
+        <div className="flex flex-col gap-2">
           <label htmlFor={`rating-${testimonial?.id || 'new'}`} className="label">
             Rating (1-5)
           </label>
@@ -228,21 +231,21 @@ function TestimonialForm({
         </div>
       </div>
 
-      <div className="form-group">
+      <div className="flex flex-col gap-2">
         <label htmlFor={`content-${testimonial?.id || 'new'}`} className="label">
           Testimonial *
         </label>
         <textarea
           id={`content-${testimonial?.id || 'new'}`}
           {...register('content', { required: true })}
-          className="textarea"
+          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50 min-h-28"
           rows={4}
           placeholder="What did the client say about your work?"
         />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="form-group">
+        <div className="flex flex-col gap-2">
           <label htmlFor={`avatarUrl-${testimonial?.id || 'new'}`} className="label">
             Avatar URL (optional)
           </label>
@@ -250,11 +253,11 @@ function TestimonialForm({
             id={`avatarUrl-${testimonial?.id || 'new'}`}
             type="url"
             {...register('avatarUrl')}
-            className="input"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
             placeholder="https://example.com/avatar.jpg"
           />
         </div>
-        <div className="form-group">
+        <div className="flex flex-col gap-2">
           <label htmlFor={`linkedinUrl-${testimonial?.id || 'new'}`} className="label">
             LinkedIn URL (optional)
           </label>
@@ -262,7 +265,7 @@ function TestimonialForm({
             id={`linkedinUrl-${testimonial?.id || 'new'}`}
             type="url"
             {...register('linkedinUrl')}
-            className="input"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
             placeholder="https://linkedin.com/in/username"
           />
         </div>
@@ -295,10 +298,10 @@ function TestimonialsEditorSection({
     <section className="container flex flex-col gap-8 mx-auto">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-            <MessageSquare className="w-5 h-5 text-blue-600" />
+          <div className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center">
+            <MessageSquare className="w-5 h-5 text-primary" />
           </div>
-          <h2 className="text-2xl font-semibold text-gray-900">Client Testimonials</h2>
+          <h2 className="text-2xl font-semibold text-foreground">Client Testimonials</h2>
         </div>
 
         {!showNewForm && (

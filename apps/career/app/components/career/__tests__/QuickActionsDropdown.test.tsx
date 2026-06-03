@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { Calendar, MessageSquare } from 'lucide-react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -31,47 +31,47 @@ describe('QuickActionsDropdown', () => {
     expect(screen.getByText('Quick Actions')).toBeInTheDocument();
   });
 
-  it('shows dropdown menu when clicked', () => {
+  const openMenu = () => {
+    fireEvent.pointerDown(screen.getByRole('button', { name: /quick actions/i }));
+  };
+
+  it('shows dropdown menu when clicked', async () => {
     render(<QuickActionsDropdown actions={mockActions} />);
 
-    const button = screen.getByText('Quick Actions');
-    fireEvent.click(button);
+    openMenu();
 
-    expect(screen.getByText('Test Action 1')).toBeInTheDocument();
+    expect(await screen.findByText('Test Action 1')).toBeInTheDocument();
     expect(screen.getByText('Test Action 2')).toBeInTheDocument();
     expect(screen.getByText('Test Action 3')).toBeInTheDocument();
   });
 
-  it('calls onClick when action is clicked', () => {
+  it('calls onClick when action is clicked', async () => {
     render(<QuickActionsDropdown actions={mockActions} />);
 
-    const button = screen.getByText('Quick Actions');
-    fireEvent.click(button);
+    openMenu();
 
-    const actionButton = screen.getByText('Test Action 1');
+    const actionButton = await screen.findByText('Test Action 1');
     fireEvent.click(actionButton);
 
     expect(mockActions[0].onClick).toHaveBeenCalledTimes(1);
   });
 
-  it('closes dropdown after action is clicked', () => {
+  it('closes dropdown after action is clicked', async () => {
     render(<QuickActionsDropdown actions={mockActions} />);
 
-    const button = screen.getByText('Quick Actions');
-    fireEvent.click(button);
+    openMenu();
 
-    const actionButton = screen.getByText('Test Action 1');
+    const actionButton = await screen.findByText('Test Action 1');
     fireEvent.click(actionButton);
 
-    expect(screen.queryByText('Test Action 1')).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByText('Test Action 1')).not.toBeInTheDocument());
   });
 
-  it('renders custom icon components', () => {
+  it('renders custom icon components', async () => {
     render(<QuickActionsDropdown actions={mockActions} />);
 
-    const button = screen.getByText('Quick Actions');
-    fireEvent.click(button);
+    openMenu();
 
-    expect(screen.getByTestId('custom-icon')).toBeInTheDocument();
+    expect(await screen.findByTestId('custom-icon')).toBeInTheDocument();
   });
 });

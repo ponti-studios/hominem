@@ -1,3 +1,5 @@
+import { Card, CardContent } from '@hominem/ui/card';
+
 interface StatCardProps {
   title: string;
   value: string | number;
@@ -10,27 +12,25 @@ export function StatCard({ title, value, subtitle, trend, icon }: StatCardProps)
   const trendColors = {
     up: 'text-emerald-600',
     down: 'text-red-500',
-    neutral: 'text-slate-500',
+    neutral: 'text-muted-foreground',
   };
 
   return (
-    <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200/50 hover:shadow-lg transition-all duration-300 hover:border-slate-300/50">
-      <div className="flex items-start justify-between">
+    <Card className="border-border bg-card  transition-colors hover:border-primary/30">
+      <CardContent className="flex items-start justify-between gap-4 p-6">
         <div className="flex-1">
-          <h3 className="text-sm font-medium text-slate-600 tracking-wide uppercase font-sans">
+          <h3 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
             {title}
           </h3>
-          <p className="text-4xl font-light text-slate-900 mt-2 font-serif">{value}</p>
-          {subtitle && (
-            <p
-              className={`text-sm mt-2 font-sans ${trend ? trendColors[trend] : 'text-slate-500'}`}
-            >
+          <p className="mt-2 text-3xl font-semibold text-foreground md:text-4xl">{value}</p>
+          {subtitle ? (
+            <p className={`mt-2 text-sm ${trend ? trendColors[trend] : 'text-muted-foreground'}`}>
               {subtitle}
             </p>
-          )}
+          ) : null}
         </div>
-        {icon && <div className="text-slate-400 opacity-60">{icon}</div>}
-      </div>
-    </div>
+        {icon ? <div className="text-muted-foreground/70">{icon}</div> : null}
+      </CardContent>
+    </Card>
   );
 }

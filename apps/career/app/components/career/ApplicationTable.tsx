@@ -1,9 +1,19 @@
-import { Checkbox } from '@hominem/ui/checkbox';
+import { Badge } from '@hominem/ui/badge';
+import { Button, buttonVariants } from '@hominem/ui/button';
+import { Card, CardContent } from '@hominem/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@hominem/ui/dropdown';
 import { FilterControls, FilterSelect } from '@hominem/ui/filters';
 import { SearchInput } from '@hominem/ui/search-input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@hominem/ui/table';
-import { PlusIcon } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronDownIcon, PlusIcon } from 'lucide-react';
+import { useMemo } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 
 import {
@@ -50,24 +60,9 @@ export function ApplicationTable({
 }: ApplicationTableProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
-  const statusDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Get unique statuses and sources from current applications for filter options
   const uniqueStatuses = getUniqueStatuses(applications);
   const uniqueSources = getUniqueSources(applications);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target as Node)) {
-        setIsStatusDropdownOpen(false);
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const updateSearchParams = (updates: Record<string, string | string[] | null>) => {
     const newSearchParams = new URLSearchParams(searchParams);
@@ -77,8 +72,8 @@ export function ApplicationTable({
         newSearchParams.delete(key);
       } else if (Array.isArray(value)) {
         newSearchParams.delete(key);
-        for (const v of value) {
-          newSearchParams.append(key, v);
+        for (const item of value) {
+          newSearchParams.append(key, item);
         }
       } else {
         newSearchParams.set(key, value);
@@ -95,7 +90,7 @@ export function ApplicationTable({
   const handleStatusToggle = (status: string) => {
     const currentStatuses = filters.statuses || [];
     const newStatuses = currentStatuses.includes(status)
-      ? currentStatuses.filter((s) => s !== status)
+      ? currentStatuses.filter((item) => item !== status)
       : [...currentStatuses, status];
 
     updateSearchParams({ status: newStatuses, page: '1' });
@@ -142,17 +137,21 @@ export function ApplicationTable({
     }
 
     return chips;
-  }, [filters.search, filters.source, filters.statuses, handleStatusToggle]);
+  }, [filters.search, filters.source, filters.statuses]);
 
   if (!applications || applications.length === 0) {
     return (
-      <div className={`text-center py-8 text-gray-500 ${className}`}>
-        <div className="text-4xl mb-4">📝</div>
-        <p className="font-medium">{emptyTitle}</p>
-        <p className="text-sm mt-1">{emptyDescription}</p>
+      <div className={`py-8 text-center text-muted-foreground ${className}`}>
+        <div className="mb-4 text-4xl">📝</div>
+        <p className="font-medium text-foreground">{emptyTitle}</p>
+        <p className="mt-1 text-sm">{emptyDescription}</p>
         <Link
           to="/career/applications/create"
-          className="btn-primary mt-4 inline-flex items-center gap-2"
+          className={buttonVariants({
+            variant: 'primary',
+            size: 'md',
+            className: 'mt-4 inline-flex gap-2',
+          })}
         >
           <PlusIcon className="size-4" />
           Add Application
@@ -163,258 +162,236 @@ export function ApplicationTable({
 
   return (
     <div className={`space-y-4 ${className}`}>
-      {/* Search and Filter Section */}
-      <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-        <FilterControls showActiveFilters={activeFilters} activeFilters={filterChips}>
-          <div className="flex-1">
-            <label htmlFor="search" className="mb-1 block text-sm font-medium text-gray-700">
-              Search
-            </label>
-            <SearchInput
-              value={filters.search || ''}
-              onSearchChange={handleSearchChange}
-              placeholder="Search by position or company..."
-            />
-          </div>
+      <Card className="border-border bg-card ">
+        <CardContent className="p-4">
+          <FilterControls showActiveFilters={activeFilters} activeFilters={filterChips}>
+            <div className="flex-1">
+              <label htmlFor="search" className="mb-1 block text-sm font-medium text-foreground">
+                Search
+              </label>
+              <SearchInput
+                value={filters.search || ''}
+                onSearchChange={handleSearchChange}
+                placeholder="Search by position or company..."
+              />
+            </div>
 
-          <div className="relative sm:w-48" ref={statusDropdownRef}>
-            <label
-              htmlFor="status-dropdown"
-              className="mb-1 block text-sm font-medium text-gray-700"
-            >
-              Status ({(filters.statuses || []).length} selected)
-            </label>
-            <button
-              id="status-dropdown"
-              type="button"
-              onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
-              className="flex w-full items-center justify-between rounded-md border border-gray-300 bg-white px-3 py-2 text-left text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500"
-            >
-              <span className="truncate">
-                {!filters.statuses || filters.statuses.length === 0
-                  ? 'All Statuses'
-                  : filters.statuses.length === 1
-                    ? formatStatusText(filters.statuses[0])
-                    : `${filters.statuses.length} statuses`}
-              </span>
-              <svg
-                className="h-4 w-4 text-gray-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                aria-hidden="true"
+            <div className="sm:w-48">
+              <label
+                htmlFor="status-dropdown"
+                className="mb-1 block text-sm font-medium text-foreground"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-            </button>
-
-            {isStatusDropdownOpen && (
-              <div className="absolute z-10 mt-1 w-full rounded-md border border-gray-300 bg-white shadow-lg">
-                <div className="max-h-60 overflow-auto py-1">
-                  <div className="border-b border-gray-200 px-3 py-2">
-                    <button
-                      type="button"
-                      onClick={() => updateSearchParams({ status: [], page: '1' })}
-                      className="font-medium text-blue-600 hover:text-blue-800 text-sm"
-                    >
-                      Clear all
-                    </button>
-                    <span className="mx-2 text-gray-400">|</span>
-                    <button
-                      type="button"
-                      onClick={() => updateSearchParams({ status: uniqueStatuses, page: '1' })}
-                      className="font-medium text-blue-600 hover:text-blue-800 text-sm"
-                    >
-                      Select all
-                    </button>
-                  </div>
+                Status ({(filters.statuses || []).length} selected)
+              </label>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    id="status-dropdown"
+                    type="button"
+                    variant="outline"
+                    className="w-full justify-between bg-background"
+                  >
+                    <span className="truncate">
+                      {!filters.statuses || filters.statuses.length === 0
+                        ? 'All Statuses'
+                        : filters.statuses.length === 1
+                          ? formatStatusText(filters.statuses[0])
+                          : `${filters.statuses.length} statuses`}
+                    </span>
+                    <ChevronDownIcon className="size-4 text-muted-foreground" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56">
+                  <DropdownMenuItem onClick={() => updateSearchParams({ status: [], page: '1' })}>
+                    Clear all
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => updateSearchParams({ status: uniqueStatuses, page: '1' })}
+                  >
+                    Select all
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   {uniqueStatuses.map((status) => (
-                    <label
+                    <DropdownMenuCheckboxItem
                       key={status}
-                      className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-gray-50"
+                      checked={(filters.statuses || []).includes(status)}
+                      onCheckedChange={() => handleStatusToggle(status)}
                     >
-                      <Checkbox
-                        checked={(filters.statuses || []).includes(status)}
-                        onCheckedChange={() => handleStatusToggle(status)}
-                        className="border-gray-300 data-[state=checked]:border-blue-600 data-[state=checked]:bg-blue-600"
-                      />
-                      <span className="text-sm text-gray-900">{formatStatusText(status)}</span>
-                    </label>
+                      {formatStatusText(status)}
+                    </DropdownMenuCheckboxItem>
                   ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            <div className="sm:w-48">
+              <FilterSelect
+                label="Source"
+                value={filters.source || ''}
+                options={uniqueSources.map((source) => ({
+                  value: source || '',
+                  label: source || 'Unknown',
+                }))}
+                onChange={handleSourceChange}
+                placeholder="All Sources"
+                id="source-filter"
+              />
+            </div>
+          </FilterControls>
+
+          <div className="mt-3 flex items-center justify-between text-sm text-muted-foreground">
+            <span>
+              Showing {(pagination.page - 1) * pagination.limit + 1} to{' '}
+              {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}{' '}
+              applications
+            </span>
+            <div className="flex items-center gap-4">
+              {activeFilters ? (
+                <button
+                  type="button"
+                  onClick={clearAllFilters}
+                  className="font-medium text-primary hover:text-primary/80"
+                >
+                  Clear filters
+                </button>
+              ) : null}
+
+              {pagination.totalPages > 1 ? (
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    onClick={() => handlePageChange(pagination.page - 1)}
+                    disabled={pagination.page <= 1}
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                  >
+                    Previous
+                  </Button>
+
+                  <span className="text-foreground">
+                    Page {pagination.page} of {pagination.totalPages}
+                  </span>
+
+                  <Button
+                    type="button"
+                    onClick={() => handlePageChange(pagination.page + 1)}
+                    disabled={pagination.page >= pagination.totalPages}
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                  >
+                    Next
+                  </Button>
                 </div>
-              </div>
-            )}
+              ) : null}
+            </div>
           </div>
+        </CardContent>
+      </Card>
 
-          <div className="sm:w-48">
-            <FilterSelect
-              label="Source"
-              value={filters.source || ''}
-              options={uniqueSources.map((source) => ({
-                value: source || '',
-                label: source || 'Unknown',
-              }))}
-              onChange={handleSourceChange}
-              placeholder="All Sources"
-              id="source-filter"
-            />
-          </div>
-        </FilterControls>
-
-        {/* Results Summary and Pagination Controls */}
-        <div className="mt-3 flex items-center justify-between text-sm text-gray-500">
-          <span>
-            Showing {(pagination.page - 1) * pagination.limit + 1} to{' '}
-            {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}{' '}
-            applications
-          </span>
-          <div className="flex items-center gap-4">
-            {activeFilters && (
-              <button
-                type="button"
-                onClick={clearAllFilters}
-                className="text-blue-600 hover:text-blue-800 font-medium"
-              >
-                Clear filters
-              </button>
-            )}
-
-            {/* Pagination Controls */}
-            {pagination.totalPages > 1 && (
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => handlePageChange(pagination.page - 1)}
-                  disabled={pagination.page <= 1}
-                  className="px-3 py-1 border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                >
-                  Previous
-                </button>
-
-                <span className="text-gray-700">
-                  Page {pagination.page} of {pagination.totalPages}
-                </span>
-
-                <button
-                  type="button"
-                  onClick={() => handlePageChange(pagination.page + 1)}
-                  disabled={pagination.page >= pagination.totalPages}
-                  className="px-3 py-1 border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                >
-                  Next
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Table Section */}
       {applications.length === 0 ? (
-        <div className="text-center py-8 text-gray-500 bg-white rounded-lg border border-gray-200">
-          <div className="text-4xl mb-4">🔍</div>
-          <p className="font-medium">
-            {activeFilters ? 'No applications match your filters' : emptyTitle}
-          </p>
-          <p className="text-sm mt-1">
-            {activeFilters ? 'Try adjusting your search criteria' : emptyDescription}
-          </p>
-        </div>
+        <Card className="border-border bg-card ">
+          <CardContent className="py-8 text-center text-muted-foreground">
+            <div className="mb-4 text-4xl">🔍</div>
+            <p className="font-medium text-foreground">
+              {activeFilters ? 'No applications match your filters' : emptyTitle}
+            </p>
+            <p className="mt-1 text-sm">
+              {activeFilters ? 'Try adjusting your search criteria' : emptyDescription}
+            </p>
+          </CardContent>
+        </Card>
       ) : (
         <>
-          {/* Desktop Table View */}
-          <div className="hidden rounded-lg border border-gray-200 bg-white shadow-sm md:block">
-            <Table>
-              <TableHeader className="bg-gray-50 [&_tr]:border-gray-200">
-                <TableRow>
-                  <TableHead className="px-6 text-xs uppercase tracking-wider text-gray-500">
-                    Position
-                  </TableHead>
-                  <TableHead className="px-6 text-xs uppercase tracking-wider text-gray-500">
-                    Status
-                  </TableHead>
-                  <TableHead className="px-6 text-xs uppercase tracking-wider text-gray-500">
-                    Applied
-                  </TableHead>
-                  <TableHead className="px-6 text-xs uppercase tracking-wider text-gray-500">
-                    Response
-                  </TableHead>
-                  <TableHead className="px-6 text-xs uppercase tracking-wider text-gray-500">
-                    Salary
-                  </TableHead>
-                  <TableHead className="px-6 text-xs uppercase tracking-wider text-gray-500">
-                    Source
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {applications.map((app) => (
-                  <TableRow key={app.id} className="transition-colors hover:bg-gray-50">
-                    <TableCell className="px-6 whitespace-nowrap">
-                      <Link
-                        to={`/career/applications/${app.id}`}
-                        className="block hover:text-blue-600"
-                      >
-                        <div className="text-sm font-medium text-gray-900">{app.position}</div>
-                        <div className="text-sm text-gray-500">{getCompanyName(app.company)}</div>
-                      </Link>
-                    </TableCell>
-                    <TableCell className="px-6 whitespace-nowrap">
-                      <span
-                        className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${getStatusColor(app.status)}`}
-                      >
-                        {formatStatusText(app.status)}
-                      </span>
-                    </TableCell>
-                    <TableCell className="px-6 whitespace-nowrap text-sm text-gray-900">
-                      {formatApplicationDate(app.applicationDate || app.startDate || null)}
-                    </TableCell>
-                    <TableCell className="px-6 whitespace-nowrap text-sm text-gray-900">
-                      {formatApplicationDate(app.responseDate)}
-                    </TableCell>
-                    <TableCell className="px-6 whitespace-nowrap text-sm text-gray-900">
-                      {formatApplicationSalary(app.salaryOffered || app.salaryQuoted)}
-                    </TableCell>
-                    <TableCell className="px-6 whitespace-nowrap">
-                      <span className="text-sm capitalize text-gray-500">{app.source || '—'}</span>
-                    </TableCell>
+          <Card className="hidden border-border bg-card  md:block">
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader className="bg-muted/50 [&_tr]:border-border">
+                  <TableRow>
+                    <TableHead className="px-6 text-xs uppercase tracking-wider text-muted-foreground">
+                      Position
+                    </TableHead>
+                    <TableHead className="px-6 text-xs uppercase tracking-wider text-muted-foreground">
+                      Status
+                    </TableHead>
+                    <TableHead className="px-6 text-xs uppercase tracking-wider text-muted-foreground">
+                      Applied
+                    </TableHead>
+                    <TableHead className="px-6 text-xs uppercase tracking-wider text-muted-foreground">
+                      Response
+                    </TableHead>
+                    <TableHead className="px-6 text-xs uppercase tracking-wider text-muted-foreground">
+                      Salary
+                    </TableHead>
+                    <TableHead className="px-6 text-xs uppercase tracking-wider text-muted-foreground">
+                      Source
+                    </TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {applications.map((app) => (
+                    <TableRow key={app.id} className="transition-colors hover:bg-muted/40">
+                      <TableCell className="px-6 whitespace-nowrap">
+                        <Link
+                          to={`/career/applications/${app.id}`}
+                          className="block transition-colors hover:text-primary"
+                        >
+                          <div className="text-sm font-medium text-foreground">{app.position}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {getCompanyName(app.company)}
+                          </div>
+                        </Link>
+                      </TableCell>
+                      <TableCell className="px-6 whitespace-nowrap">
+                        <Badge variant="outline" className={getStatusColor(app.status)}>
+                          {formatStatusText(app.status)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="px-6 whitespace-nowrap text-sm text-foreground">
+                        {formatApplicationDate(app.applicationDate || app.startDate || null)}
+                      </TableCell>
+                      <TableCell className="px-6 whitespace-nowrap text-sm text-foreground">
+                        {formatApplicationDate(app.responseDate)}
+                      </TableCell>
+                      <TableCell className="px-6 whitespace-nowrap text-sm text-foreground">
+                        {formatApplicationSalary(app.salaryOffered || app.salaryQuoted)}
+                      </TableCell>
+                      <TableCell className="px-6 whitespace-nowrap">
+                        <span className="text-sm capitalize text-muted-foreground">
+                          {app.source || '—'}
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
 
-          {/* Mobile List View */}
-          <div className="md:hidden bg-white rounded-lg border border-gray-200 shadow-sm">
-            <div className="divide-y divide-gray-200">
+          <Card className="md:hidden border-border bg-card ">
+            <CardContent className="divide-y divide-border p-0">
               {applications.map((app) => (
                 <Link
                   key={app.id}
                   to={`/career/applications/${app.id}`}
-                  className="block p-4 hover:bg-gray-50 transition-colors duration-200 focus:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
+                  className="block p-4 transition-colors duration-200 hover:bg-muted/40 focus:bg-muted/40 focus:outline-none focus:ring-2 focus:ring-ring/30 focus:ring-inset"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-gray-900 truncate">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium text-foreground">
                         {app.position}
                       </div>
-                      <div className="text-sm text-gray-500 truncate">
+                      <div className="truncate text-sm text-muted-foreground">
                         {getCompanyName(app.company)}
                       </div>
                     </div>
                     <div className="ml-4 flex items-center space-x-3">
-                      <span
-                        className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(app.status)}`}
-                      >
+                      <Badge variant="outline" className={getStatusColor(app.status)}>
                         {formatStatusText(app.status)}
-                      </span>
+                      </Badge>
                       <svg
-                        className="h-5 w-5 text-gray-400"
+                        className="h-5 w-5 text-muted-foreground"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -431,8 +408,8 @@ export function ApplicationTable({
                   </div>
                 </Link>
               ))}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </>
       )}
     </div>

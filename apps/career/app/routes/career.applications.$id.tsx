@@ -153,17 +153,19 @@ export default function ApplicationDetail() {
 
   if (!loaderData.success || !loaderData.data) {
     return (
-      <div className="bg-gradient-to-br from-red-50 via-white to-pink-50">
-        <div className="container mx-auto py-20">
+      <div className="rounded-md border border-destructive/30 bg-destructive/10">
+        <div className="mx-auto py-20">
           <div className="text-center">
-            <div className="w-16 h-16 mx-auto mb-6 bg-red-100 rounded-full flex items-center justify-center">
-              <span className="text-red-600 text-2xl">!</span>
+            <div className="mx-auto mb-6 flex size-16 items-center justify-center rounded-full border border-destructive/30 bg-destructive/10">
+              <span className="text-2xl text-destructive">!</span>
             </div>
-            <h1 className="text-2xl font-bold text-red-600 mb-4">Application not found</h1>
-            <p className="text-gray-600">The requested job application could not be found.</p>
+            <h1 className="mb-4 text-2xl font-bold text-destructive">Application not found</h1>
+            <p className="text-muted-foreground">
+              The requested job application could not be found.
+            </p>
             <Link
               to="/career/applications"
-              className="mt-6 inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 bg-blue-600 text-white hover:bg-blue-700 h-10 px-4 py-2"
+              className="mt-6 inline-flex h-10 items-center justify-center whitespace-nowrap rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
             >
               Back to Applications
             </Link>
@@ -187,7 +189,7 @@ export default function ApplicationDetail() {
     {
       id: 'update-status',
       label: 'Update Status',
-      icon: () => <span className="w-2 h-2 bg-blue-500 rounded-full" />,
+      icon: () => <span className="w-2 h-2 bg-accent/100 rounded-full" />,
       onClick: () => setShowStatusUpdate(true),
     },
     {
@@ -216,7 +218,7 @@ export default function ApplicationDetail() {
       <header className="flex items-center justify-between">
         <Link
           to="/career/applications"
-          className="flex items-center text-sm text-gray-500 hover:text-gray-900"
+          className="flex items-center text-sm text-muted-foreground hover:text-foreground"
         >
           <ChevronLeft className="h-5 w-5" />
           Back to Applications
@@ -226,8 +228,8 @@ export default function ApplicationDetail() {
       {/* Application Header */}
       <div className="flex flex-col md:flex-row items-center justify-between">
         <div>
-          <h1 className="text-lg md:text-xl font-bold text-gray-900">{application.position}</h1>
-          <p className="text-sm md:text-base text-gray-600">{company?.name}</p>
+          <h1 className="text-lg md:text-xl font-bold text-foreground">{application.position}</h1>
+          <p className="text-sm md:text-base text-muted-foreground">{company?.name}</p>
         </div>
         <div className="flex items-center gap-3">
           <span
@@ -240,13 +242,13 @@ export default function ApplicationDetail() {
       </div>
 
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TabId)}>
-        <div className="border-b border-gray-200">
+        <div className="border-b border-border">
           <TabsList variant="line" className="-mb-px h-auto gap-8 bg-transparent p-0">
             {tabItems.map((tab) => (
               <TabsTrigger
                 key={tab.id}
                 value={tab.id}
-                className="gap-2 rounded-none px-1 py-4 text-sm font-medium data-[state=active]:text-blue-600 after:bg-blue-500"
+                className="gap-2 rounded-none px-1 py-4 text-sm font-medium data-[state=active]:text-primary after:bg-accent/100"
               >
                 <tab.icon className="h-5 w-5" />
                 {tab.label}

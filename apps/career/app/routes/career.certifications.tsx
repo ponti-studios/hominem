@@ -87,22 +87,22 @@ export default function CertificationsPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
 
   return (
-    <div className="bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
+    <div className="space-y-8">
       {/* Header */}
-      <div className="border-b border-slate-200/50 bg-white/80 backdrop-blur-sm">
-        <div className="px-4 sm:px-6 lg:px-8 py-6">
+      <div className="rounded-md border border-border bg-card">
+        <div className="px-4 py-6 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-light text-slate-900 font-serif">
+              <h1 className="text-3xl font-light text-foreground font-sans">
                 Professional Certifications
               </h1>
-              <p className="text-lg text-slate-600 font-sans mt-2">
+              <p className="text-lg text-muted-foreground font-sans mt-2">
                 Track your certifications across your entire career
               </p>
             </div>
             <Button
               onClick={() => setShowCreateForm(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               <PlusIcon className="w-4 h-4 mr-2" />
               Add Certification
@@ -114,35 +114,35 @@ export default function CertificationsPage() {
       <div className="px-4 sm:px-6 lg:px-8 py-8">
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200/50">
-            <div className="text-2xl font-bold text-slate-900">{summary.totalCertifications}</div>
-            <div className="text-sm text-slate-600">Total Certifications</div>
+          <div className="rounded-md border border-border bg-card p-6">
+            <div className="text-2xl font-bold text-foreground">{summary.totalCertifications}</div>
+            <div className="text-sm text-muted-foreground">Total Certifications</div>
           </div>
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200/50">
-            <div className="text-2xl font-bold text-green-600">{summary.activeCertifications}</div>
-            <div className="text-sm text-slate-600">Active</div>
+          <div className="rounded-md border border-border bg-card p-6">
+            <div className="text-2xl font-bold text-success">{summary.activeCertifications}</div>
+            <div className="text-sm text-muted-foreground">Active</div>
           </div>
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200/50">
-            <div className="text-2xl font-bold text-amber-600">{summary.expiringInSixMonths}</div>
-            <div className="text-sm text-slate-600">Expiring Soon</div>
+          <div className="rounded-md border border-border bg-card p-6">
+            <div className="text-2xl font-bold text-warning">{summary.expiringInSixMonths}</div>
+            <div className="text-sm text-muted-foreground">Expiring Soon</div>
           </div>
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200/50">
-            <div className="text-2xl font-bold text-slate-900">
+          <div className="rounded-md border border-border bg-card p-6">
+            <div className="text-2xl font-bold text-foreground">
               ${(summary.totalInvestment / 100).toLocaleString()}
             </div>
-            <div className="text-sm text-slate-600">Total Investment</div>
+            <div className="text-sm text-muted-foreground">Total Investment</div>
           </div>
         </div>
 
         {/* Certifications List */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200/50">
-          <div className="p-6 border-b border-slate-200/50">
-            <h2 className="text-xl font-semibold text-slate-900">Your Certifications</h2>
+        <div className="bg-card rounded-md  border border-border/50">
+          <div className="p-6 border-b border-border/50">
+            <h2 className="text-xl font-semibold text-foreground">Your Certifications</h2>
           </div>
 
           {certifications.length === 0 ? (
             <div className="p-12 text-center">
-              <div className="text-slate-400 mb-4">
+              <div className="text-muted-foreground mb-4">
                 <svg
                   className="w-16 h-16 mx-auto"
                   fill="none"
@@ -158,13 +158,13 @@ export default function CertificationsPage() {
                   />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium text-slate-900 mb-2">No certifications yet</h3>
-              <p className="text-slate-600 mb-6">
+              <h3 className="text-lg font-medium text-foreground mb-2">No certifications yet</h3>
+              <p className="text-muted-foreground mb-6">
                 Start tracking your professional certifications to showcase your expertise.
               </p>
               <Button
                 onClick={() => setShowCreateForm(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 <PlusIcon className="w-4 h-4 mr-2" />
                 Add Your First Certification
@@ -198,24 +198,24 @@ function CertificationCard({ certification }: CertificationCardProps) {
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-2">
-            <h3 className="text-lg font-semibold text-slate-900">{certification.name}</h3>
+            <h3 className="text-lg font-semibold text-foreground">{certification.name}</h3>
             <span
               className={`px-2 py-1 text-xs font-medium rounded-full ${
                 certification.status === 'active'
-                  ? 'bg-green-100 text-green-800'
+                  ? 'bg-success/10 text-foreground'
                   : certification.status === 'expired'
-                    ? 'bg-red-100 text-red-800'
+                    ? 'bg-destructive/10 text-foreground'
                     : 'bg-amber-100 text-amber-800'
               }`}
             >
               {certification.status}
             </span>
           </div>
-          <p className="text-slate-600 mb-3">{certification.issuingOrganization}</p>
+          <p className="text-muted-foreground mb-3">{certification.issuingOrganization}</p>
           {certification.description && (
-            <p className="text-slate-700 mb-3">{certification.description}</p>
+            <p className="text-muted-foreground mb-3">{certification.description}</p>
           )}
-          <div className="flex items-center gap-6 text-sm text-slate-600">
+          <div className="flex items-center gap-6 text-sm text-muted-foreground">
             <span>Issued: {new Date(certification.issueDate).toLocaleDateString()}</span>
             {certification.expirationDate && (
               <span>Expires: {new Date(certification.expirationDate).toLocaleDateString()}</span>
@@ -230,11 +230,11 @@ function CertificationCard({ certification }: CertificationCardProps) {
             variant="ghost"
             size="sm"
             onClick={() => setIsEditing(true)}
-            className="text-slate-400 hover:text-slate-600"
+            className="text-muted-foreground hover:text-muted-foreground"
           >
             <PencilIcon className="w-4 h-4" />
           </Button>
-          <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-600">
+          <Button variant="ghost" size="sm" className="text-destructive/70 hover:text-destructive">
             <TrashIcon className="w-4 h-4" />
           </Button>
         </div>
@@ -252,11 +252,11 @@ function CreateCertificationModal({ onClose }: CreateCertificationModalProps) {
   const [expirationDate, setExpirationDate] = useState<Date | undefined>();
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-slate-200">
+    <div className="fixed inset-0 bg-background/80 flex items-center justify-center z-50">
+      <div className="bg-card rounded-md  w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-border">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-slate-900">Add Certification</h2>
+            <h2 className="text-xl font-semibold text-foreground">Add Certification</h2>
             <Button variant="ghost" size="sm" onClick={onClose}>
               <XIcon className="w-5 h-5" />
             </Button>
@@ -266,7 +266,10 @@ function CreateCertificationModal({ onClose }: CreateCertificationModalProps) {
         <form className="p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label htmlFor="cert-name" className="block text-sm font-medium text-slate-700 mb-2">
+              <label
+                htmlFor="cert-name"
+                className="block text-sm font-medium text-muted-foreground mb-2"
+              >
                 Certification Name *
               </label>
               <input
@@ -274,14 +277,14 @@ function CreateCertificationModal({ onClose }: CreateCertificationModalProps) {
                 type="text"
                 name="name"
                 required
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
+                className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-ring focus:ring-ring/50"
                 placeholder="AWS Solutions Architect"
               />
             </div>
             <div>
               <label
                 htmlFor="issuing-org"
-                className="block text-sm font-medium text-slate-700 mb-2"
+                className="block text-sm font-medium text-muted-foreground mb-2"
               >
                 Issuing Organization *
               </label>
@@ -290,21 +293,24 @@ function CreateCertificationModal({ onClose }: CreateCertificationModalProps) {
                 type="text"
                 name="issuingOrganization"
                 required
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
+                className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-ring focus:ring-ring/50"
                 placeholder="Amazon Web Services"
               />
             </div>
           </div>
 
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-slate-700 mb-2">
+            <label
+              htmlFor="description"
+              className="block text-sm font-medium text-muted-foreground mb-2"
+            >
               Description
             </label>
             <textarea
               id="description"
               name="description"
               rows={3}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
+              className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-ring focus:ring-ring/50"
               placeholder="Brief description of what this certification covers..."
             />
           </div>
@@ -337,7 +343,10 @@ function CreateCertificationModal({ onClose }: CreateCertificationModalProps) {
               <input type="hidden" name="expirationDate" value={formatDateValue(expirationDate)} />
             </div>
             <div>
-              <label htmlFor="cost" className="block text-sm font-medium text-slate-700 mb-2">
+              <label
+                htmlFor="cost"
+                className="block text-sm font-medium text-muted-foreground mb-2"
+              >
                 Cost
               </label>
               <input
@@ -346,7 +355,7 @@ function CreateCertificationModal({ onClose }: CreateCertificationModalProps) {
                 name="cost"
                 min="0"
                 step="0.01"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
+                className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-ring focus:ring-ring/50"
                 placeholder="299.00"
               />
             </div>
@@ -354,13 +363,16 @@ function CreateCertificationModal({ onClose }: CreateCertificationModalProps) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label htmlFor="category" className="block text-sm font-medium text-slate-700 mb-2">
+              <label
+                htmlFor="category"
+                className="block text-sm font-medium text-muted-foreground mb-2"
+              >
                 Category
               </label>
               <select
                 id="category"
                 name="category"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
+                className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-ring focus:ring-ring/50"
               >
                 <option value="">Select category...</option>
                 <option value="technical">Technical</option>
@@ -376,14 +388,17 @@ function CreateCertificationModal({ onClose }: CreateCertificationModalProps) {
               </select>
             </div>
             <div>
-              <label htmlFor="status" className="block text-sm font-medium text-slate-700 mb-2">
+              <label
+                htmlFor="status"
+                className="block text-sm font-medium text-muted-foreground mb-2"
+              >
                 Status
               </label>
               <select
                 id="status"
                 name="status"
                 defaultValue="active"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
+                className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-ring focus:ring-ring/50"
               >
                 <option value="active">Active</option>
                 <option value="expired">Expired</option>
@@ -393,11 +408,14 @@ function CreateCertificationModal({ onClose }: CreateCertificationModalProps) {
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-6 border-t border-slate-200">
+          <div className="flex items-center justify-end gap-3 pt-6 border-t border-border">
             <Button variant="ghost" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white">
+            <Button
+              type="submit"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
+            >
               <CheckIcon className="w-4 h-4 mr-2" />
               Add Certification
             </Button>

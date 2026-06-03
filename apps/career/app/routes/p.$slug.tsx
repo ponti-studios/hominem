@@ -71,9 +71,9 @@ export default function Portfolio({
       <header className="mb-16">
         <div className="flex items-start justify-between mb-8">
           <div>
-            <h1 className="font-serif text-4xl font-light text-gray-900 mb-2">{portfolio.name}</h1>
+            <h1 className="font-sans text-4xl font-light text-foreground mb-2">{portfolio.name}</h1>
             {/* Contact */}
-            <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
               <span>{portfolio.currentLocation}</span>
               {portfolio.locationTagline && (
                 <>
@@ -86,20 +86,18 @@ export default function Portfolio({
               {portfolio.availabilityStatus && portfolio.availabilityMessage && (
                 <>
                   <span>•</span>
-                  <span className="text-green-600 font-medium">
-                    {portfolio.availabilityMessage}
-                  </span>
+                  <span className="text-success font-medium">{portfolio.availabilityMessage}</span>
                 </>
               )}
             </div>
-            <p className="text-xl text-gray-600 my-4">{portfolio.jobTitle}</p>
+            <p className="text-xl text-muted-foreground my-4">{portfolio.jobTitle}</p>
           </div>
         </div>
 
         {/* Bio */}
         <section className="mb-16">
-          <h2 className="font-serif text-2xl font-light text-gray-900">About</h2>
-          <p className="text-gray-700 leading-relaxed">{portfolio.bio}</p>
+          <h2 className="font-sans text-2xl font-light text-foreground">About</h2>
+          <p className="text-muted-foreground leading-relaxed">{portfolio.bio}</p>
         </section>
 
         {/* Stats */}
@@ -107,8 +105,10 @@ export default function Portfolio({
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
             {portfolio.portfolioStats.map((stat) => (
               <div key={stat.id} className="text-center">
-                <div className="text-xl font-serif font-light text-gray-900 mb-1">{stat.value}</div>
-                <div className="text-xs text-gray-600">{stat.label}</div>
+                <div className="text-xl font-sans font-light text-foreground mb-1">
+                  {stat.value}
+                </div>
+                <div className="text-xs text-muted-foreground">{stat.label}</div>
               </div>
             ))}
           </div>
@@ -118,28 +118,30 @@ export default function Portfolio({
       {/* Work Experience */}
       {portfolio.workExperiences && portfolio.workExperiences.length > 0 && (
         <section className="mb-16">
-          <h2 className="font-serif text-2xl font-light text-gray-900 mb-4">Experience</h2>
+          <h2 className="font-sans text-2xl font-light text-foreground mb-4">Experience</h2>
           <div className="space-y-12">
             {portfolio.workExperiences.map((job) => (
-              <div key={job.id} className="border-l-2 border-gray-100 pl-6">
+              <div key={job.id} className="border-l-2 border-border pl-6">
                 <div className="flex items-start justify-between mb-3">
                   <div>
-                    <h3 className="font-medium text-gray-900">{job.role}</h3>
-                    <p className="text-gray-700">{job.company}</p>
+                    <h3 className="font-medium text-foreground">{job.role}</h3>
+                    <p className="text-muted-foreground">{job.company}</p>
                   </div>
-                  <div className="text-sm text-gray-500">
+                  <div className="text-sm text-muted-foreground">
                     {job.startDate ? new Date(job.startDate).getFullYear() : 'Unknown'} -{' '}
                     {job.endDate ? new Date(job.endDate).getFullYear() : 'Present'}
                   </div>
                 </div>
-                <p className="text-gray-700 mb-3 leading-relaxed">{job.description}</p>
-                {job.metrics && <p className="text-sm text-gray-600 mb-4 italic">{job.metrics}</p>}
+                <p className="text-muted-foreground mb-3 leading-relaxed">{job.description}</p>
+                {job.metrics && (
+                  <p className="text-sm text-muted-foreground mb-4 italic">{job.metrics}</p>
+                )}
                 {job.tags && job.tags.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {job.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-full"
+                        className="px-3 py-1 bg-muted text-muted-foreground text-xs rounded-full"
                       >
                         {tag}
                       </span>
@@ -155,12 +157,12 @@ export default function Portfolio({
       {/* Skills */}
       {portfolio.skills && portfolio.skills.length > 0 && (
         <section className="mb-16">
-          <h2 className="font-serif text-2xl font-light text-gray-900 mb-8">Skills</h2>
+          <h2 className="font-sans text-2xl font-light text-foreground mb-8">Skills</h2>
           <div className="flex flex-wrap gap-2">
             {portfolio.skills.map((skill) => (
               <span
                 key={skill.id}
-                className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full"
+                className="px-3 py-1 bg-muted text-muted-foreground text-sm rounded-full"
               >
                 {skill.name}
               </span>
@@ -172,20 +174,22 @@ export default function Portfolio({
       {/* Featured Projects */}
       {portfolio.projects && portfolio.projects.length > 0 && (
         <section>
-          <h2 className="font-serif text-2xl font-light text-gray-900 mb-8">Featured Projects</h2>
+          <h2 className="font-sans text-2xl font-light text-foreground mb-8">Featured Projects</h2>
           <div className="space-y-8">
             {portfolio.projects
               // .filter((project) => project.isFeatured)
               .map((project) => (
-                <div key={project.id} className="border border-gray-200 rounded-lg p-6">
-                  <h3 className="font-medium text-gray-900 mb-2">{project.title}</h3>
-                  <p className="text-gray-700 mb-4 leading-relaxed">{project.description}</p>
+                <div key={project.id} className="border border-border rounded-lg p-6">
+                  <h3 className="font-medium text-foreground mb-2">{project.title}</h3>
+                  <p className="text-muted-foreground mb-4 leading-relaxed">
+                    {project.description}
+                  </p>
                   {project.technologies && project.technologies.length > 0 && (
                     <div className="flex flex-wrap gap-2">
                       {project.technologies.map((tech) => (
                         <span
                           key={tech}
-                          className="px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-full"
+                          className="px-3 py-1 bg-muted text-muted-foreground text-xs rounded-full"
                         >
                           {tech}
                         </span>

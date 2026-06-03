@@ -26,7 +26,7 @@ export function ApplicationsMetrics({ metrics }: ApplicationsMetricsProps) {
       title: 'Interview Rate',
       value: formatPercentage(metrics.interviewRate),
       icon: '🎯',
-      color: 'text-blue-600',
+      color: 'text-primary',
     },
     {
       title: 'Offer Rate',
@@ -65,19 +65,28 @@ export function ApplicationsMetrics({ metrics }: ApplicationsMetricsProps) {
       title: 'Acceptance Rate',
       value: formatPercentage(metrics.acceptanceRate),
       icon: '✅',
-      color: 'text-green-600',
+      color: 'text-success',
     },
   ];
 
   const hasSalaryData = metrics.salaryMetrics.averageOffered > 0;
 
   return (
-    <Card className="border-border bg-card shadow-sm">
+    <Card className="border-border bg-card ">
       <CardContent className="space-y-6 p-4">
         <div className="flex items-center justify-between gap-3">
           <Badge variant="outline">Application metrics</Badge>
-          <Button type="button" variant="outline" size="sm" onClick={() => setIsExpanded(!isExpanded)}>
-            {isExpanded ? <ChevronUpIcon className="h-4 w-4" /> : <ChevronDownIcon className="h-4 w-4" />}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setIsExpanded(!isExpanded)}
+          >
+            {isExpanded ? (
+              <ChevronUpIcon className="h-4 w-4" />
+            ) : (
+              <ChevronDownIcon className="h-4 w-4" />
+            )}
           </Button>
         </div>
 
@@ -126,27 +135,35 @@ export function ApplicationsMetrics({ metrics }: ApplicationsMetricsProps) {
 
                 {showSalaryDetails ? (
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    <div className="rounded-lg border border-green-200 bg-green-50 p-4">
-                      <p className="mb-1 text-sm font-medium text-muted-foreground">Average Offered</p>
-                      <p className="text-xl font-bold text-green-700">
+                    <div className="rounded-lg border border-success/30 bg-success/10 p-4">
+                      <p className="mb-1 text-sm font-medium text-muted-foreground">
+                        Average Offered
+                      </p>
+                      <p className="text-xl font-bold text-success">
                         ${centsToDollars(metrics.salaryMetrics.averageOffered).toLocaleString()}
                       </p>
                     </div>
-                    <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-                      <p className="mb-1 text-sm font-medium text-muted-foreground">Average Accepted</p>
-                      <p className="text-xl font-bold text-blue-700">
+                    <div className="rounded-lg border border-accent/30 bg-accent/10 p-4">
+                      <p className="mb-1 text-sm font-medium text-muted-foreground">
+                        Average Accepted
+                      </p>
+                      <p className="text-xl font-bold text-primary">
                         ${centsToDollars(metrics.salaryMetrics.averageAccepted).toLocaleString()}
                       </p>
                     </div>
                     <div className="rounded-lg border border-purple-200 bg-purple-50 p-4">
-                      <p className="mb-1 text-sm font-medium text-muted-foreground">Negotiation Success</p>
+                      <p className="mb-1 text-sm font-medium text-muted-foreground">
+                        Negotiation Success
+                      </p>
                       <p className="text-xl font-bold text-purple-700">
                         {formatPercentage(metrics.salaryMetrics.negotiationSuccessRate)}
                       </p>
                     </div>
-                    <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
-                      <p className="mb-1 text-sm font-medium text-muted-foreground">Avg. Negotiation Increase</p>
-                      <p className="text-xl font-bold text-yellow-700">
+                    <div className="rounded-lg border border-warning/30 bg-warning/10 p-4">
+                      <p className="mb-1 text-sm font-medium text-muted-foreground">
+                        Avg. Negotiation Increase
+                      </p>
+                      <p className="text-xl font-bold text-foreground">
                         {formatPercentage(metrics.salaryMetrics.averageNegotiationIncrease)}
                       </p>
                     </div>
@@ -162,7 +179,7 @@ export function ApplicationsMetrics({ metrics }: ApplicationsMetricsProps) {
                       </div>
                       <div className="text-right">
                         <p className="text-sm text-muted-foreground">Negotiation Success</p>
-                        <p className="text-lg font-bold text-green-600">
+                        <p className="text-lg font-bold text-success">
                           {formatPercentage(metrics.salaryMetrics.negotiationSuccessRate)}
                         </p>
                       </div>

@@ -98,17 +98,17 @@ function ApplicationCard({
   const getStatusColor = (status: string) => {
     switch (status) {
       case JobApplicationStatus.APPLIED:
-        return 'border-blue-200 bg-blue-50 text-blue-700';
+        return 'border-accent/30 bg-accent/10 text-primary';
       case JobApplicationStatus.PHONE_SCREEN:
-        return 'border-yellow-200 bg-yellow-50 text-yellow-700';
+        return 'border-warning/30 bg-warning/10 text-foreground';
       case JobApplicationStatus.INTERVIEW:
         return 'border-purple-200 bg-purple-50 text-purple-700';
       case JobApplicationStatus.OFFER:
-        return 'border-green-200 bg-green-50 text-green-700';
+        return 'border-success/30 bg-success/10 text-success';
       case JobApplicationStatus.ACCEPTED:
         return 'border-emerald-200 bg-emerald-50 text-emerald-700';
       case JobApplicationStatus.REJECTED:
-        return 'border-red-200 bg-red-50 text-red-700';
+        return 'border-destructive/30 bg-destructive/10 text-destructive';
       case JobApplicationStatus.WITHDRAWN:
       default:
         return 'border-border bg-muted text-muted-foreground';
@@ -134,7 +134,7 @@ function ApplicationCard({
   const companyName = getCompanyName(application.company);
 
   return (
-    <Card className="group border-border bg-card shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+    <Card className="group border-border bg-card  transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/30">
       <CardContent className="space-y-4 p-5">
         <div className="space-y-3">
           <div className="flex items-start justify-between gap-3">
@@ -238,12 +238,7 @@ function ApplicationCard({
                 Job Post
               </a>
             ) : null}
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={handleDelete}
-              className="h-8 text-xs"
-            >
+            <Button variant="destructive" size="sm" onClick={handleDelete} className="h-8 text-xs">
               Delete
             </Button>
           </div>

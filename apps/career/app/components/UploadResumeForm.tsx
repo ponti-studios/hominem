@@ -1,4 +1,6 @@
 import { Alert, AlertDescription, AlertTitle } from '@hominem/ui';
+import { Button } from '@hominem/ui/button';
+import { Card, CardContent } from '@hominem/ui/card';
 import { FileText, Upload } from 'lucide-react';
 import { useRef, useState } from 'react';
 
@@ -122,98 +124,100 @@ export function UploadResumeForm({
     <div className="max-w-2xl mx-auto px-6">
       {/* Header */}
       <div className="text-center mb-12">
-        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-          <Upload className="w-8 h-8 text-blue-600" />
+        <div className="w-16 h-16 bg-accent/20 rounded-full flex items-center justify-center mx-auto mb-6">
+          <Upload className="w-8 h-8 text-primary" />
         </div>
-        <h1 className="font-serif text-3xl font-light text-gray-900 mb-4">Upload Your Resume</h1>
-        <p className="text-gray-600 leading-relaxed max-w-md mx-auto">
+        <h1 className="font-sans text-3xl font-light text-foreground mb-4">Upload Your Resume</h1>
+        <p className="text-muted-foreground leading-relaxed max-w-md mx-auto">
           Upload your existing resume to get started. We'll extract your information and help you
           create a beautiful portfolio.
         </p>
       </div>
 
       {/* Upload Area */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8">
-        <div
-          className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-            isDragging ? 'border-blue-400 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
-          }`}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-        >
-          <div className="flex flex-col items-center">
-            <FileText className="w-12 h-12 text-gray-400 mb-4" />
-            <h3 className="font-medium text-gray-900 mb-2">
-              Drop your resume here, or{' '}
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="text-blue-600 hover:text-blue-700 underline"
-              >
-                browse
-              </button>
-            </h3>
-            <p className="text-sm text-gray-500 mb-6">PDF files only, up to 10MB</p>
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".pdf"
-              onChange={handleFileSelect}
-              className="hidden"
-            />
-
-            {selectedFile && (
-              <div className="flex items-center gap-3 p-3 rounded-lg">
-                <FileText className="w-5 h-5 text-gray-600" />
-                <div className="text-left">
-                  <p className="font-medium text-gray-900">{selectedFile.name}</p>
-                  <p className="text-sm text-gray-500">
-                    {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Upload Progress */}
-        {isUploading && (
-          <div className="mt-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-900">Uploading...</span>
-              <span className="text-sm text-gray-500">{Math.round(uploadProgress)}%</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${uploadProgress}%` }}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Error Message */}
-        {error ? (
-          <Alert variant="destructive">
-            <AlertTitle>Upload failed</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        ) : null}
-
-        {/* Upload Button */}
-        <div className="mt-8 flex justify-center">
-          <button
-            type="button"
-            onClick={uploadResume}
-            disabled={!selectedFile || isUploading}
-            className="px-8 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+      <Card className="mb-8 border-border bg-card">
+        <CardContent className="p-8">
+          <div
+            className={`rounded-md border-2 border-dashed p-8 text-center transition-colors ${
+              isDragging ? 'border-accent/50 bg-accent/10' : 'border-border hover:border-border'
+            }`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
           >
-            {isUploading ? 'Uploading...' : 'Upload Resume'}
-          </button>
-        </div>
-      </div>
+            <div className="flex flex-col items-center">
+              <FileText className="w-12 h-12 text-muted-foreground mb-4" />
+              <h3 className="font-medium text-foreground mb-2">
+                Drop your resume here, or{' '}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="text-primary hover:text-primary underline"
+                >
+                  browse
+                </button>
+              </h3>
+              <p className="text-sm text-muted-foreground mb-6">PDF files only, up to 10MB</p>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+
+              {selectedFile && (
+                <div className="flex items-center gap-3 rounded-md border border-border bg-muted/40 p-3">
+                  <FileText className="w-5 h-5 text-muted-foreground" />
+                  <div className="text-left">
+                    <p className="font-medium text-foreground">{selectedFile.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Upload Progress */}
+          {isUploading && (
+            <div className="mt-6">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-foreground">Uploading...</span>
+                <span className="text-sm text-muted-foreground">{Math.round(uploadProgress)}%</span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-muted">
+                <div
+                  className="h-2 rounded-full bg-accent transition-all duration-300"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Error Message */}
+          {error ? (
+            <Alert variant="destructive">
+              <AlertTitle>Upload failed</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          ) : null}
+
+          {/* Upload Button */}
+          <div className="mt-8 flex justify-center">
+            <Button
+              type="button"
+              onClick={uploadResume}
+              disabled={!selectedFile || isUploading}
+              size="lg"
+            >
+              {isUploading ? 'Uploading...' : 'Upload Resume'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

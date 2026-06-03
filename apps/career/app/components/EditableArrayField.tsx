@@ -42,7 +42,7 @@ const ArrayItem = memo(function ArrayItem({
         value={value}
         onChange={handleChange}
         onKeyDown={(e) => onKeyDown(e, index)}
-        className="flex-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
+        className="flex-1 block w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-ring focus:ring-ring/50"
         placeholder={placeholder}
         data-testid={`array-input-${normalizeString(value)}`}
       />
@@ -51,7 +51,7 @@ const ArrayItem = memo(function ArrayItem({
         onClick={() => onRemove(index)}
         variant="ghost"
         size="sm"
-        className="p-2 text-red-600 hover:bg-red-50"
+        className="p-2 text-destructive hover:bg-destructive/10"
         data-testid={`remove-item-${normalizeString(value)}`}
         aria-label={`Remove item ${value}`}
       >
@@ -146,7 +146,7 @@ export function EditableArrayField({
   if (isEditing) {
     return (
       <div className={className} data-testid={`editable-array-field-${field}`}>
-        <div className="block text-sm font-medium text-slate-700 mb-2">{label}</div>
+        <div className="block text-sm font-medium text-muted-foreground mb-2">{label}</div>
         <div className="space-y-2">
           {editValues.map((item, index) => (
             <ArrayItem
@@ -164,7 +164,7 @@ export function EditableArrayField({
             onClick={addItem}
             variant="ghost"
             size="sm"
-            className="text-blue-600 hover:bg-blue-50"
+            className="text-primary hover:bg-accent/10"
             data-testid="add-item-button"
           >
             <PlusIcon className="w-4 h-4 mr-1" />
@@ -175,7 +175,7 @@ export function EditableArrayField({
               type="button"
               onClick={handleSave}
               size="sm"
-              className="bg-green-600 hover:bg-green-700 text-white"
+              className="bg-green-600 hover:bg-green-700 text-primary-foreground"
               data-testid="save-button"
             >
               <CheckIcon className="w-4 h-4 mr-1" />
@@ -186,7 +186,7 @@ export function EditableArrayField({
               onClick={handleCancel}
               variant="ghost"
               size="sm"
-              className="text-slate-600 hover:bg-slate-100"
+              className="text-muted-foreground hover:bg-muted"
               data-testid="cancel-button"
             >
               <XIcon className="w-4 h-4 mr-1" />
@@ -200,27 +200,27 @@ export function EditableArrayField({
 
   return (
     <div className={className} data-testid={`editable-array-field-${field}`}>
-      <div className="block text-sm font-medium text-slate-700 mb-2">{label}</div>
+      <div className="block text-sm font-medium text-muted-foreground mb-2">{label}</div>
       <div className="group">
         <div className="space-y-2" data-testid="array-items-display">
           {value.length > 0 ? (
             value.map((item) => (
               <div
                 key={`display-${field}-${normalizeString(item)}`}
-                className="text-slate-900 bg-slate-50 rounded px-3 py-2"
+                className="text-foreground bg-muted rounded px-3 py-2"
                 data-testid={`display-item-${normalizeString(item)}`}
               >
                 {item}
               </div>
             ))
           ) : (
-            <div className="text-slate-400 italic" data-testid="empty-state">
+            <div className="text-muted-foreground italic" data-testid="empty-state">
               No {label.toLowerCase()} added yet
             </div>
           )}
         </div>
         <div className="flex justify-between items-center mt-2">
-          <span className="text-sm text-slate-500" data-testid="item-count">
+          <span className="text-sm text-muted-foreground" data-testid="item-count">
             {value.length} item{value.length !== 1 ? 's' : ''}
           </span>
           <Button
@@ -228,7 +228,7 @@ export function EditableArrayField({
             onClick={handleEdit}
             variant="ghost"
             size="sm"
-            className="p-1 text-slate-400 hover:text-slate-600 focus:text-slate-600"
+            className="p-1 text-muted-foreground hover:text-muted-foreground focus:text-muted-foreground"
             aria-label={`Edit ${label}`}
             data-testid="edit-button"
           >

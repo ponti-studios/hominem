@@ -1,118 +1,34 @@
-import { memo, useEffect, useMemo, useState } from 'react';
+import { LoadingSpinner } from '@hominem/ui/loading-spinner';
+import { memo } from 'react';
 
-import styles from './AIProcessingAnimation.module.css';
-
-const dataElements = [
-  'experience',
-  'skills',
-  'education',
-  'projects',
-  'achievements',
-  'certifications',
-  'technologies',
-  'languages',
-  'frameworks',
-  'databases',
-  'tools',
-  'methodologies',
-  'leadership',
-  'collaboration',
-  'communication',
-  'problem-solving',
-  'analytics',
-  'design',
-  'development',
-  'testing',
-  'deployment',
-  'optimization',
-  'innovation',
-];
-
-interface DataColumn {
-  id: number;
-  words: string;
-  speed: number;
-  offset: number;
-  isReverse: boolean;
-}
-
-const MatrixColumn = memo(({ column }: { column: DataColumn }) => (
-  <div
-    className={`${styles.matrixColumn} ${column.isReverse ? styles.matrixColumnReverse : styles.matrixColumnNormal}`}
-    style={
-      {
-        left: `${column.id * 12.5}%`,
-        '--speed': `${column.speed}s`,
-        '--delay': `${column.offset}s`,
-      } as React.CSSProperties
-    }
-  >
-    {column.words}
-  </div>
-));
-
-MatrixColumn.displayName = 'MatrixColumn';
+const processingSteps = ['Extracting experience', 'Structuring skills', 'Optimizing language'];
 
 export const AIProcessingAnimation = memo(() => {
-  const [columns, setColumns] = useState<DataColumn[]>([]);
-
-  const generateColumns = useMemo(
-    () => () => {
-      const newColumns: DataColumn[] = [];
-      for (let i = 0; i < 6; i++) {
-        const words = Array.from(
-          { length: 10 },
-          () => dataElements[Math.floor(Math.random() * dataElements.length)],
-        ).join('\n');
-
-        newColumns.push({
-          id: i,
-          words,
-          speed: 4 + Math.random() * 3,
-          offset: Math.random() * 2,
-          isReverse: i % 2 === 1,
-        });
-      }
-      setColumns(newColumns);
-    },
-    [],
-  );
-
-  useEffect(() => {
-    generateColumns();
-    const interval = setInterval(generateColumns, 6000);
-    return () => clearInterval(interval);
-  }, [generateColumns]);
-
   return (
-    <div className={styles.container}>
-      {/* Animated gradient overlay */}
-      <div className={styles.gradientOverlay} />
-
-      {/* Matrix columns */}
-      <div className={styles.matrixContainer}>
-        {columns.map((column) => (
-          <MatrixColumn key={`${column.id}-${column.words.slice(0, 20)}`} column={column} />
-        ))}
-      </div>
-
-      {/* Center processing indicator */}
-      <div className={styles.processingIndicator}>
-        <div className="relative">
-          <div className={styles.spinningRing} />
-          <div className={styles.innerRing}>
-            <div className={styles.aiText}>AI</div>
-          </div>
+    <div className="mx-auto w-full max-w-sm rounded-md border border-border bg-card p-6 text-card-foreground">
+      <div className="flex flex-col items-center gap-5 text-center">
+        <div className="flex size-20 items-center justify-center rounded-full border border-accent/30 bg-accent/10">
+          <LoadingSpinner variant="lg" />
         </div>
-      </div>
 
-      {/* Scanning line effect */}
-      <div className={styles.scanLine} />
+        <div className="space-y-2">
+          <h2 className="heading-3 text-foreground">Analyzing Resume Data</h2>
+          <p className="body-2 text-muted-foreground">
+            Turning your resume into structured portfolio content.
+          </p>
+        </div>
 
-      {/* Status text */}
-      <div className={styles.statusText}>
-        <div className={styles.statusTitle}>Analyzing Resume Data...</div>
-        <div className={styles.statusSubtitle}>Extracting • Structuring • Optimizing</div>
+        <div className="grid w-full gap-2">
+          {processingSteps.map((step) => (
+            <div
+              key={step}
+              className="flex items-center justify-between rounded-md border border-border bg-muted/40 px-3 py-2 text-sm"
+            >
+              <span className="text-muted-foreground">{step}</span>
+              <span className="size-2 rounded-full bg-accent" />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

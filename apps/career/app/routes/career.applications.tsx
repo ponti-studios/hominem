@@ -1,4 +1,7 @@
 import { CareerRepository, getDb } from '@hominem/db';
+import { Badge } from '@hominem/ui/badge';
+import { buttonVariants } from '@hominem/ui/button';
+import { Card, CardContent } from '@hominem/ui/card';
 import { PlusIcon } from 'lucide-react';
 import {
   Link,
@@ -196,39 +199,37 @@ export default function CareerApplications() {
 
   if (!loaderData.success) {
     return (
-      <div className="bg-gray-50">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-          <h2 className="text-lg font-semibold text-red-800 mb-2 font-serif">Error Loading Data</h2>
-          <p className="text-red-700 font-sans">Failed to load job applications data</p>
-        </div>
-      </div>
+      <Card className="border-destructive/30 bg-destructive/5 ">
+        <CardContent className="space-y-2 p-6">
+          <h2 className="text-lg font-semibold text-foreground">Error Loading Data</h2>
+          <p className="text-sm text-muted-foreground">Failed to load job applications data</p>
+        </CardContent>
+      </Card>
     );
   }
 
   if (loaderData?.error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-        <h2 className="text-lg font-semibold text-red-800 mb-2 font-serif">Error Loading Data</h2>
-        <p className="text-red-700 font-sans">{loaderData.error}</p>
-        <p className="text-sm text-red-600 mt-2 font-sans">
-          Make sure you have job application data in your database.
-        </p>
-      </div>
+      <Card className="border-destructive/30 bg-destructive/5 ">
+        <CardContent className="space-y-2 p-6">
+          <h2 className="text-lg font-semibold text-foreground">Error Loading Data</h2>
+          <p className="text-sm text-muted-foreground">{loaderData.error}</p>
+          <p className="text-sm text-muted-foreground">
+            Make sure you have job application data in your database.
+          </p>
+        </CardContent>
+      </Card>
     );
   }
 
   if (!loaderData.data) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-            <h2 className="text-lg font-semibold text-red-800 mb-2 font-serif">
-              Error Loading Data
-            </h2>
-            <p className="text-red-700 font-sans">Failed to load job applications data</p>
-          </div>
-        </div>
-      </div>
+      <Card className="border-destructive/30 bg-destructive/5 ">
+        <CardContent className="space-y-2 p-6">
+          <h2 className="text-lg font-semibold text-foreground">Error Loading Data</h2>
+          <p className="text-sm text-muted-foreground">Failed to load job applications data</p>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -236,26 +237,39 @@ export default function CareerApplications() {
 
   return (
     <div className="space-y-8 px-2 sm:px-0">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 pb-4  ">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold leading-tight text-gray-900">Job Applications</h1>
+      <Card className="border-border bg-card ">
+        <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="outline">Applications</Badge>
+              <Badge variant="secondary">{pagination.total} total</Badge>
+            </div>
+            <div>
+              <h1 className="text-3xl font-semibold leading-tight text-foreground">
+                Job Applications
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Track your pipeline, review recent activity, and keep application progress
+                organized.
+              </p>
+            </div>
           </div>
           <Link
             to="/career/applications/create"
-            className="btn-primary flex items-center gap-2 p-2 md:px-4"
+            className={buttonVariants({
+              variant: 'primary',
+              className: 'inline-flex items-center gap-2',
+            })}
           >
             <PlusIcon className="size-4" />
-            <span className="hidden md:block">Add Application</span>
+            <span>Add Application</span>
           </Link>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
+
       <div className="space-y-8">
-        {/* Application Activity Heatmap */}
         <ApplicationsHeatmap applications={allApplications} />
 
-        {/* All Applications */}
         <ApplicationTable
           applications={applications}
           pagination={pagination}

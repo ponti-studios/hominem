@@ -3,7 +3,7 @@
 
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 
-import { getAuthenticatedUser, requireAuth, type User } from './auth.server';
+import { getServerSession, requireAuth, type User } from './auth.server';
 import { shouldUseMockData } from './utils/mock-data';
 
 export interface ApiResponse<T = unknown> {
@@ -21,8 +21,8 @@ export async function withAuth<T>(
   request: Request,
   callback: (context: AuthenticatedContext) => Promise<T>,
 ): Promise<T> {
-  const user = await getAuthenticatedUser(request);
-  const authenticatedUser = requireAuth(user);
+  const { user, headers } = await getServerSession(request);
+  const authenticatedUser = requireAuth(user, headers);
 
   return await callback({
     user: authenticatedUser,
@@ -65,6 +65,32 @@ export async function withMockDataFallback<T>(
     return await getMockData(request);
   }
   return await getRealData();
+}
+
+function getErrorCode(error: unknown): string | undefined {
+  return typeof error === 'object' && error !== null && 'code' in error
+    ? String((error as { code: unknown }).code)
+    : undefined;
+}
+
+function getNestedErrors(error: unknown): unknown[] {
+  if (typeof error !== 'object' || error === null) return [];
+
+  const nested: unknown[] = [];
+  if ('cause' in error) nested.push((error as { cause?: unknown }).cause);
+  if ('errors' in error) {
+    const errors = (error as { errors?: unknown }).errors;
+    if (Array.isArray(errors)) nested.push(...errors);
+  }
+
+  return nested.filter(Boolean);
+}
+
+export function isDatabaseConnectionError(error: unknown): boolean {
+  const code = getErrorCode(error);
+  if (code === 'ECONNREFUSED') return true;
+
+  return getNestedErrors(error).some(isDatabaseConnectionError);
 }
 
 export async function tryAsync<T>(

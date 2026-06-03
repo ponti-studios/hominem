@@ -8,7 +8,7 @@ interface AuthScaffoldProps {
 
 export function AuthScaffold({ children, title, helperText }: AuthScaffoldProps) {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-base px-4 py-10">
+    <div className="flex items-center justify-center bg-base px-4 py-10">
       <div className="mx-auto flex w-full max-w-sm flex-col items-center text-center">
         <div className="space-y-2">
           <h1 className="heading-2 text-text-primary">{title}</h1>

@@ -22,9 +22,9 @@ export function ApplicationNotesTab({ notes, applicationId }: NotesTabProps) {
       case 'interview':
         return 'border-purple-200 bg-purple-50 text-purple-700';
       case 'research':
-        return 'border-blue-200 bg-blue-50 text-blue-700';
+        return 'border-accent/30 bg-accent/10 text-primary';
       case 'follow_up':
-        return 'border-yellow-200 bg-yellow-50 text-yellow-700';
+        return 'border-warning/30 bg-warning/10 text-foreground';
       default:
         return 'border-border bg-muted text-muted-foreground';
     }
@@ -39,7 +39,7 @@ export function ApplicationNotesTab({ notes, applicationId }: NotesTabProps) {
 
       {/* Add Note Form */}
       {showAddNote && (
-        <Card className="border-border bg-card shadow-sm">
+        <Card className="border-border bg-card ">
           <CardHeader>
             <CardTitle>Add Note</CardTitle>
           </CardHeader>
@@ -105,11 +105,13 @@ export function ApplicationNotesTab({ notes, applicationId }: NotesTabProps) {
           </div>
         ) : (
           notes.map((note) => (
-            <Card key={note.id} className="border-border bg-card shadow-sm">
+            <Card key={note.id} className="border-border bg-card ">
               <CardContent className="p-4">
                 <div className="mb-2 flex items-start justify-between gap-3">
                   <div className="space-y-2">
-                    {note.title ? <h4 className="font-medium text-foreground">{note.title}</h4> : null}
+                    {note.title ? (
+                      <h4 className="font-medium text-foreground">{note.title}</h4>
+                    ) : null}
                     <Badge variant="outline" className={getNoteTone(note.type)}>
                       {note.type.replace('_', ' ')}
                     </Badge>

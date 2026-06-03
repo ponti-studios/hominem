@@ -93,10 +93,10 @@ function SocialLinksEditorSection({
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Link2 className="w-5 h-5 text-blue-600" />
+            <div className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center">
+              <Link2 className="w-5 h-5 text-primary" />
             </div>
-            <h2 className="text-2xl font-semibold text-gray-900">Social</h2>
+            <h2 className="text-2xl font-semibold text-foreground">Social</h2>
           </div>
         </div>
         <div className="flex gap-3">
@@ -119,13 +119,13 @@ function SocialLinksEditorSection({
       >
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* GitHub */}
-          <div className="form-group">
+          <div className="flex flex-col gap-2">
             <label htmlFor="github" className="label flex items-center gap-2">
-              <Github className="w-4 h-4 text-gray-600" />
+              <Github className="w-4 h-4 text-muted-foreground" />
               GitHub Username
             </label>
             <div className="flex">
-              <div className="inline-flex items-center px-3 text-sm text-gray-500 border border-r-0 border-gray-300 rounded-l-md">
+              <div className="inline-flex items-center px-3 text-sm text-muted-foreground border border-r-0 border-border rounded-l-md">
                 github.com/
               </div>
               <input
@@ -147,13 +147,13 @@ function SocialLinksEditorSection({
           </div>
 
           {/* LinkedIn */}
-          <div className="form-group">
+          <div className="flex flex-col gap-2">
             <label htmlFor="linkedin" className="label flex items-center gap-2">
-              <Linkedin className="w-4 h-4 text-gray-600" />
+              <Linkedin className="w-4 h-4 text-muted-foreground" />
               LinkedIn Username
             </label>
             <div className="flex">
-              <div className="inline-flex items-center px-3 text-sm text-gray-500 border border-r-0 border-gray-300 rounded-l-md">
+              <div className="inline-flex items-center px-3 text-sm text-muted-foreground border border-r-0 border-border rounded-l-md">
                 linkedin.com/in/
               </div>
               <input
@@ -176,13 +176,13 @@ function SocialLinksEditorSection({
           </div>
 
           {/* Twitter */}
-          <div className="form-group">
+          <div className="flex flex-col gap-2">
             <label htmlFor="twitter" className="label flex items-center gap-2">
-              <Twitter className="w-4 h-4 text-gray-600" />
+              <Twitter className="w-4 h-4 text-muted-foreground" />
               Twitter Username
             </label>
             <div className="flex">
-              <div className="inline-flex items-center px-3 text-sm text-gray-500 border border-r-0 border-gray-300 rounded-l-md">
+              <div className="inline-flex items-center px-3 text-sm text-muted-foreground border border-r-0 border-border rounded-l-md">
                 twitter.com/
               </div>
               <input
@@ -202,9 +202,9 @@ function SocialLinksEditorSection({
           </div>
 
           {/* Website */}
-          <div className="form-group">
+          <div className="flex flex-col gap-2">
             <label htmlFor="website" className="label flex items-center gap-2">
-              <Globe className="w-4 h-4 text-gray-600" />
+              <Globe className="w-4 h-4 text-muted-foreground" />
               Website URL
             </label>
             <input
@@ -228,31 +228,31 @@ function SocialLinksEditorSection({
           watchedValues.linkedin ||
           watchedValues.twitter ||
           watchedValues.website) && (
-          <div className="mt-8 p-6 rounded-lg border border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Preview</h3>
+          <div className="mt-8 p-6 rounded-lg border border-border">
+            <h3 className="text-lg font-medium text-foreground mb-4">Preview</h3>
             <div className="flex flex-wrap gap-3">
               {watchedValues.github && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-lg border border-gray-200">
-                  <Github className="w-4 h-4 text-gray-600" />
-                  <span className="text-sm text-gray-700">{watchedValues.github}</span>
+                <div className="flex items-center gap-2 px-3 py-2 bg-card rounded-lg border border-border">
+                  <Github className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">{watchedValues.github}</span>
                 </div>
               )}
               {watchedValues.linkedin && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-lg border border-gray-200">
-                  <Linkedin className="w-4 h-4 text-gray-600" />
-                  <span className="text-sm text-gray-700">{watchedValues.linkedin}</span>
+                <div className="flex items-center gap-2 px-3 py-2 bg-card rounded-lg border border-border">
+                  <Linkedin className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">{watchedValues.linkedin}</span>
                 </div>
               )}
               {watchedValues.twitter && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-lg border border-gray-200">
-                  <Twitter className="w-4 h-4 text-gray-600" />
-                  <span className="text-sm text-gray-700">{watchedValues.twitter}</span>
+                <div className="flex items-center gap-2 px-3 py-2 bg-card rounded-lg border border-border">
+                  <Twitter className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">{watchedValues.twitter}</span>
                 </div>
               )}
               {watchedValues.website && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-lg border border-gray-200">
-                  <Globe className="w-4 h-4 text-gray-600" />
-                  <span className="text-sm text-gray-700">{watchedValues.website}</span>
+                <div className="flex items-center gap-2 px-3 py-2 bg-card rounded-lg border border-border">
+                  <Globe className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">{watchedValues.website}</span>
                 </div>
               )}
             </div>

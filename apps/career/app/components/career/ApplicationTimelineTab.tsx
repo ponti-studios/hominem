@@ -26,7 +26,7 @@ export function ApplicationTimelineTab({ application, applicationId }: TimelineT
 
       {/* Add Interview Form */}
       {showAddInterview && (
-        <Card className="border-border bg-card shadow-sm">
+        <Card className="border-border bg-card ">
           <CardHeader>
             <CardTitle>Add Interview</CardTitle>
           </CardHeader>
@@ -93,7 +93,7 @@ export function ApplicationTimelineTab({ application, applicationId }: TimelineT
       {/* Timeline Display */}
       <div className="space-y-4">
         {/* Application Date */}
-        <Card className="border-border bg-card shadow-sm">
+        <Card className="border-border bg-card ">
           <CardContent className="flex items-start gap-4 p-4">
             <div className="mt-1 size-3 shrink-0 rounded-full bg-primary" />
             <div className="flex-1 space-y-1">
@@ -110,7 +110,7 @@ export function ApplicationTimelineTab({ application, applicationId }: TimelineT
 
         {/* Interviews */}
         {application.interviewDates?.map((interview, index) => (
-          <Card key={interview.date} className="border-border bg-card shadow-sm">
+          <Card key={interview.date} className="border-border bg-card ">
             <CardContent className="flex items-start gap-4 p-4">
               <div className="mt-1 size-3 shrink-0 rounded-full bg-purple-500" />
               <div className="flex-1 space-y-2">
@@ -119,7 +119,10 @@ export function ApplicationTimelineTab({ application, applicationId }: TimelineT
                     <h4 className="font-medium text-foreground">
                       {interview.type.replace(/(\b\w)/g, (l) => l.toUpperCase())} Interview
                     </h4>
-                    <Badge variant="outline" className="border-purple-200 bg-purple-50 text-purple-700">
+                    <Badge
+                      variant="outline"
+                      className="border-purple-200 bg-purple-50 text-purple-700"
+                    >
                       {interview.type.replace(/_/g, ' ')}
                     </Badge>
                   </div>

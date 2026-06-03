@@ -1,11 +1,20 @@
 {
-  "lsp": {
-    "vscode-css-language-server": {
-      "settings": {
-        "css": {
-          "customData": [".vscode/tailwind.custom-data.json"]
-        }
-      }
+  "tab_size": 2,
+  "hard_tabs": false,
+  "format_on_save": "off",
+  "formatter": {
+    "external": {
+      "command": "./node_modules/.bin/oxfmt",
+      "arguments": ["--stdin-filepath", "{buffer_path}"]
+    }
+  },
+  "languages": {
+    "CSS": {
+      "language_servers": [
+        "tailwindcss-intellisense-css",
+        "!vscode-css-language-server",
+        "..."
+      ]
     }
   }
 }

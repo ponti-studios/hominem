@@ -1,20 +1,20 @@
 export function getStatusColor(status: string) {
   switch (status) {
     case 'APPLIED':
-      return 'bg-blue-100 text-blue-800';
+      return 'border-accent/30 bg-accent/10 text-foreground';
     case 'PHONE_SCREEN':
-      return 'bg-yellow-100 text-yellow-800';
+      return 'border-warning/30 bg-warning/10 text-foreground';
     case 'INTERVIEW':
-      return 'bg-purple-100 text-purple-800';
+      return 'border-accent/30 bg-accent/10 text-foreground';
     case 'OFFER':
-      return 'bg-green-100 text-green-800';
+      return 'border-success/30 bg-success/10 text-foreground';
     case 'ACCEPTED':
-      return 'bg-emerald-100 text-emerald-800';
+      return 'border-success/40 bg-success/15 text-foreground';
     case 'REJECTED':
-      return 'bg-red-100 text-red-800';
+      return 'border-destructive/30 bg-destructive/10 text-foreground';
     case 'WITHDRAWN':
-      return 'bg-gray-100 text-gray-800';
+      return 'bg-muted text-foreground';
     default:
-      return 'bg-gray-100 text-gray-800';
+      return 'bg-muted text-foreground';
   }
 }

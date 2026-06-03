@@ -220,47 +220,47 @@ export function JobScrapingResumeCustomizer({
       {showResumeGeneration && (
         <div className="flex items-center justify-center space-x-8">
           <div
-            className={`flex items-center space-x-3 ${step === 'scrape' ? 'text-black' : 'text-gray-400'}`}
+            className={`flex items-center space-x-3 ${step === 'scrape' ? 'text-foreground' : 'text-muted-foreground'}`}
           >
             <div
-              className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${step === 'scrape' ? 'border-black bg-black text-white' : 'border-gray-300'}`}
+              className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${step === 'scrape' ? 'border-accent bg-primary text-primary-foreground' : 'border-border'}`}
             >
               <span className="text-sm font-medium">1</span>
             </div>
             <span className="text-sm font-medium">Scrape</span>
           </div>
           <div
-            className={`w-12 h-px ${step === 'review' || step === 'generate' || step === 'result' ? 'bg-black' : 'bg-gray-300'}`}
+            className={`w-12 h-px ${step === 'review' || step === 'generate' || step === 'result' ? 'bg-primary' : 'bg-muted'}`}
           />
           <div
-            className={`flex items-center space-x-3 ${step === 'review' ? 'text-black' : step === 'generate' || step === 'result' ? 'text-black' : 'text-gray-400'}`}
+            className={`flex items-center space-x-3 ${step === 'review' ? 'text-foreground' : step === 'generate' || step === 'result' ? 'text-foreground' : 'text-muted-foreground'}`}
           >
             <div
-              className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${step === 'review' ? 'border-black bg-black text-white' : step === 'generate' || step === 'result' ? 'border-black' : 'border-gray-300'}`}
+              className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${step === 'review' ? 'border-accent bg-primary text-primary-foreground' : step === 'generate' || step === 'result' ? 'border-accent' : 'border-border'}`}
             >
               <span className="text-sm font-medium">2</span>
             </div>
             <span className="text-sm font-medium">Review</span>
           </div>
           <div
-            className={`w-12 h-px ${step === 'generate' || step === 'result' ? 'bg-black' : 'bg-gray-300'}`}
+            className={`w-12 h-px ${step === 'generate' || step === 'result' ? 'bg-primary' : 'bg-muted'}`}
           />
           <div
-            className={`flex items-center space-x-3 ${step === 'generate' ? 'text-black' : step === 'result' ? 'text-black' : 'text-gray-400'}`}
+            className={`flex items-center space-x-3 ${step === 'generate' ? 'text-foreground' : step === 'result' ? 'text-foreground' : 'text-muted-foreground'}`}
           >
             <div
-              className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${step === 'generate' ? 'border-black bg-black text-white' : step === 'result' ? 'border-black' : 'border-gray-300'}`}
+              className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${step === 'generate' ? 'border-accent bg-primary text-primary-foreground' : step === 'result' ? 'border-accent' : 'border-border'}`}
             >
               <span className="text-sm font-medium">3</span>
             </div>
             <span className="text-sm font-medium">Generate</span>
           </div>
-          <div className={`w-12 h-px ${step === 'result' ? 'bg-black' : 'bg-gray-300'}`} />
+          <div className={`w-12 h-px ${step === 'result' ? 'bg-primary' : 'bg-muted'}`} />
           <div
-            className={`flex items-center space-x-3 ${step === 'result' ? 'text-black' : 'text-gray-400'}`}
+            className={`flex items-center space-x-3 ${step === 'result' ? 'text-foreground' : 'text-muted-foreground'}`}
           >
             <div
-              className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${step === 'result' ? 'border-black bg-black text-white' : 'border-gray-300'}`}
+              className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${step === 'result' ? 'border-accent bg-primary text-primary-foreground' : 'border-border'}`}
             >
               <span className="text-sm font-medium">4</span>
             </div>
@@ -273,8 +273,10 @@ export function JobScrapingResumeCustomizer({
       {step === 'scrape' && (
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-8">
-            <h2 className="font-serif text-2xl font-light text-gray-900 mb-2">Job Posting URL</h2>
-            <p className="text-gray-600">Enter the URL of the job posting you'd like to analyze</p>
+            <h2 className="font-sans text-2xl font-light text-foreground mb-2">Job Posting URL</h2>
+            <p className="text-muted-foreground">
+              Enter the URL of the job posting you'd like to analyze
+            </p>
           </div>
 
           <div className="space-y-6">
@@ -284,13 +286,13 @@ export function JobScrapingResumeCustomizer({
                 value={jobUrl}
                 onChange={(e) => setJobUrl(e.target.value)}
                 placeholder="https://example.com/job-posting"
-                className="w-full text-center text-lg py-4 border-0 border-b-2 border-gray-300 focus:border-black focus:ring-0 rounded-none"
+                className="w-full text-center text-lg py-4 border-0 border-b-2 border-border focus:border-accent focus:ring-0 rounded-md"
               />
             </div>
 
             {scrapingError && (
               <div className="text-center">
-                <p className="text-red-600 text-sm">{scrapingError}</p>
+                <p className="text-destructive text-sm">{scrapingError}</p>
               </div>
             )}
 
@@ -298,15 +300,15 @@ export function JobScrapingResumeCustomizer({
               <Button
                 onClick={handleScrape}
                 disabled={isScraping || !jobUrl.trim()}
-                className={`px-8 py-3 border-0 rounded-none transition-all duration-200 ${
+                className={`px-8 py-3 border-0 rounded-md transition-all duration-200 ${
                   isScraping
-                    ? 'bg-gray-400 text-white cursor-not-allowed'
-                    : 'bg-black text-white hover:bg-gray-800'
+                    ? 'bg-muted text-primary-foreground cursor-not-allowed'
+                    : 'bg-primary text-primary-foreground hover:bg-primary/90'
                 }`}
               >
                 {isScraping ? (
                   <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
                     <span>Scraping...</span>
                   </div>
                 ) : (
@@ -322,34 +324,36 @@ export function JobScrapingResumeCustomizer({
       {step === 'review' && scrapedJob && (
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="font-serif text-2xl font-light text-gray-900 mb-2">
+            <h2 className="font-sans text-2xl font-light text-foreground mb-2">
               Review Job Posting
             </h2>
-            <p className="text-gray-600">Verify the extracted information before proceeding</p>
+            <p className="text-muted-foreground">
+              Verify the extracted information before proceeding
+            </p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             <div className="space-y-6">
               <div>
-                <h3 className="font-serif text-lg font-medium text-gray-900 mb-2">Position</h3>
-                <p className="text-gray-700">{scrapedJob.jobTitle}</p>
+                <h3 className="font-sans text-lg font-medium text-foreground mb-2">Position</h3>
+                <p className="text-muted-foreground">{scrapedJob.jobTitle}</p>
               </div>
 
               <div>
-                <h3 className="font-serif text-lg font-medium text-gray-900 mb-2">Company</h3>
-                <p className="text-gray-700">{scrapedJob.companyName}</p>
+                <h3 className="font-sans text-lg font-medium text-foreground mb-2">Company</h3>
+                <p className="text-muted-foreground">{scrapedJob.companyName}</p>
               </div>
 
               {scrapedJob.requirements.length > 0 && (
                 <div>
-                  <h3 className="font-serif text-lg font-medium text-gray-900 mb-3">
+                  <h3 className="font-sans text-lg font-medium text-foreground mb-3">
                     Requirements
                   </h3>
                   <ul className="space-y-2">
                     {scrapedJob.requirements.map((req, index) => (
                       <li
                         key={`req-${index}-${req.slice(0, 20)}`}
-                        className="text-gray-700 text-sm"
+                        className="text-muted-foreground text-sm"
                       >
                         • {req}
                       </li>
@@ -360,9 +364,9 @@ export function JobScrapingResumeCustomizer({
             </div>
 
             <div>
-              <h3 className="font-serif text-lg font-medium text-gray-900 mb-3">Description</h3>
-              <div className="bg-gray-50 p-6 max-h-96 overflow-y-auto">
-                <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">
+              <h3 className="font-sans text-lg font-medium text-foreground mb-3">Description</h3>
+              <div className="bg-muted p-6 max-h-96 overflow-y-auto">
+                <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap">
                   {scrapedJob.jobDescription}
                 </p>
               </div>
@@ -373,15 +377,15 @@ export function JobScrapingResumeCustomizer({
             <Button
               onClick={handleSaveApplication}
               disabled={isSaving}
-              className={`px-8 py-3 border-0 rounded-none transition-all duration-200 ${
+              className={`px-8 py-3 border-0 rounded-md transition-all duration-200 ${
                 isSaving
-                  ? 'bg-gray-400 text-white cursor-not-allowed'
-                  : 'bg-black text-white hover:bg-gray-800'
+                  ? 'bg-muted text-primary-foreground cursor-not-allowed'
+                  : 'bg-primary text-primary-foreground hover:bg-primary/90'
               }`}
             >
               {isSaving ? (
                 <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
                   <span>Saving...</span>
                 </div>
               ) : (
@@ -391,7 +395,7 @@ export function JobScrapingResumeCustomizer({
             <Button
               variant="outline"
               onClick={() => setStep('scrape')}
-              className="px-8 py-3 border-gray-300 text-gray-700 hover:bg-gray-50 rounded-none"
+              className="px-8 py-3 border-border text-muted-foreground hover:bg-muted rounded-md"
             >
               Back
             </Button>
@@ -399,7 +403,7 @@ export function JobScrapingResumeCustomizer({
 
           {saveError && (
             <div className="text-center mt-4">
-              <p className="text-red-600 text-sm">{saveError}</p>
+              <p className="text-destructive text-sm">{saveError}</p>
             </div>
           )}
         </div>
@@ -409,10 +413,10 @@ export function JobScrapingResumeCustomizer({
       {showResumeGeneration && step === 'generate' && (
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="font-serif text-2xl font-light text-gray-900 mb-2">
+            <h2 className="font-sans text-2xl font-light text-foreground mb-2">
               Resume Preferences
             </h2>
-            <p className="text-gray-600">Configure your resume format and style</p>
+            <p className="text-muted-foreground">Configure your resume format and style</p>
           </div>
 
           <div className="space-y-8">
@@ -420,7 +424,7 @@ export function JobScrapingResumeCustomizer({
               <div>
                 <label
                   htmlFor="resumeFormat"
-                  className="block font-serif text-sm font-medium text-gray-900 mb-3"
+                  className="block font-sans text-sm font-medium text-foreground mb-3"
                 >
                   Format
                 </label>
@@ -431,7 +435,7 @@ export function JobScrapingResumeCustomizer({
                 >
                   <SelectTrigger
                     id="resumeFormat"
-                    className="w-full rounded-none border-0 border-b-2 border-gray-300 px-0 focus:ring-0"
+                    className="w-full rounded-md border-0 border-b-2 border-border px-0 focus:ring-0"
                   >
                     <SelectValue placeholder="Select format" />
                   </SelectTrigger>
@@ -447,7 +451,7 @@ export function JobScrapingResumeCustomizer({
               <div>
                 <label
                   htmlFor="targetLength"
-                  className="block font-serif text-sm font-medium text-gray-900 mb-3"
+                  className="block font-sans text-sm font-medium text-foreground mb-3"
                 >
                   Length
                 </label>
@@ -458,7 +462,7 @@ export function JobScrapingResumeCustomizer({
                 >
                   <SelectTrigger
                     id="targetLength"
-                    className="w-full rounded-none border-0 border-b-2 border-gray-300 px-0 focus:ring-0"
+                    className="w-full rounded-md border-0 border-b-2 border-border px-0 focus:ring-0"
                   >
                     <SelectValue placeholder="Select length" />
                   </SelectTrigger>
@@ -474,7 +478,7 @@ export function JobScrapingResumeCustomizer({
             <div>
               <label
                 htmlFor="focusAreas"
-                className="block font-serif text-sm font-medium text-gray-900 mb-3"
+                className="block font-sans text-sm font-medium text-foreground mb-3"
               >
                 Focus Areas (optional)
               </label>
@@ -484,7 +488,7 @@ export function JobScrapingResumeCustomizer({
                 onChange={(e) => setFocusAreas(e.target.value)}
                 placeholder="leadership, technical, etc."
                 disabled={isGenerating}
-                className="w-full border-0 border-b-2 border-gray-300 focus:border-black focus:ring-0 rounded-none"
+                className="w-full border-0 border-b-2 border-border focus:border-accent focus:ring-0 rounded-md"
               />
             </div>
           </div>
@@ -493,15 +497,15 @@ export function JobScrapingResumeCustomizer({
             <Button
               onClick={handleGenerateResume}
               disabled={isGenerating}
-              className={`px-8 py-3 border-0 rounded-none transition-all duration-200 ${
+              className={`px-8 py-3 border-0 rounded-md transition-all duration-200 ${
                 isGenerating
-                  ? 'bg-gray-400 text-white cursor-not-allowed'
-                  : 'bg-black text-white hover:bg-gray-800'
+                  ? 'bg-muted text-primary-foreground cursor-not-allowed'
+                  : 'bg-primary text-primary-foreground hover:bg-primary/90'
               }`}
             >
               {isGenerating ? (
                 <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
                   <span>Generating...</span>
                 </div>
               ) : (
@@ -511,7 +515,7 @@ export function JobScrapingResumeCustomizer({
             <Button
               variant="outline"
               onClick={() => setStep('review')}
-              className="px-8 py-3 border-gray-300 text-gray-700 hover:bg-gray-50 rounded-none"
+              className="px-8 py-3 border-border text-muted-foreground hover:bg-muted rounded-md"
             >
               Back
             </Button>
@@ -519,7 +523,7 @@ export function JobScrapingResumeCustomizer({
 
           {generationError && (
             <div className="text-center mt-4">
-              <p className="text-red-600 text-sm">{generationError}</p>
+              <p className="text-destructive text-sm">{generationError}</p>
             </div>
           )}
         </div>
@@ -529,28 +533,28 @@ export function JobScrapingResumeCustomizer({
       {showResumeGeneration && step === 'result' && resumeResult && (
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="font-serif text-2xl font-light text-gray-900 mb-2">
+            <h2 className="font-sans text-2xl font-light text-foreground mb-2">
               Your Customized Resume
             </h2>
-            <p className="text-gray-600">Ready to download and apply</p>
+            <p className="text-muted-foreground">Ready to download and apply</p>
           </div>
 
           {/* Job Analysis */}
           {resumeResult.jobAnalysis && (
             <div className="mb-12">
-              <h3 className="font-serif text-lg font-medium text-gray-900 mb-6 text-center">
+              <h3 className="font-sans text-lg font-medium text-foreground mb-6 text-center">
                 Key Insights
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
-                  <h4 className="font-serif text-sm font-medium text-gray-900 mb-3">
+                  <h4 className="font-sans text-sm font-medium text-foreground mb-3">
                     Required Skills
                   </h4>
                   <div className="flex flex-wrap gap-2">
                     {resumeResult.jobAnalysis.requiredSkills.map((skill) => (
                       <span
                         key={skill}
-                        className="px-3 py-1 border border-gray-300 text-gray-700 text-sm"
+                        className="px-3 py-1 border border-border text-muted-foreground text-sm"
                       >
                         {skill}
                       </span>
@@ -559,14 +563,14 @@ export function JobScrapingResumeCustomizer({
                 </div>
 
                 <div>
-                  <h4 className="font-serif text-sm font-medium text-gray-900 mb-3">
+                  <h4 className="font-sans text-sm font-medium text-foreground mb-3">
                     Recommended Keywords
                   </h4>
                   <div className="flex flex-wrap gap-2">
                     {resumeResult.jobAnalysis.recommendedKeywords.map((keyword) => (
                       <span
                         key={keyword}
-                        className="px-3 py-1 border border-gray-300 text-gray-700 text-sm"
+                        className="px-3 py-1 border border-border text-muted-foreground text-sm"
                       >
                         {keyword}
                       </span>
@@ -580,27 +584,27 @@ export function JobScrapingResumeCustomizer({
           {/* Customized Resume */}
           <div className="mb-12">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="font-serif text-lg font-medium text-gray-900">Resume Content</h3>
+              <h3 className="font-sans text-lg font-medium text-foreground">Resume Content</h3>
               <div className="space-x-3">
                 <Button
                   variant="outline"
                   onClick={handleCopyResume}
-                  className="px-4 py-2 border-gray-300 text-gray-700 hover:bg-gray-50 rounded-none"
+                  className="px-4 py-2 border-border text-muted-foreground hover:bg-muted rounded-md"
                 >
                   Copy
                 </Button>
                 <Button
                   variant="outline"
                   onClick={handleDownloadResume}
-                  className="px-4 py-2 border-gray-300 text-gray-700 hover:bg-gray-50 rounded-none"
+                  className="px-4 py-2 border-border text-muted-foreground hover:bg-muted rounded-md"
                 >
                   Download
                 </Button>
               </div>
             </div>
 
-            <div className="bg-gray-50 p-8 border border-gray-200">
-              <pre className="whitespace-pre-wrap text-gray-800 font-mono text-sm leading-relaxed">
+            <div className="bg-muted p-8 border border-border">
+              <pre className="whitespace-pre-wrap text-foreground font-mono text-sm leading-relaxed">
                 {resumeResult.customizedResume}
               </pre>
             </div>
@@ -609,14 +613,14 @@ export function JobScrapingResumeCustomizer({
           <div className="text-center space-x-4">
             <Button
               onClick={resetFlow}
-              className="px-8 py-3 bg-black text-white hover:bg-gray-800 border-0 rounded-none"
+              className="px-8 py-3 bg-primary text-primary-foreground hover:bg-primary/90 border-0 rounded-md"
             >
               Start Over
             </Button>
             <Button
               variant="outline"
               onClick={() => setStep('generate')}
-              className="px-8 py-3 border-gray-300 text-gray-700 hover:bg-gray-50 rounded-none"
+              className="px-8 py-3 border-border text-muted-foreground hover:bg-muted rounded-md"
             >
               Back
             </Button>

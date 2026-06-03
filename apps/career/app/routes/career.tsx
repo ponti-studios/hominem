@@ -1,3 +1,6 @@
+import { Badge } from '@hominem/ui/badge';
+import { buttonVariants } from '@hominem/ui/button';
+import { Card, CardContent } from '@hominem/ui/card';
 import type { LoaderFunctionArgs } from 'react-router';
 import { Link, useLoaderData } from 'react-router';
 
@@ -126,31 +129,32 @@ export default function CareerDashboard() {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div className="border-b border-slate-200/50 bg-white/80 backdrop-blur-sm">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-light text-slate-900 font-serif">Your Career</h1>
+      <Card className="border-border bg-card ">
+        <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-2">
+            <Badge variant="outline">Career dashboard</Badge>
+            <div>
+              <h1 className="text-3xl font-semibold text-foreground md:text-4xl">Your Career</h1>
+              <p className="text-sm text-muted-foreground">
+                Review your experience, compensation growth, and career momentum.
+              </p>
+            </div>
           </div>
-          <nav className="hidden sm:flex items-center space-x-8">
+          <nav className="flex flex-wrap items-center gap-3">
             <Link
               to="/career/applications"
-              className="text-slate-600 hover:text-slate-900 font-medium transition-colors duration-200 font-sans"
+              className={buttonVariants({ variant: 'outline', size: 'sm' })}
             >
               Applications
             </Link>
-            <Link
-              to="/projects"
-              className="text-slate-600 hover:text-slate-900 font-medium transition-colors duration-200 font-sans"
-            >
+            <Link to="/projects" className={buttonVariants({ variant: 'outline', size: 'sm' })}>
               Projects
             </Link>
           </nav>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Current Salary"
           value={formatCurrency(summary.currentSalary / 100)}
@@ -180,37 +184,37 @@ export default function CareerDashboard() {
       {/* Salary Progression */}
 
       {summary.salaryByYear.length > 0 ? (
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/50">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-light text-slate-900 font-serif">Salary Progression</h2>
-            <span className="text-sm text-slate-500 font-sans">By Year</span>
-          </div>
-          <SalaryChart data={summary.salaryByYear} />
-        </div>
+        <Card className="border-border bg-card ">
+          <CardContent className="space-y-6 p-6">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-2xl font-semibold text-foreground">Salary Progression</h2>
+              <Badge variant="outline">By year</Badge>
+            </div>
+            <SalaryChart data={summary.salaryByYear} />
+          </CardContent>
+        </Card>
       ) : null}
 
       {/* Highest Salary Increase Highlight */}
-      {summary.highestSalaryIncrease.amount > 0 && (
-        <div className="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl p-8 text-white">
-          <div className="flex items-center justify-between">
+      {summary.highestSalaryIncrease.amount > 0 ? (
+        <Card className="border-success/30 bg-success/10">
+          <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h3 className="text-lg font-medium font-sans opacity-90">Biggest Career Win</h3>
-              <p className="text-3xl font-light font-serif mt-2">
+              <h3 className="text-lg font-medium text-foreground">Biggest Career Win</h3>
+              <p className="mt-2 text-3xl font-semibold text-foreground">
                 +{formatCurrency(summary.highestSalaryIncrease.amount / 100)}
               </p>
-              <p className="text-emerald-100 mt-1 font-sans">
+              <p className="mt-1 text-sm text-muted-foreground">
                 {formatPercentage(summary.highestSalaryIncrease.percentage)} increase •{' '}
                 {summary.highestSalaryIncrease.reason}
               </p>
             </div>
-            <div className="text-right opacity-75">
-              <p className="text-sm font-sans">
-                {new Date(summary.highestSalaryIncrease.date).toLocaleDateString()}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+            <Badge variant="outline" className="border-success/30 bg-background/70 text-foreground">
+              {new Date(summary.highestSalaryIncrease.date).toLocaleDateString()}
+            </Badge>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {/* Career History - Combined Timeline and Experiences */}
       <CareerHistory workExperiences={experiences} careerTimeline={timeline} />

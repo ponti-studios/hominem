@@ -1,4 +1,14 @@
-import { useEffect, useState } from 'react';
+import { Badge } from '@hominem/ui/badge';
+import { buttonVariants } from '@hominem/ui/button';
+import { Card, CardContent } from '@hominem/ui/card';
+import {
+  BarChart3Icon,
+  BriefcaseIcon,
+  GlobeIcon,
+  ShieldCheckIcon,
+  SparklesIcon,
+  ZapIcon,
+} from 'lucide-react';
 import type { LoaderFunctionArgs, MetaFunction } from 'react-router';
 import { Link } from 'react-router';
 
@@ -20,331 +30,176 @@ export const meta: MetaFunction = () => {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { getAuthenticatedUser, redirectIfAuthenticated } = await import('../lib/auth.server');
-  const user = await getAuthenticatedUser(request);
-  redirectIfAuthenticated(user, '/account');
+  const { getServerSession, redirectIfAuthenticated } = await import('../lib/auth.server');
+  const { user, headers } = await getServerSession(request);
+  redirectIfAuthenticated(user, '/account', headers);
   return null;
 }
 
+const features = [
+  {
+    icon: ZapIcon,
+    title: 'Fast setup',
+    description:
+      'Turn resume content into a structured portfolio without rebuilding every section by hand.',
+  },
+  {
+    icon: SparklesIcon,
+    title: 'Polished writing',
+    description: 'Shape your experience, skills, and proof points into copy that reads clearly.',
+  },
+  {
+    icon: BriefcaseIcon,
+    title: 'Career context',
+    description: 'Connect applications, experience, and projects so your story stays current.',
+  },
+  {
+    icon: GlobeIcon,
+    title: 'Public sharing',
+    description: 'Publish a focused portfolio page and share it during job searches or networking.',
+  },
+  {
+    icon: BarChart3Icon,
+    title: 'Progress tracking',
+    description:
+      'Review applications, source performance, compensation growth, and career momentum.',
+  },
+  {
+    icon: ShieldCheckIcon,
+    title: 'Private by default',
+    description: 'Keep control over what is public while managing your career data in one place.',
+  },
+];
+
+const stats = [
+  { label: 'Portfolio sections', value: '7' },
+  { label: 'Career views', value: '4' },
+  { label: 'Application filters', value: '3' },
+  { label: 'Setup flow', value: '1' },
+];
+
 export default function Home() {
-  const [loading, setLoading] = useState(true);
-  const [hoveredFeature, setHoveredFeature] = useState<number | null>(null);
-
-  useEffect(() => {
-    setLoading(false);
-  }, []);
-
-  const features = [
-    {
-      icon: '⚡',
-      title: 'Lightning Fast',
-      description:
-        'Create stunning portfolios in minutes, not hours. Our AI-powered builder does the heavy lifting.',
-      gradient: 'from-yellow-400 to-orange-500',
-    },
-    {
-      icon: '🎨',
-      title: 'Beautiful Design',
-      description:
-        'Choose from professionally designed templates that adapt to your unique style and brand.',
-      gradient: 'from-pink-400 to-purple-500',
-    },
-    {
-      icon: '💻',
-      title: 'Developer Friendly',
-      description:
-        'Built with modern tech stack. Customize everything with React, TypeScript, and Tailwind CSS.',
-      gradient: 'from-blue-400 to-cyan-500',
-    },
-    {
-      icon: '🌍',
-      title: 'Global Reach',
-      description:
-        'Share your portfolio anywhere with custom domains and lightning-fast global CDN.',
-      gradient: 'from-green-400 to-emerald-500',
-    },
-    {
-      icon: '📊',
-      title: 'Analytics Included',
-      description: 'Track visitors, engagement, and conversions with built-in analytics dashboard.',
-      gradient: 'from-indigo-400 to-blue-500',
-    },
-    {
-      icon: '🛡️',
-      title: 'Secure & Reliable',
-      description:
-        'Enterprise-grade security with 99.9% uptime guarantee. Your data is always safe.',
-      gradient: 'from-red-400 to-pink-500',
-    },
-  ];
-
-  const testimonials = [
-    {
-      name: 'Sarah Chen',
-      role: 'Senior Product Designer',
-      company: 'Google',
-      content:
-        'Craftd helped me land my dream job at Google. The portfolio templates are absolutely stunning!',
-      initials: 'SC',
-    },
-    {
-      name: 'Mike Rodriguez',
-      role: 'Full Stack Developer',
-      company: 'Stripe',
-      content:
-        "The most intuitive portfolio builder I've ever used. Went from idea to published in 30 minutes.",
-      initials: 'MR',
-    },
-    {
-      name: 'Emma Thompson',
-      role: 'UX Director',
-      company: 'Airbnb',
-      content: 'Clean, professional, and mobile-optimized. My portfolio has never looked better.',
-      initials: 'ET',
-    },
-  ];
-
-  const stats = [
-    { label: 'Portfolios Created', value: '50K+', icon: '💼' },
-    { label: 'Job Offers Generated', value: '12K+', icon: '⭐' },
-    { label: 'Happy Creators', value: '25K+', icon: '👥' },
-    { label: 'Countries Reached', value: '120+', icon: '🌍' },
-  ];
-
-  if (loading) {
-    return (
-      <div className="bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="bg-white max-w-7xl mx-auto">
-      {/* Hero Section */}
-      <section className="pt-20 pb-20 px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-4xl mx-auto">
-          <div className="mb-6 inline-flex items-center px-4 py-2 rounded-full border border-blue-200 text-blue-700">
-            <span className="animate-pulse">✨</span>
-            <span className="ml-2">Trusted by 25K+ professionals</span>
+    <div className="mx-auto w-full max-w-7xl space-y-16">
+      <section className="grid min-h-[58vh] items-center gap-10 py-10 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="space-y-8">
+          <Badge variant="outline" className="border-accent/30 bg-accent/10 text-foreground">
+            Portfolio builder for active job searches
+          </Badge>
+          <div className="space-y-5">
+            <h1 className="display-2 max-w-3xl text-foreground">Craftd</h1>
+            <p className="body-1 max-w-2xl text-muted-foreground">
+              Create a focused professional portfolio, track applications, and keep your career
+              story organized from first draft to final offer.
+            </p>
           </div>
-
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-8 leading-tight">
-            Create Your{' '}
-            <span className="bg-linear-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-              Dream Portfolio
-            </span>{' '}
-            in Minutes
-          </h1>
-
-          <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto leading-relaxed">
-            Create stunning portfolios in minutes, not hours. Our AI-powered builder makes
-            professional portfolio creation simple and beautiful.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-            <Link
-              to="/onboarding"
-              className="bg-black hover:bg-gray-800 text-white px-8 py-4 text-lg group rounded-md font-medium transition-all duration-300 inline-flex items-center hover:scale-105"
-            >
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Link to="/onboarding" className={buttonVariants({ variant: 'primary', size: 'lg' })}>
               Start Building
-              <span className="ml-2 group-hover:translate-x-1 transition-transform inline-block">
-                →
-              </span>
             </Link>
-
-            <Link
-              to="/demo"
-              className="px-8 py-4 text-lg group border border-gray-300 hover:border-gray-400 rounded-md font-medium transition-all duration-300 inline-flex items-center hover:scale-105"
-            >
-              <span className="mr-2 group-hover:scale-110 transition-transform inline-block">
-                ▶
-              </span>
+            <Link to="/demo" className={buttonVariants({ variant: 'outline', size: 'lg' })}>
               View Demo
             </Link>
           </div>
-
-          <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
-            No credit card required
-          </div>
+          <p className="body-4 text-muted-foreground">No credit card required.</p>
         </div>
-      </section>
 
-      {/* Stats Section */}
-      <section className="py-16">
-        <div className="px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-            {stats.map((stat) => (
-              <div key={stat.label} className="text-center">
-                <div className="text-2xl mb-4">{stat.icon}</div>
-                <div className="text-3xl font-bold text-gray-900 mb-2">{stat.value}</div>
-                <div className="text-gray-600">{stat.label}</div>
+        <Card className="border-border bg-card">
+          <CardContent className="space-y-5 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="body-4 text-muted-foreground">Today</p>
+                <h2 className="heading-3 text-foreground">Career workspace</h2>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-900 mb-6">
-            Everything you need to{' '}
-            <span className="bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              stand out
-            </span>
-          </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Professional features that make your portfolio shine and help you land your next
-            opportunity.
-          </p>
-        </div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {features.map((feature, index) => (
-            <div
-              key={feature.title}
-              className="h-full group hover:shadow-xl transition-all duration-300 border-0 bg-linear-to-br from-white to-gray-50 rounded-lg p-8 hover:scale-105"
-              onMouseEnter={() => setHoveredFeature(index)}
-              onMouseLeave={() => setHoveredFeature(null)}
-            >
-              <div
-                className={`w-12 h-12 rounded-lg bg-linear-to-br flex items-center justify-center mb-6 group-hover:scale-110 transition-transform text-white text-xl ${feature.gradient}`}
-              >
-                {feature.icon}
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">{feature.title}</h3>
-              <p className="text-gray-600 leading-relaxed">{feature.description}</p>
+              <SparklesIcon className="size-5 text-accent" />
             </div>
-          ))}
-        </div>
+            <div className="grid gap-3">
+              {[
+                'Portfolio draft ready',
+                '3 applications need follow-up',
+                'Resume tuned for product roles',
+              ].map((item) => (
+                <div key={item} className="rounded-md border border-border bg-muted/40 p-3">
+                  <p className="body-3 text-foreground">{item}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </section>
 
-      {/* Testimonials Section */}
-      <section className="py-20">
-        <div className="px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-6">
-              Loved by{' '}
-              <span className="bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                professionals
-              </span>
-            </h2>
-            <p className="text-xl text-gray-600">
-              Join thousands of creators who've transformed their careers with Craftd.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial) => (
-              <div key={testimonial.name} className="h-full bg-white rounded-lg border p-8">
-                <div className="flex items-center mb-6">
-                  <div className="w-12 h-12 rounded-full bg-linear-to-br from-blue-500 to-purple-600 mr-4 flex items-center justify-center text-sm font-semibold text-white">
-                    {testimonial.initials}
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900">{testimonial.name}</h4>
-                    <p className="text-sm text-gray-600">
-                      {testimonial.role} • {testimonial.company}
-                    </p>
-                  </div>
-                </div>
-                <p className="text-gray-700 italic">"{testimonial.content}"</p>
-                <div className="flex mt-4">
-                  {Array(5)
-                    .fill(0)
-                    .map((_, i) => (
-                      <span key={`star-${testimonial.name}-${i}`} className="text-yellow-400">
-                        ⭐
-                      </span>
-                    ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {stats.map((stat) => (
+          <Card key={stat.label} className="border-border bg-card">
+            <CardContent className="space-y-1 p-5">
+              <div className="heading-2 text-foreground">{stat.value}</div>
+              <div className="body-4 text-muted-foreground">{stat.label}</div>
+            </CardContent>
+          </Card>
+        ))}
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl font-bold text-gray-900 mb-6">
-            Ready to write your{' '}
-            <span className="bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              success story?
-            </span>
-          </h2>
-          <p className="text-xl text-gray-600 mb-10">
-            Join thousands of professionals who've landed their dream jobs with portfolios built on
-            Craftd.
+      <section className="space-y-6">
+        <div className="space-y-2">
+          <h2 className="heading-1 text-foreground">Everything stays connected</h2>
+          <p className="body-2 max-w-2xl text-muted-foreground">
+            The app combines portfolio editing, career history, and application tracking in one
+            coherent workflow.
           </p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {features.map((feature) => {
+            const Icon = feature.icon;
+            return (
+              <Card key={feature.title} className="border-border bg-card">
+                <CardContent className="space-y-4 p-5">
+                  <div className="flex size-10 items-center justify-center rounded-md border border-accent/30 bg-accent/10">
+                    <Icon className="size-5 text-accent" />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="heading-4 text-foreground">{feature.title}</h3>
+                    <p className="body-3 text-muted-foreground">{feature.description}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </section>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              to="/onboarding"
-              className="bg-black hover:bg-gray-800 text-white px-8 py-4 text-lg group rounded-md font-medium transition-colors inline-flex items-center"
-            >
-              <span className="mr-2 group-hover:-translate-y-0.5 transition-transform inline-block">
-                🚀
-              </span>
+      <section className="rounded-md border border-border bg-card p-6 text-center sm:p-10">
+        <div className="mx-auto max-w-2xl space-y-5">
+          <h2 className="heading-1 text-foreground">Ready to build your portfolio?</h2>
+          <p className="body-2 text-muted-foreground">
+            Start with onboarding, publish when you are ready, and keep refining as your search
+            evolves.
+          </p>
+          <div className="flex flex-col justify-center gap-3 sm:flex-row">
+            <Link to="/onboarding" className={buttonVariants({ variant: 'primary', size: 'lg' })}>
               Create Your Portfolio
             </Link>
-
-            <Link
-              to="/demo"
-              className="px-8 py-4 text-lg border border-gray-300 hover:border-gray-400 rounded-md font-medium transition-colors inline-flex items-center"
-            >
-              Explore Examples
+            <Link to="/demo" className={buttonVariants({ variant: 'outline', size: 'lg' })}>
+              Explore Example
             </Link>
-          </div>
-
-          <div className="mt-8 flex items-center justify-center gap-6 text-sm text-gray-500">
-            <div className="flex items-center gap-2">
-              <span className="text-green-500">✓</span>
-              Free to start
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-green-500">✓</span>
-              No credit card required
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-green-500">✓</span>
-              Setup in minutes
-            </div>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-gray-200 py-8">
-        <div className="px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row items-center justify-between">
-            <div className="flex items-center gap-2 mb-4 md:mb-0">
-              <div className="w-6 h-6 rounded bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                ✨
-              </div>
-              <span className="font-semibold text-gray-900">Craftd</span>
-            </div>
-
-            <div className="flex items-center gap-6 text-sm text-gray-600">
-              <Link to="/account" className="hover:text-gray-900 transition-colors">
-                Account
-              </Link>
-              <Link to="/onboarding" className="hover:text-gray-900 transition-colors">
-                Create
-              </Link>
-              <Link to="/demo" className="hover:text-gray-900 transition-colors">
-                Demo
-              </Link>
-            </div>
-          </div>
-
-          <div className="mt-8 pt-8 border-t border-gray-200 text-center text-sm text-gray-500">
-            © 2025 Craftd. All rights reserved.
-          </div>
+      <footer className="border-t border-border py-8">
+        <div className="flex flex-col items-center justify-between gap-4 text-sm text-muted-foreground md:flex-row">
+          <span className="font-medium text-foreground">Craftd</span>
+          <nav className="flex items-center gap-6">
+            <Link to="/account" className="hover:text-foreground">
+              Account
+            </Link>
+            <Link to="/onboarding" className="hover:text-foreground">
+              Create
+            </Link>
+            <Link to="/demo" className="hover:text-foreground">
+              Demo
+            </Link>
+          </nav>
+          <span>2026 Craftd</span>
         </div>
       </footer>
     </div>

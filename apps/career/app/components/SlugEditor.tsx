@@ -179,19 +179,19 @@ export function SlugEditor({ portfolioId, initialSlug, onSave, onCancel }: SlugE
   const getMessageStyling = () => {
     if (!validation.message) return '';
 
-    if (validation.isChecking) return 'text-blue-600';
-    if (validation.isAvailable) return 'text-green-600';
-    return 'text-red-600';
+    if (validation.isChecking) return 'text-primary';
+    if (validation.isAvailable) return 'text-success';
+    return 'text-destructive';
   };
 
   return (
     <div className="space-y-2">
-      <label htmlFor="portfolio-slug" className="text-sm font-medium text-gray-700">
+      <label htmlFor="portfolio-slug" className="text-sm font-medium text-muted-foreground">
         Portfolio URL
       </label>
       <div className="flex items-center space-x-2">
         <div className="flex items-center flex-1 min-w-0">
-          <div className="inline-flex items-center px-4 h-8 text-sm text-gray-900 border border-r-0 bg-gray-200 border-gray-300 rounded-l-md">
+          <div className="inline-flex items-center px-4 h-8 text-sm text-foreground border border-r-0 bg-muted border-border rounded-l-md">
             craftd.dev/p/
           </div>
           <div className="flex-1 relative">
@@ -219,7 +219,7 @@ export function SlugEditor({ portfolioId, initialSlug, onSave, onCancel }: SlugE
             disabled={!canSave}
             variant="outline"
             size="sm"
-            className="h-8 border-green-300 px-2 text-xs text-green-700 hover:bg-green-50"
+            className="h-8 border-success/40 px-2 text-xs text-success hover:bg-success/10"
           >
             {isSaving ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : null}
             Save

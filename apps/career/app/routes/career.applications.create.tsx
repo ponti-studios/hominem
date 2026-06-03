@@ -177,9 +177,9 @@ export default function CreateJobApplication() {
       <div className="container mx-auto py-4">
         <div className="max-w-3xl mx-auto">
           {/* Input Method Selection */}
-          <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm mb-4">
+          <Card className=" border-0 bg-background/80 backdrop-blur-sm mb-4">
             <CardContent className="p-4">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              <h2 className="text-lg font-semibold text-foreground mb-4">
                 How would you like to add this job?
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -188,14 +188,16 @@ export default function CreateJobApplication() {
                   onClick={() => setInputMethod('url')}
                   className={`p-4 rounded-lg border-2 transition-all ${
                     inputMethod === 'url'
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-200 bg-white hover:border-gray-300'
+                      ? 'border-blue-500 bg-accent/10 text-primary'
+                      : 'border-border bg-card hover:border-border'
                   }`}
                 >
                   <div className="text-center">
                     <div className="text-2xl mb-2">🔗</div>
                     <div className="font-medium">Scrape from URL</div>
-                    <div className="text-sm text-gray-500 mt-1">Paste a job posting URL</div>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      Paste a job posting URL
+                    </div>
                   </div>
                 </button>
 
@@ -204,14 +206,16 @@ export default function CreateJobApplication() {
                   onClick={() => setInputMethod('paste')}
                   className={`p-4 rounded-lg border-2 transition-all ${
                     inputMethod === 'paste'
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-200 bg-white hover:border-gray-300'
+                      ? 'border-blue-500 bg-accent/10 text-primary'
+                      : 'border-border bg-card hover:border-border'
                   }`}
                 >
                   <div className="text-center">
                     <div className="text-2xl mb-2">📋</div>
                     <div className="font-medium">Paste Description</div>
-                    <div className="text-sm text-gray-500 mt-1">Copy & paste job details</div>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      Copy & paste job details
+                    </div>
                   </div>
                 </button>
 
@@ -220,21 +224,21 @@ export default function CreateJobApplication() {
                   onClick={() => setInputMethod('manual')}
                   className={`p-4 rounded-lg border-2 transition-all ${
                     inputMethod === 'manual'
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-200 bg-white hover:border-gray-300'
+                      ? 'border-blue-500 bg-accent/10 text-primary'
+                      : 'border-border bg-card hover:border-border'
                   }`}
                 >
                   <div className="text-center">
                     <div className="text-2xl mb-2">✏️</div>
                     <div className="font-medium">Manual Entry</div>
-                    <div className="text-sm text-gray-500 mt-1">Fill out form manually</div>
+                    <div className="text-sm text-muted-foreground mt-1">Fill out form manually</div>
                   </div>
                 </button>
               </div>
 
               {/* URL Scraping */}
               {inputMethod === 'url' && (
-                <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="mt-4 pt-4 border-t border-border">
                   <div className="flex items-center gap-2">
                     <Input
                       type="url"
@@ -262,15 +266,15 @@ export default function CreateJobApplication() {
 
               {/* Paste Description */}
               {inputMethod === 'paste' && (
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <h3 className="text-md font-semibold text-gray-800 mb-4">
+                <div className="mt-4 pt-4 border-t border-border">
+                  <h3 className="text-md font-semibold text-foreground mb-4">
                     Paste Job Description
                   </h3>
                   <div className="space-y-2">
                     <div>
                       <label
                         htmlFor="pastedDescription"
-                        className="block text-sm font-medium text-gray-700 mb-2 sr-only"
+                        className="block text-sm font-medium text-muted-foreground mb-2 sr-only"
                       >
                         Job Description
                       </label>
@@ -280,7 +284,7 @@ export default function CreateJobApplication() {
                         onChange={(e) => setPastedDescription(e.target.value)}
                         rows={8}
                         placeholder="Paste the job description here..."
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                        className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring/50 focus:border-transparent resize-none"
                       />
                     </div>
                     <div className="text-center">
@@ -300,12 +304,12 @@ export default function CreateJobApplication() {
 
           {/* Manual Form (conditionally rendered) */}
           {inputMethod === 'manual' && (
-            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+            <Card className=" border-0 bg-background/80 backdrop-blur-sm">
               <CardContent className="p-4">
                 {actionData && !actionData.success && (
-                  <div className="mb-6 p-4 text-red-700 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
-                    <div className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center">
-                      <span className="text-red-600 text-sm">!</span>
+                  <div className="mb-6 p-4 text-destructive bg-destructive/10 border border-destructive/30 rounded-lg flex items-center gap-3">
+                    <div className="w-5 h-5 rounded-full bg-destructive/10 flex items-center justify-center">
+                      <span className="text-destructive text-sm">!</span>
                     </div>
                     {actionData.error}
                   </div>
@@ -313,27 +317,27 @@ export default function CreateJobApplication() {
 
                 {/* Scraped Data Preview */}
                 {scrapedData && (
-                  <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <h3 className="text-lg font-semibold text-blue-900 mb-4 flex items-center gap-2">
-                      <span className="text-blue-600">📋</span>
+                  <div className="mb-6 p-4 bg-accent/10 border border-accent/30 rounded-lg">
+                    <h3 className="text-lg font-semibold text-accent-foreground mb-4 flex items-center gap-2">
+                      <span className="text-primary">📋</span>
                       Extracted Job Information
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {scrapedData.requirements.length > 0 && (
                         <div>
-                          <h4 className="font-medium text-blue-800 mb-2">Requirements</h4>
+                          <h4 className="font-medium text-foreground mb-2">Requirements</h4>
                           <ul className="space-y-1">
                             {scrapedData.requirements.slice(0, 5).map((req, index) => (
                               <li
                                 key={`req-${index}-${req.slice(0, 20)}`}
-                                className="text-sm text-blue-700 flex items-start gap-2"
+                                className="text-sm text-primary flex items-start gap-2"
                               >
                                 <span className="text-blue-500 mt-1">•</span>
                                 <span>{req}</span>
                               </li>
                             ))}
                             {scrapedData.requirements.length > 5 && (
-                              <li className="text-sm text-blue-600 italic">
+                              <li className="text-sm text-primary italic">
                                 +{scrapedData.requirements.length - 5} more requirements
                               </li>
                             )}
@@ -343,18 +347,18 @@ export default function CreateJobApplication() {
 
                       {scrapedData.skills.length > 0 && (
                         <div>
-                          <h4 className="font-medium text-blue-800 mb-2">Skills</h4>
+                          <h4 className="font-medium text-foreground mb-2">Skills</h4>
                           <div className="flex flex-wrap gap-2">
                             {scrapedData.skills.slice(0, 8).map((skill, index) => (
                               <span
                                 key={`skill-${skill}`}
-                                className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-md"
+                                className="px-2 py-1 bg-accent/20 text-primary text-xs rounded-md"
                               >
                                 {skill}
                               </span>
                             ))}
                             {scrapedData.skills.length > 8 && (
-                              <span className="px-2 py-1 bg-blue-100 text-blue-600 text-xs rounded-md italic">
+                              <span className="px-2 py-1 bg-accent/20 text-primary text-xs rounded-md italic">
                                 +{scrapedData.skills.length - 8} more
                               </span>
                             )}
@@ -365,8 +369,8 @@ export default function CreateJobApplication() {
 
                     {scrapedData.companyDescription && (
                       <div className="mt-4">
-                        <h4 className="font-medium text-blue-800 mb-2">Company Description</h4>
-                        <p className="text-sm text-blue-700 leading-relaxed">
+                        <h4 className="font-medium text-foreground mb-2">Company Description</h4>
+                        <p className="text-sm text-primary leading-relaxed">
                           {scrapedData.companyDescription.length > 200
                             ? `${scrapedData.companyDescription.substring(0, 200)}...`
                             : scrapedData.companyDescription}
@@ -374,8 +378,8 @@ export default function CreateJobApplication() {
                       </div>
                     )}
 
-                    <div className="mt-4 pt-4 border-t border-blue-200">
-                      <div className="flex flex-wrap gap-4 text-xs text-blue-600">
+                    <div className="mt-4 pt-4 border-t border-accent/30">
+                      <div className="flex flex-wrap gap-4 text-xs text-primary">
                         <span>📊 {scrapedData.wordCount} words</span>
                         <span>🔗 {scrapedData.url ? 'URL available' : 'No URL'}</span>
                         <span>📅 {new Date(scrapedData.scrapedAt).toLocaleDateString()}</span>
@@ -387,7 +391,10 @@ export default function CreateJobApplication() {
                 <Form method="post" className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <label htmlFor="position" className="text-sm font-medium text-gray-700">
+                      <label
+                        htmlFor="position"
+                        className="text-sm font-medium text-muted-foreground"
+                      >
                         Job Title *
                       </label>
                       <Input
@@ -401,7 +408,10 @@ export default function CreateJobApplication() {
                     </div>
 
                     <div className="space-y-2">
-                      <label htmlFor="company" className="text-sm font-medium text-gray-700">
+                      <label
+                        htmlFor="company"
+                        className="text-sm font-medium text-muted-foreground"
+                      >
                         Company *
                       </label>
                       <Input
@@ -437,7 +447,7 @@ export default function CreateJobApplication() {
                     </div>
 
                     <div className="space-y-2">
-                      <label htmlFor="status" className="text-sm font-medium text-gray-700">
+                      <label htmlFor="status" className="text-sm font-medium text-muted-foreground">
                         Status
                       </label>
                       <Select name="status" defaultValue={JobApplicationStatus.APPLIED}>
@@ -456,7 +466,7 @@ export default function CreateJobApplication() {
                   </div>
 
                   <div className="space-y-2">
-                    <label htmlFor="location" className="text-sm font-medium text-gray-700">
+                    <label htmlFor="location" className="text-sm font-medium text-muted-foreground">
                       Location
                     </label>
                     <Input
@@ -469,7 +479,10 @@ export default function CreateJobApplication() {
                   </div>
 
                   <div className="space-y-2">
-                    <label htmlFor="jobPosting" className="text-sm font-medium text-gray-700">
+                    <label
+                      htmlFor="jobPosting"
+                      className="text-sm font-medium text-muted-foreground"
+                    >
                       Job Description
                     </label>
                     <textarea
@@ -477,7 +490,7 @@ export default function CreateJobApplication() {
                       name="jobPosting"
                       rows={6}
                       placeholder="Paste the job description here..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                      className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring/50 focus:border-transparent resize-none"
                       defaultValue={scrapedData ? scrapedData.jobDescription : ''}
                     />
                     {/* Hidden field to store full structured data */}
@@ -491,7 +504,10 @@ export default function CreateJobApplication() {
                   </div>
 
                   <div className="space-y-2">
-                    <label htmlFor="salaryQuoted" className="text-sm font-medium text-gray-700">
+                    <label
+                      htmlFor="salaryQuoted"
+                      className="text-sm font-medium text-muted-foreground"
+                    >
                       Salary Range
                     </label>
                     <Input
@@ -503,15 +519,15 @@ export default function CreateJobApplication() {
                   </div>
 
                   {/* Recruiter Information */}
-                  <div className="pt-4 border-t border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  <div className="pt-4 border-t border-border">
+                    <h3 className="text-lg font-semibold text-foreground mb-4">
                       Recruiter Information
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <label
                           htmlFor="recruiterName"
-                          className="text-sm font-medium text-gray-700"
+                          className="text-sm font-medium text-muted-foreground"
                         >
                           Recruiter Name
                         </label>
@@ -526,7 +542,7 @@ export default function CreateJobApplication() {
                       <div className="space-y-2">
                         <label
                           htmlFor="recruiterEmail"
-                          className="text-sm font-medium text-gray-700"
+                          className="text-sm font-medium text-muted-foreground"
                         >
                           Recruiter Email
                         </label>
@@ -543,7 +559,7 @@ export default function CreateJobApplication() {
                     <div className="mt-6 space-y-2">
                       <label
                         htmlFor="recruiterLinkedin"
-                        className="text-sm font-medium text-gray-700"
+                        className="text-sm font-medium text-muted-foreground"
                       >
                         Recruiter LinkedIn URL
                       </label>
@@ -563,7 +579,7 @@ export default function CreateJobApplication() {
                     </Button>
                     <Link
                       to="/career/applications"
-                      className="flex-1 h-11 inline-flex items-center justify-center rounded-lg text-sm font-medium transition-colors border border-gray-300 bg-white hover:bg-gray-50 text-gray-700"
+                      className="flex-1 h-11 inline-flex items-center justify-center rounded-lg text-sm font-medium transition-colors border border-border bg-card hover:bg-muted text-muted-foreground"
                     >
                       Cancel
                     </Link>

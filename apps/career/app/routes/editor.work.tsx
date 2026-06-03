@@ -178,9 +178,12 @@ function WorkExperienceForm({
   const isSaving = fetcher.state === 'submitting';
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="card bg-muted/50 space-y-4">
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="rounded-md border border-border bg-card p-4 bg-muted/50 space-y-4"
+    >
       <div className="flex items-center justify-between">
-        <h3 className="text-2xl tracking-tight font-medium text-foreground font-serif">
+        <h3 className="text-2xl tracking-normal font-medium text-foreground font-sans">
           {isNew ? 'New Experience' : experience?.company || 'Work Experience'}
         </h3>
         <div className="flex gap-2">
@@ -207,7 +210,7 @@ function WorkExperienceForm({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="form-group">
+        <div className="flex flex-col gap-2">
           <label htmlFor={`role-${experience?.id || 'new'}`} className="label">
             Job Title *
           </label>
@@ -215,11 +218,11 @@ function WorkExperienceForm({
             id={`role-${experience?.id || 'new'}`}
             type="text"
             {...register('role', { required: true })}
-            className="input"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
             placeholder="e.g., Senior Software Engineer"
           />
         </div>
-        <div className="form-group">
+        <div className="flex flex-col gap-2">
           <label htmlFor={`company-${experience?.id || 'new'}`} className="label">
             Company *
           </label>
@@ -227,14 +230,14 @@ function WorkExperienceForm({
             id={`company-${experience?.id || 'new'}`}
             type="text"
             {...register('company', { required: true })}
-            className="input"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
             placeholder="e.g., Google"
           />
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="form-group">
+        <div className="flex flex-col gap-2">
           <label htmlFor={`startDate-${experience?.id || 'new'}`} className="label">
             Start Date *
           </label>
@@ -242,10 +245,10 @@ function WorkExperienceForm({
             id={`startDate-${experience?.id || 'new'}`}
             type="date"
             {...register('startDate', { required: true })}
-            className="input"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
           />
         </div>
-        <div className="form-group">
+        <div className="flex flex-col gap-2">
           <label htmlFor={`endDate-${experience?.id || 'new'}`} className="label">
             End Date
           </label>
@@ -253,7 +256,7 @@ function WorkExperienceForm({
             id={`endDate-${experience?.id || 'new'}`}
             type="date"
             {...register('endDate')}
-            className="input"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
             placeholder="Leave empty if current position"
           />
           <p className="text-xs text-muted-foreground mt-xs">
@@ -262,20 +265,20 @@ function WorkExperienceForm({
         </div>
       </div>
 
-      <div className="form-group">
+      <div className="flex flex-col gap-2">
         <label htmlFor={`description-${experience?.id || 'new'}`} className="label">
           Job Description *
         </label>
         <textarea
           id={`description-${experience?.id || 'new'}`}
           {...register('description', { required: true })}
-          className="textarea"
+          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50 min-h-28"
           rows={4}
           placeholder="Describe your role, responsibilities, and key achievements..."
         />
       </div>
 
-      <div className="form-group">
+      <div className="flex flex-col gap-2">
         <fieldset>
           <legend className="label">Key Achievements</legend>
           <div className="space-y-2">
@@ -283,7 +286,7 @@ function WorkExperienceForm({
               <div key={field.id} className="flex gap-2">
                 <input
                   {...register(`achievements.${index}.value` as const)}
-                  className="input flex-1"
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50 flex-1"
                   placeholder="e.g., Increased team productivity by 40%"
                 />
                 <Button
@@ -291,7 +294,7 @@ function WorkExperienceForm({
                   onClick={() => remove(index)}
                   variant="ghost"
                   size="sm"
-                  className="text-red-600 hover:text-red-700"
+                  className="text-destructive hover:text-destructive"
                 >
                   Remove
                 </Button>
@@ -345,10 +348,10 @@ function WorkExperienceEditorSection({
     <section className="container flex flex-col gap-8 mx-auto">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-            <Briefcase className="w-5 h-5 text-blue-600" />
+          <div className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center">
+            <Briefcase className="w-5 h-5 text-primary" />
           </div>
-          <h2 className="text-2xl font-semibold text-gray-900">Work Experience</h2>
+          <h2 className="text-2xl font-semibold text-foreground">Work Experience</h2>
         </div>
         {!showNewForm && (
           <Button

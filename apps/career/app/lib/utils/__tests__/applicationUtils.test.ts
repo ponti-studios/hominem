@@ -41,19 +41,25 @@ describe('Application Utils', () => {
 
   describe('getStatusColor', () => {
     it('should return correct colors for known statuses', () => {
-      expect(getStatusColor('APPLIED')).toBe('bg-blue-100 text-blue-800');
-      expect(getStatusColor('PHONE_SCREEN')).toBe('bg-yellow-100 text-yellow-800');
-      expect(getStatusColor('INTERVIEW')).toBe('bg-purple-100 text-purple-800');
-      expect(getStatusColor('FINAL_INTERVIEW')).toBe('bg-indigo-100 text-indigo-800');
-      expect(getStatusColor('OFFER')).toBe('bg-green-100 text-green-800');
-      expect(getStatusColor('ACCEPTED')).toBe('bg-emerald-100 text-emerald-800');
-      expect(getStatusColor('REJECTED')).toBe('bg-red-100 text-red-800');
-      expect(getStatusColor('WITHDRAWN')).toBe('bg-gray-100 text-gray-800');
+      expect(getStatusColor('APPLIED')).toBe('border-accent/30 bg-accent/10 text-foreground');
+      expect(getStatusColor('PHONE_SCREEN')).toBe(
+        'border-warning/30 bg-warning/10 text-foreground',
+      );
+      expect(getStatusColor('INTERVIEW')).toBe('border-accent/30 bg-accent/10 text-foreground');
+      expect(getStatusColor('FINAL_INTERVIEW')).toBe(
+        'border-accent/40 bg-accent/15 text-foreground',
+      );
+      expect(getStatusColor('OFFER')).toBe('border-success/30 bg-success/10 text-foreground');
+      expect(getStatusColor('ACCEPTED')).toBe('border-success/40 bg-success/15 text-foreground');
+      expect(getStatusColor('REJECTED')).toBe(
+        'border-destructive/30 bg-destructive/10 text-foreground',
+      );
+      expect(getStatusColor('WITHDRAWN')).toBe('bg-muted text-foreground');
     });
 
     it('should return default gray color for unknown statuses', () => {
-      expect(getStatusColor('UNKNOWN_STATUS')).toBe('bg-gray-100 text-gray-800');
-      expect(getStatusColor('')).toBe('bg-gray-100 text-gray-800');
+      expect(getStatusColor('UNKNOWN_STATUS')).toBe('bg-muted text-foreground');
+      expect(getStatusColor('')).toBe('bg-muted text-foreground');
     });
   });
 

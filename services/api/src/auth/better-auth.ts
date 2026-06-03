@@ -80,6 +80,7 @@ const deviceCodeFieldMappings = {
 function getTrustedOrigins() {
   const origins = new Set([
     env.API_URL,
+    env.CAREER_URL,
     env.AUTH_PASSKEY_ORIGIN,
     env.WEB_URL,
     'hakumi://',

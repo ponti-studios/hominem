@@ -15,18 +15,18 @@ export function LevelProgressionChart({ data }: LevelProgressionChartProps) {
       {data.map((level, index) => (
         <div key={`level-${level.level}-${index}`} className="relative">
           <div className="flex items-center justify-between mb-2">
-            <h4 className="text-lg font-medium text-slate-900 font-serif capitalize">
+            <h4 className="text-lg font-medium text-foreground font-sans capitalize">
               {level.level.replace('-', ' ')}
             </h4>
-            <span className="text-sm text-slate-500 font-sans">{level.duration} months</span>
+            <span className="text-sm text-muted-foreground font-sans">{level.duration} months</span>
           </div>
-          <div className="bg-slate-100 rounded-lg h-2 overflow-hidden">
+          <div className="bg-muted rounded-lg h-2 overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg"
+              className="h-full rounded-lg bg-accent"
               style={{ width: `${Math.min((level.duration / 36) * 100, 100)}%` }}
             />
           </div>
-          <div className="flex justify-between mt-1 text-xs text-slate-500 font-sans">
+          <div className="flex justify-between mt-1 text-xs text-muted-foreground font-sans">
             <span>{new Date(level.startDate).toLocaleDateString()}</span>
             {level.endDate && <span>{new Date(level.endDate).toLocaleDateString()}</span>}
           </div>

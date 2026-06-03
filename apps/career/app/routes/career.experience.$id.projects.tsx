@@ -131,18 +131,18 @@ export default function WorkExperienceProjects() {
           className="p-2"
           data-testid="back-button"
         >
-          <ArrowLeftIcon className="w-5 h-5 text-slate-600" />
+          <ArrowLeftIcon className="w-5 h-5 text-muted-foreground" />
         </Button>
         <div className="flex-1 flex gap-2 items-center">
-          <h1 className="text-3xl font-light text-slate-900 font-serif">Projects</h1>
-          <p className="text-sm text-slate-600 font-sans">
+          <h1 className="text-3xl font-light text-foreground font-sans">Projects</h1>
+          <p className="text-sm text-muted-foreground font-sans">
             @ {workExperience.role} at {workExperience.company}
           </p>
         </div>
         <Button
           type="button"
           onClick={() => setShowAddForm(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white"
+          className="bg-primary hover:bg-primary/90 text-primary-foreground"
         >
           <PlusIcon className="w-4 h-4 mr-2" />
           Add Project
@@ -158,19 +158,19 @@ export default function WorkExperienceProjects() {
           {projects.length > 0 ? (
             projects.map((project: Project) => <ProjectCard key={project.id} project={project} />)
           ) : (
-            <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200/50 text-center">
-              <div className="text-slate-400 mb-4">
+            <div className="bg-card rounded-md p-8  border border-border/50 text-center">
+              <div className="text-muted-foreground mb-4">
                 <PlusIcon className="w-12 h-12 mx-auto mb-4" />
               </div>
-              <h3 className="text-lg font-medium text-slate-900 mb-2">No projects yet</h3>
-              <p className="text-slate-600 mb-4">
+              <h3 className="text-lg font-medium text-foreground mb-2">No projects yet</h3>
+              <p className="text-muted-foreground mb-4">
                 Start tracking your work items, projects, and achievements for interview
                 preparation.
               </p>
               <Button
                 type="button"
                 onClick={() => setShowAddForm(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 <PlusIcon className="w-4 h-4 mr-2" />
                 Add Your First Project
@@ -229,14 +229,14 @@ function ProjectForm({ project, onCancel }: ProjectFormProps) {
   };
 
   return (
-    <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200/50">
-      <h2 className="text-2xl font-light text-slate-900 font-serif mb-6">
+    <div className="bg-card rounded-md p-8  border border-border/50">
+      <h2 className="text-2xl font-light text-foreground font-sans mb-6">
         {project ? 'Edit Project' : 'Add New Project'}
       </h2>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label htmlFor="title" className="block text-sm font-medium text-slate-700 mb-2">
+          <label htmlFor="title" className="block text-sm font-medium text-muted-foreground mb-2">
             Project Title
           </label>
           <input
@@ -244,7 +244,7 @@ function ProjectForm({ project, onCancel }: ProjectFormProps) {
             id="title"
             value={formData.title}
             onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
+            className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-ring focus:ring-ring/50"
             placeholder="e.g., User Authentication System, Data Migration Pipeline"
             required
           />
@@ -253,7 +253,7 @@ function ProjectForm({ project, onCancel }: ProjectFormProps) {
         <div>
           <label
             htmlFor="shortDescription"
-            className="block text-sm font-medium text-slate-700 mb-2"
+            className="block text-sm font-medium text-muted-foreground mb-2"
           >
             Short Description
           </label>
@@ -262,20 +262,23 @@ function ProjectForm({ project, onCancel }: ProjectFormProps) {
             id="shortDescription"
             value={formData.shortDescription}
             onChange={(e) => setFormData((prev) => ({ ...prev, shortDescription: e.target.value }))}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
+            className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-ring focus:ring-ring/50"
             placeholder="Brief one-line summary"
           />
         </div>
 
         <div>
-          <label htmlFor="description" className="block text-sm font-medium text-slate-700 mb-2">
+          <label
+            htmlFor="description"
+            className="block text-sm font-medium text-muted-foreground mb-2"
+          >
             Description
           </label>
           <textarea
             id="description"
             value={formData.description}
             onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
+            className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-ring focus:ring-ring/50"
             rows={4}
             placeholder="Describe what you did, the challenges you solved, and your role in the project"
             required
@@ -284,14 +287,17 @@ function ProjectForm({ project, onCancel }: ProjectFormProps) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label htmlFor="status" className="block text-sm font-medium text-slate-700 mb-2">
+            <label
+              htmlFor="status"
+              className="block text-sm font-medium text-muted-foreground mb-2"
+            >
               Status
             </label>
             <select
               id="status"
               value={formData.status}
               onChange={(e) => setFormData((prev) => ({ ...prev, status: e.target.value }))}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
+              className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-ring focus:ring-ring/50"
             >
               <option value="in-progress">In Progress</option>
               <option value="completed">Completed</option>
@@ -300,7 +306,10 @@ function ProjectForm({ project, onCancel }: ProjectFormProps) {
           </div>
 
           <div>
-            <label htmlFor="technologies" className="block text-sm font-medium text-slate-700 mb-2">
+            <label
+              htmlFor="technologies"
+              className="block text-sm font-medium text-muted-foreground mb-2"
+            >
               Technologies Used
             </label>
             <input
@@ -308,14 +317,14 @@ function ProjectForm({ project, onCancel }: ProjectFormProps) {
               id="technologies"
               value={formData.technologies}
               onChange={(e) => setFormData((prev) => ({ ...prev, technologies: e.target.value }))}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
+              className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-ring focus:ring-ring/50"
               placeholder="React, Node.js, PostgreSQL, AWS"
             />
           </div>
         </div>
 
         <div className="flex items-center gap-4">
-          <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white">
+          <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground">
             <CheckIcon className="w-4 h-4 mr-1" />
             {project ? 'Update Project' : 'Save Project'}
           </Button>
@@ -323,7 +332,7 @@ function ProjectForm({ project, onCancel }: ProjectFormProps) {
             type="button"
             onClick={onCancel}
             variant="ghost"
-            className="text-slate-600 hover:bg-slate-100"
+            className="text-muted-foreground hover:bg-muted"
           >
             <XIcon className="w-4 h-4 mr-1" />
             Cancel
@@ -366,13 +375,13 @@ function ProjectCard({ project }: ProjectCardProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
-        return 'bg-green-100 text-green-800';
+        return 'bg-success/10 text-foreground';
       case 'in-progress':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-accent/20 text-foreground';
       case 'archived':
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-foreground';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-foreground';
     }
   };
 
@@ -381,12 +390,12 @@ function ProjectCard({ project }: ProjectCardProps) {
   }
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/50">
+    <div className="bg-card rounded-md p-6  border border-border/50">
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
-          <h3 className="text-xl font-medium text-slate-900 mb-2">{project.title}</h3>
+          <h3 className="text-xl font-medium text-foreground mb-2">{project.title}</h3>
           {project.shortDescription && (
-            <p className="text-slate-600 mb-2">{project.shortDescription}</p>
+            <p className="text-muted-foreground mb-2">{project.shortDescription}</p>
           )}
           <span
             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}
@@ -400,7 +409,7 @@ function ProjectCard({ project }: ProjectCardProps) {
             onClick={() => setIsEditing(true)}
             variant="ghost"
             size="sm"
-            className="p-2 text-slate-400 hover:text-slate-600"
+            className="p-2 text-muted-foreground hover:text-muted-foreground"
           >
             <PencilIcon className="w-4 h-4" />
           </Button>
@@ -409,7 +418,7 @@ function ProjectCard({ project }: ProjectCardProps) {
             onClick={handleDelete}
             variant="ghost"
             size="sm"
-            className="p-2 text-red-400 hover:text-red-600"
+            className="p-2 text-destructive/70 hover:text-destructive"
           >
             <TrashIcon className="w-4 h-4" />
           </Button>
@@ -418,18 +427,18 @@ function ProjectCard({ project }: ProjectCardProps) {
 
       <div className="space-y-4">
         <div>
-          <h4 className="text-sm font-medium text-slate-700 mb-2">Description</h4>
-          <p className="text-slate-600">{project.description}</p>
+          <h4 className="text-sm font-medium text-muted-foreground mb-2">Description</h4>
+          <p className="text-muted-foreground">{project.description}</p>
         </div>
 
         {project.technologies && project.technologies.length > 0 && (
           <div>
-            <h4 className="text-sm font-medium text-slate-700 mb-2">Technologies</h4>
+            <h4 className="text-sm font-medium text-muted-foreground mb-2">Technologies</h4>
             <div className="flex flex-wrap gap-2">
               {project.technologies.map((tech: string, index: number) => (
                 <span
                   key={`${project.id}-tech-${index}`}
-                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800"
+                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted text-foreground"
                 >
                   {tech}
                 </span>
@@ -438,7 +447,7 @@ function ProjectCard({ project }: ProjectCardProps) {
           </div>
         )}
 
-        <div className="text-xs text-slate-400">
+        <div className="text-xs text-muted-foreground">
           Created {new Date(project.createdAt).toLocaleDateString()}
           {project.updatedAt &&
             project.createdAt !== project.updatedAt &&

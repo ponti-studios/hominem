@@ -165,7 +165,10 @@ function ProjectForm({
   const isSaving = fetcher.state === 'submitting';
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="card bg-muted/50 space-y-4">
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="rounded-md border border-border bg-card p-4 bg-muted/50 space-y-4"
+    >
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium text-foreground">{isNew ? 'New Project' : 'Project'}</h3>
         <div className="flex gap-2">
@@ -191,7 +194,7 @@ function ProjectForm({
         </div>
       </div>
 
-      <div className="form-group">
+      <div className="flex flex-col gap-2">
         <label htmlFor={`title-${project?.id || 'new'}`} className="label">
           Project Title *
         </label>
@@ -199,12 +202,12 @@ function ProjectForm({
           id={`title-${project?.id || 'new'}`}
           type="text"
           {...register('title', { required: true })}
-          className="input"
+          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
           placeholder="e.g., E-commerce Platform"
         />
       </div>
 
-      <div className="form-group">
+      <div className="flex flex-col gap-2">
         <label htmlFor={`shortDescription-${project?.id || 'new'}`} className="label">
           Short Description
         </label>
@@ -212,26 +215,26 @@ function ProjectForm({
           id={`shortDescription-${project?.id || 'new'}`}
           type="text"
           {...register('shortDescription')}
-          className="input"
+          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
           placeholder="Brief one-line description"
         />
       </div>
 
-      <div className="form-group">
+      <div className="flex flex-col gap-2">
         <label htmlFor={`description-${project?.id || 'new'}`} className="label">
           Full Description *
         </label>
         <textarea
           id={`description-${project?.id || 'new'}`}
           {...register('description', { required: true })}
-          className="textarea"
+          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50 min-h-28"
           rows={4}
           placeholder="Detailed project description, features, and technologies used..."
         />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="form-group">
+        <div className="flex flex-col gap-2">
           <label htmlFor={`liveUrl-${project?.id || 'new'}`} className="label">
             Live URL
           </label>
@@ -239,11 +242,11 @@ function ProjectForm({
             id={`liveUrl-${project?.id || 'new'}`}
             type="url"
             {...register('liveUrl')}
-            className="input"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
             placeholder="https://example.com"
           />
         </div>
-        <div className="form-group">
+        <div className="flex flex-col gap-2">
           <label htmlFor={`githubUrl-${project?.id || 'new'}`} className="label">
             GitHub URL
           </label>
@@ -251,14 +254,14 @@ function ProjectForm({
             id={`githubUrl-${project?.id || 'new'}`}
             type="url"
             {...register('githubUrl')}
-            className="input"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
             placeholder="https://github.com/user/repo"
           />
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="form-group">
+        <div className="flex flex-col gap-2">
           <label htmlFor={`imageUrl-${project?.id || 'new'}`} className="label">
             Image URL
           </label>
@@ -266,11 +269,11 @@ function ProjectForm({
             id={`imageUrl-${project?.id || 'new'}`}
             type="url"
             {...register('imageUrl')}
-            className="input"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
             placeholder="Project screenshot or image"
           />
         </div>
-        <div className="form-group">
+        <div className="flex flex-col gap-2">
           <label htmlFor={`videoUrl-${project?.id || 'new'}`} className="label">
             Video URL
           </label>
@@ -278,13 +281,13 @@ function ProjectForm({
             id={`videoUrl-${project?.id || 'new'}`}
             type="url"
             {...register('videoUrl')}
-            className="input"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
             placeholder="Demo video URL"
           />
         </div>
       </div>
 
-      <div className="form-group">
+      <div className="flex flex-col gap-2">
         <label htmlFor={`technologies-${project?.id || 'new'}`} className="label">
           Technologies
         </label>
@@ -292,7 +295,7 @@ function ProjectForm({
           id={`technologies-${project?.id || 'new'}`}
           type="text"
           {...register('technologies')}
-          className="input"
+          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
           placeholder="React, TypeScript, Node.js (comma-separated)"
         />
         <p className="text-xs text-muted-foreground mt-xs">
@@ -301,7 +304,7 @@ function ProjectForm({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="form-group">
+        <div className="flex flex-col gap-2">
           <label htmlFor={`status-${project?.id || 'new'}`} className="label">
             Status
           </label>
@@ -311,7 +314,7 @@ function ProjectForm({
             <option value="planned">Planned</option>
           </select>
         </div>
-        <div className="form-group">
+        <div className="flex flex-col gap-2">
           <label htmlFor={`startDate-${project?.id || 'new'}`} className="label">
             Start Date
           </label>
@@ -319,10 +322,10 @@ function ProjectForm({
             id={`startDate-${project?.id || 'new'}`}
             type="date"
             {...register('startDate')}
-            className="input"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
           />
         </div>
-        <div className="form-group">
+        <div className="flex flex-col gap-2">
           <label htmlFor={`endDate-${project?.id || 'new'}`} className="label">
             End Date
           </label>
@@ -330,19 +333,19 @@ function ProjectForm({
             id={`endDate-${project?.id || 'new'}`}
             type="date"
             {...register('endDate')}
-            className="input"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
           />
         </div>
       </div>
 
       <div className="flex gap-4">
-        <div className="form-group">
+        <div className="flex flex-col gap-2">
           <label className="flex items-center gap-2">
             <input type="checkbox" {...register('isFeatured')} className="checkbox" />
             <span className="label">Featured Project</span>
           </label>
         </div>
-        <div className="form-group">
+        <div className="flex flex-col gap-2">
           <label className="flex items-center gap-2">
             <input type="checkbox" {...register('isVisible')} className="checkbox" />
             <span className="label">Visible</span>
@@ -377,10 +380,10 @@ function ProjectsEditorSection({
     <section className="container flex flex-col gap-8 mx-auto">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-            <FolderOpen className="w-5 h-5 text-blue-600" />
+          <div className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center">
+            <FolderOpen className="w-5 h-5 text-primary" />
           </div>
-          <h2 className="text-2xl font-semibold text-gray-900">Projects</h2>
+          <h2 className="text-2xl font-semibold text-foreground">Projects</h2>
         </div>
 
         {!showNewForm && (

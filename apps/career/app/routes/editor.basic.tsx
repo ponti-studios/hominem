@@ -146,11 +146,11 @@ export default function EditorBasic() {
 
   return (
     <section className="flex flex-col gap-8 mx-auto">
-      <h2 className="text-2xl font-semibold text-gray-800">Basic Information</h2>
+      <h2 className="text-2xl font-semibold text-foreground">Basic Information</h2>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Basic Information Card */}
-        <div className="card space-y-6">
-          <h3 className="text-lg font-medium text-gray-800">Personal Information</h3>
+        <div className="rounded-md border border-border bg-card p-4 space-y-6">
+          <h3 className="text-lg font-medium text-foreground">Personal Information</h3>
           <div>
             <label htmlFor="name" className="label">
               Full Name
@@ -158,7 +158,7 @@ export default function EditorBasic() {
             <input
               id="name"
               {...register('name', { required: 'Name is required' })}
-              className="input mt-1"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50 mt-1"
             />
             {errors.name && <p className="error-message">{errors.name.message}</p>}
           </div>
@@ -166,7 +166,12 @@ export default function EditorBasic() {
             <label htmlFor="initials" className="label">
               Initials (Optional)
             </label>
-            <input id="initials" {...register('initials')} maxLength={10} className="input mt-1" />
+            <input
+              id="initials"
+              {...register('initials')}
+              maxLength={10}
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50 mt-1"
+            />
           </div>
           <div>
             <label htmlFor="jobTitle" className="label">
@@ -175,7 +180,7 @@ export default function EditorBasic() {
             <input
               id="jobTitle"
               {...register('jobTitle', { required: 'Job title is required' })}
-              className="input mt-1"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50 mt-1"
             />
             {errors.jobTitle && <p className="error-message">{errors.jobTitle.message}</p>}
           </div>
@@ -187,7 +192,7 @@ export default function EditorBasic() {
               id="tagline"
               {...register('tagline', { required: 'Tagline is required' })}
               maxLength={500}
-              className="input mt-1"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50 mt-1"
             />
             {errors.tagline && <p className="error-message">{errors.tagline.message}</p>}
           </div>
@@ -199,15 +204,15 @@ export default function EditorBasic() {
               id="bio"
               {...register('bio', { required: 'Bio is required' })}
               rows={5}
-              className="textarea mt-1"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50 min-h-28 mt-1"
             />
             {errors.bio && <p className="error-message">{errors.bio.message}</p>}
           </div>
         </div>
 
         {/* Contact Information Card */}
-        <div className="card space-y-6">
-          <h3 className="text-lg font-medium text-gray-800">Contact Information</h3>
+        <div className="rounded-md border border-border bg-card p-4 space-y-6">
+          <h3 className="text-lg font-medium text-foreground">Contact Information</h3>
           <div>
             <label htmlFor="email" className="label">
               Contact Email
@@ -219,7 +224,7 @@ export default function EditorBasic() {
                 required: 'Email is required',
                 pattern: { value: /^\S+@\S+$/i, message: 'Invalid email format' },
               })}
-              className="input mt-1"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50 mt-1"
             />
             {errors.email && <p className="error-message">{errors.email.message}</p>}
           </div>
@@ -227,13 +232,18 @@ export default function EditorBasic() {
             <label htmlFor="phone" className="label">
               Phone (Optional)
             </label>
-            <input id="phone" {...register('phone')} maxLength={50} className="input mt-1" />
+            <input
+              id="phone"
+              {...register('phone')}
+              maxLength={50}
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50 mt-1"
+            />
           </div>
         </div>
 
         {/* Location Information Card */}
-        <div className="card space-y-6">
-          <h3 className="text-lg font-medium text-gray-800">Location Information</h3>
+        <div className="rounded-md border border-border bg-card p-4 space-y-6">
+          <h3 className="text-lg font-medium text-foreground">Location Information</h3>
           <div>
             <label htmlFor="currentLocation" className="label">
               Current Location (e.g., City, Country)
@@ -242,7 +252,7 @@ export default function EditorBasic() {
               id="currentLocation"
               {...register('currentLocation', { required: 'Location is required' })}
               maxLength={255}
-              className="input mt-1"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50 mt-1"
             />
             {errors.currentLocation && (
               <p className="error-message">{errors.currentLocation.message}</p>
@@ -256,14 +266,14 @@ export default function EditorBasic() {
               id="locationTagline"
               {...register('locationTagline')}
               maxLength={255}
-              className="input mt-1"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50 mt-1"
             />
           </div>
         </div>
 
         {/* Availability Information Card */}
-        <div className="card space-y-6">
-          <h3 className="text-lg font-medium text-gray-800">Availability</h3>
+        <div className="rounded-md border border-border bg-card p-4 space-y-6">
+          <h3 className="text-lg font-medium text-foreground">Availability</h3>
           <div>
             <label htmlFor="availabilityStatus" className="label mb-2">
               Available for new opportunities?
@@ -280,7 +290,7 @@ export default function EditorBasic() {
                   />
                 )}
               />
-              <span className="ml-3 text-sm text-gray-600">
+              <span className="ml-3 text-sm text-muted-foreground">
                 {watch('availabilityStatus') ? 'Yes, I am available' : 'No, I am not available'}
               </span>
             </div>
@@ -294,7 +304,7 @@ export default function EditorBasic() {
                 id="availabilityMessage"
                 {...register('availabilityMessage')}
                 maxLength={500}
-                className="input mt-1"
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50 mt-1"
               />
             </div>
           )}

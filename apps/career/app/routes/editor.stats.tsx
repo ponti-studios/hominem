@@ -111,10 +111,10 @@ function PortfolioStatsEditorSection({
     <section className="flex flex-col gap-4">
       <div className="flex items-center justify-between mb-2xl">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-            <BarChart3 className="w-5 h-5 text-blue-600" />
+          <div className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center">
+            <BarChart3 className="w-5 h-5 text-primary" />
           </div>
-          <h2 className="text-2xl font-semibold text-gray-900">Portfolio Stats</h2>
+          <h2 className="text-2xl font-semibold text-foreground">Portfolio Stats</h2>
         </div>
         <div className="flex gap-2">
           <Button
@@ -143,7 +143,7 @@ function PortfolioStatsEditorSection({
           <div key={field.id} className="card">
             <div className="flex flex-col sm:flex-row sm:items-end gap-4">
               <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="form-group">
+                <div className="flex flex-col gap-2">
                   <label htmlFor={`stats.${index}.label`} className="label">
                     Label
                   </label>
@@ -154,7 +154,7 @@ function PortfolioStatsEditorSection({
                     {...register(`stats.${index}.label` as const)}
                   />
                 </div>
-                <div className="form-group">
+                <div className="flex flex-col gap-2">
                   <label htmlFor={`stats.${index}.value`} className="label">
                     Value
                   </label>

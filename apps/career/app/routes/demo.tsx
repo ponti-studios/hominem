@@ -1,3 +1,6 @@
+import { Badge } from '@hominem/ui/badge';
+import { buttonVariants } from '@hominem/ui/button';
+import { Card, CardContent } from '@hominem/ui/card';
 import { ArrowLeft } from 'lucide-react';
 import type { MetaFunction } from 'react-router';
 import { Link } from 'react-router';
@@ -7,38 +10,21 @@ export const meta: MetaFunction = () => {
     { title: 'Demo Portfolio - Sarah Chen | Craftd' },
     {
       name: 'description',
-      content: 'Demo portfolio showcasing our minimal, Apple-inspired resume design',
+      content: 'Demo portfolio showcasing a Craftd professional portfolio',
     },
   ];
 };
 
-// Demo portfolio data
 const demoPortfolio = {
-  slug: 'sarah-chen',
-  title: 'Senior Product Designer - Sarah Chen',
   personalInfo: {
     name: 'Sarah Chen',
     title: 'Senior Product Designer',
     tagline:
-      'Demo Portfolio · I design digital experiences that bridge the gap between user needs and business objectives, with a focus on accessibility and sustainable design practices.',
-    bio: "With over 8 years in product design, I've led design initiatives at both high-growth startups and Fortune 500 companies. My approach combines rigorous user research with systematic design thinking to create products that are both beautiful and functional.",
-    location: {
-      current: 'San Francisco, CA',
-      tagline: 'Open to remote work',
-    },
-    availability: {
-      status: true,
-      message: 'Available for new opportunities starting January 2024',
-    },
-    contact: {
-      email: 'sarah.chen@example.com',
-      phone: '+1 (555) 123-4567',
-    },
-    social: {
-      linkedin: 'https://linkedin.com/in/sarahchen',
-      github: 'https://github.com/sarahchen',
-      website: 'https://sarahchen.design',
-    },
+      'I design digital experiences that connect user needs and business objectives with accessible, sustainable product systems.',
+    bio: "With over 8 years in product design, I've led design initiatives at both high-growth startups and Fortune 500 companies.",
+    location: 'San Francisco, CA',
+    email: 'sarah.chen@example.com',
+    availability: 'Available for new opportunities',
     stats: [
       { value: '8+', label: 'Years Experience' },
       { value: '50M+', label: 'Users Impacted' },
@@ -50,7 +36,6 @@ const demoPortfolio = {
     {
       title: 'Stripe',
       role: 'Senior Product Designer',
-      company: 'Stripe',
       startDate: '2022-01-01',
       endDate: null,
       description:
@@ -62,7 +47,6 @@ const demoPortfolio = {
     {
       title: 'Figma',
       role: 'Product Designer',
-      company: 'Figma',
       startDate: '2020-03-01',
       endDate: '2021-12-31',
       description:
@@ -73,18 +57,9 @@ const demoPortfolio = {
     },
   ],
   skills: [
-    {
-      category: 'Design',
-      items: ['Product Design', 'UX Research', 'Design Systems', 'Prototyping', 'User Testing'],
-    },
-    {
-      category: 'Tools',
-      items: ['Figma', 'Sketch', 'Principle', 'Framer', 'Adobe Creative Suite'],
-    },
-    {
-      category: 'Development',
-      items: ['HTML/CSS', 'JavaScript', 'React', 'Design Tokens'],
-    },
+    ['Design', 'Product Design', 'UX Research', 'Design Systems', 'Prototyping', 'User Testing'],
+    ['Tools', 'Figma', 'Sketch', 'Principle', 'Framer', 'Adobe Creative Suite'],
+    ['Development', 'HTML/CSS', 'JavaScript', 'React', 'Design Tokens'],
   ],
   projects: [
     {
@@ -92,171 +67,115 @@ const demoPortfolio = {
       description:
         'Complete redesign of the merchant dashboard with focus on data visualization and workflow optimization.',
       tags: ['Product Design', 'Data Visualization', 'Enterprise'],
-      featured: true,
     },
     {
       title: 'Figma Comments System',
       description: 'Real-time commenting and feedback system for design collaboration.',
       tags: ['Collaboration', 'Real-time', 'UX'],
-      featured: true,
     },
   ],
 };
 
 export default function Demo() {
   return (
-    <>
-      {/* Demo Navigation */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md">
-        <div className="max-w-2xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <Link
-              to="/"
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors group"
-            >
-              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-              <span className="font-sans text-sm font-medium">Back to Craftd</span>
-            </Link>
-
-            <div className="font-sans text-sm text-gray-500">
-              <span className="font-medium">Demo Portfolio</span> · Sarah Chen
-            </div>
-          </div>
-        </div>
+    <div className="mx-auto w-full max-w-3xl space-y-8">
+      <div className="flex items-center justify-between gap-4">
+        <Link to="/" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
+          <ArrowLeft className="size-4" />
+          Back to Craftd
+        </Link>
+        <Badge variant="outline">Demo Portfolio</Badge>
       </div>
 
-      {/* Content with top spacing */}
-      <div className="pt-16">
-        <div className="max-w-2xl mx-auto px-6 py-12">
-          {/* Header */}
-          <header className="mb-16">
-            <div className="flex items-start justify-between mb-8">
-              <div>
-                <h1 className="font-serif text-4xl font-light text-gray-900 mb-2">
-                  {demoPortfolio.personalInfo.name}
-                </h1>
-                <p className="text-xl text-gray-600 mb-4">{demoPortfolio.personalInfo.title}</p>
-                <p className="text-gray-600 leading-relaxed">
-                  {demoPortfolio.personalInfo.tagline}
-                </p>
-              </div>
+      <Card className="border-border bg-card">
+        <CardContent className="space-y-8 p-6 sm:p-8">
+          <header className="space-y-6">
+            <div className="space-y-3">
+              <h1 className="heading-1 text-foreground">{demoPortfolio.personalInfo.name}</h1>
+              <p className="subheading-2 text-muted-foreground">
+                {demoPortfolio.personalInfo.title}
+              </p>
+              <p className="body-2 text-muted-foreground">{demoPortfolio.personalInfo.tagline}</p>
             </div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+            <div className="grid gap-3 sm:grid-cols-4">
               {demoPortfolio.personalInfo.stats.map((stat) => (
-                <div key={stat.label} className="text-center">
-                  <div className="text-2xl font-serif font-light text-gray-900 mb-1">
-                    {stat.value}
-                  </div>
-                  <div className="text-sm text-gray-600">{stat.label}</div>
+                <div key={stat.label} className="rounded-md border border-border bg-muted/40 p-3">
+                  <div className="heading-4 text-foreground">{stat.value}</div>
+                  <div className="body-4 text-muted-foreground">{stat.label}</div>
                 </div>
               ))}
             </div>
-
-            {/* Contact */}
-            <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-              <span>{demoPortfolio.personalInfo.location.current}</span>
-              <span>•</span>
-              <span>{demoPortfolio.personalInfo.contact.email}</span>
-              <span>•</span>
-              <span className="text-green-600 font-medium">
-                {demoPortfolio.personalInfo.availability.message}
-              </span>
+            <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+              <span>{demoPortfolio.personalInfo.location}</span>
+              <span>{demoPortfolio.personalInfo.email}</span>
+              <span className="text-success">{demoPortfolio.personalInfo.availability}</span>
             </div>
           </header>
 
-          {/* Bio */}
-          <section className="mb-16">
-            <h2 className="font-serif text-2xl font-light text-gray-900 mb-6">About</h2>
-            <p className="text-gray-700 leading-relaxed">{demoPortfolio.personalInfo.bio}</p>
+          <section className="space-y-3">
+            <h2 className="heading-3 text-foreground">About</h2>
+            <p className="body-2 text-muted-foreground">{demoPortfolio.personalInfo.bio}</p>
           </section>
 
-          {/* Work Experience */}
-          <section className="mb-16">
-            <h2 className="font-serif text-2xl font-light text-gray-900 mb-8">Experience</h2>
-            <div className="space-y-12">
-              {demoPortfolio.workExperience.map((job) => (
-                <div
-                  key={`${job.title}-${job.startDate}`}
-                  className="border-l-2 border-gray-100 pl-6"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h3 className="font-medium text-gray-900">{job.title}</h3>
-                      <p className="text-gray-700">{job.role}</p>
-                      {job.company && <p className="text-sm text-gray-600">{job.company}</p>}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {new Date(job.startDate).getFullYear()} -
-                      {job.endDate ? new Date(job.endDate).getFullYear() : 'Present'}
-                    </div>
+          <section className="space-y-5">
+            <h2 className="heading-3 text-foreground">Experience</h2>
+            {demoPortfolio.workExperience.map((job) => (
+              <div key={`${job.title}-${job.startDate}`} className="border-l border-border pl-5">
+                <div className="flex flex-col justify-between gap-2 sm:flex-row">
+                  <div>
+                    <h3 className="heading-4 text-foreground">{job.title}</h3>
+                    <p className="body-3 text-muted-foreground">{job.role}</p>
                   </div>
-                  <p className="text-gray-700 mb-3 leading-relaxed">{job.description}</p>
-                  <p className="text-sm text-gray-600 mb-4 italic">{job.metrics}</p>
-                  <div className="flex flex-wrap gap-2">
-                    {job.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-full"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
+                  <p className="body-4 text-muted-foreground">
+                    {new Date(job.startDate).getFullYear()} -{' '}
+                    {job.endDate ? new Date(job.endDate).getFullYear() : 'Present'}
+                  </p>
                 </div>
-              ))}
-            </div>
+                <p className="body-3 mt-3 text-muted-foreground">{job.description}</p>
+                <p className="body-4 mt-2 text-muted-foreground">{job.metrics}</p>
+                <TagList tags={job.tags} />
+              </div>
+            ))}
           </section>
 
-          {/* Skills */}
-          <section className="mb-16">
-            <h2 className="font-serif text-2xl font-light text-gray-900 mb-8">Skills</h2>
-            <div className="space-y-6">
-              {demoPortfolio.skills.map((skillGroup) => (
-                <div key={skillGroup.category}>
-                  <h3 className="font-medium text-gray-900 mb-3">{skillGroup.category}</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {skillGroup.items.map((skill) => (
-                      <span
-                        key={skill}
-                        className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full"
-                      >
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
+          <section className="space-y-5">
+            <h2 className="heading-3 text-foreground">Skills</h2>
+            {demoPortfolio.skills.map(([category, ...skills]) => (
+              <div key={category} className="space-y-3">
+                <h3 className="heading-4 text-foreground">{category}</h3>
+                <TagList tags={skills} />
+              </div>
+            ))}
           </section>
 
-          {/* Featured Projects */}
-          <section>
-            <h2 className="font-serif text-2xl font-light text-gray-900 mb-8">Featured Projects</h2>
-            <div className="space-y-8">
-              {demoPortfolio.projects
-                .filter((project) => project.featured)
-                .map((project) => (
-                  <div key={project.title} className="border border-gray-200 rounded-lg p-6">
-                    <h3 className="font-medium text-gray-900 mb-2">{project.title}</h3>
-                    <p className="text-gray-700 mb-4 leading-relaxed">{project.description}</p>
-                    <div className="flex flex-wrap gap-2">
-                      {project.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-full"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-            </div>
+          <section className="space-y-5">
+            <h2 className="heading-3 text-foreground">Featured Projects</h2>
+            {demoPortfolio.projects.map((project) => (
+              <div key={project.title} className="rounded-md border border-border bg-muted/30 p-4">
+                <h3 className="heading-4 text-foreground">{project.title}</h3>
+                <p className="body-3 mt-2 text-muted-foreground">{project.description}</p>
+                <TagList tags={project.tags} />
+              </div>
+            ))}
           </section>
-        </div>
-      </div>
-    </>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function TagList({ tags }: { tags: string[] }) {
+  return (
+    <div className="mt-3 flex flex-wrap gap-2">
+      {tags.map((tag) => (
+        <Badge
+          key={tag}
+          variant="outline"
+          className="border-border bg-muted/40 text-muted-foreground"
+        >
+          {tag}
+        </Badge>
+      ))}
+    </div>
   );
 }

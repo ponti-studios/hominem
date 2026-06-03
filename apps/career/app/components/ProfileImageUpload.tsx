@@ -1,5 +1,7 @@
 import { Button } from '@hominem/ui/button';
-import { Edit, ImageIcon, Upload, User, X } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@hominem/ui/dialog';
+import { LoadingSpinner } from '@hominem/ui/loading-spinner';
+import { Edit, ImageIcon, Upload, User } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 
 import 'react-image-crop/dist/ReactCrop.css';
@@ -188,16 +190,13 @@ export function ProfileImageUpload({
 
   if (showCropper) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] flex flex-col p-6">
-          <div className="flex justify-between items-center mb-4 shrink-0">
-            <h3 className="text-lg font-semibold">Crop Profile Image</h3>
-            <Button type="button" onClick={handleCancel} variant="ghost" size="sm" className="p-1">
-              <X className="w-5 h-5" />
-            </Button>
-          </div>
+      <Dialog open={showCropper} onOpenChange={(open) => !open && handleCancel()}>
+        <DialogContent className="flex max-h-[90vh] max-w-4xl flex-col overflow-hidden border-border bg-card">
+          <DialogHeader>
+            <DialogTitle>Crop Profile Image</DialogTitle>
+          </DialogHeader>
 
-          <div className="mb-6 flex-1 flex items-center justify-center">
+          <div className="mb-6 flex flex-1 items-center justify-center overflow-auto">
             <ReactCrop
               crop={crop}
               onChange={(_, percentCrop) => setCrop(percentCrop)}
@@ -224,7 +223,7 @@ export function ProfileImageUpload({
             </ReactCrop>
           </div>
 
-          <div className="flex justify-end space-x-3 shrink-0">
+          <div className="flex shrink-0 justify-end gap-3">
             <Button type="button" onClick={handleCancel} disabled={isUploading} variant="outline">
               Cancel
             </Button>
@@ -237,7 +236,7 @@ export function ProfileImageUpload({
             >
               {isUploading ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                  <LoadingSpinner variant="sm" />
                   Uploading...
                 </>
               ) : (
@@ -248,8 +247,8 @@ export function ProfileImageUpload({
               )}
             </Button>
           </div>
-        </div>
-      </div>
+        </DialogContent>
+      </Dialog>
     );
   }
 
@@ -263,16 +262,16 @@ export function ProfileImageUpload({
           variant="ghost"
           className="relative group p-0"
         >
-          <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden border-4 border-white shadow-lg mr-4 group-hover:shadow-xl transition-shadow">
+          <div className="mr-4 flex size-16 items-center justify-center overflow-hidden rounded-full border-4 border-border bg-muted">
             {currentImageUrl &&
             typeof currentImageUrl === 'string' &&
             currentImageUrl.trim() !== '' ? (
               <img src={currentImageUrl} alt="Profile" className="w-full h-full object-cover" />
             ) : (
-              <User className="w-6 h-6 text-gray-400" />
+              <User className="w-6 h-6 text-muted-foreground" />
             )}
           </div>
-          <div className="absolute -bottom-1 -right-1 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-1 shadow-lg transition-colors">
+          <div className="absolute -bottom-1 -right-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full p-1  transition-colors">
             <Edit className="w-3 h-3" />
           </div>
         </Button>
@@ -280,32 +279,32 @@ export function ProfileImageUpload({
 
       {/* Upload Area - Animated */}
       <div
-        className={`bg-white rounded-lg border border-gray-200 transition-all duration-300 ease-in-out overflow-hidden ${
+        className={`bg-card rounded-lg border border-border transition-all duration-300 ease-in-out overflow-hidden ${
           showUploadZone ? 'max-h-96 opacity-100 p-4' : 'max-h-0 opacity-0 p-0 border-opacity-0'
         }`}
       >
         <div
           className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-            isDragging ? 'border-blue-400 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
+            isDragging ? 'border-accent/50 bg-accent/10' : 'border-border hover:border-border'
           }`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
           <div className="flex flex-col items-center">
-            <ImageIcon className="w-8 h-8 text-gray-400 mb-3" />
-            <h3 className="font-medium text-gray-900 mb-1">
+            <ImageIcon className="w-8 h-8 text-muted-foreground mb-3" />
+            <h3 className="font-medium text-foreground mb-1">
               Drop your image here, or{' '}
               <Button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 variant="ghost"
-                className="text-blue-600 hover:text-blue-700 underline p-0 h-auto"
+                className="text-primary hover:text-primary underline p-0 h-auto"
               >
                 browse
               </Button>
             </h3>
-            <p className="text-sm text-gray-500 mb-4">JPG, PNG, GIF up to 5MB</p>
+            <p className="text-sm text-muted-foreground mb-4">JPG, PNG, GIF up to 5MB</p>
 
             <input
               ref={fileInputRef}
@@ -317,10 +316,10 @@ export function ProfileImageUpload({
 
             {selectedFile && (
               <div className="flex items-center gap-3 p-3 rounded-lg">
-                <ImageIcon className="w-5 h-5 text-gray-600" />
+                <ImageIcon className="w-5 h-5 text-muted-foreground" />
                 <div className="text-left">
-                  <p className="font-medium text-gray-900">{selectedFile.name}</p>
-                  <p className="text-sm text-gray-500">
+                  <p className="font-medium text-foreground">{selectedFile.name}</p>
+                  <p className="text-sm text-muted-foreground">
                     {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
                   </p>
                 </div>
@@ -332,7 +331,7 @@ export function ProfileImageUpload({
                 type="button"
                 onClick={() => setShowUploadZone(false)}
                 variant="ghost"
-                className="mt-4 text-sm text-gray-500 hover:text-gray-700 underline p-0 h-auto"
+                className="mt-4 text-sm text-muted-foreground hover:text-muted-foreground underline p-0 h-auto"
               >
                 Cancel
               </Button>

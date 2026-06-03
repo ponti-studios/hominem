@@ -4,7 +4,8 @@ import { Link, Outlet, redirect, useLoaderData, useLocation } from 'react-router
 
 import type { FullPortfolio } from '../lib/portfolio.server';
 import { getFullUserPortfolio } from '../lib/portfolio.server';
-import { withAuthLoader } from '../lib/route-utils';
+import { withAuthLoader, withMockDataFallback } from '../lib/route-utils';
+import { getMockPortfolioForForms } from '../lib/utils/mock-data';
 
 export const meta: MetaFunction = () => {
   return [
@@ -20,12 +21,21 @@ export const meta: MetaFunction = () => {
  * Loader for wizard editor: ensure the user has a portfolio or redirect to onboarding
  */
 export async function loader(args: LoaderFunctionArgs) {
-  return withAuthLoader(args, async ({ user }) => {
-    const portfolio = await getFullUserPortfolio(user.id);
-    if (!portfolio) {
-      throw redirect('/onboarding');
-    }
-    return portfolio;
+  return withAuthLoader(args, async ({ user, request }) => {
+    return withMockDataFallback(
+      request,
+      async (request) => {
+        const mockData = await getMockPortfolioForForms(request);
+        return mockData.existingPortfolio as FullPortfolio;
+      },
+      async () => {
+        const portfolio = await getFullUserPortfolio(user.id);
+        if (!portfolio) {
+          throw redirect('/onboarding');
+        }
+        return portfolio;
+      },
+    );
   });
 }
 
@@ -81,56 +91,66 @@ export default function EditorLayout() {
   const currentStepIndex = editorSteps.findIndex((step) => location.pathname.startsWith(step.path));
 
   return (
-    <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-4 gap-8">
-      {/* Sidebar Navigation */}
-      <div className="md:col-span-2 lg:col-span-1 px-4 md:px-0">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-8">
-          <nav className="space-y-2">
-            {editorSteps.map((step, index) => {
-              const isActive = step.value === location.pathname.split('/').pop();
-              const isCompleted = index < currentStepIndex;
-              const Icon = step.icon;
+    <div className="w-full flex-1 space-y-6">
+      <div>
+        <h1 className="heading-1 text-foreground">Portfolio Editor</h1>
+        <p className="body-2 text-muted-foreground">
+          Refine the content and sections that power your public portfolio.
+        </p>
+      </div>
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
+        {/* Sidebar Navigation */}
+        <div className="md:col-span-2 lg:col-span-1 px-4 md:px-0">
+          <div className="bg-card rounded-lg  border border-border p-6 sticky top-8">
+            <nav className="space-y-2">
+              {editorSteps.map((step, index) => {
+                const isActive = step.value === location.pathname.split('/').pop();
+                const isCompleted = index < currentStepIndex;
+                const Icon = step.icon;
 
-              return (
-                <Link
-                  key={step.path}
-                  to={step.path}
-                  className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
-                    isActive
-                      ? 'bg-blue-50 border border-blue-200 text-blue-900'
-                      : 'hover:bg-gray-50 text-gray-700'
-                  }`}
-                >
-                  <div
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                      isActive ? 'bg-blue-100' : isCompleted ? 'bg-green-100' : 'bg-gray-100'
+                return (
+                  <Link
+                    key={step.path}
+                    to={step.path}
+                    className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
+                      isActive
+                        ? 'bg-accent/10 border border-accent/30 text-accent-foreground'
+                        : 'hover:bg-muted text-muted-foreground'
                     }`}
                   >
-                    <Icon
-                      className={`w-4 h-4 ${
-                        isActive
-                          ? 'text-blue-600'
-                          : isCompleted
-                            ? 'text-green-600'
-                            : 'text-gray-600'
+                    <div
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                        isActive ? 'bg-accent/20' : isCompleted ? 'bg-success/10' : 'bg-muted'
                       }`}
-                    />
-                  </div>
-                  <div>
-                    <div className={`font-medium ${isActive ? 'text-blue-900' : 'text-gray-900'}`}>
-                      {step.label}
+                    >
+                      <Icon
+                        className={`w-4 h-4 ${
+                          isActive
+                            ? 'text-primary'
+                            : isCompleted
+                              ? 'text-success'
+                              : 'text-muted-foreground'
+                        }`}
+                      />
                     </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </nav>
+                    <div>
+                      <div
+                        className={`font-medium ${isActive ? 'text-accent-foreground' : 'text-foreground'}`}
+                      >
+                        {step.label}
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="md:col-span-2 lg:col-span-3 overflow-y-auto">
-        <Outlet context={portfolio} />
+        {/* Main Content */}
+        <div className="md:col-span-2 lg:col-span-3 overflow-y-auto">
+          <Outlet context={portfolio} />
+        </div>
       </div>
     </div>
   );

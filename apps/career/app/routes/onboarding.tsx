@@ -36,7 +36,7 @@ export default function Onboarding() {
       {currentStep === 2 && conversion && (
         <div className="flex flex-col items-center space-y-4">
           <CheckCircle2 className="text-green-500 w-16 h-16 animate-bounce" />
-          <p className="text-lg text-gray-700">Done! Redirecting to review...</p>
+          <p className="text-lg text-muted-foreground">Done! Redirecting to review...</p>
         </div>
       )}
     </div>

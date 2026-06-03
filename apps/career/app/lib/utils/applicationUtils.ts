@@ -14,16 +14,16 @@ export function getCompanyName(company: string | { name: string } | null | undef
  */
 export function getStatusColor(status: string): string {
   const colors = {
-    APPLIED: 'bg-blue-100 text-blue-800',
-    PHONE_SCREEN: 'bg-yellow-100 text-yellow-800',
-    INTERVIEW: 'bg-purple-100 text-purple-800',
-    FINAL_INTERVIEW: 'bg-indigo-100 text-indigo-800',
-    OFFER: 'bg-green-100 text-green-800',
-    ACCEPTED: 'bg-emerald-100 text-emerald-800',
-    REJECTED: 'bg-red-100 text-red-800',
-    WITHDRAWN: 'bg-gray-100 text-gray-800',
+    APPLIED: 'border-accent/30 bg-accent/10 text-foreground',
+    PHONE_SCREEN: 'border-warning/30 bg-warning/10 text-foreground',
+    INTERVIEW: 'border-accent/30 bg-accent/10 text-foreground',
+    FINAL_INTERVIEW: 'border-accent/40 bg-accent/15 text-foreground',
+    OFFER: 'border-success/30 bg-success/10 text-foreground',
+    ACCEPTED: 'border-success/40 bg-success/15 text-foreground',
+    REJECTED: 'border-destructive/30 bg-destructive/10 text-foreground',
+    WITHDRAWN: 'bg-muted text-foreground',
   };
-  return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
+  return colors[status as keyof typeof colors] || 'bg-muted text-foreground';
 }
 
 /**

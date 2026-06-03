@@ -22,13 +22,13 @@ export async function loader(args: LoaderFunctionArgs) {
 
 export default function EnhancedResumeCustomizerPage() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-card">
       <div className="px-4 md:px-0">
         {/* Header */}
         <div className="mb-4">
           <Link
             to="/career/applications"
-            className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-8 transition-colors"
+            className="inline-flex items-center text-sm text-muted-foreground hover:text-muted-foreground mb-8 transition-colors"
           >
             <svg
               className="w-4 h-4 mr-2"

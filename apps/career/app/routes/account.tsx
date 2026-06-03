@@ -1,6 +1,8 @@
 import { useAuthClient } from '@hominem/auth/client/provider';
 import { CareerRepository, getDb } from '@hominem/db';
+import { Badge } from '@hominem/ui/badge';
 import { Button } from '@hominem/ui/button';
+import { Card, CardContent } from '@hominem/ui/card';
 import { Download, Edit, ExternalLink, LogOut, Trash2, Upload } from 'lucide-react';
 import { useState } from 'react';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
@@ -12,6 +14,7 @@ import { getFullUserPortfolio } from '../lib/portfolio.server';
 import {
   createErrorResponse,
   createSuccessResponse,
+  isDatabaseConnectionError,
   tryAsync,
   withAuthAction,
   withAuthLoader,
@@ -49,31 +52,47 @@ export async function loader(args: LoaderFunctionArgs) {
           user,
           portfolios: [mockSummary],
           hasPortfolio: true,
+          isPortfolioDataUnavailable: false,
         };
       },
       async () => {
-        const fullPortfolio = await getFullUserPortfolio(user.id);
-        const portfolios: Portfolio[] = fullPortfolio
-          ? [
-              {
-                id: fullPortfolio.id,
-                title: fullPortfolio.title,
-                slug: fullPortfolio.slug,
-                isPublic: fullPortfolio.isPublic,
-                isActive: fullPortfolio.isActive,
-                updatedAt: fullPortfolio.updatedAt,
-                name: fullPortfolio.name,
-                jobTitle: fullPortfolio.jobTitle,
-                bio: fullPortfolio.bio,
-                profileImageUrl: fullPortfolio.profileImageUrl || undefined,
-              },
-            ]
-          : [];
-        return {
-          user,
-          portfolios,
-          hasPortfolio: portfolios.length > 0,
-        };
+        try {
+          const fullPortfolio = await getFullUserPortfolio(user.id);
+          const portfolios: Portfolio[] = fullPortfolio
+            ? [
+                {
+                  id: fullPortfolio.id,
+                  title: fullPortfolio.title,
+                  slug: fullPortfolio.slug,
+                  isPublic: fullPortfolio.isPublic,
+                  isActive: fullPortfolio.isActive,
+                  updatedAt: fullPortfolio.updatedAt,
+                  name: fullPortfolio.name,
+                  jobTitle: fullPortfolio.jobTitle,
+                  bio: fullPortfolio.bio,
+                  profileImageUrl: fullPortfolio.profileImageUrl || undefined,
+                },
+              ]
+            : [];
+          return {
+            user,
+            portfolios,
+            hasPortfolio: portfolios.length > 0,
+            isPortfolioDataUnavailable: false,
+          };
+        } catch (error) {
+          if (!isDatabaseConnectionError(error)) {
+            throw error;
+          }
+
+          console.warn('Portfolio data unavailable: could not connect to the database.');
+          return {
+            user,
+            portfolios: [],
+            hasPortfolio: false,
+            isPortfolioDataUnavailable: true,
+          };
+        }
       },
     );
   });
@@ -202,7 +221,7 @@ export default function Account() {
   const actionData = useActionData<typeof action>();
   const [isSigningOut, setIsSigningOut] = useState(false);
 
-  const { user, portfolios, hasPortfolio } = loaderData;
+  const { user, portfolios, hasPortfolio, isPortfolioDataUnavailable } = loaderData;
 
   const portfolio = portfolios[0];
   const [profileImageUrl, setProfileImageUrl] = useState(portfolio?.profileImageUrl || undefined);
@@ -291,17 +310,18 @@ export default function Account() {
   return (
     <div className="py-8">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-        <div className="text-center -mt-4">
-          <p className="mt-2 text-gray-600">Manage your portfolio and account settings</p>
+        <div className="-mt-4 space-y-2 text-center">
+          <Badge variant="outline">Account</Badge>
+          <p className="text-muted-foreground">Manage your portfolio and account settings</p>
         </div>
 
         {/* Profile Information Card */}
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-4 py-5 sm:p-6 space-y-6">
-            <h3 className="text-lg leading-6 font-medium text-gray-900">Profile Information</h3>
+        <Card className="border-border bg-card">
+          <CardContent className="space-y-6 p-5 sm:p-6">
+            <h3 className="heading-4 text-foreground">Profile Information</h3>
 
             <ProfileImageUpload
-              currentImageUrl={portfolio.profileImageUrl}
+              currentImageUrl={portfolio?.profileImageUrl}
               onImageUploaded={handleImageUpload}
               onError={handleImageError}
             />
@@ -310,7 +330,7 @@ export default function Account() {
               <div className="flex items-center space-x-4">
                 <div>
                   <h3 className="text-lg font-medium">{userDisplayName}</h3>
-                  <p className="text-gray-600">{user.email}</p>
+                  <p className="text-muted-foreground">{user.email}</p>
                 </div>
               </div>
 
@@ -328,18 +348,36 @@ export default function Account() {
             </div>
 
             {uploadError && (
-              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-sm text-red-600">{uploadError}</p>
+              <div className="mt-4 rounded-md border border-destructive/30 bg-destructive/10 p-3">
+                <p className="text-sm text-destructive">{uploadError}</p>
               </div>
             )}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Portfolio Management Section */}
         <div className="mb-6">
-          {portfolio ? (
-            <div className="bg-white shadow rounded-lg">
-              <div className="px-4 py-5 sm:p-6">
+          {isPortfolioDataUnavailable ? (
+            <Card className="border-border bg-card">
+              <CardContent className="px-4 py-8 text-center">
+                <p className="text-muted-foreground mb-4">Portfolio data is unavailable</p>
+                <p className="text-sm text-muted-foreground mb-6">
+                  The database is not reachable right now. Your session is still active.
+                </p>
+                <Button
+                  type="button"
+                  onClick={() => window.location.reload()}
+                  variant="outline"
+                  size="sm"
+                  className="inline-flex items-center justify-center"
+                >
+                  Try Again
+                </Button>
+              </CardContent>
+            </Card>
+          ) : portfolio ? (
+            <Card className="border-border bg-card">
+              <CardContent className="p-5 sm:p-6">
                 <div className="space-y-3 sm:hidden">
                   <div className="flex items-center justify-between">
                     <h2 className="text-lg font-semibold">Portfolio</h2>
@@ -348,7 +386,7 @@ export default function Account() {
                         href={`/p/${portfolio.slug}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 px-2 py-1 border border-gray-300 rounded-md text-xs font-medium text-gray-700 bg-white hover:bg-gray-50"
+                        className="inline-flex items-center gap-1 px-2 py-1 border border-border rounded-md text-xs font-medium text-muted-foreground bg-card hover:bg-muted"
                       >
                         <ExternalLink className="w-4 h-4" />
                         <span className="text-xs">View</span>
@@ -358,15 +396,16 @@ export default function Account() {
 
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      <Badge
+                        variant="outline"
+                        className={
                           portfolio.isPublic
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}
+                            ? 'border-accent/30 bg-accent/10 text-foreground'
+                            : 'border-border bg-muted text-foreground'
+                        }
                       >
                         {portfolio.isPublic ? 'Public' : 'Private'}
-                      </span>
+                      </Badge>
                     </div>
                   </div>
                 </div>
@@ -376,15 +415,16 @@ export default function Account() {
                   <div className="flex items-center space-x-3">
                     <h2 className="text-lg font-semibold">Portfolio</h2>
                     <div className="flex items-center space-x-2">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      <Badge
+                        variant="outline"
+                        className={
                           portfolio.isPublic
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}
+                            ? 'border-accent/30 bg-accent/10 text-foreground'
+                            : 'border-border bg-muted text-foreground'
+                        }
                       >
                         {portfolio.isPublic ? 'Public' : 'Private'}
-                      </span>
+                      </Badge>
                     </div>
                   </div>
 
@@ -393,7 +433,7 @@ export default function Account() {
                       href={`/p/${portfolio.slug}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                      className="inline-flex items-center gap-1 px-3 py-1 border border-border rounded-md text-sm font-medium text-muted-foreground bg-card hover:bg-muted"
                     >
                       <ExternalLink className="w-4 h-4" />
                       View Live
@@ -405,8 +445,8 @@ export default function Account() {
                   {/* Editable Portfolio URL */}
                   <SlugEditor portfolioId={portfolio.id} initialSlug={portfolio.slug} />
 
-                  <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-                    <p className="text-sm text-blue-800">
+                  <div className="bg-accent/10 border border-accent/30 rounded-md p-3">
+                    <p className="text-sm text-foreground">
                       Want to update your portfolio with a new resume? Use "Upload New Resume" to
                       replace your current portfolio data with fresh information from your updated
                       resume.
@@ -431,7 +471,7 @@ export default function Account() {
                       disabled={pdfGenerating || !portfolio.isPublic}
                       variant="outline"
                       size="sm"
-                      className="w-full sm:w-auto border-green-200 text-green-600 hover:text-green-700 hover:bg-green-50"
+                      className="w-full border-success/30 text-success hover:bg-success/10 sm:w-auto"
                     >
                       <Download className="w-4 h-4 mr-2" />
                       {pdfGenerating ? 'Generating PDF...' : 'Download PDF'}
@@ -441,7 +481,7 @@ export default function Account() {
                       onClick={() => navigate('/onboarding')}
                       variant="outline"
                       size="sm"
-                      className="w-full sm:w-auto border-blue-200 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      className="w-full sm:w-auto border-accent/30 text-primary hover:text-primary hover:bg-accent/10"
                     >
                       <Upload className="w-4 h-4 mr-2" />
                       Upload New Resume
@@ -451,7 +491,7 @@ export default function Account() {
                       onClick={() => handleDeletePortfolio(portfolio.id)}
                       variant="outline"
                       size="sm"
-                      className="w-full sm:w-auto border-red-200 text-red-600 hover:text-red-700 hover:bg-red-50"
+                      className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 sm:w-auto"
                     >
                       <Trash2 className="w-4 h-4 mr-2" />
                       Delete Portfolio
@@ -459,31 +499,31 @@ export default function Account() {
                   </div>
 
                   {pdfError && (
-                    <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-md">
-                      <p className="text-sm text-red-600">{pdfError}</p>
+                    <div className="mt-2 rounded-md border border-destructive/30 bg-destructive/10 p-3">
+                      <p className="text-sm text-destructive">{pdfError}</p>
                     </div>
                   )}
 
                   {!portfolio.isPublic && (
-                    <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-                      <p className="text-sm text-yellow-800">
+                    <div className="mt-2 rounded-md border border-warning/30 bg-warning/10 p-3">
+                      <p className="text-sm text-foreground">
                         Your portfolio must be public to generate a PDF. Make it public in the
                         editor to enable PDF downloads.
                       </p>
                     </div>
                   )}
 
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-foreground">
                     Last updated: {new Date(portfolio.updatedAt).toLocaleDateString()}
                   </p>
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           ) : (
-            <div className="bg-white shadow rounded-lg">
-              <div className="px-4 py-8 text-center">
-                <p className="text-gray-500 mb-4">No portfolio found</p>
-                <p className="text-sm text-gray-400 mb-6">
+            <Card className="border-border bg-card">
+              <CardContent className="px-4 py-8 text-center">
+                <p className="text-muted-foreground mb-4">No portfolio found</p>
+                <p className="text-sm text-muted-foreground mb-6">
                   Create your professional portfolio to showcase your skills and experience.
                 </p>
                 <Button
@@ -494,8 +534,8 @@ export default function Account() {
                 >
                   Get Started
                 </Button>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           )}
         </div>
       </div>

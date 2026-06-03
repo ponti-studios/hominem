@@ -125,11 +125,11 @@ export default function WorkExperienceDetail() {
           className="p-2"
           data-testid="back-button"
         >
-          <ArrowLeftIcon className="w-5 h-5 text-slate-600" />
+          <ArrowLeftIcon className="w-5 h-5 text-muted-foreground" />
         </Button>
         <div>
-          <h1 className="text-3xl font-light text-slate-900 font-serif">{workExperience.role}</h1>
-          <p className="text-lg text-slate-600 font-sans">{workExperience.company}</p>
+          <h1 className="text-3xl font-light text-foreground font-sans">{workExperience.role}</h1>
+          <p className="text-lg text-muted-foreground font-sans">{workExperience.company}</p>
         </div>
       </div>
 
@@ -336,10 +336,10 @@ export default function WorkExperienceDetail() {
               />
 
               <div className="space-y-2">
-                <h3 className="text-sm font-medium text-slate-700">Major Projects</h3>
-                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200">
+                <h3 className="text-sm font-medium text-muted-foreground">Major Projects</h3>
+                <div className="flex items-center justify-between p-4 bg-muted rounded-lg border border-border">
                   <div>
-                    <p className="text-xs text-slate-600 mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       Track work items, projects, and their impact for interview prep
                     </p>
                   </div>
@@ -348,7 +348,7 @@ export default function WorkExperienceDetail() {
                     type="button"
                     onClick={() => navigate(`/career/experience/${workExperience.id}/projects`)}
                     size="sm"
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground"
                   >
                     Manage Projects
                   </Button>
@@ -404,8 +404,8 @@ interface SectionProps {
 
 function Section({ title, children }: SectionProps) {
   return (
-    <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200/50">
-      <h2 className="text-2xl font-light text-slate-900 font-serif mb-6">{title}</h2>
+    <div className="bg-card rounded-md p-8  border border-border/50">
+      <h2 className="text-2xl font-light text-foreground font-sans mb-6">{title}</h2>
       {children}
     </div>
   );
@@ -478,15 +478,15 @@ function EditableField({
   if (isEditing) {
     return (
       <div className={className}>
-        <div className="block text-sm font-medium text-slate-700 mb-2">{label}</div>
+        <div className="block text-sm font-medium text-muted-foreground mb-2">{label}</div>
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            {prefix && <span className="text-slate-500">{prefix}</span>}
+            {prefix && <span className="text-muted-foreground">{prefix}</span>}
             {type === 'textarea' ? (
               <textarea
                 value={editValue}
                 onChange={(e) => setEditValue(e.target.value)}
-                className="flex-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
+                className="flex-1 block w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-ring focus:ring-ring/50"
                 rows={3}
                 placeholder={placeholder}
               />
@@ -494,7 +494,7 @@ function EditableField({
               <select
                 value={editValue}
                 onChange={(e) => setEditValue(e.target.value)}
-                className="flex-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
+                className="flex-1 block w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-ring focus:ring-ring/50"
               >
                 <option value="">Select...</option>
                 {options.map((option) => (
@@ -508,7 +508,7 @@ function EditableField({
                 type={type}
                 value={editValue}
                 onChange={(e) => setEditValue(e.target.value)}
-                className="flex-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
+                className="flex-1 block w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-ring focus:ring-ring/50"
                 placeholder={placeholder}
               />
             )}
@@ -518,7 +518,7 @@ function EditableField({
               type="button"
               onClick={handleSave}
               size="sm"
-              className="bg-green-600 hover:bg-green-700 text-white"
+              className="bg-green-600 hover:bg-green-700 text-primary-foreground"
             >
               <CheckIcon className="w-4 h-4 mr-1" />
               Save
@@ -528,7 +528,7 @@ function EditableField({
               onClick={handleCancel}
               variant="ghost"
               size="sm"
-              className="text-slate-600 hover:bg-slate-100"
+              className="text-muted-foreground hover:bg-muted"
             >
               <XIcon className="w-4 h-4 mr-1" />
               Cancel
@@ -542,28 +542,28 @@ function EditableField({
   return (
     <div className={className}>
       <div className="flex items-center justify-between mb-2">
-        <div className="text-sm font-medium text-slate-700">{label}</div>
+        <div className="text-sm font-medium text-muted-foreground">{label}</div>
         <Button
           type="button"
           onClick={() => setIsEditing(true)}
           variant="ghost"
           size="sm"
-          className="p-1 text-slate-400 hover:text-slate-600 focus:text-slate-600"
+          className="p-1 text-muted-foreground hover:text-muted-foreground focus:text-muted-foreground"
           aria-label={`Edit ${label}`}
         >
           <PencilIcon className="w-4 h-4" />
         </Button>
       </div>
       <div>
-        {prefix && value && <span className="text-slate-500 mr-1">{prefix}</span>}
+        {prefix && value && <span className="text-muted-foreground mr-1">{prefix}</span>}
         {type === 'textarea' ? (
           <div
-            className={`${!value ? 'text-slate-400 italic' : 'text-slate-900'} whitespace-pre-line break-words`}
+            className={`${!value ? 'text-muted-foreground italic' : 'text-foreground'} whitespace-pre-line break-words`}
           >
             {value || 'Not set'}
           </div>
         ) : (
-          <span className={`${!value ? 'text-slate-400 italic' : 'text-slate-900'}`}>
+          <span className={`${!value ? 'text-muted-foreground italic' : 'text-foreground'}`}>
             {type === 'number' && value ? Number.parseInt(value).toLocaleString() : displayValue}
           </span>
         )}

@@ -1,59 +1,8 @@
-@import 'tailwindcss';
+@import '@hominem/ui/styles/globals.css';
 @import 'tw-animate-css';
 
-@theme {
-  --color-background: #ffffff;
-  --color-foreground: #0f172a;
-  --color-primary: #2563eb;
-  --color-primary-foreground: #ffffff;
-  --color-secondary: #f1f5f9;
-  --color-secondary-foreground: #0f172a;
-  --color-muted: #f8fafc;
-  --color-muted-foreground: #64748b;
-  --color-accent: #eff6ff;
-  --color-accent-foreground: #1d4ed8;
-  --color-destructive: #dc2626;
-  --color-destructive-foreground: #ffffff;
-  --color-popover: #ffffff;
-  --color-popover-foreground: #0f172a;
-  --color-input: #e2e8f0;
-  --color-border: #d1d5db;
-  --color-ring: #3b82f6;
-  --color-sidebar: #ffffff;
-  --color-sidebar-foreground: #0f172a;
-  --color-sidebar-primary: #2563eb;
-  --color-sidebar-primary-foreground: #ffffff;
-  --color-sidebar-accent: #eff6ff;
-  --color-sidebar-accent-foreground: #1d4ed8;
-  --color-sidebar-border: #e2e8f0;
-  --color-sidebar-ring: #3b82f6;
-}
-
 @layer base {
-  html,
   body {
-    @apply bg-background text-foreground;
-  }
-}
-
-@utility input {
-  @apply w-full rounded-md border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-2;
-}
-
-@utility form-group {
-  @apply flex flex-col gap-2;
-}
-
-@utility textarea {
-  @apply input;
-}
-
-@utility table-header {
-  @apply px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500;
-}
-
-@layer components {
-  .btn-primary {
-    @apply flex items-center justify-center gap-2 rounded-lg bg-black px-4 py-1 text-base text-white focus:outline-none focus:ring-2 focus:ring-blue-500 hover:bg-blue-600;
+    min-width: 320px;
   }
 }
