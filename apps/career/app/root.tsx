@@ -132,9 +132,9 @@ export default function App({ loaderData }: { loaderData: { apiBaseUrl: string; 
     <AuthProvider config={{ apiBaseUrl }}>
       <QueryClientProvider client={queryClient}>
         <ToastProvider>
-          <div className="min-h-screen overflow-hidden bg-background text-foreground">
+          <div className="flex min-h-screen flex-col bg-background text-foreground">
             <Navigation />
-            <main className="mx-auto mt-24 flex w-full max-w-6xl flex-1 flex-col px-4 pb-12 pt-8 font-sans sm:px-6 lg:px-8">
+            <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-8 font-sans sm:px-6 lg:px-8">
               <Outlet />
             </main>
           </div>

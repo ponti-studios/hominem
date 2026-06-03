@@ -7,7 +7,7 @@ import { Link } from 'react-router';
 
 export const meta: MetaFunction = () => {
   return [
-    { title: 'Demo Portfolio - Sarah Chen | Craftd' },
+    { title: 'Sarah Chen | Craftd' },
     {
       name: 'description',
       content: 'Demo portfolio showcasing a Craftd professional portfolio',

@@ -17,9 +17,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@hominem/ui/dropdown';
-import { BriefcaseIcon, FileTextIcon, MenuIcon, PencilIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { Link, useLocation, useNavigation } from 'react-router';
+import { MenuIcon } from 'lucide-react';
+import { useState } from 'react';
+import { Link, useLocation } from 'react-router';
 
 import { cn } from '~/lib/utils';
 
@@ -28,57 +28,77 @@ import { useUser } from '../hooks/useAuth';
 interface NavItem {
   href: string;
   label: string;
-  icon?: React.ComponentType<{ className?: string }>;
 }
 
 const AUTH_LINKS: { authenticated: NavItem[]; unauthenticated: NavItem[] } = {
   authenticated: [
-    { href: '/editor', label: 'Editor', icon: PencilIcon },
-    { href: '/career', label: 'Career', icon: BriefcaseIcon },
-    { href: '/career/applications', label: 'Applications', icon: FileTextIcon },
+    { href: '/editor', label: 'Editor' },
+    { href: '/career', label: 'Career' },
+    { href: '/career/applications', label: 'Applications' },
   ],
   unauthenticated: [
-    { href: '/login', label: 'Log In' },
-    { href: '/onboarding', label: 'Sign Up' },
+    { href: '/login', label: 'Log in' },
+    { href: '/onboarding', label: 'Sign up' },
   ],
 };
 
 const PUBLIC_LINKS: NavItem[] = [{ href: '/demo', label: 'Demo' }];
 
+function isActiveRoute(pathname: string, href: string) {
+  if (href === '/editor') {
+    return pathname === href || pathname.startsWith('/editor/');
+  }
+
+  if (href === '/career/applications') {
+    return pathname === href || pathname.startsWith('/career/applications/');
+  }
+
+  if (href === '/career') {
+    return (
+      pathname === href ||
+      pathname === '/career/certifications' ||
+      pathname.startsWith('/career/experience/')
+    );
+  }
+
+  return pathname === href;
+}
+
 function UserAvatar({ user }: { user: { name?: string | null; email?: string | null } }) {
   return (
-    <Avatar className="size-8 border border-border bg-muted">
+    <Avatar>
       <AvatarFallback>{(user.name || user.email || 'U')[0]?.toUpperCase() || 'U'}</AvatarFallback>
     </Avatar>
   );
 }
 
-function NavLink({
+function NavigationLink({
   href,
   label,
-  icon: Icon,
-  isCurrentPage,
-  onClick,
+  pathname,
   mobile = false,
+  onClick,
 }: NavItem & {
-  isCurrentPage: (href: string) => boolean;
-  onClick?: () => void;
+  pathname: string;
   mobile?: boolean;
+  onClick?: () => void;
 }) {
+  const isActive = isActiveRoute(pathname, href);
+
   return (
     <Link
       to={href}
       onClick={onClick}
+      aria-current={isActive ? 'page' : undefined}
       className={cn(
-        buttonVariants({ variant: 'ghost', size: mobile ? 'lg' : 'sm' }),
-        'justify-start gap-2',
-        mobile && 'h-11 w-full',
-        isCurrentPage(href)
-          ? 'bg-accent text-accent-foreground'
-          : 'text-muted-foreground hover:text-foreground',
+        buttonVariants({ variant: 'ghost', size: 'md' }),
+        'rounded-full px-4',
+        mobile && 'w-full justify-start rounded-md',
+        isActive
+          ? 'bg-foreground text-background hover:bg-foreground/90 hover:text-background'
+          : 'text-muted-foreground hover:bg-muted hover:text-foreground',
       )}
     >
-      {Icon ? <Icon className="size-4" /> : null}
       {label}
     </Link>
   );
@@ -87,206 +107,155 @@ function NavLink({
 export default function Navigation() {
   const user = useUser();
   const authClient = useAuthClient();
-  const navigation = useNavigation();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [isNavHidden, setIsNavHidden] = useState(false);
-  const [lastScrollY, setLastScrollY] = useState(0);
 
-  const isNavigating = navigation.state === 'loading';
-  const navLinks = user ? [] : PUBLIC_LINKS;
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      setIsScrolled(currentScrollY > 10);
-
-      if (currentScrollY > lastScrollY + 10 && currentScrollY > 100) {
-        setIsNavHidden(true);
-      } else if (currentScrollY < lastScrollY - 10 || currentScrollY < 50) {
-        setIsNavHidden(false);
-      }
-
-      setLastScrollY(currentScrollY);
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY]);
+  const primaryLinks = user ? AUTH_LINKS.authenticated : PUBLIC_LINKS;
 
   const closeMenu = () => setIsMenuOpen(false);
-
-  const isCurrentPage = (href: string) =>
-    href === '/' ? location.pathname === '/' : location.pathname === href;
-
   const handleSignOut = async () => {
-    try {
-      await authClient.signOut();
-      closeMenu();
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
+    closeMenu();
+    await authClient.signOut();
   };
 
   return (
-    <nav
-      className={cn(
-        'fixed inset-x-0 top-0 z-50 px-4 transition-transform duration-200 ease-out',
-        isNavHidden ? '-translate-y-full' : 'translate-y-0',
-      )}
-    >
-      <div
-        className={cn(
-          'mx-auto mt-4 max-w-7xl rounded-full border px-4 py-2 transition-colors duration-200 sm:px-6',
-          isScrolled
-            ? 'border-border bg-background/85 backdrop-blur-xl'
-            : 'border-border/70 bg-background/70 backdrop-blur-md',
-          isNavigating && 'border-accent',
-        )}
-      >
-        <div className="flex h-12 items-center justify-between gap-3">
-          <Link to="/" className="flex items-center gap-2 rounded-md text-foreground">
-            <span className="flex size-8 items-center justify-center rounded-md border border-border bg-muted">
-              <img src="/icons/icon-192x192.png" alt="Craftd Logo" className="h-5 w-auto" />
-            </span>
-            <span className="text-lg font-semibold tracking-normal">Craftd</span>
-          </Link>
+    <header className="bg-background/90 backdrop-blur">
+      <div className="mx-auto flex min-h-16 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+        <Link
+          to="/"
+          className="flex items-center gap-3 text-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+        >
+          <img
+            src="/icons/icon-192x192.png"
+            alt="Craftd logo"
+            className="h-10 w-auto"
+            width="40"
+            height="40"
+          />
+        </Link>
 
-          {navLinks.length > 0 ? (
-            <div className="hidden items-center gap-2 md:flex">
-              {navLinks.map((link) => (
-                <NavLink key={link.href} {...link} isCurrentPage={isCurrentPage} />
+        <div className="hidden flex-1 justify-center md:flex">
+          {primaryLinks.length > 0 ? (
+            <nav className="flex items-center gap-2" aria-label="Primary">
+              {primaryLinks.map((link) => (
+                <NavigationLink key={link.href} {...link} pathname={location.pathname} />
               ))}
-            </div>
+            </nav>
           ) : null}
+        </div>
 
-          <div className="flex items-center gap-2">
-            {user ? (
-              <div className="hidden items-center gap-2 md:flex">
-                {AUTH_LINKS.authenticated.map((link) => (
-                  <NavLink key={link.href} {...link} isCurrentPage={isCurrentPage} />
-                ))}
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button type="button" variant="ghost" className="gap-2">
-                      <span>Account</span>
-                      <UserAvatar user={user} />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuLabel className="truncate">
-                      {user.name || user.email || 'Account'}
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link to="/account">Account settings</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleSignOut}>Sign out</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            ) : (
-              <div className="hidden items-center gap-2 md:flex">
-                <Link to="/login" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
-                  Log In
-                </Link>
-                <Link
-                  to="/onboarding"
-                  className={buttonVariants({ variant: 'primary', size: 'sm' })}
-                >
-                  Sign Up
-                </Link>
-              </div>
-            )}
-
-            <Drawer open={isMenuOpen} onOpenChange={setIsMenuOpen} direction="right">
-              <DrawerTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="md:hidden"
-                  aria-label="Open navigation menu"
-                >
-                  <MenuIcon className="size-5" />
+        <div className="hidden items-center gap-2 md:flex">
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button type="button" variant="ghost" size="md" className="rounded-full px-2.5">
+                  <span>Account</span>
+                  <UserAvatar user={user} />
                 </Button>
-              </DrawerTrigger>
-              <DrawerContent className="h-full max-h-none rounded-none border-l bg-background p-0">
-                <DrawerHeader className="border-b border-border p-4">
-                  <DrawerTitle>Navigation</DrawerTitle>
-                </DrawerHeader>
-                <div className="flex flex-col gap-2 p-4">
-                  {navLinks.map((link) => (
-                    <NavLink
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="truncate">
+                  {user.name || user.email || 'Account'}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/account">Account</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => void handleSignOut()}>Sign out</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <>
+              <Link to="/login" className={buttonVariants({ variant: 'ghost', size: 'md' })}>
+                Log in
+              </Link>
+              <Link to="/onboarding" className={buttonVariants({ variant: 'primary', size: 'md' })}>
+                Sign up
+              </Link>
+            </>
+          )}
+        </div>
+
+        <Drawer open={isMenuOpen} onOpenChange={setIsMenuOpen} direction="right">
+          <DrawerTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="size-11 md:hidden"
+              aria-label="Open navigation menu"
+            >
+              <MenuIcon className="size-5" />
+            </Button>
+          </DrawerTrigger>
+          <DrawerContent className="h-full max-h-none rounded-none border-l bg-background p-0">
+            <DrawerHeader className="border-b border-border px-4 py-4">
+              <DrawerTitle>Menu</DrawerTitle>
+            </DrawerHeader>
+
+            <div className="flex flex-col gap-6 p-4">
+              {primaryLinks.length > 0 ? (
+                <nav className="flex flex-col gap-2" aria-label="Mobile navigation">
+                  {primaryLinks.map((link) => (
+                    <NavigationLink
                       key={link.href}
                       {...link}
-                      isCurrentPage={isCurrentPage}
-                      onClick={closeMenu}
+                      pathname={location.pathname}
                       mobile
+                      onClick={closeMenu}
                     />
                   ))}
+                </nav>
+              ) : null}
 
-                  {user ? (
-                    <>
-                      <DrawerClose asChild>
-                        <Link
-                          to="/account"
-                          className={cn(
-                            buttonVariants({ variant: 'ghost', size: 'lg' }),
-                            'h-11 w-full justify-start gap-2 text-muted-foreground',
-                          )}
-                        >
-                          <UserAvatar user={user} />
-                          My Account
-                        </Link>
-                      </DrawerClose>
-                      {AUTH_LINKS.authenticated.map((link) => (
-                        <NavLink
-                          key={link.href}
-                          {...link}
-                          isCurrentPage={isCurrentPage}
-                          onClick={closeMenu}
-                          mobile
-                        />
-                      ))}
-                      <Button
-                        type="button"
-                        onClick={handleSignOut}
-                        variant="ghost"
-                        size="lg"
-                        className="h-11 w-full justify-start text-muted-foreground"
+              <div className="flex flex-col gap-2 border-t border-border pt-4">
+                {user ? (
+                  <>
+                    <DrawerClose asChild>
+                      <Link
+                        to="/account"
+                        className={cn(
+                          buttonVariants({ variant: 'ghost', size: 'md' }),
+                          'justify-start rounded-md px-4',
+                        )}
                       >
-                        Sign Out
-                      </Button>
-                    </>
-                  ) : (
-                    AUTH_LINKS.unauthenticated.map((link) => (
-                      <DrawerClose key={link.href} asChild>
-                        <Link
-                          to={link.href}
-                          className={cn(
-                            buttonVariants({
-                              variant: link.href === '/onboarding' ? 'primary' : 'ghost',
-                              size: 'lg',
-                            }),
-                            'h-11 w-full justify-start',
-                          )}
-                        >
-                          {link.label}
-                        </Link>
-                      </DrawerClose>
-                    ))
-                  )}
-                </div>
-              </DrawerContent>
-            </Drawer>
-          </div>
-        </div>
+                        <UserAvatar user={user} />
+                        <span>Account</span>
+                      </Link>
+                    </DrawerClose>
+                    <Button
+                      type="button"
+                      onClick={() => void handleSignOut()}
+                      variant="ghost"
+                      size="md"
+                      className="justify-start rounded-md px-4"
+                    >
+                      Sign out
+                    </Button>
+                  </>
+                ) : (
+                  AUTH_LINKS.unauthenticated.map((link) => (
+                    <DrawerClose key={link.href} asChild>
+                      <Link
+                        to={link.href}
+                        className={cn(
+                          buttonVariants({
+                            variant: link.href === '/onboarding' ? 'primary' : 'ghost',
+                            size: 'md',
+                          }),
+                          'justify-start rounded-md px-4',
+                        )}
+                      >
+                        {link.label}
+                      </Link>
+                    </DrawerClose>
+                  ))
+                )}
+              </div>
+            </div>
+          </DrawerContent>
+        </Drawer>
       </div>
-    </nav>
+    </header>
   );
 }
