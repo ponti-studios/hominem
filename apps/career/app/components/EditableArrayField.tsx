@@ -174,11 +174,11 @@ export function EditableArrayField({
             <Button
               type="button"
               onClick={handleSave}
+              variant="primary"
               size="sm"
-              className="bg-green-600 hover:bg-green-700 text-primary-foreground"
               data-testid="save-button"
             >
-              <CheckIcon className="w-4 h-4 mr-1" />
+              <CheckIcon className="w-4 h-4" />
               Save
             </Button>
             <Button

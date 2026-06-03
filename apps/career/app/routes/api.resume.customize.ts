@@ -1,5 +1,4 @@
-import { openai } from '@ai-sdk/openai';
-import { generateObject, generateText } from 'ai';
+import { getSharedAiModelConfig, getSharedOpenAIClient } from '@hominem/services/ai-model';
 import type { ActionFunction } from 'react-router';
 import { z } from 'zod';
 
@@ -9,7 +8,11 @@ import { getAuthenticatedUser, requireAuth } from '../lib/auth.server';
 import { getFullUserPortfolio } from '../lib/portfolio.server';
 import { formatPortfolioForLLM } from '../lib/utils/portfolio-formatter';
 
-const model = openai('gpt-4o');
+function parseJsonObject(content: string): unknown {
+  const trimmed = content.trim();
+  const jsonMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+  return JSON.parse(jsonMatch?.[1] ?? trimmed);
+}
 
 // Input validation schema
 const customizeResumeSchema = z.object({
@@ -172,29 +175,40 @@ ${portfolioContext}
 
 Please create a customized resume that highlights the most relevant experience and skills for this specific job opportunity.`;
 
-    // Generate customized resume using AI
-    const result = await generateText({
-      model,
-      system: systemPrompt,
-      prompt: userPrompt,
-      maxTokens: 4000,
+    // Generate customized resume using the shared monorepo AI client
+    const result = await getSharedOpenAIClient().chat.completions.create({
+      model: getSharedAiModelConfig().modelId,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
+      max_tokens: 4000,
       temperature: 0.3, // Lower temperature for more consistent, professional output
     });
 
     // Extract key insights from the job posting for additional context
-    const analysisResult = await generateObject({
-      model,
-      schema: jobAnalysisSchema,
-      system:
-        'You are an expert job posting analyzer. Analyze the job posting to extract key information that will help optimize a resume for this position.',
-      prompt: `Analyze this job posting and extract the most important information:
+    const analysisResult = await getSharedOpenAIClient().chat.completions.create({
+      model: getSharedAiModelConfig().modelId,
+      response_format: { type: 'json_object' },
+      messages: [
+        {
+          role: 'system',
+          content:
+            'You are an expert job posting analyzer. Return only valid JSON with requiredSkills, qualifications, cultureKeywords, and recommendedKeywords arrays.',
+        },
+        {
+          role: 'user',
+          content: `Analyze this job posting and extract the most important information:
 
 ${finalJobPosting}`,
+        },
+      ],
       temperature: 0.1,
     });
 
+    const parsedAnalysis = parseJsonObject(analysisResult.choices[0]?.message.content ?? '');
     const { success: analysisSuccess, data: jobAnalysis } = jobAnalysisSchema.safeParse(
-      analysisResult.object,
+      parsedAnalysis,
     );
 
     if (!analysisSuccess) {
@@ -202,7 +216,7 @@ ${finalJobPosting}`,
     }
 
     const responseData = {
-      customizedResume: result.text,
+      customizedResume: result.choices[0]?.message.content ?? '',
       jobAnalysis: analysisSuccess ? jobAnalysis : null,
       metadata: {
         format: resumeFormat,

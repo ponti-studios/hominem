@@ -1,7 +1,6 @@
 import { Buffer } from 'node:buffer';
 
-import { openai } from '@ai-sdk/openai';
-import { generateObject } from 'ai';
+import { getSharedAiModelConfig, getSharedOpenAIClient } from '@hominem/services/ai-model';
 import PDFParser from 'pdf2json';
 import type { ActionFunction } from 'react-router';
 
@@ -11,7 +10,68 @@ import { FILE_VALIDATION_PRESETS, uploadFile, validateFile } from '../lib/servic
 import type { ConvertedResumeData } from '../types/resume';
 import { resumeSchema } from '../types/resume';
 
-const model = openai('gpt-4.1');
+function parseJsonObject(content: string): unknown {
+  const trimmed = content.trim();
+  const jsonMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+  return JSON.parse(jsonMatch?.[1] ?? trimmed);
+}
+
+const resumeJsonShape = {
+  portfolio: {
+    slug: 'string',
+    title: 'string',
+    name: 'string',
+    initials: 'string | null',
+    jobTitle: 'string',
+    bio: 'string',
+    tagline: 'string',
+    currentLocation: 'string',
+    locationTagline: 'string | null',
+    email: 'email string',
+    phone: 'string | null',
+    availabilityStatus: 'boolean',
+    availabilityMessage: 'string | null',
+    isPublic: 'boolean',
+    isActive: 'boolean',
+  },
+  socialLinks: {
+    github: 'string | null',
+    linkedin: 'string | null',
+    twitter: 'string | null',
+    website: 'string | null',
+  },
+  workExperience: [
+    {
+      company: 'string',
+      description: 'string',
+      role: 'string',
+      startDate: 'string | null',
+      endDate: 'string | null',
+    },
+  ],
+  skills: [
+    {
+      name: 'string',
+      level: 'number from 1 to 100',
+      category: 'string | null',
+      description: 'string | null',
+      yearsOfExperience: 'number | null',
+      certifications: ['string'],
+    },
+  ],
+  projects: [
+    {
+      title: 'string',
+      description: 'string',
+      shortDescription: 'string | null',
+      technologies: ['string'],
+      liveUrl: 'string | null',
+      githubUrl: 'string | null',
+      status: 'in-progress | completed | archived',
+    },
+  ],
+  stats: [{ label: 'string', value: 'string' }],
+};
 
 export const action: ActionFunction = async ({ request }) => {
   try {
@@ -70,17 +130,30 @@ export const action: ActionFunction = async ({ request }) => {
         });
       }
 
-      // Generate structured data using OpenAI
-      const result = await generateObject<ConvertedResumeData>({
-        model,
-        schema: resumeSchema,
+      // Generate structured data using the shared monorepo AI client
+      const result = await getSharedOpenAIClient().chat.completions.create({
+        model: getSharedAiModelConfig().modelId,
+        response_format: { type: 'json_object' },
         messages: [
-          { role: 'system', content: 'You are an expert resume parser.' },
-          { role: 'user', content: pdfText },
+          {
+            role: 'system',
+            content:
+              'You are an expert resume parser. Return only valid JSON matching the requested resume schema.',
+          },
+          {
+            role: 'user',
+            content: `Parse this resume into structured JSON compatible with this shape:
+
+${JSON.stringify(resumeJsonShape, null, 2)}
+
+Resume text:
+${pdfText}`,
+          },
         ],
       });
 
-      const { success, data } = resumeSchema.safeParse(result.object);
+      const parsedResume = parseJsonObject(result.choices[0]?.message.content ?? '');
+      const { success, data } = resumeSchema.safeParse(parsedResume as ConvertedResumeData);
       if (!success) {
         return new Response(JSON.stringify({ error: 'Invalid data' }), {
           status: 400,

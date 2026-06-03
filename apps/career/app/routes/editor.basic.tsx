@@ -1,5 +1,7 @@
 import { CareerRepository, getDb } from '@hominem/db';
 import { Button } from '@hominem/ui/button';
+import { Card, CardContent, CardHeader } from '@hominem/ui/card';
+import { Input } from '@hominem/ui/input';
 import { Switch } from '@hominem/ui/switch';
 import { useEffect } from 'react';
 import { Controller, useForm, type SubmitHandler } from 'react-hook-form';
@@ -145,181 +147,119 @@ export default function EditorBasic() {
   const isSaving = fetcher.state === 'submitting';
 
   return (
-    <section className="flex flex-col gap-8 mx-auto">
-      <h2 className="text-2xl font-semibold text-foreground">Basic Information</h2>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {/* Basic Information Card */}
-        <div className="rounded-md border border-border bg-card p-4 space-y-6">
-          <h3 className="text-lg font-medium text-foreground">Personal Information</h3>
-          <div>
-            <label htmlFor="name" className="label">
-              Full Name
-            </label>
-            <input
-              id="name"
-              {...register('name', { required: 'Name is required' })}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50 mt-1"
-            />
-            {errors.name && <p className="error-message">{errors.name.message}</p>}
-          </div>
-          <div>
-            <label htmlFor="initials" className="label">
-              Initials (Optional)
-            </label>
-            <input
-              id="initials"
-              {...register('initials')}
-              maxLength={10}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50 mt-1"
-            />
-          </div>
-          <div>
-            <label htmlFor="jobTitle" className="label">
-              Job Title / Professional Title
-            </label>
-            <input
-              id="jobTitle"
-              {...register('jobTitle', { required: 'Job title is required' })}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50 mt-1"
-            />
-            {errors.jobTitle && <p className="error-message">{errors.jobTitle.message}</p>}
-          </div>
-          <div>
-            <label htmlFor="tagline" className="label">
-              Tagline (Short, catchy phrase)
-            </label>
-            <input
-              id="tagline"
-              {...register('tagline', { required: 'Tagline is required' })}
-              maxLength={500}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50 mt-1"
-            />
-            {errors.tagline && <p className="error-message">{errors.tagline.message}</p>}
-          </div>
-          <div>
-            <label htmlFor="bio" className="label">
-              Bio / Description
-            </label>
-            <textarea
-              id="bio"
-              {...register('bio', { required: 'Bio is required' })}
-              rows={5}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50 min-h-28 mt-1"
-            />
-            {errors.bio && <p className="error-message">{errors.bio.message}</p>}
-          </div>
-        </div>
+    <section className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <Card>
+          <CardHeader>
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Personal</span>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-1">
+              <label htmlFor="name" className="text-xs font-medium text-muted-foreground">Full Name</label>
+              <Input id="name" {...register('name', { required: 'Name is required' })} />
+              {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="initials" className="text-xs font-medium text-muted-foreground">Initials</label>
+              <Input id="initials" {...register('initials')} maxLength={10} />
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="jobTitle" className="text-xs font-medium text-muted-foreground">Job Title</label>
+              <Input id="jobTitle" {...register('jobTitle', { required: 'Job title is required' })} />
+              {errors.jobTitle && <p className="text-xs text-destructive">{errors.jobTitle.message}</p>}
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="tagline" className="text-xs font-medium text-muted-foreground">Tagline</label>
+              <Input id="tagline" {...register('tagline', { required: 'Tagline is required' })} maxLength={500} />
+              {errors.tagline && <p className="text-xs text-destructive">{errors.tagline.message}</p>}
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="bio" className="text-xs font-medium text-muted-foreground">Bio</label>
+              <textarea
+                id="bio"
+                {...register('bio', { required: 'Bio is required' })}
+                rows={4}
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50 resize-none"
+              />
+              {errors.bio && <p className="text-xs text-destructive">{errors.bio.message}</p>}
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* Contact Information Card */}
-        <div className="rounded-md border border-border bg-card p-4 space-y-6">
-          <h3 className="text-lg font-medium text-foreground">Contact Information</h3>
-          <div>
-            <label htmlFor="email" className="label">
-              Contact Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              {...register('email', {
-                required: 'Email is required',
-                pattern: { value: /^\S+@\S+$/i, message: 'Invalid email format' },
-              })}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50 mt-1"
-            />
-            {errors.email && <p className="error-message">{errors.email.message}</p>}
-          </div>
-          <div>
-            <label htmlFor="phone" className="label">
-              Phone (Optional)
-            </label>
-            <input
-              id="phone"
-              {...register('phone')}
-              maxLength={50}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50 mt-1"
-            />
-          </div>
-        </div>
+        <Card>
+          <CardHeader>
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Contact</span>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-1">
+              <label htmlFor="email" className="text-xs font-medium text-muted-foreground">Email</label>
+              <Input
+                id="email"
+                type="email"
+                {...register('email', {
+                  required: 'Email is required',
+                  pattern: { value: /^\S+@\S+$/i, message: 'Invalid email format' },
+                })}
+              />
+              {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="phone" className="text-xs font-medium text-muted-foreground">Phone</label>
+              <Input id="phone" {...register('phone')} maxLength={50} />
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* Location Information Card */}
-        <div className="rounded-md border border-border bg-card p-4 space-y-6">
-          <h3 className="text-lg font-medium text-foreground">Location Information</h3>
-          <div>
-            <label htmlFor="currentLocation" className="label">
-              Current Location (e.g., City, Country)
-            </label>
-            <input
-              id="currentLocation"
-              {...register('currentLocation', { required: 'Location is required' })}
-              maxLength={255}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50 mt-1"
-            />
-            {errors.currentLocation && (
-              <p className="error-message">{errors.currentLocation.message}</p>
-            )}
-          </div>
-          <div>
-            <label htmlFor="locationTagline" className="label">
-              Location Tagline (Optional)
-            </label>
-            <input
-              id="locationTagline"
-              {...register('locationTagline')}
-              maxLength={255}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50 mt-1"
-            />
-          </div>
-        </div>
+        <Card>
+          <CardHeader>
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Location</span>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-1">
+              <label htmlFor="currentLocation" className="text-xs font-medium text-muted-foreground">Location</label>
+              <Input
+                id="currentLocation"
+                {...register('currentLocation', { required: 'Location is required' })}
+                maxLength={255}
+              />
+              {errors.currentLocation && <p className="text-xs text-destructive">{errors.currentLocation.message}</p>}
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="locationTagline" className="text-xs font-medium text-muted-foreground">Location tagline</label>
+              <Input id="locationTagline" {...register('locationTagline')} maxLength={255} />
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* Availability Information Card */}
-        <div className="rounded-md border border-border bg-card p-4 space-y-6">
-          <h3 className="text-lg font-medium text-foreground">Availability</h3>
-          <div>
-            <label htmlFor="availabilityStatus" className="label mb-2">
-              Available for new opportunities?
-            </label>
-            <div className="flex items-center">
+        <Card>
+          <CardHeader>
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Availability</span>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-3">
               <Controller
                 name="availabilityStatus"
                 control={control}
                 render={({ field }) => (
-                  <Switch
-                    id="availabilityStatus"
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
+                  <Switch id="availabilityStatus" checked={field.value} onCheckedChange={field.onChange} />
                 )}
               />
-              <span className="ml-3 text-sm text-muted-foreground">
-                {watch('availabilityStatus') ? 'Yes, I am available' : 'No, I am not available'}
-              </span>
-            </div>
-          </div>
-          {watch('availabilityStatus') && (
-            <div>
-              <label htmlFor="availabilityMessage" className="label">
-                Availability Message (Optional)
+              <label htmlFor="availabilityStatus" className="text-sm text-muted-foreground">
+                {watch('availabilityStatus') ? 'Open to opportunities' : 'Not available'}
               </label>
-              <input
-                id="availabilityMessage"
-                {...register('availabilityMessage')}
-                maxLength={500}
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50 mt-1"
-              />
             </div>
-          )}
-        </div>
+            {watch('availabilityStatus') && (
+              <div className="space-y-1">
+                <label htmlFor="availabilityMessage" className="text-xs font-medium text-muted-foreground">Availability note</label>
+                <Input id="availabilityMessage" {...register('availabilityMessage')} maxLength={500} />
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-        <div>
-          <Button
-            type="submit"
-            disabled={isSaving || !isDirty}
-            variant="primary"
-            className="w-full"
-          >
-            {isSaving ? 'Saving...' : 'Save Basic Info'}
-          </Button>
-        </div>
+        <Button type="submit" disabled={isSaving || !isDirty} variant="primary" fullWidth>
+          {isSaving ? 'Saving…' : 'Save'}
+        </Button>
       </form>
     </section>
   );

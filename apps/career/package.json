@@ -20,17 +20,14 @@
     "db:inject-jobs": "pnpm exec tsx scripts/inject-job-applications.ts"
   },
   "dependencies": {
-    "@ai-sdk/google": "^1.2.19",
-    "@ai-sdk/openai": "^1.3.22",
-    "@google/generative-ai": "^0.24.1",
     "@hominem/auth": "workspace:*",
     "@hominem/db": "workspace:*",
+    "@hominem/services": "workspace:*",
     "@hominem/storage": "workspace:*",
     "@hominem/ui": "workspace:*",
     "@react-router/node": "7.14.0",
     "@react-router/serve": "7.14.0",
     "@tanstack/react-query": "^5.80.6",
-    "ai": "^4.3.16",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "csv-parse": "^5.6.0",
