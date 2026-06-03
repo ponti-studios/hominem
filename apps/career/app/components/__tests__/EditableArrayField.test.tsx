@@ -17,7 +17,7 @@ interface EditableArrayFieldProps {
   onSave?: (field: string, value: string[]) => void;
 }
 
-describe.skip('EditableArrayField', () => {
+describe('EditableArrayField', () => {
   const defaultProps: EditableArrayFieldProps = {
     label: 'Test Items',
     value: ['Item 1', 'Item 2'],
@@ -185,11 +185,11 @@ describe.skip('EditableArrayField', () => {
       await user.click(screen.getByTestId('edit-button'));
       const lastInput = screen.getByTestId(`array-input-${normalizeString('Item 2')}`);
 
-      await user.type(lastInput, 'Some content');
+      await user.click(lastInput);
       await user.keyboard('{Enter}');
 
-      // New item should have the content as its test ID
-      expect(screen.getByTestId('array-input-Some content')).toBeInTheDocument();
+      expect(screen.getByTestId('array-input-')).toBeInTheDocument();
+      expect(screen.getAllByRole('textbox')).toHaveLength(3);
     });
 
     it('does not add new item when Enter is pressed on empty last input', async () => {
@@ -202,7 +202,8 @@ describe.skip('EditableArrayField', () => {
       await user.clear(lastInput);
       await user.keyboard('{Enter}');
 
-      expect(screen.queryByTestId('array-input-')).not.toBeInTheDocument();
+      expect(screen.getAllByRole('textbox')).toHaveLength(2);
+      expect(screen.getByTestId('array-input-')).toHaveValue('');
     });
 
     it('does not add new item when Shift+Enter is pressed', async () => {
@@ -210,7 +211,6 @@ describe.skip('EditableArrayField', () => {
       render(<EditableArrayField {...defaultProps} />);
 
       await user.click(screen.getByTestId('edit-button'));
-      const lastInput = screen.getByTestId(`array-input-${normalizeString('Item 2')}`);
 
       await user.keyboard('{Shift>}{Enter}{/Shift}');
 
@@ -273,6 +273,9 @@ describe.skip('EditableArrayField', () => {
 
     it('creates and submits form when no onSave callback provided', async () => {
       const user = userEvent.setup();
+      const submitSpy = vi
+        .spyOn(HTMLFormElement.prototype, 'submit')
+        .mockImplementation(() => undefined);
 
       render(<EditableArrayField {...defaultProps} />);
 
@@ -286,6 +289,7 @@ describe.skip('EditableArrayField', () => {
         screen.queryByTestId(`array-input-${normalizeString('Item 1')}`),
       ).not.toBeInTheDocument();
       expect(screen.getByTestId(`display-item-${normalizeString('Item 1')}`)).toBeInTheDocument();
+      expect(submitSpy).toHaveBeenCalledOnce();
     });
 
     it('exits edit mode after saving', async () => {

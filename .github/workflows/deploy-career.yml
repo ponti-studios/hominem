@@ -1,0 +1,23 @@
+name: deploy-career
+
+on:
+  workflow_run:
+    workflows: [validate-career]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-career-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy-career:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    uses: ./.github/workflows/railway-deploy-service.yml
+    secrets:
+      service_target: ${{ secrets.RAILWAY_SERVICE_CAREER }}
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+    with:
+      service_name: career
+      checkout_ref: ${{ github.event.workflow_run.head_sha || github.sha }}

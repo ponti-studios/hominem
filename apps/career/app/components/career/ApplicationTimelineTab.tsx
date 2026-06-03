@@ -14,7 +14,7 @@ interface TimelineTabProps {
   applicationId: string;
 }
 
-export function ApplicationTimelineTab({ application, applicationId }: TimelineTabProps) {
+export function ApplicationTimelineTab({ application }: TimelineTabProps) {
   const [showAddInterview, setShowAddInterview] = useState(false);
 
   return (
@@ -109,10 +109,10 @@ export function ApplicationTimelineTab({ application, applicationId }: TimelineT
         </Card>
 
         {/* Interviews */}
-        {application.interviewDates?.map((interview, index) => (
+        {application.interviewDates?.map((interview) => (
           <Card key={interview.date}>
             <CardContent className="flex items-start gap-4 p-4">
-              <div className="mt-1 size-3 shrink-0 rounded-full bg-purple-500" />
+              <div className="mt-1 size-3 shrink-0 rounded-full bg-accent" />
               <div className="flex-1 space-y-2">
                 <div className="flex items-center justify-between gap-3">
                   <div className="space-y-2">
@@ -121,7 +121,7 @@ export function ApplicationTimelineTab({ application, applicationId }: TimelineT
                     </h4>
                     <Badge
                       variant="outline"
-                      className="border-purple-200 bg-purple-50 text-purple-700"
+                      className="border-accent/30 bg-accent/10 text-foreground"
                     >
                       {interview.type.replace(/_/g, ' ')}
                     </Badge>

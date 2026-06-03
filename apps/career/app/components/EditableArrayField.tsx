@@ -150,7 +150,7 @@ export function EditableArrayField({
         <div className="space-y-2">
           {editValues.map((item, index) => (
             <ArrayItem
-              key={`edit-${field}-${normalizeString(item)}`}
+              key={`edit-${field}-${index}`}
               value={item}
               index={index}
               placeholder={placeholder}

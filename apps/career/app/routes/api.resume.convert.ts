@@ -1,19 +1,50 @@
-import { Buffer } from 'node:buffer';
-
 import { getSharedAiModelConfig, getSharedOpenAIClient } from '@hominem/services/ai-model';
-import PDFParser from 'pdf2json';
 import type { ActionFunction } from 'react-router';
 
-import { getAuthenticatedUser, requireAuth } from '../lib/auth.server';
+import { getAuthenticatedUser } from '../lib/auth.server';
+import { logger } from '../lib/logger';
+import { extractPdfText } from '../lib/services/pdf-text.server';
 import { saveResumeToDatabase } from '../lib/services/resume-conversion.service';
 import { FILE_VALIDATION_PRESETS, uploadFile, validateFile } from '../lib/services/storage.service';
-import type { ConvertedResumeData } from '../types/resume';
+import type { ConvertedResumeData, ResumeConvertStage, UploadResumeResponse } from '../types/resume';
 import { resumeSchema } from '../types/resume';
 
 function parseJsonObject(content: string): unknown {
   const trimmed = content.trim();
   const jsonMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
   return JSON.parse(jsonMatch?.[1] ?? trimmed);
+}
+
+function jsonResponse(data: unknown, status = 200): Response {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+function errorResponse(
+  error: string,
+  status: number,
+  stage: ResumeConvertStage,
+  retryable: boolean,
+): Response {
+  return jsonResponse({ error, stage, retryable } satisfies UploadResumeResponse, status);
+}
+
+function storageFailureMessage(): string {
+  if (process.env.NODE_ENV === 'production') {
+    return 'Could not store the resume file. Check the Cloudflare R2 configuration and try again.';
+  }
+
+  return 'Could not store the resume file. Start local MinIO and make sure the storage bucket is available, then try again.';
+}
+
+function logRouteError(message: string, error: unknown, context?: Record<string, unknown>): void {
+  logger.error(
+    message,
+    error instanceof Error ? error : undefined,
+    error instanceof Error ? context : { ...context, error },
+  );
 }
 
 const resumeJsonShape = {
@@ -74,63 +105,76 @@ const resumeJsonShape = {
 };
 
 export const action: ActionFunction = async ({ request }) => {
+  let userId: string | undefined;
+
   try {
     const sessionUser = await getAuthenticatedUser(request);
-    const user = requireAuth(sessionUser);
+    if (!sessionUser) {
+      return errorResponse('Please log in to upload your resume.', 401, 'auth', false);
+    }
+    const user = sessionUser;
+    userId = user.id;
 
     const contentType = request.headers.get('content-type') || '';
     if (!contentType.includes('multipart/form-data')) {
-      return new Response(JSON.stringify({ error: 'Please upload a PDF file' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return errorResponse(
+        'Upload must be sent as multipart form data with a PDF file.',
+        400,
+        'request',
+        true,
+      );
     }
 
     const formData = await request.formData();
     const file = formData.get('pdf') as File | null;
     if (!file) {
-      return new Response(JSON.stringify({ error: 'No PDF file provided' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return errorResponse(
+        'No PDF file was attached. Choose a resume PDF and try again.',
+        400,
+        'file-validation',
+        true,
+      );
     }
 
     // Use centralized file validation
     const validation = validateFile(file, FILE_VALIDATION_PRESETS.PDF_RESUME);
     if (!validation.valid) {
-      return new Response(JSON.stringify({ error: validation.error }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return errorResponse(
+        validation.error ?? 'The selected file is not a valid resume PDF.',
+        400,
+        'file-validation',
+        true,
+      );
     }
 
+    let pdfText: string;
     try {
-      // First, extract text from PDF (before uploading to storage)
-      const buffer = Buffer.from(await file.arrayBuffer());
-      const pdfText = await new Promise<string>((resolve, reject) => {
-        const parser = new PDFParser(undefined, true);
-        parser.on('pdfParser_dataError', (data) => {
-          const error = data instanceof Error ? data : data.parserError;
-          reject(error);
-        });
-        parser.on('pdfParser_dataReady', () => {
-          try {
-            resolve(parser.getRawTextContent());
-          } catch (e) {
-            reject(e);
-          }
-        });
-        parser.parseBuffer(buffer);
+      pdfText = await extractPdfText(file);
+    } catch (error) {
+      logRouteError('Resume PDF text extraction failed', error, {
+        userId: user.id,
+        fileName: file.name,
+        fileSize: file.size,
       });
+      return errorResponse(
+        'Could not read text from this PDF. Try a searchable PDF instead of a scanned or password-protected file.',
+        400,
+        'pdf-extraction',
+        true,
+      );
+    }
 
-      if (!pdfText.trim()) {
-        return new Response(JSON.stringify({ error: 'Could not extract text from PDF.' }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
+    if (!pdfText.trim()) {
+      return errorResponse(
+        'This PDF did not contain readable text. Upload a searchable resume PDF instead of a scanned image.',
+        400,
+        'pdf-extraction',
+        true,
+      );
+    }
 
-      // Generate structured data using the shared monorepo AI client
+    let aiContent: string;
+    try {
       const result = await getSharedOpenAIClient().chat.completions.create({
         model: getSharedAiModelConfig().modelId,
         response_format: { type: 'json_object' },
@@ -151,56 +195,117 @@ ${pdfText}`,
           },
         ],
       });
-
-      const parsedResume = parseJsonObject(result.choices[0]?.message.content ?? '');
-      const { success, data } = resumeSchema.safeParse(parsedResume as ConvertedResumeData);
-      if (!success) {
-        return new Response(JSON.stringify({ error: 'Invalid data' }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
-
-      const uploadResult = await uploadFile(file, user.id, 'resumes');
-
-      if (!uploadResult.success) {
-        console.error(uploadResult.error);
-        return new Response(JSON.stringify({ error: uploadResult.error }), {
-          status: 500,
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
-
-      // Save to database (this will handle overwriting existing portfolio safely)
-      const saveResult = await saveResumeToDatabase(user.id, data);
-      const portfolioId = saveResult.portfolioId;
-
-      const responseData = {
-        message: 'Resume uploaded and processed successfully',
-        data,
-        saved: true,
-        portfolioId,
-        fileUrl: uploadResult.publicUrl,
-      };
-
-      return new Response(JSON.stringify(responseData), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
+      aiContent = result.choices[0]?.message.content ?? '';
+    } catch (error) {
+      logRouteError('Resume AI parsing request failed', error, {
+        userId: user.id,
+        fileName: file.name,
       });
-    } catch (processingError) {
-      const msg = processingError instanceof Error ? processingError.message : 'Processing failed';
-      return new Response(JSON.stringify({ error: msg }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return errorResponse(
+        'Could not parse the resume with AI right now. Check the AI service configuration and try again.',
+        502,
+        'ai-parse',
+        true,
+      );
     }
+
+    if (!aiContent.trim()) {
+      logger.error('Resume AI parsing returned empty content', undefined, {
+        userId: user.id,
+        fileName: file.name,
+      });
+      return errorResponse(
+        'The AI parser returned an empty response. Try again, or upload a simpler resume PDF.',
+        502,
+        'ai-parse',
+        true,
+      );
+    }
+
+    let parsedResume: unknown;
+    try {
+      parsedResume = parseJsonObject(aiContent);
+    } catch (error) {
+      logRouteError('Resume AI parsing returned invalid JSON', error, {
+        userId: user.id,
+        fileName: file.name,
+      });
+      return errorResponse(
+        'The AI parser returned malformed resume data. Try again, or upload a simpler resume PDF.',
+        502,
+        'ai-parse',
+        true,
+      );
+    }
+
+    const {
+      success,
+      data,
+      error: schemaError,
+    } = resumeSchema.safeParse(parsedResume as ConvertedResumeData);
+    if (!success) {
+      logger.error('Resume AI parsing failed schema validation', undefined, {
+        userId: user.id,
+        fileName: file.name,
+        issues: schemaError.issues,
+      });
+      return errorResponse(
+        'The parsed resume data was incomplete or invalid. Try again, or update the PDF with clearer resume sections.',
+        422,
+        'schema-validation',
+        true,
+      );
+    }
+
+    const uploadResult = await uploadFile(file, user.id, 'resumes');
+
+    if (!uploadResult.success) {
+      logger.error('Resume file upload failed', undefined, {
+        userId: user.id,
+        fileName: file.name,
+        error: uploadResult.error,
+      });
+      return errorResponse(storageFailureMessage(), 503, 'storage', true);
+    }
+
+    let portfolioId: string;
+    let portfolioSlug: string;
+    try {
+      const saveResult = await saveResumeToDatabase(user.id, data);
+      portfolioId = saveResult.portfolioId;
+      portfolioSlug = saveResult.portfolioSlug;
+    } catch (error) {
+      logRouteError('Resume database save failed', error, {
+        userId: user.id,
+        fileName: file.name,
+      });
+      return errorResponse(
+        'Resume was parsed and uploaded, but saving the portfolio failed. Check the database connection and migrations.',
+        500,
+        'database',
+        true,
+      );
+    }
+
+    return jsonResponse({
+      message: 'Resume uploaded and processed successfully',
+      data,
+      saved: true,
+      portfolioId,
+      portfolioSlug,
+      portfolioUrl: `/p/${portfolioSlug}`,
+      fileUrl: uploadResult.publicUrl,
+      stage: 'complete',
+      retryable: false,
+    } satisfies UploadResumeResponse);
   } catch (err) {
-    console.error('Resume conversion error:', err);
-    return new Response(
-      JSON.stringify({
-        error: err instanceof Error ? err.message : 'Internal server error',
-      }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } },
+    logRouteError('Resume conversion request failed before processing', err, { userId });
+
+    return errorResponse(
+      'Could not start resume conversion. Please try again.',
+      500,
+      'request',
+      true,
     );
   }
 };

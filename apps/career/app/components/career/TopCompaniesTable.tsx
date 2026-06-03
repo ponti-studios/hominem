@@ -102,7 +102,7 @@ export function TopCompaniesTable({ companies }: TopCompaniesTableProps) {
                 <PercentageProgressBar
                   label="Interview Success"
                   percentage={Math.min(company.interviewRate, 100)}
-                  color="bg-accent/100"
+                  color="bg-accent"
                   className="rounded-lg bg-muted/30 p-3"
                 />
                 <PercentageProgressBar

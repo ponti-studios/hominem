@@ -91,7 +91,7 @@ export async function parseResume(file: File): Promise<ParsedResumeData> {
 
 // Function to save parsed resume data to the database
 export async function saveResumeData(userId: string, data: ParsedResumeData): Promise<boolean> {
-  // This would save the data to Supabase
+  // This would save the data to the career database
   // For now, just return true to simulate success
   return true;
 }

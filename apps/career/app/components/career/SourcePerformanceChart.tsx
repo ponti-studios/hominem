@@ -37,20 +37,20 @@ export function SourcePerformanceChart({ data }: SourcePerformanceChartProps) {
             <PercentageProgressBar
               label="Response Rate"
               percentage={source.responseRate}
-              color="bg-accent/100"
+              color="bg-accent"
             />
 
             <PercentageProgressBar
               label="Offer Rate"
               percentage={source.offerRate}
-              color="bg-success/100"
+              color="bg-success"
             />
 
             <VolumeProgressBar
               label="Volume (relative)"
               count={source.count}
               maxCount={maxCount}
-              color="bg-muted0"
+              color="bg-muted"
             />
           </div>
 
@@ -73,15 +73,15 @@ export function SourcePerformanceChart({ data }: SourcePerformanceChartProps) {
         <h4 className="font-medium text-foreground mb-2">Performance Guide</h4>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
           <div className="flex items-center">
-            <div className="w-3 h-3 bg-accent/100 rounded mr-2" />
+            <div className="w-3 h-3 bg-accent rounded mr-2" />
             <span className="text-muted-foreground">Response Rate</span>
           </div>
           <div className="flex items-center">
-            <div className="w-3 h-3 bg-success/100 rounded mr-2" />
+            <div className="w-3 h-3 bg-success rounded mr-2" />
             <span className="text-muted-foreground">Offer Rate</span>
           </div>
           <div className="flex items-center">
-            <div className="w-3 h-30 rounded mr-2" />
+            <div className="w-3 h-3 bg-muted rounded mr-2" />
             <span className="text-muted-foreground">Application Volume</span>
           </div>
         </div>

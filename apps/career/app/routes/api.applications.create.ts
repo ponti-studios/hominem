@@ -1,6 +1,7 @@
 import type { ActionFunction } from 'react-router';
 
 import { getAuthenticatedUser } from '~/lib/auth.server';
+import { logger } from '~/lib/logger';
 import { JobApplicationsService } from '~/lib/services/job-applications.service';
 import type { JobPosting } from '~/types/applications';
 
@@ -55,11 +56,15 @@ export const action: ActionFunction = async ({ request }) => {
       { status: 200, headers: { 'Content-Type': 'application/json' } },
     );
   } catch (error) {
-    console.error('Application creation error:', error);
-
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Internal server error' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } },
+    logger.error(
+      'Application creation error',
+      error instanceof Error ? error : undefined,
+      error instanceof Error ? undefined : { error },
     );
+
+    return new Response(JSON.stringify({ error: 'Unable to create application' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 };

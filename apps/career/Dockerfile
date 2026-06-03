@@ -2,23 +2,21 @@ FROM node:26.1.0-alpine AS builder
 
 WORKDIR /app
 
-ARG VITE_PUBLIC_SUPABASE_URL
-ARG VITE_PUBLIC_SUPABASE_ANON_KEY
 ARG VITE_DATABASE_URL
 
 ENV TURBO_TELEMETRY_DISABLED=1 \
-    VITE_PUBLIC_SUPABASE_URL=${VITE_PUBLIC_SUPABASE_URL} \
-    VITE_PUBLIC_SUPABASE_ANON_KEY=${VITE_PUBLIC_SUPABASE_ANON_KEY} \
     VITE_DATABASE_URL=${VITE_DATABASE_URL}
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+COPY packages ./packages
 COPY apps/career ./apps/career
 COPY tsconfig.profiles ./tsconfig.profiles
 COPY tsconfig.json ./
 
 RUN npm install -g pnpm@11.1.1 && \
-    pnpm install --frozen-lockfile --config.trust-policy=ignore --filter @hominem/career...
+    pnpm install --frozen-lockfile --filter @hominem/career...
 
+# react-router build bundles all @hominem/* packages into build/server and build/client
 RUN pnpm --filter @hominem/career run build
 
 FROM node:26.1.0-alpine AS server

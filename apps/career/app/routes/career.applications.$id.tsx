@@ -189,7 +189,7 @@ export default function ApplicationDetail() {
     {
       id: 'update-status',
       label: 'Update Status',
-      icon: () => <span className="w-2 h-2 bg-accent/100 rounded-full" />,
+      icon: () => <span className="w-2 h-2 bg-accent rounded-full" />,
       onClick: () => setShowStatusUpdate(true),
     },
     {
@@ -248,7 +248,7 @@ export default function ApplicationDetail() {
               <TabsTrigger
                 key={tab.id}
                 value={tab.id}
-                className="gap-2 rounded-none px-1 py-4 text-sm font-medium data-[state=active]:text-primary after:bg-accent/100"
+                className="gap-2 rounded-none px-1 py-4 text-sm font-medium data-[state=active]:text-primary after:bg-accent"
               >
                 <tab.icon className="h-5 w-5" />
                 {tab.label}

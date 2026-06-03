@@ -1,9 +1,13 @@
 import { Badge } from '@hominem/ui/badge';
 import { Button } from '@hominem/ui/button';
 import { Card, CardContent } from '@hominem/ui/card';
-import { ArrowRight, CheckCircle2, Edit3, Eye, Gift, Share2, Sparkles } from 'lucide-react';
-import type { MetaFunction } from 'react-router';
-import { useNavigate } from 'react-router';
+import { ArrowRight, CheckCircle2, Copy, Edit3, Eye, Gift, Share2, Sparkles } from 'lucide-react';
+import { useState } from 'react';
+import type { LoaderFunctionArgs, MetaFunction } from 'react-router';
+import { useLoaderData, useNavigate } from 'react-router';
+
+import { getFullUserPortfolio } from '../lib/portfolio.server';
+import { withAuthLoader } from '../lib/route-utils';
 
 export const meta: MetaFunction = () => {
   return [
@@ -15,12 +19,36 @@ export const meta: MetaFunction = () => {
   ];
 };
 
-export default function OnboardingComplete() {
-  const navigate = useNavigate();
+export async function loader(args: LoaderFunctionArgs) {
+  return withAuthLoader(args, async ({ user }) => {
+    const portfolio = await getFullUserPortfolio(user.id);
 
-  const goToPortfolio = () => navigate('/account');
+    return {
+      portfolio: portfolio
+        ? {
+            slug: portfolio.slug,
+            title: portfolio.title,
+          }
+        : null,
+    };
+  });
+}
+
+export default function OnboardingComplete() {
+  const { portfolio } = useLoaderData<typeof loader>();
+  const navigate = useNavigate();
+  const [copyLabel, setCopyLabel] = useState('Copy Link');
+  const portfolioPath = portfolio ? `/p/${portfolio.slug}` : null;
+
+  const goToPortfolio = () => navigate(portfolioPath ?? '/account');
   const shareTips = () =>
     document.getElementById('sharing-tips')?.scrollIntoView({ behavior: 'smooth' });
+  const copyPortfolioLink = async () => {
+    if (!portfolioPath) return;
+
+    await navigator.clipboard.writeText(new URL(portfolioPath, window.location.origin).toString());
+    setCopyLabel('Copied');
+  };
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-6">
@@ -121,12 +149,17 @@ export default function OnboardingComplete() {
               </div>
             ))}
           </div>
-          <div className="flex items-center gap-2 rounded-md border border-accent/30 bg-accent/10 px-3 py-2">
-            <code className="min-w-0 flex-1 truncate font-mono text-xs text-foreground">
-              https://craftd.dev/your-name
-            </code>
-            <Button type="button" variant="primary" size="sm">Copy Link</Button>
-          </div>
+          {portfolioPath ? (
+            <div className="flex items-center gap-2 rounded-md border border-accent/30 bg-accent/10 px-3 py-2">
+              <code className="min-w-0 flex-1 truncate font-mono text-xs text-foreground">
+                {portfolioPath}
+              </code>
+              <Button type="button" onClick={copyPortfolioLink} variant="primary" size="sm">
+                <Copy className="size-4" />
+                {copyLabel}
+              </Button>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
     </div>

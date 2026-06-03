@@ -1,14 +1,13 @@
-// @ts-nocheck
-/* eslint-disable */
-
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 
 import { getServerSession, requireAuth, type User } from './auth.server';
+import { logger } from './logger';
 
 export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
+  message?: string;
 }
 
 export interface AuthenticatedContext {
@@ -23,7 +22,7 @@ export async function withAuth<T>(
   const { user, headers } = await getServerSession(request);
   const authenticatedUser = requireAuth(user, headers);
 
-  return await callback({
+  return callback({
     user: authenticatedUser,
     request,
   });
@@ -55,7 +54,6 @@ export function createSuccessResponse<T>(data?: T, message?: string): ApiRespons
   };
 }
 
-
 export async function tryAsync<T>(
   operation: () => Promise<T>,
   errorMessage = 'Operation failed',
@@ -63,7 +61,11 @@ export async function tryAsync<T>(
   try {
     return await operation();
   } catch (error) {
-    console.error(errorMessage, error);
+    logger.error(
+      errorMessage,
+      error instanceof Error ? error : undefined,
+      error instanceof Error ? undefined : { error },
+    );
     return createErrorResponse(errorMessage);
   }
 }
@@ -75,7 +77,7 @@ export function parseFormData<T>(formData: FormData, key: string): T | ApiRespon
       return createErrorResponse(`Missing ${key} in form data`);
     }
     return JSON.parse(data) as T;
-  } catch (error) {
+  } catch {
     return createErrorResponse(`Invalid ${key} format`);
   }
 }

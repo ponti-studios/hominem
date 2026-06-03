@@ -6,18 +6,14 @@
     "build": "react-router build",
     "dev": "react-router dev",
     "dev:debug": "node --inspect-brk ./node_modules/.bin/react-router dev",
-    "lint": "pnpm dlx oxlint ./app ./scripts ./tests",
-    "format": "pnpm dlx oxfmt ./app ./scripts ./tests",
+    "lint": "pnpm dlx oxlint ./app ./tests",
+    "format": "pnpm dlx oxfmt ./app ./tests",
     "preview": "pnpm build && vite preview",
     "start": "react-router-serve ./build/server/index.js",
     "test": "vitest run --passWithNoTests",
     "test:ui": "vitest run --ui",
     "test:coverage": "vitest run --coverage",
-    "typecheck": "react-router typegen && tsgo --noEmit",
-    "db:up": "docker-compose up -d",
-    "db:down": "docker-compose down",
-    "db:migrate": "pnpm -C ../.. exec just db-migrate",
-    "db:inject-jobs": "pnpm exec tsx scripts/inject-job-applications.ts"
+    "typecheck": "react-router typegen && tsgo --noEmit"
   },
   "dependencies": {
     "@hominem/auth": "workspace:*",

@@ -4,6 +4,7 @@ import type { ConvertedResumeData } from '../../types/resume';
 
 export interface SaveResumeResult {
   portfolioId: string;
+  portfolioSlug: string;
 }
 
 export async function saveResumeToDatabase(
@@ -117,7 +118,7 @@ export async function saveResumeToDatabase(
         .execute();
     }
 
-    return { portfolioId };
+    return { portfolioId, portfolioSlug: slug };
   });
 }
 

@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { jobScrapingService } from '~/lib/services/job-scraping.service';
 
 import { getAuthenticatedUser, requireAuth } from '../lib/auth.server';
+import { logger } from '../lib/logger';
 import { getFullUserPortfolio } from '../lib/portfolio.server';
 import { formatPortfolioForLLM } from '../lib/utils/portfolio-formatter';
 
@@ -126,7 +127,9 @@ export const action: ActionFunction = async ({ request }) => {
       finalJobPosting = jobPosting;
     } else {
       return new Response(
-        JSON.stringify({ error: 'Either jobPosting, jobPostingUrl, or jobPostingData must be provided' }),
+        JSON.stringify({
+          error: 'Either jobPosting, jobPostingUrl, or jobPostingData must be provided',
+        }),
         { status: 400, headers: { 'Content-Type': 'application/json' } },
       );
     }
@@ -207,17 +210,18 @@ ${finalJobPosting}`,
     });
 
     const parsedAnalysis = parseJsonObject(analysisResult.choices[0]?.message.content ?? '');
-    const { success: analysisSuccess, data: jobAnalysis } = jobAnalysisSchema.safeParse(
-      parsedAnalysis,
-    );
+    const analysisValidation = jobAnalysisSchema.safeParse(parsedAnalysis);
 
-    if (!analysisSuccess) {
-      console.warn('Failed to parse job analysis with schema');
+    if (!analysisValidation.success) {
+      logger.warn('Failed to parse job analysis with schema', {
+        userId: user.id,
+        issues: analysisValidation.error.issues,
+      });
     }
 
     const responseData = {
       customizedResume: result.choices[0]?.message.content ?? '',
-      jobAnalysis: analysisSuccess ? jobAnalysis : null,
+      jobAnalysis: analysisValidation.success ? analysisValidation.data : null,
       metadata: {
         format: resumeFormat,
         targetLength,
@@ -236,11 +240,15 @@ ${finalJobPosting}`,
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Resume customization error:', error);
-
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Internal server error' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } },
+    logger.error(
+      'Resume customization error',
+      error instanceof Error ? error : undefined,
+      error instanceof Error ? undefined : { error },
     );
+
+    return new Response(JSON.stringify({ error: 'Unable to customize resume' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 };

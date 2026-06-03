@@ -14,13 +14,13 @@ interface NotesTabProps {
   applicationId: string;
 }
 
-export function ApplicationNotesTab({ notes, applicationId }: NotesTabProps) {
+export function ApplicationNotesTab({ notes }: NotesTabProps) {
   const [showAddNote, setShowAddNote] = useState(false);
 
   const getNoteTone = (type: string) => {
     switch (type) {
       case 'interview':
-        return 'border-purple-200 bg-purple-50 text-purple-700';
+        return 'border-accent/30 bg-accent/10 text-foreground';
       case 'research':
         return 'border-accent/30 bg-accent/10 text-primary';
       case 'follow_up':

@@ -1,46 +1,48 @@
-FROM node:26.1.0-alpine AS builder
+# syntax=docker/dockerfile:1
 
+ARG NODE_VERSION=24.14.1
+
+FROM node:${NODE_VERSION}-alpine AS base
 WORKDIR /app
+ENV PNPM_HOME=/pnpm \
+    PATH=/pnpm:$PATH \
+    TURBO_TELEMETRY_DISABLED=1
+RUN corepack enable
+
+FROM base AS builder
 
 ARG VITE_PUBLIC_API_URL
 ARG VITE_POSTHOG_HOST
-
-ENV TURBO_TELEMETRY_DISABLED=1 \
-    VITE_PUBLIC_API_URL=${VITE_PUBLIC_API_URL} \
+ENV VITE_PUBLIC_API_URL=${VITE_PUBLIC_API_URL} \
     VITE_POSTHOG_HOST=${VITE_POSTHOG_HOST}
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+COPY apps/web/package.json apps/web/package.json
 COPY packages ./packages
 COPY apps/web ./apps/web
 COPY tsconfig.profiles ./tsconfig.profiles
 COPY tsconfig.json ./
 
-RUN npm install -g pnpm@11.1.1 && \
-    pnpm install --frozen-lockfile --filter @hominem/web...
+RUN pnpm install --frozen-lockfile --filter @hominem/web...
+RUN pnpm --filter @hominem/web build
 
-# react-router build bundles all @hominem/* packages into build/server and build/client
-RUN pnpm --filter @hominem/web run build
-
-FROM node:26.1.0-alpine AS server
-
+FROM node:${NODE_VERSION}-alpine AS runner
 WORKDIR /app
-
-ENV NODE_ENV=production
+ENV NODE_ENV=production \
+    PORT=3000
 
 RUN apk add --no-cache ca-certificates curl && \
-    addgroup -g 1001 webuser && \
-    adduser -D -u 1001 -G webuser -s /sbin/nologin -h /app webuser
+    addgroup -g 1001 -S app && \
+    adduser -S -D -u 1001 -G app -s /sbin/nologin -h /app app
 
-# Install only the production server runtime — no pnpm, no workspace packages needed
 RUN npm install --no-save @react-router/serve@7.14.0
 
-COPY --from=builder --chown=webuser:webuser /app/apps/web/build ./apps/web/build
+COPY --from=builder --chown=app:app /app/apps/web/build ./build
 
-USER webuser
-
+USER app
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f -s -m 2 http://localhost:${PORT:-3000}/ || exit 1
+    CMD curl -f -s -m 2 http://localhost:${PORT}/ || exit 1
 
-CMD ["node_modules/.bin/react-router-serve", "apps/web/build/server/index.js"]
+CMD ["node_modules/.bin/react-router-serve", "./build/server/index.js"]

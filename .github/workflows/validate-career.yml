@@ -1,0 +1,64 @@
+name: validate-career
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/career/**'
+      - 'packages/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'turbo.json'
+      - 'tsconfig.json'
+      - 'tsconfig.profiles/**'
+      - 'justfile'
+      - 'justfiles/**'
+      - '.github/actions/setup-pnpm-workspace/**'
+      - '.github/workflows/validate-career.yml'
+  pull_request:
+    branches: [main, preview]
+    paths:
+      - 'apps/career/**'
+      - 'packages/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'turbo.json'
+      - 'tsconfig.json'
+      - 'tsconfig.profiles/**'
+      - 'justfile'
+      - 'justfiles/**'
+      - '.github/actions/setup-pnpm-workspace/**'
+      - '.github/workflows/validate-career.yml'
+
+concurrency:
+  group: validate-career-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-career:
+    runs-on: ubuntu-latest
+    env:
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+      TURBO_TELEMETRY_DISABLED: '1'
+
+    strategy:
+      matrix:
+        node-version: [24.14.1]
+
+    steps:
+      - name: checkout-repository
+        uses: actions/checkout@v6
+
+      - name: setup-pnpm-workspace
+        uses: ./.github/actions/setup-pnpm-workspace
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: lint
+        run: pnpm --filter @hominem/career lint
+
+      - name: typecheck
+        run: pnpm --filter @hominem/career typecheck

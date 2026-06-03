@@ -1,6 +1,7 @@
 import type { ActionFunction } from 'react-router';
 
 import { getAuthenticatedUser } from '~/lib/auth.server';
+import { logger } from '~/lib/logger';
 import { jobScrapingService } from '~/lib/services/job-scraping.service';
 
 export const action: ActionFunction = async ({ request }) => {
@@ -41,16 +42,20 @@ export const action: ActionFunction = async ({ request }) => {
       );
     }
 
-    return new Response(
-      JSON.stringify({ jobPosting: result.jobPosting }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } },
-    );
+    return new Response(JSON.stringify({ jobPosting: result.jobPosting }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (error) {
-    console.error('Job scraping API error:', error);
-
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Internal server error' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } },
+    logger.error(
+      'Job scraping API error',
+      error instanceof Error ? error : undefined,
+      error instanceof Error ? undefined : { error },
     );
+
+    return new Response(JSON.stringify({ error: 'Unable to scrape job posting' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 };

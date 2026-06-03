@@ -67,11 +67,26 @@ export const resumeSchema = z.object({
 
 export type ConvertedResumeData = z.infer<typeof resumeSchema>;
 
+export type ResumeConvertStage =
+  | 'auth'
+  | 'request'
+  | 'file-validation'
+  | 'pdf-extraction'
+  | 'ai-parse'
+  | 'schema-validation'
+  | 'storage'
+  | 'database'
+  | 'complete';
+
 export type UploadResumeResponse = {
   message?: string;
   data?: ConvertedResumeData;
   saved?: boolean;
   portfolioId?: string;
+  portfolioSlug?: string;
+  portfolioUrl?: string;
   fileUrl?: string;
   error?: string;
+  stage?: ResumeConvertStage;
+  retryable?: boolean;
 };

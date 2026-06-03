@@ -7,6 +7,7 @@ import { Link, useFetcher } from 'react-router';
 
 import { useToast } from '~/hooks/useToast';
 import { centsToDollars, formatCurrency } from '~/lib/utils';
+import { getCompanyName, getStatusColor } from '~/lib/utils/applicationUtils';
 import type { JobApplication } from '~/types/career';
 import { JobApplicationStatus } from '~/types/career';
 
@@ -94,26 +95,6 @@ function ApplicationCard({
     }
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case JobApplicationStatus.APPLIED:
-        return 'border-accent/30 bg-accent/10 text-primary';
-      case JobApplicationStatus.PHONE_SCREEN:
-        return 'border-warning/30 bg-warning/10 text-foreground';
-      case JobApplicationStatus.INTERVIEW:
-        return 'border-purple-200 bg-purple-50 text-purple-700';
-      case JobApplicationStatus.OFFER:
-        return 'border-success/30 bg-success/10 text-success';
-      case JobApplicationStatus.ACCEPTED:
-        return 'border-emerald-200 bg-emerald-50 text-emerald-700';
-      case JobApplicationStatus.REJECTED:
-        return 'border-destructive/30 bg-destructive/10 text-destructive';
-      case JobApplicationStatus.WITHDRAWN:
-      default:
-        return 'border-border bg-muted text-muted-foreground';
-    }
-  };
-
   const formatDate = (date: Date | string | null | undefined) => {
     if (!date) return '—';
     const dateObj = typeof date === 'string' ? new Date(date) : date;
@@ -122,12 +103,6 @@ function ApplicationCard({
       day: 'numeric',
       year: 'numeric',
     });
-  };
-
-  const getCompanyName = (company: string | { name: string } | null | undefined) => {
-    if (!company) return 'Unknown Company';
-    if (typeof company === 'string') return company;
-    return company.name || 'Unknown Company';
   };
 
   const companyName = getCompanyName(application.company);

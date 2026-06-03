@@ -1,6 +1,12 @@
 import { CareerRepository, getDb } from '@hominem/db';
-import type { CareerCompanyRecord as Company, CareerJobApplicationRecord } from '@hominem/db';
+import type {
+  CareerCompanyRecord as Company,
+  CareerJobApplicationRecord,
+  JsonObject,
+  JsonValue,
+} from '@hominem/db';
 
+import { JobApplicationStage, JobApplicationStatus } from '~/types/career';
 import type {
   ApplicationFile,
   ApplicationNote,
@@ -8,7 +14,6 @@ import type {
   InterviewEntry,
   JobApplicationUpdate,
 } from '~/types/career-data';
-import { JobApplicationStage, JobApplicationStatus } from '~/types/career';
 
 export interface CreateApplicationInput {
   companyName: string;
@@ -35,6 +40,16 @@ export interface ApplicationDetailData {
   application: ApplicationWithCompany;
   notes: ApplicationNote[];
   files: ApplicationFile[];
+}
+
+function interviewEntryToJson(entry: InterviewEntry): JsonObject {
+  return {
+    type: entry.type,
+    date: entry.date,
+    duration: entry.duration,
+    interviewer: entry.interviewer,
+    notes: entry.notes,
+  };
 }
 
 export class JobApplicationsService {
@@ -328,7 +343,7 @@ export class JobApplicationsService {
     await getDb()
       .updateTable('app.job_applications')
       .set({
-        interview_dates: [...currentInterviews, interview] as unknown as never,
+        interview_dates: [...currentInterviews, interview].map(interviewEntryToJson) as JsonValue,
       })
       .where('id', '=', applicationId)
       .executeTakeFirstOrThrow();

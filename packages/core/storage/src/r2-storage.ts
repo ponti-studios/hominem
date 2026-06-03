@@ -31,11 +31,85 @@ function getIsTestMode(): boolean {
   return process.env.NODE_ENV === 'test';
 }
 
+type StorageConnectionConfig = {
+  endpoint: string;
+  region: string;
+  bucketName: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  publicUrl?: string;
+  forcePathStyle: boolean;
+  canCreateBucket: boolean;
+};
+
+const localMinioStorageConfig: StorageConnectionConfig = {
+  endpoint: 'http://localhost:9000',
+  region: 'auto',
+  bucketName: 'storage',
+  accessKeyId: 'minioadmin',
+  secretAccessKey: 'minioadmin',
+  publicUrl: 'http://localhost:9000',
+  forcePathStyle: true,
+  canCreateBucket: true,
+};
+
+function getCloudflareR2StorageConfig(): StorageConnectionConfig | null {
+  const endpoint = process.env.R2_ENDPOINT;
+  const bucketName = process.env.R2_BUCKET_NAME;
+  const accessKeyId = process.env.R2_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
+  const publicUrl = process.env.R2_PUBLIC_URL;
+  const values = [endpoint, bucketName, accessKeyId, secretAccessKey, publicUrl];
+  const hasPartialConfig = values.some(Boolean);
+
+  if (!hasPartialConfig) {
+    return null;
+  }
+
+  const missing = [
+    endpoint ? null : 'R2_ENDPOINT',
+    bucketName ? null : 'R2_BUCKET_NAME',
+    accessKeyId ? null : 'R2_ACCESS_KEY_ID',
+    secretAccessKey ? null : 'R2_SECRET_ACCESS_KEY',
+  ].filter((value): value is string => Boolean(value));
+
+  if (missing.length > 0) {
+    throw new Error(`Missing Cloudflare R2 configuration: ${missing.join(', ')}`);
+  }
+
+  return {
+    endpoint: endpoint!,
+    region: 'auto',
+    bucketName: bucketName!,
+    accessKeyId: accessKeyId!,
+    secretAccessKey: secretAccessKey!,
+    publicUrl,
+    forcePathStyle: false,
+    canCreateBucket: false,
+  };
+}
+
+function getStorageConnectionConfig(): StorageConnectionConfig {
+  if (process.env.NODE_ENV !== 'production') {
+    return localMinioStorageConfig;
+  }
+
+  const r2Config = getCloudflareR2StorageConfig();
+  if (r2Config) {
+    return r2Config;
+  }
+
+  throw new Error(
+    'Missing Cloudflare R2 configuration. Set R2_ENDPOINT, R2_BUCKET_NAME, R2_ACCESS_KEY_ID, and R2_SECRET_ACCESS_KEY.',
+  );
+}
+
 class InMemoryStorageBackend {
   client?: S3Client;
   bucketName = 'app-test';
   isPublic = false;
   userScoped = true;
+  canCreateBucket = false;
   files: Map<string, Buffer> = new Map();
   maxFileSize: number;
   category: StorageCategory;
@@ -297,6 +371,7 @@ export class R2StorageService {
   maxFileSize!: number;
   isPublic!: boolean;
   userScoped!: boolean;
+  canCreateBucket!: boolean;
   preparedUploadKeys: Map<string, { key: string; userId: string }> = new Map();
 
   constructor(category: StorageCategory, options?: StorageOptions) {
@@ -312,30 +387,24 @@ export class R2StorageService {
       });
     }
 
-    const endpoint = process.env.R2_ENDPOINT;
-    const accessKeyId = process.env.R2_ACCESS_KEY_ID;
-    const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
-
-    if (!endpoint || !accessKeyId || !secretAccessKey) {
-      throw new Error(
-        'Missing R2 credentials. Set R2_ENDPOINT, R2_ACCESS_KEY_ID, and R2_SECRET_ACCESS_KEY environment variables.',
-      );
-    }
+    const storageConfig = getStorageConnectionConfig();
 
     this.client = new S3Client({
-      region: 'auto',
-      endpoint,
+      region: storageConfig.region,
+      endpoint: storageConfig.endpoint,
       credentials: {
-        accessKeyId,
-        secretAccessKey,
+        accessKeyId: storageConfig.accessKeyId,
+        secretAccessKey: storageConfig.secretAccessKey,
       },
+      forcePathStyle: storageConfig.forcePathStyle,
     });
 
-    this.bucketName = process.env.R2_BUCKET_NAME || 'storage';
+    this.bucketName = storageConfig.bucketName;
     this.category = category;
     this.maxFileSize = options?.maxFileSize || 50 * 1024 * 1024;
     this.isPublic = options?.isPublic ?? false;
     this.userScoped = category !== 'places';
+    this.canCreateBucket = storageConfig.canCreateBucket;
   }
 
   getKey(userId: string, filename: string): string {
@@ -349,10 +418,13 @@ export class R2StorageService {
     try {
       await this.client.send(new HeadBucketCommand({ Bucket: this.bucketName }));
     } catch {
+      if (!this.canCreateBucket) {
+        throw new Error(`Storage bucket "${this.bucketName}" does not exist or is not accessible`);
+      }
+
       await this.client.send(
         new CreateBucketCommand({
           Bucket: this.bucketName,
-          ACL: this.isPublic ? 'public-read' : 'private',
         }),
       );
     }
@@ -653,12 +725,18 @@ export class R2StorageService {
   }
 
   getPublicUrl(key: string): string {
-    const endpoint = process.env.R2_ENDPOINT;
+    const storageConfig = getStorageConnectionConfig();
+    const endpoint = storageConfig.endpoint;
     const bucket = this.bucketName;
-    if (!endpoint) {
-      throw new Error('R2_ENDPOINT not configured');
+    const publicUrl = storageConfig.publicUrl;
+    if (publicUrl) {
+      return `${publicUrl.replace(/\/$/, '')}/${bucket}/${key}`;
     }
+
     const url = new URL(endpoint);
+    if (storageConfig.forcePathStyle) {
+      return `${url.protocol}//${url.host}/${bucket}/${key}`;
+    }
     return `${url.protocol}//${bucket}.${url.host}/${key}`;
   }
 

@@ -12,5 +12,5 @@
 ## Notes
 
 - This app is intentionally self-contained for the first migration pass.
-- Keep Supabase auth and the local Drizzle schema until a later platform integration pass.
+- Use shared workspace services for database, auth, and storage integrations.
 - Use `~/*` imports for app-local modules.

@@ -1,15 +1,48 @@
 import { Alert, AlertDescription, AlertTitle } from '@hominem/ui';
 import { Button } from '@hominem/ui/button';
 import { Card, CardContent } from '@hominem/ui/card';
-import { FileText, Upload } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { FileText, LogIn, RefreshCw, Upload, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
-import type { ConvertedResumeData, UploadResumeResponse } from '../types/resume';
+import { AIProcessingAnimation, type ResumeUploadStep } from './AIProcessingAnimation';
+import type { ResumeConvertStage, UploadResumeResponse } from '../types/resume';
 
 interface UploadResumeFormProps {
   onUploadStart: () => void;
-  onUploadComplete: (data: ConvertedResumeData) => void;
+  onUploadComplete: (response: UploadResumeResponse) => void;
   onUploadError?: (error: string) => void;
+}
+
+type UploadStatus = 'idle' | 'pending' | 'error';
+
+const stageToStep: Partial<Record<ResumeConvertStage, ResumeUploadStep>> = {
+  request: 'uploading',
+  'file-validation': 'uploading',
+  'pdf-extraction': 'extracting',
+  'ai-parse': 'analyzing',
+  'schema-validation': 'analyzing',
+  storage: 'saving',
+  database: 'saving',
+};
+
+const estimatedSteps: ResumeUploadStep[] = ['uploading', 'extracting', 'analyzing', 'saving'];
+
+function isPdfFile(file: File): boolean {
+  return file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+}
+
+async function readUploadResponse(response: Response): Promise<UploadResumeResponse> {
+  try {
+    return (await response.json()) as UploadResumeResponse;
+  } catch {
+    return {
+      error: response.ok
+        ? 'Upload succeeded but the response was unreadable. Refresh your account page to check your portfolio.'
+        : 'Server returned an unreadable error response. Try again.',
+      stage: 'request',
+      retryable: true,
+    };
+  }
 }
 
 export function UploadResumeForm({
@@ -17,12 +50,29 @@ export function UploadResumeForm({
   onUploadComplete,
   onUploadError,
 }: UploadResumeFormProps) {
-  const [files, setFiles] = useState<FileList | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [status, setStatus] = useState<UploadStatus>('idle');
+  const [activeStep, setActiveStep] = useState<ResumeUploadStep>('uploading');
   const [error, setError] = useState<string | null>(null);
+  const [errorStage, setErrorStage] = useState<ResumeConvertStage | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [requiresLogin, setRequiresLogin] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    if (status !== 'pending') return;
+
+    let stepIndex = 0;
+    setActiveStep(estimatedSteps[stepIndex]);
+    const interval = window.setInterval(() => {
+      stepIndex = Math.min(stepIndex + 1, estimatedSteps.length - 1);
+      setActiveStep(estimatedSteps[stepIndex]);
+    }, 1600);
+
+    return () => window.clearInterval(interval);
+  }, [status]);
 
   const handleDragOver = (event: React.DragEvent) => {
     event.preventDefault();
@@ -35,75 +85,120 @@ export function UploadResumeForm({
     event.preventDefault();
     setIsDragging(false);
     const droppedFiles = event.dataTransfer?.files;
-    if (droppedFiles && droppedFiles.length > 0) setFiles(droppedFiles);
+    if (droppedFiles && droppedFiles.length > 0) {
+      setSelectedFile(droppedFiles[0]);
+      setNotice(droppedFiles.length > 1 ? 'Only the first PDF was selected.' : null);
+      setError(null);
+      setRequiresLogin(false);
+    }
   };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setFiles(event.target.files);
+    const file = event.target.files?.[0] ?? null;
+    setSelectedFile(file);
+    setNotice(null);
+    setError(null);
+    setRequiresLogin(false);
+  };
+
+  const clearSelectedFile = () => {
+    setSelectedFile(null);
+    setError(null);
+    setErrorStage(null);
+    setNotice(null);
+    setRequiresLogin(false);
+    setStatus('idle');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const cancelUpload = () => {
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
+    setStatus('idle');
+    setError('Upload canceled.');
+    setErrorStage(null);
+    setRequiresLogin(false);
   };
 
   const uploadResume = async () => {
     setError(null);
-    if (!files || files.length === 0) {
+    setErrorStage(null);
+    setRequiresLogin(false);
+    if (!selectedFile) {
       const msg = 'Please select a PDF file';
       setError(msg);
+      setStatus('error');
       onUploadError?.(msg);
       return;
     }
-    const file = files[0];
-    if (file.type !== 'application/pdf') {
+    if (!isPdfFile(selectedFile)) {
       const msg = 'Please select a PDF file';
       setError(msg);
+      setStatus('error');
       onUploadError?.(msg);
       return;
     }
-    if (file.size > 10 * 1024 * 1024) {
+    if (selectedFile.size > 10 * 1024 * 1024) {
       const msg = 'File size must be less than 10MB';
       setError(msg);
+      setStatus('error');
       onUploadError?.(msg);
       return;
     }
 
-    setIsUploading(true);
-    setUploadProgress(0);
+    setStatus('pending');
     onUploadStart();
-
-    const progressInterval = setInterval(() => {
-      setUploadProgress((prev) => (prev < 90 ? prev + Math.random() * 10 : prev));
-    }, 200);
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
 
     try {
       const formData = new FormData();
-      formData.append('pdf', file);
+      formData.append('pdf', selectedFile);
       const res = await fetch('/api/resume/convert', {
         method: 'POST',
         credentials: 'same-origin',
         body: formData,
+        signal: abortController.signal,
       });
-      const result = (await res.json()) as UploadResumeResponse;
-
-      clearInterval(progressInterval);
-      setUploadProgress(100);
-      setIsUploading(false);
+      const result = await readUploadResponse(res);
+      abortControllerRef.current = null;
 
       if (!res.ok) {
-        let msg = result.error ?? 'Conversion failed';
-        if (res.status === 401 || res.status === 403) msg = 'Please log in to upload your resume';
+        const msg = result.error ?? 'Conversion failed';
+        setStatus('error');
         setError(msg);
+        setErrorStage(result.stage ?? null);
+        setRequiresLogin(res.status === 401 || res.status === 403 || result.stage === 'auth');
+        if (result.stage) setActiveStep(stageToStep[result.stage] ?? 'uploading');
         onUploadError?.(msg);
         return;
       }
-      onUploadComplete(result.data!);
-    } catch {
-      clearInterval(progressInterval);
-      setIsUploading(false);
+
+      if (!result.data) {
+        const msg = result.error ?? 'Upload completed, but the response did not include resume data.';
+        setStatus('error');
+        setError(msg);
+        setErrorStage(result.stage ?? 'request');
+        onUploadError?.(msg);
+        return;
+      }
+
+      setActiveStep('saving');
+      onUploadComplete(result);
+    } catch (uploadError) {
+      abortControllerRef.current = null;
+      if (uploadError instanceof DOMException && uploadError.name === 'AbortError') return;
+
+      setStatus('error');
       const msg = 'Upload failed';
       setError(msg);
+      setErrorStage('request');
       onUploadError?.(msg);
     }
   };
 
-  const selectedFile = files?.[0];
+  const isPending = status === 'pending';
+  const buttonLabel = status === 'error' && selectedFile ? 'Try Again' : 'Upload Resume';
 
   return (
     <div className="w-full max-w-md">
@@ -132,6 +227,7 @@ export function UploadResumeForm({
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
+                    disabled={isPending}
                     className="text-primary underline"
                   >
                     browse
@@ -145,6 +241,7 @@ export function UploadResumeForm({
                 type="file"
                 accept=".pdf"
                 onChange={handleFileSelect}
+                disabled={isPending}
                 className="hidden"
               />
 
@@ -162,38 +259,55 @@ export function UploadResumeForm({
             </div>
           </div>
 
-          {isUploading && (
-            <div>
-              <div className="mb-1 flex items-center justify-between text-xs">
-                <span className="text-muted-foreground">Uploading…</span>
-                <span className="text-muted-foreground">{Math.round(uploadProgress)}%</span>
-              </div>
-              <div className="h-1 w-full rounded-full bg-muted">
-                <div
-                  className="h-1 rounded-full bg-accent transition-all duration-300"
-                  style={{ width: `${uploadProgress}%` }}
-                />
-              </div>
-            </div>
-          )}
+          {notice ? <p className="text-xs text-muted-foreground">{notice}</p> : null}
+
+          {isPending ? <AIProcessingAnimation activeStep={activeStep} /> : null}
 
           {error ? (
             <Alert variant="destructive">
               <AlertTitle>Upload failed</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
+              <AlertDescription>
+                <div className="space-y-3">
+                  <p>{error}</p>
+                  {errorStage ? (
+                    <p className="text-xs">Failed during {errorStage.replaceAll('-', ' ')}.</p>
+                  ) : null}
+                  {requiresLogin ? (
+                    <Button type="button" variant="outline" size="sm" asChild>
+                      <a href="/login?next=/onboarding">
+                        <LogIn className="size-4" />
+                        Sign in
+                      </a>
+                    </Button>
+                  ) : null}
+                </div>
+              </AlertDescription>
             </Alert>
           ) : null}
 
-          <Button
-            type="button"
-            onClick={uploadResume}
-            disabled={!selectedFile || isUploading}
-            variant="primary"
-            fullWidth
-          >
-            <Upload className="size-4" />
-            {isUploading ? 'Uploading…' : 'Upload Resume'}
-          </Button>
+          <div className="grid gap-2">
+            <Button
+              type="button"
+              onClick={uploadResume}
+              disabled={isPending}
+              variant="primary"
+              fullWidth
+            >
+              {status === 'error' ? <RefreshCw className="size-4" /> : <Upload className="size-4" />}
+              {isPending ? 'Processing…' : buttonLabel}
+            </Button>
+            {isPending ? (
+              <Button type="button" onClick={cancelUpload} variant="outline" fullWidth>
+                <X className="size-4" />
+                Cancel
+              </Button>
+            ) : null}
+            {selectedFile && !isPending ? (
+              <Button type="button" onClick={clearSelectedFile} variant="ghost" fullWidth>
+                Use a different PDF
+              </Button>
+            ) : null}
+          </div>
         </CardContent>
       </Card>
     </div>

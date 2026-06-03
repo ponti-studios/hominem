@@ -12,6 +12,7 @@ export const baseSchema = z.object({
   R2_BUCKET_NAME: z.string().default('storage'),
   R2_ACCESS_KEY_ID: z.string().optional(),
   R2_SECRET_ACCESS_KEY: z.string().optional(),
+  R2_PUBLIC_URL: z.url().optional(),
   REDIS_URL: z.url().optional().default('redis://localhost:6379'),
 });
 
