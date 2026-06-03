@@ -105,14 +105,8 @@ export const action: ActionFunction = async ({ request }) => {
 
       if (!scrapingResult.success || !scrapingResult.jobPosting) {
         return new Response(
-          JSON.stringify({
-            error: scrapingResult.error || 'Failed to scrape job posting',
-            success: false,
-          }),
-          {
-            status: 400,
-            headers: { 'Content-Type': 'application/json' },
-          },
+          JSON.stringify({ error: scrapingResult.error || 'Failed to scrape job posting' }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } },
         );
       }
 
@@ -129,14 +123,8 @@ export const action: ActionFunction = async ({ request }) => {
       finalJobPosting = jobPosting;
     } else {
       return new Response(
-        JSON.stringify({
-          error: 'Either jobPosting, jobPostingUrl, or jobPostingData must be provided',
-          success: false,
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        },
+        JSON.stringify({ error: 'Either jobPosting, jobPostingUrl, or jobPostingData must be provided' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } },
       );
     }
 
@@ -213,9 +201,7 @@ ${finalJobPosting}`,
       console.warn('Failed to parse job analysis with schema');
     }
 
-    // Return the customized resume
     const responseData = {
-      success: true,
       customizedResume: result.text,
       jobAnalysis: analysisSuccess ? jobAnalysis : null,
       metadata: {
@@ -239,14 +225,8 @@ ${finalJobPosting}`,
     console.error('Resume customization error:', error);
 
     return new Response(
-      JSON.stringify({
-        error: error instanceof Error ? error.message : 'Internal server error',
-        success: false,
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      },
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Internal server error' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } },
     );
   }
 };

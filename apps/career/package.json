@@ -22,11 +22,11 @@
   "dependencies": {
     "@ai-sdk/google": "^1.2.19",
     "@ai-sdk/openai": "^1.3.22",
+    "@google/generative-ai": "^0.24.1",
     "@hominem/auth": "workspace:*",
     "@hominem/db": "workspace:*",
     "@hominem/storage": "workspace:*",
     "@hominem/ui": "workspace:*",
-    "@google/generative-ai": "^0.24.1",
     "@react-router/node": "7.14.0",
     "@react-router/serve": "7.14.0",
     "@tanstack/react-query": "^5.80.6",
@@ -50,7 +50,6 @@
     "zod": "4.3.6"
   },
   "devDependencies": {
-    "@playwright/test": "^1.52.0",
     "@react-router/dev": "7.14.0",
     "@tailwindcss/vite": "^4.1.8",
     "@tanstack/react-query-devtools": "^5.80.6",
@@ -64,8 +63,8 @@
     "@vitest/coverage-v8": "4.1.2",
     "jsdom": "^26.1.0",
     "tailwindcss": "^4.1.8",
-    "tw-animate-css": "^1.3.4",
     "tsx": "^4.10.0",
+    "tw-animate-css": "^1.3.4",
     "vite": "8.0.8",
     "vitest": "4.1.2"
   }

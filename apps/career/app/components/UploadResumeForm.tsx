@@ -96,8 +96,8 @@ export function UploadResumeForm({
       setUploadProgress(100);
       setIsUploading(false);
 
-      if (!res.ok || !result.success) {
-        let msg = result.success ? 'Conversion failed' : result.error;
+      if (!res.ok) {
+        let msg = result.error ?? 'Conversion failed';
 
         // Handle authentication errors specifically
         if (res.status === 401 || res.status === 403) {
@@ -108,7 +108,7 @@ export function UploadResumeForm({
         onUploadError?.(msg);
         return;
       }
-      onUploadComplete(result.data);
+      onUploadComplete(result.data!);
     } catch {
       clearInterval(progressInterval);
       setIsUploading(false);

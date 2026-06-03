@@ -102,9 +102,7 @@ export const action: ActionFunction = async ({ request }) => {
       const saveResult = await saveResumeToDatabase(user.id, data);
       const portfolioId = saveResult.portfolioId;
 
-      // Return success response
       const responseData = {
-        success: true,
         message: 'Resume uploaded and processed successfully',
         data,
         saved: true,

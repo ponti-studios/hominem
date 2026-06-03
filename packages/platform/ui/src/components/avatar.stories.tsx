@@ -2,7 +2,6 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import {
   Avatar,
-  AvatarBadge,
   AvatarFallback,
   AvatarGroup,
   AvatarGroupCount,
@@ -54,9 +53,8 @@ export const Sizes: Story = {
 
 export const WithBadge: Story = {
   render: () => (
-    <Avatar>
+    <Avatar statusBadge>
       <AvatarFallback>JD</AvatarFallback>
-      <AvatarBadge />
     </Avatar>
   ),
 };

@@ -1,4 +1,4 @@
-import { Button } from '@hominem/ui/button';
+import { Button, buttonVariants } from '@hominem/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
 import { Input } from '@hominem/ui/input';
 import { Briefcase, Calendar, DollarSign, MapPin, TrendingUp } from 'lucide-react';
@@ -43,7 +43,7 @@ export function ApplicationOverviewTab({ application, company }: OverviewTabProp
             {application.source && (
               <div className="flex items-center gap-2">
                 <TrendingUp className="h-4 w-4" />
-                <span>Source: {application.source}</span>
+                <span>{application.source}</span>
               </div>
             )}
 
@@ -51,20 +51,6 @@ export function ApplicationOverviewTab({ application, company }: OverviewTabProp
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4" />
                 <span>{application.location}</span>
-              </div>
-            )}
-
-            {application.salaryQuoted && (
-              <div>
-                <span className="text-sm font-medium text-muted-foreground">Salary Quoted</span>
-                <p className="text-foreground mt-1">{application.salaryQuoted}</p>
-              </div>
-            )}
-
-            {application.source && (
-              <div>
-                <span className="text-sm font-medium text-muted-foreground">Source</span>
-                <p className="text-foreground mt-1">{application.source}</p>
               </div>
             )}
           </div>
@@ -75,7 +61,7 @@ export function ApplicationOverviewTab({ application, company }: OverviewTabProp
                 href={application.jobPostingUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 bg-card border border-border hover:bg-muted h-9 px-4 py-2"
+                className={buttonVariants({ variant: 'outline', size: 'sm' })}
               >
                 View Job Posting
               </a>
@@ -84,7 +70,6 @@ export function ApplicationOverviewTab({ application, company }: OverviewTabProp
         </CardContent>
       </Card>
 
-      {/* Company Information */}
       <Card>
         <CardHeader>
           <CardTitle>Company Information</CardTitle>
@@ -143,10 +128,9 @@ export function ApplicationOverviewTab({ application, company }: OverviewTabProp
         </CardContent>
       </Card>
 
-      {/* Recruiter Information */}
       <Card>
         <CardHeader>
-          <div className="w-full  flex items-center justify-between">
+          <div className="w-full flex items-center justify-between">
             <CardTitle>Recruiter Information</CardTitle>
             <Button
               variant="outline"

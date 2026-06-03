@@ -87,7 +87,7 @@ export default function Demo() {
         <Badge variant="outline">Demo Portfolio</Badge>
       </div>
 
-      <Card className="border-border bg-card">
+      <Card>
         <CardContent className="space-y-8 p-6 sm:p-8">
           <header className="space-y-6">
             <div className="space-y-3">

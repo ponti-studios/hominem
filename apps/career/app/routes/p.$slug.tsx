@@ -1,8 +1,6 @@
 import type { LoaderFunctionArgs, MetaFunction } from 'react-router';
 
 import { getFullPortfolioBySlug } from '../lib/portfolio.server';
-import { withMockDataFallback } from '../lib/route-utils';
-import { getMockPortfolioData } from '../lib/utils/mock-data';
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   if (!data) {
@@ -37,25 +35,11 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     throw new Response('Portfolio not found', { status: 404 });
   }
 
-  return withMockDataFallback(
-    request,
-    async (request) => {
-      // Return mock data for testing
-      const mockData = getMockPortfolioData(request);
-      if (mockData) {
-        return { portfolio: mockData.portfolio };
-      }
-      throw new Response('Portfolio not found', { status: 404 });
-    },
-    async () => {
-      // Fetch real portfolio data
-      const portfolio = await getFullPortfolioBySlug(slug);
-      if (!portfolio) {
-        throw new Response('Portfolio not found', { status: 404 });
-      }
-      return { portfolio };
-    },
-  );
+  const portfolio = await getFullPortfolioBySlug(slug);
+  if (!portfolio) {
+    throw new Response('Portfolio not found', { status: 404 });
+  }
+  return { portfolio };
 }
 
 export default function Portfolio({

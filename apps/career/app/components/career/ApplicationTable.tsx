@@ -12,7 +12,7 @@ import {
 import { FilterControls, FilterSelect } from '@hominem/ui/filters';
 import { SearchInput } from '@hominem/ui/search-input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@hominem/ui/table';
-import { ChevronDownIcon, PlusIcon } from 'lucide-react';
+import { ChevronDownIcon, ChevronRightIcon, PlusIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 
@@ -142,7 +142,6 @@ export function ApplicationTable({
   if (!applications || applications.length === 0) {
     return (
       <div className={`py-8 text-center text-muted-foreground ${className}`}>
-        <div className="mb-4 text-4xl">📝</div>
         <p className="font-medium text-foreground">{emptyTitle}</p>
         <p className="mt-1 text-sm">{emptyDescription}</p>
         <Link
@@ -162,7 +161,7 @@ export function ApplicationTable({
 
   return (
     <div className={`space-y-4 ${className}`}>
-      <Card className="border-border bg-card ">
+      <Card>
         <CardContent className="p-4">
           <FilterControls showActiveFilters={activeFilters} activeFilters={filterChips}>
             <div className="flex-1">
@@ -181,7 +180,7 @@ export function ApplicationTable({
                 htmlFor="status-dropdown"
                 className="mb-1 block text-sm font-medium text-foreground"
               >
-                Status ({(filters.statuses || []).length} selected)
+                Status
               </label>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -291,9 +290,8 @@ export function ApplicationTable({
       </Card>
 
       {applications.length === 0 ? (
-        <Card className="border-border bg-card ">
+        <Card>
           <CardContent className="py-8 text-center text-muted-foreground">
-            <div className="mb-4 text-4xl">🔍</div>
             <p className="font-medium text-foreground">
               {activeFilters ? 'No applications match your filters' : emptyTitle}
             </p>
@@ -304,61 +302,49 @@ export function ApplicationTable({
         </Card>
       ) : (
         <>
-          <Card className="hidden border-border bg-card  md:block">
+          <Card className="hidden  md:block">
             <CardContent className="p-0">
               <Table>
-                <TableHeader className="bg-muted/50 [&_tr]:border-border">
+                <TableHeader className="bg-muted/30">
                   <TableRow>
-                    <TableHead className="px-6 text-xs uppercase tracking-wider text-muted-foreground">
-                      Position
-                    </TableHead>
-                    <TableHead className="px-6 text-xs uppercase tracking-wider text-muted-foreground">
-                      Status
-                    </TableHead>
-                    <TableHead className="px-6 text-xs uppercase tracking-wider text-muted-foreground">
-                      Applied
-                    </TableHead>
-                    <TableHead className="px-6 text-xs uppercase tracking-wider text-muted-foreground">
-                      Response
-                    </TableHead>
-                    <TableHead className="px-6 text-xs uppercase tracking-wider text-muted-foreground">
-                      Salary
-                    </TableHead>
-                    <TableHead className="px-6 text-xs uppercase tracking-wider text-muted-foreground">
-                      Source
-                    </TableHead>
+                    <TableHead>Position</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Applied</TableHead>
+                    <TableHead>Response</TableHead>
+                    <TableHead>Salary</TableHead>
+                    <TableHead>Source</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {applications.map((app) => (
-                    <TableRow key={app.id} className="transition-colors hover:bg-muted/40">
-                      <TableCell className="px-6 whitespace-nowrap">
+                    <TableRow key={app.id} className="hover:bg-muted/40">
+                      <TableCell className="whitespace-nowrap">
                         <Link
                           to={`/career/applications/${app.id}`}
-                          className="block transition-colors hover:text-primary"
+                          className="block hover:text-primary"
                         >
-                          <div className="text-sm font-medium text-foreground">{app.position}</div>
-                          <div className="text-sm text-muted-foreground">
+                          <div className="font-medium text-foreground">{app.position}</div>
+                          <div className="text-muted-foreground">
                             {getCompanyName(app.company)}
                           </div>
                         </Link>
                       </TableCell>
-                      <TableCell className="px-6 whitespace-nowrap">
+                      <TableCell className="whitespace-nowrap">
                         <Badge variant="outline" className={getStatusColor(app.status)}>
                           {formatStatusText(app.status)}
                         </Badge>
                       </TableCell>
-                      <TableCell className="px-6 whitespace-nowrap text-sm text-foreground">
+                      <TableCell className="whitespace-nowrap text-muted-foreground">
                         {formatApplicationDate(app.applicationDate || app.startDate || null)}
                       </TableCell>
-                      <TableCell className="px-6 whitespace-nowrap text-sm text-foreground">
+                      <TableCell className="whitespace-nowrap text-muted-foreground">
                         {formatApplicationDate(app.responseDate)}
                       </TableCell>
-                      <TableCell className="px-6 whitespace-nowrap text-sm text-foreground">
+                      <TableCell className="whitespace-nowrap text-muted-foreground">
                         {formatApplicationSalary(app.salaryOffered || app.salaryQuoted)}
                       </TableCell>
-                      <TableCell className="px-6 whitespace-nowrap">
-                        <span className="text-sm capitalize text-muted-foreground">
+                      <TableCell>
+                        <span className="capitalize text-muted-foreground">
                           {app.source || '—'}
                         </span>
                       </TableCell>
@@ -369,7 +355,7 @@ export function ApplicationTable({
             </CardContent>
           </Card>
 
-          <Card className="md:hidden border-border bg-card ">
+          <Card className="md:hidden ">
             <CardContent className="divide-y divide-border p-0">
               {applications.map((app) => (
                 <Link
@@ -390,20 +376,7 @@ export function ApplicationTable({
                       <Badge variant="outline" className={getStatusColor(app.status)}>
                         {formatStatusText(app.status)}
                       </Badge>
-                      <svg
-                        className="h-5 w-5 text-muted-foreground"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        aria-hidden="true"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 5l7 7-7 7"
-                        />
-                      </svg>
+                      <ChevronRightIcon className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
                     </div>
                   </div>
                 </Link>

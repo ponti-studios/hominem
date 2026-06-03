@@ -23,7 +23,7 @@ export default function ResumeCustomizer() {
           </div>
 
           {/* Input Method Selection */}
-          <Card className="mb-8 border-border bg-card">
+          <Card className="mb-8 ">
             <CardContent className="p-8">
               <h2 className="font-sans text-2xl font-light text-foreground mb-6 text-center">
                 How would you like to provide the job details?
@@ -35,7 +35,7 @@ export default function ResumeCustomizer() {
                   className={`p-6 rounded-lg border-2 transition-all ${
                     inputMethod === 'url'
                       ? 'border-accent bg-accent text-accent-foreground'
-                      : 'border-border bg-card hover:border-border'
+                      : 'hover:border-border'
                   }`}
                 >
                   <div className="text-center">
@@ -53,7 +53,7 @@ export default function ResumeCustomizer() {
                   className={`p-6 rounded-lg border-2 transition-all ${
                     inputMethod === 'paste'
                       ? 'border-accent bg-accent text-accent-foreground'
-                      : 'border-border bg-card hover:border-border'
+                      : 'hover:border-border'
                   }`}
                 >
                   <div className="text-center">
@@ -70,7 +70,7 @@ export default function ResumeCustomizer() {
 
           {/* URL Scraping */}
           {inputMethod === 'url' && (
-            <Card className="border-border bg-card">
+            <Card>
               <CardContent className="p-8">
                 <JobScrapingResumeCustomizer showResumeGeneration={true} />
               </CardContent>
@@ -79,7 +79,7 @@ export default function ResumeCustomizer() {
 
           {/* Paste Description */}
           {inputMethod === 'paste' && (
-            <Card className="border-border bg-card">
+            <Card>
               <CardContent className="p-8">
                 <div className="text-center mb-8">
                   <h2 className="font-sans text-2xl font-light text-foreground mb-2">

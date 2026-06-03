@@ -4,7 +4,6 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 
 import { getServerSession, requireAuth, type User } from './auth.server';
-import { shouldUseMockData } from './utils/mock-data';
 
 export interface ApiResponse<T = unknown> {
   success: boolean;
@@ -56,42 +55,6 @@ export function createSuccessResponse<T>(data?: T, message?: string): ApiRespons
   };
 }
 
-export async function withMockDataFallback<T>(
-  request: Request,
-  getMockData: (request: Request) => Promise<T>,
-  getRealData: () => Promise<T>,
-): Promise<T> {
-  if (shouldUseMockData(request)) {
-    return await getMockData(request);
-  }
-  return await getRealData();
-}
-
-function getErrorCode(error: unknown): string | undefined {
-  return typeof error === 'object' && error !== null && 'code' in error
-    ? String((error as { code: unknown }).code)
-    : undefined;
-}
-
-function getNestedErrors(error: unknown): unknown[] {
-  if (typeof error !== 'object' || error === null) return [];
-
-  const nested: unknown[] = [];
-  if ('cause' in error) nested.push((error as { cause?: unknown }).cause);
-  if ('errors' in error) {
-    const errors = (error as { errors?: unknown }).errors;
-    if (Array.isArray(errors)) nested.push(...errors);
-  }
-
-  return nested.filter(Boolean);
-}
-
-export function isDatabaseConnectionError(error: unknown): boolean {
-  const code = getErrorCode(error);
-  if (code === 'ECONNREFUSED') return true;
-
-  return getNestedErrors(error).some(isDatabaseConnectionError);
-}
 
 export async function tryAsync<T>(
   operation: () => Promise<T>,

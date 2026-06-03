@@ -66,7 +66,7 @@ export default function OnboardingComplete() {
             'Use your portfolio link in applications, networking, and interviews.',
           ],
         ].map(([title, description]) => (
-          <Card key={title} className="border-border bg-card">
+          <Card key={title}>
             <CardContent className="space-y-3 p-5">
               <Sparkles className="size-5 text-accent" />
               <h2 className="heading-4 text-foreground">{title}</h2>
@@ -76,7 +76,7 @@ export default function OnboardingComplete() {
         ))}
       </section>
 
-      <Card className="border-border bg-card">
+      <Card>
         <CardContent className="space-y-5 p-6">
           <h2 className="heading-2 text-foreground">Next steps</h2>
           <div className="grid gap-4 md:grid-cols-2">
@@ -112,7 +112,7 @@ export default function OnboardingComplete() {
         </CardContent>
       </Card>
 
-      <Card id="sharing-tips" className="border-border bg-card">
+      <Card id="sharing-tips">
         <CardContent className="space-y-6 p-6">
           <div className="space-y-2 text-center">
             <Gift className="mx-auto size-8 text-accent" />

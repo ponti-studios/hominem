@@ -1,7 +1,7 @@
 import { Badge } from '@hominem/ui/badge';
 import { buttonVariants } from '@hominem/ui/button';
 import { Card, CardContent } from '@hominem/ui/card';
-import { BriefcaseIcon } from 'lucide-react';
+import { BriefcaseIcon, ChevronRightIcon } from 'lucide-react';
 import type { ComponentProps } from 'react';
 import { Link } from 'react-router';
 
@@ -10,17 +10,6 @@ import type { WorkExperienceWithFinancials } from '~/types/career-data';
 
 interface CareerHistoryProps {
   workExperiences: WorkExperienceWithFinancials[];
-  careerTimeline: Array<{
-    date: string;
-    type: string;
-    title: string;
-    description: string;
-    company?: string;
-    role?: string;
-    salary?: number;
-    salaryChange?: number;
-    percentage?: string;
-  }>;
 }
 
 export function CareerHistory({ workExperiences }: CareerHistoryProps) {
@@ -70,7 +59,7 @@ export function CareerHistory({ workExperiences }: CareerHistoryProps) {
 
   if (sortedExperiences.length === 0) {
     return (
-      <Card data-testid="career-history" className="border-border bg-card ">
+      <Card data-testid="career-history">
         <CardContent className="py-12 text-center" data-testid="empty-state">
           <div className="mb-4 text-muted-foreground">
             <BriefcaseIcon className="mx-auto h-16 w-16" />
@@ -109,7 +98,7 @@ export function CareerHistory({ workExperiences }: CareerHistoryProps) {
         {sortedExperiences.map((experience) => (
           <Card
             key={experience.id}
-            className="border-border bg-card  transition-colors hover:border-primary/30"
+            className="transition-colors hover:border-primary/30"
             data-testid={`work-experience-${experience.id}`}
           >
             <CardContent className="space-y-4">
@@ -228,7 +217,7 @@ export function CareerHistory({ workExperiences }: CareerHistoryProps) {
         ))}
       </div>
 
-      <Card className="border-border bg-card  md:hidden">
+      <Card className="md:hidden">
         <CardContent className="divide-y divide-border p-0">
           {sortedExperiences.map((experience) => (
             <Link
@@ -279,20 +268,7 @@ export function CareerHistory({ workExperiences }: CareerHistoryProps) {
                         : ''}
                     </span>
                   )}
-                  <svg
-                    className="h-5 w-5 text-muted-foreground"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 5l7 7-7 7"
-                    />
-                  </svg>
+                  <ChevronRightIcon className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
                 </div>
               </div>
             </Link>

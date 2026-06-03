@@ -72,7 +72,7 @@ export function ApplicationsMetrics({ metrics }: ApplicationsMetricsProps) {
   const hasSalaryData = metrics.salaryMetrics.averageOffered > 0;
 
   return (
-    <Card className="border-border bg-card ">
+    <Card>
       <CardContent className="space-y-6 p-4">
         <div className="flex items-center justify-between gap-3">
           <Badge variant="outline">Application metrics</Badge>

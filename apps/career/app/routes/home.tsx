@@ -104,7 +104,7 @@ export default function Home() {
           <p className="body-4 text-muted-foreground">No credit card required.</p>
         </div>
 
-        <Card className="border-border bg-card">
+        <Card>
           <CardContent className="space-y-5 p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -130,7 +130,7 @@ export default function Home() {
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
-          <Card key={stat.label} className="border-border bg-card">
+          <Card key={stat.label}>
             <CardContent className="space-y-1 p-5">
               <div className="heading-2 text-foreground">{stat.value}</div>
               <div className="body-4 text-muted-foreground">{stat.label}</div>
@@ -151,7 +151,7 @@ export default function Home() {
           {features.map((feature) => {
             const Icon = feature.icon;
             return (
-              <Card key={feature.title} className="border-border bg-card">
+              <Card key={feature.title}>
                 <CardContent className="space-y-4 p-5">
                   <div className="flex size-10 items-center justify-center rounded-md border border-accent/30 bg-accent/10">
                     <Icon className="size-5 text-accent" />
@@ -167,7 +167,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="rounded-md border border-border bg-card p-6 text-center sm:p-10">
+      <section className="rounded-md border p-6 text-center sm:p-10">
         <div className="mx-auto max-w-2xl space-y-5">
           <h2 className="heading-1 text-foreground">Ready to build your portfolio?</h2>
           <p className="body-2 text-muted-foreground">

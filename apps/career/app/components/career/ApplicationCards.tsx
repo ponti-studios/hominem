@@ -36,7 +36,6 @@ export function ApplicationCards({
   if (!applications || applications.length === 0) {
     return (
       <div className={`py-8 text-center text-muted-foreground ${className}`}>
-        <div className="mb-4 text-4xl">📝</div>
         <p className="font-medium text-foreground">{emptyTitle}</p>
         <p className="mt-1 text-sm">{emptyDescription}</p>
       </div>

@@ -1,7 +1,7 @@
-import { CareerRepository, getDb } from '@hominem/db';
 import type { ActionFunction } from 'react-router';
 
 import { getAuthenticatedUser } from '~/lib/auth.server';
+import { JobApplicationsService } from '~/lib/services/job-applications.service';
 import type { JobPosting } from '~/types/applications';
 
 export const action: ActionFunction = async ({ request }) => {
@@ -35,40 +35,30 @@ export const action: ActionFunction = async ({ request }) => {
         })()
       : null;
 
-    const company = await CareerRepository.findOrCreateCompany(getDb(), user.id, {
-      name: jobPosting.companyName,
-      website: websiteOrigin,
-      description: jobPosting.companyDescription || null,
-    });
-
-    const application = await CareerRepository.createJobApplication(getDb(), user.id, {
-      companyId: company.id,
+    const application = await JobApplicationsService.createApplication(user.id, {
+      companyName: jobPosting.companyName,
+      companyWebsite: websiteOrigin,
+      companyDescription: jobPosting.companyDescription || null,
       position: jobPosting.jobTitle,
-      status: 'APPLIED',
-      startDate: new Date(),
       jobPosting: JSON.stringify(jobPosting),
       location: jobPosting.location || null,
+      requirements: jobPosting.requirements || [],
+      skills: jobPosting.skills || [],
+      jobPostingUrl: jobPosting.url || null,
+      jobPostingWordCount: jobPosting.wordCount || null,
       source: 'scraped',
-      applicationDate: new Date(),
       link: jobPosting.url || null,
     });
 
     return new Response(
-      JSON.stringify({
-        success: true,
-        application,
-        message: 'Application saved successfully',
-      }),
+      JSON.stringify({ application, message: 'Application saved successfully' }),
       { status: 200, headers: { 'Content-Type': 'application/json' } },
     );
   } catch (error) {
     console.error('Application creation error:', error);
 
     return new Response(
-      JSON.stringify({
-        error: error instanceof Error ? error.message : 'Internal server error',
-        success: false,
-      }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Internal server error' }),
       { status: 500, headers: { 'Content-Type': 'application/json' } },
     );
   }

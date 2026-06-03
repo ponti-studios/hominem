@@ -1,52 +1,66 @@
 import * as AvatarPrimitive from '@radix-ui/react-avatar';
 import * as React from 'react';
 
+import { type ClassValue } from 'clsx';
+
 import { cn } from '../lib/utils';
 
 type AvatarSize = 'sm' | 'default' | 'lg';
 
 const AvatarContext = React.createContext<{ size: AvatarSize }>({ size: 'default' });
 
-const avatarSize: Record<AvatarSize, string> = {
+const avatarSize: Record<AvatarSize, ClassValue> = {
   sm: 'size-6',
-  default: 'size-8',
+  default: 'size-6',
   lg: 'size-10',
 };
 
-const badgeSize: Record<AvatarSize, string> = {
-  sm: 'size-2 [&>svg]:hidden',
-  default: 'size-2.5 [&>svg]:size-2',
-  lg: 'size-3 [&>svg]:size-2',
+const badgeDotSize: Record<AvatarSize, ClassValue> = {
+  sm: 'size-2',
+  default: 'size-2.5',
+  lg: 'size-3',
 };
 
-const fallbackText: Record<AvatarSize, string> = {
+const fallbackText: Record<AvatarSize, ClassValue> = {
   sm: 'text-xs',
   default: 'text-sm',
   lg: 'text-sm',
 };
 
-const groupCountSize: Record<AvatarSize, string> = {
-  sm: 'size-6 [&>svg]:size-3',
-  default: 'size-8 [&>svg]:size-4',
-  lg: 'size-10 [&>svg]:size-5',
+const groupCountSvg: Record<AvatarSize, ClassValue> = {
+  sm: '[&>svg]:size-3',
+  default: '[&>svg]:size-4',
+  lg: '[&>svg]:size-5',
 };
 
 function Avatar({
   className,
   size = 'default',
+  statusBadge = false,
+  children,
   ...props
-}: React.ComponentProps<typeof AvatarPrimitive.Root> & { size?: AvatarSize }) {
+}: React.ComponentProps<typeof AvatarPrimitive.Root> & {
+  size?: AvatarSize;
+  statusBadge?: boolean;
+}) {
   return (
     <AvatarContext.Provider value={{ size }}>
       <AvatarPrimitive.Root
         data-slot="avatar"
-        className={cn(
-          'relative flex shrink-0 overflow-hidden rounded-full select-none',
-          avatarSize[size],
-          className,
-        )}
+        className={cn('relative shrink-0 rounded-full select-none', avatarSize[size], className)}
         {...props}
-      />
+      >
+        {children}
+        {statusBadge && (
+          <span
+            data-slot="avatar-badge"
+            className={cn(
+              'bg-primary ring-background absolute right-0 bottom-0 z-10 rounded-full ring-2',
+              badgeDotSize[size],
+            )}
+          />
+        )}
+      </AvatarPrimitive.Root>
     </AvatarContext.Provider>
   );
 }
@@ -55,7 +69,7 @@ function AvatarImage({ className, ...props }: React.ComponentProps<typeof Avatar
   return (
     <AvatarPrimitive.Image
       data-slot="avatar-image"
-      className={cn('aspect-square size-full', className)}
+      className={cn('absolute inset-0 size-full rounded-full object-cover', className)}
       {...props}
     />
   );
@@ -70,23 +84,8 @@ function AvatarFallback({
     <AvatarPrimitive.Fallback
       data-slot="avatar-fallback"
       className={cn(
-        'bg-muted text-muted-foreground flex size-full items-center justify-center rounded-full',
+        'bg-muted text-muted-foreground absolute inset-0 flex items-center justify-center rounded-full',
         fallbackText[size],
-        className,
-      )}
-      {...props}
-    />
-  );
-}
-
-function AvatarBadge({ className, ...props }: React.ComponentProps<'span'>) {
-  const { size } = React.useContext(AvatarContext);
-  return (
-    <span
-      data-slot="avatar-badge"
-      className={cn(
-        'bg-primary text-primary-foreground ring-background absolute right-0 bottom-0 z-10 inline-flex items-center justify-center rounded-full ring-2 select-none',
-        badgeSize[size],
         className,
       )}
       {...props}
@@ -120,7 +119,8 @@ function AvatarGroupCount({ className, ...props }: React.ComponentProps<'div'>) 
       data-slot="avatar-group-count"
       className={cn(
         'bg-muted text-muted-foreground ring-background relative flex shrink-0 items-center justify-center rounded-full text-sm ring-2',
-        groupCountSize[size],
+        avatarSize[size],
+        groupCountSvg[size],
         className,
       )}
       {...props}
@@ -128,4 +128,4 @@ function AvatarGroupCount({ className, ...props }: React.ComponentProps<'div'>) 
   );
 }
 
-export { Avatar, AvatarImage, AvatarFallback, AvatarBadge, AvatarGroup, AvatarGroupCount };
+export { Avatar, AvatarImage, AvatarFallback, AvatarGroup, AvatarGroupCount };

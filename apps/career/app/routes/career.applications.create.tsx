@@ -1,4 +1,3 @@
-import { CareerRepository, getDb } from '@hominem/db';
 import { Button } from '@hominem/ui/button';
 import { Card, CardContent } from '@hominem/ui/card';
 import { DatePicker } from '@hominem/ui/date-picker';
@@ -9,6 +8,7 @@ import { useState } from 'react';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import { Form, Link, redirect, useActionData } from 'react-router';
 
+import { JobApplicationsService } from '~/lib/services/job-applications.service';
 import {
   createErrorResponse,
   createSuccessResponse,
@@ -16,15 +16,8 @@ import {
   withAuthLoader,
 } from '~/lib/route-utils';
 import type { JobPosting, ScrapedJobPostingResponse } from '~/types/applications';
-import { JobApplicationStage, JobApplicationStatus } from '~/types/career';
+import { JobApplicationStatus } from '~/types/career';
 
-const formatDateValue = (value: Date | undefined) => {
-  if (!value) {
-    return '';
-  }
-
-  return value.toISOString().split('T')[0] ?? '';
-};
 
 export async function loader(args: LoaderFunctionArgs) {
   return withAuthLoader(args, async ({ user }) => {
@@ -47,43 +40,35 @@ export async function action(args: ActionFunctionArgs) {
     const recruiterEmail = formData.get('recruiterEmail') as string;
     const recruiterLinkedin = formData.get('recruiterLinkedin') as string;
 
+    if (!position || !companyName) {
+      return createErrorResponse('Position and company are required');
+    }
+
+    let requirements: string[] = [];
+    let skills: string[] = [];
+    let jobPostingUrl: string | null = null;
+    let jobPostingWordCount: number | null = null;
+
+    if (jobPostingData) {
+      try {
+        const parsed = JSON.parse(jobPostingData) as JobPosting;
+        requirements = parsed.requirements || [];
+        skills = parsed.skills || [];
+        jobPostingUrl = parsed.url || null;
+        jobPostingWordCount = parsed.wordCount || null;
+      } catch {
+        // fall through with defaults
+      }
+    }
+
     try {
-      if (!position || !companyName) {
-        return createErrorResponse('Position and company are required');
-      }
-
-      const company = await CareerRepository.findOrCreateCompany(getDb(), user.id, {
-        name: companyName,
-      });
-
-      // Use structured data if available, otherwise use the job description text
-      const jobPostingToStore = jobPostingData || jobPosting;
-
-      // Parse the structured data if available
-      let requirements: string[] = [];
-      let skills: string[] = [];
-      let jobPostingUrl: string | null = null;
-      let jobPostingWordCount: number | null = null;
-
-      if (jobPostingData) {
-        try {
-          const parsedData = JSON.parse(jobPostingData) as JobPosting;
-          requirements = parsedData.requirements || [];
-          skills = parsedData.skills || [];
-          jobPostingUrl = parsedData.url || null;
-          jobPostingWordCount = parsedData.wordCount || null;
-        } catch (error) {
-          console.error('Error parsing job posting data:', error);
-        }
-      }
-
-      await CareerRepository.createJobApplication(getDb(), user.id, {
-        companyId: company.id,
+      await JobApplicationsService.createApplication(user.id, {
+        companyName,
         position,
         status,
         startDate: new Date(startDate),
         location: location || null,
-        jobPosting: jobPostingToStore || null,
+        jobPosting: jobPostingData || jobPosting || null,
         requirements,
         skills,
         jobPostingUrl,
@@ -92,13 +77,6 @@ export async function action(args: ActionFunctionArgs) {
         recruiterName: recruiterName || null,
         recruiterEmail: recruiterEmail || null,
         recruiterLinkedin: recruiterLinkedin || null,
-        reference: false,
-        stages: [
-          {
-            stage: JobApplicationStage.APPLICATION,
-            date: new Date().toISOString(),
-          },
-        ],
       });
 
       return redirect('/career/applications');
@@ -138,7 +116,7 @@ export default function CreateJobApplication() {
 
       const result: ScrapedJobPostingResponse = await response.json();
 
-      if (result.success && result.jobPosting) {
+      if (result.jobPosting) {
         handleScrapedData(result.jobPosting);
       } else {
         setScrapingError(result.error || 'Failed to scrape job posting.');
@@ -188,12 +166,11 @@ export default function CreateJobApplication() {
                   onClick={() => setInputMethod('url')}
                   className={`p-4 rounded-lg border-2 transition-all ${
                     inputMethod === 'url'
-                      ? 'border-blue-500 bg-accent/10 text-primary'
-                      : 'border-border bg-card hover:border-border'
+                      ? 'border-primary bg-accent/10 text-primary'
+                      : 'border-border bg-card hover:border-muted-foreground/30'
                   }`}
                 >
                   <div className="text-center">
-                    <div className="text-2xl mb-2">🔗</div>
                     <div className="font-medium">Scrape from URL</div>
                     <div className="text-sm text-muted-foreground mt-1">
                       Paste a job posting URL
@@ -206,12 +183,11 @@ export default function CreateJobApplication() {
                   onClick={() => setInputMethod('paste')}
                   className={`p-4 rounded-lg border-2 transition-all ${
                     inputMethod === 'paste'
-                      ? 'border-blue-500 bg-accent/10 text-primary'
-                      : 'border-border bg-card hover:border-border'
+                      ? 'border-primary bg-accent/10 text-primary'
+                      : 'border-border bg-card hover:border-muted-foreground/30'
                   }`}
                 >
                   <div className="text-center">
-                    <div className="text-2xl mb-2">📋</div>
                     <div className="font-medium">Paste Description</div>
                     <div className="text-sm text-muted-foreground mt-1">
                       Copy & paste job details
@@ -224,12 +200,11 @@ export default function CreateJobApplication() {
                   onClick={() => setInputMethod('manual')}
                   className={`p-4 rounded-lg border-2 transition-all ${
                     inputMethod === 'manual'
-                      ? 'border-blue-500 bg-accent/10 text-primary'
-                      : 'border-border bg-card hover:border-border'
+                      ? 'border-primary bg-accent/10 text-primary'
+                      : 'border-border bg-card hover:border-muted-foreground/30'
                   }`}
                 >
                   <div className="text-center">
-                    <div className="text-2xl mb-2">✏️</div>
                     <div className="font-medium">Manual Entry</div>
                     <div className="text-sm text-muted-foreground mt-1">Fill out form manually</div>
                   </div>
@@ -318,8 +293,7 @@ export default function CreateJobApplication() {
                 {/* Scraped Data Preview */}
                 {scrapedData && (
                   <div className="mb-6 p-4 bg-accent/10 border border-accent/30 rounded-lg">
-                    <h3 className="text-lg font-semibold text-accent-foreground mb-4 flex items-center gap-2">
-                      <span className="text-primary">📋</span>
+                    <h3 className="text-lg font-semibold text-foreground mb-4">
                       Extracted Job Information
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -330,14 +304,14 @@ export default function CreateJobApplication() {
                             {scrapedData.requirements.slice(0, 5).map((req, index) => (
                               <li
                                 key={`req-${index}-${req.slice(0, 20)}`}
-                                className="text-sm text-primary flex items-start gap-2"
+                                className="text-sm text-muted-foreground flex items-start gap-2"
                               >
-                                <span className="text-blue-500 mt-1">•</span>
+                                <span className="mt-1">•</span>
                                 <span>{req}</span>
                               </li>
                             ))}
                             {scrapedData.requirements.length > 5 && (
-                              <li className="text-sm text-primary italic">
+                              <li className="text-sm text-muted-foreground italic">
                                 +{scrapedData.requirements.length - 5} more requirements
                               </li>
                             )}
@@ -352,7 +326,7 @@ export default function CreateJobApplication() {
                             {scrapedData.skills.slice(0, 8).map((skill, index) => (
                               <span
                                 key={`skill-${skill}`}
-                                className="px-2 py-1 bg-accent/20 text-primary text-xs rounded-md"
+                                className="px-2 py-1 bg-accent/20 text-muted-foreground text-xs rounded-md"
                               >
                                 {skill}
                               </span>
@@ -370,7 +344,7 @@ export default function CreateJobApplication() {
                     {scrapedData.companyDescription && (
                       <div className="mt-4">
                         <h4 className="font-medium text-foreground mb-2">Company Description</h4>
-                        <p className="text-sm text-primary leading-relaxed">
+                        <p className="text-sm text-muted-foreground leading-relaxed">
                           {scrapedData.companyDescription.length > 200
                             ? `${scrapedData.companyDescription.substring(0, 200)}...`
                             : scrapedData.companyDescription}
@@ -379,10 +353,10 @@ export default function CreateJobApplication() {
                     )}
 
                     <div className="mt-4 pt-4 border-t border-accent/30">
-                      <div className="flex flex-wrap gap-4 text-xs text-primary">
-                        <span>📊 {scrapedData.wordCount} words</span>
-                        <span>🔗 {scrapedData.url ? 'URL available' : 'No URL'}</span>
-                        <span>📅 {new Date(scrapedData.scrapedAt).toLocaleDateString()}</span>
+                      <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+                        <span>{scrapedData.wordCount} words</span>
+                        {scrapedData.url && <span>URL captured</span>}
+                        <span>{new Date(scrapedData.scrapedAt).toLocaleDateString()}</span>
                       </div>
                     </div>
                   </div>
@@ -442,7 +416,7 @@ export default function CreateJobApplication() {
                       <input
                         type="hidden"
                         name="startDate"
-                        value={formatDateValue(applicationDate)}
+                        value={applicationDate.toISOString().split('T')[0]}
                       />
                     </div>
 

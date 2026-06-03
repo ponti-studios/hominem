@@ -134,7 +134,7 @@ export default function App({ loaderData }: { loaderData: { apiBaseUrl: string; 
         <ToastProvider>
           <div className="flex min-h-screen flex-col bg-background text-foreground">
             <Navigation />
-            <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-8 font-sans sm:px-6 lg:px-8">
+            <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-6 font-sans sm:px-6 lg:px-8">
               <Outlet />
             </main>
           </div>
@@ -151,7 +151,7 @@ export function ErrorBoundary({ error }: { error: unknown }) {
       return (
         <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4 text-foreground">
           <Card className="w-full max-w-md border-border bg-card text-center">
-            <CardContent className="space-y-6 p-8">
+            <CardContent className="space-y-4 p-6">
               <h1 className="display-2 text-foreground">404</h1>
               <p className="heading-3 text-muted-foreground">Page Not Found</p>
               <Link to="/" className={buttonVariants({ variant: 'primary', size: 'lg' })}>
@@ -165,7 +165,7 @@ export function ErrorBoundary({ error }: { error: unknown }) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4 text-foreground">
         <Card className="w-full max-w-md border-border bg-card text-center">
-          <CardContent className="space-y-6 p-8">
+          <CardContent className="space-y-4 p-6">
             <h1 className="display-2 text-destructive">{err.status}</h1>
             <p className="heading-3 text-muted-foreground">{err.statusText}</p>
             <Link to="/" className={buttonVariants({ variant: 'destructive', size: 'lg' })}>
@@ -182,7 +182,7 @@ export function ErrorBoundary({ error }: { error: unknown }) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4 text-foreground">
       <Card className="w-full max-w-2xl border-border bg-card">
-        <CardContent className="space-y-4 p-8 text-center">
+        <CardContent className="space-y-4 p-6 text-center">
           <h1 className="heading-1 text-foreground">Oops!</h1>
           <p className="text-muted-foreground">{message}</p>
           {stack && (

@@ -10,11 +10,17 @@
   },
   "languages": {
     "CSS": {
-      "language_servers": [
-        "tailwindcss-intellisense-css",
-        "!vscode-css-language-server",
-        "..."
-      ]
+      "language_servers": ["tailwindcss-intellisense-css", "!vscode-css-language-server", "..."]
+    }
+  },
+  "lsp": {
+    "tailwindcss-language-server": {
+      "settings": {
+        "classFunctions": ["cva", "cx", "cn"],
+        "experimental": {
+          "classRegex": ["[cls|className]\\s\\:\\=\\s\"([^\"]*)"]
+        }
+      }
     }
   }
 }

@@ -39,7 +39,7 @@ export function ApplicationNotesTab({ notes, applicationId }: NotesTabProps) {
 
       {/* Add Note Form */}
       {showAddNote && (
-        <Card className="border-border bg-card ">
+        <Card>
           <CardHeader>
             <CardTitle>Add Note</CardTitle>
           </CardHeader>
@@ -105,7 +105,7 @@ export function ApplicationNotesTab({ notes, applicationId }: NotesTabProps) {
           </div>
         ) : (
           notes.map((note) => (
-            <Card key={note.id} className="border-border bg-card ">
+            <Card key={note.id}>
               <CardContent className="p-4">
                 <div className="mb-2 flex items-start justify-between gap-3">
                   <div className="space-y-2">

@@ -1,5 +1,6 @@
 import { Button } from '@hominem/ui/button';
 import { Input } from '@hominem/ui/input';
+import { LoadingSpinner } from '@hominem/ui/loading-spinner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
 import { useState } from 'react';
 
@@ -13,7 +14,6 @@ interface JobAnalysis {
 }
 
 interface CustomizeResumeResponse {
-  success: boolean;
   customizedResume: string;
   jobAnalysis: JobAnalysis | null;
   metadata: {
@@ -273,7 +273,7 @@ export function JobScrapingResumeCustomizer({
       {step === 'scrape' && (
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-8">
-            <h2 className="font-sans text-2xl font-light text-foreground mb-2">Job Posting URL</h2>
+            <h2 className="text-xl font-semibold text-foreground mb-2">Job Posting URL</h2>
             <p className="text-muted-foreground">
               Enter the URL of the job posting you'd like to analyze
             </p>
@@ -300,20 +300,9 @@ export function JobScrapingResumeCustomizer({
               <Button
                 onClick={handleScrape}
                 disabled={isScraping || !jobUrl.trim()}
-                className={`px-8 py-3 border-0 rounded-md transition-all duration-200 ${
-                  isScraping
-                    ? 'bg-muted text-primary-foreground cursor-not-allowed'
-                    : 'bg-primary text-primary-foreground hover:bg-primary/90'
-                }`}
+                variant="primary"
               >
-                {isScraping ? (
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                    <span>Scraping...</span>
-                  </div>
-                ) : (
-                  'Continue'
-                )}
+                {isScraping ? <LoadingSpinner variant="sm" /> : 'Continue'}
               </Button>
             </div>
           </div>
@@ -324,7 +313,7 @@ export function JobScrapingResumeCustomizer({
       {step === 'review' && scrapedJob && (
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="font-sans text-2xl font-light text-foreground mb-2">
+            <h2 className="text-xl font-semibold text-foreground mb-2">
               Review Job Posting
             </h2>
             <p className="text-muted-foreground">
@@ -374,29 +363,10 @@ export function JobScrapingResumeCustomizer({
           </div>
 
           <div className="text-center mt-12 space-x-4">
-            <Button
-              onClick={handleSaveApplication}
-              disabled={isSaving}
-              className={`px-8 py-3 border-0 rounded-md transition-all duration-200 ${
-                isSaving
-                  ? 'bg-muted text-primary-foreground cursor-not-allowed'
-                  : 'bg-primary text-primary-foreground hover:bg-primary/90'
-              }`}
-            >
-              {isSaving ? (
-                <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                  <span>Saving...</span>
-                </div>
-              ) : (
-                'Save & Continue'
-              )}
+            <Button onClick={handleSaveApplication} disabled={isSaving} variant="primary">
+              {isSaving ? <LoadingSpinner variant="sm" /> : 'Save & Continue'}
             </Button>
-            <Button
-              variant="outline"
-              onClick={() => setStep('scrape')}
-              className="px-8 py-3 border-border text-muted-foreground hover:bg-muted rounded-md"
-            >
+            <Button variant="outline" onClick={() => setStep('scrape')}>
               Back
             </Button>
           </div>
@@ -413,7 +383,7 @@ export function JobScrapingResumeCustomizer({
       {showResumeGeneration && step === 'generate' && (
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="font-sans text-2xl font-light text-foreground mb-2">
+            <h2 className="text-xl font-semibold text-foreground mb-2">
               Resume Preferences
             </h2>
             <p className="text-muted-foreground">Configure your resume format and style</p>
@@ -494,29 +464,10 @@ export function JobScrapingResumeCustomizer({
           </div>
 
           <div className="text-center mt-12 space-x-4">
-            <Button
-              onClick={handleGenerateResume}
-              disabled={isGenerating}
-              className={`px-8 py-3 border-0 rounded-md transition-all duration-200 ${
-                isGenerating
-                  ? 'bg-muted text-primary-foreground cursor-not-allowed'
-                  : 'bg-primary text-primary-foreground hover:bg-primary/90'
-              }`}
-            >
-              {isGenerating ? (
-                <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                  <span>Generating...</span>
-                </div>
-              ) : (
-                'Generate Resume'
-              )}
+            <Button onClick={handleGenerateResume} disabled={isGenerating} variant="primary">
+              {isGenerating ? <LoadingSpinner variant="sm" /> : 'Generate Resume'}
             </Button>
-            <Button
-              variant="outline"
-              onClick={() => setStep('review')}
-              className="px-8 py-3 border-border text-muted-foreground hover:bg-muted rounded-md"
-            >
+            <Button variant="outline" onClick={() => setStep('review')}>
               Back
             </Button>
           </div>
@@ -533,7 +484,7 @@ export function JobScrapingResumeCustomizer({
       {showResumeGeneration && step === 'result' && resumeResult && (
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="font-sans text-2xl font-light text-foreground mb-2">
+            <h2 className="text-xl font-semibold text-foreground mb-2">
               Your Customized Resume
             </h2>
             <p className="text-muted-foreground">Ready to download and apply</p>
@@ -586,20 +537,8 @@ export function JobScrapingResumeCustomizer({
             <div className="flex justify-between items-center mb-6">
               <h3 className="font-sans text-lg font-medium text-foreground">Resume Content</h3>
               <div className="space-x-3">
-                <Button
-                  variant="outline"
-                  onClick={handleCopyResume}
-                  className="px-4 py-2 border-border text-muted-foreground hover:bg-muted rounded-md"
-                >
-                  Copy
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={handleDownloadResume}
-                  className="px-4 py-2 border-border text-muted-foreground hover:bg-muted rounded-md"
-                >
-                  Download
-                </Button>
+                <Button variant="outline" onClick={handleCopyResume}>Copy</Button>
+                <Button variant="outline" onClick={handleDownloadResume}>Download</Button>
               </div>
             </div>
 
@@ -611,19 +550,8 @@ export function JobScrapingResumeCustomizer({
           </div>
 
           <div className="text-center space-x-4">
-            <Button
-              onClick={resetFlow}
-              className="px-8 py-3 bg-primary text-primary-foreground hover:bg-primary/90 border-0 rounded-md"
-            >
-              Start Over
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setStep('generate')}
-              className="px-8 py-3 border-border text-muted-foreground hover:bg-muted rounded-md"
-            >
-              Back
-            </Button>
+            <Button onClick={resetFlow} variant="primary">Start Over</Button>
+            <Button variant="outline" onClick={() => setStep('generate')}>Back</Button>
           </div>
         </div>
       )}

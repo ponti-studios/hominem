@@ -36,30 +36,20 @@ export const action: ActionFunction = async ({ request }) => {
 
     if (!result.success) {
       return new Response(
-        JSON.stringify({
-          error: result.error || 'Job posting scraping failed',
-          success: false,
-        }),
+        JSON.stringify({ error: result.error || 'Job posting scraping failed' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } },
       );
     }
 
     return new Response(
-      JSON.stringify({
-        success: true,
-        jobPosting: result.jobPosting,
-        message: 'Job posting scraped successfully',
-      }),
+      JSON.stringify({ jobPosting: result.jobPosting }),
       { status: 200, headers: { 'Content-Type': 'application/json' } },
     );
   } catch (error) {
     console.error('Job scraping API error:', error);
 
     return new Response(
-      JSON.stringify({
-        error: error instanceof Error ? error.message : 'Internal server error',
-        success: false,
-      }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Internal server error' }),
       { status: 500, headers: { 'Content-Type': 'application/json' } },
     );
   }

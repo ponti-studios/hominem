@@ -11,7 +11,7 @@ interface TopCompaniesTableProps {
 export function TopCompaniesTable({ companies }: TopCompaniesTableProps) {
   if (!companies || companies.length === 0) {
     return (
-      <Card className="border-border bg-card ">
+      <Card>
         <CardContent className="py-8 text-center text-muted-foreground">
           <div className="mb-4 text-4xl">🏢</div>
           <p className="font-medium text-foreground">No company data available</p>
@@ -71,7 +71,7 @@ export function TopCompaniesTable({ companies }: TopCompaniesTableProps) {
         const badge = getPerformanceBadge(company.offerRate, company.interviewRate);
 
         return (
-          <Card key={company.company} className="border-border bg-card ">
+          <Card key={company.company}>
             <CardContent className="space-y-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -117,7 +117,7 @@ export function TopCompaniesTable({ companies }: TopCompaniesTableProps) {
         );
       })}
 
-      <Card className="border-border bg-card ">
+      <Card>
         <CardContent className="space-y-3">
           <h4 className="font-medium text-foreground">Company Insights</h4>
           <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">

@@ -1,5 +1,5 @@
-import { getDb } from '@hominem/db';
-import type { CareerCompanyRecord as Company } from '@hominem/db';
+import { CareerRepository, getDb } from '@hominem/db';
+import type { CareerCompanyRecord as Company, CareerJobApplicationRecord } from '@hominem/db';
 
 import type {
   ApplicationFile,
@@ -8,6 +8,28 @@ import type {
   InterviewEntry,
   JobApplicationUpdate,
 } from '~/types/career-data';
+import { JobApplicationStage, JobApplicationStatus } from '~/types/career';
+
+export interface CreateApplicationInput {
+  companyName: string;
+  companyWebsite?: string | null;
+  companyDescription?: string | null;
+  position: string;
+  status?: JobApplicationStatus;
+  startDate?: Date;
+  location?: string | null;
+  jobPosting?: string | null;
+  requirements?: string[];
+  skills?: string[];
+  jobPostingUrl?: string | null;
+  jobPostingWordCount?: number | null;
+  salaryQuoted?: string | null;
+  recruiterName?: string | null;
+  recruiterEmail?: string | null;
+  recruiterLinkedin?: string | null;
+  source?: string | null;
+  link?: string | null;
+}
 
 export interface ApplicationDetailData {
   application: ApplicationWithCompany;
@@ -324,5 +346,39 @@ export class JobApplicationsService {
       .executeTakeFirst();
 
     return application || null;
+  }
+
+  static async createApplication(
+    userId: string,
+    input: CreateApplicationInput,
+  ): Promise<CareerJobApplicationRecord> {
+    const db = getDb();
+
+    const company = await CareerRepository.findOrCreateCompany(db, userId, {
+      name: input.companyName,
+      website: input.companyWebsite ?? null,
+      description: input.companyDescription ?? null,
+    });
+
+    return CareerRepository.createJobApplication(db, userId, {
+      companyId: company.id,
+      position: input.position,
+      status: input.status ?? JobApplicationStatus.APPLIED,
+      startDate: input.startDate ?? new Date(),
+      location: input.location ?? null,
+      jobPosting: input.jobPosting ?? null,
+      requirements: input.requirements ?? [],
+      skills: input.skills ?? [],
+      jobPostingUrl: input.jobPostingUrl ?? null,
+      jobPostingWordCount: input.jobPostingWordCount ?? null,
+      salaryQuoted: input.salaryQuoted ?? null,
+      recruiterName: input.recruiterName ?? null,
+      recruiterEmail: input.recruiterEmail ?? null,
+      recruiterLinkedin: input.recruiterLinkedin ?? null,
+      source: input.source ?? null,
+      link: input.link ?? null,
+      reference: false,
+      stages: [{ stage: JobApplicationStage.APPLICATION, date: new Date().toISOString() }],
+    });
   }
 }

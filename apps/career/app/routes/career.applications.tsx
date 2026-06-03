@@ -1,5 +1,4 @@
 import { CareerRepository, getDb } from '@hominem/db';
-import { Badge } from '@hominem/ui/badge';
 import { buttonVariants } from '@hominem/ui/button';
 import { Card, CardContent } from '@hominem/ui/card';
 import { PlusIcon } from 'lucide-react';
@@ -21,7 +20,7 @@ import {
   withAuthAction,
   withAuthLoader,
 } from '~/lib/route-utils';
-import { JobApplicationStage, type JobApplicationStatus } from '~/types/career';
+import type { JobApplicationStatus } from '~/types/career';
 
 export async function loader(args: LoaderFunctionArgs) {
   return withAuthLoader(args, async ({ user, request }) => {
@@ -109,49 +108,6 @@ export async function action(args: ActionFunctionArgs) {
       const formData = await request.formData();
       const operation = formData.get('operation') as string;
 
-      if (operation === 'create') {
-        const position = formData.get('position') as string;
-        const companyName = formData.get('company') as string;
-        const status = formData.get('status') as string;
-        const startDate = formData.get('startDate') as string;
-        const location = formData.get('location') as string;
-        const jobPosting = formData.get('jobPosting') as string;
-        const salaryQuoted = formData.get('salaryQuoted') as string;
-        const recruiterName = formData.get('recruiterName') as string;
-        const recruiterEmail = formData.get('recruiterEmail') as string;
-        const recruiterLinkedin = formData.get('recruiterLinkedin') as string;
-
-        if (!position || !companyName) {
-          return createErrorResponse('Position and company are required');
-        }
-
-        const company = await CareerRepository.findOrCreateCompany(getDb(), user.id, {
-          name: companyName,
-        });
-
-        const newApplication = await CareerRepository.createJobApplication(getDb(), user.id, {
-          companyId: company.id,
-          position,
-          status: status as JobApplicationStatus,
-          startDate: new Date(startDate),
-          location: location || null,
-          jobPosting: jobPosting || null,
-          salaryQuoted: salaryQuoted || null,
-          recruiterName: recruiterName || null,
-          recruiterEmail: recruiterEmail || null,
-          recruiterLinkedin: recruiterLinkedin || null,
-          reference: false,
-          stages: [
-            {
-              stage: JobApplicationStage.APPLICATION,
-              date: new Date().toISOString(),
-            },
-          ],
-        });
-
-        return createSuccessResponse(newApplication, 'Job application created successfully');
-      }
-
       if (operation === 'update') {
         const applicationId = formData.get('applicationId') as string;
         const status = formData.get('status') as string;
@@ -197,37 +153,14 @@ export default function CareerApplications() {
     }
   }
 
-  if (!loaderData.success) {
+  if (!loaderData.success || !loaderData.data) {
     return (
-      <Card className="border-destructive/30 bg-destructive/5 ">
+      <Card className="border-destructive/30 bg-destructive/5">
         <CardContent className="space-y-2 p-6">
           <h2 className="text-lg font-semibold text-foreground">Error Loading Data</h2>
-          <p className="text-sm text-muted-foreground">Failed to load job applications data</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (loaderData?.error) {
-    return (
-      <Card className="border-destructive/30 bg-destructive/5 ">
-        <CardContent className="space-y-2 p-6">
-          <h2 className="text-lg font-semibold text-foreground">Error Loading Data</h2>
-          <p className="text-sm text-muted-foreground">{loaderData.error}</p>
           <p className="text-sm text-muted-foreground">
-            Make sure you have job application data in your database.
+            {loaderData?.error ?? 'Failed to load job applications data'}
           </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!loaderData.data) {
-    return (
-      <Card className="border-destructive/30 bg-destructive/5 ">
-        <CardContent className="space-y-2 p-6">
-          <h2 className="text-lg font-semibold text-foreground">Error Loading Data</h2>
-          <p className="text-sm text-muted-foreground">Failed to load job applications data</p>
         </CardContent>
       </Card>
     );
@@ -237,35 +170,21 @@ export default function CareerApplications() {
 
   return (
     <div className="space-y-8 px-2 sm:px-0">
-      <Card className="border-border bg-card ">
-        <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="outline">Applications</Badge>
-              <Badge variant="secondary">{pagination.total} total</Badge>
-            </div>
-            <div>
-              <h1 className="text-3xl font-semibold leading-tight text-foreground">
-                Job Applications
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Track your pipeline, review recent activity, and keep application progress
-                organized.
-              </p>
-            </div>
-          </div>
-          <Link
-            to="/career/applications/create"
-            className={buttonVariants({
-              variant: 'primary',
-              className: 'inline-flex items-center gap-2',
-            })}
-          >
-            <PlusIcon className="size-4" />
-            <span>Add Application</span>
-          </Link>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-semibold">Job Applications</h1>
+          <p className="text-sm text-muted-foreground">
+            {pagination.total} applications · track your pipeline and progress
+          </p>
+        </div>
+        <Link
+          to="/career/applications/create"
+          className={buttonVariants({ variant: 'primary', size: 'sm' })}
+        >
+          <PlusIcon className="size-4" />
+          Add Application
+        </Link>
+      </div>
 
       <div className="space-y-8">
         <ApplicationsHeatmap applications={allApplications} />

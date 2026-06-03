@@ -67,13 +67,11 @@ export const resumeSchema = z.object({
 
 export type ConvertedResumeData = z.infer<typeof resumeSchema>;
 
-export type UploadResumeResponse =
-  | {
-      success: true;
-      message: string;
-      data: ConvertedResumeData;
-      saved: true;
-      portfolioId: string;
-      fileUrl: string;
-    }
-  | { success: false; error: string };
+export type UploadResumeResponse = {
+  message?: string;
+  data?: ConvertedResumeData;
+  saved?: boolean;
+  portfolioId?: string;
+  fileUrl?: string;
+  error?: string;
+};

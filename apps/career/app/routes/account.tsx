@@ -14,11 +14,9 @@ import { getFullUserPortfolio } from '../lib/portfolio.server';
 import {
   createErrorResponse,
   createSuccessResponse,
-  isDatabaseConnectionError,
   tryAsync,
   withAuthAction,
   withAuthLoader,
-  withMockDataFallback,
 } from '../lib/route-utils';
 import {
   FILE_VALIDATION_PRESETS,
@@ -26,75 +24,32 @@ import {
   uploadFile,
   validateFile,
 } from '../lib/services/storage.service';
-import { getMockPortfolioForForms } from '../lib/utils/mock-data';
 
 // Account loader - migrated from Svelte layout server
 export async function loader(args: LoaderFunctionArgs) {
-  return withAuthLoader(args, async ({ user, request }) => {
-    return withMockDataFallback(
-      request,
-      async (request) => {
-        const mockData = await getMockPortfolioForForms(request);
-        // Convert mock data to PortfolioSummary format
-        const mockSummary = {
-          id: mockData.portfolioId,
-          slug: 'test-portfolio',
-          title: 'Test Portfolio',
-          name: mockData.personalInfoData.name,
-          jobTitle: mockData.personalInfoData.jobTitle,
-          bio: mockData.personalInfoData.bio,
-          isPublic: true,
-          isActive: true,
-          updatedAt: new Date(),
-          profileImageUrl: undefined,
-        };
-        return {
-          user,
-          portfolios: [mockSummary],
-          hasPortfolio: true,
-          isPortfolioDataUnavailable: false,
-        };
-      },
-      async () => {
-        try {
-          const fullPortfolio = await getFullUserPortfolio(user.id);
-          const portfolios: Portfolio[] = fullPortfolio
-            ? [
-                {
-                  id: fullPortfolio.id,
-                  title: fullPortfolio.title,
-                  slug: fullPortfolio.slug,
-                  isPublic: fullPortfolio.isPublic,
-                  isActive: fullPortfolio.isActive,
-                  updatedAt: fullPortfolio.updatedAt,
-                  name: fullPortfolio.name,
-                  jobTitle: fullPortfolio.jobTitle,
-                  bio: fullPortfolio.bio,
-                  profileImageUrl: fullPortfolio.profileImageUrl || undefined,
-                },
-              ]
-            : [];
-          return {
-            user,
-            portfolios,
-            hasPortfolio: portfolios.length > 0,
-            isPortfolioDataUnavailable: false,
-          };
-        } catch (error) {
-          if (!isDatabaseConnectionError(error)) {
-            throw error;
-          }
-
-          console.warn('Portfolio data unavailable: could not connect to the database.');
-          return {
-            user,
-            portfolios: [],
-            hasPortfolio: false,
-            isPortfolioDataUnavailable: true,
-          };
-        }
-      },
-    );
+  return withAuthLoader(args, async ({ user }) => {
+    const fullPortfolio = await getFullUserPortfolio(user.id);
+    const portfolios: Portfolio[] = fullPortfolio
+      ? [
+          {
+            id: fullPortfolio.id,
+            title: fullPortfolio.title,
+            slug: fullPortfolio.slug,
+            isPublic: fullPortfolio.isPublic,
+            isActive: fullPortfolio.isActive,
+            updatedAt: fullPortfolio.updatedAt,
+            name: fullPortfolio.name,
+            jobTitle: fullPortfolio.jobTitle,
+            bio: fullPortfolio.bio,
+            profileImageUrl: fullPortfolio.profileImageUrl || undefined,
+          },
+        ]
+      : [];
+    return {
+      user,
+      portfolios,
+      hasPortfolio: portfolios.length > 0,
+    };
   });
 }
 
@@ -221,7 +176,7 @@ export default function Account() {
   const actionData = useActionData<typeof action>();
   const [isSigningOut, setIsSigningOut] = useState(false);
 
-  const { user, portfolios, hasPortfolio, isPortfolioDataUnavailable } = loaderData;
+  const { user, portfolios, hasPortfolio } = loaderData;
 
   const portfolio = portfolios[0];
   const [profileImageUrl, setProfileImageUrl] = useState(portfolio?.profileImageUrl || undefined);
@@ -316,7 +271,7 @@ export default function Account() {
         </div>
 
         {/* Profile Information Card */}
-        <Card className="border-border bg-card">
+        <Card>
           <CardContent className="space-y-6 p-5 sm:p-6">
             <h3 className="heading-4 text-foreground">Profile Information</h3>
 
@@ -357,26 +312,8 @@ export default function Account() {
 
         {/* Portfolio Management Section */}
         <div className="mb-6">
-          {isPortfolioDataUnavailable ? (
-            <Card className="border-border bg-card">
-              <CardContent className="px-4 py-8 text-center">
-                <p className="text-muted-foreground mb-4">Portfolio data is unavailable</p>
-                <p className="text-sm text-muted-foreground mb-6">
-                  The database is not reachable right now. Your session is still active.
-                </p>
-                <Button
-                  type="button"
-                  onClick={() => window.location.reload()}
-                  variant="outline"
-                  size="sm"
-                  className="inline-flex items-center justify-center"
-                >
-                  Try Again
-                </Button>
-              </CardContent>
-            </Card>
-          ) : portfolio ? (
-            <Card className="border-border bg-card">
+          {portfolio ? (
+            <Card>
               <CardContent className="p-5 sm:p-6">
                 <div className="space-y-3 sm:hidden">
                   <div className="flex items-center justify-between">
@@ -520,7 +457,7 @@ export default function Account() {
               </CardContent>
             </Card>
           ) : (
-            <Card className="border-border bg-card">
+            <Card>
               <CardContent className="px-4 py-8 text-center">
                 <p className="text-muted-foreground mb-4">No portfolio found</p>
                 <p className="text-sm text-muted-foreground mb-6">
