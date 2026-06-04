@@ -12,9 +12,10 @@ interface UploadResumeFormProps {
   onUploadStart: () => void;
   onUploadComplete: (response: UploadResumeResponse) => void;
   onUploadError?: (error: string) => void;
+  mode?: 'create' | 'replace';
 }
 
-type UploadStatus = 'idle' | 'pending' | 'error' | 'confirm-replace';
+type UploadStatus = 'idle' | 'pending' | 'error';
 
 function isPdfFile(file: File): boolean {
   return file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
@@ -38,6 +39,7 @@ export function UploadResumeForm({
   onUploadStart,
   onUploadComplete,
   onUploadError,
+  mode = 'create',
 }: UploadResumeFormProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -46,9 +48,6 @@ export function UploadResumeForm({
   const [errorStage, setErrorStage] = useState<ResumeConvertStage | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [requiresLogin, setRequiresLogin] = useState(false);
-  const [existingPortfolio, setExistingPortfolio] = useState<
-    UploadResumeResponse['existingPortfolio'] | null
-  >(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -69,7 +68,6 @@ export function UploadResumeForm({
       setError(null);
       setErrorStage(null);
       setRequiresLogin(false);
-      setExistingPortfolio(null);
       setStatus('idle');
     }
   };
@@ -81,7 +79,6 @@ export function UploadResumeForm({
     setError(null);
     setErrorStage(null);
     setRequiresLogin(false);
-    setExistingPortfolio(null);
     setStatus('idle');
   };
 
@@ -91,7 +88,6 @@ export function UploadResumeForm({
     setErrorStage(null);
     setNotice(null);
     setRequiresLogin(false);
-    setExistingPortfolio(null);
     setStatus('idle');
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
@@ -103,14 +99,12 @@ export function UploadResumeForm({
     setError('Upload canceled.');
     setErrorStage(null);
     setRequiresLogin(false);
-    setExistingPortfolio(null);
   };
 
-  const uploadResume = async (replaceExisting = false) => {
+  const uploadResume = async () => {
     setError(null);
     setErrorStage(null);
     setRequiresLogin(false);
-    if (!replaceExisting) setExistingPortfolio(null);
     if (!selectedFile) {
       const msg = 'Please select a PDF file';
       setError(msg);
@@ -141,7 +135,7 @@ export function UploadResumeForm({
     try {
       const formData = new FormData();
       formData.append('pdf', selectedFile);
-      if (replaceExisting) formData.append('replaceExisting', 'true');
+      if (mode === 'replace') formData.append('replaceExisting', 'true');
       const res = await fetch('/api/resume/convert', {
         method: 'POST',
         credentials: 'same-origin',
@@ -153,13 +147,11 @@ export function UploadResumeForm({
 
       if (!res.ok) {
         const msg = result.error ?? 'Conversion failed';
-        const needsReplaceConfirmation = result.stage === 'replace-confirmation';
-        setStatus(needsReplaceConfirmation ? 'confirm-replace' : 'error');
+        setStatus('error');
         setError(msg);
         setErrorStage(result.stage ?? null);
-        setExistingPortfolio(result.existingPortfolio ?? null);
         setRequiresLogin(res.status === 401 || res.status === 403 || result.stage === 'auth');
-        if (!needsReplaceConfirmation) onUploadError?.(msg);
+        onUploadError?.(msg);
         return;
       }
 
@@ -187,12 +179,12 @@ export function UploadResumeForm({
   };
 
   const isPending = status === 'pending';
-  const isConfirmingReplace = status === 'confirm-replace';
-  const buttonLabel = isConfirmingReplace
-    ? 'Replace Portfolio'
-    : status === 'error' && selectedFile
+  const buttonLabel =
+    status === 'error' && selectedFile
       ? 'Try Again'
-      : 'Upload Resume';
+      : mode === 'replace'
+        ? 'Replace Portfolio'
+        : 'Upload Resume';
 
   return (
     <div className="w-full max-w-md">
@@ -273,18 +265,11 @@ export function UploadResumeForm({
           ) : null}
 
           {error ? (
-            <Alert variant={isConfirmingReplace ? undefined : 'destructive'}>
-              <AlertTitle>
-                {isConfirmingReplace ? 'Replace existing portfolio?' : 'Upload failed'}
-              </AlertTitle>
+            <Alert variant="destructive">
+              <AlertTitle>Upload failed</AlertTitle>
               <AlertDescription>
                 <div className="space-y-3">
                   <p>{error}</p>
-                  {isConfirmingReplace && existingPortfolio ? (
-                    <p className="text-xs">
-                      Current portfolio: {existingPortfolio.title} at /p/{existingPortfolio.slug}
-                    </p>
-                  ) : null}
                   {errorStage ? (
                     <p className="text-xs">Failed during {errorStage.replaceAll('-', ' ')}.</p>
                   ) : null}
@@ -304,7 +289,7 @@ export function UploadResumeForm({
           <div className="grid gap-2">
             <Button
               type="button"
-              onClick={() => uploadResume(isConfirmingReplace)}
+              onClick={() => uploadResume()}
               disabled={isPending || !selectedFile}
               variant="primary"
               fullWidth

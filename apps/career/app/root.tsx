@@ -1,4 +1,5 @@
 import { AuthProvider } from '@hominem/auth/client/provider';
+import { CareerRepository, getDb } from '@hominem/db';
 import { Button, buttonVariants } from '@hominem/ui/button';
 import { Card, CardContent } from '@hominem/ui/card';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -94,10 +95,20 @@ export const meta = () => [
 
 const API_URL = process.env.VITE_PUBLIC_API_URL || process.env.API_URL || 'http://localhost:3000';
 
+interface CurrentPortfolioSummary {
+  id: string;
+  title: string;
+  slug: string;
+}
+
 // Root loader to get authenticated user
 export async function loader({ request }: LoaderFunctionArgs) {
   const { user, headers } = await getServerSession(request);
-  return data({ user, apiBaseUrl: API_URL }, { headers });
+  const currentPortfolio = user
+    ? ((await CareerRepository.getPortfolioByUserId(getDb(), user.id)) as CurrentPortfolioSummary | null)
+    : null;
+
+  return data({ user, apiBaseUrl: API_URL, currentPortfolio }, { headers });
 }
 
 // Add route handle to enable accessing loader data from child routes
@@ -126,7 +137,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
 // Instantiate a single QueryClient for the app
 const queryClient = new QueryClient();
 
-export default function App({ loaderData }: { loaderData: { apiBaseUrl: string; user: unknown } }) {
+export default function App({
+  loaderData,
+}: {
+  loaderData: { apiBaseUrl: string; user: unknown; currentPortfolio: CurrentPortfolioSummary | null };
+}) {
   const { apiBaseUrl } = loaderData;
   return (
     <AuthProvider config={{ apiBaseUrl }}>

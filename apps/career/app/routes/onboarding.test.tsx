@@ -5,6 +5,16 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router';
 
+const navigate = vi.fn();
+
+vi.mock('react-router', async () => {
+  const actual = await vi.importActual<typeof import('react-router')>('react-router');
+  return {
+    ...actual,
+    useNavigate: () => navigate,
+  };
+});
+
 vi.mock('../components/UploadResumeForm', () => ({
   UploadResumeForm: ({
     onUploadComplete,
@@ -28,8 +38,9 @@ function makeUploadResumeResponse() {
 import Onboarding from './onboarding';
 
 describe('Onboarding', () => {
-  it('shows the success state inline after upload completes', async () => {
+  it('navigates to the created portfolio after upload completes', async () => {
     const user = userEvent.setup();
+    navigate.mockReset();
 
     render(
       <MemoryRouter initialEntries={['/onboarding']}>
@@ -39,12 +50,6 @@ describe('Onboarding', () => {
 
     await user.click(screen.getByRole('button', { name: /mock upload form/i }));
 
-    expect(screen.getByText('Portfolio created')).toBeInTheDocument();
-    expect(screen.getByText('/p/charles-ponti')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /upload another resume/i })).toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: /upload another resume/i }));
-
-    expect(screen.getByRole('button', { name: /mock upload form/i })).toBeInTheDocument();
+    expect(navigate).toHaveBeenCalledWith('/p/charles-ponti');
   });
 });

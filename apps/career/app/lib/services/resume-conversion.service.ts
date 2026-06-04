@@ -1,4 +1,4 @@
-import { runInTransaction, sql, type DbHandle } from '@hominem/db';
+import { CareerRepository, runInTransaction, sql, type DbHandle } from '@hominem/db';
 
 import type { ConvertedResumeData } from '../../types/resume';
 import { normalizePortfolioSlug } from '../../types/resume';
@@ -8,6 +8,10 @@ export interface SaveResumeResult {
   portfolioSlug: string;
 }
 
+export interface SaveResumeOptions {
+  replacePortfolioId?: string;
+}
+
 function serializeJsonColumn(value: unknown): string {
   return JSON.stringify(value);
 }
@@ -15,9 +19,16 @@ function serializeJsonColumn(value: unknown): string {
 export async function saveResumeToDatabase(
   owner_userid: string,
   data: ConvertedResumeData,
+  options: SaveResumeOptions = {},
 ): Promise<SaveResumeResult> {
   return runInTransaction(async (tx) => {
-    await tx.deleteFrom('app.portfolios').where('owner_userid', '=', owner_userid).execute();
+    if (options.replacePortfolioId) {
+      await tx
+        .deleteFrom('app.portfolios')
+        .where('id', '=', options.replacePortfolioId)
+        .where('owner_userid', '=', owner_userid)
+        .execute();
+    }
 
     const slug = await generateUniqueSlug(tx, data.portfolio.slug, data.portfolio.name);
 
@@ -45,6 +56,7 @@ export async function saveResumeToDatabase(
       .executeTakeFirstOrThrow();
 
     const portfolio_id = createdPortfolio.id;
+    await CareerRepository.setCurrentPortfolioByUserId(tx, owner_userid, portfolio_id);
 
     if (data.social_links) {
       await tx

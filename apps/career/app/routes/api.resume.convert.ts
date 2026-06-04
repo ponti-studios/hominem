@@ -1,14 +1,20 @@
-import { CareerRepository, getDb } from '@hominem/db';
 import { createChatCompletion, getChatCompletionText } from '@hominem/ai';
+import { CareerRepository, getDb } from '@hominem/db';
 import { createStorageService, resolveUploadMimeType, validateFile } from '@hominem/storage';
+import { readFile } from 'node:fs/promises';
 import type { ActionFunction } from 'react-router';
+import { z } from 'zod';
 
 import { getAuthenticatedUser } from '../lib/auth.server';
 import { logger } from '../lib/logger';
 import { getRateLimitHeaders, resumeConvertRateLimit } from '../lib/rate-limit';
 import { extractPdfText } from '../lib/services/pdf-text.server';
 import { saveResumeToDatabase } from '../lib/services/resume-conversion.service';
-import type { ConvertedResumeData, ResumeConvertStage, UploadResumeResponse } from '../types/resume';
+import type {
+  ConvertedResumeData,
+  ResumeConvertStage,
+  UploadResumeResponse,
+} from '../types/resume';
 import { resumeSchema } from '../types/resume';
 
 const MAX_EXTRACTED_RESUME_TEXT_LENGTH = 80_000;
@@ -20,10 +26,19 @@ const PDF_RESUME_VALIDATION = {
   maxSizeBytes: 10 * 1024 * 1024,
   allowedTypes: ['application/pdf'],
 } as const;
-const RESUME_PARSER_SYSTEM_PROMPT =
-  'You are an expert resume parser. Return only valid JSON matching the requested resume schema. ' +
-  'Required strings must not be blank. Dates must be YYYY-MM-DD, YYYY-MM, or null; use null for present/current roles. ' +
-  'Repeatable sections must be arrays, using empty arrays when absent. Slugs must be lowercase kebab-case, 3 to 50 characters.';
+const RESUME_PARSER_PROMPT_URL = new URL('../lib/prompts/resume-parser.md', import.meta.url);
+let resumeParserSystemPromptPromise: Promise<string> | null = null;
+const resumeParserJsonSchema = z.toJSONSchema(resumeSchema);
+
+async function loadResumeParserSystemPrompt(): Promise<string> {
+  if (!resumeParserSystemPromptPromise) {
+    resumeParserSystemPromptPromise = readFile(RESUME_PARSER_PROMPT_URL, 'utf8').then((content) =>
+      content.trim(),
+    );
+  }
+
+  return resumeParserSystemPromptPromise;
+}
 
 function parseJsonObject(content: string): unknown {
   const trimmed = content.trim();
@@ -69,63 +84,6 @@ function logRouteError(message: string, error: unknown, context?: Record<string,
   );
 }
 
-const resumeJsonShape = {
-  portfolio: {
-    slug: 'string',
-    title: 'string',
-    name: 'string',
-    initials: 'string | null',
-    job_title: 'string',
-    bio: 'string',
-    tagline: 'string',
-    current_location: 'string',
-    location_tagline: 'string | null',
-    email: 'email string',
-    phone: 'string | null',
-    availability_status: 'boolean',
-    availability_message: 'string | null',
-    is_public: 'boolean',
-    is_active: 'boolean',
-  },
-  social_links: {
-    github: 'string | null',
-    linkedin: 'string | null',
-    twitter: 'string | null',
-    website: 'string | null',
-  },
-  workExperience: [
-    {
-      company: 'string',
-      description: 'string',
-      role: 'string',
-      start_date: 'string | null',
-      end_date: 'string | null',
-    },
-  ],
-  skills: [
-    {
-      name: 'string',
-      level: 'number from 1 to 100',
-      category: 'string | null',
-      description: 'string | null',
-      years_of_experience: 'number | null',
-      certifications: ['string'],
-    },
-  ],
-  projects: [
-    {
-      title: 'string',
-      description: 'string',
-      short_description: 'string | null',
-      technologies: ['string'],
-      live_url: 'string | null',
-      github_url: 'string | null',
-      status: 'in-progress | completed | archived',
-    },
-  ],
-  stats: [{ label: 'string', value: 'string' }],
-};
-
 export const action: ActionFunction = async ({ request }) => {
   let owner_userid: string | undefined;
 
@@ -169,6 +127,7 @@ export const action: ActionFunction = async ({ request }) => {
     const formData = await request.formData();
     const file = formData.get('pdf') as File | null;
     const replaceExisting = formData.get('replaceExisting') === 'true';
+    let existingPortfolio: { id: string } | null = null;
     if (!file) {
       return errorResponse(
         'No PDF file was attached. Choose a resume PDF and try again.',
@@ -178,20 +137,16 @@ export const action: ActionFunction = async ({ request }) => {
       );
     }
 
-    const existingPortfolio = await CareerRepository.getPortfolioByUserId(getDb(), user.id);
-    if (existingPortfolio && !replaceExisting) {
-      return errorResponse(
-        'Uploading this resume will replace your existing portfolio.',
-        409,
-        'replace-confirmation',
-        false,
-        {
-          existingPortfolio: {
-            slug: existingPortfolio.slug,
-            title: existingPortfolio.title,
-          },
-        },
-      );
+    if (replaceExisting) {
+      existingPortfolio = await CareerRepository.getPortfolioByUserId(getDb(), user.id);
+      if (!existingPortfolio) {
+        return errorResponse(
+          'No existing portfolio was found to replace. Create a portfolio first.',
+          404,
+          'request',
+          false,
+        );
+      }
     }
 
     const validation = validateFile(file, PDF_RESUME_VALIDATION);
@@ -242,18 +197,24 @@ export const action: ActionFunction = async ({ request }) => {
 
     let aiContent: string;
     try {
+      const resumeParserSystemPrompt = await loadResumeParserSystemPrompt();
       const result = await createChatCompletion({
-        response_format: { type: 'json_object' },
+        response_format: {
+          type: 'json_schema',
+          json_schema: {
+            name: 'resume_parser',
+            schema: resumeParserJsonSchema,
+            strict: true,
+          },
+        },
         messages: [
           {
             role: 'system',
-            content: RESUME_PARSER_SYSTEM_PROMPT,
+            content: resumeParserSystemPrompt,
           },
           {
             role: 'user',
-            content: `Parse this resume into structured JSON compatible with this shape:
-
-${JSON.stringify(resumeJsonShape, null, 2)}
+            content: `Parse this resume into structured JSON.
 
 Resume text:
 ${pdfText}`,
@@ -340,7 +301,9 @@ ${pdfText}`,
     let portfolio_id: string;
     let portfolioSlug: string;
     try {
-      const saveResult = await saveResumeToDatabase(user.id, data);
+      const saveResult = await saveResumeToDatabase(user.id, data, {
+        replacePortfolioId: replaceExisting ? (existingPortfolio?.id ?? undefined) : undefined,
+      });
       portfolio_id = saveResult.portfolio_id;
       portfolioSlug = saveResult.portfolioSlug;
     } catch (error) {

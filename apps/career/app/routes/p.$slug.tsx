@@ -117,7 +117,9 @@ export default function Portfolio({
                     {job.end_date ? new Date(job.end_date).getFullYear() : 'Present'}
                   </div>
                 </div>
-                <p className="text-muted-foreground mb-3 leading-relaxed">{job.description}</p>
+                <p className="text-muted-foreground mb-3 whitespace-pre-line leading-relaxed">
+                  {job.description}
+                </p>
                 {job.metrics && (
                   <p className="text-sm text-muted-foreground mb-4 italic">{job.metrics}</p>
                 )}

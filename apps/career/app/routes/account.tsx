@@ -7,10 +7,13 @@ import { Card, CardContent } from '@hominem/ui/card';
 import { Download, Edit, ExternalLink, LogOut, Trash2, Upload } from 'lucide-react';
 import { useState } from 'react';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
-import { useActionData, useLoaderData, useNavigate, useSubmit } from 'react-router';
+import { useLoaderData, useNavigate, useRevalidator, useSubmit } from 'react-router';
+
+import { cn } from '~/lib/utils';
 
 import { ProfileImageUpload } from '../components/ProfileImageUpload';
 import { SlugEditor } from '../components/SlugEditor';
+import { UploadResumeForm } from '../components/UploadResumeForm';
 import { getFullUserPortfolio } from '../lib/portfolio.server';
 import {
   createErrorResponse,
@@ -31,26 +34,26 @@ const PROFILE_IMAGE_VALIDATION = {
 // Account loader - migrated from Svelte layout server
 export async function loader(args: LoaderFunctionArgs) {
   return withAuthLoader(args, async ({ user }) => {
-    const fullPortfolio = await getFullUserPortfolio(user.id);
-    const portfolios: Portfolio[] = fullPortfolio
-      ? [
-          {
-            id: fullPortfolio.id,
-            title: fullPortfolio.title,
-            slug: fullPortfolio.slug,
-            is_public: fullPortfolio.is_public,
-            is_active: fullPortfolio.is_active,
-            updatedat: fullPortfolio.updatedat,
-            name: fullPortfolio.name,
-            job_title: fullPortfolio.job_title,
-            bio: fullPortfolio.bio,
-            profile_image_url: fullPortfolio.profile_image_url || undefined,
-          },
-        ]
-      : [];
+    const [fullPortfolio, portfolioRows] = await Promise.all([
+      getFullUserPortfolio(user.id),
+      CareerRepository.listPortfoliosByUserId(getDb(), user.id),
+    ]);
+    const portfolios: Portfolio[] = portfolioRows.map((portfolio) => ({
+      id: portfolio.id,
+      title: portfolio.title,
+      slug: portfolio.slug,
+      is_public: portfolio.is_public,
+      is_active: portfolio.is_active,
+      updatedat: portfolio.updatedat,
+      name: portfolio.name,
+      job_title: portfolio.job_title,
+      bio: portfolio.bio,
+      profile_image_url: portfolio.profile_image_url || undefined,
+    }));
     return {
       user,
       portfolios,
+      currentPortfolioId: fullPortfolio?.id ?? null,
       hasPortfolio: portfolios.length > 0,
     };
   });
@@ -69,6 +72,18 @@ export async function action(args: ActionFunctionArgs) {
 
         return createSuccessResponse(null, 'Portfolio deleted successfully');
       }, 'Failed to delete portfolio');
+    }
+
+    if (action === 'set-current-portfolio' && portfolio_id) {
+      return tryAsync(async () => {
+        await CareerRepository.setCurrentPortfolioByUserId(
+          getDb(),
+          user.id,
+          portfolio_id as string,
+        );
+
+        return createSuccessResponse(null, 'Current portfolio updated successfully');
+      }, 'Failed to update current portfolio');
     }
 
     if (action === 'upload-profile-image') {
@@ -97,11 +112,7 @@ export async function action(args: ActionFunctionArgs) {
         }
 
         try {
-          await CareerRepository.updatePortfolioProfileImage(
-            getDb(),
-            user.id,
-            uploadResult.url,
-          );
+          await CareerRepository.updatePortfolioProfileImage(getDb(), user.id, uploadResult.url);
         } catch (updateError) {
           console.error('Database update error:', updateError);
           await profileImageStorage.deleteFile(uploadResult.id, user.id);
@@ -177,16 +188,17 @@ export function meta() {
 
 export default function Account() {
   const navigate = useNavigate();
+  const revalidator = useRevalidator();
   const submit = useSubmit();
   const authClient = useAuthClient();
   const loaderData = useLoaderData<typeof loader>();
-  const actionData = useActionData<typeof action>();
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [showReplaceResume, setShowReplaceResume] = useState(false);
 
-  const { user, portfolios, hasPortfolio } = loaderData;
+  const { user, portfolios, currentPortfolioId } = loaderData;
 
-  const portfolio = portfolios[0];
-  const [profile_image_url, setProfileImageUrl] = useState(portfolio?.profile_image_url || undefined);
+  const currentPortfolio =
+    portfolios.find((portfolio) => portfolio.id === currentPortfolioId) ?? portfolios[0] ?? null;
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [pdfGenerating, setPdfGenerating] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
@@ -213,8 +225,15 @@ export default function Account() {
     }
   };
 
-  const handleImageUpload = (image_url: string) => {
-    setProfileImageUrl(image_url);
+  const handleSetCurrentPortfolio = (portfolio_id: string) => {
+    const formData = new FormData();
+    formData.append('action', 'set-current-portfolio');
+    formData.append('portfolio_id', portfolio_id);
+
+    submit(formData, { method: 'post' });
+  };
+
+  const handleImageUpload = (_image_url: string) => {
     setUploadError(null);
   };
 
@@ -222,8 +241,13 @@ export default function Account() {
     setUploadError(error);
   };
 
+  const handleReplaceResumeComplete = () => {
+    setShowReplaceResume(false);
+    revalidator.revalidate();
+  };
+
   const handleDownloadPdf = async () => {
-    if (!portfolio?.slug || !portfolio.is_public) {
+    if (!currentPortfolio?.slug || !currentPortfolio.is_public) {
       setPdfError('Portfolio must be public to generate PDF');
       return;
     }
@@ -232,7 +256,7 @@ export default function Account() {
       setPdfGenerating(true);
       setPdfError(null);
 
-      const portfolioUrl = `${window.location.origin}/p/${portfolio.slug}`;
+      const portfolioUrl = `${window.location.origin}/p/${currentPortfolio.slug}`;
 
       const response = await fetch('https://craftd-worker.fly.dev/trigger-task', {
         method: 'POST',
@@ -273,32 +297,33 @@ export default function Account() {
     <div className="py-8">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         <div className="-mt-4 space-y-2 text-center">
-          <Badge variant="outline">Account</Badge>
+          <h1 className="text-2xl font-bold">Account</h1>
           <p className="text-muted-foreground">Manage your portfolio and account settings</p>
         </div>
 
         {/* Profile Information Card */}
         <Card>
-          <CardContent className="space-y-6 p-5 sm:p-6">
-            <h3 className="heading-4 text-foreground">Profile Information</h3>
+          <CardContent className="space-y-4 p-4 sm:p-5">
+            <h3 className="text-base font-semibold text-foreground">Profile Information</h3>
 
             <ProfileImageUpload
-              currentImageUrl={portfolio?.profile_image_url}
+              compact
+              currentImageUrl={currentPortfolio?.profile_image_url}
               onImageUploaded={handleImageUpload}
               onError={handleImageError}
             />
 
             <div className="flex items-start">
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-3">
                 <div>
-                  <h3 className="text-lg font-medium">{userDisplayName}</h3>
-                  <p className="text-muted-foreground">{user.email}</p>
+                  <h3 className="text-base font-medium">{userDisplayName}</h3>
+                  <p className="text-sm text-muted-foreground">{user.email}</p>
                 </div>
               </div>
             </div>
 
             {uploadError && (
-              <div className="mt-4 rounded-md border border-destructive/30 bg-destructive/10 p-3">
+              <div className="mt-2 rounded-md border border-destructive/30 bg-destructive/10 p-3">
                 <p className="text-sm text-destructive">{uploadError}</p>
               </div>
             )}
@@ -307,15 +332,15 @@ export default function Account() {
 
         {/* Portfolio Management Section */}
         <div className="mb-6">
-          {portfolio ? (
+          {currentPortfolio ? (
             <Card>
               <CardContent className="p-5 sm:p-6">
                 <div className="space-y-3 sm:hidden">
                   <div className="flex items-center justify-between">
                     <h2 className="text-lg font-semibold">Portfolio</h2>
-                    {portfolio.is_public && (
+                    {currentPortfolio.is_public && (
                       <a
-                        href={`/p/${portfolio.slug}`}
+                        href={`/p/${currentPortfolio.slug}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 px-2 py-1 border border-border rounded-md text-xs font-medium text-muted-foreground bg-card hover:bg-muted"
@@ -331,12 +356,12 @@ export default function Account() {
                       <Badge
                         variant="outline"
                         className={
-                          portfolio.is_public
+                          currentPortfolio.is_public
                             ? 'border-accent/30 bg-accent/10 text-foreground'
                             : 'border-border bg-muted text-foreground'
                         }
                       >
-                        {portfolio.is_public ? 'Public' : 'Private'}
+                        {currentPortfolio.is_public ? 'Public' : 'Private'}
                       </Badge>
                     </div>
                   </div>
@@ -350,19 +375,19 @@ export default function Account() {
                       <Badge
                         variant="outline"
                         className={
-                          portfolio.is_public
+                          currentPortfolio.is_public
                             ? 'border-accent/30 bg-accent/10 text-foreground'
                             : 'border-border bg-muted text-foreground'
                         }
                       >
-                        {portfolio.is_public ? 'Public' : 'Private'}
+                        {currentPortfolio.is_public ? 'Public' : 'Private'}
                       </Badge>
                     </div>
                   </div>
 
-                  {portfolio.is_public && (
+                  {currentPortfolio.is_public && (
                     <a
-                      href={`/p/${portfolio.slug}`}
+                      href={`/p/${currentPortfolio.slug}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 px-3 py-1 border border-border rounded-md text-sm font-medium text-muted-foreground bg-card hover:bg-muted"
@@ -375,15 +400,107 @@ export default function Account() {
 
                 <div className="mt-4 space-y-4">
                   {/* Editable Portfolio URL */}
-                  <SlugEditor portfolio_id={portfolio.id} initialSlug={portfolio.slug} />
+                  <SlugEditor
+                    portfolio_id={currentPortfolio.id}
+                    initialSlug={currentPortfolio.slug}
+                  />
 
                   <div className="bg-accent/10 border border-accent/30 rounded-md p-3">
                     <p className="text-sm text-foreground">
-                      Want to update your portfolio with a new resume? Use "Upload New Resume" to
-                      replace your current portfolio data with fresh information from your updated
-                      resume.
+                      Want a fresh portfolio? Create a new one from a resume upload or replace this
+                      portfolio from here.
                     </p>
                   </div>
+
+                  {showReplaceResume ? (
+                    <div className="rounded-md border border-warning/30 bg-warning/10 p-4 space-y-4">
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-foreground">Replace portfolio</p>
+                        <p className="text-sm text-foreground">
+                          This will delete the current portfolio and rebuild it from the uploaded
+                          resume.
+                        </p>
+                      </div>
+
+                      <UploadResumeForm
+                        mode="replace"
+                        onUploadStart={() => undefined}
+                        onUploadComplete={handleReplaceResumeComplete}
+                        onUploadError={() => undefined}
+                      />
+
+                      <div className="flex justify-end">
+                        <Button
+                          type="button"
+                          onClick={() => setShowReplaceResume(false)}
+                          variant="ghost"
+                          size="sm"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {portfolios.length > 1 ? (
+                    <div className="rounded-md border border-border bg-card p-4 space-y-3">
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-foreground">
+                          Choose current portfolio
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          This portfolio powers the editor, customize tools, and public API views.
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        {portfolios.map((portfolioOption) => {
+                          const isCurrent = portfolioOption.id === currentPortfolio.id;
+
+                          return (
+                            <div
+                              key={portfolioOption.id}
+                              className={cn(
+                                'flex flex-col gap-3 rounded-md border p-3 sm:flex-row sm:items-center sm:justify-between',
+                                isCurrent
+                                  ? 'border-primary/30 bg-primary/5'
+                                  : 'border-border bg-background',
+                              )}
+                            >
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-medium text-foreground">
+                                  {portfolioOption.title}
+                                </p>
+                                <p className="truncate text-xs text-muted-foreground">
+                                  /p/{portfolioOption.slug}
+                                </p>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                {isCurrent ? (
+                                  <Badge
+                                    variant="outline"
+                                    className="border-primary/30 bg-primary/10"
+                                  >
+                                    Current
+                                  </Badge>
+                                ) : (
+                                  <Button
+                                    type="button"
+                                    onClick={() => handleSetCurrentPortfolio(portfolioOption.id)}
+                                    variant="outline"
+                                    size="xs"
+                                  >
+                                    Use this portfolio
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : null}
 
                   {/* Responsive button layout */}
                   <div className="flex flex-col sm:flex-row sm:justify-end space-y-2 sm:space-y-0 sm:space-x-2">
@@ -400,7 +517,7 @@ export default function Account() {
                     <Button
                       type="button"
                       onClick={handleDownloadPdf}
-                      disabled={pdfGenerating || !portfolio.is_public}
+                      disabled={pdfGenerating || !currentPortfolio.is_public}
                       variant="outline"
                       size="sm"
                       className="w-full border-success/30 text-success hover:bg-success/10 sm:w-auto"
@@ -416,11 +533,21 @@ export default function Account() {
                       className="w-full sm:w-auto border-accent/30 text-primary hover:text-primary hover:bg-accent/10"
                     >
                       <Upload className="w-4 h-4 mr-2" />
-                      Upload New Resume
+                      Create New Portfolio
                     </Button>
                     <Button
                       type="button"
-                      onClick={() => handleDeletePortfolio(portfolio.id)}
+                      onClick={() => setShowReplaceResume((current) => !current)}
+                      variant="outline"
+                      size="sm"
+                      className="w-full sm:w-auto border-warning/30 text-foreground hover:bg-warning/10"
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      Replace Portfolio
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => handleDeletePortfolio(currentPortfolio.id)}
                       variant="outline"
                       size="sm"
                       className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 sm:w-auto"
@@ -436,7 +563,7 @@ export default function Account() {
                     </div>
                   )}
 
-                  {!portfolio.is_public && (
+                  {!currentPortfolio.is_public && (
                     <div className="mt-2 rounded-md border border-warning/30 bg-warning/10 p-3">
                       <p className="text-sm text-foreground">
                         Your portfolio must be public to generate a PDF. Make it public in the
@@ -446,7 +573,7 @@ export default function Account() {
                   )}
 
                   <p className="text-xs text-muted-foreground">
-                    Last updated: {new Date(portfolio.updatedat).toLocaleDateString()}
+                    Last updated: {new Date(currentPortfolio.updatedat).toLocaleDateString()}
                   </p>
                 </div>
               </CardContent>

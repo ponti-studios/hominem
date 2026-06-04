@@ -13,6 +13,7 @@ import type {
   AppSkills,
   AppSocialLinks,
   AppTestimonials,
+  AppUserPortfolioPreferences,
   AppWorkExperiences,
 } from '../../types/database';
 
@@ -23,6 +24,7 @@ type WorkExperienceRow = Selectable<AppWorkExperiences>;
 type SkillRow = Selectable<AppSkills>;
 type ProjectRow = Selectable<AppProjects>;
 type TestimonialRow = Selectable<AppTestimonials>;
+type UserPortfolioPreferenceRow = Selectable<AppUserPortfolioPreferences>;
 type CompanyRow = Selectable<AppCompanies>;
 type JobApplicationRow = Selectable<AppJobApplications>;
 type CareerEventRow = Selectable<AppCareerEvents>;
@@ -261,18 +263,98 @@ async function getOwnedPortfolioRowOrThrow(handle: DbHandle, owner_userid: strin
   return portfolio as PortfolioRow;
 }
 
+async function getCurrentPortfolioPreference(
+  handle: DbHandle,
+  owner_userid: string,
+): Promise<UserPortfolioPreferenceRow | null> {
+  const preference = await handle
+    .selectFrom('app.user_portfolio_preferences')
+    .selectAll()
+    .where('user_id', '=', owner_userid)
+    .executeTakeFirst();
+
+  return (preference as UserPortfolioPreferenceRow | undefined) ?? null;
+}
+
+async function resolveCurrentPortfolioRow(
+  handle: DbHandle,
+  owner_userid: string,
+): Promise<PortfolioRow | null> {
+  const preference = await getCurrentPortfolioPreference(handle, owner_userid);
+
+  if (preference?.current_portfolio_id) {
+    const preferredPortfolio = await getOwnedPortfolioRow(
+      handle,
+      owner_userid,
+      preference.current_portfolio_id,
+    );
+    if (preferredPortfolio) {
+      return preferredPortfolio as PortfolioRow;
+    }
+  }
+
+  const fallbackPortfolio = await handle
+    .selectFrom('app.portfolios')
+    .selectAll()
+    .where('owner_userid', '=', owner_userid)
+    .orderBy('createdat', 'desc')
+    .executeTakeFirst();
+
+  return (fallbackPortfolio as PortfolioRow | undefined) ?? null;
+}
+
 export const CareerRepository = {
   async getPortfolioByUserId(
     handle: DbHandle,
     owner_userid: string,
   ): Promise<CareerPortfolioRecord | null> {
-    const portfolio = await handle
+    const portfolio = await resolveCurrentPortfolioRow(handle, owner_userid);
+
+    return portfolio;
+  },
+
+  async listPortfoliosByUserId(
+    handle: DbHandle,
+    owner_userid: string,
+  ): Promise<CareerPortfolioRecord[]> {
+    const portfolios = await handle
       .selectFrom('app.portfolios')
       .selectAll()
       .where('owner_userid', '=', owner_userid)
-      .executeTakeFirst();
+      .orderBy('createdat', 'desc')
+      .execute();
 
-    return (portfolio as PortfolioRow | undefined) ?? null;
+    return portfolios as PortfolioRow[];
+  },
+
+  async getCurrentPortfolioIdByUserId(
+    handle: DbHandle,
+    owner_userid: string,
+  ): Promise<string | null> {
+    const preference = await getCurrentPortfolioPreference(handle, owner_userid);
+    return preference?.current_portfolio_id ?? null;
+  },
+
+  async setCurrentPortfolioByUserId(
+    handle: DbHandle,
+    owner_userid: string,
+    portfolio_id: string,
+  ): Promise<void> {
+    await getOwnedPortfolioRowOrThrow(handle, owner_userid, portfolio_id);
+
+    await handle
+      .insertInto('app.user_portfolio_preferences')
+      .values({
+        user_id: owner_userid,
+        current_portfolio_id: portfolio_id,
+      })
+      .onConflict((oc) =>
+        oc.column('user_id').doUpdateSet({
+          current_portfolio_id: portfolio_id,
+          updatedat: new Date(),
+        }),
+      )
+      .execute();
   },
 
   async getPortfolioBySlug(handle: DbHandle, slug: string): Promise<CareerPortfolioRecord | null> {

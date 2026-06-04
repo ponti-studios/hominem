@@ -1,7 +1,7 @@
 import { Badge } from '@hominem/ui/badge';
 import { buttonVariants } from '@hominem/ui/button';
 import { Card, CardContent } from '@hominem/ui/card';
-import { BriefcaseIcon, ChevronRightIcon } from 'lucide-react';
+import { ArrowRightIcon, BriefcaseIcon, ChevronRightIcon } from 'lucide-react';
 import type { ComponentProps } from 'react';
 import { Link } from 'react-router';
 
@@ -16,6 +16,13 @@ export function CareerHistory({ work_experiences }: CareerHistoryProps) {
   const sortedExperiences = work_experiences
     .filter((experience) => experience.start_date)
     .sort((a, b) => {
+      const aIsCurrent = !a.end_date;
+      const bIsCurrent = !b.end_date;
+
+      if (aIsCurrent !== bIsCurrent) {
+        return aIsCurrent ? -1 : 1;
+      }
+
       const dateA = a.start_date ? new Date(a.start_date).getTime() : 0;
       const dateB = b.start_date ? new Date(b.start_date).getTime() : 0;
       return dateB - dateA;
@@ -84,20 +91,22 @@ export function CareerHistory({ work_experiences }: CareerHistoryProps) {
             <CardContent className="space-y-4">
               <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div className="space-y-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-base font-semibold text-foreground" data-testid="job-title">
-                      {experience.role}
-                    </h3>
+                  <h3
+                    className="text-base font-semibold text-foreground"
+                    data-testid="company-name"
+                  >
+                    {experience.company}
+                  </h3>
+
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+                    <span data-testid="job-title">{experience.role}</span>
+                    {experience.start_date ? <span aria-hidden="true">•</span> : null}
                     {experience.start_date ? (
                       <span data-testid="date-range">
                         {formatDateRange(experience.start_date, experience.end_date)}
                       </span>
                     ) : null}
                   </div>
-
-                  <p className="text-sm text-muted-foreground" data-testid="company-name">
-                    {experience.company}
-                  </p>
 
                   {experience.metrics ? (
                     <p className="text-sm text-muted-foreground" data-testid="job-metrics">
@@ -112,9 +121,9 @@ export function CareerHistory({ work_experiences }: CareerHistoryProps) {
                 >
                   <Link
                     to={`/career/experience/${experience.id}`}
-                    className={buttonVariants({ variant: 'outline', size: 'sm' })}
+                    className={buttonVariants({ variant: 'ghost', size: 'sm' })}
                   >
-                    View Details
+                    <ArrowRightIcon className="h-4" aria-hidden="true" />
                   </Link>
                 </div>
               </div>
@@ -195,15 +204,20 @@ export function CareerHistory({ work_experiences }: CareerHistoryProps) {
                 <div className="min-w-0 flex-1">
                   <div
                     className="truncate text-sm font-medium text-foreground"
-                    data-testid="mobile-job-title"
-                  >
-                    {experience.role}
-                  </div>
-                  <div
-                    className="truncate text-sm text-muted-foreground"
                     data-testid="mobile-company-name"
                   >
                     {experience.company}
+                  </div>
+                  <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+                    <span className="truncate" data-testid="mobile-job-title">
+                      {experience.role}
+                    </span>
+                    {experience.start_date ? <span aria-hidden="true">•</span> : null}
+                    {experience.start_date ? (
+                      <span className="truncate" data-testid="mobile-date-range">
+                        {formatDateRange(experience.start_date, experience.end_date)}
+                      </span>
+                    ) : null}
                   </div>
                 </div>
                 <div className="ml-4 flex items-center space-x-3">
@@ -216,7 +230,7 @@ export function CareerHistory({ work_experiences }: CareerHistoryProps) {
                       Current
                     </Badge>
                   ) : (
-                    <span className="text-xs text-muted-foreground" data-testid="mobile-end-date">
+                    <span className="text-sm text-muted-foreground" data-testid="mobile-end-date">
                       {experience.end_date
                         ? new Date(experience.end_date).toLocaleDateString('en-US', {
                             month: 'short',

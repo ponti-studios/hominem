@@ -17,7 +17,6 @@
     "apps/career/app/routes/editor.work.tsx",
     "apps/career/app/routes/home.tsx",
     "apps/career/app/routes/login.tsx",
-    "apps/career/app/routes/onboarding.complete.tsx",
     "apps/mobile/app/_layout.tsx",
     "apps/mobile/app/(auth)/index.tsx",
     "apps/mobile/app/(auth)/verify.tsx",

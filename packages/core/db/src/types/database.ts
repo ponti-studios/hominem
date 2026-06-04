@@ -842,6 +842,13 @@ export interface AppTestimonials {
   updatedat: Generated<Timestamp>;
 }
 
+export interface AppUserPortfolioPreferences {
+  createdat: Generated<Timestamp>;
+  current_portfolio_id: string | null;
+  updatedat: Generated<Timestamp>;
+  user_id: string;
+}
+
 export interface AppTravelTrips {
   createdat: Generated<Timestamp>;
   description: string | null;
@@ -1224,6 +1231,7 @@ export interface DB {
   'app.task_assignments': AppTaskAssignments;
   'app.tasks': AppTasks;
   'app.testimonials': AppTestimonials;
+  'app.user_portfolio_preferences': AppUserPortfolioPreferences;
   'app.travel_trips': AppTravelTrips;
   'app.video_channels': AppVideoChannels;
   'app.video_views': AppVideoViews;

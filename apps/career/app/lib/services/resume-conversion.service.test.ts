@@ -1,4 +1,4 @@
-import { getDb } from '@hominem/db';
+import { CareerRepository, getDb } from '@hominem/db';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { createCareerTestDb } from '~/test/db/career';
@@ -47,7 +47,7 @@ describe('resume conversion slug generation', () => {
     expect(slug).toHaveLength(50);
   });
 
-  it('replaces the existing portfolio and inserts converted resume sections', async () => {
+  it('creates a new portfolio without deleting the existing one', async () => {
     const user = await testDb.createUser({ name: 'Replace User' });
     await testDb.createPortfolio({
       user,
@@ -113,10 +113,13 @@ describe('resume conversion slug generation', () => {
       .select(['id', 'slug', 'title'])
       .where('owner_userid', '=', user.id)
       .execute();
-    expect(portfolios).toHaveLength(1);
-    expect(portfolios[0]).toMatchObject({ slug: 'new-portfolio', title: 'New Portfolio' });
+    expect(portfolios).toHaveLength(2);
+    expect(portfolios.map((portfolio) => portfolio.slug).sort()).toEqual([
+      'new-portfolio',
+      'old-portfolio',
+    ]);
 
-    const portfolio_id = portfolios[0]?.id;
+    const portfolio_id = portfolios.find((portfolio) => portfolio.slug === 'new-portfolio')!.id;
     const [workCount, skillCount, projectCount, statCount, social_links] = await Promise.all([
       getDb()
         .selectFrom('app.work_experiences')
@@ -150,5 +153,79 @@ describe('resume conversion slug generation', () => {
     expect(projectCount.technologies).toEqual(['TypeScript', 'React']);
     expect(Number(statCount.count)).toBe(1);
     expect(social_links.github).toBe('https://github.com/example');
+
+    const preference = await getDb()
+      .selectFrom('app.user_portfolio_preferences')
+      .select(['current_portfolio_id'])
+      .where('user_id', '=', user.id)
+      .executeTakeFirstOrThrow();
+
+    expect(preference.current_portfolio_id).toBe(portfolio_id);
+  });
+
+  it('replaces only the selected portfolio when requested', async () => {
+    const user = await testDb.createUser({ name: 'Replace User' });
+    const { portfolio: replacedPortfolio } = await testDb.createPortfolio({
+      user,
+      slug: 'replace-me',
+      title: 'Replace Me',
+      job_title: 'Old Role',
+    });
+    await testDb.createPortfolio({
+      user,
+      slug: 'keep-me',
+      title: 'Keep Me',
+      job_title: 'Existing Role',
+    });
+
+    const data = makeConvertedResumeData({
+      portfolio: {
+        slug: 'replacement-portfolio',
+        title: 'Replacement Portfolio',
+        name: user.name,
+        initials: 'RU',
+        job_title: 'Staff Engineer',
+        email: user.email,
+      },
+      workExperience: [],
+      skills: [],
+      projects: [],
+      stats: [],
+    });
+
+    const result = await saveResumeToDatabase(user.id, data, {
+      replacePortfolioId: replacedPortfolio.id,
+    });
+
+    expect(result.portfolioSlug).toBe('replacement-portfolio');
+
+    const portfolios = await getDb()
+      .selectFrom('app.portfolios')
+      .select(['slug'])
+      .where('owner_userid', '=', user.id)
+      .execute();
+
+    expect(portfolios.map((portfolio) => portfolio.slug).sort()).toEqual([
+      'keep-me',
+      'replacement-portfolio',
+    ]);
+  });
+
+  it('loads the explicitly selected current portfolio instead of the newest one', async () => {
+    const { user, portfolio: olderPortfolio } = await testDb.createPortfolio({
+      slug: 'older-portfolio',
+      title: 'Older Portfolio',
+    });
+    await testDb.createPortfolio({
+      user,
+      slug: 'newer-portfolio',
+      title: 'Newer Portfolio',
+    });
+
+    await CareerRepository.setCurrentPortfolioByUserId(getDb(), user.id, olderPortfolio.id);
+
+    const currentPortfolio = await CareerRepository.getPortfolioByUserId(getDb(), user.id);
+
+    expect(currentPortfolio?.id).toBe(olderPortfolio.id);
   });
 });

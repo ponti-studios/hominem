@@ -11,13 +11,14 @@ import { UploadResumeForm } from '../UploadResumeForm';
 
 const uploadResponse = makeUploadResumeResponse();
 
-function renderForm() {
+function renderForm(mode?: 'create' | 'replace') {
   const onUploadStart = vi.fn();
   const onUploadComplete = vi.fn();
   const onUploadError = vi.fn();
 
   render(
     <UploadResumeForm
+      mode={mode}
       onUploadStart={onUploadStart}
       onUploadComplete={onUploadComplete}
       onUploadError={onUploadError}
@@ -171,89 +172,30 @@ describe('UploadResumeForm', () => {
     await waitFor(() => expect(onUploadComplete).toHaveBeenCalledWith(uploadResponse));
   });
 
-  it('asks for confirmation before replacing an existing portfolio', async () => {
+  it('submits replaceExisting when rendered in replace mode', async () => {
     const user = userEvent.setup();
-    server.use(
-      http.post('/api/resume/convert', async () =>
-        HttpResponse.json(
-          {
-            error: 'Uploading this resume will replace your existing portfolio.',
-            stage: 'replace-confirmation',
-            retryable: false,
-            existingPortfolio: { slug: 'existing', title: 'Existing Portfolio' },
-          },
-          { status: 409 },
-        ),
-      ),
-    );
-    const { onUploadError } = renderForm();
-    await selectFile(user, new File(['pdf'], 'resume.pdf', { type: 'application/pdf' }));
-
-    await user.click(screen.getByRole('button', { name: /upload resume/i }));
-
-    expect(await screen.findByText('Replace existing portfolio?')).toBeInTheDocument();
-    expect(
-      screen.getByText(/current portfolio: existing portfolio at \/p\/existing/i),
-    ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /replace portfolio/i })).toBeEnabled();
-    expect(onUploadError).not.toHaveBeenCalled();
-  });
-
-  it('resubmits with replaceExisting when replacement is confirmed', async () => {
-    const user = userEvent.setup();
-    let requestCount = 0;
-    server.use(
-      http.post('/api/resume/convert', async () => {
-        requestCount += 1;
-        if (requestCount === 1) {
-          return HttpResponse.json(
-            {
-              error: 'Uploading this resume will replace your existing portfolio.',
-              stage: 'replace-confirmation',
-              retryable: false,
-              existingPortfolio: { slug: 'existing', title: 'Existing Portfolio' },
-            },
-            { status: 409 },
-          );
+    let submittedWithReplaceExisting = false;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, init?: RequestInit) => {
+        const body = init?.body;
+        if (!(body instanceof FormData)) {
+          throw new Error('Expected FormData body');
         }
-        return HttpResponse.json(uploadResponse);
+        submittedWithReplaceExisting = body.get('replaceExisting') === 'true';
+        return new Response(JSON.stringify(uploadResponse), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
       }),
     );
-    const { onUploadComplete } = renderForm();
+    const { onUploadComplete } = renderForm('replace');
     await selectFile(user, new File(['pdf'], 'resume.pdf', { type: 'application/pdf' }));
 
-    await user.click(screen.getByRole('button', { name: /upload resume/i }));
-    await user.click(await screen.findByRole('button', { name: /replace portfolio/i }));
+    await user.click(screen.getByRole('button', { name: /replace portfolio/i }));
 
     await waitFor(() => expect(onUploadComplete).toHaveBeenCalledWith(uploadResponse));
-    expect(requestCount).toBe(2);
-  });
-
-  it('clears replacement confirmation when choosing a different PDF', async () => {
-    const user = userEvent.setup();
-    server.use(
-      http.post('/api/resume/convert', async () =>
-        HttpResponse.json(
-          {
-            error: 'Uploading this resume will replace your existing portfolio.',
-            stage: 'replace-confirmation',
-            retryable: false,
-            existingPortfolio: { slug: 'existing', title: 'Existing Portfolio' },
-          },
-          { status: 409 },
-        ),
-      ),
-    );
-    renderForm();
-    await selectFile(user, new File(['pdf'], 'resume.pdf', { type: 'application/pdf' }));
-
-    await user.click(screen.getByRole('button', { name: /upload resume/i }));
-    expect(await screen.findByText('Replace existing portfolio?')).toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: /use a different pdf/i }));
-
-    expect(screen.queryByText('Replace existing portfolio?')).not.toBeInTheDocument();
-    expect(screen.queryByText('resume.pdf')).not.toBeInTheDocument();
+    expect(submittedWithReplaceExisting).toBe(true);
   });
 
   it('clears file and error state when choosing a different PDF', async () => {

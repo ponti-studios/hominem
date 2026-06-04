@@ -51,7 +51,9 @@ export function CareerTimelineItem({ item, index }: CareerTimelineItemProps) {
               {item.type.replace('_', ' ')}
             </span>
           </div>
-          <p className="text-muted-foreground mt-1 font-sans">{item.description}</p>
+          <p className="text-muted-foreground mt-1 whitespace-pre-line font-sans">
+            {item.description}
+          </p>
           <div className="flex items-center space-x-4 mt-2 text-sm text-muted-foreground font-sans">
             <span>{new Date(item.date).toLocaleDateString()}</span>
             {item.company && <span>• {item.company}</span>}

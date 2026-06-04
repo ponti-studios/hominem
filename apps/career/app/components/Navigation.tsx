@@ -1,4 +1,5 @@
 import { useAuthClient } from '@hominem/auth/client/provider';
+import { Badge } from '@hominem/ui/badge';
 import { Avatar, AvatarFallback } from '@hominem/ui/avatar';
 import { Button, buttonVariants } from '@hominem/ui/button';
 import {
@@ -15,7 +16,7 @@ import { Link, useLocation } from 'react-router';
 
 import { cn } from '~/lib/utils';
 
-import { useUser } from '../hooks/useAuth';
+import { useCurrentPortfolio, useUser } from '../hooks/useAuth';
 
 interface NavItem {
   href: string;
@@ -98,6 +99,7 @@ function NavigationLink({
 
 export default function Navigation() {
   const user = useUser();
+  const currentPortfolio = useCurrentPortfolio();
   const authClient = useAuthClient();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -133,20 +135,46 @@ export default function Navigation() {
             ))}
 
             {user ? (
-              <Link
-                to="/account"
-                aria-current={isActiveRoute(location.pathname, '/account') ? 'page' : undefined}
-                className={cn(
-                  buttonVariants({ variant: 'ghost', size: 'md' }),
-                  'rounded-full px-2.5',
-                  isActiveRoute(location.pathname, '/account')
-                    ? 'bg-foreground text-background hover:bg-foreground/90 hover:text-background'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+              <div className="flex items-center gap-2">
+                {currentPortfolio ? (
+                  <Link
+                    to="/editor"
+                    className={cn(
+                      buttonVariants({ variant: 'ghost', size: 'md' }),
+                      'rounded-full px-3 text-left',
+                      isActiveRoute(location.pathname, '/editor')
+                        ? 'bg-accent/10 text-foreground hover:bg-accent/10 hover:text-foreground'
+                        : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                    )}
+                  >
+                    <div className="flex max-w-40 flex-col items-start leading-tight">
+                      <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                        Current portfolio
+                      </span>
+                      <span className="truncate text-sm font-medium">{currentPortfolio.title}</span>
+                    </div>
+                  </Link>
+                ) : (
+                  <Badge variant="outline" className="rounded-full px-3 py-1 text-xs">
+                    No portfolio yet
+                  </Badge>
                 )}
-              >
-                <span>Account</span>
-                <UserAvatar user={user} />
-              </Link>
+
+                <Link
+                  to="/account"
+                  aria-current={isActiveRoute(location.pathname, '/account') ? 'page' : undefined}
+                  className={cn(
+                    buttonVariants({ variant: 'ghost', size: 'md' }),
+                    'rounded-full px-2.5',
+                    isActiveRoute(location.pathname, '/account')
+                      ? 'bg-foreground text-background hover:bg-foreground/90 hover:text-background'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                  )}
+                >
+                  <span>Account</span>
+                  <UserAvatar user={user} />
+                </Link>
+              </div>
             ) : (
               AUTH_LINKS.unauthenticated.map((link) => (
                 <Link
@@ -202,6 +230,27 @@ export default function Navigation() {
               <div className="flex flex-col gap-2 border-t border-border pt-4">
                 {user ? (
                   <>
+                    {currentPortfolio ? (
+                      <Link
+                        to="/editor"
+                        onClick={closeMenu}
+                        className={cn(
+                          buttonVariants({ variant: 'ghost', size: 'md' }),
+                          'justify-start rounded-md px-4',
+                        )}
+                      >
+                        <div className="flex flex-col items-start">
+                          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                            Current portfolio
+                          </span>
+                          <span className="text-sm font-medium">{currentPortfolio.title}</span>
+                        </div>
+                      </Link>
+                    ) : (
+                      <Badge variant="outline" className="justify-start rounded-md px-4 py-2">
+                        No portfolio yet
+                      </Badge>
+                    )}
                     <DrawerClose asChild>
                       <Link
                         to="/account"

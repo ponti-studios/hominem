@@ -115,7 +115,7 @@ async function createExistingPortfolio() {
     email: user.email,
     name: user.name,
   });
-  return portfolio;
+  return { user, portfolio };
 }
 
 describe('resume convert action', () => {
@@ -220,25 +220,21 @@ describe('resume convert action', () => {
     expect(body.error).toBe('Invalid PDF');
   });
 
-  it('returns replace confirmation before extraction when a portfolio exists', async () => {
+  it('creates a new portfolio even when one already exists', async () => {
     await createExistingPortfolio();
 
     const response = await callAction(formRequest(pdfFile()));
     const body = await responseBody(response);
 
-    expect(response.status).toBe(409);
-    expect(body.stage).toBe('replace-confirmation');
-    expect(body.existingPortfolio).toEqual({
-      slug: 'existing',
-      title: 'Existing Portfolio',
-    });
-    expect(mocks.extractPdfText).not.toHaveBeenCalled();
-    expect(mocks.createCompletion).not.toHaveBeenCalled();
-    expect(mocks.storeFile).not.toHaveBeenCalled();
+    expect(response.status).toBe(200);
+    expect(body.stage).toBe('complete');
+    expect(mocks.extractPdfText).toHaveBeenCalledTimes(1);
+    expect(mocks.createCompletion).toHaveBeenCalledTimes(1);
+    expect(mocks.storeFile).toHaveBeenCalledTimes(1);
   });
 
-  it('continues conversion when replacing an existing portfolio is confirmed', async () => {
-    await createExistingPortfolio();
+  it('continues conversion when replacement is requested from the account page', async () => {
+    const existing = await createExistingPortfolio();
 
     const response = await callAction(formRequest(pdfFile(), { replaceExisting: true }));
     const body = await responseBody(response);
@@ -246,6 +242,11 @@ describe('resume convert action', () => {
     expect(response.status).toBe(200);
     expect(body.stage).toBe('complete');
     expect(mocks.extractPdfText).toHaveBeenCalledTimes(1);
+    expect(mocks.saveResumeToDatabase).toHaveBeenCalledWith(
+      existing.user.id,
+      expect.any(Object),
+      { replacePortfolioId: existing.portfolio.id },
+    );
   });
 
   it('returns pdf extraction stage when text extraction fails', async () => {
@@ -277,6 +278,33 @@ describe('resume convert action', () => {
     expect(response.status).toBe(400);
     expect(body.stage).toBe('pdf-extraction');
     expect(mocks.createCompletion).not.toHaveBeenCalled();
+  });
+
+  it('tells the AI to preserve resume bullet points in work experience descriptions', async () => {
+    const response = await callAction(formRequest(pdfFile()));
+    expect(response.status).toBe(200);
+
+    expect(mocks.createCompletion).toHaveBeenCalledWith(
+      expect.objectContaining({
+        response_format: expect.objectContaining({
+          type: 'json_schema',
+          json_schema: expect.objectContaining({
+            name: 'resume_parser',
+            strict: true,
+          }),
+        }),
+        messages: expect.arrayContaining([
+          expect.objectContaining({
+            role: 'system',
+            content: expect.stringContaining('preserve the resume bullet points'),
+          }),
+          expect.objectContaining({
+            role: 'user',
+            content: expect.not.stringContaining('JSON.stringify'),
+          }),
+        ]),
+      }),
+    );
   });
 
   it('returns ai parse stage when the AI request fails', async () => {

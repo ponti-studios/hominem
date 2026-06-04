@@ -3,6 +3,7 @@ import type { LoaderFunctionArgs, MetaFunction } from 'react-router';
 import { Link, Outlet, redirect, useLoaderData, useLocation } from 'react-router';
 
 import { cn } from '~/lib/utils';
+import { Badge } from '@hominem/ui/badge';
 
 import type { FullPortfolio } from '../lib/portfolio.server';
 import { getFullUserPortfolio } from '../lib/portfolio.server';
@@ -50,13 +51,26 @@ export default function EditorLayout() {
 
   return (
     <div className="w-full flex-1 space-y-4">
-      <div>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           Portfolio Editor
         </p>
         <p className="text-sm text-muted-foreground">
           Refine the content and sections that power your public portfolio.
         </p>
+        </div>
+
+        <Link to="/account" className="self-start">
+          <Badge variant="outline" className="gap-2 rounded-full border-primary/30 bg-primary/5 px-3 py-1">
+            <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+              Current
+            </span>
+            <span className="max-w-48 truncate text-sm font-medium text-foreground">
+              {portfolio.title}
+            </span>
+          </Badge>
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-4">

@@ -79,6 +79,7 @@
   --color-popover-foreground: #1a1208;
   --color-input: #e8d5b5;
   --color-ring: #5c3d2e;          /* monogram brown */
+  --color-border: #e8d5b5;
 
   --color-emphasis-highest: #1a1208; /* near-black */
   --color-emphasis-high: #3d2010;    /* chocolate */
@@ -94,6 +95,9 @@
   --color-chart-3: #5c3d2e; /* monogram brown */
   --color-chart-4: #c8a882; /* canvas tan */
   --color-chart-5: #e8d5b5; /* natural */
+  --color-chart-positive: #4a5c3c;
+  --color-chart-negative: #8c1c1c;
+  --color-chart-neutral: #a0703a;
 
   --color-sidebar: #f5ecd7;
   --color-sidebar-foreground: #1a1208;
@@ -126,10 +130,11 @@
   --radius-lg: 8px;
   --radius-xl: 12px;
   --radius-icon: 22%;
+  --radius: 4px;
 
-  --shadow-low: 0 1px 3px rgba(28, 25, 18, 0.06), 0 1px 2px rgba(28, 25, 18, 0.04);
-  --shadow-medium: 0 4px 16px rgba(28, 25, 18, 0.08), 0 2px 4px rgba(28, 25, 18, 0.04);
-  --shadow-high: 0 16px 48px rgba(28, 25, 18, 0.1), 0 4px 12px rgba(28, 25, 18, 0.06);
+  --shadow-low: 0 1px 3px rgba(26, 18, 8, 0.06), 0 1px 2px rgba(26, 18, 8, 0.04);
+  --shadow-medium: 0 4px 16px rgba(26, 18, 8, 0.08), 0 2px 4px rgba(26, 18, 8, 0.04);
+  --shadow-high: 0 16px 48px rgba(26, 18, 8, 0.1), 0 4px 12px rgba(26, 18, 8, 0.06);
 
   --duration-fast: 120ms;
   --duration-default: 200ms;

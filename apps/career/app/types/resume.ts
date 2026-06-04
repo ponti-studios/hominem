@@ -75,7 +75,6 @@ export const resumeSchema = z.object({
       twitter: optionalString,
       website: optionalString,
     })
-    .optional()
     .nullable(),
   workExperience: z.array(
     z.object({
@@ -121,7 +120,6 @@ export type ResumeConvertStage =
   | 'auth'
   | 'request'
   | 'file-validation'
-  | 'replace-confirmation'
   | 'rate-limit'
   | 'pdf-extraction'
   | 'ai-parse'
@@ -138,10 +136,6 @@ export type UploadResumeResponse = {
   portfolioSlug?: string;
   portfolioUrl?: string;
   fileUrl?: string;
-  existingPortfolio?: {
-    slug: string;
-    title: string;
-  };
   rateLimit?: {
     limit: number;
     remaining: number;
