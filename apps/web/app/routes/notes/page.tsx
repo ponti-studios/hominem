@@ -218,7 +218,7 @@ export default function NotesPage({ loaderData }: { loaderData: { inbox: InboxOu
         <div
           ref={setScrollElement}
           onScroll={updateNearBottom}
-          className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden"
+          className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden pb-40 md:pb-44"
         >
           {inboxQuery.isLoading ? (
             <div className="mx-auto w-full max-w-4xl px-4 py-5 text-body-4 text-text-secondary md:px-6 lg:px-8">

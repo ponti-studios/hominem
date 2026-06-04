@@ -172,18 +172,20 @@ const ComposerForm = memo(function ComposerForm({
           <input type="hidden" name="chatId" value={chatId ?? ''} />
           <input type="hidden" name="noteTitle" value={noteTitle ?? ''} />
 
-          <ComposerAttachmentList />
+          <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1">
+              <ComposerAttachmentList />
+              <AttachedNotesList />
+              <ComposerInput
+                ref={inputRef}
+                placeholder={presentation.placeholder}
+                isDraftMode={isDraftMode}
+                isPending={isPending}
+              />
+            </div>
+          </div>
 
-          <AttachedNotesList />
-
-          <ComposerInput
-            ref={inputRef}
-            placeholder={presentation.placeholder}
-            isDraftMode={isDraftMode}
-            isPending={isPending}
-          />
-
-          <div className="mt-auto flex shrink-0 items-center justify-between">
+          <div className="flex shrink-0 items-center justify-between gap-2 rounded-full border border-border-subtle bg-background/70 px-1.5 py-1.5">
             <ComposerTools
               fileInputRef={fileInputRef}
               cameraInputRef={cameraInputRef}
@@ -248,8 +250,8 @@ const ComposerInput = memo(function ComposerInput({
       disabled={isPending}
       aria-label="Compose message or note"
       className={[
-        'body-1 w-full resize-none border-0 bg-transparent p-0 text-text-primary outline-none field-sizing-content overflow-y-auto placeholder:text-text-tertiary focus:outline-none',
-        isDraftMode ? 'min-h-7 max-h-56' : 'min-h-6 max-h-40',
+        'body-1 w-full resize-none border-0 bg-transparent p-0 text-text-primary outline-none field-sizing-content overflow-y-auto placeholder:text-text-tertiary focus-visible:outline-none',
+        isDraftMode ? 'min-h-14 max-h-40' : 'min-h-12 max-h-32',
       ].join(' ')}
     />
   );

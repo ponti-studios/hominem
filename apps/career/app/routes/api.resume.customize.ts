@@ -1,4 +1,4 @@
-import { createChatCompletion, getChatCompletionText } from '@hominem/services/ai-model';
+import { createChatCompletion, getChatCompletionText } from '@hominem/ai';
 import type { ActionFunction } from 'react-router';
 import { z } from 'zod';
 

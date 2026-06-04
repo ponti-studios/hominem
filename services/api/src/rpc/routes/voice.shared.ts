@@ -8,7 +8,7 @@ import {
   postChatCompletion,
   toAudioFormat,
   type SharedChatMessage,
-} from '@hominem/services/ai-model';
+} from '@hominem/ai';
 import { logger } from '@hominem/telemetry';
 import { type Context } from 'hono';
 

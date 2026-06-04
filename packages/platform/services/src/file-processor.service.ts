@@ -1,10 +1,9 @@
 import { Buffer } from 'node:buffer';
 
+import { createChatCompletion, getChatCompletionText } from '@hominem/ai';
 import { logger, LOG_MESSAGES } from '@hominem/telemetry';
 import mammoth from 'mammoth';
 import PDFParser from 'pdf2json';
-
-import { createChatCompletion, getChatCompletionText } from './ai-model';
 
 export interface ProcessedFile {
   id: string;

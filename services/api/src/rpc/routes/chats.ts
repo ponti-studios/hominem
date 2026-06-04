@@ -1,6 +1,6 @@
 import type { ChatMessageFileRecord, ChatMessageRecord, NoteContext } from '@hominem/db';
 import { ChatRepository, getDb, runInTransaction } from '@hominem/db';
-import { streamChatCompletion } from '@hominem/services/ai-model';
+import { streamChatCompletion } from '@hominem/ai';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { streamSSE } from 'hono/streaming';

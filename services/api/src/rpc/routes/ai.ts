@@ -1,5 +1,5 @@
 import { logger } from '@hominem/telemetry';
-import { enhanceText, hasOpenRouterApiKey } from '@hominem/services/ai-model';
+import { enhanceText, hasOpenRouterApiKey } from '@hominem/ai';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import * as z from 'zod';

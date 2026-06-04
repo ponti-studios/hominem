@@ -67,13 +67,14 @@ function ActionButton({
       disabled={disabled}
       data-testid={isPrimary ? 'composer-primary' : 'composer-secondary'}
       className={cn(
-        'flex shrink-0 items-center justify-center rounded-full transition-colors',
-        isPrimary ? 'size-10.5' : 'size-9.5 border border-border bg-surface text-foreground',
+        'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-medium transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
+        isPrimary ? 'bg-foreground text-background' : 'border border-border-subtle bg-background text-text-secondary',
         isPrimary &&
           (disabled
             ? 'cursor-not-allowed bg-surface text-text-tertiary'
-            : 'bg-foreground text-background hover:bg-foreground/85'),
-        !isPrimary && 'disabled:cursor-not-allowed disabled:opacity-40',
+            : 'border-transparent bg-foreground text-background hover:bg-foreground/90'),
+        !isPrimary && 'hover:border-border-default hover:bg-surface hover:text-foreground',
+        disabled && 'cursor-not-allowed opacity-40',
       )}
     >
       {icon}
@@ -104,7 +105,7 @@ export const ComposerActionsRow = memo(function ComposerActionsRow({
   const showVoiceAsPrimary = showsVoiceButton && !hasContent;
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1.5">
       {presentation.posture !== 'note-query' && !showVoiceAsPrimary && (
         <ActionButton
           intent={secondaryIntent(presentation.posture)}

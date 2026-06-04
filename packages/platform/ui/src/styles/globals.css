@@ -39,73 +39,74 @@
   --letter-spacing-normal: 0;
   --letter-spacing-relaxed: 0.01em;
 
-  --color-bg-base: rgba(17, 17, 19, 1);
-  --color-bg-surface: rgba(24, 25, 27, 1);
-  --color-bg-elevated: rgba(33, 34, 37, 1);
-  --color-bg-overlay: rgba(245, 246, 248, 0.06);
+  /* Luxury matte palette — LV/Hermès inspired */
+  --color-bg-base: #faf4ea;       /* warm ivory */
+  --color-bg-surface: #f5ecd7;    /* ivory */
+  --color-bg-elevated: #ede0cc;   /* warm linen */
+  --color-bg-overlay: rgba(26, 18, 8, 0.06);
 
-  --color-text-primary: rgba(245, 246, 248, 1);
-  --color-text-secondary: rgba(180, 185, 195, 1);
-  --color-text-tertiary: rgba(141, 147, 161, 1);
-  --color-text-disabled: rgba(97, 103, 117, 1);
+  --color-text-primary: #1a1208;  /* near-black */
+  --color-text-secondary: #5c3d2e; /* monogram brown */
+  --color-text-tertiary: #a0703a; /* saddle tan */
+  --color-text-disabled: #c8a882; /* canvas tan */
 
-  --color-border-default: rgba(245, 246, 248, 0.18);
-  --color-border-subtle: rgba(245, 246, 248, 0.11);
-  --color-border-focus: rgba(142, 141, 255, 0.5);
+  --color-border-default: #e8d5b5; /* natural leather */
+  --color-border-subtle: rgba(232, 213, 181, 0.6);
+  --color-border-focus: rgba(92, 61, 46, 0.5); /* monogram brown */
 
-  --color-icon-primary: rgba(245, 246, 248, 1);
-  --color-icon-muted: rgba(141, 147, 161, 1);
+  --color-icon-primary: #1a1208;
+  --color-icon-muted: #a0703a;    /* saddle tan */
 
-  --color-success: rgba(61, 214, 140, 1);
-  --color-warning: rgba(255, 209, 102, 1);
-  --color-destructive: rgba(255, 123, 92, 1);
+  --color-success: #4a5c3c;       /* cypress green */
+  --color-warning: #a0703a;       /* saddle tan */
+  --color-destructive: #8c1c1c;   /* rouge casaque */
 
-  --color-accent: rgba(142, 141, 255, 1);
-  --color-accent-foreground: rgba(15, 16, 40, 1);
+  --color-accent: #c8a882;        /* canvas tan */
+  --color-accent-foreground: #1a1208;
 
-  --color-primary: var(--color-accent);
-  --color-primary-foreground: var(--color-accent-foreground);
-  --color-secondary: rgba(245, 246, 248, 0.14);
-  --color-secondary-foreground: rgba(229, 232, 239, 1);
-  --color-muted: rgba(245, 246, 248, 0.08);
-  --color-muted-foreground: rgba(180, 185, 195, 1);
-  --color-foreground: rgba(245, 246, 248, 1);
-  --color-background: rgba(17, 17, 19, 1);
-  --color-card: rgba(24, 25, 27, 1);
-  --color-card-foreground: rgba(245, 246, 248, 1);
-  --color-destructive-foreground: rgba(29, 14, 10, 1);
-  --color-popover: rgba(24, 25, 27, 1);
-  --color-popover-foreground: rgba(245, 246, 248, 1);
-  --color-input: rgba(24, 25, 27, 1);
-  --color-ring: rgba(180, 185, 195, 1);
+  --color-primary: #1a1208;       /* near-black */
+  --color-primary-foreground: #f5ecd7;
+  --color-secondary: #ede0cc;     /* warm linen */
+  --color-secondary-foreground: #1a1208;
+  --color-muted: #f0e6d0;         /* light ivory */
+  --color-muted-foreground: #a0703a; /* saddle tan */
+  --color-foreground: #1a1208;
+  --color-background: #faf4ea;
+  --color-card: #f5ecd7;
+  --color-card-foreground: #1a1208;
+  --color-destructive-foreground: #f5ecd7;
+  --color-popover: #f5ecd7;
+  --color-popover-foreground: #1a1208;
+  --color-input: #e8d5b5;
+  --color-ring: #5c3d2e;          /* monogram brown */
 
-  --color-emphasis-highest: rgba(245, 246, 248, 0.92);
-  --color-emphasis-high: rgba(245, 246, 248, 0.76);
-  --color-emphasis-medium: rgba(245, 246, 248, 0.56);
-  --color-emphasis-low: rgba(245, 246, 248, 0.38);
-  --color-emphasis-lower: rgba(245, 246, 248, 0.26);
-  --color-emphasis-subtle: rgba(245, 246, 248, 0.18);
-  --color-emphasis-minimal: rgba(245, 246, 248, 0.12);
-  --color-emphasis-faint: rgba(245, 246, 248, 0.07);
+  --color-emphasis-highest: #1a1208; /* near-black */
+  --color-emphasis-high: #3d2010;    /* chocolate */
+  --color-emphasis-medium: #5c3d2e;  /* monogram brown */
+  --color-emphasis-low: #a0703a;     /* saddle tan */
+  --color-emphasis-lower: #c8a882;   /* canvas tan */
+  --color-emphasis-subtle: #e8d5b5;  /* natural leather */
+  --color-emphasis-minimal: #f0e6d0; /* light ivory */
+  --color-emphasis-faint: #faf4ea;   /* warm ivory */
 
-  --color-chart-1: rgba(142, 141, 255, 1);
-  --color-chart-2: rgba(61, 214, 140, 1);
-  --color-chart-3: rgba(56, 189, 248, 1);
-  --color-chart-4: rgba(255, 209, 102, 1);
-  --color-chart-5: rgba(255, 123, 92, 1);
+  --color-chart-1: #1a1208; /* near-black */
+  --color-chart-2: #3d2010; /* chocolate */
+  --color-chart-3: #5c3d2e; /* monogram brown */
+  --color-chart-4: #c8a882; /* canvas tan */
+  --color-chart-5: #e8d5b5; /* natural */
 
-  --color-sidebar: rgba(15, 16, 18, 1);
-  --color-sidebar-foreground: rgba(245, 246, 248, 1);
-  --color-sidebar-primary: rgba(142, 141, 255, 1);
-  --color-sidebar-primary-foreground: rgba(15, 16, 40, 1);
-  --color-sidebar-accent: rgba(245, 246, 248, 0.08);
-  --color-sidebar-accent-foreground: rgba(245, 246, 248, 1);
-  --color-sidebar-border: rgba(245, 246, 248, 0.14);
-  --color-sidebar-ring: rgba(142, 141, 255, 1);
+  --color-sidebar: #f5ecd7;
+  --color-sidebar-foreground: #1a1208;
+  --color-sidebar-primary: #1a1208;
+  --color-sidebar-primary-foreground: #f5ecd7;
+  --color-sidebar-accent: rgba(26, 18, 8, 0.06);
+  --color-sidebar-accent-foreground: #1a1208;
+  --color-sidebar-border: #e8d5b5;
+  --color-sidebar-ring: #5c3d2e;
 
-  --color-prompt-bg: rgba(24, 25, 27, 1);
-  --color-prompt-border: rgba(245, 246, 248, 0.18);
-  --color-prompt-border-focus: rgba(142, 141, 255, 0.5);
+  --color-prompt-bg: #f5ecd7;
+  --color-prompt-border: #e8d5b5;
+  --color-prompt-border-focus: rgba(92, 61, 46, 0.5);
 
   --spacing-1: 4px;
   --spacing-2: 8px;
@@ -139,7 +140,7 @@
 }
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 @utility pb-safe-area-inset-bottom {
@@ -173,18 +174,6 @@
     color: var(--color-text-primary);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    html,
-    body {
-      color-scheme: dark;
-    }
-  }
-
-  :root[data-theme='dark'] html,
-  :root[data-theme='dark'] body {
-    color-scheme: dark;
   }
 
   *:focus {
@@ -543,9 +532,65 @@
   height: 4rem;
 }
 
+@utility ui-eyebrow {
+  font-size: var(--font-size-caption-1);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--color-muted-foreground);
+}
+
+@utility ui-plain-card {
+  border: 1px solid var(--color-border-default);
+  padding: 1.75rem;
+}
+
+@utility ui-flat-card {
+  border: 1px solid var(--color-border-default);
+  background-color: var(--color-card);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+}
+
+@utility ui-data-value {
+  font-size: 1.5rem;
+  font-weight: var(--font-weight-regular);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-emphasis-highest);
+}
+
+@utility ui-data-label {
+  font-size: var(--font-size-caption-1);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--color-muted-foreground);
+}
+
+@utility ui-dash-list-item {
+  display: flex;
+  gap: 0.5rem;
+  font-size: var(--font-size-sm);
+  line-height: 1.5rem;
+  color: var(--color-foreground);
+}
+
+@utility ui-dash-marker {
+  margin-top: 0.125rem;
+  flex-shrink: 0;
+  color: var(--color-muted-foreground);
+}
+
 @layer utilities {
   .container {
-    @apply w-full px-4 sm:px-6;
+    width: 100%;
+    padding-inline: 1rem;
     margin-inline: auto;
+  }
+
+  @media (min-width: 640px) {
+    .container {
+      padding-inline: 1.5rem;
+    }
   }
 }

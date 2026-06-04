@@ -37,9 +37,11 @@ function ToolButton({
       disabled={disabled}
       aria-pressed={active || undefined}
       className={cn(
-        'flex size-7 shrink-0 items-center justify-center rounded-md transition-colors',
+        'flex h-11 min-w-11 shrink-0 items-center justify-center rounded-full border border-border-subtle bg-background px-2.5 text-text-tertiary transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
         disabled && 'cursor-not-allowed opacity-40',
-        active ? 'bg-foreground/8 text-foreground' : 'text-text-tertiary hover:text-foreground',
+        active
+          ? 'border-border-default bg-surface text-foreground'
+          : 'hover:border-border-default hover:bg-surface hover:text-foreground',
       )}
     >
       {icon}
@@ -74,7 +76,7 @@ export const ComposerTools = memo(function ComposerTools({
   }, []);
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-1.5">
       {presentation.showsNotePicker && (
         <ToolButton
           icon={<BookOpen className="size-4" />}

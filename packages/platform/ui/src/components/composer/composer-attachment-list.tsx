@@ -21,28 +21,31 @@ export const ComposerAttachmentList = memo(function ComposerAttachmentList() {
   return (
     <div className="flex flex-col gap-2">
       {uploadedFiles.length > 0 && (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1.5">
           {uploadedFiles.map((file) => (
-            <div
+            <button
               key={file.id}
-              className="flex items-center gap-2 rounded-md border border-border bg-surface px-2 py-1"
+              type="button"
+              onClick={() => store.dispatch({ type: 'REMOVE_FILE', fileId: file.id })}
+              aria-label={`Remove ${file.originalName}`}
+              className="inline-flex min-h-11 max-w-full items-center gap-1.5 rounded-full border border-border-subtle bg-surface px-2.5 py-2 text-left transition-colors duration-150 hover:border-border-default hover:bg-background focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
             >
-              <span className="max-w-45 truncate text-xs text-foreground">{file.originalName}</span>
-              <button
-                type="button"
-                onClick={() => store.dispatch({ type: 'REMOVE_FILE', fileId: file.id })}
-                aria-label={`Remove ${file.originalName}`}
-                className="text-text-tertiary transition-colors hover:text-foreground"
-              >
-                <X className="size-3" />
-              </button>
-            </div>
+              <span className="body-4 min-w-0 max-w-45 truncate text-text-primary">
+                {file.originalName}
+              </span>
+              <X className="size-3 shrink-0 text-text-tertiary" aria-hidden="true" />
+            </button>
           ))}
         </div>
       )}
       {uploadErrors.map((error) => (
-        <div key={error} className="text-xs text-destructive">
-          {error}
+        <div
+          key={error}
+          className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+          role="alert"
+        >
+          <span className="size-1.5 shrink-0 rounded-full bg-destructive" aria-hidden="true" />
+          <span className="min-w-0">{error}</span>
         </div>
       ))}
     </div>

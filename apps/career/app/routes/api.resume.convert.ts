@@ -1,5 +1,5 @@
 import { CareerRepository, getDb } from '@hominem/db';
-import { createChatCompletion, getChatCompletionText } from '@hominem/services/ai-model';
+import { createChatCompletion, getChatCompletionText } from '@hominem/ai';
 import { createStorageService, resolveUploadMimeType, validateFile } from '@hominem/storage';
 import type { ActionFunction } from 'react-router';
 

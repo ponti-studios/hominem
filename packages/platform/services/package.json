@@ -30,10 +30,6 @@
       "types": "./src/env.ts",
       "default": "./src/env.ts"
     },
-    "./ai-model": {
-      "types": "./src/ai-model.ts",
-      "default": "./src/ai-model.ts"
-    },
     "./redis": {
       "types": "./src/redis.ts",
       "default": "./src/redis.ts"
@@ -50,9 +46,7 @@
     "lint": "pnpm dlx oxlint ./src"
   },
   "dependencies": {
-    "@openrouter/sdk": "^0.12.35",
-    "@tanstack/ai": "^0.22.1",
-    "@tanstack/ai-openrouter": "^0.9.8",
+    "@hominem/ai": "workspace:*",
     "@hominem/env": "workspace:*",
     "@hominem/telemetry": "workspace:*",
     "@hominem/utils": "workspace:*",

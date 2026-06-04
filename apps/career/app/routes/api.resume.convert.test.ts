@@ -52,7 +52,7 @@ vi.mock('../lib/rate-limit', () => ({
   getRateLimitHeaders: mocks.getRateLimitHeaders,
 }));
 
-vi.mock('@hominem/services/ai-model', () => ({
+vi.mock('@hominem/ai', () => ({
   createChatCompletion: mocks.createCompletion,
   getChatCompletionText: vi.fn((result: { choices?: Array<{ message?: { content?: string } }> }) => result.choices?.[0]?.message?.content ?? ''),
 }));

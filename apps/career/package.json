@@ -17,6 +17,7 @@
     "typecheck": "react-router typegen && tsgo --noEmit"
   },
   "dependencies": {
+    "@hominem/ai": "workspace:*",
     "@hominem/auth": "workspace:*",
     "@hominem/db": "workspace:*",
     "@hominem/services": "workspace:*",

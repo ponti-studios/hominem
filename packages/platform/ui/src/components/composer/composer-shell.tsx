@@ -11,14 +11,17 @@ import { cn } from '../../lib/utils';
 
 export function ComposerShell({ children }: { children: ReactNode }) {
   return (
-    <div className="pointer-events-none fixed bottom-0 left-0 right-0 z-50 px-2 pb-[max(env(safe-area-inset-bottom),8px)]">
-      <div className="container mx-auto w-full px-4 sm:px-6">
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 px-2 pb-[max(env(safe-area-inset-bottom),8px)] sm:px-3">
+      <div className="mx-auto w-full max-w-3xl px-0">
         <div
           className={cn(
-            'pointer-events-auto flex w-full flex-col gap-1.5 rounded-3xl border border-border-default bg-base px-3 py-2.5 shadow-[0_24px_80px_rgba(0,0,0,0.08)] backdrop-blur-xl',
+            'pointer-events-auto overflow-hidden rounded-2xl border border-border-subtle bg-surface/95 shadow-medium backdrop-blur-xl supports-backdrop-filter:bg-surface/85 focus-within:border-border-focus',
           )}
         >
-          {children}
+          <div aria-hidden="true" className="h-px bg-foreground/6" />
+          <div className="flex w-full flex-col gap-1.5 px-2.5 py-2 sm:px-3 sm:py-2.5">
+            {children}
+          </div>
         </div>
       </div>
     </div>

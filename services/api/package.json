@@ -23,6 +23,7 @@
   "dependencies": {
     "@better-auth/kysely-adapter": "^1.5.4",
     "@better-auth/passkey": "^1.5.4",
+    "@hominem/ai": "workspace:*",
     "@hominem/auth": "workspace:*",
     "@hominem/db": "workspace:*",
     "@hominem/env": "workspace:*",

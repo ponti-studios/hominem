@@ -3,13 +3,11 @@ import { chat } from '@tanstack/ai';
 import { createOpenRouterText, openRouterText } from '@tanstack/ai-openrouter';
 import { webFetchTool, webSearchTool } from '@tanstack/ai-openrouter/tools';
 
-import { env } from './env';
-
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 const DEFAULT_HTTP_REFERER = 'https://hominem.app';
 const DEFAULT_APP_TITLE = 'Hominem';
 
-const DEFAULT_TEXT_MODEL = env.AI_MODEL;
+const DEFAULT_TEXT_MODEL = process.env.AI_MODEL ?? 'openai/gpt-4o';
 const DEFAULT_IMAGE_MODEL = 'x-ai/grok-imagine-image-quality';
 const DEFAULT_EMBEDDING_MODEL = 'google/gemini-embedding-2';
 const DEFAULT_TRANSCRIPTION_MODEL = 'mistralai/voxtral-mini-transcribe';
@@ -124,7 +122,7 @@ export type SharedChatCompletionStreamChunk = {
 };
 
 function isTestEnvironment(): boolean {
-  return env.NODE_ENV === 'test' || process.env.NODE_ENV === 'test';
+  return process.env.NODE_ENV === 'test';
 }
 
 function resolveOpenRouterMetadata(options: OpenRouterClientOptions = {}) {
@@ -136,11 +134,11 @@ function resolveOpenRouterMetadata(options: OpenRouterClientOptions = {}) {
 }
 
 export function hasOpenRouterApiKey(): boolean {
-  return Boolean(env.OPENROUTER_API_KEY?.trim());
+  return Boolean(process.env.OPENROUTER_API_KEY?.trim());
 }
 
 function resolveOpenRouterApiKey(apiKey?: string) {
-  const resolvedApiKey = apiKey ?? env.OPENROUTER_API_KEY?.trim();
+  const resolvedApiKey = apiKey ?? process.env.OPENROUTER_API_KEY?.trim();
 
   if (!resolvedApiKey) {
     throw new Error('OPENROUTER_API_KEY is required');
