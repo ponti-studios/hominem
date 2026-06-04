@@ -21,26 +21,6 @@ export function CareerHistory({ work_experiences }: CareerHistoryProps) {
       return dateB - dateA;
     });
 
-  const formatDuration = (start_date: string | Date, end_date?: string | Date | null) => {
-    const start = new Date(start_date);
-    const end = end_date ? new Date(end_date) : new Date();
-    const years = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 365.25);
-
-    if (years < 1) {
-      const months = Math.round(years * 12);
-      return `${months} month${months !== 1 ? 's' : ''}`;
-    }
-
-    const wholeYears = Math.floor(years);
-    const remainingMonths = Math.round((years - wholeYears) * 12);
-
-    if (remainingMonths === 0) {
-      return `${wholeYears} year${wholeYears !== 1 ? 's' : ''}`;
-    }
-
-    return `${wholeYears}y ${remainingMonths}m`;
-  };
-
   const formatDateRange = (start_date: string | Date, end_date?: string | Date | null) => {
     const start = new Date(start_date);
     const end = end_date ? new Date(end_date) : null;
@@ -108,20 +88,10 @@ export function CareerHistory({ work_experiences }: CareerHistoryProps) {
                     <h3 className="text-base font-semibold text-foreground" data-testid="job-title">
                       {experience.role}
                     </h3>
-                    <Link
-                      to={`/career/experience/${experience.id}`}
-                      className={buttonVariants({ variant: 'outline', size: 'sm' })}
-                    >
-                      View Details
-                    </Link>
-                    {!experience.end_date ? (
-                      <Badge
-                        variant="outline"
-                        className="border-emerald-200 bg-emerald-50 text-emerald-700"
-                        data-testid="current-badge"
-                      >
-                        Current
-                      </Badge>
+                    {experience.start_date ? (
+                      <span data-testid="date-range">
+                        {formatDateRange(experience.start_date, experience.end_date)}
+                      </span>
                     ) : null}
                   </div>
 
@@ -140,17 +110,12 @@ export function CareerHistory({ work_experiences }: CareerHistoryProps) {
                   className="flex items-center gap-1 text-sm text-muted-foreground"
                   data-testid="employment-dates"
                 >
-                  {experience.start_date ? (
-                    <>
-                      <span data-testid="date-range">
-                        {formatDateRange(experience.start_date, experience.end_date)}
-                      </span>
-                      <span>•</span>
-                      <span data-testid="duration">
-                        {formatDuration(experience.start_date, experience.end_date)}
-                      </span>
-                    </>
-                  ) : null}
+                  <Link
+                    to={`/career/experience/${experience.id}`}
+                    className={buttonVariants({ variant: 'outline', size: 'sm' })}
+                  >
+                    View Details
+                  </Link>
                 </div>
               </div>
 
@@ -240,14 +205,6 @@ export function CareerHistory({ work_experiences }: CareerHistoryProps) {
                   >
                     {experience.company}
                   </div>
-                  {experience.start_date ? (
-                    <div
-                      className="mt-1 text-xs text-muted-foreground"
-                      data-testid="mobile-duration"
-                    >
-                      {formatDuration(experience.start_date, experience.end_date)}
-                    </div>
-                  ) : null}
                 </div>
                 <div className="ml-4 flex items-center space-x-3">
                   {!experience.end_date ? (

@@ -22,7 +22,6 @@ export default [
   ]),
   route('/projects', 'routes/career.projects.tsx'),
   route('/onboarding', 'routes/onboarding.tsx'),
-  route('/onboarding/complete', 'routes/onboarding.complete.tsx'),
   route('/demo', 'routes/demo.tsx'),
   route('/api/resume/customize', 'routes/api.resume.customize.ts'),
   route('/resume/custom', 'routes/resume.custom.tsx'),
