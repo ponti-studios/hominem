@@ -1,7 +1,7 @@
 {
-  "name": "My Website",
-  "short_name": "My Website",
-  "description": "My Website - Web Application",
+  "name": "Career",
+  "short_name": "Career",
+  "description": "Career - Web Application",
   "start_url": "/",
   "display": "standalone",
   "orientation": "any",

@@ -305,7 +305,7 @@ export function UploadResumeForm({
             <Button
               type="button"
               onClick={() => uploadResume(isConfirmingReplace)}
-              disabled={isPending}
+              disabled={isPending || !selectedFile}
               variant="primary"
               fullWidth
             >

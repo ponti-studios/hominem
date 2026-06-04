@@ -10,6 +10,11 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
   const isProd = mode === 'production';
   const isAnalyze = process.env.ANALYZE === 'true';
   const shouldGenerateSourceMaps = process.env.SOURCEMAP === 'true' || isAnalyze;
+  const workspacePackages = [
+    /^@hominem\//,
+    /^@preact\/signals-react$/,
+    /^@react-router\//,
+  ];
 
   return {
     plugins: [
@@ -111,7 +116,7 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
     },
 
     ssr: {
-      noExternal: true,
+      noExternal: workspacePackages,
       resolve: {
         conditions: ['browser'],
       },

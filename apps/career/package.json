@@ -6,6 +6,7 @@
     "build": "react-router build",
     "dev": "react-router dev",
     "dev:debug": "node --inspect-brk ./node_modules/.bin/react-router dev",
+    "generate:brand-assets": "tsx ../../scripts/generate-brand-assets.ts --app-dir . --source ./public/logo.career.v2.png --brand-name Career",
     "lint": "pnpm dlx oxlint ./app ./tests",
     "format": "pnpm dlx oxfmt ./app ./tests",
     "preview": "pnpm build && vite preview",

@@ -24,7 +24,7 @@ import { authConfig } from './lib/auth.server';
 import { serverEnv } from './lib/env.server';
 import './lib/i18n';
 
-const ICON_VERSION = '20260407';
+const ICON_VERSION = '20260604';
 
 const NOTES_ICON_LINKS = [
   { rel: 'icon', type: 'image/x-icon', href: `/icons/favicon.ico?v=${ICON_VERSION}` },

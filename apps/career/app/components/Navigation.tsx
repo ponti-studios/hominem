@@ -119,7 +119,7 @@ export default function Navigation() {
         >
           <img
             src="/icons/icon-192x192.png"
-            alt="Craftd logo"
+            alt="Career logo"
             className="h-10 w-auto"
             width="40"
             height="40"

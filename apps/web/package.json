@@ -7,6 +7,7 @@
     "format": "pnpm dlx oxfmt ./app",
     "build": "react-router build",
     "dev": "react-router dev",
+    "generate:brand-assets": "tsx ../../scripts/generate-brand-assets.ts --app-dir . --source ./public/logo.hakumi.png --logo-output ./public/logo.web.png --social-output-dir ./public --brand-name Hakumi",
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsgo --noEmit"
   },

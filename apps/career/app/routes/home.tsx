@@ -184,10 +184,8 @@ export default function Home() {
                   i % 3 !== 2 ? 'border-r' : '',
                 )}
               >
-                <div className="flex items-center gap-3">
-                  <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-accent/20 bg-accent/10 transition-colors group-hover:border-accent/40 group-hover:bg-accent/15">
-                    <Icon className="size-4 text-accent" />
-                  </div>
+                <div className="flex items-center gap-2.5">
+                  <Icon className="size-4 shrink-0 text-accent" />
                   <p className="font-medium text-foreground">{feature.title}</p>
                 </div>
                 <p className="mt-3 text-sm text-muted-foreground">{feature.description}</p>

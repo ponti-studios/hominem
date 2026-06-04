@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'hominem-v1';
+const CACHE_VERSION = 'hominem-v2';
 const APP_SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const ASSET_CACHE = `${CACHE_VERSION}-assets`;
 const IMAGE_CACHE = `${CACHE_VERSION}-images`;

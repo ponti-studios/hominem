@@ -43,21 +43,19 @@ describe('UploadResumeForm', () => {
     vi.useRealTimers();
   });
 
-  it('shows an error when uploading without a file', async () => {
-    const { onUploadError } = renderForm();
+  it('disables upload until a file is selected', () => {
+    renderForm();
 
-    fireEvent.click(screen.getByRole('button', { name: /upload resume/i }));
-
-    expect(await screen.findByText('Please select a PDF file')).toBeInTheDocument();
-    expect(onUploadError).toHaveBeenCalledWith('Please select a PDF file');
+    expect(screen.getByRole('button', { name: /upload resume/i })).toBeDisabled();
   });
 
   it('rejects a non-PDF file', async () => {
-    const user = userEvent.setup();
     const { onUploadError } = renderForm();
-    await selectFile(user, new File(['hello'], 'resume.txt', { type: 'text/plain' }));
+    fireEvent.change(fileInput(), {
+      target: { files: [new File(['hello'], 'resume.txt', { type: 'text/plain' })] },
+    });
 
-    await user.click(screen.getByRole('button', { name: /upload resume/i }));
+    fireEvent.click(screen.getByRole('button', { name: /upload resume/i }));
 
     expect(await screen.findByText('Please select a PDF file')).toBeInTheDocument();
     expect(onUploadError).toHaveBeenCalledWith('Please select a PDF file');
