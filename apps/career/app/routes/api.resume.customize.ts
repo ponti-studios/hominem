@@ -1,4 +1,5 @@
 import { createChatCompletion, getChatCompletionText } from '@hominem/ai';
+import { readFile } from 'node:fs/promises';
 import type { ActionFunction } from 'react-router';
 import { z } from 'zod';
 
@@ -8,6 +9,19 @@ import { getAuthenticatedUser, requireAuth } from '../lib/auth.server';
 import { logger } from '../lib/logger';
 import { getFullUserPortfolio } from '../lib/portfolio.server';
 import { formatPortfolioForLLM } from '../lib/utils/portfolio-formatter';
+
+const RESUME_CUSTOMIZE_PROMPT_URL = new URL('../lib/prompts/resume-customize.md', import.meta.url);
+let resumeCustomizeSystemPromptPromise: Promise<string> | null = null;
+
+async function loadResumeCustomizeSystemPrompt(): Promise<string> {
+  if (!resumeCustomizeSystemPromptPromise) {
+    resumeCustomizeSystemPromptPromise = readFile(RESUME_CUSTOMIZE_PROMPT_URL, 'utf8').then(
+      (content) => content.trim(),
+    );
+  }
+
+  return resumeCustomizeSystemPromptPromise;
+}
 
 function parseJsonObject(content: string): unknown {
   const trimmed = content.trim();
@@ -153,22 +167,12 @@ export const action: ActionFunction = async ({ request }) => {
     const portfolioContext = formatPortfolioForLLM(portfolio);
 
     // Create AI prompt for resume customization
-    const systemPrompt = `You are an expert resume writer and career advisor. Your task is to create a customized resume based on the user's portfolio data and a specific job posting.
-
-Guidelines:
-1. Analyze the job posting to identify key requirements, skills, and qualifications
-2. Match the user's experience and skills to the job requirements
-3. Prioritize and highlight the most relevant experiences
-4. Use action verbs and quantifiable achievements when possible
-5. Tailor the language and keywords to match the job posting
-6. Maintain professional formatting and structure
-7. Focus on achievements and impact, not just responsibilities
+    const baseSystemPrompt = await loadResumeCustomizeSystemPrompt();
+    const systemPrompt = `${baseSystemPrompt}
 
 Resume Format: ${resumeFormat}
 Target Length: ${targetLength}
-${focusAreas.length > 0 ? `Focus Areas: ${focusAreas.join(', ')}` : ''}
-
-Return a complete, professional resume in markdown format that is specifically tailored to this job opportunity.`;
+${focusAreas.length > 0 ? `Focus Areas: ${focusAreas.join(', ')}` : ''}`;
 
     const userPrompt = `JOB POSTING:
 ${finalJobPosting}

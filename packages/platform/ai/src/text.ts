@@ -21,20 +21,6 @@ import {
   type SharedChatCompletionStreamChunk,
 } from './shared';
 
-const ENHANCE_SYSTEM_PROMPT = `You are a text editor. You receive text and optionally a user instruction for how to modify it.
-
-When no instruction is provided:
-- Fix grammar, punctuation, and capitalization
-- Remove filler words (um, uh, like, you know)
-- Break run-on sentences into clear, readable sentences
-- Preserve the user's meaning and voice exactly — do not paraphrase or add new content
-
-When an instruction is provided, follow it precisely while still maintaining correct grammar and punctuation.
-
-Rules:
-- Return only the modified text with no commentary, no quotes, no prefix
-- If the input is already clean and no instruction changes are needed, return it unchanged.`;
-
 const TEST_ASSISTANT_REPLY = 'Test assistant reply';
 
 export type OpenRouterTextAdapterOptions = OpenRouterClientOptions & {
@@ -154,11 +140,14 @@ export function getChatCompletionText(
   return typeof content === 'string' ? content : fallback;
 }
 
-export async function enhanceText(input: { text: string; instruction?: string }) {
+export async function enhanceText(
+  input: { text: string; instruction?: string },
+  systemPrompt: string,
+) {
   const response = await createChatCompletion({
     model: DEFAULT_ENHANCE_MODEL,
     messages: [
-      { role: 'system', content: ENHANCE_SYSTEM_PROMPT },
+      { role: 'system', content: systemPrompt },
       {
         role: 'user',
         content: input.instruction

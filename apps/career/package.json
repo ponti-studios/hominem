@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "react-router build",
+    "build": "react-router build && mkdir -p build/lib && cp -R app/lib/prompts build/lib/",
     "dev": "react-router dev",
     "dev:debug": "node --inspect-brk ./node_modules/.bin/react-router dev",
     "generate:brand-assets": "tsx ../../scripts/generate-brand-assets.ts --app-dir . --source ./public/logo.career.v2.png --brand-name Career",

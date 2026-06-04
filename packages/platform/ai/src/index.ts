@@ -32,9 +32,9 @@ export {
   getSharedTextModel,
   postChatCompletion,
   streamChatCompletion,
-} from './chat';
+} from './text';
 
-export type { OpenRouterTextAdapterOptions } from './chat';
+export type { OpenRouterTextAdapterOptions } from './text';
 
 export { generateEmbedding } from './embeddings';
 export { generateImageFromPrompt } from './image';
