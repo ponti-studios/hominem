@@ -30,7 +30,7 @@ describe('career auth server helpers', () => {
   });
 
   it('reads the current session from the shared auth API', async () => {
-    const fetchMock = vi.fn(async () => Response.json(sessionPayload));
+    const fetchMock = vi.fn<typeof fetch>(async () => Response.json(sessionPayload));
     vi.stubGlobal('fetch', fetchMock);
 
     const result = await getServerSession(
@@ -39,12 +39,10 @@ describe('career auth server helpers', () => {
       }),
     );
 
-    const calls = fetchMock.mock.calls as unknown as [
-      [string, { method: string; headers: Headers }],
-    ];
-    const [url, init] = calls[0];
+    const [url, init] = fetchMock.mock.calls[0] ?? [];
+    if (!(init?.headers instanceof Headers)) throw new Error('expected fetch Headers');
 
-    expect(url).toMatch(/\/api\/auth\/get-session$/);
+    expect(String(url)).toMatch(/\/api\/auth\/get-session$/);
     expect(init.method).toBe('GET');
     expect(init.headers.get('cookie')).toBe('better-auth.session_token=session-token');
     expect(result.user?.id).toBe('auth-user-id');

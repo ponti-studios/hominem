@@ -1,11 +1,10 @@
 import type { CareerWorkExperienceRecord as WorkExperience } from '@hominem/db';
 import { Button } from '@hominem/ui/button';
-import { ArrowLeftIcon, CheckIcon, PencilIcon, XIcon } from 'lucide-react';
-import { useState } from 'react';
+import { ArrowLeftIcon, PlusIcon } from 'lucide-react';
+import { useRef, useState } from 'react';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import { useLoaderData, useNavigate } from 'react-router';
 
-import { EditableArrayField } from '~/components/EditableArrayField';
 import { createSuccessResponse, withAuthLoader } from '~/lib/route-utils';
 
 interface LoaderData {
@@ -15,18 +14,11 @@ interface LoaderData {
 export async function loader(args: LoaderFunctionArgs) {
   return withAuthLoader(args, async ({ user }) => {
     const { id } = args.params;
-    if (!id) {
-      throw new Response('Work experience ID is required', { status: 400 });
-    }
-
+    if (!id) throw new Response('Work experience ID is required', { status: 400 });
     try {
       const { getWorkExperienceById } = await import('~/lib/career/queries/base');
       const workExperience = await getWorkExperienceById(user.id, id);
-
-      if (!workExperience) {
-        throw new Response('Work experience not found', { status: 404 });
-      }
-
+      if (!workExperience) throw new Response('Work experience not found', { status: 404 });
       return createSuccessResponse({ workExperience });
     } catch (error) {
       console.error('Error loading work experience:', error);
@@ -38,62 +30,32 @@ export async function loader(args: LoaderFunctionArgs) {
 export async function action(args: ActionFunctionArgs) {
   return withAuthLoader(args, async ({ user, request }) => {
     const { id } = args.params;
-    if (!id) {
-      throw new Response('Work experience ID is required', { status: 400 });
-    }
-
+    if (!id) throw new Response('Work experience ID is required', { status: 400 });
     const formData = await request.formData();
     const field = formData.get('field') as string;
     const value = formData.get('value') as string;
-
     try {
       const { updateWorkExperience } = await import('~/lib/career/queries/base');
-
-      // Convert the value to appropriate type based on field
       let processedValue: string | number | Date | null = value;
-
-      if (
-        ['baseSalary', 'totalCompensation', 'equityValue', 'signingBonus', 'annualBonus'].includes(
-          field,
-        )
-      ) {
-        processedValue = value ? Number.parseInt(value) * 100 : null; // Convert to cents
+      if (['baseSalary', 'totalCompensation', 'equityValue', 'signingBonus', 'annualBonus'].includes(field)) {
+        processedValue = value ? Number.parseInt(value) * 100 : null;
       } else if (['teamSize', 'directReports'].includes(field)) {
         processedValue = value ? Number.parseInt(value) : null;
       } else if (['startDate', 'endDate'].includes(field)) {
         processedValue = value ? new Date(value) : null;
       }
-
-      // Now determine how to update the database
       if (field.startsWith('metadata.')) {
         const { getWorkExperienceById } = await import('~/lib/career/queries/base');
-        const currentExperience = await getWorkExperienceById(user.id, id);
-
-        if (currentExperience) {
+        const current = await getWorkExperienceById(user.id, id);
+        if (current) {
           const metadataField = field.replace('metadata.', '');
-          const currentMetadata = currentExperience.metadata || {};
-
-          // Parse JSON values for array fields like achievements, projects, etc.
-          let parsedValue = processedValue;
-          try {
-            // Try to parse as JSON in case it's an array from EditableArrayField
-            parsedValue = JSON.parse(value);
-          } catch {
-            // If parsing fails, use the original string value
-            parsedValue = processedValue;
-          }
-
-          const updatedMetadata = {
-            ...currentMetadata,
-            [metadataField]: parsedValue,
-          };
-
-          await updateWorkExperience(user.id, id, { metadata: updatedMetadata });
+          let parsedValue: unknown = processedValue;
+          try { parsedValue = JSON.parse(value); } catch { parsedValue = processedValue; }
+          await updateWorkExperience(user.id, id, { metadata: { ...(current.metadata || {}), [metadataField]: parsedValue } });
         }
       } else {
         await updateWorkExperience(user.id, id, { [field]: processedValue });
       }
-
       return createSuccessResponse({ success: true });
     } catch (error) {
       console.error('Error updating work experience:', error);
@@ -102,472 +64,592 @@ export async function action(args: ActionFunctionArgs) {
   });
 }
 
-export default function WorkExperienceDetail() {
-  const response = useLoaderData<{ success: boolean; data: LoaderData }>();
-  const data = response?.data || {};
-  const { workExperience } = data;
-  const navigate = useNavigate();
+// ─── helpers ──────────────────────────────────────────────────────────────────
 
-  if (!workExperience) {
-    return <div>Work experience not found</div>;
-  }
-
-  return (
-    <div>
-      {/* Header */}
-
-      <div className="flex items-center gap-4">
-        <Button
-          type="button"
-          onClick={() => navigate('/career')}
-          variant="ghost"
-          size="sm"
-          className="p-2"
-          data-testid="back-button"
-        >
-          <ArrowLeftIcon className="w-5 h-5 text-muted-foreground" />
-        </Button>
-        <div>
-          <h1 className="text-3xl font-light text-foreground font-sans">{workExperience.role}</h1>
-          <p className="text-lg text-muted-foreground font-sans">{workExperience.company}</p>
-        </div>
-      </div>
-
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="space-y-8">
-          {/* Basic Information */}
-          <Section title="Basic Information">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <EditableField
-                label="Role/Position"
-                value={workExperience.role}
-                field="role"
-                workExperienceId={workExperience.id}
-              />
-              <EditableField
-                label="Company"
-                value={workExperience.company}
-                field="company"
-                workExperienceId={workExperience.id}
-              />
-              <EditableField
-                label="Start Date"
-                value={workExperience.startDate?.toISOString().split('T')[0] || ''}
-                field="startDate"
-                type="date"
-                workExperienceId={workExperience.id}
-              />
-              <EditableField
-                label="End Date"
-                value={workExperience.endDate?.toISOString().split('T')[0] || ''}
-                field="endDate"
-                type="date"
-                workExperienceId={workExperience.id}
-                placeholder="Leave blank if current"
-              />
-              <EditableField
-                label="Employment Type"
-                value={workExperience.employmentType}
-                field="employmentType"
-                type="select"
-                options={[
-                  'full-time',
-                  'part-time',
-                  'contract',
-                  'freelance',
-                  'internship',
-                  'temporary',
-                ]}
-                workExperienceId={workExperience.id}
-              />
-              <EditableField
-                label="Work Arrangement"
-                value={workExperience.workArrangement}
-                field="workArrangement"
-                type="select"
-                options={['office', 'remote', 'hybrid', 'travel']}
-                workExperienceId={workExperience.id}
-              />
-            </div>
-            <EditableField
-              label="Description"
-              value={workExperience.description}
-              field="description"
-              type="textarea"
-              workExperienceId={workExperience.id}
-              className="mt-6"
-            />
-          </Section>
-
-          {/* Financial Information */}
-          <Section title="Financial Information">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <EditableField
-                label="Base Salary"
-                value={
-                  workExperience.baseSalary ? (workExperience.baseSalary / 100).toString() : ''
-                }
-                field="baseSalary"
-                type="number"
-                workExperienceId={workExperience.id}
-                prefix="$"
-                placeholder="Annual salary"
-              />
-              <EditableField
-                label="Total Compensation"
-                value={
-                  workExperience.totalCompensation
-                    ? (workExperience.totalCompensation / 100).toString()
-                    : ''
-                }
-                field="totalCompensation"
-                type="number"
-                workExperienceId={workExperience.id}
-                prefix="$"
-                placeholder="Including equity & bonuses"
-              />
-              <EditableField
-                label="Signing Bonus"
-                value={
-                  workExperience.signingBonus ? (workExperience.signingBonus / 100).toString() : ''
-                }
-                field="signingBonus"
-                type="number"
-                workExperienceId={workExperience.id}
-                prefix="$"
-              />
-              <EditableField
-                label="Annual Bonus"
-                value={
-                  workExperience.annualBonus ? (workExperience.annualBonus / 100).toString() : ''
-                }
-                field="annualBonus"
-                type="number"
-                workExperienceId={workExperience.id}
-                prefix="$"
-              />
-              <EditableField
-                label="Equity Value"
-                value={
-                  workExperience.equityValue ? (workExperience.equityValue / 100).toString() : ''
-                }
-                field="equityValue"
-                type="number"
-                workExperienceId={workExperience.id}
-                prefix="$"
-                placeholder="Estimated value"
-              />
-              <EditableField
-                label="Equity Percentage"
-                value={workExperience.equityPercentage || ''}
-                field="equityPercentage"
-                workExperienceId={workExperience.id}
-                placeholder="0.5%"
-              />
-            </div>
-          </Section>
-
-          {/* Role Details */}
-          <Section title="Role Details">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <EditableField
-                label="Seniority Level"
-                value={workExperience.seniorityLevel || ''}
-                field="seniorityLevel"
-                type="select"
-                options={[
-                  'intern',
-                  'entry-level',
-                  'mid-level',
-                  'senior',
-                  'lead',
-                  'principal',
-                  'staff',
-                  'director',
-                  'vp',
-                  'c-level',
-                ]}
-                workExperienceId={workExperience.id}
-              />
-              <EditableField
-                label="Department"
-                value={workExperience.department || ''}
-                field="department"
-                workExperienceId={workExperience.id}
-              />
-              <EditableField
-                label="Team Size"
-                value={workExperience.teamSize?.toString() || ''}
-                field="teamSize"
-                type="number"
-                workExperienceId={workExperience.id}
-              />
-              <EditableField
-                label="Direct Reports"
-                value={workExperience.directReports?.toString() || ''}
-                field="directReports"
-                type="number"
-                workExperienceId={workExperience.id}
-              />
-              <EditableField
-                label="Reports To"
-                value={workExperience.reportsTo || ''}
-                field="reportsTo"
-                workExperienceId={workExperience.id}
-              />
-            </div>
-          </Section>
-
-          {/* Achievements & Projects */}
-          <Section title="Achievements & Projects">
-            <div className="space-y-6">
-              <EditableArrayField
-                label="Key Achievements"
-                value={(workExperience.metadata?.achievements as string[] | undefined) || []}
-                field="metadata.achievements"
-                placeholder="Describe a key achievement or accomplishment"
-              />
-
-              <EditableArrayField
-                label="Technologies Used"
-                value={(workExperience.metadata?.technologies as string[] | undefined) || []}
-                field="metadata.technologies"
-                placeholder="Technology, framework, or tool"
-              />
-
-              <div className="space-y-2">
-                <h3 className="text-sm font-medium text-muted-foreground">Major Projects</h3>
-                <div className="flex items-center justify-between p-4 bg-muted rounded-lg border border-border">
-                  <div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Track work items, projects, and their impact for interview prep
-                    </p>
-                  </div>
-                  <Button
-                    id="manage-projects-button"
-                    type="button"
-                    onClick={() => navigate(`/career/experience/${workExperience.id}/projects`)}
-                    size="sm"
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground"
-                  >
-                    Manage Projects
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </Section>
-
-          {/* Exit Information */}
-          <Section title="Exit Information">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <EditableField
-                label="Reason for Leaving"
-                value={workExperience.reasonForLeaving || ''}
-                field="reasonForLeaving"
-                type="select"
-                options={[
-                  'promotion',
-                  'better_opportunity',
-                  'relocation',
-                  'layoff',
-                  'termination',
-                  'contract_end',
-                  'career_change',
-                  'salary',
-                  'culture',
-                  'management',
-                  'growth',
-                  'personal',
-                ]}
-                workExperienceId={workExperience.id}
-              />
-            </div>
-            <EditableField
-              label="Exit Notes"
-              value={workExperience.exitNotes || ''}
-              field="exitNotes"
-              type="textarea"
-              workExperienceId={workExperience.id}
-              className="mt-6"
-            />
-          </Section>
-        </div>
-      </div>
-    </div>
-  );
+function submitField(field: string, value: string) {
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.style.display = 'none';
+  const f = document.createElement('input');
+  f.name = 'field';
+  f.value = field;
+  const v = document.createElement('textarea');
+  v.name = 'value';
+  v.value = value;
+  form.appendChild(f);
+  form.appendChild(v);
+  document.body.appendChild(form);
+  form.submit();
+  document.body.removeChild(form);
 }
 
-interface SectionProps {
-  title: string;
-  children: React.ReactNode;
+function fmtDate(d: Date | string | null | undefined) {
+  if (!d) return null;
+  return new Date(d).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 }
 
-function Section({ title, children }: SectionProps) {
-  return (
-    <div className="bg-card rounded-md p-8  border border-border/50">
-      <h2 className="text-2xl font-light text-foreground font-sans mb-6">{title}</h2>
-      {children}
-    </div>
-  );
+function fmtCurrency(cents: number | null | undefined) {
+  if (!cents) return null;
+  const k = cents / 100;
+  return k >= 1000 ? `$${(k / 1000).toFixed(0)}k` : `$${k.toLocaleString()}`;
 }
 
-interface EditableFieldProps {
-  label: string;
-  value: string;
+function capitalize(s: string) {
+  return s.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+// ─── inline editable ──────────────────────────────────────────────────────────
+
+interface InlineEditableProps {
+  value: string | null | undefined;
   field: string;
-  workExperienceId: string;
-  type?: 'text' | 'number' | 'date' | 'textarea' | 'select';
+  type?: 'text' | 'number' | 'date' | 'select' | 'textarea';
   options?: string[];
-  prefix?: string;
   placeholder?: string;
   className?: string;
+  prefix?: string;
+  suffix?: string;
+  /** extra transform applied to the displayed (not editing) value */
+  display?: (v: string) => string;
 }
 
-function EditableField({
-  label,
+function InlineEditable({
   value,
   field,
   type = 'text',
   options = [],
-  prefix,
-  placeholder,
+  placeholder = '—',
   className = '',
-}: EditableFieldProps) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editValue, setEditValue] = useState(value);
+  prefix,
+  suffix,
+  display,
+}: InlineEditableProps) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value ?? '');
+  const cancelledRef = useRef(false);
 
-  const handleSave = () => {
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.style.display = 'none';
+  const startEdit = () => {
+    setDraft(value ?? '');
+    cancelledRef.current = false;
+    setEditing(true);
+  };
 
-    const fieldInput = document.createElement('input');
-    fieldInput.name = 'field';
-    fieldInput.value = field;
-
-    // Use textarea for multiline content to preserve line breaks
-    if (type === 'textarea') {
-      const valueTextarea = document.createElement('textarea');
-      valueTextarea.name = 'value';
-      valueTextarea.value = editValue;
-      valueTextarea.style.display = 'none';
-      form.appendChild(valueTextarea);
-    } else {
-      const valueInput = document.createElement('input');
-      valueInput.name = 'value';
-      valueInput.value = editValue;
-      form.appendChild(valueInput);
+  const save = () => {
+    if (!cancelledRef.current && draft !== (value ?? '')) {
+      submitField(field, draft);
     }
-
-    form.appendChild(fieldInput);
-    document.body.appendChild(form);
-
-    form.submit();
-    document.body.removeChild(form);
-
-    setIsEditing(false);
+    setEditing(false);
   };
 
-  const handleCancel = () => {
-    setEditValue(value);
-    setIsEditing(false);
+  const cancel = () => {
+    cancelledRef.current = true;
+    setDraft(value ?? '');
+    setEditing(false);
   };
 
-  const displayValue = value || 'Not set';
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+    if (e.key === 'Enter' && type !== 'textarea') { e.preventDefault(); save(); }
+  };
 
-  if (isEditing) {
+  const baseInputCls =
+    'bg-transparent border-b border-ring/50 focus:border-ring focus:outline-none text-foreground placeholder:text-muted-foreground/40';
+
+  if (editing) {
+    if (type === 'textarea') {
+      return (
+        <textarea
+          // biome-ignore lint/a11y/noAutofocus: intentional inline edit
+          autoFocus
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={save}
+          onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); cancel(); } }}
+          className={`${baseInputCls} w-full resize-none leading-relaxed ${className}`}
+          rows={4}
+          placeholder={placeholder}
+        />
+      );
+    }
+    if (type === 'select') {
+      return (
+        <select
+          // biome-ignore lint/a11y/noAutofocus: intentional inline edit
+          autoFocus
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={save}
+          onKeyDown={onKeyDown}
+          className={`${baseInputCls} ${className}`}
+        >
+          <option value="">—</option>
+          {options.map((o) => (
+            <option key={o} value={o}>{capitalize(o)}</option>
+          ))}
+        </select>
+      );
+    }
     return (
-      <div className={className}>
-        <div className="block text-sm font-medium text-muted-foreground mb-2">{label}</div>
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            {prefix && <span className="text-muted-foreground">{prefix}</span>}
-            {type === 'textarea' ? (
-              <textarea
-                value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
-                className="flex-1 block w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-ring focus:ring-ring/50"
-                rows={3}
-                placeholder={placeholder}
-              />
-            ) : type === 'select' ? (
-              <select
-                value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
-                className="flex-1 block w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-ring focus:ring-ring/50"
-              >
-                <option value="">Select...</option>
-                {options.map((option) => (
-                  <option key={option} value={option}>
-                    {option.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <input
-                type={type}
-                value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
-                className="flex-1 block w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-ring focus:ring-ring/50"
-                placeholder={placeholder}
-              />
-            )}
+      <input
+        // biome-ignore lint/a11y/noAutofocus: intentional inline edit
+        autoFocus
+        type={type}
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={save}
+        onKeyDown={onKeyDown}
+        className={`${baseInputCls} ${className}`}
+        placeholder={placeholder}
+      />
+    );
+  }
+
+  const isEmpty = !value;
+  const shown = isEmpty ? null : (display ? display(value!) : value!);
+
+  return (
+    <span
+      onClick={startEdit}
+      title="Click to edit"
+      className={`cursor-text transition-colors ${
+        isEmpty
+          ? 'text-muted-foreground/40 italic hover:text-muted-foreground/70'
+          : 'hover:underline decoration-dotted underline-offset-2'
+      } ${className}`}
+    >
+      {!isEmpty && prefix && <span className="text-muted-foreground">{prefix}</span>}
+      {shown ?? placeholder}
+      {!isEmpty && suffix && <span className="text-muted-foreground">{suffix}</span>}
+    </span>
+  );
+}
+
+// ─── array editors ────────────────────────────────────────────────────────────
+
+function AchievementList({
+  items,
+  field,
+}: { items: string[]; field: string }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(items);
+
+  const save = () => {
+    const filtered = draft.map((v) => v.trim()).filter(Boolean);
+    submitField(field, JSON.stringify(filtered));
+    setEditing(false);
+  };
+
+  if (!editing) {
+    return (
+      <div className="space-y-1.5">
+        {items.map((item, i) => (
+          <div key={i} className="flex items-start gap-2 text-sm leading-relaxed">
+            <span className="mt-0.5 text-muted-foreground/60 shrink-0">•</span>
+            <span>{item}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              onClick={handleSave}
-              size="sm"
-              className="bg-green-600 hover:bg-green-700 text-primary-foreground"
-            >
-              <CheckIcon className="w-4 h-4 mr-1" />
-              Save
-            </Button>
-            <Button
-              type="button"
-              onClick={handleCancel}
-              variant="ghost"
-              size="sm"
-              className="text-muted-foreground hover:bg-muted"
-            >
-              <XIcon className="w-4 h-4 mr-1" />
-              Cancel
-            </Button>
-          </div>
-        </div>
+        ))}
+        <button
+          type="button"
+          onClick={() => { setDraft(items.length ? items : ['']); setEditing(true); }}
+          className="flex items-center gap-1 text-xs text-muted-foreground/50 hover:text-muted-foreground mt-1 transition-colors"
+        >
+          <PlusIcon className="w-3 h-3" />
+          {items.length ? 'Edit' : 'Add achievement'}
+        </button>
       </div>
     );
   }
 
   return (
-    <div className={className}>
-      <div className="flex items-center justify-between mb-2">
-        <div className="text-sm font-medium text-muted-foreground">{label}</div>
-        <Button
-          type="button"
-          onClick={() => setIsEditing(true)}
-          variant="ghost"
-          size="sm"
-          className="p-1 text-muted-foreground hover:text-muted-foreground focus:text-muted-foreground"
-          aria-label={`Edit ${label}`}
-        >
-          <PencilIcon className="w-4 h-4" />
-        </Button>
-      </div>
-      <div>
-        {prefix && value && <span className="text-muted-foreground mr-1">{prefix}</span>}
-        {type === 'textarea' ? (
-          <div
-            className={`${!value ? 'text-muted-foreground italic' : 'text-foreground'} whitespace-pre-line break-words`}
+    <div className="space-y-2">
+      {draft.map((item, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <span className="text-muted-foreground/60 shrink-0">•</span>
+          <input
+            type="text"
+            value={item}
+            onChange={(e) => {
+              const next = [...draft];
+              next[i] = e.target.value;
+              setDraft(next);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                setDraft((d) => { const n = [...d]; n.splice(i + 1, 0, ''); return n; });
+              }
+              if (e.key === 'Backspace' && item === '' && draft.length > 1) {
+                e.preventDefault();
+                setDraft((d) => d.filter((_, idx) => idx !== i));
+              }
+            }}
+            // biome-ignore lint/a11y/noAutofocus: intentional
+            autoFocus={i === draft.length - 1}
+            className="flex-1 bg-transparent border-b border-border/50 focus:border-ring focus:outline-none text-sm py-0.5"
+            placeholder="Achievement…"
+          />
+          <button
+            type="button"
+            onClick={() => setDraft((d) => d.filter((_, idx) => idx !== i))}
+            className="text-muted-foreground/40 hover:text-destructive text-xs"
+            aria-label="Remove"
           >
-            {value || 'Not set'}
-          </div>
-        ) : (
-          <span className={`${!value ? 'text-muted-foreground italic' : 'text-foreground'}`}>
-            {type === 'number' && value ? Number.parseInt(value).toLocaleString() : displayValue}
-          </span>
-        )}
+            ×
+          </button>
+        </div>
+      ))}
+      <div className="flex items-center gap-3 pt-1">
+        <button
+          type="button"
+          onClick={() => setDraft((d) => [...d, ''])}
+          className="text-xs text-muted-foreground/50 hover:text-muted-foreground flex items-center gap-1"
+        >
+          <PlusIcon className="w-3 h-3" /> Add
+        </button>
+        <button type="button" onClick={save} className="text-xs text-primary hover:text-primary/80">Save</button>
+        <button type="button" onClick={() => { setDraft(items); setEditing(false); }} className="text-xs text-muted-foreground/50 hover:text-muted-foreground">Cancel</button>
       </div>
     </div>
+  );
+}
+
+function TechTags({ items, field }: { items: string[]; field: string }) {
+  const [adding, setAdding] = useState(false);
+  const [newTag, setNewTag] = useState('');
+
+  const remove = (i: number) => {
+    const next = items.filter((_, idx) => idx !== i);
+    submitField(field, JSON.stringify(next));
+  };
+
+  const add = () => {
+    const tag = newTag.trim();
+    if (!tag) { setAdding(false); return; }
+    submitField(field, JSON.stringify([...items, tag]));
+    setNewTag('');
+    setAdding(false);
+  };
+
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {items.map((t, i) => (
+        <button
+          key={i}
+          type="button"
+          onClick={() => remove(i)}
+          title="Click to remove"
+          className="px-2 py-0.5 rounded-full bg-muted text-xs text-foreground hover:bg-destructive/10 hover:text-destructive hover:line-through transition-colors"
+        >
+          {t}
+        </button>
+      ))}
+      {adding ? (
+        <input
+          // biome-ignore lint/a11y/noAutofocus: intentional
+          autoFocus
+          type="text"
+          value={newTag}
+          onChange={(e) => setNewTag(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') add(); if (e.key === 'Escape') { setAdding(false); setNewTag(''); } }}
+          onBlur={add}
+          className="px-2 py-0.5 rounded-full bg-muted text-xs border border-ring/50 focus:outline-none w-24"
+          placeholder="add tag…"
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={() => setAdding(true)}
+          className="px-2 py-0.5 rounded-full border border-dashed border-muted-foreground/30 text-xs text-muted-foreground/40 hover:text-muted-foreground hover:border-muted-foreground/60 transition-colors"
+        >
+          + add
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ─── layout primitives ────────────────────────────────────────────────────────
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-3 mb-3">
+      <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 whitespace-nowrap">
+        {children}
+      </span>
+      <div className="flex-1 h-px bg-border/50" />
+    </div>
+  );
+}
+
+// ─── page ─────────────────────────────────────────────────────────────────────
+
+export default function WorkExperienceDetail() {
+  const response = useLoaderData<{ success: boolean; data: LoaderData }>();
+  const { workExperience: wx } = response?.data ?? {};
+  const navigate = useNavigate();
+
+  if (!wx) return <div className="p-8 text-muted-foreground">Work experience not found</div>;
+
+  const achievements = (wx.metadata?.achievements as string[] | undefined) ?? [];
+  const technologies = (wx.metadata?.technologies as string[] | undefined) ?? [];
+
+  const hasFinancial = !!(wx.baseSalary || wx.totalCompensation || wx.signingBonus || wx.annualBonus || wx.equityValue || wx.equityPercentage);
+  const hasTeam = !!(wx.teamSize || wx.directReports || wx.reportsTo || wx.seniorityLevel || wx.department);
+  const hasExit = !!(wx.reasonForLeaving || wx.exitNotes);
+
+  return (
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10 space-y-8">
+
+      {/* Back */}
+      <button
+        type="button"
+        onClick={() => navigate('/career')}
+        data-testid="back-button"
+        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ArrowLeftIcon className="w-3.5 h-3.5" />
+        Career
+      </button>
+
+      {/* Identity */}
+      <div className="space-y-1">
+        <InlineEditable
+          value={wx.role}
+          field="role"
+          placeholder="Role / Position"
+          className="text-2xl font-semibold text-foreground block w-full"
+        />
+        <InlineEditable
+          value={wx.company}
+          field="company"
+          placeholder="Company"
+          className="text-lg text-muted-foreground block"
+        />
+
+        {/* Metadata row — each segment is individually editable */}
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground pt-1">
+          <InlineEditable
+            value={wx.startDate ? new Date(wx.startDate).toISOString().split('T')[0] : ''}
+            field="startDate"
+            type="date"
+            placeholder="Start"
+            display={(_v) => fmtDate(wx.startDate) ?? ''}
+          />
+          <span className="text-muted-foreground/40">–</span>
+          <InlineEditable
+            value={wx.endDate ? new Date(wx.endDate).toISOString().split('T')[0] : ''}
+            field="endDate"
+            type="date"
+            placeholder="Present"
+            display={(_v) => fmtDate(wx.endDate) ?? ''}
+          />
+          <Sep />
+          <InlineEditable
+            value={wx.employmentType ?? ''}
+            field="employmentType"
+            type="select"
+            options={['full-time', 'part-time', 'contract', 'freelance', 'internship', 'temporary']}
+            placeholder="Type"
+            display={capitalize}
+          />
+          <Sep />
+          <InlineEditable
+            value={wx.workArrangement ?? ''}
+            field="workArrangement"
+            type="select"
+            options={['office', 'remote', 'hybrid', 'travel']}
+            placeholder="Arrangement"
+            display={capitalize}
+          />
+        </div>
+      </div>
+
+      {/* Description */}
+      <div>
+        <InlineEditable
+          value={wx.description ?? ''}
+          field="description"
+          type="textarea"
+          placeholder="Add a description of your role and responsibilities…"
+          className="text-sm text-foreground/90 leading-relaxed w-full block"
+        />
+      </div>
+
+      {/* Achievements */}
+      <div>
+        <SectionLabel>Achievements</SectionLabel>
+        <AchievementList items={achievements} field="metadata.achievements" />
+      </div>
+
+      {/* Technologies */}
+      <div>
+        <SectionLabel>Technologies</SectionLabel>
+        <TechTags items={technologies} field="metadata.technologies" />
+      </div>
+
+      {/* Projects */}
+      <div>
+        <SectionLabel>Projects</SectionLabel>
+        <button
+          type="button"
+          onClick={() => navigate(`/career/experience/${wx.id}/projects`)}
+          className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1.5 transition-colors"
+        >
+          Manage projects
+          <span className="text-muted-foreground/40">→</span>
+        </button>
+      </div>
+
+      {/* Financial — hidden until populated, soft prompt if not */}
+      {hasFinancial ? (
+        <div>
+          <SectionLabel>Compensation</SectionLabel>
+          <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
+            <CompFact label="Base" value={wx.baseSalary} field="baseSalary" cents />
+            <CompFact label="Total comp" value={wx.totalCompensation} field="totalCompensation" cents />
+            <CompFact label="Signing" value={wx.signingBonus} field="signingBonus" cents />
+            <CompFact label="Annual bonus" value={wx.annualBonus} field="annualBonus" cents />
+            <CompFact label="Equity value" value={wx.equityValue} field="equityValue" cents />
+            {(wx.equityPercentage || true) && (
+              <span className="text-muted-foreground">
+                <InlineEditable
+                  value={wx.equityPercentage ?? ''}
+                  field="equityPercentage"
+                  placeholder="0.5% equity"
+                  suffix=" equity"
+                />
+              </span>
+            )}
+          </div>
+        </div>
+      ) : (
+        <AddPrompt label="Add compensation" onExpand={() => submitField('baseSalary', '')} />
+      )}
+
+      {/* Team — hidden until populated */}
+      {hasTeam ? (
+        <div>
+          <SectionLabel>Team</SectionLabel>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-muted-foreground">
+            {(wx.seniorityLevel || true) && (
+              <InlineEditable
+                value={wx.seniorityLevel ?? ''}
+                field="seniorityLevel"
+                type="select"
+                options={['intern', 'entry-level', 'mid-level', 'senior', 'lead', 'principal', 'staff', 'director', 'vp', 'c-level']}
+                placeholder="Seniority"
+                display={capitalize}
+              />
+            )}
+            {(wx.department || true) && (
+              <>
+                <Sep />
+                <InlineEditable value={wx.department ?? ''} field="department" placeholder="Department" />
+              </>
+            )}
+            {wx.teamSize != null && (
+              <>
+                <Sep />
+                <InlineEditable
+                  value={wx.teamSize.toString()}
+                  field="teamSize"
+                  type="number"
+                  placeholder="Team size"
+                  suffix="-person team"
+                />
+              </>
+            )}
+            {wx.directReports != null && (
+              <>
+                <Sep />
+                <InlineEditable
+                  value={wx.directReports.toString()}
+                  field="directReports"
+                  type="number"
+                  placeholder="Reports"
+                  suffix=" direct reports"
+                />
+              </>
+            )}
+            {(wx.reportsTo || true) && (
+              <>
+                <Sep />
+                <span className="text-muted-foreground/60">→</span>
+                <InlineEditable value={wx.reportsTo ?? ''} field="reportsTo" placeholder="Reports to" />
+              </>
+            )}
+          </div>
+        </div>
+      ) : (
+        <AddPrompt label="Add team details" onExpand={() => {}} />
+      )}
+
+      {/* Exit — hidden until populated */}
+      {hasExit && (
+        <div>
+          <SectionLabel>Exit</SectionLabel>
+          <div className="space-y-2 text-sm text-muted-foreground">
+            <InlineEditable
+              value={wx.reasonForLeaving ?? ''}
+              field="reasonForLeaving"
+              type="select"
+              options={['promotion', 'better_opportunity', 'relocation', 'layoff', 'termination', 'contract_end', 'career_change', 'salary', 'culture', 'management', 'growth', 'personal']}
+              placeholder="Reason for leaving"
+              display={capitalize}
+            />
+            {wx.exitNotes && (
+              <InlineEditable
+                value={wx.exitNotes}
+                field="exitNotes"
+                type="textarea"
+                placeholder="Exit notes…"
+                className="block w-full leading-relaxed"
+              />
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── small helpers ────────────────────────────────────────────────────────────
+
+function Sep() {
+  return <span className="text-muted-foreground/30 select-none">·</span>;
+}
+
+function CompFact({
+  label,
+  value,
+  field,
+  cents,
+}: { label: string; value: number | null | undefined; field: string; cents?: boolean }) {
+  if (!value) return null;
+  const display = cents ? fmtCurrency(value) : value.toString();
+  return (
+    <span className="text-muted-foreground">
+      <span className="text-muted-foreground/60 text-xs mr-1">{label}</span>
+      <InlineEditable
+        value={cents ? (value / 100).toString() : value.toString()}
+        field={field}
+        type="number"
+        prefix="$"
+        display={() => display ?? ''}
+      />
+    </span>
+  );
+}
+
+function AddPrompt({ label, onExpand }: { label: string; onExpand: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onExpand}
+      className="flex items-center gap-1.5 text-xs text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors"
+    >
+      <PlusIcon className="w-3 h-3" />
+      {label}
+    </button>
   );
 }

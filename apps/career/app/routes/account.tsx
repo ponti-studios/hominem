@@ -1,5 +1,6 @@
 import { useAuthClient } from '@hominem/auth/client/provider';
 import { CareerRepository, getDb } from '@hominem/db';
+import { createStorageService, validateFile } from '@hominem/storage';
 import { Badge } from '@hominem/ui/badge';
 import { Button } from '@hominem/ui/button';
 import { Card, CardContent } from '@hominem/ui/card';
@@ -18,12 +19,14 @@ import {
   withAuthAction,
   withAuthLoader,
 } from '../lib/route-utils';
-import {
-  FILE_VALIDATION_PRESETS,
-  deleteFile,
-  uploadFile,
-  validateFile,
-} from '../lib/services/storage.service';
+const profileImageStorage = createStorageService('images', {
+  maxFileSize: 5 * 1024 * 1024,
+  isPublic: true,
+});
+const PROFILE_IMAGE_VALIDATION = {
+  maxSizeBytes: 5 * 1024 * 1024,
+  allowedTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+} as const;
 
 // Account loader - migrated from Svelte layout server
 export async function loader(args: LoaderFunctionArgs) {
@@ -76,33 +79,37 @@ export async function action(args: ActionFunctionArgs) {
           return createErrorResponse('No image file provided');
         }
 
-        const validation = validateFile(imageFile, FILE_VALIDATION_PRESETS.PROFILE_IMAGE);
+        const validation = validateFile(imageFile, PROFILE_IMAGE_VALIDATION);
         if (!validation.valid) {
           return createErrorResponse(validation.error || 'Invalid file');
         }
 
-        const uploadResult = await uploadFile(imageFile, user.id, 'profile-images');
-
-        if (!uploadResult.success) {
-          return createErrorResponse(uploadResult.error || 'Failed to upload image');
+        let uploadResult: { id: string; url: string };
+        try {
+          const buffer = Buffer.from(await imageFile.arrayBuffer());
+          uploadResult = await profileImageStorage.storeFile(buffer, imageFile.type, user.id, {
+            originalName: imageFile.name,
+          });
+        } catch (uploadError) {
+          return createErrorResponse(
+            uploadError instanceof Error ? uploadError.message : 'Failed to upload image',
+          );
         }
 
         try {
           await CareerRepository.updatePortfolioProfileImage(
             getDb(),
             user.id,
-            uploadResult.publicUrl ?? '',
+            uploadResult.url,
           );
         } catch (updateError) {
           console.error('Database update error:', updateError);
-          if (uploadResult.fileId) {
-            await deleteFile(uploadResult.fileId, user.id, 'profile-images');
-          }
+          await profileImageStorage.deleteFile(uploadResult.id, user.id);
           return createErrorResponse('Failed to update portfolio');
         }
 
         return createSuccessResponse(
-          { imageUrl: uploadResult.publicUrl },
+          { imageUrl: uploadResult.url },
           'Profile image updated successfully',
         );
       }, 'Failed to upload profile image');

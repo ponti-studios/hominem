@@ -1,100 +1,55 @@
+// @vitest-environment node
+
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createCareerTestDb } from '~/test/db/career';
 import { makeConvertedResumeData } from '~/test/factories/resume';
 
-const testState = vi.hoisted(() => ({
-  authUser: {
-    id: 'user-id',
-    email: 'user@example.com',
-    name: 'Test User',
-  } as { id: string; email: string; name: string } | null,
-  validationResult: { valid: true } as { valid: boolean; error?: string },
-  rateLimitAllowed: true,
-  rateLimitRemaining: 2,
-  rateLimitResetTime: 1_893_456_000_000,
-  pdfText: 'resume text',
-  pdfShouldFail: false,
-  pdfCalls: 0,
-  aiContent: '',
-  aiShouldFail: false,
-  aiCalls: 0,
-  uploadResult: {
-    success: true,
-    fileId: 'file-id',
-    publicUrl: 'http://localhost:9000/storage/resumes/resume.pdf',
-  } as { success: boolean; fileId?: string; publicUrl?: string },
-  uploadCalls: [] as unknown[][],
-  deleteShouldFail: false,
-  deleteShouldThrow: false,
-  deleteCalls: [] as unknown[][],
-  saveResult: {
-    portfolioId: 'portfolio-id',
-    portfolioSlug: 'charles-ponti',
-  },
-  saveShouldFail: false,
+const mocks = vi.hoisted(() => ({
+  createCompletion: vi.fn(),
+  createStorageService: vi.fn(),
+  deleteFile: vi.fn(),
+  extractPdfText: vi.fn(),
+  getAuthenticatedUser: vi.fn(),
+  getRateLimitHeaders: vi.fn(),
+  isRateLimitAllowed: vi.fn(),
+  logError: vi.fn(),
+  resolveUploadMimeType: vi.fn(),
+  saveResumeToDatabase: vi.fn(),
+  storeFile: vi.fn(),
+  validateFile: vi.fn(),
 }));
 
 vi.mock('../lib/auth.server', () => ({
-  getAuthenticatedUser: vi.fn(async () => testState.authUser),
+  getAuthenticatedUser: mocks.getAuthenticatedUser,
 }));
 
 vi.mock('../lib/logger', () => ({
   logger: {
-    error: vi.fn(),
+    error: mocks.logError,
   },
 }));
 
-vi.mock('../lib/services/storage.service', () => ({
-  FILE_VALIDATION_PRESETS: {
-    PDF_RESUME: {},
-  },
-  validateFile: vi.fn(() => testState.validationResult),
-  resolveUploadMimeType: vi.fn((file: File) =>
-    file.type || (file.name?.toLowerCase().endsWith('.pdf') ? 'application/pdf' : ''),
-  ),
-  uploadFile: vi.fn(async (...args: unknown[]) => {
-    testState.uploadCalls.push(args);
-    return testState.uploadResult;
-  }),
-  deleteFile: vi.fn(async (...args: unknown[]) => {
-    testState.deleteCalls.push(args);
-    if (testState.deleteShouldThrow) throw new Error('cleanup threw');
-    return testState.deleteShouldFail
-      ? { success: false, error: 'cleanup failed' }
-      : { success: true };
-  }),
+vi.mock('@hominem/storage', () => ({
+  createStorageService: mocks.createStorageService,
+  resolveUploadMimeType: mocks.resolveUploadMimeType,
+  validateFile: mocks.validateFile,
 }));
 
 vi.mock('../lib/services/resume-conversion.service', () => ({
-  saveResumeToDatabase: vi.fn(async () => {
-    if (testState.saveShouldFail) throw new Error('db failed');
-    return testState.saveResult;
-  }),
+  saveResumeToDatabase: mocks.saveResumeToDatabase,
 }));
 
 vi.mock('../lib/services/pdf-text.server', () => ({
-  extractPdfText: vi.fn(async () => {
-    testState.pdfCalls += 1;
-    if (testState.pdfShouldFail) throw new Error('pdf failed');
-    return testState.pdfText;
-  }),
+  extractPdfText: mocks.extractPdfText,
 }));
 
 vi.mock('../lib/rate-limit', () => ({
   resumeConvertRateLimit: {
     maxRequests: 3,
-    isAllowed: vi.fn(() => ({
-      allowed: testState.rateLimitAllowed,
-      remaining: testState.rateLimitRemaining,
-      resetTime: testState.rateLimitResetTime,
-    })),
+    isAllowed: mocks.isRateLimitAllowed,
   },
-  getRateLimitHeaders: vi.fn((result: { remaining: number; resetTime: number }) => ({
-    'X-RateLimit-Limit': '3',
-    'X-RateLimit-Remaining': String(result.remaining),
-    'X-RateLimit-Reset': String(Math.ceil(result.resetTime / 1000)),
-  })),
+  getRateLimitHeaders: mocks.getRateLimitHeaders,
 }));
 
 vi.mock('@hominem/services/ai-model', () => ({
@@ -102,11 +57,7 @@ vi.mock('@hominem/services/ai-model', () => ({
   getSharedOpenAIClient: vi.fn(() => ({
     chat: {
       completions: {
-        create: vi.fn(async () => {
-          testState.aiCalls += 1;
-          if (testState.aiShouldFail) throw new Error('ai failed');
-          return { choices: [{ message: { content: testState.aiContent } }] };
-        }),
+        create: mocks.createCompletion,
       },
     },
   })),
@@ -116,6 +67,10 @@ let action: typeof import('./api.resume.convert').action;
 const testDb = createCareerTestDb();
 
 beforeAll(async () => {
+  mocks.createStorageService.mockReturnValue({
+    deleteFile: mocks.deleteFile,
+    storeFile: mocks.storeFile,
+  });
   ({ action } = await import('./api.resume.convert'));
 });
 
@@ -132,21 +87,14 @@ function pdfFileWithoutMime(): File {
 }
 
 function formRequest(file?: File, options?: { replaceExisting?: boolean }): Request {
-  const entries = new Map<string, FormDataEntryValue>();
-  if (file) entries.set('pdf', file);
-  if (options?.replaceExisting) entries.set('replaceExisting', 'true');
-  const request = new Request('http://localhost/api/resume/convert', {
+  const formData = new FormData();
+  if (file) formData.set('pdf', file);
+  if (options?.replaceExisting) formData.set('replaceExisting', 'true');
+
+  return new Request('http://localhost/api/resume/convert', {
     method: 'POST',
-    headers: { 'content-type': 'multipart/form-data' },
+    body: formData,
   });
-
-  Object.defineProperty(request, 'formData', {
-    value: async () => ({
-      get: (key: string) => entries.get(key) ?? null,
-    }),
-  });
-
-  return request;
 }
 
 async function callAction(request: Request): Promise<Response> {
@@ -168,49 +116,55 @@ async function createExistingPortfolio() {
     slug: 'existing',
     title: 'Existing Portfolio',
   });
-  testState.authUser = {
+  mocks.getAuthenticatedUser.mockResolvedValue({
     id: user.id,
     email: user.email,
     name: user.name,
-  };
+  });
   return portfolio;
 }
 
 describe('resume convert action', () => {
   beforeEach(() => {
-    testState.authUser = {
+    mocks.getAuthenticatedUser.mockResolvedValue({
       id: 'user-id',
       email: 'user@example.com',
       name: 'Test User',
-    };
-    testState.rateLimitAllowed = true;
-    testState.rateLimitRemaining = 2;
-    testState.rateLimitResetTime = 1_893_456_000_000;
-    testState.validationResult = { valid: true };
-    testState.pdfText = 'resume text';
-    testState.pdfShouldFail = false;
-    testState.pdfCalls = 0;
-    testState.aiContent = JSON.stringify(makeConvertedResumeData());
-    testState.aiShouldFail = false;
-    testState.aiCalls = 0;
-    testState.uploadResult = {
-      success: true,
-      fileId: 'file-id',
-      publicUrl: 'http://localhost:9000/storage/resumes/resume.pdf',
-    };
-    testState.uploadCalls = [];
-    testState.deleteShouldFail = false;
-    testState.deleteShouldThrow = false;
-    testState.deleteCalls = [];
-    testState.saveResult = {
+    });
+    mocks.isRateLimitAllowed.mockReturnValue({
+      allowed: true,
+      remaining: 2,
+      resetTime: 1_893_456_000_000,
+    });
+    mocks.getRateLimitHeaders.mockImplementation(
+      (result: { remaining: number; resetTime: number }) => ({
+        'X-RateLimit-Limit': '3',
+        'X-RateLimit-Remaining': String(result.remaining),
+        'X-RateLimit-Reset': String(Math.ceil(result.resetTime / 1000)),
+      }),
+    );
+    mocks.validateFile.mockReturnValue({ valid: true });
+    mocks.resolveUploadMimeType.mockImplementation((file: File) => {
+      const type = file.type === 'application/octet-stream' ? '' : file.type;
+      return type || (file.name?.toLowerCase().endsWith('.pdf') ? 'application/pdf' : '');
+    });
+    mocks.extractPdfText.mockResolvedValue('resume text');
+    mocks.createCompletion.mockResolvedValue({
+      choices: [{ message: { content: JSON.stringify(makeConvertedResumeData()) } }],
+    });
+    mocks.storeFile.mockResolvedValue({
+      id: 'file-id',
+      url: 'http://localhost:9000/storage/resumes/resume.pdf',
+    });
+    mocks.deleteFile.mockResolvedValue(true);
+    mocks.saveResumeToDatabase.mockResolvedValue({
       portfolioId: 'portfolio-id',
       portfolioSlug: 'charles-ponti',
-    };
-    testState.saveShouldFail = false;
+    });
   });
 
   it('returns auth stage when the user is not authenticated', async () => {
-    testState.authUser = null;
+    mocks.getAuthenticatedUser.mockResolvedValue(null);
 
     const response = await callAction(formRequest(pdfFile()));
     const body = await responseBody(response);
@@ -235,8 +189,11 @@ describe('resume convert action', () => {
   });
 
   it('returns rate limit stage before parsing multipart requests', async () => {
-    testState.rateLimitAllowed = false;
-    testState.rateLimitRemaining = 0;
+    mocks.isRateLimitAllowed.mockReturnValue({
+      allowed: false,
+      remaining: 0,
+      resetTime: 1_893_456_000_000,
+    });
 
     const response = await callAction(formRequest(pdfFile()));
     const body = await responseBody(response);
@@ -245,9 +202,9 @@ describe('resume convert action', () => {
     expect(response.headers.get('X-RateLimit-Limit')).toBe('3');
     expect(body.stage).toBe('rate-limit');
     expect(body.rateLimit).toMatchObject({ limit: 3, remaining: 0 });
-    expect(testState.pdfCalls).toBe(0);
-    expect(testState.aiCalls).toBe(0);
-    expect(testState.uploadCalls).toHaveLength(0);
+    expect(mocks.extractPdfText).not.toHaveBeenCalled();
+    expect(mocks.createCompletion).not.toHaveBeenCalled();
+    expect(mocks.storeFile).not.toHaveBeenCalled();
   });
 
   it('returns file validation stage when no file is attached', async () => {
@@ -259,7 +216,7 @@ describe('resume convert action', () => {
   });
 
   it('returns file validation stage when file validation fails', async () => {
-    testState.validationResult = { valid: false, error: 'Invalid PDF' };
+    mocks.validateFile.mockReturnValue({ valid: false, error: 'Invalid PDF' });
 
     const response = await callAction(formRequest(pdfFile()));
     const body = await responseBody(response);
@@ -281,9 +238,9 @@ describe('resume convert action', () => {
       slug: 'existing',
       title: 'Existing Portfolio',
     });
-    expect(testState.pdfCalls).toBe(0);
-    expect(testState.aiCalls).toBe(0);
-    expect(testState.uploadCalls).toHaveLength(0);
+    expect(mocks.extractPdfText).not.toHaveBeenCalled();
+    expect(mocks.createCompletion).not.toHaveBeenCalled();
+    expect(mocks.storeFile).not.toHaveBeenCalled();
   });
 
   it('continues conversion when replacing an existing portfolio is confirmed', async () => {
@@ -294,11 +251,11 @@ describe('resume convert action', () => {
 
     expect(response.status).toBe(200);
     expect(body.stage).toBe('complete');
-    expect(testState.pdfCalls).toBe(1);
+    expect(mocks.extractPdfText).toHaveBeenCalledTimes(1);
   });
 
   it('returns pdf extraction stage when text extraction fails', async () => {
-    testState.pdfShouldFail = true;
+    mocks.extractPdfText.mockRejectedValue(new Error('pdf failed'));
 
     const response = await callAction(formRequest(pdfFile()));
     const body = await responseBody(response);
@@ -308,7 +265,7 @@ describe('resume convert action', () => {
   });
 
   it('returns pdf extraction stage when extracted text is empty', async () => {
-    testState.pdfText = '   ';
+    mocks.extractPdfText.mockResolvedValue('   ');
 
     const response = await callAction(formRequest(pdfFile()));
     const body = await responseBody(response);
@@ -318,18 +275,18 @@ describe('resume convert action', () => {
   });
 
   it('returns pdf extraction stage when extracted text is too large', async () => {
-    testState.pdfText = 'x'.repeat(80_001);
+    mocks.extractPdfText.mockResolvedValue('x'.repeat(80_001));
 
     const response = await callAction(formRequest(pdfFile()));
     const body = await responseBody(response);
 
     expect(response.status).toBe(400);
     expect(body.stage).toBe('pdf-extraction');
-    expect(testState.aiCalls).toBe(0);
+    expect(mocks.createCompletion).not.toHaveBeenCalled();
   });
 
   it('returns ai parse stage when the AI request fails', async () => {
-    testState.aiShouldFail = true;
+    mocks.createCompletion.mockRejectedValue(new Error('ai failed'));
 
     const response = await callAction(formRequest(pdfFile()));
     const body = await responseBody(response);
@@ -339,7 +296,7 @@ describe('resume convert action', () => {
   });
 
   it('returns ai parse stage when the AI response is malformed JSON', async () => {
-    testState.aiContent = '{';
+    mocks.createCompletion.mockResolvedValue({ choices: [{ message: { content: '{' } }] });
 
     const response = await callAction(formRequest(pdfFile()));
     const body = await responseBody(response);
@@ -349,7 +306,9 @@ describe('resume convert action', () => {
   });
 
   it('returns schema validation stage when the parsed resume is invalid', async () => {
-    testState.aiContent = JSON.stringify({ portfolio: { email: 'not-an-email' } });
+    mocks.createCompletion.mockResolvedValue({
+      choices: [{ message: { content: JSON.stringify({ portfolio: { email: 'not-an-email' } }) } }],
+    });
 
     const response = await callAction(formRequest(pdfFile()));
     const body = await responseBody(response);
@@ -359,26 +318,42 @@ describe('resume convert action', () => {
   });
 
   it('returns schema validation stage when required parsed fields are blank', async () => {
-    testState.aiContent = JSON.stringify(makeConvertedResumeData({ portfolio: { title: '   ' } }));
+    mocks.createCompletion.mockResolvedValue({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify(makeConvertedResumeData({ portfolio: { title: '   ' } })),
+          },
+        },
+      ],
+    });
 
     const response = await callAction(formRequest(pdfFile()));
     const body = await responseBody(response);
 
     expect(response.status).toBe(422);
     expect(body.stage).toBe('schema-validation');
-    expect(testState.uploadCalls).toHaveLength(0);
+    expect(mocks.storeFile).not.toHaveBeenCalled();
   });
 
   it('normalizes present dates before saving', async () => {
-    testState.aiContent = JSON.stringify({
-      ...makeConvertedResumeData(),
-      workExperience: [
+    mocks.createCompletion.mockResolvedValue({
+      choices: [
         {
-          company: 'Company',
-          role: 'Engineer',
-          description: 'Built things',
-          startDate: '2020-01',
-          endDate: 'Present',
+          message: {
+            content: JSON.stringify({
+              ...makeConvertedResumeData(),
+              workExperience: [
+                {
+                  company: 'Company',
+                  role: 'Engineer',
+                  description: 'Built things',
+                  startDate: '2020-01',
+                  endDate: 'Present',
+                },
+              ],
+            }),
+          },
         },
       ],
     });
@@ -399,17 +374,16 @@ describe('resume convert action', () => {
     const response = await callAction(formRequest(pdfFileWithoutMime()));
 
     expect(response.status).toBe(200);
-    expect(testState.uploadCalls[0]).toEqual([
-      expect.any(File),
-      'user-id',
-      'resumes',
-      'resume.pdf',
+    expect(mocks.storeFile).toHaveBeenCalledWith(
+      expect.any(Buffer),
       'application/pdf',
-    ]);
+      'user-id',
+      { originalName: 'resume.pdf' },
+    );
   });
 
   it('returns storage stage when upload fails', async () => {
-    testState.uploadResult = { success: false, publicUrl: undefined };
+    mocks.storeFile.mockRejectedValue(new Error('storage failed'));
 
     const response = await callAction(formRequest(pdfFile()));
     const body = await responseBody(response);
@@ -420,38 +394,38 @@ describe('resume convert action', () => {
   });
 
   it('returns database stage when saving fails', async () => {
-    testState.saveShouldFail = true;
+    mocks.saveResumeToDatabase.mockRejectedValue(new Error('db failed'));
 
     const response = await callAction(formRequest(pdfFile()));
     const body = await responseBody(response);
 
     expect(response.status).toBe(500);
     expect(body.stage).toBe('database');
-    expect(testState.deleteCalls).toEqual([['file-id', 'user-id', 'resumes']]);
+    expect(mocks.deleteFile).toHaveBeenCalledWith('file-id', 'user-id');
   });
 
   it('keeps database failure response when upload cleanup fails', async () => {
-    testState.saveShouldFail = true;
-    testState.deleteShouldFail = true;
+    mocks.saveResumeToDatabase.mockRejectedValue(new Error('db failed'));
+    mocks.deleteFile.mockResolvedValue(false);
 
     const response = await callAction(formRequest(pdfFile()));
     const body = await responseBody(response);
 
     expect(response.status).toBe(500);
     expect(body.stage).toBe('database');
-    expect(testState.deleteCalls).toHaveLength(1);
+    expect(mocks.deleteFile).toHaveBeenCalledTimes(1);
   });
 
   it('keeps database failure response when upload cleanup throws', async () => {
-    testState.saveShouldFail = true;
-    testState.deleteShouldThrow = true;
+    mocks.saveResumeToDatabase.mockRejectedValue(new Error('db failed'));
+    mocks.deleteFile.mockRejectedValue(new Error('cleanup threw'));
 
     const response = await callAction(formRequest(pdfFile()));
     const body = await responseBody(response);
 
     expect(response.status).toBe(500);
     expect(body.stage).toBe('database');
-    expect(testState.deleteCalls).toHaveLength(1);
+    expect(mocks.deleteFile).toHaveBeenCalledTimes(1);
   });
 
   it('returns portfolio metadata when conversion succeeds', async () => {

@@ -10,7 +10,16 @@ export {
   UPLOAD_ALLOWED_MIME_TYPES,
   UPLOAD_MAX_FILE_COUNT,
   UPLOAD_MAX_FILE_SIZE_BYTES,
+  isAllowedFileType,
+  normalizeMissingUploadMimeType,
+  resolveUploadMimeType,
   isSupportedUploadMimeType,
+  validateFile,
+} from './upload-policy';
+export type {
+  FileValidationOptions,
+  FileValidationResult,
+  UploadPolicyFile,
 } from './upload-policy';
 
 export type {

@@ -1,5 +1,6 @@
 import { CareerRepository, getDb } from '@hominem/db';
 import { getSharedAiModelConfig, getSharedOpenAIClient } from '@hominem/services/ai-model';
+import { createStorageService, resolveUploadMimeType, validateFile } from '@hominem/storage';
 import type { ActionFunction } from 'react-router';
 
 import { getAuthenticatedUser } from '../lib/auth.server';
@@ -7,17 +8,18 @@ import { logger } from '../lib/logger';
 import { getRateLimitHeaders, resumeConvertRateLimit } from '../lib/rate-limit';
 import { extractPdfText } from '../lib/services/pdf-text.server';
 import { saveResumeToDatabase } from '../lib/services/resume-conversion.service';
-import {
-  deleteFile,
-  FILE_VALIDATION_PRESETS,
-  resolveUploadMimeType,
-  uploadFile,
-  validateFile,
-} from '../lib/services/storage.service';
 import type { ConvertedResumeData, ResumeConvertStage, UploadResumeResponse } from '../types/resume';
 import { resumeSchema } from '../types/resume';
 
 const MAX_EXTRACTED_RESUME_TEXT_LENGTH = 80_000;
+const resumeStorage = createStorageService('documents', {
+  maxFileSize: 10 * 1024 * 1024,
+  isPublic: false,
+});
+const PDF_RESUME_VALIDATION = {
+  maxSizeBytes: 10 * 1024 * 1024,
+  allowedTypes: ['application/pdf'],
+} as const;
 const RESUME_PARSER_SYSTEM_PROMPT =
   'You are an expert resume parser. Return only valid JSON matching the requested resume schema. ' +
   'Required strings must not be blank. Dates must be YYYY-MM-DD, YYYY-MM, or null; use null for present/current roles. ' +
@@ -192,7 +194,7 @@ export const action: ActionFunction = async ({ request }) => {
       );
     }
 
-    const validation = validateFile(file, FILE_VALIDATION_PRESETS.PDF_RESUME);
+    const validation = validateFile(file, PDF_RESUME_VALIDATION);
     if (!validation.valid) {
       return errorResponse(
         validation.error ?? 'The selected file is not a valid resume PDF.',
@@ -321,13 +323,17 @@ ${pdfText}`,
       );
     }
 
-    const uploadResult = await uploadFile(file, user.id, 'resumes', file.name, uploadMimeType);
-
-    if (!uploadResult.success) {
+    let uploadResult: { id: string; url: string };
+    try {
+      const buffer = Buffer.from(await file.arrayBuffer());
+      uploadResult = await resumeStorage.storeFile(buffer, uploadMimeType, user.id, {
+        originalName: file.name,
+      });
+    } catch (error) {
       logger.error('Resume file upload failed', undefined, {
         userId: user.id,
         fileName: file.name,
-        error: uploadResult.error,
+        error: error instanceof Error ? error.message : error,
       });
       return errorResponse(storageFailureMessage(), 503, 'storage', true);
     }
@@ -343,22 +349,22 @@ ${pdfText}`,
         userId: user.id,
         fileName: file.name,
       });
-      if (uploadResult.fileId) {
+      if (uploadResult.id) {
         try {
-          const deleteResult = await deleteFile(uploadResult.fileId, user.id, 'resumes');
-          if (!deleteResult.success) {
+          const deleted = await resumeStorage.deleteFile(uploadResult.id, user.id);
+          if (!deleted) {
             logger.error('Resume upload cleanup after database failure failed', undefined, {
               userId: user.id,
               fileName: file.name,
-              fileId: uploadResult.fileId,
-              error: deleteResult.error,
+              fileId: uploadResult.id,
+              error: 'File not found',
             });
           }
         } catch (cleanupError) {
           logRouteError('Resume upload cleanup after database failure threw', cleanupError, {
             userId: user.id,
             fileName: file.name,
-            fileId: uploadResult.fileId,
+            fileId: uploadResult.id,
           });
         }
       }
@@ -377,7 +383,7 @@ ${pdfText}`,
       portfolioId,
       portfolioSlug,
       portfolioUrl: `/p/${portfolioSlug}`,
-      fileUrl: uploadResult.publicUrl,
+      fileUrl: uploadResult.url,
       stage: 'complete',
       retryable: false,
     } satisfies UploadResumeResponse);
