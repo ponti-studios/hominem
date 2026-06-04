@@ -17,7 +17,6 @@ export const UI_TRANSLATIONS_EN = {
       title: 'Verify',
       helper: 'Code sent to {{email}}.',
       codeLabel: 'Verification code',
-      codePlaceholder: '123456',
       verifyButton: 'Verify',
       verifyButtonLoading: 'Verifying...',
       resendButton: 'Resend code',

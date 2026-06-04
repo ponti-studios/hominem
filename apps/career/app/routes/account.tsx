@@ -453,10 +453,9 @@ export default function Account() {
             </Card>
           ) : (
             <Card>
-              <CardContent className="px-4 py-8 text-center">
-                <p className="text-muted-foreground mb-4">No portfolio found</p>
-                <p className="text-sm text-muted-foreground mb-6">
-                  Create your professional portfolio to showcase your skills and experience.
+              <CardContent className="p-6 text-center space-y-4">
+                <p className="text-muted-foreground">
+                  Start showcasing your skills and experience.
                 </p>
                 <Button
                   type="button"
@@ -471,13 +470,13 @@ export default function Account() {
           )}
         </div>
 
-        <div className="border-t border-border pt-6">
+        <div className="border-t border-border pt-6 flex justify-end">
           <Button
             type="button"
             onClick={handleSignOut}
             disabled={isSigningOut}
-            variant="outline"
-            className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 sm:w-auto"
+            variant="primary"
+            className="w-full sm:w-auto"
           >
             <LogOut className="w-4 h-4 mr-2" />
             {isSigningOut ? 'Signing Out...' : 'Sign Out'}

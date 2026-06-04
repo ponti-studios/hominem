@@ -86,11 +86,7 @@ export function OtpVerificationForm({
           <p className="body-4 text-destructive" role="alert">
             {displayError}
           </p>
-        ) : (
-          <p className="body-4 text-text-tertiary">
-            {translateUi('auth.otpVerification.codePlaceholder')}
-          </p>
-        )}
+        ) : null}
       </div>
 
       <Button type="submit" variant="primary" disabled={!canSubmit} fullWidth>

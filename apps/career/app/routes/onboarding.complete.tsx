@@ -1,4 +1,3 @@
-import { Badge } from '@hominem/ui/badge';
 import { Button } from '@hominem/ui/button';
 import { ArrowRight, CheckCircle2, Copy, Eye } from 'lucide-react';
 import { useState } from 'react';
@@ -36,7 +35,7 @@ export async function loader(args: LoaderFunctionArgs) {
 export default function OnboardingComplete() {
   const { portfolio } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
-  const [copyLabel, setCopyLabel] = useState('Copy Link');
+  const [copyLabel, setCopyLabel] = useState('');
   const portfolioPath = portfolio ? `/p/${portfolio.slug}` : null;
 
   const goToPortfolio = () => navigate(portfolioPath ?? '/account');
@@ -44,22 +43,16 @@ export default function OnboardingComplete() {
     if (!portfolioPath) return;
     await navigator.clipboard.writeText(new URL(portfolioPath, window.location.origin).toString());
     setCopyLabel('Copied');
+    setTimeout(() => setCopyLabel(''), 3000);
   };
 
   return (
-    <div className="mx-auto w-full max-w-lg space-y-6 text-center">
-      <div className="mx-auto flex size-10 items-center justify-center rounded-full border border-success/30 bg-success/10">
-        <CheckCircle2 className="size-5 text-success" />
-      </div>
-
+    <div className="mx-auto w-full max-w-lg space-y-4 text-center">
       <div className="space-y-2">
-        <Badge variant="outline" className="border-success/30 bg-success/10 text-foreground">
+        <h1 className="text-xl font-semibold text-secondary flex justify-center items-center gap-4 border rounded w-fit px-4 py-2 mx-auto bg-primary">
+          <CheckCircle2 className="size-5 text-muted-foreground" />
           Portfolio created
-        </Badge>
-        <h1 className="text-xl font-semibold text-foreground">Your portfolio is ready</h1>
-        <p className="text-sm text-muted-foreground">
-          Live and ready to share. Add the link to your resume, LinkedIn, and job applications.
-        </p>
+        </h1>
       </div>
 
       {portfolioPath ? (
@@ -68,7 +61,7 @@ export default function OnboardingComplete() {
             {portfolioPath}
           </code>
           <Button type="button" onClick={copyPortfolioLink} variant="ghost" size="xs">
-            <Copy className="size-3" />
+            {copyLabel || <Copy className="size-3" />}
           </Button>
         </div>
       ) : null}

@@ -6,17 +6,17 @@ import { cn } from '~/lib/utils';
 
 export const meta: MetaFunction = () => {
   return [
-    { title: 'Craftd - your career, art directed' },
+    { title: 'Craftd - keep your job search from scattering' },
     {
       name: 'description',
       content:
-        'A minimalist portfolio and application tracker for people who want their career story to feel curated, current, and easy to share.',
+        'A private workspace for job seekers who need to reuse their best proof, tailor serious applications, and keep a long search organized.',
     },
-    { property: 'og:title', content: 'Craftd - your career, art directed' },
+    { property: 'og:title', content: 'Craftd - keep your job search from scattering' },
     {
       property: 'og:description',
       content:
-        'A minimalist portfolio and application tracker for people who want their career story to feel curated, current, and easy to share.',
+        'A private workspace for job seekers who need to reuse their best proof, tailor serious applications, and keep a long search organized.',
     },
   ];
 };
@@ -28,54 +28,36 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return null;
 }
 
-const studioNotes = [
+const searchProblems = [
   {
-    label: 'Scatterd files',
-    copy: 'A single polished link instead of a pile of files.',
+    label: 'Stop starting over',
+    copy: 'Every strong application asks for a slightly different version of your story.',
   },
   {
-    label: 'Missed follow-ups',
-    copy: 'Track every role without losing the thread.',
+    label: 'Find your best proof',
+    copy: 'Your best projects, wins, links, and resume bullets are spread across too many places.',
   },
   {
-    label: 'No clear signal',
-    copy: 'See where momentum is stalling before weeks slip by.',
+    label: 'Tailor without burning out',
+    copy: 'The roles worth chasing deserve sharper context, but rewriting everything by hand does not scale.',
   },
   {
-    label: 'Messy materials',
-    copy: 'Your resume, projects, and proof of work end up in too many places.',
-  },
-  {
-    label: 'Role chaos',
-    copy: 'Every stage, follow-up, and deadline turns into one more thing to remember.',
-  },
-  {
-    label: 'Stalled progress',
-    copy: 'Without a clear read, it is hard to tell what is moving and what is stuck.',
+    label: 'Know what needs attention',
+    copy: 'When weeks blur together, it gets hard to see what you sent, what worked, and what needs attention.',
   },
 ];
 
 export default function Home() {
   return (
-    <div className="relative overflow-hidden bg-background">
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-[32rem] bg-elevated/35 blur-3xl"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute right-0 top-0 h-72 w-72 rounded-full bg-accent/10 blur-3xl"
-        aria-hidden
-      />
-
-      <section className="relative mx-auto flex min-h-screen w-full max-w-4xl flex-col px-4 py-6 sm:px-6 lg:px-8">
-        <main className="flex flex-1 items-center py-16 lg:py-24">
+    <div className="relative overflow-hidden">
+      <section className="relative mx-auto flex min-h-screen w-full max-w-5xl flex-col py-6">
+        <main className="flex flex-1 items-center">
           <div className="w-full">
             <div className="max-w-2xl">
-              <p className="ui-eyebrow">Private access</p>
-              <h1 className="display-1 mt-5 max-w-2xl">Keep your career from getting scattered.</h1>
+              <h1 className="display-1 mt-5 max-w-2xl">Keep your job search from scattering.</h1>
               <p className="body-1 mt-6 max-w-xl text-muted-foreground">
-                When your portfolio, resume, and applications live in different places, staying
-                current starts to feel like a second job.
+                Craftd helps you reuse your best proof, tailor the applications that matter, and
+                remember what you sent when the search stretches on.
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -101,34 +83,29 @@ export default function Home() {
             </div>
 
             <div className="mt-14 border-t border-subtle pt-6">
-              <p className="ui-eyebrow">
-                Problems. Meet <i>solutions</i>.
-              </p>
-              <div className="mt-5 grid gap-0 border-y border-subtle">
-                {studioNotes.map((note, index) => (
-                  <div
-                    key={note.label}
-                    className={cn(
-                      'py-5',
-                      index !== studioNotes.length - 1 && 'border-b border-subtle',
-                    )}
-                  >
-                    <p className="heading-4 text-foreground">{note.label}</p>
-                    <p className="body-2 mt-2 max-w-2xl text-muted-foreground">{note.copy}</p>
+              <p className="ui-eyebrow">What gets hard</p>
+              <div className="mt-5 grid gap-5 border-y border-subtle py-5">
+                {searchProblems.map((problem, index) => (
+                  <div key={problem.label}>
+                    <p className="caption1 uppercase tracking-[0.28em] text-muted-foreground">
+                      {String(index + 1).padStart(2, '0')}
+                    </p>
+                    <p className="heading-4 mt-3 text-foreground">{problem.label}</p>
+                    <p className="body-2 mt-2 max-w-2xl text-muted-foreground">{problem.copy}</p>
                   </div>
                 ))}
               </div>
-              <p className="subheading-1 mt-8 max-w-2xl text-foreground">
-                Built for the moments when your career materials feel scattered, stale, and hard to
-                keep up with.
-              </p>
-              <p className="body-2 mt-3 text-muted-foreground">Less scrambling, more clarity.</p>
             </div>
 
-            <section className="mt-14 border-t border-subtle py-7">
+            <section className="py-7">
               <p className="ui-eyebrow">What it replaces</p>
               <p className="heading-2 mt-3 max-w-3xl text-foreground">
-                scattered docs, messy tabs, and a portfolio that never felt finished.
+                No more scattered docs, messy tabs, and repeating yourself.
+              </p>
+              <p className="body-2 mt-5 max-w-2xl text-muted-foreground">
+                Built for the parts of the search you can control: your story, your proof, your
+                follow-through, and your memory. It will not make employers respond. It will help
+                you stop applying from scratch.
               </p>
             </section>
 
