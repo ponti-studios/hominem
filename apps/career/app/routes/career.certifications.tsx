@@ -6,8 +6,8 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import { useLoaderData } from 'react-router';
 
 import { createSuccessResponse, withAuthLoader } from '~/lib/route-utils';
+import { cn } from '~/lib/utils';
 import type { Certification, CertificationSummary } from '~/types/career-data';
-
 const formatDateValue = (value: Date | undefined) => {
   if (!value) {
     return '';
@@ -200,13 +200,14 @@ function CertificationCard({ certification }: CertificationCardProps) {
           <div className="flex items-center gap-3 mb-2">
             <h3 className="text-lg font-semibold text-foreground">{certification.name}</h3>
             <span
-              className={`px-2 py-1 text-xs font-medium rounded-full ${
+              className={cn(
+                'px-2 py-1 text-xs font-medium rounded-full',
                 certification.status === 'active'
                   ? 'bg-success/10 text-foreground'
                   : certification.status === 'expired'
                     ? 'bg-destructive/10 text-foreground'
-                    : 'bg-amber-100 text-amber-800'
-              }`}
+                    : 'bg-amber-100 text-amber-800',
+              )}
             >
               {certification.status}
             </span>

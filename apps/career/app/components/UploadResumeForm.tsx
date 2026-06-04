@@ -1,12 +1,13 @@
 import { Alert, AlertDescription, AlertTitle } from '@hominem/ui';
 import { Button } from '@hominem/ui/button';
 import { Card, CardContent } from '@hominem/ui/card';
+import { Progress } from '@hominem/ui/progress';
 import { FileText, LogIn, RefreshCw, Upload, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 
-import { AIProcessingAnimation, type ResumeUploadStep } from './AIProcessingAnimation';
+import { cn } from '~/lib/utils';
+
 import type { ResumeConvertStage, UploadResumeResponse } from '../types/resume';
-
 interface UploadResumeFormProps {
   onUploadStart: () => void;
   onUploadComplete: (response: UploadResumeResponse) => void;
@@ -14,20 +15,6 @@ interface UploadResumeFormProps {
 }
 
 type UploadStatus = 'idle' | 'pending' | 'error' | 'confirm-replace';
-
-const stageToStep: Partial<Record<ResumeConvertStage, ResumeUploadStep>> = {
-  request: 'uploading',
-  'file-validation': 'uploading',
-  'replace-confirmation': 'uploading',
-  'rate-limit': 'uploading',
-  'pdf-extraction': 'extracting',
-  'ai-parse': 'analyzing',
-  'schema-validation': 'analyzing',
-  storage: 'saving',
-  database: 'saving',
-};
-
-const estimatedSteps: ResumeUploadStep[] = ['uploading', 'extracting', 'analyzing', 'saving'];
 
 function isPdfFile(file: File): boolean {
   return file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
@@ -55,28 +42,15 @@ export function UploadResumeForm({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [status, setStatus] = useState<UploadStatus>('idle');
-  const [activeStep, setActiveStep] = useState<ResumeUploadStep>('uploading');
   const [error, setError] = useState<string | null>(null);
   const [errorStage, setErrorStage] = useState<ResumeConvertStage | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [requiresLogin, setRequiresLogin] = useState(false);
-  const [existingPortfolio, setExistingPortfolio] =
-    useState<UploadResumeResponse['existingPortfolio'] | null>(null);
+  const [existingPortfolio, setExistingPortfolio] = useState<
+    UploadResumeResponse['existingPortfolio'] | null
+  >(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
-
-  useEffect(() => {
-    if (status !== 'pending') return;
-
-    let stepIndex = 0;
-    setActiveStep(estimatedSteps[stepIndex]);
-    const interval = window.setInterval(() => {
-      stepIndex = Math.min(stepIndex + 1, estimatedSteps.length - 1);
-      setActiveStep(estimatedSteps[stepIndex]);
-    }, 1600);
-
-    return () => window.clearInterval(interval);
-  }, [status]);
 
   const handleDragOver = (event: React.DragEvent) => {
     event.preventDefault();
@@ -185,13 +159,13 @@ export function UploadResumeForm({
         setErrorStage(result.stage ?? null);
         setExistingPortfolio(result.existingPortfolio ?? null);
         setRequiresLogin(res.status === 401 || res.status === 403 || result.stage === 'auth');
-        if (result.stage) setActiveStep(stageToStep[result.stage] ?? 'uploading');
         if (!needsReplaceConfirmation) onUploadError?.(msg);
         return;
       }
 
       if (!result.data) {
-        const msg = result.error ?? 'Upload completed, but the response did not include resume data.';
+        const msg =
+          result.error ?? 'Upload completed, but the response did not include resume data.';
         setStatus('error');
         setError(msg);
         setErrorStage(result.stage ?? 'request');
@@ -199,7 +173,6 @@ export function UploadResumeForm({
         return;
       }
 
-      setActiveStep('saving');
       onUploadComplete(result);
     } catch (uploadError) {
       abortControllerRef.current = null;
@@ -217,7 +190,9 @@ export function UploadResumeForm({
   const isConfirmingReplace = status === 'confirm-replace';
   const buttonLabel = isConfirmingReplace
     ? 'Replace Portfolio'
-    : status === 'error' && selectedFile ? 'Try Again' : 'Upload Resume';
+    : status === 'error' && selectedFile
+      ? 'Try Again'
+      : 'Upload Resume';
 
   return (
     <div className="w-full max-w-md">
@@ -231,9 +206,12 @@ export function UploadResumeForm({
       <Card>
         <CardContent className="space-y-4">
           <div
-            className={`rounded-md border-2 border-dashed p-6 text-center transition-colors ${
-              isDragging ? 'border-accent/50 bg-accent/10' : 'border-border hover:border-muted-foreground/30'
-            }`}
+            className={cn(
+              'rounded-md border-2 border-dashed p-6 text-center transition-colors',
+              isDragging
+                ? 'border-accent/50 bg-accent/10'
+                : 'border-border hover:border-muted-foreground/30',
+            )}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
@@ -268,7 +246,9 @@ export function UploadResumeForm({
                 <div className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2">
                   <FileText className="size-4 shrink-0 text-muted-foreground" />
                   <div className="min-w-0 text-left">
-                    <p className="truncate text-sm font-medium text-foreground">{selectedFile.name}</p>
+                    <p className="truncate text-sm font-medium text-foreground">
+                      {selectedFile.name}
+                    </p>
                     <p className="text-xs text-muted-foreground">
                       {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
                     </p>
@@ -280,11 +260,23 @@ export function UploadResumeForm({
 
           {notice ? <p className="text-xs text-muted-foreground">{notice}</p> : null}
 
-          {isPending ? <AIProcessingAnimation activeStep={activeStep} /> : null}
+          {isPending ? (
+            <div className="space-y-2 rounded-md border border-border bg-card p-4 text-card-foreground">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-foreground">Resume processing</p>
+                <p className="text-xs text-muted-foreground">
+                  We&apos;re extracting your resume details and building your portfolio.
+                </p>
+              </div>
+              <Progress value={60} indicatorClassName="animate-pulse" aria-label="Resume processing" />
+            </div>
+          ) : null}
 
           {error ? (
             <Alert variant={isConfirmingReplace ? undefined : 'destructive'}>
-              <AlertTitle>{isConfirmingReplace ? 'Replace existing portfolio?' : 'Upload failed'}</AlertTitle>
+              <AlertTitle>
+                {isConfirmingReplace ? 'Replace existing portfolio?' : 'Upload failed'}
+              </AlertTitle>
               <AlertDescription>
                 <div className="space-y-3">
                   <p>{error}</p>
@@ -317,7 +309,11 @@ export function UploadResumeForm({
               variant="primary"
               fullWidth
             >
-              {status === 'error' ? <RefreshCw className="size-4" /> : <Upload className="size-4" />}
+              {status === 'error' ? (
+                <RefreshCw className="size-4" />
+              ) : (
+                <Upload className="size-4" />
+              )}
               {isPending ? 'Processing…' : buttonLabel}
             </Button>
             {isPending ? (

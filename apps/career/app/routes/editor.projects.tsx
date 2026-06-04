@@ -25,33 +25,33 @@ interface ProjectFormValues {
   id?: string;
   title: string;
   description: string;
-  shortDescription?: string;
-  liveUrl?: string;
-  githubUrl?: string;
-  imageUrl?: string;
-  videoUrl?: string;
+  short_description?: string;
+  live_url?: string;
+  github_url?: string;
+  image_url?: string;
+  video_url?: string;
   technologies?: string[];
   status?: string;
-  startDate?: string;
-  endDate?: string;
-  isFeatured?: boolean;
-  isVisible?: boolean;
-  sortOrder?: number;
-  portfolioId: string;
+  start_date?: string;
+  end_date?: string;
+  is_featured?: boolean;
+  is_visible?: boolean;
+  sort_order?: number;
+  portfolio_id: string;
 }
 
 interface ProjectsEditorSectionProps {
   projects?: Project[] | null;
-  portfolioId: string;
+  portfolio_id: string;
 }
 
 function ProjectForm({
   project,
-  portfolioId,
+  portfolio_id,
   onDelete,
 }: {
   project?: Project;
-  portfolioId: string;
+  portfolio_id: string;
   onDelete?: () => void;
 }) {
   const fetcher = useFetcher();
@@ -68,19 +68,19 @@ function ProjectForm({
       id: project?.id,
       title: project?.title || '',
       description: project?.description || '',
-      shortDescription: project?.shortDescription || '',
-      liveUrl: project?.liveUrl || '',
-      githubUrl: project?.githubUrl || '',
-      imageUrl: project?.imageUrl || '',
-      videoUrl: project?.videoUrl || '',
+      short_description: project?.short_description || '',
+      live_url: project?.live_url || '',
+      github_url: project?.github_url || '',
+      image_url: project?.image_url || '',
+      video_url: project?.video_url || '',
       technologies: nullArrayToUndefined(project?.technologies) || [],
       status: project?.status || 'completed',
-      startDate: formatDateForInput(project?.startDate),
-      endDate: formatDateForInput(project?.endDate),
-      isFeatured: project?.isFeatured || false,
-      isVisible: project?.isVisible !== false,
-      sortOrder: project?.sortOrder || 0,
-      portfolioId,
+      start_date: formatDateForInput(project?.start_date),
+      end_date: formatDateForInput(project?.end_date),
+      is_featured: project?.is_featured || false,
+      is_visible: project?.is_visible !== false,
+      sort_order: project?.sort_order || 0,
+      portfolio_id,
     },
     mode: 'onChange',
   });
@@ -102,19 +102,19 @@ function ProjectForm({
             id: result.data.id,
             title: result.data.title || '',
             description: result.data.description || '',
-            shortDescription: result.data.shortDescription || '',
-            liveUrl: result.data.liveUrl || '',
-            githubUrl: result.data.githubUrl || '',
-            imageUrl: result.data.imageUrl || '',
-            videoUrl: result.data.videoUrl || '',
+            short_description: result.data.short_description || '',
+            live_url: result.data.live_url || '',
+            github_url: result.data.github_url || '',
+            image_url: result.data.image_url || '',
+            video_url: result.data.video_url || '',
             technologies: nullArrayToUndefined(result.data.technologies) || [],
             status: result.data.status || 'completed',
-            startDate: formatDateForInput(result.data.startDate),
-            endDate: formatDateForInput(result.data.endDate),
-            isFeatured: result.data.isFeatured || false,
-            isVisible: result.data.isVisible !== false,
-            sortOrder: result.data.sortOrder || 0,
-            portfolioId: result.data.portfolioId,
+            start_date: formatDateForInput(result.data.start_date),
+            end_date: formatDateForInput(result.data.end_date),
+            is_featured: result.data.is_featured || false,
+            is_visible: result.data.is_visible !== false,
+            sort_order: result.data.sort_order || 0,
+            portfolio_id: result.data.portfolio_id,
           });
         }
       } else {
@@ -151,7 +151,7 @@ function ProjectForm({
       const formData = new FormData();
       formData.append('operation', 'delete');
       formData.append('id', project.id);
-      formData.append('portfolioId', portfolioId);
+      formData.append('portfolio_id', portfolio_id);
 
       fetcher.submit(formData, {
         method: 'POST',
@@ -208,13 +208,13 @@ function ProjectForm({
       </div>
 
       <div className="flex flex-col gap-2">
-        <label htmlFor={`shortDescription-${project?.id || 'new'}`} className="label">
+        <label htmlFor={`short_description-${project?.id || 'new'}`} className="label">
           Short Description
         </label>
         <input
-          id={`shortDescription-${project?.id || 'new'}`}
+          id={`short_description-${project?.id || 'new'}`}
           type="text"
-          {...register('shortDescription')}
+          {...register('short_description')}
           className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
           placeholder="Brief one-line description"
         />
@@ -235,25 +235,25 @@ function ProjectForm({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="flex flex-col gap-2">
-          <label htmlFor={`liveUrl-${project?.id || 'new'}`} className="label">
+          <label htmlFor={`live_url-${project?.id || 'new'}`} className="label">
             Live URL
           </label>
           <input
-            id={`liveUrl-${project?.id || 'new'}`}
+            id={`live_url-${project?.id || 'new'}`}
             type="url"
-            {...register('liveUrl')}
+            {...register('live_url')}
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
             placeholder="https://example.com"
           />
         </div>
         <div className="flex flex-col gap-2">
-          <label htmlFor={`githubUrl-${project?.id || 'new'}`} className="label">
+          <label htmlFor={`github_url-${project?.id || 'new'}`} className="label">
             GitHub URL
           </label>
           <input
-            id={`githubUrl-${project?.id || 'new'}`}
+            id={`github_url-${project?.id || 'new'}`}
             type="url"
-            {...register('githubUrl')}
+            {...register('github_url')}
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
             placeholder="https://github.com/user/repo"
           />
@@ -262,25 +262,25 @@ function ProjectForm({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="flex flex-col gap-2">
-          <label htmlFor={`imageUrl-${project?.id || 'new'}`} className="label">
+          <label htmlFor={`image_url-${project?.id || 'new'}`} className="label">
             Image URL
           </label>
           <input
-            id={`imageUrl-${project?.id || 'new'}`}
+            id={`image_url-${project?.id || 'new'}`}
             type="url"
-            {...register('imageUrl')}
+            {...register('image_url')}
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
             placeholder="Project screenshot or image"
           />
         </div>
         <div className="flex flex-col gap-2">
-          <label htmlFor={`videoUrl-${project?.id || 'new'}`} className="label">
+          <label htmlFor={`video_url-${project?.id || 'new'}`} className="label">
             Video URL
           </label>
           <input
-            id={`videoUrl-${project?.id || 'new'}`}
+            id={`video_url-${project?.id || 'new'}`}
             type="url"
-            {...register('videoUrl')}
+            {...register('video_url')}
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
             placeholder="Demo video URL"
           />
@@ -315,24 +315,24 @@ function ProjectForm({
           </select>
         </div>
         <div className="flex flex-col gap-2">
-          <label htmlFor={`startDate-${project?.id || 'new'}`} className="label">
+          <label htmlFor={`start_date-${project?.id || 'new'}`} className="label">
             Start Date
           </label>
           <input
-            id={`startDate-${project?.id || 'new'}`}
+            id={`start_date-${project?.id || 'new'}`}
             type="date"
-            {...register('startDate')}
+            {...register('start_date')}
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
           />
         </div>
         <div className="flex flex-col gap-2">
-          <label htmlFor={`endDate-${project?.id || 'new'}`} className="label">
+          <label htmlFor={`end_date-${project?.id || 'new'}`} className="label">
             End Date
           </label>
           <input
-            id={`endDate-${project?.id || 'new'}`}
+            id={`end_date-${project?.id || 'new'}`}
             type="date"
-            {...register('endDate')}
+            {...register('end_date')}
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
           />
         </div>
@@ -341,13 +341,13 @@ function ProjectForm({
       <div className="flex gap-4">
         <div className="flex flex-col gap-2">
           <label className="flex items-center gap-2">
-            <input type="checkbox" {...register('isFeatured')} className="checkbox" />
+            <input type="checkbox" {...register('is_featured')} className="checkbox" />
             <span className="label">Featured Project</span>
           </label>
         </div>
         <div className="flex flex-col gap-2">
           <label className="flex items-center gap-2">
-            <input type="checkbox" {...register('isVisible')} className="checkbox" />
+            <input type="checkbox" {...register('is_visible')} className="checkbox" />
             <span className="label">Visible</span>
           </label>
         </div>
@@ -358,7 +358,7 @@ function ProjectForm({
 
 function ProjectsEditorSection({
   projects: initialProjects,
-  portfolioId,
+  portfolio_id,
 }: ProjectsEditorSectionProps) {
   const [showNewForm, setShowNewForm] = useState(false);
   const [projects, setProjects] = useState(initialProjects || []);
@@ -402,7 +402,7 @@ function ProjectsEditorSection({
       <div className="flex flex-col gap-8">
         {/* Show new project form if requested */}
         {showNewForm && (
-          <ProjectForm portfolioId={portfolioId} onDelete={() => setShowNewForm(false)} />
+          <ProjectForm portfolio_id={portfolio_id} onDelete={() => setShowNewForm(false)} />
         )}
 
         {/* Existing projects */}
@@ -410,7 +410,7 @@ function ProjectsEditorSection({
           <ProjectForm
             key={project.id}
             project={project}
-            portfolioId={portfolioId}
+            portfolio_id={portfolio_id}
             onDelete={() => handleDelete(project.id)}
           />
         ))}
@@ -441,8 +441,8 @@ export async function action(args: ActionFunctionArgs) {
 
         const projectData = projectDataResult as ProjectFormValues;
 
-        if (!projectData.portfolioId) {
-          return createErrorResponse('Missing portfolioId');
+        if (!projectData.portfolio_id) {
+          return createErrorResponse('Missing portfolio_id');
         }
 
         return tryAsync(async () => {
@@ -459,26 +459,26 @@ export async function action(args: ActionFunctionArgs) {
             const dbData = {
               ...insertData,
               technologies: technologiesArray,
-              startDate: stringToDate(insertData.startDate),
-              endDate: stringToDate(insertData.endDate),
+              start_date: stringToDate(insertData.start_date),
+              end_date: stringToDate(insertData.end_date),
             };
 
             const newProject = await CareerRepository.createProject(getDb(), user.id, {
-              portfolioId: dbData.portfolioId,
+              portfolio_id: dbData.portfolio_id,
               title: dbData.title,
               description: dbData.description,
-              shortDescription: dbData.shortDescription,
-              liveUrl: dbData.liveUrl,
-              githubUrl: dbData.githubUrl,
-              imageUrl: dbData.imageUrl,
-              videoUrl: dbData.videoUrl,
+              short_description: dbData.short_description,
+              live_url: dbData.live_url,
+              github_url: dbData.github_url,
+              image_url: dbData.image_url,
+              video_url: dbData.video_url,
               technologies: dbData.technologies,
               status: dbData.status,
-              startDate: dbData.startDate,
-              endDate: dbData.endDate,
-              isFeatured: dbData.isFeatured,
-              isVisible: dbData.isVisible,
-              sortOrder: dbData.sortOrder,
+              start_date: dbData.start_date,
+              end_date: dbData.end_date,
+              is_featured: dbData.is_featured,
+              is_visible: dbData.is_visible,
+              sort_order: dbData.sort_order,
             });
 
             return createSuccessResponse(newProject, 'Project created successfully');
@@ -492,25 +492,25 @@ export async function action(args: ActionFunctionArgs) {
           const dbData = {
             ...updateData,
             technologies: technologiesArray,
-            startDate: stringToDate(updateData.startDate),
-            endDate: stringToDate(updateData.endDate),
+            start_date: stringToDate(updateData.start_date),
+            end_date: stringToDate(updateData.end_date),
           };
 
-          await CareerRepository.updateProject(getDb(), user.id, id, projectData.portfolioId, {
+          await CareerRepository.updateProject(getDb(), user.id, id, projectData.portfolio_id, {
             title: dbData.title,
             description: dbData.description,
-            shortDescription: dbData.shortDescription,
-            liveUrl: dbData.liveUrl,
-            githubUrl: dbData.githubUrl,
-            imageUrl: dbData.imageUrl,
-            videoUrl: dbData.videoUrl,
+            short_description: dbData.short_description,
+            live_url: dbData.live_url,
+            github_url: dbData.github_url,
+            image_url: dbData.image_url,
+            video_url: dbData.video_url,
             technologies: dbData.technologies,
             status: dbData.status,
-            startDate: dbData.startDate,
-            endDate: dbData.endDate,
-            isFeatured: dbData.isFeatured,
-            isVisible: dbData.isVisible,
-            sortOrder: dbData.sortOrder,
+            start_date: dbData.start_date,
+            end_date: dbData.end_date,
+            is_featured: dbData.is_featured,
+            is_visible: dbData.is_visible,
+            sort_order: dbData.sort_order,
           });
 
           return createSuccessResponse(null, 'Project updated successfully');
@@ -519,14 +519,14 @@ export async function action(args: ActionFunctionArgs) {
 
       case 'delete': {
         const id = formData.get('id') as string;
-        const portfolioId = formData.get('portfolioId') as string;
+        const portfolio_id = formData.get('portfolio_id') as string;
 
-        if (!id || !portfolioId) {
+        if (!id || !portfolio_id) {
           return createErrorResponse('Missing required fields for deletion');
         }
 
         return tryAsync(async () => {
-          await CareerRepository.deleteProject(getDb(), user.id, id, portfolioId);
+          await CareerRepository.deleteProject(getDb(), user.id, id, portfolio_id);
 
           return createSuccessResponse(null, 'Project deleted successfully');
         }, 'Failed to delete project');
@@ -542,5 +542,5 @@ export default function EditorProjects() {
   // Consume portfolio provided by parent editor layout loader via outlet context
   const portfolio = useOutletContext<FullPortfolio>();
 
-  return <ProjectsEditorSection projects={portfolio.projects} portfolioId={portfolio.id} />;
+  return <ProjectsEditorSection projects={portfolio.projects} portfolio_id={portfolio.id} />;
 }

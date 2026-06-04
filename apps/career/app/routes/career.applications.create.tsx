@@ -8,16 +8,16 @@ import { useState } from 'react';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import { Form, Link, redirect, useActionData } from 'react-router';
 
-import { JobApplicationsService } from '~/lib/services/job-applications.service';
 import {
   createErrorResponse,
   createSuccessResponse,
   withAuthAction,
   withAuthLoader,
 } from '~/lib/route-utils';
+import { JobApplicationsService } from '~/lib/services/job-applications.service';
+import { cn } from '~/lib/utils';
 import type { JobPosting, ScrapedJobPostingResponse } from '~/types/applications';
 import { JobApplicationStatus } from '~/types/career';
-
 
 export async function loader(args: LoaderFunctionArgs) {
   return withAuthLoader(args, async ({ user }) => {
@@ -30,15 +30,15 @@ export async function action(args: ActionFunctionArgs) {
     const formData = await request.formData();
     const position = formData.get('position') as string;
     const companyName = formData.get('company') as string;
-    const startDate = formData.get('startDate') as string;
+    const start_date = formData.get('start_date') as string;
     const status = formData.get('status') as JobApplicationStatus;
     const location = formData.get('location') as string;
-    const jobPosting = formData.get('jobPosting') as string;
+    const job_posting = formData.get('job_posting') as string;
     const jobPostingData = formData.get('jobPostingData') as string;
-    const salaryQuoted = formData.get('salaryQuoted') as string;
-    const recruiterName = formData.get('recruiterName') as string;
-    const recruiterEmail = formData.get('recruiterEmail') as string;
-    const recruiterLinkedin = formData.get('recruiterLinkedin') as string;
+    const salary_quoted = formData.get('salary_quoted') as string;
+    const recruiter_name = formData.get('recruiter_name') as string;
+    const recruiter_email = formData.get('recruiter_email') as string;
+    const recruiter_linkedin = formData.get('recruiter_linkedin') as string;
 
     if (!position || !companyName) {
       return createErrorResponse('Position and company are required');
@@ -46,16 +46,16 @@ export async function action(args: ActionFunctionArgs) {
 
     let requirements: string[] = [];
     let skills: string[] = [];
-    let jobPostingUrl: string | null = null;
-    let jobPostingWordCount: number | null = null;
+    let job_posting_url: string | null = null;
+    let job_posting_word_count: number | null = null;
 
     if (jobPostingData) {
       try {
         const parsed = JSON.parse(jobPostingData) as JobPosting;
         requirements = parsed.requirements || [];
         skills = parsed.skills || [];
-        jobPostingUrl = parsed.url || null;
-        jobPostingWordCount = parsed.wordCount || null;
+        job_posting_url = parsed.url || null;
+        job_posting_word_count = parsed.wordCount || null;
       } catch {
         // fall through with defaults
       }
@@ -66,17 +66,17 @@ export async function action(args: ActionFunctionArgs) {
         companyName,
         position,
         status,
-        startDate: new Date(startDate),
+        start_date: new Date(start_date),
         location: location || null,
-        jobPosting: jobPostingData || jobPosting || null,
+        job_posting: jobPostingData || job_posting || null,
         requirements,
         skills,
-        jobPostingUrl,
-        jobPostingWordCount,
-        salaryQuoted: salaryQuoted || null,
-        recruiterName: recruiterName || null,
-        recruiterEmail: recruiterEmail || null,
-        recruiterLinkedin: recruiterLinkedin || null,
+        job_posting_url,
+        job_posting_word_count,
+        salary_quoted: salary_quoted || null,
+        recruiter_name: recruiter_name || null,
+        recruiter_email: recruiter_email || null,
+        recruiter_linkedin: recruiter_linkedin || null,
       });
 
       return redirect('/career/applications');
@@ -95,7 +95,7 @@ export default function CreateJobApplication() {
   const [url, setUrl] = useState('');
   const [isScraping, setIsScraping] = useState(false);
   const [scrapingError, setScrapingError] = useState<string | null>(null);
-  const [applicationDate, setApplicationDate] = useState(() => new Date());
+  const [application_date, setApplicationDate] = useState(() => new Date());
 
   const handleScrapedData = (data: JobPosting) => {
     setScrapedData(data);
@@ -116,8 +116,8 @@ export default function CreateJobApplication() {
 
       const result: ScrapedJobPostingResponse = await response.json();
 
-      if (result.jobPosting) {
-        handleScrapedData(result.jobPosting);
+      if (result.job_posting) {
+        handleScrapedData(result.job_posting);
       } else {
         setScrapingError(result.error || 'Failed to scrape job posting.');
       }
@@ -133,7 +133,7 @@ export default function CreateJobApplication() {
     if (pastedDescription.trim()) {
       // Create a basic JobPosting object from pasted text
       const basicJobPosting: JobPosting = {
-        jobTitle: '',
+        job_title: '',
         companyName: '',
         companyDescription: '',
         jobDescription: pastedDescription,
@@ -164,11 +164,12 @@ export default function CreateJobApplication() {
                 <button
                   type="button"
                   onClick={() => setInputMethod('url')}
-                  className={`p-4 rounded-lg border-2 transition-all ${
+                  className={cn(
+                    'p-4 rounded-lg border-2 transition-all',
                     inputMethod === 'url'
                       ? 'border-primary bg-accent/10 text-primary'
-                      : 'border-border bg-card hover:border-muted-foreground/30'
-                  }`}
+                      : 'border-border bg-card hover:border-muted-foreground/30',
+                  )}
                 >
                   <div className="text-center">
                     <div className="font-medium">Scrape from URL</div>
@@ -181,11 +182,12 @@ export default function CreateJobApplication() {
                 <button
                   type="button"
                   onClick={() => setInputMethod('paste')}
-                  className={`p-4 rounded-lg border-2 transition-all ${
+                  className={cn(
+                    'p-4 rounded-lg border-2 transition-all',
                     inputMethod === 'paste'
                       ? 'border-primary bg-accent/10 text-primary'
-                      : 'border-border bg-card hover:border-muted-foreground/30'
-                  }`}
+                      : 'border-border bg-card hover:border-muted-foreground/30',
+                  )}
                 >
                   <div className="text-center">
                     <div className="font-medium">Paste Description</div>
@@ -198,11 +200,12 @@ export default function CreateJobApplication() {
                 <button
                   type="button"
                   onClick={() => setInputMethod('manual')}
-                  className={`p-4 rounded-lg border-2 transition-all ${
+                  className={cn(
+                    'p-4 rounded-lg border-2 transition-all',
                     inputMethod === 'manual'
                       ? 'border-primary bg-accent/10 text-primary'
-                      : 'border-border bg-card hover:border-muted-foreground/30'
-                  }`}
+                      : 'border-border bg-card hover:border-muted-foreground/30',
+                  )}
                 >
                   <div className="text-center">
                     <div className="font-medium">Manual Entry</div>
@@ -377,7 +380,7 @@ export default function CreateJobApplication() {
                         placeholder="e.g. Senior Software Engineer"
                         required
                         className="h-11"
-                        defaultValue={scrapedData?.jobTitle || ''}
+                        defaultValue={scrapedData?.job_title || ''}
                       />
                     </div>
 
@@ -402,9 +405,9 @@ export default function CreateJobApplication() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <DatePicker
-                        id="startDate"
+                        id="start_date"
                         label="Application Date *"
-                        value={applicationDate}
+                        value={application_date}
                         onSelect={(nextDate) => {
                           if (nextDate) {
                             setApplicationDate(nextDate);
@@ -415,8 +418,8 @@ export default function CreateJobApplication() {
                       />
                       <input
                         type="hidden"
-                        name="startDate"
-                        value={applicationDate.toISOString().split('T')[0]}
+                        name="start_date"
+                        value={application_date.toISOString().split('T')[0]}
                       />
                     </div>
 
@@ -454,14 +457,14 @@ export default function CreateJobApplication() {
 
                   <div className="space-y-2">
                     <label
-                      htmlFor="jobPosting"
+                      htmlFor="job_posting"
                       className="text-sm font-medium text-muted-foreground"
                     >
                       Job Description
                     </label>
                     <textarea
-                      id="jobPosting"
-                      name="jobPosting"
+                      id="job_posting"
+                      name="job_posting"
                       rows={6}
                       placeholder="Paste the job description here..."
                       className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring/50 focus:border-transparent resize-none"
@@ -479,14 +482,14 @@ export default function CreateJobApplication() {
 
                   <div className="space-y-2">
                     <label
-                      htmlFor="salaryQuoted"
+                      htmlFor="salary_quoted"
                       className="text-sm font-medium text-muted-foreground"
                     >
                       Salary Range
                     </label>
                     <Input
-                      id="salaryQuoted"
-                      name="salaryQuoted"
+                      id="salary_quoted"
+                      name="salary_quoted"
                       placeholder="e.g. $120k - $150k or $80/hour"
                       className="h-11"
                     />
@@ -500,14 +503,14 @@ export default function CreateJobApplication() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <label
-                          htmlFor="recruiterName"
+                          htmlFor="recruiter_name"
                           className="text-sm font-medium text-muted-foreground"
                         >
                           Recruiter Name
                         </label>
                         <Input
-                          id="recruiterName"
-                          name="recruiterName"
+                          id="recruiter_name"
+                          name="recruiter_name"
                           placeholder="e.g. John Smith"
                           className="h-11"
                         />
@@ -515,14 +518,14 @@ export default function CreateJobApplication() {
 
                       <div className="space-y-2">
                         <label
-                          htmlFor="recruiterEmail"
+                          htmlFor="recruiter_email"
                           className="text-sm font-medium text-muted-foreground"
                         >
                           Recruiter Email
                         </label>
                         <Input
-                          id="recruiterEmail"
-                          name="recruiterEmail"
+                          id="recruiter_email"
+                          name="recruiter_email"
                           type="email"
                           placeholder="e.g. john.smith@company.com"
                           className="h-11"
@@ -532,14 +535,14 @@ export default function CreateJobApplication() {
 
                     <div className="mt-6 space-y-2">
                       <label
-                        htmlFor="recruiterLinkedin"
+                        htmlFor="recruiter_linkedin"
                         className="text-sm font-medium text-muted-foreground"
                       >
                         Recruiter LinkedIn URL
                       </label>
                       <Input
-                        id="recruiterLinkedin"
-                        name="recruiterLinkedin"
+                        id="recruiter_linkedin"
+                        name="recruiter_linkedin"
                         type="url"
                         placeholder="e.g. https://linkedin.com/in/johnsmith"
                         className="h-11"

@@ -3,7 +3,7 @@ import { Card, CardContent } from '@hominem/ui/card';
 import { useState } from 'react';
 
 import { JobScrapingResumeCustomizer } from '~/components/JobScrapingResumeCustomizer';
-
+import { cn } from '~/lib/utils';
 export default function ResumeCustomizer() {
   const [inputMethod, setInputMethod] = useState<'url' | 'paste'>('url');
   const [pastedDescription, setPastedDescription] = useState('');
@@ -32,11 +32,12 @@ export default function ResumeCustomizer() {
                 <button
                   type="button"
                   onClick={() => setInputMethod('url')}
-                  className={`p-6 rounded-lg border-2 transition-all ${
+                  className={cn(
+                    'p-6 rounded-lg border-2 transition-all',
                     inputMethod === 'url'
                       ? 'border-accent bg-accent text-accent-foreground'
-                      : 'hover:border-border'
-                  }`}
+                      : 'hover:border-border',
+                  )}
                 >
                   <div className="text-center">
                     <div className="mb-3 text-3xl">Link</div>
@@ -50,11 +51,12 @@ export default function ResumeCustomizer() {
                 <button
                   type="button"
                   onClick={() => setInputMethod('paste')}
-                  className={`p-6 rounded-lg border-2 transition-all ${
+                  className={cn(
+                    'p-6 rounded-lg border-2 transition-all',
                     inputMethod === 'paste'
                       ? 'border-accent bg-accent text-accent-foreground'
-                      : 'hover:border-border'
-                  }`}
+                      : 'hover:border-border',
+                  )}
                 >
                   <div className="text-center">
                     <div className="mb-3 text-3xl">Text</div>

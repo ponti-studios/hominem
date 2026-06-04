@@ -1,5 +1,5 @@
 import { CareerRepository, getDb } from '@hominem/db';
-import { getSharedAiModelConfig, getSharedOpenAIClient } from '@hominem/services/ai-model';
+import { createChatCompletion, getChatCompletionText } from '@hominem/services/ai-model';
 import { createStorageService, resolveUploadMimeType, validateFile } from '@hominem/storage';
 import type { ActionFunction } from 'react-router';
 
@@ -75,19 +75,19 @@ const resumeJsonShape = {
     title: 'string',
     name: 'string',
     initials: 'string | null',
-    jobTitle: 'string',
+    job_title: 'string',
     bio: 'string',
     tagline: 'string',
-    currentLocation: 'string',
-    locationTagline: 'string | null',
+    current_location: 'string',
+    location_tagline: 'string | null',
     email: 'email string',
     phone: 'string | null',
-    availabilityStatus: 'boolean',
-    availabilityMessage: 'string | null',
-    isPublic: 'boolean',
-    isActive: 'boolean',
+    availability_status: 'boolean',
+    availability_message: 'string | null',
+    is_public: 'boolean',
+    is_active: 'boolean',
   },
-  socialLinks: {
+  social_links: {
     github: 'string | null',
     linkedin: 'string | null',
     twitter: 'string | null',
@@ -98,8 +98,8 @@ const resumeJsonShape = {
       company: 'string',
       description: 'string',
       role: 'string',
-      startDate: 'string | null',
-      endDate: 'string | null',
+      start_date: 'string | null',
+      end_date: 'string | null',
     },
   ],
   skills: [
@@ -108,7 +108,7 @@ const resumeJsonShape = {
       level: 'number from 1 to 100',
       category: 'string | null',
       description: 'string | null',
-      yearsOfExperience: 'number | null',
+      years_of_experience: 'number | null',
       certifications: ['string'],
     },
   ],
@@ -116,10 +116,10 @@ const resumeJsonShape = {
     {
       title: 'string',
       description: 'string',
-      shortDescription: 'string | null',
+      short_description: 'string | null',
       technologies: ['string'],
-      liveUrl: 'string | null',
-      githubUrl: 'string | null',
+      live_url: 'string | null',
+      github_url: 'string | null',
       status: 'in-progress | completed | archived',
     },
   ],
@@ -127,7 +127,7 @@ const resumeJsonShape = {
 };
 
 export const action: ActionFunction = async ({ request }) => {
-  let userId: string | undefined;
+  let owner_userid: string | undefined;
 
   try {
     const sessionUser = await getAuthenticatedUser(request);
@@ -135,7 +135,7 @@ export const action: ActionFunction = async ({ request }) => {
       return errorResponse('Please log in to upload your resume.', 401, 'auth', false);
     }
     const user = sessionUser;
-    userId = user.id;
+    owner_userid = user.id;
 
     const rateLimit = resumeConvertRateLimit.isAllowed(user.id);
     const rateLimitHeaders = getRateLimitHeaders(rateLimit, resumeConvertRateLimit);
@@ -210,7 +210,7 @@ export const action: ActionFunction = async ({ request }) => {
       pdfText = await extractPdfText(file);
     } catch (error) {
       logRouteError('Resume PDF text extraction failed', error, {
-        userId: user.id,
+        owner_userid: user.id,
         fileName: file.name,
         fileSize: file.size,
       });
@@ -242,8 +242,7 @@ export const action: ActionFunction = async ({ request }) => {
 
     let aiContent: string;
     try {
-      const result = await getSharedOpenAIClient().chat.completions.create({
-        model: getSharedAiModelConfig().modelId,
+      const result = await createChatCompletion({
         response_format: { type: 'json_object' },
         messages: [
           {
@@ -261,10 +260,10 @@ ${pdfText}`,
           },
         ],
       });
-      aiContent = result.choices[0]?.message.content ?? '';
+      aiContent = getChatCompletionText(result);
     } catch (error) {
       logRouteError('Resume AI parsing request failed', error, {
-        userId: user.id,
+        owner_userid: user.id,
         fileName: file.name,
       });
       return errorResponse(
@@ -277,7 +276,7 @@ ${pdfText}`,
 
     if (!aiContent.trim()) {
       logger.error('Resume AI parsing returned empty content', undefined, {
-        userId: user.id,
+        owner_userid: user.id,
         fileName: file.name,
       });
       return errorResponse(
@@ -293,7 +292,7 @@ ${pdfText}`,
       parsedResume = parseJsonObject(aiContent);
     } catch (error) {
       logRouteError('Resume AI parsing returned invalid JSON', error, {
-        userId: user.id,
+        owner_userid: user.id,
         fileName: file.name,
       });
       return errorResponse(
@@ -311,7 +310,7 @@ ${pdfText}`,
     } = resumeSchema.safeParse(parsedResume as ConvertedResumeData);
     if (!success) {
       logger.error('Resume AI parsing failed schema validation', undefined, {
-        userId: user.id,
+        owner_userid: user.id,
         fileName: file.name,
         issues: schemaError.issues,
       });
@@ -331,22 +330,22 @@ ${pdfText}`,
       });
     } catch (error) {
       logger.error('Resume file upload failed', undefined, {
-        userId: user.id,
+        owner_userid: user.id,
         fileName: file.name,
         error: error instanceof Error ? error.message : error,
       });
       return errorResponse(storageFailureMessage(), 503, 'storage', true);
     }
 
-    let portfolioId: string;
+    let portfolio_id: string;
     let portfolioSlug: string;
     try {
       const saveResult = await saveResumeToDatabase(user.id, data);
-      portfolioId = saveResult.portfolioId;
+      portfolio_id = saveResult.portfolio_id;
       portfolioSlug = saveResult.portfolioSlug;
     } catch (error) {
       logRouteError('Resume database save failed', error, {
-        userId: user.id,
+        owner_userid: user.id,
         fileName: file.name,
       });
       if (uploadResult.id) {
@@ -354,7 +353,7 @@ ${pdfText}`,
           const deleted = await resumeStorage.deleteFile(uploadResult.id, user.id);
           if (!deleted) {
             logger.error('Resume upload cleanup after database failure failed', undefined, {
-              userId: user.id,
+              owner_userid: user.id,
               fileName: file.name,
               fileId: uploadResult.id,
               error: 'File not found',
@@ -362,7 +361,7 @@ ${pdfText}`,
           }
         } catch (cleanupError) {
           logRouteError('Resume upload cleanup after database failure threw', cleanupError, {
-            userId: user.id,
+            owner_userid: user.id,
             fileName: file.name,
             fileId: uploadResult.id,
           });
@@ -380,7 +379,7 @@ ${pdfText}`,
       message: 'Resume uploaded and processed successfully',
       data,
       saved: true,
-      portfolioId,
+      portfolio_id,
       portfolioSlug,
       portfolioUrl: `/p/${portfolioSlug}`,
       fileUrl: uploadResult.url,
@@ -388,7 +387,7 @@ ${pdfText}`,
       retryable: false,
     } satisfies UploadResumeResponse);
   } catch (err) {
-    logRouteError('Resume conversion request failed before processing', err, { userId });
+    logRouteError('Resume conversion request failed before processing', err, { owner_userid });
 
     return errorResponse(
       'Could not start resume conversion. Please try again.',

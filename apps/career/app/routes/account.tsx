@@ -38,13 +38,13 @@ export async function loader(args: LoaderFunctionArgs) {
             id: fullPortfolio.id,
             title: fullPortfolio.title,
             slug: fullPortfolio.slug,
-            isPublic: fullPortfolio.isPublic,
-            isActive: fullPortfolio.isActive,
-            updatedAt: fullPortfolio.updatedAt,
+            is_public: fullPortfolio.is_public,
+            is_active: fullPortfolio.is_active,
+            updatedat: fullPortfolio.updatedat,
             name: fullPortfolio.name,
-            jobTitle: fullPortfolio.jobTitle,
+            job_title: fullPortfolio.job_title,
             bio: fullPortfolio.bio,
-            profileImageUrl: fullPortfolio.profileImageUrl || undefined,
+            profile_image_url: fullPortfolio.profile_image_url || undefined,
           },
         ]
       : [];
@@ -61,11 +61,11 @@ export async function action(args: ActionFunctionArgs) {
   return withAuthAction(args, async ({ user }) => {
     const formData = await args.request.formData();
     const action = formData.get('action');
-    const portfolioId = formData.get('portfolioId');
+    const portfolio_id = formData.get('portfolio_id');
 
-    if (action === 'delete' && portfolioId) {
+    if (action === 'delete' && portfolio_id) {
       return tryAsync(async () => {
-        await CareerRepository.deletePortfolio(getDb(), user.id, portfolioId as string);
+        await CareerRepository.deletePortfolio(getDb(), user.id, portfolio_id as string);
 
         return createSuccessResponse(null, 'Portfolio deleted successfully');
       }, 'Failed to delete portfolio');
@@ -109,7 +109,7 @@ export async function action(args: ActionFunctionArgs) {
         }
 
         return createSuccessResponse(
-          { imageUrl: uploadResult.url },
+          { image_url: uploadResult.url },
           'Profile image updated successfully',
         );
       }, 'Failed to upload profile image');
@@ -118,9 +118,9 @@ export async function action(args: ActionFunctionArgs) {
     if (action === 'update-slug') {
       return tryAsync(async () => {
         const newSlug = formData.get('slug') as string;
-        const portfolioId = formData.get('portfolioId') as string;
+        const portfolio_id = formData.get('portfolio_id') as string;
 
-        if (!newSlug || !portfolioId) {
+        if (!newSlug || !portfolio_id) {
           return createErrorResponse('Slug and portfolio ID are required');
         }
 
@@ -139,13 +139,13 @@ export async function action(args: ActionFunctionArgs) {
           return createErrorResponse('Slug must be less than 50 characters long');
         }
 
-        const isAvailable = await CareerRepository.isSlugAvailable(getDb(), newSlug, portfolioId);
+        const isAvailable = await CareerRepository.isSlugAvailable(getDb(), newSlug, portfolio_id);
 
         if (!isAvailable) {
           return createErrorResponse('Slug is already taken');
         }
 
-        await CareerRepository.updatePortfolioSlug(getDb(), user.id, portfolioId, newSlug);
+        await CareerRepository.updatePortfolioSlug(getDb(), user.id, portfolio_id, newSlug);
 
         return createSuccessResponse({ slug: newSlug }, 'Portfolio URL updated successfully');
       }, 'Failed to update portfolio URL');
@@ -159,13 +159,13 @@ interface Portfolio {
   id: string;
   title: string;
   slug: string;
-  isPublic: boolean;
-  isActive: boolean;
-  updatedAt: string | Date;
+  is_public: boolean;
+  is_active: boolean;
+  updatedat: string | Date;
   name?: string;
-  jobTitle?: string;
+  job_title?: string;
   bio?: string;
-  profileImageUrl?: string;
+  profile_image_url?: string;
 }
 
 export function meta() {
@@ -186,7 +186,7 @@ export default function Account() {
   const { user, portfolios, hasPortfolio } = loaderData;
 
   const portfolio = portfolios[0];
-  const [profileImageUrl, setProfileImageUrl] = useState(portfolio?.profileImageUrl || undefined);
+  const [profile_image_url, setProfileImageUrl] = useState(portfolio?.profile_image_url || undefined);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [pdfGenerating, setPdfGenerating] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
@@ -203,18 +203,18 @@ export default function Account() {
     }
   };
 
-  const handleDeletePortfolio = (portfolioId: string) => {
+  const handleDeletePortfolio = (portfolio_id: string) => {
     if (confirm('Are you sure you want to delete this portfolio? This action cannot be undone.')) {
       const formData = new FormData();
       formData.append('action', 'delete');
-      formData.append('portfolioId', portfolioId);
+      formData.append('portfolio_id', portfolio_id);
 
       submit(formData, { method: 'post' });
     }
   };
 
-  const handleImageUpload = (imageUrl: string) => {
-    setProfileImageUrl(imageUrl);
+  const handleImageUpload = (image_url: string) => {
+    setProfileImageUrl(image_url);
     setUploadError(null);
   };
 
@@ -223,7 +223,7 @@ export default function Account() {
   };
 
   const handleDownloadPdf = async () => {
-    if (!portfolio?.slug || !portfolio.isPublic) {
+    if (!portfolio?.slug || !portfolio.is_public) {
       setPdfError('Portfolio must be public to generate PDF');
       return;
     }
@@ -241,7 +241,7 @@ export default function Account() {
         },
         body: JSON.stringify({
           url: portfolioUrl,
-          userId: user.id,
+          owner_userid: user.id,
         }),
       });
 
@@ -283,30 +283,18 @@ export default function Account() {
             <h3 className="heading-4 text-foreground">Profile Information</h3>
 
             <ProfileImageUpload
-              currentImageUrl={portfolio?.profileImageUrl}
+              currentImageUrl={portfolio?.profile_image_url}
               onImageUploaded={handleImageUpload}
               onError={handleImageError}
             />
 
-            <div className="flex items-start justify-between">
+            <div className="flex items-start">
               <div className="flex items-center space-x-4">
                 <div>
                   <h3 className="text-lg font-medium">{userDisplayName}</h3>
                   <p className="text-muted-foreground">{user.email}</p>
                 </div>
               </div>
-
-              <Button
-                type="button"
-                onClick={handleSignOut}
-                disabled={isSigningOut}
-                variant="outline"
-                size="sm"
-                className="inline-flex items-center"
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                {isSigningOut ? 'Signing Out...' : 'Sign Out'}
-              </Button>
             </div>
 
             {uploadError && (
@@ -325,7 +313,7 @@ export default function Account() {
                 <div className="space-y-3 sm:hidden">
                   <div className="flex items-center justify-between">
                     <h2 className="text-lg font-semibold">Portfolio</h2>
-                    {portfolio.isPublic && (
+                    {portfolio.is_public && (
                       <a
                         href={`/p/${portfolio.slug}`}
                         target="_blank"
@@ -343,12 +331,12 @@ export default function Account() {
                       <Badge
                         variant="outline"
                         className={
-                          portfolio.isPublic
+                          portfolio.is_public
                             ? 'border-accent/30 bg-accent/10 text-foreground'
                             : 'border-border bg-muted text-foreground'
                         }
                       >
-                        {portfolio.isPublic ? 'Public' : 'Private'}
+                        {portfolio.is_public ? 'Public' : 'Private'}
                       </Badge>
                     </div>
                   </div>
@@ -362,17 +350,17 @@ export default function Account() {
                       <Badge
                         variant="outline"
                         className={
-                          portfolio.isPublic
+                          portfolio.is_public
                             ? 'border-accent/30 bg-accent/10 text-foreground'
                             : 'border-border bg-muted text-foreground'
                         }
                       >
-                        {portfolio.isPublic ? 'Public' : 'Private'}
+                        {portfolio.is_public ? 'Public' : 'Private'}
                       </Badge>
                     </div>
                   </div>
 
-                  {portfolio.isPublic && (
+                  {portfolio.is_public && (
                     <a
                       href={`/p/${portfolio.slug}`}
                       target="_blank"
@@ -387,7 +375,7 @@ export default function Account() {
 
                 <div className="mt-4 space-y-4">
                   {/* Editable Portfolio URL */}
-                  <SlugEditor portfolioId={portfolio.id} initialSlug={portfolio.slug} />
+                  <SlugEditor portfolio_id={portfolio.id} initialSlug={portfolio.slug} />
 
                   <div className="bg-accent/10 border border-accent/30 rounded-md p-3">
                     <p className="text-sm text-foreground">
@@ -412,7 +400,7 @@ export default function Account() {
                     <Button
                       type="button"
                       onClick={handleDownloadPdf}
-                      disabled={pdfGenerating || !portfolio.isPublic}
+                      disabled={pdfGenerating || !portfolio.is_public}
                       variant="outline"
                       size="sm"
                       className="w-full border-success/30 text-success hover:bg-success/10 sm:w-auto"
@@ -448,7 +436,7 @@ export default function Account() {
                     </div>
                   )}
 
-                  {!portfolio.isPublic && (
+                  {!portfolio.is_public && (
                     <div className="mt-2 rounded-md border border-warning/30 bg-warning/10 p-3">
                       <p className="text-sm text-foreground">
                         Your portfolio must be public to generate a PDF. Make it public in the
@@ -458,7 +446,7 @@ export default function Account() {
                   )}
 
                   <p className="text-xs text-muted-foreground">
-                    Last updated: {new Date(portfolio.updatedAt).toLocaleDateString()}
+                    Last updated: {new Date(portfolio.updatedat).toLocaleDateString()}
                   </p>
                 </div>
               </CardContent>
@@ -481,6 +469,19 @@ export default function Account() {
               </CardContent>
             </Card>
           )}
+        </div>
+
+        <div className="border-t border-border pt-6">
+          <Button
+            type="button"
+            onClick={handleSignOut}
+            disabled={isSigningOut}
+            variant="outline"
+            className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 sm:w-auto"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            {isSigningOut ? 'Signing Out...' : 'Sign Out'}
+          </Button>
         </div>
       </div>
     </div>

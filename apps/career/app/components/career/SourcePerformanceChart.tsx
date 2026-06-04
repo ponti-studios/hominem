@@ -1,5 +1,6 @@
 import { PercentageProgressBar, VolumeProgressBar } from '@hominem/ui/progress';
 
+import { cn } from '~/lib/utils';
 interface SourceMetric {
   source: string;
   count: number;
@@ -59,7 +60,10 @@ export function SourcePerformanceChart({ data }: SourcePerformanceChartProps) {
             <div className="flex justify-between items-center">
               <span className="text-sm text-muted-foreground">Overall Score</span>
               <span
-                className={`text-sm font-medium ${getScoreColor(source.responseRate, source.offerRate)}`}
+                className={cn(
+                  'text-sm font-medium',
+                  getScoreColor(source.responseRate, source.offerRate),
+                )}
               >
                 {calculatePerformanceScore(source.responseRate, source.offerRate)}
               </span>

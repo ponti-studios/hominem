@@ -18,6 +18,7 @@ import {
   withAuthLoader,
 } from '~/lib/route-utils';
 import { JobApplicationsService } from '~/lib/services/job-applications.service';
+import { cn } from '~/lib/utils';
 import { formatStatusText, getStatusColor } from '~/lib/utils/applicationUtils';
 import type {
   ApplicationWithRelations,
@@ -71,14 +72,14 @@ export async function action(args: ActionFunctionArgs) {
           'position',
           'status',
           'location',
-          'jobPosting',
-          'salaryQuoted',
-          'salaryAccepted',
-          'companyNotes',
-          'negotiationNotes',
-          'recruiterName',
-          'recruiterEmail',
-          'recruiterLinkedin',
+          'job_posting',
+          'salary_quoted',
+          'salary_accepted',
+          'company_notes',
+          'negotiation_notes',
+          'recruiter_name',
+          'recruiter_email',
+          'recruiter_linkedin',
         ] as const;
 
         for (const field of fields) {
@@ -233,7 +234,10 @@ export default function ApplicationDetail() {
         </div>
         <div className="flex items-center gap-3">
           <span
-            className={`px-4 py-2 text-sm font-semibold rounded-full ${getStatusColor(application.status)}`}
+            className={cn(
+              'px-4 py-2 text-sm font-semibold rounded-full',
+              getStatusColor(application.status),
+            )}
           >
             {formatStatusText(application.status)}
           </span>

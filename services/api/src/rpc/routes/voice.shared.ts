@@ -3,6 +3,12 @@ import { existsSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
+import {
+  hasOpenRouterApiKey,
+  postChatCompletion,
+  toAudioFormat,
+  type SharedChatMessage,
+} from '@hominem/services/ai-model';
 import { logger } from '@hominem/telemetry';
 import { type Context } from 'hono';
 
@@ -44,16 +50,8 @@ const VOICE_MIME_ALIASES: Record<string, string> = {
   'audio/x-wav': 'audio/wav',
   'audio/m4a': 'audio/mp4',
 };
-const MIME_TO_OPENROUTER_FORMAT: Record<string, string> = {
-  'audio/webm': 'webm',
-  'audio/mp4': 'mp4',
-  'audio/mpeg': 'mp3',
-  'audio/wav': 'wav',
-  'audio/ogg': 'ogg',
-};
 const TRANSCRIPTION_MODEL = 'google/gemini-2.5-flash-lite';
 const VOICE_RESPONSE_MODEL = 'openai/gpt-4o-audio-preview';
-const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 
 interface AudioChunk {
   choices?: Array<{
@@ -229,29 +227,11 @@ function getErrorMessage(error: unknown, fallback = 'Unknown error'): string {
   return error instanceof Error ? error.message : fallback;
 }
 
-function requireOpenRouterApiKey(logPrefix: string, requestId: string): string {
-  const apiKey = env.OPENROUTER_API_KEY?.trim();
-  if (apiKey) return apiKey;
+function requireOpenRouterApiKey(logPrefix: string, requestId: string): void {
+  if (hasOpenRouterApiKey()) return;
 
   logger.error(`${logPrefix} Missing OPENROUTER_API_KEY`, getVoiceLogData(requestId));
   throw new VoiceError('Invalid API configuration.', 'AUTH', 401);
-}
-
-function getOpenRouterHeaders(apiKey: string): Record<string, string> {
-  return {
-    Authorization: `Bearer ${apiKey}`,
-    'Content-Type': 'application/json',
-    'HTTP-Referer': 'https://hominem.app',
-    'X-Title': 'Hominem',
-  };
-}
-
-async function postOpenRouterChatCompletion(apiKey: string, body: object): Promise<Response> {
-  return fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
-    method: 'POST',
-    headers: getOpenRouterHeaders(apiKey),
-    body: JSON.stringify(body),
-  });
 }
 
 async function getVoiceProviderErrorMessage(response: Response): Promise<string | undefined> {
@@ -341,7 +321,7 @@ function getTranscriptionMessages(input: {
   base64Audio: string;
   audioFormat: string;
   language?: string;
-}): object[] {
+}): SharedChatMessage[] {
   return [
     {
       role: 'user',
@@ -376,7 +356,7 @@ export async function transcribeVoiceBuffer(input: {
     size: input.buffer.byteLength,
   });
 
-  const apiKey = requireOpenRouterApiKey('[voice-transcription]', requestId);
+  requireOpenRouterApiKey('[voice-transcription]', requestId);
 
   logger.info('[voice-transcription] Request started', {
     ...getVoiceLogData(requestId),
@@ -396,7 +376,7 @@ export async function transcribeVoiceBuffer(input: {
     requestId,
   });
 
-  const audioFormat = MIME_TO_OPENROUTER_FORMAT[normalizedMimeType] ?? 'mp3';
+  const audioFormat = toAudioFormat(normalizedMimeType);
   const base64Audio = Buffer.from(input.buffer).toString('base64');
   const messages = getTranscriptionMessages({ base64Audio, audioFormat, language: input.language });
 
@@ -405,7 +385,7 @@ export async function transcribeVoiceBuffer(input: {
 
   try {
     const fetchStart = performance.now();
-    response = await postOpenRouterChatCompletion(apiKey, { model: TRANSCRIPTION_MODEL, messages });
+    response = await postChatCompletion({ model: TRANSCRIPTION_MODEL, messages });
     responseTime = performance.now() - fetchStart;
   } catch (error) {
     const errorTime = performance.now() - startTime;
@@ -481,8 +461,11 @@ export async function transcribeVoiceBuffer(input: {
   }
 }
 
-function getVoiceResponseMessages(input: { text: string; systemPrompt?: string }): object[] {
-  const messages: object[] = [];
+function getVoiceResponseMessages(input: {
+  text: string;
+  systemPrompt?: string;
+}): SharedChatMessage[] {
+  const messages: SharedChatMessage[] = [];
 
   if (input.systemPrompt) {
     messages.push({ role: 'system', content: input.systemPrompt });
@@ -493,7 +476,7 @@ function getVoiceResponseMessages(input: { text: string; systemPrompt?: string }
 }
 
 function getVoiceResponseBody(input: {
-  messages: object[];
+  messages: SharedChatMessage[];
   voice: VoiceResponseVoice;
   format: VoiceResponseFormat;
 }) {
@@ -611,7 +594,7 @@ export async function generateVoiceResponseStream(input: {
   requestId?: string;
 }) {
   const requestId = input.requestId ?? createVoiceRequestId('vr');
-  const apiKey = requireOpenRouterApiKey('[voice-response]', requestId);
+  requireOpenRouterApiKey('[voice-response]', requestId);
   const voice: VoiceResponseVoice = input.voice ?? 'alloy';
   const format = input.format ?? 'pcm16';
   const messages = getVoiceResponseMessages({
@@ -622,10 +605,7 @@ export async function generateVoiceResponseStream(input: {
   let response: Response;
 
   try {
-    response = await postOpenRouterChatCompletion(
-      apiKey,
-      getVoiceResponseBody({ messages, voice, format }),
-    );
+    response = await postChatCompletion(getVoiceResponseBody({ messages, voice, format }));
   } catch (error) {
     logger.error('[voice-response] Fetch failed', {
       ...getVoiceLogData(requestId),
@@ -692,7 +672,7 @@ async function collectSpeechStream(response: Response): Promise<Buffer> {
 
 export async function generateSpeechBuffer(input: { text: string; voice: string; speed: number }) {
   const requestId = createVoiceRequestId('sp');
-  const apiKey = requireOpenRouterApiKey('[voice-speech]', requestId);
+  requireOpenRouterApiKey('[voice-speech]', requestId);
   const model = 'openai/gpt-4o-audio-preview';
 
   logger.info('[voice-speech] Request started', {
@@ -706,7 +686,7 @@ export async function generateSpeechBuffer(input: { text: string; voice: string;
   let response: Response;
 
   try {
-    response = await postOpenRouterChatCompletion(apiKey, {
+    response = await postChatCompletion({
       model,
       messages: [{ role: 'user', content: input.text }],
       modalities: ['audio'],

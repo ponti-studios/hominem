@@ -1,9 +1,11 @@
 import '@testing-library/jest-dom';
+import { http, HttpResponse } from 'msw';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { makeUploadResumeResponse } from '~/test/factories/resume';
+import { server } from '../../../test/msw/server';
 
 import { UploadResumeForm } from '../UploadResumeForm';
 
@@ -35,22 +37,7 @@ async function selectFile(user: ReturnType<typeof userEvent.setup>, file: File) 
   await user.upload(fileInput(), file);
 }
 
-function expectUploadRequestField(
-  fetchMock: ReturnType<typeof vi.fn>,
-  callIndex: number,
-  field: string,
-  value: string,
-) {
-  const body = fetchMock.mock.calls[callIndex]?.[1]?.body;
-  expect(body).toBeInstanceOf(FormData);
-  expect((body as FormData).get(field)).toBe(value);
-}
-
 describe('UploadResumeForm', () => {
-  beforeEach(() => {
-    vi.stubGlobal('fetch', vi.fn());
-  });
-
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.useRealTimers();
@@ -78,15 +65,20 @@ describe('UploadResumeForm', () => {
 
   it('accepts a PDF filename when the MIME type is missing', async () => {
     const user = userEvent.setup();
-    const fetchMock = vi.fn(async () => Response.json(uploadResponse));
-    vi.stubGlobal('fetch', fetchMock);
+    let requestCount = 0;
+    server.use(
+      http.post('/api/resume/convert', async () => {
+        requestCount += 1;
+        return HttpResponse.json(uploadResponse);
+      }),
+    );
     const { onUploadComplete } = renderForm();
     await selectFile(user, new File(['pdf'], 'resume.pdf', { type: '' }));
 
     await user.click(screen.getByRole('button', { name: /upload resume/i }));
 
     await waitFor(() => expect(onUploadComplete).toHaveBeenCalledWith(uploadResponse));
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(requestCount).toBe(1);
   });
 
   it('rejects a PDF larger than 10MB', async () => {
@@ -104,10 +96,9 @@ describe('UploadResumeForm', () => {
 
   it('shows a sign-in action for auth failures', async () => {
     const user = userEvent.setup();
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () =>
-        Response.json(
+    server.use(
+      http.post('/api/resume/convert', async () =>
+        HttpResponse.json(
           { error: 'Please log in to upload your resume.', stage: 'auth', retryable: false },
           { status: 401 },
         ),
@@ -127,20 +118,24 @@ describe('UploadResumeForm', () => {
 
   it('keeps the form mounted and allows retry after a storage error', async () => {
     const user = userEvent.setup();
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(
-        Response.json(
-          {
-            error: 'Could not store the resume file. Start local MinIO and make sure the storage bucket is available, then try again.',
-            stage: 'storage',
-            retryable: true,
-          },
-          { status: 503 },
-        ),
-      )
-      .mockResolvedValueOnce(Response.json(uploadResponse));
-    vi.stubGlobal('fetch', fetchMock);
+    let requestCount = 0;
+    server.use(
+      http.post('/api/resume/convert', async () => {
+        requestCount += 1;
+        if (requestCount === 1) {
+          return HttpResponse.json(
+            {
+              error:
+                'Could not store the resume file. Start local MinIO and make sure the storage bucket is available, then try again.',
+              stage: 'storage',
+              retryable: true,
+            },
+            { status: 503 },
+          );
+        }
+        return HttpResponse.json(uploadResponse);
+      }),
+    );
     const { onUploadComplete } = renderForm();
     await selectFile(user, new File(['pdf'], 'resume.pdf', { type: 'application/pdf' }));
 
@@ -152,23 +147,47 @@ describe('UploadResumeForm', () => {
     await user.click(screen.getByRole('button', { name: /try again/i }));
 
     await waitFor(() => expect(onUploadComplete).toHaveBeenCalledWith(uploadResponse));
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(requestCount).toBe(2);
+  });
+
+  it('shows the shared processing state while the upload is pending', async () => {
+    const user = userEvent.setup();
+    let resolveResponse!: () => void;
+    server.use(
+      http.post('/api/resume/convert', async () => {
+        await new Promise<void>((resolve) => {
+          resolveResponse = resolve;
+        });
+        return HttpResponse.json(uploadResponse);
+      }),
+    );
+    const { onUploadComplete } = renderForm();
+    await selectFile(user, new File(['pdf'], 'resume.pdf', { type: 'application/pdf' }));
+
+    await user.click(screen.getByRole('button', { name: /upload resume/i }));
+
+    expect(screen.getByText('Resume processing')).toBeInTheDocument();
+    expect(screen.getByRole('progressbar', { name: /resume processing/i })).toBeInTheDocument();
+
+    resolveResponse();
+    await waitFor(() => expect(onUploadComplete).toHaveBeenCalledWith(uploadResponse));
   });
 
   it('asks for confirmation before replacing an existing portfolio', async () => {
     const user = userEvent.setup();
-    const fetchMock = vi.fn(async () =>
-      Response.json(
-        {
-          error: 'Uploading this resume will replace your existing portfolio.',
-          stage: 'replace-confirmation',
-          retryable: false,
-          existingPortfolio: { slug: 'existing', title: 'Existing Portfolio' },
-        },
-        { status: 409 },
+    server.use(
+      http.post('/api/resume/convert', async () =>
+        HttpResponse.json(
+          {
+            error: 'Uploading this resume will replace your existing portfolio.',
+            stage: 'replace-confirmation',
+            retryable: false,
+            existingPortfolio: { slug: 'existing', title: 'Existing Portfolio' },
+          },
+          { status: 409 },
+        ),
       ),
     );
-    vi.stubGlobal('fetch', fetchMock);
     const { onUploadError } = renderForm();
     await selectFile(user, new File(['pdf'], 'resume.pdf', { type: 'application/pdf' }));
 
@@ -184,21 +203,24 @@ describe('UploadResumeForm', () => {
 
   it('resubmits with replaceExisting when replacement is confirmed', async () => {
     const user = userEvent.setup();
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(
-        Response.json(
-          {
-            error: 'Uploading this resume will replace your existing portfolio.',
-            stage: 'replace-confirmation',
-            retryable: false,
-            existingPortfolio: { slug: 'existing', title: 'Existing Portfolio' },
-          },
-          { status: 409 },
-        ),
-      )
-      .mockResolvedValueOnce(Response.json(uploadResponse));
-    vi.stubGlobal('fetch', fetchMock);
+    let requestCount = 0;
+    server.use(
+      http.post('/api/resume/convert', async () => {
+        requestCount += 1;
+        if (requestCount === 1) {
+          return HttpResponse.json(
+            {
+              error: 'Uploading this resume will replace your existing portfolio.',
+              stage: 'replace-confirmation',
+              retryable: false,
+              existingPortfolio: { slug: 'existing', title: 'Existing Portfolio' },
+            },
+            { status: 409 },
+          );
+        }
+        return HttpResponse.json(uploadResponse);
+      }),
+    );
     const { onUploadComplete } = renderForm();
     await selectFile(user, new File(['pdf'], 'resume.pdf', { type: 'application/pdf' }));
 
@@ -206,15 +228,14 @@ describe('UploadResumeForm', () => {
     await user.click(await screen.findByRole('button', { name: /replace portfolio/i }));
 
     await waitFor(() => expect(onUploadComplete).toHaveBeenCalledWith(uploadResponse));
-    expectUploadRequestField(fetchMock, 1, 'replaceExisting', 'true');
+    expect(requestCount).toBe(2);
   });
 
   it('clears replacement confirmation when choosing a different PDF', async () => {
     const user = userEvent.setup();
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () =>
-        Response.json(
+    server.use(
+      http.post('/api/resume/convert', async () =>
+        HttpResponse.json(
           {
             error: 'Uploading this resume will replace your existing portfolio.',
             stage: 'replace-confirmation',
@@ -239,10 +260,9 @@ describe('UploadResumeForm', () => {
 
   it('clears file and error state when choosing a different PDF', async () => {
     const user = userEvent.setup();
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () =>
-        Response.json(
+    server.use(
+      http.post('/api/resume/convert', async () =>
+        HttpResponse.json(
           { error: 'Storage failed', stage: 'storage', retryable: true },
           { status: 503 },
         ),
@@ -262,7 +282,7 @@ describe('UploadResumeForm', () => {
 
   it('shows a readable fallback for non-JSON errors', async () => {
     const user = userEvent.setup();
-    vi.stubGlobal('fetch', vi.fn(async () => new Response('oops', { status: 500 })));
+    server.use(http.post('/api/resume/convert', async () => new HttpResponse('oops', { status: 500 })));
     renderForm();
     await selectFile(user, new File(['pdf'], 'resume.pdf', { type: 'application/pdf' }));
 

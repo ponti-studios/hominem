@@ -5,8 +5,8 @@ import { ChevronDownIcon, ChevronUpIcon } from 'lucide-react';
 import { useState } from 'react';
 
 import { centsToDollars, formatPercentage } from '~/lib/utils';
+import { cn } from '~/lib/utils';
 import type { JobApplicationMetrics } from '~/types/career-data';
-
 interface ApplicationsMetricsProps {
   metrics: JobApplicationMetrics;
 }
@@ -94,7 +94,7 @@ export function ApplicationsMetrics({ metrics }: ApplicationsMetricsProps) {
           {performanceMetrics.map((metric) => (
             <div key={metric.title} className="text-center">
               <div className="mb-1 text-2xl">{metric.icon}</div>
-              <div className={`text-lg font-bold ${metric.color}`}>{metric.value}</div>
+              <div className={cn('text-lg font-bold', metric.color)}>{metric.value}</div>
               <div className="text-xs text-muted-foreground">{metric.title}</div>
             </div>
           ))}
@@ -111,7 +111,9 @@ export function ApplicationsMetrics({ metrics }: ApplicationsMetricsProps) {
                       <span className="text-sm">{metric.icon}</span>
                       <div className="flex-1">
                         <div className="text-xs text-muted-foreground">{metric.title}</div>
-                        <div className={`text-sm font-medium ${metric.color}`}>{metric.value}</div>
+                        <div className={cn('text-sm font-medium', metric.color)}>
+                          {metric.value}
+                        </div>
                       </div>
                     </div>
                   </div>

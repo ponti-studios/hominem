@@ -17,7 +17,7 @@ type CreatePortfolioOptions = {
   user?: CareerTestUser;
   slug?: string;
   title?: string;
-  jobTitle?: string;
+  job_title?: string;
 };
 
 export function createCareerTestDb() {
@@ -48,7 +48,7 @@ export function createCareerTestDb() {
         slug,
         title: options.title ?? `${user.name} Portfolio`,
         name: user.name,
-        job_title: options.jobTitle ?? 'Engineer',
+        job_title: options.job_title ?? 'Engineer',
         bio: 'Bio',
         tagline: 'Tagline',
         current_location: 'Los Angeles',

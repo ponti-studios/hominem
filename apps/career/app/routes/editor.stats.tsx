@@ -25,12 +25,12 @@ interface PortfolioStatsFormValues {
 
 interface PortfolioStatsEditorSectionProps {
   stats?: PortfolioStat[] | null;
-  portfolioId: string;
+  portfolio_id: string;
 }
 
 function PortfolioStatsEditorSection({
   stats: initialStats,
-  portfolioId,
+  portfolio_id,
 }: PortfolioStatsEditorSectionProps) {
   const fetcher = useFetcher();
   const { addToast } = useToast();
@@ -93,7 +93,7 @@ function PortfolioStatsEditorSection({
       id: s.id,
       label: s.label,
       value: s.value,
-      portfolioId,
+      portfolio_id,
     }));
 
     const formData2 = new FormData();
@@ -193,7 +193,7 @@ export async function action(args: ActionFunctionArgs) {
   return withAuthAction(args, async ({ user }) => {
     const formData = await args.request.formData();
     const statsDataResult = parseFormData<
-      Array<{ id?: string; label: string; value: string; portfolioId: string }>
+      Array<{ id?: string; label: string; value: string; portfolio_id: string }>
     >(formData, 'statsData');
     if ('success' in statsDataResult && !statsDataResult.success) {
       return statsDataResult;
@@ -202,7 +202,7 @@ export async function action(args: ActionFunctionArgs) {
       id?: string;
       label: string;
       value: string;
-      portfolioId: string;
+      portfolio_id: string;
     }>;
     if (!Array.isArray(statsData)) {
       return createErrorResponse('Invalid stats data');
@@ -211,19 +211,19 @@ export async function action(args: ActionFunctionArgs) {
       // Nothing to do
       return createSuccessResponse(null, 'No stats to save');
     }
-    // Ensure portfolioId exists
-    const portfolioId = statsData[0]?.portfolioId;
-    if (!portfolioId) return createErrorResponse('Missing portfolioId');
+    // Ensure portfolio_id exists
+    const portfolio_id = statsData[0]?.portfolio_id;
+    if (!portfolio_id) return createErrorResponse('Missing portfolio_id');
     await runInTransaction((tx) =>
       CareerRepository.replacePortfolioStats(
         tx,
         user.id,
-        portfolioId,
+        portfolio_id,
         statsData.map((stat, index) => ({
           id: stat.id,
           label: stat.label,
           value: stat.value,
-          sortOrder: index,
+          sort_order: index,
         })),
       ),
     );
@@ -236,6 +236,6 @@ export default function EditorStats() {
   const portfolio = useOutletContext<FullPortfolio>();
 
   return (
-    <PortfolioStatsEditorSection stats={portfolio.portfolioStats} portfolioId={portfolio.id} />
+    <PortfolioStatsEditorSection stats={portfolio.portfolio_stats} portfolio_id={portfolio.id} />
   );
 }

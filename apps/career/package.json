@@ -54,6 +54,7 @@
     "@types/react-dom": "19.1.7",
     "@types/react-image-crop": "^8.1.6",
     "@vitest/coverage-v8": "4.1.2",
+    "msw": "^2.12.13",
     "jsdom": "^26.1.0",
     "tailwindcss": "^4.1.8",
     "tsx": "^4.10.0",

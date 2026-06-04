@@ -12,6 +12,7 @@ import {
   type ReactNode,
 } from 'react';
 
+import { cn } from '../../lib/utils';
 import { Button } from '../button';
 import {
   DropdownMenu,
@@ -249,7 +250,7 @@ export const PromptInput = forwardRef<HTMLFormElement, PromptInputProps>(functio
     <form
       ref={ref || formRef}
       onSubmit={handleSubmit}
-      className={`flex flex-col gap-2 ${isDragOver ? 'ring-2 ring-primary ring-offset-2' : ''}`}
+      className={cn('flex flex-col gap-2', isDragOver ? 'ring-2 ring-primary ring-offset-2' : '')}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -307,7 +308,10 @@ export const PromptInputTextarea = forwardRef<HTMLTextAreaElement, PromptInputTe
         onInput={(e) => adjustHeight(e.currentTarget)}
         placeholder={placeholder || 'Type your message...'}
         disabled={disabled}
-        className={`flex w-full min-h-11 max-h-60 resize-none rounded-md border bg-background px-4 py-3 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 ${isFocused ? 'ring-2 ring-ring' : ''}`}
+        className={cn(
+          'flex w-full min-h-11 max-h-60 resize-none rounded-md border bg-background px-4 py-3 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
+          isFocused ? 'ring-2 ring-ring' : '',
+        )}
         rows={1}
         {...props}
       />

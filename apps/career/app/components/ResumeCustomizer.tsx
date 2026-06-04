@@ -4,6 +4,7 @@ import { Input } from '@hominem/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
 import { useState } from 'react';
 
+import { cn } from '~/lib/utils';
 interface JobAnalysis {
   requiredSkills: string[];
   qualifications: string[];
@@ -20,7 +21,7 @@ interface CustomizeResumeResponse {
     targetLength: string;
     focusAreas: string[];
     generatedAt: string;
-    portfolioId: string;
+    portfolio_id: string;
   };
   error?: string;
 }
@@ -31,8 +32,8 @@ interface ResumeCustomizerProps {
 }
 
 export function ResumeCustomizer({ applicationId, initialJobPosting = '' }: ResumeCustomizerProps) {
-  const [jobPosting, setJobPosting] = useState(initialJobPosting);
-  const [jobPostingUrl, setJobPostingUrl] = useState('');
+  const [job_posting, setJobPosting] = useState(initialJobPosting);
+  const [job_posting_url, setJobPostingUrl] = useState('');
   const [inputMethod, setInputMethod] = useState<'text' | 'url'>('text');
   const [resumeFormat, setResumeFormat] = useState<
     'professional' | 'modern' | 'technical' | 'executive'
@@ -45,12 +46,12 @@ export function ResumeCustomizer({ applicationId, initialJobPosting = '' }: Resu
   const [isFormCollapsed, setIsFormCollapsed] = useState(false);
 
   const handleGenerate = async () => {
-    if (inputMethod === 'text' && !jobPosting.trim()) {
+    if (inputMethod === 'text' && !job_posting.trim()) {
       setError('Please paste the job posting content');
       return;
     }
 
-    if (inputMethod === 'url' && !jobPostingUrl.trim()) {
+    if (inputMethod === 'url' && !job_posting_url.trim()) {
       setError('Please enter a job posting URL');
       return;
     }
@@ -64,8 +65,8 @@ export function ResumeCustomizer({ applicationId, initialJobPosting = '' }: Resu
         resumeFormat: typeof resumeFormat;
         targetLength: typeof targetLength;
         focusAreas: string[];
-        jobPosting?: string;
-        jobPostingUrl?: string;
+        job_posting?: string;
+        job_posting_url?: string;
       } = {
         resumeFormat,
         targetLength,
@@ -79,9 +80,9 @@ export function ResumeCustomizer({ applicationId, initialJobPosting = '' }: Resu
 
       // Add the appropriate field based on input method
       if (inputMethod === 'text') {
-        requestBody.jobPosting = jobPosting.trim();
+        requestBody.job_posting = job_posting.trim();
       } else {
-        requestBody.jobPostingUrl = jobPostingUrl.trim();
+        requestBody.job_posting_url = job_posting_url.trim();
       }
 
       const response = await fetch('/api/resume/customize', {
@@ -191,7 +192,10 @@ export function ResumeCustomizer({ applicationId, initialJobPosting = '' }: Resu
           </div>
         </CardHeader>
         <CardContent
-          className={`space-y-4 transition-all duration-300 ${isFormCollapsed ? 'hidden' : 'block'}`}
+          className={cn(
+            'space-y-4 transition-all duration-300',
+            isFormCollapsed ? 'hidden' : 'block',
+          )}
         >
           {/* Input Method Toggle */}
           <div>
@@ -227,14 +231,14 @@ export function ResumeCustomizer({ applicationId, initialJobPosting = '' }: Resu
           {inputMethod === 'text' ? (
             <div>
               <label
-                htmlFor="jobPosting"
+                htmlFor="job_posting"
                 className="block text-sm font-medium text-muted-foreground mb-2"
               >
                 Job Posting Content *
               </label>
               <textarea
-                id="jobPosting"
-                value={jobPosting}
+                id="job_posting"
+                value={job_posting}
                 onChange={(e) => setJobPosting(e.target.value)}
                 placeholder="Paste the complete job posting here..."
                 rows={8}
@@ -245,15 +249,15 @@ export function ResumeCustomizer({ applicationId, initialJobPosting = '' }: Resu
           ) : (
             <div>
               <label
-                htmlFor="jobPostingUrl"
+                htmlFor="job_posting_url"
                 className="block text-sm font-medium text-muted-foreground mb-2"
               >
                 Job Posting URL *
               </label>
               <Input
-                id="jobPostingUrl"
+                id="job_posting_url"
                 type="url"
-                value={jobPostingUrl}
+                value={job_posting_url}
                 onChange={(e) => setJobPostingUrl(e.target.value)}
                 placeholder="https://example.com/job-posting/123"
                 disabled={isGenerating}
@@ -336,7 +340,8 @@ export function ResumeCustomizer({ applicationId, initialJobPosting = '' }: Resu
           <Button
             onClick={handleGenerate}
             disabled={
-              isGenerating || (inputMethod === 'text' ? !jobPosting.trim() : !jobPostingUrl.trim())
+              isGenerating ||
+              (inputMethod === 'text' ? !job_posting.trim() : !job_posting_url.trim())
             }
             className="w-full"
           >

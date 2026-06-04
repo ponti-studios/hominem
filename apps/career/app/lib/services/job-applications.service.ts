@@ -21,17 +21,17 @@ export interface CreateApplicationInput {
   companyDescription?: string | null;
   position: string;
   status?: JobApplicationStatus;
-  startDate?: Date;
+  start_date?: Date;
   location?: string | null;
-  jobPosting?: string | null;
+  job_posting?: string | null;
   requirements?: string[];
   skills?: string[];
-  jobPostingUrl?: string | null;
-  jobPostingWordCount?: number | null;
-  salaryQuoted?: string | null;
-  recruiterName?: string | null;
-  recruiterEmail?: string | null;
-  recruiterLinkedin?: string | null;
+  job_posting_url?: string | null;
+  job_posting_word_count?: number | null;
+  salary_quoted?: string | null;
+  recruiter_name?: string | null;
+  recruiter_email?: string | null;
+  recruiter_linkedin?: string | null;
   source?: string | null;
   link?: string | null;
 }
@@ -58,7 +58,7 @@ export class JobApplicationsService {
    */
   static async getApplicationDetail(
     applicationId: string,
-    userId: string,
+    owner_userid: string,
   ): Promise<ApplicationDetailData> {
     const db = getDb();
 
@@ -119,7 +119,7 @@ export class JobApplicationsService {
         'application.stages',
         'application.createdat',
         'application.updatedat',
-        'company.id as companyId',
+        'company.id as company_id',
         'company.name as companyName',
         'company.website as companyWebsite',
         'company.industry as companyIndustry',
@@ -128,7 +128,7 @@ export class JobApplicationsService {
         'company.description as companyDescription',
       ])
       .where('application.id', '=', applicationId)
-      .where('application.owner_userid', '=', userId)
+      .where('application.owner_userid', '=', owner_userid)
       .executeTakeFirst();
 
     if (!applicationData) {
@@ -142,81 +142,81 @@ export class JobApplicationsService {
       .orderBy('createdat', 'asc')
       .execute();
 
-    const company = applicationData.companyId
+    const company = applicationData.company_id
       ? ({
-          id: applicationData.companyId,
-          ownerUserId: '',
+          id: applicationData.company_id,
+          owner_userid: '',
           name: applicationData.companyName || '',
           website: applicationData.companyWebsite,
           industry: applicationData.companyIndustry,
           size: applicationData.companySize,
           location: applicationData.companyLocation,
           description: applicationData.companyDescription,
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          createdat: new Date(),
+          updatedat: new Date(),
         } as Company)
       : null;
 
     const application = {
       id: applicationData.id,
-      userId: applicationData.owner_userid,
+      owner_userid: applicationData.owner_userid,
       position: applicationData.position,
-      companyId: applicationData.company_id,
+      company_id: applicationData.company_id,
       status: applicationData.status,
-      startDate: applicationData.start_date ? new Date(applicationData.start_date) : new Date(),
-      endDate: applicationData.end_date ? new Date(applicationData.end_date) : null,
+      start_date: applicationData.start_date ? new Date(applicationData.start_date) : new Date(),
+      end_date: applicationData.end_date ? new Date(applicationData.end_date) : null,
       location: applicationData.location,
-      jobPosting: applicationData.job_posting,
+      job_posting: applicationData.job_posting,
       requirements: Array.isArray(applicationData.requirements) ? applicationData.requirements : [],
       skills: Array.isArray(applicationData.skills) ? applicationData.skills : [],
-      jobPostingUrl: applicationData.job_posting_url,
-      jobPostingWordCount: applicationData.job_posting_word_count,
-      salaryQuoted: applicationData.salary_quoted,
-      salaryAccepted: applicationData.salary_accepted,
-      salaryExpected: applicationData.salary_expected,
-      salaryRequested: applicationData.salary_requested,
-      salaryOffered: applicationData.salary_offered,
-      salaryNegotiated: applicationData.salary_negotiated,
-      salaryFinal: applicationData.salary_final,
-      totalCompOffered: applicationData.total_comp_offered,
-      totalCompFinal: applicationData.total_comp_final,
-      equityOffered: applicationData.equity_offered,
-      equityFinal: applicationData.equity_final,
-      bonusOffered: applicationData.bonus_offered,
-      bonusFinal: applicationData.bonus_final,
+      job_posting_url: applicationData.job_posting_url,
+      job_posting_word_count: applicationData.job_posting_word_count,
+      salary_quoted: applicationData.salary_quoted,
+      salary_accepted: applicationData.salary_accepted,
+      salary_expected: applicationData.salary_expected,
+      salary_requested: applicationData.salary_requested,
+      salary_offered: applicationData.salary_offered,
+      salary_negotiated: applicationData.salary_negotiated,
+      salary_final: applicationData.salary_final,
+      total_comp_offered: applicationData.total_comp_offered,
+      total_comp_final: applicationData.total_comp_final,
+      equity_offered: applicationData.equity_offered,
+      equity_final: applicationData.equity_final,
+      bonus_offered: applicationData.bonus_offered,
+      bonus_final: applicationData.bonus_final,
       source: applicationData.source,
-      applicationDate: applicationData.application_date
+      application_date: applicationData.application_date
         ? new Date(applicationData.application_date)
         : null,
-      responseDate: applicationData.response_date ? new Date(applicationData.response_date) : null,
-      firstInterviewDate: applicationData.first_interview_date
+      response_date: applicationData.response_date ? new Date(applicationData.response_date) : null,
+      first_interview_date: applicationData.first_interview_date
         ? new Date(applicationData.first_interview_date)
         : null,
-      offerDate: applicationData.offer_date ? new Date(applicationData.offer_date) : null,
-      decisionDate: applicationData.decision_date ? new Date(applicationData.decision_date) : null,
-      rejectionReason: applicationData.rejection_reason,
-      withdrawalReason: applicationData.withdrawal_reason,
-      timeToResponse: applicationData.time_to_response,
-      timeToFirstInterview: applicationData.time_to_first_interview,
-      timeToOffer: applicationData.time_to_offer,
-      timeToDecision: applicationData.time_to_decision,
-      coverLetter: applicationData.cover_letter,
+      offer_date: applicationData.offer_date ? new Date(applicationData.offer_date) : null,
+      decision_date: applicationData.decision_date ? new Date(applicationData.decision_date) : null,
+      rejection_reason: applicationData.rejection_reason,
+      withdrawal_reason: applicationData.withdrawal_reason,
+      time_to_response: applicationData.time_to_response,
+      time_to_first_interview: applicationData.time_to_first_interview,
+      time_to_offer: applicationData.time_to_offer,
+      time_to_decision: applicationData.time_to_decision,
+      cover_letter: applicationData.cover_letter,
       resume: applicationData.resume,
       jobId: applicationData.job_id,
       link: applicationData.link,
-      phoneScreen: applicationData.phone_screen,
+      phone_screen: applicationData.phone_screen,
       reference: applicationData.reference,
-      interviewDates: Array.isArray(applicationData.interview_dates)
+      interview_dates: Array.isArray(applicationData.interview_dates)
         ? (applicationData.interview_dates as unknown as InterviewEntry[])
         : [],
-      companyNotes: applicationData.company_notes,
-      negotiationNotes: applicationData.negotiation_notes,
-      recruiterName: applicationData.recruiter_name,
-      recruiterEmail: applicationData.recruiter_email,
-      recruiterLinkedin: applicationData.recruiter_linkedin,
+      company_notes: applicationData.company_notes,
+      negotiation_notes: applicationData.negotiation_notes,
+      recruiter_name: applicationData.recruiter_name,
+      recruiter_email: applicationData.recruiter_email,
+      recruiter_linkedin: applicationData.recruiter_linkedin,
       stages: Array.isArray(applicationData.stages) ? applicationData.stages : [],
-      createdAt: applicationData.createdat ? new Date(applicationData.createdat) : new Date(),
-      updatedAt: applicationData.updatedat ? new Date(applicationData.updatedat) : new Date(),
+      createdat: applicationData.createdat ? new Date(applicationData.createdat) : new Date(),
+      updatedat: applicationData.updatedat ? new Date(applicationData.updatedat) : new Date(),
       company,
     } as unknown as ApplicationWithCompany;
 
@@ -229,8 +229,8 @@ export class JobApplicationsService {
           title: note.title,
           content: note.content,
           isPrivate: note.is_private,
-          createdAt: note.createdat ? new Date(note.createdat) : new Date(),
-          updatedAt: note.updatedat ? new Date(note.updatedat) : new Date(),
+          createdat: note.createdat ? new Date(note.createdat) : new Date(),
+          updatedat: note.updatedat ? new Date(note.updatedat) : new Date(),
         }) as ApplicationNote,
     );
 
@@ -244,12 +244,12 @@ export class JobApplicationsService {
   /**
    * Verify application ownership
    */
-  static async verifyOwnership(applicationId: string, userId: string): Promise<boolean> {
+  static async verifyOwnership(applicationId: string, owner_userid: string): Promise<boolean> {
     const application = await getDb()
       .selectFrom('app.job_applications')
       .select('id')
       .where('id', '=', applicationId)
-      .where('owner_userid', '=', userId)
+      .where('owner_userid', '=', owner_userid)
       .executeTakeFirst();
 
     return Boolean(application);
@@ -261,7 +261,7 @@ export class JobApplicationsService {
   static async updateApplication(
     applicationId: string,
     updates: JobApplicationUpdate,
-    userId?: string,
+    owner_userid?: string,
   ): Promise<void> {
     if (Object.keys(updates).length === 0) {
       return;
@@ -273,27 +273,27 @@ export class JobApplicationsService {
         ...(updates.position !== undefined ? { position: updates.position } : {}),
         ...(updates.status !== undefined ? { status: updates.status } : {}),
         ...(updates.location !== undefined ? { location: updates.location } : {}),
-        ...(updates.jobPosting !== undefined ? { job_posting: updates.jobPosting } : {}),
-        ...(updates.salaryQuoted !== undefined ? { salary_quoted: updates.salaryQuoted } : {}),
-        ...(updates.salaryAccepted !== undefined
-          ? { salary_accepted: updates.salaryAccepted }
+        ...(updates.job_posting !== undefined ? { job_posting: updates.job_posting } : {}),
+        ...(updates.salary_quoted !== undefined ? { salary_quoted: updates.salary_quoted } : {}),
+        ...(updates.salary_accepted !== undefined
+          ? { salary_accepted: updates.salary_accepted }
           : {}),
-        ...(updates.companyNotes !== undefined ? { company_notes: updates.companyNotes } : {}),
-        ...(updates.negotiationNotes !== undefined
-          ? { negotiation_notes: updates.negotiationNotes }
+        ...(updates.company_notes !== undefined ? { company_notes: updates.company_notes } : {}),
+        ...(updates.negotiation_notes !== undefined
+          ? { negotiation_notes: updates.negotiation_notes }
           : {}),
-        ...(updates.recruiterName !== undefined ? { recruiter_name: updates.recruiterName } : {}),
-        ...(updates.recruiterEmail !== undefined
-          ? { recruiter_email: updates.recruiterEmail }
+        ...(updates.recruiter_name !== undefined ? { recruiter_name: updates.recruiter_name } : {}),
+        ...(updates.recruiter_email !== undefined
+          ? { recruiter_email: updates.recruiter_email }
           : {}),
-        ...(updates.recruiterLinkedin !== undefined
-          ? { recruiter_linkedin: updates.recruiterLinkedin }
+        ...(updates.recruiter_linkedin !== undefined
+          ? { recruiter_linkedin: updates.recruiter_linkedin }
           : {}),
       })
       .where('id', '=', applicationId);
 
-    if (userId) {
-      query = query.where('owner_userid', '=', userId);
+    if (owner_userid) {
+      query = query.where('owner_userid', '=', owner_userid);
     }
 
     await query.executeTakeFirstOrThrow();
@@ -352,44 +352,44 @@ export class JobApplicationsService {
   /**
    * Get application by ID for ownership verification
    */
-  static async getApplicationById(applicationId: string, userId: string) {
+  static async getApplicationById(applicationId: string, owner_userid: string) {
     const application = await getDb()
       .selectFrom('app.job_applications')
       .selectAll()
       .where('id', '=', applicationId)
-      .where('owner_userid', '=', userId)
+      .where('owner_userid', '=', owner_userid)
       .executeTakeFirst();
 
     return application || null;
   }
 
   static async createApplication(
-    userId: string,
+    owner_userid: string,
     input: CreateApplicationInput,
   ): Promise<CareerJobApplicationRecord> {
     const db = getDb();
 
-    const company = await CareerRepository.findOrCreateCompany(db, userId, {
+    const company = await CareerRepository.findOrCreateCompany(db, owner_userid, {
       name: input.companyName,
       website: input.companyWebsite ?? null,
       description: input.companyDescription ?? null,
     });
 
-    return CareerRepository.createJobApplication(db, userId, {
-      companyId: company.id,
+    return CareerRepository.createJobApplication(db, owner_userid, {
+      company_id: company.id,
       position: input.position,
       status: input.status ?? JobApplicationStatus.APPLIED,
-      startDate: input.startDate ?? new Date(),
+      start_date: input.start_date ?? new Date(),
       location: input.location ?? null,
-      jobPosting: input.jobPosting ?? null,
+      job_posting: input.job_posting ?? null,
       requirements: input.requirements ?? [],
       skills: input.skills ?? [],
-      jobPostingUrl: input.jobPostingUrl ?? null,
-      jobPostingWordCount: input.jobPostingWordCount ?? null,
-      salaryQuoted: input.salaryQuoted ?? null,
-      recruiterName: input.recruiterName ?? null,
-      recruiterEmail: input.recruiterEmail ?? null,
-      recruiterLinkedin: input.recruiterLinkedin ?? null,
+      job_posting_url: input.job_posting_url ?? null,
+      job_posting_word_count: input.job_posting_word_count ?? null,
+      salary_quoted: input.salary_quoted ?? null,
+      recruiter_name: input.recruiter_name ?? null,
+      recruiter_email: input.recruiter_email ?? null,
+      recruiter_linkedin: input.recruiter_linkedin ?? null,
       source: input.source ?? null,
       link: input.link ?? null,
       reference: false,

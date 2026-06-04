@@ -7,15 +7,15 @@ import { Link, useFetcher } from 'react-router';
 
 import { useToast } from '~/hooks/useToast';
 import { centsToDollars, formatCurrency } from '~/lib/utils';
+import { cn } from '~/lib/utils';
 import { getCompanyName, getStatusColor } from '~/lib/utils/applicationUtils';
 import type { JobApplication } from '~/types/career';
 import { JobApplicationStatus } from '~/types/career';
-
 type ApplicationWithCompany = JobApplication & {
   company?: string | { name: string; [key: string]: unknown } | null;
-  applicationDate?: Date | null;
-  responseDate?: Date | null;
-  salaryOffered?: number | null;
+  application_date?: Date | null;
+  response_date?: Date | null;
+  salary_offered?: number | null;
   source?: string | null;
 };
 
@@ -36,7 +36,7 @@ export function ApplicationCards({
 }: ApplicationCardsProps) {
   if (!applications || applications.length === 0) {
     return (
-      <div className={`py-8 text-center text-muted-foreground ${className}`}>
+      <div className={cn('py-8 text-center text-muted-foreground', className)}>
         <p className="font-medium text-foreground">{emptyTitle}</p>
         <p className="mt-1 text-sm">{emptyDescription}</p>
       </div>
@@ -44,7 +44,7 @@ export function ApplicationCards({
   }
 
   return (
-    <div className={`grid gap-6 md:grid-cols-2 xl:grid-cols-3 ${className}`}>
+    <div className={cn('grid gap-6 md:grid-cols-2 xl:grid-cols-3', className)}>
       {applications.map((app) => (
         <ApplicationCard key={app.id} application={app} showActions={showActions} />
       ))}
@@ -151,7 +151,7 @@ function ApplicationCard({
               Applied
             </span>
             <span className="font-medium text-foreground">
-              {formatDate(application.applicationDate || application.startDate)}
+              {formatDate(application.application_date || application.start_date)}
             </span>
           </div>
 
@@ -167,19 +167,19 @@ function ApplicationCard({
             </div>
           ) : null}
 
-          {application.salaryQuoted || application.salaryOffered ? (
+          {application.salary_quoted || application.salary_offered ? (
             <div className="flex items-center justify-between gap-3">
               <span className="flex items-center gap-2 text-muted-foreground">
                 <DollarSignIcon className="size-4" />
                 Salary
               </span>
               <span className="max-w-32 truncate text-right font-medium text-foreground">
-                {typeof application.salaryQuoted === 'string'
-                  ? application.salaryQuoted
-                  : application.salaryOffered
-                    ? formatCurrency(centsToDollars(application.salaryOffered))
-                    : application.salaryQuoted
-                      ? formatCurrency(centsToDollars(application.salaryQuoted))
+                {typeof application.salary_quoted === 'string'
+                  ? application.salary_quoted
+                  : application.salary_offered
+                    ? formatCurrency(centsToDollars(application.salary_offered))
+                    : application.salary_quoted
+                      ? formatCurrency(centsToDollars(application.salary_quoted))
                       : '—'}
               </span>
             </div>
@@ -198,9 +198,9 @@ function ApplicationCard({
             >
               View Details
             </Link>
-            {application.jobPosting ? (
+            {application.job_posting ? (
               <a
-                href={application.jobPosting}
+                href={application.job_posting}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={buttonVariants({

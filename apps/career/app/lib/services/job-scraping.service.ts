@@ -47,7 +47,7 @@ export class JobScrapingService {
               json_schema: {
                 type: 'object',
                 properties: {
-                  jobTitle: {
+                  job_title: {
                     type: 'string',
                     description: 'The job title or position name',
                   },
@@ -82,7 +82,7 @@ export class JobScrapingService {
                     description: 'The complete cleaned text content of the job posting',
                   },
                 },
-                required: ['fullText', 'jobTitle'],
+                required: ['fullText', 'job_title'],
               },
             },
           }),
@@ -110,8 +110,8 @@ export class JobScrapingService {
       // Clean up the text content
       const cleanedText = this.cleanJobPostingText(fullText);
 
-      const jobPosting: JobPosting = {
-        jobTitle: extractedData.jobTitle || 'Unknown Position',
+      const job_posting: JobPosting = {
+        job_title: extractedData.job_title || 'Unknown Position',
         companyName: extractedData.companyName || 'Unknown Company',
         companyDescription: extractedData.companyDescription || '',
         jobDescription: extractedData.jobDescription || cleanedText,
@@ -126,7 +126,7 @@ export class JobScrapingService {
 
       return {
         success: true,
-        jobPosting,
+        job_posting,
       };
     } catch (error) {
       console.error('Job posting scraping failed:', error);
@@ -188,9 +188,9 @@ export class JobScrapingService {
   async scrapeAndValidateJobPosting(jobUrl: string): Promise<ScrapedJobPostingResponse> {
     const result = await this.scrapeJobPosting(jobUrl);
 
-    if (result.success && result.jobPosting) {
+    if (result.success && result.job_posting) {
       // Basic validation - ensure we got meaningful content
-      const wordCount = result.jobPosting.wordCount;
+      const wordCount = result.job_posting.wordCount;
 
       if (wordCount < 50) {
         return {
@@ -202,7 +202,7 @@ export class JobScrapingService {
       // Check for common job posting indicators
       const hasJobContent =
         /(job|position|role|responsibilities|requirements|qualifications)/i.test(
-          result.jobPosting.fullText,
+          result.job_posting.fullText,
         );
 
       if (!hasJobContent) {

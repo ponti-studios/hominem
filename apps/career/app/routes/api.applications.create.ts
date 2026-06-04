@@ -17,19 +17,19 @@ export const action: ActionFunction = async ({ request }) => {
     }
 
     const body = await request.json();
-    const { jobPosting } = body as { jobPosting: JobPosting };
+    const { job_posting } = body as { job_posting: JobPosting };
 
-    if (!jobPosting) {
+    if (!job_posting) {
       return new Response(JSON.stringify({ error: 'Job posting data is required' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    const websiteOrigin = jobPosting.url
+    const websiteOrigin = job_posting.url
       ? (() => {
           try {
-            return new URL(jobPosting.url).origin;
+            return new URL(job_posting.url).origin;
           } catch {
             return null;
           }
@@ -37,18 +37,18 @@ export const action: ActionFunction = async ({ request }) => {
       : null;
 
     const application = await JobApplicationsService.createApplication(user.id, {
-      companyName: jobPosting.companyName,
+      companyName: job_posting.companyName,
       companyWebsite: websiteOrigin,
-      companyDescription: jobPosting.companyDescription || null,
-      position: jobPosting.jobTitle,
-      jobPosting: JSON.stringify(jobPosting),
-      location: jobPosting.location || null,
-      requirements: jobPosting.requirements || [],
-      skills: jobPosting.skills || [],
-      jobPostingUrl: jobPosting.url || null,
-      jobPostingWordCount: jobPosting.wordCount || null,
+      companyDescription: job_posting.companyDescription || null,
+      position: job_posting.job_title,
+      job_posting: JSON.stringify(job_posting),
+      location: job_posting.location || null,
+      requirements: job_posting.requirements || [],
+      skills: job_posting.skills || [],
+      job_posting_url: job_posting.url || null,
+      job_posting_word_count: job_posting.wordCount || null,
       source: 'scraped',
-      link: jobPosting.url || null,
+      link: job_posting.url || null,
     });
 
     return new Response(

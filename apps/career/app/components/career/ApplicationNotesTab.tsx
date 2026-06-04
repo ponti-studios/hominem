@@ -118,7 +118,7 @@ export function ApplicationNotesTab({ notes }: NotesTabProps) {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground">
-                      {new Date(note.createdAt).toLocaleDateString()}
+                      {new Date(note.createdat).toLocaleDateString()}
                     </span>
                     <Form method="post" className="inline">
                       <input type="hidden" name="operation" value="delete_note" />

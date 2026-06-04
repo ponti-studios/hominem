@@ -3,7 +3,7 @@ import type { CareerJobApplicationRecord } from '@hominem/db';
 export type ApplicationWithCompany = CareerJobApplicationRecord;
 
 export interface JobPosting {
-  jobTitle: string;
+  job_title: string;
   companyName: string;
   companyDescription: string;
   jobDescription: string;
@@ -18,6 +18,6 @@ export interface JobPosting {
 
 export interface ScrapedJobPostingResponse {
   success: boolean;
-  jobPosting?: JobPosting;
+  job_posting?: JobPosting;
   error?: string;
 }

@@ -30,8 +30,8 @@ export interface ApplicationNote {
   title: string | null;
   content: string;
   isPrivate: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  createdat: Date;
+  updatedat: Date;
 }
 
 export interface ApplicationFile {
@@ -43,13 +43,13 @@ export interface ApplicationFile {
   fileContent: string | null;
   mimeType: string | null;
   fileSize: number | null;
-  createdAt: Date;
-  updatedAt: Date;
+  createdat: Date;
+  updatedat: Date;
 }
 
 export interface Certification {
   id: string;
-  userId: string;
+  owner_userid: string;
   name: string;
   description: string | null;
   issuingOrganization: string;
@@ -57,13 +57,13 @@ export interface Certification {
   expirationDate: Date | null;
   nextRenewalDate: Date | null;
   status: 'active' | 'expired' | 'pending_renewal' | 'archived';
-  workExperienceId: string | null;
+  work_experience_id: string | null;
   category: string | null;
   cost: number | null;
-  isVisible: boolean;
-  sortOrder: number;
-  createdAt: Date;
-  updatedAt: Date;
+  is_visible: boolean;
+  sort_order: number;
+  createdat: Date;
+  updatedat: Date;
 }
 
 export interface ApplicationWithRelations {
@@ -107,8 +107,8 @@ export interface CareerProgressionSummary {
   currentLevel: string;
   levelProgression: Array<{
     level: string;
-    startDate: string;
-    endDate?: string;
+    start_date: string;
+    end_date?: string;
     duration: number;
   }>;
 }
@@ -117,15 +117,15 @@ export interface JobApplicationUpdate {
   position?: string;
   status?: string;
   location?: string | null;
-  jobPosting?: string | null;
-  salaryQuoted?: string | null;
-  salaryAccepted?: string | null;
-  companyNotes?: string | null;
-  negotiationNotes?: string | null;
-  recruiterName?: string | null;
-  recruiterEmail?: string | null;
-  recruiterLinkedin?: string | null;
-  updatedAt?: Date;
+  job_posting?: string | null;
+  salary_quoted?: string | null;
+  salary_accepted?: string | null;
+  company_notes?: string | null;
+  negotiation_notes?: string | null;
+  recruiter_name?: string | null;
+  recruiter_email?: string | null;
+  recruiter_linkedin?: string | null;
+  updatedat?: Date;
 }
 
 export interface JobApplicationMetrics {

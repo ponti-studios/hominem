@@ -7,9 +7,10 @@ import { useCallback, useRef, useState } from 'react';
 import 'react-image-crop/dist/ReactCrop.css';
 import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from 'react-image-crop';
 
+import { cn } from '~/lib/utils';
 interface ProfileImageUploadProps {
   currentImageUrl?: string | null | undefined;
-  onImageUploaded: (imageUrl: string) => void;
+  onImageUploaded: (image_url: string) => void;
   onError?: (error: string) => void;
 }
 
@@ -154,7 +155,7 @@ export function ProfileImageUpload({
       const result = (await response.json()) as {
         success: boolean;
         error?: string;
-        data?: { imageUrl: string };
+        data?: { image_url: string };
       };
 
       if (!response.ok || !result.success) {
@@ -162,9 +163,9 @@ export function ProfileImageUpload({
       }
 
       // Success - only call if we have a valid URL
-      const imageUrl = result.data?.imageUrl;
-      if (imageUrl) {
-        onImageUploaded(imageUrl);
+      const image_url = result.data?.image_url;
+      if (image_url) {
+        onImageUploaded(image_url);
         setShowCropper(false);
         setImgSrc('');
         setSelectedFile(null);
@@ -279,14 +280,16 @@ export function ProfileImageUpload({
 
       {/* Upload Area - Animated */}
       <div
-        className={`bg-card rounded-lg border border-border transition-all duration-300 ease-in-out overflow-hidden ${
-          showUploadZone ? 'max-h-96 opacity-100 p-4' : 'max-h-0 opacity-0 p-0 border-opacity-0'
-        }`}
+        className={cn(
+          'bg-card rounded-lg border border-border transition-all duration-300 ease-in-out overflow-hidden',
+          showUploadZone ? 'max-h-96 opacity-100 p-4' : 'max-h-0 opacity-0 p-0 border-opacity-0',
+        )}
       >
         <div
-          className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-            isDragging ? 'border-accent/50 bg-accent/10' : 'border-border hover:border-border'
-          }`}
+          className={cn(
+            'border-2 border-dashed rounded-lg p-6 text-center transition-colors',
+            isDragging ? 'border-accent/50 bg-accent/10' : 'border-border hover:border-border',
+          )}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}

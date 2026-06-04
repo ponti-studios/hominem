@@ -1,6 +1,6 @@
 import type { ChatMessageFileRecord, ChatMessageRecord, NoteContext } from '@hominem/db';
 import { ChatRepository, getDb, runInTransaction } from '@hominem/db';
-import { getSharedAiModelConfig, getSharedOpenAIClient } from '@hominem/services/ai-model';
+import { streamChatCompletion } from '@hominem/services/ai-model';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { streamSSE } from 'hono/streaming';
@@ -217,11 +217,8 @@ const chatByIdRoutes = new Hono<AppContext>()
         referencedNoteIds: resolvedNotes.length > 0 ? resolvedNotes.map((n) => n.id) : null,
       });
     });
-
     const prompt = buildConversationPrompt(message, history, resolvedNotes, resolvedFiles);
-    const completion = await getSharedOpenAIClient().chat.completions.create({
-      model: getSharedAiModelConfig().modelId,
-      stream: true,
+    const completion = streamChatCompletion({
       messages: [
         { role: 'system', content: loadPrompt('chat-assistant') },
         { role: 'user', content: prompt },
@@ -233,7 +230,7 @@ const chatByIdRoutes = new Hono<AppContext>()
 
       try {
         for await (const chunk of completion) {
-          const text = chunk.choices[0]?.delta?.content;
+          const text = chunk.choices?.[0]?.delta?.content;
           if (typeof text === 'string' && text.length > 0) {
             assistantText += text;
             await stream.writeSSE({ data: JSON.stringify({ chunk: text }) });

@@ -9,6 +9,7 @@ import {
 import { Button } from '@hominem/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '@hominem/ui/command';
 import { SpeechInput } from '@hominem/ui/composer';
+import { cn } from '@hominem/ui/lib/utils';
 import { slugifyText } from '@hominem/utils/text';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Link, data } from 'react-router';
@@ -240,7 +241,10 @@ export default function ChatPage({
           {messages.map((message) => (
             <div
               key={message.id}
-              className={`rounded-2xl p-4 ${message.role === 'user' ? 'bg-background' : 'bg-muted/30'}`}
+              className={cn(
+                'rounded-2xl p-4',
+                message.role === 'user' ? 'bg-background' : 'bg-muted/30',
+              )}
             >
               <div className="flex items-center justify-between gap-3">
                 <span className="text-xs uppercase tracking-[0.2em] text-text-tertiary">

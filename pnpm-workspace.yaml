@@ -33,6 +33,7 @@ trustPolicy: no-downgrade
 blockExoticSubdeps: true
 strictDepBuilds: true
 allowBuilds:
+  '@openrouter/sdk': true
   '@swc/core': true
   core-js: false
   esbuild: true

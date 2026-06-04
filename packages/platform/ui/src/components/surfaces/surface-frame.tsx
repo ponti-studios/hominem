@@ -1,5 +1,6 @@
 import type { ComponentPropsWithoutRef, ElementType } from 'react';
 
+import { cn } from '../../lib/utils';
 type SurfaceFrameProps<T extends ElementType = 'div'> = {
   as?: T;
   elevated?: boolean;
@@ -14,7 +15,7 @@ export function SurfaceFrame<T extends ElementType = 'div'>({
 
   return (
     <Comp
-      className={`rounded-3xl border-subtle bg-surface ${elevated ? 'shadow-sm' : ''}`}
+      className={cn('rounded-3xl border-subtle bg-surface', elevated ? 'shadow-sm' : '')}
       {...props}
     />
   );

@@ -8,7 +8,9 @@ import { useState } from 'react';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import { useLoaderData, useNavigate } from 'react-router';
 
+import { jsonArray } from '~/lib/db-json';
 import { createSuccessResponse, withAuthLoader } from '~/lib/route-utils';
+import { cn } from '~/lib/utils';
 
 interface LoaderData {
   workExperience: WorkExperience;
@@ -31,7 +33,7 @@ export async function loader(args: LoaderFunctionArgs) {
         throw new Response('Work experience not found', { status: 404 });
       }
 
-      const projects = await getProjectsByWorkExperience(workExperience.portfolioId, id);
+      const projects = await getProjectsByWorkExperience(workExperience.portfolio_id, id);
 
       return createSuccessResponse({ workExperience, projects });
     } catch (error) {
@@ -66,19 +68,19 @@ export async function action(args: ActionFunctionArgs) {
         const description = formData.get('description') as string;
         const status = formData.get('status') as string;
         const technologies = formData.get('technologies') as string;
-        const shortDescription = formData.get('shortDescription') as string;
+        const short_description = formData.get('short_description') as string;
 
         await createProject(user.id, {
-          portfolioId: currentExperience.portfolioId,
-          workExperienceId: id,
+          portfolio_id: currentExperience.portfolio_id,
+          work_experience_id: id,
           title,
           description,
-          shortDescription: shortDescription || null,
+          short_description: short_description || null,
           status,
           technologies: technologies ? technologies.split(',').map((t) => t.trim()) : [],
-          isVisible: true,
-          isFeatured: false,
-          sortOrder: 0,
+          is_visible: true,
+          is_featured: false,
+          sort_order: 0,
         });
       } else if (actionType === 'update') {
         const projectId = formData.get('projectId') as string;
@@ -86,18 +88,18 @@ export async function action(args: ActionFunctionArgs) {
         const description = formData.get('description') as string;
         const status = formData.get('status') as string;
         const technologies = formData.get('technologies') as string;
-        const shortDescription = formData.get('shortDescription') as string;
+        const short_description = formData.get('short_description') as string;
 
-        await updateProject(user.id, projectId, currentExperience.portfolioId, {
+        await updateProject(user.id, projectId, currentExperience.portfolio_id, {
           title,
           description,
-          shortDescription: shortDescription || null,
+          short_description: short_description || null,
           status,
           technologies: technologies ? technologies.split(',').map((t) => t.trim()) : [],
         });
       } else if (actionType === 'delete') {
         const projectId = formData.get('projectId') as string;
-        await deleteProject(user.id, projectId, currentExperience.portfolioId);
+        await deleteProject(user.id, projectId, currentExperience.portfolio_id);
       }
 
       return createSuccessResponse({ success: true });
@@ -192,9 +194,9 @@ function ProjectForm({ project, onCancel }: ProjectFormProps) {
   const [formData, setFormData] = useState({
     title: project?.title || '',
     description: project?.description || '',
-    shortDescription: project?.shortDescription || '',
+    short_description: project?.short_description || '',
     status: project?.status || 'in-progress',
-    technologies: project?.technologies?.join(', ') || '',
+    technologies: jsonArray<string>(project?.technologies).join(', '),
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -252,16 +254,18 @@ function ProjectForm({ project, onCancel }: ProjectFormProps) {
 
         <div>
           <label
-            htmlFor="shortDescription"
+            htmlFor="short_description"
             className="block text-sm font-medium text-muted-foreground mb-2"
           >
             Short Description
           </label>
           <input
             type="text"
-            id="shortDescription"
-            value={formData.shortDescription}
-            onChange={(e) => setFormData((prev) => ({ ...prev, shortDescription: e.target.value }))}
+            id="short_description"
+            value={formData.short_description}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, short_description: e.target.value }))
+            }
             className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-ring focus:ring-ring/50"
             placeholder="Brief one-line summary"
           />
@@ -349,6 +353,7 @@ interface ProjectCardProps {
 
 function ProjectCard({ project }: ProjectCardProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const technologies = jsonArray<string>(project.technologies);
 
   const handleDelete = () => {
     if (confirm('Are you sure you want to delete this project?')) {
@@ -394,11 +399,14 @@ function ProjectCard({ project }: ProjectCardProps) {
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
           <h3 className="text-xl font-medium text-foreground mb-2">{project.title}</h3>
-          {project.shortDescription && (
-            <p className="text-muted-foreground mb-2">{project.shortDescription}</p>
+          {project.short_description && (
+            <p className="text-muted-foreground mb-2">{project.short_description}</p>
           )}
           <span
-            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}
+            className={cn(
+              'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
+              getStatusColor(project.status),
+            )}
           >
             {project.status.replace('-', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
           </span>
@@ -431,11 +439,11 @@ function ProjectCard({ project }: ProjectCardProps) {
           <p className="text-muted-foreground">{project.description}</p>
         </div>
 
-        {project.technologies && project.technologies.length > 0 && (
+        {technologies.length > 0 && (
           <div>
             <h4 className="text-sm font-medium text-muted-foreground mb-2">Technologies</h4>
             <div className="flex flex-wrap gap-2">
-              {project.technologies.map((tech: string, index: number) => (
+              {technologies.map((tech, index) => (
                 <span
                   key={`${project.id}-tech-${index}`}
                   className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted text-foreground"
@@ -448,10 +456,10 @@ function ProjectCard({ project }: ProjectCardProps) {
         )}
 
         <div className="text-xs text-muted-foreground">
-          Created {new Date(project.createdAt).toLocaleDateString()}
-          {project.updatedAt &&
-            project.createdAt !== project.updatedAt &&
-            `, updated ${new Date(project.updatedAt).toLocaleDateString()}`}
+          Created {new Date(project.createdat).toLocaleDateString()}
+          {project.updatedat &&
+            project.createdat !== project.updatedat &&
+            `, updated ${new Date(project.updatedat).toLocaleDateString()}`}
         </div>
       </div>
     </div>

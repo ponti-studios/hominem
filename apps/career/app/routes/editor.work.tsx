@@ -12,6 +12,7 @@ import type { WorkExperienceMetadata } from '~/types/career-data';
 
 import { useToast } from '../hooks/useToast';
 import type { FullPortfolio } from '../lib/portfolio.server';
+import { jsonObject } from '../lib/db-json';
 import {
   createErrorResponse,
   createSuccessResponse,
@@ -30,35 +31,36 @@ interface WorkExperienceFormValues {
   id?: string;
   role: string;
   company: string;
-  startDate?: string;
-  endDate?: string;
+  start_date?: string;
+  end_date?: string;
   description: string;
   achievements?: { value: string }[];
   action?: string;
   tags?: string[];
   metadata?: WorkExperienceMetadata;
-  sortOrder?: number;
-  isVisible?: boolean;
-  portfolioId: string;
+  sort_order?: number;
+  is_visible?: boolean;
+  portfolio_id: string;
 }
 
 interface WorkExperienceEditorSectionProps {
-  workExperiences?: WorkExperience[] | null;
-  portfolioId: string;
+  work_experiences?: WorkExperience[] | null;
+  portfolio_id: string;
 }
 
 function WorkExperienceForm({
   experience,
-  portfolioId,
+  portfolio_id,
   onDelete,
 }: {
   experience?: WorkExperience;
-  portfolioId: string;
+  portfolio_id: string;
   onDelete?: () => void;
 }) {
   const fetcher = useFetcher();
   const { addToast } = useToast();
   const isNew = !experience?.id;
+  const metadata = jsonObject<WorkExperienceMetadata>(experience?.metadata) ?? {};
 
   const {
     register,
@@ -71,17 +73,16 @@ function WorkExperienceForm({
       id: experience?.id,
       role: experience?.role || '',
       company: experience?.company || '',
-      startDate: formatDateForInput(experience?.startDate),
-      endDate: formatDateForInput(experience?.endDate),
+      start_date: formatDateForInput(experience?.start_date),
+      end_date: formatDateForInput(experience?.end_date),
       description: experience?.description || '',
-      achievements:
-        (experience?.metadata?.achievements as string[])?.map((value) => ({ value })) || [],
+      achievements: metadata.achievements?.map((value) => ({ value })) || [],
       action: nullToUndefined(experience?.action),
       tags: nullArrayToUndefined(experience?.tags) || [],
-      metadata: experience?.metadata || {},
-      sortOrder: experience?.sortOrder || 0,
-      isVisible: experience?.isVisible !== false,
-      portfolioId,
+      metadata,
+      sort_order: experience?.sort_order || 0,
+      is_visible: experience?.is_visible !== false,
+      portfolio_id,
     },
     mode: 'onChange',
   });
@@ -103,16 +104,16 @@ function WorkExperienceForm({
       if (result.success) {
         addToast(result.message || 'Work experience saved successfully!', 'success');
         if (result.data && isNew) {
+          const resultMetadata = jsonObject<WorkExperienceMetadata>(result.data.metadata) ?? {};
           // Reset form with the returned data (including new ID)
           reset({
             ...result.data,
-            startDate: formatDateForInput(result.data.startDate),
-            endDate: formatDateForInput(result.data.endDate),
-            achievements:
-              (result.data.metadata?.achievements as string[])?.map((value) => ({ value })) || [],
+            start_date: formatDateForInput(result.data.start_date),
+            end_date: formatDateForInput(result.data.end_date),
+            achievements: resultMetadata.achievements?.map((value) => ({ value })) || [],
             action: nullToUndefined(result.data.action),
             tags: nullArrayToUndefined(result.data.tags) || [],
-            metadata: result.data.metadata || {},
+            metadata: resultMetadata,
           });
         }
       } else {
@@ -127,7 +128,7 @@ function WorkExperienceForm({
       return;
     }
 
-    if (!formData.role || !formData.company || !formData.startDate || !formData.description) {
+    if (!formData.role || !formData.company || !formData.start_date || !formData.description) {
       addToast('Please fill in all required fields.', 'error');
       return;
     }
@@ -164,7 +165,7 @@ function WorkExperienceForm({
       const formData = new FormData();
       formData.append('operation', 'delete');
       formData.append('id', experience.id);
-      formData.append('portfolioId', portfolioId);
+      formData.append('portfolio_id', portfolio_id);
 
       fetcher.submit(formData, {
         method: 'POST',
@@ -238,24 +239,24 @@ function WorkExperienceForm({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="flex flex-col gap-2">
-          <label htmlFor={`startDate-${experience?.id || 'new'}`} className="label">
+          <label htmlFor={`start_date-${experience?.id || 'new'}`} className="label">
             Start Date *
           </label>
           <input
-            id={`startDate-${experience?.id || 'new'}`}
+            id={`start_date-${experience?.id || 'new'}`}
             type="date"
-            {...register('startDate', { required: true })}
+            {...register('start_date', { required: true })}
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
           />
         </div>
         <div className="flex flex-col gap-2">
-          <label htmlFor={`endDate-${experience?.id || 'new'}`} className="label">
+          <label htmlFor={`end_date-${experience?.id || 'new'}`} className="label">
             End Date
           </label>
           <input
-            id={`endDate-${experience?.id || 'new'}`}
+            id={`end_date-${experience?.id || 'new'}`}
             type="date"
-            {...register('endDate')}
+            {...register('end_date')}
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
             placeholder="Leave empty if current position"
           />
@@ -320,8 +321,8 @@ function WorkExperienceForm({
 }
 
 function WorkExperienceEditorSection({
-  workExperiences: initialWorkExperiences,
-  portfolioId,
+  work_experiences: initialWorkExperiences,
+  portfolio_id,
 }: WorkExperienceEditorSectionProps) {
   const [showNewForm, setShowNewForm] = useState(false);
   const [experiences, setExperiences] = useState(initialWorkExperiences || []);
@@ -369,7 +370,7 @@ function WorkExperienceEditorSection({
       <div className="flex flex-col gap-8">
         {/* Show new experience form if requested */}
         {showNewForm && (
-          <WorkExperienceForm portfolioId={portfolioId} onDelete={() => setShowNewForm(false)} />
+          <WorkExperienceForm portfolio_id={portfolio_id} onDelete={() => setShowNewForm(false)} />
         )}
 
         {/* Existing experiences */}
@@ -377,7 +378,7 @@ function WorkExperienceEditorSection({
           <WorkExperienceForm
             key={experience.id}
             experience={experience}
-            portfolioId={portfolioId}
+            portfolio_id={portfolio_id}
             onDelete={() => handleDelete(experience.id)}
           />
         ))}
@@ -411,8 +412,8 @@ export async function action(args: ActionFunctionArgs) {
 
         const workExperienceData = workExperienceDataResult as WorkExperienceFormValues;
 
-        if (!workExperienceData.portfolioId) {
-          return createErrorResponse('Missing portfolioId');
+        if (!workExperienceData.portfolio_id) {
+          return createErrorResponse('Missing portfolio_id');
         }
 
         return tryAsync(async () => {
@@ -423,22 +424,22 @@ export async function action(args: ActionFunctionArgs) {
             // Convert date strings to Date objects for database
             const dbData = {
               ...insertData,
-              startDate: stringToDate(insertData.startDate),
-              endDate: stringToDate(insertData.endDate),
+              start_date: stringToDate(insertData.start_date),
+              end_date: stringToDate(insertData.end_date),
             };
 
             const newExperience = await CareerRepository.createWorkExperience(getDb(), user.id, {
-              portfolioId: dbData.portfolioId,
+              portfolio_id: dbData.portfolio_id,
               role: dbData.role,
               company: dbData.company,
               description: dbData.description,
-              startDate: dbData.startDate,
-              endDate: dbData.endDate,
+              start_date: dbData.start_date,
+              end_date: dbData.end_date,
               action: dbData.action,
               tags: dbData.tags,
               metadata: dbData.metadata as Record<string, unknown> | undefined,
-              sortOrder: dbData.sortOrder,
-              isVisible: dbData.isVisible,
+              sort_order: dbData.sort_order,
+              is_visible: dbData.is_visible,
             });
 
             return createSuccessResponse(newExperience, 'Work experience created successfully');
@@ -451,21 +452,21 @@ export async function action(args: ActionFunctionArgs) {
           // Convert date strings to Date objects for database
           const dbData = {
             ...updateData,
-            startDate: stringToDate(updateData.startDate),
-            endDate: stringToDate(updateData.endDate),
+            start_date: stringToDate(updateData.start_date),
+            end_date: stringToDate(updateData.end_date),
           };
 
           await CareerRepository.updateWorkExperience(getDb(), user.id, id, {
             role: dbData.role,
             company: dbData.company,
             description: dbData.description,
-            startDate: dbData.startDate,
-            endDate: dbData.endDate,
+            start_date: dbData.start_date,
+            end_date: dbData.end_date,
             action: dbData.action,
             tags: dbData.tags,
             metadata: dbData.metadata as Record<string, unknown> | undefined,
-            sortOrder: dbData.sortOrder,
-            isVisible: dbData.isVisible,
+            sort_order: dbData.sort_order,
+            is_visible: dbData.is_visible,
           });
 
           return createSuccessResponse(null, 'Work experience updated successfully');
@@ -474,14 +475,14 @@ export async function action(args: ActionFunctionArgs) {
 
       case 'delete': {
         const id = formData.get('id') as string;
-        const portfolioId = formData.get('portfolioId') as string;
+        const portfolio_id = formData.get('portfolio_id') as string;
 
-        if (!id || !portfolioId) {
+        if (!id || !portfolio_id) {
           return createErrorResponse('Missing required fields for deletion');
         }
 
         return tryAsync(async () => {
-          await CareerRepository.deleteWorkExperience(getDb(), user.id, id, portfolioId);
+          await CareerRepository.deleteWorkExperience(getDb(), user.id, id, portfolio_id);
 
           return createSuccessResponse(null, 'Work experience deleted successfully');
         }, 'Failed to delete work experience');
@@ -499,8 +500,8 @@ export default function EditorWork() {
 
   return (
     <WorkExperienceEditorSection
-      workExperiences={portfolio.workExperiences}
-      portfolioId={portfolio.id}
+      work_experiences={portfolio.work_experiences}
+      portfolio_id={portfolio.id}
     />
   );
 }

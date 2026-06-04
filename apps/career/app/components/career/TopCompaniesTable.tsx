@@ -3,7 +3,7 @@ import { Card, CardContent } from '@hominem/ui/card';
 import { PercentageProgressBar } from '@hominem/ui/progress';
 
 import type { TopCompany } from '~/lib/career/queries/job-applications';
-
+import { cn } from '~/lib/utils';
 interface TopCompaniesTableProps {
   companies: TopCompany[];
 }
@@ -147,7 +147,7 @@ function MetricStat({
 }) {
   return (
     <div className="rounded-lg bg-muted/40 p-3 text-center">
-      <div className={`text-lg font-bold text-foreground ${valueClassName ?? ''}`}>{value}</div>
+      <div className={cn('text-lg font-bold text-foreground', valueClassName ?? '')}>{value}</div>
       <div className="text-xs text-muted-foreground">{label}</div>
     </div>
   );

@@ -5,8 +5,10 @@ import { useRef, useState } from 'react';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import { useLoaderData, useNavigate } from 'react-router';
 
+import { jsonObject } from '~/lib/db-json';
 import { createSuccessResponse, withAuthLoader } from '~/lib/route-utils';
-
+import { cn } from '~/lib/utils';
+import type { WorkExperienceMetadata } from '~/types/career-data';
 interface LoaderData {
   workExperience: WorkExperience;
 }
@@ -37,11 +39,19 @@ export async function action(args: ActionFunctionArgs) {
     try {
       const { updateWorkExperience } = await import('~/lib/career/queries/base');
       let processedValue: string | number | Date | null = value;
-      if (['baseSalary', 'totalCompensation', 'equityValue', 'signingBonus', 'annualBonus'].includes(field)) {
+      if (
+        [
+          'base_salary',
+          'total_compensation',
+          'equity_value',
+          'signing_bonus',
+          'annual_bonus',
+        ].includes(field)
+      ) {
         processedValue = value ? Number.parseInt(value) * 100 : null;
-      } else if (['teamSize', 'directReports'].includes(field)) {
+      } else if (['team_size', 'direct_reports'].includes(field)) {
         processedValue = value ? Number.parseInt(value) : null;
-      } else if (['startDate', 'endDate'].includes(field)) {
+      } else if (['start_date', 'end_date'].includes(field)) {
         processedValue = value ? new Date(value) : null;
       }
       if (field.startsWith('metadata.')) {
@@ -49,9 +59,16 @@ export async function action(args: ActionFunctionArgs) {
         const current = await getWorkExperienceById(user.id, id);
         if (current) {
           const metadataField = field.replace('metadata.', '');
+          const metadata = jsonObject<Record<string, unknown>>(current.metadata) ?? {};
           let parsedValue: unknown = processedValue;
-          try { parsedValue = JSON.parse(value); } catch { parsedValue = processedValue; }
-          await updateWorkExperience(user.id, id, { metadata: { ...(current.metadata || {}), [metadataField]: parsedValue } });
+          try {
+            parsedValue = JSON.parse(value);
+          } catch {
+            parsedValue = processedValue;
+          }
+          await updateWorkExperience(user.id, id, {
+            metadata: { ...metadata, [metadataField]: parsedValue },
+          });
         }
       } else {
         await updateWorkExperience(user.id, id, { [field]: processedValue });
@@ -148,8 +165,14 @@ function InlineEditable({
   };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') { e.preventDefault(); cancel(); }
-    if (e.key === 'Enter' && type !== 'textarea') { e.preventDefault(); save(); }
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      cancel();
+    }
+    if (e.key === 'Enter' && type !== 'textarea') {
+      e.preventDefault();
+      save();
+    }
   };
 
   const baseInputCls =
@@ -164,8 +187,13 @@ function InlineEditable({
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={save}
-          onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); cancel(); } }}
-          className={`${baseInputCls} w-full resize-none leading-relaxed ${className}`}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              e.preventDefault();
+              cancel();
+            }
+          }}
+          className={cn(baseInputCls, 'w-full resize-none leading-relaxed', className)}
           rows={4}
           placeholder={placeholder}
         />
@@ -180,11 +208,13 @@ function InlineEditable({
           onChange={(e) => setDraft(e.target.value)}
           onBlur={save}
           onKeyDown={onKeyDown}
-          className={`${baseInputCls} ${className}`}
+          className={cn(baseInputCls, className)}
         >
           <option value="">—</option>
           {options.map((o) => (
-            <option key={o} value={o}>{capitalize(o)}</option>
+            <option key={o} value={o}>
+              {capitalize(o)}
+            </option>
           ))}
         </select>
       );
@@ -198,24 +228,26 @@ function InlineEditable({
         onChange={(e) => setDraft(e.target.value)}
         onBlur={save}
         onKeyDown={onKeyDown}
-        className={`${baseInputCls} ${className}`}
+        className={cn(baseInputCls, className)}
         placeholder={placeholder}
       />
     );
   }
 
   const isEmpty = !value;
-  const shown = isEmpty ? null : (display ? display(value!) : value!);
+  const shown = isEmpty ? null : display ? display(value!) : value!;
 
   return (
     <span
       onClick={startEdit}
       title="Click to edit"
-      className={`cursor-text transition-colors ${
+      className={cn(
+        'cursor-text transition-colors',
         isEmpty
           ? 'text-muted-foreground/40 italic hover:text-muted-foreground/70'
-          : 'hover:underline decoration-dotted underline-offset-2'
-      } ${className}`}
+          : 'hover:underline decoration-dotted underline-offset-2',
+        className,
+      )}
     >
       {!isEmpty && prefix && <span className="text-muted-foreground">{prefix}</span>}
       {shown ?? placeholder}
@@ -226,10 +258,7 @@ function InlineEditable({
 
 // ─── array editors ────────────────────────────────────────────────────────────
 
-function AchievementList({
-  items,
-  field,
-}: { items: string[]; field: string }) {
+function AchievementList({ items, field }: { items: string[]; field: string }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(items);
 
@@ -250,7 +279,10 @@ function AchievementList({
         ))}
         <button
           type="button"
-          onClick={() => { setDraft(items.length ? items : ['']); setEditing(true); }}
+          onClick={() => {
+            setDraft(items.length ? items : ['']);
+            setEditing(true);
+          }}
           className="flex items-center gap-1 text-xs text-muted-foreground/50 hover:text-muted-foreground mt-1 transition-colors"
         >
           <PlusIcon className="w-3 h-3" />
@@ -276,7 +308,11 @@ function AchievementList({
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault();
-                setDraft((d) => { const n = [...d]; n.splice(i + 1, 0, ''); return n; });
+                setDraft((d) => {
+                  const n = [...d];
+                  n.splice(i + 1, 0, '');
+                  return n;
+                });
               }
               if (e.key === 'Backspace' && item === '' && draft.length > 1) {
                 e.preventDefault();
@@ -306,8 +342,19 @@ function AchievementList({
         >
           <PlusIcon className="w-3 h-3" /> Add
         </button>
-        <button type="button" onClick={save} className="text-xs text-primary hover:text-primary/80">Save</button>
-        <button type="button" onClick={() => { setDraft(items); setEditing(false); }} className="text-xs text-muted-foreground/50 hover:text-muted-foreground">Cancel</button>
+        <button type="button" onClick={save} className="text-xs text-primary hover:text-primary/80">
+          Save
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setDraft(items);
+            setEditing(false);
+          }}
+          className="text-xs text-muted-foreground/50 hover:text-muted-foreground"
+        >
+          Cancel
+        </button>
       </div>
     </div>
   );
@@ -324,7 +371,10 @@ function TechTags({ items, field }: { items: string[]; field: string }) {
 
   const add = () => {
     const tag = newTag.trim();
-    if (!tag) { setAdding(false); return; }
+    if (!tag) {
+      setAdding(false);
+      return;
+    }
     submitField(field, JSON.stringify([...items, tag]));
     setNewTag('');
     setAdding(false);
@@ -350,7 +400,13 @@ function TechTags({ items, field }: { items: string[]; field: string }) {
           type="text"
           value={newTag}
           onChange={(e) => setNewTag(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') add(); if (e.key === 'Escape') { setAdding(false); setNewTag(''); } }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') add();
+            if (e.key === 'Escape') {
+              setAdding(false);
+              setNewTag('');
+            }
+          }}
           onBlur={add}
           className="px-2 py-0.5 rounded-full bg-muted text-xs border border-ring/50 focus:outline-none w-24"
           placeholder="add tag…"
@@ -390,16 +446,29 @@ export default function WorkExperienceDetail() {
 
   if (!wx) return <div className="p-8 text-muted-foreground">Work experience not found</div>;
 
-  const achievements = (wx.metadata?.achievements as string[] | undefined) ?? [];
-  const technologies = (wx.metadata?.technologies as string[] | undefined) ?? [];
+  const metadata = jsonObject<WorkExperienceMetadata>(wx.metadata) ?? {};
+  const achievements = metadata.achievements ?? [];
+  const technologies = metadata.technologies ?? [];
 
-  const hasFinancial = !!(wx.baseSalary || wx.totalCompensation || wx.signingBonus || wx.annualBonus || wx.equityValue || wx.equityPercentage);
-  const hasTeam = !!(wx.teamSize || wx.directReports || wx.reportsTo || wx.seniorityLevel || wx.department);
-  const hasExit = !!(wx.reasonForLeaving || wx.exitNotes);
+  const hasFinancial = !!(
+    wx.base_salary ||
+    wx.total_compensation ||
+    wx.signing_bonus ||
+    wx.annual_bonus ||
+    wx.equity_value ||
+    wx.equity_percentage
+  );
+  const hasTeam = !!(
+    wx.team_size ||
+    wx.direct_reports ||
+    wx.reports_to ||
+    wx.seniority_level ||
+    wx.department
+  );
+  const hasExit = !!(wx.reason_for_leaving || wx.exit_notes);
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10 space-y-8">
-
       {/* Back */}
       <button
         type="button"
@@ -429,24 +498,24 @@ export default function WorkExperienceDetail() {
         {/* Metadata row — each segment is individually editable */}
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground pt-1">
           <InlineEditable
-            value={wx.startDate ? new Date(wx.startDate).toISOString().split('T')[0] : ''}
-            field="startDate"
+            value={wx.start_date ? new Date(wx.start_date).toISOString().split('T')[0] : ''}
+            field="start_date"
             type="date"
             placeholder="Start"
-            display={(_v) => fmtDate(wx.startDate) ?? ''}
+            display={(_v) => fmtDate(wx.start_date) ?? ''}
           />
           <span className="text-muted-foreground/40">–</span>
           <InlineEditable
-            value={wx.endDate ? new Date(wx.endDate).toISOString().split('T')[0] : ''}
-            field="endDate"
+            value={wx.end_date ? new Date(wx.end_date).toISOString().split('T')[0] : ''}
+            field="end_date"
             type="date"
             placeholder="Present"
-            display={(_v) => fmtDate(wx.endDate) ?? ''}
+            display={(_v) => fmtDate(wx.end_date) ?? ''}
           />
           <Sep />
           <InlineEditable
-            value={wx.employmentType ?? ''}
-            field="employmentType"
+            value={wx.employment_type ?? ''}
+            field="employment_type"
             type="select"
             options={['full-time', 'part-time', 'contract', 'freelance', 'internship', 'temporary']}
             placeholder="Type"
@@ -454,8 +523,8 @@ export default function WorkExperienceDetail() {
           />
           <Sep />
           <InlineEditable
-            value={wx.workArrangement ?? ''}
-            field="workArrangement"
+            value={wx.work_arrangement ?? ''}
+            field="work_arrangement"
             type="select"
             options={['office', 'remote', 'hybrid', 'travel']}
             placeholder="Arrangement"
@@ -505,16 +574,21 @@ export default function WorkExperienceDetail() {
         <div>
           <SectionLabel>Compensation</SectionLabel>
           <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
-            <CompFact label="Base" value={wx.baseSalary} field="baseSalary" cents />
-            <CompFact label="Total comp" value={wx.totalCompensation} field="totalCompensation" cents />
-            <CompFact label="Signing" value={wx.signingBonus} field="signingBonus" cents />
-            <CompFact label="Annual bonus" value={wx.annualBonus} field="annualBonus" cents />
-            <CompFact label="Equity value" value={wx.equityValue} field="equityValue" cents />
-            {(wx.equityPercentage || true) && (
+            <CompFact label="Base" value={wx.base_salary} field="base_salary" cents />
+            <CompFact
+              label="Total comp"
+              value={wx.total_compensation}
+              field="total_compensation"
+              cents
+            />
+            <CompFact label="Signing" value={wx.signing_bonus} field="signing_bonus" cents />
+            <CompFact label="Annual bonus" value={wx.annual_bonus} field="annual_bonus" cents />
+            <CompFact label="Equity value" value={wx.equity_value} field="equity_value" cents />
+            {(wx.equity_percentage || true) && (
               <span className="text-muted-foreground">
                 <InlineEditable
-                  value={wx.equityPercentage ?? ''}
-                  field="equityPercentage"
+                  value={wx.equity_percentage ?? ''}
+                  field="equity_percentage"
                   placeholder="0.5% equity"
                   suffix=" equity"
                 />
@@ -523,7 +597,7 @@ export default function WorkExperienceDetail() {
           </div>
         </div>
       ) : (
-        <AddPrompt label="Add compensation" onExpand={() => submitField('baseSalary', '')} />
+        <AddPrompt label="Add compensation" onExpand={() => submitField('base_salary', '')} />
       )}
 
       {/* Team — hidden until populated */}
@@ -531,12 +605,23 @@ export default function WorkExperienceDetail() {
         <div>
           <SectionLabel>Team</SectionLabel>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-muted-foreground">
-            {(wx.seniorityLevel || true) && (
+            {(wx.seniority_level || true) && (
               <InlineEditable
-                value={wx.seniorityLevel ?? ''}
-                field="seniorityLevel"
+                value={wx.seniority_level ?? ''}
+                field="seniority_level"
                 type="select"
-                options={['intern', 'entry-level', 'mid-level', 'senior', 'lead', 'principal', 'staff', 'director', 'vp', 'c-level']}
+                options={[
+                  'intern',
+                  'entry-level',
+                  'mid-level',
+                  'senior',
+                  'lead',
+                  'principal',
+                  'staff',
+                  'director',
+                  'vp',
+                  'c-level',
+                ]}
                 placeholder="Seniority"
                 display={capitalize}
               />
@@ -544,38 +629,46 @@ export default function WorkExperienceDetail() {
             {(wx.department || true) && (
               <>
                 <Sep />
-                <InlineEditable value={wx.department ?? ''} field="department" placeholder="Department" />
+                <InlineEditable
+                  value={wx.department ?? ''}
+                  field="department"
+                  placeholder="Department"
+                />
               </>
             )}
-            {wx.teamSize != null && (
+            {wx.team_size != null && (
               <>
                 <Sep />
                 <InlineEditable
-                  value={wx.teamSize.toString()}
-                  field="teamSize"
+                  value={wx.team_size.toString()}
+                  field="team_size"
                   type="number"
                   placeholder="Team size"
                   suffix="-person team"
                 />
               </>
             )}
-            {wx.directReports != null && (
+            {wx.direct_reports != null && (
               <>
                 <Sep />
                 <InlineEditable
-                  value={wx.directReports.toString()}
-                  field="directReports"
+                  value={wx.direct_reports.toString()}
+                  field="direct_reports"
                   type="number"
                   placeholder="Reports"
                   suffix=" direct reports"
                 />
               </>
             )}
-            {(wx.reportsTo || true) && (
+            {(wx.reports_to || true) && (
               <>
                 <Sep />
                 <span className="text-muted-foreground/60">→</span>
-                <InlineEditable value={wx.reportsTo ?? ''} field="reportsTo" placeholder="Reports to" />
+                <InlineEditable
+                  value={wx.reports_to ?? ''}
+                  field="reports_to"
+                  placeholder="Reports to"
+                />
               </>
             )}
           </div>
@@ -590,17 +683,30 @@ export default function WorkExperienceDetail() {
           <SectionLabel>Exit</SectionLabel>
           <div className="space-y-2 text-sm text-muted-foreground">
             <InlineEditable
-              value={wx.reasonForLeaving ?? ''}
-              field="reasonForLeaving"
+              value={wx.reason_for_leaving ?? ''}
+              field="reason_for_leaving"
               type="select"
-              options={['promotion', 'better_opportunity', 'relocation', 'layoff', 'termination', 'contract_end', 'career_change', 'salary', 'culture', 'management', 'growth', 'personal']}
+              options={[
+                'promotion',
+                'better_opportunity',
+                'relocation',
+                'layoff',
+                'termination',
+                'contract_end',
+                'career_change',
+                'salary',
+                'culture',
+                'management',
+                'growth',
+                'personal',
+              ]}
               placeholder="Reason for leaving"
               display={capitalize}
             />
-            {wx.exitNotes && (
+            {wx.exit_notes && (
               <InlineEditable
-                value={wx.exitNotes}
-                field="exitNotes"
+                value={wx.exit_notes}
+                field="exit_notes"
                 type="textarea"
                 placeholder="Exit notes…"
                 className="block w-full leading-relaxed"
@@ -624,7 +730,12 @@ function CompFact({
   value,
   field,
   cents,
-}: { label: string; value: number | null | undefined; field: string; cents?: boolean }) {
+}: {
+  label: string;
+  value: number | null | undefined;
+  field: string;
+  cents?: boolean;
+}) {
   if (!value) return null;
   const display = cents ? fmtCurrency(value) : value.toString();
   return (

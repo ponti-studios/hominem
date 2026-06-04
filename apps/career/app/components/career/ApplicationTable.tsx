@@ -16,6 +16,7 @@ import { ChevronDownIcon, ChevronRightIcon, PlusIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 
+import { cn } from '~/lib/utils';
 import {
   formatApplicationDate,
   formatApplicationSalary,
@@ -141,7 +142,7 @@ export function ApplicationTable({
 
   if (!applications || applications.length === 0) {
     return (
-      <div className={`py-8 text-center text-muted-foreground ${className}`}>
+      <div className={cn('py-8 text-center text-muted-foreground', className)}>
         <p className="font-medium text-foreground">{emptyTitle}</p>
         <p className="mt-1 text-sm">{emptyDescription}</p>
         <Link
@@ -160,7 +161,7 @@ export function ApplicationTable({
   }
 
   return (
-    <div className={`space-y-4 ${className}`}>
+    <div className={cn('space-y-4', className)}>
       <Card>
         <CardContent className="p-4">
           <FilterControls showActiveFilters={activeFilters} activeFilters={filterChips}>
@@ -324,9 +325,7 @@ export function ApplicationTable({
                           className="block hover:text-primary"
                         >
                           <div className="font-medium text-foreground">{app.position}</div>
-                          <div className="text-muted-foreground">
-                            {getCompanyName(app.company)}
-                          </div>
+                          <div className="text-muted-foreground">{getCompanyName(app.company)}</div>
                         </Link>
                       </TableCell>
                       <TableCell className="whitespace-nowrap">
@@ -335,13 +334,13 @@ export function ApplicationTable({
                         </Badge>
                       </TableCell>
                       <TableCell className="whitespace-nowrap text-muted-foreground">
-                        {formatApplicationDate(app.applicationDate || app.startDate || null)}
+                        {formatApplicationDate(app.application_date || app.start_date || null)}
                       </TableCell>
                       <TableCell className="whitespace-nowrap text-muted-foreground">
-                        {formatApplicationDate(app.responseDate)}
+                        {formatApplicationDate(app.response_date)}
                       </TableCell>
                       <TableCell className="whitespace-nowrap text-muted-foreground">
-                        {formatApplicationSalary(app.salaryOffered || app.salaryQuoted)}
+                        {formatApplicationSalary(app.salary_offered || app.salary_quoted)}
                       </TableCell>
                       <TableCell>
                         <span className="capitalize text-muted-foreground">
@@ -376,7 +375,10 @@ export function ApplicationTable({
                       <Badge variant="outline" className={getStatusColor(app.status)}>
                         {formatStatusText(app.status)}
                       </Badge>
-                      <ChevronRightIcon className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+                      <ChevronRightIcon
+                        className="h-5 w-5 text-muted-foreground"
+                        aria-hidden="true"
+                      />
                     </div>
                   </div>
                 </Link>

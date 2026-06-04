@@ -1,5 +1,6 @@
 import type { LoaderFunctionArgs, MetaFunction } from 'react-router';
 
+import { jsonArray } from '../lib/db-json';
 import { getFullPortfolioBySlug } from '../lib/portfolio.server';
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
@@ -11,18 +12,18 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
   }
 
   return [
-    { title: `${data.portfolio.name} - ${data.portfolio.jobTitle}` },
+    { title: `${data.portfolio.name} - ${data.portfolio.job_title}` },
     { name: 'description', content: data.portfolio.bio },
     {
       property: 'og:title',
-      content: `${data.portfolio.name} - ${data.portfolio.jobTitle}`,
+      content: `${data.portfolio.name} - ${data.portfolio.job_title}`,
     },
     { property: 'og:description', content: data.portfolio.bio },
     { property: 'og:type', content: 'profile' },
     { name: 'twitter:card', content: 'summary_large_image' },
     {
       name: 'twitter:title',
-      content: `${data.portfolio.name} - ${data.portfolio.jobTitle}`,
+      content: `${data.portfolio.name} - ${data.portfolio.job_title}`,
     },
     { name: 'twitter:description', content: data.portfolio.bio },
   ];
@@ -58,23 +59,23 @@ export default function Portfolio({
             <h1 className="font-sans text-4xl font-light text-foreground mb-2">{portfolio.name}</h1>
             {/* Contact */}
             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-              <span>{portfolio.currentLocation}</span>
-              {portfolio.locationTagline && (
+              <span>{portfolio.current_location}</span>
+              {portfolio.location_tagline && (
                 <>
                   <span>•</span>
-                  <span>{portfolio.locationTagline}</span>
+                  <span>{portfolio.location_tagline}</span>
                 </>
               )}
               <span>•</span>
               <span>{portfolio.email}</span>
-              {portfolio.availabilityStatus && portfolio.availabilityMessage && (
+              {portfolio.availability_status && portfolio.availability_message && (
                 <>
                   <span>•</span>
-                  <span className="text-success font-medium">{portfolio.availabilityMessage}</span>
+                  <span className="text-success font-medium">{portfolio.availability_message}</span>
                 </>
               )}
             </div>
-            <p className="text-xl text-muted-foreground my-4">{portfolio.jobTitle}</p>
+            <p className="text-xl text-muted-foreground my-4">{portfolio.job_title}</p>
           </div>
         </div>
 
@@ -85,9 +86,9 @@ export default function Portfolio({
         </section>
 
         {/* Stats */}
-        {portfolio.portfolioStats && portfolio.portfolioStats.length > 0 && (
+        {portfolio.portfolio_stats && portfolio.portfolio_stats.length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-            {portfolio.portfolioStats.map((stat) => (
+            {portfolio.portfolio_stats.map((stat) => (
               <div key={stat.id} className="text-center">
                 <div className="text-xl font-sans font-light text-foreground mb-1">
                   {stat.value}
@@ -100,11 +101,11 @@ export default function Portfolio({
       </header>
 
       {/* Work Experience */}
-      {portfolio.workExperiences && portfolio.workExperiences.length > 0 && (
+      {portfolio.work_experiences && portfolio.work_experiences.length > 0 && (
         <section className="mb-16">
           <h2 className="font-sans text-2xl font-light text-foreground mb-4">Experience</h2>
           <div className="space-y-12">
-            {portfolio.workExperiences.map((job) => (
+            {portfolio.work_experiences.map((job) => (
               <div key={job.id} className="border-l-2 border-border pl-6">
                 <div className="flex items-start justify-between mb-3">
                   <div>
@@ -112,17 +113,17 @@ export default function Portfolio({
                     <p className="text-muted-foreground">{job.company}</p>
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    {job.startDate ? new Date(job.startDate).getFullYear() : 'Unknown'} -{' '}
-                    {job.endDate ? new Date(job.endDate).getFullYear() : 'Present'}
+                    {job.start_date ? new Date(job.start_date).getFullYear() : 'Unknown'} -{' '}
+                    {job.end_date ? new Date(job.end_date).getFullYear() : 'Present'}
                   </div>
                 </div>
                 <p className="text-muted-foreground mb-3 leading-relaxed">{job.description}</p>
                 {job.metrics && (
                   <p className="text-sm text-muted-foreground mb-4 italic">{job.metrics}</p>
                 )}
-                {job.tags && job.tags.length > 0 && (
+                {jsonArray<string>(job.tags).length > 0 && (
                   <div className="flex flex-wrap gap-2">
-                    {job.tags.map((tag) => (
+                    {jsonArray<string>(job.tags).map((tag) => (
                       <span
                         key={tag}
                         className="px-3 py-1 bg-muted text-muted-foreground text-xs rounded-full"
@@ -161,16 +162,16 @@ export default function Portfolio({
           <h2 className="font-sans text-2xl font-light text-foreground mb-8">Featured Projects</h2>
           <div className="space-y-8">
             {portfolio.projects
-              // .filter((project) => project.isFeatured)
+              // .filter((project) => project.is_featured)
               .map((project) => (
                 <div key={project.id} className="border border-border rounded-lg p-6">
                   <h3 className="font-medium text-foreground mb-2">{project.title}</h3>
                   <p className="text-muted-foreground mb-4 leading-relaxed">
                     {project.description}
                   </p>
-                  {project.technologies && project.technologies.length > 0 && (
+                  {jsonArray<string>(project.technologies).length > 0 && (
                     <div className="flex flex-wrap gap-2">
-                      {project.technologies.map((tech) => (
+                      {jsonArray<string>(project.technologies).map((tech) => (
                         <span
                           key={tech}
                           className="px-3 py-1 bg-muted text-muted-foreground text-xs rounded-full"

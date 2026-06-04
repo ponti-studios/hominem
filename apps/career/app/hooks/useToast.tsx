@@ -1,6 +1,7 @@
 import { Button } from '@hominem/ui/button';
 import { createContext, useCallback, useContext, useState, type ReactNode } from 'react';
 
+import { cn } from '~/lib/utils';
 interface ToastMessage {
   id: string;
   message: string;
@@ -54,13 +55,14 @@ function ToastContainer() {
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className={`max-w-sm p-4 rounded-md  border transition-all duration-300 ease-in-out transform animate-in slide-in-from-right-5 ${
+          className={cn(
+            'max-w-sm p-4 rounded-md border transition-all duration-300 ease-in-out transform animate-in slide-in-from-right-5',
             toast.type === 'success'
               ? 'bg-success/10 border-success/30 text-foreground'
               : toast.type === 'error'
                 ? 'bg-destructive/10 border-destructive/30 text-foreground'
-                : 'bg-accent/10 border-accent/30 text-foreground'
-          }`}
+                : 'bg-accent/10 border-accent/30 text-foreground',
+          )}
         >
           <div className="flex items-start gap-3">
             <div className="flex-shrink-0 mt-0.5">

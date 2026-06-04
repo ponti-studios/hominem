@@ -13,7 +13,9 @@ import { useState } from 'react';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import { useLoaderData } from 'react-router';
 
+import { jsonArray } from '~/lib/db-json';
 import { createSuccessResponse, withAuthLoader } from '~/lib/route-utils';
+import { cn } from '~/lib/utils';
 
 interface ProjectSummary {
   totalProjects: number;
@@ -212,6 +214,7 @@ interface ProjectCardProps {
 
 function ProjectCard({ project }: ProjectCardProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const technologies = jsonArray<string>(project.technologies);
 
   const statusColors = {
     planned: 'bg-amber-100 text-amber-800',
@@ -228,14 +231,15 @@ function ProjectCard({ project }: ProjectCardProps) {
           <div className="flex items-center gap-3 mb-2">
             <h3 className="text-lg font-semibold text-foreground">{project.title}</h3>
             <span
-              className={`px-2 py-1 text-xs font-medium rounded-full ${
+              className={cn(
+                'px-2 py-1 text-xs font-medium rounded-full',
                 statusColors[project.status as keyof typeof statusColors] ||
-                'bg-muted text-foreground'
-              }`}
+                  'bg-muted text-foreground',
+              )}
             >
               {project.status.replace('_', ' ')}
             </span>
-            {project.isFeatured && (
+            {project.is_featured && (
               <span className="px-2 py-1 text-xs font-medium rounded-full bg-warning/10 text-foreground">
                 Featured
               </span>
@@ -250,9 +254,9 @@ function ProjectCard({ project }: ProjectCardProps) {
 
           <p className="text-muted-foreground mb-3">{project.description}</p>
 
-          {project.technologies && project.technologies.length > 0 && (
+          {technologies.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-3">
-              {project.technologies.map((tech) => (
+              {technologies.map((tech) => (
                 <span
                   key={tech}
                   className="px-2 py-1 text-xs bg-muted text-muted-foreground rounded-md"
@@ -264,34 +268,35 @@ function ProjectCard({ project }: ProjectCardProps) {
           )}
 
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            {project.startDate && (
-              <span>Started: {new Date(project.startDate).toLocaleDateString()}</span>
+            {project.start_date && (
+              <span>Started: {new Date(project.start_date).toLocaleDateString()}</span>
             )}
-            {project.endDate && (
-              <span>Completed: {new Date(project.endDate).toLocaleDateString()}</span>
+            {project.end_date && (
+              <span>Completed: {new Date(project.end_date).toLocaleDateString()}</span>
             )}
           </div>
         </div>
 
         <div className="flex items-center gap-2 ml-4">
-          {project.liveUrl && (
+          {project.live_url && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() =>
-                project.liveUrl && window.open(project.liveUrl, '_blank', 'noopener,noreferrer')
+                project.live_url && window.open(project.live_url, '_blank', 'noopener,noreferrer')
               }
               className="text-muted-foreground hover:text-muted-foreground"
             >
               <ExternalLinkIcon className="w-4 h-4" />
             </Button>
           )}
-          {project.githubUrl && (
+          {project.github_url && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() =>
-                project.githubUrl && window.open(project.githubUrl, '_blank', 'noopener,noreferrer')
+                project.github_url &&
+                window.open(project.github_url, '_blank', 'noopener,noreferrer')
               }
               className="text-muted-foreground hover:text-muted-foreground"
             >
@@ -317,6 +322,7 @@ function ProjectCard({ project }: ProjectCardProps) {
 
 function ProjectMobileCard({ project }: ProjectCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const technologies = jsonArray<string>(project.technologies);
 
   const statusColors = {
     planned: 'bg-amber-100 text-amber-800',
@@ -349,15 +355,19 @@ function ProjectMobileCard({ project }: ProjectCardProps) {
           </div>
           <div className="ml-4 flex items-center space-x-3">
             <span
-              className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+              className={cn(
+                'inline-flex px-2 py-1 text-xs font-medium rounded-full',
                 statusColors[project.status as keyof typeof statusColors] ||
-                'bg-muted text-foreground'
-              }`}
+                  'bg-muted text-foreground',
+              )}
             >
               {formatStatusText(project.status)}
             </span>
             <svg
-              className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}
+              className={cn(
+                'h-5 w-5 text-muted-foreground transition-transform duration-200',
+                isExpanded ? 'rotate-90' : '',
+              )}
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -377,9 +387,9 @@ function ProjectMobileCard({ project }: ProjectCardProps) {
               <p className="text-sm text-muted-foreground">{project.description}</p>
             )}
 
-            {project.technologies && project.technologies.length > 0 && (
+            {technologies.length > 0 && (
               <div className="flex flex-wrap gap-1">
-                {project.technologies.slice(0, 6).map((tech) => (
+                {technologies.slice(0, 6).map((tech) => (
                   <span
                     key={tech}
                     className="px-2 py-1 text-xs bg-muted text-muted-foreground rounded-md"
@@ -387,9 +397,9 @@ function ProjectMobileCard({ project }: ProjectCardProps) {
                     {tech}
                   </span>
                 ))}
-                {project.technologies.length > 6 && (
+                {technologies.length > 6 && (
                   <span className="text-xs text-muted-foreground">
-                    +{project.technologies.length - 6} more
+                    +{technologies.length - 6} more
                   </span>
                 )}
               </div>
@@ -397,24 +407,24 @@ function ProjectMobileCard({ project }: ProjectCardProps) {
 
             <div className="flex items-center justify-between">
               <div className="text-xs text-muted-foreground">
-                {project.startDate && (
-                  <span>Started: {new Date(project.startDate).toLocaleDateString()}</span>
+                {project.start_date && (
+                  <span>Started: {new Date(project.start_date).toLocaleDateString()}</span>
                 )}
-                {project.endDate && (
+                {project.end_date && (
                   <span className="ml-3">
-                    Completed: {new Date(project.endDate).toLocaleDateString()}
+                    Completed: {new Date(project.end_date).toLocaleDateString()}
                   </span>
                 )}
               </div>
 
               <div className="flex items-center gap-2">
-                {project.liveUrl && (
+                {project.live_url && (
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (project.liveUrl) {
-                        window.open(project.liveUrl, '_blank', 'noopener,noreferrer');
+                      if (project.live_url) {
+                        window.open(project.live_url, '_blank', 'noopener,noreferrer');
                       }
                     }}
                     className="p-1 text-muted-foreground hover:text-primary transition-colors"
@@ -436,13 +446,13 @@ function ProjectMobileCard({ project }: ProjectCardProps) {
                     </svg>
                   </button>
                 )}
-                {project.githubUrl && (
+                {project.github_url && (
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (project.githubUrl) {
-                        window.open(project.githubUrl, '_blank', 'noopener,noreferrer');
+                      if (project.github_url) {
+                        window.open(project.github_url, '_blank', 'noopener,noreferrer');
                       }
                     }}
                     className="p-1 text-muted-foreground hover:text-muted-foreground transition-colors"
@@ -552,7 +562,7 @@ function CreateProjectModal({ onClose }: CreateProjectModalProps) {
             <input
               id="short-description"
               type="text"
-              name="shortDescription"
+              name="short_description"
               className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-ring focus:ring-ring/50"
               placeholder="One-line summary for project cards"
             />
@@ -585,7 +595,7 @@ function CreateProjectModal({ onClose }: CreateProjectModalProps) {
               <input
                 id="live-url"
                 type="url"
-                name="liveUrl"
+                name="live_url"
                 className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-ring focus:ring-ring/50"
                 placeholder="https://myproject.com"
               />
@@ -600,7 +610,7 @@ function CreateProjectModal({ onClose }: CreateProjectModalProps) {
               <input
                 id="github-url"
                 type="url"
-                name="githubUrl"
+                name="github_url"
                 className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-ring focus:ring-ring/50"
                 placeholder="https://github.com/user/project"
               />
@@ -618,7 +628,7 @@ function CreateProjectModal({ onClose }: CreateProjectModalProps) {
               <input
                 id="start-date"
                 type="date"
-                name="startDate"
+                name="start_date"
                 className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-ring focus:ring-ring/50"
               />
             </div>
@@ -632,7 +642,7 @@ function CreateProjectModal({ onClose }: CreateProjectModalProps) {
               <input
                 id="end-date"
                 type="date"
-                name="endDate"
+                name="end_date"
                 className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-ring focus:ring-ring/50"
               />
             </div>
@@ -643,7 +653,7 @@ function CreateProjectModal({ onClose }: CreateProjectModalProps) {
               <input
                 id="is-featured"
                 type="checkbox"
-                name="isFeatured"
+                name="is_featured"
                 className="rounded border-border text-primary focus:border-ring focus:ring-ring/50"
               />
               <label htmlFor="is-featured" className="text-sm font-medium text-muted-foreground">
@@ -654,7 +664,7 @@ function CreateProjectModal({ onClose }: CreateProjectModalProps) {
               <input
                 id="is-visible"
                 type="checkbox"
-                name="isVisible"
+                name="is_visible"
                 defaultChecked
                 className="rounded border-border text-primary focus:border-ring focus:ring-ring/50"
               />

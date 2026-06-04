@@ -9,14 +9,6 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from '@hominem/ui/drawer';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@hominem/ui/dropdown';
 import { MenuIcon } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router';
@@ -83,18 +75,18 @@ function NavigationLink({
   mobile?: boolean;
   onClick?: () => void;
 }) {
-  const isActive = isActiveRoute(pathname, href);
+  const is_active = isActiveRoute(pathname, href);
 
   return (
     <Link
       to={href}
       onClick={onClick}
-      aria-current={isActive ? 'page' : undefined}
+      aria-current={is_active ? 'page' : undefined}
       className={cn(
         buttonVariants({ variant: 'ghost', size: 'md' }),
         'rounded-full px-4',
         mobile && 'w-full justify-start rounded-md',
-        isActive
+        is_active
           ? 'bg-foreground text-background hover:bg-foreground/90 hover:text-background'
           : 'text-muted-foreground hover:bg-muted hover:text-foreground',
       )}
@@ -119,8 +111,8 @@ export default function Navigation() {
   };
 
   return (
-    <header className="bg-background/90 backdrop-blur">
-      <div className="mx-auto flex min-h-16 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur">
+      <div className="mx-auto flex min-h-14 w-full max-w-6xl items-center gap-4 px-4 sm:px-6 lg:px-8">
         <Link
           to="/"
           className="flex items-center gap-3 text-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
@@ -134,46 +126,45 @@ export default function Navigation() {
           />
         </Link>
 
-        <div className="hidden flex-1 justify-center md:flex">
-          {primaryLinks.length > 0 ? (
-            <nav className="flex items-center gap-2" aria-label="Primary">
-              {primaryLinks.map((link) => (
-                <NavigationLink key={link.href} {...link} pathname={location.pathname} />
-              ))}
-            </nav>
-          ) : null}
-        </div>
+        <div className="hidden flex-1 justify-end md:flex">
+          <nav className="flex items-center gap-2" aria-label="Primary">
+            {primaryLinks.map((link) => (
+              <NavigationLink key={link.href} {...link} pathname={location.pathname} />
+            ))}
 
-        <div className="hidden items-center gap-2 md:flex">
-          {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button type="button" variant="ghost" size="md" className="rounded-full px-2.5">
-                  <span>Account</span>
-                  <UserAvatar user={user} />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel className="truncate">
-                  {user.name || user.email || 'Account'}
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link to="/account">Account</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => void handleSignOut()}>Sign out</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <>
-              <Link to="/login" className={buttonVariants({ variant: 'ghost', size: 'md' })}>
-                Log in
+            {user ? (
+              <Link
+                to="/account"
+                aria-current={isActiveRoute(location.pathname, '/account') ? 'page' : undefined}
+                className={cn(
+                  buttonVariants({ variant: 'ghost', size: 'md' }),
+                  'rounded-full px-2.5',
+                  isActiveRoute(location.pathname, '/account')
+                    ? 'bg-foreground text-background hover:bg-foreground/90 hover:text-background'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                )}
+              >
+                <span>Account</span>
+                <UserAvatar user={user} />
               </Link>
-              <Link to="/onboarding" className={buttonVariants({ variant: 'primary', size: 'md' })}>
-                Sign up
-              </Link>
-            </>
-          )}
+            ) : (
+              AUTH_LINKS.unauthenticated.map((link) => (
+                <Link
+                  key={link.href}
+                  to={link.href}
+                  className={cn(
+                    buttonVariants({
+                      variant: link.href === '/onboarding' ? 'primary' : 'ghost',
+                      size: 'md',
+                    }),
+                    'rounded-full px-4',
+                  )}
+                >
+                  {link.label}
+                </Link>
+              ))
+            )}
+          </nav>
         </div>
 
         <Drawer open={isMenuOpen} onOpenChange={setIsMenuOpen} direction="right">

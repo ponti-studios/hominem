@@ -1,14 +1,14 @@
 import { getFullUserPortfolio } from '../lib/portfolio.server';
 
-export async function loader({ params }: { params: { userId: string } }) {
-  const { userId } = params;
+export async function loader({ params }: { params: { owner_userid: string } }) {
+  const { owner_userid } = params;
 
-  if (!userId) {
+  if (!owner_userid) {
     throw new Response('User ID is required', { status: 400 });
   }
 
   try {
-    const portfolio = await getFullUserPortfolio(userId);
+    const portfolio = await getFullUserPortfolio(owner_userid);
 
     if (!portfolio) {
       throw new Response('Portfolio not found', { status: 404 });

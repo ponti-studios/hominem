@@ -18,7 +18,7 @@ import type { CareerProgressionSummary, WorkExperienceWithFinancials } from '~/t
 interface LoaderData {
   user: { id: string; email?: string | null; name?: string | null };
   careerSummary: CareerProgressionSummary;
-  workExperiences: WorkExperienceWithFinancials[];
+  work_experiences: WorkExperienceWithFinancials[];
 }
 
 export async function loader(args: LoaderFunctionArgs) {
@@ -35,20 +35,20 @@ export async function loader(args: LoaderFunctionArgs) {
       ]);
 
       const careerSummary = getCareerProgressionSummary(experiencesResult, eventsResult);
-      const workExperiences = getWorkExperiencesWithFinancials(experiencesResult);
+      const work_experiences = getWorkExperiencesWithFinancials(experiencesResult);
 
-      const serializedWorkExperiences = workExperiences.map((exp) => ({
+      const serializedWorkExperiences = work_experiences.map((exp) => ({
         ...exp,
-        startDate: exp.startDate ? new Date(exp.startDate).toISOString() : null,
-        endDate: exp.endDate ? new Date(exp.endDate).toISOString() : null,
-        createdAt: exp.createdAt ? new Date(exp.createdAt).toISOString() : null,
-        updatedAt: exp.updatedAt ? new Date(exp.updatedAt).toISOString() : null,
+        start_date: exp.start_date ? new Date(exp.start_date).toISOString() : null,
+        end_date: exp.end_date ? new Date(exp.end_date).toISOString() : null,
+        createdat: exp.createdat ? new Date(exp.createdat).toISOString() : null,
+        updatedat: exp.updatedat ? new Date(exp.updatedat).toISOString() : null,
       }));
 
       const responseData = {
         user,
         careerSummary,
-        workExperiences: serializedWorkExperiences,
+        work_experiences: serializedWorkExperiences,
       };
 
       return createSuccessResponse(responseData);
@@ -71,7 +71,7 @@ export async function loader(args: LoaderFunctionArgs) {
           currentLevel: '',
           levelProgression: [],
         },
-        workExperiences: [],
+        work_experiences: [],
       });
     }
   });
@@ -80,7 +80,7 @@ export async function loader(args: LoaderFunctionArgs) {
 export default function CareerDashboard() {
   const response = useLoaderData<{ success: boolean; data: LoaderData }>();
   const data = response?.data || {};
-  const { careerSummary, workExperiences } = data;
+  const { careerSummary, work_experiences } = data;
 
   // Provide default values if data is missing
   const defaultSummary: CareerProgressionSummary = {
@@ -100,7 +100,7 @@ export default function CareerDashboard() {
   };
 
   const summary = careerSummary || defaultSummary;
-  const experiences = workExperiences || [];
+  const experiences = work_experiences || [];
 
   return (
     <div className="space-y-6">
@@ -158,7 +158,7 @@ export default function CareerDashboard() {
         </Card>
       ) : null}
 
-      <CareerHistory workExperiences={experiences} />
+      <CareerHistory work_experiences={experiences} />
     </div>
   );
 }

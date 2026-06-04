@@ -29,54 +29,54 @@ export interface JobApplicationStageEntry {
 
 export interface JobApplication {
   id: string;
-  userId: string;
+  owner_userid: string;
   position: string;
-  companyId: string;
+  company_id: string;
   company?: string;
   status: JobApplicationStatus;
-  startDate: Date;
-  endDate?: Date | null;
+  start_date: Date;
+  end_date?: Date | null;
   location?: string;
-  jobPosting?: string;
-  salaryQuoted?: string;
-  salaryAccepted?: string | null;
-  coverLetter?: string | null;
+  job_posting?: string;
+  salary_quoted?: string;
+  salary_accepted?: string | null;
+  cover_letter?: string | null;
   resume?: string | null;
   jobId?: string | null;
   link?: string | null;
-  phoneScreen?: string | null;
+  phone_screen?: string | null;
   reference: boolean;
   stages: JobApplicationStageEntry[];
   // Recruiter Information
-  recruiterName?: string | null;
-  recruiterEmail?: string | null;
-  recruiterLinkedin?: string | null;
-  createdAt?: Date;
-  updatedAt?: Date;
+  recruiter_name?: string | null;
+  recruiter_email?: string | null;
+  recruiter_linkedin?: string | null;
+  createdat?: Date;
+  updatedat?: Date;
 }
 
 export interface JobApplicationInsert {
-  userId: string;
+  owner_userid: string;
   position: string;
-  companyId: string;
+  company_id: string;
   status: JobApplicationStatus;
-  startDate?: Date;
-  endDate?: Date | null;
+  start_date?: Date;
+  end_date?: Date | null;
   location?: string;
-  jobPosting?: string;
-  salaryQuoted?: string;
-  salaryAccepted?: string | null;
-  coverLetter?: string | null;
+  job_posting?: string;
+  salary_quoted?: string;
+  salary_accepted?: string | null;
+  cover_letter?: string | null;
   resume?: string | null;
   jobId?: string | null;
   link?: string | null;
-  phoneScreen?: string | null;
+  phone_screen?: string | null;
   reference: boolean;
   stages: JobApplicationStageEntry[];
   // Recruiter Information
-  recruiterName?: string | null;
-  recruiterEmail?: string | null;
-  recruiterLinkedin?: string | null;
+  recruiter_name?: string | null;
+  recruiter_email?: string | null;
+  recruiter_linkedin?: string | null;
 }
 
 export interface Company {
@@ -87,6 +87,6 @@ export interface Company {
   size?: string;
   location?: string;
   description?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
+  createdat?: Date;
+  updatedat?: Date;
 }

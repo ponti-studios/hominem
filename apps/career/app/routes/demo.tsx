@@ -36,8 +36,8 @@ const demoPortfolio = {
     {
       title: 'Stripe',
       role: 'Senior Product Designer',
-      startDate: '2022-01-01',
-      endDate: null,
+      start_date: '2022-01-01',
+      end_date: null,
       description:
         "Leading design for Stripe's next-generation payment processing platform, focusing on developer experience and enterprise merchant tools.",
       metrics:
@@ -47,8 +47,8 @@ const demoPortfolio = {
     {
       title: 'Figma',
       role: 'Product Designer',
-      startDate: '2020-03-01',
-      endDate: '2021-12-31',
+      start_date: '2020-03-01',
+      end_date: '2021-12-31',
       description:
         "Designed collaboration features for Figma's web platform, including real-time commenting, version history, and team libraries.",
       metrics:
@@ -120,15 +120,15 @@ export default function Demo() {
           <section className="space-y-5">
             <h2 className="heading-3 text-foreground">Experience</h2>
             {demoPortfolio.workExperience.map((job) => (
-              <div key={`${job.title}-${job.startDate}`} className="border-l border-border pl-5">
+              <div key={`${job.title}-${job.start_date}`} className="border-l border-border pl-5">
                 <div className="flex flex-col justify-between gap-2 sm:flex-row">
                   <div>
                     <h3 className="heading-4 text-foreground">{job.title}</h3>
                     <p className="body-3 text-muted-foreground">{job.role}</p>
                   </div>
                   <p className="body-4 text-muted-foreground">
-                    {new Date(job.startDate).getFullYear()} -{' '}
-                    {job.endDate ? new Date(job.endDate).getFullYear() : 'Present'}
+                    {new Date(job.start_date).getFullYear()} -{' '}
+                    {job.end_date ? new Date(job.end_date).getFullYear() : 'Present'}
                   </p>
                 </div>
                 <p className="body-3 mt-3 text-muted-foreground">{job.description}</p>

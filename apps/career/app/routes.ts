@@ -8,7 +8,7 @@ export default [
   route('/health', 'routes/health.ts'),
   route('/api/applications/create', 'routes/api.applications.create.ts'),
   route('/api/job/scrape', 'routes/api.job.scrape.ts'),
-  route('/api/portfolio/:userId', 'routes/api.portfolio.$userId.ts'),
+  route('/api/portfolio/:owner_userid', 'routes/api.portfolio.$userId.ts'),
   route('/api/resume/convert', 'routes/api.resume.convert.ts'),
   route('/api/validate-slug', 'routes/api.validate-slug.ts'),
   ...prefix('/career', [

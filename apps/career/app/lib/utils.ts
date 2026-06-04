@@ -62,12 +62,12 @@ export function formatNumber(num: number): string {
 
 /**
  * Calculate days between two dates
- * @param startDate - Start date
- * @param endDate - End date (default: current date)
+ * @param start_date - Start date
+ * @param end_date - End date (default: current date)
  * @returns Number of days
  */
-export function daysBetween(startDate: Date, endDate = new Date()): number {
-  const timeDiff = endDate.getTime() - startDate.getTime();
+export function daysBetween(start_date: Date, end_date = new Date()): number {
+  const timeDiff = end_date.getTime() - start_date.getTime();
   return Math.ceil(timeDiff / (1000 * 3600 * 24));
 }
 
@@ -100,8 +100,8 @@ export const nullToUndefined = (value: string | null | undefined): string | unde
  * Helper function to safely convert nullable array to undefined
  * Useful for form default values where null arrays should become undefined
  */
-export const nullArrayToUndefined = (value: string[] | null | undefined): string[] | undefined => {
-  return value === null ? undefined : value;
+export const nullArrayToUndefined = (value: unknown): string[] | undefined => {
+  return Array.isArray(value) ? (value as string[]) : undefined;
 };
 
 /**

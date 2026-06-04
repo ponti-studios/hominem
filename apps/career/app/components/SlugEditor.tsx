@@ -6,7 +6,7 @@ import { useSubmit } from 'react-router';
 import { cn } from '~/lib/utils';
 
 interface SlugEditorProps {
-  portfolioId: string;
+  portfolio_id: string;
   initialSlug: string;
   onSave?: (newSlug: string) => void;
   onCancel?: () => void;
@@ -19,7 +19,7 @@ interface ValidationState {
   isValid: boolean;
 }
 
-export function SlugEditor({ portfolioId, initialSlug, onSave, onCancel }: SlugEditorProps) {
+export function SlugEditor({ portfolio_id, initialSlug, onSave, onCancel }: SlugEditorProps) {
   const submit = useSubmit();
 
   // Component state
@@ -77,7 +77,7 @@ export function SlugEditor({ portfolioId, initialSlug, onSave, onCancel }: SlugE
 
       try {
         const response = await fetch(
-          `/api/validate-slug?slug=${encodeURIComponent(slug)}&currentId=${encodeURIComponent(portfolioId)}`,
+          `/api/validate-slug?slug=${encodeURIComponent(slug)}&currentId=${encodeURIComponent(portfolio_id)}`,
         );
         const data = (await response.json()) as {
           success: boolean;
@@ -109,7 +109,7 @@ export function SlugEditor({ portfolioId, initialSlug, onSave, onCancel }: SlugE
         });
       }
     },
-    [portfolioId, initialSlug],
+    [portfolio_id, initialSlug],
   );
 
   // Debounce validation calls
@@ -133,7 +133,7 @@ export function SlugEditor({ portfolioId, initialSlug, onSave, onCancel }: SlugE
       const formData = new FormData();
       formData.append('action', 'update-slug');
       formData.append('slug', slugValue);
-      formData.append('portfolioId', portfolioId);
+      formData.append('portfolio_id', portfolio_id);
 
       submit(formData, { method: 'post' });
 
@@ -229,7 +229,7 @@ export function SlugEditor({ portfolioId, initialSlug, onSave, onCancel }: SlugE
 
       {/* Validation message */}
       {validation.message && (
-        <p className={`text-xs ${getMessageStyling()}`}>{validation.message}</p>
+        <p className={cn('text-xs', getMessageStyling())}>{validation.message}</p>
       )}
     </div>
   );

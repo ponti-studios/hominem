@@ -2,10 +2,11 @@ import { BarChart3, Briefcase, Code, FolderOpen, Link2, MessageSquare, User } fr
 import type { LoaderFunctionArgs, MetaFunction } from 'react-router';
 import { Link, Outlet, redirect, useLoaderData, useLocation } from 'react-router';
 
+import { cn } from '~/lib/utils';
+
 import type { FullPortfolio } from '../lib/portfolio.server';
 import { getFullUserPortfolio } from '../lib/portfolio.server';
 import { withAuthLoader } from '../lib/route-utils';
-
 export const meta: MetaFunction = () => {
   return [
     { title: 'Portfolio Editor | Craftd' },
@@ -33,16 +34,19 @@ const editorSteps = [
   { path: '/editor/social', value: 'social', label: 'Social', icon: Link2 },
   { path: '/editor/stats', value: 'stats', label: 'Stats', icon: BarChart3 },
   { path: '/editor/projects', value: 'projects', label: 'Projects', icon: FolderOpen },
-  { path: '/editor/testimonials', value: 'testimonials', label: 'Testimonials', icon: MessageSquare },
+  {
+    path: '/editor/testimonials',
+    value: 'testimonials',
+    label: 'Testimonials',
+    icon: MessageSquare,
+  },
 ];
 
 export default function EditorLayout() {
   const location = useLocation();
   const portfolio = useLoaderData<FullPortfolio>();
 
-  const currentStepIndex = editorSteps.findIndex((step) =>
-    location.pathname.startsWith(step.path),
-  );
+  const currentStepIndex = editorSteps.findIndex((step) => location.pathname.startsWith(step.path));
 
   return (
     <div className="w-full flex-1 space-y-4">
@@ -60,7 +64,7 @@ export default function EditorLayout() {
           <div className="sticky top-6 rounded-md border bg-card p-3">
             <nav className="space-y-0.5">
               {editorSteps.map((step, index) => {
-                const isActive = step.value === location.pathname.split('/').pop();
+                const is_active = step.value === location.pathname.split('/').pop();
                 const isCompleted = index < currentStepIndex;
                 const Icon = step.icon;
 
@@ -68,18 +72,24 @@ export default function EditorLayout() {
                   <Link
                     key={step.path}
                     to={step.path}
-                    className={`flex items-center gap-2.5 rounded px-2.5 py-2 text-sm transition-colors ${
-                      isActive
+                    className={cn(
+                      'flex items-center gap-2.5 rounded px-2.5 py-2 text-sm transition-colors',
+                      is_active
                         ? 'bg-accent/10 text-foreground'
-                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                    }`}
+                        : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                    )}
                   >
                     <Icon
-                      className={`size-4 shrink-0 ${
-                        isActive ? 'text-primary' : isCompleted ? 'text-success' : 'text-muted-foreground'
-                      }`}
+                      className={cn(
+                        'size-4 shrink-0',
+                        is_active
+                          ? 'text-primary'
+                          : isCompleted
+                            ? 'text-success'
+                            : 'text-muted-foreground',
+                      )}
                     />
-                    <span className={isActive ? 'font-medium' : ''}>{step.label}</span>
+                    <span className={is_active ? 'font-medium' : ''}>{step.label}</span>
                   </Link>
                 );
               })}

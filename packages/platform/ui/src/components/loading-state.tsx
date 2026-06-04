@@ -1,8 +1,8 @@
 import React from 'react';
 import type { ReactNode } from 'react';
 
+import { cn } from '../lib/utils';
 import { LoadingSpinner } from './loading-spinner';
-
 export type LoadingVariant = 'page' | 'inline' | 'skeleton';
 
 export interface LoadingStateProps {
@@ -106,7 +106,7 @@ export function LoadingState({
             {Array.from({ length: skeletonLines }).map((_, i) => (
               <div
                 key={i}
-                className={`${skeletonLineHeight} animate-pulse rounded bg-background-secondary`}
+                className={cn(skeletonLineHeight, 'animate-pulse rounded bg-background-secondary')}
               />
             ))}
           </div>

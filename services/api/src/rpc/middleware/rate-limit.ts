@@ -7,6 +7,7 @@ import type { AppContext } from './auth';
 interface RateLimitInput {
   bucket: string;
   identifier: string;
+  // Number of seconds the value will remain cached in Redis.
   windowSec: number;
   max: number;
 }

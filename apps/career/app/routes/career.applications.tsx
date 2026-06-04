@@ -48,10 +48,10 @@ export async function loader(args: LoaderFunctionArgs) {
       const pagination = {
         limit,
         offset,
-        orderBy: (searchParams.get('orderBy') || 'applicationDate') as
-          | 'applicationDate'
-          | 'responseDate'
-          | 'offerDate'
+        orderBy: (searchParams.get('orderBy') || 'application_date') as
+          | 'application_date'
+          | 'response_date'
+          | 'offer_date'
           | 'companyName'
           | 'position',
         orderDirection: (searchParams.get('orderDirection') as 'asc' | 'desc') || 'desc',

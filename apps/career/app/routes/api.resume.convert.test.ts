@@ -53,14 +53,8 @@ vi.mock('../lib/rate-limit', () => ({
 }));
 
 vi.mock('@hominem/services/ai-model', () => ({
-  getSharedAiModelConfig: vi.fn(() => ({ modelId: 'test-model' })),
-  getSharedOpenAIClient: vi.fn(() => ({
-    chat: {
-      completions: {
-        create: mocks.createCompletion,
-      },
-    },
-  })),
+  createChatCompletion: mocks.createCompletion,
+  getChatCompletionText: vi.fn((result: { choices?: Array<{ message?: { content?: string } }> }) => result.choices?.[0]?.message?.content ?? ''),
 }));
 
 let action: typeof import('./api.resume.convert').action;
@@ -158,7 +152,7 @@ describe('resume convert action', () => {
     });
     mocks.deleteFile.mockResolvedValue(true);
     mocks.saveResumeToDatabase.mockResolvedValue({
-      portfolioId: 'portfolio-id',
+      portfolio_id: 'portfolio-id',
       portfolioSlug: 'charles-ponti',
     });
   });
@@ -348,8 +342,8 @@ describe('resume convert action', () => {
                   company: 'Company',
                   role: 'Engineer',
                   description: 'Built things',
-                  startDate: '2020-01',
-                  endDate: 'Present',
+                  start_date: '2020-01',
+                  end_date: 'Present',
                 },
               ],
             }),
@@ -365,8 +359,8 @@ describe('resume convert action', () => {
     expect(
       (body.data as ReturnType<typeof makeConvertedResumeData>).workExperience[0],
     ).toMatchObject({
-      startDate: '2020-01-01',
-      endDate: null,
+      start_date: '2020-01-01',
+      end_date: null,
     });
   });
 
@@ -434,7 +428,7 @@ describe('resume convert action', () => {
 
     expect(response.status).toBe(200);
     expect(body.stage).toBe('complete');
-    expect(body.portfolioId).toBe('portfolio-id');
+    expect(body.portfolio_id).toBe('portfolio-id');
     expect(body.portfolioSlug).toBe('charles-ponti');
     expect(body.portfolioUrl).toBe('/p/charles-ponti');
     expect(body.fileUrl).toBe('http://localhost:9000/storage/resumes/resume.pdf');

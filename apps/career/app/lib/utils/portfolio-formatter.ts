@@ -1,4 +1,5 @@
 import type { FullPortfolio } from '../portfolio.server';
+import { jsonArray } from '../db-json';
 
 /**
  * Formats portfolio data in a natural, LLM-friendly format
@@ -7,8 +8,8 @@ import type { FullPortfolio } from '../portfolio.server';
 export function formatPortfolioForLLM(portfolioData: FullPortfolio): string {
   let formatted = 'CANDIDATE PROFILE:\n';
   formatted += `Name: ${portfolioData.name}\n`;
-  formatted += `Current Role: ${portfolioData.jobTitle}\n`;
-  formatted += `Location: ${portfolioData.currentLocation}\n`;
+  formatted += `Current Role: ${portfolioData.job_title}\n`;
+  formatted += `Location: ${portfolioData.current_location}\n`;
   formatted += `Email: ${portfolioData.email}\n`;
   if (portfolioData.phone) formatted += `Phone: ${portfolioData.phone}\n`;
 
@@ -16,38 +17,39 @@ export function formatPortfolioForLLM(portfolioData: FullPortfolio): string {
   formatted += `${portfolioData.bio}\n`;
 
   formatted += '\nCONTACT LINKS:';
-  if (portfolioData.socialLinks) {
-    if (portfolioData.socialLinks.linkedin)
-      formatted += `\n- LinkedIn: ${portfolioData.socialLinks.linkedin}`;
-    if (portfolioData.socialLinks.github)
-      formatted += `\n- GitHub: ${portfolioData.socialLinks.github}`;
-    if (portfolioData.socialLinks.website)
-      formatted += `\n- Website: ${portfolioData.socialLinks.website}`;
-    if (portfolioData.socialLinks.twitter)
-      formatted += `\n- Twitter: ${portfolioData.socialLinks.twitter}`;
+  if (portfolioData.social_links) {
+    if (portfolioData.social_links.linkedin)
+      formatted += `\n- LinkedIn: ${portfolioData.social_links.linkedin}`;
+    if (portfolioData.social_links.github)
+      formatted += `\n- GitHub: ${portfolioData.social_links.github}`;
+    if (portfolioData.social_links.website)
+      formatted += `\n- Website: ${portfolioData.social_links.website}`;
+    if (portfolioData.social_links.twitter)
+      formatted += `\n- Twitter: ${portfolioData.social_links.twitter}`;
   }
 
   formatted += '\n\nWORK EXPERIENCE:';
-  for (let i = 0; i < portfolioData.workExperiences.length; i++) {
-    const exp = portfolioData.workExperiences[i];
-    const startDate = exp.startDate
-      ? new Date(exp.startDate).toLocaleDateString('en-US', {
+  for (let i = 0; i < portfolioData.work_experiences.length; i++) {
+    const exp = portfolioData.work_experiences[i];
+    const start_date = exp.start_date
+      ? new Date(exp.start_date).toLocaleDateString('en-US', {
           month: 'short',
           year: 'numeric',
         })
       : 'Unknown';
-    const endDate = exp.endDate
-      ? new Date(exp.endDate).toLocaleDateString('en-US', {
+    const end_date = exp.end_date
+      ? new Date(exp.end_date).toLocaleDateString('en-US', {
           month: 'short',
           year: 'numeric',
         })
       : 'Present';
 
-    formatted += `\n\n${i + 1}. ${exp.role} at ${exp.company} (${startDate} - ${endDate})\n`;
+    formatted += `\n\n${i + 1}. ${exp.role} at ${exp.company} (${start_date} - ${end_date})\n`;
     formatted += `   Description: ${exp.description}`;
 
     if (exp.metrics) formatted += `\n   Key Metrics: ${exp.metrics}`;
-    if (exp.tags && exp.tags.length > 0) formatted += `\n   Technologies: ${exp.tags.join(', ')}`;
+    const tags = jsonArray<string>(exp.tags);
+    if (tags.length > 0) formatted += `\n   Technologies: ${tags.join(', ')}`;
   }
 
   formatted += '\n\nSKILLS:';
@@ -62,7 +64,7 @@ export function formatPortfolioForLLM(portfolioData: FullPortfolio): string {
     formatted += `\n\n${category}:`;
     for (const skill of skills) {
       formatted += `\n- ${skill.name} (${skill.level}% proficiency)`;
-      if (skill.yearsOfExperience) formatted += ` - ${skill.yearsOfExperience} years`;
+      if (skill.years_of_experience) formatted += ` - ${skill.years_of_experience} years`;
       if (skill.description) formatted += ` - ${skill.description}`;
     }
   }
@@ -73,16 +75,17 @@ export function formatPortfolioForLLM(portfolioData: FullPortfolio): string {
     formatted += `\n\n${i + 1}. ${project.title} (${project.status})\n`;
     formatted += `   Description: ${project.description}`;
 
-    if (project.technologies && project.technologies.length > 0) {
-      formatted += `\n   Technologies: ${project.technologies.join(', ')}`;
+    const technologies = jsonArray<string>(project.technologies);
+    if (technologies.length > 0) {
+      formatted += `\n   Technologies: ${technologies.join(', ')}`;
     }
-    if (project.liveUrl) formatted += `\n   Live URL: ${project.liveUrl}`;
-    if (project.githubUrl) formatted += `\n   GitHub: ${project.githubUrl}`;
+    if (project.live_url) formatted += `\n   Live URL: ${project.live_url}`;
+    if (project.github_url) formatted += `\n   GitHub: ${project.github_url}`;
   }
 
-  if (portfolioData.portfolioStats && portfolioData.portfolioStats.length > 0) {
+  if (portfolioData.portfolio_stats && portfolioData.portfolio_stats.length > 0) {
     formatted += '\n\nKEY STATISTICS:';
-    for (const stat of portfolioData.portfolioStats) {
+    for (const stat of portfolioData.portfolio_stats) {
       formatted += `\n- ${stat.label}: ${stat.value}`;
     }
   }

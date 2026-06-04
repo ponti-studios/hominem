@@ -1,5 +1,5 @@
 import { getDb } from '@hominem/db';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { createCareerTestDb } from '~/test/db/career';
 import { makeConvertedResumeData } from '~/test/factories/resume';
@@ -7,9 +7,18 @@ import { makeConvertedResumeData } from '~/test/factories/resume';
 import { generateUniqueSlug, saveResumeToDatabase } from './resume-conversion.service';
 
 const testDb = createCareerTestDb();
+const slugTestValues = ['charles-ponti', 'charles-ponti-2', 'charles-ponti-3'];
+
+async function cleanupSlugTestRows() {
+  await getDb().deleteFrom('app.portfolios').where('slug', 'in', slugTestValues).execute();
+}
 
 describe('resume conversion slug generation', () => {
-  afterEach(() => testDb.cleanup());
+  beforeEach(cleanupSlugTestRows);
+  afterEach(async () => {
+    await testDb.cleanup();
+    await cleanupSlugTestRows();
+  });
 
   it('normalizes mixed-case and invalid slug input', async () => {
     await expect(generateUniqueSlug(getDb(), ' Charles Ponti!! ', 'Fallback')).resolves.toBe(
@@ -44,7 +53,7 @@ describe('resume conversion slug generation', () => {
       user,
       slug: 'old-portfolio',
       title: 'Old Portfolio',
-      jobTitle: 'Old Role',
+      job_title: 'Old Role',
     });
 
     const data = makeConvertedResumeData({
@@ -53,10 +62,10 @@ describe('resume conversion slug generation', () => {
         title: 'New Portfolio',
         name: user.name,
         initials: 'RU',
-        jobTitle: 'Staff Engineer',
+        job_title: 'Staff Engineer',
         email: user.email,
       },
-      socialLinks: {
+      social_links: {
         github: 'https://github.com/example',
         linkedin: null,
         twitter: null,
@@ -67,8 +76,8 @@ describe('resume conversion slug generation', () => {
           company: 'Company',
           role: 'Engineer',
           description: 'Built products',
-          startDate: '2020-01-01',
-          endDate: null,
+          start_date: '2020-01-01',
+          end_date: null,
         },
       ],
       skills: [
@@ -77,7 +86,7 @@ describe('resume conversion slug generation', () => {
           level: 90,
           category: 'Programming',
           description: null,
-          yearsOfExperience: 5,
+          years_of_experience: 5,
           certifications: [],
         },
       ],
@@ -85,10 +94,10 @@ describe('resume conversion slug generation', () => {
         {
           title: 'Project',
           description: 'Shipped a project',
-          shortDescription: null,
+          short_description: null,
           technologies: ['TypeScript', 'React'],
-          liveUrl: null,
-          githubUrl: null,
+          live_url: null,
+          github_url: null,
           status: 'completed',
         },
       ],
@@ -107,32 +116,32 @@ describe('resume conversion slug generation', () => {
     expect(portfolios).toHaveLength(1);
     expect(portfolios[0]).toMatchObject({ slug: 'new-portfolio', title: 'New Portfolio' });
 
-    const portfolioId = portfolios[0]?.id;
-    const [workCount, skillCount, projectCount, statCount, socialLinks] = await Promise.all([
+    const portfolio_id = portfolios[0]?.id;
+    const [workCount, skillCount, projectCount, statCount, social_links] = await Promise.all([
       getDb()
         .selectFrom('app.work_experiences')
         .select(({ fn }) => fn.countAll<number>().as('count'))
-        .where('portfolio_id', '=', portfolioId)
+        .where('portfolio_id', '=', portfolio_id)
         .executeTakeFirstOrThrow(),
       getDb()
         .selectFrom('app.skills')
         .select(({ fn }) => fn.countAll<number>().as('count'))
-        .where('portfolio_id', '=', portfolioId)
+        .where('portfolio_id', '=', portfolio_id)
         .executeTakeFirstOrThrow(),
       getDb()
         .selectFrom('app.projects')
         .select(['technologies'])
-        .where('portfolio_id', '=', portfolioId)
+        .where('portfolio_id', '=', portfolio_id)
         .executeTakeFirstOrThrow(),
       getDb()
         .selectFrom('app.portfolio_stats')
         .select(({ fn }) => fn.countAll<number>().as('count'))
-        .where('portfolio_id', '=', portfolioId)
+        .where('portfolio_id', '=', portfolio_id)
         .executeTakeFirstOrThrow(),
       getDb()
         .selectFrom('app.social_links')
         .select(['github'])
-        .where('portfolio_id', '=', portfolioId)
+        .where('portfolio_id', '=', portfolio_id)
         .executeTakeFirstOrThrow(),
     ]);
 
@@ -140,6 +149,6 @@ describe('resume conversion slug generation', () => {
     expect(Number(skillCount.count)).toBe(1);
     expect(projectCount.technologies).toEqual(['TypeScript', 'React']);
     expect(Number(statCount.count)).toBe(1);
-    expect(socialLinks.github).toBe('https://github.com/example');
+    expect(social_links.github).toBe('https://github.com/example');
   });
 });

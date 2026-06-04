@@ -42,7 +42,7 @@ export const action: ActionFunction = async ({ request }) => {
       );
     }
 
-    return new Response(JSON.stringify({ jobPosting: result.jobPosting }), {
+    return new Response(JSON.stringify({ job_posting: result.job_posting }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });

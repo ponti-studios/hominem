@@ -1,4 +1,4 @@
-import { getSharedAiModelConfig, getSharedOpenAIClient } from '@hominem/services/ai-model';
+import { createChatCompletion, getChatCompletionText } from '@hominem/services/ai-model';
 import type { ActionFunction } from 'react-router';
 import { z } from 'zod';
 
@@ -17,11 +17,11 @@ function parseJsonObject(content: string): unknown {
 
 // Input validation schema
 const customizeResumeSchema = z.object({
-  jobPosting: z.string().min(100, 'Job posting must be at least 100 characters').optional(),
-  jobPostingUrl: z.string().url('Invalid job posting URL').optional(),
+  job_posting: z.string().min(100, 'Job posting must be at least 100 characters').optional(),
+  job_posting_url: z.string().url('Invalid job posting URL').optional(),
   jobPostingData: z
     .object({
-      jobTitle: z.string(),
+      job_title: z.string(),
       companyName: z.string(),
       jobDescription: z.string(),
       requirements: z.array(z.string()),
@@ -81,14 +81,14 @@ export const action: ActionFunction = async ({ request }) => {
       );
     }
 
-    const { jobPosting, jobPostingUrl, jobPostingData, resumeFormat, focusAreas, targetLength } =
+    const { job_posting, job_posting_url, jobPostingData, resumeFormat, focusAreas, targetLength } =
       validation.data;
 
     // Handle job posting input - either direct text, URL to scrape, or structured data
     let finalJobPosting: string;
     let jobPostingSource: 'text' | 'scraped' | 'structured' = 'text';
     let jobPostingMetadata: {
-      jobTitle?: string;
+      job_title?: string;
       companyName?: string;
       requirements?: string[];
       skills?: string[];
@@ -99,36 +99,36 @@ export const action: ActionFunction = async ({ request }) => {
       finalJobPosting = jobPostingData.fullText;
       jobPostingSource = 'structured';
       jobPostingMetadata = {
-        jobTitle: jobPostingData.jobTitle,
+        job_title: jobPostingData.job_title,
         companyName: jobPostingData.companyName,
         requirements: jobPostingData.requirements,
         skills: jobPostingData.skills,
       };
-    } else if (jobPostingUrl) {
-      const scrapingResult = await jobScrapingService.scrapeAndValidateJobPosting(jobPostingUrl);
+    } else if (job_posting_url) {
+      const scrapingResult = await jobScrapingService.scrapeAndValidateJobPosting(job_posting_url);
 
-      if (!scrapingResult.success || !scrapingResult.jobPosting) {
+      if (!scrapingResult.success || !scrapingResult.job_posting) {
         return new Response(
           JSON.stringify({ error: scrapingResult.error || 'Failed to scrape job posting' }),
           { status: 400, headers: { 'Content-Type': 'application/json' } },
         );
       }
 
-      finalJobPosting = scrapingResult.jobPosting.fullText;
+      finalJobPosting = scrapingResult.job_posting.fullText;
       jobPostingSource = 'scraped';
       jobPostingMetadata = {
-        jobTitle: scrapingResult.jobPosting.jobTitle,
-        companyName: scrapingResult.jobPosting.companyName,
-        requirements: scrapingResult.jobPosting.requirements,
-        skills: scrapingResult.jobPosting.skills,
+        job_title: scrapingResult.job_posting.job_title,
+        companyName: scrapingResult.job_posting.companyName,
+        requirements: scrapingResult.job_posting.requirements,
+        skills: scrapingResult.job_posting.skills,
       };
-    } else if (jobPosting) {
+    } else if (job_posting) {
       // Use provided job posting text
-      finalJobPosting = jobPosting;
+      finalJobPosting = job_posting;
     } else {
       return new Response(
         JSON.stringify({
-          error: 'Either jobPosting, jobPostingUrl, or jobPostingData must be provided',
+          error: 'Either job_posting, job_posting_url, or jobPostingData must be provided',
         }),
         { status: 400, headers: { 'Content-Type': 'application/json' } },
       );
@@ -179,8 +179,7 @@ ${portfolioContext}
 Please create a customized resume that highlights the most relevant experience and skills for this specific job opportunity.`;
 
     // Generate customized resume using the shared monorepo AI client
-    const result = await getSharedOpenAIClient().chat.completions.create({
-      model: getSharedAiModelConfig().modelId,
+    const result = await createChatCompletion({
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
@@ -190,8 +189,7 @@ Please create a customized resume that highlights the most relevant experience a
     });
 
     // Extract key insights from the job posting for additional context
-    const analysisResult = await getSharedOpenAIClient().chat.completions.create({
-      model: getSharedAiModelConfig().modelId,
+    const analysisResult = await createChatCompletion({
       response_format: { type: 'json_object' },
       messages: [
         {
@@ -209,28 +207,28 @@ ${finalJobPosting}`,
       temperature: 0.1,
     });
 
-    const parsedAnalysis = parseJsonObject(analysisResult.choices[0]?.message.content ?? '');
+    const parsedAnalysis = parseJsonObject(getChatCompletionText(analysisResult));
     const analysisValidation = jobAnalysisSchema.safeParse(parsedAnalysis);
 
     if (!analysisValidation.success) {
       logger.warn('Failed to parse job analysis with schema', {
-        userId: user.id,
+        owner_userid: user.id,
         issues: analysisValidation.error.issues,
       });
     }
 
     const responseData = {
-      customizedResume: result.choices[0]?.message.content ?? '',
+      customizedResume: getChatCompletionText(result),
       jobAnalysis: analysisValidation.success ? analysisValidation.data : null,
       metadata: {
         format: resumeFormat,
         targetLength,
         focusAreas,
         generatedAt: new Date().toISOString(),
-        portfolioId: portfolio.id,
+        portfolio_id: portfolio.id,
         jobPostingSource,
-        jobPostingUrl: jobPostingUrl || null,
-        jobPostingWordCount: finalJobPosting.split(/\s+/).length,
+        job_posting_url: job_posting_url || null,
+        job_posting_word_count: finalJobPosting.split(/\s+/).length,
         jobPostingMetadata,
       },
     };

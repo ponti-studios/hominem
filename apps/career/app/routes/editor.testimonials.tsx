@@ -25,23 +25,23 @@ interface TestimonialFormValues {
   content: string;
   company?: string;
   rating?: number;
-  avatarUrl?: string;
-  linkedinUrl?: string;
-  portfolioId: string;
+  avatar_url?: string;
+  linkedin_url?: string;
+  portfolio_id: string;
 }
 
 interface TestimonialsEditorSectionProps {
   testimonials?: Testimonial[] | null;
-  portfolioId: string;
+  portfolio_id: string;
 }
 
 function TestimonialForm({
   testimonial,
-  portfolioId,
+  portfolio_id,
   onDelete,
 }: {
   testimonial?: Testimonial;
-  portfolioId: string;
+  portfolio_id: string;
   onDelete?: () => void;
 }) {
   const fetcher = useFetcher();
@@ -61,9 +61,9 @@ function TestimonialForm({
       content: testimonial?.content || '',
       company: testimonial?.company || '',
       rating: testimonial?.rating || undefined,
-      avatarUrl: testimonial?.avatarUrl || '',
-      linkedinUrl: testimonial?.linkedinUrl || '',
-      portfolioId,
+      avatar_url: testimonial?.avatar_url || '',
+      linkedin_url: testimonial?.linkedin_url || '',
+      portfolio_id,
     },
     mode: 'onChange',
   });
@@ -88,9 +88,9 @@ function TestimonialForm({
             content: result.data.content || '',
             company: result.data.company || '',
             rating: result.data.rating || undefined,
-            avatarUrl: result.data.avatarUrl || '',
-            linkedinUrl: result.data.linkedinUrl || '',
-            portfolioId: result.data.portfolioId,
+            avatar_url: result.data.avatar_url || '',
+            linkedin_url: result.data.linkedin_url || '',
+            portfolio_id: result.data.portfolio_id,
           });
         }
       } else {
@@ -127,7 +127,7 @@ function TestimonialForm({
       const formData = new FormData();
       formData.append('operation', 'delete');
       formData.append('id', testimonial.id);
-      formData.append('portfolioId', portfolioId);
+      formData.append('portfolio_id', portfolio_id);
 
       fetcher.submit(formData, {
         method: 'POST',
@@ -246,25 +246,25 @@ function TestimonialForm({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="flex flex-col gap-2">
-          <label htmlFor={`avatarUrl-${testimonial?.id || 'new'}`} className="label">
+          <label htmlFor={`avatar_url-${testimonial?.id || 'new'}`} className="label">
             Avatar URL (optional)
           </label>
           <input
-            id={`avatarUrl-${testimonial?.id || 'new'}`}
+            id={`avatar_url-${testimonial?.id || 'new'}`}
             type="url"
-            {...register('avatarUrl')}
+            {...register('avatar_url')}
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
             placeholder="https://example.com/avatar.jpg"
           />
         </div>
         <div className="flex flex-col gap-2">
-          <label htmlFor={`linkedinUrl-${testimonial?.id || 'new'}`} className="label">
+          <label htmlFor={`linkedin_url-${testimonial?.id || 'new'}`} className="label">
             LinkedIn URL (optional)
           </label>
           <input
-            id={`linkedinUrl-${testimonial?.id || 'new'}`}
+            id={`linkedin_url-${testimonial?.id || 'new'}`}
             type="url"
-            {...register('linkedinUrl')}
+            {...register('linkedin_url')}
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
             placeholder="https://linkedin.com/in/username"
           />
@@ -276,7 +276,7 @@ function TestimonialForm({
 
 function TestimonialsEditorSection({
   testimonials: initialTestimonials,
-  portfolioId,
+  portfolio_id,
 }: TestimonialsEditorSectionProps) {
   const [showNewForm, setShowNewForm] = useState(false);
   const [testimonials, setTestimonials] = useState(initialTestimonials || []);
@@ -324,7 +324,7 @@ function TestimonialsEditorSection({
       <div className="flex flex-col gap-8">
         {/* Show new testimonial form if requested */}
         {showNewForm && (
-          <TestimonialForm portfolioId={portfolioId} onDelete={() => setShowNewForm(false)} />
+          <TestimonialForm portfolio_id={portfolio_id} onDelete={() => setShowNewForm(false)} />
         )}
 
         {/* Existing testimonials */}
@@ -332,7 +332,7 @@ function TestimonialsEditorSection({
           <TestimonialForm
             key={testimonial.id}
             testimonial={testimonial}
-            portfolioId={portfolioId}
+            portfolio_id={portfolio_id}
             onDelete={() => handleDelete(testimonial.id)}
           />
         ))}
@@ -368,8 +368,8 @@ export async function action(args: ActionFunctionArgs) {
 
         const testimonialData = testimonialDataResult as TestimonialFormValues;
 
-        if (!testimonialData.portfolioId) {
-          return createErrorResponse('Missing portfolioId');
+        if (!testimonialData.portfolio_id) {
+          return createErrorResponse('Missing portfolio_id');
         }
 
         return tryAsync(async () => {
@@ -378,13 +378,13 @@ export async function action(args: ActionFunctionArgs) {
             const { id: _id, ...insertData } = testimonialData;
 
             const newTestimonial = await CareerRepository.createTestimonial(getDb(), user.id, {
-              portfolioId: insertData.portfolioId,
+              portfolio_id: insertData.portfolio_id,
               name: insertData.name,
               title: insertData.title,
               company: insertData.company,
               content: insertData.content,
-              avatarUrl: insertData.avatarUrl,
-              linkedinUrl: insertData.linkedinUrl,
+              avatar_url: insertData.avatar_url,
+              linkedin_url: insertData.linkedin_url,
               rating: insertData.rating,
             });
 
@@ -399,14 +399,14 @@ export async function action(args: ActionFunctionArgs) {
             getDb(),
             user.id,
             id,
-            testimonialData.portfolioId,
+            testimonialData.portfolio_id,
             {
               name: updateData.name,
               title: updateData.title,
               company: updateData.company,
               content: updateData.content,
-              avatarUrl: updateData.avatarUrl,
-              linkedinUrl: updateData.linkedinUrl,
+              avatar_url: updateData.avatar_url,
+              linkedin_url: updateData.linkedin_url,
               rating: updateData.rating,
             },
           );
@@ -417,14 +417,14 @@ export async function action(args: ActionFunctionArgs) {
 
       case 'delete': {
         const id = formData.get('id') as string;
-        const portfolioId = formData.get('portfolioId') as string;
+        const portfolio_id = formData.get('portfolio_id') as string;
 
-        if (!id || !portfolioId) {
+        if (!id || !portfolio_id) {
           return createErrorResponse('Missing required fields for deletion');
         }
 
         return tryAsync(async () => {
-          await CareerRepository.deleteTestimonial(getDb(), user.id, id, portfolioId);
+          await CareerRepository.deleteTestimonial(getDb(), user.id, id, portfolio_id);
 
           return createSuccessResponse(null, 'Testimonial deleted successfully');
         }, 'Failed to delete testimonial');
@@ -441,6 +441,6 @@ export default function EditorTestimonials() {
   const portfolio = useOutletContext<FullPortfolio>();
 
   return (
-    <TestimonialsEditorSection testimonials={portfolio.testimonials} portfolioId={portfolio.id} />
+    <TestimonialsEditorSection testimonials={portfolio.testimonials} portfolio_id={portfolio.id} />
   );
 }

@@ -1,7 +1,7 @@
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 interface LogContext {
-  userId?: string;
+  owner_userid?: string;
   requestId?: string;
   [key: string]: unknown;
 }

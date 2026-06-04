@@ -8,6 +8,14 @@ import { useState } from 'react';
 import { Form } from 'react-router';
 
 import type { ApplicationWithCompany } from '~/types/career-data';
+import { jsonArray } from '~/lib/db-json';
+
+type InterviewEntry = {
+  date: string;
+  interviewer?: string;
+  notes?: string;
+  type: string;
+};
 
 interface TimelineTabProps {
   application: ApplicationWithCompany;
@@ -100,7 +108,7 @@ export function ApplicationTimelineTab({ application }: TimelineTabProps) {
               <div className="flex items-center justify-between gap-3">
                 <h4 className="font-medium text-foreground">Application Submitted</h4>
                 <span className="text-sm text-muted-foreground">
-                  {new Date(application.startDate).toLocaleDateString()}
+                  {new Date(application.start_date).toLocaleDateString()}
                 </span>
               </div>
               <p className="text-sm text-muted-foreground">Initial application submitted</p>
@@ -109,7 +117,7 @@ export function ApplicationTimelineTab({ application }: TimelineTabProps) {
         </Card>
 
         {/* Interviews */}
-        {application.interviewDates?.map((interview) => (
+        {jsonArray<InterviewEntry>(application.interview_dates).map((interview) => (
           <Card key={interview.date}>
             <CardContent className="flex items-start gap-4 p-4">
               <div className="mt-1 size-3 shrink-0 rounded-full bg-accent" />

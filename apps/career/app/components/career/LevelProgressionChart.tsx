@@ -2,8 +2,8 @@ interface LevelProgressionChartProps {
   data: Array<{
     level: string;
     duration: number;
-    startDate: string;
-    endDate?: string;
+    start_date: string;
+    end_date?: string;
   }>;
 }
 
@@ -27,8 +27,8 @@ export function LevelProgressionChart({ data }: LevelProgressionChartProps) {
             />
           </div>
           <div className="flex justify-between mt-1 text-xs text-muted-foreground font-sans">
-            <span>{new Date(level.startDate).toLocaleDateString()}</span>
-            {level.endDate && <span>{new Date(level.endDate).toLocaleDateString()}</span>}
+            <span>{new Date(level.start_date).toLocaleDateString()}</span>
+            {level.end_date && <span>{new Date(level.end_date).toLocaleDateString()}</span>}
           </div>
         </div>
       ))}

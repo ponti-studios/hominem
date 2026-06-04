@@ -22,13 +22,13 @@ interface SocialLinksFormValues {
 }
 
 interface SocialLinksEditorSectionProps {
-  socialLinks?: CareerSocialLinksRecord | null;
-  portfolioId: string;
+  social_links?: CareerSocialLinksRecord | null;
+  portfolio_id: string;
 }
 
 function SocialLinksEditorSection({
-  socialLinks: initialSocialLinks,
-  portfolioId,
+  social_links: initialSocialLinks,
+  portfolio_id,
 }: SocialLinksEditorSectionProps) {
   const fetcher = useFetcher();
   const { addToast } = useToast();
@@ -74,7 +74,7 @@ function SocialLinksEditorSection({
       linkedin: formData.linkedin,
       twitter: formData.twitter,
       website: formData.website,
-      portfolioId,
+      portfolio_id,
     };
 
     const formData2 = new FormData();
@@ -189,7 +189,10 @@ function SocialLinksEditorSection({
                 id="twitter"
                 type="text"
                 placeholder="username"
-                className={`input rounded-l-none border-l-0 ${errors.twitter ? 'input-error' : ''}`}
+                className={cn(
+                  'input rounded-l-none border-l-0',
+                  errors.twitter ? 'input-error' : '',
+                )}
                 {...register('twitter', {
                   pattern: {
                     value: /^[a-zA-Z0-9_]+$/,
@@ -211,7 +214,7 @@ function SocialLinksEditorSection({
               id="website"
               type="url"
               placeholder="https://yourwebsite.com"
-              className={`input ${errors.website ? 'input-error' : ''}`}
+              className={cn('input', errors.website ? 'input-error' : '')}
               {...register('website', {
                 pattern: {
                   value: /^https?:\/\/.+\..+/,
@@ -270,22 +273,22 @@ export async function action(args: ActionFunctionArgs) {
     const formData = await args.request.formData();
 
     const socialLinksDataResult = parseFormData<
-      Array<SocialLinksFormValues & { portfolioId: string }>
+      Array<SocialLinksFormValues & { portfolio_id: string }>
     >(formData, 'socialLinksData');
     if ('success' in socialLinksDataResult && !socialLinksDataResult.success) {
       return socialLinksDataResult;
     }
 
     const socialLinksData = socialLinksDataResult as Array<
-      SocialLinksFormValues & { portfolioId: string }
+      SocialLinksFormValues & { portfolio_id: string }
     >;
     const socialLinksPayload = socialLinksData[0];
 
-    if (!socialLinksPayload?.portfolioId) {
-      throw new Error('Missing portfolioId');
+    if (!socialLinksPayload?.portfolio_id) {
+      throw new Error('Missing portfolio_id');
     }
 
-    await CareerRepository.saveSocialLinks(getDb(), user.id, socialLinksPayload.portfolioId, {
+    await CareerRepository.saveSocialLinks(getDb(), user.id, socialLinksPayload.portfolio_id, {
       id: socialLinksPayload.id,
       github: socialLinksPayload.github,
       linkedin: socialLinksPayload.linkedin,
@@ -301,6 +304,6 @@ export default function EditorSocial() {
   const portfolio = useOutletContext<FullPortfolio>();
 
   return (
-    <SocialLinksEditorSection socialLinks={portfolio.socialLinks} portfolioId={portfolio.id} />
+    <SocialLinksEditorSection social_links={portfolio.social_links} portfolio_id={portfolio.id} />
   );
 }

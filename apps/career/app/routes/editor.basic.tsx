@@ -16,17 +16,17 @@ export interface BasicInfoFormValues {
   name: string;
   initials?: string | null;
   title?: string | null;
-  jobTitle: string;
+  job_title: string;
   bio: string;
   tagline: string;
-  currentLocation: string;
-  locationTagline?: string | null;
+  current_location: string;
+  location_tagline?: string | null;
   email: string;
   phone?: string | null;
-  availabilityStatus?: boolean;
-  availabilityMessage?: string | null;
-  isPublic?: boolean;
-  isActive?: boolean;
+  availability_status?: boolean;
+  availability_message?: string | null;
+  is_public?: boolean;
+  is_active?: boolean;
 }
 
 export const meta: MetaFunction = () => {
@@ -66,17 +66,17 @@ export default function EditorBasic() {
       name: portfolio.name || '',
       initials: portfolio.initials || '',
       title: portfolio.title || '',
-      jobTitle: portfolio.jobTitle || '',
+      job_title: portfolio.job_title || '',
       bio: portfolio.bio || '',
       tagline: portfolio.tagline || '',
-      currentLocation: portfolio.currentLocation || '',
-      locationTagline: portfolio.locationTagline || '',
+      current_location: portfolio.current_location || '',
+      location_tagline: portfolio.location_tagline || '',
       email: portfolio.email || '',
       phone: portfolio.phone || '',
-      availabilityStatus: portfolio.availabilityStatus || false,
-      availabilityMessage: portfolio.availabilityMessage || '',
-      isPublic: portfolio.isPublic,
-      isActive: portfolio.isActive,
+      availability_status: portfolio.availability_status || false,
+      availability_message: portfolio.availability_message || '',
+      is_public: portfolio.is_public,
+      is_active: portfolio.is_active,
     },
   });
 
@@ -85,17 +85,17 @@ export default function EditorBasic() {
       name: portfolio.name || '',
       initials: portfolio.initials || '',
       title: portfolio.title || '',
-      jobTitle: portfolio.jobTitle || '',
+      job_title: portfolio.job_title || '',
       bio: portfolio.bio || '',
       tagline: portfolio.tagline || '',
-      currentLocation: portfolio.currentLocation || '',
-      locationTagline: portfolio.locationTagline || '',
+      current_location: portfolio.current_location || '',
+      location_tagline: portfolio.location_tagline || '',
       email: portfolio.email || '',
       phone: portfolio.phone || '',
-      availabilityStatus: portfolio.availabilityStatus || false,
-      availabilityMessage: portfolio.availabilityMessage || '',
-      isPublic: portfolio.isPublic,
-      isActive: portfolio.isActive,
+      availability_status: portfolio.availability_status || false,
+      availability_message: portfolio.availability_message || '',
+      is_public: portfolio.is_public,
+      is_active: portfolio.is_active,
     });
   }, [portfolio, reset]);
 
@@ -122,17 +122,17 @@ export default function EditorBasic() {
       name: formData.name,
       initials: formData.initials,
       title: formData.title,
-      jobTitle: formData.jobTitle,
+      job_title: formData.job_title,
       bio: formData.bio,
       tagline: formData.tagline,
-      currentLocation: formData.currentLocation,
-      locationTagline: formData.locationTagline,
+      current_location: formData.current_location,
+      location_tagline: formData.location_tagline,
       email: formData.email,
       phone: formData.phone,
-      availabilityStatus: formData.availabilityStatus,
-      availabilityMessage: formData.availabilityMessage,
-      isPublic: portfolio.isPublic,
-      isActive: portfolio.isActive,
+      availability_status: formData.availability_status,
+      availability_message: formData.availability_message,
+      is_public: portfolio.is_public,
+      is_active: portfolio.is_active,
     };
 
     const formData2 = new FormData();
@@ -164,9 +164,9 @@ export default function EditorBasic() {
               <Input id="initials" {...register('initials')} maxLength={10} />
             </div>
             <div className="space-y-1">
-              <label htmlFor="jobTitle" className="text-xs font-medium text-muted-foreground">Job Title</label>
-              <Input id="jobTitle" {...register('jobTitle', { required: 'Job title is required' })} />
-              {errors.jobTitle && <p className="text-xs text-destructive">{errors.jobTitle.message}</p>}
+              <label htmlFor="job_title" className="text-xs font-medium text-muted-foreground">Job Title</label>
+              <Input id="job_title" {...register('job_title', { required: 'Job title is required' })} />
+              {errors.job_title && <p className="text-xs text-destructive">{errors.job_title.message}</p>}
             </div>
             <div className="space-y-1">
               <label htmlFor="tagline" className="text-xs font-medium text-muted-foreground">Tagline</label>
@@ -216,17 +216,17 @@ export default function EditorBasic() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-1">
-              <label htmlFor="currentLocation" className="text-xs font-medium text-muted-foreground">Location</label>
+              <label htmlFor="current_location" className="text-xs font-medium text-muted-foreground">Location</label>
               <Input
-                id="currentLocation"
-                {...register('currentLocation', { required: 'Location is required' })}
+                id="current_location"
+                {...register('current_location', { required: 'Location is required' })}
                 maxLength={255}
               />
-              {errors.currentLocation && <p className="text-xs text-destructive">{errors.currentLocation.message}</p>}
+              {errors.current_location && <p className="text-xs text-destructive">{errors.current_location.message}</p>}
             </div>
             <div className="space-y-1">
-              <label htmlFor="locationTagline" className="text-xs font-medium text-muted-foreground">Location tagline</label>
-              <Input id="locationTagline" {...register('locationTagline')} maxLength={255} />
+              <label htmlFor="location_tagline" className="text-xs font-medium text-muted-foreground">Location tagline</label>
+              <Input id="location_tagline" {...register('location_tagline')} maxLength={255} />
             </div>
           </CardContent>
         </Card>
@@ -238,20 +238,20 @@ export default function EditorBasic() {
           <CardContent className="space-y-4">
             <div className="flex items-center gap-3">
               <Controller
-                name="availabilityStatus"
+                name="availability_status"
                 control={control}
                 render={({ field }) => (
-                  <Switch id="availabilityStatus" checked={field.value} onCheckedChange={field.onChange} />
+                  <Switch id="availability_status" checked={field.value} onCheckedChange={field.onChange} />
                 )}
               />
-              <label htmlFor="availabilityStatus" className="text-sm text-muted-foreground">
-                {watch('availabilityStatus') ? 'Open to opportunities' : 'Not available'}
+              <label htmlFor="availability_status" className="text-sm text-muted-foreground">
+                {watch('availability_status') ? 'Open to opportunities' : 'Not available'}
               </label>
             </div>
-            {watch('availabilityStatus') && (
+            {watch('availability_status') && (
               <div className="space-y-1">
-                <label htmlFor="availabilityMessage" className="text-xs font-medium text-muted-foreground">Availability note</label>
-                <Input id="availabilityMessage" {...register('availabilityMessage')} maxLength={500} />
+                <label htmlFor="availability_message" className="text-xs font-medium text-muted-foreground">Availability note</label>
+                <Input id="availability_message" {...register('availability_message')} maxLength={500} />
               </div>
             )}
           </CardContent>

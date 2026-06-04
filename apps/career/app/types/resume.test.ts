@@ -44,8 +44,8 @@ describe('resume schema', () => {
           company: 'Company',
           role: 'Engineer',
           description: 'Built products',
-          startDate: '2020-01',
-          endDate: 'Current',
+          start_date: '2020-01',
+          end_date: 'Current',
         },
       ],
     });
@@ -53,8 +53,8 @@ describe('resume schema', () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.workExperience[0]).toMatchObject({
-        startDate: '2020-01-01',
-        endDate: null,
+        start_date: '2020-01-01',
+        end_date: null,
       });
     }
   });
@@ -67,8 +67,8 @@ describe('resume schema', () => {
           company: 'Company',
           role: 'Engineer',
           description: 'Built products',
-          startDate: '2020-99-99',
-          endDate: null,
+          start_date: '2020-99-99',
+          end_date: null,
         },
       ],
     });

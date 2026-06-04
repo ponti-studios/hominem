@@ -1,5 +1,5 @@
 import { formatCurrency } from '~/lib/utils';
-
+import { cn } from '~/lib/utils';
 export interface CareerTimelineItem {
   date: string;
   type: string;
@@ -33,14 +33,20 @@ export function CareerTimelineItem({ item, index }: CareerTimelineItemProps) {
       <div className="relative flex items-start space-x-4">
         <div className="flex-shrink-0">
           <div
-            className={`w-3 h-3 rounded-full border-2 ${style.replace('bg-', 'border-').replace('text-', '').replace('border-', 'bg-')}`}
+            className={cn(
+              'w-3 h-3 rounded-full border-2',
+              style.replace('bg-', 'border-').replace('text-', '').replace('border-', 'bg-'),
+            )}
           />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center space-x-2">
             <h4 className="text-lg font-medium text-foreground font-sans">{item.title}</h4>
             <span
-              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${style}`}
+              className={cn(
+                'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border',
+                style,
+              )}
             >
               {item.type.replace('_', ' ')}
             </span>

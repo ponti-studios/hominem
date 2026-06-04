@@ -9,21 +9,21 @@ import { formatCurrency, formatPercentage } from '~/lib/utils';
 import type { WorkExperienceWithFinancials } from '~/types/career-data';
 
 interface CareerHistoryProps {
-  workExperiences: WorkExperienceWithFinancials[];
+  work_experiences: WorkExperienceWithFinancials[];
 }
 
-export function CareerHistory({ workExperiences }: CareerHistoryProps) {
-  const sortedExperiences = workExperiences
-    .filter((experience) => experience.startDate)
+export function CareerHistory({ work_experiences }: CareerHistoryProps) {
+  const sortedExperiences = work_experiences
+    .filter((experience) => experience.start_date)
     .sort((a, b) => {
-      const dateA = a.startDate ? new Date(a.startDate).getTime() : 0;
-      const dateB = b.startDate ? new Date(b.startDate).getTime() : 0;
+      const dateA = a.start_date ? new Date(a.start_date).getTime() : 0;
+      const dateB = b.start_date ? new Date(b.start_date).getTime() : 0;
       return dateB - dateA;
     });
 
-  const formatDuration = (startDate: string | Date, endDate?: string | Date | null) => {
-    const start = new Date(startDate);
-    const end = endDate ? new Date(endDate) : new Date();
+  const formatDuration = (start_date: string | Date, end_date?: string | Date | null) => {
+    const start = new Date(start_date);
+    const end = end_date ? new Date(end_date) : new Date();
     const years = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 365.25);
 
     if (years < 1) {
@@ -41,9 +41,9 @@ export function CareerHistory({ workExperiences }: CareerHistoryProps) {
     return `${wholeYears}y ${remainingMonths}m`;
   };
 
-  const formatDateRange = (startDate: string | Date, endDate?: string | Date | null) => {
-    const start = new Date(startDate);
-    const end = endDate ? new Date(endDate) : null;
+  const formatDateRange = (start_date: string | Date, end_date?: string | Date | null) => {
+    const start = new Date(start_date);
+    const end = end_date ? new Date(end_date) : null;
 
     const startFormatted = start.toLocaleDateString('en-US', {
       month: 'short',
@@ -114,7 +114,7 @@ export function CareerHistory({ workExperiences }: CareerHistoryProps) {
                     >
                       View Details
                     </Link>
-                    {!experience.endDate ? (
+                    {!experience.end_date ? (
                       <Badge
                         variant="outline"
                         className="border-emerald-200 bg-emerald-50 text-emerald-700"
@@ -140,14 +140,14 @@ export function CareerHistory({ workExperiences }: CareerHistoryProps) {
                   className="flex items-center gap-1 text-sm text-muted-foreground"
                   data-testid="employment-dates"
                 >
-                  {experience.startDate ? (
+                  {experience.start_date ? (
                     <>
                       <span data-testid="date-range">
-                        {formatDateRange(experience.startDate, experience.endDate)}
+                        {formatDateRange(experience.start_date, experience.end_date)}
                       </span>
                       <span>•</span>
                       <span data-testid="duration">
-                        {formatDuration(experience.startDate, experience.endDate)}
+                        {formatDuration(experience.start_date, experience.end_date)}
                       </span>
                     </>
                   ) : null}
@@ -240,17 +240,17 @@ export function CareerHistory({ workExperiences }: CareerHistoryProps) {
                   >
                     {experience.company}
                   </div>
-                  {experience.startDate ? (
+                  {experience.start_date ? (
                     <div
                       className="mt-1 text-xs text-muted-foreground"
                       data-testid="mobile-duration"
                     >
-                      {formatDuration(experience.startDate, experience.endDate)}
+                      {formatDuration(experience.start_date, experience.end_date)}
                     </div>
                   ) : null}
                 </div>
                 <div className="ml-4 flex items-center space-x-3">
-                  {!experience.endDate ? (
+                  {!experience.end_date ? (
                     <Badge
                       variant="outline"
                       className="border-emerald-200 bg-emerald-50 text-emerald-700"
@@ -260,8 +260,8 @@ export function CareerHistory({ workExperiences }: CareerHistoryProps) {
                     </Badge>
                   ) : (
                     <span className="text-xs text-muted-foreground" data-testid="mobile-end-date">
-                      {experience.endDate
-                        ? new Date(experience.endDate).toLocaleDateString('en-US', {
+                      {experience.end_date
+                        ? new Date(experience.end_date).toLocaleDateString('en-US', {
                             month: 'short',
                             year: 'numeric',
                           })

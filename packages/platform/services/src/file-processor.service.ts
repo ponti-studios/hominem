@@ -4,7 +4,7 @@ import { logger, LOG_MESSAGES } from '@hominem/telemetry';
 import mammoth from 'mammoth';
 import PDFParser from 'pdf2json';
 
-import { getSharedAiModelConfig, getSharedOpenAIClient } from './ai-model';
+import { createChatCompletion, getChatCompletionText } from './ai-model';
 
 export interface ProcessedFile {
   id: string;
@@ -16,24 +16,6 @@ export interface ProcessedFile {
   content?: string;
   thumbnail?: string;
   metadata?: Record<string, unknown>;
-}
-
-// Lazy initialization - only create client when needed
-let openaiClient: ReturnType<typeof getSharedOpenAIClient> | null = null;
-let aiModelConfig: ReturnType<typeof getSharedAiModelConfig> | null = null;
-
-function getOpenAIClient() {
-  if (!openaiClient) {
-    openaiClient = getSharedOpenAIClient();
-  }
-  return openaiClient;
-}
-
-function getAiModelConfig() {
-  if (!aiModelConfig) {
-    aiModelConfig = getSharedAiModelConfig();
-  }
-  return aiModelConfig;
 }
 
 export class FileProcessorService {
@@ -81,8 +63,7 @@ export class FileProcessorService {
     if (buffer.byteLength < 20 * 1024 * 1024) {
       try {
         const base64Image = Buffer.from(buffer).toString('base64');
-        const response = await getOpenAIClient().chat.completions.create({
-          model: getAiModelConfig().modelId,
+        const response = await createChatCompletion({
           messages: [
             {
               role: 'user',
@@ -103,7 +84,7 @@ export class FileProcessorService {
           max_tokens: 500,
         });
 
-        textContent = response.choices[0]?.message?.content || '';
+        textContent = getChatCompletionText(response);
       } catch (error) {
         logger.warn(LOG_MESSAGES.IMAGE_ANALYZE_ERROR, { error });
       }
@@ -153,8 +134,7 @@ export class FileProcessorService {
       let summary = '';
       if (textContent.length > 1000) {
         try {
-          const response = await getOpenAIClient().chat.completions.create({
-            model: getAiModelConfig().modelId,
+          const response = await createChatCompletion({
             messages: [
               {
                 role: 'system',
@@ -171,7 +151,7 @@ export class FileProcessorService {
             max_tokens: 300,
           });
 
-          summary = response.choices[0]?.message?.content || '';
+          summary = getChatCompletionText(response);
         } catch (error) {
           logger.warn(LOG_MESSAGES.DOCUMENT_SUMMARIZE_ERROR, { error });
         }

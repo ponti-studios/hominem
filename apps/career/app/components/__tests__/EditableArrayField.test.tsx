@@ -11,7 +11,7 @@ interface EditableArrayFieldProps {
   label: string;
   value: string[];
   field: string;
-  workExperienceId: string;
+  work_experience_id: string;
   placeholder?: string;
   className?: string;
   onSave?: (field: string, value: string[]) => void;
@@ -22,7 +22,7 @@ describe('EditableArrayField', () => {
     label: 'Test Items',
     value: ['Item 1', 'Item 2'],
     field: 'test-field',
-    workExperienceId: 'work-exp-1',
+    work_experience_id: 'work-exp-1',
     placeholder: 'Enter test item',
   };
 

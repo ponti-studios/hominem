@@ -1,6 +1,7 @@
 import { LoadingSpinner } from '@hominem/ui/loading-spinner';
 import { memo } from 'react';
 
+import { cn } from '~/lib/utils';
 export type ResumeUploadStep = 'uploading' | 'extracting' | 'analyzing' | 'saving';
 
 const processingSteps: { id: ResumeUploadStep; label: string }[] = [
@@ -42,9 +43,10 @@ export const AIProcessingAnimation = memo(
               >
                 <span className="text-xs text-muted-foreground">{step.label}</span>
                 <span
-                  className={`size-1.5 rounded-full ${
-                    index <= activeIndex ? 'bg-accent' : 'bg-muted-foreground/30'
-                  }`}
+                  className={cn(
+                    'size-1.5 rounded-full',
+                    index <= activeIndex ? 'bg-accent' : 'bg-muted-foreground/30',
+                  )}
                 />
               </div>
             ))}

@@ -9,18 +9,18 @@ const sessionPayload = {
     emailVerified: true,
     name: 'Test User',
     image: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    createdat: new Date(),
+    updatedat: new Date(),
   },
   session: {
     id: 'session-id',
     token: 'token',
-    userId: 'auth-user-id',
+    owner_userid: 'auth-user-id',
     expiresAt: new Date(),
     ipAddress: null,
     userAgent: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    createdat: new Date(),
+    updatedat: new Date(),
   },
 };
 

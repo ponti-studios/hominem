@@ -3,8 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
 import { useMemo, useState } from 'react';
 
 import { useContainerWidth } from '~/hooks/useContainerWidth';
+import { cn } from '~/lib/utils';
 import type { ApplicationWithCompany } from '~/types/applications';
-
 interface ApplicationsHeatmapProps {
   applications: ApplicationWithCompany[];
 }
@@ -49,7 +49,7 @@ export function ApplicationsHeatmap({ applications }: ApplicationsHeatmapProps) 
       const dateString = date.toISOString().split('T')[0];
 
       const dayApplications = applications.filter((app) => {
-        const appDate = app.applicationDate || app.startDate;
+        const appDate = app.application_date || app.start_date;
         if (!appDate) return false;
 
         const appDateString = new Date(appDate).toISOString().split('T')[0];
@@ -161,7 +161,10 @@ export function ApplicationsHeatmap({ applications }: ApplicationsHeatmapProps) 
                       <button
                         key={day.date}
                         type="button"
-                        className={`h-3 w-3 rounded-sm transition-all hover:ring-2 hover:ring-ring/40 focus:outline-none focus:ring-2 focus:ring-ring/40 ${getColorClass(day.count)}`}
+                        className={cn(
+                          'h-3 w-3 rounded-sm transition-all hover:ring-2 hover:ring-ring/40 focus:outline-none focus:ring-2 focus:ring-ring/40',
+                          getColorClass(day.count),
+                        )}
                         onMouseEnter={() => setSelectedDay(day as DayData)}
                         onMouseLeave={() => setSelectedDay(null)}
                         onFocus={() => setSelectedDay(day as DayData)}

@@ -36,7 +36,7 @@ export function SalaryChart({ data }: SalaryChartProps) {
 
   const minSalary = Math.min(...sortedData.map((d) => d.salary));
   const maxSalary = Math.max(...sortedData.map((d) => d.salary));
-  const salaryRange = maxSalary - minSalary;
+  const salary_range = maxSalary - minSalary;
 
   // Chart dimensions
   const width = 800;
@@ -48,8 +48,8 @@ export function SalaryChart({ data }: SalaryChartProps) {
   // Calculate positions
   const getX = (index: number) => padding + (index / (sortedData.length - 1)) * chartWidth;
   const getY = (salary: number) => {
-    if (salaryRange === 0) return height - padding - chartHeight / 2;
-    return height - padding - ((salary - minSalary) / salaryRange) * chartHeight;
+    if (salary_range === 0) return height - padding - chartHeight / 2;
+    return height - padding - ((salary - minSalary) / salary_range) * chartHeight;
   };
 
   // Create path for the line
@@ -93,7 +93,7 @@ export function SalaryChart({ data }: SalaryChartProps) {
         {/* Grid lines */}
         {[0, 0.25, 0.5, 0.75, 1].map((fraction) => {
           const y = height - padding - fraction * chartHeight;
-          const salary = minSalary + fraction * salaryRange;
+          const salary = minSalary + fraction * salary_range;
           return (
             <g key={fraction}>
               <line

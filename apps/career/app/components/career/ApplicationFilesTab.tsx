@@ -31,21 +31,21 @@ export function ApplicationFilesTab({ application, applicationId }: FilesTabProp
           </Card>
         )}
 
-        {application.coverLetter && (
+        {application.cover_letter && (
           <Card>
             <CardHeader>
               <CardTitle className="text-sm">Cover Letter</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="bg-muted p-3 rounded text-xs font-mono max-h-40 overflow-y-auto">
-                {application.coverLetter}
+                {application.cover_letter}
               </div>
             </CardContent>
           </Card>
         )}
       </div>
 
-      {!application.resume && !application.coverLetter && (
+      {!application.resume && !application.cover_letter && (
         <div className="text-center py-8 text-muted-foreground">
           No files uploaded yet. File upload functionality coming soon.
         </div>

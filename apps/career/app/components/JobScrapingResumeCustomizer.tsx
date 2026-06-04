@@ -4,8 +4,8 @@ import { LoadingSpinner } from '@hominem/ui/loading-spinner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
 import { useState } from 'react';
 
+import { cn } from '~/lib/utils';
 import type { JobPosting, ScrapedJobPostingResponse } from '~/types/applications';
-
 interface JobAnalysis {
   requiredSkills: string[];
   qualifications: string[];
@@ -21,12 +21,12 @@ interface CustomizeResumeResponse {
     targetLength: string;
     focusAreas: string[];
     generatedAt: string;
-    portfolioId: string;
+    portfolio_id: string;
     jobPostingSource: string;
-    jobPostingUrl?: string;
-    jobPostingWordCount: number;
+    job_posting_url?: string;
+    job_posting_word_count: number;
     jobPostingMetadata: {
-      jobTitle?: string;
+      job_title?: string;
       companyName?: string;
       requirements?: string[];
       skills?: string[];
@@ -95,10 +95,10 @@ export function JobScrapingResumeCustomizer({
         throw new Error(data.error || 'Failed to scrape job posting');
       }
 
-      if (data.jobPosting) {
-        setScrapedJob(data.jobPosting);
+      if (data.job_posting) {
+        setScrapedJob(data.job_posting);
         if (onScrapedData) {
-          onScrapedData(data.jobPosting);
+          onScrapedData(data.job_posting);
         } else {
           setStep('review');
         }
@@ -124,7 +124,7 @@ export function JobScrapingResumeCustomizer({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ jobPosting: scrapedJob }),
+        body: JSON.stringify({ job_posting: scrapedJob }),
       });
 
       const data = await response.json();
@@ -220,47 +220,99 @@ export function JobScrapingResumeCustomizer({
       {showResumeGeneration && (
         <div className="flex items-center justify-center space-x-8">
           <div
-            className={`flex items-center space-x-3 ${step === 'scrape' ? 'text-foreground' : 'text-muted-foreground'}`}
+            className={cn(
+              'flex items-center space-x-3',
+              step === 'scrape' ? 'text-foreground' : 'text-muted-foreground',
+            )}
           >
             <div
-              className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${step === 'scrape' ? 'border-accent bg-primary text-primary-foreground' : 'border-border'}`}
+              className={cn(
+                'w-8 h-8 rounded-full border-2 flex items-center justify-center',
+                step === 'scrape'
+                  ? 'border-accent bg-primary text-primary-foreground'
+                  : 'border-border',
+              )}
             >
               <span className="text-sm font-medium">1</span>
             </div>
             <span className="text-sm font-medium">Scrape</span>
           </div>
           <div
-            className={`w-12 h-px ${step === 'review' || step === 'generate' || step === 'result' ? 'bg-primary' : 'bg-muted'}`}
+            className={cn(
+              'w-12 h-px',
+              step === 'review' || step === 'generate' || step === 'result'
+                ? 'bg-primary'
+                : 'bg-muted',
+            )}
           />
           <div
-            className={`flex items-center space-x-3 ${step === 'review' ? 'text-foreground' : step === 'generate' || step === 'result' ? 'text-foreground' : 'text-muted-foreground'}`}
+            className={cn(
+              'flex items-center space-x-3',
+              step === 'review'
+                ? 'text-foreground'
+                : step === 'generate' || step === 'result'
+                  ? 'text-foreground'
+                  : 'text-muted-foreground',
+            )}
           >
             <div
-              className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${step === 'review' ? 'border-accent bg-primary text-primary-foreground' : step === 'generate' || step === 'result' ? 'border-accent' : 'border-border'}`}
+              className={cn(
+                'w-8 h-8 rounded-full border-2 flex items-center justify-center',
+                step === 'review'
+                  ? 'border-accent bg-primary text-primary-foreground'
+                  : step === 'generate' || step === 'result'
+                    ? 'border-accent'
+                    : 'border-border',
+              )}
             >
               <span className="text-sm font-medium">2</span>
             </div>
             <span className="text-sm font-medium">Review</span>
           </div>
           <div
-            className={`w-12 h-px ${step === 'generate' || step === 'result' ? 'bg-primary' : 'bg-muted'}`}
+            className={cn(
+              'w-12 h-px',
+              step === 'generate' || step === 'result' ? 'bg-primary' : 'bg-muted',
+            )}
           />
           <div
-            className={`flex items-center space-x-3 ${step === 'generate' ? 'text-foreground' : step === 'result' ? 'text-foreground' : 'text-muted-foreground'}`}
+            className={cn(
+              'flex items-center space-x-3',
+              step === 'generate'
+                ? 'text-foreground'
+                : step === 'result'
+                  ? 'text-foreground'
+                  : 'text-muted-foreground',
+            )}
           >
             <div
-              className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${step === 'generate' ? 'border-accent bg-primary text-primary-foreground' : step === 'result' ? 'border-accent' : 'border-border'}`}
+              className={cn(
+                'w-8 h-8 rounded-full border-2 flex items-center justify-center',
+                step === 'generate'
+                  ? 'border-accent bg-primary text-primary-foreground'
+                  : step === 'result'
+                    ? 'border-accent'
+                    : 'border-border',
+              )}
             >
               <span className="text-sm font-medium">3</span>
             </div>
             <span className="text-sm font-medium">Generate</span>
           </div>
-          <div className={`w-12 h-px ${step === 'result' ? 'bg-primary' : 'bg-muted'}`} />
+          <div className={cn('w-12 h-px', step === 'result' ? 'bg-primary' : 'bg-muted')} />
           <div
-            className={`flex items-center space-x-3 ${step === 'result' ? 'text-foreground' : 'text-muted-foreground'}`}
+            className={cn(
+              'flex items-center space-x-3',
+              step === 'result' ? 'text-foreground' : 'text-muted-foreground',
+            )}
           >
             <div
-              className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${step === 'result' ? 'border-accent bg-primary text-primary-foreground' : 'border-border'}`}
+              className={cn(
+                'w-8 h-8 rounded-full border-2 flex items-center justify-center',
+                step === 'result'
+                  ? 'border-accent bg-primary text-primary-foreground'
+                  : 'border-border',
+              )}
             >
               <span className="text-sm font-medium">4</span>
             </div>
@@ -313,9 +365,7 @@ export function JobScrapingResumeCustomizer({
       {step === 'review' && scrapedJob && (
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-xl font-semibold text-foreground mb-2">
-              Review Job Posting
-            </h2>
+            <h2 className="text-xl font-semibold text-foreground mb-2">Review Job Posting</h2>
             <p className="text-muted-foreground">
               Verify the extracted information before proceeding
             </p>
@@ -325,7 +375,7 @@ export function JobScrapingResumeCustomizer({
             <div className="space-y-6">
               <div>
                 <h3 className="font-sans text-lg font-medium text-foreground mb-2">Position</h3>
-                <p className="text-muted-foreground">{scrapedJob.jobTitle}</p>
+                <p className="text-muted-foreground">{scrapedJob.job_title}</p>
               </div>
 
               <div>
@@ -383,9 +433,7 @@ export function JobScrapingResumeCustomizer({
       {showResumeGeneration && step === 'generate' && (
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-xl font-semibold text-foreground mb-2">
-              Resume Preferences
-            </h2>
+            <h2 className="text-xl font-semibold text-foreground mb-2">Resume Preferences</h2>
             <p className="text-muted-foreground">Configure your resume format and style</p>
           </div>
 
@@ -484,9 +532,7 @@ export function JobScrapingResumeCustomizer({
       {showResumeGeneration && step === 'result' && resumeResult && (
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-xl font-semibold text-foreground mb-2">
-              Your Customized Resume
-            </h2>
+            <h2 className="text-xl font-semibold text-foreground mb-2">Your Customized Resume</h2>
             <p className="text-muted-foreground">Ready to download and apply</p>
           </div>
 
@@ -537,8 +583,12 @@ export function JobScrapingResumeCustomizer({
             <div className="flex justify-between items-center mb-6">
               <h3 className="font-sans text-lg font-medium text-foreground">Resume Content</h3>
               <div className="space-x-3">
-                <Button variant="outline" onClick={handleCopyResume}>Copy</Button>
-                <Button variant="outline" onClick={handleDownloadResume}>Download</Button>
+                <Button variant="outline" onClick={handleCopyResume}>
+                  Copy
+                </Button>
+                <Button variant="outline" onClick={handleDownloadResume}>
+                  Download
+                </Button>
               </div>
             </div>
 
@@ -550,8 +600,12 @@ export function JobScrapingResumeCustomizer({
           </div>
 
           <div className="text-center space-x-4">
-            <Button onClick={resetFlow} variant="primary">Start Over</Button>
-            <Button variant="outline" onClick={() => setStep('generate')}>Back</Button>
+            <Button onClick={resetFlow} variant="primary">
+              Start Over
+            </Button>
+            <Button variant="outline" onClick={() => setStep('generate')}>
+              Back
+            </Button>
           </div>
         </div>
       )}

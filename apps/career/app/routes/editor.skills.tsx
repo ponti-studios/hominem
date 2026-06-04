@@ -7,6 +7,8 @@ import { useForm } from 'react-hook-form';
 import type { ActionFunctionArgs, MetaFunction } from 'react-router';
 import { useFetcher, useOutletContext } from 'react-router';
 
+import { cn } from '~/lib/utils';
+
 import { useToast } from '../hooks/useToast';
 import type { FullPortfolio } from '../lib/portfolio.server';
 import {
@@ -30,15 +32,15 @@ interface NewSkillForm {
 type EditableSkill = Partial<CareerSkillRecord> & {
   name: string;
   level: number;
-  portfolioId: string;
+  portfolio_id: string;
 };
 
 interface SkillsEditorSectionProps {
   skills?: CareerSkillRecord[] | null;
-  portfolioId: string;
+  portfolio_id: string;
 }
 
-function SkillsEditorSection({ skills: initialSkills, portfolioId }: SkillsEditorSectionProps) {
+function SkillsEditorSection({ skills: initialSkills, portfolio_id }: SkillsEditorSectionProps) {
   const [skills, setSkills] = useState<EditableSkill[]>(initialSkills || []);
   const [isAddingSkill, setIsAddingSkill] = useState(false);
   const fetcher = useFetcher();
@@ -83,7 +85,7 @@ function SkillsEditorSection({ skills: initialSkills, portfolioId }: SkillsEdito
       name: skill.name,
       category: skill.category,
       level: skill.level,
-      portfolioId: skill.portfolioId,
+      portfolio_id: skill.portfolio_id,
     }));
 
     const formData = new FormData();
@@ -118,9 +120,9 @@ function SkillsEditorSection({ skills: initialSkills, portfolioId }: SkillsEdito
       name: data.name.trim(),
       category: data.category.trim() || null,
       level: data.level,
-      portfolioId,
-      isVisible: true,
-      sortOrder: skills.length,
+      portfolio_id,
+      is_visible: true,
+      sort_order: skills.length,
     };
 
     const updatedSkills = [...skills, newSkill];
@@ -262,7 +264,10 @@ function SkillsEditorSection({ skills: initialSkills, portfolioId }: SkillsEdito
               {categorySkills.map((skill, index) => (
                 <div
                   key={skill.id || `${category}-${index}`}
-                  className={`inline-flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium transition-colors ${getSkillLevelColor(skill.level || 50)}`}
+                  className={cn(
+                    'inline-flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium transition-colors',
+                    getSkillLevelColor(skill.level || 50),
+                  )}
                 >
                   <span className="border-b border-border">{skill.name}</span>
                   <span className="text-xs opacity-75">({skill.level || 50}%)</span>
@@ -293,7 +298,7 @@ export default function EditorSkills() {
 
   return (
     <div className="container mx-auto">
-      <SkillsEditorSection skills={portfolio.skills} portfolioId={portfolio.id} />
+      <SkillsEditorSection skills={portfolio.skills} portfolio_id={portfolio.id} />
     </div>
   );
 }
@@ -307,7 +312,7 @@ export async function action(args: ActionFunctionArgs) {
         name: string;
         category?: string | null;
         level: number;
-        portfolioId: string;
+        portfolio_id: string;
       }>
     >(formData, 'skillsData');
     if ('success' in skillsDataResult && !skillsDataResult.success) {
@@ -318,21 +323,21 @@ export async function action(args: ActionFunctionArgs) {
       name: string;
       category?: string | null;
       level: number;
-      portfolioId: string;
+      portfolio_id: string;
     }>;
     if (!Array.isArray(skillsData)) {
       return createErrorResponse('Invalid skills data');
     }
-    // Ensure all skills have portfolioId and level is a number
-    const portfolioId = skillsData[0]?.portfolioId;
-    if (!portfolioId) return createErrorResponse('Missing portfolioId');
-    skillsData = skillsData.map((s) => ({ ...s, portfolioId, level: Number(s.level) }));
+    // Ensure all skills have portfolio_id and level is a number
+    const portfolio_id = skillsData[0]?.portfolio_id;
+    if (!portfolio_id) return createErrorResponse('Missing portfolio_id');
+    skillsData = skillsData.map((s) => ({ ...s, portfolio_id, level: Number(s.level) }));
     return tryAsync(async () => {
       await runInTransaction((tx) =>
         CareerRepository.replaceSkills(
           tx,
           user.id,
-          portfolioId,
+          portfolio_id,
           skillsData.map((skill) => ({
             id: skill.id,
             name: skill.name,

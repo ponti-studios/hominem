@@ -2,6 +2,11 @@
   "tab_size": 2,
   "hard_tabs": false,
   "format_on_save": "off",
+  "inlay_hints": {
+    "enabled": true,
+    "show_parameter_hints": false,
+    "show_type_hints": false
+  },
   "formatter": {
     "external": {
       "command": "./node_modules/.bin/oxfmt",

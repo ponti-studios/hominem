@@ -56,19 +56,19 @@ export const resumeSchema = z.object({
     title: nonBlankString,
     name: nonBlankString,
     initials: optionalString,
-    jobTitle: nonBlankString,
+    job_title: nonBlankString,
     bio: nonBlankString,
     tagline: nonBlankString,
-    currentLocation: nonBlankString,
-    locationTagline: optionalString,
+    current_location: nonBlankString,
+    location_tagline: optionalString,
     email: z.string().trim().email(),
     phone: optionalString,
-    availabilityStatus: z.boolean(),
-    availabilityMessage: optionalString,
-    isPublic: z.boolean(),
-    isActive: z.boolean(),
+    availability_status: z.boolean(),
+    availability_message: optionalString,
+    is_public: z.boolean(),
+    is_active: z.boolean(),
   }),
-  socialLinks: z
+  social_links: z
     .object({
       github: optionalString,
       linkedin: optionalString,
@@ -82,8 +82,8 @@ export const resumeSchema = z.object({
       company: nonBlankString,
       description: nonBlankString,
       role: nonBlankString,
-      startDate: resumeDate,
-      endDate: resumeDate,
+      start_date: resumeDate,
+      end_date: resumeDate,
     }),
   ).default([]),
   skills: z.array(
@@ -92,7 +92,7 @@ export const resumeSchema = z.object({
       level: z.number().finite().min(1).max(100),
       category: optionalString,
       description: optionalString,
-      yearsOfExperience: z.number().finite().min(0).optional().nullable(),
+      years_of_experience: z.number().finite().min(0).optional().nullable(),
       certifications: z.array(nonBlankString).default([]),
     }),
   ).default([]),
@@ -100,10 +100,10 @@ export const resumeSchema = z.object({
     z.object({
       title: nonBlankString,
       description: nonBlankString,
-      shortDescription: optionalString,
+      short_description: optionalString,
       technologies: z.array(nonBlankString).default([]),
-      liveUrl: optionalString,
-      githubUrl: optionalString,
+      live_url: optionalString,
+      github_url: optionalString,
       status: z.enum(['in-progress', 'completed', 'archived']),
     }),
   ).default([]),
@@ -134,7 +134,7 @@ export type UploadResumeResponse = {
   message?: string;
   data?: ConvertedResumeData;
   saved?: boolean;
-  portfolioId?: string;
+  portfolio_id?: string;
   portfolioSlug?: string;
   portfolioUrl?: string;
   fileUrl?: string;
