@@ -1,7 +1,7 @@
 {
   "tab_size": 2,
   "hard_tabs": false,
-  "format_on_save": "off",
+  "format_on_save": "on",
   "inlay_hints": {
     "enabled": true,
     "show_parameter_hints": false,
