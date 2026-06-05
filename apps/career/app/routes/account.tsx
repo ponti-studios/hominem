@@ -294,14 +294,10 @@ export default function Account() {
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="space-y-2 text-center">
           <h1 className="text-2xl font-bold">Account</h1>
-          <p className="text-muted-foreground">Manage your portfolio and account settings</p>
         </div>
 
-        {/* Profile Information Card */}
         <Card>
-          <CardContent className="space-y-4 p-4 sm:p-5">
-            <h3 className="text-base font-semibold text-foreground">Profile Information</h3>
-
+          <CardContent>
             <ProfileImageUpload
               compact
               currentImageUrl={currentPortfolio?.profile_image_url}
