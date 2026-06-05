@@ -6,12 +6,12 @@
  *
  * Mode table (aligned with layout plan Phase 1):
  *
- *   Route          Mode                noteId   chatId
- *   /home          generic             –        –
- *   /chat/:id      chat-continuation   –        ✓ from URL
- *   /notes/:id     note-aware          ✓ from URL  –
- *   /notes/:id.*   note-aware          ✓ from URL  –
- *   everything else generic            –        –
+ *   Route          Mode                chatId
+ *   /home          generic             –
+ *   /chat/:id      chat-continuation   ✓ from URL
+ *   /notes/:id     note-aware          –
+ *   /notes/:id.*   note-aware          –
+ *   everything else generic            –
  *
  * noteTitle is NOT derived here — it comes from the loaded Note object and
  * is pushed via setNoteTitle in the note route once data arrives.
@@ -22,7 +22,6 @@ import { useMatch } from 'react-router';
 
 interface ComposerModeResult {
   mode: ComposerMode;
-  noteId: string | null;
   chatId: string | null;
 }
 
@@ -32,13 +31,12 @@ export function useComposerMode(): ComposerModeResult {
   const noteSubMatch = useMatch('/notes/:noteId/*');
 
   if (chatMatch?.params.chatId) {
-    return { mode: 'chat-continuation', chatId: chatMatch.params.chatId, noteId: null };
+    return { mode: 'chat-continuation', chatId: chatMatch.params.chatId };
   }
 
-  const resolvedNoteId = noteMatch?.params.noteId ?? noteSubMatch?.params.noteId ?? null;
-  if (resolvedNoteId) {
-    return { mode: 'note-aware', noteId: resolvedNoteId, chatId: null };
+  if (noteMatch?.params.noteId ?? noteSubMatch?.params.noteId) {
+    return { mode: 'note-aware', chatId: null };
   }
 
-  return { mode: 'generic', chatId: null, noteId: null };
+  return { mode: 'generic', chatId: null };
 }

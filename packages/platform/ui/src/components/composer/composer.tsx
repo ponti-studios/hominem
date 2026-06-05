@@ -11,12 +11,9 @@ import { AttachedNotesList } from './attached-notes-list';
 import { appendChatAttachmentContext, appendNoteAttachments } from './attachment-formatting';
 import { ComposerActionsRow } from './composer-actions-row';
 import { ComposerAttachmentList } from './composer-attachment-list';
-import type { ComposerPresentation } from './composer-presentation';
+import type { ComposerPresentation, ComposerSubmitIntent } from './composer-presentation';
 import { deriveComposerPresentation } from './composer-presentation';
-import type {
-  ComposerMode,
-  ComposerProviderProps,
-} from './composer-provider';
+import type { ComposerMode, ComposerProviderProps } from './composer-provider';
 import {
   ComposerProvider,
   useComposerActionsRef,
@@ -48,13 +45,21 @@ function toNoteTitle(text: string, fallback = ''): string {
   return text.slice(0, CHAT_TITLE_MAX_LENGTH) || fallback;
 }
 
+function isComposerSubmitIntent(value: FormDataEntryValue | null): value is ComposerSubmitIntent {
+  return (
+    value === 'send-reply' ||
+    value === 'save-note' ||
+    value === 'save-as-note' ||
+    value === 'start-chat'
+  );
+}
+
 export interface ComposerProps {
   actionsRef: ComposerProviderProps['actionsRef'];
   buildChatPath: (chatId: string) => string;
   mode: ComposerMode;
-  noteId?: string | null;
   chatId?: string | null;
-  /** Derived from useNote(noteId) in the layout — no useEffect push needed */
+  /** Derived from the loaded note in the route layout — no useEffect push needed */
   noteTitle?: string | null;
   store: ComposerProviderProps['store'];
   inlineVoiceEnabled?: boolean;
@@ -79,7 +84,6 @@ type ComposerFormProps = Omit<ComposerProps, 'actionsRef' | 'store'> & {
 
 const ComposerForm = memo(function ComposerForm({
   buildChatPath,
-  noteId,
   chatId,
   noteTitle,
   inlineVoiceEnabled = true,
@@ -98,18 +102,18 @@ const ComposerForm = memo(function ComposerForm({
 
   const [, formAction, isPending] = useActionState(async (_prevState: null, formData: FormData) => {
     const text = ((formData.get('draft') as string) ?? '').trim();
-    const intent = formData.get('intent') as string;
-    const fNoteId = (formData.get('noteId') as string) || null;
+    const intentValue = formData.get('intent');
     const fChatId = (formData.get('chatId') as string) || null;
     const fNoteTitle = (formData.get('noteTitle') as string) || null;
 
     const { attachedNotes, uploadedFiles } = store.getSnapshot();
     const hasContent = text.length > 0 || uploadedFiles.length > 0;
     if (!hasContent) return null;
+    if (!isComposerSubmitIntent(intentValue)) return null;
 
     const actions = actionsRef.current;
 
-    switch (intent) {
+    switch (intentValue) {
       case 'send-reply': {
         if (!fChatId) break;
         const prefix = buildNoteContext(attachedNotes);
@@ -118,16 +122,6 @@ const ComposerForm = memo(function ComposerForm({
         ]);
         await actions.sendMessage({ chatId: fChatId, message });
         store.dispatch({ type: 'CLEAR' });
-        break;
-      }
-      case 'update-note': {
-        if (!fNoteId) break;
-        await actions.updateNote({
-          id: fNoteId,
-          content: appendNoteAttachments(text, [...uploadedFiles]),
-        });
-        store.dispatch({ type: 'CLEAR_DRAFT' });
-        store.dispatch({ type: 'CLEAR_FILES' });
         break;
       }
       case 'save-note':
@@ -175,7 +169,6 @@ const ComposerForm = memo(function ComposerForm({
     }
   }
 
-  const isDraftMode = presentation.posture === 'draft';
   const showsVoiceButton = inlineVoiceEnabled && presentation.showsVoiceButton;
 
   return (
@@ -200,7 +193,6 @@ const ComposerForm = memo(function ComposerForm({
 
       <ComposerShell>
         <form action={formAction} className="flex flex-col gap-1.5">
-          <input type="hidden" name="noteId" value={noteId ?? ''} />
           <input type="hidden" name="chatId" value={chatId ?? ''} />
           <input type="hidden" name="noteTitle" value={noteTitle ?? ''} />
 
@@ -211,14 +203,13 @@ const ComposerForm = memo(function ComposerForm({
               <ComposerInput
                 ref={inputRef}
                 placeholder={presentation.placeholder}
-                isDraftMode={isDraftMode}
                 isPending={isPending}
               />
               <ComposerEnhanceTray />
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center justify-between gap-2 rounded-full border border-border-subtle bg-background/70 px-1.5 py-1.5">
+          <div className="flex shrink-0 items-center justify-between gap-2">
             <ComposerTools
               fileInputRef={fileInputRef}
               cameraInputRef={cameraInputRef}
@@ -301,12 +292,10 @@ const ComposerEnhanceTray = memo(function ComposerEnhanceTray() {
 const ComposerInput = memo(function ComposerInput({
   ref,
   placeholder,
-  isDraftMode,
   isPending,
 }: {
   ref: React.RefObject<HTMLTextAreaElement | null>;
   placeholder: string;
-  isDraftMode: boolean;
   isPending: boolean;
 }) {
   const store = useComposerStore();
@@ -334,10 +323,7 @@ const ComposerInput = memo(function ComposerInput({
       placeholder={placeholder}
       disabled={isPending}
       aria-label="Compose message or note"
-      className={[
-        'body-1 w-full resize-none border-0 bg-transparent p-0 text-text-primary outline-none field-sizing-content overflow-y-auto placeholder:text-text-tertiary focus-visible:outline-none',
-        isDraftMode ? 'min-h-14 max-h-40' : 'min-h-12 max-h-32',
-      ].join(' ')}
+      className="body-1 min-h-12 max-h-32 w-full resize-none border-0 bg-transparent p-0 text-text-primary outline-none field-sizing-content overflow-y-auto placeholder:text-text-tertiary focus-visible:outline-none"
     />
   );
 });

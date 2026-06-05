@@ -8,7 +8,7 @@ WEB_DIR := ROOT_DIR / "apps" / "web"
 UI_DIR := ROOT_DIR / "packages" / "platform" / "ui"
 TURBO := "pnpm exec turbo"
 LOCAL_DATABASE_URL := "postgresql://postgres:postgres@127.0.0.1:5434/hominem"
-LOCAL_TEST_DATABASE_URL := "postgresql://postgres:postgres@127.0.0.1:5434/app-test"
+LOCAL_TEST_DATABASE_URL := "postgresql://postgres:postgres@127.0.0.1:4433/app-test"
 
 import 'justfiles/db.just'
 

@@ -24,6 +24,7 @@ Required environment variables:
 ```dotenv
 VITE_DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/craftd_dev
 DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/craftd_dev
+DATABASE_URL_TEST=postgresql://postgres:postgres@127.0.0.1:4433/app-test
 VITE_PUBLIC_API_URL=http://localhost:3000
 ```
 
@@ -47,6 +48,6 @@ Cloudflare R2 is only required for deployed environments. Local development uses
 ## Notes
 
 - Database access now goes through `@hominem/db` and the shared `packages/core/db` migrations.
-- Shared monorepo Postgres URLs use `127.0.0.1:5434` (`hominem` for dev, `app-test` for test). This app’s standalone `docker-compose.yml` keeps its own local database on `127.0.0.1:5432/craftd_dev`.
+- Shared monorepo Postgres URLs use `127.0.0.1:5434` for dev (`hominem`) and `127.0.0.1:4433` for test (`app-test`). This app’s standalone `docker-compose.yml` keeps its own local database on `127.0.0.1:5432/craftd_dev`.
 - Local uploads use MinIO; deployed environments should configure Cloudflare R2 with `R2_ENDPOINT`, `R2_BUCKET_NAME`, `R2_ACCESS_KEY_ID`, and `R2_SECRET_ACCESS_KEY`.
 - Deployment uses the repo-level `validate-career` and `deploy-career` workflows with the same Railway/Docker shape as `apps/web`. The deploy workflow expects `RAILWAY_SERVICE_CAREER` and `RAILWAY_TOKEN` secrets.

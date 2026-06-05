@@ -1,5 +1,5 @@
 import { cn } from '@hominem/ui/lib/utils';
-import { NavLink, Outlet, data } from 'react-router';
+import { Link, NavLink, Outlet, data } from 'react-router';
 
 import { getServerSession } from '~/lib/auth.server';
 import { WEB_BRAND } from '~/lib/brand';
@@ -36,9 +36,9 @@ export default function Layout({ loaderData }: Route.ComponentProps) {
         <header className="border-b border-border-subtle bg-background/90 backdrop-blur">
           <div className="flex items-center justify-between gap-4 py-4">
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-text-tertiary">
+              <Link to="/" className="text-xs uppercase tracking-[0.2em] text-text-tertiary">
                 {WEB_BRAND.appName}
-              </p>
+              </Link>
             </div>
             <nav className="flex items-center gap-2">
               <NavItem to="/notes" label="Notes" />

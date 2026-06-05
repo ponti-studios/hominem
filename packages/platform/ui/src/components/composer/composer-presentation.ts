@@ -7,7 +7,6 @@
  *
  * Posture:
  *   capture   — home/focus route (create note or start chat)
- *   draft     — note detail (extend the open note)
  *   reply     — chat detail (reply to conversation)
  *   hidden    — any route where the composer should not render
  */
@@ -15,15 +14,25 @@
 import type { ComposerMode } from './composer-provider';
 
 export type ComposerPosture = 'capture' | 'draft' | 'reply' | 'note-query' | 'hidden';
+export type ComposerActionIcon = 'plus.circle' | 'arrow.up' | 'bubble.left';
+export type ComposerSubmitIntent =
+  | 'send-reply'
+  | 'save-note'
+  | 'save-as-note'
+  | 'start-chat';
+
+export interface ComposerActionSpec {
+  intent: ComposerSubmitIntent;
+  label: string;
+  /** Icon name understood by the Composer — kept symbolic so the component picks the icon */
+  icon: ComposerActionIcon;
+}
 
 export interface ComposerPresentation {
   posture: ComposerPosture;
   placeholder: string;
-  primaryActionLabel: string;
-  /** Icon name understood by the Composer — kept symbolic so the component picks the icon */
-  primaryActionIcon: 'plus.circle' | 'arrow.up';
-  secondaryActionLabel: string;
-  secondaryActionIcon: 'bubble.left' | 'plus.circle';
+  primaryAction: ComposerActionSpec;
+  secondaryAction: ComposerActionSpec | null;
   showsAttachmentButton: boolean;
   showsVoiceButton: boolean;
   showsNotePicker: boolean;
@@ -37,10 +46,12 @@ export function deriveComposerPresentation(
     return {
       posture: 'note-query',
       placeholder: 'Ask about this note…',
-      primaryActionLabel: 'Ask',
-      primaryActionIcon: 'arrow.up',
-      secondaryActionLabel: '',
-      secondaryActionIcon: 'bubble.left',
+      primaryAction: {
+        intent: 'start-chat',
+        label: 'Ask',
+        icon: 'arrow.up',
+      },
+      secondaryAction: null,
       showsAttachmentButton: false,
       showsVoiceButton: true,
       showsNotePicker: false,
@@ -51,10 +62,16 @@ export function deriveComposerPresentation(
     return {
       posture: 'reply',
       placeholder: isRecording ? 'Listening…' : 'Reply in chat',
-      primaryActionLabel: 'Send',
-      primaryActionIcon: 'arrow.up',
-      secondaryActionLabel: 'Save as note',
-      secondaryActionIcon: 'plus.circle',
+      primaryAction: {
+        intent: 'send-reply',
+        label: 'Send',
+        icon: 'arrow.up',
+      },
+      secondaryAction: {
+        intent: 'save-as-note',
+        label: 'Save as note',
+        icon: 'plus.circle',
+      },
       showsAttachmentButton: true,
       showsVoiceButton: true,
       showsNotePicker: true,
@@ -65,10 +82,16 @@ export function deriveComposerPresentation(
   return {
     posture: 'capture',
     placeholder: isRecording ? 'Listening…' : 'Write a note, ask something, or drop a file',
-    primaryActionLabel: 'Save note',
-    primaryActionIcon: 'plus.circle',
-    secondaryActionLabel: 'Start chat',
-    secondaryActionIcon: 'bubble.left',
+    primaryAction: {
+      intent: 'save-note',
+      label: 'Save note',
+      icon: 'plus.circle',
+    },
+    secondaryAction: {
+      intent: 'start-chat',
+      label: 'Start chat',
+      icon: 'bubble.left',
+    },
     showsAttachmentButton: true,
     showsVoiceButton: true,
     showsNotePicker: false,

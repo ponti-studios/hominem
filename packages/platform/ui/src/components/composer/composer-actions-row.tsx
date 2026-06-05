@@ -14,72 +14,19 @@ import { ArrowUp, CirclePlus, MessageSquare, Mic, Sparkles } from 'lucide-react'
 import { memo } from 'react';
 import { useFormStatus } from 'react-dom';
 
-import { cn } from '../../lib/utils';
-import type { ComposerPresentation } from './composer-presentation';
+import { Button } from '../button';
+import type { ComposerActionIcon, ComposerPresentation } from './composer-presentation';
 import { useComposerSlice, useComposerStore } from './composer-provider';
 
-function primaryIntent(posture: ComposerPresentation['posture']): string {
-  switch (posture) {
-    case 'reply':
-      return 'send-reply';
-    case 'draft':
-      return 'update-note';
-    case 'note-query':
-      return 'start-chat';
+function ActionIcon({ icon }: { icon: ComposerActionIcon }) {
+  switch (icon) {
+    case 'plus.circle':
+      return <CirclePlus className="size-4.5" />;
+    case 'bubble.left':
+      return <MessageSquare className="size-4.5" />;
     default:
-      return 'save-note';
+      return <ArrowUp className="size-4.5" />;
   }
-}
-
-function secondaryIntent(posture: ComposerPresentation['posture']): string {
-  switch (posture) {
-    case 'reply':
-      return 'save-as-note';
-    default:
-      return 'start-chat';
-  }
-}
-
-function ActionButton({
-  intent,
-  icon,
-  label,
-  disabled,
-  variant,
-  onClick,
-}: {
-  intent?: string;
-  icon: React.ReactNode;
-  label: string;
-  disabled: boolean;
-  variant: 'primary' | 'secondary';
-  onClick?: () => void;
-}) {
-  const isPrimary = variant === 'primary';
-  const buttonProps = onClick
-    ? { type: 'button' as const, onClick }
-    : { type: 'submit' as const, name: 'intent', value: intent };
-  return (
-    <button
-      {...buttonProps}
-      aria-label={label}
-      title={label}
-      disabled={disabled}
-      data-testid={isPrimary ? 'composer-primary' : 'composer-secondary'}
-      className={cn(
-        'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-medium transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
-        isPrimary ? 'bg-foreground text-background' : 'border border-border-subtle bg-background text-text-secondary',
-        isPrimary &&
-          (disabled
-            ? 'cursor-not-allowed bg-surface text-text-tertiary'
-            : 'border-transparent bg-foreground text-background hover:bg-foreground/90'),
-        !isPrimary && 'hover:border-border-default hover:bg-surface hover:text-foreground',
-        disabled && 'cursor-not-allowed opacity-40',
-      )}
-    >
-      {icon}
-    </button>
-  );
 }
 
 export const ComposerActionsRow = memo(function ComposerActionsRow({
@@ -108,50 +55,56 @@ export const ComposerActionsRow = memo(function ComposerActionsRow({
 
   return (
     <div className="flex items-center gap-1.5">
-      <ActionButton
-        icon={<Sparkles className="size-4.5" />}
-        label="Enhance text"
+      <Button
+        size="icon"
+        variant="outline"
+        aria-label="Enhance text"
+        title="Enhance text"
         disabled={!hasContent || isPending || formPending || isUploading || isEnhancing}
-        variant="secondary"
         onClick={() => store.dispatch({ type: 'SET_ENHANCE_OPEN', isOpen: true })}
-      />
-      {presentation.posture !== 'note-query' && !showVoiceAsPrimary && (
-        <ActionButton
-          intent={secondaryIntent(presentation.posture)}
-          icon={
-            presentation.secondaryActionIcon === 'plus.circle' ? (
-              <CirclePlus className="size-4.5" />
-            ) : (
-              <MessageSquare className="size-4.5" />
-            )
-          }
-          label={presentation.secondaryActionLabel}
+        data-testid="composer-secondary"
+      >
+        <Sparkles className="size-4.5" />
+      </Button>
+      {presentation.secondaryAction && !showVoiceAsPrimary && (
+        <Button
+          size="icon"
+          variant="outline"
+          type="submit"
+          name="intent"
+          value={presentation.secondaryAction.intent}
+          aria-label={presentation.secondaryAction.label}
+          title={presentation.secondaryAction.label}
           disabled={disabled}
-          variant="secondary"
-        />
+          data-testid="composer-secondary"
+        >
+          <ActionIcon icon={presentation.secondaryAction.icon} />
+        </Button>
       )}
       {showVoiceAsPrimary ? (
-        <ActionButton
-          icon={<Mic className="size-4.5" />}
-          label="Voice note"
+        <Button
+          size="icon"
+          aria-label="Voice note"
+          title="Voice note"
           disabled={isPending || formPending || isEnhancing}
-          variant="primary"
           onClick={() => voiceDialogRef.current?.showModal()}
-        />
+          data-testid="composer-primary"
+        >
+          <Mic className="size-4.5" />
+        </Button>
       ) : (
-        <ActionButton
-          intent={primaryIntent(presentation.posture)}
-          icon={
-            presentation.primaryActionIcon === 'plus.circle' ? (
-              <CirclePlus className="size-4.5" />
-            ) : (
-              <ArrowUp className="size-4.5" />
-            )
-          }
-          label={presentation.primaryActionLabel}
+        <Button
+          size="icon"
+          type="submit"
+          name="intent"
+          value={presentation.primaryAction.intent}
+          aria-label={presentation.primaryAction.label}
+          title={presentation.primaryAction.label}
           disabled={disabled}
-          variant="primary"
-        />
+          data-testid="composer-primary"
+        >
+          <ActionIcon icon={presentation.primaryAction.icon} />
+        </Button>
       )}
     </div>
   );

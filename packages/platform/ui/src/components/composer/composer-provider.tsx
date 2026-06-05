@@ -23,7 +23,6 @@ import { INITIAL_COMPOSER_STATE, ComposerStore, type ComposerState } from './com
 
 export interface ComposerActions {
   createNote: (input: { content: string; title?: string }) => Promise<unknown>;
-  updateNote: (input: { id: string; content: string }) => Promise<unknown>;
   sendMessage: (input: { chatId: string; message: string }) => Promise<unknown>;
   createChat: (input: { seedText: string; title: string }) => Promise<{ id: string }>;
   enhanceText: (input: { text: string; instruction?: string }) => Promise<string>;

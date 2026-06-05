@@ -12,7 +12,7 @@ import { useTextEnhance } from '~/hooks/ai';
 import { useCreateChat } from '~/hooks/use-chats';
 import { useComposerMode } from '~/hooks/use-composer-mode';
 import { useInbox } from '~/hooks/use-inbox';
-import { useCreateNote, useUpdateNote } from '~/hooks/use-notes';
+import { useCreateNote } from '~/hooks/use-notes';
 import { useTranscribe } from '~/hooks/use-transcribe';
 import { getServerSession } from '~/lib/auth.server';
 import { serverEnv } from '~/lib/env.server';
@@ -55,12 +55,11 @@ export default function NotesPage({ loaderData }: { loaderData: { inbox: InboxOu
   const actionsRef = useRef<ComposerActions>({} as ComposerActions);
 
   const createNote = useCreateNote();
-  const updateNote = useUpdateNote();
   const createChat = useCreateChat();
   const { enhance } = useTextEnhance();
   const { uploadFiles } = useFileUpload();
   const transcribeMutation = useTranscribe();
-  const { mode, noteId, chatId } = useComposerMode();
+  const { mode, chatId } = useComposerMode();
   const navigate = useNavigate();
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -179,10 +178,8 @@ export default function NotesPage({ loaderData }: { loaderData: { inbox: InboxOu
     createNote: async (input) => {
       const result = await createNote.mutateAsync(input);
       window.localStorage.removeItem(NOTES_NEW_DRAFT_STORAGE_KEY);
-      navigate(`/notes/${result.id}`);
       return result;
     },
-    updateNote: async (input) => updateNote.mutateAsync(input),
     sendMessage: async (_input) => {},
     createChat: async (input) => {
       const chat = await createChat.mutateAsync({ title: input.title });
@@ -279,7 +276,6 @@ export default function NotesPage({ loaderData }: { loaderData: { inbox: InboxOu
         actionsRef={actionsRef}
         buildChatPath={(chatId) => `/chat/${chatId}`}
         mode={mode}
-        noteId={noteId}
         chatId={chatId}
         store={composerStore}
         transcribeMutation={transcribeMutation}
