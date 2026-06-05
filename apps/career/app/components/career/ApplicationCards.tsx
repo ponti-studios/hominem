@@ -1,27 +1,21 @@
-import { Badge } from '@hominem/ui/badge';
-import { Button, buttonVariants } from '@hominem/ui/button';
-import { Card, CardContent } from '@hominem/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
-import { CalendarIcon, DollarSignIcon, MapPinIcon } from 'lucide-react';
-import { Link, useFetcher } from 'react-router';
+import { Badge } from "@hominem/ui/badge";
+import { EmptyState } from "@hominem/ui";
+import { buttonVariants } from "@hominem/ui/button";
+import { Card, CardContent } from "@hominem/ui/card";
+import { CalendarIcon, DollarSignIcon, MapPinIcon } from "lucide-react";
+import { Link } from "react-router";
 
-import { useToast } from '~/hooks/useToast';
-import { centsToDollars, formatCurrency } from '~/lib/utils';
-import { cn } from '~/lib/utils';
-import { getCompanyName, getStatusColor } from '~/lib/utils/applicationUtils';
-import type { JobApplication } from '~/types/career';
-import { JobApplicationStatus } from '~/types/career';
-type ApplicationWithCompany = JobApplication & {
-  company?: string | { name: string; [key: string]: unknown } | null;
-  application_date?: Date | null;
-  response_date?: Date | null;
-  salary_offered?: number | null;
-  source?: string | null;
-};
+import { centsToDollars, formatCurrency } from "~/lib/utils";
+import { cn } from "~/lib/utils";
+import {
+  formatStatusText,
+  getCompanyName,
+  getStatusColor,
+} from "~/lib/utils/applicationUtils";
+import type { ApplicationWithCompany } from "~/types/applications";
 
 interface ApplicationCardsProps {
   applications: ApplicationWithCompany[];
-  showActions?: boolean;
   emptyTitle?: string;
   emptyDescription?: string;
   className?: string;
@@ -29,24 +23,25 @@ interface ApplicationCardsProps {
 
 export function ApplicationCards({
   applications,
-  showActions = false,
-  emptyTitle = 'No applications found',
-  emptyDescription = 'Start tracking your job applications to see them here',
-  className = '',
+  emptyTitle = "No applications found",
+  emptyDescription = "Start tracking your job applications to see them here",
+  className = "",
 }: ApplicationCardsProps) {
   if (!applications || applications.length === 0) {
     return (
-      <div className={cn('py-8 text-center text-muted-foreground', className)}>
-        <p className="font-medium text-foreground">{emptyTitle}</p>
-        <p className="mt-1 text-sm">{emptyDescription}</p>
-      </div>
+      <EmptyState
+        title={emptyTitle}
+        description={emptyDescription}
+        variant="quiet"
+        className={className}
+      />
     );
   }
 
   return (
-    <div className={cn('grid gap-6 md:grid-cols-2 xl:grid-cols-3', className)}>
+    <div className={cn("grid gap-6 md:grid-cols-2 xl:grid-cols-3", className)}>
       {applications.map((app) => (
-        <ApplicationCard key={app.id} application={app} showActions={showActions} />
+        <ApplicationCard key={app.id} application={app} />
       ))}
     </div>
   );
@@ -54,54 +49,16 @@ export function ApplicationCards({
 
 function ApplicationCard({
   application,
-  showActions = false,
 }: {
   application: ApplicationWithCompany;
-  showActions?: boolean;
 }) {
-  const fetcher = useFetcher();
-  const { addToast } = useToast();
-
-  const handleStatusChange = (newStatus: string) => {
-    if (!showActions) return;
-
-    const formData = new FormData();
-    formData.append('operation', 'update');
-    formData.append('applicationId', application.id);
-    formData.append('status', newStatus);
-
-    fetcher.submit(formData, { method: 'POST' });
-  };
-
-  const handleDelete = () => {
-    if (!showActions) return;
-
-    if (confirm('Are you sure you want to delete this application?')) {
-      const formData = new FormData();
-      formData.append('operation', 'delete');
-      formData.append('applicationId', application.id);
-
-      fetcher.submit(formData, { method: 'POST' });
-    }
-  };
-
-  // Handle fetcher responses
-  if (fetcher.state === 'idle' && fetcher.data && showActions) {
-    const result = fetcher.data as { success: boolean; error?: string; message?: string };
-    if (result.success) {
-      addToast(result.message || 'Application updated successfully!', 'success');
-    } else {
-      addToast(`Error: ${result.error}`, 'error');
-    }
-  }
-
   const formatDate = (date: Date | string | null | undefined) => {
-    if (!date) return '—';
-    const dateObj = typeof date === 'string' ? new Date(date) : date;
-    return dateObj.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
+    if (!date) return "—";
+    const dateObj = typeof date === "string" ? new Date(date) : date;
+    return dateObj.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
     });
   };
 
@@ -118,30 +75,20 @@ function ApplicationCard({
               </h3>
               <div className="mt-2 flex items-center gap-2">
                 <div className="flex size-8 items-center justify-center rounded-md bg-primary/10 text-sm font-semibold text-primary">
-                  {companyName.charAt(0)?.toUpperCase() || 'C'}
+                  {companyName.charAt(0)?.toUpperCase() || "C"}
                 </div>
-                <span className="truncate font-medium text-foreground/90">{companyName}</span>
+                <span className="truncate font-medium text-foreground/90">
+                  {companyName}
+                </span>
               </div>
             </div>
-            <Badge variant="outline" className={getStatusColor(application.status)}>
-              {application.status.replace(/_/g, ' ')}
+            <Badge
+              variant="outline"
+              className={getStatusColor(application.status)}
+            >
+              {formatStatusText(application.status)}
             </Badge>
           </div>
-
-          {showActions ? (
-            <Select value={application.status} onValueChange={handleStatusChange}>
-              <SelectTrigger className="h-8 w-32 text-xs">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.values(JobApplicationStatus).map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {status.replace(/_/g, ' ')}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : null}
         </div>
 
         <div className="space-y-3 text-sm">
@@ -151,7 +98,9 @@ function ApplicationCard({
               Applied
             </span>
             <span className="font-medium text-foreground">
-              {formatDate(application.application_date || application.start_date)}
+              {formatDate(
+                application.application_date || application.start_date,
+              )}
             </span>
           </div>
 
@@ -174,49 +123,38 @@ function ApplicationCard({
                 Salary
               </span>
               <span className="max-w-32 truncate text-right font-medium text-foreground">
-                {typeof application.salary_quoted === 'string'
+                {typeof application.salary_quoted === "string"
                   ? application.salary_quoted
                   : application.salary_offered
                     ? formatCurrency(centsToDollars(application.salary_offered))
                     : application.salary_quoted
-                      ? formatCurrency(centsToDollars(application.salary_quoted))
-                      : '—'}
+                      ? formatCurrency(
+                          centsToDollars(application.salary_quoted),
+                        )
+                      : "—"}
               </span>
             </div>
           ) : null}
         </div>
 
-        {showActions ? (
-          <div className="flex gap-2 border-t border-border pt-2">
-            <Link
-              to={`/job-applications/${application.id}`}
-              className={buttonVariants({
-                variant: 'outline',
-                size: 'sm',
-                className: 'h-8 flex-1 text-xs',
-              })}
+        <div className="flex gap-2 border-t border-border pt-2">
+          <Link
+            to={`/career/applications/${application.id}`}
+            className={buttonVariants({ variant: "outline" })}
+          >
+            View Details
+          </Link>
+          {application.job_posting ? (
+            <a
+              href={application.job_posting}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={buttonVariants({ variant: "outline" })}
             >
-              View Details
-            </Link>
-            {application.job_posting ? (
-              <a
-                href={application.job_posting}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={buttonVariants({
-                  variant: 'outline',
-                  size: 'sm',
-                  className: 'h-8 px-3 text-xs',
-                })}
-              >
-                Job Post
-              </a>
-            ) : null}
-            <Button variant="destructive" size="sm" onClick={handleDelete} className="h-8 text-xs">
-              Delete
-            </Button>
-          </div>
-        ) : null}
+              Job Post
+            </a>
+          ) : null}
+        </div>
       </CardContent>
     </Card>
   );

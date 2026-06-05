@@ -24,6 +24,7 @@ export {
 export { Button, buttonVariants } from './components/button';
 export * from './components/enhance';
 export * from './components/composer';
+export { EmptyState } from './components/surfaces/empty-state';
 export { SectionIntro } from './components/surfaces/section-intro';
 export { StatePanel } from './components/surfaces/state-panel';
 export { SurfacePanel } from './components/surfaces/surface-panel';

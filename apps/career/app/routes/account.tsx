@@ -76,11 +76,7 @@ export async function action(args: ActionFunctionArgs) {
 
     if (action === 'set-current-portfolio' && portfolio_id) {
       return tryAsync(async () => {
-        await CareerRepository.setCurrentPortfolioByUserId(
-          db,
-          user.id,
-          portfolio_id as string,
-        );
+        await CareerRepository.setCurrentPortfolioByUserId(db, user.id, portfolio_id as string);
 
         return createSuccessResponse(null, 'Current portfolio updated successfully');
       }, 'Failed to update current portfolio');
@@ -294,9 +290,9 @@ export default function Account() {
   const userDisplayName = String(user.name || user.email);
 
   return (
-    <div className="py-8">
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-        <div className="-mt-4 space-y-2 text-center">
+    <div className="py-2">
+      <div className="max-w-2xl mx-auto space-y-6">
+        <div className="space-y-2 text-center">
           <h1 className="text-2xl font-bold">Account</h1>
           <p className="text-muted-foreground">Manage your portfolio and account settings</p>
         </div>

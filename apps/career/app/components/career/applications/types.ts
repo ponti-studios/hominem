@@ -1,0 +1,38 @@
+import type { ApplicationWithCompany } from "~/types/applications";
+
+export interface ApplicationsFiltersProps {
+  searchValue: string;
+  onSearchChange: (value: string) => void;
+  statuses: string[];
+  selectedStatuses: string[];
+  onStatusToggle: (status: string) => void;
+  sourceOptions: Array<{ value: string; label: string }>;
+  selectedSource: string;
+  onSourceChange: (source: string) => void;
+  onClearFilters: () => void;
+}
+
+export interface ApplicationsResultsSummaryProps {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  onPrevPage: () => void;
+  onNextPage: () => void;
+  hasActiveFilters: boolean;
+  onClearFilters: () => void;
+}
+
+export interface ApplicationsDesktopTableProps {
+  applications: ApplicationWithCompany[];
+}
+
+export interface ApplicationsMobileListProps {
+  applications: ApplicationWithCompany[];
+}
+
+export interface ApplicationsEmptyStateProps {
+  kind: "base" | "filtered";
+  emptyTitle: string;
+  emptyDescription: string;
+}

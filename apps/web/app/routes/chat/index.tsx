@@ -1,5 +1,6 @@
 import { Button } from '@hominem/ui/button';
-import { SearchInput } from '@hominem/ui/search-input';
+import { EmptyState } from '@hominem/ui';
+import { Input } from '@hominem/ui/input';
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams, data, redirect } from 'react-router';
 
@@ -87,7 +88,11 @@ export default function ChatIndexPage({
       ) : null}
 
       <div className="grid gap-3">
-        <SearchInput value={chatSearch} onSearchChange={setChatSearch} placeholder="Search chats" />
+        <Input
+          value={chatSearch}
+          onChange={(e) => setChatSearch(e.target.value)}
+          placeholder="Search chats"
+        />
 
         {filteredChats.map((chat) => (
           <Link
@@ -108,19 +113,15 @@ export default function ChatIndexPage({
       </div>
 
       {chats.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border-subtle bg-surface p-10 text-center">
-          <p className="text-base text-foreground">No chats yet.</p>
-          <p className="mt-2 text-sm text-text-secondary">
-            Create one and mention a note with <code>#note-title</code>.
-          </p>
-        </div>
+        <EmptyState title="No chats yet." variant="dashed" size="lg" />
       ) : null}
 
       {chats.length > 0 && filteredChats.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border-subtle bg-surface p-10 text-center">
-          <p className="text-base text-foreground">No chats match “{chatSearch}”.</p>
-          <p className="mt-2 text-sm text-text-secondary">Try a different title search.</p>
-        </div>
+        <EmptyState
+          title={`No chats match "${chatSearch}".`}
+          description="Try a different title search."
+          variant="search"
+        />
       ) : null}
     </div>
   );

@@ -1,8 +1,8 @@
 import type { Note } from '@hominem/rpc/types/notes.types';
 import { StatePanel } from '@hominem/ui';
-import { NoteEditor } from '~/components/notes';
 import { useNavigate } from 'react-router';
 
+import { NoteEditor } from '~/components/notes';
 import { useTextEnhance } from '~/hooks/ai';
 import { useDeleteNote, useUpdateNote } from '~/hooks/use-notes';
 import { useTranscribe } from '~/hooks/use-transcribe';

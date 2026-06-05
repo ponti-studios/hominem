@@ -1,19 +1,37 @@
-import { Button } from '@hominem/ui/button';
-import { DatePicker } from '@hominem/ui/date-picker';
-import { CheckIcon, PencilIcon, PlusIcon, TrashIcon, XIcon } from 'lucide-react';
-import { useState } from 'react';
-import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
-import { useLoaderData } from 'react-router';
+import { Button } from "@hominem/ui/button";
+import { DatePicker } from "@hominem/ui/date-picker";
+import { EmptyState } from "@hominem/ui";
+import {
+  CheckIcon,
+  PencilIcon,
+  PlusIcon,
+  TrashIcon,
+  XIcon,
+} from "lucide-react";
+import { useState } from "react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
 
-import { createSuccessResponse, withAuthLoader } from '~/lib/route-utils';
-import { cn } from '~/lib/utils';
-import type { Certification, CertificationSummary } from '~/types/career-data';
+import { CareerRecordIndexShell } from "~/components/career/CareerRecordIndexShell";
+import { MetricsGrid } from "~/components/career/MetricsGrid";
+import {
+  createSuccessResponse,
+  withAuthAction,
+  withAuthLoader,
+} from "~/lib/route-utils";
+import {
+  formatCertificationStatus,
+  getCertificationStatusClasses,
+} from "~/lib/utils/certificationUtils";
+import { cn } from "~/lib/utils";
+import type { Certification, CertificationSummary } from "~/types/career-data";
+
 const formatDateValue = (value: Date | undefined) => {
   if (!value) {
-    return '';
+    return "";
   }
 
-  return value.toISOString().split('T')[0] ?? '';
+  return value.toISOString().split("T")[0] ?? "";
 };
 
 interface LoaderData {
@@ -25,7 +43,6 @@ interface LoaderData {
 export async function loader(args: LoaderFunctionArgs) {
   return withAuthLoader(args, async ({ user }) => {
     try {
-      // For now, return empty data - we'll implement the queries later
       const certifications: Certification[] = [];
       const summary: CertificationSummary = {
         totalCertifications: 0,
@@ -44,37 +61,45 @@ export async function loader(args: LoaderFunctionArgs) {
         summary,
       });
     } catch (error) {
-      console.error('Error loading certifications:', error);
-      throw new Response('Error loading certifications', { status: 500 });
+      console.error("Error loading certifications:", error);
+      throw new Response("Error loading certifications", { status: 500 });
     }
   });
 }
 
 export async function action(args: ActionFunctionArgs) {
-  return withAuthLoader(args, async ({ user, request }) => {
+  return withAuthAction(args, async ({ request }) => {
     const formData = await request.formData();
-    const operation = formData.get('operation') as string;
+    const operation = formData.get("operation") as string;
 
     try {
-      if (operation === 'create') {
-        // TODO: Implement certification creation
-        return createSuccessResponse({ success: true }, 'Certification created successfully');
+      if (operation === "create") {
+        return createSuccessResponse(
+          { success: true },
+          "Certification created successfully",
+        );
       }
 
-      if (operation === 'update') {
-        // TODO: Implement certification update
-        return createSuccessResponse({ success: true }, 'Certification updated successfully');
+      if (operation === "update") {
+        return createSuccessResponse(
+          { success: true },
+          "Certification updated successfully",
+        );
       }
 
-      if (operation === 'delete') {
-        // TODO: Implement certification deletion
-        return createSuccessResponse({ success: true }, 'Certification deleted successfully');
+      if (operation === "delete") {
+        return createSuccessResponse(
+          { success: true },
+          "Certification deleted successfully",
+        );
       }
 
-      throw new Response('Invalid operation', { status: 400 });
+      throw new Response("Invalid operation", { status: 400 });
     } catch (error) {
-      console.error('Error handling certification operation:', error);
-      throw new Response('Error processing certification request', { status: 500 });
+      console.error("Error handling certification operation:", error);
+      throw new Response("Error processing certification request", {
+        status: 500,
+      });
     }
   });
 }
@@ -83,106 +108,73 @@ export default function CertificationsPage() {
   const response = useLoaderData<{ success: boolean; data: LoaderData }>();
   const data = response?.data || {};
   const { certifications, summary } = data;
-
   const [showCreateForm, setShowCreateForm] = useState(false);
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="rounded-md border border-border bg-card">
-        <div className="px-4 py-6 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-light text-foreground font-sans">
-                Professional Certifications
-              </h1>
-              <p className="text-lg text-muted-foreground font-sans mt-2">
-                Track your certifications across your entire career
-              </p>
-            </div>
-            <Button
-              onClick={() => setShowCreateForm(true)}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground"
-            >
-              <PlusIcon className="w-4 h-4 mr-2" />
-              Add Certification
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      <div className="px-4 sm:px-6 lg:px-8 py-8">
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="rounded-md border border-border bg-card p-6">
-            <div className="text-2xl font-bold text-foreground">{summary.totalCertifications}</div>
-            <div className="text-sm text-muted-foreground">Total Certifications</div>
-          </div>
-          <div className="rounded-md border border-border bg-card p-6">
-            <div className="text-2xl font-bold text-success">{summary.activeCertifications}</div>
-            <div className="text-sm text-muted-foreground">Active</div>
-          </div>
-          <div className="rounded-md border border-border bg-card p-6">
-            <div className="text-2xl font-bold text-warning">{summary.expiringInSixMonths}</div>
-            <div className="text-sm text-muted-foreground">Expiring Soon</div>
-          </div>
-          <div className="rounded-md border border-border bg-card p-6">
-            <div className="text-2xl font-bold text-foreground">
-              ${(summary.totalInvestment / 100).toLocaleString()}
-            </div>
-            <div className="text-sm text-muted-foreground">Total Investment</div>
-          </div>
-        </div>
-
-        {/* Certifications List */}
-        <div className="bg-card rounded-md  border border-border/50">
-          <div className="p-6 border-b border-border/50">
-            <h2 className="text-xl font-semibold text-foreground">Your Certifications</h2>
-          </div>
-
-          {certifications.length === 0 ? (
-            <div className="p-12 text-center">
-              <div className="text-muted-foreground mb-4">
-                <svg
-                  className="w-16 h-16 mx-auto"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1}
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-lg font-medium text-foreground mb-2">No certifications yet</h3>
-              <p className="text-muted-foreground mb-6">
-                Start tracking your professional certifications to showcase your expertise.
-              </p>
-              <Button
-                onClick={() => setShowCreateForm(true)}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground"
-              >
-                <PlusIcon className="w-4 h-4 mr-2" />
+    <CareerRecordIndexShell
+      title="Professional Certifications"
+      subtitle="Track your certifications across your entire career"
+      primaryAction={
+        <Button onClick={() => setShowCreateForm(true)}>
+          <PlusIcon className="mr-2 w-4 h-4" />
+          Add Certification
+        </Button>
+      }
+      metrics={
+        <MetricsGrid
+          items={[
+            {
+              label: "Total Certifications",
+              value: String(summary.totalCertifications),
+            },
+            {
+              label: "Active",
+              value: String(summary.activeCertifications),
+              tone: "success",
+            },
+            {
+              label: "Expiring Soon",
+              value: String(summary.expiringInSixMonths),
+              tone: "warning",
+            },
+            {
+              label: "Total Investment",
+              value: `$${(summary.totalInvestment / 100).toLocaleString()}`,
+            },
+          ]}
+        />
+      }
+      sectionTitle="Your Certifications"
+      emptyState={
+        certifications.length === 0 ? (
+          <EmptyState
+            title="No certifications yet"
+            description="Start tracking your professional certifications to showcase your expertise."
+            action={
+              <Button onClick={() => setShowCreateForm(true)}>
+                <PlusIcon className="size-4" />
                 Add Your First Certification
               </Button>
-            </div>
-          ) : (
-            <div className="divide-y divide-slate-200/50">
-              {certifications.map((cert) => (
-                <CertificationCard key={cert.id} certification={cert} />
-              ))}
-            </div>
-          )}
+            }
+          />
+        ) : undefined
+      }
+    >
+      {certifications.length > 0 ? (
+        <div className="divide-y divide-slate-200/50">
+          {certifications.map((certification) => (
+            <CertificationCard
+              key={certification.id}
+              certification={certification}
+            />
+          ))}
         </div>
+      ) : null}
 
-        {/* Create Form Modal */}
-        {showCreateForm && <CreateCertificationModal onClose={() => setShowCreateForm(false)} />}
-      </div>
-    </div>
+      {showCreateForm ? (
+        <CreateCertificationModal onClose={() => setShowCreateForm(false)} />
+      ) : null}
+    </CareerRecordIndexShell>
   );
 }
 
@@ -191,39 +183,46 @@ interface CertificationCardProps {
 }
 
 function CertificationCard({ certification }: CertificationCardProps) {
-  const [isEditing, setIsEditing] = useState(false);
+  const [, setIsEditing] = useState(false);
 
   return (
     <div className="p-6">
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <div className="flex items-center gap-3 mb-2">
-            <h3 className="text-lg font-semibold text-foreground">{certification.name}</h3>
+          <div className="mb-2 flex items-center gap-3">
+            <h3 className="text-lg font-semibold text-foreground">
+              {certification.name}
+            </h3>
             <span
               className={cn(
-                'px-2 py-1 text-xs font-medium rounded-full',
-                certification.status === 'active'
-                  ? 'bg-success/10 text-foreground'
-                  : certification.status === 'expired'
-                    ? 'bg-destructive/10 text-foreground'
-                    : 'bg-amber-100 text-amber-800',
+                "rounded-full px-2 py-1 text-xs font-medium",
+                getCertificationStatusClasses(certification.status),
               )}
             >
-              {certification.status}
+              {formatCertificationStatus(certification.status)}
             </span>
           </div>
-          <p className="text-muted-foreground mb-3">{certification.issuingOrganization}</p>
-          {certification.description && (
-            <p className="text-muted-foreground mb-3">{certification.description}</p>
-          )}
+          <p className="mb-3 text-muted-foreground">
+            {certification.issuingOrganization}
+          </p>
+          {certification.description ? (
+            <p className="mb-3 text-muted-foreground">
+              {certification.description}
+            </p>
+          ) : null}
           <div className="flex items-center gap-6 text-sm text-muted-foreground">
-            <span>Issued: {new Date(certification.issueDate).toLocaleDateString()}</span>
-            {certification.expirationDate && (
-              <span>Expires: {new Date(certification.expirationDate).toLocaleDateString()}</span>
-            )}
-            {certification.cost && (
+            <span>
+              Issued: {new Date(certification.issueDate).toLocaleDateString()}
+            </span>
+            {certification.expirationDate ? (
+              <span>
+                Expires:{" "}
+                {new Date(certification.expirationDate).toLocaleDateString()}
+              </span>
+            ) : null}
+            {certification.cost ? (
               <span>Cost: ${(certification.cost / 100).toLocaleString()}</span>
-            )}
+            ) : null}
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -235,7 +234,11 @@ function CertificationCard({ certification }: CertificationCardProps) {
           >
             <PencilIcon className="w-4 h-4" />
           </Button>
-          <Button variant="ghost" size="sm" className="text-destructive/70 hover:text-destructive">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-destructive/70 hover:text-destructive"
+          >
             <TrashIcon className="w-4 h-4" />
           </Button>
         </div>
@@ -253,23 +256,25 @@ function CreateCertificationModal({ onClose }: CreateCertificationModalProps) {
   const [expirationDate, setExpirationDate] = useState<Date | undefined>();
 
   return (
-    <div className="fixed inset-0 bg-background/80 flex items-center justify-center z-50">
-      <div className="bg-card rounded-md  w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-border">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80">
+      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-md bg-card">
+        <div className="border-b border-border p-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-foreground">Add Certification</h2>
+            <h2 className="text-xl font-semibold text-foreground">
+              Add Certification
+            </h2>
             <Button variant="ghost" size="sm" onClick={onClose}>
               <XIcon className="w-5 h-5" />
             </Button>
           </div>
         </div>
 
-        <form className="p-6 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <form className="space-y-6 p-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div>
               <label
                 htmlFor="cert-name"
-                className="block text-sm font-medium text-muted-foreground mb-2"
+                className="mb-2 block text-sm font-medium text-muted-foreground"
               >
                 Certification Name *
               </label>
@@ -285,7 +290,7 @@ function CreateCertificationModal({ onClose }: CreateCertificationModalProps) {
             <div>
               <label
                 htmlFor="issuing-org"
-                className="block text-sm font-medium text-muted-foreground mb-2"
+                className="mb-2 block text-sm font-medium text-muted-foreground"
               >
                 Issuing Organization *
               </label>
@@ -303,7 +308,7 @@ function CreateCertificationModal({ onClose }: CreateCertificationModalProps) {
           <div>
             <label
               htmlFor="description"
-              className="block text-sm font-medium text-muted-foreground mb-2"
+              className="mb-2 block text-sm font-medium text-muted-foreground"
             >
               Description
             </label>
@@ -330,7 +335,11 @@ function CreateCertificationModal({ onClose }: CreateCertificationModalProps) {
                 placeholder="Pick issue date"
                 containerClassName="min-w-0"
               />
-              <input type="hidden" name="issueDate" value={formatDateValue(issueDate)} />
+              <input
+                type="hidden"
+                name="issueDate"
+                value={formatDateValue(issueDate)}
+              />
             </div>
             <div>
               <DatePicker
@@ -341,12 +350,16 @@ function CreateCertificationModal({ onClose }: CreateCertificationModalProps) {
                 placeholder="Pick expiration date"
                 containerClassName="min-w-0"
               />
-              <input type="hidden" name="expirationDate" value={formatDateValue(expirationDate)} />
+              <input
+                type="hidden"
+                name="expirationDate"
+                value={formatDateValue(expirationDate)}
+              />
             </div>
             <div>
               <label
                 htmlFor="cost"
-                className="block text-sm font-medium text-muted-foreground mb-2"
+                className="mb-2 block text-sm font-medium text-muted-foreground"
               >
                 Cost
               </label>
@@ -362,11 +375,11 @@ function CreateCertificationModal({ onClose }: CreateCertificationModalProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div>
               <label
                 htmlFor="category"
-                className="block text-sm font-medium text-muted-foreground mb-2"
+                className="mb-2 block text-sm font-medium text-muted-foreground"
               >
                 Category
               </label>
@@ -391,7 +404,7 @@ function CreateCertificationModal({ onClose }: CreateCertificationModalProps) {
             <div>
               <label
                 htmlFor="status"
-                className="block text-sm font-medium text-muted-foreground mb-2"
+                className="mb-2 block text-sm font-medium text-muted-foreground"
               >
                 Status
               </label>
@@ -409,15 +422,12 @@ function CreateCertificationModal({ onClose }: CreateCertificationModalProps) {
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-6 border-t border-border">
+          <div className="flex items-center justify-end gap-3 border-t border-border pt-6">
             <Button variant="ghost" onClick={onClose}>
               Cancel
             </Button>
-            <Button
-              type="submit"
-              className="bg-primary hover:bg-primary/90 text-primary-foreground"
-            >
-              <CheckIcon className="w-4 h-4 mr-2" />
+            <Button type="submit">
+              <CheckIcon className="mr-2 w-4 h-4" />
               Add Certification
             </Button>
           </div>

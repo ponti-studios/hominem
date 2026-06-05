@@ -6,9 +6,9 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@hominem/ui/accordion';
+import { EmptyState, InlineEnhanceTray, useInlineEnhance } from '@hominem/ui';
 import { Button } from '@hominem/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '@hominem/ui/command';
-import { InlineEnhanceTray, useInlineEnhance } from '@hominem/ui';
 import { SpeechInput } from '@hominem/ui/composer';
 import { cn } from '@hominem/ui/lib/utils';
 import { slugifyText } from '@hominem/utils/text';
@@ -321,12 +321,15 @@ export default function ChatPage({
             </div>
           ))}
           {messages.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-border-subtle p-8 text-center">
-              <p className="text-base text-foreground">No messages yet.</p>
-              <p className="mt-2 text-sm text-text-secondary">
-                Ask a question, mention notes with <code>#</code>, or attach a file.
-              </p>
-            </div>
+            <EmptyState
+              title="No messages yet."
+              description={
+                <>
+                  Ask a question, mention notes with <code>#</code>, or attach a file.
+                </>
+              }
+              variant="dashed"
+            />
           ) : null}
         </div>
 

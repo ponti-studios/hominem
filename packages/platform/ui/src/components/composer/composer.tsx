@@ -1,3 +1,5 @@
+'use client';
+
 import { CHAT_TITLE_MAX_LENGTH } from '@hominem/rpc/types';
 import type { Note } from '@hominem/rpc/types/notes.types';
 import type { UseMutationResult } from '@tanstack/react-query';
@@ -11,8 +13,16 @@ import { ComposerActionsRow } from './composer-actions-row';
 import { ComposerAttachmentList } from './composer-attachment-list';
 import type { ComposerPresentation } from './composer-presentation';
 import { deriveComposerPresentation } from './composer-presentation';
-import type { ComposerMode } from './composer-provider';
-import { useComposerActionsRef, useComposerSlice, useComposerStore } from './composer-provider';
+import type {
+  ComposerMode,
+  ComposerProviderProps,
+} from './composer-provider';
+import {
+  ComposerProvider,
+  useComposerActionsRef,
+  useComposerSlice,
+  useComposerStore,
+} from './composer-provider';
 import { ComposerShell } from './composer-shell';
 import { ComposerTools } from './composer-tools';
 import { NotePickerDialog } from './note-picker-dialog';
@@ -39,24 +49,33 @@ function toNoteTitle(text: string, fallback = ''): string {
 }
 
 export interface ComposerProps {
+  actionsRef: ComposerProviderProps['actionsRef'];
   buildChatPath: (chatId: string) => string;
   mode: ComposerMode;
   noteId?: string | null;
   chatId?: string | null;
   /** Derived from useNote(noteId) in the layout — no useEffect push needed */
   noteTitle?: string | null;
-  navigate: (path: string) => void;
+  store: ComposerProviderProps['store'];
   inlineVoiceEnabled?: boolean;
   transcribeMutation: UseMutationResult<TranscribeResult, Error, TranscribeVariables>;
   /** Notes for the picker — fetched in layout, passed as stable prop */
   notes?: Note[];
 }
 
-export function Composer(props: ComposerProps) {
+export function Composer({ actionsRef, store, ...props }: ComposerProps) {
   const presentation = deriveComposerPresentation(props.mode);
   if (presentation.posture === 'hidden') return null;
-  return <ComposerForm {...props} presentation={presentation} />;
+  return (
+    <ComposerProvider store={store} actionsRef={actionsRef}>
+      <ComposerForm {...props} presentation={presentation} />
+    </ComposerProvider>
+  );
 }
+
+type ComposerFormProps = Omit<ComposerProps, 'actionsRef' | 'store'> & {
+  presentation: ComposerPresentation;
+};
 
 const ComposerForm = memo(function ComposerForm({
   buildChatPath,
@@ -67,7 +86,7 @@ const ComposerForm = memo(function ComposerForm({
   transcribeMutation,
   notes = [],
   presentation,
-}: ComposerProps & { presentation: ComposerPresentation }) {
+}: ComposerFormProps) {
   const store = useComposerStore();
   const actionsRef = useComposerActionsRef();
 

@@ -1,31 +1,33 @@
-import type { CareerWorkExperienceRecord as WorkExperience } from '@hominem/db';
-import { CareerRepository, db } from '@hominem/db';
-import { Button } from '@hominem/ui/button';
-import { Briefcase, PlusIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import type { SubmitHandler } from 'react-hook-form';
-import { useFieldArray, useForm } from 'react-hook-form';
-import type { ActionFunctionArgs } from 'react-router';
-import { useFetcher, useOutletContext } from 'react-router';
+import type { CareerWorkExperienceRecord as WorkExperience } from "@hominem/db";
+import { CareerRepository, db } from "@hominem/db";
+import { Button } from "@hominem/ui/button";
+import { Briefcase, PlusIcon } from "lucide-react";
+import { useEffect, useState } from "react";
+import type { SubmitHandler } from "react-hook-form";
+import { useFieldArray, useForm } from "react-hook-form";
+import type { ActionFunctionArgs } from "react-router";
+import { useFetcher, useOutletContext } from "react-router";
 
-import type { WorkExperienceMetadata } from '~/types/career-data';
+import type { WorkExperienceMetadata } from "~/types/career-data";
 
-import { useToast } from '../hooks/useToast';
-import type { FullPortfolio } from '../lib/portfolio.server';
-import { jsonObject } from '../lib/db-json';
+import { EditorFormActions } from "../components/EditorFormActions";
+import { useToast } from "../hooks/useToast";
+import { useCareerEditorSubmission } from "../hooks/useCareerEditorSubmission";
+import type { FullPortfolio } from "../lib/portfolio.server";
+import { jsonObject } from "../lib/db-json";
 import {
   createErrorResponse,
   createSuccessResponse,
   parseFormData,
   tryAsync,
   withAuthAction,
-} from '../lib/route-utils';
+} from "../lib/route-utils";
 import {
   formatDateForInput,
   nullArrayToUndefined,
   nullToUndefined,
   stringToDate,
-} from '../lib/utils';
+} from "../lib/utils";
 
 interface WorkExperienceFormValues {
   id?: string;
@@ -60,7 +62,8 @@ function WorkExperienceForm({
   const fetcher = useFetcher();
   const { addToast } = useToast();
   const isNew = !experience?.id;
-  const metadata = jsonObject<WorkExperienceMetadata>(experience?.metadata) ?? {};
+  const metadata =
+    jsonObject<WorkExperienceMetadata>(experience?.metadata) ?? {};
 
   const {
     register,
@@ -71,11 +74,11 @@ function WorkExperienceForm({
   } = useForm<WorkExperienceFormValues>({
     defaultValues: {
       id: experience?.id,
-      role: experience?.role || '',
-      company: experience?.company || '',
+      role: experience?.role || "",
+      company: experience?.company || "",
       start_date: formatDateForInput(experience?.start_date),
       end_date: formatDateForInput(experience?.end_date),
-      description: experience?.description || '',
+      description: experience?.description || "",
       achievements: metadata.achievements?.map((value) => ({ value })) || [],
       action: nullToUndefined(experience?.action),
       tags: nullArrayToUndefined(experience?.tags) || [],
@@ -84,58 +87,58 @@ function WorkExperienceForm({
       is_visible: experience?.is_visible !== false,
       portfolio_id,
     },
-    mode: 'onChange',
+    mode: "onChange",
   });
 
   const { fields, append, remove } = useFieldArray({
     control,
-    name: 'achievements',
+    name: "achievements",
   });
 
-  // Handle fetcher responses
-  useEffect(() => {
-    if (fetcher.state === 'idle' && fetcher.data) {
-      const result = fetcher.data as {
-        success: boolean;
-        error?: string;
-        message?: string;
-        data?: WorkExperience;
-      };
-      if (result.success) {
-        addToast(result.message || 'Work experience saved successfully!', 'success');
-        if (result.data && isNew) {
-          const resultMetadata = jsonObject<WorkExperienceMetadata>(result.data.metadata) ?? {};
-          // Reset form with the returned data (including new ID)
-          reset({
-            ...result.data,
-            start_date: formatDateForInput(result.data.start_date),
-            end_date: formatDateForInput(result.data.end_date),
-            achievements: resultMetadata.achievements?.map((value) => ({ value })) || [],
-            action: nullToUndefined(result.data.action),
-            tags: nullArrayToUndefined(result.data.tags) || [],
-            metadata: resultMetadata,
-          });
-        }
-      } else {
-        addToast(`Failed to save work experience: ${result.error || 'Unknown error'}`, 'error');
-      }
-    }
-  }, [fetcher.state, fetcher.data, reset, addToast, isNew]);
+  useCareerEditorSubmission<WorkExperience>({
+    fetcher,
+    addToast,
+    successMessage: "Work experience saved successfully!",
+    errorMessage: "Failed to save work experience",
+    isNew,
+    onCreateSuccess: (savedExperience) => {
+      const savedMetadata =
+        jsonObject<WorkExperienceMetadata>(savedExperience.metadata) ?? {};
+
+      reset({
+        ...savedExperience,
+        start_date: formatDateForInput(savedExperience.start_date),
+        end_date: formatDateForInput(savedExperience.end_date),
+        achievements:
+          savedMetadata.achievements?.map((value) => ({ value })) || [],
+        action: nullToUndefined(savedExperience.action),
+        tags: nullArrayToUndefined(savedExperience.tags) || [],
+        metadata: savedMetadata,
+      });
+    },
+  });
 
   const onSubmit: SubmitHandler<WorkExperienceFormValues> = (formData) => {
     if (!isDirty && !isNew) {
-      addToast('No changes to save.', 'info');
+      addToast("No changes to save.", "info");
       return;
     }
 
-    if (!formData.role || !formData.company || !formData.start_date || !formData.description) {
-      addToast('Please fill in all required fields.', 'error');
+    if (
+      !formData.role ||
+      !formData.company ||
+      !formData.start_date ||
+      !formData.description
+    ) {
+      addToast("Please fill in all required fields.", "error");
       return;
     }
 
     // Convert achievements array to metadata format
     const achievements =
-      formData.achievements?.map((item) => item.value).filter((value) => value.trim() !== '') || [];
+      formData.achievements
+        ?.map((item) => item.value)
+        .filter((value) => value.trim() !== "") || [];
 
     const submissionData = {
       ...formData,
@@ -149,34 +152,34 @@ function WorkExperienceForm({
     const { achievements: _, ...finalData } = submissionData;
 
     const formDataToSubmit = new FormData();
-    formDataToSubmit.append('operation', isNew ? 'create' : 'update');
-    formDataToSubmit.append('workExperienceData', JSON.stringify(finalData));
+    formDataToSubmit.append("operation", isNew ? "create" : "update");
+    formDataToSubmit.append("workExperienceData", JSON.stringify(finalData));
 
     fetcher.submit(formDataToSubmit, {
-      method: 'POST',
-      action: '/editor/work',
+      method: "POST",
+      action: "/editor/work",
     });
   };
 
   const handleDelete = () => {
     if (!experience?.id) return;
 
-    if (confirm('Are you sure you want to delete this work experience?')) {
+    if (confirm("Are you sure you want to delete this work experience?")) {
       const formData = new FormData();
-      formData.append('operation', 'delete');
-      formData.append('id', experience.id);
-      formData.append('portfolio_id', portfolio_id);
+      formData.append("operation", "delete");
+      formData.append("id", experience.id);
+      formData.append("portfolio_id", portfolio_id);
 
       fetcher.submit(formData, {
-        method: 'POST',
-        action: '/editor/work',
+        method: "POST",
+        action: "/editor/work",
       });
 
       onDelete?.();
     }
   };
 
-  const isSaving = fetcher.state === 'submitting';
+  const isSaving = fetcher.state === "submitting";
 
   return (
     <form
@@ -185,52 +188,42 @@ function WorkExperienceForm({
     >
       <div className="flex items-center justify-between">
         <h3 className="text-2xl tracking-normal font-medium text-foreground font-sans">
-          {isNew ? 'New Experience' : experience?.company || 'Work Experience'}
+          {isNew ? "New Experience" : experience?.company || "Work Experience"}
         </h3>
-        <div className="flex gap-2">
-          <Button
-            type="submit"
-            disabled={isSaving || (!isDirty && !isNew) || !isValid}
-            variant="primary"
-            size="sm"
-          >
-            {isSaving ? 'Saving...' : isNew ? 'Add Experience' : 'Save Changes'}
-          </Button>
-          {!isNew && (
-            <Button
-              type="button"
-              onClick={handleDelete}
-              disabled={isSaving}
-              variant="destructive"
-              size="sm"
-            >
-              Delete
-            </Button>
-          )}
-        </div>
+        <EditorFormActions
+          isSaving={isSaving}
+          isNew={isNew}
+          isDirty={isDirty}
+          isValid={isValid}
+          submitLabel={isNew ? "Add Experience" : "Save Changes"}
+          onDelete={!isNew ? handleDelete : undefined}
+        />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="flex flex-col gap-2">
-          <label htmlFor={`role-${experience?.id || 'new'}`} className="label">
+          <label htmlFor={`role-${experience?.id || "new"}`} className="label">
             Job Title *
           </label>
           <input
-            id={`role-${experience?.id || 'new'}`}
+            id={`role-${experience?.id || "new"}`}
             type="text"
-            {...register('role', { required: true })}
+            {...register("role", { required: true })}
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
             placeholder="e.g., Senior Software Engineer"
           />
         </div>
         <div className="flex flex-col gap-2">
-          <label htmlFor={`company-${experience?.id || 'new'}`} className="label">
+          <label
+            htmlFor={`company-${experience?.id || "new"}`}
+            className="label"
+          >
             Company *
           </label>
           <input
-            id={`company-${experience?.id || 'new'}`}
+            id={`company-${experience?.id || "new"}`}
             type="text"
-            {...register('company', { required: true })}
+            {...register("company", { required: true })}
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
             placeholder="e.g., Google"
           />
@@ -239,24 +232,30 @@ function WorkExperienceForm({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="flex flex-col gap-2">
-          <label htmlFor={`start_date-${experience?.id || 'new'}`} className="label">
+          <label
+            htmlFor={`start_date-${experience?.id || "new"}`}
+            className="label"
+          >
             Start Date *
           </label>
           <input
-            id={`start_date-${experience?.id || 'new'}`}
+            id={`start_date-${experience?.id || "new"}`}
             type="date"
-            {...register('start_date', { required: true })}
+            {...register("start_date", { required: true })}
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
           />
         </div>
         <div className="flex flex-col gap-2">
-          <label htmlFor={`end_date-${experience?.id || 'new'}`} className="label">
+          <label
+            htmlFor={`end_date-${experience?.id || "new"}`}
+            className="label"
+          >
             End Date
           </label>
           <input
-            id={`end_date-${experience?.id || 'new'}`}
+            id={`end_date-${experience?.id || "new"}`}
             type="date"
-            {...register('end_date')}
+            {...register("end_date")}
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
             placeholder="Leave empty if current position"
           />
@@ -267,12 +266,15 @@ function WorkExperienceForm({
       </div>
 
       <div className="flex flex-col gap-2">
-        <label htmlFor={`description-${experience?.id || 'new'}`} className="label">
+        <label
+          htmlFor={`description-${experience?.id || "new"}`}
+          className="label"
+        >
           Job Description *
         </label>
         <textarea
-          id={`description-${experience?.id || 'new'}`}
-          {...register('description', { required: true })}
+          id={`description-${experience?.id || "new"}`}
+          {...register("description", { required: true })}
           className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50 min-h-28"
           rows={4}
           placeholder="Describe your role, responsibilities, and key achievements..."
@@ -303,7 +305,7 @@ function WorkExperienceForm({
             ))}
             <Button
               type="button"
-              onClick={() => append({ value: '' })}
+              onClick={() => append({ value: "" })}
               variant="outline"
               size="sm"
               className="w-full border-dashed"
@@ -336,11 +338,6 @@ function WorkExperienceEditorSection({
     setShowNewForm(true);
   };
 
-  const handleNewExperienceCreated = () => {
-    setShowNewForm(false);
-    // The parent component should re-fetch data or we could optimistically update
-  };
-
   const handleDelete = (experienceId: string) => {
     setExperiences((prev) => prev.filter((exp) => exp.id !== experienceId));
   };
@@ -352,7 +349,9 @@ function WorkExperienceEditorSection({
           <div className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center">
             <Briefcase className="w-5 h-5 text-primary" />
           </div>
-          <h2 className="text-2xl font-semibold text-foreground">Work Experience</h2>
+          <h2 className="text-2xl font-semibold text-foreground">
+            Work Experience
+          </h2>
         </div>
         {!showNewForm && (
           <Button
@@ -370,7 +369,10 @@ function WorkExperienceEditorSection({
       <div className="flex flex-col gap-8">
         {/* Show new experience form if requested */}
         {showNewForm && (
-          <WorkExperienceForm portfolio_id={portfolio_id} onDelete={() => setShowNewForm(false)} />
+          <WorkExperienceForm
+            portfolio_id={portfolio_id}
+            onDelete={() => setShowNewForm(false)}
+          />
         )}
 
         {/* Existing experiences */}
@@ -385,7 +387,8 @@ function WorkExperienceEditorSection({
 
         {experiences.length === 0 && !showNewForm && (
           <div className="text-center py-2xl text-muted-foreground">
-            No work experiences added yet. Click "Add New Experience" to get started.
+            No work experiences added yet. Click "Add New Experience" to get
+            started.
           </div>
         )}
       </div>
@@ -396,28 +399,33 @@ function WorkExperienceEditorSection({
 export async function action(args: ActionFunctionArgs) {
   return withAuthAction(args, async ({ user }) => {
     const formData = await args.request.formData();
-    const operation = formData.get('operation') as string;
+    const operation = formData.get("operation") as string;
 
     switch (operation) {
-      case 'create':
-      case 'update': {
-        const workExperienceDataResult = parseFormData<WorkExperienceFormValues>(
-          formData,
-          'workExperienceData',
-        );
+      case "create":
+      case "update": {
+        const workExperienceDataResult =
+          parseFormData<WorkExperienceFormValues>(
+            formData,
+            "workExperienceData",
+          );
 
-        if ('success' in workExperienceDataResult && !workExperienceDataResult.success) {
+        if (
+          "success" in workExperienceDataResult &&
+          !workExperienceDataResult.success
+        ) {
           return workExperienceDataResult;
         }
 
-        const workExperienceData = workExperienceDataResult as WorkExperienceFormValues;
+        const workExperienceData =
+          workExperienceDataResult as WorkExperienceFormValues;
 
         if (!workExperienceData.portfolio_id) {
-          return createErrorResponse('Missing portfolio_id');
+          return createErrorResponse("Missing portfolio_id");
         }
 
         return tryAsync(async () => {
-          if (operation === 'create') {
+          if (operation === "create") {
             // Insert new experience
             const { id: _id, ...insertData } = workExperienceData;
 
@@ -428,26 +436,36 @@ export async function action(args: ActionFunctionArgs) {
               end_date: stringToDate(insertData.end_date),
             };
 
-            const newExperience = await CareerRepository.createWorkExperience(db, user.id, {
-              portfolio_id: dbData.portfolio_id,
-              role: dbData.role,
-              company: dbData.company,
-              description: dbData.description,
-              start_date: dbData.start_date,
-              end_date: dbData.end_date,
-              action: dbData.action,
-              tags: dbData.tags,
-              metadata: dbData.metadata as Record<string, unknown> | undefined,
-              sort_order: dbData.sort_order,
-              is_visible: dbData.is_visible,
-            });
+            const newExperience = await CareerRepository.createWorkExperience(
+              db,
+              user.id,
+              {
+                portfolio_id: dbData.portfolio_id,
+                role: dbData.role,
+                company: dbData.company,
+                description: dbData.description,
+                start_date: dbData.start_date,
+                end_date: dbData.end_date,
+                action: dbData.action,
+                tags: dbData.tags,
+                metadata: dbData.metadata as
+                  | Record<string, unknown>
+                  | undefined,
+                sort_order: dbData.sort_order,
+                is_visible: dbData.is_visible,
+              },
+            );
 
-            return createSuccessResponse(newExperience, 'Work experience created successfully');
+            return createSuccessResponse(
+              newExperience,
+              "Work experience created successfully",
+            );
           }
 
           // Update existing experience
           const { id, ...updateData } = workExperienceData;
-          if (!id) return createErrorResponse('Missing experience ID for update');
+          if (!id)
+            return createErrorResponse("Missing experience ID for update");
 
           // Convert date strings to Date objects for database
           const dbData = {
@@ -469,27 +487,38 @@ export async function action(args: ActionFunctionArgs) {
             is_visible: dbData.is_visible,
           });
 
-          return createSuccessResponse(null, 'Work experience updated successfully');
+          return createSuccessResponse(
+            null,
+            "Work experience updated successfully",
+          );
         }, `Failed to ${operation} work experience`);
       }
 
-      case 'delete': {
-        const id = formData.get('id') as string;
-        const portfolio_id = formData.get('portfolio_id') as string;
+      case "delete": {
+        const id = formData.get("id") as string;
+        const portfolio_id = formData.get("portfolio_id") as string;
 
         if (!id || !portfolio_id) {
-          return createErrorResponse('Missing required fields for deletion');
+          return createErrorResponse("Missing required fields for deletion");
         }
 
         return tryAsync(async () => {
-          await CareerRepository.deleteWorkExperience(db, user.id, id, portfolio_id);
+          await CareerRepository.deleteWorkExperience(
+            db,
+            user.id,
+            id,
+            portfolio_id,
+          );
 
-          return createSuccessResponse(null, 'Work experience deleted successfully');
-        }, 'Failed to delete work experience');
+          return createSuccessResponse(
+            null,
+            "Work experience deleted successfully",
+          );
+        }, "Failed to delete work experience");
       }
 
       default:
-        return createErrorResponse('Invalid operation');
+        return createErrorResponse("Invalid operation");
     }
   });
 }

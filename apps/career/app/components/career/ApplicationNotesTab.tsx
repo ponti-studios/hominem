@@ -1,13 +1,20 @@
-import { Badge } from '@hominem/ui/badge';
-import { Button } from '@hominem/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
-import { Input } from '@hominem/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
-import { Textarea } from '@hominem/ui/textarea';
-import { useState } from 'react';
-import { Form } from 'react-router';
+import { Badge } from "@hominem/ui/badge";
+import { Button } from "@hominem/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@hominem/ui/card";
+import { Input } from "@hominem/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@hominem/ui/select";
+import { Textarea } from "@hominem/ui/textarea";
+import { useState } from "react";
+import { Form } from "react-router";
 
-import type { ApplicationNote } from '~/types/career-data';
+import { getApplicationNoteTone } from "~/lib/utils/applicationNoteUtils";
+import type { ApplicationNote } from "~/types/career-data";
 
 interface NotesTabProps {
   notes: ApplicationNote[];
@@ -17,23 +24,12 @@ interface NotesTabProps {
 export function ApplicationNotesTab({ notes }: NotesTabProps) {
   const [showAddNote, setShowAddNote] = useState(false);
 
-  const getNoteTone = (type: string) => {
-    switch (type) {
-      case 'interview':
-        return 'border-accent/30 bg-accent/10 text-foreground';
-      case 'research':
-        return 'border-accent/30 bg-accent/10 text-primary';
-      case 'follow_up':
-        return 'border-warning/30 bg-warning/10 text-foreground';
-      default:
-        return 'border-border bg-muted text-muted-foreground';
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
-        <h3 className="text-lg font-semibold text-foreground">Notes & Feedback</h3>
+        <h3 className="text-lg font-semibold text-foreground">
+          Notes & Feedback
+        </h3>
         <Button onClick={() => setShowAddNote(true)}>Add Note</Button>
       </div>
 
@@ -44,12 +40,19 @@ export function ApplicationNotesTab({ notes }: NotesTabProps) {
             <CardTitle>Add Note</CardTitle>
           </CardHeader>
           <CardContent>
-            <Form method="post" onSubmit={() => setShowAddNote(false)} className="space-y-4">
+            <Form
+              method="post"
+              onSubmit={() => setShowAddNote(false)}
+              className="space-y-4"
+            >
               <input type="hidden" name="operation" value="add_note" />
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="noteType" className="text-sm font-medium text-foreground">
+                  <label
+                    htmlFor="noteType"
+                    className="text-sm font-medium text-foreground"
+                  >
                     Note Type
                   </label>
                   <Select name="noteType" defaultValue="general">
@@ -67,7 +70,10 @@ export function ApplicationNotesTab({ notes }: NotesTabProps) {
                 </div>
 
                 <div>
-                  <label htmlFor="noteTitle" className="text-sm font-medium text-foreground">
+                  <label
+                    htmlFor="noteTitle"
+                    className="text-sm font-medium text-foreground"
+                  >
                     Title (Optional)
                   </label>
                   <Input name="noteTitle" placeholder="Note title" />
@@ -75,7 +81,10 @@ export function ApplicationNotesTab({ notes }: NotesTabProps) {
               </div>
 
               <div>
-                <label htmlFor="noteContent" className="text-sm font-medium text-foreground">
+                <label
+                  htmlFor="noteContent"
+                  className="text-sm font-medium text-foreground"
+                >
                   Content
                 </label>
                 <Textarea
@@ -88,7 +97,11 @@ export function ApplicationNotesTab({ notes }: NotesTabProps) {
 
               <div className="flex gap-2">
                 <Button type="submit">Add Note</Button>
-                <Button type="button" variant="outline" onClick={() => setShowAddNote(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowAddNote(false)}
+                >
                   Cancel
                 </Button>
               </div>
@@ -110,10 +123,15 @@ export function ApplicationNotesTab({ notes }: NotesTabProps) {
                 <div className="mb-2 flex items-start justify-between gap-3">
                   <div className="space-y-2">
                     {note.title ? (
-                      <h4 className="font-medium text-foreground">{note.title}</h4>
+                      <h4 className="font-medium text-foreground">
+                        {note.title}
+                      </h4>
                     ) : null}
-                    <Badge variant="outline" className={getNoteTone(note.type)}>
-                      {note.type.replace('_', ' ')}
+                    <Badge
+                      variant="outline"
+                      className={getApplicationNoteTone(note.type)}
+                    >
+                      {note.type.replace("_", " ")}
                     </Badge>
                   </div>
                   <div className="flex items-center gap-2">
@@ -121,14 +139,18 @@ export function ApplicationNotesTab({ notes }: NotesTabProps) {
                       {new Date(note.createdat).toLocaleDateString()}
                     </span>
                     <Form method="post" className="inline">
-                      <input type="hidden" name="operation" value="delete_note" />
+                      <input
+                        type="hidden"
+                        name="operation"
+                        value="delete_note"
+                      />
                       <input type="hidden" name="noteId" value={note.id} />
                       <Button
                         type="submit"
                         variant="destructive"
                         size="sm"
                         onClick={(e) => {
-                          if (!confirm('Delete this note?')) e.preventDefault();
+                          if (!confirm("Delete this note?")) e.preventDefault();
                         }}
                       >
                         Delete
@@ -136,7 +158,9 @@ export function ApplicationNotesTab({ notes }: NotesTabProps) {
                     </Form>
                   </div>
                 </div>
-                <p className="whitespace-pre-wrap text-sm text-foreground/90">{note.content}</p>
+                <p className="whitespace-pre-wrap text-sm text-foreground/90">
+                  {note.content}
+                </p>
               </CardContent>
             </Card>
           ))

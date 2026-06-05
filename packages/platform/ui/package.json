@@ -63,10 +63,6 @@
       "types": "./src/components/table.tsx",
       "default": "./src/components/table.tsx"
     },
-    "./search-input": {
-      "types": "./src/components/search-input.tsx",
-      "default": "./src/components/search-input.tsx"
-    },
     "./dialog": {
       "types": "./src/components/dialog.tsx",
       "default": "./src/components/dialog.tsx"

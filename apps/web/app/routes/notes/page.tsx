@@ -1,18 +1,18 @@
 import type { InboxOutput } from '@hominem/rpc/react';
-import { SectionIntro, StatePanel } from '@hominem/ui';
+import { EmptyState, SectionIntro } from '@hominem/ui';
 import { Composer } from '@hominem/ui/composer';
 import type { ComposerActions } from '@hominem/ui/composer/composer-provider';
-import { ComposerProvider, ComposerStore } from '@hominem/ui/composer/composer-provider';
+import { ComposerStore } from '@hominem/ui/composer/composer-provider';
 import { InboxStreamRow } from '@hominem/ui/inbox';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { data, redirect, useNavigate } from 'react-router';
 
+import { useTextEnhance } from '~/hooks/ai';
 import { useCreateChat } from '~/hooks/use-chats';
 import { useComposerMode } from '~/hooks/use-composer-mode';
 import { useInbox } from '~/hooks/use-inbox';
 import { useCreateNote, useUpdateNote } from '~/hooks/use-notes';
-import { useTextEnhance } from '~/hooks/ai';
 import { useTranscribe } from '~/hooks/use-transcribe';
 import { getServerSession } from '~/lib/auth.server';
 import { serverEnv } from '~/lib/env.server';
@@ -215,7 +215,7 @@ export default function NotesPage({ loaderData }: { loaderData: { inbox: InboxOu
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-background">
-      <div className="mx-auto w-full max-w-4xl px-4 md:px-6 lg:px-8 pt-6 pb-2">
+      <div className="mx-auto w-full max-w-4xl px-4 pt-6 pb-2 md:px-6 lg:px-8">
         <SectionIntro
           title="Inbox"
           description="All your notes and chats in one stream. Updated items float to the top."
@@ -229,9 +229,11 @@ export default function NotesPage({ loaderData }: { loaderData: { inbox: InboxOu
         >
           {items.length === 0 ? (
             <div className="mx-auto w-full max-w-4xl px-4 py-5 md:px-6 lg:px-8">
-              <StatePanel
+              <EmptyState
                 title="Your inbox is empty."
                 description="Create a note or start a chat to get started."
+                variant="dashed"
+                size="lg"
               />
             </div>
           ) : null}
@@ -273,17 +275,16 @@ export default function NotesPage({ loaderData }: { loaderData: { inbox: InboxOu
           ) : null}
         </div>
       </main>
-      <ComposerProvider store={composerStore} actionsRef={actionsRef}>
-        <Composer
-          buildChatPath={(chatId) => `/chat/${chatId}`}
-          mode={mode}
-          noteId={noteId}
-          chatId={chatId}
-          navigate={navigate}
-          transcribeMutation={transcribeMutation}
-          inlineVoiceEnabled={true}
-        />
-      </ComposerProvider>
+      <Composer
+        actionsRef={actionsRef}
+        buildChatPath={(chatId) => `/chat/${chatId}`}
+        mode={mode}
+        noteId={noteId}
+        chatId={chatId}
+        store={composerStore}
+        transcribeMutation={transcribeMutation}
+        inlineVoiceEnabled={true}
+      />
     </div>
   );
 }
