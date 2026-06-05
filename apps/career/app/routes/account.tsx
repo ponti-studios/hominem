@@ -195,7 +195,6 @@ export default function Account() {
 
   const currentPortfolio =
     portfolios.find((portfolio) => portfolio.id === currentPortfolioId) ?? portfolios[0] ?? null;
-  const [uploadError, setUploadError] = useState<string | null>(null);
   const [pdfGenerating, setPdfGenerating] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
 
@@ -229,13 +228,7 @@ export default function Account() {
     submit(formData, { method: 'post' });
   };
 
-  const handleImageUpload = (_image_url: string) => {
-    setUploadError(null);
-  };
-
-  const handleImageError = (error: string) => {
-    setUploadError(error);
-  };
+  const handleImageUpload = () => revalidator.revalidate();
 
   const handleReplaceResumeComplete = () => {
     setShowReplaceResume(false);
@@ -302,7 +295,6 @@ export default function Account() {
               compact
               currentImageUrl={currentPortfolio?.profile_image_url}
               onImageUploaded={handleImageUpload}
-              onError={handleImageError}
             />
 
             <div className="flex items-start">
@@ -313,12 +305,6 @@ export default function Account() {
                 </div>
               </div>
             </div>
-
-            {uploadError && (
-              <div className="mt-2 rounded-md border border-destructive/30 bg-destructive/10 p-3">
-                <p className="text-sm text-destructive">{uploadError}</p>
-              </div>
-            )}
           </CardContent>
         </Card>
 

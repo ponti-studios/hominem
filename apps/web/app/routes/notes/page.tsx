@@ -225,13 +225,7 @@ export default function NotesPage({ loaderData }: { loaderData: { inbox: InboxOu
   }, [composerStore]);
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-background">
-      <div className="mx-auto w-full max-w-4xl px-4 pt-6 pb-2 md:px-6 lg:px-8">
-        <SectionIntro
-          title="Inbox"
-          description="All your notes and chats in one stream. Updated items float to the top."
-        />
-      </div>
+    <div className="flex h-full min-h-0 flex-col">
       <main className="flex min-h-0 w-full flex-1 flex-col border-t border-border-subtle">
         <div
           ref={setScrollElement}
