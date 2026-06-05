@@ -1,5 +1,5 @@
-@import '../../../packages/platform/ui/src/styles/globals.css';
-@import '../../../packages/platform/ui/src/styles/animations.css';
+@import '../../../packages/platform/ui/src/styles.css';
+@import '../../../packages/platform/ui/src/animations.css';
 
 @source '../../../packages/platform/ui/src';
 

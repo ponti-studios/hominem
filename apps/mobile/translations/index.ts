@@ -1,4 +1,19 @@
 const t = {
+  enhance: {
+    title: 'Enhance text',
+    subtitle: "Describe how you'd like to modify this text, or pick a suggestion.",
+    suggestions: [
+      'Fix grammar',
+      'Make concise',
+      'Make formal',
+      'Expand ideas',
+      'Simplify',
+      'Add bullet points',
+    ] as const,
+    instructionPlaceholder: 'e.g. Make it more engaging…',
+    cancel: 'Cancel',
+    confirm: 'Enhance',
+  },
   notes: {
     editor: {
       titlePlaceholder: 'Title',
@@ -23,21 +38,6 @@ const t = {
       undo: 'Undo',
       redo: 'Redo',
       dismissKeyboard: 'Dismiss keyboard',
-    },
-    enhance: {
-      title: 'Enhance Note',
-      subtitle: "Describe how you'd like to modify this note, or pick a suggestion.",
-      suggestions: [
-        'Fix grammar',
-        'Make concise',
-        'Make formal',
-        'Expand ideas',
-        'Simplify',
-        'Add bullet points',
-      ] as const,
-      instructionPlaceholder: 'e.g. Make it more engaging…',
-      cancel: 'Cancel',
-      confirm: 'Enhance',
     },
   },
   chat: {

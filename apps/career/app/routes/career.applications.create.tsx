@@ -8,6 +8,7 @@ import { useState } from 'react';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import { Form, Link, redirect, useActionData } from 'react-router';
 
+import type { JobScrapeApiRequest, JobScrapeApiResponse } from '~/lib/api-contracts';
 import {
   createErrorResponse,
   createSuccessResponse,
@@ -16,7 +17,7 @@ import {
 } from '~/lib/route-utils';
 import { JobApplicationsService } from '~/lib/services/job-applications.service';
 import { cn } from '~/lib/utils';
-import type { JobPosting, ScrapedJobPostingResponse } from '~/types/applications';
+import type { JobPosting } from '~/types/applications';
 import { JobApplicationStatus } from '~/types/career';
 
 export async function loader(args: LoaderFunctionArgs) {
@@ -111,10 +112,10 @@ export default function CreateJobApplication() {
       const response = await fetch('/api/job/scrape', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url } satisfies JobScrapeApiRequest),
       });
 
-      const result: ScrapedJobPostingResponse = await response.json();
+      const result: JobScrapeApiResponse = await response.json();
 
       if (result.job_posting) {
         handleScrapedData(result.job_posting);

@@ -5,6 +5,10 @@ export default defineConfig({
     tsconfigPaths: true,
   },
   test: {
+    env: {
+      NODE_ENV: 'test',
+      DATABASE_URL: process.env.DATABASE_URL_TEST,
+    },
     globals: true,
     environment: 'jsdom',
     setupFiles: ['vitest.setup.ts'],

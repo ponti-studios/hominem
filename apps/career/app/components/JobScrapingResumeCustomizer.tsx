@@ -4,36 +4,14 @@ import { LoadingSpinner } from '@hominem/ui/loading-spinner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
 import { useState } from 'react';
 
+import type {
+  CustomizeResumeApiRequest,
+  CustomizeResumeApiResponse,
+  JobScrapeApiRequest,
+  JobScrapeApiResponse,
+} from '~/lib/api-contracts';
 import { cn } from '~/lib/utils';
-import type { JobPosting, ScrapedJobPostingResponse } from '~/types/applications';
-interface JobAnalysis {
-  requiredSkills: string[];
-  qualifications: string[];
-  cultureKeywords: string[];
-  recommendedKeywords: string[];
-}
-
-interface CustomizeResumeResponse {
-  customizedResume: string;
-  jobAnalysis: JobAnalysis | null;
-  metadata: {
-    format: string;
-    targetLength: string;
-    focusAreas: string[];
-    generatedAt: string;
-    portfolio_id: string;
-    jobPostingSource: string;
-    job_posting_url?: string;
-    job_posting_word_count: number;
-    jobPostingMetadata: {
-      job_title?: string;
-      companyName?: string;
-      requirements?: string[];
-      skills?: string[];
-    };
-  };
-  error?: string;
-}
+import type { JobPosting } from '~/types/applications';
 
 type Step = 'scrape' | 'review' | 'generate' | 'result';
 
@@ -59,12 +37,12 @@ export function JobScrapingResumeCustomizer({
   const [targetLength, setTargetLength] = useState<'concise' | 'standard' | 'detailed'>('standard');
   const [focusAreas, setFocusAreas] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [resumeResult, setResumeResult] = useState<CustomizeResumeResponse | null>(null);
+  const [resumeResult, setResumeResult] = useState<CustomizeResumeApiResponse | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
 
   // Application saving state
   const [isSaving, setIsSaving] = useState(false);
-  const [savedApplication, setSavedApplication] = useState<{
+  const [_savedApplication, setSavedApplication] = useState<{
     id: string;
     [key: string]: unknown;
   } | null>(null);
@@ -81,15 +59,15 @@ export function JobScrapingResumeCustomizer({
     setScrapedJob(null);
 
     try {
-      const formData = new FormData();
-      formData.append('jobUrl', jobUrl.trim());
-
       const response = await fetch('/api/job/scrape', {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url: jobUrl.trim() } satisfies JobScrapeApiRequest),
       });
 
-      const data: ScrapedJobPostingResponse = await response.json();
+      const data: JobScrapeApiResponse = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to scrape job posting');
@@ -165,10 +143,10 @@ export function JobScrapingResumeCustomizer({
                 .map((s) => s.trim())
                 .filter(Boolean)
             : [],
-        }),
+        } satisfies CustomizeResumeApiRequest),
       });
 
-      const data: CustomizeResumeResponse = await response.json();
+      const data: CustomizeResumeApiResponse = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to customize resume');

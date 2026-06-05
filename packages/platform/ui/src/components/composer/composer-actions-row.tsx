@@ -10,13 +10,13 @@
  * availability changes, not on every keystroke.
  */
 
-import { ArrowUp, CirclePlus, MessageSquare, Mic } from 'lucide-react';
+import { ArrowUp, CirclePlus, MessageSquare, Mic, Sparkles } from 'lucide-react';
 import { memo } from 'react';
 import { useFormStatus } from 'react-dom';
 
 import { cn } from '../../lib/utils';
 import type { ComposerPresentation } from './composer-presentation';
-import { useComposerSlice } from './composer-provider';
+import { useComposerSlice, useComposerStore } from './composer-provider';
 
 function primaryIntent(posture: ComposerPresentation['posture']): string {
   switch (posture) {
@@ -97,15 +97,24 @@ export const ComposerActionsRow = memo(function ComposerActionsRow({
     (s) => s.draft.trim().length > 0 || s.uploadedFiles.length > 0,
   );
   const isUploading = useComposerSlice((s) => s.isUploading);
+  const isEnhancing = useComposerSlice((s) => s.isEnhancing);
+  const store = useComposerStore();
 
   const { pending: formPending } = useFormStatus();
 
-  const disabled = !hasContent || isPending || formPending || isUploading;
+  const disabled = !hasContent || isPending || formPending || isUploading || isEnhancing;
 
   const showVoiceAsPrimary = showsVoiceButton && !hasContent;
 
   return (
     <div className="flex items-center gap-1.5">
+      <ActionButton
+        icon={<Sparkles className="size-4.5" />}
+        label="Enhance text"
+        disabled={!hasContent || isPending || formPending || isUploading || isEnhancing}
+        variant="secondary"
+        onClick={() => store.dispatch({ type: 'SET_ENHANCE_OPEN', isOpen: true })}
+      />
       {presentation.posture !== 'note-query' && !showVoiceAsPrimary && (
         <ActionButton
           intent={secondaryIntent(presentation.posture)}
@@ -125,7 +134,7 @@ export const ComposerActionsRow = memo(function ComposerActionsRow({
         <ActionButton
           icon={<Mic className="size-4.5" />}
           label="Voice note"
-          disabled={isPending || formPending}
+          disabled={isPending || formPending || isEnhancing}
           variant="primary"
           onClick={() => voiceDialogRef.current?.showModal()}
         />

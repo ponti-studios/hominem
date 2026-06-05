@@ -15,9 +15,3 @@ export interface JobPosting {
   scrapedAt: string;
   wordCount: number;
 }
-
-export interface ScrapedJobPostingResponse {
-  success: boolean;
-  job_posting?: JobPosting;
-  error?: string;
-}

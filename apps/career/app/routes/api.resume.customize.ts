@@ -1,8 +1,14 @@
-import { createChatCompletion, getChatCompletionText } from '@hominem/ai';
 import { readFile } from 'node:fs/promises';
+
+import { createChatCompletion, getChatCompletionText } from '@hominem/ai';
 import type { ActionFunction } from 'react-router';
 import { z } from 'zod';
 
+import {
+  jobAnalysisSchema,
+  type CustomizeResumeApiRequest,
+  type CustomizeResumeApiResponse,
+} from '~/lib/api-contracts';
 import { jobScrapingService } from '~/lib/services/job-scraping.service';
 
 import { getAuthenticatedUser, requireAuth } from '../lib/auth.server';
@@ -53,18 +59,6 @@ const customizeResumeSchema = z.object({
   targetLength: z.enum(['concise', 'standard', 'detailed']).default('standard'),
 });
 
-// Job analysis schema
-const jobAnalysisSchema = z.object({
-  requiredSkills: z.array(z.string()).describe('Top 5 required skills from the job posting'),
-  qualifications: z.array(z.string()).describe('Top 3 most important qualifications'),
-  cultureKeywords: z.array(z.string()).describe('Company culture keywords from the posting'),
-  recommendedKeywords: z
-    .array(z.string())
-    .describe('Keywords to include in the resume for ATS optimization'),
-});
-
-export type JobAnalysis = z.infer<typeof jobAnalysisSchema>;
-
 export const action: ActionFunction = async ({ request }) => {
   try {
     const sessionUser = await getAuthenticatedUser(request);
@@ -79,7 +73,7 @@ export const action: ActionFunction = async ({ request }) => {
     }
 
     // Parse and validate input
-    const body = await request.json();
+    const body = (await request.json()) as CustomizeResumeApiRequest;
     const validation = customizeResumeSchema.safeParse(body);
 
     if (!validation.success) {
@@ -221,7 +215,7 @@ ${finalJobPosting}`,
       });
     }
 
-    const responseData = {
+    const responseData: CustomizeResumeApiResponse = {
       customizedResume: getChatCompletionText(result),
       jobAnalysis: analysisValidation.success ? analysisValidation.data : null,
       metadata: {

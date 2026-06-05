@@ -9,8 +9,8 @@ import { INITIAL_VIEWPORTS } from 'storybook/viewport'
 import { handlers } from '../src/mocks/handlers'
 import { commonControlsExclude } from '../src/storybook/controls'
 
-import '../src/styles/animations.css'
-import '../src/styles/globals.css'
+import '../src/animations.css'
+import '../src/styles.css'
 
 sb.mock('expo-clipboard', {
   getStringAsync: async () => '',

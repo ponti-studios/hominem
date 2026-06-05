@@ -4,34 +4,18 @@ import { Input } from '@hominem/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
 import { useState } from 'react';
 
+import type { CustomizeResumeApiRequest, CustomizeResumeApiResponse } from '~/lib/api-contracts';
 import { cn } from '~/lib/utils';
-interface JobAnalysis {
-  requiredSkills: string[];
-  qualifications: string[];
-  cultureKeywords: string[];
-  recommendedKeywords: string[];
-}
-
-interface CustomizeResumeResponse {
-  success: boolean;
-  customizedResume: string;
-  jobAnalysis: JobAnalysis | null;
-  metadata: {
-    format: string;
-    targetLength: string;
-    focusAreas: string[];
-    generatedAt: string;
-    portfolio_id: string;
-  };
-  error?: string;
-}
 
 interface ResumeCustomizerProps {
   applicationId?: string;
   initialJobPosting?: string;
 }
 
-export function ResumeCustomizer({ applicationId, initialJobPosting = '' }: ResumeCustomizerProps) {
+export function ResumeCustomizer({
+  applicationId: _applicationId,
+  initialJobPosting = '',
+}: ResumeCustomizerProps) {
   const [job_posting, setJobPosting] = useState(initialJobPosting);
   const [job_posting_url, setJobPostingUrl] = useState('');
   const [inputMethod, setInputMethod] = useState<'text' | 'url'>('text');
@@ -41,7 +25,7 @@ export function ResumeCustomizer({ applicationId, initialJobPosting = '' }: Resu
   const [targetLength, setTargetLength] = useState<'concise' | 'standard' | 'detailed'>('standard');
   const [focusAreas, setFocusAreas] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [result, setResult] = useState<CustomizeResumeResponse | null>(null);
+  const [result, setResult] = useState<CustomizeResumeApiResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isFormCollapsed, setIsFormCollapsed] = useState(false);
 
@@ -61,13 +45,7 @@ export function ResumeCustomizer({ applicationId, initialJobPosting = '' }: Resu
     setResult(null);
 
     try {
-      const requestBody: {
-        resumeFormat: typeof resumeFormat;
-        targetLength: typeof targetLength;
-        focusAreas: string[];
-        job_posting?: string;
-        job_posting_url?: string;
-      } = {
+      const requestBody: CustomizeResumeApiRequest = {
         resumeFormat,
         targetLength,
         focusAreas: focusAreas
@@ -93,7 +71,7 @@ export function ResumeCustomizer({ applicationId, initialJobPosting = '' }: Resu
         body: JSON.stringify(requestBody),
       });
 
-      const data = await response.json();
+      const data = (await response.json()) as CustomizeResumeApiResponse;
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to customize resume');

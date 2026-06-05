@@ -1,5 +1,11 @@
 import { getServerEnv } from '~/lib/env';
-import type { JobPosting, ScrapedJobPostingResponse } from '~/types/applications';
+import type { JobPosting } from '~/types/applications';
+
+interface JobScrapingResult {
+  success: boolean;
+  job_posting?: JobPosting;
+  error?: string;
+}
 
 export class JobScrapingService {
   private readonly cloudflareAccountId: string;
@@ -24,7 +30,7 @@ export class JobScrapingService {
   /**
    * Scrape a job posting URL and extract structured data using Cloudflare Browser Rendering API
    */
-  async scrapeJobPosting(jobUrl: string): Promise<ScrapedJobPostingResponse> {
+  async scrapeJobPosting(jobUrl: string): Promise<JobScrapingResult> {
     try {
       if (!this.cloudflareAccountId || !this.cloudflareApiToken) {
         throw new Error('Cloudflare credentials not configured');
@@ -185,7 +191,7 @@ export class JobScrapingService {
   /**
    * Scrape job posting and validate the content
    */
-  async scrapeAndValidateJobPosting(jobUrl: string): Promise<ScrapedJobPostingResponse> {
+  async scrapeAndValidateJobPosting(jobUrl: string): Promise<JobScrapingResult> {
     const result = await this.scrapeJobPosting(jobUrl);
 
     if (result.success && result.job_posting) {

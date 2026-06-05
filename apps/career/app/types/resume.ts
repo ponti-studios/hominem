@@ -76,42 +76,50 @@ export const resumeSchema = z.object({
       website: optionalString,
     })
     .nullable(),
-  workExperience: z.array(
-    z.object({
-      company: nonBlankString,
-      description: nonBlankString,
-      role: nonBlankString,
-      start_date: resumeDate,
-      end_date: resumeDate,
-    }),
-  ).default([]),
-  skills: z.array(
-    z.object({
-      name: nonBlankString,
-      level: z.number().finite().min(1).max(100),
-      category: optionalString,
-      description: optionalString,
-      years_of_experience: z.number().finite().min(0).optional().nullable(),
-      certifications: z.array(nonBlankString).default([]),
-    }),
-  ).default([]),
-  projects: z.array(
-    z.object({
-      title: nonBlankString,
-      description: nonBlankString,
-      short_description: optionalString,
-      technologies: z.array(nonBlankString).default([]),
-      live_url: optionalString,
-      github_url: optionalString,
-      status: z.enum(['in-progress', 'completed', 'archived']),
-    }),
-  ).default([]),
-  stats: z.array(
-    z.object({
-      label: nonBlankString,
-      value: nonBlankString,
-    }),
-  ).default([]),
+  workExperience: z
+    .array(
+      z.object({
+        company: nonBlankString,
+        description: nonBlankString,
+        role: nonBlankString,
+        start_date: resumeDate,
+        end_date: resumeDate,
+      }),
+    )
+    .default([]),
+  skills: z
+    .array(
+      z.object({
+        name: nonBlankString,
+        level: z.number().finite().min(1).max(100),
+        category: optionalString,
+        description: optionalString,
+        years_of_experience: z.number().finite().min(0).optional().nullable(),
+        certifications: z.array(nonBlankString).default([]),
+      }),
+    )
+    .default([]),
+  projects: z
+    .array(
+      z.object({
+        title: nonBlankString,
+        description: nonBlankString,
+        short_description: optionalString,
+        technologies: z.array(nonBlankString).default([]),
+        live_url: optionalString,
+        github_url: optionalString,
+        status: z.enum(['in-progress', 'completed', 'archived']),
+      }),
+    )
+    .default([]),
+  stats: z
+    .array(
+      z.object({
+        label: nonBlankString,
+        value: nonBlankString,
+      }),
+    )
+    .default([]),
 });
 
 export type ConvertedResumeData = z.infer<typeof resumeSchema>;
@@ -127,21 +135,3 @@ export type ResumeConvertStage =
   | 'storage'
   | 'database'
   | 'complete';
-
-export type UploadResumeResponse = {
-  message?: string;
-  data?: ConvertedResumeData;
-  saved?: boolean;
-  portfolio_id?: string;
-  portfolioSlug?: string;
-  portfolioUrl?: string;
-  fileUrl?: string;
-  rateLimit?: {
-    limit: number;
-    remaining: number;
-    reset: number;
-  };
-  error?: string;
-  stage?: ResumeConvertStage;
-  retryable?: boolean;
-};

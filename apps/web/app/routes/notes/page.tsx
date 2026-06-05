@@ -12,6 +12,7 @@ import { useCreateChat } from '~/hooks/use-chats';
 import { useComposerMode } from '~/hooks/use-composer-mode';
 import { useInbox } from '~/hooks/use-inbox';
 import { useCreateNote, useUpdateNote } from '~/hooks/use-notes';
+import { useTextEnhance } from '~/hooks/ai';
 import { useTranscribe } from '~/hooks/use-transcribe';
 import { getServerSession } from '~/lib/auth.server';
 import { serverEnv } from '~/lib/env.server';
@@ -51,6 +52,7 @@ export default function NotesPage({ loaderData }: { loaderData: { inbox: InboxOu
   const createNote = useCreateNote();
   const updateNote = useUpdateNote();
   const createChat = useCreateChat();
+  const { enhance } = useTextEnhance();
   const { uploadFiles } = useFileUpload();
   const transcribeMutation = useTranscribe();
   const { mode, noteId, chatId } = useComposerMode();
@@ -183,6 +185,7 @@ export default function NotesPage({ loaderData }: { loaderData: { inbox: InboxOu
       window.localStorage.removeItem(NOTES_NEW_DRAFT_STORAGE_KEY);
       return { id: chat.id };
     },
+    enhanceText: ({ text, instruction }) => enhance({ text, instruction }),
     uploadFiles,
     navigate,
   };

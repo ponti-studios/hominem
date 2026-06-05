@@ -9,6 +9,7 @@ export function useTextEnhance() {
   const enhance = useCallback(
     async ({ text, instruction }: EnhanceTextInput): Promise<string> => {
       setIsEnhancing(true);
+
       try {
         const response = await client.api.ai.enhance.$post({
           json: instruction ? { text, instruction } : { text },

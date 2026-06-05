@@ -3,6 +3,7 @@ import type { UseMutationResult } from '@tanstack/react-query';
 import type { ChangeEvent } from 'react';
 import { memo, useActionState, useRef } from 'react';
 
+import { InlineEnhanceTray } from '../enhance/inline-enhance-tray';
 import { AttachedNotesList } from './attached-notes-list';
 import { appendChatAttachmentContext, appendNoteAttachments } from './attachment-formatting';
 import { buildNoteContext, toNoteTitle } from './composer-actions';
@@ -182,6 +183,7 @@ const ComposerForm = memo(function ComposerForm({
                 isDraftMode={isDraftMode}
                 isPending={isPending}
               />
+              <ComposerEnhanceTray />
             </div>
           </div>
 
@@ -210,6 +212,58 @@ const ComposerForm = memo(function ComposerForm({
       />
       <NotePickerDialog ref={notePickerDialogRef} notes={notes} inputRef={inputRef} />
     </>
+  );
+});
+
+const ComposerEnhanceTray = memo(function ComposerEnhanceTray() {
+  const store = useComposerStore();
+  const actionsRef = useComposerActionsRef();
+  const draft = useComposerSlice((s) => s.draft);
+  const instruction = useComposerSlice((s) => s.enhanceInstruction);
+  const isOpen = useComposerSlice((s) => s.isEnhanceOpen);
+  const isEnhancing = useComposerSlice((s) => s.isEnhancing);
+  const error = useComposerSlice((s) => s.enhanceError);
+
+  if (!isOpen) {
+    return null;
+  }
+
+  async function handleConfirm() {
+    if (!draft.trim() || isEnhancing) {
+      return;
+    }
+
+    store.dispatch({ type: 'SET_ENHANCING', isEnhancing: true });
+    store.dispatch({ type: 'SET_ENHANCE_ERROR', error: null });
+
+    try {
+      const enhanced = await actionsRef.current.enhanceText({
+        text: draft,
+        instruction: instruction.trim() || undefined,
+      });
+      store.dispatch({ type: 'SET_DRAFT', text: enhanced });
+      store.dispatch({ type: 'RESET_ENHANCE' });
+    } catch (caughtError) {
+      store.dispatch({
+        type: 'SET_ENHANCE_ERROR',
+        error: caughtError instanceof Error ? caughtError.message : 'Enhancement failed',
+      });
+      store.dispatch({ type: 'SET_ENHANCING', isEnhancing: false });
+    }
+  }
+
+  return (
+    <InlineEnhanceTray
+      instruction={instruction}
+      onInstructionChange={(value) =>
+        store.dispatch({ type: 'SET_ENHANCE_INSTRUCTION', instruction: value })
+      }
+      onCancel={() => store.dispatch({ type: 'RESET_ENHANCE' })}
+      onConfirm={() => void handleConfirm()}
+      isEnhancing={isEnhancing}
+      error={error}
+      className="mt-2"
+    />
   );
 });
 

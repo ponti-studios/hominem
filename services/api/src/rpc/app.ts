@@ -4,7 +4,7 @@ import type { AppContext } from './middleware/auth';
 import { requestIdMiddleware } from './middleware/auth';
 import { apiErrorHandler } from './middleware/error';
 import { validationErrorMiddleware } from './middleware/validation';
-import { aiRoutes } from './routes/ai';
+import { enhanceRoutes } from './routes/enhance';
 import { chatsRoutes } from './routes/chats';
 import { filesRoutes } from './routes/files';
 import { inboxRoutes } from './routes/inbox';
@@ -17,7 +17,7 @@ export const rpcApp = new Hono<AppContext>()
   .use(requestIdMiddleware)
   .use(validationErrorMiddleware)
   .basePath('/api')
-  .route('/ai', aiRoutes)
+  .route('/ai', enhanceRoutes)
   .route('/chats', chatsRoutes)
   .route('/inbox', inboxRoutes)
   .route('/files', filesRoutes)

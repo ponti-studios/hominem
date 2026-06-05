@@ -1,9 +1,10 @@
 import { useQueryClient } from '@tanstack/react-query';
 import type { RelativePathString } from 'expo-router';
 import { useRouter } from 'expo-router';
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { Keyboard, TextInput } from 'react-native';
 
+import { InlineEnhanceTray } from '~/components/ai/InlineEnhanceTray';
 import { ComposerActionGroup } from '~/components/composer/ComposerActionGroup';
 import { ComposerAttachmentRow } from '~/components/composer/ComposerAttachmentRow';
 import { ActionButton } from '~/components/composer/ComposerButtons';
@@ -19,6 +20,7 @@ import { ComposerTextInput } from '~/components/composer/ComposerTextInput';
 import { useComposer } from '~/components/composer/useComposer';
 import { normalizeChatTitle } from '~/services/chat';
 import { useCreateChat } from '~/services/chat/use-create-chat';
+import { useInlineEnhance } from '~/services/ai';
 import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
 import { donateAddNoteIntent } from '~/services/intent-donation';
@@ -54,14 +56,22 @@ function FeedComposerInner() {
     uploadedAttachmentIds,
     canSubmit,
     clearDraft,
-    enhance,
-    isEnhancing,
   } = useComposer({
     initialDraft: readFeedDraft(),
     onDraftChange: writeFeedDraft,
     onExtraClearDraft: clearFeedDraft,
   });
   const { attachments } = useComposerAttachments();
+  const {
+    isEnhanceOpen,
+    enhanceInstruction,
+    setEnhanceInstruction,
+    enhanceError,
+    isEnhancing,
+    toggleEnhance,
+    closeEnhance,
+    runEnhance,
+  } = useInlineEnhance();
 
   const handleSave = useCallback(async () => {
     if (!canSubmit || isSaving) return;
@@ -112,12 +122,24 @@ function FeedComposerInner() {
   return (
     <ComposerSurface
       accessory={hasAccessory ? <ComposerAttachmentRow /> : undefined}
+      inlinePanel={
+        isEnhanceOpen ? (
+          <InlineEnhanceTray
+            instruction={enhanceInstruction}
+            onInstructionChange={setEnhanceInstruction}
+            onCancel={closeEnhance}
+            onConfirm={() => void runEnhance({ text: message, onEnhanced: setMessage })}
+            isEnhancing={isEnhancing}
+            error={enhanceError}
+          />
+        ) : undefined
+      }
       actions={
         <ComposerActionGroup hasContent={hasContent}>
           <ActionButton
             accessibilityLabel={t.feed.composer.enhanceTextA11y}
             icon="wand.and.sparkles"
-            onPress={() => void enhance(message).then(setMessage)}
+            onPress={toggleEnhance}
             disabled={!hasContent || isEnhancing}
             isAnimating={isEnhancing}
           />

@@ -1,11 +1,11 @@
 import { useNavigate } from 'react-router';
 
 import { UploadResumeForm } from '../components/UploadResumeForm';
-import type { UploadResumeResponse } from '../types/resume';
+import type { UploadResumeApiResponse } from '../lib/api-contracts';
 
 export default function Onboarding() {
   const navigate = useNavigate();
-  const handleUploadComplete = (response: UploadResumeResponse) => {
+  const handleUploadComplete = (response: UploadResumeApiResponse) => {
     navigate(`/p/${response.portfolioSlug}`);
   };
 

@@ -7,12 +7,13 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, TextInput, View } from 'react-native';
 
-import { EnhanceModal } from '~/components/notes/EnhanceModal';
+import { InlineEnhanceTray } from '~/components/ai/InlineEnhanceTray';
 import { NOTE_TOOLBAR_ID, NoteToolbar } from '~/components/notes/NoteToolbar';
 import { Text, makeStyles, useThemeColors } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
 import { useNoteEditor } from '~/hooks/use-note-editor';
 import { useNoteToolbar } from '~/hooks/use-note-toolbar';
+import { useInlineEnhance } from '~/services/ai';
 import { useNoteQuery } from '~/services/notes/use-note-query';
 import { recordWorkspaceScreenReady } from '~/services/performance/startup-metrics';
 import { writeLastOpenWorkspaceRoute } from '~/services/workspace/launch-state';
@@ -58,10 +59,19 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
   const navigation = useNavigation();
   const router = useRouter();
   const contentInputRef = useRef<TextInput>(null);
-  const [enhanceModalVisible, setEnhanceModalVisible] = useState(false);
 
   const { data: note, isInitialLoading } = useNoteQuery({ noteId });
   const { save, updateCache, detachFile } = useNoteEditor(noteId);
+  const {
+    isEnhanceOpen,
+    enhanceInstruction,
+    setEnhanceInstruction,
+    enhanceError,
+    isEnhancing,
+    toggleEnhance,
+    closeEnhance,
+    runEnhance,
+  } = useInlineEnhance();
 
   useEffect(() => {
     writeLastOpenWorkspaceRoute(`/(protected)/(tabs)/notes/${noteId}`);
@@ -100,7 +110,7 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2] }}>
           <Pressable
             hitSlop={6}
-            onPress={() => setEnhanceModalVisible(true)}
+            onPress={toggleEnhance}
             style={({ pressed }) => ({
               alignItems: 'center',
               height: 36,
@@ -196,6 +206,30 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
           inputAccessoryViewID={NOTE_TOOLBAR_ID}
         />
 
+        {isEnhanceOpen ? (
+          <InlineEnhanceTray
+            instruction={enhanceInstruction}
+            onInstructionChange={setEnhanceInstruction}
+            onCancel={closeEnhance}
+            onConfirm={() =>
+              void runEnhance({
+                text: note.content,
+                onEnhanced: (enhanced) => {
+                  updateCache({ content: enhanced });
+                  toolbar.onTypingChange(enhanced);
+                  void save(
+                    note.title,
+                    enhanced,
+                    note.files.map((file) => file.id),
+                  );
+                },
+              })
+            }
+            isEnhancing={isEnhancing}
+            error={enhanceError}
+          />
+        ) : null}
+
         {note.files.length > 0 ? (
           <View style={styles.filesSection}>
             <Text style={styles.filesLabel}>{t.notes.editor.attachments}</Text>
@@ -236,12 +270,6 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
         onRedo={toolbar.redo}
         canUndo={toolbar.canUndo}
         canRedo={toolbar.canRedo}
-      />
-
-      <EnhanceModal
-        noteId={noteId}
-        visible={enhanceModalVisible}
-        onClose={() => setEnhanceModalVisible(false)}
       />
     </>
   );

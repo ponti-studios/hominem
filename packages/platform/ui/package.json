@@ -159,10 +159,8 @@
       "types": "./src/lib/gsap/sequences.ts",
       "default": "./src/lib/gsap/sequences.ts"
     },
-    "./styles/*": {
-      "types": "./src/styles/*",
-      "default": "./src/styles/*"
-    },
+    "./styles.css": "./src/styles.css",
+    "./animations.css": "./src/animations.css",
     "./chat": {
       "types": "./src/components/chat/index.ts",
       "default": "./src/components/chat/index.ts"

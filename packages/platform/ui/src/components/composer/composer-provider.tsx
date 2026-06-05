@@ -26,6 +26,7 @@ export interface ComposerActions {
   updateNote: (input: { id: string; content: string }) => Promise<unknown>;
   sendMessage: (input: { chatId: string; message: string }) => Promise<unknown>;
   createChat: (input: { seedText: string; title: string }) => Promise<{ id: string }>;
+  enhanceText: (input: { text: string; instruction?: string }) => Promise<string>;
   uploadFiles: (files: FileList | File[]) => Promise<ReadonlyArray<UploadedFile>>;
   navigate: (path: string) => void;
 }

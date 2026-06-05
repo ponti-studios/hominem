@@ -1,5 +1,6 @@
 import type { ActionFunction } from 'react-router';
 
+import type { JobScrapeApiRequest, JobScrapeApiResponse } from '~/lib/api-contracts';
 import { getAuthenticatedUser } from '~/lib/auth.server';
 import { logger } from '~/lib/logger';
 import { jobScrapingService } from '~/lib/services/job-scraping.service';
@@ -15,7 +16,7 @@ export const action: ActionFunction = async ({ request }) => {
       });
     }
 
-    const { url: jobUrl } = (await request.json()) as { url: string };
+    const { url: jobUrl } = (await request.json()) as JobScrapeApiRequest;
 
     if (!jobUrl) {
       return new Response(JSON.stringify({ error: 'Job posting URL is required' }), {
@@ -37,15 +38,20 @@ export const action: ActionFunction = async ({ request }) => {
 
     if (!result.success) {
       return new Response(
-        JSON.stringify({ error: result.error || 'Job posting scraping failed' }),
+        JSON.stringify({
+          error: result.error || 'Job posting scraping failed',
+        } satisfies JobScrapeApiResponse),
         { status: 400, headers: { 'Content-Type': 'application/json' } },
       );
     }
 
-    return new Response(JSON.stringify({ job_posting: result.job_posting }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({ job_posting: result.job_posting } satisfies JobScrapeApiResponse),
+      {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      },
+    );
   } catch (error) {
     logger.error(
       'Job scraping API error',
@@ -53,9 +59,12 @@ export const action: ActionFunction = async ({ request }) => {
       error instanceof Error ? undefined : { error },
     );
 
-    return new Response(JSON.stringify({ error: 'Unable to scrape job posting' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({ error: 'Unable to scrape job posting' } satisfies JobScrapeApiResponse),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      },
+    );
   }
 };

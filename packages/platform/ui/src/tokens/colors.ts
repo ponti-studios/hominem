@@ -1,7 +1,7 @@
 /**
  * Canonical color tokens — single dark-mode palette.
  *
- * Values MUST match the @theme block in packages/platform/ui/src/styles/globals.css.
+ * Values MUST match the @theme block in packages/platform/ui/src/styles.css.
  * Web consumes these via CSS custom properties; other platforms (e.g. mobile)
  * import this file directly.
  */

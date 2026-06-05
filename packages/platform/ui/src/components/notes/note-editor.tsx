@@ -1,7 +1,10 @@
+import { Sparkles } from 'lucide-react';
 import type { Note } from '@hominem/rpc/types/notes.types';
 import { slugifyText } from '@hominem/utils/text';
 import { useCallback } from 'react';
 
+import { InlineEnhanceTray, useInlineEnhance } from '../enhance';
+import { Button } from '../button';
 import type { UploadedFile } from '../../types/upload';
 import { SurfacePanel } from '../surfaces/surface-panel';
 import { DeleteNoteAlert } from './delete-note-alert';
@@ -19,6 +22,7 @@ interface NoteEditorProps {
   }) => Promise<void>;
   onUploadFiles: (files: FileList) => Promise<UploadedFile[]>;
   onTranscribeAudio: (audioBlob: Blob) => Promise<string>;
+  onEnhanceText: (input: { text: string; instruction?: string }) => Promise<string>;
   onDelete: () => Promise<void>;
   isDeleting?: boolean;
   isDeletingError?: boolean;
@@ -31,6 +35,7 @@ export function NoteEditor({
   onSave,
   onUploadFiles,
   onTranscribeAudio,
+  onEnhanceText,
   onDelete,
   isDeleting = false,
   isDeletingError = false,
@@ -64,6 +69,16 @@ export function NoteEditor({
     },
     onSave,
   );
+  const {
+    isEnhanceOpen,
+    enhanceInstruction,
+    setEnhanceInstruction,
+    enhanceError,
+    isEnhancing,
+    toggleEnhance,
+    closeEnhance,
+    runEnhance,
+  } = useInlineEnhance({ onEnhanceText });
 
   const handleAttachFiles = useCallback(
     async (fileList: FileList) => {
@@ -126,9 +141,21 @@ export function NoteEditor({
               Mention this note in chat as <code>#{slugifyText(title || note.title)}</code>.
             </p>
           </div>
-          <span className="rounded-full border border-border-subtle px-3 py-1 text-xs uppercase tracking-[0.2em] text-text-secondary">
-            {saveStatus}
-          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="icon"
+              size="icon"
+              onClick={toggleEnhance}
+              disabled={!content.trim() || isEnhancing}
+              title="Enhance text"
+              aria-label="Enhance text"
+            >
+              <Sparkles className="size-4" />
+            </Button>
+            <span className="rounded-full border border-border-subtle px-3 py-1 text-xs uppercase tracking-[0.2em] text-text-secondary">
+              {saveStatus}
+            </span>
+          </div>
         </div>
 
         <textarea
@@ -142,6 +169,26 @@ export function NoteEditor({
           aria-label="Note content"
           className="mt-6 min-h-[50vh] w-full resize-none border-0 bg-transparent text-base leading-7 outline-none placeholder:text-text-tertiary"
         />
+
+        {isEnhanceOpen ? (
+          <InlineEnhanceTray
+            instruction={enhanceInstruction}
+            onInstructionChange={setEnhanceInstruction}
+            onCancel={closeEnhance}
+            onConfirm={() =>
+              void runEnhance({
+                text: draftRef.current.content,
+                onEnhanced: (enhanced) => {
+                  setContent(enhanced);
+                  scheduleIdleSave();
+                },
+              })
+            }
+            isEnhancing={isEnhancing}
+            error={enhanceError}
+            className="mt-4"
+          />
+        ) : null}
       </SurfacePanel>
 
       <aside className="space-y-4">

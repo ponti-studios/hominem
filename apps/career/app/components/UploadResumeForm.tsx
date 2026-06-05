@@ -5,12 +5,13 @@ import { Progress } from '@hominem/ui/progress';
 import { FileText, LogIn, RefreshCw, Upload, X } from 'lucide-react';
 import { useRef, useState } from 'react';
 
+import type { UploadResumeApiResponse } from '~/lib/api-contracts';
 import { cn } from '~/lib/utils';
 
-import type { ResumeConvertStage, UploadResumeResponse } from '../types/resume';
+import type { ResumeConvertStage } from '../types/resume';
 interface UploadResumeFormProps {
   onUploadStart: () => void;
-  onUploadComplete: (response: UploadResumeResponse) => void;
+  onUploadComplete: (response: UploadResumeApiResponse) => void;
   onUploadError?: (error: string) => void;
   mode?: 'create' | 'replace';
 }
@@ -21,9 +22,9 @@ function isPdfFile(file: File): boolean {
   return file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
 }
 
-async function readUploadResponse(response: Response): Promise<UploadResumeResponse> {
+async function readUploadResponse(response: Response): Promise<UploadResumeApiResponse> {
   try {
-    return (await response.json()) as UploadResumeResponse;
+    return (await response.json()) as UploadResumeApiResponse;
   } catch {
     return {
       error: response.ok
@@ -260,7 +261,11 @@ export function UploadResumeForm({
                   We&apos;re extracting your resume details and building your portfolio.
                 </p>
               </div>
-              <Progress value={60} indicatorClassName="animate-pulse" aria-label="Resume processing" />
+              <Progress
+                value={60}
+                indicatorClassName="animate-pulse"
+                aria-label="Resume processing"
+              />
             </div>
           ) : null}
 

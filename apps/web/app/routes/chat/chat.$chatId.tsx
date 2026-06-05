@@ -8,12 +8,14 @@ import {
 } from '@hominem/ui/accordion';
 import { Button } from '@hominem/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '@hominem/ui/command';
+import { InlineEnhanceTray, useInlineEnhance } from '@hominem/ui';
 import { SpeechInput } from '@hominem/ui/composer';
 import { cn } from '@hominem/ui/lib/utils';
 import { slugifyText } from '@hominem/utils/text';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Link, data } from 'react-router';
 
+import { useTextEnhance } from '~/hooks/ai';
 import { useArchiveChat } from '~/hooks/use-chats';
 import { useNoteSearch } from '~/hooks/use-notes';
 import { useServerSpeech } from '~/hooks/use-server-speech';
@@ -101,12 +103,25 @@ export default function ChatPage({
   const transcribe = useTranscribe();
   const { speakingId, loadingId, speak } = useServerSpeech();
   const { uploadFiles, uploadState } = useFileUpload();
+  const { enhance } = useTextEnhance();
 
   const [draft, setDraft] = useState('');
   const [selectedNotes, setSelectedNotes] = useState<SelectedNote[]>([]);
   const [attachedFiles, setAttachedFiles] = useState<
     Array<{ id: string; originalName: string; url: string; textContent?: string; content?: string }>
   >([]);
+  const {
+    isEnhanceOpen,
+    enhanceInstruction,
+    setEnhanceInstruction,
+    enhanceError,
+    isEnhancing,
+    toggleEnhance,
+    closeEnhance,
+    runEnhance,
+  } = useInlineEnhance({
+    onEnhanceText: ({ text, instruction }) => enhance({ text, instruction }),
+  });
 
   const seededNote = useMemo(
     () => (seedNote ? [{ id: seedNote.id, title: seedNote.title, excerpt: seedNote.excerpt }] : []),
@@ -374,6 +389,17 @@ export default function ChatPage({
               className="min-h-[120px] w-full rounded-2xl border border-border-subtle bg-background px-4 py-3 text-sm outline-none"
             />
 
+            {isEnhanceOpen ? (
+              <InlineEnhanceTray
+                instruction={enhanceInstruction}
+                onInstructionChange={setEnhanceInstruction}
+                onCancel={closeEnhance}
+                onConfirm={() => void runEnhance({ text: draft, onEnhanced: setDraft })}
+                isEnhancing={isEnhancing}
+                error={enhanceError}
+              />
+            ) : null}
+
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <label className="inline-flex cursor-pointer items-center rounded-full border border-border-subtle px-4 py-2 text-sm text-text-secondary">
@@ -400,13 +426,23 @@ export default function ChatPage({
                   <span className="text-xs text-destructive">{uploadState.errors.join(', ')}</span>
                 ) : null}
               </div>
-              <Button
-                type="button"
-                disabled={streamMessage.isStreaming}
-                onClick={() => void handleSend()}
-              >
-                {streamMessage.isStreaming ? 'Streaming...' : 'Send'}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={!draft.trim() || isEnhancing || streamMessage.isStreaming}
+                  onClick={toggleEnhance}
+                >
+                  Enhance
+                </Button>
+                <Button
+                  type="button"
+                  disabled={streamMessage.isStreaming || isEnhancing}
+                  onClick={() => void handleSend()}
+                >
+                  {streamMessage.isStreaming ? 'Streaming...' : 'Send'}
+                </Button>
+              </div>
             </div>
           </div>
         </div>

@@ -35,7 +35,7 @@ db-migrate:
     just goose-install
     DATABASE_URL="${DATABASE_URL:-{{ LOCAL_DATABASE_URL }}}"
     goose -dir "{{ MIGRATIONS_DIR }}" postgres "$DATABASE_URL" up
-    pnpm --filter "@hominem/db" exec kysely-codegen
+    pnpm --filter "@hominem/db" run kysely-codegen
 
 db-rollback:
     #!/usr/bin/env bash

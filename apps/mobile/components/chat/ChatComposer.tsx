@@ -1,6 +1,7 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { TextInput } from 'react-native';
 
+import { InlineEnhanceTray } from '~/components/ai/InlineEnhanceTray';
 import { ComposerAccessories } from '~/components/composer/ComposerAccessories';
 import { ComposerActionGroup } from '~/components/composer/ComposerActionGroup';
 import { ActionButton } from '~/components/composer/ComposerButtons';
@@ -10,6 +11,7 @@ import { ComposerSurface } from '~/components/composer/ComposerSurface';
 import { ComposerTextInput } from '~/components/composer/ComposerTextInput';
 import { useChatMentions } from '~/components/composer/useChatMentions';
 import { useComposer } from '~/components/composer/useComposer';
+import { useInlineEnhance } from '~/services/ai';
 import { useActiveChat, useAutoUpdateChatTitle, useSendMessage } from '~/services/chat';
 import { clearChatDraft, readChatDraft, writeChatDraft } from '~/services/workspace/launch-state';
 import t from '~/translations';
@@ -40,14 +42,22 @@ function ChatComposerContent({ chatId }: { chatId: string }) {
     uploadedAttachmentIds,
     canSubmit: baseCanSubmit,
     clearDraft,
-    enhance,
-    isEnhancing,
   } = useComposer({
     initialDraft: readChatDraft(resolvedChatId),
     onDraftChange: (nextMessage) => writeChatDraft(resolvedChatId, nextMessage),
     onExtraClearDraft: () => clearChatDraft(resolvedChatId),
   });
   const { attachments } = useComposerAttachments();
+  const {
+    isEnhanceOpen,
+    enhanceInstruction,
+    setEnhanceInstruction,
+    enhanceError,
+    isEnhancing,
+    toggleEnhance,
+    closeEnhance,
+    runEnhance,
+  } = useInlineEnhance();
 
   const { sendChatMessage, isChatSending } = useSendMessage({ chatId: resolvedChatId });
   const autoUpdateTitle = useAutoUpdateChatTitle(resolvedChatId);
@@ -115,6 +125,18 @@ function ChatComposerContent({ chatId }: { chatId: string }) {
           testID="chat-input-field"
         />
       }
+      inlinePanel={
+        isEnhanceOpen ? (
+          <InlineEnhanceTray
+            instruction={enhanceInstruction}
+            onInstructionChange={setEnhanceInstruction}
+            onCancel={closeEnhance}
+            onConfirm={() => void runEnhance({ text: message, onEnhanced: setMessage })}
+            isEnhancing={isEnhancing}
+            error={enhanceError}
+          />
+        ) : undefined
+      }
       leadingAction={
         <ComposerMedia
           accessibilityLabel={t.chat.input.addAttachmentA11y}
@@ -125,7 +147,7 @@ function ChatComposerContent({ chatId }: { chatId: string }) {
         <ComposerActionGroup hasContent={hasContent}>
           <ActionButton
             icon="wand.and.sparkles"
-            onPress={() => void enhance(message).then(setMessage)}
+            onPress={toggleEnhance}
             accessibilityLabel={t.chat.input.enhanceTextA11y}
             disabled={!hasContent || isChatSending || isEnhancing}
             isAnimating={isEnhancing}

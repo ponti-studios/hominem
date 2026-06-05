@@ -21,6 +21,7 @@ export {
 } from './components/layout/landing-page';
 export { Stack, type GapToken, type StackProps } from './components/layout/stack';
 export { Alert, AlertDescription, AlertTitle } from './components/alert';
+export * from './components/enhance';
 export * from './components/loading-state';
 export * from './components/composer';
 export * from './components/workflow';

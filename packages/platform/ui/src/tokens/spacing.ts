@@ -2,7 +2,7 @@
  * Spacing tokens — 8px primary grid, 4px secondary.
  *
  * Values are unitless numbers (px on web via CSS vars, logical pixels on
- * mobile). Must match --spacing-* in packages/ui/src/styles/globals.css.
+ * mobile). Must match --spacing-* in packages/ui/src/styles.css.
  */
 
 export const spacing = {

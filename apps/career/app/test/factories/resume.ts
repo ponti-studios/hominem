@@ -1,16 +1,15 @@
-import type { ConvertedResumeData, UploadResumeResponse } from '~/types/resume';
+import type { UploadResumeApiResponse } from '~/lib/api-contracts';
+import type { ConvertedResumeData } from '~/types/resume';
 
 type ResumeDataOverrides = Partial<Omit<ConvertedResumeData, 'portfolio'>> & {
   portfolio?: Partial<ConvertedResumeData['portfolio']>;
 };
 
-type UploadResponseOverrides = Partial<Omit<UploadResumeResponse, 'data'>> & {
+type UploadResponseOverrides = Partial<Omit<UploadResumeApiResponse, 'data'>> & {
   data?: ConvertedResumeData;
 };
 
-export function makeConvertedResumeData(
-  overrides: ResumeDataOverrides = {},
-): ConvertedResumeData {
+export function makeConvertedResumeData(overrides: ResumeDataOverrides = {}): ConvertedResumeData {
   const base: ConvertedResumeData = {
     portfolio: {
       slug: 'charles-ponti',
@@ -48,7 +47,7 @@ export function makeConvertedResumeData(
 
 export function makeUploadResumeResponse(
   overrides: UploadResponseOverrides = {},
-): UploadResumeResponse {
+): UploadResumeApiResponse {
   return {
     message: 'ok',
     data: makeConvertedResumeData(),

@@ -8,6 +8,7 @@ import { makeStyles } from '~/components/theme';
 
 interface ComposerSurfaceProps {
   accessory?: React.ReactNode;
+  inlinePanel?: React.ReactNode;
   actions?: React.ReactNode;
   input: React.ReactNode;
   leadingAction: React.ReactNode;
@@ -16,6 +17,7 @@ interface ComposerSurfaceProps {
 
 export function ComposerSurface({
   accessory,
+  inlinePanel,
   actions,
   input,
   leadingAction,
@@ -37,6 +39,7 @@ export function ComposerSurface({
     <Animated.View style={[styles.surface, styles.content, animatedContentStyle]} testID={testID}>
       {accessory ? <View style={styles.accessory}>{accessory}</View> : null}
       {input}
+      {inlinePanel ? <View style={styles.inlinePanel}>{inlinePanel}</View> : null}
       <View style={[styles.actionRow, actions ? null : styles.actionRowCompact]}>
         <View style={styles.leadingActionSlot}>{leadingAction}</View>
         <View style={styles.actionSlot}>{actions}</View>
@@ -65,6 +68,10 @@ const useStyles = makeStyles((theme) => ({
   },
   accessory: {
     gap: spacing[2],
+    width: '100%',
+  },
+  inlinePanel: {
+    marginTop: spacing[1],
     width: '100%',
   },
   actionRow: {

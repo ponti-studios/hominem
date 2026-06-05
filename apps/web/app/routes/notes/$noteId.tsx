@@ -3,6 +3,7 @@ import { StatePanel } from '@hominem/ui';
 import { NoteEditor } from '@hominem/ui/notes';
 import { useNavigate } from 'react-router';
 
+import { useTextEnhance } from '~/hooks/ai';
 import { useDeleteNote, useUpdateNote } from '~/hooks/use-notes';
 import { useTranscribe } from '~/hooks/use-transcribe';
 import { useFileUpload } from '~/lib/hooks/use-file-upload';
@@ -20,6 +21,7 @@ export default function NoteSplitView({
   const navigate = useNavigate();
   const updateNote = useUpdateNote();
   const deleteNote = useDeleteNote();
+  const { enhance } = useTextEnhance();
   const transcribe = useTranscribe();
   const { uploadFiles, uploadState } = useFileUpload();
 
@@ -45,6 +47,7 @@ export default function NoteSplitView({
           const result = await transcribe.mutateAsync({ audioBlob });
           return result.text;
         }}
+        onEnhanceText={({ text, instruction }) => enhance({ text, instruction })}
         onDelete={async () => {
           await deleteNote.mutateAsync({ id: note.id });
           navigate('/notes');

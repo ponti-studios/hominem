@@ -1,4 +1,4 @@
-@import '@hominem/ui/styles/globals.css';
+@import '@hominem/ui/styles.css';
 @import 'tw-animate-css';
 
 @source '../../../packages/platform/ui/src';

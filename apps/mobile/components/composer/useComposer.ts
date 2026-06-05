@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 
 import { useComposerContext } from '~/components/composer/ComposerContext';
-import { useTextEnhance } from '~/services/ai/use-text-enhance';
 
 interface UseComposerOptions {
   initialDraft?: string;
@@ -18,7 +17,6 @@ export function useComposer({
     useComposerContext();
 
   const [message, setMessageState] = useState(initialDraft ?? seedMessage ?? '');
-  const { enhance, isEnhancing } = useTextEnhance();
 
   const setMessage = useCallback(
     (nextMessage: string) => {
@@ -53,7 +51,5 @@ export function useComposer({
     uploadedAttachmentIds,
     canSubmit,
     clearDraft,
-    enhance,
-    isEnhancing,
   };
 }

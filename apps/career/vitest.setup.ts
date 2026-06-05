@@ -1,8 +1,8 @@
-import '@testing-library/jest-dom'
-import { afterAll, afterEach, beforeAll } from 'vitest'
+import '@testing-library/jest-dom';
+import { db, sql } from '@hominem/db';
+import { afterAll, afterEach, beforeAll } from 'vitest';
 
-import { db, sql } from '@hominem/db'
-import { server } from './test/msw/server'
+import { server } from './test/msw/server';
 
 class ResizeObserverMock {
   observe() {}
@@ -10,16 +10,16 @@ class ResizeObserverMock {
   disconnect() {}
 }
 
-globalThis.ResizeObserver = ResizeObserverMock
+globalThis.ResizeObserver = ResizeObserverMock;
 
 beforeAll(() => {
-  server.listen({ onUnhandledRequest: 'error' })
-})
+  server.listen({ onUnhandledRequest: 'error' });
+});
 
 beforeAll(async () => {
   await db.execute(
     sql`ALTER TABLE app.portfolios DROP CONSTRAINT IF EXISTS app_portfolios_owner_userId_key`,
-  )
+  );
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS app.user_portfolio_preferences (
       user_id text PRIMARY KEY REFERENCES "user"(id) ON DELETE CASCADE,
@@ -27,13 +27,13 @@ beforeAll(async () => {
       createdat timestamptz NOT NULL DEFAULT now(),
       updatedat timestamptz NOT NULL DEFAULT now()
     )
-  `)
-})
+  `);
+});
 
 afterEach(() => {
-  server.resetHandlers()
-})
+  server.resetHandlers();
+});
 
 afterAll(() => {
-  server.close()
-})
+  server.close();
+});

@@ -16,6 +16,10 @@ export interface ComposerState {
   readonly draft: string;
   readonly attachedNotes: ReadonlyArray<Note>;
   readonly uploadedFiles: ReadonlyArray<UploadedFile>;
+  readonly isEnhanceOpen: boolean;
+  readonly enhanceInstruction: string;
+  readonly isEnhancing: boolean;
+  readonly enhanceError: string | null;
   readonly isUploading: boolean;
   readonly uploadProgress: number;
   readonly uploadErrors: ReadonlyArray<string>;
@@ -25,6 +29,10 @@ export const INITIAL_COMPOSER_STATE: ComposerState = {
   draft: '',
   attachedNotes: [],
   uploadedFiles: [],
+  isEnhanceOpen: false,
+  enhanceInstruction: '',
+  isEnhancing: false,
+  enhanceError: null,
   isUploading: false,
   uploadProgress: 0,
   uploadErrors: [],
@@ -39,6 +47,11 @@ export type ComposerAction =
   | { type: 'ADD_FILES'; files: ReadonlyArray<UploadedFile> }
   | { type: 'REMOVE_FILE'; fileId: string }
   | { type: 'CLEAR_FILES' }
+  | { type: 'SET_ENHANCE_OPEN'; isOpen: boolean }
+  | { type: 'SET_ENHANCE_INSTRUCTION'; instruction: string }
+  | { type: 'SET_ENHANCING'; isEnhancing: boolean }
+  | { type: 'SET_ENHANCE_ERROR'; error: string | null }
+  | { type: 'RESET_ENHANCE' }
   | { type: 'SET_UPLOADING'; isUploading: boolean; progress?: number }
   | { type: 'SET_UPLOAD_ERRORS'; errors: ReadonlyArray<string> }
   | { type: 'CLEAR' };
@@ -69,6 +82,32 @@ function reduceComposerState(state: ComposerState, action: ComposerAction): Comp
       };
     case 'CLEAR_FILES':
       return state.uploadedFiles.length === 0 ? state : { ...state, uploadedFiles: [] };
+    case 'SET_ENHANCE_OPEN':
+      return state.isEnhanceOpen === action.isOpen
+        ? state
+        : {
+            ...state,
+            isEnhanceOpen: action.isOpen,
+            enhanceError: action.isOpen ? state.enhanceError : null,
+          };
+    case 'SET_ENHANCE_INSTRUCTION':
+      return state.enhanceInstruction === action.instruction
+        ? state
+        : { ...state, enhanceInstruction: action.instruction };
+    case 'SET_ENHANCING':
+      return state.isEnhancing === action.isEnhancing
+        ? state
+        : { ...state, isEnhancing: action.isEnhancing };
+    case 'SET_ENHANCE_ERROR':
+      return state.enhanceError === action.error ? state : { ...state, enhanceError: action.error };
+    case 'RESET_ENHANCE':
+      return {
+        ...state,
+        isEnhanceOpen: false,
+        enhanceInstruction: '',
+        isEnhancing: false,
+        enhanceError: null,
+      };
     case 'SET_UPLOADING':
       return {
         ...state,
@@ -81,6 +120,10 @@ function reduceComposerState(state: ComposerState, action: ComposerAction): Comp
     case 'CLEAR':
       return {
         ...INITIAL_COMPOSER_STATE,
+        isEnhanceOpen: false,
+        enhanceInstruction: '',
+        isEnhancing: false,
+        enhanceError: null,
         isUploading: state.isUploading,
         uploadProgress: state.uploadProgress,
       };

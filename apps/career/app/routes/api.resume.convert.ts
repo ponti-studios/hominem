@@ -1,20 +1,18 @@
+import { readFile } from 'node:fs/promises';
+
 import { createChatCompletion, getChatCompletionText } from '@hominem/ai';
 import { CareerRepository, getDb } from '@hominem/db';
 import { createStorageService, resolveUploadMimeType, validateFile } from '@hominem/storage';
-import { readFile } from 'node:fs/promises';
 import type { ActionFunction } from 'react-router';
 import { z } from 'zod';
 
+import type { UploadResumeApiResponse } from '../lib/api-contracts';
 import { getAuthenticatedUser } from '../lib/auth.server';
 import { logger } from '../lib/logger';
 import { getRateLimitHeaders, resumeConvertRateLimit } from '../lib/rate-limit';
 import { extractPdfText } from '../lib/services/pdf-text.server';
 import { saveResumeToDatabase } from '../lib/services/resume-conversion.service';
-import type {
-  ConvertedResumeData,
-  ResumeConvertStage,
-  UploadResumeResponse,
-} from '../types/resume';
+import type { ConvertedResumeData, ResumeConvertStage } from '../types/resume';
 import { resumeSchema } from '../types/resume';
 
 const MAX_EXTRACTED_RESUME_TEXT_LENGTH = 80_000;
@@ -58,11 +56,11 @@ function errorResponse(
   status: number,
   stage: ResumeConvertStage,
   retryable: boolean,
-  extra?: Omit<UploadResumeResponse, 'error' | 'stage' | 'retryable'>,
+  extra?: Omit<UploadResumeApiResponse, 'error' | 'stage' | 'retryable'>,
   headers?: HeadersInit,
 ): Response {
   return jsonResponse(
-    { error, stage, retryable, ...extra } satisfies UploadResumeResponse,
+    { error, stage, retryable, ...extra } satisfies UploadResumeApiResponse,
     status,
     headers,
   );
@@ -348,7 +346,7 @@ ${pdfText}`,
       fileUrl: uploadResult.url,
       stage: 'complete',
       retryable: false,
-    } satisfies UploadResumeResponse);
+    } satisfies UploadResumeApiResponse);
   } catch (err) {
     logRouteError('Resume conversion request failed before processing', err, { owner_userid });
 

@@ -50,6 +50,7 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
         '~': path.resolve(import.meta.dirname, './app'),
       },
       conditions: ['browser'],
+      dedupe: ['react', 'react-dom', 'react/jsx-dev-runtime', 'react/jsx-runtime'],
       tsconfigPaths: true,
     },
 
