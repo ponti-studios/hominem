@@ -1,5 +1,3 @@
-import { Sparkles } from 'lucide-react';
-
 import { cn } from '../../lib/utils';
 import { Button } from '../button';
 import { Input } from '../input';

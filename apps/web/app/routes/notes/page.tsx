@@ -1,5 +1,5 @@
 import type { InboxOutput } from '@hominem/rpc/react';
-import { EmptyState, SectionIntro } from '@hominem/ui';
+import { EmptyState } from '@hominem/ui';
 import { Composer } from '@hominem/ui/composer';
 import type { ComposerActions } from '@hominem/ui/composer/composer-provider';
 import { ComposerStore } from '@hominem/ui/composer/composer-provider';
