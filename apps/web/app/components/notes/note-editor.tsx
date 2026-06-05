@@ -1,5 +1,5 @@
-import { MessageCircle, MoreHorizontal, Paperclip, Sparkles, X } from 'lucide-react';
 import type { Note } from '@hominem/rpc/types/notes.types';
+import { MessageCircle, MoreHorizontal, Paperclip, Sparkles, X } from 'lucide-react';
 import { slugifyText } from '@hominem/utils/text';
 import { useCallback, useRef, useState } from 'react';
 import { Link } from 'react-router';
@@ -28,6 +28,7 @@ import {
 import type { UploadedFile } from '~/lib/types/upload';
 
 import { useNoteEditor } from './use-note-editor';
+import type { NoteFile } from './use-note-editor';
 
 interface NoteEditorProps {
   chatHref?: string;
@@ -73,19 +74,7 @@ export function NoteEditor({
     flushSave,
     scheduleIdleSave,
   } = useNoteEditor(
-    {
-      id: note.id,
-      title: note.title,
-      content: note.content,
-      files: note.files.map((f) => ({
-        id: f.id,
-        originalName: f.originalName,
-        mimetype: f.mimetype,
-        size: f.size,
-        url: f.url,
-        uploadedAt: f.uploadedAt,
-      })),
-    },
+    note,
     onSave,
   );
   const {
@@ -108,14 +97,7 @@ export function NoteEditor({
       if (uploaded.length === 0) return;
       const nextFiles = [
         ...draftRef.current.files,
-        ...uploaded.map((file) => ({
-          id: file.id,
-          originalName: file.originalName,
-          mimetype: file.mimetype,
-          size: file.size,
-          url: file.url,
-          uploadedAt: file.uploadedAt.toISOString(),
-        })),
+        ...uploaded.map(toNoteFile),
       ];
       setFiles(nextFiles);
       await flushSave();
@@ -324,4 +306,15 @@ export function NoteEditor({
       </AlertDialog>
     </div>
   );
+}
+
+function toNoteFile(file: UploadedFile): NoteFile {
+  return {
+    id: file.id,
+    originalName: file.originalName,
+    mimetype: file.mimetype,
+    size: file.size,
+    url: file.url,
+    uploadedAt: file.uploadedAt.toISOString(),
+  };
 }

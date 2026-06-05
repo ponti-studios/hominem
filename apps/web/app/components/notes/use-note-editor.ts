@@ -1,16 +1,10 @@
+import type { Note, NoteFile } from '@hominem/rpc/types/notes.types';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { MutableRefObject } from 'react';
-
-import type { NoteFile } from './note-file.types';
+import type { RefObject } from 'react';
 
 export type { NoteFile };
 
-export interface UseNoteEditorInput {
-  id: string;
-  title: string | null;
-  content: string;
-  files: NoteFile[];
-}
+export type UseNoteEditorInput = Pick<Note, 'id' | 'title' | 'content' | 'files'>;
 
 export interface UseNoteEditorOutput {
   title: string;
@@ -19,7 +13,7 @@ export interface UseNoteEditorOutput {
   setContent: (content: string) => void;
   files: NoteFile[];
   setFiles: (files: NoteFile[]) => void;
-  draftRef: MutableRefObject<{ title: string; content: string; files: NoteFile[] }>;
+  draftRef: RefObject<{ title: string; content: string; files: NoteFile[] }>;
   saveStatus: 'saved' | 'saving' | 'unsaved';
   isSaving: boolean;
   flushSave: () => Promise<void>;

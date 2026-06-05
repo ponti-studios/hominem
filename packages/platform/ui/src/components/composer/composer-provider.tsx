@@ -31,7 +31,7 @@ export interface ComposerActions {
 }
 
 const ComposerStoreCtx = createContext<ComposerStore | null>(null);
-const ComposerActionsCtx = createContext<React.MutableRefObject<ComposerActions> | null>(null);
+const ComposerActionsCtx = createContext<React.RefObject<ComposerActions> | null>(null);
 
 function useRequired<T>(ctx: Context<T | null>, name: string): T {
   const value = useContext(ctx);
@@ -43,7 +43,7 @@ export interface ComposerProviderProps {
   /** Created once in the layout: useMemo(() => new ComposerStore(), []) */
   store: ComposerStore;
   /** Stable ref whose .current is updated each render in the layout */
-  actionsRef: React.MutableRefObject<ComposerActions>;
+  actionsRef: React.RefObject<ComposerActions>;
   children: ReactNode;
 }
 
@@ -60,7 +60,7 @@ export function useComposerStore(): ComposerStore {
   return useRequired(ComposerStoreCtx, 'useComposerStore');
 }
 
-export function useComposerActionsRef(): React.MutableRefObject<ComposerActions> {
+export function useComposerActionsRef(): React.RefObject<ComposerActions> {
   return useRequired(ComposerActionsCtx, 'useComposerActionsRef');
 }
 
