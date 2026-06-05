@@ -16,7 +16,6 @@ type InboxRow = {
   title: string | null;
   preview: string | null;
   updatedAt: string;
-  route: string;
 };
 
 export const inboxRoutes = new Hono<AppContext>()
@@ -34,8 +33,7 @@ export const inboxRoutes = new Hono<AppContext>()
           c.id as "entityId",
           c.title as "title",
           null::text as "preview",
-          c.last_message_at as "updatedAt",
-          '/(protected)/(tabs)/chat/' || c.id as "route"
+          c.last_message_at as "updatedAt"
         from app.chats c
         where c.owner_userid = ${userId}
           and c.archived_at is null
@@ -48,8 +46,7 @@ export const inboxRoutes = new Hono<AppContext>()
           n.id as "entityId",
           n.title as "title",
           left(coalesce(n.excerpt, n.content), 240) as "preview",
-          n.updatedat as "updatedAt",
-          '/(protected)/(tabs)/notes/' || n.id as "route"
+          n.updatedat as "updatedAt"
         from app.notes n
         where n.owner_userid = ${userId}
           and n.archived_at is null

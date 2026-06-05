@@ -1,4 +1,4 @@
-import type { ActionFunction } from 'react-router';
+import { data, type ActionFunction } from 'react-router';
 
 import { getAuthenticatedUser } from '~/lib/auth.server';
 import { logger } from '~/lib/logger';
@@ -10,20 +10,14 @@ export const action: ActionFunction = async ({ request }) => {
     const user = await getAuthenticatedUser(request);
 
     if (!user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return data({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
     const { job_posting } = body as { job_posting: JobPosting };
 
     if (!job_posting) {
-      return new Response(JSON.stringify({ error: 'Job posting data is required' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return data({ error: 'Job posting data is required' }, { status: 400 });
     }
 
     const websiteOrigin = job_posting.url
@@ -51,10 +45,7 @@ export const action: ActionFunction = async ({ request }) => {
       link: job_posting.url || null,
     });
 
-    return new Response(
-      JSON.stringify({ application, message: 'Application saved successfully' }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } },
-    );
+    return { application, message: 'Application saved successfully' };
   } catch (error) {
     logger.error(
       'Application creation error',
@@ -62,9 +53,6 @@ export const action: ActionFunction = async ({ request }) => {
       error instanceof Error ? undefined : { error },
     );
 
-    return new Response(JSON.stringify({ error: 'Unable to create application' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return data({ error: 'Unable to create application' }, { status: 500 });
   }
 };

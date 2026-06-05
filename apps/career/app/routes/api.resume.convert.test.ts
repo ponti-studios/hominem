@@ -91,14 +91,37 @@ function formRequest(file?: File, options?: { replaceExisting?: boolean }): Requ
   });
 }
 
+function toRouteResponse(result: unknown): Response {
+  if (result instanceof Response) {
+    return result;
+  }
+
+  if (
+    result &&
+    typeof result === 'object' &&
+    'type' in result &&
+    result.type === 'DataWithResponseInit' &&
+    'data' in result
+  ) {
+    const init =
+      'init' in result && result.init && typeof result.init === 'object' ? result.init : undefined;
+
+    return Response.json(result.data, init as ResponseInit | undefined);
+  }
+
+  return Response.json(result);
+}
+
 async function callAction(request: Request): Promise<Response> {
-  return (await action({
+  const result = await action({
     request,
     params: {},
     context: {},
     unstable_url: new URL(request.url),
     unstable_pattern: '/api/resume/convert',
-  })) as Response;
+  });
+
+  return toRouteResponse(result);
 }
 
 async function responseBody(response: Response) {

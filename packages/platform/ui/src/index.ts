@@ -10,6 +10,18 @@ export { OtpVerificationForm } from './components/auth/otp-verification-form';
 export { PasskeyButton } from './components/auth/passkey-button';
 export { PasskeyManagement } from './components/auth/passkey-management';
 export { Alert, AlertDescription, AlertTitle } from './components/alert';
+export {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from './components/alert-dialog';
+export { Button, buttonVariants } from './components/button';
 export * from './components/enhance';
 export * from './components/composer';
 export { SectionIntro } from './components/surfaces/section-intro';

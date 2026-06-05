@@ -18,6 +18,14 @@ interface UseInboxStreamItemsOptions {
 
 const INBOX_STREAM_STALE_TIME_MS = 30_000;
 
+function toMobileInboxRoute(item: InboxStreamItem): string {
+  if (item.kind === 'chat') {
+    return `/(protected)/(tabs)/chat/${item.entityId}`;
+  }
+
+  return `/(protected)/(tabs)/notes/${item.entityId}`;
+}
+
 function toInboxStreamItem(item: InboxStreamItem): InboxStreamItemData {
   return {
     id: `${item.kind}:${item.id}`,
@@ -26,7 +34,7 @@ function toInboxStreamItem(item: InboxStreamItem): InboxStreamItemData {
     title: item.title,
     preview: item.preview,
     updatedAt: item.updatedAt,
-    route: item.route,
+    route: toMobileInboxRoute(item),
   };
 }
 

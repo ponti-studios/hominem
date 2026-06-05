@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 
 import { createChatCompletion, getChatCompletionText } from '@hominem/ai';
-import type { ActionFunction } from 'react-router';
+import { data, type ActionFunction } from 'react-router';
 import { z } from 'zod';
 
 import {
@@ -66,10 +66,7 @@ export const action: ActionFunction = async ({ request }) => {
 
     // Validate request method
     if (request.method !== 'POST') {
-      return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-        status: 405,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return data({ error: 'Method not allowed' }, { status: 405 });
     }
 
     // Parse and validate input
@@ -77,15 +74,12 @@ export const action: ActionFunction = async ({ request }) => {
     const validation = customizeResumeSchema.safeParse(body);
 
     if (!validation.success) {
-      return new Response(
-        JSON.stringify({
+      return data(
+        {
           error: 'Invalid input',
           details: validation.error.issues,
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
         },
+        { status: 400 },
       );
     }
 
@@ -116,9 +110,9 @@ export const action: ActionFunction = async ({ request }) => {
       const scrapingResult = await jobScrapingService.scrapeAndValidateJobPosting(job_posting_url);
 
       if (!scrapingResult.success || !scrapingResult.job_posting) {
-        return new Response(
-          JSON.stringify({ error: scrapingResult.error || 'Failed to scrape job posting' }),
-          { status: 400, headers: { 'Content-Type': 'application/json' } },
+        return data(
+          { error: scrapingResult.error || 'Failed to scrape job posting' },
+          { status: 400 },
         );
       }
 
@@ -134,11 +128,11 @@ export const action: ActionFunction = async ({ request }) => {
       // Use provided job posting text
       finalJobPosting = job_posting;
     } else {
-      return new Response(
-        JSON.stringify({
+      return data(
+        {
           error: 'Either job_posting, job_posting_url, or jobPostingData must be provided',
-        }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } },
+        },
+        { status: 400 },
       );
     }
 
@@ -146,14 +140,11 @@ export const action: ActionFunction = async ({ request }) => {
     const portfolio = await getFullUserPortfolio(user.id);
 
     if (!portfolio) {
-      return new Response(
-        JSON.stringify({
-          error: 'No portfolio found. Please create your portfolio first.',
-        }),
+      return data(
         {
-          status: 404,
-          headers: { 'Content-Type': 'application/json' },
+          error: 'No portfolio found. Please create your portfolio first.',
         },
+        { status: 404 },
       );
     }
 
@@ -231,10 +222,7 @@ ${finalJobPosting}`,
       },
     };
 
-    return new Response(JSON.stringify(responseData), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return responseData;
   } catch (error) {
     logger.error(
       'Resume customization error',
@@ -242,9 +230,6 @@ ${finalJobPosting}`,
       error instanceof Error ? undefined : { error },
     );
 
-    return new Response(JSON.stringify({ error: 'Unable to customize resume' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return data({ error: 'Unable to customize resume' }, { status: 500 });
   }
 };

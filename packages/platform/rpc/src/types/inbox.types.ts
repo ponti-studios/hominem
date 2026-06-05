@@ -5,7 +5,6 @@ export interface InboxStreamItem {
   title: string | null;
   preview: string | null;
   updatedAt: string;
-  route: string;
 }
 
 export type InboxOutput = {

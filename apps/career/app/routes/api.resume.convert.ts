@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { createChatCompletion, getChatCompletionText } from '@hominem/ai';
 import { CareerRepository, getDb } from '@hominem/db';
 import { createStorageService, resolveUploadMimeType, validateFile } from '@hominem/storage';
-import type { ActionFunction } from 'react-router';
+import { data, type ActionFunction } from 'react-router';
 import { z } from 'zod';
 
 import type { UploadResumeApiResponse } from '../lib/api-contracts';
@@ -44,13 +44,6 @@ function parseJsonObject(content: string): unknown {
   return JSON.parse(jsonMatch?.[1] ?? trimmed);
 }
 
-function jsonResponse(data: unknown, status = 200, headers?: HeadersInit): Response {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { 'Content-Type': 'application/json', ...headers },
-  });
-}
-
 function errorResponse(
   error: string,
   status: number,
@@ -58,11 +51,10 @@ function errorResponse(
   retryable: boolean,
   extra?: Omit<UploadResumeApiResponse, 'error' | 'stage' | 'retryable'>,
   headers?: HeadersInit,
-): Response {
-  return jsonResponse(
+): ReturnType<typeof data<UploadResumeApiResponse>> {
+  return data(
     { error, stage, retryable, ...extra } satisfies UploadResumeApiResponse,
-    status,
-    headers,
+    { status, headers },
   );
 }
 
@@ -336,7 +328,7 @@ ${pdfText}`,
       );
     }
 
-    return jsonResponse({
+    return {
       message: 'Resume uploaded and processed successfully',
       data,
       saved: true,
@@ -346,7 +338,7 @@ ${pdfText}`,
       fileUrl: uploadResult.url,
       stage: 'complete',
       retryable: false,
-    } satisfies UploadResumeApiResponse);
+    } satisfies UploadResumeApiResponse;
   } catch (err) {
     logRouteError('Resume conversion request failed before processing', err, { owner_userid });
 

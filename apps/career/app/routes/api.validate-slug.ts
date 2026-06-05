@@ -1,5 +1,5 @@
 import { CareerRepository, getDb } from '@hominem/db';
-import type { LoaderFunctionArgs } from 'react-router';
+import { data, type LoaderFunctionArgs } from 'react-router';
 
 import { createErrorResponse, createSuccessResponse, withAuthLoader } from '../lib/route-utils';
 
@@ -10,20 +10,27 @@ export async function loader(args: LoaderFunctionArgs) {
     const currentPortfolioId = url.searchParams.get('currentId');
 
     if (!slug) {
-      return createErrorResponse('Slug parameter is required');
+      return data(createErrorResponse('Slug parameter is required'), { status: 400 });
     }
 
     // Basic slug validation
     if (!/^[a-z0-9-]+$/.test(slug)) {
-      return createErrorResponse('Slug can only contain lowercase letters, numbers, and hyphens');
+      return data(
+        createErrorResponse('Slug can only contain lowercase letters, numbers, and hyphens'),
+        { status: 400 },
+      );
     }
 
     if (slug.length < 3) {
-      return createErrorResponse('Slug must be at least 3 characters long');
+      return data(createErrorResponse('Slug must be at least 3 characters long'), {
+        status: 400,
+      });
     }
 
     if (slug.length > 50) {
-      return createErrorResponse('Slug must be less than 50 characters long');
+      return data(createErrorResponse('Slug must be less than 50 characters long'), {
+        status: 400,
+      });
     }
 
     // Check if slug already exists (excluding current portfolio if editing)
@@ -41,7 +48,7 @@ export async function loader(args: LoaderFunctionArgs) {
       });
     } catch (error) {
       console.error('Error checking slug availability:', error);
-      return createErrorResponse('Failed to check slug availability');
+      return data(createErrorResponse('Failed to check slug availability'), { status: 500 });
     }
   });
 }

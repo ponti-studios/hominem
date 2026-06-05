@@ -23,6 +23,14 @@ const FEED_OVERSCAN_COUNT = 6;
 const FEED_NEAR_BOTTOM_THRESHOLD = 96;
 const NOTES_NEW_DRAFT_STORAGE_KEY = 'web:notes:new-draft';
 
+function buildInboxItemPath(item: InboxOutput['items'][number]): string {
+  if (item.kind === 'chat') {
+    return `/chat/${item.entityId}`;
+  }
+
+  return `/notes/${item.entityId}`;
+}
+
 export async function loader({ request }: { request: Request }) {
   const { user } = await getServerSession(request);
   if (!user) {
@@ -266,7 +274,7 @@ export default function NotesPage({ loaderData }: { loaderData: { inbox: InboxOu
                       className="absolute left-0 top-0 w-full"
                       style={{ transform: `translateY(${virtualItem.start}px)` }}
                     >
-                      <InboxStreamRow item={item} />
+                      <InboxStreamRow href={buildInboxItemPath(item)} item={item} />
                     </div>
                   );
                 })}
@@ -277,6 +285,7 @@ export default function NotesPage({ loaderData }: { loaderData: { inbox: InboxOu
       </main>
       <ComposerProvider store={composerStore} actionsRef={actionsRef}>
         <Composer
+          buildChatPath={(chatId) => `/chat/${chatId}`}
           mode={mode}
           noteId={noteId}
           chatId={chatId}

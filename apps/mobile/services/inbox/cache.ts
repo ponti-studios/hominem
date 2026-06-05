@@ -25,7 +25,6 @@ function isInboxItem(value: unknown): value is InboxStreamItem {
     typeof item.entityId === 'string' &&
     isInboxKind(item.kind) &&
     typeof item.updatedAt === 'string' &&
-    typeof item.route === 'string' &&
     (item.title === null || typeof item.title === 'string') &&
     (item.preview === null || typeof item.preview === 'string')
   );
