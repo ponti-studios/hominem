@@ -30,7 +30,7 @@ import type { UploadedFile } from '~/lib/types/upload';
 import { useNoteEditor } from './use-note-editor';
 
 interface NoteEditorProps {
-  chatHref: string;
+  chatHref?: string;
   note: Note;
   onSave: (params: {
     id: string;
@@ -195,11 +195,13 @@ export function NoteEditor({
                 variant="ghost"
                 title="Dictate note"
               />
-              <Button asChild variant="ghost" size="icon" title="Chat with this note">
-                <Link to={chatHref} aria-label="Chat with this note">
-                  <MessageCircle className="size-4" />
-                </Link>
-              </Button>
+              {chatHref ? (
+                <Button asChild variant="ghost" size="icon" title="Chat with this note">
+                  <Link to={chatHref} aria-label="Chat with this note">
+                    <MessageCircle className="size-4" />
+                  </Link>
+                </Button>
+              ) : null}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" title="More actions" aria-label="More actions">

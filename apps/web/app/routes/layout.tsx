@@ -41,8 +41,7 @@ export default function Layout({ loaderData }: Route.ComponentProps) {
               </Link>
             </div>
             <nav className="flex items-center gap-2">
-              <NavItem to="/notes" label="Notes" />
-              <NavItem to="/chat" label="Chat" />
+              <NavItem to="/inbox" label="Inbox" />
               <NavItem to="/account" label="Account" />
             </nav>
           </div>

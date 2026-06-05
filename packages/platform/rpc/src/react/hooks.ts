@@ -59,13 +59,15 @@ export function useRpcMutation<TData, TVariables = void>(
 
 interface UseInboxOptions {
   limit?: number;
+  cursor?: string;
 }
 
 export function useInbox(options: UseInboxOptions = {}) {
   return useRpcQuery(
     async (client) => {
-      const query: { limit?: string } = {};
+      const query: { limit?: string; cursor?: string } = {};
       if (options.limit) query.limit = String(options.limit);
+      if (options.cursor) query.cursor = options.cursor;
       const res = await client.api.inbox.$get({ query });
       return res.json() as Promise<InboxOutput>;
     },

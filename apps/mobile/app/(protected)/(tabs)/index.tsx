@@ -26,9 +26,15 @@ export default function FeedScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ seed?: string }>();
-  const { items, isInitialLoading, isRefreshing, refetch } = useInboxStreamItems({
-    enabled: isFocused,
-  });
+  const {
+    items,
+    isInitialLoading,
+    isRefreshing,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    refetch,
+  } = useInboxStreamItems({ enabled: isFocused });
   const listRef = React.useRef<FlashListRef<InboxStreamItemData> | null>(null);
   const [composerHeight, setComposerHeight] = useState(0);
 
@@ -97,6 +103,12 @@ export default function FeedScreen() {
         listRef={listRef}
         items={items}
         isLoading={isInitialLoading}
+        isFetchingNextPage={isFetchingNextPage}
+        onEndReached={() => {
+          if (hasNextPage && !isFetchingNextPage) {
+            void fetchNextPage();
+          }
+        }}
         contentPaddingBottom={composerHeight + insets.bottom}
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={refetch} />}
       />

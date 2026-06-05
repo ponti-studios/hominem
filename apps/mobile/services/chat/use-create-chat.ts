@@ -3,13 +3,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import {
   invalidateInboxQueries,
-  upsertInboxSessionActivity,
-  type ChatInboxRefreshSnapshot,
 } from '~/services/inbox/inbox-refresh';
 import { chatKeys } from '~/services/notes/query-keys';
 import { writeCachedChat } from '~/services/workspace/content-cache';
-
-import type { ChatWithActivity } from './session-types';
 
 interface CreateChatInput {
   title: string;
@@ -27,15 +23,6 @@ export function useCreateChat() {
     onSuccess: (chat) => {
       writeCachedChat(chat);
       queryClient.setQueryData(chatKeys.activeChat(chat.id), chat);
-      queryClient.setQueryData<ChatWithActivity[] | undefined>(chatKeys.resumableSessions, (prev) =>
-        upsertInboxSessionActivity(prev ?? [], {
-          chatId: chat.id,
-          noteId: chat.noteId,
-          title: chat.title,
-          timestamp: chat.createdAt,
-          userId: chat.userId,
-        } satisfies ChatInboxRefreshSnapshot),
-      );
       void invalidateInboxQueries(queryClient);
     },
   });

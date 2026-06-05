@@ -23,7 +23,6 @@ export function useNoteEditor(noteId: string) {
         return current.map((entry) => (entry.id === updatedNote.id ? updatedNote : entry));
       });
       requestTopReveal();
-      void queryClient.invalidateQueries({ queryKey: noteKeys.feeds() });
       void invalidateInboxQueries(queryClient);
     },
     [queryClient, requestTopReveal],

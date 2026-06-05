@@ -74,7 +74,7 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
   } = useInlineEnhance();
 
   useEffect(() => {
-    writeLastOpenWorkspaceRoute(`/(protected)/(tabs)/notes/${noteId}`);
+    writeLastOpenWorkspaceRoute(`/(protected)/(tabs)/inbox/note/${noteId}`);
     recordWorkspaceScreenReady({
       target: 'note',
       restoreSource: 'last_open_route',
@@ -123,7 +123,7 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
           </Pressable>
           <Pressable
             hitSlop={6}
-            onPress={() => router.push(`/(protected)/(tabs)/chat/${noteId}`)}
+            onPress={() => router.push(`/(protected)/(tabs)/inbox/note/${noteId}`)}
             style={({ pressed }) => ({
               alignItems: 'center',
               height: 36,

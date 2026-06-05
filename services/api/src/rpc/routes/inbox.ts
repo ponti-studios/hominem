@@ -7,7 +7,13 @@ import { authMiddleware, type AppContext } from '../middleware/auth';
 
 const inboxQuerySchema = z.object({
   limit: z.string().optional(),
+  cursor: z.string().optional(),
 });
+
+type InboxCursor = {
+  updatedAt: string;
+  id: string;
+};
 
 type InboxRow = {
   kind: 'note' | 'chat';
@@ -18,6 +24,28 @@ type InboxRow = {
   updatedAt: string;
 };
 
+function encodeInboxCursor(item: InboxRow): string {
+  return Buffer.from(JSON.stringify({ updatedAt: item.updatedAt, id: item.id })).toString(
+    'base64url',
+  );
+}
+
+function decodeInboxCursor(cursor: string | undefined): InboxCursor | null {
+  if (!cursor) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8')) as InboxCursor;
+    if (typeof parsed.updatedAt !== 'string' || typeof parsed.id !== 'string') {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
 export const inboxRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
   .get('/', zValidator('query', inboxQuerySchema), async (c) => {
@@ -25,7 +53,9 @@ export const inboxRoutes = new Hono<AppContext>()
     const query = c.req.valid('query');
     const parsedLimit = query.limit ? Number.parseInt(query.limit, 10) : 50;
     const limit = Number.isFinite(parsedLimit) ? Math.min(Math.max(parsedLimit, 1), 100) : 50;
-    const { rows: items } = await sql<InboxRow>`
+    const cursor = decodeInboxCursor(query.cursor);
+    const { rows } = await sql<InboxRow>`
+      with inbox_items as (
         select
           'chat' as "kind",
           c.id as "id",
@@ -49,12 +79,24 @@ export const inboxRoutes = new Hono<AppContext>()
         from app.notes n
         where n.owner_userid = ${userId}
           and n.archived_at is null
+      )
+      select *
+      from inbox_items
+      where ${
+        cursor
+          ? sql`("updatedAt", "id") < (${cursor.updatedAt}::timestamptz, ${cursor.id})`
+          : sql`true`
+      }
+      order by "updatedAt" desc, "id" desc
+      limit ${limit + 1}
+    `.execute(db);
 
-        order by "updatedAt" desc, "id" desc
-        limit ${limit}
-      `.execute(db);
+    const items = rows.slice(0, limit);
+    const lastItem = items.at(-1);
+    const nextCursor = rows.length > limit && lastItem ? encodeInboxCursor(lastItem) : null;
 
     return c.json({
       items,
+      nextCursor,
     });
   });

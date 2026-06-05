@@ -11,6 +11,8 @@
 export const queryKeys = {
   inbox: {
     all: ['inbox'] as const,
+    pages: () => ['inbox', 'pages'] as const,
+    page: (options: Record<string, unknown>) => ['inbox', 'pages', options] as const,
   },
 
   notes: {

@@ -7,6 +7,12 @@ export interface InboxStreamItem {
   updatedAt: string;
 }
 
+export type InboxInput = {
+  limit?: number;
+  cursor?: string;
+};
+
 export type InboxOutput = {
   items: InboxStreamItem[];
+  nextCursor: string | null;
 };

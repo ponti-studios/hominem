@@ -4,6 +4,6 @@ export function loader({ params }: LoaderFunctionArgs) {
   return redirect(params.noteId ? `/inbox/note/${params.noteId}` : '/inbox');
 }
 
-export default function NoteChatRedirect() {
+export default function RedirectNoteEdit() {
   return null;
 }

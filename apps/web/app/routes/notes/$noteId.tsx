@@ -36,7 +36,6 @@ export default function NoteSplitView({
   return (
     <div className="py-8">
       <NoteEditor
-        chatHref={`/chat?noteId=${note.id}`}
         note={note}
         onSave={async ({ id, title, content, fileIds }) => {
           await updateNote.mutateAsync({ id, title, content, fileIds });
@@ -51,7 +50,7 @@ export default function NoteSplitView({
         onEnhanceText={({ text, instruction }) => enhance({ text, instruction })}
         onDelete={async () => {
           await deleteNote.mutateAsync({ id: note.id });
-          navigate('/notes');
+          navigate('/inbox');
         }}
         isDeleting={deleteNote.isPending}
         isDeletingError={deleteNote.isError}

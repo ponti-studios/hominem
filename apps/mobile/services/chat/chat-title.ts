@@ -90,5 +90,5 @@ export function updateChatTitleCaches(
     ),
   );
 
-  void queryClient.invalidateQueries({ queryKey: inboxKeys.all });
+  void queryClient.invalidateQueries({ queryKey: inboxKeys.pages() });
 }

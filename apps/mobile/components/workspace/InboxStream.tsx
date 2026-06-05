@@ -12,8 +12,10 @@ import type { InboxStreamItemData as InboxStreamItemModel } from './InboxStreamI
 interface InboxStreamProps {
   items: InboxStreamItemModel[];
   isLoading?: boolean;
+  isFetchingNextPage?: boolean;
   listRef?: RefObject<FlashListRef<InboxStreamItemModel> | null>;
   onSelectStarter?: (prompt: string) => void;
+  onEndReached?: () => void;
   refreshControl?: React.ReactElement<RefreshControlProps>;
   contentPaddingBottom?: number;
 }
@@ -65,8 +67,10 @@ const SAMPLE_ITEMS = [
 export const InboxStream = ({
   items,
   isLoading = false,
+  isFetchingNextPage = false,
   listRef,
   onSelectStarter,
+  onEndReached,
   refreshControl,
   contentPaddingBottom,
 }: InboxStreamProps) => {
@@ -188,7 +192,17 @@ export const InboxStream = ({
           keyExtractor={keyExtractor}
           keyboardDismissMode="on-drag"
           renderItem={renderItem}
-          ListFooterComponent={<View style={staticStyles.sectionFooter} />}
+          ListFooterComponent={
+            <View style={staticStyles.sectionFooter}>
+              {isFetchingNextPage ? (
+                <Text variant="caption1" color="text-tertiary" style={styles.footerText}>
+                  Loading more...
+                </Text>
+              ) : null}
+            </View>
+          }
+          onEndReached={onEndReached}
+          onEndReachedThreshold={0.4}
           refreshControl={refreshControl}
           showsVerticalScrollIndicator={false}
         />
@@ -204,6 +218,9 @@ const useStreamStyles = makeStyles((theme) => ({
   sectionShell: {
     flex: 1,
     overflow: 'hidden',
+  },
+  footerText: {
+    textAlign: 'center',
   },
   emptyWrap: {
     flexGrow: 1,

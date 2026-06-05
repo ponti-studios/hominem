@@ -13,16 +13,19 @@ export default [
   layout('routes/layout.tsx', [
     index('routes/home.tsx'),
 
-    // Chat Routes
-    route('chat', 'routes/chat/index.tsx'),
-    route('chat/:chatId', 'routes/chat/chat.$chatId.tsx'),
+    route('inbox', 'routes/notes/page.tsx'),
+    route('inbox/note/:noteId', 'routes/notes/$noteId.tsx'),
+    route('inbox/chat/:chatId', 'routes/chat/chat.$chatId.tsx'),
 
-    // Notes Routes
+    // Compatibility redirects
+    route('chat', 'routes/redirect-to-inbox.tsx'),
+    route('chat/:chatId', 'routes/redirect-chat-detail.tsx'),
+
     layout('routes/notes/layout.tsx', [
-      route('notes', 'routes/notes/page.tsx'),
-      route('notes/:noteId', 'routes/notes/$noteId.tsx'),
-      route('notes/:noteId/edit', 'routes/notes/$noteId_.edit.tsx'),
-      route('notes/:noteId/chat', 'routes/notes/$noteId.chat.tsx'),
+      route('notes', 'routes/redirect-notes-index.tsx'),
+      route('notes/:noteId', 'routes/redirect-note-detail.tsx'),
+      route('notes/:noteId/edit', 'routes/redirect-note-edit.tsx'),
+      route('notes/:noteId/chat', 'routes/redirect-note-chat.tsx'),
     ]),
 
     route('/account', 'routes/account.tsx'),

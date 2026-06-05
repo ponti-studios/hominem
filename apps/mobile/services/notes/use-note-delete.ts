@@ -24,7 +24,6 @@ export function useNoteDelete({ noteId }: UseNoteDeleteOptions) {
       queryClient.setQueryData<Note[]>(noteKeys.all, (current) =>
         current?.filter((note) => note.id !== noteId),
       );
-      void queryClient.invalidateQueries({ queryKey: noteKeys.feeds() });
       void invalidateInboxQueries(queryClient);
     },
   });

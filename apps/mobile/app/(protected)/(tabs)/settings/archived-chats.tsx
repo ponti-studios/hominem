@@ -16,7 +16,7 @@ export default function ArchivedChatsScreen() {
   const { data: chats = [] } = useArchivedSessions({ enabled: isFocused });
   const onPressChat = useCallback(
     (chatId: string) => {
-      router.push(`/(protected)/(tabs)/chat/${chatId}` as RelativePathString);
+      router.push(`/(protected)/(tabs)/inbox/chat/${chatId}` as RelativePathString);
     },
     [router],
   );

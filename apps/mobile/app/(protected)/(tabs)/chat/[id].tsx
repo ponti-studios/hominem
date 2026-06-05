@@ -58,7 +58,7 @@ export default function ChatDetailScreen() {
   const [composerHeight, setComposerHeight] = useState(0);
 
   useEffect(() => {
-    writeLastOpenWorkspaceRoute(`/(protected)/(tabs)/chat/${chatId}`);
+    writeLastOpenWorkspaceRoute(`/(protected)/(tabs)/inbox/chat/${chatId}`);
     recordWorkspaceScreenReady({
       target: 'chat',
       restoreSource: 'last_open_route',

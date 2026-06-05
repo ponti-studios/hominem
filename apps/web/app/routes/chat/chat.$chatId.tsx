@@ -212,8 +212,8 @@ export default function ChatPage({
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Link to="/chat" className="text-sm text-text-secondary underline">
-                  Back to chats
+                <Link to="/inbox" className="text-sm text-text-secondary underline">
+                  Back to inbox
                 </Link>
                 <button
                   type="button"

@@ -101,7 +101,7 @@ function FeedComposerInner() {
     const chat = await createChat({ title });
     clearDraft();
     router.push(
-      `/(protected)/(tabs)/chat/${chat.id}?initialMessage=${encodeURIComponent(message.trim())}` as RelativePathString,
+      `/(protected)/(tabs)/inbox/chat/${chat.id}?initialMessage=${encodeURIComponent(message.trim())}` as RelativePathString,
     );
     requestTopReveal();
   }, [canSubmit, isChatCreating, createChat, message, clearDraft, router, requestTopReveal]);

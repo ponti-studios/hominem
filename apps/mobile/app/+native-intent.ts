@@ -6,12 +6,12 @@
  *
  * Supported deep link patterns:
  *   hakumi://verify?token=<otp>        -> /(auth)/verify?token=<otp>
- *   hakumi://chat/<id>                 -> /(protected)/(tabs)/chat/<id>
+ *   hakumi://chat/<id>                 -> /(protected)/(tabs)/inbox/chat/<id>
  *   hakumi://chat?seed=<text>          -> /(protected)/(tabs)/?seed=<text>
  *   hakumi://notes                     -> /(protected)/(tabs)
- *   hakumi://notes/<id>                -> /(protected)/(tabs)/notes/<id>
+ *   hakumi://notes/<id>                -> /(protected)/(tabs)/inbox/note/<id>
  *   hakumi://focus                     -> /(protected)/(tabs)/
- *   hakumi://focus/<id>                -> /(protected)/(tabs)/notes/<id>
+ *   hakumi://focus/<id>                -> /(protected)/(tabs)/inbox/note/<id>
  *   hakumi://account                   -> /(protected)/(tabs)/settings
  *   hakumi://note/add                  -> /(protected)/(tabs)
  */
@@ -38,7 +38,7 @@ export function redirectSystemPath({
   // Chat with specific ID: chat/<id>
   const chatIdMatch = normalized.match(/^chat\/([^?]+)/);
   if (chatIdMatch) {
-    return `/(protected)/(tabs)/chat/${chatIdMatch[1]}`;
+    return `/(protected)/(tabs)/inbox/chat/${chatIdMatch[1]}`;
   }
 
   // Chat with seed (start new): chat?seed=<text> -> feed with seed
@@ -50,7 +50,7 @@ export function redirectSystemPath({
   // Notes with specific ID
   const notesIdMatch = normalized.match(/^notes\/(.+)/);
   if (notesIdMatch) {
-    return `/(protected)/(tabs)/notes/${notesIdMatch[1]}`;
+    return `/(protected)/(tabs)/inbox/note/${notesIdMatch[1]}`;
   }
 
   // Notes list -> feed
@@ -61,7 +61,7 @@ export function redirectSystemPath({
   // Focus with specific ID -> note detail
   const focusIdMatch = normalized.match(/^focus\/(.+)/);
   if (focusIdMatch) {
-    return `/(protected)/(tabs)/notes/${focusIdMatch[1]}`;
+    return `/(protected)/(tabs)/inbox/note/${focusIdMatch[1]}`;
   }
 
   // Focus list -> feed

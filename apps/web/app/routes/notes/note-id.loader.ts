@@ -8,7 +8,7 @@ export async function noteIdLoader({ request, params }: LoaderFunctionArgs) {
   const { noteId } = params;
 
   if (!noteId) {
-    return redirect('/notes');
+    return redirect('/inbox');
   }
 
   const cookie = request.headers.get('cookie');

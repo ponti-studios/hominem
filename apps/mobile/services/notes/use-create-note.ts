@@ -1,7 +1,9 @@
-import { createNotesMutationSuccessHandler, useApiClient } from '@hominem/rpc/react';
+import { useApiClient } from '@hominem/rpc/react';
 import type { Note } from '@hominem/rpc/types';
 import { buildContentPreview } from '@hominem/utils/text';
 import { useMutation, useQueryClient, type UseMutationResult } from '@tanstack/react-query';
+
+import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 
 import { noteKeys } from './query-keys';
 
@@ -65,7 +67,6 @@ export const useCreateNote = (): UseMutationResult<
     },
     onMutate: async (input) => {
       await queryClient.cancelQueries({ queryKey: noteKeys.all });
-      await queryClient.cancelQueries({ queryKey: noteKeys.feed({ limit: 20 }) });
 
       const previousNotes = queryClient.getQueryData<Note[]>(noteKeys.all);
       const optimisticId = `optimistic-note-${Date.now().toString()}`;
@@ -91,8 +92,9 @@ export const useCreateNote = (): UseMutationResult<
         );
         return [createdNote, ...withoutOptimistic];
       });
+      queryClient.setQueryData(noteKeys.detail(createdNote.id), createdNote);
 
-      await createNotesMutationSuccessHandler(queryClient, createdNote.id);
+      await invalidateInboxQueries(queryClient);
     },
   });
 };

@@ -12,6 +12,6 @@ type AppAuthConfig = {
 };
 
 export const NOTES_AUTH_CONFIG: AppAuthConfig = {
-  defaultPostAuthDestination: '/notes',
-  allowedDestinations: ['/', '/home', '/chat', '/notes', '/account', '/settings'],
+  defaultPostAuthDestination: '/inbox',
+  allowedDestinations: ['/', '/home', '/inbox', '/chat', '/notes', '/account', '/settings'],
 };

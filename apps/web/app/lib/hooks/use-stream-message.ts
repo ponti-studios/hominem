@@ -3,7 +3,7 @@ import { useSignal } from '@preact/signals-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useRef } from 'react';
 
-import { chatQueryKeys } from '~/lib/query-keys';
+import { chatQueryKeys, inboxQueryKeys } from '~/lib/query-keys';
 
 type StreamStatus = 'idle' | 'streaming' | 'done' | 'error';
 
@@ -91,7 +91,7 @@ export function useStreamMessage({ chatId }: { chatId: string }) {
         status.value = 'done';
         await queryClient.invalidateQueries({ queryKey: chatQueryKeys.get(chatId) });
         await queryClient.invalidateQueries({ queryKey: chatQueryKeys.messages(chatId) });
-        await queryClient.invalidateQueries({ queryKey: chatQueryKeys.list });
+        await queryClient.invalidateQueries({ queryKey: inboxQueryKeys.pages() });
       } catch (err) {
         if (abortControllerRef.current?.signal.aborted) {
           status.value = 'idle';

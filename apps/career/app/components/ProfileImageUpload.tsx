@@ -213,7 +213,6 @@ export function ProfileImageUpload({
               type="button"
               onClick={handleUpload}
               disabled={isUploading || !crop}
-              variant="primary"
               className="flex items-center gap-2"
             >
               {isUploading ? (

@@ -11,4 +11,4 @@ export { HonoProvider } from './provider';
 
 export type { OptimisticUpdateConfig } from './hooks';
 export type { HonoProviderProps } from './provider';
-export type { InboxOutput, InboxStreamItem } from '../types/inbox.types';
+export type { InboxInput, InboxOutput, InboxStreamItem } from '../types/inbox.types';

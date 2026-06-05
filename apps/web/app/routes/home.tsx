@@ -8,15 +8,15 @@ import { getServerSession } from '~/lib/auth.server';
 export async function loader({ request }: LoaderFunctionArgs) {
   const { user, headers } = await getServerSession(request);
   if (user) {
-    return redirect('/notes', { headers });
+    return redirect('/inbox', { headers });
   }
 
   const requestUrl = new URL(request.url);
   const rawNext = requestUrl.searchParams.get('next');
   const next = rawNext
-    ? resolveAuthRedirect(rawNext, '/notes', [...NOTES_AUTH_CONFIG.allowedDestinations])
+    ? resolveAuthRedirect(rawNext, '/inbox', [...NOTES_AUTH_CONFIG.allowedDestinations])
         .safeRedirect
-    : '/notes';
+    : '/inbox';
 
   return data({ next }, { headers });
 }

@@ -8,6 +8,8 @@ import { queryKeys } from '@hominem/rpc/react';
 
 export const inboxKeys = {
   all: queryKeys.inbox.all,
+  pages: queryKeys.inbox.pages,
+  page: (options: Record<string, unknown>) => queryKeys.inbox.page(options),
 } as const;
 
 export const noteKeys = {

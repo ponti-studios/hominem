@@ -14,6 +14,12 @@ export const chatQueryKeys = {
   sidebarList: ['chats', 'sidebar', 'list'] as const,
 };
 
+export const inboxQueryKeys = {
+  all: queryKeys.inbox.all,
+  pages: queryKeys.inbox.pages,
+  page: (options: Record<string, unknown>) => queryKeys.inbox.page(options),
+};
+
 export const notesQueryKeys = {
   lists: queryKeys.notes.lists,
   feeds: queryKeys.notes.feeds,

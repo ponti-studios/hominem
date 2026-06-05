@@ -8,9 +8,8 @@
  *
  *   Route          Mode                chatId
  *   /home          generic             –
- *   /chat/:id      chat-continuation   ✓ from URL
- *   /notes/:id     note-aware          –
- *   /notes/:id.*   note-aware          –
+ *   /inbox/chat/:id chat-continuation  ✓ from URL
+ *   /inbox/note/:id note-aware         –
  *   everything else generic            –
  *
  * noteTitle is NOT derived here — it comes from the loaded Note object and
@@ -26,15 +25,14 @@ interface ComposerModeResult {
 }
 
 export function useComposerMode(): ComposerModeResult {
-  const chatMatch = useMatch('/chat/:chatId');
-  const noteMatch = useMatch('/notes/:noteId');
-  const noteSubMatch = useMatch('/notes/:noteId/*');
+  const chatMatch = useMatch('/inbox/chat/:chatId');
+  const noteMatch = useMatch('/inbox/note/:noteId');
 
   if (chatMatch?.params.chatId) {
     return { mode: 'chat-continuation', chatId: chatMatch.params.chatId };
   }
 
-  if (noteMatch?.params.noteId ?? noteSubMatch?.params.noteId) {
+  if (noteMatch?.params.noteId) {
     return { mode: 'note-aware', chatId: null };
   }
 

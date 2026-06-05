@@ -1,10 +1,4 @@
-import {
-  createNotesMutationSuccessHandler,
-  DEFAULT_NOTES_FEED_LIMIT,
-  useApiClient,
-  useRpcMutation,
-  useRpcQuery,
-} from '@hominem/rpc/react';
+import { useApiClient, useRpcMutation, useRpcQuery } from '@hominem/rpc/react';
 import type {
   NoteFeedItem,
   NotesCreateInput,
@@ -18,11 +12,9 @@ import type {
   NotesUpdateInput,
   NotesUpdateOutput,
 } from '@hominem/rpc/types/notes.types';
-import { buildContentPreview } from '@hominem/utils/text';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { notesQueryKeys } from '~/lib/query-keys';
-import { requestNotesRowExit } from '~/routes/notes/notes-surface-events';
+import { inboxQueryKeys, notesQueryKeys } from '~/lib/query-keys';
 
 interface UseNotesListOptions {
   enabled?: boolean;
@@ -38,71 +30,8 @@ export interface NotesFeedData {
   pageParams: Array<string | null>;
 }
 
-interface CreateNoteContext {
-  optimisticId: string;
-  previousFeed: NotesFeedData | undefined;
-}
-
 export function flattenNoteFeedPages(data: NotesFeedData | undefined): NoteFeedItem[] {
   return (data?.pages.flatMap((page) => page.notes) ?? []).slice().reverse();
-}
-
-function buildOptimisticFeedNote(input: NotesCreateInput): NoteFeedItem {
-  const now = new Date().toISOString();
-  const trimmed = input.content.trim();
-
-  return {
-    id: `optimistic-note-${Date.now().toString()}`,
-    title: input.title?.trim() || null,
-    contentPreview: buildContentPreview(null, trimmed),
-    createdAt: now,
-    authorId: 'optimistic-user',
-    metadata: {
-      hasAttachments: Boolean(input.fileIds?.length),
-    },
-  };
-}
-
-function prependOptimisticFeedNote(
-  current: NotesFeedData | undefined,
-  optimisticNote: NoteFeedItem,
-): NotesFeedData {
-  if (!current || current.pages.length === 0) {
-    return {
-      pages: [{ notes: [optimisticNote], nextCursor: null }],
-      pageParams: [null],
-    };
-  }
-
-  const [firstPage, ...restPages] = current.pages;
-  if (!firstPage) {
-    return {
-      pages: [{ notes: [optimisticNote], nextCursor: null }],
-      pageParams: [null],
-    };
-  }
-
-  return {
-    ...current,
-    pages: [{ ...firstPage, notes: [...firstPage.notes, optimisticNote] }, ...restPages],
-  };
-}
-
-function removeFeedNote(
-  current: NotesFeedData | undefined,
-  noteId: string,
-): NotesFeedData | undefined {
-  if (!current) {
-    return current;
-  }
-
-  return {
-    ...current,
-    pages: current.pages.map((page) => ({
-      ...page,
-      notes: page.notes.filter((note) => note.id !== noteId),
-    })),
-  };
 }
 
 export function useNotesList(options: NotesListInput = {}, queryOptions: UseNotesListOptions = {}) {
@@ -152,7 +81,7 @@ export function useNotesFeed(
   queryOptions: UseNotesFeedOptions = {},
 ) {
   const client = useApiClient();
-  const limit = options.limit ?? DEFAULT_NOTES_FEED_LIMIT;
+  const limit = options.limit ?? 20;
 
   return useInfiniteQuery<NotesFeedOutput, Error, NotesFeedData, readonly unknown[], string | null>(
     {
@@ -223,38 +152,14 @@ export function useCreateNote() {
   const client = useApiClient();
   const queryClient = useQueryClient();
 
-  return useMutation<NotesCreateOutput, Error, NotesCreateInput, CreateNoteContext>({
+  return useMutation<NotesCreateOutput, Error, NotesCreateInput>({
     mutationFn: async (variables) => {
       const res = await client.api.notes.$post({ json: variables as never });
       return res.json() as Promise<NotesCreateOutput>;
     },
-    onMutate: async (variables) => {
-      const optimisticNote = buildOptimisticFeedNote(variables);
-      const feedQueryKey = notesQueryKeys.feed({ limit: DEFAULT_NOTES_FEED_LIMIT });
-
-      await queryClient.cancelQueries({ queryKey: feedQueryKey });
-      const previousFeed = queryClient.getQueryData<NotesFeedData>(feedQueryKey);
-
-      queryClient.setQueryData<NotesFeedData>(feedQueryKey, (current) =>
-        prependOptimisticFeedNote(current, optimisticNote),
-      );
-
-      return {
-        optimisticId: optimisticNote.id,
-        previousFeed,
-      };
-    },
-    onError: (_error, _variables, context) => {
-      const feedQueryKey = notesQueryKeys.feed({ limit: DEFAULT_NOTES_FEED_LIMIT });
-      queryClient.setQueryData(feedQueryKey, context?.previousFeed);
-    },
-    onSuccess: async (createdNote, _variables, context) => {
-      if (context?.optimisticId) {
-        await requestNotesRowExit(context.optimisticId);
-      }
+    onSuccess: (createdNote) => {
       queryClient.setQueryData(notesQueryKeys.detail(createdNote.id), createdNote);
-      queryClient.invalidateQueries({ queryKey: notesQueryKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: notesQueryKeys.feeds() });
+      queryClient.invalidateQueries({ queryKey: inboxQueryKeys.pages() });
     },
   });
 }
@@ -273,7 +178,8 @@ export function useUpdateNote() {
     },
     {
       onSuccess: (data) => {
-        createNotesMutationSuccessHandler(queryClient, data.id);
+        queryClient.setQueryData(notesQueryKeys.detail(data.id), data);
+        queryClient.invalidateQueries({ queryKey: inboxQueryKeys.pages() });
       },
     },
   );
@@ -283,34 +189,14 @@ export function useDeleteNote() {
   const client = useApiClient();
   const queryClient = useQueryClient();
 
-  return useMutation<
-    NotesDeleteOutput,
-    Error,
-    { id: string },
-    { previousFeed: NotesFeedData | undefined }
-  >({
+  return useMutation<NotesDeleteOutput, Error, { id: string }>({
     mutationFn: async (variables) => {
       const res = await client.api.notes[':id'].$delete({ param: { id: variables.id } });
       return res.json() as Promise<NotesDeleteOutput>;
     },
-    onMutate: async (variables) => {
-      const feedQueryKey = notesQueryKeys.feed({ limit: DEFAULT_NOTES_FEED_LIMIT });
-      await queryClient.cancelQueries({ queryKey: feedQueryKey });
-      const previousFeed = queryClient.getQueryData<NotesFeedData>(feedQueryKey);
-
-      await requestNotesRowExit(variables.id);
-      queryClient.setQueryData<NotesFeedData>(feedQueryKey, (current) =>
-        removeFeedNote(current, variables.id),
-      );
-
-      return { previousFeed };
-    },
-    onError: (_error, _variables, context) => {
-      const feedQueryKey = notesQueryKeys.feed({ limit: DEFAULT_NOTES_FEED_LIMIT });
-      queryClient.setQueryData(feedQueryKey, context?.previousFeed);
-    },
     onSuccess: async (_, variables) => {
-      await createNotesMutationSuccessHandler(queryClient, variables.id);
+      queryClient.removeQueries({ queryKey: notesQueryKeys.detail(variables.id) });
+      queryClient.invalidateQueries({ queryKey: inboxQueryKeys.pages() });
     },
   });
 }

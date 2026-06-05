@@ -41,10 +41,11 @@ export default function AppLayout() {
         <Stack.Screen
           name="index"
           options={{
-            title: 'Feed',
+            title: 'Inbox',
             headerRight: () => <SettingsButton />,
           }}
         />
+        <Stack.Screen name="inbox/[kind]/[id]" options={{}} />
         <Stack.Screen name="notes/[id]" options={{}} />
         <Stack.Screen name="chat/[id]" options={{}} />
         <Stack.Screen name="settings/index" options={{ title: 'Settings' }} />

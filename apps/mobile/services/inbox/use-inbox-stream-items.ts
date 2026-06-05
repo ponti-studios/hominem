@@ -1,7 +1,7 @@
 import { useApiClient } from '@hominem/rpc/react';
 import type { InboxOutput, InboxStreamItem } from '@hominem/rpc/types';
-import { useQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
+import { useInfiniteQuery, type InfiniteData } from '@tanstack/react-query';
+import { useEffect, useMemo } from 'react';
 
 import type { InboxStreamItemData } from '~/components/workspace/InboxStreamItem.types';
 import { readCachedInboxItems, writeCachedInboxItems } from '~/services/inbox/cache';
@@ -20,10 +20,10 @@ const INBOX_STREAM_STALE_TIME_MS = 30_000;
 
 function toMobileInboxRoute(item: InboxStreamItem): string {
   if (item.kind === 'chat') {
-    return `/(protected)/(tabs)/chat/${item.entityId}`;
+    return `/(protected)/(tabs)/inbox/chat/${item.entityId}`;
   }
 
-  return `/(protected)/(tabs)/notes/${item.entityId}`;
+  return `/(protected)/(tabs)/inbox/note/${item.entityId}`;
 }
 
 function toInboxStreamItem(item: InboxStreamItem): InboxStreamItemData {
@@ -47,23 +47,44 @@ export function useInboxStreamItems({ enabled = true }: UseInboxStreamItemsOptio
     inboxItemCount: cachedItems.length,
   });
 
-  const inboxQuery = useQuery<InboxOutput>({
-    queryKey: inboxKeys.all,
-    queryFn: async () => {
-      const res = await client.api.inbox.$get({ query: { limit: '50' } });
-      const inbox = await res.json();
-      writeCachedInboxItems(inbox.items);
-      return inbox;
+  const inboxQuery = useInfiniteQuery<
+    InboxOutput,
+    Error,
+    InfiniteData<InboxOutput, string | null>,
+    readonly unknown[],
+    string | null
+  >({
+    queryKey: inboxKeys.page({ limit: 50 }),
+    initialPageParam: null,
+    queryFn: async ({ pageParam }) => {
+      const query: { limit: string; cursor?: string } = { limit: '50' };
+      if (pageParam) query.cursor = pageParam;
+      const res = await client.api.inbox.$get({ query });
+      return res.json() as Promise<InboxOutput>;
     },
-    initialData: cachedItems.length > 0 ? { items: cachedItems } : undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    initialData:
+      cachedItems.length > 0
+        ? { pages: [{ items: cachedItems, nextCursor: null }], pageParams: [null] }
+        : undefined,
+    initialDataUpdatedAt: cachedItems.length > 0 ? 0 : undefined,
     staleTime: INBOX_STREAM_STALE_TIME_MS,
     enabled,
   });
 
-  const inboxItems = inboxQuery.data?.items ?? [];
+  const inboxItems = useMemo(
+    () => inboxQuery.data?.pages.flatMap((page) => page.items) ?? [],
+    [inboxQuery.data],
+  );
+  useEffect(() => {
+    if (inboxItems.length > 0) {
+      writeCachedInboxItems(inboxItems);
+    }
+  }, [inboxItems]);
+
   const items = useMemo(() => inboxItems.map(toInboxStreamItem), [inboxItems]);
   const restoredState = resolveRestoredQueryState({
-    data: inboxQuery.data?.items,
+    data: inboxItems,
     isPending: inboxQuery.isPending,
     isFetching: inboxQuery.isFetching,
     hasUsableData: hasNonEmptyListData,
@@ -73,6 +94,9 @@ export function useInboxStreamItems({ enabled = true }: UseInboxStreamItemsOptio
     items,
     isInitialLoading: restoredState.isInitialLoading,
     isRefreshing: restoredState.isRefreshing,
+    fetchNextPage: () => inboxQuery.fetchNextPage(),
+    hasNextPage: inboxQuery.hasNextPage,
+    isFetchingNextPage: inboxQuery.isFetchingNextPage,
     refetch: () => inboxQuery.refetch(),
   };
 }

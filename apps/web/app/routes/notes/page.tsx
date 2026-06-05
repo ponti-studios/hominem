@@ -25,10 +25,10 @@ const NOTES_NEW_DRAFT_STORAGE_KEY = 'web:notes:new-draft';
 
 function buildInboxItemPath(item: InboxOutput['items'][number]): string {
   if (item.kind === 'chat') {
-    return `/chat/${item.entityId}`;
+    return `/inbox/chat/${item.entityId}`;
   }
 
-  return `/notes/${item.entityId}`;
+  return `/inbox/note/${item.entityId}`;
 }
 
 export async function loader({ request }: { request: Request }) {
@@ -43,14 +43,19 @@ export async function loader({ request }: { request: Request }) {
     new URL('/api/inbox?limit=20', serverEnv.VITE_PUBLIC_API_URL).toString(),
     { headers },
   );
-  const inbox: InboxOutput = response.ok ? ((await response.json()) as InboxOutput) : { items: [] };
+  const inbox: InboxOutput = response.ok
+    ? ((await response.json()) as InboxOutput)
+    : { items: [], nextCursor: null };
 
   return data({ inbox });
 }
 
 export default function NotesPage({ loaderData }: { loaderData: { inbox: InboxOutput } }) {
   const inboxQuery = useInbox(20, { initialData: loaderData.inbox });
-  const items = useMemo(() => inboxQuery.data?.items ?? [], [inboxQuery.data]);
+  const items = useMemo(
+    () => inboxQuery.data?.pages.flatMap((page) => page.items) ?? [],
+    [inboxQuery.data],
+  );
   const composerStore = useMemo(() => new ComposerStore(), []);
   const actionsRef = useRef<ComposerActions>({} as ComposerActions);
 
@@ -139,9 +144,18 @@ export default function NotesPage({ loaderData }: { loaderData: { inbox: InboxOu
   );
 
   const maybeLoadOlderItems = useCallback(() => {
-    // Inbox API doesn't support pagination yet, so this is a no-op
-    // In the future, this can be extended to support cursor-based pagination
-  }, []);
+    const scrollElement = scrollRef.current;
+    if (!scrollElement || !inboxQuery.hasNextPage || inboxQuery.isFetchingNextPage) {
+      return;
+    }
+
+    const distanceFromBottom =
+      scrollElement.scrollHeight - scrollElement.clientHeight - scrollElement.scrollTop;
+
+    if (distanceFromBottom <= FEED_ESTIMATED_ROW_HEIGHT * 4) {
+      void inboxQuery.fetchNextPage();
+    }
+  }, [inboxQuery]);
 
   const setScrollElement = useCallback(
     (element: HTMLDivElement | null) => {
@@ -221,7 +235,10 @@ export default function NotesPage({ loaderData }: { loaderData: { inbox: InboxOu
       <main className="flex min-h-0 w-full flex-1 flex-col border-t border-border-subtle">
         <div
           ref={setScrollElement}
-          onScroll={updateNearBottom}
+          onScroll={() => {
+            updateNearBottom();
+            maybeLoadOlderItems();
+          }}
           className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden pb-40 md:pb-44"
         >
           {items.length === 0 ? (
@@ -268,13 +285,16 @@ export default function NotesPage({ loaderData }: { loaderData: { inbox: InboxOu
                   );
                 })}
               </div>
+              {inboxQuery.isFetchingNextPage ? (
+                <div className="py-4 text-center text-sm text-text-tertiary">Loading more...</div>
+              ) : null}
             </div>
           ) : null}
         </div>
       </main>
       <Composer
         actionsRef={actionsRef}
-        buildChatPath={(chatId) => `/chat/${chatId}`}
+        buildChatPath={(chatId) => `/inbox/chat/${chatId}`}
         mode={mode}
         chatId={chatId}
         store={composerStore}

@@ -26,10 +26,6 @@ export function useChatArchive({ chatId, onSuccess }: UseChatArchiveOptions) {
       writeCachedChat(archivedChat);
       queryClient.setQueryData(chatKeys.activeChat(chatId), archivedChat);
       queryClient.setQueryData<ChatWithActivity[] | undefined>(
-        chatKeys.resumableSessions,
-        (sessions) => sessions?.filter((session) => session.id !== chatId),
-      );
-      queryClient.setQueryData<ChatWithActivity[] | undefined>(
         chatKeys.archivedSessions,
         (sessions) => {
           const nextArchivedChat: ChatWithActivity = {
