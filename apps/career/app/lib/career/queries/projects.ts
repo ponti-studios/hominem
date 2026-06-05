@@ -1,12 +1,12 @@
 import type { CareerProjectRecord } from '@hominem/db';
-import { CareerRepository, getDb } from '@hominem/db';
+import { CareerRepository, db } from '@hominem/db';
 
 export async function getProjectsByPortfolio(portfolio_id: string) {
-  return CareerRepository.listProjectsByPortfolio(getDb(), portfolio_id);
+  return CareerRepository.listProjectsByPortfolio(db, portfolio_id);
 }
 
 export async function getProjectsByWorkExperience(portfolio_id: string, work_experience_id: string) {
-  return CareerRepository.listProjectsByWorkExperience(getDb(), portfolio_id, work_experience_id);
+  return CareerRepository.listProjectsByWorkExperience(db, portfolio_id, work_experience_id);
 }
 
 export async function createProject(
@@ -24,7 +24,7 @@ export async function createProject(
     sort_order: number;
   },
 ): Promise<CareerProjectRecord> {
-  return CareerRepository.createProject(getDb(), owner_userid, projectData);
+  return CareerRepository.createProject(db, owner_userid, projectData);
 }
 
 export async function updateProject(
@@ -43,9 +43,9 @@ export async function updateProject(
     sort_order?: number;
   },
 ) {
-  await CareerRepository.updateProject(getDb(), owner_userid, projectId, portfolio_id, updates);
+  await CareerRepository.updateProject(db, owner_userid, projectId, portfolio_id, updates);
 }
 
 export async function deleteProject(owner_userid: string, projectId: string, portfolio_id: string) {
-  await CareerRepository.deleteProject(getDb(), owner_userid, projectId, portfolio_id);
+  await CareerRepository.deleteProject(db, owner_userid, projectId, portfolio_id);
 }

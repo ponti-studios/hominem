@@ -1,5 +1,5 @@
 import { useAuthClient } from '@hominem/auth/client/provider';
-import { CareerRepository, getDb } from '@hominem/db';
+import { CareerRepository, db } from '@hominem/db';
 import { createStorageService, validateFile } from '@hominem/storage';
 import { Badge } from '@hominem/ui/badge';
 import { Button } from '@hominem/ui/button';
@@ -36,7 +36,7 @@ export async function loader(args: LoaderFunctionArgs) {
   return withAuthLoader(args, async ({ user }) => {
     const [fullPortfolio, portfolioRows] = await Promise.all([
       getFullUserPortfolio(user.id),
-      CareerRepository.listPortfoliosByUserId(getDb(), user.id),
+      CareerRepository.listPortfoliosByUserId(db, user.id),
     ]);
     const portfolios: Portfolio[] = portfolioRows.map((portfolio) => ({
       id: portfolio.id,
@@ -68,7 +68,7 @@ export async function action(args: ActionFunctionArgs) {
 
     if (action === 'delete' && portfolio_id) {
       return tryAsync(async () => {
-        await CareerRepository.deletePortfolio(getDb(), user.id, portfolio_id as string);
+        await CareerRepository.deletePortfolio(db, user.id, portfolio_id as string);
 
         return createSuccessResponse(null, 'Portfolio deleted successfully');
       }, 'Failed to delete portfolio');
@@ -77,7 +77,7 @@ export async function action(args: ActionFunctionArgs) {
     if (action === 'set-current-portfolio' && portfolio_id) {
       return tryAsync(async () => {
         await CareerRepository.setCurrentPortfolioByUserId(
-          getDb(),
+          db,
           user.id,
           portfolio_id as string,
         );
@@ -112,7 +112,7 @@ export async function action(args: ActionFunctionArgs) {
         }
 
         try {
-          await CareerRepository.updatePortfolioProfileImage(getDb(), user.id, uploadResult.url);
+          await CareerRepository.updatePortfolioProfileImage(db, user.id, uploadResult.url);
         } catch (updateError) {
           console.error('Database update error:', updateError);
           await profileImageStorage.deleteFile(uploadResult.id, user.id);
@@ -150,13 +150,13 @@ export async function action(args: ActionFunctionArgs) {
           return createErrorResponse('Slug must be less than 50 characters long');
         }
 
-        const isAvailable = await CareerRepository.isSlugAvailable(getDb(), newSlug, portfolio_id);
+        const isAvailable = await CareerRepository.isSlugAvailable(db, newSlug, portfolio_id);
 
         if (!isAvailable) {
           return createErrorResponse('Slug is already taken');
         }
 
-        await CareerRepository.updatePortfolioSlug(getDb(), user.id, portfolio_id, newSlug);
+        await CareerRepository.updatePortfolioSlug(db, user.id, portfolio_id, newSlug);
 
         return createSuccessResponse({ slug: newSlug }, 'Portfolio URL updated successfully');
       }, 'Failed to update portfolio URL');

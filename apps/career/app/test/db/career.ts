@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { getDb } from '@hominem/db';
+import { db } from '@hominem/db';
 
 type CareerTestUser = {
   id: string;
@@ -32,7 +32,7 @@ export function createCareerTestDb() {
     };
     userIds.push(user.id);
 
-    await getDb().insertInto('user').values(user).execute();
+    await db.insertInto('user').values(user).execute();
 
     return user;
   }
@@ -41,7 +41,7 @@ export function createCareerTestDb() {
     const user = options.user ?? (await createUser({ name: options.slug ?? 'Portfolio User' }));
     const slug = options.slug ?? 'existing';
 
-    const portfolio = await getDb()
+    const portfolio = await db
       .insertInto('app.portfolios')
       .values({
         owner_userid: user.id,
@@ -63,7 +63,7 @@ export function createCareerTestDb() {
   async function cleanup() {
     if (userIds.length === 0) return;
 
-    await getDb().deleteFrom('user').where('id', 'in', userIds).execute();
+    await db.deleteFrom('user').where('id', 'in', userIds).execute();
     userIds.length = 0;
   }
 

@@ -1,4 +1,4 @@
-import { CareerRepository, getDb } from '@hominem/db';
+import { CareerRepository, db } from '@hominem/db';
 import { data, type LoaderFunctionArgs } from 'react-router';
 
 import { createErrorResponse, createSuccessResponse, withAuthLoader } from '../lib/route-utils';
@@ -36,7 +36,7 @@ export async function loader(args: LoaderFunctionArgs) {
     // Check if slug already exists (excluding current portfolio if editing)
     try {
       const isAvailable = await CareerRepository.isSlugAvailable(
-        getDb(),
+        db,
         slug,
         currentPortfolioId || undefined,
       );

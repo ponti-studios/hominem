@@ -1,4 +1,4 @@
-import { getDb, TaskRepository } from '@hominem/db';
+import { db, TaskRepository } from '@hominem/db';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import * as z from 'zod';
@@ -16,7 +16,7 @@ export const tasksRoutes = new Hono<AppContext>()
   .post('/', zValidator('json', createTaskSchema), async (c) => {
     const userId = c.get('userId')!;
     const input = c.req.valid('json');
-    const task = await TaskRepository.create(getDb(), {
+    const task = await TaskRepository.create(db, {
       artifactType: input.artifactType,
       description: input.description ?? null,
       title: input.title,

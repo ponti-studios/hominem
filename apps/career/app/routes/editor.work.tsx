@@ -1,5 +1,5 @@
 import type { CareerWorkExperienceRecord as WorkExperience } from '@hominem/db';
-import { CareerRepository, getDb } from '@hominem/db';
+import { CareerRepository, db } from '@hominem/db';
 import { Button } from '@hominem/ui/button';
 import { Briefcase, PlusIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -428,7 +428,7 @@ export async function action(args: ActionFunctionArgs) {
               end_date: stringToDate(insertData.end_date),
             };
 
-            const newExperience = await CareerRepository.createWorkExperience(getDb(), user.id, {
+            const newExperience = await CareerRepository.createWorkExperience(db, user.id, {
               portfolio_id: dbData.portfolio_id,
               role: dbData.role,
               company: dbData.company,
@@ -456,7 +456,7 @@ export async function action(args: ActionFunctionArgs) {
             end_date: stringToDate(updateData.end_date),
           };
 
-          await CareerRepository.updateWorkExperience(getDb(), user.id, id, {
+          await CareerRepository.updateWorkExperience(db, user.id, id, {
             role: dbData.role,
             company: dbData.company,
             description: dbData.description,
@@ -482,7 +482,7 @@ export async function action(args: ActionFunctionArgs) {
         }
 
         return tryAsync(async () => {
-          await CareerRepository.deleteWorkExperience(getDb(), user.id, id, portfolio_id);
+          await CareerRepository.deleteWorkExperience(db, user.id, id, portfolio_id);
 
           return createSuccessResponse(null, 'Work experience deleted successfully');
         }, 'Failed to delete work experience');

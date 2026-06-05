@@ -38,11 +38,3 @@ export async function runInTransaction<T>(fn: (trx: TransactionHandle) => Promis
   return db.transaction().execute(fn);
 }
 
-/**
- * Returns the default (non-transactional) database handle.
- * Use this for read-only queries or single-statement writes
- * that don't need atomicity guarantees.
- */
-export function getDb(): Kysely<DB> {
-  return db;
-}

@@ -1,5 +1,5 @@
 import type { ChatMessageFileRecord, ChatMessageRecord, NoteContext } from '@hominem/db';
-import { ChatRepository, getDb, runInTransaction } from '@hominem/db';
+import { ChatRepository, db, runInTransaction } from '@hominem/db';
 import { streamChatCompletion } from '@hominem/ai';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
@@ -11,7 +11,6 @@ const chatsSendSchema = z
     message: z.string(),
     fileIds: z.array(z.uuid()).max(5).optional(),
     noteIds: z.array(z.uuid()).max(10).optional(),
-    chatId: z.string().optional(),
   })
   .superRefine((value, ctx) => {
     if (
@@ -46,12 +45,24 @@ const chatsMessagesQuerySchema = z.object({
   offset: z.string().optional(),
 });
 
-function buildUserPrompt(
+function buildPrompt(
   message: string,
+  history: ChatMessageRecord[],
   notes: NoteContext[],
   files: ChatMessageFileRecord[],
 ): string {
-  const sections = [message.trim()];
+  const sections = [];
+
+  if (history.length > 0) {
+    sections.push(
+      [
+        'Conversation history:',
+        ...history.map((entry, index) => `${index + 1}. ${entry.role}: ${entry.content}`),
+      ].join('\n'),
+    );
+  }
+
+  sections.push(message.trim());
 
   if (notes.length > 0) {
     sections.push(
@@ -96,29 +107,7 @@ function buildUserPrompt(
   return sections.filter(Boolean).join('\n\n');
 }
 
-function buildConversationPrompt(
-  message: string,
-  history: ChatMessageRecord[],
-  notes: NoteContext[],
-  files: ChatMessageFileRecord[],
-): string {
-  const sections = [];
-
-  if (history.length > 0) {
-    sections.push(
-      [
-        'Conversation history:',
-        ...history.map((entry, index) => `${index + 1}. ${entry.role}: ${entry.content}`),
-      ].join('\n'),
-    );
-  }
-
-  sections.push(buildUserPrompt(message, notes, files));
-
-  return sections.join('\n\n');
-}
-
-function getRequiredChatId(c: { req: { param: (name: string) => string | undefined } }): string {
+function getChatId(c: { req: { param: (name: string) => string | undefined } }): string {
   const chatId = c.req.param('id');
   if (!chatId) throw new ValidationError('Chat id is required');
   return chatId;
@@ -126,17 +115,12 @@ function getRequiredChatId(c: { req: { param: (name: string) => string | undefin
 
 const chatByIdRoutes = new Hono<AppContext>()
   .use(
-    '/send',
-    rateLimitMiddleware({ bucket: 'chat-send', identifier: 'send', windowSec: 60, max: 30 }),
-  )
-  .use(
     '/stream',
-    rateLimitMiddleware({ bucket: 'chat-stream', identifier: 'stream', windowSec: 60, max: 30 }),
+    rateLimitMiddleware({ bucket: 'chat-stream', windowSec: 60, max: 30 }),
   )
   .get('/', async (c) => {
     const userId = c.get('userId')!;
-    const chatId = getRequiredChatId(c);
-    const db = getDb();
+    const chatId = getChatId(c);
 
     const chat = await ChatRepository.getOwnedOrThrow(db, chatId, userId);
     const messages = await ChatRepository.getMessages(db, chatId, 100, 0);
@@ -148,8 +132,7 @@ const chatByIdRoutes = new Hono<AppContext>()
   })
   .delete('/', async (c) => {
     const userId = c.get('userId')!;
-    const chatId = getRequiredChatId(c);
-    const db = getDb();
+    const chatId = getChatId(c);
 
     await ChatRepository.getOwnedOrThrow(db, chatId, userId);
     await ChatRepository.delete(db, chatId, userId);
@@ -158,9 +141,8 @@ const chatByIdRoutes = new Hono<AppContext>()
   })
   .patch('/', zValidator('json', chatsUpdateSchema), async (c) => {
     const userId = c.get('userId')!;
-    const chatId = getRequiredChatId(c);
+    const chatId = getChatId(c);
     const { title } = c.req.valid('json');
-    const db = getDb();
 
     await ChatRepository.getOwnedOrThrow(db, chatId, userId);
     await ChatRepository.updateTitle(db, chatId, userId, title);
@@ -169,8 +151,7 @@ const chatByIdRoutes = new Hono<AppContext>()
   })
   .post('/archive', async (c) => {
     const userId = c.get('userId')!;
-    const chatId = getRequiredChatId(c);
-    const db = getDb();
+    const chatId = getChatId(c);
 
     await ChatRepository.getOwnedOrThrow(db, chatId, userId);
     const archived = await ChatRepository.archive(db, chatId, userId);
@@ -179,8 +160,7 @@ const chatByIdRoutes = new Hono<AppContext>()
   })
   .get('/messages', zValidator('query', chatsMessagesQuerySchema), async (c) => {
     const userId = c.get('userId')!;
-    const chatId = getRequiredChatId(c);
-    const db = getDb();
+    const chatId = getChatId(c);
 
     await ChatRepository.getOwnedOrThrow(db, chatId, userId);
     const query = c.req.valid('query');
@@ -192,8 +172,7 @@ const chatByIdRoutes = new Hono<AppContext>()
   })
   .post('/stream', zValidator('json', chatsSendSchema), async (c) => {
     const userId = c.get('userId')!;
-    const chatId = getRequiredChatId(c);
-    const db = getDb();
+    const chatId = getChatId(c);
 
     await ChatRepository.getOwnedOrThrow(db, chatId, userId);
     const { message, fileIds = [], noteIds = [] } = c.req.valid('json');
@@ -207,17 +186,15 @@ const chatByIdRoutes = new Hono<AppContext>()
       throw new ValidationError('Message, notes, or files are required');
     }
 
-    await runInTransaction(async (trx) => {
-      await ChatRepository.insertMessage(trx, {
-        chatId,
-        authorUserId: userId,
-        role: 'user',
-        content: storedUserContent,
-        files: resolvedFiles.length > 0 ? resolvedFiles : null,
-        referencedNoteIds: resolvedNotes.length > 0 ? resolvedNotes.map((n) => n.id) : null,
-      });
+    await ChatRepository.insertMessage(db, {
+      chatId,
+      authorUserId: userId,
+      role: 'user',
+      content: storedUserContent,
+      files: resolvedFiles.length > 0 ? resolvedFiles : null,
+      referencedNoteIds: resolvedNotes.length > 0 ? resolvedNotes.map((n) => n.id) : null,
     });
-    const prompt = buildConversationPrompt(message, history, resolvedNotes, resolvedFiles);
+    const prompt = buildPrompt(message, history, resolvedNotes, resolvedFiles);
     const completion = streamChatCompletion({
       messages: [
         { role: 'system', content: loadPrompt('chat-assistant') },
@@ -261,13 +238,13 @@ export const chatsRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
   .get('/', async (c) => {
     const userId = c.get('userId')!;
-    const chats = await ChatRepository.listForUser(getDb(), userId, 100);
+    const chats = await ChatRepository.listForUser(db, userId, 100);
     return c.json(chats.map(toChatDto));
   })
   .post('/', zValidator('json', chatsCreateSchema), async (c) => {
     const userId = c.get('userId')!;
     const { title } = c.req.valid('json');
-    const chat = await ChatRepository.create(getDb(), { userId, title });
+    const chat = await ChatRepository.create(db, { userId, title });
     return c.json(toChatDto(chat), 201);
   })
   .route('/:id', chatByIdRoutes);

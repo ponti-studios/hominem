@@ -1,4 +1,4 @@
-import { CareerRepository, getDb } from '@hominem/db';
+import { CareerRepository, db } from '@hominem/db';
 import { Button } from '@hominem/ui/button';
 import { Card, CardContent, CardHeader } from '@hominem/ui/card';
 import { Input } from '@hominem/ui/input';
@@ -43,7 +43,7 @@ export async function action(args: ActionFunctionArgs) {
     }
     const portfolioData = portfolioDataResult as BasicInfoFormValues;
 
-    await CareerRepository.savePortfolioBasics(getDb(), user.id, portfolioData);
+    await CareerRepository.savePortfolioBasics(db, user.id, portfolioData);
     return createSuccessResponse(null, 'Portfolio saved successfully');
   });
 }

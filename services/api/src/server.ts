@@ -33,6 +33,7 @@ export type AppEnv = {
 export function createServer() {
   const app = new Hono<AppEnv>();
   const allowedOrigins = new Set([env.API_URL, env.WEB_URL, env.CAREER_URL]);
+  const authHandler = (c: { req: { raw: Request } }) => betterAuthServer.handler(c.req.raw);
 
   app.use('*', blockMaliciousProbes());
 
@@ -45,9 +46,7 @@ export function createServer() {
   app.use(
     '*',
     cors({
-      origin: (origin) => {
-        return allowedOrigins.has(origin || '') ? origin : null;
-      },
+      origin: (origin) => (allowedOrigins.has(origin || '') ? origin : null),
       credentials: true,
       allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     }),
@@ -58,8 +57,8 @@ export function createServer() {
 
   app.use('/api/auth/*', authRateLimitMiddleware());
   app.route('/api/status', statusRoutes);
-  app.on(['GET', 'POST'], '/api/auth', (c) => betterAuthServer.handler(c.req.raw));
-  app.on(['GET', 'POST'], '/api/auth/*', (c) => betterAuthServer.handler(c.req.raw));
+  app.on(['GET', 'POST'], '/api/auth', authHandler);
+  app.on(['GET', 'POST'], '/api/auth/*', authHandler);
   app.route('/api/images', imagesRoutes);
 
   app.get('/', (c) => {

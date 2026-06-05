@@ -1,4 +1,4 @@
-import { getDb, sql } from '@hominem/db';
+import { db, sql } from '@hominem/db';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import * as z from 'zod';
@@ -25,7 +25,6 @@ export const inboxRoutes = new Hono<AppContext>()
     const query = c.req.valid('query');
     const parsedLimit = query.limit ? Number.parseInt(query.limit, 10) : 50;
     const limit = Number.isFinite(parsedLimit) ? Math.min(Math.max(parsedLimit, 1), 100) : 50;
-    const db = getDb();
     const { rows: items } = await sql<InboxRow>`
         select
           'chat' as "kind",

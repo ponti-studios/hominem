@@ -18,9 +18,9 @@ const healthServer = createServer((req, res) => {
 });
 healthServer.listen(Number(process.env.PORT ?? 3001));
 
-initRuntime('worker').installSignalHandlers([
+initRuntime('worker').installSignalHandlers(
   () => fileProcessingWorker.close(),
   () => new Promise<void>((resolve) => healthServer.close(() => resolve())),
-]);
+);
 
 logger.info('worker_started', { queue: 'file-processing' });

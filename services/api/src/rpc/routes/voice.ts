@@ -105,20 +105,18 @@ export const authenticatedVoiceRoutes = new Hono<AppContext>()
     '/transcribe',
     rateLimitMiddleware({
       bucket: 'voice-transcribe',
-      identifier: 'transcribe',
       windowSec: 60,
       max: 20,
     }),
   )
   .use(
     '/speech',
-    rateLimitMiddleware({ bucket: 'voice-speech', identifier: 'speech', windowSec: 60, max: 30 }),
+    rateLimitMiddleware({ bucket: 'voice-speech', windowSec: 60, max: 30 }),
   )
   .use(
     '/respond/stream',
     rateLimitMiddleware({
       bucket: 'voice-respond-stream',
-      identifier: 'respond-stream',
       windowSec: 60,
       max: 20,
     }),

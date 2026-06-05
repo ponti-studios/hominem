@@ -1,4 +1,4 @@
-import { CareerRepository, getDb } from '@hominem/db';
+import { CareerRepository, db } from '@hominem/db';
 import type {
   CareerCompanyRecord as Company,
   CareerJobApplicationRecord,
@@ -60,7 +60,6 @@ export class JobApplicationsService {
     applicationId: string,
     owner_userid: string,
   ): Promise<ApplicationDetailData> {
-    const db = getDb();
 
     const applicationData = await db
       .selectFrom('app.job_applications as application')
@@ -245,7 +244,7 @@ export class JobApplicationsService {
    * Verify application ownership
    */
   static async verifyOwnership(applicationId: string, owner_userid: string): Promise<boolean> {
-    const application = await getDb()
+    const application = await db
       .selectFrom('app.job_applications')
       .select('id')
       .where('id', '=', applicationId)
@@ -267,7 +266,7 @@ export class JobApplicationsService {
       return;
     }
 
-    let query = getDb()
+    let query = db
       .updateTable('app.job_applications')
       .set({
         ...(updates.position !== undefined ? { position: updates.position } : {}),
@@ -308,7 +307,7 @@ export class JobApplicationsService {
     title: string | null,
     content: string,
   ): Promise<void> {
-    await getDb()
+    await db
       .insertInto('app.application_notes')
       .values({
         application_id: applicationId,
@@ -323,14 +322,14 @@ export class JobApplicationsService {
    * Delete a note
    */
   static async deleteNote(noteId: string): Promise<void> {
-    await getDb().deleteFrom('app.application_notes').where('id', '=', noteId).execute();
+    await db.deleteFrom('app.application_notes').where('id', '=', noteId).execute();
   }
 
   /**
    * Add an interview to an application
    */
   static async addInterview(applicationId: string, interview: InterviewEntry): Promise<void> {
-    const currentApplication = await getDb()
+    const currentApplication = await db
       .selectFrom('app.job_applications')
       .select('interview_dates')
       .where('id', '=', applicationId)
@@ -340,7 +339,7 @@ export class JobApplicationsService {
       ? (currentApplication.interview_dates as unknown as InterviewEntry[])
       : [];
 
-    await getDb()
+    await db
       .updateTable('app.job_applications')
       .set({
         interview_dates: [...currentInterviews, interview].map(interviewEntryToJson) as JsonValue,
@@ -353,7 +352,7 @@ export class JobApplicationsService {
    * Get application by ID for ownership verification
    */
   static async getApplicationById(applicationId: string, owner_userid: string) {
-    const application = await getDb()
+    const application = await db
       .selectFrom('app.job_applications')
       .selectAll()
       .where('id', '=', applicationId)
@@ -367,7 +366,6 @@ export class JobApplicationsService {
     owner_userid: string,
     input: CreateApplicationInput,
   ): Promise<CareerJobApplicationRecord> {
-    const db = getDb();
 
     const company = await CareerRepository.findOrCreateCompany(db, owner_userid, {
       name: input.companyName,

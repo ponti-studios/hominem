@@ -20,7 +20,7 @@ export const enhanceRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
   .use(
     '/enhance',
-    rateLimitMiddleware({ bucket: 'ai-enhance', identifier: 'enhance', windowSec: 60, max: 30 }),
+    rateLimitMiddleware({ bucket: 'ai-enhance', windowSec: 60, max: 30 }),
   )
   .post('/enhance', zValidator('json', enhanceTextInputSchema), async (c) => {
     const { text, instruction } = c.req.valid('json');

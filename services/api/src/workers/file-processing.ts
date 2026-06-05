@@ -1,4 +1,4 @@
-import { FileRepository, getDb } from '@hominem/db';
+import { FileRepository, db } from '@hominem/db';
 import { QUEUE_NAMES } from '@hominem/queues';
 import { FileProcessorService } from '@hominem/services/files';
 import { redis as cache } from '@hominem/services/redis';
@@ -38,7 +38,7 @@ async function processFileUploadJob(data: FileProcessingJobData) {
     data.fileId,
   );
 
-  await FileRepository.upsert(getDb(), {
+  await FileRepository.upsert(db, {
     id: data.fileId,
     userId: data.userId,
     storageKey: data.storageKey,

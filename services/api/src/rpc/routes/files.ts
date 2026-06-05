@@ -1,5 +1,5 @@
 import type { FileRecord } from '@hominem/db';
-import { FileRepository, getDb } from '@hominem/db';
+import { FileRepository, db } from '@hominem/db';
 import { fileProcessingQueue } from '@hominem/queues';
 import { fileStorageService } from '@hominem/storage';
 import { logger } from '@hominem/telemetry';
@@ -83,7 +83,7 @@ export const filesRoutes = new Hono<AppContext>()
   .get('/', async (c) => {
     try {
       const userId = c.get('userId')!;
-      const files = await FileRepository.listForUser(getDb(), userId);
+      const files = await FileRepository.listForUser(db, userId);
 
       return c.json({
         files: files.map(toFilePayload),
@@ -97,7 +97,7 @@ export const filesRoutes = new Hono<AppContext>()
     try {
       const userId = c.get('userId')!;
       const fileId = c.req.param('fileId');
-      const file = await FileRepository.getOwnedOrThrow(getDb(), fileId, userId);
+      const file = await FileRepository.getOwnedOrThrow(db, fileId, userId);
 
       return c.json({ file: toFilePayload(file) });
     } catch (error) {
@@ -108,7 +108,7 @@ export const filesRoutes = new Hono<AppContext>()
     try {
       const userId = c.get('userId')!;
       const fileId = c.req.param('fileId');
-      const url = await FileRepository.getUrl(getDb(), fileId, userId);
+      const url = await FileRepository.getUrl(db, fileId, userId);
 
       return c.json({
         url,
@@ -123,7 +123,6 @@ export const filesRoutes = new Hono<AppContext>()
     try {
       const userId = c.get('userId')!;
       const fileId = c.req.param('fileId');
-      const db = getDb();
 
       const exists = await FileRepository.existsForUser(db, fileId, userId);
       if (!exists) {
@@ -171,7 +170,7 @@ export const filesRoutes = new Hono<AppContext>()
         },
       );
 
-      const stored = await FileRepository.upsert(getDb(), {
+      const stored = await FileRepository.upsert(db, {
         id: storedFile.id,
         userId,
         storageKey: storedFile.filename,

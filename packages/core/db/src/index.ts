@@ -9,7 +9,7 @@ export { db, healthCheck, pool, sql } from './db';
 export type { DB as Database, Json, JsonArray, JsonObject, JsonValue } from './types/database';
 
 // Transaction support
-export { getDb, runInTransaction } from './transaction';
+export { runInTransaction } from './transaction';
 export type { DbHandle, TransactionHandle } from './transaction';
 
 // Export database table types

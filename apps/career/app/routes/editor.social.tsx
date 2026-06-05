@@ -1,5 +1,5 @@
 import type { CareerSocialLinksRecord } from '@hominem/db';
-import { CareerRepository, getDb } from '@hominem/db';
+import { CareerRepository, db } from '@hominem/db';
 import { Button } from '@hominem/ui/button';
 import { Github, Globe, Link2, Linkedin, Twitter } from 'lucide-react';
 import { useEffect } from 'react';
@@ -288,7 +288,7 @@ export async function action(args: ActionFunctionArgs) {
       throw new Error('Missing portfolio_id');
     }
 
-    await CareerRepository.saveSocialLinks(getDb(), user.id, socialLinksPayload.portfolio_id, {
+    await CareerRepository.saveSocialLinks(db, user.id, socialLinksPayload.portfolio_id, {
       id: socialLinksPayload.id,
       github: socialLinksPayload.github,
       linkedin: socialLinksPayload.linkedin,

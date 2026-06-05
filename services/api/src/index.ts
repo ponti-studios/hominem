@@ -18,4 +18,4 @@ serve({
   overrideGlobalObjects: false,
 });
 
-initRuntime('api').installSignalHandlers([]);
+initRuntime('api').installSignalHandlers();

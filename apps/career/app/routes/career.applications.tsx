@@ -1,4 +1,4 @@
-import { CareerRepository, getDb } from '@hominem/db';
+import { CareerRepository, db } from '@hominem/db';
 import { buttonVariants } from '@hominem/ui/button';
 import { Card, CardContent } from '@hominem/ui/card';
 import { PlusIcon } from 'lucide-react';
@@ -113,7 +113,7 @@ export async function action(args: ActionFunctionArgs) {
         const status = formData.get('status') as string;
 
         await CareerRepository.updateJobApplicationStatus(
-          getDb(),
+          db,
           user.id,
           applicationId,
           status as JobApplicationStatus,
@@ -125,7 +125,7 @@ export async function action(args: ActionFunctionArgs) {
       if (operation === 'delete') {
         const applicationId = formData.get('applicationId') as string;
 
-        await CareerRepository.deleteJobApplication(getDb(), user.id, applicationId);
+        await CareerRepository.deleteJobApplication(db, user.id, applicationId);
 
         return createSuccessResponse({ success: true }, 'Job application deleted successfully');
       }

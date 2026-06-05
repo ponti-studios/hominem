@@ -19,6 +19,6 @@ export function blockMaliciousProbes(): MiddlewareHandler {
       }
     }
 
-    return await next();
+    return next();
   };
 }

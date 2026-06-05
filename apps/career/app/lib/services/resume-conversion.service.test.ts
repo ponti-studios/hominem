@@ -1,4 +1,4 @@
-import { CareerRepository, getDb } from '@hominem/db';
+import { CareerRepository, db } from '@hominem/db';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { createCareerTestDb } from '~/test/db/career';
@@ -10,7 +10,7 @@ const testDb = createCareerTestDb();
 const slugTestValues = ['charles-ponti', 'charles-ponti-2', 'charles-ponti-3'];
 
 async function cleanupSlugTestRows() {
-  await getDb().deleteFrom('app.portfolios').where('slug', 'in', slugTestValues).execute();
+  await db.deleteFrom('app.portfolios').where('slug', 'in', slugTestValues).execute();
 }
 
 describe('resume conversion slug generation', () => {
@@ -21,28 +21,28 @@ describe('resume conversion slug generation', () => {
   });
 
   it('normalizes mixed-case and invalid slug input', async () => {
-    await expect(generateUniqueSlug(getDb(), ' Charles Ponti!! ', 'Fallback')).resolves.toBe(
+    await expect(generateUniqueSlug(db, ' Charles Ponti!! ', 'Fallback')).resolves.toBe(
       'charles-ponti',
     );
   });
 
   it('uses fallback input when the requested slug normalizes to empty', async () => {
-    await expect(generateUniqueSlug(getDb(), '!!!', 'Jane Doe')).resolves.toBe('jane-doe');
+    await expect(generateUniqueSlug(db, '!!!', 'Jane Doe')).resolves.toBe('jane-doe');
   });
 
   it('uses portfolio when requested and fallback slugs normalize to empty', async () => {
-    await expect(generateUniqueSlug(getDb(), '!!!', '???')).resolves.toBe('portfolio');
+    await expect(generateUniqueSlug(db, '!!!', '???')).resolves.toBe('portfolio');
   });
 
   it('adds deterministic suffixes for duplicate slugs', async () => {
     await testDb.createPortfolio({ slug: 'charles-ponti' });
     await testDb.createPortfolio({ slug: 'charles-ponti-2' });
 
-    await expect(generateUniqueSlug(getDb(), 'Charles Ponti')).resolves.toBe('charles-ponti-3');
+    await expect(generateUniqueSlug(db, 'Charles Ponti')).resolves.toBe('charles-ponti-3');
   });
 
   it('keeps generated slugs within database length constraints', async () => {
-    const slug = await generateUniqueSlug(getDb(), 'a'.repeat(80), 'Fallback');
+    const slug = await generateUniqueSlug(db, 'a'.repeat(80), 'Fallback');
 
     expect(slug).toHaveLength(50);
   });
@@ -108,7 +108,7 @@ describe('resume conversion slug generation', () => {
 
     expect(result.portfolioSlug).toBe('new-portfolio');
 
-    const portfolios = await getDb()
+    const portfolios = await db
       .selectFrom('app.portfolios')
       .select(['id', 'slug', 'title'])
       .where('owner_userid', '=', user.id)
@@ -121,27 +121,27 @@ describe('resume conversion slug generation', () => {
 
     const portfolio_id = portfolios.find((portfolio) => portfolio.slug === 'new-portfolio')!.id;
     const [workCount, skillCount, projectCount, statCount, social_links] = await Promise.all([
-      getDb()
+      db
         .selectFrom('app.work_experiences')
         .select(({ fn }) => fn.countAll<number>().as('count'))
         .where('portfolio_id', '=', portfolio_id)
         .executeTakeFirstOrThrow(),
-      getDb()
+      db
         .selectFrom('app.skills')
         .select(({ fn }) => fn.countAll<number>().as('count'))
         .where('portfolio_id', '=', portfolio_id)
         .executeTakeFirstOrThrow(),
-      getDb()
+      db
         .selectFrom('app.projects')
         .select(['technologies'])
         .where('portfolio_id', '=', portfolio_id)
         .executeTakeFirstOrThrow(),
-      getDb()
+      db
         .selectFrom('app.portfolio_stats')
         .select(({ fn }) => fn.countAll<number>().as('count'))
         .where('portfolio_id', '=', portfolio_id)
         .executeTakeFirstOrThrow(),
-      getDb()
+      db
         .selectFrom('app.social_links')
         .select(['github'])
         .where('portfolio_id', '=', portfolio_id)
@@ -154,7 +154,7 @@ describe('resume conversion slug generation', () => {
     expect(Number(statCount.count)).toBe(1);
     expect(social_links.github).toBe('https://github.com/example');
 
-    const preference = await getDb()
+    const preference = await db
       .selectFrom('app.user_portfolio_preferences')
       .select(['current_portfolio_id'])
       .where('user_id', '=', user.id)
@@ -199,7 +199,7 @@ describe('resume conversion slug generation', () => {
 
     expect(result.portfolioSlug).toBe('replacement-portfolio');
 
-    const portfolios = await getDb()
+    const portfolios = await db
       .selectFrom('app.portfolios')
       .select(['slug'])
       .where('owner_userid', '=', user.id)
@@ -222,9 +222,9 @@ describe('resume conversion slug generation', () => {
       title: 'Newer Portfolio',
     });
 
-    await CareerRepository.setCurrentPortfolioByUserId(getDb(), user.id, olderPortfolio.id);
+    await CareerRepository.setCurrentPortfolioByUserId(db, user.id, olderPortfolio.id);
 
-    const currentPortfolio = await CareerRepository.getPortfolioByUserId(getDb(), user.id);
+    const currentPortfolio = await CareerRepository.getPortfolioByUserId(db, user.id);
 
     expect(currentPortfolio?.id).toBe(olderPortfolio.id);
   });

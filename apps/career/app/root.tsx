@@ -1,5 +1,5 @@
 import { AuthProvider } from '@hominem/auth/client/provider';
-import { CareerRepository, getDb } from '@hominem/db';
+import { CareerRepository, db } from '@hominem/db';
 import { Button, buttonVariants } from '@hominem/ui/button';
 import { Card, CardContent } from '@hominem/ui/card';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -105,7 +105,7 @@ interface CurrentPortfolioSummary {
 export async function loader({ request }: LoaderFunctionArgs) {
   const { user, headers } = await getServerSession(request);
   const currentPortfolio = user
-    ? ((await CareerRepository.getPortfolioByUserId(getDb(), user.id)) as CurrentPortfolioSummary | null)
+    ? ((await CareerRepository.getPortfolioByUserId(db, user.id)) as CurrentPortfolioSummary | null)
     : null;
 
   return data({ user, apiBaseUrl: API_URL, currentPortfolio }, { headers });

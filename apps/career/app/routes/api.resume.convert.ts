@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 
 import { createChatCompletion, getChatCompletionText } from '@hominem/ai';
-import { CareerRepository, getDb } from '@hominem/db';
+import { CareerRepository, db } from '@hominem/db';
 import { createStorageService, resolveUploadMimeType, validateFile } from '@hominem/storage';
 import { data, type ActionFunction } from 'react-router';
 import { z } from 'zod';
@@ -128,7 +128,7 @@ export const action: ActionFunction = async ({ request }) => {
     }
 
     if (replaceExisting) {
-      existingPortfolio = await CareerRepository.getPortfolioByUserId(getDb(), user.id);
+      existingPortfolio = await CareerRepository.getPortfolioByUserId(db, user.id);
       if (!existingPortfolio) {
         return errorResponse(
           'No existing portfolio was found to replace. Create a portfolio first.',

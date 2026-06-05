@@ -1,5 +1,5 @@
 import type { CareerTestimonialRecord as Testimonial } from '@hominem/db';
-import { CareerRepository, getDb } from '@hominem/db';
+import { CareerRepository, db } from '@hominem/db';
 import { Button } from '@hominem/ui/button';
 import { MessageSquare, PlusIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -377,7 +377,7 @@ export async function action(args: ActionFunctionArgs) {
             // Insert new testimonial
             const { id: _id, ...insertData } = testimonialData;
 
-            const newTestimonial = await CareerRepository.createTestimonial(getDb(), user.id, {
+            const newTestimonial = await CareerRepository.createTestimonial(db, user.id, {
               portfolio_id: insertData.portfolio_id,
               name: insertData.name,
               title: insertData.title,
@@ -396,7 +396,7 @@ export async function action(args: ActionFunctionArgs) {
           if (!id) return createErrorResponse('Missing testimonial ID for update');
 
           await CareerRepository.updateTestimonial(
-            getDb(),
+            db,
             user.id,
             id,
             testimonialData.portfolio_id,
@@ -424,7 +424,7 @@ export async function action(args: ActionFunctionArgs) {
         }
 
         return tryAsync(async () => {
-          await CareerRepository.deleteTestimonial(getDb(), user.id, id, portfolio_id);
+          await CareerRepository.deleteTestimonial(db, user.id, id, portfolio_id);
 
           return createSuccessResponse(null, 'Testimonial deleted successfully');
         }, 'Failed to delete testimonial');

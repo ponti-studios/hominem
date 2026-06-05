@@ -1,5 +1,5 @@
 import type { CareerProjectRecord as Project } from '@hominem/db';
-import { CareerRepository, getDb } from '@hominem/db';
+import { CareerRepository, db } from '@hominem/db';
 import { Button } from '@hominem/ui/button';
 import { FolderOpen, PlusIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -463,7 +463,7 @@ export async function action(args: ActionFunctionArgs) {
               end_date: stringToDate(insertData.end_date),
             };
 
-            const newProject = await CareerRepository.createProject(getDb(), user.id, {
+            const newProject = await CareerRepository.createProject(db, user.id, {
               portfolio_id: dbData.portfolio_id,
               title: dbData.title,
               description: dbData.description,
@@ -496,7 +496,7 @@ export async function action(args: ActionFunctionArgs) {
             end_date: stringToDate(updateData.end_date),
           };
 
-          await CareerRepository.updateProject(getDb(), user.id, id, projectData.portfolio_id, {
+          await CareerRepository.updateProject(db, user.id, id, projectData.portfolio_id, {
             title: dbData.title,
             description: dbData.description,
             short_description: dbData.short_description,
@@ -526,7 +526,7 @@ export async function action(args: ActionFunctionArgs) {
         }
 
         return tryAsync(async () => {
-          await CareerRepository.deleteProject(getDb(), user.id, id, portfolio_id);
+          await CareerRepository.deleteProject(db, user.id, id, portfolio_id);
 
           return createSuccessResponse(null, 'Project deleted successfully');
         }, 'Failed to delete project');
