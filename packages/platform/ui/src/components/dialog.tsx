@@ -3,7 +3,6 @@ import { XIcon } from 'lucide-react';
 import * as React from 'react';
 
 import { cn } from '../lib/utils';
-import { Button } from './button';
 
 function Dialog({ ...props }: React.ComponentProps<typeof DialogPrimitive.Root>) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />;
@@ -81,27 +80,13 @@ function DialogHeader({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
-function DialogFooter({
-  className,
-  showCloseButton = false,
-  children,
-  ...props
-}: React.ComponentProps<'div'> & {
-  showCloseButton?: boolean;
-}) {
+function DialogFooter({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="dialog-footer"
       className={cn('flex flex-col-reverse gap-2 sm:flex-row sm:justify-end', className)}
       {...props}
-    >
-      {children}
-      {showCloseButton && (
-        <DialogPrimitive.Close asChild>
-          <Button variant="outline">Close</Button>
-        </DialogPrimitive.Close>
-      )}
-    </div>
+    />
   );
 }
 

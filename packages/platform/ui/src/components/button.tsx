@@ -3,80 +3,57 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 
 import { cn } from '../lib/utils';
-import type { ButtonBaseProps } from './button.types';
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-40 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 aria-invalid:border-destructive",
+  'inline-flex min-h-6 min-w-6 items-center justify-center gap-2 whitespace-nowrap rounded-md border text-sm font-medium transition-colors focus-visible:outline-none focus-visible:border-foreground disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
   {
     variants: {
       variant: {
         default:
-          'bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-secondary disabled:text-secondary-foreground disabled:opacity-60',
-        primary:
-          'bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-secondary disabled:text-secondary-foreground disabled:opacity-60',
+          'border-border bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:bg-primary/90',
         destructive:
-          'bg-destructive text-destructive-foreground hover:bg-destructive/90 focus-visible:ring-destructive/20',
-        icon: 'border border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground',
-        outline: 'border border-border bg-background text-foreground hover:bg-muted',
-        secondary: 'bg-secondary text-secondary-foreground hover:bg-muted',
-        ghost: 'text-muted-foreground hover:bg-muted hover:text-foreground',
-        link: 'text-primary underline-offset-4 hover:underline',
+          'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/90 focus-visible:bg-destructive/90',
+        outline:
+          'border-border text-foreground hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground',
+        secondary:
+          'border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 focus-visible:bg-secondary/80',
+        ghost:
+          'border-transparent bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground',
+        link: 'border-transparent bg-transparent text-foreground underline-offset-4 hover:text-secondary-foreground hover:underline focus-visible:bg-accent/25',
       },
       size: {
-        xs: 'h-4 px-2 text-xs',
-        sm: 'h-6 px-3 text-xs',
-        md: 'h-9 px-3',
-        lg: 'h-10 px-4',
-        icon: 'size-9',
+        default: 'h-9 px-4 py-2',
+        sm: 'h-8 rounded-md px-3 text-xs',
+        lg: 'h-10 rounded-md px-8',
+        icon: 'h-9 w-9',
       },
     },
     defaultVariants: {
       variant: 'default',
-      size: 'md',
+      size: 'default',
     },
   },
 );
 
-function Button({
-  className,
-  variant = 'default',
-  size = 'md',
-  asChild = false,
-  isLoading = false,
-  fullWidth = false,
-  title,
-  children,
-  type = 'button',
-  ...props
-}: React.ComponentProps<'button'> &
-  VariantProps<typeof buttonVariants> & {
-    asChild?: boolean;
-  } & ButtonBaseProps) {
-  const Comp = asChild ? Slot : 'button';
-  const content = children ?? title;
-  const loadingContent = (
-    <>
-      <span
-        aria-hidden="true"
-        className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"
-      />
-      <span className="sr-only">{content}</span>
-    </>
-  );
-
-  return (
-    <Comp
-      data-slot="button"
-      data-variant={variant}
-      data-size={size}
-      disabled={isLoading || props.disabled}
-      className={cn(buttonVariants({ variant, size, className }), fullWidth && 'w-full')}
-      type={asChild ? undefined : type}
-      {...props}
-    >
-      {isLoading ? loadingContent : content}
-    </Comp>
-  );
+interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean;
 }
+
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : 'button';
+    return (
+      <Comp
+        className={cn(buttonVariants({ variant, size, className }))}
+        type="button"
+        ref={ref}
+        {...props}
+      />
+    );
+  },
+);
+Button.displayName = 'Button';
 
 export { Button, buttonVariants };
