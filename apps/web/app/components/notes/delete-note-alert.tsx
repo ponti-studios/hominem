@@ -10,9 +10,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '../alert-dialog';
-import { Button } from '../button';
-import { SurfacePanel } from '../surfaces/surface-panel';
+} from '@hominem/ui';
+import { Button } from '@hominem/ui';
+import { SurfacePanel } from '@hominem/ui';
 
 interface DeleteNoteAlertProps {
   onDelete: () => Promise<void> | void;

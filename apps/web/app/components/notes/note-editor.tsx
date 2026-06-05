@@ -3,16 +3,16 @@ import type { Note } from '@hominem/rpc/types/notes.types';
 import { slugifyText } from '@hominem/utils/text';
 import { useCallback } from 'react';
 
-import { InlineEnhanceTray, useInlineEnhance } from '../enhance';
-import { Button } from '../button';
-import type { UploadedFile } from '../../types/upload';
-import { SurfacePanel } from '../surfaces/surface-panel';
+import { InlineEnhanceTray, useInlineEnhance, Button, SurfacePanel } from '@hominem/ui';
+import type { UploadedFile } from '~/lib/types/upload';
+
 import { DeleteNoteAlert } from './delete-note-alert';
 import { NoteActionsPanel } from './note-actions-panel';
 import { NoteFilesPanel } from './note-files-panel';
 import { useNoteEditor } from './use-note-editor';
 
 interface NoteEditorProps {
+  chatHref: string;
   note: Note;
   onSave: (params: {
     id: string;
@@ -31,6 +31,7 @@ interface NoteEditorProps {
 }
 
 export function NoteEditor({
+  chatHref,
   note,
   onSave,
   onUploadFiles,
@@ -193,7 +194,7 @@ export function NoteEditor({
 
       <aside className="space-y-4">
         <NoteActionsPanel
-          noteId={note.id}
+          chatHref={chatHref}
           onAttachFiles={handleAttachFiles}
           onAudioRecorded={handleTranscribed}
           uploadErrors={uploadErrors}

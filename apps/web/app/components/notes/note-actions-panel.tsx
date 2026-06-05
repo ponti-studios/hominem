@@ -1,12 +1,10 @@
 import { memo, useRef } from 'react';
 import { Link } from 'react-router';
 
-import { Button } from '../button';
-import { SpeechInput } from '../composer';
-import { SurfacePanel } from '../surfaces/surface-panel';
+import { Button, SpeechInput, SurfacePanel } from '@hominem/ui';
 
 interface NoteActionsPanelProps {
-  noteId: string;
+  chatHref: string;
   onAttachFiles: (files: FileList) => Promise<void>;
   onAudioRecorded: (audioBlob: Blob) => Promise<void>;
   uploadErrors?: string[];
@@ -14,7 +12,7 @@ interface NoteActionsPanelProps {
 }
 
 export const NoteActionsPanel = memo(function NoteActionsPanel({
-  noteId,
+  chatHref,
   onAttachFiles,
   onAudioRecorded,
   uploadErrors = [],
@@ -35,7 +33,7 @@ export const NoteActionsPanel = memo(function NoteActionsPanel({
           {isUploading ? 'Uploading…' : 'Attach files'}
         </Button>
         <Link
-          to={`/chat?noteId=${noteId}`}
+          to={chatHref}
           className="inline-flex items-center rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background"
         >
           Chat with this note

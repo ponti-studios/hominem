@@ -1,6 +1,6 @@
 import type { Note } from '@hominem/rpc/types/notes.types';
 import { StatePanel } from '@hominem/ui';
-import { NoteEditor } from '@hominem/ui/notes';
+import { NoteEditor } from '~/components/notes';
 import { useNavigate } from 'react-router';
 
 import { useTextEnhance } from '~/hooks/ai';
@@ -36,6 +36,7 @@ export default function NoteEditPage({
   return (
     <div className="py-8">
       <NoteEditor
+        chatHref={`/chat?noteId=${note.id}`}
         note={note}
         onSave={async ({ id, title, content, fileIds }) => {
           await updateNote.mutateAsync({ id, title, content, fileIds });

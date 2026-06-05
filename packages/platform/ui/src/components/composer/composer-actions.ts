@@ -36,6 +36,7 @@ export interface ResolvedComposerActions {
 }
 
 export interface ResolveComposerActionsInput {
+  buildChatPath: (chatId: string) => string;
   posture: ComposerPosture;
   draftText: string;
   noteId: string | null;
@@ -129,7 +130,7 @@ export function resolveComposerActions(
           });
           input.clearDraft();
           input.clearUploadedFiles();
-          input.navigate(`/chat/${chat.id}`);
+          input.navigate(input.buildChatPath(chat.id));
         });
       },
     },

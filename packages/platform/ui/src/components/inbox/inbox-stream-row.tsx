@@ -4,6 +4,7 @@ import { memo } from 'react';
 import { Link } from 'react-router';
 
 interface InboxStreamRowProps {
+  href: string;
   item: InboxStreamItem;
 }
 
@@ -29,7 +30,7 @@ function formatTimestamp(value: string): string {
   return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 
-export const InboxStreamRow = memo(function InboxStreamRow({ item }: InboxStreamRowProps) {
+export const InboxStreamRow = memo(function InboxStreamRow({ href, item }: InboxStreamRowProps) {
   const title = item.title || (item.kind === 'chat' ? 'Untitled chat' : 'Untitled note');
   const preview = item.preview || (item.kind === 'chat' ? 'No messages yet.' : 'No content yet.');
   const timestamp = formatTimestamp(item.updatedAt);
@@ -43,7 +44,7 @@ export const InboxStreamRow = memo(function InboxStreamRow({ item }: InboxStream
   return (
     <div className="relative py-0 after:absolute after:inset-x-3 after:bottom-0 after:h-px after:bg-border-subtle last:after:hidden">
       <Link
-        to={item.route}
+        to={href}
         className="group flex items-start gap-2 rounded-none px-4 py-3 outline-none transition-colors active:bg-elevated/40 focus-visible:[outline-style:solid] focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
       >
         <div className="mt-px flex h-[18px] w-[18px] shrink-0 items-center justify-center text-text-secondary transition-colors group-active:text-foreground">

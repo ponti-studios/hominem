@@ -27,6 +27,7 @@ interface TranscribeVariables {
 }
 
 export interface ComposerProps {
+  buildChatPath: (chatId: string) => string;
   mode: ComposerMode;
   noteId?: string | null;
   chatId?: string | null;
@@ -46,6 +47,7 @@ export function Composer(props: ComposerProps) {
 }
 
 const ComposerForm = memo(function ComposerForm({
+  buildChatPath,
   noteId,
   chatId,
   noteTitle,
@@ -117,7 +119,7 @@ const ComposerForm = memo(function ComposerForm({
         });
         store.dispatch({ type: 'CLEAR_DRAFT' });
         store.dispatch({ type: 'CLEAR_FILES' });
-        actions.navigate(`/chat/${chat.id}`);
+        actions.navigate(buildChatPath(chat.id));
         break;
       }
     }

@@ -7,31 +7,14 @@ export * from './translations';
 export { AuthScaffold } from './components/auth/auth-scaffold';
 export { EmailEntryForm } from './components/auth/email-entry-form';
 export { OtpVerificationForm } from './components/auth/otp-verification-form';
-export { ResendCodeButton } from './components/auth/resend-code-button';
 export { PasskeyButton } from './components/auth/passkey-button';
-export { PasskeyEnrollmentBanner } from './components/auth/passkey-enrollment-banner';
 export { PasskeyManagement } from './components/auth/passkey-management';
-export { Header, type HeaderProps, type NavItem } from './components/layout/header';
-export { Inline, type InlineProps } from './components/layout/inline';
-export {
-  LandingPage,
-  type LandingFeature,
-  type LandingPageProps,
-  type LandingStep,
-} from './components/layout/landing-page';
-export { Stack, type GapToken, type StackProps } from './components/layout/stack';
 export { Alert, AlertDescription, AlertTitle } from './components/alert';
 export * from './components/enhance';
-export * from './components/loading-state';
 export * from './components/composer';
-export * from './components/workflow';
-export * from './components/feedback';
-export { MetaBadge } from './components/surfaces/meta-badge';
 export { SectionIntro } from './components/surfaces/section-intro';
 export { StatePanel } from './components/surfaces/state-panel';
-export { SurfaceFrame } from './components/surfaces/surface-frame';
 export { SurfacePanel } from './components/surfaces/surface-panel';
-export { PreviewCard, type PreviewCardHeaderProps } from './components/surfaces/preview-card';
 
 export * from './components/update-guard';
 export * from './constants/chart-colors';
