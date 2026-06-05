@@ -302,7 +302,7 @@ const ComposerInput = memo(function ComposerInput({
   const draft = useComposerSlice((s) => s.draft);
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.shiftKey && e.key === 'Enter') {
+    if (e.metaKey && e.key === 'Enter') {
       e.preventDefault();
       const submitBtn = ref.current?.form?.querySelector('[data-testid="composer-primary"]');
       if (submitBtn && submitBtn instanceof HTMLButtonElement) {
