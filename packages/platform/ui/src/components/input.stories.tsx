@@ -3,7 +3,6 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { booleanControl, selectControl, textControl } from '../storybook/controls';
 import { inputTypeOptions } from '../storybook/options';
 import { Input } from './input';
-import { Label } from './label';
 
 const meta = {
   title: 'Forms/Input',
@@ -29,7 +28,9 @@ export const Default: Story = {
 export const WithLabel: Story = {
   render: () => (
     <div className="flex flex-col gap-2 w-72">
-      <Label htmlFor="email">Email</Label>
+      <label htmlFor="email" className="text-sm font-medium leading-none text-foreground">
+        Email
+      </label>
       <Input id="email" type="email" placeholder="you@example.com" />
     </div>
   ),

@@ -92,8 +92,8 @@ export function InlineEnhanceTray({
           <Button variant="outline" onClick={onCancel} disabled={isEnhancing}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={onConfirm} isLoading={isEnhancing}>
-            {confirmLabel}
+          <Button onClick={onConfirm} disabled={isEnhancing}>
+            {isEnhancing ? 'Enhancing...' : confirmLabel}
           </Button>
         </div>
       </div>

@@ -1,3 +1,4 @@
+import { cn } from '@hominem/ui/lib/utils';
 import { NavLink, Outlet, data } from 'react-router';
 
 import { getServerSession } from '~/lib/auth.server';
@@ -10,7 +11,10 @@ function NavItem({ to, label }: { to: string; label: string }) {
     <NavLink
       to={to}
       className={({ isActive }) =>
-        `rounded-full px-3 py-1.5 text-sm ${isActive ? 'bg-foreground text-background' : 'text-text-secondary'}`
+        cn(`rounded-full px-3 py-1.5 text-sm`, {
+          'bg-foreground text-background': isActive,
+          'text-text-secondary': !isActive,
+        })
       }
     >
       {label}
@@ -27,10 +31,10 @@ export default function Layout({ loaderData }: Route.ComponentProps) {
   const { userId } = loaderData;
 
   return (
-    <div className="flex h-[100dvh] w-full flex-col bg-background text-foreground">
+    <div className="flex flex-col bg-background text-foreground max-w-5xl mx-auto px-4 lg:px-0">
       {userId ? (
         <header className="border-b border-border-subtle bg-background/90 backdrop-blur">
-          <div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-4 py-4 md:px-6 lg:px-8">
+          <div className="flex items-center justify-between gap-4 py-4">
             <div>
               <p className="text-xs uppercase tracking-[0.2em] text-text-tertiary">
                 {WEB_BRAND.appName}

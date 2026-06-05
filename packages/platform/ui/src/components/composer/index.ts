@@ -1,6 +1,5 @@
 export * from './composer.js';
 export * from './composer-actions-row.js';
-export * from './composer-actions.js';
 export * from './composer-attachment-list.js';
 export * from './composer-presentation.js';
 export * from './composer-provider.js';

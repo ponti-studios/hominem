@@ -1,12 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Plus, Trash2 } from 'lucide-react';
+import { Loader2, Plus, Trash2 } from 'lucide-react';
 import { expect, userEvent, within } from 'storybook/test';
 
-import { booleanControl, selectControl } from '../storybook/controls';
+import { booleanControl, hiddenControl, selectControl } from '../storybook/controls';
 import { buttonSizeOptions, buttonVariantOptions } from '../storybook/options';
 import { Button } from './button';
 
-const meta = {
+const meta: Meta = {
   title: 'Primitives/Button',
   component: Button,
   tags: ['autodocs'],
@@ -15,13 +15,12 @@ const meta = {
       defaultValue: 'default',
     }),
     size: selectControl(buttonSizeOptions, 'Size variant of the button', {
-      defaultValue: 'md',
+      defaultValue: 'default',
     }),
-    fullWidth: booleanControl('Makes the button stretch to its container width', false),
     disabled: booleanControl('Prevents user interaction and applies disabled styling', false),
-    isLoading: booleanControl('Shows the button in a loading state', false),
+    asChild: hiddenControl,
   },
-} satisfies Meta<typeof Button>;
+};
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -44,10 +43,10 @@ export const Variants: Story = {
   render: () => (
     <div className="flex flex-wrap gap-3">
       <Button variant="default">Default</Button>
-      <Button variant="primary">Primary</Button>
+      <Button variant="secondary">Secondary</Button>
       <Button variant="ghost">Ghost</Button>
       <Button variant="destructive">Destructive</Button>
-      <Button variant="icon" size="icon">
+      <Button variant="ghost" size="icon" aria-label="Add">
         <Plus className="size-4" />
       </Button>
       <Button variant="link">Link</Button>
@@ -58,11 +57,10 @@ export const Variants: Story = {
 export const Sizes: Story = {
   render: () => (
     <div className="flex flex-wrap items-center gap-3">
-      <Button size="xs">XS</Button>
       <Button size="sm">Small</Button>
-      <Button size="md">Medium</Button>
+      <Button size="default">Default</Button>
       <Button size="lg">Large</Button>
-      <Button size="icon">
+      <Button size="icon" aria-label="Add">
         <Plus className="size-4" />
       </Button>
     </div>
@@ -106,10 +104,12 @@ export const Disabled: Story = {
 };
 
 export const Loading: Story = {
-  args: {
-    children: 'Saving',
-    isLoading: true,
-  },
+  render: () => (
+    <Button disabled>
+      <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+      Saving
+    </Button>
+  ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const button = canvas.getByRole('button', { name: 'Saving' });

@@ -1,5 +1,5 @@
 import type { InboxStreamItem } from '@hominem/rpc/react';
-import { MessageCircle, Paperclip } from 'lucide-react';
+import { MessageCircle } from 'lucide-react';
 import { memo } from 'react';
 import { Link } from 'react-router';
 
@@ -30,9 +30,22 @@ function formatTimestamp(value: string): string {
   return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 
+function deriveInboxLabel(item: InboxStreamItem): string {
+  const normalizedTitle = item.title?.trim();
+  if (normalizedTitle) {
+    return normalizedTitle;
+  }
+
+  const normalizedPreview = item.preview?.replace(/\s+/g, ' ').trim();
+  if (normalizedPreview) {
+    return normalizedPreview;
+  }
+
+  return item.kind === 'chat' ? 'Untitled chat' : 'Untitled note';
+}
+
 export const InboxStreamRow = memo(function InboxStreamRow({ href, item }: InboxStreamRowProps) {
-  const title = item.title || (item.kind === 'chat' ? 'Untitled chat' : 'Untitled note');
-  const preview = item.preview || (item.kind === 'chat' ? 'No messages yet.' : 'No content yet.');
+  const label = deriveInboxLabel(item);
   const timestamp = formatTimestamp(item.updatedAt);
   const isChat = item.kind === 'chat';
   const icon = isChat ? (
@@ -54,21 +67,11 @@ export const InboxStreamRow = memo(function InboxStreamRow({ href, item }: Inbox
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-3">
             <h2 className="min-w-0 flex-1 truncate text-[15px] font-medium leading-5 tracking-[-0.2px] text-foreground group-active:font-medium">
-              {title}
+              {label}
             </h2>
             <div className="shrink-0 text-right text-[11px] leading-3 text-text-tertiary">
               {timestamp}
             </div>
-          </div>
-
-          <div className="mt-1 min-w-0 text-[11px] leading-4 text-text-tertiary">
-            <p className="line-clamp-2 text-text-secondary">{preview}</p>
-            {!isChat && item.preview ? (
-              <div className="mt-1 inline-flex items-center gap-1">
-                <Paperclip className="size-3" aria-hidden="true" />
-                <span>Has attachments</span>
-              </div>
-            ) : null}
           </div>
         </div>
       </Link>

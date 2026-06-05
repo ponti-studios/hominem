@@ -42,7 +42,7 @@ export function SettingsPageLayout({
             <h1 className="text-xl font-semibold text-foreground">{title}</h1>
             <p className="mt-1 text-sm text-text-secondary">{description}</p>
           </div>
-          <TabsList variant="line" className="w-full justify-start gap-2 p-0">
+          <TabsList className="w-full justify-start gap-2 border-x-0 border-t-0 bg-transparent p-0">
             <TabsTrigger value="account" className="flex-none px-0 py-2 sm:px-3">
               Profile
             </TabsTrigger>

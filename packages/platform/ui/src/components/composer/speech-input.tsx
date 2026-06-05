@@ -1,11 +1,11 @@
 import { emitVoiceEvent } from '@hominem/rpc/voice-events';
 import { Mic, MicOff, Loader2 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState, type ButtonHTMLAttributes } from 'react';
+import { useCallback, useEffect, useRef, useState, type ComponentProps } from 'react';
 
 import { cn } from '../../lib/utils';
 import { Button } from '../button';
 
-interface SpeechInputProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+interface SpeechInputProps extends ComponentProps<typeof Button> {
   onAudioRecorded?: (blob: Blob) => void;
   onTranscriptionChange?: (text: string) => void;
   onRecordingComplete?: (text: string) => void;
@@ -58,6 +58,8 @@ export function SpeechInput({
   ariaLabel = 'Start voice input',
   language = 'en-US',
   className,
+  variant = 'default',
+  size = 'icon',
   ...props
 }: SpeechInputProps) {
   const [isRecording, setIsRecording] = useState(false);
@@ -342,8 +344,8 @@ export function SpeechInput({
       </span>
       <Button
         type="button"
-        variant={isRecording ? 'destructive' : 'default'}
-        size="icon"
+        variant={isRecording ? 'destructive' : variant}
+        size={size}
         aria-label={isRecording ? 'Stop recording' : ariaLabel}
         className={cn('', className)}
         onClick={toggleRecording}

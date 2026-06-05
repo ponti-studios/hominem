@@ -35,7 +35,7 @@ export const Default: Story = {
 export const LineVariant: Story = {
   render: () => (
     <Tabs defaultValue="tab1" className="w-[400px]">
-      <TabsList variant="line">
+      <TabsList className="border-x-0 border-t-0 bg-transparent">
         <TabsTrigger value="tab1">Overview</TabsTrigger>
         <TabsTrigger value="tab2">Analytics</TabsTrigger>
         <TabsTrigger value="tab3">Reports</TabsTrigger>

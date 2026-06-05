@@ -1,10 +1,7 @@
-import type { Server as HttpServer } from 'node:http';
-
 import { logger, LOG_MESSAGES } from '@hominem/telemetry';
 import { serve } from '@hono/node-server';
 
 import { env } from './env';
-import { attachChatRealtimeWebSocketServer } from './rpc/realtime/chat-ws';
 import { initRuntime } from './runtime';
 import { createServer } from './server';
 
@@ -14,13 +11,11 @@ const host = '0.0.0.0';
 
 logger.info(LOG_MESSAGES.SERVER_STARTED, { host, port });
 
-const nodeServer = serve({
+serve({
   fetch: app.fetch,
   port,
   hostname: host,
   overrideGlobalObjects: false,
 });
 
-const detachChatRealtimeWebSocket = attachChatRealtimeWebSocketServer(nodeServer as HttpServer);
-
-initRuntime('api').installSignalHandlers([detachChatRealtimeWebSocket]);
+initRuntime('api').installSignalHandlers([]);

@@ -102,7 +102,7 @@ export const WithCloseButton: Story = {
           <DialogTitle>Confirmation</DialogTitle>
           <DialogDescription>Are you sure you want to proceed?</DialogDescription>
         </DialogHeader>
-        <DialogFooter showCloseButton>
+        <DialogFooter>
           <Button>Confirm</Button>
         </DialogFooter>
       </DialogContent>

@@ -63,12 +63,7 @@ export default function ChatIndexPage({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-semibold text-foreground">Chat</h2>
-          <p className="mt-1 text-sm text-text-secondary">
-            Start a new conversation and pull in notes explicitly with mentions.
-          </p>
-        </div>
+        <h2 className="font-semibold text-foreground">Chat</h2>
         <Button
           type="button"
           onClick={async () => {

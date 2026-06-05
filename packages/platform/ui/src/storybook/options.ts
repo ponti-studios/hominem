@@ -1,18 +1,15 @@
-import type { ButtonSize, ButtonVariant } from '../components/button.types';
 import type { TextFieldType } from '../components/text-field.types';
 
 const buttonVariantOptions = [
   'default',
-  'primary',
   'destructive',
-  'icon',
   'ghost',
   'link',
   'outline',
   'secondary',
-] satisfies readonly ButtonVariant[];
+] as const;
 
-const buttonSizeOptions = ['md', 'xs', 'sm', 'lg', 'icon'] satisfies readonly ButtonSize[];
+const buttonSizeOptions = ['default', 'sm', 'lg', 'icon'] as const;
 
 const inputTypeOptions = ['text', 'email', 'password', 'search', 'number', 'tel', 'url'] as const;
 

@@ -49,11 +49,8 @@ export async function loader({ request }: { request: Request }) {
 }
 
 export default function NotesPage({ loaderData }: { loaderData: { inbox: InboxOutput } }) {
-  const inboxQuery = useInbox(20);
-  const items = useMemo(
-    () => inboxQuery.data?.items || loaderData.inbox.items,
-    [inboxQuery.data, loaderData.inbox.items],
-  );
+  const inboxQuery = useInbox(20, { initialData: loaderData.inbox });
+  const items = useMemo(() => inboxQuery.data?.items ?? [], [inboxQuery.data]);
   const composerStore = useMemo(() => new ComposerStore(), []);
   const actionsRef = useRef<ComposerActions>({} as ComposerActions);
 
@@ -119,7 +116,6 @@ export default function NotesPage({ loaderData }: { loaderData: { inbox: InboxOu
 
       if (wasInitialHydration) {
         hasScrolledInitialLoadRef.current = true;
-        scrollToBottom();
       } else if (didPrependOlderItems) {
         const previousScrollHeight = lastScrollHeightRef.current;
         lastScrollHeightRef.current = null;
@@ -231,13 +227,7 @@ export default function NotesPage({ loaderData }: { loaderData: { inbox: InboxOu
           onScroll={updateNearBottom}
           className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden pb-40 md:pb-44"
         >
-          {inboxQuery.isLoading ? (
-            <div className="mx-auto w-full max-w-4xl px-4 py-5 text-body-4 text-text-secondary md:px-6 lg:px-8">
-              Loading inbox...
-            </div>
-          ) : null}
-
-          {!inboxQuery.isLoading && items.length === 0 ? (
+          {items.length === 0 ? (
             <div className="mx-auto w-full max-w-4xl px-4 py-5 md:px-6 lg:px-8">
               <StatePanel
                 title="Your inbox is empty."

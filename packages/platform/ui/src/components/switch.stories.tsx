@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 
 import { booleanControl, selectControl } from '../storybook/controls';
 import { switchSizeOptions } from '../storybook/options';
-import { Label } from './label';
 import { Switch } from './switch';
 
 const meta = {
@@ -50,7 +49,9 @@ function SwitchPreview({
         onCheckedChange={setCurrentChecked}
         size={size}
       />
-      <Label htmlFor={id}>{label}</Label>
+      <label htmlFor={id} className="text-sm font-medium leading-none text-foreground">
+        {label}
+      </label>
     </div>
   );
 }

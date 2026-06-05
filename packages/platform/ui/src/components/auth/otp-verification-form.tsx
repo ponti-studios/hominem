@@ -89,7 +89,7 @@ export function OtpVerificationForm({
         ) : null}
       </div>
 
-      <Button type="submit" variant="primary" disabled={!canSubmit} fullWidth>
+      <Button type="submit" disabled={!canSubmit} className="w-full">
         {isSubmitting
           ? translateUi('auth.otpVerification.verifyButtonLoading')
           : translateUi('auth.otpVerification.verifyButton')}
@@ -99,7 +99,7 @@ export function OtpVerificationForm({
         <Button
           type="button"
           variant="link"
-          size="xs"
+          size="sm"
           onClick={handleResend}
           disabled={isResending || isSubmitting}
           className="px-0"
@@ -113,7 +113,7 @@ export function OtpVerificationForm({
           <Button
             type="button"
             variant="link"
-            size="xs"
+            size="sm"
             onClick={onChangeEmail}
             disabled={isSubmitting}
             className="px-0"

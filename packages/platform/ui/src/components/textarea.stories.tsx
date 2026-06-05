@@ -1,17 +1,55 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { ComponentProps } from 'react';
 import { expect, userEvent, within } from 'storybook/test';
 
 import { booleanControl, numberControl, textControl } from '../storybook/controls';
 import { Textarea } from './textarea';
+
+function TextareaField({
+  error,
+  helpText,
+  id,
+  label,
+  ...props
+}: ComponentProps<typeof Textarea> & {
+  error?: string;
+  helpText?: string;
+  id: string;
+  label: string;
+}) {
+  const helpId = helpText ? `${id}-help` : undefined;
+  const errorId = error ? `${id}-error` : undefined;
+
+  return (
+    <div className="grid gap-2">
+      <label htmlFor={id} className="text-sm font-medium leading-none text-foreground">
+        {label}
+      </label>
+      <Textarea
+        id={id}
+        aria-describedby={[helpId, errorId].filter(Boolean).join(' ') || undefined}
+        aria-invalid={error ? true : undefined}
+        {...props}
+      />
+      {helpText ? (
+        <p id={helpId} className="text-sm text-muted-foreground">
+          {helpText}
+        </p>
+      ) : null}
+      {error ? (
+        <p id={errorId} className="text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+}
 
 const meta = {
   title: 'Forms/Textarea',
   component: Textarea,
   tags: ['autodocs'],
   argTypes: {
-    label: textControl('Label displayed above the textarea'),
-    helpText: textControl('Supporting text shown below the textarea'),
-    error: textControl('Validation error text shown below the textarea'),
     placeholder: textControl('Placeholder text shown when the textarea is empty'),
     rows: numberControl('Number of visible text lines', { min: 1, max: 20, defaultValue: 4 }),
     disabled: booleanControl('Prevents user interaction and applies disabled styling', false),
@@ -23,10 +61,10 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    label: 'Notes',
     placeholder: 'Enter your notes here',
     rows: 4,
   },
+  render: (args) => <TextareaField id="notes" label="Notes" {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const textarea = canvas.getByLabelText('Notes') as HTMLTextAreaElement;
@@ -41,11 +79,17 @@ export const Default: Story = {
 
 export const WithHelpText: Story = {
   args: {
-    label: 'Description',
-    helpText: 'Markdown formatting is supported',
     placeholder: 'Write a detailed description...',
     rows: 5,
   },
+  render: (args) => (
+    <TextareaField
+      id="description"
+      label="Description"
+      helpText="Markdown formatting is supported"
+      {...args}
+    />
+  ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
@@ -55,11 +99,17 @@ export const WithHelpText: Story = {
 
 export const Error: Story = {
   args: {
-    label: 'Message',
-    error: 'Message is required and cannot be empty',
     placeholder: 'Write something...',
     rows: 3,
   },
+  render: (args) => (
+    <TextareaField
+      id="message"
+      label="Message"
+      error="Message is required and cannot be empty"
+      {...args}
+    />
+  ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
@@ -72,10 +122,10 @@ export const Error: Story = {
 export const Disabled: Story = {
   args: {
     disabled: true,
-    label: 'Archived Notes',
     placeholder: 'This field is disabled',
     rows: 4,
   },
+  render: (args) => <TextareaField id="archived-notes" label="Archived Notes" {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const textarea = canvas.getByLabelText('Archived Notes');
@@ -86,9 +136,15 @@ export const Disabled: Story = {
 
 export const LargeField: Story = {
   args: {
-    label: 'Long Form Content',
-    helpText: 'Use this field for extended writing',
     placeholder: 'Write as much as you need...',
     rows: 8,
   },
+  render: (args) => (
+    <TextareaField
+      id="long-form-content"
+      label="Long Form Content"
+      helpText="Use this field for extended writing"
+      {...args}
+    />
+  ),
 };

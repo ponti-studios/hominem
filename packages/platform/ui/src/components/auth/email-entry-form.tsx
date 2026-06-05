@@ -72,7 +72,7 @@ export function EmailEntryForm({
             error={displayError}
           />
 
-          <Button type="submit" variant="primary" disabled={isSubmitting} fullWidth>
+          <Button type="submit" disabled={isSubmitting} className="w-full">
             {isSubmitting
               ? translateUi('auth.emailEntry.submitButtonLoading')
               : translateUi('auth.emailEntry.submitButton')}

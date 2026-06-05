@@ -4,9 +4,6 @@ import { Button } from './button';
 import {
   Popover,
   PopoverContent,
-  PopoverHeader,
-  PopoverTitle,
-  PopoverDescription,
   PopoverTrigger,
 } from './popover';
 
@@ -26,10 +23,10 @@ export const Default: Story = {
         <Button variant="outline">Open Popover</Button>
       </PopoverTrigger>
       <PopoverContent>
-        <PopoverHeader>
-          <PopoverTitle>Dimensions</PopoverTitle>
-          <PopoverDescription>Set the dimensions for the layer.</PopoverDescription>
-        </PopoverHeader>
+        <div className="grid gap-1.5">
+          <h4 className="font-medium leading-none text-foreground">Dimensions</h4>
+          <p className="text-sm text-muted-foreground">Set the dimensions for the layer.</p>
+        </div>
         <div className="grid gap-4 pt-4">
           <div className="grid grid-cols-3 items-center gap-4">
             <label className="text-sm">Width</label>

@@ -1,3 +1,4 @@
+import { CHAT_TITLE_MAX_LENGTH } from '@hominem/rpc/types';
 import type { Note } from '@hominem/rpc/types/notes.types';
 import type { UseMutationResult } from '@tanstack/react-query';
 import type { ChangeEvent } from 'react';
@@ -6,7 +7,6 @@ import { memo, useActionState, useRef } from 'react';
 import { InlineEnhanceTray } from '../enhance/inline-enhance-tray';
 import { AttachedNotesList } from './attached-notes-list';
 import { appendChatAttachmentContext, appendNoteAttachments } from './attachment-formatting';
-import { buildNoteContext, toNoteTitle } from './composer-actions';
 import { ComposerActionsRow } from './composer-actions-row';
 import { ComposerAttachmentList } from './composer-attachment-list';
 import type { ComposerPresentation } from './composer-presentation';
@@ -24,6 +24,18 @@ interface TranscribeResult {
 interface TranscribeVariables {
   audioBlob: Blob;
   language?: string;
+}
+
+function buildNoteContext(attachedNotes: ReadonlyArray<Note>): string {
+  if (attachedNotes.length === 0) return '';
+  const sections = attachedNotes.map(
+    (note) => `### ${note.title ?? 'Untitled note'}\n\n${note.content}`,
+  );
+  return `<context>\n${sections.join('\n\n---\n\n')}\n</context>\n\n`;
+}
+
+function toNoteTitle(text: string, fallback = ''): string {
+  return text.slice(0, CHAT_TITLE_MAX_LENGTH) || fallback;
 }
 
 export interface ComposerProps {
@@ -101,10 +113,8 @@ const ComposerForm = memo(function ComposerForm({
       }
       case 'save-note':
       case 'save-as-note': {
-        const title = toNoteTitle(text);
         await actions.createNote({
           content: appendNoteAttachments(text, [...uploadedFiles]),
-          ...(title ? { title } : {}),
         });
         store.dispatch({ type: 'CLEAR_DRAFT' });
         store.dispatch({ type: 'CLEAR_FILES' });
