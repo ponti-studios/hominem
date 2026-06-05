@@ -36,29 +36,12 @@ export function InlineEnhanceTray({
   isEnhancing = false,
   error = null,
   suggestions = DEFAULT_SUGGESTIONS,
-  title = 'Enhance text',
-  subtitle = "Describe how you'd like to improve this text, or pick a suggestion.",
   placeholder = 'e.g. Make it more engaging',
   confirmLabel = 'Enhance',
   className,
 }: InlineEnhanceTrayProps) {
   return (
-    <div
-      className={cn(
-        'rounded-xl border border-border-subtle bg-muted/40 p-3 sm:p-4',
-        className,
-      )}
-    >
-      <div className="flex items-start gap-3">
-        <div className="mt-0.5 rounded-full border border-border-subtle bg-background p-2 text-text-secondary">
-          <Sparkles className="size-4" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-foreground">{title}</p>
-          <p className="mt-1 text-sm text-text-secondary">{subtitle}</p>
-        </div>
-      </div>
-
+    <div className={cn('rounded-xl border bg-muted/40 p-2', className)}>
       <div className="mt-3 flex flex-wrap gap-2">
         {suggestions.map((suggestion) => {
           const isActive = instruction === suggestion;
