@@ -27,7 +27,7 @@ export default function Component() {
     authenticate,
     authError: passkeyError,
     isSupported: isPasskeySupported,
-  } = usePasskeys({ enabled: false });
+  } = usePasskeys({ enabled: true });
 
   const { error: sendError, handleSendOtp } = useEmailAuth({
     sendOtp: async (email) => {
