@@ -1,18 +1,19 @@
 import { Button } from '@hominem/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@hominem/ui/card';
 
-import { SettingsPageLayout } from '~/components/settings-page-layout';
 import { useSignOut } from '~/lib/hooks/use-sign-out';
 
 export default function AccountPage() {
   const signOut = useSignOut();
 
   return (
-    <SettingsPageLayout
-      currentTab="account"
-      title="Profile"
-      description="Manage your account and active session."
-    >
+    <main className="container mx-auto w-full px-4 py-8 sm:px-6">
+      <header className="mb-6 space-y-4">
+        <div>
+          <h1 className="text-xl font-semibold text-foreground">Profile</h1>
+          <p className="mt-1 text-sm text-text-secondary">Manage your account and active session.</p>
+        </div>
+      </header>
       <div className="space-y-6">
         <Card>
           <CardHeader>
@@ -32,6 +33,6 @@ export default function AccountPage() {
           </CardContent>
         </Card>
       </div>
-    </SettingsPageLayout>
+    </main>
   );
 }
