@@ -51,11 +51,7 @@ export function usePasskeys(options: UsePasskeysOptions = {}): UsePasskeysResult
   const [data, setData] = useState<Passkey[]>(options.initialPasskeys ?? []);
   const [error, setError] = useState<ApiError>(null);
   const [isLoading, setIsLoading] = useState(Boolean(options.enabled));
-  const [isSupported, setIsSupported] = useState(false);
-
-  useEffect(() => {
-    setIsSupported(getPasskeySupport());
-  }, []);
+  const [isSupported] = useState(getPasskeySupport);
 
   const refetch = useCallback(async () => {
     setIsLoading(true);
