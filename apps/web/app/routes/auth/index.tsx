@@ -56,8 +56,12 @@ export default function Component() {
       {...(isPasskeySupported
         ? {
             onPasskeyClick: async () => {
-              await authenticate();
-              navigate('/inbox');
+              try {
+                await authenticate();
+                navigate('/inbox');
+              } catch (error) {
+                // Error is already handled by usePasskeys and available via passkeyError
+              }
             },
           }
         : {})}
