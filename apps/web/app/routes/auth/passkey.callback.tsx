@@ -1,5 +1,4 @@
 import { redirect } from 'react-router';
-import type { ActionFunctionArgs } from 'react-router';
 
 import { userContext } from '~/lib/middleware';
 
@@ -13,11 +12,10 @@ export async function action({ request, context }: Route.ActionArgs) {
   let payload: Record<string, unknown>;
   try {
     payload = (await request.json()) as Record<string, unknown>;
+    if (!payload || typeof payload !== 'object') {
+      return redirect('/auth?error=Invalid+request');
+    }
   } catch {
-    return redirect('/auth?error=Invalid+request');
-  }
-
-  if (!payload || typeof payload !== 'object') {
     return redirect('/auth?error=Invalid+request');
   }
 
