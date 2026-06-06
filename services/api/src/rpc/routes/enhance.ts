@@ -1,9 +1,8 @@
+import { enhanceText, hasOpenRouterApiKey } from '@hominem/ai';
+import { logger } from '@hominem/telemetry';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import * as z from 'zod';
-
-import { enhanceText, hasOpenRouterApiKey } from '@hominem/ai';
-import { logger } from '@hominem/telemetry';
 
 import { authMiddleware, type AppContext } from '../middleware/auth';
 import { rateLimitMiddleware } from '../middleware/rate-limit';
@@ -18,10 +17,7 @@ const ENHANCE_SYSTEM_PROMPT = loadPrompt('text-enhance');
 
 export const enhanceRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
-  .use(
-    '/enhance',
-    rateLimitMiddleware({ bucket: 'ai-enhance', windowSec: 60, max: 30 }),
-  )
+  .use('/enhance', rateLimitMiddleware({ bucket: 'ai-enhance', windowSec: 60, max: 30 }))
   .post('/enhance', zValidator('json', enhanceTextInputSchema), async (c) => {
     const { text, instruction } = c.req.valid('json');
 

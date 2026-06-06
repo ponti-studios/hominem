@@ -1,6 +1,6 @@
 import { useAuthClient } from '@hominem/auth/client/provider';
-import { Badge } from '@hominem/ui/badge';
 import { Avatar, AvatarFallback } from '@hominem/ui/avatar';
+import { Badge } from '@hominem/ui/badge';
 import { Button, buttonVariants } from '@hominem/ui/button';
 import {
   Drawer,
@@ -84,7 +84,7 @@ function NavigationLink({
       onClick={onClick}
       aria-current={is_active ? 'page' : undefined}
       className={cn(
-        buttonVariants({ variant: 'ghost', size: 'md' }),
+        buttonVariants({ variant: 'ghost' }),
         'rounded-full px-4',
         mobile && 'w-full justify-start rounded-md',
         is_active
@@ -114,7 +114,7 @@ export default function Navigation() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur">
-      <div className="mx-auto flex min-h-14 w-full max-w-6xl items-center gap-4 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex min-h-14 w-full max-w-6xl items-center gap-4">
         <Link
           to="/"
           className="flex items-center gap-3 text-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
@@ -140,7 +140,7 @@ export default function Navigation() {
                   <Link
                     to="/editor"
                     className={cn(
-                      buttonVariants({ variant: 'ghost', size: 'md' }),
+                      buttonVariants({ variant: 'ghost' }),
                       'rounded-full px-3 text-left',
                       isActiveRoute(location.pathname, '/editor')
                         ? 'bg-accent/10 text-foreground hover:bg-accent/10 hover:text-foreground'
@@ -164,7 +164,7 @@ export default function Navigation() {
                   to="/account"
                   aria-current={isActiveRoute(location.pathname, '/account') ? 'page' : undefined}
                   className={cn(
-                    buttonVariants({ variant: 'ghost', size: 'md' }),
+                    buttonVariants({ variant: 'ghost' }),
                     'rounded-full px-2.5',
                     isActiveRoute(location.pathname, '/account')
                       ? 'bg-foreground text-background hover:bg-foreground/90 hover:text-background'
@@ -182,8 +182,7 @@ export default function Navigation() {
                   to={link.href}
                   className={cn(
                     buttonVariants({
-                      variant: link.href === '/onboarding' ? 'primary' : 'ghost',
-                      size: 'md',
+                      variant: link.href !== '/onboarding' ? 'ghost' : undefined,
                     }),
                     'rounded-full px-4',
                   )}
@@ -235,7 +234,7 @@ export default function Navigation() {
                         to="/editor"
                         onClick={closeMenu}
                         className={cn(
-                          buttonVariants({ variant: 'ghost', size: 'md' }),
+                          buttonVariants({ variant: 'ghost' }),
                           'justify-start rounded-md px-4',
                         )}
                       >
@@ -255,7 +254,7 @@ export default function Navigation() {
                       <Link
                         to="/account"
                         className={cn(
-                          buttonVariants({ variant: 'ghost', size: 'md' }),
+                          buttonVariants({ variant: 'ghost' }),
                           'justify-start rounded-md px-4',
                         )}
                       >
@@ -280,8 +279,7 @@ export default function Navigation() {
                         to={link.href}
                         className={cn(
                           buttonVariants({
-                            variant: link.href === '/onboarding' ? 'primary' : 'ghost',
-                            size: 'md',
+                            variant: link.href !== '/onboarding' ? 'ghost' : undefined,
                           }),
                           'justify-start rounded-md px-4',
                         )}

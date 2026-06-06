@@ -1,8 +1,7 @@
 import { Badge } from '@hominem/ui/badge';
-import { buttonVariants } from '@hominem/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
+import { Card, CardContent, CardHeader } from '@hominem/ui/card';
 import type { LoaderFunctionArgs } from 'react-router';
-import { Link, useLoaderData } from 'react-router';
+import { useLoaderData } from 'react-router';
 
 import { CareerHistory } from '~/components/career/CareerHistory';
 import { SalaryChart } from '~/components/career/SalaryChart';
@@ -11,7 +10,8 @@ import {
   getCareerProgressionSummary,
   getWorkExperiencesWithFinancials,
 } from '~/lib/career/queries/career-progression';
-import { createErrorResponse, createSuccessResponse, withAuthLoader } from '~/lib/route-utils';
+import { userContext } from '~/lib/middleware';
+import { createErrorResponse, createSuccessResponse } from '~/lib/route-utils';
 import { formatCurrency, formatPercentage } from '~/lib/utils';
 import type { CareerProgressionSummary, WorkExperienceWithFinancials } from '~/types/career-data';
 
@@ -21,42 +21,41 @@ interface LoaderData {
   work_experiences: WorkExperienceWithFinancials[];
 }
 
-export async function loader(args: LoaderFunctionArgs) {
-  return withAuthLoader(args, async ({ user }) => {
-    try {
-      // Import the base functions here to avoid module issues
-      const { getUserCareerEvents, getUserWorkExperiences } =
-        await import('~/lib/career/queries/base');
+export async function loader({ context }: LoaderFunctionArgs) {
+  const user = context.get(userContext);
+  try {
+    // Import the base functions here to avoid module issues
+    const { getUserCareerEvents, getUserWorkExperiences } =
+      await import('~/lib/career/queries/base');
 
-      // Make single calls to get the base data
-      const [experiencesResult, eventsResult] = await Promise.all([
-        getUserWorkExperiences(user.id),
-        getUserCareerEvents(user.id),
-      ]);
+    // Make single calls to get the base data
+    const [experiencesResult, eventsResult] = await Promise.all([
+      getUserWorkExperiences(user.id),
+      getUserCareerEvents(user.id),
+    ]);
 
-      const careerSummary = getCareerProgressionSummary(experiencesResult, eventsResult);
-      const work_experiences = getWorkExperiencesWithFinancials(experiencesResult);
+    const careerSummary = getCareerProgressionSummary(experiencesResult, eventsResult);
+    const work_experiences = getWorkExperiencesWithFinancials(experiencesResult);
 
-      const serializedWorkExperiences = work_experiences.map((exp) => ({
-        ...exp,
-        start_date: exp.start_date ? new Date(exp.start_date).toISOString() : null,
-        end_date: exp.end_date ? new Date(exp.end_date).toISOString() : null,
-        createdat: exp.createdat ? new Date(exp.createdat).toISOString() : null,
-        updatedat: exp.updatedat ? new Date(exp.updatedat).toISOString() : null,
-      }));
+    const serializedWorkExperiences = work_experiences.map((exp) => ({
+      ...exp,
+      start_date: exp.start_date ? new Date(exp.start_date).toISOString() : null,
+      end_date: exp.end_date ? new Date(exp.end_date).toISOString() : null,
+      createdat: exp.createdat ? new Date(exp.createdat).toISOString() : null,
+      updatedat: exp.updatedat ? new Date(exp.updatedat).toISOString() : null,
+    }));
 
-      const responseData = {
-        user,
-        careerSummary,
-        work_experiences: serializedWorkExperiences,
-      };
+    const responseData = {
+      user,
+      careerSummary,
+      work_experiences: serializedWorkExperiences,
+    };
 
-      return createSuccessResponse(responseData);
-    } catch (error) {
-      console.error('Error loading career data:', error);
-      return createErrorResponse('Failed to load career data');
-    }
-  });
+    return createSuccessResponse(responseData);
+  } catch (error) {
+    console.error('Error loading career data:', error);
+    return createErrorResponse('Failed to load career data');
+  }
 }
 
 export default function CareerDashboard() {
@@ -107,18 +106,9 @@ export default function CareerDashboard() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <StatCard
-          value={formatCurrency(summary.currentSalary / 100)}
-          subtitle="compensation"
-        />
-        <StatCard
-          value={summary.totalExperience.toFixed(1)}
-          subtitle="yrs of experience"
-        />
-        <StatCard
-          value={summary.averageTenurePerJob.toFixed(1)}
-          subtitle="avg tenure"
-        />
+        <StatCard value={formatCurrency(summary.currentSalary / 100)} subtitle="compensation" />
+        <StatCard value={summary.totalExperience.toFixed(1)} subtitle="yrs of experience" />
+        <StatCard value={summary.averageTenurePerJob.toFixed(1)} subtitle="avg tenure" />
       </div>
 
       {summary.salaryByYear.length > 0 ? (
@@ -137,7 +127,9 @@ export default function CareerDashboard() {
         <Card className="border-success/30 bg-success/10">
           <CardContent className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Biggest Career Win</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Biggest Career Win
+              </p>
               <p className="mt-1 text-2xl font-semibold">
                 +{formatCurrency(summary.highestSalaryIncrease.amount / 100)}
               </p>

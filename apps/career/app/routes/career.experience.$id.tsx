@@ -1,5 +1,3 @@
-import type { CareerWorkExperienceRecord as WorkExperience } from '@hominem/db';
-import { Button } from '@hominem/ui/button';
 import { ArrowLeftIcon, PlusIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
@@ -9,9 +7,6 @@ import { jsonObject } from '~/lib/db-json';
 import { createErrorResponse, createSuccessResponse, withAuthLoader } from '~/lib/route-utils';
 import { cn } from '~/lib/utils';
 import type { WorkExperienceMetadata } from '~/types/career-data';
-interface LoaderData {
-  workExperience: WorkExperience;
-}
 
 export async function loader(args: LoaderFunctionArgs) {
   return withAuthLoader(args, async ({ user }) => {
@@ -440,7 +435,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 // ─── page ─────────────────────────────────────────────────────────────────────
 
 export default function WorkExperienceDetail() {
-  const response = useLoaderData<{ success: boolean; data: LoaderData }>();
+  const response = useLoaderData<typeof loader>();
   const { workExperience: wx } = response?.data ?? {};
   const navigate = useNavigate();
 
@@ -584,16 +579,14 @@ export default function WorkExperienceDetail() {
             <CompFact label="Signing" value={wx.signing_bonus} field="signing_bonus" cents />
             <CompFact label="Annual bonus" value={wx.annual_bonus} field="annual_bonus" cents />
             <CompFact label="Equity value" value={wx.equity_value} field="equity_value" cents />
-            {(wx.equity_percentage || true) && (
-              <span className="text-muted-foreground">
-                <InlineEditable
-                  value={wx.equity_percentage ?? ''}
-                  field="equity_percentage"
-                  placeholder="0.5% equity"
-                  suffix=" equity"
-                />
-              </span>
-            )}
+            <span className="text-muted-foreground">
+              <InlineEditable
+                value={wx.equity_percentage ?? ''}
+                field="equity_percentage"
+                placeholder="0.5% equity"
+                suffix=" equity"
+              />
+            </span>
           </div>
         </div>
       ) : (
@@ -605,37 +598,33 @@ export default function WorkExperienceDetail() {
         <div>
           <SectionLabel>Team</SectionLabel>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-muted-foreground">
-            {(wx.seniority_level || true) && (
+            <InlineEditable
+              value={wx.seniority_level ?? ''}
+              field="seniority_level"
+              type="select"
+              options={[
+                'intern',
+                'entry-level',
+                'mid-level',
+                'senior',
+                'lead',
+                'principal',
+                'staff',
+                'director',
+                'vp',
+                'c-level',
+              ]}
+              placeholder="Seniority"
+              display={capitalize}
+            />
+            <>
+              <Sep />
               <InlineEditable
-                value={wx.seniority_level ?? ''}
-                field="seniority_level"
-                type="select"
-                options={[
-                  'intern',
-                  'entry-level',
-                  'mid-level',
-                  'senior',
-                  'lead',
-                  'principal',
-                  'staff',
-                  'director',
-                  'vp',
-                  'c-level',
-                ]}
-                placeholder="Seniority"
-                display={capitalize}
+                value={wx.department ?? ''}
+                field="department"
+                placeholder="Department"
               />
-            )}
-            {(wx.department || true) && (
-              <>
-                <Sep />
-                <InlineEditable
-                  value={wx.department ?? ''}
-                  field="department"
-                  placeholder="Department"
-                />
-              </>
-            )}
+            </>
             {wx.team_size != null && (
               <>
                 <Sep />
@@ -660,17 +649,15 @@ export default function WorkExperienceDetail() {
                 />
               </>
             )}
-            {(wx.reports_to || true) && (
-              <>
-                <Sep />
-                <span className="text-muted-foreground/60">→</span>
-                <InlineEditable
-                  value={wx.reports_to ?? ''}
-                  field="reports_to"
-                  placeholder="Reports to"
-                />
-              </>
-            )}
+            <>
+              <Sep />
+              <span className="text-muted-foreground/60">→</span>
+              <InlineEditable
+                value={wx.reports_to ?? ''}
+                field="reports_to"
+                placeholder="Reports to"
+              />
+            </>
           </div>
         </div>
       ) : (

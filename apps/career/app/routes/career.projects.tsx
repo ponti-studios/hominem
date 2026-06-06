@@ -1,7 +1,7 @@
-import type { CareerProjectRecord as Project } from "@hominem/db";
-import { Button } from "@hominem/ui/button";
-import { Card, CardContent } from "@hominem/ui/card";
-import { EmptyState } from "@hominem/ui";
+import type { CareerProjectRecord as Project } from '@hominem/db';
+import { EmptyState } from '@hominem/ui';
+import { Button } from '@hominem/ui/button';
+import { Card, CardContent } from '@hominem/ui/card';
 import {
   CheckIcon,
   ExternalLinkIcon,
@@ -10,25 +10,17 @@ import {
   PlusIcon,
   TrashIcon,
   XIcon,
-} from "lucide-react";
-import { useState } from "react";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData } from "react-router";
+} from 'lucide-react';
+import { useState } from 'react';
+import type { ActionFunctionArgs } from 'react-router';
+import { useLoaderData } from 'react-router';
 
-import { CareerRecordIndexShell } from "~/components/career/CareerRecordIndexShell";
-import { MetricsGrid } from "~/components/career/MetricsGrid";
-import { jsonArray } from "~/lib/db-json";
-import {
-  createErrorResponse,
-  createSuccessResponse,
-  withAuthAction,
-  withAuthLoader,
-} from "~/lib/route-utils";
-import {
-  formatProjectStatus,
-  getProjectStatusClasses,
-} from "~/lib/utils/projectUtils";
-import { cn } from "~/lib/utils";
+import { CareerRecordIndexShell } from '~/components/career/CareerRecordIndexShell';
+import { MetricsGrid } from '~/components/career/MetricsGrid';
+import { jsonArray } from '~/lib/db-json';
+import { createErrorResponse, createSuccessResponse } from '~/lib/route-utils';
+import { cn } from '~/lib/utils';
+import { formatProjectStatus, getProjectStatusClasses } from '~/lib/utils/projectUtils';
 
 interface ProjectSummary {
   totalProjects: number;
@@ -39,78 +31,56 @@ interface ProjectSummary {
   workLinkedProjects: number;
 }
 
-interface LoaderData {
-  user: { id: string; email?: string | null; name?: string | null };
-  projects: (Project & {
-    workExperience?: { company: string; role: string };
-  })[];
-  summary: ProjectSummary;
+export async function loader(): Promise<ReturnType<typeof createSuccessResponse<unknown>>> {
+  try {
+    const projects: (Project & {
+      workExperience?: { company: string; role: string };
+    })[] = [];
+    const summary: ProjectSummary = {
+      totalProjects: 0,
+      completedProjects: 0,
+      inProgressProjects: 0,
+      plannedProjects: 0,
+      portfolioProjects: 0,
+      workLinkedProjects: 0,
+    };
+
+    return createSuccessResponse({
+      projects,
+      summary,
+    });
+  } catch (error) {
+    console.error('Error loading projects:', error);
+    return createErrorResponse('Failed to load projects');
+  }
 }
 
-export async function loader(args: LoaderFunctionArgs) {
-  return withAuthLoader(args, async ({ user }) => {
-    try {
-      const projects: (Project & {
-        workExperience?: { company: string; role: string };
-      })[] = [];
-      const summary: ProjectSummary = {
-        totalProjects: 0,
-        completedProjects: 0,
-        inProgressProjects: 0,
-        plannedProjects: 0,
-        portfolioProjects: 0,
-        workLinkedProjects: 0,
-      };
+export async function action({ request }: ActionFunctionArgs) {
+  const formData = await request.formData();
+  const operation = formData.get('operation') as string;
 
-      return createSuccessResponse({
-        user,
-        projects,
-        summary,
-      });
-    } catch (error) {
-      console.error("Error loading projects:", error);
-      return createErrorResponse("Failed to load projects");
+  try {
+    if (operation === 'create') {
+      return createSuccessResponse({ success: true }, 'Project created successfully');
     }
-  });
-}
 
-export async function action(args: ActionFunctionArgs) {
-  return withAuthAction(args, async ({ request }) => {
-    const formData = await request.formData();
-    const operation = formData.get("operation") as string;
-
-    try {
-      if (operation === "create") {
-        return createSuccessResponse(
-          { success: true },
-          "Project created successfully",
-        );
-      }
-
-      if (operation === "update") {
-        return createSuccessResponse(
-          { success: true },
-          "Project updated successfully",
-        );
-      }
-
-      if (operation === "delete") {
-        return createSuccessResponse(
-          { success: true },
-          "Project deleted successfully",
-        );
-      }
-
-      return createErrorResponse("Invalid operation");
-    } catch (error) {
-      console.error("Error handling project operation:", error);
-      return createErrorResponse("Failed to process project request");
+    if (operation === 'update') {
+      return createSuccessResponse({ success: true }, 'Project updated successfully');
     }
-  });
+
+    if (operation === 'delete') {
+      return createSuccessResponse({ success: true }, 'Project deleted successfully');
+    }
+
+    return createErrorResponse('Invalid operation');
+  } catch (error) {
+    console.error('Error handling project operation:', error);
+    return createErrorResponse('Failed to process project request');
+  }
 }
 
 export default function ProjectsPage() {
-  const response = useLoaderData<{ success: boolean; data?: LoaderData; error?: string }>();
+  const response = useLoaderData<typeof loader>();
   const [showCreateForm, setShowCreateForm] = useState(false);
 
   if (!response.success) {
@@ -119,7 +89,7 @@ export default function ProjectsPage() {
         <CardContent className="space-y-2 p-6">
           <h2 className="text-lg font-semibold text-foreground">Error Loading Data</h2>
           <p className="text-sm text-muted-foreground">
-            {response.error ?? "Failed to load projects"}
+            {response.error ?? 'Failed to load projects'}
           </p>
         </CardContent>
       </Card>
@@ -142,31 +112,31 @@ export default function ProjectsPage() {
       metrics={
         <MetricsGrid
           items={[
-            { label: "Total Projects", value: String(summary.totalProjects) },
+            { label: 'Total Projects', value: String(summary.totalProjects) },
             {
-              label: "Completed",
+              label: 'Completed',
               value: String(summary.completedProjects),
-              tone: "success",
+              tone: 'success',
             },
             {
-              label: "In Progress",
+              label: 'In Progress',
               value: String(summary.inProgressProjects),
-              tone: "accent",
+              tone: 'accent',
             },
             {
-              label: "Planned",
+              label: 'Planned',
               value: String(summary.plannedProjects),
-              tone: "warning",
+              tone: 'warning',
             },
             {
-              label: "Portfolio",
+              label: 'Portfolio',
               value: String(summary.portfolioProjects),
-              tone: "accent",
+              tone: 'accent',
             },
             {
-              label: "Work-Linked",
+              label: 'Work-Linked',
               value: String(summary.workLinkedProjects),
-              tone: "muted",
+              tone: 'muted',
             },
           ]}
         />
@@ -205,9 +175,7 @@ export default function ProjectsPage() {
         </>
       ) : null}
 
-      {showCreateForm ? (
-        <CreateProjectModal onClose={() => setShowCreateForm(false)} />
-      ) : null}
+      {showCreateForm ? <CreateProjectModal onClose={() => setShowCreateForm(false)} /> : null}
     </CareerRecordIndexShell>
   );
 }
@@ -225,12 +193,10 @@ function ProjectCard({ project }: ProjectCardProps) {
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="mb-2 flex items-center gap-3">
-            <h3 className="text-lg font-semibold text-foreground">
-              {project.title}
-            </h3>
+            <h3 className="text-lg font-semibold text-foreground">{project.title}</h3>
             <span
               className={cn(
-                "rounded-full px-2 py-1 text-xs font-medium",
+                'rounded-full px-2 py-1 text-xs font-medium',
                 getProjectStatusClasses(project.status),
               )}
             >
@@ -245,8 +211,7 @@ function ProjectCard({ project }: ProjectCardProps) {
 
           {project.workExperience ? (
             <p className="mb-2 text-sm text-muted-foreground">
-              Work Project at {project.workExperience.company} (
-              {project.workExperience.role})
+              Work Project at {project.workExperience.company} ({project.workExperience.role})
             </p>
           ) : null}
 
@@ -267,14 +232,10 @@ function ProjectCard({ project }: ProjectCardProps) {
 
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             {project.start_date ? (
-              <span>
-                Started: {new Date(project.start_date).toLocaleDateString()}
-              </span>
+              <span>Started: {new Date(project.start_date).toLocaleDateString()}</span>
             ) : null}
             {project.end_date ? (
-              <span>
-                Completed: {new Date(project.end_date).toLocaleDateString()}
-              </span>
+              <span>Completed: {new Date(project.end_date).toLocaleDateString()}</span>
             ) : null}
           </div>
         </div>
@@ -285,11 +246,7 @@ function ProjectCard({ project }: ProjectCardProps) {
               variant="ghost"
               size="sm"
               onClick={() =>
-                window.open(
-                  project.live_url ?? undefined,
-                  "_blank",
-                  "noopener,noreferrer",
-                )
+                window.open(project.live_url ?? undefined, '_blank', 'noopener,noreferrer')
               }
               className="text-muted-foreground hover:text-muted-foreground"
             >
@@ -301,11 +258,7 @@ function ProjectCard({ project }: ProjectCardProps) {
               variant="ghost"
               size="sm"
               onClick={() =>
-                window.open(
-                  project.github_url ?? undefined,
-                  "_blank",
-                  "noopener,noreferrer",
-                )
+                window.open(project.github_url ?? undefined, '_blank', 'noopener,noreferrer')
               }
               className="text-muted-foreground hover:text-muted-foreground"
             >
@@ -320,11 +273,7 @@ function ProjectCard({ project }: ProjectCardProps) {
           >
             <PencilIcon className="w-4 h-4" />
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-destructive/70 hover:text-destructive"
-          >
+          <Button variant="ghost" size="sm" className="text-destructive/70 hover:text-destructive">
             <TrashIcon className="w-4 h-4" />
           </Button>
         </div>
@@ -346,19 +295,17 @@ function ProjectMobileCard({ project }: ProjectCardProps) {
       >
         <div className="flex items-center justify-between">
           <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-medium text-foreground">
-              {project.title}
-            </div>
+            <div className="truncate text-sm font-medium text-foreground">{project.title}</div>
             <div className="truncate text-sm text-muted-foreground">
               {project.workExperience
                 ? `${project.workExperience.company} (Work Project)`
-                : "Personal Project"}
+                : 'Personal Project'}
             </div>
           </div>
           <div className="ml-4 flex items-center space-x-3">
             <span
               className={cn(
-                "inline-flex rounded-full px-2 py-1 text-xs font-medium",
+                'inline-flex rounded-full px-2 py-1 text-xs font-medium',
                 getProjectStatusClasses(project.status),
               )}
             >
@@ -366,20 +313,15 @@ function ProjectMobileCard({ project }: ProjectCardProps) {
             </span>
             <svg
               className={cn(
-                "h-5 w-5 text-muted-foreground transition-transform duration-200",
-                isExpanded ? "rotate-90" : "",
+                'h-5 w-5 text-muted-foreground transition-transform duration-200',
+                isExpanded ? 'rotate-90' : '',
               )}
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
               aria-hidden="true"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 5l7 7-7 7"
-              />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </div>
         </div>
@@ -389,9 +331,7 @@ function ProjectMobileCard({ project }: ProjectCardProps) {
         <div className="border-t border-border px-4 pb-4">
           <div className="space-y-3 pt-3">
             {project.description ? (
-              <p className="text-sm text-muted-foreground">
-                {project.description}
-              </p>
+              <p className="text-sm text-muted-foreground">{project.description}</p>
             ) : null}
 
             {technologies.length > 0 ? (
@@ -415,9 +355,7 @@ function ProjectMobileCard({ project }: ProjectCardProps) {
             <div className="flex items-center justify-between">
               <div className="text-xs text-muted-foreground">
                 {project.start_date ? (
-                  <span>
-                    Started: {new Date(project.start_date).toLocaleDateString()}
-                  </span>
+                  <span>Started: {new Date(project.start_date).toLocaleDateString()}</span>
                 ) : null}
                 {project.end_date ? (
                   <span className="ml-3">
@@ -432,11 +370,7 @@ function ProjectMobileCard({ project }: ProjectCardProps) {
                     type="button"
                     onClick={(event) => {
                       event.stopPropagation();
-                      window.open(
-                        project.live_url ?? undefined,
-                        "_blank",
-                        "noopener,noreferrer",
-                      );
+                      window.open(project.live_url ?? undefined, '_blank', 'noopener,noreferrer');
                     }}
                     className="p-1 text-muted-foreground transition-colors hover:text-primary"
                     title="View Live Project"
@@ -462,11 +396,7 @@ function ProjectMobileCard({ project }: ProjectCardProps) {
                     type="button"
                     onClick={(event) => {
                       event.stopPropagation();
-                      window.open(
-                        project.github_url ?? undefined,
-                        "_blank",
-                        "noopener,noreferrer",
-                      );
+                      window.open(project.github_url ?? undefined, '_blank', 'noopener,noreferrer');
                     }}
                     className="p-1 text-muted-foreground transition-colors hover:text-muted-foreground"
                     title="View on GitHub"
@@ -500,9 +430,7 @@ function CreateProjectModal({ onClose }: CreateProjectModalProps) {
       <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-md bg-card">
         <div className="border-b border-border p-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-foreground">
-              Add Project
-            </h2>
+            <h2 className="text-xl font-semibold text-foreground">Add Project</h2>
             <Button variant="ghost" size="sm" onClick={onClose}>
               <XIcon className="w-5 h-5" />
             </Button>

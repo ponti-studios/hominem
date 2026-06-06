@@ -54,7 +54,10 @@ vi.mock('../lib/rate-limit', () => ({
 
 vi.mock('@hominem/ai', () => ({
   createChatCompletion: mocks.createCompletion,
-  getChatCompletionText: vi.fn((result: { choices?: Array<{ message?: { content?: string } }> }) => result.choices?.[0]?.message?.content ?? ''),
+  getChatCompletionText: vi.fn(
+    (result: { choices?: Array<{ message?: { content?: string } }> }) =>
+      result.choices?.[0]?.message?.content ?? '',
+  ),
 }));
 
 let action: typeof import('./api.resume.convert').action;
@@ -265,11 +268,9 @@ describe('resume convert action', () => {
     expect(response.status).toBe(200);
     expect(body.stage).toBe('complete');
     expect(mocks.extractPdfText).toHaveBeenCalledTimes(1);
-    expect(mocks.saveResumeToDatabase).toHaveBeenCalledWith(
-      existing.user.id,
-      expect.any(Object),
-      { replacePortfolioId: existing.portfolio.id },
-    );
+    expect(mocks.saveResumeToDatabase).toHaveBeenCalledWith(existing.user.id, expect.any(Object), {
+      replacePortfolioId: existing.portfolio.id,
+    });
   });
 
   it('returns pdf extraction stage when text extraction fails', async () => {
@@ -419,12 +420,9 @@ describe('resume convert action', () => {
     const response = await callAction(formRequest(pdfFileWithoutMime()));
 
     expect(response.status).toBe(200);
-    expect(mocks.storeFile).toHaveBeenCalledWith(
-      expect.any(Buffer),
-      'application/pdf',
-      'user-id',
-      { originalName: 'resume.pdf' },
-    );
+    expect(mocks.storeFile).toHaveBeenCalledWith(expect.any(Buffer), 'application/pdf', 'user-id', {
+      originalName: 'resume.pdf',
+    });
   });
 
   it('returns storage stage when upload fails', async () => {

@@ -255,7 +255,11 @@ async function getOwnedPortfolioRow(handle: DbHandle, owner_userid: string, port
     .executeTakeFirst();
 }
 
-async function getOwnedPortfolioRowOrThrow(handle: DbHandle, owner_userid: string, portfolio_id: string) {
+async function getOwnedPortfolioRowOrThrow(
+  handle: DbHandle,
+  owner_userid: string,
+  portfolio_id: string,
+) {
   const portfolio = await getOwnedPortfolioRow(handle, owner_userid, portfolio_id);
   if (!portfolio) {
     throw new NotFoundError('Portfolio', { portfolio_id, owner_userid });
@@ -431,7 +435,11 @@ export const CareerRepository = {
     await handle.deleteFrom('app.portfolios').where('owner_userid', '=', owner_userid).execute();
   },
 
-  async deletePortfolio(handle: DbHandle, owner_userid: string, portfolio_id: string): Promise<void> {
+  async deletePortfolio(
+    handle: DbHandle,
+    owner_userid: string,
+    portfolio_id: string,
+  ): Promise<void> {
     await handle
       .deleteFrom('app.portfolios')
       .where('id', '=', portfolio_id)
@@ -654,7 +662,11 @@ export const CareerRepository = {
     experienceId: string,
     updates: UpdateCareerWorkExperienceInput,
   ): Promise<CareerWorkExperienceRecord> {
-    const existing = await CareerRepository.getWorkExperienceById(handle, owner_userid, experienceId);
+    const existing = await CareerRepository.getWorkExperienceById(
+      handle,
+      owner_userid,
+      experienceId,
+    );
     if (!existing) {
       throw new NotFoundError('WorkExperience', { experienceId, owner_userid });
     }
@@ -665,15 +677,19 @@ export const CareerRepository = {
     if (updates.role !== undefined) set.role = updates.role;
     if (updates.company !== undefined) set.company = updates.company;
     if (updates.description !== undefined) set.description = updates.description;
-    if (updates.start_date !== undefined) set.start_date = updates.start_date ? new Date(updates.start_date) : null;
-    if (updates.end_date !== undefined) set.end_date = updates.end_date ? new Date(updates.end_date) : null;
+    if (updates.start_date !== undefined)
+      set.start_date = updates.start_date ? new Date(updates.start_date) : null;
+    if (updates.end_date !== undefined)
+      set.end_date = updates.end_date ? new Date(updates.end_date) : null;
     if (updates.action !== undefined) set.action = updates.action;
     if (updates.tags !== undefined) set.tags = serializeJsonColumn(updates.tags);
-    if (updates.metadata !== undefined) set.metadata = serializeJsonColumn(updates.metadata ?? null);
+    if (updates.metadata !== undefined)
+      set.metadata = serializeJsonColumn(updates.metadata ?? null);
     if (updates.sort_order !== undefined) set.sort_order = updates.sort_order;
     if (updates.is_visible !== undefined) set.is_visible = updates.is_visible;
     if (updates.base_salary !== undefined) set.base_salary = updates.base_salary;
-    if (updates.total_compensation !== undefined) set.total_compensation = updates.total_compensation;
+    if (updates.total_compensation !== undefined)
+      set.total_compensation = updates.total_compensation;
     if (updates.equity_value !== undefined) set.equity_value = updates.equity_value;
     if (updates.equity_percentage !== undefined) set.equity_percentage = updates.equity_percentage;
     if (updates.signing_bonus !== undefined) set.signing_bonus = updates.signing_bonus;
@@ -685,7 +701,8 @@ export const CareerRepository = {
     if (updates.team_size !== undefined) set.team_size = updates.team_size;
     if (updates.direct_reports !== undefined) set.direct_reports = updates.direct_reports;
     if (updates.reports_to !== undefined) set.reports_to = updates.reports_to;
-    if (updates.reason_for_leaving !== undefined) set.reason_for_leaving = updates.reason_for_leaving;
+    if (updates.reason_for_leaving !== undefined)
+      set.reason_for_leaving = updates.reason_for_leaving;
     if (updates.exit_notes !== undefined) set.exit_notes = updates.exit_notes;
 
     const updated = await handle
@@ -794,9 +811,7 @@ export const CareerRepository = {
             .selectAll()
             .where('id', 'in', companyIds)
             .execute();
-    const companiesById = new Map(
-      companies.map((company) => [company.id, company as CompanyRow]),
-    );
+    const companiesById = new Map(companies.map((company) => [company.id, company as CompanyRow]));
 
     return (applications as JobApplicationRow[]).map((application) =>
       toJobApplicationRecord(application, companiesById.get(application.company_id) ?? null),
@@ -843,9 +858,7 @@ export const CareerRepository = {
           phone: input.phone ?? null,
           availability_status: input.availability_status ?? false,
           availability_message: input.availability_message ?? null,
-          ...(input.theme !== undefined
-            ? { theme: serializeJsonColumn(input.theme ?? null) }
-            : {}),
+          ...(input.theme !== undefined ? { theme: serializeJsonColumn(input.theme ?? null) } : {}),
           ...(input.copyright !== undefined ? { copyright: input.copyright } : {}),
           ...(input.is_public !== undefined ? { is_public: input.is_public } : {}),
           ...(input.is_active !== undefined ? { is_active: input.is_active } : {}),
@@ -874,9 +887,7 @@ export const CareerRepository = {
         phone: input.phone ?? null,
         availability_status: input.availability_status ?? false,
         availability_message: input.availability_message ?? null,
-        ...(input.theme !== undefined
-          ? { theme: serializeJsonColumn(input.theme ?? null) }
-          : {}),
+        ...(input.theme !== undefined ? { theme: serializeJsonColumn(input.theme ?? null) } : {}),
         ...(input.copyright !== undefined ? { copyright: input.copyright } : {}),
         ...(input.is_public !== undefined ? { is_public: input.is_public } : {}),
         ...(input.is_active !== undefined ? { is_active: input.is_active } : {}),

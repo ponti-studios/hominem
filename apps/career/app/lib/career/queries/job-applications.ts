@@ -191,7 +191,9 @@ export type JobApplicationFunnel = {
   percentage: number;
 };
 
-export async function getJobApplicationFunnel(owner_userid: string): Promise<JobApplicationFunnel[]> {
+export async function getJobApplicationFunnel(
+  owner_userid: string,
+): Promise<JobApplicationFunnel[]> {
   const applications = extractJobApplications(await getUserJobApplications(owner_userid));
   const funnel = [
     { stage: 'Applied', count: applications.length },
@@ -328,7 +330,9 @@ export async function getAllApplicationsWithCompany(
   }
 
   if (filter?.company_id) {
-    applications = applications.filter((application) => application.company_id === filter.company_id);
+    applications = applications.filter(
+      (application) => application.company_id === filter.company_id,
+    );
   }
 
   if (filter?.source) {
@@ -350,7 +354,8 @@ export async function getAllApplicationsWithCompany(
   if (filter?.start_date) {
     applications = applications.filter(
       (application) =>
-        application.application_date && new Date(application.application_date) >= filter.start_date!,
+        application.application_date &&
+        new Date(application.application_date) >= filter.start_date!,
     );
   }
 

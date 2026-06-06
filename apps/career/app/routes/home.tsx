@@ -63,10 +63,7 @@ export default function Home() {
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link
                   to="/onboarding"
-                  className={cn(
-                    buttonVariants({ variant: 'primary', size: 'lg' }),
-                    'h-11 rounded-full px-6 text-sm',
-                  )}
+                  className={cn(buttonVariants({ size: 'lg' }), 'h-11 rounded-full px-6 text-sm')}
                 >
                   Get organized
                 </Link>

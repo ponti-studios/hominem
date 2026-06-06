@@ -8,7 +8,11 @@ interface StatCardProps {
 
 export function StatCard({ value, subtitle, trend }: StatCardProps) {
   const subtitleClass =
-    trend === 'up' ? 'text-xs text-emerald-600' : trend === 'down' ? 'text-xs text-red-500' : 'text-xs text-muted-foreground';
+    trend === 'up'
+      ? 'text-xs text-emerald-600'
+      : trend === 'down'
+        ? 'text-xs text-red-500'
+        : 'text-xs text-muted-foreground';
 
   return (
     <Card>

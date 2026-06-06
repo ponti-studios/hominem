@@ -1,6 +1,6 @@
+import { streamChatCompletion } from '@hominem/ai';
 import type { ChatMessageFileRecord, ChatMessageRecord, NoteContext } from '@hominem/db';
 import { ChatRepository, db, runInTransaction } from '@hominem/db';
-import { streamChatCompletion } from '@hominem/ai';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { streamSSE } from 'hono/streaming';
@@ -114,10 +114,7 @@ function getChatId(c: { req: { param: (name: string) => string | undefined } }):
 }
 
 const chatByIdRoutes = new Hono<AppContext>()
-  .use(
-    '/stream',
-    rateLimitMiddleware({ bucket: 'chat-stream', windowSec: 60, max: 30 }),
-  )
+  .use('/stream', rateLimitMiddleware({ bucket: 'chat-stream', windowSec: 60, max: 30 }))
   .get('/', async (c) => {
     const userId = c.get('userId')!;
     const chatId = getChatId(c);

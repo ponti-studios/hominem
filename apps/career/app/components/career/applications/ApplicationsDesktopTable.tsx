@@ -1,14 +1,7 @@
-import { Badge } from "@hominem/ui/badge";
-import { Card, CardContent } from "@hominem/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@hominem/ui/table";
-import { Link } from "react-router";
+import { Badge } from '@hominem/ui/badge';
+import { Card, CardContent } from '@hominem/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@hominem/ui/table';
+import { Link } from 'react-router';
 
 import {
   formatApplicationDate,
@@ -16,13 +9,11 @@ import {
   formatStatusText,
   getCompanyName,
   getStatusColor,
-} from "~/lib/utils/applicationUtils";
+} from '~/lib/utils/applicationUtils';
 
-import type { ApplicationsDesktopTableProps } from "./types";
+import type { ApplicationsDesktopTableProps } from './types';
 
-export function ApplicationsDesktopTable({
-  applications,
-}: ApplicationsDesktopTableProps) {
+export function ApplicationsDesktopTable({ applications }: ApplicationsDesktopTableProps) {
   return (
     <Card className="hidden md:block">
       <CardContent className="p-0">
@@ -45,40 +36,31 @@ export function ApplicationsDesktopTable({
                     to={`/career/applications/${application.id}`}
                     className="block hover:text-primary"
                   >
-                    <div className="font-medium text-foreground">
-                      {application.position}
-                    </div>
+                    <div className="font-medium text-foreground">{application.position}</div>
                     <div className="text-muted-foreground">
                       {getCompanyName(application.company)}
                     </div>
                   </Link>
                 </TableCell>
                 <TableCell className="whitespace-nowrap">
-                  <Badge
-                    variant="outline"
-                    className={getStatusColor(application.status)}
-                  >
+                  <Badge variant="outline" className={getStatusColor(application.status)}>
                     {formatStatusText(application.status)}
                   </Badge>
                 </TableCell>
                 <TableCell className="whitespace-nowrap text-muted-foreground">
                   {formatApplicationDate(
-                    application.application_date ||
-                      application.start_date ||
-                      null,
+                    application.application_date || application.start_date || null,
                   )}
                 </TableCell>
                 <TableCell className="whitespace-nowrap text-muted-foreground">
                   {formatApplicationDate(application.response_date)}
                 </TableCell>
                 <TableCell className="whitespace-nowrap text-muted-foreground">
-                  {formatApplicationSalary(
-                    application.salary_offered || application.salary_quoted,
-                  )}
+                  {formatApplicationSalary(application.salary_offered || application.salary_quoted)}
                 </TableCell>
                 <TableCell>
                   <span className="capitalize text-muted-foreground">
-                    {application.source || "—"}
+                    {application.source || '—'}
                   </span>
                 </TableCell>
               </TableRow>

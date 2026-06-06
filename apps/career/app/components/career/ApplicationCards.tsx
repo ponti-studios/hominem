@@ -1,18 +1,14 @@
-import { Badge } from "@hominem/ui/badge";
-import { EmptyState } from "@hominem/ui";
-import { buttonVariants } from "@hominem/ui/button";
-import { Card, CardContent } from "@hominem/ui/card";
-import { CalendarIcon, DollarSignIcon, MapPinIcon } from "lucide-react";
-import { Link } from "react-router";
+import { EmptyState } from '@hominem/ui';
+import { Badge } from '@hominem/ui/badge';
+import { buttonVariants } from '@hominem/ui/button';
+import { Card, CardContent } from '@hominem/ui/card';
+import { CalendarIcon, DollarSignIcon, MapPinIcon } from 'lucide-react';
+import { Link } from 'react-router';
 
-import { centsToDollars, formatCurrency } from "~/lib/utils";
-import { cn } from "~/lib/utils";
-import {
-  formatStatusText,
-  getCompanyName,
-  getStatusColor,
-} from "~/lib/utils/applicationUtils";
-import type { ApplicationWithCompany } from "~/types/applications";
+import { centsToDollars, formatCurrency } from '~/lib/utils';
+import { cn } from '~/lib/utils';
+import { formatStatusText, getCompanyName, getStatusColor } from '~/lib/utils/applicationUtils';
+import type { ApplicationWithCompany } from '~/types/applications';
 
 interface ApplicationCardsProps {
   applications: ApplicationWithCompany[];
@@ -23,9 +19,9 @@ interface ApplicationCardsProps {
 
 export function ApplicationCards({
   applications,
-  emptyTitle = "No applications found",
-  emptyDescription = "Start tracking your job applications to see them here",
-  className = "",
+  emptyTitle = 'No applications found',
+  emptyDescription = 'Start tracking your job applications to see them here',
+  className = '',
 }: ApplicationCardsProps) {
   if (!applications || applications.length === 0) {
     return (
@@ -39,7 +35,7 @@ export function ApplicationCards({
   }
 
   return (
-    <div className={cn("grid gap-6 md:grid-cols-2 xl:grid-cols-3", className)}>
+    <div className={cn('grid gap-6 md:grid-cols-2 xl:grid-cols-3', className)}>
       {applications.map((app) => (
         <ApplicationCard key={app.id} application={app} />
       ))}
@@ -47,18 +43,14 @@ export function ApplicationCards({
   );
 }
 
-function ApplicationCard({
-  application,
-}: {
-  application: ApplicationWithCompany;
-}) {
+function ApplicationCard({ application }: { application: ApplicationWithCompany }) {
   const formatDate = (date: Date | string | null | undefined) => {
-    if (!date) return "—";
-    const dateObj = typeof date === "string" ? new Date(date) : date;
-    return dateObj.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
+    if (!date) return '—';
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return dateObj.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
     });
   };
 
@@ -75,17 +67,12 @@ function ApplicationCard({
               </h3>
               <div className="mt-2 flex items-center gap-2">
                 <div className="flex size-8 items-center justify-center rounded-md bg-primary/10 text-sm font-semibold text-primary">
-                  {companyName.charAt(0)?.toUpperCase() || "C"}
+                  {companyName.charAt(0)?.toUpperCase() || 'C'}
                 </div>
-                <span className="truncate font-medium text-foreground/90">
-                  {companyName}
-                </span>
+                <span className="truncate font-medium text-foreground/90">{companyName}</span>
               </div>
             </div>
-            <Badge
-              variant="outline"
-              className={getStatusColor(application.status)}
-            >
+            <Badge variant="outline" className={getStatusColor(application.status)}>
               {formatStatusText(application.status)}
             </Badge>
           </div>
@@ -98,9 +85,7 @@ function ApplicationCard({
               Applied
             </span>
             <span className="font-medium text-foreground">
-              {formatDate(
-                application.application_date || application.start_date,
-              )}
+              {formatDate(application.application_date || application.start_date)}
             </span>
           </div>
 
@@ -123,15 +108,13 @@ function ApplicationCard({
                 Salary
               </span>
               <span className="max-w-32 truncate text-right font-medium text-foreground">
-                {typeof application.salary_quoted === "string"
+                {typeof application.salary_quoted === 'string'
                   ? application.salary_quoted
                   : application.salary_offered
                     ? formatCurrency(centsToDollars(application.salary_offered))
                     : application.salary_quoted
-                      ? formatCurrency(
-                          centsToDollars(application.salary_quoted),
-                        )
-                      : "—"}
+                      ? formatCurrency(centsToDollars(application.salary_quoted))
+                      : '—'}
               </span>
             </div>
           ) : null}
@@ -140,7 +123,7 @@ function ApplicationCard({
         <div className="flex gap-2 border-t border-border pt-2">
           <Link
             to={`/career/applications/${application.id}`}
-            className={buttonVariants({ variant: "outline" })}
+            className={buttonVariants({ variant: 'outline' })}
           >
             View Details
           </Link>
@@ -149,7 +132,7 @@ function ApplicationCard({
               href={application.job_posting}
               target="_blank"
               rel="noopener noreferrer"
-              className={buttonVariants({ variant: "outline" })}
+              className={buttonVariants({ variant: 'outline' })}
             >
               Job Post
             </a>

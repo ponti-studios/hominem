@@ -1,5 +1,5 @@
-import type { FullPortfolio } from '../portfolio.server';
 import { jsonArray } from '../db-json';
+import type { FullPortfolio } from '../portfolio.server';
 
 /**
  * Formats portfolio data in a natural, LLM-friendly format

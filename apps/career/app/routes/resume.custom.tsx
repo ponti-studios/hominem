@@ -2,7 +2,7 @@ import type { LoaderFunctionArgs, MetaFunction } from 'react-router';
 import { Link } from 'react-router';
 
 import { JobScrapingResumeCustomizer } from '~/components/JobScrapingResumeCustomizer';
-import { withAuthLoader } from '~/lib/route-utils';
+import { userContext } from '~/lib/middleware';
 
 export const meta: MetaFunction = () => {
   return [
@@ -14,10 +14,9 @@ export const meta: MetaFunction = () => {
   ];
 };
 
-export async function loader(args: LoaderFunctionArgs) {
-  return withAuthLoader(args, async ({ user }) => {
-    return { user };
-  });
+export async function loader({ context }: LoaderFunctionArgs) {
+  const user = context.get(userContext);
+  return { user };
 }
 
 export default function EnhancedResumeCustomizerPage() {

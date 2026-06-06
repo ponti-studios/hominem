@@ -1,9 +1,10 @@
+import type { LoaderFunctionArgs } from 'react-router';
 import { data } from 'react-router';
 
-import { getServerSession } from '../../../lib/auth.server';
+import { userContext } from '~/lib/middleware';
 
-export async function loader({ request }: { request: Request }) {
-  const { user } = await getServerSession(request);
+export async function loader({ context }: LoaderFunctionArgs) {
+  const user = context.get(userContext);
 
   if (!user) {
     return data({ error: 'Not authenticated' }, { status: 401 });

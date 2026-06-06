@@ -1,9 +1,8 @@
 import '@testing-library/jest-dom';
-
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router';
+import { describe, expect, it, vi } from 'vitest';
 
 const navigate = vi.fn();
 
@@ -19,9 +18,7 @@ vi.mock('../components/UploadResumeForm', () => ({
   UploadResumeForm: ({
     onUploadComplete,
   }: {
-    onUploadComplete: (response: {
-      portfolioSlug: string;
-    }) => void;
+    onUploadComplete: (response: { portfolioSlug: string }) => void;
   }) => (
     <button type="button" onClick={() => onUploadComplete(makeUploadResumeResponse())}>
       Mock Upload Form

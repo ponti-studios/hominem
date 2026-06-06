@@ -1,4 +1,4 @@
-import { Button } from "@hominem/ui/button";
+import { Button } from '@hominem/ui/button';
 
 export interface EditorFormActionsProps {
   isSaving: boolean;
@@ -22,7 +22,7 @@ export function EditorFormActions({
   return (
     <div className="flex gap-2">
       <Button type="submit" disabled={isSubmitDisabled} size="sm">
-        {isSaving ? "Saving..." : submitLabel}
+        {isSaving ? 'Saving...' : submitLabel}
       </Button>
       {!isNew && onDelete ? (
         <Button

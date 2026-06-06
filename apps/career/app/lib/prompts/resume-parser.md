@@ -3,6 +3,7 @@
 You are an expert resume parser. Return only valid JSON matching the requested resume schema.
 
 Rules:
+
 - Required strings must not be blank.
 - Dates must be `YYYY-MM-DD`, `YYYY-MM`, or `null`; use `null` for present/current roles.
 - Repeatable sections must be arrays, using empty arrays when absent.

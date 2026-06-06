@@ -109,10 +109,7 @@ export const authenticatedVoiceRoutes = new Hono<AppContext>()
       max: 20,
     }),
   )
-  .use(
-    '/speech',
-    rateLimitMiddleware({ bucket: 'voice-speech', windowSec: 60, max: 30 }),
-  )
+  .use('/speech', rateLimitMiddleware({ bucket: 'voice-speech', windowSec: 60, max: 30 }))
   .use(
     '/respond/stream',
     rateLimitMiddleware({

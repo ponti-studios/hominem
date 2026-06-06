@@ -1,12 +1,12 @@
 import type { ChatMessageDto } from '@hominem/rpc/types/chat.types';
 import type { NoteSearchResult } from '@hominem/rpc/types/notes.types';
+import { EmptyState, InlineEnhanceTray, useInlineEnhance } from '@hominem/ui';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from '@hominem/ui/accordion';
-import { EmptyState, InlineEnhanceTray, useInlineEnhance } from '@hominem/ui';
 import { Button } from '@hominem/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '@hominem/ui/command';
 import { SpeechInput } from '@hominem/ui/composer';
@@ -20,8 +20,7 @@ import { useArchiveChat } from '~/hooks/use-chats';
 import { useNoteSearch } from '~/hooks/use-notes';
 import { useServerSpeech } from '~/hooks/use-server-speech';
 import { useTranscribe } from '~/hooks/use-transcribe';
-import { serverEnv } from '~/lib/env.server';
-import { requireAuth } from '~/lib/guards';
+import { createServerApiClient } from '~/lib/api.server';
 import { useChatMessages } from '~/lib/hooks/use-chat-messages';
 import { useFileUpload } from '~/lib/hooks/use-file-upload';
 import { useStreamMessage } from '~/lib/hooks/use-stream-message';
@@ -49,38 +48,30 @@ function getMentionQuery(value: string) {
 }
 
 export async function loader({ request, params }: Route.LoaderArgs) {
-  await requireAuth(request);
+  try {
+    const client = createServerApiClient(request);
+    const [chat, messages] = await Promise.all([
+      client.api.chats[':chatId']
+        .$get({ param: { chatId: params.chatId } })
+        .then((res) => res.json()),
+      client.api.chats[':chatId'].messages
+        .$get({ param: { chatId: params.chatId }, query: { limit: '50' } })
+        .then((res) => res.json()),
+    ]);
 
-  const cookie = request.headers.get('cookie');
-  const headers = cookie ? { cookie } : undefined;
-  const chatResponse = await fetch(
-    new URL(`/api/chats/${params.chatId}`, serverEnv.VITE_PUBLIC_API_URL).toString(),
-    { headers },
-  );
-  const chat = chatResponse.ok ? ((await chatResponse.json()) as ChatLoaderData) : null;
+    const noteId = new URL(request.url).searchParams.get('noteId');
+    let seedNote: NoteLoaderData | null = null;
+    if (noteId) {
+      seedNote = await client.api.notes[':noteId']
+        .$get({ param: { noteId } })
+        .then((res) => res.json())
+        .catch(() => null);
+    }
 
-  const messagesResponse = await fetch(
-    new URL(
-      `/api/chats/${params.chatId}/messages?limit=50`,
-      serverEnv.VITE_PUBLIC_API_URL,
-    ).toString(),
-    { headers },
-  );
-  const messages = messagesResponse.ok
-    ? ((await messagesResponse.json()) as ChatMessageLoaderData)
-    : [];
-
-  const noteId = new URL(request.url).searchParams.get('noteId');
-  let seedNote: NoteLoaderData | null = null;
-  if (noteId) {
-    const noteResponse = await fetch(
-      new URL(`/api/notes/${noteId}`, serverEnv.VITE_PUBLIC_API_URL).toString(),
-      { headers },
-    );
-    seedNote = noteResponse.ok ? ((await noteResponse.json()) as NoteLoaderData) : null;
+    return data({ chat, seedNote, messages });
+  } catch {
+    return data({ chat: null, seedNote: null, messages: [] });
   }
-
-  return data({ chat, seedNote, messages });
 }
 
 export default function ChatPage({

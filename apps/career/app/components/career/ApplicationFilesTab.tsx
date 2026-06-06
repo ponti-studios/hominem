@@ -5,10 +5,9 @@ import type { ApplicationWithCompany } from '~/types/career-data';
 
 interface FilesTabProps {
   application: ApplicationWithCompany;
-  applicationId: string;
 }
 
-export function ApplicationFilesTab({ application, applicationId }: FilesTabProps) {
+export function ApplicationFilesTab({ application }: FilesTabProps) {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">

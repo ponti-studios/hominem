@@ -30,18 +30,21 @@ export function useStreamMessage({ chatId }: { chatId: string }) {
       const abortSignal = abortControllerRef.current.signal;
 
       try {
-        const streamRes = await client.api.chats[':id'].stream.$post({
-          param: { id: chatId },
-          json: {
-            message: input.message,
-            ...(input.fileIds && input.fileIds.length > 0 ? { fileIds: input.fileIds } : {}),
-            ...(input.noteIds && input.noteIds.length > 0 ? { noteIds: input.noteIds } : {}),
+        const streamRes = await client.api.chats[':id'].stream.$post(
+          {
+            param: { id: chatId },
+            json: {
+              message: input.message,
+              ...(input.fileIds && input.fileIds.length > 0 ? { fileIds: input.fileIds } : {}),
+              ...(input.noteIds && input.noteIds.length > 0 ? { noteIds: input.noteIds } : {}),
+            },
           },
-        }, {
-          init: {
-            signal: abortSignal,
+          {
+            init: {
+              signal: abortSignal,
+            },
           },
-        });
+        );
         const body = streamRes.body;
         if (!body) throw new Error('No response body');
 

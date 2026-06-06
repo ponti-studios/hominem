@@ -9,83 +9,77 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import { Form, Link, redirect, useActionData } from 'react-router';
 
 import type { JobScrapeApiRequest, JobScrapeApiResponse } from '~/lib/api-contracts';
-import {
-  createErrorResponse,
-  createSuccessResponse,
-  withAuthAction,
-  withAuthLoader,
-} from '~/lib/route-utils';
+import { userContext } from '~/lib/middleware';
+import { createErrorResponse, createSuccessResponse } from '~/lib/route-utils';
 import { JobApplicationsService } from '~/lib/services/job-applications.service';
 import { cn } from '~/lib/utils';
 import type { JobPosting } from '~/types/applications';
 import { JobApplicationStatus } from '~/types/career';
 
-export async function loader(args: LoaderFunctionArgs) {
-  return withAuthLoader(args, async ({ user }) => {
-    return createSuccessResponse({ user });
-  });
+export async function loader({ context }: LoaderFunctionArgs) {
+  const user = context.get(userContext);
+  return createSuccessResponse({ user });
 }
 
-export async function action(args: ActionFunctionArgs) {
-  return withAuthAction(args, async ({ user, request }) => {
-    const formData = await request.formData();
-    const position = formData.get('position') as string;
-    const companyName = formData.get('company') as string;
-    const start_date = formData.get('start_date') as string;
-    const status = formData.get('status') as JobApplicationStatus;
-    const location = formData.get('location') as string;
-    const job_posting = formData.get('job_posting') as string;
-    const jobPostingData = formData.get('jobPostingData') as string;
-    const salary_quoted = formData.get('salary_quoted') as string;
-    const recruiter_name = formData.get('recruiter_name') as string;
-    const recruiter_email = formData.get('recruiter_email') as string;
-    const recruiter_linkedin = formData.get('recruiter_linkedin') as string;
+export async function action({ request, context }: ActionFunctionArgs) {
+  const user = context.get(userContext);
+  const formData = await request.formData();
+  const position = formData.get('position') as string;
+  const companyName = formData.get('company') as string;
+  const start_date = formData.get('start_date') as string;
+  const status = formData.get('status') as JobApplicationStatus;
+  const location = formData.get('location') as string;
+  const job_posting = formData.get('job_posting') as string;
+  const jobPostingData = formData.get('jobPostingData') as string;
+  const salary_quoted = formData.get('salary_quoted') as string;
+  const recruiter_name = formData.get('recruiter_name') as string;
+  const recruiter_email = formData.get('recruiter_email') as string;
+  const recruiter_linkedin = formData.get('recruiter_linkedin') as string;
 
-    if (!position || !companyName) {
-      return createErrorResponse('Position and company are required');
-    }
+  if (!position || !companyName) {
+    return createErrorResponse('Position and company are required');
+  }
 
-    let requirements: string[] = [];
-    let skills: string[] = [];
-    let job_posting_url: string | null = null;
-    let job_posting_word_count: number | null = null;
+  let requirements: string[] = [];
+  let skills: string[] = [];
+  let job_posting_url: string | null = null;
+  let job_posting_word_count: number | null = null;
 
-    if (jobPostingData) {
-      try {
-        const parsed = JSON.parse(jobPostingData) as JobPosting;
-        requirements = parsed.requirements || [];
-        skills = parsed.skills || [];
-        job_posting_url = parsed.url || null;
-        job_posting_word_count = parsed.wordCount || null;
-      } catch {
-        // fall through with defaults
-      }
-    }
-
+  if (jobPostingData) {
     try {
-      await JobApplicationsService.createApplication(user.id, {
-        companyName,
-        position,
-        status,
-        start_date: new Date(start_date),
-        location: location || null,
-        job_posting: jobPostingData || job_posting || null,
-        requirements,
-        skills,
-        job_posting_url,
-        job_posting_word_count,
-        salary_quoted: salary_quoted || null,
-        recruiter_name: recruiter_name || null,
-        recruiter_email: recruiter_email || null,
-        recruiter_linkedin: recruiter_linkedin || null,
-      });
-
-      return redirect('/career/applications');
-    } catch (error) {
-      console.error('Error creating job application:', error);
-      return createErrorResponse('Failed to create job application. Please try again.');
+      const parsed = JSON.parse(jobPostingData) as JobPosting;
+      requirements = parsed.requirements || [];
+      skills = parsed.skills || [];
+      job_posting_url = parsed.url || null;
+      job_posting_word_count = parsed.wordCount || null;
+    } catch {
+      // fall through with defaults
     }
-  });
+  }
+
+  try {
+    await JobApplicationsService.createApplication(user.id, {
+      companyName,
+      position,
+      status,
+      start_date: new Date(start_date),
+      location: location || null,
+      job_posting: jobPostingData || job_posting || null,
+      requirements,
+      skills,
+      job_posting_url,
+      job_posting_word_count,
+      salary_quoted: salary_quoted || null,
+      recruiter_name: recruiter_name || null,
+      recruiter_email: recruiter_email || null,
+      recruiter_linkedin: recruiter_linkedin || null,
+    });
+
+    return redirect('/career/applications');
+  } catch (error) {
+    console.error('Error creating job application:', error);
+    return createErrorResponse('Failed to create job application. Please try again.');
+  }
 }
 
 export default function CreateJobApplication() {
@@ -327,7 +321,7 @@ export default function CreateJobApplication() {
                         <div>
                           <h4 className="font-medium text-foreground mb-2">Skills</h4>
                           <div className="flex flex-wrap gap-2">
-                            {scrapedData.skills.slice(0, 8).map((skill, index) => (
+                            {scrapedData.skills.slice(0, 8).map((skill, _index) => (
                               <span
                                 key={`skill-${skill}`}
                                 className="px-2 py-1 bg-accent/20 text-muted-foreground text-xs rounded-md"

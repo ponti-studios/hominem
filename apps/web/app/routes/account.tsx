@@ -1,21 +1,8 @@
 import { Button } from '@hominem/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@hominem/ui/card';
-import { data, redirect } from 'react-router';
 
 import { SettingsPageLayout } from '~/components/settings-page-layout';
-import { getServerSession } from '~/lib/auth.server';
 import { useSignOut } from '~/lib/hooks/use-sign-out';
-
-import type { Route } from './+types/account';
-
-export async function loader({ request }: Route.LoaderArgs) {
-  const { user, headers } = await getServerSession(request);
-  if (!user) {
-    throw redirect('/auth', { headers });
-  }
-
-  return data({ userId: user.id }, { headers });
-}
 
 export default function AccountPage() {
   const signOut = useSignOut();

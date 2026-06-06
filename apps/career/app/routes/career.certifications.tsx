@@ -1,46 +1,34 @@
-import { Button } from "@hominem/ui/button";
-import { Card, CardContent } from "@hominem/ui/card";
-import { DatePicker } from "@hominem/ui/date-picker";
-import { EmptyState } from "@hominem/ui";
-import {
-  CheckIcon,
-  PencilIcon,
-  PlusIcon,
-  TrashIcon,
-  XIcon,
-} from "lucide-react";
-import { useState } from "react";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData } from "react-router";
+import { EmptyState } from '@hominem/ui';
+import { Button } from '@hominem/ui/button';
+import { Card, CardContent } from '@hominem/ui/card';
+import { DatePicker } from '@hominem/ui/date-picker';
+import { CheckIcon, PencilIcon, PlusIcon, TrashIcon, XIcon } from 'lucide-react';
+import { useState } from 'react';
+import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
+import { useLoaderData } from 'react-router';
 
-import { CareerRecordIndexShell } from "~/components/career/CareerRecordIndexShell";
-import { MetricsGrid } from "~/components/career/MetricsGrid";
+import { CareerRecordIndexShell } from '~/components/career/CareerRecordIndexShell';
+import { MetricsGrid } from '~/components/career/MetricsGrid';
 import {
   createErrorResponse,
   createSuccessResponse,
   withAuthAction,
   withAuthLoader,
-} from "~/lib/route-utils";
+} from '~/lib/route-utils';
+import { cn } from '~/lib/utils';
 import {
   formatCertificationStatus,
   getCertificationStatusClasses,
-} from "~/lib/utils/certificationUtils";
-import { cn } from "~/lib/utils";
-import type { Certification, CertificationSummary } from "~/types/career-data";
+} from '~/lib/utils/certificationUtils';
+import type { Certification, CertificationSummary } from '~/types/career-data';
 
 const formatDateValue = (value: Date | undefined) => {
   if (!value) {
-    return "";
+    return '';
   }
 
-  return value.toISOString().split("T")[0] ?? "";
+  return value.toISOString().split('T')[0] ?? '';
 };
-
-interface LoaderData {
-  user: { id: string; email?: string | null; name?: string | null };
-  certifications: Certification[];
-  summary: CertificationSummary;
-}
 
 export async function loader(args: LoaderFunctionArgs) {
   return withAuthLoader(args, async ({ user }) => {
@@ -63,8 +51,8 @@ export async function loader(args: LoaderFunctionArgs) {
         summary,
       });
     } catch (error) {
-      console.error("Error loading certifications:", error);
-      return createErrorResponse("Failed to load certifications");
+      console.error('Error loading certifications:', error);
+      return createErrorResponse('Failed to load certifications');
     }
   });
 }
@@ -72,40 +60,31 @@ export async function loader(args: LoaderFunctionArgs) {
 export async function action(args: ActionFunctionArgs) {
   return withAuthAction(args, async ({ request }) => {
     const formData = await request.formData();
-    const operation = formData.get("operation") as string;
+    const operation = formData.get('operation') as string;
 
     try {
-      if (operation === "create") {
-        return createSuccessResponse(
-          { success: true },
-          "Certification created successfully",
-        );
+      if (operation === 'create') {
+        return createSuccessResponse({ success: true }, 'Certification created successfully');
       }
 
-      if (operation === "update") {
-        return createSuccessResponse(
-          { success: true },
-          "Certification updated successfully",
-        );
+      if (operation === 'update') {
+        return createSuccessResponse({ success: true }, 'Certification updated successfully');
       }
 
-      if (operation === "delete") {
-        return createSuccessResponse(
-          { success: true },
-          "Certification deleted successfully",
-        );
+      if (operation === 'delete') {
+        return createSuccessResponse({ success: true }, 'Certification deleted successfully');
       }
 
-      return createErrorResponse("Invalid operation");
+      return createErrorResponse('Invalid operation');
     } catch (error) {
-      console.error("Error handling certification operation:", error);
-      return createErrorResponse("Failed to process certification request");
+      console.error('Error handling certification operation:', error);
+      return createErrorResponse('Failed to process certification request');
     }
   });
 }
 
 export default function CertificationsPage() {
-  const response = useLoaderData<{ success: boolean; data?: LoaderData; error?: string }>();
+  const response = useLoaderData<typeof loader>();
   const [showCreateForm, setShowCreateForm] = useState(false);
 
   if (!response.success) {
@@ -114,7 +93,7 @@ export default function CertificationsPage() {
         <CardContent className="space-y-2 p-6">
           <h2 className="text-lg font-semibold text-foreground">Error Loading Data</h2>
           <p className="text-sm text-muted-foreground">
-            {response.error ?? "Failed to load certifications"}
+            {response.error ?? 'Failed to load certifications'}
           </p>
         </CardContent>
       </Card>
@@ -138,21 +117,21 @@ export default function CertificationsPage() {
         <MetricsGrid
           items={[
             {
-              label: "Total Certifications",
+              label: 'Total Certifications',
               value: String(summary.totalCertifications),
             },
             {
-              label: "Active",
+              label: 'Active',
               value: String(summary.activeCertifications),
-              tone: "success",
+              tone: 'success',
             },
             {
-              label: "Expiring Soon",
+              label: 'Expiring Soon',
               value: String(summary.expiringInSixMonths),
-              tone: "warning",
+              tone: 'warning',
             },
             {
-              label: "Total Investment",
+              label: 'Total Investment',
               value: `$${(summary.totalInvestment / 100).toLocaleString()}`,
             },
           ]}
@@ -177,10 +156,7 @@ export default function CertificationsPage() {
       {certifications.length > 0 ? (
         <div className="divide-y divide-slate-200/50">
           {certifications.map((certification) => (
-            <CertificationCard
-              key={certification.id}
-              certification={certification}
-            />
+            <CertificationCard key={certification.id} certification={certification} />
           ))}
         </div>
       ) : null}
@@ -204,35 +180,24 @@ function CertificationCard({ certification }: CertificationCardProps) {
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="mb-2 flex items-center gap-3">
-            <h3 className="text-lg font-semibold text-foreground">
-              {certification.name}
-            </h3>
+            <h3 className="text-lg font-semibold text-foreground">{certification.name}</h3>
             <span
               className={cn(
-                "rounded-full px-2 py-1 text-xs font-medium",
+                'rounded-full px-2 py-1 text-xs font-medium',
                 getCertificationStatusClasses(certification.status),
               )}
             >
               {formatCertificationStatus(certification.status)}
             </span>
           </div>
-          <p className="mb-3 text-muted-foreground">
-            {certification.issuingOrganization}
-          </p>
+          <p className="mb-3 text-muted-foreground">{certification.issuingOrganization}</p>
           {certification.description ? (
-            <p className="mb-3 text-muted-foreground">
-              {certification.description}
-            </p>
+            <p className="mb-3 text-muted-foreground">{certification.description}</p>
           ) : null}
           <div className="flex items-center gap-6 text-sm text-muted-foreground">
-            <span>
-              Issued: {new Date(certification.issueDate).toLocaleDateString()}
-            </span>
+            <span>Issued: {new Date(certification.issueDate).toLocaleDateString()}</span>
             {certification.expirationDate ? (
-              <span>
-                Expires:{" "}
-                {new Date(certification.expirationDate).toLocaleDateString()}
-              </span>
+              <span>Expires: {new Date(certification.expirationDate).toLocaleDateString()}</span>
             ) : null}
             {certification.cost ? (
               <span>Cost: ${(certification.cost / 100).toLocaleString()}</span>
@@ -248,11 +213,7 @@ function CertificationCard({ certification }: CertificationCardProps) {
           >
             <PencilIcon className="w-4 h-4" />
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-destructive/70 hover:text-destructive"
-          >
+          <Button variant="ghost" size="sm" className="text-destructive/70 hover:text-destructive">
             <TrashIcon className="w-4 h-4" />
           </Button>
         </div>
@@ -274,9 +235,7 @@ function CreateCertificationModal({ onClose }: CreateCertificationModalProps) {
       <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-md bg-card">
         <div className="border-b border-border p-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-foreground">
-              Add Certification
-            </h2>
+            <h2 className="text-xl font-semibold text-foreground">Add Certification</h2>
             <Button variant="ghost" size="sm" onClick={onClose}>
               <XIcon className="w-5 h-5" />
             </Button>
@@ -349,11 +308,7 @@ function CreateCertificationModal({ onClose }: CreateCertificationModalProps) {
                 placeholder="Pick issue date"
                 containerClassName="min-w-0"
               />
-              <input
-                type="hidden"
-                name="issueDate"
-                value={formatDateValue(issueDate)}
-              />
+              <input type="hidden" name="issueDate" value={formatDateValue(issueDate)} />
             </div>
             <div>
               <DatePicker
@@ -364,11 +319,7 @@ function CreateCertificationModal({ onClose }: CreateCertificationModalProps) {
                 placeholder="Pick expiration date"
                 containerClassName="min-w-0"
               />
-              <input
-                type="hidden"
-                name="expirationDate"
-                value={formatDateValue(expirationDate)}
-              />
+              <input type="hidden" name="expirationDate" value={formatDateValue(expirationDate)} />
             </div>
             <div>
               <label

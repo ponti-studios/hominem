@@ -5,11 +5,7 @@ export function buildApplicationsSearchParams(
   const nextSearchParams = new URLSearchParams(currentSearchParams);
 
   for (const [key, value] of Object.entries(updates)) {
-    if (
-      value === null ||
-      value === "" ||
-      (Array.isArray(value) && value.length === 0)
-    ) {
+    if (value === null || value === '' || (Array.isArray(value) && value.length === 0)) {
       nextSearchParams.delete(key);
       continue;
     }

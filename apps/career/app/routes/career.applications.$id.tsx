@@ -143,14 +143,14 @@ export async function action(args: ActionFunctionArgs) {
 
 export default function ApplicationDetail() {
   const loaderData = useLoaderData() as { success: boolean; data?: ApplicationWithRelations };
-  const actionData = useActionData();
+  const _actionData = useActionData();
   const params = useParams();
-  const fetcher = useFetcher();
+  const _fetcher = useFetcher();
   type TabId = 'overview' | 'timeline' | 'notes' | 'files';
   const [activeTab, setActiveTab] = useState<TabId>('overview');
-  const [showStatusUpdate, setShowStatusUpdate] = useState(false);
-  const [showAddNote, setShowAddNote] = useState(false);
-  const [showAddInterview, setShowAddInterview] = useState(false);
+  const [_showStatusUpdate, setShowStatusUpdate] = useState(false);
+  const [_showAddNote, setShowAddNote] = useState(false);
+  const [_showAddInterview, setShowAddInterview] = useState(false);
 
   if (!loaderData.success || !loaderData.data) {
     return (
@@ -176,7 +176,7 @@ export default function ApplicationDetail() {
     );
   }
 
-  const { application, notes, files } = loaderData.data;
+  const { application, notes, _files } = loaderData.data;
   const { company } = application;
 
   const tabItems = [

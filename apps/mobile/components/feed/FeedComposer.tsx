@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import type { RelativePathString } from 'expo-router';
 import { useRouter } from 'expo-router';
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useRef } from 'react';
 import { Keyboard, TextInput } from 'react-native';
 
 import { InlineEnhanceTray } from '~/components/ai/InlineEnhanceTray';
@@ -18,9 +18,9 @@ import { ComposerResting } from '~/components/composer/ComposerResting';
 import { ComposerSurface } from '~/components/composer/ComposerSurface';
 import { ComposerTextInput } from '~/components/composer/ComposerTextInput';
 import { useComposer } from '~/components/composer/useComposer';
+import { useInlineEnhance } from '~/services/ai';
 import { normalizeChatTitle } from '~/services/chat';
 import { useCreateChat } from '~/services/chat/use-create-chat';
-import { useInlineEnhance } from '~/services/ai';
 import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
 import { donateAddNoteIntent } from '~/services/intent-donation';
@@ -49,18 +49,12 @@ function FeedComposerInner() {
   const inputRef = useRef<TextInput>(null);
   const { isActive, activate } = useComposerContext();
 
-  const {
-    message,
-    setMessage,
-    uploadState,
-    uploadedAttachmentIds,
-    canSubmit,
-    clearDraft,
-  } = useComposer({
-    initialDraft: readFeedDraft(),
-    onDraftChange: writeFeedDraft,
-    onExtraClearDraft: clearFeedDraft,
-  });
+  const { message, setMessage, uploadState, uploadedAttachmentIds, canSubmit, clearDraft } =
+    useComposer({
+      initialDraft: readFeedDraft(),
+      onDraftChange: writeFeedDraft,
+      onExtraClearDraft: clearFeedDraft,
+    });
   const { attachments } = useComposerAttachments();
   const {
     isEnhanceOpen,

@@ -1,6 +1,5 @@
-import { describe, expect, it } from 'vitest';
-
 import { resolveUploadMimeType, validateFile } from '@hominem/storage';
+import { describe, expect, it } from 'vitest';
 
 const PDF_RESUME_VALIDATION = {
   maxSizeBytes: 10 * 1024 * 1024,
@@ -20,7 +19,9 @@ describe('upload policy validation', () => {
   });
 
   it('accepts a pdf filename when multipart parsing uses application/octet-stream', () => {
-    expect(validateFile(file('resume.pdf', 'application/octet-stream'), PDF_RESUME_VALIDATION)).toEqual({
+    expect(
+      validateFile(file('resume.pdf', 'application/octet-stream'), PDF_RESUME_VALIDATION),
+    ).toEqual({
       valid: true,
     });
     expect(resolveUploadMimeType(file('resume.pdf', 'application/octet-stream'))).toBe(

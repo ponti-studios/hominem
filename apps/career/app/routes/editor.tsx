@@ -1,13 +1,12 @@
+import { Badge } from '@hominem/ui/badge';
 import { BarChart3, Briefcase, Code, FolderOpen, Link2, MessageSquare, User } from 'lucide-react';
 import type { LoaderFunctionArgs, MetaFunction } from 'react-router';
 import { Link, Outlet, redirect, useLoaderData, useLocation } from 'react-router';
 
 import { cn } from '~/lib/utils';
-import { Badge } from '@hominem/ui/badge';
 
-import type { FullPortfolio } from '../lib/portfolio.server';
+import { userContext } from '../lib/middleware';
 import { getFullUserPortfolio } from '../lib/portfolio.server';
-import { withAuthLoader } from '../lib/route-utils';
 export const meta: MetaFunction = () => {
   return [
     { title: 'Portfolio Editor | Craftd' },
@@ -18,14 +17,13 @@ export const meta: MetaFunction = () => {
   ];
 };
 
-export async function loader(args: LoaderFunctionArgs) {
-  return withAuthLoader(args, async ({ user }) => {
-    const portfolio = await getFullUserPortfolio(user.id);
-    if (!portfolio) {
-      throw redirect('/onboarding');
-    }
-    return portfolio;
-  });
+export async function loader({ context }: LoaderFunctionArgs) {
+  const user = context.get(userContext);
+  const portfolio = await getFullUserPortfolio(user.id);
+  if (!portfolio) {
+    throw redirect('/onboarding');
+  }
+  return portfolio;
 }
 
 const editorSteps = [
@@ -45,7 +43,7 @@ const editorSteps = [
 
 export default function EditorLayout() {
   const location = useLocation();
-  const portfolio = useLoaderData<FullPortfolio>();
+  const portfolio = useLoaderData<typeof loader>();
 
   const currentStepIndex = editorSteps.findIndex((step) => location.pathname.startsWith(step.path));
 
@@ -53,16 +51,19 @@ export default function EditorLayout() {
     <div className="w-full flex-1 space-y-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          Portfolio Editor
-        </p>
-        <p className="text-sm text-muted-foreground">
-          Refine the content and sections that power your public portfolio.
-        </p>
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Portfolio Editor
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Refine the content and sections that power your public portfolio.
+          </p>
         </div>
 
         <Link to="/account" className="self-start">
-          <Badge variant="outline" className="gap-2 rounded-full border-primary/30 bg-primary/5 px-3 py-1">
+          <Badge
+            variant="outline"
+            className="gap-2 rounded-full border-primary/30 bg-primary/5 px-3 py-1"
+          >
             <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
               Current
             </span>

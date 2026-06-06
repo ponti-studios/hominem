@@ -15,7 +15,6 @@ import {
   createSuccessResponse,
   parseFormData,
   tryAsync,
-  withAuthAction,
 } from '../lib/route-utils';
 
 interface TestimonialFormValues {
@@ -349,91 +348,84 @@ function TestimonialsEditorSection({
 
 export const meta: MetaFunction = () => [{ title: 'Testimonials - Portfolio Editor | Craftd' }];
 
-export async function action(args: ActionFunctionArgs) {
-  return withAuthAction(args, async ({ user }) => {
-    const formData = await args.request.formData();
-    const operation = formData.get('operation') as string;
+export async function action({ request, context }: ActionFunctionArgs) {
+  const user = context.get(userContext);
+  const formData = await request.formData();
+  const operation = formData.get('operation') as string;
 
-    switch (operation) {
-      case 'create':
-      case 'update': {
-        const testimonialDataResult = parseFormData<TestimonialFormValues>(
-          formData,
-          'testimonialData',
-        );
+  switch (operation) {
+    case 'create':
+    case 'update': {
+      const testimonialDataResult = parseFormData<TestimonialFormValues>(
+        formData,
+        'testimonialData',
+      );
 
-        if ('success' in testimonialDataResult && !testimonialDataResult.success) {
-          return testimonialDataResult;
-        }
-
-        const testimonialData = testimonialDataResult as TestimonialFormValues;
-
-        if (!testimonialData.portfolio_id) {
-          return createErrorResponse('Missing portfolio_id');
-        }
-
-        return tryAsync(async () => {
-          if (operation === 'create') {
-            // Insert new testimonial
-            const { id: _id, ...insertData } = testimonialData;
-
-            const newTestimonial = await CareerRepository.createTestimonial(db, user.id, {
-              portfolio_id: insertData.portfolio_id,
-              name: insertData.name,
-              title: insertData.title,
-              company: insertData.company,
-              content: insertData.content,
-              avatar_url: insertData.avatar_url,
-              linkedin_url: insertData.linkedin_url,
-              rating: insertData.rating,
-            });
-
-            return createSuccessResponse(newTestimonial, 'Testimonial created successfully');
-          }
-
-          // Update existing testimonial
-          const { id, ...updateData } = testimonialData;
-          if (!id) return createErrorResponse('Missing testimonial ID for update');
-
-          await CareerRepository.updateTestimonial(
-            db,
-            user.id,
-            id,
-            testimonialData.portfolio_id,
-            {
-              name: updateData.name,
-              title: updateData.title,
-              company: updateData.company,
-              content: updateData.content,
-              avatar_url: updateData.avatar_url,
-              linkedin_url: updateData.linkedin_url,
-              rating: updateData.rating,
-            },
-          );
-
-          return createSuccessResponse(null, 'Testimonial updated successfully');
-        }, `Failed to ${operation} testimonial`);
+      if ('success' in testimonialDataResult && !testimonialDataResult.success) {
+        return testimonialDataResult;
       }
 
-      case 'delete': {
-        const id = formData.get('id') as string;
-        const portfolio_id = formData.get('portfolio_id') as string;
+      const testimonialData = testimonialDataResult as TestimonialFormValues;
 
-        if (!id || !portfolio_id) {
-          return createErrorResponse('Missing required fields for deletion');
-        }
-
-        return tryAsync(async () => {
-          await CareerRepository.deleteTestimonial(db, user.id, id, portfolio_id);
-
-          return createSuccessResponse(null, 'Testimonial deleted successfully');
-        }, 'Failed to delete testimonial');
+      if (!testimonialData.portfolio_id) {
+        return createErrorResponse('Missing portfolio_id');
       }
 
-      default:
-        return createErrorResponse('Invalid operation');
+      return tryAsync(async () => {
+        if (operation === 'create') {
+          // Insert new testimonial
+          const { id: _id, ...insertData } = testimonialData;
+
+          const newTestimonial = await CareerRepository.createTestimonial(db, user.id, {
+            portfolio_id: insertData.portfolio_id,
+            name: insertData.name,
+            title: insertData.title,
+            company: insertData.company,
+            content: insertData.content,
+            avatar_url: insertData.avatar_url,
+            linkedin_url: insertData.linkedin_url,
+            rating: insertData.rating,
+          });
+
+          return createSuccessResponse(newTestimonial, 'Testimonial created successfully');
+        }
+
+        // Update existing testimonial
+        const { id, ...updateData } = testimonialData;
+        if (!id) return createErrorResponse('Missing testimonial ID for update');
+
+        await CareerRepository.updateTestimonial(db, user.id, id, testimonialData.portfolio_id, {
+          name: updateData.name,
+          title: updateData.title,
+          company: updateData.company,
+          content: updateData.content,
+          avatar_url: updateData.avatar_url,
+          linkedin_url: updateData.linkedin_url,
+          rating: updateData.rating,
+        });
+
+        return createSuccessResponse(null, 'Testimonial updated successfully');
+      }, `Failed to ${operation} testimonial`);
     }
-  });
+
+    case 'delete': {
+      const id = formData.get('id') as string;
+      const portfolio_id = formData.get('portfolio_id') as string;
+
+      if (!id || !portfolio_id) {
+        return createErrorResponse('Missing required fields for deletion');
+      }
+
+      return tryAsync(async () => {
+        await CareerRepository.deleteTestimonial(db, user.id, id, portfolio_id);
+
+        return createSuccessResponse(null, 'Testimonial deleted successfully');
+      }, 'Failed to delete testimonial');
+    }
+
+    default:
+      return createErrorResponse('Invalid operation');
+  }
 }
 
 export default function EditorTestimonials() {

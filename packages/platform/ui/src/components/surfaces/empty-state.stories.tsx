@@ -1,5 +1,5 @@
-import { SearchIcon, SparklesIcon } from 'lucide-react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { SearchIcon, SparklesIcon } from 'lucide-react';
 
 import { Button } from '../button';
 import { EmptyState } from './empty-state';
@@ -29,6 +29,5 @@ export const Search: Story = {
     title: 'No results found',
     description: 'Try adjusting your filters or search terms.',
     variant: 'search',
-    size: 'md',
   },
 };

@@ -1,9 +1,4 @@
 import type { Note } from '@hominem/rpc/types/notes.types';
-import { MessageCircle, MoreHorizontal, Paperclip, Sparkles, X } from 'lucide-react';
-import { slugifyText } from '@hominem/utils/text';
-import { memo, useCallback, useRef, useState } from 'react';
-import { Link } from 'react-router';
-
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,6 +20,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@hominem/ui/dropdown';
+import { slugifyText } from '@hominem/utils/text';
+import { MessageCircle, MoreHorizontal, Paperclip, Sparkles, X } from 'lucide-react';
+import { memo, useCallback, useRef, useState } from 'react';
+import { Link } from 'react-router';
+
 import type { UploadedFile } from '~/lib/types/upload';
 
 import { useNoteEditor } from './use-note-editor';
@@ -73,10 +73,7 @@ export function NoteEditor({
     saveStatus,
     flushSave,
     scheduleIdleSave,
-  } = useNoteEditor(
-    note,
-    onSave,
-  );
+  } = useNoteEditor(note, onSave);
   const {
     isEnhanceOpen,
     enhanceInstruction,
@@ -96,10 +93,7 @@ export function NoteEditor({
     async (fileList: FileList) => {
       const uploaded = await onUploadFiles(fileList);
       if (uploaded.length === 0) return;
-      const nextFiles = [
-        ...draftRef.current.files,
-        ...uploaded.map(toNoteFile),
-      ];
+      const nextFiles = [...draftRef.current.files, ...uploaded.map(toNoteFile)];
       setFiles(nextFiles);
       await flushSave();
     },
@@ -141,20 +135,11 @@ export function NoteEditor({
     [scheduleIdleSave, setContent],
   );
 
-  const handleFlushSave = useCallback(
-    () => void flushSave().catch(() => undefined),
-    [flushSave],
-  );
+  const handleFlushSave = useCallback(() => void flushSave().catch(() => undefined), [flushSave]);
 
-  const openFilePicker = useCallback(
-    () => fileInputRef.current?.click(),
-    [],
-  );
+  const openFilePicker = useCallback(() => fileInputRef.current?.click(), []);
 
-  const openDeleteDialog = useCallback(
-    () => setIsDeleteDialogOpen(true),
-    [],
-  );
+  const openDeleteDialog = useCallback(() => setIsDeleteDialogOpen(true), []);
 
   return (
     <div>

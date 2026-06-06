@@ -1,16 +1,33 @@
 import type { Note } from '@hominem/rpc/types/notes.types';
 import { StatePanel } from '@hominem/ui';
-import { useNavigate } from 'react-router';
+import { data, redirect, useNavigate } from 'react-router';
 
 import { NoteEditor } from '~/components/notes';
 import { useTextEnhance } from '~/hooks/ai';
 import { useDeleteNote, useUpdateNote } from '~/hooks/use-notes';
 import { useTranscribe } from '~/hooks/use-transcribe';
+import { createServerApiClient } from '~/lib/api.server';
 import { useFileUpload } from '~/lib/hooks/use-file-upload';
 
-import { noteIdLoader } from './note-id.loader';
+import type { Route } from './+types/$noteId';
 
-export { noteIdLoader as loader };
+export async function loader({ request, params }: Route.LoaderArgs) {
+  const { noteId } = params;
+
+  if (!noteId) {
+    return redirect('/inbox');
+  }
+
+  try {
+    const client = createServerApiClient(request);
+    const note = await client.api.notes[':noteId']
+      .$get({ param: { noteId } })
+      .then((res) => res.json());
+    return data({ noteId, note });
+  } catch {
+    return data({ noteId, note: null });
+  }
+}
 
 export default function NoteSplitView({
   loaderData,

@@ -3,12 +3,12 @@ import type { LoaderFunctionArgs } from 'react-router';
 import { data, redirect } from 'react-router';
 
 import { NOTES_AUTH_CONFIG } from '~/config/auth';
-import { getServerSession } from '~/lib/auth.server';
+import { userContext } from '~/lib/middleware';
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  const { user, headers } = await getServerSession(request);
+export async function loader({ request, context }: LoaderFunctionArgs) {
+  const user = context.get(userContext);
   if (user) {
-    return redirect('/inbox', { headers });
+    return redirect('/inbox');
   }
 
   const requestUrl = new URL(request.url);
@@ -18,7 +18,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         .safeRedirect
     : '/inbox';
 
-  return data({ next }, { headers });
+  return data({ next });
 }
 
 export default function HomePage({ loaderData }: { loaderData: { next: string } }) {

@@ -1,6 +1,3 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
-
-import { getServerSession, requireAuth, type User } from './auth.server';
 import { logger } from './logger';
 
 export interface ApiResponse<T = unknown> {
@@ -8,38 +5,6 @@ export interface ApiResponse<T = unknown> {
   data?: T;
   error?: string;
   message?: string;
-}
-
-export interface AuthenticatedContext {
-  user: User;
-  request: Request;
-}
-
-export async function withAuth<T>(
-  request: Request,
-  callback: (context: AuthenticatedContext) => Promise<T>,
-): Promise<T> {
-  const { user, headers } = await getServerSession(request);
-  const authenticatedUser = requireAuth(user, headers);
-
-  return callback({
-    user: authenticatedUser,
-    request,
-  });
-}
-
-export async function withAuthAction<T>(
-  { request }: ActionFunctionArgs,
-  callback: (context: AuthenticatedContext) => Promise<T>,
-): Promise<T> {
-  return withAuth(request, callback);
-}
-
-export async function withAuthLoader<T>(
-  { request }: LoaderFunctionArgs,
-  callback: (context: AuthenticatedContext) => Promise<T>,
-): Promise<T> {
-  return withAuth(request, callback);
 }
 
 export function createErrorResponse<T>(error: string): ApiResponse<T> {

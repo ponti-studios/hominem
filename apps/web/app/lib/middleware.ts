@@ -1,0 +1,25 @@
+import type { User } from '@hominem/auth/types';
+import { createContext, redirect } from 'react-router';
+
+import type { Route } from '../+types/root';
+import { getServerSession } from './auth.server';
+
+export const userContext = createContext<User | null>();
+
+export const authMiddleware: Route.MiddlewareFunction = async ({ request, context }) => {
+  const path = new URL(request.url).pathname;
+
+  // Public paths that don't require authentication
+  const publicPaths = ['/', '/auth', '/auth/verify', '/auth/passkey.callback'];
+
+  const isPublic = publicPaths.some((p) => path === p || path.startsWith(p + '/'));
+
+  // Always try to get session, but only require it for protected routes
+  const { user } = await getServerSession(request);
+
+  if (!user || !isPublic) {
+    throw redirect('/auth');
+  }
+
+  context.set(userContext, user);
+};

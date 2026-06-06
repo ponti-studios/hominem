@@ -39,12 +39,6 @@ import type { JobApplicationStatus } from '~/types/career';
 const DEFAULT_LIMIT = 10;
 const MAX_LIMIT = 100;
 
-interface ApplicationFilters {
-  search?: string;
-  statuses: string[];
-  source?: string;
-}
-
 export async function loader(args: LoaderFunctionArgs) {
   return withAuthLoader(args, async ({ user, request }) => {
     try {
@@ -53,7 +47,10 @@ export async function loader(args: LoaderFunctionArgs) {
 
       // Extract pagination and filter parameters
       const page = Math.max(1, Number.parseInt(searchParams.get('page') || '1'));
-      const limit = Math.max(1, Math.min(MAX_LIMIT, Number.parseInt(searchParams.get('limit') || String(DEFAULT_LIMIT))));
+      const limit = Math.max(
+        1,
+        Math.min(MAX_LIMIT, Number.parseInt(searchParams.get('limit') || String(DEFAULT_LIMIT))),
+      );
       const offset = (page - 1) * limit;
 
       const searchQuery = searchParams.get('search') || undefined;

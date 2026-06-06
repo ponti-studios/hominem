@@ -22,6 +22,7 @@ import './globals.css';
 import { HonoProvider } from './lib/api';
 import { authConfig } from './lib/auth.server';
 import { serverEnv } from './lib/env.server';
+import { authMiddleware, userContext } from './lib/middleware';
 import './lib/i18n';
 
 const ICON_VERSION = '20260604';
@@ -55,12 +56,16 @@ const NOTES_ICON_LINKS = [
   { rel: 'manifest', href: `/manifest.json?v=${ICON_VERSION}` },
 ] as const;
 
-export async function loader(_: Route.LoaderArgs) {
+export const middleware: Route.MiddlewareFunction[] = [authMiddleware];
+
+export async function loader({ context }: Route.LoaderArgs) {
+  const user = context.get(userContext);
   return data({
     authEnv: {
       apiBaseUrl: authConfig.apiBaseUrl,
     },
     apiBaseUrl: serverEnv.VITE_PUBLIC_API_URL,
+    user,
   });
 }
 

@@ -1,4 +1,4 @@
-import type { ApplicationWithCompany } from "~/types/applications";
+import type { ApplicationWithCompany } from '~/types/applications';
 
 export interface ApplicationsFiltersProps {
   searchValue: string;
@@ -32,7 +32,7 @@ export interface ApplicationsMobileListProps {
 }
 
 export interface ApplicationsEmptyStateProps {
-  kind: "base" | "filtered";
+  kind: 'base' | 'filtered';
   emptyTitle: string;
   emptyDescription: string;
 }

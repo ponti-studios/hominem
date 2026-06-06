@@ -16,7 +16,6 @@ import {
   createSuccessResponse,
   parseFormData,
   tryAsync,
-  withAuthAction,
 } from '../lib/route-utils';
 
 export const meta: MetaFunction = () => {
@@ -303,50 +302,49 @@ export default function EditorSkills() {
   );
 }
 
-export async function action(args: ActionFunctionArgs) {
-  return withAuthAction(args, async ({ user }) => {
-    const formData = await args.request.formData();
-    const skillsDataResult = parseFormData<
-      Array<{
-        id?: string;
-        name: string;
-        category?: string | null;
-        level: number;
-        portfolio_id: string;
-      }>
-    >(formData, 'skillsData');
-    if ('success' in skillsDataResult && !skillsDataResult.success) {
-      return skillsDataResult;
-    }
-    let skillsData = skillsDataResult as Array<{
+export async function action({ request, context }: ActionFunctionArgs) {
+  const user = context.get(userContext);
+  const formData = await request.formData();
+  const skillsDataResult = parseFormData<
+    Array<{
       id?: string;
       name: string;
       category?: string | null;
       level: number;
       portfolio_id: string;
-    }>;
-    if (!Array.isArray(skillsData)) {
-      return createErrorResponse('Invalid skills data');
-    }
-    // Ensure all skills have portfolio_id and level is a number
-    const portfolio_id = skillsData[0]?.portfolio_id;
-    if (!portfolio_id) return createErrorResponse('Missing portfolio_id');
-    skillsData = skillsData.map((s) => ({ ...s, portfolio_id, level: Number(s.level) }));
-    return tryAsync(async () => {
-      await runInTransaction((tx) =>
-        CareerRepository.replaceSkills(
-          tx,
-          user.id,
-          portfolio_id,
-          skillsData.map((skill) => ({
-            id: skill.id,
-            name: skill.name,
-            category: skill.category,
-            level: Number(skill.level),
-          })),
-        ),
-      );
-      return createSuccessResponse(null, 'Skills saved successfully');
-    }, 'Failed to save skills');
-  });
+    }>
+  >(formData, 'skillsData');
+  if ('success' in skillsDataResult && !skillsDataResult.success) {
+    return skillsDataResult;
+  }
+  let skillsData = skillsDataResult as Array<{
+    id?: string;
+    name: string;
+    category?: string | null;
+    level: number;
+    portfolio_id: string;
+  }>;
+  if (!Array.isArray(skillsData)) {
+    return createErrorResponse('Invalid skills data');
+  }
+  // Ensure all skills have portfolio_id and level is a number
+  const portfolio_id = skillsData[0]?.portfolio_id;
+  if (!portfolio_id) return createErrorResponse('Missing portfolio_id');
+  skillsData = skillsData.map((s) => ({ ...s, portfolio_id, level: Number(s.level) }));
+  return tryAsync(async () => {
+    await runInTransaction((tx) =>
+      CareerRepository.replaceSkills(
+        tx,
+        user.id,
+        portfolio_id,
+        skillsData.map((skill) => ({
+          id: skill.id,
+          name: skill.name,
+          category: skill.category,
+          level: Number(skill.level),
+        })),
+      ),
+    );
+    return createSuccessResponse(null, 'Skills saved successfully');
+  }, 'Failed to save skills');
 }

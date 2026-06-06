@@ -37,4 +37,3 @@ export type DbHandle = Kysely<DB> | TransactionHandle;
 export async function runInTransaction<T>(fn: (trx: TransactionHandle) => Promise<T>): Promise<T> {
   return db.transaction().execute(fn);
 }
-

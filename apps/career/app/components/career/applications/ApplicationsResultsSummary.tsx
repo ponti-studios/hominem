@@ -1,6 +1,6 @@
-import { Button } from "@hominem/ui/button";
+import { Button } from '@hominem/ui/button';
 
-import type { ApplicationsResultsSummaryProps } from "./types";
+import type { ApplicationsResultsSummaryProps } from './types';
 
 export function ApplicationsResultsSummary({
   page,
@@ -19,7 +19,7 @@ export function ApplicationsResultsSummary({
     <div className="flex flex-col gap-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
       <span>
         {total === 0
-          ? "0 applications"
+          ? '0 applications'
           : `Showing ${rangeStart} to ${rangeEnd} of ${total} applications`}
       </span>
 

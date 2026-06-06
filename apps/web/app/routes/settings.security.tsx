@@ -1,11 +1,10 @@
 import { usePasskeys } from '@hominem/auth/client/passkey';
 import { PasskeyManagement } from '@hominem/ui';
 import { useCallback } from 'react';
-import { data, redirect } from 'react-router';
+import { data } from 'react-router';
 
 import { SettingsPageLayout } from '~/components/settings-page-layout';
-import { getServerSession } from '~/lib/auth.server';
-import { serverEnv } from '~/lib/env.server';
+import { createServerApiClient } from '~/lib/api.server';
 
 import type { Route } from './+types/settings.security';
 
@@ -29,23 +28,18 @@ function normalizePasskeys(payload: unknown): LoaderPasskey[] {
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const { user } = await getServerSession(request);
-  if (!user) {
-    return redirect('/auth');
+  try {
+    const client = createServerApiClient(request);
+    const payload = await client.api.auth.passkey['list-user-passkeys']
+      .$get()
+      .then((res) => res.json())
+      .catch(() => null);
+    return data({
+      passkeys: normalizePasskeys(payload),
+    });
+  } catch {
+    return data({ passkeys: [] });
   }
-
-  const cookie = request.headers.get('cookie');
-  const headers = cookie ? { cookie } : undefined;
-  const response = await fetch(
-    new URL('/api/auth/passkey/list-user-passkeys', serverEnv.VITE_PUBLIC_API_URL).toString(),
-    { headers },
-  );
-
-  const payload = response.ok ? await response.json().catch(() => null) : null;
-
-  return data({
-    passkeys: normalizePasskeys(payload),
-  });
 }
 
 export default function SecuritySettingsPage({ loaderData }: Route.ComponentProps) {

@@ -2,7 +2,7 @@ import type { LoaderFunctionArgs } from 'react-router';
 
 import { getServerEnv } from '~/lib/env';
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ _request }: LoaderFunctionArgs) {
   const start = Date.now();
   const checks: Record<string, boolean | string> = {};
 

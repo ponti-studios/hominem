@@ -9,7 +9,6 @@ interface SlugEditorProps {
   portfolio_id: string;
   initialSlug: string;
   onSave?: (newSlug: string) => void;
-  onCancel?: () => void;
 }
 
 interface ValidationState {
@@ -19,7 +18,7 @@ interface ValidationState {
   isValid: boolean;
 }
 
-export function SlugEditor({ portfolio_id, initialSlug, onSave, onCancel }: SlugEditorProps) {
+export function SlugEditor({ portfolio_id, initialSlug, onSave }: SlugEditorProps) {
   const submit = useSubmit();
 
   // Component state
@@ -100,7 +99,7 @@ export function SlugEditor({ portfolio_id, initialSlug, onSave, onCancel }: Slug
             isValid: false,
           });
         }
-      } catch (error) {
+      } catch (_error) {
         setValidation({
           isChecking: false,
           isAvailable: false,

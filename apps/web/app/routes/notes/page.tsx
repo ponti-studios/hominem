@@ -6,7 +6,7 @@ import { ComposerStore } from '@hominem/ui/composer/composer-provider';
 import { InboxStreamRow } from '@hominem/ui/inbox';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { data, redirect, useNavigate } from 'react-router';
+import { data, useNavigate } from 'react-router';
 
 import { useTextEnhance } from '~/hooks/ai';
 import { useCreateChat } from '~/hooks/use-chats';
@@ -14,40 +14,24 @@ import { useComposerMode } from '~/hooks/use-composer-mode';
 import { useInbox } from '~/hooks/use-inbox';
 import { useCreateNote } from '~/hooks/use-notes';
 import { useTranscribe } from '~/hooks/use-transcribe';
-import { getServerSession } from '~/lib/auth.server';
-import { serverEnv } from '~/lib/env.server';
+import { createServerApiClient } from '~/lib/api.server';
 import { useFileUpload } from '~/lib/hooks/use-file-upload';
+
+import { Route } from './+types/page';
 
 const FEED_ESTIMATED_ROW_HEIGHT = 128;
 const FEED_OVERSCAN_COUNT = 6;
 const FEED_NEAR_BOTTOM_THRESHOLD = 96;
 const NOTES_NEW_DRAFT_STORAGE_KEY = 'web:notes:new-draft';
 
-function buildInboxItemPath(item: InboxOutput['items'][number]): string {
-  if (item.kind === 'chat') {
-    return `/inbox/chat/${item.entityId}`;
+export async function loader({ request }: Route.LoaderArgs) {
+  try {
+    const client = createServerApiClient(request);
+    const inbox = await client.api.inbox.$get({ query: { limit: '20' } }).then((res) => res.json());
+    return data({ inbox });
+  } catch {
+    return data({ inbox: { items: [], nextCursor: null } });
   }
-
-  return `/inbox/note/${item.entityId}`;
-}
-
-export async function loader({ request }: { request: Request }) {
-  const { user } = await getServerSession(request);
-  if (!user) {
-    throw redirect('/auth');
-  }
-
-  const cookie = request.headers.get('cookie');
-  const headers = cookie ? { cookie } : undefined;
-  const response = await fetch(
-    new URL('/api/inbox?limit=20', serverEnv.VITE_PUBLIC_API_URL).toString(),
-    { headers },
-  );
-  const inbox: InboxOutput = response.ok
-    ? ((await response.json()) as InboxOutput)
-    : { items: [], nextCursor: null };
-
-  return data({ inbox });
 }
 
 export default function NotesPage({ loaderData }: { loaderData: { inbox: InboxOutput } }) {
@@ -274,7 +258,7 @@ export default function NotesPage({ loaderData }: { loaderData: { inbox: InboxOu
                       className="absolute left-0 top-0 w-full"
                       style={{ transform: `translateY(${virtualItem.start}px)` }}
                     >
-                      <InboxStreamRow href={buildInboxItemPath(item)} item={item} />
+                      <InboxStreamRow item={item} />
                     </div>
                   );
                 })}

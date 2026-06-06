@@ -1,12 +1,12 @@
 import '@testing-library/jest-dom';
-import { http, HttpResponse } from 'msw';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { http, HttpResponse } from 'msw';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { makeUploadResumeResponse } from '~/test/factories/resume';
-import { server } from '../../../test/msw/server';
 
+import { server } from '../../../test/msw/server';
 import { UploadResumeForm } from '../UploadResumeForm';
 
 const uploadResponse = makeUploadResumeResponse();
@@ -83,9 +83,12 @@ describe('UploadResumeForm', () => {
   it('rejects a PDF larger than 10MB', async () => {
     const user = userEvent.setup();
     const { onUploadError } = renderForm();
-    await selectFile(user, new File([new Uint8Array(10 * 1024 * 1024 + 1)], 'resume.pdf', {
-      type: 'application/pdf',
-    }));
+    await selectFile(
+      user,
+      new File([new Uint8Array(10 * 1024 * 1024 + 1)], 'resume.pdf', {
+        type: 'application/pdf',
+      }),
+    );
 
     await user.click(screen.getByRole('button', { name: /upload resume/i }));
 
@@ -222,7 +225,9 @@ describe('UploadResumeForm', () => {
 
   it('shows a readable fallback for non-JSON errors', async () => {
     const user = userEvent.setup();
-    server.use(http.post('/api/resume/convert', async () => new HttpResponse('oops', { status: 500 })));
+    server.use(
+      http.post('/api/resume/convert', async () => new HttpResponse('oops', { status: 500 })),
+    );
     renderForm();
     await selectFile(user, new File(['pdf'], 'resume.pdf', { type: 'application/pdf' }));
 

@@ -11,7 +11,7 @@ import { cn } from '~/lib/utils';
 
 import { useToast } from '../hooks/useToast';
 import type { FullPortfolio } from '../lib/portfolio.server';
-import { createSuccessResponse, parseFormData, withAuthAction } from '../lib/route-utils';
+import { createSuccessResponse, parseFormData } from '../lib/route-utils';
 
 interface SocialLinksFormValues {
   id?: string;
@@ -268,36 +268,35 @@ function SocialLinksEditorSection({
 
 export const meta: MetaFunction = () => [{ title: 'Social - Portfolio Editor | Craftd' }];
 
-export async function action(args: ActionFunctionArgs) {
-  return withAuthAction(args, async ({ user }) => {
-    const formData = await args.request.formData();
+export async function action({ request, context }: ActionFunctionArgs) {
+  const user = context.get(userContext);
+  const formData = await request.formData();
 
-    const socialLinksDataResult = parseFormData<
-      Array<SocialLinksFormValues & { portfolio_id: string }>
-    >(formData, 'socialLinksData');
-    if ('success' in socialLinksDataResult && !socialLinksDataResult.success) {
-      return socialLinksDataResult;
-    }
+  const socialLinksDataResult = parseFormData<
+    Array<SocialLinksFormValues & { portfolio_id: string }>
+  >(formData, 'socialLinksData');
+  if ('success' in socialLinksDataResult && !socialLinksDataResult.success) {
+    return socialLinksDataResult;
+  }
 
-    const socialLinksData = socialLinksDataResult as Array<
-      SocialLinksFormValues & { portfolio_id: string }
-    >;
-    const socialLinksPayload = socialLinksData[0];
+  const socialLinksData = socialLinksDataResult as Array<
+    SocialLinksFormValues & { portfolio_id: string }
+  >;
+  const socialLinksPayload = socialLinksData[0];
 
-    if (!socialLinksPayload?.portfolio_id) {
-      throw new Error('Missing portfolio_id');
-    }
+  if (!socialLinksPayload?.portfolio_id) {
+    throw new Error('Missing portfolio_id');
+  }
 
-    await CareerRepository.saveSocialLinks(db, user.id, socialLinksPayload.portfolio_id, {
-      id: socialLinksPayload.id,
-      github: socialLinksPayload.github,
-      linkedin: socialLinksPayload.linkedin,
-      twitter: socialLinksPayload.twitter,
-      website: socialLinksPayload.website,
-    });
-
-    return createSuccessResponse(null, 'Social links saved successfully');
+  await CareerRepository.saveSocialLinks(db, user.id, socialLinksPayload.portfolio_id, {
+    id: socialLinksPayload.id,
+    github: socialLinksPayload.github,
+    linkedin: socialLinksPayload.linkedin,
+    twitter: socialLinksPayload.twitter,
+    website: socialLinksPayload.website,
   });
+
+  return createSuccessResponse(null, 'Social links saved successfully');
 }
 
 export default function EditorSocial() {

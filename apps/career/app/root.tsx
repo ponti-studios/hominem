@@ -15,11 +15,13 @@ import {
   ScrollRestoration,
 } from 'react-router';
 
+import type { Route } from './+types/root';
 import Navigation from './components/Navigation';
 
 import './app.css';
+import { NavigationProgress } from './components/NavigationProgress';
 import { ToastProvider } from './hooks/useToast';
-import { getServerSession } from './lib/auth.server';
+import { authMiddleware, userContext } from './lib/middleware';
 
 export const links = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -101,14 +103,14 @@ interface CurrentPortfolioSummary {
   slug: string;
 }
 
-// Root loader to get authenticated user
-export async function loader({ request }: LoaderFunctionArgs) {
-  const { user, headers } = await getServerSession(request);
-  const currentPortfolio = user
-    ? ((await CareerRepository.getPortfolioByUserId(db, user.id)) as CurrentPortfolioSummary | null)
-    : null;
+export const middleware: Route.MiddlewareFunction[] = [authMiddleware];
 
-  return data({ user, apiBaseUrl: API_URL, currentPortfolio }, { headers });
+// Root loader to get authenticated user
+export async function loader({ context }: LoaderFunctionArgs) {
+  const user = context.get(userContext);
+  const currentPortfolio = user ? await CareerRepository.getPortfolioByUserId(db, user.id) : null;
+
+  return data({ user, apiBaseUrl: API_URL, currentPortfolio });
 }
 
 // Add route handle to enable accessing loader data from child routes
@@ -140,16 +142,21 @@ const queryClient = new QueryClient();
 export default function App({
   loaderData,
 }: {
-  loaderData: { apiBaseUrl: string; user: unknown; currentPortfolio: CurrentPortfolioSummary | null };
+  loaderData: {
+    apiBaseUrl: string;
+    user: unknown;
+    currentPortfolio: CurrentPortfolioSummary | null;
+  };
 }) {
   const { apiBaseUrl } = loaderData;
   return (
     <AuthProvider config={{ apiBaseUrl }}>
       <QueryClientProvider client={queryClient}>
         <ToastProvider>
+          <NavigationProgress />
           <div className="flex min-h-screen flex-col bg-background text-foreground">
             <Navigation />
-            <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-6 font-sans sm:px-6 lg:px-8">
+            <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col py-6 font-sans">
               <Outlet />
             </main>
           </div>
@@ -169,7 +176,7 @@ export function ErrorBoundary({ error }: { error: unknown }) {
             <CardContent className="space-y-4 p-6">
               <h1 className="display-2 text-foreground">404</h1>
               <p className="heading-3 text-muted-foreground">Page Not Found</p>
-              <Link to="/" className={buttonVariants({ variant: 'primary', size: 'lg' })}>
+              <Link to="/" className={buttonVariants({ size: 'lg' })}>
                 Go Home
               </Link>
             </CardContent>

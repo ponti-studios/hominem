@@ -10,12 +10,7 @@ import { useFetcher, useOutletContext } from 'react-router';
 
 import { useToast } from '../hooks/useToast';
 import type { FullPortfolio } from '../lib/portfolio.server';
-import {
-  createErrorResponse,
-  createSuccessResponse,
-  parseFormData,
-  withAuthAction,
-} from '../lib/route-utils';
+import { createErrorResponse, createSuccessResponse, parseFormData } from '../lib/route-utils';
 
 type PortfolioStat = CareerPortfolioStatRecord;
 
@@ -72,7 +67,7 @@ function PortfolioStatsEditorSection({
     append({ label: '', value: '' });
   };
 
-  const handleRemoveStat = (index: number, statId?: string) => {
+  const _handleRemoveStat = (index: number, statId?: string) => {
     if (statId) {
       if (confirm('Are you sure you want to delete this stat? This action is permanent.')) {
         remove(index);
@@ -189,46 +184,45 @@ function PortfolioStatsEditorSection({
 
 export const meta: MetaFunction = () => [{ title: 'Portfolio Stats - Portfolio Editor | Craftd' }];
 
-export async function action(args: ActionFunctionArgs) {
-  return withAuthAction(args, async ({ user }) => {
-    const formData = await args.request.formData();
-    const statsDataResult = parseFormData<
-      Array<{ id?: string; label: string; value: string; portfolio_id: string }>
-    >(formData, 'statsData');
-    if ('success' in statsDataResult && !statsDataResult.success) {
-      return statsDataResult;
-    }
-    const statsData = statsDataResult as Array<{
-      id?: string;
-      label: string;
-      value: string;
-      portfolio_id: string;
-    }>;
-    if (!Array.isArray(statsData)) {
-      return createErrorResponse('Invalid stats data');
-    }
-    if (statsData.length === 0) {
-      // Nothing to do
-      return createSuccessResponse(null, 'No stats to save');
-    }
-    // Ensure portfolio_id exists
-    const portfolio_id = statsData[0]?.portfolio_id;
-    if (!portfolio_id) return createErrorResponse('Missing portfolio_id');
-    await runInTransaction((tx) =>
-      CareerRepository.replacePortfolioStats(
-        tx,
-        user.id,
-        portfolio_id,
-        statsData.map((stat, index) => ({
-          id: stat.id,
-          label: stat.label,
-          value: stat.value,
-          sort_order: index,
-        })),
-      ),
-    );
-    return createSuccessResponse(null, 'Portfolio stats saved successfully');
-  });
+export async function action({ request, context }: ActionFunctionArgs) {
+  const user = context.get(userContext);
+  const formData = await request.formData();
+  const statsDataResult = parseFormData<
+    Array<{ id?: string; label: string; value: string; portfolio_id: string }>
+  >(formData, 'statsData');
+  if ('success' in statsDataResult && !statsDataResult.success) {
+    return statsDataResult;
+  }
+  const statsData = statsDataResult as Array<{
+    id?: string;
+    label: string;
+    value: string;
+    portfolio_id: string;
+  }>;
+  if (!Array.isArray(statsData)) {
+    return createErrorResponse('Invalid stats data');
+  }
+  if (statsData.length === 0) {
+    // Nothing to do
+    return createSuccessResponse(null, 'No stats to save');
+  }
+  // Ensure portfolio_id exists
+  const portfolio_id = statsData[0]?.portfolio_id;
+  if (!portfolio_id) return createErrorResponse('Missing portfolio_id');
+  await runInTransaction((tx) =>
+    CareerRepository.replacePortfolioStats(
+      tx,
+      user.id,
+      portfolio_id,
+      statsData.map((stat, index) => ({
+        id: stat.id,
+        label: stat.label,
+        value: stat.value,
+        sort_order: index,
+      })),
+    ),
+  );
+  return createSuccessResponse(null, 'Portfolio stats saved successfully');
 }
 
 export default function EditorStats() {

@@ -60,7 +60,6 @@ export class JobApplicationsService {
     applicationId: string,
     owner_userid: string,
   ): Promise<ApplicationDetailData> {
-
     const applicationData = await db
       .selectFrom('app.job_applications as application')
       .leftJoin('app.companies as company', 'company.id', 'application.company_id')
@@ -366,7 +365,6 @@ export class JobApplicationsService {
     owner_userid: string,
     input: CreateApplicationInput,
   ): Promise<CareerJobApplicationRecord> {
-
     const company = await CareerRepository.findOrCreateCompany(db, owner_userid, {
       name: input.companyName,
       website: input.companyWebsite ?? null,

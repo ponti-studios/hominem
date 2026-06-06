@@ -18,7 +18,7 @@ export interface UseEmailAuthOutput {
 }
 
 export function useEmailAuth(ops: EmailAuthOperations): UseEmailAuthOutput {
-  const [email, setEmail] = useState('');
+  const [email, _setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);

@@ -1,33 +1,26 @@
-import type { CareerProjectRecord as Project } from "@hominem/db";
-import { CareerRepository, db } from "@hominem/db";
-import { Button } from "@hominem/ui/button";
-import { FolderOpen, PlusIcon } from "lucide-react";
-import { useEffect, useState } from "react";
-import type { SubmitHandler } from "react-hook-form";
-import { useForm } from "react-hook-form";
-import type { ActionFunctionArgs, MetaFunction } from "react-router";
-import { useFetcher, useOutletContext } from "react-router";
+import type { CareerProjectRecord as Project } from '@hominem/db';
+import { CareerRepository, db } from '@hominem/db';
+import { Button } from '@hominem/ui/button';
+import { FolderOpen, PlusIcon } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import type { SubmitHandler } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
+import type { ActionFunctionArgs, MetaFunction } from 'react-router';
+import { useFetcher, useOutletContext } from 'react-router';
 
-import { EditorFormActions } from "../components/EditorFormActions";
-import { useToast } from "../hooks/useToast";
-import { useCareerEditorSubmission } from "../hooks/useCareerEditorSubmission";
-import type { FullPortfolio } from "../lib/portfolio.server";
+import { EditorFormActions } from '../components/EditorFormActions';
+import { useCareerEditorSubmission } from '../hooks/useCareerEditorSubmission';
+import { useToast } from '../hooks/useToast';
+import type { FullPortfolio } from '../lib/portfolio.server';
 import {
   createErrorResponse,
   createSuccessResponse,
   parseFormData,
   tryAsync,
-  withAuthAction,
-} from "../lib/route-utils";
-import {
-  formatDateForInput,
-  nullArrayToUndefined,
-  stringToDate,
-} from "../lib/utils";
+} from '../lib/route-utils';
+import { formatDateForInput, nullArrayToUndefined, stringToDate } from '../lib/utils';
 
-export const meta: MetaFunction = () => [
-  { title: "Projects - Portfolio Editor | Craftd" },
-];
+export const meta: MetaFunction = () => [{ title: 'Projects - Portfolio Editor | Craftd' }];
 
 interface ProjectFormValues {
   id?: string;
@@ -74,15 +67,15 @@ function ProjectForm({
   } = useForm<ProjectFormValues>({
     defaultValues: {
       id: project?.id,
-      title: project?.title || "",
-      description: project?.description || "",
-      short_description: project?.short_description || "",
-      live_url: project?.live_url || "",
-      github_url: project?.github_url || "",
-      image_url: project?.image_url || "",
-      video_url: project?.video_url || "",
+      title: project?.title || '',
+      description: project?.description || '',
+      short_description: project?.short_description || '',
+      live_url: project?.live_url || '',
+      github_url: project?.github_url || '',
+      image_url: project?.image_url || '',
+      video_url: project?.video_url || '',
       technologies: nullArrayToUndefined(project?.technologies) || [],
-      status: project?.status || "completed",
+      status: project?.status || 'completed',
       start_date: formatDateForInput(project?.start_date),
       end_date: formatDateForInput(project?.end_date),
       is_featured: project?.is_featured || false,
@@ -90,27 +83,27 @@ function ProjectForm({
       sort_order: project?.sort_order || 0,
       portfolio_id,
     },
-    mode: "onChange",
+    mode: 'onChange',
   });
 
   useCareerEditorSubmission<Project>({
     fetcher,
     addToast,
-    successMessage: "Project saved successfully!",
-    errorMessage: "Failed to save project",
+    successMessage: 'Project saved successfully!',
+    errorMessage: 'Failed to save project',
     isNew,
     onCreateSuccess: (savedProject) => {
       reset({
         id: savedProject.id,
-        title: savedProject.title || "",
-        description: savedProject.description || "",
-        short_description: savedProject.short_description || "",
-        live_url: savedProject.live_url || "",
-        github_url: savedProject.github_url || "",
-        image_url: savedProject.image_url || "",
-        video_url: savedProject.video_url || "",
+        title: savedProject.title || '',
+        description: savedProject.description || '',
+        short_description: savedProject.short_description || '',
+        live_url: savedProject.live_url || '',
+        github_url: savedProject.github_url || '',
+        image_url: savedProject.image_url || '',
+        video_url: savedProject.video_url || '',
         technologies: nullArrayToUndefined(savedProject.technologies) || [],
-        status: savedProject.status || "completed",
+        status: savedProject.status || 'completed',
         start_date: formatDateForInput(savedProject.start_date),
         end_date: formatDateForInput(savedProject.end_date),
         is_featured: savedProject.is_featured || false,
@@ -123,44 +116,44 @@ function ProjectForm({
 
   const onSubmit: SubmitHandler<ProjectFormValues> = (formData) => {
     if (!isDirty && !isNew) {
-      addToast("No changes to save.", "info");
+      addToast('No changes to save.', 'info');
       return;
     }
 
     if (!formData.title || !formData.description) {
-      addToast("Please fill in all required fields.", "error");
+      addToast('Please fill in all required fields.', 'error');
       return;
     }
 
     const formDataToSubmit = new FormData();
-    formDataToSubmit.append("operation", isNew ? "create" : "update");
-    formDataToSubmit.append("projectData", JSON.stringify(formData));
+    formDataToSubmit.append('operation', isNew ? 'create' : 'update');
+    formDataToSubmit.append('projectData', JSON.stringify(formData));
 
     fetcher.submit(formDataToSubmit, {
-      method: "POST",
-      action: "/editor/projects",
+      method: 'POST',
+      action: '/editor/projects',
     });
   };
 
   const handleDelete = () => {
     if (!project?.id) return;
 
-    if (confirm("Are you sure you want to delete this project?")) {
+    if (confirm('Are you sure you want to delete this project?')) {
       const formData = new FormData();
-      formData.append("operation", "delete");
-      formData.append("id", project.id);
-      formData.append("portfolio_id", portfolio_id);
+      formData.append('operation', 'delete');
+      formData.append('id', project.id);
+      formData.append('portfolio_id', portfolio_id);
 
       fetcher.submit(formData, {
-        method: "POST",
-        action: "/editor/projects",
+        method: 'POST',
+        action: '/editor/projects',
       });
 
       onDelete?.();
     }
   };
 
-  const isSaving = fetcher.state === "submitting";
+  const isSaving = fetcher.state === 'submitting';
 
   return (
     <form
@@ -168,58 +161,50 @@ function ProjectForm({
       className="rounded-md border border-border bg-card p-4 bg-muted/50 space-y-4"
     >
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium text-foreground">
-          {isNew ? "New Project" : "Project"}
-        </h3>
+        <h3 className="text-lg font-medium text-foreground">{isNew ? 'New Project' : 'Project'}</h3>
         <EditorFormActions
           isSaving={isSaving}
           isNew={isNew}
           isDirty={isDirty}
           isValid={isValid}
-          submitLabel={isNew ? "Add Project" : "Save Changes"}
+          submitLabel={isNew ? 'Add Project' : 'Save Changes'}
           onDelete={!isNew ? handleDelete : undefined}
         />
       </div>
 
       <div className="flex flex-col gap-2">
-        <label htmlFor={`title-${project?.id || "new"}`} className="label">
+        <label htmlFor={`title-${project?.id || 'new'}`} className="label">
           Project Title *
         </label>
         <input
-          id={`title-${project?.id || "new"}`}
+          id={`title-${project?.id || 'new'}`}
           type="text"
-          {...register("title", { required: true })}
+          {...register('title', { required: true })}
           className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
           placeholder="e.g., E-commerce Platform"
         />
       </div>
 
       <div className="flex flex-col gap-2">
-        <label
-          htmlFor={`short_description-${project?.id || "new"}`}
-          className="label"
-        >
+        <label htmlFor={`short_description-${project?.id || 'new'}`} className="label">
           Short Description
         </label>
         <input
-          id={`short_description-${project?.id || "new"}`}
+          id={`short_description-${project?.id || 'new'}`}
           type="text"
-          {...register("short_description")}
+          {...register('short_description')}
           className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
           placeholder="Brief one-line description"
         />
       </div>
 
       <div className="flex flex-col gap-2">
-        <label
-          htmlFor={`description-${project?.id || "new"}`}
-          className="label"
-        >
+        <label htmlFor={`description-${project?.id || 'new'}`} className="label">
           Full Description *
         </label>
         <textarea
-          id={`description-${project?.id || "new"}`}
-          {...register("description", { required: true })}
+          id={`description-${project?.id || 'new'}`}
+          {...register('description', { required: true })}
           className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50 min-h-28"
           rows={4}
           placeholder="Detailed project description, features, and technologies used..."
@@ -228,28 +213,25 @@ function ProjectForm({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="flex flex-col gap-2">
-          <label htmlFor={`live_url-${project?.id || "new"}`} className="label">
+          <label htmlFor={`live_url-${project?.id || 'new'}`} className="label">
             Live URL
           </label>
           <input
-            id={`live_url-${project?.id || "new"}`}
+            id={`live_url-${project?.id || 'new'}`}
             type="url"
-            {...register("live_url")}
+            {...register('live_url')}
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
             placeholder="https://example.com"
           />
         </div>
         <div className="flex flex-col gap-2">
-          <label
-            htmlFor={`github_url-${project?.id || "new"}`}
-            className="label"
-          >
+          <label htmlFor={`github_url-${project?.id || 'new'}`} className="label">
             GitHub URL
           </label>
           <input
-            id={`github_url-${project?.id || "new"}`}
+            id={`github_url-${project?.id || 'new'}`}
             type="url"
-            {...register("github_url")}
+            {...register('github_url')}
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
             placeholder="https://github.com/user/repo"
           />
@@ -258,31 +240,25 @@ function ProjectForm({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="flex flex-col gap-2">
-          <label
-            htmlFor={`image_url-${project?.id || "new"}`}
-            className="label"
-          >
+          <label htmlFor={`image_url-${project?.id || 'new'}`} className="label">
             Image URL
           </label>
           <input
-            id={`image_url-${project?.id || "new"}`}
+            id={`image_url-${project?.id || 'new'}`}
             type="url"
-            {...register("image_url")}
+            {...register('image_url')}
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
             placeholder="Project screenshot or image"
           />
         </div>
         <div className="flex flex-col gap-2">
-          <label
-            htmlFor={`video_url-${project?.id || "new"}`}
-            className="label"
-          >
+          <label htmlFor={`video_url-${project?.id || 'new'}`} className="label">
             Video URL
           </label>
           <input
-            id={`video_url-${project?.id || "new"}`}
+            id={`video_url-${project?.id || 'new'}`}
             type="url"
-            {...register("video_url")}
+            {...register('video_url')}
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
             placeholder="Demo video URL"
           />
@@ -290,16 +266,13 @@ function ProjectForm({
       </div>
 
       <div className="flex flex-col gap-2">
-        <label
-          htmlFor={`technologies-${project?.id || "new"}`}
-          className="label"
-        >
+        <label htmlFor={`technologies-${project?.id || 'new'}`} className="label">
           Technologies
         </label>
         <input
-          id={`technologies-${project?.id || "new"}`}
+          id={`technologies-${project?.id || 'new'}`}
           type="text"
-          {...register("technologies")}
+          {...register('technologies')}
           className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
           placeholder="React, TypeScript, Node.js (comma-separated)"
         />
@@ -310,41 +283,34 @@ function ProjectForm({
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="flex flex-col gap-2">
-          <label htmlFor={`status-${project?.id || "new"}`} className="label">
+          <label htmlFor={`status-${project?.id || 'new'}`} className="label">
             Status
           </label>
-          <select
-            id={`status-${project?.id || "new"}`}
-            {...register("status")}
-            className="select"
-          >
+          <select id={`status-${project?.id || 'new'}`} {...register('status')} className="select">
             <option value="completed">Completed</option>
             <option value="in-progress">In Progress</option>
             <option value="planned">Planned</option>
           </select>
         </div>
         <div className="flex flex-col gap-2">
-          <label
-            htmlFor={`start_date-${project?.id || "new"}`}
-            className="label"
-          >
+          <label htmlFor={`start_date-${project?.id || 'new'}`} className="label">
             Start Date
           </label>
           <input
-            id={`start_date-${project?.id || "new"}`}
+            id={`start_date-${project?.id || 'new'}`}
             type="date"
-            {...register("start_date")}
+            {...register('start_date')}
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
           />
         </div>
         <div className="flex flex-col gap-2">
-          <label htmlFor={`end_date-${project?.id || "new"}`} className="label">
+          <label htmlFor={`end_date-${project?.id || 'new'}`} className="label">
             End Date
           </label>
           <input
-            id={`end_date-${project?.id || "new"}`}
+            id={`end_date-${project?.id || 'new'}`}
             type="date"
-            {...register("end_date")}
+            {...register('end_date')}
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
           />
         </div>
@@ -353,21 +319,13 @@ function ProjectForm({
       <div className="flex gap-4">
         <div className="flex flex-col gap-2">
           <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              {...register("is_featured")}
-              className="checkbox"
-            />
+            <input type="checkbox" {...register('is_featured')} className="checkbox" />
             <span className="label">Featured Project</span>
           </label>
         </div>
         <div className="flex flex-col gap-2">
           <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              {...register("is_visible")}
-              className="checkbox"
-            />
+            <input type="checkbox" {...register('is_visible')} className="checkbox" />
             <span className="label">Visible</span>
           </label>
         </div>
@@ -422,10 +380,7 @@ function ProjectsEditorSection({
       <div className="flex flex-col gap-8">
         {/* Show new project form if requested */}
         {showNewForm && (
-          <ProjectForm
-            portfolio_id={portfolio_id}
-            onDelete={() => setShowNewForm(false)}
-          />
+          <ProjectForm portfolio_id={portfolio_id} onDelete={() => setShowNewForm(false)} />
         )}
 
         {/* Existing projects */}
@@ -448,143 +403,121 @@ function ProjectsEditorSection({
   );
 }
 
-export async function action(args: ActionFunctionArgs) {
-  return withAuthAction(args, async ({ user }) => {
-    const formData = await args.request.formData();
-    const operation = formData.get("operation") as string;
+export async function action({ request, context }: ActionFunctionArgs) {
+  const user = context.get(userContext);
+  const formData = await request.formData();
+  const operation = formData.get('operation') as string;
 
-    switch (operation) {
-      case "create":
-      case "update": {
-        const projectDataResult = parseFormData<ProjectFormValues>(
-          formData,
-          "projectData",
-        );
+  switch (operation) {
+    case 'create':
+    case 'update': {
+      const projectDataResult = parseFormData<ProjectFormValues>(formData, 'projectData');
 
-        if ("success" in projectDataResult && !projectDataResult.success) {
-          return projectDataResult;
-        }
+      if ('success' in projectDataResult && !projectDataResult.success) {
+        return projectDataResult;
+      }
 
-        const projectData = projectDataResult as ProjectFormValues;
+      const projectData = projectDataResult as ProjectFormValues;
 
-        if (!projectData.portfolio_id) {
-          return createErrorResponse("Missing portfolio_id");
-        }
+      if (!projectData.portfolio_id) {
+        return createErrorResponse('Missing portfolio_id');
+      }
 
-        return tryAsync(async () => {
-          // Convert technologies string to array if needed
-          const technologiesArray = Array.isArray(projectData.technologies)
-            ? projectData.technologies
-            : [];
+      return tryAsync(async () => {
+        // Convert technologies string to array if needed
+        const technologiesArray = Array.isArray(projectData.technologies)
+          ? projectData.technologies
+          : [];
 
-          if (operation === "create") {
-            // Insert new project
-            const { id: _id, ...insertData } = projectData;
-
-            // Convert date strings to Date objects for database
-            const dbData = {
-              ...insertData,
-              technologies: technologiesArray,
-              start_date: stringToDate(insertData.start_date),
-              end_date: stringToDate(insertData.end_date),
-            };
-
-            const newProject = await CareerRepository.createProject(
-              db,
-              user.id,
-              {
-                portfolio_id: dbData.portfolio_id,
-                title: dbData.title,
-                description: dbData.description,
-                short_description: dbData.short_description,
-                live_url: dbData.live_url,
-                github_url: dbData.github_url,
-                image_url: dbData.image_url,
-                video_url: dbData.video_url,
-                technologies: dbData.technologies,
-                status: dbData.status,
-                start_date: dbData.start_date,
-                end_date: dbData.end_date,
-                is_featured: dbData.is_featured,
-                is_visible: dbData.is_visible,
-                sort_order: dbData.sort_order,
-              },
-            );
-
-            return createSuccessResponse(
-              newProject,
-              "Project created successfully",
-            );
-          }
-
-          // Update existing project
-          const { id, ...updateData } = projectData;
-          if (!id) return createErrorResponse("Missing project ID for update");
+        if (operation === 'create') {
+          // Insert new project
+          const { id: _id, ...insertData } = projectData;
 
           // Convert date strings to Date objects for database
           const dbData = {
-            ...updateData,
+            ...insertData,
             technologies: technologiesArray,
-            start_date: stringToDate(updateData.start_date),
-            end_date: stringToDate(updateData.end_date),
+            start_date: stringToDate(insertData.start_date),
+            end_date: stringToDate(insertData.end_date),
           };
 
-          await CareerRepository.updateProject(
-            db,
-            user.id,
-            id,
-            projectData.portfolio_id,
-            {
-              title: dbData.title,
-              description: dbData.description,
-              short_description: dbData.short_description,
-              live_url: dbData.live_url,
-              github_url: dbData.github_url,
-              image_url: dbData.image_url,
-              video_url: dbData.video_url,
-              technologies: dbData.technologies,
-              status: dbData.status,
-              start_date: dbData.start_date,
-              end_date: dbData.end_date,
-              is_featured: dbData.is_featured,
-              is_visible: dbData.is_visible,
-              sort_order: dbData.sort_order,
-            },
-          );
+          const newProject = await CareerRepository.createProject(db, user.id, {
+            portfolio_id: dbData.portfolio_id,
+            title: dbData.title,
+            description: dbData.description,
+            short_description: dbData.short_description,
+            live_url: dbData.live_url,
+            github_url: dbData.github_url,
+            image_url: dbData.image_url,
+            video_url: dbData.video_url,
+            technologies: dbData.technologies,
+            status: dbData.status,
+            start_date: dbData.start_date,
+            end_date: dbData.end_date,
+            is_featured: dbData.is_featured,
+            is_visible: dbData.is_visible,
+            sort_order: dbData.sort_order,
+          });
 
-          return createSuccessResponse(null, "Project updated successfully");
-        }, `Failed to ${operation} project`);
-      }
-
-      case "delete": {
-        const id = formData.get("id") as string;
-        const portfolio_id = formData.get("portfolio_id") as string;
-
-        if (!id || !portfolio_id) {
-          return createErrorResponse("Missing required fields for deletion");
+          return createSuccessResponse(newProject, 'Project created successfully');
         }
 
-        return tryAsync(async () => {
-          await CareerRepository.deleteProject(db, user.id, id, portfolio_id);
+        // Update existing project
+        const { id, ...updateData } = projectData;
+        if (!id) return createErrorResponse('Missing project ID for update');
 
-          return createSuccessResponse(null, "Project deleted successfully");
-        }, "Failed to delete project");
+        // Convert date strings to Date objects for database
+        const dbData = {
+          ...updateData,
+          technologies: technologiesArray,
+          start_date: stringToDate(updateData.start_date),
+          end_date: stringToDate(updateData.end_date),
+        };
+
+        await CareerRepository.updateProject(db, user.id, id, projectData.portfolio_id, {
+          title: dbData.title,
+          description: dbData.description,
+          short_description: dbData.short_description,
+          live_url: dbData.live_url,
+          github_url: dbData.github_url,
+          image_url: dbData.image_url,
+          video_url: dbData.video_url,
+          technologies: dbData.technologies,
+          status: dbData.status,
+          start_date: dbData.start_date,
+          end_date: dbData.end_date,
+          is_featured: dbData.is_featured,
+          is_visible: dbData.is_visible,
+          sort_order: dbData.sort_order,
+        });
+
+        return createSuccessResponse(null, 'Project updated successfully');
+      }, `Failed to ${operation} project`);
+    }
+
+    case 'delete': {
+      const id = formData.get('id') as string;
+      const portfolio_id = formData.get('portfolio_id') as string;
+
+      if (!id || !portfolio_id) {
+        return createErrorResponse('Missing required fields for deletion');
       }
 
-      default:
-        return createErrorResponse("Invalid operation");
+      return tryAsync(async () => {
+        await CareerRepository.deleteProject(db, user.id, id, portfolio_id);
+
+        return createSuccessResponse(null, 'Project deleted successfully');
+      }, 'Failed to delete project');
     }
-  });
+
+    default:
+      return createErrorResponse('Invalid operation');
+  }
 }
 
 export default function EditorProjects() {
   // Consume portfolio provided by parent editor layout loader via outlet context
   const portfolio = useOutletContext<FullPortfolio>();
 
-  return (
-    <ProjectsEditorSection
-      projects={portfolio.projects}
-      portfolio_id={portfolio.id}
-    />
-  );
+  return <ProjectsEditorSection projects={portfolio.projects} portfolio_id={portfolio.id} />;
 }

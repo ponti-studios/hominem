@@ -7,8 +7,8 @@ import { Textarea } from '@hominem/ui/textarea';
 import { useState } from 'react';
 import { Form } from 'react-router';
 
-import type { ApplicationWithCompany } from '~/types/career-data';
 import { jsonArray } from '~/lib/db-json';
+import type { ApplicationWithCompany } from '~/types/career-data';
 
 type InterviewEntry = {
   date: string;

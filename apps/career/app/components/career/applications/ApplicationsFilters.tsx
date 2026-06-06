@@ -1,17 +1,17 @@
-import { Button } from "@hominem/ui/button";
+import { Button } from '@hominem/ui/button';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from "@hominem/ui/dropdown";
-import { FilterControls, FilterSelect } from "@hominem/ui/filters";
-import { Input } from "@hominem/ui/input";
-import { ChevronDownIcon } from "lucide-react";
+} from '@hominem/ui/dropdown';
+import { FilterControls, FilterSelect } from '@hominem/ui/filters';
+import { Input } from '@hominem/ui/input';
+import { ChevronDownIcon } from 'lucide-react';
 
-import { formatStatusText } from "~/lib/utils/applicationUtils";
+import { formatStatusText } from '~/lib/utils/applicationUtils';
 
-import type { ApplicationsFiltersProps } from "./types";
+import type { ApplicationsFiltersProps } from './types';
 
 export function ApplicationsFilters({
   searchValue,
@@ -28,9 +28,9 @@ export function ApplicationsFilters({
     ...(searchValue
       ? [
           {
-            id: "search",
+            id: 'search',
             label: `Search: ${searchValue}`,
-            onRemove: () => onSearchChange(""),
+            onRemove: () => onSearchChange(''),
           },
         ]
       : []),
@@ -42,19 +42,16 @@ export function ApplicationsFilters({
     ...(selectedSource
       ? [
           {
-            id: "source",
+            id: 'source',
             label: `Source: ${selectedSource}`,
-            onRemove: () => onSourceChange(""),
+            onRemove: () => onSourceChange(''),
           },
         ]
       : []),
   ];
 
   return (
-    <FilterControls
-      showActiveFilters={activeFilters.length > 0}
-      activeFilters={activeFilters}
-    >
+    <FilterControls showActiveFilters={activeFilters.length > 0} activeFilters={activeFilters}>
       <div className="flex-1">
         <label
           htmlFor="application-search"
@@ -87,7 +84,7 @@ export function ApplicationsFilters({
             >
               <span className="truncate">
                 {selectedStatuses.length === 0
-                  ? "All Statuses"
+                  ? 'All Statuses'
                   : selectedStatuses.length === 1
                     ? formatStatusText(selectedStatuses[0])
                     : `${selectedStatuses.length} statuses`}
@@ -121,12 +118,7 @@ export function ApplicationsFilters({
       </div>
 
       {activeFilters.length > 0 ? (
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onClearFilters}
-          className="border-dashed"
-        >
+        <Button type="button" variant="outline" onClick={onClearFilters} className="border-dashed">
           Clear Filters
         </Button>
       ) : null}

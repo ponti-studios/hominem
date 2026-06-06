@@ -10,7 +10,7 @@ import { useFetcher, useOutletContext } from 'react-router';
 
 import { useToast } from '../hooks/useToast';
 import type { FullPortfolio } from '../lib/portfolio.server';
-import { createSuccessResponse, parseFormData, withAuthAction } from '../lib/route-utils';
+import { createSuccessResponse, parseFormData } from '../lib/route-utils';
 
 export interface BasicInfoFormValues {
   name: string;
@@ -34,18 +34,17 @@ export const meta: MetaFunction = () => {
 };
 
 // Server action to save portfolio data
-export async function action(args: ActionFunctionArgs) {
-  return withAuthAction(args, async ({ user }) => {
-    const formData = await args.request.formData();
-    const portfolioDataResult = parseFormData<BasicInfoFormValues>(formData, 'portfolioData');
-    if ('success' in portfolioDataResult && !portfolioDataResult.success) {
-      return portfolioDataResult;
-    }
-    const portfolioData = portfolioDataResult as BasicInfoFormValues;
+export async function action({ request, context }: ActionFunctionArgs) {
+  const user = context.get(userContext);
+  const formData = await request.formData();
+  const portfolioDataResult = parseFormData<BasicInfoFormValues>(formData, 'portfolioData');
+  if ('success' in portfolioDataResult && !portfolioDataResult.success) {
+    return portfolioDataResult;
+  }
+  const portfolioData = portfolioDataResult as BasicInfoFormValues;
 
-    await CareerRepository.savePortfolioBasics(db, user.id, portfolioData);
-    return createSuccessResponse(null, 'Portfolio saved successfully');
-  });
+  await CareerRepository.savePortfolioBasics(db, user.id, portfolioData);
+  return createSuccessResponse(null, 'Portfolio saved successfully');
 }
 
 export default function EditorBasic() {
@@ -151,30 +150,53 @@ export default function EditorBasic() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <Card>
           <CardHeader>
-            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Personal</span>
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Personal
+            </span>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-1">
-              <label htmlFor="name" className="text-xs font-medium text-muted-foreground">Full Name</label>
+              <label htmlFor="name" className="text-xs font-medium text-muted-foreground">
+                Full Name
+              </label>
               <Input id="name" {...register('name', { required: 'Name is required' })} />
               {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
             </div>
             <div className="space-y-1">
-              <label htmlFor="initials" className="text-xs font-medium text-muted-foreground">Initials</label>
+              <label htmlFor="initials" className="text-xs font-medium text-muted-foreground">
+                Initials
+              </label>
               <Input id="initials" {...register('initials')} maxLength={10} />
             </div>
             <div className="space-y-1">
-              <label htmlFor="job_title" className="text-xs font-medium text-muted-foreground">Job Title</label>
-              <Input id="job_title" {...register('job_title', { required: 'Job title is required' })} />
-              {errors.job_title && <p className="text-xs text-destructive">{errors.job_title.message}</p>}
+              <label htmlFor="job_title" className="text-xs font-medium text-muted-foreground">
+                Job Title
+              </label>
+              <Input
+                id="job_title"
+                {...register('job_title', { required: 'Job title is required' })}
+              />
+              {errors.job_title && (
+                <p className="text-xs text-destructive">{errors.job_title.message}</p>
+              )}
             </div>
             <div className="space-y-1">
-              <label htmlFor="tagline" className="text-xs font-medium text-muted-foreground">Tagline</label>
-              <Input id="tagline" {...register('tagline', { required: 'Tagline is required' })} maxLength={500} />
-              {errors.tagline && <p className="text-xs text-destructive">{errors.tagline.message}</p>}
+              <label htmlFor="tagline" className="text-xs font-medium text-muted-foreground">
+                Tagline
+              </label>
+              <Input
+                id="tagline"
+                {...register('tagline', { required: 'Tagline is required' })}
+                maxLength={500}
+              />
+              {errors.tagline && (
+                <p className="text-xs text-destructive">{errors.tagline.message}</p>
+              )}
             </div>
             <div className="space-y-1">
-              <label htmlFor="bio" className="text-xs font-medium text-muted-foreground">Bio</label>
+              <label htmlFor="bio" className="text-xs font-medium text-muted-foreground">
+                Bio
+              </label>
               <textarea
                 id="bio"
                 {...register('bio', { required: 'Bio is required' })}
@@ -188,11 +210,15 @@ export default function EditorBasic() {
 
         <Card>
           <CardHeader>
-            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Contact</span>
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Contact
+            </span>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-1">
-              <label htmlFor="email" className="text-xs font-medium text-muted-foreground">Email</label>
+              <label htmlFor="email" className="text-xs font-medium text-muted-foreground">
+                Email
+              </label>
               <Input
                 id="email"
                 type="email"
@@ -204,7 +230,9 @@ export default function EditorBasic() {
               {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
             </div>
             <div className="space-y-1">
-              <label htmlFor="phone" className="text-xs font-medium text-muted-foreground">Phone</label>
+              <label htmlFor="phone" className="text-xs font-medium text-muted-foreground">
+                Phone
+              </label>
               <Input id="phone" {...register('phone')} maxLength={50} />
             </div>
           </CardContent>
@@ -212,20 +240,34 @@ export default function EditorBasic() {
 
         <Card>
           <CardHeader>
-            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Location</span>
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Location
+            </span>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-1">
-              <label htmlFor="current_location" className="text-xs font-medium text-muted-foreground">Location</label>
+              <label
+                htmlFor="current_location"
+                className="text-xs font-medium text-muted-foreground"
+              >
+                Location
+              </label>
               <Input
                 id="current_location"
                 {...register('current_location', { required: 'Location is required' })}
                 maxLength={255}
               />
-              {errors.current_location && <p className="text-xs text-destructive">{errors.current_location.message}</p>}
+              {errors.current_location && (
+                <p className="text-xs text-destructive">{errors.current_location.message}</p>
+              )}
             </div>
             <div className="space-y-1">
-              <label htmlFor="location_tagline" className="text-xs font-medium text-muted-foreground">Location tagline</label>
+              <label
+                htmlFor="location_tagline"
+                className="text-xs font-medium text-muted-foreground"
+              >
+                Location tagline
+              </label>
               <Input id="location_tagline" {...register('location_tagline')} maxLength={255} />
             </div>
           </CardContent>
@@ -233,7 +275,9 @@ export default function EditorBasic() {
 
         <Card>
           <CardHeader>
-            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Availability</span>
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Availability
+            </span>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center gap-3">
@@ -241,7 +285,11 @@ export default function EditorBasic() {
                 name="availability_status"
                 control={control}
                 render={({ field }) => (
-                  <Switch id="availability_status" checked={field.value} onCheckedChange={field.onChange} />
+                  <Switch
+                    id="availability_status"
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
                 )}
               />
               <label htmlFor="availability_status" className="text-sm text-muted-foreground">
@@ -250,8 +298,17 @@ export default function EditorBasic() {
             </div>
             {watch('availability_status') && (
               <div className="space-y-1">
-                <label htmlFor="availability_message" className="text-xs font-medium text-muted-foreground">Availability note</label>
-                <Input id="availability_message" {...register('availability_message')} maxLength={500} />
+                <label
+                  htmlFor="availability_message"
+                  className="text-xs font-medium text-muted-foreground"
+                >
+                  Availability note
+                </label>
+                <Input
+                  id="availability_message"
+                  {...register('availability_message')}
+                  maxLength={500}
+                />
               </div>
             )}
           </CardContent>

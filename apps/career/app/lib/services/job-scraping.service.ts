@@ -16,7 +16,7 @@ export class JobScrapingService {
       const env = getServerEnv();
       this.cloudflareAccountId = env.VITE_CLOUDFLARE_ACCOUNT_ID || '';
       this.cloudflareApiToken = env.VITE_CLOUDFLARE_API_TOKEN || '';
-    } catch (error) {
+    } catch (_error) {
       // If we're on the client side, these will be empty
       this.cloudflareAccountId = '';
       this.cloudflareApiToken = '';

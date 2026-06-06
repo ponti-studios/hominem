@@ -1,8 +1,6 @@
-import type {
-  CareerProjectRecord as Project,
-  CareerWorkExperienceRecord as WorkExperience,
-} from '@hominem/db';
+import type { CareerProjectRecord as Project } from '@hominem/db';
 import { Button } from '@hominem/ui/button';
+import { Card, CardContent } from '@hominem/ui/card';
 import { ArrowLeftIcon, CheckIcon, PencilIcon, PlusIcon, TrashIcon, XIcon } from 'lucide-react';
 import { useState } from 'react';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
@@ -11,12 +9,6 @@ import { useLoaderData, useNavigate } from 'react-router';
 import { jsonArray } from '~/lib/db-json';
 import { createErrorResponse, createSuccessResponse, withAuthLoader } from '~/lib/route-utils';
 import { cn } from '~/lib/utils';
-import { Card, CardContent } from '@hominem/ui/card';
-
-interface LoaderData {
-  workExperience: WorkExperience;
-  projects: Project[];
-}
 
 export async function loader(args: LoaderFunctionArgs) {
   return withAuthLoader(args, async ({ user }) => {
@@ -112,7 +104,7 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function WorkExperienceProjects() {
-  const response = useLoaderData<{ success: boolean; data?: LoaderData; error?: string }>();
+  const response = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const [showAddForm, setShowAddForm] = useState(false);
 
@@ -122,7 +114,7 @@ export default function WorkExperienceProjects() {
         <CardContent className="space-y-2 p-6">
           <h2 className="text-lg font-semibold text-foreground">Error Loading Data</h2>
           <p className="text-sm text-muted-foreground">
-            {response.error ?? "Failed to load projects"}
+            {response.error ?? 'Failed to load projects'}
           </p>
         </CardContent>
       </Card>

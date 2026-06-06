@@ -1,19 +1,13 @@
-import { Badge } from "@hominem/ui/badge";
-import { Card, CardContent } from "@hominem/ui/card";
-import { ChevronRightIcon } from "lucide-react";
-import { Link } from "react-router";
+import { Badge } from '@hominem/ui/badge';
+import { Card, CardContent } from '@hominem/ui/card';
+import { ChevronRightIcon } from 'lucide-react';
+import { Link } from 'react-router';
 
-import {
-  formatStatusText,
-  getCompanyName,
-  getStatusColor,
-} from "~/lib/utils/applicationUtils";
+import { formatStatusText, getCompanyName, getStatusColor } from '~/lib/utils/applicationUtils';
 
-import type { ApplicationsMobileListProps } from "./types";
+import type { ApplicationsMobileListProps } from './types';
 
-export function ApplicationsMobileList({
-  applications,
-}: ApplicationsMobileListProps) {
+export function ApplicationsMobileList({ applications }: ApplicationsMobileListProps) {
   return (
     <Card className="md:hidden">
       <CardContent className="divide-y divide-border p-0">
@@ -33,16 +27,10 @@ export function ApplicationsMobileList({
                 </div>
               </div>
               <div className="ml-4 flex items-center space-x-3">
-                <Badge
-                  variant="outline"
-                  className={getStatusColor(application.status)}
-                >
+                <Badge variant="outline" className={getStatusColor(application.status)}>
                   {formatStatusText(application.status)}
                 </Badge>
-                <ChevronRightIcon
-                  className="h-5 w-5 text-muted-foreground"
-                  aria-hidden="true"
-                />
+                <ChevronRightIcon className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
               </div>
             </div>
           </Link>

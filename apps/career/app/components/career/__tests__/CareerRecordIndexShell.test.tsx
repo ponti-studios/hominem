@@ -1,11 +1,11 @@
-import "@testing-library/jest-dom/vitest";
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import '@testing-library/jest-dom/vitest';
+import { render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
 
-import { CareerRecordIndexShell } from "../CareerRecordIndexShell";
+import { CareerRecordIndexShell } from '../CareerRecordIndexShell';
 
-describe("CareerRecordIndexShell", () => {
-  it("renders the shared header, metrics slot, and section content", () => {
+describe('CareerRecordIndexShell', () => {
+  it('renders the shared header, metrics slot, and section content', () => {
     render(
       <CareerRecordIndexShell
         title="Projects"
@@ -18,15 +18,15 @@ describe("CareerRecordIndexShell", () => {
       </CareerRecordIndexShell>,
     );
 
-    expect(screen.getByText("Projects")).toBeInTheDocument();
-    expect(screen.getByText("Manage your work")).toBeInTheDocument();
-    expect(screen.getByText("Add")).toBeInTheDocument();
-    expect(screen.getByText("Metrics Slot")).toBeInTheDocument();
-    expect(screen.getByText("Your Projects")).toBeInTheDocument();
-    expect(screen.getByText("Project rows")).toBeInTheDocument();
+    expect(screen.getByText('Projects')).toBeInTheDocument();
+    expect(screen.getByText('Manage your work')).toBeInTheDocument();
+    expect(screen.getByText('Add')).toBeInTheDocument();
+    expect(screen.getByText('Metrics Slot')).toBeInTheDocument();
+    expect(screen.getByText('Your Projects')).toBeInTheDocument();
+    expect(screen.getByText('Project rows')).toBeInTheDocument();
   });
 
-  it("renders the empty state in place of content when provided", () => {
+  it('renders the empty state in place of content when provided', () => {
     render(
       <CareerRecordIndexShell
         title="Certifications"
@@ -36,7 +36,7 @@ describe("CareerRecordIndexShell", () => {
       />,
     );
 
-    expect(screen.getByText("No certifications yet")).toBeInTheDocument();
-    expect(screen.queryByText("Project rows")).not.toBeInTheDocument();
+    expect(screen.getByText('No certifications yet')).toBeInTheDocument();
+    expect(screen.queryByText('Project rows')).not.toBeInTheDocument();
   });
 });

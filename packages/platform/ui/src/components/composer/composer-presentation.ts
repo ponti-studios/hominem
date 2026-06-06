@@ -15,11 +15,7 @@ import type { ComposerMode } from './composer-provider';
 
 export type ComposerPosture = 'capture' | 'draft' | 'reply' | 'note-query' | 'hidden';
 export type ComposerActionIcon = 'plus.circle' | 'arrow.up' | 'bubble.left';
-export type ComposerSubmitIntent =
-  | 'send-reply'
-  | 'save-note'
-  | 'save-as-note'
-  | 'start-chat';
+export type ComposerSubmitIntent = 'send-reply' | 'save-note' | 'save-as-note' | 'start-chat';
 
 export interface ComposerActionSpec {
   intent: ComposerSubmitIntent;

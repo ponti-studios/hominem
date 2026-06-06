@@ -52,10 +52,10 @@ function errorResponse(
   extra?: Omit<UploadResumeApiResponse, 'error' | 'stage' | 'retryable'>,
   headers?: HeadersInit,
 ): ReturnType<typeof data<UploadResumeApiResponse>> {
-  return data(
-    { error, stage, retryable, ...extra } satisfies UploadResumeApiResponse,
-    { status, headers },
-  );
+  return data({ error, stage, retryable, ...extra } satisfies UploadResumeApiResponse, {
+    status,
+    headers,
+  });
 }
 
 function storageFailureMessage(): string {

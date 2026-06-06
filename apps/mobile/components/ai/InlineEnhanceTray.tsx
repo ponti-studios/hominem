@@ -56,9 +56,7 @@ export function InlineEnhanceTray({
               style={({ pressed }) => [
                 styles.chip,
                 {
-                  backgroundColor: isActive
-                    ? themeColors.background
-                    : themeColors['bg-surface'],
+                  backgroundColor: isActive ? themeColors.background : themeColors['bg-surface'],
                   borderColor: themeColors['border-default'],
                   opacity: pressed ? 0.75 : 1,
                 },

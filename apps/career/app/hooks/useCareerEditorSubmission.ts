@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import type { FetcherWithComponents } from "react-router";
+import { useEffect } from 'react';
+import type { FetcherWithComponents } from 'react-router';
 
 interface EditorSubmissionResult<TRecord> {
   success: boolean;
@@ -10,11 +10,7 @@ interface EditorSubmissionResult<TRecord> {
 
 interface UseCareerEditorSubmissionOptions<TRecord> {
   fetcher: FetcherWithComponents<unknown>;
-  addToast: (
-    message: string,
-    type: "success" | "error" | "info",
-    duration?: number,
-  ) => void;
+  addToast: (message: string, type: 'success' | 'error' | 'info', duration?: number) => void;
   successMessage: string;
   errorMessage: string;
   isNew: boolean;
@@ -30,14 +26,14 @@ export function useCareerEditorSubmission<TRecord>({
   onCreateSuccess,
 }: UseCareerEditorSubmissionOptions<TRecord>) {
   useEffect(() => {
-    if (fetcher.state !== "idle" || !fetcher.data) {
+    if (fetcher.state !== 'idle' || !fetcher.data) {
       return;
     }
 
     const result = fetcher.data as EditorSubmissionResult<TRecord>;
 
     if (result.success) {
-      addToast(result.message || successMessage, "success");
+      addToast(result.message || successMessage, 'success');
 
       if (isNew && result.data && onCreateSuccess) {
         onCreateSuccess(result.data);
@@ -46,17 +42,6 @@ export function useCareerEditorSubmission<TRecord>({
       return;
     }
 
-    addToast(
-      result.error ? `${errorMessage}: ${result.error}` : errorMessage,
-      "error",
-    );
-  }, [
-    addToast,
-    errorMessage,
-    fetcher.data,
-    fetcher.state,
-    isNew,
-    onCreateSuccess,
-    successMessage,
-  ]);
+    addToast(result.error ? `${errorMessage}: ${result.error}` : errorMessage, 'error');
+  }, [addToast, errorMessage, fetcher.data, fetcher.state, isNew, onCreateSuccess, successMessage]);
 }

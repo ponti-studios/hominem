@@ -107,7 +107,11 @@ export function formatPercentage(value: number, decimals = 1): string {
 
 export function createDateRange(start_date: string | Date, end_date?: string | Date | null) {
   const start = typeof start_date === 'string' ? new Date(start_date) : start_date;
-  const end = end_date ? (typeof end_date === 'string' ? new Date(end_date) : end_date) : new Date();
+  const end = end_date
+    ? typeof end_date === 'string'
+      ? new Date(end_date)
+      : end_date
+    : new Date();
 
   return { start, end };
 }
