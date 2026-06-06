@@ -11,8 +11,8 @@ import {
 } from '~/lib/api-contracts';
 import { jobScrapingService } from '~/lib/services/job-scraping.service';
 
-import { getAuthenticatedUser, requireAuth } from '../lib/auth.server';
 import { logger } from '../lib/logger';
+import { userContext } from '../lib/middleware';
 import { getFullUserPortfolio } from '../lib/portfolio.server';
 import { formatPortfolioForLLM } from '../lib/utils/portfolio-formatter';
 
@@ -59,10 +59,9 @@ const customizeResumeSchema = z.object({
   targetLength: z.enum(['concise', 'standard', 'detailed']).default('standard'),
 });
 
-export const action: ActionFunction = async ({ request }) => {
+export const action: ActionFunction = async ({ request, context }) => {
   try {
-    const sessionUser = await getAuthenticatedUser(request);
-    const user = requireAuth(sessionUser);
+    const user = context.get(userContext)!;
 
     // Validate request method
     if (request.method !== 'POST') {

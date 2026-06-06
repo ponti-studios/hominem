@@ -1,6 +1,12 @@
+// @vitest-environment node
+
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { getAuthenticatedUser, getServerSession } from './auth.server';
+vi.mock('./env', () => ({
+  serverEnv: () => ({ VITE_PUBLIC_API_URL: 'http://localhost:3000' }),
+}));
+
+import { getServerSession } from './auth.server';
 
 const sessionPayload = {
   user: {
@@ -61,18 +67,6 @@ describe('career auth server helpers', () => {
       session: null,
       headers: expect.any(Headers),
     });
-  });
-
-  it('uses the shared session user for getAuthenticatedUser', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => Response.json(sessionPayload)),
-    );
-
-    const user = await getAuthenticatedUser(new Request('http://localhost/'));
-
-    expect(user?.id).toBe(sessionPayload.user.id);
-    expect(user?.email).toBe(sessionPayload.user.email);
   });
 
   it('uses the test auth cookie without calling the shared auth API', async () => {

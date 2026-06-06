@@ -1,33 +1,27 @@
 import { useAuthClient } from '@hominem/auth/client/provider';
 import { EmailEntryForm } from '@hominem/ui';
-import type { MetaFunction } from 'react-router';
-import { redirect, useLocation, useNavigate } from 'react-router';
+import type { LoaderFunctionArgs, MetaFunction } from 'react-router';
+import { redirect, useNavigate } from 'react-router';
 
-import { getServerSession } from '~/lib/auth.server';
+import { userContext } from '~/lib/middleware';
 
-export const meta: MetaFunction = () => {
-  return [
-    { title: 'Sign In - Craftd' },
-    {
-      name: 'description',
-      content: 'Sign in to Craftd to create and manage your professional portfolio',
-    },
-  ];
-};
+export const meta: MetaFunction = () => [
+  { title: 'Sign In - Craftd' },
+  {
+    name: 'description',
+    content: 'Sign in to Craftd to create and manage your professional portfolio',
+  },
+];
 
-export async function loader({ request }: { request: Request }) {
-  const { user, headers } = await getServerSession(request);
-  if (user) {
-    throw redirect('/account', { headers });
-  }
+export async function loader({ context }: LoaderFunctionArgs) {
+  const user = context.get(userContext);
+  if (user) throw redirect('/account');
   return null;
 }
 
 export default function Login() {
   const authClient = useAuthClient();
-  const location = useLocation();
   const navigate = useNavigate();
-  const next = new URLSearchParams(location.search).get('next') ?? '/account';
 
   return (
     <EmailEntryForm
@@ -41,9 +35,7 @@ export default function Login() {
         if (result.error) {
           throw new Error(result.error.message ?? 'Failed to send verification code');
         }
-        navigate(
-          `/login/verify?email=${encodeURIComponent(email)}&next=${encodeURIComponent(next)}`,
-        );
+        navigate(`/login/verify?email=${encodeURIComponent(email)}`);
       }}
     />
   );

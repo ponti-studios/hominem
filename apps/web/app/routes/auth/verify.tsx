@@ -1,20 +1,18 @@
 'use client';
 
 import { useAuthClient } from '@hominem/auth/client/provider';
-import { resolveAuthRedirect } from '@hominem/auth/shared/redirect-policy';
 import { OtpVerificationForm } from '@hominem/ui';
-import { redirect, useLoaderData, useLocation, useNavigate } from 'react-router';
+import { redirect, useLoaderData, useNavigate } from 'react-router';
 
-import { NOTES_AUTH_CONFIG } from '~/config/auth';
+import { userContext } from '~/lib/middleware';
 
-import { getNextRedirect } from './shared';
-import { redirectAuthenticatedUser } from './shared.server';
+import type { Route } from './+types/verify';
 import { useEmailAuth } from './use-email-auth';
 
-export async function loader({ request }: { request: Request }) {
-  const redirectResponse = await redirectAuthenticatedUser(request);
-  if (redirectResponse) {
-    return redirectResponse;
+export async function loader({ request, context }: Route.LoaderArgs) {
+  const user = context.get(userContext);
+  if (user) {
+    throw redirect('/inbox');
   }
 
   const url = new URL(request.url);
@@ -29,26 +27,19 @@ export async function loader({ request }: { request: Request }) {
 export default function Component() {
   const authClient = useAuthClient();
   const { email: loaderEmail } = useLoaderData<{ email: string }>();
-  const location = useLocation();
   const navigate = useNavigate();
-  const next = getNextRedirect(location.search);
 
   const { error, handleVerifyOtp, handleResendOtp } = useEmailAuth(
     {
       sendOtp: async () => {},
       verifyOtp: async (email, otp) => {
-        const destination = resolveAuthRedirect(
-          next,
-          NOTES_AUTH_CONFIG.defaultPostAuthDestination,
-          [...NOTES_AUTH_CONFIG.allowedDestinations],
-        ).safeRedirect;
         const result = await authClient.signIn.emailOtp({ email, otp });
         if (result.error || !result.data?.user?.id) {
           throw new Error(
             result.error?.message ?? 'Verification failed. Please check your code and try again.',
           );
         }
-        navigate(destination);
+        navigate('/inbox');
       },
       resendOtp: async (email) => {
         const result = await authClient.emailOtp.sendVerificationOtp({
@@ -73,11 +64,9 @@ export default function Component() {
         await handleResendOtp(resolvedEmail);
       }}
       email={loaderEmail}
-      defaultNext={NOTES_AUTH_CONFIG.defaultPostAuthDestination}
+      defaultNext="/inbox"
       onChangeEmail={() => {
-        const authUrl = new URL('/auth', window.location.origin);
-        authUrl.searchParams.set('next', next);
-        window.location.assign(`${authUrl.pathname}${authUrl.search}`);
+        navigate('/auth');
       }}
     />
   );

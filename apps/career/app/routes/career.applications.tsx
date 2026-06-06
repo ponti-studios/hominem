@@ -22,12 +22,8 @@ import { ApplicationsResultsSummary } from '~/components/career/applications/App
 import { ApplicationsHeatmap } from '~/components/career/ApplicationsHeatmap';
 import { useToast } from '~/hooks/useToast';
 import { getAllApplicationsWithCompany } from '~/lib/career/queries/job-applications';
-import {
-  createErrorResponse,
-  createSuccessResponse,
-  withAuthAction,
-  withAuthLoader,
-} from '~/lib/route-utils';
+import { userContext } from '~/lib/middleware';
+import { createErrorResponse, createSuccessResponse } from '~/lib/route-utils';
 import { buildApplicationsSearchParams } from '~/lib/utils/applicationsSearchParams';
 import {
   getUniqueSources,
@@ -39,121 +35,115 @@ import type { JobApplicationStatus } from '~/types/career';
 const DEFAULT_LIMIT = 10;
 const MAX_LIMIT = 100;
 
-export async function loader(args: LoaderFunctionArgs) {
-  return withAuthLoader(args, async ({ user, request }) => {
-    try {
-      const url = new URL(request.url);
-      const searchParams = url.searchParams;
+export async function loader({ context, request }: LoaderFunctionArgs) {
+  const user = context.get(userContext)!;
+  try {
+    const url = new URL(request.url);
+    const searchParams = url.searchParams;
 
-      // Extract pagination and filter parameters
-      const page = Math.max(1, Number.parseInt(searchParams.get('page') || '1'));
-      const limit = Math.max(
-        1,
-        Math.min(MAX_LIMIT, Number.parseInt(searchParams.get('limit') || String(DEFAULT_LIMIT))),
-      );
-      const offset = (page - 1) * limit;
+    // Extract pagination and filter parameters
+    const page = Math.max(1, Number.parseInt(searchParams.get('page') || '1'));
+    const limit = Math.max(
+      1,
+      Math.min(MAX_LIMIT, Number.parseInt(searchParams.get('limit') || String(DEFAULT_LIMIT))),
+    );
+    const offset = (page - 1) * limit;
 
-      const searchQuery = searchParams.get('search') || undefined;
-      const selectedStatuses = searchParams.getAll('status').filter(Boolean);
-      const source = searchParams.get('source') || undefined;
+    const searchQuery = searchParams.get('search') || undefined;
+    const selectedStatuses = searchParams.getAll('status').filter(Boolean);
+    const source = searchParams.get('source') || undefined;
 
-      // Build filter object
-      const filter = {
-        ...(selectedStatuses.length > 0 && { statuses: selectedStatuses }),
-        ...(source && source !== 'ALL' && { source }),
-        ...(searchQuery && { search: searchQuery }),
-      };
+    // Build filter object
+    const filter = {
+      ...(selectedStatuses.length > 0 && { statuses: selectedStatuses }),
+      ...(source && source !== 'ALL' && { source }),
+      ...(searchQuery && { search: searchQuery }),
+    };
 
-      // Build pagination object
-      const pagination = {
+    // Build pagination object
+    const pagination = {
+      limit,
+      offset,
+      orderBy: (searchParams.get('orderBy') || 'application_date') as
+        | 'application_date'
+        | 'response_date'
+        | 'offer_date'
+        | 'companyName'
+        | 'position',
+      orderDirection: (searchParams.get('orderDirection') as 'asc' | 'desc') || 'desc',
+    };
+
+    const allApplications = await getAllApplicationsWithCompany(user.id);
+    const paginatedApplications = await getAllApplicationsWithCompany(user.id, filter, pagination);
+    const filteredApplications = await getAllApplicationsWithCompany(user.id, filter);
+
+    return createSuccessResponse({
+      user,
+      allApplications,
+      applications: paginatedApplications,
+      pagination: {
+        page,
         limit,
-        offset,
-        orderBy: (searchParams.get('orderBy') || 'application_date') as
-          | 'application_date'
-          | 'response_date'
-          | 'offer_date'
-          | 'companyName'
-          | 'position',
-        orderDirection: (searchParams.get('orderDirection') as 'asc' | 'desc') || 'desc',
-      };
-
-      const allApplications = await getAllApplicationsWithCompany(user.id);
-      const paginatedApplications = await getAllApplicationsWithCompany(
-        user.id,
-        filter,
-        pagination,
-      );
-      const filteredApplications = await getAllApplicationsWithCompany(user.id, filter);
-
-      return createSuccessResponse({
-        user,
-        allApplications,
-        applications: paginatedApplications,
-        pagination: {
-          page,
-          limit,
-          total: filteredApplications.length,
-          totalPages: Math.ceil(filteredApplications.length / limit),
-        },
-        filters: {
-          search: searchQuery,
-          statuses: selectedStatuses,
-          source: source && source !== 'ALL' ? source : undefined,
-        },
-      });
-    } catch (error) {
-      console.error('Error loading job applications data:', error);
-      return createErrorResponse('Failed to load job applications data');
-    }
-  });
+        total: filteredApplications.length,
+        totalPages: Math.ceil(filteredApplications.length / limit),
+      },
+      filters: {
+        search: searchQuery,
+        statuses: selectedStatuses,
+        source: source && source !== 'ALL' ? source : undefined,
+      },
+    });
+  } catch (error) {
+    console.error('Error loading job applications data:', error);
+    return createErrorResponse('Failed to load job applications data');
+  }
 }
 
-export async function action(args: ActionFunctionArgs) {
-  return withAuthAction(args, async ({ user, request }) => {
-    try {
-      const formData = await request.formData();
-      const operation = formData.get('operation');
+export async function action({ context, request }: ActionFunctionArgs) {
+  const user = context.get(userContext)!;
+  try {
+    const formData = await request.formData();
+    const operation = formData.get('operation');
 
-      if (typeof operation !== 'string') {
-        return createErrorResponse('Invalid operation');
-      }
-
-      if (operation === 'update') {
-        const applicationId = formData.get('applicationId');
-        const status = formData.get('status');
-
-        if (typeof applicationId !== 'string' || typeof status !== 'string') {
-          return createErrorResponse('Missing or invalid applicationId or status');
-        }
-
-        await CareerRepository.updateJobApplicationStatus(
-          db,
-          user.id,
-          applicationId,
-          status as JobApplicationStatus,
-        );
-
-        return createSuccessResponse(null, 'Job application updated successfully');
-      }
-
-      if (operation === 'delete') {
-        const applicationId = formData.get('applicationId');
-
-        if (typeof applicationId !== 'string') {
-          return createErrorResponse('Missing or invalid applicationId');
-        }
-
-        await CareerRepository.deleteJobApplication(db, user.id, applicationId);
-
-        return createSuccessResponse({ success: true }, 'Job application deleted successfully');
-      }
-
+    if (typeof operation !== 'string') {
       return createErrorResponse('Invalid operation');
-    } catch (error) {
-      console.error('Error in job applications action:', error);
-      return createErrorResponse('Failed to process job application request');
     }
-  });
+
+    if (operation === 'update') {
+      const applicationId = formData.get('applicationId');
+      const status = formData.get('status');
+
+      if (typeof applicationId !== 'string' || typeof status !== 'string') {
+        return createErrorResponse('Missing or invalid applicationId or status');
+      }
+
+      await CareerRepository.updateJobApplicationStatus(
+        db,
+        user.id,
+        applicationId,
+        status as JobApplicationStatus,
+      );
+
+      return createSuccessResponse(null, 'Job application updated successfully');
+    }
+
+    if (operation === 'delete') {
+      const applicationId = formData.get('applicationId');
+
+      if (typeof applicationId !== 'string') {
+        return createErrorResponse('Missing or invalid applicationId');
+      }
+
+      await CareerRepository.deleteJobApplication(db, user.id, applicationId);
+
+      return createSuccessResponse({ success: true }, 'Job application deleted successfully');
+    }
+
+    return createErrorResponse('Invalid operation');
+  } catch (error) {
+    console.error('Error in job applications action:', error);
+    return createErrorResponse('Failed to process job application request');
+  }
 }
 
 function ApplicationsHeader({ totalCount }: { totalCount: number }) {

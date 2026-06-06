@@ -1,9 +1,8 @@
 import type { Session, User } from '@hominem/auth/types';
-import { redirect } from 'react-router';
+
+import { serverEnv } from './env';
 
 export type { User };
-
-const API_URL = process.env.VITE_PUBLIC_API_URL || process.env.API_URL || 'http://localhost:3000';
 
 function getTestAuthUser(cookieHeader: string | null): User | null {
   const testAuthCookie = cookieHeader
@@ -23,33 +22,38 @@ function getTestAuthUser(cookieHeader: string | null): User | null {
 export async function getServerSession(request: Request) {
   const headers = new Headers();
   const cookie = request.headers.get('cookie');
-  const testUser = getTestAuthUser(cookie);
 
-  if (testUser) {
-    return {
-      user: testUser,
-      session: {
-        id: 'test-session',
-        token: 'test-session',
-        userId: testUser.id,
-        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-        ipAddress: null,
-        userAgent: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      } satisfies Session,
-      headers: new Headers(),
-    };
+  if (process.env.NODE_ENV !== 'production') {
+    const testUser = getTestAuthUser(cookie);
+    if (testUser) {
+      return {
+        user: testUser,
+        session: {
+          id: 'test-session',
+          token: 'test-session',
+          userId: testUser.id,
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+          ipAddress: null,
+          userAgent: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        } satisfies Session,
+        headers: new Headers(),
+      };
+    }
   }
 
   if (cookie) {
     headers.set('cookie', cookie);
   }
 
-  const response = await fetch(new URL('/api/auth/get-session', API_URL).toString(), {
-    method: 'GET',
-    headers,
-  });
+  const response = await fetch(
+    new URL('/api/auth/get-session', serverEnv().VITE_PUBLIC_API_URL).toString(),
+    {
+      method: 'GET',
+      headers,
+    },
+  );
 
   if (!response.ok) {
     return { user: null, session: null, headers: new Headers() };
@@ -65,26 +69,4 @@ export async function getServerSession(request: Request) {
     session: payload?.session ?? null,
     headers: new Headers(),
   };
-}
-
-export async function getAuthenticatedUser(request: Request): Promise<User | null> {
-  const { user } = await getServerSession(request);
-  return user;
-}
-
-export function requireAuth(user: User | null, headers?: Headers): User {
-  if (!user) {
-    throw redirect('/login', headers ? { headers } : undefined);
-  }
-  return user;
-}
-
-export function redirectIfAuthenticated(
-  user: User | null,
-  redirectTo = '/account',
-  headers?: Headers,
-) {
-  if (user) {
-    throw redirect(redirectTo, headers ? { headers } : undefined);
-  }
 }

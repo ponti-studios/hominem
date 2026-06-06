@@ -2,26 +2,26 @@
 
 import { usePasskeys } from '@hominem/auth/client/passkey';
 import { useAuthClient } from '@hominem/auth/client/provider';
-import { readAuthErrorMessage } from '@hominem/auth/shared/error-contract';
-import { resolveAuthRedirect } from '@hominem/auth/shared/redirect-policy';
 import { EmailEntryForm } from '@hominem/ui';
-import { useLocation, useNavigate } from 'react-router';
+import { redirect, useLocation, useNavigate } from 'react-router';
 
-import { NOTES_AUTH_CONFIG } from '~/config/auth';
+import { userContext } from '~/lib/middleware';
 
-import { getNextRedirect } from './shared';
-import { redirectAuthenticatedUser } from './shared.server';
+import type { Route } from './+types/index';
 import { useEmailAuth } from './use-email-auth';
 
-export async function loader({ request }: { request: Request }) {
-  return redirectAuthenticatedUser(request);
+export async function loader({ context }: Route.LoaderArgs) {
+  const user = context.get(userContext);
+  if (user) {
+    throw redirect('/inbox');
+  }
+  return null;
 }
 
 export default function Component() {
   const authClient = useAuthClient();
   const location = useLocation();
   const navigate = useNavigate();
-  const next = getNextRedirect(location.search);
 
   const {
     authenticate,
@@ -38,16 +38,13 @@ export default function Component() {
       if (result.error) {
         throw new Error(result.error.message ?? 'Failed to send verification code');
       }
-      const redirectTo = next ?? NOTES_AUTH_CONFIG.defaultPostAuthDestination;
-      navigate(
-        `/auth/verify?email=${encodeURIComponent(email)}&next=${encodeURIComponent(redirectTo)}`,
-      );
+      navigate(`/auth/verify?email=${encodeURIComponent(email)}`);
     },
     verifyOtp: async () => {},
     resendOtp: async () => {},
   });
 
-  const callbackError = readAuthErrorMessage(new URLSearchParams(location.search));
+  const callbackError = new URLSearchParams(location.search).get('error');
   const resolvedError = callbackError ?? passkeyError ?? sendError ?? undefined;
 
   return (
@@ -60,12 +57,7 @@ export default function Component() {
         ? {
             onPasskeyClick: async () => {
               await authenticate();
-              const { safeRedirect } = resolveAuthRedirect(
-                next,
-                NOTES_AUTH_CONFIG.defaultPostAuthDestination,
-                [...NOTES_AUTH_CONFIG.allowedDestinations],
-              );
-              navigate(safeRedirect);
+              navigate('/inbox');
             },
           }
         : {})}

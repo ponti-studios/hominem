@@ -1,5 +1,5 @@
 import { cn } from '@hominem/ui/lib/utils';
-import { Link, NavLink, Outlet, data } from 'react-router';
+import { Link, NavLink, Outlet } from 'react-router';
 
 import { WEB_BRAND } from '~/lib/brand';
 import { userContext } from '~/lib/middleware';
@@ -24,7 +24,7 @@ function NavItem({ to, label }: { to: string; label: string }) {
 
 export async function loader({ context }: Route.LoaderArgs) {
   const user = context.get(userContext);
-  return data({ userId: user?.id ?? null });
+  return { userId: user?.id ?? null };
 }
 
 export default function Layout({ loaderData }: Route.ComponentProps) {

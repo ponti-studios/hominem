@@ -1,18 +1,11 @@
 import { data, type ActionFunction } from 'react-router';
 
 import type { JobScrapeApiRequest, JobScrapeApiResponse } from '~/lib/api-contracts';
-import { getAuthenticatedUser } from '~/lib/auth.server';
 import { logger } from '~/lib/logger';
 import { jobScrapingService } from '~/lib/services/job-scraping.service';
 
 export const action: ActionFunction = async ({ request }) => {
   try {
-    const user = await getAuthenticatedUser(request);
-
-    if (!user) {
-      return data({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const { url: jobUrl } = (await request.json()) as JobScrapeApiRequest;
 
     if (!jobUrl) {

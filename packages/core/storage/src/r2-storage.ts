@@ -90,18 +90,18 @@ function getCloudflareR2StorageConfig(): StorageConnectionConfig | null {
 }
 
 function getStorageConnectionConfig(): StorageConnectionConfig {
-  if (process.env.NODE_ENV !== 'production') {
-    return localMinioStorageConfig;
-  }
-
   const r2Config = getCloudflareR2StorageConfig();
   if (r2Config) {
     return r2Config;
   }
 
-  throw new Error(
-    'Missing Cloudflare R2 configuration. Set R2_ENDPOINT, R2_BUCKET_NAME, R2_ACCESS_KEY_ID, and R2_SECRET_ACCESS_KEY.',
-  );
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      'Missing Cloudflare R2 configuration in production. Set R2_ENDPOINT, R2_BUCKET_NAME, R2_ACCESS_KEY_ID, and R2_SECRET_ACCESS_KEY.',
+    );
+  }
+
+  return localMinioStorageConfig;
 }
 
 class InMemoryStorageBackend {

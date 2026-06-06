@@ -4,76 +4,75 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import { useLoaderData, useNavigate } from 'react-router';
 
 import { jsonObject } from '~/lib/db-json';
-import { createErrorResponse, createSuccessResponse, withAuthLoader } from '~/lib/route-utils';
+import { userContext } from '~/lib/middleware';
+import { createErrorResponse, createSuccessResponse } from '~/lib/route-utils';
 import { cn } from '~/lib/utils';
 import type { WorkExperienceMetadata } from '~/types/career-data';
 
-export async function loader(args: LoaderFunctionArgs) {
-  return withAuthLoader(args, async ({ user }) => {
-    const { id } = args.params;
-    if (!id) throw new Response('Work experience ID is required', { status: 400 });
-    try {
-      const { getWorkExperienceById } = await import('~/lib/career/queries/base');
-      const workExperience = await getWorkExperienceById(user.id, id);
-      if (!workExperience) throw new Response('Work experience not found', { status: 404 });
-      return createSuccessResponse({ workExperience });
-    } catch (error) {
-      console.error('Error loading work experience:', error);
-      return createErrorResponse('Failed to load work experience');
-    }
-  });
+export async function loader({ context, params }: LoaderFunctionArgs) {
+  const user = context.get(userContext)!;
+  const { id } = params;
+  if (!id) throw new Response('Work experience ID is required', { status: 400 });
+  try {
+    const { getWorkExperienceById } = await import('~/lib/career/queries/base');
+    const workExperience = await getWorkExperienceById(user.id, id);
+    if (!workExperience) throw new Response('Work experience not found', { status: 404 });
+    return createSuccessResponse({ workExperience });
+  } catch (error) {
+    console.error('Error loading work experience:', error);
+    return createErrorResponse('Failed to load work experience');
+  }
 }
 
-export async function action(args: ActionFunctionArgs) {
-  return withAuthLoader(args, async ({ user, request }) => {
-    const { id } = args.params;
-    if (!id) throw new Response('Work experience ID is required', { status: 400 });
-    const formData = await request.formData();
-    const field = formData.get('field') as string;
-    const value = formData.get('value') as string;
-    try {
-      const { updateWorkExperience } = await import('~/lib/career/queries/base');
-      let processedValue: string | number | Date | null = value;
-      if (
-        [
-          'base_salary',
-          'total_compensation',
-          'equity_value',
-          'signing_bonus',
-          'annual_bonus',
-        ].includes(field)
-      ) {
-        processedValue = value ? Number.parseInt(value) * 100 : null;
-      } else if (['team_size', 'direct_reports'].includes(field)) {
-        processedValue = value ? Number.parseInt(value) : null;
-      } else if (['start_date', 'end_date'].includes(field)) {
-        processedValue = value ? new Date(value) : null;
-      }
-      if (field.startsWith('metadata.')) {
-        const { getWorkExperienceById } = await import('~/lib/career/queries/base');
-        const current = await getWorkExperienceById(user.id, id);
-        if (current) {
-          const metadataField = field.replace('metadata.', '');
-          const metadata = jsonObject<Record<string, unknown>>(current.metadata) ?? {};
-          let parsedValue: unknown = processedValue;
-          try {
-            parsedValue = JSON.parse(value);
-          } catch {
-            parsedValue = processedValue;
-          }
-          await updateWorkExperience(user.id, id, {
-            metadata: { ...metadata, [metadataField]: parsedValue },
-          });
-        }
-      } else {
-        await updateWorkExperience(user.id, id, { [field]: processedValue });
-      }
-      return createSuccessResponse({ success: true });
-    } catch (error) {
-      console.error('Error updating work experience:', error);
-      return createErrorResponse('Failed to update work experience');
+export async function action({ context, request, params }: ActionFunctionArgs) {
+  const user = context.get(userContext)!;
+  const { id } = params;
+  if (!id) throw new Response('Work experience ID is required', { status: 400 });
+  const formData = await request.formData();
+  const field = formData.get('field') as string;
+  const value = formData.get('value') as string;
+  try {
+    const { updateWorkExperience } = await import('~/lib/career/queries/base');
+    let processedValue: string | number | Date | null = value;
+    if (
+      [
+        'base_salary',
+        'total_compensation',
+        'equity_value',
+        'signing_bonus',
+        'annual_bonus',
+      ].includes(field)
+    ) {
+      processedValue = value ? Number.parseInt(value) * 100 : null;
+    } else if (['team_size', 'direct_reports'].includes(field)) {
+      processedValue = value ? Number.parseInt(value) : null;
+    } else if (['start_date', 'end_date'].includes(field)) {
+      processedValue = value ? new Date(value) : null;
     }
-  });
+    if (field.startsWith('metadata.')) {
+      const { getWorkExperienceById } = await import('~/lib/career/queries/base');
+      const current = await getWorkExperienceById(user.id, id);
+      if (current) {
+        const metadataField = field.replace('metadata.', '');
+        const metadata = jsonObject<Record<string, unknown>>(current.metadata) ?? {};
+        let parsedValue: unknown = processedValue;
+        try {
+          parsedValue = JSON.parse(value);
+        } catch {
+          parsedValue = processedValue;
+        }
+        await updateWorkExperience(user.id, id, {
+          metadata: { ...metadata, [metadataField]: parsedValue },
+        });
+      }
+    } else {
+      await updateWorkExperience(user.id, id, { [field]: processedValue });
+    }
+    return createSuccessResponse({ success: true });
+  } catch (error) {
+    console.error('Error updating work experience:', error);
+    return createErrorResponse('Failed to update work experience');
+  }
 }
 
 // ─── helpers ──────────────────────────────────────────────────────────────────

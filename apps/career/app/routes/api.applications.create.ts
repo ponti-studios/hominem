@@ -1,18 +1,13 @@
 import { data, type ActionFunction } from 'react-router';
 
-import { getAuthenticatedUser } from '~/lib/auth.server';
 import { logger } from '~/lib/logger';
+import { userContext } from '~/lib/middleware';
 import { JobApplicationsService } from '~/lib/services/job-applications.service';
 import type { JobPosting } from '~/types/applications';
 
-export const action: ActionFunction = async ({ request }) => {
+export const action: ActionFunction = async ({ request, context }) => {
+  const user = context.get(userContext)!;
   try {
-    const user = await getAuthenticatedUser(request);
-
-    if (!user) {
-      return data({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const body = await request.json();
     const { job_posting } = body as { job_posting: JobPosting };
 

@@ -7,100 +7,99 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import { useLoaderData, useNavigate } from 'react-router';
 
 import { jsonArray } from '~/lib/db-json';
-import { createErrorResponse, createSuccessResponse, withAuthLoader } from '~/lib/route-utils';
+import { userContext } from '~/lib/middleware';
+import { createErrorResponse, createSuccessResponse } from '~/lib/route-utils';
 import { cn } from '~/lib/utils';
 
-export async function loader(args: LoaderFunctionArgs) {
-  return withAuthLoader(args, async ({ user }) => {
-    const { id } = args.params;
-    if (!id) {
-      throw new Response('Work experience ID is required', { status: 400 });
+export async function loader({ context, params }: LoaderFunctionArgs) {
+  const user = context.get(userContext)!;
+  const { id } = params;
+  if (!id) {
+    throw new Response('Work experience ID is required', { status: 400 });
+  }
+
+  try {
+    const { getWorkExperienceById } = await import('~/lib/career/queries/base');
+    const { getProjectsByWorkExperience } = await import('~/lib/career/queries/projects');
+
+    const workExperience = await getWorkExperienceById(user.id, id);
+    if (!workExperience) {
+      throw new Response('Work experience not found', { status: 404 });
     }
 
-    try {
-      const { getWorkExperienceById } = await import('~/lib/career/queries/base');
-      const { getProjectsByWorkExperience } = await import('~/lib/career/queries/projects');
+    const projects = await getProjectsByWorkExperience(workExperience.portfolio_id, id);
 
-      const workExperience = await getWorkExperienceById(user.id, id);
-      if (!workExperience) {
-        throw new Response('Work experience not found', { status: 404 });
-      }
-
-      const projects = await getProjectsByWorkExperience(workExperience.portfolio_id, id);
-
-      return createSuccessResponse({ workExperience, projects });
-    } catch (error) {
-      console.error('Error loading work experience projects:', error);
-      return createErrorResponse('Failed to load work experience projects');
-    }
-  });
+    return createSuccessResponse({ workExperience, projects });
+  } catch (error) {
+    console.error('Error loading work experience projects:', error);
+    return createErrorResponse('Failed to load work experience projects');
+  }
 }
 
-export async function action(args: ActionFunctionArgs) {
-  return withAuthLoader(args, async ({ user, request }) => {
-    const { id } = args.params;
-    if (!id) {
-      throw new Response('Work experience ID is required', { status: 400 });
+export async function action({ context, request, params }: ActionFunctionArgs) {
+  const user = context.get(userContext)!;
+  const { id } = params;
+  if (!id) {
+    throw new Response('Work experience ID is required', { status: 400 });
+  }
+
+  const formData = await request.formData();
+  const actionType = formData.get('actionType') as string;
+
+  try {
+    const { getWorkExperienceById } = await import('~/lib/career/queries/base');
+    const { createProject, updateProject, deleteProject } =
+      await import('~/lib/career/queries/projects');
+
+    const currentExperience = await getWorkExperienceById(user.id, id);
+    if (!currentExperience) {
+      throw new Response('Work experience not found', { status: 404 });
     }
 
-    const formData = await request.formData();
-    const actionType = formData.get('actionType') as string;
+    if (actionType === 'add') {
+      const title = formData.get('title') as string;
+      const description = formData.get('description') as string;
+      const status = formData.get('status') as string;
+      const technologies = formData.get('technologies') as string;
+      const short_description = formData.get('short_description') as string;
 
-    try {
-      const { getWorkExperienceById } = await import('~/lib/career/queries/base');
-      const { createProject, updateProject, deleteProject } =
-        await import('~/lib/career/queries/projects');
+      await createProject(user.id, {
+        portfolio_id: currentExperience.portfolio_id,
+        work_experience_id: id,
+        title,
+        description,
+        short_description: short_description || null,
+        status,
+        technologies: technologies ? technologies.split(',').map((t) => t.trim()) : [],
+        is_visible: true,
+        is_featured: false,
+        sort_order: 0,
+      });
+    } else if (actionType === 'update') {
+      const projectId = formData.get('projectId') as string;
+      const title = formData.get('title') as string;
+      const description = formData.get('description') as string;
+      const status = formData.get('status') as string;
+      const technologies = formData.get('technologies') as string;
+      const short_description = formData.get('short_description') as string;
 
-      const currentExperience = await getWorkExperienceById(user.id, id);
-      if (!currentExperience) {
-        throw new Response('Work experience not found', { status: 404 });
-      }
-
-      if (actionType === 'add') {
-        const title = formData.get('title') as string;
-        const description = formData.get('description') as string;
-        const status = formData.get('status') as string;
-        const technologies = formData.get('technologies') as string;
-        const short_description = formData.get('short_description') as string;
-
-        await createProject(user.id, {
-          portfolio_id: currentExperience.portfolio_id,
-          work_experience_id: id,
-          title,
-          description,
-          short_description: short_description || null,
-          status,
-          technologies: technologies ? technologies.split(',').map((t) => t.trim()) : [],
-          is_visible: true,
-          is_featured: false,
-          sort_order: 0,
-        });
-      } else if (actionType === 'update') {
-        const projectId = formData.get('projectId') as string;
-        const title = formData.get('title') as string;
-        const description = formData.get('description') as string;
-        const status = formData.get('status') as string;
-        const technologies = formData.get('technologies') as string;
-        const short_description = formData.get('short_description') as string;
-
-        await updateProject(user.id, projectId, currentExperience.portfolio_id, {
-          title,
-          description,
-          short_description: short_description || null,
-          status,
-          technologies: technologies ? technologies.split(',').map((t) => t.trim()) : [],
-        });
-      } else if (actionType === 'delete') {
-        const projectId = formData.get('projectId') as string;
-        await deleteProject(user.id, projectId, currentExperience.portfolio_id);
-      }
-
-      return createSuccessResponse({ success: true });
-    } catch (error) {
-      console.error('Error managing project:', error);
-      return createErrorResponse('Failed to manage project');
+      await updateProject(user.id, projectId, currentExperience.portfolio_id, {
+        title,
+        description,
+        short_description: short_description || null,
+        status,
+        technologies: technologies ? technologies.split(',').map((t) => t.trim()) : [],
+      });
+    } else if (actionType === 'delete') {
+      const projectId = formData.get('projectId') as string;
+      await deleteProject(user.id, projectId, currentExperience.portfolio_id);
     }
-  });
+
+    return createSuccessResponse({ success: true });
+  } catch (error) {
+    console.error('Error managing project:', error);
+    return createErrorResponse('Failed to manage project');
+  }
 }
 
 export default function WorkExperienceProjects() {

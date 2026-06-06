@@ -4,7 +4,7 @@ export const baseSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   DATABASE_URL: z.url().optional(),
   OPENROUTER_API_KEY: z.string().optional(),
-  AI_MODEL: z.string().default('openai/gpt-4o-mini-2024-07-18'),
+  AI_MODEL: z.string().default('openai/gpt-4o'),
   RESEND_API_KEY: z.string().optional(),
   RESEND_FROM_EMAIL: z.string().optional(),
   RESEND_FROM_NAME: z.string().optional(),

@@ -9,12 +9,8 @@ import { useLoaderData } from 'react-router';
 
 import { CareerRecordIndexShell } from '~/components/career/CareerRecordIndexShell';
 import { MetricsGrid } from '~/components/career/MetricsGrid';
-import {
-  createErrorResponse,
-  createSuccessResponse,
-  withAuthAction,
-  withAuthLoader,
-} from '~/lib/route-utils';
+import { userContext } from '~/lib/middleware';
+import { createErrorResponse, createSuccessResponse } from '~/lib/route-utils';
 import { cn } from '~/lib/utils';
 import {
   formatCertificationStatus,
@@ -30,57 +26,50 @@ const formatDateValue = (value: Date | undefined) => {
   return value.toISOString().split('T')[0] ?? '';
 };
 
-export async function loader(args: LoaderFunctionArgs) {
-  return withAuthLoader(args, async ({ user }) => {
-    try {
-      const certifications: Certification[] = [];
-      const summary: CertificationSummary = {
-        totalCertifications: 0,
-        activeCertifications: 0,
-        expiredCertifications: 0,
-        expiringInSixMonths: 0,
-        categories: [],
-        totalInvestment: 0,
-        upcomingRenewals: [],
-        certificationsByYear: [],
-      };
+export async function loader({ context }: LoaderFunctionArgs) {
+  const user = context.get(userContext)!;
+  try {
+    const certifications: Certification[] = [];
+    const summary: CertificationSummary = {
+      totalCertifications: 0,
+      activeCertifications: 0,
+      expiredCertifications: 0,
+      expiringInSixMonths: 0,
+      categories: [],
+      totalInvestment: 0,
+      upcomingRenewals: [],
+      certificationsByYear: [],
+    };
 
-      return createSuccessResponse({
-        user,
-        certifications,
-        summary,
-      });
-    } catch (error) {
-      console.error('Error loading certifications:', error);
-      return createErrorResponse('Failed to load certifications');
-    }
-  });
+    return createSuccessResponse({ user, certifications, summary });
+  } catch (error) {
+    console.error('Error loading certifications:', error);
+    return createErrorResponse('Failed to load certifications');
+  }
 }
 
-export async function action(args: ActionFunctionArgs) {
-  return withAuthAction(args, async ({ request }) => {
-    const formData = await request.formData();
-    const operation = formData.get('operation') as string;
+export async function action({ request }: ActionFunctionArgs) {
+  const formData = await request.formData();
+  const operation = formData.get('operation') as string;
 
-    try {
-      if (operation === 'create') {
-        return createSuccessResponse({ success: true }, 'Certification created successfully');
-      }
-
-      if (operation === 'update') {
-        return createSuccessResponse({ success: true }, 'Certification updated successfully');
-      }
-
-      if (operation === 'delete') {
-        return createSuccessResponse({ success: true }, 'Certification deleted successfully');
-      }
-
-      return createErrorResponse('Invalid operation');
-    } catch (error) {
-      console.error('Error handling certification operation:', error);
-      return createErrorResponse('Failed to process certification request');
+  try {
+    if (operation === 'create') {
+      return createSuccessResponse({ success: true }, 'Certification created successfully');
     }
-  });
+
+    if (operation === 'update') {
+      return createSuccessResponse({ success: true }, 'Certification updated successfully');
+    }
+
+    if (operation === 'delete') {
+      return createSuccessResponse({ success: true }, 'Certification deleted successfully');
+    }
+
+    return createErrorResponse('Invalid operation');
+  } catch (error) {
+    console.error('Error handling certification operation:', error);
+    return createErrorResponse('Failed to process certification request');
+  }
 }
 
 export default function CertificationsPage() {

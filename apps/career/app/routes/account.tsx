@@ -14,14 +14,10 @@ import { cn } from '~/lib/utils';
 import { ProfileImageUpload } from '../components/ProfileImageUpload';
 import { SlugEditor } from '../components/SlugEditor';
 import { UploadResumeForm } from '../components/UploadResumeForm';
+import { userContext } from '../lib/middleware';
 import { getFullUserPortfolio } from '../lib/portfolio.server';
-import {
-  createErrorResponse,
-  createSuccessResponse,
-  tryAsync,
-  withAuthAction,
-  withAuthLoader,
-} from '../lib/route-utils';
+import { createErrorResponse, createSuccessResponse, tryAsync } from '../lib/route-utils';
+
 const profileImageStorage = createStorageService('images', {
   maxFileSize: 5 * 1024 * 1024,
   isPublic: true,
@@ -31,38 +27,36 @@ const PROFILE_IMAGE_VALIDATION = {
   allowedTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
 } as const;
 
-// Account loader - migrated from Svelte layout server
-export async function loader(args: LoaderFunctionArgs) {
-  return withAuthLoader(args, async ({ user }) => {
-    const [fullPortfolio, portfolioRows] = await Promise.all([
-      getFullUserPortfolio(user.id),
-      CareerRepository.listPortfoliosByUserId(db, user.id),
-    ]);
-    const portfolios: Portfolio[] = portfolioRows.map((portfolio) => ({
-      id: portfolio.id,
-      title: portfolio.title,
-      slug: portfolio.slug,
-      is_public: portfolio.is_public,
-      is_active: portfolio.is_active,
-      updatedat: portfolio.updatedat,
-      name: portfolio.name,
-      job_title: portfolio.job_title,
-      bio: portfolio.bio,
-      profile_image_url: portfolio.profile_image_url || undefined,
-    }));
-    return {
-      user,
-      portfolios,
-      currentPortfolioId: fullPortfolio?.id ?? null,
-      hasPortfolio: portfolios.length > 0,
-    };
-  });
+export async function loader({ context }: LoaderFunctionArgs) {
+  const user = context.get(userContext)!;
+  const [fullPortfolio, portfolioRows] = await Promise.all([
+    getFullUserPortfolio(user.id),
+    CareerRepository.listPortfoliosByUserId(db, user.id),
+  ]);
+  const portfolios: Portfolio[] = portfolioRows.map((portfolio) => ({
+    id: portfolio.id,
+    title: portfolio.title,
+    slug: portfolio.slug,
+    is_public: portfolio.is_public,
+    is_active: portfolio.is_active,
+    updatedat: portfolio.updatedat,
+    name: portfolio.name,
+    job_title: portfolio.job_title,
+    bio: portfolio.bio,
+    profile_image_url: portfolio.profile_image_url || undefined,
+  }));
+  return {
+    user,
+    portfolios,
+    currentPortfolioId: fullPortfolio?.id ?? null,
+    hasPortfolio: portfolios.length > 0,
+  };
 }
 
-// Server action for portfolio operations
-export async function action(args: ActionFunctionArgs) {
-  return withAuthAction(args, async ({ user }) => {
-    const formData = await args.request.formData();
+export async function action({ request, context }: ActionFunctionArgs) {
+  const user = context.get(userContext)!;
+  const formData = await request.formData();
+  {
     const action = formData.get('action');
     const portfolio_id = formData.get('portfolio_id');
 
@@ -159,7 +153,7 @@ export async function action(args: ActionFunctionArgs) {
     }
 
     return createErrorResponse('Invalid action');
-  });
+  }
 }
 
 interface Portfolio {
@@ -273,12 +267,6 @@ export default function Account() {
       setPdfGenerating(false);
     }
   };
-
-  // User should be available from loader (requireAuth ensures this)
-  if (!user) {
-    navigate('/login');
-    return null;
-  }
 
   const userDisplayName = String(user.name || user.email);
 

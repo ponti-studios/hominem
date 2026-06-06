@@ -21,6 +21,7 @@ import Navigation from './components/Navigation';
 import './app.css';
 import { NavigationProgress } from './components/NavigationProgress';
 import { ToastProvider } from './hooks/useToast';
+import { serverEnv } from './lib/env';
 import { authMiddleware, userContext } from './lib/middleware';
 
 export const links = () => [
@@ -95,8 +96,6 @@ export const meta = () => [
   { name: 'twitter:image', content: '/icons/twitter-card.jpg' },
 ];
 
-const API_URL = process.env.VITE_PUBLIC_API_URL || process.env.API_URL || 'http://localhost:3000';
-
 interface CurrentPortfolioSummary {
   id: string;
   title: string;
@@ -105,12 +104,11 @@ interface CurrentPortfolioSummary {
 
 export const middleware: Route.MiddlewareFunction[] = [authMiddleware];
 
-// Root loader to get authenticated user
 export async function loader({ context }: LoaderFunctionArgs) {
   const user = context.get(userContext);
   const currentPortfolio = user ? await CareerRepository.getPortfolioByUserId(db, user.id) : null;
 
-  return data({ user, apiBaseUrl: API_URL, currentPortfolio });
+  return data({ user, apiBaseUrl: serverEnv().VITE_PUBLIC_API_URL, currentPortfolio });
 }
 
 // Add route handle to enable accessing loader data from child routes

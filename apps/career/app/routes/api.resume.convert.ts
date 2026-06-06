@@ -7,8 +7,8 @@ import { data, type ActionFunction } from 'react-router';
 import { z } from 'zod';
 
 import type { UploadResumeApiResponse } from '../lib/api-contracts';
-import { getAuthenticatedUser } from '../lib/auth.server';
 import { logger } from '../lib/logger';
+import { userContext } from '../lib/middleware';
 import { getRateLimitHeaders, resumeConvertRateLimit } from '../lib/rate-limit';
 import { extractPdfText } from '../lib/services/pdf-text.server';
 import { saveResumeToDatabase } from '../lib/services/resume-conversion.service';
@@ -58,14 +58,6 @@ function errorResponse(
   });
 }
 
-function storageFailureMessage(): string {
-  if (process.env.NODE_ENV === 'production') {
-    return 'Could not store the resume file. Check the Cloudflare R2 configuration and try again.';
-  }
-
-  return 'Could not store the resume file. Start local MinIO and make sure the storage bucket is available, then try again.';
-}
-
 function logRouteError(message: string, error: unknown, context?: Record<string, unknown>): void {
   logger.error(
     message,
@@ -74,17 +66,11 @@ function logRouteError(message: string, error: unknown, context?: Record<string,
   );
 }
 
-export const action: ActionFunction = async ({ request }) => {
-  let owner_userid: string | undefined;
+export const action: ActionFunction = async ({ request, context }) => {
+  const user = context.get(userContext)!;
+  let owner_userid: string | undefined = user.id;
 
   try {
-    const sessionUser = await getAuthenticatedUser(request);
-    if (!sessionUser) {
-      return errorResponse('Please log in to upload your resume.', 401, 'auth', false);
-    }
-    const user = sessionUser;
-    owner_userid = user.id;
-
     const rateLimit = resumeConvertRateLimit.isAllowed(user.id);
     const rateLimitHeaders = getRateLimitHeaders(rateLimit, resumeConvertRateLimit);
     if (!rateLimit.allowed) {
@@ -285,7 +271,12 @@ ${pdfText}`,
         fileName: file.name,
         error: error instanceof Error ? error.message : error,
       });
-      return errorResponse(storageFailureMessage(), 503, 'storage', true);
+      return errorResponse(
+        'Could not store the resume file. Check the storage configuration and try again.',
+        503,
+        'storage',
+        true,
+      );
     }
 
     let portfolio_id: string;

@@ -1,7 +1,8 @@
 import { buttonVariants } from '@hominem/ui/button';
 import type { LoaderFunctionArgs, MetaFunction } from 'react-router';
-import { Link } from 'react-router';
+import { Link, redirect } from 'react-router';
 
+import { userContext } from '~/lib/middleware';
 import { cn } from '~/lib/utils';
 
 export const meta: MetaFunction = () => {
@@ -21,10 +22,9 @@ export const meta: MetaFunction = () => {
   ];
 };
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  const { getServerSession, redirectIfAuthenticated } = await import('../lib/auth.server');
-  const { user, headers } = await getServerSession(request);
-  redirectIfAuthenticated(user, '/account', headers);
+export async function loader({ context }: LoaderFunctionArgs) {
+  const user = context.get(userContext);
+  if (user) throw redirect('/account');
   return null;
 }
 

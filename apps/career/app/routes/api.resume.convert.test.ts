@@ -5,12 +5,13 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { createCareerTestDb } from '~/test/db/career';
 import { makeConvertedResumeData } from '~/test/factories/resume';
 
+import { userContext } from '../lib/middleware';
+
 const mocks = vi.hoisted(() => ({
   createCompletion: vi.fn(),
   createStorageService: vi.fn(),
   deleteFile: vi.fn(),
   extractPdfText: vi.fn(),
-  getAuthenticatedUser: vi.fn(),
   getRateLimitHeaders: vi.fn(),
   isRateLimitAllowed: vi.fn(),
   logError: vi.fn(),
@@ -18,10 +19,6 @@ const mocks = vi.hoisted(() => ({
   saveResumeToDatabase: vi.fn(),
   storeFile: vi.fn(),
   validateFile: vi.fn(),
-}));
-
-vi.mock('../lib/auth.server', () => ({
-  getAuthenticatedUser: mocks.getAuthenticatedUser,
 }));
 
 vi.mock('../lib/logger', () => ({
@@ -115,11 +112,22 @@ function toRouteResponse(result: unknown): Response {
   return Response.json(result);
 }
 
-async function callAction(request: Request): Promise<Response> {
+const DEFAULT_TEST_USER = { id: 'user-id', email: 'user@example.com', name: 'Test User' };
+
+function makeContext(user: typeof DEFAULT_TEST_USER | null = DEFAULT_TEST_USER) {
+  const { RouterContextProvider } = require('react-router');
+  const ctx = new RouterContextProvider([[userContext, user]]);
+  return ctx;
+}
+
+async function callAction(
+  request: Request,
+  user: typeof DEFAULT_TEST_USER | null = DEFAULT_TEST_USER,
+): Promise<Response> {
   const result = await action({
     request,
     params: {},
-    context: {},
+    context: makeContext(user),
     unstable_url: new URL(request.url),
     unstable_pattern: '/api/resume/convert',
   });
@@ -136,21 +144,11 @@ async function createExistingPortfolio() {
     slug: 'existing',
     title: 'Existing Portfolio',
   });
-  mocks.getAuthenticatedUser.mockResolvedValue({
-    id: user.id,
-    email: user.email,
-    name: user.name,
-  });
   return { user, portfolio };
 }
 
 describe('resume convert action', () => {
   beforeEach(() => {
-    mocks.getAuthenticatedUser.mockResolvedValue({
-      id: 'user-id',
-      email: 'user@example.com',
-      name: 'Test User',
-    });
     mocks.isRateLimitAllowed.mockReturnValue({
       allowed: true,
       remaining: 2,
@@ -181,17 +179,6 @@ describe('resume convert action', () => {
       portfolio_id: 'portfolio-id',
       portfolioSlug: 'charles-ponti',
     });
-  });
-
-  it('returns auth stage when the user is not authenticated', async () => {
-    mocks.getAuthenticatedUser.mockResolvedValue(null);
-
-    const response = await callAction(formRequest(pdfFile()));
-    const body = await responseBody(response);
-
-    expect(response.status).toBe(401);
-    expect(body.stage).toBe('auth');
-    expect(body.retryable).toBe(false);
   });
 
   it('returns request stage when the body is not multipart', async () => {
@@ -247,9 +234,9 @@ describe('resume convert action', () => {
   });
 
   it('creates a new portfolio even when one already exists', async () => {
-    await createExistingPortfolio();
+    const { user } = await createExistingPortfolio();
 
-    const response = await callAction(formRequest(pdfFile()));
+    const response = await callAction(formRequest(pdfFile()), user);
     const body = await responseBody(response);
 
     expect(response.status).toBe(200);
@@ -262,7 +249,10 @@ describe('resume convert action', () => {
   it('continues conversion when replacement is requested from the account page', async () => {
     const existing = await createExistingPortfolio();
 
-    const response = await callAction(formRequest(pdfFile(), { replaceExisting: true }));
+    const response = await callAction(
+      formRequest(pdfFile(), { replaceExisting: true }),
+      existing.user,
+    );
     const body = await responseBody(response);
 
     expect(response.status).toBe(200);
@@ -433,7 +423,7 @@ describe('resume convert action', () => {
 
     expect(response.status).toBe(503);
     expect(body.stage).toBe('storage');
-    expect(body.error).toMatch(/minio|r2|cloudflare/i);
+    expect(body.error).toMatch(/storage/i);
   });
 
   it('returns database stage when saving fails', async () => {

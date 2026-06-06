@@ -11,12 +11,8 @@ import {
   ApplicationTimelineTab,
   QuickActionsDropdown,
 } from '~/components/career';
-import {
-  createErrorResponse,
-  createSuccessResponse,
-  withAuthAction,
-  withAuthLoader,
-} from '~/lib/route-utils';
+import { userContext } from '~/lib/middleware';
+import { createErrorResponse, createSuccessResponse } from '~/lib/route-utils';
 import { JobApplicationsService } from '~/lib/services/job-applications.service';
 import { cn } from '~/lib/utils';
 import { formatStatusText, getStatusColor } from '~/lib/utils/applicationUtils';
@@ -26,119 +22,117 @@ import type {
   JobApplicationUpdate,
 } from '~/types/career-data';
 
-export async function loader(args: LoaderFunctionArgs) {
-  return withAuthLoader(args, async ({ user }) => {
-    const { id } = args.params;
+export async function loader({ context, params }: LoaderFunctionArgs) {
+  const user = context.get(userContext)!;
+  const { id } = params;
 
-    if (!id) {
-      return createErrorResponse('Application ID is required');
-    }
+  if (!id) {
+    return createErrorResponse('Application ID is required');
+  }
 
-    try {
-      const data = await JobApplicationsService.getApplicationDetail(id, user.id);
-      return createSuccessResponse(data);
-    } catch (error) {
-      console.error('Error fetching application details:', error);
-      if (error instanceof Error && error.message === 'Application not found') {
-        return createErrorResponse('Application not found');
-      }
-      return createErrorResponse('Failed to fetch application details');
+  try {
+    const data = await JobApplicationsService.getApplicationDetail(id, user.id);
+    return createSuccessResponse(data);
+  } catch (error) {
+    console.error('Error fetching application details:', error);
+    if (error instanceof Error && error.message === 'Application not found') {
+      return createErrorResponse('Application not found');
     }
-  });
+    return createErrorResponse('Failed to fetch application details');
+  }
 }
 
-export async function action(args: ActionFunctionArgs) {
-  return withAuthAction(args, async ({ user, request }) => {
-    const { id } = args.params;
-    const formData = await request.formData();
-    const operation = formData.get('operation') as string;
+export async function action({ context, request, params }: ActionFunctionArgs) {
+  const user = context.get(userContext)!;
+  const { id } = params;
+  const formData = await request.formData();
+  const operation = formData.get('operation') as string;
 
-    if (!id) {
-      return createErrorResponse('Application ID is required');
+  if (!id) {
+    return createErrorResponse('Application ID is required');
+  }
+
+  try {
+    // Verify ownership
+    const hasOwnership = await JobApplicationsService.verifyOwnership(id, user.id);
+    if (!hasOwnership) {
+      return createErrorResponse('Application not found or access denied');
     }
 
-    try {
-      // Verify ownership
-      const hasOwnership = await JobApplicationsService.verifyOwnership(id, user.id);
-      if (!hasOwnership) {
-        return createErrorResponse('Application not found or access denied');
-      }
+    if (operation === 'update_application') {
+      const updates: JobApplicationUpdate = {};
 
-      if (operation === 'update_application') {
-        const updates: JobApplicationUpdate = {};
+      // Get all possible fields from form
+      const fields = [
+        'position',
+        'status',
+        'location',
+        'job_posting',
+        'salary_quoted',
+        'salary_accepted',
+        'company_notes',
+        'negotiation_notes',
+        'recruiter_name',
+        'recruiter_email',
+        'recruiter_linkedin',
+      ] as const;
 
-        // Get all possible fields from form
-        const fields = [
-          'position',
-          'status',
-          'location',
-          'job_posting',
-          'salary_quoted',
-          'salary_accepted',
-          'company_notes',
-          'negotiation_notes',
-          'recruiter_name',
-          'recruiter_email',
-          'recruiter_linkedin',
-        ] as const;
-
-        for (const field of fields) {
-          const value = formData.get(field);
-          if (value !== null) {
-            updates[field] = value as string | undefined;
-          }
+      for (const field of fields) {
+        const value = formData.get(field);
+        if (value !== null) {
+          updates[field] = value as string | undefined;
         }
-
-        await JobApplicationsService.updateApplication(id, updates);
-        return createSuccessResponse(null, 'Application updated successfully');
       }
 
-      if (operation === 'add_note') {
-        const type = formData.get('noteType') as string;
-        const title = formData.get('noteTitle') as string;
-        const content = formData.get('noteContent') as string;
-
-        if (!content) {
-          return createErrorResponse('Note content is required');
-        }
-
-        await JobApplicationsService.addNote(id, type, title, content);
-        return createSuccessResponse(null, 'Note added successfully');
-      }
-
-      if (operation === 'delete_note') {
-        const noteId = formData.get('noteId') as string;
-        await JobApplicationsService.deleteNote(noteId);
-        return createSuccessResponse(null, 'Note deleted successfully');
-      }
-
-      if (operation === 'add_interview') {
-        const interviewType = formData.get('interviewType') as InterviewEntry['type'];
-        const interviewDate = formData.get('interviewDate') as string;
-        const interviewer = formData.get('interviewer') as string;
-        const notes = formData.get('interviewNotes') as string;
-
-        if (!interviewDate) {
-          return createErrorResponse('Interview date is required');
-        }
-
-        const newInterview: InterviewEntry = {
-          type: interviewType,
-          date: interviewDate,
-          interviewer: interviewer || undefined,
-          notes: notes || undefined,
-        };
-
-        await JobApplicationsService.addInterview(id, newInterview);
-        return createSuccessResponse(null, 'Interview added successfully');
-      }
-
-      return createErrorResponse('Invalid operation');
-    } catch (error) {
-      console.error('Error in application detail action:', error);
-      return createErrorResponse('Failed to process request');
+      await JobApplicationsService.updateApplication(id, updates);
+      return createSuccessResponse(null, 'Application updated successfully');
     }
-  });
+
+    if (operation === 'add_note') {
+      const type = formData.get('noteType') as string;
+      const title = formData.get('noteTitle') as string;
+      const content = formData.get('noteContent') as string;
+
+      if (!content) {
+        return createErrorResponse('Note content is required');
+      }
+
+      await JobApplicationsService.addNote(id, type, title, content);
+      return createSuccessResponse(null, 'Note added successfully');
+    }
+
+    if (operation === 'delete_note') {
+      const noteId = formData.get('noteId') as string;
+      await JobApplicationsService.deleteNote(noteId);
+      return createSuccessResponse(null, 'Note deleted successfully');
+    }
+
+    if (operation === 'add_interview') {
+      const interviewType = formData.get('interviewType') as InterviewEntry['type'];
+      const interviewDate = formData.get('interviewDate') as string;
+      const interviewer = formData.get('interviewer') as string;
+      const notes = formData.get('interviewNotes') as string;
+
+      if (!interviewDate) {
+        return createErrorResponse('Interview date is required');
+      }
+
+      const newInterview: InterviewEntry = {
+        type: interviewType,
+        date: interviewDate,
+        interviewer: interviewer || undefined,
+        notes: notes || undefined,
+      };
+
+      await JobApplicationsService.addInterview(id, newInterview);
+      return createSuccessResponse(null, 'Interview added successfully');
+    }
+
+    return createErrorResponse('Invalid operation');
+  } catch (error) {
+    console.error('Error in application detail action:', error);
+    return createErrorResponse('Failed to process request');
+  }
 }
 
 export default function ApplicationDetail() {
