@@ -1,4 +1,5 @@
 import { Button } from "@hominem/ui/button";
+import { Card, CardContent } from "@hominem/ui/card";
 import { DatePicker } from "@hominem/ui/date-picker";
 import { EmptyState } from "@hominem/ui";
 import {
@@ -15,6 +16,7 @@ import { useLoaderData } from "react-router";
 import { CareerRecordIndexShell } from "~/components/career/CareerRecordIndexShell";
 import { MetricsGrid } from "~/components/career/MetricsGrid";
 import {
+  createErrorResponse,
   createSuccessResponse,
   withAuthAction,
   withAuthLoader,
@@ -62,7 +64,7 @@ export async function loader(args: LoaderFunctionArgs) {
       });
     } catch (error) {
       console.error("Error loading certifications:", error);
-      throw new Response("Error loading certifications", { status: 500 });
+      return createErrorResponse("Failed to load certifications");
     }
   });
 }
@@ -94,21 +96,33 @@ export async function action(args: ActionFunctionArgs) {
         );
       }
 
-      throw new Response("Invalid operation", { status: 400 });
+      return createErrorResponse("Invalid operation");
     } catch (error) {
       console.error("Error handling certification operation:", error);
-      throw new Response("Error processing certification request", {
-        status: 500,
-      });
+      return createErrorResponse("Failed to process certification request");
     }
   });
 }
 
 export default function CertificationsPage() {
-  const response = useLoaderData<{ success: boolean; data: LoaderData }>();
-  const data = response?.data || {};
-  const { certifications, summary } = data;
+  const response = useLoaderData<{ success: boolean; data?: LoaderData; error?: string }>();
   const [showCreateForm, setShowCreateForm] = useState(false);
+
+  if (!response.success) {
+    return (
+      <Card className="border-destructive/30 bg-destructive/5">
+        <CardContent className="space-y-2 p-6">
+          <h2 className="text-lg font-semibold text-foreground">Error Loading Data</h2>
+          <p className="text-sm text-muted-foreground">
+            {response.error ?? "Failed to load certifications"}
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const data = response.data || {};
+  const { certifications, summary } = data;
 
   return (
     <CareerRecordIndexShell

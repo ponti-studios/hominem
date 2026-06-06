@@ -9,8 +9,9 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import { useLoaderData, useNavigate } from 'react-router';
 
 import { jsonArray } from '~/lib/db-json';
-import { createSuccessResponse, withAuthLoader } from '~/lib/route-utils';
+import { createErrorResponse, createSuccessResponse, withAuthLoader } from '~/lib/route-utils';
 import { cn } from '~/lib/utils';
+import { Card, CardContent } from '@hominem/ui/card';
 
 interface LoaderData {
   workExperience: WorkExperience;
@@ -38,7 +39,7 @@ export async function loader(args: LoaderFunctionArgs) {
       return createSuccessResponse({ workExperience, projects });
     } catch (error) {
       console.error('Error loading work experience projects:', error);
-      throw new Response('Error loading work experience projects', { status: 500 });
+      return createErrorResponse('Failed to load work experience projects');
     }
   });
 }
@@ -105,17 +106,31 @@ export async function action(args: ActionFunctionArgs) {
       return createSuccessResponse({ success: true });
     } catch (error) {
       console.error('Error managing project:', error);
-      throw new Response('Error managing project', { status: 500 });
+      return createErrorResponse('Failed to manage project');
     }
   });
 }
 
 export default function WorkExperienceProjects() {
-  const response = useLoaderData<{ success: boolean; data: LoaderData }>();
-  const data = response?.data || {};
-  const { workExperience, projects = [] } = data;
+  const response = useLoaderData<{ success: boolean; data?: LoaderData; error?: string }>();
   const navigate = useNavigate();
   const [showAddForm, setShowAddForm] = useState(false);
+
+  if (!response.success) {
+    return (
+      <Card className="border-destructive/30 bg-destructive/5">
+        <CardContent className="space-y-2 p-6">
+          <h2 className="text-lg font-semibold text-foreground">Error Loading Data</h2>
+          <p className="text-sm text-muted-foreground">
+            {response.error ?? "Failed to load projects"}
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const data = response.data || {};
+  const { workExperience, projects = [] } = data;
 
   if (!workExperience) {
     return <div>Work experience not found</div>;

@@ -1,6 +1,6 @@
 import { Badge } from '@hominem/ui/badge';
 import { buttonVariants } from '@hominem/ui/button';
-import { Card, CardContent, CardHeader } from '@hominem/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
 import type { LoaderFunctionArgs } from 'react-router';
 import { Link, useLoaderData } from 'react-router';
 
@@ -11,7 +11,7 @@ import {
   getCareerProgressionSummary,
   getWorkExperiencesWithFinancials,
 } from '~/lib/career/queries/career-progression';
-import { createSuccessResponse, withAuthLoader } from '~/lib/route-utils';
+import { createErrorResponse, createSuccessResponse, withAuthLoader } from '~/lib/route-utils';
 import { formatCurrency, formatPercentage } from '~/lib/utils';
 import type { CareerProgressionSummary, WorkExperienceWithFinancials } from '~/types/career-data';
 
@@ -54,35 +54,30 @@ export async function loader(args: LoaderFunctionArgs) {
       return createSuccessResponse(responseData);
     } catch (error) {
       console.error('Error loading career data:', error);
-      return createSuccessResponse({
-        user,
-        careerSummary: {
-          totalExperience: 0,
-          currentSalary: 0,
-          firstSalary: 0,
-          totalSalaryGrowth: 0,
-          salaryGrowthPercentage: 0,
-          averageAnnualGrowth: 0,
-          promotionCount: 0,
-          jobChangeCount: 0,
-          averageTenurePerJob: 0,
-          highestSalaryIncrease: { amount: 0, percentage: 0, reason: '', date: '' },
-          salaryByYear: [],
-          currentLevel: '',
-          levelProgression: [],
-        },
-        work_experiences: [],
-      });
+      return createErrorResponse('Failed to load career data');
     }
   });
 }
 
 export default function CareerDashboard() {
-  const response = useLoaderData<{ success: boolean; data: LoaderData }>();
-  const data = response?.data || {};
+  const response = useLoaderData<{ success: boolean; data?: LoaderData; error?: string }>();
+
+  if (!response.success) {
+    return (
+      <Card className="border-destructive/30 bg-destructive/5">
+        <CardContent className="space-y-2 p-6">
+          <h2 className="text-lg font-semibold text-foreground">Error Loading Data</h2>
+          <p className="text-sm text-muted-foreground">
+            {response.error ?? 'Failed to load career data'}
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const data = response.data || {};
   const { careerSummary, work_experiences } = data;
 
-  // Provide default values if data is missing
   const defaultSummary: CareerProgressionSummary = {
     totalExperience: 0,
     currentSalary: 0,

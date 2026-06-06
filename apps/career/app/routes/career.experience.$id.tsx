@@ -6,7 +6,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import { useLoaderData, useNavigate } from 'react-router';
 
 import { jsonObject } from '~/lib/db-json';
-import { createSuccessResponse, withAuthLoader } from '~/lib/route-utils';
+import { createErrorResponse, createSuccessResponse, withAuthLoader } from '~/lib/route-utils';
 import { cn } from '~/lib/utils';
 import type { WorkExperienceMetadata } from '~/types/career-data';
 interface LoaderData {
@@ -24,7 +24,7 @@ export async function loader(args: LoaderFunctionArgs) {
       return createSuccessResponse({ workExperience });
     } catch (error) {
       console.error('Error loading work experience:', error);
-      throw new Response('Error loading work experience', { status: 500 });
+      return createErrorResponse('Failed to load work experience');
     }
   });
 }
@@ -76,7 +76,7 @@ export async function action(args: ActionFunctionArgs) {
       return createSuccessResponse({ success: true });
     } catch (error) {
       console.error('Error updating work experience:', error);
-      throw new Response('Error updating work experience', { status: 500 });
+      return createErrorResponse('Failed to update work experience');
     }
   });
 }

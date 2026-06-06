@@ -1,5 +1,6 @@
 import type { CareerProjectRecord as Project } from "@hominem/db";
 import { Button } from "@hominem/ui/button";
+import { Card, CardContent } from "@hominem/ui/card";
 import { EmptyState } from "@hominem/ui";
 import {
   CheckIcon,
@@ -18,6 +19,7 @@ import { CareerRecordIndexShell } from "~/components/career/CareerRecordIndexShe
 import { MetricsGrid } from "~/components/career/MetricsGrid";
 import { jsonArray } from "~/lib/db-json";
 import {
+  createErrorResponse,
   createSuccessResponse,
   withAuthAction,
   withAuthLoader,
@@ -67,7 +69,7 @@ export async function loader(args: LoaderFunctionArgs) {
       });
     } catch (error) {
       console.error("Error loading projects:", error);
-      throw new Response("Error loading projects", { status: 500 });
+      return createErrorResponse("Failed to load projects");
     }
   });
 }
@@ -99,19 +101,33 @@ export async function action(args: ActionFunctionArgs) {
         );
       }
 
-      throw new Response("Invalid operation", { status: 400 });
+      return createErrorResponse("Invalid operation");
     } catch (error) {
       console.error("Error handling project operation:", error);
-      throw new Response("Error processing project request", { status: 500 });
+      return createErrorResponse("Failed to process project request");
     }
   });
 }
 
 export default function ProjectsPage() {
-  const response = useLoaderData<{ success: boolean; data: LoaderData }>();
-  const data = response?.data || {};
-  const { projects, summary } = data;
+  const response = useLoaderData<{ success: boolean; data?: LoaderData; error?: string }>();
   const [showCreateForm, setShowCreateForm] = useState(false);
+
+  if (!response.success) {
+    return (
+      <Card className="border-destructive/30 bg-destructive/5">
+        <CardContent className="space-y-2 p-6">
+          <h2 className="text-lg font-semibold text-foreground">Error Loading Data</h2>
+          <p className="text-sm text-muted-foreground">
+            {response.error ?? "Failed to load projects"}
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const data = response.data || {};
+  const { projects, summary } = data;
 
   return (
     <CareerRecordIndexShell
