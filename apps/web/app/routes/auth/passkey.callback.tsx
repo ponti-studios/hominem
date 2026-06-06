@@ -10,3 +10,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   return redirect('/inbox');
 }
+
+export default function PasskeyCallback() {
+  return null;
+}
