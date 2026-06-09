@@ -6,6 +6,28 @@ export interface StreamSSEOptions {
   signal?: AbortSignal;
 }
 
+function getAbortError() {
+  return new DOMException('Aborted', 'AbortError');
+}
+
+function getSSEFrameDelimiter(value: string): { index: number; length: number } | null {
+  const match = /\r?\n\r?\n/.exec(value);
+  return match ? { index: match.index, length: match[0].length } : null;
+}
+
+function getFrameData(frame: string): string | null {
+  const dataLines = frame
+    .split(/\r?\n/)
+    .map((line) => line.trimEnd())
+    .flatMap((line) => {
+      if (line.startsWith('data: ')) return [line.slice(6)];
+      if (line.startsWith('data:')) return [line.slice(5)];
+      return [];
+    });
+
+  return dataLines.length > 0 ? dataLines.join('\n') : null;
+}
+
 // XHR-based SSE client for React Native / Hermes.
 // Hermes does not expose ReadableStream on fetch responses, but XHR.responseText
 // grows incrementally as data arrives — we slice from the last offset on each
@@ -17,12 +39,15 @@ export async function streamSSE({
   onChunk,
   signal,
 }: StreamSSEOptions): Promise<void> {
-  if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+  if (signal?.aborted) throw getAbortError();
 
   const authHeaders = await getHeaders();
+  if (signal?.aborted) throw getAbortError();
 
   return new Promise<void>((resolve, reject) => {
+    let buffer = '';
     let offset = 0;
+    let settled = false;
 
     const xhr = new XMLHttpRequest();
     xhr.open('POST', url);
@@ -33,55 +58,81 @@ export async function streamSSE({
       xhr.setRequestHeader(key, value);
     }
 
+    const cleanup = () => signal?.removeEventListener('abort', onAbort);
+    const rejectOnce = (error: Error) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(error);
+    };
+    const resolveOnce = () => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve();
+    };
+    const processFrame = (frame: string) => {
+      const data = getFrameData(frame);
+      if (data === null || data === '[DONE]') return;
+
+      try {
+        const parsed = JSON.parse(data) as { chunk?: string; error?: string };
+        if (typeof parsed.error === 'string') {
+          rejectOnce(new Error(parsed.error));
+          return;
+        }
+        if (typeof parsed.chunk === 'string') {
+          onChunk(parsed.chunk);
+        }
+      } catch {
+        // Invalid non-terminal frames are ignored to preserve existing comment tolerance.
+      }
+    };
+    const processBufferedFrames = () => {
+      let delimiter = getSSEFrameDelimiter(buffer);
+      while (delimiter) {
+        const frame = buffer.slice(0, delimiter.index);
+        buffer = buffer.slice(delimiter.index + delimiter.length);
+        processFrame(frame);
+        if (settled) return;
+        delimiter = getSSEFrameDelimiter(buffer);
+      }
+    };
+
     const onAbort = () => {
       xhr.abort();
-      reject(new DOMException('Aborted', 'AbortError'));
+      rejectOnce(getAbortError());
     };
     signal?.addEventListener('abort', onAbort, { once: true });
 
-    const cleanup = () => signal?.removeEventListener('abort', onAbort);
-
     xhr.onreadystatechange = () => {
+      if (settled) return;
       // readyState 3 = LOADING (data arriving), 4 = DONE
       if (xhr.readyState < 3) return;
 
       const newText = xhr.responseText.slice(offset);
       offset = xhr.responseText.length;
-
-      // Each SSE message is "data: <payload>\n\n"
-      for (const line of newText.split('\n')) {
-        const trimmed = line.trimEnd();
-        if (!trimmed.startsWith('data: ')) continue;
-        const data = trimmed.slice(6);
-        if (data === '[DONE]') continue;
-        try {
-          const parsed = JSON.parse(data) as { chunk?: string; error?: string };
-          if (typeof parsed.error === 'string') {
-            cleanup();
-            reject(new Error(parsed.error));
-            return;
-          }
-          if (typeof parsed.chunk === 'string') {
-            onChunk(parsed.chunk);
-          }
-        } catch {
-          // Partial line or non-JSON comment — skip
-        }
-      }
+      buffer += newText;
+      processBufferedFrames();
+      if (settled) return;
 
       if (xhr.readyState === 4) {
-        cleanup();
+        if (buffer.trim().length > 0) {
+          processFrame(buffer);
+          buffer = '';
+          if (settled) return;
+        }
+
         if (xhr.status >= 200 && xhr.status < 300) {
-          resolve();
+          resolveOnce();
         } else {
-          reject(new Error(`SSE stream failed: HTTP ${xhr.status}`));
+          rejectOnce(new Error(`SSE stream failed: HTTP ${xhr.status}`));
         }
       }
     };
 
     xhr.onerror = () => {
-      cleanup();
-      reject(new Error('SSE network error'));
+      rejectOnce(new Error('SSE network error'));
     };
 
     xhr.send(JSON.stringify(payload));

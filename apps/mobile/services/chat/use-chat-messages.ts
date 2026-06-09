@@ -13,6 +13,8 @@ import { chatKeys } from '../notes/query-keys';
 import { type MessageOutput } from './chatMessages';
 import { selectChatSession } from './session-activity';
 
+export const CHAT_MESSAGES_LIMIT = 50;
+
 function toMessageOutput(message: RpcChatMessage): MessageOutput | null {
   if (message.role === 'tool') {
     return null;
@@ -43,7 +45,7 @@ export const useChatMessages = ({ chatId }: { chatId: string }) => {
     queryFn: async () => {
       const res = await client.api.chats[':id'].messages.$get({
         param: { id: chatId },
-        query: { limit: '10' },
+        query: { limit: String(CHAT_MESSAGES_LIMIT) },
       });
       const messages = await res.json();
 
