@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 
+import { resolveInitialComposerMessage } from '~/components/composer/composer-initial-message';
 import { useComposerContext } from '~/components/composer/ComposerContext';
 
 interface UseComposerOptions {
@@ -16,7 +17,9 @@ export function useComposer({
   const { attachments, errors, isUploading, progressByAssetId, clearAttachments, seedMessage } =
     useComposerContext();
 
-  const [message, setMessageState] = useState(initialDraft ?? seedMessage ?? '');
+  const [message, setMessageState] = useState(() =>
+    resolveInitialComposerMessage({ initialDraft, seedMessage }),
+  );
 
   const setMessage = useCallback(
     (nextMessage: string) => {

@@ -1,7 +1,7 @@
 import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 import * as Haptics from 'expo-haptics';
 import * as MediaLibrary from 'expo-media-library';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -28,6 +28,7 @@ type CameraModalProps = {
 
 export function CameraModal({ visible, onCapture, onClose }: CameraModalProps) {
   const insets = useSafeAreaInsets();
+  const modalRef = useRef<BottomSheetModal>(null);
   const [facing, setFacing] = useState<'front' | 'back'>('back');
   const [isTakingPhoto, setIsTakingPhoto] = useState(false);
 
@@ -85,10 +86,18 @@ export function CameraModal({ visible, onCapture, onClose }: CameraModalProps) {
     onClose();
   }, [onClose]);
 
-  if (!visible) return null;
+  useEffect(() => {
+    if (visible) {
+      modalRef.current?.present();
+      return;
+    }
+
+    modalRef.current?.dismiss();
+  }, [visible]);
 
   return (
     <BottomSheetModal
+      ref={modalRef}
       snapPoints={snapPoints}
       enablePanDownToClose
       handleIndicatorStyle={styles.dragHandle}
