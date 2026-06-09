@@ -13,11 +13,10 @@ import { clearLegacyDataOnce } from '~/services/auth/boot-legacy-data';
 import { probeAuthSession } from '~/services/auth/boot-session-probe';
 import { getStoredSessionTokens } from '~/services/auth/boot-session-store';
 import { getBootProfile, upsertBootProfile } from '~/services/auth/boot-user-profile';
+import { createAuthBootAbortController } from '~/services/auth/boot-abort';
 import { clearPersistedSessionCookies } from '~/services/auth/session-cookie';
 import type { AuthContext } from '~/services/auth/types';
 import { markStartupPhase, updateStartupContext } from '~/services/performance/startup-metrics';
-
-const AUTH_BOOT_TIMEOUT_MS = 8000;
 
 export function useBootSequence(
   context: AuthContext,
@@ -52,9 +51,7 @@ export function useBootSequence(
         phase: 'boot',
       });
 
-      const controller = new AbortController();
-      const signal = input?.signal ?? controller.signal;
-      const timeoutId = setTimeout(() => controller.abort(), AUTH_BOOT_TIMEOUT_MS);
+      const bootAbort = createAuthBootAbortController(input?.signal);
 
       try {
         const storedSession = await restoreStoredSessionSnapshot({
@@ -84,7 +81,7 @@ export function useBootSequence(
           },
           upsertProfile: upsertBootProfile,
           clearLegacyData: clearLegacyDataOnce,
-          signal,
+          signal: bootAbort.signal,
         });
 
         if (result.type === 'SESSION_LOADED') {
@@ -146,7 +143,7 @@ export function useBootSequence(
         markStartupPhase('auth_boot_resolved');
         hasBootstrappedRef.current = true;
       } finally {
-        clearTimeout(timeoutId);
+        bootAbort.cleanup();
         isBootingRef.current = false;
       }
     },
