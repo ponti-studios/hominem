@@ -222,7 +222,30 @@ export default function Account() {
     submit(formData, { method: 'post' });
   };
 
-  const handleImageUpload = () => revalidator.revalidate();
+  const handleImageUpload = async (croppedImageBlob: Blob) => {
+    const formData = new FormData();
+    formData.append('image', croppedImageBlob, 'profile-image.jpg');
+    formData.append('action', 'upload-profile-image');
+
+    const response = await fetch('/account', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const result = (await response.json()) as {
+      success: boolean;
+      error?: string;
+      data?: { image_url: string };
+    };
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || 'Upload failed');
+    }
+
+    revalidator.revalidate();
+
+    return result.data?.image_url;
+  };
 
   const handleReplaceResumeComplete = () => {
     setShowReplaceResume(false);
@@ -277,21 +300,17 @@ export default function Account() {
           <h1 className="text-2xl font-bold">Account</h1>
         </div>
 
-        <Card>
-          <CardContent>
+        <Card className="max-w-fit justify-self-end">
+          <CardContent className="flex space-x-2">
             <ProfileImageUpload
               compact
               currentImageUrl={currentPortfolio?.profile_image_url}
-              onImageUploaded={handleImageUpload}
+              onUpload={handleImageUpload}
             />
 
-            <div className="flex items-start">
-              <div className="flex items-center space-x-3">
-                <div>
-                  <h3 className="text-base font-medium">{userDisplayName}</h3>
-                  <p className="text-sm text-muted-foreground">{user.email}</p>
-                </div>
-              </div>
+            <div className="flex flex-col items-start">
+              <h3 className="text-base font-medium">{userDisplayName}</h3>
+              <p className="text-sm text-muted-foreground">{user.email}</p>
             </div>
           </CardContent>
         </Card>
@@ -455,7 +474,7 @@ export default function Account() {
                                     type="button"
                                     onClick={() => handleSetCurrentPortfolio(portfolioOption.id)}
                                     variant="outline"
-                                    size="xs"
+                                    size="sm"
                                   >
                                     Use this portfolio
                                   </Button>
@@ -568,7 +587,7 @@ export default function Account() {
             type="button"
             onClick={handleSignOut}
             disabled={isSigningOut}
-            variant="primary"
+            variant="default"
             className="w-full sm:w-auto"
           >
             <LogOut className="w-4 h-4 mr-2" />

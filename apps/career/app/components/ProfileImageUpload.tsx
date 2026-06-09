@@ -8,13 +8,13 @@ import { ImageCropDialog } from './ImageCropDialog';
 
 interface ProfileImageUploadProps {
   currentImageUrl?: string | null | undefined;
-  onImageUploaded: (image_url: string) => void;
+  onUpload: (croppedImageBlob: Blob) => Promise<string | void>;
   compact?: boolean;
 }
 
 export function ProfileImageUpload({
   currentImageUrl,
-  onImageUploaded,
+  onUpload,
   compact = false,
 }: ProfileImageUploadProps) {
   const [imgSrc, setImgSrc] = useState<string>(currentImageUrl || '');
@@ -58,35 +58,13 @@ export function ProfileImageUpload({
   const handleUpload = async (croppedImageBlob: Blob) => {
     try {
       setIsUploading(true);
-      const formData = new FormData();
-      formData.append('image', croppedImageBlob, 'profile-image.jpg');
-      formData.append('action', 'upload-profile-image');
-
-      const response = await fetch('/account', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const result = (await response.json()) as {
-        success: boolean;
-        error?: string;
-        data?: { image_url: string };
-      };
-
-      if (!response.ok || !result.success) {
-        throw new Error(result.error || 'Upload failed');
+      const uploadedImageUrl = await onUpload(croppedImageBlob);
+      if (typeof uploadedImageUrl === 'string' && uploadedImageUrl.trim() !== '') {
+        setDisplayImageUrl(uploadedImageUrl);
       }
-
-      const image_url = result.data?.image_url;
-      if (image_url) {
-        setDisplayImageUrl(image_url);
-        setUploadError(null);
-        onImageUploaded(image_url);
-        setShowCropper(false);
-        setImgSrc('');
-      } else {
-        throw new Error('No image URL returned from server');
-      }
+      setUploadError(null);
+      setShowCropper(false);
+      setImgSrc('');
     } catch (error) {
       console.error('Upload error:', error);
       setUploadError(error instanceof Error ? error.message : 'Upload failed');
@@ -123,7 +101,7 @@ export function ProfileImageUpload({
   const avatarIconClass = compact ? 'w-5 h-5' : 'w-6 h-6';
 
   return (
-    <div className="w-full">
+    <div>
       {/* Current Profile Image */}
       <div className={compact ? 'mb-3 flex items-center' : 'mb-4 flex items-center'}>
         <Button
