@@ -3,6 +3,7 @@
 import { usePasskeys } from '@hominem/auth/client/passkey';
 import { useAuthClient } from '@hominem/auth/client/provider';
 import { EmailEntryForm } from '@hominem/ui';
+import { useEffect, useState } from 'react';
 import { redirect, useLocation, useNavigate } from 'react-router';
 
 import { userContext } from '~/lib/middleware';
@@ -22,12 +23,17 @@ export default function Component() {
   const authClient = useAuthClient();
   const location = useLocation();
   const navigate = useNavigate();
+  const [isMounted, setIsMounted] = useState(false);
 
   const {
     authenticate,
     authError: passkeyError,
     isSupported: isPasskeySupported,
   } = usePasskeys({ enabled: true });
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const { error: sendError, handleSendOtp } = useEmailAuth({
     sendOtp: async (email) => {
@@ -53,13 +59,13 @@ export default function Component() {
         await handleSendOtp(email);
       }}
       {...(resolvedError ? { error: resolvedError } : {})}
-      {...(isPasskeySupported
+      {...(isMounted && isPasskeySupported
         ? {
             onPasskeyClick: async () => {
               try {
                 await authenticate();
                 navigate('/inbox');
-              } catch (error) {
+              } catch {
                 // Error is already handled by usePasskeys and available via passkeyError
               }
             },
