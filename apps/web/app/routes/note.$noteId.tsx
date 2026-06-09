@@ -9,7 +9,7 @@ import { useTranscribe } from '~/hooks/use-transcribe';
 import { createServerApiClient } from '~/lib/api.server';
 import { useFileUpload } from '~/lib/hooks/use-file-upload';
 
-import type { Route } from './+types/$noteId';
+import type { Route } from './+types/note.$noteId';
 
 export async function loader({ request, params }: Route.LoaderArgs) {
   const { noteId } = params;
@@ -20,8 +20,8 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
   try {
     const client = createServerApiClient(request);
-    const note = await client.api.notes[':noteId']
-      .$get({ param: { noteId } })
+    const note = await client.api.notes[':id']
+      .$get({ param: { id: noteId } })
       .then((res) => res.json());
     return data({ noteId, note });
   } catch {

@@ -17,7 +17,7 @@ import { useTranscribe } from '~/hooks/use-transcribe';
 import { createServerApiClient } from '~/lib/api.server';
 import { useFileUpload } from '~/lib/hooks/use-file-upload';
 
-import { Route } from './+types/page';
+import { Route } from './+types/inbox';
 
 const FEED_ESTIMATED_ROW_HEIGHT = 128;
 const FEED_OVERSCAN_COUNT = 6;
@@ -272,7 +272,7 @@ export default function NotesPage({ loaderData }: { loaderData: { inbox: InboxOu
       </main>
       <Composer
         actionsRef={actionsRef}
-        buildChatPath={(chatId) => `/inbox/chat/${chatId}`}
+        buildChatPath={(chatId) => `/chat/${chatId}`}
         mode={mode}
         chatId={chatId}
         store={composerStore}

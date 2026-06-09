@@ -25,8 +25,8 @@ interface ComposerModeResult {
 }
 
 export function useComposerMode(): ComposerModeResult {
-  const chatMatch = useMatch('/inbox/chat/:chatId');
-  const noteMatch = useMatch('/inbox/note/:noteId');
+  const chatMatch = useMatch('/chat/:chatId');
+  const noteMatch = useMatch('/note/:noteId');
 
   if (chatMatch?.params.chatId) {
     return { mode: 'chat-continuation', chatId: chatMatch.params.chatId };

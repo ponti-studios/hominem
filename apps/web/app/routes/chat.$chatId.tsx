@@ -51,19 +51,19 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   try {
     const client = createServerApiClient(request);
     const [chat, messages] = await Promise.all([
-      client.api.chats[':chatId']
-        .$get({ param: { chatId: params.chatId } })
+      client.api.chats[':id']
+        .$get({ param: { id: params.chatId } })
         .then((res) => res.json()),
-      client.api.chats[':chatId'].messages
-        .$get({ param: { chatId: params.chatId }, query: { limit: '50' } })
+      client.api.chats[':id'].messages
+        .$get({ param: { id: params.chatId }, query: { limit: '50' } })
         .then((res) => res.json()),
     ]);
 
     const noteId = new URL(request.url).searchParams.get('noteId');
     let seedNote: NoteLoaderData | null = null;
     if (noteId) {
-      seedNote = await client.api.notes[':noteId']
-        .$get({ param: { noteId } })
+      seedNote = await client.api.notes[':id']
+        .$get({ param: { id: noteId } })
         .then((res) => res.json())
         .catch(() => null);
     }
