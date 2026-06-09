@@ -4,7 +4,7 @@ import { useCallback } from 'react';
 import { data } from 'react-router';
 
 import { SettingsPageLayout } from '~/components/settings-page-layout';
-import { createServerApiClient } from '~/lib/api.server';
+import { authConfig } from '~/lib/auth.server';
 
 import type { Route } from './+types/settings.security';
 
@@ -29,10 +29,17 @@ function normalizePasskeys(payload: unknown): LoaderPasskey[] {
 
 export async function loader({ request }: Route.LoaderArgs) {
   try {
-    const client = createServerApiClient(request);
-    const payload = await client.api.auth.passkey['list-user-passkeys']
-      .$get()
-      .then((res) => res.json())
+    const headers = new Headers();
+    const cookie = request.headers.get('cookie');
+    if (cookie) {
+      headers.set('cookie', cookie);
+    }
+
+    const payload = await fetch(
+      new URL('/api/auth/passkey/list-user-passkeys', authConfig.apiBaseUrl).toString(),
+      { headers },
+    )
+      .then((res) => (res.ok ? res.json() : null))
       .catch(() => null);
     return data({
       passkeys: normalizePasskeys(payload),
