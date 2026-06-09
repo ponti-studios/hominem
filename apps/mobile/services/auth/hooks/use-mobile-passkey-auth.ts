@@ -43,9 +43,7 @@ export function useMobilePasskeyAuth(
   const [passkeysLoading, setPasskeysLoading] = useState(Boolean(options.loadPasskeys));
   const [passkeysError, setPasskeysError] = useState<string | null>(null);
 
-  // Passkeys require iOS 16+. Earlier versions and non-iOS platforms are not supported.
-  const isSupported =
-    Platform.OS === 'ios' && Number.parseInt(Platform.Version as string, 10) >= 16;
+  const isSupported = Number.parseInt(Platform.Version as string, 10) >= 16;
 
   const loadPasskeys = useCallback(async () => {
     if (!options.loadPasskeys) {

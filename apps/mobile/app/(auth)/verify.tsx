@@ -4,7 +4,6 @@ import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import {
   KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -225,7 +224,7 @@ function VerifyScreen() {
   return (
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor: palette.background }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior="padding"
     >
       <View
         pointerEvents="none"

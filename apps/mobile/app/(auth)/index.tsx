@@ -3,7 +3,6 @@ import { Redirect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -185,7 +184,7 @@ function AuthScreen() {
     <>
       <KeyboardAvoidingView
         style={[styles.container, { backgroundColor: palette.background }]}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior="padding"
       >
         <View
           pointerEvents="none"

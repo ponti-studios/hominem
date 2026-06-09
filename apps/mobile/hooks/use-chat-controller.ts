@@ -18,7 +18,7 @@ import {
   useState,
   type RefObject,
 } from 'react';
-import { Alert, Platform, Share, TextInput } from 'react-native';
+import { Alert, Share, TextInput } from 'react-native';
 
 import { loadMarkdown } from '../components/chat/chat-message';
 import type { SendInput } from '../services/chat/use-send-message';
@@ -326,22 +326,10 @@ export function useChatController({
     const text = copiedMessage.message;
     if (!text) return;
 
-    if (Platform.OS !== 'web') {
-      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      void Clipboard.setStringAsync(text).catch(() => {
-        void Share.share({ message: text, title: 'Copy message' });
-      });
-      return;
-    }
-
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      void navigator.clipboard.writeText(text).catch(() => {
-        void Share.share({ message: text, title: 'Copy message' });
-      });
-      return;
-    }
-
-    void Share.share({ message: text, title: 'Copy message' });
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    void Clipboard.setStringAsync(text).catch(() => {
+      void Share.share({ message: text, title: 'Copy message' });
+    });
   }, []);
 
   const handleRegenerate = useCallback(

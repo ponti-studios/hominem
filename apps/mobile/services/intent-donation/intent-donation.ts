@@ -1,11 +1,8 @@
 import { LOG_MESSAGES, logger } from '@hominem/telemetry';
-import { Platform } from 'react-native';
 
 type IntentName = 'AddNoteIntent' | 'StartChatIntent';
 
 function donateIntent(name: IntentName): void {
-  if (Platform.OS !== 'ios') return;
-
   try {
     const HakumiIntents = require('~/modules/hakumi-intents').default as {
       donate(intentName: IntentName): Promise<boolean>;
