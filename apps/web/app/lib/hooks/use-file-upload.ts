@@ -172,7 +172,7 @@ export function useFileUpload(): UseFileUploadReturn {
     });
 
     uppy.use(XHRUpload, {
-      endpoint: `${import.meta.env.VITE_PUBLIC_API_URL}/api/files`,
+      endpoint: `${import.meta.env.VITE_API_BASE_URL}/api/files`,
       method: 'POST',
       formData: true,
       fieldName: 'file',

@@ -1,14 +1,12 @@
-import type { LoaderFunctionArgs } from 'react-router';
+import { serverEnv } from '~/lib/env';
 
-import { getServerEnv } from '~/lib/env';
-
-export async function loader({ _request }: LoaderFunctionArgs) {
+export async function loader() {
   const start = Date.now();
   const checks: Record<string, boolean | string> = {};
 
   try {
-    const env = getServerEnv();
-    void new URL(env.VITE_DATABASE_URL);
+    const env = serverEnv();
+    void new URL(env.DATABASE_URL);
     checks.database = 'connected';
 
     const responseTime = Date.now() - start;

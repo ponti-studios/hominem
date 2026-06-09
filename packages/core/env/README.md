@@ -5,6 +5,7 @@ Environment handling utilities, shared schemas, and brand identity for the Homin
 ## Problem This Solves
 
 Environment variables were accessed inconsistently across the codebase:
+
 - **Client components** used `import.meta.env.VITE_*` (Vite compile-time)
 - **Server loaders** used `process.env` (Node.js runtime)
 - **Shared code** used fallbacks like `import.meta.env.X || process.env.X`
@@ -38,12 +39,12 @@ import { createClientEnv, createServerEnv } from '@hominem/env';
 
 // Define your app's schema
 const clientSchema = z.object({
-  VITE_PUBLIC_API_URL: z.url(),
+  VITE_API_BASE_URL: z.url(),
 });
 
 const serverSchema = z.object({
-  VITE_PUBLIC_API_URL: z.url(),
   DATABASE_URL: z.url(),
+  VITE_API_BASE_URL: z.url(),
 });
 
 // Create validated env objects
@@ -56,7 +57,7 @@ export const serverEnv = createServerEnv(serverSchema, 'myAppServer');
 ```typescript
 // Client component
 import { clientEnv } from '~/lib/env';
-const apiUrl = clientEnv.VITE_PUBLIC_API_URL;
+const apiUrl = clientEnv.VITE_API_BASE_URL;
 
 // Server loader
 import { serverEnv } from '~/lib/env';
@@ -70,8 +71,8 @@ const dbUrl = serverEnv.DATABASE_URL;
 ```typescript
 function createClientEnv<T extends z.ZodObject<z.ZodRawShape>>(
   schema: T,
-  context?: string
-): z.infer<T>
+  context?: string,
+): z.infer<T>;
 ```
 
 Creates a lazy-validated client environment proxy.
@@ -85,8 +86,8 @@ Creates a lazy-validated client environment proxy.
 ```typescript
 function createServerEnv<T extends z.ZodObject<z.ZodRawShape>>(
   schema: T,
-  context?: string
-): z.infer<T>
+  context?: string,
+): z.infer<T>;
 ```
 
 Creates a lazy-validated server environment proxy.
@@ -117,7 +118,7 @@ Validation only runs on first property access, not at import time. This prevents
 const env = createClientEnv(mySchema, 'myApp');
 
 // Validation runs here, on first access
-const url = env.VITE_PUBLIC_API_URL;
+const url = env.VITE_API_BASE_URL;
 ```
 
 ### Context Awareness
@@ -130,7 +131,7 @@ const url = env.VITE_PUBLIC_API_URL;
 ```typescript
 // Missing required variable
 EnvValidationError: Environment validation failed:
-  - VITE_PUBLIC_API_URL: Invalid input: expected string, received undefined
+  - VITE_API_BASE_URL: Invalid input: expected string, received undefined
 Context: myAppClient
 
 // Wrong context
@@ -141,37 +142,42 @@ Context: myAppClient
 
 ## Environment Variable Naming
 
-Use `VITE_` prefix for both client and server:
+Use `VITE_` only for client-safe values that are intended to be exposed to browser code.
 
-| Context | Variable | Example |
-|---------|----------|---------|
-| Both | `VITE_*` | `VITE_PUBLIC_API_URL` |
+| Context     | Variable          | Example             |
+| ----------- | ----------------- | ------------------- |
+| Client-safe | `VITE_*`          | `VITE_API_BASE_URL` |
+| Server-only | no `VITE_` prefix | `DATABASE_URL`      |
 
-**Note:** Vite automatically injects `VITE_*` variables into both `import.meta.env` (browser) and `process.env` (SSR) during build.
+**Note:** keep secrets and server-only credentials out of `VITE_` variables. Those belong in server env schemas and `process.env`-backed accessors.
 
 ## Migration Guide
 
 ### From direct import.meta.env
 
 **Before:**
+
 ```typescript
-const apiUrl = import.meta.env.VITE_PUBLIC_API_URL;
+const apiUrl = import.meta.env.VITE_API_BASE_URL;
 ```
 
 **After:**
+
 ```typescript
 import { clientEnv } from '~/lib/env';
-const apiUrl = clientEnv.VITE_PUBLIC_API_URL;
+const apiUrl = clientEnv.VITE_API_BASE_URL;
 ```
 
 ### From direct process.env
 
 **Before:**
+
 ```typescript
 const dbUrl = process.env.DATABASE_URL;
 ```
 
 **After:**
+
 ```typescript
 import { serverEnv } from '~/lib/env';
 const dbUrl = serverEnv.DATABASE_URL;
@@ -180,17 +186,17 @@ const dbUrl = serverEnv.DATABASE_URL;
 ### From fallback pattern
 
 **Before:**
+
 ```typescript
-const baseUrl = 
-  import.meta.env.VITE_PUBLIC_API_URL || 
-  process.env.VITE_PUBLIC_API_URL || 
-  'http://localhost:4040';
+const baseUrl =
+  import.meta.env.VITE_API_BASE_URL || process.env.VITE_API_BASE_URL || 'http://localhost:4040';
 ```
 
 **After:**
+
 ```typescript
 import { serverEnv } from '~/lib/env';
-const baseUrl = serverEnv.VITE_PUBLIC_API_URL;
+const baseUrl = serverEnv.VITE_API_BASE_URL;
 ```
 
 ## Package Structure
@@ -211,12 +217,14 @@ packages/core/env/
 ## Why This Architecture?
 
 **Goals:**
+
 - Single responsibility - package handles validation mechanics only
 - Apps own their schemas - no coordination needed
 - Lazy validation - no import-time crashes
 - Type-safe - full TypeScript support via Zod
 
 **Benefits:**
+
 - No schema conflicts between apps
 - Each app defines exactly the vars it needs
 - Easy to add/remove vars without affecting others

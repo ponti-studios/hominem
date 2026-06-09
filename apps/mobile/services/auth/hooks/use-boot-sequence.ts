@@ -9,11 +9,11 @@ import {
   recordAuthEvent,
 } from '~/services/auth/analytics';
 import { restoreStoredSessionSnapshot, runAuthBoot } from '~/services/auth/boot';
+import { createAuthBootAbortController } from '~/services/auth/boot-abort';
 import { clearLegacyDataOnce } from '~/services/auth/boot-legacy-data';
 import { probeAuthSession } from '~/services/auth/boot-session-probe';
 import { getStoredSessionTokens } from '~/services/auth/boot-session-store';
 import { getBootProfile, upsertBootProfile } from '~/services/auth/boot-user-profile';
-import { createAuthBootAbortController } from '~/services/auth/boot-abort';
 import { clearPersistedSessionCookies } from '~/services/auth/session-cookie';
 import type { AuthContext } from '~/services/auth/types';
 import { markStartupPhase, updateStartupContext } from '~/services/performance/startup-metrics';

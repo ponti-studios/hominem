@@ -1,10 +1,7 @@
 import type { Note } from '@hominem/rpc/types';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  createDebouncedNoteSaver,
-  type NoteSavePayload,
-} from '~/hooks/debounced-note-saver';
+import { createDebouncedNoteSaver, type NoteSavePayload } from '~/hooks/debounced-note-saver';
 
 function createNote(content: string): Note {
   return { id: `note-${content}`, content } as Note;
@@ -26,7 +23,9 @@ describe('createDebouncedNoteSaver', () => {
 
   it('persists only the latest pending save when edits are superseded', () => {
     vi.useFakeTimers();
-    const persist = vi.fn((payload: NoteSavePayload) => Promise.resolve(createNote(payload.content)));
+    const persist = vi.fn((payload: NoteSavePayload) =>
+      Promise.resolve(createNote(payload.content)),
+    );
     const commit = vi.fn();
     const saver = createDebouncedNoteSaver({ commit, delayMs: 600, persist });
 
@@ -40,7 +39,9 @@ describe('createDebouncedNoteSaver', () => {
 
   it('flushes the latest pending save immediately', () => {
     vi.useFakeTimers();
-    const persist = vi.fn((payload: NoteSavePayload) => Promise.resolve(createNote(payload.content)));
+    const persist = vi.fn((payload: NoteSavePayload) =>
+      Promise.resolve(createNote(payload.content)),
+    );
     const commit = vi.fn();
     const saver = createDebouncedNoteSaver({ commit, delayMs: 600, persist });
 

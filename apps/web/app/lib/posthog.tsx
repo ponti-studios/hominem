@@ -1,35 +1,34 @@
+import {} from '@hominem/env';
 import posthog from 'posthog-js';
 import { PostHogProvider } from 'posthog-js/react';
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 
-const apiKey = import.meta.env.VITE_POSTHOG_API_KEY as string | undefined;
-const host =
-  (import.meta.env.VITE_POSTHOG_HOST as string | undefined) ?? 'https://us.i.posthog.com';
+import { getClientEnv } from './env.client';
 
-if (apiKey && typeof window !== 'undefined') {
-  posthog.init(apiKey, {
-    api_host: host,
-    // Disable in development unless a key is explicitly set
-    loaded: (ph) => {
-      if (import.meta.env.DEV && !apiKey) {
-        ph.opt_out_capturing();
-      }
-    },
-    capture_pageview: true,
-    capture_pageleave: true,
-    autocapture: false,
-  });
-}
+export function AnalyticsProvider({ children }: { children: ReactNode }) {
+  const env = getClientEnv();
+  const publicKey = env.VITE_POSTHOG_PUBLIC_KEY;
+  const host = env.VITE_POSTHOG_HOST;
 
-interface AnalyticsProviderProps {
-  children: ReactNode;
-}
-
-export function AnalyticsProvider({ children }: AnalyticsProviderProps) {
-  if (!apiKey) {
-    // No PostHog key: render children directly; useFeatureFlag returns false.
+  if (!publicKey) {
+    // No PostHog public key: render children directly; useFeatureFlag returns false.
     return <>{children}</>;
   }
+
+  useEffect(() => {
+    posthog.init(publicKey, {
+      api_host: host,
+      // Disable in development unless a public key is explicitly set
+      loaded: (ph) => {
+        if (import.meta.env.DEV && !publicKey) {
+          ph.opt_out_capturing();
+        }
+      },
+      capture_pageview: true,
+      capture_pageleave: true,
+      autocapture: false,
+    });
+  });
 
   return <PostHogProvider client={posthog}>{children}</PostHogProvider>;
 }

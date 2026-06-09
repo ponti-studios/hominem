@@ -7,12 +7,6 @@
     "show_parameter_hints": false,
     "show_type_hints": false
   },
-  "formatter": {
-    "external": {
-      "command": "./node_modules/.bin/oxfmt",
-      "arguments": ["--stdin-filepath", "{buffer_path}"]
-    }
-  },
   "languages": {
     "CSS": {
       "language_servers": ["tailwindcss-intellisense-css", "!vscode-css-language-server", "..."]

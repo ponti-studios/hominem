@@ -1,9 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  AUTH_BOOT_TIMEOUT_MS,
-  createAuthBootAbortController,
-} from '~/services/auth/boot-abort';
+import { AUTH_BOOT_TIMEOUT_MS, createAuthBootAbortController } from '~/services/auth/boot-abort';
 
 describe('createAuthBootAbortController', () => {
   afterEach(() => {

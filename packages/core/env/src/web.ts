@@ -3,8 +3,8 @@ import * as z from 'zod';
 import { baseSchema } from './base';
 
 export const webSchema = baseSchema.extend({
-  VITE_PUBLIC_API_URL: z.url(),
-  VITE_POSTHOG_API_KEY: z.string().optional(),
+  VITE_API_BASE_URL: z.url(),
+  VITE_POSTHOG_PUBLIC_KEY: z.string().optional(),
   VITE_POSTHOG_HOST: z.url().optional().default('https://us.i.posthog.com'),
   VITE_OTEL_DISABLED: z.enum(['true', 'false']).optional().default('false'),
   VITE_OTEL_SERVICE_NAME: z.string().optional().default('web'),

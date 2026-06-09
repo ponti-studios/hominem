@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 
-const API_URL = import.meta.env.VITE_PUBLIC_API_URL;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 type FetchOptions<T> = {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
@@ -43,7 +43,7 @@ export function useApiClient() {
         const fetchBody: BodyInit | null =
           body instanceof FormData ? body : body ? JSON.stringify(body) : null;
 
-        const res = await fetch(`${API_URL}${endpoint}`, {
+        const res = await fetch(`${API_BASE_URL}${endpoint}`, {
           method,
           headers: {
             ...defaultHeaders,

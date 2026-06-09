@@ -106,7 +106,7 @@ export const action: ActionFunction = async ({ request, context }) => {
         skills: jobPostingData.skills,
       };
     } else if (job_posting_url) {
-      const scrapingResult = await jobScrapingService.scrapeAndValidateJobPosting(job_posting_url);
+      const scrapingResult = await jobScrapingService.scrapeJobPosting(job_posting_url);
 
       if (!scrapingResult.success || !scrapingResult.job_posting) {
         return data(

@@ -3,7 +3,7 @@ import type { Session, User } from '@hominem/auth/types';
 import { serverEnv } from './env.server';
 
 export const authConfig = {
-  apiBaseUrl: serverEnv.VITE_PUBLIC_API_URL,
+  apiBaseUrl: serverEnv.VITE_API_BASE_URL,
 };
 
 export async function getServerSession(request: Request) {

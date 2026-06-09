@@ -64,7 +64,7 @@ export async function loader({ context }: Route.LoaderArgs) {
     authEnv: {
       apiBaseUrl: authConfig.apiBaseUrl,
     },
-    apiBaseUrl: serverEnv.VITE_PUBLIC_API_URL,
+    apiBaseUrl: serverEnv.VITE_API_BASE_URL,
     user,
   });
 }

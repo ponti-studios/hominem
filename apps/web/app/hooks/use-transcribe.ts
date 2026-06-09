@@ -31,7 +31,7 @@ export function useTranscribe() {
         formData.append('language', language);
       }
 
-      const apiBase = import.meta.env.VITE_PUBLIC_API_URL as string;
+      const apiBase = import.meta.env.VITE_API_BASE_URL as string;
       const response = await fetch(`${apiBase}/api/voice/transcribe`, {
         method: 'POST',
         credentials: 'include',

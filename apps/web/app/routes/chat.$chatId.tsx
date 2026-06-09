@@ -51,9 +51,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   try {
     const client = createServerApiClient(request);
     const [chat, messages] = await Promise.all([
-      client.api.chats[':id']
-        .$get({ param: { id: params.chatId } })
-        .then((res) => res.json()),
+      client.api.chats[':id'].$get({ param: { id: params.chatId } }).then((res) => res.json()),
       client.api.chats[':id'].messages
         .$get({ param: { id: params.chatId }, query: { limit: '50' } })
         .then((res) => res.json()),

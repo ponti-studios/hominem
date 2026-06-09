@@ -1,4 +1,6 @@
-import { getServerEnv } from '~/lib/env';
+import { z } from 'zod';
+
+import { serverEnv } from '~/lib/env';
 import type { JobPosting } from '~/types/applications';
 
 interface JobScrapingResult {
@@ -7,17 +9,63 @@ interface JobScrapingResult {
   error?: string;
 }
 
+const cloudflareResponseSchema = z.object({
+  success: z.boolean(),
+  result: z.unknown().optional(),
+  errors: z
+    .array(
+      z.object({
+        message: z.string().optional(),
+      }),
+    )
+    .optional(),
+});
+
+const extractedJobSchema = z.object({
+  job_title: z.string().optional(),
+  companyName: z.string().optional(),
+  companyDescription: z.string().optional(),
+  jobDescription: z.string().optional(),
+  location: z.string().optional(),
+  requirements: z.array(z.string()).optional(),
+  skills: z.array(z.string()).optional(),
+  fullText: z.string().optional(),
+});
+
+const JOB_EXTRACTION_PROMPT =
+  'Extract the job posting into structured JSON with the following fields: job_title, companyName, companyDescription, jobDescription, location, requirements, skills, and fullText. Return only the job posting content and exclude navigation, ads, footers, cookie banners, and unrelated page chrome.';
+
+const JOB_EXTRACTION_SCHEMA = {
+  type: 'object',
+  properties: {
+    job_title: { type: 'string' },
+    companyName: { type: 'string' },
+    companyDescription: { type: 'string' },
+    jobDescription: { type: 'string' },
+    location: { type: 'string' },
+    requirements: {
+      type: 'array',
+      items: { type: 'string' },
+    },
+    skills: {
+      type: 'array',
+      items: { type: 'string' },
+    },
+    fullText: { type: 'string' },
+  },
+  required: ['fullText', 'job_title'],
+};
+
 export class JobScrapingService {
   private readonly cloudflareAccountId: string;
   private readonly cloudflareApiToken: string;
 
   constructor() {
     try {
-      const env = getServerEnv();
-      this.cloudflareAccountId = env.VITE_CLOUDFLARE_ACCOUNT_ID || '';
-      this.cloudflareApiToken = env.VITE_CLOUDFLARE_API_TOKEN || '';
-    } catch (_error) {
-      // If we're on the client side, these will be empty
+      const env = serverEnv();
+      this.cloudflareAccountId = env.CLOUDFLARE_ACCOUNT_ID || '';
+      this.cloudflareApiToken = env.CLOUDFLARE_API_TOKEN || '';
+    } catch {
       this.cloudflareAccountId = '';
       this.cloudflareApiToken = '';
     }
@@ -27,9 +75,6 @@ export class JobScrapingService {
     }
   }
 
-  /**
-   * Scrape a job posting URL and extract structured data using Cloudflare Browser Rendering API
-   */
   async scrapeJobPosting(jobUrl: string): Promise<JobScrapingResult> {
     try {
       if (!this.cloudflareAccountId || !this.cloudflareApiToken) {
@@ -46,50 +91,13 @@ export class JobScrapingService {
           },
           body: JSON.stringify({
             url: jobUrl,
-            prompt:
-              'Extract the job posting content, including job title, company name, job description, requirements, responsibilities, and qualifications. Remove any navigation, ads, or unrelated content.',
+            prompt: JOB_EXTRACTION_PROMPT,
+            gotoOptions: {
+              waitUntil: 'networkidle2',
+            },
             response_format: {
               type: 'json_schema',
-              json_schema: {
-                type: 'object',
-                properties: {
-                  job_title: {
-                    type: 'string',
-                    description: 'The job title or position name',
-                  },
-                  companyName: {
-                    type: 'string',
-                    description: 'The company name',
-                  },
-                  companyDescription: {
-                    type: 'string',
-                    description: 'The company description',
-                  },
-                  jobDescription: {
-                    type: 'string',
-                    description: 'The main job description and responsibilities',
-                  },
-                  location: {
-                    type: 'string',
-                    description: 'The location of the job',
-                  },
-                  requirements: {
-                    type: 'array',
-                    items: { type: 'string' },
-                    description: 'List of job requirements and qualifications',
-                  },
-                  skills: {
-                    type: 'array',
-                    items: { type: 'string' },
-                    description: 'List of required or preferred skills',
-                  },
-                  fullText: {
-                    type: 'string',
-                    description: 'The complete cleaned text content of the job posting',
-                  },
-                },
-                required: ['fullText', 'job_title'],
-              },
+              schema: JOB_EXTRACTION_SCHEMA,
             },
           }),
         },
@@ -102,37 +110,35 @@ export class JobScrapingService {
         );
       }
 
-      const result = await response.json();
+      const payload = cloudflareResponseSchema.parse(await response.json());
 
-      if (!result.success) {
+      if (!payload.success) {
         throw new Error(
-          `Cloudflare API returned error: ${result.errors?.[0]?.message || 'Unknown error'}`,
+          `Cloudflare API returned error: ${payload.errors?.[0]?.message || 'Unknown error'}`,
         );
       }
 
-      const extractedData = result.result;
-      const fullText = extractedData.fullText || '';
-
-      // Clean up the text content
-      const cleanedText = this.cleanJobPostingText(fullText);
-
-      const job_posting: JobPosting = {
-        job_title: extractedData.job_title || 'Unknown Position',
-        companyName: extractedData.companyName || 'Unknown Company',
-        companyDescription: extractedData.companyDescription || '',
-        jobDescription: extractedData.jobDescription || cleanedText,
-        location: extractedData.location || '',
-        requirements: extractedData.requirements || [],
-        skills: extractedData.skills || [],
-        fullText: cleanedText,
-        url: jobUrl,
-        scrapedAt: new Date().toISOString(),
-        wordCount: cleanedText.split(/\s+/).length,
-      };
+      const extractedData = extractedJobSchema.parse(payload.result ?? {});
+      const fullText = extractedData.fullText ?? '';
+      const normalizedFullText = fullText.trim();
 
       return {
         success: true,
-        job_posting,
+        job_posting: {
+          job_title: extractedData.job_title || 'Unknown Position',
+          companyName: extractedData.companyName || 'Unknown Company',
+          companyDescription: extractedData.companyDescription || '',
+          jobDescription: extractedData.jobDescription || normalizedFullText,
+          location: extractedData.location || '',
+          requirements: extractedData.requirements || [],
+          skills: extractedData.skills || [],
+          fullText: normalizedFullText,
+          url: jobUrl,
+          scrapedAt: new Date().toISOString(),
+          wordCount: normalizedFullText
+            ? normalizedFullText.split(/\s+/).filter(Boolean).length
+            : 0,
+        },
       };
     } catch (error) {
       console.error('Job posting scraping failed:', error);
@@ -143,109 +149,15 @@ export class JobScrapingService {
     }
   }
 
-  /**
-   * Check if the job scraping service is healthy
-   */
   async checkHealth(): Promise<{ status: string; runtime?: string; timestamp?: string }> {
-    try {
-      if (!this.cloudflareAccountId || !this.cloudflareApiToken) {
-        return { status: 'unhealthy', runtime: 'direct-api', timestamp: new Date().toISOString() };
-      }
+    const isConfigured = Boolean(this.cloudflareAccountId && this.cloudflareApiToken);
 
-      // Test with a simple request
-      const response = await fetch(
-        `https://api.cloudflare.com/client/v4/accounts/${this.cloudflareAccountId}/browser-rendering/json`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${this.cloudflareApiToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            url: 'https://example.com',
-            prompt: 'Extract the page title',
-            response_format: {
-              type: 'json_schema',
-              json_schema: {
-                type: 'object',
-                properties: {
-                  title: { type: 'string' },
-                },
-              },
-            },
-          }),
-        },
-      );
-
-      if (!response.ok) {
-        return { status: 'unhealthy', runtime: 'direct-api', timestamp: new Date().toISOString() };
-      }
-
-      return { status: 'healthy', runtime: 'direct-api', timestamp: new Date().toISOString() };
-    } catch (error) {
-      console.error('Health check failed:', error);
-      return { status: 'unhealthy', runtime: 'direct-api', timestamp: new Date().toISOString() };
-    }
-  }
-
-  /**
-   * Scrape job posting and validate the content
-   */
-  async scrapeAndValidateJobPosting(jobUrl: string): Promise<JobScrapingResult> {
-    const result = await this.scrapeJobPosting(jobUrl);
-
-    if (result.success && result.job_posting) {
-      // Basic validation - ensure we got meaningful content
-      const wordCount = result.job_posting.wordCount;
-
-      if (wordCount < 50) {
-        return {
-          success: false,
-          error: 'Job posting appears to be too short or empty. Please check the URL.',
-        };
-      }
-
-      // Check for common job posting indicators
-      const hasJobContent =
-        /(job|position|role|responsibilities|requirements|qualifications)/i.test(
-          result.job_posting.fullText,
-        );
-
-      if (!hasJobContent) {
-        return {
-          success: false,
-          error: "The page doesn't appear to contain job posting content. Please verify the URL.",
-        };
-      }
-    }
-
-    return result;
-  }
-
-  /**
-   * Clean and format job posting text content
-   */
-  private cleanJobPostingText(text: string): string {
-    return (
-      text
-        // Remove excessive whitespace
-        .replace(/\s+/g, ' ')
-        // Remove common job board noise
-        .replace(/apply now|apply for this job|submit application/gi, '')
-        .replace(/share this job|bookmark|save job/gi, '')
-        // Remove email addresses
-        .replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, '')
-        // Remove phone numbers
-        .replace(/\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/g, '')
-        // Remove URLs
-        .replace(/https?:\/\/[^\s]+/g, '')
-        // Remove excessive punctuation
-        .replace(/[.!?]{2,}/g, '.')
-        // Trim whitespace
-        .trim()
-    );
+    return {
+      status: isConfigured ? 'healthy' : 'unhealthy',
+      runtime: 'direct-api',
+      timestamp: new Date().toISOString(),
+    };
   }
 }
 
-// Export a singleton instance
 export const jobScrapingService = new JobScrapingService();

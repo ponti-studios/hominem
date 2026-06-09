@@ -18,7 +18,7 @@ export const action: ActionFunction = async ({ request }) => {
       return data({ error: 'Invalid URL format' }, { status: 400 });
     }
 
-    const result = await jobScrapingService.scrapeAndValidateJobPosting(jobUrl);
+    const result = await jobScrapingService.scrapeJobPosting(jobUrl);
 
     if (!result.success) {
       return data(

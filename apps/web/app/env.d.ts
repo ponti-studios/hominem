@@ -1,8 +1,8 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  readonly VITE_PUBLIC_API_URL: string;
-  readonly VITE_POSTHOG_API_KEY?: string;
+  readonly VITE_API_BASE_URL: string;
+  readonly VITE_POSTHOG_PUBLIC_KEY?: string;
   readonly VITE_POSTHOG_HOST?: string;
   readonly VITE_OTEL_DISABLED?: 'true' | 'false';
   readonly VITE_OTEL_SERVICE_NAME?: string;
