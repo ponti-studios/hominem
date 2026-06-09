@@ -6,10 +6,8 @@ import { getServerSession, type User } from './auth.server';
 export const userContext = createContext<User | null>(null);
 
 export const authMiddleware: Route.MiddlewareFunction = async ({ request, context }) => {
-  // Only check auth on protected routes
   const path = new URL(request.url).pathname;
-  const publicPaths = ['/', '/login', '/p/'];
-  const isPublic = publicPaths.some((p) => path === p || path.startsWith(p));
+  const isPublic = path === '/' || path.startsWith('/login') || path.startsWith('/p/');
 
   if (isPublic) {
     return;
