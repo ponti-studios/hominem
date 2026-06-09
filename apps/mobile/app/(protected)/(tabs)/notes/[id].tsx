@@ -137,7 +137,7 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
         </View>
       ),
     });
-  }, [navigation, noteId, note?.title, router]);
+  }, [navigation, noteId, note?.title, router, toggleEnhance]);
 
   if (isInitialLoading || !note) {
     return <NoteDetailPlaceholder />;

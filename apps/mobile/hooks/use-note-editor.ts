@@ -1,18 +1,21 @@
 import { useApiClient } from '@hominem/rpc/react';
 import type { Note } from '@hominem/rpc/types';
 import { useQueryClient } from '@tanstack/react-query';
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 
 import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
 import { noteKeys } from '~/services/notes/query-keys';
 import { writeCachedNote } from '~/services/workspace/content-cache';
 
+import { createDebouncedNoteSaver, type NoteSavePayload } from './debounced-note-saver';
+
+const NOTE_SAVE_DEBOUNCE_MS = 600;
+
 export function useNoteEditor(noteId: string) {
   const client = useApiClient();
   const queryClient = useQueryClient();
   const { requestTopReveal } = useTopAnchoredFeed();
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const commitServerResponse = useCallback(
     (updatedNote: Note) => {
@@ -28,23 +31,34 @@ export function useNoteEditor(noteId: string) {
     [queryClient, requestTopReveal],
   );
 
-  const save = useCallback(
-    (title: string | null, content: string, fileIds: string[]): Promise<void> => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      return new Promise((resolve, reject) => {
-        debounceRef.current = setTimeout(() => {
-          client.api.notes[':id']
-            .$patch({ param: { id: noteId }, json: { title: title || null, content, fileIds } })
-            .then((res) => res.json())
-            .then((updatedNote) => {
-              commitServerResponse(updatedNote);
-              resolve();
-            })
-            .catch((error: unknown) => reject(error));
-        }, 600);
+  const persistSave = useCallback(
+    async ({ content, fileIds, title }: NoteSavePayload) => {
+      const res = await client.api.notes[':id'].$patch({
+        param: { id: noteId },
+        json: { title: title || null, content, fileIds },
       });
+      return res.json();
     },
-    [noteId, client, commitServerResponse],
+    [noteId, client],
+  );
+
+  const saver = useMemo(
+    () =>
+      createDebouncedNoteSaver({
+        commit: commitServerResponse,
+        delayMs: NOTE_SAVE_DEBOUNCE_MS,
+        persist: persistSave,
+      }),
+    [commitServerResponse, persistSave],
+  );
+
+  useEffect(() => () => saver.flush(), [saver]);
+
+  const save = useCallback(
+    (title: string | null, content: string, fileIds: string[]) => {
+      saver.schedule({ title: title || null, content, fileIds });
+    },
+    [saver],
   );
 
   const updateCache = useCallback(
