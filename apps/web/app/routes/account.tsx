@@ -1,38 +1,60 @@
+import { useAuthClient } from '@hominem/auth/client/provider';
 import { Button } from '@hominem/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@hominem/ui/card';
-
-import { useSignOut } from '~/lib/hooks/use-sign-out';
+import { Card, CardContent } from '@hominem/ui/card';
+import { LogOut } from 'lucide-react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router';
 
 export default function AccountPage() {
-  const signOut = useSignOut();
+  const navigate = useNavigate();
+  const authClient = useAuthClient();
+  const [isSigningOut, setIsSigningOut] = useState(false);
+
+  const handleSignOut = async () => {
+    try {
+      setIsSigningOut(true);
+      await authClient.signOut();
+      navigate('/');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    } finally {
+      setIsSigningOut(false);
+    }
+  };
 
   return (
-    <main className="container mx-auto w-full px-4 py-8 sm:px-6">
-      <header className="mb-6 space-y-4">
-        <div>
-          <h1 className="text-xl font-semibold text-foreground">Profile</h1>
-          <p className="mt-1 text-sm text-text-secondary">Manage your account and active session.</p>
+    <div className="py-2">
+      <div className="max-w-2xl mx-auto space-y-6">
+        <div className="space-y-2 text-center">
+          <h1 className="text-2xl font-bold">Account</h1>
         </div>
-      </header>
-      <div className="space-y-6">
+
         <Card>
-          <CardHeader>
-            <CardTitle>Authentication</CardTitle>
-            <CardDescription>Manage your session.</CardDescription>
-          </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-between rounded-lg border border-border/30 p-4">
-              <div>
-                <h3 className="text-sm font-medium text-foreground">Sign Out</h3>
-                <p className="text-sm text-text-secondary">End your current session.</p>
+            <div className="flex items-start">
+              <div className="flex items-center space-x-3">
+                <div>
+                  <h3 className="text-base font-medium">Account Settings</h3>
+                  <p className="text-sm text-muted-foreground">Manage your account preferences</p>
+                </div>
               </div>
-              <Button variant="outline" onClick={() => void signOut()}>
-                Sign Out
-              </Button>
             </div>
           </CardContent>
         </Card>
+
+        <div className="border-t border-border pt-6 flex justify-end">
+          <Button
+            type="button"
+            onClick={handleSignOut}
+            disabled={isSigningOut}
+            variant="default"
+            className="w-full sm:w-auto"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            {isSigningOut ? 'Signing Out...' : 'Sign Out'}
+          </Button>
+        </div>
       </div>
-    </main>
+    </div>
   );
 }
