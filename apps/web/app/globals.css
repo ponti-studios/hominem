@@ -1,4 +1,4 @@
-@import '../../../packages/platform/ui/src/styles.css';
-@import '../../../packages/platform/ui/src/animations.css';
+@import '../../../packages/ui/src/styles.css';
+@import '../../../packages/ui/src/animations.css';
 
-@source '../../../packages/platform/ui/src';
+@source '../../../packages/ui/src';

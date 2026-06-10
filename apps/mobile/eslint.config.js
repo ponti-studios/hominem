@@ -15,7 +15,7 @@ module.exports = defineConfig([
         {
           patterns: [
             {
-              group: ["**/packages/platform/ui/src/**", "packages/platform/ui/src/**"],
+              group: ["**/packages/ui/src/**", "packages/ui/src/**"],
               message: "Import shared UI through @hominem/ui public exports.",
             },
             {
