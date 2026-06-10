@@ -12,8 +12,7 @@ Hominem is a product monorepo with three active surfaces:
 apps/web       -> web UI, routes, browser-only helpers
 apps/mobile    -> Expo app, native UI, mobile-only helpers
 services/api   -> Hono API, auth, data access, workers
-packages/core  -> shared config, db, env, utils
-packages/platform -> shared hooks, UI, auth, rpc, telemetry, queues
+packages/*     -> shared libraries: db, env, utils, ui, auth, rpc, telemetry, hooks, etc.
 ```
 
 The default direction is from apps into shared packages, and from shared packages into `services/api` only when backend coordination is required.

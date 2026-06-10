@@ -202,7 +202,7 @@ const baseUrl = serverEnv.VITE_API_BASE_URL;
 ## Package Structure
 
 ```
-packages/core/env/
+packages/env/
 ├── src/
 │   ├── base.ts
 │   ├── api.ts
