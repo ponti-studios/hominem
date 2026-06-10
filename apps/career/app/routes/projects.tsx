@@ -5,18 +5,17 @@ import { FolderOpen, PlusIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
 import { useForm } from 'react-hook-form';
-import { Route } from './+types/editor.projects';
-import { useFetcher, useOutletContext } from 'react-router';
+import { useFetcher } from 'react-router';
 
 import { EditorFormActions } from '../components/EditorFormActions';
 import { useCareerEditorSubmission } from '../hooks/useCareerEditorSubmission';
 import { useToast } from '../hooks/useToast';
-import type { FullPortfolio } from '../lib/portfolio.server';
+import { portfolioContext, userContext } from '../lib/middleware';
 import { parseFormData } from '../lib/route-utils';
-import { userContext } from '../lib/middleware';
 import { formatDateForInput, nullArrayToUndefined, stringToDate } from '../lib/utils';
+import { Route } from './+types/projects';
 
-export const meta: Route.MetaFunction = () => [{ title: 'Projects - Portfolio Editor | Craftd' }];
+export const meta: Route.MetaFunction = () => [{ title: 'Projects | Craftd' }];
 
 interface ProjectFormValues {
   id?: string;
@@ -127,7 +126,7 @@ function ProjectForm({
 
     fetcher.submit(formDataToSubmit, {
       method: 'POST',
-      action: '/editor/projects',
+      action: '/projects',
     });
   };
 
@@ -142,7 +141,7 @@ function ProjectForm({
 
       fetcher.submit(formData, {
         method: 'POST',
-        action: '/editor/projects',
+        action: '/projects',
       });
 
       onDelete?.();
@@ -399,6 +398,12 @@ function ProjectsEditorSection({
   );
 }
 
+export async function loader({ context }: Route.LoaderArgs) {
+  const portfolio = context.get(portfolioContext)!;
+  const projects = await CareerRepository.listProjectsByPortfolio(db, portfolio.id);
+  return { projects, portfolio_id: portfolio.id };
+}
+
 export async function action({ request, context }: Route.ActionArgs) {
   const user = context.get(userContext);
   if (!user) {
@@ -520,9 +525,8 @@ export async function action({ request, context }: Route.ActionArgs) {
   }
 }
 
-export default function EditorProjects() {
-  // Consume portfolio provided by parent editor layout loader via outlet context
-  const portfolio = useOutletContext<FullPortfolio>();
-
-  return <ProjectsEditorSection projects={portfolio.projects} portfolio_id={portfolio.id} />;
+export default function Projects({ loaderData }: Route.ComponentProps) {
+  return (
+    <ProjectsEditorSection projects={loaderData.projects} portfolio_id={loaderData.portfolio_id} />
+  );
 }

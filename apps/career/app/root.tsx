@@ -1,5 +1,4 @@
 import { AuthProvider } from '@hominem/auth/client/provider';
-import { CareerRepository, db } from '@hominem/db';
 import { Button, buttonVariants } from '@hominem/ui/button';
 import { Card, CardContent } from '@hominem/ui/card';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -21,7 +20,7 @@ import './app.css';
 import { NavigationProgress } from './components/NavigationProgress';
 import { ToastProvider } from './hooks/useToast';
 import { serverEnv } from './lib/env';
-import { authMiddleware, userContext } from './lib/middleware';
+import { authMiddleware, portfolioContext, userContext } from './lib/middleware';
 
 export const links = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -105,7 +104,7 @@ export const middleware: Route.MiddlewareFunction[] = [authMiddleware];
 
 export async function loader({ context }: Route.LoaderArgs) {
   const user = context.get(userContext);
-  const currentPortfolio = user ? await CareerRepository.getPortfolioByUserId(db, user.id) : null;
+  const currentPortfolio = context.get(portfolioContext);
 
   return data({ user, apiBaseUrl: serverEnv().VITE_PUBLIC_API_URL, currentPortfolio });
 }

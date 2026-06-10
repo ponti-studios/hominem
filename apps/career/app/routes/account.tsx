@@ -1,21 +1,25 @@
 import { useAuthClient } from '@hominem/auth/client/provider';
-import { CareerRepository, db } from '@hominem/db';
+import { CareerRepository, db, type CareerPortfolioRecord } from '@hominem/db';
 import { createStorageService, validateFile } from '@hominem/storage';
 import { Badge } from '@hominem/ui/badge';
 import { Button } from '@hominem/ui/button';
-import { Card, CardContent } from '@hominem/ui/card';
+import { Card, CardContent, CardHeader } from '@hominem/ui/card';
+import { Input } from '@hominem/ui/input';
+import { Switch } from '@hominem/ui/switch';
 import { Download, Edit, ExternalLink, LogOut, Trash2, Upload } from 'lucide-react';
-import { useState } from 'react';
-import { Route } from './+types/account';
-import { useNavigate, useRevalidator, useSubmit } from 'react-router';
+import { useEffect, useState } from 'react';
+import { Controller, useForm, type SubmitHandler } from 'react-hook-form';
+import { useNavigate, useRevalidator, useSubmit, useFetcher } from 'react-router';
 
 import { cn } from '~/lib/utils';
 
 import { ProfileImageUpload } from '../components/ProfileImageUpload';
 import { SlugEditor } from '../components/SlugEditor';
 import { UploadResumeForm } from '../components/UploadResumeForm';
-import { userContext } from '../lib/middleware';
-import { getFullUserPortfolio } from '../lib/portfolio.server';
+import { useToast } from '../hooks/useToast';
+import { portfolioContext, userContext } from '../lib/middleware';
+import { parseFormData } from '../lib/route-utils';
+import { Route } from './+types/account';
 
 const profileImageStorage = createStorageService('images', {
   maxFileSize: 5 * 1024 * 1024,
@@ -28,26 +32,25 @@ const PROFILE_IMAGE_VALIDATION = {
 
 export async function loader({ context }: Route.LoaderArgs) {
   const user = context.get(userContext)!;
-  const [fullPortfolio, portfolioRows] = await Promise.all([
-    getFullUserPortfolio(user.id),
-    CareerRepository.listPortfoliosByUserId(db, user.id),
-  ]);
-  const portfolios: Portfolio[] = portfolioRows.map((portfolio) => ({
-    id: portfolio.id,
-    title: portfolio.title,
-    slug: portfolio.slug,
-    is_public: portfolio.is_public,
-    is_active: portfolio.is_active,
-    updatedat: portfolio.updatedat,
-    name: portfolio.name,
-    job_title: portfolio.job_title,
-    bio: portfolio.bio,
-    profile_image_url: portfolio.profile_image_url || undefined,
+  const currentPortfolio = context.get(portfolioContext);
+  const portfolioRows = await CareerRepository.listPortfoliosByUserId(db, user.id);
+  const portfolios: Portfolio[] = portfolioRows.map((p) => ({
+    id: p.id,
+    title: p.title,
+    slug: p.slug,
+    is_public: p.is_public,
+    is_active: p.is_active,
+    updatedat: p.updatedat,
+    name: p.name,
+    job_title: p.job_title,
+    bio: p.bio,
+    profile_image_url: p.profile_image_url || undefined,
   }));
   return {
     user,
     portfolios,
-    currentPortfolioId: fullPortfolio?.id ?? null,
+    currentPortfolio: currentPortfolio ?? null,
+    currentPortfolioId: currentPortfolio?.id ?? null,
     hasPortfolio: portfolios.length > 0,
   };
 }
@@ -164,8 +167,40 @@ export async function action({ request, context }: Route.ActionArgs) {
       }
     }
 
+    if (action === 'update-basics') {
+      const portfolioDataResult = parseFormData<BasicInfoFormValues>(formData, 'portfolioData');
+      if ('success' in portfolioDataResult && !portfolioDataResult.success) {
+        throw new Response('Invalid portfolio data', { status: 400 });
+      }
+      const portfolioData = portfolioDataResult as BasicInfoFormValues;
+      try {
+        await CareerRepository.savePortfolioBasics(db, user.id, portfolioData);
+        return { message: 'Portfolio basics updated successfully' };
+      } catch (error) {
+        console.error('Failed to update portfolio basics:', error);
+        throw new Response('Failed to update portfolio basics', { status: 500 });
+      }
+    }
+
     throw new Response('Invalid action', { status: 400 });
   }
+}
+
+interface BasicInfoFormValues {
+  name: string;
+  initials?: string | null;
+  title?: string | null;
+  job_title: string;
+  bio: string;
+  tagline: string;
+  current_location: string;
+  location_tagline?: string | null;
+  email: string;
+  phone?: string | null;
+  availability_status?: boolean;
+  availability_message?: string | null;
+  is_public?: boolean;
+  is_active?: boolean;
 }
 
 interface Portfolio {
@@ -179,6 +214,246 @@ interface Portfolio {
   job_title?: string;
   bio?: string;
   profile_image_url?: string;
+}
+
+function BasicInfoForm({ portfolio }: { portfolio: CareerPortfolioRecord }) {
+  const fetcher = useFetcher();
+  const { addToast } = useToast();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isDirty },
+    reset,
+    control,
+    watch,
+  } = useForm<BasicInfoFormValues>({
+    defaultValues: {
+      name: portfolio.name || '',
+      initials: portfolio.initials || '',
+      title: portfolio.title || '',
+      job_title: portfolio.job_title || '',
+      bio: portfolio.bio || '',
+      tagline: portfolio.tagline || '',
+      current_location: portfolio.current_location || '',
+      location_tagline: portfolio.location_tagline || '',
+      email: portfolio.email || '',
+      phone: portfolio.phone || '',
+      availability_status: portfolio.availability_status || false,
+      availability_message: portfolio.availability_message || '',
+      is_public: portfolio.is_public,
+      is_active: portfolio.is_active,
+    },
+  });
+
+  useEffect(() => {
+    reset({
+      name: portfolio.name || '',
+      initials: portfolio.initials || '',
+      title: portfolio.title || '',
+      job_title: portfolio.job_title || '',
+      bio: portfolio.bio || '',
+      tagline: portfolio.tagline || '',
+      current_location: portfolio.current_location || '',
+      location_tagline: portfolio.location_tagline || '',
+      email: portfolio.email || '',
+      phone: portfolio.phone || '',
+      availability_status: portfolio.availability_status || false,
+      availability_message: portfolio.availability_message || '',
+      is_public: portfolio.is_public,
+      is_active: portfolio.is_active,
+    });
+  }, [portfolio, reset]);
+
+  useEffect(() => {
+    if (fetcher.state === 'idle' && fetcher.data) {
+      const result = fetcher.data as { success: boolean; error?: string; message?: string };
+      if (result.success) {
+        addToast(result.message || 'Basic info updated!', 'success');
+      } else {
+        addToast(`Failed to update: ${result.error || 'Unknown error'}`, 'error');
+      }
+    }
+  }, [fetcher.state, fetcher.data, addToast]);
+
+  const onSubmit: SubmitHandler<BasicInfoFormValues> = (formData) => {
+    if (!isDirty) {
+      addToast('No changes to save.', 'info');
+      return;
+    }
+    const fd = new FormData();
+    fd.append('action', 'update-basics');
+    fd.append('portfolioData', JSON.stringify(formData));
+    fetcher.submit(fd, { method: 'POST', action: '/account' });
+  };
+
+  const isSaving = fetcher.state === 'submitting';
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <Card>
+        <CardHeader>
+          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Personal
+          </span>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-1">
+            <label htmlFor="name" className="text-xs font-medium text-muted-foreground">
+              Full Name
+            </label>
+            <Input id="name" {...register('name', { required: 'Name is required' })} />
+            {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
+          </div>
+          <div className="space-y-1">
+            <label htmlFor="initials" className="text-xs font-medium text-muted-foreground">
+              Initials
+            </label>
+            <Input id="initials" {...register('initials')} maxLength={10} />
+          </div>
+          <div className="space-y-1">
+            <label htmlFor="job_title" className="text-xs font-medium text-muted-foreground">
+              Job Title
+            </label>
+            <Input
+              id="job_title"
+              {...register('job_title', { required: 'Job title is required' })}
+            />
+            {errors.job_title && (
+              <p className="text-xs text-destructive">{errors.job_title.message}</p>
+            )}
+          </div>
+          <div className="space-y-1">
+            <label htmlFor="tagline" className="text-xs font-medium text-muted-foreground">
+              Tagline
+            </label>
+            <Input
+              id="tagline"
+              {...register('tagline', { required: 'Tagline is required' })}
+              maxLength={500}
+            />
+            {errors.tagline && <p className="text-xs text-destructive">{errors.tagline.message}</p>}
+          </div>
+          <div className="space-y-1">
+            <label htmlFor="bio" className="text-xs font-medium text-muted-foreground">
+              Bio
+            </label>
+            <textarea
+              id="bio"
+              {...register('bio', { required: 'Bio is required' })}
+              rows={4}
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50 resize-none"
+            />
+            {errors.bio && <p className="text-xs text-destructive">{errors.bio.message}</p>}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Contact
+          </span>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-1">
+            <label htmlFor="email" className="text-xs font-medium text-muted-foreground">
+              Email
+            </label>
+            <Input
+              id="email"
+              type="email"
+              {...register('email', {
+                required: 'Email is required',
+                pattern: { value: /^\S+@\S+$/i, message: 'Invalid email format' },
+              })}
+            />
+            {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+          </div>
+          <div className="space-y-1">
+            <label htmlFor="phone" className="text-xs font-medium text-muted-foreground">
+              Phone
+            </label>
+            <Input id="phone" {...register('phone')} maxLength={50} />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Location
+          </span>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-1">
+            <label htmlFor="current_location" className="text-xs font-medium text-muted-foreground">
+              Location
+            </label>
+            <Input
+              id="current_location"
+              {...register('current_location', { required: 'Location is required' })}
+              maxLength={255}
+            />
+            {errors.current_location && (
+              <p className="text-xs text-destructive">{errors.current_location.message}</p>
+            )}
+          </div>
+          <div className="space-y-1">
+            <label htmlFor="location_tagline" className="text-xs font-medium text-muted-foreground">
+              Location tagline
+            </label>
+            <Input id="location_tagline" {...register('location_tagline')} maxLength={255} />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Availability
+          </span>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-3">
+            <Controller
+              name="availability_status"
+              control={control}
+              render={({ field }) => (
+                <Switch
+                  id="availability_status"
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              )}
+            />
+            <label htmlFor="availability_status" className="text-sm text-muted-foreground">
+              {watch('availability_status') ? 'Open to opportunities' : 'Not available'}
+            </label>
+          </div>
+          {watch('availability_status') && (
+            <div className="space-y-1">
+              <label
+                htmlFor="availability_message"
+                className="text-xs font-medium text-muted-foreground"
+              >
+                Availability note
+              </label>
+              <Input
+                id="availability_message"
+                {...register('availability_message')}
+                maxLength={500}
+              />
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Button type="submit" disabled={isSaving || !isDirty} variant="default" className="w-full">
+        {isSaving ? 'Saving…' : 'Save'}
+      </Button>
+    </form>
+  );
 }
 
 export function meta() {
@@ -196,10 +471,7 @@ export default function Account({ loaderData }: Route.ComponentProps) {
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [showReplaceResume, setShowReplaceResume] = useState(false);
 
-  const { user, portfolios, currentPortfolioId } = loaderData;
-
-  const currentPortfolio =
-    portfolios.find((portfolio) => portfolio.id === currentPortfolioId) ?? portfolios[0] ?? null;
+  const { user, portfolios, currentPortfolioId, currentPortfolio } = loaderData;
   const [pdfGenerating, setPdfGenerating] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
 
@@ -502,7 +774,7 @@ export default function Account({ loaderData }: Route.ComponentProps) {
                   <div className="flex flex-col sm:flex-row sm:justify-end space-y-2 sm:space-y-0 sm:space-x-2">
                     <Button
                       type="button"
-                      onClick={() => navigate('/editor')}
+                      onClick={() => navigate('/work')}
                       variant="default"
                       size="sm"
                       className="w-full sm:w-auto"
@@ -592,6 +864,13 @@ export default function Account({ loaderData }: Route.ComponentProps) {
             </Card>
           )}
         </div>
+
+        {currentPortfolio && (
+          <div>
+            <h2 className="text-lg font-semibold mb-4">Portfolio Info</h2>
+            <BasicInfoForm portfolio={currentPortfolio} />
+          </div>
+        )}
 
         <div className="border-t border-border pt-6 flex justify-end">
           <Button

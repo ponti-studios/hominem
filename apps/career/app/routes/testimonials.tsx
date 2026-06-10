@@ -5,13 +5,12 @@ import { MessageSquare, PlusIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
 import { useForm } from 'react-hook-form';
-import { Route } from './+types/editor.testimonials';
-import { useFetcher, useOutletContext } from 'react-router';
+import { useFetcher } from 'react-router';
 
 import { useToast } from '../hooks/useToast';
-import type { FullPortfolio } from '../lib/portfolio.server';
+import { portfolioContext, userContext } from '../lib/middleware';
 import { parseFormData } from '../lib/route-utils';
-import { userContext } from '../lib/middleware';
+import { Route } from './+types/testimonials';
 
 interface TestimonialFormValues {
   id?: string;
@@ -111,7 +110,7 @@ function TestimonialForm({
 
     fetcher.submit(formDataToSubmit, {
       method: 'POST',
-      action: '/editor/testimonials',
+      action: '/testimonials',
     });
   };
 
@@ -126,7 +125,7 @@ function TestimonialForm({
 
       fetcher.submit(formData, {
         method: 'POST',
-        action: '/editor/testimonials',
+        action: '/testimonials',
       });
 
       onDelete?.();
@@ -342,7 +341,18 @@ function TestimonialsEditorSection({
   );
 }
 
-export const meta: Route.MetaFunction = () => [{ title: 'Testimonials - Portfolio Editor | Craftd' }];
+export const meta: Route.MetaFunction = () => [{ title: 'Testimonials | Craftd' }];
+
+export async function loader({ context }: Route.LoaderArgs) {
+  const portfolio = context.get(portfolioContext)!;
+  const testimonials = await db
+    .selectFrom('app.testimonials')
+    .selectAll()
+    .where('portfolio_id', '=', portfolio.id)
+    .orderBy('sort_order', 'asc')
+    .execute();
+  return { testimonials, portfolio_id: portfolio.id };
+}
 
 export async function action({ request, context }: Route.ActionArgs) {
   const user = context.get(userContext);
@@ -433,11 +443,11 @@ export async function action({ request, context }: Route.ActionArgs) {
   }
 }
 
-export default function EditorTestimonials() {
-  // Consume portfolio provided by parent editor layout loader via outlet context
-  const portfolio = useOutletContext<FullPortfolio>();
-
+export default function Testimonials({ loaderData }: Route.ComponentProps) {
   return (
-    <TestimonialsEditorSection testimonials={portfolio.testimonials} portfolio_id={portfolio.id} />
+    <TestimonialsEditorSection
+      testimonials={loaderData.testimonials}
+      portfolio_id={loaderData.portfolio_id}
+    />
   );
 }

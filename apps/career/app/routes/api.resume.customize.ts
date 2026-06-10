@@ -9,6 +9,7 @@ import {
   type CustomizeResumeApiRequest,
   type CustomizeResumeApiResponse,
 } from '~/lib/api-contracts';
+
 import { logger } from '../lib/logger';
 import { userContext } from '../lib/middleware';
 import { getFullUserPortfolio } from '../lib/portfolio.server';
@@ -79,8 +80,7 @@ export const action: ActionFunction = async ({ request, context }) => {
       );
     }
 
-    const { job_posting, jobPostingData, resumeFormat, focusAreas, targetLength } =
-      validation.data;
+    const { job_posting, jobPostingData, resumeFormat, focusAreas, targetLength } = validation.data;
 
     // Handle job posting input - either direct text or pre-scraped structured data
     let finalJobPosting: string;

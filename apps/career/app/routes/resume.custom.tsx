@@ -1,8 +1,9 @@
-import { Route } from './+types/resume.custom';
 import { Link } from 'react-router';
 
 import { JobScrapingResumeCustomizer } from '~/components/JobScrapingResumeCustomizer';
 import { userContext } from '~/lib/middleware';
+
+import { Route } from './+types/resume.custom';
 
 export const meta: Route.MetaFunction = () => {
   return [

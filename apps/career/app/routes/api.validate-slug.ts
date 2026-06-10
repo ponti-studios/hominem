@@ -1,8 +1,8 @@
 import { CareerRepository, db } from '@hominem/db';
 import { data } from 'react-router';
-import { Route } from './+types/api.validate-slug';
 
 import { createErrorResponse, createSuccessResponse } from '../lib/route-utils';
+import { Route } from './+types/api.validate-slug';
 
 export async function loader({ request }: Route.LoaderArgs) {
   const url = new URL(request.url);

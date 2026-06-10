@@ -1,21 +1,20 @@
 import type { CareerSkillRecord } from '@hominem/db';
-import { CareerRepository, runInTransaction } from '@hominem/db';
+import { CareerRepository, db, runInTransaction } from '@hominem/db';
 import { Button } from '@hominem/ui/button';
 import { LoaderPinwheel, PlusIcon, XIcon, Zap } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Route } from './+types/editor.skills';
-import { useFetcher, useOutletContext } from 'react-router';
+import { useFetcher } from 'react-router';
 
 import { cn } from '~/lib/utils';
 
 import { useToast } from '../hooks/useToast';
-import type { FullPortfolio } from '../lib/portfolio.server';
+import { portfolioContext, userContext } from '../lib/middleware';
 import { parseFormData } from '../lib/route-utils';
-import { userContext } from '../lib/middleware';
+import { Route } from './+types/skills';
 
 export const meta: Route.MetaFunction = () => {
-  return [{ title: 'Skills - Portfolio Editor | Craftd' }];
+  return [{ title: 'Skills | Craftd' }];
 };
 
 interface NewSkillForm {
@@ -88,7 +87,7 @@ function SkillsEditorSection({ skills: initialSkills, portfolio_id }: SkillsEdit
 
     fetcher.submit(formData, {
       method: 'POST',
-      action: '/editor/skills',
+      action: '/skills',
     });
   };
 
@@ -287,15 +286,15 @@ function SkillsEditorSection({ skills: initialSkills, portfolio_id }: SkillsEdit
   );
 }
 
-export default function EditorSkills() {
-  // Use portfolio from parent editor layout via outlet context
-  const portfolio = useOutletContext<FullPortfolio>();
-
-  return (
-    <div className="container mx-auto">
-      <SkillsEditorSection skills={portfolio.skills} portfolio_id={portfolio.id} />
-    </div>
-  );
+export async function loader({ context }: Route.LoaderArgs) {
+  const portfolio = context.get(portfolioContext)!;
+  const skills = await db
+    .selectFrom('app.skills')
+    .selectAll()
+    .where('portfolio_id', '=', portfolio.id)
+    .orderBy('sort_order', 'asc')
+    .execute();
+  return { skills, portfolio_id: portfolio.id };
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
@@ -349,4 +348,12 @@ export async function action({ request, context }: Route.ActionArgs) {
     console.error('Failed to save skills:', error);
     throw new Response('Failed to save skills', { status: 500 });
   }
+}
+
+export default function Skills({ loaderData }: Route.ComponentProps) {
+  return (
+    <div className="container mx-auto">
+      <SkillsEditorSection skills={loaderData.skills} portfolio_id={loaderData.portfolio_id} />
+    </div>
+  );
 }

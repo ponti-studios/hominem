@@ -1,7 +1,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hominem/ui/tabs';
 import { Briefcase, Calendar, ChevronLeft, MessageSquare, Paperclip, UserPlus } from 'lucide-react';
 import { useState } from 'react';
-import { Route } from './+types/career.applications.$id';
 import { Link, useFetcher } from 'react-router';
 
 import {
@@ -20,6 +19,8 @@ import type {
   InterviewEntry,
   JobApplicationUpdate,
 } from '~/types/career-data';
+
+import { Route } from './+types/applications.$id';
 
 export async function loader({ context, params }: Route.LoaderArgs) {
   const user = context.get(userContext)!;
@@ -183,7 +184,7 @@ export default function ApplicationDetail({ loaderData, params }: Route.Componen
       {/* Header */}
       <header className="flex items-center justify-between">
         <Link
-          to="/career/applications"
+          to="/applications"
           className="flex items-center text-sm text-muted-foreground hover:text-foreground"
         >
           <ChevronLeft className="h-5 w-5" />

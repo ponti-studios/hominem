@@ -4,15 +4,16 @@ import { Button } from '@hominem/ui/button';
 import { Github, Globe, Link2, Linkedin, Twitter } from 'lucide-react';
 import { useEffect } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
-import { Route } from './+types/editor.social';
-import { useFetcher, useOutletContext } from 'react-router';
+import { useFetcher } from 'react-router';
 
 import { cn } from '~/lib/utils';
 
 import { useToast } from '../hooks/useToast';
-import type { FullPortfolio } from '../lib/portfolio.server';
+import { portfolioContext, userContext } from '../lib/middleware';
 import { parseFormData } from '../lib/route-utils';
-import { userContext } from '../lib/middleware';
+import { Route } from './+types/social';
+
+export const meta: Route.MetaFunction = () => [{ title: 'Social | Craftd' }];
 
 interface SocialLinksFormValues {
   id?: string;
@@ -83,7 +84,7 @@ function SocialLinksEditorSection({
 
     fetcher.submit(formData2, {
       method: 'POST',
-      action: '/editor/social',
+      action: '/social',
     });
   };
 
@@ -267,7 +268,15 @@ function SocialLinksEditorSection({
   );
 }
 
-export const meta: Route.MetaFunction = () => [{ title: 'Social - Portfolio Editor | Craftd' }];
+export async function loader({ context }: Route.LoaderArgs) {
+  const portfolio = context.get(portfolioContext)!;
+  const social_links = await db
+    .selectFrom('app.social_links')
+    .selectAll()
+    .where('portfolio_id', '=', portfolio.id)
+    .executeTakeFirst();
+  return { social_links: social_links ?? null, portfolio_id: portfolio.id };
+}
 
 export async function action({ request, context }: Route.ActionArgs) {
   const user = context.get(userContext);
@@ -308,10 +317,11 @@ export async function action({ request, context }: Route.ActionArgs) {
   }
 }
 
-export default function EditorSocial() {
-  const portfolio = useOutletContext<FullPortfolio>();
-
+export default function Social({ loaderData }: Route.ComponentProps) {
   return (
-    <SocialLinksEditorSection social_links={portfolio.social_links} portfolio_id={portfolio.id} />
+    <SocialLinksEditorSection
+      social_links={loaderData.social_links}
+      portfolio_id={loaderData.portfolio_id}
+    />
   );
 }

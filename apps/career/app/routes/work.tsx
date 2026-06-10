@@ -5,8 +5,7 @@ import { Briefcase, PlusIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
 import { useFieldArray, useForm } from 'react-hook-form';
-import { Route } from './+types/editor.work';
-import { useFetcher, useOutletContext } from 'react-router';
+import { useFetcher } from 'react-router';
 
 import type { WorkExperienceMetadata } from '~/types/career-data';
 
@@ -14,15 +13,15 @@ import { EditorFormActions } from '../components/EditorFormActions';
 import { useCareerEditorSubmission } from '../hooks/useCareerEditorSubmission';
 import { useToast } from '../hooks/useToast';
 import { jsonObject } from '../lib/db-json';
-import type { FullPortfolio } from '../lib/portfolio.server';
+import { portfolioContext, userContext } from '../lib/middleware';
 import { parseFormData } from '../lib/route-utils';
-import { userContext } from '../lib/middleware';
 import {
   formatDateForInput,
   nullArrayToUndefined,
   nullToUndefined,
   stringToDate,
 } from '../lib/utils';
+import { Route } from './+types/work';
 
 interface WorkExperienceFormValues {
   id?: string;
@@ -142,7 +141,7 @@ function WorkExperienceForm({
 
     fetcher.submit(formDataToSubmit, {
       method: 'POST',
-      action: '/editor/work',
+      action: '/work',
     });
   };
 
@@ -157,7 +156,7 @@ function WorkExperienceForm({
 
       fetcher.submit(formData, {
         method: 'POST',
-        action: '/editor/work',
+        action: '/work',
       });
 
       onDelete?.();
@@ -363,6 +362,13 @@ function WorkExperienceEditorSection({
   );
 }
 
+export async function loader({ context }: Route.LoaderArgs) {
+  const user = context.get(userContext)!;
+  const portfolio = context.get(portfolioContext)!;
+  const work_experiences = await CareerRepository.listUserWorkExperiences(db, user.id);
+  return { work_experiences, portfolio_id: portfolio.id };
+}
+
 export async function action({ request, context }: Route.ActionArgs) {
   const user = context.get(userContext);
   if (!user) {
@@ -471,14 +477,11 @@ export async function action({ request, context }: Route.ActionArgs) {
   }
 }
 
-export default function EditorWork() {
-  // Consume portfolio provided by parent editor layout loader via outlet context
-  const portfolio = useOutletContext<FullPortfolio>();
-
+export default function Work({ loaderData }: Route.ComponentProps) {
   return (
     <WorkExperienceEditorSection
-      work_experiences={portfolio.work_experiences}
-      portfolio_id={portfolio.id}
+      work_experiences={loaderData.work_experiences}
+      portfolio_id={loaderData.portfolio_id}
     />
   );
 }

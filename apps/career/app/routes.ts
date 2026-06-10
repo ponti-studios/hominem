@@ -1,4 +1,4 @@
-import { type RouteConfig, index, layout, prefix, route } from '@react-router/dev/routes';
+import { type RouteConfig, index, route } from '@react-router/dev/routes';
 
 export default [
   index('routes/home.tsx'),
@@ -11,28 +11,21 @@ export default [
   route('/api/portfolio/:owner_userid', 'routes/api.portfolio.$userId.ts'),
   route('/api/resume/convert', 'routes/api.resume.convert.ts'),
   route('/api/validate-slug', 'routes/api.validate-slug.ts'),
-  ...prefix('/career', [
-    index('routes/career.tsx'),
-    route('/applications', 'routes/career.applications.tsx'),
-    route('/experience/:id', 'routes/career.experience.$id.tsx'),
-    route('/experience/:id/projects', 'routes/career.experience.$id.projects.tsx'),
-    route('/applications/create', 'routes/career.applications.create.tsx'),
-    route('/applications/:id', 'routes/career.applications.$id.tsx'),
-    route('/certifications', 'routes/career.certifications.tsx'),
-  ]),
-  route('/projects', 'routes/career.projects.tsx'),
+  route('/api/resume/customize', 'routes/api.resume.customize.ts'),
   route('/onboarding', 'routes/onboarding.tsx'),
   route('/demo', 'routes/demo.tsx'),
-  route('/api/resume/customize', 'routes/api.resume.customize.ts'),
   route('/resume/custom', 'routes/resume.custom.tsx'),
   route('/p/:slug', 'routes/p.$slug.tsx'),
-  layout('routes/editor.tsx', [
-    route('/editor', 'routes/editor.basic.tsx'),
-    route('/editor/work', 'routes/editor.work.tsx'),
-    route('/editor/skills', 'routes/editor.skills.tsx'),
-    route('/editor/social', 'routes/editor.social.tsx'),
-    route('/editor/stats', 'routes/editor.stats.tsx'),
-    route('/editor/projects', 'routes/editor.projects.tsx'),
-    route('/editor/testimonials', 'routes/editor.testimonials.tsx'),
-  ]),
+  route('/work', 'routes/work.tsx'),
+  route('/work/:id', 'routes/work.$id.tsx'),
+  route('/work/:id/projects', 'routes/work.$id.projects.tsx'),
+  route('/skills', 'routes/skills.tsx'),
+  route('/social', 'routes/social.tsx'),
+  route('/stats', 'routes/stats.tsx'),
+  route('/projects', 'routes/projects.tsx'),
+  route('/testimonials', 'routes/testimonials.tsx'),
+  route('/applications', 'routes/applications.tsx'),
+  route('/applications/new', 'routes/applications.new.tsx'),
+  route('/applications/:id', 'routes/applications.$id.tsx'),
+  route('/certifications', 'routes/certifications.tsx'),
 ] satisfies RouteConfig;

@@ -1,7 +1,7 @@
-import { z } from "zod";
+import { z } from 'zod';
 
-import { serverEnv } from "~/lib/env";
-import type { JobPosting } from "~/types/applications";
+import { serverEnv } from '~/lib/env';
+import type { JobPosting } from '~/types/applications';
 
 interface JobScrapingResult {
   success: boolean;
@@ -21,27 +21,27 @@ const extractedJobSchema = z.object({
 });
 
 const JOB_EXTRACTION_PROMPT =
-  "Extract the job posting into structured JSON with the following fields: job_title, companyName, companyDescription, jobDescription, location, requirements, skills, and fullText. Return only the job posting content and exclude navigation, ads, footers, cookie banners, and unrelated page chrome.";
+  'Extract the job posting into structured JSON with the following fields: job_title, companyName, companyDescription, jobDescription, location, requirements, skills, and fullText. Return only the job posting content and exclude navigation, ads, footers, cookie banners, and unrelated page chrome.';
 
 const JOB_EXTRACTION_SCHEMA = {
-  type: "object",
+  type: 'object',
   properties: {
-    job_title: { type: "string" },
-    companyName: { type: "string" },
-    companyDescription: { type: "string" },
-    jobDescription: { type: "string" },
-    location: { type: "string" },
+    job_title: { type: 'string' },
+    companyName: { type: 'string' },
+    companyDescription: { type: 'string' },
+    jobDescription: { type: 'string' },
+    location: { type: 'string' },
     requirements: {
-      type: "array",
-      items: { type: "string" },
+      type: 'array',
+      items: { type: 'string' },
     },
     skills: {
-      type: "array",
-      items: { type: "string" },
+      type: 'array',
+      items: { type: 'string' },
     },
-    fullText: { type: "string" },
+    fullText: { type: 'string' },
   },
-  required: ["fullText", "job_title"],
+  required: ['fullText', 'job_title'],
 };
 
 export class JobScrapingService {
@@ -51,40 +51,40 @@ export class JobScrapingService {
   constructor() {
     try {
       const env = serverEnv();
-      this.cloudflareAccountId = env.CLOUDFLARE_ACCOUNT_ID || "";
-      this.cloudflareApiToken = env.CLOUDFLARE_API_TOKEN || "";
+      this.cloudflareAccountId = env.CLOUDFLARE_ACCOUNT_ID || '';
+      this.cloudflareApiToken = env.CLOUDFLARE_API_TOKEN || '';
     } catch {
-      this.cloudflareAccountId = "";
-      this.cloudflareApiToken = "";
+      this.cloudflareAccountId = '';
+      this.cloudflareApiToken = '';
     }
 
     if (!this.cloudflareAccountId || !this.cloudflareApiToken) {
-      console.warn("Cloudflare credentials not configured. Job scraping will not work.");
+      console.warn('Cloudflare credentials not configured. Job scraping will not work.');
     }
   }
 
   async scrapeJobPosting(jobUrl: string): Promise<JobScrapingResult> {
     try {
       if (!this.cloudflareAccountId || !this.cloudflareApiToken) {
-        throw new Error("Cloudflare credentials not configured");
+        throw new Error('Cloudflare credentials not configured');
       }
 
       const response = await fetch(
         `https://api.cloudflare.com/client/v4/accounts/${this.cloudflareAccountId}/browser-rendering/json`,
         {
-          method: "POST",
+          method: 'POST',
           headers: {
             Authorization: `Bearer ${this.cloudflareApiToken}`,
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             url: jobUrl,
             prompt: JOB_EXTRACTION_PROMPT,
             gotoOptions: {
-              waitUntil: "networkidle2",
+              waitUntil: 'networkidle2',
             },
             response_format: {
-              type: "json_schema",
+              type: 'json_schema',
               schema: JOB_EXTRACTION_SCHEMA,
             },
           }),
@@ -106,22 +106,22 @@ export class JobScrapingService {
 
       if (!payload.success) {
         throw new Error(
-          `Cloudflare API returned error: ${payload.errors?.[0]?.message || "Unknown error"}`,
+          `Cloudflare API returned error: ${payload.errors?.[0]?.message || 'Unknown error'}`,
         );
       }
 
       const extractedData = extractedJobSchema.parse(payload.result ?? {});
-      const fullText = extractedData.fullText ?? "";
+      const fullText = extractedData.fullText ?? '';
       const normalizedFullText = fullText.trim();
 
       return {
         success: true,
         job_posting: {
-          job_title: extractedData.job_title || "Unknown Position",
-          companyName: extractedData.companyName || "Unknown Company",
-          companyDescription: extractedData.companyDescription || "",
+          job_title: extractedData.job_title || 'Unknown Position',
+          companyName: extractedData.companyName || 'Unknown Company',
+          companyDescription: extractedData.companyDescription || '',
           jobDescription: extractedData.jobDescription || normalizedFullText,
-          location: extractedData.location || "",
+          location: extractedData.location || '',
           requirements: extractedData.requirements || [],
           skills: extractedData.skills || [],
           fullText: normalizedFullText,
@@ -133,10 +133,10 @@ export class JobScrapingService {
         },
       };
     } catch (error) {
-      console.error("Job posting scraping failed:", error);
+      console.error('Job posting scraping failed:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Unknown error occurred",
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
   }
@@ -145,8 +145,8 @@ export class JobScrapingService {
     const isConfigured = Boolean(this.cloudflareAccountId && this.cloudflareApiToken);
 
     return {
-      status: isConfigured ? "healthy" : "unhealthy",
-      runtime: "direct-api",
+      status: isConfigured ? 'healthy' : 'unhealthy',
+      runtime: 'direct-api',
       timestamp: new Date().toISOString(),
     };
   }

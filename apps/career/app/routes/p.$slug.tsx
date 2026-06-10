@@ -1,7 +1,6 @@
-import { Route } from './+types/p.$slug';
-
 import { jsonArray } from '../lib/db-json';
 import { getFullPortfolioBySlug } from '../lib/portfolio.server';
+import { Route } from './+types/p.$slug';
 
 export const meta: Route.MetaFunction = ({ data }) => {
   if (!data) {

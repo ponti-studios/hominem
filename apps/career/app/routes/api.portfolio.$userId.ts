@@ -1,8 +1,8 @@
 import { data } from 'react-router';
-import { Route } from './+types/api.portfolio.$userId';
 
 import { logger } from '../lib/logger';
 import { getFullUserPortfolio } from '../lib/portfolio.server';
+import { Route } from './+types/api.portfolio.$userId';
 
 export async function loader({ params }: Route.LoaderArgs) {
   const { owner_userid } = params;

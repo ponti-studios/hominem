@@ -1,9 +1,10 @@
 import { useAuthClient } from '@hominem/auth/client/provider';
 import { OtpVerificationForm } from '@hominem/ui';
-import { Route } from './+types/verify';
 import { redirect, useNavigate } from 'react-router';
 
 import { userContext } from '~/lib/middleware';
+
+import { Route } from './+types/verify';
 
 export const meta: Route.MetaFunction = () => [{ title: 'Verify - Craftd' }];
 

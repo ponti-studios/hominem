@@ -1,9 +1,9 @@
-import { Button } from "@hominem/ui/button";
-import { Check, Loader2, X } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
-import { useSubmit } from "react-router";
+import { Button } from '@hominem/ui/button';
+import { Check, Loader2, X } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { useSubmit } from 'react-router';
 
-import { cn } from "~/lib/utils";
+import { cn } from '~/lib/utils';
 
 interface SlugEditorProps {
   portfolio_id: string;
@@ -27,7 +27,7 @@ export function SlugEditor({ portfolio_id, initialSlug, onSave }: SlugEditorProp
   const [validation, setValidation] = useState<ValidationState>({
     isChecking: false,
     isAvailable: null,
-    message: "",
+    message: '',
     isValid: true,
   });
 
@@ -41,7 +41,7 @@ export function SlugEditor({ portfolio_id, initialSlug, onSave }: SlugEditorProp
     async (slug: string) => {
       // Reset validation if empty or same as initial
       if (!slug || slug === initialSlug) {
-        setValidation({ isChecking: false, isAvailable: null, message: "", isValid: true });
+        setValidation({ isChecking: false, isAvailable: null, message: '', isValid: true });
         return;
       }
 
@@ -50,7 +50,7 @@ export function SlugEditor({ portfolio_id, initialSlug, onSave }: SlugEditorProp
         setValidation({
           isChecking: false,
           isAvailable: false,
-          message: "Slug must be at least 3 characters long",
+          message: 'Slug must be at least 3 characters long',
           isValid: false,
         });
         return;
@@ -60,7 +60,7 @@ export function SlugEditor({ portfolio_id, initialSlug, onSave }: SlugEditorProp
         setValidation({
           isChecking: false,
           isAvailable: false,
-          message: "Slug must be less than 50 characters long",
+          message: 'Slug must be less than 50 characters long',
           isValid: false,
         });
         return;
@@ -70,7 +70,7 @@ export function SlugEditor({ portfolio_id, initialSlug, onSave }: SlugEditorProp
       setValidation({
         isChecking: true,
         isAvailable: null,
-        message: "Checking availability...",
+        message: 'Checking availability...',
         isValid: true,
       });
 
@@ -95,7 +95,7 @@ export function SlugEditor({ portfolio_id, initialSlug, onSave }: SlugEditorProp
           setValidation({
             isChecking: false,
             isAvailable: false,
-            message: data.error || "Invalid slug format",
+            message: data.error || 'Invalid slug format',
             isValid: false,
           });
         }
@@ -103,7 +103,7 @@ export function SlugEditor({ portfolio_id, initialSlug, onSave }: SlugEditorProp
         setValidation({
           isChecking: false,
           isAvailable: false,
-          message: "Error checking availability",
+          message: 'Error checking availability',
           isValid: false,
         });
       }
@@ -130,16 +130,16 @@ export function SlugEditor({ portfolio_id, initialSlug, onSave }: SlugEditorProp
 
     try {
       const formData = new FormData();
-      formData.append("action", "update-slug");
-      formData.append("slug", slugValue);
-      formData.append("portfolio_id", portfolio_id);
+      formData.append('action', 'update-slug');
+      formData.append('slug', slugValue);
+      formData.append('portfolio_id', portfolio_id);
 
-      submit(formData, { method: "post" });
+      submit(formData, { method: 'post' });
 
       // Let the parent component handle the success state
       onSave?.(slugValue);
     } catch (error) {
-      console.error("Failed to save slug:", error);
+      console.error('Failed to save slug:', error);
     } finally {
       setIsSaving(false);
     }
@@ -147,7 +147,7 @@ export function SlugEditor({ portfolio_id, initialSlug, onSave }: SlugEditorProp
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Transform input to valid slug format
-    const newValue = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "");
+    const newValue = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
     setSlugValue(newValue);
   };
 
@@ -176,11 +176,11 @@ export function SlugEditor({ portfolio_id, initialSlug, onSave }: SlugEditorProp
 
   // Get message styling
   const getMessageStyling = () => {
-    if (!validation.message) return "";
+    if (!validation.message) return '';
 
-    if (validation.isChecking) return "text-primary";
-    if (validation.isAvailable) return "text-success";
-    return "text-destructive";
+    if (validation.isChecking) return 'text-primary';
+    if (validation.isAvailable) return 'text-success';
+    return 'text-destructive';
   };
 
   return (
@@ -200,8 +200,8 @@ export function SlugEditor({ portfolio_id, initialSlug, onSave }: SlugEditorProp
               value={slugValue}
               onChange={handleInputChange}
               className={cn(
-                "input rounded-l-none pr-8 font-mono h-8",
-                !validation.isValid ? "input-error" : "",
+                'input rounded-l-none pr-8 font-mono h-8',
+                !validation.isValid ? 'input-error' : '',
               )}
               placeholder="your-portfolio-name"
             />
@@ -228,7 +228,7 @@ export function SlugEditor({ portfolio_id, initialSlug, onSave }: SlugEditorProp
 
       {/* Validation message */}
       {validation.message && (
-        <p className={cn("text-xs", getMessageStyling())}>{validation.message}</p>
+        <p className={cn('text-xs', getMessageStyling())}>{validation.message}</p>
       )}
     </div>
   );

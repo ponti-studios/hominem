@@ -5,7 +5,6 @@ import { useDebouncedValue } from '@hominem/ui/hooks';
 import { PlusIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
-import { Route } from './+types/career.applications';
 
 import { ApplicationsDesktopTable } from '~/components/career/applications/ApplicationsDesktopTable';
 import { ApplicationsEmptyState } from '~/components/career/applications/ApplicationsEmptyState';
@@ -23,6 +22,8 @@ import {
   hasActiveFilters,
 } from '~/lib/utils/applicationUtils';
 import type { JobApplicationStatus } from '~/types/career';
+
+import { Route } from './+types/applications';
 
 const DEFAULT_LIMIT = 10;
 const MAX_LIMIT = 100;
@@ -147,7 +148,7 @@ function ApplicationsHeader({ totalCount }: { totalCount: number }) {
           {totalCount} applications · track your pipeline and progress
         </p>
       </div>
-      <Link to="/career/applications/create" className={buttonVariants({ size: 'sm' })}>
+      <Link to="/applications/new" className={buttonVariants({ size: 'sm' })}>
         <PlusIcon className="size-4" />
         Add Application
       </Link>
@@ -155,7 +156,7 @@ function ApplicationsHeader({ totalCount }: { totalCount: number }) {
   );
 }
 
-export default function CareerApplications({ loaderData, actionData }: Route.ComponentProps) {
+export default function Applications({ loaderData, actionData }: Route.ComponentProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { addToast } = useToast();

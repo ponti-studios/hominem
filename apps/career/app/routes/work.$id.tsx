@@ -1,12 +1,13 @@
 import { ArrowLeftIcon, PlusIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
-import { Route } from './+types/career.experience.$id';
 import { useNavigate } from 'react-router';
 
 import { jsonObject } from '~/lib/db-json';
 import { userContext } from '~/lib/middleware';
 import { cn } from '~/lib/utils';
 import type { WorkExperienceMetadata } from '~/types/career-data';
+
+import { Route } from './+types/work.$id';
 
 export async function loader({ context, params }: Route.LoaderArgs) {
   const user = context.get(userContext)!;
@@ -464,12 +465,12 @@ export default function WorkExperienceDetail({ loaderData }: Route.ComponentProp
       {/* Back */}
       <button
         type="button"
-        onClick={() => navigate('/career')}
+        onClick={() => navigate('/work')}
         data-testid="back-button"
         className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeftIcon className="w-3.5 h-3.5" />
-        Career
+        Work
       </button>
 
       {/* Identity */}
@@ -553,7 +554,7 @@ export default function WorkExperienceDetail({ loaderData }: Route.ComponentProp
         <SectionLabel>Projects</SectionLabel>
         <button
           type="button"
-          onClick={() => navigate(`/career/experience/${wx.id}/projects`)}
+          onClick={() => navigate(`/work/${wx.id}/projects`)}
           className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1.5 transition-colors"
         >
           Manage projects

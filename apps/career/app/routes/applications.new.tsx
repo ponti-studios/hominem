@@ -5,7 +5,6 @@ import { Input } from '@hominem/ui/input';
 import { LoadingSpinner } from '@hominem/ui/loading-spinner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
 import { useState } from 'react';
-import { Route } from './+types/career.applications.create';
 import { Form, Link, redirect } from 'react-router';
 
 import type { JobScrapeApiRequest, JobScrapeApiResponse } from '~/lib/api-contracts';
@@ -14,6 +13,8 @@ import { JobApplicationsService } from '~/lib/services/job-applications.service'
 import { cn } from '~/lib/utils';
 import type { JobPosting } from '~/types/applications';
 import { JobApplicationStatus } from '~/types/career';
+
+import { Route } from './+types/applications.new';
 
 export async function loader({ context }: Route.LoaderArgs) {
   const user = context.get(userContext);
@@ -77,7 +78,7 @@ export async function action({ request, context }: Route.ActionArgs) {
       recruiter_linkedin: recruiter_linkedin || null,
     });
 
-    return redirect('/career/applications');
+    return redirect('/applications');
   } catch (error) {
     console.error('Error creating job application:', error);
     throw new Response('Failed to create job application. Please try again.', { status: 500 });
@@ -542,7 +543,7 @@ export default function CreateJobApplication() {
                       Create Application
                     </Button>
                     <Link
-                      to="/career/applications"
+                      to="/applications"
                       className="flex-1 h-11 inline-flex items-center justify-center rounded-lg text-sm font-medium transition-colors border border-border bg-card hover:bg-muted text-muted-foreground"
                     >
                       Cancel

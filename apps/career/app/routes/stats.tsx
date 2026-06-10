@@ -1,17 +1,16 @@
 import type { CareerPortfolioStatRecord } from '@hominem/db';
-import { CareerRepository, runInTransaction } from '@hominem/db';
+import { CareerRepository, db, runInTransaction } from '@hominem/db';
 import { Button } from '@hominem/ui/button';
 import { Input } from '@hominem/ui/input';
 import { BarChart3, PlusIcon } from 'lucide-react';
 import { useEffect } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
-import { Route } from './+types/editor.stats';
-import { useFetcher, useOutletContext } from 'react-router';
+import { useFetcher } from 'react-router';
 
 import { useToast } from '../hooks/useToast';
-import type { FullPortfolio } from '../lib/portfolio.server';
+import { portfolioContext, userContext } from '../lib/middleware';
 import { parseFormData } from '../lib/route-utils';
-import { userContext } from '../lib/middleware';
+import { Route } from './+types/stats';
 
 type PortfolioStat = CareerPortfolioStatRecord;
 
@@ -97,7 +96,7 @@ function PortfolioStatsEditorSection({
 
     fetcher.submit(formData2, {
       method: 'POST',
-      action: '/editor/stats',
+      action: '/stats',
     });
   };
 
@@ -183,7 +182,18 @@ function PortfolioStatsEditorSection({
   );
 }
 
-export const meta: Route.MetaFunction = () => [{ title: 'Portfolio Stats - Portfolio Editor | Craftd' }];
+export const meta: Route.MetaFunction = () => [{ title: 'Portfolio Stats | Craftd' }];
+
+export async function loader({ context }: Route.LoaderArgs) {
+  const portfolio = context.get(portfolioContext)!;
+  const stats = await db
+    .selectFrom('app.portfolio_stats')
+    .selectAll()
+    .where('portfolio_id', '=', portfolio.id)
+    .orderBy('sort_order', 'asc')
+    .execute();
+  return { stats, portfolio_id: portfolio.id };
+}
 
 export async function action({ request, context }: Route.ActionArgs) {
   const user = context.get(userContext);
@@ -234,11 +244,8 @@ export async function action({ request, context }: Route.ActionArgs) {
   }
 }
 
-export default function EditorStats() {
-  // Consume portfolio from parent editor layout loader via outlet context
-  const portfolio = useOutletContext<FullPortfolio>();
-
+export default function Stats({ loaderData }: Route.ComponentProps) {
   return (
-    <PortfolioStatsEditorSection stats={portfolio.portfolio_stats} portfolio_id={portfolio.id} />
+    <PortfolioStatsEditorSection stats={loaderData.stats} portfolio_id={loaderData.portfolio_id} />
   );
 }

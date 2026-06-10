@@ -1,9 +1,10 @@
 import { useAuthClient } from '@hominem/auth/client/provider';
 import { EmailEntryForm } from '@hominem/ui';
-import { Route } from './+types/login';
 import { redirect, useNavigate } from 'react-router';
 
 import { userContext } from '~/lib/middleware';
+
+import { Route } from './+types/login';
 
 export const meta: Route.MetaFunction = () => [
   { title: 'Sign In - Craftd' },

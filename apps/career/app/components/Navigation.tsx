@@ -25,9 +25,10 @@ interface NavItem {
 
 const AUTH_LINKS: { authenticated: NavItem[]; unauthenticated: NavItem[] } = {
   authenticated: [
-    { href: '/editor', label: 'Editor' },
-    { href: '/career', label: 'Career' },
-    { href: '/career/applications', label: 'Applications' },
+    { href: '/work', label: 'Work' },
+    { href: '/applications', label: 'Applications' },
+    { href: '/projects', label: 'Projects' },
+    { href: '/skills', label: 'Skills' },
   ],
   unauthenticated: [
     { href: '/login', label: 'Log in' },
@@ -38,20 +39,16 @@ const AUTH_LINKS: { authenticated: NavItem[]; unauthenticated: NavItem[] } = {
 const PUBLIC_LINKS: NavItem[] = [{ href: '/demo', label: 'Demo' }];
 
 function isActiveRoute(pathname: string, href: string) {
-  if (href === '/editor') {
-    return pathname === href || pathname.startsWith('/editor/');
+  if (href === '/work') {
+    return pathname === href || pathname.startsWith('/work/');
   }
 
-  if (href === '/career/applications') {
-    return pathname === href || pathname.startsWith('/career/applications/');
+  if (href === '/applications') {
+    return pathname === href || pathname.startsWith('/applications/');
   }
 
-  if (href === '/career') {
-    return (
-      pathname === href ||
-      pathname === '/career/certifications' ||
-      pathname.startsWith('/career/experience/')
-    );
+  if (href === '/projects') {
+    return pathname === href || pathname.startsWith('/projects/');
   }
 
   return pathname === href;
@@ -138,11 +135,11 @@ export default function Navigation() {
               <div className="flex items-center gap-2">
                 {currentPortfolio ? (
                   <Link
-                    to="/editor"
+                    to="/work"
                     className={cn(
                       buttonVariants({ variant: 'ghost' }),
                       'rounded-full px-3 text-left',
-                      isActiveRoute(location.pathname, '/editor')
+                      isActiveRoute(location.pathname, '/work')
                         ? 'bg-accent/10 text-foreground hover:bg-accent/10 hover:text-foreground'
                         : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                     )}
@@ -231,7 +228,7 @@ export default function Navigation() {
                   <>
                     {currentPortfolio ? (
                       <Link
-                        to="/editor"
+                        to="/work"
                         onClick={closeMenu}
                         className={cn(
                           buttonVariants({ variant: 'ghost' }),

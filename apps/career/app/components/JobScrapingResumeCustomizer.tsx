@@ -1,8 +1,8 @@
-import { useMutation } from '@tanstack/react-query';
 import { Button } from '@hominem/ui/button';
 import { Input } from '@hominem/ui/input';
 import { LoadingSpinner } from '@hominem/ui/loading-spinner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
+import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 
 import type {
@@ -34,7 +34,9 @@ async function scrapeJob(url: string): Promise<JobPosting> {
   return data.job_posting;
 }
 
-async function saveApplication(job_posting: JobPosting): Promise<{ id: string; [key: string]: unknown }> {
+async function saveApplication(
+  job_posting: JobPosting,
+): Promise<{ id: string; [key: string]: unknown }> {
   const response = await fetch('/api/applications/create', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -47,7 +49,9 @@ async function saveApplication(job_posting: JobPosting): Promise<{ id: string; [
   return data.application;
 }
 
-async function generateResume(request: CustomizeResumeApiRequest): Promise<CustomizeResumeApiResponse> {
+async function generateResume(
+  request: CustomizeResumeApiRequest,
+): Promise<CustomizeResumeApiResponse> {
   const response = await fetch('/api/resume/customize', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -328,7 +332,11 @@ export function JobScrapingResumeCustomizer({
               disabled={saveApplicationMutation.isPending}
               variant="default"
             >
-              {saveApplicationMutation.isPending ? <LoadingSpinner variant="sm" /> : 'Save & Continue'}
+              {saveApplicationMutation.isPending ? (
+                <LoadingSpinner variant="sm" />
+              ) : (
+                'Save & Continue'
+              )}
             </Button>
             <Button variant="outline" onClick={() => setStep('scrape')}>
               Back
@@ -434,7 +442,10 @@ export function JobScrapingResumeCustomizer({
                   resumeFormat,
                   targetLength,
                   focusAreas: focusAreas
-                    ? focusAreas.split(',').map((s) => s.trim()).filter(Boolean)
+                    ? focusAreas
+                        .split(',')
+                        .map((s) => s.trim())
+                        .filter(Boolean)
                     : [],
                 } satisfies CustomizeResumeApiRequest)
               }
