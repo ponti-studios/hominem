@@ -1,11 +1,11 @@
 import { useAuthClient } from '@hominem/auth/client/provider';
 import { EmailEntryForm } from '@hominem/ui';
-import type { LoaderFunctionArgs, MetaFunction } from 'react-router';
+import { Route } from './+types/login';
 import { redirect, useNavigate } from 'react-router';
 
 import { userContext } from '~/lib/middleware';
 
-export const meta: MetaFunction = () => [
+export const meta: Route.MetaFunction = () => [
   { title: 'Sign In - Craftd' },
   {
     name: 'description',
@@ -13,7 +13,7 @@ export const meta: MetaFunction = () => [
   },
 ];
 
-export async function loader({ context }: LoaderFunctionArgs) {
+export async function loader({ context }: Route.LoaderArgs) {
   const user = context.get(userContext);
   if (user) throw redirect('/account');
   return null;

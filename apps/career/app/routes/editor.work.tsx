@@ -5,7 +5,7 @@ import { Briefcase, PlusIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
 import { useFieldArray, useForm } from 'react-hook-form';
-import type { ActionFunctionArgs } from 'react-router';
+import { Route } from './+types/editor.work';
 import { useFetcher, useOutletContext } from 'react-router';
 
 import type { WorkExperienceMetadata } from '~/types/career-data';
@@ -15,12 +15,7 @@ import { useCareerEditorSubmission } from '../hooks/useCareerEditorSubmission';
 import { useToast } from '../hooks/useToast';
 import { jsonObject } from '../lib/db-json';
 import type { FullPortfolio } from '../lib/portfolio.server';
-import {
-  createErrorResponse,
-  createSuccessResponse,
-  parseFormData,
-  tryAsync,
-} from '../lib/route-utils';
+import { parseFormData } from '../lib/route-utils';
 import { userContext } from '../lib/middleware';
 import {
   formatDateForInput,
@@ -368,10 +363,10 @@ function WorkExperienceEditorSection({
   );
 }
 
-export async function action({ request, context }: ActionFunctionArgs) {
+export async function action({ request, context }: Route.ActionArgs) {
   const user = context.get(userContext);
   if (!user) {
-    return createErrorResponse('User not found');
+    throw new Response('User not found', { status: 401 });
   }
   const formData = await request.formData();
   const operation = formData.get('operation') as string;
@@ -385,16 +380,16 @@ export async function action({ request, context }: ActionFunctionArgs) {
       );
 
       if ('success' in workExperienceDataResult && !workExperienceDataResult.success) {
-        return workExperienceDataResult;
+        throw new Response('Invalid work experience data', { status: 400 });
       }
 
       const workExperienceData = workExperienceDataResult as WorkExperienceFormValues;
 
       if (!workExperienceData.portfolio_id) {
-        return createErrorResponse('Missing portfolio_id');
+        throw new Response('Missing portfolio_id', { status: 400 });
       }
 
-      return tryAsync(async () => {
+      try {
         if (operation === 'create') {
           // Insert new experience
           const { id: _id, ...insertData } = workExperienceData;
@@ -420,12 +415,12 @@ export async function action({ request, context }: ActionFunctionArgs) {
             is_visible: dbData.is_visible,
           });
 
-          return createSuccessResponse(newExperience, 'Work experience created successfully');
+          return { message: 'Work experience created successfully', data: newExperience };
         }
 
         // Update existing experience
         const { id, ...updateData } = workExperienceData;
-        if (!id) return createErrorResponse('Missing experience ID for update');
+        if (!id) throw new Response('Missing experience ID for update', { status: 400 });
 
         // Convert date strings to Date objects for database
         const dbData = {
@@ -447,8 +442,11 @@ export async function action({ request, context }: ActionFunctionArgs) {
           is_visible: dbData.is_visible,
         });
 
-        return createSuccessResponse(null, 'Work experience updated successfully');
-      }, `Failed to ${operation} work experience`);
+        return { message: 'Work experience updated successfully' };
+      } catch (error) {
+        console.error(`Failed to ${operation} work experience:`, error);
+        throw new Response(`Failed to ${operation} work experience`, { status: 500 });
+      }
     }
 
     case 'delete': {
@@ -456,18 +454,20 @@ export async function action({ request, context }: ActionFunctionArgs) {
       const portfolio_id = formData.get('portfolio_id') as string;
 
       if (!id || !portfolio_id) {
-        return createErrorResponse('Missing required fields for deletion');
+        throw new Response('Missing required fields for deletion', { status: 400 });
       }
 
-      return tryAsync(async () => {
+      try {
         await CareerRepository.deleteWorkExperience(db, user.id, id, portfolio_id);
-
-        return createSuccessResponse(null, 'Work experience deleted successfully');
-      }, 'Failed to delete work experience');
+        return { message: 'Work experience deleted successfully' };
+      } catch (error) {
+        console.error('Failed to delete work experience:', error);
+        throw new Response('Failed to delete work experience', { status: 500 });
+      }
     }
 
     default:
-      return createErrorResponse('Invalid operation');
+      throw new Response('Invalid operation', { status: 400 });
   }
 }
 

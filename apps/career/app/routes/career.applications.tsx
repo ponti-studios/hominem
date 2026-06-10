@@ -4,15 +4,8 @@ import { Card, CardContent } from '@hominem/ui/card';
 import { useDebouncedValue } from '@hominem/ui/hooks';
 import { PlusIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import {
-  Link,
-  useActionData,
-  useLoaderData,
-  useNavigate,
-  useSearchParams,
-  type ActionFunctionArgs,
-  type LoaderFunctionArgs,
-} from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
+import { Route } from './+types/career.applications';
 
 import { ApplicationsDesktopTable } from '~/components/career/applications/ApplicationsDesktopTable';
 import { ApplicationsEmptyState } from '~/components/career/applications/ApplicationsEmptyState';
@@ -23,7 +16,6 @@ import { ApplicationsHeatmap } from '~/components/career/ApplicationsHeatmap';
 import { useToast } from '~/hooks/useToast';
 import { getAllApplicationsWithCompany } from '~/lib/career/queries/job-applications';
 import { userContext } from '~/lib/middleware';
-import { createErrorResponse, createSuccessResponse } from '~/lib/route-utils';
 import { buildApplicationsSearchParams } from '~/lib/utils/applicationsSearchParams';
 import {
   getUniqueSources,
@@ -35,24 +27,7 @@ import type { JobApplicationStatus } from '~/types/career';
 const DEFAULT_LIMIT = 10;
 const MAX_LIMIT = 100;
 
-type LoaderData = {
-  user: { id: string; email?: string | null; name?: string | null };
-  allApplications: any[];
-  applications: any[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-  filters: {
-    search?: string;
-    statuses: string[];
-    source?: string;
-  };
-};
-
-export async function loader({ context, request }: LoaderFunctionArgs) {
+export async function loader({ context, request }: Route.LoaderArgs) {
   const user = context.get(userContext)!;
   try {
     const url = new URL(request.url);
@@ -94,7 +69,7 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
     const paginatedApplications = await getAllApplicationsWithCompany(user.id, filter, pagination);
     const filteredApplications = await getAllApplicationsWithCompany(user.id, filter);
 
-    return createSuccessResponse({
+    return {
       user,
       allApplications,
       applications: paginatedApplications,
@@ -109,21 +84,21 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
         statuses: selectedStatuses,
         source: source && source !== 'ALL' ? source : undefined,
       },
-    });
+    };
   } catch (error) {
     console.error('Error loading job applications data:', error);
-    return createErrorResponse('Failed to load job applications data');
+    throw new Response('Failed to load job applications data', { status: 500 });
   }
 }
 
-export async function action({ context, request }: ActionFunctionArgs) {
+export async function action({ context, request }: Route.ActionArgs) {
   const user = context.get(userContext)!;
   try {
     const formData = await request.formData();
     const operation = formData.get('operation');
 
     if (typeof operation !== 'string') {
-      return createErrorResponse('Invalid operation');
+      throw new Response('Invalid operation', { status: 400 });
     }
 
     if (operation === 'update') {
@@ -131,7 +106,7 @@ export async function action({ context, request }: ActionFunctionArgs) {
       const status = formData.get('status');
 
       if (typeof applicationId !== 'string' || typeof status !== 'string') {
-        return createErrorResponse('Missing or invalid applicationId or status');
+        throw new Response('Missing or invalid applicationId or status', { status: 400 });
       }
 
       await CareerRepository.updateJobApplicationStatus(
@@ -141,25 +116,25 @@ export async function action({ context, request }: ActionFunctionArgs) {
         status as JobApplicationStatus,
       );
 
-      return createSuccessResponse(null, 'Job application updated successfully');
+      return { message: 'Job application updated successfully' };
     }
 
     if (operation === 'delete') {
       const applicationId = formData.get('applicationId');
 
       if (typeof applicationId !== 'string') {
-        return createErrorResponse('Missing or invalid applicationId');
+        throw new Response('Missing or invalid applicationId', { status: 400 });
       }
 
       await CareerRepository.deleteJobApplication(db, user.id, applicationId);
 
-      return createSuccessResponse({ success: true }, 'Job application deleted successfully');
+      return { message: 'Job application deleted successfully' };
     }
 
-    return createErrorResponse('Invalid operation');
+    throw new Response('Invalid operation', { status: 400 });
   } catch (error) {
     console.error('Error in job applications action:', error);
-    return createErrorResponse('Failed to process job application request');
+    throw new Response('Failed to process job application request', { status: 500 });
   }
 }
 
@@ -180,53 +155,27 @@ function ApplicationsHeader({ totalCount }: { totalCount: number }) {
   );
 }
 
-export default function CareerApplications() {
-  const loaderData = useLoaderData<{ success: boolean; data?: LoaderData; error?: string }>();
-  const actionData = useActionData();
+export default function CareerApplications({ loaderData, actionData }: Route.ComponentProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { addToast } = useToast();
-  const searchValueFromRoute =
-    loaderData.success && loaderData.data ? loaderData.data.filters.search || '' : '';
+  const searchValueFromRoute = loaderData.filters.search || '';
   const [searchValue, setSearchValue] = useState(searchValueFromRoute);
   const debouncedSearchValue = useDebouncedValue(searchValue, 500);
 
   useEffect(() => {
-    if (!actionData) {
+    if (!actionData?.message) {
       return;
     }
 
-    const result = actionData as {
-      success: boolean;
-      error?: string;
-      message?: string;
-    };
-    if (result.success) {
-      addToast(result.message || 'Operation completed successfully!', 'success');
-      return;
-    }
-
-    addToast(`Error: ${result.error}`, 'error');
+    addToast(actionData.message, 'success');
   }, [actionData, addToast]);
 
-  if (!loaderData.success || !loaderData.data) {
-    return (
-      <Card className="border-destructive/30 bg-destructive/5">
-        <CardContent className="space-y-2 p-6">
-          <h2 className="text-lg font-semibold text-foreground">Error Loading Data</h2>
-          <p className="text-sm text-muted-foreground">
-            {loaderData?.error ?? 'Failed to load job applications data'}
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const { allApplications, applications, pagination } = loaderData.data;
+  const { allApplications, applications, pagination, filters: initialFilters } = loaderData;
   const filters = {
-    ...loaderData.data.filters,
-    statuses: loaderData.data.filters.statuses ?? [],
-    source: loaderData.data.filters.source ?? '',
+    ...initialFilters,
+    statuses: initialFilters.statuses ?? [],
+    source: initialFilters.source ?? '',
   };
   const statuses = getUniqueStatuses(allApplications);
   const sourceOptions = getUniqueSources(allApplications).map((source) => ({

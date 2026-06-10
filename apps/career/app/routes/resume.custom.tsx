@@ -1,10 +1,10 @@
-import type { LoaderFunctionArgs, MetaFunction } from 'react-router';
+import { Route } from './+types/resume.custom';
 import { Link } from 'react-router';
 
 import { JobScrapingResumeCustomizer } from '~/components/JobScrapingResumeCustomizer';
 import { userContext } from '~/lib/middleware';
 
-export const meta: MetaFunction = () => {
+export const meta: Route.MetaFunction = () => {
   return [
     { title: 'Resume Customizer | Craftd' },
     {
@@ -14,7 +14,7 @@ export const meta: MetaFunction = () => {
   ];
 };
 
-export async function loader({ context }: LoaderFunctionArgs) {
+export async function loader({ context }: Route.LoaderArgs) {
   const user = context.get(userContext);
   return { user };
 }

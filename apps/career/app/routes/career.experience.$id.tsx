@@ -1,19 +1,14 @@
 import { ArrowLeftIcon, PlusIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
-import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
-import { useLoaderData, useNavigate } from 'react-router';
+import { Route } from './+types/career.experience.$id';
+import { useNavigate } from 'react-router';
 
 import { jsonObject } from '~/lib/db-json';
 import { userContext } from '~/lib/middleware';
-import { createErrorResponse, createSuccessResponse } from '~/lib/route-utils';
 import { cn } from '~/lib/utils';
 import type { WorkExperienceMetadata } from '~/types/career-data';
 
-type LoaderData = {
-  workExperience: any;
-};
-
-export async function loader({ context, params }: LoaderFunctionArgs) {
+export async function loader({ context, params }: Route.LoaderArgs) {
   const user = context.get(userContext)!;
   const { id } = params;
   if (!id) throw new Response('Work experience ID is required', { status: 400 });
@@ -21,14 +16,14 @@ export async function loader({ context, params }: LoaderFunctionArgs) {
     const { getWorkExperienceById } = await import('~/lib/career/queries/base');
     const workExperience = await getWorkExperienceById(user.id, id);
     if (!workExperience) throw new Response('Work experience not found', { status: 404 });
-    return createSuccessResponse({ workExperience });
+    return { workExperience };
   } catch (error) {
     console.error('Error loading work experience:', error);
-    return createErrorResponse('Failed to load work experience');
+    throw new Response('Failed to load work experience', { status: 500 });
   }
 }
 
-export async function action({ context, request, params }: ActionFunctionArgs) {
+export async function action({ context, request, params }: Route.ActionArgs) {
   const user = context.get(userContext)!;
   const { id } = params;
   if (!id) throw new Response('Work experience ID is required', { status: 400 });
@@ -72,10 +67,10 @@ export async function action({ context, request, params }: ActionFunctionArgs) {
     } else {
       await updateWorkExperience(user.id, id, { [field]: processedValue });
     }
-    return createSuccessResponse({ success: true });
+    return { success: true };
   } catch (error) {
     console.error('Error updating work experience:', error);
-    return createErrorResponse('Failed to update work experience');
+    throw new Response('Failed to update work experience', { status: 500 });
   }
 }
 
@@ -437,9 +432,8 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 // ─── page ─────────────────────────────────────────────────────────────────────
 
-export default function WorkExperienceDetail() {
-  const response = useLoaderData<{ success: boolean; data?: LoaderData; error?: string }>();
-  const { workExperience: wx } = response?.data ?? {};
+export default function WorkExperienceDetail({ loaderData }: Route.ComponentProps) {
+  const { workExperience: wx } = loaderData;
   const navigate = useNavigate();
 
   if (!wx) return <div className="p-8 text-muted-foreground">Work experience not found</div>;

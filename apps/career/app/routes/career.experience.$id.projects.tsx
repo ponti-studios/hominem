@@ -1,72 +1,65 @@
-import type { CareerProjectRecord as Project } from '@hominem/db';
-import { Button } from '@hominem/ui/button';
-import { Card, CardContent } from '@hominem/ui/card';
-import { ArrowLeftIcon, CheckIcon, PencilIcon, PlusIcon, TrashIcon, XIcon } from 'lucide-react';
-import { useState } from 'react';
-import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
-import { useLoaderData, useNavigate } from 'react-router';
+import type { CareerProjectRecord as Project } from "@hominem/db";
+import { Button } from "@hominem/ui/button";
+import { ArrowLeftIcon, CheckIcon, PencilIcon, PlusIcon, TrashIcon, XIcon } from "lucide-react";
+import { useState } from "react";
+import { useNavigate } from "react-router";
 
-import { jsonArray } from '~/lib/db-json';
-import { userContext } from '~/lib/middleware';
-import { createErrorResponse, createSuccessResponse } from '~/lib/route-utils';
-import { cn } from '~/lib/utils';
+import { jsonArray } from "~/lib/db-json";
+import { userContext } from "~/lib/middleware";
+import { cn } from "~/lib/utils";
+import { Route } from "./+types/career.experience.$id.projects";
 
-type LoaderData = {
-  workExperience: any;
-  projects: Project[];
-};
-
-export async function loader({ context, params }: LoaderFunctionArgs) {
+export async function loader({ context, params }: Route.LoaderArgs) {
   const user = context.get(userContext)!;
   const { id } = params;
   if (!id) {
-    throw new Response('Work experience ID is required', { status: 400 });
+    throw new Response("Work experience ID is required", { status: 400 });
   }
 
   try {
-    const { getWorkExperienceById } = await import('~/lib/career/queries/base');
-    const { getProjectsByWorkExperience } = await import('~/lib/career/queries/projects');
+    const { getWorkExperienceById } = await import("~/lib/career/queries/base");
+    const { getProjectsByWorkExperience } = await import("~/lib/career/queries/projects");
 
     const workExperience = await getWorkExperienceById(user.id, id);
     if (!workExperience) {
-      throw new Response('Work experience not found', { status: 404 });
+      throw new Response("Work experience not found", { status: 404 });
     }
 
     const projects = await getProjectsByWorkExperience(workExperience.portfolio_id, id);
 
-    return createSuccessResponse({ workExperience, projects });
+    return { workExperience, projects };
   } catch (error) {
-    console.error('Error loading work experience projects:', error);
-    return createErrorResponse('Failed to load work experience projects');
+    console.error("Error loading work experience projects:", error);
+    throw new Response("Failed to load work experience projects", { status: 500 });
   }
 }
 
-export async function action({ context, request, params }: ActionFunctionArgs) {
+export async function action({ context, request, params }: Route.ActionArgs) {
   const user = context.get(userContext)!;
   const { id } = params;
   if (!id) {
-    throw new Response('Work experience ID is required', { status: 400 });
+    throw new Response("Work experience ID is required", { status: 400 });
   }
 
   const formData = await request.formData();
-  const actionType = formData.get('actionType') as string;
+  const actionType = formData.get("actionType") as string;
 
   try {
-    const { getWorkExperienceById } = await import('~/lib/career/queries/base');
+    const { getWorkExperienceById } = await import("~/lib/career/queries/base");
     const { createProject, updateProject, deleteProject } =
-      await import('~/lib/career/queries/projects');
+      await import("~/lib/career/queries/projects");
 
     const currentExperience = await getWorkExperienceById(user.id, id);
     if (!currentExperience) {
-      throw new Response('Work experience not found', { status: 404 });
+      throw new Response("Work experience not found", { status: 404 });
     }
 
-    if (actionType === 'add') {
-      const title = formData.get('title') as string;
-      const description = formData.get('description') as string;
-      const status = formData.get('status') as string;
-      const technologies = formData.get('technologies') as string;
-      const short_description = formData.get('short_description') as string;
+    if (actionType === "add") {
+      const title = formData.get("title") as string;
+      const description = formData.get("description") as string;
+      const status = formData.get("status") as string;
+      const technologies = formData.get("technologies") as string;
+      const short_description = formData.get("short_description") as string;
 
       await createProject(user.id, {
         portfolio_id: currentExperience.portfolio_id,
@@ -75,58 +68,42 @@ export async function action({ context, request, params }: ActionFunctionArgs) {
         description,
         short_description: short_description || null,
         status,
-        technologies: technologies ? technologies.split(',').map((t) => t.trim()) : [],
+        technologies: technologies ? technologies.split(",").map((t) => t.trim()) : [],
         is_visible: true,
         is_featured: false,
         sort_order: 0,
       });
-    } else if (actionType === 'update') {
-      const projectId = formData.get('projectId') as string;
-      const title = formData.get('title') as string;
-      const description = formData.get('description') as string;
-      const status = formData.get('status') as string;
-      const technologies = formData.get('technologies') as string;
-      const short_description = formData.get('short_description') as string;
+    } else if (actionType === "update") {
+      const projectId = formData.get("projectId") as string;
+      const title = formData.get("title") as string;
+      const description = formData.get("description") as string;
+      const status = formData.get("status") as string;
+      const technologies = formData.get("technologies") as string;
+      const short_description = formData.get("short_description") as string;
 
       await updateProject(user.id, projectId, currentExperience.portfolio_id, {
         title,
         description,
         short_description: short_description || null,
         status,
-        technologies: technologies ? technologies.split(',').map((t) => t.trim()) : [],
+        technologies: technologies ? technologies.split(",").map((t) => t.trim()) : [],
       });
-    } else if (actionType === 'delete') {
-      const projectId = formData.get('projectId') as string;
+    } else if (actionType === "delete") {
+      const projectId = formData.get("projectId") as string;
       await deleteProject(user.id, projectId, currentExperience.portfolio_id);
     }
 
-    return createSuccessResponse({ success: true });
+    return { success: true };
   } catch (error) {
-    console.error('Error managing project:', error);
-    return createErrorResponse('Failed to manage project');
+    console.error("Error managing project:", error);
+    throw new Response("Failed to manage project");
   }
 }
 
-export default function WorkExperienceProjects() {
-  const response = useLoaderData<{ success: boolean; data?: LoaderData; error?: string }>();
+export default function WorkExperienceProjects({ loaderData }: Route.ComponentProps) {
+  const { workExperience, projects } = loaderData;
   const navigate = useNavigate();
   const [showAddForm, setShowAddForm] = useState(false);
-
-  if (!response.success) {
-    return (
-      <Card className="border-destructive/30 bg-destructive/5">
-        <CardContent className="space-y-2 p-6">
-          <h2 className="text-lg font-semibold text-foreground">Error Loading Data</h2>
-          <p className="text-sm text-muted-foreground">
-            {response.error ?? 'Failed to load projects'}
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const data = response.data as LoaderData;
-  const { workExperience, projects } = data;
 
   if (!workExperience) {
     return <div>Work experience not found</div>;
@@ -203,36 +180,36 @@ interface ProjectFormProps {
 
 function ProjectForm({ project, onCancel }: ProjectFormProps) {
   const [formData, setFormData] = useState({
-    title: project?.title || '',
-    description: project?.description || '',
-    short_description: project?.short_description || '',
-    status: project?.status || 'in-progress',
-    technologies: jsonArray<string>(project?.technologies).join(', '),
+    title: project?.title || "",
+    description: project?.description || "",
+    short_description: project?.short_description || "",
+    status: project?.status || "in-progress",
+    technologies: jsonArray<string>(project?.technologies).join(", "),
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.style.display = 'none';
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.style.display = "none";
 
-    const actionInput = document.createElement('input');
-    actionInput.name = 'actionType';
-    actionInput.value = project ? 'update' : 'add';
+    const actionInput = document.createElement("input");
+    actionInput.name = "actionType";
+    actionInput.value = project ? "update" : "add";
     form.appendChild(actionInput);
 
     if (project) {
-      const projectIdInput = document.createElement('input');
-      projectIdInput.name = 'projectId';
+      const projectIdInput = document.createElement("input");
+      projectIdInput.name = "projectId";
       projectIdInput.value = project.id;
       form.appendChild(projectIdInput);
     }
 
     for (const [key, value] of Object.entries(formData)) {
-      const input = document.createElement('input');
+      const input = document.createElement("input");
       input.name = key;
-      input.value = value || '';
+      input.value = value || "";
       form.appendChild(input);
     }
 
@@ -244,7 +221,7 @@ function ProjectForm({ project, onCancel }: ProjectFormProps) {
   return (
     <div className="bg-card rounded-md p-8  border border-border/50">
       <h2 className="text-2xl font-light text-foreground font-sans mb-6">
-        {project ? 'Edit Project' : 'Add New Project'}
+        {project ? "Edit Project" : "Add New Project"}
       </h2>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -341,7 +318,7 @@ function ProjectForm({ project, onCancel }: ProjectFormProps) {
         <div className="flex items-center gap-4">
           <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground">
             <CheckIcon className="w-4 h-4 mr-1" />
-            {project ? 'Update Project' : 'Save Project'}
+            {project ? "Update Project" : "Save Project"}
           </Button>
           <Button
             type="button"
@@ -367,18 +344,18 @@ function ProjectCard({ project }: ProjectCardProps) {
   const technologies = jsonArray<string>(project.technologies);
 
   const handleDelete = () => {
-    if (confirm('Are you sure you want to delete this project?')) {
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.style.display = 'none';
+    if (confirm("Are you sure you want to delete this project?")) {
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.style.display = "none";
 
-      const actionInput = document.createElement('input');
-      actionInput.name = 'actionType';
-      actionInput.value = 'delete';
+      const actionInput = document.createElement("input");
+      actionInput.name = "actionType";
+      actionInput.value = "delete";
       form.appendChild(actionInput);
 
-      const projectIdInput = document.createElement('input');
-      projectIdInput.name = 'projectId';
+      const projectIdInput = document.createElement("input");
+      projectIdInput.name = "projectId";
       projectIdInput.value = project.id;
       form.appendChild(projectIdInput);
 
@@ -390,14 +367,14 @@ function ProjectCard({ project }: ProjectCardProps) {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed':
-        return 'bg-success/10 text-foreground';
-      case 'in-progress':
-        return 'bg-accent/20 text-foreground';
-      case 'archived':
-        return 'bg-muted text-foreground';
+      case "completed":
+        return "bg-success/10 text-foreground";
+      case "in-progress":
+        return "bg-accent/20 text-foreground";
+      case "archived":
+        return "bg-muted text-foreground";
       default:
-        return 'bg-muted text-foreground';
+        return "bg-muted text-foreground";
     }
   };
 
@@ -415,11 +392,11 @@ function ProjectCard({ project }: ProjectCardProps) {
           )}
           <span
             className={cn(
-              'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
+              "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
               getStatusColor(project.status),
             )}
           >
-            {project.status.replace('-', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+            {project.status.replace("-", " ").replace(/\b\w/g, (l: string) => l.toUpperCase())}
           </span>
         </div>
         <div className="flex items-center gap-2">

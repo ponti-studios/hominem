@@ -1,13 +1,13 @@
 import { useAuthClient } from '@hominem/auth/client/provider';
 import { OtpVerificationForm } from '@hominem/ui';
-import type { LoaderFunctionArgs, MetaFunction } from 'react-router';
-import { redirect, useLoaderData, useNavigate } from 'react-router';
+import { Route } from './+types/verify';
+import { redirect, useNavigate } from 'react-router';
 
 import { userContext } from '~/lib/middleware';
 
-export const meta: MetaFunction = () => [{ title: 'Verify - Craftd' }];
+export const meta: Route.MetaFunction = () => [{ title: 'Verify - Craftd' }];
 
-export async function loader({ request, context }: LoaderFunctionArgs) {
+export async function loader({ request, context }: Route.LoaderArgs) {
   const user = context.get(userContext);
   if (user) throw redirect('/account');
 
@@ -18,9 +18,9 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   return { email };
 }
 
-export default function Verify() {
+export default function Verify({ loaderData }: Route.ComponentProps) {
   const authClient = useAuthClient();
-  const { email } = useLoaderData<{ email: string }>();
+  const { email } = loaderData;
   const navigate = useNavigate();
 
   return (

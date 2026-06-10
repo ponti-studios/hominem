@@ -1,11 +1,11 @@
 import { buttonVariants } from '@hominem/ui/button';
-import type { LoaderFunctionArgs, MetaFunction } from 'react-router';
+import { Route } from './+types/home';
 import { Link, redirect } from 'react-router';
 
 import { userContext } from '~/lib/middleware';
 import { cn } from '~/lib/utils';
 
-export const meta: MetaFunction = () => {
+export const meta: Route.MetaFunction = () => {
   return [
     { title: 'Craftd - keep your job search from scattering' },
     {
@@ -22,7 +22,7 @@ export const meta: MetaFunction = () => {
   ];
 };
 
-export async function loader({ context }: LoaderFunctionArgs) {
+export async function loader({ context }: Route.LoaderArgs) {
   const user = context.get(userContext);
   if (user) throw redirect('/account');
   return null;

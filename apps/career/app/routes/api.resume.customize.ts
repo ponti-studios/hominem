@@ -9,8 +9,6 @@ import {
   type CustomizeResumeApiRequest,
   type CustomizeResumeApiResponse,
 } from '~/lib/api-contracts';
-import { jobScrapingService } from '~/lib/services/job-scraping.service';
-
 import { logger } from '../lib/logger';
 import { userContext } from '../lib/middleware';
 import { getFullUserPortfolio } from '../lib/portfolio.server';
@@ -38,7 +36,6 @@ function parseJsonObject(content: string): unknown {
 // Input validation schema
 const customizeResumeSchema = z.object({
   job_posting: z.string().min(100, 'Job posting must be at least 100 characters').optional(),
-  job_posting_url: z.string().url('Invalid job posting URL').optional(),
   jobPostingData: z
     .object({
       job_title: z.string(),
@@ -82,12 +79,11 @@ export const action: ActionFunction = async ({ request, context }) => {
       );
     }
 
-    const { job_posting, job_posting_url, jobPostingData, resumeFormat, focusAreas, targetLength } =
+    const { job_posting, jobPostingData, resumeFormat, focusAreas, targetLength } =
       validation.data;
 
-    // Handle job posting input - either direct text, URL to scrape, or structured data
+    // Handle job posting input - either direct text or pre-scraped structured data
     let finalJobPosting: string;
-    let jobPostingSource: 'text' | 'scraped' | 'structured' = 'text';
     let jobPostingMetadata: {
       job_title?: string;
       companyName?: string;
@@ -96,41 +92,18 @@ export const action: ActionFunction = async ({ request, context }) => {
     } = {};
 
     if (jobPostingData) {
-      // Use provided structured job posting data
       finalJobPosting = jobPostingData.fullText;
-      jobPostingSource = 'structured';
       jobPostingMetadata = {
         job_title: jobPostingData.job_title,
         companyName: jobPostingData.companyName,
         requirements: jobPostingData.requirements,
         skills: jobPostingData.skills,
       };
-    } else if (job_posting_url) {
-      const scrapingResult = await jobScrapingService.scrapeJobPosting(job_posting_url);
-
-      if (!scrapingResult.success || !scrapingResult.job_posting) {
-        return data(
-          { error: scrapingResult.error || 'Failed to scrape job posting' },
-          { status: 400 },
-        );
-      }
-
-      finalJobPosting = scrapingResult.job_posting.fullText;
-      jobPostingSource = 'scraped';
-      jobPostingMetadata = {
-        job_title: scrapingResult.job_posting.job_title,
-        companyName: scrapingResult.job_posting.companyName,
-        requirements: scrapingResult.job_posting.requirements,
-        skills: scrapingResult.job_posting.skills,
-      };
     } else if (job_posting) {
-      // Use provided job posting text
       finalJobPosting = job_posting;
     } else {
       return data(
-        {
-          error: 'Either job_posting, job_posting_url, or jobPostingData must be provided',
-        },
+        { error: 'Either job_posting or jobPostingData must be provided' },
         { status: 400 },
       );
     }
@@ -214,8 +187,6 @@ ${finalJobPosting}`,
         focusAreas,
         generatedAt: new Date().toISOString(),
         portfolio_id: portfolio.id,
-        jobPostingSource,
-        job_posting_url: job_posting_url || null,
         job_posting_word_count: finalJobPosting.split(/\s+/).length,
         jobPostingMetadata,
       },

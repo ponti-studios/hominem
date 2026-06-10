@@ -1,15 +1,47 @@
+import { useMutation } from '@tanstack/react-query';
 import { Button } from '@hominem/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
 import { Input } from '@hominem/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
 import { useState } from 'react';
 
-import type { CustomizeResumeApiRequest, CustomizeResumeApiResponse } from '~/lib/api-contracts';
+import type {
+  CustomizeResumeApiRequest,
+  CustomizeResumeApiResponse,
+  JobScrapeApiRequest,
+  JobScrapeApiResponse,
+} from '~/lib/api-contracts';
 import { cn } from '~/lib/utils';
 
 interface ResumeCustomizerProps {
   applicationId?: string;
   initialJobPosting?: string;
+}
+
+async function scrapeJob(url: string) {
+  const response = await fetch('/api/job/scrape', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url } satisfies JobScrapeApiRequest),
+  });
+  const data = (await response.json()) as JobScrapeApiResponse;
+  if (!response.ok || !data.job_posting) {
+    throw new Error(data.error || 'Failed to scrape job posting');
+  }
+  return data.job_posting;
+}
+
+async function generateResume(request: CustomizeResumeApiRequest) {
+  const response = await fetch('/api/resume/customize', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  });
+  const data = (await response.json()) as CustomizeResumeApiResponse;
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to customize resume');
+  }
+  return data;
 }
 
 export function ResumeCustomizer({
@@ -24,72 +56,54 @@ export function ResumeCustomizer({
   >('professional');
   const [targetLength, setTargetLength] = useState<'concise' | 'standard' | 'detailed'>('standard');
   const [focusAreas, setFocusAreas] = useState<string>('');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [result, setResult] = useState<CustomizeResumeApiResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [isFormCollapsed, setIsFormCollapsed] = useState(false);
 
-  const handleGenerate = async () => {
-    if (inputMethod === 'text' && !job_posting.trim()) {
-      setError('Please paste the job posting content');
-      return;
-    }
+  const parsedFocusAreas = focusAreas
+    ? focusAreas.split(',').map((s) => s.trim()).filter(Boolean)
+    : [];
 
-    if (inputMethod === 'url' && !job_posting_url.trim()) {
-      setError('Please enter a job posting URL');
-      return;
-    }
+  const generateMutation = useMutation({
+    mutationFn: generateResume,
+    onSuccess: () => setIsFormCollapsed(true),
+  });
 
-    setIsGenerating(true);
-    setError(null);
-    setResult(null);
-
-    try {
-      const requestBody: CustomizeResumeApiRequest = {
+  const scrapeMutation = useMutation({
+    mutationFn: scrapeJob,
+    onSuccess: (job_posting) => {
+      generateMutation.mutate({
+        jobPostingData: job_posting,
         resumeFormat,
         targetLength,
-        focusAreas: focusAreas
-          ? focusAreas
-              .split(',')
-              .map((s) => s.trim())
-              .filter(Boolean)
-          : [],
-      };
-
-      // Add the appropriate field based on input method
-      if (inputMethod === 'text') {
-        requestBody.job_posting = job_posting.trim();
-      } else {
-        requestBody.job_posting_url = job_posting_url.trim();
-      }
-
-      const response = await fetch('/api/resume/customize', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
+        focusAreas: parsedFocusAreas,
       });
+    },
+  });
 
-      const data = (await response.json()) as CustomizeResumeApiResponse;
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to customize resume');
-      }
-
-      setResult(data);
-      setIsFormCollapsed(true); // Collapse form when results are available
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setIsGenerating(false);
+  const handleGenerate = () => {
+    if (inputMethod === 'url') {
+      scrapeMutation.mutate(job_posting_url.trim());
+    } else {
+      generateMutation.mutate({
+        job_posting: job_posting.trim(),
+        resumeFormat,
+        targetLength,
+        focusAreas: parsedFocusAreas,
+      });
     }
   };
+
+  const result = generateMutation.data;
+  const error = scrapeMutation.error?.message ?? generateMutation.error?.message ?? null;
+  const isScraping = scrapeMutation.isPending;
+  const isGenerating = generateMutation.isPending;
+  const isDisabled =
+    isScraping ||
+    isGenerating ||
+    (inputMethod === 'text' ? !job_posting.trim() : !job_posting_url.trim());
 
   const handleCopyResume = () => {
     if (result?.customizedResume) {
       navigator.clipboard.writeText(result.customizedResume);
-      // You could add a toast notification here
     }
   };
 
@@ -189,7 +203,7 @@ export function ResumeCustomizer({
                 variant={inputMethod === 'text' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setInputMethod('text')}
-                disabled={isGenerating}
+                disabled={isDisabled}
               >
                 Paste Text
               </Button>
@@ -198,7 +212,7 @@ export function ResumeCustomizer({
                 variant={inputMethod === 'url' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setInputMethod('url')}
-                disabled={isGenerating}
+                disabled={isDisabled}
               >
                 Job Posting URL
               </Button>
@@ -221,7 +235,7 @@ export function ResumeCustomizer({
                 placeholder="Paste the complete job posting here..."
                 rows={8}
                 className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring/50"
-                disabled={isGenerating}
+                disabled={isDisabled}
               />
             </div>
           ) : (
@@ -238,7 +252,7 @@ export function ResumeCustomizer({
                 value={job_posting_url}
                 onChange={(e) => setJobPostingUrl(e.target.value)}
                 placeholder="https://example.com/job-posting/123"
-                disabled={isGenerating}
+                disabled={isDisabled}
                 className="w-full"
               />
               <p className="text-xs text-muted-foreground mt-1">
@@ -258,7 +272,7 @@ export function ResumeCustomizer({
               <Select
                 value={resumeFormat}
                 onValueChange={(value) => setResumeFormat(value as typeof resumeFormat)}
-                disabled={isGenerating}
+                disabled={isDisabled}
               >
                 <SelectTrigger id="resumeFormat" className="w-full">
                   <SelectValue placeholder="Select format" />
@@ -282,7 +296,7 @@ export function ResumeCustomizer({
               <Select
                 value={targetLength}
                 onValueChange={(value) => setTargetLength(value as typeof targetLength)}
-                disabled={isGenerating}
+                disabled={isDisabled}
               >
                 <SelectTrigger id="targetLength" className="w-full">
                   <SelectValue placeholder="Select length" />
@@ -307,7 +321,7 @@ export function ResumeCustomizer({
                 value={focusAreas}
                 onChange={(e) => setFocusAreas(e.target.value)}
                 placeholder="leadership, technical, etc."
-                disabled={isGenerating}
+                disabled={isDisabled}
               />
               <p className="text-xs text-muted-foreground mt-1">
                 Comma-separated areas to emphasize
@@ -315,20 +329,16 @@ export function ResumeCustomizer({
             </div>
           </div>
 
-          <Button
-            onClick={handleGenerate}
-            disabled={
-              isGenerating ||
-              (inputMethod === 'text' ? !job_posting.trim() : !job_posting_url.trim())
-            }
-            className="w-full"
-          >
-            {isGenerating ? (
+          <Button onClick={handleGenerate} disabled={isDisabled} className="w-full">
+            {isScraping ? (
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                {inputMethod === 'url'
-                  ? 'Scraping Job Posting...'
-                  : 'Generating Customized Resume...'}
+                Scraping job posting...
+              </div>
+            ) : isGenerating ? (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Generating resume...
               </div>
             ) : inputMethod === 'url' ? (
               'Scrape & Generate Resume'

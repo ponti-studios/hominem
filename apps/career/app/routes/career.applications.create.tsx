@@ -5,26 +5,25 @@ import { Input } from '@hominem/ui/input';
 import { LoadingSpinner } from '@hominem/ui/loading-spinner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
 import { useState } from 'react';
-import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
-import { Form, Link, redirect, useActionData } from 'react-router';
+import { Route } from './+types/career.applications.create';
+import { Form, Link, redirect } from 'react-router';
 
 import type { JobScrapeApiRequest, JobScrapeApiResponse } from '~/lib/api-contracts';
 import { userContext } from '~/lib/middleware';
-import { createErrorResponse, createSuccessResponse } from '~/lib/route-utils';
 import { JobApplicationsService } from '~/lib/services/job-applications.service';
 import { cn } from '~/lib/utils';
 import type { JobPosting } from '~/types/applications';
 import { JobApplicationStatus } from '~/types/career';
 
-export async function loader({ context }: LoaderFunctionArgs) {
+export async function loader({ context }: Route.LoaderArgs) {
   const user = context.get(userContext);
-  return createSuccessResponse({ user });
+  return { user };
 }
 
-export async function action({ request, context }: ActionFunctionArgs) {
+export async function action({ request, context }: Route.ActionArgs) {
   const user = context.get(userContext);
   if (!user) {
-    return createErrorResponse('User not found');
+    throw new Response('User not found', { status: 401 });
   }
   const formData = await request.formData();
   const position = formData.get('position') as string;
@@ -40,7 +39,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const recruiter_linkedin = formData.get('recruiter_linkedin') as string;
 
   if (!position || !companyName) {
-    return createErrorResponse('Position and company are required');
+    throw new Response('Position and company are required', { status: 400 });
   }
 
   let requirements: string[] = [];
@@ -81,12 +80,11 @@ export async function action({ request, context }: ActionFunctionArgs) {
     return redirect('/career/applications');
   } catch (error) {
     console.error('Error creating job application:', error);
-    return createErrorResponse('Failed to create job application. Please try again.');
+    throw new Response('Failed to create job application. Please try again.', { status: 500 });
   }
 }
 
 export default function CreateJobApplication() {
-  const actionData = useActionData<{ success: boolean; error?: string }>();
   const [inputMethod, setInputMethod] = useState<'manual' | 'url' | 'paste' | null>(null);
   const [scrapedData, setScrapedData] = useState<JobPosting | null>(null);
   const [pastedDescription, setPastedDescription] = useState('');
@@ -282,15 +280,6 @@ export default function CreateJobApplication() {
           {inputMethod === 'manual' && (
             <Card className=" border-0 bg-background/80 backdrop-blur-sm">
               <CardContent className="p-4">
-                {actionData && !actionData.success && (
-                  <div className="mb-6 p-4 text-destructive bg-destructive/10 border border-destructive/30 rounded-lg flex items-center gap-3">
-                    <div className="w-5 h-5 rounded-full bg-destructive/10 flex items-center justify-center">
-                      <span className="text-destructive text-sm">!</span>
-                    </div>
-                    {actionData.error}
-                  </div>
-                )}
-
                 {/* Scraped Data Preview */}
                 {scrapedData && (
                   <div className="mb-6 p-4 bg-accent/10 border border-accent/30 rounded-lg">

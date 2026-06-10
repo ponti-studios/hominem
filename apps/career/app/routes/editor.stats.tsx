@@ -5,12 +5,12 @@ import { Input } from '@hominem/ui/input';
 import { BarChart3, PlusIcon } from 'lucide-react';
 import { useEffect } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
-import type { ActionFunctionArgs, MetaFunction } from 'react-router';
+import { Route } from './+types/editor.stats';
 import { useFetcher, useOutletContext } from 'react-router';
 
 import { useToast } from '../hooks/useToast';
 import type { FullPortfolio } from '../lib/portfolio.server';
-import { createErrorResponse, createSuccessResponse, parseFormData } from '../lib/route-utils';
+import { parseFormData } from '../lib/route-utils';
 import { userContext } from '../lib/middleware';
 
 type PortfolioStat = CareerPortfolioStatRecord;
@@ -183,19 +183,19 @@ function PortfolioStatsEditorSection({
   );
 }
 
-export const meta: MetaFunction = () => [{ title: 'Portfolio Stats - Portfolio Editor | Craftd' }];
+export const meta: Route.MetaFunction = () => [{ title: 'Portfolio Stats - Portfolio Editor | Craftd' }];
 
-export async function action({ request, context }: ActionFunctionArgs) {
+export async function action({ request, context }: Route.ActionArgs) {
   const user = context.get(userContext);
   if (!user) {
-    return createErrorResponse('User not found');
+    throw new Response('User not found', { status: 401 });
   }
   const formData = await request.formData();
   const statsDataResult = parseFormData<
     Array<{ id?: string; label: string; value: string; portfolio_id: string }>
   >(formData, 'statsData');
   if ('success' in statsDataResult && !statsDataResult.success) {
-    return statsDataResult;
+    throw new Response('Invalid stats data', { status: 400 });
   }
   const statsData = statsDataResult as Array<{
     id?: string;
@@ -204,29 +204,34 @@ export async function action({ request, context }: ActionFunctionArgs) {
     portfolio_id: string;
   }>;
   if (!Array.isArray(statsData)) {
-    return createErrorResponse('Invalid stats data');
+    throw new Response('Invalid stats data', { status: 400 });
   }
   if (statsData.length === 0) {
     // Nothing to do
-    return createSuccessResponse(null, 'No stats to save');
+    return { message: 'No stats to save' };
   }
   // Ensure portfolio_id exists
   const portfolio_id = statsData[0]?.portfolio_id;
-  if (!portfolio_id) return createErrorResponse('Missing portfolio_id');
-  await runInTransaction((tx) =>
-    CareerRepository.replacePortfolioStats(
-      tx,
-      user.id,
-      portfolio_id,
-      statsData.map((stat, index) => ({
-        id: stat.id,
-        label: stat.label,
-        value: stat.value,
-        sort_order: index,
-      })),
-    ),
-  );
-  return createSuccessResponse(null, 'Portfolio stats saved successfully');
+  if (!portfolio_id) throw new Response('Missing portfolio_id', { status: 400 });
+  try {
+    await runInTransaction((tx) =>
+      CareerRepository.replacePortfolioStats(
+        tx,
+        user.id,
+        portfolio_id,
+        statsData.map((stat, index) => ({
+          id: stat.id,
+          label: stat.label,
+          value: stat.value,
+          sort_order: index,
+        })),
+      ),
+    );
+    return { message: 'Portfolio stats saved successfully' };
+  } catch (error) {
+    console.error('Failed to save portfolio stats:', error);
+    throw new Response('Failed to save portfolio stats', { status: 500 });
+  }
 }
 
 export default function EditorStats() {

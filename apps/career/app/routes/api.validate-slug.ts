@@ -1,9 +1,10 @@
 import { CareerRepository, db } from '@hominem/db';
-import { data, type LoaderFunctionArgs } from 'react-router';
+import { data } from 'react-router';
+import { Route } from './+types/api.validate-slug';
 
 import { createErrorResponse, createSuccessResponse } from '../lib/route-utils';
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request }: Route.LoaderArgs) {
   const url = new URL(request.url);
   const slug = url.searchParams.get('slug');
   const currentPortfolioId = url.searchParams.get('currentId');

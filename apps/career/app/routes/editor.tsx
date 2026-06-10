@@ -1,13 +1,13 @@
 import { Badge } from '@hominem/ui/badge';
 import { BarChart3, Briefcase, Code, FolderOpen, Link2, MessageSquare, User } from 'lucide-react';
-import type { LoaderFunctionArgs, MetaFunction } from 'react-router';
-import { Link, Outlet, redirect, useLoaderData, useLocation } from 'react-router';
+import { Route } from './+types/editor';
+import { Link, Outlet, redirect, useLocation } from 'react-router';
 
 import { cn } from '~/lib/utils';
 
 import { userContext } from '../lib/middleware';
 import { getFullUserPortfolio } from '../lib/portfolio.server';
-export const meta: MetaFunction = () => {
+export const meta: Route.MetaFunction = () => {
   return [
     { title: 'Portfolio Editor | Craftd' },
     {
@@ -17,7 +17,7 @@ export const meta: MetaFunction = () => {
   ];
 };
 
-export async function loader({ context }: LoaderFunctionArgs) {
+export async function loader({ context }: Route.LoaderArgs) {
   const user = context.get(userContext);
   if (!user) {
     throw redirect('/');
@@ -44,9 +44,8 @@ const editorSteps = [
   },
 ];
 
-export default function EditorLayout() {
+export default function EditorLayout({ loaderData: portfolio }: Route.ComponentProps) {
   const location = useLocation();
-  const portfolio = useLoaderData<typeof loader>();
 
   const currentStepIndex = editorSteps.findIndex((step) => location.pathname.startsWith(step.path));
 

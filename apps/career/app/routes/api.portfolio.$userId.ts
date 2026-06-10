@@ -1,9 +1,10 @@
-import { data, type LoaderFunctionArgs } from 'react-router';
+import { data } from 'react-router';
+import { Route } from './+types/api.portfolio.$userId';
 
 import { logger } from '../lib/logger';
 import { getFullUserPortfolio } from '../lib/portfolio.server';
 
-export async function loader({ params }: LoaderFunctionArgs) {
+export async function loader({ params }: Route.LoaderArgs) {
   const { owner_userid } = params;
 
   if (!owner_userid) {

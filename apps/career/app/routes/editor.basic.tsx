@@ -5,13 +5,13 @@ import { Input } from '@hominem/ui/input';
 import { Switch } from '@hominem/ui/switch';
 import { useEffect } from 'react';
 import { Controller, useForm, type SubmitHandler } from 'react-hook-form';
-import type { ActionFunctionArgs, MetaFunction } from 'react-router';
+import { Route } from './+types/editor.basic';
 import { useFetcher, useOutletContext } from 'react-router';
 
 import { useToast } from '../hooks/useToast';
 import type { FullPortfolio } from '../lib/portfolio.server';
 import { userContext } from '../lib/middleware';
-import { createSuccessResponse, parseFormData } from '../lib/route-utils';
+import { parseFormData } from '../lib/route-utils';
 
 export interface BasicInfoFormValues {
   name: string;
@@ -30,25 +30,25 @@ export interface BasicInfoFormValues {
   is_active?: boolean;
 }
 
-export const meta: MetaFunction = () => {
+export const meta: Route.MetaFunction = () => {
   return [{ title: 'Basic Info - Portfolio Editor | Craftd' }];
 };
 
 // Server action to save portfolio data
-export async function action({ request, context }: ActionFunctionArgs) {
+export async function action({ request, context }: Route.ActionArgs) {
   const user = context.get(userContext);
   if (!user) {
-    return createSuccessResponse(null, 'User not found');
+    throw new Response('User not found', { status: 401 });
   }
   const formData = await request.formData();
   const portfolioDataResult = parseFormData<BasicInfoFormValues>(formData, 'portfolioData');
   if ('success' in portfolioDataResult && !portfolioDataResult.success) {
-    return portfolioDataResult;
+    throw new Response('Invalid portfolio data', { status: 400 });
   }
   const portfolioData = portfolioDataResult as BasicInfoFormValues;
 
   await CareerRepository.savePortfolioBasics(db, user.id, portfolioData);
-  return createSuccessResponse(null, 'Portfolio saved successfully');
+  return { message: 'Portfolio saved successfully' };
 }
 
 export default function EditorBasic() {

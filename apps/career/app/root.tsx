@@ -3,7 +3,6 @@ import { CareerRepository, db } from '@hominem/db';
 import { Button, buttonVariants } from '@hominem/ui/button';
 import { Card, CardContent } from '@hominem/ui/card';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { LoaderFunctionArgs } from 'react-router';
 import {
   data,
   isRouteErrorResponse,
@@ -104,7 +103,7 @@ interface CurrentPortfolioSummary {
 
 export const middleware: Route.MiddlewareFunction[] = [authMiddleware];
 
-export async function loader({ context }: LoaderFunctionArgs) {
+export async function loader({ context }: Route.LoaderArgs) {
   const user = context.get(userContext);
   const currentPortfolio = user ? await CareerRepository.getPortfolioByUserId(db, user.id) : null;
 

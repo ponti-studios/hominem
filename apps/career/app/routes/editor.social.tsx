@@ -4,14 +4,14 @@ import { Button } from '@hominem/ui/button';
 import { Github, Globe, Link2, Linkedin, Twitter } from 'lucide-react';
 import { useEffect } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
-import type { ActionFunctionArgs, MetaFunction } from 'react-router';
+import { Route } from './+types/editor.social';
 import { useFetcher, useOutletContext } from 'react-router';
 
 import { cn } from '~/lib/utils';
 
 import { useToast } from '../hooks/useToast';
 import type { FullPortfolio } from '../lib/portfolio.server';
-import { createErrorResponse, createSuccessResponse, parseFormData } from '../lib/route-utils';
+import { parseFormData } from '../lib/route-utils';
 import { userContext } from '../lib/middleware';
 
 interface SocialLinksFormValues {
@@ -267,12 +267,12 @@ function SocialLinksEditorSection({
   );
 }
 
-export const meta: MetaFunction = () => [{ title: 'Social - Portfolio Editor | Craftd' }];
+export const meta: Route.MetaFunction = () => [{ title: 'Social - Portfolio Editor | Craftd' }];
 
-export async function action({ request, context }: ActionFunctionArgs) {
+export async function action({ request, context }: Route.ActionArgs) {
   const user = context.get(userContext);
   if (!user) {
-    return createErrorResponse('User not found');
+    throw new Response('User not found', { status: 401 });
   }
   const formData = await request.formData();
 
@@ -280,7 +280,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     Array<SocialLinksFormValues & { portfolio_id: string }>
   >(formData, 'socialLinksData');
   if ('success' in socialLinksDataResult && !socialLinksDataResult.success) {
-    return socialLinksDataResult;
+    throw new Response('Invalid social links data', { status: 400 });
   }
 
   const socialLinksData = socialLinksDataResult as Array<
@@ -289,18 +289,23 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const socialLinksPayload = socialLinksData[0];
 
   if (!socialLinksPayload?.portfolio_id) {
-    throw new Error('Missing portfolio_id');
+    throw new Response('Missing portfolio_id', { status: 400 });
   }
 
-  await CareerRepository.saveSocialLinks(db, user.id, socialLinksPayload.portfolio_id, {
-    id: socialLinksPayload.id,
-    github: socialLinksPayload.github,
-    linkedin: socialLinksPayload.linkedin,
-    twitter: socialLinksPayload.twitter,
-    website: socialLinksPayload.website,
-  });
+  try {
+    await CareerRepository.saveSocialLinks(db, user.id, socialLinksPayload.portfolio_id, {
+      id: socialLinksPayload.id,
+      github: socialLinksPayload.github,
+      linkedin: socialLinksPayload.linkedin,
+      twitter: socialLinksPayload.twitter,
+      website: socialLinksPayload.website,
+    });
 
-  return createSuccessResponse(null, 'Social links saved successfully');
+    return { message: 'Social links saved successfully' };
+  } catch (error) {
+    console.error('Failed to save social links:', error);
+    throw new Response('Failed to save social links', { status: 500 });
+  }
 }
 
 export default function EditorSocial() {

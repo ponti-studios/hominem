@@ -5,23 +5,18 @@ import { FolderOpen, PlusIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
 import { useForm } from 'react-hook-form';
-import type { ActionFunctionArgs, MetaFunction } from 'react-router';
+import { Route } from './+types/editor.projects';
 import { useFetcher, useOutletContext } from 'react-router';
 
 import { EditorFormActions } from '../components/EditorFormActions';
 import { useCareerEditorSubmission } from '../hooks/useCareerEditorSubmission';
 import { useToast } from '../hooks/useToast';
 import type { FullPortfolio } from '../lib/portfolio.server';
-import {
-  createErrorResponse,
-  createSuccessResponse,
-  parseFormData,
-  tryAsync,
-} from '../lib/route-utils';
+import { parseFormData } from '../lib/route-utils';
 import { userContext } from '../lib/middleware';
 import { formatDateForInput, nullArrayToUndefined, stringToDate } from '../lib/utils';
 
-export const meta: MetaFunction = () => [{ title: 'Projects - Portfolio Editor | Craftd' }];
+export const meta: Route.MetaFunction = () => [{ title: 'Projects - Portfolio Editor | Craftd' }];
 
 interface ProjectFormValues {
   id?: string;
@@ -404,10 +399,10 @@ function ProjectsEditorSection({
   );
 }
 
-export async function action({ request, context }: ActionFunctionArgs) {
+export async function action({ request, context }: Route.ActionArgs) {
   const user = context.get(userContext);
   if (!user) {
-    return createErrorResponse('User not found');
+    throw new Response('User not found', { status: 401 });
   }
   const formData = await request.formData();
   const operation = formData.get('operation') as string;
@@ -418,16 +413,16 @@ export async function action({ request, context }: ActionFunctionArgs) {
       const projectDataResult = parseFormData<ProjectFormValues>(formData, 'projectData');
 
       if ('success' in projectDataResult && !projectDataResult.success) {
-        return projectDataResult;
+        throw new Response('Invalid project data', { status: 400 });
       }
 
       const projectData = projectDataResult as ProjectFormValues;
 
       if (!projectData.portfolio_id) {
-        return createErrorResponse('Missing portfolio_id');
+        throw new Response('Missing portfolio_id', { status: 400 });
       }
 
-      return tryAsync(async () => {
+      try {
         // Convert technologies string to array if needed
         const technologiesArray = Array.isArray(projectData.technologies)
           ? projectData.technologies
@@ -463,12 +458,12 @@ export async function action({ request, context }: ActionFunctionArgs) {
             sort_order: dbData.sort_order,
           });
 
-          return createSuccessResponse(newProject, 'Project created successfully');
+          return { message: 'Project created successfully', data: newProject };
         }
 
         // Update existing project
         const { id, ...updateData } = projectData;
-        if (!id) return createErrorResponse('Missing project ID for update');
+        if (!id) throw new Response('Missing project ID for update', { status: 400 });
 
         // Convert date strings to Date objects for database
         const dbData = {
@@ -495,8 +490,12 @@ export async function action({ request, context }: ActionFunctionArgs) {
           sort_order: dbData.sort_order,
         });
 
-        return createSuccessResponse(null, 'Project updated successfully');
-      }, `Failed to ${operation} project`);
+        return { message: 'Project updated successfully' };
+      } catch (error) {
+        if (error instanceof Response) throw error;
+        console.error(`Failed to ${operation} project:`, error);
+        throw new Response(`Failed to ${operation} project`, { status: 500 });
+      }
     }
 
     case 'delete': {
@@ -504,18 +503,20 @@ export async function action({ request, context }: ActionFunctionArgs) {
       const portfolio_id = formData.get('portfolio_id') as string;
 
       if (!id || !portfolio_id) {
-        return createErrorResponse('Missing required fields for deletion');
+        throw new Response('Missing required fields for deletion', { status: 400 });
       }
 
-      return tryAsync(async () => {
+      try {
         await CareerRepository.deleteProject(db, user.id, id, portfolio_id);
-
-        return createSuccessResponse(null, 'Project deleted successfully');
-      }, 'Failed to delete project');
+        return { message: 'Project deleted successfully' };
+      } catch (error) {
+        console.error('Failed to delete project:', error);
+        throw new Response('Failed to delete project', { status: 500 });
+      }
     }
 
     default:
-      return createErrorResponse('Invalid operation');
+      throw new Response('Invalid operation', { status: 400 });
   }
 }
 

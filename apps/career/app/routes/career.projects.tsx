@@ -1,7 +1,6 @@
-import type { CareerProjectRecord as Project } from '@hominem/db';
-import { EmptyState } from '@hominem/ui';
-import { Button } from '@hominem/ui/button';
-import { Card, CardContent } from '@hominem/ui/card';
+import type { CareerProjectRecord as Project } from "@hominem/db";
+import { EmptyState } from "@hominem/ui";
+import { Button } from "@hominem/ui/button";
 import {
   CheckIcon,
   ExternalLinkIcon,
@@ -10,17 +9,15 @@ import {
   PlusIcon,
   TrashIcon,
   XIcon,
-} from 'lucide-react';
-import { useState } from 'react';
-import type { ActionFunctionArgs } from 'react-router';
-import { useLoaderData } from 'react-router';
+} from "lucide-react";
+import { useState } from "react";
+import { Route } from "./+types/career.projects";
 
-import { CareerRecordIndexShell } from '~/components/career/CareerRecordIndexShell';
-import { MetricsGrid } from '~/components/career/MetricsGrid';
-import { jsonArray } from '~/lib/db-json';
-import { createErrorResponse, createSuccessResponse } from '~/lib/route-utils';
-import { cn } from '~/lib/utils';
-import { formatProjectStatus, getProjectStatusClasses } from '~/lib/utils/projectUtils';
+import { CareerRecordIndexShell } from "~/components/career/CareerRecordIndexShell";
+import { MetricsGrid } from "~/components/career/MetricsGrid";
+import { jsonArray } from "~/lib/db-json";
+import { cn } from "~/lib/utils";
+import { formatProjectStatus, getProjectStatusClasses } from "~/lib/utils/projectUtils";
 
 interface ProjectSummary {
   totalProjects: number;
@@ -31,14 +28,7 @@ interface ProjectSummary {
   workLinkedProjects: number;
 }
 
-type LoaderData = {
-  projects: (Project & {
-    workExperience?: { company: string; role: string };
-  })[];
-  summary: ProjectSummary;
-};
-
-export async function loader(): Promise<ReturnType<typeof createSuccessResponse<unknown>>> {
+export async function loader() {
   try {
     const projects: (Project & {
       workExperience?: { company: string; role: string };
@@ -52,59 +42,43 @@ export async function loader(): Promise<ReturnType<typeof createSuccessResponse<
       workLinkedProjects: 0,
     };
 
-    return createSuccessResponse({
+    return {
       projects,
       summary,
-    });
+    };
   } catch (error) {
-    console.error('Error loading projects:', error);
-    return createErrorResponse('Failed to load projects');
+    console.error("Error loading projects:", error);
+    throw new Response("Failed to load projects", { status: 500 });
   }
 }
 
-export async function action({ request }: ActionFunctionArgs) {
+export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
-  const operation = formData.get('operation') as string;
+  const operation = formData.get("operation") as string;
 
   try {
-    if (operation === 'create') {
-      return createSuccessResponse({ success: true }, 'Project created successfully');
+    if (operation === "create") {
+      return { success: true, message: "Project created successfully" };
     }
 
-    if (operation === 'update') {
-      return createSuccessResponse({ success: true }, 'Project updated successfully');
+    if (operation === "update") {
+      return { success: true, message: "Project updated successfully" };
     }
 
-    if (operation === 'delete') {
-      return createSuccessResponse({ success: true }, 'Project deleted successfully');
+    if (operation === "delete") {
+      return { success: true, message: "Project deleted successfully" };
     }
 
-    return createErrorResponse('Invalid operation');
+    throw new Response("Invalid operation", { status: 400 });
   } catch (error) {
-    console.error('Error handling project operation:', error);
-    return createErrorResponse('Failed to process project request');
+    console.error("Error handling project operation:", error);
+    throw new Response("Failed to process project request", { status: 500 });
   }
 }
 
-export default function ProjectsPage() {
-  const response = useLoaderData<{ success: boolean; data?: LoaderData; error?: string }>();
+export default function ProjectsPage({ loaderData }: Route.ComponentProps) {
+  const { projects, summary } = loaderData;
   const [showCreateForm, setShowCreateForm] = useState(false);
-
-  if (!response.success) {
-    return (
-      <Card className="border-destructive/30 bg-destructive/5">
-        <CardContent className="space-y-2 p-6">
-          <h2 className="text-lg font-semibold text-foreground">Error Loading Data</h2>
-          <p className="text-sm text-muted-foreground">
-            {response.error ?? 'Failed to load projects'}
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const data = response.data as LoaderData;
-  const { projects, summary } = data;
 
   return (
     <CareerRecordIndexShell
@@ -119,31 +93,31 @@ export default function ProjectsPage() {
       metrics={
         <MetricsGrid
           items={[
-            { label: 'Total Projects', value: String(summary.totalProjects) },
+            { label: "Total Projects", value: String(summary.totalProjects) },
             {
-              label: 'Completed',
+              label: "Completed",
               value: String(summary.completedProjects),
-              tone: 'success',
+              tone: "success",
             },
             {
-              label: 'In Progress',
+              label: "In Progress",
               value: String(summary.inProgressProjects),
-              tone: 'accent',
+              tone: "accent",
             },
             {
-              label: 'Planned',
+              label: "Planned",
               value: String(summary.plannedProjects),
-              tone: 'warning',
+              tone: "warning",
             },
             {
-              label: 'Portfolio',
+              label: "Portfolio",
               value: String(summary.portfolioProjects),
-              tone: 'accent',
+              tone: "accent",
             },
             {
-              label: 'Work-Linked',
+              label: "Work-Linked",
               value: String(summary.workLinkedProjects),
-              tone: 'muted',
+              tone: "muted",
             },
           ]}
         />
@@ -203,7 +177,7 @@ function ProjectCard({ project }: ProjectCardProps) {
             <h3 className="text-lg font-semibold text-foreground">{project.title}</h3>
             <span
               className={cn(
-                'rounded-full px-2 py-1 text-xs font-medium',
+                "rounded-full px-2 py-1 text-xs font-medium",
                 getProjectStatusClasses(project.status),
               )}
             >
@@ -253,7 +227,7 @@ function ProjectCard({ project }: ProjectCardProps) {
               variant="ghost"
               size="sm"
               onClick={() =>
-                window.open(project.live_url ?? undefined, '_blank', 'noopener,noreferrer')
+                window.open(project.live_url ?? undefined, "_blank", "noopener,noreferrer")
               }
               className="text-muted-foreground hover:text-muted-foreground"
             >
@@ -265,7 +239,7 @@ function ProjectCard({ project }: ProjectCardProps) {
               variant="ghost"
               size="sm"
               onClick={() =>
-                window.open(project.github_url ?? undefined, '_blank', 'noopener,noreferrer')
+                window.open(project.github_url ?? undefined, "_blank", "noopener,noreferrer")
               }
               className="text-muted-foreground hover:text-muted-foreground"
             >
@@ -306,13 +280,13 @@ function ProjectMobileCard({ project }: ProjectCardProps) {
             <div className="truncate text-sm text-muted-foreground">
               {project.workExperience
                 ? `${project.workExperience.company} (Work Project)`
-                : 'Personal Project'}
+                : "Personal Project"}
             </div>
           </div>
           <div className="ml-4 flex items-center space-x-3">
             <span
               className={cn(
-                'inline-flex rounded-full px-2 py-1 text-xs font-medium',
+                "inline-flex rounded-full px-2 py-1 text-xs font-medium",
                 getProjectStatusClasses(project.status),
               )}
             >
@@ -320,8 +294,8 @@ function ProjectMobileCard({ project }: ProjectCardProps) {
             </span>
             <svg
               className={cn(
-                'h-5 w-5 text-muted-foreground transition-transform duration-200',
-                isExpanded ? 'rotate-90' : '',
+                "h-5 w-5 text-muted-foreground transition-transform duration-200",
+                isExpanded ? "rotate-90" : "",
               )}
               fill="none"
               viewBox="0 0 24 24"
@@ -377,7 +351,7 @@ function ProjectMobileCard({ project }: ProjectCardProps) {
                     type="button"
                     onClick={(event) => {
                       event.stopPropagation();
-                      window.open(project.live_url ?? undefined, '_blank', 'noopener,noreferrer');
+                      window.open(project.live_url ?? undefined, "_blank", "noopener,noreferrer");
                     }}
                     className="p-1 text-muted-foreground transition-colors hover:text-primary"
                     title="View Live Project"
@@ -403,7 +377,7 @@ function ProjectMobileCard({ project }: ProjectCardProps) {
                     type="button"
                     onClick={(event) => {
                       event.stopPropagation();
-                      window.open(project.github_url ?? undefined, '_blank', 'noopener,noreferrer');
+                      window.open(project.github_url ?? undefined, "_blank", "noopener,noreferrer");
                     }}
                     className="p-1 text-muted-foreground transition-colors hover:text-muted-foreground"
                     title="View on GitHub"

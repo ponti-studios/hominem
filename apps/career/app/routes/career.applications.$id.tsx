@@ -1,8 +1,8 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hominem/ui/tabs';
 import { Briefcase, Calendar, ChevronLeft, MessageSquare, Paperclip, UserPlus } from 'lucide-react';
 import { useState } from 'react';
-import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
-import { Link, useActionData, useFetcher, useLoaderData, useParams } from 'react-router';
+import { Route } from './+types/career.applications.$id';
+import { Link, useFetcher } from 'react-router';
 
 import {
   ApplicationFilesTab,
@@ -12,7 +12,6 @@ import {
   QuickActionsDropdown,
 } from '~/components/career';
 import { userContext } from '~/lib/middleware';
-import { createErrorResponse, createSuccessResponse } from '~/lib/route-utils';
 import { JobApplicationsService } from '~/lib/services/job-applications.service';
 import { cn } from '~/lib/utils';
 import { formatStatusText, getStatusColor } from '~/lib/utils/applicationUtils';
@@ -22,41 +21,41 @@ import type {
   JobApplicationUpdate,
 } from '~/types/career-data';
 
-export async function loader({ context, params }: LoaderFunctionArgs) {
+export async function loader({ context, params }: Route.LoaderArgs) {
   const user = context.get(userContext)!;
   const { id } = params;
 
   if (!id) {
-    return createErrorResponse('Application ID is required');
+    throw new Response('Application ID is required', { status: 400 });
   }
 
   try {
     const data = await JobApplicationsService.getApplicationDetail(id, user.id);
-    return createSuccessResponse(data);
+    return data;
   } catch (error) {
     console.error('Error fetching application details:', error);
     if (error instanceof Error && error.message === 'Application not found') {
-      return createErrorResponse('Application not found');
+      throw new Response('Application not found', { status: 404 });
     }
-    return createErrorResponse('Failed to fetch application details');
+    throw new Response('Failed to fetch application details', { status: 500 });
   }
 }
 
-export async function action({ context, request, params }: ActionFunctionArgs) {
+export async function action({ context, request, params }: Route.ActionArgs) {
   const user = context.get(userContext)!;
   const { id } = params;
   const formData = await request.formData();
   const operation = formData.get('operation') as string;
 
   if (!id) {
-    return createErrorResponse('Application ID is required');
+    throw new Response('Application ID is required', { status: 400 });
   }
 
   try {
     // Verify ownership
     const hasOwnership = await JobApplicationsService.verifyOwnership(id, user.id);
     if (!hasOwnership) {
-      return createErrorResponse('Application not found or access denied');
+      throw new Response('Application not found or access denied', { status: 403 });
     }
 
     if (operation === 'update_application') {
@@ -85,7 +84,7 @@ export async function action({ context, request, params }: ActionFunctionArgs) {
       }
 
       await JobApplicationsService.updateApplication(id, updates);
-      return createSuccessResponse(null, 'Application updated successfully');
+      return { message: 'Application updated successfully' };
     }
 
     if (operation === 'add_note') {
@@ -94,17 +93,17 @@ export async function action({ context, request, params }: ActionFunctionArgs) {
       const content = formData.get('noteContent') as string;
 
       if (!content) {
-        return createErrorResponse('Note content is required');
+        throw new Response('Note content is required', { status: 400 });
       }
 
       await JobApplicationsService.addNote(id, type, title, content);
-      return createSuccessResponse(null, 'Note added successfully');
+      return { message: 'Note added successfully' };
     }
 
     if (operation === 'delete_note') {
       const noteId = formData.get('noteId') as string;
       await JobApplicationsService.deleteNote(noteId);
-      return createSuccessResponse(null, 'Note deleted successfully');
+      return { message: 'Note deleted successfully' };
     }
 
     if (operation === 'add_interview') {
@@ -114,7 +113,7 @@ export async function action({ context, request, params }: ActionFunctionArgs) {
       const notes = formData.get('interviewNotes') as string;
 
       if (!interviewDate) {
-        return createErrorResponse('Interview date is required');
+        throw new Response('Interview date is required', { status: 400 });
       }
 
       const newInterview: InterviewEntry = {
@@ -125,52 +124,24 @@ export async function action({ context, request, params }: ActionFunctionArgs) {
       };
 
       await JobApplicationsService.addInterview(id, newInterview);
-      return createSuccessResponse(null, 'Interview added successfully');
+      return { message: 'Interview added successfully' };
     }
 
-    return createErrorResponse('Invalid operation');
+    throw new Response('Invalid operation', { status: 400 });
   } catch (error) {
     console.error('Error in application detail action:', error);
-    return createErrorResponse('Failed to process request');
+    throw new Response('Failed to process request', { status: 500 });
   }
 }
 
-export default function ApplicationDetail() {
-  const loaderData = useLoaderData() as { success: boolean; data?: ApplicationWithRelations };
-  const _actionData = useActionData();
-  const params = useParams();
+export default function ApplicationDetail({ loaderData, params }: Route.ComponentProps) {
+  const { application, notes } = loaderData;
   const _fetcher = useFetcher();
   type TabId = 'overview' | 'timeline' | 'notes' | 'files';
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [_showStatusUpdate, setShowStatusUpdate] = useState(false);
   const [_showAddNote, setShowAddNote] = useState(false);
   const [_showAddInterview, setShowAddInterview] = useState(false);
-
-  if (!loaderData.success || !loaderData.data) {
-    return (
-      <div className="rounded-md border border-destructive/30 bg-destructive/10">
-        <div className="mx-auto py-20">
-          <div className="text-center">
-            <div className="mx-auto mb-6 flex size-16 items-center justify-center rounded-full border border-destructive/30 bg-destructive/10">
-              <span className="text-2xl text-destructive">!</span>
-            </div>
-            <h1 className="mb-4 text-2xl font-bold text-destructive">Application not found</h1>
-            <p className="text-muted-foreground">
-              The requested job application could not be found.
-            </p>
-            <Link
-              to="/career/applications"
-              className="mt-6 inline-flex h-10 items-center justify-center whitespace-nowrap rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-            >
-              Back to Applications
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const { application, notes } = loaderData.data;
   const { company } = application;
 
   const tabItems = [

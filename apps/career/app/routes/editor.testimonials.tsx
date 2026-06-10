@@ -5,17 +5,12 @@ import { MessageSquare, PlusIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
 import { useForm } from 'react-hook-form';
-import type { ActionFunctionArgs, MetaFunction } from 'react-router';
+import { Route } from './+types/editor.testimonials';
 import { useFetcher, useOutletContext } from 'react-router';
 
 import { useToast } from '../hooks/useToast';
 import type { FullPortfolio } from '../lib/portfolio.server';
-import {
-  createErrorResponse,
-  createSuccessResponse,
-  parseFormData,
-  tryAsync,
-} from '../lib/route-utils';
+import { parseFormData } from '../lib/route-utils';
 import { userContext } from '../lib/middleware';
 
 interface TestimonialFormValues {
@@ -347,12 +342,12 @@ function TestimonialsEditorSection({
   );
 }
 
-export const meta: MetaFunction = () => [{ title: 'Testimonials - Portfolio Editor | Craftd' }];
+export const meta: Route.MetaFunction = () => [{ title: 'Testimonials - Portfolio Editor | Craftd' }];
 
-export async function action({ request, context }: ActionFunctionArgs) {
+export async function action({ request, context }: Route.ActionArgs) {
   const user = context.get(userContext);
   if (!user) {
-    return createErrorResponse('User not found');
+    throw new Response('User not found', { status: 401 });
   }
   const formData = await request.formData();
   const operation = formData.get('operation') as string;
@@ -366,16 +361,16 @@ export async function action({ request, context }: ActionFunctionArgs) {
       );
 
       if ('success' in testimonialDataResult && !testimonialDataResult.success) {
-        return testimonialDataResult;
+        throw new Response('Invalid testimonial data', { status: 400 });
       }
 
       const testimonialData = testimonialDataResult as TestimonialFormValues;
 
       if (!testimonialData.portfolio_id) {
-        return createErrorResponse('Missing portfolio_id');
+        throw new Response('Missing portfolio_id', { status: 400 });
       }
 
-      return tryAsync(async () => {
+      try {
         if (operation === 'create') {
           // Insert new testimonial
           const { id: _id, ...insertData } = testimonialData;
@@ -391,12 +386,12 @@ export async function action({ request, context }: ActionFunctionArgs) {
             rating: insertData.rating,
           });
 
-          return createSuccessResponse(newTestimonial, 'Testimonial created successfully');
+          return { message: 'Testimonial created successfully', data: newTestimonial };
         }
 
         // Update existing testimonial
         const { id, ...updateData } = testimonialData;
-        if (!id) return createErrorResponse('Missing testimonial ID for update');
+        if (!id) throw new Response('Missing testimonial ID for update', { status: 400 });
 
         await CareerRepository.updateTestimonial(db, user.id, id, testimonialData.portfolio_id, {
           name: updateData.name,
@@ -408,8 +403,12 @@ export async function action({ request, context }: ActionFunctionArgs) {
           rating: updateData.rating,
         });
 
-        return createSuccessResponse(null, 'Testimonial updated successfully');
-      }, `Failed to ${operation} testimonial`);
+        return { message: 'Testimonial updated successfully' };
+      } catch (error) {
+        if (error instanceof Response) throw error;
+        console.error(`Failed to ${operation} testimonial:`, error);
+        throw new Response(`Failed to ${operation} testimonial`, { status: 500 });
+      }
     }
 
     case 'delete': {
@@ -417,18 +416,20 @@ export async function action({ request, context }: ActionFunctionArgs) {
       const portfolio_id = formData.get('portfolio_id') as string;
 
       if (!id || !portfolio_id) {
-        return createErrorResponse('Missing required fields for deletion');
+        throw new Response('Missing required fields for deletion', { status: 400 });
       }
 
-      return tryAsync(async () => {
+      try {
         await CareerRepository.deleteTestimonial(db, user.id, id, portfolio_id);
-
-        return createSuccessResponse(null, 'Testimonial deleted successfully');
-      }, 'Failed to delete testimonial');
+        return { message: 'Testimonial deleted successfully' };
+      } catch (error) {
+        console.error('Failed to delete testimonial:', error);
+        throw new Response('Failed to delete testimonial', { status: 500 });
+      }
     }
 
     default:
-      return createErrorResponse('Invalid operation');
+      throw new Response('Invalid operation', { status: 400 });
   }
 }
 

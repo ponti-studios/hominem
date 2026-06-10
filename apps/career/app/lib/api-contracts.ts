@@ -43,7 +43,6 @@ export type JobAnalysis = z.infer<typeof jobAnalysisSchema>;
 
 export type CustomizeResumeApiRequest = {
   job_posting?: string;
-  job_posting_url?: string;
   jobPostingData?: JobPosting;
   resumeFormat?: 'professional' | 'modern' | 'technical' | 'executive';
   focusAreas?: string[];
@@ -59,8 +58,6 @@ export type CustomizeResumeApiResponse = {
     focusAreas: string[];
     generatedAt: string;
     portfolio_id: string;
-    jobPostingSource: string;
-    job_posting_url: string | null;
     job_posting_word_count: number;
     jobPostingMetadata: {
       job_title?: string;

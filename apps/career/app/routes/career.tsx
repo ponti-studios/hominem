@@ -1,7 +1,6 @@
 import { Badge } from '@hominem/ui/badge';
 import { Card, CardContent, CardHeader } from '@hominem/ui/card';
-import type { LoaderFunctionArgs } from 'react-router';
-import { useLoaderData } from 'react-router';
+import { Route } from './+types/career';
 
 import { CareerHistory } from '~/components/career/CareerHistory';
 import { SalaryChart } from '~/components/career/SalaryChart';
@@ -11,20 +10,13 @@ import {
   getWorkExperiencesWithFinancials,
 } from '~/lib/career/queries/career-progression';
 import { userContext } from '~/lib/middleware';
-import { createErrorResponse, createSuccessResponse } from '~/lib/route-utils';
 import { formatCurrency, formatPercentage } from '~/lib/utils';
 import type { CareerProgressionSummary, WorkExperienceWithFinancials } from '~/types/career-data';
 
-interface LoaderData {
-  user: { id: string; email?: string | null; name?: string | null };
-  careerSummary: CareerProgressionSummary;
-  work_experiences: WorkExperienceWithFinancials[];
-}
-
-export async function loader({ context }: LoaderFunctionArgs) {
+export async function loader({ context }: Route.LoaderArgs) {
   const user = context.get(userContext);
   if (!user) {
-    return createErrorResponse('User not found');
+    throw new Response('User not found', { status: 401 });
   }
   try {
     // Import the base functions here to avoid module issues
@@ -48,37 +40,19 @@ export async function loader({ context }: LoaderFunctionArgs) {
       updatedat: exp.updatedat ? new Date(exp.updatedat).toISOString() : null,
     }));
 
-    const responseData = {
+    return {
       user,
       careerSummary,
       work_experiences: serializedWorkExperiences,
     };
-
-    return createSuccessResponse(responseData);
   } catch (error) {
     console.error('Error loading career data:', error);
-    return createErrorResponse('Failed to load career data');
+    throw new Response('Failed to load career data', { status: 500 });
   }
 }
 
-export default function CareerDashboard() {
-  const response = useLoaderData<{ success: boolean; data?: LoaderData; error?: string }>();
-
-  if (!response.success) {
-    return (
-      <Card className="border-destructive/30 bg-destructive/5">
-        <CardContent className="space-y-2 p-6">
-          <h2 className="text-lg font-semibold text-foreground">Error Loading Data</h2>
-          <p className="text-sm text-muted-foreground">
-            {response.error ?? 'Failed to load career data'}
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const data = response.data as LoaderData;
-  const { careerSummary, work_experiences } = data;
+export default function CareerDashboard({ loaderData }: Route.ComponentProps) {
+  const { careerSummary, work_experiences } = loaderData;
 
   const defaultSummary: CareerProgressionSummary = {
     totalExperience: 0,
@@ -148,7 +122,7 @@ export default function CareerDashboard() {
         </Card>
       ) : null}
 
-      <CareerHistory work_experiences={experiences} />
+      <CareerHistory work_experiences={experiences as unknown as WorkExperienceWithFinancials[]} />
     </div>
   );
 }

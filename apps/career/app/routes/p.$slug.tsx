@@ -1,9 +1,9 @@
-import type { LoaderFunctionArgs, MetaFunction } from 'react-router';
+import { Route } from './+types/p.$slug';
 
 import { jsonArray } from '../lib/db-json';
 import { getFullPortfolioBySlug } from '../lib/portfolio.server';
 
-export const meta: MetaFunction<typeof loader> = ({ data }) => {
+export const meta: Route.MetaFunction = ({ data }) => {
   if (!data) {
     return [
       { title: 'Portfolio Not Found | Craftd' },
@@ -29,7 +29,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
   ];
 };
 
-export async function loader({ params }: LoaderFunctionArgs) {
+export async function loader({ params }: Route.LoaderArgs) {
   const { slug } = params;
 
   if (!slug) {

@@ -6,8 +6,8 @@ import { Button } from '@hominem/ui/button';
 import { Card, CardContent } from '@hominem/ui/card';
 import { Download, Edit, ExternalLink, LogOut, Trash2, Upload } from 'lucide-react';
 import { useState } from 'react';
-import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
-import { useLoaderData, useNavigate, useRevalidator, useSubmit } from 'react-router';
+import { Route } from './+types/account';
+import { useNavigate, useRevalidator, useSubmit } from 'react-router';
 
 import { cn } from '~/lib/utils';
 
@@ -16,7 +16,6 @@ import { SlugEditor } from '../components/SlugEditor';
 import { UploadResumeForm } from '../components/UploadResumeForm';
 import { userContext } from '../lib/middleware';
 import { getFullUserPortfolio } from '../lib/portfolio.server';
-import { createErrorResponse, createSuccessResponse, tryAsync } from '../lib/route-utils';
 
 const profileImageStorage = createStorageService('images', {
   maxFileSize: 5 * 1024 * 1024,
@@ -27,7 +26,7 @@ const PROFILE_IMAGE_VALIDATION = {
   allowedTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
 } as const;
 
-export async function loader({ context }: LoaderFunctionArgs) {
+export async function loader({ context }: Route.LoaderArgs) {
   const user = context.get(userContext)!;
   const [fullPortfolio, portfolioRows] = await Promise.all([
     getFullUserPortfolio(user.id),
@@ -53,7 +52,7 @@ export async function loader({ context }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request, context }: ActionFunctionArgs) {
+export async function action({ request, context }: Route.ActionArgs) {
   const user = context.get(userContext)!;
   const formData = await request.formData();
   {
@@ -61,32 +60,36 @@ export async function action({ request, context }: ActionFunctionArgs) {
     const portfolio_id = formData.get('portfolio_id');
 
     if (action === 'delete' && portfolio_id) {
-      return tryAsync(async () => {
+      try {
         await CareerRepository.deletePortfolio(db, user.id, portfolio_id as string);
-
-        return createSuccessResponse(null, 'Portfolio deleted successfully');
-      }, 'Failed to delete portfolio');
+        return { message: 'Portfolio deleted successfully' };
+      } catch (error) {
+        console.error('Failed to delete portfolio:', error);
+        throw new Response('Failed to delete portfolio', { status: 500 });
+      }
     }
 
     if (action === 'set-current-portfolio' && portfolio_id) {
-      return tryAsync(async () => {
+      try {
         await CareerRepository.setCurrentPortfolioByUserId(db, user.id, portfolio_id as string);
-
-        return createSuccessResponse(null, 'Current portfolio updated successfully');
-      }, 'Failed to update current portfolio');
+        return { message: 'Current portfolio updated successfully' };
+      } catch (error) {
+        console.error('Failed to update current portfolio:', error);
+        throw new Response('Failed to update current portfolio', { status: 500 });
+      }
     }
 
     if (action === 'upload-profile-image') {
-      return tryAsync(async () => {
+      try {
         const imageFile = formData.get('image') as File | null;
 
         if (!imageFile) {
-          return createErrorResponse('No image file provided');
+          throw new Response('No image file provided', { status: 400 });
         }
 
         const validation = validateFile(imageFile, PROFILE_IMAGE_VALIDATION);
         if (!validation.valid) {
-          return createErrorResponse(validation.error || 'Invalid file');
+          throw new Response(validation.error || 'Invalid file', { status: 400 });
         }
 
         let uploadResult: { id: string; url: string };
@@ -96,8 +99,9 @@ export async function action({ request, context }: ActionFunctionArgs) {
             originalName: imageFile.name,
           });
         } catch (uploadError) {
-          return createErrorResponse(
+          throw new Response(
             uploadError instanceof Error ? uploadError.message : 'Failed to upload image',
+            { status: 500 },
           );
         }
 
@@ -106,53 +110,61 @@ export async function action({ request, context }: ActionFunctionArgs) {
         } catch (updateError) {
           console.error('Database update error:', updateError);
           await profileImageStorage.deleteFile(uploadResult.id, user.id);
-          return createErrorResponse('Failed to update portfolio');
+          throw new Response('Failed to update portfolio', { status: 500 });
         }
 
-        return createSuccessResponse(
-          { image_url: uploadResult.url },
-          'Profile image updated successfully',
-        );
-      }, 'Failed to upload profile image');
+        return {
+          message: 'Profile image updated successfully',
+          data: { image_url: uploadResult.url },
+        };
+      } catch (error) {
+        if (error instanceof Response) throw error;
+        console.error('Failed to upload profile image:', error);
+        throw new Response('Failed to upload profile image', { status: 500 });
+      }
     }
 
     if (action === 'update-slug') {
-      return tryAsync(async () => {
+      try {
         const newSlug = formData.get('slug') as string;
         const portfolio_id = formData.get('portfolio_id') as string;
 
         if (!newSlug || !portfolio_id) {
-          return createErrorResponse('Slug and portfolio ID are required');
+          throw new Response('Slug and portfolio ID are required', { status: 400 });
         }
 
         // Basic slug validation
         if (!/^[a-z0-9-]+$/.test(newSlug)) {
-          return createErrorResponse(
-            'Slug can only contain lowercase letters, numbers, and hyphens',
-          );
+          throw new Response('Slug can only contain lowercase letters, numbers, and hyphens', {
+            status: 400,
+          });
         }
 
         if (newSlug.length < 3) {
-          return createErrorResponse('Slug must be at least 3 characters long');
+          throw new Response('Slug must be at least 3 characters long', { status: 400 });
         }
 
         if (newSlug.length > 50) {
-          return createErrorResponse('Slug must be less than 50 characters long');
+          throw new Response('Slug must be less than 50 characters long', { status: 400 });
         }
 
         const isAvailable = await CareerRepository.isSlugAvailable(db, newSlug, portfolio_id);
 
         if (!isAvailable) {
-          return createErrorResponse('Slug is already taken');
+          throw new Response('Slug is already taken', { status: 400 });
         }
 
         await CareerRepository.updatePortfolioSlug(db, user.id, portfolio_id, newSlug);
 
-        return createSuccessResponse({ slug: newSlug }, 'Portfolio URL updated successfully');
-      }, 'Failed to update portfolio URL');
+        return { message: 'Portfolio URL updated successfully', data: { slug: newSlug } };
+      } catch (error) {
+        if (error instanceof Response) throw error;
+        console.error('Failed to update portfolio URL:', error);
+        throw new Response('Failed to update portfolio URL', { status: 500 });
+      }
     }
 
-    return createErrorResponse('Invalid action');
+    throw new Response('Invalid action', { status: 400 });
   }
 }
 
@@ -176,12 +188,11 @@ export function meta() {
   ];
 }
 
-export default function Account() {
+export default function Account({ loaderData }: Route.ComponentProps) {
   const navigate = useNavigate();
   const revalidator = useRevalidator();
   const submit = useSubmit();
   const authClient = useAuthClient();
-  const loaderData = useLoaderData<typeof loader>();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [showReplaceResume, setShowReplaceResume] = useState(false);
 

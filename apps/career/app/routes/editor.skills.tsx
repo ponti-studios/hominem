@@ -4,22 +4,17 @@ import { Button } from '@hominem/ui/button';
 import { LoaderPinwheel, PlusIcon, XIcon, Zap } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import type { ActionFunctionArgs, MetaFunction } from 'react-router';
+import { Route } from './+types/editor.skills';
 import { useFetcher, useOutletContext } from 'react-router';
 
 import { cn } from '~/lib/utils';
 
 import { useToast } from '../hooks/useToast';
 import type { FullPortfolio } from '../lib/portfolio.server';
-import {
-  createErrorResponse,
-  createSuccessResponse,
-  parseFormData,
-  tryAsync,
-} from '../lib/route-utils';
+import { parseFormData } from '../lib/route-utils';
 import { userContext } from '../lib/middleware';
 
-export const meta: MetaFunction = () => {
+export const meta: Route.MetaFunction = () => {
   return [{ title: 'Skills - Portfolio Editor | Craftd' }];
 };
 
@@ -303,10 +298,10 @@ export default function EditorSkills() {
   );
 }
 
-export async function action({ request, context }: ActionFunctionArgs) {
+export async function action({ request, context }: Route.ActionArgs) {
   const user = context.get(userContext);
   if (!user) {
-    return createErrorResponse('User not found');
+    throw new Response('User not found', { status: 401 });
   }
   const formData = await request.formData();
   const skillsDataResult = parseFormData<
@@ -319,7 +314,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     }>
   >(formData, 'skillsData');
   if ('success' in skillsDataResult && !skillsDataResult.success) {
-    return skillsDataResult;
+    throw new Response('Invalid skills data', { status: 400 });
   }
   let skillsData = skillsDataResult as Array<{
     id?: string;
@@ -329,13 +324,13 @@ export async function action({ request, context }: ActionFunctionArgs) {
     portfolio_id: string;
   }>;
   if (!Array.isArray(skillsData)) {
-    return createErrorResponse('Invalid skills data');
+    throw new Response('Invalid skills data', { status: 400 });
   }
   // Ensure all skills have portfolio_id and level is a number
   const portfolio_id = skillsData[0]?.portfolio_id;
-  if (!portfolio_id) return createErrorResponse('Missing portfolio_id');
+  if (!portfolio_id) throw new Response('Missing portfolio_id', { status: 400 });
   skillsData = skillsData.map((s) => ({ ...s, portfolio_id, level: Number(s.level) }));
-  return tryAsync(async () => {
+  try {
     await runInTransaction((tx) =>
       CareerRepository.replaceSkills(
         tx,
@@ -349,6 +344,9 @@ export async function action({ request, context }: ActionFunctionArgs) {
         })),
       ),
     );
-    return createSuccessResponse(null, 'Skills saved successfully');
-  }, 'Failed to save skills');
+    return { message: 'Skills saved successfully' };
+  } catch (error) {
+    console.error('Failed to save skills:', error);
+    throw new Response('Failed to save skills', { status: 500 });
+  }
 }

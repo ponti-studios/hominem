@@ -1,38 +1,29 @@
-import { EmptyState } from '@hominem/ui';
-import { Button } from '@hominem/ui/button';
-import { Card, CardContent } from '@hominem/ui/card';
-import { DatePicker } from '@hominem/ui/date-picker';
-import { CheckIcon, PencilIcon, PlusIcon, TrashIcon, XIcon } from 'lucide-react';
-import { useState } from 'react';
-import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
-import { useLoaderData } from 'react-router';
+import { EmptyState } from "@hominem/ui";
+import { Button } from "@hominem/ui/button";
+import { DatePicker } from "@hominem/ui/date-picker";
+import { CheckIcon, PencilIcon, PlusIcon, TrashIcon, XIcon } from "lucide-react";
+import { useState } from "react";
+import { Route } from "./+types/career.certifications";
 
-import { CareerRecordIndexShell } from '~/components/career/CareerRecordIndexShell';
-import { MetricsGrid } from '~/components/career/MetricsGrid';
-import { userContext } from '~/lib/middleware';
-import { createErrorResponse, createSuccessResponse } from '~/lib/route-utils';
-import { cn } from '~/lib/utils';
+import { CareerRecordIndexShell } from "~/components/career/CareerRecordIndexShell";
+import { MetricsGrid } from "~/components/career/MetricsGrid";
+import { userContext } from "~/lib/middleware";
+import { cn } from "~/lib/utils";
 import {
   formatCertificationStatus,
   getCertificationStatusClasses,
-} from '~/lib/utils/certificationUtils';
-import type { Certification, CertificationSummary } from '~/types/career-data';
-
-type LoaderData = {
-  user: { id: string; email?: string | null; name?: string | null };
-  certifications: Certification[];
-  summary: CertificationSummary;
-};
+} from "~/lib/utils/certificationUtils";
+import type { Certification, CertificationSummary } from "~/types/career-data";
 
 const formatDateValue = (value: Date | undefined) => {
   if (!value) {
-    return '';
+    return "";
   }
 
-  return value.toISOString().split('T')[0] ?? '';
+  return value.toISOString().split("T")[0] ?? "";
 };
 
-export async function loader({ context }: LoaderFunctionArgs) {
+export async function loader({ context }: Route.LoaderArgs) {
   const user = context.get(userContext)!;
   try {
     const certifications: Certification[] = [];
@@ -47,56 +38,40 @@ export async function loader({ context }: LoaderFunctionArgs) {
       certificationsByYear: [],
     };
 
-    return createSuccessResponse({ user, certifications, summary });
+    return { user, certifications, summary };
   } catch (error) {
-    console.error('Error loading certifications:', error);
-    return createErrorResponse('Failed to load certifications');
+    console.error("Error loading certifications:", error);
+    throw new Response("Failed to load certifications", { status: 500 });
   }
 }
 
-export async function action({ request }: ActionFunctionArgs) {
+export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
-  const operation = formData.get('operation') as string;
+  const operation = formData.get("operation") as string;
 
   try {
-    if (operation === 'create') {
-      return createSuccessResponse({ success: true }, 'Certification created successfully');
+    if (operation === "create") {
+      return { success: true, message: "Certification created successfully" };
     }
 
-    if (operation === 'update') {
-      return createSuccessResponse({ success: true }, 'Certification updated successfully');
+    if (operation === "update") {
+      return { success: true, message: "Certification updated successfully" };
     }
 
-    if (operation === 'delete') {
-      return createSuccessResponse({ success: true }, 'Certification deleted successfully');
+    if (operation === "delete") {
+      return { success: true, message: "Certification deleted successfully" };
     }
 
-    return createErrorResponse('Invalid operation');
+    throw new Response("Invalid operation", { status: 400 });
   } catch (error) {
-    console.error('Error handling certification operation:', error);
-    return createErrorResponse('Failed to process certification request');
+    console.error("Error handling certification operation:", error);
+    throw new Response("Failed to process certification request", { status: 500 });
   }
 }
 
-export default function CertificationsPage() {
-  const response = useLoaderData<{ success: boolean; data?: LoaderData; error?: string }>();
+export default function CertificationsPage({ loaderData }: Route.ComponentProps) {
+  const { certifications, summary } = loaderData;
   const [showCreateForm, setShowCreateForm] = useState(false);
-
-  if (!response.success) {
-    return (
-      <Card className="border-destructive/30 bg-destructive/5">
-        <CardContent className="space-y-2 p-6">
-          <h2 className="text-lg font-semibold text-foreground">Error Loading Data</h2>
-          <p className="text-sm text-muted-foreground">
-            {response.error ?? 'Failed to load certifications'}
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const data = response.data as LoaderData;
-  const { certifications, summary } = data;
 
   return (
     <CareerRecordIndexShell
@@ -112,21 +87,21 @@ export default function CertificationsPage() {
         <MetricsGrid
           items={[
             {
-              label: 'Total Certifications',
+              label: "Total Certifications",
               value: String(summary.totalCertifications),
             },
             {
-              label: 'Active',
+              label: "Active",
               value: String(summary.activeCertifications),
-              tone: 'success',
+              tone: "success",
             },
             {
-              label: 'Expiring Soon',
+              label: "Expiring Soon",
               value: String(summary.expiringInSixMonths),
-              tone: 'warning',
+              tone: "warning",
             },
             {
-              label: 'Total Investment',
+              label: "Total Investment",
               value: `$${(summary.totalInvestment / 100).toLocaleString()}`,
             },
           ]}
@@ -178,7 +153,7 @@ function CertificationCard({ certification }: CertificationCardProps) {
             <h3 className="text-lg font-semibold text-foreground">{certification.name}</h3>
             <span
               className={cn(
-                'rounded-full px-2 py-1 text-xs font-medium',
+                "rounded-full px-2 py-1 text-xs font-medium",
                 getCertificationStatusClasses(certification.status),
               )}
             >

@@ -1,3 +1,4 @@
+import { useMutation } from '@tanstack/react-query';
 import { Button } from '@hominem/ui/button';
 import { Input } from '@hominem/ui/input';
 import { LoadingSpinner } from '@hominem/ui/loading-spinner';
@@ -20,146 +21,80 @@ interface JobScrapingResumeCustomizerProps {
   showResumeGeneration?: boolean;
 }
 
+async function scrapeJob(url: string): Promise<JobPosting> {
+  const response = await fetch('/api/job/scrape', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url } satisfies JobScrapeApiRequest),
+  });
+  const data = (await response.json()) as JobScrapeApiResponse;
+  if (!response.ok || !data.job_posting) {
+    throw new Error(data.error || 'Failed to scrape job posting');
+  }
+  return data.job_posting;
+}
+
+async function saveApplication(job_posting: JobPosting): Promise<{ id: string; [key: string]: unknown }> {
+  const response = await fetch('/api/applications/create', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ job_posting }),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to save application');
+  }
+  return data.application;
+}
+
+async function generateResume(request: CustomizeResumeApiRequest): Promise<CustomizeResumeApiResponse> {
+  const response = await fetch('/api/resume/customize', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  });
+  const data = (await response.json()) as CustomizeResumeApiResponse;
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to customize resume');
+  }
+  return data;
+}
+
 export function JobScrapingResumeCustomizer({
   onScrapedData,
   showResumeGeneration = true,
 }: JobScrapingResumeCustomizerProps) {
   const [step, setStep] = useState<Step>('scrape');
   const [jobUrl, setJobUrl] = useState('');
-  const [isScraping, setIsScraping] = useState(false);
-  const [scrapedJob, setScrapedJob] = useState<JobPosting | null>(null);
-  const [scrapingError, setScrapingError] = useState<string | null>(null);
-
-  // Resume generation state
   const [resumeFormat, setResumeFormat] = useState<
     'professional' | 'modern' | 'technical' | 'executive'
   >('professional');
   const [targetLength, setTargetLength] = useState<'concise' | 'standard' | 'detailed'>('standard');
   const [focusAreas, setFocusAreas] = useState<string>('');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [resumeResult, setResumeResult] = useState<CustomizeResumeApiResponse | null>(null);
-  const [generationError, setGenerationError] = useState<string | null>(null);
 
-  // Application saving state
-  const [isSaving, setIsSaving] = useState(false);
-  const [_savedApplication, setSavedApplication] = useState<{
-    id: string;
-    [key: string]: unknown;
-  } | null>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
-
-  const handleScrape = async () => {
-    if (!jobUrl.trim()) {
-      setScrapingError('Please enter a job posting URL');
-      return;
-    }
-
-    setIsScraping(true);
-    setScrapingError(null);
-    setScrapedJob(null);
-
-    try {
-      const response = await fetch('/api/job/scrape', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ url: jobUrl.trim() } satisfies JobScrapeApiRequest),
-      });
-
-      const data: JobScrapeApiResponse = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to scrape job posting');
-      }
-
-      if (data.job_posting) {
-        setScrapedJob(data.job_posting);
-        if (onScrapedData) {
-          onScrapedData(data.job_posting);
-        } else {
-          setStep('review');
-        }
+  const scrapeMutation = useMutation({
+    mutationFn: scrapeJob,
+    onSuccess: (job_posting) => {
+      if (onScrapedData) {
+        onScrapedData(job_posting);
       } else {
-        throw new Error('No job posting data received');
+        setStep('review');
       }
-    } catch (err) {
-      setScrapingError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setIsScraping(false);
-    }
-  };
+    },
+  });
 
-  const handleSaveApplication = async () => {
-    if (!scrapedJob) return;
+  const saveApplicationMutation = useMutation({
+    mutationFn: saveApplication,
+    onSuccess: () => setStep('generate'),
+  });
 
-    setIsSaving(true);
-    setSaveError(null);
+  const generateMutation = useMutation({
+    mutationFn: generateResume,
+    onSuccess: () => setStep('result'),
+  });
 
-    try {
-      const response = await fetch('/api/applications/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ job_posting: scrapedJob }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to save application');
-      }
-
-      setSavedApplication(data.application);
-      setStep('generate');
-    } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleGenerateResume = async () => {
-    if (!scrapedJob) return;
-
-    setIsGenerating(true);
-    setGenerationError(null);
-    setResumeResult(null);
-
-    try {
-      const response = await fetch('/api/resume/customize', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          jobPostingData: scrapedJob,
-          resumeFormat,
-          targetLength,
-          focusAreas: focusAreas
-            ? focusAreas
-                .split(',')
-                .map((s) => s.trim())
-                .filter(Boolean)
-            : [],
-        } satisfies CustomizeResumeApiRequest),
-      });
-
-      const data: CustomizeResumeApiResponse = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to customize resume');
-      }
-
-      setResumeResult(data);
-      setStep('result');
-    } catch (err) {
-      setGenerationError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
+  const scrapedJob = scrapeMutation.data ?? null;
+  const resumeResult = generateMutation.data ?? null;
 
   const handleCopyResume = () => {
     if (resumeResult?.customizedResume) {
@@ -184,12 +119,9 @@ export function JobScrapingResumeCustomizer({
   const resetFlow = () => {
     setStep('scrape');
     setJobUrl('');
-    setScrapedJob(null);
-    setScrapingError(null);
-    setResumeResult(null);
-    setGenerationError(null);
-    setSavedApplication(null);
-    setSaveError(null);
+    scrapeMutation.reset();
+    saveApplicationMutation.reset();
+    generateMutation.reset();
   };
 
   return (
@@ -320,19 +252,19 @@ export function JobScrapingResumeCustomizer({
               />
             </div>
 
-            {scrapingError && (
+            {scrapeMutation.isError && (
               <div className="text-center">
-                <p className="text-destructive text-sm">{scrapingError}</p>
+                <p className="text-destructive text-sm">{scrapeMutation.error.message}</p>
               </div>
             )}
 
             <div className="text-center">
               <Button
-                onClick={handleScrape}
-                disabled={isScraping || !jobUrl.trim()}
+                onClick={() => scrapeMutation.mutate(jobUrl.trim())}
+                disabled={scrapeMutation.isPending || !jobUrl.trim()}
                 variant="default"
               >
-                {isScraping ? <LoadingSpinner variant="sm" /> : 'Continue'}
+                {scrapeMutation.isPending ? <LoadingSpinner variant="sm" /> : 'Continue'}
               </Button>
             </div>
           </div>
@@ -391,17 +323,21 @@ export function JobScrapingResumeCustomizer({
           </div>
 
           <div className="text-center mt-12 space-x-4">
-            <Button onClick={handleSaveApplication} disabled={isSaving} variant="default">
-              {isSaving ? <LoadingSpinner variant="sm" /> : 'Save & Continue'}
+            <Button
+              onClick={() => saveApplicationMutation.mutate(scrapedJob)}
+              disabled={saveApplicationMutation.isPending}
+              variant="default"
+            >
+              {saveApplicationMutation.isPending ? <LoadingSpinner variant="sm" /> : 'Save & Continue'}
             </Button>
             <Button variant="outline" onClick={() => setStep('scrape')}>
               Back
             </Button>
           </div>
 
-          {saveError && (
+          {saveApplicationMutation.isError && (
             <div className="text-center mt-4">
-              <p className="text-destructive text-sm">{saveError}</p>
+              <p className="text-destructive text-sm">{saveApplicationMutation.error.message}</p>
             </div>
           )}
         </div>
@@ -427,7 +363,7 @@ export function JobScrapingResumeCustomizer({
                 <Select
                   value={resumeFormat}
                   onValueChange={(value) => setResumeFormat(value as typeof resumeFormat)}
-                  disabled={isGenerating}
+                  disabled={generateMutation.isPending}
                 >
                   <SelectTrigger
                     id="resumeFormat"
@@ -454,7 +390,7 @@ export function JobScrapingResumeCustomizer({
                 <Select
                   value={targetLength}
                   onValueChange={(value) => setTargetLength(value as typeof targetLength)}
-                  disabled={isGenerating}
+                  disabled={generateMutation.isPending}
                 >
                   <SelectTrigger
                     id="targetLength"
@@ -483,24 +419,38 @@ export function JobScrapingResumeCustomizer({
                 value={focusAreas}
                 onChange={(e) => setFocusAreas(e.target.value)}
                 placeholder="leadership, technical, etc."
-                disabled={isGenerating}
+                disabled={generateMutation.isPending}
                 className="w-full border-0 border-b-2 border-border focus:border-accent focus:ring-0 rounded-md"
               />
             </div>
           </div>
 
           <div className="text-center mt-12 space-x-4">
-            <Button onClick={handleGenerateResume} disabled={isGenerating} variant="default">
-              {isGenerating ? <LoadingSpinner variant="sm" /> : 'Generate Resume'}
+            <Button
+              onClick={() =>
+                scrapedJob &&
+                generateMutation.mutate({
+                  jobPostingData: scrapedJob,
+                  resumeFormat,
+                  targetLength,
+                  focusAreas: focusAreas
+                    ? focusAreas.split(',').map((s) => s.trim()).filter(Boolean)
+                    : [],
+                } satisfies CustomizeResumeApiRequest)
+              }
+              disabled={generateMutation.isPending}
+              variant="default"
+            >
+              {generateMutation.isPending ? <LoadingSpinner variant="sm" /> : 'Generate Resume'}
             </Button>
             <Button variant="outline" onClick={() => setStep('review')}>
               Back
             </Button>
           </div>
 
-          {generationError && (
+          {generateMutation.isError && (
             <div className="text-center mt-4">
-              <p className="text-destructive text-sm">{generationError}</p>
+              <p className="text-destructive text-sm">{generateMutation.error.message}</p>
             </div>
           )}
         </div>
