@@ -1,4 +1,3 @@
-import type { InboxOutput } from '@hominem/rpc/react';
 import { EmptyState } from '@hominem/ui';
 import { Composer } from '@hominem/ui/composer';
 import type { ComposerActions } from '@hominem/ui/composer/composer-provider';
@@ -34,7 +33,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   }
 }
 
-export default function NotesPage({ loaderData }: { loaderData: { inbox: InboxOutput } }) {
+export default function NotesPage({ loaderData }: Route.ComponentProps) {
   const inboxQuery = useInbox(20, { initialData: loaderData.inbox });
   const items = useMemo(
     () => inboxQuery.data?.pages.flatMap((page) => page.items) ?? [],

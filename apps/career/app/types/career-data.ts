@@ -1,5 +1,6 @@
 import type {
   CareerApplicationStage,
+  CareerCertificationRecord,
   CareerCompanyRecord,
   CareerInterviewEntry,
   CareerJobApplicationRecord,
@@ -47,24 +48,7 @@ export interface ApplicationFile {
   updatedat: Date;
 }
 
-export interface Certification {
-  id: string;
-  owner_userid: string;
-  name: string;
-  description: string | null;
-  issuingOrganization: string;
-  issueDate: Date;
-  expirationDate: Date | null;
-  nextRenewalDate: Date | null;
-  status: 'active' | 'expired' | 'pending_renewal' | 'archived';
-  work_experience_id: string | null;
-  category: string | null;
-  cost: number | null;
-  is_visible: boolean;
-  sort_order: number;
-  createdat: Date;
-  updatedat: Date;
-}
+export type Certification = CareerCertificationRecord;
 
 export interface ApplicationWithRelations {
   application: ApplicationWithCompany;

@@ -24,7 +24,7 @@ export function useInbox(limit: number = 50, options: UseInboxOptions = {}) {
       const query: { limit: string; cursor?: string } = { limit: String(limit) };
       if (pageParam) query.cursor = pageParam;
       const res = await client.api.inbox.$get({ query });
-      return res.json() as Promise<InboxOutput>;
+      return res.json();
     },
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     staleTime: 1000 * 30,

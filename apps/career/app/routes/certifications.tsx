@@ -161,14 +161,14 @@ function CertificationCard({ certification }: CertificationCardProps) {
               {formatCertificationStatus(certification.status)}
             </span>
           </div>
-          <p className="mb-3 text-muted-foreground">{certification.issuingOrganization}</p>
+          <p className="mb-3 text-muted-foreground">{certification.issuing_organization}</p>
           {certification.description ? (
             <p className="mb-3 text-muted-foreground">{certification.description}</p>
           ) : null}
           <div className="flex items-center gap-6 text-sm text-muted-foreground">
-            <span>Issued: {new Date(certification.issueDate).toLocaleDateString()}</span>
-            {certification.expirationDate ? (
-              <span>Expires: {new Date(certification.expirationDate).toLocaleDateString()}</span>
+            <span>Issued: {new Date(certification.issue_date).toLocaleDateString()}</span>
+            {certification.expiration_date ? (
+              <span>Expires: {new Date(certification.expiration_date).toLocaleDateString()}</span>
             ) : null}
             {certification.cost ? (
               <span>Cost: ${(certification.cost / 100).toLocaleString()}</span>

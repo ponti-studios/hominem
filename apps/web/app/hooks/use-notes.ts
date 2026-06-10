@@ -2,15 +2,11 @@ import { useApiClient, useRpcMutation, useRpcQuery } from '@hominem/rpc/react';
 import type {
   NoteFeedItem,
   NotesCreateInput,
-  NotesCreateOutput,
-  NotesDeleteOutput,
   NotesFeedInput,
   NotesFeedOutput,
-  NotesGetOutput,
   NotesListInput,
   NotesSearchOutput,
   NotesUpdateInput,
-  NotesUpdateOutput,
 } from '@hominem/rpc/types/notes.types';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -91,7 +87,7 @@ export function useNotesFeed(
         const query: { limit: string; cursor?: string } = { limit: String(limit) };
         if (pageParam) query.cursor = pageParam;
         const res = await client.api.notes.feed.$get({ query });
-        return res.json() as Promise<NotesFeedOutput>;
+        return res.json();
       },
       getNextPageParam: (lastPage) => lastPage.nextCursor,
       enabled: queryOptions.enabled ?? true,
@@ -102,11 +98,11 @@ export function useNotesFeed(
 }
 
 export function useNote(id: string) {
-  return useRpcQuery<NotesGetOutput>(
+  return useRpcQuery(
     (client) =>
       client.api.notes[':id']
         .$get({ param: { id } })
-        .then((r) => r.json() as Promise<NotesGetOutput>),
+        .then((r) => r.json()),
     {
       queryKey: notesQueryKeys.detail(id),
       enabled: !!id,
@@ -133,7 +129,7 @@ export function useNoteSearch(query: string, enabled = true) {
       const q: { query: string; limit?: string; cursor?: string } = { query, limit: '8' };
       if (pageParam) q.cursor = pageParam;
       const res = await client.api.notes.search.$get({ query: q });
-      return res.json() as Promise<NotesSearchOutput>;
+      return res.json();
     },
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     select: (data) => {
@@ -152,10 +148,10 @@ export function useCreateNote() {
   const client = useApiClient();
   const queryClient = useQueryClient();
 
-  return useMutation<NotesCreateOutput, Error, NotesCreateInput>({
-    mutationFn: async (variables) => {
+  return useMutation({
+    mutationFn: async (variables: NotesCreateInput) => {
       const res = await client.api.notes.$post({ json: variables as never });
-      return res.json() as Promise<NotesCreateOutput>;
+      return res.json();
     },
     onSuccess: (createdNote) => {
       queryClient.setQueryData(notesQueryKeys.detail(createdNote.id), createdNote);
@@ -167,14 +163,14 @@ export function useCreateNote() {
 export function useUpdateNote() {
   const queryClient = useQueryClient();
 
-  return useRpcMutation<NotesUpdateOutput, { id: string } & NotesUpdateInput>(
-    async (client, variables) => {
+  return useRpcMutation(
+    async (client, variables: { id: string } & NotesUpdateInput) => {
       const { id, ...fields } = variables;
       const res = await client.api.notes[':id'].$patch({
         param: { id },
         json: fields as never,
       });
-      return res.json() as Promise<NotesUpdateOutput>;
+      return res.json();
     },
     {
       onSuccess: (data) => {
@@ -189,10 +185,10 @@ export function useDeleteNote() {
   const client = useApiClient();
   const queryClient = useQueryClient();
 
-  return useMutation<NotesDeleteOutput, Error, { id: string }>({
-    mutationFn: async (variables) => {
+  return useMutation({
+    mutationFn: async (variables: { id: string }) => {
       const res = await client.api.notes[':id'].$delete({ param: { id: variables.id } });
-      return res.json() as Promise<NotesDeleteOutput>;
+      return res.json();
     },
     onSuccess: async (_, variables) => {
       queryClient.removeQueries({ queryKey: notesQueryKeys.detail(variables.id) });

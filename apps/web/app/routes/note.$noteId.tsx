@@ -1,4 +1,3 @@
-import type { Note } from '@hominem/rpc/types/notes.types';
 import { StatePanel } from '@hominem/ui';
 import { data, redirect, useNavigate } from 'react-router';
 
@@ -29,11 +28,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   }
 }
 
-export default function NoteSplitView({
-  loaderData,
-}: {
-  loaderData: { noteId: string; note: Note | null };
-}) {
+export default function NoteSplitView({ loaderData }: Route.ComponentProps) {
   const { note } = loaderData;
   const navigate = useNavigate();
   const updateNote = useUpdateNote();

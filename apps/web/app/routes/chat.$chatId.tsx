@@ -1,4 +1,3 @@
-import type { ChatMessageDto } from '@hominem/rpc/types/chat.types';
 import type { NoteSearchResult } from '@hominem/rpc/types/notes.types';
 import { EmptyState, InlineEnhanceTray, useInlineEnhance } from '@hominem/ui';
 import {
@@ -28,13 +27,6 @@ import { useStreamMessage } from '~/lib/hooks/use-stream-message';
 import type { Route } from './+types/chat.$chatId';
 
 type SelectedNote = NoteSearchResult;
-
-type ChatLoaderData = {
-  id: string;
-  title?: string | null;
-};
-
-type ChatMessageLoaderData = ChatMessageDto[];
 
 type NoteLoaderData = {
   id: string;
@@ -72,17 +64,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   }
 }
 
-export default function ChatPage({
-  loaderData,
-  params,
-}: {
-  loaderData: {
-    chat: ChatLoaderData | null;
-    seedNote: NoteLoaderData | null;
-    messages: ChatMessageLoaderData;
-  };
-  params: { chatId: string };
-}) {
+export default function ChatPage({ loaderData, params }: Route.ComponentProps) {
   const { chat, seedNote, messages: initialMessages } = loaderData;
   const { chatId } = params;
   const inputRef = useRef<HTMLTextAreaElement | null>(null);

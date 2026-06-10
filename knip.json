@@ -16,15 +16,7 @@
       "project": ["src/**/*.{ts,tsx}"]
     },
 
-    "packages/core/*": {
-      "project": ["src/**/*.{ts,tsx}"]
-    },
-
-    "packages/platform/*": {
-      "project": ["src/**/*.{ts,tsx}"]
-    },
-
-    "packages/domains/*": {
+    "packages/*": {
       "project": ["src/**/*.{ts,tsx}"]
     },
 
@@ -41,7 +33,7 @@
   "ignoreUnresolved": ["^vite/client$"],
 
   "ignore": [
-    "packages/platform/ui/src/components/**",
+    "packages/ui/src/components/**",
     "apps/mobile/components/**",
     "apps/mobile/services/**",
     "apps/mobile/hooks/**",
