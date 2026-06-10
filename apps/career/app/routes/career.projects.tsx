@@ -31,6 +31,13 @@ interface ProjectSummary {
   workLinkedProjects: number;
 }
 
+type LoaderData = {
+  projects: (Project & {
+    workExperience?: { company: string; role: string };
+  })[];
+  summary: ProjectSummary;
+};
+
 export async function loader(): Promise<ReturnType<typeof createSuccessResponse<unknown>>> {
   try {
     const projects: (Project & {
@@ -80,7 +87,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function ProjectsPage() {
-  const response = useLoaderData<typeof loader>();
+  const response = useLoaderData<{ success: boolean; data?: LoaderData; error?: string }>();
   const [showCreateForm, setShowCreateForm] = useState(false);
 
   if (!response.success) {
@@ -96,7 +103,7 @@ export default function ProjectsPage() {
     );
   }
 
-  const data = response.data || {};
+  const data = response.data as LoaderData;
   const { projects, summary } = data;
 
   return (

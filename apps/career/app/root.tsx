@@ -210,7 +210,7 @@ export function ErrorBoundary({ error }: { error: unknown }) {
               {stack}
             </pre>
           )}
-          <Button asChild variant="primary">
+          <Button asChild variant="default">
             <Link to="/">Go Home</Link>
           </Button>
         </CardContent>

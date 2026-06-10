@@ -18,6 +18,7 @@ import {
   parseFormData,
   tryAsync,
 } from '../lib/route-utils';
+import { userContext } from '../lib/middleware';
 import { formatDateForInput, nullArrayToUndefined, stringToDate } from '../lib/utils';
 
 export const meta: MetaFunction = () => [{ title: 'Projects - Portfolio Editor | Craftd' }];
@@ -405,6 +406,9 @@ function ProjectsEditorSection({
 
 export async function action({ request, context }: ActionFunctionArgs) {
   const user = context.get(userContext);
+  if (!user) {
+    return createErrorResponse('User not found');
+  }
   const formData = await request.formData();
   const operation = formData.get('operation') as string;
 

@@ -296,8 +296,8 @@ export function UploadResumeForm({
               type="button"
               onClick={() => uploadResume()}
               disabled={isPending || !selectedFile}
-              variant="primary"
-              fullWidth
+              variant="default"
+              className="w-full"
             >
               {status === 'error' ? (
                 <RefreshCw className="size-4" />
@@ -307,13 +307,13 @@ export function UploadResumeForm({
               {isPending ? 'Processing…' : buttonLabel}
             </Button>
             {isPending ? (
-              <Button type="button" onClick={cancelUpload} variant="outline" fullWidth>
+              <Button type="button" onClick={cancelUpload} variant="outline" className="w-full">
                 <X className="size-4" />
                 Cancel
               </Button>
             ) : null}
             {selectedFile && !isPending ? (
-              <Button type="button" onClick={clearSelectedFile} variant="ghost" fullWidth>
+              <Button type="button" onClick={clearSelectedFile} variant="ghost" className="w-full">
                 Use a different PDF
               </Button>
             ) : null}

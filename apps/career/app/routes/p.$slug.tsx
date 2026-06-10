@@ -29,7 +29,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
   ];
 };
 
-export async function loader({ params, _request }: LoaderFunctionArgs) {
+export async function loader({ params }: LoaderFunctionArgs) {
   const { slug } = params;
 
   if (!slug) {

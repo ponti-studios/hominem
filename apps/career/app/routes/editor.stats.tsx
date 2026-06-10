@@ -11,6 +11,7 @@ import { useFetcher, useOutletContext } from 'react-router';
 import { useToast } from '../hooks/useToast';
 import type { FullPortfolio } from '../lib/portfolio.server';
 import { createErrorResponse, createSuccessResponse, parseFormData } from '../lib/route-utils';
+import { userContext } from '../lib/middleware';
 
 type PortfolioStat = CareerPortfolioStatRecord;
 
@@ -126,7 +127,7 @@ function PortfolioStatsEditorSection({
             type="submit"
             form="stats-form"
             disabled={isSaving || !isDirty}
-            variant="primary"
+            variant="default"
             size="sm"
           >
             {isSaving ? 'Saving...' : 'Save Changes'}
@@ -186,6 +187,9 @@ export const meta: MetaFunction = () => [{ title: 'Portfolio Stats - Portfolio E
 
 export async function action({ request, context }: ActionFunctionArgs) {
   const user = context.get(userContext);
+  if (!user) {
+    return createErrorResponse('User not found');
+  }
   const formData = await request.formData();
   const statsDataResult = parseFormData<
     Array<{ id?: string; label: string; value: string; portfolio_id: string }>

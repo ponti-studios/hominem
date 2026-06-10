@@ -10,6 +10,7 @@ import { useFetcher, useOutletContext } from 'react-router';
 
 import { useToast } from '../hooks/useToast';
 import type { FullPortfolio } from '../lib/portfolio.server';
+import { userContext } from '../lib/middleware';
 import { createSuccessResponse, parseFormData } from '../lib/route-utils';
 
 export interface BasicInfoFormValues {
@@ -36,6 +37,9 @@ export const meta: MetaFunction = () => {
 // Server action to save portfolio data
 export async function action({ request, context }: ActionFunctionArgs) {
   const user = context.get(userContext);
+  if (!user) {
+    return createSuccessResponse(null, 'User not found');
+  }
   const formData = await request.formData();
   const portfolioDataResult = parseFormData<BasicInfoFormValues>(formData, 'portfolioData');
   if ('success' in portfolioDataResult && !portfolioDataResult.success) {
@@ -314,7 +318,7 @@ export default function EditorBasic() {
           </CardContent>
         </Card>
 
-        <Button type="submit" disabled={isSaving || !isDirty} variant="primary" fullWidth>
+        <Button type="submit" disabled={isSaving || !isDirty} variant="default" className="w-full">
           {isSaving ? 'Saving…' : 'Save'}
         </Button>
       </form>

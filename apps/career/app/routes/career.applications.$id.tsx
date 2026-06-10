@@ -170,7 +170,7 @@ export default function ApplicationDetail() {
     );
   }
 
-  const { application, notes, _files } = loaderData.data;
+  const { application, notes } = loaderData.data;
   const { company } = application;
 
   const tabItems = [
@@ -241,7 +241,7 @@ export default function ApplicationDetail() {
 
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TabId)}>
         <div className="border-b border-border">
-          <TabsList variant="line" className="-mb-px h-auto gap-8 bg-transparent p-0">
+          <TabsList className="-mb-px h-auto gap-8 bg-transparent p-0">
             {tabItems.map((tab) => (
               <TabsTrigger
                 key={tab.id}
@@ -266,7 +266,7 @@ export default function ApplicationDetail() {
             <ApplicationNotesTab notes={notes} applicationId={params.id || ''} />
           </TabsContent>
           <TabsContent value="files">
-            <ApplicationFilesTab application={application} applicationId={params.id || ''} />
+            <ApplicationFilesTab application={application} />
           </TabsContent>
         </div>
       </Tabs>

@@ -174,7 +174,7 @@ export function EditableArrayField({
             <Button
               type="button"
               onClick={handleSave}
-              variant="primary"
+              variant="default"
               size="sm"
               data-testid="save-button"
             >

@@ -23,6 +23,9 @@ interface LoaderData {
 
 export async function loader({ context }: LoaderFunctionArgs) {
   const user = context.get(userContext);
+  if (!user) {
+    return createErrorResponse('User not found');
+  }
   try {
     // Import the base functions here to avoid module issues
     const { getUserCareerEvents, getUserWorkExperiences } =
@@ -74,7 +77,7 @@ export default function CareerDashboard() {
     );
   }
 
-  const data = response.data || {};
+  const data = response.data as LoaderData;
   const { careerSummary, work_experiences } = data;
 
   const defaultSummary: CareerProgressionSummary = {

@@ -18,6 +18,12 @@ import {
 } from '~/lib/utils/certificationUtils';
 import type { Certification, CertificationSummary } from '~/types/career-data';
 
+type LoaderData = {
+  user: { id: string; email?: string | null; name?: string | null };
+  certifications: Certification[];
+  summary: CertificationSummary;
+};
+
 const formatDateValue = (value: Date | undefined) => {
   if (!value) {
     return '';
@@ -73,7 +79,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function CertificationsPage() {
-  const response = useLoaderData<typeof loader>();
+  const response = useLoaderData<{ success: boolean; data?: LoaderData; error?: string }>();
   const [showCreateForm, setShowCreateForm] = useState(false);
 
   if (!response.success) {
@@ -89,7 +95,7 @@ export default function CertificationsPage() {
     );
   }
 
-  const data = response.data || {};
+  const data = response.data as LoaderData;
   const { certifications, summary } = data;
 
   return (

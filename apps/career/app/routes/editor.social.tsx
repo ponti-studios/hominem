@@ -11,7 +11,8 @@ import { cn } from '~/lib/utils';
 
 import { useToast } from '../hooks/useToast';
 import type { FullPortfolio } from '../lib/portfolio.server';
-import { createSuccessResponse, parseFormData } from '../lib/route-utils';
+import { createErrorResponse, createSuccessResponse, parseFormData } from '../lib/route-utils';
+import { userContext } from '../lib/middleware';
 
 interface SocialLinksFormValues {
   id?: string;
@@ -104,7 +105,7 @@ function SocialLinksEditorSection({
             type="submit"
             form="social-form"
             disabled={isSaving || !isDirty}
-            variant="primary"
+            variant="default"
           >
             {isSaving ? 'Saving...' : 'Save'}
           </Button>
@@ -270,6 +271,9 @@ export const meta: MetaFunction = () => [{ title: 'Social - Portfolio Editor | C
 
 export async function action({ request, context }: ActionFunctionArgs) {
   const user = context.get(userContext);
+  if (!user) {
+    return createErrorResponse('User not found');
+  }
   const formData = await request.formData();
 
   const socialLinksDataResult = parseFormData<

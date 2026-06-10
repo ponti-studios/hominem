@@ -17,6 +17,7 @@ import {
   parseFormData,
   tryAsync,
 } from '../lib/route-utils';
+import { userContext } from '../lib/middleware';
 
 export const meta: MetaFunction = () => {
   return [{ title: 'Skills - Portfolio Editor | Craftd' }];
@@ -244,7 +245,7 @@ function SkillsEditorSection({ skills: initialSkills, portfolio_id }: SkillsEdit
               >
                 Cancel
               </Button>
-              <Button type="submit" variant="primary">
+              <Button type="submit" variant="default">
                 Add Skill
               </Button>
             </div>
@@ -304,6 +305,9 @@ export default function EditorSkills() {
 
 export async function action({ request, context }: ActionFunctionArgs) {
   const user = context.get(userContext);
+  if (!user) {
+    return createErrorResponse('User not found');
+  }
   const formData = await request.formData();
   const skillsDataResult = parseFormData<
     Array<{

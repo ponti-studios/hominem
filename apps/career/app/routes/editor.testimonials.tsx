@@ -16,6 +16,7 @@ import {
   parseFormData,
   tryAsync,
 } from '../lib/route-utils';
+import { userContext } from '../lib/middleware';
 
 interface TestimonialFormValues {
   id?: string;
@@ -152,7 +153,7 @@ function TestimonialForm({
           <Button
             type="submit"
             disabled={isSaving || (!isDirty && !isNew) || !isValid}
-            variant="primary"
+            variant="default"
             size="sm"
           >
             {isSaving ? 'Saving...' : isNew ? 'Add Testimonial' : 'Save Changes'}
@@ -350,6 +351,9 @@ export const meta: MetaFunction = () => [{ title: 'Testimonials - Portfolio Edit
 
 export async function action({ request, context }: ActionFunctionArgs) {
   const user = context.get(userContext);
+  if (!user) {
+    return createErrorResponse('User not found');
+  }
   const formData = await request.formData();
   const operation = formData.get('operation') as string;
 

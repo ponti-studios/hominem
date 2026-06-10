@@ -9,6 +9,10 @@ import { createErrorResponse, createSuccessResponse } from '~/lib/route-utils';
 import { cn } from '~/lib/utils';
 import type { WorkExperienceMetadata } from '~/types/career-data';
 
+type LoaderData = {
+  workExperience: any;
+};
+
 export async function loader({ context, params }: LoaderFunctionArgs) {
   const user = context.get(userContext)!;
   const { id } = params;
@@ -434,7 +438,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 // ─── page ─────────────────────────────────────────────────────────────────────
 
 export default function WorkExperienceDetail() {
-  const response = useLoaderData<typeof loader>();
+  const response = useLoaderData<{ success: boolean; data?: LoaderData; error?: string }>();
   const { workExperience: wx } = response?.data ?? {};
   const navigate = useNavigate();
 

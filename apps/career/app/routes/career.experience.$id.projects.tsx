@@ -11,6 +11,11 @@ import { userContext } from '~/lib/middleware';
 import { createErrorResponse, createSuccessResponse } from '~/lib/route-utils';
 import { cn } from '~/lib/utils';
 
+type LoaderData = {
+  workExperience: any;
+  projects: Project[];
+};
+
 export async function loader({ context, params }: LoaderFunctionArgs) {
   const user = context.get(userContext)!;
   const { id } = params;
@@ -103,7 +108,7 @@ export async function action({ context, request, params }: ActionFunctionArgs) {
 }
 
 export default function WorkExperienceProjects() {
-  const response = useLoaderData<typeof loader>();
+  const response = useLoaderData<{ success: boolean; data?: LoaderData; error?: string }>();
   const navigate = useNavigate();
   const [showAddForm, setShowAddForm] = useState(false);
 
@@ -120,8 +125,8 @@ export default function WorkExperienceProjects() {
     );
   }
 
-  const data = response.data || {};
-  const { workExperience, projects = [] } = data;
+  const data = response.data as LoaderData;
+  const { workExperience, projects } = data;
 
   if (!workExperience) {
     return <div>Work experience not found</div>;

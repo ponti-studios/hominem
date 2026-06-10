@@ -19,6 +19,9 @@ export const meta: MetaFunction = () => {
 
 export async function loader({ context }: LoaderFunctionArgs) {
   const user = context.get(userContext);
+  if (!user) {
+    throw redirect('/');
+  }
   const portfolio = await getFullUserPortfolio(user.id);
   if (!portfolio) {
     throw redirect('/onboarding');

@@ -23,6 +23,9 @@ export async function loader({ context }: LoaderFunctionArgs) {
 
 export async function action({ request, context }: ActionFunctionArgs) {
   const user = context.get(userContext);
+  if (!user) {
+    return createErrorResponse('User not found');
+  }
   const formData = await request.formData();
   const position = formData.get('position') as string;
   const companyName = formData.get('company') as string;

@@ -330,7 +330,7 @@ export function JobScrapingResumeCustomizer({
               <Button
                 onClick={handleScrape}
                 disabled={isScraping || !jobUrl.trim()}
-                variant="primary"
+                variant="default"
               >
                 {isScraping ? <LoadingSpinner variant="sm" /> : 'Continue'}
               </Button>
@@ -391,7 +391,7 @@ export function JobScrapingResumeCustomizer({
           </div>
 
           <div className="text-center mt-12 space-x-4">
-            <Button onClick={handleSaveApplication} disabled={isSaving} variant="primary">
+            <Button onClick={handleSaveApplication} disabled={isSaving} variant="default">
               {isSaving ? <LoadingSpinner variant="sm" /> : 'Save & Continue'}
             </Button>
             <Button variant="outline" onClick={() => setStep('scrape')}>
@@ -490,7 +490,7 @@ export function JobScrapingResumeCustomizer({
           </div>
 
           <div className="text-center mt-12 space-x-4">
-            <Button onClick={handleGenerateResume} disabled={isGenerating} variant="primary">
+            <Button onClick={handleGenerateResume} disabled={isGenerating} variant="default">
               {isGenerating ? <LoadingSpinner variant="sm" /> : 'Generate Resume'}
             </Button>
             <Button variant="outline" onClick={() => setStep('review')}>
@@ -578,7 +578,7 @@ export function JobScrapingResumeCustomizer({
           </div>
 
           <div className="text-center space-x-4">
-            <Button onClick={resetFlow} variant="primary">
+            <Button onClick={resetFlow} variant="default">
               Start Over
             </Button>
             <Button variant="outline" onClick={() => setStep('generate')}>

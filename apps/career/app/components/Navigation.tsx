@@ -266,7 +266,6 @@ export default function Navigation() {
                       type="button"
                       onClick={() => void handleSignOut()}
                       variant="ghost"
-                      size="md"
                       className="justify-start rounded-md px-4"
                     >
                       Sign out

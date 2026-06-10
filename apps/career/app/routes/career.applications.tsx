@@ -35,6 +35,23 @@ import type { JobApplicationStatus } from '~/types/career';
 const DEFAULT_LIMIT = 10;
 const MAX_LIMIT = 100;
 
+type LoaderData = {
+  user: { id: string; email?: string | null; name?: string | null };
+  allApplications: any[];
+  applications: any[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  filters: {
+    search?: string;
+    statuses: string[];
+    source?: string;
+  };
+};
+
 export async function loader({ context, request }: LoaderFunctionArgs) {
   const user = context.get(userContext)!;
   try {
@@ -164,7 +181,7 @@ function ApplicationsHeader({ totalCount }: { totalCount: number }) {
 }
 
 export default function CareerApplications() {
-  const loaderData = useLoaderData<typeof loader>();
+  const loaderData = useLoaderData<{ success: boolean; data?: LoaderData; error?: string }>();
   const actionData = useActionData();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
