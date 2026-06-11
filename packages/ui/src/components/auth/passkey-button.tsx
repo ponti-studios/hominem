@@ -19,13 +19,13 @@ export function PasskeyButton({
       type="button"
       variant="secondary"
       onClick={onClick}
-      disabled={disabled || isLoading}
+      disabled={disabled}
       className="gap-4"
+      isLoading={isLoading}
+      loadingLabel={translateUi('auth.emailEntry.passkeyLoadingButton')}
     >
       <KeyIcon size={16} />
-      {isLoading
-        ? translateUi('auth.emailEntry.passkeyLoadingButton')
-        : translateUi('auth.emailEntry.passkeyButton')}
+      {translateUi('auth.emailEntry.passkeyButton')}
     </Button>
   );
 }

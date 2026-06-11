@@ -21,8 +21,14 @@ export function EditorFormActions({
 
   return (
     <div className="flex gap-2">
-      <Button type="submit" disabled={isSubmitDisabled} size="sm">
-        {isSaving ? 'Saving...' : submitLabel}
+      <Button
+        type="submit"
+        disabled={isSubmitDisabled}
+        size="sm"
+        isLoading={isSaving}
+        loadingLabel="Saving..."
+      >
+        {submitLabel}
       </Button>
       {!isNew && onDelete ? (
         <Button

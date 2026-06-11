@@ -1,6 +1,5 @@
 import { Button } from '@hominem/ui/button';
 import { Input } from '@hominem/ui/input';
-import { LoadingSpinner } from '@hominem/ui/loading-spinner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
 import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
@@ -267,8 +266,10 @@ export function JobScrapingResumeCustomizer({
                 onClick={() => scrapeMutation.mutate(jobUrl.trim())}
                 disabled={scrapeMutation.isPending || !jobUrl.trim()}
                 variant="default"
+                isLoading={scrapeMutation.isPending}
+                loadingLabel="Continuing..."
               >
-                {scrapeMutation.isPending ? <LoadingSpinner variant="sm" /> : 'Continue'}
+                Continue
               </Button>
             </div>
           </div>
@@ -331,12 +332,10 @@ export function JobScrapingResumeCustomizer({
               onClick={() => saveApplicationMutation.mutate(scrapedJob)}
               disabled={saveApplicationMutation.isPending}
               variant="default"
+              isLoading={saveApplicationMutation.isPending}
+              loadingLabel="Saving..."
             >
-              {saveApplicationMutation.isPending ? (
-                <LoadingSpinner variant="sm" />
-              ) : (
-                'Save & Continue'
-              )}
+              Save & Continue
             </Button>
             <Button variant="outline" onClick={() => setStep('scrape')}>
               Back
@@ -451,8 +450,10 @@ export function JobScrapingResumeCustomizer({
               }
               disabled={generateMutation.isPending}
               variant="default"
+              isLoading={generateMutation.isPending}
+              loadingLabel="Generating resume..."
             >
-              {generateMutation.isPending ? <LoadingSpinner variant="sm" /> : 'Generate Resume'}
+              Generate Resume
             </Button>
             <Button variant="outline" onClick={() => setStep('review')}>
               Back

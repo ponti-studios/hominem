@@ -3,6 +3,13 @@ import { emailOTPClient } from 'better-auth/client/plugins';
 import { createAuthClient } from 'better-auth/react';
 import { createContext, useContext, useMemo, type PropsWithChildren } from 'react';
 
+export {
+  useEmailAuth,
+  type EmailAuthOperations,
+  type UseEmailAuthOptions,
+  type UseEmailAuthOutput,
+} from './email-auth';
+
 type AuthClientOptions = {
   baseURL: string;
   plugins: [ReturnType<typeof emailOTPClient>, ReturnType<typeof passkeyClient>];

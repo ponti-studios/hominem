@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Loader2, Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { expect, userEvent, within } from 'storybook/test';
 
 import { booleanControl, hiddenControl, selectControl } from '../storybook/controls';
@@ -105,9 +105,8 @@ export const Disabled: Story = {
 
 export const Loading: Story = {
   render: () => (
-    <Button disabled>
-      <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-      Saving
+    <Button isLoading loadingLabel="Saving">
+      Save
     </Button>
   ),
   play: async ({ canvasElement }) => {

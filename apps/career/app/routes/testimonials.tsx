@@ -149,8 +149,14 @@ function TestimonialForm({
             disabled={isSaving || (!isDirty && !isNew) || !isValid}
             variant="default"
             size="sm"
+            isLoading={isSaving}
+            loadingLabel="Saving..."
           >
-            {isSaving ? 'Saving...' : isNew ? 'Add Testimonial' : 'Save Changes'}
+            {isNew ? (
+              'Add Testimonial'
+            ) : (
+              'Save Changes'
+            )}
           </Button>
           {!isNew && (
             <Button

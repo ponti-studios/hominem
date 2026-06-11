@@ -1,6 +1,5 @@
 import { Button } from '@hominem/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@hominem/ui/dialog';
-import { LoadingSpinner } from '@hominem/ui/loading-spinner';
 import { Upload } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 
@@ -128,18 +127,11 @@ export function ImageCropDialog({
             onClick={handleConfirm}
             disabled={isSubmitting || !crop}
             className="flex items-center gap-2"
+            isLoading={isSubmitting}
+            loadingLabel="Uploading..."
           >
-            {isSubmitting ? (
-              <>
-                <LoadingSpinner variant="sm" />
-                Uploading...
-              </>
-            ) : (
-              <>
-                <Upload className="h-4 w-4" />
-                {confirmLabel}
-              </>
-            )}
+            <Upload className="h-4 w-4" />
+            {confirmLabel}
           </Button>
         </div>
       </DialogContent>

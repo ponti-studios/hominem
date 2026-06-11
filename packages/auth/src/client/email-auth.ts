@@ -1,5 +1,6 @@
-import { normalizeEmail, normalizeOtp } from '@hominem/auth/shared/validation';
 import { useCallback, useState } from 'react';
+
+import { normalizeEmail, normalizeOtp } from '../shared/validation';
 
 export interface EmailAuthOperations {
   sendOtp: (email: string) => Promise<void>;
@@ -43,7 +44,11 @@ export function useEmailAuth(
         setError('Email is required');
         return;
       }
-      if (emailOverride) setEmail(emailOverride);
+
+      if (emailOverride !== undefined) {
+        setEmail(emailOverride);
+      }
+
       try {
         setIsSubmitting(true);
         setError(null);
@@ -70,6 +75,7 @@ export function useEmailAuth(
         setError('Verification code is required');
         return;
       }
+
       try {
         setIsSubmitting(true);
         setError(null);
@@ -95,6 +101,7 @@ export function useEmailAuth(
         setError('Email is required');
         return;
       }
+
       try {
         setIsResending(true);
         setError(null);

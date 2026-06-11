@@ -2,7 +2,6 @@ import { Button } from '@hominem/ui/button';
 import { Card, CardContent } from '@hominem/ui/card';
 import { DatePicker } from '@hominem/ui/date-picker';
 import { Input } from '@hominem/ui/input';
-import { LoadingSpinner } from '@hominem/ui/loading-spinner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
 import { useState } from 'react';
 import { Form, Link, redirect } from 'react-router';
@@ -231,8 +230,10 @@ export default function CreateJobApplication() {
                       disabled={isScraping || !url.trim()}
                       className="h-11"
                       variant="default"
+                      isLoading={isScraping}
+                      loadingLabel="Scraping..."
                     >
-                      {isScraping ? <LoadingSpinner variant="sm" /> : 'Scrape'}
+                      Scrape
                     </Button>
                   </div>
                   {scrapingError && <p className="text-red-500 text-sm mt-2">{scrapingError}</p>}

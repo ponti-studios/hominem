@@ -449,8 +449,15 @@ function BasicInfoForm({ portfolio }: { portfolio: CareerPortfolioRecord }) {
         </CardContent>
       </Card>
 
-      <Button type="submit" disabled={isSaving || !isDirty} variant="default" className="w-full">
-        {isSaving ? 'Saving…' : 'Save'}
+      <Button
+        type="submit"
+        disabled={isSaving || !isDirty}
+        variant="default"
+        className="w-full"
+        isLoading={isSaving}
+        loadingLabel="Saving..."
+      >
+        Save
       </Button>
     </form>
   );
@@ -789,9 +796,11 @@ export default function Account({ loaderData }: Route.ComponentProps) {
                       variant="outline"
                       size="sm"
                       className="w-full border-success/30 text-success hover:bg-success/10 sm:w-auto"
+                      isLoading={pdfGenerating}
+                      loadingLabel="Generating PDF..."
                     >
                       <Download className="w-4 h-4 mr-2" />
-                      {pdfGenerating ? 'Generating PDF...' : 'Download PDF'}
+                      Download PDF
                     </Button>
                     <Button
                       type="button"

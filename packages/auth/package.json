@@ -32,6 +32,10 @@
       "types": "./src/client/provider.tsx",
       "default": "./src/client/provider.tsx"
     },
+    "./client/email-auth": {
+      "types": "./src/client/email-auth.ts",
+      "default": "./src/client/email-auth.ts"
+    },
     "./client/passkey": {
       "types": "./src/client/passkey.ts",
       "default": "./src/client/passkey.ts"

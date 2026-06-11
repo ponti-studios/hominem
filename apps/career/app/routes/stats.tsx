@@ -128,8 +128,10 @@ function PortfolioStatsEditorSection({
             disabled={isSaving || !isDirty}
             variant="default"
             size="sm"
+            isLoading={isSaving}
+            loadingLabel="Saving..."
           >
-            {isSaving ? 'Saving...' : 'Save Changes'}
+            Save Changes
           </Button>
         </div>
       </div>

@@ -107,8 +107,10 @@ function SocialLinksEditorSection({
             form="social-form"
             disabled={isSaving || !isDirty}
             variant="default"
+            isLoading={isSaving}
+            loadingLabel="Saving..."
           >
-            {isSaving ? 'Saving...' : 'Save'}
+            Save
           </Button>
         </div>
       </div>

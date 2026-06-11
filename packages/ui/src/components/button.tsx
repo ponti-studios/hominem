@@ -3,6 +3,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 
 import { cn } from '../lib/utils';
+import { LoadingSpinner } from './loading-spinner';
 
 const buttonVariants = cva(
   'inline-flex min-h-6 min-w-6 items-center justify-center gap-2 whitespace-nowrap rounded-md border text-sm font-medium transition-colors focus-visible:outline-none focus-visible:border-foreground disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
@@ -38,18 +39,46 @@ const buttonVariants = cva(
 interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
   asChild?: boolean;
+  isLoading?: boolean;
+  loadingLabel?: string;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  (
+    {
+      children,
+      className,
+      disabled,
+      isLoading = false,
+      loadingLabel = 'Loading',
+      variant,
+      size,
+      asChild = false,
+      ...props
+    },
+    ref,
+  ) => {
     const Comp = asChild ? Slot : 'button';
+    const spinnerVariant = size === 'lg' ? 'md' : 'sm';
+
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
         type="button"
         ref={ref}
+        disabled={disabled || isLoading}
+        aria-busy={isLoading}
         {...props}
-      />
+      >
+        {isLoading ? (
+          <>
+            <LoadingSpinner variant={spinnerVariant} />
+            <span className="sr-only">{loadingLabel}</span>
+          </>
+        ) : (
+          children
+        )}
+      </Comp>
     );
   },
 );

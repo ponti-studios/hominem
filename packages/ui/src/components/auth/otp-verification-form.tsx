@@ -1,63 +1,42 @@
-import { maskEmail } from '@hominem/auth/shared/mask-email';
 import { normalizeOtp } from '@hominem/auth/shared/validation';
-import { useState } from 'react';
-import { useSearchParams } from 'react-router';
 
 import { translateUi } from '../../translations';
 import { Button } from '../button';
-import { AuthScaffold } from './auth-scaffold';
 import { OtpCodeInput } from './otp-code-input';
 
 interface OtpVerificationFormProps {
   email: string;
-  defaultNext?: string;
+  otp: string;
   error?: string | undefined;
-  onSubmit: (input: { email: string; otp: string; next: string }) => Promise<void>;
-  onResend: (email: string) => Promise<void>;
-  onChangeEmail?: () => void;
+  isSubmitting?: boolean;
+  isResending?: boolean;
+  onOtpChange: (otp: string) => void;
+  onSubmit: () => void | Promise<void>;
+  onResend: () => void | Promise<void>;
+  onChangeEmail: () => void;
 }
 
 export function OtpVerificationForm({
   email,
-  defaultNext = '/finance',
+  otp,
   error,
+  isSubmitting = false,
+  isResending = false,
+  onOtpChange,
   onSubmit,
   onResend,
   onChangeEmail,
 }: OtpVerificationFormProps) {
-  const [searchParams] = useSearchParams();
-  const [otp, setOtp] = useState('');
-  const [resendError, setResendError] = useState<string | null>(null);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const [isClientSubmitting, setIsClientSubmitting] = useState(false);
-  const [isClientResending, setIsClientResending] = useState(false);
-  const isSubmitting = isClientSubmitting;
-  const resolvedEmail = searchParams.get('email') ?? email;
-  const next = searchParams.get('next') ?? defaultNext;
   const normalizedOtp = normalizeOtp(otp);
-  const isResending = isClientResending;
   const canSubmit = normalizedOtp.length === 6 && !isSubmitting && !isResending;
-  const displayError = error ?? submitError ?? resendError;
+  const displayError = error;
 
   const handleResend = () => {
     if (isResending) {
       return;
     }
 
-    setResendError(null);
-    setSubmitError(null);
-    setIsClientResending(true);
-    void onResend(resolvedEmail)
-      .catch((caughtError) => {
-        setResendError(
-          caughtError instanceof Error
-            ? caughtError.message
-            : translateUi('auth.otpVerification.resendFailedError'),
-        );
-      })
-      .finally(() => {
-        setIsClientResending(false);
-      });
+    void onResend();
   };
 
   const fields = (
@@ -72,15 +51,7 @@ export function OtpVerificationForm({
           disabled={isSubmitting || isResending}
           error={displayError ?? undefined}
           autoFocus
-          onChange={(nextOtp) => {
-            setOtp(nextOtp);
-            if (resendError) {
-              setResendError(null);
-            }
-            if (submitError) {
-              setSubmitError(null);
-            }
-          }}
+          onChange={onOtpChange}
         />
         {displayError ? (
           <p className="body-4 text-destructive" role="alert">
@@ -89,10 +60,14 @@ export function OtpVerificationForm({
         ) : null}
       </div>
 
-      <Button type="submit" disabled={!canSubmit} className="w-full">
-        {isSubmitting
-          ? translateUi('auth.otpVerification.verifyButtonLoading')
-          : translateUi('auth.otpVerification.verifyButton')}
+      <Button
+        type="submit"
+        disabled={!canSubmit}
+        className="w-full"
+        isLoading={isSubmitting}
+        loadingLabel={translateUi('auth.otpVerification.verifyButtonLoading')}
+      >
+        {translateUi('auth.otpVerification.verifyButton')}
       </Button>
 
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-sm">
@@ -103,66 +78,36 @@ export function OtpVerificationForm({
           onClick={handleResend}
           disabled={isResending || isSubmitting}
           className="px-0"
+          isLoading={isResending}
+          loadingLabel={translateUi('auth.otpVerification.resendButtonLoading')}
         >
-          {isResending
-            ? translateUi('auth.otpVerification.resendButtonLoading')
-            : translateUi('auth.otpVerification.resendButton')}
+          {translateUi('auth.otpVerification.resendButton')}
         </Button>
 
-        {onChangeEmail ? (
-          <Button
-            type="button"
-            variant="link"
-            size="sm"
-            onClick={onChangeEmail}
-            disabled={isSubmitting}
-            className="px-0"
-          >
-            {translateUi('auth.otpVerification.changeEmailLink')}
-          </Button>
-        ) : null}
+        <Button
+          type="button"
+          variant="link"
+          size="sm"
+          onClick={onChangeEmail}
+          disabled={isSubmitting}
+          className="px-0"
+        >
+          {translateUi('auth.otpVerification.changeEmailLink')}
+        </Button>
       </div>
     </div>
   );
 
-  const form = (
+  return (
     <form
       onSubmit={(event) => {
         event.preventDefault();
-        setSubmitError(null);
-        setResendError(null);
-        setIsClientSubmitting(true);
-
-        void onSubmit({
-          email: resolvedEmail,
-          otp: normalizedOtp,
-          next,
-        })
-          .catch((caughtError) => {
-            setSubmitError(
-              caughtError instanceof Error
-                ? caughtError.message
-                : translateUi('auth.otpVerification.verifyFailedError'),
-            );
-          })
-          .finally(() => {
-            setIsClientSubmitting(false);
-          });
+        void onSubmit();
       }}
     >
-      <input type="hidden" name="email" value={resolvedEmail} />
-      <input type="hidden" name="next" value={next} />
+      <input type="hidden" name="email" value={email} />
       <input type="hidden" name="otp" value={normalizedOtp} />
       {fields}
     </form>
-  );
-
-  return (
-    <AuthScaffold
-      title={translateUi('auth.otpVerification.title')}
-      helperText={translateUi('auth.otpVerification.helper', { email: maskEmail(resolvedEmail) })}
-    >
-      {form}
-    </AuthScaffold>
   );
 }

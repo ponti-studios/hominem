@@ -332,18 +332,14 @@ export function ResumeCustomizer({
             </div>
           </div>
 
-          <Button onClick={handleGenerate} disabled={isDisabled} className="w-full">
-            {isScraping ? (
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Scraping job posting...
-              </div>
-            ) : isGenerating ? (
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Generating resume...
-              </div>
-            ) : inputMethod === 'url' ? (
+          <Button
+            onClick={handleGenerate}
+            disabled={isDisabled}
+            className="w-full"
+            isLoading={isScraping || isGenerating}
+            loadingLabel={isScraping ? 'Scraping job posting...' : 'Generating resume...'}
+          >
+            {inputMethod === 'url' ? (
               'Scrape & Generate Resume'
             ) : (
               'Generate Customized Resume'
