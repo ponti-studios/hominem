@@ -20,7 +20,7 @@ import './app.css';
 import { NavigationProgress } from './components/NavigationProgress';
 import { ToastProvider } from './hooks/useToast';
 import { serverEnv } from './lib/env';
-import { authMiddleware, portfolioContext, userContext } from './lib/middleware';
+import { portfolioContext, sessionMiddleware, userContext } from './lib/middleware';
 
 export const links = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -100,7 +100,9 @@ interface CurrentPortfolioSummary {
   slug: string;
 }
 
-export const middleware: Route.MiddlewareFunction[] = [authMiddleware];
+export const middleware: Route.MiddlewareFunction[] = [
+  (args, next) => sessionMiddleware(args, next),
+];
 
 export async function loader({ context }: Route.LoaderArgs) {
   const user = context.get(userContext);

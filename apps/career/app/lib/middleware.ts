@@ -1,45 +1,94 @@
 import { CareerRepository, db } from '@hominem/db';
 import type { CareerPortfolioRecord } from '@hominem/db';
-import { createContext, redirect } from 'react-router';
+import { createContext, redirect, type RouterContext } from 'react-router';
 
-import type { Route } from '../+types/root';
 import { getServerSession, type User } from './auth.server';
 
 export const userContext = createContext<User | null>(null);
 export const portfolioContext = createContext<CareerPortfolioRecord | null>(null);
 
-// Routes where an authenticated user with no portfolio is redirected to /onboarding.
-// Everything not listed here (/, /account, /onboarding, /api/*, /health, /p/*, /demo, /resume/*) is exempt.
-const PORTFOLIO_REQUIRED_PREFIXES = [
-  '/work',
-  '/skills',
-  '/social',
-  '/stats',
-  '/projects',
-  '/testimonials',
-  '/applications',
-  '/certifications',
-];
+type MiddlewareContext = {
+  get: <T>(key: RouterContext<T>) => T;
+  set: <T>(key: RouterContext<T>, value: T) => void;
+};
 
-function requiresPortfolio(path: string): boolean {
-  return PORTFOLIO_REQUIRED_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`));
+type SharedMiddlewareArgs = {
+  request: Request;
+  context: MiddlewareContext;
+};
+
+type SharedMiddlewareNext = () => Promise<Response>;
+
+function isApiRequest(path: string): boolean {
+  return path === '/api' || path.startsWith('/api/');
 }
 
-export const authMiddleware: Route.MiddlewareFunction = async ({ request, context }) => {
-  const path = new URL(request.url).pathname;
-  const isPublic =
-    path === '/' || path.startsWith('/login') || path.startsWith('/p/') || path === '/health';
+function unauthorizedResponse(path: string) {
+  if (isApiRequest(path)) {
+    return Response.json({ error: 'Authentication required' }, { status: 401 });
+  }
 
-  if (isPublic) return;
+  return redirect('/login');
+}
+
+export async function sessionMiddleware(
+  { request, context }: SharedMiddlewareArgs,
+  next: SharedMiddlewareNext,
+): Promise<Response | void> {
+  if (new URL(request.url).pathname === '/health') {
+    return next();
+  }
 
   const { user } = await getServerSession(request);
-  if (!user) return redirect('/login');
-  context.set(userContext, user);
+  if (user) {
+    context.set(userContext, user);
+  }
 
-  const portfolio = await CareerRepository.getPortfolioByUserId(db, user.id);
-  context.set(portfolioContext, portfolio ?? null);
+  return next();
+}
 
-  if (requiresPortfolio(path) && !portfolio) {
+export async function requireAuthMiddleware(
+  { request, context }: SharedMiddlewareArgs,
+  next: SharedMiddlewareNext,
+): Promise<Response | void> {
+  const path = new URL(request.url).pathname;
+  const user = context.get(userContext);
+
+  if (!user) {
+    return unauthorizedResponse(path);
+  }
+
+  return next();
+}
+
+export async function loadPortfolioMiddleware(
+  { context }: SharedMiddlewareArgs,
+  next: SharedMiddlewareNext,
+): Promise<Response | void> {
+  const user = context.get(userContext);
+  if (!user) {
+    return next();
+  }
+
+  const currentPortfolio = await CareerRepository.getPortfolioByUserId(db, user.id);
+  context.set(portfolioContext, currentPortfolio ?? null);
+
+  return next();
+}
+
+export async function requirePortfolioMiddleware(
+  { context }: SharedMiddlewareArgs,
+  next: SharedMiddlewareNext,
+): Promise<Response | void> {
+  const user = context.get(userContext);
+  if (!user) {
+    return redirect('/login');
+  }
+
+  const currentPortfolio = context.get(portfolioContext);
+  if (!currentPortfolio) {
     return redirect('/onboarding');
   }
-};
+
+  return next();
+}

@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 
-import { createChatCompletion, getChatCompletionText } from '@hominem/ai';
+import { createChatCompletion, getChatCompletionText, OpenRouterRequestError } from '@hominem/ai';
 import { CareerRepository, db } from '@hominem/db';
 import { createStorageService, resolveUploadMimeType, validateFile } from '@hominem/storage';
 import { data, type ActionFunction } from 'react-router';
@@ -59,11 +59,55 @@ function errorResponse(
 }
 
 function logRouteError(message: string, error: unknown, context?: Record<string, unknown>): void {
+  const errorContext =
+    error instanceof OpenRouterRequestError
+      ? {
+          ...context,
+          ai_error: {
+            status: error.status,
+            statusText: error.statusText,
+            code: error.code,
+            providerMessage: error.providerMessage,
+            details: error.details,
+          },
+        }
+      : context;
+
   logger.error(
-    message,
-    error instanceof Error ? error : undefined,
-    error instanceof Error ? context : { ...context, error },
+    message || (error instanceof Error ? error.message : ""),
   );
+}
+
+function resolveAiParseFailure(error: unknown) {
+  if (error instanceof OpenRouterRequestError) {
+    if (error.code === 'missing_api_key') {
+      return {
+        error:
+          'Resume parsing AI is not configured yet. Set OPENROUTER_API_KEY and try again.',
+        status: 503,
+      };
+    }
+
+    if (error.status === 401 || error.status === 402 || error.status === 403) {
+      return {
+        error:
+          'Resume parsing AI is unavailable because the provider credentials were rejected. Check the AI service configuration and try again.',
+        status: 502,
+      };
+    }
+
+    if (error.status === 429) {
+      return {
+        error: 'Resume parsing AI is temporarily rate limited. Wait a moment and try again.',
+        status: 503,
+      };
+    }
+  }
+
+  return {
+    error: 'Could not parse the resume with AI right now. Try again in a moment.',
+    status: 502,
+  };
 }
 
 export const action: ActionFunction = async ({ request, context }) => {
@@ -175,9 +219,9 @@ export const action: ActionFunction = async ({ request, context }) => {
     try {
       const resumeParserSystemPrompt = await loadResumeParserSystemPrompt();
       const result = await createChatCompletion({
-        response_format: {
+        responseFormat: {
           type: 'json_schema',
-          json_schema: {
+          jsonSchema: {
             name: 'resume_parser',
             schema: resumeParserJsonSchema,
             strict: true,
@@ -203,9 +247,10 @@ ${pdfText}`,
         owner_userid: user.id,
         fileName: file.name,
       });
+      const failure = resolveAiParseFailure(error);
       return errorResponse(
-        'Could not parse the resume with AI right now. Check the AI service configuration and try again.',
-        502,
+        failure.error,
+        failure.status,
         'ai-parse',
         true,
       );

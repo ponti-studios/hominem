@@ -1,5 +1,6 @@
 // @vitest-environment node
 
+import { OpenRouterRequestError } from '@hominem/ai';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createCareerTestDb } from '~/test/db/career';
@@ -50,6 +51,22 @@ vi.mock('../lib/rate-limit', () => ({
 }));
 
 vi.mock('@hominem/ai', () => ({
+  OpenRouterRequestError: class OpenRouterRequestError extends Error {
+    status?: number;
+    statusText?: string;
+    code?: string;
+
+    constructor(
+      message: string,
+      options: { status?: number; statusText?: string; code?: string } = {},
+    ) {
+      super(message);
+      this.name = 'OpenRouterRequestError';
+      this.status = options.status;
+      this.statusText = options.statusText;
+      this.code = options.code;
+    }
+  },
   createChatCompletion: mocks.createCompletion,
   getChatCompletionText: vi.fn(
     (result: { choices?: Array<{ message?: { content?: string } }> }) =>
@@ -300,9 +317,9 @@ describe('resume convert action', () => {
 
     expect(mocks.createCompletion).toHaveBeenCalledWith(
       expect.objectContaining({
-        response_format: expect.objectContaining({
+        responseFormat: expect.objectContaining({
           type: 'json_schema',
-          json_schema: expect.objectContaining({
+          jsonSchema: expect.objectContaining({
             name: 'resume_parser',
             strict: true,
           }),
@@ -329,6 +346,41 @@ describe('resume convert action', () => {
 
     expect(response.status).toBe(502);
     expect(body.stage).toBe('ai-parse');
+  });
+
+  it('returns a provider credential message when the ai provider rejects the request', async () => {
+    mocks.createCompletion.mockRejectedValue(
+      new OpenRouterRequestError('Provider returned error', {
+        status: 401,
+        statusText: 'Unauthorized',
+      }),
+    );
+
+    const response = await callAction(formRequest(pdfFile()));
+    const body = await responseBody(response);
+
+    expect(response.status).toBe(502);
+    expect(body.stage).toBe('ai-parse');
+    expect(body.error).toBe(
+      'Resume parsing AI is unavailable because the provider credentials were rejected. Check the AI service configuration and try again.',
+    );
+  });
+
+  it('returns a configuration message when the ai api key is missing', async () => {
+    mocks.createCompletion.mockRejectedValue(
+      new OpenRouterRequestError('OPENROUTER_API_KEY is required', {
+        code: 'missing_api_key',
+      }),
+    );
+
+    const response = await callAction(formRequest(pdfFile()));
+    const body = await responseBody(response);
+
+    expect(response.status).toBe(503);
+    expect(body.stage).toBe('ai-parse');
+    expect(body.error).toBe(
+      'Resume parsing AI is not configured yet. Set OPENROUTER_API_KEY and try again.',
+    );
   });
 
   it('returns ai parse stage when the AI response is malformed JSON', async () => {

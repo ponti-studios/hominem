@@ -145,13 +145,13 @@ Please create a customized resume that highlights the most relevant experience a
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
-      max_tokens: 4000,
-      temperature: 0.3, // Lower temperature for more consistent, professional output
+      maxTokens: 4000,
+      temperature: 0.3,
     });
 
     // Extract key insights from the job posting for additional context
     const analysisResult = await createChatCompletion({
-      response_format: { type: 'json_object' },
+      responseFormat: { type: 'json_object' },
       messages: [
         {
           role: 'system',
