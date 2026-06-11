@@ -1,7 +1,6 @@
-import { classifyFileByMimeType, getmimeTypeFromExtension } from '@hominem/rpc';
 import { useApiClient } from '@hominem/rpc/react';
 import { UPLOAD_MAX_FILE_COUNT } from '@hominem/storage/constants';
-import { getFileExtension } from '@hominem/utils/files';
+import { getFileExtension, classifyFileByMimeType, getmimeTypeFromExtension } from '@hominem/utils/files';
 import * as ImagePicker from 'expo-image-picker';
 import React, {
   createContext,

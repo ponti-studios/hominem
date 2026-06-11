@@ -458,7 +458,7 @@ function BasicInfoForm({ portfolio }: { portfolio: CareerPortfolioRecord }) {
 
 export function meta() {
   return [
-    { title: 'Account - Craftd' },
+    { title: 'Account' },
     { name: 'description', content: 'Manage your portfolio and account settings' },
   ];
 }

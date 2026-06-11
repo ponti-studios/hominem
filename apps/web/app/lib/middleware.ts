@@ -10,7 +10,7 @@ export const authMiddleware: Route.MiddlewareFunction = async ({ request, contex
   const path = new URL(request.url).pathname;
 
   // Public paths that don't require authentication
-  const publicPaths = ['/', '/auth', '/auth/verify'];
+  const publicPaths = ['/', '/auth'];
 
   const isPublic = publicPaths.some((p) => path === p || path.startsWith(p + '/'));
 

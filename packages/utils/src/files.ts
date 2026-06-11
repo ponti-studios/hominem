@@ -61,3 +61,74 @@ const MIME_TO_EXT: Record<string, string> = {
 export function getExtensionFromMimeType(mimetype: string): string {
   return MIME_TO_EXT[mimetype.toLowerCase()] ?? '';
 }
+
+export type FileType = 'image' | 'audio' | 'video' | 'document' | 'file';
+
+export function classifyFileByMimeType(mimetype: string): FileType {
+  if (!mimetype) return 'file';
+
+  const type = mimetype.toLowerCase();
+
+  if (type.startsWith('image/')) return 'image';
+  if (type.startsWith('audio/')) return 'audio';
+  if (type.startsWith('video/')) return 'video';
+
+  if (
+    type === 'application/pdf' ||
+    type.startsWith('text/') ||
+    type.includes('word') ||
+    type.includes('document') ||
+    type.includes('spreadsheet') ||
+    type.includes('presentation') ||
+    type.includes('csv') ||
+    type.includes('json') ||
+    type.includes('xml')
+  ) {
+    return 'document';
+  }
+
+  return 'file';
+}
+
+export function getmimeTypeFromExtension(extension: string): string {
+  const mimeMap: Record<string, string> = {
+    // Images
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    heic: 'image/heic',
+    heif: 'image/heif',
+    png: 'image/png',
+    gif: 'image/gif',
+    webp: 'image/webp',
+    svg: 'image/svg+xml',
+
+    // Audio
+    mp3: 'audio/mpeg',
+    wav: 'audio/wav',
+    ogg: 'audio/ogg',
+    flac: 'audio/flac',
+    m4a: 'audio/mp4',
+
+    // Video
+    mp4: 'video/mp4',
+    webm: 'video/webm',
+    mov: 'video/quicktime',
+    avi: 'video/x-msvideo',
+
+    // Documents
+    pdf: 'application/pdf',
+    txt: 'text/plain',
+    doc: 'application/msword',
+    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    xls: 'application/vnd.ms-excel',
+    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    ppt: 'application/vnd.ms-powerpoint',
+    pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    csv: 'text/csv',
+    json: 'application/json',
+    xml: 'application/xml',
+  };
+
+  const normalized = extension.toLowerCase();
+  return mimeMap[normalized] || 'application/octet-stream';
+}

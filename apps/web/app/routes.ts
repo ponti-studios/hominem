@@ -4,10 +4,7 @@ export default [
   // API Routes (specific handlers)
   route('api/auth/google', 'routes/api/auth/google.ts'),
 
-  layout('routes/auth/layout.tsx', [
-    route('/auth', 'routes/auth/index.tsx'),
-    route('/auth/verify', 'routes/auth/verify.tsx'),
-  ]),
+  layout('routes/auth/layout.tsx', [route('/auth', 'routes/auth/index.tsx')]),
 
   layout('routes/layout.tsx', [
     index('routes/home.tsx'),

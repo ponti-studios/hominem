@@ -1,20 +1,24 @@
-import type { InboxOutput } from '@hominem/rpc/react';
+import type { HonoClient } from '@hominem/rpc';
 import { useApiClient } from '@hominem/rpc/react';
 import { useInfiniteQuery, type InfiniteData } from '@tanstack/react-query';
 
 import { inboxQueryKeys } from '~/lib/query-keys';
 
+type InboxPage = Awaited<
+  ReturnType<Awaited<ReturnType<HonoClient['api']['inbox']['$get']>>['json']>
+>;
+
 interface UseInboxOptions {
-  initialData?: InboxOutput;
+  initialData?: InboxPage;
 }
 
 export function useInbox(limit: number = 50, options: UseInboxOptions = {}) {
   const client = useApiClient();
 
   return useInfiniteQuery<
-    InboxOutput,
+    InboxPage,
     Error,
-    InfiniteData<InboxOutput, string | null>,
+    InfiniteData<InboxPage, string | null>,
     readonly unknown[],
     string | null
   >({

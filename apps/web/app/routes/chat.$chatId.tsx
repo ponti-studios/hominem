@@ -189,7 +189,7 @@ export default function ChatPage({ loaderData, params }: Route.ComponentProps) {
                 <button
                   type="button"
                   className="text-sm text-text-secondary underline"
-                  onClick={() => archiveChat.mutate({ chatId })}
+                  onClick={() => archiveChat.mutate()}
                 >
                   Archive chat
                 </button>

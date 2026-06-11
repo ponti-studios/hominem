@@ -2,7 +2,7 @@
 
 import { usePasskeys } from '@hominem/auth/client/passkey';
 import { useAuthClient } from '@hominem/auth/client/provider';
-import { EmailEntryForm } from '@hominem/ui';
+import { EmailEntryForm, OtpVerificationForm } from '@hominem/ui';
 import { useEffect, useState } from 'react';
 import { redirect, useLocation, useNavigate } from 'react-router';
 
@@ -19,11 +19,14 @@ export async function loader({ context }: Route.LoaderArgs) {
   return null;
 }
 
+type LoginStep = 'email' | 'otp';
+
 export default function Component() {
   const authClient = useAuthClient();
   const location = useLocation();
   const navigate = useNavigate();
   const [isMounted, setIsMounted] = useState(false);
+  const [loginStep, setLoginStep] = useState<LoginStep>('email');
 
   const {
     authenticate,
@@ -35,28 +38,63 @@ export default function Component() {
     setIsMounted(true);
   }, []);
 
-  const { error: sendError, handleSendOtp } = useEmailAuth({
-    sendOtp: async (email) => {
+  const { error, email, handleSendOtp, handleVerifyOtp, handleResendOtp } = useEmailAuth({
+    sendOtp: async (resolvedEmail) => {
       const result = await authClient.emailOtp.sendVerificationOtp({
-        email,
+        email: resolvedEmail,
         type: 'sign-in',
       });
       if (result.error) {
         throw new Error(result.error.message ?? 'Failed to send verification code');
       }
-      navigate(`/auth/verify?email=${encodeURIComponent(email)}`);
+      setLoginStep('otp');
     },
-    verifyOtp: async () => {},
-    resendOtp: async () => {},
+    verifyOtp: async (resolvedEmail, otp) => {
+      const result = await authClient.signIn.emailOtp({ email: resolvedEmail, otp });
+      if (result.error || !result.data?.user?.id) {
+        throw new Error(
+          result.error?.message ?? 'Verification failed. Please check your code and try again.',
+        );
+      }
+      navigate('/inbox');
+    },
+    resendOtp: async (resolvedEmail) => {
+      const result = await authClient.emailOtp.sendVerificationOtp({
+        email: resolvedEmail,
+        type: 'sign-in',
+      });
+      if (result.error) {
+        throw new Error(result.error.message ?? 'Failed to resend verification code');
+      }
+    },
   });
 
   const callbackError = new URLSearchParams(location.search).get('error');
-  const resolvedError = callbackError ?? passkeyError ?? sendError ?? undefined;
+  const next = new URLSearchParams(location.search).get('next');
+  const resolvedError = callbackError ?? passkeyError ?? error ?? undefined;
+
+  if (loginStep === 'otp') {
+    return (
+      <OtpVerificationForm
+        email={email}
+        defaultNext="/inbox"
+        error={resolvedError}
+        onSubmit={async ({ email: submittedEmail, otp }) => {
+          await handleVerifyOtp(submittedEmail, otp);
+        }}
+        onResend={async (submittedEmail) => {
+          await handleResendOtp(submittedEmail);
+        }}
+        onChangeEmail={() => setLoginStep('email')}
+      />
+    );
+  }
 
   return (
     <EmailEntryForm
-      onSubmit={async ({ email }) => {
-        await handleSendOtp(email);
+      next={next}
+      onSubmit={async ({ email: submittedEmail }) => {
+        await handleSendOtp(submittedEmail);
       }}
       {...(resolvedError ? { error: resolvedError } : {})}
       {...(isMounted && isPasskeySupported

@@ -26,4 +26,3 @@ export interface JobApplicationStageEntry {
   date: string;
   notes?: string;
 }
-

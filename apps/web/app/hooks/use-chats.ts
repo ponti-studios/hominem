@@ -1,44 +1,41 @@
-import { useRpcMutation } from '@hominem/rpc/react';
-import type { ChatsArchiveOutput, ChatsCreateOutput } from '@hominem/rpc/types/chat.types';
-import { useQueryClient } from '@tanstack/react-query';
+import type { HonoClient } from '@hominem/rpc';
+import { useApiClient } from '@hominem/rpc/react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { inboxQueryKeys } from '~/lib/query-keys';
 
+type ArchiveChatOutput = Awaited<
+  ReturnType<Awaited<ReturnType<HonoClient['api']['chats'][':id']['archive']['$post']>>['json']>
+>;
+
 export function useCreateChat() {
+  const client = useApiClient();
   const queryClient = useQueryClient();
 
-  return useRpcMutation<ChatsCreateOutput, { title: string }>(
-    (client, variables) =>
-      client.api.chats
-        .$post({ json: { title: variables.title } })
-        .then((r) => r.json()),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: inboxQueryKeys.pages() });
-      },
+  return useMutation({
+    mutationFn: ({ title }: { title: string }) =>
+      client.api.chats.$post({ json: { title } }).then((r) => r.json()),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: inboxQueryKeys.pages() });
     },
-  );
+  });
 }
 
 export function useArchiveChat({
-  chatId: _chatId,
+  chatId,
   onSuccess,
 }: {
   chatId: string;
-  onSuccess?: (chat: ChatsArchiveOutput) => void;
+  onSuccess?: (chat: ArchiveChatOutput) => void;
 }) {
+  const client = useApiClient();
   const queryClient = useQueryClient();
 
-  return useRpcMutation<ChatsArchiveOutput, { chatId: string }>(
-    (client, variables) =>
-      client.api.chats[':id'].archive
-        .$post({ param: { id: variables.chatId } })
-        .then((r) => r.json()),
-    {
-      onSuccess: (chat) => {
-        queryClient.invalidateQueries({ queryKey: inboxQueryKeys.pages() });
-        onSuccess?.(chat);
-      },
+  return useMutation<ArchiveChatOutput, Error, void>({
+    mutationFn: () => client.api.chats[':id'].archive.$post({ param: { id: chatId } }).then((r) => r.json()),
+    onSuccess: (chat) => {
+      queryClient.invalidateQueries({ queryKey: inboxQueryKeys.pages() });
+      onSuccess?.(chat);
     },
-  );
+  });
 }

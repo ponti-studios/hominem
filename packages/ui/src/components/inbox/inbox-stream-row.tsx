@@ -1,4 +1,4 @@
-import type { InboxStreamItem } from '@hominem/rpc/react';
+import type { InboxStreamItem } from '@hominem/rpc/types';
 import { MessageCircle } from 'lucide-react';
 import { memo } from 'react';
 import { Link } from 'react-router';

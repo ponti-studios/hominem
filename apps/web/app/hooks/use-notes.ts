@@ -1,4 +1,4 @@
-import { useApiClient, useRpcMutation, useRpcQuery } from '@hominem/rpc/react';
+import { useApiClient } from '@hominem/rpc/react';
 import type {
   NoteFeedItem,
   NotesCreateInput,
@@ -8,7 +8,7 @@ import type {
   NotesSearchOutput,
   NotesUpdateInput,
 } from '@hominem/rpc/types/notes.types';
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { inboxQueryKeys, notesQueryKeys } from '~/lib/query-keys';
 
@@ -31,8 +31,13 @@ export function flattenNoteFeedPages(data: NotesFeedData | undefined): NoteFeedI
 }
 
 export function useNotesList(options: NotesListInput = {}, queryOptions: UseNotesListOptions = {}) {
-  return useRpcQuery(
-    async (client) => {
+  const client = useApiClient();
+
+  return useQuery({
+    queryKey: notesQueryKeys.list(options),
+    enabled: queryOptions.enabled ?? true,
+    staleTime: 1000 * 60 * 1,
+    queryFn: async () => {
       const query: {
         types?: string;
         status?: string;
@@ -60,12 +65,7 @@ export function useNotesList(options: NotesListInput = {}, queryOptions: UseNote
       const data = await res.json();
       return Array.isArray(data.notes) ? data.notes : [];
     },
-    {
-      enabled: queryOptions.enabled ?? true,
-      queryKey: notesQueryKeys.list(options),
-      staleTime: 1000 * 60 * 1,
-    },
-  );
+  });
 }
 
 interface UseNotesFeedOptions extends UseNotesListOptions {
@@ -98,17 +98,14 @@ export function useNotesFeed(
 }
 
 export function useNote(id: string) {
-  return useRpcQuery(
-    (client) =>
-      client.api.notes[':id']
-        .$get({ param: { id } })
-        .then((r) => r.json()),
-    {
-      queryKey: notesQueryKeys.detail(id),
-      enabled: !!id,
-      staleTime: 1000 * 60 * 5,
-    },
-  );
+  const client = useApiClient();
+
+  return useQuery({
+    queryKey: notesQueryKeys.detail(id),
+    enabled: !!id,
+    staleTime: 1000 * 60 * 5,
+    queryFn: () => client.api.notes[':id'].$get({ param: { id } }).then((r) => r.json()),
+  });
 }
 
 export function useNoteSearch(query: string, enabled = true) {
@@ -161,10 +158,11 @@ export function useCreateNote() {
 }
 
 export function useUpdateNote() {
+  const client = useApiClient();
   const queryClient = useQueryClient();
 
-  return useRpcMutation(
-    async (client, variables: { id: string } & NotesUpdateInput) => {
+  return useMutation({
+    mutationFn: async (variables: { id: string } & NotesUpdateInput) => {
       const { id, ...fields } = variables;
       const res = await client.api.notes[':id'].$patch({
         param: { id },
@@ -172,13 +170,11 @@ export function useUpdateNote() {
       });
       return res.json();
     },
-    {
-      onSuccess: (data) => {
-        queryClient.setQueryData(notesQueryKeys.detail(data.id), data);
-        queryClient.invalidateQueries({ queryKey: inboxQueryKeys.pages() });
-      },
+    onSuccess: (data) => {
+      queryClient.setQueryData(notesQueryKeys.detail(data.id), data);
+      queryClient.invalidateQueries({ queryKey: inboxQueryKeys.pages() });
     },
-  );
+  });
 }
 
 export function useDeleteNote() {
