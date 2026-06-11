@@ -1,7 +1,10 @@
+import { Button } from '@hominem/ui/button';
 import { ArrowLeftIcon, PlusIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useFetcher, useNavigate } from 'react-router';
 
+import { FormErrorAlert } from '../components/FormErrorAlert';
+import { useCareerEditorSubmission } from '../hooks/useCareerEditorSubmission';
 import { jsonObject } from '~/lib/db-json';
 import { userContext } from '~/lib/middleware';
 import { cn } from '~/lib/utils';
@@ -29,6 +32,31 @@ export async function action({ context, request, params }: Route.ActionArgs) {
   const { id } = params;
   if (!id) throw new Response('Work experience ID is required', { status: 400 });
   const formData = await request.formData();
+  const operation = formData.get('operation');
+
+  if (operation === 'delete') {
+    const portfolio_id = formData.get('portfolio_id');
+
+    if (typeof portfolio_id !== 'string' || !portfolio_id) {
+      return { success: false, operation, error: 'Choose a work experience before deleting it.' };
+    }
+
+    try {
+      const { CareerRepository, db } = await import('@hominem/db');
+
+      await CareerRepository.deleteWorkExperience(db, user.id, id, portfolio_id);
+
+      return { success: true, operation };
+    } catch (error) {
+      console.error('Error deleting work experience:', error);
+      return {
+        success: false,
+        operation,
+        error: 'We couldn’t delete this work experience. Try again.',
+      };
+    }
+  }
+
   const field = formData.get('field') as string;
   const value = formData.get('value') as string;
   try {
@@ -435,6 +463,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 export default function WorkExperienceDetail({ loaderData }: Route.ComponentProps) {
   const { workExperience: wx } = loaderData;
+  const deleteFetcher = useFetcher();
   const navigate = useNavigate();
 
   if (!wx) return <div className="p-8 text-muted-foreground">Work experience not found</div>;
@@ -460,18 +489,55 @@ export default function WorkExperienceDetail({ loaderData }: Route.ComponentProp
   );
   const hasExit = !!(wx.reason_for_leaving || wx.exit_notes);
 
+  const { submissionError, clearSubmissionError } = useCareerEditorSubmission({
+    fetcher: deleteFetcher,
+    errorMessage: 'We couldn’t delete this work experience. Try again.',
+    onSuccess: (result) => {
+      if (result.operation === 'delete') {
+        navigate('/work');
+      }
+    },
+  });
+
+  const handleDelete = () => {
+    if (!confirm('Are you sure you want to delete this work experience?')) {
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('operation', 'delete');
+    formData.append('portfolio_id', wx.portfolio_id);
+
+    clearSubmissionError();
+    deleteFetcher.submit(formData, { method: 'POST' });
+  };
+
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10 space-y-8">
-      {/* Back */}
-      <button
-        type="button"
-        onClick={() => navigate('/work')}
-        data-testid="back-button"
-        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <ArrowLeftIcon className="w-3.5 h-3.5" />
-        Work
-      </button>
+      <div className="flex items-start justify-between gap-4">
+        <button
+          type="button"
+          onClick={() => navigate('/work')}
+          data-testid="back-button"
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeftIcon className="w-3.5 h-3.5" />
+          Work
+        </button>
+
+        <Button
+          type="button"
+          onClick={handleDelete}
+          variant="destructive"
+          disabled={deleteFetcher.state === 'submitting'}
+          isLoading={deleteFetcher.state === 'submitting'}
+          loadingLabel="Deleting..."
+        >
+          Delete experience
+        </Button>
+      </div>
+
+      <FormErrorAlert title="Work experience wasn’t deleted" message={submissionError} />
 
       {/* Identity */}
       <div className="space-y-1">

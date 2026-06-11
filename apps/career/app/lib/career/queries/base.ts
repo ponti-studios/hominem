@@ -7,7 +7,7 @@ import type {
 import { CareerRepository, db } from '@hominem/db';
 
 export async function getUserWorkExperiences(owner_userid: string) {
-  return CareerRepository.listUserWorkExperiences(db, owner_userid, 'asc');
+  return CareerRepository.listUserWorkExperiences(db, owner_userid, 'desc');
 }
 
 export async function getUserWorkExperiencesDesc(owner_userid: string) {
@@ -28,7 +28,7 @@ export async function getCurrentWorkExperience(owner_userid: string) {
 }
 
 export async function getFirstWorkExperience(owner_userid: string) {
-  const experiences = await getUserWorkExperiences(owner_userid);
+  const experiences = await CareerRepository.listUserWorkExperiences(db, owner_userid, 'asc');
   return experiences[0] || null;
 }
 

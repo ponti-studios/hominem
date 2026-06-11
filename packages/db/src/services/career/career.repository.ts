@@ -629,15 +629,26 @@ export const CareerRepository = {
   async listUserWorkExperiences(
     handle: DbHandle,
     owner_userid: string,
-    direction: 'asc' | 'desc' = 'asc',
+    direction: 'asc' | 'desc' = 'desc',
   ): Promise<CareerWorkExperienceRecord[]> {
-    const rows = await handle
+    let query = handle
       .selectFrom('app.work_experiences as workExperience')
       .innerJoin('app.portfolios as portfolio', 'portfolio.id', 'workExperience.portfolio_id')
       .selectAll('workExperience')
-      .where('portfolio.owner_userid', '=', owner_userid)
-      .orderBy('workExperience.start_date', direction)
-      .execute();
+      .where('portfolio.owner_userid', '=', owner_userid);
+
+    query =
+      direction === 'desc'
+        ? query
+            .orderBy(sql`case when "workExperience"."end_date" is null then 0 else 1 end`)
+            .orderBy('workExperience.end_date', 'desc')
+            .orderBy('workExperience.start_date', 'desc')
+        : query
+            .orderBy(sql`case when "workExperience"."end_date" is null then 1 else 0 end`)
+            .orderBy('workExperience.start_date', 'asc')
+            .orderBy('workExperience.end_date', 'asc');
+
+    const rows = await query.execute();
 
     return rows as WorkExperienceRow[];
   },
