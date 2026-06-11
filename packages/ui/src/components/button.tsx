@@ -23,10 +23,10 @@ const buttonVariants = cva(
         link: 'border-transparent bg-transparent text-foreground underline-offset-4 hover:text-secondary-foreground hover:underline focus-visible:bg-accent/25',
       },
       size: {
-        default: 'h-9 px-4 py-2',
-        sm: 'h-8 rounded-md px-3 text-xs',
-        lg: 'h-10 rounded-md px-8',
-        icon: 'h-9 w-9',
+        default: 'px-4 py-2',
+        sm: 'rounded-md px-3 text-xs',
+        lg: 'rounded-md px-8',
+        icon: 'size-9',
       },
     },
     defaultVariants: {
