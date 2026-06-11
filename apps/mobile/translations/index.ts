@@ -50,6 +50,8 @@ const t = {
     input: {
       messagePlaceholder: 'Message',
       addAttachmentA11y: 'Add attachment',
+      startVoiceInputA11y: 'Record voice note',
+      stopVoiceInputA11y: 'Stop recording voice note',
       enhanceTextA11y: 'Enhance text with AI',
       sendMessageA11y: 'Send message',
       sendingA11y: 'Sending…',
@@ -273,6 +275,8 @@ const t = {
     composer: {
       placeholder: 'Write a note, ask something…',
       addAttachmentA11y: 'Add attachment',
+      startVoiceInputA11y: 'Record voice note',
+      stopVoiceInputA11y: 'Stop recording voice note',
       enhanceTextA11y: 'Enhance text with AI',
       openChatA11y: 'Open chat',
       saveNoteA11y: 'Save note',

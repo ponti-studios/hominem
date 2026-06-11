@@ -1,4 +1,4 @@
-import { enhanceText, hasOpenRouterApiKey } from '@hominem/ai';
+import { enhanceText } from '@hominem/ai';
 import { logger } from '@hominem/telemetry';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
@@ -20,11 +20,6 @@ export const enhanceRoutes = new Hono<AppContext>()
   .use('/enhance', rateLimitMiddleware({ bucket: 'ai-enhance', windowSec: 60, max: 30 }))
   .post('/enhance', zValidator('json', enhanceTextInputSchema), async (c) => {
     const { text, instruction } = c.req.valid('json');
-
-    if (!hasOpenRouterApiKey()) {
-      logger.error('[ai/enhance] Missing OPENROUTER_API_KEY');
-      return c.json({ error: 'AI service unavailable' }, 503);
-    }
 
     try {
       const enhanced = await enhanceText({ text, instruction }, ENHANCE_SYSTEM_PROMPT);

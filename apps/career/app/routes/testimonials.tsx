@@ -7,7 +7,8 @@ import type { SubmitHandler } from 'react-hook-form';
 import { useForm } from 'react-hook-form';
 import { useFetcher } from 'react-router';
 
-import { useToast } from '../hooks/useToast';
+import { FormErrorAlert } from '../components/FormErrorAlert';
+import { useCareerEditorSubmission } from '../hooks/useCareerEditorSubmission';
 import { portfolioContext, userContext } from '../lib/middleware';
 import { parseFormData } from '../lib/route-utils';
 import { Route } from './+types/testimonials';
@@ -39,14 +40,13 @@ function TestimonialForm({
   onDelete?: () => void;
 }) {
   const fetcher = useFetcher();
-  const { addToast } = useToast();
   const isNew = !testimonial?.id;
 
   const {
     register,
     handleSubmit,
     reset,
-    formState: { isDirty, isValid },
+    formState: { errors, isDirty, isValid },
   } = useForm<TestimonialFormValues>({
     defaultValues: {
       id: testimonial?.id,
@@ -62,45 +62,35 @@ function TestimonialForm({
     mode: 'onChange',
   });
 
-  // Handle fetcher responses
-  useEffect(() => {
-    if (fetcher.state === 'idle' && fetcher.data) {
-      const result = fetcher.data as {
-        success: boolean;
-        error?: string;
-        message?: string;
-        data?: Testimonial;
-      };
-      if (result.success) {
-        addToast(result.message || 'Testimonial saved successfully!', 'success');
-        if (result.data && isNew) {
-          // Reset form with the returned data (including new ID)
-          reset({
-            id: result.data.id,
-            name: result.data.name || '',
-            title: result.data.title || '',
-            content: result.data.content || '',
-            company: result.data.company || '',
-            rating: result.data.rating || undefined,
-            avatar_url: result.data.avatar_url || '',
-            linkedin_url: result.data.linkedin_url || '',
-            portfolio_id: result.data.portfolio_id,
-          });
-        }
-      } else {
-        addToast(`Failed to save testimonial: ${result.error || 'Unknown error'}`, 'error');
+  const { submissionError, clearSubmissionError } = useCareerEditorSubmission<Testimonial>({
+    fetcher,
+    errorMessage: 'We couldn’t save this testimonial. Try again.',
+    onSuccess: (result) => {
+      if (result.operation === 'delete') {
+        onDelete?.();
+        return;
       }
-    }
-  }, [fetcher.state, fetcher.data, reset, addToast, isNew]);
+
+      if (!result.data || !isNew) {
+        return;
+      }
+
+      reset({
+        id: result.data.id,
+        name: result.data.name || '',
+        title: result.data.title || '',
+        content: result.data.content || '',
+        company: result.data.company || '',
+        rating: result.data.rating || undefined,
+        avatar_url: result.data.avatar_url || '',
+        linkedin_url: result.data.linkedin_url || '',
+        portfolio_id: result.data.portfolio_id,
+      });
+    },
+  });
 
   const onSubmit: SubmitHandler<TestimonialFormValues> = (formData) => {
     if (!isDirty && !isNew) {
-      addToast('No changes to save.', 'info');
-      return;
-    }
-
-    if (!formData.name || !formData.content) {
-      addToast('Please fill in all required fields.', 'error');
       return;
     }
 
@@ -108,6 +98,7 @@ function TestimonialForm({
     formDataToSubmit.append('operation', isNew ? 'create' : 'update');
     formDataToSubmit.append('testimonialData', JSON.stringify(formData));
 
+    clearSubmissionError();
     fetcher.submit(formDataToSubmit, {
       method: 'POST',
       action: '/testimonials',
@@ -123,12 +114,11 @@ function TestimonialForm({
       formData.append('id', testimonial.id);
       formData.append('portfolio_id', portfolio_id);
 
+      clearSubmissionError();
       fetcher.submit(formData, {
         method: 'POST',
         action: '/testimonials',
       });
-
-      onDelete?.();
     }
   };
 
@@ -139,6 +129,7 @@ function TestimonialForm({
       onSubmit={handleSubmit(onSubmit)}
       className="rounded-md border border-border bg-card p-4 bg-muted/50 space-y-4"
     >
+      <FormErrorAlert title="Testimonial wasn’t saved" message={submissionError} />
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium text-foreground">
           {isNew ? 'New Testimonial' : 'Testimonial'}
@@ -180,10 +171,17 @@ function TestimonialForm({
           <input
             id={`name-${testimonial?.id || 'new'}`}
             type="text"
-            {...register('name', { required: true })}
+            {...register('name', { required: 'Add the person’s name.' })}
+            aria-describedby={errors.name ? `name-${testimonial?.id || 'new'}-error` : undefined}
+            aria-invalid={errors.name ? true : undefined}
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
             placeholder="Client's full name"
           />
+          {errors.name ? (
+            <p id={`name-${testimonial?.id || 'new'}-error`} role="alert" className="text-xs text-destructive">
+              {errors.name.message}
+            </p>
+          ) : null}
         </div>
         <div className="flex flex-col gap-2">
           <label htmlFor={`title-${testimonial?.id || 'new'}`} className="label">
@@ -237,11 +235,24 @@ function TestimonialForm({
         </label>
         <textarea
           id={`content-${testimonial?.id || 'new'}`}
-          {...register('content', { required: true })}
+          {...register('content', { required: 'Add the testimonial copy.' })}
+          aria-describedby={
+            errors.content ? `content-${testimonial?.id || 'new'}-error` : undefined
+          }
+          aria-invalid={errors.content ? true : undefined}
           className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50 min-h-28"
           rows={4}
           placeholder="What did the client say about your work?"
         />
+        {errors.content ? (
+          <p
+            id={`content-${testimonial?.id || 'new'}-error`}
+            role="alert"
+            className="text-xs text-destructive"
+          >
+            {errors.content.message}
+          </p>
+        ) : null}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -363,7 +374,7 @@ export async function loader({ context }: Route.LoaderArgs) {
 export async function action({ request, context }: Route.ActionArgs) {
   const user = context.get(userContext);
   if (!user) {
-    throw new Response('User not found', { status: 401 });
+    return { success: false, error: 'Sign in again before saving your testimonials.' };
   }
   const formData = await request.formData();
   const operation = formData.get('operation') as string;
@@ -377,13 +388,17 @@ export async function action({ request, context }: Route.ActionArgs) {
       );
 
       if ('success' in testimonialDataResult && !testimonialDataResult.success) {
-        throw new Response('Invalid testimonial data', { status: 400 });
+        return { success: false, operation, error: 'Your testimonial changes couldn’t be read.' };
       }
 
       const testimonialData = testimonialDataResult as TestimonialFormValues;
 
       if (!testimonialData.portfolio_id) {
-        throw new Response('Missing portfolio_id', { status: 400 });
+        return {
+          success: false,
+          operation,
+          error: 'Choose a portfolio before saving this testimonial.',
+        };
       }
 
       try {
@@ -402,12 +417,23 @@ export async function action({ request, context }: Route.ActionArgs) {
             rating: insertData.rating,
           });
 
-          return { message: 'Testimonial created successfully', data: newTestimonial };
+          return {
+            success: true,
+            operation,
+            message: 'Testimonial created successfully',
+            data: newTestimonial,
+          };
         }
 
         // Update existing testimonial
         const { id, ...updateData } = testimonialData;
-        if (!id) throw new Response('Missing testimonial ID for update', { status: 400 });
+        if (!id) {
+          return {
+            success: false,
+            operation,
+            error: 'Choose a testimonial before saving your changes.',
+          };
+        }
 
         await CareerRepository.updateTestimonial(db, user.id, id, testimonialData.portfolio_id, {
           name: updateData.name,
@@ -419,11 +445,17 @@ export async function action({ request, context }: Route.ActionArgs) {
           rating: updateData.rating,
         });
 
-        return { message: 'Testimonial updated successfully' };
+        return { success: true, operation, message: 'Testimonial updated successfully' };
       } catch (error) {
-        if (error instanceof Response) throw error;
         console.error(`Failed to ${operation} testimonial:`, error);
-        throw new Response(`Failed to ${operation} testimonial`, { status: 500 });
+        return {
+          success: false,
+          operation,
+          error:
+            operation === 'create'
+              ? 'We couldn’t create this testimonial. Try again.'
+              : 'We couldn’t save this testimonial. Try again.',
+        };
       }
     }
 
@@ -432,15 +464,15 @@ export async function action({ request, context }: Route.ActionArgs) {
       const portfolio_id = formData.get('portfolio_id') as string;
 
       if (!id || !portfolio_id) {
-        throw new Response('Missing required fields for deletion', { status: 400 });
+        return { success: false, operation, error: 'Choose a testimonial before deleting it.' };
       }
 
       try {
         await CareerRepository.deleteTestimonial(db, user.id, id, portfolio_id);
-        return { message: 'Testimonial deleted successfully' };
+        return { success: true, operation, message: 'Testimonial deleted successfully' };
       } catch (error) {
         console.error('Failed to delete testimonial:', error);
-        throw new Response('Failed to delete testimonial', { status: 500 });
+        return { success: false, operation, error: 'We couldn’t delete this testimonial. Try again.' };
       }
     }
 

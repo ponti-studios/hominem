@@ -8,7 +8,8 @@ import { useFetcher } from 'react-router';
 
 import { cn } from '~/lib/utils';
 
-import { useToast } from '../hooks/useToast';
+import { FormErrorAlert } from '../components/FormErrorAlert';
+import { useCareerEditorSubmission } from '../hooks/useCareerEditorSubmission';
 import { portfolioContext, userContext } from '../lib/middleware';
 import { parseFormData } from '../lib/route-utils';
 import { Route } from './+types/skills';
@@ -38,12 +39,12 @@ function SkillsEditorSection({ skills: initialSkills, portfolio_id }: SkillsEdit
   const [skills, setSkills] = useState<EditableSkill[]>(initialSkills || []);
   const [isAddingSkill, setIsAddingSkill] = useState(false);
   const fetcher = useFetcher();
-  const { addToast } = useToast();
 
   const {
     register: registerNewSkill,
     handleSubmit: handleNewSkillSubmit,
     reset: resetNewSkillForm,
+    formState: { errors: newSkillErrors },
   } = useForm<NewSkillForm>({
     defaultValues: {
       name: '',
@@ -55,6 +56,11 @@ function SkillsEditorSection({ skills: initialSkills, portfolio_id }: SkillsEdit
   useEffect(() => {
     setSkills(initialSkills || []);
   }, [initialSkills]);
+
+  const { submissionError, clearSubmissionError } = useCareerEditorSubmission({
+    fetcher,
+    errorMessage: 'We couldn’t save your skills. Try again.',
+  });
 
   // Group skills by category
   const skillsByCategory = skills.reduce(
@@ -85,21 +91,12 @@ function SkillsEditorSection({ skills: initialSkills, portfolio_id }: SkillsEdit
     const formData = new FormData();
     formData.append('skillsData', JSON.stringify(skillsToSave));
 
+    clearSubmissionError();
     fetcher.submit(formData, {
       method: 'POST',
       action: '/skills',
     });
   };
-
-  // Handle fetcher errors
-  useEffect(() => {
-    if (fetcher.state === 'idle' && fetcher.data) {
-      const result = fetcher.data as { success: boolean; error?: string };
-      if (!result.success) {
-        addToast(`Failed to save skills: ${result.error || 'Unknown error'}`, 'error');
-      }
-    }
-  }, [fetcher.state, fetcher.data, addToast]);
 
   const handleRemoveSkill = (skillToRemove: EditableSkill) => {
     const updatedSkills = skills.filter((skill) =>
@@ -164,6 +161,7 @@ function SkillsEditorSection({ skills: initialSkills, portfolio_id }: SkillsEdit
           </Button>
         </div>
       </div>
+      <FormErrorAlert title="Skills weren’t saved" message={submissionError} />
       {/* Add new skill section */}
       {isAddingSkill ? (
         <div className="rounded-md border border-border bg-card p-4 my-8 border border-dashed border-border py-2 px-4">
@@ -179,9 +177,16 @@ function SkillsEditorSection({ skills: initialSkills, portfolio_id }: SkillsEdit
                 <input
                   id="name"
                   {...registerNewSkill('name', { required: 'Skill name is required' })}
+                  aria-describedby={newSkillErrors.name ? 'new-skill-name-error' : undefined}
+                  aria-invalid={newSkillErrors.name ? true : undefined}
                   className="w-full px-3 py-2 border border-border rounded-md  focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-ring text-sm"
                   placeholder="e.g., React"
                 />
+                {newSkillErrors.name ? (
+                  <p id="new-skill-name-error" role="alert" className="text-xs text-destructive">
+                    {newSkillErrors.name.message}
+                  </p>
+                ) : null}
               </div>
 
               <div>
@@ -222,9 +227,16 @@ function SkillsEditorSection({ skills: initialSkills, portfolio_id }: SkillsEdit
                     min: { value: 1, message: 'Level must be at least 1' },
                     max: { value: 100, message: 'Level cannot exceed 100' },
                   })}
+                  aria-describedby={newSkillErrors.level ? 'new-skill-level-error' : undefined}
+                  aria-invalid={newSkillErrors.level ? true : undefined}
                   className="w-full px-3 py-2 border border-border rounded-md  focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-ring text-sm"
                   placeholder="50"
                 />
+                {newSkillErrors.level ? (
+                  <p id="new-skill-level-error" role="alert" className="text-xs text-destructive">
+                    {newSkillErrors.level.message}
+                  </p>
+                ) : null}
               </div>
             </div>
 
@@ -300,7 +312,7 @@ export async function loader({ context }: Route.LoaderArgs) {
 export async function action({ request, context }: Route.ActionArgs) {
   const user = context.get(userContext);
   if (!user) {
-    throw new Response('User not found', { status: 401 });
+    return { success: false, error: 'Sign in again before saving your skills.' };
   }
   const formData = await request.formData();
   const skillsDataResult = parseFormData<
@@ -313,7 +325,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     }>
   >(formData, 'skillsData');
   if ('success' in skillsDataResult && !skillsDataResult.success) {
-    throw new Response('Invalid skills data', { status: 400 });
+    return { success: false, error: 'Your skills couldn’t be read. Refresh and try again.' };
   }
   let skillsData = skillsDataResult as Array<{
     id?: string;
@@ -323,11 +335,13 @@ export async function action({ request, context }: Route.ActionArgs) {
     portfolio_id: string;
   }>;
   if (!Array.isArray(skillsData)) {
-    throw new Response('Invalid skills data', { status: 400 });
+    return { success: false, error: 'Your skills couldn’t be read. Refresh and try again.' };
   }
   // Ensure all skills have portfolio_id and level is a number
   const portfolio_id = skillsData[0]?.portfolio_id;
-  if (!portfolio_id) throw new Response('Missing portfolio_id', { status: 400 });
+  if (!portfolio_id) {
+    return { success: false, error: 'Choose a portfolio before saving your skills.' };
+  }
   skillsData = skillsData.map((s) => ({ ...s, portfolio_id, level: Number(s.level) }));
   try {
     await runInTransaction((tx) =>
@@ -343,10 +357,10 @@ export async function action({ request, context }: Route.ActionArgs) {
         })),
       ),
     );
-    return { message: 'Skills saved successfully' };
+    return { success: true, message: 'Skills saved successfully' };
   } catch (error) {
     console.error('Failed to save skills:', error);
-    throw new Response('Failed to save skills', { status: 500 });
+    return { success: false, error: 'We couldn’t save your skills. Try again.' };
   }
 }
 

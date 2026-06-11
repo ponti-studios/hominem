@@ -10,7 +10,6 @@ import {
   AlertDialogTitle,
   Button,
   InlineEnhanceTray,
-  SpeechInput,
   SurfacePanel,
   useInlineEnhance,
 } from '@hominem/ui';
@@ -40,7 +39,6 @@ interface NoteEditorProps {
     fileIds: string[];
   }) => Promise<void>;
   onUploadFiles: (files: FileList) => Promise<UploadedFile[]>;
-  onTranscribeAudio: (audioBlob: Blob) => Promise<string>;
   onEnhanceText: (input: { text: string; instruction?: string }) => Promise<string>;
   onDelete: () => Promise<void>;
   isDeleting?: boolean;
@@ -54,7 +52,6 @@ export function NoteEditor({
   note,
   onSave,
   onUploadFiles,
-  onTranscribeAudio,
   onEnhanceText,
   onDelete,
   isDeleting = false,
@@ -98,16 +95,6 @@ export function NoteEditor({
       await flushSave();
     },
     [draftRef, flushSave, onUploadFiles, setFiles],
-  );
-
-  const handleTranscribed = useCallback(
-    async (audioBlob: Blob) => {
-      const text = await onTranscribeAudio(audioBlob);
-      const nextContent = `${draftRef.current.content}\n${text}`.trim();
-      setContent(nextContent);
-      await flushSave();
-    },
-    [draftRef, flushSave, onTranscribeAudio, setContent],
   );
 
   const handleDetachFile = useCallback(
@@ -162,7 +149,6 @@ export function NoteEditor({
               onAttachFiles={openFilePicker}
               onDelete={openDeleteDialog}
               onToggleEnhance={toggleEnhance}
-              onTranscribed={handleTranscribed}
             />
           </div>
 
@@ -269,7 +255,6 @@ interface NoteActionsProps {
   onAttachFiles: () => void;
   onDelete: () => void;
   onToggleEnhance: () => void;
-  onTranscribed: (audioBlob: Blob) => Promise<void>;
 }
 
 const NoteActions = memo(function NoteActions({
@@ -281,7 +266,6 @@ const NoteActions = memo(function NoteActions({
   onAttachFiles,
   onDelete,
   onToggleEnhance,
-  onTranscribed,
 }: NoteActionsProps) {
   return (
     <div className="flex shrink-0 items-center justify-end gap-1">
@@ -306,12 +290,6 @@ const NoteActions = memo(function NoteActions({
       >
         <Paperclip className="size-4" />
       </Button>
-      <SpeechInput
-        ariaLabel="Dictate note"
-        onAudioRecorded={onTranscribed}
-        variant="ghost"
-        title="Dictate note"
-      />
       {chatHref ? (
         <Button asChild variant="ghost" size="icon" title="Chat with this note">
           <Link to={chatHref} aria-label="Chat with this note">

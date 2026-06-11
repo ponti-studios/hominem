@@ -73,14 +73,14 @@ export class FileProcessorService {
                 },
                 {
                   type: 'image_url',
-                  image_url: {
+                  imageUrl: {
                     url: `data:${file.mimetype};base64,${base64Image}`,
                   },
                 },
               ],
             },
           ],
-          max_tokens: 500,
+          maxTokens: 500,
         });
 
         textContent = getChatCompletionText(response);
@@ -147,7 +147,7 @@ export class FileProcessorService {
                 }`,
               },
             ],
-            max_tokens: 300,
+            maxTokens: 300,
           });
 
           summary = getChatCompletionText(response);

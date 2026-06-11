@@ -12,7 +12,6 @@ import { ApplicationsFilters } from '~/components/career/applications/Applicatio
 import { ApplicationsMobileList } from '~/components/career/applications/ApplicationsMobileList';
 import { ApplicationsResultsSummary } from '~/components/career/applications/ApplicationsResultsSummary';
 import { ApplicationsHeatmap } from '~/components/career/ApplicationsHeatmap';
-import { useToast } from '~/hooks/useToast';
 import { getAllApplicationsWithCompany } from '~/lib/career/queries/job-applications';
 import { userContext } from '~/lib/middleware';
 import { buildApplicationsSearchParams } from '~/lib/utils/applicationsSearchParams';
@@ -156,21 +155,12 @@ function ApplicationsHeader({ totalCount }: { totalCount: number }) {
   );
 }
 
-export default function Applications({ loaderData, actionData }: Route.ComponentProps) {
+export default function Applications({ loaderData }: Route.ComponentProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { addToast } = useToast();
   const searchValueFromRoute = loaderData.filters.search || '';
   const [searchValue, setSearchValue] = useState(searchValueFromRoute);
   const debouncedSearchValue = useDebouncedValue(searchValue, 500);
-
-  useEffect(() => {
-    if (!actionData?.message) {
-      return;
-    }
-
-    addToast(actionData.message, 'success');
-  }, [actionData, addToast]);
 
   const { allApplications, applications, pagination, filters: initialFilters } = loaderData;
   const filters = {

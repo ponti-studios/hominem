@@ -7,7 +7,8 @@ import { useEffect } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { useFetcher } from 'react-router';
 
-import { useToast } from '../hooks/useToast';
+import { FormErrorAlert } from '../components/FormErrorAlert';
+import { useCareerEditorSubmission } from '../hooks/useCareerEditorSubmission';
 import { portfolioContext, userContext } from '../lib/middleware';
 import { parseFormData } from '../lib/route-utils';
 import { Route } from './+types/stats';
@@ -28,7 +29,6 @@ function PortfolioStatsEditorSection({
   portfolio_id,
 }: PortfolioStatsEditorSectionProps) {
   const fetcher = useFetcher();
-  const { addToast } = useToast();
   const {
     register,
     control,
@@ -46,22 +46,15 @@ function PortfolioStatsEditorSection({
     reset({ stats: initialStats || [] });
   }, [initialStats, reset]);
 
+  const { submissionError, clearSubmissionError } = useCareerEditorSubmission({
+    fetcher,
+    errorMessage: 'We couldn’t save your portfolio stats. Try again.',
+  });
+
   const { fields, append, remove } = useFieldArray({
     control,
     name: 'stats',
   });
-
-  // Handle fetcher errors and success
-  useEffect(() => {
-    if (fetcher.state === 'idle' && fetcher.data) {
-      const result = fetcher.data as { success: boolean; error?: string; message?: string };
-      if (result.success) {
-        addToast(result.message || 'Portfolio stats saved successfully!', 'success');
-      } else {
-        addToast(`Failed to save portfolio stats: ${result.error || 'Unknown error'}`, 'error');
-      }
-    }
-  }, [fetcher.state, fetcher.data, addToast]);
 
   const handleAddNewStat = () => {
     append({ label: '', value: '' });
@@ -79,7 +72,6 @@ function PortfolioStatsEditorSection({
 
   const onSubmit = (formData: PortfolioStatsFormValues) => {
     if (!isDirty) {
-      addToast('No changes to save in portfolio stats.', 'info');
       return;
     }
 
@@ -94,6 +86,7 @@ function PortfolioStatsEditorSection({
     const formData2 = new FormData();
     formData2.append('statsData', JSON.stringify(statsToSave));
 
+    clearSubmissionError();
     fetcher.submit(formData2, {
       method: 'POST',
       action: '/stats',
@@ -136,6 +129,7 @@ function PortfolioStatsEditorSection({
         </div>
       </div>
       <form id="stats-form" onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+        <FormErrorAlert title="Portfolio stats weren’t saved" message={submissionError} />
         {fields.map((field, index) => (
           <div key={field.id} className="card">
             <div className="flex flex-col sm:flex-row sm:items-end gap-4">
@@ -200,14 +194,14 @@ export async function loader({ context }: Route.LoaderArgs) {
 export async function action({ request, context }: Route.ActionArgs) {
   const user = context.get(userContext);
   if (!user) {
-    throw new Response('User not found', { status: 401 });
+    return { success: false, error: 'Sign in again before saving your portfolio stats.' };
   }
   const formData = await request.formData();
   const statsDataResult = parseFormData<
     Array<{ id?: string; label: string; value: string; portfolio_id: string }>
   >(formData, 'statsData');
   if ('success' in statsDataResult && !statsDataResult.success) {
-    throw new Response('Invalid stats data', { status: 400 });
+    return { success: false, error: 'Your stats couldn’t be read. Refresh and try again.' };
   }
   const statsData = statsDataResult as Array<{
     id?: string;
@@ -216,15 +210,16 @@ export async function action({ request, context }: Route.ActionArgs) {
     portfolio_id: string;
   }>;
   if (!Array.isArray(statsData)) {
-    throw new Response('Invalid stats data', { status: 400 });
+    return { success: false, error: 'Your stats couldn’t be read. Refresh and try again.' };
   }
   if (statsData.length === 0) {
-    // Nothing to do
-    return { message: 'No stats to save' };
+    return { success: true, message: 'No stats to save' };
   }
   // Ensure portfolio_id exists
   const portfolio_id = statsData[0]?.portfolio_id;
-  if (!portfolio_id) throw new Response('Missing portfolio_id', { status: 400 });
+  if (!portfolio_id) {
+    return { success: false, error: 'Choose a portfolio before saving your stats.' };
+  }
   try {
     await runInTransaction((tx) =>
       CareerRepository.replacePortfolioStats(
@@ -239,10 +234,10 @@ export async function action({ request, context }: Route.ActionArgs) {
         })),
       ),
     );
-    return { message: 'Portfolio stats saved successfully' };
+    return { success: true, message: 'Portfolio stats saved successfully' };
   } catch (error) {
     console.error('Failed to save portfolio stats:', error);
-    throw new Response('Failed to save portfolio stats', { status: 500 });
+    return { success: false, error: 'We couldn’t save your portfolio stats. Try again.' };
   }
 }
 

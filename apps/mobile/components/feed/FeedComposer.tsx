@@ -18,6 +18,7 @@ import { ComposerResting } from '~/components/composer/ComposerResting';
 import { ComposerSurface } from '~/components/composer/ComposerSurface';
 import { ComposerTextInput } from '~/components/composer/ComposerTextInput';
 import { useComposer } from '~/components/composer/useComposer';
+import { useVoiceComposerInput } from '~/components/composer/useVoiceComposerInput';
 import { useInlineEnhance } from '~/services/ai';
 import { normalizeChatTitle } from '~/services/chat';
 import { useCreateChat } from '~/services/chat/use-create-chat';
@@ -55,6 +56,12 @@ function FeedComposerInner() {
       onDraftChange: writeFeedDraft,
       onExtraClearDraft: clearFeedDraft,
     });
+  const {
+    handleVoicePress,
+    isBusy: isVoiceBusy,
+    isCleaningVoice,
+    isRecording,
+  } = useVoiceComposerInput({ message, setMessage });
   const { attachments } = useComposerAttachments();
   const {
     isEnhanceOpen,
@@ -131,21 +138,30 @@ function FeedComposerInner() {
       actions={
         <ComposerActionGroup hasContent={hasContent}>
           <ActionButton
+            accessibilityLabel={
+              isRecording ? t.feed.composer.stopVoiceInputA11y : t.feed.composer.startVoiceInputA11y
+            }
+            icon={isRecording ? 'stop.fill' : 'mic.fill'}
+            onPress={() => void handleVoicePress()}
+            disabled={isSaving || isChatCreating || isEnhancing || isCleaningVoice}
+            isAnimating={isVoiceBusy}
+          />
+          <ActionButton
             accessibilityLabel={t.feed.composer.enhanceTextA11y}
             icon="wand.and.sparkles"
             onPress={toggleEnhance}
-            disabled={!hasContent || isEnhancing}
-            isAnimating={isEnhancing}
+            disabled={!hasContent || isEnhancing || isVoiceBusy}
+            isAnimating={isEnhancing || isCleaningVoice}
           />
           <ActionButton
             accessibilityLabel={t.feed.composer.openChatA11y}
-            disabled={!canSubmit || isSaving || isChatCreating || isEnhancing}
+            disabled={!canSubmit || isSaving || isChatCreating || isEnhancing || isVoiceBusy}
             icon="bubble.left"
             onPress={() => void handleChat()}
           />
           <ActionButton
             accessibilityLabel={t.feed.composer.saveNoteA11y}
-            disabled={!canSubmit || isSaving || isChatCreating || isEnhancing}
+            disabled={!canSubmit || isSaving || isChatCreating || isEnhancing || isVoiceBusy}
             icon="arrow.up"
             onPress={() => void handleSave()}
           />

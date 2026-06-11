@@ -12,7 +12,4 @@ export * from './attachments.js';
 export * from './audio-player.js';
 export * from './note-picker-dialog.js';
 export * from './prompt-input.js';
-export * from './speech-input.js';
 export * from './transcription.js';
-export * from './voice-dialog.js';
-export * from './recording-clock.js';

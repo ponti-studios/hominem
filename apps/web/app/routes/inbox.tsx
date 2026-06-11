@@ -12,7 +12,6 @@ import { useCreateChat } from '~/hooks/use-chats';
 import { useComposerMode } from '~/hooks/use-composer-mode';
 import { useInbox } from '~/hooks/use-inbox';
 import { useCreateNote } from '~/hooks/use-notes';
-import { useTranscribe } from '~/hooks/use-transcribe';
 import { createServerApiClient } from '~/lib/api.server';
 import { useFileUpload } from '~/lib/hooks/use-file-upload';
 
@@ -46,7 +45,6 @@ export default function NotesPage({ loaderData }: Route.ComponentProps) {
   const createChat = useCreateChat();
   const { enhance } = useTextEnhance();
   const { uploadFiles } = useFileUpload();
-  const transcribeMutation = useTranscribe();
   const { mode, chatId } = useComposerMode();
   const navigate = useNavigate();
 
@@ -275,8 +273,6 @@ export default function NotesPage({ loaderData }: Route.ComponentProps) {
         mode={mode}
         chatId={chatId}
         store={composerStore}
-        transcribeMutation={transcribeMutation}
-        inlineVoiceEnabled={true}
       />
     </div>
   );

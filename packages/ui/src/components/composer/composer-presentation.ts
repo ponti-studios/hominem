@@ -30,7 +30,6 @@ export interface ComposerPresentation {
   primaryAction: ComposerActionSpec;
   secondaryAction: ComposerActionSpec | null;
   showsAttachmentButton: boolean;
-  showsVoiceButton: boolean;
   showsNotePicker: boolean;
 }
 
@@ -49,7 +48,6 @@ export function deriveComposerPresentation(
       },
       secondaryAction: null,
       showsAttachmentButton: false,
-      showsVoiceButton: true,
       showsNotePicker: false,
     };
   }
@@ -69,7 +67,6 @@ export function deriveComposerPresentation(
         icon: 'plus.circle',
       },
       showsAttachmentButton: true,
-      showsVoiceButton: true,
       showsNotePicker: true,
     };
   }
@@ -89,7 +86,6 @@ export function deriveComposerPresentation(
       icon: 'bubble.left',
     },
     showsAttachmentButton: true,
-    showsVoiceButton: true,
     showsNotePicker: false,
   };
 }

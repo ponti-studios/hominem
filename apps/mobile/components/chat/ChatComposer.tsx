@@ -11,6 +11,7 @@ import { ComposerSurface } from '~/components/composer/ComposerSurface';
 import { ComposerTextInput } from '~/components/composer/ComposerTextInput';
 import { useChatMentions } from '~/components/composer/useChatMentions';
 import { useComposer } from '~/components/composer/useComposer';
+import { useVoiceComposerInput } from '~/components/composer/useVoiceComposerInput';
 import { useInlineEnhance } from '~/services/ai';
 import { useActiveChat, useAutoUpdateChatTitle, useSendMessage } from '~/services/chat';
 import { clearChatDraft, readChatDraft, writeChatDraft } from '~/services/workspace/launch-state';
@@ -47,6 +48,12 @@ function ChatComposerContent({ chatId }: { chatId: string }) {
     onDraftChange: (nextMessage) => writeChatDraft(resolvedChatId, nextMessage),
     onExtraClearDraft: () => clearChatDraft(resolvedChatId),
   });
+  const {
+    handleVoicePress,
+    isBusy: isVoiceBusy,
+    isCleaningVoice,
+    isRecording,
+  } = useVoiceComposerInput({ message, setMessage });
   const { attachments } = useComposerAttachments();
   const {
     isEnhanceOpen,
@@ -146,16 +153,25 @@ function ChatComposerContent({ chatId }: { chatId: string }) {
       actions={
         <ComposerActionGroup hasContent={hasContent}>
           <ActionButton
+            icon={isRecording ? 'stop.fill' : 'mic.fill'}
+            onPress={() => void handleVoicePress()}
+            accessibilityLabel={
+              isRecording ? t.chat.input.stopVoiceInputA11y : t.chat.input.startVoiceInputA11y
+            }
+            disabled={isChatSending || isEnhancing || isCleaningVoice}
+            isAnimating={isVoiceBusy}
+          />
+          <ActionButton
             icon="wand.and.sparkles"
             onPress={toggleEnhance}
             accessibilityLabel={t.chat.input.enhanceTextA11y}
-            disabled={!hasContent || isChatSending || isEnhancing}
-            isAnimating={isEnhancing}
+            disabled={!hasContent || isChatSending || isEnhancing || isVoiceBusy}
+            isAnimating={isEnhancing || isCleaningVoice}
           />
           <ActionButton
             icon="arrow.up"
             onPress={() => void handleSend()}
-            disabled={!canSubmit || isChatSending}
+            disabled={!canSubmit || isChatSending || isVoiceBusy}
             accessibilityLabel={
               isChatSending ? t.chat.input.sendingA11y : t.chat.input.sendMessageA11y
             }

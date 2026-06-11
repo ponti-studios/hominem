@@ -8,8 +8,8 @@ import { useForm } from 'react-hook-form';
 import { useFetcher } from 'react-router';
 
 import { EditorFormActions } from '../components/EditorFormActions';
+import { FormErrorAlert } from '../components/FormErrorAlert';
 import { useCareerEditorSubmission } from '../hooks/useCareerEditorSubmission';
-import { useToast } from '../hooks/useToast';
 import { portfolioContext, userContext } from '../lib/middleware';
 import { parseFormData } from '../lib/route-utils';
 import { formatDateForInput, nullArrayToUndefined, stringToDate } from '../lib/utils';
@@ -51,14 +51,13 @@ function ProjectForm({
   onDelete?: () => void;
 }) {
   const fetcher = useFetcher();
-  const { addToast } = useToast();
   const isNew = !project?.id;
 
   const {
     register,
     handleSubmit,
     reset,
-    formState: { isDirty, isValid },
+    formState: { errors, isDirty, isValid },
   } = useForm<ProjectFormValues>({
     defaultValues: {
       id: project?.id,
@@ -81,13 +80,20 @@ function ProjectForm({
     mode: 'onChange',
   });
 
-  useCareerEditorSubmission<Project>({
+  const { submissionError, clearSubmissionError } = useCareerEditorSubmission<Project>({
     fetcher,
-    addToast,
-    successMessage: 'Project saved successfully!',
-    errorMessage: 'Failed to save project',
-    isNew,
-    onCreateSuccess: (savedProject) => {
+    errorMessage: 'We couldn’t save this project. Try again.',
+    onSuccess: (result) => {
+      if (result.operation === 'delete') {
+        onDelete?.();
+        return;
+      }
+
+      if (!isNew || !result.data) {
+        return;
+      }
+
+      const savedProject = result.data;
       reset({
         id: savedProject.id,
         title: savedProject.title || '',
@@ -111,12 +117,6 @@ function ProjectForm({
 
   const onSubmit: SubmitHandler<ProjectFormValues> = (formData) => {
     if (!isDirty && !isNew) {
-      addToast('No changes to save.', 'info');
-      return;
-    }
-
-    if (!formData.title || !formData.description) {
-      addToast('Please fill in all required fields.', 'error');
       return;
     }
 
@@ -124,6 +124,7 @@ function ProjectForm({
     formDataToSubmit.append('operation', isNew ? 'create' : 'update');
     formDataToSubmit.append('projectData', JSON.stringify(formData));
 
+    clearSubmissionError();
     fetcher.submit(formDataToSubmit, {
       method: 'POST',
       action: '/projects',
@@ -139,12 +140,11 @@ function ProjectForm({
       formData.append('id', project.id);
       formData.append('portfolio_id', portfolio_id);
 
+      clearSubmissionError();
       fetcher.submit(formData, {
         method: 'POST',
         action: '/projects',
       });
-
-      onDelete?.();
     }
   };
 
@@ -155,6 +155,7 @@ function ProjectForm({
       onSubmit={handleSubmit(onSubmit)}
       className="rounded-md border border-border bg-card p-4 bg-muted/50 space-y-4"
     >
+      <FormErrorAlert title="Project wasn’t saved" message={submissionError} />
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium text-foreground">{isNew ? 'New Project' : 'Project'}</h3>
         <EditorFormActions
@@ -174,10 +175,17 @@ function ProjectForm({
         <input
           id={`title-${project?.id || 'new'}`}
           type="text"
-          {...register('title', { required: true })}
+          {...register('title', { required: 'Add a project title.' })}
+          aria-describedby={errors.title ? `title-${project?.id || 'new'}-error` : undefined}
+          aria-invalid={errors.title ? true : undefined}
           className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
           placeholder="e.g., E-commerce Platform"
         />
+        {errors.title ? (
+          <p id={`title-${project?.id || 'new'}-error`} role="alert" className="text-xs text-destructive">
+            {errors.title.message}
+          </p>
+        ) : null}
       </div>
 
       <div className="flex flex-col gap-2">
@@ -199,11 +207,24 @@ function ProjectForm({
         </label>
         <textarea
           id={`description-${project?.id || 'new'}`}
-          {...register('description', { required: true })}
+          {...register('description', { required: 'Add a project description.' })}
+          aria-describedby={
+            errors.description ? `description-${project?.id || 'new'}-error` : undefined
+          }
+          aria-invalid={errors.description ? true : undefined}
           className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50 min-h-28"
           rows={4}
           placeholder="Detailed project description, features, and technologies used..."
         />
+        {errors.description ? (
+          <p
+            id={`description-${project?.id || 'new'}-error`}
+            role="alert"
+            className="text-xs text-destructive"
+          >
+            {errors.description.message}
+          </p>
+        ) : null}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -407,7 +428,7 @@ export async function loader({ context }: Route.LoaderArgs) {
 export async function action({ request, context }: Route.ActionArgs) {
   const user = context.get(userContext);
   if (!user) {
-    throw new Response('User not found', { status: 401 });
+    return { success: false, error: 'Sign in again before saving your projects.' };
   }
   const formData = await request.formData();
   const operation = formData.get('operation') as string;
@@ -418,13 +439,13 @@ export async function action({ request, context }: Route.ActionArgs) {
       const projectDataResult = parseFormData<ProjectFormValues>(formData, 'projectData');
 
       if ('success' in projectDataResult && !projectDataResult.success) {
-        throw new Response('Invalid project data', { status: 400 });
+        return { success: false, operation, error: 'Your project changes couldn’t be read.' };
       }
 
       const projectData = projectDataResult as ProjectFormValues;
 
       if (!projectData.portfolio_id) {
-        throw new Response('Missing portfolio_id', { status: 400 });
+        return { success: false, operation, error: 'Choose a portfolio before saving this project.' };
       }
 
       try {
@@ -463,12 +484,14 @@ export async function action({ request, context }: Route.ActionArgs) {
             sort_order: dbData.sort_order,
           });
 
-          return { message: 'Project created successfully', data: newProject };
+          return { success: true, operation, message: 'Project created successfully', data: newProject };
         }
 
         // Update existing project
         const { id, ...updateData } = projectData;
-        if (!id) throw new Response('Missing project ID for update', { status: 400 });
+        if (!id) {
+          return { success: false, operation, error: 'Choose a project before saving your changes.' };
+        }
 
         // Convert date strings to Date objects for database
         const dbData = {
@@ -495,11 +518,17 @@ export async function action({ request, context }: Route.ActionArgs) {
           sort_order: dbData.sort_order,
         });
 
-        return { message: 'Project updated successfully' };
+        return { success: true, operation, message: 'Project updated successfully' };
       } catch (error) {
-        if (error instanceof Response) throw error;
         console.error(`Failed to ${operation} project:`, error);
-        throw new Response(`Failed to ${operation} project`, { status: 500 });
+        return {
+          success: false,
+          operation,
+          error:
+            operation === 'create'
+              ? 'We couldn’t create this project. Try again.'
+              : 'We couldn’t save this project. Try again.',
+        };
       }
     }
 
@@ -508,15 +537,15 @@ export async function action({ request, context }: Route.ActionArgs) {
       const portfolio_id = formData.get('portfolio_id') as string;
 
       if (!id || !portfolio_id) {
-        throw new Response('Missing required fields for deletion', { status: 400 });
+        return { success: false, operation, error: 'Choose a project before deleting it.' };
       }
 
       try {
         await CareerRepository.deleteProject(db, user.id, id, portfolio_id);
-        return { message: 'Project deleted successfully' };
+        return { success: true, operation, message: 'Project deleted successfully' };
       } catch (error) {
         console.error('Failed to delete project:', error);
-        throw new Response('Failed to delete project', { status: 500 });
+        return { success: false, operation, error: 'We couldn’t delete this project. Try again.' };
       }
     }
 

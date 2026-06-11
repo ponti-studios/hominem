@@ -53,9 +53,7 @@ export function EmailEntryForm({
           {translateUi('auth.emailEntry.submitButton')}
         </Button>
 
-        {onPasskeyClick ? (
-          <PasskeyButton onClick={onPasskeyClick} disabled={isSubmitting} />
-        ) : null}
+        {onPasskeyClick ? <PasskeyButton onClick={onPasskeyClick} disabled={isSubmitting} /> : null}
       </div>
     </form>
   );

@@ -327,7 +327,6 @@ function createRecordingController() {
 }
 
 const voiceResponsePlayback = createPlaybackController();
-const ttsPlayback = createPlaybackController();
 const recording = createRecordingController();
 
 export function getRecordingSnapshot() {
@@ -356,21 +355,4 @@ export async function startRecording() {
 
 export async function stopRecording() {
   return recording.stopRecording();
-}
-
-export async function playTTS(audioUri: string) {
-  logger.info('[voice-playback] starting text-to-speech playback', {
-    audioUri,
-  });
-  await voiceResponsePlayback.stop();
-  await ttsPlayback.prepare(audioUri);
-  await ttsPlayback.play();
-  logger.info('[voice-playback] text-to-speech playback active', {
-    audioUri,
-  });
-}
-
-export function stopTTS() {
-  logger.info('[voice-playback] stopping text-to-speech playback');
-  void ttsPlayback.stop();
 }

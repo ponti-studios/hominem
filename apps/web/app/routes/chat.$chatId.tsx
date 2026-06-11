@@ -8,7 +8,6 @@ import {
 } from '@hominem/ui/accordion';
 import { Button } from '@hominem/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '@hominem/ui/command';
-import { SpeechInput } from '@hominem/ui/composer';
 import { cn } from '@hominem/ui/lib/utils';
 import { slugifyText } from '@hominem/utils/text';
 import { useCallback, useMemo, useRef, useState } from 'react';
@@ -17,8 +16,6 @@ import { Link, data } from 'react-router';
 import { useTextEnhance } from '~/hooks/ai';
 import { useArchiveChat } from '~/hooks/use-chats';
 import { useNoteSearch } from '~/hooks/use-notes';
-import { useServerSpeech } from '~/hooks/use-server-speech';
-import { useTranscribe } from '~/hooks/use-transcribe';
 import { createServerApiClient } from '~/lib/api.server';
 import { useChatMessages } from '~/lib/hooks/use-chat-messages';
 import { useFileUpload } from '~/lib/hooks/use-file-upload';
@@ -71,8 +68,6 @@ export default function ChatPage({ loaderData, params }: Route.ComponentProps) {
   const { messages } = useChatMessages({ chatId, initialData: initialMessages });
   const streamMessage = useStreamMessage({ chatId });
   const archiveChat = useArchiveChat({ chatId });
-  const transcribe = useTranscribe();
-  const { speakingId, loadingId, speak } = useServerSpeech();
   const { uploadFiles, uploadState } = useFileUpload();
   const { enhance } = useTextEnhance();
 
@@ -236,19 +231,6 @@ export default function ChatPage({ loaderData, params }: Route.ComponentProps) {
                 <span className="text-xs uppercase tracking-[0.2em] text-text-tertiary">
                   {message.role}
                 </span>
-                {message.role === 'assistant' ? (
-                  <button
-                    type="button"
-                    className="text-xs text-text-secondary underline"
-                    onClick={() => void speak(message.id, message.content)}
-                  >
-                    {loadingId === message.id
-                      ? 'Loading audio...'
-                      : speakingId === message.id
-                        ? 'Playing'
-                        : 'Speak'}
-                  </button>
-                ) : null}
               </div>
               <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-foreground">
                 {message.content}
@@ -389,13 +371,6 @@ export default function ChatPage({ loaderData, params }: Route.ComponentProps) {
                     }}
                   />
                 </label>
-                <SpeechInput
-                  ariaLabel="Dictate chat message"
-                  onAudioRecorded={async (audioBlob: Blob) => {
-                    const result = await transcribe.mutateAsync({ audioBlob });
-                    setDraft((current) => `${current}\n${result.text}`.trim());
-                  }}
-                />
                 {uploadState.errors.length > 0 ? (
                   <span className="text-xs text-destructive">{uploadState.errors.join(', ')}</span>
                 ) : null}

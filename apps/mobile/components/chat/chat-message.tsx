@@ -459,21 +459,17 @@ export function renderChatMessage(
     onEdit?: (messageId: string, content: string) => void;
     onRegenerate?: (messageId: string) => void;
     onDelete?: (messageId: string) => void;
-    onSpeak?: (message: ChatMessageItem) => void;
-    speakingId?: string | null;
     onShare?: (message: ChatMessageItem) => void;
     isActive?: boolean;
     onActivate?: () => void;
   },
 ) {
-  const { speakingId, ...rest } = actions ?? {};
   return (
     <ChatMessage
       Markdown={Markdown ?? null}
       formatTimestamp={formatTimestamp}
-      isSpeaking={speakingId === item.id}
       message={item}
-      {...rest}
+      {...actions}
     />
   );
 }

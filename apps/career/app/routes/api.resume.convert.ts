@@ -234,10 +234,7 @@ export const action: ActionFunction = async ({ request, context }) => {
           },
           {
             role: 'user',
-            content: `Parse this resume into structured JSON.
-
-Resume text:
-${pdfText}`,
+            content: `Parse this resume into structured JSON. Resume text:\n${pdfText}`,
           },
         ],
       });

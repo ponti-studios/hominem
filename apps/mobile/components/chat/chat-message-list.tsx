@@ -27,12 +27,10 @@ interface ChatMessageListProps {
   searchQuery: string;
   markdown: MarkdownComponent | null;
   showDebug: boolean;
-  speakingId: string | null;
   onCopy: (message: ChatMessageItem) => void;
   onEdit: (messageId: string, content: string) => void;
   onRegenerate: (messageId: string) => void;
   onDelete: (messageId: string) => void;
-  onSpeak: (message: ChatMessageItem) => void;
   onShare: (message: ChatMessageItem) => void;
   renderIcon: ChatRenderIcon;
   formatTimestamp: (value: string) => string;
@@ -47,12 +45,10 @@ export function ChatMessageList({
   searchQuery,
   markdown,
   showDebug,
-  speakingId,
   onCopy,
   onEdit,
   onRegenerate,
   onDelete,
-  onSpeak,
   onShare,
   renderIcon,
   formatTimestamp,
@@ -109,9 +105,7 @@ export function ChatMessageList({
         onEdit: item.isStreaming ? undefined : onEdit,
         onRegenerate: item.isStreaming ? undefined : onRegenerate,
         onShare: item.isStreaming ? undefined : onShare,
-        onSpeak: item.isStreaming ? undefined : onSpeak,
         showDebug,
-        speakingId,
       }),
     [
       activeActionMessageId,
@@ -122,10 +116,8 @@ export function ChatMessageList({
       onEdit,
       onRegenerate,
       onShare,
-      onSpeak,
       renderIcon,
       showDebug,
-      speakingId,
     ],
   );
 

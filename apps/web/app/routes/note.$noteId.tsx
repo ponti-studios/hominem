@@ -4,7 +4,6 @@ import { data, redirect, useNavigate } from 'react-router';
 import { NoteEditor } from '~/components/notes';
 import { useTextEnhance } from '~/hooks/ai';
 import { useDeleteNote, useUpdateNote } from '~/hooks/use-notes';
-import { useTranscribe } from '~/hooks/use-transcribe';
 import { createServerApiClient } from '~/lib/api.server';
 import { useFileUpload } from '~/lib/hooks/use-file-upload';
 
@@ -34,7 +33,6 @@ export default function NoteSplitView({ loaderData }: Route.ComponentProps) {
   const updateNote = useUpdateNote();
   const deleteNote = useDeleteNote();
   const { enhance } = useTextEnhance();
-  const transcribe = useTranscribe();
   const { uploadFiles, uploadState } = useFileUpload();
 
   if (!note) {
@@ -54,10 +52,6 @@ export default function NoteSplitView({ loaderData }: Route.ComponentProps) {
         }}
         onUploadFiles={async (files) => {
           return uploadFiles(files);
-        }}
-        onTranscribeAudio={async (audioBlob) => {
-          const result = await transcribe.mutateAsync({ audioBlob });
-          return result.text;
         }}
         onEnhanceText={({ text, instruction }) => enhance({ text, instruction })}
         onDelete={async () => {

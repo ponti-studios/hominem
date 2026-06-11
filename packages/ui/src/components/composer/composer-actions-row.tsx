@@ -10,7 +10,7 @@
  * availability changes, not on every keystroke.
  */
 
-import { ArrowUp, CirclePlus, MessageSquare, Mic, Sparkles } from 'lucide-react';
+import { ArrowUp, CirclePlus, MessageSquare, Sparkles } from 'lucide-react';
 import { memo } from 'react';
 import { useFormStatus } from 'react-dom';
 
@@ -32,13 +32,9 @@ function ActionIcon({ icon }: { icon: ComposerActionIcon }) {
 export const ComposerActionsRow = memo(function ComposerActionsRow({
   presentation,
   isPending,
-  voiceDialogRef,
-  showsVoiceButton,
 }: {
   presentation: ComposerPresentation;
   isPending: boolean;
-  voiceDialogRef: React.RefObject<HTMLDialogElement | null>;
-  showsVoiceButton: boolean;
 }) {
   const hasContent = useComposerSlice(
     (s) => s.draft.trim().length > 0 || s.uploadedFiles.length > 0,
@@ -50,8 +46,6 @@ export const ComposerActionsRow = memo(function ComposerActionsRow({
   const { pending: formPending } = useFormStatus();
 
   const disabled = !hasContent || isPending || formPending || isUploading || isEnhancing;
-
-  const showVoiceAsPrimary = showsVoiceButton && !hasContent;
 
   return (
     <div className="flex items-center gap-1.5">
@@ -66,7 +60,7 @@ export const ComposerActionsRow = memo(function ComposerActionsRow({
       >
         <Sparkles className="size-4.5" />
       </Button>
-      {presentation.secondaryAction && !showVoiceAsPrimary && (
+      {presentation.secondaryAction && (
         <Button
           size="icon"
           variant="outline"
@@ -81,31 +75,18 @@ export const ComposerActionsRow = memo(function ComposerActionsRow({
           <ActionIcon icon={presentation.secondaryAction.icon} />
         </Button>
       )}
-      {showVoiceAsPrimary ? (
-        <Button
-          size="icon"
-          aria-label="Voice note"
-          title="Voice note"
-          disabled={isPending || formPending || isEnhancing}
-          onClick={() => voiceDialogRef.current?.showModal()}
-          data-testid="composer-primary"
-        >
-          <Mic className="size-4.5" />
-        </Button>
-      ) : (
-        <Button
-          size="icon"
-          type="submit"
-          name="intent"
-          value={presentation.primaryAction.intent}
-          aria-label={presentation.primaryAction.label}
-          title={presentation.primaryAction.label}
-          disabled={disabled}
-          data-testid="composer-primary"
-        >
-          <ActionIcon icon={presentation.primaryAction.icon} />
-        </Button>
-      )}
+      <Button
+        size="icon"
+        type="submit"
+        name="intent"
+        value={presentation.primaryAction.intent}
+        aria-label={presentation.primaryAction.label}
+        title={presentation.primaryAction.label}
+        disabled={disabled}
+        data-testid="composer-primary"
+      >
+        <ActionIcon icon={presentation.primaryAction.icon} />
+      </Button>
     </div>
   );
 });

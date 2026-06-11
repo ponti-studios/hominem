@@ -8,20 +8,22 @@ export {
   DEFAULT_SPEECH_MODEL,
   DEFAULT_TEXT_MODEL,
   DEFAULT_TRANSCRIPTION_MODEL,
+  DEFAULT_VOICE_CLEANUP_MODEL,
   createOpenRouterClient,
-  hasOpenRouterApiKey,
+  isJsonObject,
+  OpenRouterRequestError,
 } from './shared';
 
 export type {
   EmbeddingOptions,
   ImageGenerationOptions,
+  JsonObject,
+  OpenRouterClientLike,
   OpenRouterClientOptions,
-  SharedChatCompletionBody,
-  SharedChatCompletionResponse,
-  SharedChatCompletionStreamChunk,
-  SharedChatMessage,
   TranscriptionOptions,
 } from './shared';
+
+export type { ChatMessage as SharedChatMessage } from './text';
 
 export {
   createChatCompletion,
@@ -38,4 +40,6 @@ export type { OpenRouterTextAdapterOptions } from './text';
 
 export { generateEmbedding } from './embeddings';
 export { generateImageFromPrompt } from './image';
-export { toAudioFormat, transcribeAudio } from './transcription';
+export { cleanupVoiceTranscript } from './voice-cleanup';
+
+export type { VoiceTranscriptCleanupInput, VoiceTranscriptCleanupOutput } from './voice-cleanup';

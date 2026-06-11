@@ -13,10 +13,11 @@ import { useNavigate, useRevalidator, useSubmit, useFetcher } from 'react-router
 
 import { cn } from '~/lib/utils';
 
+import { FormErrorAlert } from '../components/FormErrorAlert';
 import { ProfileImageUpload } from '../components/ProfileImageUpload';
 import { SlugEditor } from '../components/SlugEditor';
 import { UploadResumeForm } from '../components/UploadResumeForm';
-import { useToast } from '../hooks/useToast';
+import { useCareerEditorSubmission } from '../hooks/useCareerEditorSubmission';
 import { portfolioContext, userContext } from '../lib/middleware';
 import { parseFormData } from '../lib/route-utils';
 import { Route } from './+types/account';
@@ -65,7 +66,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     if (action === 'delete' && portfolio_id) {
       try {
         await CareerRepository.deletePortfolio(db, user.id, portfolio_id as string);
-        return { message: 'Portfolio deleted successfully' };
+        return { success: true, message: 'Portfolio deleted successfully' };
       } catch (error) {
         console.error('Failed to delete portfolio:', error);
         throw new Response('Failed to delete portfolio', { status: 500 });
@@ -75,7 +76,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     if (action === 'set-current-portfolio' && portfolio_id) {
       try {
         await CareerRepository.setCurrentPortfolioByUserId(db, user.id, portfolio_id as string);
-        return { message: 'Current portfolio updated successfully' };
+        return { success: true, message: 'Current portfolio updated successfully' };
       } catch (error) {
         console.error('Failed to update current portfolio:', error);
         throw new Response('Failed to update current portfolio', { status: 500 });
@@ -117,6 +118,7 @@ export async function action({ request, context }: Route.ActionArgs) {
         }
 
         return {
+          success: true,
           message: 'Profile image updated successfully',
           data: { image_url: uploadResult.url },
         };
@@ -159,7 +161,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 
         await CareerRepository.updatePortfolioSlug(db, user.id, portfolio_id, newSlug);
 
-        return { message: 'Portfolio URL updated successfully', data: { slug: newSlug } };
+        return { success: true, message: 'Portfolio URL updated successfully', data: { slug: newSlug } };
       } catch (error) {
         if (error instanceof Response) throw error;
         console.error('Failed to update portfolio URL:', error);
@@ -170,15 +172,15 @@ export async function action({ request, context }: Route.ActionArgs) {
     if (action === 'update-basics') {
       const portfolioDataResult = parseFormData<BasicInfoFormValues>(formData, 'portfolioData');
       if ('success' in portfolioDataResult && !portfolioDataResult.success) {
-        throw new Response('Invalid portfolio data', { status: 400 });
+        return { success: false, error: 'Your changes couldn’t be read. Refresh and try again.' };
       }
       const portfolioData = portfolioDataResult as BasicInfoFormValues;
       try {
         await CareerRepository.savePortfolioBasics(db, user.id, portfolioData);
-        return { message: 'Portfolio basics updated successfully' };
+        return { success: true, message: 'Portfolio basics updated successfully' };
       } catch (error) {
         console.error('Failed to update portfolio basics:', error);
-        throw new Response('Failed to update portfolio basics', { status: 500 });
+        return { success: false, error: 'We couldn’t save your basic info. Try again.' };
       }
     }
 
@@ -218,7 +220,6 @@ interface Portfolio {
 
 function BasicInfoForm({ portfolio }: { portfolio: CareerPortfolioRecord }) {
   const fetcher = useFetcher();
-  const { addToast } = useToast();
 
   const {
     register,
@@ -265,25 +266,19 @@ function BasicInfoForm({ portfolio }: { portfolio: CareerPortfolioRecord }) {
     });
   }, [portfolio, reset]);
 
-  useEffect(() => {
-    if (fetcher.state === 'idle' && fetcher.data) {
-      const result = fetcher.data as { success: boolean; error?: string; message?: string };
-      if (result.success) {
-        addToast(result.message || 'Basic info updated!', 'success');
-      } else {
-        addToast(`Failed to update: ${result.error || 'Unknown error'}`, 'error');
-      }
-    }
-  }, [fetcher.state, fetcher.data, addToast]);
+  const { submissionError, clearSubmissionError } = useCareerEditorSubmission({
+    fetcher,
+    errorMessage: 'We couldn’t save your basic info. Try again.',
+  });
 
   const onSubmit: SubmitHandler<BasicInfoFormValues> = (formData) => {
     if (!isDirty) {
-      addToast('No changes to save.', 'info');
       return;
     }
     const fd = new FormData();
     fd.append('action', 'update-basics');
     fd.append('portfolioData', JSON.stringify(formData));
+    clearSubmissionError();
     fetcher.submit(fd, { method: 'POST', action: '/account' });
   };
 
@@ -291,6 +286,7 @@ function BasicInfoForm({ portfolio }: { portfolio: CareerPortfolioRecord }) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <FormErrorAlert title="Basic info wasn’t saved" message={submissionError} />
       <Card>
         <CardHeader>
           <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">

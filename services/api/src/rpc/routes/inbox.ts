@@ -75,7 +75,7 @@ export const inboxRoutes = new Hono<AppContext>()
           n.id as "entityId",
           n.title as "title",
           left(coalesce(n.excerpt, n.content), 240) as "preview",
-          n.updatedat as "updatedAt"
+          n."updatedAt" as "updatedAt"
         from app.notes n
         where n.owner_userid = ${userId}
           and n.archived_at is null

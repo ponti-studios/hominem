@@ -25,6 +25,20 @@ private enum VoiceTranscriberError: LocalizedError {
   }
 }
 
+private struct VoiceTranscriptionResult: Record {
+  @Field
+  var rawText: String
+
+  @Field
+  var locale: String
+
+  @Field
+  var engine: String
+
+  @Field
+  var isOnDevice: Bool
+}
+
 private func permissionStatusString(_ status: SFSpeechRecognizerAuthorizationStatus) -> String {
   switch status {
   case .authorized:
@@ -50,7 +64,7 @@ private func requestSpeechRecognitionAuthorization() async -> SFSpeechRecognizer
   }
 }
 
-private func transcribeAudioFile(at audioUri: String) async throws -> String {
+private func transcribeAudioFile(at audioUri: String) async throws -> VoiceTranscriptionResult {
   guard SFSpeechRecognizer.authorizationStatus() == .authorized else {
     throw VoiceTranscriberError.missingPermission
   }
@@ -101,7 +115,14 @@ private func transcribeAudioFile(at audioUri: String) async throws -> String {
         return
       }
 
-      continuation.resume(returning: transcript)
+      continuation.resume(
+        returning: VoiceTranscriptionResult(
+          rawText: transcript,
+          locale: locale.identifier,
+          engine: "sfspeech",
+          isOnDevice: true
+        )
+      )
     }
   }
 }
@@ -119,7 +140,7 @@ public class VoiceTranscriberModule: Module {
       return permissionStatusString(status)
     }
 
-    AsyncFunction("transcribeFile") { (audioUri: String) async throws -> String in
+    AsyncFunction("transcribeFile") { (audioUri: String) async throws -> VoiceTranscriptionResult in
       try await transcribeAudioFile(at: audioUri)
     }
   }

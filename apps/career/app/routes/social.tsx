@@ -8,7 +8,8 @@ import { useFetcher } from 'react-router';
 
 import { cn } from '~/lib/utils';
 
-import { useToast } from '../hooks/useToast';
+import { FormErrorAlert } from '../components/FormErrorAlert';
+import { useCareerEditorSubmission } from '../hooks/useCareerEditorSubmission';
 import { portfolioContext, userContext } from '../lib/middleware';
 import { parseFormData } from '../lib/route-utils';
 import { Route } from './+types/social';
@@ -33,7 +34,6 @@ function SocialLinksEditorSection({
   portfolio_id,
 }: SocialLinksEditorSectionProps) {
   const fetcher = useFetcher();
-  const { addToast } = useToast();
   const {
     register,
     handleSubmit,
@@ -51,21 +51,13 @@ function SocialLinksEditorSection({
     reset(initialSocialLinks || {});
   }, [initialSocialLinks, reset]);
 
-  // Handle fetcher errors and success
-  useEffect(() => {
-    if (fetcher.state === 'idle' && fetcher.data) {
-      const result = fetcher.data as { success: boolean; error?: string; message?: string };
-      if (result.success) {
-        addToast(result.message || 'Social links saved successfully!', 'success');
-      } else {
-        addToast(`Failed to save social links: ${result.error || 'Unknown error'}`, 'error');
-      }
-    }
-  }, [fetcher.state, fetcher.data, addToast]);
+  const { submissionError, clearSubmissionError } = useCareerEditorSubmission({
+    fetcher,
+    errorMessage: 'We couldn’t save your social links. Try again.',
+  });
 
   const onSubmit: SubmitHandler<SocialLinksFormValues> = (formData) => {
     if (!isDirty) {
-      addToast('No changes to save in social links.', 'info');
       return;
     }
 
@@ -82,6 +74,7 @@ function SocialLinksEditorSection({
     const formData2 = new FormData();
     formData2.append('socialLinksData', JSON.stringify([socialLinksToSave]));
 
+    clearSubmissionError();
     fetcher.submit(formData2, {
       method: 'POST',
       action: '/social',
@@ -121,6 +114,11 @@ function SocialLinksEditorSection({
         onSubmit={handleSubmit(onSubmit)}
         className="space-y-2 md:space-y-6 card"
       >
+        <FormErrorAlert
+          title="Social links weren’t saved"
+          message={submissionError}
+          className="mb-4"
+        />
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* GitHub */}
           <div className="flex flex-col gap-2">
@@ -291,7 +289,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     Array<SocialLinksFormValues & { portfolio_id: string }>
   >(formData, 'socialLinksData');
   if ('success' in socialLinksDataResult && !socialLinksDataResult.success) {
-    throw new Response('Invalid social links data', { status: 400 });
+    return { success: false, error: 'Your social links couldn’t be read. Refresh and try again.' };
   }
 
   const socialLinksData = socialLinksDataResult as Array<
@@ -300,7 +298,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   const socialLinksPayload = socialLinksData[0];
 
   if (!socialLinksPayload?.portfolio_id) {
-    throw new Response('Missing portfolio_id', { status: 400 });
+    return { success: false, error: 'Choose a portfolio before saving social links.' };
   }
 
   try {
@@ -312,10 +310,10 @@ export async function action({ request, context }: Route.ActionArgs) {
       website: socialLinksPayload.website,
     });
 
-    return { message: 'Social links saved successfully' };
+    return { success: true, message: 'Social links saved successfully' };
   } catch (error) {
     console.error('Failed to save social links:', error);
-    throw new Response('Failed to save social links', { status: 500 });
+    return { success: false, error: 'We couldn’t save your social links. Try again.' };
   }
 }
 

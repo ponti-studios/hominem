@@ -30,7 +30,8 @@ export const apiSchema = baseSchema.extend({
     .enum(['true', 'false'])
     .default('false')
     .describe('Whether to actually send emails via Resend'),
-  OPENROUTER_API_KEY: isTest ? z.string().default('test-openrouter-key') : z.string().optional(),
+  OPENROUTER_API_KEY: isTest ? z.string().default('test-openrouter-key') : z.string(),
+  OPENROUTER_VOICE_CLEANUP_MODEL: z.string().default('openai/gpt-4o-mini'),
   SENTRY_DSN: z.string().optional(),
   SAVE_VOICE_AUDIO: z.coerce.boolean().default(false),
 });

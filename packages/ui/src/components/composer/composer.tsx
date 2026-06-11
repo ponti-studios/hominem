@@ -2,7 +2,6 @@
 
 import { CHAT_TITLE_MAX_LENGTH } from '@hominem/rpc/types';
 import type { Note } from '@hominem/rpc/types/notes.types';
-import type { UseMutationResult } from '@tanstack/react-query';
 import type { ChangeEvent } from 'react';
 import { memo, useActionState, useRef } from 'react';
 
@@ -23,15 +22,6 @@ import {
 import { ComposerShell } from './composer-shell';
 import { ComposerTools } from './composer-tools';
 import { NotePickerDialog } from './note-picker-dialog';
-import { VoiceDialog } from './voice-dialog';
-
-interface TranscribeResult {
-  text: string;
-}
-interface TranscribeVariables {
-  audioBlob: Blob;
-  language?: string;
-}
 
 function buildNoteContext(attachedNotes: ReadonlyArray<Note>): string {
   if (attachedNotes.length === 0) return '';
@@ -62,8 +52,6 @@ export interface ComposerProps {
   /** Derived from the loaded note in the route layout — no useEffect push needed */
   noteTitle?: string | null;
   store: ComposerProviderProps['store'];
-  inlineVoiceEnabled?: boolean;
-  transcribeMutation: UseMutationResult<TranscribeResult, Error, TranscribeVariables>;
   /** Notes for the picker — fetched in layout, passed as stable prop */
   notes?: Note[];
 }
@@ -86,8 +74,6 @@ const ComposerForm = memo(function ComposerForm({
   buildChatPath,
   chatId,
   noteTitle,
-  inlineVoiceEnabled = true,
-  transcribeMutation,
   notes = [],
   presentation,
 }: ComposerFormProps) {
@@ -97,7 +83,6 @@ const ComposerForm = memo(function ComposerForm({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
-  const voiceDialogRef = useRef<HTMLDialogElement>(null);
   const notePickerDialogRef = useRef<HTMLDialogElement>(null);
 
   const [, formAction, isPending] = useActionState(async (_prevState: null, formData: FormData) => {
@@ -169,8 +154,6 @@ const ComposerForm = memo(function ComposerForm({
     }
   }
 
-  const showsVoiceButton = inlineVoiceEnabled && presentation.showsVoiceButton;
-
   return (
     <>
       <input
@@ -216,22 +199,11 @@ const ComposerForm = memo(function ComposerForm({
               notePickerDialogRef={notePickerDialogRef}
               presentation={presentation}
             />
-            <ComposerActionsRow
-              presentation={presentation}
-              isPending={isPending}
-              voiceDialogRef={voiceDialogRef}
-              showsVoiceButton={showsVoiceButton}
-            />
+            <ComposerActionsRow presentation={presentation} isPending={isPending} />
           </div>
         </form>
       </ComposerShell>
 
-      <VoiceDialog
-        ref={voiceDialogRef}
-        store={store}
-        transcribeMutation={transcribeMutation}
-        inputRef={inputRef}
-      />
       <NotePickerDialog ref={notePickerDialogRef} notes={notes} inputRef={inputRef} />
     </>
   );

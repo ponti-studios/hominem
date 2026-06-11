@@ -18,7 +18,7 @@ import {
   useState,
   type RefObject,
 } from 'react';
-import { Alert, Share, TextInput } from 'react-native';
+import { Alert, Platform, Share, TextInput } from 'react-native';
 
 import { loadMarkdown } from '../components/chat/chat-message';
 import type { SendInput } from '../services/chat/use-send-message';
@@ -41,7 +41,6 @@ export interface ChatServices {
     isPending: boolean;
   };
   chatKeys: { messages: (chatId: string) => readonly unknown[] };
-  speech: { speakingId: string | null; speak: (id: string, text: string) => void };
   onNoteCreated?: () => Promise<void>;
   onArtifactCreated?: (artifact: {
     source: { kind: 'artifact'; id: string; type: Exclude<ArtifactType, 'tracker'>; title: string };
@@ -113,7 +112,6 @@ interface UseChatControllerResult {
   handleRejectReview: () => Promise<void>;
   handleSearchQueryChange: (query: string) => void;
   handleShareMessage: (message: ChatMessageItem) => Promise<void>;
-  handleSpeakMessage: (message: ChatMessageItem) => void;
   canTransform: boolean;
   isMessagesLoading: boolean;
   isArchiving: boolean;
@@ -126,7 +124,6 @@ interface UseChatControllerResult {
   searchQuery: string;
   showDebug: boolean;
   showSearch: boolean;
-  speakingId: string | null;
   statusCopy: string;
 }
 
@@ -136,7 +133,6 @@ export function useChatController({
   source,
   services,
 }: UseChatControllerInput): UseChatControllerResult {
-  const { speakingId, speak } = services.speech;
   const client = useApiClient();
   const queryClient = useQueryClient();
   const {
@@ -327,6 +323,14 @@ export function useChatController({
     if (!text) return;
 
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    if (Platform.OS === 'web') {
+      void globalThis.navigator?.clipboard?.writeText(text).catch(() => {
+        void Share.share({ message: text, title: 'Copy message' });
+      });
+      return;
+    }
+
     void Clipboard.setStringAsync(text).catch(() => {
       void Share.share({ message: text, title: 'Copy message' });
     });
@@ -375,13 +379,6 @@ export function useChatController({
       queryClient.invalidateQueries({ queryKey: services.chatKeys.messages(chatId) });
     },
     [chatId, queryClient, services.chatKeys],
-  );
-
-  const handleSpeakMessage = useCallback(
-    (message: ChatMessageItem) => {
-      speak(message.id, message.message);
-    },
-    [speak],
   );
 
   const handleOpenSearch = useCallback(() => {
@@ -435,7 +432,6 @@ export function useChatController({
     handleRejectReview,
     handleSearchQueryChange,
     handleShareMessage,
-    handleSpeakMessage,
     handleTransformFromMenu,
     handleToggleDebug,
     canTransform,
@@ -449,7 +445,6 @@ export function useChatController({
     showDebug: uiState.showDebug,
     showActionsMenu: uiState.showActionsMenu,
     showSearch: uiState.showSearch,
-    speakingId,
     statusCopy,
     isReviewVisible,
   };

@@ -18,9 +18,8 @@ import Navigation from './components/Navigation';
 
 import './app.css';
 import { NavigationProgress } from './components/NavigationProgress';
-import { ToastProvider } from './hooks/useToast';
 import { serverEnv } from './lib/env';
-import { portfolioContext, sessionMiddleware, userContext } from './lib/middleware';
+import { sessionMiddleware, userContext } from './lib/middleware';
 
 export const links = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -94,21 +93,14 @@ export const meta = () => [
   { name: 'twitter:image', content: '/icons/twitter-card.jpg' },
 ];
 
-interface CurrentPortfolioSummary {
-  id: string;
-  title: string;
-  slug: string;
-}
-
 export const middleware: Route.MiddlewareFunction[] = [
   (args, next) => sessionMiddleware(args, next),
 ];
 
 export async function loader({ context }: Route.LoaderArgs) {
   const user = context.get(userContext);
-  const currentPortfolio = context.get(portfolioContext);
 
-  return data({ user, apiBaseUrl: serverEnv().VITE_PUBLIC_API_URL, currentPortfolio });
+  return data({ user, apiBaseUrl: serverEnv().VITE_PUBLIC_API_URL });
 }
 
 // Add route handle to enable accessing loader data from child routes
@@ -143,22 +135,19 @@ export default function App({
   loaderData: {
     apiBaseUrl: string;
     user: unknown;
-    currentPortfolio: CurrentPortfolioSummary | null;
   };
 }) {
   const { apiBaseUrl } = loaderData;
   return (
     <AuthProvider config={{ apiBaseUrl }}>
       <QueryClientProvider client={queryClient}>
-        <ToastProvider>
-          <NavigationProgress />
-          <div className="flex min-h-screen flex-col bg-background text-foreground">
-            <Navigation />
-            <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col py-6 font-sans">
-              <Outlet />
-            </main>
-          </div>
-        </ToastProvider>
+        <NavigationProgress />
+        <div className="flex min-h-screen flex-col bg-background text-foreground">
+          <Navigation />
+          <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col py-6 font-sans">
+            <Outlet />
+          </main>
+        </div>
       </QueryClientProvider>
     </AuthProvider>
   );

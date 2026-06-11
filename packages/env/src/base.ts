@@ -5,6 +5,7 @@ export const baseSchema = z.object({
   DATABASE_URL: z.url().optional(),
   OPENROUTER_API_KEY: z.string().optional(),
   AI_MODEL: z.string().default('openai/gpt-4o'),
+  OPENROUTER_VOICE_CLEANUP_MODEL: z.string().default('openai/gpt-4o-mini'),
   RESEND_API_KEY: z.string().optional(),
   RESEND_FROM_EMAIL: z.string().optional(),
   RESEND_FROM_NAME: z.string().optional(),

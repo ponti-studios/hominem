@@ -1,219 +1,127 @@
+import { cleanupVoiceTranscript, OpenRouterRequestError } from '@hominem/ai';
+import {
+  VoiceCleanupInputSchema,
+  VoiceCleanupOutputSchema,
+} from '@hominem/rpc/schemas/voice.schema';
 import { logger } from '@hominem/telemetry';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
-import * as z from 'zod';
 
 import { authMiddleware, type AppContext } from '../middleware/auth';
 import { rateLimitMiddleware } from '../middleware/rate-limit';
-import {
-  VoiceError,
-  generateSpeechBuffer,
-  generateVoiceResponseStream,
-  getVoiceErrorStatusCode,
-  getVoiceLogData,
-  getVoiceRequestContext,
-  getVoiceResponseRequestOptions,
-  handleVoiceRouteError,
-  isErrorWithMessage,
-  parseLoggedVoiceRequest,
-  respondToInvalidVoiceMultipartBody,
-  respondWithJsonError,
-  transcribeVoiceBuffer,
-} from './voice-helpers';
 
-type MobileVoiceTranscriptionOutput = {
-  text: string;
-  language?: string;
-  duration?: number;
-  words?: unknown[];
-  segments?: unknown[];
-};
+const VOICE_CLEANUP_MIN_LENGTH = 8;
+const VOICE_CLEANUP_MIN_WORDS = 2;
+const VOICE_CLEANUP_MIN_LENGTH_RATIO = 0.45;
+const VOICE_CLEANUP_MAX_LENGTH_RATIO = 2.5;
 
-const voiceSpeechSchema = z.object({
-  text: z.string().min(1).max(4096),
-  voice: z.string().default('alloy'),
-  speed: z.number().min(0.25).max(4).default(1),
-});
+function countTranscriptWords(text: string) {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
 
-const voiceRoutes = new Hono<AppContext>().post('/transcribe', async (c) => {
-  try {
-    const { requestId, clientRequestId } = getVoiceRequestContext(c);
-    const { body, audioFile, language } = await parseLoggedVoiceRequest(c, {
-      requestId,
-      clientRequestId,
-      route: '/transcribe',
-    });
+function shouldBypassVoiceCleanup(text: string) {
+  const trimmed = text.trim();
+  return (
+    trimmed.length < VOICE_CLEANUP_MIN_LENGTH ||
+    countTranscriptWords(trimmed) < VOICE_CLEANUP_MIN_WORDS
+  );
+}
 
-    if (!(audioFile instanceof File)) {
-      return respondToInvalidVoiceMultipartBody(c, {
-        body,
-        requestId,
-        clientRequestId,
-        route: '/transcribe',
-        code: 'INVALID_FORMAT',
-      });
-    }
+function isSafeVoiceCleanup(rawText: string, cleanedText: string) {
+  const rawTrimmed = rawText.trim();
+  const cleanedTrimmed = cleanedText.trim();
 
-    const output = await transcribeVoiceBuffer({
-      buffer: await audioFile.arrayBuffer(),
-      mimeType: audioFile.type,
-      ...(audioFile.name ? { fileName: audioFile.name } : {}),
-      ...(language ? { language } : {}),
-      requestId,
-    });
+  if (!cleanedTrimmed) return false;
 
-    logger.info('[voice-transcription] request completed', {
-      ...getVoiceLogData(requestId),
-      clientRequestId,
-      route: '/transcribe',
-      transcriptLength: output.text.length,
-      transcriptPreview: output.text.slice(0, 120),
-    });
+  const rawLength = rawTrimmed.length;
+  const cleanedLength = cleanedTrimmed.length;
 
-    const response: MobileVoiceTranscriptionOutput = {
-      text: output.text,
-    };
+  if (rawLength === 0) return false;
 
-    return c.json(response);
-  } catch (error) {
-    const { requestId, clientRequestId } = getVoiceRequestContext(c);
-    if (error instanceof VoiceError) {
-      return handleVoiceRouteError(c, {
-        error,
-        requestId,
-        clientRequestId,
-        route: '/transcribe',
-      });
-    }
-    logger.error('[voice-transcription] unexpected failure', {
-      ...getVoiceLogData(requestId),
-      clientRequestId,
-      route: '/transcribe',
-      error: isErrorWithMessage(error) ? error.message : 'Unknown error',
-    });
-    return respondWithJsonError(
-      c,
-      { error: 'Failed to transcribe audio', code: 'TRANSCRIBE_FAILED' },
-      500,
-    );
+  const lengthRatio = cleanedLength / rawLength;
+  if (
+    lengthRatio < VOICE_CLEANUP_MIN_LENGTH_RATIO ||
+    lengthRatio > VOICE_CLEANUP_MAX_LENGTH_RATIO
+  ) {
+    return false;
   }
-});
+
+  const rawWords = countTranscriptWords(rawTrimmed);
+  const cleanedWords = countTranscriptWords(cleanedTrimmed);
+
+  if (rawWords >= 6 && cleanedWords < Math.ceil(rawWords / 2)) {
+    return false;
+  }
+
+  return true;
+}
+
+function buildFallbackOutput(rawText: string) {
+  return VoiceCleanupOutputSchema.parse({
+    rawText,
+    cleanedText: rawText,
+    changed: false,
+    mode: 'constrained',
+  });
+}
+
+function getVoiceCleanupErrorStatus(error: unknown) {
+  if (error instanceof OpenRouterRequestError) {
+    return error.status;
+  }
+
+  if (typeof error === 'object' && error !== null && 'statusCode' in error) {
+    const statusCode = (error as { statusCode?: unknown }).statusCode;
+    return typeof statusCode === 'number' ? statusCode : undefined;
+  }
+
+  return undefined;
+}
 
 export const authenticatedVoiceRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
-  .use(
-    '/transcribe',
-    rateLimitMiddleware({
-      bucket: 'voice-transcribe',
-      windowSec: 60,
-      max: 20,
-    }),
-  )
-  .use('/speech', rateLimitMiddleware({ bucket: 'voice-speech', windowSec: 60, max: 30 }))
-  .use(
-    '/respond/stream',
-    rateLimitMiddleware({
-      bucket: 'voice-respond-stream',
-      windowSec: 60,
-      max: 20,
-    }),
-  )
-  .route('', voiceRoutes)
-  .post('/speech', zValidator('json', voiceSpeechSchema), async (c) => {
-    const { text, voice, speed } = c.req.valid('json');
-    try {
-      const { audioBuffer, mediaType } = await generateSpeechBuffer({ text, voice, speed });
-      c.header('Content-Type', mediaType);
-      c.header('Content-Length', String(audioBuffer.byteLength));
-      return c.body(new Uint8Array(audioBuffer));
-    } catch (error) {
-      if (error instanceof VoiceError) {
-        return c.json({ error: error.message }, getVoiceErrorStatusCode(error.statusCode));
-      }
-      return c.json(
-        { error: isErrorWithMessage(error) ? error.message : 'Failed to generate speech' },
-        500,
-      );
+  .use('/cleanup', rateLimitMiddleware({ bucket: 'voice-cleanup', windowSec: 60, max: 30 }))
+  .post('/cleanup', zValidator('json', VoiceCleanupInputSchema), async (c) => {
+    const input = c.req.valid('json');
+    const rawText = input.rawText.trim();
+
+    if (shouldBypassVoiceCleanup(rawText)) {
+      return c.json(buildFallbackOutput(rawText));
     }
-  })
-  .post('/respond/stream', async (c) => {
+
     try {
-      const { requestId, clientRequestId } = getVoiceRequestContext(c);
-      const { body, audioFile, language } = await parseLoggedVoiceRequest(c, {
-        requestId,
-        clientRequestId,
-        route: '/respond/stream',
+      const { cleanedText } = await cleanupVoiceTranscript({
+        rawText,
+        ...(input.locale ? { locale: input.locale } : {}),
       });
+      const normalizedCleanedText = cleanedText.trim();
+      const safeCleanedText = isSafeVoiceCleanup(rawText, normalizedCleanedText)
+        ? normalizedCleanedText
+        : rawText;
 
-      if (!(audioFile instanceof File)) {
-        return respondToInvalidVoiceMultipartBody(c, {
-          body,
-          requestId,
-          clientRequestId,
-          route: '/respond/stream',
-          code: 'RESPONSE_FAILED',
-        });
-      }
-
-      const transcription = await transcribeVoiceBuffer({
-        buffer: await audioFile.arrayBuffer(),
-        mimeType: audioFile.type,
-        ...(audioFile.name ? { fileName: audioFile.name } : {}),
-        ...(language ? { language } : {}),
-        requestId,
-      });
-
-      logger.info('[voice-response] transcription completed', {
-        ...getVoiceLogData(requestId),
-        clientRequestId,
-        route: '/respond/stream',
-        transcriptLength: transcription.text.length,
-        transcriptPreview: transcription.text.slice(0, 120),
-      });
-
-      const { voice, systemPrompt } = getVoiceResponseRequestOptions(body);
-
-      const { stream, transcript, mimeType } = await generateVoiceResponseStream({
-        text: transcription.text,
-        voice,
-        format: 'pcm16' as const,
-        systemPrompt,
-        requestId,
-      });
-
-      c.executionCtx.waitUntil(
-        transcript.catch(() => {
-          // Stream transport only needs the audio response.
+      return c.json(
+        VoiceCleanupOutputSchema.parse({
+          rawText,
+          cleanedText: safeCleanedText,
+          changed: safeCleanedText !== rawText,
+          mode: 'constrained',
         }),
       );
-
-      return c.body(stream, 200, {
-        'Content-Type': mimeType,
-        'X-User-Transcript': encodeURIComponent(transcription.text),
-      });
     } catch (error) {
-      const { requestId, clientRequestId } = getVoiceRequestContext(c);
-      if (error instanceof VoiceError) {
-        return handleVoiceRouteError(c, {
-          error,
-          requestId,
-          clientRequestId,
-          route: '/respond/stream',
-        });
-      }
-      logger.error('[voice-response] unexpected failure', {
-        ...getVoiceLogData(requestId),
-        clientRequestId,
-        route: '/respond/stream',
-        error: isErrorWithMessage(error) ? error.message : 'Unknown error',
+      logger.error('[voice-cleanup] cleanup failed', {
+        source: input.source,
+        locale: input.locale,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
-      return respondWithJsonError(
-        c,
-        {
-          error: isErrorWithMessage(error) ? error.message : 'Failed to generate voice response',
-          code: 'RESPONSE_FAILED',
-        },
-        500,
-      );
+
+      const status = getVoiceCleanupErrorStatus(error);
+      if (status === 401 || status === 429) {
+        return c.json(
+          { message: error instanceof Error ? error.message : 'Voice cleanup failed' },
+          status,
+        );
+      }
+
+      return c.json(buildFallbackOutput(rawText));
     }
   });

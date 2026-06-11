@@ -1,13 +1,18 @@
 import * as z from 'zod';
 
-export const VoiceTranscribeSuccessSchema = z.object({
-  text: z.string(),
+export const VoiceCleanupSourceSchema = z.enum(['apple-on-device']);
+
+export const VoiceCleanupInputSchema = z.object({
+  rawText: z.string().min(1).max(8000),
+  locale: z.string().min(2).max(32).optional(),
+  source: VoiceCleanupSourceSchema,
 });
 
-export const VoiceTranscribeErrorSchema = z.object({
-  error: z.string().optional(),
-  code: z.string().optional(),
+export const VoiceCleanupOutputSchema = z.object({
+  rawText: z.string(),
+  cleanedText: z.string(),
+  changed: z.boolean(),
+  mode: z.literal('constrained'),
 });
-
-export type VoiceTranscribeSuccessResponse = z.infer<typeof VoiceTranscribeSuccessSchema>;
-export type VoiceTranscribeErrorResponse = z.infer<typeof VoiceTranscribeErrorSchema>;
+export type VoiceCleanupInput = z.infer<typeof VoiceCleanupInputSchema>;
+export type VoiceCleanupOutput = z.infer<typeof VoiceCleanupOutputSchema>;

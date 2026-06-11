@@ -18,7 +18,6 @@ import {
   type ChatServices,
 } from '~/components/chat';
 import { ChatComposer } from '~/components/chat/ChatComposer';
-import { useTTS } from '~/components/media/use-tts';
 import { EmptyState } from '~/components/ui';
 import AppIcon from '~/components/ui/icon';
 import {
@@ -52,7 +51,6 @@ export default function ChatDetailScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
-  const { speakingId, speak } = useTTS();
   const { data: activeChat } = useActiveChat(id);
   const chatId = activeChat?.id ?? id;
   const [composerHeight, setComposerHeight] = useState(0);
@@ -87,14 +85,8 @@ export default function ChatDetailScreen() {
       chatKeys: {
         messages: chatKeys.messages,
       },
-      speech: {
-        speak: (messageId: string, text: string) => {
-          void speak(messageId, text);
-        },
-        speakingId,
-      },
     }),
-    [chatId, queryClient, speak, speakingId],
+    [chatId, queryClient],
   );
 
   const source = useMemo<SessionSource>(() => {
@@ -194,12 +186,10 @@ export default function ChatDetailScreen() {
         searchQuery={controller.searchQuery}
         markdown={controller.Markdown}
         showDebug={controller.showDebug}
-        speakingId={controller.speakingId}
         onCopy={controller.handleCopyMessage}
         onEdit={controller.handleEditMessage}
         onRegenerate={controller.handleRegenerate}
         onDelete={controller.handleDeleteMessage}
-        onSpeak={controller.handleSpeakMessage}
         onShare={(message: Parameters<typeof controller.handleShareMessage>[0]) => {
           void controller.handleShareMessage(message);
         }}

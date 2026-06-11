@@ -1,47 +1,57 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { FetcherWithComponents } from 'react-router';
 
-interface EditorSubmissionResult<TRecord> {
+export interface EditorSubmissionResult<TRecord> {
   success: boolean;
   error?: string;
   message?: string;
   data?: TRecord;
+  operation?: string;
 }
 
 interface UseCareerEditorSubmissionOptions<TRecord> {
   fetcher: FetcherWithComponents<unknown>;
-  addToast: (message: string, type: 'success' | 'error' | 'info', duration?: number) => void;
-  successMessage: string;
   errorMessage: string;
-  isNew: boolean;
-  onCreateSuccess?: (record: TRecord) => void;
+  onSuccess?: (result: EditorSubmissionResult<TRecord>) => void;
 }
 
 export function useCareerEditorSubmission<TRecord>({
   fetcher,
-  addToast,
-  successMessage,
   errorMessage,
-  isNew,
-  onCreateSuccess,
+  onSuccess,
 }: UseCareerEditorSubmissionOptions<TRecord>) {
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
+  const handledResultRef = useRef<unknown>(null);
+
   useEffect(() => {
-    if (fetcher.state !== 'idle' || !fetcher.data) {
+    if (fetcher.state === 'submitting') {
+      setSubmissionError(null);
       return;
     }
 
+    if (
+      fetcher.state !== 'idle' ||
+      !fetcher.data ||
+      Object.is(handledResultRef.current, fetcher.data)
+    ) {
+      return;
+    }
+
+    handledResultRef.current = fetcher.data;
     const result = fetcher.data as EditorSubmissionResult<TRecord>;
 
-    if (result.success) {
-      addToast(result.message || successMessage, 'success');
-
-      if (isNew && result.data && onCreateSuccess) {
-        onCreateSuccess(result.data);
-      }
-
+    if (result.success === false) {
+      setSubmissionError(result.error || errorMessage);
       return;
     }
 
-    addToast(result.error ? `${errorMessage}: ${result.error}` : errorMessage, 'error');
-  }, [addToast, errorMessage, fetcher.data, fetcher.state, isNew, onCreateSuccess, successMessage]);
+    setSubmissionError(null);
+    onSuccess?.(result);
+  }, [errorMessage, fetcher.data, fetcher.state, onSuccess]);
+
+  return {
+    submissionError,
+    clearSubmissionError: () => setSubmissionError(null),
+    setSubmissionError,
+  };
 }
