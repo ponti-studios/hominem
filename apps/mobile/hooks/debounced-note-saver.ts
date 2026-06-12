@@ -14,10 +14,12 @@ interface PendingNoteSave {
 export function createDebouncedNoteSaver({
   commit,
   delayMs,
+  onError,
   persist,
 }: {
   commit: (note: Note) => void;
   delayMs: number;
+  onError?: (error: unknown) => void;
   persist: (payload: NoteSavePayload) => Promise<Note>;
 }) {
   let pending: PendingNoteSave | null = null;
@@ -30,14 +32,17 @@ export function createDebouncedNoteSaver({
     timer = null;
   };
 
-  const persistPending = (next: PendingNoteSave) => {
-    void persist(next.payload)
-      .then((note) => {
-        if (next.version === version) {
-          commit(note);
-        }
-      })
-      .catch(() => undefined);
+  const persistPending = async (next: PendingNoteSave) => {
+    try {
+      const note = await persist(next.payload);
+      if (next.version === version) {
+        commit(note);
+      }
+    } catch (error) {
+      if (next.version === version) {
+        onError?.(error);
+      }
+    }
   };
 
   const flush = () => {
@@ -50,6 +55,13 @@ export function createDebouncedNoteSaver({
 
   return {
     flush,
+    persistNow: async (payload: NoteSavePayload) => {
+      version += 1;
+      const next = { payload, version };
+      pending = null;
+      clearTimer();
+      await persistPending(next);
+    },
     schedule: (payload: NoteSavePayload) => {
       version += 1;
       pending = { payload, version };

@@ -22,6 +22,8 @@ const t = {
       contentA11yLabel: 'Note content',
       attachments: 'Attachments',
       removeFile: (name: string) => `Remove ${name}`,
+      saveErrorTitle: 'Could not save note',
+      saveErrorMessage: 'Your latest note changes could not be saved. Please try again.',
     },
     toolbar: {
       bold: 'Bold',

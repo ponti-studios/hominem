@@ -1,12 +1,15 @@
 import { useApiClient } from '@hominem/rpc/react';
 import type { Note } from '@hominem/rpc/types';
+import { logger } from '@hominem/telemetry';
 import { useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { Alert } from 'react-native';
 
 import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
 import { noteKeys } from '~/services/notes/query-keys';
 import { writeCachedNote } from '~/services/workspace/content-cache';
+import t from '~/translations';
 
 import { createDebouncedNoteSaver, type NoteSavePayload } from './debounced-note-saver';
 
@@ -16,9 +19,11 @@ export function useNoteEditor(noteId: string) {
   const client = useApiClient();
   const queryClient = useQueryClient();
   const { requestTopReveal } = useTopAnchoredFeed();
+  const hasShownSaveErrorRef = useRef(false);
 
   const commitServerResponse = useCallback(
     (updatedNote: Note) => {
+      hasShownSaveErrorRef.current = false;
       writeCachedNote(updatedNote);
       queryClient.setQueryData<Note>(noteKeys.detail(updatedNote.id), updatedNote);
       queryClient.setQueryData<Note[]>(noteKeys.all, (current) => {
@@ -47,9 +52,19 @@ export function useNoteEditor(noteId: string) {
       createDebouncedNoteSaver({
         commit: commitServerResponse,
         delayMs: NOTE_SAVE_DEBOUNCE_MS,
+        onError: (error) => {
+          logger.error('[note-editor] save failed', error as Error);
+          void queryClient.invalidateQueries({ queryKey: noteKeys.detail(noteId) });
+          if (hasShownSaveErrorRef.current) {
+            return;
+          }
+
+          hasShownSaveErrorRef.current = true;
+          Alert.alert(t.notes.editor.saveErrorTitle, t.notes.editor.saveErrorMessage);
+        },
         persist: persistSave,
       }),
-    [commitServerResponse, persistSave],
+    [commitServerResponse, noteId, persistSave, queryClient],
   );
 
   useEffect(() => () => saver.flush(), [saver]);
@@ -80,13 +95,13 @@ export function useNoteEditor(noteId: string) {
     async (fileId: string, currentFiles: Note['files'], title: string | null, content: string) => {
       const nextFiles = currentFiles.filter((f) => f.id !== fileId);
       updateCache({ files: nextFiles });
-      const res = await client.api.notes[':id'].$patch({
-        param: { id: noteId },
-        json: { title: title || null, content, fileIds: nextFiles.map((f) => f.id) },
+      await saver.persistNow({
+        title: title || null,
+        content,
+        fileIds: nextFiles.map((f) => f.id),
       });
-      commitServerResponse(await res.json());
     },
-    [noteId, client, updateCache, commitServerResponse],
+    [saver, updateCache],
   );
 
   return { save, updateCache, detachFile };

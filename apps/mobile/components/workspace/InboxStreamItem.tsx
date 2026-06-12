@@ -2,15 +2,7 @@ import { Button, ContextMenu, Host } from '@expo/ui/swift-ui';
 import { useRouter } from 'expo-router';
 import React, { memo, useCallback } from 'react';
 import { Alert, Pressable, View } from 'react-native';
-import Reanimated, {
-  Easing,
-  FadeIn,
-  interpolate,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated';
-import { scheduleOnRN } from 'react-native-worklets';
+import Reanimated, { FadeIn } from 'react-native-reanimated';
 
 import {
   Text,
@@ -28,9 +20,6 @@ import t from '~/translations';
 
 import type { InboxStreamItemData as InboxStreamItemModel } from './InboxStreamItem.types';
 
-// Exit animation duration
-const EXIT_MS = 260;
-
 interface InboxStreamItemProps {
   item: InboxStreamItemModel;
 }
@@ -41,24 +30,11 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
   const primaryText = cleanText(item.title) ?? t.workspace.item.untitled;
   const kindLabel = item.kind === 'chat' ? 'CHAT' : 'NOTE';
   const iconName = item.kind === 'chat' ? 'bubble.left' : 'note.text';
-
-  const exitProgress = useSharedValue(0);
-
-  const animateExit = useCallback(
-    (onComplete: () => void) => {
-      exitProgress.value = withTiming(
-        1,
-        { duration: EXIT_MS, easing: Easing.out(Easing.cubic) },
-        (finished) => {
-          if (finished) scheduleOnRN(onComplete);
-        },
-      );
-    },
-    [exitProgress],
-  );
-
-  const { mutate: deleteNote } = useNoteDelete({ noteId: item.entityId });
-  const { mutate: archiveChat } = useChatArchive({ chatId: item.entityId });
+  const { mutate: deleteNote, isPending: isDeletingNote } = useNoteDelete({ noteId: item.entityId });
+  const { mutate: archiveChat, isPending: isArchivingChat } = useChatArchive({
+    chatId: item.entityId,
+  });
+  const isPending = isDeletingNote || isArchivingChat;
 
   const handleDelete = useCallback(() => {
     Alert.alert(t.workspace.item.deleteNote.title, t.workspace.item.deleteNote.message, [
@@ -67,68 +43,68 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
         text: t.workspace.item.deleteNote.confirm,
         style: 'destructive',
         onPress: () => {
-          animateExit(deleteNote);
+          deleteNote();
         },
       },
     ]);
-  }, [animateExit, deleteNote]);
+  }, [deleteNote]);
 
   const handleArchive = useCallback(() => {
-    animateExit(archiveChat);
-  }, [animateExit, archiveChat]);
-
-  const exitStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(exitProgress.value, [0, 0.5, 1], [1, 0.6, 0]),
-    transform: [{ translateX: interpolate(exitProgress.value, [0, 1], [0, 40]) }],
-  }));
+    archiveChat();
+  }, [archiveChat]);
 
   const onPress = useCallback(() => {
+    if (isPending) {
+      return;
+    }
+
     router.push(item.route);
-  }, [item.route, router]);
+  }, [isPending, item.route, router]);
 
   return (
-    <>
-      <Reanimated.View entering={FadeIn.duration(200)}>
-        <Reanimated.View style={exitStyle} pointerEvents="box-none">
-          <Host style={{ width: '100%' }}>
-            <ContextMenu>
-              <ContextMenu.Trigger>
-                <Pressable
-                  accessibilityLabel={`${primaryText}, ${kindLabel}`}
-                  accessibilityRole="button"
-                  onPress={onPress}
-                  style={({ pressed }) => [styles.pressable, pressed ? styles.pressed : null]}
-                >
-                  <View style={styles.row}>
-                    <AppIcon name={iconName} size={18} tintColor={theme.colors['icon-muted']} />
-                    <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
-                      {primaryText}
-                    </Text>
-                  </View>
-                </Pressable>
-              </ContextMenu.Trigger>
-              <ContextMenu.Items>
-                {item.kind === 'note' ? (
-                  <Button
-                    label={t.workspace.item.deleteNote.confirm}
-                    role="destructive"
-                    systemImage="trash"
-                    onPress={handleDelete}
-                  />
-                ) : (
-                  <Button
-                    label={t.workspace.item.archive}
-                    role="destructive"
-                    systemImage="archivebox"
-                    onPress={handleArchive}
-                  />
-                )}
-              </ContextMenu.Items>
-            </ContextMenu>
-          </Host>
-        </Reanimated.View>
-      </Reanimated.View>
-    </>
+    <Reanimated.View entering={FadeIn.duration(200)}>
+      <Host style={{ width: '100%' }}>
+        <ContextMenu>
+          <ContextMenu.Trigger>
+            <Pressable
+              accessibilityLabel={`${primaryText}, ${kindLabel}`}
+              accessibilityRole="button"
+              disabled={isPending}
+              onPress={onPress}
+              style={({ pressed }) => [
+                styles.pressable,
+                pressed ? styles.pressed : null,
+                isPending ? styles.pending : null,
+              ]}
+            >
+              <View style={styles.row}>
+                <AppIcon name={iconName} size={18} tintColor={theme.colors['icon-muted']} />
+                <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
+                  {primaryText}
+                </Text>
+              </View>
+            </Pressable>
+          </ContextMenu.Trigger>
+          <ContextMenu.Items>
+            {item.kind === 'note' ? (
+              <Button
+                label={t.workspace.item.deleteNote.confirm}
+                role="destructive"
+                systemImage="trash"
+                onPress={handleDelete}
+              />
+            ) : (
+              <Button
+                label={t.workspace.item.archive}
+                role="destructive"
+                systemImage="archivebox"
+                onPress={handleArchive}
+              />
+            )}
+          </ContextMenu.Items>
+        </ContextMenu>
+      </Host>
+    </Reanimated.View>
   );
 });
 
@@ -143,6 +119,9 @@ const useStyles = makeStyles((theme) => ({
   pressable: {},
   pressed: {
     backgroundColor: theme.colors['bg-base'],
+  },
+  pending: {
+    opacity: 0.5,
   },
   row: {
     flexDirection: 'row',

@@ -36,14 +36,6 @@ type AccountAction =
   | { type: 'set-prevent-screenshots'; preventScreenshots: boolean }
   | { type: 'set-app-lock'; appLock: boolean };
 
-function createInitialAccountState(name: string): AccountState {
-  return {
-    name,
-    preventScreenshots: getPreventScreenshots(),
-    appLock: getAppLockEnabled(),
-  };
-}
-
 function accountReducer(state: AccountState, action: AccountAction): AccountState {
   switch (action.type) {
     case 'set-name':
@@ -66,7 +58,11 @@ function Settings() {
     isLoading: isPasskeyLoading,
   } = useMobilePasskeyAuth({ loadPasskeys: true });
   const initialName = currentUser?.name ?? '';
-  const [state, dispatch] = useReducer(accountReducer, initialName, createInitialAccountState);
+  const [state, dispatch] = useReducer(accountReducer, {
+    name: initialName,
+    preventScreenshots: getPreventScreenshots(),
+    appLock: getAppLockEnabled(),
+  });
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [saveError, setSaveError] = useState<string | null>(null);
 

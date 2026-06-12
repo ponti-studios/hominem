@@ -1,9 +1,9 @@
 import * as LocalAuthentication from 'expo-local-authentication';
-import { useCallback, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { AppState } from 'react-native';
 
 import { APP_NAME } from '~/constants';
-import { storage } from '~/services/storage/mmkv';
+import { storage, subscribeToStorageKey } from '~/services/storage/mmkv';
 import t from '~/translations';
 
 const LOCK_ENABLED_KEY = 'app_lock_enabled';
@@ -17,7 +17,11 @@ export function setAppLockEnabled(value: boolean) {
 }
 
 export function useAppLock() {
-  const enabled = getAppLockEnabled();
+  const enabled = useSyncExternalStore(
+    (onStoreChange) => subscribeToStorageKey(LOCK_ENABLED_KEY, onStoreChange),
+    getAppLockEnabled,
+    getAppLockEnabled,
+  );
   const [isUnlocked, setIsUnlocked] = useState(!enabled);
   const appState = useRef(AppState.currentState);
 
@@ -46,34 +50,33 @@ export function useAppLock() {
     }
   }, [enabled]);
 
-  const subscribe = useCallback(
-    (_onStoreChange: () => void) => {
-      void authenticate();
+  useEffect(() => {
+    if (!enabled) {
+      setIsUnlocked(true);
+      return;
+    }
 
-      if (!enabled) {
-        return () => {};
+    setIsUnlocked(false);
+    void authenticate();
+  }, [enabled, authenticate]);
+
+  useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (appState.current === 'background' && nextState === 'active') {
+        setIsUnlocked(false);
+        void authenticate();
       }
+      appState.current = nextState;
+    });
 
-      const subscription = AppState.addEventListener('change', (nextState) => {
-        if (appState.current === 'background' && nextState === 'active') {
-          setIsUnlocked(false);
-          void authenticate();
-        }
-        appState.current = nextState;
-      });
-
-      return () => {
-        subscription.remove();
-      };
-    },
-    [enabled, authenticate],
-  );
-
-  useSyncExternalStore(
-    subscribe,
-    () => 0,
-    () => 0,
-  );
+    return () => {
+      subscription.remove();
+    };
+  }, [enabled, authenticate]);
 
   return { isUnlocked, authenticate };
 }

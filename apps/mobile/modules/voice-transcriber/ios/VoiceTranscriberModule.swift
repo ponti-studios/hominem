@@ -39,6 +39,74 @@ private struct VoiceTranscriptionResult: Record {
   var isOnDevice: Bool
 }
 
+private final class VoiceTranscriptionTaskDelegate: NSObject, SFSpeechRecognitionTaskDelegate {
+  private var task: SFSpeechRecognitionTask?
+  private var didResume = false
+  private let continuation: CheckedContinuation<VoiceTranscriptionResult, Error>
+  private let locale: Locale
+
+  init(
+    continuation: CheckedContinuation<VoiceTranscriptionResult, Error>,
+    locale: Locale
+  ) {
+    self.continuation = continuation
+    self.locale = locale
+  }
+
+  func attachTask(_ task: SFSpeechRecognitionTask) {
+    self.task = task
+  }
+
+  private func resume(throwing error: Error) {
+    guard !didResume else {
+      return
+    }
+
+    didResume = true
+    task?.cancel()
+    continuation.resume(throwing: error)
+  }
+
+  private func resume(with transcript: String) {
+    guard !didResume else {
+      return
+    }
+
+    didResume = true
+    task?.cancel()
+
+    guard !transcript.isEmpty else {
+      continuation.resume(throwing: VoiceTranscriberError.emptyTranscript)
+      return
+    }
+
+    continuation.resume(
+      returning: VoiceTranscriptionResult(
+        rawText: transcript,
+        locale: locale.identifier,
+        engine: "sfspeech",
+        isOnDevice: true
+      )
+    )
+  }
+
+  func speechRecognitionTask(_ task: SFSpeechRecognitionTask, didFinishRecognition recognitionResult: SFSpeechRecognitionResult) {
+    let transcript = recognitionResult.bestTranscription.formattedString.trimmingCharacters(in: .whitespacesAndNewlines)
+    resume(with: transcript)
+  }
+
+  func speechRecognitionTask(_ task: SFSpeechRecognitionTask, didFinishSuccessfully successfully: Bool) {
+    guard successfully else {
+      resume(throwing: task.error ?? VoiceTranscriberError.emptyTranscript)
+      return
+    }
+  }
+
+  func speechRecognitionTaskWasCancelled(_ task: SFSpeechRecognitionTask) {
+    resume(throwing: task.error ?? VoiceTranscriberError.emptyTranscript)
+  }
+}
+
 private func permissionStatusString(_ status: SFSpeechRecognizerAuthorizationStatus) -> String {
   switch status {
   case .authorized:
@@ -87,43 +155,9 @@ private func transcribeAudioFile(at audioUri: String) async throws -> VoiceTrans
   request.requiresOnDeviceRecognition = true
 
   return try await withCheckedThrowingContinuation { continuation in
-    var didResume = false
-    var task: SFSpeechRecognitionTask?
-
-    task = recognizer.recognitionTask(with: request) { result, error in
-      if didResume {
-        return
-      }
-
-      if let error {
-        didResume = true
-        task?.cancel()
-        continuation.resume(throwing: error)
-        return
-      }
-
-      guard let result, result.isFinal else {
-        return
-      }
-
-      let transcript = result.bestTranscription.formattedString.trimmingCharacters(in: .whitespacesAndNewlines)
-      didResume = true
-      task?.cancel()
-
-      if transcript.isEmpty {
-        continuation.resume(throwing: VoiceTranscriberError.emptyTranscript)
-        return
-      }
-
-      continuation.resume(
-        returning: VoiceTranscriptionResult(
-          rawText: transcript,
-          locale: locale.identifier,
-          engine: "sfspeech",
-          isOnDevice: true
-        )
-      )
-    }
+    let delegate = VoiceTranscriptionTaskDelegate(continuation: continuation, locale: locale)
+    let task = recognizer.recognitionTask(with: request, delegate: delegate)
+    delegate.attachTask(task)
   }
 }
 
