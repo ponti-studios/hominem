@@ -30,6 +30,11 @@ When you are working on the API or shared backend code, run the API validation l
 1. Start the local test services you need.
 2. Run `just check-api`
 
+For mobile work, use the mobile bootstrap loop in `apps/mobile/README.md`:
+
+1. `just mobile-prebuild`
+2. `just run-ios dev`
+
 ## Canonical Commands
 
 - `just setup`: install dependencies and prepare the repo toolchain

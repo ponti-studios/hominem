@@ -27,16 +27,16 @@ private enum VoiceTranscriberError: LocalizedError {
 
 private struct VoiceTranscriptionResult: Record {
   @Field
-  var rawText: String
+  var rawText: String = ""
 
   @Field
-  var locale: String
+  var locale: String = ""
 
   @Field
-  var engine: String
+  var engine: String = "sfspeech"
 
   @Field
-  var isOnDevice: Bool
+  var isOnDevice: Bool = true
 }
 
 private final class VoiceTranscriptionTaskDelegate: NSObject, SFSpeechRecognitionTaskDelegate {
