@@ -9,7 +9,6 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme,
 } from 'react-native';
 import Animated, {
   Easing,
@@ -19,6 +18,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { useThemeColors } from '~/components/theme';
 import { FeatureErrorBoundary } from '~/components/error-boundary/FeatureErrorBoundary';
 import { Button } from '~/components/ui/button';
 import AppIcon from '~/components/ui/icon';
@@ -31,41 +31,10 @@ import { isValidEmail, normalizeEmail } from '~/services/auth/validation';
 import { posthog } from '~/services/posthog';
 import t from '~/translations';
 
-const authPalette = {
-  light: {
-    background: '#FFFFFF',
-    orbPrimary: '#F5F5F5',
-    orbSecondary: '#F0F0F0',
-    icon: '#000000',
-    iconChip: '#F5F5F5',
-    textPrimary: '#000000',
-    textSecondary: '#5F5F5F',
-    border: '#D7D7D7',
-    inputBackground: '#FFFFFF',
-    inputText: '#000000',
-    inputPlaceholder: '#8A8A8A',
-    error: '#C62828',
-  },
-  dark: {
-    background: '#000000',
-    orbPrimary: '#1A1A1A',
-    orbSecondary: '#0F0F0F',
-    icon: '#FFFFFF',
-    iconChip: '#2A2A2A',
-    textPrimary: '#FFFFFF',
-    textSecondary: '#B3B3B3',
-    border: '#2F2F2F',
-    inputBackground: '#111111',
-    inputText: '#FFFFFF',
-    inputPlaceholder: '#7A7A7A',
-    error: '#FF8A80',
-  },
-} as const;
-
 function AuthScreen() {
   const { authStatus, isSignedIn, completePasskeySignIn, requestEmailOtp } = useAuth();
   const router = useRouter();
-  const colorScheme = useColorScheme();
+  const themeColors = useThemeColors();
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -178,21 +147,20 @@ function AuthScreen() {
     passkeyError,
   });
   const canUsePasskeys = MOBILE_PASSKEY_ENABLED && isPasskeySupported;
-  const palette = colorScheme === 'light' ? authPalette.light : authPalette.dark;
 
   return (
     <>
       <KeyboardAvoidingView
-        style={[styles.container, { backgroundColor: palette.background }]}
+        style={[styles.container, { backgroundColor: themeColors.background }]}
         behavior="padding"
       >
         <View
           pointerEvents="none"
-          style={[styles.orbPrimary, { backgroundColor: palette.orbPrimary }]}
+          style={[styles.orbPrimary, { backgroundColor: themeColors['bg-surface'] }]}
         />
         <View
           pointerEvents="none"
-          style={[styles.orbSecondary, { backgroundColor: palette.orbSecondary }]}
+          style={[styles.orbSecondary, { backgroundColor: themeColors['bg-elevated'] }]}
         />
 
         <ScrollView
@@ -204,15 +172,15 @@ function AuthScreen() {
         >
           <View style={styles.contentShell}>
             <View style={styles.card}>
-              <View style={[styles.iconChip, { backgroundColor: palette.iconChip }]}>
+              <View style={[styles.iconChip, { backgroundColor: themeColors['bg-surface'] }]}>
                 <AppIcon name="envelope" />
               </View>
 
               <View style={styles.copyBlock}>
-                <Text style={[styles.title, { color: palette.textPrimary }]}>
+                <Text style={[styles.title, { color: themeColors.foreground }]}>
                   {t.auth.emailEntry.title}
                 </Text>
-                <Text style={[styles.helperText, { color: palette.textSecondary }]}>
+                <Text style={[styles.helperText, { color: themeColors['text-secondary'] }]}>
                   {isProbing ? t.auth.resumingSession : t.auth.emailEntry.helper}
                 </Text>
               </View>
@@ -224,21 +192,23 @@ function AuthScreen() {
                       testID="auth-email-input"
                       value={email}
                       placeholder={t.auth.emailEntry.emailPlaceholder}
-                      placeholderTextColor={palette.inputPlaceholder}
+                      placeholderTextColor={themeColors['text-tertiary']}
                       keyboardType="email-address"
                       textContentType="emailAddress"
                       autoCapitalize="none"
                       autoCorrect={false}
                       autoFocus
                       editable={!isSubmitting}
-                      cursorColor={palette.textPrimary}
-                      selectionColor={palette.textPrimary}
+                      cursorColor={themeColors.foreground}
+                      selectionColor={themeColors.foreground}
                       style={[
                         styles.input,
                         {
-                          backgroundColor: palette.inputBackground,
-                          borderColor: displayError ? palette.error : palette.border,
-                          color: palette.inputText,
+                          backgroundColor: themeColors['bg-surface'],
+                          borderColor: displayError
+                            ? themeColors.destructive
+                            : themeColors['border-default'],
+                          color: themeColors.foreground,
                           opacity: isSubmitting ? 0.6 : 1,
                         },
                       ]}
@@ -261,7 +231,7 @@ function AuthScreen() {
                     <Text
                       testID="auth-email-message"
                       accessibilityLiveRegion="polite"
-                      style={[styles.errorText, { color: palette.error }]}
+                      style={[styles.errorText, { color: themeColors.destructive }]}
                     >
                       {displayError}
                     </Text>

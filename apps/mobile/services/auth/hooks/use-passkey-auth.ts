@@ -3,6 +3,7 @@ import type { RefObject } from 'react';
 import { useCallback } from 'react';
 
 import { captureAuthAnalyticsEvent, captureAuthAnalyticsFailure } from '~/services/auth/analytics';
+import { clearPendingAuthEmail } from '~/services/auth/pending-email';
 import { getPersistedSessionCookieHeader } from '~/services/auth/session-cookie';
 import type { AuthContext } from '~/services/auth/types';
 import { LocalStore } from '~/services/storage/local-store';
@@ -77,6 +78,7 @@ export function usePasskeyAuth(
         const userProfile = toAuthUserProfile(saved);
         if (!userProfile) throw new Error('Failed to create passkey user profile');
 
+        clearPendingAuthEmail();
         dispatch({ type: 'SESSION_LOADED', user: userProfile });
         captureAuthAnalyticsEvent('auth_passkey_sign_in_succeeded', {
           phase: 'passkey_sign_in',

@@ -27,9 +27,9 @@ interface ChatMessageListProps {
   markdown: MarkdownComponent | null;
   showDebug: boolean;
   onCopy: (message: ChatMessageItem) => void;
-  onEdit: (messageId: string, content: string) => void;
+  onEdit?: (messageId: string, content: string) => void;
   onRegenerate: (messageId: string) => void;
-  onDelete: (messageId: string) => void;
+  onDelete?: (messageId: string) => void;
   onShare: (message: ChatMessageItem) => void;
   renderIcon: ChatRenderIcon;
   formatTimestamp: (value: string) => string;

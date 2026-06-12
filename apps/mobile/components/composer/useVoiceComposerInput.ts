@@ -90,8 +90,29 @@ export function useVoiceComposerInput({ message, setMessage }: UseVoiceComposerI
     await processStoppedRecording(fileUri);
   }, [processStoppedRecording]);
 
+  const ensureSpeechRecognitionPermission = useCallback(async () => {
+    const currentStatus = await VoiceTranscriberModule.getPermissions();
+    if (currentStatus === 'authorized') {
+      return true;
+    }
+
+    const nextStatus = await VoiceTranscriberModule.requestPermissions();
+    return nextStatus === 'authorized';
+  }, []);
+
   const startVoiceRecording = useCallback(async () => {
     setError(null);
+    try {
+      const hasSpeechRecognitionPermission = await ensureSpeechRecognitionPermission();
+      if (!hasSpeechRecognitionPermission) {
+        setError(createVoiceComposerError('permission-denied'));
+        return;
+      }
+    } catch {
+      setError(createVoiceComposerError('permission-denied'));
+      return;
+    }
+
     const result = await startRecording();
     if (result.ok) return;
 
@@ -100,7 +121,7 @@ export function useVoiceComposerInput({ message, setMessage }: UseVoiceComposerI
         result.reason === 'permission-denied' ? 'permission-denied' : 'recording-failed',
       ),
     );
-  }, []);
+  }, [ensureSpeechRecognitionPermission]);
 
   const handleVoicePress = useCallback(async () => {
     if (recordingSnapshot.state === 'RECORDING' || recordingSnapshot.state === 'PAUSED') {

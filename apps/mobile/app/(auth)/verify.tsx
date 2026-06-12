@@ -10,7 +10,6 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme,
 } from 'react-native';
 import Animated, {
   Easing,
@@ -21,8 +20,10 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { useThemeColors } from '~/components/theme';
 import { CHAT_AUTH_CONFIG } from '~/config/auth';
 import { OTP_EXPIRES_SECONDS } from '~/config/auth-protocol';
+import { readPendingAuthEmail, writePendingAuthEmail } from '~/services/auth/pending-email';
 import t from '~/translations';
 
 import { FeatureErrorBoundary } from '../../components/error-boundary/FeatureErrorBoundary';
@@ -33,45 +34,10 @@ import { useEmailAuth } from '../../services/auth/hooks/use-email-auth';
 import { normalizeOtp } from '../../services/auth/validation';
 import { posthog } from '../../services/posthog';
 
-const authPalette = {
-  light: {
-    background: '#FFFFFF',
-    orbPrimary: '#F5F5F5',
-    orbSecondary: '#F0F0F0',
-    icon: '#000000',
-    iconChip: '#F5F5F5',
-    textPrimary: '#000000',
-    textSecondary: '#5F5F5F',
-    border: '#D7D7D7',
-    inputBackground: '#FFFFFF',
-    inputPlaceholder: '#8A8A8A',
-    error: '#C62828',
-    warning: '#B45309',
-    success: '#16A34A',
-  },
-  dark: {
-    background: '#000000',
-    orbPrimary: '#1A1A1A',
-    orbSecondary: '#0F0F0F',
-    icon: '#FFFFFF',
-    iconChip: '#2A2A2A',
-    textPrimary: '#FFFFFF',
-    textSecondary: '#B3B3B3',
-    border: '#2F2F2F',
-    inputBackground: '#111111',
-    inputPlaceholder: '#7A7A7A',
-    error: '#FF8A80',
-    warning: '#FCD34D',
-    success: '#4ADE80',
-  },
-} as const;
-
-type Palette = (typeof authPalette)['light'] | (typeof authPalette)['dark'];
-
-function countdownColor(secondsLeft: number, palette: Palette) {
-  if (secondsLeft === 0 || secondsLeft < 20) return palette.error;
-  if (secondsLeft < 60) return palette.warning;
-  return palette.textSecondary;
+function countdownColor(secondsLeft: number, themeColors: ReturnType<typeof useThemeColors>) {
+  if (secondsLeft === 0 || secondsLeft < 20) return themeColors.destructive;
+  if (secondsLeft < 60) return themeColors.warning;
+  return themeColors['text-secondary'];
 }
 
 function formatCountdown(s: number) {
@@ -80,7 +46,7 @@ function formatCountdown(s: number) {
 
 function VerifyScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme();
+  const themeColors = useThemeColors();
   const { isSignedIn, requestEmailOtp, verifyEmailOtp } = useAuth();
   const {
     email: emailParam,
@@ -91,8 +57,14 @@ function VerifyScreen() {
     token?: string;
     sentAt?: string;
   }>();
-  const resolvedEmail = emailParam ?? '';
+  const resolvedEmail = emailParam ?? readPendingAuthEmail();
   const autoSubmitKeyRef = React.useRef<string | null>(null);
+
+  React.useEffect(() => {
+    if (emailParam) {
+      writePendingAuthEmail(emailParam);
+    }
+  }, [emailParam]);
 
   // Countdown
   const [tokenSentAt, setTokenSentAt] = React.useState(() =>
@@ -198,22 +170,25 @@ function VerifyScreen() {
   }
 
   if (!resolvedEmail) {
-    return null;
+    return <Redirect href={'/(auth)' as RelativePathString} />;
   }
 
   const isBusy = isSubmitting || isResending;
-  const palette = colorScheme === 'light' ? authPalette.light : authPalette.dark;
 
   if (verifySucceeded) {
     return (
       <View
-        style={[styles.container, styles.successContainer, { backgroundColor: palette.background }]}
+        style={[
+          styles.container,
+          styles.successContainer,
+          { backgroundColor: themeColors.background },
+        ]}
       >
         <Animated.View entering={FadeIn.duration(300)} style={styles.successContent}>
-          <View style={[styles.successChip, { backgroundColor: palette.iconChip }]}>
-            <AppIcon name="checkmark.circle.fill" size={32} tintColor={palette.success} />
+          <View style={[styles.successChip, { backgroundColor: themeColors['bg-surface'] }]}>
+            <AppIcon name="checkmark.circle.fill" size={32} tintColor={themeColors.success} />
           </View>
-          <Text style={[styles.successText, { color: palette.textPrimary }]}>
+          <Text style={[styles.successText, { color: themeColors.foreground }]}>
             {t.auth.verify.signedIn}
           </Text>
         </Animated.View>
@@ -223,16 +198,16 @@ function VerifyScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: palette.background }]}
+      style={[styles.container, { backgroundColor: themeColors.background }]}
       behavior="padding"
     >
       <View
         pointerEvents="none"
-        style={[styles.orbPrimary, { backgroundColor: palette.orbPrimary }]}
+        style={[styles.orbPrimary, { backgroundColor: themeColors['bg-surface'] }]}
       />
       <View
         pointerEvents="none"
-        style={[styles.orbSecondary, { backgroundColor: palette.orbSecondary }]}
+        style={[styles.orbSecondary, { backgroundColor: themeColors['bg-elevated'] }]}
       />
 
       <ScrollView
@@ -244,16 +219,16 @@ function VerifyScreen() {
       >
         <View style={styles.contentShell}>
           <View style={styles.card}>
-            <View style={[styles.iconChip, { backgroundColor: palette.iconChip }]}>
+            <View style={[styles.iconChip, { backgroundColor: themeColors['bg-surface'] }]}>
               <AppIcon name="lock.shield" />
             </View>
 
             <View style={styles.copyBlock}>
-              <Text style={[styles.title, { color: palette.textPrimary }]}>
+              <Text style={[styles.title, { color: themeColors.foreground }]}>
                 {t.auth.verify.title}
               </Text>
               <View style={styles.emailChipRow}>
-                <Text style={[styles.helperText, { color: palette.textSecondary }]}>
+                <Text style={[styles.helperText, { color: themeColors['text-secondary'] }]}>
                   {t.auth.verify.codeSentTo}
                 </Text>
                 <Pressable
@@ -264,13 +239,13 @@ function VerifyScreen() {
                   }}
                   style={({ pressed }) => [
                     styles.emailChip,
-                    { backgroundColor: palette.iconChip, opacity: pressed ? 0.65 : 1 },
+                    { backgroundColor: themeColors['bg-surface'], opacity: pressed ? 0.65 : 1 },
                   ]}
                 >
-                  <Text style={[styles.emailChipText, { color: palette.textPrimary }]}>
+                  <Text style={[styles.emailChipText, { color: themeColors.foreground }]}>
                     {maskEmail(resolvedEmail)}
                   </Text>
-                  <AppIcon name="pencil" size={11} tintColor={palette.textSecondary} />
+                  <AppIcon name="pencil" size={11} tintColor={themeColors['text-secondary']} />
                 </Pressable>
               </View>
             </View>
@@ -281,8 +256,10 @@ function VerifyScreen() {
                   style={[
                     styles.inputRow,
                     {
-                      backgroundColor: palette.inputBackground,
-                      borderColor: authError ? palette.error : palette.border,
+                      backgroundColor: themeColors['bg-surface'],
+                      borderColor: authError
+                        ? themeColors.destructive
+                        : themeColors['border-default'],
                       opacity: isBusy ? 0.6 : 1,
                     },
                   ]}
@@ -291,7 +268,7 @@ function VerifyScreen() {
                     testID="auth-otp-input"
                     value={normalizedOtp}
                     placeholder={t.auth.verify.codePlaceholder}
-                    placeholderTextColor={palette.inputPlaceholder}
+                    placeholderTextColor={themeColors['text-tertiary']}
                     keyboardType="number-pad"
                     textContentType="oneTimeCode"
                     autoCapitalize="none"
@@ -299,9 +276,9 @@ function VerifyScreen() {
                     autoFocus
                     returnKeyType="done"
                     editable={!isBusy}
-                    cursorColor={palette.textPrimary}
-                    selectionColor={palette.textPrimary}
-                    style={[styles.input, { color: palette.textPrimary }]}
+                    cursorColor={themeColors.foreground}
+                    selectionColor={themeColors.foreground}
+                    style={[styles.input, { color: themeColors.foreground }]}
                     onChangeText={(value) => {
                       setOtp(normalizeOtp(value).slice(0, 6));
                     }}
@@ -314,12 +291,15 @@ function VerifyScreen() {
                     accessibilityLabel={t.auth.verify.oneTimeVerificationCodeA11y}
                   />
                   {secondsLeft === 0 ? (
-                    <Text style={[styles.countdown, { color: palette.error }]}>
+                    <Text style={[styles.countdown, { color: themeColors.destructive }]}>
                       {t.auth.verify.expired}
                     </Text>
                   ) : (
                     <Text
-                      style={[styles.countdown, { color: countdownColor(secondsLeft, palette) }]}
+                      style={[
+                        styles.countdown,
+                        { color: countdownColor(secondsLeft, themeColors) },
+                      ]}
                       accessibilityLabel={t.auth.verify.timeRemainingA11y(secondsLeft)}
                     >
                       {formatCountdown(secondsLeft)}
@@ -332,7 +312,7 @@ function VerifyScreen() {
                 <Text
                   testID="auth-otp-message"
                   accessibilityLiveRegion="polite"
-                  style={[styles.errorText, { color: palette.error }]}
+                  style={[styles.errorText, { color: themeColors.destructive }]}
                 >
                   {authError}
                 </Text>

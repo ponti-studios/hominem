@@ -2,6 +2,7 @@ import type { RefObject } from 'react';
 import { useCallback } from 'react';
 
 import { captureAuthAnalyticsEvent, captureAuthAnalyticsFailure } from '~/services/auth/analytics';
+import { clearPendingAuthEmail } from '~/services/auth/pending-email';
 import { authClient } from '~/services/auth/auth-client';
 import { clearPersistedSessionCookies } from '~/services/auth/session-cookie';
 import type { AuthContext } from '~/services/auth/types';
@@ -27,6 +28,7 @@ export function useSignOut(context: AuthContext, sessionCookieHeaderRef: RefObje
 
       await clearPersistedSessionCookies();
       sessionCookieHeaderRef.current = null;
+      clearPendingAuthEmail();
       await LocalStore.clearAllData();
       dispatch({ type: 'SIGN_OUT_SUCCESS' });
       captureAuthAnalyticsEvent('auth_sign_out_succeeded', {

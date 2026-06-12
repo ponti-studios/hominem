@@ -6,6 +6,7 @@ import { captureAuthAnalyticsEvent, captureAuthAnalyticsFailure } from '~/servic
 import { authClient } from '~/services/auth/auth-client';
 import { getPersistedSessionCookieHeader } from '~/services/auth/session-cookie';
 import type { AuthContext } from '~/services/auth/types';
+import { clearPendingAuthEmail, writePendingAuthEmail } from '~/services/auth/pending-email';
 import { LocalStore } from '~/services/storage/local-store';
 
 const OTP_REQUEST_TIMEOUT_MS = 12000;
@@ -99,6 +100,7 @@ export function useEmailOtp(
       }
 
       dispatch({ type: 'OTP_REQUESTED' });
+      writePendingAuthEmail(email);
       captureAuthAnalyticsEvent('auth_email_otp_request_succeeded', {
         phase: 'email_otp_request',
         durationMs: Date.now() - startedAt,
@@ -153,6 +155,7 @@ export function useEmailOtp(
         const userProfile = toAuthUserProfile(saved);
         if (!userProfile) throw new Error('Failed to create user profile');
 
+        clearPendingAuthEmail();
         dispatch({ type: 'SESSION_LOADED', user: userProfile });
         captureAuthAnalyticsEvent('auth_email_otp_verify_succeeded', {
           phase: 'email_otp_verify',

@@ -113,7 +113,7 @@ export default function ChatDetailScreen() {
 
   const displayTitle = getChatTitle(activeChat?.title, controller.resolvedSource);
 
-  const { mutate: handleCreateChat, isPending: isCreatingChat } = useCreateChat();
+  const { mutateAsync: createChat, isPending: isCreatingChat } = useCreateChat();
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -133,7 +133,11 @@ export default function ChatDetailScreen() {
           <Pressable
             disabled={isCreatingChat}
             hitSlop={6}
-            onPress={() => handleCreateChat({ title: DEFAULT_CHAT_TITLE })}
+            onPress={() => {
+              void createChat({ title: DEFAULT_CHAT_TITLE }).then((chat) => {
+                router.push(`/(protected)/(tabs)/inbox/chat/${chat.id}`);
+              });
+            }}
             style={({ pressed }) => [
               styles.headerIconButton,
               { opacity: isCreatingChat ? 0.35 : pressed ? 0.65 : 1 },
@@ -153,9 +157,10 @@ export default function ChatDetailScreen() {
     controller.isArchiving,
     controller.showDebug,
     displayTitle,
-    handleCreateChat,
+    createChat,
     isCreatingChat,
     navigation,
+    router,
   ]);
 
   const emptyState = useMemo(
@@ -187,9 +192,7 @@ export default function ChatDetailScreen() {
         markdown={controller.Markdown}
         showDebug={controller.showDebug}
         onCopy={controller.handleCopyMessage}
-        onEdit={controller.handleEditMessage}
         onRegenerate={controller.handleRegenerate}
-        onDelete={controller.handleDeleteMessage}
         onShare={(message: Parameters<typeof controller.handleShareMessage>[0]) => {
           void controller.handleShareMessage(message);
         }}
