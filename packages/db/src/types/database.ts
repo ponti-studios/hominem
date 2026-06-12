@@ -913,8 +913,6 @@ export interface AppWorkExperiences {
   direct_reports: Generated<number>;
   employment_type: Generated<string>;
   end_date: Timestamp | null;
-  equity_percentage: string | null;
-  equity_value: number | null;
   exit_notes: string | null;
   gradient: string | null;
   id: Generated<string>;

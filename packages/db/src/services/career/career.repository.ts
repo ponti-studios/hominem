@@ -155,8 +155,6 @@ export interface UpdateCareerWorkExperienceInput {
   is_visible?: boolean;
   // financial
   base_salary?: number | null;
-  equity_value?: number | null;
-  equity_percentage?: string | null;
   signing_bonus?: number | null;
   annual_bonus?: number | null;
   // role details
@@ -700,8 +698,6 @@ export const CareerRepository = {
     if (updates.sort_order !== undefined) set.sort_order = updates.sort_order;
     if (updates.is_visible !== undefined) set.is_visible = updates.is_visible;
     if (updates.base_salary !== undefined) set.base_salary = updates.base_salary;
-    if (updates.equity_value !== undefined) set.equity_value = updates.equity_value;
-    if (updates.equity_percentage !== undefined) set.equity_percentage = updates.equity_percentage;
     if (updates.signing_bonus !== undefined) set.signing_bonus = updates.signing_bonus;
     if (updates.annual_bonus !== undefined) set.annual_bonus = updates.annual_bonus;
     if (updates.employment_type !== undefined) set.employment_type = updates.employment_type;

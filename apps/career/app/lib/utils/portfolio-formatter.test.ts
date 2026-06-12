@@ -79,8 +79,6 @@ const createMockPortfolio = (overrides: Partial<FullPortfolio> = {}): FullPortfo
       base_salary: 12000000, // $120,000 in cents
       currency: 'USD',
       salary_range: null,
-      equity_value: null,
-      equity_percentage: null,
       signing_bonus: null,
       annual_bonus: 2000000, // $20,000 in cents
       bonus_history: [],
@@ -121,8 +119,6 @@ const createMockPortfolio = (overrides: Partial<FullPortfolio> = {}): FullPortfo
       base_salary: 8500000, // $85,000 in cents
       currency: 'USD',
       salary_range: null,
-      equity_value: null,
-      equity_percentage: '0.5%',
       signing_bonus: 500000, // $5,000 in cents
       annual_bonus: null,
       bonus_history: [],

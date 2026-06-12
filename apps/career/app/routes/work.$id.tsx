@@ -224,8 +224,6 @@ interface CompensationFormValues {
   base_salary: string;
   signing_bonus: string;
   annual_bonus: string;
-  equity_value: string;
-  equity_percentage: string;
 }
 
 interface TeamFormValues {
@@ -748,8 +746,6 @@ function CompensationSection({ workExperience }: { workExperience: WorkExperienc
       base_salary: formatCurrencyInput(workExperience.base_salary),
       signing_bonus: formatCurrencyInput(workExperience.signing_bonus),
       annual_bonus: formatCurrencyInput(workExperience.annual_bonus),
-      equity_value: formatCurrencyInput(workExperience.equity_value),
-      equity_percentage: workExperience.equity_percentage ?? '',
     }),
     [workExperience],
   );
@@ -769,8 +765,6 @@ function CompensationSection({ workExperience }: { workExperience: WorkExperienc
       base_salary: normalizeCurrencyInput(values.base_salary),
       signing_bonus: normalizeCurrencyInput(values.signing_bonus),
       annual_bonus: normalizeCurrencyInput(values.annual_bonus),
-      equity_value: normalizeCurrencyInput(values.equity_value),
-      equity_percentage: normalizeOptionalText(values.equity_percentage),
     });
 
   return (
@@ -799,12 +793,6 @@ function CompensationSection({ workExperience }: { workExperience: WorkExperienc
             <Field label="Annual bonus">
               <Input inputMode="decimal" placeholder="30000" {...register('annual_bonus')} />
             </Field>
-            <Field label="Equity value">
-              <Input inputMode="decimal" placeholder="50000" {...register('equity_value')} />
-            </Field>
-            <Field label="Equity percentage">
-              <Input placeholder="0.25%" {...register('equity_percentage')} />
-            </Field>
           </div>
 
           <SectionFormActions
@@ -829,14 +817,6 @@ function CompensationSection({ workExperience }: { workExperience: WorkExperienc
           <DetailRow
             label="Annual bonus"
             value={formatCurrency(workExperience.annual_bonus) ?? 'Not set'}
-          />
-          <DetailRow
-            label="Equity value"
-            value={formatCurrency(workExperience.equity_value) ?? 'Not set'}
-          />
-          <DetailRow
-            label="Equity percentage"
-            value={workExperience.equity_percentage ?? 'Not set'}
           />
         </div>
       ) : (
@@ -1183,18 +1163,12 @@ function normalizeWorkExperienceUpdates(
     end_date: updates.end_date !== undefined ? normalizeDateInput(updates.end_date) : undefined,
     base_salary:
       updates.base_salary !== undefined ? normalizeCurrencyInput(updates.base_salary) : undefined,
-    equity_value:
-      updates.equity_value !== undefined ? normalizeCurrencyInput(updates.equity_value) : undefined,
     signing_bonus:
       updates.signing_bonus !== undefined
         ? normalizeCurrencyInput(updates.signing_bonus)
         : undefined,
     annual_bonus:
       updates.annual_bonus !== undefined ? normalizeCurrencyInput(updates.annual_bonus) : undefined,
-    equity_percentage:
-      updates.equity_percentage !== undefined
-        ? normalizeOptionalText(updates.equity_percentage)
-        : undefined,
     employment_type:
       updates.employment_type !== undefined
         ? normalizeOptionalText(updates.employment_type)
@@ -1391,8 +1365,6 @@ function hasCompensation(workExperience: WorkExperienceRecord) {
     workExperience.base_salary,
     workExperience.signing_bonus,
     workExperience.annual_bonus,
-    workExperience.equity_value,
-    workExperience.equity_percentage,
   ].some((value) => value !== null && value !== undefined && value !== '');
 }
 
