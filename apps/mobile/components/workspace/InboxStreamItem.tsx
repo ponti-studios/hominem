@@ -1,5 +1,5 @@
 import { Button, ContextMenu, Host } from '@expo/ui/swift-ui';
-import { useRouter } from 'expo-router/build/hooks';
+import { useRouter } from 'expo-router';
 import React, { memo, useCallback } from 'react';
 import { Alert, Pressable, View } from 'react-native';
 import Reanimated, {

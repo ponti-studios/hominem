@@ -18,7 +18,7 @@ import {
   useState,
   type RefObject,
 } from 'react';
-import { Alert, Platform, Share, TextInput } from 'react-native';
+import { Alert, Share, TextInput } from 'react-native';
 
 import { loadMarkdown } from '../components/chat/chat-message';
 import type { SendInput } from '../services/chat/use-send-message';
@@ -323,13 +323,6 @@ export function useChatController({
     if (!text) return;
 
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
-    if (Platform.OS === 'web') {
-      void globalThis.navigator?.clipboard?.writeText(text).catch(() => {
-        void Share.share({ message: text, title: 'Copy message' });
-      });
-      return;
-    }
 
     void Clipboard.setStringAsync(text).catch(() => {
       void Share.share({ message: text, title: 'Copy message' });

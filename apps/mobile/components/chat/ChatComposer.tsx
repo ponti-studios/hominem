@@ -1,5 +1,5 @@
-import React, { useCallback, useRef } from 'react';
-import { TextInput } from 'react-native';
+import React, { useCallback, useEffect, useRef } from 'react';
+import { Alert, TextInput } from 'react-native';
 
 import { InlineEnhanceTray } from '~/components/ai/InlineEnhanceTray';
 import { ComposerAccessories } from '~/components/composer/ComposerAccessories';
@@ -53,6 +53,8 @@ function ChatComposerContent({ chatId }: { chatId: string }) {
     isBusy: isVoiceBusy,
     isCleaningVoice,
     isRecording,
+    error: voiceError,
+    clearError: clearVoiceError,
   } = useVoiceComposerInput({ message, setMessage });
   const { attachments } = useComposerAttachments();
   const {
@@ -78,6 +80,17 @@ function ChatComposerContent({ chatId }: { chatId: string }) {
   } = useChatMentions({ message, setMessage, inputRef });
 
   const canSubmit = baseCanSubmit || selectedNotes.length > 0;
+
+  useEffect(() => {
+    if (!voiceError) return;
+
+    Alert.alert(voiceError.title, voiceError.message, [
+      {
+        text: 'OK',
+        onPress: clearVoiceError,
+      },
+    ]);
+  }, [clearVoiceError, voiceError]);
 
   const handleSend = useCallback(async () => {
     if (!canSubmit || isChatSending) return;

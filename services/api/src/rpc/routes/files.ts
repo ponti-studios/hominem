@@ -80,45 +80,6 @@ function logAndThrow(error: unknown, message: string): never {
 
 export const filesRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
-  .get('/', async (c) => {
-    try {
-      const userId = c.get('userId')!;
-      const files = await FileRepository.listForUser(db, userId);
-
-      return c.json({
-        files: files.map(toFilePayload),
-        count: files.length,
-      });
-    } catch (error) {
-      logAndThrow(error, 'Failed to list files');
-    }
-  })
-  .get('/:fileId', async (c) => {
-    try {
-      const userId = c.get('userId')!;
-      const fileId = c.req.param('fileId');
-      const file = await FileRepository.getOwnedOrThrow(db, fileId, userId);
-
-      return c.json({ file: toFilePayload(file) });
-    } catch (error) {
-      logAndThrow(error, 'Failed to fetch file');
-    }
-  })
-  .get('/:fileId/url', async (c) => {
-    try {
-      const userId = c.get('userId')!;
-      const fileId = c.req.param('fileId');
-      const url = await FileRepository.getUrl(db, fileId, userId);
-
-      return c.json({
-        url,
-        expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-        message: 'URL generated successfully',
-      });
-    } catch (error) {
-      logAndThrow(error, 'Failed to generate file URL');
-    }
-  })
   .delete('/:fileId', async (c) => {
     try {
       const userId = c.get('userId')!;

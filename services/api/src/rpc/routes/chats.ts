@@ -127,15 +127,6 @@ const chatByIdRoutes = new Hono<AppContext>()
       messages: messages.map(toChatMessageDto),
     });
   })
-  .delete('/', async (c) => {
-    const userId = c.get('userId')!;
-    const chatId = getChatId(c);
-
-    await ChatRepository.getOwnedOrThrow(db, chatId, userId);
-    await ChatRepository.delete(db, chatId, userId);
-
-    return c.json({ success: true });
-  })
   .patch('/', zValidator('json', chatsUpdateSchema), async (c) => {
     const userId = c.get('userId')!;
     const chatId = getChatId(c);

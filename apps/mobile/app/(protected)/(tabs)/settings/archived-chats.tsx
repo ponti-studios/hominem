@@ -43,7 +43,11 @@ function ArchivedChatsSwiftUI({
   const themeColors = useThemeColors();
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      contentInsetAdjustmentBehavior="automatic"
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+    >
       <View
         style={[
           styles.sectionCard,

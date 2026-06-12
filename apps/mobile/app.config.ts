@@ -1,7 +1,8 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
+import appVariantModule from './config/appVariant.js';
 import type { AppVariant, VariantConfig } from './config/appVariantConfig';
 
-const { getAppVariant, getAppVariantConfig } = require('./config/appVariant.js') as {
+const { getAppVariant, getAppVariantConfig } = appVariantModule as {
   getAppVariant(rawVariant?: string): AppVariant;
   getAppVariantConfig(rawVariant?: string): VariantConfig;
 };
@@ -12,18 +13,15 @@ const EXPO_PROJECT_ID = '4dfac82b-644f-4ff3-be42-e8f941287aa1';
 const shellTheme = {
   mobile: {
     splashBackgroundColor: '#000000',
-    htmlBackgroundColor: '#000000',
-    adaptiveIconBackgroundColor: '#000000',
     notificationColor: '#000000',
   },
 } as const;
 
 const ROOT_ASSETS_DIR = './assets';
 
-function getBrandAssetPaths(variant: AppVariant): { favicon: string; icon: string; splash: string } {
+function getBrandAssetPaths(variant: AppVariant): { icon: string; splash: string } {
   const icon = `${ROOT_ASSETS_DIR}/${VARIANT_ICON_NAMES[variant]}`;
   return {
-    favicon: `${ROOT_ASSETS_DIR}/icon.png`,
     icon,
     splash: `${ROOT_ASSETS_DIR}/logo.splash-screen.png`,
   };
@@ -156,15 +154,11 @@ export default ({ config }: ConfigContext) => {
     version: '1.0.0',
     scheme: variantConfig.scheme,
     owner: EXPO_OWNER,
+    platforms: ['ios'],
     orientation: 'portrait',
     icon: brandAssets.icon,
     userInterfaceStyle: 'light',
     assetBundlePatterns: ['assets/**/*', 'api/**/*', 'app/**/*', 'constants/**/*', 'hooks/**/*', 'navigation/**/*', 'services/**/*'],
-    web: {
-      bundler: 'metro',
-      output: 'static',
-      favicon: brandAssets.favicon,
-    },
     plugins,
     experiments: {
       tsconfigPaths: true,

@@ -106,41 +106,24 @@ export const NoteSchema = z.object({
 
 export const CreateNoteInputSchema = z.object({
   type: NoteContentTypeSchema.default('note'),
-  status: NoteStatusSchema.default('draft').optional(),
   title: z.string().optional(),
   content: z.string(),
   fileIds: z.array(z.uuid()).max(5).optional(),
-  excerpt: z.string().optional(),
-  tags: z.array(ContentTagSchema).optional().default([]),
-  mentions: z.array(NoteMentionSchema).optional().default([]),
-  publishingMetadata: PublishingMetadataSchema.optional(),
-  analysis: NoteAnalysisSchema.optional(),
 });
 
 export const UpdateNoteInputSchema = z.object({
-  type: NoteContentTypeSchema.optional(),
-  status: NoteStatusSchema.optional(),
   title: z.string().nullish(),
   content: z.string().optional(),
   fileIds: z.array(z.uuid()).max(5).optional(),
-  excerpt: z.string().nullish(),
-  scheduledFor: z.string().nullable().optional(),
-  tags: z.array(ContentTagSchema).nullish(),
-  publishingMetadata: PublishingMetadataSchema.optional().nullish(),
-  analysis: NoteAnalysisSchema.optional().nullish(),
 });
 
 export const NotesListQuerySchema = z.object({
-  types: z.string().optional(),
-  status: z.string().optional(),
-  tags: z.string().optional(),
   query: z.string().optional(),
   since: z.string().optional(),
   sortBy: z.enum(['createdAt', 'updatedAt', 'title']).optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),
   limit: z.string().optional(),
   offset: z.string().optional(),
-  includeAllVersions: z.string().optional(),
 });
 
 export const NotesFeedQuerySchema = z.object({

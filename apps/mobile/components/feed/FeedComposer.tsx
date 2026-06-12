@@ -1,8 +1,8 @@
 import { useQueryClient } from '@tanstack/react-query';
 import type { RelativePathString } from 'expo-router';
 import { useRouter } from 'expo-router';
-import React, { useCallback, useRef } from 'react';
-import { Keyboard, TextInput } from 'react-native';
+import React, { useCallback, useEffect, useRef } from 'react';
+import { Alert, Keyboard, TextInput } from 'react-native';
 
 import { InlineEnhanceTray } from '~/components/ai/InlineEnhanceTray';
 import { ComposerActionGroup } from '~/components/composer/ComposerActionGroup';
@@ -61,6 +61,8 @@ function FeedComposerInner() {
     isBusy: isVoiceBusy,
     isCleaningVoice,
     isRecording,
+    error: voiceError,
+    clearError: clearVoiceError,
   } = useVoiceComposerInput({ message, setMessage });
   const { attachments } = useComposerAttachments();
   const {
@@ -110,6 +112,17 @@ function FeedComposerInner() {
   const hasContent = message.trim().length > 0;
   const hasAccessory =
     attachments.length > 0 || uploadState.errors.length > 0 || uploadState.isUploading;
+
+  useEffect(() => {
+    if (!voiceError) return;
+
+    Alert.alert(voiceError.title, voiceError.message, [
+      {
+        text: 'OK',
+        onPress: clearVoiceError,
+      },
+    ]);
+  }, [clearVoiceError, voiceError]);
 
   if (!isActive) {
     return (

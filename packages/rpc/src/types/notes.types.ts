@@ -14,7 +14,6 @@ export {
   TaskStatusSchema,
 } from '../schemas/notes.schema'
 
-import type { ContentTag, NoteAnalysis, TaskPriority, TaskStatus } from '../schemas/notes.schema'
 import type { InferResponseType } from 'hono/client'
 import type { HonoClient } from '../core/api-client'
 
@@ -75,39 +74,21 @@ export type NoteMention = {
   name: string
 }
 
-// Task metadata helper type
-export type TaskMetadata = {
-  status?: TaskStatus;
-  priority?: TaskPriority;
-  dueDate?: string;
-};
-
-// ============================================================================
-// Output Types (Inferred from returns - these are optional aliases)
-// ============================================================================
-
 export type NotesListOutput = { notes: Note[] };
 export type NotesFeedOutput = NoteFeedPage;
 export type NotesGetOutput = Note;
 export type NotesCreateOutput = Note;
 export type NotesUpdateOutput = Note;
 export type NotesDeleteOutput = Note;
-export type NotesPublishOutput = Note;
-export type NotesArchiveOutput = Note;
-export type NotesVersionsOutput = { versions: Note[] };
 export type NotesSearchOutput = { notes: NoteSearchResult[]; nextCursor: string | null };
 
 export type NotesListInput = {
-  types?: NoteContentType[];
-  status?: Array<'draft' | 'published' | 'archived'>;
-  tags?: string[];
   query?: string;
   since?: string;
   sortBy?: 'createdAt' | 'updatedAt' | 'title';
   sortOrder?: 'asc' | 'desc';
   limit?: number;
   offset?: number;
-  includeAllVersions?: boolean;
 };
 
 export type NotesFeedInput = {
@@ -127,14 +108,9 @@ export type NotesSearchInput = {
 
 export type NotesCreateInput = {
   type?: NoteContentType;
-  status?: NoteStatus;
   title?: string;
   content: string;
   fileIds?: string[];
-  tags?: ContentTag[];
-  mentions?: NoteMention[];
-  publishingMetadata?: PublishingMetadata;
-  analysis?: NoteAnalysis;
 };
 
 // ============================================================================
@@ -142,44 +118,7 @@ export type NotesCreateInput = {
 // ============================================================================
 
 export type NotesUpdateInput = {
-  type?: NoteContentType;
-  status?: NoteStatus;
   title?: string | null;
   content?: string;
   fileIds?: string[];
-  scheduledFor?: string | null;
-  tags?: ContentTag[] | null;
-  publishingMetadata?: PublishingMetadata | null;
-  analysis?: NoteAnalysis | null;
-};
-
-// ============================================================================
-// SYNC NOTES
-// ============================================================================
-
-export type NotesSyncItem = {
-  id?: string;
-  type: NoteContentType;
-  status?: NoteStatus;
-  title?: string | null;
-  content: string;
-  excerpt?: string | null;
-  tags?: ContentTag[];
-  mentions?: NoteMention[];
-  publishingMetadata?: PublishingMetadata | null;
-  analysis?: NoteAnalysis | null;
-  createdAt?: string;
-  updatedAt?: string;
-  publishedAt?: string;
-  scheduledFor?: string;
-};
-
-export type NotesSyncInput = {
-  items: NotesSyncItem[];
-};
-
-export type NotesSyncOutput = {
-  created: number;
-  updated: number;
-  failed: number;
 };

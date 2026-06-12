@@ -1,6 +1,6 @@
 import { useIsFocused } from '@react-navigation/native';
 import type { FlashListRef } from '@shopify/flash-list';
-import { useLocalSearchParams, useRouter } from 'expo-router/build/hooks';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import type { LayoutChangeEvent } from 'react-native';
 import { RefreshControl, View } from 'react-native';

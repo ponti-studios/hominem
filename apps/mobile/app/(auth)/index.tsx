@@ -197,6 +197,7 @@ function AuthScreen() {
 
         <ScrollView
           testID="auth-screen"
+          contentInsetAdjustmentBehavior="automatic"
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}

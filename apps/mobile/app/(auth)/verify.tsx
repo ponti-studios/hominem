@@ -237,6 +237,7 @@ function VerifyScreen() {
 
       <ScrollView
         testID="auth-verify-screen"
+        contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}

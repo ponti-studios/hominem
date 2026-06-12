@@ -6,10 +6,7 @@ import {
   normalizeOpenRouterError,
   type OpenRouterClientOptions,
 } from './shared';
-import {
-  createOpenRouterTextAdapter,
-  type OpenRouterTextAdapterOptions,
-} from './text';
+import { createOpenRouterTextAdapter, type OpenRouterTextAdapterOptions } from './text';
 
 export type VoiceTranscriptCleanupInput = OpenRouterClientOptions & {
   rawText: string;
@@ -34,6 +31,10 @@ const VoiceTranscriptCleanupOutputSchema = z.object({
   cleanedText: z.string(),
 });
 
+export function parseVoiceTranscriptCleanupOutput(value: unknown): VoiceTranscriptCleanupOutput {
+  return VoiceTranscriptCleanupOutputSchema.parse(value);
+}
+
 export async function cleanupVoiceTranscript(
   input: VoiceTranscriptCleanupInput,
 ): Promise<VoiceTranscriptCleanupOutput> {
@@ -44,7 +45,7 @@ export async function cleanupVoiceTranscript(
   };
 
   try {
-    return await chat({
+    const output = await chat({
       adapter: createOpenRouterTextAdapter(adapterOptions),
       systemPrompts: [VOICE_TRANSCRIPT_CLEANUP_SYSTEM_PROMPT],
       messages: [
@@ -58,6 +59,7 @@ export async function cleanupVoiceTranscript(
       ],
       outputSchema: VoiceTranscriptCleanupOutputSchema,
     });
+    return parseVoiceTranscriptCleanupOutput(output);
   } catch (error) {
     throw normalizeOpenRouterError(error);
   }

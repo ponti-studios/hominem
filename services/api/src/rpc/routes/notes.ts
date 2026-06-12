@@ -18,83 +18,26 @@ const NoteContentTypeSchema = z.enum([
   'blog_post',
   'social_post',
 ]);
-const NoteStatusSchema = z.enum(['draft', 'published', 'archived']);
-const ContentTagSchema = z.object({ value: z.string() });
-const NoteMentionSchema = z.object({ id: z.string(), name: z.string() });
-const PublishingMetadataSchema = z.object({
-  platform: z.string().optional(),
-  url: z.string().optional(),
-  externalId: z.string().optional(),
-  seo: z
-    .object({
-      metaTitle: z.string().optional(),
-      metaDescription: z.string().optional(),
-      keywords: z.array(z.string()).optional(),
-      canonicalUrl: z.string().optional(),
-      featuredImage: z.string().optional(),
-    })
-    .optional(),
-  metrics: z
-    .object({
-      views: z.number().optional(),
-      likes: z.number().optional(),
-      reposts: z.number().optional(),
-      replies: z.number().optional(),
-      clicks: z.number().optional(),
-    })
-    .optional(),
-  threadPosition: z.number().optional(),
-  threadId: z.string().optional(),
-  inReplyTo: z.string().optional(),
-  scheduledFor: z.string().optional(),
-  importedAt: z.string().optional(),
-  importedFrom: z.string().optional(),
-});
-const NoteAnalysisSchema = z.object({
-  readingTimeMinutes: z.number().optional(),
-  summary: z.string().optional(),
-  keywords: z.array(z.string()).optional(),
-  sentiment: z.enum(['positive', 'neutral', 'negative']).optional(),
-  language: z.string().optional(),
-});
-
 const CreateNoteInputSchema = z.object({
   type: NoteContentTypeSchema.default('note'),
-  status: NoteStatusSchema.default('draft').optional(),
   title: z.string().optional(),
   content: z.string(),
   fileIds: z.array(z.uuid()).max(5).optional(),
-  excerpt: z.string().optional(),
-  tags: z.array(ContentTagSchema).optional().default([]),
-  mentions: z.array(NoteMentionSchema).optional().default([]),
-  publishingMetadata: PublishingMetadataSchema.optional(),
-  analysis: NoteAnalysisSchema.optional(),
 });
 
 const UpdateNoteInputSchema = z.object({
-  type: NoteContentTypeSchema.optional(),
-  status: NoteStatusSchema.optional(),
   title: z.string().nullish(),
   content: z.string().optional(),
   fileIds: z.array(z.uuid()).max(5).optional(),
-  excerpt: z.string().nullish(),
-  scheduledFor: z.string().nullable().optional(),
-  tags: z.array(ContentTagSchema).nullish(),
-  publishingMetadata: PublishingMetadataSchema.optional().nullish(),
-  analysis: NoteAnalysisSchema.optional().nullish(),
 });
 
 const NotesListQuerySchema = z.object({
-  types: z.string().optional(),
-  status: z.string().optional(),
-  tags: z.string().optional(),
   query: z.string().optional(),
   since: z.string().optional(),
   sortBy: z.enum(['createdAt', 'updatedAt', 'title']).optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),
   limit: z.string().optional(),
   offset: z.string().optional(),
-  includeAllVersions: z.string().optional(),
 });
 
 const NotesFeedQuerySchema = z.object({
@@ -200,19 +143,5 @@ export const notesRoutes = new Hono<AppContext>()
     const note = await NoteRepository.load(db, id, userId);
     await NoteRepository.hardDelete(db, id, userId);
 
-    return c.json(toNoteDto(note));
-  })
-  .post('/:id/archive', zValidator('param', noteParamSchema), async (c) => {
-    const userId = c.get('userId')!;
-    const { id } = c.req.valid('param');
-    const note = await NoteRepository.load(db, id, userId);
-    await NoteRepository.archive(db, id, userId);
-    return c.json(toNoteDto(note));
-  })
-  .post('/:id/unarchive', zValidator('param', noteParamSchema), async (c) => {
-    const userId = c.get('userId')!;
-    const { id } = c.req.valid('param');
-    await NoteRepository.unarchive(db, id, userId);
-    const note = await NoteRepository.load(db, id, userId);
     return c.json(toNoteDto(note));
   });

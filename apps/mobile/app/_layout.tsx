@@ -1,9 +1,7 @@
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { SplashScreen, Stack } from 'expo-router/build/exports';
-import { useRouter, useSegments } from 'expo-router/build/hooks';
-import type { RelativePathString } from 'expo-router/build/typed-routes/types';
+import { SplashScreen, Stack, type RelativePathString, useRouter, useSegments } from 'expo-router';
 import { PostHogProvider, type PostHog } from 'posthog-react-native';
 import React, { useEffect } from 'react';
 import { Pressable, StyleSheet, View, useColorScheme } from 'react-native';

@@ -1,12 +1,11 @@
 import type { ChatMessageItem, ChatRenderIcon, MarkdownComponent } from '@hominem/chat';
+import { FlashList, type FlashListRef, type ListRenderItem } from '@shopify/flash-list';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import {
-  FlatList,
   Pressable,
   StyleSheet,
   View,
-  type FlatList as RNFlatList,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from 'react-native';
@@ -57,10 +56,11 @@ export function ChatMessageList({
 }: ChatMessageListProps) {
   const hasSearchQuery = showSearch && searchQuery.length > 0;
   const [activeActionMessageId, setActiveActionMessageId] = useState<string | null>(null);
-  const listRef = useRef<RNFlatList<ChatMessageItem> | null>(null);
+  const listRef = useRef<FlashListRef<ChatMessageItem> | null>(null);
   const isNearEndRef = useRef(true);
   const prevCountRef = useRef(displayMessages.length);
   const prevLastMessageIdRef = useRef(displayMessages.at(-1)?.id ?? null);
+  const isStreaming = displayMessages.at(-1)?.isStreaming ?? false;
 
   const handleScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
@@ -71,7 +71,6 @@ export function ChatMessageList({
   // Scroll to end when new content arrives, but only if the user is already near the bottom.
   useEffect(() => {
     const lastMessage = displayMessages.at(-1) ?? null;
-    const isStreaming = displayMessages.some((m) => m.isStreaming);
     const countChanged = displayMessages.length !== prevCountRef.current;
     const lastMessageIdChanged = lastMessage?.id !== prevLastMessageIdRef.current;
     const shouldScrollForNewUserMessage =
@@ -88,10 +87,10 @@ export function ChatMessageList({
     requestAnimationFrame(() => {
       listRef.current?.scrollToEnd({ animated: countChanged });
     });
-  }, [displayMessages, showSearch]);
+  }, [displayMessages, isStreaming, showSearch]);
 
-  const renderItem = useCallback(
-    ({ item }: { item: ChatMessageItem }) =>
+  const renderItem = useCallback<ListRenderItem<ChatMessageItem>>(
+    ({ item }) =>
       renderChatMessage(item, markdown, renderIcon, formatTimestamp, {
         isActive: !item.isStreaming && activeActionMessageId === item.id,
         onActivate: item.isStreaming
@@ -150,7 +149,7 @@ export function ChatMessageList({
   }
 
   return (
-    <FlatList
+    <FlashList
       ref={listRef}
       style={styles.list}
       ListEmptyComponent={listEmptyComponent}
@@ -165,7 +164,6 @@ export function ChatMessageList({
       inverted={false}
       onScroll={handleScroll}
       onScrollBeginDrag={() => setActiveActionMessageId(null)}
-      removeClippedSubviews={false}
       renderItem={renderItem}
       scrollEnabled={displayMessages.length > 0}
       scrollEventThrottle={16}

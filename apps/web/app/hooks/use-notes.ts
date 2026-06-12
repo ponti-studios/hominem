@@ -39,28 +39,19 @@ export function useNotesList(options: NotesListInput = {}, queryOptions: UseNote
     staleTime: 1000 * 60 * 1,
     queryFn: async () => {
       const query: {
-        types?: string;
-        status?: string;
-        tags?: string;
         query?: string;
         since?: string;
         sortBy?: 'createdAt' | 'updatedAt' | 'title';
         sortOrder?: 'asc' | 'desc';
         limit?: string;
         offset?: string;
-        includeAllVersions?: string;
       } = {};
-      if (options.types?.length) query.types = options.types.join(',');
-      if (options.status?.length) query.status = options.status.join(',');
-      if (options.tags?.length) query.tags = options.tags.join(',');
       if (options.query) query.query = options.query;
       if (options.since) query.since = options.since;
       if (options.sortBy) query.sortBy = options.sortBy;
       if (options.sortOrder) query.sortOrder = options.sortOrder;
       if (options.limit != null) query.limit = String(options.limit);
       if (options.offset != null) query.offset = String(options.offset);
-      if (options.includeAllVersions != null)
-        query.includeAllVersions = String(options.includeAllVersions);
       const res = await client.api.notes.$get({ query });
       const data = await res.json();
       return Array.isArray(data.notes) ? data.notes : [];

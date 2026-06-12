@@ -1,6 +1,5 @@
 import { logger } from '@hominem/telemetry';
-import { useCallback, useRef, useSyncExternalStore } from 'react';
-import { Alert } from 'react-native';
+import { useCallback, useRef, useState, useSyncExternalStore } from 'react';
 
 import {
   getRecordingSnapshot,
@@ -8,10 +7,17 @@ import {
   stopRecording,
   subscribeRecording,
 } from '~/components/media/audio.service';
-import VoiceTranscriberModule from '~/modules/voice-transcriber/src/VoiceTranscriberModule';
+import VoiceTranscriberModule from '~/modules/voice-transcriber';
 import { useVoiceCleanup } from '~/services/ai';
 
-import { mergeTranscriptIntoDraft, replaceTranscriptInDraft } from './voiceComposerInput.helpers';
+import {
+  createVoiceComposerError,
+  deriveVoiceComposerState,
+  isRecorderActive,
+  maybeApplyCleanedTranscript,
+  mergeTranscriptIntoDraft,
+  type VoiceComposerError,
+} from './voiceComposerInput.helpers';
 
 interface UseVoiceComposerInputOptions {
   message: string;
@@ -25,31 +31,43 @@ export function useVoiceComposerInput({ message, setMessage }: UseVoiceComposerI
     getRecordingSnapshot,
     getRecordingSnapshot,
   );
+  const [error, setError] = useState<VoiceComposerError | null>(null);
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const draftRef = useRef(message);
   draftRef.current = message;
 
-  const handleVoicePress = useCallback(async () => {
-    if (recordingSnapshot.state === 'RECORDING' || recordingSnapshot.state === 'PAUSED') {
-      const fileUri = await stopRecording();
-      if (!fileUri) return;
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
+
+  const processStoppedRecording = useCallback(
+    async (fileUri: string) => {
+      setIsTranscribing(true);
+      setError(null);
 
       try {
         const result = await VoiceTranscriberModule.transcribeFile(fileUri);
         const rawText = result.rawText.trim();
         if (!rawText) return;
 
-        const nextDraft = mergeTranscriptIntoDraft(draftRef.current, rawText);
-        setMessage(nextDraft);
-
+        const insertedDraft = mergeTranscriptIntoDraft(draftRef.current, rawText);
+        setMessage(insertedDraft);
+        setIsTranscribing(false);
         void cleanup({
           rawText,
           locale: result.locale,
           source: 'apple-on-device',
         })
           .then((cleanupResult) => {
-            if (!cleanupResult.changed) return;
-            if (draftRef.current !== nextDraft) return;
-            setMessage(replaceTranscriptInDraft(nextDraft, rawText, cleanupResult.cleanedText));
+            setMessage(
+              maybeApplyCleanedTranscript({
+                currentDraft: draftRef.current,
+                insertedDraft,
+                rawText,
+                cleanedText: cleanupResult.cleanedText,
+                changed: cleanupResult.changed,
+              }),
+            );
           })
           .catch((error: unknown) => {
             logger.warn('[voice-cleanup] background cleanup failed', {
@@ -58,11 +76,35 @@ export function useVoiceComposerInput({ message, setMessage }: UseVoiceComposerI
           });
       } catch (error) {
         logger.error('[voice-transcriber] transcription failed', error as Error);
-        Alert.alert(
-          'Voice transcription failed',
-          'Your recording was kept, but the transcript could not be generated.',
-        );
+        setError(createVoiceComposerError('transcription-failed'));
+      } finally {
+        setIsTranscribing(false);
       }
+    },
+    [cleanup, setMessage],
+  );
+
+  const stopAndTranscribeRecording = useCallback(async () => {
+    const fileUri = await stopRecording();
+    if (!fileUri) return;
+    await processStoppedRecording(fileUri);
+  }, [processStoppedRecording]);
+
+  const startVoiceRecording = useCallback(async () => {
+    setError(null);
+    const result = await startRecording();
+    if (result.ok) return;
+
+    setError(
+      createVoiceComposerError(
+        result.reason === 'permission-denied' ? 'permission-denied' : 'recording-failed',
+      ),
+    );
+  }, []);
+
+  const handleVoicePress = useCallback(async () => {
+    if (recordingSnapshot.state === 'RECORDING' || recordingSnapshot.state === 'PAUSED') {
+      await stopAndTranscribeRecording();
       return;
     }
 
@@ -70,33 +112,26 @@ export function useVoiceComposerInput({ message, setMessage }: UseVoiceComposerI
       return;
     }
 
-    const result = await startRecording();
-    if (result.ok) return;
+    await startVoiceRecording();
+  }, [recordingSnapshot.state, startVoiceRecording, stopAndTranscribeRecording]);
 
-    if (result.reason === 'permission-denied') {
-      Alert.alert(
-        'Microphone access required',
-        'Allow microphone and speech recognition access to record a voice note.',
-      );
-      return;
-    }
+  const isRecording = isRecorderActive(recordingSnapshot.state);
+  const voiceState = deriveVoiceComposerState({
+    recorderState: recordingSnapshot.state,
+    isTranscribing,
+    isCleaningVoice,
+    error,
+  });
 
-    Alert.alert('Voice recording failed', 'Hakumi could not start recording right now.');
-  }, [cleanup, recordingSnapshot.state, setMessage]);
-
-  const isRecording =
-    recordingSnapshot.state === 'REQUESTING_PERMISSION' ||
-    recordingSnapshot.state === 'PREPARING' ||
-    recordingSnapshot.state === 'RECORDING' ||
-    recordingSnapshot.state === 'PAUSED' ||
-    recordingSnapshot.state === 'STOPPING';
-
-  const isBusy = isRecording || isCleaningVoice;
+  const isBusy = voiceState !== 'idle' && voiceState !== 'failed';
 
   return {
     handleVoicePress,
     isBusy,
     isRecording,
     isCleaningVoice,
+    voiceState,
+    error,
+    clearError,
   };
 }
