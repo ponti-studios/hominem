@@ -339,11 +339,7 @@ export function ResumeCustomizer({
             isLoading={isScraping || isGenerating}
             loadingLabel={isScraping ? 'Scraping job posting...' : 'Generating resume...'}
           >
-            {inputMethod === 'url' ? (
-              'Scrape & Generate Resume'
-            ) : (
-              'Generate Customized Resume'
-            )}
+            {inputMethod === 'url' ? 'Scrape & Generate Resume' : 'Generate Customized Resume'}
           </Button>
         </CardContent>
       </Card>

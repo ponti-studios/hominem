@@ -1,48 +1,48 @@
-import { maskEmail } from "@hominem/auth/shared/mask-email";
-import { useAuthClient, useEmailAuth } from "@hominem/auth/client/provider";
-import { resolveAuthRedirect } from "@hominem/auth/shared/redirect-policy";
-import { AuthScaffold, EmailEntryForm, OtpVerificationForm, translateUi } from "@hominem/ui";
-import { useState } from "react";
-import { redirect, useLocation, useNavigate } from "react-router";
+import { useAuthClient, useEmailAuth } from '@hominem/auth/client/provider';
+import { maskEmail } from '@hominem/auth/shared/mask-email';
+import { resolveAuthRedirect } from '@hominem/auth/shared/redirect-policy';
+import { AuthScaffold, EmailEntryForm, OtpVerificationForm, translateUi } from '@hominem/ui';
+import { useState } from 'react';
+import { redirect, useLocation, useNavigate } from 'react-router';
 
-import { userContext } from "~/lib/middleware";
+import { userContext } from '~/lib/middleware';
 
-import { Route } from "./+types/login";
+import { Route } from './+types/login';
 
 export const meta: Route.MetaFunction = () => [
-  { title: "Sign In - Craftd" },
+  { title: 'Sign In - Craftd' },
   {
-    name: "description",
-    content: "Sign in to Craftd to create and manage your professional portfolio",
+    name: 'description',
+    content: 'Sign in to Craftd to create and manage your professional portfolio',
   },
 ];
 
 export async function loader({ context }: Route.LoaderArgs) {
   const user = context.get(userContext);
-  if (user) throw redirect("/account");
+  if (user) throw redirect('/account');
   return null;
 }
 
-type LoginStep = "email" | "otp";
+type LoginStep = 'email' | 'otp';
 
 export default function Login() {
   const authClient = useAuthClient();
   const location = useLocation();
   const navigate = useNavigate();
-  const [loginStep, setLoginStep] = useState<LoginStep>("email");
-  const next = new URLSearchParams(location.search).get("next");
-  const postAuthRedirect = resolveAuthRedirect(next, "/account", [
-    "/account",
-    "/onboarding",
-    "/applications",
-    "/resume",
-    "/work",
-    "/skills",
-    "/social",
-    "/stats",
-    "/projects",
-    "/testimonials",
-    "/certifications",
+  const [loginStep, setLoginStep] = useState<LoginStep>('email');
+  const next = new URLSearchParams(location.search).get('next');
+  const postAuthRedirect = resolveAuthRedirect(next, '/account', [
+    '/account',
+    '/onboarding',
+    '/applications',
+    '/resume',
+    '/work',
+    '/skills',
+    '/social',
+    '/stats',
+    '/projects',
+    '/testimonials',
+    '/certifications',
   ]).safeRedirect;
   const {
     error,
@@ -60,12 +60,12 @@ export default function Login() {
     sendOtp: async (resolvedEmail) => {
       const result = await authClient.emailOtp.sendVerificationOtp({
         email: resolvedEmail,
-        type: "sign-in",
+        type: 'sign-in',
       });
       if (result.error) {
-        throw new Error(result.error.message ?? "Failed to send verification code");
+        throw new Error(result.error.message ?? 'Failed to send verification code');
       }
-      setLoginStep("otp");
+      setLoginStep('otp');
     },
     verifyOtp: async (resolvedEmail, submittedOtp) => {
       const result = await authClient.signIn.emailOtp({
@@ -74,7 +74,7 @@ export default function Login() {
       });
       if (result.error || !result.data?.user?.id) {
         throw new Error(
-          result.error?.message ?? "Verification failed. Please check your code and try again.",
+          result.error?.message ?? 'Verification failed. Please check your code and try again.',
         );
       }
       navigate(postAuthRedirect);
@@ -82,19 +82,19 @@ export default function Login() {
     resendOtp: async (resolvedEmail) => {
       const result = await authClient.emailOtp.sendVerificationOtp({
         email: resolvedEmail,
-        type: "sign-in",
+        type: 'sign-in',
       });
       if (result.error) {
-        throw new Error(result.error.message ?? "Failed to resend verification code");
+        throw new Error(result.error.message ?? 'Failed to resend verification code');
       }
     },
   });
 
-  if (loginStep === "otp") {
+  if (loginStep === 'otp') {
     return (
       <AuthScaffold
-        title={translateUi("auth.otpVerification.title")}
-        helperText={translateUi("auth.otpVerification.helper", { email: maskEmail(email) })}
+        title={translateUi('auth.otpVerification.title')}
+        helperText={translateUi('auth.otpVerification.helper', { email: maskEmail(email) })}
       >
         <OtpVerificationForm
           email={email}
@@ -108,7 +108,7 @@ export default function Login() {
           }}
           onSubmit={() => handleVerifyOtp(email, otp)}
           onResend={() => handleResendOtp(email)}
-          onChangeEmail={() => setLoginStep("email")}
+          onChangeEmail={() => setLoginStep('email')}
         />
       </AuthScaffold>
     );

@@ -182,7 +182,11 @@ function ProjectForm({
           placeholder="e.g., E-commerce Platform"
         />
         {errors.title ? (
-          <p id={`title-${project?.id || 'new'}-error`} role="alert" className="text-xs text-destructive">
+          <p
+            id={`title-${project?.id || 'new'}-error`}
+            role="alert"
+            className="text-xs text-destructive"
+          >
             {errors.title.message}
           </p>
         ) : null}
@@ -445,7 +449,11 @@ export async function action({ request, context }: Route.ActionArgs) {
       const projectData = projectDataResult as ProjectFormValues;
 
       if (!projectData.portfolio_id) {
-        return { success: false, operation, error: 'Choose a portfolio before saving this project.' };
+        return {
+          success: false,
+          operation,
+          error: 'Choose a portfolio before saving this project.',
+        };
       }
 
       try {
@@ -484,13 +492,22 @@ export async function action({ request, context }: Route.ActionArgs) {
             sort_order: dbData.sort_order,
           });
 
-          return { success: true, operation, message: 'Project created successfully', data: newProject };
+          return {
+            success: true,
+            operation,
+            message: 'Project created successfully',
+            data: newProject,
+          };
         }
 
         // Update existing project
         const { id, ...updateData } = projectData;
         if (!id) {
-          return { success: false, operation, error: 'Choose a project before saving your changes.' };
+          return {
+            success: false,
+            operation,
+            error: 'Choose a project before saving your changes.',
+          };
         }
 
         // Convert date strings to Date objects for database

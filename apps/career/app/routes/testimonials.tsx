@@ -143,11 +143,7 @@ function TestimonialForm({
             isLoading={isSaving}
             loadingLabel="Saving..."
           >
-            {isNew ? (
-              'Add Testimonial'
-            ) : (
-              'Save Changes'
-            )}
+            {isNew ? 'Add Testimonial' : 'Save Changes'}
           </Button>
           {!isNew && (
             <Button
@@ -178,7 +174,11 @@ function TestimonialForm({
             placeholder="Client's full name"
           />
           {errors.name ? (
-            <p id={`name-${testimonial?.id || 'new'}-error`} role="alert" className="text-xs text-destructive">
+            <p
+              id={`name-${testimonial?.id || 'new'}-error`}
+              role="alert"
+              className="text-xs text-destructive"
+            >
               {errors.name.message}
             </p>
           ) : null}
@@ -472,7 +472,11 @@ export async function action({ request, context }: Route.ActionArgs) {
         return { success: true, operation, message: 'Testimonial deleted successfully' };
       } catch (error) {
         console.error('Failed to delete testimonial:', error);
-        return { success: false, operation, error: 'We couldn’t delete this testimonial. Try again.' };
+        return {
+          success: false,
+          operation,
+          error: 'We couldn’t delete this testimonial. Try again.',
+        };
       }
     }
 

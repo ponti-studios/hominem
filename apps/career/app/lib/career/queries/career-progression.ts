@@ -132,12 +132,11 @@ function buildSalaryByYear(workExps: ReturnType<typeof extractWorkExperiences>) 
       const monthsWorked = calculateMonthsWorked(periodStart, periodEnd);
       const monthlyFraction = monthsWorked / 12;
       const annualSalary = getCurrentSalary(exp);
-      const annualTotalComp = exp.total_compensation || annualSalary;
 
       salaryByYear.push({
         year,
         salary: Math.round(annualSalary * monthlyFraction),
-        totalComp: Math.round(annualTotalComp * monthlyFraction),
+        totalComp: Math.round(annualSalary * monthlyFraction),
         company: exp.company,
         title: exp.role,
       });

@@ -26,7 +26,9 @@ const AUTHENTICATED_LINKS = [
   { href: '/skills', label: 'Skills', end: true },
 ] as const satisfies readonly NavItem[];
 
-const PUBLIC_LINKS = [{ href: '/demo', label: 'Demo', end: true }] as const satisfies readonly NavItem[];
+const PUBLIC_LINKS = [
+  { href: '/demo', label: 'Demo', end: true },
+] as const satisfies readonly NavItem[];
 
 const ACCOUNT_LINK = { href: '/account', label: 'Account', end: true } as const satisfies NavItem;
 
@@ -42,7 +44,9 @@ function navigationLinkClassName(variant: 'desktop' | 'mobile') {
       variant === 'desktop'
         ? 'w-full justify-center whitespace-nowrap px-3 py-2 text-center'
         : 'w-full justify-start px-4 py-3',
-      isActive ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground',
+      isActive
+        ? 'bg-muted text-foreground'
+        : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground',
     );
 }
 
@@ -82,7 +86,10 @@ function MobileNavigation({
       </nav>
 
       {secondaryLinks.length > 0 ? (
-        <nav className="flex flex-col gap-2 border-t border-border pt-4" aria-label="Secondary navigation">
+        <nav
+          className="flex flex-col gap-2 border-t border-border pt-4"
+          aria-label="Secondary navigation"
+        >
           {secondaryLinks.map((link) => (
             <DrawerClose key={link.href} asChild>
               <NavigationLink link={link} variant="mobile" />

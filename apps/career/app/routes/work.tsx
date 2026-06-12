@@ -134,9 +134,7 @@ export default function Work({ loaderData }: Route.ComponentProps) {
     <section className="container flex flex-col gap-4 mx-auto">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1">
-          <h2 className="heading-2 text-foreground">
-            Work Experience
-          </h2>
+          <h2 className="heading-2 text-foreground">Work Experience</h2>
         </div>
         <Button
           type="button"
@@ -201,7 +199,11 @@ export async function action({ request, context }: Route.ActionArgs) {
       );
 
       if ('success' in workExperienceDataResult && !workExperienceDataResult.success) {
-        return { success: false, operation, error: 'Your work experience changes couldn’t be read.' };
+        return {
+          success: false,
+          operation,
+          error: 'Your work experience changes couldn’t be read.',
+        };
       }
 
       const workExperienceData = workExperienceDataResult as WorkExperienceFormValues;

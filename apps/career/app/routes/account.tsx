@@ -161,7 +161,11 @@ export async function action({ request, context }: Route.ActionArgs) {
 
         await CareerRepository.updatePortfolioSlug(db, user.id, portfolio_id, newSlug);
 
-        return { success: true, message: 'Portfolio URL updated successfully', data: { slug: newSlug } };
+        return {
+          success: true,
+          message: 'Portfolio URL updated successfully',
+          data: { slug: newSlug },
+        };
       } catch (error) {
         if (error instanceof Response) throw error;
         console.error('Failed to update portfolio URL:', error);

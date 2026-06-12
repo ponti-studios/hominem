@@ -935,7 +935,6 @@ export interface AppWorkExperiences {
   start_date: Timestamp | null;
   tags: Generated<Json>;
   team_size: number | null;
-  total_compensation: number | null;
   updatedat: Generated<Timestamp>;
   work_arrangement: Generated<string>;
 }

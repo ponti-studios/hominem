@@ -19,7 +19,10 @@ export function FormErrorAlert({
   }
 
   return (
-    <Alert variant="destructive" className={cn('border-destructive/30 bg-destructive/10', className)}>
+    <Alert
+      variant="destructive"
+      className={cn('border-destructive/30 bg-destructive/10', className)}
+    >
       <AlertCircle className="size-4" />
       <AlertTitle>{title}</AlertTitle>
       <AlertDescription>{message}</AlertDescription>

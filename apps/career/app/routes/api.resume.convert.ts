@@ -73,17 +73,14 @@ function logRouteError(message: string, error: unknown, context?: Record<string,
         }
       : context;
 
-  logger.error(
-    message || (error instanceof Error ? error.message : ""),
-  );
+  logger.error(message || (error instanceof Error ? error.message : ''));
 }
 
 function resolveAiParseFailure(error: unknown) {
   if (error instanceof OpenRouterRequestError) {
     if (error.code === 'missing_api_key') {
       return {
-        error:
-          'Resume parsing AI is not configured yet. Set OPENROUTER_API_KEY and try again.',
+        error: 'Resume parsing AI is not configured yet. Set OPENROUTER_API_KEY and try again.',
         status: 503,
       };
     }
@@ -245,12 +242,7 @@ export const action: ActionFunction = async ({ request, context }) => {
         fileName: file.name,
       });
       const failure = resolveAiParseFailure(error);
-      return errorResponse(
-        failure.error,
-        failure.status,
-        'ai-parse',
-        true,
-      );
+      return errorResponse(failure.error, failure.status, 'ai-parse', true);
     }
 
     if (!aiContent.trim()) {
