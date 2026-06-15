@@ -83,8 +83,7 @@ export async function generateImageFromPrompt(
           }>
         ).find((item) => item.type === 'image_url' || item.imageUrl || item.image_url || item.url)
       : null;
-    const contentImageUrl =
-      imageItem?.imageUrl?.url ?? imageItem?.image_url?.url ?? imageItem?.url;
+    const contentImageUrl = imageItem?.imageUrl?.url ?? imageItem?.image_url?.url ?? imageItem?.url;
 
     if (contentImageUrl) {
       return contentImageUrl;

@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader } from '@hominem/ui/card';
 import { Link } from 'react-router';
 
 import { CareerHistory } from '~/components/career/CareerHistory';
+import { LevelProgressionChart } from '~/components/career/LevelProgressionChart';
 import { SalaryChart } from '~/components/career/SalaryChart';
 import { StatCard } from '~/components/career/StatCard';
 import {
@@ -143,6 +144,18 @@ function Dashboard({
           </CardHeader>
           <CardContent>
             <SalaryChart data={summary.salaryByYear} />
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {summary.levelProgression.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <h2 className="text-sm font-semibold">Level Progression</h2>
+            <Badge variant="outline">By role</Badge>
+          </CardHeader>
+          <CardContent>
+            <LevelProgressionChart data={summary.levelProgression} />
           </CardContent>
         </Card>
       ) : null}

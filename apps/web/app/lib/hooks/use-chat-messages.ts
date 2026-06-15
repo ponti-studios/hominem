@@ -39,7 +39,9 @@ export function useChatMessages({
     refetchOnReconnect: false,
     staleTime: 30_000,
     queryFn: () =>
-      client.api.chats[':id'].messages.$get({ param: { id: chatId }, query: { limit: '50' } }).then((r) => r.json()),
+      client.api.chats[':id'].messages
+        .$get({ param: { id: chatId }, query: { limit: '50' } })
+        .then((r) => r.json()),
     ...(initialData ? { initialData } : {}),
   });
 

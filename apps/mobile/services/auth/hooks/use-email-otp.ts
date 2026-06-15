@@ -4,9 +4,9 @@ import { useCallback } from 'react';
 
 import { captureAuthAnalyticsEvent, captureAuthAnalyticsFailure } from '~/services/auth/analytics';
 import { authClient } from '~/services/auth/auth-client';
+import { clearPendingAuthEmail, writePendingAuthEmail } from '~/services/auth/pending-email';
 import { getPersistedSessionCookieHeader } from '~/services/auth/session-cookie';
 import type { AuthContext } from '~/services/auth/types';
-import { clearPendingAuthEmail, writePendingAuthEmail } from '~/services/auth/pending-email';
 import { LocalStore } from '~/services/storage/local-store';
 
 const OTP_REQUEST_TIMEOUT_MS = 12000;

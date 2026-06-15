@@ -18,8 +18,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { useThemeColors } from '~/components/theme';
 import { FeatureErrorBoundary } from '~/components/error-boundary/FeatureErrorBoundary';
+import { useThemeColors } from '~/components/theme';
 import { Button } from '~/components/ui/button';
 import AppIcon from '~/components/ui/icon';
 import { CHAT_AUTH_CONFIG } from '~/config/auth';

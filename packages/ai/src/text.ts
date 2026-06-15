@@ -1,12 +1,12 @@
+import type { ChatRequest, ChatResult, ChatStreamChunk } from '@openrouter/sdk/models';
 import { chat } from '@tanstack/ai';
+import type { AnyTextAdapter, ContentPart, ModelMessage, StreamChunk } from '@tanstack/ai';
 import {
   createOpenRouterText,
   openRouterText,
   type OpenRouterTextModelOptions,
 } from '@tanstack/ai-openrouter';
 import { webFetchTool, webSearchTool } from '@tanstack/ai-openrouter/tools';
-import type { AnyTextAdapter, ContentPart, ModelMessage, StreamChunk } from '@tanstack/ai';
-import type { ChatRequest, ChatResult, ChatStreamChunk } from '@openrouter/sdk/models';
 
 import {
   createOpenRouterClient,

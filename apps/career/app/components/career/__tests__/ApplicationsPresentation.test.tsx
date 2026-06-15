@@ -33,7 +33,7 @@ describe('applications presentation components', () => {
     expect(screen.getAllByText('INTERVIEW')).toHaveLength(2);
   });
 
-  it('renders the base empty state with the create action', () => {
+  it('renders the base empty state copy', () => {
     render(
       <MemoryRouter>
         <ApplicationsEmptyState
@@ -45,7 +45,9 @@ describe('applications presentation components', () => {
     );
 
     expect(screen.getByText('No applications found')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Add Application' })).toBeInTheDocument();
+    expect(
+      screen.getByText('Start tracking your job applications to see them here'),
+    ).toBeInTheDocument();
   });
 
   it('renders the filtered empty state copy without the create action', () => {

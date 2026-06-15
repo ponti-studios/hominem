@@ -1,7 +1,6 @@
 export const fontFamilies = {
-  primary:
-    "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif",
-  mono: "'SF Mono', 'Menlo', ui-monospace, monospace",
+  primary: "-apple-system, BlinkMacSystemFont, system-ui, sans-serif",
+  mono: "ui-monospace, monospace",
 } as const;
 
 export const fontSizes = {

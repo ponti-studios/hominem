@@ -752,6 +752,22 @@ export const CareerRepository = {
     return rows as ProjectRow[];
   },
 
+  async getProjectById(
+    handle: DbHandle,
+    owner_userid: string,
+    projectId: string,
+  ): Promise<CareerProjectRecord | null> {
+    const row = await handle
+      .selectFrom('app.projects as project')
+      .innerJoin('app.portfolios as portfolio', 'portfolio.id', 'project.portfolio_id')
+      .selectAll('project')
+      .where('portfolio.owner_userid', '=', owner_userid)
+      .where('project.id', '=', projectId)
+      .executeTakeFirst();
+
+    return (row as ProjectRow | undefined) ?? null;
+  },
+
   async listUserCareerEvents(
     handle: DbHandle,
     owner_userid: string,
@@ -1011,7 +1027,14 @@ export const CareerRepository = {
     handle: DbHandle,
     owner_userid: string,
     portfolio_id: string,
-    skills: Array<{ id?: string; name: string; category?: string | null; level: number }>,
+    skills: Array<{
+      id?: string;
+      name: string;
+      category?: string | null;
+      level: number;
+      ai_derived?: boolean;
+      proof?: string | null;
+    }>,
   ): Promise<void> {
     await getOwnedPortfolioRowOrThrow(handle, owner_userid, portfolio_id);
 
@@ -1042,6 +1065,7 @@ export const CareerRepository = {
             category: skill.category ?? null,
             level: skill.level,
             sort_order: index,
+            ...(skill.proof !== undefined && { proof: skill.proof }),
           })
           .where('id', '=', skill.id)
           .where('portfolio_id', '=', portfolio_id)
@@ -1055,6 +1079,8 @@ export const CareerRepository = {
             category: skill.category ?? null,
             level: skill.level,
             sort_order: index,
+            ai_derived: skill.ai_derived ?? false,
+            proof: skill.proof ?? null,
           })
           .execute();
       }

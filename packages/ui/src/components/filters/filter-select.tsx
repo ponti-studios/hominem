@@ -30,11 +30,13 @@ export function FilterSelect<T extends string>({
   const selectId = id ?? generatedId;
 
   // Convert empty string to special value for Radix UI Select
-  const selectValue = value === '' ? ALL_VALUE : value;
+  const selectValue = (value === '' ? ALL_VALUE : value) as T;
 
-  const handleValueChange = (val: string) => {
+  const handleValueChange = (val: unknown) => {
+    const nextValue = typeof val === 'string' ? val : '';
+
     // Convert special value back to empty string
-    onChange((val === ALL_VALUE ? '' : val) as T | '');
+    onChange((nextValue === ALL_VALUE ? '' : nextValue) as T | '');
   };
 
   return (

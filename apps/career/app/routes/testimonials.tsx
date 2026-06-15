@@ -1,10 +1,10 @@
 import type { CareerTestimonialRecord as Testimonial } from '@hominem/db';
 import { CareerRepository, db } from '@hominem/db';
 import { Button } from '@hominem/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
 import { MessageSquare, PlusIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import type { SubmitHandler } from 'react-hook-form';
-import { useForm } from 'react-hook-form';
+import { Controller, type SubmitHandler, useForm } from 'react-hook-form';
 import { useFetcher } from 'react-router';
 
 import { FormErrorAlert } from '../components/FormErrorAlert';
@@ -43,6 +43,7 @@ function TestimonialForm({
   const isNew = !testimonial?.id;
 
   const {
+    control,
     register,
     handleSubmit,
     reset,
@@ -214,18 +215,27 @@ function TestimonialForm({
           <label htmlFor={`rating-${testimonial?.id || 'new'}`} className="label">
             Rating (1-5)
           </label>
-          <select
-            id={`rating-${testimonial?.id || 'new'}`}
-            {...register('rating', { valueAsNumber: true })}
-            className="select"
-          >
-            <option value="">Select rating</option>
-            <option value="5">5 - Excellent</option>
-            <option value="4">4 - Good</option>
-            <option value="3">3 - Average</option>
-            <option value="2">2 - Fair</option>
-            <option value="1">1 - Poor</option>
-          </select>
+          <Controller
+            control={control}
+            name="rating"
+            render={({ field }) => (
+              <Select
+                value={field.value != null ? String(field.value) : ''}
+                onValueChange={(value) => field.onChange(value ? Number(value) : undefined)}
+              >
+                <SelectTrigger id={`rating-${testimonial?.id || 'new'}`} className="w-full">
+                  <SelectValue placeholder="Select rating" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">5 - Excellent</SelectItem>
+                  <SelectItem value="4">4 - Good</SelectItem>
+                  <SelectItem value="3">3 - Average</SelectItem>
+                  <SelectItem value="2">2 - Fair</SelectItem>
+                  <SelectItem value="1">1 - Poor</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          />
         </div>
       </div>
 

@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../select';
 import type { ActiveFilter } from './active-filters-bar';
 import { FilterControls, type FilterControlsProps } from './filter-controls';
 
@@ -42,16 +43,24 @@ export const Default: Story = {
   },
   render: () => (
     <FilterControls>
-      <select className="h-9 rounded-md border px-3 text-sm">
-        <option>All statuses</option>
-        <option>Active</option>
-        <option>Inactive</option>
-      </select>
-      <select className="h-9 rounded-md border px-3 text-sm">
-        <option>All types</option>
-        <option>Invoice</option>
-        <option>Payment</option>
-      </select>
+      <Select>
+        <SelectTrigger className="w-[180px]">
+          <SelectValue placeholder="All statuses" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="active">Active</SelectItem>
+          <SelectItem value="inactive">Inactive</SelectItem>
+        </SelectContent>
+      </Select>
+      <Select>
+        <SelectTrigger className="w-[180px]">
+          <SelectValue placeholder="All types" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="invoice">Invoice</SelectItem>
+          <SelectItem value="payment">Payment</SelectItem>
+        </SelectContent>
+      </Select>
     </FilterControls>
   ),
 };
@@ -73,12 +82,22 @@ export const WithActiveFilters: Story = {
         { id: '2', label: 'Type: Invoice', onRemove: () => {} },
       ]}
     >
-      <select className="h-9 rounded-md border px-3 text-sm">
-        <option>Active</option>
-      </select>
-      <select className="h-9 rounded-md border px-3 text-sm">
-        <option>Invoice</option>
-      </select>
+      <Select defaultValue="active">
+        <SelectTrigger className="w-[180px]">
+          <SelectValue placeholder="Active" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="active">Active</SelectItem>
+        </SelectContent>
+      </Select>
+      <Select defaultValue="invoice">
+        <SelectTrigger className="w-[180px]">
+          <SelectValue placeholder="Invoice" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="invoice">Invoice</SelectItem>
+        </SelectContent>
+      </Select>
     </FilterControls>
   ),
 };

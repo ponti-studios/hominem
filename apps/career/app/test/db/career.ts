@@ -39,7 +39,7 @@ export function createCareerTestDb() {
 
   async function createPortfolio(options: CreatePortfolioOptions = {}) {
     const user = options.user ?? (await createUser({ name: options.slug ?? 'Portfolio User' }));
-    const slug = options.slug ?? 'existing';
+    const slug = options.slug ?? `existing-${randomUUID()}`;
 
     const portfolio = await db
       .insertInto('app.portfolios')

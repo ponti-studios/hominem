@@ -13,11 +13,5 @@ export function ApplicationsEmptyState({
     );
   }
 
-  return (
-    <EmptyState
-      title={emptyTitle}
-      description={emptyDescription}
-      variant="dashed"
-    />
-  );
+  return <EmptyState title={emptyTitle} description={emptyDescription} variant="dashed" />;
 }

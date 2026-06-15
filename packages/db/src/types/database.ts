@@ -678,6 +678,7 @@ export interface AppProjects {
 }
 
 export interface AppSkills {
+  ai_derived: Generated<boolean>;
   category: string | null;
   createdat: Generated<Timestamp>;
   description: string | null;
@@ -687,6 +688,7 @@ export interface AppSkills {
   level: number;
   name: string;
   portfolio_id: string;
+  proof: string | null;
   sort_order: Generated<number>;
   updatedat: Generated<Timestamp>;
   years_of_experience: number | null;

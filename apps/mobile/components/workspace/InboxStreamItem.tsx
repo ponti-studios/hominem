@@ -30,7 +30,9 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
   const primaryText = cleanText(item.title) ?? t.workspace.item.untitled;
   const kindLabel = item.kind === 'chat' ? 'CHAT' : 'NOTE';
   const iconName = item.kind === 'chat' ? 'bubble.left' : 'note.text';
-  const { mutate: deleteNote, isPending: isDeletingNote } = useNoteDelete({ noteId: item.entityId });
+  const { mutate: deleteNote, isPending: isDeletingNote } = useNoteDelete({
+    noteId: item.entityId,
+  });
   const { mutate: archiveChat, isPending: isArchivingChat } = useChatArchive({
     chatId: item.entityId,
   });

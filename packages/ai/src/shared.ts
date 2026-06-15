@@ -113,7 +113,9 @@ export function normalizeOpenRouterError(error: unknown): OpenRouterRequestError
     const details = parseOpenRouterErrorDetails(candidate.body);
     const nestedError = details?.error;
     const providerError =
-      isJsonObject(nestedError) && typeof nestedError.message === 'string' ? nestedError : undefined;
+      isJsonObject(nestedError) && typeof nestedError.message === 'string'
+        ? nestedError
+        : undefined;
     const providerMessage =
       providerError && typeof providerError.message === 'string'
         ? providerError.message
@@ -130,7 +132,8 @@ export function normalizeOpenRouterError(error: unknown): OpenRouterRequestError
         (typeof candidate.message === 'string' ? candidate.message : 'OpenRouter request failed'),
       {
         status,
-        code: providerError && typeof providerError.code === 'string' ? providerError.code : undefined,
+        code:
+          providerError && typeof providerError.code === 'string' ? providerError.code : undefined,
         providerMessage,
         details: providerError ?? details,
       },

@@ -42,7 +42,6 @@ export default function Login() {
     '/stats',
     '/projects',
     '/testimonials',
-    '/certifications',
   ]).safeRedirect;
   const {
     error,

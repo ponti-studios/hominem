@@ -1,8 +1,8 @@
 'use client';
 
-import { maskEmail } from '@hominem/auth/shared/mask-email';
 import { usePasskeys } from '@hominem/auth/client/passkey';
 import { useAuthClient, useEmailAuth } from '@hominem/auth/client/provider';
+import { maskEmail } from '@hominem/auth/shared/mask-email';
 import { resolveAuthRedirect } from '@hominem/auth/shared/redirect-policy';
 import { AuthScaffold, EmailEntryForm, OtpVerificationForm, translateUi } from '@hominem/ui';
 import { useEffect, useState } from 'react';

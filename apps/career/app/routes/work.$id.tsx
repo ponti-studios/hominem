@@ -16,6 +16,7 @@ import {
 import { Button } from '@hominem/ui/button';
 import { Field } from '@hominem/ui/field';
 import { Input } from '@hominem/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
 import { Textarea } from '@hominem/ui/textarea';
 import {
   ArrowLeftIcon,
@@ -25,7 +26,7 @@ import {
   TrashIcon,
 } from 'lucide-react';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
-import { useFieldArray, useForm, type SubmitHandler } from 'react-hook-form';
+import { Controller, useFieldArray, useForm, type SubmitHandler } from 'react-hook-form';
 import { useFetcher, useNavigate } from 'react-router';
 
 import { jsonObject } from '~/lib/db-json';
@@ -76,9 +77,6 @@ const REASON_FOR_LEAVING_OPTIONS = [
   'growth',
   'personal',
 ] as const;
-
-const selectClassName =
-  'border-input focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 aria-invalid:border-destructive flex h-11 w-full rounded-md border bg-transparent px-3 py-2 text-base transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm';
 
 export async function loader({ context, params }: Route.LoaderArgs) {
   const user = context.get(userContext)!;
@@ -337,7 +335,8 @@ export default function WorkExperienceDetail({ loaderData }: Route.ComponentProp
         <TechnologiesSection technologies={metadata.technologies ?? []} />
         <ProjectsSection
           linkedProjectCount={linkedProjectCount}
-          onOpen={() => navigate(`/work/${workExperience.id}/projects`)}
+          onOpen={() => navigate(`/projects?client=${workExperience.id}`)}
+          companyName={workExperience.company || 'this client'}
         />
         <CompensationSection workExperience={workExperience} />
         <TeamSection workExperience={workExperience} />
@@ -375,6 +374,7 @@ function OverviewSection({
       onSuccess: () => setIsEditing(false),
     });
   const {
+    control,
     register,
     handleSubmit,
     reset,
@@ -444,24 +444,52 @@ function OverviewSection({
 
           <div className="grid gap-4 md:grid-cols-2">
             <Field label="Employment type">
-              <select className={selectClassName} {...register('employment_type')}>
-                <option value="">Select one</option>
-                {EMPLOYMENT_TYPE_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {formatOptionalLabel(option)}
-                  </option>
-                ))}
-              </select>
+              <Controller
+                control={control}
+                name="employment_type"
+                render={({ field }) => (
+                  <Select
+                    value={field.value ?? ''}
+                    onValueChange={(value) => field.onChange(value === '__none' ? '' : value)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select one" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none">Select one</SelectItem>
+                      {EMPLOYMENT_TYPE_OPTIONS.map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {formatOptionalLabel(option)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
             </Field>
             <Field label="Work arrangement">
-              <select className={selectClassName} {...register('work_arrangement')}>
-                <option value="">Select one</option>
-                {WORK_ARRANGEMENT_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {formatOptionalLabel(option)}
-                  </option>
-                ))}
-              </select>
+              <Controller
+                control={control}
+                name="work_arrangement"
+                render={({ field }) => (
+                  <Select
+                    value={field.value ?? ''}
+                    onValueChange={(value) => field.onChange(value === '__none' ? '' : value)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select one" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none">Select one</SelectItem>
+                      {WORK_ARRANGEMENT_OPTIONS.map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {formatOptionalLabel(option)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
             </Field>
           </div>
 
@@ -708,9 +736,11 @@ function TechnologiesSection({ technologies }: { technologies: string[] }) {
 function ProjectsSection({
   linkedProjectCount,
   onOpen,
+  companyName,
 }: {
   linkedProjectCount: number;
   onOpen: () => void;
+  companyName: string;
 }) {
   return (
     <SectionCard
@@ -718,7 +748,7 @@ function ProjectsSection({
       action={
         <Button type="button" variant="outline" onClick={onOpen}>
           <BriefcaseBusinessIcon className="size-4" />
-          Manage projects
+          View projects
         </Button>
       }
     >
@@ -730,8 +760,8 @@ function ProjectsSection({
               : `${linkedProjectCount} project${linkedProjectCount === 1 ? '' : 's'} linked to this role.`}
           </p>
           <p className="body-4 text-muted-foreground">
-            Use the projects screen to attach launches, case studies, or shipped work to this
-            experience.
+            Open the shared projects screen to manage launches, case studies, and shipped work for{' '}
+            {companyName}. We’ll pre-apply the client filter for you.
           </p>
         </div>
       </div>
@@ -843,7 +873,7 @@ function TeamSection({ workExperience }: { workExperience: WorkExperienceRecord 
       errorMessage: 'We couldn’t save the team details. Try again.',
       onSuccess: () => setIsEditing(false),
     });
-  const { register, handleSubmit, reset } = useForm<TeamFormValues>({ defaultValues });
+  const { control, register, handleSubmit, reset } = useForm<TeamFormValues>({ defaultValues });
 
   useEffect(() => {
     reset(defaultValues);
@@ -876,14 +906,28 @@ function TeamSection({ workExperience }: { workExperience: WorkExperienceRecord 
 
           <div className="grid gap-4 md:grid-cols-2">
             <Field label="Seniority level">
-              <select className={selectClassName} {...register('seniority_level')}>
-                <option value="">Select one</option>
-                {SENIORITY_LEVEL_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {formatOptionalLabel(option)}
-                  </option>
-                ))}
-              </select>
+              <Controller
+                control={control}
+                name="seniority_level"
+                render={({ field }) => (
+                  <Select
+                    value={field.value ?? ''}
+                    onValueChange={(value) => field.onChange(value === '__none' ? '' : value)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select one" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none">Select one</SelectItem>
+                      {SENIORITY_LEVEL_OPTIONS.map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {formatOptionalLabel(option)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
             </Field>
             <Field label="Department">
               <Input placeholder="Engineering" {...register('department')} />
@@ -949,7 +993,7 @@ function ExitSection({ workExperience }: { workExperience: WorkExperienceRecord 
       errorMessage: 'We couldn’t save the exit details. Try again.',
       onSuccess: () => setIsEditing(false),
     });
-  const { register, handleSubmit, reset } = useForm<ExitFormValues>({ defaultValues });
+  const { control, register, handleSubmit, reset } = useForm<ExitFormValues>({ defaultValues });
 
   useEffect(() => {
     reset(defaultValues);
@@ -978,14 +1022,28 @@ function ExitSection({ workExperience }: { workExperience: WorkExperienceRecord 
           <FormErrorAlert title="Exit details weren’t saved" message={submissionError} />
 
           <Field label="Reason for leaving">
-            <select className={selectClassName} {...register('reason_for_leaving')}>
-              <option value="">Select one</option>
-              {REASON_FOR_LEAVING_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {formatOptionalLabel(option)}
-                </option>
-              ))}
-            </select>
+            <Controller
+              control={control}
+              name="reason_for_leaving"
+              render={({ field }) => (
+                <Select
+                  value={field.value ?? ''}
+                  onValueChange={(value) => field.onChange(value === '__none' ? '' : value)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select one" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none">Select one</SelectItem>
+                    {REASON_FOR_LEAVING_OPTIONS.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {formatOptionalLabel(option)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </Field>
 
           <Field label="Exit notes">
@@ -1365,7 +1423,7 @@ function hasCompensation(workExperience: WorkExperienceRecord) {
     workExperience.base_salary,
     workExperience.signing_bonus,
     workExperience.annual_bonus,
-  ].some((value) => value !== null && value !== undefined && value !== '');
+  ].some((value) => value !== null && value !== undefined);
 }
 
 function hasTeamDetails(workExperience: WorkExperienceRecord) {

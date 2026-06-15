@@ -166,7 +166,7 @@ export default function ChatPage({ loaderData, params }: Route.ComponentProps) {
       <aside>
         <Accordion type="multiple" defaultValue={['chat', 'notes']} className="space-y-3">
           <AccordionItem value="chat" className="rounded-2xl border-border-subtle bg-surface">
-            <AccordionTrigger className="rounded-2xl px-4 py-4 text-base hover:bg-muted/40">
+            <AccordionTrigger className="rounded-2xl p-4 text-base hover:bg-muted/40">
               Current chat
             </AccordionTrigger>
             <AccordionContent className="space-y-4 px-4 pb-4 pt-0">
@@ -193,7 +193,7 @@ export default function ChatPage({ loaderData, params }: Route.ComponentProps) {
           </AccordionItem>
 
           <AccordionItem value="notes" className="rounded-2xl border-border-subtle bg-surface">
-            <AccordionTrigger className="rounded-2xl px-4 py-4 text-base hover:bg-muted/40">
+            <AccordionTrigger className="rounded-2xl p-4 text-base hover:bg-muted/40">
               Selected notes ({selectedNotesForSend.length})
             </AccordionTrigger>
             <AccordionContent className="px-4 pb-4 pt-0">

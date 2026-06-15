@@ -12,7 +12,14 @@ import { ApplicationsFilters } from '~/components/career/applications/Applicatio
 import { ApplicationsMobileList } from '~/components/career/applications/ApplicationsMobileList';
 import { ApplicationsResultsSummary } from '~/components/career/applications/ApplicationsResultsSummary';
 import { ApplicationsHeatmap } from '~/components/career/ApplicationsHeatmap';
-import { getAllApplicationsWithCompany } from '~/lib/career/queries/job-applications';
+import { ApplicationsMetrics } from '~/components/career/ApplicationsMetrics';
+import { SourcePerformanceChart } from '~/components/career/SourcePerformanceChart';
+import { TopCompaniesInsights } from '~/components/career/TopCompaniesInsights';
+import {
+  getAllApplicationsWithCompany,
+  getJobApplicationMetricsForUser,
+  getTopCompaniesAppliedTo,
+} from '~/lib/career/queries/job-applications';
 import { userContext } from '~/lib/middleware';
 import { buildApplicationsSearchParams } from '~/lib/utils/applicationsSearchParams';
 import {
@@ -65,14 +72,21 @@ export async function loader({ context, request }: Route.LoaderArgs) {
       orderDirection: (searchParams.get('orderDirection') as 'asc' | 'desc') || 'desc',
     };
 
-    const allApplications = await getAllApplicationsWithCompany(user.id);
-    const paginatedApplications = await getAllApplicationsWithCompany(user.id, filter, pagination);
-    const filteredApplications = await getAllApplicationsWithCompany(user.id, filter);
+    const [allApplications, paginatedApplications, filteredApplications, metrics, topCompanies] =
+      await Promise.all([
+        getAllApplicationsWithCompany(user.id),
+        getAllApplicationsWithCompany(user.id, filter, pagination),
+        getAllApplicationsWithCompany(user.id, filter),
+        getJobApplicationMetricsForUser(user.id),
+        getTopCompaniesAppliedTo(user.id),
+      ]);
 
     return {
       user,
       allApplications,
       applications: paginatedApplications,
+      metrics,
+      topCompanies,
       pagination: {
         page,
         limit,
@@ -162,7 +176,14 @@ export default function Applications({ loaderData }: Route.ComponentProps) {
   const [searchValue, setSearchValue] = useState(searchValueFromRoute);
   const debouncedSearchValue = useDebouncedValue(searchValue, 500);
 
-  const { allApplications, applications, pagination, filters: initialFilters } = loaderData;
+  const {
+    allApplications,
+    applications,
+    metrics,
+    pagination,
+    topCompanies,
+    filters: initialFilters,
+  } = loaderData;
   const filters = {
     ...initialFilters,
     statuses: initialFilters.statuses ?? [],
@@ -215,27 +236,21 @@ export default function Applications({ loaderData }: Route.ComponentProps) {
     updateSearchParams({ search: debouncedSearchValue, page: '1' });
   }, [debouncedSearchValue, filters.search]);
 
-  if (pagination.total === 0 && !hasFilters) {
-    return (
-      <div className="space-y-8 px-2 sm:px-0">
-        <ApplicationsHeader totalCount={allApplications.length} />
-        <div className="space-y-8">
-          <ApplicationsEmptyState
-            kind="base"
-            emptyTitle="No applications found"
-            emptyDescription="Start tracking your job applications to see them here"
-          />
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-8 px-2 sm:px-0">
       <ApplicationsHeader totalCount={allApplications.length} />
 
       <div className="space-y-8">
         <ApplicationsHeatmap applications={allApplications} />
+        <ApplicationsMetrics metrics={metrics} />
+        <div className="grid gap-6 xl:grid-cols-2">
+          <Card>
+            <CardContent className="p-4">
+              <SourcePerformanceChart data={metrics.sourceMetrics} />
+            </CardContent>
+          </Card>
+          <TopCompaniesInsights companies={topCompanies} />
+        </div>
         <Card>
           <CardContent className="space-y-4 p-4">
             <ApplicationsFilters
@@ -265,9 +280,13 @@ export default function Applications({ loaderData }: Route.ComponentProps) {
 
         {applications.length === 0 ? (
           <ApplicationsEmptyState
-            kind="filtered"
-            emptyTitle="No applications match your filters"
-            emptyDescription="Try adjusting your search criteria"
+            kind={hasFilters ? 'filtered' : 'base'}
+            emptyTitle={hasFilters ? 'No applications match your filters' : 'No applications found'}
+            emptyDescription={
+              hasFilters
+                ? 'Try adjusting your search criteria'
+                : 'Start tracking your job applications to see them here'
+            }
           />
         ) : (
           <>

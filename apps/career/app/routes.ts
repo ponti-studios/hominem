@@ -13,6 +13,7 @@ export default [
     route('api/applications/create', 'routes/api.applications.create.ts'),
     route('api/resume/convert', 'routes/api.resume.convert.ts'),
     route('api/resume/customize', 'routes/api.resume.customize.ts'),
+    route('api/skills/derive', 'routes/api.skills.derive.ts'),
     layout('routes/_authenticated-pages.tsx', [
       route('account', 'routes/account.tsx'),
       route('onboarding', 'routes/onboarding.tsx'),
@@ -20,17 +21,18 @@ export default [
       layout('routes/_portfolio-required.tsx', [
         route('work', 'routes/work.tsx'),
         route('work/:id', 'routes/work.$id.tsx'),
-        route('work/:id/projects', 'routes/work.$id.projects.tsx'),
         route('skills', 'routes/skills.tsx'),
         route('social', 'routes/social.tsx'),
         route('stats', 'routes/stats.tsx'),
         route('projects', 'routes/projects.tsx'),
+        route('projects/new', 'routes/projects.new.tsx'),
+        route('projects/:id', 'routes/projects.$id.tsx'),
         route('testimonials', 'routes/testimonials.tsx'),
         route('applications', 'routes/applications.tsx'),
         route('applications/new', 'routes/applications.new.tsx'),
         route('applications/:id', 'routes/applications.$id.tsx'),
-        route('certifications', 'routes/certifications.tsx'),
       ]),
     ]),
   ]),
+  route('*', 'routes/$.tsx'),
 ] satisfies RouteConfig;

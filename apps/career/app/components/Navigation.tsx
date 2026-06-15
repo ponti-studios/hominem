@@ -158,7 +158,7 @@ export default function Navigation() {
               </Button>
             </DrawerTrigger>
             <DrawerContent className="h-full max-h-none rounded-none border-l bg-background p-0">
-              <DrawerHeader className="border-b border-border px-4 py-4">
+              <DrawerHeader className="border-b border-border p-4">
                 <DrawerTitle>Menu</DrawerTitle>
               </DrawerHeader>
 

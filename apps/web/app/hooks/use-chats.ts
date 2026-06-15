@@ -32,7 +32,8 @@ export function useArchiveChat({
   const queryClient = useQueryClient();
 
   return useMutation<ArchiveChatOutput, Error, void>({
-    mutationFn: () => client.api.chats[':id'].archive.$post({ param: { id: chatId } }).then((r) => r.json()),
+    mutationFn: () =>
+      client.api.chats[':id'].archive.$post({ param: { id: chatId } }).then((r) => r.json()),
     onSuccess: (chat) => {
       queryClient.invalidateQueries({ queryKey: inboxQueryKeys.pages() });
       onSuccess?.(chat);

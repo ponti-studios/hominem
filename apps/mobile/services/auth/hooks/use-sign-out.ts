@@ -2,8 +2,8 @@ import type { RefObject } from 'react';
 import { useCallback } from 'react';
 
 import { captureAuthAnalyticsEvent, captureAuthAnalyticsFailure } from '~/services/auth/analytics';
-import { clearPendingAuthEmail } from '~/services/auth/pending-email';
 import { authClient } from '~/services/auth/auth-client';
+import { clearPendingAuthEmail } from '~/services/auth/pending-email';
 import { clearPersistedSessionCookies } from '~/services/auth/session-cookie';
 import type { AuthContext } from '~/services/auth/types';
 import { LocalStore } from '~/services/storage/local-store';

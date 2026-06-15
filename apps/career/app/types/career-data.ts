@@ -1,6 +1,5 @@
 import type {
   CareerApplicationStage,
-  CareerCertificationRecord,
   CareerCompanyRecord,
   CareerInterviewEntry,
   CareerJobApplicationRecord,
@@ -47,8 +46,6 @@ export interface ApplicationFile {
   createdat: Date;
   updatedat: Date;
 }
-
-export type Certification = CareerCertificationRecord;
 
 export interface ApplicationWithRelations {
   application: ApplicationWithCompany;
@@ -137,28 +134,5 @@ export interface JobApplicationMetrics {
     status: string;
     count: number;
     percentage: number;
-  }>;
-}
-
-export interface CertificationSummary {
-  totalCertifications: number;
-  activeCertifications: number;
-  expiredCertifications: number;
-  expiringInSixMonths: number;
-  categories: Array<{
-    category: string;
-    count: number;
-  }>;
-  totalInvestment: number;
-  upcomingRenewals: Array<{
-    id: string;
-    name: string;
-    expirationDate: string;
-    daysUntilExpiration: number;
-  }>;
-  certificationsByYear: Array<{
-    year: number;
-    count: number;
-    totalCost: number;
   }>;
 }
