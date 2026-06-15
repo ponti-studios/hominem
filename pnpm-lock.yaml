@@ -83,6 +83,9 @@ importers:
       '@hominem/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@hominem/utils':
+        specifier: workspace:*
+        version: link:../../packages/utils
       '@react-router/node':
         specifier: 7.14.0
         version: 7.14.0(react-router@7.14.0(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(typescript@6.0.3)
@@ -575,6 +578,9 @@ importers:
 
   packages/rpc:
     dependencies:
+      '@hominem/api':
+        specifier: workspace:*
+        version: link:../../services/api
       '@hominem/chat':
         specifier: workspace:*
         version: link:../chat
@@ -591,9 +597,6 @@ importers:
         specifier: 4.3.6
         version: 4.3.6
     devDependencies:
-      '@hominem/api':
-        specifier: workspace:*
-        version: link:../../services/api
       react:
         specifier: 19.2.0
         version: 19.2.0
@@ -874,9 +877,6 @@ importers:
       '@hominem/queues':
         specifier: workspace:*
         version: link:../../packages/queues
-      '@hominem/rpc':
-        specifier: workspace:*
-        version: link:../../packages/rpc
       '@hominem/services':
         specifier: workspace:*
         version: link:../../packages/services

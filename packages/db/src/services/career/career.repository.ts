@@ -8,7 +8,6 @@ import type {
   AppCertifications,
   AppCompanies,
   AppJobApplications,
-  AppPortfolioStats,
   AppPortfolios,
   AppProjects,
   AppSkills,
@@ -20,7 +19,6 @@ import type {
 
 type PortfolioRow = Selectable<AppPortfolios>;
 type SocialLinksRow = Selectable<AppSocialLinks>;
-type PortfolioStatRow = Selectable<AppPortfolioStats>;
 type WorkExperienceRow = Selectable<AppWorkExperiences>;
 type SkillRow = Selectable<AppSkills>;
 type ProjectRow = Selectable<AppProjects>;
@@ -112,7 +110,6 @@ export interface CareerApplicationStage {
 
 export type CareerPortfolioRecord = PortfolioRow;
 export type CareerSocialLinksRecord = SocialLinksRow;
-export type CareerPortfolioStatRecord = PortfolioStatRow;
 export type CareerWorkExperienceRecord = WorkExperienceRow;
 export type CareerSkillRecord = SkillRow;
 export type CareerProjectRecord = ProjectRow;
@@ -120,7 +117,6 @@ export type CareerTestimonialRecord = TestimonialRow;
 
 export interface CareerFullPortfolioRecord extends CareerPortfolioRecord {
   social_links: CareerSocialLinksRecord | null;
-  portfolio_stats: CareerPortfolioStatRecord[];
   work_experiences: CareerWorkExperienceRecord[];
   skills: CareerSkillRecord[];
   projects: CareerProjectRecord[];
@@ -184,49 +180,41 @@ async function loadFullPortfolio(
   handle: DbHandle,
   portfolio: CareerPortfolioRecord,
 ): Promise<CareerFullPortfolioRecord> {
-  const [social_links, portfolio_stats, work_experiences, skills, projects, testimonials] =
-    await Promise.all([
-      handle
-        .selectFrom('app.social_links')
-        .selectAll()
-        .where('portfolio_id', '=', portfolio.id)
-        .executeTakeFirst(),
-      handle
-        .selectFrom('app.portfolio_stats')
-        .selectAll()
-        .where('portfolio_id', '=', portfolio.id)
-        .orderBy('sort_order', 'asc')
-        .execute(),
-      handle
-        .selectFrom('app.work_experiences')
-        .selectAll()
-        .where('portfolio_id', '=', portfolio.id)
-        .orderBy(sql`start_date asc nulls last`)
-        .execute(),
-      handle
-        .selectFrom('app.skills')
-        .selectAll()
-        .where('portfolio_id', '=', portfolio.id)
-        .orderBy('sort_order', 'asc')
-        .execute(),
-      handle
-        .selectFrom('app.projects')
-        .selectAll()
-        .where('portfolio_id', '=', portfolio.id)
-        .orderBy('sort_order', 'asc')
-        .execute(),
-      handle
-        .selectFrom('app.testimonials')
-        .selectAll()
-        .where('portfolio_id', '=', portfolio.id)
-        .orderBy('sort_order', 'asc')
-        .execute(),
-    ]);
+  const [social_links, work_experiences, skills, projects, testimonials] = await Promise.all([
+    handle
+      .selectFrom('app.social_links')
+      .selectAll()
+      .where('portfolio_id', '=', portfolio.id)
+      .executeTakeFirst(),
+    handle
+      .selectFrom('app.work_experiences')
+      .selectAll()
+      .where('portfolio_id', '=', portfolio.id)
+      .orderBy(sql`start_date asc nulls last`)
+      .execute(),
+    handle
+      .selectFrom('app.skills')
+      .selectAll()
+      .where('portfolio_id', '=', portfolio.id)
+      .orderBy('sort_order', 'asc')
+      .execute(),
+    handle
+      .selectFrom('app.projects')
+      .selectAll()
+      .where('portfolio_id', '=', portfolio.id)
+      .orderBy('sort_order', 'asc')
+      .execute(),
+    handle
+      .selectFrom('app.testimonials')
+      .selectAll()
+      .where('portfolio_id', '=', portfolio.id)
+      .orderBy('sort_order', 'asc')
+      .execute(),
+  ]);
 
   return {
     ...portfolio,
     social_links: (social_links as SocialLinksRow | undefined) ?? null,
-    portfolio_stats: portfolio_stats as PortfolioStatRow[],
     work_experiences: work_experiences as WorkExperienceRow[],
     skills: skills as SkillRow[],
     projects: projects as ProjectRow[],
@@ -969,58 +957,6 @@ export const CareerRepository = {
       .executeTakeFirstOrThrow();
 
     return created as SocialLinksRow;
-  },
-
-  async replacePortfolioStats(
-    handle: DbHandle,
-    owner_userid: string,
-    portfolio_id: string,
-    stats: Array<{ id?: string; label: string; value: string; sort_order?: number }>,
-  ): Promise<void> {
-    await getOwnedPortfolioRowOrThrow(handle, owner_userid, portfolio_id);
-
-    const current = await handle
-      .selectFrom('app.portfolio_stats')
-      .select(['id'])
-      .where('portfolio_id', '=', portfolio_id)
-      .execute();
-
-    const currentIds = current.map((item) => item.id);
-    const submittedIds = stats.flatMap((item) => (item.id ? [item.id] : []));
-    const toDelete = currentIds.filter((id) => !submittedIds.includes(id));
-
-    if (toDelete.length > 0) {
-      await handle
-        .deleteFrom('app.portfolio_stats')
-        .where('portfolio_id', '=', portfolio_id)
-        .where('id', 'in', toDelete)
-        .execute();
-    }
-
-    for (const [index, stat] of stats.entries()) {
-      if (stat.id) {
-        await handle
-          .updateTable('app.portfolio_stats')
-          .set({
-            label: stat.label,
-            value: stat.value,
-            sort_order: stat.sort_order ?? index,
-          })
-          .where('id', '=', stat.id)
-          .where('portfolio_id', '=', portfolio_id)
-          .execute();
-      } else {
-        await handle
-          .insertInto('app.portfolio_stats')
-          .values({
-            portfolio_id: portfolio_id,
-            label: stat.label,
-            value: stat.value,
-            sort_order: stat.sort_order ?? index,
-          })
-          .execute();
-      }
-    }
   },
 
   async replaceSkills(

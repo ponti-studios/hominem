@@ -10,7 +10,7 @@ import type { Route } from './+types/applications';
 import Applications from './applications';
 
 describe('Applications route', () => {
-  it('renders the aggregate visualizations above the records list', () => {
+  it('renders the applications table with records', () => {
     render(
       <MemoryRouter initialEntries={['/applications']}>
         <Applications
@@ -41,47 +41,6 @@ describe('Applications route', () => {
                 company: { name: 'Example Co' },
               }),
             ],
-            metrics: {
-              totalApplications: 1,
-              responseRate: 100,
-              interviewRate: 100,
-              offerRate: 0,
-              acceptanceRate: 0,
-              averageTimeToResponse: 5,
-              averageTimeToOffer: 0,
-              averageTimeToDecision: 0,
-              salaryMetrics: {
-                averageOffered: 0,
-                averageAccepted: 0,
-                negotiationSuccessRate: 0,
-                averageNegotiationIncrease: 0,
-              },
-              sourceMetrics: [
-                {
-                  source: 'linkedin',
-                  count: 1,
-                  responseRate: 100,
-                  offerRate: 0,
-                },
-              ],
-              statusBreakdown: [
-                {
-                  status: JobApplicationStatus.INTERVIEW,
-                  count: 1,
-                  percentage: 100,
-                },
-              ],
-            },
-            topCompanies: [
-              {
-                company: 'Example Co',
-                count: 1,
-                offers: 0,
-                interviews: 1,
-                offerRate: 0,
-                interviewRate: 100,
-              },
-            ],
             pagination: {
               page: 1,
               limit: 10,
@@ -98,14 +57,11 @@ describe('Applications route', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText('Application Activity')).toBeInTheDocument();
-    expect(screen.getByText('Application metrics')).toBeInTheDocument();
-    expect(screen.getByText('Performance Guide')).toBeInTheDocument();
-    expect(screen.getByText('Company Insights')).toBeInTheDocument();
     expect(screen.getAllByText('Staff Engineer').length).toBeGreaterThan(0);
+    expect(screen.getByText('Job Applications')).toBeInTheDocument();
   });
 
-  it('keeps analytics visible when there are no applications', () => {
+  it('shows empty state when there are no applications', () => {
     render(
       <MemoryRouter initialEntries={['/applications']}>
         <Applications
@@ -117,25 +73,6 @@ describe('Applications route', () => {
             user: {} as Route.ComponentProps['loaderData']['user'],
             allApplications: [],
             applications: [],
-            metrics: {
-              totalApplications: 0,
-              responseRate: 0,
-              interviewRate: 0,
-              offerRate: 0,
-              acceptanceRate: 0,
-              averageTimeToResponse: 0,
-              averageTimeToOffer: 0,
-              averageTimeToDecision: 0,
-              salaryMetrics: {
-                averageOffered: 0,
-                averageAccepted: 0,
-                negotiationSuccessRate: 0,
-                averageNegotiationIncrease: 0,
-              },
-              sourceMetrics: [],
-              statusBreakdown: [],
-            },
-            topCompanies: [],
             pagination: {
               page: 1,
               limit: 10,
@@ -152,9 +89,6 @@ describe('Applications route', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText('Application metrics')).toBeInTheDocument();
-    expect(screen.getByText('No source performance data available')).toBeInTheDocument();
-    expect(screen.getByText('No company data available')).toBeInTheDocument();
     expect(screen.getByText('No applications found')).toBeInTheDocument();
   });
 });

@@ -1,4 +1,4 @@
-import { UploadResponseSchema } from '@hominem/rpc/schemas/files.schema';
+import type { UploadResponse, UploadedFileDto } from '@hominem/rpc/types';
 import {
   UPLOAD_MAX_FILE_COUNT,
   UPLOAD_MAX_FILE_SIZE_BYTES,
@@ -14,7 +14,7 @@ interface UploadClient {
   upload(formData: FormData): Promise<unknown>;
 }
 
-function toUploadedFile(file: ReturnType<typeof UploadResponseSchema.parse>['file']): UploadedFile {
+function toUploadedFile(file: UploadedFileDto): UploadedFile {
   return {
     id: file.id,
     originalName: file.originalName,
@@ -24,7 +24,6 @@ function toUploadedFile(file: ReturnType<typeof UploadResponseSchema.parse>['fil
     ...(file.content ? { content: file.content } : {}),
     ...(file.textContent ? { textContent: file.textContent } : {}),
     ...(file.metadata ? { metadata: file.metadata } : {}),
-    ...(file.thumbnail ? { thumbnail: file.thumbnail } : {}),
     url: file.url,
     uploadedAt: new Date(file.uploadedAt),
     vectorIds: file.vectorIds ?? [],
@@ -123,7 +122,7 @@ async function performMobileUploads(
       formData.append('originalName', originalName);
       formData.append('mimetype', mimetype);
 
-      const completion = UploadResponseSchema.parse(await api.upload(formData));
+      const completion = await api.upload(formData) as UploadResponse;
 
       completedCount++;
       const overallProgress = Math.round((completedCount / assets.length) * 100);

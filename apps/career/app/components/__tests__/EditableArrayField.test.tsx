@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { normalizeString } from '~/lib/utils';
+import { slugifyText } from '@hominem/utils/text';
 
 import { EditableArrayField } from '../EditableArrayField';
 
@@ -42,10 +42,10 @@ describe('EditableArrayField', () => {
     it('displays all items when value has items', () => {
       render(<EditableArrayField {...defaultProps} />);
 
-      expect(screen.getByTestId(`display-item-${normalizeString('Item 1')}`)).toHaveTextContent(
+      expect(screen.getByTestId(`display-item-${slugifyText('Item 1')}`)).toHaveTextContent(
         'Item 1',
       );
-      expect(screen.getByTestId(`display-item-${normalizeString('Item 2')}`)).toHaveTextContent(
+      expect(screen.getByTestId(`display-item-${slugifyText('Item 2')}`)).toHaveTextContent(
         'Item 2',
       );
     });
@@ -89,8 +89,8 @@ describe('EditableArrayField', () => {
 
       await user.click(screen.getByTestId('edit-button'));
 
-      expect(screen.getByTestId(`array-input-${normalizeString('Item 1')}`)).toBeInTheDocument();
-      expect(screen.getByTestId(`array-input-${normalizeString('Item 2')}`)).toBeInTheDocument();
+      expect(screen.getByTestId(`array-input-${slugifyText('Item 1')}`)).toBeInTheDocument();
+      expect(screen.getByTestId(`array-input-${slugifyText('Item 2')}`)).toBeInTheDocument();
       expect(screen.getByTestId('save-button')).toBeInTheDocument();
       expect(screen.getByTestId('cancel-button')).toBeInTheDocument();
     });
@@ -101,8 +101,8 @@ describe('EditableArrayField', () => {
 
       await user.click(screen.getByTestId('edit-button'));
 
-      expect(screen.getByTestId(`array-input-${normalizeString('Item 1')}`)).toHaveValue('Item 1');
-      expect(screen.getByTestId(`array-input-${normalizeString('Item 2')}`)).toHaveValue('Item 2');
+      expect(screen.getByTestId(`array-input-${slugifyText('Item 1')}`)).toHaveValue('Item 1');
+      expect(screen.getByTestId(`array-input-${slugifyText('Item 2')}`)).toHaveValue('Item 2');
     });
 
     it('shows placeholder text in input fields', async () => {
@@ -111,7 +111,7 @@ describe('EditableArrayField', () => {
 
       await user.click(screen.getByTestId('edit-button'));
 
-      expect(screen.getByTestId(`array-input-${normalizeString('Item 1')}`)).toHaveAttribute(
+      expect(screen.getByTestId(`array-input-${slugifyText('Item 1')}`)).toHaveAttribute(
         'placeholder',
         'Enter test item',
       );
@@ -132,8 +132,8 @@ describe('EditableArrayField', () => {
 
       await user.click(screen.getByTestId('edit-button'));
 
-      expect(screen.getByTestId(`remove-item-${normalizeString('Item 1')}`)).toBeInTheDocument();
-      expect(screen.getByTestId(`remove-item-${normalizeString('Item 2')}`)).toBeInTheDocument();
+      expect(screen.getByTestId(`remove-item-${slugifyText('Item 1')}`)).toBeInTheDocument();
+      expect(screen.getByTestId(`remove-item-${slugifyText('Item 2')}`)).toBeInTheDocument();
     });
   });
 
@@ -143,7 +143,7 @@ describe('EditableArrayField', () => {
       render(<EditableArrayField {...defaultProps} />);
 
       await user.click(screen.getByTestId('edit-button'));
-      const input = screen.getByTestId(`array-input-${normalizeString('Item 1')}`);
+      const input = screen.getByTestId(`array-input-${slugifyText('Item 1')}`);
 
       await user.clear(input);
       await user.type(input, 'Updated Item');
@@ -168,13 +168,13 @@ describe('EditableArrayField', () => {
       render(<EditableArrayField {...defaultProps} />);
 
       await user.click(screen.getByTestId('edit-button'));
-      await user.click(screen.getByTestId(`remove-item-${normalizeString('Item 1')}`));
+      await user.click(screen.getByTestId(`remove-item-${slugifyText('Item 1')}`));
 
       // After removing first item, second item becomes the first
-      expect(screen.getByTestId(`array-input-${normalizeString('Item 2')}`)).toHaveValue('Item 2');
+      expect(screen.getByTestId(`array-input-${slugifyText('Item 2')}`)).toHaveValue('Item 2');
       // Should only have one input field now
       expect(
-        screen.queryByTestId(`array-input-${normalizeString('Item 1')}`),
+        screen.queryByTestId(`array-input-${slugifyText('Item 1')}`),
       ).not.toBeInTheDocument();
     });
 
@@ -183,7 +183,7 @@ describe('EditableArrayField', () => {
       render(<EditableArrayField {...defaultProps} />);
 
       await user.click(screen.getByTestId('edit-button'));
-      const lastInput = screen.getByTestId(`array-input-${normalizeString('Item 2')}`);
+      const lastInput = screen.getByTestId(`array-input-${slugifyText('Item 2')}`);
 
       await user.click(lastInput);
       await user.keyboard('{Enter}');
@@ -197,7 +197,7 @@ describe('EditableArrayField', () => {
       render(<EditableArrayField {...defaultProps} />);
 
       await user.click(screen.getByTestId('edit-button'));
-      const lastInput = screen.getByTestId(`array-input-${normalizeString('Item 2')}`);
+      const lastInput = screen.getByTestId(`array-input-${slugifyText('Item 2')}`);
 
       await user.clear(lastInput);
       await user.keyboard('{Enter}');
@@ -226,7 +226,7 @@ describe('EditableArrayField', () => {
       render(<EditableArrayField {...defaultProps} onSave={mockOnSave} />);
 
       await user.click(screen.getByTestId('edit-button'));
-      const input = screen.getByTestId(`array-input-${normalizeString('Item 1')}`);
+      const input = screen.getByTestId(`array-input-${slugifyText('Item 1')}`);
       await user.clear(input);
       await user.type(input, 'Updated Item');
       await user.click(screen.getByTestId('save-button'));
@@ -255,7 +255,7 @@ describe('EditableArrayField', () => {
       render(<EditableArrayField {...defaultProps} onSave={mockOnSave} />);
 
       await user.click(screen.getByTestId('edit-button'));
-      const input = screen.getByTestId(`array-input-${normalizeString('Item 1')}`);
+      const input = screen.getByTestId(`array-input-${slugifyText('Item 1')}`);
 
       // Clear the input first
       await user.clear(input);
@@ -286,9 +286,9 @@ describe('EditableArrayField', () => {
 
       // Should exit edit mode
       expect(
-        screen.queryByTestId(`array-input-${normalizeString('Item 1')}`),
+        screen.queryByTestId(`array-input-${slugifyText('Item 1')}`),
       ).not.toBeInTheDocument();
-      expect(screen.getByTestId(`display-item-${normalizeString('Item 1')}`)).toBeInTheDocument();
+      expect(screen.getByTestId(`display-item-${slugifyText('Item 1')}`)).toBeInTheDocument();
       expect(submitSpy).toHaveBeenCalledOnce();
     });
 
@@ -303,9 +303,9 @@ describe('EditableArrayField', () => {
 
       // Should be back in display mode
       expect(
-        screen.queryByTestId(`array-input-${normalizeString('Item 1')}`),
+        screen.queryByTestId(`array-input-${slugifyText('Item 1')}`),
       ).not.toBeInTheDocument();
-      expect(screen.getByTestId(`display-item-${normalizeString('Item 1')}`)).toBeInTheDocument();
+      expect(screen.getByTestId(`display-item-${slugifyText('Item 1')}`)).toBeInTheDocument();
     });
   });
 
@@ -315,13 +315,13 @@ describe('EditableArrayField', () => {
       render(<EditableArrayField {...defaultProps} />);
 
       await user.click(screen.getByTestId('edit-button'));
-      const input = screen.getByTestId(`array-input-${normalizeString('Item 1')}`);
+      const input = screen.getByTestId(`array-input-${slugifyText('Item 1')}`);
       await user.clear(input);
       await user.type(input, 'Changed Item');
       await user.click(screen.getByTestId('cancel-button'));
 
       // Should be back in display mode with original values
-      expect(screen.getByTestId(`display-item-${normalizeString('Item 1')}`)).toHaveTextContent(
+      expect(screen.getByTestId(`display-item-${slugifyText('Item 1')}`)).toHaveTextContent(
         'Item 1',
       );
     });
@@ -334,9 +334,9 @@ describe('EditableArrayField', () => {
       await user.click(screen.getByTestId('cancel-button'));
 
       expect(
-        screen.queryByTestId(`array-input-${normalizeString('Item 1')}`),
+        screen.queryByTestId(`array-input-${slugifyText('Item 1')}`),
       ).not.toBeInTheDocument();
-      expect(screen.getByTestId(`display-item-${normalizeString('Item 1')}`)).toBeInTheDocument();
+      expect(screen.getByTestId(`display-item-${slugifyText('Item 1')}`)).toBeInTheDocument();
     });
 
     it('removes added items when cancel is clicked', async () => {
@@ -359,11 +359,11 @@ describe('EditableArrayField', () => {
 
       await user.click(screen.getByTestId('edit-button'));
 
-      expect(screen.getByTestId(`remove-item-${normalizeString('Item 1')}`)).toHaveAttribute(
+      expect(screen.getByTestId(`remove-item-${slugifyText('Item 1')}`)).toHaveAttribute(
         'aria-label',
         'Remove item Item 1',
       );
-      expect(screen.getByTestId(`remove-item-${normalizeString('Item 2')}`)).toHaveAttribute(
+      expect(screen.getByTestId(`remove-item-${slugifyText('Item 2')}`)).toHaveAttribute(
         'aria-label',
         'Remove item Item 2',
       );
@@ -391,7 +391,7 @@ describe('EditableArrayField', () => {
         'This is a very long text that should still be handled properly by the component';
       render(<EditableArrayField {...defaultProps} value={[longText]} />);
 
-      expect(screen.getByTestId(`display-item-${normalizeString(longText)}`)).toHaveTextContent(
+      expect(screen.getByTestId(`display-item-${slugifyText(longText)}`)).toHaveTextContent(
         longText,
       );
     });
@@ -400,7 +400,7 @@ describe('EditableArrayField', () => {
       const specialText = 'Item with "quotes" & <tags> and émojis 🎉';
       render(<EditableArrayField {...defaultProps} value={[specialText]} />);
 
-      expect(screen.getByTestId(`display-item-${normalizeString(specialText)}`)).toHaveTextContent(
+      expect(screen.getByTestId(`display-item-${slugifyText(specialText)}`)).toHaveTextContent(
         specialText,
       );
     });
@@ -412,8 +412,8 @@ describe('EditableArrayField', () => {
       render(<EditableArrayField {...defaultProps} onSave={mockOnSave} />);
 
       await user.click(screen.getByTestId('edit-button'));
-      await user.click(screen.getByTestId(`remove-item-${normalizeString('Item 1')}`));
-      await user.click(screen.getByTestId(`remove-item-${normalizeString('Item 2')}`)); // Remove what was item 1
+      await user.click(screen.getByTestId(`remove-item-${slugifyText('Item 1')}`));
+      await user.click(screen.getByTestId(`remove-item-${slugifyText('Item 2')}`)); // Remove what was item 1
       await user.click(screen.getByTestId('save-button'));
 
       expect(mockOnSave).toHaveBeenCalledWith('test-field', []);
@@ -422,18 +422,18 @@ describe('EditableArrayField', () => {
     it('updates when value prop changes', async () => {
       const { rerender } = render(<EditableArrayField {...defaultProps} />);
 
-      expect(screen.getByTestId(`display-item-${normalizeString('Item 1')}`)).toHaveTextContent(
+      expect(screen.getByTestId(`display-item-${slugifyText('Item 1')}`)).toHaveTextContent(
         'Item 1',
       );
 
       // Change the value prop
       rerender(<EditableArrayField {...defaultProps} value={['New Item']} />);
 
-      expect(screen.getByTestId(`display-item-${normalizeString('New Item')}`)).toHaveTextContent(
+      expect(screen.getByTestId(`display-item-${slugifyText('New Item')}`)).toHaveTextContent(
         'New Item',
       );
       expect(
-        screen.queryByTestId(`display-item-${normalizeString('Item 1')}`),
+        screen.queryByTestId(`display-item-${slugifyText('Item 1')}`),
       ).not.toBeInTheDocument();
       expect(screen.getByTestId('item-count')).toHaveTextContent('1 item');
     });

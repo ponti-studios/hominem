@@ -8,7 +8,7 @@ import { useFetcher } from 'react-router';
 import type { EditorSubmissionResult } from '~/hooks/useCareerEditorSubmission';
 
 import { useCareerEditorSubmission } from '../../hooks/useCareerEditorSubmission';
-import { formatDateForInput } from '../../lib/utils';
+import { formatDateForInput } from '@hominem/utils/dates';
 import { EditorFormActions } from '../EditorFormActions';
 import { FormErrorAlert } from '../FormErrorAlert';
 

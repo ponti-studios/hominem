@@ -4,46 +4,18 @@ import { ChatRepository, db, runInTransaction } from '@hominem/db';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { streamSSE } from 'hono/streaming';
-import * as z from 'zod';
 
-const chatsSendSchema = z
-  .object({
-    message: z.string(),
-    fileIds: z.array(z.uuid()).max(5).optional(),
-    noteIds: z.array(z.uuid()).max(10).optional(),
-  })
-  .superRefine((value, ctx) => {
-    if (
-      value.message.trim().length === 0 &&
-      (!value.fileIds || value.fileIds.length === 0) &&
-      (!value.noteIds || value.noteIds.length === 0)
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'message, fileIds, or noteIds is required',
-        path: ['message'],
-      });
-    }
-  });
-
+import {
+  ChatsSendSchema,
+  ChatsCreateSchema,
+  ChatsUpdateSchema,
+  ChatsMessagesQuerySchema,
+} from '../../schemas/chats.schema';
 import { ValidationError } from '../errors';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 import { rateLimitMiddleware } from '../middleware/rate-limit';
 import { loadPrompt } from '../utils/load-prompt';
 import { toChatDto, toChatMessageDto, toStoredUserMessageContent } from './chats.mapper';
-
-const chatsCreateSchema = z.object({
-  title: z.string().trim().min(1).max(120),
-});
-
-const chatsUpdateSchema = z.object({
-  title: z.string().trim().min(1).max(120),
-});
-
-const chatsMessagesQuerySchema = z.object({
-  limit: z.string().optional(),
-  offset: z.string().optional(),
-});
 
 function buildPrompt(
   message: string,
@@ -127,7 +99,7 @@ const chatByIdRoutes = new Hono<AppContext>()
       messages: messages.map(toChatMessageDto),
     });
   })
-  .patch('/', zValidator('json', chatsUpdateSchema), async (c) => {
+  .patch('/', zValidator('json', ChatsUpdateSchema), async (c) => {
     const userId = c.get('userId')!;
     const chatId = getChatId(c);
     const { title } = c.req.valid('json');
@@ -146,7 +118,7 @@ const chatByIdRoutes = new Hono<AppContext>()
 
     return c.json(toChatDto(archived));
   })
-  .get('/messages', zValidator('query', chatsMessagesQuerySchema), async (c) => {
+  .get('/messages', zValidator('query', ChatsMessagesQuerySchema), async (c) => {
     const userId = c.get('userId')!;
     const chatId = getChatId(c);
 
@@ -158,7 +130,7 @@ const chatByIdRoutes = new Hono<AppContext>()
     const messages = await ChatRepository.getMessages(db, chatId, limit, offset);
     return c.json(messages.map(toChatMessageDto));
   })
-  .post('/stream', zValidator('json', chatsSendSchema), async (c) => {
+  .post('/stream', zValidator('json', ChatsSendSchema), async (c) => {
     const userId = c.get('userId')!;
     const chatId = getChatId(c);
 
@@ -229,7 +201,7 @@ export const chatsRoutes = new Hono<AppContext>()
     const chats = await ChatRepository.listForUser(db, userId, 100);
     return c.json(chats.map(toChatDto));
   })
-  .post('/', zValidator('json', chatsCreateSchema), async (c) => {
+  .post('/', zValidator('json', ChatsCreateSchema), async (c) => {
     const userId = c.get('userId')!;
     const { title } = c.req.valid('json');
     const chat = await ChatRepository.create(db, { userId, title });

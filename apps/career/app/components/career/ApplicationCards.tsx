@@ -5,7 +5,7 @@ import { Card, CardContent } from '@hominem/ui/card';
 import { CalendarIcon, DollarSignIcon, MapPinIcon } from 'lucide-react';
 import { Link } from 'react-router';
 
-import { centsToDollars, formatCurrency } from '~/lib/utils';
+import { centsToDollars, formatCurrency } from '@hominem/utils/numbers';
 import { cn } from '~/lib/utils';
 import { formatStatusText, getCompanyName, getStatusColor } from '~/lib/utils/applicationUtils';
 import type { ApplicationWithCompany } from '~/types/applications';

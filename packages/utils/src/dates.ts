@@ -1,3 +1,20 @@
+export function formatDateForInput(date: string | Date | null | undefined): string | undefined {
+  if (!date) return undefined;
+  try {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    if (Number.isNaN(dateObj.getTime())) return undefined;
+    return dateObj.toISOString().split('T')[0];
+  } catch {
+    return undefined;
+  }
+}
+
+export function stringToDate(dateString?: string): Date | undefined {
+  if (!dateString) return undefined;
+  const date = new Date(dateString);
+  return Number.isNaN(date.getTime()) ? undefined : date;
+}
+
 export function getTimezone() {
   return Intl.DateTimeFormat().resolvedOptions().timeZone;
 }

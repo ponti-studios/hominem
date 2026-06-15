@@ -37,26 +37,6 @@ const createMockPortfolio = (overrides: Partial<FullPortfolio> = {}): FullPortfo
     createdat: new Date('2024-01-01'),
     updatedat: new Date('2024-01-01'),
   },
-  portfolio_stats: [
-    {
-      id: 'stat-1',
-      portfolio_id: 'test-portfolio-id',
-      label: 'Years Experience',
-      value: '5+',
-      sort_order: 0,
-      createdat: new Date('2024-01-01'),
-      updatedat: new Date('2024-01-01'),
-    },
-    {
-      id: 'stat-2',
-      portfolio_id: 'test-portfolio-id',
-      label: 'Projects Completed',
-      value: '50+',
-      sort_order: 1,
-      createdat: new Date('2024-01-01'),
-      updatedat: new Date('2024-01-01'),
-    },
-  ],
   work_experiences: [
     {
       id: 'work-1',
@@ -338,23 +318,6 @@ describe('formatPortfolioForLLM', () => {
     expect(result).not.toContain('Live URL: null');
   });
 
-  it('should include portfolio statistics', () => {
-    const portfolio = createMockPortfolio();
-    const result = formatPortfolioForLLM(portfolio);
-
-    expect(result).toContain('KEY STATISTICS:');
-    expect(result).toContain('- Years Experience: 5+');
-    expect(result).toContain('- Projects Completed: 50+');
-  });
-
-  it('should handle empty portfolio stats gracefully', () => {
-    const portfolio = createMockPortfolio({
-      portfolio_stats: [],
-    });
-    const result = formatPortfolioForLLM(portfolio);
-
-    expect(result).not.toContain('KEY STATISTICS:');
-  });
 
   it('should handle missing phone number', () => {
     const portfolio = createMockPortfolio({
@@ -372,7 +335,6 @@ describe('formatPortfolioForLLM', () => {
       work_experiences: [],
       skills: [],
       projects: [],
-      portfolio_stats: [],
     });
     const result = formatPortfolioForLLM(portfolio);
 
@@ -380,7 +342,6 @@ describe('formatPortfolioForLLM', () => {
     expect(result).toContain('WORK EXPERIENCE:');
     expect(result).toContain('SKILLS:');
     expect(result).toContain('PROJECTS:');
-    expect(result).not.toContain('KEY STATISTICS:');
   });
 
   it('should handle skills without optional fields', () => {

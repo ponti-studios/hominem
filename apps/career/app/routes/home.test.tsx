@@ -65,6 +65,26 @@ describe('Home dashboard', () => {
               ],
             },
             work_experiences: [],
+            allApplications: [],
+            metrics: {
+              totalApplications: 0,
+              responseRate: 0,
+              interviewRate: 0,
+              offerRate: 0,
+              acceptanceRate: 0,
+              averageTimeToResponse: 0,
+              averageTimeToOffer: 0,
+              averageTimeToDecision: 0,
+              salaryMetrics: {
+                averageOffered: 0,
+                averageAccepted: 0,
+                negotiationSuccessRate: 0,
+                averageNegotiationIncrease: 0,
+              },
+              sourceMetrics: [],
+              statusBreakdown: [],
+            },
+            topCompanies: [],
           }}
         />
       </MemoryRouter>,

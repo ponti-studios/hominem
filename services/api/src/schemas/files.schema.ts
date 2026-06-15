@@ -1,5 +1,10 @@
 import * as z from 'zod';
 
+export const UploadMetadataSchema = z.object({
+  originalName: z.string().min(1),
+  mimetype: z.string().min(1),
+});
+
 export const UploadedFileSchema = z.object({
   id: z.string().uuid(),
   originalName: z.string().min(1),

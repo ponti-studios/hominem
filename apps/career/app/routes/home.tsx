@@ -4,15 +4,25 @@ import { Card, CardContent, CardHeader } from '@hominem/ui/card';
 import { Link } from 'react-router';
 
 import { CareerHistory } from '~/components/career/CareerHistory';
+import { ActivityHeatmapCard } from '~/components/career/ActivityHeatmapCard';
+import { ApplicationMetricsCard } from '~/components/career/ApplicationMetricsCard';
 import { LevelProgressionChart } from '~/components/career/LevelProgressionChart';
 import { SalaryChart } from '~/components/career/SalaryChart';
+import { SourcePerformanceChart } from '~/components/career/SourcePerformanceChart';
 import { StatCard } from '~/components/career/StatCard';
+import { TopCompaniesInsights } from '~/components/career/TopCompaniesInsights';
 import {
   getCareerProgressionSummary,
   getWorkExperiencesWithFinancials,
 } from '~/lib/career/queries/career-progression';
+import {
+  getAllApplicationsWithCompany,
+  getJobApplicationMetricsForUser,
+  getTopCompaniesAppliedTo,
+} from '~/lib/career/queries/job-applications';
 import { userContext } from '~/lib/middleware';
-import { cn, formatCurrency, formatPercentage } from '~/lib/utils';
+import { formatCurrency, formatPercentage } from '@hominem/utils/numbers';
+import { cn } from '~/lib/utils';
 import type { CareerProgressionSummary, WorkExperienceWithFinancials } from '~/types/career-data';
 
 import { Route } from './+types/home';
@@ -42,10 +52,14 @@ export async function loader({ context }: Route.LoaderArgs) {
     const { getUserCareerEvents, getUserWorkExperiences } =
       await import('~/lib/career/queries/base');
 
-    const [experiencesResult, eventsResult] = await Promise.all([
-      getUserWorkExperiences(user.id),
-      getUserCareerEvents(user.id),
-    ]);
+    const [experiencesResult, eventsResult, allApplications, metrics, topCompanies] =
+      await Promise.all([
+        getUserWorkExperiences(user.id),
+        getUserCareerEvents(user.id),
+        getAllApplicationsWithCompany(user.id),
+        getJobApplicationMetricsForUser(user.id),
+        getTopCompaniesAppliedTo(user.id),
+      ]);
 
     const careerSummary = getCareerProgressionSummary(experiencesResult, eventsResult);
     const work_experiences = getWorkExperiencesWithFinancials(experiencesResult);
@@ -62,6 +76,9 @@ export async function loader({ context }: Route.LoaderArgs) {
       authenticated: true as const,
       careerSummary,
       work_experiences: serializedWorkExperiences,
+      allApplications,
+      metrics,
+      topCompanies,
     };
   } catch (error) {
     console.error('Error loading career data:', error);
@@ -100,7 +117,7 @@ function Dashboard({
 }: {
   loaderData: Extract<Route.ComponentProps['loaderData'], { authenticated: true }>;
 }) {
-  const { careerSummary, work_experiences } = loaderData;
+  const { careerSummary, work_experiences, allApplications, metrics, topCompanies } = loaderData;
 
   const defaultSummary: CareerProgressionSummary = {
     totalExperience: 0,
@@ -183,6 +200,25 @@ function Dashboard({
       ) : null}
 
       <CareerHistory work_experiences={experiences as unknown as WorkExperienceWithFinancials[]} />
+
+      <section className="space-y-6">
+        <div>
+          <h2 className="text-xl font-semibold">Job Search</h2>
+          <p className="text-sm text-muted-foreground">Application activity and pipeline performance.</p>
+        </div>
+
+        <div className="space-y-6">
+          <ActivityHeatmapCard applications={allApplications} />
+          <ApplicationMetricsCard applications={allApplications} metrics={metrics} />
+        </div>
+
+        <div className="grid gap-6 xl:grid-cols-2">
+          <div className="overflow-hidden rounded-lg border border-border bg-card p-4">
+            <SourcePerformanceChart data={metrics.sourceMetrics} />
+          </div>
+          <TopCompaniesInsights companies={topCompanies} />
+        </div>
+      </section>
     </div>
   );
 }

@@ -1,5 +1,3 @@
-import * as z from 'zod';
-
 import type { InferResponseType } from 'hono/client';
 import type { ArtifactType } from '@hominem/chat/types';
 import type { HonoClient } from '../core/api-client';
@@ -14,9 +12,3 @@ export type TasksCreateInput = {
 };
 
 export type TasksCreateOutput = Task;
-
-export const TasksCreateInputSchema = z.object({
-  title: z.string().trim().min(1).max(120),
-  description: z.string().trim().optional().nullable(),
-  artifactType: z.enum(['task', 'task_list']),
-});

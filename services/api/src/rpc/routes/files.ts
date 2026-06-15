@@ -4,15 +4,10 @@ import { fileProcessingQueue } from '@hominem/queues';
 import { fileStorageService } from '@hominem/storage';
 import { logger } from '@hominem/telemetry';
 import { Hono } from 'hono';
-import * as z from 'zod';
 
+import { UploadMetadataSchema } from '../../schemas/files.schema';
 import { InternalError, NotFoundError, UnavailableError, ValidationError } from '../errors';
 import { authMiddleware, type AppContext } from '../middleware/auth';
-
-const uploadMetadataSchema = z.object({
-  originalName: z.string().min(1),
-  mimetype: z.string().min(1),
-});
 
 function toFilePayload(file: FileRecord) {
   return {
@@ -108,7 +103,7 @@ export const filesRoutes = new Hono<AppContext>()
         throw new ValidationError('File is required');
       }
 
-      const parsed = uploadMetadataSchema.safeParse({
+      const parsed = UploadMetadataSchema.safeParse({
         originalName: typeof body.originalName === 'string' ? body.originalName : file.name,
         mimetype: typeof body.mimetype === 'string' ? body.mimetype : file.type,
       });

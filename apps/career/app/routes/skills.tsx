@@ -101,12 +101,12 @@ function SkillsEditorSection({ skills: initialSkills, portfolio_id }: SkillsEdit
 
   return (
     <section className="container flex flex-col gap-8 mx-auto">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
           <div className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center">
             <Zap className="w-5 h-5 text-primary" />
           </div>
-          <div>
+          <div className="min-w-0">
             <h2 className="text-2xl font-semibold text-foreground">Skills</h2>
             <p className="text-sm text-muted-foreground">
               Derived from your work experience and projects — every skill backed by proof.
@@ -118,7 +118,7 @@ function SkillsEditorSection({ skills: initialSkills, portfolio_id }: SkillsEdit
             type="submit"
             variant="outline"
             disabled={isDeriving}
-            className="inline-flex items-center gap-2"
+            className="inline-flex w-full items-center gap-2 sm:w-auto"
           >
             {isDeriving ? (
               <LoaderPinwheel className="size-4 animate-spin" />

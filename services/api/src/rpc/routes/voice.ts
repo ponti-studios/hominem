@@ -1,4 +1,4 @@
-import { VoiceCleanupInputSchema } from '@hominem/rpc/schemas/voice.schema';
+import { VoiceCleanupInputSchema } from '../../schemas/voice.schema';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 

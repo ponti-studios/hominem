@@ -1,7 +1,7 @@
 import { CareerRepository, db } from '@hominem/db';
 
 import { parseFormData } from '../route-utils';
-import { stringToDate } from '../utils';
+import { stringToDate } from '@hominem/utils/dates';
 import { type ProjectMutationValues, normalizeProjectMutationValues } from './project-form';
 
 export async function handleProjectMutationAction(request: Request, ownerUserId: string) {

@@ -1,6 +1,4 @@
 import { Badge } from '@hominem/ui/badge';
-import { Card, CardContent } from '@hominem/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@hominem/ui/table';
 import { Link } from 'react-router';
 
 import {
@@ -15,59 +13,55 @@ import type { ApplicationsDesktopTableProps } from './types';
 
 export function ApplicationsDesktopTable({ applications }: ApplicationsDesktopTableProps) {
   return (
-    <Card className="hidden md:block">
-      <CardContent className="p-0">
-        <Table>
-          <TableHeader className="bg-muted/30">
-            <TableRow>
-              <TableHead>Position</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Applied</TableHead>
-              <TableHead>Response</TableHead>
-              <TableHead>Salary</TableHead>
-              <TableHead>Source</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {applications.map((application) => (
-              <TableRow key={application.id} className="hover:bg-muted/40">
-                <TableCell className="whitespace-nowrap">
-                  <Link
-                    to={`/career/applications/${application.id}`}
-                    className="block hover:text-primary"
-                  >
-                    <div className="font-medium text-foreground">{application.position}</div>
-                    <div className="text-muted-foreground">
-                      {getCompanyName(application.company)}
-                    </div>
-                  </Link>
-                </TableCell>
-                <TableCell className="whitespace-nowrap">
-                  <Badge variant="outline" className={getStatusColor(application.status)}>
-                    {formatStatusText(application.status)}
-                  </Badge>
-                </TableCell>
-                <TableCell className="whitespace-nowrap text-muted-foreground">
-                  {formatApplicationDate(
-                    application.application_date || application.start_date || null,
-                  )}
-                </TableCell>
-                <TableCell className="whitespace-nowrap text-muted-foreground">
-                  {formatApplicationDate(application.response_date)}
-                </TableCell>
-                <TableCell className="whitespace-nowrap text-muted-foreground">
-                  {formatApplicationSalary(application.salary_offered || application.salary_quoted)}
-                </TableCell>
-                <TableCell>
-                  <span className="capitalize text-muted-foreground">
-                    {application.source || '—'}
-                  </span>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
+    <div className="hidden md:block">
+      <div className="grid grid-cols-[minmax(0,1.5fr)_minmax(0,0.9fr)_minmax(0,0.8fr)_minmax(0,0.8fr)_minmax(0,0.9fr)_minmax(0,0.8fr)] gap-3 border-b border-border bg-muted/20 px-4 py-3 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+        <span>Position</span>
+        <span>Status</span>
+        <span>Applied</span>
+        <span>Response</span>
+        <span>Salary</span>
+        <span>Source</span>
+      </div>
+
+      <ul className="divide-y divide-border">
+        {applications.map((application) => (
+          <li key={application.id} className="transition-colors duration-150 hover:bg-muted/30">
+            <Link
+              to={`/career/applications/${application.id}`}
+              className="grid min-h-16 grid-cols-[minmax(0,1.5fr)_minmax(0,0.9fr)_minmax(0,0.8fr)_minmax(0,0.8fr)_minmax(0,0.9fr)_minmax(0,0.8fr)] items-center gap-3 px-4 py-3 focus:bg-muted/30 focus:outline-none"
+            >
+              <div className="min-w-0">
+                <p className="body-2 truncate text-text-primary">{application.position}</p>
+                <p className="body-4 truncate text-text-secondary">
+                  {getCompanyName(application.company)}
+                </p>
+              </div>
+
+              <div>
+                <Badge variant="outline" className={getStatusColor(application.status)}>
+                  {formatStatusText(application.status)}
+                </Badge>
+              </div>
+
+              <p className="body-4 whitespace-nowrap text-text-tertiary">
+                {formatApplicationDate(application.application_date || application.start_date || null)}
+              </p>
+
+              <p className="body-4 whitespace-nowrap text-text-tertiary">
+                {formatApplicationDate(application.response_date)}
+              </p>
+
+              <p className="body-4 whitespace-nowrap text-text-tertiary">
+                {formatApplicationSalary(application.salary_offered || application.salary_quoted)}
+              </p>
+
+              <p className="body-4 truncate capitalize text-text-tertiary">
+                {application.source || '—'}
+              </p>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

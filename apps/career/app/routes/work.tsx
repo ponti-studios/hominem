@@ -10,7 +10,7 @@ import { FormErrorAlert } from '../components/FormErrorAlert';
 import { useCareerEditorSubmission } from '../hooks/useCareerEditorSubmission';
 import { portfolioContext, userContext } from '../lib/middleware';
 import { parseFormData } from '../lib/route-utils';
-import { stringToDate } from '../lib/utils';
+import { stringToDate } from '@hominem/utils/dates';
 import { Route } from './+types/work';
 
 interface WorkExperienceFormValues {
@@ -131,9 +131,9 @@ export default function Work({ loaderData }: Route.ComponentProps) {
   };
 
   return (
-    <section className="container flex flex-col gap-4 mx-auto">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1">
+    <section className="container mx-auto flex flex-col gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-1">
           <h2 className="heading-2 text-foreground">Work Experience</h2>
         </div>
         <Button
@@ -141,7 +141,7 @@ export default function Work({ loaderData }: Route.ComponentProps) {
           onClick={handleAddNew}
           variant="outline"
           disabled={draftFetcher.state === 'submitting'}
-          className="inline-flex items-center gap-2 border-dashed"
+          className="inline-flex w-full items-center gap-2 border-dashed sm:w-auto"
           isLoading={draftFetcher.state === 'submitting'}
           loadingLabel="Creating..."
         >

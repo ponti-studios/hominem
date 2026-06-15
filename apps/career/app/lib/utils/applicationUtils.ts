@@ -1,4 +1,4 @@
-import { centsToDollars, formatCurrency } from '~/lib/utils';
+import { centsToDollars, formatCurrency } from '@hominem/utils/numbers';
 
 /**
  * Get a standardized company name from various company data formats

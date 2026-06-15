@@ -8,6 +8,18 @@
     "./types": {
       "types": "./src/rpc/app.ts",
       "default": "./src/rpc/app.ts"
+    },
+    "./schemas/voice.schema": {
+      "types": "./src/schemas/voice.schema.ts",
+      "default": "./src/schemas/voice.schema.ts"
+    },
+    "./schemas/notes.schema": {
+      "types": "./src/schemas/notes.schema.ts",
+      "default": "./src/schemas/notes.schema.ts"
+    },
+    "./schemas/files.schema": {
+      "types": "./src/schemas/files.schema.ts",
+      "default": "./src/schemas/files.schema.ts"
     }
   },
   "scripts": {
@@ -28,7 +40,6 @@
     "@hominem/db": "workspace:*",
     "@hominem/env": "workspace:*",
     "@hominem/queues": "workspace:*",
-    "@hominem/rpc": "workspace:*",
     "@hominem/services": "workspace:*",
     "@hominem/storage": "workspace:*",
     "@hominem/telemetry": "workspace:*",

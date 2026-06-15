@@ -1,14 +1,9 @@
 import { db, sql } from '@hominem/db';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
-import * as z from 'zod';
 
+import { InboxQuerySchema } from '../../schemas/inbox.schema';
 import { authMiddleware, type AppContext } from '../middleware/auth';
-
-const inboxQuerySchema = z.object({
-  limit: z.string().optional(),
-  cursor: z.string().optional(),
-});
 
 type InboxCursor = {
   updatedAt: string;
@@ -48,7 +43,7 @@ function decodeInboxCursor(cursor: string | undefined): InboxCursor | null {
 
 export const inboxRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
-  .get('/', zValidator('query', inboxQuerySchema), async (c) => {
+  .get('/', zValidator('query', InboxQuerySchema), async (c) => {
     const userId = c.get('userId')!;
     const query = c.req.valid('query');
     const parsedLimit = query.limit ? Number.parseInt(query.limit, 10) : 50;

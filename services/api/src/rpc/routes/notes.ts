@@ -1,56 +1,18 @@
 import { db, NoteRepository } from '@hominem/db';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
-import * as z from 'zod';
 
 import { NoteService } from '../../application/notes.service';
+import {
+  CreateNoteInputSchema,
+  NoteParamSchema,
+  NotesListQuerySchema,
+  NotesFeedQuerySchema,
+  NoteSearchQuerySchema,
+  UpdateNoteInputSchema,
+} from '../../schemas/notes.schema';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 import { toNoteDto, toNoteFeedItemDto } from './notes.mapper';
-
-const NoteContentTypeSchema = z.enum([
-  'note',
-  'document',
-  'task',
-  'timer',
-  'journal',
-  'tweet',
-  'essay',
-  'blog_post',
-  'social_post',
-]);
-const CreateNoteInputSchema = z.object({
-  type: NoteContentTypeSchema.default('note'),
-  title: z.string().optional(),
-  content: z.string(),
-  fileIds: z.array(z.uuid()).max(5).optional(),
-});
-
-const UpdateNoteInputSchema = z.object({
-  title: z.string().nullish(),
-  content: z.string().optional(),
-  fileIds: z.array(z.uuid()).max(5).optional(),
-});
-
-const NotesListQuerySchema = z.object({
-  query: z.string().optional(),
-  since: z.string().optional(),
-  sortBy: z.enum(['createdAt', 'updatedAt', 'title']).optional(),
-  sortOrder: z.enum(['asc', 'desc']).optional(),
-  limit: z.string().optional(),
-  offset: z.string().optional(),
-});
-
-const NotesFeedQuerySchema = z.object({
-  limit: z.string().optional(),
-  cursor: z.string().optional(),
-});
-
-const noteParamSchema = z.object({ id: z.uuid() });
-const noteSearchQuerySchema = z.object({
-  query: z.string().trim().min(1),
-  limit: z.string().optional(),
-  cursor: z.string().optional(),
-});
 const noteService = new NoteService();
 
 export const notesRoutes = new Hono<AppContext>()
@@ -87,7 +49,7 @@ export const notesRoutes = new Hono<AppContext>()
       nextCursor: feed.nextCursor,
     });
   })
-  .get('/search', zValidator('query', noteSearchQuerySchema), async (c) => {
+  .get('/search', zValidator('query', NoteSearchQuerySchema), async (c) => {
     const userId = c.get('userId')!;
     const query = c.req.valid('query');
     const limit = query.limit ? Math.min(Number.parseInt(query.limit, 10), 20) : 10;
@@ -112,7 +74,7 @@ export const notesRoutes = new Hono<AppContext>()
 
     return c.json(toNoteDto(note), 201);
   })
-  .get('/:id', zValidator('param', noteParamSchema), async (c) => {
+  .get('/:id', zValidator('param', NoteParamSchema), async (c) => {
     const userId = c.get('userId')!;
     const { id } = c.req.valid('param');
     const note = await NoteRepository.load(db, id, userId);
@@ -120,7 +82,7 @@ export const notesRoutes = new Hono<AppContext>()
   })
   .patch(
     '/:id',
-    zValidator('param', noteParamSchema),
+    zValidator('param', NoteParamSchema),
     zValidator('json', UpdateNoteInputSchema),
     async (c) => {
       const userId = c.get('userId')!;
@@ -136,7 +98,7 @@ export const notesRoutes = new Hono<AppContext>()
       return c.json(toNoteDto(note));
     },
   )
-  .delete('/:id', zValidator('param', noteParamSchema), async (c) => {
+  .delete('/:id', zValidator('param', NoteParamSchema), async (c) => {
     const userId = c.get('userId')!;
     const { id } = c.req.valid('param');
 

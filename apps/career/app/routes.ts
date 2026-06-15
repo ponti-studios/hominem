@@ -23,7 +23,6 @@ export default [
         route('work/:id', 'routes/work.$id.tsx'),
         route('skills', 'routes/skills.tsx'),
         route('social', 'routes/social.tsx'),
-        route('stats', 'routes/stats.tsx'),
         route('projects', 'routes/projects.tsx'),
         route('projects/new', 'routes/projects.new.tsx'),
         route('projects/:id', 'routes/projects.$id.tsx'),

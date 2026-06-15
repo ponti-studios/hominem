@@ -1,4 +1,4 @@
-import { formatCurrency } from '~/lib/utils';
+import { formatCurrency } from '@hominem/utils/numbers';
 
 interface SalaryChartProps {
   data: Array<{

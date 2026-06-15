@@ -131,11 +131,11 @@ function TestimonialForm({
       className="rounded-md border border-border bg-card p-4 bg-muted/50 space-y-4"
     >
       <FormErrorAlert title="Testimonial wasn’t saved" message={submissionError} />
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium text-foreground">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h3 className="min-w-0 text-lg font-medium text-foreground">
           {isNew ? 'New Testimonial' : 'Testimonial'}
         </h3>
-        <div className="flex gap-2">
+        <div className="flex gap-2 sm:justify-end">
           <Button
             type="submit"
             disabled={isSaving || (!isDirty && !isNew) || !isValid}
@@ -143,6 +143,7 @@ function TestimonialForm({
             size="sm"
             isLoading={isSaving}
             loadingLabel="Saving..."
+            className="w-full sm:w-auto"
           >
             {isNew ? 'Add Testimonial' : 'Save Changes'}
           </Button>
@@ -153,6 +154,7 @@ function TestimonialForm({
               disabled={isSaving}
               variant="destructive"
               size="sm"
+              className="w-full sm:w-auto"
             >
               Delete
             </Button>

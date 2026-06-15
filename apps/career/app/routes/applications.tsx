@@ -1,6 +1,5 @@
 import { CareerRepository, db } from '@hominem/db';
 import { buttonVariants } from '@hominem/ui/button';
-import { Card, CardContent } from '@hominem/ui/card';
 import { useDebouncedValue } from '@hominem/ui/hooks';
 import { PlusIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -11,15 +10,7 @@ import { ApplicationsEmptyState } from '~/components/career/applications/Applica
 import { ApplicationsFilters } from '~/components/career/applications/ApplicationsFilters';
 import { ApplicationsMobileList } from '~/components/career/applications/ApplicationsMobileList';
 import { ApplicationsResultsSummary } from '~/components/career/applications/ApplicationsResultsSummary';
-import { ApplicationsHeatmap } from '~/components/career/ApplicationsHeatmap';
-import { ApplicationsMetrics } from '~/components/career/ApplicationsMetrics';
-import { SourcePerformanceChart } from '~/components/career/SourcePerformanceChart';
-import { TopCompaniesInsights } from '~/components/career/TopCompaniesInsights';
-import {
-  getAllApplicationsWithCompany,
-  getJobApplicationMetricsForUser,
-  getTopCompaniesAppliedTo,
-} from '~/lib/career/queries/job-applications';
+import { getAllApplicationsWithCompany } from '~/lib/career/queries/job-applications';
 import { userContext } from '~/lib/middleware';
 import { buildApplicationsSearchParams } from '~/lib/utils/applicationsSearchParams';
 import {
@@ -72,21 +63,16 @@ export async function loader({ context, request }: Route.LoaderArgs) {
       orderDirection: (searchParams.get('orderDirection') as 'asc' | 'desc') || 'desc',
     };
 
-    const [allApplications, paginatedApplications, filteredApplications, metrics, topCompanies] =
-      await Promise.all([
-        getAllApplicationsWithCompany(user.id),
-        getAllApplicationsWithCompany(user.id, filter, pagination),
-        getAllApplicationsWithCompany(user.id, filter),
-        getJobApplicationMetricsForUser(user.id),
-        getTopCompaniesAppliedTo(user.id),
-      ]);
+    const [allApplications, paginatedApplications, filteredApplications] = await Promise.all([
+      getAllApplicationsWithCompany(user.id),
+      getAllApplicationsWithCompany(user.id, filter, pagination),
+      getAllApplicationsWithCompany(user.id, filter),
+    ]);
 
     return {
       user,
       allApplications,
       applications: paginatedApplications,
-      metrics,
-      topCompanies,
       pagination: {
         page,
         limit,
@@ -154,14 +140,14 @@ export async function action({ context, request }: Route.ActionArgs) {
 
 function ApplicationsHeader({ totalCount }: { totalCount: number }) {
   return (
-    <div className="flex items-center justify-between">
-      <div>
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="min-w-0">
         <h1 className="text-xl font-semibold">Job Applications</h1>
         <p className="text-sm text-muted-foreground">
           {totalCount} applications · track your pipeline and progress
         </p>
       </div>
-      <Link to="/applications/new" className={buttonVariants({ size: 'sm' })}>
+      <Link to="/applications/new" className={buttonVariants({ size: 'sm' }) + ' w-full sm:w-auto'}>
         <PlusIcon className="size-4" />
         Add Application
       </Link>
@@ -179,9 +165,7 @@ export default function Applications({ loaderData }: Route.ComponentProps) {
   const {
     allApplications,
     applications,
-    metrics,
     pagination,
-    topCompanies,
     filters: initialFilters,
   } = loaderData;
   const filters = {
@@ -241,18 +225,8 @@ export default function Applications({ loaderData }: Route.ComponentProps) {
       <ApplicationsHeader totalCount={allApplications.length} />
 
       <div className="space-y-8">
-        <ApplicationsHeatmap applications={allApplications} />
-        <ApplicationsMetrics metrics={metrics} />
-        <div className="grid gap-6 xl:grid-cols-2">
-          <Card>
-            <CardContent className="p-4">
-              <SourcePerformanceChart data={metrics.sourceMetrics} />
-            </CardContent>
-          </Card>
-          <TopCompaniesInsights companies={topCompanies} />
-        </div>
-        <Card>
-          <CardContent className="space-y-4 p-4">
+        <div className="overflow-hidden rounded-lg border border-border bg-card">
+          <div className="p-4">
             <ApplicationsFilters
               searchValue={searchValue}
               onSearchChange={handleSearchChange}
@@ -272,28 +246,28 @@ export default function Applications({ loaderData }: Route.ComponentProps) {
               totalPages={pagination.totalPages}
               onPrevPage={() => updateSearchParams({ page: String(pagination.page - 1) })}
               onNextPage={() => updateSearchParams({ page: String(pagination.page + 1) })}
-              hasActiveFilters={hasFilters}
-              onClearFilters={clearFilters}
             />
-          </CardContent>
-        </Card>
+          </div>
 
-        {applications.length === 0 ? (
-          <ApplicationsEmptyState
-            kind={hasFilters ? 'filtered' : 'base'}
-            emptyTitle={hasFilters ? 'No applications match your filters' : 'No applications found'}
-            emptyDescription={
-              hasFilters
-                ? 'Try adjusting your search criteria'
-                : 'Start tracking your job applications to see them here'
-            }
-          />
-        ) : (
-          <>
-            <ApplicationsDesktopTable applications={applications} />
-            <ApplicationsMobileList applications={applications} />
-          </>
-        )}
+          {applications.length === 0 ? (
+            <div className="px-6 py-10 sm:px-8">
+              <ApplicationsEmptyState
+                kind={hasFilters ? 'filtered' : 'base'}
+                emptyTitle={hasFilters ? 'No applications match your filters' : 'No applications found'}
+                emptyDescription={
+                  hasFilters
+                    ? 'Try adjusting your search criteria'
+                    : 'Start tracking your job applications to see them here'
+                }
+              />
+            </div>
+          ) : (
+            <>
+              <ApplicationsDesktopTable applications={applications} />
+              <ApplicationsMobileList applications={applications} />
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

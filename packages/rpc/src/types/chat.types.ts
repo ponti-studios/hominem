@@ -1,4 +1,3 @@
-import * as z from 'zod';
 import type { InferResponseType } from 'hono/client';
 
 export type {
@@ -73,41 +72,6 @@ export type ChatsUISendInput = {
   metadata?: Record<string, unknown>;
 };
 
-export const chatsSendSchema = z
-  .object({
-    message: z.string(),
-    fileIds: z.array(z.uuid()).max(5).optional(),
-    noteIds: z.array(z.uuid()).max(10).optional(),
-    chatId: z.string().optional(),
-  })
-  .superRefine((value, ctx) => {
-    if (
-      value.message.trim().length === 0 &&
-      (!value.fileIds || value.fileIds.length === 0) &&
-      (!value.noteIds || value.noteIds.length === 0)
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'message, fileIds, or noteIds is required',
-        path: ['message'],
-      });
-    }
-  });
-
-export const chatsUISendSchema = z.object({
-  messages: z.array(
-    z.object({
-      id: z.string(),
-      role: z.enum(['system', 'user', 'assistant', 'data']),
-      content: z.string(),
-      parts: z.array(z.record(z.string(), z.unknown())).optional(),
-      toolInvocations: z.array(z.record(z.string(), z.unknown())).optional(),
-      createdAt: z.union([z.string(), z.date()]).optional(),
-    }),
-  ),
-  chatId: z.string().optional(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
-});
 
 export type ChatsCreateInput = {
   title: string;

@@ -83,12 +83,5 @@ export function formatPortfolioForLLM(portfolioData: FullPortfolio): string {
     if (project.github_url) formatted += `\n   GitHub: ${project.github_url}`;
   }
 
-  if (portfolioData.portfolio_stats && portfolioData.portfolio_stats.length > 0) {
-    formatted += '\n\nKEY STATISTICS:';
-    for (const stat of portfolioData.portfolio_stats) {
-      formatted += `\n- ${stat.label}: ${stat.value}`;
-    }
-  }
-
   return formatted;
 }

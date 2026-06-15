@@ -1,4 +1,5 @@
 export * from './ai.types';
+export * from './files.types';
 export * from './chat.types';
 export * from './empty-input.types';
 export * from './inbox.types';

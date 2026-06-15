@@ -29,6 +29,14 @@
     "./files": {
       "types": "./src/files.ts",
       "default": "./src/files.ts"
+    },
+    "./numbers": {
+      "types": "./src/numbers.ts",
+      "default": "./src/numbers.ts"
+    },
+    "./coerce": {
+      "types": "./src/coerce.ts",
+      "default": "./src/coerce.ts"
     }
   },
   "scripts": {

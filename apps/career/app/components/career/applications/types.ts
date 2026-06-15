@@ -19,8 +19,6 @@ export interface ApplicationsResultsSummaryProps {
   totalPages: number;
   onPrevPage: () => void;
   onNextPage: () => void;
-  hasActiveFilters: boolean;
-  onClearFilters: () => void;
 }
 
 export interface ApplicationsDesktopTableProps {

@@ -9,31 +9,19 @@ export function ApplicationsResultsSummary({
   totalPages,
   onPrevPage,
   onNextPage,
-  hasActiveFilters,
-  onClearFilters,
 }: ApplicationsResultsSummaryProps) {
   const rangeStart = total === 0 ? 0 : (page - 1) * limit + 1;
   const rangeEnd = total === 0 ? 0 : Math.min(page * limit, total);
 
   return (
-    <div className="flex flex-col gap-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-      <span>
+    <div className="flex flex-col gap-3 border-t border-border pt-4 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+      <span className="body-4 text-muted-foreground">
         {total === 0
           ? '0 applications'
           : `Showing ${rangeStart} to ${rangeEnd} of ${total} applications`}
       </span>
 
       <div className="flex items-center gap-4">
-        {hasActiveFilters ? (
-          <button
-            type="button"
-            onClick={onClearFilters}
-            className="font-medium text-primary hover:text-primary/80"
-          >
-            Clear filters
-          </button>
-        ) : null}
-
         {totalPages > 1 ? (
           <div className="flex items-center gap-2">
             <Button
@@ -42,10 +30,11 @@ export function ApplicationsResultsSummary({
               disabled={page <= 1}
               variant="outline"
               size="sm"
+              className="border-dashed"
             >
               Previous
             </Button>
-            <span className="text-foreground">
+            <span className="body-4 text-foreground">
               Page {page} of {totalPages}
             </span>
             <Button
@@ -54,6 +43,7 @@ export function ApplicationsResultsSummary({
               disabled={page >= totalPages}
               variant="outline"
               size="sm"
+              className="border-dashed"
             >
               Next
             </Button>

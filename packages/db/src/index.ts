@@ -72,7 +72,6 @@ export type {
   CareerFullPortfolioRecord,
   CareerJobApplicationRecord,
   CareerPortfolioRecord,
-  CareerPortfolioStatRecord,
   CareerProjectRecord,
   CareerSkillRecord,
   CareerSocialLinksRecord,

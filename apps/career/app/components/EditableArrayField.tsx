@@ -2,7 +2,7 @@ import { Button } from '@hominem/ui/button';
 import { CheckIcon, PencilIcon, PlusIcon, TrashIcon, XIcon } from 'lucide-react';
 import { memo, useState } from 'react';
 
-import { normalizeString } from '~/lib/utils';
+import { slugifyText } from '@hominem/utils/text';
 
 interface EditableArrayFieldProps {
   label: string;
@@ -36,7 +36,7 @@ const ArrayItem = memo(function ArrayItem({
   };
 
   return (
-    <div className="flex items-center gap-2" data-testid={`array-item-${normalizeString(value)}`}>
+    <div className="flex items-center gap-2" data-testid={`array-item-${slugifyText(value)}`}>
       <input
         type="text"
         value={value}
@@ -44,7 +44,7 @@ const ArrayItem = memo(function ArrayItem({
         onKeyDown={(e) => onKeyDown(e, index)}
         className="flex-1 block w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-ring focus:ring-ring/50"
         placeholder={placeholder}
-        data-testid={`array-input-${normalizeString(value)}`}
+        data-testid={`array-input-${slugifyText(value)}`}
       />
       <Button
         type="button"
@@ -52,7 +52,7 @@ const ArrayItem = memo(function ArrayItem({
         variant="ghost"
         size="sm"
         className="p-2 text-destructive hover:bg-destructive/10"
-        data-testid={`remove-item-${normalizeString(value)}`}
+        data-testid={`remove-item-${slugifyText(value)}`}
         aria-label={`Remove item ${value}`}
       >
         <TrashIcon className="w-4 h-4" />
@@ -206,9 +206,9 @@ export function EditableArrayField({
           {value.length > 0 ? (
             value.map((item) => (
               <div
-                key={`display-${field}-${normalizeString(item)}`}
+                key={`display-${field}-${slugifyText(item)}`}
                 className="text-foreground bg-muted rounded px-3 py-2"
-                data-testid={`display-item-${normalizeString(item)}`}
+                data-testid={`display-item-${slugifyText(item)}`}
               >
                 {item}
               </div>

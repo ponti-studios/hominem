@@ -71,18 +71,6 @@ export async function saveResumeToDatabase(
         .execute();
     }
 
-    for (const [index, stat] of data.stats.entries()) {
-      await tx
-        .insertInto('app.portfolio_stats')
-        .values({
-          portfolio_id: portfolio_id,
-          label: stat.label,
-          value: stat.value,
-          sort_order: index,
-        })
-        .execute();
-    }
-
     for (const [index, workExperience] of data.workExperience.entries()) {
       await tx
         .insertInto('app.work_experiences')

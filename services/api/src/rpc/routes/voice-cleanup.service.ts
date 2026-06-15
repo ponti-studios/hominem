@@ -7,7 +7,7 @@ import {
   VoiceCleanupOutputSchema,
   type VoiceCleanupInput,
   type VoiceCleanupOutput,
-} from '@hominem/rpc/schemas/voice.schema';
+} from '../../schemas/voice.schema';
 import { logger } from '@hominem/telemetry';
 
 const VOICE_CLEANUP_MIN_LENGTH = 8;

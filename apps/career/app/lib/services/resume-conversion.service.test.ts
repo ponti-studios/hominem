@@ -120,7 +120,7 @@ describe('resume conversion slug generation', () => {
     ]);
 
     const portfolio_id = portfolios.find((portfolio) => portfolio.slug === 'new-portfolio')!.id;
-    const [workCount, skillCount, projectCount, statCount, social_links] = await Promise.all([
+    const [workCount, skillCount, projectCount, social_links] = await Promise.all([
       db
         .selectFrom('app.work_experiences')
         .select(({ fn }) => fn.countAll<number>().as('count'))
@@ -137,11 +137,6 @@ describe('resume conversion slug generation', () => {
         .where('portfolio_id', '=', portfolio_id)
         .executeTakeFirstOrThrow(),
       db
-        .selectFrom('app.portfolio_stats')
-        .select(({ fn }) => fn.countAll<number>().as('count'))
-        .where('portfolio_id', '=', portfolio_id)
-        .executeTakeFirstOrThrow(),
-      db
         .selectFrom('app.social_links')
         .select(['github'])
         .where('portfolio_id', '=', portfolio_id)
@@ -151,7 +146,6 @@ describe('resume conversion slug generation', () => {
     expect(Number(workCount.count)).toBe(1);
     expect(Number(skillCount.count)).toBe(1);
     expect(projectCount.technologies).toEqual(['TypeScript', 'React']);
-    expect(Number(statCount.count)).toBe(1);
     expect(social_links.github).toBe('https://github.com/example');
 
     const preference = await db

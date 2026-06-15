@@ -5,7 +5,7 @@ import { ArrowRightIcon, BriefcaseIcon, ChevronRightIcon } from 'lucide-react';
 import type { ComponentProps } from 'react';
 import { Link } from 'react-router';
 
-import { formatCurrency, formatPercentage } from '~/lib/utils';
+import { formatCurrency, formatPercentage } from '@hominem/utils/numbers';
 import type { WorkExperienceWithFinancials } from '~/types/career-data';
 
 interface CareerHistoryProps {

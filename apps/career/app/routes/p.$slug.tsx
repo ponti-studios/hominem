@@ -84,19 +84,6 @@ export default function Portfolio({
           <p className="text-muted-foreground leading-relaxed">{portfolio.bio}</p>
         </section>
 
-        {/* Stats */}
-        {portfolio.portfolio_stats && portfolio.portfolio_stats.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-            {portfolio.portfolio_stats.map((stat) => (
-              <div key={stat.id} className="text-center">
-                <div className="text-xl font-sans font-light text-foreground mb-1">
-                  {stat.value}
-                </div>
-                <div className="text-xs text-muted-foreground">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        )}
       </header>
 
       {/* Work Experience */}

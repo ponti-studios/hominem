@@ -15,7 +15,6 @@ export async function getFullPortfolioBySlug(slug: string): Promise<FullPortfoli
  * Deletes a user's portfolio and all associated data
  * Due to CASCADE DELETE constraints, this will automatically remove:
  * - social_links
- * - portfolio_stats
  * - work_experiences
  * - skills
  * - projects

@@ -1,4 +1,4 @@
-import { UploadResponseSchema } from '@hominem/rpc/schemas/files.schema';
+import type { UploadResponse, UploadedFileDto } from '@hominem/rpc/types';
 import {
   UPLOAD_ALLOWED_MIME_TYPES,
   UPLOAD_MAX_FILE_COUNT,
@@ -17,7 +17,7 @@ import type { UploadedFile } from '~/lib/types/upload';
  */
 export type UploadStateMachine = 'idle' | 'uploading' | 'done' | 'error';
 
-function toUploadedFile(file: ReturnType<typeof UploadResponseSchema.parse>['file']): UploadedFile {
+function toUploadedFile(file: UploadedFileDto): UploadedFile {
   return {
     id: file.id,
     originalName: file.originalName,
@@ -27,7 +27,6 @@ function toUploadedFile(file: ReturnType<typeof UploadResponseSchema.parse>['fil
     ...(file.content ? { content: file.content } : {}),
     ...(file.textContent ? { textContent: file.textContent } : {}),
     ...(file.metadata ? { metadata: file.metadata } : {}),
-    ...(file.thumbnail ? { thumbnail: file.thumbnail } : {}),
     url: file.url,
     uploadedAt: new Date(file.uploadedAt),
     vectorIds: file.vectorIds ?? [],
@@ -187,7 +186,7 @@ export function useFileUpload(): UseFileUploadReturn {
         }
       },
       getResponseData(xhr: XMLHttpRequest) {
-        return UploadResponseSchema.parse(JSON.parse(xhr.responseText));
+        return JSON.parse(xhr.responseText) as UploadResponse;
       },
     });
 
@@ -243,11 +242,9 @@ export function useFileUpload(): UseFileUploadReturn {
         const result = await uppy.upload();
         const newFiles = (result?.successful ?? []).flatMap((file) => {
           const body = file.response?.body;
-          try {
-            return [toUploadedFile(UploadResponseSchema.parse(body).file)];
-          } catch {
-            return [];
-          }
+          const response = body as UploadResponse | undefined;
+          if (!response?.file) return [];
+          return [toUploadedFile(response.file)];
         });
 
         const uploadErrors = (result?.failed ?? []).map((failedFile) => {

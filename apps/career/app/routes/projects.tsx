@@ -150,15 +150,13 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
     : `${loaderData.projects.length} total project${loaderData.projects.length === 1 ? '' : 's'}`;
 
   return (
-    <section className="mx-auto flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1">
-          <h2 className="heading-2 text-foreground">Projects</h2>
-        </div>
+    <section className="mx-auto flex w-full flex-col gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="heading-2 text-foreground">Projects</h2>
         <Button
           type="button"
           onClick={() => navigate(newProjectHref)}
-          className="inline-flex items-center gap-2"
+          className="inline-flex w-full items-center gap-2 sm:w-auto"
         >
           <PlusIcon className="size-4" />
           Add New Project
@@ -168,7 +166,7 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
       <div className="overflow-hidden rounded-lg border border-border bg-card">
         <div className="border-b border-border p-4">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-            <div className="flex flex-col gap-2">
+            <div className="flex min-w-0 flex-col gap-2">
               <label
                 htmlFor="project-client-filter"
                 className="body-4 text-muted-foreground font-bold"
@@ -176,7 +174,7 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
                 Client
               </label>
               <Select value={selectedClientId ?? ''} onValueChange={handleClientChange}>
-                <SelectTrigger id="project-client-filter" className="w-full min-w-64">
+                <SelectTrigger id="project-client-filter" className="w-full sm:w-64">
                   <SelectValue placeholder="All clients" />
                 </SelectTrigger>
                 <SelectContent>

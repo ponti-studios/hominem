@@ -1,19 +1,3 @@
-export type { NoteAnalysis } from '../schemas/notes.schema'
-
-export type {
-  AllContentType,
-  ContentTag,
-  TaskPriority,
-  TaskStatus,
-} from '../schemas/notes.schema'
-
-export {
-  NoteContentTypeSchema,
-  NoteStatusSchema,
-  TaskPrioritySchema,
-  TaskStatusSchema,
-} from '../schemas/notes.schema'
-
 import type { InferResponseType } from 'hono/client'
 import type { HonoClient } from '../core/api-client'
 

@@ -3,12 +3,11 @@
  * Please do not edit it manually.
  */
 
-import type { ColumnType } from 'kysely';
+import type { ColumnType } from "kysely";
 
-export type Generated<T> =
-  T extends ColumnType<infer S, infer I, infer U>
-    ? ColumnType<S, I | undefined, U>
-    : ColumnType<T, T | undefined, T>;
+export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
+  ? ColumnType<S, I | undefined, U>
+  : ColumnType<T, T | undefined, T>;
 
 export type Int8 = ColumnType<string, bigint | number | string, bigint | number | string>;
 
@@ -601,16 +600,6 @@ export interface AppPortfolios {
   updatedat: Generated<Timestamp>;
 }
 
-export interface AppPortfolioStats {
-  createdat: Generated<Timestamp>;
-  id: Generated<string>;
-  label: string;
-  portfolio_id: string;
-  sort_order: Generated<number>;
-  updatedat: Generated<Timestamp>;
-  value: string;
-}
-
 export interface AppPossessionContainers {
   createdat: Generated<Timestamp>;
   description: string | null;
@@ -844,13 +833,6 @@ export interface AppTestimonials {
   updatedat: Generated<Timestamp>;
 }
 
-export interface AppUserPortfolioPreferences {
-  createdat: Generated<Timestamp>;
-  current_portfolio_id: string | null;
-  updatedat: Generated<Timestamp>;
-  user_id: string;
-}
-
 export interface AppTravelTrips {
   createdat: Generated<Timestamp>;
   description: string | null;
@@ -862,6 +844,13 @@ export interface AppTravelTrips {
   start_date: Timestamp;
   status: Generated<string>;
   updatedat: Generated<Timestamp>;
+}
+
+export interface AppUserPortfolioPreferences {
+  createdat: Generated<Timestamp>;
+  current_portfolio_id: string | null;
+  updatedat: Generated<Timestamp>;
+  user_id: string;
 }
 
 export interface AppVideoChannels {
@@ -1178,74 +1167,73 @@ export interface Verification {
 
 export interface DB {
   account: Account;
-  'app.application_files': AppApplicationFiles;
-  'app.application_notes': AppApplicationNotes;
-  'app.bookmarks': AppBookmarks;
-  'app.career_events': AppCareerEvents;
-  'app.certifications': AppCertifications;
-  'app.chat_messages': AppChatMessages;
-  'app.chats': AppChats;
-  'app.companies': AppCompanies;
-  'app.entities': AppEntities;
-  'app.entity_links': AppEntityLinks;
-  'app.event_attendees': AppEventAttendees;
-  'app.events': AppEvents;
-  'app.files': AppFiles;
-  'app.finance_accounts': AppFinanceAccounts;
-  'app.finance_institutions': AppFinanceInstitutions;
-  'app.finance_transactions': AppFinanceTransactions;
-  'app.goals': AppGoals;
-  'app.job_applications': AppJobApplications;
-  'app.key_results': AppKeyResults;
-  'app.music_albums': AppMusicAlbums;
-  'app.music_artists': AppMusicArtists;
-  'app.music_listens': AppMusicListens;
-  'app.music_playlist_tracks': AppMusicPlaylistTracks;
-  'app.music_playlists': AppMusicPlaylists;
-  'app.music_tracks': AppMusicTracks;
-  'app.note_files': AppNoteFiles;
-  'app.note_shares': AppNoteShares;
-  'app.note_versions': AppNoteVersions;
-  'app.notes': AppNotes;
-  'app.people': AppPeople;
-  'app.places': AppPlaces;
-  'app.plaid_items': AppPlaidItems;
-  'app.portfolio_analytics': AppPortfolioAnalytics;
-  'app.portfolio_stats': AppPortfolioStats;
-  'app.portfolios': AppPortfolios;
-  'app.possession_containers': AppPossessionContainers;
-  'app.possession_events': AppPossessionEvents;
-  'app.possessions': AppPossessions;
-  'app.projects': AppProjects;
-  'app.skills': AppSkills;
-  'app.social_links': AppSocialLinks;
-  'app.space_invites': AppSpaceInvites;
-  'app.space_items': AppSpaceItems;
-  'app.space_members': AppSpaceMembers;
-  'app.space_tags': AppSpaceTags;
-  'app.spaces': AppSpaces;
-  'app.tag_aliases': AppTagAliases;
-  'app.tag_assignments': AppTagAssignments;
-  'app.tags': AppTags;
-  'app.task_assignments': AppTaskAssignments;
-  'app.tasks': AppTasks;
-  'app.testimonials': AppTestimonials;
-  'app.user_portfolio_preferences': AppUserPortfolioPreferences;
-  'app.travel_trips': AppTravelTrips;
-  'app.video_channels': AppVideoChannels;
-  'app.video_views': AppVideoViews;
-  'app.work_experiences': AppWorkExperiences;
+  "app.application_files": AppApplicationFiles;
+  "app.application_notes": AppApplicationNotes;
+  "app.bookmarks": AppBookmarks;
+  "app.career_events": AppCareerEvents;
+  "app.certifications": AppCertifications;
+  "app.chat_messages": AppChatMessages;
+  "app.chats": AppChats;
+  "app.companies": AppCompanies;
+  "app.entities": AppEntities;
+  "app.entity_links": AppEntityLinks;
+  "app.event_attendees": AppEventAttendees;
+  "app.events": AppEvents;
+  "app.files": AppFiles;
+  "app.finance_accounts": AppFinanceAccounts;
+  "app.finance_institutions": AppFinanceInstitutions;
+  "app.finance_transactions": AppFinanceTransactions;
+  "app.goals": AppGoals;
+  "app.job_applications": AppJobApplications;
+  "app.key_results": AppKeyResults;
+  "app.music_albums": AppMusicAlbums;
+  "app.music_artists": AppMusicArtists;
+  "app.music_listens": AppMusicListens;
+  "app.music_playlist_tracks": AppMusicPlaylistTracks;
+  "app.music_playlists": AppMusicPlaylists;
+  "app.music_tracks": AppMusicTracks;
+  "app.note_files": AppNoteFiles;
+  "app.note_shares": AppNoteShares;
+  "app.note_versions": AppNoteVersions;
+  "app.notes": AppNotes;
+  "app.people": AppPeople;
+  "app.places": AppPlaces;
+  "app.plaid_items": AppPlaidItems;
+  "app.portfolio_analytics": AppPortfolioAnalytics;
+  "app.portfolios": AppPortfolios;
+  "app.possession_containers": AppPossessionContainers;
+  "app.possession_events": AppPossessionEvents;
+  "app.possessions": AppPossessions;
+  "app.projects": AppProjects;
+  "app.skills": AppSkills;
+  "app.social_links": AppSocialLinks;
+  "app.space_invites": AppSpaceInvites;
+  "app.space_items": AppSpaceItems;
+  "app.space_members": AppSpaceMembers;
+  "app.space_tags": AppSpaceTags;
+  "app.spaces": AppSpaces;
+  "app.tag_aliases": AppTagAliases;
+  "app.tag_assignments": AppTagAssignments;
+  "app.tags": AppTags;
+  "app.task_assignments": AppTaskAssignments;
+  "app.tasks": AppTasks;
+  "app.testimonials": AppTestimonials;
+  "app.travel_trips": AppTravelTrips;
+  "app.user_portfolio_preferences": AppUserPortfolioPreferences;
+  "app.video_channels": AppVideoChannels;
+  "app.video_views": AppVideoViews;
+  "app.work_experiences": AppWorkExperiences;
   deviceCode: DeviceCode;
-  'drizzle.__drizzle_migrations': DrizzleDrizzleMigrations;
+  "drizzle.__drizzle_migrations": DrizzleDrizzleMigrations;
   goose_db_version: GooseDbVersion;
   jwks: Jwks;
-  'labs.covid_data': LabsCovidData;
-  'labs.relationship_cases': LabsRelationshipCases;
-  'labs.relationship_verdicts': LabsRelationshipVerdicts;
-  'labs.rhobh_daily_puzzles': LabsRhobhDailyPuzzles;
-  'labs.tfl_cameras': LabsTflCameras;
-  'ops.audit_logs': OpsAuditLogs;
-  'ops.search_logs': OpsSearchLogs;
+  "labs.covid_data": LabsCovidData;
+  "labs.relationship_cases": LabsRelationshipCases;
+  "labs.relationship_verdicts": LabsRelationshipVerdicts;
+  "labs.rhobh_daily_puzzles": LabsRhobhDailyPuzzles;
+  "labs.tfl_cameras": LabsTflCameras;
+  "ops.audit_logs": OpsAuditLogs;
+  "ops.search_logs": OpsSearchLogs;
   passkey: Passkey;
   session: Session;
   user: User;
