@@ -79,12 +79,12 @@ function SelectContent({
       <SelectPrimitive.Select.Positioner
         alignItemWithTrigger={alignItemWithTrigger}
         sideOffset={sideOffset}
-        className="z-50"
+        className="z-50 w-[var(--anchor-width)]"
       >
         <SelectPrimitive.Select.Popup
           data-slot="select-content"
           className={cn(
-            'bg-background text-foreground relative max-h-(--available-height) min-w-32 overflow-hidden rounded-md border border-border shadow-medium',
+            'bg-background text-foreground relative max-h-(--available-height) w-full overflow-hidden rounded-md border border-border shadow-medium',
             className,
           )}
           {...props}
