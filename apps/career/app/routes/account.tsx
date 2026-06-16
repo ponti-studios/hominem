@@ -294,26 +294,26 @@ function BasicInfoForm({ portfolio }: { portfolio: CareerPortfolioRecord }) {
       <FormErrorAlert title="Basic info wasn’t saved" message={submissionError} />
       <Card>
         <CardHeader>
-          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          <span className="ui-eyebrow">
             Personal
           </span>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-1">
-            <label htmlFor="name" className="text-xs font-medium text-muted-foreground">
+            <label htmlFor="name" className="subheading-4 text-muted-foreground">
               Full Name
             </label>
             <Input id="name" {...register('name', { required: 'Name is required' })} />
-            {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
+            {errors.name && <p className="body-4 text-destructive">{errors.name.message}</p>}
           </div>
           <div className="space-y-1">
-            <label htmlFor="initials" className="text-xs font-medium text-muted-foreground">
+            <label htmlFor="initials" className="subheading-4 text-muted-foreground">
               Initials
             </label>
             <Input id="initials" {...register('initials')} maxLength={10} />
           </div>
           <div className="space-y-1">
-            <label htmlFor="job_title" className="text-xs font-medium text-muted-foreground">
+            <label htmlFor="job_title" className="subheading-4 text-muted-foreground">
               Job Title
             </label>
             <Input
@@ -321,11 +321,11 @@ function BasicInfoForm({ portfolio }: { portfolio: CareerPortfolioRecord }) {
               {...register('job_title', { required: 'Job title is required' })}
             />
             {errors.job_title && (
-              <p className="text-xs text-destructive">{errors.job_title.message}</p>
+              <p className="body-4 text-destructive">{errors.job_title.message}</p>
             )}
           </div>
           <div className="space-y-1">
-            <label htmlFor="tagline" className="text-xs font-medium text-muted-foreground">
+            <label htmlFor="tagline" className="subheading-4 text-muted-foreground">
               Tagline
             </label>
             <Input
@@ -333,10 +333,10 @@ function BasicInfoForm({ portfolio }: { portfolio: CareerPortfolioRecord }) {
               {...register('tagline', { required: 'Tagline is required' })}
               maxLength={500}
             />
-            {errors.tagline && <p className="text-xs text-destructive">{errors.tagline.message}</p>}
+            {errors.tagline && <p className="body-4 text-destructive">{errors.tagline.message}</p>}
           </div>
           <div className="space-y-1">
-            <label htmlFor="bio" className="text-xs font-medium text-muted-foreground">
+            <label htmlFor="bio" className="subheading-4 text-muted-foreground">
               Bio
             </label>
             <Textarea
@@ -345,20 +345,20 @@ function BasicInfoForm({ portfolio }: { portfolio: CareerPortfolioRecord }) {
               rows={4}
               className="resize-none"
             />
-            {errors.bio && <p className="text-xs text-destructive">{errors.bio.message}</p>}
+            {errors.bio && <p className="body-4 text-destructive">{errors.bio.message}</p>}
           </div>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          <span className="ui-eyebrow">
             Contact
           </span>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-1">
-            <label htmlFor="email" className="text-xs font-medium text-muted-foreground">
+            <label htmlFor="email" className="subheading-4 text-muted-foreground">
               Email
             </label>
             <Input
@@ -369,10 +369,10 @@ function BasicInfoForm({ portfolio }: { portfolio: CareerPortfolioRecord }) {
                 pattern: { value: /^\S+@\S+$/i, message: 'Invalid email format' },
               })}
             />
-            {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+            {errors.email && <p className="body-4 text-destructive">{errors.email.message}</p>}
           </div>
           <div className="space-y-1">
-            <label htmlFor="phone" className="text-xs font-medium text-muted-foreground">
+            <label htmlFor="phone" className="subheading-4 text-muted-foreground">
               Phone
             </label>
             <Input id="phone" {...register('phone')} maxLength={50} />
@@ -382,13 +382,13 @@ function BasicInfoForm({ portfolio }: { portfolio: CareerPortfolioRecord }) {
 
       <Card>
         <CardHeader>
-          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          <span className="ui-eyebrow">
             Location
           </span>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-1">
-            <label htmlFor="current_location" className="text-xs font-medium text-muted-foreground">
+            <label htmlFor="current_location" className="subheading-4 text-muted-foreground">
               Location
             </label>
             <Input
@@ -397,11 +397,11 @@ function BasicInfoForm({ portfolio }: { portfolio: CareerPortfolioRecord }) {
               maxLength={255}
             />
             {errors.current_location && (
-              <p className="text-xs text-destructive">{errors.current_location.message}</p>
+              <p className="body-4 text-destructive">{errors.current_location.message}</p>
             )}
           </div>
           <div className="space-y-1">
-            <label htmlFor="location_tagline" className="text-xs font-medium text-muted-foreground">
+            <label htmlFor="location_tagline" className="subheading-4 text-muted-foreground">
               Location tagline
             </label>
             <Input id="location_tagline" {...register('location_tagline')} maxLength={255} />
@@ -411,7 +411,7 @@ function BasicInfoForm({ portfolio }: { portfolio: CareerPortfolioRecord }) {
 
       <Card>
         <CardHeader>
-          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          <span className="ui-eyebrow">
             Availability
           </span>
         </CardHeader>
@@ -428,7 +428,7 @@ function BasicInfoForm({ portfolio }: { portfolio: CareerPortfolioRecord }) {
                 />
               )}
             />
-            <label htmlFor="availability_status" className="text-sm text-muted-foreground">
+            <label htmlFor="availability_status" className="body-3 text-muted-foreground">
               {watch('availability_status') ? 'Open to opportunities' : 'Not available'}
             </label>
           </div>
@@ -436,7 +436,7 @@ function BasicInfoForm({ portfolio }: { portfolio: CareerPortfolioRecord }) {
             <div className="space-y-1">
               <label
                 htmlFor="availability_message"
-                className="text-xs font-medium text-muted-foreground"
+                className="subheading-4 text-muted-foreground"
               >
                 Availability note
               </label>
@@ -588,7 +588,7 @@ export default function Account({ loaderData }: Route.ComponentProps) {
     <div className="py-2">
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="space-y-2 text-center">
-          <h1 className="text-2xl font-bold">Account</h1>
+          <h1 className="heading-1">Account</h1>
         </div>
 
         <Card className="max-w-fit justify-self-end">
@@ -600,8 +600,8 @@ export default function Account({ loaderData }: Route.ComponentProps) {
             />
 
             <div className="flex flex-col items-start">
-              <h3 className="text-base font-medium">{userDisplayName}</h3>
-              <p className="text-sm text-muted-foreground">{user.email}</p>
+              <h3 className="subheading-3">{userDisplayName}</h3>
+              <p className="body-3 text-muted-foreground">{user.email}</p>
             </div>
           </CardContent>
         </Card>
@@ -613,16 +613,16 @@ export default function Account({ loaderData }: Route.ComponentProps) {
               <CardContent className="p-5 sm:p-6">
                 <div className="space-y-3 sm:hidden">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-semibold">Portfolio</h2>
+                    <h2 className="heading-3">Portfolio</h2>
                     {currentPortfolio.is_public && (
                       <a
                         href={`/p/${currentPortfolio.slug}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 rounded-md border border-border bg-card px-2 py-1 text-xs font-medium text-muted-foreground"
+                        className="inline-flex items-center gap-1 rounded-md border border-border bg-card px-2 py-1 subheading-4 text-muted-foreground"
                       >
                         <ExternalLink className="w-4 h-4" />
-                        <span className="text-xs">View</span>
+                        <span className="caption1">View</span>
                       </a>
                     )}
                   </div>
@@ -646,7 +646,7 @@ export default function Account({ loaderData }: Route.ComponentProps) {
                 {/* Desktop: Horizontal layout */}
                 <div className="hidden sm:flex sm:items-center sm:justify-between">
                   <div className="flex items-center space-x-3">
-                    <h2 className="text-lg font-semibold">Portfolio</h2>
+                    <h2 className="heading-3">Portfolio</h2>
                     <div className="flex items-center space-x-2">
                       <Badge
                         variant="outline"
@@ -666,7 +666,7 @@ export default function Account({ loaderData }: Route.ComponentProps) {
                       href={`/p/${currentPortfolio.slug}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 rounded-md border border-border bg-card px-3 py-1 text-sm font-medium text-muted-foreground"
+                      className="inline-flex items-center gap-1 rounded-md border border-border bg-card px-3 py-1 subheading-4 text-muted-foreground"
                     >
                       <ExternalLink className="w-4 h-4" />
                       View Live
@@ -682,7 +682,7 @@ export default function Account({ loaderData }: Route.ComponentProps) {
                   />
 
                   <div className="bg-accent/10 border border-accent/30 rounded-md p-3">
-                    <p className="text-sm text-foreground">
+                    <p className="body-3 text-foreground">
                       Want a fresh portfolio? Create a new one from a resume upload or replace this
                       portfolio from here.
                     </p>
@@ -691,8 +691,8 @@ export default function Account({ loaderData }: Route.ComponentProps) {
                   {showReplaceResume ? (
                     <div className="rounded-md border border-warning/30 bg-warning/10 p-4 space-y-4">
                       <div className="space-y-1">
-                        <p className="text-sm font-medium text-foreground">Replace portfolio</p>
-                        <p className="text-sm text-foreground">
+                        <p className="subheading-4 text-foreground">Replace portfolio</p>
+                        <p className="body-3 text-foreground">
                           This will delete the current portfolio and rebuild it from the uploaded
                           resume.
                         </p>
@@ -721,10 +721,10 @@ export default function Account({ loaderData }: Route.ComponentProps) {
                   {portfolios.length > 1 ? (
                     <div className="rounded-md border border-border bg-card p-4 space-y-3">
                       <div className="space-y-1">
-                        <p className="text-sm font-medium text-foreground">
+                        <p className="subheading-4 text-foreground">
                           Choose current portfolio
                         </p>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="body-3 text-muted-foreground">
                           This portfolio powers the editor, customize tools, and public API views.
                         </p>
                       </div>
@@ -744,10 +744,10 @@ export default function Account({ loaderData }: Route.ComponentProps) {
                               )}
                             >
                               <div className="min-w-0">
-                                <p className="truncate text-sm font-medium text-foreground">
+                                <p className="truncate subheading-4 text-foreground">
                                   {portfolioOption.title}
                                 </p>
-                                <p className="truncate text-xs text-muted-foreground">
+                                <p className="truncate body-4 text-muted-foreground">
                                   /p/{portfolioOption.slug}
                                 </p>
                               </div>
@@ -837,20 +837,20 @@ export default function Account({ loaderData }: Route.ComponentProps) {
 
                   {pdfError && (
                     <div className="mt-2 rounded-md border border-destructive/30 bg-destructive/10 p-3">
-                      <p className="text-sm text-destructive">{pdfError}</p>
+                      <p className="body-3 text-destructive">{pdfError}</p>
                     </div>
                   )}
 
                   {!currentPortfolio.is_public && (
                     <div className="mt-2 rounded-md border border-warning/30 bg-warning/10 p-3">
-                      <p className="text-sm text-foreground">
+                      <p className="body-3 text-foreground">
                         Your portfolio must be public to generate a PDF. Make it public in the
                         editor to enable PDF downloads.
                       </p>
                     </div>
                   )}
 
-                  <p className="text-xs text-muted-foreground">
+                  <p className="body-4 text-muted-foreground">
                     Last updated: {new Date(currentPortfolio.updatedat).toLocaleDateString()}
                   </p>
                 </div>
@@ -859,7 +859,7 @@ export default function Account({ loaderData }: Route.ComponentProps) {
           ) : (
             <Card>
               <CardContent className="p-6 text-center space-y-4">
-                <p className="text-muted-foreground">
+                <p className="body-3 text-muted-foreground">
                   Start showcasing your skills and experience.
                 </p>
                 <Button
@@ -877,7 +877,7 @@ export default function Account({ loaderData }: Route.ComponentProps) {
 
         {currentPortfolio && (
           <div>
-            <h2 className="text-lg font-semibold mb-4">Portfolio Info</h2>
+            <h2 className="heading-3 mb-4">Portfolio Info</h2>
             <BasicInfoForm portfolio={currentPortfolio} />
           </div>
         )}

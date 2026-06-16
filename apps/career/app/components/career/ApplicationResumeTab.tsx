@@ -1,3 +1,4 @@
+import type { CareerJobApplicationRecord as ApplicationWithCompany } from '@hominem/db';
 import { Button } from '@hominem/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
 import { Input } from '@hominem/ui/input';
@@ -6,19 +7,27 @@ import { AlertCircle, CheckCircle, Copy, FileText, Sparkles } from 'lucide-react
 import { useMemo, useState } from 'react';
 import { useFetcher } from 'react-router';
 
-import type { CustomizeResumeApiRequest, CustomizeResumeApiResponse, JobAnalysis } from '~/lib/api-contracts';
+import type {
+  CustomizeResumeApiRequest,
+  CustomizeResumeApiResponse,
+  JobAnalysis,
+} from '~/lib/api-contracts';
 import type { JobPosting } from '~/types/applications';
-import type { CareerJobApplicationRecord as ApplicationWithCompany } from '@hominem/db';
 
 interface ApplicationResumeTabProps {
   application: ApplicationWithCompany;
   applicationId: string;
 }
 
-export function ApplicationResumeTab({ application, applicationId: _applicationId }: ApplicationResumeTabProps) {
+export function ApplicationResumeTab({
+  application,
+  applicationId: _applicationId,
+}: ApplicationResumeTabProps) {
   const fetcher = useFetcher();
 
-  const [resumeFormat, setResumeFormat] = useState<'professional' | 'modern' | 'technical' | 'executive'>('professional');
+  const [resumeFormat, setResumeFormat] = useState<
+    'professional' | 'modern' | 'technical' | 'executive'
+  >('professional');
   const [targetLength, setTargetLength] = useState<'concise' | 'standard' | 'detailed'>('standard');
   const [focusAreas, setFocusAreas] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -42,7 +51,8 @@ export function ApplicationResumeTab({ application, applicationId: _applicationI
   const hasAnyPosting = hasStructuredPosting || hasRawPosting;
 
   const isSaving = fetcher.state !== 'idle';
-  const saveSuccess = fetcher.data && (fetcher.data as { message?: string }).message === 'Resume saved successfully';
+  const saveSuccess =
+    fetcher.data && (fetcher.data as { message?: string }).message === 'Resume saved successfully';
 
   async function handleGenerate() {
     setIsGenerating(true);
@@ -96,8 +106,8 @@ export function ApplicationResumeTab({ application, applicationId: _applicationI
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
         <FileText className="h-10 w-10 text-muted-foreground/50" />
-        <p className="text-muted-foreground">No job description stored for this application.</p>
-        <p className="text-sm text-muted-foreground">
+        <p className="body-3 text-muted-foreground">No job description stored for this application.</p>
+        <p className="body-3 text-muted-foreground">
           Add a job posting URL or description in the Overview tab to generate a tailored resume.
         </p>
       </div>
@@ -113,22 +123,24 @@ export function ApplicationResumeTab({ application, applicationId: _applicationI
         <Card>
           <CardContent className="p-4">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm font-medium text-foreground">
+              <span className="subheading-4 text-foreground">
                 {parsedJobPosting.job_title || application.position}
               </span>
               {parsedJobPosting.companyName && (
-                <span className="text-sm text-muted-foreground">at {parsedJobPosting.companyName}</span>
+                <span className="body-3 text-muted-foreground">
+                  at {parsedJobPosting.companyName}
+                </span>
               )}
               {parsedJobPosting.skills?.slice(0, 6).map((skill) => (
                 <span
                   key={skill}
-                  className="px-2 py-0.5 bg-accent/20 text-muted-foreground text-xs rounded-md"
+                  className="px-2 py-0.5 bg-accent/20 text-muted-foreground caption1 rounded-md"
                 >
                   {skill}
                 </span>
               ))}
               {(parsedJobPosting.skills?.length ?? 0) > 6 && (
-                <span className="text-xs text-muted-foreground">
+                <span className="body-4 text-muted-foreground">
                   +{(parsedJobPosting.skills?.length ?? 0) - 6} more
                 </span>
               )}
@@ -142,29 +154,21 @@ export function ApplicationResumeTab({ application, applicationId: _applicationI
         <Card>
           <CardHeader className="pb-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <CardTitle className="text-base">Saved Resume</CardTitle>
+              <CardTitle className="heading-4">Saved Resume</CardTitle>
               <div className="flex gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleCopy(application.resume!)}
-                >
-                  <Copy className="h-4 w-4 mr-1" />
+                <Button variant="ghost" size="sm" onClick={() => handleCopy(application.resume!)}>
+                  <Copy className="size-4 mr-1" />
                   Copy
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowRegenerate(true)}
-                >
-                  <Sparkles className="h-4 w-4 mr-1" />
+                <Button variant="outline" size="sm" onClick={() => setShowRegenerate(true)}>
+                  <Sparkles className="size-4 mr-1" />
                   Regenerate
                 </Button>
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            <pre className="text-xs text-muted-foreground font-mono whitespace-pre-wrap leading-relaxed max-h-64 overflow-y-auto">
+            <pre className="body-4 text-muted-foreground font-mono whitespace-pre-wrap leading-relaxed max-h-64 overflow-y-auto">
               {application.resume.slice(0, 800)}
               {application.resume.length > 800 ? '\n\n…' : ''}
             </pre>
@@ -176,15 +180,15 @@ export function ApplicationResumeTab({ application, applicationId: _applicationI
       {showGenerateForm && (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Sparkles className="h-4 w-4" />
+            <CardTitle className="heading-4 flex items-center gap-2">
+              <Sparkles className="size-4" />
               {application.resume ? 'Regenerate Resume' : 'Generate Tailored Resume'}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-muted-foreground">Format</label>
+                <label className="subheading-4 text-muted-foreground">Format</label>
                 <Select
                   value={resumeFormat}
                   onValueChange={(v) => setResumeFormat(v as typeof resumeFormat)}
@@ -202,7 +206,7 @@ export function ApplicationResumeTab({ application, applicationId: _applicationI
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-muted-foreground">Length</label>
+                <label className="subheading-4 text-muted-foreground">Length</label>
                 <Select
                   value={targetLength}
                   onValueChange={(v) => setTargetLength(v as typeof targetLength)}
@@ -220,9 +224,11 @@ export function ApplicationResumeTab({ application, applicationId: _applicationI
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-muted-foreground">
+              <label className="subheading-4 text-muted-foreground">
                 Focus Areas{' '}
-                <span className="font-normal text-muted-foreground/70">(optional, comma-separated)</span>
+                <span className="font-normal text-muted-foreground/70">
+                  (optional, comma-separated)
+                </span>
               </label>
               <Input
                 placeholder="e.g. leadership, TypeScript, distributed systems"
@@ -232,8 +238,8 @@ export function ApplicationResumeTab({ application, applicationId: _applicationI
             </div>
 
             {error && (
-              <div className="flex items-start gap-2 text-sm text-destructive">
-                <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+              <div className="flex items-start gap-2 body-3 text-destructive">
+                <AlertCircle className="size-4 mt-0.5 shrink-0" />
                 <span>{error}</span>
               </div>
             )}
@@ -246,14 +252,11 @@ export function ApplicationResumeTab({ application, applicationId: _applicationI
                 loadingLabel="Generating..."
                 className="flex-1"
               >
-                <Sparkles className="h-4 w-4 mr-2" />
+                <Sparkles className="size-4 mr-2" />
                 Generate Resume
               </Button>
               {showRegenerate && (
-                <Button
-                  variant="outline"
-                  onClick={() => setShowRegenerate(false)}
-                >
+                <Button variant="outline" onClick={() => setShowRegenerate(false)}>
                   Cancel
                 </Button>
               )}
@@ -267,14 +270,10 @@ export function ApplicationResumeTab({ application, applicationId: _applicationI
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between flex-wrap gap-2">
-              <CardTitle className="text-base">Generated Resume</CardTitle>
+              <CardTitle className="heading-4">Generated Resume</CardTitle>
               <div className="flex gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleCopy(generatedResume)}
-                >
-                  <Copy className="h-4 w-4 mr-1" />
+                <Button variant="ghost" size="sm" onClick={() => handleCopy(generatedResume)}>
+                  <Copy className="size-4 mr-1" />
                   {copySuccess ? 'Copied!' : 'Copy'}
                 </Button>
                 <Button
@@ -286,7 +285,7 @@ export function ApplicationResumeTab({ application, applicationId: _applicationI
                 >
                   {saveSuccess ? (
                     <>
-                      <CheckCircle className="h-4 w-4 mr-1" />
+                      <CheckCircle className="size-4 mr-1" />
                       Saved
                     </>
                   ) : (
@@ -298,13 +297,16 @@ export function ApplicationResumeTab({ application, applicationId: _applicationI
           </CardHeader>
           <CardContent className="space-y-4">
             {jobAnalysis && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 bg-muted/30 rounded-lg text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 bg-muted/30 rounded-lg body-3">
                 {jobAnalysis.requiredSkills.length > 0 && (
                   <div>
-                    <p className="font-medium text-foreground mb-1">Matched Skills</p>
+                    <p className="subheading-4 text-foreground mb-1">Matched Skills</p>
                     <div className="flex flex-wrap gap-1">
                       {jobAnalysis.requiredSkills.map((skill) => (
-                        <span key={skill} className="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs rounded">
+                        <span
+                          key={skill}
+                          className="px-1.5 py-0.5 bg-success/10 text-success caption1 rounded"
+                        >
                           {skill}
                         </span>
                       ))}
@@ -313,10 +315,13 @@ export function ApplicationResumeTab({ application, applicationId: _applicationI
                 )}
                 {jobAnalysis.recommendedKeywords.length > 0 && (
                   <div>
-                    <p className="font-medium text-foreground mb-1">ATS Keywords</p>
+                    <p className="subheading-4 text-foreground mb-1">ATS Keywords</p>
                     <div className="flex flex-wrap gap-1">
                       {jobAnalysis.recommendedKeywords.slice(0, 6).map((kw) => (
-                        <span key={kw} className="px-1.5 py-0.5 bg-accent/20 text-muted-foreground text-xs rounded">
+                        <span
+                          key={kw}
+                          className="px-1.5 py-0.5 bg-accent/20 text-muted-foreground caption1 rounded"
+                        >
                           {kw}
                         </span>
                       ))}
@@ -325,7 +330,7 @@ export function ApplicationResumeTab({ application, applicationId: _applicationI
                 )}
               </div>
             )}
-            <pre className="text-xs font-mono whitespace-pre-wrap leading-relaxed max-h-[32rem] overflow-y-auto border border-border rounded-lg p-4">
+            <pre className="caption1 font-mono whitespace-pre-wrap leading-relaxed max-h-[32rem] overflow-y-auto border border-border rounded-lg p-4">
               {generatedResume}
             </pre>
           </CardContent>

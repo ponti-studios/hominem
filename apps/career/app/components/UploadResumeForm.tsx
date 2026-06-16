@@ -190,8 +190,8 @@ export function UploadResumeForm({
   return (
     <div className="w-full max-w-md">
       <div className="mb-4">
-        <h1 className="text-lg font-semibold text-foreground">Upload your resume</h1>
-        <p className="text-xs text-muted-foreground">
+        <h1 className="heading-3 text-foreground">Upload your resume</h1>
+        <p className="body-4 text-muted-foreground">
           We'll extract your information and build your portfolio automatically.
         </p>
       </div>
@@ -212,7 +212,7 @@ export function UploadResumeForm({
             <div className="flex flex-col items-center gap-3">
               <FileText className="size-8 text-muted-foreground" />
               <div>
-                <p className="text-sm text-foreground">
+                <p className="body-3 text-foreground">
                   Drop your resume here, or{' '}
                   <button
                     type="button"
@@ -223,7 +223,7 @@ export function UploadResumeForm({
                     browse
                   </button>
                 </p>
-                <p className="mt-0.5 text-xs text-muted-foreground">PDF only · max 10MB</p>
+                <p className="mt-0.5 body-4 text-muted-foreground">PDF only · max 10MB</p>
               </div>
 
               <input
@@ -239,10 +239,10 @@ export function UploadResumeForm({
                 <div className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2">
                   <FileText className="size-4 shrink-0 text-muted-foreground" />
                   <div className="min-w-0 text-left">
-                    <p className="truncate text-sm font-medium text-foreground">
+                    <p className="truncate subheading-4 text-foreground">
                       {selectedFile.name}
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="body-4 text-muted-foreground">
                       {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
                     </p>
                   </div>
@@ -251,13 +251,13 @@ export function UploadResumeForm({
             </div>
           </div>
 
-          {notice ? <p className="text-xs text-muted-foreground">{notice}</p> : null}
+          {notice ? <p className="body-4 text-muted-foreground">{notice}</p> : null}
 
           {isPending ? (
             <div className="space-y-2 rounded-md border border-border bg-card p-4 text-card-foreground">
               <div className="space-y-1">
-                <p className="text-sm font-medium text-foreground">Resume processing</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="subheading-4 text-foreground">Resume processing</p>
+                <p className="body-4 text-muted-foreground">
                   We&apos;re extracting your resume details and building your portfolio.
                 </p>
               </div>
@@ -276,7 +276,7 @@ export function UploadResumeForm({
                 <div className="space-y-3">
                   <p>{error}</p>
                   {errorStage ? (
-                    <p className="text-xs">Failed during {errorStage.replaceAll('-', ' ')}.</p>
+                    <p className="body-4">Failed during {errorStage.replaceAll('-', ' ')}.</p>
                   ) : null}
                   {requiresLogin ? (
                     <Button type="button" variant="outline" size="sm" asChild>

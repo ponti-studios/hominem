@@ -11,7 +11,7 @@ export function ApplicationFilesTab({ application }: FilesTabProps) {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 className="text-lg font-semibold">Files & Documents</h3>
+        <h3 className="heading-3">Files & Documents</h3>
         <Button disabled className="text-xs sm:text-sm">
           <span className="hidden sm:inline">Upload File </span>(Coming Soon)
         </Button>
@@ -22,10 +22,10 @@ export function ApplicationFilesTab({ application }: FilesTabProps) {
         {application.resume && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm">Resume</CardTitle>
+              <CardTitle className="body-3">Resume</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="bg-muted p-3 rounded text-xs font-mono max-h-40 overflow-y-auto">
+              <div className="bg-muted p-3 rounded caption1 font-mono max-h-40 overflow-y-auto">
                 {application.resume}
               </div>
             </CardContent>
@@ -35,10 +35,10 @@ export function ApplicationFilesTab({ application }: FilesTabProps) {
         {application.cover_letter && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm">Cover Letter</CardTitle>
+              <CardTitle className="body-3">Cover Letter</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="bg-muted p-3 rounded text-xs font-mono max-h-40 overflow-y-auto">
+              <div className="bg-muted p-3 rounded caption1 font-mono max-h-40 overflow-y-auto">
                 {application.cover_letter}
               </div>
             </CardContent>
@@ -47,7 +47,7 @@ export function ApplicationFilesTab({ application }: FilesTabProps) {
       </div>
 
       {!application.resume && !application.cover_letter && (
-        <div className="text-center py-8 text-muted-foreground">
+        <div className="text-center py-8 body-3 text-muted-foreground">
           No files uploaded yet. File upload functionality coming soon.
         </div>
       )}

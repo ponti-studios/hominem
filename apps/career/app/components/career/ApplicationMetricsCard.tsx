@@ -66,7 +66,7 @@ export function ApplicationMetricsCard({ applications, metrics }: ApplicationMet
     {
       title: 'Response Rate',
       value: formatPercentage(metrics.responseRate),
-      color: 'text-emerald-600',
+      color: 'text-success',
     },
     {
       title: 'Interview Rate',
@@ -76,7 +76,7 @@ export function ApplicationMetricsCard({ applications, metrics }: ApplicationMet
     {
       title: 'Offer Rate',
       value: formatPercentage(metrics.offerRate),
-      color: 'text-purple-600',
+      color: 'text-success',
     },
     {
       title: 'Avg. Response Time',
@@ -89,12 +89,12 @@ export function ApplicationMetricsCard({ applications, metrics }: ApplicationMet
     {
       title: 'Avg. Offer Time',
       value: `${Math.round(metrics.averageTimeToOffer)} days`,
-      color: 'text-pink-600',
+      color: 'text-foreground',
     },
     {
       title: 'Avg. Decision Time',
       value: `${Math.round(metrics.averageTimeToDecision)} days`,
-      color: 'text-orange-600',
+      color: 'text-warning',
     },
     {
       title: 'Acceptance Rate',
@@ -106,11 +106,11 @@ export function ApplicationMetricsCard({ applications, metrics }: ApplicationMet
   return (
     <Card className="border-border bg-card">
       <CardHeader>
-        <CardTitle className="text-lg text-foreground">Application Metrics</CardTitle>
+        <CardTitle className="heading-3 text-foreground">Application Metrics</CardTitle>
       </CardHeader>
 
       <CardContent>
-        <div className="space-y-5 font-mono text-sm">
+        <div className="space-y-5 font-mono body-3">
           <div className="space-y-2">
             {performanceMetrics.map((metric) => (
               <MetricRow key={metric.title} metric={metric} />
@@ -119,7 +119,7 @@ export function ApplicationMetricsCard({ applications, metrics }: ApplicationMet
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
+              <p className="ui-eyebrow">
                 Timing Analysis
               </p>
               <div className="space-y-2">
@@ -130,7 +130,7 @@ export function ApplicationMetricsCard({ applications, metrics }: ApplicationMet
             </div>
 
             <div className="space-y-3 border-t border-dashed border-border/80 pt-4">
-              <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
+              <p className="ui-eyebrow">
                 Salary Insights
               </p>
 
@@ -153,7 +153,7 @@ export function ApplicationMetricsCard({ applications, metrics }: ApplicationMet
                   metric={{
                     title: 'Negotiation Success',
                     value: formatPercentage(metrics.salaryMetrics.negotiationSuccessRate),
-                    color: 'text-purple-700',
+                    color: 'text-success',
                   }}
                 />
                 <MetricRow

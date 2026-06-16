@@ -85,8 +85,8 @@ export function SalaryChart({ data }: SalaryChartProps) {
         {/* Gradient definition */}
         <defs>
           <linearGradient id="salaryGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="rgb(99, 102, 241)" stopOpacity="0.3" />
-            <stop offset="100%" stopColor="rgb(99, 102, 241)" stopOpacity="0.05" />
+            <stop offset="0%" stopColor="var(--color-success)" stopOpacity="0.3" />
+            <stop offset="100%" stopColor="var(--color-success)" stopOpacity="0.05" />
           </linearGradient>
         </defs>
 
@@ -101,14 +101,14 @@ export function SalaryChart({ data }: SalaryChartProps) {
                 y1={y}
                 x2={width - padding}
                 y2={y}
-                stroke="rgb(226, 232, 240)"
+                stroke="var(--color-border)"
                 strokeWidth="1"
               />
               <text
                 x={padding - 10}
                 y={y + 4}
                 textAnchor="end"
-                className="text-xs fill-slate-500 font-sans"
+                className="caption1 fill-muted-foreground"
               >
                 {formatCurrency(salary / 100)}
               </text>
@@ -122,7 +122,7 @@ export function SalaryChart({ data }: SalaryChartProps) {
         {/* Main line */}
         <path
           d={pathData}
-          stroke="rgb(99, 102, 241)"
+          stroke="var(--color-success)"
           strokeWidth="3"
           fill="none"
           strokeLinecap="round"
@@ -135,13 +135,13 @@ export function SalaryChart({ data }: SalaryChartProps) {
           const y = getY(item.salary);
           return (
             <g key={`${item.year}-${index}`}>
-              <circle cx={x} cy={y} r="6" fill="white" stroke="rgb(99, 102, 241)" strokeWidth="3" />
+              <circle cx={x} cy={y} r="6" fill="var(--color-card)" stroke="var(--color-success)" strokeWidth="3" />
               {/* Year labels */}
               <text
                 x={x}
                 y={height - padding + 20}
                 textAnchor="middle"
-                className="text-sm fill-slate-600 font-sans"
+                className="body-4 fill-foreground"
               >
                 {item.year}
               </text>

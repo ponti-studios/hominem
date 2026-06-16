@@ -160,15 +160,15 @@ export function SlugEditor({ portfolio_id, initialSlug, onSave }: SlugEditorProp
     if (!slugValue || slugValue === initialSlug) return null;
 
     if (validation.isChecking) {
-      return <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />;
+      return <Loader2 className="w-4 h-4 text-primary animate-spin" />;
     }
 
     if (validation.isAvailable) {
-      return <Check className="w-4 h-4 text-green-500" />;
+      return <Check className="w-4 h-4 text-success" />;
     }
 
     if (validation.isAvailable === false) {
-      return <X className="w-4 h-4 text-red-500" />;
+      return <X className="w-4 h-4 text-destructive" />;
     }
 
     return null;
@@ -185,12 +185,12 @@ export function SlugEditor({ portfolio_id, initialSlug, onSave }: SlugEditorProp
 
   return (
     <div className="space-y-2">
-      <label htmlFor="portfolio-slug" className="text-sm font-medium text-muted-foreground">
+      <label htmlFor="portfolio-slug" className="subheading-4 text-muted-foreground">
         Portfolio URL
       </label>
       <div className="flex items-center space-x-2">
         <div className="flex items-center flex-1 min-w-0">
-          <div className="inline-flex items-center px-4 h-8 text-sm text-foreground border border-r-0 bg-muted border-border rounded-l-md">
+          <div className="inline-flex items-center px-4 h-8 body-3 text-foreground border border-r-0 bg-muted border-border rounded-l-md">
             craftd.dev/p/
           </div>
           <div className="flex-1 relative">
@@ -218,7 +218,7 @@ export function SlugEditor({ portfolio_id, initialSlug, onSave }: SlugEditorProp
             disabled={!canSave}
             variant="outline"
             size="sm"
-            className="h-8 border-success/40 px-2 text-xs text-success"
+            className="h-8 border-success/40 px-2 caption1 text-success"
           >
             {isSaving ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : null}
             Save
@@ -228,7 +228,7 @@ export function SlugEditor({ portfolio_id, initialSlug, onSave }: SlugEditorProp
 
       {/* Validation message */}
       {validation.message && (
-        <p className={cn('text-xs', getMessageStyling())}>{validation.message}</p>
+        <p className={cn('body-4', getMessageStyling())}>{validation.message}</p>
       )}
     </div>
   );

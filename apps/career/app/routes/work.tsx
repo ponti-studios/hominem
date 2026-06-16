@@ -162,7 +162,7 @@ export default function Work({ loaderData }: Route.ComponentProps) {
             </ul>
           </div>
         ) : (
-          <div className="text-center py-2xl text-muted-foreground">
+          <div className="text-center py-16 body-3 text-muted-foreground">
             No work experiences added yet. Click "Add New Experience" to get started.
           </div>
         )}

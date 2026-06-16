@@ -208,7 +208,7 @@ function SkillsEditorSection({ skills: initialSkills, portfolio_id }: SkillsEdit
       )}
 
       {isSaving && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2 body-3 text-muted-foreground">
           <LoaderPinwheel className="size-4 animate-spin" />
           Saving…
         </div>
@@ -216,8 +216,8 @@ function SkillsEditorSection({ skills: initialSkills, portfolio_id }: SkillsEdit
 
       {skills.length === 0 ? (
         <div className="py-12 text-center text-muted-foreground">
-          <p className="text-sm">No skills yet.</p>
-          <p className="mt-1 text-sm">
+          <p className="body-3">No skills yet.</p>
+          <p className="mt-1 body-3">
             Click <Sparkles className="inline size-3.5 mx-0.5" /> to extract skills from your work
             history, or <PlusIcon className="inline size-3.5 mx-0.5" /> to add one manually.
           </p>
@@ -226,7 +226,7 @@ function SkillsEditorSection({ skills: initialSkills, portfolio_id }: SkillsEdit
         <div className="overflow-hidden rounded-lg border border-border bg-card divide-y divide-border">
           {sortedCategories.map((category) => (
             <div key={category} className="px-4 py-3">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+              <p className="ui-eyebrow mb-3">
                 {CATEGORY_LABELS[category] ?? category}
               </p>
               <div className="flex flex-wrap gap-2">

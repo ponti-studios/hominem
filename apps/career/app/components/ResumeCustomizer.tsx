@@ -127,8 +127,8 @@ export function ResumeCustomizer({
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-foreground mb-2">AI Resume Customizer</h2>
-        <p className="text-muted-foreground">
+        <h2 className="heading-1 text-foreground mb-2">AI Resume Customizer</h2>
+                  <p className="body-3 text-muted-foreground">
           Paste a job posting below and we'll generate a customized resume based on your portfolio
         </p>
       </div>
@@ -196,7 +196,7 @@ export function ResumeCustomizer({
           <div>
             <label
               htmlFor="inputMethod"
-              className="block text-sm font-medium text-muted-foreground mb-2"
+              className="block subheading-4 text-muted-foreground mb-2"
             >
               Input Method
             </label>
@@ -227,7 +227,7 @@ export function ResumeCustomizer({
             <div>
               <label
                 htmlFor="job_posting"
-                className="block text-sm font-medium text-muted-foreground mb-2"
+                className="block subheading-4 text-muted-foreground mb-2"
               >
                 Job Posting Content *
               </label>
@@ -245,7 +245,7 @@ export function ResumeCustomizer({
             <div>
               <label
                 htmlFor="job_posting_url"
-                className="block text-sm font-medium text-muted-foreground mb-2"
+                className="block subheading-4 text-muted-foreground mb-2"
               >
                 Job Posting URL *
               </label>
@@ -258,7 +258,7 @@ export function ResumeCustomizer({
                 disabled={isDisabled}
                 className="w-full"
               />
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="body-4 text-muted-foreground mt-1">
                 We'll automatically scrape and extract the job posting content from the URL
               </p>
             </div>
@@ -268,7 +268,7 @@ export function ResumeCustomizer({
             <div>
               <label
                 htmlFor="resumeFormat"
-                className="block text-sm font-medium text-muted-foreground mb-2"
+                className="block subheading-4 text-muted-foreground mb-2"
               >
                 Resume Format
               </label>
@@ -292,7 +292,7 @@ export function ResumeCustomizer({
             <div>
               <label
                 htmlFor="targetLength"
-                className="block text-sm font-medium text-muted-foreground mb-2"
+                className="block subheading-4 text-muted-foreground mb-2"
               >
                 Target Length
               </label>
@@ -315,7 +315,7 @@ export function ResumeCustomizer({
             <div>
               <label
                 htmlFor="focusAreas"
-                className="block text-sm font-medium text-muted-foreground mb-2"
+                className="block subheading-4 text-muted-foreground mb-2"
               >
                 Focus Areas (optional)
               </label>
@@ -326,7 +326,7 @@ export function ResumeCustomizer({
                 placeholder="leadership, technical, etc."
                 disabled={isDisabled}
               />
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="body-4 text-muted-foreground mt-1">
                 Comma-separated areas to emphasize
               </p>
             </div>
@@ -350,9 +350,9 @@ export function ResumeCustomizer({
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-destructive">
               <div className="w-5 h-5 rounded-full bg-destructive/10 flex items-center justify-center">
-                <span className="text-destructive text-sm">!</span>
+                <span className="text-destructive body-3">!</span>
               </div>
-              <span className="font-medium">Error:</span>
+              <span className="subheading-4">Error:</span>
               <span>{error}</span>
             </div>
           </CardContent>
@@ -371,12 +371,12 @@ export function ResumeCustomizer({
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <h4 className="font-medium text-foreground mb-2">Required Skills</h4>
+                    <h4 className="subheading-4 text-foreground mb-2">Required Skills</h4>
                     <div className="flex flex-wrap gap-2">
                       {result.jobAnalysis.requiredSkills.map((skill) => (
                         <span
                           key={skill}
-                          className="px-2 py-1 bg-accent/20 text-foreground text-xs rounded-full"
+                          className="px-2 py-1 bg-accent/20 text-foreground caption1 rounded-full"
                         >
                           {skill}
                         </span>
@@ -385,8 +385,8 @@ export function ResumeCustomizer({
                   </div>
 
                   <div>
-                    <h4 className="font-medium text-foreground mb-2">Key Qualifications</h4>
-                    <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+                    <h4 className="subheading-4 text-foreground mb-2">Key Qualifications</h4>
+                    <ul className="list-disc list-inside body-3 text-muted-foreground space-y-1">
                       {result.jobAnalysis.qualifications.map((qual) => (
                         <li key={qual}>{qual}</li>
                       ))}
@@ -394,12 +394,12 @@ export function ResumeCustomizer({
                   </div>
 
                   <div>
-                    <h4 className="font-medium text-foreground mb-2">Culture Keywords</h4>
+                    <h4 className="subheading-4 text-foreground mb-2">Culture Keywords</h4>
                     <div className="flex flex-wrap gap-2">
                       {result.jobAnalysis.cultureKeywords.map((keyword) => (
                         <span
                           key={keyword}
-                          className="px-2 py-1 bg-success/10 text-foreground text-xs rounded-full"
+                          className="px-2 py-1 bg-success/10 text-foreground caption1 rounded-full"
                         >
                           {keyword}
                         </span>
@@ -408,12 +408,12 @@ export function ResumeCustomizer({
                   </div>
 
                   <div>
-                    <h4 className="font-medium text-foreground mb-2">Recommended Keywords</h4>
+                    <h4 className="subheading-4 text-foreground mb-2">Recommended Keywords</h4>
                     <div className="flex flex-wrap gap-2">
                       {result.jobAnalysis.recommendedKeywords.map((keyword) => (
                         <span
                           key={keyword}
-                          className="px-2 py-1 bg-accent/10 text-foreground text-xs rounded-full"
+                          className="px-2 py-1 bg-accent/10 text-foreground caption1 rounded-full"
                         >
                           {keyword}
                         </span>
@@ -439,14 +439,14 @@ export function ResumeCustomizer({
                   </Button>
                 </div>
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="body-3 text-muted-foreground">
                 Generated on {new Date(result.metadata.generatedAt).toLocaleString()} •{' '}
                 {result.metadata.format} format • {result.metadata.targetLength} length
               </p>
             </CardHeader>
             <CardContent>
               <div className="bg-muted p-4 rounded-lg">
-                <pre className="whitespace-pre-wrap text-sm text-foreground font-mono leading-relaxed">
+                <pre className="whitespace-pre-wrap body-3 text-foreground font-mono leading-relaxed">
                   {result.customizedResume}
                 </pre>
               </div>

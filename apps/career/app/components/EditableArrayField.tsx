@@ -146,7 +146,7 @@ export function EditableArrayField({
   if (isEditing) {
     return (
       <div className={className} data-testid={`editable-array-field-${field}`}>
-        <div className="block text-sm font-medium text-muted-foreground mb-2">{label}</div>
+        <div className="block subheading-4 text-muted-foreground mb-2">{label}</div>
         <div className="space-y-2">
           {editValues.map((item, index) => (
             <ArrayItem
@@ -200,7 +200,7 @@ export function EditableArrayField({
 
   return (
     <div className={className} data-testid={`editable-array-field-${field}`}>
-      <div className="block text-sm font-medium text-muted-foreground mb-2">{label}</div>
+      <div className="block subheading-4 text-muted-foreground mb-2">{label}</div>
       <div className="group">
         <div className="space-y-2" data-testid="array-items-display">
           {value.length > 0 ? (
@@ -220,7 +220,7 @@ export function EditableArrayField({
           )}
         </div>
         <div className="flex justify-between items-center mt-2">
-          <span className="text-sm text-muted-foreground" data-testid="item-count">
+          <span className="body-3 text-muted-foreground" data-testid="item-count">
             {value.length} item{value.length !== 1 ? 's' : ''}
           </span>
           <Button

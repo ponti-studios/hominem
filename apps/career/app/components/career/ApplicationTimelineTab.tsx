@@ -28,7 +28,7 @@ export function ApplicationTimelineTab({ application }: TimelineTabProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
-        <h3 className="text-lg font-semibold text-foreground">Application Timeline</h3>
+        <h3 className="heading-3 text-foreground">Application Timeline</h3>
         <Button onClick={() => setShowAddInterview(true)}>Add Interview</Button>
       </div>
 
@@ -44,7 +44,7 @@ export function ApplicationTimelineTab({ application }: TimelineTabProps) {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="interviewType" className="text-sm font-medium text-foreground">
+                  <label htmlFor="interviewType" className="subheading-4 text-foreground">
                     Interview Type
                   </label>
                   <Select name="interviewType" defaultValue="phone">
@@ -62,7 +62,7 @@ export function ApplicationTimelineTab({ application }: TimelineTabProps) {
                 </div>
 
                 <div>
-                  <label htmlFor="interviewDate" className="text-sm font-medium text-foreground">
+                  <label htmlFor="interviewDate" className="subheading-4 text-foreground">
                     Date & Time
                   </label>
                   <Input name="interviewDate" type="datetime-local" required />
@@ -70,14 +70,14 @@ export function ApplicationTimelineTab({ application }: TimelineTabProps) {
               </div>
 
               <div>
-                <label htmlFor="interviewer" className="text-sm font-medium text-foreground">
+                <label htmlFor="interviewer" className="subheading-4 text-foreground">
                   Interviewer
                 </label>
                 <Input name="interviewer" placeholder="Name or role of interviewer" />
               </div>
 
               <div>
-                <label htmlFor="interviewNotes" className="text-sm font-medium text-foreground">
+                <label htmlFor="interviewNotes" className="subheading-4 text-foreground">
                   Notes
                 </label>
                 <Textarea
@@ -106,12 +106,12 @@ export function ApplicationTimelineTab({ application }: TimelineTabProps) {
             <div className="mt-1 size-3 shrink-0 rounded-full bg-primary" />
             <div className="flex-1 space-y-1">
               <div className="flex items-center justify-between gap-3">
-                <h4 className="font-medium text-foreground">Application Submitted</h4>
-                <span className="text-sm text-muted-foreground">
+                <h4 className="subheading-4 text-foreground">Application Submitted</h4>
+                <span className="body-3 text-muted-foreground">
                   {new Date(application.start_date).toLocaleDateString()}
                 </span>
               </div>
-              <p className="text-sm text-muted-foreground">Initial application submitted</p>
+              <p className="body-3 text-muted-foreground">Initial application submitted</p>
             </div>
           </CardContent>
         </Card>
@@ -124,7 +124,7 @@ export function ApplicationTimelineTab({ application }: TimelineTabProps) {
               <div className="flex-1 space-y-2">
                 <div className="flex items-center justify-between gap-3">
                   <div className="space-y-2">
-                    <h4 className="font-medium text-foreground">
+                    <h4 className="subheading-4 text-foreground">
                       {interview.type.replace(/(\b\w)/g, (l) => l.toUpperCase())} Interview
                     </h4>
                     <Badge
@@ -134,15 +134,15 @@ export function ApplicationTimelineTab({ application }: TimelineTabProps) {
                       {interview.type.replace(/_/g, ' ')}
                     </Badge>
                   </div>
-                  <span className="text-sm text-muted-foreground">
+                  <span className="body-3 text-muted-foreground">
                     {new Date(interview.date).toLocaleDateString()}
                   </span>
                 </div>
                 {interview.interviewer ? (
-                  <p className="text-sm text-muted-foreground">with {interview.interviewer}</p>
+                  <p className="body-3 text-muted-foreground">with {interview.interviewer}</p>
                 ) : null}
                 {interview.notes ? (
-                  <p className="mt-1 text-sm text-foreground/90">{interview.notes}</p>
+                  <p className="mt-1 body-3 text-foreground/90">{interview.notes}</p>
                 ) : null}
               </div>
             </CardContent>

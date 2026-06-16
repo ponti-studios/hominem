@@ -536,7 +536,7 @@ function OverviewSection({
           </div>
 
           <div className="space-y-2">
-            <p className="body-4 uppercase tracking-widest text-muted-foreground">Description</p>
+            <p className="ui-eyebrow">Description</p>
             {workExperience.description ? (
               <p className="body-2 max-w-3xl whitespace-pre-wrap text-foreground/90">
                 {workExperience.description}
@@ -1071,7 +1071,7 @@ function ExitSection({ workExperience }: { workExperience: WorkExperienceRecord 
           />
           {workExperience.exit_notes ? (
             <div className="space-y-2">
-              <p className="body-4 uppercase tracking-widest text-muted-foreground">Notes</p>
+              <p className="ui-eyebrow">Notes</p>
               <p className="body-2 max-w-3xl whitespace-pre-wrap text-foreground/90">
                 {workExperience.exit_notes}
               </p>
@@ -1118,7 +1118,7 @@ function DetailRow({
 }) {
   return (
     <div className={cn('space-y-1', compact ? '' : 'rounded-md border p-3')}>
-      <p className="body-4 uppercase tracking-widest text-muted-foreground">{label}</p>
+      <p className="ui-eyebrow">{label}</p>
       <p className="body-2 break-words text-foreground">{value}</p>
     </div>
   );

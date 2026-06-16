@@ -139,7 +139,7 @@ export function ProfileImageUpload({
 
       {uploadError && (
         <div className="mt-2 rounded-md border border-destructive/30 bg-destructive/10 p-3">
-          <p className="text-sm text-destructive">{uploadError}</p>
+          <p className="body-3 text-destructive">{uploadError}</p>
         </div>
       )}
     </div>

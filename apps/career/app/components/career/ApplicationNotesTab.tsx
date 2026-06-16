@@ -22,7 +22,7 @@ export function ApplicationNotesTab({ notes }: NotesTabProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
-        <h3 className="text-lg font-semibold text-foreground">Notes & Feedback</h3>
+        <h3 className="heading-3 text-foreground">Notes & Feedback</h3>
         <Button onClick={() => setShowAddNote(true)}>Add Note</Button>
       </div>
 
@@ -38,7 +38,7 @@ export function ApplicationNotesTab({ notes }: NotesTabProps) {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="noteType" className="text-sm font-medium text-foreground">
+                  <label htmlFor="noteType" className="subheading-4 text-foreground">
                     Note Type
                   </label>
                   <Select name="noteType" defaultValue="general">
@@ -56,7 +56,7 @@ export function ApplicationNotesTab({ notes }: NotesTabProps) {
                 </div>
 
                 <div>
-                  <label htmlFor="noteTitle" className="text-sm font-medium text-foreground">
+                  <label htmlFor="noteTitle" className="subheading-4 text-foreground">
                     Title (Optional)
                   </label>
                   <Input name="noteTitle" placeholder="Note title" />
@@ -64,7 +64,7 @@ export function ApplicationNotesTab({ notes }: NotesTabProps) {
               </div>
 
               <div>
-                <label htmlFor="noteContent" className="text-sm font-medium text-foreground">
+                <label htmlFor="noteContent" className="subheading-4 text-foreground">
                   Content
                 </label>
                 <Textarea
@@ -89,7 +89,7 @@ export function ApplicationNotesTab({ notes }: NotesTabProps) {
       {/* Notes List */}
       <div className="space-y-4">
         {notes.length === 0 ? (
-          <div className="py-8 text-center text-muted-foreground">
+          <div className="py-8 text-center body-3 text-muted-foreground">
             No notes yet. Add your first note above.
           </div>
         ) : (
@@ -99,14 +99,14 @@ export function ApplicationNotesTab({ notes }: NotesTabProps) {
                 <div className="mb-2 flex items-start justify-between gap-3">
                   <div className="space-y-2">
                     {note.title ? (
-                      <h4 className="font-medium text-foreground">{note.title}</h4>
+                      <h4 className="subheading-4 text-foreground">{note.title}</h4>
                     ) : null}
                     <Badge variant="outline" className={getApplicationNoteTone(note.type)}>
                       {note.type.replace('_', ' ')}
                     </Badge>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-sm text-muted-foreground whitespace-nowrap">
+                    <span className="body-3 text-muted-foreground whitespace-nowrap">
                       {new Date(note.createdat).toLocaleDateString()}
                     </span>
                     <Form method="post" className="inline">
@@ -125,7 +125,7 @@ export function ApplicationNotesTab({ notes }: NotesTabProps) {
                     </Form>
                   </div>
                 </div>
-                <p className="whitespace-pre-wrap text-sm text-foreground/90">{note.content}</p>
+                <p className="whitespace-pre-wrap body-3 text-foreground/90">{note.content}</p>
               </CardContent>
             </Card>
           ))

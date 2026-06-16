@@ -108,7 +108,7 @@ export function ActivityHeatmapCard({ applications }: ActivityHeatmapCardProps) 
     <div ref={containerRef}>
       <Card className="relative overflow-hidden border-border bg-card">
         <CardHeader className="space-y-2 flex items-center">
-          <CardTitle className="text-lg text-foreground">Application Activity</CardTitle>
+          <CardTitle className="heading-3 text-foreground">Application Activity</CardTitle>
           <Badge variant="outline">Last 12 months</Badge>
         </CardHeader>
 
@@ -117,7 +117,7 @@ export function ActivityHeatmapCard({ applications }: ActivityHeatmapCardProps) 
             <div className="flex items-center gap-1">
               <div className="flex shrink-0 flex-col space-y-1">
                 {WEEKDAYS.map((weekday) => (
-                  <div key={weekday} className="h-3 text-xs text-muted-foreground">
+                  <div key={weekday} className="h-3 body-4 text-muted-foreground">
                     {weekday}
                   </div>
                 ))}
@@ -134,16 +134,13 @@ export function ActivityHeatmapCard({ applications }: ActivityHeatmapCardProps) 
                         key={day.date}
                         title={`${formatDate(day.date)}: ${day.count} application${day.count !== 1 ? 's' : ''}`}
                         aria-label={`${formatDate(day.date)}: ${day.count} application${day.count !== 1 ? 's' : ''}`}
-                        className={cn(
-                          'size-3 rounded-sm transition-all',
-                          {
-                            'bg-muted': day.count === 0,
-                            'bg-emerald-500/20': day.count === 1,
-                            'bg-emerald-500/35': day.count === 2,
-                            'bg-emerald-500/55': day.count === 3,
-                            'bg-emerald-500/75': day.count >= 4,
-                          },
-                        )}
+                        className={cn('size-3 rounded-sm transition-all', {
+                          'bg-muted': day.count === 0,
+                          'bg-success/20': day.count === 1,
+                          'bg-success/35': day.count === 2,
+                          'bg-success/55': day.count === 3,
+                          'bg-success/75': day.count >= 4,
+                        })}
                       />
                     ))}
                   </div>
@@ -152,15 +149,15 @@ export function ActivityHeatmapCard({ applications }: ActivityHeatmapCardProps) 
             </div>
 
             <div className="flex items-center justify-end gap-2">
-              <span className="text-xs text-muted-foreground">Less</span>
+              <span className="body-4 text-muted-foreground">Less</span>
               <div className="flex gap-1">
-                <div className="h-3 w-3 rounded-sm bg-muted" />
-                <div className="h-3 w-3 rounded-sm bg-emerald-500/20" />
-                <div className="h-3 w-3 rounded-sm bg-emerald-500/35" />
-                <div className="h-3 w-3 rounded-sm bg-emerald-500/55" />
-                <div className="h-3 w-3 rounded-sm bg-emerald-500/75" />
+                <div className="size-3 rounded-sm bg-muted" />
+                <div className="size-3 rounded-sm bg-success/20" />
+                <div className="size-3 rounded-sm bg-success/35" />
+                <div className="size-3 rounded-sm bg-success/55" />
+                <div className="size-3 rounded-sm bg-success/75" />
               </div>
-              <span className="text-xs text-muted-foreground">More</span>
+              <span className="body-4 text-muted-foreground">More</span>
             </div>
           </div>
         </CardContent>

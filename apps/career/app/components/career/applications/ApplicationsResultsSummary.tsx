@@ -14,7 +14,7 @@ export function ApplicationsResultsSummary({
   const rangeEnd = total === 0 ? 0 : Math.min(page * limit, total);
 
   return (
-    <div className="flex flex-col gap-3 border-t border-border pt-4 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-3 border-t border-border pt-4 body-3 text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
       <span className="body-4 text-muted-foreground">
         {total === 0
           ? '0 applications'

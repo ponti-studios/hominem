@@ -28,9 +28,9 @@ export function TopCompaniesInsights({ companies }: TopCompaniesInsightsProps) {
   }
 
   const getRateColor = (rate: number) => {
-    if (rate >= 80) return 'text-emerald-600';
+    if (rate >= 80) return 'text-success';
     if (rate >= 50) return 'text-primary';
-    if (rate >= 20) return 'text-yellow-600';
+    if (rate >= 20) return 'text-warning';
     return 'text-destructive';
   };
 
@@ -40,7 +40,7 @@ export function TopCompaniesInsights({ companies }: TopCompaniesInsightsProps) {
     if (avgRate >= 70) {
       return {
         label: 'Excellent',
-        className: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+        className: 'border-success/30 bg-success/10 text-success',
       };
     }
 
@@ -81,8 +81,8 @@ export function TopCompaniesInsights({ companies }: TopCompaniesInsightsProps) {
             <CardContent className="space-y-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h4 className="font-medium text-foreground">{company.company}</h4>
-                  <p className="text-sm text-muted-foreground">{company.count} applications</p>
+                  <h4 className="subheading-4 text-foreground">{company.company}</h4>
+                  <p className="body-3 text-muted-foreground">{company.count} applications</p>
                 </div>
                 <Badge variant="outline" className={badge.className}>
                   {badge.label}
@@ -114,7 +114,7 @@ export function TopCompaniesInsights({ companies }: TopCompaniesInsightsProps) {
                 <PercentageProgressBar
                   label="Offer Success"
                   percentage={Math.min(company.offerRate, 100)}
-                  color="bg-emerald-500"
+                  color="bg-success"
                   className="rounded-lg bg-muted/30 p-3"
                 />
               </div>
@@ -125,15 +125,15 @@ export function TopCompaniesInsights({ companies }: TopCompaniesInsightsProps) {
 
       <Card>
         <CardContent className="space-y-3">
-          <h4 className="font-medium text-foreground">Company Insights</h4>
-          <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
+          <h4 className="subheading-4 text-foreground">Company Insights</h4>
+          <div className="grid grid-cols-1 gap-4 body-3 sm:grid-cols-2">
             <div>
               <span className="text-muted-foreground">Best Performing: </span>
-              <span className="font-medium text-foreground">{bestPerforming.company}</span>
+              <span className="subheading-4 text-foreground">{bestPerforming.company}</span>
             </div>
             <div>
               <span className="text-muted-foreground">Most Applications: </span>
-              <span className="font-medium text-foreground">{mostApplications.company}</span>
+              <span className="subheading-4 text-foreground">{mostApplications.company}</span>
             </div>
           </div>
         </CardContent>
@@ -153,8 +153,8 @@ function MetricStat({
 }) {
   return (
     <div className="rounded-lg bg-muted/40 p-3 text-center">
-      <div className={cn('text-lg font-bold text-foreground', valueClassName ?? '')}>{value}</div>
-      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className={cn('heading-3 text-foreground', valueClassName ?? '')}>{value}</div>
+      <div className="body-4 text-muted-foreground">{label}</div>
     </div>
   );
 }

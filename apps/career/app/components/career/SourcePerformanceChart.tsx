@@ -15,7 +15,7 @@ interface SourcePerformanceChartProps {
 export function SourcePerformanceChart({ data }: SourcePerformanceChartProps) {
   if (!data || data.length === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
+      <div className="text-center py-8 body-3 text-muted-foreground">
         No source performance data available
       </div>
     );
@@ -29,8 +29,8 @@ export function SourcePerformanceChart({ data }: SourcePerformanceChartProps) {
         <div key={source.source} className="border border-border rounded-lg p-4">
           {/* Source Header */}
           <div className="flex justify-between items-center mb-3">
-            <h4 className="font-medium text-foreground capitalize">{source.source}</h4>
-            <span className="text-sm text-muted-foreground">{source.count} applications</span>
+            <h4 className="subheading-4 text-foreground capitalize">{source.source}</h4>
+            <span className="body-3 text-muted-foreground">{source.count} applications</span>
           </div>
 
           {/* Performance Bars */}
@@ -58,10 +58,10 @@ export function SourcePerformanceChart({ data }: SourcePerformanceChartProps) {
           {/* Performance Score */}
           <div className="mt-3 pt-3 border-t border-border">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Overall Score</span>
+              <span className="body-3 text-muted-foreground">Overall Score</span>
               <span
                 className={cn(
-                  'text-sm font-medium',
+                  'subheading-4',
                   getScoreColor(source.responseRate, source.offerRate),
                 )}
               >
@@ -74,8 +74,8 @@ export function SourcePerformanceChart({ data }: SourcePerformanceChartProps) {
 
       {/* Legend */}
       <div className="mt-6 p-4 rounded-lg">
-        <h4 className="font-medium text-foreground mb-2">Performance Guide</h4>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+        <h4 className="subheading-4 text-foreground mb-2">Performance Guide</h4>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 body-3">
           <div className="flex items-center">
             <div className="w-3 h-3 bg-accent rounded mr-2" />
             <span className="text-muted-foreground">Response Rate</span>
@@ -108,6 +108,6 @@ function getScoreColor(responseRate: number, offerRate: number): string {
 
   if (score >= 80) return 'text-success';
   if (score >= 60) return 'text-primary';
-  if (score >= 40) return 'text-yellow-600';
+  if (score >= 40) return 'text-warning';
   return 'text-destructive';
 }

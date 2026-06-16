@@ -15,7 +15,7 @@ const buttonVariants = cva(
         destructive:
           'void-hover border-transparent bg-destructive text-destructive-foreground [--void-hover-bg:color-mix(in_srgb,var(--color-destructive)_90%,white_10%)] [--void-hover-color:var(--color-destructive-foreground)] [--void-hover-border:transparent]',
         outline:
-          'void-hover border-border bg-transparent text-foreground [--void-hover-bg:var(--color-accent)] [--void-hover-color:var(--color-accent-foreground)] [--void-hover-border:var(--color-accent)]',
+          'void-hover border-border bg-surface text-foreground [--void-hover-bg:var(--color-bg-elevated)] [--void-hover-color:var(--color-foreground)] [--void-hover-border:var(--color-border-default)]',
         secondary:
           'void-hover border-transparent bg-secondary text-secondary-foreground [--void-hover-bg:color-mix(in_srgb,var(--color-secondary)_80%,white_20%)] [--void-hover-color:var(--color-secondary-foreground)] [--void-hover-border:transparent]',
         ghost:
@@ -27,7 +27,7 @@ const buttonVariants = cva(
         default: 'px-3 text-sm',
         sm: 'px-2 text-xs',
         lg: 'px-5 text-sm',
-        icon: 'size-8',
+        icon: 'size-6',
       },
     },
     defaultVariants: {

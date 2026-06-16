@@ -1,3 +1,4 @@
+import type { CareerJobApplicationRecord as ApplicationWithCompany } from '@hominem/db';
 import { Button } from '@hominem/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
 import { Input } from '@hominem/ui/input';
@@ -6,7 +7,6 @@ import { useState } from 'react';
 import { Form } from 'react-router';
 
 import { formatApplicationDate } from '~/lib/utils/applicationUtils';
-import type { CareerJobApplicationRecord as ApplicationWithCompany } from '@hominem/db';
 
 interface OverviewTabProps {
   application: ApplicationWithCompany;
@@ -29,43 +29,42 @@ export function ApplicationOverviewTab({ application, company }: OverviewTabProp
               className="text-muted-foreground transition-colors"
               aria-label="View job posting"
             >
-              <ExternalLink className="h-4 w-4" />
+              <ExternalLink className="size-4" />
             </a>
           )}
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 gap-2">
             <div className="flex items-center gap-2">
-              <Briefcase className="h-4 w-4" />
+              <Briefcase className="size-4" />
               <span>{application.position}</span>
             </div>
 
             <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
+              <Calendar className="size-4" />
               <span>{formatApplicationDate(application.start_date)}</span>
             </div>
 
             {application.salary_quoted && (
               <div className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
+                <DollarSign className="size-4" />
                 <span>{application.salary_quoted}</span>
               </div>
             )}
             {application.source && (
               <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4" />
+                <TrendingUp className="size-4" />
                 <span>{application.source}</span>
               </div>
             )}
 
             {application.location && (
               <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
+                <MapPin className="size-4" />
                 <span>{application.location}</span>
               </div>
             )}
           </div>
-
         </CardContent>
       </Card>
 
@@ -76,13 +75,13 @@ export function ApplicationOverviewTab({ application, company }: OverviewTabProp
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <span className="text-sm font-medium text-muted-foreground">Company Name</span>
+              <span className="subheading-4 text-muted-foreground">Company Name</span>
               <p className="text-foreground mt-1">{company?.name || 'Unknown Company'}</p>
             </div>
 
             {company?.website && (
               <div>
-                <span className="text-sm font-medium text-muted-foreground">Website</span>
+                <span className="subheading-4 text-muted-foreground">Website</span>
                 <a
                   href={company.website}
                   target="_blank"
@@ -96,21 +95,21 @@ export function ApplicationOverviewTab({ application, company }: OverviewTabProp
 
             {company?.industry && (
               <div>
-                <span className="text-sm font-medium text-muted-foreground">Industry</span>
+                <span className="subheading-4 text-muted-foreground">Industry</span>
                 <p className="text-foreground mt-1">{company.industry}</p>
               </div>
             )}
 
             {company?.size && (
               <div>
-                <span className="text-sm font-medium text-muted-foreground">Company Size</span>
+                <span className="subheading-4 text-muted-foreground">Company Size</span>
                 <p className="text-foreground mt-1">{company.size}</p>
               </div>
             )}
 
             {company?.location && (
               <div>
-                <span className="text-sm font-medium text-muted-foreground">Company Location</span>
+                <span className="subheading-4 text-muted-foreground">Company Location</span>
                 <p className="text-foreground mt-1">{company.location}</p>
               </div>
             )}
@@ -118,7 +117,7 @@ export function ApplicationOverviewTab({ application, company }: OverviewTabProp
 
           {application.company_notes && (
             <div className="mt-6 pt-6 border-t border-border">
-              <span className="text-sm font-medium text-muted-foreground">Research Notes</span>
+              <span className="subheading-4 text-muted-foreground">Research Notes</span>
               <p className="text-muted-foreground whitespace-pre-wrap mt-1">
                 {application.company_notes}
               </p>
@@ -147,7 +146,7 @@ export function ApplicationOverviewTab({ application, company }: OverviewTabProp
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <span className="text-sm font-medium text-muted-foreground">Recruiter Name</span>
+                  <span className="subheading-4 text-muted-foreground">Recruiter Name</span>
                   <Input
                     id="recruiter_name"
                     name="recruiter_name"
@@ -157,7 +156,7 @@ export function ApplicationOverviewTab({ application, company }: OverviewTabProp
                 </div>
 
                 <div className="space-y-2">
-                  <span className="text-sm font-medium text-muted-foreground">Recruiter Email</span>
+                  <span className="subheading-4 text-muted-foreground">Recruiter Email</span>
                   <Input
                     id="recruiter_email"
                     name="recruiter_email"
@@ -169,9 +168,7 @@ export function ApplicationOverviewTab({ application, company }: OverviewTabProp
               </div>
 
               <div className="space-y-2">
-                <span className="text-sm font-medium text-muted-foreground">
-                  Recruiter LinkedIn URL
-                </span>
+                <span className="subheading-4 text-muted-foreground">Recruiter LinkedIn URL</span>
                 <Input
                   id="recruiter_linkedin"
                   name="recruiter_linkedin"
@@ -198,7 +195,7 @@ export function ApplicationOverviewTab({ application, company }: OverviewTabProp
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <span className="text-sm font-medium text-muted-foreground">Recruiter Name</span>
+                <span className="subheading-4 text-muted-foreground">Recruiter Name</span>
                 <p className="text-foreground mt-1">
                   {application.recruiter_name || (
                     <span className="text-muted-foreground italic">Not specified</span>
@@ -207,7 +204,7 @@ export function ApplicationOverviewTab({ application, company }: OverviewTabProp
               </div>
 
               <div>
-                <span className="text-sm font-medium text-muted-foreground">Recruiter Email</span>
+                <span className="subheading-4 text-muted-foreground">Recruiter Email</span>
                 {application.recruiter_email ? (
                   <a
                     href={`mailto:${application.recruiter_email}`}
@@ -221,9 +218,7 @@ export function ApplicationOverviewTab({ application, company }: OverviewTabProp
               </div>
 
               <div className="md:col-span-2">
-                <span className="text-sm font-medium text-muted-foreground">
-                  Recruiter LinkedIn
-                </span>
+                <span className="subheading-4 text-muted-foreground">Recruiter LinkedIn</span>
                 {application.recruiter_linkedin ? (
                   <a
                     href={application.recruiter_linkedin}

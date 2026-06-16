@@ -62,14 +62,14 @@ function ApplicationCard({ application }: { application: ApplicationWithCompany 
         <div className="space-y-3">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <h3 className="text-lg font-semibold text-foreground transition-colors">
+              <h3 className="heading-3 text-foreground transition-colors">
                 {application.position}
               </h3>
               <div className="mt-2 flex items-center gap-2">
-                <div className="flex size-8 items-center justify-center rounded-md bg-primary/10 text-sm font-semibold text-primary">
+                <div className="flex size-8 items-center justify-center rounded-md bg-primary/10 caption1 font-semibold text-primary">
                   {companyName.charAt(0)?.toUpperCase() || 'C'}
                 </div>
-                <span className="truncate font-medium text-foreground/90">{companyName}</span>
+                <span className="truncate subheading-4 text-foreground/90">{companyName}</span>
               </div>
             </div>
             <Badge variant="outline" className={getStatusColor(application.status)}>
@@ -78,13 +78,13 @@ function ApplicationCard({ application }: { application: ApplicationWithCompany 
           </div>
         </div>
 
-        <div className="space-y-3 text-sm">
+        <div className="space-y-3 body-3">
           <div className="flex items-center justify-between gap-3">
             <span className="flex items-center gap-2 text-muted-foreground">
               <CalendarIcon className="size-4" />
               Applied
             </span>
-            <span className="font-medium text-foreground">
+            <span className="subheading-4 text-foreground">
               {formatDate(application.application_date || application.start_date)}
             </span>
           </div>
@@ -95,7 +95,7 @@ function ApplicationCard({ application }: { application: ApplicationWithCompany 
                 <MapPinIcon className="size-4" />
                 Location
               </span>
-              <span className="max-w-32 truncate text-right font-medium text-foreground">
+              <span className="max-w-32 truncate text-right subheading-4 text-foreground">
                 {application.location}
               </span>
             </div>
@@ -107,7 +107,7 @@ function ApplicationCard({ application }: { application: ApplicationWithCompany 
                 <DollarSignIcon className="size-4" />
                 Salary
               </span>
-              <span className="max-w-32 truncate text-right font-medium text-foreground">
+              <span className="max-w-32 truncate text-right subheading-4 text-foreground">
                 {typeof application.salary_quoted === 'string'
                   ? application.salary_quoted
                   : application.salary_offered

@@ -105,7 +105,7 @@ export default function Demo() {
                 </div>
               ))}
             </div>
-            <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+            <div className="flex flex-wrap gap-3 body-3 text-muted-foreground">
               <span>{demoPortfolio.personalInfo.location}</span>
               <span>{demoPortfolio.personalInfo.email}</span>
               <span className="text-success">{demoPortfolio.personalInfo.availability}</span>

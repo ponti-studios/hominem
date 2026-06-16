@@ -134,7 +134,7 @@ function TestimonialForm({
     >
       <FormErrorAlert title="Testimonial wasn’t saved" message={submissionError} />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h3 className="min-w-0 text-lg font-medium text-foreground">
+        <h3 className="min-w-0 heading-3 text-foreground">
           {isNew ? 'New Testimonial' : 'Testimonial'}
         </h3>
         <div className="flex gap-2 sm:justify-end">
@@ -181,7 +181,7 @@ function TestimonialForm({
             <p
               id={`name-${testimonial?.id || 'new'}-error`}
               role="alert"
-              className="text-xs text-destructive"
+              className="body-4 text-destructive"
             >
               {errors.name.message}
             </p>
@@ -259,7 +259,7 @@ function TestimonialForm({
           <p
             id={`content-${testimonial?.id || 'new'}-error`}
             role="alert"
-            className="text-xs text-destructive"
+            className="body-4 text-destructive"
           >
             {errors.content.message}
           </p>
@@ -348,7 +348,7 @@ function TestimonialsEditorSection({
         ))}
 
         {testimonials.length === 0 && !showNewForm && (
-          <div className="text-center py-2xl text-muted-foreground">
+          <div className="text-center py-16 body-3 text-muted-foreground">
             No testimonials added yet. Click "Add New Testimonial" to get started.
           </div>
         )}

@@ -1,3 +1,5 @@
+import type { UpdateCareerJobApplicationInput } from '@hominem/db';
+import type { CareerInterviewEntry as InterviewEntry } from '@hominem/db';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hominem/ui/tabs';
 import {
   Briefcase,
@@ -24,9 +26,6 @@ import { userContext } from '~/lib/middleware';
 import { JobApplicationsService } from '~/lib/services/job-applications.service';
 import { cn } from '~/lib/utils';
 import { formatStatusText, getStatusColor } from '~/lib/utils/applicationUtils';
-import type { UpdateCareerJobApplicationInput } from '@hominem/db';
-
-import type { CareerInterviewEntry as InterviewEntry } from '@hominem/db';
 
 import { Route } from './+types/applications.$id';
 
@@ -202,10 +201,7 @@ export default function ApplicationDetail({ loaderData, params }: Route.Componen
     <div className="space-y-6 p-4">
       {/* Header */}
       <header className="flex items-center justify-between">
-        <Link
-          to="/applications"
-          className="flex items-center text-sm text-muted-foreground"
-        >
+        <Link to="/applications" className="flex items-center body-3 text-muted-foreground">
           <ChevronLeft className="h-5 w-5" />
           Back to Applications
         </Link>
@@ -214,8 +210,8 @@ export default function ApplicationDetail({ loaderData, params }: Route.Componen
       {/* Application Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
         <div>
-          <h1 className="text-lg md:text-xl font-bold text-foreground">{application.position}</h1>
-          <p className="text-sm md:text-base text-muted-foreground">{company?.name}</p>
+          <h1 className="heading-3 md:heading-2 text-foreground">{application.position}</h1>
+          <p className="body-3 text-muted-foreground">{company?.name}</p>
         </div>
         <div className="flex items-center gap-3">
           <span
@@ -232,10 +228,10 @@ export default function ApplicationDetail({ loaderData, params }: Route.Componen
 
       {/* Persistent job context bar */}
       {(application.job_posting || application.location) && (
-        <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground border border-border rounded-lg px-4 py-2 bg-muted/30">
+        <div className="flex flex-wrap items-center gap-4 body-3 text-muted-foreground border border-border rounded-lg px-4 py-2 bg-muted/30">
           {application.location && (
             <span className="flex items-center gap-1">
-              <MapPin className="h-3 w-3" />
+              <MapPin className="size-3" />
               {application.location}
             </span>
           )}
@@ -247,7 +243,7 @@ export default function ApplicationDetail({ loaderData, params }: Route.Componen
           <TabsList>
             {tabItems.map((tab) => (
               <TabsTrigger key={tab.id} value={tab.id}>
-                <tab.icon className="h-4 w-4 shrink-0" />
+                <tab.icon className="size-4 shrink-0" />
                 <span className="hidden sm:inline">{tab.label}</span>
               </TabsTrigger>
             ))}

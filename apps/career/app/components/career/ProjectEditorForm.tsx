@@ -188,7 +188,7 @@ export function ProjectEditorForm({
       <FormErrorAlert title="Project request failed" message={submissionError} />
 
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-lg font-medium text-foreground">{isNew ? 'New Project' : 'Project'}</h2>
+        <h2 className="heading-3 text-foreground">{isNew ? 'New Project' : 'Project'}</h2>
         <EditorFormActions
           isSaving={isSaving}
           isNew={isNew}
@@ -218,7 +218,7 @@ export function ProjectEditorForm({
             <p
               id={`project-title-${project?.id || 'new'}-error`}
               role="alert"
-              className="text-xs text-destructive"
+              className="body-4 text-destructive"
             >
               {errors.title.message}
             </p>
@@ -288,7 +288,7 @@ export function ProjectEditorForm({
           <p
             id={`project-description-${project?.id || 'new'}-error`}
             role="alert"
-            className="text-xs text-destructive"
+            className="body-4 text-destructive"
           >
             {errors.description.message}
           </p>
@@ -355,7 +355,7 @@ export function ProjectEditorForm({
           {...register('technologies_text')}
           placeholder="React, TypeScript, Node.js"
         />
-        <p className="text-xs text-muted-foreground mt-xs">
+        <p className="body-4 text-muted-foreground mt-xs">
           Enter technologies separated by commas
         </p>
       </div>

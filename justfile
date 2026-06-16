@@ -6,6 +6,7 @@ set positional-arguments := true
 ROOT_DIR := justfile_directory()
 UI_DIR := ROOT_DIR / "packages" / "platform" / "ui"
 TURBO := "pnpm exec turbo"
+TURBO_DEV := "pnpm exec turbo run dev --ui stream"
 LOCAL_DATABASE_URL := "postgresql://postgres:postgres@127.0.0.1:5434/hominem"
 LOCAL_TEST_DATABASE_URL := "postgresql://postgres:postgres@127.0.0.1:4433/app-test"
 
@@ -33,10 +34,10 @@ check:
     {{ TURBO }} format lint build test --force
 
 dev:
-    {{ TURBO }} run dev
+    {{ TURBO_DEV }}
 
 dev-api:
-    {{ TURBO }} run dev --filter=@hominem/api
+    {{ TURBO_DEV }} --filter=@hominem/api
 
 storybook:
     cd "{{ UI_DIR }}" && pnpm exec storybook dev -p 6006
@@ -69,5 +70,5 @@ api:
     if [[ "$1" == "--prod" ]]; then
         {{ TURBO }} run start --filter=@hominem/api
     else
-        {{ TURBO }} run dev --filter=@hominem/api
+        {{ TURBO_DEV }} --filter=@hominem/api
     fi

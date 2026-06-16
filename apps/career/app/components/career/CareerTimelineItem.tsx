@@ -19,9 +19,9 @@ interface CareerTimelineItemProps {
 
 export function CareerTimelineItem({ item, index }: CareerTimelineItemProps) {
   const typeStyles = {
-    job_start: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+    job_start: 'bg-success/10 text-success border-success/30',
     job_end: 'bg-muted text-muted-foreground border-border',
-    promotion: 'bg-accent/10 text-purple-700 border-purple-200',
+    promotion: 'bg-primary/10 text-primary border-primary/30',
     raise: 'bg-accent/20 text-primary border-accent/30',
     default: 'bg-muted text-muted-foreground border-border',
   };
@@ -41,24 +41,24 @@ export function CareerTimelineItem({ item, index }: CareerTimelineItemProps) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center space-x-2">
-            <h4 className="text-lg font-medium text-foreground font-sans">{item.title}</h4>
+            <h4 className="heading-3 text-foreground">{item.title}</h4>
             <span
               className={cn(
-                'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border',
+                'inline-flex items-center px-2.5 py-0.5 rounded-full caption2 border',
                 style,
               )}
             >
               {item.type.replace('_', ' ')}
             </span>
           </div>
-          <p className="text-muted-foreground mt-1 whitespace-pre-line font-sans">
+          <p className="body-3 text-muted-foreground mt-1 whitespace-pre-line">
             {item.description}
           </p>
-          <div className="flex items-center space-x-4 mt-2 text-sm text-muted-foreground font-sans">
+          <div className="flex items-center space-x-4 mt-2 body-3 text-muted-foreground">
             <span>{new Date(item.date).toLocaleDateString()}</span>
             {item.company && <span>• {item.company}</span>}
             {item.salaryChange && (
-              <span className="text-emerald-600">• +{formatCurrency(item.salaryChange / 100)}</span>
+              <span className="text-success">• +{formatCurrency(item.salaryChange / 100)}</span>
             )}
           </div>
         </div>

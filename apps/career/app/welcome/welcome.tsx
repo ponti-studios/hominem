@@ -11,7 +11,7 @@ export function Welcome({ message }: { message: string }) {
         </header>
         <div className="max-w-[300px] w-full space-y-6 px-4">
           <nav className="space-y-4 rounded-md border border-border bg-card p-6">
-            <p className="text-center leading-6 text-muted-foreground">What&apos;s next?</p>
+            <p className="body-3 text-center text-muted-foreground">What&apos;s next?</p>
             <ul>
               {resources.map(({ href, text, icon }) => (
                 <li key={href}>

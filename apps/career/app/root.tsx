@@ -144,7 +144,7 @@ export default function App({
         <NavigationProgress />
         <div className="flex min-h-screen flex-col bg-background text-foreground">
           <Navigation />
-          <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-6 font-sans">
+          <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-6">
             <Outlet />
           </main>
         </div>
@@ -193,9 +193,9 @@ export function ErrorBoundary({ error }: { error: unknown }) {
       <Card className="w-full max-w-2xl border-border bg-card">
         <CardContent className="space-y-4 p-6 text-center">
           <h1 className="heading-1 text-foreground">Oops!</h1>
-          <p className="text-muted-foreground">{message}</p>
+          <p className="body-3 text-muted-foreground">{message}</p>
           {stack && (
-            <pre className="max-h-48 w-full overflow-auto rounded-md border border-destructive/30 bg-muted p-4 text-left text-sm text-foreground">
+            <pre className="max-h-48 w-full overflow-auto rounded-md border border-destructive/30 bg-muted p-4 text-left body-3 text-foreground">
               {stack}
             </pre>
           )}

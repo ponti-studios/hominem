@@ -70,20 +70,7 @@ function SocialLinksEditorSection({
 
   return (
     <section className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <h2 className="heading-2 text-foreground">Social</h2>
-        <Button
-          type="submit"
-          form="social-form"
-          disabled={isSaving || !isDirty}
-          variant="outline"
-          size="icon"
-          isLoading={isSaving}
-          aria-label="Save social links"
-        >
-          <SaveIcon className="size-4" />
-        </Button>
-      </div>
+      <h2 className="heading-2 text-foreground">Social</h2>
 
       <Card>
         <CardContent className="p-6">
@@ -93,12 +80,12 @@ function SocialLinksEditorSection({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               {/* GitHub */}
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="github" className="body-3 font-medium text-text-primary flex items-center gap-2">
+                <label htmlFor="github" className="subheading-4 text-text-primary flex items-center gap-2">
                   <Github className="size-4 text-muted-foreground" />
                   GitHub
                 </label>
                 <div className="flex">
-                  <span className="inline-flex items-center shrink-0 px-3 text-sm text-muted-foreground border border-r-0 border-input rounded-l-md bg-muted/50">
+                  <span className="inline-flex items-center shrink-0 px-3 body-3 text-muted-foreground border border-r-0 border-input rounded-l-md bg-muted/50">
                     github.com/
                   </span>
                   <Input
@@ -120,12 +107,12 @@ function SocialLinksEditorSection({
 
               {/* LinkedIn */}
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="linkedin" className="body-3 font-medium text-text-primary flex items-center gap-2">
+                <label htmlFor="linkedin" className="subheading-4 text-text-primary flex items-center gap-2">
                   <Linkedin className="size-4 text-muted-foreground" />
                   LinkedIn
                 </label>
                 <div className="flex">
-                  <span className="inline-flex items-center shrink-0 px-3 text-sm text-muted-foreground border border-r-0 border-input rounded-l-md bg-muted/50">
+                  <span className="inline-flex items-center shrink-0 px-3 body-3 text-muted-foreground border border-r-0 border-input rounded-l-md bg-muted/50">
                     linkedin.com/in/
                   </span>
                   <Input
@@ -147,12 +134,12 @@ function SocialLinksEditorSection({
 
               {/* Twitter */}
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="twitter" className="body-3 font-medium text-text-primary flex items-center gap-2">
+                <label htmlFor="twitter" className="subheading-4 text-text-primary flex items-center gap-2">
                   <Twitter className="size-4 text-muted-foreground" />
                   Twitter / X
                 </label>
                 <div className="flex">
-                  <span className="inline-flex items-center shrink-0 px-3 text-sm text-muted-foreground border border-r-0 border-input rounded-l-md bg-muted/50">
+                  <span className="inline-flex items-center shrink-0 px-3 body-3 text-muted-foreground border border-r-0 border-input rounded-l-md bg-muted/50">
                     x.com/
                   </span>
                   <Input
@@ -174,7 +161,7 @@ function SocialLinksEditorSection({
 
               {/* Website */}
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="website" className="body-3 font-medium text-text-primary flex items-center gap-2">
+                <label htmlFor="website" className="subheading-4 text-text-primary flex items-center gap-2">
                   <Globe className="size-4 text-muted-foreground" />
                   Website
                 </label>
@@ -192,6 +179,18 @@ function SocialLinksEditorSection({
                 />
                 {errors.website && <p className="body-4 text-destructive">{errors.website.message}</p>}
               </div>
+            </div>
+
+            <div className="flex justify-end">
+              <Button
+                type="submit"
+                disabled={isSaving || !isDirty}
+                isLoading={isSaving}
+                aria-label="Save social links"
+              >
+                <SaveIcon className="size-4" />
+                Save
+              </Button>
             </div>
           </form>
         </CardContent>

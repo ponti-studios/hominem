@@ -57,12 +57,9 @@ export default function Navigation() {
 
   if (!isAuthenticated) {
     return (
-      <header className="sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur">
+      <header className="sticky top-0 z-50 border-b border-border/40 bg-surface/80 backdrop-blur">
         <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-3 px-4 sm:px-6 lg:px-8">
-          <Link
-            to="/"
-            className="flex shrink-0 items-center text-foreground"
-          >
+          <Link to="/" className="flex shrink-0 items-center text-foreground">
             <img
               src="/icons/icon-192x192.png"
               alt="Career logo"
@@ -80,9 +77,7 @@ export default function Navigation() {
                 className={({ isActive }) =>
                   cn(
                     'px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
-                    isActive
-                      ? 'bg-muted text-foreground'
-                      : 'text-muted-foreground',
+                    isActive ? 'bg-muted text-foreground' : 'text-muted-foreground',
                   )
                 }
               >
@@ -97,9 +92,7 @@ export default function Navigation() {
                 className={({ isActive }) =>
                   cn(
                     'px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
-                    isActive
-                      ? 'bg-muted text-foreground'
-                      : 'text-muted-foreground',
+                    isActive ? 'bg-muted text-foreground' : 'text-muted-foreground',
                   )
                 }
               >
@@ -113,14 +106,11 @@ export default function Navigation() {
   }
 
   return (
-    <header className="sticky top-0 z-50 bg-background border-b border-border/40">
+    <header className="sticky top-0 z-50 bg-surface border-b border-border/40">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-14 items-stretch">
           {/* Logo */}
-          <Link
-            to="/"
-            className="mr-2 flex shrink-0 items-center pr-4 text-foreground"
-          >
+          <Link to="/" className="mr-2 flex shrink-0 items-center pr-4 text-foreground">
             <img
               src="/icons/icon-192x192.png"
               alt="Career logo"
@@ -151,9 +141,7 @@ export default function Navigation() {
               onClick={() => setPortfolioOpen((prev) => !prev)}
               className={cn(
                 'flex items-center gap-1 px-3 py-1.5 text-sm rounded-md transition-colors font-medium',
-                isPortfolioActive
-                  ? 'text-foreground bg-muted'
-                  : 'text-muted-foreground',
+                isPortfolioActive ? 'text-foreground bg-muted' : 'text-muted-foreground',
               )}
             >
               Portfolio
@@ -172,9 +160,7 @@ export default function Navigation() {
                     className={({ isActive }) =>
                       cn(
                         'flex items-center px-3 py-2 text-sm transition-colors',
-                        isActive
-                          ? 'text-foreground font-medium bg-muted'
-                          : 'text-muted-foreground',
+                        isActive ? 'text-foreground font-medium bg-muted' : 'text-muted-foreground',
                       )
                     }
                   >
@@ -204,12 +190,10 @@ export default function Navigation() {
               aria-label="Account settings"
               className={cn(
                 'flex items-center justify-center h-8 w-8 rounded-full transition-colors',
-                isAccountActive
-                  ? 'bg-muted text-foreground'
-                  : 'text-muted-foreground',
+                isAccountActive ? 'bg-muted text-foreground' : 'text-muted-foreground',
               )}
             >
-              <User className="h-4 w-4" />
+              <User className="size-4" />
             </Link>
           </div>
         </div>

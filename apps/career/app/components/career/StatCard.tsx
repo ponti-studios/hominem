@@ -9,16 +9,16 @@ interface StatCardProps {
 export function StatCard({ value, subtitle, trend }: StatCardProps) {
   const subtitleClass =
     trend === 'up'
-      ? 'text-xs text-emerald-600'
+      ? 'caption1 text-success'
       : trend === 'down'
-        ? 'text-xs text-red-500'
-        : 'text-xs text-muted-foreground';
+        ? 'caption1 text-destructive'
+        : 'body-4 text-muted-foreground';
 
   return (
     <Card>
       <CardContent>
         <div className="flex flex-col items-start">
-          <p className="text-2xl font-semibold tabular-nums">{value}</p>
+          <p className="heading-2 tabular-nums">{value}</p>
           {subtitle ? <p className={subtitleClass}>{subtitle}</p> : null}
         </div>
       </CardContent>

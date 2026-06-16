@@ -9,7 +9,7 @@ interface FilterChipProps {
 export function FilterChip({ label, onRemove, onClick }: FilterChipProps) {
   return (
     <div
-      className="flex items-center gap-1 rounded-full border border-border/40 bg-card px-2 py-1 text-sm font-medium text-card-foreground transition-colors hover:bg-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="flex items-center gap-1 rounded-full border border-border bg-elevated px-2 py-1 text-sm font-medium text-foreground transition-colors hover:bg-[var(--color-bg-elevated)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       title={onClick ? `Click to edit: ${label}` : label}
       onClick={onClick}
       onKeyDown={(e) => {

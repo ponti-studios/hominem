@@ -130,7 +130,7 @@ export function ImageCropDialog({
             isLoading={isSubmitting}
             loadingLabel="Uploading..."
           >
-            <Upload className="h-4 w-4" />
+            <Upload className="size-4" />
             {confirmLabel}
           </Button>
         </div>

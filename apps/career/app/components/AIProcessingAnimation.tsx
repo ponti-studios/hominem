@@ -29,10 +29,10 @@ export const AIProcessingAnimation = memo(
           <LoadingSpinner variant="md" />
 
           <div className="space-y-1">
-            <p className="text-sm font-medium text-foreground">
+            <p className="subheading-4 text-foreground">
               {processingSteps[activeIndex]?.label ?? 'Processing resume'}
             </p>
-            <p className="text-xs text-muted-foreground">{message}</p>
+            <p className="body-4 text-muted-foreground">{message}</p>
           </div>
 
           <div className="grid w-full gap-1.5">
@@ -41,7 +41,7 @@ export const AIProcessingAnimation = memo(
                 key={step.id}
                 className="flex items-center justify-between rounded border border-border bg-muted/40 px-3 py-1.5"
               >
-                <span className="text-xs text-muted-foreground">{step.label}</span>
+                <span className="body-4 text-muted-foreground">{step.label}</span>
                 <span
                   className={cn(
                     'size-1.5 rounded-full',

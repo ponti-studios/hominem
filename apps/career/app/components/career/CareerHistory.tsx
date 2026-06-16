@@ -51,10 +51,10 @@ export function CareerHistory({ work_experiences }: CareerHistoryProps) {
           <div className="mb-4 text-muted-foreground">
             <BriefcaseIcon className="mx-auto h-16 w-16" />
           </div>
-          <p className="font-medium text-foreground" data-testid="empty-message">
+          <p className="subheading-3 text-foreground" data-testid="empty-message">
             No work experience yet
           </p>
-          <p className="mt-1 text-sm text-muted-foreground" data-testid="empty-description">
+          <p className="mt-1 body-3 text-muted-foreground" data-testid="empty-description">
             Add your work experiences to see your career journey
           </p>
         </CardContent>
@@ -67,12 +67,12 @@ export function CareerHistory({ work_experiences }: CareerHistoryProps) {
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2
-            className="text-2xl font-semibold text-foreground"
+            className="heading-2 text-foreground"
             data-testid="work-experience-title"
           >
             Work Experience
           </h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="body-3 text-muted-foreground">
             Track your roles, growth, and compensation over time.
           </p>
         </div>
@@ -92,13 +92,13 @@ export function CareerHistory({ work_experiences }: CareerHistoryProps) {
               <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div className="space-y-2">
                   <h3
-                    className="text-base font-semibold text-foreground"
+                    className="heading-4 text-foreground"
                     data-testid="company-name"
                   >
                     {experience.company}
                   </h3>
 
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 body-3 text-muted-foreground">
                     <span data-testid="job-title">{experience.role}</span>
                     {experience.start_date ? <span aria-hidden="true">•</span> : null}
                     {experience.start_date ? (
@@ -109,14 +109,14 @@ export function CareerHistory({ work_experiences }: CareerHistoryProps) {
                   </div>
 
                   {experience.metrics ? (
-                    <p className="text-sm text-muted-foreground" data-testid="job-metrics">
+                    <p className="body-3 text-muted-foreground" data-testid="job-metrics">
                       {experience.metrics}
                     </p>
                   ) : null}
                 </div>
 
                 <div
-                  className="flex items-center gap-1 text-sm text-muted-foreground"
+                  className="flex items-center gap-1 body-3 text-muted-foreground"
                   data-testid="employment-dates"
                 >
                   <Link
@@ -165,7 +165,7 @@ export function CareerHistory({ work_experiences }: CareerHistoryProps) {
 
               {experience.skillsAcquired && experience.skillsAcquired.length > 0 ? (
                 <div data-testid="skills-section" className="space-y-2">
-                  <span className="block text-xs text-muted-foreground">Skills & Technologies</span>
+                  <span className="block body-4 text-muted-foreground">Skills & Technologies</span>
                   <div className="flex flex-wrap gap-2" data-testid="skills-list">
                     {experience.skillsAcquired.slice(0, 8).map((skill) => (
                       <Badge
@@ -203,12 +203,12 @@ export function CareerHistory({ work_experiences }: CareerHistoryProps) {
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <div
-                    className="truncate text-sm font-medium text-foreground"
+                    className="truncate subheading-4 text-foreground"
                     data-testid="mobile-company-name"
                   >
                     {experience.company}
                   </div>
-                  <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+                  <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 body-3 text-muted-foreground">
                     <span className="truncate" data-testid="mobile-job-title">
                       {experience.role}
                     </span>
@@ -224,13 +224,13 @@ export function CareerHistory({ work_experiences }: CareerHistoryProps) {
                   {!experience.end_date ? (
                     <Badge
                       variant="outline"
-                      className="border-emerald-200 bg-emerald-50 text-emerald-700"
+                      className="border-success/30 bg-success/10 text-success"
                       data-testid="mobile-current-badge"
                     >
                       Current
                     </Badge>
                   ) : (
-                    <span className="text-sm text-muted-foreground" data-testid="mobile-end-date">
+                    <span className="body-3 text-muted-foreground" data-testid="mobile-end-date">
                       {experience.end_date
                         ? new Date(experience.end_date).toLocaleDateString('en-US', {
                             month: 'short',
@@ -257,8 +257,8 @@ const KeyStat = ({
 }: ComponentProps<'div'> & { label: string; value: string }) => {
   return (
     <div className="min-w-0 rounded-lg bg-muted/50 p-3" {...props}>
-      <span className="mb-1 block truncate text-xs text-muted-foreground">{label}</span>
-      <span className="block truncate text-sm font-medium text-foreground" title={value}>
+      <span className="mb-1 block truncate body-4 text-muted-foreground">{label}</span>
+      <span className="block truncate subheading-4 text-foreground" title={value}>
         {value}
       </span>
     </div>
