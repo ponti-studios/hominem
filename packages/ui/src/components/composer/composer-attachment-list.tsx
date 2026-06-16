@@ -28,7 +28,7 @@ export const ComposerAttachmentList = memo(function ComposerAttachmentList() {
               type="button"
               onClick={() => store.dispatch({ type: 'REMOVE_FILE', fileId: file.id })}
               aria-label={`Remove ${file.originalName}`}
-              className="inline-flex min-h-11 max-w-full items-center gap-1.5 rounded-full border border-border-subtle bg-surface px-2.5 py-2 text-left transition-colors duration-150 hover:border-border-default hover:bg-background focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              className="inline-flex min-h-11 max-w-full items-center gap-1.5 rounded-full border border-border-subtle bg-surface px-2.5 py-2 text-left void-hover [--void-hover-bg:var(--color-background)] [--void-hover-border:var(--color-border-default)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
             >
               <span className="body-4 min-w-0 max-w-45 truncate text-text-primary">
                 {file.originalName}

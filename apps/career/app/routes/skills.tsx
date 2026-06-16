@@ -3,9 +3,10 @@ import { CareerRepository, db, runInTransaction } from '@hominem/db';
 import { Button } from '@hominem/ui/button';
 import { Card, CardContent } from '@hominem/ui/card';
 import { Field } from '@hominem/ui/field';
+import { FilterChip } from '@hominem/ui/filters';
 import { Input } from '@hominem/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
-import { LoaderPinwheel, PlusIcon, Sparkles, XIcon } from 'lucide-react';
+import { LoaderPinwheel, PlusIcon, Sparkles } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useFetcher } from 'react-router';
 
@@ -35,27 +36,6 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 const CATEGORY_ORDER = ['technical', 'data', 'design', 'product', 'leadership', 'other'];
 
-function SkillChip({
-  skill,
-  onRemove,
-}: {
-  skill: EditableSkill;
-  onRemove: (skill: EditableSkill) => void;
-}) {
-  return (
-    <div className="group inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium border border-border bg-card transition-colors hover:bg-muted/50">
-      <span>{skill.name}</span>
-      <button
-        type="button"
-        onClick={() => onRemove(skill)}
-        className="opacity-0 group-hover:opacity-100 transition-opacity rounded-full p-0.5 hover:text-destructive"
-        aria-label={`Remove ${skill.name}`}
-      >
-        <XIcon className="size-3" />
-      </button>
-    </div>
-  );
-}
 
 interface SkillsEditorSectionProps {
   skills?: CareerSkillRecord[] | null;
@@ -251,10 +231,10 @@ function SkillsEditorSection({ skills: initialSkills, portfolio_id }: SkillsEdit
               </p>
               <div className="flex flex-wrap gap-2">
                 {skillsByCategory[category].map((skill, index) => (
-                  <SkillChip
+                  <FilterChip
                     key={skill.id ?? `${category}-${index}`}
-                    skill={skill}
-                    onRemove={handleRemoveSkill}
+                    label={skill.name}
+                    onRemove={() => handleRemoveSkill(skill)}
                   />
                 ))}
               </div>

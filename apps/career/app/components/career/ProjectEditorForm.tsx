@@ -1,6 +1,8 @@
 import type { CareerProjectRecord as Project } from '@hominem/db';
 import { Button } from '@hominem/ui/button';
+import { Input } from '@hominem/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
+import { Textarea } from '@hominem/ui/textarea';
 import { useEffect } from 'react';
 import { Controller, type SubmitHandler, useForm } from 'react-hook-form';
 import { useFetcher } from 'react-router';
@@ -47,9 +49,6 @@ interface ProjectEditorFormProps {
   onSuccess?: (result: EditorSubmissionResult<Project>) => void;
   onDeleteSuccess?: () => void;
 }
-
-const inputClassName =
-  'w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground';
 
 function normalizeOptionalText(value?: string | null) {
   const trimmed = value?.trim();
@@ -205,7 +204,7 @@ export function ProjectEditorForm({
           <label htmlFor={`project-title-${project?.id || 'new'}`} className="label">
             Project Title *
           </label>
-          <input
+          <Input
             id={`project-title-${project?.id || 'new'}`}
             type="text"
             {...register('title', { required: 'Add a project title.' })}
@@ -213,7 +212,6 @@ export function ProjectEditorForm({
               errors.title ? `project-title-${project?.id || 'new'}-error` : undefined
             }
             aria-invalid={errors.title ? true : undefined}
-            className={inputClassName}
             placeholder="e.g., E-commerce Platform"
           />
           {errors.title ? (
@@ -263,11 +261,10 @@ export function ProjectEditorForm({
         <label htmlFor={`project-short-description-${project?.id || 'new'}`} className="label">
           Short Description
         </label>
-        <input
+        <Input
           id={`project-short-description-${project?.id || 'new'}`}
           type="text"
           {...register('short_description')}
-          className={inputClassName}
           placeholder="Brief one-line description"
         />
       </div>
@@ -276,14 +273,14 @@ export function ProjectEditorForm({
         <label htmlFor={`project-description-${project?.id || 'new'}`} className="label">
           Full Description *
         </label>
-        <textarea
+        <Textarea
           id={`project-description-${project?.id || 'new'}`}
           {...register('description', { required: 'Add a project description.' })}
           aria-describedby={
             errors.description ? `project-description-${project?.id || 'new'}-error` : undefined
           }
           aria-invalid={errors.description ? true : undefined}
-          className={`${inputClassName} min-h-28`}
+          className="min-h-28"
           rows={4}
           placeholder="Detailed project description, features, and technologies used..."
         />
@@ -303,11 +300,10 @@ export function ProjectEditorForm({
           <label htmlFor={`project-live-url-${project?.id || 'new'}`} className="label">
             Live URL
           </label>
-          <input
+          <Input
             id={`project-live-url-${project?.id || 'new'}`}
             type="url"
             {...register('live_url')}
-            className={inputClassName}
             placeholder="https://example.com"
           />
         </div>
@@ -315,11 +311,10 @@ export function ProjectEditorForm({
           <label htmlFor={`project-github-url-${project?.id || 'new'}`} className="label">
             GitHub URL
           </label>
-          <input
+          <Input
             id={`project-github-url-${project?.id || 'new'}`}
             type="url"
             {...register('github_url')}
-            className={inputClassName}
             placeholder="https://github.com/user/repo"
           />
         </div>
@@ -330,11 +325,10 @@ export function ProjectEditorForm({
           <label htmlFor={`project-image-url-${project?.id || 'new'}`} className="label">
             Image URL
           </label>
-          <input
+          <Input
             id={`project-image-url-${project?.id || 'new'}`}
             type="url"
             {...register('image_url')}
-            className={inputClassName}
             placeholder="Project screenshot or image"
           />
         </div>
@@ -342,11 +336,10 @@ export function ProjectEditorForm({
           <label htmlFor={`project-video-url-${project?.id || 'new'}`} className="label">
             Video URL
           </label>
-          <input
+          <Input
             id={`project-video-url-${project?.id || 'new'}`}
             type="url"
             {...register('video_url')}
-            className={inputClassName}
             placeholder="Demo video URL"
           />
         </div>
@@ -356,11 +349,10 @@ export function ProjectEditorForm({
         <label htmlFor={`project-technologies-${project?.id || 'new'}`} className="label">
           Technologies
         </label>
-        <input
+        <Input
           id={`project-technologies-${project?.id || 'new'}`}
           type="text"
           {...register('technologies_text')}
-          className={inputClassName}
           placeholder="React, TypeScript, Node.js"
         />
         <p className="text-xs text-muted-foreground mt-xs">
@@ -394,22 +386,20 @@ export function ProjectEditorForm({
           <label htmlFor={`project-start-date-${project?.id || 'new'}`} className="label">
             Start Date
           </label>
-          <input
+          <Input
             id={`project-start-date-${project?.id || 'new'}`}
             type="date"
             {...register('start_date')}
-            className={inputClassName}
           />
         </div>
         <div className="flex flex-col gap-2">
           <label htmlFor={`project-end-date-${project?.id || 'new'}`} className="label">
             End Date
           </label>
-          <input
+          <Input
             id={`project-end-date-${project?.id || 'new'}`}
             type="date"
             {...register('end_date')}
-            className={inputClassName}
           />
         </div>
       </div>
@@ -419,11 +409,10 @@ export function ProjectEditorForm({
           <label htmlFor={`project-sort-order-${project?.id || 'new'}`} className="label">
             Sort Order
           </label>
-          <input
+          <Input
             id={`project-sort-order-${project?.id || 'new'}`}
             type="number"
             {...register('sort_order', { valueAsNumber: true })}
-            className={inputClassName}
             min={0}
           />
         </div>

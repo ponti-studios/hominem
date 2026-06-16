@@ -147,7 +147,7 @@ export function PasskeyManagement({
                 onClick={() => handleDelete(pk.id)}
                 disabled={deletingId === pk.id}
                 aria-label={`Remove passkey ${pk.name ?? pk.id}`}
-                className="text-muted-foreground hover:text-destructive disabled:opacity-50"
+                className="text-muted-foreground hover:text-destructive disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
               >
                 <Trash2 className="size-4" aria-hidden />
               </button>

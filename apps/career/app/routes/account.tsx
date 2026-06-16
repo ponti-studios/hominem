@@ -5,6 +5,7 @@ import { Badge } from '@hominem/ui/badge';
 import { Button } from '@hominem/ui/button';
 import { Card, CardContent, CardHeader } from '@hominem/ui/card';
 import { Input } from '@hominem/ui/input';
+import { Textarea } from '@hominem/ui/textarea';
 import { Switch } from '@hominem/ui/switch';
 import { Download, Edit, ExternalLink, LogOut, Trash2, Upload } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -338,11 +339,11 @@ function BasicInfoForm({ portfolio }: { portfolio: CareerPortfolioRecord }) {
             <label htmlFor="bio" className="text-xs font-medium text-muted-foreground">
               Bio
             </label>
-            <textarea
+            <Textarea
               id="bio"
               {...register('bio', { required: 'Bio is required' })}
               rows={4}
-              className="w-full resize-none rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
+              className="resize-none"
             />
             {errors.bio && <p className="text-xs text-destructive">{errors.bio.message}</p>}
           </div>

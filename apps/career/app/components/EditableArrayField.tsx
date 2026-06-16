@@ -1,4 +1,5 @@
 import { Button } from '@hominem/ui/button';
+import { Input } from '@hominem/ui/input';
 import { CheckIcon, PencilIcon, PlusIcon, TrashIcon, XIcon } from 'lucide-react';
 import { memo, useState } from 'react';
 
@@ -37,12 +38,11 @@ const ArrayItem = memo(function ArrayItem({
 
   return (
     <div className="flex items-center gap-2" data-testid={`array-item-${slugifyText(value)}`}>
-      <input
+      <Input
         type="text"
         value={value}
         onChange={handleChange}
         onKeyDown={(e) => onKeyDown(e, index)}
-        className="block w-full flex-1 rounded-lg border border-border px-3 py-2 text-sm"
         placeholder={placeholder}
         data-testid={`array-input-${slugifyText(value)}`}
       />

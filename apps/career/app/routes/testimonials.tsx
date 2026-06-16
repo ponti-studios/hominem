@@ -1,7 +1,9 @@
 import type { CareerTestimonialRecord as Testimonial } from '@hominem/db';
 import { CareerRepository, db } from '@hominem/db';
 import { Button } from '@hominem/ui/button';
+import { Input } from '@hominem/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
+import { Textarea } from '@hominem/ui/textarea';
 import { PlusIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Controller, type SubmitHandler, useForm } from 'react-hook-form';
@@ -167,14 +169,13 @@ function TestimonialForm({
           <label htmlFor={`name-${testimonial?.id || 'new'}`} className="label">
             Name *
           </label>
-          <input
+          <Input
             id={`name-${testimonial?.id || 'new'}`}
             type="text"
-            {...register('name', { required: 'Add the person’s name.' })}
+            {...register('name', { required: "Add the person's name." })}
             aria-describedby={errors.name ? `name-${testimonial?.id || 'new'}-error` : undefined}
             aria-invalid={errors.name ? true : undefined}
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
-            placeholder="Client's full name"
+            placeholder="Client’s full name"
           />
           {errors.name ? (
             <p
@@ -190,11 +191,10 @@ function TestimonialForm({
           <label htmlFor={`title-${testimonial?.id || 'new'}`} className="label">
             Job Title
           </label>
-          <input
+          <Input
             id={`title-${testimonial?.id || 'new'}`}
             type="text"
             {...register('title')}
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
             placeholder="e.g., Senior Developer"
           />
         </div>
@@ -205,11 +205,10 @@ function TestimonialForm({
           <label htmlFor={`company-${testimonial?.id || 'new'}`} className="label">
             Company
           </label>
-          <input
+          <Input
             id={`company-${testimonial?.id || 'new'}`}
             type="text"
             {...register('company')}
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
             placeholder="Company name"
           />
         </div>
@@ -245,14 +244,14 @@ function TestimonialForm({
         <label htmlFor={`content-${testimonial?.id || 'new'}`} className="label">
           Testimonial *
         </label>
-        <textarea
+        <Textarea
           id={`content-${testimonial?.id || 'new'}`}
           {...register('content', { required: 'Add the testimonial copy.' })}
           aria-describedby={
             errors.content ? `content-${testimonial?.id || 'new'}-error` : undefined
           }
           aria-invalid={errors.content ? true : undefined}
-          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground min-h-28"
+          className="min-h-28"
           rows={4}
           placeholder="What did the client say about your work?"
         />
@@ -272,11 +271,10 @@ function TestimonialForm({
           <label htmlFor={`avatar_url-${testimonial?.id || 'new'}`} className="label">
             Avatar URL (optional)
           </label>
-          <input
+          <Input
             id={`avatar_url-${testimonial?.id || 'new'}`}
             type="url"
             {...register('avatar_url')}
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
             placeholder="https://example.com/avatar.jpg"
           />
         </div>
@@ -284,11 +282,10 @@ function TestimonialForm({
           <label htmlFor={`linkedin_url-${testimonial?.id || 'new'}`} className="label">
             LinkedIn URL (optional)
           </label>
-          <input
+          <Input
             id={`linkedin_url-${testimonial?.id || 'new'}`}
             type="url"
             {...register('linkedin_url')}
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
             placeholder="https://linkedin.com/in/username"
           />
         </div>

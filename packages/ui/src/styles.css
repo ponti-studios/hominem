@@ -494,6 +494,20 @@
   outline-offset: 2px;
 }
 
+@utility hover-surface {
+  transition-property: background-color, color, border-color, opacity;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-default);
+
+  @media (hover: hover) {
+    &:not(:disabled):not([data-disabled]):hover {
+      background-color: var(--color-bg-surface);
+      border-color: var(--color-border-default);
+      color: var(--color-foreground);
+    }
+  }
+}
+
 @utility void-hover {
   transition-property: background-color, color, border-color, box-shadow, transform, opacity;
   transition-duration: var(--duration-fast);

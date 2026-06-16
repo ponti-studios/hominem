@@ -82,7 +82,7 @@ export const NotePickerDialog = memo(
           <button
             type="button"
             onClick={close}
-            className="ml-auto flex size-7 items-center justify-center rounded-full text-text-tertiary transition-colors hover:bg-surface hover:text-foreground"
+            className="ml-auto flex size-7 items-center justify-center rounded-full text-text-tertiary hover-surface"
             aria-label="Close note picker"
           >
             <X className="size-3.5" />
@@ -122,7 +122,7 @@ export const NotePickerDialog = memo(
                     type="button"
                     onClick={() => toggleNote(note)}
                     className={cn(
-                      'flex w-full items-center gap-3 rounded-lg py-2.5 text-left transition-colors hover:bg-surface',
+                      'flex w-full items-center gap-3 rounded-lg py-2.5 text-left hover-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                       isSelected && 'bg-surface',
                     )}
                   >

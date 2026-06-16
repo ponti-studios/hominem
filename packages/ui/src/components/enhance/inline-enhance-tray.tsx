@@ -48,10 +48,10 @@ export function InlineEnhanceTray({
               key={suggestion}
               type="button"
               className={cn(
-                'rounded-full border px-3 py-1.5 text-xs transition-colors',
+                'rounded-full border px-3 py-1.5 text-xs void-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                 isActive
                   ? 'border-border-default bg-background text-foreground'
-                  : 'border-border-subtle bg-background/70 text-text-secondary hover:border-border-default hover:text-foreground',
+                  : 'border-border-subtle bg-background/70 text-text-secondary [--void-hover-bg:transparent] [--void-hover-border:var(--color-border-default)] [--void-hover-color:var(--color-foreground)]',
               )}
               onClick={() => onInstructionChange(suggestion)}
             >

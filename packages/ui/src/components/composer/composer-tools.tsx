@@ -42,7 +42,7 @@ export const ComposerTools = memo(function ComposerTools({
           className={cn(
             attachedNotesCount > 0
               ? 'border-border-default bg-surface text-foreground'
-              : 'hover:border-border-default hover:bg-surface hover:text-foreground',
+              : '[--void-hover-bg:var(--color-bg-surface)] [--void-hover-border:var(--color-border-default)] [--void-hover-color:var(--color-foreground)]',
           )}
         >
           <BookOpen className="size-4" />
