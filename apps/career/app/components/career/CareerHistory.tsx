@@ -6,7 +6,7 @@ import type { ComponentProps } from 'react';
 import { Link } from 'react-router';
 
 import { formatCurrency, formatPercentage } from '@hominem/utils/numbers';
-import type { WorkExperienceWithFinancials } from '~/types/career-data';
+import type { WorkExperienceWithFinancials } from '~/lib/career/queries/career-progression';
 
 interface CareerHistoryProps {
   work_experiences: WorkExperienceWithFinancials[];

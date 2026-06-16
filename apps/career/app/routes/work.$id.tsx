@@ -32,7 +32,7 @@ import { useFetcher, useNavigate } from 'react-router';
 import { jsonObject } from '~/lib/db-json';
 import { userContext } from '~/lib/middleware';
 import { cn } from '~/lib/utils';
-import type { WorkExperienceMetadata } from '~/types/career-data';
+import type { WorkExperienceMetadata } from '~/lib/career/queries/career-progression';
 
 import { FormErrorAlert } from '../components/FormErrorAlert';
 import { useCareerEditorSubmission } from '../hooks/useCareerEditorSubmission';

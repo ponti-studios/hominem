@@ -7,11 +7,12 @@ import { Textarea } from '@hominem/ui/textarea';
 import { useState } from 'react';
 import { Form } from 'react-router';
 
+import type { AppApplicationNotes, Selectable } from '@hominem/db';
+
 import { getApplicationNoteTone } from '~/lib/utils/applicationNoteUtils';
-import type { ApplicationNote } from '~/types/career-data';
 
 interface NotesTabProps {
-  notes: ApplicationNote[];
+  notes: Selectable<AppApplicationNotes>[];
   applicationId: string;
 }
 

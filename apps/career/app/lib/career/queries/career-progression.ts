@@ -1,6 +1,4 @@
-import type { CareerEventRecord as CareerEvent } from '@hominem/db';
-
-import type { CareerProgressionSummary, WorkExperienceWithFinancials } from '~/types/career-data';
+import type { CareerEventRecord as CareerEvent, CareerWorkExperienceRecord } from '@hominem/db';
 
 import {
   extractWorkExperiences,
@@ -8,6 +6,56 @@ import {
   type getUserWorkExperiences,
 } from './base';
 import { calculatePercentageChange, getCurrentSalary, safeParseJson, yearsBetween } from './utils';
+
+export interface WorkExperienceMetadata {
+  company_size?: string;
+  industry?: string;
+  location?: string;
+  website?: string;
+  achievements?: string[];
+  technologies?: string[];
+}
+
+export interface WorkExperienceWithFinancials extends CareerWorkExperienceRecord {
+  totalTenure?: number;
+  currentAnnualizedSalary?: number;
+  totalCompensationReceived?: number;
+  averageAnnualRaise?: number;
+  promotionCount?: number;
+  skillsAcquired?: string[];
+}
+
+export interface CareerProgressionSummary {
+  totalExperience: number;
+  currentSalary: number;
+  firstSalary: number;
+  totalSalaryGrowth: number;
+  salaryGrowthPercentage: number;
+  averageAnnualGrowth: number;
+  promotionCount: number;
+  jobChangeCount: number;
+  averageTenurePerJob: number;
+  highestSalaryIncrease: {
+    amount: number;
+    percentage: number;
+    reason: string;
+    date: string;
+  };
+  salaryByYear: Array<{
+    year: number;
+    salary: number;
+    totalComp: number;
+    company: string;
+    title: string;
+  }>;
+  currentLevel: string;
+  levelProgression: Array<{
+    level: string;
+    start_date: string;
+    end_date?: string;
+    duration: number;
+  }>;
+}
 
 function toDate(value: Date | string | null | undefined) {
   return value ? new Date(value) : null;

@@ -8,7 +8,7 @@ import { useFetcher } from 'react-router';
 
 import type { CustomizeResumeApiRequest, CustomizeResumeApiResponse, JobAnalysis } from '~/lib/api-contracts';
 import type { JobPosting } from '~/types/applications';
-import type { ApplicationWithCompany } from '~/types/career-data';
+import type { CareerJobApplicationRecord as ApplicationWithCompany } from '@hominem/db';
 
 interface ApplicationResumeTabProps {
   application: ApplicationWithCompany;

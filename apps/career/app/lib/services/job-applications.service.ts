@@ -1,19 +1,17 @@
 import { CareerRepository, db } from '@hominem/db';
 import type {
+  AppApplicationFiles,
+  AppApplicationNotes,
   CareerCompanyRecord as Company,
   CareerJobApplicationRecord,
   JsonObject,
   JsonValue,
+  Selectable,
+  UpdateCareerJobApplicationInput,
 } from '@hominem/db';
 
 import { JobApplicationStage, JobApplicationStatus } from '~/types/career';
-import type {
-  ApplicationFile,
-  ApplicationNote,
-  ApplicationWithCompany,
-  InterviewEntry,
-  JobApplicationUpdate,
-} from '~/types/career-data';
+import type { CareerInterviewEntry as InterviewEntry, CareerJobApplicationRecord as ApplicationWithCompany } from '@hominem/db';
 
 export interface CreateApplicationInput {
   companyName: string;
@@ -38,8 +36,8 @@ export interface CreateApplicationInput {
 
 export interface ApplicationDetailData {
   application: ApplicationWithCompany;
-  notes: ApplicationNote[];
-  files: ApplicationFile[];
+  notes: Selectable<AppApplicationNotes>[];
+  files: Selectable<AppApplicationFiles>[];
 }
 
 function interviewEntryToJson(entry: InterviewEntry): JsonObject {
@@ -218,23 +216,9 @@ export class JobApplicationsService {
       company,
     } as unknown as ApplicationWithCompany;
 
-    const notes = notesResult.map(
-      (note) =>
-        ({
-          id: note.id,
-          applicationId: note.application_id,
-          type: note.type,
-          title: note.title,
-          content: note.content,
-          isPrivate: note.is_private,
-          createdat: note.createdat ? new Date(note.createdat) : new Date(),
-          updatedat: note.updatedat ? new Date(note.updatedat) : new Date(),
-        }) as ApplicationNote,
-    );
-
     return {
       application,
-      notes,
+      notes: notesResult,
       files: [],
     };
   }
@@ -258,7 +242,7 @@ export class JobApplicationsService {
    */
   static async updateApplication(
     applicationId: string,
-    updates: JobApplicationUpdate,
+    updates: UpdateCareerJobApplicationInput,
     owner_userid?: string,
   ): Promise<void> {
     if (Object.keys(updates).length === 0) {

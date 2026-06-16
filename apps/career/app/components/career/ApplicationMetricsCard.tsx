@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 
 import { cn } from '~/lib/utils';
 import type { ApplicationWithCompany } from '~/types/applications';
-import type { JobApplicationMetrics } from '~/types/career-data';
+import type { JobApplicationMetrics } from '~/lib/career/queries/job-applications';
 
 interface Metric {
   title: string;

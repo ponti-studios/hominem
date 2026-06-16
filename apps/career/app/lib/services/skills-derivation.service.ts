@@ -26,7 +26,7 @@ Rules:
 - Prefer specific, credible skills over generic ones ("React" over "Frontend Development").
 - Deduplicate — if the same skill appears across multiple roles, pick the best proof and set level accordingly.
 - Return 10–30 skills. Aim for breadth across technical, leadership, and domain skills where evidence exists.
-- Return a valid JSON array only, no markdown, no explanation.`;
+- Return valid JSON only: { "skills": [ ... ] }. No markdown, no explanation.`;
 
 export async function deriveSkillsFromCareerHistory(
   owner_userid: string,
@@ -74,9 +74,16 @@ export async function deriveSkillsFromCareerHistory(
   });
 
   const raw = getChatCompletionText(result);
+  console.log('[skills-derivation] raw AI response:', raw?.slice(0, 500));
   const parsed = JSON.parse(raw);
 
-  // The model may return { skills: [...] } or a bare array
-  const arr = Array.isArray(parsed) ? parsed : (parsed.skills ?? []);
+  // json_object mode always returns an object; find the first array value
+  let arr: unknown[];
+  if (Array.isArray(parsed)) {
+    arr = parsed;
+  } else {
+    const firstArray = Object.values(parsed as Record<string, unknown>).find(Array.isArray);
+    arr = (firstArray as unknown[]) ?? [];
+  }
   return derivedSkillsSchema.parse(arr);
 }

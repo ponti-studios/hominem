@@ -24,11 +24,9 @@ import { userContext } from '~/lib/middleware';
 import { JobApplicationsService } from '~/lib/services/job-applications.service';
 import { cn } from '~/lib/utils';
 import { formatStatusText, getStatusColor } from '~/lib/utils/applicationUtils';
-import type {
-  ApplicationWithRelations,
-  InterviewEntry,
-  JobApplicationUpdate,
-} from '~/types/career-data';
+import type { UpdateCareerJobApplicationInput } from '@hominem/db';
+
+import type { CareerInterviewEntry as InterviewEntry } from '@hominem/db';
 
 import { Route } from './+types/applications.$id';
 
@@ -70,7 +68,7 @@ export async function action({ context, request, params }: Route.ActionArgs) {
     }
 
     if (operation === 'update_application') {
-      const updates: JobApplicationUpdate = {};
+      const updates: UpdateCareerJobApplicationInput = {};
 
       // Get all possible fields from form
       const fields = [

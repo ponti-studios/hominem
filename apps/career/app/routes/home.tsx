@@ -23,7 +23,7 @@ import {
 import { userContext } from '~/lib/middleware';
 import { formatCurrency, formatPercentage } from '@hominem/utils/numbers';
 import { cn } from '~/lib/utils';
-import type { CareerProgressionSummary, WorkExperienceWithFinancials } from '~/types/career-data';
+import type { CareerProgressionSummary, WorkExperienceWithFinancials } from '~/lib/career/queries/career-progression';
 
 import { Route } from './+types/home';
 

@@ -1,4 +1,4 @@
-import type { ApplicationWithCompany, JobApplicationMetrics } from '~/types/career-data';
+import type { CareerJobApplicationRecord as ApplicationWithCompany } from '@hominem/db';
 
 import {
   extractJobApplications,
@@ -25,6 +25,34 @@ export type PaginationOptions = {
   orderBy?: 'application_date' | 'response_date' | 'offer_date' | 'companyName' | 'position';
   orderDirection?: 'asc' | 'desc';
 };
+
+export interface JobApplicationMetrics {
+  totalApplications: number;
+  responseRate: number;
+  interviewRate: number;
+  offerRate: number;
+  acceptanceRate: number;
+  averageTimeToResponse: number;
+  averageTimeToOffer: number;
+  averageTimeToDecision: number;
+  salaryMetrics: {
+    averageOffered: number;
+    averageAccepted: number;
+    negotiationSuccessRate: number;
+    averageNegotiationIncrease: number;
+  };
+  sourceMetrics: Array<{
+    source: string;
+    count: number;
+    responseRate: number;
+    offerRate: number;
+  }>;
+  statusBreakdown: Array<{
+    status: string;
+    count: number;
+    percentage: number;
+  }>;
+}
 
 export async function getJobApplicationMetrics(
   applications: ReturnType<typeof extractJobApplications>,

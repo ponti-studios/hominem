@@ -80,5 +80,6 @@ export type {
   CareerApplicationStage,
   CareerInterviewEntry,
   CreateDefaultCareerPortfolioInput,
+  UpdateCareerJobApplicationInput,
   UpdateCareerWorkExperienceInput,
 } from './services/career/career.repository';

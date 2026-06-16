@@ -8,7 +8,7 @@ import { useState } from 'react';
 import { Form } from 'react-router';
 
 import { jsonArray } from '~/lib/db-json';
-import type { ApplicationWithCompany } from '~/types/career-data';
+import type { CareerJobApplicationRecord as ApplicationWithCompany } from '@hominem/db';
 
 type InterviewEntry = {
   date: string;

@@ -1,7 +1,7 @@
-import { CareerRepository, runInTransaction } from '@hominem/db';
+import { CareerRepository, db, runInTransaction } from '@hominem/db';
 import { data } from 'react-router';
 
-import { portfolioContext, userContext } from '~/lib/middleware';
+import { userContext } from '~/lib/middleware';
 import { deriveSkillsFromCareerHistory } from '~/lib/services/skills-derivation.service';
 
 import type { Route } from './+types/api.skills.derive';
@@ -12,10 +12,13 @@ export async function action({ request, context }: Route.ActionArgs) {
   }
 
   const user = context.get(userContext);
-  const portfolio = context.get(portfolioContext);
-
-  if (!user || !portfolio) {
+  if (!user) {
     return data({ success: false, error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const portfolio = await CareerRepository.getPortfolioByUserId(db, user.id);
+  if (!portfolio) {
+    return data({ success: false, error: 'No portfolio found.' }, { status: 404 });
   }
 
   let derived: Awaited<ReturnType<typeof deriveSkillsFromCareerHistory>>;

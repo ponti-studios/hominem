@@ -4,7 +4,7 @@ import { Button } from '@hominem/ui/button';
 import { PencilLineIcon, PlusIcon } from 'lucide-react';
 import { useFetcher, useNavigate } from 'react-router';
 
-import type { WorkExperienceMetadata } from '~/types/career-data';
+import type { WorkExperienceMetadata } from '~/lib/career/queries/career-progression';
 
 import { FormErrorAlert } from '../components/FormErrorAlert';
 import { useCareerEditorSubmission } from '../hooks/useCareerEditorSubmission';

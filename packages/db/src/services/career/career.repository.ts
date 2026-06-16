@@ -166,6 +166,22 @@ export interface UpdateCareerWorkExperienceInput {
   exit_notes?: string | null;
 }
 
+export interface UpdateCareerJobApplicationInput {
+  position?: string;
+  status?: string;
+  location?: string | null;
+  job_posting?: string | null;
+  salary_quoted?: string | null;
+  salary_accepted?: string | null;
+  company_notes?: string | null;
+  negotiation_notes?: string | null;
+  recruiter_name?: string | null;
+  recruiter_email?: string | null;
+  recruiter_linkedin?: string | null;
+  resume?: string | null;
+  updatedat?: Date;
+}
+
 function toJobApplicationRecord(
   row: JobApplicationRow,
   company: CompanyRow | null,

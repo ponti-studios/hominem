@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { Form } from 'react-router';
 
 import { formatApplicationDate } from '~/lib/utils/applicationUtils';
-import type { ApplicationWithCompany } from '~/types/career-data';
+import type { CareerJobApplicationRecord as ApplicationWithCompany } from '@hominem/db';
 
 interface OverviewTabProps {
   application: ApplicationWithCompany;
