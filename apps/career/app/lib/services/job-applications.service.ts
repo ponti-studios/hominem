@@ -265,30 +265,7 @@ export class JobApplicationsService {
       return;
     }
 
-    let query = db
-      .updateTable('app.job_applications')
-      .set({
-        ...(updates.position !== undefined ? { position: updates.position } : {}),
-        ...(updates.status !== undefined ? { status: updates.status } : {}),
-        ...(updates.location !== undefined ? { location: updates.location } : {}),
-        ...(updates.job_posting !== undefined ? { job_posting: updates.job_posting } : {}),
-        ...(updates.salary_quoted !== undefined ? { salary_quoted: updates.salary_quoted } : {}),
-        ...(updates.salary_accepted !== undefined
-          ? { salary_accepted: updates.salary_accepted }
-          : {}),
-        ...(updates.company_notes !== undefined ? { company_notes: updates.company_notes } : {}),
-        ...(updates.negotiation_notes !== undefined
-          ? { negotiation_notes: updates.negotiation_notes }
-          : {}),
-        ...(updates.recruiter_name !== undefined ? { recruiter_name: updates.recruiter_name } : {}),
-        ...(updates.recruiter_email !== undefined
-          ? { recruiter_email: updates.recruiter_email }
-          : {}),
-        ...(updates.recruiter_linkedin !== undefined
-          ? { recruiter_linkedin: updates.recruiter_linkedin }
-          : {}),
-      })
-      .where('id', '=', applicationId);
+    let query = db.updateTable('app.job_applications').set(updates).where('id', '=', applicationId);
 
     if (owner_userid) {
       query = query.where('owner_userid', '=', owner_userid);

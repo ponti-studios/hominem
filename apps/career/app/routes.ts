@@ -10,14 +10,12 @@ export default [
   route('demo', 'routes/demo.tsx'),
   route('p/:slug', 'routes/p.$slug.tsx'),
   layout('routes/_authenticated.tsx', [
-    route('api/applications/create', 'routes/api.applications.create.ts'),
     route('api/resume/convert', 'routes/api.resume.convert.ts'),
     route('api/resume/customize', 'routes/api.resume.customize.ts'),
     route('api/skills/derive', 'routes/api.skills.derive.ts'),
     layout('routes/_authenticated-pages.tsx', [
       route('account', 'routes/account.tsx'),
       route('onboarding', 'routes/onboarding.tsx'),
-      route('resume/custom', 'routes/resume.custom.tsx'),
       layout('routes/_portfolio-required.tsx', [
         route('work', 'routes/work.tsx'),
         route('work/:id', 'routes/work.$id.tsx'),

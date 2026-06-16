@@ -1,14 +1,7 @@
-import type { InferResponseType } from 'hono/client';
-import type { ArtifactType } from '@hominem/chat/types';
+import type { InferRequestType, InferResponseType } from 'hono/client';
 import type { HonoClient } from '../core/api-client';
 
-type _TaskEndpoint = HonoClient['api']['tasks']['$post'];
-export type Task = InferResponseType<_TaskEndpoint, 201>;
-
-export type TasksCreateInput = {
-  title: string;
-  description?: string | null;
-  artifactType: Exclude<ArtifactType, 'note' | 'tracker'>;
-};
-
+type _TasksCreateEndpoint = HonoClient['api']['tasks']['$post'];
+export type Task = InferResponseType<_TasksCreateEndpoint, 201>;
+export type TasksCreateInput = InferRequestType<_TasksCreateEndpoint>['json'];
 export type TasksCreateOutput = Task;

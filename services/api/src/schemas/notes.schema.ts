@@ -1,19 +1,7 @@
 import * as z from 'zod';
 
-export const NoteContentTypeSchema = z.enum([
-  'note',
-  'document',
-  'task',
-  'timer',
-  'journal',
-  'tweet',
-  'essay',
-  'blog_post',
-  'social_post',
-]);
-
 export const CreateNoteInputSchema = z.object({
-  type: NoteContentTypeSchema.default('note'),
+  type: z.enum(['note', 'document', 'task', 'timer', 'journal', 'tweet', 'essay', 'blog_post', 'social_post']).default('note'),
   title: z.string().optional(),
   content: z.string(),
   fileIds: z.array(z.uuid()).max(5).optional(),

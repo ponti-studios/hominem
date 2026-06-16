@@ -30,62 +30,6 @@ export interface ChatMessageItem {
   isStreaming?: boolean;
 }
 
-export interface ChatMessageFile {
-  type: 'image' | 'file';
-  filename?: string;
-  mimeType?: string;
-  size?: number;
-  metadata?: Record<string, JsonValue>;
-}
-
-export interface Chat {
-  archivedAt: string | null;
-  id: string;
-  userId: string;
-  title: string;
-  noteId: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface ChatInsert {
-  archivedAt?: string | null;
-  id?: string;
-  userId: string;
-  title?: string;
-  noteId?: string | null;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export interface ChatMessage {
-  id: string;
-  chatId: string;
-  userId: string;
-  role: ChatMessageRole;
-  content: string;
-  files: ChatMessageFile[] | null;
-  toolCalls: ChatMessageToolCall[] | null;
-  reasoning: string | null;
-  parentMessageId: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface ChatMessageInsert {
-  id?: string;
-  chatId: string;
-  userId: string;
-  role: ChatMessageRole;
-  content: string;
-  files?: ChatMessageFile[] | null;
-  toolCalls?: ChatMessageToolCall[] | null;
-  reasoning?: string | null;
-  parentMessageId?: string | null;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
 export function getReferencedNoteLabel(note: ChatMessageReferencedNote) {
   return note.title || note.id;
 }
@@ -116,8 +60,3 @@ export type MarkdownComponent = import('react').ComponentType<{
   children: import('react').ReactNode;
   style?: object;
 }>;
-
-export type ChatOutput = Chat;
-export type ChatInput = ChatInsert;
-export type ChatMessageOutput = ChatMessage;
-export type ChatMessageInput = ChatMessageInsert;

@@ -1,5 +1,15 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hominem/ui/tabs';
-import { Briefcase, Calendar, ChevronLeft, MessageSquare, Paperclip, UserPlus } from 'lucide-react';
+import {
+  Briefcase,
+  Calendar,
+  ChevronLeft,
+  ExternalLink,
+  FileText,
+  MapPin,
+  MessageSquare,
+  Paperclip,
+  UserPlus,
+} from 'lucide-react';
 import { useState } from 'react';
 import { Link, useFetcher } from 'react-router';
 
@@ -7,6 +17,7 @@ import {
   ApplicationFilesTab,
   ApplicationNotesTab,
   ApplicationOverviewTab,
+  ApplicationResumeTab,
   ApplicationTimelineTab,
   QuickActionsDropdown,
 } from '~/components/career';
@@ -75,6 +86,7 @@ export async function action({ context, request, params }: Route.ActionArgs) {
         'recruiter_name',
         'recruiter_email',
         'recruiter_linkedin',
+        'resume',
       ] as const;
 
       for (const field of fields) {
@@ -86,6 +98,15 @@ export async function action({ context, request, params }: Route.ActionArgs) {
 
       await JobApplicationsService.updateApplication(id, updates);
       return { message: 'Application updated successfully' };
+    }
+
+    if (operation === 'save_resume') {
+      const resume = formData.get('resume') as string;
+      if (!resume) {
+        throw new Response('Resume content is required', { status: 400 });
+      }
+      await JobApplicationsService.updateApplication(id, { resume });
+      return { message: 'Resume saved successfully' };
     }
 
     if (operation === 'add_note') {
@@ -138,7 +159,7 @@ export async function action({ context, request, params }: Route.ActionArgs) {
 export default function ApplicationDetail({ loaderData, params }: Route.ComponentProps) {
   const { application, notes } = loaderData;
   const _fetcher = useFetcher();
-  type TabId = 'overview' | 'timeline' | 'notes' | 'files';
+  type TabId = 'overview' | 'timeline' | 'notes' | 'files' | 'resume';
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [_showStatusUpdate, setShowStatusUpdate] = useState(false);
   const [_showAddNote, setShowAddNote] = useState(false);
@@ -150,6 +171,7 @@ export default function ApplicationDetail({ loaderData, params }: Route.Componen
     { id: 'timeline', label: 'Timeline', icon: Calendar },
     { id: 'notes', label: 'Notes', icon: MessageSquare },
     { id: 'files', label: 'Files', icon: Paperclip },
+    { id: 'resume', label: 'Resume', icon: FileText },
   ];
 
   const quickActions = [
@@ -211,6 +233,32 @@ export default function ApplicationDetail({ loaderData, params }: Route.Componen
         </div>
       </div>
 
+      {/* Persistent job context bar */}
+      {(application.job_posting_url || application.job_posting || application.location) && (
+        <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground border border-border rounded-lg px-4 py-2 bg-muted/30">
+          {application.job_posting_url && (
+            <a
+              href={application.job_posting_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-primary hover:underline"
+            >
+              <ExternalLink className="h-3 w-3" />
+              View Job Posting
+            </a>
+          )}
+          {application.location && (
+            <span className="flex items-center gap-1">
+              <MapPin className="h-3 w-3" />
+              {application.location}
+            </span>
+          )}
+          {application.job_posting_word_count && (
+            <span>{application.job_posting_word_count} word job description stored</span>
+          )}
+        </div>
+      )}
+
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TabId)}>
         <div className="border-b border-border">
           <TabsList className="-mb-px h-auto gap-8 bg-transparent p-0">
@@ -239,6 +287,9 @@ export default function ApplicationDetail({ loaderData, params }: Route.Componen
           </TabsContent>
           <TabsContent value="files">
             <ApplicationFilesTab application={application} />
+          </TabsContent>
+          <TabsContent value="resume">
+            <ApplicationResumeTab application={application} applicationId={params.id || ''} />
           </TabsContent>
         </div>
       </Tabs>

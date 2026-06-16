@@ -1,9 +1,9 @@
 import { useApiClient } from '@hominem/rpc/react';
 import type {
   NoteFeedItem,
+  NoteFeedPage,
   NotesCreateInput,
   NotesFeedInput,
-  NotesFeedOutput,
   NotesListInput,
   NotesSearchOutput,
   NotesUpdateInput,
@@ -70,7 +70,7 @@ export function useNotesFeed(
   const client = useApiClient();
   const limit = options.limit ?? 20;
 
-  return useInfiniteQuery<NotesFeedOutput, Error, NotesFeedData, readonly unknown[], string | null>(
+  return useInfiniteQuery<NoteFeedPage, Error, NotesFeedData, readonly unknown[], string | null>(
     {
       queryKey: notesQueryKeys.feed({ limit }),
       initialPageParam: null,

@@ -1,108 +1,63 @@
-import type { InferResponseType } from 'hono/client'
+import type { InferRequestType, InferResponseType } from 'hono/client'
 import type { HonoClient } from '../core/api-client'
 
-export type PublishingMetadata = {
-  platform?: string | undefined
-  url?: string | undefined
-  externalId?: string | undefined
-  seo?: {
-    metaTitle?: string | undefined
-    metaDescription?: string | undefined
-    keywords?: string[] | undefined
-    canonicalUrl?: string | undefined
-    featuredImage?: string | undefined
-  } | undefined
-  metrics?: {
-    views?: number | undefined
-    likes?: number | undefined
-    reposts?: number | undefined
-    replies?: number | undefined
-    clicks?: number | undefined
-  } | undefined
-  threadPosition?: number | undefined
-  threadId?: string | undefined
-  inReplyTo?: string | undefined
-  scheduledFor?: string | undefined
-  importedAt?: string | undefined
-  importedFrom?: string | undefined
-}
+// ============================================================================
+// GET
+// ============================================================================
 
-// Derived from the upstream API — types flow from db → api → apps
 type _NoteEndpoint = HonoClient['api']['notes'][':id']['$get']
 export type Note = InferResponseType<_NoteEndpoint, 200>
 export type NoteFile = Note['files'][number]
+export type NoteContentType = Note['type']
+export type NoteStatus = Note['status']
+export type NoteMention = NonNullable<Note['mentions']>[number]
+export type PublishingMetadata = NonNullable<Note['publishingMetadata']>
 
-type _NoteSearchEndpoint = HonoClient['api']['notes']['search']['$get']
-type _NoteSearchResponse = InferResponseType<_NoteSearchEndpoint, 200>
-export type NoteSearchResult = _NoteSearchResponse['notes'][number]
+// ============================================================================
+// LIST
+// ============================================================================
+
+type _NotesListEndpoint = HonoClient['api']['notes']['$get']
+export type NotesListOutput = InferResponseType<_NotesListEndpoint, 200>
+export type NotesListInput = InferRequestType<_NotesListEndpoint>['query']
+
+// ============================================================================
+// FEED
+// ============================================================================
 
 type _NoteFeedEndpoint = HonoClient['api']['notes']['feed']['$get']
 export type NoteFeedPage = InferResponseType<_NoteFeedEndpoint, 200>
 export type NoteFeedItem = NoteFeedPage['notes'][number]
-
-export type NoteContentType =
-  | 'note'
-  | 'document'
-  | 'task'
-  | 'timer'
-  | 'journal'
-  | 'tweet'
-  | 'essay'
-  | 'blog_post'
-  | 'social_post'
-
-export type NoteStatus = 'draft' | 'published' | 'archived'
-
-export type NoteMention = {
-  id: string
-  name: string
-}
-
-export type NotesListOutput = { notes: Note[] };
-export type NotesFeedOutput = NoteFeedPage;
-export type NotesGetOutput = Note;
-export type NotesCreateOutput = Note;
-export type NotesUpdateOutput = Note;
-export type NotesDeleteOutput = Note;
-export type NotesSearchOutput = { notes: NoteSearchResult[]; nextCursor: string | null };
-
-export type NotesListInput = {
-  query?: string;
-  since?: string;
-  sortBy?: 'createdAt' | 'updatedAt' | 'title';
-  sortOrder?: 'asc' | 'desc';
-  limit?: number;
-  offset?: number;
-};
-
-export type NotesFeedInput = {
-  limit?: number;
-  cursor?: string;
-};
-
-export type NotesSearchInput = {
-  query: string;
-  limit?: number;
-  cursor?: string;
-};
+export type NotesFeedInput = InferRequestType<_NoteFeedEndpoint>['query']
 
 // ============================================================================
-// CREATE NOTE
+// SEARCH
 // ============================================================================
 
-export type NotesCreateInput = {
-  type?: NoteContentType;
-  title?: string;
-  content: string;
-  fileIds?: string[];
-};
+type _NoteSearchEndpoint = HonoClient['api']['notes']['search']['$get']
+export type NotesSearchOutput = InferResponseType<_NoteSearchEndpoint, 200>
+export type NoteSearchResult = NotesSearchOutput['notes'][number]
+export type NotesSearchInput = InferRequestType<_NoteSearchEndpoint>['query']
 
 // ============================================================================
-// UPDATE NOTE
+// CREATE
 // ============================================================================
 
-export type NotesUpdateInput = {
-  title?: string | null;
-  content?: string;
-  fileIds?: string[];
-};
+type _NotesCreateEndpoint = HonoClient['api']['notes']['$post']
+export type NotesCreateInput = InferRequestType<_NotesCreateEndpoint>['json']
+export type NotesCreateOutput = InferResponseType<_NotesCreateEndpoint, 201>
+
+// ============================================================================
+// UPDATE
+// ============================================================================
+
+type _NotesUpdateEndpoint = HonoClient['api']['notes'][':id']['$patch']
+export type NotesUpdateInput = InferRequestType<_NotesUpdateEndpoint>['json']
+export type NotesUpdateOutput = InferResponseType<_NotesUpdateEndpoint, 200>
+
+// ============================================================================
+// DELETE
+// ============================================================================
+
+type _NotesDeleteEndpoint = HonoClient['api']['notes'][':id']['$delete']
+export type NotesDeleteOutput = InferResponseType<_NotesDeleteEndpoint, 200>

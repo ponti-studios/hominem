@@ -60,7 +60,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   }
 
   try {
-    await JobApplicationsService.createApplication(user.id, {
+    const application = await JobApplicationsService.createApplication(user.id, {
       companyName,
       position,
       status,
@@ -77,7 +77,7 @@ export async function action({ request, context }: Route.ActionArgs) {
       recruiter_linkedin: recruiter_linkedin || null,
     });
 
-    return redirect('/applications');
+    return redirect(`/applications/${application.id}`);
   } catch (error) {
     console.error('Error creating job application:', error);
     throw new Response('Failed to create job application. Please try again.', { status: 500 });
@@ -85,7 +85,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function CreateJobApplication() {
-  const [inputMethod, setInputMethod] = useState<'manual' | 'url' | 'paste' | null>(null);
+  const [inputMethod, setInputMethod] = useState<'manual' | 'url' | 'paste'>('url');
   const [scrapedData, setScrapedData] = useState<JobPosting | null>(null);
   const [pastedDescription, setPastedDescription] = useState('');
   const [url, setUrl] = useState('');
@@ -150,69 +150,12 @@ export default function CreateJobApplication() {
     <div>
       <div className="container mx-auto py-4">
         <div className="max-w-3xl mx-auto">
-          {/* Input Method Selection */}
-          <Card className=" border-0 bg-background/80 backdrop-blur-sm mb-4">
+          {/* Input Method */}
+          <Card className="border-0 bg-background/80 backdrop-blur-sm mb-4">
             <CardContent className="p-4">
-              <h2 className="text-lg font-semibold text-foreground mb-4">
-                How would you like to add this job?
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <button
-                  type="button"
-                  onClick={() => setInputMethod('url')}
-                  className={cn(
-                    'p-4 rounded-lg border-2 transition-all',
-                    inputMethod === 'url'
-                      ? 'border-primary bg-accent/10 text-primary'
-                      : 'border-border bg-card hover:border-muted-foreground/30',
-                  )}
-                >
-                  <div className="text-center">
-                    <div className="font-medium">Scrape from URL</div>
-                    <div className="text-sm text-muted-foreground mt-1">
-                      Paste a job posting URL
-                    </div>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setInputMethod('paste')}
-                  className={cn(
-                    'p-4 rounded-lg border-2 transition-all',
-                    inputMethod === 'paste'
-                      ? 'border-primary bg-accent/10 text-primary'
-                      : 'border-border bg-card hover:border-muted-foreground/30',
-                  )}
-                >
-                  <div className="text-center">
-                    <div className="font-medium">Paste Description</div>
-                    <div className="text-sm text-muted-foreground mt-1">
-                      Copy & paste job details
-                    </div>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setInputMethod('manual')}
-                  className={cn(
-                    'p-4 rounded-lg border-2 transition-all',
-                    inputMethod === 'manual'
-                      ? 'border-primary bg-accent/10 text-primary'
-                      : 'border-border bg-card hover:border-muted-foreground/30',
-                  )}
-                >
-                  <div className="text-center">
-                    <div className="font-medium">Manual Entry</div>
-                    <div className="text-sm text-muted-foreground mt-1">Fill out form manually</div>
-                  </div>
-                </button>
-              </div>
-
-              {/* URL Scraping */}
+              {/* URL input — default / primary path */}
               {inputMethod === 'url' && (
-                <div className="mt-4 pt-4 border-t border-border">
+                <>
                   <div className="flex items-center gap-2">
                     <Input
                       type="url"
@@ -223,63 +166,77 @@ export default function CreateJobApplication() {
                       onChange={(e) => setUrl(e.target.value)}
                       className="h-11"
                       disabled={isScraping}
+                      autoFocus
                     />
                     <Button
                       type="button"
                       onClick={handleScrape}
                       disabled={isScraping || !url.trim()}
-                      className="h-11"
+                      className="h-11 shrink-0"
                       variant="default"
                       isLoading={isScraping}
                       loadingLabel="Scraping..."
                     >
-                      Scrape
+                      Import
                     </Button>
                   </div>
                   {scrapingError && <p className="text-red-500 text-sm mt-2">{scrapingError}</p>}
-                </div>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    or{' '}
+                    <button
+                      type="button"
+                      className="underline hover:text-foreground transition-colors"
+                      onClick={() => setInputMethod('paste')}
+                    >
+                      paste a description
+                    </button>
+                    {' · '}
+                    <button
+                      type="button"
+                      className="underline hover:text-foreground transition-colors"
+                      onClick={() => setInputMethod('manual')}
+                    >
+                      enter manually
+                    </button>
+                  </p>
+                </>
               )}
 
               {/* Paste Description */}
               {inputMethod === 'paste' && (
-                <div className="mt-4 pt-4 border-t border-border">
-                  <h3 className="text-md font-semibold text-foreground mb-4">
-                    Paste Job Description
-                  </h3>
-                  <div className="space-y-2">
-                    <div>
-                      <label
-                        htmlFor="pastedDescription"
-                        className="block text-sm font-medium text-muted-foreground mb-2 sr-only"
-                      >
-                        Job Description
-                      </label>
-                      <textarea
-                        id="pastedDescription"
-                        value={pastedDescription}
-                        onChange={(e) => setPastedDescription(e.target.value)}
-                        rows={8}
-                        placeholder="Paste the job description here..."
-                        className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring/50 focus:border-transparent resize-none"
-                      />
-                    </div>
-                    <div className="text-center">
-                      <Button
-                        onClick={handlePasteDescription}
-                        disabled={!pastedDescription.trim()}
-                        variant="default"
-                      >
-                        Use This Description
-                      </Button>
-                    </div>
+                <div className="space-y-2">
+                  <textarea
+                    id="pastedDescription"
+                    value={pastedDescription}
+                    onChange={(e) => setPastedDescription(e.target.value)}
+                    rows={8}
+                    placeholder="Paste the job description here..."
+                    className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring/50 focus:border-transparent resize-none"
+                    autoFocus
+                  />
+                  <div className="flex items-center gap-3">
+                    <Button
+                      onClick={handlePasteDescription}
+                      disabled={!pastedDescription.trim()}
+                      variant="default"
+                    >
+                      Use This Description
+                    </Button>
+                    <button
+                      type="button"
+                      className="text-xs text-muted-foreground underline hover:text-foreground transition-colors"
+                      onClick={() => setInputMethod('url')}
+                    >
+                      Back to URL
+                    </button>
                   </div>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Manual Form (conditionally rendered) */}
-          {inputMethod === 'manual' && (
+          {/* Manual Form — shown after URL scrape or when entering manually */}
+          {(inputMethod === 'manual' || scrapedData) && (
             <Card className=" border-0 bg-background/80 backdrop-blur-sm">
               <CardContent className="p-4">
                 {/* Scraped Data Preview */}

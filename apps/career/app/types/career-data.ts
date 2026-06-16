@@ -106,6 +106,7 @@ export interface JobApplicationUpdate {
   recruiter_name?: string | null;
   recruiter_email?: string | null;
   recruiter_linkedin?: string | null;
+  resume?: string | null;
   updatedat?: Date;
 }
 
