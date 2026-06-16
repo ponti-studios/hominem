@@ -21,3 +21,4 @@ jobs:
     with:
       service_name: career
       checkout_ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      config_path: apps/career/railway.json
