@@ -203,7 +203,7 @@
     "react-dom": "19.2.0",
     "start-server-and-test": "^2.1.0",
     "storybook": "^10.3.6",
-    "vite": "8.0.8"
+    "vite": "8.0.16"
   },
   "peerDependencies": {
     "react": "19.2.0",
