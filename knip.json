@@ -2,11 +2,6 @@
   "$schema": "https://unpkg.com/knip@5/schema.json",
 
   "workspaces": {
-    "apps/web": {
-      "entry": ["app/**/*.{ts,tsx}"],
-      "project": ["app/**/*.{ts,tsx}"]
-    },
-
     "apps/mobile": {
       "entry": ["app/**/*.{ts,tsx}"],
       "project": ["**/*.{ts,tsx}"]

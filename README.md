@@ -1,15 +1,13 @@
 # Hominem
 
-Hominem is a product monorepo with three active surfaces:
+Hominem is a product monorepo with two active surfaces:
 
-- web in `apps/web`
 - api in `services/api`
 - mobile in `apps/mobile`
 
 ## Architecture
 
 ```text
-apps/web       -> web UI, routes, browser-only helpers
 apps/mobile    -> Expo app, native UI, mobile-only helpers
 services/api   -> Hono API, auth, data access, workers
 packages/*     -> shared libraries: db, env, utils, ui, auth, rpc, telemetry, hooks, etc.
@@ -22,8 +20,8 @@ The default direction is from apps into shared packages, and from shared package
 Use the smallest possible loop by default.
 
 1. `just setup`
-2. `just dev-web`
-3. `just check-web`
+2. `just dev-api`
+3. `just check-api`
 
 When you are working on the API or shared backend code, run the API validation lane instead:
 
@@ -38,16 +36,14 @@ For mobile work, use the mobile bootstrap loop in `apps/mobile/README.md`:
 ## Canonical Commands
 
 - `just setup`: install dependencies and prepare the repo toolchain
-- `just dev-web`: run the API and web apps for product work
-- `just check-web`: lint, typecheck, test, and build the web app
+- `just dev-api`: run the API for backend product work
 - `just check-api`: lint, typecheck, and test the API
-- `just web-e2e`: run the web browser suite
 - `just validate-migrations`: validate migration idempotency
 
 ## Setup And Build
 
 1. `just setup`
-2. `just check-web` or `just check-api`
+2. `just check-api`
 3. `pnpm turbo build` for a full workspace build when needed
 
 ## CI Model

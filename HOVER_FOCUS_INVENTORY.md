@@ -3,14 +3,13 @@
 This document consolidates explicit hover/focus styling across:
 
 - `apps/career`
-- `apps/web`
 - `packages/ui`
 
 ## Scope
 
 Included:
 
-- App-local source files under `apps/career/app/**/*` and `apps/web/app/**/*`
+- App-local source files under `apps/career/app/**/*`
 - Shared UI source under `packages/ui/src/**/*`
 - App-level stylesheets when they define interaction behavior
 
@@ -25,7 +24,6 @@ Excluded:
 | Area          | Hover/focus style density | Main source of interaction styling                                     |
 | ------------- | ------------------------- | ---------------------------------------------------------------------- |
 | `apps/career` | High                      | App-local Tailwind utilities throughout routes/components              |
-| `apps/web`    | Low                       | Mostly shared `@hominem/ui` components; only a few app-local overrides |
 | `packages/ui` | High                      | Design-system primitives and pattern components                        |
 
 ## `apps/career` inventory
@@ -199,40 +197,6 @@ Excluded:
 
 - Resource link hover underline: `hover:underline`
 - Icon stroke changes on group hover: `group-hover:stroke-current`
-
-## `apps/web` inventory
-
-### App stylesheet
-
-`apps/web/app/globals.css`
-
-- Only imports shared styles:
-  - `@hominem/ui/src/styles.css`
-  - `@hominem/ui/src/animations.css`
-- No app-specific hover/focus rules
-
-### Chat route
-
-`apps/web/app/routes/chat.$chatId.tsx`
-
-- Accordion trigger hover background: `hover:bg-muted/40`
-- Applied to:
-  - `Current chat`
-  - `Selected notes (...)`
-
-Other interactive controls in this route mostly rely on shared UI primitives.
-
-### Note editor
-
-`apps/web/app/components/notes/note-editor.tsx`
-
-- File attachment link hover underline: `hover:underline`
-- Detach file button hover text: `hover:text-foreground`
-- Detach file button focus treatment:
-  - `focus-visible:outline-none`
-  - `focus-visible:[outline-style:solid]`
-  - `focus-visible:outline-2`
-  - `focus-visible:outline-ring`
 
 ## `packages/ui` inventory
 
@@ -464,10 +428,6 @@ These are illustrative, not the production contract.
 
 - `apps/career`
 
-### Least app-local interaction styling
-
-- `apps/web`
-
 ### Most comprehensive reusable interaction system
 
 - `packages/ui`
@@ -478,12 +438,6 @@ These are illustrative, not the production contract.
 
 - Many components define their own hover/focus utilities directly, which is flexible but can drift over time.
 - `focus-within` is used in only a few list patterns.
-
-### `apps/web`
-
-- Most interaction behavior is inherited from shared UI.
-- App-local hover/focus overrides are minimal.
-- The note detach button is the clearest local keyboard-accessible focus pattern.
 
 ### `packages/ui`
 
@@ -499,4 +453,3 @@ These are illustrative, not the production contract.
 - Shared primitives: `packages/ui/src/components/button.tsx`, `input.tsx`, `textarea.tsx`, `select.tsx`, `tabs.tsx`
 - Global focus policy: `packages/ui/src/styles.css`
 - Career app local overrides: `apps/career/app/components/Navigation.tsx`, `apps/career/app/components/career/*`, `apps/career/app/routes/*`
-- Web app local overrides: `apps/web/app/routes/chat.$chatId.tsx`, `apps/web/app/components/notes/note-editor.tsx`

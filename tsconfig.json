@@ -18,8 +18,7 @@
     { "path": "packages/ui" },
     { "path": "packages/utils" },
     { "path": "services/api" },
-    { "path": "apps/mobile" },
-    { "path": "apps/web" }
+    { "path": "apps/mobile" }
   ],
   "exclude": [
     "node_modules",

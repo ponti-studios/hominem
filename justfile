@@ -4,7 +4,6 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 set positional-arguments := true
 
 ROOT_DIR := justfile_directory()
-WEB_DIR := ROOT_DIR / "apps" / "web"
 UI_DIR := ROOT_DIR / "packages" / "platform" / "ui"
 TURBO := "pnpm exec turbo"
 LOCAL_DATABASE_URL := "postgresql://postgres:postgres@127.0.0.1:5434/hominem"
@@ -33,17 +32,11 @@ test-api:
 check:
     {{ TURBO }} format lint build test --force
 
-web-e2e-install:
-    cd "{{ WEB_DIR }}" && pnpm dlx playwright install --with-deps chromium
-
 dev:
     {{ TURBO }} run dev
 
 dev-api:
     {{ TURBO }} run dev --filter=@hominem/api
-
-dev-web:
-    {{ TURBO }} run dev --filter=@hominem/api --filter=@hominem/web
 
 storybook:
     cd "{{ UI_DIR }}" && pnpm exec storybook dev -p 6006
