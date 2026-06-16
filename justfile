@@ -41,28 +41,28 @@ dev-api:
 storybook:
     cd "{{ UI_DIR }}" && pnpm exec storybook dev -p 6006
 
-MOBILE_DIR := ROOT_DIR / "apps" / "mobile"
+OMIRO_DIR := ROOT_DIR / "apps" / "omiro"
 
 mobile-test:
-    cd "{{ MOBILE_DIR }}" && pnpm exec vitest run --config vitest.config.ts
+    cd "{{ OMIRO_DIR }}" && pnpm exec vitest run --config vitest.config.ts
 
 mobile-test-watch:
-    cd "{{ MOBILE_DIR }}" && pnpm exec vitest --config vitest.config.ts
+    cd "{{ OMIRO_DIR }}" && pnpm exec vitest --config vitest.config.ts
 
 start-ios:
-    cd "{{ MOBILE_DIR }}" && pnpm exec expo start --ios
+    cd "{{ OMIRO_DIR }}" && pnpm exec expo start --ios
 
 mobile-prebuild:
-    cd "{{ MOBILE_DIR }}" && pnpm exec expo prebuild --platform ios --clean
+    cd "{{ OMIRO_DIR }}" && pnpm exec expo prebuild --platform ios --clean
 
 run-ios variant="dev":
-    cd "{{ MOBILE_DIR }}" && APP_VARIANT="{{ variant }}" pnpm exec expo run:ios
+    cd "{{ OMIRO_DIR }}" && APP_VARIANT="{{ variant }}" pnpm exec expo run:ios
 
 mobile-doctor:
-    cd "{{ MOBILE_DIR }}" && npx --yes expo-doctor
+    cd "{{ OMIRO_DIR }}" && npx --yes expo-doctor
 
 mobile-lint:
-    cd "{{ MOBILE_DIR }}" && pnpm exec expo lint
+    cd "{{ OMIRO_DIR }}" && pnpm exec expo lint
 
 api:
     #!/usr/bin/env bash

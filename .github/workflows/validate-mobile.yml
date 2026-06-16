@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'apps/mobile/**'
+      - 'apps/omiro/**'
       - 'packages/**'
       - 'pnpm-lock.yaml'
       - '.github/actions/setup-pnpm-workspace/**'
@@ -12,7 +12,7 @@ on:
   pull_request:
     branches: [main, preview]
     paths:
-      - 'apps/mobile/**'
+      - 'apps/omiro/**'
       - 'packages/**'
       - 'pnpm-lock.yaml'
       - '.github/actions/setup-pnpm-workspace/**'

@@ -3,12 +3,12 @@
 Hominem is a product monorepo with two active surfaces:
 
 - api in `services/api`
-- mobile in `apps/mobile`
+- omiro in `apps/omiro`
 
 ## Architecture
 
 ```text
-apps/mobile    -> Expo app, native UI, mobile-only helpers
+apps/omiro     -> Expo app, native UI, mobile-only helpers
 services/api   -> Hono API, auth, data access, workers
 packages/*     -> shared libraries: db, env, utils, ui, auth, rpc, telemetry, hooks, etc.
 ```
@@ -28,7 +28,7 @@ When you are working on the API or shared backend code, run the API validation l
 1. Start the local test services you need.
 2. Run `just check-api`
 
-For mobile work, use the mobile bootstrap loop in `apps/mobile/README.md`:
+For Omiro work, use the app bootstrap loop in `apps/omiro/README.md`:
 
 1. `just mobile-prebuild`
 2. `just run-ios dev`

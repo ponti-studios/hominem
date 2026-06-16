@@ -2,7 +2,7 @@
  * Motion tokens — durations and translate distances.
  *
  * Durations are in milliseconds. Must match animations.css and
- * apps/mobile/theme/motion.ts (which imports from here).
+ * apps/omiro/theme/motion.ts (which imports from here).
  *
  * CSS easing strings are web-only. Mobile uses react-native-reanimated
  * Easing.* functions which cannot be expressed as strings — the mobile

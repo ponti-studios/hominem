@@ -6,7 +6,7 @@
  * or tagline elsewhere — import from here.
  */
 export const BRAND = {
-  appName: 'Hakumi',
+  appName: 'Omiro',
   tagline: 'A notes-first personal workspace for capture, context, and chat.',
 } as const;
 
