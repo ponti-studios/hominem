@@ -10,6 +10,12 @@ just mobile-prebuild
 just run-ios dev
 ```
 
+For production builds or EAS Update publishes, regenerate the native project with the production variant first:
+
+```bash
+just mobile-prebuild production
+```
+
 ## Working In Zed
 
 Zed can edit the TypeScript/React Native sources directly, but Swift diagnostics for the native modules only work after the generated iOS project exists locally.
@@ -24,6 +30,7 @@ That error usually means the iOS workspace has not been generated yet, or CocoaP
 
 1. Install the repo dependencies with `pnpm install`.
 2. Generate the iOS project with `just mobile-prebuild`.
+   For production release work, use `just mobile-prebuild production` instead so the local `ios` tree matches the App Store build.
 3. Run the iOS app with `just run-ios dev` when you want Expo to finish wiring the native project and launch the app.
 4. Open the repo root in Zed after the iOS project has been generated so SourceKit can resolve the native modules.
 
@@ -32,6 +39,7 @@ That error usually means the iOS workspace has not been generated yet, or CocoaP
 ### `No such module 'ExpoModulesCore'`
 
 - Make sure you have generated the iOS project locally with `just mobile-prebuild`.
+- For production build or update work, regenerate with `just mobile-prebuild production` before publishing.
 - Make sure Xcode command line tools are installed and selected.
 - Re-run `just run-ios dev` so Expo can refresh the iOS workspace and Pods.
 
@@ -41,7 +49,8 @@ If the error still appears, the local generated `apps/omiro/ios` directory is li
 
 | Need | Run | When to use it |
 | --- | --- | --- |
-| Generate the iOS project | `just mobile-prebuild` | First-time setup or after native config changes |
+| Generate the dev iOS project | `just mobile-prebuild` | First-time setup or after native config changes during development |
+| Generate the production iOS project | `just mobile-prebuild production` | Before App Store builds or production EAS Update publishes |
 | Launch the iOS app | `just run-ios dev` | Daily mobile development |
 | Start Metro / Expo | `just start-ios` | When you want to attach to an existing native build |
 | Check the app docs | `apps/omiro/README.md` | When Zed or Swift diagnostics get confused |

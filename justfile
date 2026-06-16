@@ -53,8 +53,8 @@ mobile-test-watch:
 start-ios:
     cd "{{ OMIRO_DIR }}" && pnpm exec expo start --ios
 
-mobile-prebuild:
-    cd "{{ OMIRO_DIR }}" && pnpm exec expo prebuild --platform ios --clean
+mobile-prebuild variant="dev":
+    cd "{{ OMIRO_DIR }}" && APP_VARIANT="{{ variant }}" pnpm exec expo prebuild --platform ios --clean
 
 run-ios variant="dev":
     cd "{{ OMIRO_DIR }}" && APP_VARIANT="{{ variant }}" pnpm exec expo run:ios

@@ -9,6 +9,7 @@ const { getAppVariant, getAppVariantConfig } = appVariantModule as {
 
 const EXPO_OWNER = 'pontistudios';
 const EXPO_PROJECT_ID = '4dfac82b-644f-4ff3-be42-e8f941287aa1';
+const APPLE_TEAM_ID = '3QHJ2KN8AL';
 
 const shellTheme = {
   mobile: {
@@ -45,7 +46,7 @@ function getExpoExtraConfig(
 }
 
 function getAppleTeamId() {
-  return process.env.EXPO_APPLE_TEAM_ID;
+  return process.env.EXPO_APPLE_TEAM_ID ?? APPLE_TEAM_ID;
 }
 
 function getUpdatesConfig(variantConfig: VariantConfig): ExpoConfig['updates'] {

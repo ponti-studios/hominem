@@ -31,28 +31,16 @@ jobs:
       - name: setup-eas
         run: npm install -g eas-cli@18
 
-      - name: validate-ios-production-config
-        working-directory: apps/omiro
-        env:
-          EXPO_APPLE_TEAM_ID: ${{ secrets.EXPO_APPLE_TEAM_ID }}
-        run: |
-          test -n "$EXPO_APPLE_TEAM_ID" || {
-            echo "Missing EXPO_APPLE_TEAM_ID secret. Production iOS builds require the Apple Team ID so Expo can generate the correct native targets and credentials mapping."
-            exit 1
-          }
-
       - name: prebuild-production-ios-project
         working-directory: apps/omiro
         env:
           APP_VARIANT: production
-          EXPO_APPLE_TEAM_ID: ${{ secrets.EXPO_APPLE_TEAM_ID }}
         run: pnpm exec expo prebuild --platform ios --clean --no-install
 
       - name: submit-build
         working-directory: apps/omiro
         env:
           APP_VARIANT: production
-          EXPO_APPLE_TEAM_ID: ${{ secrets.EXPO_APPLE_TEAM_ID }}
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           eas build \

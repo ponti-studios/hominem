@@ -57,6 +57,7 @@
     "expo-splash-screen": "~55.0.21",
     "expo-store-review": "^55.0.14",
     "expo-symbols": "^55.0.8",
+    "expo-updates": "~55.0.24",
     "expo-web-browser": "~55.0.16",
     "posthog-react-native": "^4.45.6",
     "react": "19.2.6",
