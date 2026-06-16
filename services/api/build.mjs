@@ -1,3 +1,5 @@
+import { cpSync, mkdirSync } from 'node:fs';
+
 import { build } from 'rolldown';
 
 // hono-openapi@1.3.0 statically imports @hono/standard-validator (optional peer dep
@@ -34,3 +36,6 @@ await Promise.all([
     output: { file: 'dist/worker.mjs', format: 'esm', codeSplitting: false },
   }),
 ]);
+
+mkdirSync('dist/prompts', { recursive: true });
+cpSync('src/rpc/prompts', 'dist/prompts', { recursive: true });

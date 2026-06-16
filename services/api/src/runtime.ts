@@ -29,7 +29,7 @@ export function initRuntime(serviceName: string) {
     samplingRatio: parseFloat(process.env.OTEL_TRACES_SAMPLER_ARG || '1.0'),
   });
 
-  const installSignalHandlers = (tasks: ShutdownTask[] = []) => {
+  const installSignalHandlers = (...tasks: ShutdownTask[]) => {
     const shutdown = async (signal: NodeJS.Signals) => {
       logger.info(LOG_MESSAGES.SERVER_SHUTDOWN, { serviceName, signal });
       for (const task of tasks) {

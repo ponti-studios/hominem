@@ -1,9 +1,7 @@
 packages:
   - 'apps/*'
   - 'services/*'
-  - 'packages/core/*'
-  - 'packages/platform/*'
-  - 'packages/domains/*'
+  - 'packages/*'
 
 overrides:
   ua-parser-js: 1.0.39
@@ -29,10 +27,11 @@ verifyStoreIntegrity: true
 strictStorePkgContentCheck: true
 minimumReleaseAge: 1440
 minimumReleaseAgeStrict: true
-trustPolicy: no-downgrade
+trustPolicy: needsFix
 blockExoticSubdeps: true
 strictDepBuilds: true
 allowBuilds:
+  '@openrouter/sdk': true
   '@swc/core': true
   core-js: false
   esbuild: true

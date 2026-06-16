@@ -1,0 +1,87 @@
+import { useApiClient } from '@hominem/rpc/react';
+import type { Chat, ChatMessageDto as RpcChatMessage } from '@hominem/rpc/types';
+import { useQuery } from '@tanstack/react-query';
+
+import {
+  readCachedChat,
+  readCachedChatMessages,
+  writeCachedChat,
+  writeCachedChatMessages,
+} from '~/services/workspace/content-cache';
+
+import { chatKeys } from '../notes/query-keys';
+import { type MessageOutput } from './chatMessages';
+import { selectChatSession } from './session-activity';
+
+export const CHAT_MESSAGES_LIMIT = 50;
+
+function toMessageOutput(message: RpcChatMessage): MessageOutput | null {
+  if (message.role === 'tool') {
+    return null;
+  }
+
+  return {
+    id: message.id,
+    role: message.role,
+    message: message.content,
+    created_at: message.createdAt,
+    chat_id: message.chatId,
+    profile_id: '',
+    focus_ids: null,
+    focus_items: null,
+    reasoning: message.reasoning,
+    referencedNotes: message.referencedNotes ?? null,
+    toolCalls: message.toolCalls ?? null,
+    isStreaming: false,
+  };
+}
+
+export const useChatMessages = ({ chatId }: { chatId: string }) => {
+  const client = useApiClient();
+  const cachedMessages = readCachedChatMessages(chatId);
+
+  return useQuery<MessageOutput[]>({
+    queryKey: chatKeys.messages(chatId),
+    queryFn: async () => {
+      const res = await client.api.chats[':id'].messages.$get({
+        param: { id: chatId },
+        query: { limit: String(CHAT_MESSAGES_LIMIT) },
+      });
+      const messages = await res.json();
+
+      const nextMessages = messages.flatMap((message) => {
+        const output = toMessageOutput(message as RpcChatMessage);
+        return output ? [output] : [];
+      });
+      writeCachedChatMessages(chatId, nextMessages);
+      return nextMessages;
+    },
+    enabled: Boolean(chatId),
+    initialData: cachedMessages.length > 0 ? cachedMessages : undefined,
+    refetchOnWindowFocus: false,
+    staleTime: 30_000,
+  });
+};
+
+export const useActiveChat = (chatId?: string | null) => {
+  const client = useApiClient();
+  const cachedChat = chatId ? readCachedChat(chatId) : null;
+
+  return useQuery<Chat | null>({
+    queryKey: chatKeys.activeChat(chatId ?? null),
+    queryFn: async () => {
+      if (chatId) {
+        const res = await client.api.chats[':id'].$get({ param: { id: chatId } });
+        const chat = await res.json();
+        const { messages: _messages, ...chatRecord } = chat;
+        writeCachedChat(chatRecord);
+        return chatRecord;
+      }
+
+      const listRes = await client.api.chats.$get({ query: { limit: '50' } });
+      const chats = await listRes.json();
+      return selectChatSession(chats, chatId);
+    },
+    initialData: cachedChat,
+  });
+};

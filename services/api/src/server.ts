@@ -1,9 +1,9 @@
 import type { User } from '@hominem/auth/types';
 import { LOG_MESSAGES, logger } from '@hominem/telemetry';
 import { createHonoTelemetryMiddleware } from '@hominem/telemetry/node';
-import { apiReference } from '@scalar/hono-api-reference';
+import { Scalar } from '@scalar/hono-api-reference';
 import * as Sentry from '@sentry/node';
-import { Hono } from 'hono';
+import { Hono, type MiddlewareHandler } from 'hono';
 import { openAPIRouteHandler } from 'hono-openapi';
 import { cors } from 'hono/cors';
 import { prettyJSON } from 'hono/pretty-json';
@@ -30,96 +30,107 @@ export type AppEnv = {
   };
 };
 
-export function createServer() {
-  const app = new Hono<AppEnv>();
-  const allowedOrigins = new Set([env.API_URL, env.WEB_URL]);
+const ALLOWED_CORS_METHODS = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'];
+const DEV_OPENAPI_SERVER = {
+  url: 'http://localhost:4040',
+  description: 'Local development server',
+};
+const BEARER_SECURITY_SCHEME = {
+  type: 'http',
+  scheme: 'bearer',
+  bearerFormat: 'JWT',
+  description: 'JWT token for authentication',
+} as const;
 
-  app.use('*', blockMaliciousProbes());
+function createAllowedOrigins() {
+  return new Set([env.API_URL, env.WEB_URL, env.CAREER_URL]);
+}
 
-  app.use('*', createHonoTelemetryMiddleware());
+function createCorsMiddleware(): MiddlewareHandler {
+  const allowedOrigins = createAllowedOrigins();
 
-  app.use('*', requestLogger());
+  return cors({
+    origin: (origin) => (allowedOrigins.has(origin || '') ? origin : null),
+    credentials: true,
+    allowMethods: ALLOWED_CORS_METHODS,
+  });
+}
 
-  app.use('*', prettyJSON());
+function createAuthHandler() {
+  return (c: { req: { raw: Request } }) => betterAuthServer.handler(c.req.raw);
+}
 
-  app.use(
-    '*',
-    cors({
-      origin: (origin) => {
-        return allowedOrigins.has(origin || '') ? origin : null;
+function createRootStatusPayload() {
+  return {
+    status: 'ok',
+    serverTime: new Date().toISOString(),
+    uptime: process.uptime(),
+  };
+}
+
+function createOpenApiDocumentation() {
+  return {
+    openapi: '3.1.0',
+    info: {
+      title: API_BRAND.api.title,
+      version: '1.0.0',
+      description: API_BRAND.api.description,
+      contact: {
+        name: API_BRAND.api.contactName,
+        email: 'code@hominem.io',
       },
-      credentials: true,
-      allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    }),
-  );
+    },
+    servers: [
+      {
+        url: env.API_URL,
+        description: 'Production API server',
+      },
+      ...(env.NODE_ENV !== 'production' ? [DEV_OPENAPI_SERVER] : []),
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: BEARER_SECURITY_SCHEME,
+      },
+    },
+    security: [
+      {
+        bearerAuth: [],
+      },
+    ],
+  };
+}
 
+function registerBaseMiddleware(app: Hono<AppEnv>) {
+  app.use('*', blockMaliciousProbes());
+  app.use('*', createHonoTelemetryMiddleware());
+  app.use('*', requestLogger());
+  app.use('*', prettyJSON());
+  app.use('*', createCorsMiddleware());
   app.use('*', authJwtMiddleware());
-  app.route('/', rpcApp);
+}
 
+function registerApiRoutes(app: Hono<AppEnv>) {
+  const authHandler = createAuthHandler();
+
+  app.route('/', rpcApp);
   app.use('/api/auth/*', authRateLimitMiddleware());
   app.route('/api/status', statusRoutes);
-  app.on(['GET', 'POST'], '/api/auth', (c) => betterAuthServer.handler(c.req.raw));
-  app.on(['GET', 'POST'], '/api/auth/*', (c) => betterAuthServer.handler(c.req.raw));
+  app.on(['GET', 'POST'], '/api/auth', authHandler);
+  app.on(['GET', 'POST'], '/api/auth/*', authHandler);
   app.route('/api/images', imagesRoutes);
+}
 
-  app.get('/', (c) => {
-    return c.json({
-      status: 'ok',
-      serverTime: new Date().toISOString(),
-      uptime: process.uptime(),
-    });
-  });
-
+function registerDocumentationRoutes(app: Hono<AppEnv>) {
   app.get(
     '/openapi.json',
     openAPIRouteHandler(app, {
-      documentation: {
-        openapi: '3.1.0',
-        info: {
-          title: API_BRAND.api.title,
-          version: '1.0.0',
-          description: API_BRAND.api.description,
-          contact: {
-            name: API_BRAND.api.contactName,
-            email: 'code@hominem.io',
-          },
-        },
-        servers: [
-          {
-            url: env.API_URL,
-            description: 'Production API server',
-          },
-          ...(env.NODE_ENV !== 'production'
-            ? [
-                {
-                  url: 'http://localhost:4040',
-                  description: 'Local development server',
-                },
-              ]
-            : []),
-        ],
-        components: {
-          securitySchemes: {
-            bearerAuth: {
-              type: 'http',
-              scheme: 'bearer',
-              bearerFormat: 'JWT',
-              description: 'JWT token for authentication',
-            },
-          },
-        },
-        security: [
-          {
-            bearerAuth: [],
-          },
-        ],
-      },
+      documentation: createOpenApiDocumentation(),
     }),
   );
 
   app.get(
     '/docs',
-    apiReference({
+    Scalar({
       theme: 'saturn',
       url: '/openapi.json',
       metaData: {
@@ -132,7 +143,9 @@ export function createServer() {
       },
     }),
   );
+}
 
+function registerErrorHandlers(app: Hono<AppEnv>) {
   app.onError((err, c) => {
     Sentry.captureException(err);
     logger.error('[services/api] Error', { error: err });
@@ -167,6 +180,16 @@ export function createServer() {
     });
     return c.text('Not Found', 404);
   });
+}
+
+export function createServer() {
+  const app = new Hono<AppEnv>();
+
+  registerBaseMiddleware(app);
+  registerApiRoutes(app);
+  app.get('/', (c) => c.json(createRootStatusPayload()));
+  registerDocumentationRoutes(app);
+  registerErrorHandlers(app);
 
   return app;
 }

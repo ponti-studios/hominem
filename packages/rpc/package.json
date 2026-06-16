@@ -1,0 +1,45 @@
+{
+  "name": "@hominem/rpc",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./react": {
+      "types": "./src/react/index.ts",
+      "default": "./src/react/index.ts"
+    },
+    "./types": {
+      "types": "./src/types/index.ts",
+      "default": "./src/types/index.ts"
+    },
+    "./types/*": {
+      "types": "./src/types/*.ts",
+      "default": "./src/types/*.ts"
+    },
+    "./voice-events": {
+      "types": "./src/voice-events.ts",
+      "default": "./src/voice-events.ts"
+    }
+  },
+  "scripts": {
+    "build": "true",
+    "typecheck": "tsgo --noEmit"
+  },
+  "dependencies": {
+    "@hominem/api": "workspace:*",
+    "@hominem/chat": "workspace:*",
+    "@preact/signals-react": "^3.1.1",
+    "@tanstack/react-query": "5.100.10",
+    "hono": "4.12.18",
+    "zod": "4.3.6"
+  },
+  "devDependencies": {
+    "react": "19.2.0"
+  },
+  "peerDependencies": {
+    "react": "19.2.0"
+  }
+}

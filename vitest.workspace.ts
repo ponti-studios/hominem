@@ -1,4 +1,4 @@
 export default [
-  'apps/mobile/vitest.config.ts',
-  'packages/platform/ui/vitest.config.ts',
+  'apps/omiro/vitest.config.ts',
+  'packages/ui/vitest.config.ts',
 ]

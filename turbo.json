@@ -13,6 +13,7 @@
     "API_URL",
     "WEB_URL",
     "DATABASE_URL",
+    "VITE_DATABASE_URL",
     "REDIS_URL",
     "BETTER_AUTH_SECRET",
     "AUTH_PASSKEY_RP_ID",
@@ -46,6 +47,8 @@
     "OTEL_LOG_LEVEL",
     "OTEL_LOGS_EXPORTER",
     "VITE_PUBLIC_API_URL",
+    "VITE_CLOUDFLARE_ACCOUNT_ID",
+    "VITE_CLOUDFLARE_API_TOKEN",
     "VITE_POSTHOG_API_KEY",
     "VITE_POSTHOG_HOST",
     "VITE_OTEL_DISABLED",
@@ -90,7 +93,7 @@
       "inputs": [
         "src/**/*.{ts,tsx,js,jsx,json,md,css}",
         "app/**/*.{ts,tsx,js,jsx,json,md,css}",
-        "packages/platform/ui/tools/stylelint-config-void.cjs"
+        "packages/ui/tools/stylelint-config-void.cjs"
       ]
     },
     "start": {

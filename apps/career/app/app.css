@@ -1,0 +1,10 @@
+@import '@hominem/ui/styles.css';
+@import 'tw-animate-css';
+
+@source '../../../packages/ui/src';
+
+@layer base {
+  body {
+    min-width: 320px;
+  }
+}

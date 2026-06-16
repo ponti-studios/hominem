@@ -1,0 +1,35 @@
+import { type RouteConfig, index, layout, route } from '@react-router/dev/routes';
+
+export default [
+  index('routes/home.tsx'),
+  route('login', 'routes/login.tsx'),
+  route('health', 'routes/health.ts'),
+  route('api/job/scrape', 'routes/api.job.scrape.ts'),
+  route('api/portfolio/:owner_userid', 'routes/api.portfolio.$userId.ts'),
+  route('api/validate-slug', 'routes/api.validate-slug.ts'),
+  route('demo', 'routes/demo.tsx'),
+  route('p/:slug', 'routes/p.$slug.tsx'),
+  layout('routes/_authenticated.tsx', [
+    route('api/resume/convert', 'routes/api.resume.convert.ts'),
+    route('api/resume/customize', 'routes/api.resume.customize.ts'),
+    route('api/skills/derive', 'routes/api.skills.derive.ts'),
+    layout('routes/_authenticated-pages.tsx', [
+      route('account', 'routes/account.tsx'),
+      route('onboarding', 'routes/onboarding.tsx'),
+      layout('routes/_portfolio-required.tsx', [
+        route('work', 'routes/work.tsx'),
+        route('work/:id', 'routes/work.$id.tsx'),
+        route('skills', 'routes/skills.tsx'),
+        route('social', 'routes/social.tsx'),
+        route('projects', 'routes/projects.tsx'),
+        route('projects/new', 'routes/projects.new.tsx'),
+        route('projects/:id', 'routes/projects.$id.tsx'),
+        route('testimonials', 'routes/testimonials.tsx'),
+        route('applications', 'routes/applications.tsx'),
+        route('applications/new', 'routes/applications.new.tsx'),
+        route('applications/:id', 'routes/applications.$id.tsx'),
+      ]),
+    ]),
+  ]),
+  route('*', 'routes/$.tsx'),
+] satisfies RouteConfig;

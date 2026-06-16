@@ -1,0 +1,26 @@
+import { useApiClient } from '@hominem/rpc/react';
+import type { EnhanceTextInput, EnhanceTextOutput } from '@hominem/rpc/types';
+import { useCallback, useState } from 'react';
+
+export function useTextEnhance() {
+  const client = useApiClient();
+  const [isEnhancing, setIsEnhancing] = useState(false);
+
+  const enhance = useCallback(
+    async ({ text, instruction }: EnhanceTextInput): Promise<string> => {
+      setIsEnhancing(true);
+      try {
+        const response = await client.api.ai.enhance.$post({
+          json: instruction ? { text, instruction } : { text },
+        });
+        const data = (await response.json()) as EnhanceTextOutput;
+        return data.text;
+      } finally {
+        setIsEnhancing(false);
+      }
+    },
+    [client],
+  );
+
+  return { enhance, isEnhancing };
+}

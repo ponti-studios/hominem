@@ -4,10 +4,9 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 set positional-arguments := true
 
 ROOT_DIR := justfile_directory()
-WEB_DIR := ROOT_DIR / "apps" / "web"
 UI_DIR := ROOT_DIR / "packages" / "platform" / "ui"
 TURBO := "pnpm exec turbo"
-LOCAL_DATABASE_URL := "postgresql://postgres:postgres@127.0.0.1:5434/app"
+LOCAL_DATABASE_URL := "postgresql://postgres:postgres@127.0.0.1:5434/hominem"
 LOCAL_TEST_DATABASE_URL := "postgresql://postgres:postgres@127.0.0.1:4433/app-test"
 
 import 'justfiles/db.just'
@@ -33,43 +32,37 @@ test-api:
 check:
     {{ TURBO }} format lint build test --force
 
-web-e2e-install:
-    cd "{{ WEB_DIR }}" && pnpm dlx playwright install --with-deps chromium
-
 dev:
     {{ TURBO }} run dev
 
 dev-api:
     {{ TURBO }} run dev --filter=@hominem/api
 
-dev-web:
-    {{ TURBO }} run dev --filter=@hominem/api --filter=@hominem/web
-
 storybook:
     cd "{{ UI_DIR }}" && pnpm exec storybook dev -p 6006
 
-MOBILE_DIR := ROOT_DIR / "apps" / "mobile"
+OMIRO_DIR := ROOT_DIR / "apps" / "omiro"
 
 mobile-test:
-    cd "{{ MOBILE_DIR }}" && pnpm exec vitest run --config vitest.config.ts
+    cd "{{ OMIRO_DIR }}" && pnpm exec vitest run --config vitest.config.ts
 
 mobile-test-watch:
-    cd "{{ MOBILE_DIR }}" && pnpm exec vitest --config vitest.config.ts
+    cd "{{ OMIRO_DIR }}" && pnpm exec vitest --config vitest.config.ts
 
 start-ios:
-    cd "{{ MOBILE_DIR }}" && pnpm exec expo start --ios
+    cd "{{ OMIRO_DIR }}" && pnpm exec expo start --ios
 
 mobile-prebuild:
-    cd "{{ MOBILE_DIR }}" && pnpm exec expo prebuild --platform ios
+    cd "{{ OMIRO_DIR }}" && pnpm exec expo prebuild --platform ios --clean
 
 run-ios variant="dev":
-    cd "{{ MOBILE_DIR }}" && APP_VARIANT="{{ variant }}" pnpm exec expo run:ios
+    cd "{{ OMIRO_DIR }}" && APP_VARIANT="{{ variant }}" pnpm exec expo run:ios
 
 mobile-doctor:
-    cd "{{ MOBILE_DIR }}" && npx --yes expo-doctor
+    cd "{{ OMIRO_DIR }}" && npx --yes expo-doctor
 
 mobile-lint:
-    cd "{{ MOBILE_DIR }}" && pnpm exec expo lint
+    cd "{{ OMIRO_DIR }}" && pnpm exec expo lint
 
 api:
     #!/usr/bin/env bash

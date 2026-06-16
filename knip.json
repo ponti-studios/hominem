@@ -2,12 +2,7 @@
   "$schema": "https://unpkg.com/knip@5/schema.json",
 
   "workspaces": {
-    "apps/web": {
-      "entry": ["app/**/*.{ts,tsx}"],
-      "project": ["app/**/*.{ts,tsx}"]
-    },
-
-    "apps/mobile": {
+    "apps/omiro": {
       "entry": ["app/**/*.{ts,tsx}"],
       "project": ["**/*.{ts,tsx}"]
     },
@@ -16,15 +11,7 @@
       "project": ["src/**/*.{ts,tsx}"]
     },
 
-    "packages/core/*": {
-      "project": ["src/**/*.{ts,tsx}"]
-    },
-
-    "packages/platform/*": {
-      "project": ["src/**/*.{ts,tsx}"]
-    },
-
-    "packages/domains/*": {
+    "packages/*": {
       "project": ["src/**/*.{ts,tsx}"]
     },
 
@@ -41,11 +28,11 @@
   "ignoreUnresolved": ["^vite/client$"],
 
   "ignore": [
-    "packages/platform/ui/src/components/**",
-    "apps/mobile/components/**",
-    "apps/mobile/services/**",
-    "apps/mobile/hooks/**",
-    "apps/mobile/types/**",
-    "apps/mobile/modules/**"
+    "packages/ui/src/components/**",
+    "apps/omiro/components/**",
+    "apps/omiro/services/**",
+    "apps/omiro/hooks/**",
+    "apps/omiro/types/**",
+    "apps/omiro/modules/**"
   ]
 }

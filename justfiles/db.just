@@ -1,4 +1,4 @@
-MIGRATIONS_DIR := ROOT_DIR / "packages" / "core" / "db" / "migrations"
+MIGRATIONS_DIR := ROOT_DIR / "packages" / "db" / "migrations"
 
 goose-install goose-version="v3.27.0":
     #!/usr/bin/env bash
@@ -11,7 +11,7 @@ goose-install goose-version="v3.27.0":
       echo "$(dirname "$goose_bin")" >> "$GITHUB_PATH"
     fi
 
-db-setup environment="test" migrations-path="packages/core/db/migrations":
+db-setup environment="test" migrations-path="packages/db/migrations":
     #!/usr/bin/env bash
     goose_bin="$(go env GOPATH)/bin/goose"
     just goose-install
@@ -35,7 +35,7 @@ db-migrate:
     just goose-install
     DATABASE_URL="${DATABASE_URL:-{{ LOCAL_DATABASE_URL }}}"
     goose -dir "{{ MIGRATIONS_DIR }}" postgres "$DATABASE_URL" up
-    pnpm --filter "@hominem/db" exec kysely-codegen
+    pnpm --filter "@hominem/db" run kysely-codegen
 
 db-rollback:
     #!/usr/bin/env bash

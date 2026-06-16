@@ -6,7 +6,7 @@ import type { AppContext } from './auth';
 
 interface RateLimitInput {
   bucket: string;
-  identifier: string;
+  // Number of seconds the value will remain cached in Redis.
   windowSec: number;
   max: number;
 }
@@ -25,7 +25,7 @@ export function rateLimitMiddleware(input: RateLimitInput) {
     try {
       const redis = await getRedis();
       const userId = c.get('userId') ?? 'anonymous';
-      const key = `ratelimit:rpc:${input.bucket}:${hashRateLimitIdentifier(`${userId}:${input.identifier}`)}`;
+      const key = `ratelimit:rpc:${input.bucket}:${hashRateLimitIdentifier(`${userId}:${input.bucket}`)}`;
       const count = await redis.incr(key);
 
       if (count === 1) {

@@ -1,19 +1,16 @@
 # Hominem
 
-Hominem is a product monorepo with three active surfaces:
+Hominem is a product monorepo with two active surfaces:
 
-- web in `apps/web`
 - api in `services/api`
-- mobile in `apps/mobile`
+- omiro in `apps/omiro`
 
 ## Architecture
 
 ```text
-apps/web       -> web UI, routes, browser-only helpers
-apps/mobile    -> Expo app, native UI, mobile-only helpers
+apps/omiro     -> Expo app, native UI, mobile-only helpers
 services/api   -> Hono API, auth, data access, workers
-packages/core  -> shared config, db, env, utils
-packages/platform -> shared hooks, UI, auth, rpc, telemetry, queues
+packages/*     -> shared libraries: db, env, utils, ui, auth, rpc, telemetry, hooks, etc.
 ```
 
 The default direction is from apps into shared packages, and from shared packages into `services/api` only when backend coordination is required.
@@ -23,27 +20,30 @@ The default direction is from apps into shared packages, and from shared package
 Use the smallest possible loop by default.
 
 1. `just setup`
-2. `just dev-web`
-3. `just check-web`
+2. `just dev-api`
+3. `just check-api`
 
 When you are working on the API or shared backend code, run the API validation lane instead:
 
 1. Start the local test services you need.
 2. Run `just check-api`
 
+For Omiro work, use the app bootstrap loop in `apps/omiro/README.md`:
+
+1. `just mobile-prebuild`
+2. `just run-ios dev`
+
 ## Canonical Commands
 
 - `just setup`: install dependencies and prepare the repo toolchain
-- `just dev-web`: run the API and web apps for product work
-- `just check-web`: lint, typecheck, test, and build the web app
+- `just dev-api`: run the API for backend product work
 - `just check-api`: lint, typecheck, and test the API
-- `just web-e2e`: run the web browser suite
 - `just validate-migrations`: validate migration idempotency
 
 ## Setup And Build
 
 1. `just setup`
-2. `just check-web` or `just check-api`
+2. `just check-api`
 3. `pnpm turbo build` for a full workspace build when needed
 
 ## CI Model

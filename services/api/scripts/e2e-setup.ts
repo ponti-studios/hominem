@@ -91,7 +91,7 @@ async function signIn(): Promise<SignInResult> {
 }
 
 async function main() {
-  console.log('\nHakumi E2E setup\n');
+  console.log('\nOmiro E2E setup\n');
   console.log(`  API:   ${API_URL}`);
   console.log(`  Email: ${TEST_EMAIL}`);
   console.log();
