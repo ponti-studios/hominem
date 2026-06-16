@@ -145,8 +145,8 @@ async function callAction(
     request,
     params: {},
     context: makeContext(user),
-    unstable_url: new URL(request.url),
-    unstable_pattern: '/api/resume/convert',
+    url: new URL(request.url),
+    pattern: '/api/resume/convert',
   });
 
   return toRouteResponse(result);
