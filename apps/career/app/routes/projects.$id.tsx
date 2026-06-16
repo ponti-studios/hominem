@@ -55,7 +55,7 @@ export default function EditProject({ loaderData }: Route.ComponentProps) {
         type="button"
         onClick={() => navigate(backHref)}
         data-testid="back-button"
-        className="body-3 inline-flex items-center gap-2 self-start text-muted-foreground transition-colors hover:text-foreground"
+        className="body-3 inline-flex items-center gap-2 self-start text-muted-foreground transition-colors"
       >
         <ArrowLeftIcon className="size-4" />
         Back to projects

@@ -5,7 +5,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@hominem/ui/dropdown';
-import { ChevronDown, Plus } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { useState } from 'react';
 
 interface QuickAction {
@@ -35,12 +35,10 @@ export function QuickActionsDropdown({ actions, className = '' }: QuickActionsDr
             setIsOpen((open) => !open);
           }}
         >
-          <Plus className="size-4" />
-          Quick Actions
-          <ChevronDown className="size-4" />
+          <Menu className="size-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
+      <DropdownMenuContent side="bottom" align="end" sideOffset={8} className="w-56">
         {actions.map((action) => {
           const Icon = action.icon;
           return (

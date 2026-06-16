@@ -19,9 +19,9 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
         caption_label: 'text-sm font-medium',
         nav: 'absolute inset-x-4 top-4 flex items-center justify-between',
         button_previous:
-          'inline-flex size-8 items-center justify-center rounded-full border border-border bg-background text-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50',
+          'void-hover void-focus inline-flex size-8 items-center justify-center rounded-full border border-border bg-background text-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [--void-hover-bg:var(--color-accent)] [--void-hover-color:var(--color-accent-foreground)] [--void-hover-border:var(--color-accent)]',
         button_next:
-          'inline-flex size-8 items-center justify-center rounded-full border border-border bg-background text-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50',
+          'void-hover void-focus inline-flex size-8 items-center justify-center rounded-full border border-border bg-background text-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [--void-hover-bg:var(--color-accent)] [--void-hover-color:var(--color-accent-foreground)] [--void-hover-border:var(--color-accent)]',
         month_grid: 'w-full border-collapse',
         weekdays: 'flex',
         weekday:
@@ -29,7 +29,7 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
         week: 'mt-1 flex w-full',
         day: 'relative size-8 p-0 text-center text-sm focus-within:z-20',
         day_button:
-          'inline-flex size-8 items-center justify-center rounded-md text-sm font-normal transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring/40 disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50',
+          'void-hover void-focus inline-flex size-8 items-center justify-center rounded-md text-sm font-normal disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [--void-hover-bg:var(--color-accent)] [--void-hover-color:var(--color-accent-foreground)] [--void-hover-border:transparent] [--void-focus-shadow:0_0_0_2px_color-mix(in_srgb,var(--color-ring)_40%,transparent)]',
         selected:
           '[&>button]:bg-primary [&>button]:text-primary-foreground [&>button]:hover:bg-primary [&>button]:hover:text-primary-foreground',
         today: '[&>button]:bg-accent [&>button]:text-accent-foreground',

@@ -2,7 +2,7 @@ import type { CareerTestimonialRecord as Testimonial } from '@hominem/db';
 import { CareerRepository, db } from '@hominem/db';
 import { Button } from '@hominem/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
-import { MessageSquare, PlusIcon } from 'lucide-react';
+import { PlusIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Controller, type SubmitHandler, useForm } from 'react-hook-form';
 import { useFetcher } from 'react-router';
@@ -173,7 +173,7 @@ function TestimonialForm({
             {...register('name', { required: 'Add the person’s name.' })}
             aria-describedby={errors.name ? `name-${testimonial?.id || 'new'}-error` : undefined}
             aria-invalid={errors.name ? true : undefined}
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
             placeholder="Client's full name"
           />
           {errors.name ? (
@@ -194,7 +194,7 @@ function TestimonialForm({
             id={`title-${testimonial?.id || 'new'}`}
             type="text"
             {...register('title')}
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
             placeholder="e.g., Senior Developer"
           />
         </div>
@@ -209,7 +209,7 @@ function TestimonialForm({
             id={`company-${testimonial?.id || 'new'}`}
             type="text"
             {...register('company')}
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
             placeholder="Company name"
           />
         </div>
@@ -252,7 +252,7 @@ function TestimonialForm({
             errors.content ? `content-${testimonial?.id || 'new'}-error` : undefined
           }
           aria-invalid={errors.content ? true : undefined}
-          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50 min-h-28"
+          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground min-h-28"
           rows={4}
           placeholder="What did the client say about your work?"
         />
@@ -276,7 +276,7 @@ function TestimonialForm({
             id={`avatar_url-${testimonial?.id || 'new'}`}
             type="url"
             {...register('avatar_url')}
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
             placeholder="https://example.com/avatar.jpg"
           />
         </div>
@@ -288,7 +288,7 @@ function TestimonialForm({
             id={`linkedin_url-${testimonial?.id || 'new'}`}
             type="url"
             {...register('linkedin_url')}
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
             placeholder="https://linkedin.com/in/username"
           />
         </div>
@@ -318,31 +318,21 @@ function TestimonialsEditorSection({
   };
 
   return (
-    <section className="container flex flex-col gap-8 mx-auto">
+    <section className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center">
-            <MessageSquare className="w-5 h-5 text-primary" />
-          </div>
-          <h2 className="text-2xl font-semibold text-foreground">Client Testimonials</h2>
-        </div>
-
+        <h2 className="heading-2 text-foreground">Client Testimonials</h2>
         {!showNewForm && (
           <Button
             type="button"
             onClick={handleAddNew}
             variant="outline"
-            className="inline-flex items-center gap-2 border-dashed"
+            size="icon"
+            aria-label="Add new testimonial"
           >
             <PlusIcon className="size-4" />
-            <span className="hidden sm:block">Add New Testimonial</span>
           </Button>
         )}
       </div>
-
-      <p className="text-muted text-muted-foreground mb-lg">
-        Add testimonials and reviews from your clients and colleagues.
-      </p>
 
       <div className="flex flex-col gap-8">
         {/* Show new testimonial form if requested */}

@@ -10,9 +10,11 @@ interface FilesTabProps {
 export function ApplicationFilesTab({ application }: FilesTabProps) {
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="text-lg font-semibold">Files & Documents</h3>
-        <Button disabled>Upload File (Coming Soon)</Button>
+        <Button disabled className="text-xs sm:text-sm">
+          <span className="hidden sm:inline">Upload File </span>(Coming Soon)
+        </Button>
       </div>
 
       {/* Existing text content */}

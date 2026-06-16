@@ -49,7 +49,7 @@ interface ProjectEditorFormProps {
 }
 
 const inputClassName =
-  'w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50';
+  'w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground';
 
 function normalizeOptionalText(value?: string | null) {
   const trimmed = value?.trim();

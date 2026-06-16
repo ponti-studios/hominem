@@ -3,7 +3,6 @@ import {
   Briefcase,
   Calendar,
   ChevronLeft,
-  ExternalLink,
   FileText,
   MapPin,
   MessageSquare,
@@ -207,7 +206,7 @@ export default function ApplicationDetail({ loaderData, params }: Route.Componen
       <header className="flex items-center justify-between">
         <Link
           to="/applications"
-          className="flex items-center text-sm text-muted-foreground hover:text-foreground"
+          className="flex items-center text-sm text-muted-foreground"
         >
           <ChevronLeft className="h-5 w-5" />
           Back to Applications
@@ -215,7 +214,7 @@ export default function ApplicationDetail({ loaderData, params }: Route.Componen
       </header>
 
       {/* Application Header */}
-      <div className="flex flex-col md:flex-row items-center justify-between">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
         <div>
           <h1 className="text-lg md:text-xl font-bold text-foreground">{application.position}</h1>
           <p className="text-sm md:text-base text-muted-foreground">{company?.name}</p>
@@ -234,42 +233,24 @@ export default function ApplicationDetail({ loaderData, params }: Route.Componen
       </div>
 
       {/* Persistent job context bar */}
-      {(application.job_posting_url || application.job_posting || application.location) && (
+      {(application.job_posting || application.location) && (
         <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground border border-border rounded-lg px-4 py-2 bg-muted/30">
-          {application.job_posting_url && (
-            <a
-              href={application.job_posting_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 text-primary hover:underline"
-            >
-              <ExternalLink className="h-3 w-3" />
-              View Job Posting
-            </a>
-          )}
           {application.location && (
             <span className="flex items-center gap-1">
               <MapPin className="h-3 w-3" />
               {application.location}
             </span>
           )}
-          {application.job_posting_word_count && (
-            <span>{application.job_posting_word_count} word job description stored</span>
-          )}
         </div>
       )}
 
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TabId)}>
-        <div className="border-b border-border">
-          <TabsList className="-mb-px h-auto gap-8 bg-transparent p-0">
+        <div>
+          <TabsList>
             {tabItems.map((tab) => (
-              <TabsTrigger
-                key={tab.id}
-                value={tab.id}
-                className="gap-2 rounded-none px-1 py-4 text-sm font-medium data-[state=active]:text-primary after:bg-accent"
-              >
-                <tab.icon className="h-5 w-5" />
-                {tab.label}
+              <TabsTrigger key={tab.id} value={tab.id}>
+                <tab.icon className="h-4 w-4 shrink-0" />
+                <span className="hidden sm:inline">{tab.label}</span>
               </TabsTrigger>
             ))}
           </TabsList>

@@ -5,18 +5,22 @@ import * as React from 'react';
 import { cn } from '../lib/utils';
 
 const badgeVariants = cva(
-  'inline-flex items-center justify-center rounded border border-transparent px-1.5 py-px text-xs font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 aria-invalid:border-destructive transition-[color,box-shadow] overflow-hidden',
+  'void-focus inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded border border-transparent px-1.5 py-px text-xs font-medium [&>svg]:size-3 [&>svg]:pointer-events-none aria-invalid:border-destructive aria-invalid:ring-destructive/20',
   {
     variants: {
       variant: {
-        default: 'bg-primary text-primary-foreground [a&]:hover:bg-primary/90',
-        secondary: 'bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90',
+        default:
+          'bg-primary text-primary-foreground [a&]:void-hover [a&]:[--void-hover-bg:color-mix(in_srgb,var(--color-primary)_90%,white_10%)] [a&]:[--void-hover-color:var(--color-primary-foreground)] [a&]:[--void-hover-border:transparent]',
+        secondary:
+          'bg-secondary text-secondary-foreground [a&]:void-hover [a&]:[--void-hover-bg:color-mix(in_srgb,var(--color-secondary)_80%,white_20%)] [a&]:[--void-hover-color:var(--color-secondary-foreground)] [a&]:[--void-hover-border:transparent]',
         destructive:
-          'bg-destructive text-destructive-foreground [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20',
+          'bg-destructive text-destructive-foreground [a&]:void-hover [a&]:[--void-hover-bg:color-mix(in_srgb,var(--color-destructive)_90%,white_10%)] [a&]:[--void-hover-color:var(--color-destructive-foreground)] [a&]:[--void-hover-border:transparent] [--void-focus-shadow:0_0_0_3px_color-mix(in_srgb,var(--color-destructive)_20%,transparent)]',
         outline:
-          'border-border text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground',
-        ghost: '[a&]:hover:bg-accent [a&]:hover:text-accent-foreground',
-        link: 'text-primary underline-offset-4 [a&]:hover:underline',
+          'border-border text-foreground [a&]:void-hover [a&]:[--void-hover-bg:var(--color-accent)] [a&]:[--void-hover-color:var(--color-accent-foreground)] [a&]:[--void-hover-border:var(--color-accent)]',
+        ghost:
+          '[a&]:void-hover [a&]:[--void-hover-bg:var(--color-accent)] [a&]:[--void-hover-color:var(--color-accent-foreground)] [a&]:[--void-hover-border:transparent]',
+        link:
+          'text-primary underline-offset-4 [a&]:void-hover [a&]:hover:underline [a&]:[--void-hover-bg:transparent] [a&]:[--void-hover-color:var(--color-secondary-foreground)] [a&]:[--void-hover-border:transparent]',
       },
     },
     defaultVariants: {

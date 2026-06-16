@@ -35,7 +35,7 @@ export function ApplicationNotesTab({ notes }: NotesTabProps) {
             <Form method="post" onSubmit={() => setShowAddNote(false)} className="space-y-4">
               <input type="hidden" name="operation" value="add_note" />
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="noteType" className="text-sm font-medium text-foreground">
                     Note Type
@@ -104,8 +104,8 @@ export function ApplicationNotesTab({ notes }: NotesTabProps) {
                       {note.type.replace('_', ' ')}
                     </Badge>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-sm text-muted-foreground whitespace-nowrap">
                       {new Date(note.createdat).toLocaleDateString()}
                     </span>
                     <Form method="post" className="inline">

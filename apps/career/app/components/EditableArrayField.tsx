@@ -42,7 +42,7 @@ const ArrayItem = memo(function ArrayItem({
         value={value}
         onChange={handleChange}
         onKeyDown={(e) => onKeyDown(e, index)}
-        className="flex-1 block w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-ring focus:ring-ring/50"
+        className="block w-full flex-1 rounded-lg border border-border px-3 py-2 text-sm"
         placeholder={placeholder}
         data-testid={`array-input-${slugifyText(value)}`}
       />
@@ -51,7 +51,7 @@ const ArrayItem = memo(function ArrayItem({
         onClick={() => onRemove(index)}
         variant="ghost"
         size="sm"
-        className="p-2 text-destructive hover:bg-destructive/10"
+        className="p-2 text-destructive"
         data-testid={`remove-item-${slugifyText(value)}`}
         aria-label={`Remove item ${value}`}
       >
@@ -164,7 +164,7 @@ export function EditableArrayField({
             onClick={addItem}
             variant="ghost"
             size="sm"
-            className="text-primary hover:bg-accent/10"
+            className="text-primary"
             data-testid="add-item-button"
           >
             <PlusIcon className="w-4 h-4 mr-1" />
@@ -186,7 +186,7 @@ export function EditableArrayField({
               onClick={handleCancel}
               variant="ghost"
               size="sm"
-              className="text-muted-foreground hover:bg-muted"
+              className="text-muted-foreground"
               data-testid="cancel-button"
             >
               <XIcon className="w-4 h-4 mr-1" />
@@ -228,7 +228,7 @@ export function EditableArrayField({
             onClick={handleEdit}
             variant="ghost"
             size="sm"
-            className="p-1 text-muted-foreground hover:text-muted-foreground focus:text-muted-foreground"
+            className="p-1 text-muted-foreground"
             aria-label={`Edit ${label}`}
             data-testid="edit-button"
           >

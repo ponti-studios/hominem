@@ -57,12 +57,12 @@ function ApplicationCard({ application }: { application: ApplicationWithCompany 
   const companyName = getCompanyName(application.company);
 
   return (
-    <Card className="group border-border bg-card  transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/30">
+    <Card className="group border-border bg-card transition-all duration-200">
       <CardContent className="space-y-4 p-5">
         <div className="space-y-3">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <h3 className="text-lg font-semibold text-foreground transition-colors group-hover:text-primary">
+              <h3 className="text-lg font-semibold text-foreground transition-colors">
                 {application.position}
               </h3>
               <div className="mt-2 flex items-center gap-2">

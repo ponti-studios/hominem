@@ -203,7 +203,7 @@ export function UploadResumeForm({
               'rounded-md border-2 border-dashed p-6 text-center transition-colors',
               isDragging
                 ? 'border-accent/50 bg-accent/10'
-                : 'border-border hover:border-muted-foreground/30',
+                : 'border-border',
             )}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}

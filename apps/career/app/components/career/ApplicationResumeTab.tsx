@@ -141,7 +141,7 @@ export function ApplicationResumeTab({ application, applicationId: _applicationI
       {application.resume && !showRegenerate && !generatedResume && (
         <Card>
           <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <CardTitle className="text-base">Saved Resume</CardTitle>
               <div className="flex gap-2">
                 <Button

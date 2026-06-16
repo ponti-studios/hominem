@@ -218,7 +218,7 @@ export function SlugEditor({ portfolio_id, initialSlug, onSave }: SlugEditorProp
             disabled={!canSave}
             variant="outline"
             size="sm"
-            className="h-8 border-success/40 px-2 text-xs text-success hover:bg-success/10"
+            className="h-8 border-success/40 px-2 text-xs text-success"
           >
             {isSaving ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : null}
             Save

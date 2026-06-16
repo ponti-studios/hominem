@@ -135,7 +135,7 @@ export function ActivityHeatmapCard({ applications }: ActivityHeatmapCardProps) 
                         title={`${formatDate(day.date)}: ${day.count} application${day.count !== 1 ? 's' : ''}`}
                         aria-label={`${formatDate(day.date)}: ${day.count} application${day.count !== 1 ? 's' : ''}`}
                         className={cn(
-                          'size-3 rounded-sm transition-all hover:ring-2 hover:ring-ring/40 focus:outline-none focus:ring-2 focus:ring-ring/40',
+                          'size-3 rounded-sm transition-all',
                           {
                             'bg-muted': day.count === 0,
                             'bg-emerald-500/20': day.count === 1,

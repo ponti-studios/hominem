@@ -25,10 +25,10 @@ export function ApplicationsDesktopTable({ applications }: ApplicationsDesktopTa
 
       <ul className="divide-y divide-border">
         {applications.map((application) => (
-          <li key={application.id} className="transition-colors duration-150 hover:bg-muted/30">
+          <li key={application.id} className="transition-colors duration-150">
             <Link
-              to={`/career/applications/${application.id}`}
-              className="grid min-h-16 grid-cols-[minmax(0,1.5fr)_minmax(0,0.9fr)_minmax(0,0.8fr)_minmax(0,0.8fr)_minmax(0,0.9fr)_minmax(0,0.8fr)] items-center gap-3 px-4 py-3 focus:bg-muted/30 focus:outline-none"
+              to={`/applications/${application.id}`}
+              className="grid min-h-16 grid-cols-[minmax(0,1.5fr)_minmax(0,0.9fr)_minmax(0,0.8fr)_minmax(0,0.8fr)_minmax(0,0.9fr)_minmax(0,0.8fr)] items-center gap-3 px-4 py-3"
             >
               <div className="min-w-0">
                 <p className="body-2 truncate text-text-primary">{application.position}</p>

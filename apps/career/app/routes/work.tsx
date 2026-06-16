@@ -46,7 +46,7 @@ function WorkExperienceSummaryCard({
   onEdit: (id: string) => void;
 }) {
   return (
-    <li className="transition-colors duration-150 hover:bg-muted/30 focus-within:bg-muted/30">
+    <li className="transition-colors duration-150">
       <div className="grid min-h-14 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_auto_auto]">
         <div className="min-w-0">
           <p className="body-2 truncate text-text-primary">
@@ -131,22 +131,18 @@ export default function Work({ loaderData }: Route.ComponentProps) {
   };
 
   return (
-    <section className="container mx-auto flex flex-col gap-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 items-center gap-1">
-          <h2 className="heading-2 text-foreground">Work Experience</h2>
-        </div>
+    <section className="flex flex-col gap-6">
+      <div className="flex items-center justify-between">
+        <h2 className="heading-2 text-foreground">Work Experience</h2>
         <Button
           type="button"
           onClick={handleAddNew}
           variant="outline"
+          size="icon"
           disabled={draftFetcher.state === 'submitting'}
-          className="inline-flex w-full items-center gap-2 border-dashed sm:w-auto"
-          isLoading={draftFetcher.state === 'submitting'}
-          loadingLabel="Creating..."
+          aria-label="Add new experience"
         >
           <PlusIcon className="size-4" />
-          <span className="hidden sm:block">Add New Experience</span>
         </Button>
       </div>
 

@@ -47,12 +47,6 @@ export interface ApplicationFile {
   updatedat: Date;
 }
 
-export interface ApplicationWithRelations {
-  application: ApplicationWithCompany;
-  notes: ApplicationNote[];
-  files: ApplicationFile[];
-}
-
 export interface WorkExperienceWithFinancials extends WorkExperience {
   totalTenure?: number;
   currentAnnualizedSalary?: number;

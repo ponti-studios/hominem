@@ -110,6 +110,14 @@
   --color-prompt-bg: #f5ecd7;
   --color-prompt-border: #e8d5b5;
   --color-prompt-border-focus: rgba(92, 61, 46, 0.5);
+  --color-interaction-hover-bg: color-mix(in srgb, var(--color-accent) 28%, transparent);
+  --color-interaction-hover-border: color-mix(
+    in srgb,
+    var(--color-border-focus) 56%,
+    transparent
+  );
+  --color-interaction-hover-text: var(--color-foreground);
+  --color-interaction-focus-ring: color-mix(in srgb, var(--color-ring) 24%, transparent);
 
   --spacing-1: 4px;
   --spacing-2: 8px;
@@ -486,11 +494,32 @@
   outline-offset: 2px;
 }
 
+@utility void-hover {
+  transition-property: background-color, color, border-color, box-shadow, transform, opacity;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-default);
+
+  @media (hover: hover) {
+    &:not(:disabled):not([data-disabled]):not([aria-disabled='true']):hover {
+      background-color: var(--void-hover-bg, var(--color-interaction-hover-bg));
+      color: var(--void-hover-color, var(--color-interaction-hover-text));
+      border-color: var(--void-hover-border, var(--color-interaction-hover-border));
+      box-shadow: var(--void-hover-shadow, none);
+      transform: var(--void-hover-transform, none);
+    }
+  }
+}
+
 @utility void-focus {
   outline: none;
   &:focus-visible {
-    outline: 2px solid var(--color-ring);
-    outline-offset: 2px;
+    outline: var(--void-focus-outline-width, 2px) solid
+      var(--void-focus-outline-color, var(--color-ring));
+    outline-offset: var(--void-focus-outline-offset, 2px);
+    border-color: var(--void-focus-border, var(--color-ring));
+    box-shadow: var(--void-focus-shadow, 0 0 0 3px var(--color-interaction-focus-ring));
+    background-color: var(--void-focus-bg);
+    color: var(--void-focus-color);
   }
 }
 

@@ -16,10 +16,10 @@ export function ApplicationsMobileList({ applications }: ApplicationsMobileListP
     <div className="md:hidden">
       <ul className="divide-y divide-border">
         {applications.map((application) => (
-          <li key={application.id} className="transition-colors duration-150 hover:bg-muted/30">
+          <li key={application.id} className="transition-colors duration-150">
             <Link
-              to={`/career/applications/${application.id}`}
-              className="block p-4 focus:bg-muted/30 focus:outline-none"
+              to={`/applications/${application.id}`}
+              className="block p-4"
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0 flex-1">

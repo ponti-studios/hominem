@@ -17,7 +17,7 @@ export function StatCard({ value, subtitle, trend }: StatCardProps) {
   return (
     <Card>
       <CardContent>
-        <div className="flex flex-col items-end flex-1">
+        <div className="flex flex-col items-start">
           <p className="text-2xl font-semibold tabular-nums">{value}</p>
           {subtitle ? <p className={subtitleClass}>{subtitle}</p> : null}
         </div>

@@ -44,7 +44,7 @@ export function DatePicker({
           <Button
             variant={variant}
             disabled={disabled}
-            className="w-full justify-start text-left font-normal bg-muted border-border placeholder:text-muted-foreground backdrop-blur-sm focus:border-ring focus:ring-2 focus:ring-ring/30"
+            className="w-full justify-start bg-muted text-left font-normal placeholder:text-muted-foreground backdrop-blur-sm [--void-focus-shadow:0_0_0_2px_color-mix(in_srgb,var(--color-ring)_30%,transparent)]"
             id={id}
           >
             <CalendarIcon className="mr-2 size-4" />

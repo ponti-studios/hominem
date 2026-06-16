@@ -352,7 +352,7 @@ const NoteFiles = memo(function NoteFiles({ files, onDetachFile }: NoteFilesProp
           className="flex min-w-0 max-w-full items-center gap-2 rounded-md border border-border-subtle px-2.5 py-1.5 text-sm text-text-secondary"
         >
           <a
-            className="min-w-0 truncate font-medium text-foreground underline-offset-4 hover:underline"
+            className="min-w-0 truncate font-medium text-foreground underline-offset-4"
             href={file.url}
             target="_blank"
             rel="noreferrer"
@@ -363,7 +363,7 @@ const NoteFiles = memo(function NoteFiles({ files, onDetachFile }: NoteFilesProp
           <span className="shrink-0 text-xs text-text-tertiary">{file.mimetype}</span>
           <button
             type="button"
-            className="shrink-0 rounded-sm text-text-tertiary transition-colors hover:text-foreground focus-visible:outline-none focus-visible:[outline-style:solid] focus-visible:outline-2 focus-visible:outline-ring"
+            className="shrink-0 rounded-sm text-text-tertiary transition-colors"
             onClick={() => void onDetachFile(file.id)}
             title={`Detach ${file.originalName}`}
             aria-label={`Detach ${file.originalName}`}

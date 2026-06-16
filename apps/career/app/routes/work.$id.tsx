@@ -263,7 +263,7 @@ export default function WorkExperienceDetail({ loaderData }: Route.ComponentProp
           type="button"
           onClick={() => navigate('/work')}
           data-testid="back-button"
-          className="body-3 inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
+          className="body-3 inline-flex items-center gap-2 text-muted-foreground transition-colors"
         >
           <ArrowLeftIcon className="size-4" />
           Back to work
@@ -303,9 +303,9 @@ export default function WorkExperienceDetail({ loaderData }: Route.ComponentProp
 
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button type="button" variant="destructive">
+              <Button type="button" variant="destructive" size="sm" className="self-start shrink-0 lg:self-auto">
                 <TrashIcon className="size-4" />
-                Delete experience
+                <span className="hidden sm:inline">Delete experience</span>
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
@@ -318,7 +318,7 @@ export default function WorkExperienceDetail({ loaderData }: Route.ComponentProp
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  className="bg-destructive text-destructive-foreground"
                   onClick={() => submitDelete(deleteFetcher, clearSubmissionError, workExperience)}
                 >
                   Delete

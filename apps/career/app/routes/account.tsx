@@ -342,7 +342,7 @@ function BasicInfoForm({ portfolio }: { portfolio: CareerPortfolioRecord }) {
               id="bio"
               {...register('bio', { required: 'Bio is required' })}
               rows={4}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50 resize-none"
+              className="w-full resize-none rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
             />
             {errors.bio && <p className="text-xs text-destructive">{errors.bio.message}</p>}
           </div>
@@ -618,7 +618,7 @@ export default function Account({ loaderData }: Route.ComponentProps) {
                         href={`/p/${currentPortfolio.slug}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 px-2 py-1 border border-border rounded-md text-xs font-medium text-muted-foreground bg-card hover:bg-muted"
+                        className="inline-flex items-center gap-1 rounded-md border border-border bg-card px-2 py-1 text-xs font-medium text-muted-foreground"
                       >
                         <ExternalLink className="w-4 h-4" />
                         <span className="text-xs">View</span>
@@ -665,7 +665,7 @@ export default function Account({ loaderData }: Route.ComponentProps) {
                       href={`/p/${currentPortfolio.slug}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 px-3 py-1 border border-border rounded-md text-sm font-medium text-muted-foreground bg-card hover:bg-muted"
+                      className="inline-flex items-center gap-1 rounded-md border border-border bg-card px-3 py-1 text-sm font-medium text-muted-foreground"
                     >
                       <ExternalLink className="w-4 h-4" />
                       View Live
@@ -795,7 +795,7 @@ export default function Account({ loaderData }: Route.ComponentProps) {
                       disabled={pdfGenerating || !currentPortfolio.is_public}
                       variant="outline"
                       size="sm"
-                      className="w-full border-success/30 text-success hover:bg-success/10 sm:w-auto"
+                      className="w-full border-success/30 text-success sm:w-auto"
                       isLoading={pdfGenerating}
                       loadingLabel="Generating PDF..."
                     >
@@ -807,7 +807,7 @@ export default function Account({ loaderData }: Route.ComponentProps) {
                       onClick={() => navigate('/onboarding')}
                       variant="outline"
                       size="sm"
-                      className="w-full sm:w-auto border-accent/30 text-primary hover:text-primary hover:bg-accent/10"
+                      className="w-full border-accent/30 text-primary sm:w-auto"
                     >
                       <Upload className="w-4 h-4 mr-2" />
                       Create New Portfolio
@@ -817,7 +817,7 @@ export default function Account({ loaderData }: Route.ComponentProps) {
                       onClick={() => setShowReplaceResume((current) => !current)}
                       variant="outline"
                       size="sm"
-                      className="w-full sm:w-auto border-warning/30 text-foreground hover:bg-warning/10"
+                      className="w-full border-warning/30 text-foreground sm:w-auto"
                     >
                       <Upload className="w-4 h-4 mr-2" />
                       Replace Portfolio
@@ -827,7 +827,7 @@ export default function Account({ loaderData }: Route.ComponentProps) {
                       onClick={() => handleDeletePortfolio(currentPortfolio.id)}
                       variant="outline"
                       size="sm"
-                      className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 sm:w-auto"
+                      className="w-auto border-destructive/30 text-destructive"
                     >
                       <Trash2 className="w-4 h-4 mr-2" />
                       Delete Portfolio

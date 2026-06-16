@@ -237,7 +237,7 @@ export function ResumeCustomizer({
                 onChange={(e) => setJobPosting(e.target.value)}
                 placeholder="Paste the complete job posting here..."
                 rows={8}
-                className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring/50"
+                className="w-full rounded-md border border-border px-3 py-2"
                 disabled={isDisabled}
               />
             </div>

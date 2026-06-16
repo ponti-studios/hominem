@@ -42,7 +42,7 @@ export function ApplicationTimelineTab({ application }: TimelineTabProps) {
             <Form method="post" onSubmit={() => setShowAddInterview(false)} className="space-y-4">
               <input type="hidden" name="operation" value="add_interview" />
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="interviewType" className="text-sm font-medium text-foreground">
                     Interview Type

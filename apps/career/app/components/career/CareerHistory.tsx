@@ -85,7 +85,7 @@ export function CareerHistory({ work_experiences }: CareerHistoryProps) {
         {sortedExperiences.map((experience) => (
           <Card
             key={experience.id}
-            className="transition-colors hover:border-primary/30"
+            className="transition-colors"
             data-testid={`work-experience-${experience.id}`}
           >
             <CardContent className="space-y-4">
@@ -197,7 +197,7 @@ export function CareerHistory({ work_experiences }: CareerHistoryProps) {
             <Link
               key={experience.id}
               to={`/career/experience/${experience.id}`}
-              className="block p-4 transition-colors duration-200 hover:bg-muted/40 focus:bg-muted/40 focus:outline-none focus:ring-2 focus:ring-ring/30 focus:ring-inset"
+              className="block p-4 transition-colors duration-200"
               data-testid={`mobile-experience-${experience.id}`}
             >
               <div className="flex items-center justify-between gap-3">

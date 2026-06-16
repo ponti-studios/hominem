@@ -1,7 +1,7 @@
 import type { CareerSkillRecord } from '@hominem/db';
 import { CareerRepository, db, runInTransaction } from '@hominem/db';
 import { Button } from '@hominem/ui/button';
-import { LoaderPinwheel, Sparkles, XIcon, Zap } from 'lucide-react';
+import { LoaderPinwheel, Sparkles, XIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useFetcher } from 'react-router';
 
@@ -100,36 +100,22 @@ function SkillsEditorSection({ skills: initialSkills, portfolio_id }: SkillsEdit
   const deriveError = deriveFetcher.data?.success === false ? deriveFetcher.data.error : null;
 
   return (
-    <section className="container flex flex-col gap-8 mx-auto">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 items-center gap-3">
-          <div className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center">
-            <Zap className="w-5 h-5 text-primary" />
-          </div>
-          <div className="min-w-0">
-            <h2 className="text-2xl font-semibold text-foreground">Skills</h2>
-            <p className="text-sm text-muted-foreground">
-              Derived from your work experience and projects — every skill backed by proof.
-            </p>
-          </div>
-        </div>
+    <section className="flex flex-col gap-6">
+      <div className="flex items-center justify-between">
+        <h2 className="heading-2 text-foreground">Skills</h2>
         <deriveFetcher.Form method="POST" action="/api/skills/derive">
           <Button
             type="submit"
             variant="outline"
+            size="icon"
             disabled={isDeriving}
-            className="inline-flex w-full items-center gap-2 sm:w-auto"
+            aria-label={isDeriving ? 'Deriving skills' : skills.length > 0 ? 'Re-derive skills' : 'Derive skills'}
           >
             {isDeriving ? (
               <LoaderPinwheel className="size-4 animate-spin" />
             ) : (
               <Sparkles className="size-4" />
             )}
-            {isDeriving
-              ? 'Deriving skills…'
-              : skills.length > 0
-                ? 'Re-derive skills'
-                : 'Derive my skills'}
           </Button>
         </deriveFetcher.Form>
       </div>
@@ -177,7 +163,7 @@ function SkillsEditorSection({ skills: initialSkills, portfolio_id }: SkillsEdit
                         onClick={() => handleRemoveSkill(skill)}
                         variant="ghost"
                         size="icon"
-                        className="ml-1 rounded-full p-0.5 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="ml-1 h-5 w-5 rounded-full p-0.5 opacity-0 transition-opacity"
                         title="Remove skill"
                         aria-label="Remove skill"
                       >

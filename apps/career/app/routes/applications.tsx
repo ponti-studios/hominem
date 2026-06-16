@@ -1,9 +1,9 @@
 import { CareerRepository, db } from '@hominem/db';
-import { buttonVariants } from '@hominem/ui/button';
+import { Button } from '@hominem/ui/button';
 import { useDebouncedValue } from '@hominem/ui/hooks';
 import { PlusIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 
 import { ApplicationsDesktopTable } from '~/components/career/applications/ApplicationsDesktopTable';
 import { ApplicationsEmptyState } from '~/components/career/applications/ApplicationsEmptyState';
@@ -138,19 +138,19 @@ export async function action({ context, request }: Route.ActionArgs) {
   }
 }
 
-function ApplicationsHeader({ totalCount }: { totalCount: number }) {
+function ApplicationsHeader({ totalCount, onAdd }: { totalCount: number; onAdd: () => void }) {
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="min-w-0">
-        <h1 className="text-xl font-semibold">Job Applications</h1>
-        <p className="text-sm text-muted-foreground">
-          {totalCount} applications · track your pipeline and progress
-        </p>
-      </div>
-      <Link to="/applications/new" className={buttonVariants({ size: 'sm' }) + ' w-full sm:w-auto'}>
+    <div className="flex items-center justify-between">
+      <h2 className="heading-2 text-foreground">Job Applications</h2>
+      <Button
+        type="button"
+        onClick={onAdd}
+        variant="outline"
+        size="icon"
+        aria-label="Add application"
+      >
         <PlusIcon className="size-4" />
-        Add Application
-      </Link>
+      </Button>
     </div>
   );
 }
@@ -221,8 +221,8 @@ export default function Applications({ loaderData }: Route.ComponentProps) {
   }, [debouncedSearchValue, filters.search]);
 
   return (
-    <div className="space-y-8 px-2 sm:px-0">
-      <ApplicationsHeader totalCount={allApplications.length} />
+    <section className="flex flex-col gap-6">
+      <ApplicationsHeader totalCount={allApplications.length} onAdd={() => navigate('/applications/new')} />
 
       <div className="space-y-8">
         <div className="overflow-hidden rounded-lg border border-border bg-card">
@@ -269,6 +269,6 @@ export default function Applications({ loaderData }: Route.ComponentProps) {
           )}
         </div>
       </div>
-    </div>
+    </section>
   );
 }

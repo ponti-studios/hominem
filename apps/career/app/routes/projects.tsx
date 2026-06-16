@@ -61,7 +61,7 @@ function ProjectSummaryCard({
   onEdit: (id: string) => void;
 }) {
   return (
-    <li className="transition-colors duration-150 hover:bg-muted/30 focus-within:bg-muted/30">
+    <li className="transition-colors duration-150">
       <div className="grid min-h-14 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 md:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)_auto_auto]">
         <div className="min-w-0">
           <p className="body-2 truncate text-text-primary">
@@ -150,16 +150,17 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
     : `${loaderData.projects.length} total project${loaderData.projects.length === 1 ? '' : 's'}`;
 
   return (
-    <section className="mx-auto flex w-full flex-col gap-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <section className="flex flex-col gap-6">
+      <div className="flex items-center justify-between">
         <h2 className="heading-2 text-foreground">Projects</h2>
         <Button
           type="button"
           onClick={() => navigate(newProjectHref)}
-          className="inline-flex w-full items-center gap-2 sm:w-auto"
+          variant="outline"
+          size="icon"
+          aria-label="Add new project"
         >
           <PlusIcon className="size-4" />
-          Add New Project
         </Button>
       </div>
 

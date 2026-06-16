@@ -6,20 +6,22 @@ import { cn } from '../lib/utils';
 import { LoadingSpinner } from './loading-spinner';
 
 const buttonVariants = cva(
-  'inline-flex !cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-md border text-sm font-medium transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] outline-hidden disabled:pointer-events-none disabled:!cursor-default disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 py-2',
+  'void-focus inline-flex !cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-md border text-sm font-medium outline-hidden disabled:pointer-events-none disabled:!cursor-default disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 py-2',
   {
     variants: {
       variant: {
-        default: 'border-transparent bg-primary text-primary-foreground hover:bg-primary/90',
+        default:
+          'void-hover border-transparent bg-primary text-primary-foreground [--void-hover-bg:color-mix(in_srgb,var(--color-primary)_90%,white_10%)] [--void-hover-color:var(--color-primary-foreground)] [--void-hover-border:transparent]',
         destructive:
-          'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/90',
+          'void-hover border-transparent bg-destructive text-destructive-foreground [--void-hover-bg:color-mix(in_srgb,var(--color-destructive)_90%,white_10%)] [--void-hover-color:var(--color-destructive-foreground)] [--void-hover-border:transparent]',
         outline:
-          'border-border bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground',
+          'void-hover border-border bg-transparent text-foreground [--void-hover-bg:var(--color-accent)] [--void-hover-color:var(--color-accent-foreground)] [--void-hover-border:var(--color-accent)]',
         secondary:
-          'border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80',
+          'void-hover border-transparent bg-secondary text-secondary-foreground [--void-hover-bg:color-mix(in_srgb,var(--color-secondary)_80%,white_20%)] [--void-hover-color:var(--color-secondary-foreground)] [--void-hover-border:transparent]',
         ghost:
-          'border-transparent bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground',
-        link: 'border-transparent bg-transparent text-foreground underline-offset-4 hover:text-secondary-foreground hover:underline',
+          'void-hover border-transparent bg-transparent text-foreground [--void-hover-bg:var(--color-accent)] [--void-hover-color:var(--color-accent-foreground)] [--void-hover-border:transparent]',
+        link:
+          'void-hover border-transparent bg-transparent text-foreground underline-offset-4 hover:underline [--void-hover-bg:transparent] [--void-hover-color:var(--color-secondary-foreground)] [--void-hover-border:transparent]',
       },
       size: {
         default: 'px-3 text-sm',

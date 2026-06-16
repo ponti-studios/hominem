@@ -26,7 +26,7 @@ const navLinkClass = (isActive: boolean) =>
     'flex h-14 items-center px-3 text-sm whitespace-nowrap border-b-2 transition-colors',
     isActive
       ? 'border-foreground text-foreground font-medium'
-      : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border',
+      : 'border-transparent text-muted-foreground',
   );
 
 export default function Navigation() {
@@ -61,7 +61,7 @@ export default function Navigation() {
         <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-3 px-4 sm:px-6 lg:px-8">
           <Link
             to="/"
-            className="flex shrink-0 items-center text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="flex shrink-0 items-center text-foreground"
           >
             <img
               src="/icons/icon-192x192.png"
@@ -82,7 +82,7 @@ export default function Navigation() {
                     'px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
                     isActive
                       ? 'bg-muted text-foreground'
-                      : 'text-muted-foreground hover:text-foreground',
+                      : 'text-muted-foreground',
                   )
                 }
               >
@@ -99,7 +99,7 @@ export default function Navigation() {
                     'px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
                     isActive
                       ? 'bg-muted text-foreground'
-                      : 'text-muted-foreground hover:text-foreground',
+                      : 'text-muted-foreground',
                   )
                 }
               >
@@ -119,7 +119,7 @@ export default function Navigation() {
           {/* Logo */}
           <Link
             to="/"
-            className="flex shrink-0 items-center pr-4 mr-2 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="mr-2 flex shrink-0 items-center pr-4 text-foreground"
           >
             <img
               src="/icons/icon-192x192.png"
@@ -153,7 +153,7 @@ export default function Navigation() {
                 'flex items-center gap-1 px-3 py-1.5 text-sm rounded-md transition-colors font-medium',
                 isPortfolioActive
                   ? 'text-foreground bg-muted'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
+                  : 'text-muted-foreground',
               )}
             >
               Portfolio
@@ -174,7 +174,7 @@ export default function Navigation() {
                         'flex items-center px-3 py-2 text-sm transition-colors',
                         isActive
                           ? 'text-foreground font-medium bg-muted'
-                          : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
+                          : 'text-muted-foreground',
                       )
                     }
                   >
@@ -206,7 +206,7 @@ export default function Navigation() {
                 'flex items-center justify-center h-8 w-8 rounded-full transition-colors',
                 isAccountActive
                   ? 'bg-muted text-foreground'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
+                  : 'text-muted-foreground',
               )}
             >
               <User className="h-4 w-4" />

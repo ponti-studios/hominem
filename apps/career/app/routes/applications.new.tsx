@@ -185,7 +185,7 @@ export default function CreateJobApplication() {
                     or{' '}
                     <button
                       type="button"
-                      className="underline hover:text-foreground transition-colors"
+                      className="underline transition-colors"
                       onClick={() => setInputMethod('paste')}
                     >
                       paste a description
@@ -193,7 +193,7 @@ export default function CreateJobApplication() {
                     {' · '}
                     <button
                       type="button"
-                      className="underline hover:text-foreground transition-colors"
+                      className="underline transition-colors"
                       onClick={() => setInputMethod('manual')}
                     >
                       enter manually
@@ -211,7 +211,7 @@ export default function CreateJobApplication() {
                     onChange={(e) => setPastedDescription(e.target.value)}
                     rows={8}
                     placeholder="Paste the job description here..."
-                    className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring/50 focus:border-transparent resize-none"
+                    className="w-full resize-none rounded-lg border border-border px-3 py-2"
                     autoFocus
                   />
                   <div className="flex items-center gap-3">
@@ -224,7 +224,7 @@ export default function CreateJobApplication() {
                     </Button>
                     <button
                       type="button"
-                      className="text-xs text-muted-foreground underline hover:text-foreground transition-colors"
+                      className="text-xs text-muted-foreground underline transition-colors"
                       onClick={() => setInputMethod('url')}
                     >
                       Back to URL
@@ -413,7 +413,7 @@ export default function CreateJobApplication() {
                       name="job_posting"
                       rows={6}
                       placeholder="Paste the job description here..."
-                      className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring/50 focus:border-transparent resize-none"
+                      className="w-full resize-none rounded-lg border border-border px-3 py-2"
                       defaultValue={scrapedData ? scrapedData.jobDescription : ''}
                     />
                     {/* Hidden field to store full structured data */}
@@ -502,7 +502,7 @@ export default function CreateJobApplication() {
                     </Button>
                     <Link
                       to="/applications"
-                      className="flex-1 h-11 inline-flex items-center justify-center rounded-lg text-sm font-medium transition-colors border border-border bg-card hover:bg-muted text-muted-foreground"
+                      className="inline-flex h-11 flex-1 items-center justify-center rounded-lg border border-border bg-card text-sm font-medium text-muted-foreground transition-colors"
                     >
                       Cancel
                     </Link>

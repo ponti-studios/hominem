@@ -16,7 +16,7 @@ export function Welcome({ message }: { message: string }) {
               {resources.map(({ href, text, icon }) => (
                 <li key={href}>
                   <a
-                    className="group flex items-center gap-3 self-stretch p-3 leading-normal text-primary hover:underline"
+                    className="group flex items-center gap-3 self-stretch p-3 leading-normal text-primary"
                     href={href}
                     target="_blank"
                     rel="noreferrer"
@@ -46,7 +46,7 @@ const resources = [
         height="20"
         viewBox="0 0 20 20"
         fill="none"
-        className="stroke-muted-foreground group-hover:stroke-current"
+        className="stroke-muted-foreground"
         role="img"
         aria-label="React Router Docs"
       >
@@ -68,7 +68,7 @@ const resources = [
         height="20"
         viewBox="0 0 24 20"
         fill="none"
-        className="stroke-muted-foreground group-hover:stroke-current"
+        className="stroke-muted-foreground"
         role="img"
         aria-label="Join Discord"
       >

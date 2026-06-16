@@ -1,7 +1,7 @@
-import { Button, buttonVariants } from '@hominem/ui/button';
+import { Button } from '@hominem/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
 import { Input } from '@hominem/ui/input';
-import { Briefcase, Calendar, DollarSign, MapPin, TrendingUp } from 'lucide-react';
+import { Briefcase, Calendar, DollarSign, ExternalLink, MapPin, TrendingUp } from 'lucide-react';
 import { useState } from 'react';
 import { Form } from 'react-router';
 
@@ -21,6 +21,17 @@ export function ApplicationOverviewTab({ application, company }: OverviewTabProp
       <Card>
         <CardHeader>
           <CardTitle>Application Details</CardTitle>
+          {application.job_posting_url && (
+            <a
+              href={application.job_posting_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground transition-colors"
+              aria-label="View job posting"
+            >
+              <ExternalLink className="h-4 w-4" />
+            </a>
+          )}
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 gap-2">
@@ -55,18 +66,6 @@ export function ApplicationOverviewTab({ application, company }: OverviewTabProp
             )}
           </div>
 
-          {application.job_posting_url && (
-            <div className="mt-6 pt-6 border-t border-border">
-              <a
-                href={application.job_posting_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={buttonVariants({ variant: 'outline', size: 'sm' })}
-              >
-                View Job Posting
-              </a>
-            </div>
-          )}
         </CardContent>
       </Card>
 
@@ -88,7 +87,7 @@ export function ApplicationOverviewTab({ application, company }: OverviewTabProp
                   href={company.website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-primary hover:text-primary/80 mt-1 block"
+                  className="mt-1 block text-primary"
                 >
                   {company.website}
                 </a>
@@ -212,7 +211,7 @@ export function ApplicationOverviewTab({ application, company }: OverviewTabProp
                 {application.recruiter_email ? (
                   <a
                     href={`mailto:${application.recruiter_email}`}
-                    className="text-primary hover:text-primary/80 mt-1 block"
+                    className="mt-1 block text-primary"
                   >
                     {application.recruiter_email}
                   </a>
@@ -230,7 +229,7 @@ export function ApplicationOverviewTab({ application, company }: OverviewTabProp
                     href={application.recruiter_linkedin}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-primary hover:text-primary/80 mt-1 block"
+                    className="mt-1 block text-primary"
                   >
                     View Profile
                   </a>
