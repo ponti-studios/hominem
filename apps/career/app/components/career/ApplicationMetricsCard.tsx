@@ -2,9 +2,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
 import { centsToDollars, formatPercentage } from '@hominem/utils/numbers';
 import { useMemo } from 'react';
 
+import type { JobApplicationMetrics } from '~/lib/career/queries/job-applications';
 import { cn } from '~/lib/utils';
 import type { ApplicationWithCompany } from '~/types/applications';
-import type { JobApplicationMetrics } from '~/lib/career/queries/job-applications';
 
 interface Metric {
   title: string;
@@ -12,15 +12,11 @@ interface Metric {
   color?: string;
 }
 
-const METRIC_ROW_CLASSES =
-  'flex items-baseline justify-between gap-4 border-b border-dashed border-border/60 pb-2 last:border-b-0 last:pb-0';
-const METRIC_LABEL_CLASSES = 'text-xs uppercase tracking-[0.18em] text-muted-foreground';
-
 function MetricRow({ metric }: { metric: Metric }) {
   return (
-    <div className={METRIC_ROW_CLASSES}>
-      <span className={METRIC_LABEL_CLASSES}>{metric.title}</span>
-      <span className={cn('text-sm font-semibold', metric.color)}>{metric.value}</span>
+    <div className="flex items-baseline justify-between gap-4 border-b border-dashed border-border/60 pb-2 last:border-b-0 last:pb-0">
+      <span className="ui-eyebrow">{metric.title}</span>
+      <span className={cn('subheading-4', metric.color)}>{metric.value}</span>
     </div>
   );
 }
@@ -110,7 +106,7 @@ export function ApplicationMetricsCard({ applications, metrics }: ApplicationMet
       </CardHeader>
 
       <CardContent>
-        <div className="space-y-5 font-mono body-3">
+        <div className="space-y-5 font-mono">
           <div className="space-y-2">
             {performanceMetrics.map((metric) => (
               <MetricRow key={metric.title} metric={metric} />
@@ -119,9 +115,7 @@ export function ApplicationMetricsCard({ applications, metrics }: ApplicationMet
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <p className="ui-eyebrow">
-                Timing Analysis
-              </p>
+              <p className="ui-eyebrow">Timing Analysis</p>
               <div className="space-y-2">
                 {timingMetrics.map((metric) => (
                   <MetricRow key={metric.title} metric={metric} />
@@ -130,9 +124,7 @@ export function ApplicationMetricsCard({ applications, metrics }: ApplicationMet
             </div>
 
             <div className="space-y-3 border-t border-dashed border-border/80 pt-4">
-              <p className="ui-eyebrow">
-                Salary Insights
-              </p>
+              <p className="ui-eyebrow">Salary Insights</p>
 
               <div className="space-y-2">
                 <MetricRow

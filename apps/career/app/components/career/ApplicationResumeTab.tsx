@@ -105,7 +105,7 @@ export function ApplicationResumeTab({
   if (!hasAnyPosting) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
-        <FileText className="h-10 w-10 text-muted-foreground/50" />
+        <FileText className="size-10 text-muted-foreground/50" />
         <p className="body-3 text-muted-foreground">No job description stored for this application.</p>
         <p className="body-3 text-muted-foreground">
           Add a job posting URL or description in the Overview tab to generate a tailored resume.

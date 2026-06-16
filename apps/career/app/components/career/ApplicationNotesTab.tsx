@@ -1,3 +1,4 @@
+import { EmptyState } from '@hominem/ui';
 import { Badge } from '@hominem/ui/badge';
 import { Button } from '@hominem/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
@@ -30,7 +31,7 @@ export function ApplicationNotesTab({ notes }: NotesTabProps) {
       {showAddNote && (
         <Card>
           <CardHeader>
-            <CardTitle>Add Note</CardTitle>
+            <CardTitle className="heading-4">Add Note</CardTitle>
           </CardHeader>
           <CardContent>
             <Form method="post" onSubmit={() => setShowAddNote(false)} className="space-y-4">
@@ -89,9 +90,11 @@ export function ApplicationNotesTab({ notes }: NotesTabProps) {
       {/* Notes List */}
       <div className="space-y-4">
         {notes.length === 0 ? (
-          <div className="py-8 text-center body-3 text-muted-foreground">
-            No notes yet. Add your first note above.
-          </div>
+          <EmptyState
+            title="No notes yet"
+            description="Add your first note above."
+            variant="quiet"
+          />
         ) : (
           notes.map((note) => (
             <Card key={note.id}>

@@ -202,7 +202,7 @@ export default function ApplicationDetail({ loaderData, params }: Route.Componen
       {/* Header */}
       <header className="flex items-center justify-between">
         <Link to="/applications" className="flex items-center body-3 text-muted-foreground">
-          <ChevronLeft className="h-5 w-5" />
+          <ChevronLeft className="size-5" />
           Back to Applications
         </Link>
       </header>

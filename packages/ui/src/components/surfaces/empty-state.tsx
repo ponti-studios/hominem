@@ -56,14 +56,14 @@ export function EmptyState({
         </div>
       ) : null}
       {title ? (
-        <h2 className={cn('font-semibold text-foreground', large ? 'text-lg' : 'text-base')}>
+        <h2 className={cn('text-foreground', large ? 'heading-3' : 'heading-4')}>
           {title}
         </h2>
       ) : null}
       {description ? (
         <p
           className={cn(
-            'text-sm text-text-secondary',
+            'body-3 text-text-secondary',
             centered && 'max-w-[34ch]',
             !centered && 'max-w-[52ch]',
           )}

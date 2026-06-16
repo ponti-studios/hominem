@@ -137,7 +137,7 @@ export function ResumeCustomizer({
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between w-full">
-            <CardTitle>Job Posting & Preferences</CardTitle>
+            <CardTitle className="heading-4">Job Posting & Preferences</CardTitle>
             {result && (
               <Button
                 variant="outline"
@@ -366,7 +366,7 @@ export function ResumeCustomizer({
           {result.jobAnalysis && (
             <Card>
               <CardHeader>
-                <CardTitle>Job Analysis</CardTitle>
+                <CardTitle className="heading-4">Job Analysis</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -429,7 +429,7 @@ export function ResumeCustomizer({
           <Card>
             <CardHeader>
               <div className="flex justify-between items-center">
-                <CardTitle>Customized Resume</CardTitle>
+                <CardTitle className="heading-4">Customized Resume</CardTitle>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={handleCopyResume}>
                     Copy

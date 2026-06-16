@@ -49,7 +49,7 @@ export function CareerHistory({ work_experiences }: CareerHistoryProps) {
       <Card data-testid="career-history">
         <CardContent className="py-12 text-center" data-testid="empty-state">
           <div className="mb-4 text-muted-foreground">
-            <BriefcaseIcon className="mx-auto h-16 w-16" />
+            <BriefcaseIcon className="mx-auto size-16" />
           </div>
           <p className="subheading-3 text-foreground" data-testid="empty-message">
             No work experience yet
@@ -239,7 +239,7 @@ export function CareerHistory({ work_experiences }: CareerHistoryProps) {
                         : ''}
                     </span>
                   )}
-                  <ChevronRightIcon className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+                  <ChevronRightIcon className="size-5 text-muted-foreground" aria-hidden="true" />
                 </div>
               </div>
             </Link>

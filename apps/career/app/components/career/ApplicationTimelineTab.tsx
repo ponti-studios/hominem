@@ -36,7 +36,7 @@ export function ApplicationTimelineTab({ application }: TimelineTabProps) {
       {showAddInterview && (
         <Card>
           <CardHeader>
-            <CardTitle>Add Interview</CardTitle>
+            <CardTitle className="heading-4">Add Interview</CardTitle>
           </CardHeader>
           <CardContent>
             <Form method="post" onSubmit={() => setShowAddInterview(false)} className="space-y-4">

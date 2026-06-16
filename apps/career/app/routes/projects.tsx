@@ -170,7 +170,7 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
             <div className="flex min-w-0 flex-col gap-2">
               <label
                 htmlFor="project-client-filter"
-                className="body-4 text-muted-foreground font-bold"
+                className="subheading-4 text-muted-foreground"
               >
                 Client
               </label>

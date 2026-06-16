@@ -1,3 +1,4 @@
+import { EmptyState } from '@hominem/ui';
 import { PercentageProgressBar, VolumeProgressBar } from '@hominem/ui/progress';
 
 import { cn } from '~/lib/utils';
@@ -15,9 +16,11 @@ interface SourcePerformanceChartProps {
 export function SourcePerformanceChart({ data }: SourcePerformanceChartProps) {
   if (!data || data.length === 0) {
     return (
-      <div className="text-center py-8 body-3 text-muted-foreground">
-        No source performance data available
-      </div>
+      <EmptyState
+        title="No source data"
+        description="Source performance will appear once you have applications with source information."
+        variant="quiet"
+      />
     );
   }
 

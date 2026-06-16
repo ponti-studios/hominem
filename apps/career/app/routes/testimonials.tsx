@@ -1,5 +1,6 @@
 import type { CareerTestimonialRecord as Testimonial } from '@hominem/db';
 import { CareerRepository, db } from '@hominem/db';
+import { EmptyState } from '@hominem/ui';
 import { Button } from '@hominem/ui/button';
 import { Input } from '@hominem/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
@@ -348,9 +349,11 @@ function TestimonialsEditorSection({
         ))}
 
         {testimonials.length === 0 && !showNewForm && (
-          <div className="text-center py-16 body-3 text-muted-foreground">
-            No testimonials added yet. Click "Add New Testimonial" to get started.
-          </div>
+          <EmptyState
+            title="No testimonials yet"
+            description='Click "Add New Testimonial" to get started.'
+            variant="dashed"
+          />
         )}
       </div>
     </section>

@@ -1,5 +1,6 @@
 import type { CareerWorkExperienceRecord as WorkExperience } from '@hominem/db';
 import { CareerRepository, db } from '@hominem/db';
+import { EmptyState } from '@hominem/ui';
 import { Button } from '@hominem/ui/button';
 import { PencilLineIcon, PlusIcon } from 'lucide-react';
 import { useFetcher, useNavigate } from 'react-router';
@@ -162,9 +163,11 @@ export default function Work({ loaderData }: Route.ComponentProps) {
             </ul>
           </div>
         ) : (
-          <div className="text-center py-16 body-3 text-muted-foreground">
-            No work experiences added yet. Click "Add New Experience" to get started.
-          </div>
+          <EmptyState
+            title="No work experience yet"
+            description='Click "Add New Experience" to get started.'
+            variant="dashed"
+          />
         )}
       </div>
     </section>

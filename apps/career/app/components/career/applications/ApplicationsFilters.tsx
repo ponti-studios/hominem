@@ -56,7 +56,7 @@ export function ApplicationsFilters({
         <div className="flex-1">
           <label
             htmlFor="application-search"
-            className="body-4 mb-2 block font-bold text-muted-foreground"
+            className="subheading-4 mb-2 block text-muted-foreground"
           >
             Search
           </label>
@@ -71,7 +71,7 @@ export function ApplicationsFilters({
         <div className="sm:w-48">
           <label
             htmlFor="application-status-dropdown"
-            className="body-4 mb-2 block font-bold text-muted-foreground"
+            className="subheading-4 mb-2 block text-muted-foreground"
           >
             Status
           </label>

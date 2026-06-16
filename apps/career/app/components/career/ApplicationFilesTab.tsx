@@ -1,3 +1,4 @@
+import { EmptyState } from '@hominem/ui';
 import { Button } from '@hominem/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
 
@@ -22,7 +23,7 @@ export function ApplicationFilesTab({ application }: FilesTabProps) {
         {application.resume && (
           <Card>
             <CardHeader>
-              <CardTitle className="body-3">Resume</CardTitle>
+              <CardTitle className="heading-4">Resume</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="bg-muted p-3 rounded caption1 font-mono max-h-40 overflow-y-auto">
@@ -35,7 +36,7 @@ export function ApplicationFilesTab({ application }: FilesTabProps) {
         {application.cover_letter && (
           <Card>
             <CardHeader>
-              <CardTitle className="body-3">Cover Letter</CardTitle>
+              <CardTitle className="heading-4">Cover Letter</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="bg-muted p-3 rounded caption1 font-mono max-h-40 overflow-y-auto">
@@ -47,9 +48,11 @@ export function ApplicationFilesTab({ application }: FilesTabProps) {
       </div>
 
       {!application.resume && !application.cover_letter && (
-        <div className="text-center py-8 body-3 text-muted-foreground">
-          No files uploaded yet. File upload functionality coming soon.
-        </div>
+        <EmptyState
+          title="No files yet"
+          description="File upload functionality coming soon."
+          variant="dashed"
+        />
       )}
     </div>
   );

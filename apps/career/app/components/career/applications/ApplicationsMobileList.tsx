@@ -40,7 +40,7 @@ export function ApplicationsMobileList({ applications }: ApplicationsMobileListP
                   <Badge variant="outline" className={getStatusColor(application.status)}>
                     {formatStatusText(application.status)}
                   </Badge>
-                  <ChevronRightIcon className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+                  <ChevronRightIcon className="size-5 text-muted-foreground" aria-hidden="true" />
                 </div>
               </div>
             </Link>

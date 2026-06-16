@@ -20,7 +20,7 @@ export function ApplicationOverviewTab({ application, company }: OverviewTabProp
     <div className="space-y-2">
       <Card>
         <CardHeader>
-          <CardTitle>Application Details</CardTitle>
+          <CardTitle className="heading-4">Application Details</CardTitle>
           {application.job_posting_url && (
             <a
               href={application.job_posting_url}
@@ -70,7 +70,7 @@ export function ApplicationOverviewTab({ application, company }: OverviewTabProp
 
       <Card>
         <CardHeader>
-          <CardTitle>Company Information</CardTitle>
+          <CardTitle className="heading-4">Company Information</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -129,7 +129,7 @@ export function ApplicationOverviewTab({ application, company }: OverviewTabProp
       <Card>
         <CardHeader>
           <div className="w-full flex items-center justify-between">
-            <CardTitle>Recruiter Information</CardTitle>
+            <CardTitle className="heading-4">Recruiter Information</CardTitle>
             <Button
               variant="outline"
               size="sm"
