@@ -1,12 +1,12 @@
 import type { CareerSocialLinksRecord } from '@hominem/db';
 import { CareerRepository, db } from '@hominem/db';
 import { Button } from '@hominem/ui/button';
+import { Card, CardContent } from '@hominem/ui/card';
+import { Input } from '@hominem/ui/input';
 import { Github, Globe, Linkedin, SaveIcon, Twitter } from 'lucide-react';
 import { useEffect } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { useFetcher } from 'react-router';
-
-import { cn } from '~/lib/utils';
 
 import { FormErrorAlert } from '../components/FormErrorAlert';
 import { useCareerEditorSubmission } from '../hooks/useCareerEditorSubmission';
@@ -38,14 +38,11 @@ function SocialLinksEditorSection({
     register,
     handleSubmit,
     reset,
-    watch,
     formState: { isDirty, errors },
   } = useForm<SocialLinksFormValues>({
     defaultValues: initialSocialLinks || {},
     mode: 'onChange',
   });
-
-  const watchedValues = watch();
 
   useEffect(() => {
     reset(initialSocialLinks || {});
@@ -53,32 +50,20 @@ function SocialLinksEditorSection({
 
   const { submissionError, clearSubmissionError } = useCareerEditorSubmission({
     fetcher,
-    errorMessage: 'We couldn’t save your social links. Try again.',
+    errorMessage: "We couldn't save your social links. Try again.",
   });
 
   const onSubmit: SubmitHandler<SocialLinksFormValues> = (formData) => {
-    if (!isDirty) {
-      return;
-    }
-
-    // Clean up the data - only send essential fields
-    const socialLinksToSave = {
-      id: formData.id,
-      github: formData.github,
-      linkedin: formData.linkedin,
-      twitter: formData.twitter,
-      website: formData.website,
-      portfolio_id,
-    };
+    if (!isDirty) return;
 
     const formData2 = new FormData();
-    formData2.append('socialLinksData', JSON.stringify([socialLinksToSave]));
+    formData2.append(
+      'socialLinksData',
+      JSON.stringify([{ id: formData.id, github: formData.github, linkedin: formData.linkedin, twitter: formData.twitter, website: formData.website, portfolio_id }]),
+    );
 
     clearSubmissionError();
-    fetcher.submit(formData2, {
-      method: 'POST',
-      action: '/social',
-    });
+    fetcher.submit(formData2, { method: 'POST', action: '/social' });
   };
 
   const isSaving = fetcher.state === 'submitting';
@@ -100,162 +85,117 @@ function SocialLinksEditorSection({
         </Button>
       </div>
 
-      {/* Form */}
-      <form
-        id="social-form"
-        onSubmit={handleSubmit(onSubmit)}
-        className="space-y-2 md:space-y-6 card"
-      >
-        <FormErrorAlert
-          title="Social links weren’t saved"
-          message={submissionError}
-          className="mb-4"
-        />
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* GitHub */}
-          <div className="flex flex-col gap-2">
-            <label htmlFor="github" className="label flex items-center gap-2">
-              <Github className="w-4 h-4 text-muted-foreground" />
-              GitHub Username
-            </label>
-            <div className="flex">
-              <div className="inline-flex items-center px-3 text-sm text-muted-foreground border border-r-0 border-border rounded-l-md">
-                github.com/
+      <Card>
+        <CardContent className="p-6">
+          <form id="social-form" onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
+            <FormErrorAlert title="Social links weren't saved" message={submissionError} />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              {/* GitHub */}
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="github" className="body-3 font-medium text-text-primary flex items-center gap-2">
+                  <Github className="size-4 text-muted-foreground" />
+                  GitHub
+                </label>
+                <div className="flex">
+                  <span className="inline-flex items-center shrink-0 px-3 text-sm text-muted-foreground border border-r-0 border-input rounded-l-md bg-muted/50">
+                    github.com/
+                  </span>
+                  <Input
+                    id="github"
+                    type="text"
+                    placeholder="username"
+                    className="rounded-l-none"
+                    aria-invalid={errors.github ? true : undefined}
+                    {...register('github', {
+                      pattern: {
+                        value: /^[a-zA-Z0-9]([a-zA-Z0-9-])*[a-zA-Z0-9]$/,
+                        message: 'Enter a valid GitHub username',
+                      },
+                    })}
+                  />
+                </div>
+                {errors.github && <p className="body-4 text-destructive">{errors.github.message}</p>}
               </div>
-              <input
-                id="github"
-                type="text"
-                placeholder="octocat"
-                className={cn('input rounded-l-none border-l-0', {
-                  'input-error': errors.github,
-                })}
-                {...register('github', {
-                  pattern: {
-                    value: /^[a-zA-Z0-9]([a-zA-Z0-9-])*[a-zA-Z0-9]$/,
-                    message: 'Please enter a valid GitHub username',
-                  },
-                })}
-              />
-            </div>
-            {errors.github && <p className="error-message">{errors.github.message}</p>}
-          </div>
 
-          {/* LinkedIn */}
-          <div className="flex flex-col gap-2">
-            <label htmlFor="linkedin" className="label flex items-center gap-2">
-              <Linkedin className="w-4 h-4 text-muted-foreground" />
-              LinkedIn Username
-            </label>
-            <div className="flex">
-              <div className="inline-flex items-center px-3 text-sm text-muted-foreground border border-r-0 border-border rounded-l-md">
-                linkedin.com/in/
+              {/* LinkedIn */}
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="linkedin" className="body-3 font-medium text-text-primary flex items-center gap-2">
+                  <Linkedin className="size-4 text-muted-foreground" />
+                  LinkedIn
+                </label>
+                <div className="flex">
+                  <span className="inline-flex items-center shrink-0 px-3 text-sm text-muted-foreground border border-r-0 border-input rounded-l-md bg-muted/50">
+                    linkedin.com/in/
+                  </span>
+                  <Input
+                    id="linkedin"
+                    type="text"
+                    placeholder="username"
+                    className="rounded-l-none"
+                    aria-invalid={errors.linkedin ? true : undefined}
+                    {...register('linkedin', {
+                      pattern: {
+                        value: /^[a-zA-Z0-9-]+$/,
+                        message: 'Enter a valid LinkedIn username',
+                      },
+                    })}
+                  />
+                </div>
+                {errors.linkedin && <p className="body-4 text-destructive">{errors.linkedin.message}</p>}
               </div>
-              <input
-                id="linkedin"
-                type="text"
-                placeholder="johnsmith"
-                className={cn(
-                  'input rounded-l-none border-l-0',
-                  errors.linkedin ? 'input-error' : '',
-                )}
-                {...register('linkedin', {
-                  pattern: {
-                    value: /^[a-zA-Z0-9-]+$/,
-                    message: 'Please enter a valid LinkedIn username',
-                  },
-                })}
-              />
-            </div>
-            {errors.linkedin && <p className="error-message">{errors.linkedin.message}</p>}
-          </div>
 
-          {/* Twitter */}
-          <div className="flex flex-col gap-2">
-            <label htmlFor="twitter" className="label flex items-center gap-2">
-              <Twitter className="w-4 h-4 text-muted-foreground" />
-              Twitter Username
-            </label>
-            <div className="flex">
-              <div className="inline-flex items-center px-3 text-sm text-muted-foreground border border-r-0 border-border rounded-l-md">
-                twitter.com/
+              {/* Twitter */}
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="twitter" className="body-3 font-medium text-text-primary flex items-center gap-2">
+                  <Twitter className="size-4 text-muted-foreground" />
+                  Twitter / X
+                </label>
+                <div className="flex">
+                  <span className="inline-flex items-center shrink-0 px-3 text-sm text-muted-foreground border border-r-0 border-input rounded-l-md bg-muted/50">
+                    x.com/
+                  </span>
+                  <Input
+                    id="twitter"
+                    type="text"
+                    placeholder="username"
+                    className="rounded-l-none"
+                    aria-invalid={errors.twitter ? true : undefined}
+                    {...register('twitter', {
+                      pattern: {
+                        value: /^[a-zA-Z0-9_]+$/,
+                        message: 'Enter a valid Twitter username',
+                      },
+                    })}
+                  />
+                </div>
+                {errors.twitter && <p className="body-4 text-destructive">{errors.twitter.message}</p>}
               </div>
-              <input
-                id="twitter"
-                type="text"
-                placeholder="username"
-                className={cn(
-                  'input rounded-l-none border-l-0',
-                  errors.twitter ? 'input-error' : '',
-                )}
-                {...register('twitter', {
-                  pattern: {
-                    value: /^[a-zA-Z0-9_]+$/,
-                    message: 'Please enter a valid Twitter username',
-                  },
-                })}
-              />
-            </div>
-            {errors.twitter && <p className="error-message">{errors.twitter.message}</p>}
-          </div>
 
-          {/* Website */}
-          <div className="flex flex-col gap-2">
-            <label htmlFor="website" className="label flex items-center gap-2">
-              <Globe className="w-4 h-4 text-muted-foreground" />
-              Website URL
-            </label>
-            <input
-              id="website"
-              type="url"
-              placeholder="https://yourwebsite.com"
-              className={cn('input', errors.website ? 'input-error' : '')}
-              {...register('website', {
-                pattern: {
-                  value: /^https?:\/\/.+\..+/,
-                  message: 'Please enter a valid URL (including http:// or https://)',
-                },
-              })}
-            />
-            {errors.website && <p className="error-message">{errors.website.message}</p>}
-          </div>
-        </div>
-
-        {/* Preview Section */}
-        {(watchedValues.github ||
-          watchedValues.linkedin ||
-          watchedValues.twitter ||
-          watchedValues.website) && (
-          <div className="mt-8 p-6 rounded-lg border border-border">
-            <h3 className="text-lg font-medium text-foreground mb-4">Preview</h3>
-            <div className="flex flex-wrap gap-3">
-              {watchedValues.github && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-card rounded-lg border border-border">
-                  <Github className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">{watchedValues.github}</span>
-                </div>
-              )}
-              {watchedValues.linkedin && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-card rounded-lg border border-border">
-                  <Linkedin className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">{watchedValues.linkedin}</span>
-                </div>
-              )}
-              {watchedValues.twitter && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-card rounded-lg border border-border">
-                  <Twitter className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">{watchedValues.twitter}</span>
-                </div>
-              )}
-              {watchedValues.website && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-card rounded-lg border border-border">
-                  <Globe className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">{watchedValues.website}</span>
-                </div>
-              )}
+              {/* Website */}
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="website" className="body-3 font-medium text-text-primary flex items-center gap-2">
+                  <Globe className="size-4 text-muted-foreground" />
+                  Website
+                </label>
+                <Input
+                  id="website"
+                  type="url"
+                  placeholder="https://yoursite.com"
+                  aria-invalid={errors.website ? true : undefined}
+                  {...register('website', {
+                    pattern: {
+                      value: /^https?:\/\/.+\..+/,
+                      message: 'Enter a valid URL starting with https://',
+                    },
+                  })}
+                />
+                {errors.website && <p className="body-4 text-destructive">{errors.website.message}</p>}
+              </div>
             </div>
-          </div>
-        )}
-      </form>
+          </form>
+        </CardContent>
+      </Card>
     </section>
   );
 }
@@ -281,7 +221,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     Array<SocialLinksFormValues & { portfolio_id: string }>
   >(formData, 'socialLinksData');
   if ('success' in socialLinksDataResult && !socialLinksDataResult.success) {
-    return { success: false, error: 'Your social links couldn’t be read. Refresh and try again.' };
+    return { success: false, error: "Your social links couldn't be read. Refresh and try again." };
   }
 
   const socialLinksData = socialLinksDataResult as Array<
@@ -305,7 +245,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     return { success: true, message: 'Social links saved successfully' };
   } catch (error) {
     console.error('Failed to save social links:', error);
-    return { success: false, error: 'We couldn’t save your social links. Try again.' };
+    return { success: false, error: "We couldn't save your social links. Try again." };
   }
 }
 
