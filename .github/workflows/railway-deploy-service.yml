@@ -43,10 +43,40 @@ jobs:
         run: npm install -g @railway/cli@4.58.0
 
       - name: validate-env
-        run: test -n "$SERVICE" && test -n "$RAILWAY_TOKEN"
+        run: |
+          test -n "$SERVICE" || {
+            echo "Missing Railway service target secret for '${{ inputs.service_name }}'."
+            exit 1
+          }
+          test -n "$RAILWAY_TOKEN" || {
+            echo "Missing RAILWAY_TOKEN secret."
+            exit 1
+          }
 
       - name: stage-railway-config
         if: inputs.config_path != ''
         run: cp "${{ inputs.config_path }}" railway.json
 
-      - run: railway up --ci --service "$SERVICE"
+      - name: deploy-to-railway
+        run: |
+          echo "Deploying '${{ inputs.service_name }}' with Railway service '$SERVICE'"
+          if [ -f railway.json ]; then
+            echo "Using railway.json from $(pwd)/railway.json"
+          else
+            echo "No railway.json staged; Railway will use the repository root defaults."
+          fi
+
+          set +e
+          output=$(railway up --ci --service "$SERVICE" 2>&1)
+          status=$?
+          set -e
+
+          printf '%s\n' "$output"
+
+          if [ "$status" -ne 0 ]; then
+            log_url=$(printf '%s\n' "$output" | grep -Eo 'https://railway\.com/project/[^[:space:]]+' | tail -n 1)
+            if [ -n "$log_url" ]; then
+              echo "Railway build logs: $log_url"
+            fi
+            exit "$status"
+          fi
