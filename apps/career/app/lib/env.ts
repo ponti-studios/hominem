@@ -13,14 +13,11 @@ const serverEnvSchema = z.object({
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
 
-let _serverEnv: ServerEnv | null = null;
+const validatedServerEnv = serverEnvSchema.parse(process.env);
 
 export function serverEnv(): ServerEnv {
   if (typeof window !== 'undefined') {
     throw new Error('serverEnv() can only be called on the server');
   }
-  if (!_serverEnv) {
-    _serverEnv = serverEnvSchema.parse(process.env);
-  }
-  return _serverEnv;
+  return validatedServerEnv;
 }
