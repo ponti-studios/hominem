@@ -250,6 +250,8 @@ export default ({ config }: ConfigContext) => {
           'Omiro may use your location only when you choose media that includes location details, so it can preserve context for your notes.',
         NSMicrophoneUsageDescription:
           'Allow Omiro to access your microphone to record voice notes on your device.',
+        NSSpeechRecognitionUsageDescription:
+          'Allow Omiro to transcribe recorded voice notes into text on your device.',
       },
     },
     extra: {

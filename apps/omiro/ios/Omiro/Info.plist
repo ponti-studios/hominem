@@ -67,6 +67,8 @@
     <string>Omiro may use your location only when you choose media that includes location details, so it can preserve context for your notes.</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>Allow Omiro to access your microphone to record voice notes on your device.</string>
+    <key>NSSpeechRecognitionUsageDescription</key>
+    <string>Allow Omiro to transcribe recorded voice notes into text on your device.</string>
     <key>NSPhotoLibraryAddUsageDescription</key>
     <string>Allow Omiro to save photos to your library.</string>
     <key>NSPhotoLibraryUsageDescription</key>

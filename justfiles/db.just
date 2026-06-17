@@ -1,4 +1,7 @@
+ROOT_DIR := justfile_directory()
 MIGRATIONS_DIR := ROOT_DIR / "packages" / "db" / "migrations"
+LOCAL_DATABASE_URL := "postgresql://postgres:postgres@127.0.0.1:5434/hominem"
+LOCAL_TEST_DATABASE_URL := "postgresql://postgres:postgres@127.0.0.1:4433/app-test"
 
 goose-install goose-version="v3.27.0":
     #!/usr/bin/env bash
