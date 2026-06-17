@@ -1,8 +1,8 @@
-const { getAppVariantConfig } = require('./config/appVariant')
-const variantConfig = getAppVariantConfig()
+const usesDevelopmentClient =
+  (process.env.OMIRO_DEV_CLIENT ?? ((process.env.APP_ENV ?? 'development') === 'development').toString()) !== 'false'
 
 module.exports = {
-  dependencies: variantConfig.usesDevClient
+  dependencies: usesDevelopmentClient
     ? {}
     : {
         'expo-dev-client': {

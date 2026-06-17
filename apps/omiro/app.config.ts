@@ -1,15 +1,22 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
-import appVariantModule from './config/appVariant.js';
-import type { AppVariant, VariantConfig } from './config/appVariantConfig';
-
-const { getAppVariant, getAppVariantConfig } = appVariantModule as {
-  getAppVariant(rawVariant?: string): AppVariant;
-  getAppVariantConfig(rawVariant?: string): VariantConfig;
-};
 
 const EXPO_OWNER = 'pontistudios';
 const EXPO_PROJECT_ID = '4dfac82b-644f-4ff3-be42-e8f941287aa1';
 const APPLE_TEAM_ID = '3QHJ2KN8AL';
+const DEFAULT_RUNTIME_VERSION = 'ios-r1';
+const RELEASE_CHANNELS = ['staging', 'production'] as const;
+const APP_ENVIRONMENTS = Object.freeze({
+  development: Object.freeze({
+    bundleIdentifier: 'com.pontistudios.hakumi.dev',
+    displayName: 'Omiro Dev',
+    scheme: 'hakumi-dev',
+  }),
+  production: Object.freeze({
+    bundleIdentifier: 'com.pontistudios.hakumi',
+    displayName: 'Omiro',
+    scheme: 'hakumi',
+  }),
+} as const);
 
 const shellTheme = {
   mobile: {
@@ -20,8 +27,12 @@ const shellTheme = {
 
 const ROOT_ASSETS_DIR = './assets';
 
-function getBrandAssetPaths(variant: AppVariant): { icon: string; splash: string } {
-  const icon = `${ROOT_ASSETS_DIR}/${VARIANT_ICON_NAMES[variant]}`;
+type AppEnvironment = keyof typeof APP_ENVIRONMENTS;
+type AppEnvironmentConfig = (typeof APP_ENVIRONMENTS)[AppEnvironment];
+type ReleaseChannel = (typeof RELEASE_CHANNELS)[number];
+
+function getBrandAssetPaths(appEnvironment: AppEnvironment): { icon: string; splash: string } {
+  const icon = `${ROOT_ASSETS_DIR}/${ENVIRONMENT_ICON_NAMES[appEnvironment]}`;
   return {
     icon,
     splash: `${ROOT_ASSETS_DIR}/logo.splash-screen.png`,
@@ -49,8 +60,58 @@ function getAppleTeamId() {
   return process.env.EXPO_APPLE_TEAM_ID ?? APPLE_TEAM_ID;
 }
 
-function getUpdatesConfig(variantConfig: VariantConfig): ExpoConfig['updates'] {
-  if (variantConfig.usesDevClient || variantConfig.updatesChannel === null) {
+function getAppEnvironment(rawEnvironment = process.env.APP_ENV ?? 'development'): AppEnvironment {
+  if (Object.prototype.hasOwnProperty.call(APP_ENVIRONMENTS, rawEnvironment)) {
+    return rawEnvironment as AppEnvironment;
+  }
+
+  throw new Error(`Unsupported APP_ENV: ${rawEnvironment}`);
+}
+
+function getAppEnvironmentConfig(
+  rawEnvironment = process.env.APP_ENV ?? 'development',
+): AppEnvironmentConfig {
+  return APP_ENVIRONMENTS[getAppEnvironment(rawEnvironment)];
+}
+
+function getReleaseChannel(rawChannel = process.env.OMIRO_RELEASE_CHANNEL): ReleaseChannel | null {
+  if (!rawChannel) {
+    return null;
+  }
+
+  if (RELEASE_CHANNELS.includes(rawChannel as ReleaseChannel)) {
+    return rawChannel as ReleaseChannel;
+  }
+
+  throw new Error(`Unsupported OMIRO_RELEASE_CHANNEL: ${rawChannel}`);
+}
+
+function usesDevelopmentClient(appEnvironment: AppEnvironment) {
+  return appEnvironment === 'development' && process.env.OMIRO_DEV_CLIENT !== 'false';
+}
+
+function isE2ETestingEnabled() {
+  return process.env.EXPO_PUBLIC_E2E_TESTING === 'true';
+}
+
+function getRuntimeVersion(appEnvironment: AppEnvironment): string | null {
+  if (appEnvironment !== 'production') {
+    return null;
+  }
+
+  const runtimeVersion = process.env.EXPO_RUNTIME_VERSION?.trim();
+  if (runtimeVersion) {
+    return runtimeVersion;
+  }
+
+  return DEFAULT_RUNTIME_VERSION;
+}
+
+function getUpdatesConfig(
+  appEnvironment: AppEnvironment,
+  releaseChannel: ReleaseChannel | null,
+): ExpoConfig['updates'] {
+  if (appEnvironment !== 'production') {
     return {
       enabled: false,
       checkAutomatically: 'NEVER',
@@ -58,22 +119,30 @@ function getUpdatesConfig(variantConfig: VariantConfig): ExpoConfig['updates'] {
     };
   }
 
+  if (releaseChannel === null) {
+    throw new Error('OMIRO_RELEASE_CHANNEL is required when APP_ENV=production.');
+  }
+
   return {
     url: `https://u.expo.dev/${EXPO_PROJECT_ID}`,
     requestHeaders: {
-      'expo-channel-name': variantConfig.updatesChannel,
+      'expo-channel-name': releaseChannel,
     },
   };
 }
 
-function allowsLocalNetworking(appVariant: AppVariant) {
-  return appVariant !== 'production';
+function allowsLocalNetworking(appEnvironment: AppEnvironment) {
+  return appEnvironment === 'development';
 }
 
 export default ({ config }: ConfigContext) => {
-  const appVariant = getAppVariant();
-  const variantConfig = getAppVariantConfig(appVariant);
-  const brandAssets = getBrandAssetPaths(appVariant);
+  const appEnvironment = getAppEnvironment();
+  const appEnvironmentConfig = getAppEnvironmentConfig(appEnvironment);
+  const brandAssets = getBrandAssetPaths(appEnvironment);
+  const releaseChannel = getReleaseChannel();
+  const runtimeVersion = getRuntimeVersion(appEnvironment);
+  const hasDevelopmentClient = usesDevelopmentClient(appEnvironment);
+  const e2eTesting = isE2ETestingEnabled();
   const plugins: ExpoConfig['plugins'] = [
     'expo-router',
     [
@@ -84,7 +153,7 @@ export default ({ config }: ConfigContext) => {
           infoPlist: {
             NSAppTransportSecurity: {
               NSAllowsArbitraryLoads: false,
-              NSAllowsLocalNetworking: allowsLocalNetworking(appVariant),
+              NSAllowsLocalNetworking: allowsLocalNetworking(appEnvironment),
             },
           },
         },
@@ -133,12 +202,12 @@ export default ({ config }: ConfigContext) => {
     ],
   ];
 
-  if (appVariant !== 'e2e') {
+  if (!e2eTesting) {
     plugins.push('./plugins/with-widget-bundle-update');
     plugins.push('@bacons/apple-targets');
   }
 
-  if (variantConfig.usesDevClient) {
+  if (hasDevelopmentClient) {
     plugins.splice(1, 0, [
       'expo-dev-client',
       {
@@ -151,10 +220,10 @@ export default ({ config }: ConfigContext) => {
 
   return {
     ...config,
-    name: variantConfig.displayName,
+    name: appEnvironmentConfig.displayName,
     slug: 'hakumi',
     version: '1.0.0',
-    scheme: variantConfig.scheme,
+    scheme: appEnvironmentConfig.scheme,
     owner: EXPO_OWNER,
     platforms: ['ios'],
     orientation: 'portrait',
@@ -169,11 +238,11 @@ export default ({ config }: ConfigContext) => {
     ios: {
       appleTeamId: getAppleTeamId(),
       icon: brandAssets.icon,
-      bundleIdentifier: variantConfig.bundleIdentifier,
+      bundleIdentifier: appEnvironmentConfig.bundleIdentifier,
       supportsTablet: true,
       entitlements: {
         'com.apple.developer.siri': true,
-        'keychain-access-groups': [`$(AppIdentifierPrefix)${variantConfig.bundleIdentifier}`],
+        'keychain-access-groups': [`$(AppIdentifierPrefix)${appEnvironmentConfig.bundleIdentifier}`],
       },
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
@@ -184,23 +253,22 @@ export default ({ config }: ConfigContext) => {
       },
     },
     extra: {
-      appVariant,
-      appScheme: variantConfig.scheme,
-      isDevClient: variantConfig.usesDevClient,
+      appEnvironment,
+      appScheme: appEnvironmentConfig.scheme,
+      e2eTesting,
+      isDevClient: hasDevelopmentClient,
+      ...(releaseChannel ? { releaseChannel } : {}),
       ...extraConfig,
       eas: {
         projectId: EXPO_PROJECT_ID,
       },
     },
-    runtimeVersion: {
-      policy: 'fingerprint',
-    },
-    updates: getUpdatesConfig(variantConfig),
+    ...(runtimeVersion ? { runtimeVersion } : {}),
+    updates: getUpdatesConfig(appEnvironment, releaseChannel),
   };
 };
-const VARIANT_ICON_NAMES = Object.freeze({
-  dev: 'icon.dev.png',
-  e2e: 'icon.dev.png',
-  preview: 'icon.preview.png',
+
+const ENVIRONMENT_ICON_NAMES = Object.freeze({
+  development: 'icon.dev.png',
   production: 'icon.png',
-} as const satisfies Record<AppVariant, string>);
+} as const satisfies Record<AppEnvironment, string>);

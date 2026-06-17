@@ -4,9 +4,11 @@ import * as Device from 'expo-device';
 
 const extra = (Constants.expoConfig?.extra ?? {}) as {
   apiBaseUrl?: string;
+  appEnvironment?: string;
+  e2eTesting?: boolean;
   mobilePasskeyEnabled?: string;
-  appVariant?: string;
   appScheme?: string;
+  releaseChannel?: string | null;
 };
 
 const hostUri = Constants.expoConfig?.hostUri ?? Constants.manifest2?.extra?.expoClient?.hostUri;
@@ -46,24 +48,27 @@ const configuredApiBaseUrl = toDeviceReachableApiBaseUrl(
 );
 const fallbackApiBaseUrl =
   localHost && Device.isDevice ? `http://${localHost}:4040` : 'http://localhost:4040';
-const appVariant = extra.appVariant ?? process.env.APP_VARIANT ?? 'dev';
-export const E2E_TESTING = appVariant === 'e2e';
-function isReleaseAppVariant(variant: string) {
-  return variant === 'preview' || variant === 'production';
+const appEnvironment = extra.appEnvironment ?? process.env.APP_ENV ?? 'development';
+const releaseChannel = extra.releaseChannel ?? process.env.OMIRO_RELEASE_CHANNEL ?? null;
+export const E2E_TESTING =
+  extra.e2eTesting === true || process.env.EXPO_PUBLIC_E2E_TESTING === 'true';
+function isReleaseAppEnvironment(environment: string) {
+  return environment === 'production';
 }
 
-const isReleaseRuntime = isReleaseAppVariant(appVariant);
+const isReleaseRuntime = isReleaseAppEnvironment(appEnvironment);
 
 if (!configuredApiBaseUrl && isReleaseRuntime) {
   throw new Error(
-    `Missing API base URL. Set EXPO_PUBLIC_API_BASE_URL in mobile runtime configuration for ${appVariant}.`,
+    `Missing API base URL. Set EXPO_PUBLIC_API_BASE_URL for the ${releaseChannel ?? 'production'} runtime.`,
   );
 }
 
 export const API_BASE_URL = configuredApiBaseUrl || fallbackApiBaseUrl;
-export const APP_VARIANT = appVariant;
+export const APP_ENV = appEnvironment;
 export const APP_SCHEME = extra.appScheme || 'hakumi';
 export const APP_NAME = BRAND.appName;
+export const RELEASE_CHANNEL = releaseChannel;
 
 const toBooleanFlag = (value: string | undefined) => value === 'true';
 

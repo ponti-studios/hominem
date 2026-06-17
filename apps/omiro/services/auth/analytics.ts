@@ -1,6 +1,6 @@
 import { normalizeEmail } from '@hominem/auth/shared/validation';
 
-import { API_BASE_URL, APP_VARIANT } from '~/constants';
+import { API_BASE_URL, APP_ENV, RELEASE_CHANNEL } from '~/constants';
 import { posthog } from '~/services/posthog';
 
 type AuthAnalyticsPhase =
@@ -56,7 +56,7 @@ function getEmailDomain(email?: string | null) {
 function buildAuthAnalyticsProperties(context: AuthAnalyticsContext) {
   return {
     apiBaseOrigin: getApiBaseOrigin(),
-    appVariant: APP_VARIANT,
+    appEnvironment: APP_ENV,
     durationMs: context.durationMs ?? null,
     emailDomain: getEmailDomain(context.email),
     errorMessage: context.error?.message ?? null,
@@ -65,6 +65,7 @@ function buildAuthAnalyticsProperties(context: AuthAnalyticsContext) {
     isTimeout:
       context.error?.name === 'AbortError' || context.error?.message.includes('timed out') === true,
     phase: context.phase,
+    releaseChannel: RELEASE_CHANNEL,
     source: context.source ?? 'auth_provider',
     statusCode: context.statusCode ?? null,
   };

@@ -161,7 +161,6 @@ export function ChatMessageList({
       contentContainerStyle={messagesContainerStyle}
       data={displayMessages}
       keyExtractor={keyExtractor}
-      inverted={false}
       onScroll={handleScroll}
       onScrollBeginDrag={() => setActiveActionMessageId(null)}
       renderItem={renderItem}
