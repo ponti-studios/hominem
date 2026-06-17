@@ -10,7 +10,7 @@
     "lint": "pnpm dlx oxlint ./app ./tests",
     "format": "pnpm dlx oxfmt ./app ./tests",
     "preview": "pnpm build && vite preview",
-    "start": "react-router-serve ./build/server/index.js",
+    "start": "react-router-serve ./build/server/index.js --port=${PORT:-3000}",
     "test": "vitest run --passWithNoTests",
     "test:ui": "vitest run --ui",
     "test:coverage": "vitest run --coverage",

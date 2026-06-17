@@ -62,7 +62,7 @@ function createStore<T>(initialValue: T) {
   };
 }
 
-function createPlaybackController() {
+export function createPlaybackController() {
   const store = createStore<PlaybackSnapshot>({
     audioUri: null,
     duration: 0,
@@ -326,7 +326,6 @@ function createRecordingController() {
   };
 }
 
-const voiceResponsePlayback = createPlaybackController();
 const recording = createRecordingController();
 
 export function getRecordingSnapshot() {

@@ -23,15 +23,18 @@ FROM node:26.1.0-alpine AS server
 
 WORKDIR /app
 
-ENV NODE_ENV=production
+ENV NODE_ENV=production \
+    PORT=3000
 
 RUN apk add --no-cache ca-certificates curl && \
     addgroup -g 1001 careeruser && \
     adduser -D -u 1001 -G careeruser -s /sbin/nologin -h /app careeruser
 
-RUN npm install --no-save @react-router/serve@7.14.0
-
-COPY --from=builder --chown=careeruser:careeruser /app/apps/career/build ./apps/career/build
+COPY --from=builder --chown=careeruser:careeruser /app/apps/career/package.json ./package.json
+RUN node -e "const fs = require('fs'); const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8')); pkg.dependencies = Object.fromEntries(Object.entries(pkg.dependencies ?? {}).filter(([, version]) => !String(version).startsWith('workspace:'))); delete pkg.devDependencies; fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');" && \
+    npm install --omit=dev --legacy-peer-deps
+COPY --from=builder --chown=careeruser:careeruser /app/apps/career/package.json ./package.json
+COPY --from=builder --chown=careeruser:careeruser /app/apps/career/build ./build
 
 USER careeruser
 
@@ -40,4 +43,4 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f -s -m 2 http://localhost:${PORT:-3000}/health || exit 1
 
-CMD ["node_modules/.bin/react-router-serve", "apps/career/build/server/index.js"]
+CMD ["node_modules/.bin/react-router-serve", "./build/server/index.js"]

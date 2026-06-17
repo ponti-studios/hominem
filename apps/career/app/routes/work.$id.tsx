@@ -2,6 +2,7 @@ import type {
   CareerWorkExperienceRecord as WorkExperienceRecord,
   UpdateCareerWorkExperienceInput,
 } from '@hominem/db';
+import { CareerRepository, db } from '@hominem/db';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +31,11 @@ import { Controller, useFieldArray, useForm, type SubmitHandler } from 'react-ho
 import { useFetcher, useNavigate } from 'react-router';
 
 import { jsonObject } from '~/lib/db-json';
+import {
+  getWorkExperienceById,
+  updateWorkExperience,
+} from '~/lib/career/queries/base';
+import { getProjectsByWorkExperience } from '~/lib/career/queries/projects';
 import { userContext } from '~/lib/middleware';
 import { cn } from '~/lib/utils';
 import type { WorkExperienceMetadata } from '~/lib/career/queries/career-progression';
@@ -86,9 +92,6 @@ export async function loader({ context, params }: Route.LoaderArgs) {
   }
 
   try {
-    const { getWorkExperienceById } = await import('~/lib/career/queries/base');
-    const { getProjectsByWorkExperience } = await import('~/lib/career/queries/projects');
-
     const workExperience = await getWorkExperienceById(user.id, id);
     if (!workExperience) {
       throw new Response('Work experience not found', { status: 404 });
@@ -124,8 +127,6 @@ export async function action({ context, request, params }: Route.ActionArgs) {
     }
 
     try {
-      const { CareerRepository, db } = await import('@hominem/db');
-
       await CareerRepository.deleteWorkExperience(db, user.id, id, portfolio_id);
 
       return { success: true, operation };
@@ -159,9 +160,6 @@ export async function action({ context, request, params }: Route.ActionArgs) {
   }
 
   try {
-    const { getWorkExperienceById, updateWorkExperience } =
-      await import('~/lib/career/queries/base');
-
     let mergedUpdates = updates;
 
     if (updates.metadata !== undefined) {
