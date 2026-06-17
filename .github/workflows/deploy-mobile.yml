@@ -31,19 +31,23 @@ jobs:
       - name: setup-eas
         run: npm install -g eas-cli@18
 
-      - name: prebuild-production-ios-project
+      - name: prebuild
         working-directory: apps/omiro
         env:
-          APP_VARIANT: production
+          APP_ENV: production
+          OMIRO_RELEASE_CHANNEL: production
+          EXPO_RUNTIME_VERSION: ios-r1
         run: pnpm exec expo prebuild --platform ios --clean --no-install
 
       - name: submit-build
         working-directory: apps/omiro
         env:
-          APP_VARIANT: production
+          APP_ENV: production
+          OMIRO_RELEASE_CHANNEL: production
+          EXPO_RUNTIME_VERSION: ios-r1
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
-          eas build \
+          pnpm exec eas build \
             --platform ios \
             --profile production \
             --auto-submit \

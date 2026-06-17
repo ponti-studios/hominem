@@ -14,7 +14,7 @@
       <string>production</string>
     </dict>
     <key>EXUpdatesRuntimeVersion</key>
-    <string>file:fingerprint</string>
+    <string>ios-r1</string>
     <key>EXUpdatesURL</key>
     <string>https://u.expo.dev/4dfac82b-644f-4ff3-be42-e8f941287aa1</string>
   </dict>
