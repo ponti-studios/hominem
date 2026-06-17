@@ -21,8 +21,8 @@
     "e2e:setup": "tsx scripts/e2e-setup.ts"
   },
   "dependencies": {
-    "@better-auth/kysely-adapter": "^1.5.4",
-    "@better-auth/passkey": "^1.5.4",
+    "@better-auth/kysely-adapter": "^1.6.11",
+    "@better-auth/passkey": "^1.6.11",
     "@hominem/ai": "workspace:*",
     "@hominem/auth": "workspace:*",
     "@hominem/db": "workspace:*",
@@ -33,18 +33,18 @@
     "@hominem/telemetry": "workspace:*",
     "@hominem/utils": "workspace:*",
     "@hono/node-server": "^1.19.11",
-    "@hono/zod-validator": "^0.7.6",
     "@hono/standard-validator": "^0.2.0",
+    "@hono/zod-validator": "^0.7.6",
     "@opentelemetry/api": "^1.8.0",
     "@scalar/hono-api-reference": "^0.10.2",
     "@sentry/node": "^8.54.0",
-    "better-auth": "^1.4.19",
+    "better-auth": "^1.6.11",
     "bullmq": "5.66.4",
     "dotenv": "17.2.3",
     "hono": "4.12.25",
     "hono-openapi": "^1.3.0",
     "pg": "^8.20.0",
-    "resend": "^4.0.1",
+    "resend": "^6.12.4",
     "zod": "4.3.6"
   },
   "devDependencies": {

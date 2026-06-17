@@ -48,9 +48,9 @@
     "lint": "pnpm dlx oxlint ./src"
   },
   "dependencies": {
-    "@better-auth/passkey": "^1.5.4",
+    "@better-auth/passkey": "^1.6.11",
     "@hominem/db": "workspace:*",
-    "better-auth": "^1.4.19"
+    "better-auth": "^1.6.11"
   },
   "devDependencies": {
     "react": "19.2.0",

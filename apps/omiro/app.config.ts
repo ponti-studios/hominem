@@ -100,6 +100,7 @@ export default ({ config }: ConfigContext) => {
       },
     ],
     ['expo-secure-store'],
+    'expo-font',
     'expo-localization',
     'expo-web-browser',
     'expo-asset',
