@@ -1,4 +1,4 @@
-import { ChevronDown, User } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router';
 
@@ -21,13 +21,21 @@ const UNAUTHENTICATED_LINKS = [
   { href: '/onboarding', label: 'Sign up', end: true },
 ] as const;
 
+const AUTHENTICATED_LINKS = [
+  { href: '/applications', label: 'Applications', end: false },
+  { href: '/account', label: 'Account', end: false },
+] as const;
+
 const navLinkClass = (isActive: boolean) =>
   cn(
-    'flex h-14 items-center px-3 text-sm whitespace-nowrap border-b-2 transition-colors',
+    'px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide whitespace-nowrap uppercase transition-colors',
     isActive
-      ? 'border-foreground text-foreground font-medium'
-      : 'border-transparent text-muted-foreground',
+      ? 'bg-foreground text-background'
+      : 'text-muted-foreground hover:text-foreground',
   );
+
+const pillShellClassName =
+  'w-full max-w-6xl flex items-center justify-between rounded-full border border-border bg-card px-4 py-2 shadow-sm';
 
 export default function Navigation() {
   const user = useUser();
@@ -53,149 +61,91 @@ export default function Navigation() {
   const isPortfolioActive = PORTFOLIO_LINKS.some((link) =>
     link.end ? location.pathname === link.href : location.pathname.startsWith(link.href),
   );
-  const isAccountActive = location.pathname.startsWith('/account');
 
-  if (!isAuthenticated) {
-    return (
-      <header className="sticky top-0 z-50 border-b border-border/40 bg-surface/80 backdrop-blur">
-        <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-3 px-4 sm:px-6 lg:px-8">
-          <Link to="/" className="flex shrink-0 items-center text-foreground">
-            <img
-              src="/icons/icon-192x192.png"
-              alt="Career logo"
-              className="h-8 w-auto rounded-md"
-              width="32"
-              height="32"
-            />
-          </Link>
-          <div className="ml-auto flex items-center gap-2">
-            {PUBLIC_LINKS.map((link) => (
-              <NavLink
-                key={link.href}
-                to={link.href}
-                end={link.end}
-                className={({ isActive }) =>
-                  cn(
-                    'px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
-                    isActive ? 'bg-muted text-foreground' : 'text-muted-foreground',
-                  )
-                }
-              >
-                {link.label}
-              </NavLink>
-            ))}
-            {UNAUTHENTICATED_LINKS.map((link) => (
-              <NavLink
-                key={link.href}
-                to={link.href}
-                end={link.end}
-                className={({ isActive }) =>
-                  cn(
-                    'px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
-                    isActive ? 'bg-muted text-foreground' : 'text-muted-foreground',
-                  )
-                }
-              >
-                {link.label}
-              </NavLink>
-            ))}
-          </div>
-        </div>
-      </header>
-    );
-  }
+  const trailingLinks = isAuthenticated
+    ? AUTHENTICATED_LINKS
+    : [...PUBLIC_LINKS, ...UNAUTHENTICATED_LINKS];
 
   return (
-    <header className="sticky top-0 z-50 bg-surface border-b border-border/40">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-14 items-stretch">
-          {/* Logo */}
-          <Link to="/" className="mr-2 flex shrink-0 items-center pr-4 text-foreground">
-            <img
-              src="/icons/icon-192x192.png"
-              alt="Career logo"
-              className="h-6 w-auto rounded-md"
-              width="32"
-              height="32"
-            />
-          </Link>
+    <header className="pointer-events-none fixed inset-x-0 top-5 z-50 flex justify-center px-4">
+      <div className={cn(pillShellClassName, 'pointer-events-auto')}>
+        <Link to="/" className="flex shrink-0 items-center px-2 text-sm font-semibold tracking-tight text-foreground">
+          Career
+        </Link>
 
-          {/* Desktop: portfolio links inline */}
-          <nav className="hidden sm:flex items-stretch" aria-label="Portfolio">
-            {PORTFOLIO_LINKS.map((link) => (
-              <NavLink
-                key={link.href}
-                to={link.href}
-                end={link.end}
-                className={({ isActive }) => navLinkClass(isActive)}
-              >
-                {link.label}
-              </NavLink>
-            ))}
-          </nav>
-
-          {/* Mobile: Portfolio dropdown */}
-          <div className="sm:hidden flex items-center" ref={dropdownRef}>
-            <button
-              type="button"
-              onClick={() => setPortfolioOpen((prev) => !prev)}
-              className={cn(
-                'flex items-center gap-1 px-3 py-1.5 text-sm rounded-md transition-colors font-medium',
-                isPortfolioActive ? 'text-foreground bg-muted' : 'text-muted-foreground',
-              )}
-            >
-              Portfolio
-              <ChevronDown
-                className={cn('h-3.5 w-3.5 transition-transform', portfolioOpen && 'rotate-180')}
-              />
-            </button>
-
-            {portfolioOpen && (
-              <div className="absolute left-4 top-14 w-48 rounded-lg border border-border bg-background shadow-lg py-1 z-50">
+        <div className="flex items-center gap-1">
+          {isAuthenticated ? (
+            <>
+              <nav className="hidden items-center gap-1 sm:flex" aria-label="Portfolio">
                 {PORTFOLIO_LINKS.map((link) => (
                   <NavLink
                     key={link.href}
                     to={link.href}
                     end={link.end}
-                    className={({ isActive }) =>
-                      cn(
-                        'flex items-center px-3 py-2 text-sm transition-colors',
-                        isActive ? 'text-foreground font-medium bg-muted' : 'text-muted-foreground',
-                      )
-                    }
+                    className={({ isActive }) => navLinkClass(isActive)}
                   >
-                    {link.fullLabel}
+                    {link.label}
                   </NavLink>
                 ))}
+              </nav>
+
+              <div className="relative sm:hidden" ref={dropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setPortfolioOpen((prev) => !prev)}
+                  className={cn(
+                    'px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide uppercase transition-colors',
+                    isPortfolioActive
+                      ? 'bg-foreground text-background'
+                      : 'text-muted-foreground hover:text-foreground',
+                  )}
+                >
+                  <span className="flex items-center gap-1">
+                    Portfolio
+                    <ChevronDown
+                      className={cn(
+                        'h-3.5 w-3.5 transition-transform',
+                        portfolioOpen && 'rotate-180',
+                      )}
+                    />
+                  </span>
+                </button>
+
+                {portfolioOpen && (
+                  <div className="absolute right-0 top-[calc(100%+0.75rem)] w-52 rounded-3xl border border-border bg-card p-2 shadow-sm">
+                    {PORTFOLIO_LINKS.map((link) => (
+                      <NavLink
+                        key={link.href}
+                        to={link.href}
+                        end={link.end}
+                        className={({ isActive }) =>
+                          cn(
+                            'flex items-center rounded-2xl px-3 py-2 text-xs font-semibold tracking-wide uppercase transition-colors',
+                            isActive
+                              ? 'bg-foreground text-background'
+                              : 'text-muted-foreground hover:text-foreground',
+                          )
+                        }
+                      >
+                        {link.fullLabel}
+                      </NavLink>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </>
+          ) : null}
 
-          {/* Divider */}
-          <div className="flex items-center mx-2 shrink-0">
-            <div className="w-px h-4 bg-border" />
-          </div>
-
-          {/* Applications — always visible */}
-          <NavLink to="/applications" className={({ isActive }) => navLinkClass(isActive)}>
-            Applications
-          </NavLink>
-
-          <div className="flex-1" />
-
-          {/* Account icon */}
-          <div className="flex items-center">
-            <Link
-              to="/account"
-              aria-label="Account settings"
-              className={cn(
-                'flex items-center justify-center h-8 w-8 rounded-full transition-colors',
-                isAccountActive ? 'bg-muted text-foreground' : 'text-muted-foreground',
-              )}
+          {trailingLinks.map((link) => (
+            <NavLink
+              key={link.href}
+              to={link.href}
+              end={link.end}
+              className={({ isActive }) => navLinkClass(isActive)}
             >
-              <User className="size-4" />
-            </Link>
-          </div>
+              {link.label}
+            </NavLink>
+          ))}
         </div>
       </div>
     </header>

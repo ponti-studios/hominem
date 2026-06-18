@@ -7,7 +7,6 @@ ROOT_DIR := justfile_directory()
 UI_DIR := ROOT_DIR / "packages" / "platform" / "ui"
 TURBO := "pnpm exec turbo"
 TURBO_DEV := "pnpm exec turbo run dev --ui stream"
-EXPO_APPLE_TEAM_ID := "3QHJ2KN8AL"
 OMIRO_RUNTIME_VERSION := "ios-r1"
 
 import 'justfiles/db.just'

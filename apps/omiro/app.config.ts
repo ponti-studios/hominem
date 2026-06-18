@@ -56,10 +56,6 @@ function getExpoExtraConfig(
   };
 }
 
-function getAppleTeamId() {
-  return process.env.EXPO_APPLE_TEAM_ID ?? APPLE_TEAM_ID;
-}
-
 function getAppEnvironment(rawEnvironment = process.env.APP_ENV ?? 'development'): AppEnvironment {
   if (Object.prototype.hasOwnProperty.call(APP_ENVIRONMENTS, rawEnvironment)) {
     return rawEnvironment as AppEnvironment;
@@ -236,7 +232,7 @@ export default ({ config }: ConfigContext) => {
     },
     newArchEnabled: true,
     ios: {
-      appleTeamId: getAppleTeamId(),
+      appleTeamId: APPLE_TEAM_ID,
       icon: brandAssets.icon,
       bundleIdentifier: appEnvironmentConfig.bundleIdentifier,
       supportsTablet: true,

@@ -1,4 +1,4 @@
-import * as SwitchPrimitive from '@radix-ui/react-switch';
+import * as SwitchPrimitive from '@base-ui-components/react/switch';
 import * as React from 'react';
 
 import { cn } from '../lib/utils';
@@ -7,26 +7,29 @@ function Switch({
   className,
   size = 'default',
   ...props
-}: React.ComponentProps<typeof SwitchPrimitive.Root> & {
+}: React.ComponentProps<typeof SwitchPrimitive.Switch.Root> & {
   size?: 'sm' | 'default';
 }) {
   return (
-    <SwitchPrimitive.Root
+    <SwitchPrimitive.Switch.Root
       data-slot="switch"
       data-size={size}
       className={cn(
-        'void-focus peer group/switch inline-flex shrink-0 items-center rounded-full border border-transparent outline-none disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=unchecked]:bg-input data-[size=default]:h-[1.15rem] data-[size=default]:w-8 data-[size=sm]:h-3.5 data-[size=sm]:w-6',
+        'void-focus peer inline-flex shrink-0 items-center rounded-full border border-transparent p-px outline-none disabled:cursor-not-allowed disabled:opacity-50 data-[checked]:justify-end data-[checked]:bg-primary data-[unchecked]:justify-start data-[unchecked]:bg-input',
+        size === 'default' ? 'h-[1.15rem] w-8' : 'h-3.5 w-6',
         className,
       )}
       {...props}
     >
-      <SwitchPrimitive.Thumb
+      <SwitchPrimitive.Switch.Thumb
         data-slot="switch-thumb"
+        data-size={size}
         className={cn(
-          'bg-background pointer-events-none block rounded-full ring-0 transition-transform group-data-[size=default]/switch:size-4 group-data-[size=sm]/switch:size-3 data-[state=checked]:translate-x-[calc(100%-2px)] data-[state=unchecked]:translate-x-0',
+          'bg-background pointer-events-none block rounded-full ring-0 transition-all',
+          size === 'default' ? 'size-4' : 'size-3',
         )}
       />
-    </SwitchPrimitive.Root>
+    </SwitchPrimitive.Switch.Root>
   );
 }
 

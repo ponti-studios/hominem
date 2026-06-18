@@ -1,4 +1,5 @@
 import { Button } from '@hominem/ui/button';
+import { Input } from '@hominem/ui/input';
 import { Check, Loader2, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useSubmit } from 'react-router';
@@ -17,6 +18,8 @@ interface ValidationState {
   message: string;
   isValid: boolean;
 }
+
+const DEFAULT_SLUG_PLACEHOLDER = 'your-portfolio-name';
 
 export function SlugEditor({ portfolio_id, initialSlug, onSave }: SlugEditorProps) {
   const submit = useSubmit();
@@ -174,62 +177,59 @@ export function SlugEditor({ portfolio_id, initialSlug, onSave }: SlugEditorProp
     return null;
   };
 
-  // Get message styling
-  const getMessageStyling = () => {
-    if (!validation.message) return '';
-
-    if (validation.isChecking) return 'text-primary';
-    if (validation.isAvailable) return 'text-success';
-    return 'text-destructive';
-  };
+  const helperToneClassName = validation.isChecking
+    ? 'text-primary'
+    : validation.isAvailable
+      ? 'text-success'
+      : 'text-destructive';
 
   return (
-    <div className="space-y-2">
-      <label htmlFor="portfolio-slug" className="subheading-4 text-muted-foreground">
-        Portfolio URL
-      </label>
-      <div className="flex items-center space-x-2">
-        <div className="flex items-center flex-1 min-w-0">
-          <div className="inline-flex items-center px-4 h-8 body-3 text-foreground border border-r-0 bg-muted border-border rounded-l-md">
-            craftd.dev/p/
-          </div>
-          <div className="flex-1 relative">
-            <input
+    <div className="space-y-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+        <div className="min-w-0 flex-1 space-y-2">
+          <label htmlFor="portfolio-slug" className="sr-only">
+            Portfolio URL
+          </label>
+          <div className="relative">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 body-4 text-muted-foreground">
+              craftd.dev/p/
+            </span>
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
+              {getValidationStatus()}
+            </span>
+            <Input
               id="portfolio-slug"
               type="text"
               value={slugValue}
               onChange={handleInputChange}
-              className={cn(
-                'input rounded-l-none pr-8 font-mono h-8',
-                !validation.isValid ? 'input-error' : '',
-              )}
-              placeholder="your-portfolio-name"
+              aria-invalid={!validation.isValid}
+              className="h-11 rounded-xl pl-[106px] pr-10 font-mono shadow-none"
+              placeholder={DEFAULT_SLUG_PLACEHOLDER}
             />
-            <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-              {getValidationStatus()}
-            </div>
           </div>
         </div>
 
-        <div className="flex items-center space-x-1">
-          <Button
-            type="button"
-            onClick={handleSave}
-            disabled={!canSave}
-            variant="outline"
-            size="sm"
-            className="h-8 border-success/40 px-2 caption1 text-success"
-          >
-            {isSaving ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : null}
-            Save
-          </Button>
-        </div>
+        <Button
+          type="button"
+          onClick={handleSave}
+          disabled={!canSave}
+          variant="outline"
+          size="default"
+          className="h-11 shrink-0 rounded-full px-4"
+        >
+          {isSaving ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : null}
+          Save
+        </Button>
       </div>
 
-      {/* Validation message */}
-      {validation.message && (
-        <p className={cn('body-4', getMessageStyling())}>{validation.message}</p>
-      )}
+      <p
+        className={cn(
+          'body-4',
+          validation.message ? helperToneClassName : 'text-muted-foreground',
+        )}
+      >
+        {validation.message || 'Lowercase letters, numbers, and hyphens only.'}
+      </p>
     </div>
   );
 }
