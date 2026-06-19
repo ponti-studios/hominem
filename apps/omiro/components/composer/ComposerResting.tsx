@@ -4,7 +4,7 @@ import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ComposerMedia } from '~/components/composer/ComposerMedia';
-import { makeStyles, useThemeColors } from '~/components/theme';
+import { makeStyles, shadowsNative, useThemeColors } from '~/components/theme';
 import t from '~/translations';
 
 interface ComposerRestingProps {
@@ -41,11 +41,13 @@ export function ComposerResting({ onActivate, disabled = false }: ComposerRestin
 
 const useStyles = makeStyles((theme) => ({
   surface: {
+    ...shadowsNative.low,
     alignItems: 'center',
-    backgroundColor: theme.colors['white'],
-    borderColor: theme.colors['border-subtle'],
+    backgroundColor: theme.colors['bg-elevated'],
+    borderColor: theme.colors['border-default'],
     borderRadius: radii.xl,
     borderWidth: 1,
+    elevation: 6,
     flexDirection: 'row',
     gap: spacing[2],
     paddingHorizontal: spacing[2],

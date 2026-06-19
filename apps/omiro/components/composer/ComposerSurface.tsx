@@ -4,7 +4,7 @@ import { View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { useComposerContext } from '~/components/composer/ComposerContext';
-import { makeStyles } from '~/components/theme';
+import { makeStyles, shadowsNative } from '~/components/theme';
 
 interface ComposerSurfaceProps {
   accessory?: React.ReactNode;
@@ -38,26 +38,31 @@ export function ComposerSurface({
   return (
     <Animated.View style={[styles.surface, styles.content, animatedContentStyle]} testID={testID}>
       {accessory ? <View style={styles.accessory}>{accessory}</View> : null}
-      {input}
-      {inlinePanel ? <View style={styles.inlinePanel}>{inlinePanel}</View> : null}
-      <View style={[styles.actionRow, actions ? null : styles.actionRowCompact]}>
+      <View style={styles.inputRow}>
         <View style={styles.leadingActionSlot}>{leadingAction}</View>
-        <View style={styles.actionSlot}>{actions}</View>
+        <View style={styles.inputSlot}>{input}</View>
       </View>
+      {inlinePanel ? <View style={styles.inlinePanel}>{inlinePanel}</View> : null}
+      {actions ? (
+        <View style={styles.actionRow}>
+          <View style={styles.actionSlot}>{actions}</View>
+        </View>
+      ) : null}
     </Animated.View>
   );
 }
 
 const useStyles = makeStyles((theme) => ({
   surface: {
-    backgroundColor: theme.colors['white'],
-    borderColor: theme.colors['border-subtle'],
+    ...shadowsNative.low,
+    backgroundColor: theme.colors['bg-elevated'],
+    borderColor: theme.colors['border-default'],
     borderLeftWidth: 1,
-    borderTopLeftRadius: radii.xl,
-    borderTopRightRadius: radii.xl,
+    borderRadius: radii.xl,
     borderRightWidth: 1,
     borderTopWidth: 1,
-    borderBottomWidth: 0,
+    borderBottomWidth: 1,
+    elevation: 6,
     overflow: 'hidden',
     width: '100%',
   },
@@ -74,24 +79,26 @@ const useStyles = makeStyles((theme) => ({
     marginTop: spacing[1],
     width: '100%',
   },
+  inputRow: {
+    alignItems: 'flex-end',
+    flexDirection: 'row',
+    gap: spacing[2],
+    width: '100%',
+  },
   actionRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 0,
-    minHeight: spacing[5],
+    justifyContent: 'flex-end',
+    minHeight: spacing[6],
     width: '100%',
-  },
-  actionRowCompact: {
-    alignSelf: 'flex-start',
-    justifyContent: 'flex-start',
-    marginTop: 0,
-    minHeight: 0,
-    width: 'auto',
   },
   leadingActionSlot: {
     alignItems: 'center',
     justifyContent: 'center',
+    paddingBottom: spacing[1],
+  },
+  inputSlot: {
+    flex: 1,
   },
   actionSlot: {
     alignItems: 'center',

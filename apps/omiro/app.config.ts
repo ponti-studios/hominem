@@ -145,7 +145,7 @@ export default ({ config }: ConfigContext) => {
       'expo-build-properties',
       {
         ios: {
-          deploymentTarget: '15.1',
+          deploymentTarget: '16.4',
           infoPlist: {
             NSAppTransportSecurity: {
               NSAllowsArbitraryLoads: false,

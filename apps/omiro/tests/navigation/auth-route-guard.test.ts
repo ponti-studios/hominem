@@ -8,7 +8,7 @@ describe('resolveAuthRedirect', () => {
       resolveAuthRedirect({
         authStatus: 'signed_out',
         isSignedIn: false,
-        segments: ['(protected)', '(tabs)'],
+        segments: ['(protected)', 'settings'],
       }),
     ).toBe('/(auth)');
   });
@@ -20,7 +20,7 @@ describe('resolveAuthRedirect', () => {
         isSignedIn: true,
         segments: ['(auth)'],
       }),
-    ).toBe('/(protected)/(tabs)/');
+    ).toBe('/(protected)');
   });
 
   it('does not redirect while booting or signing out', () => {

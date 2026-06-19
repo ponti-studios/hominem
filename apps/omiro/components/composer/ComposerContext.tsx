@@ -12,10 +12,9 @@ import React, {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from 'react';
-import { Alert, Keyboard, LayoutAnimation, type TextInput } from 'react-native';
+import { Alert, Keyboard } from 'react-native';
 
 import { useFileUpload } from '~/services/files/use-file-upload';
 import type { UploadedFile } from '~/types/upload';
@@ -42,8 +41,6 @@ interface ComposerContextValue {
   // Composer state
   seedMessage?: string;
   isKeyboardVisible: boolean;
-  isActive: boolean;
-  activate: (inputRef: React.RefObject<TextInput | null>) => void;
 }
 
 const ComposerContext = createContext<ComposerContextValue | undefined>(undefined);
@@ -62,38 +59,21 @@ function getAttachmentType(uploadedFile: UploadedFile): string {
 export function ComposerProvider({ children, seedMessage }: ComposerProviderProps) {
   const client = useApiClient();
   const [attachments, setAttachments] = useState<ComposerAttachment[]>([]);
-  const [isActive, setIsActive] = useState(!!seedMessage);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(Keyboard.isVisible());
-  const activatingRef = useRef(false);
 
   const { uploadAssets, uploadState, clearErrors } = useFileUpload();
 
-  // Keyboard
   useEffect(() => {
     const show = Keyboard.addListener('keyboardWillShow', () => {
       setIsKeyboardVisible(true);
     });
     const hide = Keyboard.addListener('keyboardWillHide', () => {
       setIsKeyboardVisible(false);
-      if (activatingRef.current) return;
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setIsActive(false);
     });
     return () => {
       show.remove();
       hide.remove();
     };
-  }, []);
-
-  const activate = useCallback((inputRef: React.RefObject<TextInput | null>) => {
-    activatingRef.current = true;
-    setIsActive(true);
-    setTimeout(() => {
-      inputRef.current?.focus();
-      setTimeout(() => {
-        activatingRef.current = false;
-      }, 800);
-    }, 50);
   }, []);
 
   // Attachment operations
@@ -195,8 +175,6 @@ export function ComposerProvider({ children, seedMessage }: ComposerProviderProp
       handleCameraCapture,
       seedMessage,
       isKeyboardVisible,
-      isActive,
-      activate,
     }),
     [
       attachments,
@@ -209,8 +187,6 @@ export function ComposerProvider({ children, seedMessage }: ComposerProviderProp
       handleCameraCapture,
       seedMessage,
       isKeyboardVisible,
-      isActive,
-      activate,
     ],
   );
 

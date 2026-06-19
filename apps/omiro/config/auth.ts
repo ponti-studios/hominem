@@ -12,6 +12,6 @@ type AppAuthConfig = {
 };
 
 export const CHAT_AUTH_CONFIG: AppAuthConfig = {
-  defaultPostAuthDestination: '/(protected)/(tabs)/',
-  allowedDestinations: ['/(protected)/(tabs)/'],
+  defaultPostAuthDestination: '/(protected)',
+  allowedDestinations: ['/(protected)'],
 };

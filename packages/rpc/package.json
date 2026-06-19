@@ -37,9 +37,9 @@
     "zod": "4.3.6"
   },
   "devDependencies": {
-    "react": "19.2.0"
+    "react": "19.2.3"
   },
   "peerDependencies": {
-    "react": "19.2.0"
+    "react": "19.2.3"
   }
 }

@@ -1,9 +1,12 @@
-import { Host as SwiftUIHost, TextField as SwiftUITextField } from '@expo/ui/swift-ui';
+import {
+  Host as SwiftUIHost,
+  TextField as SwiftUITextField,
+  useNativeState,
+} from '@expo/ui/swift-ui';
 import { font, frame, submitLabel, textFieldStyle } from '@expo/ui/swift-ui/modifiers';
-import { useNavigation } from '@react-navigation/native';
 import { Image } from 'expo-image';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import { Stack, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { Pressable, RefreshControl, ScrollView, TextInput, View } from 'react-native';
 
 import { InlineEnhanceTray } from '~/components/ai/InlineEnhanceTray';
@@ -64,6 +67,7 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
   const router = useRouter();
   const contentInputRef = useRef<TextInput>(null);
   const homeRoute = getWorkspaceHomeRoute();
+  const titleState = useNativeState('');
 
   const { data: note, error, isInitialLoading, isRefreshing, refetch } = useNoteQuery({ noteId });
   const { save, updateCache, detachFile } = useNoteEditor(noteId);
@@ -90,13 +94,14 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
       return;
     }
 
+    titleState.set(note.title ?? '');
     writeWorkspaceResumeArtifact({
       kind: 'note',
       id: noteId,
       title: note.title?.trim() || t.notes.editor.titleFallback,
       updatedAt: note.updatedAt ?? null,
     });
-  }, [note, noteId]);
+  }, [note, noteId, titleState]);
 
   const toolbar = useNoteToolbar({
     content: note?.content ?? '',
@@ -110,7 +115,7 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
     },
   });
 
-  const dateline = useMemo(() => {
+  const dateline = (() => {
     if (!note?.updatedAt) {
       return '';
     }
@@ -121,7 +126,7 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
       day: 'numeric',
       year: 'numeric',
     });
-  }, [note?.updatedAt]);
+  })();
 
   const handleBackPress = useCallback(() => {
     if (navigation.canGoBack()) {
@@ -131,10 +136,6 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
 
     router.replace(homeRoute);
   }, [homeRoute, navigation, router]);
-
-  const handleOpenWorkspace = useCallback(() => {
-    router.replace(homeRoute);
-  }, [homeRoute, router]);
 
   if (isInitialLoading) {
     return (
@@ -150,13 +151,6 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
             accessibilityLabel="Back"
             icon="chevron.left"
             onPress={handleBackPress}
-          />
-        </Stack.Toolbar>
-        <Stack.Toolbar placement="right">
-          <Stack.Toolbar.Button
-            accessibilityLabel="Open workspace"
-            icon="list.bullet"
-            onPress={handleOpenWorkspace}
           />
         </Stack.Toolbar>
         <NoteDetailPlaceholder />
@@ -178,13 +172,6 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
             accessibilityLabel="Back"
             icon="chevron.left"
             onPress={handleBackPress}
-          />
-        </Stack.Toolbar>
-        <Stack.Toolbar placement="right">
-          <Stack.Toolbar.Button
-            accessibilityLabel="Open workspace"
-            icon="list.bullet"
-            onPress={handleOpenWorkspace}
           />
         </Stack.Toolbar>
         <ScrollView
@@ -232,11 +219,6 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
       </Stack.Toolbar>
       <Stack.Toolbar placement="right">
         <Stack.Toolbar.Button
-          accessibilityLabel="Open workspace"
-          icon="list.bullet"
-          onPress={handleOpenWorkspace}
-        />
-        <Stack.Toolbar.Button
           accessibilityLabel="Enhance note"
           icon="wand.and.sparkles"
           onPress={toggleEnhance}
@@ -259,9 +241,9 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
       >
         <SwiftUIHost matchContents style={styles.titleHost}>
           <SwiftUITextField
-            defaultValue={note.title ?? ''}
+            text={titleState}
             placeholder={t.notes.editor.titlePlaceholder}
-            onValueChange={(value: string) => {
+            onTextChange={(value: string) => {
               updateCache({ title: value });
               void save(
                 value,

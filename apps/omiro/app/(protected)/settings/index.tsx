@@ -1,4 +1,3 @@
-import type { RelativePathString } from 'expo-router';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useReducer, useState } from 'react';
 import {
@@ -23,6 +22,7 @@ import { getPreventScreenshots, setPreventScreenshots } from '~/hooks/use-screen
 import { useAuth } from '~/services/auth/auth-provider';
 import { useMobilePasskeyAuth } from '~/services/auth/hooks/use-mobile-passkey-auth';
 import { resolveProtectedRouteState } from '~/services/auth/protected-route-state';
+import { getWorkspaceArchivedChatsRoute } from '~/services/workspace/routes';
 import t from '~/translations';
 
 interface AccountState {
@@ -120,7 +120,7 @@ function Settings() {
   };
 
   const onArchivedChatsPress = () => {
-    router.push('/(protected)/(tabs)/settings/archived-chats' as RelativePathString);
+    router.push(getWorkspaceArchivedChatsRoute());
   };
 
   const onAddPasskeyPress = async () => {

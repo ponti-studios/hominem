@@ -22,6 +22,8 @@
     "check": "pnpm dlx turbo run typecheck lint build test --concurrency 1 --force"
   },
   "devDependencies": {
+    "@expo/image-utils": "^0.10.1",
+    "@expo/prebuild-config": "~56.0.16",
     "@types/node": "^25.4.0",
     "@types/pg": "^8.18.0",
     "@types/react": "19.2.10",
@@ -51,8 +53,8 @@
     "markdown-it": ">=12.3.2",
     "postcss": ">=8.5.10",
     "prismjs": ">=1.30.0",
-    "react": "19.2.0",
-    "react-dom": "19.2.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
     "react-markdown": "^10.1.0",
     "react-syntax-highlighter": "^16.1.0",
     "serialize-javascript": ">=7.0.3",

@@ -6,6 +6,7 @@ import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useThemeColors } from '~/components/theme';
 import { Button } from '~/components/ui/button';
 import { useAuth } from '~/services/auth/auth-provider';
+import { getWorkspaceHomeRoute } from '~/services/workspace/routes';
 import t from '~/translations';
 
 const Onboarding = () => {
@@ -58,7 +59,7 @@ const Onboarding = () => {
   }
 
   if (currentUser?.name) {
-    return <Redirect href={'/(protected)/(tabs)/' as RelativePathString} />;
+    return <Redirect href={getWorkspaceHomeRoute()} />;
   }
 
   return (

@@ -6,7 +6,7 @@ interface ResolveAuthRedirectInput {
   segments: string[];
 }
 
-type AuthRedirectTarget = '/(auth)' | '/(protected)/(tabs)/';
+type AuthRedirectTarget = '/(auth)' | '/(protected)';
 
 const NO_REDIRECT_STATUSES = new Set(['booting', 'signing_out']);
 
@@ -23,7 +23,7 @@ export function resolveAuthRedirect(input: ResolveAuthRedirectInput): AuthRedire
   }
 
   if (input.isSignedIn && inAuthGroup) {
-    return '/(protected)/(tabs)/';
+    return '/(protected)';
   }
 
   return null;

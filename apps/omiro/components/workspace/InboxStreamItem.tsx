@@ -7,12 +7,9 @@ import {
   Text,
   fontFamiliesNative,
   fontSizes,
-  fontWeights,
   lineHeights,
   makeStyles,
-  useThemeColors,
 } from '~/components/theme';
-import AppIcon from '~/components/ui/icon';
 import { useChatArchive } from '~/services/chat/use-chat-archive';
 import { formatRelativeAge } from '~/services/date/format-relative-age';
 import { useNoteDelete } from '~/services/notes/use-note-delete';
@@ -29,11 +26,10 @@ interface InboxStreamItemProps {
 
 export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
   const styles = useStyles();
-  const themeColors = useThemeColors();
-  const primaryText = cleanText(item.title) ?? t.workspace.item.untitled;
+  const titleText = cleanText(item.title);
   const previewText = cleanText(item.preview);
+  const primaryText = titleText ?? previewText ?? t.workspace.item.untitled;
   const isChat = item.kind === 'chat';
-  const iconName = isChat ? 'bubble.left.fill' : 'note.text';
   const timeAgo = formatRelativeAge(item.updatedAt);
 
   const { mutate: deleteNote, isPending: isDeletingNote } = useNoteDelete({
@@ -65,21 +61,13 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
             disabled={isPending}
             style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
           >
-            <View style={styles.body}>
-              <View style={styles.titleRow}>
-                <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
-                  {primaryText}
-                </Text>
-                <View style={styles.meta}>
-                  <AppIcon name={iconName} size={11} tintColor={themeColors['text-tertiary']} />
-                  <Text style={styles.time}>{timeAgo}</Text>
-                </View>
+            <View style={styles.titleRow}>
+              <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
+                {primaryText}
+              </Text>
+              <View style={styles.meta}>
+                <Text style={styles.time}>{timeAgo}</Text>
               </View>
-              {previewText ? (
-                <Text style={styles.preview} numberOfLines={1} ellipsizeMode="tail">
-                  {previewText}
-                </Text>
-              ) : null}
             </View>
             <View style={styles.separator} />
           </Pressable>
@@ -115,7 +103,7 @@ function cleanText(value: string | null): string | null {
 const useStyles = makeStyles((theme) => ({
   row: {
     paddingHorizontal: 20,
-    paddingTop: 12,
+    paddingTop: 6,
     backgroundColor: theme.colors['bg-base'],
   },
   rowPressed: {
@@ -124,21 +112,19 @@ const useStyles = makeStyles((theme) => ({
   rowPending: {
     opacity: 0.45,
   },
-  body: {
-    paddingBottom: 12,
-    gap: 3,
-  },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    minHeight: 42,
+    paddingBottom: 6,
   },
   title: {
     flex: 1,
-    color: theme.colors.foreground,
+    color: theme.colors['text-primary'],
     fontSize: fontSizes.md,
     fontFamily: fontFamiliesNative.primary,
-    fontWeight: fontWeights.semibold,
+    fontWeight: '600',
     lineHeight: lineHeights.body,
     letterSpacing: -0.1,
   },
@@ -150,21 +136,14 @@ const useStyles = makeStyles((theme) => ({
   },
   time: {
     color: theme.colors['text-tertiary'],
-    fontSize: fontSizes.xs,
-    fontFamily: fontFamiliesNative.primary,
-    lineHeight: lineHeights.caption,
-  },
-  preview: {
-    color: theme.colors['text-secondary'],
     fontSize: fontSizes.sm,
     fontFamily: fontFamiliesNative.primary,
-    fontWeight: fontWeights.regular,
-    lineHeight: lineHeights.bodySm,
+    lineHeight: lineHeights.caption,
   },
   separator: {
     height: StyleSheet.hairlineWidth,
     backgroundColor: theme.colors['border-faint'],
-    marginLeft: 0,
+    marginLeft: 2,
   },
 }));
 

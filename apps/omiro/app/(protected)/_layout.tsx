@@ -11,6 +11,7 @@ import { useAppLock } from '~/hooks/use-app-lock';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import { ApiProvider } from '~/services/api/api-provider';
 import { useAuth } from '~/services/auth/auth-provider';
+import { TopAnchoredFeedProvider } from '~/services/inbox/top-anchored-feed';
 import queryClient from '~/services/query-client';
 import t from '~/translations';
 
@@ -89,12 +90,29 @@ function ProtectedShell() {
   return (
     <FeatureErrorBoundary featureName="Protected">
       <ApiProvider queryClient={queryClient}>
-        <View style={styles.root}>
-          <Stack initialRouteName="(tabs)" screenOptions={screenOptions}>
-            <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          </Stack>
-        </View>
+        <TopAnchoredFeedProvider>
+          <View style={styles.root}>
+            <Stack
+              initialRouteName="index"
+              screenOptions={{
+                ...screenOptions,
+                contentStyle: { backgroundColor: theme.colors['bg-base'] },
+                headerBlurEffect: 'systemChromeMaterial',
+                headerLargeTitle: false,
+                headerShadowVisible: false,
+              }}
+            >
+              <Stack.Screen name="index" options={{ headerShown: true }} />
+              <Stack.Screen name="inbox/[kind]/[id]" options={{}} />
+              <Stack.Screen name="settings/index" options={{ title: 'Settings' }} />
+              <Stack.Screen
+                name="settings/archived-chats"
+                options={{ title: 'Archived Chats' }}
+              />
+              <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+            </Stack>
+          </View>
+        </TopAnchoredFeedProvider>
       </ApiProvider>
     </FeatureErrorBoundary>
   );

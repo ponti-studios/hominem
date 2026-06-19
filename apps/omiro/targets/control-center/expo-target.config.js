@@ -2,6 +2,6 @@
 module.exports = (config) => ({
   type: 'widget',
   displayName: 'Omiro Control Center',
-  deploymentTarget: '15.1',
+  deploymentTarget: '16.4',
   bundleIdentifier: '.ControlCenter',
 });

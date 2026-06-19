@@ -1,3 +1,4 @@
+import { useNativeState } from '@expo/ui';
 import { useCallback, useMemo, useState } from 'react';
 
 import { resolveInitialComposerMessage } from '~/components/composer/composer-initial-message';
@@ -20,13 +21,15 @@ export function useComposer({
   const [message, setMessageState] = useState(() =>
     resolveInitialComposerMessage({ initialDraft, seedMessage }),
   );
+  const messageState = useNativeState(message);
 
   const setMessage = useCallback(
     (nextMessage: string) => {
+      messageState.value = nextMessage;
       setMessageState(nextMessage);
       onDraftChange?.(nextMessage);
     },
-    [onDraftChange],
+    [messageState, onDraftChange],
   );
 
   const uploadState = useMemo(
@@ -49,6 +52,7 @@ export function useComposer({
 
   return {
     message,
+    messageState,
     setMessage,
     uploadState,
     uploadedAttachmentIds,

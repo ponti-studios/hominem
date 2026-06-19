@@ -14,10 +14,12 @@ interface InboxStreamProps {
   items: InboxStreamItemModel[];
   isLoading?: boolean;
   isFetchingNextPage?: boolean;
+  listHeader?: React.ReactElement;
   listRef?: RefObject<FlashListRef<InboxStreamItemModel> | null>;
   onEndReached?: () => void;
   refreshControl?: React.ReactElement<RefreshControlProps>;
   contentPaddingBottom?: number;
+  contentPaddingTop?: number;
 }
 
 const keyExtractor = (item: InboxStreamItemModel) => `${item.kind}:${item.id}`;
@@ -33,10 +35,12 @@ export const InboxStream = ({
   items,
   isLoading = false,
   isFetchingNextPage = false,
+  listHeader,
   listRef,
   onEndReached,
   refreshControl,
   contentPaddingBottom,
+  contentPaddingTop,
 }: InboxStreamProps) => {
   const styles = useStreamStyles();
 
@@ -47,8 +51,10 @@ export const InboxStream = ({
   if (isLoading && items.length === 0) {
     return (
       <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={[
           styles.loadingWrap,
+          contentPaddingTop != null ? { paddingTop: contentPaddingTop } : null,
           contentPaddingBottom != null ? { paddingBottom: contentPaddingBottom } : null,
         ]}
         showsVerticalScrollIndicator={false}
@@ -72,6 +78,7 @@ export const InboxStream = ({
   if (error && items.length === 0) {
     return (
       <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={[
           styles.emptyWrap,
           contentPaddingBottom != null ? { paddingBottom: contentPaddingBottom } : null,
@@ -99,6 +106,7 @@ export const InboxStream = ({
   if (items.length === 0) {
     return (
       <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={[
           styles.emptyWrap,
           contentPaddingBottom != null ? { paddingBottom: contentPaddingBottom } : null,
@@ -114,13 +122,15 @@ export const InboxStream = ({
       <FlashList
         ref={listRef as React.Ref<FlashListRef<InboxStreamItemModel>>}
         contentContainerStyle={{
-          paddingTop: 4,
+          paddingTop: contentPaddingTop != null ? contentPaddingTop : 0,
           paddingBottom: contentPaddingBottom != null ? contentPaddingBottom : 16,
         }}
+        contentInsetAdjustmentBehavior="automatic"
         data={items}
         keyExtractor={keyExtractor}
         keyboardDismissMode="on-drag"
         renderItem={renderItem}
+        ListHeaderComponent={listHeader}
         ListFooterComponent={
           isFetchingNextPage ? (
             <Text variant="caption1" color="text-tertiary" style={styles.footerText}>

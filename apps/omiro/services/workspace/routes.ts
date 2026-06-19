@@ -10,15 +10,15 @@ export interface WorkspaceResumeArtifact {
 }
 
 export function getWorkspaceHomeRoute(): RelativePathString {
-  return '/(protected)/(tabs)' as RelativePathString;
+  return '/(protected)' as RelativePathString;
 }
 
 export function getWorkspaceSettingsRoute(): RelativePathString {
-  return '/(protected)/(tabs)/settings' as RelativePathString;
+  return '/(protected)/settings' as RelativePathString;
 }
 
 export function getWorkspaceArchivedChatsRoute(): RelativePathString {
-  return '/(protected)/(tabs)/settings/archived-chats' as RelativePathString;
+  return '/(protected)/settings/archived-chats' as RelativePathString;
 }
 
 export function getWorkspaceArtifactRoute(
@@ -26,18 +26,11 @@ export function getWorkspaceArtifactRoute(
   id: string,
   params?: Record<string, string>,
 ): RelativePathString {
-  const route = `/(protected)/(tabs)/inbox/${kind}/${id}`;
+  const route = `/(protected)/inbox/${kind}/${id}`;
   if (!params || Object.keys(params).length === 0) {
     return route as RelativePathString;
   }
 
   const searchParams = new URLSearchParams(params);
   return `${route}?${searchParams.toString()}` as RelativePathString;
-}
-
-export function getLegacyArtifactRoute(
-  kind: WorkspaceArtifactKind,
-  id: string,
-): RelativePathString {
-  return `/(protected)/(tabs)/${kind === 'note' ? 'notes' : kind}/${id}` as RelativePathString;
 }

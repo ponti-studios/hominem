@@ -1,8 +1,9 @@
+import type { TextInputRef as ExpoTextInputRef } from '@expo/ui';
 import { useQueryClient } from '@tanstack/react-query';
 import type { RelativePathString } from 'expo-router';
 import { useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useRef } from 'react';
-import { Alert, Keyboard, TextInput } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Alert, Keyboard } from 'react-native';
 
 import { InlineEnhanceTray } from '~/components/ai/InlineEnhanceTray';
 import { ComposerActionGroup } from '~/components/composer/ComposerActionGroup';
@@ -14,11 +15,9 @@ import {
   useComposerContext,
 } from '~/components/composer/ComposerContext';
 import { ComposerMedia } from '~/components/composer/ComposerMedia';
-import { ComposerResting } from '~/components/composer/ComposerResting';
-import { ComposerSurface } from '~/components/composer/ComposerSurface';
-import { ComposerTextInput } from '~/components/composer/ComposerTextInput';
 import { useComposer } from '~/components/composer/useComposer';
 import { useVoiceComposerInput } from '~/components/composer/useVoiceComposerInput';
+import { WorkspaceComposerShell } from '~/components/feed/WorkspaceComposerShell';
 import { useInlineEnhance } from '~/services/ai';
 import { normalizeChatTitle } from '~/services/chat';
 import { useCreateChat } from '~/services/chat/use-create-chat';
@@ -48,15 +47,23 @@ function FeedComposerInner() {
   const { requestTopReveal } = useTopAnchoredFeed();
   const { mutateAsync: createNote, isPending: isSaving } = useCreateNote();
   const { mutateAsync: createChat, isPending: isChatCreating } = useCreateChat();
-  const inputRef = useRef<TextInput>(null);
-  const { isActive, activate } = useComposerContext();
+  const inputRef = useRef<ExpoTextInputRef>(null);
+  const { seedMessage } = useComposerContext();
+  const [isFocused, setIsFocused] = useState(false);
 
-  const { message, setMessage, uploadState, uploadedAttachmentIds, canSubmit, clearDraft } =
-    useComposer({
-      initialDraft: readFeedDraft(),
-      onDraftChange: writeFeedDraft,
-      onExtraClearDraft: clearFeedDraft,
-    });
+  const {
+    message,
+    messageState,
+    setMessage,
+    uploadState,
+    uploadedAttachmentIds,
+    canSubmit,
+    clearDraft,
+  } = useComposer({
+    initialDraft: readFeedDraft(),
+    onDraftChange: writeFeedDraft,
+    onExtraClearDraft: clearFeedDraft,
+  });
   const {
     handleVoicePress,
     isBusy: isVoiceBusy,
@@ -115,6 +122,7 @@ function FeedComposerInner() {
   const hasContent = message.trim().length > 0;
   const hasAccessory =
     attachments.length > 0 || uploadState.errors.length > 0 || uploadState.isUploading;
+  const isExpanded = isFocused || hasContent || hasAccessory || isEnhanceOpen;
 
   useEffect(() => {
     if (!voiceError) return;
@@ -127,17 +135,9 @@ function FeedComposerInner() {
     ]);
   }, [clearVoiceError, voiceError]);
 
-  if (!isActive) {
-    return (
-      <ComposerResting
-        onActivate={() => activate(inputRef)}
-        disabled={isSaving || isChatCreating}
-      />
-    );
-  }
-
   return (
-    <ComposerSurface
+    <WorkspaceComposerShell
+      autoFocus={Boolean(seedMessage)}
       accessory={hasAccessory ? <ComposerAttachmentRow /> : undefined}
       inlinePanel={
         isEnhanceOpen ? (
@@ -166,7 +166,7 @@ function FeedComposerInner() {
             accessibilityLabel={t.feed.composer.enhanceTextA11y}
             icon="wand.and.sparkles"
             onPress={toggleEnhance}
-            disabled={!hasContent || isEnhancing || isVoiceBusy}
+            disabled={!hasContent || isSaving || isChatCreating || isEnhancing || isVoiceBusy}
             isAnimating={isEnhancing || isCleaningVoice}
           />
           <ActionButton
@@ -183,21 +183,19 @@ function FeedComposerInner() {
           />
         </ComposerActionGroup>
       }
-      input={
-        <ComposerTextInput
-          inputRef={inputRef}
-          value={message}
-          onChangeText={setMessage}
-          placeholder={t.feed.composer.placeholder}
-          testID="feed-composer-input"
-        />
-      }
+      inputRef={inputRef}
+      isExpanded={isExpanded}
       leadingAction={
         <ComposerMedia
           accessibilityLabel={t.feed.composer.addAttachmentA11y}
           disabled={isSaving || isChatCreating}
         />
       }
+      messageState={messageState}
+      onBlur={() => setIsFocused(false)}
+      onChangeText={setMessage}
+      onFocus={() => setIsFocused(true)}
+      placeholder={t.feed.composer.placeholder}
       testID="feed-composer"
     />
   );

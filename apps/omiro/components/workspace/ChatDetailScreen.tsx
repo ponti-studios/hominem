@@ -1,7 +1,6 @@
 import type { SessionSource } from '@hominem/rpc/types';
-import { useNavigation } from '@react-navigation/native';
 import { useQueryClient } from '@tanstack/react-query';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshControl, View, StyleSheet } from 'react-native';
 import type { LayoutChangeEvent } from 'react-native';

@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   camera: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   controls: {
     alignItems: 'center',

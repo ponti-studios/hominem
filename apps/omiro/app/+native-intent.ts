@@ -12,14 +12,14 @@ import {
  *
  * Supported deep link patterns:
  *   hakumi://verify?token=<otp>        -> /(auth)/verify?token=<otp>
- *   hakumi://chat/<id>                 -> /(protected)/(tabs)/inbox/chat/<id>
- *   hakumi://chat?seed=<text>          -> /(protected)/(tabs)/?seed=<text>
- *   hakumi://notes                     -> /(protected)/(tabs)
- *   hakumi://notes/<id>                -> /(protected)/(tabs)/inbox/note/<id>
- *   hakumi://focus                     -> /(protected)/(tabs)/
- *   hakumi://focus/<id>                -> /(protected)/(tabs)/inbox/note/<id>
- *   hakumi://account                   -> /(protected)/(tabs)/settings
- *   hakumi://note/add                  -> /(protected)/(tabs)
+ *   hakumi://chat/<id>                 -> /(protected)/inbox/chat/<id>
+ *   hakumi://chat?seed=<text>          -> /(protected)?seed=<text>
+ *   hakumi://notes                     -> /(protected)
+ *   hakumi://notes/<id>                -> /(protected)/inbox/note/<id>
+ *   hakumi://focus                     -> /(protected)
+ *   hakumi://focus/<id>                -> /(protected)/inbox/note/<id>
+ *   hakumi://account                   -> /(protected)/settings
+ *   hakumi://note/add                  -> /(protected)
  */
 export function redirectSystemPath({
   path,

@@ -1,7 +1,6 @@
-import { useIsFocused } from '@react-navigation/native';
 import { FlashList, type ListRenderItem } from '@shopify/flash-list';
 import type { RelativePathString } from 'expo-router';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useIsFocused, useRouter } from 'expo-router';
 import React, { memo, useCallback, useMemo } from 'react';
 import { Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 

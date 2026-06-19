@@ -7,7 +7,7 @@ Pod::Spec.new do |s|
   s.homepage       = 'https://github.com/hackefeller/hominem'
   s.license        = { :type => 'ISC' }
   s.platforms      = {
-    :ios => '15.1'
+    :ios => '16.4'
   }
   s.source         = { :git => 'https://github.com/hackefeller/hominem.git', :tag => s.version.to_s }
   s.static_framework = true
