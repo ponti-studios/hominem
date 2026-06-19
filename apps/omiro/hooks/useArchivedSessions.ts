@@ -22,6 +22,7 @@ export const useArchivedSessions = ({ enabled = true }: UseArchivedSessionsOptio
       return getArchivedChatsWithActivity(chats);
     },
     enabled,
+    refetchOnWindowFocus: false,
     staleTime: ARCHIVED_SESSIONS_STALE_TIME_MS,
   });
 };

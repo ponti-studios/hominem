@@ -12,6 +12,7 @@ import React, {
 
 import { E2E_TESTING } from '~/constants';
 import { createAuthContextSnapshot } from '~/services/auth/auth-provider-state';
+import { clearPendingAuthEmail } from '~/services/auth/pending-email';
 import { useAuthHeaders } from '~/services/auth/hooks/use-auth-headers';
 import { useBootSequence } from '~/services/auth/hooks/use-boot-sequence';
 import { useEmailOtp } from '~/services/auth/hooks/use-email-otp';
@@ -19,8 +20,10 @@ import { usePasskeyAuth } from '~/services/auth/hooks/use-passkey-auth';
 import { useResetAuthForE2E } from '~/services/auth/hooks/use-reset-auth-for-e2e';
 import { useSignOut } from '~/services/auth/hooks/use-sign-out';
 import { useUpdateProfile } from '~/services/auth/hooks/use-update-profile';
+import { clearPersistedSessionCookies } from '~/services/auth/session-cookie';
 import { type AuthStatusCompat } from '~/services/auth/provider-utils';
 import { authStateMachine, initialAuthState } from '~/services/auth/types';
+import { LocalStore } from '~/services/storage/local-store';
 
 type SignInResponse = {
   user: {
@@ -42,6 +45,7 @@ type AuthContextType = {
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<User>) => Promise<User>;
   getAuthHeaders: () => Promise<Record<string, string>>;
+  handleUnauthorized: () => Promise<void>;
   resetAuthForE2E: () => Promise<void>;
 };
 
@@ -90,6 +94,16 @@ function AuthProviderBody({ children }: PropsWithChildren) {
   const updateProfile = useUpdateProfile({ state, dispatch });
   const getAuthHeaders = useAuthHeaders(sessionCookieHeaderRef);
   const resetAuthForE2E = useResetAuthForE2E(dispatch);
+  const handleUnauthorized = useCallback(async () => {
+    if (state.status === 'signed_out' || state.status === 'signing_out') {
+      return;
+    }
+
+    sessionCookieHeaderRef.current = null;
+    clearPendingAuthEmail();
+    await Promise.all([clearPersistedSessionCookies(), LocalStore.clearAllData()]);
+    dispatch({ type: 'SESSION_EXPIRED' });
+  }, [dispatch, state.status]);
 
   const value: AuthContextType = {
     ...authSnapshot,
@@ -99,6 +113,7 @@ function AuthProviderBody({ children }: PropsWithChildren) {
     signOut,
     updateProfile,
     getAuthHeaders,
+    handleUnauthorized,
     resetAuthForE2E,
   };
 
@@ -131,6 +146,10 @@ function E2EAuthProvider({ children }: PropsWithChildren) {
   const updateProfile = useUpdateProfile({ state, dispatch });
   const getAuthHeaders = useAuthHeaders(sessionCookieHeaderRef);
   const resetAuthForE2E = useResetAuthForE2E(dispatch);
+  const handleUnauthorized = useCallback(async () => {
+    sessionCookieHeaderRef.current = null;
+    dispatch({ type: 'SESSION_EXPIRED' });
+  }, [dispatch]);
 
   const value: AuthContextType = {
     ...authSnapshot,
@@ -140,6 +159,7 @@ function E2EAuthProvider({ children }: PropsWithChildren) {
     signOut,
     updateProfile,
     getAuthHeaders,
+    handleUnauthorized,
     resetAuthForE2E,
   };
 

@@ -15,7 +15,7 @@ focusManager.setEventListener((handleFocus) => {
 // Configure React Query to use NetInfo for online status
 onlineManager.setEventListener((setOnline) => {
   return NetInfo.addEventListener((state) => {
-    setOnline(!!state.isConnected);
+    setOnline(state.isConnected !== false);
   });
 });
 

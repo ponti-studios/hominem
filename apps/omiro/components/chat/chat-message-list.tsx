@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import {
   Pressable,
+  type RefreshControlProps,
   StyleSheet,
   View,
   type NativeScrollEvent,
@@ -28,13 +29,14 @@ interface ChatMessageListProps {
   showDebug: boolean;
   onCopy: (message: ChatMessageItem) => void;
   onEdit?: (messageId: string, content: string) => void;
-  onRegenerate: (messageId: string) => void;
+  onRegenerate?: (messageId: string) => void;
   onDelete?: (messageId: string) => void;
   onShare: (message: ChatMessageItem) => void;
   renderIcon: ChatRenderIcon;
   formatTimestamp: (value: string) => string;
   contentPaddingBottom?: number;
   emptyState?: React.ReactElement | null;
+  refreshControl?: React.ReactElement<RefreshControlProps>;
 }
 
 export function ChatMessageList({
@@ -53,6 +55,7 @@ export function ChatMessageList({
   formatTimestamp,
   contentPaddingBottom = 0,
   emptyState,
+  refreshControl,
 }: ChatMessageListProps) {
   const hasSearchQuery = showSearch && searchQuery.length > 0;
   const [activeActionMessageId, setActiveActionMessageId] = useState<string | null>(null);
@@ -164,7 +167,8 @@ export function ChatMessageList({
       onScroll={handleScroll}
       onScrollBeginDrag={() => setActiveActionMessageId(null)}
       renderItem={renderItem}
-      scrollEnabled={displayMessages.length > 0}
+      refreshControl={refreshControl}
+      scrollEnabled={displayMessages.length > 0 || refreshControl !== undefined}
       scrollEventThrottle={16}
     />
   );

@@ -3,7 +3,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useQueryClient } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { RefreshControl, View, StyleSheet } from 'react-native';
 import type { LayoutChangeEvent } from 'react-native';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -153,6 +153,17 @@ export function ChatDetailScreen() {
     ),
     [],
   );
+  const errorState = useMemo(
+    () => (
+      <EmptyState
+        action={{ label: t.chat.loadErrorRetry, onPress: () => void controller.refetchMessages() }}
+        sfSymbol="arrow.clockwise.circle"
+        title={t.chat.loadErrorTitle}
+        description={t.chat.loadErrorDescription}
+      />
+    ),
+    [controller],
+  );
 
   return (
     <>
@@ -252,14 +263,21 @@ export function ChatDetailScreen() {
           markdown={controller.Markdown}
           showDebug={controller.showDebug}
           onCopy={controller.handleCopyMessage}
-          onRegenerate={controller.handleRegenerate}
           onShare={(message: Parameters<typeof controller.handleShareMessage>[0]) => {
             void controller.handleShareMessage(message);
           }}
           renderIcon={renderChatIcon}
           formatTimestamp={formatRelativeAge}
           contentPaddingBottom={composerHeight + insets.bottom}
-          emptyState={emptyState}
+          emptyState={controller.messagesError ? errorState : emptyState}
+          refreshControl={
+            <RefreshControl
+              refreshing={controller.isMessagesRefreshing}
+              onRefresh={() => {
+                void controller.refetchMessages();
+              }}
+            />
+          }
         />
         <KeyboardStickyView
           offset={{ closed: 0, opened: 0 }}

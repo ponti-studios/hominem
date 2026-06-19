@@ -14,11 +14,13 @@ import {
   frame,
   glassEffect,
   glassEffectId,
+  lineLimit,
 } from '@expo/ui/swift-ui/modifiers';
 import React from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 
 import { Text, useThemeColors } from '~/components/theme';
+import { BlurSurface } from '~/components/ui/BlurSurface';
 import { Button as AppButton } from '~/components/ui/button';
 import type { WorkspaceResumeArtifact } from '~/services/workspace/routes';
 import t from '~/translations';
@@ -45,38 +47,30 @@ export function WorkspaceHero({
   const resumeLabel =
     resumeArtifact?.kind === 'chat' ? t.workspace.home.resumeChat : t.workspace.home.resumeNote;
 
-  const primaryButtonModifiers = [
-    buttonStyle(IS_IOS_26_OR_NEWER ? 'glassProminent' : 'borderedProminent'),
-    glassEffectId('primary-action', namespaceId),
-  ];
-  const secondaryButtonModifiers = [buttonStyle(IS_IOS_26_OR_NEWER ? 'glass' : 'bordered')];
-
   if (!IS_IOS_26_OR_NEWER) {
     return (
-      <View
-        style={[
-          styles.fallbackCard,
-          {
-            backgroundColor: themeColors['bg-surface'],
-            borderColor: themeColors['border-default'],
-          },
-        ]}
-      >
+      <BlurSurface tint="regular" style={styles.fallbackCard}>
         <Text style={[styles.fallbackTitle, { color: themeColors.foreground }]}>
           {t.workspace.home.title}
         </Text>
-        <Text style={[styles.fallbackSubtitle, { color: themeColors['text-secondary'] }]}>
-          {t.workspace.home.subtitle}
+        <Text style={[styles.fallbackSubtitle, { color: themeColors['text-secondary'] }]} numberOfLines={2}>
+          {resumeArtifact?.title ?? t.workspace.home.subtitle}
         </Text>
-        <View style={styles.fallbackActions}>
+        <View style={styles.fallbackPrimary}>
           {resumeArtifact ? (
             <AppButton
               label={resumeLabel}
               onPress={() => onResumeArtifact?.()}
-              variant="secondary"
+              variant="primary"
             />
+          ) : (
+            <AppButton label={t.workspace.home.newChat} onPress={onStartChat} variant="primary" />
+          )}
+        </View>
+        <View style={styles.fallbackSecondary}>
+          {resumeArtifact ? (
+            <AppButton label={t.workspace.home.newChat} onPress={onStartChat} variant="secondary" />
           ) : null}
-          <AppButton label={t.workspace.home.newChat} onPress={onStartChat} variant="secondary" />
           <AppButton
             label={t.workspace.home.archivedChats}
             onPress={onOpenArchivedChats}
@@ -88,41 +82,58 @@ export function WorkspaceHero({
             variant="secondary"
           />
         </View>
-      </View>
+      </BlurSurface>
     );
   }
+
+  const primaryModifiers = [
+    buttonStyle('glassProminent'),
+    glassEffectId('primary-action', namespaceId),
+    glassEffect({
+      glass: { variant: 'regular', interactive: true },
+      shape: 'roundedRectangle',
+      cornerRadius: 22,
+    }),
+    frame({ maxWidth: Number.POSITIVE_INFINITY }),
+  ];
+
+  const secondaryModifiers = [
+    buttonStyle('glass'),
+    glassEffect({
+      glass: { variant: 'clear', interactive: true },
+      shape: 'roundedRectangle',
+      cornerRadius: 18,
+    }),
+    frame({ maxWidth: Number.POSITIVE_INFINITY }),
+  ];
 
   return (
     <Host style={styles.host}>
       <Namespace id={namespaceId}>
-        <VStack spacing={12}>
-          <SwiftUIText modifiers={[font({ size: 34, weight: 'bold' })]}>
+        <VStack spacing={10}>
+          <SwiftUIText modifiers={[font({ size: 40, weight: 'bold' })]}>
             {t.workspace.home.title}
           </SwiftUIText>
           <SwiftUIText
             modifiers={[
-              font({ size: 16, weight: 'regular' }),
+              font({ size: 15, weight: 'regular' }),
               foregroundStyle({ type: 'hierarchical', style: 'secondary' }),
+              lineLimit(2),
             ]}
           >
             {resumeArtifact
               ? resumeArtifact.title || t.workspace.home.subtitle
               : t.workspace.home.subtitle}
           </SwiftUIText>
-          <GlassEffectContainer spacing={18}>
-            <VStack spacing={10}>
+          <GlassEffectContainer spacing={10}>
+            <VStack spacing={8}>
               <HStack spacing={10}>
                 {resumeArtifact ? (
                   <Button
                     label={resumeLabel}
                     onPress={onResumeArtifact}
                     modifiers={[
-                      ...primaryButtonModifiers,
-                      glassEffect({
-                        glass: { variant: 'regular', interactive: true },
-                        shape: 'roundedRectangle',
-                        cornerRadius: 22,
-                      }),
+                      ...primaryModifiers,
                       frame({ maxWidth: Number.POSITIVE_INFINITY }),
                     ]}
                   />
@@ -131,9 +142,9 @@ export function WorkspaceHero({
                   label={t.workspace.home.newChat}
                   onPress={onStartChat}
                   modifiers={[
-                    ...secondaryButtonModifiers,
+                    buttonStyle('glassProminent'),
                     glassEffect({
-                      glass: { variant: 'clear', interactive: true },
+                      glass: { variant: 'regular', interactive: true },
                       shape: 'roundedRectangle',
                       cornerRadius: 22,
                     }),
@@ -147,27 +158,19 @@ export function WorkspaceHero({
                 <Button
                   label={t.workspace.home.archivedChats}
                   onPress={onOpenArchivedChats}
-                  modifiers={[
-                    ...secondaryButtonModifiers,
-                    glassEffect({
-                      glass: { variant: 'clear', interactive: true },
-                      shape: 'roundedRectangle',
-                      cornerRadius: 18,
-                    }),
-                    frame({ maxWidth: Number.POSITIVE_INFINITY }),
-                  ]}
+                  modifiers={secondaryModifiers}
                 />
                 <Button
                   label={t.workspace.home.settings}
                   onPress={onOpenSettings}
                   modifiers={[
-                    ...secondaryButtonModifiers,
+                    buttonStyle('glass'),
                     glassEffect({
                       glass: { variant: 'clear', interactive: true },
                       shape: 'roundedRectangle',
                       cornerRadius: 18,
                     }),
-                    frame({ width: 128 }),
+                    frame({ width: 120 }),
                   ]}
                 />
               </HStack>
@@ -181,29 +184,33 @@ export function WorkspaceHero({
 
 const styles = StyleSheet.create({
   host: {
-    marginBottom: 18,
+    marginBottom: 12,
     marginHorizontal: 16,
     marginTop: 8,
-  },
-  fallbackActions: {
-    gap: 10,
   },
   fallbackCard: {
-    borderRadius: 28,
-    borderWidth: 1,
-    gap: 14,
-    marginBottom: 18,
+    borderRadius: 24,
+    gap: 12,
+    marginBottom: 12,
     marginHorizontal: 16,
     marginTop: 8,
-    padding: 18,
-  },
-  fallbackSubtitle: {
-    fontSize: 16,
-    lineHeight: 22,
+    overflow: 'hidden',
+    padding: 20,
   },
   fallbackTitle: {
-    fontSize: 32,
+    fontSize: 36,
     fontWeight: '700',
-    lineHeight: 36,
+    letterSpacing: -0.8,
+    lineHeight: 40,
+  },
+  fallbackSubtitle: {
+    fontSize: 15,
+    lineHeight: 20,
+  },
+  fallbackPrimary: {
+    marginTop: 4,
+  },
+  fallbackSecondary: {
+    gap: 8,
   },
 });

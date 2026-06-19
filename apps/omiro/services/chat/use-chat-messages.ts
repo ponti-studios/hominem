@@ -39,6 +39,7 @@ function toMessageOutput(message: RpcChatMessage): MessageOutput | null {
 export const useChatMessages = ({ chatId }: { chatId: string }) => {
   const client = useApiClient();
   const cachedMessages = readCachedChatMessages(chatId);
+  const hasCachedMessages = cachedMessages.length > 0;
 
   return useQuery<MessageOutput[]>({
     queryKey: chatKeys.messages(chatId),
@@ -57,7 +58,8 @@ export const useChatMessages = ({ chatId }: { chatId: string }) => {
       return nextMessages;
     },
     enabled: Boolean(chatId),
-    initialData: cachedMessages.length > 0 ? cachedMessages : undefined,
+    initialData: hasCachedMessages ? cachedMessages : undefined,
+    initialDataUpdatedAt: hasCachedMessages ? 0 : undefined,
     refetchOnWindowFocus: false,
     staleTime: 30_000,
   });
@@ -83,5 +85,6 @@ export const useActiveChat = (chatId?: string | null) => {
       return selectChatSession(chats, chatId);
     },
     initialData: cachedChat,
+    initialDataUpdatedAt: cachedChat ? 0 : undefined,
   });
 };

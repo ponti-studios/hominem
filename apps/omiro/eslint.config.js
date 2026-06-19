@@ -21,22 +21,7 @@ module.exports = defineConfig([
             {
               group: ["lucide-react-native"],
               message: "Use Apple SF Symbols on mobile.",
-            },
-            {
-              group: [
-                "~/components/Button",
-                "~/components/text-input",
-                "~/components/Screen",
-                "~/components/ui/EmptyState",
-                "~/components/ui/Card",
-                "~/components/ui/Badge",
-                "~/components/ui/Separator",
-                "~/components/ui/Surface",
-                "~/components/ui/ListRow",
-                "~/components/ui/ListShell",
-              ],
-              message: "Import shared primitives from @hominem/ui public exports.",
-            },
+            }
           ],
         },
       ],

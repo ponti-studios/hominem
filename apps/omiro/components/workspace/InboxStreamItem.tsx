@@ -1,7 +1,7 @@
 import { Link } from 'expo-router';
 import React, { memo, useCallback } from 'react';
-import { Alert, Pressable, View } from 'react-native';
-import Reanimated, { FadeIn } from 'react-native-reanimated';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import Reanimated, { Easing, FadeIn } from 'react-native-reanimated';
 
 import {
   Text,
@@ -10,15 +10,18 @@ import {
   fontWeights,
   lineHeights,
   makeStyles,
-  theme,
+  useThemeColors,
 } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
 import { useChatArchive } from '~/services/chat/use-chat-archive';
+import { formatRelativeAge } from '~/services/date/format-relative-age';
 import { useNoteDelete } from '~/services/notes/use-note-delete';
 import t from '~/translations';
 
 import { ArtifactPreviewCard } from './ArtifactPreviewCard';
 import type { InboxStreamItemData as InboxStreamItemModel } from './InboxStreamItem.types';
+
+const entering = FadeIn.duration(180).easing(Easing.out(Easing.quad));
 
 interface InboxStreamItemProps {
   item: InboxStreamItemModel;
@@ -26,9 +29,13 @@ interface InboxStreamItemProps {
 
 export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
   const styles = useStyles();
+  const themeColors = useThemeColors();
   const primaryText = cleanText(item.title) ?? t.workspace.item.untitled;
-  const kindLabel = item.kind === 'chat' ? 'CHAT' : 'NOTE';
-  const iconName = item.kind === 'chat' ? 'bubble.left' : 'note.text';
+  const previewText = cleanText(item.preview);
+  const isChat = item.kind === 'chat';
+  const iconName = isChat ? 'bubble.left.fill' : 'note.text';
+  const timeAgo = formatRelativeAge(item.updatedAt);
+
   const { mutate: deleteNote, isPending: isDeletingNote } = useNoteDelete({
     noteId: item.entityId,
   });
@@ -40,13 +47,7 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
   const handleDelete = useCallback(() => {
     Alert.alert(t.workspace.item.deleteNote.title, t.workspace.item.deleteNote.message, [
       { text: t.workspace.item.deleteNote.cancel, style: 'cancel' },
-      {
-        text: t.workspace.item.deleteNote.confirm,
-        style: 'destructive',
-        onPress: () => {
-          deleteNote();
-        },
-      },
+      { text: t.workspace.item.deleteNote.confirm, style: 'destructive', onPress: () => deleteNote() },
     ]);
   }, [deleteNote]);
 
@@ -55,30 +56,39 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
   }, [archiveChat]);
 
   return (
-    <Reanimated.View entering={FadeIn.duration(200)}>
-      <Link href={item.route} disabled={isPending}>
+    <Reanimated.View entering={entering} style={isPending && styles.rowPending}>
+      <Link href={item.route} disabled={isPending} asChild>
         <Link.Trigger withAppleZoom>
           <Pressable
-            accessibilityLabel={`${primaryText}, ${kindLabel}`}
+            accessibilityLabel={`${primaryText}, ${isChat ? 'Chat' : 'Note'}`}
             accessibilityRole="button"
             disabled={isPending}
-            style={({ pressed }) => [
-              styles.pressable,
-              pressed ? styles.pressed : null,
-              isPending ? styles.pending : null,
-            ]}
+            style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
           >
-            <View style={styles.row}>
-              <AppIcon name={iconName} size={18} tintColor={theme.colors['icon-muted']} />
-              <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
-                {primaryText}
-              </Text>
+            <View style={styles.body}>
+              <View style={styles.titleRow}>
+                <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
+                  {primaryText}
+                </Text>
+                <View style={styles.meta}>
+                  <AppIcon name={iconName} size={11} tintColor={themeColors['text-tertiary']} />
+                  <Text style={styles.time}>{timeAgo}</Text>
+                </View>
+              </View>
+              {previewText ? (
+                <Text style={styles.preview} numberOfLines={1} ellipsizeMode="tail">
+                  {previewText}
+                </Text>
+              ) : null}
             </View>
+            <View style={styles.separator} />
           </Pressable>
         </Link.Trigger>
-        <Link.Preview style={styles.preview}>
+
+        <Link.Preview style={staticStyles.previewCard}>
           <ArtifactPreviewCard kind={item.kind} preview={item.preview} title={primaryText} />
         </Link.Preview>
+
         <Link.Menu title={primaryText}>
           {item.kind === 'note' ? (
             <Link.MenuAction destructive icon="trash" onPress={handleDelete}>
@@ -103,39 +113,63 @@ function cleanText(value: string | null): string | null {
 }
 
 const useStyles = makeStyles((theme) => ({
-  pressable: {},
-  pressed: {
+  row: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
     backgroundColor: theme.colors['bg-base'],
   },
-  pending: {
-    opacity: 0.5,
+  rowPressed: {
+    backgroundColor: theme.colors['bg-surface'],
   },
-  row: {
+  rowPending: {
+    opacity: 0.45,
+  },
+  body: {
+    paddingBottom: 12,
+    gap: 3,
+  },
+  titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    columnGap: theme.spacing.md,
-    minHeight: 56,
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
-    borderBottomColor: theme.colors['border-faint'],
-    borderBottomWidth: 1,
-  },
-  content: {
-    flex: 1,
-    gap: theme.spacing.sm,
-    justifyContent: 'center',
-    minWidth: 0,
+    gap: 8,
   },
   title: {
-    color: theme.colors.foreground,
     flex: 1,
-    fontSize: fontSizes.sm,
+    color: theme.colors.foreground,
+    fontSize: fontSizes.md,
     fontFamily: fontFamiliesNative.primary,
-    letterSpacing: 0,
-    lineHeight: lineHeights.bodySm,
     fontWeight: fontWeights.semibold,
+    lineHeight: lineHeights.body,
+    letterSpacing: -0.1,
+  },
+  meta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    flexShrink: 0,
+  },
+  time: {
+    color: theme.colors['text-tertiary'],
+    fontSize: fontSizes.xs,
+    fontFamily: fontFamiliesNative.primary,
+    lineHeight: lineHeights.caption,
   },
   preview: {
-    width: 320,
+    color: theme.colors['text-secondary'],
+    fontSize: fontSizes.sm,
+    fontFamily: fontFamiliesNative.primary,
+    fontWeight: fontWeights.regular,
+    lineHeight: lineHeights.bodySm,
+  },
+  separator: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: theme.colors['border-faint'],
+    marginLeft: 0,
   },
 }));
+
+const staticStyles = StyleSheet.create({
+  previewCard: {
+    width: 320,
+  },
+});

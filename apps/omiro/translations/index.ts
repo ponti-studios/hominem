@@ -24,6 +24,11 @@ const t = {
       removeFile: (name: string) => `Remove ${name}`,
       saveErrorTitle: 'Could not save note',
       saveErrorMessage: 'Your latest note changes could not be saved. Please try again.',
+      loadErrorTitle: 'Note unavailable',
+      loadErrorMessage: "We couldn't load this note right now.",
+      loadErrorRetry: 'Try again',
+      missingNoteTitle: 'Note unavailable',
+      missingNoteMessage: 'This note may have been deleted or is no longer available.',
     },
     toolbar: {
       bold: 'Bold',
@@ -47,6 +52,9 @@ const t = {
       title: 'Start the conversation',
       description: 'Ask a question, attach a photo, or record a voice note.',
     },
+    loadErrorTitle: 'Conversation unavailable',
+    loadErrorDescription: "We couldn't load this conversation right now.",
+    loadErrorRetry: 'Try again',
     conversationActionsLabel: 'Conversation actions',
     thinkingIndicator: 'Thinking...',
     input: {
@@ -112,6 +120,9 @@ const t = {
       title: 'Workspace',
       subtitle:
         'Capture something new, resume an active thread, or skim the artifacts that matter right now.',
+      loadErrorTitle: 'Workspace unavailable',
+      loadErrorDescription: "We couldn't load your workspace right now.",
+      retry: 'Try again',
       resumeChat: 'Resume chat',
       resumeNote: 'Resume note',
       newChat: 'New chat',
@@ -184,6 +195,9 @@ const t = {
       description: 'Archived chats are hidden from the main chat flow but remain available here.',
       emptyTitle: 'No archived chats yet',
       emptyCopy: 'Chats you archive will appear here for later reference.',
+      loadErrorTitle: 'Archived chats unavailable',
+      loadErrorDescription: "We couldn't load archived chats right now.",
+      loadErrorRetry: 'Try again',
     },
     name: {
       label: 'Name',

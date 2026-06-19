@@ -89,6 +89,7 @@ export function useInboxStreamItems({ enabled = true }: UseInboxStreamItemsOptio
 
   return {
     items,
+    error: inboxQuery.error,
     isInitialLoading: restoredState.isInitialLoading,
     isRefreshing: restoredState.isRefreshing,
     fetchNextPage: () => inboxQuery.fetchNextPage(),

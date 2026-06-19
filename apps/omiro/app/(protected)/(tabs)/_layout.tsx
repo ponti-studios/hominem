@@ -20,6 +20,8 @@ export default function AppLayout() {
           name="index"
           options={{
             title: 'Workspace',
+            headerLargeTitle: true,
+            headerShadowVisible: false,
           }}
         />
         <Stack.Screen name="inbox/[kind]/[id]" options={{}} />

@@ -14,11 +14,14 @@ export const ApiProvider = ({
   children: ReactNode;
   queryClient?: QueryClient;
 }) => {
-  const { getAuthHeaders } = useAuth();
+  const { getAuthHeaders, handleUnauthorized } = useAuth();
   const config: ClientConfig = {
     baseUrl: API_BASE_URL,
     getHeaders: getAuthHeaders,
     onError: (error: Error) => {
+      if ('status' in error && error.status === 401) {
+        void handleUnauthorized();
+      }
       logger.error('Mobile Hono RPC Error', error);
     },
   };

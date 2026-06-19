@@ -115,7 +115,7 @@ export function useSendMessage({ chatId }: { chatId: string }) {
 
     mutationFn: async ({ message, fileIds, noteIds }) => {
       const net = await NetInfo.fetch();
-      if (!net.isConnected) throw new Error('offline_unavailable');
+      if (net.isConnected === false) throw new Error('offline_unavailable');
 
       await streamSSE({
         url: `${API_BASE_URL}/api/chats/${chatId}/stream`,

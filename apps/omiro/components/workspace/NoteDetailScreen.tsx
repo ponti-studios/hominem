@@ -4,11 +4,12 @@ import { useNavigation } from '@react-navigation/native';
 import { Image } from 'expo-image';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
-import { Pressable, ScrollView, TextInput, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, TextInput, View } from 'react-native';
 
 import { InlineEnhanceTray } from '~/components/ai/InlineEnhanceTray';
 import { NOTE_TOOLBAR_ID, NoteToolbar } from '~/components/notes/NoteToolbar';
 import { Text, makeStyles, useThemeColors } from '~/components/theme';
+import { EmptyState } from '~/components/ui/EmptyState';
 import AppIcon from '~/components/ui/icon';
 import { useNoteEditor } from '~/hooks/use-note-editor';
 import { useNoteToolbar } from '~/hooks/use-note-toolbar';
@@ -64,7 +65,7 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
   const contentInputRef = useRef<TextInput>(null);
   const homeRoute = getWorkspaceHomeRoute();
 
-  const { data: note, isInitialLoading } = useNoteQuery({ noteId });
+  const { data: note, error, isInitialLoading, isRefreshing, refetch } = useNoteQuery({ noteId });
   const { save, updateCache, detachFile } = useNoteEditor(noteId);
   const {
     isEnhanceOpen,
@@ -135,7 +136,7 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
     router.replace(homeRoute);
   }, [homeRoute, router]);
 
-  if (isInitialLoading || !note) {
+  if (isInitialLoading) {
     return (
       <>
         <Stack.Screen
@@ -159,6 +160,55 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
           />
         </Stack.Toolbar>
         <NoteDetailPlaceholder />
+      </>
+    );
+  }
+
+  if (!note) {
+    return (
+      <>
+        <Stack.Screen
+          options={{
+            title: t.notes.editor.titleFallback,
+            headerBackVisible: false,
+          }}
+        />
+        <Stack.Toolbar placement="left">
+          <Stack.Toolbar.Button
+            accessibilityLabel="Back"
+            icon="chevron.left"
+            onPress={handleBackPress}
+          />
+        </Stack.Toolbar>
+        <Stack.Toolbar placement="right">
+          <Stack.Toolbar.Button
+            accessibilityLabel="Open workspace"
+            icon="list.bullet"
+            onPress={handleOpenWorkspace}
+          />
+        </Stack.Toolbar>
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.content}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={() => {
+                void refetch();
+              }}
+            />
+          }
+          showsVerticalScrollIndicator={false}
+        >
+          <EmptyState
+            action={{ label: t.notes.editor.loadErrorRetry, onPress: () => void refetch() }}
+            description={
+              error ? t.notes.editor.loadErrorMessage : t.notes.editor.missingNoteMessage
+            }
+            sfSymbol="arrow.clockwise.circle"
+            title={error ? t.notes.editor.loadErrorTitle : t.notes.editor.missingNoteTitle}
+          />
+        </ScrollView>
       </>
     );
   }
@@ -197,6 +247,14 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
         style={styles.container}
         contentContainerStyle={styles.content}
         keyboardDismissMode="interactive"
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        }
         showsVerticalScrollIndicator={false}
       >
         <SwiftUIHost matchContents style={styles.titleHost}>

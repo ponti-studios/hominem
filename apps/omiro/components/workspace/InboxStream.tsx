@@ -3,16 +3,18 @@ import React, { memo, useCallback, type RefObject } from 'react';
 import { ScrollView, StyleSheet, View, type RefreshControlProps } from 'react-native';
 
 import { Text, makeStyles } from '~/components/theme';
+import { EmptyState } from '~/components/ui/EmptyState';
+import t from '~/translations';
 
 import { InboxStreamItem } from './InboxStreamItem';
 import type { InboxStreamItemData as InboxStreamItemModel } from './InboxStreamItem.types';
 
 interface InboxStreamProps {
+  error?: Error | null;
   items: InboxStreamItemModel[];
   isLoading?: boolean;
   isFetchingNextPage?: boolean;
   listRef?: RefObject<FlashListRef<InboxStreamItemModel> | null>;
-  ListHeaderComponent?: React.ReactElement | null;
   onEndReached?: () => void;
   refreshControl?: React.ReactElement<RefreshControlProps>;
   contentPaddingBottom?: number;
@@ -27,11 +29,11 @@ const RenderInboxStreamItem = memo(({ item }: { item: InboxStreamItemModel }) =>
 RenderInboxStreamItem.displayName = 'RenderInboxStreamItem';
 
 export const InboxStream = ({
+  error,
   items,
   isLoading = false,
   isFetchingNextPage = false,
   listRef,
-  ListHeaderComponent,
   onEndReached,
   refreshControl,
   contentPaddingBottom,
@@ -51,15 +53,45 @@ export const InboxStream = ({
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {Array.from({ length: 5 }, (_, index) => (
-          <View key={`inbox-loading-row-${index.toString()}`} style={styles.loadingRow}>
-            <View style={styles.loadingIcon} />
-            <View style={styles.loadingCopy}>
-              <View style={styles.loadingTitle} />
-              <View style={styles.loadingMeta} />
+        {Array.from({ length: 8 }, (_, index) => (
+          <View key={`inbox-skeleton-${index.toString()}`} style={styles.skeletonRow}>
+            <View style={styles.skeletonBody}>
+              <View style={styles.skeletonTitleRow}>
+                <View style={styles.skeletonTitle} />
+                <View style={styles.skeletonTime} />
+              </View>
+              <View style={styles.skeletonPreview} />
             </View>
+            <View style={styles.skeletonSeparator} />
           </View>
         ))}
+      </ScrollView>
+    );
+  }
+
+  if (error && items.length === 0) {
+    return (
+      <ScrollView
+        contentContainerStyle={[
+          styles.emptyWrap,
+          contentPaddingBottom != null ? { paddingBottom: contentPaddingBottom } : null,
+        ]}
+        refreshControl={refreshControl}
+        showsVerticalScrollIndicator={false}
+      >
+        <EmptyState
+          action={
+            refreshControl?.props.onRefresh
+              ? {
+                  label: t.workspace.home.retry,
+                  onPress: refreshControl.props.onRefresh,
+                }
+              : undefined
+          }
+          description={t.workspace.home.loadErrorDescription}
+          sfSymbol="arrow.clockwise.circle"
+          title={t.workspace.home.loadErrorTitle}
+        />
       </ScrollView>
     );
   }
@@ -71,6 +103,7 @@ export const InboxStream = ({
           styles.emptyWrap,
           contentPaddingBottom != null ? { paddingBottom: contentPaddingBottom } : null,
         ]}
+        refreshControl={refreshControl}
         showsVerticalScrollIndicator={false}
       />
     );
@@ -78,33 +111,28 @@ export const InboxStream = ({
 
   return (
     <View style={styles.container}>
-      <View style={styles.sectionShell}>
-        <FlashList
-          ref={listRef}
-          contentContainerStyle={[
-            staticStyles.listContent,
-            contentPaddingBottom != null ? { paddingBottom: contentPaddingBottom } : null,
-          ]}
-          data={items}
-          keyExtractor={keyExtractor}
-          keyboardDismissMode="on-drag"
-          renderItem={renderItem}
-          ListHeaderComponent={ListHeaderComponent}
-          ListFooterComponent={
-            <View style={staticStyles.sectionFooter}>
-              {isFetchingNextPage ? (
-                <Text variant="caption1" color="text-tertiary" style={styles.footerText}>
-                  Loading more...
-                </Text>
-              ) : null}
-            </View>
-          }
-          onEndReached={onEndReached}
-          onEndReachedThreshold={0.4}
-          refreshControl={refreshControl}
-          showsVerticalScrollIndicator={false}
-        />
-      </View>
+      <FlashList
+        ref={listRef as React.Ref<FlashListRef<InboxStreamItemModel>>}
+        contentContainerStyle={{
+          paddingTop: 4,
+          paddingBottom: contentPaddingBottom != null ? contentPaddingBottom : 16,
+        }}
+        data={items}
+        keyExtractor={keyExtractor}
+        keyboardDismissMode="on-drag"
+        renderItem={renderItem}
+        ListFooterComponent={
+          isFetchingNextPage ? (
+            <Text variant="caption1" color="text-tertiary" style={styles.footerText}>
+              Loading more...
+            </Text>
+          ) : null
+        }
+        onEndReached={onEndReached}
+        onEndReachedThreshold={0.4}
+        refreshControl={refreshControl}
+        showsVerticalScrollIndicator={false}
+      />
     </View>
   );
 };
@@ -113,12 +141,9 @@ const useStreamStyles = makeStyles((theme) => ({
   container: {
     flex: 1,
   },
-  sectionShell: {
-    flex: 1,
-    overflow: 'hidden',
-  },
   footerText: {
     textAlign: 'center',
+    paddingVertical: theme.spacing.lg,
   },
   emptyWrap: {
     flexGrow: 1,
@@ -128,48 +153,45 @@ const useStreamStyles = makeStyles((theme) => ({
   },
   loadingWrap: {
     flexGrow: 1,
-    paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.md,
     paddingBottom: theme.spacing.lg,
-    rowGap: theme.spacing.md,
   },
-  loadingRow: {
-    alignItems: 'center',
+  skeletonRow: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    backgroundColor: theme.colors['bg-base'],
+  },
+  skeletonBody: {
+    paddingBottom: 12,
+    gap: 6,
+  },
+  skeletonTitleRow: {
     flexDirection: 'row',
-    columnGap: theme.spacing.md,
-    minHeight: 56,
-    paddingVertical: theme.spacing.sm,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
   },
-  loadingIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: theme.colors['border-subtle'],
-  },
-  loadingCopy: {
+  skeletonTitle: {
+    height: 14,
     flex: 1,
-    rowGap: theme.spacing.sm,
-  },
-  loadingTitle: {
-    height: 13,
-    width: '58%',
+    maxWidth: '65%',
     borderRadius: theme.borderRadii.sm,
     backgroundColor: theme.colors['border-subtle'],
   },
-  loadingMeta: {
+  skeletonTime: {
+    height: 10,
+    width: 32,
+    borderRadius: theme.borderRadii.sm,
+    backgroundColor: theme.colors['border-faint'],
+    flexShrink: 0,
+  },
+  skeletonPreview: {
     height: 11,
-    width: '36%',
+    width: '85%',
     borderRadius: theme.borderRadii.sm,
     backgroundColor: theme.colors['border-faint'],
   },
+  skeletonSeparator: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: theme.colors['border-faint'],
+  },
 }));
-
-const staticStyles = StyleSheet.create({
-  listContent: {
-    paddingTop: 0,
-    paddingBottom: 16,
-  },
-  sectionFooter: {
-    height: 0,
-  },
-});

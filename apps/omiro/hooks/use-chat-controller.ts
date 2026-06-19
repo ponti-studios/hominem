@@ -29,8 +29,10 @@ import {
 
 export interface ChatServices {
   useChatMessages: (args: { chatId: string }) => {
+    error: Error | null;
     isFetching: boolean;
     isPending: boolean;
+    refetch: () => Promise<unknown>;
     data: ChatMessageItem[] | undefined;
   };
   useSendMessage: (args: { chatId: string }) => {
@@ -101,24 +103,24 @@ interface UseChatControllerResult {
   handleArchiveChat: () => void;
   handleCloseSearch: () => void;
   handleCopyMessage: (message: ChatMessageItem) => void;
-  handleDeleteMessage: (messageId: string) => void;
-  handleEditMessage: (messageId: string, content: string) => Promise<void>;
   handleOpenMenu: () => void;
   handleCloseMenu: () => void;
   handleToggleDebug: () => void;
   handleTransformFromMenu: (type: ArtifactType) => void;
   handleOpenSearch: () => void;
-  handleRegenerate: (messageId: string) => Promise<void>;
   handleRejectReview: () => Promise<void>;
   handleSearchQueryChange: (query: string) => void;
   handleShareMessage: (message: ChatMessageItem) => Promise<void>;
   canTransform: boolean;
   isMessagesLoading: boolean;
+  isMessagesRefreshing: boolean;
   isArchiving: boolean;
   isReviewVisible: boolean;
+  messagesError: Error | null;
   showActionsMenu: boolean;
   lifecycleState: CaptureLifecycleState;
   pendingReview: PendingReview | null;
+  refetchMessages: () => Promise<unknown>;
   resolvedSource: SessionSource;
   searchInputRef: RefObject<TextInput | null>;
   searchQuery: string;
@@ -136,8 +138,10 @@ export function useChatController({
   const client = useApiClient();
   const queryClient = useQueryClient();
   const {
+    error: messagesError,
     isFetching: isMessagesFetching,
     isPending: isMessagesPending,
+    refetch: refetchMessages,
     data: messages,
   } = services.useChatMessages({ chatId });
   const { mutate: archiveChat, isPending: isArchiving } = services.useArchiveChat({
@@ -329,35 +333,6 @@ export function useChatController({
     });
   }, []);
 
-  const handleRegenerate = useCallback(
-    async (messageId: string) => {
-      const messageIndex = formattedMessages.findIndex((message) => message.id === messageId);
-      if (messageIndex === -1) return;
-
-      const previousUserMessage = [...formattedMessages]
-        .slice(0, messageIndex)
-        .reverse()
-        .find((message) => message.role === 'user' && message.message.trim().length > 0);
-
-      if (!previousUserMessage) return;
-
-      await sendChatMessage({ message: previousUserMessage.message });
-    },
-    [formattedMessages, sendChatMessage],
-  );
-
-  const handleEditMessage = useCallback(
-    async (messageId: string, content: string) => {
-      const existingMessage = formattedMessages.find((message) => message.id === messageId);
-      const trimmedContent = content.trim();
-      if (!trimmedContent) return;
-      if (!existingMessage || existingMessage.role !== 'user') return;
-
-      await sendChatMessage({ message: trimmedContent });
-    },
-    [formattedMessages, sendChatMessage],
-  );
-
   const handleShareMessage = useCallback(async (message: ChatMessageItem) => {
     const text = message.message;
     if (!text) return;
@@ -365,14 +340,6 @@ export function useChatController({
     await FileSystem.writeAsStringAsync(uri, text, { encoding: FileSystem.EncodingType.UTF8 });
     await Sharing.shareAsync(uri, { mimeType: 'text/plain', UTI: 'public.plain-text' });
   }, []);
-
-  const handleDeleteMessage = useCallback(
-    (_messageId: string) => {
-      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      queryClient.invalidateQueries({ queryKey: services.chatKeys.messages(chatId) });
-    },
-    [chatId, queryClient, services.chatKeys],
-  );
 
   const handleOpenSearch = useCallback(() => {
     dispatch({ type: 'open-search' });
@@ -417,11 +384,8 @@ export function useChatController({
     handleCloseSearch,
     handleCloseMenu,
     handleCopyMessage,
-    handleDeleteMessage,
-    handleEditMessage,
     handleOpenMenu,
     handleOpenSearch,
-    handleRegenerate,
     handleRejectReview,
     handleSearchQueryChange,
     handleShareMessage,
@@ -429,10 +393,13 @@ export function useChatController({
     handleToggleDebug,
     canTransform,
     isMessagesLoading: messagesState.isInitialLoading,
+    isMessagesRefreshing: messagesState.isRefreshing,
     isArchiving,
     lifecycleState,
+    messagesError,
     pendingReview,
     resolvedSource,
+    refetchMessages,
     searchInputRef,
     searchQuery: uiState.searchQuery,
     showDebug: uiState.showDebug,
