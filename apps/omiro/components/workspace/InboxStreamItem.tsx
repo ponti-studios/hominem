@@ -1,5 +1,4 @@
-import { Button, ContextMenu, Host } from '@expo/ui/swift-ui';
-import { useRouter } from 'expo-router';
+import { Link } from 'expo-router';
 import React, { memo, useCallback } from 'react';
 import { Alert, Pressable, View } from 'react-native';
 import Reanimated, { FadeIn } from 'react-native-reanimated';
@@ -18,6 +17,7 @@ import { useChatArchive } from '~/services/chat/use-chat-archive';
 import { useNoteDelete } from '~/services/notes/use-note-delete';
 import t from '~/translations';
 
+import { ArtifactPreviewCard } from './ArtifactPreviewCard';
 import type { InboxStreamItemData as InboxStreamItemModel } from './InboxStreamItem.types';
 
 interface InboxStreamItemProps {
@@ -25,7 +25,6 @@ interface InboxStreamItemProps {
 }
 
 export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
-  const router = useRouter();
   const styles = useStyles();
   const primaryText = cleanText(item.title) ?? t.workspace.item.untitled;
   const kindLabel = item.kind === 'chat' ? 'CHAT' : 'NOTE';
@@ -55,57 +54,43 @@ export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
     archiveChat();
   }, [archiveChat]);
 
-  const onPress = useCallback(() => {
-    if (isPending) {
-      return;
-    }
-
-    router.push(item.route);
-  }, [isPending, item.route, router]);
-
   return (
     <Reanimated.View entering={FadeIn.duration(200)}>
-      <Host style={{ width: '100%' }}>
-        <ContextMenu>
-          <ContextMenu.Trigger>
-            <Pressable
-              accessibilityLabel={`${primaryText}, ${kindLabel}`}
-              accessibilityRole="button"
-              disabled={isPending}
-              onPress={onPress}
-              style={({ pressed }) => [
-                styles.pressable,
-                pressed ? styles.pressed : null,
-                isPending ? styles.pending : null,
-              ]}
-            >
-              <View style={styles.row}>
-                <AppIcon name={iconName} size={18} tintColor={theme.colors['icon-muted']} />
-                <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
-                  {primaryText}
-                </Text>
-              </View>
-            </Pressable>
-          </ContextMenu.Trigger>
-          <ContextMenu.Items>
-            {item.kind === 'note' ? (
-              <Button
-                label={t.workspace.item.deleteNote.confirm}
-                role="destructive"
-                systemImage="trash"
-                onPress={handleDelete}
-              />
-            ) : (
-              <Button
-                label={t.workspace.item.archive}
-                role="destructive"
-                systemImage="archivebox"
-                onPress={handleArchive}
-              />
-            )}
-          </ContextMenu.Items>
-        </ContextMenu>
-      </Host>
+      <Link href={item.route} disabled={isPending}>
+        <Link.Trigger withAppleZoom>
+          <Pressable
+            accessibilityLabel={`${primaryText}, ${kindLabel}`}
+            accessibilityRole="button"
+            disabled={isPending}
+            style={({ pressed }) => [
+              styles.pressable,
+              pressed ? styles.pressed : null,
+              isPending ? styles.pending : null,
+            ]}
+          >
+            <View style={styles.row}>
+              <AppIcon name={iconName} size={18} tintColor={theme.colors['icon-muted']} />
+              <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
+                {primaryText}
+              </Text>
+            </View>
+          </Pressable>
+        </Link.Trigger>
+        <Link.Preview style={styles.preview}>
+          <ArtifactPreviewCard kind={item.kind} preview={item.preview} title={primaryText} />
+        </Link.Preview>
+        <Link.Menu title={primaryText}>
+          {item.kind === 'note' ? (
+            <Link.MenuAction destructive icon="trash" onPress={handleDelete}>
+              {t.workspace.item.deleteNote.confirm}
+            </Link.MenuAction>
+          ) : (
+            <Link.MenuAction destructive icon="archivebox" onPress={handleArchive}>
+              {t.workspace.item.archive}
+            </Link.MenuAction>
+          )}
+        </Link.Menu>
+      </Link>
     </Reanimated.View>
   );
 });
@@ -149,5 +134,8 @@ const useStyles = makeStyles((theme) => ({
     letterSpacing: 0,
     lineHeight: lineHeights.bodySm,
     fontWeight: fontWeights.semibold,
+  },
+  preview: {
+    width: 320,
   },
 }));

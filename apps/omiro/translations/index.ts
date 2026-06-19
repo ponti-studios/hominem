@@ -108,6 +108,18 @@ const t = {
     },
   },
   workspace: {
+    home: {
+      title: 'Workspace',
+      subtitle:
+        'Capture something new, resume an active thread, or skim the artifacts that matter right now.',
+      resumeChat: 'Resume chat',
+      resumeNote: 'Resume note',
+      newChat: 'New chat',
+      archivedChats: 'Archived chats',
+      settings: 'Settings',
+      noResume: 'Everything you capture comes back here when you need it.',
+      previewLabel: (kind: 'chat' | 'note') => (kind === 'chat' ? 'Chat preview' : 'Note preview'),
+    },
     empty: {
       title: 'Your workspace starts here',
       description:
@@ -147,6 +159,8 @@ const t = {
       untitled: 'Untitled',
       untitledNote: 'Untitled note',
       untitledSession: 'Untitled session',
+      chatLabel: 'Chat',
+      noteLabel: 'Note',
       deleteNote: {
         title: 'Delete note',
         message: 'This cannot be undone.',

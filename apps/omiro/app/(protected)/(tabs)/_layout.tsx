@@ -1,30 +1,8 @@
-import { Stack, useRouter, type RelativePathString } from 'expo-router';
+import { Stack } from 'expo-router';
 import React from 'react';
-import { Pressable } from 'react-native';
 
 import { useThemeColors } from '~/components/theme';
-import AppIcon from '~/components/ui/icon';
 import { TopAnchoredFeedProvider } from '~/services/inbox/top-anchored-feed';
-
-function SettingsButton() {
-  const router = useRouter();
-
-  return (
-    <Pressable
-      hitSlop={6}
-      onPress={() => router.push('/(protected)/(tabs)/settings' as RelativePathString)}
-      style={({ pressed }) => ({
-        alignItems: 'center',
-        height: 44,
-        justifyContent: 'center',
-        opacity: pressed ? 0.65 : 1,
-        width: 44,
-      })}
-    >
-      <AppIcon name="gearshape" />
-    </Pressable>
-  );
-}
 
 export default function AppLayout() {
   const themeColors = useThemeColors();
@@ -41,8 +19,7 @@ export default function AppLayout() {
         <Stack.Screen
           name="index"
           options={{
-            title: 'Inbox',
-            headerRight: () => <SettingsButton />,
+            title: 'Workspace',
           }}
         />
         <Stack.Screen name="inbox/[kind]/[id]" options={{}} />

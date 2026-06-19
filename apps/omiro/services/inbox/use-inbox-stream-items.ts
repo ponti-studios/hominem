@@ -11,6 +11,7 @@ import {
   hasNonEmptyListData,
   resolveRestoredQueryState,
 } from '~/services/query/restored-query-state';
+import { getWorkspaceArtifactRoute } from '~/services/workspace/routes';
 
 interface UseInboxStreamItemsOptions {
   enabled?: boolean;
@@ -19,11 +20,7 @@ interface UseInboxStreamItemsOptions {
 const INBOX_STREAM_STALE_TIME_MS = 30_000;
 
 function toMobileInboxRoute(item: InboxStreamItem): string {
-  if (item.kind === 'chat') {
-    return `/(protected)/(tabs)/inbox/chat/${item.entityId}`;
-  }
-
-  return `/(protected)/(tabs)/inbox/note/${item.entityId}`;
+  return getWorkspaceArtifactRoute(item.kind, item.entityId);
 }
 
 function toInboxStreamItem(item: InboxStreamItem): InboxStreamItemData {

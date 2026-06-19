@@ -27,6 +27,7 @@ import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
 import { donateAddNoteIntent } from '~/services/intent-donation';
 import { useCreateNote } from '~/services/notes/use-create-note';
 import { clearFeedDraft, readFeedDraft, writeFeedDraft } from '~/services/workspace/launch-state';
+import { getWorkspaceArtifactRoute } from '~/services/workspace/routes';
 import t from '~/translations';
 
 interface FeedComposerProps {
@@ -104,7 +105,9 @@ function FeedComposerInner() {
     const chat = await createChat({ title });
     clearDraft();
     router.push(
-      `/(protected)/(tabs)/inbox/chat/${chat.id}?initialMessage=${encodeURIComponent(message.trim())}` as RelativePathString,
+      getWorkspaceArtifactRoute('chat', chat.id, {
+        initialMessage: message.trim(),
+      }) as RelativePathString,
     );
     requestTopReveal();
   }, [canSubmit, isChatCreating, createChat, message, clearDraft, router, requestTopReveal]);

@@ -12,6 +12,7 @@ interface InboxStreamProps {
   isLoading?: boolean;
   isFetchingNextPage?: boolean;
   listRef?: RefObject<FlashListRef<InboxStreamItemModel> | null>;
+  ListHeaderComponent?: React.ReactElement | null;
   onEndReached?: () => void;
   refreshControl?: React.ReactElement<RefreshControlProps>;
   contentPaddingBottom?: number;
@@ -30,6 +31,7 @@ export const InboxStream = ({
   isLoading = false,
   isFetchingNextPage = false,
   listRef,
+  ListHeaderComponent,
   onEndReached,
   refreshControl,
   contentPaddingBottom,
@@ -87,6 +89,7 @@ export const InboxStream = ({
           keyExtractor={keyExtractor}
           keyboardDismissMode="on-drag"
           renderItem={renderItem}
+          ListHeaderComponent={ListHeaderComponent}
           ListFooterComponent={
             <View style={staticStyles.sectionFooter}>
               {isFetchingNextPage ? (

@@ -8,6 +8,7 @@ import { useThemeColors } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
 import { useArchivedSessions } from '~/hooks/useArchivedSessions';
 import { formatRelativeAge } from '~/services/date/format-relative-age';
+import { getWorkspaceArtifactRoute } from '~/services/workspace/routes';
 import t from '~/translations';
 
 export default function ArchivedChatsScreen() {
@@ -16,7 +17,7 @@ export default function ArchivedChatsScreen() {
   const { data: chats = [] } = useArchivedSessions({ enabled: isFocused });
   const onPressChat = useCallback(
     (chatId: string) => {
-      router.push(`/(protected)/(tabs)/inbox/chat/${chatId}` as RelativePathString);
+      router.push(getWorkspaceArtifactRoute('chat', chatId) as RelativePathString);
     },
     [router],
   );

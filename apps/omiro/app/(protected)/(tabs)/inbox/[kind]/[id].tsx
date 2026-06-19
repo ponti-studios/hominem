@@ -1,8 +1,9 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect } from 'react';
 
-import ChatDetailScreen from '../../chat/[id]';
-import NoteDetailScreen from '../../notes/[id]';
+import { ChatDetailScreen } from '~/components/workspace/ChatDetailScreen';
+import { NoteDetailScreen } from '~/components/workspace/NoteDetailScreen';
+import { getWorkspaceHomeRoute } from '~/services/workspace/routes';
 
 export default function InboxDetailScreen() {
   const { kind } = useLocalSearchParams<{ kind?: string; id?: string }>();
@@ -10,7 +11,7 @@ export default function InboxDetailScreen() {
 
   useEffect(() => {
     if (kind !== 'chat' && kind !== 'note') {
-      router.replace('/(protected)/(tabs)');
+      router.replace(getWorkspaceHomeRoute());
     }
   }, [kind, router]);
 
