@@ -6,16 +6,18 @@ import { useComposerContext } from '~/components/composer/ComposerContext';
 
 interface UseComposerOptions {
   initialDraft?: string;
+  seedMessage?: string;
   onDraftChange?: (message: string) => void;
   onExtraClearDraft?: () => void;
 }
 
 export function useComposer({
   initialDraft,
+  seedMessage,
   onDraftChange,
   onExtraClearDraft,
 }: UseComposerOptions = {}) {
-  const { attachments, errors, isUploading, progressByAssetId, clearAttachments, seedMessage } =
+  const { attachments, errors, isUploading, progressByAssetId, clearAttachments } =
     useComposerContext();
 
   const [message, setMessageState] = useState(() =>

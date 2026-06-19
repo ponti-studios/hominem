@@ -6,7 +6,7 @@ import { RefreshControl, View } from 'react-native';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { FeedComposer } from '~/components/feed/FeedComposer';
+import { Composer } from '~/components/composer/Composer';
 import { makeStyles } from '~/components/theme';
 import { APP_NAME } from '~/constants';
 import { InboxStream } from '~/components/workspace/InboxStream';
@@ -15,8 +15,10 @@ import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
 import { useInboxStreamItems } from '~/services/inbox/use-inbox-stream-items';
 import { recordWorkspaceScreenReady } from '~/services/performance/startup-metrics';
 import {
+  clearFeedDraft,
   consumeWorkspaceRestoreAttempt,
   readFeedDraft,
+  writeFeedDraft,
 } from '~/services/workspace/launch-state';
 import {
   getWorkspaceArchivedChatsRoute,
@@ -105,10 +107,16 @@ export default function FeedScreen() {
       <KeyboardStickyView
         offset={{ closed: 0, opened: 0 }}
         pointerEvents="box-none"
-        style={styles.overlay}
+        style={[styles.overlay, { paddingBottom: insets.bottom + 10 }]}
       >
         <View onLayout={handleComposerLayout} style={styles.composerShell}>
-          <FeedComposer seedMessage={params.seed} />
+          <Composer
+            mode="feed"
+            seedMessage={params.seed}
+            initialDraft={readFeedDraft()}
+            onDraftChange={writeFeedDraft}
+            onClearDraft={clearFeedDraft}
+          />
         </View>
       </KeyboardStickyView>
     </View>
@@ -123,7 +131,6 @@ const useStyles = makeStyles((theme) => ({
   overlay: {
     bottom: 0,
     left: 0,
-    paddingBottom: 10,
     paddingHorizontal: 12,
     position: 'absolute',
     right: 0,

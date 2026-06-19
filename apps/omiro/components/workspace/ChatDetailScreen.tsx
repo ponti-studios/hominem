@@ -15,7 +15,7 @@ import {
   type ChatRenderIcon,
   type ChatServices,
 } from '~/components/chat';
-import { ChatComposer } from '~/components/chat/ChatComposer';
+import { Composer } from '~/components/composer/Composer';
 import { buildConversationActionsModel } from '~/components/chat/conversation-actions.model';
 import { EmptyState } from '~/components/ui';
 import AppIcon from '~/components/ui/icon';
@@ -281,10 +281,10 @@ export function ChatDetailScreen() {
         <KeyboardStickyView
           offset={{ closed: 0, opened: 0 }}
           pointerEvents="box-none"
-          style={styles.composerOverlay}
+          style={[styles.composerOverlay, { paddingBottom: insets.bottom + 10, paddingHorizontal: 12 }]}
         >
           <View onLayout={handleComposerLayout}>
-            <ChatComposer chatId={chatId} initialMessage={initialMessage} />
+            <Composer mode="chat" chatId={chatId} seedMessage={initialMessage} />
           </View>
         </KeyboardStickyView>
         <View style={styles.reviewOverlay}>

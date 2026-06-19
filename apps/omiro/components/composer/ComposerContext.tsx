@@ -10,11 +10,10 @@ import React, {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useState,
 } from 'react';
-import { Alert, Keyboard } from 'react-native';
+import { Alert } from 'react-native';
 
 import { useFileUpload } from '~/services/files/use-file-upload';
 import type { UploadedFile } from '~/types/upload';
@@ -38,16 +37,12 @@ interface ComposerContextValue {
   clearAttachments: () => void;
   pickAttachment: () => Promise<ComposerAttachment[]>;
   handleCameraCapture: (photo: { uri: string; fileName?: string }) => Promise<ComposerAttachment[]>;
-  // Composer state
-  seedMessage?: string;
-  isKeyboardVisible: boolean;
 }
 
 const ComposerContext = createContext<ComposerContextValue | undefined>(undefined);
 
 interface ComposerProviderProps {
   children: React.ReactNode;
-  seedMessage?: string;
 }
 
 function getAttachmentType(uploadedFile: UploadedFile): string {
@@ -56,25 +51,11 @@ function getAttachmentType(uploadedFile: UploadedFile): string {
     : classifyFileByMimeType(uploadedFile.mimetype);
 }
 
-export function ComposerProvider({ children, seedMessage }: ComposerProviderProps) {
+export function ComposerProvider({ children }: ComposerProviderProps) {
   const client = useApiClient();
   const [attachments, setAttachments] = useState<ComposerAttachment[]>([]);
-  const [isKeyboardVisible, setIsKeyboardVisible] = useState(Keyboard.isVisible());
 
   const { uploadAssets, uploadState, clearErrors } = useFileUpload();
-
-  useEffect(() => {
-    const show = Keyboard.addListener('keyboardWillShow', () => {
-      setIsKeyboardVisible(true);
-    });
-    const hide = Keyboard.addListener('keyboardWillHide', () => {
-      setIsKeyboardVisible(false);
-    });
-    return () => {
-      show.remove();
-      hide.remove();
-    };
-  }, []);
 
   // Attachment operations
   const onRemove = useCallback(
@@ -173,8 +154,6 @@ export function ComposerProvider({ children, seedMessage }: ComposerProviderProp
       clearAttachments,
       pickAttachment,
       handleCameraCapture,
-      seedMessage,
-      isKeyboardVisible,
     }),
     [
       attachments,
@@ -185,8 +164,6 @@ export function ComposerProvider({ children, seedMessage }: ComposerProviderProp
       clearAttachments,
       pickAttachment,
       handleCameraCapture,
-      seedMessage,
-      isKeyboardVisible,
     ],
   );
 
