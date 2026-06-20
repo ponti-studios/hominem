@@ -1,4 +1,4 @@
-FROM node:26.3.0-alpine AS builder
+FROM node:26.3.1-alpine AS builder
 
 WORKDIR /app
 
@@ -16,7 +16,7 @@ RUN npm install -g pnpm@11.1.1 && \
 # Bundle API + all npm dependencies into dist/ (fully self-contained)
 RUN pnpm --filter @hominem/api run build
 
-FROM node:26.3.0-alpine AS release
+FROM node:26.3.1-alpine AS release
 
 WORKDIR /app
 
