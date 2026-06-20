@@ -1,6 +1,6 @@
 import { FlashList, type FlashListRef, type ListRenderItem } from '@shopify/flash-list';
 import React, { memo, useCallback, type RefObject } from 'react';
-import { ScrollView, StyleSheet, View, type RefreshControlProps } from 'react-native';
+import { ScrollView, View, type RefreshControlProps } from 'react-native';
 
 import { Text, makeStyles } from '~/components/theme';
 import { EmptyState } from '~/components/ui/EmptyState';
@@ -20,6 +20,7 @@ interface InboxStreamProps {
   refreshControl?: React.ReactElement<RefreshControlProps>;
   contentPaddingBottom?: number;
   contentPaddingTop?: number;
+  searchQuery?: string;
 }
 
 const keyExtractor = (item: InboxStreamItemModel) => `${item.kind}:${item.id}`;
@@ -41,14 +42,22 @@ export const InboxStream = ({
   refreshControl,
   contentPaddingBottom,
   contentPaddingTop,
+  searchQuery = '',
 }: InboxStreamProps) => {
   const styles = useStreamStyles();
+
+  const filteredItems = searchQuery.trim()
+    ? items.filter((item) => {
+        const q = searchQuery.toLowerCase();
+        return item.title?.toLowerCase().includes(q) || item.preview?.toLowerCase().includes(q);
+      })
+    : items;
 
   const renderItem = useCallback<ListRenderItem<InboxStreamItemModel>>(({ item }) => {
     return <RenderInboxStreamItem item={item} />;
   }, []);
 
-  if (isLoading && items.length === 0) {
+  if (isLoading && filteredItems.length === 0) {
     return (
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
@@ -60,22 +69,23 @@ export const InboxStream = ({
         showsVerticalScrollIndicator={false}
       >
         {Array.from({ length: 8 }, (_, index) => (
-          <View key={`inbox-skeleton-${index.toString()}`} style={styles.skeletonRow}>
-            <View style={styles.skeletonBody}>
-              <View style={styles.skeletonTitleRow}>
-                <View style={styles.skeletonTitle} />
-                <View style={styles.skeletonTime} />
+          <View key={`inbox-skeleton-${index.toString()}`} style={styles.skeletonCard}>
+            <View style={styles.skeletonCardClip}>
+              <View style={styles.skeletonBody}>
+                <View style={styles.skeletonTitleRow}>
+                  <View style={styles.skeletonIcon} />
+                  <View style={styles.skeletonTitle} />
+                  <View style={styles.skeletonTime} />
+                </View>
               </View>
-              <View style={styles.skeletonPreview} />
             </View>
-            <View style={styles.skeletonSeparator} />
           </View>
         ))}
       </ScrollView>
     );
   }
 
-  if (error && items.length === 0) {
+  if (error && filteredItems.length === 0) {
     return (
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
@@ -103,7 +113,7 @@ export const InboxStream = ({
     );
   }
 
-  if (items.length === 0) {
+  if (filteredItems.length === 0) {
     return (
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
@@ -122,11 +132,11 @@ export const InboxStream = ({
       <FlashList
         ref={listRef as React.Ref<FlashListRef<InboxStreamItemModel>>}
         contentContainerStyle={{
-          paddingTop: contentPaddingTop != null ? contentPaddingTop : 0,
+          paddingTop: contentPaddingTop != null ? contentPaddingTop : 8,
           paddingBottom: contentPaddingBottom != null ? contentPaddingBottom : 16,
         }}
         contentInsetAdjustmentBehavior="automatic"
-        data={items}
+        data={filteredItems}
         keyExtractor={keyExtractor}
         keyboardDismissMode="on-drag"
         renderItem={renderItem}
@@ -165,20 +175,32 @@ const useStreamStyles = makeStyles((theme) => ({
     flexGrow: 1,
     paddingBottom: theme.spacing.lg,
   },
-  skeletonRow: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    backgroundColor: theme.colors['bg-base'],
+  skeletonCard: {
+    marginHorizontal: 12,
+    marginBottom: 4,
+    borderRadius: 12,
+  },
+  skeletonCardClip: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: theme.colors['bg-surface'],
+    paddingHorizontal: 14,
+    paddingVertical: 12,
   },
   skeletonBody: {
-    paddingBottom: 12,
     gap: 6,
   },
   skeletonTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     gap: 8,
+  },
+  skeletonIcon: {
+    width: 13,
+    height: 13,
+    borderRadius: 3,
+    backgroundColor: theme.colors['border-faint'],
+    flexShrink: 0,
   },
   skeletonTitle: {
     height: 14,
@@ -193,15 +215,5 @@ const useStreamStyles = makeStyles((theme) => ({
     borderRadius: theme.borderRadii.sm,
     backgroundColor: theme.colors['border-faint'],
     flexShrink: 0,
-  },
-  skeletonPreview: {
-    height: 11,
-    width: '85%',
-    borderRadius: theme.borderRadii.sm,
-    backgroundColor: theme.colors['border-faint'],
-  },
-  skeletonSeparator: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: theme.colors['border-faint'],
   },
 }));

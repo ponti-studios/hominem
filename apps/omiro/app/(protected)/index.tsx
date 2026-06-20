@@ -2,12 +2,12 @@ import type { FlashListRef } from '@shopify/flash-list';
 import { Stack, useIsFocused, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import type { LayoutChangeEvent } from 'react-native';
-import { RefreshControl, View } from 'react-native';
+import { RefreshControl, StyleSheet, TextInput, View } from 'react-native';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Composer } from '~/components/composer/Composer';
-import { makeStyles } from '~/components/theme';
+import { makeStyles, useThemeColors } from '~/components/theme';
 import { APP_NAME } from '~/constants';
 import { InboxStream } from '~/components/workspace/InboxStream';
 import type { InboxStreamItemData } from '~/components/workspace/InboxStreamItem.types';
@@ -27,6 +27,7 @@ import {
 
 export default function FeedScreen() {
   const styles = useStyles();
+  const themeColors = useThemeColors();
   const isFocused = useIsFocused();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -43,6 +44,7 @@ export default function FeedScreen() {
   } = useInboxStreamItems({ enabled: isFocused });
   const listRef = React.useRef<FlashListRef<InboxStreamItemData>>(null);
   const [composerHeight, setComposerHeight] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const handleComposerLayout = useCallback((e: LayoutChangeEvent) => {
     const nextHeight = e.nativeEvent.layout.height;
@@ -87,12 +89,26 @@ export default function FeedScreen() {
           headerTransparent: false,
         }}
       />
+      <View style={styles.searchBar}>
+        <TextInput
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Search"
+          placeholderTextColor={themeColors['text-tertiary']}
+          clearButtonMode="while-editing"
+          returnKeyType="search"
+          autoCorrect={false}
+          autoCapitalize="none"
+          style={[styles.searchInput, { color: themeColors['text-primary'] }]}
+        />
+      </View>
       <InboxStream
         error={error}
         listRef={listRef}
         items={items}
         isLoading={isInitialLoading}
         isFetchingNextPage={isFetchingNextPage}
+        searchQuery={searchQuery}
         onEndReached={() => {
           if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
         }}
@@ -126,7 +142,19 @@ export default function FeedScreen() {
 const useStyles = makeStyles((theme) => ({
   container: {
     flex: 1,
-    backgroundColor: theme.colors['bg-base'],
+  },
+  searchBar: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: theme.colors['border-faint'],
+  },
+  searchInput: {
+    backgroundColor: theme.colors['bg-surface'],
+    borderRadius: 10,
+    fontSize: 16,
+    height: 36,
+    paddingHorizontal: 12,
   },
   overlay: {
     bottom: 0,

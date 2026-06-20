@@ -94,6 +94,7 @@ export function ClassificationReview({
           <View style={styles.actionsRow}>
             <View style={styles.actionSlot}>
               <Button
+                testID="classification-review-accept"
                 label={t.chat.classification.saveLabel[proposedType]}
                 onPress={onAccept}
                 variant="primary"
@@ -101,6 +102,7 @@ export function ClassificationReview({
             </View>
             <View style={styles.actionSlot}>
               <Button
+                testID="classification-review-reject"
                 label={t.chat.classification.discard}
                 onPress={onReject}
                 variant="secondary"

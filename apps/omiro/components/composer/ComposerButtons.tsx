@@ -22,6 +22,7 @@ interface ActionButtonProps {
   disabled: boolean;
   accessibilityLabel: string;
   isAnimating?: boolean;
+  testID?: string;
 }
 
 export function ActionButton({
@@ -30,6 +31,7 @@ export function ActionButton({
   disabled,
   accessibilityLabel,
   isAnimating = false,
+  testID,
 }: ActionButtonProps) {
   const themeColors = useThemeColors();
   const styles = useStyles();
@@ -60,6 +62,7 @@ export function ActionButton({
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
       hitSlop={spacing[2]}
+      testID={testID}
       style={({ pressed }) => [
         styles.actionBtn,
         disabled ? styles.actionBtnDisabled : null,

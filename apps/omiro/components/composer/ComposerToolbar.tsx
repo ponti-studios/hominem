@@ -1,6 +1,11 @@
 import { spacing } from '@hominem/ui/tokens';
 import React from 'react';
 import { View } from 'react-native';
+import Reanimated, {
+  LinearTransition,
+  SlideInRight,
+  SlideOutRight,
+} from 'react-native-reanimated';
 
 import { makeStyles } from '~/components/theme';
 import { ActionButton } from '~/components/composer/ComposerButtons';
@@ -20,6 +25,10 @@ interface ComposerToolbarProps {
   onSubmit: () => void;
   onStartChat?: () => void;
 }
+
+const buttonEnter = SlideInRight.duration(180);
+const buttonExit = SlideOutRight.duration(150);
+const pillLayout = LinearTransition.duration(180);
 
 export function ComposerToolbar({
   mode,
@@ -45,7 +54,7 @@ export function ComposerToolbar({
           disabled={isSubmitting}
         />
       </View>
-      <View style={styles.trailing}>
+      <Reanimated.View style={styles.trailing} layout={pillLayout}>
         <ActionButton
           icon={isRecording ? 'stop.fill' : 'mic.fill'}
           onPress={onVoicePress}
@@ -57,34 +66,46 @@ export function ComposerToolbar({
           disabled={busy && !isRecording}
           isAnimating={isVoiceBusy}
         />
-        <ActionButton
-          icon="wand.and.sparkles"
-          onPress={onEnhancePress}
-          accessibilityLabel={t.feed.composer.enhanceTextA11y}
-          disabled={!canSubmit || busy}
-          isAnimating={isEnhancing || isCleaningVoice}
-        />
-        {mode === 'feed' && onStartChat ? (
-          <ActionButton
-            icon="bubble.left"
-            onPress={onStartChat}
-            accessibilityLabel={t.feed.composer.openChatA11y}
-            disabled={!canSubmit || busy}
-          />
+        {canSubmit ? (
+          <Reanimated.View entering={buttonEnter} exiting={buttonExit}>
+            <ActionButton
+              icon="wand.and.sparkles"
+              onPress={onEnhancePress}
+              accessibilityLabel={t.feed.composer.enhanceTextA11y}
+              disabled={busy}
+              isAnimating={isEnhancing || isCleaningVoice}
+            />
+          </Reanimated.View>
         ) : null}
-        <ActionButton
-          icon="arrow.up"
-          onPress={onSubmit}
-          accessibilityLabel={
-            mode === 'feed'
-              ? t.feed.composer.saveNoteA11y
-              : isSubmitting
-                ? t.chat.input.sendingA11y
-                : t.chat.input.sendMessageA11y
-          }
-          disabled={!canSubmit || busy}
-        />
-      </View>
+        {mode === 'feed' && onStartChat && canSubmit ? (
+          <Reanimated.View entering={buttonEnter} exiting={buttonExit}>
+            <ActionButton
+              icon="bubble.left"
+              onPress={onStartChat}
+              accessibilityLabel={t.feed.composer.openChatA11y}
+              testID="composer-start-chat"
+              disabled={busy}
+            />
+          </Reanimated.View>
+        ) : null}
+        {canSubmit ? (
+          <Reanimated.View entering={buttonEnter} exiting={buttonExit}>
+            <ActionButton
+              icon="arrow.up"
+              onPress={onSubmit}
+              accessibilityLabel={
+                mode === 'feed'
+                  ? t.feed.composer.saveNoteA11y
+                  : isSubmitting
+                    ? t.chat.input.sendingA11y
+                    : t.chat.input.sendMessageA11y
+              }
+              testID={mode === 'feed' ? 'composer-submit-note' : 'composer-submit-message'}
+              disabled={busy}
+            />
+          </Reanimated.View>
+        ) : null}
+      </Reanimated.View>
     </View>
   );
 }

@@ -10,6 +10,7 @@ import { writeCachedChatMessages } from '~/services/workspace/content-cache';
 
 import { createOptimisticMessage, type MessageOutput } from './chatMessages';
 import { streamSSE } from './stream-sse';
+import { isTestMode, MOCK_AI_RESPONSE } from '~/services/testing/test-mode';
 
 // Batch chunk writes at ~2 frames (60 fps) to avoid a setQueryData per token.
 const FLUSH_INTERVAL_MS = 32;
@@ -114,6 +115,16 @@ export function useSendMessage({ chatId }: { chatId: string }) {
     },
 
     mutationFn: async ({ message, fileIds, noteIds }) => {
+      if (isTestMode()) {
+        // Simulate streaming token-by-token without hitting the real API.
+        for (const char of MOCK_AI_RESPONSE) {
+          onChunk(char);
+          await new Promise((r) => setTimeout(r, 2));
+        }
+        flushNow();
+        return;
+      }
+
       const net = await NetInfo.fetch();
       if (net.isConnected === false) throw new Error('offline_unavailable');
 
@@ -133,9 +144,12 @@ export function useSendMessage({ chatId }: { chatId: string }) {
         prev?.map((m) => (m.id === context?.assistantMsgId ? { ...m, isStreaming: false } : m)),
       );
       persistMessages();
-      // Background refresh to replace client-generated IDs with server IDs.
-      void queryClient.invalidateQueries({ queryKey: chatKeys.messages(chatId) });
-      void queryClient.invalidateQueries({ queryKey: inboxKeys.pages() });
+      // In test mode the mock never writes to the server, so a background refetch
+      // would overwrite the local optimistic data with an empty array.
+      if (!isTestMode()) {
+        void queryClient.invalidateQueries({ queryKey: chatKeys.messages(chatId) });
+        void queryClient.invalidateQueries({ queryKey: inboxKeys.pages() });
+      }
     },
 
     onError: (_error, _input, context) => {

@@ -4,7 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { FeatureErrorBoundary } from '~/components/error-boundary/FeatureErrorBoundary';
 import { ProtectedRouteFallback } from '~/components/protected/protected-route-fallback';
-import { Text, theme } from '~/components/theme';
+import { Text, theme, useThemeColors } from '~/components/theme';
 import { Button } from '~/components/ui/button';
 import { APP_NAME } from '~/constants';
 import { useAppLock } from '~/hooks/use-app-lock';
@@ -31,6 +31,7 @@ const styles = StyleSheet.create({
 });
 
 function ProtectedShell() {
+  const themeColors = useThemeColors();
   const { authStatus, isSignedIn } = useAuth();
   const { isUnlocked, authenticate } = useAppLock();
   const prefersReducedMotion = useReducedMotion();
@@ -96,8 +97,7 @@ function ProtectedShell() {
               initialRouteName="index"
               screenOptions={{
                 ...screenOptions,
-                contentStyle: { backgroundColor: theme.colors['bg-base'] },
-                headerBlurEffect: 'systemChromeMaterial',
+                contentStyle: { backgroundColor: themeColors['bg-base'] },
                 headerLargeTitle: false,
                 headerShadowVisible: false,
               }}

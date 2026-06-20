@@ -28,6 +28,7 @@ import {
   useChatMessages,
   useSendMessage,
 } from '~/services/chat';
+import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 import { useCreateChat } from '~/services/chat/use-create-chat';
 import { formatRelativeAge } from '~/services/date/format-relative-age';
 import { chatKeys } from '~/services/notes/query-keys';
@@ -81,6 +82,7 @@ export function ChatDetailScreen() {
           title: source.title,
           updatedAt,
         });
+        await invalidateInboxQueries(queryClient);
       },
       chatKeys: {
         messages: chatKeys.messages,

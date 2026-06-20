@@ -57,5 +57,9 @@ export function writeCachedInboxItems(items: InboxStreamItem[]) {
     savedAt: new Date().toISOString(),
   };
 
-  storage.set(INBOX_CACHE_KEY, JSON.stringify(snapshot));
+  try {
+    storage.set(INBOX_CACHE_KEY, JSON.stringify(snapshot));
+  } catch {
+    // Native MMKV object may be stale after a Fast Refresh cycle; safe to ignore.
+  }
 }

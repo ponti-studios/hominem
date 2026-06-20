@@ -1,7 +1,6 @@
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { QueryClientProvider } from '@tanstack/react-query';
 import {
-  DarkTheme,
   DefaultTheme,
   SplashScreen,
   Stack,
@@ -12,14 +11,14 @@ import {
 } from 'expo-router';
 import { PostHogProvider, type PostHog } from 'posthog-react-native';
 import React, { useEffect } from 'react';
-import { Pressable, StyleSheet, View, useColorScheme } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { logError } from '~/components/error-boundary/log-error';
 import { RootErrorBoundary } from '~/components/error-boundary/RootErrorBoundary';
-import { darkTheme, lightTheme, makeStyles } from '~/components/theme';
+import { lightTheme, makeStyles } from '~/components/theme';
 import { E2E_TESTING } from '~/constants';
 import { useScreenCapture } from '~/hooks/use-screen-capture';
 import { resolveAuthRedirect } from '~/navigation/auth-route-guard';
@@ -177,40 +176,22 @@ function InnerRootLayout() {
   );
 }
 
+const navigationTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    background: lightTheme.colors.background,
+    border: lightTheme.colors['border-default'],
+    card: lightTheme.colors.background,
+    notification: lightTheme.colors.accent,
+    primary: lightTheme.colors.accent,
+    text: lightTheme.colors.foreground,
+  },
+};
+
 function RootLayout() {
   const rootStyles = useRootStyles();
-  const colorScheme = useColorScheme();
   useScreenCapture();
-
-  const navigationTheme = React.useMemo(
-    () =>
-      colorScheme === 'light'
-        ? {
-            ...DefaultTheme,
-            colors: {
-              ...DefaultTheme.colors,
-              background: lightTheme.colors.background,
-              border: lightTheme.colors['border-default'],
-              card: lightTheme.colors.background,
-              notification: lightTheme.colors.accent,
-              primary: lightTheme.colors.accent,
-              text: lightTheme.colors.foreground,
-            },
-          }
-        : {
-            ...DarkTheme,
-            colors: {
-              ...DarkTheme.colors,
-              background: darkTheme.colors.background,
-              border: darkTheme.colors['border-default'],
-              card: darkTheme.colors.background,
-              notification: darkTheme.colors.accent,
-              primary: darkTheme.colors.accent,
-              text: darkTheme.colors.foreground,
-            },
-          },
-    [colorScheme],
-  );
 
   useEffect(() => {
     if (E2E_TESTING) {

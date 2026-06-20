@@ -1,11 +1,9 @@
 import {
-  colors as darkColors,
   lightColors,
   radii,
   spacing as tokenSpacing,
   type ColorToken,
 } from '@hominem/ui/tokens';
-import { useColorScheme } from 'react-native';
 
 import { fontFamiliesNative, fontSizes, fontWeights, lineHeights } from './typography';
 
@@ -37,14 +35,6 @@ export const typography = {
   lineHeights,
 } as const;
 
-export const darkTheme = {
-  colors: darkColors,
-  spacing: themeSpacing,
-  borderRadii,
-  componentSizes,
-  typography,
-} as const;
-
 export const lightTheme = {
   colors: lightColors,
   spacing: themeSpacing,
@@ -52,6 +42,8 @@ export const lightTheme = {
   componentSizes,
   typography,
 } as const;
+
+export const darkTheme = lightTheme;
 
 export type Theme = {
   colors: Record<ColorToken, string>;
@@ -62,8 +54,7 @@ export type Theme = {
 };
 
 export function useThemeColors() {
-  const scheme = useColorScheme();
-  return scheme === 'light' ? lightColors : darkColors;
+  return lightColors;
 }
 
-export default darkTheme;
+export default lightTheme;

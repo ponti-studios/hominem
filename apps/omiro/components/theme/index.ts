@@ -1,4 +1,4 @@
-import { useColorScheme, type ImageStyle, type TextStyle, type ViewStyle } from 'react-native';
+import type { ImageStyle, TextStyle, ViewStyle } from 'react-native';
 
 import { shellTheme } from '../../types/shellTheme';
 import theme, {
@@ -27,10 +27,6 @@ export type { Theme };
 type StyleMap = Record<string, ViewStyle | TextStyle | ImageStyle>;
 
 export const makeStyles = <T extends StyleMap>(styles: (theme: Theme) => T & StyleMap) => {
-  const dark = styles(darkTheme);
-  const light = styles(lightTheme);
-  return () => {
-    const scheme = useColorScheme();
-    return scheme === 'light' ? light : dark;
-  };
+  const computed = styles(lightTheme);
+  return () => computed;
 };
