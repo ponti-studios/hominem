@@ -1,4 +1,5 @@
 import { spacing } from '@hominem/ui/tokens';
+import type { SFSymbol } from 'expo-symbols';
 import React from 'react';
 import { View } from 'react-native';
 import Reanimated, { LinearTransition, SlideInRight, SlideOutRight } from 'react-native-reanimated';
@@ -19,9 +20,14 @@ interface ComposerToolbarProps {
   onVoicePress: () => void;
   onEnhancePress: () => void;
   onSubmit: () => void;
-  onStartChat?: () => void;
-  showStartChatAction?: boolean;
+  submitTestID?: string;
   submitAccessibilityLabel?: string;
+  secondaryAction?: {
+    accessibilityLabel: string;
+    icon: SFSymbol;
+    onPress: () => void;
+    testID?: string;
+  };
 }
 
 const buttonEnter = SlideInRight.duration(180);
@@ -39,9 +45,9 @@ export function ComposerToolbar({
   onVoicePress,
   onEnhancePress,
   onSubmit,
-  onStartChat,
-  showStartChatAction = true,
+  submitTestID,
   submitAccessibilityLabel,
+  secondaryAction,
 }: ComposerToolbarProps) {
   const styles = useStyles();
   const busy = isSubmitting || isVoiceBusy || isEnhancing;
@@ -75,13 +81,13 @@ export function ComposerToolbar({
             />
           </Reanimated.View>
         ) : null}
-        {mode === 'feed' && showStartChatAction && onStartChat && canSubmit ? (
+        {mode === 'feed' && secondaryAction && canSubmit ? (
           <Reanimated.View entering={buttonEnter} exiting={buttonExit}>
             <ActionButton
-              icon="bubble.left"
-              onPress={onStartChat}
-              accessibilityLabel={t.feed.composer.openChatA11y}
-              testID="composer-start-chat"
+              icon={secondaryAction.icon}
+              onPress={secondaryAction.onPress}
+              accessibilityLabel={secondaryAction.accessibilityLabel}
+              testID={secondaryAction.testID}
               disabled={busy}
             />
           </Reanimated.View>
@@ -99,7 +105,7 @@ export function ComposerToolbar({
                     ? t.chat.input.sendingA11y
                     : t.chat.input.sendMessageA11y)
               }
-              testID={mode === 'feed' ? 'composer-submit-note' : 'composer-submit-message'}
+              testID={submitTestID ?? (mode === 'feed' ? 'composer-submit-note' : 'composer-submit-message')}
               disabled={busy}
             />
           </Reanimated.View>

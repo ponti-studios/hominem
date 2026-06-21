@@ -1,3 +1,5 @@
+import { GlassEffectContainer, Host, HStack, RNHostView } from '@expo/ui/swift-ui';
+import { frame, glassEffect } from '@expo/ui/swift-ui/modifiers';
 import type { SFSymbol } from 'expo-symbols';
 import React from 'react';
 import {
@@ -11,7 +13,6 @@ import {
 
 import type { FormatCommand } from '~/components/notes/note-formatting';
 import { makeStyles, useThemeColors } from '~/components/theme';
-import { BlurSurface } from '~/components/ui/BlurSurface';
 import AppIcon from '~/components/ui/icon';
 import t from '~/translations';
 
@@ -179,14 +180,33 @@ export function NoteToolbar(props: NoteToolbarProps) {
   const styles = useToolbarStyles();
   return (
     <InputAccessoryView nativeID={NOTE_TOOLBAR_ID} backgroundColor="transparent">
-      <BlurSurface tint="chrome" style={styles.container}>
-        <ToolbarButtons {...props} />
-      </BlurSurface>
+      <Host style={styles.host}>
+        <GlassEffectContainer>
+          <HStack
+            modifiers={[
+              glassEffect({
+                glass: { variant: 'regular' },
+                shape: 'rectangle',
+              }),
+              frame({ maxWidth: Number.POSITIVE_INFINITY }),
+            ]}
+          >
+            <RNHostView>
+              <View style={styles.container}>
+                <ToolbarButtons {...props} />
+              </View>
+            </RNHostView>
+          </HStack>
+        </GlassEffectContainer>
+      </Host>
     </InputAccessoryView>
   );
 }
 
 const useToolbarStyles = makeStyles((theme) => ({
+  host: {
+    width: '100%',
+  },
   container: {
     alignItems: 'center',
     borderTopColor: theme.colors['border-subtle'],

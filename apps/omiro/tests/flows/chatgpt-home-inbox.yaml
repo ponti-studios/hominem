@@ -9,11 +9,17 @@ appId: com.pontistudios.hakumi.dev
     id: 'home-search-action'
 - assertVisible:
     id: 'home-overflow-action'
-- assertVisible: 'Recents'
-- tapOn: 'Notes'
+- assertVisible:
+    id: 'feed-composer-input'
 - assertVisible: 'Notes'
 - tapOn: 'Chats'
 - assertVisible: 'Recents'
+- tapOn:
+    id: 'feed-composer-input'
+- inputText: 'Quick capture draft'
+- assertVisible:
+    id: 'composer-save-note'
+- back
 - tapOn:
     id: 'home-overflow-action'
 - assertVisible: 'Archived chats'
@@ -40,8 +46,13 @@ appId: com.pontistudios.hakumi.dev
 - assertVisible:
     id: 'home-search-input'
 - back
+- tapOn: 'Chats'
 - tapOn:
-    id: 'home-chat-action'
+    id: 'feed-composer-input'
+- eraseText
+- inputText: 'Start a new chat from home'
+- tapOn:
+    id: 'composer-submit-chat'
 - waitForAnimationToEnd:
     timeout: 2000
 - assertVisible:

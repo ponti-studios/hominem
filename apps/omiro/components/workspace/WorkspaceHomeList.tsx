@@ -34,7 +34,6 @@ interface WorkspaceHomeListProps {
   items: InboxStreamItemData[];
   isLoading?: boolean;
   isFetchingNextPage?: boolean;
-  listHeader?: React.ReactElement;
   listRef?: RefObject<FlashListRef<any> | null>;
   onEndReached?: () => void;
   refreshControl?: React.ReactElement<RefreshControlProps>;
@@ -100,7 +99,6 @@ export function WorkspaceHomeList({
   items,
   isLoading = false,
   isFetchingNextPage = false,
-  listHeader,
   listRef,
   onEndReached,
   refreshControl,
@@ -133,7 +131,6 @@ export function WorkspaceHomeList({
   if (error && items.length === 0) {
     return (
       <View style={styles.emptyWrap}>
-        {listHeader}
         <EmptyState
           action={
             refreshControl?.props.onRefresh
@@ -154,7 +151,6 @@ export function WorkspaceHomeList({
   if (!isLoading && items.length === 0) {
     return (
       <View style={styles.emptyWrap}>
-        {listHeader}
         <EmptyState
           description={
             tab === 'notes' ? t.workspace.home.emptyNotesDescription : t.workspace.empty.description
@@ -176,7 +172,6 @@ export function WorkspaceHomeList({
       data={rows}
       keyboardDismissMode="on-drag"
       keyExtractor={(item) => item.id}
-      ListHeaderComponent={listHeader}
       ListFooterComponent={
         isFetchingNextPage ? (
           <Text variant="caption1" color="text-tertiary" style={styles.footerText}>

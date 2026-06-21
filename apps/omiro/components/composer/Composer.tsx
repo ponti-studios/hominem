@@ -178,8 +178,21 @@ function FeedComposerContent({
   const inputPlaceholder = isChatEntryMode
     ? t.chat.input.messagePlaceholder
     : t.feed.composer.placeholder;
-  const shellTestId = testID ?? (isChatEntryMode ? 'chat-composer' : 'feed-composer');
-  const inputTestId = isChatEntryMode ? 'chat-composer-input' : 'feed-composer-input';
+  const shellTestId = testID ?? 'feed-composer';
+  const inputTestId = 'feed-composer-input';
+  const secondaryAction = isChatEntryMode
+    ? {
+        accessibilityLabel: t.feed.composer.saveNoteA11y,
+        icon: 'doc.text' as const,
+        onPress: () => void handleSave(),
+        testID: 'composer-save-note',
+      }
+    : {
+        accessibilityLabel: t.feed.composer.openChatA11y,
+        icon: 'bubble.left' as const,
+        onPress: () => void handleStartChat(),
+        testID: 'composer-start-chat',
+      };
 
   return (
     <ComposerShell
@@ -218,11 +231,11 @@ function FeedComposerContent({
           onVoicePress={() => void handleVoicePress()}
           onEnhancePress={toggleEnhance}
           onSubmit={() => void (isChatEntryMode ? handleStartChat() : handleSave())}
-          onStartChat={() => void handleStartChat()}
-          showStartChatAction={entryMode === 'mixed'}
+          submitTestID={isChatEntryMode ? 'composer-submit-chat' : 'composer-submit-note'}
           submitAccessibilityLabel={
             isChatEntryMode ? t.workspace.home.startChatSubmitA11y : t.feed.composer.saveNoteA11y
           }
+          secondaryAction={secondaryAction}
         />
       }
     />

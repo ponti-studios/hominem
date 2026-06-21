@@ -1,9 +1,10 @@
+import { GlassEffectContainer, Host, HStack, RNHostView } from '@expo/ui/swift-ui';
 import ExpoSegmentedControl from '@expo/ui/community/segmented-control';
+import { frame, glassEffect, padding } from '@expo/ui/swift-ui/modifiers';
 import React from 'react';
 import { ActionSheetIOS, Pressable, StyleSheet, View } from 'react-native';
 
 import { makeStyles } from '~/components/theme';
-import { BlurSurface } from '~/components/ui/BlurSurface';
 import AppIcon from '~/components/ui/icon';
 import type { WorkspaceHomeTab } from '~/services/workspace/home-screen-state';
 import t from '~/translations';
@@ -52,44 +53,76 @@ export function WorkspaceHomeHeader({
       <View style={styles.topRow}>
         <View style={styles.utilitySpacer} />
 
-        <BlurSurface intensity={64} style={styles.segmentedWrap} tint="thin">
-          <ExpoSegmentedControl
-            appearance="light"
-            selectedIndex={activeTab === 'notes' ? 1 : 0}
-            style={styles.segmentedControl}
-            testID="home-tab-control"
-            values={TAB_VALUES}
-            onChange={(event) =>
-              onChangeTab(event.nativeEvent.selectedSegmentIndex === 1 ? 'notes' : 'chats')
-            }
-          />
-        </BlurSurface>
+        <Host style={styles.segmentedHost}>
+          <GlassEffectContainer>
+            <HStack
+              modifiers={[
+                glassEffect({
+                  glass: { variant: 'clear' },
+                  shape: 'roundedRectangle',
+                  cornerRadius: 18,
+                }),
+                padding({ all: 2 }),
+              ]}
+            >
+              <RNHostView matchContents>
+                <ExpoSegmentedControl
+                  appearance="light"
+                  selectedIndex={activeTab === 'notes' ? 1 : 0}
+                  style={styles.segmentedControl}
+                  testID="home-tab-control"
+                  values={TAB_VALUES}
+                  onChange={(event) =>
+                    onChangeTab(event.nativeEvent.selectedSegmentIndex === 1 ? 'notes' : 'chats')
+                  }
+                />
+              </RNHostView>
+            </HStack>
+          </GlassEffectContainer>
+        </Host>
 
-        <BlurSurface intensity={64} style={styles.utilityPill} tint="thin">
-          <Pressable
-            accessibilityLabel={t.workspace.home.showSearchA11y}
-            accessibilityRole="button"
-            hitSlop={8}
-            onPress={onOpenSearch}
-            testID="home-search-action"
-          >
-            <View style={styles.utilityButton}>
-              <AppIcon name="magnifyingglass" size={15} />
-            </View>
-          </Pressable>
-          <View style={styles.utilityDivider} />
-          <Pressable
-            accessibilityLabel={t.workspace.home.openMenuA11y}
-            accessibilityRole="button"
-            hitSlop={8}
-            onPress={handleOpenMenu}
-            testID="home-overflow-action"
-          >
-            <View style={styles.utilityButton}>
-              <AppIcon name="person.crop.circle" size={16} />
-            </View>
-          </Pressable>
-        </BlurSurface>
+        <Host style={styles.utilityHost}>
+          <GlassEffectContainer>
+            <HStack
+              modifiers={[
+                glassEffect({
+                  glass: { variant: 'clear' },
+                  shape: 'roundedRectangle',
+                  cornerRadius: 18,
+                }),
+                frame({ minHeight: 36 }),
+              ]}
+            >
+              <RNHostView matchContents>
+                <View style={styles.utilityPill}>
+                  <Pressable
+                    accessibilityLabel={t.workspace.home.showSearchA11y}
+                    accessibilityRole="button"
+                    hitSlop={8}
+                    onPress={onOpenSearch}
+                    testID="home-search-action"
+                  >
+                    <View style={styles.utilityButton}>
+                      <AppIcon name="magnifyingglass" size={15} />
+                    </View>
+                  </Pressable>
+                  <View style={styles.utilityDivider} />
+                  <Pressable
+                    accessibilityLabel={t.workspace.home.openMenuA11y}
+                    accessibilityRole="button"
+                    hitSlop={8}
+                    onPress={handleOpenMenu}
+                    testID="home-overflow-action"
+                  >
+                    <View style={styles.utilityButton}>
+                      <AppIcon name="person.crop.circle" size={16} />
+                    </View>
+                  </Pressable>
+                </View>
+              </RNHostView>
+            </HStack>
+          </GlassEffectContainer>
+        </Host>
       </View>
     </View>
   );
@@ -103,12 +136,8 @@ const useStyles = makeStyles((theme) => ({
     height: 28,
     width: 144,
   },
-  segmentedWrap: {
-    borderColor: 'rgba(0, 0, 0, 0.05)',
-    borderRadius: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    overflow: 'hidden',
-    padding: 2,
+  segmentedHost: {
+    minHeight: 32,
   },
   topRow: {
     alignItems: 'center',
@@ -128,14 +157,12 @@ const useStyles = makeStyles((theme) => ({
     height: 16,
     width: StyleSheet.hairlineWidth,
   },
+  utilityHost: {
+    minHeight: 36,
+  },
   utilityPill: {
     alignItems: 'center',
-    borderColor: 'rgba(0, 0, 0, 0.04)',
-    borderRadius: 18,
-    borderWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
-    minHeight: 36,
-    overflow: 'hidden',
     paddingHorizontal: 4,
     paddingVertical: 2,
   },
