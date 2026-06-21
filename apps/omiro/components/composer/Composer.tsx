@@ -24,11 +24,7 @@ import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
 import { donateAddNoteIntent } from '~/services/intent-donation';
 import { useCreateNote } from '~/services/notes/use-create-note';
-import {
-  clearChatDraft,
-  readChatDraft,
-  writeChatDraft,
-} from '~/services/workspace/launch-state';
+import { clearChatDraft, readChatDraft, writeChatDraft } from '~/services/workspace/launch-state';
 import { getWorkspaceArtifactRoute } from '~/services/workspace/routes';
 import t from '~/translations';
 
@@ -40,6 +36,8 @@ interface ComposerFeedProps {
   initialDraft?: string;
   onDraftChange?: (msg: string) => void;
   onClearDraft?: () => void;
+  entryMode?: 'mixed' | 'note' | 'chat';
+  onComplete?: () => void;
   testID?: string;
 }
 
@@ -61,6 +59,8 @@ export function Composer(props: ComposerProps) {
           initialDraft={props.initialDraft}
           onDraftChange={props.onDraftChange}
           onClearDraft={props.onClearDraft}
+          entryMode={props.entryMode}
+          onComplete={props.onComplete}
           testID={props.testID}
         />
       ) : (
@@ -81,6 +81,8 @@ interface FeedComposerContentProps {
   initialDraft?: string;
   onDraftChange?: (msg: string) => void;
   onClearDraft?: () => void;
+  entryMode?: 'mixed' | 'note' | 'chat';
+  onComplete?: () => void;
   testID?: string;
 }
 
@@ -89,6 +91,8 @@ function FeedComposerContent({
   initialDraft,
   onDraftChange,
   onClearDraft,
+  entryMode = 'mixed',
+  onComplete,
   testID,
 }: FeedComposerContentProps) {
   const queryClient = useQueryClient();
@@ -133,6 +137,7 @@ function FeedComposerContent({
     await invalidateInboxQueries(queryClient);
     requestTopReveal();
     clearDraft();
+    onComplete?.();
   }, [
     canSubmit,
     isSaving,
@@ -142,6 +147,7 @@ function FeedComposerContent({
     queryClient,
     requestTopReveal,
     clearDraft,
+    onComplete,
   ]);
 
   const handleStartChat = useCallback(async () => {
@@ -155,22 +161,37 @@ function FeedComposerContent({
       }) as RelativePathString,
     );
     requestTopReveal();
-  }, [canSubmit, isChatCreating, createChat, message, clearDraft, router, requestTopReveal]);
+    onComplete?.();
+  }, [
+    canSubmit,
+    isChatCreating,
+    createChat,
+    message,
+    clearDraft,
+    router,
+    requestTopReveal,
+    onComplete,
+  ]);
 
-  const hasAttachments =
-    uploadState.errors.length > 0 || uploadState.isUploading;
+  const hasAttachments = uploadState.errors.length > 0 || uploadState.isUploading;
+  const isChatEntryMode = entryMode === 'chat';
+  const inputPlaceholder = isChatEntryMode
+    ? t.chat.input.messagePlaceholder
+    : t.feed.composer.placeholder;
+  const shellTestId = testID ?? (isChatEntryMode ? 'chat-composer' : 'feed-composer');
+  const inputTestId = isChatEntryMode ? 'chat-composer-input' : 'feed-composer-input';
 
   return (
     <ComposerShell
-      testID={testID ?? 'feed-composer'}
+      testID={shellTestId}
       accessory={hasAttachments ? <ComposerAttachmentRow /> : undefined}
       input={
         <ComposerTextInput
           inputRef={inputRef}
           value={message}
           onChangeText={setMessage}
-          placeholder={t.feed.composer.placeholder}
-          testID="feed-composer-input"
+          placeholder={inputPlaceholder}
+          testID={inputTestId}
         />
       }
       inlinePanel={
@@ -196,8 +217,12 @@ function FeedComposerContent({
           isSubmitting={isSaving || isChatCreating}
           onVoicePress={() => void handleVoicePress()}
           onEnhancePress={toggleEnhance}
-          onSubmit={() => void handleSave()}
+          onSubmit={() => void (isChatEntryMode ? handleStartChat() : handleSave())}
           onStartChat={() => void handleStartChat()}
+          showStartChatAction={entryMode === 'mixed'}
+          submitAccessibilityLabel={
+            isChatEntryMode ? t.workspace.home.startChatSubmitA11y : t.feed.composer.saveNoteA11y
+          }
         />
       }
     />

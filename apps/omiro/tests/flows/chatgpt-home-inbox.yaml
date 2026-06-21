@@ -1,0 +1,48 @@
+appId: com.pontistudios.hakumi.dev
+---
+- openLink: 'exp+hakumi://expo-development-client/?url=http%3A%2F%2F127.0.0.1%3A8081'
+- waitForAnimationToEnd:
+    timeout: 15000
+- assertVisible:
+    id: 'home-tab-control'
+- assertVisible:
+    id: 'home-search-action'
+- assertVisible:
+    id: 'home-overflow-action'
+- assertVisible: 'Recents'
+- tapOn: 'Notes'
+- assertVisible: 'Notes'
+- tapOn: 'Chats'
+- assertVisible: 'Recents'
+- tapOn:
+    id: 'home-overflow-action'
+- assertVisible: 'Archived chats'
+- tapOn: 'Archived chats'
+- waitForAnimationToEnd:
+    timeout: 2000
+- assertVisible: 'Archived chats'
+- back
+- back
+- waitForAnimationToEnd:
+    timeout: 1000
+- tapOn:
+    id: 'home-overflow-action'
+- assertVisible: 'Settings'
+- tapOn: 'Settings'
+- waitForAnimationToEnd:
+    timeout: 2000
+- assertVisible: 'Settings'
+- back
+- tapOn:
+    id: 'home-search-action'
+- waitForAnimationToEnd:
+    timeout: 2000
+- assertVisible:
+    id: 'home-search-input'
+- back
+- tapOn:
+    id: 'home-chat-action'
+- waitForAnimationToEnd:
+    timeout: 2000
+- assertVisible:
+    id: 'chat-composer-input'

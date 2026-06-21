@@ -1,15 +1,11 @@
 import { spacing } from '@hominem/ui/tokens';
 import React from 'react';
 import { View } from 'react-native';
-import Reanimated, {
-  LinearTransition,
-  SlideInRight,
-  SlideOutRight,
-} from 'react-native-reanimated';
+import Reanimated, { LinearTransition, SlideInRight, SlideOutRight } from 'react-native-reanimated';
 
-import { makeStyles } from '~/components/theme';
 import { ActionButton } from '~/components/composer/ComposerButtons';
 import { ComposerMedia } from '~/components/composer/ComposerMedia';
+import { makeStyles } from '~/components/theme';
 import t from '~/translations';
 
 interface ComposerToolbarProps {
@@ -24,6 +20,8 @@ interface ComposerToolbarProps {
   onEnhancePress: () => void;
   onSubmit: () => void;
   onStartChat?: () => void;
+  showStartChatAction?: boolean;
+  submitAccessibilityLabel?: string;
 }
 
 const buttonEnter = SlideInRight.duration(180);
@@ -42,6 +40,8 @@ export function ComposerToolbar({
   onEnhancePress,
   onSubmit,
   onStartChat,
+  showStartChatAction = true,
+  submitAccessibilityLabel,
 }: ComposerToolbarProps) {
   const styles = useStyles();
   const busy = isSubmitting || isVoiceBusy || isEnhancing;
@@ -59,9 +59,7 @@ export function ComposerToolbar({
           icon={isRecording ? 'stop.fill' : 'mic.fill'}
           onPress={onVoicePress}
           accessibilityLabel={
-            isRecording
-              ? t.feed.composer.stopVoiceInputA11y
-              : t.feed.composer.startVoiceInputA11y
+            isRecording ? t.feed.composer.stopVoiceInputA11y : t.feed.composer.startVoiceInputA11y
           }
           disabled={busy && !isRecording}
           isAnimating={isVoiceBusy}
@@ -77,7 +75,7 @@ export function ComposerToolbar({
             />
           </Reanimated.View>
         ) : null}
-        {mode === 'feed' && onStartChat && canSubmit ? (
+        {mode === 'feed' && showStartChatAction && onStartChat && canSubmit ? (
           <Reanimated.View entering={buttonEnter} exiting={buttonExit}>
             <ActionButton
               icon="bubble.left"
@@ -94,11 +92,12 @@ export function ComposerToolbar({
               icon="arrow.up"
               onPress={onSubmit}
               accessibilityLabel={
-                mode === 'feed'
+                submitAccessibilityLabel ??
+                (mode === 'feed'
                   ? t.feed.composer.saveNoteA11y
                   : isSubmitting
                     ? t.chat.input.sendingA11y
-                    : t.chat.input.sendMessageA11y
+                    : t.chat.input.sendMessageA11y)
               }
               testID={mode === 'feed' ? 'composer-submit-note' : 'composer-submit-message'}
               disabled={busy}

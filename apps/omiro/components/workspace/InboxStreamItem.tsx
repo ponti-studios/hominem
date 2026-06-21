@@ -21,95 +21,155 @@ const KIND_ICON = {
 
 interface InboxStreamItemProps {
   item: InboxStreamItemModel;
+  variant?: 'card' | 'compact' | 'plain';
+  showKindLabel?: boolean;
+  showTimestamp?: boolean;
+  swipeEnabled?: boolean;
+  showLeadingIcon?: boolean;
 }
 
-export const InboxStreamItem = memo(({ item }: InboxStreamItemProps) => {
-  const styles = useStyles();
-  const swipeableRef = useRef<SwipeableMethods>(null);
-  const titleText = cleanText(item.title);
-  const previewText = cleanText(item.preview);
-  const primaryText = titleText ?? previewText ?? t.workspace.item.untitled;
-  const isChat = item.kind === 'chat';
-  const timeAgo = formatRelativeAge(item.updatedAt);
+export const InboxStreamItem = memo(
+  ({
+    item,
+    variant = 'card',
+    showKindLabel = false,
+    showTimestamp = true,
+    swipeEnabled = true,
+    showLeadingIcon = true,
+  }: InboxStreamItemProps) => {
+    const styles = useStyles();
+    const swipeableRef = useRef<SwipeableMethods>(null);
+    const titleText = cleanText(item.title);
+    const previewText = cleanText(item.preview);
+    const primaryText = titleText ?? previewText ?? t.workspace.item.untitled;
+    const isChat = item.kind === 'chat';
+    const timeAgo = formatRelativeAge(item.updatedAt);
 
-  const { mutate: deleteNote, isPending: isDeletingNote } = useNoteDelete({
-    noteId: item.entityId,
-  });
-  const { mutate: archiveChat, isPending: isArchivingChat } = useChatArchive({
-    chatId: item.entityId,
-  });
-  const isPending = isDeletingNote || isArchivingChat;
+    const { mutate: deleteNote, isPending: isDeletingNote } = useNoteDelete({
+      noteId: item.entityId,
+    });
+    const { mutate: archiveChat, isPending: isArchivingChat } = useChatArchive({
+      chatId: item.entityId,
+    });
+    const isPending = isDeletingNote || isArchivingChat;
 
-  const handleDelete = useCallback(() => {
-    swipeableRef.current?.close();
-    Alert.alert(t.workspace.item.deleteNote.title, t.workspace.item.deleteNote.message, [
-      { text: t.workspace.item.deleteNote.cancel, style: 'cancel' },
-      {
-        text: t.workspace.item.deleteNote.confirm,
-        style: 'destructive',
-        onPress: () => deleteNote(),
+    const handleDelete = useCallback(() => {
+      swipeableRef.current?.close();
+      Alert.alert(t.workspace.item.deleteNote.title, t.workspace.item.deleteNote.message, [
+        { text: t.workspace.item.deleteNote.cancel, style: 'cancel' },
+        {
+          text: t.workspace.item.deleteNote.confirm,
+          style: 'destructive',
+          onPress: () => deleteNote(),
+        },
+      ]);
+    }, [deleteNote]);
+
+    const handleArchive = useCallback(() => {
+      swipeableRef.current?.close();
+      archiveChat();
+    }, [archiveChat]);
+
+    const renderSwipeAction = useCallback(
+      (_progress: SharedValue<number>, _translation: SharedValue<number>) => {
+        return (
+          <Pressable
+            style={[
+              styles.swipeAction,
+              isChat ? styles.swipeActionArchive : styles.swipeActionDelete,
+            ]}
+            onPress={isChat ? handleArchive : handleDelete}
+            accessibilityLabel={
+              isChat ? t.workspace.item.archive : t.workspace.item.deleteNote.confirm
+            }
+            accessibilityRole="button"
+          >
+            <AppIcon name={isChat ? 'archivebox' : 'trash'} size={20} tintColor="white" />
+          </Pressable>
+        );
       },
-    ]);
-  }, [deleteNote]);
+      [isChat, handleArchive, handleDelete, styles],
+    );
 
-  const handleArchive = useCallback(() => {
-    swipeableRef.current?.close();
-    archiveChat();
-  }, [archiveChat]);
-
-  const renderSwipeAction = useCallback(
-    (_progress: SharedValue<number>, _translation: SharedValue<number>) => {
-      return (
-        <Pressable
-          style={[styles.swipeAction, isChat ? styles.swipeActionArchive : styles.swipeActionDelete]}
-          onPress={isChat ? handleArchive : handleDelete}
-          accessibilityLabel={isChat ? t.workspace.item.archive : t.workspace.item.deleteNote.confirm}
-          accessibilityRole="button"
-        >
-          <AppIcon name={isChat ? 'archivebox' : 'trash'} size={20} tintColor="white" />
-        </Pressable>
-      );
-    },
-    [isChat, handleArchive, handleDelete, styles],
-  );
-
-  return (
-    <View style={[styles.cardOuter, isPending && styles.rowPending]} testID={`inbox-item-${item.kind}`}>
-      <ReanimatedSwipeable
-        ref={swipeableRef}
-        containerStyle={styles.swipeableContainer}
-        renderRightActions={renderSwipeAction}
-        rightThreshold={60}
-        friction={2}
-        overshootRight={false}
-      >
-        <Link href={item.route} disabled={isPending} asChild>
-          <Link.Trigger withAppleZoom>
-            <Pressable
-              accessibilityLabel={`${primaryText}, ${isChat ? 'Chat' : 'Note'}`}
-              accessibilityRole="button"
-              disabled={isPending}
-              style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
-            >
-              <View style={styles.titleRow}>
+    const row = (
+      <Link href={item.route} disabled={isPending} asChild>
+        <Link.Trigger withAppleZoom>
+          <Pressable
+            accessibilityLabel={`${primaryText}, ${isChat ? 'Chat' : 'Note'}`}
+            accessibilityRole="button"
+            disabled={isPending}
+            style={({ pressed }) => [
+              styles.row,
+              variant === 'card'
+                ? styles.rowCard
+                : variant === 'plain'
+                  ? styles.rowPlain
+                  : styles.rowCompact,
+              pressed && styles.rowPressed,
+            ]}
+          >
+            <View style={styles.titleRow}>
+              {showLeadingIcon ? (
                 <AppIcon
                   name={KIND_ICON[item.kind]}
                   size={13}
                   tintColor={undefined}
                   style={styles.kindIcon}
                 />
-                <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
+              ) : null}
+              <View style={styles.copyColumn}>
+                <Text
+                  style={styles.title}
+                  numberOfLines={variant === 'plain' ? 2 : 1}
+                  ellipsizeMode="tail"
+                >
                   {primaryText}
                 </Text>
-                <Text style={styles.time}>{timeAgo}</Text>
+                {showKindLabel || showTimestamp ? (
+                  <View style={styles.metaRow}>
+                    {showKindLabel ? (
+                      <Text style={styles.kindLabel}>
+                        {item.kind === 'chat'
+                          ? t.workspace.item.chatLabel
+                          : t.workspace.item.noteLabel}
+                      </Text>
+                    ) : null}
+                    {showTimestamp ? <Text style={styles.time}>{timeAgo}</Text> : null}
+                  </View>
+                ) : null}
               </View>
-            </Pressable>
-          </Link.Trigger>
-        </Link>
-      </ReanimatedSwipeable>
-    </View>
-  );
-});
+            </View>
+          </Pressable>
+        </Link.Trigger>
+      </Link>
+    );
+
+    return (
+      <View
+        style={[
+          variant === 'card' ? styles.cardOuter : styles.compactOuter,
+          isPending && styles.rowPending,
+        ]}
+        testID={`inbox-item-${item.kind}`}
+      >
+        {swipeEnabled ? (
+          <ReanimatedSwipeable
+            ref={swipeableRef}
+            containerStyle={styles.swipeableContainer}
+            renderRightActions={renderSwipeAction}
+            rightThreshold={60}
+            friction={2}
+            overshootRight={false}
+          >
+            {row}
+          </ReanimatedSwipeable>
+        ) : (
+          row
+        )}
+      </View>
+    );
+  },
+);
 
 InboxStreamItem.displayName = 'InboxStreamItem';
 
@@ -123,37 +183,67 @@ const useStyles = makeStyles((theme) => ({
     marginHorizontal: 12,
     marginBottom: 4,
   },
+  compactOuter: {
+    marginHorizontal: 16,
+    marginBottom: 10,
+  },
   swipeableContainer: {
     borderRadius: 12,
   },
   row: {
-    paddingHorizontal: 14,
+    backgroundColor: theme.colors['bg-base'],
+  },
+  rowCard: {
     backgroundColor: theme.colors['bg-surface'],
+    paddingHorizontal: 14,
+  },
+  rowCompact: {
+    paddingHorizontal: 4,
+  },
+  rowPlain: {
+    backgroundColor: theme.colors['bg-base'],
+    paddingHorizontal: 0,
   },
   rowPressed: {
-    backgroundColor: theme.colors['bg-elevated'],
+    opacity: 0.64,
   },
   rowPending: {
     opacity: 0.45,
   },
   titleRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 8,
-    paddingVertical: 16,
+    paddingVertical: 15,
   },
   kindIcon: {
     flexShrink: 0,
     opacity: 0.4,
+    marginTop: 3,
+  },
+  copyColumn: {
+    flex: 1,
+    gap: 2,
   },
   title: {
-    flex: 1,
     color: theme.colors['text-primary'],
-    fontSize: fontSizes.md,
+    fontSize: fontSizes.lg,
     fontFamily: fontFamiliesNative.primary,
-    fontWeight: '600',
+    fontWeight: '400',
     lineHeight: lineHeights.body,
-    letterSpacing: -0.1,
+    letterSpacing: -0.25,
+  },
+  metaRow: {
+    alignItems: 'center',
+    columnGap: 6,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  kindLabel: {
+    color: theme.colors['text-tertiary'],
+    fontSize: fontSizes.caption1,
+    fontFamily: fontFamiliesNative.primary,
+    lineHeight: lineHeights.caption,
   },
   time: {
     color: theme.colors['text-tertiary'],
