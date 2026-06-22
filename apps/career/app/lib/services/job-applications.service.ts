@@ -9,9 +9,12 @@ import type {
   Selectable,
   UpdateCareerJobApplicationInput,
 } from '@hominem/db';
+import type {
+  CareerInterviewEntry as InterviewEntry,
+  CareerJobApplicationRecord as ApplicationWithCompany,
+} from '@hominem/db';
 
 import { JobApplicationStage, JobApplicationStatus } from '~/types/career';
-import type { CareerInterviewEntry as InterviewEntry, CareerJobApplicationRecord as ApplicationWithCompany } from '@hominem/db';
 
 export interface CreateApplicationInput {
   companyName: string;

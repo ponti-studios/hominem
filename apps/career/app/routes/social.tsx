@@ -59,7 +59,16 @@ function SocialLinksEditorSection({
     const formData2 = new FormData();
     formData2.append(
       'socialLinksData',
-      JSON.stringify([{ id: formData.id, github: formData.github, linkedin: formData.linkedin, twitter: formData.twitter, website: formData.website, portfolio_id }]),
+      JSON.stringify([
+        {
+          id: formData.id,
+          github: formData.github,
+          linkedin: formData.linkedin,
+          twitter: formData.twitter,
+          website: formData.website,
+          portfolio_id,
+        },
+      ]),
     );
 
     clearSubmissionError();
@@ -80,7 +89,10 @@ function SocialLinksEditorSection({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               {/* GitHub */}
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="github" className="subheading-4 text-text-primary flex items-center gap-2">
+                <label
+                  htmlFor="github"
+                  className="subheading-4 text-text-primary flex items-center gap-2"
+                >
                   <Github className="size-4 text-muted-foreground" />
                   GitHub
                 </label>
@@ -102,12 +114,17 @@ function SocialLinksEditorSection({
                     })}
                   />
                 </div>
-                {errors.github && <p className="body-4 text-destructive">{errors.github.message}</p>}
+                {errors.github && (
+                  <p className="body-4 text-destructive">{errors.github.message}</p>
+                )}
               </div>
 
               {/* LinkedIn */}
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="linkedin" className="subheading-4 text-text-primary flex items-center gap-2">
+                <label
+                  htmlFor="linkedin"
+                  className="subheading-4 text-text-primary flex items-center gap-2"
+                >
                   <Linkedin className="size-4 text-muted-foreground" />
                   LinkedIn
                 </label>
@@ -129,12 +146,17 @@ function SocialLinksEditorSection({
                     })}
                   />
                 </div>
-                {errors.linkedin && <p className="body-4 text-destructive">{errors.linkedin.message}</p>}
+                {errors.linkedin && (
+                  <p className="body-4 text-destructive">{errors.linkedin.message}</p>
+                )}
               </div>
 
               {/* Twitter */}
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="twitter" className="subheading-4 text-text-primary flex items-center gap-2">
+                <label
+                  htmlFor="twitter"
+                  className="subheading-4 text-text-primary flex items-center gap-2"
+                >
                   <Twitter className="size-4 text-muted-foreground" />
                   Twitter / X
                 </label>
@@ -156,12 +178,17 @@ function SocialLinksEditorSection({
                     })}
                   />
                 </div>
-                {errors.twitter && <p className="body-4 text-destructive">{errors.twitter.message}</p>}
+                {errors.twitter && (
+                  <p className="body-4 text-destructive">{errors.twitter.message}</p>
+                )}
               </div>
 
               {/* Website */}
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="website" className="subheading-4 text-text-primary flex items-center gap-2">
+                <label
+                  htmlFor="website"
+                  className="subheading-4 text-text-primary flex items-center gap-2"
+                >
                   <Globe className="size-4 text-muted-foreground" />
                   Website
                 </label>
@@ -177,7 +204,9 @@ function SocialLinksEditorSection({
                     },
                   })}
                 />
-                {errors.website && <p className="body-4 text-destructive">{errors.website.message}</p>}
+                {errors.website && (
+                  <p className="body-4 text-destructive">{errors.website.message}</p>
+                )}
               </div>
             </div>
 

@@ -30,15 +30,12 @@ import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { Controller, useFieldArray, useForm, type SubmitHandler } from 'react-hook-form';
 import { useFetcher, useNavigate } from 'react-router';
 
-import { jsonObject } from '~/lib/db-json';
-import {
-  getWorkExperienceById,
-  updateWorkExperience,
-} from '~/lib/career/queries/base';
+import { getWorkExperienceById, updateWorkExperience } from '~/lib/career/queries/base';
+import type { WorkExperienceMetadata } from '~/lib/career/queries/career-progression';
 import { getProjectsByWorkExperience } from '~/lib/career/queries/projects';
+import { jsonObject } from '~/lib/db-json';
 import { userContext } from '~/lib/middleware';
 import { cn } from '~/lib/utils';
-import type { WorkExperienceMetadata } from '~/lib/career/queries/career-progression';
 
 import { FormErrorAlert } from '../components/FormErrorAlert';
 import { useCareerEditorSubmission } from '../hooks/useCareerEditorSubmission';
@@ -301,7 +298,12 @@ export default function WorkExperienceDetail({ loaderData }: Route.ComponentProp
 
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button type="button" variant="destructive" size="sm" className="self-start shrink-0 lg:self-auto">
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                className="self-start shrink-0 lg:self-auto"
+              >
                 <TrashIcon className="size-4" />
                 <span className="hidden sm:inline">Delete experience</span>
               </Button>

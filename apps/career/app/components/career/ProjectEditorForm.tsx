@@ -3,6 +3,7 @@ import { Button } from '@hominem/ui/button';
 import { Input } from '@hominem/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
 import { Textarea } from '@hominem/ui/textarea';
+import { formatDateForInput } from '@hominem/utils/dates';
 import { useEffect } from 'react';
 import { Controller, type SubmitHandler, useForm } from 'react-hook-form';
 import { useFetcher } from 'react-router';
@@ -10,7 +11,6 @@ import { useFetcher } from 'react-router';
 import type { EditorSubmissionResult } from '~/hooks/useCareerEditorSubmission';
 
 import { useCareerEditorSubmission } from '../../hooks/useCareerEditorSubmission';
-import { formatDateForInput } from '@hominem/utils/dates';
 import { EditorFormActions } from '../EditorFormActions';
 import { FormErrorAlert } from '../FormErrorAlert';
 
@@ -355,9 +355,7 @@ export function ProjectEditorForm({
           {...register('technologies_text')}
           placeholder="React, TypeScript, Node.js"
         />
-        <p className="body-4 text-muted-foreground mt-xs">
-          Enter technologies separated by commas
-        </p>
+        <p className="body-4 text-muted-foreground mt-xs">Enter technologies separated by commas</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

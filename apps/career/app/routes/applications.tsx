@@ -162,12 +162,7 @@ export default function Applications({ loaderData }: Route.ComponentProps) {
   const [searchValue, setSearchValue] = useState(searchValueFromRoute);
   const debouncedSearchValue = useDebouncedValue(searchValue, 500);
 
-  const {
-    allApplications,
-    applications,
-    pagination,
-    filters: initialFilters,
-  } = loaderData;
+  const { allApplications, applications, pagination, filters: initialFilters } = loaderData;
   const filters = {
     ...initialFilters,
     statuses: initialFilters.statuses ?? [],
@@ -222,7 +217,10 @@ export default function Applications({ loaderData }: Route.ComponentProps) {
 
   return (
     <section className="flex flex-col gap-6">
-      <ApplicationsHeader totalCount={allApplications.length} onAdd={() => navigate('/applications/new')} />
+      <ApplicationsHeader
+        totalCount={allApplications.length}
+        onAdd={() => navigate('/applications/new')}
+      />
 
       <div className="space-y-8">
         <div className="overflow-hidden rounded-lg border border-border bg-card">
@@ -253,7 +251,9 @@ export default function Applications({ loaderData }: Route.ComponentProps) {
             <div className="px-6 py-10 sm:px-8">
               <ApplicationsEmptyState
                 kind={hasFilters ? 'filtered' : 'base'}
-                emptyTitle={hasFilters ? 'No applications match your filters' : 'No applications found'}
+                emptyTitle={
+                  hasFilters ? 'No applications match your filters' : 'No applications found'
+                }
                 emptyDescription={
                   hasFilters
                     ? 'Try adjusting your search criteria'

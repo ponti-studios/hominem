@@ -1,3 +1,4 @@
+import type { CareerJobApplicationRecord as ApplicationWithCompany } from '@hominem/db';
 import { Badge } from '@hominem/ui/badge';
 import { Button } from '@hominem/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
@@ -8,7 +9,6 @@ import { useState } from 'react';
 import { Form } from 'react-router';
 
 import { jsonArray } from '~/lib/db-json';
-import type { CareerJobApplicationRecord as ApplicationWithCompany } from '@hominem/db';
 
 type InterviewEntry = {
   date: string;

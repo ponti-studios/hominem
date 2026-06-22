@@ -79,9 +79,6 @@ function VerifyScreen() {
   );
 
   React.useEffect(() => {
-    setSecondsLeft(
-      Math.max(0, OTP_EXPIRES_SECONDS - Math.floor((Date.now() - tokenSentAt) / 1000)),
-    );
     const id = setInterval(() => {
       const left = Math.max(0, OTP_EXPIRES_SECONDS - Math.floor((Date.now() - tokenSentAt) / 1000));
       setSecondsLeft(left);
@@ -130,6 +127,7 @@ function VerifyScreen() {
   const prevErrorRef = React.useRef<string | null>(null);
   React.useEffect(() => {
     if (authError && authError !== prevErrorRef.current) {
+      // eslint-disable-next-line react-hooks/immutability
       shakeX.value = withSequence(
         withTiming(10, { duration: 50, easing: Easing.linear }),
         withTiming(-10, { duration: 50, easing: Easing.linear }),
@@ -146,6 +144,7 @@ function VerifyScreen() {
   // Animate Verify button in when 6 digits are present
   React.useEffect(() => {
     const ready = normalizedOtp.length === 6;
+    // eslint-disable-next-line react-hooks/immutability
     verifyButtonOpacity.value = withTiming(ready ? 1 : 0, { duration: 36 });
   }, [normalizedOtp.length, verifyButtonOpacity]);
 

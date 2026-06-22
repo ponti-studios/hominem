@@ -56,9 +56,7 @@ export function EmptyState({
         </div>
       ) : null}
       {title ? (
-        <h2 className={cn('text-foreground', large ? 'heading-3' : 'heading-4')}>
-          {title}
-        </h2>
+        <h2 className={cn('text-foreground', large ? 'heading-3' : 'heading-4')}>{title}</h2>
       ) : null}
       {description ? (
         <p

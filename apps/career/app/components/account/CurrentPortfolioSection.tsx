@@ -71,7 +71,12 @@ export function CurrentPortfolioSection({
             />
 
             <div className="flex justify-end">
-              <Button type="button" onClick={() => onToggleReplaceResume()} variant="ghost" size="sm">
+              <Button
+                type="button"
+                onClick={() => onToggleReplaceResume()}
+                variant="ghost"
+                size="sm"
+              >
                 Cancel
               </Button>
             </div>
@@ -95,8 +100,12 @@ export function CurrentPortfolioSection({
                     )}
                   >
                     <div className="min-w-0">
-                      <p className="truncate subheading-4 text-foreground">{portfolioOption.title}</p>
-                      <p className="truncate body-4 text-muted-foreground">/p/{portfolioOption.slug}</p>
+                      <p className="truncate subheading-4 text-foreground">
+                        {portfolioOption.title}
+                      </p>
+                      <p className="truncate body-4 text-muted-foreground">
+                        /p/{portfolioOption.slug}
+                      </p>
                     </div>
 
                     <div className="flex items-center gap-2">

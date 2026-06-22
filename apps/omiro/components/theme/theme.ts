@@ -1,9 +1,4 @@
-import {
-  lightColors,
-  radii,
-  spacing as tokenSpacing,
-  type ColorToken,
-} from '@hominem/ui/tokens';
+import { lightColors, radii, spacing as tokenSpacing, type ColorToken } from '@hominem/ui/tokens';
 
 import { fontFamiliesNative, fontSizes, fontWeights, lineHeights } from './typography';
 

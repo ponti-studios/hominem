@@ -24,7 +24,9 @@ export function AccountPage({ loaderData }: { loaderData: AccountLoaderData }) {
 
   const { user, portfolios, currentPortfolio } = loaderData;
 
-  const submitAccountAction = async <TData,>(formData: FormData): Promise<AccountActionResult<TData>> => {
+  const submitAccountAction = async <TData,>(
+    formData: FormData,
+  ): Promise<AccountActionResult<TData>> => {
     const response = await fetch('/account', {
       method: 'POST',
       body: formData,

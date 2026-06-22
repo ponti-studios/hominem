@@ -1,5 +1,5 @@
 import { logger } from '@hominem/telemetry';
-import { useCallback, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 
 import {
   getRecordingSnapshot,
@@ -34,6 +34,10 @@ export function useVoiceComposerInput({ message, setMessage }: UseVoiceComposerI
   const [error, setError] = useState<VoiceComposerError | null>(null);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const draftRef = useRef(message);
+
+  useEffect(() => {
+    draftRef.current = message;
+  }, [message]);
 
   const setDraftMessage = useCallback(
     (nextMessage: string) => {

@@ -15,9 +15,7 @@ export function MetricsGrid({ items }: MetricsGridProps) {
     >
       {items.map((item) => (
         <div key={item.label} className="rounded-md border border-border/50 bg-card p-6">
-          <div className={cn('heading-2', getMetricToneClassName(item.tone))}>
-            {item.value}
-          </div>
+          <div className={cn('heading-2', getMetricToneClassName(item.tone))}>{item.value}</div>
           <div className="body-3 text-muted-foreground">{item.label}</div>
         </div>
       ))}

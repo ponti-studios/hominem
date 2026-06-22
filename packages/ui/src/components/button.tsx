@@ -20,8 +20,7 @@ const buttonVariants = cva(
           'void-hover border-transparent bg-secondary text-secondary-foreground [--void-hover-bg:color-mix(in_srgb,var(--color-secondary)_80%,white_20%)] [--void-hover-color:var(--color-secondary-foreground)] [--void-hover-border:transparent]',
         ghost:
           'void-hover border-transparent bg-transparent text-foreground [--void-hover-bg:var(--color-accent)] [--void-hover-color:var(--color-accent-foreground)] [--void-hover-border:transparent]',
-        link:
-          'void-hover border-transparent bg-transparent text-foreground underline-offset-4 hover:underline [--void-hover-bg:transparent] [--void-hover-color:var(--color-secondary-foreground)] [--void-hover-border:transparent]',
+        link: 'void-hover border-transparent bg-transparent text-foreground underline-offset-4 hover:underline [--void-hover-bg:transparent] [--void-hover-color:var(--color-secondary-foreground)] [--void-hover-border:transparent]',
       },
       size: {
         default: 'px-3 text-sm',

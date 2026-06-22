@@ -2,8 +2,7 @@
 @import './animations.css';
 
 @theme {
-  --font-family-primary:
-    -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-family-primary: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --font-family-mono: ui-monospace, monospace;
 
   --font-size-large-title: 34px;
@@ -111,11 +110,7 @@
   --color-prompt-border: #e8d5b5;
   --color-prompt-border-focus: rgba(92, 61, 46, 0.5);
   --color-interaction-hover-bg: color-mix(in srgb, var(--color-accent) 28%, transparent);
-  --color-interaction-hover-border: color-mix(
-    in srgb,
-    var(--color-border-focus) 56%,
-    transparent
-  );
+  --color-interaction-hover-border: color-mix(in srgb, var(--color-border-focus) 56%, transparent);
   --color-interaction-hover-text: var(--color-foreground);
   --color-interaction-focus-ring: color-mix(in srgb, var(--color-ring) 24%, transparent);
 

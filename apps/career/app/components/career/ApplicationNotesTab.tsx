@@ -1,3 +1,4 @@
+import type { AppApplicationNotes, Selectable } from '@hominem/db';
 import { EmptyState } from '@hominem/ui';
 import { Badge } from '@hominem/ui/badge';
 import { Button } from '@hominem/ui/button';
@@ -7,8 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@hominem/ui/textarea';
 import { useState } from 'react';
 import { Form } from 'react-router';
-
-import type { AppApplicationNotes, Selectable } from '@hominem/db';
 
 import { getApplicationNoteTone } from '~/lib/utils/applicationNoteUtils';
 

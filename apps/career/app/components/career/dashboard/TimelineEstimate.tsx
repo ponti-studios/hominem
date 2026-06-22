@@ -1,4 +1,5 @@
 import { Card, CardContent } from '@hominem/ui/card';
+
 import type { JobApplicationMetrics } from '~/lib/career/queries/job-applications';
 import type { ApplicationWithCompany } from '~/types/applications';
 
@@ -104,9 +105,7 @@ export function TimelineEstimate({ applications, metrics }: TimelineEstimateProp
       <CardContent className="pt-4 space-y-4">
         <p className="ui-data-value">
           {estimate.low}–{estimate.high}
-          <span className="body-3 text-muted-foreground ml-2">
-            weeks to likely offer
-          </span>
+          <span className="body-3 text-muted-foreground ml-2">weeks to likely offer</span>
         </p>
 
         <div className="space-y-2">
@@ -123,9 +122,7 @@ export function TimelineEstimate({ applications, metrics }: TimelineEstimateProp
           ))}
         </div>
 
-        <p className="footnote text-muted-foreground border-t border-border pt-4">
-          {context}
-        </p>
+        <p className="footnote text-muted-foreground border-t border-border pt-4">{context}</p>
       </CardContent>
     </Card>
   );

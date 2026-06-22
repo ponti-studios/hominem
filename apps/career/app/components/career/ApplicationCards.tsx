@@ -2,10 +2,10 @@ import { EmptyState } from '@hominem/ui';
 import { Badge } from '@hominem/ui/badge';
 import { buttonVariants } from '@hominem/ui/button';
 import { Card, CardContent } from '@hominem/ui/card';
+import { centsToDollars, formatCurrency } from '@hominem/utils/numbers';
 import { CalendarIcon, DollarSignIcon, MapPinIcon } from 'lucide-react';
 import { Link } from 'react-router';
 
-import { centsToDollars, formatCurrency } from '@hominem/utils/numbers';
 import { cn } from '~/lib/utils';
 import { formatStatusText, getCompanyName, getStatusColor } from '~/lib/utils/applicationUtils';
 import type { ApplicationWithCompany } from '~/types/applications';

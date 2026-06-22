@@ -63,10 +63,7 @@ export function SourcePerformanceChart({ data }: SourcePerformanceChartProps) {
             <div className="flex justify-between items-center">
               <span className="body-3 text-muted-foreground">Overall Score</span>
               <span
-                className={cn(
-                  'subheading-4',
-                  getScoreColor(source.responseRate, source.offerRate),
-                )}
+                className={cn('subheading-4', getScoreColor(source.responseRate, source.offerRate))}
               >
                 {calculatePerformanceScore(source.responseRate, source.offerRate)}
               </span>

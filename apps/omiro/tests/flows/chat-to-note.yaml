@@ -10,29 +10,29 @@ appId: com.pontistudios.hakumi.dev
 
 # Write the test-mode flag to MMKV via deep link first.
 # Wait long enough for the useEffect + MMKV write to flush before the process is killed.
-- openLink: "hakumi-dev://enable-test-mode"
+- openLink: 'hakumi-dev://enable-test-mode'
 - waitForAnimationToEnd:
     timeout: 3000
 - stopApp
 - launchApp
-- assertVisible: "Omiro"
+- assertVisible: 'Omiro'
 - takeScreenshot: /tmp/omiro_flow_1_home
 
 # Focus the feed composer and clear any persisted draft before typing
 - tapOn:
-    id: "feed-composer-input"
+    id: 'feed-composer-input'
 - eraseText: 100
-- inputText: "What are the key principles of good product design?"
+- inputText: 'What are the key principles of good product design?'
 - takeScreenshot: /tmp/omiro_flow_2_typed
 
 # Switch to chat mode (button appears once input has text)
 - tapOn:
-    id: "composer-start-chat"
+    id: 'composer-start-chat'
 - takeScreenshot: /tmp/omiro_flow_3_chat_opened
 
 # Send the message from the chat composer
 - tapOn:
-    id: "composer-submit-message"
+    id: 'composer-submit-message'
 - takeScreenshot: /tmp/omiro_flow_4_message_sent
 
 # Wait for the mock response to finish streaming
@@ -40,33 +40,33 @@ appId: com.pontistudios.hakumi.dev
     timeout: 10000
 - takeScreenshot: /tmp/omiro_flow_4b_after_wait
 # Confirm the AI response is visible before proceeding
-- assertVisible: "mock AI response"
+- assertVisible: 'mock AI response'
 - takeScreenshot: /tmp/omiro_flow_5_ai_responded
 
 # Open the conversation actions menu from the header
-- tapOn: "Conversation actions"
+- tapOn: 'Conversation actions'
 - takeScreenshot: /tmp/omiro_flow_6_menu_open
 
 # Tap "Transform to note" in the native menu
-- tapOn: "Transform to note"
+- tapOn: 'Transform to note'
 - takeScreenshot: /tmp/omiro_flow_7_review_shown
 
 # Accept the classification review
 - tapOn:
-    id: "classification-review-accept"
+    id: 'classification-review-accept'
 - takeScreenshot: /tmp/omiro_flow_8_accepted
 
 # Navigate back to the inbox
-- tapOn: "Back"
+- tapOn: 'Back'
 - takeScreenshot: /tmp/omiro_flow_9_inbox
 
 # Pull to refresh to ensure the inbox picks up the newly created note
 - swipe:
-    start: "50%, 30%"
-    end: "50%, 70%"
+    start: '50%, 30%'
+    end: '50%, 70%'
 - takeScreenshot: /tmp/omiro_flow_10_after_refresh
 
 # Assert at least one note item is visible in the inbox.
 # InboxStreamItem sets testID="inbox-item-note" on note rows.
 - assertVisible:
-    id: "inbox-item-note"
+    id: 'inbox-item-note'

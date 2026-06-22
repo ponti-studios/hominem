@@ -1,7 +1,10 @@
+import type { UploadedFile } from '~/types/upload';
+
 import type { WorkspaceResumeArtifact } from './routes';
 
 const FEED_DRAFT_KEY = 'workspace-feed-draft-v1';
 const CHAT_DRAFT_PREFIX = 'workspace-chat-draft-v1:';
+const CHAT_COMPOSER_HANDOFF_PREFIX = 'workspace-chat-composer-handoff-v1:';
 const RESUME_ARTIFACT_KEY = 'workspace-resume-artifact-v1';
 
 const memoryStorage = new Map<string, string>();
@@ -29,7 +32,7 @@ function getFallbackStorage(): StorageLike {
 function getStorage(): StorageLike {
   try {
     const { storage } =
-      require('~/services/storage/mmkv') as typeof import('~/services/storage/mmkv');
+      require('~/services/storage/mmkv') as typeof import('~/services/storage/mmkv'); // eslint-disable-line @typescript-eslint/no-require-imports
     return storage;
   } catch {
     return getFallbackStorage();
@@ -38,6 +41,34 @@ function getStorage(): StorageLike {
 
 function getChatDraftKey(chatId: string) {
   return `${CHAT_DRAFT_PREFIX}${chatId}`;
+}
+
+function getChatComposerHandoffKey(chatId: string) {
+  return `${CHAT_COMPOSER_HANDOFF_PREFIX}${chatId}`;
+}
+
+interface SerializedUploadedFile extends Omit<UploadedFile, 'uploadedAt'> {
+  uploadedAt: string;
+}
+
+export interface WorkspaceChatComposerAttachment {
+  id: string;
+  name: string;
+  type: string;
+  localUri?: string;
+  uploadedFile?: UploadedFile;
+}
+
+interface SerializedWorkspaceChatComposerAttachment extends Omit<
+  WorkspaceChatComposerAttachment,
+  'uploadedFile'
+> {
+  uploadedFile?: SerializedUploadedFile;
+}
+
+export interface WorkspaceChatComposerHandoff {
+  attachments: WorkspaceChatComposerAttachment[];
+  message: string;
 }
 
 function readJSONValue<T>(key: string): T | null {
@@ -56,6 +87,54 @@ function readJSONValue<T>(key: string): T | null {
 
 function writeJSONValue<T>(key: string, value: T) {
   getStorage().set(key, JSON.stringify(value));
+}
+
+function serializeChatComposerAttachment(
+  attachment: WorkspaceChatComposerAttachment,
+): SerializedWorkspaceChatComposerAttachment {
+  if (!attachment.uploadedFile) {
+    return {
+      id: attachment.id,
+      localUri: attachment.localUri,
+      name: attachment.name,
+      type: attachment.type,
+    };
+  }
+
+  return {
+    id: attachment.id,
+    localUri: attachment.localUri,
+    name: attachment.name,
+    type: attachment.type,
+    uploadedFile: {
+      ...attachment.uploadedFile,
+      uploadedAt: attachment.uploadedFile.uploadedAt.toISOString(),
+    },
+  };
+}
+
+function deserializeChatComposerAttachment(
+  attachment: SerializedWorkspaceChatComposerAttachment,
+): WorkspaceChatComposerAttachment {
+  if (!attachment.uploadedFile) {
+    return {
+      id: attachment.id,
+      localUri: attachment.localUri,
+      name: attachment.name,
+      type: attachment.type,
+    };
+  }
+
+  return {
+    id: attachment.id,
+    localUri: attachment.localUri,
+    name: attachment.name,
+    type: attachment.type,
+    uploadedFile: {
+      ...attachment.uploadedFile,
+      uploadedAt: new Date(attachment.uploadedFile.uploadedAt),
+    },
+  };
 }
 
 export function readFeedDraft(): string {
@@ -93,6 +172,43 @@ export function writeChatDraft(chatId: string, value: string) {
 
 export function clearChatDraft(chatId: string) {
   getStorage().remove(getChatDraftKey(chatId));
+}
+
+export function writeChatComposerHandoff(chatId: string, handoff: WorkspaceChatComposerHandoff) {
+  writeJSONValue(getChatComposerHandoffKey(chatId), {
+    ...handoff,
+    attachments: handoff.attachments.map(serializeChatComposerAttachment),
+  });
+}
+
+export function readChatComposerHandoff(chatId: string): WorkspaceChatComposerHandoff | null {
+  const handoff = readJSONValue<{
+    attachments: SerializedWorkspaceChatComposerAttachment[];
+    message: string;
+  }>(getChatComposerHandoffKey(chatId));
+
+  if (!handoff) {
+    return null;
+  }
+
+  return {
+    ...handoff,
+    attachments: handoff.attachments.map(deserializeChatComposerAttachment),
+  };
+}
+
+export function consumeChatComposerHandoff(chatId: string): WorkspaceChatComposerHandoff | null {
+  const handoff = readChatComposerHandoff(chatId);
+  if (!handoff) {
+    return null;
+  }
+
+  getStorage().remove(getChatComposerHandoffKey(chatId));
+  return handoff;
+}
+
+export function clearChatComposerHandoff(chatId: string) {
+  getStorage().remove(getChatComposerHandoffKey(chatId));
 }
 
 export function writeWorkspaceResumeArtifact(artifact: WorkspaceResumeArtifact) {

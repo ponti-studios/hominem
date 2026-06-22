@@ -1,5 +1,5 @@
 import { FlashList, type FlashListRef, type ListRenderItem } from '@shopify/flash-list';
-import React, { memo, useCallback, type RefObject } from 'react';
+import React, { useCallback, type RefObject } from 'react';
 import { ScrollView, View, type RefreshControlProps } from 'react-native';
 
 import { Text, makeStyles } from '~/components/theme';

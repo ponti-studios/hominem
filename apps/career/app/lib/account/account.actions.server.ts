@@ -161,7 +161,12 @@ async function handleUpdateSlugAction({
     const newSlug = formData.get('slug');
     const portfolioId = formData.get('portfolio_id');
 
-    if (typeof newSlug !== 'string' || typeof portfolioId !== 'string' || !newSlug || !portfolioId) {
+    if (
+      typeof newSlug !== 'string' ||
+      typeof portfolioId !== 'string' ||
+      !newSlug ||
+      !portfolioId
+    ) {
       throw new Response('Slug and portfolio ID are required', { status: 400 });
     }
 

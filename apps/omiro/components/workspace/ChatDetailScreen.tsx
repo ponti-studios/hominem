@@ -15,8 +15,8 @@ import {
   type ChatRenderIcon,
   type ChatServices,
 } from '~/components/chat';
-import { Composer } from '~/components/composer/Composer';
 import { buildConversationActionsModel } from '~/components/chat/conversation-actions.model';
+import { Composer } from '~/components/composer/Composer';
 import { EmptyState } from '~/components/ui';
 import AppIcon from '~/components/ui/icon';
 import {
@@ -28,9 +28,9 @@ import {
   useChatMessages,
   useSendMessage,
 } from '~/services/chat';
-import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 import { useCreateChat } from '~/services/chat/use-create-chat';
 import { formatRelativeAge } from '~/services/date/format-relative-age';
+import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 import { chatKeys } from '~/services/notes/query-keys';
 import { recordWorkspaceScreenReady } from '~/services/performance/startup-metrics';
 import { writeWorkspaceResumeArtifact } from '~/services/workspace/launch-state';
@@ -283,10 +283,13 @@ export function ChatDetailScreen() {
         <KeyboardStickyView
           offset={{ closed: 0, opened: 0 }}
           pointerEvents="box-none"
-          style={[styles.composerOverlay, { paddingBottom: insets.bottom + 10, paddingHorizontal: 12 }]}
+          style={[
+            styles.composerOverlay,
+            { paddingBottom: insets.bottom + 10, paddingHorizontal: 12 },
+          ]}
         >
           <View onLayout={handleComposerLayout}>
-            <Composer mode="chat" chatId={chatId} seedMessage={initialMessage} />
+            <Composer mode="chat" chatId={chatId} initialMessage={initialMessage} />
           </View>
         </KeyboardStickyView>
         <View style={styles.reviewOverlay}>

@@ -201,9 +201,7 @@ export function UploadResumeForm({
           <div
             className={cn(
               'rounded-md border-2 border-dashed p-6 text-center transition-colors',
-              isDragging
-                ? 'border-accent/50 bg-accent/10'
-                : 'border-border',
+              isDragging ? 'border-accent/50 bg-accent/10' : 'border-border',
             )}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -239,9 +237,7 @@ export function UploadResumeForm({
                 <div className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2">
                   <FileText className="size-4 shrink-0 text-muted-foreground" />
                   <div className="min-w-0 text-left">
-                    <p className="truncate subheading-4 text-foreground">
-                      {selectedFile.name}
-                    </p>
+                    <p className="truncate subheading-4 text-foreground">{selectedFile.name}</p>
                     <p className="body-4 text-muted-foreground">
                       {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
                     </p>

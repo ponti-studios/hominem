@@ -223,10 +223,7 @@ export function SlugEditor({ portfolio_id, initialSlug, onSave }: SlugEditorProp
       </div>
 
       <p
-        className={cn(
-          'body-4',
-          validation.message ? helperToneClassName : 'text-muted-foreground',
-        )}
+        className={cn('body-4', validation.message ? helperToneClassName : 'text-muted-foreground')}
       >
         {validation.message || 'Lowercase letters, numbers, and hyphens only.'}
       </p>

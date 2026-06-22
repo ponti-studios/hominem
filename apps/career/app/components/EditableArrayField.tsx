@@ -1,9 +1,8 @@
 import { Button } from '@hominem/ui/button';
 import { Input } from '@hominem/ui/input';
+import { slugifyText } from '@hominem/utils/text';
 import { CheckIcon, PencilIcon, PlusIcon, TrashIcon, XIcon } from 'lucide-react';
 import { memo, useState } from 'react';
-
-import { slugifyText } from '@hominem/utils/text';
 
 interface EditableArrayFieldProps {
   label: string;

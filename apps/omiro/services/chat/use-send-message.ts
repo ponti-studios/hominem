@@ -6,11 +6,11 @@ import { useCallback, useRef } from 'react';
 import { API_BASE_URL } from '~/constants';
 import { useAuth } from '~/services/auth/auth-provider';
 import { chatKeys, inboxKeys } from '~/services/notes/query-keys';
+import { isTestMode, MOCK_AI_RESPONSE } from '~/services/testing/test-mode';
 import { writeCachedChatMessages } from '~/services/workspace/content-cache';
 
 import { createOptimisticMessage, type MessageOutput } from './chatMessages';
 import { streamSSE } from './stream-sse';
-import { isTestMode, MOCK_AI_RESPONSE } from '~/services/testing/test-mode';
 
 // Batch chunk writes at ~2 frames (60 fps) to avoid a setQueryData per token.
 const FLUSH_INTERVAL_MS = 32;

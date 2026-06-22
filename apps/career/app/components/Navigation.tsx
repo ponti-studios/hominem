@@ -29,9 +29,7 @@ const AUTHENTICATED_LINKS = [
 const navLinkClass = (isActive: boolean) =>
   cn(
     'px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide whitespace-nowrap uppercase transition-colors',
-    isActive
-      ? 'bg-foreground text-background'
-      : 'text-muted-foreground hover:text-foreground',
+    isActive ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground',
   );
 
 const pillShellClassName =
@@ -69,7 +67,10 @@ export default function Navigation() {
   return (
     <header className="pointer-events-none fixed inset-x-0 top-5 z-50 flex justify-center px-4">
       <div className={cn(pillShellClassName, 'pointer-events-auto')}>
-        <Link to="/" className="flex shrink-0 items-center px-2 text-sm font-semibold tracking-tight text-foreground">
+        <Link
+          to="/"
+          className="flex shrink-0 items-center px-2 text-sm font-semibold tracking-tight text-foreground"
+        >
           Career
         </Link>
 

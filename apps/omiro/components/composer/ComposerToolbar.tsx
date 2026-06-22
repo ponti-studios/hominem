@@ -15,6 +15,9 @@ interface ComposerToolbarProps {
   isVoiceBusy: boolean;
   isEnhancing: boolean;
   isCleaningVoice: boolean;
+  canPickMedia: boolean;
+  canToggleVoice: boolean;
+  canEnhance: boolean;
   canSubmit: boolean;
   isSubmitting: boolean;
   onVoicePress: () => void;
@@ -40,6 +43,9 @@ export function ComposerToolbar({
   isVoiceBusy,
   isEnhancing,
   isCleaningVoice,
+  canPickMedia,
+  canToggleVoice,
+  canEnhance,
   canSubmit,
   isSubmitting,
   onVoicePress,
@@ -50,14 +56,13 @@ export function ComposerToolbar({
   secondaryAction,
 }: ComposerToolbarProps) {
   const styles = useStyles();
-  const busy = isSubmitting || isVoiceBusy || isEnhancing;
 
   return (
     <View style={styles.toolbar}>
       <View style={styles.leading}>
         <ComposerMedia
           accessibilityLabel={t.feed.composer.addAttachmentA11y}
-          disabled={isSubmitting}
+          disabled={!canPickMedia}
         />
       </View>
       <Reanimated.View style={styles.trailing} layout={pillLayout}>
@@ -67,7 +72,7 @@ export function ComposerToolbar({
           accessibilityLabel={
             isRecording ? t.feed.composer.stopVoiceInputA11y : t.feed.composer.startVoiceInputA11y
           }
-          disabled={busy && !isRecording}
+          disabled={!canToggleVoice}
           isAnimating={isVoiceBusy}
         />
         {canSubmit ? (
@@ -76,7 +81,7 @@ export function ComposerToolbar({
               icon="wand.and.sparkles"
               onPress={onEnhancePress}
               accessibilityLabel={t.feed.composer.enhanceTextA11y}
-              disabled={busy}
+              disabled={!canEnhance}
               isAnimating={isEnhancing || isCleaningVoice}
             />
           </Reanimated.View>
@@ -88,7 +93,7 @@ export function ComposerToolbar({
               onPress={secondaryAction.onPress}
               accessibilityLabel={secondaryAction.accessibilityLabel}
               testID={secondaryAction.testID}
-              disabled={busy}
+              disabled={isSubmitting || !canSubmit}
             />
           </Reanimated.View>
         ) : null}
@@ -105,8 +110,11 @@ export function ComposerToolbar({
                     ? t.chat.input.sendingA11y
                     : t.chat.input.sendMessageA11y)
               }
-              testID={submitTestID ?? (mode === 'feed' ? 'composer-submit-note' : 'composer-submit-message')}
-              disabled={busy}
+              testID={
+                submitTestID ??
+                (mode === 'feed' ? 'composer-submit-note' : 'composer-submit-message')
+              }
+              disabled={!canSubmit}
             />
           </Reanimated.View>
         ) : null}

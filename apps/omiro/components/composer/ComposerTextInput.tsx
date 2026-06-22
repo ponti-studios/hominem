@@ -52,6 +52,7 @@ export function ComposerTextInput({
         onContentSizeChange={(e) => {
           const height = e.nativeEvent.contentSize.height;
           const clamped = Math.min(Math.max(height, INPUT_MIN_H), INPUT_MAX_H);
+          // eslint-disable-next-line react-hooks/immutability
           animatedH.value = withSpring(clamped, SPRING_CONFIG);
         }}
         placeholder={placeholder}

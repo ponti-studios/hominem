@@ -1,11 +1,11 @@
 import { Badge } from '@hominem/ui/badge';
 import { buttonVariants } from '@hominem/ui/button';
 import { Card, CardContent } from '@hominem/ui/card';
+import { formatCurrency, formatPercentage } from '@hominem/utils/numbers';
 import { ArrowRightIcon, BriefcaseIcon, ChevronRightIcon } from 'lucide-react';
 import type { ComponentProps } from 'react';
 import { Link } from 'react-router';
 
-import { formatCurrency, formatPercentage } from '@hominem/utils/numbers';
 import type { WorkExperienceWithFinancials } from '~/lib/career/queries/career-progression';
 
 interface CareerHistoryProps {
@@ -66,10 +66,7 @@ export function CareerHistory({ work_experiences }: CareerHistoryProps) {
     <div data-testid="career-history" className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2
-            className="heading-2 text-foreground"
-            data-testid="work-experience-title"
-          >
+          <h2 className="heading-2 text-foreground" data-testid="work-experience-title">
             Work Experience
           </h2>
           <p className="body-3 text-muted-foreground">
@@ -91,10 +88,7 @@ export function CareerHistory({ work_experiences }: CareerHistoryProps) {
             <CardContent className="space-y-4">
               <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div className="space-y-2">
-                  <h3
-                    className="heading-4 text-foreground"
-                    data-testid="company-name"
-                  >
+                  <h3 className="heading-4 text-foreground" data-testid="company-name">
                     {experience.company}
                   </h3>
 

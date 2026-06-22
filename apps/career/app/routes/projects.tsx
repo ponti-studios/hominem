@@ -168,10 +168,7 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
         <div className="border-b border-border p-4">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
             <div className="flex min-w-0 flex-col gap-2">
-              <label
-                htmlFor="project-client-filter"
-                className="subheading-4 text-muted-foreground"
-              >
+              <label htmlFor="project-client-filter" className="subheading-4 text-muted-foreground">
                 Client
               </label>
               <Select value={selectedClientId ?? ''} onValueChange={handleClientChange}>

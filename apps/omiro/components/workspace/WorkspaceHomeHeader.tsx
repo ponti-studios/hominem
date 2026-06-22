@@ -1,5 +1,5 @@
-import { GlassEffectContainer, Host, HStack, RNHostView } from '@expo/ui/swift-ui';
 import ExpoSegmentedControl from '@expo/ui/community/segmented-control';
+import { GlassEffectContainer, Host, HStack, RNHostView } from '@expo/ui/swift-ui';
 import { frame, glassEffect, padding } from '@expo/ui/swift-ui/modifiers';
 import React from 'react';
 import { ActionSheetIOS, Pressable, StyleSheet, View } from 'react-native';

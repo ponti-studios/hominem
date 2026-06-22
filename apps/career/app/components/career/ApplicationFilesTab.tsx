@@ -1,8 +1,7 @@
+import type { CareerJobApplicationRecord as ApplicationWithCompany } from '@hominem/db';
 import { EmptyState } from '@hominem/ui';
 import { Button } from '@hominem/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
-
-import type { CareerJobApplicationRecord as ApplicationWithCompany } from '@hominem/db';
 
 interface FilesTabProps {
   application: ApplicationWithCompany;

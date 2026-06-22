@@ -51,4 +51,40 @@ describe('workspace launch state', () => {
     expect(launchState.consumeWorkspaceRestoreAttempt()).toBe(true);
     expect(launchState.consumeWorkspaceRestoreAttempt()).toBe(false);
   });
+
+  it('round-trips and consumes chat composer handoff state', async () => {
+    const launchState = await import('~/services/workspace/launch-state');
+
+    launchState.writeChatComposerHandoff('chat-1', {
+      message: 'Follow up with context',
+      attachments: [
+        {
+          id: 'file-1',
+          localUri: 'file:///tmp/file-1.png',
+          name: 'file-1.png',
+          type: 'image',
+          uploadedFile: {
+            id: 'uploaded-file-1',
+            originalName: 'file-1.png',
+            type: 'image',
+            mimetype: 'image/png',
+            size: 128,
+            url: 'https://example.com/file-1.png',
+            uploadedAt: new Date('2026-06-21T12:00:00.000Z'),
+            vectorIds: [],
+          },
+        },
+      ],
+    });
+
+    const handoff = launchState.readChatComposerHandoff('chat-1');
+    expect(handoff).not.toBeNull();
+    expect(handoff?.message).toBe('Follow up with context');
+    expect(handoff?.attachments).toHaveLength(1);
+    expect(handoff?.attachments[0]?.uploadedFile?.uploadedAt).toBeInstanceOf(Date);
+    expect(launchState.consumeChatComposerHandoff('chat-1')?.attachments[0]?.uploadedFile?.id).toBe(
+      'uploaded-file-1',
+    );
+    expect(launchState.readChatComposerHandoff('chat-1')).toBeNull();
+  });
 });

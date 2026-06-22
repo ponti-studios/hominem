@@ -129,15 +129,21 @@ export default function FeedScreen() {
       </View>
 
       <KeyboardStickyView
-        offset={{ closed: 0, opened: 0 }}
+        offset={{ closed: 0, opened: 40 }}
         pointerEvents="box-none"
         style={styles.composerDock}
       >
-        <View style={[styles.composerWrap, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+        {/* oxfmt-ignore */}
+        <View
+          style={[
+            styles.composerWrap,
+            { paddingBottom: Math.max(insets.bottom, 12) },
+          ]}
+        >
           <Composer
             mode="feed"
             entryMode={activeTab === 'chats' ? 'chat' : 'note'}
-            initialDraft={readFeedDraft()}
+            initialMessage={readFeedDraft()}
             onDraftChange={writeFeedDraft}
             onClearDraft={clearFeedDraft}
           />
@@ -165,8 +171,7 @@ const useStyles = makeStyles((theme) => ({
   },
   composerWrap: {
     backgroundColor: 'transparent',
-    paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingHorizontal: 8,
   },
   container: {
     backgroundColor: theme.colors['bg-base'],

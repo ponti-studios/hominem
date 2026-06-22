@@ -22,7 +22,7 @@ export function enableTestMode(): void {
 
 export function disableTestMode(): void {
   try {
-    storage.delete(TEST_MODE_KEY);
+    storage.remove(TEST_MODE_KEY);
   } catch {
     // MMKV unavailable — no-op
   }

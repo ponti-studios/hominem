@@ -56,6 +56,7 @@ function AuthScreen() {
   const normalizedEmail = normalizeEmail(email);
   const emailIsValid = isValidEmail(normalizedEmail);
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/immutability
     continueButtonOpacity.value = withTiming(emailIsValid ? 1 : 0, { duration: 36 });
   }, [emailIsValid, continueButtonOpacity]);
 
@@ -63,6 +64,7 @@ function AuthScreen() {
   const prevErrorRef = React.useRef<string | null>(null);
   useEffect(() => {
     if (authError && authError !== prevErrorRef.current) {
+      // eslint-disable-next-line react-hooks/immutability
       shakeX.value = withSequence(
         withTiming(10, { duration: 50, easing: Easing.linear }),
         withTiming(-10, { duration: 50, easing: Easing.linear }),
