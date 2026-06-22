@@ -140,12 +140,6 @@
     "./tokens/shadows": {
       "types": "./src/tokens/shadows.ts",
       "default": "./src/tokens/shadows.ts"
-    },
-    "./theme": {
-      "types": "./src/theme.ts",
-      "node": "./shell-theme.cjs",
-      "require": "./shell-theme.cjs",
-      "default": "./src/theme.ts"
     }
   },
   "scripts": {

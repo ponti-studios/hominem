@@ -1,6 +1,5 @@
 import type { ImageStyle, TextStyle, ViewStyle } from 'react-native';
 
-import { shellTheme } from '../../types/shellTheme';
 import defaultTheme, {
   componentSizes,
   theme,
@@ -20,7 +19,7 @@ export {
   type SpacingToken,
 } from '@hominem/ui/tokens';
 export { fontFamiliesNative, fontSizes, fontWeights, lineHeights, Text } from './typography';
-export { componentSizes, shellTheme, theme, themeSpacing, useThemeColors };
+export { componentSizes, theme, themeSpacing, useThemeColors };
 export { defaultTheme as default };
 export type { Theme };
 
