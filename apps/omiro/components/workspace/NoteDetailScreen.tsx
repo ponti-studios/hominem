@@ -66,9 +66,9 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
   const router = useRouter();
   const contentInputRef = useRef<TextInput>(null);
   const homeRoute = getWorkspaceHomeRoute();
-  const titleState = useNativeState('');
 
   const { data: note, error, isInitialLoading, isRefreshing, refetch } = useNoteQuery({ noteId });
+  const titleState = useNativeState('');
   const { save, updateCache, detachFile } = useNoteEditor(noteId);
   const {
     isEnhanceOpen,

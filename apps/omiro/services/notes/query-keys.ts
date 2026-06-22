@@ -7,19 +7,13 @@
 import { queryKeys } from '@hominem/rpc/react';
 
 export const inboxKeys = {
-  all: queryKeys.inbox.all,
   pages: queryKeys.inbox.pages,
   page: (options: Record<string, unknown>) => queryKeys.inbox.page(options),
 } as const;
 
 export const noteKeys = {
   all: queryKeys.notes.all,
-  lists: queryKeys.notes.lists,
-  feeds: queryKeys.notes.feeds,
-  list: (options: Record<string, unknown>) => queryKeys.notes.list(options),
-  feed: (options: Record<string, unknown>) => queryKeys.notes.feed(options),
   detail: (id: string) => queryKeys.notes.detail(id),
-  search: (query: string) => queryKeys.notes.search(query),
 } as const;
 
 export const chatKeys = {

@@ -18,5 +18,3 @@ export const shellTheme = {
     notificationColor: colors.black,
   },
 } as const;
-
-export type ShellTheme = typeof shellTheme;

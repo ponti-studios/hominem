@@ -102,7 +102,7 @@ export const InboxStreamItem = memo(({ item, swipeEnabled = true }: InboxStreamI
   const row = (
     <View style={styles.row}>
       <Link href={item.route} disabled={isPending} asChild>
-        <Link.Trigger withAppleZoom>
+        <Link.Trigger withAppleZoom={isChat}>
           <Pressable
             accessibilityLabel={`${primaryText}, ${isChat ? 'Chat' : 'Note'}`}
             accessibilityRole="button"
