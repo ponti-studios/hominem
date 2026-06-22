@@ -73,7 +73,9 @@ export function WorkspaceSearchModal({
             keyboardDismissMode="on-drag"
             showsVerticalScrollIndicator={false}
           >
-            {results.map((item) => <InboxStreamItem key={item.id} item={item} swipeEnabled={false} />)}
+            {results.map((item) => (
+              <InboxStreamItem key={item.id} item={item} swipeEnabled={false} />
+            ))}
           </ScrollView>
         </View>
       </View>

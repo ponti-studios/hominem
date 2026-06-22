@@ -4,6 +4,7 @@ import { useComposerAttachments } from '~/components/composer/ComposerContext';
 import { useComposerDraft } from '~/components/composer/useComposerDraft';
 import { useVoiceComposerInput } from '~/components/composer/useVoiceComposerInput';
 import { useInlineEnhance } from '~/services/ai';
+
 import type { VoiceComposerError } from './voiceComposerInput.helpers';
 
 interface UseComposerControllerOptions {

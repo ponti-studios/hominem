@@ -11,7 +11,7 @@ import t from '~/translations';
 import { InboxStreamItem } from './InboxStreamItem';
 import type { InboxStreamItemData } from './InboxStreamItem.types';
 
-type WorkspaceHomeListRow =
+export type WorkspaceHomeListRow =
   | {
       type: 'section';
       id: string;
@@ -23,13 +23,15 @@ type WorkspaceHomeListRow =
       item: InboxStreamItemData;
     };
 
+export type WorkspaceHomeListRef = FlashListRef<WorkspaceHomeListRow>;
+
 interface WorkspaceHomeListProps {
   error?: Error | null;
   tab: WorkspaceHomeTab;
   items: InboxStreamItemData[];
   isLoading?: boolean;
   isFetchingNextPage?: boolean;
-  listRef?: RefObject<FlashListRef<any> | null>;
+  listRef?: RefObject<FlashListRef<WorkspaceHomeListRow> | null>;
   onEndReached?: () => void;
   refreshControl?: React.ReactElement<RefreshControlProps>;
   contentPaddingBottom?: number;
@@ -81,9 +83,7 @@ export function WorkspaceHomeList({
         return <Text style={styles.sectionTitle}>{item.title}</Text>;
       }
 
-      return (
-        <RenderInboxHomeItem item={item.item} />
-      );
+      return <RenderInboxHomeItem item={item.item} />;
     },
     [styles.sectionTitle],
   );
@@ -124,7 +124,7 @@ export function WorkspaceHomeList({
 
   return (
     <FlashList
-      ref={listRef as React.Ref<FlashListRef<WorkspaceHomeListRow>>}
+      ref={listRef}
       contentContainerStyle={{
         paddingTop: contentPaddingTop ?? 0,
         paddingBottom: contentPaddingBottom ?? 16,

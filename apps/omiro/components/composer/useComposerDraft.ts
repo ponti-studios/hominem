@@ -34,12 +34,7 @@ export function useComposerDraft({
     [applyMessage],
   );
 
-  const clearDraft = useCallback(
-    () =>
-      applyMessage('', {
-      }),
-    [applyMessage],
-  );
+  const clearDraft = useCallback(() => applyMessage('', {}), [applyMessage]);
 
   return {
     getMessage: () => messageRef.current,

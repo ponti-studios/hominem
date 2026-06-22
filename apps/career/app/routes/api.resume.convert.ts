@@ -73,7 +73,11 @@ function logRouteError(message: string, error: unknown, context?: Record<string,
         }
       : context;
 
-  logger.error(message || (error instanceof Error ? error.message : ''));
+  logger.error(
+    message || (error instanceof Error ? error.message : ''),
+    error instanceof Error ? error : undefined,
+    errorContext,
+  );
 }
 
 function resolveAiParseFailure(error: unknown) {

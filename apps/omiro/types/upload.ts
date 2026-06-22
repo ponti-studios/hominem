@@ -27,16 +27,3 @@ export interface UploadedFile extends ProcessedFile {
   uploadedAt: Date;
   vectorIds?: string[];
 }
-
-export interface FailedUpload {
-  name: string;
-  error: string;
-}
-
-export interface UploadResponse {
-  success: boolean;
-  files: UploadedFile[];
-  failed: FailedUpload[];
-  message: string;
-  error?: string;
-}

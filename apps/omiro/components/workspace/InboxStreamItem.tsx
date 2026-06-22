@@ -26,135 +26,133 @@ interface InboxStreamItemProps {
   swipeEnabled?: boolean;
 }
 
-export const InboxStreamItem = memo(
-  ({ item, swipeEnabled = true }: InboxStreamItemProps) => {
-    const styles = useStyles();
-    const themeColors = useThemeColors();
-    const swipeableRef = useRef<SwipeableMethods>(null);
-    const titleText = cleanText(item.title);
-    const previewText = cleanText(item.preview);
-    const primaryText = titleText ?? previewText ?? t.workspace.item.untitled;
-    const isChat = item.kind === 'chat';
+export const InboxStreamItem = memo(({ item, swipeEnabled = true }: InboxStreamItemProps) => {
+  const styles = useStyles();
+  const themeColors = useThemeColors();
+  const swipeableRef = useRef<SwipeableMethods>(null);
+  const titleText = cleanText(item.title);
+  const previewText = cleanText(item.preview);
+  const primaryText = titleText ?? previewText ?? t.workspace.item.untitled;
+  const isChat = item.kind === 'chat';
 
-    const { mutate: deleteNote, isPending: isDeletingNote } = useNoteDelete({
-      noteId: item.entityId,
-    });
-    const { mutate: archiveChat, isPending: isArchivingChat } = useChatArchive({
-      chatId: item.entityId,
-    });
-    const isPending = isDeletingNote || isArchivingChat;
+  const { mutate: deleteNote, isPending: isDeletingNote } = useNoteDelete({
+    noteId: item.entityId,
+  });
+  const { mutate: archiveChat, isPending: isArchivingChat } = useChatArchive({
+    chatId: item.entityId,
+  });
+  const isPending = isDeletingNote || isArchivingChat;
 
-    const handleDelete = useCallback(() => {
-      swipeableRef.current?.close();
-      Alert.alert(t.workspace.item.deleteNote.title, t.workspace.item.deleteNote.message, [
-        { text: t.workspace.item.deleteNote.cancel, style: 'cancel' },
-        {
-          text: t.workspace.item.deleteNote.confirm,
-          style: 'destructive',
-          onPress: () => deleteNote(),
-        },
-      ]);
-    }, [deleteNote]);
-
-    const handleArchive = useCallback(() => {
-      swipeableRef.current?.close();
-      archiveChat();
-    }, [archiveChat]);
-
-    const handleOpenActions = useCallback(() => {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: [
-            isChat ? t.workspace.item.archiveChat : t.workspace.item.deleteNote.title,
-            t.workspace.item.deleteNote.cancel,
-          ],
-          cancelButtonIndex: 1,
-          destructiveButtonIndex: isChat ? undefined : 0,
-        },
-        (selectedIndex) => {
-          if (selectedIndex !== 0) return;
-          if (isChat) {
-            handleArchive();
-            return;
-          }
-          handleDelete();
-        },
-      );
-    }, [handleArchive, handleDelete, isChat]);
-
-    const renderSwipeAction = useCallback(
-      (progress: SharedValue<number>) => {
-        return (
-          <SwipeAction
-            progress={progress}
-            iconName={isChat ? 'archivebox' : 'trash'}
-            onPress={isChat ? handleArchive : handleDelete}
-            accessibilityLabel={
-              isChat ? t.workspace.item.archive : t.workspace.item.deleteNote.confirm
-            }
-            backgroundColor={isChat ? themeColors.accent : themeColors.destructive}
-            style={styles.swipeAction}
-          />
-        );
+  const handleDelete = useCallback(() => {
+    swipeableRef.current?.close();
+    Alert.alert(t.workspace.item.deleteNote.title, t.workspace.item.deleteNote.message, [
+      { text: t.workspace.item.deleteNote.cancel, style: 'cancel' },
+      {
+        text: t.workspace.item.deleteNote.confirm,
+        style: 'destructive',
+        onPress: () => deleteNote(),
       },
-      [isChat, handleArchive, handleDelete, styles, themeColors],
+    ]);
+  }, [deleteNote]);
+
+  const handleArchive = useCallback(() => {
+    swipeableRef.current?.close();
+    archiveChat();
+  }, [archiveChat]);
+
+  const handleOpenActions = useCallback(() => {
+    ActionSheetIOS.showActionSheetWithOptions(
+      {
+        options: [
+          isChat ? t.workspace.item.archiveChat : t.workspace.item.deleteNote.title,
+          t.workspace.item.deleteNote.cancel,
+        ],
+        cancelButtonIndex: 1,
+        destructiveButtonIndex: isChat ? undefined : 0,
+      },
+      (selectedIndex) => {
+        if (selectedIndex !== 0) return;
+        if (isChat) {
+          handleArchive();
+          return;
+        }
+        handleDelete();
+      },
     );
+  }, [handleArchive, handleDelete, isChat]);
 
-    const row = (
-      <View style={styles.row}>
-        <Link href={item.route} disabled={isPending} asChild>
-          <Link.Trigger withAppleZoom>
-            <Pressable
-              accessibilityLabel={`${primaryText}, ${isChat ? 'Chat' : 'Note'}`}
-              accessibilityRole="button"
-              disabled={isPending}
-              style={({ pressed }) => [styles.contentButton, pressed && styles.rowPressed]}
-            >
-              <View style={styles.titleRow}>
-                <View style={styles.copyColumn}>
-                  <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">
-                    {primaryText}
-                  </Text>
-                </View>
-              </View>
-            </Pressable>
-          </Link.Trigger>
-        </Link>
-
-        <IconButton
-          accessibilityLabel={t.workspace.item.actionsLabel}
-          icon="ellipsis"
-          size={44}
-          iconSize={18}
-          style={styles.menuButton}
-          tintColor={themeColors['text-secondary']}
-          onPress={handleOpenActions}
+  const renderSwipeAction = useCallback(
+    (progress: SharedValue<number>) => {
+      return (
+        <SwipeAction
+          progress={progress}
+          iconName={isChat ? 'archivebox' : 'trash'}
+          onPress={isChat ? handleArchive : handleDelete}
+          accessibilityLabel={
+            isChat ? t.workspace.item.archive : t.workspace.item.deleteNote.confirm
+          }
+          backgroundColor={isChat ? themeColors.accent : themeColors.destructive}
+          style={styles.swipeAction}
         />
-      </View>
-    );
+      );
+    },
+    [isChat, handleArchive, handleDelete, styles, themeColors],
+  );
 
-    return (
-      <View style={[styles.outer, isPending && styles.rowPending]} testID={`inbox-item-${item.kind}`}>
-        {swipeEnabled ? (
-          <ReanimatedSwipeable
-            ref={swipeableRef}
-            containerStyle={styles.swipeableContainer}
-            childrenContainerStyle={styles.swipeableChildrenContainer}
-            renderRightActions={renderSwipeAction}
-            rightThreshold={60}
-            friction={2}
-            overshootRight={false}
-            enableTrackpadTwoFingerGesture
+  const row = (
+    <View style={styles.row}>
+      <Link href={item.route} disabled={isPending} asChild>
+        <Link.Trigger withAppleZoom>
+          <Pressable
+            accessibilityLabel={`${primaryText}, ${isChat ? 'Chat' : 'Note'}`}
+            accessibilityRole="button"
+            disabled={isPending}
+            style={({ pressed }) => [styles.contentButton, pressed && styles.rowPressed]}
           >
-            {row}
-          </ReanimatedSwipeable>
-        ) : (
-          row
-        )}
-      </View>
-    );
-  },
-);
+            <View style={styles.titleRow}>
+              <View style={styles.copyColumn}>
+                <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">
+                  {primaryText}
+                </Text>
+              </View>
+            </View>
+          </Pressable>
+        </Link.Trigger>
+      </Link>
+
+      <IconButton
+        accessibilityLabel={t.workspace.item.actionsLabel}
+        icon="ellipsis"
+        size={44}
+        iconSize={18}
+        style={styles.menuButton}
+        tintColor={themeColors['text-secondary']}
+        onPress={handleOpenActions}
+      />
+    </View>
+  );
+
+  return (
+    <View style={[styles.outer, isPending && styles.rowPending]} testID={`inbox-item-${item.kind}`}>
+      {swipeEnabled ? (
+        <ReanimatedSwipeable
+          ref={swipeableRef}
+          containerStyle={styles.swipeableContainer}
+          childrenContainerStyle={styles.swipeableChildrenContainer}
+          renderRightActions={renderSwipeAction}
+          rightThreshold={60}
+          friction={2}
+          overshootRight={false}
+          enableTrackpadTwoFingerGesture
+        >
+          {row}
+        </ReanimatedSwipeable>
+      ) : (
+        row
+      )}
+    </View>
+  );
+});
 
 InboxStreamItem.displayName = 'InboxStreamItem';
 

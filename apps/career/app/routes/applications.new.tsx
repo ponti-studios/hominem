@@ -9,7 +9,6 @@ import { Form, Link, redirect } from 'react-router';
 import type { JobScrapeApiRequest, JobScrapeApiResponse } from '~/lib/api-contracts';
 import { userContext } from '~/lib/middleware';
 import { JobApplicationsService } from '~/lib/services/job-applications.service';
-import { cn } from '~/lib/utils';
 import type { JobPosting } from '~/types/applications';
 import { JobApplicationStatus } from '~/types/career';
 

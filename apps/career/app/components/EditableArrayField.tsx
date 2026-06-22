@@ -34,16 +34,17 @@ const ArrayItem = memo(function ArrayItem({
     const newValue = e.target.value;
     onUpdate(index, newValue);
   };
+  const testIdSuffix = value.trim() ? slugifyText(value) : '';
 
   return (
-    <div className="flex items-center gap-2" data-testid={`array-item-${slugifyText(value)}`}>
+    <div className="flex items-center gap-2" data-testid={`array-item-${testIdSuffix}`}>
       <Input
         type="text"
         value={value}
         onChange={handleChange}
         onKeyDown={(e) => onKeyDown(e, index)}
         placeholder={placeholder}
-        data-testid={`array-input-${slugifyText(value)}`}
+        data-testid={`array-input-${testIdSuffix}`}
       />
       <Button
         type="button"
@@ -51,7 +52,7 @@ const ArrayItem = memo(function ArrayItem({
         variant="ghost"
         size="sm"
         className="p-2 text-destructive"
-        data-testid={`remove-item-${slugifyText(value)}`}
+        data-testid={`remove-item-${testIdSuffix}`}
         aria-label={`Remove item ${value}`}
       >
         <TrashIcon className="w-4 h-4" />

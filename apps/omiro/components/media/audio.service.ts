@@ -18,15 +18,6 @@ type RecordingSnapshot = {
   state: RecorderState;
 };
 
-type PlaybackSnapshot = {
-  audioUri: string | null;
-  duration: number;
-  isLoaded: boolean;
-  isPlaying: boolean;
-  position: number;
-};
-
-type AudioPlayer = ReturnType<typeof Audio.createAudioPlayer>;
 type AudioRecorder = InstanceType<typeof AudioModule.AudioRecorder>;
 
 type Listener<T> = (snapshot: T) => void;
@@ -58,100 +49,6 @@ function createStore<T>(initialValue: T) {
       return () => {
         listeners.delete(listener);
       };
-    },
-  };
-}
-
-export function createPlaybackController() {
-  const store = createStore<PlaybackSnapshot>({
-    audioUri: null,
-    duration: 0,
-    isLoaded: false,
-    isPlaying: false,
-    position: 0,
-  });
-
-  let player: AudioPlayer | null = null;
-  let pollHandle: ReturnType<typeof setInterval> | null = null;
-
-  const ensurePlayer = () => {
-    if (!player) {
-      player = Audio.createAudioPlayer(null);
-    }
-
-    return player;
-  };
-
-  const sync = () => {
-    if (!player) return;
-
-    store.setSnapshot({
-      audioUri: store.getSnapshot().audioUri,
-      duration: Math.floor(player.duration ?? 0),
-      isLoaded: player.isLoaded,
-      isPlaying: player.playing,
-      position: Math.floor(player.currentTime ?? 0),
-    });
-  };
-
-  const startPolling = () => {
-    if (pollHandle) return;
-
-    pollHandle = setInterval(sync, 100);
-    sync();
-  };
-
-  const stopPolling = () => {
-    if (!pollHandle) return;
-
-    clearInterval(pollHandle);
-    pollHandle = null;
-  };
-
-  return {
-    getSnapshot: store.getSnapshot,
-    subscribe: store.subscribe,
-    prepare: async (audioUri: string) => {
-      await Audio.setAudioModeAsync({ playsInSilentMode: true, interruptionMode: 'doNotMix' });
-
-      const nextPlayer = ensurePlayer();
-      nextPlayer.replace({ uri: audioUri });
-      await nextPlayer.seekTo(0);
-
-      store.setSnapshot({
-        audioUri,
-        duration: Math.floor(nextPlayer.duration ?? 0),
-        isLoaded: nextPlayer.isLoaded,
-        isPlaying: nextPlayer.playing,
-        position: 0,
-      });
-      startPolling();
-    },
-    play: async () => {
-      await Audio.setAudioModeAsync({ playsInSilentMode: true, interruptionMode: 'doNotMix' });
-
-      const nextPlayer = ensurePlayer();
-      nextPlayer.play();
-      startPolling();
-      sync();
-    },
-    pause: () => {
-      player?.pause();
-      sync();
-    },
-    seek: async (positionMs: number) => {
-      if (!player) return;
-
-      await player.seekTo(positionMs / 1000);
-      sync();
-    },
-    stop: async () => {
-      if (!player) return;
-
-      player.pause();
-      await player.seekTo(0);
-      stopPolling();
-      sync();
     },
   };
 }
@@ -334,18 +231,6 @@ export function getRecordingSnapshot() {
 
 export function subscribeRecording(listener: Listener<RecordingSnapshot>) {
   return recording.subscribe(listener);
-}
-
-export function clearRecording() {
-  recording.clearRecording();
-}
-
-export function pauseRecording() {
-  recording.pauseRecording();
-}
-
-export function resumeRecording() {
-  recording.resumeRecording();
 }
 
 export async function startRecording() {

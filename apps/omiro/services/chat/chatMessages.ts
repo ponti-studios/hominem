@@ -32,16 +32,3 @@ export function createOptimisticMessage(
     isStreaming: false,
   };
 }
-
-export function reconcileMessagesAfterSend(
-  previous: ChatMessageItem[],
-  serverMessages: ChatMessageItem[],
-): ChatMessageItem[] {
-  const withoutOptimistic = previous.filter(
-    (msg) => msg.role !== 'user' || serverMessages.some((m) => m.id === msg.id),
-  );
-  const newMessages = serverMessages.filter(
-    (serverMessage) => !withoutOptimistic.some((oldMessage) => oldMessage.id === serverMessage.id),
-  );
-  return [...withoutOptimistic, ...newMessages];
-}

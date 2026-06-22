@@ -8,7 +8,14 @@ import {
   type PressableStateCallbackType,
 } from 'react-native';
 
-import { colors, componentSizes, fontSizes, fontWeights, radii, themeSpacing } from '~/components/theme';
+import {
+  colors,
+  componentSizes,
+  fontSizes,
+  fontWeights,
+  radii,
+  themeSpacing,
+} from '~/components/theme';
 
 interface ButtonProps {
   label: string;

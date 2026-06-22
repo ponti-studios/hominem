@@ -30,12 +30,14 @@ export function QuickActionsDropdown({ actions, className = '' }: QuickActionsDr
           variant="outline"
           size="sm"
           className={className}
+          aria-label="Quick Actions"
           onPointerDown={(event) => {
             event.preventDefault();
             setIsOpen((open) => !open);
           }}
         >
           <Menu className="size-4" />
+          Quick Actions
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent side="bottom" align="end" sideOffset={8} className="w-56">

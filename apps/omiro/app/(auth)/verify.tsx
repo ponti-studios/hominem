@@ -1,3 +1,4 @@
+import { useEmailAuth } from '@hominem/auth/client/provider';
 import { maskEmail } from '@hominem/auth/shared/mask-email';
 import type { RelativePathString } from 'expo-router';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -29,7 +30,6 @@ import { FeatureErrorBoundary } from '../../components/error-boundary/FeatureErr
 import { Button } from '../../components/ui/button';
 import AppIcon from '../../components/ui/icon';
 import { useAuth } from '../../services/auth/auth-provider';
-import { useEmailAuth } from '../../services/auth/hooks/use-email-auth';
 import { normalizeOtp } from '../../services/auth/validation';
 import { posthog } from '../../services/posthog';
 
@@ -176,21 +176,15 @@ function VerifyScreen() {
     posthog.capture('auth_change_email_pressed');
     router.replace('/(auth)' as RelativePathString);
   }, [router]);
-  const handleVerifyPress = React.useCallback(
-    () => {
-      posthog.capture('auth_verify_pressed');
-      return handleVerifyOtp(resolvedEmail, normalizedOtp);
-    },
-    [handleVerifyOtp, normalizedOtp, resolvedEmail],
-  );
-  const handleResendPress = React.useCallback(
-    async () => {
-      posthog.capture('auth_resend_pressed');
-      await handleResendOtp(resolvedEmail);
-      setTokenSentAt(Date.now());
-    },
-    [handleResendOtp, resolvedEmail],
-  );
+  const handleVerifyPress = React.useCallback(() => {
+    posthog.capture('auth_verify_pressed');
+    return handleVerifyOtp(resolvedEmail, normalizedOtp);
+  }, [handleVerifyOtp, normalizedOtp, resolvedEmail]);
+  const handleResendPress = React.useCallback(async () => {
+    posthog.capture('auth_resend_pressed');
+    await handleResendOtp(resolvedEmail);
+    setTokenSentAt(Date.now());
+  }, [handleResendOtp, resolvedEmail]);
 
   if (isSignedIn && !verifySucceeded) {
     return <Redirect href={CHAT_AUTH_CONFIG.defaultPostAuthDestination as RelativePathString} />;

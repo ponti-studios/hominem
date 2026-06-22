@@ -1,4 +1,3 @@
-import type { FlashListRef } from '@shopify/flash-list';
 import { Stack, useIsFocused, useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { RefreshControl, View } from 'react-native';
@@ -9,7 +8,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Composer } from '~/components/composer/Composer';
 import { makeStyles } from '~/components/theme';
 import { WorkspaceHomeHeader } from '~/components/workspace/WorkspaceHomeHeader';
-import { WorkspaceHomeList } from '~/components/workspace/WorkspaceHomeList';
+import {
+  WorkspaceHomeList,
+  type WorkspaceHomeListRef,
+} from '~/components/workspace/WorkspaceHomeList';
 import { WorkspaceSearchModal } from '~/components/workspace/WorkspaceSearchModal';
 import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
 import { useInboxStreamItems } from '~/services/inbox/use-inbox-stream-items';
@@ -17,11 +19,7 @@ import {
   buildWorkspaceHomeSections,
   type WorkspaceHomeTab,
 } from '~/services/workspace/home-screen-state';
-import {
-  clearFeedDraft,
-  readFeedDraft,
-  writeFeedDraft,
-} from '~/services/workspace/launch-state';
+import { clearFeedDraft, readFeedDraft, writeFeedDraft } from '~/services/workspace/launch-state';
 import {
   getWorkspaceArchivedChatsRoute,
   getWorkspaceSettingsRoute,
@@ -42,7 +40,7 @@ export default function FeedScreen() {
     isFetchingNextPage,
     refetch,
   } = useInboxStreamItems({ enabled: isFocused });
-  const listRef = useRef<FlashListRef<any>>(null);
+  const listRef = useRef<WorkspaceHomeListRef>(null);
   const searchInputRef = useRef<TextInput>(null);
   const [activeTab, setActiveTab] = useState<WorkspaceHomeTab>('notes');
   const [searchQuery, setSearchQuery] = useState('');

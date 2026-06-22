@@ -1,8 +1,6 @@
 import type { ArtifactType } from '@hominem/rpc/types';
 import { Modal, ScrollView, View } from 'react-native';
-import Animated, {
-  FadeInUp,
-} from 'react-native-reanimated';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {

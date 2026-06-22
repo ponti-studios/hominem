@@ -65,7 +65,7 @@ export function readCachedInboxItems(): InboxStreamItem[] {
   }
 }
 
-export function writeCachedInboxItems(items: InboxStreamItem[]) {
+function writeCachedInboxItems(items: InboxStreamItem[]) {
   const snapshot: CachedInboxSnapshot = {
     items,
     savedAt: new Date().toISOString(),

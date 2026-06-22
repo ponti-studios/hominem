@@ -37,7 +37,7 @@ export function ChatComposerEntry({ chatId, initialMessage, testID }: ChatCompos
   );
 }
 
-export function ChatComposerContent({ chatId, initialMessage, testID }: ChatComposerContentProps) {
+function ChatComposerContent({ chatId, initialMessage, testID }: ChatComposerContentProps) {
   const { data: activeChat } = useActiveChat(chatId);
   const resolvedChatId = activeChat?.id ?? chatId;
   const persistedDraft = readChatDraft(resolvedChatId);

@@ -19,11 +19,3 @@ export function enableTestMode(): void {
     // MMKV unavailable — no-op
   }
 }
-
-export function disableTestMode(): void {
-  try {
-    storage.remove(TEST_MODE_KEY);
-  } catch {
-    // MMKV unavailable — no-op
-  }
-}

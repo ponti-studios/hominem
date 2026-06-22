@@ -26,10 +26,6 @@ function toChatsWithActivity(chats: Chat[], now = Date.now()): ChatWithActivity[
     );
 }
 
-export function getInboxChatsWithActivity(chats: Chat[], now = Date.now()): ChatWithActivity[] {
-  return toChatsWithActivity(chats, now).filter((chat) => !chat.archivedAt);
-}
-
 export function getArchivedChatsWithActivity(chats: Chat[], now = Date.now()): ChatWithActivity[] {
   return toChatsWithActivity(chats, now).filter((chat) => Boolean(chat.archivedAt));
 }

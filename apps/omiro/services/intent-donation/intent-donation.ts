@@ -25,7 +25,3 @@ function donateIntent(name: IntentName): void {
 export function donateAddNoteIntent(): void {
   donateIntent('AddNoteIntent');
 }
-
-export function donateStartChatIntent(): void {
-  donateIntent('StartChatIntent');
-}

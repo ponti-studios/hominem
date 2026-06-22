@@ -138,7 +138,7 @@ export async function action({ context, request }: Route.ActionArgs) {
   }
 }
 
-function ApplicationsHeader({ totalCount, onAdd }: { totalCount: number; onAdd: () => void }) {
+function ApplicationsHeader({ onAdd }: { onAdd: () => void }) {
   return (
     <div className="flex items-center justify-between">
       <h2 className="heading-2 text-foreground">Job Applications</h2>
@@ -217,10 +217,7 @@ export default function Applications({ loaderData }: Route.ComponentProps) {
 
   return (
     <section className="flex flex-col gap-6">
-      <ApplicationsHeader
-        totalCount={allApplications.length}
-        onAdd={() => navigate('/applications/new')}
-      />
+      <ApplicationsHeader onAdd={() => navigate('/applications/new')} />
 
       <div className="space-y-8">
         <div className="overflow-hidden rounded-lg border border-border bg-card">

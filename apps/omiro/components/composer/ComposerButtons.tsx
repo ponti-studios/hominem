@@ -41,11 +41,7 @@ export function ActionButton({
       return withTiming(0, { duration: 120 });
     }
 
-    return withRepeat(
-      withTiming(360, { duration: 900, easing: Easing.linear }),
-      -1,
-      false,
-    );
+    return withRepeat(withTiming(360, { duration: 900, easing: Easing.linear }), -1, false);
   }, [isAnimating, prefersReducedMotion]);
 
   const iconStyle = useAnimatedStyle(() => ({

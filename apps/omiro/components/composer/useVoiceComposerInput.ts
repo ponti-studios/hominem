@@ -38,7 +38,6 @@ export function useVoiceComposerInput({
   );
   const [error, setError] = useState<VoiceComposerError | null>(null);
   const [isTranscribing, setIsTranscribing] = useState(false);
-  const setDraftMessage = useCallback((nextMessage: string) => setMessage(nextMessage), [setMessage]);
   const setVoiceError = useCallback(
     (nextError: VoiceComposerError) => {
       setError(nextError);
@@ -62,7 +61,7 @@ export function useVoiceComposerInput({
         if (!rawText) return;
 
         const insertedDraft = mergeTranscriptIntoDraft(getMessage(), rawText);
-        setDraftMessage(insertedDraft);
+        setMessage(insertedDraft);
         setIsTranscribing(false);
         void cleanup({
           rawText,
@@ -70,7 +69,7 @@ export function useVoiceComposerInput({
           source: 'apple-on-device',
         })
           .then((cleanupResult) => {
-            setDraftMessage(
+            setMessage(
               maybeApplyCleanedTranscript({
                 currentDraft: getMessage(),
                 insertedDraft,
@@ -92,7 +91,7 @@ export function useVoiceComposerInput({
         setIsTranscribing(false);
       }
     },
-    [cleanup, getMessage, setDraftMessage, setVoiceError],
+    [cleanup, getMessage, setMessage, setVoiceError],
   );
 
   const stopAndTranscribeRecording = useCallback(async () => {

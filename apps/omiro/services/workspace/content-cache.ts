@@ -85,18 +85,10 @@ export function writeCachedChat(chat: Chat) {
   writeCachedValue(getChatCacheKey(chat.id), chat);
 }
 
-export function clearCachedChat(chatId: string) {
-  getStorage().remove(getChatCacheKey(chatId));
-}
-
 export function readCachedChatMessages(chatId: string): MessageOutput[] {
   return readCachedValue<MessageOutput[]>(getChatMessagesCacheKey(chatId)) ?? [];
 }
 
 export function writeCachedChatMessages(chatId: string, messages: MessageOutput[]) {
   writeCachedValue(getChatMessagesCacheKey(chatId), messages);
-}
-
-export function clearCachedChatMessages(chatId: string) {
-  getStorage().remove(getChatMessagesCacheKey(chatId));
 }
