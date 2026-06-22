@@ -1,10 +1,10 @@
 import type { SFSymbol } from 'expo-symbols';
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Pressable } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
-  useSharedValue,
+  useDerivedValue,
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
@@ -36,20 +36,17 @@ export function ActionButton({
   const themeColors = useThemeColors();
   const styles = useStyles();
   const prefersReducedMotion = useReducedMotion();
-  const rotation = useSharedValue(0);
-
-  useEffect(() => {
+  const rotation = useDerivedValue(() => {
     if (!isAnimating || prefersReducedMotion) {
-      rotation.value = withTiming(0, { duration: 120 });
-      return;
+      return withTiming(0, { duration: 120 });
     }
 
-    rotation.value = withRepeat(
+    return withRepeat(
       withTiming(360, { duration: 900, easing: Easing.linear }),
       -1,
       false,
     );
-  }, [isAnimating, prefersReducedMotion, rotation]);
+  }, [isAnimating, prefersReducedMotion]);
 
   const iconStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${rotation.value}deg` }],

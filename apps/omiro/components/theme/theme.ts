@@ -1,4 +1,4 @@
-import { lightColors, radii, spacing as tokenSpacing, type ColorToken } from '@hominem/ui/tokens';
+import { colors, radii, spacing as tokenSpacing, type ColorToken } from '@hominem/ui/tokens';
 
 import { fontFamiliesNative, fontSizes, fontWeights, lineHeights } from './typography';
 
@@ -31,14 +31,12 @@ export const typography = {
 } as const;
 
 export const lightTheme = {
-  colors: lightColors,
+  colors: colors,
   spacing: themeSpacing,
   borderRadii,
   componentSizes,
   typography,
 } as const;
-
-export const darkTheme = lightTheme;
 
 export type Theme = {
   colors: Record<ColorToken, string>;
@@ -49,7 +47,7 @@ export type Theme = {
 };
 
 export function useThemeColors() {
-  return lightColors;
+  return colors;
 }
 
 export default lightTheme;

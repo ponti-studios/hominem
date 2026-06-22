@@ -3,7 +3,6 @@ import type { ImageStyle, TextStyle, ViewStyle } from 'react-native';
 import { shellTheme } from '../../types/shellTheme';
 import theme, {
   componentSizes,
-  darkTheme,
   lightTheme,
   themeSpacing,
   useThemeColors,
@@ -21,7 +20,7 @@ export {
   type SpacingToken,
 } from '@hominem/ui/tokens';
 export { fontFamiliesNative, fontSizes, fontWeights, lineHeights, Text } from './typography';
-export { componentSizes, darkTheme, lightTheme, shellTheme, theme, themeSpacing, useThemeColors };
+export { componentSizes, lightTheme, shellTheme, theme, themeSpacing, useThemeColors };
 export type { Theme };
 
 type StyleMap = Record<string, ViewStyle | TextStyle | ImageStyle>;

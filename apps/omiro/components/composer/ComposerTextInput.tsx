@@ -1,7 +1,7 @@
 import { spacing } from '@hominem/ui/tokens';
-import React from 'react';
+import React, { useState } from 'react';
 import { TextInput } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, withSpring } from 'react-native-reanimated';
 
 import { makeStyles, useThemeColors } from '~/components/theme';
 
@@ -32,14 +32,17 @@ export function ComposerTextInput({
 }: ComposerTextInputProps) {
   const themeColors = useThemeColors();
   const styles = useStyles();
-  const animatedH = useSharedValue(INPUT_MIN_H);
+  const [inputHeight, setInputHeight] = useState(INPUT_MIN_H);
 
-  const inputContainerStyle = useAnimatedStyle(() => ({
-    flex: 1,
-    maxHeight: INPUT_MAX_H,
-    minHeight: animatedH.value,
-    minWidth: 0,
-  }));
+  const inputContainerStyle = useAnimatedStyle(
+    () => ({
+      flex: 1,
+      maxHeight: INPUT_MAX_H,
+      minHeight: withSpring(inputHeight, SPRING_CONFIG),
+      minWidth: 0,
+    }),
+    [inputHeight],
+  );
 
   return (
     <Animated.View style={[inputContainerStyle]}>
@@ -52,8 +55,7 @@ export function ComposerTextInput({
         onContentSizeChange={(e) => {
           const height = e.nativeEvent.contentSize.height;
           const clamped = Math.min(Math.max(height, INPUT_MIN_H), INPUT_MAX_H);
-          // eslint-disable-next-line react-hooks/immutability
-          animatedH.value = withSpring(clamped, SPRING_CONFIG);
+          setInputHeight(clamped);
         }}
         placeholder={placeholder}
         placeholderTextColor={themeColors['text-tertiary']}

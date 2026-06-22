@@ -13,7 +13,6 @@ import {
 import Animated, {
   Easing,
   useAnimatedStyle,
-  useSharedValue,
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
@@ -44,37 +43,34 @@ function AuthScreen() {
     error: passkeyError,
     isSupported: isPasskeySupported,
   } = useMobilePasskeyAuth({ loadPasskeys: false });
-
-  // Animations
-  const shakeX = useSharedValue(0);
-  const continueButtonOpacity = useSharedValue(0);
-
-  const shakeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shakeX.value }] }));
-  const continueButtonStyle = useAnimatedStyle(() => ({ opacity: continueButtonOpacity.value }));
-
-  // Animate Continue button in when a valid email is typed
   const normalizedEmail = normalizeEmail(email);
   const emailIsValid = isValidEmail(normalizedEmail);
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/immutability
-    continueButtonOpacity.value = withTiming(emailIsValid ? 1 : 0, { duration: 36 });
-  }, [emailIsValid, continueButtonOpacity]);
 
-  // Shake input when a new error appears
-  const prevErrorRef = React.useRef<string | null>(null);
-  useEffect(() => {
-    if (authError && authError !== prevErrorRef.current) {
-      // eslint-disable-next-line react-hooks/immutability
-      shakeX.value = withSequence(
-        withTiming(10, { duration: 50, easing: Easing.linear }),
-        withTiming(-10, { duration: 50, easing: Easing.linear }),
-        withTiming(7, { duration: 50, easing: Easing.linear }),
-        withTiming(-7, { duration: 50, easing: Easing.linear }),
-        withTiming(0, { duration: 50, easing: Easing.linear }),
-      );
-    }
-    prevErrorRef.current = authError;
-  }, [authError, shakeX]);
+  // Animations
+  const shakeStyle = useAnimatedStyle(
+    () => ({
+      transform: [
+        {
+          translateX: authError
+            ? withSequence(
+                withTiming(10, { duration: 50, easing: Easing.linear }),
+                withTiming(-10, { duration: 50, easing: Easing.linear }),
+                withTiming(7, { duration: 50, easing: Easing.linear }),
+                withTiming(-7, { duration: 50, easing: Easing.linear }),
+                withTiming(0, { duration: 50, easing: Easing.linear }),
+              )
+            : 0,
+        },
+      ],
+    }),
+    [authError],
+  );
+  const continueButtonStyle = useAnimatedStyle(
+    () => ({
+      opacity: withTiming(emailIsValid ? 1 : 0, { duration: 36 }),
+    }),
+    [emailIsValid],
+  );
 
   useEffect(() => {
     posthog.capture('auth_screen_viewed');

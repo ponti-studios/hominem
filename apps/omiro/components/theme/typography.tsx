@@ -1,8 +1,7 @@
 import type { ColorToken } from '@hominem/ui/tokens';
-import { colors as darkColors, lightColors } from '@hominem/ui/tokens';
+import { colors } from '@hominem/ui/tokens';
 import {
   Text as RNText,
-  useColorScheme,
   type TextProps as RNTextProps,
   type StyleProp,
   type TextStyle,
@@ -179,8 +178,6 @@ const variantStyles = {
 } satisfies Record<string, TextStyle>;
 
 function Text({ color, muted = false, style, variant = 'body', ...props }: TextProps) {
-  const scheme = useColorScheme();
-  const colors = scheme === 'light' ? lightColors : darkColors;
   const resolvedColor = color
     ? colors[color]
     : muted

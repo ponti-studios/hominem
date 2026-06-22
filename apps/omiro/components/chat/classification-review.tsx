@@ -1,10 +1,7 @@
 import type { ArtifactType } from '@hominem/rpc/types';
 import { Modal, ScrollView, View } from 'react-native';
 import Animated, {
-  useAnimatedReaction,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
+  FadeInUp,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -39,29 +36,14 @@ export function ClassificationReview({
 }: ClassificationReviewProps) {
   const styles = useClassificationStyles();
   const insets = useSafeAreaInsets();
-  const translateY = useSharedValue(80);
-  const opacity = useSharedValue(0);
-
-  useAnimatedReaction(
-    () => opacity.value,
-    (_current: number, prev: number | null) => {
-      'worklet';
-      if (prev === null) {
-        translateY.value = withTiming(0, { duration: durations.enter });
-        opacity.value = withTiming(1, { duration: durations.enter });
-      }
-    },
-  );
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ translateY: translateY.value }],
-  }));
 
   return (
     <Modal transparent animationType="none" statusBarTranslucent>
       <View style={styles.overlay}>
-        <Animated.View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }, animatedStyle]}>
+        <Animated.View
+          entering={FadeInUp.duration(durations.enter)}
+          style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}
+        >
           <View style={styles.handle} />
           <View style={styles.header}>
             <Text color="text-secondary" style={styles.typeLabel}>

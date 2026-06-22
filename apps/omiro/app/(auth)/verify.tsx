@@ -15,7 +15,6 @@ import Animated, {
   Easing,
   FadeIn,
   useAnimatedStyle,
-  useSharedValue,
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
@@ -59,6 +58,26 @@ function VerifyScreen() {
   }>();
   const resolvedEmail = emailParam ?? readPendingAuthEmail();
   const autoSubmitKeyRef = React.useRef<string | null>(null);
+  const [verifySucceeded, setVerifySucceeded] = React.useState(false);
+  const {
+    otp,
+    setOtp,
+    error: authError,
+    isSubmitting,
+    isResending,
+    handleVerifyOtp,
+    handleResendOtp,
+  } = useEmailAuth({
+    sendOtp: async () => {},
+    verifyOtp: async (email, code) => {
+      await verifyEmailOtp({ email, otp: normalizeOtp(code) });
+      setVerifySucceeded(true);
+    },
+    resendOtp: async (email) => {
+      await requestEmailOtp(email);
+    },
+  });
+  const normalizedOtp = normalizeOtp(otp).slice(0, 6);
 
   React.useEffect(() => {
     if (emailParam) {
@@ -88,7 +107,6 @@ function VerifyScreen() {
   }, [tokenSentAt]);
 
   // Success state — brief pause before redirect
-  const [verifySucceeded, setVerifySucceeded] = React.useState(false);
   React.useEffect(() => {
     if (!verifySucceeded) return;
     const id = setTimeout(() => {
@@ -98,55 +116,30 @@ function VerifyScreen() {
   }, [verifySucceeded, router]);
 
   // Animations
-  const shakeX = useSharedValue(0);
-  const verifyButtonOpacity = useSharedValue(0);
-
-  const shakeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shakeX.value }] }));
-  const verifyButtonStyle = useAnimatedStyle(() => ({ opacity: verifyButtonOpacity.value }));
-
-  const {
-    otp,
-    setOtp,
-    error: authError,
-    isSubmitting,
-    isResending,
-    handleVerifyOtp,
-    handleResendOtp,
-  } = useEmailAuth({
-    sendOtp: async () => {},
-    verifyOtp: async (email, code) => {
-      await verifyEmailOtp({ email, otp: normalizeOtp(code) });
-      setVerifySucceeded(true);
-    },
-    resendOtp: async (email) => {
-      await requestEmailOtp(email);
-    },
-  });
-
-  // Shake input row when a new error appears
-  const prevErrorRef = React.useRef<string | null>(null);
-  React.useEffect(() => {
-    if (authError && authError !== prevErrorRef.current) {
-      // eslint-disable-next-line react-hooks/immutability
-      shakeX.value = withSequence(
-        withTiming(10, { duration: 50, easing: Easing.linear }),
-        withTiming(-10, { duration: 50, easing: Easing.linear }),
-        withTiming(7, { duration: 50, easing: Easing.linear }),
-        withTiming(-7, { duration: 50, easing: Easing.linear }),
-        withTiming(0, { duration: 50, easing: Easing.linear }),
-      );
-    }
-    prevErrorRef.current = authError;
-  }, [authError, shakeX]);
-
-  const normalizedOtp = normalizeOtp(otp).slice(0, 6);
-
-  // Animate Verify button in when 6 digits are present
-  React.useEffect(() => {
-    const ready = normalizedOtp.length === 6;
-    // eslint-disable-next-line react-hooks/immutability
-    verifyButtonOpacity.value = withTiming(ready ? 1 : 0, { duration: 36 });
-  }, [normalizedOtp.length, verifyButtonOpacity]);
+  const shakeStyle = useAnimatedStyle(
+    () => ({
+      transform: [
+        {
+          translateX: authError
+            ? withSequence(
+                withTiming(10, { duration: 50, easing: Easing.linear }),
+                withTiming(-10, { duration: 50, easing: Easing.linear }),
+                withTiming(7, { duration: 50, easing: Easing.linear }),
+                withTiming(-7, { duration: 50, easing: Easing.linear }),
+                withTiming(0, { duration: 50, easing: Easing.linear }),
+              )
+            : 0,
+        },
+      ],
+    }),
+    [authError],
+  );
+  const verifyButtonStyle = useAnimatedStyle(
+    () => ({
+      opacity: withTiming(normalizedOtp.length === 6 ? 1 : 0, { duration: 36 }),
+    }),
+    [normalizedOtp.length],
+  );
 
   React.useEffect(() => {
     posthog.capture('auth_verify_screen_viewed');
