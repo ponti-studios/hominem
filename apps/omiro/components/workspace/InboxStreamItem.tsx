@@ -1,49 +1,40 @@
 import { Link } from 'expo-router';
 import React, { memo, useCallback, useRef } from 'react';
-import { Alert, Pressable, View } from 'react-native';
+import { ActionSheetIOS, Alert, Pressable, View } from 'react-native';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import type { SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
 import type { SharedValue } from 'react-native-reanimated';
 
-import { Text, fontFamiliesNative, fontSizes, lineHeights, makeStyles } from '~/components/theme';
-import AppIcon from '~/components/ui/icon';
+import {
+  Text,
+  fontFamiliesNative,
+  fontSizes,
+  lineHeights,
+  themeSpacing,
+  makeStyles,
+  useThemeColors,
+} from '~/components/theme';
+import { IconButton, SwipeAction } from '~/components/ui';
 import { useChatArchive } from '~/services/chat/use-chat-archive';
-import { formatRelativeAge } from '~/services/date/format-relative-age';
 import { useNoteDelete } from '~/services/notes/use-note-delete';
 import t from '~/translations';
 
 import type { InboxStreamItemData as InboxStreamItemModel } from './InboxStreamItem.types';
 
-const KIND_ICON = {
-  note: 'doc.text',
-  chat: 'bubble.left',
-} as const;
-
 interface InboxStreamItemProps {
   item: InboxStreamItemModel;
-  variant?: 'card' | 'compact' | 'plain';
-  showKindLabel?: boolean;
-  showTimestamp?: boolean;
   swipeEnabled?: boolean;
-  showLeadingIcon?: boolean;
 }
 
 export const InboxStreamItem = memo(
-  ({
-    item,
-    variant = 'card',
-    showKindLabel = false,
-    showTimestamp = true,
-    swipeEnabled = true,
-    showLeadingIcon = true,
-  }: InboxStreamItemProps) => {
+  ({ item, swipeEnabled = true }: InboxStreamItemProps) => {
     const styles = useStyles();
+    const themeColors = useThemeColors();
     const swipeableRef = useRef<SwipeableMethods>(null);
     const titleText = cleanText(item.title);
     const previewText = cleanText(item.preview);
     const primaryText = titleText ?? previewText ?? t.workspace.item.untitled;
     const isChat = item.kind === 'chat';
-    const timeAgo = formatRelativeAge(item.updatedAt);
 
     const { mutate: deleteNote, isPending: isDeletingNote } = useNoteDelete({
       noteId: item.entityId,
@@ -70,96 +61,90 @@ export const InboxStreamItem = memo(
       archiveChat();
     }, [archiveChat]);
 
+    const handleOpenActions = useCallback(() => {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: [
+            isChat ? t.workspace.item.archiveChat : t.workspace.item.deleteNote.title,
+            t.workspace.item.deleteNote.cancel,
+          ],
+          cancelButtonIndex: 1,
+          destructiveButtonIndex: isChat ? undefined : 0,
+        },
+        (selectedIndex) => {
+          if (selectedIndex !== 0) return;
+          if (isChat) {
+            handleArchive();
+            return;
+          }
+          handleDelete();
+        },
+      );
+    }, [handleArchive, handleDelete, isChat]);
+
     const renderSwipeAction = useCallback(
-      (_progress: SharedValue<number>, _translation: SharedValue<number>) => {
+      (progress: SharedValue<number>) => {
         return (
-          <Pressable
-            style={[
-              styles.swipeAction,
-              isChat ? styles.swipeActionArchive : styles.swipeActionDelete,
-            ]}
+          <SwipeAction
+            progress={progress}
+            iconName={isChat ? 'archivebox' : 'trash'}
             onPress={isChat ? handleArchive : handleDelete}
             accessibilityLabel={
               isChat ? t.workspace.item.archive : t.workspace.item.deleteNote.confirm
             }
-            accessibilityRole="button"
-          >
-            <AppIcon name={isChat ? 'archivebox' : 'trash'} size={20} tintColor="white" />
-          </Pressable>
+            backgroundColor={isChat ? themeColors.accent : themeColors.destructive}
+            style={styles.swipeAction}
+          />
         );
       },
-      [isChat, handleArchive, handleDelete, styles],
+      [isChat, handleArchive, handleDelete, styles, themeColors],
     );
 
     const row = (
-      <Link href={item.route} disabled={isPending} asChild>
-        <Link.Trigger withAppleZoom>
-          <Pressable
-            accessibilityLabel={`${primaryText}, ${isChat ? 'Chat' : 'Note'}`}
-            accessibilityRole="button"
-            disabled={isPending}
-            style={({ pressed }) => [
-              styles.row,
-              variant === 'card'
-                ? styles.rowCard
-                : variant === 'plain'
-                  ? styles.rowPlain
-                  : styles.rowCompact,
-              pressed && styles.rowPressed,
-            ]}
-          >
-            <View style={styles.titleRow}>
-              {showLeadingIcon ? (
-                <AppIcon
-                  name={KIND_ICON[item.kind]}
-                  size={13}
-                  tintColor={undefined}
-                  style={styles.kindIcon}
-                />
-              ) : null}
-              <View style={styles.copyColumn}>
-                <Text
-                  style={styles.title}
-                  numberOfLines={variant === 'plain' ? 2 : 1}
-                  ellipsizeMode="tail"
-                >
-                  {primaryText}
-                </Text>
-                {showKindLabel || showTimestamp ? (
-                  <View style={styles.metaRow}>
-                    {showKindLabel ? (
-                      <Text style={styles.kindLabel}>
-                        {item.kind === 'chat'
-                          ? t.workspace.item.chatLabel
-                          : t.workspace.item.noteLabel}
-                      </Text>
-                    ) : null}
-                    {showTimestamp ? <Text style={styles.time}>{timeAgo}</Text> : null}
-                  </View>
-                ) : null}
+      <View style={styles.row}>
+        <Link href={item.route} disabled={isPending} asChild>
+          <Link.Trigger withAppleZoom>
+            <Pressable
+              accessibilityLabel={`${primaryText}, ${isChat ? 'Chat' : 'Note'}`}
+              accessibilityRole="button"
+              disabled={isPending}
+              style={({ pressed }) => [styles.contentButton, pressed && styles.rowPressed]}
+            >
+              <View style={styles.titleRow}>
+                <View style={styles.copyColumn}>
+                  <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">
+                    {primaryText}
+                  </Text>
+                </View>
               </View>
-            </View>
-          </Pressable>
-        </Link.Trigger>
-      </Link>
+            </Pressable>
+          </Link.Trigger>
+        </Link>
+
+        <IconButton
+          accessibilityLabel={t.workspace.item.actionsLabel}
+          icon="ellipsis"
+          size={44}
+          iconSize={18}
+          style={styles.menuButton}
+          tintColor={themeColors['text-secondary']}
+          onPress={handleOpenActions}
+        />
+      </View>
     );
 
     return (
-      <View
-        style={[
-          variant === 'card' ? styles.cardOuter : styles.compactOuter,
-          isPending && styles.rowPending,
-        ]}
-        testID={`inbox-item-${item.kind}`}
-      >
+      <View style={[styles.outer, isPending && styles.rowPending]} testID={`inbox-item-${item.kind}`}>
         {swipeEnabled ? (
           <ReanimatedSwipeable
             ref={swipeableRef}
             containerStyle={styles.swipeableContainer}
+            childrenContainerStyle={styles.swipeableChildrenContainer}
             renderRightActions={renderSwipeAction}
             rightThreshold={60}
             friction={2}
             overshootRight={false}
+            enableTrackpadTwoFingerGesture
           >
             {row}
           </ReanimatedSwipeable>
@@ -179,30 +164,27 @@ function cleanText(value: string | null): string | null {
 }
 
 const useStyles = makeStyles((theme) => ({
-  cardOuter: {
-    marginHorizontal: 12,
-    marginBottom: 4,
-  },
-  compactOuter: {
+  outer: {
     marginHorizontal: 16,
     marginBottom: 10,
   },
   swipeableContainer: {
     borderRadius: 12,
+    overflow: 'hidden',
+  },
+  swipeableChildrenContainer: {
+    borderRadius: 12,
   },
   row: {
-    backgroundColor: theme.colors['bg-base'],
-  },
-  rowCard: {
     backgroundColor: theme.colors['bg-surface'],
-    paddingHorizontal: 14,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    paddingLeft: 14,
   },
-  rowCompact: {
-    paddingHorizontal: 4,
-  },
-  rowPlain: {
-    backgroundColor: theme.colors['bg-base'],
-    paddingHorizontal: 0,
+  contentButton: {
+    flex: 1,
+    minHeight: 44,
   },
   rowPressed: {
     opacity: 0.64,
@@ -211,19 +193,19 @@ const useStyles = makeStyles((theme) => ({
     opacity: 0.45,
   },
   titleRow: {
-    flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 8,
+    justifyContent: 'center',
+    minHeight: 44,
     paddingVertical: 15,
-  },
-  kindIcon: {
-    flexShrink: 0,
-    opacity: 0.4,
-    marginTop: 3,
   },
   copyColumn: {
     flex: 1,
     gap: 2,
+  },
+  menuButton: {
+    alignSelf: 'center',
+    marginRight: themeSpacing.sm,
+    opacity: 0.72,
   },
   title: {
     color: theme.colors['text-primary'],
@@ -233,33 +215,7 @@ const useStyles = makeStyles((theme) => ({
     lineHeight: lineHeights.body,
     letterSpacing: -0.25,
   },
-  metaRow: {
-    alignItems: 'center',
-    columnGap: 6,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  kindLabel: {
-    color: theme.colors['text-tertiary'],
-    fontSize: fontSizes.caption1,
-    fontFamily: fontFamiliesNative.primary,
-    lineHeight: lineHeights.caption,
-  },
-  time: {
-    color: theme.colors['text-tertiary'],
-    fontSize: fontSizes.sm,
-    fontFamily: fontFamiliesNative.primary,
-    lineHeight: lineHeights.caption,
-  },
   swipeAction: {
-    width: 72,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  swipeActionDelete: {
-    backgroundColor: theme.colors.destructive,
-  },
-  swipeActionArchive: {
-    backgroundColor: theme.colors['text-tertiary'],
+    height: '100%',
   },
 }));

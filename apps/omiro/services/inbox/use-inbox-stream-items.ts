@@ -1,10 +1,14 @@
 import { useApiClient } from '@hominem/rpc/react';
 import type { InboxOutput, InboxStreamItem } from '@hominem/rpc/types';
 import { useInfiniteQuery, type InfiniteData } from '@tanstack/react-query';
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 
 import type { InboxStreamItemData } from '~/components/workspace/InboxStreamItem.types';
-import { readCachedInboxItems, writeCachedInboxItems } from '~/services/inbox/cache';
+import {
+  appendCachedInboxItems,
+  readCachedInboxItems,
+  replaceCachedInboxItems,
+} from '~/services/inbox/cache';
 import { inboxKeys } from '~/services/notes/query-keys';
 import { updateStartupContext } from '~/services/performance/startup-metrics';
 import {
@@ -57,7 +61,15 @@ export function useInboxStreamItems({ enabled = true }: UseInboxStreamItemsOptio
       const query: { limit: string; cursor?: string } = { limit: '50' };
       if (pageParam) query.cursor = pageParam;
       const res = await client.api.inbox.$get({ query });
-      return res.json() as Promise<InboxOutput>;
+      const page = (await res.json()) as InboxOutput;
+
+      if (pageParam) {
+        appendCachedInboxItems(page.items);
+      } else {
+        replaceCachedInboxItems(page.items);
+      }
+
+      return page;
     },
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     initialData:
@@ -73,11 +85,6 @@ export function useInboxStreamItems({ enabled = true }: UseInboxStreamItemsOptio
     () => inboxQuery.data?.pages.flatMap((page) => page.items) ?? [],
     [inboxQuery.data],
   );
-  useEffect(() => {
-    if (inboxItems.length > 0) {
-      writeCachedInboxItems(inboxItems);
-    }
-  }, [inboxItems]);
 
   const items = useMemo(() => inboxItems.map(toInboxStreamItem), [inboxItems]);
   const restoredState = resolveRestoredQueryState({

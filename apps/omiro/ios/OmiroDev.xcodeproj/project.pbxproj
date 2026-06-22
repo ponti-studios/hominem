@@ -8,10 +8,10 @@
 
 /* Begin PBXBuildFile section */
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
-		294AEA032920BB8065C7E787 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 7FB242778C3BED106050DC96 /* PrivacyInfo.xcprivacy */; };
+		29B80DE01AE968A82388FE04 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 6179121FBFC506EB4A0175BD /* PrivacyInfo.xcprivacy */; };
+		33B2CB8DA74AE3214EF1C410 /* libPods-OmiroDev.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 54662ECE3782C5718BE3A470 /* libPods-OmiroDev.a */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
-		516A125129020C3B6A45E4ED /* libPods-OmiroDev.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5BEECD89C933BD3F7B5B338A /* libPods-OmiroDev.a */; };
-		5C17C6456928DB724554E2F8 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2EEAE3C4EFC4002794E5847 /* ExpoModulesProvider.swift */; };
+		AF70B42AF1A2F6F74BA20328 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C2B5B83E2F6A8D0A7E52E5C /* ExpoModulesProvider.swift */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
 		XX12B55A1EDABF083C3B51XX /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = XX470101BAEB8E0BBC8B0DXX /* WidgetKit.framework */; };
@@ -22,11 +22,11 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		XX7AEC3EC5A8E80BDEAAF4XX /* PBXContainerItemProxy */ = {
+		XXE1F1D925421F18FEEDE8XX /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = XX77FC72E1CA05F6B17E8CXX;
+			remoteGlobalIDString = XX7998D0441A253CCDF87CXX;
 			remoteInfo = controlcenter;
 		};
 /* End PBXContainerItemProxy section */
@@ -46,16 +46,16 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0EEF94281044F87D957955E6 /* Pods-OmiroDev.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OmiroDev.release.xcconfig"; path = "Target Support Files/Pods-OmiroDev/Pods-OmiroDev.release.xcconfig"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* OmiroDev.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; fileEncoding = 4; includeInIndex = 0; path = OmiroDev.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = OmiroDev/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = text.plist.xml; name = Info.plist; path = OmiroDev/Info.plist; sourceTree = "<group>"; };
-		3ACCF8E625A741BD83406467 /* Pods-OmiroDev.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OmiroDev.debug.xcconfig"; path = "Target Support Files/Pods-OmiroDev/Pods-OmiroDev.debug.xcconfig"; sourceTree = "<group>"; };
-		3EE947F846C5247120ECF1B7 /* Pods-OmiroDev.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OmiroDev.release.xcconfig"; path = "Target Support Files/Pods-OmiroDev/Pods-OmiroDev.release.xcconfig"; sourceTree = "<group>"; };
-		5BEECD89C933BD3F7B5B338A /* libPods-OmiroDev.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-OmiroDev.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		7FB242778C3BED106050DC96 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = OmiroDev/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		4516DA88E5313930633548AA /* Pods-OmiroDev.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OmiroDev.debug.xcconfig"; path = "Target Support Files/Pods-OmiroDev/Pods-OmiroDev.debug.xcconfig"; sourceTree = "<group>"; };
+		54662ECE3782C5718BE3A470 /* libPods-OmiroDev.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-OmiroDev.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		6179121FBFC506EB4A0175BD /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = OmiroDev/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		9C2B5B83E2F6A8D0A7E52E5C /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-OmiroDev/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = OmiroDev/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
-		C2EEAE3C4EFC4002794E5847 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-OmiroDev/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; fileEncoding = 4; includeInIndex = undefined; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = OmiroDev/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* OmiroDev-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.c.h; name = "OmiroDev-Bridging-Header.h"; path = "OmiroDev/OmiroDev-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -67,21 +67,21 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		XX612397C6AF43B8CF692FXX /* Exceptions for "control-center" folder in "controlcenter" target */ = {
+		XX0CB003920E8B4F078FC4XX /* Exceptions for "control-center" folder in "controlcenter" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 				"expo-target.config.js",
 			);
-			target = XX77FC72E1CA05F6B17E8CXX /* controlcenter */;
+			target = XX7998D0441A253CCDF87CXX /* controlcenter */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		XX3EBB34978A58D8B609CAXX /* control-center */ = {
+		XX2200CD6CF83F5E2DB5D9XX /* control-center */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				XX612397C6AF43B8CF692FXX /* Exceptions for "control-center" folder in "controlcenter" target */,
+				XX0CB003920E8B4F078FC4XX /* Exceptions for "control-center" folder in "controlcenter" target */,
 			);
 			explicitFileTypes = {
 			};
@@ -97,7 +97,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				516A125129020C3B6A45E4ED /* libPods-OmiroDev.a in Frameworks */,
+				33B2CB8DA74AE3214EF1C410 /* libPods-OmiroDev.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -115,6 +115,16 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		06C9AEA95D6392C3642329E3 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				4516DA88E5313930633548AA /* Pods-OmiroDev.debug.xcconfig */,
+				0EEF94281044F87D957955E6 /* Pods-OmiroDev.release.xcconfig */,
+			);
+			name = Pods;
+			path = Pods;
+			sourceTree = "<group>";
+		};
 		13B07FAE1A68108700A75B9A /* OmiroDev */ = {
 			isa = PBXGroup;
 			children = (
@@ -124,7 +134,7 @@
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				7FB242778C3BED106050DC96 /* PrivacyInfo.xcprivacy */,
+				6179121FBFC506EB4A0175BD /* PrivacyInfo.xcprivacy */,
 			);
 			name = OmiroDev;
 			sourceTree = "<group>";
@@ -137,35 +147,17 @@
 				XX4DFF38D47332D6BF0183XX /* SwiftUI.framework */,
 				XXCAF23C3FC41F82140FA1XX /* ActivityKit.framework */,
 				XXA12889081EB894481655XX /* AppIntents.framework */,
-				5BEECD89C933BD3F7B5B338A /* libPods-OmiroDev.a */,
+				54662ECE3782C5718BE3A470 /* libPods-OmiroDev.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		46904980CC133C4D22A753E2 /* OmiroDev */ = {
+		55A4BD7A325E69AB086ADD12 /* OmiroDev */ = {
 			isa = PBXGroup;
 			children = (
-				C2EEAE3C4EFC4002794E5847 /* ExpoModulesProvider.swift */,
+				9C2B5B83E2F6A8D0A7E52E5C /* ExpoModulesProvider.swift */,
 			);
 			name = OmiroDev;
-			sourceTree = "<group>";
-		};
-		518A640F73730E19117A8833 /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-				3ACCF8E625A741BD83406467 /* Pods-OmiroDev.debug.xcconfig */,
-				3EE947F846C5247120ECF1B7 /* Pods-OmiroDev.release.xcconfig */,
-			);
-			name = Pods;
-			path = Pods;
-			sourceTree = "<group>";
-		};
-		5E986ADEA6256578772E1320 /* ExpoModulesProviders */ = {
-			isa = PBXGroup;
-			children = (
-				46904980CC133C4D22A753E2 /* OmiroDev */,
-			);
-			name = ExpoModulesProviders;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -183,8 +175,8 @@
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				518A640F73730E19117A8833 /* Pods */,
-				5E986ADEA6256578772E1320 /* ExpoModulesProviders */,
+				06C9AEA95D6392C3642329E3 /* Pods */,
+				F915C6AAD08896C2846839A8 /* ExpoModulesProviders */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -209,10 +201,18 @@
 			path = OmiroDev/Supporting;
 			sourceTree = "<group>";
 		};
+		F915C6AAD08896C2846839A8 /* ExpoModulesProviders */ = {
+			isa = PBXGroup;
+			children = (
+				55A4BD7A325E69AB086ADD12 /* OmiroDev */,
+			);
+			name = ExpoModulesProviders;
+			sourceTree = "<group>";
+		};
 		XX3E41C1850246162C0061XX /* expo:targets */ = {
 			isa = PBXGroup;
 			children = (
-				XX3EBB34978A58D8B609CAXX /* control-center */,
+				XX2200CD6CF83F5E2DB5D9XX /* control-center */,
 			);
 			name = "expo:targets";
 			path = ../targets;
@@ -226,29 +226,29 @@
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "OmiroDev" */;
 			buildPhases = (
 				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
-				E0DE64C5D88C228FFC74F898 /* [Expo] Configure project */,
+				6322B2032121E17E7B7F650B /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
-				042D76D49B234A26B2EADAB2 /* [Expo Dev Launcher] Strip Local Network Keys for Release */,
+				B285FA5F8D5944A4B1E3F98A /* [Expo Dev Launcher] Strip Local Network Keys for Release */,
 				XX72A8CFBF0FBA13A79902XX /* Embed Foundation Extensions */,
-				A38BB81551A6087CC7E8D984 /* [CP] Embed Pods Frameworks */,
+				A34BAE1368D7FA69F175257F /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				XX1872A2910D3F5B067BB6XX /* PBXTargetDependency */,
+				XXB1D48DE1C24B1AF888AEXX /* PBXTargetDependency */,
 			);
 			name = OmiroDev;
 			productName = OmiroDev;
 			productReference = 13B07F961A680F5B00A75B9A /* OmiroDev.app */;
 			productType = "com.apple.product-type.application";
 		};
-		XX77FC72E1CA05F6B17E8CXX /* controlcenter */ = {
+		XX7998D0441A253CCDF87CXX /* controlcenter */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = XX9F1231462F2E4AEC1810XX /* Build configuration list for PBXNativeTarget "controlcenter" */;
+			buildConfigurationList = XXFEBA5AFC70C405C339E9XX /* Build configuration list for PBXNativeTarget "controlcenter" */;
 			buildPhases = (
 				XX074B8811C1CF8E8A3D74XX /* Frameworks */,
 				XXE45443DC38DCFE1DB622XX /* Sources */,
@@ -259,7 +259,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				XX3EBB34978A58D8B609CAXX /* control-center */,
+				XX2200CD6CF83F5E2DB5D9XX /* control-center */,
 			);
 			name = controlcenter;
 			productName = controlcenter;
@@ -277,7 +277,7 @@
 					13B07F861A680F5B00A75B9A = {
 						LastSwiftMigration = 1250;
 					};
-					XX77FC72E1CA05F6B17E8CXX = {
+					XX7998D0441A253CCDF87CXX = {
 						CreatedOnToolsVersion = 14.3;
 						DevelopmentTeam = 3QHJ2KN8AL;
 						ProvisioningStyle = Automatic;
@@ -298,7 +298,7 @@
 			projectRoot = "";
 			targets = (
 				13B07F861A680F5B00A75B9A /* OmiroDev */,
-				XX77FC72E1CA05F6B17E8CXX /* controlcenter */,
+				XX7998D0441A253CCDF87CXX /* controlcenter */,
 			);
 		};
 /* End PBXProject section */
@@ -311,7 +311,7 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				294AEA032920BB8065C7E787 /* PrivacyInfo.xcprivacy in Resources */,
+				29B80DE01AE968A82388FE04 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -346,24 +346,6 @@
 			shellPath = /bin/sh;
 			shellScript = "if [[ -f \"$PODS_ROOT/../.xcode.env\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env\"\nfi\nif [[ -f \"$PODS_ROOT/../.xcode.env.local\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.local\"\nfi\n\n# The project root by default is one level up from the ios directory\nexport PROJECT_ROOT=\"$PROJECT_DIR\"/..\n\nif [[ \"$CONFIGURATION\" = *Debug* ]]; then\n  export SKIP_BUNDLING=1\nfi\nif [[ -z \"$ENTRY_FILE\" ]]; then\n  # Set the entry JS file using the bundler's entry resolution.\n  export ENTRY_FILE=\"$(\"$NODE_BINARY\" -e \"require('expo/scripts/resolveAppEntry')\" \"$PROJECT_ROOT\" ios absolute | tail -n 1)\"\nfi\n\nif [[ -z \"$CLI_PATH\" ]]; then\n  # Use Expo CLI\n  export CLI_PATH=\"$(\"$NODE_BINARY\" --print \"require.resolve('@expo/cli', { paths: [require.resolve('expo/package.json')] })\")\"\nfi\nif [[ -z \"$BUNDLE_COMMAND\" ]]; then\n  # Default Expo CLI command for bundling\n  export BUNDLE_COMMAND=\"export:embed\"\nfi\n\n# Source .xcode.env.updates if it exists to allow\n# SKIP_BUNDLING to be unset if needed\nif [[ -f \"$PODS_ROOT/../.xcode.env.updates\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.updates\"\nfi\n# Source local changes to allow overrides\n# if needed\nif [[ -f \"$PODS_ROOT/../.xcode.env.local\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.local\"\nfi\n\n`\"$NODE_BINARY\" --print \"require('path').dirname(require.resolve('react-native/package.json')) + '/scripts/react-native-xcode.sh'\"`\n\n";
 		};
-		042D76D49B234A26B2EADAB2 /* [Expo Dev Launcher] Strip Local Network Keys for Release */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			name = "[Expo Dev Launcher] Strip Local Network Keys for Release";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# Strip dev-launcher-specific local network permission keys from non-Debug builds\n# This only removes _expo._tcp Bonjour services and the dev-launcher usage description.\n# Other Bonjour services and custom descriptions are preserved for production use.\n\nif [ \"$CONFIGURATION\" != \"Debug\" ]; then\n  PLIST_PATH=\"${TARGET_BUILD_DIR}/${INFOPLIST_PATH}\"\n  if [ -f \"$PLIST_PATH\" ]; then\n    # Check if NSBonjourServices exists\n    if /usr/libexec/PlistBuddy -c \"Print :NSBonjourServices\" \"$PLIST_PATH\" >/dev/null 2>&1; then\n      # Get the count of services\n      COUNT=$(/usr/libexec/PlistBuddy -c \"Print :NSBonjourServices\" \"$PLIST_PATH\" 2>/dev/null | grep \"^    \" | wc -l | tr -d ' ')\n\n      # Remove _expo._tcp\n      for ((i=COUNT-1; i>=0; i--)); do\n        SERVICE=$(/usr/libexec/PlistBuddy -c \"Print :NSBonjourServices:$i\" \"$PLIST_PATH\" 2>/dev/null || echo \"\")\n        if echo \"$SERVICE\" | grep -q \"_expo._tcp\"; then\n          /usr/libexec/PlistBuddy -c \"Delete :NSBonjourServices:$i\" \"$PLIST_PATH\" 2>/dev/null || true\n        fi\n      done\n\n      # If the array is now empty, remove it entirely\n      REMAINING=$(/usr/libexec/PlistBuddy -c \"Print :NSBonjourServices\" \"$PLIST_PATH\" 2>/dev/null | grep \"^    \" | wc -l | tr -d ' ')\n      if [ \"$REMAINING\" -eq \"0\" ]; then\n        /usr/libexec/PlistBuddy -c \"Delete :NSBonjourServices\" \"$PLIST_PATH\" 2>/dev/null || true\n      fi\n    fi\n\n    # Only delete the description if it matches the dev-launcher default text\n    DESC=$(/usr/libexec/PlistBuddy -c \"Print :NSLocalNetworkUsageDescription\" \"$PLIST_PATH\" 2>/dev/null || echo \"\")\n    if echo \"$DESC\" | grep -q \"Expo Dev Launcher\"; then\n      /usr/libexec/PlistBuddy -c \"Delete :NSLocalNetworkUsageDescription\" \"$PLIST_PATH\" 2>/dev/null || true\n    fi\n  fi\nfi\n";
-		};
 		08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -386,77 +368,7 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-OmiroDev/Pods-OmiroDev-resources.sh",
-				"${PODS_CONFIGURATION_BUILD_DIR}/EXApplication/ExpoApplication_privacy.bundle",
-				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/EXConstants.bundle",
-				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/ExpoConstants_privacy.bundle",
-				"${PODS_CONFIGURATION_BUILD_DIR}/EXUpdates/EXUpdates.bundle",
-				"${PODS_CONFIGURATION_BUILD_DIR}/ExpoDevice/ExpoDevice_privacy.bundle",
-				"${PODS_CONFIGURATION_BUILD_DIR}/ExpoFileSystem/ExpoFileSystem_privacy.bundle",
-				"${PODS_CONFIGURATION_BUILD_DIR}/ExpoLocalization/ExpoLocalization_privacy.bundle",
-				"${PODS_CONFIGURATION_BUILD_DIR}/ExpoMediaLibrary/ExpoMediaLibrary_privacy.bundle",
-				"${PODS_CONFIGURATION_BUILD_DIR}/ExpoNotifications/ExpoNotifications_privacy.bundle",
-				"${PODS_CONFIGURATION_BUILD_DIR}/ReachabilitySwift/ReachabilitySwift.bundle",
-				"${PODS_CONFIGURATION_BUILD_DIR}/React-Core/React-Core_privacy.bundle",
-				"${PODS_CONFIGURATION_BUILD_DIR}/React-cxxreact/React-cxxreact_privacy.bundle",
-				"${PODS_CONFIGURATION_BUILD_DIR}/SDWebImage/SDWebImage.bundle",
-				"${PODS_CONFIGURATION_BUILD_DIR}/expo-dev-launcher/EXDevLauncher.bundle",
-				"${PODS_CONFIGURATION_BUILD_DIR}/expo-dev-menu/EXDevMenu.bundle",
-			);
-			name = "[CP] Copy Pods Resources";
-			outputPaths = (
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoApplication_privacy.bundle",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/EXConstants.bundle",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoConstants_privacy.bundle",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/EXUpdates.bundle",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoDevice_privacy.bundle",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoFileSystem_privacy.bundle",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoLocalization_privacy.bundle",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoMediaLibrary_privacy.bundle",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoNotifications_privacy.bundle",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ReachabilitySwift.bundle",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/React-Core_privacy.bundle",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/React-cxxreact_privacy.bundle",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/SDWebImage.bundle",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/EXDevLauncher.bundle",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/EXDevMenu.bundle",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-OmiroDev/Pods-OmiroDev-resources.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		A38BB81551A6087CC7E8D984 /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-OmiroDev/Pods-OmiroDev-frameworks.sh",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ExpoModulesJSI/ExpoModulesJSI.framework/ExpoModulesJSI",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/React-Core-prebuilt/React.framework/React",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ReactNativeDependencies/ReactNativeDependencies.framework/ReactNativeDependencies",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermesvm.framework/hermesvm",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputPaths = (
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ExpoModulesJSI.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/React.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ReactNativeDependencies.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermesvm.framework",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-OmiroDev/Pods-OmiroDev-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		E0DE64C5D88C228FFC74F898 /* [Expo] Configure project */ = {
+		6322B2032121E17E7B7F650B /* [Expo] Configure project */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -480,6 +392,120 @@
 			shellPath = /bin/sh;
 			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-OmiroDev/expo-configure-project.sh\"\n";
 		};
+		800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-OmiroDev/Pods-OmiroDev-resources.sh",
+				"${PODS_CONFIGURATION_BUILD_DIR}/EXApplication/ExpoApplication_privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/EXConstants.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/ExpoConstants_privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/EXUpdates/EXUpdates.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/ExpoDevice/ExpoDevice_privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/ExpoFileSystem/ExpoFileSystem_privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/ExpoLocalization/ExpoLocalization_privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/ExpoMediaLibrary/ExpoMediaLibrary_privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/ExpoNotifications/ExpoNotifications_privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/ReachabilitySwift/ReachabilitySwift.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/React-Core/React-Core_privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/React-cxxreact/React-cxxreact_privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/expo-dev-launcher/EXDevLauncher.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/expo-dev-menu/EXDevMenu.bundle",
+			);
+			name = "[CP] Copy Pods Resources";
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoApplication_privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/EXConstants.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoConstants_privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/EXUpdates.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoDevice_privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoFileSystem_privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoLocalization_privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoMediaLibrary_privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoNotifications_privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ReachabilitySwift.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/React-Core_privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/React-cxxreact_privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/EXDevLauncher.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/EXDevMenu.bundle",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-OmiroDev/Pods-OmiroDev-resources.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		A34BAE1368D7FA69F175257F /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-OmiroDev/Pods-OmiroDev-frameworks.sh",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ExpoCamera/ExpoCamera.framework/ExpoCamera",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ExpoCameraBarcodeScanning/ExpoCameraBarcodeScanning.framework/ExpoCameraBarcodeScanning",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ExpoCameraBarcodeScanning/ZXingObjC.framework/ZXingObjC",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ExpoFileSystem/ExpoFileSystem.framework/ExpoFileSystem",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ExpoFont/ExpoFont.framework/ExpoFont",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ExpoImage/ExpoImage.framework/ExpoImage",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ExpoImage/SDWebImage.framework/SDWebImage",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ExpoImage/SDWebImageAVIFCoder.framework/SDWebImageAVIFCoder",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ExpoImage/SDWebImageSVGCoder.framework/SDWebImageSVGCoder",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ExpoImage/SDWebImageWebPCoder.framework/SDWebImageWebPCoder",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ExpoImage/libavif.framework/libavif",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ExpoMediaLibrary/ExpoMediaLibrary.framework/ExpoMediaLibrary",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ExpoModulesCore/ExpoModulesCore.framework/ExpoModulesCore",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ExpoModulesJSI/ExpoModulesJSI.framework/ExpoModulesJSI",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ExpoModulesWorklets/ExpoModulesWorklets.framework/ExpoModulesWorklets",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/React-Core-prebuilt/React.framework/React",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ReactNativeDependencies/ReactNativeDependencies.framework/ReactNativeDependencies",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermesvm.framework/hermesvm",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ExpoCamera.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ExpoCameraBarcodeScanning.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ZXingObjC.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ExpoFileSystem.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ExpoFont.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ExpoImage.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SDWebImage.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SDWebImageAVIFCoder.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SDWebImageSVGCoder.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SDWebImageWebPCoder.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/libavif.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ExpoMediaLibrary.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ExpoModulesCore.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ExpoModulesJSI.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ExpoModulesWorklets.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/React.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ReactNativeDependencies.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermesvm.framework",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-OmiroDev/Pods-OmiroDev-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		B285FA5F8D5944A4B1E3F98A /* [Expo Dev Launcher] Strip Local Network Keys for Release */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "[Expo Dev Launcher] Strip Local Network Keys for Release";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Strip dev-launcher-specific local network permission keys from non-Debug builds\n# This only removes _expo._tcp Bonjour services and the dev-launcher usage description.\n# Other Bonjour services and custom descriptions are preserved for production use.\n\nif [ \"$CONFIGURATION\" != \"Debug\" ]; then\n  PLIST_PATH=\"${TARGET_BUILD_DIR}/${INFOPLIST_PATH}\"\n  if [ -f \"$PLIST_PATH\" ]; then\n    # Check if NSBonjourServices exists\n    if /usr/libexec/PlistBuddy -c \"Print :NSBonjourServices\" \"$PLIST_PATH\" >/dev/null 2>&1; then\n      # Get the count of services\n      COUNT=$(/usr/libexec/PlistBuddy -c \"Print :NSBonjourServices\" \"$PLIST_PATH\" 2>/dev/null | grep \"^    \" | wc -l | tr -d ' ')\n\n      # Remove _expo._tcp\n      for ((i=COUNT-1; i>=0; i--)); do\n        SERVICE=$(/usr/libexec/PlistBuddy -c \"Print :NSBonjourServices:$i\" \"$PLIST_PATH\" 2>/dev/null || echo \"\")\n        if echo \"$SERVICE\" | grep -q \"_expo._tcp\"; then\n          /usr/libexec/PlistBuddy -c \"Delete :NSBonjourServices:$i\" \"$PLIST_PATH\" 2>/dev/null || true\n        fi\n      done\n\n      # If the array is now empty, remove it entirely\n      REMAINING=$(/usr/libexec/PlistBuddy -c \"Print :NSBonjourServices\" \"$PLIST_PATH\" 2>/dev/null | grep \"^    \" | wc -l | tr -d ' ')\n      if [ \"$REMAINING\" -eq \"0\" ]; then\n        /usr/libexec/PlistBuddy -c \"Delete :NSBonjourServices\" \"$PLIST_PATH\" 2>/dev/null || true\n      fi\n    fi\n\n    # Only delete the description if it matches the dev-launcher default text\n    DESC=$(/usr/libexec/PlistBuddy -c \"Print :NSLocalNetworkUsageDescription\" \"$PLIST_PATH\" 2>/dev/null || echo \"\")\n    if echo \"$DESC\" | grep -q \"Expo Dev Launcher\"; then\n      /usr/libexec/PlistBuddy -c \"Delete :NSLocalNetworkUsageDescription\" \"$PLIST_PATH\" 2>/dev/null || true\n    fi\n  fi\nfi\n";
+		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -488,7 +514,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				5C17C6456928DB724554E2F8 /* ExpoModulesProvider.swift in Sources */,
+				AF70B42AF1A2F6F74BA20328 /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -502,17 +528,17 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		XX1872A2910D3F5B067BB6XX /* PBXTargetDependency */ = {
+		XXB1D48DE1C24B1AF888AEXX /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = XX77FC72E1CA05F6B17E8CXX /* controlcenter */;
-			targetProxy = XX7AEC3EC5A8E80BDEAAF4XX /* PBXContainerItemProxy */;
+			target = XX7998D0441A253CCDF87CXX /* controlcenter */;
+			targetProxy = XXE1F1D925421F18FEEDE8XX /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 3ACCF8E625A741BD83406467 /* Pods-OmiroDev.debug.xcconfig */;
+			baseConfigurationReference = 4516DA88E5313930633548AA /* Pods-OmiroDev.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -530,6 +556,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 13.4;
 				MARKETING_VERSION = 1.0.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
@@ -549,7 +576,7 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 3EE947F846C5247120ECF1B7 /* Pods-OmiroDev.release.xcconfig */;
+			baseConfigurationReference = 0EEF94281044F87D957955E6 /* Pods-OmiroDev.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -562,6 +589,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 13.4;
 				MARKETING_VERSION = 1.0.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
@@ -712,7 +740,7 @@
 			};
 			name = Release;
 		};
-		XX18E0218B4ED9AC6E58F1XX /* Debug */ = {
+		XXA46D5BC3D04739C3CBBDXX /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ANALYZER_NONNULL = YES;
@@ -752,7 +780,7 @@
 			};
 			name = Debug;
 		};
-		XXD557820026197A820EA0XX /* Release */ = {
+		XXEA53AAC2E9089EA84552XX /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ANALYZER_NONNULL = YES;
@@ -813,11 +841,11 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		XX9F1231462F2E4AEC1810XX /* Build configuration list for PBXNativeTarget "controlcenter" */ = {
+		XXFEBA5AFC70C405C339E9XX /* Build configuration list for PBXNativeTarget "controlcenter" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				XX18E0218B4ED9AC6E58F1XX /* Debug */,
-				XXD557820026197A820EA0XX /* Release */,
+				XXA46D5BC3D04739C3CBBDXX /* Debug */,
+				XXEA53AAC2E9089EA84552XX /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

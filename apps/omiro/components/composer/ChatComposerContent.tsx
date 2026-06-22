@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 import { Alert, TextInput } from 'react-native';
 
 import { InlineEnhanceTray } from '~/components/ai/InlineEnhanceTray';
@@ -40,12 +40,39 @@ export function ChatComposerEntry({ chatId, initialMessage, testID }: ChatCompos
 export function ChatComposerContent({ chatId, initialMessage, testID }: ChatComposerContentProps) {
   const { data: activeChat } = useActiveChat(chatId);
   const resolvedChatId = activeChat?.id ?? chatId;
-  const inputRef = useRef<TextInput>(null);
-  const { sendChatMessage, isChatSending } = useSendMessage({ chatId: resolvedChatId });
-  const autoUpdateTitle = useAutoUpdateChatTitle(resolvedChatId);
   const persistedDraft = readChatDraft(resolvedChatId);
   const resolvedInitialMessage =
     persistedDraft.trim().length > 0 ? persistedDraft : (initialMessage ?? '');
+
+  return (
+    <ChatComposerDraftContent
+      key={resolvedChatId}
+      chatId={resolvedChatId}
+      initialMessage={resolvedInitialMessage}
+      testID={testID}
+    />
+  );
+}
+
+interface ChatComposerDraftContentProps {
+  chatId: string;
+  initialMessage: string;
+  testID?: string;
+}
+
+function ChatComposerDraftContent({
+  chatId,
+  initialMessage,
+  testID,
+}: ChatComposerDraftContentProps) {
+  const inputRef = useRef<TextInput>(null);
+  const { sendChatMessage, isChatSending } = useSendMessage({ chatId });
+  const autoUpdateTitle = useAutoUpdateChatTitle(chatId);
+  const handleVoiceError = useCallback(
+    (error: { title: string; message: string }) =>
+      Alert.alert(error.title, error.message, [{ text: 'OK' }]),
+    [],
+  );
   const {
     message,
     setMessage,
@@ -59,8 +86,6 @@ export function ChatComposerContent({ chatId, initialMessage, testID }: ChatComp
     isVoiceBusy,
     isCleaningVoice,
     isRecording,
-    voiceError,
-    clearVoiceError,
     isEnhanceOpen,
     enhanceInstruction,
     setEnhanceInstruction,
@@ -71,17 +96,12 @@ export function ChatComposerContent({ chatId, initialMessage, testID }: ChatComp
     runEnhance,
     clearComposer,
   } = useComposerController({
-    hydrationKey: `chat:${resolvedChatId}`,
-    initialMessage: resolvedInitialMessage,
+    initialMessage,
     isSubmitting: isChatSending,
-    onDraftChange: (msg) => writeChatDraft(resolvedChatId, msg),
-    onClearDraft: () => clearChatDraft(resolvedChatId),
+    onDraftChange: (msg) => writeChatDraft(chatId, msg),
+    onClearDraft: () => clearChatDraft(chatId),
+    onVoiceError: handleVoiceError,
   });
-
-  useEffect(() => {
-    if (!voiceError) return;
-    Alert.alert(voiceError.title, voiceError.message, [{ text: 'OK', onPress: clearVoiceError }]);
-  }, [clearVoiceError, voiceError]);
 
   const handleSend = useCallback(async () => {
     if (!canSubmit || isChatSending) return;

@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import type { RelativePathString } from 'expo-router';
 import { useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useRef } from 'react';
 import { Alert, TextInput } from 'react-native';
 
 import { InlineEnhanceTray } from '~/components/ai/InlineEnhanceTray';
@@ -44,6 +44,11 @@ export function FeedComposerContent({
   const { mutateAsync: createChat, isPending: isChatCreating } = useCreateChat();
   const inputRef = useRef<TextInput>(null);
   const isSubmitting = isSaving || isChatCreating;
+  const handleVoiceError = useCallback(
+    (error: { title: string; message: string }) =>
+      Alert.alert(error.title, error.message, [{ text: 'OK' }]),
+    [],
+  );
   const {
     message,
     setMessage,
@@ -58,8 +63,6 @@ export function FeedComposerContent({
     isVoiceBusy,
     isCleaningVoice,
     isRecording,
-    voiceError,
-    clearVoiceError,
     isEnhanceOpen,
     enhanceInstruction,
     setEnhanceInstruction,
@@ -70,17 +73,12 @@ export function FeedComposerContent({
     runEnhance,
     clearComposer,
   } = useComposerController({
-    hydrationKey: 'feed',
     initialMessage,
     isSubmitting,
     onDraftChange,
     onClearDraft,
+    onVoiceError: handleVoiceError,
   });
-
-  useEffect(() => {
-    if (!voiceError) return;
-    Alert.alert(voiceError.title, voiceError.message, [{ text: 'OK', onPress: clearVoiceError }]);
-  }, [clearVoiceError, voiceError]);
 
   const handleSave = useCallback(async () => {
     if (!canSubmit || isSaving) return;

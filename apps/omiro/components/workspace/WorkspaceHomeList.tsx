@@ -21,11 +21,6 @@ type WorkspaceHomeListRow =
       type: 'item';
       id: string;
       item: InboxStreamItemData;
-      showKindLabel: boolean;
-      showTimestamp: boolean;
-      swipeEnabled: boolean;
-      showLeadingIcon: boolean;
-      variant: 'compact' | 'plain';
     };
 
 interface WorkspaceHomeListProps {
@@ -41,32 +36,9 @@ interface WorkspaceHomeListProps {
   contentPaddingTop?: number;
 }
 
-const RenderInboxHomeItem = memo(
-  ({
-    item,
-    showKindLabel,
-    showTimestamp,
-    swipeEnabled,
-    showLeadingIcon,
-    variant,
-  }: {
-    item: InboxStreamItemData;
-    showKindLabel: boolean;
-    showTimestamp: boolean;
-    swipeEnabled: boolean;
-    showLeadingIcon: boolean;
-    variant: 'compact' | 'plain';
-  }) => (
-    <InboxStreamItem
-      item={item}
-      variant={variant}
-      showKindLabel={showKindLabel}
-      showTimestamp={showTimestamp}
-      swipeEnabled={swipeEnabled}
-      showLeadingIcon={showLeadingIcon}
-    />
-  ),
-);
+const RenderInboxHomeItem = memo(({ item }: { item: InboxStreamItemData }) => (
+  <InboxStreamItem item={item} />
+));
 
 RenderInboxHomeItem.displayName = 'RenderInboxHomeItem';
 
@@ -84,11 +56,6 @@ function buildRows({
       type: 'item' as const,
       id: item.id,
       item,
-      showKindLabel: false,
-      showTimestamp: false,
-      swipeEnabled: true,
-      showLeadingIcon: false,
-      variant: 'plain' as const,
     })),
   ];
 }
@@ -115,14 +82,7 @@ export function WorkspaceHomeList({
       }
 
       return (
-        <RenderInboxHomeItem
-          item={item.item}
-          showKindLabel={item.showKindLabel}
-          showTimestamp={item.showTimestamp}
-          swipeEnabled={item.swipeEnabled}
-          showLeadingIcon={item.showLeadingIcon}
-          variant={item.variant}
-        />
+        <RenderInboxHomeItem item={item.item} />
       );
     },
     [styles.sectionTitle],

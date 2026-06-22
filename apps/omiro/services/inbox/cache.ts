@@ -30,6 +30,20 @@ function isInboxItem(value: unknown): value is InboxStreamItem {
   );
 }
 
+function sortInboxItems(items: InboxStreamItem[]) {
+  return items.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
+}
+
+function mergeInboxItems(items: InboxStreamItem[]) {
+  const mergedItems = new Map<string, InboxStreamItem>();
+
+  items.forEach((item) => {
+    mergedItems.set(`${item.kind}:${item.id}`, item);
+  });
+
+  return sortInboxItems(Array.from(mergedItems.values()));
+}
+
 export function readCachedInboxItems(): InboxStreamItem[] {
   const raw = storage.getString(INBOX_CACHE_KEY);
   if (!raw) {
@@ -44,7 +58,7 @@ export function readCachedInboxItems(): InboxStreamItem[] {
     }
 
     const items = parsed.items.filter(isInboxItem);
-    return items.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
+    return sortInboxItems(items);
   } catch {
     storage.remove(INBOX_CACHE_KEY);
     return [];
@@ -62,4 +76,12 @@ export function writeCachedInboxItems(items: InboxStreamItem[]) {
   } catch {
     // Native MMKV object may be stale after a Fast Refresh cycle; safe to ignore.
   }
+}
+
+export function replaceCachedInboxItems(items: InboxStreamItem[]) {
+  writeCachedInboxItems(sortInboxItems([...items]));
+}
+
+export function appendCachedInboxItems(items: InboxStreamItem[]) {
+  writeCachedInboxItems(mergeInboxItems([...readCachedInboxItems(), ...items]));
 }

@@ -22,9 +22,14 @@ import {
 interface UseVoiceComposerInputOptions {
   getMessage: () => string;
   setMessage: (message: string) => void;
+  onError?: (error: VoiceComposerError) => void;
 }
 
-export function useVoiceComposerInput({ getMessage, setMessage }: UseVoiceComposerInputOptions) {
+export function useVoiceComposerInput({
+  getMessage,
+  setMessage,
+  onError,
+}: UseVoiceComposerInputOptions) {
   const { cleanup, isCleaningVoice } = useVoiceCleanup();
   const recordingSnapshot = useSyncExternalStore(
     subscribeRecording,
@@ -34,6 +39,13 @@ export function useVoiceComposerInput({ getMessage, setMessage }: UseVoiceCompos
   const [error, setError] = useState<VoiceComposerError | null>(null);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const setDraftMessage = useCallback((nextMessage: string) => setMessage(nextMessage), [setMessage]);
+  const setVoiceError = useCallback(
+    (nextError: VoiceComposerError) => {
+      setError(nextError);
+      onError?.(nextError);
+    },
+    [onError],
+  );
 
   const clearError = useCallback(() => {
     setError(null);
@@ -75,12 +87,12 @@ export function useVoiceComposerInput({ getMessage, setMessage }: UseVoiceCompos
           });
       } catch (error) {
         logger.error('[voice-transcriber] transcription failed', error as Error);
-        setError(createVoiceComposerError('transcription-failed'));
+        setVoiceError(createVoiceComposerError('transcription-failed'));
       } finally {
         setIsTranscribing(false);
       }
     },
-    [cleanup, getMessage, setDraftMessage],
+    [cleanup, getMessage, setDraftMessage, setVoiceError],
   );
 
   const stopAndTranscribeRecording = useCallback(async () => {
@@ -104,23 +116,23 @@ export function useVoiceComposerInput({ getMessage, setMessage }: UseVoiceCompos
     try {
       const hasSpeechRecognitionPermission = await ensureSpeechRecognitionPermission();
       if (!hasSpeechRecognitionPermission) {
-        setError(createVoiceComposerError('permission-denied'));
+        setVoiceError(createVoiceComposerError('permission-denied'));
         return;
       }
     } catch {
-      setError(createVoiceComposerError('permission-denied'));
+      setVoiceError(createVoiceComposerError('permission-denied'));
       return;
     }
 
     const result = await startRecording();
     if (result.ok) return;
 
-    setError(
+    setVoiceError(
       createVoiceComposerError(
         result.reason === 'permission-denied' ? 'permission-denied' : 'recording-failed',
       ),
     );
-  }, [ensureSpeechRecognitionPermission]);
+  }, [ensureSpeechRecognitionPermission, setVoiceError]);
 
   const handleVoicePress = useCallback(async () => {
     if (recordingSnapshot.state === 'RECORDING' || recordingSnapshot.state === 'PAUSED') {

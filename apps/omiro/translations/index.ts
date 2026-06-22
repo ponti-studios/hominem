@@ -201,8 +201,10 @@ const t = {
       untitled: 'Untitled',
       untitledNote: 'Untitled note',
       untitledSession: 'Untitled session',
+      actionsLabel: 'Item actions',
       chatLabel: 'Chat',
       noteLabel: 'Note',
+      archiveChat: 'Archive chat',
       deleteNote: {
         title: 'Delete note',
         message: 'This cannot be undone.',

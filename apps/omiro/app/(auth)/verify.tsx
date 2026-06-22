@@ -43,6 +43,33 @@ function formatCountdown(s: number) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
 
+function resolveTokenSentAt(sentAt?: string) {
+  const parsedSentAt = sentAt ? Number(sentAt) : NaN;
+  return Number.isFinite(parsedSentAt) ? parsedSentAt : Date.now();
+}
+
+function resolveSecondsLeft(tokenSentAt: number, now = Date.now()) {
+  return Math.max(0, OTP_EXPIRES_SECONDS - Math.floor((now - tokenSentAt) / 1000));
+}
+
+function resolveAutoSubmitInput({
+  resolvedEmail,
+  token,
+}: {
+  resolvedEmail: string;
+  token?: string;
+}) {
+  const normalizedToken = normalizeOtp(token ?? '');
+  if (!resolvedEmail || normalizedToken.length !== 6) {
+    return null;
+  }
+
+  return {
+    normalizedToken,
+    submitKey: `${resolvedEmail}:${normalizedToken}`,
+  };
+}
+
 function VerifyScreen() {
   const router = useRouter();
   const themeColors = useThemeColors();
@@ -57,6 +84,7 @@ function VerifyScreen() {
     sentAt?: string;
   }>();
   const resolvedEmail = emailParam ?? readPendingAuthEmail();
+  const initialTokenSentAt = React.useMemo(() => resolveTokenSentAt(sentAtParam), [sentAtParam]);
   const autoSubmitKeyRef = React.useRef<string | null>(null);
   const [verifySucceeded, setVerifySucceeded] = React.useState(false);
   const {
@@ -80,20 +108,14 @@ function VerifyScreen() {
   const normalizedOtp = normalizeOtp(otp).slice(0, 6);
 
   // Countdown
-  const [tokenSentAt, setTokenSentAt] = React.useState(() =>
-    sentAtParam ? Number(sentAtParam) : Date.now(),
-  );
+  const [tokenSentAt, setTokenSentAt] = React.useState(initialTokenSentAt);
   const [secondsLeft, setSecondsLeft] = React.useState(() =>
-    Math.max(
-      0,
-      OTP_EXPIRES_SECONDS -
-        Math.floor((Date.now() - (sentAtParam ? Number(sentAtParam) : Date.now())) / 1000),
-    ),
+    resolveSecondsLeft(initialTokenSentAt),
   );
 
   React.useEffect(() => {
     const id = setInterval(() => {
-      const left = Math.max(0, OTP_EXPIRES_SECONDS - Math.floor((Date.now() - tokenSentAt) / 1000));
+      const left = resolveSecondsLeft(tokenSentAt);
       setSecondsLeft(left);
       if (left === 0) clearInterval(id);
     }, 1000);
@@ -140,16 +162,39 @@ function VerifyScreen() {
   }, []);
 
   React.useEffect(() => {
-    const normalizedToken = normalizeOtp(tokenParam ?? '');
-    const submitKey = `${resolvedEmail}:${normalizedToken}`;
-    if (autoSubmitKeyRef.current === submitKey || !resolvedEmail || normalizedToken.length !== 6) {
+    const autoSubmitInput = resolveAutoSubmitInput({
+      resolvedEmail,
+      token: tokenParam,
+    });
+    if (!autoSubmitInput || autoSubmitKeyRef.current === autoSubmitInput.submitKey) {
       return;
     }
-    autoSubmitKeyRef.current = submitKey;
-    setOtp(normalizedToken);
+
+    autoSubmitKeyRef.current = autoSubmitInput.submitKey;
+    setOtp(autoSubmitInput.normalizedToken);
     posthog.capture('auth_verify_link_opened');
-    void handleVerifyOtp(resolvedEmail, normalizedToken);
+    void handleVerifyOtp(resolvedEmail, autoSubmitInput.normalizedToken);
   }, [handleVerifyOtp, resolvedEmail, setOtp, tokenParam]);
+
+  const handleChangeEmail = React.useCallback(() => {
+    posthog.capture('auth_change_email_pressed');
+    router.replace('/(auth)' as RelativePathString);
+  }, [router]);
+  const handleVerifyPress = React.useCallback(
+    () => {
+      posthog.capture('auth_verify_pressed');
+      return handleVerifyOtp(resolvedEmail, normalizedOtp);
+    },
+    [handleVerifyOtp, normalizedOtp, resolvedEmail],
+  );
+  const handleResendPress = React.useCallback(
+    async () => {
+      posthog.capture('auth_resend_pressed');
+      await handleResendOtp(resolvedEmail);
+      setTokenSentAt(Date.now());
+    },
+    [handleResendOtp, resolvedEmail],
+  );
 
   if (isSignedIn && !verifySucceeded) {
     return <Redirect href={CHAT_AUTH_CONFIG.defaultPostAuthDestination as RelativePathString} />;
@@ -219,10 +264,7 @@ function VerifyScreen() {
                 </Text>
                 <Pressable
                   hitSlop={8}
-                  onPress={() => {
-                    posthog.capture('auth_change_email_pressed');
-                    router.replace('/(auth)' as RelativePathString);
-                  }}
+                  onPress={handleChangeEmail}
                   style={({ pressed }) => [
                     styles.emailChip,
                     { backgroundColor: themeColors['bg-surface'], opacity: pressed ? 0.65 : 1 },
@@ -270,8 +312,7 @@ function VerifyScreen() {
                     }}
                     onSubmitEditing={() => {
                       if (normalizedOtp.length === 6) {
-                        posthog.capture('auth_verify_pressed');
-                        void handleVerifyOtp(resolvedEmail, normalizedOtp);
+                        void handleVerifyPress();
                       }
                     }}
                     accessibilityLabel={t.auth.verify.oneTimeVerificationCodeA11y}
@@ -313,11 +354,7 @@ function VerifyScreen() {
                   <Button
                     testID="auth-resend-otp-primary"
                     label={t.auth.verify.resendButton}
-                    onPress={async () => {
-                      posthog.capture('auth_resend_pressed');
-                      await handleResendOtp(resolvedEmail);
-                      setTokenSentAt(Date.now());
-                    }}
+                    onPress={() => void handleResendPress()}
                     disabled={isBusy}
                     variant="primary"
                   />
@@ -325,10 +362,7 @@ function VerifyScreen() {
                   <Button
                     testID="auth-verify-otp"
                     label={t.auth.verify.verifyButton}
-                    onPress={() => {
-                      posthog.capture('auth_verify_pressed');
-                      void handleVerifyOtp(resolvedEmail, normalizedOtp);
-                    }}
+                    onPress={() => void handleVerifyPress()}
                     disabled={isSubmitting || normalizedOtp.length !== 6}
                     variant="primary"
                   />
@@ -339,21 +373,14 @@ function VerifyScreen() {
                 <Button
                   testID="auth-resend-otp"
                   label={t.auth.verify.resendButton}
-                  onPress={async () => {
-                    posthog.capture('auth_resend_pressed');
-                    await handleResendOtp(resolvedEmail);
-                    setTokenSentAt(Date.now());
-                  }}
+                  onPress={() => void handleResendPress()}
                   disabled={isBusy}
                   variant="tertiary"
                   size="sm"
                 />
                 <Button
                   label={t.auth.verify.changeEmailLink}
-                  onPress={() => {
-                    posthog.capture('auth_change_email_pressed');
-                    router.replace('/(auth)' as RelativePathString);
-                  }}
+                  onPress={handleChangeEmail}
                   disabled={isBusy}
                   variant="tertiary"
                   size="sm"

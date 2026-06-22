@@ -4,21 +4,22 @@ import { useComposerAttachments } from '~/components/composer/ComposerContext';
 import { useComposerDraft } from '~/components/composer/useComposerDraft';
 import { useVoiceComposerInput } from '~/components/composer/useVoiceComposerInput';
 import { useInlineEnhance } from '~/services/ai';
+import type { VoiceComposerError } from './voiceComposerInput.helpers';
 
 interface UseComposerControllerOptions {
-  hydrationKey: string;
   initialMessage?: string;
   isSubmitting?: boolean;
   onDraftChange?: (message: string) => void;
   onClearDraft?: () => void;
+  onVoiceError?: (error: VoiceComposerError) => void;
 }
 
 export function useComposerController({
-  hydrationKey,
   initialMessage,
   isSubmitting = false,
   onDraftChange,
   onClearDraft,
+  onVoiceError,
 }: UseComposerControllerOptions) {
   const {
     getMessage,
@@ -27,7 +28,6 @@ export function useComposerController({
     clearDraft: clearTextDraft,
   } = useComposerDraft({
     initialMessage,
-    hydrationKey,
     onDraftChange,
   });
   const { attachments, errors, isUploading, clearAttachments } = useComposerAttachments();
@@ -41,9 +41,7 @@ export function useComposerController({
     isBusy: isVoiceBusy,
     isCleaningVoice,
     isRecording,
-    error: voiceError,
-    clearError: clearVoiceError,
-  } = useVoiceComposerInput({ getMessage, setMessage });
+  } = useVoiceComposerInput({ getMessage, setMessage, onError: onVoiceError });
 
   const {
     isEnhanceOpen,
@@ -87,8 +85,6 @@ export function useComposerController({
     isVoiceBusy,
     isCleaningVoice,
     isRecording,
-    voiceError,
-    clearVoiceError,
     isEnhanceOpen,
     enhanceInstruction,
     setEnhanceInstruction,
