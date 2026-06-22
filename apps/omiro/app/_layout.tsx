@@ -18,7 +18,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { logError } from '~/components/error-boundary/log-error';
 import { RootErrorBoundary } from '~/components/error-boundary/RootErrorBoundary';
-import { lightTheme, makeStyles } from '~/components/theme';
+import { theme, makeStyles } from '~/components/theme';
 import { E2E_TESTING } from '~/constants';
 import { useScreenCapture } from '~/hooks/use-screen-capture';
 import { resolveAuthRedirect } from '~/navigation/auth-route-guard';
@@ -180,12 +180,12 @@ const navigationTheme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
-    background: lightTheme.colors.background,
-    border: lightTheme.colors['border-default'],
-    card: lightTheme.colors.background,
-    notification: lightTheme.colors.accent,
-    primary: lightTheme.colors.accent,
-    text: lightTheme.colors.foreground,
+    background: theme.colors.background,
+    border: theme.colors['border-default'],
+    card: theme.colors.background,
+    notification: theme.colors.accent,
+    primary: theme.colors.accent,
+    text: theme.colors.foreground,
   },
 };
 

@@ -14,6 +14,7 @@ import React, {
   useMemo,
   useRef,
   useState,
+  type SetStateAction,
 } from 'react';
 import { Alert } from 'react-native';
 
@@ -56,14 +57,25 @@ function getAttachmentType(uploadedFile: UploadedFile): string {
 
 export function ComposerProvider({ children, initialAttachments = [] }: ComposerProviderProps) {
   const client = useApiClient();
-  const [attachments, setAttachments] = useState<ComposerAttachment[]>(() => initialAttachments);
-  const attachmentsRef = useRef(attachments);
+  const [attachments, setAttachmentsState] = useState<ComposerAttachment[]>(
+    () => initialAttachments,
+  );
+  const attachmentsRef = useRef(initialAttachments);
 
   const { uploadAssets, uploadState, clearErrors } = useFileUpload();
 
-  useEffect(() => {
-    attachmentsRef.current = attachments;
-  }, [attachments]);
+  const setAttachments = useCallback((next: SetStateAction<ComposerAttachment[]>) => {
+    setAttachmentsState((currentAttachments) => {
+      const resolvedAttachments =
+        typeof next === 'function'
+          ? (next as (currentAttachments: ComposerAttachment[]) => ComposerAttachment[])(
+              currentAttachments,
+            )
+          : next;
+      attachmentsRef.current = resolvedAttachments;
+      return resolvedAttachments;
+    });
+  }, []);
 
   // Attachment operations
   const onRemove = useCallback(
@@ -78,10 +90,10 @@ export function ComposerProvider({ children, initialAttachments = [] }: Composer
         return prev.filter((a) => a.id !== id);
       });
     },
-    [client],
+    [client, setAttachments],
   );
 
-  const clearAttachments = useCallback(() => setAttachments([]), []);
+  const clearAttachments = useCallback(() => setAttachments([]), [setAttachments]);
 
   const appendUploadedAssets = useCallback(
     async (
@@ -105,7 +117,7 @@ export function ComposerProvider({ children, initialAttachments = [] }: Composer
       setAttachments((prev) => [...prev, ...next]);
       return next;
     },
-    [uploadAssets],
+    [setAttachments, uploadAssets],
   );
 
   const pickAttachment = useCallback(async (): Promise<ComposerAttachment[]> => {
@@ -129,7 +141,7 @@ export function ComposerProvider({ children, initialAttachments = [] }: Composer
         uri: asset.uri,
       })),
     );
-  }, [clearErrors, attachments.length, appendUploadedAssets]);
+  }, [attachments.length, appendUploadedAssets, clearErrors]);
 
   const handleCameraCapture = useCallback(
     async (photo: { uri: string; fileName?: string }): Promise<ComposerAttachment[]> => {

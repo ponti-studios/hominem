@@ -1,5 +1,5 @@
 /**
- * Canonical color tokens — single dark-mode palette.
+ * Canonical color tokens — single palette.
  *
  * Values MUST match the @theme block in packages/ui/src/styles.css.
  * Web consumes these via CSS custom properties; other platforms (e.g. mobile)

@@ -4,12 +4,11 @@ import {
   StyleProp,
   StyleSheet,
   Text,
-  useColorScheme,
   ViewStyle,
   type PressableStateCallbackType,
 } from 'react-native';
 
-import { componentSizes, fontSizes, fontWeights, radii, themeSpacing } from '~/components/theme';
+import { colors, componentSizes, fontSizes, fontWeights, radii, themeSpacing } from '~/components/theme';
 
 interface ButtonProps {
   label: string;
@@ -28,9 +27,6 @@ export function Button({
   variant = 'primary',
   testID,
 }: ButtonProps) {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-
   const resolvedStyles = useMemo(() => {
     const baseStyle = {
       paddingVertical: themeSpacing.md,
@@ -44,13 +40,13 @@ export function Button({
 
     const variantStyles: Record<string, StyleProp<ViewStyle>> = {
       primary: {
-        backgroundColor: isDark ? '#FFFFFF' : '#000000',
+        backgroundColor: colors.primary,
         borderWidth: 0,
       },
       secondary: {
         backgroundColor: 'transparent',
         borderWidth: 1,
-        borderColor: isDark ? '#FFFFFF' : '#000000',
+        borderColor: colors.foreground,
       },
       tertiary: {
         backgroundColor: 'transparent',
@@ -63,17 +59,17 @@ export function Button({
     };
 
     const textColor = {
-      primary: isDark ? '#000000' : '#FFFFFF',
-      secondary: isDark ? '#FFFFFF' : '#000000',
-      tertiary: isDark ? '#FFFFFF' : '#000000',
-      'destructive-text': 'red',
+      primary: colors['primary-foreground'],
+      secondary: colors.foreground,
+      tertiary: colors.foreground,
+      'destructive-text': colors.destructive,
     };
 
     return {
       container: [baseStyle, variantStyles[variant], disabled && styles.disabled],
       text: textColor[variant],
     };
-  }, [disabled, isDark, variant]);
+  }, [disabled, variant]);
 
   const pressableStyle = useCallback(
     ({ pressed }: PressableStateCallbackType) => [

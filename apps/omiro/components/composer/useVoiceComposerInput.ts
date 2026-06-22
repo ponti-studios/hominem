@@ -1,5 +1,5 @@
 import { logger } from '@hominem/telemetry';
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useState, useSyncExternalStore } from 'react';
 
 import {
   getRecordingSnapshot,
@@ -20,11 +20,11 @@ import {
 } from './voiceComposerInput.helpers';
 
 interface UseVoiceComposerInputOptions {
-  message: string;
+  getMessage: () => string;
   setMessage: (message: string) => void;
 }
 
-export function useVoiceComposerInput({ message, setMessage }: UseVoiceComposerInputOptions) {
+export function useVoiceComposerInput({ getMessage, setMessage }: UseVoiceComposerInputOptions) {
   const { cleanup, isCleaningVoice } = useVoiceCleanup();
   const recordingSnapshot = useSyncExternalStore(
     subscribeRecording,
@@ -33,19 +33,7 @@ export function useVoiceComposerInput({ message, setMessage }: UseVoiceComposerI
   );
   const [error, setError] = useState<VoiceComposerError | null>(null);
   const [isTranscribing, setIsTranscribing] = useState(false);
-  const draftRef = useRef(message);
-
-  useEffect(() => {
-    draftRef.current = message;
-  }, [message]);
-
-  const setDraftMessage = useCallback(
-    (nextMessage: string) => {
-      draftRef.current = nextMessage;
-      setMessage(nextMessage);
-    },
-    [setMessage],
-  );
+  const setDraftMessage = useCallback((nextMessage: string) => setMessage(nextMessage), [setMessage]);
 
   const clearError = useCallback(() => {
     setError(null);
@@ -61,7 +49,7 @@ export function useVoiceComposerInput({ message, setMessage }: UseVoiceComposerI
         const rawText = result.rawText.trim();
         if (!rawText) return;
 
-        const insertedDraft = mergeTranscriptIntoDraft(draftRef.current, rawText);
+        const insertedDraft = mergeTranscriptIntoDraft(getMessage(), rawText);
         setDraftMessage(insertedDraft);
         setIsTranscribing(false);
         void cleanup({
@@ -72,7 +60,7 @@ export function useVoiceComposerInput({ message, setMessage }: UseVoiceComposerI
           .then((cleanupResult) => {
             setDraftMessage(
               maybeApplyCleanedTranscript({
-                currentDraft: draftRef.current,
+                currentDraft: getMessage(),
                 insertedDraft,
                 rawText,
                 cleanedText: cleanupResult.cleanedText,
@@ -92,7 +80,7 @@ export function useVoiceComposerInput({ message, setMessage }: UseVoiceComposerI
         setIsTranscribing(false);
       }
     },
-    [cleanup, setDraftMessage],
+    [cleanup, getMessage, setDraftMessage],
   );
 
   const stopAndTranscribeRecording = useCallback(async () => {

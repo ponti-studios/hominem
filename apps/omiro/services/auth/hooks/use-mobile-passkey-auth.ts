@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useCallback, useMemo, useState } from 'react';
 import { Platform } from 'react-native';
 
 import { E2E_TESTING } from '~/constants';
@@ -37,52 +38,43 @@ function toErrorMessage(error: unknown, fallback: string) {
 export function useMobilePasskeyAuth(
   options: UseMobilePasskeyAuthOptions = {},
 ): UseMobilePasskeyAuthReturn {
+  const loadPasskeysEnabled = Boolean(options.loadPasskeys);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [passkeys, setPasskeys] = useState<{ id: string; name: string }[]>([]);
-  const [passkeysLoading, setPasskeysLoading] = useState(Boolean(options.loadPasskeys));
-  const [passkeysError, setPasskeysError] = useState<string | null>(null);
 
   const isSupported = Number.parseInt(Platform.Version as string, 10) >= 16;
 
+  const fetchPasskeys = useCallback(async () => {
+    const response = (await authClient.$fetch('/passkey/list-user-passkeys', {
+      method: 'GET',
+      throw: false,
+    })) as {
+      data?: { id: string; name?: string | null }[] | null;
+      error?: { message?: string } | null;
+    };
+
+    if (response.error) {
+      throw new Error(response.error.message ?? 'Failed to load passkeys');
+    }
+
+    return (response.data ?? []).map((passkey) => ({
+      id: passkey.id,
+      name: passkey.name ?? 'Unnamed passkey',
+    }));
+  }, []);
+
+  const passkeysQuery = useQuery({
+    queryKey: ['mobile-passkeys'],
+    queryFn: fetchPasskeys,
+    enabled: loadPasskeysEnabled,
+  });
   const loadPasskeys = useCallback(async () => {
-    if (!options.loadPasskeys) {
+    if (!loadPasskeysEnabled) {
       return;
     }
 
-    setPasskeysLoading(true);
-    setPasskeysError(null);
-
-    try {
-      const response = (await authClient.$fetch('/passkey/list-user-passkeys', {
-        method: 'GET',
-        throw: false,
-      })) as {
-        data?: { id: string; name?: string | null }[] | null;
-        error?: { message?: string } | null;
-      };
-
-      if (response.error) {
-        throw new Error(response.error.message ?? 'Failed to load passkeys');
-      }
-
-      setPasskeys(
-        (response.data ?? []).map((passkey) => ({
-          id: passkey.id,
-          name: passkey.name ?? 'Unnamed passkey',
-        })),
-      );
-    } catch (err) {
-      setPasskeys([]);
-      setPasskeysError(err instanceof Error ? err.message : 'Failed to load passkeys');
-    } finally {
-      setPasskeysLoading(false);
-    }
-  }, [options.loadPasskeys]);
-
-  useEffect(() => {
-    void loadPasskeys();
-  }, [loadPasskeys]);
+    await passkeysQuery.refetch();
+  }, [loadPasskeysEnabled, passkeysQuery]);
 
   const signIn = useCallback(
     async (
@@ -222,14 +214,14 @@ export function useMobilePasskeyAuth(
   );
 
   return useMemo(() => {
-    const displayError = error ?? passkeysError;
+    const displayError = error ?? passkeysQuery.error?.message ?? null;
 
     return {
       signIn,
       addPasskey,
-      passkeys,
+      passkeys: passkeysQuery.data ?? [],
       deletePasskey,
-      isLoading: isLoading || passkeysLoading,
+      isLoading: isLoading || passkeysQuery.isFetching,
       error: displayError,
       isSupported,
     };
@@ -239,9 +231,9 @@ export function useMobilePasskeyAuth(
     error,
     isLoading,
     isSupported,
-    passkeys,
-    passkeysError,
-    passkeysLoading,
+    passkeysQuery.data,
+    passkeysQuery.error,
+    passkeysQuery.isFetching,
     signIn,
   ]);
 }

@@ -9,8 +9,6 @@ const RESUME_ARTIFACT_KEY = 'workspace-resume-artifact-v1';
 
 const memoryStorage = new Map<string, string>();
 
-let hasAttemptedWorkspaceRestore = false;
-
 interface StorageLike {
   getString: (key: string) => string | undefined;
   remove: (key: string) => void;
@@ -223,6 +221,7 @@ export function clearWorkspaceResumeArtifact() {
   getStorage().remove(RESUME_ARTIFACT_KEY);
 }
 
+let hasAttemptedWorkspaceRestore = false;
 export function consumeWorkspaceRestoreAttempt(): boolean {
   if (hasAttemptedWorkspaceRestore) {
     return false;

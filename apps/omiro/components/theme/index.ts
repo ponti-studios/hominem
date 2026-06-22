@@ -1,9 +1,9 @@
 import type { ImageStyle, TextStyle, ViewStyle } from 'react-native';
 
 import { shellTheme } from '../../types/shellTheme';
-import theme, {
+import defaultTheme, {
   componentSizes,
-  lightTheme,
+  theme,
   themeSpacing,
   useThemeColors,
   type Theme,
@@ -20,12 +20,13 @@ export {
   type SpacingToken,
 } from '@hominem/ui/tokens';
 export { fontFamiliesNative, fontSizes, fontWeights, lineHeights, Text } from './typography';
-export { componentSizes, lightTheme, shellTheme, theme, themeSpacing, useThemeColors };
+export { componentSizes, shellTheme, theme, themeSpacing, useThemeColors };
+export { defaultTheme as default };
 export type { Theme };
 
 type StyleMap = Record<string, ViewStyle | TextStyle | ImageStyle>;
 
 export const makeStyles = <T extends StyleMap>(styles: (theme: Theme) => T & StyleMap) => {
-  const computed = styles(lightTheme);
+  const computed = styles(theme);
   return () => computed;
 };

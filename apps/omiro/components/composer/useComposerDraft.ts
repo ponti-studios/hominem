@@ -12,6 +12,7 @@ export function useComposerDraft({
   onDraftChange,
 }: UseComposerDraftOptions = {}) {
   const [message, setMessageState] = useState(() => initialMessage);
+  const messageRef = useRef(initialMessage);
   const hydratedKeyRef = useRef(hydrationKey);
   const hasLocalEditsRef = useRef(false);
 
@@ -23,6 +24,7 @@ export function useComposerDraft({
         persist?: boolean;
       },
     ) => {
+      messageRef.current = nextMessage;
       setMessageState(nextMessage);
 
       if (options?.markEdited ?? true) {
@@ -68,6 +70,7 @@ export function useComposerDraft({
   }, [applyMessage, hydrationKey, initialMessage]);
 
   return {
+    getMessage: () => messageRef.current,
     message,
     setMessage,
     clearDraft,

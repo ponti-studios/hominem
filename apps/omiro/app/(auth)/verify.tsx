@@ -22,7 +22,7 @@ import Animated, {
 import { useThemeColors } from '~/components/theme';
 import { CHAT_AUTH_CONFIG } from '~/config/auth';
 import { OTP_EXPIRES_SECONDS } from '~/config/auth-protocol';
-import { readPendingAuthEmail, writePendingAuthEmail } from '~/services/auth/pending-email';
+import { readPendingAuthEmail } from '~/services/auth/pending-email';
 import t from '~/translations';
 
 import { FeatureErrorBoundary } from '../../components/error-boundary/FeatureErrorBoundary';
@@ -78,12 +78,6 @@ function VerifyScreen() {
     },
   });
   const normalizedOtp = normalizeOtp(otp).slice(0, 6);
-
-  React.useEffect(() => {
-    if (emailParam) {
-      writePendingAuthEmail(emailParam);
-    }
-  }, [emailParam]);
 
   // Countdown
   const [tokenSentAt, setTokenSentAt] = React.useState(() =>

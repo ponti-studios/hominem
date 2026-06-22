@@ -30,7 +30,7 @@ export const typography = {
   lineHeights,
 } as const;
 
-export const lightTheme = {
+export const theme = {
   colors: colors,
   spacing: themeSpacing,
   borderRadii,
@@ -50,4 +50,4 @@ export function useThemeColors() {
   return colors;
 }
 
-export default lightTheme;
+export default theme;

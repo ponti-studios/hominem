@@ -21,6 +21,7 @@ export function useComposerController({
   onClearDraft,
 }: UseComposerControllerOptions) {
   const {
+    getMessage,
     message,
     setMessage,
     clearDraft: clearTextDraft,
@@ -42,7 +43,7 @@ export function useComposerController({
     isRecording,
     error: voiceError,
     clearError: clearVoiceError,
-  } = useVoiceComposerInput({ message, setMessage });
+  } = useVoiceComposerInput({ getMessage, setMessage });
 
   const {
     isEnhanceOpen,

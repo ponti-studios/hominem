@@ -29,6 +29,30 @@ import {
   getWorkspaceSettingsRoute,
 } from '~/services/workspace/routes';
 
+function resolveFeedReadySignature({
+  seed,
+  hasDraft,
+  consumeRestoreAttempt,
+}: {
+  seed?: string;
+  hasDraft: boolean;
+  consumeRestoreAttempt: () => boolean;
+}) {
+  if (seed) {
+    return `seed:${hasDraft ? 'draft' : 'empty'}`;
+  }
+
+  if (hasDraft) {
+    return 'default:draft';
+  }
+
+  if (consumeRestoreAttempt()) {
+    return 'default:empty';
+  }
+
+  return null;
+}
+
 export default function FeedScreen() {
   const styles = useStyles();
   const isFocused = useIsFocused();
@@ -47,29 +71,33 @@ export default function FeedScreen() {
   } = useInboxStreamItems({ enabled: isFocused });
   const listRef = useRef<FlashListRef<any>>(null);
   const searchInputRef = useRef<TextInput>(null);
+  const readySignatureRef = useRef<string | null>(null);
   const [activeTab, setActiveTab] = useState<WorkspaceHomeTab>('notes');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchVisible, setIsSearchVisible] = useState(false);
+  const feedDraft = readFeedDraft();
+  const hasFeedDraft = feedDraft.trim().length > 0;
 
   useTopAnchoredFeed({ listRef, headKey: items[0]?.id ?? null, isFocused });
 
   useEffect(() => {
-    if (!isFocused || params.seed) return;
-    if (!consumeWorkspaceRestoreAttempt()) return;
-    if (readFeedDraft().trim().length > 0) return;
-    recordWorkspaceScreenReady({ target: 'feed', restoreSource: 'default_feed' });
-  }, [isFocused, params.seed]);
-
-  useEffect(() => {
-    if (!isFocused) return;
-    if (params.seed) {
-      recordWorkspaceScreenReady({ target: 'feed', restoreSource: 'default_feed' });
+    if (!isFocused) {
+      readySignatureRef.current = null;
       return;
     }
-    if (readFeedDraft().trim().length > 0) {
-      recordWorkspaceScreenReady({ target: 'feed', restoreSource: 'default_feed' });
+
+    const readySignature = resolveFeedReadySignature({
+      seed: params.seed,
+      hasDraft: hasFeedDraft,
+      consumeRestoreAttempt: consumeWorkspaceRestoreAttempt,
+    });
+    if (!readySignature || readySignatureRef.current === readySignature) {
+      return;
     }
-  }, [isFocused, params.seed]);
+
+    readySignatureRef.current = readySignature;
+    recordWorkspaceScreenReady({ target: 'feed', restoreSource: 'default_feed' });
+  }, [hasFeedDraft, isFocused, params.seed]);
 
   const handleOpenSettings = useCallback(() => router.push(getWorkspaceSettingsRoute()), [router]);
 
@@ -143,7 +171,7 @@ export default function FeedScreen() {
           <Composer
             mode="feed"
             entryMode={activeTab === 'chats' ? 'chat' : 'note'}
-            initialMessage={readFeedDraft()}
+            initialMessage={feedDraft}
             onDraftChange={writeFeedDraft}
             onClearDraft={clearFeedDraft}
           />
