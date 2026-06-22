@@ -1,5 +1,6 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
-import { colors } from '@hominem/ui/tokens';
+
+const APP_THEME_BLACK = 'rgba(0, 0, 0, 1)';
 
 const EXPO_OWNER = 'pontistudios';
 const EXPO_PROJECT_ID = '4dfac82b-644f-4ff3-be42-e8f941287aa1';
@@ -154,7 +155,7 @@ export default ({ config }: ConfigContext) => {
     [
       'expo-splash-screen',
       {
-        backgroundColor: colors.black,
+        backgroundColor: APP_THEME_BLACK,
         image: brandAssets.splash,
         enableFullScreenImage_legacy: true,
         resizeMode: 'cover',
@@ -169,7 +170,7 @@ export default ({ config }: ConfigContext) => {
     [
       'expo-notifications',
       {
-        color: colors.black,
+        color: APP_THEME_BLACK,
       },
     ],
     [
