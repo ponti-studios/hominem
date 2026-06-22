@@ -10,7 +10,6 @@ import {
   replaceCachedInboxItems,
 } from '~/services/inbox/cache';
 import { inboxKeys } from '~/services/notes/query-keys';
-import { updateStartupContext } from '~/services/performance/startup-metrics';
 import {
   hasNonEmptyListData,
   resolveRestoredQueryState,
@@ -42,11 +41,6 @@ function toInboxStreamItem(item: InboxStreamItem): InboxStreamItemData {
 export function useInboxStreamItems({ enabled = true }: UseInboxStreamItemsOptions = {}) {
   const client = useApiClient();
   const cachedItems = readCachedInboxItems();
-
-  updateStartupContext({
-    inboxCacheHit: cachedItems.length > 0,
-    inboxItemCount: cachedItems.length,
-  });
 
   const inboxQuery = useInfiniteQuery<
     InboxOutput,

@@ -1,6 +1,6 @@
 import type { RelativePathString } from 'expo-router';
 import { Redirect, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Pressable,
@@ -71,10 +71,6 @@ function AuthScreen() {
     }),
     [emailIsValid],
   );
-
-  useEffect(() => {
-    posthog.capture('auth_screen_viewed');
-  }, []);
 
   const handleSendCode = useCallback(async () => {
     posthog.capture('auth_send_code_pressed');

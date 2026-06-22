@@ -1,6 +1,6 @@
 import type { FlashListRef } from '@shopify/flash-list';
-import { Stack, useIsFocused, useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Stack, useIsFocused, useRouter } from 'expo-router';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { RefreshControl, View } from 'react-native';
 import type { TextInput } from 'react-native';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
@@ -13,14 +13,12 @@ import { WorkspaceHomeList } from '~/components/workspace/WorkspaceHomeList';
 import { WorkspaceSearchModal } from '~/components/workspace/WorkspaceSearchModal';
 import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
 import { useInboxStreamItems } from '~/services/inbox/use-inbox-stream-items';
-import { recordWorkspaceScreenReady } from '~/services/performance/startup-metrics';
 import {
   buildWorkspaceHomeSections,
   type WorkspaceHomeTab,
 } from '~/services/workspace/home-screen-state';
 import {
   clearFeedDraft,
-  consumeWorkspaceRestoreAttempt,
   readFeedDraft,
   writeFeedDraft,
 } from '~/services/workspace/launch-state';
@@ -29,36 +27,11 @@ import {
   getWorkspaceSettingsRoute,
 } from '~/services/workspace/routes';
 
-function resolveFeedReadySignature({
-  seed,
-  hasDraft,
-  consumeRestoreAttempt,
-}: {
-  seed?: string;
-  hasDraft: boolean;
-  consumeRestoreAttempt: () => boolean;
-}) {
-  if (seed) {
-    return `seed:${hasDraft ? 'draft' : 'empty'}`;
-  }
-
-  if (hasDraft) {
-    return 'default:draft';
-  }
-
-  if (consumeRestoreAttempt()) {
-    return 'default:empty';
-  }
-
-  return null;
-}
-
 export default function FeedScreen() {
   const styles = useStyles();
   const isFocused = useIsFocused();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams<{ seed?: string }>();
   const {
     error,
     items,
@@ -71,33 +44,12 @@ export default function FeedScreen() {
   } = useInboxStreamItems({ enabled: isFocused });
   const listRef = useRef<FlashListRef<any>>(null);
   const searchInputRef = useRef<TextInput>(null);
-  const readySignatureRef = useRef<string | null>(null);
   const [activeTab, setActiveTab] = useState<WorkspaceHomeTab>('notes');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const feedDraft = readFeedDraft();
-  const hasFeedDraft = feedDraft.trim().length > 0;
 
   useTopAnchoredFeed({ listRef, headKey: items[0]?.id ?? null, isFocused });
-
-  useEffect(() => {
-    if (!isFocused) {
-      readySignatureRef.current = null;
-      return;
-    }
-
-    const readySignature = resolveFeedReadySignature({
-      seed: params.seed,
-      hasDraft: hasFeedDraft,
-      consumeRestoreAttempt: consumeWorkspaceRestoreAttempt,
-    });
-    if (!readySignature || readySignatureRef.current === readySignature) {
-      return;
-    }
-
-    readySignatureRef.current = readySignature;
-    recordWorkspaceScreenReady({ target: 'feed', restoreSource: 'default_feed' });
-  }, [hasFeedDraft, isFocused, params.seed]);
 
   const handleOpenSettings = useCallback(() => router.push(getWorkspaceSettingsRoute()), [router]);
 

@@ -32,7 +32,6 @@ import { useCreateChat } from '~/services/chat/use-create-chat';
 import { formatRelativeAge } from '~/services/date/format-relative-age';
 import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 import { chatKeys } from '~/services/notes/query-keys';
-import { recordWorkspaceScreenReady } from '~/services/performance/startup-metrics';
 import { writeWorkspaceResumeArtifact } from '~/services/workspace/launch-state';
 import { getWorkspaceArtifactRoute, getWorkspaceHomeRoute } from '~/services/workspace/routes';
 import t from '~/translations';
@@ -56,13 +55,6 @@ export function ChatDetailScreen() {
   const chatId = activeChat?.id ?? id;
   const [composerHeight, setComposerHeight] = useState(0);
   const homeRoute = getWorkspaceHomeRoute();
-
-  useEffect(() => {
-    recordWorkspaceScreenReady({
-      target: 'chat',
-      restoreSource: 'last_open_route',
-    });
-  }, []);
 
   const handleComposerLayout = useCallback((e: LayoutChangeEvent) => {
     const nextHeight = e.nativeEvent.layout.height;

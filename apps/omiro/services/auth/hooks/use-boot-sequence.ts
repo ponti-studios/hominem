@@ -16,7 +16,6 @@ import { getStoredSessionTokens } from '~/services/auth/boot-session-store';
 import { getBootProfile, upsertBootProfile } from '~/services/auth/boot-user-profile';
 import { clearPersistedSessionCookies } from '~/services/auth/session-cookie';
 import type { AuthContext } from '~/services/auth/types';
-import { markStartupPhase, updateStartupContext } from '~/services/performance/startup-metrics';
 
 export function useBootSequence(
   context: AuthContext,
@@ -34,8 +33,6 @@ export function useBootSequence(
 
       if (E2E_TESTING) {
         dispatch({ type: 'SESSION_EXPIRED' });
-        markStartupPhase('auth_boot_start');
-        markStartupPhase('auth_boot_resolved');
         hasBootstrappedRef.current = true;
         isBootingRef.current = false;
         return;
@@ -44,7 +41,6 @@ export function useBootSequence(
       const startedAt = Date.now();
       let restoredFromLocal = false;
 
-      markStartupPhase('auth_boot_start');
       markAuthPhaseStart('boot');
       recordAuthEvent('auth_boot_start', 'boot');
       captureAuthAnalyticsEvent('auth_boot_started', {
@@ -63,10 +59,6 @@ export function useBootSequence(
         if (storedSession) {
           restoredFromLocal = true;
           sessionCookieHeaderRef.current = storedSession.sessionCookieHeader;
-          updateStartupContext({
-            authRestoreSource: 'local',
-          });
-          markStartupPhase('local_auth_restored');
           dispatch({ type: 'SESSION_LOADED', user: storedSession.user });
           dispatch({ type: 'SYNC_STARTED' });
         }
@@ -86,10 +78,6 @@ export function useBootSequence(
 
         if (result.type === 'SESSION_LOADED') {
           sessionCookieHeaderRef.current = result.tokens.sessionCookieHeader;
-          updateStartupContext({
-            authRestoreSource: restoredFromLocal ? 'local' : 'network',
-            authValidationOutcome: 'loaded',
-          });
           dispatch({ type: 'SESSION_LOADED', user: result.user });
           recordAuthEvent('auth_boot_resolved:session_loaded', 'boot');
           captureAuthAnalyticsEvent('auth_boot_succeeded', {
@@ -98,10 +86,6 @@ export function useBootSequence(
             email: result.user.email,
           });
         } else {
-          updateStartupContext({
-            authRestoreSource: restoredFromLocal ? 'local' : 'none',
-            authValidationOutcome: 'signed_out',
-          });
           dispatch({ type: 'SESSION_EXPIRED' });
           recordAuthEvent('auth_boot_resolved:session_expired', 'boot');
           captureAuthAnalyticsEvent('auth_boot_signed_out', {
@@ -110,7 +94,6 @@ export function useBootSequence(
           });
         }
 
-        markStartupPhase('auth_boot_resolved');
         hasBootstrappedRef.current = true;
       } catch (error) {
         const resolvedError =
@@ -125,22 +108,12 @@ export function useBootSequence(
         });
 
         if (restoredFromLocal) {
-          updateStartupContext({
-            authRestoreSource: 'local',
-            authValidationOutcome: 'background_failed',
-          });
           dispatch({ type: 'SYNC_COMPLETED' });
-          markStartupPhase('auth_boot_resolved');
           hasBootstrappedRef.current = true;
           return;
         }
 
-        updateStartupContext({
-          authRestoreSource: 'none',
-          authValidationOutcome: 'degraded',
-        });
         dispatch({ type: 'SESSION_RECOVERY_FAILED', error: resolvedError });
-        markStartupPhase('auth_boot_resolved');
         hasBootstrappedRef.current = true;
       } finally {
         bootAbort.cleanup();

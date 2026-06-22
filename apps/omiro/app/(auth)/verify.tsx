@@ -158,10 +158,6 @@ function VerifyScreen() {
   );
 
   React.useEffect(() => {
-    posthog.capture('auth_verify_screen_viewed');
-  }, []);
-
-  React.useEffect(() => {
     const autoSubmitInput = resolveAutoSubmitInput({
       resolvedEmail,
       token: tokenParam,

@@ -24,13 +24,11 @@ import { useScreenCapture } from '~/hooks/use-screen-capture';
 import { resolveAuthRedirect } from '~/navigation/auth-route-guard';
 import { AuthProvider, useAuth } from '~/services/auth/auth-provider';
 import { initObservability } from '~/services/observability';
-import { markStartupPhase } from '~/services/performance/startup-metrics';
 import { POSTHOG_ENABLED, posthog } from '~/services/posthog';
 import queryClient from '~/services/query-client';
 import { recordActiveDay } from '~/services/review-prompt/review-prompt';
 
 SplashScreen.preventAutoHideAsync();
-markStartupPhase('app_start');
 
 const useInnerStyles = makeStyles((t) =>
   StyleSheet.create({
@@ -81,8 +79,6 @@ function InnerRootLayout() {
   const hasMarkedShellReady = React.useRef(false);
   const lastRedirectSignatureRef = React.useRef<string | null>(null);
   useEffect(() => {
-    markStartupPhase('root_layout_mounted');
-
     let hasHidden = false;
     const hide = () => {
       if (hasHidden) {
@@ -107,7 +103,6 @@ function InnerRootLayout() {
 
   useEffect(() => {
     if (!hasMarkedShellReady.current && authStatus !== 'booting') {
-      markStartupPhase('shell_ready');
       hasMarkedShellReady.current = true;
     }
 

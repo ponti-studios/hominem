@@ -18,7 +18,6 @@ import { useNoteEditor } from '~/hooks/use-note-editor';
 import { useNoteToolbar } from '~/hooks/use-note-toolbar';
 import { useInlineEnhance } from '~/services/ai';
 import { useNoteQuery } from '~/services/notes/use-note-query';
-import { recordWorkspaceScreenReady } from '~/services/performance/startup-metrics';
 import { writeWorkspaceResumeArtifact } from '~/services/workspace/launch-state';
 import { getWorkspaceHomeRoute } from '~/services/workspace/routes';
 import t from '~/translations';
@@ -81,13 +80,6 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
     closeEnhance,
     runEnhance,
   } = useInlineEnhance();
-
-  useEffect(() => {
-    recordWorkspaceScreenReady({
-      target: 'note',
-      restoreSource: 'last_open_route',
-    });
-  }, []);
 
   useEffect(() => {
     if (!note) {
