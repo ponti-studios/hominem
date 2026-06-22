@@ -25,12 +25,6 @@ interface InboxStreamProps {
 
 const keyExtractor = (item: InboxStreamItemModel) => `${item.kind}:${item.id}`;
 
-const RenderInboxStreamItem = memo(({ item }: { item: InboxStreamItemModel }) => {
-  return <InboxStreamItem item={item} />;
-});
-
-RenderInboxStreamItem.displayName = 'RenderInboxStreamItem';
-
 export const InboxStream = ({
   error,
   items,
@@ -54,7 +48,7 @@ export const InboxStream = ({
     : items;
 
   const renderItem = useCallback<ListRenderItem<InboxStreamItemModel>>(({ item }) => {
-    return <RenderInboxStreamItem item={item} />;
+    return <InboxStreamItem item={item} />;
   }, []);
 
   if (isLoading && filteredItems.length === 0) {
