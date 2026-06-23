@@ -6,8 +6,9 @@ import {
 import { font, frame, submitLabel, textFieldStyle } from '@expo/ui/swift-ui/modifiers';
 import { Image } from 'expo-image';
 import { Stack, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, TextInput, View } from 'react-native';
+import Markdown from 'react-native-markdown-display';
 
 import { InlineEnhanceTray } from '~/components/ai/InlineEnhanceTray';
 import { NOTE_TOOLBAR_ID, NoteToolbar } from '~/components/notes/NoteToolbar';
@@ -66,9 +67,10 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
   const router = useRouter();
   const contentInputRef = useRef<TextInput>(null);
   const homeRoute = getWorkspaceHomeRoute();
+  const titleState = useNativeState('');
+  const [isPreviewing, setIsPreviewing] = useState(false);
 
   const { data: note, error, isInitialLoading, isRefreshing, refetch } = useNoteQuery({ noteId });
-  const titleState = useNativeState('');
   const { save, updateCache, detachFile } = useNoteEditor(noteId);
   const {
     isEnhanceOpen,
@@ -82,18 +84,21 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
   } = useInlineEnhance();
 
   useEffect(() => {
+    titleState.set(note?.title ?? '');
+  }, [note?.title, titleState]);
+
+  useEffect(() => {
     if (!note) {
       return;
     }
 
-    titleState.set(note.title ?? '');
     writeWorkspaceResumeArtifact({
       kind: 'note',
       id: noteId,
       title: note.title?.trim() || t.notes.editor.titleFallback,
       updatedAt: note.updatedAt ?? null,
     });
-  }, [note, noteId, titleState]);
+  }, [note, noteId]);
 
   const toolbar = useNoteToolbar({
     content: note?.content ?? '',
@@ -211,6 +216,11 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
       </Stack.Toolbar>
       <Stack.Toolbar placement="right">
         <Stack.Toolbar.Button
+          accessibilityLabel={isPreviewing ? t.notes.editor.editMode : t.notes.editor.previewMode}
+          icon={isPreviewing ? 'pencil' : 'eye'}
+          onPress={() => setIsPreviewing((current) => !current)}
+        />
+        <Stack.Toolbar.Button
           accessibilityLabel="Enhance note"
           icon="wand.and.sparkles"
           onPress={toggleEnhance}
@@ -258,31 +268,39 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
 
         <View style={styles.divider} />
 
-        <TextInput
-          ref={contentInputRef}
-          multiline
-          value={note.content}
-          selection={toolbar.controlledSelection}
-          onChangeText={(value) => {
-            updateCache({ content: value });
-            toolbar.onTypingChange(value);
-            void save(
-              note.title,
-              value,
-              note.files.map((f) => f.id),
-            );
-          }}
-          onSelectionChange={toolbar.onSelectionChange}
-          placeholder={t.notes.editor.contentPlaceholder}
-          placeholderTextColor={themeColors['text-tertiary']}
-          cursorColor={themeColors.accent}
-          selectionColor={themeColors.accent}
-          style={styles.contentInput}
-          textAlignVertical="top"
-          scrollEnabled={false}
-          accessibilityLabel={t.notes.editor.contentA11yLabel}
-          inputAccessoryViewID={NOTE_TOOLBAR_ID}
-        />
+        {isPreviewing ? (
+          note.content.trim().length > 0 ? (
+            <Markdown style={markdownStyles(themeColors)}>{note.content}</Markdown>
+          ) : (
+            <Text style={styles.previewEmpty}>{t.notes.editor.previewEmpty}</Text>
+          )
+        ) : (
+          <TextInput
+            ref={contentInputRef}
+            multiline
+            value={note.content}
+            selection={toolbar.controlledSelection}
+            onChangeText={(value) => {
+              updateCache({ content: value });
+              toolbar.onTypingChange(value);
+              void save(
+                note.title,
+                value,
+                note.files.map((f) => f.id),
+              );
+            }}
+            onSelectionChange={toolbar.onSelectionChange}
+            placeholder={t.notes.editor.contentPlaceholder}
+            placeholderTextColor={themeColors['text-tertiary']}
+            cursorColor={themeColors.accent}
+            selectionColor={themeColors.accent}
+            style={styles.contentInput}
+            textAlignVertical="top"
+            scrollEnabled={false}
+            accessibilityLabel={t.notes.editor.contentA11yLabel}
+            inputAccessoryViewID={NOTE_TOOLBAR_ID}
+          />
+        )}
 
         {isEnhanceOpen ? (
           <InlineEnhanceTray
@@ -412,6 +430,11 @@ const useNoteStyles = makeStyles((theme) => ({
     paddingHorizontal: 0,
     minHeight: 240,
   },
+  previewEmpty: {
+    color: theme.colors['text-tertiary'],
+    fontStyle: 'italic',
+    minHeight: 240,
+  },
   filesSection: {
     marginTop: 24,
     gap: 8,
@@ -456,3 +479,47 @@ const useNoteStyles = makeStyles((theme) => ({
     opacity: 0.65,
   },
 }));
+
+function markdownStyles(colors: ReturnType<typeof useThemeColors>) {
+  return {
+    body: { color: colors.foreground, fontSize: 17, lineHeight: 28 },
+    heading1: { color: colors.foreground, fontSize: 24, fontWeight: '700' as const, marginTop: 12 },
+    heading2: { color: colors.foreground, fontSize: 20, fontWeight: '700' as const, marginTop: 10 },
+    heading3: { color: colors.foreground, fontSize: 18, fontWeight: '600' as const, marginTop: 8 },
+    strong: { color: colors.foreground, fontWeight: '700' as const },
+    em: { color: colors.foreground, fontStyle: 'italic' as const },
+    link: { color: colors.accent, textDecorationLine: 'underline' as const },
+    bullet_list: { marginVertical: 6 },
+    ordered_list: { marginVertical: 6 },
+    code_inline: {
+      color: colors.foreground,
+      backgroundColor: colors['bg-elevated'],
+      borderRadius: 4,
+      fontFamily: 'Menlo',
+      paddingHorizontal: 4,
+    },
+    code_block: {
+      color: colors.foreground,
+      backgroundColor: colors['bg-elevated'],
+      borderRadius: 8,
+      fontFamily: 'Menlo',
+      padding: 12,
+    },
+    fence: {
+      color: colors.foreground,
+      backgroundColor: colors['bg-elevated'],
+      borderRadius: 8,
+      fontFamily: 'Menlo',
+      padding: 12,
+    },
+    blockquote: {
+      color: colors['text-secondary'],
+      backgroundColor: 'transparent',
+      borderColor: colors['border-subtle'],
+      borderLeftWidth: 3,
+      marginVertical: 6,
+      paddingLeft: 12,
+    },
+    hr: { backgroundColor: colors['border-subtle'], height: 1, marginVertical: 12 },
+  };
+}

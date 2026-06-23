@@ -1,6 +1,5 @@
 import type { LinkDescriptor } from 'react-router';
 
-export * from './theme';
 export * from './tokens';
 export * from './translations';
 
