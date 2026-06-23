@@ -123,7 +123,7 @@ export function ComposerToolbar({
   );
 }
 
-const useStyles = makeStyles(() => ({
+const useStyles = makeStyles((theme) => ({
   toolbar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -138,7 +138,7 @@ const useStyles = makeStyles(() => ({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing[1],
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    backgroundColor: theme.colors['bg-surface'],
     borderRadius: 32,
     paddingHorizontal: spacing[1],
   },

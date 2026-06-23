@@ -1,38 +1,38 @@
 import { colors } from '../tokens';
 
 /**
- * Chart Colors for Kanso Monochrome Design System
+ * Chart Colors for Dark Luxury Design System
  *
  * Use these constants for consistent chart styling across the application.
- * All charts should use grayscale colors with semantic tokens for meaning.
+ * All colors reference the canonical color system for cohesion.
  */
 
 export const CHART_COLORS = {
-  /** Primary grayscale shades for multi-category charts */
-  chart1: 'rgba(255, 255, 255, 0.9)',
-  chart2: 'rgba(255, 255, 255, 0.7)',
-  chart3: 'rgba(255, 255, 255, 0.5)',
-  chart4: 'rgba(255, 255, 255, 0.3)',
-  chart5: 'rgba(255, 255, 255, 0.15)',
+  /** Primary luxury colors for multi-category charts */
+  chart1: colors['chart-1'],
+  chart2: colors['chart-2'],
+  chart3: colors['chart-3'],
+  chart4: colors['chart-4'],
+  chart5: colors['chart-5'],
 
   /** Semantic chart colors for meaning-based visualization */
-  positive: 'rgba(255, 255, 255, 0.7)', // income, growth, success
-  negative: colors.destructive, // expenses, decline, errors
-  neutral: 'rgba(255, 255, 255, 0.5)', // baseline, reference lines
+  positive: colors.success,
+  negative: colors.destructive,
+  neutral: colors['text-secondary'],
 
   /** Chart background and grid */
   background: colors['bg-base'],
-  grid: 'rgba(255, 255, 255, 0.1)',
+  grid: colors['border-subtle'],
 
   /** Axis and label colors */
-  axis: 'rgba(255, 255, 255, 0.4)',
-  label: 'rgba(255, 255, 255, 0.7)',
+  axis: colors['text-tertiary'],
+  label: colors['text-secondary'],
 
   /** Tooltip styling */
   tooltip: {
     background: colors['text-primary'],
     text: colors['bg-base'],
-    border: 'rgba(255, 255, 255, 0.2)',
+    border: colors['border-default'],
   },
 } as const;
 
