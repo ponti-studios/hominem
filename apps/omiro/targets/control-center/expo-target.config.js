@@ -4,4 +4,8 @@ module.exports = (config) => ({
   displayName: 'Omiro Control Center',
   deploymentTarget: '16.4',
   bundleIdentifier: '.ControlCenter',
+  buildSettings: {
+    CURRENT_PROJECT_VERSION: '$(inherited)',
+    MARKETING_VERSION: '$(inherited)',
+  },
 });
