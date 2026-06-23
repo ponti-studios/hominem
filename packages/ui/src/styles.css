@@ -37,78 +37,78 @@
   --letter-spacing-normal: 0;
   --letter-spacing-relaxed: 0.01em;
 
-  /* Luxury matte palette — LV/Hermès inspired */
-  --color-bg-base: #faf4ea; /* warm ivory */
-  --color-bg-surface: #f5ecd7; /* ivory */
-  --color-bg-elevated: #ede0cc; /* warm linen */
-  --color-bg-overlay: rgba(26, 18, 8, 0.06);
+  /* Dark luxury palette — heritage-inspired dark theme */
+  --color-bg-base: #141210; /* charcoal */
+  --color-bg-surface: #1a1714; /* dark brown */
+  --color-bg-elevated: #211d19; /* warm dark */
+  --color-bg-overlay: rgba(200, 168, 130, 0.06);
 
-  --color-text-primary: #1a1208; /* near-black */
-  --color-text-secondary: #5c3d2e; /* monogram brown */
-  --color-text-tertiary: #a0703a; /* saddle tan */
-  --color-text-disabled: #c8a882; /* canvas tan */
+  --color-text-primary: #faf4ea; /* warm ivory */
+  --color-text-secondary: #a07032; /* saddle tan */
+  --color-text-tertiary: #8b674f; /* warm brown */
+  --color-text-disabled: #68523c; /* muted brown */
 
-  --color-border-default: #e8d5b5; /* natural leather */
-  --color-border-subtle: rgba(232, 213, 181, 0.6);
-  --color-border-focus: rgba(92, 61, 46, 0.5); /* monogram brown */
+  --color-border-default: rgba(200, 168, 130, 0.3); /* canvas tan with opacity */
+  --color-border-subtle: rgba(200, 168, 130, 0.18);
+  --color-border-focus: rgba(200, 168, 130, 0.6); /* canvas tan */
 
-  --color-icon-primary: #1a1208;
-  --color-icon-muted: #a0703a; /* saddle tan */
+  --color-icon-primary: #faf4ea;
+  --color-icon-muted: #8b674f; /* warm brown */
 
   --color-success: #4a5c3c; /* cypress green */
-  --color-warning: #a0703a; /* saddle tan */
+  --color-warning: #a07032; /* saddle tan */
   --color-destructive: #8c1c1c; /* rouge casaque */
 
   --color-accent: #c8a882; /* canvas tan */
-  --color-accent-foreground: #1a1208;
+  --color-accent-foreground: #141210;
 
-  --color-primary: #1a1208; /* near-black */
-  --color-primary-foreground: #f5ecd7;
-  --color-secondary: #ede0cc; /* warm linen */
-  --color-secondary-foreground: #1a1208;
-  --color-muted: #f0e6d0; /* light ivory */
-  --color-muted-foreground: #a0703a; /* saddle tan */
-  --color-foreground: #1a1208;
-  --color-background: #faf4ea;
-  --color-card: #f5ecd7;
-  --color-card-foreground: #1a1208;
-  --color-destructive-foreground: #f5ecd7;
-  --color-popover: #f5ecd7;
-  --color-popover-foreground: #1a1208;
-  --color-input: #e8d5b5;
-  --color-ring: #5c3d2e; /* monogram brown */
-  --color-border: #e8d5b5;
+  --color-primary: #141210; /* charcoal */
+  --color-primary-foreground: #faf4ea;
+  --color-secondary: rgba(200, 168, 130, 0.18); /* canvas tan opacity */
+  --color-secondary-foreground: #faf4ea;
+  --color-muted: rgba(200, 168, 130, 0.12);
+  --color-muted-foreground: #a07032; /* saddle tan */
+  --color-foreground: #faf4ea;
+  --color-background: #141210;
+  --color-card: #1a1714;
+  --color-card-foreground: #faf4ea;
+  --color-destructive-foreground: #faf4ea;
+  --color-popover: #1a1714;
+  --color-popover-foreground: #faf4ea;
+  --color-input: #211d19;
+  --color-ring: #c8a882; /* canvas tan */
+  --color-border: rgba(200, 168, 130, 0.3);
 
-  --color-emphasis-highest: #1a1208; /* near-black */
-  --color-emphasis-high: #3d2010; /* chocolate */
-  --color-emphasis-medium: #5c3d2e; /* monogram brown */
-  --color-emphasis-low: #a0703a; /* saddle tan */
-  --color-emphasis-lower: #c8a882; /* canvas tan */
-  --color-emphasis-subtle: #e8d5b5; /* natural leather */
-  --color-emphasis-minimal: #f0e6d0; /* light ivory */
-  --color-emphasis-faint: #faf4ea; /* warm ivory */
+  --color-emphasis-highest: #faf4ea; /* warm ivory */
+  --color-emphasis-high: #e8d5b5; /* natural leather */
+  --color-emphasis-medium: #c8a882; /* canvas tan */
+  --color-emphasis-low: #a07032; /* saddle tan */
+  --color-emphasis-lower: #8b674f; /* warm brown */
+  --color-emphasis-subtle: rgba(200, 168, 130, 0.3);
+  --color-emphasis-minimal: rgba(200, 168, 130, 0.18);
+  --color-emphasis-faint: rgba(200, 168, 130, 0.06);
 
-  --color-chart-1: #1a1208; /* near-black */
-  --color-chart-2: #3d2010; /* chocolate */
-  --color-chart-3: #5c3d2e; /* monogram brown */
-  --color-chart-4: #c8a882; /* canvas tan */
-  --color-chart-5: #e8d5b5; /* natural */
+  --color-chart-1: #c8a882; /* canvas tan */
+  --color-chart-2: #4a5c3c; /* cypress green */
+  --color-chart-3: #8b674f; /* warm brown */
+  --color-chart-4: #a07032; /* saddle tan */
+  --color-chart-5: rgba(200, 168, 130, 0.6);
   --color-chart-positive: #4a5c3c;
   --color-chart-negative: #8c1c1c;
-  --color-chart-neutral: #a0703a;
+  --color-chart-neutral: #a07032;
 
-  --color-sidebar: #f5ecd7;
-  --color-sidebar-foreground: #1a1208;
-  --color-sidebar-primary: #1a1208;
-  --color-sidebar-primary-foreground: #f5ecd7;
-  --color-sidebar-accent: rgba(26, 18, 8, 0.06);
-  --color-sidebar-accent-foreground: #1a1208;
-  --color-sidebar-border: #e8d5b5;
-  --color-sidebar-ring: #5c3d2e;
+  --color-sidebar: #1a1714;
+  --color-sidebar-foreground: #faf4ea;
+  --color-sidebar-primary: #c8a882;
+  --color-sidebar-primary-foreground: #141210;
+  --color-sidebar-accent: rgba(200, 168, 130, 0.12);
+  --color-sidebar-accent-foreground: #faf4ea;
+  --color-sidebar-border: rgba(200, 168, 130, 0.18);
+  --color-sidebar-ring: #c8a882;
 
-  --color-prompt-bg: #f5ecd7;
-  --color-prompt-border: #e8d5b5;
-  --color-prompt-border-focus: rgba(92, 61, 46, 0.5);
+  --color-prompt-bg: #211d19;
+  --color-prompt-border: rgba(200, 168, 130, 0.3);
+  --color-prompt-border-focus: rgba(200, 168, 130, 0.6);
   --color-interaction-hover-bg: color-mix(in srgb, var(--color-accent) 28%, transparent);
   --color-interaction-hover-border: color-mix(in srgb, var(--color-border-focus) 56%, transparent);
   --color-interaction-hover-text: var(--color-foreground);
@@ -134,9 +134,9 @@
   --radius-icon: 22%;
   --radius: 4px;
 
-  --shadow-low: 0 1px 3px rgba(26, 18, 8, 0.06), 0 1px 2px rgba(26, 18, 8, 0.04);
-  --shadow-medium: 0 4px 16px rgba(26, 18, 8, 0.08), 0 2px 4px rgba(26, 18, 8, 0.04);
-  --shadow-high: 0 16px 48px rgba(26, 18, 8, 0.1), 0 4px 12px rgba(26, 18, 8, 0.06);
+  --shadow-low: 0 1px 3px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.12);
+  --shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.24), 0 2px 4px rgba(0, 0, 0, 0.12);
+  --shadow-high: 0 16px 48px rgba(0, 0, 0, 0.32), 0 4px 12px rgba(0, 0, 0, 0.18);
 
   --duration-fast: 120ms;
   --duration-default: 200ms;
