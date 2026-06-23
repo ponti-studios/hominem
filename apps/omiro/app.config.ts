@@ -1,6 +1,6 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 
-const APP_THEME_CHARCOAL = 'rgba(20, 18, 16, 1)';
+const APP_THEME_COLOR = '#FCF1E8';
 
 const EXPO_OWNER = 'pontistudios';
 const EXPO_PROJECT_ID = '4dfac82b-644f-4ff3-be42-e8f941287aa1';
@@ -155,7 +155,7 @@ export default ({ config }: ConfigContext) => {
     [
       'expo-splash-screen',
       {
-        backgroundColor: APP_THEME_CHARCOAL,
+        backgroundColor: APP_THEME_COLOR,
         image: brandAssets.splash,
         enableFullScreenImage_legacy: true,
         resizeMode: 'cover',
@@ -170,7 +170,7 @@ export default ({ config }: ConfigContext) => {
     [
       'expo-notifications',
       {
-        color: APP_THEME_CHARCOAL,
+        color: APP_THEME_COLOR,
       },
     ],
     [
