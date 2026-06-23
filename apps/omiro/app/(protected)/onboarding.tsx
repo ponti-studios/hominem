@@ -107,7 +107,7 @@ const Onboarding = () => {
           />
 
           {hasError ? (
-            <Text style={[styles.errorText, { color: '#FF5A5F' }]}>{t.onboarding.nameError}</Text>
+            <Text style={[styles.errorText, { color: '#8c1c1c' }]}>{t.onboarding.nameError}</Text>
           ) : null}
 
           <Button

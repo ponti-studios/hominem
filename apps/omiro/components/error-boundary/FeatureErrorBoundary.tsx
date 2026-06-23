@@ -45,7 +45,7 @@ function FeatureFallback({
         <AppIcon
           name="exclamationmark.triangle.fill"
           size={componentSizes.lg}
-          tintColor="#FF7B5C"
+          tintColor={themeColors.destructive}
         />
         <Text style={[styles.title, { color: themeColors.foreground }]}>Something went wrong</Text>
         <Text style={[styles.message, { color: themeColors['text-secondary'] }]}>

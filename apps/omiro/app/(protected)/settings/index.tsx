@@ -383,12 +383,12 @@ const styles = StyleSheet.create({
     minHeight: 40,
   },
   deleteActionText: {
-    color: '#FF5A5F',
+    color: '#8c1c1c',
     fontSize: 16,
     fontWeight: '500',
   },
   errorText: {
-    color: '#FF5A5F',
+    color: '#8c1c1c',
   },
   inlineInput: {
     borderRadius: 12,
@@ -405,7 +405,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   removeText: {
-    color: '#FF5A5F',
+    color: '#8c1c1c',
     fontSize: 14,
     fontWeight: '500',
   },

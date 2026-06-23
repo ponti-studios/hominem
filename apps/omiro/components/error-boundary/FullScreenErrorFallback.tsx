@@ -31,7 +31,7 @@ export function FullScreenErrorFallback({
         <AppIcon
           name="exclamationmark.triangle.fill"
           size={componentSizes.lg}
-          tintColor="#FF7B5C"
+          tintColor={themeColors.destructive}
         />
         <Text style={[styles.title, { color: themeColors.foreground }]}>
           {t.errors.somethingWentWrong}

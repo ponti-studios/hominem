@@ -74,10 +74,10 @@ export const links = () => [
 
 export const meta = () => [
   // Theme Color
-  { name: 'theme-color', content: '#111113' },
+  { name: 'theme-color', content: '#141210' },
 
   // Microsoft Tile Icons
-  { name: 'msapplication-TileColor', content: '#111113' },
+  { name: 'msapplication-TileColor', content: '#141210' },
   { name: 'msapplication-TileImage', content: '/icons/ms-icon-144x144.png' },
   { name: 'msapplication-square70x70logo', content: '/icons/ms-icon-70x70.png' },
   { name: 'msapplication-square150x150logo', content: '/icons/ms-icon-150x150.png' },
