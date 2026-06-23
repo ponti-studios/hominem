@@ -1,5 +1,5 @@
 import { db } from '@hominem/db';
-import { logger, LOG_MESSAGES } from '@hominem/telemetry';
+import { logger } from '@hominem/utils/logger';
 import { Hono } from 'hono';
 
 import { UnavailableError } from '../errors';
@@ -11,7 +11,7 @@ export const statusRoutes = new Hono<AppEnv>();
 statusRoutes.get('/', async (c) => {
   try {
     // Simple health check using selectFrom
-    await db.selectFrom('user').select('id').limit(1).executeTakeFirst();
+    await db.selectFrom('users').select('id').limit(1).executeTakeFirst();
 
     return c.json({
       status: 'ok',
@@ -20,7 +20,7 @@ statusRoutes.get('/', async (c) => {
       database: 'connected',
     });
   } catch (err) {
-    logger.error(LOG_MESSAGES.HEALTH_CHECK_FAILED, { error: err });
+    logger.error('Health check failed', { error: err });
     throw new UnavailableError('Health check failed', {
       status: 'error',
       serverTime: new Date().toISOString(),

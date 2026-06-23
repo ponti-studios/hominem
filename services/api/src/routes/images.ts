@@ -1,25 +1,13 @@
 import { createHash } from 'crypto';
 
-import { redis as cache } from '@hominem/services/redis';
-import { logger } from '@hominem/telemetry';
+import { isValidGoogleHost } from '@hominem/utils/google';
+import { logger } from '@hominem/utils/logger';
 import type { Context } from 'hono';
 import { Hono } from 'hono';
 
-import { ForbiddenError, InternalError, UnavailableError, ValidationError } from '../errors';
+import { ValidationError, ForbiddenError, UnavailableError, InternalError } from '../errors';
+import { cache } from '../lib/redis';
 import type { AppEnv } from '../server';
-
-function isValidGoogleHost(input: string): boolean {
-  try {
-    const parsed = new URL(input);
-    const hostname = parsed.hostname.toLowerCase();
-    const allowedBaseDomains = ['googleapis.com', 'googleusercontent.com'];
-    return allowedBaseDomains.some((base) => {
-      return hostname === base || hostname.endsWith(`.${base}`);
-    });
-  } catch {
-    return false;
-  }
-}
 
 export const imagesRoutes = new Hono<AppEnv>();
 
@@ -45,8 +33,6 @@ function setResponseHeaders(
     cacheStatus?: 'hit' | 'miss';
   },
 ) {
-  // This public proxy is intentionally fetchable from any origin so browsers can load
-  // proxied Google-hosted images without inheriting the app-level API CORS allowlist.
   c.header('Access-Control-Allow-Origin', '*');
   c.header('Access-Control-Allow-Methods', 'GET');
   c.header('Content-Type', options.contentType);
@@ -65,9 +51,6 @@ function setResponseHeaders(
 /**
  * Proxy endpoint for external images to avoid CORB/CORS issues
  * Usage: /api/images/proxy?url=<encoded-image-url>
- *
- * This route intentionally serves public image bytes with wildcard CORS and stays restricted
- * by host allowlisting instead of the server-level origin allowlist.
  *
  * Note: This endpoint returns binary image data on success, not ApiResult.
  * Errors use ApiResult format for consistency.
