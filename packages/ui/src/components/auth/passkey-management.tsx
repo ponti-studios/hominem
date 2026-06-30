@@ -1,7 +1,7 @@
-import { KeyRound, Plus, Trash2 } from "lucide-react";
-import { useCallback, useState } from "react";
+import { KeyRound, Plus, Trash2 } from 'lucide-react';
+import { useCallback, useState } from 'react';
 
-import { Button } from "../button";
+import { Button } from '../button';
 
 export interface PasskeyRecord {
   id: string;
@@ -37,10 +37,10 @@ export function PasskeyManagement({
     try {
       const success = await onAdd();
       if (!success) {
-        setActionError("Passkey registration was cancelled or failed.");
+        setActionError('Passkey registration was cancelled or failed.');
       }
     } catch {
-      setActionError("An error occurred during passkey registration.");
+      setActionError('An error occurred during passkey registration.');
     } finally {
       setAdding(false);
     }
@@ -53,10 +53,10 @@ export function PasskeyManagement({
       try {
         const success = await onDelete(id);
         if (!success) {
-          throw new Error("Failed to delete passkey");
+          throw new Error('Failed to delete passkey');
         }
       } catch {
-        setActionError("Could not delete passkey. Please try again.");
+        setActionError('Could not delete passkey. Please try again.');
       } finally {
         setDeletingId(null);
       }
@@ -84,7 +84,7 @@ export function PasskeyManagement({
           aria-label="Add a passkey"
         >
           <Plus className="size-4" aria-hidden />
-          {adding ? "Adding..." : "Add passkey"}
+          {adding ? 'Adding...' : 'Add passkey'}
         </Button>
       </div>
 
@@ -111,7 +111,7 @@ export function PasskeyManagement({
               <div className="flex items-center gap-3">
                 <KeyRound className="text-text-secondary size-4 shrink-0" aria-hidden />
                 <div>
-                  <span className="font-medium">{pk.name ?? "Passkey"}</span>
+                  <span className="font-medium">{pk.name ?? 'Passkey'}</span>
                   {pk.createdAt ? (
                     <span className="text-text-tertiary ml-2 text-xs">
                       Added {new Date(pk.createdAt).toLocaleDateString()}

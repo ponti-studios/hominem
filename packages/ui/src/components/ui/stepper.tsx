@@ -1,8 +1,8 @@
-import * as React from "react";
-import { Minus, Plus } from "lucide-react";
+import { Minus, Plus } from 'lucide-react';
+import * as React from 'react';
 
-import { cn } from "../../lib/utils";
-import { Button } from "./button";
+import { cn } from '../../lib/utils';
+import { Button } from './button';
 
 interface StepperProps {
   value: number;
@@ -26,14 +26,14 @@ function Stepper({
   onChange,
   className,
   disabled,
-  increaseLabel = "Increase",
-  decreaseLabel = "Decrease",
+  increaseLabel = 'Increase',
+  decreaseLabel = 'Decrease',
 }: StepperProps) {
   const atMin = value <= min;
   const atMax = value >= max;
 
   return (
-    <div className={cn("border-border bg-muted flex items-center rounded-lg border", className)}>
+    <div className={cn('border-border bg-muted flex items-center rounded-lg border', className)}>
       <Button
         type="button"
         variant="ghost"

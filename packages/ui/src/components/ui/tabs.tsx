@@ -1,7 +1,7 @@
-import * as TabsPrimitive from "@radix-ui/react-tabs";
-import * as React from "react";
+import * as TabsPrimitive from '@radix-ui/react-tabs';
+import * as React from 'react';
 
-import { cn } from "../../lib/utils";
+import { cn } from '../../lib/utils';
 
 function Tabs({ ...props }: React.ComponentProps<typeof TabsPrimitive.Root>) {
   return <TabsPrimitive.Root data-slot="tabs" {...props} />;
@@ -19,7 +19,7 @@ const TabsList = React.forwardRef<TabsListElement, TabsListProps>(function TabsL
   const indicatorOffsetY = -1;
   const [indicatorStyle, setIndicatorStyle] = React.useState<React.CSSProperties>({
     opacity: 0,
-    transform: "translate3d(0, 0, 0)",
+    transform: 'translate3d(0, 0, 0)',
     width: 0,
     height: 0,
   });
@@ -27,7 +27,7 @@ const TabsList = React.forwardRef<TabsListElement, TabsListProps>(function TabsL
   const setRefs = React.useCallback(
     (node: TabsListElement | null) => {
       listRef.current = node;
-      if (typeof ref === "function") {
+      if (typeof ref === 'function') {
         ref(node);
       } else if (ref) {
         ref.current = node;
@@ -90,18 +90,18 @@ const TabsList = React.forwardRef<TabsListElement, TabsListProps>(function TabsL
     const mutationObserver = new MutationObserver(schedule);
     mutationObserver.observe(list, {
       attributes: true,
-      attributeFilter: ["data-state", "class", "style"],
+      attributeFilter: ['data-state', 'class', 'style'],
       childList: true,
       subtree: true,
     });
 
-    window.addEventListener("resize", schedule);
+    window.addEventListener('resize', schedule);
 
     return () => {
       cancelAnimationFrame(frame);
       resizeObserver.disconnect();
       mutationObserver.disconnect();
-      window.removeEventListener("resize", schedule);
+      window.removeEventListener('resize', schedule);
     };
   }, [syncIndicator]);
 
@@ -110,7 +110,7 @@ const TabsList = React.forwardRef<TabsListElement, TabsListProps>(function TabsL
       ref={setRefs}
       data-slot="tabs-list"
       className={cn(
-        "border-border bg-secondary/30 text-secondary-foreground relative isolate inline-flex h-9 items-center justify-center rounded-lg border p-1",
+        'border-border bg-secondary/30 text-secondary-foreground relative isolate inline-flex h-9 items-center justify-center rounded-lg border p-1',
         className,
       )}
       {...props}
@@ -124,14 +124,14 @@ const TabsList = React.forwardRef<TabsListElement, TabsListProps>(function TabsL
     </TabsPrimitive.List>
   );
 });
-TabsList.displayName = "TabsList";
+TabsList.displayName = 'TabsList';
 
 function TabsTrigger({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Trigger>) {
   return (
     <TabsPrimitive.Trigger
       data-slot="tabs-trigger"
       className={cn(
-        "text-secondary-foreground focus-visible:border-foreground focus-visible:text-foreground data-[state=active]:text-foreground relative z-10 inline-flex min-h-6 items-center justify-center rounded-md border border-transparent px-3 py-1 text-sm font-medium whitespace-nowrap transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50",
+        'text-secondary-foreground focus-visible:border-foreground focus-visible:text-foreground data-[state=active]:text-foreground relative z-10 inline-flex min-h-6 items-center justify-center rounded-md border border-transparent px-3 py-1 text-sm font-medium whitespace-nowrap transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50',
         className,
       )}
       {...props}
@@ -144,7 +144,7 @@ function TabsContent({ className, ...props }: React.ComponentProps<typeof TabsPr
     <TabsPrimitive.Content
       data-slot="tabs-content"
       className={cn(
-        "focus-visible:border-border focus-visible:bg-accent/10 mt-2 rounded-md focus-visible:border focus-visible:outline-none",
+        'focus-visible:border-border focus-visible:bg-accent/10 mt-2 rounded-md focus-visible:border focus-visible:outline-none',
         className,
       )}
       {...props}

@@ -1,8 +1,8 @@
-import { Command as CommandPrimitive } from "cmdk";
-import { SearchIcon } from "lucide-react";
-import * as React from "react";
+import { Command as CommandPrimitive } from 'cmdk';
+import { SearchIcon } from 'lucide-react';
+import * as React from 'react';
 
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './dialog';
 
 function Command(props: React.ComponentProps<typeof CommandPrimitive>) {
   return (
@@ -15,12 +15,12 @@ function Command(props: React.ComponentProps<typeof CommandPrimitive>) {
 }
 
 function CommandDialog({
-  title = "Command Palette",
-  description = "Search for a command to run...",
+  title = 'Command Palette',
+  description = 'Search for a command to run...',
   children,
   showCloseButton = true,
   ...props
-}: Omit<React.ComponentProps<typeof Dialog>, "children"> & {
+}: Omit<React.ComponentProps<typeof Dialog>, 'children'> & {
   title?: string;
   description?: string;
   showCloseButton?: boolean;
@@ -102,7 +102,7 @@ function CommandItem(props: React.ComponentProps<typeof CommandPrimitive.Item>) 
   );
 }
 
-function CommandShortcut(props: React.ComponentProps<"span">) {
+function CommandShortcut(props: React.ComponentProps<'span'>) {
   return (
     <span
       data-slot="command-shortcut"
@@ -112,7 +112,7 @@ function CommandShortcut(props: React.ComponentProps<"span">) {
   );
 }
 
-function CommandListLoading(props: React.ComponentProps<"div">) {
+function CommandListLoading(props: React.ComponentProps<'div'>) {
   return <div data-slot="command-list-loading" className="py-6 text-center text-sm" {...props} />;
 }
 

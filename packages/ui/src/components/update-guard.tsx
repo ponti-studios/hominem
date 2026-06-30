@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import type { ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 
 interface RegisterSWOptions {
   onRegistered?: (registration: ServiceWorkerRegistration | undefined) => void;
@@ -21,18 +21,18 @@ function useRegisterSW(options?: RegisterSWOptions): RegisterSWResult {
   const hasReloadedRef = useRef(false);
   const onRegisteredRef = useRef(options?.onRegistered);
   const onRegisterErrorRef = useRef(options?.onRegisterError);
-  const serviceWorkerPathRef = useRef(options?.serviceWorkerPath ?? "/sw.js");
+  const serviceWorkerPathRef = useRef(options?.serviceWorkerPath ?? '/sw.js');
 
   useEffect(() => {
     onRegisteredRef.current = options?.onRegistered;
     onRegisterErrorRef.current = options?.onRegisterError;
-    serviceWorkerPathRef.current = options?.serviceWorkerPath ?? "/sw.js";
+    serviceWorkerPathRef.current = options?.serviceWorkerPath ?? '/sw.js';
   }, [options?.onRegistered, options?.onRegisterError, options?.serviceWorkerPath]);
 
   useEffect(() => {
     if (
-      typeof window === "undefined" ||
-      !("serviceWorker" in navigator) ||
+      typeof window === 'undefined' ||
+      !('serviceWorker' in navigator) ||
       !window.isSecureContext
     ) {
       return;
@@ -49,7 +49,7 @@ function useRegisterSW(options?: RegisterSWOptions): RegisterSWResult {
       window.location.reload();
     };
 
-    navigator.serviceWorker.addEventListener("controllerchange", handleControllerChange);
+    navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
 
     const handleWaitingServiceWorker = (registration: ServiceWorkerRegistration) => {
       registrationRef.current = registration;
@@ -84,14 +84,14 @@ function useRegisterSW(options?: RegisterSWOptions): RegisterSWResult {
         handleWaitingServiceWorker(registration);
       }
 
-      registration.addEventListener("updatefound", () => {
+      registration.addEventListener('updatefound', () => {
         const installingWorker = registration.installing;
         if (!installingWorker) {
           return;
         }
 
-        installingWorker.addEventListener("statechange", () => {
-          if (installingWorker.state === "installed") {
+        installingWorker.addEventListener('statechange', () => {
+          if (installingWorker.state === 'installed') {
             handleInstalledServiceWorker(registration);
           }
         });
@@ -122,7 +122,7 @@ function useRegisterSW(options?: RegisterSWOptions): RegisterSWResult {
 
     return () => {
       isMounted = false;
-      navigator.serviceWorker.removeEventListener("controllerchange", handleControllerChange);
+      navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
     };
   }, []);
 
@@ -131,27 +131,27 @@ function useRegisterSW(options?: RegisterSWOptions): RegisterSWResult {
     needRefresh: [needRefresh, setNeedRefresh],
     updateServiceWorker: (reload = true) => {
       shouldReloadRef.current = reload;
-      registrationRef.current?.waiting?.postMessage({ type: "SKIP_WAITING" });
+      registrationRef.current?.waiting?.postMessage({ type: 'SKIP_WAITING' });
     },
   };
 }
 
 function subscribeOnline(onStoreChange: () => void) {
-  if (typeof window === "undefined") {
+  if (typeof window === 'undefined') {
     return () => {};
   }
 
-  window.addEventListener("online", onStoreChange);
-  window.addEventListener("offline", onStoreChange);
+  window.addEventListener('online', onStoreChange);
+  window.addEventListener('offline', onStoreChange);
 
   return () => {
-    window.removeEventListener("online", onStoreChange);
-    window.removeEventListener("offline", onStoreChange);
+    window.removeEventListener('online', onStoreChange);
+    window.removeEventListener('offline', onStoreChange);
   };
 }
 
 function getOnlineSnapshot() {
-  if (typeof navigator === "undefined") {
+  if (typeof navigator === 'undefined') {
     return true;
   }
 
@@ -180,10 +180,10 @@ function UpdateGuardClient({
   hasStaleData = false,
   hideInDev = true,
   copy,
-}: Omit<UpdateGuardProps, "children">) {
+}: Omit<UpdateGuardProps, 'children'>) {
   const isDev =
-    typeof import.meta !== "undefined" &&
-    typeof import.meta.env !== "undefined" &&
+    typeof import.meta !== 'undefined' &&
+    typeof import.meta.env !== 'undefined' &&
     Boolean(import.meta.env.DEV);
 
   const {
@@ -205,8 +205,8 @@ function UpdateGuardClient({
     }
 
     return hasStaleData
-      ? (copy?.offlineStaleMessage ?? "Offline - showing cached data where available")
-      : (copy?.offlineMessage ?? "Offline - data may be unavailable");
+      ? (copy?.offlineStaleMessage ?? 'Offline - showing cached data where available')
+      : (copy?.offlineMessage ?? 'Offline - data may be unavailable');
   }, [copy?.offlineMessage, copy?.offlineStaleMessage, hasStaleData, isOnline]);
 
   if (hideInDev && isDev) {
@@ -228,8 +228,8 @@ function UpdateGuardClient({
           <div className="border-default bg-surface flex items-center gap-3 rounded-md border px-4 py-2">
             <span className="text-text-primary text-sm">
               {offlineReady
-                ? (copy?.offlineReady ?? "App ready to work offline")
-                : (copy?.newContentAvailable ?? "New content available")}
+                ? (copy?.offlineReady ?? 'App ready to work offline')
+                : (copy?.newContentAvailable ?? 'New content available')}
             </span>
             {needRefresh ? (
               <button
@@ -237,11 +237,11 @@ function UpdateGuardClient({
                 onClick={() => updateServiceWorker(true)}
                 className="text-accent text-sm font-semibold"
               >
-                {copy?.refreshButton ?? "Refresh"}
+                {copy?.refreshButton ?? 'Refresh'}
               </button>
             ) : null}
             <button type="button" onClick={closePrompt} className="text-text-secondary text-sm">
-              {copy?.closeButton ?? "Close"}
+              {copy?.closeButton ?? 'Close'}
             </button>
           </div>
         </div>
@@ -257,7 +257,7 @@ export function UpdateGuard({
   hideInDev = true,
   copy,
 }: UpdateGuardProps) {
-  const isClient = typeof window !== "undefined";
+  const isClient = typeof window !== 'undefined';
 
   return (
     <>

@@ -1,21 +1,21 @@
-import { cn } from "../lib/utils";
+import { cn } from '../lib/utils';
 
 interface LoadingSpinnerProps {
-  variant?: "sm" | "md" | "lg" | "xl";
+  variant?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
 const sizeClasses = {
-  sm: "loading-size-sm",
-  md: "loading-size-md",
-  lg: "loading-size-lg",
-  xl: "loading-size-xl",
-} satisfies Record<NonNullable<LoadingSpinnerProps["variant"]>, string>;
+  sm: 'loading-size-sm',
+  md: 'loading-size-md',
+  lg: 'loading-size-lg',
+  xl: 'loading-size-xl',
+} satisfies Record<NonNullable<LoadingSpinnerProps['variant']>, string>;
 
-export function LoadingSpinner({ variant = "md" }: LoadingSpinnerProps) {
+export function LoadingSpinner({ variant = 'md' }: LoadingSpinnerProps) {
   return (
     <span
       className={cn(
-        "relative inline-flex shrink-0 items-center justify-center overflow-hidden align-middle",
+        'relative inline-flex shrink-0 items-center justify-center overflow-hidden align-middle',
         sizeClasses[variant],
       )}
       aria-label="Loading"

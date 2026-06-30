@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useReducedMotion } from "framer-motion";
-import * as React from "react";
+import { useReducedMotion } from 'framer-motion';
+import * as React from 'react';
 
-import { cn } from "../../lib/utils";
+import { cn } from '../../lib/utils';
 
 interface Particle {
   x: number;
@@ -18,7 +18,7 @@ export interface ParticleBackgroundPalette {
   link: string;
 }
 
-export interface ParticleBackgroundProps extends React.ComponentProps<"div"> {
+export interface ParticleBackgroundProps extends React.ComponentProps<'div'> {
   enabled?: boolean;
   interactive?: boolean;
   particleCount?: number;
@@ -39,22 +39,22 @@ const DEFAULT_ATTRACT_RADIUS = 180;
 const DEFAULT_VELOCITY = 0.18;
 
 const DEFAULT_PALETTE = {
-  particle: "15,23,42",
-  link: "15,23,42",
+  particle: '15,23,42',
+  link: '15,23,42',
 };
 
 function useResolvedTheme() {
-  const [resolvedTheme, setResolvedTheme] = React.useState<"light" | "dark">("light");
+  const [resolvedTheme, setResolvedTheme] = React.useState<'light' | 'dark'>('light');
 
   React.useEffect(() => {
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const resolve = () => setResolvedTheme(media.matches ? "dark" : "light");
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const resolve = () => setResolvedTheme(media.matches ? 'dark' : 'light');
 
     resolve();
-    media.addEventListener("change", resolve);
+    media.addEventListener('change', resolve);
 
     return () => {
-      media.removeEventListener("change", resolve);
+      media.removeEventListener('change', resolve);
     };
   }, []);
 
@@ -88,7 +88,7 @@ export function ParticleBackground({
     const canvasEl = canvasRef.current;
     if (!canvasEl) return;
 
-    const ctx = canvasEl.getContext("2d");
+    const ctx = canvasEl.getContext('2d');
     if (!ctx) return;
 
     const canvas = canvasEl;
@@ -117,7 +117,7 @@ export function ParticleBackground({
         y: Math.random() * rect.height,
         vx: (Math.random() - 0.5) * velocity,
         vy: (Math.random() - 0.5) * velocity,
-        opacity: Math.random() * (resolvedTheme === "dark" ? 0.045 : 0.035) + 0.02,
+        opacity: Math.random() * (resolvedTheme === 'dark' ? 0.045 : 0.035) + 0.02,
       }));
     }
 
@@ -165,7 +165,7 @@ export function ParticleBackground({
           const dist = Math.sqrt(dx * dx + dy * dy);
 
           if (dist < maxLinkDistance) {
-            const alpha = (1 - dist / maxLinkDistance) * (resolvedTheme === "dark" ? 0.04 : 0.03);
+            const alpha = (1 - dist / maxLinkDistance) * (resolvedTheme === 'dark' ? 0.04 : 0.03);
             context.beginPath();
             context.moveTo(p.x, p.y);
             context.lineTo(q.x, q.y);
@@ -194,17 +194,17 @@ export function ParticleBackground({
     };
 
     if (interactive) {
-      canvas.addEventListener("mousemove", onMouseMove);
-      canvas.addEventListener("mouseleave", onMouseLeave);
-      document.addEventListener("mousemove", onMouseMove);
+      canvas.addEventListener('mousemove', onMouseMove);
+      canvas.addEventListener('mouseleave', onMouseLeave);
+      document.addEventListener('mousemove', onMouseMove);
     }
 
     return () => {
       cancelAnimationFrame(raf.current);
       ro.disconnect();
-      document.removeEventListener("mousemove", onMouseMove);
-      canvas.removeEventListener("mousemove", onMouseMove);
-      canvas.removeEventListener("mouseleave", onMouseLeave);
+      document.removeEventListener('mousemove', onMouseMove);
+      canvas.removeEventListener('mousemove', onMouseMove);
+      canvas.removeEventListener('mouseleave', onMouseLeave);
     };
   }, [
     attractRadius,
@@ -224,7 +224,7 @@ export function ParticleBackground({
 
   return (
     <div
-      className={cn("pointer-events-none absolute inset-0 overflow-hidden", className)}
+      className={cn('pointer-events-none absolute inset-0 overflow-hidden', className)}
       aria-hidden="true"
       {...props}
     >

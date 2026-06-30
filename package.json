@@ -21,9 +21,16 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
+    "dev:career": "turbo run dev --filter=@hominem/career",
+    "dev:omiro": "turbo run dev --filter=@hominem/omiro",
+    "dev:api": "turbo run dev --filter=@hominem/api",
     "lint": "turbo run lint",
     "format": "turbo run format",
+    "precommit": "pnpm run format && pnpm run lint",
+    "prepush": "pnpm test",
+    "test": "turbo run test",
     "typecheck": "turbo run typecheck",
+    "knip": "knip",
     "check": "turbo run typecheck lint build test --concurrency 1 --force"
   },
   "devDependencies": {

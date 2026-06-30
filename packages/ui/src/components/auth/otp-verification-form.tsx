@@ -1,7 +1,7 @@
-import { OTP_LENGTH, normalizeOtp } from "../../lib";
-import { translateUi } from "../../translations";
-import { Button } from "../button";
-import { OtpCodeInput } from "./otp-code-input";
+import { OTP_LENGTH, normalizeOtp } from '../../lib';
+import { translateUi } from '../../translations';
+import { Button } from '../button';
+import { OtpCodeInput } from './otp-code-input';
 
 export interface OtpVerificationFormProps {
   email: string;
@@ -42,7 +42,7 @@ export function OtpVerificationForm({
       <div className="space-y-3">
         <div className="flex flex-col gap-1.5">
           <label className="body-3 text-text-primary font-medium" htmlFor="otp-verification-code">
-            {translateUi("auth.otpVerification.codeLabel")}
+            {translateUi('auth.otpVerification.codeLabel')}
           </label>
           <OtpCodeInput
             id="otp-verification-code"
@@ -64,9 +64,9 @@ export function OtpVerificationForm({
           disabled={!canSubmit}
           className="w-full"
           isLoading={isSubmitting}
-          loadingLabel={translateUi("auth.otpVerification.verifyButtonLoading")}
+          loadingLabel={translateUi('auth.otpVerification.verifyButtonLoading')}
         >
-          {translateUi("auth.otpVerification.verifyButton")}
+          {translateUi('auth.otpVerification.verifyButton')}
         </Button>
 
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-sm">
@@ -78,9 +78,9 @@ export function OtpVerificationForm({
             disabled={isResending || isSubmitting}
             className="px-0"
             isLoading={isResending}
-            loadingLabel={translateUi("auth.otpVerification.resendButtonLoading")}
+            loadingLabel={translateUi('auth.otpVerification.resendButtonLoading')}
           >
-            {translateUi("auth.otpVerification.resendButton")}
+            {translateUi('auth.otpVerification.resendButton')}
           </Button>
 
           <Button
@@ -91,7 +91,7 @@ export function OtpVerificationForm({
             disabled={isSubmitting}
             className="px-0"
           >
-            {translateUi("auth.otpVerification.changeEmailLink")}
+            {translateUi('auth.otpVerification.changeEmailLink')}
           </Button>
         </div>
       </div>

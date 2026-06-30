@@ -1,4 +1,4 @@
-import * as React from "react";
+import * as React from 'react';
 
 export interface AppNavigationLink {
   href: string;
@@ -8,7 +8,7 @@ export interface AppNavigationLink {
 export interface AppNavigationCta {
   href: string;
   label: string;
-  variant?: "default" | "outline";
+  variant?: 'default' | 'outline';
 }
 
 export interface AppNavigationRenderLinkArgs {
@@ -31,7 +31,7 @@ export interface AppNavigationProps {
 
 export function AppNavigation({
   brand,
-  brandHref = "/",
+  brandHref = '/',
   links,
   cta,
   activeHref,
@@ -45,7 +45,7 @@ export function AppNavigation({
         {brand &&
           renderLink({
             href: brandHref,
-            className: "font-semibold text-sm tracking-tight text-foreground",
+            className: 'font-semibold text-sm tracking-tight text-foreground',
             children: brand,
           })}
 
@@ -55,8 +55,8 @@ export function AppNavigation({
               href: link.href,
               className: `px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide uppercase transition-colors ${
                 isActive(link.href)
-                  ? "bg-foreground text-background"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? 'bg-foreground text-background'
+                  : 'text-muted-foreground hover:text-foreground'
               }`,
               children: link.label,
             }),
@@ -65,11 +65,11 @@ export function AppNavigation({
             renderLink({
               href: cta.href,
               className: `ml-1 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide uppercase transition-colors ${
-                cta.variant === "outline"
-                  ? "border border-border text-foreground hover:bg-accent"
+                cta.variant === 'outline'
+                  ? 'border border-border text-foreground hover:bg-accent'
                   : isActive(cta.href)
-                    ? "bg-foreground text-background"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? 'bg-foreground text-background'
+                    : 'text-muted-foreground hover:text-foreground'
               }`,
               children: cta.label,
             })}

@@ -1,6 +1,6 @@
-import { useId } from "react";
+import { useId } from 'react';
 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../select';
 
 export interface FilterSelectOption<T extends string> {
   value: T;
@@ -9,26 +9,26 @@ export interface FilterSelectOption<T extends string> {
 
 export interface FilterSelectProps<T extends string> {
   label: string;
-  value: T | "";
+  value: T | '';
   options: Array<FilterSelectOption<T>>;
-  onChange: (value: T | "") => void;
+  onChange: (value: T | '') => void;
   placeholder?: string;
   id?: string;
 }
 
-const ALL_VALUE = "__all__" as const;
+const ALL_VALUE = '__all__' as const;
 
 export function FilterSelect<T extends string>({
   label,
   value,
   options,
   onChange,
-  placeholder = "All",
+  placeholder = 'All',
   id,
 }: FilterSelectProps<T>) {
   const generatedId = useId();
   const selectId = id ?? generatedId;
-  const selectValue = value === "" ? ALL_VALUE : value;
+  const selectValue = value === '' ? ALL_VALUE : value;
 
   return (
     <div className="flex-1">
@@ -41,7 +41,7 @@ export function FilterSelect<T extends string>({
       <Select
         value={selectValue}
         onValueChange={(nextValue) =>
-          onChange((nextValue === ALL_VALUE ? "" : nextValue) as T | "")
+          onChange((nextValue === ALL_VALUE ? '' : nextValue) as T | '')
         }
       >
         <SelectTrigger id={selectId} className="w-full">

@@ -1,7 +1,7 @@
-import { MessageCircle } from "lucide-react";
-import { memo, type ReactNode } from "react";
+import { MessageCircle } from 'lucide-react';
+import { memo, type ReactNode } from 'react';
 
-import { cn } from "../../lib/utils";
+import { cn } from '../../lib/utils';
 
 export interface InboxStreamRowItem {
   kind: string;
@@ -33,18 +33,18 @@ function formatTimestamp(value: string | Date): string {
   const dayDiff = Math.round((today.getTime() - targetDay.getTime()) / 86400000);
 
   if (dayDiff === 0) {
-    return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
   }
 
   if (dayDiff === 1) {
-    return "Yesterday";
+    return 'Yesterday';
   }
 
   if (dayDiff > 1 && dayDiff < 7) {
-    return date.toLocaleDateString([], { weekday: "short" });
+    return date.toLocaleDateString([], { weekday: 'short' });
   }
 
-  return date.toLocaleDateString([], { month: "short", day: "numeric" });
+  return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 
 function deriveInboxLabel(item: InboxStreamRowItem) {
@@ -53,12 +53,12 @@ function deriveInboxLabel(item: InboxStreamRowItem) {
     return normalizedTitle;
   }
 
-  const normalizedPreview = item.preview?.replace(/\s+/g, " ").trim();
+  const normalizedPreview = item.preview?.replace(/\s+/g, ' ').trim();
   if (normalizedPreview) {
     return normalizedPreview;
   }
 
-  return item.kind === "chat" ? "Untitled chat" : "Untitled note";
+  return item.kind === 'chat' ? 'Untitled chat' : 'Untitled note';
 }
 
 export const InboxStreamRow = memo(function InboxStreamRow({
@@ -70,7 +70,7 @@ export const InboxStreamRow = memo(function InboxStreamRow({
   const label = deriveInboxLabel(item);
   const timestamp = formatTimestamp(item.updatedAt);
   const resolvedHref = href ?? item.href ?? `/inbox/${item.kind}/${item.entityId}`;
-  const isChat = item.kind === "chat";
+  const isChat = item.kind === 'chat';
   const icon = isChat ? (
     <MessageCircle className="h-[18px] w-[18px]" aria-hidden="true" />
   ) : (
@@ -97,7 +97,7 @@ export const InboxStreamRow = memo(function InboxStreamRow({
   );
 
   const interactiveClassName = cn(
-    "group active:bg-elevated/40 focus-visible:outline-ring flex items-start gap-2 rounded-none px-4 py-3 transition-colors outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:[outline-style:solid]",
+    'group active:bg-elevated/40 focus-visible:outline-ring flex items-start gap-2 rounded-none px-4 py-3 transition-colors outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:[outline-style:solid]',
   );
 
   let rowContent: ReactNode;
@@ -111,7 +111,7 @@ export const InboxStreamRow = memo(function InboxStreamRow({
     rowContent = (
       <button
         type="button"
-        className={cn(interactiveClassName, "w-full text-left")}
+        className={cn(interactiveClassName, 'w-full text-left')}
         onClick={onClick}
       >
         {content}

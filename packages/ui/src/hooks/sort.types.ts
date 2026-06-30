@@ -4,7 +4,7 @@
  */
 
 export type SortField = string;
-export type SortDirection = "asc" | "desc";
+export type SortDirection = 'asc' | 'desc';
 
 export interface SortOption {
   field: SortField;

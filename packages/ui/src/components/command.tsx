@@ -9,4 +9,4 @@ export {
   CommandListLoading,
   CommandSeparator,
   CommandShortcut,
-} from "./ui/command";
+} from './ui/command';

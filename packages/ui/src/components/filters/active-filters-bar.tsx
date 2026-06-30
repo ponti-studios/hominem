@@ -1,4 +1,4 @@
-import { FilterChip } from "./filter-chip";
+import { FilterChip } from './filter-chip';
 
 export interface ActiveFilter {
   id: string;

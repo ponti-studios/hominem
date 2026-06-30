@@ -1,5 +1,5 @@
 {
-  "$schema": "https://turbo.build/schema.json",
+  "$schema": "https://turborepo.org/schema.json",
   "globalDependencies": [
     "package.json",
     "pnpm-lock.yaml",
@@ -65,7 +65,6 @@
     "EXPO_PUBLIC_POSTHOG_HOST",
     "GITHUB_TOKEN"
   ],
-  "concurrency": "8",
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
@@ -73,8 +72,7 @@
     },
     "dev": {
       "cache": false,
-      "persistent": true,
-      "dependsOn": ["^build"]
+      "persistent": true
     },
     "db:migrate": {
       "dependsOn": ["^build"]
@@ -86,29 +84,31 @@
       "dependsOn": ["^build"]
     },
     "format": {
-      "inputs": ["src/**/*.{ts,tsx,js,jsx,json,md}", "app/**/*.{ts,tsx,js,jsx,json,md}"]
+      "outputs": []
     },
     "lint": {
-      "inputs": [
-        "src/**/*.{ts,tsx,js,jsx,json,md,css}",
-        "app/**/*.{ts,tsx,js,jsx,json,md,css}",
-        "packages/ui/tools/stylelint-config-void.cjs"
-      ]
+      "outputs": []
+    },
+    "preview": {
+      "dependsOn": ["build"]
     },
     "start": {
-      "dependsOn": ["build"]
+      "dependsOn": ["build"],
+      "cache": false
     },
     "test": {
       "dependsOn": ["^build"],
-      "inputs": [
-        "src/**/*.{ts,tsx,js,jsx}",
-        "app/**/*.{ts,tsx,js,jsx}",
-        "test/**/*.{ts,tsx,js,jsx}"
-      ]
+      "outputs": ["coverage/**"]
+    },
+    "test:coverage": {
+      "dependsOn": ["^build"],
+      "outputs": ["coverage/**"]
+    },
+    "test:watch": {
+      "outputs": []
     },
     "typecheck": {
-      "dependsOn": ["^build"],
-      "inputs": ["**/*.ts", "**/*.tsx", "tsconfig.json"]
+      "outputs": []
     }
   }
 }

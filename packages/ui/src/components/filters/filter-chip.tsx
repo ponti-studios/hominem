@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { X } from 'lucide-react';
 
 export interface FilterChipProps {
   label: string;
@@ -13,12 +13,12 @@ export function FilterChip({ label, onRemove, onClick }: FilterChipProps) {
       title={onClick ? `Click to edit: ${label}` : label}
       onClick={onClick}
       onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
+        if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault();
           onClick?.();
         }
       }}
-      role={onClick ? "button" : undefined}
+      role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
     >
       <span>{label}</span>

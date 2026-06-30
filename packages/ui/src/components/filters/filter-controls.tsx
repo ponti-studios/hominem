@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from 'react';
 
-import { ActiveFiltersBar, type ActiveFilter } from "./active-filters-bar";
+import { ActiveFiltersBar, type ActiveFilter } from './active-filters-bar';
 
 export interface FilterControlsProps {
   children: ReactNode;

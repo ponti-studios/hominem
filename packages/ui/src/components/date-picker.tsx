@@ -1,9 +1,9 @@
-import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import { format } from 'date-fns';
+import { CalendarIcon } from 'lucide-react';
 
-import { Button } from "./button";
-import { Calendar } from "./calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "./popover";
+import { Button } from './button';
+import { Calendar } from './calendar';
+import { Popover, PopoverContent, PopoverTrigger } from './popover';
 
 export interface DatePickerProps {
   value: Date | undefined;
@@ -15,22 +15,22 @@ export interface DatePickerProps {
   dateFormat?: string;
   showLabel?: boolean;
   containerClassName?: string;
-  popoverAlign?: "start" | "center" | "end";
-  variant?: "outline" | "default" | "destructive" | "secondary" | "ghost" | "link";
+  popoverAlign?: 'start' | 'center' | 'end';
+  variant?: 'outline' | 'default' | 'destructive' | 'secondary' | 'ghost' | 'link';
 }
 
 export function DatePicker({
   value,
   onSelect,
   disabled = false,
-  id = "date-picker",
-  placeholder = "Pick a date",
+  id = 'date-picker',
+  placeholder = 'Pick a date',
   label,
-  dateFormat = "MMM d, yyyy",
+  dateFormat = 'MMM d, yyyy',
   showLabel = true,
-  containerClassName = "flex-1 min-w-[180px]",
-  popoverAlign = "start",
-  variant = "outline",
+  containerClassName = 'flex-1 min-w-[180px]',
+  popoverAlign = 'start',
+  variant = 'outline',
 }: DatePickerProps) {
   return (
     <div className={containerClassName}>

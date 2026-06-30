@@ -1,7 +1,7 @@
-import { translateUi } from "../../translations";
-import { Button } from "../button";
-import { TextField } from "../text-field";
-import { PasskeyButton } from "./passkey-button";
+import { translateUi } from '../../translations';
+import { Button } from '../button';
+import { TextField } from '../text-field';
+import { PasskeyButton } from './passkey-button';
 
 export interface EmailEntryFormProps {
   email: string;
@@ -29,13 +29,13 @@ export function EmailEntryForm({
     >
       <div className="space-y-3">
         <TextField
-          label={translateUi("auth.emailEntry.emailLabel")}
+          label={translateUi('auth.emailEntry.emailLabel')}
           name="email"
           type="email"
           value={email}
           autoComplete="email"
           required
-          placeholder={translateUi("auth.emailEntry.emailPlaceholder")}
+          placeholder={translateUi('auth.emailEntry.emailPlaceholder')}
           disabled={isSubmitting}
           error={error}
           onChange={(event) => onEmailChange(event.target.value)}
@@ -46,9 +46,9 @@ export function EmailEntryForm({
           disabled={isSubmitting}
           className="w-full"
           isLoading={isSubmitting}
-          loadingLabel={translateUi("auth.emailEntry.submitButtonLoading")}
+          loadingLabel={translateUi('auth.emailEntry.submitButtonLoading')}
         >
-          {translateUi("auth.emailEntry.submitButton")}
+          {translateUi('auth.emailEntry.submitButton')}
         </Button>
 
         {onPasskeyClick ? <PasskeyButton onClick={onPasskeyClick} disabled={isSubmitting} /> : null}

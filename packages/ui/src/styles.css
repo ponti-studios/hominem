@@ -1,5 +1,5 @@
-@import "tailwindcss";
-@import "./animations.css";
+@import 'tailwindcss';
+@import './animations.css';
 
 @theme {
   --font-family-primary: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
@@ -163,7 +163,7 @@
 }
 
 :root,
-:root[data-color-system="primer"] {
+:root[data-color-system='primer'] {
   --ui-color-scheme: light;
   --color-bg-base: #ffffff;
   --color-bg-surface: #f6f8fa;
@@ -239,9 +239,9 @@
   --color-white: #ffffff;
 }
 
-:root:not([data-color-system])[data-color-mode="dark"],
-:root[data-color-system="primer"][data-color-mode="dark"],
-[data-color-system="primer"][data-color-mode="dark"] {
+:root:not([data-color-system])[data-color-mode='dark'],
+:root[data-color-system='primer'][data-color-mode='dark'],
+[data-color-system='primer'][data-color-mode='dark'] {
   --ui-color-scheme: dark;
   --color-bg-base: #0d1117;
   --color-bg-surface: #161b22;
@@ -314,8 +314,8 @@
   --color-interaction-focus-ring: rgba(47, 129, 247, 0.28);
 }
 
-:root[data-color-system="apple"][data-color-mode="light"],
-[data-color-system="apple"][data-color-mode="light"] {
+:root[data-color-system='apple'][data-color-mode='light'],
+[data-color-system='apple'][data-color-mode='light'] {
   --ui-color-scheme: light;
   --color-bg-base: #ffffff;
   --color-bg-surface: #f2f2f7;
@@ -388,8 +388,8 @@
   --color-interaction-focus-ring: rgba(0, 122, 255, 0.22);
 }
 
-:root[data-color-system="apple"][data-color-mode="dark"],
-[data-color-system="apple"][data-color-mode="dark"] {
+:root[data-color-system='apple'][data-color-mode='dark'],
+[data-color-system='apple'][data-color-mode='dark'] {
   --ui-color-scheme: dark;
   --color-bg-base: #000000;
   --color-bg-surface: #1c1c1e;
@@ -462,16 +462,16 @@
   --color-interaction-focus-ring: rgba(10, 132, 255, 0.28);
 }
 
-:root[data-color-system="primer"][data-color-mode="light"],
-:root[data-color-system="apple"][data-color-mode="light"],
-[data-color-system="primer"][data-color-mode="light"],
-[data-color-system="apple"][data-color-mode="light"] {
+:root[data-color-system='primer'][data-color-mode='light'],
+:root[data-color-system='apple'][data-color-mode='light'],
+[data-color-system='primer'][data-color-mode='light'],
+[data-color-system='apple'][data-color-mode='light'] {
   --ui-color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-color-mode]):not([data-color-system="apple"]),
-  :root[data-color-system="primer"]:not([data-color-mode]) {
+  :root:not([data-color-mode]):not([data-color-system='apple']),
+  :root[data-color-system='primer']:not([data-color-mode]) {
     --ui-color-scheme: dark;
     --color-bg-base: #0d1117;
     --color-bg-surface: #161b22;
@@ -544,7 +544,7 @@
     --color-interaction-focus-ring: rgba(47, 129, 247, 0.28);
   }
 
-  :root[data-color-system="apple"]:not([data-color-mode]) {
+  :root[data-color-system='apple']:not([data-color-mode]) {
     --ui-color-scheme: dark;
     --color-bg-base: #000000;
     --color-bg-surface: #1c1c1e;
@@ -665,7 +665,7 @@
     transition: none;
   }
 
-  *:is(button, a, input, select, textarea, [role="button"], [role="link"]) {
+  *:is(button, a, input, select, textarea, [role='button'], [role='link']) {
     transition-property: background-color, color, border-color, opacity;
     transition-duration: var(--duration-fast);
     transition-timing-function: var(--ease-default);
@@ -977,7 +977,7 @@
   transition-timing-function: var(--ease-default);
 
   @media (hover: hover) {
-    &:not(:disabled):not([data-disabled]):not([aria-disabled="true"]):hover {
+    &:not(:disabled):not([data-disabled]):not([aria-disabled='true']):hover {
       background-color: var(--void-hover-bg, var(--color-interaction-hover-bg));
       color: var(--void-hover-color, var(--color-interaction-hover-text));
       border-color: var(--void-hover-border, var(--color-interaction-hover-border));

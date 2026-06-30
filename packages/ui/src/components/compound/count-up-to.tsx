@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from 'react';
 
 export interface CountUpToProps {
   value: number;
@@ -50,9 +50,9 @@ function useCountUp(endValue: number, duration = 1.5, startValue = 0) {
   return currentValue;
 }
 
-function formatNumber(value: number, decimals = 0, separator = ","): string {
+function formatNumber(value: number, decimals = 0, separator = ','): string {
   const fixedValue = value.toFixed(decimals);
-  const parts = fixedValue.split(".");
+  const parts = fixedValue.split('.');
   const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, separator);
 
   return parts.length > 1 ? `${integerPart}.${parts[1]}` : integerPart;
@@ -61,11 +61,11 @@ function formatNumber(value: number, decimals = 0, separator = ","): string {
 export function CountUpTo({
   value,
   duration = 1.5,
-  separator = ",",
+  separator = ',',
   start = 0,
   decimals = 0,
-  prefix = "",
-  suffix = "",
+  prefix = '',
+  suffix = '',
 }: CountUpToProps): ReactNode {
   const currentValue = useCountUp(value, duration, start);
   const formattedValue = formatNumber(currentValue, decimals, separator);
