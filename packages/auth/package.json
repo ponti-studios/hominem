@@ -44,8 +44,8 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsgo --noEmit",
-    "format": "pnpm dlx oxfmt ./src",
-    "lint": "pnpm dlx oxlint ./src"
+    "format": "oxfmt src --write",
+    "lint": "oxlint src --fix"
   },
   "dependencies": {
     "@better-auth/passkey": "^1.6.11",

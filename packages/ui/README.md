@@ -20,10 +20,10 @@ pnpm add @hominem/ui
 Import components directly from the package:
 
 ```tsx
-import { Button } from "@hominem/ui"
+import { Button } from '@hominem/ui';
 
 export function App() {
-  return <Button>Click me</Button>
+  return <Button>Click me</Button>;
 }
 ```
 
@@ -34,14 +34,6 @@ export function App() {
 - **Utilities** (`src/lib/`): Helper functions like `cn()` for classname merging
 
 ## Development
-
-#### View Components in Storybook
-
-```bash
-pnpm storybook
-```
-
-This launches Storybook at `http://localhost:6006` showing interactive component documentation.
 
 #### Build Library
 
@@ -71,27 +63,24 @@ Follow these conventions when adding or modifying components:
 Use CVA for all component variants:
 
 ```tsx
-import { cva } from "class-variance-authority"
+import { cva } from 'class-variance-authority';
 
-const buttonVariants = cva(
-  "inline-flex items-center justify-center",
-  {
-    variants: {
-      intent: {
-        primary: "bg-primary text-primary-foreground",
-        secondary: "bg-secondary text-secondary-foreground",
-      },
-      size: {
-        small: "h-8 px-3 text-sm",
-        large: "h-10 px-4 text-lg",
-      },
+const buttonVariants = cva('inline-flex items-center justify-center', {
+  variants: {
+    intent: {
+      primary: 'bg-primary text-primary-foreground',
+      secondary: 'bg-secondary text-secondary-foreground',
     },
-    defaultVariants: {
-      intent: "primary",
-      size: "large",
+    size: {
+      small: 'h-8 px-3 text-sm',
+      large: 'h-10 px-4 text-lg',
     },
-  }
-)
+  },
+  defaultVariants: {
+    intent: 'primary',
+    size: 'large',
+  },
+});
 ```
 
 ### Accessibility
@@ -102,18 +91,18 @@ const buttonVariants = cva(
 
 ### Testing
 
-Create `.stories.tsx` files alongside components showing:
-- Default state
-- All variants
-- Interactive examples
-- Edge cases
+Run type checking and linting before committing:
+
+```bash
+pnpm typecheck
+pnpm lint
+```
 
 ## Adding New Components
 
 1. Create the component file in `src/components/ui/` or `src/components/compound/`
 2. Add exports to `src/components/ui/index.ts` or `src/components/compound/index.ts`
-3. Create `ComponentName.stories.tsx` showing all variants and usage
-4. Test with `pnpm storybook`
+3. Test the component
 
 ## Updating Apps
 
@@ -121,10 +110,10 @@ When adding new components, update imports in apps from local paths to:
 
 ```tsx
 // Before
-import { Button } from "@/components/ui/button"
+import { Button } from '@/components/ui/button';
 
 // After
-import { Button } from "@hominem/ui"
+import { Button } from '@hominem/ui';
 ```
 
 ## License

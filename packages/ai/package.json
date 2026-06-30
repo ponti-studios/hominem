@@ -15,8 +15,8 @@
   "scripts": {
     "build": "tsgo -p tsconfig.json",
     "typecheck": "tsgo --noEmit",
-    "format": "pnpm dlx oxfmt ./src",
-    "lint": "pnpm dlx oxlint ./src"
+    "format": "oxfmt src --write",
+    "lint": "oxlint src --fix"
   },
   "dependencies": {
     "@openrouter/sdk": "^0.12.35",
