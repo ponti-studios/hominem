@@ -1,12 +1,12 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useState } from 'react';
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { useState } from "react";
 
-import { OtpCodeInput } from './otp-code-input';
+import { OtpCodeInput } from "./otp-code-input";
 
 const meta = {
-  title: 'Patterns/Auth/OtpCodeInput',
+  title: "Patterns/Auth/OtpCodeInput",
   component: OtpCodeInput,
-  tags: ['autodocs'],
+  tags: ["autodocs"],
 } satisfies Meta<typeof OtpCodeInput>;
 
 export default meta;
@@ -14,7 +14,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    value: '',
+    value: "",
     onChange: () => {},
     autoFocus: false,
   },
@@ -30,9 +30,9 @@ export const Default: Story = {
 
 export const WithError: Story = {
   args: {
-    value: '12',
+    value: "12",
     onChange: () => {},
-    error: 'Invalid code. Please try again.',
+    error: "Invalid code. Please try again.",
     autoFocus: false,
   },
   render: (args) => (
@@ -44,7 +44,7 @@ export const WithError: Story = {
 
 export const Disabled: Story = {
   args: {
-    value: '123456',
+    value: "123456",
     onChange: () => {},
     disabled: true,
     autoFocus: false,
@@ -58,7 +58,7 @@ export const Disabled: Story = {
 
 export const FourDigit: Story = {
   args: {
-    value: '',
+    value: "",
     onChange: () => {},
     length: 4,
     autoFocus: false,

@@ -1,23 +1,23 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Plus, Trash2 } from 'lucide-react';
-import { expect, userEvent, within } from 'storybook/test';
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { Plus, Trash2 } from "lucide-react";
+import { expect, userEvent, within } from "storybook/test";
 
-import { booleanControl, hiddenControl, selectControl } from '../storybook/controls';
-import { buttonSizeOptions, buttonVariantOptions } from '../storybook/options';
-import { Button } from './button';
+import { booleanControl, hiddenControl, selectControl } from "../storybook/controls";
+import { buttonSizeOptions, buttonVariantOptions } from "../storybook/options";
+import { Button } from "./button";
 
 const meta: Meta = {
-  title: 'Primitives/Button',
+  title: "Primitives/Button",
   component: Button,
-  tags: ['autodocs'],
+  tags: ["autodocs"],
   argTypes: {
-    variant: selectControl(buttonVariantOptions, 'Visual style variant of the button', {
-      defaultValue: 'default',
+    variant: selectControl(buttonVariantOptions, "Visual style variant of the button", {
+      defaultValue: "default",
     }),
-    size: selectControl(buttonSizeOptions, 'Size variant of the button', {
-      defaultValue: 'default',
+    size: selectControl(buttonSizeOptions, "Size variant of the button", {
+      defaultValue: "default",
     }),
-    disabled: booleanControl('Prevents user interaction and applies disabled styling', false),
+    disabled: booleanControl("Prevents user interaction and applies disabled styling", false),
     asChild: hiddenControl,
   },
 };
@@ -26,10 +26,10 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  args: { children: 'Button' },
+  args: { children: "Button" },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const button = canvas.getByRole('button', { name: 'Button' });
+    const button = canvas.getByRole("button", { name: "Button" });
 
     await userEvent.hover(button);
     await userEvent.click(button);
@@ -97,9 +97,9 @@ export const Disabled: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    await expect(canvas.getByRole('button', { name: 'Default' })).toBeDisabled();
-    await expect(canvas.getByRole('button', { name: 'Outline' })).toBeDisabled();
-    await expect(canvas.getByRole('button', { name: 'Destructive' })).toBeDisabled();
+    await expect(canvas.getByRole("button", { name: "Default" })).toBeDisabled();
+    await expect(canvas.getByRole("button", { name: "Outline" })).toBeDisabled();
+    await expect(canvas.getByRole("button", { name: "Destructive" })).toBeDisabled();
   },
 };
 
@@ -111,7 +111,7 @@ export const Loading: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const button = canvas.getByRole('button', { name: 'Saving' });
+    const button = canvas.getByRole("button", { name: "Saving" });
 
     await expect(button).toBeDisabled();
   },

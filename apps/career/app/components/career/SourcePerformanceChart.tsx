@@ -1,5 +1,5 @@
 import { EmptyState } from '@hominem/ui';
-import { PercentageProgressBar, VolumeProgressBar } from '@hominem/ui/progress';
+import { PercentageProgressBar, VolumeProgressBar } from '@hominem/ui';
 
 import { cn } from '~/lib/utils';
 interface SourceMetric {

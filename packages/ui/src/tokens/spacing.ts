@@ -21,9 +21,9 @@ export const spacing = {
  * Used for message bubbles, transcript areas, and other content containers.
  */
 export const contentWidths = {
-  bubble: '36rem', // Compact message bubble width (576px)
-  transcript: '44rem', // Standard transcript/content width (704px)
-  notePreview: '32ch', // Empty-state note preview width
+  bubble: "36rem", // Compact message bubble width (576px)
+  transcript: "44rem", // Standard transcript/content width (704px)
+  notePreview: "32ch", // Empty-state note preview width
 } as const;
 
 export type SpacingToken = keyof typeof spacing;

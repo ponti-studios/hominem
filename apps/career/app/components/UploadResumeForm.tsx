@@ -1,7 +1,5 @@
 import { Alert, AlertDescription, AlertTitle } from '@hominem/ui';
-import { Button } from '@hominem/ui/button';
-import { Card, CardContent } from '@hominem/ui/card';
-import { Progress } from '@hominem/ui/progress';
+import { Button, Card, CardContent, Progress } from '@hominem/ui';
 import { FileText, LogIn, RefreshCw, Upload, X } from 'lucide-react';
 import { useRef, useState } from 'react';
 

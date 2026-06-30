@@ -1,11 +1,11 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from "@storybook/react-vite";
 
-import { SurfacePanel } from './surface-panel';
+import { SurfacePanel } from "./surface-panel";
 
 const meta = {
-  title: 'Surfaces/SurfacePanel',
+  title: "Surfaces/SurfacePanel",
   component: SurfacePanel,
-  tags: ['autodocs'],
+  tags: ["autodocs"],
 } satisfies Meta<typeof SurfacePanel>;
 
 export default meta;
@@ -15,8 +15,8 @@ export const Default: Story = {
   render: () => (
     <SurfacePanel>
       <div className="space-y-2">
-        <h3 className="text-base font-semibold text-foreground">Inset panel</h3>
-        <p className="text-sm text-text-secondary">
+        <h3 className="text-foreground text-base font-semibold">Inset panel</h3>
+        <p className="text-text-secondary text-sm">
           Use for secondary groupings inside larger layouts and frames.
         </p>
       </div>

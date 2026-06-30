@@ -1,4 +1,4 @@
-import { Card, CardContent } from '@hominem/ui/card';
+import { Card, CardContent } from '@hominem/ui';
 
 import type { JobApplicationMetrics } from '~/lib/career/queries/job-applications';
 import type { ApplicationWithCompany } from '~/types/applications';

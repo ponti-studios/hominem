@@ -10,7 +10,8 @@
  *
  * ## Animation mandate
  *
- * Web interactive animations MUST use GSAP via `@hominem/ui/lib/gsap`.
+ * Web interactive animations MUST use the shared GSAP helpers exposed by the
+ * consuming app.
  * The canonical sequences (playFocusExpand, playFocusCollapse,
  * playContextSwitch, playSubmitPulse, playEnterRow, playExitRow,
  * playShimmer) read the numeric constants from this file so all motion
@@ -44,7 +45,7 @@ export const translateDistances = {
 
 /** CSS cubic-bezier strings — web only. */
 export const easingWeb = {
-  enter: 'cubic-bezier(0.0, 0.0, 0.2, 1)',
-  exit: 'cubic-bezier(0.4, 0.0, 1, 1)',
-  standard: 'cubic-bezier(0.4, 0, 0.2, 1)',
+  enter: "cubic-bezier(0.0, 0.0, 0.2, 1)",
+  exit: "cubic-bezier(0.4, 0.0, 1, 1)",
+  standard: "cubic-bezier(0.4, 0, 0.2, 1)",
 } as const;

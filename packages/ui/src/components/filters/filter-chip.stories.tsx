@@ -1,14 +1,14 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from "@storybook/react-vite";
 
-import { hiddenControl, textControl } from '../../storybook/controls';
-import { FilterChip } from './filter-chip';
+import { hiddenControl, textControl } from "../../storybook/controls";
+import { FilterChip } from "./filter-chip";
 
 const meta = {
-  title: 'Patterns/Filters/FilterChip',
+  title: "Patterns/Filters/FilterChip",
   component: FilterChip,
-  tags: ['autodocs'],
+  tags: ["autodocs"],
   argTypes: {
-    label: textControl('Label displayed inside the filter chip'),
+    label: textControl("Label displayed inside the filter chip"),
     onRemove: hiddenControl,
     onClick: hiddenControl,
   },
@@ -19,14 +19,14 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    label: 'Status: Active',
+    label: "Status: Active",
     onRemove: () => {},
   },
 };
 
 export const Clickable: Story = {
   args: {
-    label: 'Category: Work',
+    label: "Category: Work",
     onRemove: () => {},
     onClick: () => {},
   },
@@ -34,7 +34,7 @@ export const Clickable: Story = {
 
 export const Multiple: Story = {
   args: {
-    label: 'Filter',
+    label: "Filter",
     onRemove: () => {},
   },
   parameters: {

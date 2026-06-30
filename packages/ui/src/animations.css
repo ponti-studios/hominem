@@ -261,12 +261,12 @@
 }
 
 .animate-accordion-down,
-[data-state='open'].animate-accordion-down {
+[data-state="open"].animate-accordion-down {
   animation: accordion-down 400ms cubic-bezier(0.32, 0.72, 0.28, 1) both;
 }
 
 .animate-accordion-up,
-[data-state='closed'].animate-accordion-up {
+[data-state="closed"].animate-accordion-up {
   animation: accordion-up 300ms cubic-bezier(0.32, 0.72, 0.28, 1) both;
 }
 

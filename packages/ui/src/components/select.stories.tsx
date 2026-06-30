@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from "@storybook/react-vite";
 
 import {
   Select,
@@ -8,12 +8,12 @@ import {
   SelectLabel,
   SelectTrigger,
   SelectValue,
-} from './select';
+} from "./select";
 
 const meta = {
-  title: 'Forms/Select',
+  title: "Forms/Select",
   component: Select,
-  tags: ['autodocs'],
+  tags: ["autodocs"],
 } satisfies Meta<typeof Select>;
 
 export default meta;

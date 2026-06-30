@@ -1,19 +1,19 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from "@storybook/react-vite";
 
 function UpdateGuardPreview() {
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-warning/90 border-b border-warning p-4">
-      <div className="max-w-5xl mx-auto flex items-center justify-between gap-4">
+    <div className="bg-warning/90 border-warning fixed top-0 right-0 left-0 z-50 border-b p-4">
+      <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <span className="text-xl">⬆️</span>
           <div>
-            <p className="font-medium text-sm">App Update Available</p>
-            <p className="text-xs text-text-secondary">
+            <p className="text-sm font-medium">App Update Available</p>
+            <p className="text-text-secondary text-xs">
               A new version of the app is ready. Please refresh to update.
             </p>
           </div>
         </div>
-        <button className="px-4 py-1.5 bg-foreground text-background rounded text-sm font-medium hover:opacity-90">
+        <button className="bg-foreground text-background rounded px-4 py-1.5 text-sm font-medium hover:opacity-90">
           Update Now
         </button>
       </div>
@@ -23,16 +23,16 @@ function UpdateGuardPreview() {
 
 function UpdateGuardModalPreview() {
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
-      <div className="bg-base border border-border-default rounded-lg p-6 max-w-sm space-y-4">
+    <div className="fixed inset-0 flex items-center justify-center bg-black/50">
+      <div className="bg-base border-border-default max-w-sm space-y-4 rounded-lg border p-6">
         <div className="text-center">
-          <div className="text-3xl mb-2">🔄</div>
-          <h2 className="font-semibold mb-1">Update Required</h2>
-          <p className="text-sm text-text-secondary">
+          <div className="mb-2 text-3xl">🔄</div>
+          <h2 className="mb-1 font-semibold">Update Required</h2>
+          <p className="text-text-secondary text-sm">
             A critical update is available. Please refresh your browser to continue.
           </p>
         </div>
-        <button className="w-full px-4 py-2 bg-accent text-white rounded-md font-medium">
+        <button className="bg-accent w-full rounded-md px-4 py-2 font-medium text-white">
           Refresh Now
         </button>
       </div>
@@ -42,14 +42,14 @@ function UpdateGuardModalPreview() {
 
 function UpdateGuardProgressPreview() {
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
-      <div className="bg-base border border-border-default rounded-lg p-6 max-w-sm space-y-4 text-center">
+    <div className="fixed inset-0 flex items-center justify-center bg-black/50">
+      <div className="bg-base border-border-default max-w-sm space-y-4 rounded-lg border p-6 text-center">
         <div className="inline-flex">
-          <div className="w-8 h-8 border-4 border-border-default border-t-accent rounded-full animate-spin" />
+          <div className="border-border-default border-t-accent h-8 w-8 animate-spin rounded-full border-4" />
         </div>
         <div>
-          <p className="font-medium text-sm mb-1">Updating Your App</p>
-          <p className="text-xs text-text-secondary">
+          <p className="mb-1 text-sm font-medium">Updating Your App</p>
+          <p className="text-text-secondary text-xs">
             Please wait while we download the latest version...
           </p>
         </div>
@@ -59,11 +59,11 @@ function UpdateGuardProgressPreview() {
 }
 
 const meta = {
-  title: 'Patterns/UpdateGuard',
+  title: "Patterns/UpdateGuard",
   component: UpdateGuardPreview,
-  tags: ['autodocs'],
+  tags: ["autodocs"],
   parameters: {
-    layout: 'fullscreen',
+    layout: "fullscreen",
   },
 } satisfies Meta<typeof UpdateGuardPreview>;
 

@@ -1,14 +1,14 @@
-import type { EmptyStateProps } from './empty-state';
-import { EmptyState } from './empty-state';
+import type { EmptyStateProps } from "./empty-state";
+import { EmptyState } from "./empty-state";
 
 interface StatePanelProps {
-  icon?: EmptyStateProps['icon'];
-  title?: EmptyStateProps['title'];
-  description?: EmptyStateProps['description'];
-  actions?: EmptyStateProps['action'];
-  children?: EmptyStateProps['children'];
-  layout?: EmptyStateProps['layout'];
-  variant?: 'default' | 'dashed';
+  icon?: EmptyStateProps["icon"];
+  title?: EmptyStateProps["title"];
+  description?: EmptyStateProps["description"];
+  actions?: EmptyStateProps["action"];
+  children?: EmptyStateProps["children"];
+  layout?: EmptyStateProps["layout"];
+  variant?: "default" | "dashed";
 }
 
 export function StatePanel({
@@ -17,8 +17,8 @@ export function StatePanel({
   description,
   actions,
   children,
-  layout = 'centered',
-  variant = 'default',
+  layout = "centered",
+  variant = "default",
 }: StatePanelProps) {
   return (
     <EmptyState

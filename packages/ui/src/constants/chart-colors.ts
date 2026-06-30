@@ -1,49 +1,39 @@
-import { colors } from '../tokens';
-
 /**
- * Chart Colors for Dark Luxury Design System
- *
- * Use these constants for consistent chart styling across the application.
- * All colors reference the canonical color system for cohesion.
+ * Chart colors are CSS-variable-backed so they stay in sync with the active
+ * color system and mode at runtime.
  */
 
 export const CHART_COLORS = {
-  /** Primary luxury colors for multi-category charts */
-  chart1: colors['chart-1'],
-  chart2: colors['chart-2'],
-  chart3: colors['chart-3'],
-  chart4: colors['chart-4'],
-  chart5: colors['chart-5'],
+  chart1: "var(--color-chart-1)",
+  chart2: "var(--color-chart-2)",
+  chart3: "var(--color-chart-3)",
+  chart4: "var(--color-chart-4)",
+  chart5: "var(--color-chart-5)",
 
-  /** Semantic chart colors for meaning-based visualization */
-  positive: colors.success,
-  negative: colors.destructive,
-  neutral: colors['text-secondary'],
+  positive: "var(--color-chart-positive)",
+  negative: "var(--color-chart-negative)",
+  neutral: "var(--color-chart-neutral)",
 
-  /** Chart background and grid */
-  background: colors['bg-base'],
-  grid: colors['border-subtle'],
+  background: "var(--color-bg-base)",
+  grid: "var(--color-border-subtle)",
 
-  /** Axis and label colors */
-  axis: colors['text-tertiary'],
-  label: colors['text-secondary'],
+  axis: "var(--color-text-tertiary)",
+  label: "var(--color-text-secondary)",
 
-  /** Tooltip styling */
   tooltip: {
-    background: colors['text-primary'],
-    text: colors['bg-base'],
-    border: colors['border-default'],
+    background: "var(--color-card)",
+    text: "var(--color-text-primary)",
+    border: "var(--color-border-default)",
   },
 } as const;
 
-/** CSS custom property references for use in inline styles */
 export const CHART_CSS_VARS = {
-  positive: 'var(--color-chart-positive)',
-  negative: 'var(--color-chart-negative)',
-  neutral: 'var(--color-chart-neutral)',
-  chart1: 'var(--color-chart-1)',
-  chart2: 'var(--color-chart-2)',
-  chart3: 'var(--color-chart-3)',
-  chart4: 'var(--color-chart-4)',
-  chart5: 'var(--color-chart-5)',
+  positive: "var(--color-chart-positive)",
+  negative: "var(--color-chart-negative)",
+  neutral: "var(--color-chart-neutral)",
+  chart1: "var(--color-chart-1)",
+  chart2: "var(--color-chart-2)",
+  chart3: "var(--color-chart-3)",
+  chart4: "var(--color-chart-4)",
+  chart5: "var(--color-chart-5)",
 } as const;

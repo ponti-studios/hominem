@@ -1,5 +1,4 @@
-import { Button } from '@hominem/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@hominem/ui/dialog';
+import { Button, Dialog, DialogContent, DialogHeader, DialogTitle } from '@hominem/ui';
 import { Upload } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 

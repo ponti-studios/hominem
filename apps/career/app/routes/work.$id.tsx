@@ -13,12 +13,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@hominem/ui/alert-dialog';
-import { Button } from '@hominem/ui/button';
-import { Field } from '@hominem/ui/field';
-import { Input } from '@hominem/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
-import { Textarea } from '@hominem/ui/textarea';
+} from '@hominem/ui';
+import {
+  Button,
+  Field,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Textarea,
+} from '@hominem/ui';
 import {
   ArrowLeftIcon,
   BriefcaseBusinessIcon,

@@ -1,10 +1,10 @@
-import { KeyIcon } from 'lucide-react';
+import { KeyIcon } from "lucide-react";
 
-import { translateUi } from '../../translations';
-import { Button } from '../button';
+import { translateUi } from "../../translations";
+import { Button } from "../button";
 
-interface PasskeyButtonProps {
-  onClick: () => void;
+export interface PasskeyButtonProps {
+  onClick: () => void | Promise<void>;
   disabled?: boolean;
   isLoading?: boolean;
 }
@@ -18,14 +18,14 @@ export function PasskeyButton({
     <Button
       type="button"
       variant="secondary"
-      onClick={onClick}
+      onClick={() => void onClick()}
       disabled={disabled}
       className="gap-4"
       isLoading={isLoading}
-      loadingLabel={translateUi('auth.emailEntry.passkeyLoadingButton')}
+      loadingLabel={translateUi("auth.emailEntry.passkeyLoadingButton")}
     >
       <KeyIcon size={16} />
-      {translateUi('auth.emailEntry.passkeyButton')}
+      {translateUi("auth.emailEntry.passkeyButton")}
     </Button>
   );
 }

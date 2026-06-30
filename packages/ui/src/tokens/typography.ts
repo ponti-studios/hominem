@@ -1,6 +1,6 @@
 export const fontFamilies = {
-  primary: '-apple-system, BlinkMacSystemFont, system-ui, sans-serif',
-  mono: 'ui-monospace, monospace',
+  primary: "-apple-system, BlinkMacSystemFont, system-ui, sans-serif",
+  mono: "ui-monospace, monospace",
 } as const;
 
 export const fontSizes = {
@@ -20,10 +20,10 @@ export const fontSizes = {
 } as const;
 
 export const fontWeights = {
-  regular: '400',
-  medium: '500',
-  semibold: '600',
-  bold: '700',
+  regular: "400",
+  medium: "500",
+  semibold: "600",
+  bold: "700",
 } as const;
 
 export const lineHeights = {

@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from "@storybook/react-vite";
 
 import {
   AlertDialog,
@@ -10,12 +10,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from './alert-dialog';
+} from "./alert-dialog";
 
 const meta = {
-  title: 'Patterns/Overlay/AlertDialog',
+  title: "Patterns/Overlay/AlertDialog",
   component: AlertDialog,
-  tags: ['autodocs'],
+  tags: ["autodocs"],
 } satisfies Meta<typeof AlertDialog>;
 
 export default meta;
@@ -24,7 +24,7 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   render: () => (
     <AlertDialog>
-      <AlertDialogTrigger className="px-4 py-2 border rounded text-sm">
+      <AlertDialogTrigger className="rounded border px-4 py-2 text-sm">
         Open Dialog
       </AlertDialogTrigger>
       <AlertDialogContent>

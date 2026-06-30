@@ -1,7 +1,7 @@
-import * as React from 'react';
+import * as React from "react";
 
-import { cn } from '../lib/utils';
-import type { FieldBaseProps } from './field.types';
+import { cn } from "../lib/utils";
+import type { FieldBaseProps } from "./field.types";
 
 interface FieldProps extends FieldBaseProps {
   children: React.ReactNode;
@@ -29,8 +29,8 @@ function Field({ label, helpText, error, required, children, id: externalId }: F
         <label
           htmlFor={id}
           className={cn(
-            'body-3 font-medium text-text-primary',
-            required && "after:content-['*'] after:ml-0.5 after:text-destructive",
+            "body-3 text-text-primary font-medium",
+            required && "after:text-destructive after:ml-0.5 after:content-['*']",
           )}
         >
           {label}
@@ -43,8 +43,8 @@ function Field({ label, helpText, error, required, children, id: externalId }: F
             children as React.ReactElement<React.HTMLAttributes<HTMLElement>>,
             {
               id,
-              'aria-describedby': error ? errorId : helpText ? descId : undefined,
-              'aria-invalid': error ? true : undefined,
+              "aria-describedby": error ? errorId : helpText ? descId : undefined,
+              "aria-invalid": error ? true : undefined,
             } as React.HTMLAttributes<HTMLElement>,
           )
         : children}

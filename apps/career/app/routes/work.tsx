@@ -1,7 +1,7 @@
 import type { CareerWorkExperienceRecord as WorkExperience } from '@hominem/db';
 import { CareerRepository, db } from '@hominem/db';
 import { EmptyState } from '@hominem/ui';
-import { Button } from '@hominem/ui/button';
+import { Button } from '@hominem/ui';
 import { stringToDate } from '@hominem/utils/dates';
 import { PencilLineIcon, PlusIcon } from 'lucide-react';
 import { useFetcher, useNavigate } from 'react-router';

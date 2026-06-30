@@ -1,12 +1,12 @@
-import { Button } from '@hominem/ui/button';
 import {
+  Button,
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from '@hominem/ui/dropdown';
-import { FilterSelect } from '@hominem/ui/filters';
-import { Input } from '@hominem/ui/input';
+  FilterSelect,
+  Input,
+} from '@hominem/ui';
 import { ChevronDownIcon, XIcon } from 'lucide-react';
 
 import { formatStatusText } from '~/lib/utils/applicationUtils';

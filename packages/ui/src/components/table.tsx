@@ -1,31 +1,31 @@
-import * as React from 'react';
+import * as React from "react";
 
-import { cn } from '../lib/utils';
+import { cn } from "../lib/utils";
 
 const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(
   ({ className, ...props }, ref) => (
     <div className="w-full overflow-auto">
-      <table ref={ref} className={cn('w-full caption-bottom body-3', className)} {...props} />
+      <table ref={ref} className={cn("body-3 w-full caption-bottom", className)} {...props} />
     </div>
   ),
 );
-Table.displayName = 'Table';
+Table.displayName = "Table";
 
 const TableHeader = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
-  <thead ref={ref} className={cn('[&_tr]:border-b', className)} {...props} />
+  <thead ref={ref} className={cn("[&_tr]:border-b", className)} {...props} />
 ));
-TableHeader.displayName = 'TableHeader';
+TableHeader.displayName = "TableHeader";
 
 const TableBody = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
-  <tbody ref={ref} className={cn('[&_tr:last-child]:border-0', className)} {...props} />
+  <tbody ref={ref} className={cn("[&_tr:last-child]:border-0", className)} {...props} />
 ));
-TableBody.displayName = 'TableBody';
+TableBody.displayName = "TableBody";
 
 const TableFooter = React.forwardRef<
   HTMLTableSectionElement,
@@ -33,25 +33,25 @@ const TableFooter = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <tfoot
     ref={ref}
-    className={cn('bg-primary font-medium text-primary-foreground', className)}
+    className={cn("bg-primary text-primary-foreground font-medium", className)}
     {...props}
   />
 ));
-TableFooter.displayName = 'TableFooter';
+TableFooter.displayName = "TableFooter";
 
 const TableRow = React.forwardRef<HTMLTableRowElement, React.HTMLAttributes<HTMLTableRowElement>>(
   ({ className, ...props }, ref) => (
     <tr
       ref={ref}
       className={cn(
-        'void-hover border-b data-[state=selected]:bg-muted [--void-hover-bg:color-mix(in_srgb,var(--color-muted)_72%,transparent)] [--void-hover-color:inherit] [--void-hover-border:var(--color-border-default)]',
+        "void-hover data-[state=selected]:bg-muted border-b [--void-hover-bg:color-mix(in_srgb,var(--color-muted)_72%,transparent)] [--void-hover-border:var(--color-border-default)] [--void-hover-color:inherit]",
         className,
       )}
       {...props}
     />
   ),
 );
-TableRow.displayName = 'TableRow';
+TableRow.displayName = "TableRow";
 
 const TableHead = React.forwardRef<
   HTMLTableCellElement,
@@ -60,13 +60,13 @@ const TableHead = React.forwardRef<
   <th
     ref={ref}
     className={cn(
-      'h-9 px-3 text-left align-middle ui-eyebrow [&:has([role=checkbox])]:pr-0',
+      "ui-eyebrow h-9 px-3 text-left align-middle [&:has([role=checkbox])]:pr-0",
       className,
     )}
     {...props}
   />
 ));
-TableHead.displayName = 'TableHead';
+TableHead.displayName = "TableHead";
 
 const TableCell = React.forwardRef<
   HTMLTableCellElement,
@@ -74,18 +74,18 @@ const TableCell = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <td
     ref={ref}
-    className={cn('px-3 py-2.5 align-middle [&:has([role=checkbox])]:pr-0', className)}
+    className={cn("px-3 py-2.5 align-middle [&:has([role=checkbox])]:pr-0", className)}
     {...props}
   />
 ));
-TableCell.displayName = 'TableCell';
+TableCell.displayName = "TableCell";
 
 const TableCaption = React.forwardRef<
   HTMLTableCaptionElement,
   React.HTMLAttributes<HTMLTableCaptionElement>
 >(({ className, ...props }, ref) => (
-  <caption ref={ref} className={cn('mt-4 body-4 text-muted-foreground', className)} {...props} />
+  <caption ref={ref} className={cn("body-4 text-muted-foreground mt-4", className)} {...props} />
 ));
-TableCaption.displayName = 'TableCaption';
+TableCaption.displayName = "TableCaption";
 
 export { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow };

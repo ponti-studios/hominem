@@ -1,11 +1,12 @@
 import type { ColorToken } from '@hominem/ui/tokens';
-import { colors } from '@hominem/ui/tokens';
 import {
   Text as RNText,
   type TextProps as RNTextProps,
   type StyleProp,
   type TextStyle,
 } from 'react-native';
+
+import { colors } from './theme';
 
 export const fontFamiliesNative = {
   primary: 'System',

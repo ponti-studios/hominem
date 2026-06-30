@@ -1,10 +1,19 @@
 import type { CareerJobApplicationRecord as ApplicationWithCompany } from '@hominem/db';
-import { Badge } from '@hominem/ui/badge';
-import { Button } from '@hominem/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
-import { Input } from '@hominem/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
-import { Textarea } from '@hominem/ui/textarea';
+import { Badge } from '@hominem/ui';
+import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Textarea,
+} from '@hominem/ui';
 import { useState } from 'react';
 import { Form } from 'react-router';
 

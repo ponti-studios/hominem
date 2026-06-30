@@ -1,24 +1,16 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useState, type ComponentProps } from 'react';
-import { MemoryRouter } from 'react-router';
-import { expect, userEvent, within } from 'storybook/test';
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { useState, type ComponentProps } from "react";
+import { expect, userEvent, within } from "storybook/test";
 
-import { EmailEntryForm } from './email-entry-form';
+import { EmailEntryForm } from "./email-entry-form";
 
 const meta = {
-  title: 'Patterns/Auth/EmailEntryForm',
+  title: "Patterns/Auth/EmailEntryForm",
   component: EmailEntryForm,
-  tags: ['autodocs'],
+  tags: ["autodocs"],
   parameters: {
-    layout: 'fullscreen',
+    layout: "fullscreen",
   },
-  decorators: [
-    (Story) => (
-      <MemoryRouter>
-        <Story />
-      </MemoryRouter>
-    ),
-  ],
 } satisfies Meta<typeof EmailEntryForm>;
 
 export default meta;
@@ -32,24 +24,24 @@ function ControlledEmailEntryForm(args: ComponentProps<typeof EmailEntryForm>) {
 
 export const Default: Story = {
   args: {
-    email: '',
+    email: "",
     onEmailChange: () => {},
     onSubmit: async () => {},
   },
   render: (args) => <ControlledEmailEntryForm {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const input = canvas.getByLabelText('Email address') as HTMLInputElement;
+    const input = canvas.getByLabelText("Email address") as HTMLInputElement;
 
-    await userEvent.type(input, 'test@example.com');
-    await expect(input).toHaveValue('test@example.com');
+    await userEvent.type(input, "test@example.com");
+    await expect(input).toHaveValue("test@example.com");
   },
 };
 
 export const WithError: Story = {
   args: {
-    email: '',
-    error: 'Please enter a valid email address.',
+    email: "",
+    error: "Please enter a valid email address.",
     onEmailChange: () => {},
     onSubmit: async () => {},
   },
@@ -57,7 +49,7 @@ export const WithError: Story = {
 
 export const WithPasskey: Story = {
   args: {
-    email: '',
+    email: "",
     onEmailChange: () => {},
     onSubmit: async () => {},
     onPasskeyClick: async () => {},

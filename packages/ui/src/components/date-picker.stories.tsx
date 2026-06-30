@@ -1,12 +1,12 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useState } from 'react';
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { useState } from "react";
 
-import { DatePicker } from './date-picker';
+import { DatePicker } from "./date-picker";
 
 const meta = {
-  title: 'Forms/DatePicker',
+  title: "Forms/DatePicker",
   component: DatePicker,
-  tags: ['autodocs'],
+  tags: ["autodocs"],
 } satisfies Meta<typeof DatePicker>;
 
 export default meta;
@@ -16,7 +16,7 @@ export const Default: Story = {
   args: {
     value: undefined,
     onSelect: () => {},
-    placeholder: 'Pick a date',
+    placeholder: "Pick a date",
   },
   render: (args) => {
     const [date, setDate] = useState<Date | undefined>(args.value);
@@ -28,7 +28,7 @@ export const WithLabel: Story = {
   args: {
     value: new Date(),
     onSelect: () => {},
-    label: 'Due Date',
+    label: "Due Date",
     showLabel: true,
   },
   render: (args) => {
@@ -42,7 +42,7 @@ export const Disabled: Story = {
     value: new Date(),
     onSelect: () => {},
     disabled: true,
-    label: 'Locked Date',
+    label: "Locked Date",
     showLabel: true,
   },
 };

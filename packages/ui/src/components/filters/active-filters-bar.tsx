@@ -1,4 +1,4 @@
-import { FilterChip } from './filter-chip';
+import { FilterChip } from "./filter-chip";
 
 export interface ActiveFilter {
   id: string;
@@ -7,7 +7,7 @@ export interface ActiveFilter {
   onClick?: () => void;
 }
 
-interface ActiveFiltersBarProps {
+export interface ActiveFiltersBarProps {
   filters: ActiveFilter[];
   label?: string;
 }
@@ -19,7 +19,7 @@ export function ActiveFiltersBar({ filters, label }: ActiveFiltersBarProps) {
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {label && <span className="text-sm text-muted-foreground">{label}</span>}
+      {label ? <span className="text-muted-foreground text-sm">{label}</span> : null}
       {filters.map((filter) => (
         <FilterChip
           key={filter.id}

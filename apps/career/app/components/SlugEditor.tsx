@@ -1,5 +1,4 @@
-import { Button } from '@hominem/ui/button';
-import { Input } from '@hominem/ui/input';
+import { Button, Input } from '@hominem/ui';
 import { Check, Loader2, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useSubmit } from 'react-router';

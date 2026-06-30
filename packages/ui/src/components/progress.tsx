@@ -1,7 +1,7 @@
-import * as ProgressPrimitive from '@radix-ui/react-progress';
-import * as React from 'react';
+import * as ProgressPrimitive from "@radix-ui/react-progress";
+import * as React from "react";
 
-import { cn } from '../lib/utils';
+import { cn } from "../lib/utils";
 
 function Progress({
   className,
@@ -14,13 +14,13 @@ function Progress({
   return (
     <ProgressPrimitive.Root
       data-slot="progress"
-      className={cn('bg-primary/20 relative h-2 w-full overflow-hidden rounded-full', className)}
+      className={cn("bg-primary/20 relative h-2 w-full overflow-hidden rounded-full", className)}
       value={value}
       {...props}
     >
       <ProgressPrimitive.Indicator
         data-slot="progress-indicator"
-        className={cn('bg-primary h-full w-full flex-1 transition-all', indicatorClassName)}
+        className={cn("bg-primary h-full w-full flex-1 transition-all", indicatorClassName)}
         style={{ transform: `translateX(-${100 - (value ?? 0)}%)` }}
       />
     </ProgressPrimitive.Root>
@@ -37,16 +37,16 @@ interface PercentageProgressBarProps {
 function PercentageProgressBar({
   label,
   percentage,
-  color = 'bg-primary',
+  color = "bg-primary",
   className,
 }: PercentageProgressBarProps) {
   const clampedPercentage = Math.max(0, Math.min(100, percentage));
 
   return (
-    <div className={cn('space-y-2', className)}>
+    <div className={cn("space-y-2", className)}>
       <div className="flex items-center justify-between gap-3 text-sm">
         <span className="text-muted-foreground">{label}</span>
-        <span className="font-medium text-foreground">{clampedPercentage.toFixed(0)}%</span>
+        <span className="text-foreground font-medium">{clampedPercentage.toFixed(0)}%</span>
       </div>
       <Progress value={clampedPercentage} indicatorClassName={color} />
     </div>
@@ -65,16 +65,16 @@ function VolumeProgressBar({
   label,
   count,
   maxCount,
-  color = 'bg-primary',
+  color = "bg-primary",
   className,
 }: VolumeProgressBarProps) {
   const percentage = maxCount > 0 ? (count / maxCount) * 100 : 0;
 
   return (
-    <div className={cn('space-y-2', className)}>
+    <div className={cn("space-y-2", className)}>
       <div className="flex items-center justify-between gap-3 text-sm">
         <span className="text-muted-foreground">{label}</span>
-        <span className="font-medium text-foreground">{count}</span>
+        <span className="text-foreground font-medium">{count}</span>
       </div>
       <Progress value={percentage} indicatorClassName={color} />
     </div>

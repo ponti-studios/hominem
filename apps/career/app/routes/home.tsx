@@ -1,4 +1,4 @@
-import { buttonVariants } from '@hominem/ui/button';
+import { buttonVariants } from '@hominem/ui';
 import { Link } from 'react-router';
 
 import { FunnelHealth } from '~/components/career/dashboard/FunnelHealth';

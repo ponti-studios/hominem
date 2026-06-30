@@ -1,11 +1,11 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from "@storybook/react-vite";
 
-import { Progress } from './progress';
+import { Progress } from "./progress";
 
 const meta = {
-  title: 'Feedback/Progress',
+  title: "Feedback/Progress",
   component: Progress,
-  tags: ['autodocs'],
+  tags: ["autodocs"],
 } satisfies Meta<typeof Progress>;
 
 export default meta;
@@ -27,7 +27,7 @@ export const Complete: Story = {
 
 export const Partial: Story = {
   render: () => (
-    <div className="flex flex-col gap-4 w-64">
+    <div className="flex w-64 flex-col gap-4">
       <Progress value={10} />
       <Progress value={33} />
       <Progress value={66} />

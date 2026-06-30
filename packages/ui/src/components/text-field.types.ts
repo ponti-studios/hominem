@@ -1,4 +1,4 @@
-export type TextFieldType = 'text' | 'email' | 'password' | 'search';
+export type TextFieldType = "text" | "email" | "password" | "search";
 
 export interface TextFieldBaseProps {
   disabled?: boolean | undefined;

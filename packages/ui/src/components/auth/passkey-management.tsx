@@ -1,47 +1,22 @@
-import { KeyRound, Plus, Trash2 } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { KeyRound, Plus, Trash2 } from "lucide-react";
+import { useCallback, useState } from "react";
 
-import { Button } from '../button';
+import { Button } from "../button";
 
-interface Passkey {
+export interface PasskeyRecord {
   id: string;
   name?: string;
   createdAt?: string;
 }
 
-interface PasskeyManagementProps {
-  /**
-   * List of registered passkeys to display.
-   * Pass undefined while loading.
-   */
-  passkeys?: Passkey[] | undefined;
-  /**
-   * Whether the passkeys list is currently loading.
-   */
-  isLoading?: boolean | undefined;
-  /**
-   * Error message to display, if any.
-   */
-  error?: string | null | undefined;
-  /**
-   * Called when the user wants to add a new passkey.
-   * Should invoke the platform WebAuthn registration flow.
-   * Returns true on success, false on cancellation/failure.
-   */
+export interface PasskeyManagementProps {
+  passkeys?: PasskeyRecord[];
+  isLoading?: boolean;
+  error?: string | null;
   onAdd: () => Promise<boolean>;
-  /**
-   * Called when the user wants to delete a passkey.
-   * Returns true on success, false on failure.
-   */
   onDelete: (id: string) => Promise<boolean>;
 }
 
-/**
- * Passkey management panel — lists registered passkeys, lets users add or
- * delete them. Designed to be embedded in a `/settings/security` page.
- *
- * Data fetching is the responsibility of the parent component.
- */
 export function PasskeyManagement({
   passkeys: passkeysProp,
   isLoading = false,
@@ -62,10 +37,10 @@ export function PasskeyManagement({
     try {
       const success = await onAdd();
       if (!success) {
-        setActionError('Passkey registration was cancelled or failed.');
+        setActionError("Passkey registration was cancelled or failed.");
       }
     } catch {
-      setActionError('An error occurred during passkey registration.');
+      setActionError("An error occurred during passkey registration.");
     } finally {
       setAdding(false);
     }
@@ -77,9 +52,11 @@ export function PasskeyManagement({
       setActionError(null);
       try {
         const success = await onDelete(id);
-        if (!success) throw new Error('Failed to delete passkey');
+        if (!success) {
+          throw new Error("Failed to delete passkey");
+        }
       } catch {
-        setActionError('Could not delete passkey. Please try again.');
+        setActionError("Could not delete passkey. Please try again.");
       } finally {
         setDeletingId(null);
       }
@@ -102,25 +79,25 @@ export function PasskeyManagement({
           type="button"
           variant="outline"
           size="sm"
-          onClick={handleAdd}
+          onClick={() => void handleAdd()}
           disabled={adding}
           aria-label="Add a passkey"
         >
           <Plus className="size-4" aria-hidden />
-          {adding ? 'Adding...' : 'Add passkey'}
+          {adding ? "Adding..." : "Add passkey"}
         </Button>
       </div>
 
-      {error && (
-        <p role="alert" className="text-sm text-destructive">
+      {error ? (
+        <p role="alert" className="text-destructive text-sm">
           {error}
         </p>
-      )}
+      ) : null}
 
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">Loading passkeys...</p>
+        <p className="text-muted-foreground text-sm">Loading passkeys...</p>
       ) : passkeys.length === 0 ? (
-        <div className="flex items-center gap-3 border border-dashed border-default p-4 text-sm text-text-secondary">
+        <div className="border-default text-text-secondary flex items-center gap-3 border border-dashed p-4 text-sm">
           <KeyRound className="size-4 shrink-0" aria-hidden />
           <span>No passkeys registered. Add one to sign in faster.</span>
         </div>
@@ -129,25 +106,25 @@ export function PasskeyManagement({
           {passkeys.map((pk) => (
             <li
               key={pk.id}
-              className="flex items-center justify-between border border-default px-4 py-3 text-sm"
+              className="border-default flex items-center justify-between border px-4 py-3 text-sm"
             >
               <div className="flex items-center gap-3">
-                <KeyRound className="size-4 shrink-0 text-text-secondary" aria-hidden />
+                <KeyRound className="text-text-secondary size-4 shrink-0" aria-hidden />
                 <div>
-                  <span className="font-medium">{pk.name ?? 'Passkey'}</span>
-                  {pk.createdAt && (
-                    <span className="ml-2 text-xs text-text-tertiary">
+                  <span className="font-medium">{pk.name ?? "Passkey"}</span>
+                  {pk.createdAt ? (
+                    <span className="text-text-tertiary ml-2 text-xs">
                       Added {new Date(pk.createdAt).toLocaleDateString()}
                     </span>
-                  )}
+                  ) : null}
                 </div>
               </div>
               <button
                 type="button"
-                onClick={() => handleDelete(pk.id)}
+                onClick={() => void handleDelete(pk.id)}
                 disabled={deletingId === pk.id}
                 aria-label={`Remove passkey ${pk.name ?? pk.id}`}
-                className="text-muted-foreground hover:text-destructive disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+                className="hover:text-destructive text-muted-foreground focus-visible:ring-ring rounded-sm focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50"
               >
                 <Trash2 className="size-4" aria-hidden />
               </button>

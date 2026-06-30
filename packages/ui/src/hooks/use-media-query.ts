@@ -1,4 +1,4 @@
-import { useCallback, useSyncExternalStore } from 'react';
+import { useCallback, useSyncExternalStore } from "react";
 
 interface MediaQueryOptions {
   width?: number;
@@ -37,7 +37,7 @@ function mediaQuery(query: string, options?: MediaQueryOptions) {
 export function useMediaQuery(query: string) {
   const subscribe = useCallback(
     (onStoreChange: () => void) => {
-      if (typeof window === 'undefined') {
+      if (typeof window === "undefined") {
         return () => {};
       }
 
@@ -46,16 +46,16 @@ export function useMediaQuery(query: string) {
         onStoreChange();
       };
 
-      mql.addEventListener('change', onChange);
+      mql.addEventListener("change", onChange);
       return () => {
-        mql.removeEventListener('change', onChange);
+        mql.removeEventListener("change", onChange);
       };
     },
     [query],
   );
 
   const getSnapshot = useCallback(() => {
-    if (typeof window === 'undefined') {
+    if (typeof window === "undefined") {
       return false;
     }
     return mediaQuery(query);

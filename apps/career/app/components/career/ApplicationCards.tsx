@@ -1,7 +1,5 @@
 import { EmptyState } from '@hominem/ui';
-import { Badge } from '@hominem/ui/badge';
-import { buttonVariants } from '@hominem/ui/button';
-import { Card, CardContent } from '@hominem/ui/card';
+import { Badge, buttonVariants, Card, CardContent } from '@hominem/ui';
 import { centsToDollars, formatCurrency } from '@hominem/utils/numbers';
 import { CalendarIcon, DollarSignIcon, MapPinIcon } from 'lucide-react';
 import { Link } from 'react-router';

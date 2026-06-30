@@ -1,14 +1,14 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from "@storybook/react-vite";
 
-import { hiddenControl, textControl } from '../../storybook/controls';
-import { ActiveFiltersBar } from './active-filters-bar';
+import { hiddenControl, textControl } from "../../storybook/controls";
+import { ActiveFiltersBar } from "./active-filters-bar";
 
 const meta = {
-  title: 'Patterns/Filters/ActiveFiltersBar',
+  title: "Patterns/Filters/ActiveFiltersBar",
   component: ActiveFiltersBar,
-  tags: ['autodocs'],
+  tags: ["autodocs"],
   argTypes: {
-    label: textControl('Optional label shown before the filter chips'),
+    label: textControl("Optional label shown before the filter chips"),
     filters: hiddenControl,
   },
 } satisfies Meta<typeof ActiveFiltersBar>;
@@ -19,19 +19,19 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   args: {
     filters: [
-      { id: '1', label: 'Status: Active', onRemove: () => {} },
-      { id: '2', label: 'Type: Invoice', onRemove: () => {} },
-      { id: '3', label: 'Date: Last 30 days', onRemove: () => {} },
+      { id: "1", label: "Status: Active", onRemove: () => {} },
+      { id: "2", label: "Type: Invoice", onRemove: () => {} },
+      { id: "3", label: "Date: Last 30 days", onRemove: () => {} },
     ],
   },
 };
 
 export const WithLabel: Story = {
   args: {
-    label: 'Active filters:',
+    label: "Active filters:",
     filters: [
-      { id: '1', label: 'Category: Work', onRemove: () => {} },
-      { id: '2', label: 'Priority: High', onRemove: () => {} },
+      { id: "1", label: "Category: Work", onRemove: () => {} },
+      { id: "2", label: "Priority: High", onRemove: () => {} },
     ],
   },
 };

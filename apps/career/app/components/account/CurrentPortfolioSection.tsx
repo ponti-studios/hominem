@@ -1,6 +1,6 @@
 import type { CareerPortfolioRecord } from '@hominem/db';
-import { Badge } from '@hominem/ui/badge';
-import { Button } from '@hominem/ui/button';
+import { Badge } from '@hominem/ui';
+import { Button } from '@hominem/ui';
 import { ExternalLink } from 'lucide-react';
 
 import { SlugEditor } from '~/components/SlugEditor';

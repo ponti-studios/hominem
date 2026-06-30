@@ -8,7 +8,7 @@
 interface ProcessedFile {
   id: string;
   originalName: string;
-  type: 'image' | 'document' | 'audio' | 'video' | 'unknown';
+  type: "image" | "document" | "audio" | "video" | "unknown";
   mimetype: string;
   size: number;
   content?: string;

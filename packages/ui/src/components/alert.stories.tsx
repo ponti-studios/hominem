@@ -1,12 +1,12 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import { AlertCircle, Info, Terminal } from 'lucide-react';
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { AlertCircle, Info, Terminal } from "lucide-react";
 
-import { Alert, AlertDescription, AlertTitle } from './alert';
+import { Alert, AlertDescription, AlertTitle } from "./alert";
 
 const meta = {
-  title: 'Feedback/Alert',
+  title: "Feedback/Alert",
   component: Alert,
-  tags: ['autodocs'],
+  tags: ["autodocs"],
 } satisfies Meta<typeof Alert>;
 
 export default meta;

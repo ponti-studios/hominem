@@ -9,7 +9,6 @@ import defaultTheme, {
 } from './theme';
 
 export {
-  colors,
   durations,
   radii,
   shadowsNative,
@@ -18,6 +17,7 @@ export {
   type RadiusToken,
   type SpacingToken,
 } from '@hominem/ui/tokens';
+export { colors } from './theme';
 export { fontFamiliesNative, fontSizes, fontWeights, lineHeights, Text } from './typography';
 export { componentSizes, theme, themeSpacing, useThemeColors };
 export { defaultTheme as default };

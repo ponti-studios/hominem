@@ -1,6 +1,5 @@
 import { CareerRepository, db } from '@hominem/db';
-import { Button } from '@hominem/ui/button';
-import { useDebouncedValue } from '@hominem/ui/hooks';
+import { Button, useDebouncedValue } from '@hominem/ui';
 import { PlusIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';

@@ -1,6 +1,6 @@
-import { cn } from '../../lib/utils';
-import { Button } from '../button';
-import { Input } from '../input';
+import { cn } from "../../lib/utils";
+import { Button } from "../button";
+import { Input } from "../input";
 
 export interface InlineEnhanceTrayProps {
   instruction: string;
@@ -18,12 +18,12 @@ export interface InlineEnhanceTrayProps {
 }
 
 const DEFAULT_SUGGESTIONS = [
-  'Fix grammar',
-  'Make concise',
-  'Make formal',
-  'Expand ideas',
-  'Simplify',
-  'Add bullet points',
+  "Fix grammar",
+  "Make concise",
+  "Make formal",
+  "Expand ideas",
+  "Simplify",
+  "Add bullet points",
 ] as const;
 
 export function InlineEnhanceTray({
@@ -34,12 +34,12 @@ export function InlineEnhanceTray({
   isEnhancing = false,
   error = null,
   suggestions = DEFAULT_SUGGESTIONS,
-  placeholder = 'e.g. Make it more engaging',
-  confirmLabel = 'Enhance',
+  placeholder = "e.g. Make it more engaging",
+  confirmLabel = "Enhance",
   className,
 }: InlineEnhanceTrayProps) {
   return (
-    <div className={cn('rounded-xl border bg-muted/40 p-2', className)}>
+    <div className={cn("bg-muted/40 rounded-xl border p-2", className)}>
       <div className="mt-3 flex flex-wrap gap-2">
         {suggestions.map((suggestion) => {
           const isActive = instruction === suggestion;
@@ -48,10 +48,10 @@ export function InlineEnhanceTray({
               key={suggestion}
               type="button"
               className={cn(
-                'rounded-full border px-3 py-1.5 text-xs void-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                "void-hover focus-visible:ring-ring rounded-full border px-3 py-1.5 text-xs focus-visible:ring-2 focus-visible:outline-none",
                 isActive
-                  ? 'border-border-default bg-background text-foreground'
-                  : 'border-border-subtle bg-background/70 text-text-secondary [--void-hover-bg:transparent] [--void-hover-border:var(--color-border-default)] [--void-hover-color:var(--color-foreground)]',
+                  ? "border-border-default bg-background text-foreground"
+                  : "border-border-subtle bg-background/70 text-text-secondary [--void-hover-bg:transparent] [--void-hover-border:var(--color-border-default)] [--void-hover-color:var(--color-foreground)]",
               )}
               onClick={() => onInstructionChange(suggestion)}
             >
@@ -74,12 +74,12 @@ export function InlineEnhanceTray({
             Cancel
           </Button>
           <Button onClick={onConfirm} disabled={isEnhancing}>
-            {isEnhancing ? 'Enhancing...' : confirmLabel}
+            {isEnhancing ? "Enhancing..." : confirmLabel}
           </Button>
         </div>
       </div>
 
-      {error ? <p className="mt-3 text-sm text-destructive">{error}</p> : null}
+      {error ? <p className="text-destructive mt-3 text-sm">{error}</p> : null}
     </div>
   );
 }

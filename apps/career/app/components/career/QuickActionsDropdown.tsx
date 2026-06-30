@@ -1,10 +1,10 @@
-import { Button } from '@hominem/ui/button';
 import {
+  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@hominem/ui/dropdown';
+} from '@hominem/ui';
 import { Menu } from 'lucide-react';
 import { useState } from 'react';
 

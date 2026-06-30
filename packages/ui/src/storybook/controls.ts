@@ -1,13 +1,13 @@
-import type { InputType } from 'storybook/internal/csf';
+import type { InputType } from "storybook/internal/csf";
 
-type StorybookControlTable = NonNullable<InputType['table']>;
+type StorybookControlTable = NonNullable<InputType["table"]>;
 
-type StorybookControlCondition = NonNullable<InputType['if']>;
+type StorybookControlCondition = NonNullable<InputType["if"]>;
 
 type StorybookControl = InputType;
 
 type SelectControlConfig = {
-  controlType?: 'select' | 'radio' | 'inline-radio' | 'check' | 'inline-check' | 'multi-select';
+  controlType?: "select" | "radio" | "inline-radio" | "check" | "inline-check" | "multi-select";
   defaultValue?: boolean | number | string | null;
   if?: StorybookControlCondition;
   labels?: Record<string, string>;
@@ -46,7 +46,7 @@ function withDefaultValue(
 function booleanControl(description: string, defaultValue?: boolean): StorybookControl {
   return withDefaultValue(
     {
-      control: 'boolean',
+      control: "boolean",
       description,
     },
     defaultValue,
@@ -56,7 +56,7 @@ function booleanControl(description: string, defaultValue?: boolean): StorybookC
 function textControl(description: string, defaultValue?: string): StorybookControl {
   return withDefaultValue(
     {
-      control: 'text',
+      control: "text",
       description,
     },
     defaultValue,
@@ -78,7 +78,7 @@ function numberControl(
         max: config?.max,
         min: config?.min,
         step: config?.step,
-        type: 'number',
+        type: "number",
       },
       description,
     },
@@ -94,7 +94,7 @@ function selectControl<T extends boolean | number | string | null>(
   return withDefaultValue(
     {
       control: {
-        type: config?.controlType ?? 'select',
+        type: config?.controlType ?? "select",
       },
       description,
       options,

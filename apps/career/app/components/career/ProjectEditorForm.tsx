@@ -1,8 +1,14 @@
 import type { CareerProjectRecord as Project } from '@hominem/db';
-import { Button } from '@hominem/ui/button';
-import { Input } from '@hominem/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
-import { Textarea } from '@hominem/ui/textarea';
+import { Button } from '@hominem/ui';
+import {
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Textarea,
+} from '@hominem/ui';
 import { formatDateForInput } from '@hominem/utils/dates';
 import { useEffect } from 'react';
 import { Controller, type SubmitHandler, useForm } from 'react-hook-form';

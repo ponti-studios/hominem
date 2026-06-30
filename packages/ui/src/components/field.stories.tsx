@@ -1,13 +1,13 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import { expect, userEvent, within } from 'storybook/test';
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect, userEvent, within } from "storybook/test";
 
-import { Field } from './field';
-import { Input } from './input';
+import { Field } from "./field";
+import { Input } from "./input";
 
 const meta = {
-  title: 'Forms/Field',
+  title: "Forms/Field",
   component: Field,
-  tags: ['autodocs'],
+  tags: ["autodocs"],
   args: {
     children: <Input placeholder="you@example.com" />,
   },
@@ -24,12 +24,12 @@ export const Default: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const input = canvas.getByLabelText('Email');
+    const input = canvas.getByLabelText("Email");
 
-    await userEvent.type(input, 'you@example.com');
+    await userEvent.type(input, "you@example.com");
 
-    await expect(input).toHaveValue('you@example.com');
-    await expect(canvas.getByText('We will never share your address.')).toBeInTheDocument();
+    await expect(input).toHaveValue("you@example.com");
+    await expect(canvas.getByText("We will never share your address.")).toBeInTheDocument();
   },
 };
 
@@ -42,8 +42,8 @@ export const Error: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    await expect(canvas.getByLabelText('Email')).toHaveAttribute('aria-invalid', 'true');
-    await expect(canvas.getByRole('alert')).toHaveTextContent('Email is required');
+    await expect(canvas.getByLabelText("Email")).toHaveAttribute("aria-invalid", "true");
+    await expect(canvas.getByRole("alert")).toHaveTextContent("Email is required");
   },
 };
 
@@ -56,7 +56,7 @@ export const Textarea: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    await expect(canvas.getByLabelText('Notes')).toBeInTheDocument();
-    await expect(canvas.getByText('Markdown supported')).toBeInTheDocument();
+    await expect(canvas.getByLabelText("Notes")).toBeInTheDocument();
+    await expect(canvas.getByText("Markdown supported")).toBeInTheDocument();
   },
 };

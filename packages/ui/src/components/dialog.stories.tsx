@@ -1,8 +1,8 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useEffect, useState } from 'react';
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { useEffect, useState } from "react";
 
-import { booleanControl, hiddenControl } from '../storybook/controls';
-import { Button } from './button';
+import { booleanControl, hiddenControl } from "../storybook/controls";
+import { Button } from "./button";
 import {
   Dialog,
   DialogContent,
@@ -11,15 +11,15 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from './dialog';
+} from "./dialog";
 
 const meta = {
-  title: 'Patterns/Overlay/Dialog',
+  title: "Patterns/Overlay/Dialog",
   component: Dialog,
-  tags: ['autodocs'],
+  tags: ["autodocs"],
   argTypes: {
-    open: booleanControl('Controls whether the dialog is open', true),
-    modal: booleanControl('Whether interaction outside the dialog is disabled when open', true),
+    open: booleanControl("Controls whether the dialog is open", true),
+    modal: booleanControl("Whether interaction outside the dialog is disabled when open", true),
     defaultOpen: hiddenControl,
     onOpenChange: hiddenControl,
   },
@@ -56,7 +56,7 @@ export const Default: Story = {
     modal: true,
   },
   render: (args) => (
-    <DialogPreview open={args.open ?? true} modal={args.modal ?? true}>
+    <DialogPreview open={Boolean(args.open ?? true)} modal={Boolean(args.modal ?? true)}>
       <DialogTrigger asChild>
         <Button variant="outline">Open Dialog</Button>
       </DialogTrigger>
@@ -93,7 +93,7 @@ export const WithCloseButton: Story = {
     modal: true,
   },
   render: (args) => (
-    <DialogPreview open={args.open ?? true} modal={args.modal ?? true}>
+    <DialogPreview open={Boolean(args.open ?? true)} modal={Boolean(args.modal ?? true)}>
       <DialogTrigger asChild>
         <Button>Open</Button>
       </DialogTrigger>

@@ -1,12 +1,12 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useState } from 'react';
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { useState } from "react";
 
-import { FilterSelect } from './filter-select';
+import { FilterSelect } from "./filter-select";
 
 const meta = {
-  title: 'Patterns/Filters/FilterSelect',
+  title: "Patterns/Filters/FilterSelect",
   component: FilterSelect,
-  tags: ['autodocs'],
+  tags: ["autodocs"],
   parameters: {
     controls: {
       disable: true,
@@ -18,20 +18,20 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const statusOptions = [
-  { value: 'active', label: 'Active' },
-  { value: 'inactive', label: 'Inactive' },
-  { value: 'pending', label: 'Pending' },
+  { value: "active", label: "Active" },
+  { value: "inactive", label: "Inactive" },
+  { value: "pending", label: "Pending" },
 ];
 
 export const Default: Story = {
   args: {
-    label: 'Status',
-    value: '',
+    label: "Status",
+    value: "",
     options: statusOptions,
     onChange: () => {},
   },
   render: () => {
-    const [value, setValue] = useState<string | ''>('');
+    const [value, setValue] = useState<string | "">("");
     return (
       <FilterSelect
         label="Status"
@@ -46,13 +46,13 @@ export const Default: Story = {
 
 export const WithSelection: Story = {
   args: {
-    label: 'Status',
-    value: 'active',
+    label: "Status",
+    value: "active",
     options: statusOptions,
     onChange: () => {},
   },
   render: () => {
-    const [value, setValue] = useState<string | ''>('active');
+    const [value, setValue] = useState<string | "">("active");
     return (
       <FilterSelect
         label="Status"
@@ -67,14 +67,14 @@ export const WithSelection: Story = {
 
 export const MultipleSelects: Story = {
   args: {
-    label: 'Status',
-    value: '',
+    label: "Status",
+    value: "",
     options: statusOptions,
     onChange: () => {},
   },
   render: () => {
-    const [status, setStatus] = useState<string | ''>('');
-    const [type, setType] = useState<string | ''>('');
+    const [status, setStatus] = useState<string | "">("");
+    const [type, setType] = useState<string | "">("");
     return (
       <div className="flex gap-4">
         <FilterSelect
@@ -88,9 +88,9 @@ export const MultipleSelects: Story = {
           label="Type"
           value={type}
           options={[
-            { value: 'invoice', label: 'Invoice' },
-            { value: 'payment', label: 'Payment' },
-            { value: 'refund', label: 'Refund' },
+            { value: "invoice", label: "Invoice" },
+            { value: "payment", label: "Payment" },
+            { value: "refund", label: "Refund" },
           ]}
           onChange={setType}
           placeholder="All types"

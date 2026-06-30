@@ -1,12 +1,12 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import { expect, userEvent, within } from 'storybook/test';
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect, userEvent, within } from "storybook/test";
 
-import { Button } from './button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './card';
+import { Button } from "./button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./card";
 
 const meta = {
-  title: 'Patterns/DataDisplay/Card',
-  tags: ['autodocs'],
+  title: "Patterns/DataDisplay/Card",
+  tags: ["autodocs"],
   component: Card,
 } satisfies Meta<typeof Card>;
 
@@ -35,13 +35,13 @@ export const Default: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const cancelButton = canvas.getByRole('button', { name: 'Cancel' });
+    const cancelButton = canvas.getByRole("button", { name: "Cancel" });
 
     await userEvent.tab();
 
-    await expect(canvas.getByText('Card Title')).toBeInTheDocument();
+    await expect(canvas.getByText("Card Title")).toBeInTheDocument();
     await expect(cancelButton).toHaveFocus();
-    await expect(canvas.getByRole('button', { name: 'Confirm' })).toBeInTheDocument();
+    await expect(canvas.getByRole("button", { name: "Confirm" })).toBeInTheDocument();
   },
 };
 
@@ -56,6 +56,6 @@ export const Minimal: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    await expect(canvas.getByText('Minimal card with only content.')).toBeInTheDocument();
+    await expect(canvas.getByText("Minimal card with only content.")).toBeInTheDocument();
   },
 };

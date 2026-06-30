@@ -1,9 +1,9 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useEffect, useState } from 'react';
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { useEffect, useState } from "react";
 
-import { booleanControl, hiddenControl, selectControl } from '../storybook/controls';
-import { drawerDirectionOptions } from '../storybook/options';
-import { Button } from './button';
+import { booleanControl, hiddenControl, selectControl } from "../storybook/controls";
+import { drawerDirectionOptions } from "../storybook/options";
+import { Button } from "./button";
 import {
   Drawer,
   DrawerClose,
@@ -13,24 +13,24 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
-} from './drawer';
+} from "./drawer";
 
 const meta = {
-  title: 'Patterns/Overlay/Drawer',
+  title: "Patterns/Overlay/Drawer",
   component: Drawer,
-  tags: ['autodocs'],
+  tags: ["autodocs"],
   argTypes: {
-    open: booleanControl('Controls whether the drawer is open', true),
+    open: booleanControl("Controls whether the drawer is open", true),
     defaultOpen: hiddenControl,
     direction: selectControl(
       drawerDirectionOptions,
-      'The side of the screen the drawer slides in from',
+      "The side of the screen the drawer slides in from",
       {
-        defaultValue: 'bottom',
+        defaultValue: "bottom",
       },
     ),
-    modal: booleanControl('When true, interaction outside the drawer is disabled while open', true),
-    dismissible: booleanControl('Whether the drawer can be closed by dragging it', true),
+    modal: booleanControl("When true, interaction outside the drawer is disabled while open", true),
+    dismissible: booleanControl("Whether the drawer can be closed by dragging it", true),
     onOpenChange: hiddenControl,
   },
 } satisfies Meta<typeof Drawer>;
@@ -46,7 +46,7 @@ function DrawerPreview({
   children,
 }: {
   open: boolean;
-  direction: 'top' | 'bottom' | 'left' | 'right';
+  direction: "top" | "bottom" | "left" | "right";
   modal: boolean;
   dismissible: boolean;
   children: React.ReactNode;
@@ -73,14 +73,14 @@ function DrawerPreview({
 export const Default: Story = {
   args: {
     open: true,
-    direction: 'bottom',
+    direction: "bottom",
     modal: true,
     dismissible: true,
   },
   render: (args) => (
     <DrawerPreview
       open={args.open ?? true}
-      direction={(args.direction ?? 'bottom') as 'bottom' | 'left' | 'right' | 'top'}
+      direction={(args.direction ?? "bottom") as "bottom" | "left" | "right" | "top"}
       modal={args.modal ?? true}
       dismissible={args.dismissible ?? true}
     >
@@ -93,7 +93,7 @@ export const Default: Story = {
           <DrawerDescription>Set your daily activity goal.</DrawerDescription>
         </DrawerHeader>
         <div className="p-4">
-          <p className="text-sm text-muted-foreground">Drawer content goes here.</p>
+          <p className="text-muted-foreground text-sm">Drawer content goes here.</p>
         </div>
         <DrawerFooter>
           <Button>Submit</Button>

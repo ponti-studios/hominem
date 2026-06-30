@@ -1,19 +1,19 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useEffect, useState } from 'react';
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { useEffect, useState } from "react";
 
-import { booleanControl, selectControl } from '../storybook/controls';
-import { switchSizeOptions } from '../storybook/options';
-import { Switch } from './switch';
+import { booleanControl, selectControl } from "../storybook/controls";
+import { switchSizeOptions } from "../storybook/options";
+import { Switch } from "./switch";
 
 const meta = {
-  title: 'Forms/Switch',
+  title: "Forms/Switch",
   component: Switch,
-  tags: ['autodocs'],
+  tags: ["autodocs"],
   argTypes: {
-    checked: booleanControl('Controlled on/off state of the switch', false),
-    disabled: booleanControl('Prevents user interaction and applies disabled styling', false),
-    size: selectControl(switchSizeOptions, 'Size variant of the switch', {
-      defaultValue: 'default',
+    checked: booleanControl("Controlled on/off state of the switch", false),
+    disabled: booleanControl("Prevents user interaction and applies disabled styling", false),
+    size: selectControl(switchSizeOptions, "Size variant of the switch", {
+      defaultValue: "default",
     }),
   },
 } satisfies Meta<typeof Switch>;
@@ -26,13 +26,13 @@ function SwitchPreview({
   disabled = false,
   id,
   label,
-  size = 'default',
+  size = "default",
 }: {
   checked: boolean;
   disabled: boolean;
   id: string;
   label: string;
-  size: 'default' | 'sm';
+  size: "default" | "sm";
 }) {
   const [currentChecked, setCurrentChecked] = useState(checked);
 
@@ -49,7 +49,7 @@ function SwitchPreview({
         onCheckedChange={setCurrentChecked}
         size={size}
       />
-      <label htmlFor={id} className="text-sm font-medium leading-none text-foreground">
+      <label htmlFor={id} className="text-foreground text-sm leading-none font-medium">
         {label}
       </label>
     </div>
@@ -66,7 +66,7 @@ export const Default: Story = {
       disabled={args.disabled ?? false}
       id="switch-default"
       label="Airplane Mode"
-      size={args.size ?? 'default'}
+      size={args.size ?? "default"}
     />
   ),
 };
@@ -74,7 +74,7 @@ export const Default: Story = {
 export const WithLabel: Story = {
   args: {
     checked: false,
-    size: 'default',
+    size: "default",
   },
   render: (args) => (
     <SwitchPreview
@@ -82,7 +82,7 @@ export const WithLabel: Story = {
       disabled={args.disabled ?? false}
       id="airplane-mode"
       label="Airplane Mode"
-      size={args.size ?? 'default'}
+      size={args.size ?? "default"}
     />
   ),
 };
@@ -97,7 +97,7 @@ export const Checked: Story = {
       disabled={args.disabled ?? false}
       id="notifications"
       label="Enable Notifications"
-      size={args.size ?? 'default'}
+      size={args.size ?? "default"}
     />
   ),
 };
@@ -114,14 +114,14 @@ export const Disabled: Story = {
         disabled={args.disabled ?? false}
         id="disabled-off"
         label="Disabled off"
-        size={args.size ?? 'default'}
+        size={args.size ?? "default"}
       />
       <SwitchPreview
         checked
         disabled={args.disabled ?? false}
         id="disabled-on"
         label="Disabled on"
-        size={args.size ?? 'default'}
+        size={args.size ?? "default"}
       />
     </div>
   ),
@@ -130,7 +130,7 @@ export const Disabled: Story = {
 export const Small: Story = {
   args: {
     checked: false,
-    size: 'sm',
+    size: "sm",
   },
   render: (args) => (
     <SwitchPreview
@@ -138,7 +138,7 @@ export const Small: Story = {
       disabled={args.disabled ?? false}
       id="small"
       label="Small switch"
-      size={args.size ?? 'default'}
+      size={args.size ?? "default"}
     />
   ),
 };

@@ -1,11 +1,18 @@
 import type { CareerSkillRecord } from '@hominem/db';
 import { CareerRepository, db, runInTransaction } from '@hominem/db';
-import { Button } from '@hominem/ui/button';
-import { Card, CardContent } from '@hominem/ui/card';
-import { Field } from '@hominem/ui/field';
-import { FilterChip } from '@hominem/ui/filters';
-import { Input } from '@hominem/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
+import { Button } from '@hominem/ui';
+import {
+  Card,
+  CardContent,
+  Field,
+  FilterChip,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@hominem/ui';
 import { LoaderPinwheel, PlusIcon, Sparkles } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useFetcher } from 'react-router';

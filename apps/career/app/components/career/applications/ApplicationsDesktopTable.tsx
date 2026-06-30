@@ -1,4 +1,4 @@
-import { Badge } from '@hominem/ui/badge';
+import { Badge } from '@hominem/ui';
 import { Link } from 'react-router';
 
 import {

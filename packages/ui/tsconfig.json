@@ -1,11 +1,24 @@
 {
   "extends": "../../tsconfig.profiles/react-bundler-lib.json",
   "compilerOptions": {
-    "rootDir": ".",
-    "outDir": "./build",
-    "tsBuildInfoFile": "../../.cache/ui.tsbuildinfo",
+    "outDir": "./dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "target": "ES2020",
+    "jsx": "react-jsx",
+    "ignoreDeprecations": "6.0",
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@hominem/ui": ["./src/index.ts"]
+    },
     "types": ["node", "vite/client"]
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", ".storybook/**/*.ts", ".storybook/**/*.tsx"],
-  "exclude": ["node_modules", "build", "dist", ".turbo", ".cache", "coverage", "*.tsbuildinfo"]
+  "include": ["src"]
 }

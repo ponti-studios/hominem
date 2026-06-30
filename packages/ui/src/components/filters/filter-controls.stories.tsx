@@ -1,8 +1,8 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from "@storybook/react-vite";
 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../select';
-import type { ActiveFilter } from './active-filters-bar';
-import { FilterControls, type FilterControlsProps } from './filter-controls';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../select";
+import type { ActiveFilter } from "./active-filters-bar";
+import { FilterControls, type FilterControlsProps } from "./filter-controls";
 
 interface FilterControlsPreviewProps {
   children: React.ReactNode;
@@ -24,9 +24,9 @@ function FilterControlsPreview(props: FilterControlsPreviewProps) {
 }
 
 const meta = {
-  title: 'Patterns/Filters/FilterControls',
+  title: "Patterns/Filters/FilterControls",
   component: FilterControlsPreview,
-  tags: ['autodocs'],
+  tags: ["autodocs"],
 } satisfies Meta<typeof FilterControlsPreview>;
 
 export default meta;
@@ -78,8 +78,8 @@ export const WithActiveFilters: Story = {
     <FilterControls
       showActiveFilters
       activeFilters={[
-        { id: '1', label: 'Status: Active', onRemove: () => {} },
-        { id: '2', label: 'Type: Invoice', onRemove: () => {} },
+        { id: "1", label: "Status: Active", onRemove: () => {} },
+        { id: "2", label: "Type: Invoice", onRemove: () => {} },
       ]}
     >
       <Select defaultValue="active">

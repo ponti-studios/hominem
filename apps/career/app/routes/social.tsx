@@ -1,8 +1,7 @@
 import type { CareerSocialLinksRecord } from '@hominem/db';
 import { CareerRepository, db } from '@hominem/db';
-import { Button } from '@hominem/ui/button';
-import { Card, CardContent } from '@hominem/ui/card';
-import { Input } from '@hominem/ui/input';
+import { Button } from '@hominem/ui';
+import { Card, CardContent, Input } from '@hominem/ui';
 import { Github, Globe, Linkedin, SaveIcon, Twitter } from 'lucide-react';
 import { useEffect } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';

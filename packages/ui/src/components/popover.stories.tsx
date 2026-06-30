@@ -1,12 +1,12 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from "@storybook/react-vite";
 
-import { Button } from './button';
-import { Popover, PopoverContent, PopoverTrigger } from './popover';
+import { Button } from "./button";
+import { Popover, PopoverContent, PopoverTrigger } from "./popover";
 
 const meta = {
-  title: 'Patterns/Overlay/Popover',
+  title: "Patterns/Overlay/Popover",
   component: Popover,
-  tags: ['autodocs'],
+  tags: ["autodocs"],
 } satisfies Meta<typeof Popover>;
 
 export default meta;
@@ -20,8 +20,8 @@ export const Default: Story = {
       </PopoverTrigger>
       <PopoverContent>
         <div className="grid gap-1.5">
-          <h4 className="font-medium leading-none text-foreground">Dimensions</h4>
-          <p className="text-sm text-muted-foreground">Set the dimensions for the layer.</p>
+          <h4 className="text-foreground leading-none font-medium">Dimensions</h4>
+          <p className="text-muted-foreground text-sm">Set the dimensions for the layer.</p>
         </div>
         <div className="grid gap-4 pt-4">
           <div className="grid grid-cols-3 items-center gap-4">

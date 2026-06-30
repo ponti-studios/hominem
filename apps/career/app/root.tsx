@@ -1,6 +1,12 @@
 import { AuthProvider } from '@hominem/auth/client/provider';
-import { Button, buttonVariants } from '@hominem/ui/button';
-import { Card, CardContent } from '@hominem/ui/card';
+import {
+  Button,
+  buttonVariants,
+  Card,
+  CardContent,
+  COLOR_MODE_ATTRIBUTE,
+  COLOR_SYSTEM_ATTRIBUTE,
+} from '@hominem/ui';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   data,
@@ -108,12 +114,29 @@ export const handle = {
   id: 'root',
 };
 
+const themeBootScript = `
+(() => {
+  const root = document.documentElement;
+  const system = localStorage.getItem('hominem:ui-color-system') || root.getAttribute('${COLOR_SYSTEM_ATTRIBUTE}') || 'primer';
+  const mode = localStorage.getItem('hominem:ui-color-mode') || root.getAttribute('${COLOR_MODE_ATTRIBUTE}') || 'system';
+
+  root.setAttribute('${COLOR_SYSTEM_ATTRIBUTE}', system === 'apple' ? 'apple' : 'primer');
+
+  if (mode === 'light' || mode === 'dark') {
+    root.setAttribute('${COLOR_MODE_ATTRIBUTE}', mode);
+  } else {
+    root.removeAttribute('${COLOR_MODE_ATTRIBUTE}');
+  }
+})();
+`;
+
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" data-color-system="primer" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
         <Meta />
         <Links />
       </head>

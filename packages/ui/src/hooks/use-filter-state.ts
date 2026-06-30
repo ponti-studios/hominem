@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface UseFilterStateOptions<T> {
   initialFilters: T;
@@ -15,7 +15,7 @@ export function useFilterState<T extends Record<string, unknown>>(
 
   const setFilters = useCallback(
     (newFilters: T | ((prev: T) => T)) => {
-      const updatedFilters = typeof newFilters === 'function' ? newFilters(filters) : newFilters;
+      const updatedFilters = typeof newFilters === "function" ? newFilters(filters) : newFilters;
       setFiltersState(updatedFilters);
 
       if (debounceMs && debounceMs > 0) {

@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState } from "react";
 
 interface UseInlineEnhanceParams {
   onEnhanceText: (input: { text: string; instruction?: string }) => Promise<string>;
@@ -11,7 +11,7 @@ interface RunEnhanceParams {
 
 export function useInlineEnhance({ onEnhanceText }: UseInlineEnhanceParams) {
   const [isEnhanceOpen, setIsEnhanceOpen] = useState(false);
-  const [enhanceInstruction, setEnhanceInstruction] = useState('');
+  const [enhanceInstruction, setEnhanceInstruction] = useState("");
   const [enhanceError, setEnhanceError] = useState<string | null>(null);
   const [isEnhancing, setIsEnhancing] = useState(false);
 
@@ -21,7 +21,7 @@ export function useInlineEnhance({ onEnhanceText }: UseInlineEnhanceParams) {
   }, []);
 
   const closeEnhance = useCallback(() => {
-    setEnhanceInstruction('');
+    setEnhanceInstruction("");
     setEnhanceError(null);
     setIsEnhanceOpen(false);
   }, []);
@@ -44,7 +44,7 @@ export function useInlineEnhance({ onEnhanceText }: UseInlineEnhanceParams) {
         closeEnhance();
         return true;
       } catch (caughtError) {
-        setEnhanceError(caughtError instanceof Error ? caughtError.message : 'Enhancement failed');
+        setEnhanceError(caughtError instanceof Error ? caughtError.message : "Enhancement failed");
         return false;
       } finally {
         setIsEnhancing(false);

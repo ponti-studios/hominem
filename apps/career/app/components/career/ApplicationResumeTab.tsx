@@ -1,8 +1,17 @@
 import type { CareerJobApplicationRecord as ApplicationWithCompany } from '@hominem/db';
-import { Button } from '@hominem/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
-import { Input } from '@hominem/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
+import { Button } from '@hominem/ui';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@hominem/ui';
 import { AlertCircle, CheckCircle, Copy, FileText, Sparkles } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useFetcher } from 'react-router';

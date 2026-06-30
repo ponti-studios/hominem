@@ -1,53 +1,49 @@
-import { useId } from 'react';
+import { useId } from "react";
 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../select";
 
-interface FilterSelectOption<T extends string> {
+export interface FilterSelectOption<T extends string> {
   value: T;
   label: string;
 }
 
-interface FilterSelectProps<T extends string> {
+export interface FilterSelectProps<T extends string> {
   label: string;
-  value: T | '';
+  value: T | "";
   options: Array<FilterSelectOption<T>>;
-  onChange: (value: T | '') => void;
+  onChange: (value: T | "") => void;
   placeholder?: string;
   id?: string;
 }
 
-const ALL_VALUE = '__all__' as const;
+const ALL_VALUE = "__all__" as const;
 
 export function FilterSelect<T extends string>({
   label,
   value,
   options,
   onChange,
-  placeholder = 'All',
+  placeholder = "All",
   id,
 }: FilterSelectProps<T>) {
   const generatedId = useId();
   const selectId = id ?? generatedId;
-
-  // Convert empty string to special value for Radix UI Select
-  const selectValue = (value === '' ? ALL_VALUE : value) as T;
-
-  const handleValueChange = (val: unknown) => {
-    const nextValue = typeof val === 'string' ? val : '';
-
-    // Convert special value back to empty string
-    onChange((nextValue === ALL_VALUE ? '' : nextValue) as T | '');
-  };
+  const selectValue = value === "" ? ALL_VALUE : value;
 
   return (
     <div className="flex-1">
       <label
         htmlFor={selectId}
-        className="block text-xs font-medium mb-1.5 uppercase tracking-wide text-muted-foreground"
+        className="text-muted-foreground mb-1.5 block text-xs font-medium tracking-wide uppercase"
       >
         {label}
       </label>
-      <Select value={selectValue} onValueChange={handleValueChange}>
+      <Select
+        value={selectValue}
+        onValueChange={(nextValue) =>
+          onChange((nextValue === ALL_VALUE ? "" : nextValue) as T | "")
+        }
+      >
         <SelectTrigger id={selectId} className="w-full">
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>

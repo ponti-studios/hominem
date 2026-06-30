@@ -1,9 +1,9 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from "react";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 type FetchOptions<T> = {
-  method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  method?: "GET" | "POST" | "PUT" | "DELETE";
   body?: T | undefined;
   headers?: Record<string, string>;
   stream?: boolean;
@@ -28,7 +28,7 @@ export function useApiClient() {
    */
   const fetchApi = useCallback(
     async <T, S>(endpoint: string, options: FetchOptions<T> = {}): Promise<S> => {
-      const { method = 'GET', body, headers = {}, stream = false } = options;
+      const { method = "GET", body, headers = {}, stream = false } = options;
       setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
       try {
@@ -37,7 +37,7 @@ export function useApiClient() {
 
         // Only set Content-Type for non-FormData requests
         if (!(body instanceof FormData)) {
-          defaultHeaders['Content-Type'] = 'application/json';
+          defaultHeaders["Content-Type"] = "application/json";
         }
 
         const fetchBody: BodyInit | null =
@@ -50,12 +50,12 @@ export function useApiClient() {
             ...headers,
           },
           body: fetchBody,
-          credentials: 'include',
+          credentials: "include",
         });
 
         if (!res.ok) {
           const error = await res.json().catch(() => ({}));
-          throw new Error(error.message || 'An error occurred');
+          throw new Error(error.message || "An error occurred");
         }
 
         if (stream) {
@@ -70,7 +70,7 @@ export function useApiClient() {
         setState((prev) => ({
           ...prev,
           isLoading: false,
-          error: error instanceof Error ? error : new Error('An unknown error occurred'),
+          error: error instanceof Error ? error : new Error("An unknown error occurred"),
         }));
         throw error;
       }
@@ -85,31 +85,31 @@ export function useApiClient() {
     () => ({
       get: <body, returnType>(
         endpoint: string,
-        options?: Omit<FetchOptions<body>, 'method' | 'body'>,
-      ) => fetchApi<body, returnType>(endpoint, { ...options, method: 'GET' }),
+        options?: Omit<FetchOptions<body>, "method" | "body">,
+      ) => fetchApi<body, returnType>(endpoint, { ...options, method: "GET" }),
 
-      post: <T, S>(endpoint: string, data?: T, options?: Omit<FetchOptions<T>, 'method'>) =>
-        fetchApi<T, S>(endpoint, { ...options, method: 'POST', body: data || undefined }),
+      post: <T, S>(endpoint: string, data?: T, options?: Omit<FetchOptions<T>, "method">) =>
+        fetchApi<T, S>(endpoint, { ...options, method: "POST", body: data || undefined }),
 
       postStream: <T>(
         endpoint: string,
         data: T,
-        options?: Omit<FetchOptions<T>, 'method' | 'stream'>,
+        options?: Omit<FetchOptions<T>, "method" | "stream">,
       ) =>
-        fetchApi<T, Response>(endpoint, { ...options, method: 'POST', body: data, stream: true }),
+        fetchApi<T, Response>(endpoint, { ...options, method: "POST", body: data, stream: true }),
 
       postFormData: <S>(
         endpoint: string,
         formData: FormData,
-        options?: Omit<FetchOptions<FormData>, 'method'>,
-      ) => fetchApi<FormData, S>(endpoint, { ...options, method: 'POST', body: formData }),
+        options?: Omit<FetchOptions<FormData>, "method">,
+      ) => fetchApi<FormData, S>(endpoint, { ...options, method: "POST", body: formData }),
 
-      put: <T, S>(endpoint: string, data: T, options?: Omit<FetchOptions<T>, 'method'>) =>
-        fetchApi<T, S>(endpoint, { ...options, method: 'PUT', body: data }),
+      put: <T, S>(endpoint: string, data: T, options?: Omit<FetchOptions<T>, "method">) =>
+        fetchApi<T, S>(endpoint, { ...options, method: "PUT", body: data }),
 
-      delete: <T, S>(endpoint: string, options?: Omit<FetchOptions<T>, 'method'>) =>
+      delete: <T, S>(endpoint: string, options?: Omit<FetchOptions<T>, "method">) =>
         // We add body because `fetchApi` use `application/json` as default content type
-        fetchApi<T, S>(endpoint, { ...options, method: 'DELETE', body: {} as T }),
+        fetchApi<T, S>(endpoint, { ...options, method: "DELETE", body: {} as T }),
     }),
     [fetchApi],
   );

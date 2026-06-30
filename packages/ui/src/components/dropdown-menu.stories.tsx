@@ -1,7 +1,7 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import { CreditCard, LogOut, Settings, User } from 'lucide-react';
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { CreditCard, LogOut, Settings, User } from "lucide-react";
 
-import { Button } from './button';
+import { Button } from "./button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,30 +11,30 @@ import {
   DropdownMenuSeparator,
   DropdownMenuShortcut,
   DropdownMenuTrigger,
-} from './dropdown-menu';
+} from "./dropdown-menu";
 
 const meta = {
-  title: 'Patterns/Overlay/DropdownMenu',
+  title: "Patterns/Overlay/DropdownMenu",
   component: DropdownMenu,
-  tags: ['autodocs'],
+  tags: ["autodocs"],
   argTypes: {
     open: {
-      control: 'boolean',
-      description: 'Controls whether the dropdown menu is open',
+      control: "boolean",
+      description: "Controls whether the dropdown menu is open",
     },
     defaultOpen: {
-      control: 'boolean',
-      description: 'Whether the dropdown menu is open by default (uncontrolled)',
+      control: "boolean",
+      description: "Whether the dropdown menu is open by default (uncontrolled)",
     },
     modal: {
-      control: 'boolean',
-      description: 'When true, interaction outside the menu is disabled while open',
-      table: { defaultValue: { summary: 'true' } },
+      control: "boolean",
+      description: "When true, interaction outside the menu is disabled while open",
+      table: { defaultValue: { summary: "true" } },
     },
     dir: {
-      control: 'select',
-      options: ['ltr', 'rtl'],
-      description: 'Reading direction of the dropdown menu',
+      control: "select",
+      options: ["ltr", "rtl"],
+      description: "Reading direction of the dropdown menu",
     },
   },
 } satisfies Meta<typeof DropdownMenu>;

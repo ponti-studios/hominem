@@ -1,5 +1,5 @@
 import { useAuthClient } from '@hominem/auth/client/provider';
-import { Button } from '@hominem/ui/button';
+import { Button } from '@hominem/ui';
 import { useState } from 'react';
 import { useNavigate, useRevalidator } from 'react-router';
 

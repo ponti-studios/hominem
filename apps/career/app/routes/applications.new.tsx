@@ -1,8 +1,15 @@
-import { Button } from '@hominem/ui/button';
-import { Card, CardContent } from '@hominem/ui/card';
-import { DatePicker } from '@hominem/ui/date-picker';
-import { Input } from '@hominem/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
+import {
+  Button,
+  Card,
+  CardContent,
+  DatePicker,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@hominem/ui';
 import { useState } from 'react';
 import { Form, Link, redirect } from 'react-router';
 

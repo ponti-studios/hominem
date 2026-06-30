@@ -1,4 +1,4 @@
-import { Button } from '@hominem/ui/button';
+import { Button } from '@hominem/ui';
 import { Download, Edit, Trash2, Upload } from 'lucide-react';
 
 import { cn } from '~/lib/utils';

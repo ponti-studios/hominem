@@ -1,6 +1,4 @@
-import { Badge } from '@hominem/ui/badge';
-import { buttonVariants } from '@hominem/ui/button';
-import { Card, CardContent } from '@hominem/ui/card';
+import { Badge, buttonVariants, Card, CardContent } from '@hominem/ui';
 import { formatCurrency, formatPercentage } from '@hominem/utils/numbers';
 import { ArrowRightIcon, BriefcaseIcon, ChevronRightIcon } from 'lucide-react';
 import type { ComponentProps } from 'react';

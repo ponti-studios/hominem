@@ -1,77 +1,33 @@
-import { dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath } from "node:url";
+import { dirname } from "node:path";
+import type { StorybookConfig } from "@storybook/react-vite";
 
-import { defineMain } from '@storybook/react-vite/node';
-import tailwindcss from '@tailwindcss/vite';
-import { createLogger } from 'vite';
+const config: StorybookConfig = {
+  stories: ["../src/**/*.mdx", "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"],
 
-export default defineMain({
-  features: {
-    experimentalTestSyntax: true,
-  },
-  tags: {
-    _test: {
-      defaultFilterSelection: 'exclude',
-    },
-    experimental: {
-      defaultFilterSelection: 'exclude',
-    },
-  },
-  staticDirs: ['../public'],
-  stories: ['../src/**/*.stories.@(ts|tsx)'],
   addons: [
-    getAbsolutePath('@storybook/addon-docs'),
-    getAbsolutePath('@storybook/addon-vitest'),
-    getAbsolutePath('@storybook/addon-mcp'),
+    getAbsolutePath("@storybook/addon-links"),
+    getAbsolutePath("@storybook/addon-onboarding"),
+    getAbsolutePath("@chromatic-com/storybook"),
+    getAbsolutePath("@storybook/addon-docs")
   ],
+
   framework: {
-    name: getAbsolutePath('@storybook/react-vite'),
+    name: getAbsolutePath("@storybook/react-vite"),
     options: {},
   },
-  docs: {
-    defaultName: 'Documentation',
-  },
-  typescript: {
-    reactDocgen: 'react-docgen-typescript',
-    reactDocgenTypescriptOptions: {
-      propFilter: (prop) => (prop.parent ? !prop.parent.fileName.includes('node_modules') : true),
-    },
-  },
+
   viteFinal: async (config) => {
-    const existingOnWarn = config.build?.rollupOptions?.onwarn;
-    const logger = createLogger(config.logLevel, { allowClearScreen: false });
-    const loggerWarn = logger.warn;
-
-    logger.warn = (message, options) => {
-      if (message.includes('Module level directives cause errors when bundled, "use client"')) {
-        return;
-      }
-
-      loggerWarn(message, options);
-    };
-
-    config.plugins = [tailwindcss(), ...(config.plugins ?? [])];
-    config.customLogger = logger;
-    config.resolve = config.resolve ?? {};
-    config.resolve.tsconfigPaths = true;
-    config.build = config.build ?? {};
-    config.build.rollupOptions = config.build.rollupOptions ?? {};
-    config.build.rollupOptions.onwarn = (warning, warn) => {
-      if (warning.code === 'MODULE_LEVEL_DIRECTIVE' && warning.message.includes("'use client'")) {
-        return;
-      }
-
-      if (existingOnWarn) {
-        existingOnWarn(warning, warn);
-        return;
-      }
-
-      warn(warning);
-    };
-    return config;
+    const { mergeConfig } = await import("vite");
+    const tailwindcss = (await import("@tailwindcss/vite")).default;
+    return mergeConfig(config, {
+      plugins: [tailwindcss()],
+      build: { target: "esnext" },
+    });
   },
-});
+};
+export default config;
 
-function getAbsolutePath(value: string) {
+function getAbsolutePath(value: string): any {
   return dirname(fileURLToPath(import.meta.resolve(`${value}/package.json`)));
 }

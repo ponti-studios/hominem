@@ -1,6 +1,8 @@
+import { Button, GlassEffectContainer, Host, HStack, Menu, RNHostView } from '@expo/ui/swift-ui';
+import { buttonStyle, glassEffect, padding } from '@expo/ui/swift-ui/modifiers';
 import { Link } from 'expo-router';
 import React, { memo, useCallback, useRef } from 'react';
-import { ActionSheetIOS, Alert, Pressable, View } from 'react-native';
+import { Alert, Pressable, View } from 'react-native';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import type { SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
 import type { SharedValue } from 'react-native-reanimated';
@@ -60,27 +62,6 @@ export const InboxStreamItem = memo(({ item, swipeEnabled = true }: InboxStreamI
     archiveChat();
   }, [archiveChat]);
 
-  const handleOpenActions = useCallback(() => {
-    ActionSheetIOS.showActionSheetWithOptions(
-      {
-        options: [
-          isChat ? t.workspace.item.archiveChat : t.workspace.item.deleteNote.title,
-          t.workspace.item.deleteNote.cancel,
-        ],
-        cancelButtonIndex: 1,
-        destructiveButtonIndex: isChat ? undefined : 0,
-      },
-      (selectedIndex) => {
-        if (selectedIndex !== 0) return;
-        if (isChat) {
-          handleArchive();
-          return;
-        }
-        handleDelete();
-      },
-    );
-  }, [handleArchive, handleDelete, isChat]);
-
   const renderSwipeAction = useCallback(
     (progress: SharedValue<number>) => {
       return (
@@ -120,15 +101,42 @@ export const InboxStreamItem = memo(({ item, swipeEnabled = true }: InboxStreamI
         </Link.Trigger>
       </Link>
 
-      <IconButton
-        accessibilityLabel={t.workspace.item.actionsLabel}
-        icon="ellipsis"
-        size={44}
-        iconSize={18}
-        style={styles.menuButton}
-        tintColor={themeColors['text-secondary']}
-        onPress={handleOpenActions}
-      />
+      <Host style={styles.menuHost}>
+        <Menu
+          label={
+            <GlassEffectContainer>
+              <HStack
+                modifiers={[
+                  glassEffect({
+                    glass: { variant: 'clear', interactive: true },
+                    shape: 'roundedRectangle',
+                    cornerRadius: 18,
+                  }),
+                  padding({ all: 2 }),
+                ]}
+              >
+                <RNHostView matchContents>
+                  <IconButton
+                    accessibilityLabel={t.workspace.item.actionsLabel}
+                    icon="ellipsis"
+                    size={40}
+                    iconSize={18}
+                    style={styles.menuButton}
+                    tintColor={themeColors['text-secondary']}
+                  />
+                </RNHostView>
+              </HStack>
+            </GlassEffectContainer>
+          }
+          modifiers={[buttonStyle('borderless')]}
+        >
+          <Button
+            label={isChat ? t.workspace.item.archiveChat : t.workspace.item.deleteNote.title}
+            role={isChat ? undefined : 'destructive'}
+            onPress={isChat ? handleArchive : handleDelete}
+          />
+        </Menu>
+      </Host>
     </View>
   );
 
@@ -163,7 +171,6 @@ function cleanText(value: string | null): string | null {
 
 const useStyles = makeStyles((theme) => ({
   outer: {
-    marginHorizontal: 16,
     marginBottom: 10,
   },
   swipeableContainer: {
@@ -202,8 +209,11 @@ const useStyles = makeStyles((theme) => ({
   },
   menuButton: {
     alignSelf: 'center',
-    marginRight: themeSpacing.sm,
     opacity: 0.72,
+  },
+  menuHost: {
+    alignSelf: 'center',
+    marginRight: themeSpacing.sm,
   },
   title: {
     color: theme.colors['text-primary'],

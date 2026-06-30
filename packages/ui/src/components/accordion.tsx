@@ -1,8 +1,8 @@
-import * as AccordionPrimitive from '@radix-ui/react-accordion';
-import { ChevronDown } from 'lucide-react';
-import * as React from 'react';
+import * as AccordionPrimitive from "@radix-ui/react-accordion";
+import { ChevronDown } from "lucide-react";
+import * as React from "react";
 
-import { cn } from '../lib/utils';
+import { cn } from "../lib/utils";
 
 function Accordion({ ...props }: React.ComponentProps<typeof AccordionPrimitive.Root>) {
   return <AccordionPrimitive.Root data-slot="accordion" {...props} />;
@@ -16,7 +16,7 @@ function AccordionItem({
     <AccordionPrimitive.Item
       data-slot="accordion-item"
       className={cn(
-        'mb-2 overflow-hidden rounded-md border border-subtle bg-background last:mb-0',
+        "border-subtle bg-background mb-2 overflow-hidden rounded-md border last:mb-0",
         className,
       )}
       {...props}
@@ -34,7 +34,7 @@ function AccordionTrigger({
       <AccordionPrimitive.Trigger
         data-slot="accordion-trigger"
         className={cn(
-          'void-hover void-focus flex w-full flex-1 items-center justify-between gap-4 px-4 py-3 text-left text-sm font-semibold disabled:pointer-events-none disabled:opacity-50 [&[data-state=open]>svg]:rotate-180 [--void-hover-bg:var(--color-accent)] [--void-hover-color:var(--color-accent-foreground)] [--void-hover-border:var(--color-accent)]',
+          "void-hover void-focus flex w-full flex-1 items-center justify-between gap-4 px-4 py-3 text-left text-sm font-semibold [--void-hover-bg:var(--color-accent)] [--void-hover-border:var(--color-accent)] [--void-hover-color:var(--color-accent-foreground)] disabled:pointer-events-none disabled:opacity-50 [&[data-state=open]>svg]:rotate-180",
           className,
         )}
         {...props}
@@ -54,10 +54,10 @@ function AccordionContent({
   return (
     <AccordionPrimitive.Content
       data-slot="accordion-content"
-      className="overflow-hidden text-sm animate-accordion-down"
+      className="animate-accordion-down overflow-hidden text-sm"
       {...props}
     >
-      <div className={cn('px-4 pb-3 pt-2', className)}>{children}</div>
+      <div className={cn("px-4 pt-2 pb-3", className)}>{children}</div>
     </AccordionPrimitive.Content>
   );
 }

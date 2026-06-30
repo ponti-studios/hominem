@@ -1,23 +1,22 @@
-import { normalizeOtp } from '@hominem/auth/shared/validation';
-import * as React from 'react';
+import * as React from "react";
 
-import { cn } from '../../lib/utils';
+import { OTP_LENGTH, normalizeOtp } from "../../lib";
+import { cn } from "../../lib/utils";
 
-interface OtpCodeInputProps {
+export interface OtpCodeInputProps {
   id?: string;
   length?: number;
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
   autoFocus?: boolean;
-  error?: string | undefined;
+  error?: string;
   onComplete?: (value: string) => void;
-  maskDelay?: number;
 }
 
 export function OtpCodeInput({
   id,
-  length = 6,
+  length = OTP_LENGTH,
   value,
   onChange,
   disabled = false,
@@ -48,24 +47,29 @@ export function OtpCodeInput({
   const handlePaste = React.useCallback(
     (event: React.ClipboardEvent<HTMLInputElement>) => {
       event.preventDefault();
-      const pasted = normalizeOtp(event.clipboardData.getData('text')).slice(0, length);
-      if (!pasted) return;
+      const pasted = normalizeOtp(event.clipboardData.getData("text")).slice(0, length);
+      if (!pasted) {
+        return;
+      }
+
       onChange(pasted);
-      if (pasted.length === length) onComplete?.(pasted);
+      if (pasted.length === length) {
+        onComplete?.(pasted);
+      }
     },
     [length, onChange, onComplete],
   );
 
   return (
-    <fieldset className="w-full border-0 p-0 m-0">
+    <fieldset className="m-0 w-full border-0 p-0">
       <legend className="sr-only">Enter one-time code</legend>
       <div
         className={cn(
-          'flex items-center min-h-12 rounded-xl border bg-surface px-3.5 py-3 transition-colors duration-120',
-          'focus-within:border-border-focus focus-within:shadow-[0_0_0_2px_var(--color-bg-elevated),0_0_0_4px_var(--color-accent)]',
+          "bg-surface flex min-h-12 items-center rounded-xl border px-3.5 py-3 transition-colors duration-120",
+          "focus-within:border-border-focus focus-within:shadow-[0_0_0_2px_var(--color-bg-elevated),0_0_0_4px_var(--color-accent)]",
           error &&
-            'border-destructive focus-within:shadow-[0_0_0_2px_var(--color-bg-elevated),0_0_0_4px_var(--color-destructive)]',
-          disabled && 'opacity-50 cursor-not-allowed',
+            "border-destructive focus-within:shadow-[0_0_0_2px_var(--color-bg-elevated),0_0_0_4px_var(--color-destructive)]",
+          disabled && "cursor-not-allowed opacity-50",
         )}
       >
         <input
@@ -78,11 +82,11 @@ export function OtpCodeInput({
           disabled={disabled}
           onChange={handleChange}
           onPaste={handlePaste}
-          placeholder={'––––––'.slice(0, length)}
+          placeholder={"------".slice(0, length)}
           autoComplete="one-time-code"
           className={cn(
-            'flex-1 bg-transparent text-base font-semibold text-text-primary placeholder:text-text-tertiary',
-            'focus:outline-none tracking-[0.5em] disabled:cursor-not-allowed',
+            "text-text-primary placeholder:text-text-tertiary flex-1 bg-transparent text-base font-semibold",
+            "tracking-[0.5em] focus:outline-none disabled:cursor-not-allowed",
           )}
           aria-label="One-time verification code"
           aria-invalid={Boolean(error)}

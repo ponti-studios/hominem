@@ -1,11 +1,11 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from "@storybook/react-vite";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./tabs";
 
 const meta = {
-  title: 'Navigation/Tabs',
+  title: "Navigation/Tabs",
   component: Tabs,
-  tags: ['autodocs'],
+  tags: ["autodocs"],
 } satisfies Meta<typeof Tabs>;
 
 export default meta;
@@ -19,12 +19,12 @@ export const Default: Story = {
         <TabsTrigger value="password">Password</TabsTrigger>
       </TabsList>
       <TabsContent value="account">
-        <p className="text-sm text-muted-foreground p-4">
+        <p className="text-muted-foreground p-4 text-sm">
           Make changes to your account here. Click save when you're done.
         </p>
       </TabsContent>
       <TabsContent value="password">
-        <p className="text-sm text-muted-foreground p-4">
+        <p className="text-muted-foreground p-4 text-sm">
           Change your password here. After saving, you'll be logged out.
         </p>
       </TabsContent>
@@ -41,13 +41,13 @@ export const LineVariant: Story = {
         <TabsTrigger value="tab3">Reports</TabsTrigger>
       </TabsList>
       <TabsContent value="tab1">
-        <p className="text-sm text-muted-foreground p-4">Overview content</p>
+        <p className="text-muted-foreground p-4 text-sm">Overview content</p>
       </TabsContent>
       <TabsContent value="tab2">
-        <p className="text-sm text-muted-foreground p-4">Analytics content</p>
+        <p className="text-muted-foreground p-4 text-sm">Analytics content</p>
       </TabsContent>
       <TabsContent value="tab3">
-        <p className="text-sm text-muted-foreground p-4">Reports content</p>
+        <p className="text-muted-foreground p-4 text-sm">Reports content</p>
       </TabsContent>
     </Tabs>
   ),

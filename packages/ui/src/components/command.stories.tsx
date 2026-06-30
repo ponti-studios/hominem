@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Calculator, Calendar, CreditCard, Settings, Smile, User } from 'lucide-react';
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { Calculator, Calendar, CreditCard, Settings, Smile, User } from "lucide-react";
 
 import {
   Command,
@@ -10,12 +10,12 @@ import {
   CommandList,
   CommandSeparator,
   CommandShortcut,
-} from './command';
+} from "./command";
 
 const meta = {
-  title: 'Patterns/Overlay/Command',
+  title: "Patterns/Overlay/Command",
   component: Command,
-  tags: ['autodocs'],
+  tags: ["autodocs"],
 } satisfies Meta<typeof Command>;
 
 export default meta;
@@ -23,7 +23,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: () => (
-    <Command className="rounded-md border w-[450px]">
+    <Command className="w-[450px] rounded-md border">
       <CommandInput placeholder="Type a command or search..." />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>

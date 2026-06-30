@@ -1,5 +1,4 @@
-import { Button } from '@hominem/ui/button';
-import { Input } from '@hominem/ui/input';
+import { Button, Input } from '@hominem/ui';
 import { slugifyText } from '@hominem/utils/text';
 import { CheckIcon, PencilIcon, PlusIcon, TrashIcon, XIcon } from 'lucide-react';
 import { memo, useState } from 'react';
