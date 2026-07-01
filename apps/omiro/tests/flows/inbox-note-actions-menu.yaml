@@ -1,0 +1,17 @@
+appId: com.pontistudios.hakumi.dev
+---
+# Flow: Inbox note actions menu
+# Opens the note row overflow menu and captures the native menu presentation.
+
+- launchApp
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertVisible:
+    id: 'inbox-item-note'
+- assertVisible:
+    id: 'inbox-item-note-actions'
+- tapOn:
+    id: 'inbox-item-note-actions'
+    index: 0
+- assertVisible: 'Delete'
+- takeScreenshot: /tmp/omiro_inbox_note_actions_menu

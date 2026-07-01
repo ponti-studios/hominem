@@ -6,6 +6,7 @@ import {
   Stack,
   ThemeProvider,
   type RelativePathString,
+  usePathname,
   useRouter,
   useSegments,
 } from 'expo-router';
@@ -27,6 +28,11 @@ import { initObservability } from '~/services/observability';
 import { POSTHOG_ENABLED, posthog } from '~/services/posthog';
 import queryClient from '~/services/query-client';
 import { recordActiveDay } from '~/services/review-prompt/review-prompt';
+import {
+  consumeWorkspaceRestoreAttempt,
+  consumeWorkspaceResumeArtifact,
+} from '~/services/workspace/launch-state';
+import { getWorkspaceArtifactRoute } from '~/services/workspace/routes';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -73,6 +79,7 @@ const useRootStyles = makeStyles(() =>
 function InnerRootLayout() {
   const styles = useInnerStyles();
   const router = useRouter();
+  const pathname = usePathname();
   const segments = useSegments() as string[];
   const segmentKey = segments.join('/');
   const { authStatus, isSignedIn, currentUser, resetAuthForE2E, signOut } = useAuth();
@@ -126,6 +133,26 @@ function InnerRootLayout() {
       router.replace(target as RelativePathString);
     }
   }, [authStatus, isSignedIn, router, segmentKey, segments]);
+
+  useEffect(() => {
+    if (authStatus === 'booting' || !isSignedIn || !currentUser?.id) {
+      return;
+    }
+
+    if (!consumeWorkspaceRestoreAttempt()) {
+      return;
+    }
+
+    const resumeArtifact = consumeWorkspaceResumeArtifact();
+    if (!resumeArtifact) {
+      return;
+    }
+
+    const target = getWorkspaceArtifactRoute(resumeArtifact.kind, resumeArtifact.id);
+    if (pathname !== target) {
+      router.replace(target);
+    }
+  }, [authStatus, currentUser?.id, isSignedIn, pathname, router]);
 
   return (
     <RootErrorBoundary

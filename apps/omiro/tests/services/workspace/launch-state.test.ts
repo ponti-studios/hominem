@@ -45,6 +45,26 @@ describe('workspace launch state', () => {
     expect(launchState.readFeedDraft()).toBe('Follow up on notes');
   });
 
+  it('consumes workspace resume metadata once', async () => {
+    const launchState = await import('~/services/workspace/launch-state');
+
+    launchState.writeWorkspaceResumeArtifact({
+      kind: 'chat',
+      id: 'chat-1',
+      title: 'Follow up',
+      updatedAt: '2026-06-18T12:00:00.000Z',
+    });
+
+    expect(launchState.consumeWorkspaceResumeArtifact()).toEqual({
+      kind: 'chat',
+      id: 'chat-1',
+      title: 'Follow up',
+      updatedAt: '2026-06-18T12:00:00.000Z',
+    });
+    expect(launchState.consumeWorkspaceResumeArtifact()).toBeNull();
+    expect(launchState.readWorkspaceResumeArtifact()).toBeNull();
+  });
+
   it('only consumes the workspace restore attempt once per module load', async () => {
     const launchState = await import('~/services/workspace/launch-state');
 

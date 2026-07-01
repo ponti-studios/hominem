@@ -1,5 +1,3 @@
-import { ProgressView, Host as SwiftUIHost } from '@expo/ui/swift-ui';
-import { frame, progressViewStyle } from '@expo/ui/swift-ui/modifiers';
 import { radii, spacing } from '@hominem/ui/tokens';
 import { Image } from 'expo-image';
 import React from 'react';
@@ -54,12 +52,9 @@ export function ComposerAttachmentRow() {
                 {uploading && (
                   <>
                     <View style={styles.thumbDim} />
-                    <SwiftUIHost style={styles.progressHost}>
-                      <ProgressView
-                        value={progress / 100}
-                        modifiers={[progressViewStyle('linear'), frame({ height: spacing[1] })]}
-                      />
-                    </SwiftUIHost>
+                    <View style={styles.progressTrack}>
+                      <View style={[styles.progressFill, { width: `${progress}%` }]} />
+                    </View>
                   </>
                 )}
               </Pressable>
@@ -110,12 +105,17 @@ const useStyles = makeStyles((theme) => ({
     bottom: 0,
     backgroundColor: theme.colors['overlay-modal-medium'],
   },
-  progressHost: {
+  progressTrack: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
     height: spacing[1],
+    backgroundColor: theme.colors['overlay-modal-medium'],
+  },
+  progressFill: {
+    backgroundColor: theme.colors.accent,
+    height: '100%',
   },
   errorText: {
     fontSize: 12,

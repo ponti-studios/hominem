@@ -1,9 +1,4 @@
-import {
-  Host as SwiftUIHost,
-  TextField as SwiftUITextField,
-  useNativeState,
-} from '@expo/ui/swift-ui';
-import { font, frame, submitLabel, textFieldStyle } from '@expo/ui/swift-ui/modifiers';
+import { parseInboxTimestamp } from '@hominem/chat';
 import { Image } from 'expo-image';
 import { Stack, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -25,6 +20,26 @@ import { getWorkspaceHomeRoute } from '~/services/workspace/routes';
 import t from '~/translations';
 
 const COMPOSER_CLEARANCE = 220;
+
+function formatNoteDateline(
+  note: { createdAt?: string | null; updatedAt?: string | null } | null,
+): string {
+  const timestamp = note?.updatedAt ?? note?.createdAt;
+  if (!timestamp) {
+    return '';
+  }
+
+  try {
+    const date = parseInboxTimestamp(timestamp);
+    return date.toLocaleDateString(undefined, {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  } catch {
+    return '';
+  }
+}
 
 function NoteDetailPlaceholder() {
   const styles = useNoteStyles();
@@ -68,7 +83,7 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
   const router = useRouter();
   const contentInputRef = useRef<TextInput>(null);
   const homeRoute = getWorkspaceHomeRoute();
-  const titleState = useNativeState('');
+  const [titleInputHeight, setTitleInputHeight] = useState(36);
   const [isPreviewing, setIsPreviewing] = useState(false);
 
   const { data: note, error, isInitialLoading, isRefreshing, refetch } = useNoteQuery({ noteId });
@@ -84,10 +99,6 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
     closeEnhance,
     runEnhance,
   } = useInlineEnhance();
-
-  useEffect(() => {
-    titleState.set(note?.title ?? '');
-  }, [note?.title, titleState]);
 
   useEffect(() => {
     if (!note) {
@@ -114,18 +125,7 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
     },
   });
 
-  const dateline = (() => {
-    if (!note?.updatedAt) {
-      return '';
-    }
-
-    const date = new Date(note.updatedAt);
-    return date.toLocaleDateString(undefined, {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  })();
+  const dateline = formatNoteDateline(note ?? null);
 
   const handleDeleteNote = useCallback(() => {
     Alert.alert(t.workspace.item.deleteNote.title, t.workspace.item.deleteNote.message, [
@@ -156,7 +156,8 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
       <>
         <Stack.Screen
           options={{
-            title: t.notes.editor.titleFallback,
+            title: '',
+            headerTitle: () => null,
             headerBackVisible: false,
           }}
         />
@@ -177,7 +178,8 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
       <>
         <Stack.Screen
           options={{
-            title: t.notes.editor.titleFallback,
+            title: '',
+            headerTitle: () => null,
             headerBackVisible: false,
           }}
         />
@@ -220,7 +222,8 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
     <>
       <Stack.Screen
         options={{
-          title: note.title?.trim() || t.notes.editor.titleFallback,
+          title: '',
+          headerTitle: () => null,
           headerBackVisible: false,
         }}
       />
@@ -265,26 +268,34 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
         }
         showsVerticalScrollIndicator={false}
       >
-        <SwiftUIHost matchContents style={styles.titleHost}>
-          <SwiftUITextField
-            text={titleState}
-            placeholder={t.notes.editor.titlePlaceholder}
-            onTextChange={(value: string) => {
-              updateCache({ title: value });
-              void save(
-                value,
-                note.content,
-                note.files.map((f) => f.id),
-              );
-            }}
-            modifiers={[
-              textFieldStyle('plain'),
-              font({ size: 26, weight: 'bold' }),
-              submitLabel('next'),
-              frame({ maxWidth: Number.POSITIVE_INFINITY }),
-            ]}
-          />
-        </SwiftUIHost>
+        <TextInput
+          multiline
+          defaultValue={note.title ?? ''}
+          onContentSizeChange={(event) => {
+            const nextHeight = Math.max(36, Math.min(120, event.nativeEvent.contentSize.height));
+            setTitleInputHeight((current) => (current === nextHeight ? current : nextHeight));
+          }}
+          onChangeText={(value) => {
+            updateCache({ title: value });
+            void save(
+              value,
+              note.content,
+              note.files.map((f) => f.id),
+            );
+          }}
+          placeholder={t.notes.editor.titlePlaceholder}
+          placeholderTextColor={themeColors['text-tertiary']}
+          scrollEnabled={false}
+          selectionColor={themeColors.accent}
+          style={[
+            styles.titleInput,
+            {
+              height: titleInputHeight,
+            },
+          ]}
+          testID="note-title-input"
+          textAlignVertical="top"
+        />
 
         <Text variant="overline" style={styles.dateline}>
           {dateline}
@@ -404,9 +415,15 @@ const useNoteStyles = makeStyles((theme) => ({
     paddingTop: 16,
     paddingBottom: COMPOSER_CLEARANCE,
   },
-  titleHost: {
+  titleInput: {
     alignSelf: 'stretch',
+    color: theme.colors.foreground,
+    fontSize: 28,
+    fontWeight: '700',
+    lineHeight: 34,
     marginBottom: 6,
+    minHeight: 36,
+    paddingVertical: 0,
   },
   placeholderTitle: {
     alignSelf: 'stretch',

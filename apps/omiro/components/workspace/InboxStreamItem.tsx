@@ -1,6 +1,5 @@
-import { Button, GlassEffectContainer, Host, HStack, Menu, RNHostView } from '@expo/ui/swift-ui';
-import { buttonStyle, glassEffect, padding } from '@expo/ui/swift-ui/modifiers';
-import { Link } from 'expo-router';
+import { MenuView } from '@expo/ui/community/menu';
+import { Link, useRouter } from 'expo-router';
 import React, { memo, useCallback, useRef } from 'react';
 import { Alert, Pressable, View } from 'react-native';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
@@ -31,6 +30,7 @@ interface InboxStreamItemProps {
 export const InboxStreamItem = memo(({ item, swipeEnabled = true }: InboxStreamItemProps) => {
   const styles = useStyles();
   const themeColors = useThemeColors();
+  const router = useRouter();
   const swipeableRef = useRef<SwipeableMethods>(null);
   const titleText = cleanText(item.title);
   const previewText = cleanText(item.preview);
@@ -62,6 +62,25 @@ export const InboxStreamItem = memo(({ item, swipeEnabled = true }: InboxStreamI
     archiveChat();
   }, [archiveChat]);
 
+  const handleMenuAction = useCallback(
+    (event: { nativeEvent: { event: string } }) => {
+      if (event.nativeEvent.event === 'open-item') {
+        router.push(item.route);
+        return;
+      }
+
+      if (event.nativeEvent.event === 'delete-note') {
+        handleDelete();
+        return;
+      }
+
+      if (event.nativeEvent.event === 'archive-chat') {
+        handleArchive();
+      }
+    },
+    [handleArchive, handleDelete, item.route, router],
+  );
+
   const renderSwipeAction = useCallback(
     (progress: SharedValue<number>) => {
       return (
@@ -89,10 +108,11 @@ export const InboxStreamItem = memo(({ item, swipeEnabled = true }: InboxStreamI
             accessibilityRole="button"
             disabled={isPending}
             style={({ pressed }) => [styles.contentButton, pressed && styles.rowPressed]}
+            testID={`inbox-item-${item.kind}-open`}
           >
             <View style={styles.titleRow}>
               <View style={styles.copyColumn}>
-                <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">
+                <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
                   {primaryText}
                 </Text>
               </View>
@@ -101,42 +121,33 @@ export const InboxStreamItem = memo(({ item, swipeEnabled = true }: InboxStreamI
         </Link.Trigger>
       </Link>
 
-      <Host style={styles.menuHost}>
-        <Menu
-          label={
-            <GlassEffectContainer>
-              <HStack
-                modifiers={[
-                  glassEffect({
-                    glass: { variant: 'clear', interactive: true },
-                    shape: 'roundedRectangle',
-                    cornerRadius: 18,
-                  }),
-                  padding({ all: 2 }),
-                ]}
-              >
-                <RNHostView matchContents>
-                  <IconButton
-                    accessibilityLabel={t.workspace.item.actionsLabel}
-                    icon="ellipsis"
-                    size={40}
-                    iconSize={18}
-                    style={styles.menuButton}
-                    tintColor={themeColors['text-secondary']}
-                  />
-                </RNHostView>
-              </HStack>
-            </GlassEffectContainer>
-          }
-          modifiers={[buttonStyle('borderless')]}
-        >
-          <Button
-            label={isChat ? t.workspace.item.archiveChat : t.workspace.item.deleteNote.title}
-            role={isChat ? undefined : 'destructive'}
-            onPress={isChat ? handleArchive : handleDelete}
-          />
-        </Menu>
-      </Host>
+      <MenuView
+        actions={[
+          {
+            id: 'open-item',
+            title: t.workspace.item.open,
+            image: isChat ? 'bubble.left' : 'doc.text',
+          },
+          {
+            id: isChat ? 'archive-chat' : 'delete-note',
+            title: isChat ? t.workspace.item.archive : t.workspace.item.deleteNote.menu,
+            image: isChat ? 'archivebox' : 'trash',
+            attributes: isChat ? undefined : { destructive: true },
+          },
+        ]}
+        onPressAction={handleMenuAction}
+        style={styles.menuHost}
+      >
+        <IconButton
+          accessibilityLabel={t.workspace.item.actionsLabel}
+          icon="ellipsis"
+          size={44}
+          iconSize={18}
+          style={styles.menuButton}
+          testID={`inbox-item-${item.kind}-actions`}
+          tintColor={themeColors['text-secondary']}
+        />
+      </MenuView>
     </View>
   );
 
@@ -171,49 +182,58 @@ function cleanText(value: string | null): string | null {
 
 const useStyles = makeStyles((theme) => ({
   outer: {
-    marginBottom: 10,
+    marginBottom: themeSpacing.md,
   },
   swipeableContainer: {
-    borderRadius: 12,
-    overflow: 'hidden',
+    overflow: 'visible',
   },
   swipeableChildrenContainer: {
-    borderRadius: 12,
+    overflow: 'visible',
   },
   row: {
-    backgroundColor: theme.colors['bg-surface'],
-    borderRadius: 12,
+    position: 'relative',
     flexDirection: 'row',
     alignItems: 'stretch',
-    paddingLeft: 14,
+    paddingLeft: themeSpacing.md,
+    paddingRight: themeSpacing.sm,
   },
   contentButton: {
     flex: 1,
+    minWidth: 0,
     minHeight: 44,
+    paddingRight: 64,
   },
   rowPressed: {
-    opacity: 0.64,
+    backgroundColor: theme.colors['bg-surface'],
   },
   rowPending: {
     opacity: 0.45,
   },
   titleRow: {
+    flex: 1,
     alignItems: 'flex-start',
     justifyContent: 'center',
+    minWidth: 0,
     minHeight: 44,
-    paddingVertical: 15,
+    paddingVertical: 14,
   },
   copyColumn: {
     flex: 1,
+    minWidth: 0,
     gap: 2,
+    paddingRight: 56,
   },
   menuButton: {
     alignSelf: 'center',
-    opacity: 0.72,
+    opacity: 0.48,
   },
   menuHost: {
+    position: 'absolute',
+    top: 0,
+    right: themeSpacing.sm,
+    bottom: 0,
     alignSelf: 'center',
-    marginRight: themeSpacing.sm,
+    justifyContent: 'center',
   },
   title: {
     color: theme.colors['text-primary'],
@@ -222,6 +242,8 @@ const useStyles = makeStyles((theme) => ({
     fontWeight: '400',
     lineHeight: lineHeights.body,
     letterSpacing: -0.25,
+    flexShrink: 1,
+    maxWidth: '100%',
   },
   swipeAction: {
     height: '100%',

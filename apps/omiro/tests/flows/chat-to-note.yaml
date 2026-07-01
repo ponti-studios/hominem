@@ -8,14 +8,19 @@ appId: com.pontistudios.hakumi.dev
 # Uses MMKV test-mode flag so the AI response is mocked locally —
 # no real API tokens are consumed during this flow.
 
-# Write the test-mode flag to MMKV via deep link first.
-# Wait long enough for the useEffect + MMKV write to flush before the process is killed.
+# Write the test-mode flag to MMKV via deep link first, then force the dev
+# client back to the workspace home so prior runs do not resume a chat detail.
 - openLink: 'hakumi-dev://enable-test-mode'
 - waitForAnimationToEnd:
     timeout: 3000
-- stopApp
-- launchApp
-- assertVisible: 'Omiro'
+- openLink: 'exp+hakumi://expo-development-client/?url=http%3A%2F%2F127.0.0.1%3A8081'
+- waitForAnimationToEnd:
+    timeout: 10000
+- openLink: 'hakumi-dev://'
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertVisible:
+    id: 'feed-composer-input'
 - takeScreenshot: /tmp/omiro_flow_1_home
 
 # Focus the feed composer and clear any persisted draft before typing
@@ -29,6 +34,13 @@ appId: com.pontistudios.hakumi.dev
 - tapOn:
     id: 'composer-start-chat'
 - takeScreenshot: /tmp/omiro_flow_3_chat_opened
+
+# The chat detail composer owns the message draft once the chat is created.
+- tapOn:
+    id: 'chat-composer-input'
+- eraseText: 100
+- inputText: 'What are the key principles of good product design?'
+- takeScreenshot: /tmp/omiro_flow_3b_chat_typed
 
 # Send the message from the chat composer
 - tapOn:
@@ -56,8 +68,16 @@ appId: com.pontistudios.hakumi.dev
     id: 'classification-review-accept'
 - takeScreenshot: /tmp/omiro_flow_8_accepted
 
-# Navigate back to the inbox
-- tapOn: 'Back'
+# Navigate back to the inbox via the dev-client reset. Native toolbar buttons
+# are not reliably activatable through Maestro on this simulator.
+- openLink: 'exp+hakumi://expo-development-client/?url=http%3A%2F%2F127.0.0.1%3A8081'
+- waitForAnimationToEnd:
+    timeout: 10000
+- openLink: 'hakumi-dev://'
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertVisible:
+    id: 'feed-composer-input'
 - takeScreenshot: /tmp/omiro_flow_9_inbox
 
 # Pull to refresh to ensure the inbox picks up the newly created note

@@ -1,0 +1,32 @@
+appId: com.pontistudios.hakumi.dev
+---
+# Flow: Note title edit
+# Regresses the crash where focusing/editing the note title caused UIKit to
+# abort while reloading the editor keyboard accessory view.
+
+- openLink: 'exp+hakumi://expo-development-client/?url=http%3A%2F%2F127.0.0.1%3A8081'
+- waitForAnimationToEnd:
+    timeout: 10000
+- openLink: 'hakumi-dev://'
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertVisible:
+    id: 'feed-composer-input'
+- assertVisible:
+    id: 'inbox-item-note-open'
+- tapOn:
+    id: 'inbox-item-note-open'
+    index: 0
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertVisible:
+    id: 'note-title-input'
+- tapOn:
+    id: 'note-title-input'
+- eraseText: 100
+- inputText: 'Edited note title from Maestro'
+- waitForAnimationToEnd:
+    timeout: 1000
+- assertVisible:
+    id: 'note-title-input'
+- takeScreenshot: /tmp/omiro_note_title_edit

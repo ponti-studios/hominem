@@ -1,7 +1,7 @@
 import type { SessionSource } from '@hominem/rpc/types';
 import { useQueryClient } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { RefreshControl, View, StyleSheet } from 'react-native';
 import type { LayoutChangeEvent } from 'react-native';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
@@ -32,7 +32,10 @@ import { useCreateChat } from '~/services/chat/use-create-chat';
 import { formatRelativeAge } from '~/services/date/format-relative-age';
 import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 import { chatKeys } from '~/services/notes/query-keys';
-import { writeWorkspaceResumeArtifact } from '~/services/workspace/launch-state';
+import {
+  clearWorkspaceResumeArtifact,
+  writeWorkspaceResumeArtifact,
+} from '~/services/workspace/launch-state';
 import { getWorkspaceArtifactRoute, getWorkspaceHomeRoute } from '~/services/workspace/routes';
 import t from '~/translations';
 
@@ -55,6 +58,7 @@ export function ChatDetailScreen() {
   const chatId = activeChat?.id ?? id;
   const [composerHeight, setComposerHeight] = useState(0);
   const homeRoute = getWorkspaceHomeRoute();
+  const isReturningHomeRef = useRef(false);
 
   const handleComposerLayout = useCallback((e: LayoutChangeEvent) => {
     const nextHeight = e.nativeEvent.layout.height;
@@ -96,11 +100,15 @@ export function ChatDetailScreen() {
     return { kind: 'new' };
   }, [activeChat]);
 
+  const returnHome = useCallback(() => {
+    isReturningHomeRef.current = true;
+    clearWorkspaceResumeArtifact();
+    router.replace(homeRoute);
+  }, [homeRoute, router]);
+
   const controller = useChatController({
     chatId,
-    onChatArchive: () => {
-      router.replace(homeRoute);
-    },
+    onChatArchive: returnHome,
     services,
     source,
   });
@@ -117,14 +125,18 @@ export function ChatDetailScreen() {
     });
   }, [activeChat?.updatedAt, chatId, displayTitle]);
 
-  const handleBackPress = useCallback(() => {
-    if (navigation.canGoBack()) {
-      router.back();
-      return;
-    }
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', (event) => {
+      if (isReturningHomeRef.current) {
+        return;
+      }
 
-    router.replace(homeRoute);
-  }, [homeRoute, navigation, router]);
+      event.preventDefault();
+      returnHome();
+    });
+
+    return unsubscribe;
+  }, [navigation, returnHome]);
 
   const conversationActions = useMemo(
     () =>
@@ -163,17 +175,10 @@ export function ChatDetailScreen() {
       <Stack.Screen
         options={{
           title: displayTitle,
-          headerBackVisible: false,
+          headerBackVisible: true,
           headerTitleAlign: 'center',
         }}
       />
-      <Stack.Toolbar placement="left">
-        <Stack.Toolbar.Button
-          accessibilityLabel="Back"
-          icon="chevron.left"
-          onPress={handleBackPress}
-        />
-      </Stack.Toolbar>
       <Stack.Toolbar placement="right">
         <Stack.Toolbar.Menu
           accessibilityLabel={t.chat.conversationActionsLabel}

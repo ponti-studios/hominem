@@ -1,5 +1,3 @@
-import { GlassEffectContainer, Host, HStack, RNHostView } from '@expo/ui/swift-ui';
-import { frame, glassEffect } from '@expo/ui/swift-ui/modifiers';
 import type { SFSymbol } from 'expo-symbols';
 import React from 'react';
 import {
@@ -180,35 +178,17 @@ export function NoteToolbar(props: NoteToolbarProps) {
   const styles = useToolbarStyles();
   return (
     <InputAccessoryView nativeID={NOTE_TOOLBAR_ID} backgroundColor="transparent">
-      <Host style={styles.host}>
-        <GlassEffectContainer>
-          <HStack
-            modifiers={[
-              glassEffect({
-                glass: { variant: 'regular' },
-                shape: 'rectangle',
-              }),
-              frame({ maxWidth: Number.POSITIVE_INFINITY }),
-            ]}
-          >
-            <RNHostView>
-              <View style={styles.container}>
-                <ToolbarButtons {...props} />
-              </View>
-            </RNHostView>
-          </HStack>
-        </GlassEffectContainer>
-      </Host>
+      <View style={styles.container}>
+        <ToolbarButtons {...props} />
+      </View>
     </InputAccessoryView>
   );
 }
 
 const useToolbarStyles = makeStyles((theme) => ({
-  host: {
-    width: '100%',
-  },
   container: {
     alignItems: 'center',
+    backgroundColor: theme.colors.background,
     borderTopColor: theme.colors['border-subtle'],
     borderTopWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',

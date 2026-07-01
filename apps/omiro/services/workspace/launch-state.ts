@@ -221,6 +221,16 @@ export function clearWorkspaceResumeArtifact() {
   getStorage().remove(RESUME_ARTIFACT_KEY);
 }
 
+export function consumeWorkspaceResumeArtifact(): WorkspaceResumeArtifact | null {
+  const artifact = readWorkspaceResumeArtifact();
+  if (!artifact) {
+    return null;
+  }
+
+  clearWorkspaceResumeArtifact();
+  return artifact;
+}
+
 let hasAttemptedWorkspaceRestore = false;
 export function consumeWorkspaceRestoreAttempt(): boolean {
   if (hasAttemptedWorkspaceRestore) {

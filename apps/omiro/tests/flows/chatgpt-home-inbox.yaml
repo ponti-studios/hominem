@@ -2,7 +2,12 @@ appId: com.pontistudios.hakumi.dev
 ---
 - openLink: 'exp+hakumi://expo-development-client/?url=http%3A%2F%2F127.0.0.1%3A8081'
 - waitForAnimationToEnd:
-    timeout: 15000
+    timeout: 10000
+- openLink: 'hakumi-dev://'
+- waitForAnimationToEnd:
+    timeout: 3000
+- waitForAnimationToEnd:
+    timeout: 1000
 - assertVisible:
     id: 'home-tab-control'
 - assertVisible:
@@ -16,6 +21,7 @@ appId: com.pontistudios.hakumi.dev
 - assertVisible: 'Recents'
 - tapOn:
     id: 'feed-composer-input'
+- eraseText: 100
 - inputText: 'Quick capture draft'
 - assertVisible:
     id: 'composer-save-note'
@@ -27,8 +33,7 @@ appId: com.pontistudios.hakumi.dev
 - waitForAnimationToEnd:
     timeout: 2000
 - assertVisible: 'Archived chats'
-- back
-- back
+- tapOn: 'index'
 - waitForAnimationToEnd:
     timeout: 1000
 - tapOn:
@@ -38,14 +43,18 @@ appId: com.pontistudios.hakumi.dev
 - waitForAnimationToEnd:
     timeout: 2000
 - assertVisible: 'Settings'
-- back
+- tapOn: 'index'
+- waitForAnimationToEnd:
+    timeout: 1000
 - tapOn:
     id: 'home-search-action'
 - waitForAnimationToEnd:
     timeout: 2000
 - assertVisible:
     id: 'home-search-input'
-- back
+- tapOn: 'Close search'
+- waitForAnimationToEnd:
+    timeout: 1000
 - tapOn: 'Chats'
 - tapOn:
     id: 'feed-composer-input'
