@@ -29,7 +29,7 @@ export function App() {
 
 ### Component Organization
 
-- **UI Components** (`src/components/ui/`): Primitives and base components (Button, Card, Dialog, etc.)
+- **UI Components** (`src/components/`): Primitives and base components (Button, Card, Dialog, etc.)
 - **Compound Components** (`src/components/compound/`): Higher-level features (Form, Table, etc.)
 - **Utilities** (`src/lib/`): Helper functions like `cn()` for classname merging
 
@@ -100,8 +100,8 @@ pnpm lint
 
 ## Adding New Components
 
-1. Create the component file in `src/components/ui/` or `src/components/compound/`
-2. Add exports to `src/components/ui/index.ts` or `src/components/compound/index.ts`
+1. Create the component file in `src/components/` or `src/components/compound/`
+2. Add exports to `src/components/index.ts` or `src/components/compound/index.ts`
 3. Test the component
 
 ## Updating Apps
@@ -110,7 +110,7 @@ When adding new components, update imports in apps from local paths to:
 
 ```tsx
 // Before
-import { Button } from '@/components/ui/button';
+import { Button } from '@hominem/ui';
 
 // After
 import { Button } from '@hominem/ui';

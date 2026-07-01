@@ -26,6 +26,10 @@
       "types": "./src/components/button.tsx",
       "import": "./src/components/button.tsx"
     },
+    "./label": {
+      "types": "./src/components/label.tsx",
+      "import": "./src/components/label.tsx"
+    },
     "./badge": {
       "types": "./src/components/badge.tsx",
       "import": "./src/components/badge.tsx"
@@ -58,6 +62,10 @@
       "types": "./src/components/input.tsx",
       "import": "./src/components/input.tsx"
     },
+    "./radio-group": {
+      "types": "./src/components/radio-group.tsx",
+      "import": "./src/components/radio-group.tsx"
+    },
     "./select": {
       "types": "./src/components/select.tsx",
       "import": "./src/components/select.tsx"
@@ -77,6 +85,18 @@
     "./dialog": {
       "types": "./src/components/dialog.tsx",
       "import": "./src/components/dialog.tsx"
+    },
+    "./sheet": {
+      "types": "./src/components/sheet.tsx",
+      "import": "./src/components/sheet.tsx"
+    },
+    "./slider": {
+      "types": "./src/components/slider.tsx",
+      "import": "./src/components/slider.tsx"
+    },
+    "./stepper": {
+      "types": "./src/components/stepper.tsx",
+      "import": "./src/components/stepper.tsx"
     },
     "./drawer": {
       "types": "./src/components/drawer.tsx",

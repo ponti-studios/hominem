@@ -21,7 +21,7 @@ const extractedJobSchema = z.object({
 });
 
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
-const EXTRACTION_MODEL = 'deepseek/deepseek-v4-flash';
+const EXTRACTION_MODEL = 'openai/gpt-4o-mini';
 
 export async function scrapeJobPosting(jobUrl: string): Promise<JobScrapingResult> {
   try {

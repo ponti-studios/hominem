@@ -410,7 +410,6 @@ const useNoteStyles = makeStyles((theme) => ({
   },
   placeholderTitle: {
     alignSelf: 'stretch',
-    backgroundColor: theme.colors['border-subtle'],
     borderRadius: theme.borderRadii.sm,
     height: 32,
     marginBottom: 12,

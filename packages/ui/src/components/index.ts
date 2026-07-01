@@ -65,10 +65,10 @@ export {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-  Badge,
-  badgeVariants,
-  Button,
-  buttonVariants,
+} from './accordion';
+export { Badge, badgeVariants } from './badge';
+export { Button, buttonVariants } from './button';
+export {
   Card,
   CardAction,
   CardContent,
@@ -76,6 +76,8 @@ export {
   CardFooter,
   CardHeader,
   CardTitle,
+} from './card';
+export {
   Command,
   CommandDialog,
   CommandEmpty,
@@ -86,6 +88,8 @@ export {
   CommandListLoading,
   CommandSeparator,
   CommandShortcut,
+} from './command';
+export {
   Dialog,
   DialogClose,
   DialogContent,
@@ -96,15 +100,13 @@ export {
   DialogPortal,
   DialogTitle,
   DialogTrigger,
-  Input,
-  Label,
-  Popover,
-  PopoverAnchor,
-  PopoverContent,
-  PopoverTrigger,
-  Progress,
-  RadioGroup,
-  RadioGroupItem,
+} from './dialog';
+export { Input } from './input';
+export { Label } from './label';
+export { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from './popover';
+export { Progress } from './progress';
+export { RadioGroup, RadioGroupItem } from './radio-group';
+export {
   Select,
   SelectContent,
   SelectGroup,
@@ -112,6 +114,8 @@ export {
   SelectLabel,
   SelectTrigger,
   SelectValue,
+} from './select';
+export {
   Sheet,
   SheetClose,
   SheetContent,
@@ -122,8 +126,11 @@ export {
   SheetPortal,
   SheetTitle,
   SheetTrigger,
-  Slider,
-  Stepper,
+} from './sheet';
+export { Slider } from './slider';
+export { Stepper } from './stepper';
+export type { StepperProps } from './stepper';
+export {
   Table,
   TableBody,
   TableCaption,
@@ -132,12 +139,9 @@ export {
   TableHead,
   TableHeader,
   TableRow,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-  Textarea,
-} from './ui';
+} from './table';
+export { Tabs, TabsContent, TabsList, TabsTrigger } from './tabs';
+export { Textarea } from './textarea';
 export type {
   AuthScaffoldProps,
   EmailEntryFormProps,
@@ -171,5 +175,4 @@ export type {
   FilterSelectProps,
 } from './filters';
 export type { InboxStreamRowItem, InboxStreamRowLinkProps, InboxStreamRowProps } from './inbox';
-export type { StepperProps } from './ui';
 export type { UpdateGuardCopy, UpdateGuardProps } from './update-guard';

@@ -145,8 +145,8 @@ export { LoadingSpinner } from './components/loading-spinner';
 export { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from './components/popover';
 export { PercentageProgressBar, Progress, VolumeProgressBar } from './components/progress';
 export type { PercentageProgressBarProps, VolumeProgressBarProps } from './components/progress';
-export { RadioGroup, RadioGroupItem } from './components/ui/radio-group';
-export { Label } from './components/ui/label';
+export { RadioGroup, RadioGroupItem } from './components/radio-group';
+export { Label } from './components/label';
 export {
   Select,
   SelectContent,
@@ -167,10 +167,10 @@ export {
   SheetPortal,
   SheetTitle,
   SheetTrigger,
-} from './components/ui/sheet';
-export { Slider } from './components/ui/slider';
-export { Stepper } from './components/ui/stepper';
-export type { StepperProps } from './components/ui/stepper';
+} from './components/sheet';
+export { Slider } from './components/slider';
+export { Stepper } from './components/stepper';
+export type { StepperProps } from './components/stepper';
 export { Switch } from './components/switch';
 export { EmptyState } from './components/surfaces/empty-state';
 export { SectionIntro } from './components/surfaces/section-intro';
