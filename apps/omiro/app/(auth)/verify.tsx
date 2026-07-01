@@ -222,15 +222,6 @@ function VerifyScreen() {
       style={[styles.container, { backgroundColor: themeColors.background }]}
       behavior="padding"
     >
-      <View
-        pointerEvents="none"
-        style={[styles.orbPrimary, { backgroundColor: themeColors['bg-surface'] }]}
-      />
-      <View
-        pointerEvents="none"
-        style={[styles.orbSecondary, { backgroundColor: themeColors['bg-elevated'] }]}
-      />
-
       <ScrollView
         testID="auth-verify-screen"
         contentInsetAdjustmentBehavior="automatic"
@@ -387,7 +378,6 @@ function VerifyScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    overflow: 'hidden',
   },
   successContainer: {
     alignItems: 'center',
@@ -411,8 +401,8 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 24,
+    paddingHorizontal: 24,
+    paddingTop: 32,
     paddingBottom: 80,
   },
   contentShell: {
@@ -422,12 +412,12 @@ const styles = StyleSheet.create({
   card: {
     width: '100%',
     maxWidth: 420,
-    gap: 20,
+    gap: 18,
   },
   iconChip: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -493,24 +483,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 12,
-  },
-  orbPrimary: {
-    position: 'absolute',
-    top: -120,
-    right: -60,
-    width: 300,
-    height: 300,
-    borderRadius: 150,
-    opacity: 0.62,
-  },
-  orbSecondary: {
-    position: 'absolute',
-    bottom: -150,
-    left: -120,
-    width: 340,
-    height: 340,
-    borderRadius: 170,
-    opacity: 0.34,
   },
 });
 

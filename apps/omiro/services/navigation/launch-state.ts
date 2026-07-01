@@ -1,11 +1,11 @@
 import type { UploadedFile } from '~/types/upload';
 
-import type { WorkspaceResumeArtifact } from './routes';
+import type { ResumeTarget } from './routes';
 
-const FEED_DRAFT_KEY = 'workspace-feed-draft-v1';
+const INBOX_DRAFT_KEY = 'workspace-feed-draft-v1';
 const CHAT_DRAFT_PREFIX = 'workspace-chat-draft-v1:';
 const CHAT_COMPOSER_HANDOFF_PREFIX = 'workspace-chat-composer-handoff-v1:';
-const RESUME_ARTIFACT_KEY = 'workspace-resume-artifact-v1';
+const RESUME_TARGET_KEY = 'workspace-resume-artifact-v1';
 
 const memoryStorage = new Map<string, string>();
 
@@ -49,7 +49,7 @@ interface SerializedUploadedFile extends Omit<UploadedFile, 'uploadedAt'> {
   uploadedAt: string;
 }
 
-export interface WorkspaceChatComposerAttachment {
+export interface ChatComposerAttachment {
   id: string;
   name: string;
   type: string;
@@ -57,15 +57,15 @@ export interface WorkspaceChatComposerAttachment {
   uploadedFile?: UploadedFile;
 }
 
-interface SerializedWorkspaceChatComposerAttachment extends Omit<
-  WorkspaceChatComposerAttachment,
+interface SerializedChatComposerAttachment extends Omit<
+  ChatComposerAttachment,
   'uploadedFile'
 > {
   uploadedFile?: SerializedUploadedFile;
 }
 
-export interface WorkspaceChatComposerHandoff {
-  attachments: WorkspaceChatComposerAttachment[];
+export interface ChatComposerHandoff {
+  attachments: ChatComposerAttachment[];
   message: string;
 }
 
@@ -88,8 +88,8 @@ function writeJSONValue<T>(key: string, value: T) {
 }
 
 function serializeChatComposerAttachment(
-  attachment: WorkspaceChatComposerAttachment,
-): SerializedWorkspaceChatComposerAttachment {
+  attachment: ChatComposerAttachment,
+): SerializedChatComposerAttachment {
   if (!attachment.uploadedFile) {
     return {
       id: attachment.id,
@@ -112,8 +112,8 @@ function serializeChatComposerAttachment(
 }
 
 function deserializeChatComposerAttachment(
-  attachment: SerializedWorkspaceChatComposerAttachment,
-): WorkspaceChatComposerAttachment {
+  attachment: SerializedChatComposerAttachment,
+): ChatComposerAttachment {
   if (!attachment.uploadedFile) {
     return {
       id: attachment.id,
@@ -135,22 +135,22 @@ function deserializeChatComposerAttachment(
   };
 }
 
-export function readFeedDraft(): string {
-  return getStorage().getString(FEED_DRAFT_KEY) ?? '';
+export function readInboxDraft(): string {
+  return getStorage().getString(INBOX_DRAFT_KEY) ?? '';
 }
 
-export function writeFeedDraft(value: string) {
+export function writeInboxDraft(value: string) {
   const normalized = value.trim();
   if (normalized.length === 0) {
-    getStorage().remove(FEED_DRAFT_KEY);
+    getStorage().remove(INBOX_DRAFT_KEY);
     return;
   }
 
-  getStorage().set(FEED_DRAFT_KEY, value);
+  getStorage().set(INBOX_DRAFT_KEY, value);
 }
 
-export function clearFeedDraft() {
-  getStorage().remove(FEED_DRAFT_KEY);
+export function clearInboxDraft() {
+  getStorage().remove(INBOX_DRAFT_KEY);
 }
 
 export function readChatDraft(chatId: string): string {
@@ -172,16 +172,16 @@ export function clearChatDraft(chatId: string) {
   getStorage().remove(getChatDraftKey(chatId));
 }
 
-export function writeChatComposerHandoff(chatId: string, handoff: WorkspaceChatComposerHandoff) {
+export function writeChatComposerHandoff(chatId: string, handoff: ChatComposerHandoff) {
   writeJSONValue(getChatComposerHandoffKey(chatId), {
     ...handoff,
     attachments: handoff.attachments.map(serializeChatComposerAttachment),
   });
 }
 
-export function readChatComposerHandoff(chatId: string): WorkspaceChatComposerHandoff | null {
+export function readChatComposerHandoff(chatId: string): ChatComposerHandoff | null {
   const handoff = readJSONValue<{
-    attachments: SerializedWorkspaceChatComposerAttachment[];
+    attachments: SerializedChatComposerAttachment[];
     message: string;
   }>(getChatComposerHandoffKey(chatId));
 
@@ -195,7 +195,7 @@ export function readChatComposerHandoff(chatId: string): WorkspaceChatComposerHa
   };
 }
 
-export function consumeChatComposerHandoff(chatId: string): WorkspaceChatComposerHandoff | null {
+export function consumeChatComposerHandoff(chatId: string): ChatComposerHandoff | null {
   const handoff = readChatComposerHandoff(chatId);
   if (!handoff) {
     return null;
@@ -209,34 +209,34 @@ export function clearChatComposerHandoff(chatId: string) {
   getStorage().remove(getChatComposerHandoffKey(chatId));
 }
 
-export function writeWorkspaceResumeArtifact(artifact: WorkspaceResumeArtifact) {
-  writeJSONValue(RESUME_ARTIFACT_KEY, artifact);
+export function writeResumeTarget(target: ResumeTarget) {
+  writeJSONValue(RESUME_TARGET_KEY, target);
 }
 
-export function readWorkspaceResumeArtifact(): WorkspaceResumeArtifact | null {
-  return readJSONValue<WorkspaceResumeArtifact>(RESUME_ARTIFACT_KEY);
+export function readResumeTarget(): ResumeTarget | null {
+  return readJSONValue<ResumeTarget>(RESUME_TARGET_KEY);
 }
 
-export function clearWorkspaceResumeArtifact() {
-  getStorage().remove(RESUME_ARTIFACT_KEY);
+export function clearResumeTarget() {
+  getStorage().remove(RESUME_TARGET_KEY);
 }
 
-export function consumeWorkspaceResumeArtifact(): WorkspaceResumeArtifact | null {
-  const artifact = readWorkspaceResumeArtifact();
-  if (!artifact) {
+export function consumeResumeTarget(): ResumeTarget | null {
+  const target = readResumeTarget();
+  if (!target) {
     return null;
   }
 
-  clearWorkspaceResumeArtifact();
-  return artifact;
+  clearResumeTarget();
+  return target;
 }
 
-let hasAttemptedWorkspaceRestore = false;
-export function consumeWorkspaceRestoreAttempt(): boolean {
-  if (hasAttemptedWorkspaceRestore) {
+let hasAttemptedRestore = false;
+export function consumeRestoreAttempt(): boolean {
+  if (hasAttemptedRestore) {
     return false;
   }
 
-  hasAttemptedWorkspaceRestore = true;
+  hasAttemptedRestore = true;
   return true;
 }

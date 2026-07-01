@@ -44,7 +44,7 @@ export interface ChatServices {
   };
   chatKeys: { messages: (chatId: string) => readonly unknown[] };
   onNoteCreated?: () => Promise<void>;
-  onArtifactCreated?: (artifact: {
+  onContentCreated?: (content: {
     source: { kind: 'artifact'; id: string; type: Exclude<ArtifactType, 'tracker'>; title: string };
     updatedAt?: string;
   }) => Promise<void>;
@@ -195,8 +195,8 @@ export function useChatController({
       return res.json();
     },
     onSuccess: async (task) => {
-      if (services.onArtifactCreated) {
-        await services.onArtifactCreated({
+      if (services.onContentCreated) {
+        await services.onContentCreated({
           source: {
             kind: 'artifact',
             id: task.id,
@@ -245,8 +245,8 @@ export function useChatController({
     onAcceptReview: async (review) => {
       if (review.proposedType === 'note') {
         const note = await createNote.mutateAsync(review);
-        if (services.onArtifactCreated) {
-          await services.onArtifactCreated({
+        if (services.onContentCreated) {
+          await services.onContentCreated({
             source: {
               kind: 'artifact',
               id: note.id,
@@ -292,7 +292,7 @@ export function useChatController({
     onRejectReview: async () => {},
     onError: (_phase, _error) => {
       Alert.alert(
-        _phase === 'accept' ? 'Could not save artifact' : 'Could not prepare review',
+        _phase === 'accept' ? 'Could not save content' : 'Could not prepare review',
         'Please try again.',
       );
     },

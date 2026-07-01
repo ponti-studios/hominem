@@ -1,28 +1,28 @@
 import type { RelativePathString } from 'expo-router';
 
-export type WorkspaceArtifactKind = 'chat' | 'note';
+export type ContentKind = 'chat' | 'note';
 
-export interface WorkspaceResumeArtifact {
-  kind: WorkspaceArtifactKind;
+export interface ResumeTarget {
+  kind: ContentKind;
   id: string;
   title: string | null;
   updatedAt: string | null;
 }
 
-export function getWorkspaceHomeRoute(): RelativePathString {
+export function getInboxRoute(): RelativePathString {
   return '/(protected)' as RelativePathString;
 }
 
-export function getWorkspaceSettingsRoute(): RelativePathString {
+export function getSettingsRoute(): RelativePathString {
   return '/(protected)/settings' as RelativePathString;
 }
 
-export function getWorkspaceArchivedChatsRoute(): RelativePathString {
+export function getArchivedChatsRoute(): RelativePathString {
   return '/(protected)/settings/archived-chats' as RelativePathString;
 }
 
-export function getWorkspaceArtifactRoute(
-  kind: WorkspaceArtifactKind,
+export function getContentRoute(
+  kind: ContentKind,
   id: string,
   params?: Record<string, string>,
 ): RelativePathString {

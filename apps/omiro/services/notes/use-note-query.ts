@@ -3,7 +3,7 @@ import type { Note } from '@hominem/rpc/types';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { hasDefinedData, resolveRestoredQueryState } from '~/services/query/restored-query-state';
-import { readCachedNote, writeCachedNote } from '~/services/workspace/content-cache';
+import { readCachedNote, writeCachedNote } from '~/services/content-cache';
 
 import { noteKeys } from './query-keys';
 

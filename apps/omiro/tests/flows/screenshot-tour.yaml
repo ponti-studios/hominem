@@ -21,9 +21,9 @@ appId: com.pontistudios.hakumi.dev
 - waitForAnimationToEnd:
     timeout: 500
 
-# ── 3. Composer – feed mode (text entered) ───────────────────────────────────
+# ── 3. Composer – inbox mode (text entered) ───────────────────────────────────
 - tapOn:
-    id: 'feed-composer-input'
+    id: 'inbox-composer-input'
 - inputText: 'Some example note content for the screenshot tour'
 - waitForAnimationToEnd:
     timeout: 500

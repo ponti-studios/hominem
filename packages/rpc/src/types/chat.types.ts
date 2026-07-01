@@ -43,6 +43,31 @@ export type ChatsCreateInput = InferRequestType<_ChatsCreateEndpoint>['json'];
 export type ChatsCreateOutput = InferResponseType<_ChatsCreateEndpoint, 201>;
 
 // ============================================================================
+// START STREAM
+// ============================================================================
+
+type _ChatsStartStreamEndpoint = HonoClient['api']['chats']['start-stream']['$post'];
+export type ChatsStartStreamInput = InferRequestType<_ChatsStartStreamEndpoint>['json'];
+export interface ChatStreamChunkEvent {
+  type: 'chunk';
+  chunk: string;
+}
+
+export interface ChatStreamErrorEvent {
+  type: 'error';
+  message: string;
+}
+
+export interface ChatsStartStreamReadyEvent {
+  type: 'ready';
+  chatId: string;
+  chat: Chat;
+}
+
+export type ChatStreamEvent = ChatStreamChunkEvent | ChatStreamErrorEvent;
+export type ChatsStartStreamEvent = ChatsStartStreamReadyEvent | ChatStreamEvent;
+
+// ============================================================================
 // GET (with messages)
 // ============================================================================
 

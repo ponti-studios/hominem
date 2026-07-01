@@ -10,7 +10,7 @@ import { makeStyles } from '~/components/theme';
 import t from '~/translations';
 
 interface ComposerToolbarProps {
-  mode: 'feed' | 'chat';
+  mode: 'inbox' | 'chat';
   isRecording: boolean;
   isVoiceBusy: boolean;
   isEnhancing: boolean;
@@ -61,7 +61,7 @@ export function ComposerToolbar({
     <View style={styles.toolbar}>
       <View style={styles.leading}>
         <ComposerMedia
-          accessibilityLabel={t.feed.composer.addAttachmentA11y}
+          accessibilityLabel={t.inboxComposer.composer.addAttachmentA11y}
           disabled={!canPickMedia}
         />
       </View>
@@ -70,7 +70,7 @@ export function ComposerToolbar({
           icon={isRecording ? 'stop.fill' : 'mic.fill'}
           onPress={onVoicePress}
           accessibilityLabel={
-            isRecording ? t.feed.composer.stopVoiceInputA11y : t.feed.composer.startVoiceInputA11y
+            isRecording ? t.inboxComposer.composer.stopVoiceInputA11y : t.inboxComposer.composer.startVoiceInputA11y
           }
           disabled={!canToggleVoice}
           isAnimating={isVoiceBusy}
@@ -80,13 +80,13 @@ export function ComposerToolbar({
             <ActionButton
               icon="wand.and.sparkles"
               onPress={onEnhancePress}
-              accessibilityLabel={t.feed.composer.enhanceTextA11y}
+              accessibilityLabel={t.inboxComposer.composer.enhanceTextA11y}
               disabled={!canEnhance}
               isAnimating={isEnhancing || isCleaningVoice}
             />
           </Reanimated.View>
         ) : null}
-        {mode === 'feed' && secondaryAction && canSubmit ? (
+        {mode === 'inbox' && secondaryAction && canSubmit ? (
           <Reanimated.View entering={buttonEnter} exiting={buttonExit}>
             <ActionButton
               icon={secondaryAction.icon}
@@ -104,15 +104,15 @@ export function ComposerToolbar({
               onPress={onSubmit}
               accessibilityLabel={
                 submitAccessibilityLabel ??
-                (mode === 'feed'
-                  ? t.feed.composer.saveNoteA11y
+                (mode === 'inbox'
+                  ? t.inboxComposer.composer.saveNoteA11y
                   : isSubmitting
                     ? t.chat.input.sendingA11y
                     : t.chat.input.sendMessageA11y)
               }
               testID={
                 submitTestID ??
-                (mode === 'feed' ? 'composer-submit-note' : 'composer-submit-message')
+                (mode === 'inbox' ? 'composer-submit-note' : 'composer-submit-message')
               }
               disabled={!canSubmit}
             />

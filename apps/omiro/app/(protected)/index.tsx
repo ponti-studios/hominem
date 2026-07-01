@@ -1,32 +1,33 @@
+import ExpoSegmentedControl from '@expo/ui/community/segmented-control';
+import { Host, RNHostView } from '@expo/ui/swift-ui';
 import { Stack, useIsFocused, useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { RefreshControl, View } from 'react-native';
-import type { TextInput } from 'react-native';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Composer } from '~/components/composer/Composer';
-import { makeStyles } from '~/components/theme';
-import { WorkspaceHomeHeader } from '~/components/workspace/WorkspaceHomeHeader';
+import { makeStyles, useThemeColors } from '~/components/theme';
 import {
-  WorkspaceHomeList,
-  type WorkspaceHomeListRef,
-} from '~/components/workspace/WorkspaceHomeList';
-import { WorkspaceSearchModal } from '~/components/workspace/WorkspaceSearchModal';
-import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
+  InboxList,
+  type InboxListRef,
+} from '~/components/inbox/InboxList';
+import { useTopAnchoredInbox } from '~/services/inbox/top-anchored-inbox';
 import { useInboxStreamItems } from '~/services/inbox/use-inbox-stream-items';
 import {
-  buildWorkspaceHomeSections,
-  type WorkspaceHomeTab,
-} from '~/services/workspace/home-screen-state';
-import { clearFeedDraft, readFeedDraft, writeFeedDraft } from '~/services/workspace/launch-state';
+  buildInboxSections,
+  type InboxTab,
+} from '~/services/inbox/screen-state';
+import { clearInboxDraft, readInboxDraft, writeInboxDraft } from '~/services/navigation/launch-state';
 import {
-  getWorkspaceArchivedChatsRoute,
-  getWorkspaceSettingsRoute,
-} from '~/services/workspace/routes';
+  getArchivedChatsRoute,
+  getSettingsRoute,
+} from '~/services/navigation/routes';
+import t from '~/translations';
 
-export default function FeedScreen() {
+export default function InboxScreen() {
   const styles = useStyles();
+  const themeColors = useThemeColors();
   const isFocused = useIsFocused();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -40,65 +41,93 @@ export default function FeedScreen() {
     isFetchingNextPage,
     refetch,
   } = useInboxStreamItems({ enabled: isFocused });
-  const listRef = useRef<WorkspaceHomeListRef>(null);
-  const searchInputRef = useRef<TextInput>(null);
-  const [activeTab, setActiveTab] = useState<WorkspaceHomeTab>('notes');
+  const listRef = useRef<InboxListRef>(null);
+  const [activeTab, setActiveTab] = useState<InboxTab>('notes');
   const [searchQuery, setSearchQuery] = useState('');
-  const [isSearchVisible, setIsSearchVisible] = useState(false);
-  const feedDraft = readFeedDraft();
+  const inboxDraft = readInboxDraft();
 
-  useTopAnchoredFeed({ listRef, headKey: items[0]?.id ?? null, isFocused });
+  useTopAnchoredInbox({ listRef, headKey: items[0]?.id ?? null, isFocused });
 
-  const handleOpenSettings = useCallback(() => router.push(getWorkspaceSettingsRoute()), [router]);
+  const handleOpenSettings = useCallback(() => router.push(getSettingsRoute()), [router]);
 
   const handleOpenArchivedChats = useCallback(
-    () => router.push(getWorkspaceArchivedChatsRoute()),
+    () => router.push(getArchivedChatsRoute()),
     [router],
   );
 
-  const handleOpenSearch = useCallback(() => setIsSearchVisible(true), []);
-
-  const handleCloseSearch = useCallback(() => {
-    setIsSearchVisible(false);
-    setSearchQuery('');
-  }, []);
-
   const { searchResults, visibleItems } = useMemo(
     () =>
-      buildWorkspaceHomeSections({
+      buildInboxSections({
         items,
         tab: activeTab,
         searchQuery,
       }),
     [activeTab, items, searchQuery],
   );
+  const isSearching = searchQuery.trim().length > 0;
+  const displayItems = isSearching ? searchResults : visibleItems;
 
   return (
     <View style={styles.container}>
       <Stack.Screen
         options={{
-          headerShown: false,
+          headerShown: true,
+          title: 'Inbox',
+          headerSearchBarOptions: {
+            placeholder: t.inbox.screen.searchPlaceholder,
+            placement: 'stacked',
+            allowToolbarIntegration: false,
+            hideWhenScrolling: false,
+            hideNavigationBar: false,
+            obscureBackground: false,
+            onCancelButtonPress: () => setSearchQuery(''),
+            onChangeText: (event) => setSearchQuery(event.nativeEvent.text),
+            tintColor: themeColors.foreground,
+          },
         }}
       />
-
-      <WorkspaceHomeHeader
-        activeTab={activeTab}
-        topInset={insets.top}
-        onChangeTab={setActiveTab}
-        onOpenArchivedChats={handleOpenArchivedChats}
-        onOpenSearch={handleOpenSearch}
-        onOpenSettings={handleOpenSettings}
-      />
+      <Stack.Toolbar placement="right">
+        <Stack.Toolbar.Menu
+          accessibilityLabel={t.inbox.screen.openMenuA11y}
+          icon="person.crop.circle"
+          title="Inbox"
+        >
+          <Stack.Toolbar.MenuAction icon="archivebox" onPress={handleOpenArchivedChats}>
+            {t.inbox.screen.archivedChats}
+          </Stack.Toolbar.MenuAction>
+          <Stack.Toolbar.MenuAction icon="gearshape" onPress={handleOpenSettings}>
+            {t.inbox.screen.settings}
+          </Stack.Toolbar.MenuAction>
+        </Stack.Toolbar.Menu>
+      </Stack.Toolbar>
 
       <View style={styles.listWrap}>
-        <WorkspaceHomeList
+        <InboxList
           contentPaddingBottom={insets.bottom + 164}
+          contentPaddingTop={4}
           error={error}
           isFetchingNextPage={isFetchingNextPage}
           isLoading={isInitialLoading}
-          items={visibleItems}
+          items={displayItems}
           listRef={listRef}
           tab={activeTab}
+          listHeader={
+            <View style={styles.tabHeader}>
+              <Host>
+                <RNHostView matchContents>
+                  <ExpoSegmentedControl
+                    selectedIndex={activeTab === 'notes' ? 1 : 0}
+                    style={styles.segmentedControl}
+                    testID="inbox-tab-control"
+                    values={[t.inbox.screen.chatsTab, t.inbox.screen.notesTab]}
+                    onChange={(event) =>
+                      setActiveTab(event.nativeEvent.selectedSegmentIndex === 1 ? 'notes' : 'chats')
+                    }
+                  />
+                </RNHostView>
+              </Host>
+            </View>
+          }
           onEndReached={() => {
             if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
           }}
@@ -119,23 +148,14 @@ export default function FeedScreen() {
           ]}
         >
           <Composer
-            mode="feed"
+            mode="inbox"
             entryMode={activeTab === 'chats' ? 'chat' : 'note'}
-            initialMessage={feedDraft}
-            onDraftChange={writeFeedDraft}
-            onClearDraft={clearFeedDraft}
+            initialMessage={inboxDraft}
+            onDraftChange={writeInboxDraft}
+            onClearDraft={clearInboxDraft}
           />
         </View>
       </KeyboardStickyView>
-
-      <WorkspaceSearchModal
-        visible={isSearchVisible}
-        searchInputRef={searchInputRef}
-        searchQuery={searchQuery}
-        results={searchResults}
-        onClose={handleCloseSearch}
-        onChangeSearchQuery={setSearchQuery}
-      />
     </View>
   );
 }
@@ -157,5 +177,13 @@ const useStyles = makeStyles((theme) => ({
   },
   listWrap: {
     flex: 1,
+  },
+  tabHeader: {
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  segmentedControl: {
+    height: 32,
+    width: 168,
   },
 }));

@@ -1,17 +1,17 @@
 import { FlashList, type FlashListRef, type ListRenderItem } from '@shopify/flash-list';
-import React, { memo, useCallback, type RefObject } from 'react';
+import React, { memo, useCallback, type ReactElement, type RefObject } from 'react';
 import type { RefreshControlProps } from 'react-native';
 import { View } from 'react-native';
 
 import { Text, makeStyles } from '~/components/theme';
 import { EmptyState } from '~/components/ui/EmptyState';
-import type { WorkspaceHomeTab } from '~/services/workspace/home-screen-state';
+import type { InboxTab } from '~/services/inbox/screen-state';
 import t from '~/translations';
 
 import { InboxStreamItem } from './InboxStreamItem';
 import type { InboxStreamItemData } from './InboxStreamItem.types';
 
-export type WorkspaceHomeListRow =
+export type InboxListRow =
   | {
       type: 'section';
       id: string;
@@ -23,19 +23,21 @@ export type WorkspaceHomeListRow =
       item: InboxStreamItemData;
     };
 
-export type WorkspaceHomeListRef = FlashListRef<WorkspaceHomeListRow>;
+export type InboxListRef = FlashListRef<InboxListRow>;
 
-interface WorkspaceHomeListProps {
+interface InboxListProps {
   error?: Error | null;
-  tab: WorkspaceHomeTab;
+  tab: InboxTab;
   items: InboxStreamItemData[];
+  sectionTitle?: string;
   isLoading?: boolean;
   isFetchingNextPage?: boolean;
-  listRef?: RefObject<FlashListRef<WorkspaceHomeListRow> | null>;
+  listRef?: RefObject<FlashListRef<InboxListRow> | null>;
   onEndReached?: () => void;
   refreshControl?: React.ReactElement<RefreshControlProps>;
   contentPaddingBottom?: number;
   contentPaddingTop?: number;
+  listHeader?: ReactElement;
 }
 
 const RenderInboxHomeItem = memo(({ item }: { item: InboxStreamItemData }) => (
@@ -46,23 +48,15 @@ RenderInboxHomeItem.displayName = 'RenderInboxHomeItem';
 
 function buildRows({
   items,
-  tab,
-}: Pick<WorkspaceHomeListProps, 'items' | 'tab'>): WorkspaceHomeListRow[] {
-  return [
-    {
-      type: 'section' as const,
-      id: `section:${tab}`,
-      title: tab === 'notes' ? t.workspace.home.recentNotes : t.workspace.home.recentChats,
-    },
-    ...items.map((item) => ({
-      type: 'item' as const,
-      id: item.id,
-      item,
-    })),
-  ];
+}: Pick<InboxListProps, 'items'>): InboxListRow[] {
+  return items.map((item) => ({
+    type: 'item' as const,
+    id: item.id,
+    item,
+  }));
 }
 
-export function WorkspaceHomeList({
+export function InboxList({
   error,
   tab,
   items,
@@ -73,19 +67,17 @@ export function WorkspaceHomeList({
   refreshControl,
   contentPaddingBottom,
   contentPaddingTop,
-}: WorkspaceHomeListProps) {
+  listHeader,
+}: InboxListProps) {
   const styles = useStyles();
-  const rows = buildRows({ items, tab });
+  const rows = buildRows({ items });
 
-  const renderItem = useCallback<ListRenderItem<WorkspaceHomeListRow>>(
+  const renderItem = useCallback<ListRenderItem<InboxListRow>>(
     ({ item }) => {
-      if (item.type === 'section') {
-        return <Text style={styles.sectionTitle}>{item.title}</Text>;
-      }
-
+      if (item.type === 'section') return null;
       return <RenderInboxHomeItem item={item.item} />;
     },
-    [styles.sectionTitle],
+    [],
   );
 
   if (error && items.length === 0) {
@@ -95,14 +87,14 @@ export function WorkspaceHomeList({
           action={
             refreshControl?.props.onRefresh
               ? {
-                  label: t.workspace.home.retry,
+                  label: t.inbox.screen.retry,
                   onPress: refreshControl.props.onRefresh,
                 }
               : undefined
           }
-          description={t.workspace.home.loadErrorDescription}
+          description={t.inbox.screen.loadErrorDescription}
           sfSymbol="arrow.clockwise.circle"
-          title={t.workspace.home.loadErrorTitle}
+          title={t.inbox.screen.loadErrorTitle}
         />
       </View>
     );
@@ -113,10 +105,10 @@ export function WorkspaceHomeList({
       <View style={styles.emptyWrap}>
         <EmptyState
           description={
-            tab === 'notes' ? t.workspace.home.emptyNotesDescription : t.workspace.empty.description
+            tab === 'notes' ? t.inbox.screen.emptyNotesDescription : t.inbox.empty.description
           }
           sfSymbol={tab === 'notes' ? 'doc.text' : 'bubble.left.and.bubble.right'}
-          title={tab === 'notes' ? t.workspace.home.emptyNotesTitle : t.workspace.empty.title}
+          title={tab === 'notes' ? t.inbox.screen.emptyNotesTitle : t.inbox.empty.title}
         />
       </View>
     );
@@ -129,9 +121,11 @@ export function WorkspaceHomeList({
         paddingTop: contentPaddingTop ?? 0,
         paddingBottom: contentPaddingBottom ?? 16,
       }}
+      contentInsetAdjustmentBehavior="automatic"
       data={rows}
       keyboardDismissMode="on-drag"
       keyExtractor={(item) => item.id}
+      ListHeaderComponent={listHeader}
       ListFooterComponent={
         isFetchingNextPage ? (
           <Text variant="caption1" color="text-tertiary" style={styles.footerText}>
@@ -155,14 +149,5 @@ const useStyles = makeStyles((theme) => ({
   footerText: {
     paddingVertical: theme.spacing.lg,
     textAlign: 'center',
-  },
-  sectionTitle: {
-    color: theme.colors.foreground,
-    fontSize: theme.typography.sizes.xl,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-    paddingBottom: 14,
-    paddingHorizontal: 16,
-    paddingTop: 28,
   },
 }));

@@ -9,13 +9,13 @@ import React, {
   type RefObject,
 } from 'react';
 
-export interface TopAnchoredFeedState {
+export interface TopAnchoredInboxState {
   pendingRequestId: number;
   handledRequestId: number;
 }
 
 interface ShouldRevealTopInput {
-  state: TopAnchoredFeedState;
+  state: TopAnchoredInboxState;
   headKey: string | null;
   isFocused: boolean;
 }
@@ -24,35 +24,35 @@ interface ScrollableListRef {
   scrollToOffset: (params: { offset: number; animated: boolean }) => void;
 }
 
-interface UseTopAnchoredFeedOptions {
+interface UseTopAnchoredInboxOptions {
   listRef?: RefObject<ScrollableListRef | null>;
   headKey?: string | null;
   isFocused?: boolean;
 }
 
-interface TopAnchoredFeedContextValue {
-  state: TopAnchoredFeedState;
+interface TopAnchoredInboxContextValue {
+  state: TopAnchoredInboxState;
   requestTopReveal: () => void;
   markTopRevealHandled: () => void;
 }
 
-const TopAnchoredFeedContext = createContext<TopAnchoredFeedContextValue | null>(null);
+const TopAnchoredInboxContext = createContext<TopAnchoredInboxContextValue | null>(null);
 
-export function createTopAnchoredFeedState(): TopAnchoredFeedState {
+export function createTopAnchoredInboxState(): TopAnchoredInboxState {
   return {
     pendingRequestId: 0,
     handledRequestId: 0,
   };
 }
 
-export function requestTopReveal(state: TopAnchoredFeedState): TopAnchoredFeedState {
+export function requestTopReveal(state: TopAnchoredInboxState): TopAnchoredInboxState {
   return {
     ...state,
     pendingRequestId: state.pendingRequestId + 1,
   };
 }
 
-export function markTopRevealHandled(state: TopAnchoredFeedState): TopAnchoredFeedState {
+export function markTopRevealHandled(state: TopAnchoredInboxState): TopAnchoredInboxState {
   if (state.pendingRequestId === state.handledRequestId) {
     return state;
   }
@@ -67,18 +67,18 @@ export function shouldRevealTop({ state, headKey, isFocused }: ShouldRevealTopIn
   return state.pendingRequestId > state.handledRequestId && isFocused && headKey !== null;
 }
 
-function useTopAnchoredFeedContext() {
-  const context = useContext(TopAnchoredFeedContext);
+function useTopAnchoredInboxContext() {
+  const context = useContext(TopAnchoredInboxContext);
 
   if (!context) {
-    throw new Error('useTopAnchoredFeed must be used within a TopAnchoredFeedProvider');
+    throw new Error('useTopAnchoredInbox must be used within a TopAnchoredInboxProvider');
   }
 
   return context;
 }
 
-export function TopAnchoredFeedProvider({ children }: PropsWithChildren) {
-  const [state, setState] = useState(createTopAnchoredFeedState);
+export function TopAnchoredInboxProvider({ children }: PropsWithChildren) {
+  const [state, setState] = useState(createTopAnchoredInboxState);
 
   const handleRequestTopReveal = useCallback(() => {
     setState((currentState) => requestTopReveal(currentState));
@@ -88,7 +88,7 @@ export function TopAnchoredFeedProvider({ children }: PropsWithChildren) {
     setState((currentState) => markTopRevealHandled(currentState));
   }, []);
 
-  const value = useMemo<TopAnchoredFeedContextValue>(
+  const value = useMemo<TopAnchoredInboxContextValue>(
     () => ({
       state,
       requestTopReveal: handleRequestTopReveal,
@@ -98,20 +98,20 @@ export function TopAnchoredFeedProvider({ children }: PropsWithChildren) {
   );
 
   return (
-    <TopAnchoredFeedContext.Provider value={value}>{children}</TopAnchoredFeedContext.Provider>
+    <TopAnchoredInboxContext.Provider value={value}>{children}</TopAnchoredInboxContext.Provider>
   );
 }
 
-export function useTopAnchoredFeed({
+export function useTopAnchoredInbox({
   listRef,
   headKey = null,
   isFocused = false,
-}: UseTopAnchoredFeedOptions = {}) {
+}: UseTopAnchoredInboxOptions = {}) {
   const {
     state,
     requestTopReveal: handleRequestTopReveal,
     markTopRevealHandled: handleMarkTopRevealHandled,
-  } = useTopAnchoredFeedContext();
+  } = useTopAnchoredInboxContext();
 
   useEffect(() => {
     if (!listRef || !shouldRevealTop({ state, headKey, isFocused })) {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import type { InboxStreamItemData } from '~/components/workspace/InboxStreamItem.types';
-import { buildWorkspaceHomeSections } from '~/services/workspace/home-screen-state';
+import type { InboxStreamItemData } from '~/components/inbox/InboxStreamItem.types';
+import { buildInboxSections } from '~/services/inbox/screen-state';
 
 const ITEMS: InboxStreamItemData[] = [
   {
@@ -33,9 +33,9 @@ const ITEMS: InboxStreamItemData[] = [
   },
 ];
 
-describe('buildWorkspaceHomeSections', () => {
+describe('buildInboxSections', () => {
   it('derives chat and note lists from the inbox payload', () => {
-    const result = buildWorkspaceHomeSections({
+    const result = buildInboxSections({
       items: ITEMS,
       tab: 'chats',
       searchQuery: '',
@@ -46,12 +46,12 @@ describe('buildWorkspaceHomeSections', () => {
   });
 
   it('selects visible items from the active tab', () => {
-    const chatsResult = buildWorkspaceHomeSections({
+    const chatsResult = buildInboxSections({
       items: ITEMS,
       tab: 'chats',
       searchQuery: '',
     });
-    const notesResult = buildWorkspaceHomeSections({
+    const notesResult = buildInboxSections({
       items: ITEMS,
       tab: 'notes',
       searchQuery: '',
@@ -62,7 +62,7 @@ describe('buildWorkspaceHomeSections', () => {
   });
 
   it('searches across loaded notes and chats regardless of active tab', () => {
-    const result = buildWorkspaceHomeSections({
+    const result = buildInboxSections({
       items: ITEMS,
       tab: 'notes',
       searchQuery: 'design',

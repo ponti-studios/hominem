@@ -16,64 +16,64 @@ vi.mock('~/services/storage/mmkv', () => {
   };
 });
 
-describe('workspace launch state', () => {
+describe('inbox launch state', () => {
   beforeEach(async () => {
     vi.resetModules();
   });
 
   it('stores resume metadata independently from drafts', async () => {
-    const launchState = await import('~/services/workspace/launch-state');
+    const launchState = await import('~/services/navigation/launch-state');
 
-    launchState.writeFeedDraft('Follow up on notes');
-    launchState.writeWorkspaceResumeArtifact({
+    launchState.writeInboxDraft('Follow up on notes');
+    launchState.writeResumeTarget({
       kind: 'note',
       id: 'note-1',
       title: 'Roadmap note',
       updatedAt: '2026-06-18T12:00:00.000Z',
     });
 
-    expect(launchState.readFeedDraft()).toBe('Follow up on notes');
-    expect(launchState.readWorkspaceResumeArtifact()).toEqual({
+    expect(launchState.readInboxDraft()).toBe('Follow up on notes');
+    expect(launchState.readResumeTarget()).toEqual({
       kind: 'note',
       id: 'note-1',
       title: 'Roadmap note',
       updatedAt: '2026-06-18T12:00:00.000Z',
     });
 
-    launchState.clearWorkspaceResumeArtifact();
-    expect(launchState.readWorkspaceResumeArtifact()).toBeNull();
-    expect(launchState.readFeedDraft()).toBe('Follow up on notes');
+    launchState.clearResumeTarget();
+    expect(launchState.readResumeTarget()).toBeNull();
+    expect(launchState.readInboxDraft()).toBe('Follow up on notes');
   });
 
-  it('consumes workspace resume metadata once', async () => {
-    const launchState = await import('~/services/workspace/launch-state');
+  it('consumes inbox resume metadata once', async () => {
+    const launchState = await import('~/services/navigation/launch-state');
 
-    launchState.writeWorkspaceResumeArtifact({
+    launchState.writeResumeTarget({
       kind: 'chat',
       id: 'chat-1',
       title: 'Follow up',
       updatedAt: '2026-06-18T12:00:00.000Z',
     });
 
-    expect(launchState.consumeWorkspaceResumeArtifact()).toEqual({
+    expect(launchState.consumeResumeTarget()).toEqual({
       kind: 'chat',
       id: 'chat-1',
       title: 'Follow up',
       updatedAt: '2026-06-18T12:00:00.000Z',
     });
-    expect(launchState.consumeWorkspaceResumeArtifact()).toBeNull();
-    expect(launchState.readWorkspaceResumeArtifact()).toBeNull();
+    expect(launchState.consumeResumeTarget()).toBeNull();
+    expect(launchState.readResumeTarget()).toBeNull();
   });
 
-  it('only consumes the workspace restore attempt once per module load', async () => {
-    const launchState = await import('~/services/workspace/launch-state');
+  it('only consumes the inbox restore attempt once per module load', async () => {
+    const launchState = await import('~/services/navigation/launch-state');
 
-    expect(launchState.consumeWorkspaceRestoreAttempt()).toBe(true);
-    expect(launchState.consumeWorkspaceRestoreAttempt()).toBe(false);
+    expect(launchState.consumeRestoreAttempt()).toBe(true);
+    expect(launchState.consumeRestoreAttempt()).toBe(false);
   });
 
   it('round-trips and consumes chat composer handoff state', async () => {
-    const launchState = await import('~/services/workspace/launch-state');
+    const launchState = await import('~/services/navigation/launch-state');
 
     launchState.writeChatComposerHandoff('chat-1', {
       message: 'Follow up with context',

@@ -3,9 +3,9 @@ import type { Chat, SessionSource } from '@hominem/rpc/types';
 import type { QueryClient } from '@tanstack/react-query';
 
 import { chatKeys, inboxKeys } from '~/services/notes/query-keys';
-import { writeCachedChat } from '~/services/workspace/content-cache';
+import { writeCachedChat } from '~/services/content-cache';
 
-import type { ChatWithActivity } from './session-types';
+import type { ChatWithActivity } from './chat-types';
 
 export const DEFAULT_CHAT_TITLE = 'New conversation';
 
@@ -66,7 +66,7 @@ export function updateChatTitleCaches(
       : currentChat,
   );
 
-  queryClient.setQueryData<ChatWithActivity[] | undefined>(chatKeys.resumableSessions, (sessions) =>
+  queryClient.setQueryData<ChatWithActivity[] | undefined>(chatKeys.resumableChats, (sessions) =>
     sessions?.map((session) =>
       session.id === chatId
         ? {
@@ -78,7 +78,7 @@ export function updateChatTitleCaches(
     ),
   );
 
-  queryClient.setQueryData<ChatWithActivity[] | undefined>(chatKeys.archivedSessions, (sessions) =>
+  queryClient.setQueryData<ChatWithActivity[] | undefined>(chatKeys.archivedChats, (sessions) =>
     sessions?.map((session) =>
       session.id === chatId
         ? {

@@ -9,7 +9,7 @@ import {
   normalizeChatTitle,
   updateChatTitleCaches,
 } from '~/services/chat/chat-title';
-import type { ChatWithActivity } from '~/services/chat/session-types';
+import type { ChatWithActivity } from '~/services/chat/chat-types';
 import { chatKeys } from '~/services/notes/query-keys';
 
 describe('chat title helpers', () => {
@@ -25,11 +25,11 @@ describe('chat title helpers', () => {
       kind: 'capture',
       preview: 'First real message',
     };
-    const artifactSource: SessionSource = {
+    const linkedNoteSource: SessionSource = {
       kind: 'artifact',
-      id: 'artifact-1',
+      id: 'note-1',
       type: 'note' as const,
-      title: 'Artifact title',
+      title: 'Linked note title',
     };
     const newSource: SessionSource = {
       kind: 'new',
@@ -43,14 +43,14 @@ describe('chat title helpers', () => {
     expect(getChatTitle(null, captureSource)).toBe('First real message');
     expect(getChatTitle(undefined, captureSource)).toBe('First real message');
 
-    // Artifact source
-    expect(getChatTitle(DEFAULT_CHAT_TITLE, artifactSource)).toBe('Artifact title');
+    // Linked note source
+    expect(getChatTitle(DEFAULT_CHAT_TITLE, linkedNoteSource)).toBe('Linked note title');
 
     // New chat falls back to default
     expect(getChatTitle(null, newSource)).toBe(DEFAULT_CHAT_TITLE);
   });
 
-  it('updates the active and session caches together', () => {
+  it('updates the active and chat caches together', () => {
     const queryClient = new QueryClient();
     const chat: Chat = {
       archivedAt: null,
@@ -61,13 +61,13 @@ describe('chat title helpers', () => {
       updatedAt: '2026-04-13T01:29:18.000Z',
       userId: 'user-1',
     };
-    const session: ChatWithActivity = {
+    const resumableChat: ChatWithActivity = {
       ...chat,
       activityAt: chat.updatedAt,
     };
 
     queryClient.setQueryData(chatKeys.activeChat(chat.id), chat);
-    queryClient.setQueryData(chatKeys.resumableSessions, [session]);
+    queryClient.setQueryData(chatKeys.resumableChats, [resumableChat]);
 
     updateChatTitleCaches(queryClient, {
       chatId: chat.id,
@@ -79,7 +79,7 @@ describe('chat title helpers', () => {
       title: 'A better title',
       updatedAt: '2026-04-13T01:30:00.000Z',
     });
-    expect(queryClient.getQueryData(chatKeys.resumableSessions)).toMatchObject([
+    expect(queryClient.getQueryData(chatKeys.resumableChats)).toMatchObject([
       {
         title: 'A better title',
         updatedAt: '2026-04-13T01:30:00.000Z',

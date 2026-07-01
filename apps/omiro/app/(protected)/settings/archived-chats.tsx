@@ -7,9 +7,9 @@ import { Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native'
 import { useThemeColors } from '~/components/theme';
 import { EmptyState } from '~/components/ui/EmptyState';
 import AppIcon from '~/components/ui/icon';
-import { useArchivedSessions } from '~/hooks/useArchivedSessions';
+import { useArchivedChats } from '~/hooks/useArchivedChats';
 import { formatRelativeAge } from '~/services/date/format-relative-age';
-import { getWorkspaceArtifactRoute } from '~/services/workspace/routes';
+import { getContentRoute } from '~/services/navigation/routes';
 import t from '~/translations';
 
 export default function ArchivedChatsScreen() {
@@ -20,10 +20,10 @@ export default function ArchivedChatsScreen() {
     error,
     isFetching,
     refetch,
-  } = useArchivedSessions({ enabled: isFocused });
+  } = useArchivedChats({ enabled: isFocused });
   const onPressChat = useCallback(
     (chatId: string) => {
-      router.push(getWorkspaceArtifactRoute('chat', chatId) as RelativePathString);
+      router.push(getContentRoute('chat', chatId) as RelativePathString);
     },
     [router],
   );
@@ -55,7 +55,7 @@ function ArchivedChatsSwiftUI({
   onPressChat,
   onRefresh,
 }: {
-  chats: NonNullable<ReturnType<typeof useArchivedSessions>['data']>;
+  chats: NonNullable<ReturnType<typeof useArchivedChats>['data']>;
   error: Error | null;
   isRefreshing: boolean;
   onPressChat: (chatId: string) => void;
@@ -64,21 +64,7 @@ function ArchivedChatsSwiftUI({
   const themeColors = useThemeColors();
   const header = useMemo(
     () => (
-      <View
-        style={[
-          styles.sectionCard,
-          {
-            backgroundColor: themeColors['bg-surface'],
-            borderColor: themeColors['border-default'],
-          },
-        ]}
-      >
-        <Text style={[styles.eyebrow, { color: themeColors['text-secondary'] }]}>
-          {t.settings.archivedChatsScreen.eyebrow}
-        </Text>
-        <Text style={[styles.title, { color: themeColors.foreground }]}>
-          {t.settings.archivedChatsScreen.title}
-        </Text>
+      <View style={styles.header}>
         <Text style={[styles.helperText, { color: themeColors['text-secondary'] }]}>
           {t.settings.archivedChatsScreen.description}
         </Text>
@@ -88,15 +74,7 @@ function ArchivedChatsSwiftUI({
   );
   const empty = useMemo(
     () => (
-      <View
-        style={[
-          styles.sectionCard,
-          {
-            backgroundColor: themeColors['bg-surface'],
-            borderColor: themeColors['border-default'],
-          },
-        ]}
-      >
+      <View style={styles.emptyWrap}>
         {error ? (
           <EmptyState
             action={{ label: t.settings.archivedChatsScreen.loadErrorRetry, onPress: onRefresh }}
@@ -143,30 +121,24 @@ const ArchivedChatRow = memo(
     chat,
     onPressChat,
   }: {
-    chat: NonNullable<ReturnType<typeof useArchivedSessions>['data']>[number];
+    chat: NonNullable<ReturnType<typeof useArchivedChats>['data']>[number];
     onPressChat: (chatId: string) => void;
   }) => {
     const themeColors = useThemeColors();
 
     return (
-      <View
-        style={[
-          styles.sectionCard,
-          styles.chatCard,
-          {
-            backgroundColor: themeColors['bg-surface'],
-            borderColor: themeColors['border-default'],
-          },
-        ]}
-      >
+      <View style={styles.rowWrap}>
         <Pressable
           onPress={() => onPressChat(chat.id)}
-          style={({ pressed }) => [styles.chatRow, { opacity: pressed ? 0.7 : 1 }]}
+          style={({ pressed }) => [
+            styles.chatRow,
+            { borderBottomColor: themeColors['border-subtle'], opacity: pressed ? 0.7 : 1 },
+          ]}
         >
           <AppIcon name="tray" size={14} tintColor={themeColors['text-secondary']} />
           <View style={styles.chatCopy}>
             <Text style={[styles.chatTitle, { color: themeColors.foreground }]}>
-              {chat.title ?? t.workspace.item.untitledSession}
+              {chat.title ?? t.inbox.item.untitledChat}
             </Text>
             <Text style={[styles.chatMeta, { color: themeColors['text-secondary'] }]}>
               Archived {formatRelativeAge(chat.archivedAt ?? chat.activityAt)}
@@ -191,13 +163,17 @@ const styles = StyleSheet.create({
   },
   chatRow: {
     alignItems: 'center',
+    borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
     gap: 10,
     minHeight: 52,
-    paddingVertical: 6,
+    paddingVertical: 12,
   },
   chatTitle: {
     fontSize: 15,
+  },
+  emptyWrap: {
+    paddingTop: 32,
   },
   emptyCopy: {
     fontSize: 14,
@@ -210,32 +186,22 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 15,
   },
-  eyebrow: {
-    fontSize: 13,
+  header: {
+    paddingBottom: 8,
+    paddingHorizontal: 16,
+    paddingTop: 8,
   },
   helperText: {
-    fontSize: 16,
+    fontSize: 15,
     lineHeight: 22,
   },
-  chatCard: {
-    gap: 0,
-  },
   listContent: {
-    padding: 16,
+    paddingBottom: 24,
   },
   listFooter: {
     height: 16,
   },
-  sectionCard: {
-    borderRadius: 18,
-    borderWidth: 1,
-    gap: 8,
-    marginBottom: 16,
-    padding: 16,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    lineHeight: 34,
+  rowWrap: {
+    paddingHorizontal: 16,
   },
 });

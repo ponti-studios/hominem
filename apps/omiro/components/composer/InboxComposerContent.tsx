@@ -1,6 +1,4 @@
 import { useQueryClient } from '@tanstack/react-query';
-import type { RelativePathString } from 'expo-router';
-import { useRouter } from 'expo-router';
 import React, { useCallback, useRef } from 'react';
 import { Alert, TextInput } from 'react-native';
 
@@ -10,17 +8,14 @@ import { ComposerShell } from '~/components/composer/ComposerShell';
 import { ComposerTextInput } from '~/components/composer/ComposerTextInput';
 import { ComposerToolbar } from '~/components/composer/ComposerToolbar';
 import { useComposerController } from '~/components/composer/useComposerController';
-import { normalizeChatTitle } from '~/services/chat';
-import { useCreateChat } from '~/services/chat/use-create-chat';
+import { normalizeChatTitle, useStartChatFromInbox } from '~/services/chat';
 import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
-import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
+import { useTopAnchoredInbox } from '~/services/inbox/top-anchored-inbox';
 import { donateAddNoteIntent } from '~/services/intent-donation';
 import { useCreateNote } from '~/services/notes/use-create-note';
-import { writeChatComposerHandoff } from '~/services/workspace/launch-state';
-import { getWorkspaceArtifactRoute } from '~/services/workspace/routes';
 import t from '~/translations';
 
-export interface FeedComposerContentProps {
+export interface InboxComposerContentProps {
   initialMessage?: string;
   onDraftChange?: (msg: string) => void;
   onClearDraft?: () => void;
@@ -29,21 +24,20 @@ export interface FeedComposerContentProps {
   testID?: string;
 }
 
-export function FeedComposerContent({
+export function InboxComposerContent({
   initialMessage,
   onDraftChange,
   onClearDraft,
   entryMode = 'mixed',
   onComplete,
   testID,
-}: FeedComposerContentProps) {
+}: InboxComposerContentProps) {
   const queryClient = useQueryClient();
-  const router = useRouter();
-  const { requestTopReveal } = useTopAnchoredFeed();
+  const { requestTopReveal } = useTopAnchoredInbox();
   const { mutateAsync: createNote, isPending: isSaving } = useCreateNote();
-  const { mutateAsync: createChat, isPending: isChatCreating } = useCreateChat();
+  const { startChat, isStartingChat } = useStartChatFromInbox();
   const inputRef = useRef<TextInput>(null);
-  const isSubmitting = isSaving || isChatCreating;
+  const isSubmitting = isSaving || isStartingChat;
   const handleVoiceError = useCallback(
     (error: { title: string; message: string }) =>
       Alert.alert(error.title, error.message, [{ text: 'OK' }]),
@@ -52,7 +46,6 @@ export function FeedComposerContent({
   const {
     message,
     setMessage,
-    attachments,
     showAttachments,
     uploadedAttachmentIds,
     canSubmit,
@@ -101,29 +94,34 @@ export function FeedComposerContent({
   ]);
 
   const handleStartChat = useCallback(async () => {
-    if (!canSubmit || isChatCreating) return;
-    const title = normalizeChatTitle(message);
-    const chat = await createChat({ title });
-    writeChatComposerHandoff(chat.id, {
-      attachments,
-      message: message.trim(),
-    });
-    clearComposer();
-    router.push(
-      getWorkspaceArtifactRoute('chat', chat.id, {
-        initialMessage: message.trim(),
-      }) as RelativePathString,
-    );
-    requestTopReveal();
-    onComplete?.();
+    if (!canSubmit || isStartingChat) return;
+
+    try {
+      await startChat({
+        title: normalizeChatTitle(message),
+        message: message.trim(),
+        fileIds: uploadedAttachmentIds,
+        noteIds: [],
+        onReady: () => {
+          clearComposer();
+          requestTopReveal();
+          onComplete?.();
+        },
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error && error.message === 'offline_unavailable'
+          ? 'You appear to be offline. Please reconnect and try again.'
+          : 'We could not start that chat right now. Please try again.';
+      Alert.alert('Could not start chat', message, [{ text: 'OK' }]);
+    }
   }, [
     canSubmit,
-    isChatCreating,
-    createChat,
-    attachments,
+    isStartingChat,
+    startChat,
     message,
+    uploadedAttachmentIds,
     clearComposer,
-    router,
     requestTopReveal,
     onComplete,
   ]);
@@ -131,18 +129,18 @@ export function FeedComposerContent({
   const isChatEntryMode = entryMode === 'chat';
   const inputPlaceholder = isChatEntryMode
     ? t.chat.input.messagePlaceholder
-    : t.feed.composer.placeholder;
-  const shellTestId = testID ?? 'feed-composer';
-  const inputTestId = 'feed-composer-input';
+    : t.inboxComposer.composer.placeholder;
+  const shellTestId = testID ?? 'inbox-composer';
+  const inputTestId = 'inbox-composer-input';
   const secondaryAction = isChatEntryMode
     ? {
-        accessibilityLabel: t.feed.composer.saveNoteA11y,
+        accessibilityLabel: t.inboxComposer.composer.saveNoteA11y,
         icon: 'doc.text' as const,
         onPress: () => void handleSave(),
         testID: 'composer-save-note',
       }
     : {
-        accessibilityLabel: t.feed.composer.openChatA11y,
+        accessibilityLabel: t.inboxComposer.composer.openChatA11y,
         icon: 'bubble.left' as const,
         onPress: () => void handleStartChat(),
         testID: 'composer-start-chat',
@@ -180,7 +178,7 @@ export function FeedComposerContent({
       }
       toolbar={
         <ComposerToolbar
-          mode="feed"
+          mode="inbox"
           isRecording={isRecording}
           isVoiceBusy={isVoiceBusy}
           isEnhancing={isEnhancing}
@@ -195,7 +193,7 @@ export function FeedComposerContent({
           onSubmit={() => void (isChatEntryMode ? handleStartChat() : handleSave())}
           submitTestID={isChatEntryMode ? 'composer-submit-chat' : 'composer-submit-note'}
           submitAccessibilityLabel={
-            isChatEntryMode ? t.workspace.home.startChatSubmitA11y : t.feed.composer.saveNoteA11y
+            isChatEntryMode ? t.inbox.screen.startChatSubmitA11y : t.inboxComposer.composer.saveNoteA11y
           }
           secondaryAction={secondaryAction}
         />

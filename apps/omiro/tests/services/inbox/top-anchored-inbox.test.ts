@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  createTopAnchoredFeedState,
+  createTopAnchoredInboxState,
   markTopRevealHandled,
   requestTopReveal,
   shouldRevealTop,
-} from '~/services/inbox/top-anchored-feed';
+} from '~/services/inbox/top-anchored-inbox';
 
-describe('top anchored feed', () => {
+describe('top anchored inbox', () => {
   it('reveals the top once after a focused request', () => {
-    const requestedState = requestTopReveal(createTopAnchoredFeedState());
+    const requestedState = requestTopReveal(createTopAnchoredInboxState());
 
     expect(
       shouldRevealTop({
@@ -31,7 +31,7 @@ describe('top anchored feed', () => {
   });
 
   it('waits until focus returns before revealing the top', () => {
-    const state = requestTopReveal(createTopAnchoredFeedState());
+    const state = requestTopReveal(createTopAnchoredInboxState());
 
     expect(
       shouldRevealTop({
@@ -53,7 +53,7 @@ describe('top anchored feed', () => {
   it('does not reveal the top without a pending request', () => {
     expect(
       shouldRevealTop({
-        state: createTopAnchoredFeedState(),
+        state: createTopAnchoredInboxState(),
         headKey: 'note:1',
         isFocused: true,
       }),
@@ -61,7 +61,7 @@ describe('top anchored feed', () => {
   });
 
   it('does not reveal the top when there is no head item', () => {
-    const state = requestTopReveal(createTopAnchoredFeedState());
+    const state = requestTopReveal(createTopAnchoredInboxState());
 
     expect(
       shouldRevealTop({

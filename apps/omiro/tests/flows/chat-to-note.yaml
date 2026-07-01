@@ -1,15 +1,15 @@
 appId: com.pontistudios.hakumi.dev
 ---
 # Flow: Chat → Note
-# Types a message in the feed, starts a chat, sends the message, waits for
-# the AI to respond, transforms the conversation to a note via the header
+# Types a message in the inbox, starts and sends the chat in one action, waits
+# for the AI to respond, transforms the conversation to a note via the header
 # menu, and asserts the note appears back in the inbox.
 #
 # Uses MMKV test-mode flag so the AI response is mocked locally —
 # no real API tokens are consumed during this flow.
 
 # Write the test-mode flag to MMKV via deep link first, then force the dev
-# client back to the workspace home so prior runs do not resume a chat detail.
+# client back to the inbox so prior runs do not resume a chat detail.
 - openLink: 'hakumi-dev://enable-test-mode'
 - waitForAnimationToEnd:
     timeout: 3000
@@ -20,12 +20,12 @@ appId: com.pontistudios.hakumi.dev
 - waitForAnimationToEnd:
     timeout: 3000
 - assertVisible:
-    id: 'feed-composer-input'
+    id: 'inbox-composer-input'
 - takeScreenshot: /tmp/omiro_flow_1_home
 
-# Focus the feed composer and clear any persisted draft before typing
+# Focus the inbox composer and clear any persisted draft before typing
 - tapOn:
-    id: 'feed-composer-input'
+    id: 'inbox-composer-input'
 - eraseText: 100
 - inputText: 'What are the key principles of good product design?'
 - takeScreenshot: /tmp/omiro_flow_2_typed
@@ -35,16 +35,8 @@ appId: com.pontistudios.hakumi.dev
     id: 'composer-start-chat'
 - takeScreenshot: /tmp/omiro_flow_3_chat_opened
 
-# The chat detail composer owns the message draft once the chat is created.
-- tapOn:
-    id: 'chat-composer-input'
-- eraseText: 100
-- inputText: 'What are the key principles of good product design?'
-- takeScreenshot: /tmp/omiro_flow_3b_chat_typed
-
-# Send the message from the chat composer
-- tapOn:
-    id: 'composer-submit-message'
+# The chat detail should already show the sent user message.
+- assertVisible: 'What are the key principles of good product design?'
 - takeScreenshot: /tmp/omiro_flow_4_message_sent
 
 # Wait for the mock response to finish streaming
@@ -77,7 +69,7 @@ appId: com.pontistudios.hakumi.dev
 - waitForAnimationToEnd:
     timeout: 3000
 - assertVisible:
-    id: 'feed-composer-input'
+    id: 'inbox-composer-input'
 - takeScreenshot: /tmp/omiro_flow_9_inbox
 
 # Pull to refresh to ensure the inbox picks up the newly created note

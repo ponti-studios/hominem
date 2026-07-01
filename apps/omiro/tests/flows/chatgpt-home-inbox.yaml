@@ -9,25 +9,25 @@ appId: com.pontistudios.hakumi.dev
 - waitForAnimationToEnd:
     timeout: 1000
 - assertVisible:
-    id: 'home-tab-control'
+    id: 'inbox-tab-control'
 - assertVisible:
-    id: 'home-search-action'
+    id: 'inbox-search-action'
 - assertVisible:
-    id: 'home-overflow-action'
+    id: 'inbox-overflow-action'
 - assertVisible:
-    id: 'feed-composer-input'
+    id: 'inbox-composer-input'
 - assertVisible: 'Notes'
 - tapOn: 'Chats'
 - assertVisible: 'Recents'
 - tapOn:
-    id: 'feed-composer-input'
+    id: 'inbox-composer-input'
 - eraseText: 100
 - inputText: 'Quick capture draft'
 - assertVisible:
     id: 'composer-save-note'
 - back
 - tapOn:
-    id: 'home-overflow-action'
+    id: 'inbox-overflow-action'
 - assertVisible: 'Archived chats'
 - tapOn: 'Archived chats'
 - waitForAnimationToEnd:
@@ -37,7 +37,7 @@ appId: com.pontistudios.hakumi.dev
 - waitForAnimationToEnd:
     timeout: 1000
 - tapOn:
-    id: 'home-overflow-action'
+    id: 'inbox-overflow-action'
 - assertVisible: 'Settings'
 - tapOn: 'Settings'
 - waitForAnimationToEnd:
@@ -47,22 +47,24 @@ appId: com.pontistudios.hakumi.dev
 - waitForAnimationToEnd:
     timeout: 1000
 - tapOn:
-    id: 'home-search-action'
+    id: 'inbox-search-action'
 - waitForAnimationToEnd:
     timeout: 2000
 - assertVisible:
-    id: 'home-search-input'
+    id: 'inbox-search-input'
 - tapOn: 'Close search'
 - waitForAnimationToEnd:
     timeout: 1000
 - tapOn: 'Chats'
 - tapOn:
-    id: 'feed-composer-input'
+    id: 'inbox-composer-input'
 - eraseText
 - inputText: 'Start a new chat from home'
 - tapOn:
     id: 'composer-submit-chat'
 - waitForAnimationToEnd:
     timeout: 2000
+- assertVisible: 'Start a new chat from home'
+- assertVisible: 'Thinking...'
 - assertVisible:
     id: 'chat-composer-input'

@@ -1,8 +1,9 @@
-export interface StreamSSEOptions {
+export interface StreamSSEOptions<TEvent> {
   url: string;
   payload: unknown;
   getHeaders: () => Promise<Record<string, string>>;
-  onChunk: (chunk: string) => void;
+  onEvent: (event: TEvent) => void;
+  onDone?: () => void;
   signal?: AbortSignal;
 }
 
@@ -32,13 +33,14 @@ function getFrameData(frame: string): string | null {
 // Hermes does not expose ReadableStream on fetch responses, but XHR.responseText
 // grows incrementally as data arrives — we slice from the last offset on each
 // readystatechange to extract new SSE lines without re-parsing the full body.
-export async function streamSSE({
+export async function streamSSE<TEvent>({
   url,
   payload,
   getHeaders,
-  onChunk,
+  onEvent,
+  onDone,
   signal,
-}: StreamSSEOptions): Promise<void> {
+}: StreamSSEOptions<TEvent>): Promise<void> {
   if (signal?.aborted) throw getAbortError();
 
   const authHeaders = await getHeaders();
@@ -73,17 +75,19 @@ export async function streamSSE({
     };
     const processFrame = (frame: string) => {
       const data = getFrameData(frame);
-      if (data === null || data === '[DONE]') return;
+      if (data === null) return;
+      if (data === '[DONE]') {
+        onDone?.();
+        return;
+      }
 
       try {
-        const parsed = JSON.parse(data) as { chunk?: string; error?: string };
-        if (typeof parsed.error === 'string') {
-          rejectOnce(new Error(parsed.error));
+        const parsed = JSON.parse(data) as { type?: string; message?: string; error?: string };
+        if ((parsed.type === 'error' || parsed.error) && typeof (parsed.message ?? parsed.error) === 'string') {
+          rejectOnce(new Error(parsed.message ?? parsed.error ?? 'Stream error'));
           return;
         }
-        if (typeof parsed.chunk === 'string') {
-          onChunk(parsed.chunk);
-        }
+        onEvent(parsed as TEvent);
       } catch {
         // Invalid non-terminal frames are ignored to preserve existing comment tolerance.
       }

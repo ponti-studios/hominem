@@ -1,8 +1,8 @@
 import type { SessionSource } from '@hominem/rpc/types';
 import { useQueryClient } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { RefreshControl, View, StyleSheet } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { RefreshControl, StyleSheet, View } from 'react-native';
 import type { LayoutChangeEvent } from 'react-native';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -32,12 +32,19 @@ import { useCreateChat } from '~/services/chat/use-create-chat';
 import { formatRelativeAge } from '~/services/date/format-relative-age';
 import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 import { chatKeys } from '~/services/notes/query-keys';
-import {
-  clearWorkspaceResumeArtifact,
-  writeWorkspaceResumeArtifact,
-} from '~/services/workspace/launch-state';
-import { getWorkspaceArtifactRoute, getWorkspaceHomeRoute } from '~/services/workspace/routes';
+import { writeResumeTarget } from '~/services/navigation/launch-state';
+import { getContentRoute, getInboxRoute } from '~/services/navigation/routes';
 import t from '~/translations';
+
+function getConversationActionIcon(kind: string, type?: string) {
+  if (kind === 'search') return 'magnifyingglass';
+  if (kind === 'toggle-debug') return 'ladybug';
+  if (kind === 'archive') return 'archivebox';
+  if (type === 'note') return 'doc.text';
+  if (type === 'task') return 'checkmark.circle';
+  if (type === 'task_list') return 'checklist';
+  return 'ellipsis.circle';
+}
 
 const renderChatIcon: ChatRenderIcon = (name, props) => {
   const tintColor = props.color;
@@ -49,7 +56,7 @@ const renderChatIcon: ChatRenderIcon = (name, props) => {
 };
 
 export function ChatDetailScreen() {
-  const { id, initialMessage } = useLocalSearchParams<{ id: string; initialMessage?: string }>();
+  const { id } = useLocalSearchParams<{ id: string }>();
   const navigation = useNavigation();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -57,8 +64,7 @@ export function ChatDetailScreen() {
   const { data: activeChat } = useActiveChat(id);
   const chatId = activeChat?.id ?? id;
   const [composerHeight, setComposerHeight] = useState(0);
-  const homeRoute = getWorkspaceHomeRoute();
-  const isReturningHomeRef = useRef(false);
+  const canGoBack = navigation.canGoBack();
 
   const handleComposerLayout = useCallback((e: LayoutChangeEvent) => {
     const nextHeight = e.nativeEvent.layout.height;
@@ -72,7 +78,7 @@ export function ChatDetailScreen() {
       useArchiveChat,
       useChatMessages,
       useSendMessage,
-      onArtifactCreated: async ({ source, updatedAt }) => {
+      onContentCreated: async ({ source, updatedAt }) => {
         updateChatTitleCaches(queryClient, {
           chatId,
           title: source.title,
@@ -100,15 +106,9 @@ export function ChatDetailScreen() {
     return { kind: 'new' };
   }, [activeChat]);
 
-  const returnHome = useCallback(() => {
-    isReturningHomeRef.current = true;
-    clearWorkspaceResumeArtifact();
-    router.replace(homeRoute);
-  }, [homeRoute, router]);
-
   const controller = useChatController({
     chatId,
-    onChatArchive: returnHome,
+    onChatArchive: () => router.replace(getInboxRoute()),
     services,
     source,
   });
@@ -117,26 +117,13 @@ export function ChatDetailScreen() {
   const { mutateAsync: createChat, isPending: isCreatingChat } = useCreateChat();
 
   useEffect(() => {
-    writeWorkspaceResumeArtifact({
+    writeResumeTarget({
       kind: 'chat',
       id: chatId,
       title: displayTitle,
       updatedAt: activeChat?.updatedAt ?? null,
     });
   }, [activeChat?.updatedAt, chatId, displayTitle]);
-
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('beforeRemove', (event) => {
-      if (isReturningHomeRef.current) {
-        return;
-      }
-
-      event.preventDefault();
-      returnHome();
-    });
-
-    return unsubscribe;
-  }, [navigation, returnHome]);
 
   const conversationActions = useMemo(
     () =>
@@ -147,7 +134,6 @@ export function ChatDetailScreen() {
       }),
     [controller.canTransform, controller.isArchiving, controller.showDebug],
   );
-
   const emptyState = useMemo(
     () => (
       <EmptyState
@@ -175,22 +161,30 @@ export function ChatDetailScreen() {
       <Stack.Screen
         options={{
           title: displayTitle,
-          headerBackVisible: true,
-          headerTitleAlign: 'center',
+          headerBackButtonDisplayMode: 'minimal',
+          headerBackVisible: canGoBack,
         }}
       />
+      {!canGoBack ? (
+        <Stack.Toolbar placement="left">
+          <Stack.Toolbar.Button icon="chevron.left" onPress={() => router.replace(getInboxRoute())}>
+            Inbox
+          </Stack.Toolbar.Button>
+        </Stack.Toolbar>
+      ) : null}
       <Stack.Toolbar placement="right">
         <Stack.Toolbar.Menu
           accessibilityLabel={t.chat.conversationActionsLabel}
           icon="ellipsis.circle"
-          title={t.chat.conversationActionsLabel}
+          title={displayTitle}
         >
-          {conversationActions.flatMap((section) =>
+          {conversationActions.map((section) =>
             section.items.map((item) => {
               if (item.kind === 'search') {
                 return (
                   <Stack.Toolbar.MenuAction
-                    key={`${section.title}:${item.label}`}
+                    key={item.kind}
+                    icon={getConversationActionIcon(item.kind)}
                     onPress={controller.handleOpenSearch}
                   >
                     {item.label}
@@ -201,7 +195,9 @@ export function ChatDetailScreen() {
               if (item.kind === 'toggle-debug') {
                 return (
                   <Stack.Toolbar.MenuAction
-                    key={`${section.title}:${item.label}`}
+                    key={item.kind}
+                    icon={getConversationActionIcon(item.kind)}
+                    isOn={controller.showDebug}
                     onPress={controller.handleToggleDebug}
                   >
                     {item.label}
@@ -212,8 +208,15 @@ export function ChatDetailScreen() {
               if (item.kind === 'transform' && item.type) {
                 return (
                   <Stack.Toolbar.MenuAction
-                    key={`${section.title}:${item.label}`}
-                    onPress={() => controller.handleTransformFromMenu(item.type!)}
+                    key={`${item.kind}:${item.type}`}
+                    icon={getConversationActionIcon(item.kind, item.type)}
+                    onPress={() => {
+                      if (!item.type) {
+                        return;
+                      }
+
+                      controller.handleTransformFromMenu(item.type);
+                    }}
                   >
                     {item.label}
                   </Stack.Toolbar.MenuAction>
@@ -222,8 +225,9 @@ export function ChatDetailScreen() {
 
               return (
                 <Stack.Toolbar.MenuAction
-                  key={`${section.title}:${item.label}`}
-                  destructive
+                  key={item.kind}
+                  destructive={item.kind === 'archive'}
+                  icon={getConversationActionIcon(item.kind)}
                   onPress={controller.handleArchiveChat}
                 >
                   {item.label}
@@ -238,7 +242,7 @@ export function ChatDetailScreen() {
           icon="square.and.pencil"
           onPress={() => {
             void createChat({ title: DEFAULT_CHAT_TITLE }).then((chat) => {
-              router.push(getWorkspaceArtifactRoute('chat', chat.id));
+              router.push(getContentRoute('chat', chat.id));
             });
           }}
         />
@@ -286,7 +290,7 @@ export function ChatDetailScreen() {
           ]}
         >
           <View onLayout={handleComposerLayout}>
-            <Composer mode="chat" chatId={chatId} initialMessage={initialMessage} />
+            <Composer mode="chat" chatId={chatId} />
           </View>
         </KeyboardStickyView>
         <View style={styles.reviewOverlay}>

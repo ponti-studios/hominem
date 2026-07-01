@@ -7,11 +7,11 @@ import {
   readCachedChatMessages,
   writeCachedChat,
   writeCachedChatMessages,
-} from '~/services/workspace/content-cache';
+} from '~/services/content-cache';
 
 import { chatKeys } from '../notes/query-keys';
 import { type MessageOutput } from './chatMessages';
-import { selectChatSession } from './session-activity';
+import { selectChat } from './chat-activity';
 
 export const CHAT_MESSAGES_LIMIT = 50;
 
@@ -82,7 +82,7 @@ export const useActiveChat = (chatId?: string | null) => {
 
       const listRes = await client.api.chats.$get({ query: { limit: '50' } });
       const chats = await listRes.json();
-      return selectChatSession(chats, chatId);
+      return selectChat(chats, chatId);
     },
     initialData: cachedChat,
     initialDataUpdatedAt: cachedChat ? 0 : undefined,

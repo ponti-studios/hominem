@@ -2,8 +2,8 @@ import { parseInboxTimestamp } from '@hominem/chat';
 import type { Chat } from '@hominem/rpc/types';
 import { TIME_UNITS } from '@hominem/utils/time';
 
-import { getChatActivityAt } from './session-activity';
-import type { ChatWithActivity } from './session-types';
+import { getChatActivityAt } from './chat-activity';
+import type { ChatWithActivity } from './chat-types';
 
 function parseChatActivityAt(chat: Chat): Date {
   return parseInboxTimestamp(getChatActivityAt(chat));

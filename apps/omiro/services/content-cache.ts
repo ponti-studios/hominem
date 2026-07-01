@@ -28,7 +28,7 @@ function getFallbackStorage(): StorageLike {
 
 function getStorage(): StorageLike {
   try {
-    const { storage } = require('../storage/mmkv') as typeof import('../storage/mmkv');
+    const { storage } = require('./storage/mmkv') as typeof import('./storage/mmkv');
     return storage;
   } catch {
     return getFallbackStorage();

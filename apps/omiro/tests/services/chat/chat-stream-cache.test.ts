@@ -1,0 +1,148 @@
+import type { Chat } from '@hominem/rpc/types';
+import { QueryClient } from '@tanstack/react-query';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import {
+  appendAssistantChunk,
+  failAssistantStream,
+  finishAssistantStream,
+  seedStartedChat,
+} from '~/services/chat/chat-stream-cache';
+import { chatKeys } from '~/services/notes/query-keys';
+
+vi.mock('~/services/storage/mmkv', () => {
+  const store = new Map<string, string>();
+
+  return {
+    storage: {
+      getString: (key: string) => store.get(key),
+      remove: (key: string) => {
+        store.delete(key);
+      },
+      set: (key: string, value: string) => {
+        store.set(key, value);
+      },
+    },
+  };
+});
+
+describe('chat stream cache', () => {
+  let queryClient: QueryClient;
+
+  beforeEach(() => {
+    queryClient = new QueryClient();
+  });
+
+  it('seeds the new chat and its first two timeline messages before navigation', () => {
+    const chat: Chat = {
+      archivedAt: null,
+      createdAt: '2026-07-01T08:00:00.000Z',
+      id: 'chat-1',
+      noteId: null,
+      title: 'First chat',
+      updatedAt: '2026-07-01T08:00:00.000Z',
+      userId: 'user-1',
+    };
+
+    seedStartedChat(queryClient, {
+      chat,
+      message: 'Hello world',
+      userMessageId: 'user-message-1',
+      assistantMessageId: 'assistant-message-1',
+    });
+
+    expect(queryClient.getQueryData(chatKeys.activeChat(chat.id))).toEqual(chat);
+    expect(queryClient.getQueryData(chatKeys.messages(chat.id))).toEqual([
+      expect.objectContaining({
+        id: 'user-message-1',
+        role: 'user',
+        message: 'Hello world',
+      }),
+      expect.objectContaining({
+        id: 'assistant-message-1',
+        role: 'assistant',
+        message: '',
+        isStreaming: true,
+      }),
+    ]);
+  });
+
+  it('appends chunks and finalizes the assistant placeholder', () => {
+    const chat: Chat = {
+      archivedAt: null,
+      createdAt: '2026-07-01T08:00:00.000Z',
+      id: 'chat-1',
+      noteId: null,
+      title: 'First chat',
+      updatedAt: '2026-07-01T08:00:00.000Z',
+      userId: 'user-1',
+    };
+
+    seedStartedChat(queryClient, {
+      chat,
+      message: 'Hello world',
+      userMessageId: 'user-message-1',
+      assistantMessageId: 'assistant-message-1',
+    });
+
+    appendAssistantChunk(queryClient, {
+      chatId: chat.id,
+      assistantMessageId: 'assistant-message-1',
+      chunk: 'Hello',
+    });
+    appendAssistantChunk(queryClient, {
+      chatId: chat.id,
+      assistantMessageId: 'assistant-message-1',
+      chunk: ' there',
+    });
+    finishAssistantStream(queryClient, {
+      chatId: chat.id,
+      assistantMessageId: 'assistant-message-1',
+    });
+
+    expect(queryClient.getQueryData(chatKeys.messages(chat.id))).toEqual([
+      expect.objectContaining({ id: 'user-message-1', role: 'user' }),
+      expect.objectContaining({
+        id: 'assistant-message-1',
+        role: 'assistant',
+        message: 'Hello there',
+        isStreaming: false,
+      }),
+    ]);
+  });
+
+  it('keeps the user message visible if the assistant stream fails after ready', () => {
+    const chat: Chat = {
+      archivedAt: null,
+      createdAt: '2026-07-01T08:00:00.000Z',
+      id: 'chat-1',
+      noteId: null,
+      title: 'First chat',
+      updatedAt: '2026-07-01T08:00:00.000Z',
+      userId: 'user-1',
+    };
+
+    seedStartedChat(queryClient, {
+      chat,
+      message: 'Hello world',
+      userMessageId: 'user-message-1',
+      assistantMessageId: 'assistant-message-1',
+    });
+
+    failAssistantStream(queryClient, {
+      chatId: chat.id,
+      assistantMessageId: 'assistant-message-1',
+      errorMessage: 'stream interrupted',
+    });
+
+    expect(queryClient.getQueryData(chatKeys.messages(chat.id))).toEqual([
+      expect.objectContaining({ id: 'user-message-1', role: 'user', message: 'Hello world' }),
+      expect.objectContaining({
+        id: 'assistant-message-1',
+        role: 'assistant',
+        isStreaming: false,
+        message: 'Something went wrong: stream interrupted',
+      }),
+    ]);
+  });
+});

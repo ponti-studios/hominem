@@ -17,8 +17,8 @@ export const noteKeys = {
 } as const;
 
 export const chatKeys = {
-  resumableSessions: queryKeys.chats.sessions,
-  archivedSessions: queryKeys.chats.archived,
+  resumableChats: queryKeys.chats.sessions,
+  archivedChats: queryKeys.chats.archived,
   messages: (chatId: string) => queryKeys.chats.messages(chatId),
   activeChat: (chatId: string | null) => ['chats', 'detail', chatId] as const,
 } as const;

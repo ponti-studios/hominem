@@ -119,13 +119,12 @@ const t = {
       discard: 'DISCARD',
     },
   },
-  workspace: {
-    home: {
-      title: 'Workspace',
-      subtitle:
-        'Capture something new, resume an active thread, or skim the artifacts that matter right now.',
-      loadErrorTitle: 'Workspace unavailable',
-      loadErrorDescription: "We couldn't load your workspace right now.",
+  inbox: {
+    screen: {
+      title: 'Inbox',
+      subtitle: 'Capture something new, pick up an active chat, or skim what matters right now.',
+      loadErrorTitle: 'Inbox unavailable',
+      loadErrorDescription: "We couldn't load your inbox right now.",
       retry: 'Try again',
       recentChats: 'Recents',
       recentNotes: 'Notes',
@@ -164,10 +163,10 @@ const t = {
       previewLabel: (kind: 'chat' | 'note') => (kind === 'chat' ? 'Chat preview' : 'Note preview'),
     },
     empty: {
-      title: 'Your workspace starts here',
+      title: 'Your inbox starts here',
       description:
         'Capture a note, ask Omiro to connect the dots, or attach a file. Everything you add comes back here when you need it.',
-      exampleWorkspace: 'Example workspace',
+      exampleInbox: 'Example inbox',
       preview: 'Preview',
       starters: {
         captureNote: {
@@ -201,7 +200,7 @@ const t = {
     item: {
       untitled: 'Untitled',
       untitledNote: 'Untitled note',
-      untitledSession: 'Untitled session',
+      untitledChat: 'Untitled chat',
       actionsLabel: 'Item actions',
       chatLabel: 'Chat',
       noteLabel: 'Note',
@@ -283,7 +282,7 @@ const t = {
     unlockPrompt: (appName: string) => `Unlock ${appName}`,
     unlockFallbackLabel: 'Use passcode',
     unlockCancelLabel: 'Cancel',
-    resumingSession: 'Resuming session…',
+    restoringSignIn: 'Restoring sign in…',
     emailEntry: {
       title: 'Remember everything.',
       helper: 'Capture anything; Retrieve everything.',
@@ -315,7 +314,7 @@ const t = {
   },
   onboarding: {
     title: 'What should Omiro call you?',
-    subtitle: 'This is only used to personalize your workspace. You can change it later.',
+    subtitle: 'This is only used to personalize your inbox. You can change it later.',
     namePlaceholder: 'Wyatt',
     nameError: 'Add a name or continue without one.',
     start: 'Start using Omiro',
@@ -337,7 +336,7 @@ const t = {
       returnToRoot: 'Return to root',
     },
   },
-  feed: {
+  inboxComposer: {
     composer: {
       placeholder: 'Write a note, ask something…',
       addAttachmentA11y: 'Add attachment',

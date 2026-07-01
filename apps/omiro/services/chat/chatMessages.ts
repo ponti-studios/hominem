@@ -32,3 +32,24 @@ export function createOptimisticMessage(
     isStreaming: false,
   };
 }
+
+export function createStreamingPlaceholder(
+  chatId: string,
+  id = fallbackId(),
+  message = '',
+): ChatMessageItem {
+  return {
+    id,
+    role: 'assistant',
+    message,
+    created_at: new Date().toISOString(),
+    chat_id: chatId,
+    profile_id: '',
+    focus_ids: null,
+    focus_items: null,
+    reasoning: null,
+    referencedNotes: null,
+    toolCalls: null,
+    isStreaming: true,
+  };
+}

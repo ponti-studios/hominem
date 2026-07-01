@@ -34,7 +34,7 @@ export const InboxStreamItem = memo(({ item, swipeEnabled = true }: InboxStreamI
   const swipeableRef = useRef<SwipeableMethods>(null);
   const titleText = cleanText(item.title);
   const previewText = cleanText(item.preview);
-  const primaryText = titleText ?? previewText ?? t.workspace.item.untitled;
+  const primaryText = titleText ?? previewText ?? t.inbox.item.untitled;
   const isChat = item.kind === 'chat';
 
   const { mutate: deleteNote, isPending: isDeletingNote } = useNoteDelete({
@@ -47,10 +47,10 @@ export const InboxStreamItem = memo(({ item, swipeEnabled = true }: InboxStreamI
 
   const handleDelete = useCallback(() => {
     swipeableRef.current?.close();
-    Alert.alert(t.workspace.item.deleteNote.title, t.workspace.item.deleteNote.message, [
-      { text: t.workspace.item.deleteNote.cancel, style: 'cancel' },
+    Alert.alert(t.inbox.item.deleteNote.title, t.inbox.item.deleteNote.message, [
+      { text: t.inbox.item.deleteNote.cancel, style: 'cancel' },
       {
-        text: t.workspace.item.deleteNote.confirm,
+        text: t.inbox.item.deleteNote.confirm,
         style: 'destructive',
         onPress: () => deleteNote(),
       },
@@ -89,7 +89,7 @@ export const InboxStreamItem = memo(({ item, swipeEnabled = true }: InboxStreamI
           iconName={isChat ? 'archivebox' : 'trash'}
           onPress={isChat ? handleArchive : handleDelete}
           accessibilityLabel={
-            isChat ? t.workspace.item.archive : t.workspace.item.deleteNote.confirm
+            isChat ? t.inbox.item.archive : t.inbox.item.deleteNote.confirm
           }
           backgroundColor={isChat ? themeColors.accent : themeColors.destructive}
           style={styles.swipeAction}
@@ -125,12 +125,12 @@ export const InboxStreamItem = memo(({ item, swipeEnabled = true }: InboxStreamI
         actions={[
           {
             id: 'open-item',
-            title: t.workspace.item.open,
+            title: t.inbox.item.open,
             image: isChat ? 'bubble.left' : 'doc.text',
           },
           {
             id: isChat ? 'archive-chat' : 'delete-note',
-            title: isChat ? t.workspace.item.archive : t.workspace.item.deleteNote.menu,
+            title: isChat ? t.inbox.item.archive : t.inbox.item.deleteNote.menu,
             image: isChat ? 'archivebox' : 'trash',
             attributes: isChat ? undefined : { destructive: true },
           },
@@ -139,7 +139,7 @@ export const InboxStreamItem = memo(({ item, swipeEnabled = true }: InboxStreamI
         style={styles.menuHost}
       >
         <IconButton
-          accessibilityLabel={t.workspace.item.actionsLabel}
+          accessibilityLabel={t.inbox.item.actionsLabel}
           icon="ellipsis"
           size={44}
           iconSize={18}

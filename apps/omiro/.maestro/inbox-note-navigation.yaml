@@ -1,0 +1,12 @@
+appId: com.pontistudios.hakumi.dev
+---
+- launchApp
+- assertVisible: Inbox
+- assertVisible:
+    id: inbox-item-note-open
+- tapOn:
+    id: inbox-item-note-open
+- assertVisible:
+    id: note-title-input
+- back
+- assertVisible: Inbox

@@ -22,7 +22,7 @@ import { getPreventScreenshots, setPreventScreenshots } from '~/hooks/use-screen
 import { useAuth } from '~/services/auth/auth-provider';
 import { useMobilePasskeyAuth } from '~/services/auth/hooks/use-mobile-passkey-auth';
 import { resolveProtectedRouteState } from '~/services/auth/protected-route-state';
-import { getWorkspaceArchivedChatsRoute } from '~/services/workspace/routes';
+import { getArchivedChatsRoute } from '~/services/navigation/routes';
 import t from '~/translations';
 
 interface AccountState {
@@ -120,7 +120,7 @@ function Settings() {
   };
 
   const onArchivedChatsPress = () => {
-    router.push(getWorkspaceArchivedChatsRoute());
+    router.push(getArchivedChatsRoute());
   };
 
   const onAddPasskeyPress = async () => {
@@ -376,6 +376,8 @@ export default Settings;
 const styles = StyleSheet.create({
   actionStack: {
     gap: 8,
+    paddingHorizontal: 16,
+    paddingTop: 8,
   },
   deleteAction: {
     alignItems: 'center',
@@ -391,8 +393,7 @@ const styles = StyleSheet.create({
     color: '#8c1c1c',
   },
   inlineInput: {
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: 10,
     fontSize: 15,
     minHeight: 40,
     minWidth: '60%',
@@ -411,10 +412,12 @@ const styles = StyleSheet.create({
   },
   row: {
     alignItems: 'center',
+    borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
     gap: 12,
     justifyContent: 'space-between',
     minHeight: 48,
+    paddingVertical: 10,
   },
   rowLabel: {
     fontSize: 15,
@@ -434,17 +437,19 @@ const styles = StyleSheet.create({
     minWidth: 78,
   },
   scrollContent: {
-    gap: 16,
-    padding: 16,
+    gap: 20,
+    paddingBottom: 24,
   },
   sectionCard: {
-    borderRadius: 18,
-    borderWidth: 1,
+    borderRadius: 0,
+    borderWidth: StyleSheet.hairlineWidth,
     gap: 12,
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   sectionTitle: {
     fontSize: 13,
+    paddingTop: 4,
   },
   statusText: {
     fontSize: 13,

@@ -3,32 +3,31 @@ import React from 'react';
 import { ChatComposerEntry } from '~/components/composer/ChatComposerContent';
 import { ComposerProvider } from '~/components/composer/ComposerContext';
 import {
-  FeedComposerContent,
-  type FeedComposerContentProps,
-} from '~/components/composer/FeedComposerContent';
+  InboxComposerContent,
+  type InboxComposerContentProps,
+} from '~/components/composer/InboxComposerContent';
 
-interface ComposerFeedProps {
-  mode: 'feed';
+interface ComposerInboxProps {
+  mode: 'inbox';
 }
 
 interface ComposerChatProps {
   mode: 'chat';
   chatId: string;
-  initialMessage?: string;
   testID?: string;
 }
 
-type FeedComposerProps = ComposerFeedProps & FeedComposerContentProps;
+type InboxComposerProps = ComposerInboxProps & InboxComposerContentProps;
 
-export type ComposerProps = FeedComposerProps | ComposerChatProps;
+export type ComposerProps = InboxComposerProps | ComposerChatProps;
 
 export function Composer(props: ComposerProps) {
-  if (props.mode === 'feed') {
-    const { mode: _mode, ...feedProps } = props;
+  if (props.mode === 'inbox') {
+    const { mode: _mode, ...inboxProps } = props;
 
     return (
       <ComposerProvider>
-        <FeedComposerContent {...feedProps} />
+        <InboxComposerContent {...inboxProps} />
       </ComposerProvider>
     );
   }

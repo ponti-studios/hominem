@@ -3,7 +3,7 @@ import type { InboxOutput, InboxStreamItem } from '@hominem/rpc/types';
 import { useInfiniteQuery, type InfiniteData } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
-import type { InboxStreamItemData } from '~/components/workspace/InboxStreamItem.types';
+import type { InboxStreamItemData } from '~/components/inbox/InboxStreamItem.types';
 import {
   appendCachedInboxItems,
   readCachedInboxItems,
@@ -14,7 +14,7 @@ import {
   hasNonEmptyListData,
   resolveRestoredQueryState,
 } from '~/services/query/restored-query-state';
-import { getWorkspaceArtifactRoute } from '~/services/workspace/routes';
+import { getContentRoute } from '~/services/navigation/routes';
 
 interface UseInboxStreamItemsOptions {
   enabled?: boolean;
@@ -23,7 +23,7 @@ interface UseInboxStreamItemsOptions {
 const INBOX_STREAM_STALE_TIME_MS = 30_000;
 
 function toMobileInboxRoute(item: InboxStreamItem): string {
-  return getWorkspaceArtifactRoute(item.kind, item.entityId);
+  return getContentRoute(item.kind, item.entityId);
 }
 
 function toInboxStreamItem(item: InboxStreamItem): InboxStreamItemData {

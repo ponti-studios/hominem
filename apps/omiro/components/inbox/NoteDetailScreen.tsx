@@ -15,8 +15,8 @@ import { useNoteToolbar } from '~/hooks/use-note-toolbar';
 import { useInlineEnhance } from '~/services/ai';
 import { useNoteDelete } from '~/services/notes/use-note-delete';
 import { useNoteQuery } from '~/services/notes/use-note-query';
-import { writeWorkspaceResumeArtifact } from '~/services/workspace/launch-state';
-import { getWorkspaceHomeRoute } from '~/services/workspace/routes';
+import { writeResumeTarget } from '~/services/navigation/launch-state';
+import { getInboxRoute } from '~/services/navigation/routes';
 import t from '~/translations';
 
 const COMPOSER_CLEARANCE = 220;
@@ -82,9 +82,10 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
   const navigation = useNavigation();
   const router = useRouter();
   const contentInputRef = useRef<TextInput>(null);
-  const homeRoute = getWorkspaceHomeRoute();
+  const homeRoute = getInboxRoute();
   const [titleInputHeight, setTitleInputHeight] = useState(36);
   const [isPreviewing, setIsPreviewing] = useState(false);
+  const canGoBack = navigation.canGoBack();
 
   const { data: note, error, isInitialLoading, isRefreshing, refetch } = useNoteQuery({ noteId });
   const { save, updateCache, detachFile } = useNoteEditor(noteId);
@@ -105,7 +106,7 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
       return;
     }
 
-    writeWorkspaceResumeArtifact({
+    writeResumeTarget({
       kind: 'note',
       id: noteId,
       title: note.title?.trim() || t.notes.editor.titleFallback,
@@ -128,10 +129,10 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
   const dateline = formatNoteDateline(note ?? null);
 
   const handleDeleteNote = useCallback(() => {
-    Alert.alert(t.workspace.item.deleteNote.title, t.workspace.item.deleteNote.message, [
-      { text: t.workspace.item.deleteNote.cancel, style: 'cancel' },
+    Alert.alert(t.inbox.item.deleteNote.title, t.inbox.item.deleteNote.message, [
+      { text: t.inbox.item.deleteNote.cancel, style: 'cancel' },
       {
-        text: t.workspace.item.deleteNote.confirm,
+        text: t.inbox.item.deleteNote.confirm,
         style: 'destructive',
         onPress: () => {
           deleteNote(undefined, {
@@ -142,15 +143,6 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
     ]);
   }, [deleteNote, homeRoute, router]);
 
-  const handleBackPress = useCallback(() => {
-    if (navigation.canGoBack()) {
-      router.back();
-      return;
-    }
-
-    router.replace(homeRoute);
-  }, [homeRoute, navigation, router]);
-
   if (isInitialLoading) {
     return (
       <>
@@ -158,16 +150,17 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
           options={{
             title: '',
             headerTitle: () => null,
-            headerBackVisible: false,
+            headerBackButtonDisplayMode: 'minimal',
+            headerBackVisible: canGoBack,
           }}
         />
-        <Stack.Toolbar placement="left">
-          <Stack.Toolbar.Button
-            accessibilityLabel="Back"
-            icon="chevron.left"
-            onPress={handleBackPress}
-          />
-        </Stack.Toolbar>
+        {!canGoBack ? (
+          <Stack.Toolbar placement="left">
+            <Stack.Toolbar.Button icon="chevron.left" onPress={() => router.replace(homeRoute)}>
+              Inbox
+            </Stack.Toolbar.Button>
+          </Stack.Toolbar>
+        ) : null}
         <NoteDetailPlaceholder />
       </>
     );
@@ -180,16 +173,17 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
           options={{
             title: '',
             headerTitle: () => null,
-            headerBackVisible: false,
+            headerBackButtonDisplayMode: 'minimal',
+            headerBackVisible: canGoBack,
           }}
         />
-        <Stack.Toolbar placement="left">
-          <Stack.Toolbar.Button
-            accessibilityLabel="Back"
-            icon="chevron.left"
-            onPress={handleBackPress}
-          />
-        </Stack.Toolbar>
+        {!canGoBack ? (
+          <Stack.Toolbar placement="left">
+            <Stack.Toolbar.Button icon="chevron.left" onPress={() => router.replace(homeRoute)}>
+              Inbox
+            </Stack.Toolbar.Button>
+          </Stack.Toolbar>
+        ) : null}
         <ScrollView
           style={styles.container}
           contentContainerStyle={styles.content}
@@ -224,32 +218,29 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
         options={{
           title: '',
           headerTitle: () => null,
-          headerBackVisible: false,
+          headerBackButtonDisplayMode: 'minimal',
+          headerBackVisible: canGoBack,
         }}
       />
-      <Stack.Toolbar placement="left">
-        <Stack.Toolbar.Button
-          accessibilityLabel="Back"
-          icon="chevron.left"
-          onPress={handleBackPress}
-        />
-      </Stack.Toolbar>
+      {!canGoBack ? (
+        <Stack.Toolbar placement="left">
+          <Stack.Toolbar.Button icon="chevron.left" onPress={() => router.replace(homeRoute)}>
+            Inbox
+          </Stack.Toolbar.Button>
+        </Stack.Toolbar>
+      ) : null}
       <Stack.Toolbar placement="right">
         <Stack.Toolbar.Button
           accessibilityLabel={isPreviewing ? t.notes.editor.editMode : t.notes.editor.previewMode}
           icon={isPreviewing ? 'pencil' : 'eye'}
           onPress={() => setIsPreviewing((current) => !current)}
         />
-        <Stack.Toolbar.Menu
-          accessibilityLabel={t.notes.editor.actionsLabel}
-          icon="ellipsis.circle"
-          title={t.notes.editor.actionsLabel}
-        >
-          <Stack.Toolbar.MenuAction onPress={toggleEnhance}>
+        <Stack.Toolbar.Menu accessibilityLabel={t.notes.editor.actionsLabel} icon="ellipsis.circle">
+          <Stack.Toolbar.MenuAction icon="sparkles" onPress={toggleEnhance}>
             {t.enhance.confirm}
           </Stack.Toolbar.MenuAction>
-          <Stack.Toolbar.MenuAction destructive onPress={handleDeleteNote}>
-            {t.workspace.item.deleteNote.title}
+          <Stack.Toolbar.MenuAction destructive icon="trash" onPress={handleDeleteNote}>
+            {t.inbox.item.deleteNote.title}
           </Stack.Toolbar.MenuAction>
         </Stack.Toolbar.Menu>
       </Stack.Toolbar>

@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef } from 'react';
+import React, { useCallback, useRef } from 'react';
 import { Alert, TextInput } from 'react-native';
 
 import { InlineEnhanceTray } from '~/components/ai/InlineEnhanceTray';
@@ -11,44 +11,34 @@ import { useComposerController } from '~/components/composer/useComposerControll
 import { useActiveChat, useAutoUpdateChatTitle, useSendMessage } from '~/services/chat';
 import {
   clearChatDraft,
-  consumeChatComposerHandoff,
   readChatDraft,
   writeChatDraft,
-} from '~/services/workspace/launch-state';
+} from '~/services/navigation/launch-state';
 import t from '~/translations';
 
 export interface ChatComposerContentProps {
   chatId: string;
-  initialMessage?: string;
   testID?: string;
 }
 
-export function ChatComposerEntry({ chatId, initialMessage, testID }: ChatComposerContentProps) {
-  const handoff = useMemo(() => consumeChatComposerHandoff(chatId), [chatId]);
-
+export function ChatComposerEntry({ chatId, testID }: ChatComposerContentProps) {
   return (
-    <ComposerProvider initialAttachments={handoff?.attachments ?? []}>
-      <ChatComposerContent
-        chatId={chatId}
-        initialMessage={handoff?.message ?? initialMessage}
-        testID={testID}
-      />
+    <ComposerProvider>
+      <ChatComposerContent chatId={chatId} testID={testID} />
     </ComposerProvider>
   );
 }
 
-function ChatComposerContent({ chatId, initialMessage, testID }: ChatComposerContentProps) {
+function ChatComposerContent({ chatId, testID }: ChatComposerContentProps) {
   const { data: activeChat } = useActiveChat(chatId);
   const resolvedChatId = activeChat?.id ?? chatId;
   const persistedDraft = readChatDraft(resolvedChatId);
-  const resolvedInitialMessage =
-    persistedDraft.trim().length > 0 ? persistedDraft : (initialMessage ?? '');
 
   return (
     <ChatComposerDraftContent
       key={resolvedChatId}
       chatId={resolvedChatId}
-      initialMessage={resolvedInitialMessage}
+      initialMessage={persistedDraft}
       testID={testID}
     />
   );

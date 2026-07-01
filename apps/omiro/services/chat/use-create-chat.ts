@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 import { chatKeys } from '~/services/notes/query-keys';
-import { writeCachedChat } from '~/services/workspace/content-cache';
+import { writeCachedChat } from '~/services/content-cache';
 
 interface CreateChatInput {
   title: string;

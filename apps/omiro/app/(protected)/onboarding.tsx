@@ -1,12 +1,12 @@
 import type { RelativePathString } from 'expo-router';
-import { Redirect } from 'expo-router';
+import { Redirect, Stack } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { useThemeColors } from '~/components/theme';
 import { Button } from '~/components/ui/button';
 import { useAuth } from '~/services/auth/auth-provider';
-import { getWorkspaceHomeRoute } from '~/services/workspace/routes';
+import { getInboxRoute } from '~/services/navigation/routes';
 import t from '~/translations';
 
 const Onboarding = () => {
@@ -59,81 +59,83 @@ const Onboarding = () => {
   }
 
   if (currentUser?.name) {
-    return <Redirect href={getWorkspaceHomeRoute()} />;
+    return <Redirect href={getInboxRoute()} />;
   }
 
   return (
-    <ScrollView
-      contentInsetAdjustmentBehavior="automatic"
-      contentContainerStyle={styles.scrollContent}
-      keyboardShouldPersistTaps="handled"
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={styles.card}>
-        <View style={styles.hero}>
-          <Text style={[styles.brandMark, { color: themeColors.foreground }]}>O</Text>
-          <Text style={[styles.title, { color: themeColors.foreground }]}>
-            {t.onboarding.title}
-          </Text>
-          <Text style={[styles.helperText, { color: themeColors['text-secondary'] }]}>
-            {t.onboarding.subtitle}
-          </Text>
+    <>
+      <Stack.Screen options={{ headerShown: true, title: 'Welcome' }} />
+      <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.card}>
+          <View style={styles.hero}>
+            <Text style={[styles.title, { color: themeColors.foreground }]}>
+              {t.onboarding.title}
+            </Text>
+            <Text style={[styles.helperText, { color: themeColors['text-secondary'] }]}>
+              {t.onboarding.subtitle}
+            </Text>
+          </View>
+
+          <View style={styles.formSection}>
+            <TextInput
+              value={name}
+              placeholder={t.onboarding.namePlaceholder}
+              placeholderTextColor={themeColors['text-tertiary']}
+              autoCapitalize="words"
+              autoCorrect={false}
+              editable={!isSubmitting}
+              returnKeyType="done"
+              cursorColor={themeColors.foreground}
+              selectionColor={themeColors.foreground}
+              style={[
+                styles.input,
+                {
+                  backgroundColor: themeColors['bg-surface'],
+                  borderColor: themeColors['border-default'],
+                  color: themeColors.foreground,
+                },
+              ]}
+              onChangeText={(text) => {
+                setName(text);
+                setHasError(false);
+              }}
+              onSubmitEditing={() => void onButtonPress()}
+            />
+
+            {hasError ? (
+              <Text style={[styles.errorText, { color: '#8c1c1c' }]}>{t.onboarding.nameError}</Text>
+            ) : null}
+
+            <Button
+              label={t.onboarding.start}
+              onPress={() => void onButtonPress()}
+              disabled={isSubmitting}
+              variant="primary"
+            />
+
+            <Button
+              label={t.onboarding.continueWithoutName}
+              onPress={() => void onSkipPress()}
+              disabled={isSubmitting}
+              variant="tertiary"
+            />
+
+            <Button
+              testID="onboarding-sign-out"
+              label={t.onboarding.signOut}
+              onPress={() => void signOut()}
+              disabled={isSubmitting}
+              variant="tertiary"
+            />
+          </View>
         </View>
-
-        <View style={styles.formSection}>
-          <TextInput
-            value={name}
-            placeholder={t.onboarding.namePlaceholder}
-            placeholderTextColor={themeColors['text-tertiary']}
-            autoCapitalize="words"
-            autoCorrect={false}
-            editable={!isSubmitting}
-            returnKeyType="done"
-            cursorColor={themeColors.foreground}
-            selectionColor={themeColors.foreground}
-            style={[
-              styles.input,
-              {
-                backgroundColor: themeColors['bg-surface'],
-                borderColor: themeColors['border-default'],
-                color: themeColors.foreground,
-              },
-            ]}
-            onChangeText={(text) => {
-              setName(text);
-              setHasError(false);
-            }}
-            onSubmitEditing={() => void onButtonPress()}
-          />
-
-          {hasError ? (
-            <Text style={[styles.errorText, { color: '#8c1c1c' }]}>{t.onboarding.nameError}</Text>
-          ) : null}
-
-          <Button
-            label={t.onboarding.start}
-            onPress={() => void onButtonPress()}
-            disabled={isSubmitting}
-            variant="primary"
-          />
-
-          <Button
-            label={t.onboarding.continueWithoutName}
-            onPress={() => void onSkipPress()}
-            disabled={isSubmitting}
-            variant="tertiary"
-          />
-
-          <Button
-            testID="onboarding-sign-out"
-            label={t.onboarding.signOut}
-            onPress={() => void signOut()}
-            disabled={isSubmitting}
-            variant="tertiary"
-          />
-        </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </>
   );
 };
 
@@ -151,11 +153,7 @@ const styles = StyleSheet.create({
     gap: 24,
   },
   hero: {
-    gap: 8,
-  },
-  brandMark: {
-    fontSize: 17,
-    fontWeight: '600',
+    gap: 10,
   },
   title: {
     fontSize: 28,

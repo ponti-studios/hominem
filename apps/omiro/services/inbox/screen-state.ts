@@ -1,8 +1,8 @@
-import type { InboxStreamItemData } from '~/components/workspace/InboxStreamItem.types';
+import type { InboxStreamItemData } from '~/components/inbox/InboxStreamItem.types';
 
-export type WorkspaceHomeTab = 'chats' | 'notes';
+export type InboxTab = 'chats' | 'notes';
 
-export interface WorkspaceHomeSections {
+export interface InboxSections {
   chatItems: InboxStreamItemData[];
   noteItems: InboxStreamItemData[];
   visibleItems: InboxStreamItemData[];
@@ -20,15 +20,15 @@ function byKind(items: InboxStreamItemData[], kind: InboxStreamItemData['kind'])
   return items.filter((item) => item.kind === kind);
 }
 
-export function buildWorkspaceHomeSections({
+export function buildInboxSections({
   items,
   tab,
   searchQuery,
 }: {
   items: InboxStreamItemData[];
-  tab: WorkspaceHomeTab;
+  tab: InboxTab;
   searchQuery: string;
-}): WorkspaceHomeSections {
+}): InboxSections {
   const chatItems = byKind(items, 'chat');
   const noteItems = byKind(items, 'note');
   const searchResults = items.filter((item) => matchesQuery(item, searchQuery));

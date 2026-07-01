@@ -11,7 +11,7 @@ import { useAppLock } from '~/hooks/use-app-lock';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import { ApiProvider } from '~/services/api/api-provider';
 import { useAuth } from '~/services/auth/auth-provider';
-import { TopAnchoredFeedProvider } from '~/services/inbox/top-anchored-feed';
+import { TopAnchoredInboxProvider } from '~/services/inbox/top-anchored-inbox';
 import queryClient from '~/services/query-client';
 import t from '~/translations';
 
@@ -91,7 +91,7 @@ function ProtectedShell() {
   return (
     <FeatureErrorBoundary featureName="Protected">
       <ApiProvider queryClient={queryClient}>
-        <TopAnchoredFeedProvider>
+        <TopAnchoredInboxProvider>
           <View style={styles.root}>
             <Stack
               initialRouteName="index"
@@ -106,10 +106,10 @@ function ProtectedShell() {
               <Stack.Screen name="inbox/[kind]/[id]" options={{}} />
               <Stack.Screen name="settings/index" options={{ title: 'Settings' }} />
               <Stack.Screen name="settings/archived-chats" options={{ title: 'Archived Chats' }} />
-              <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+              <Stack.Screen name="onboarding" options={{ headerShown: true }} />
             </Stack>
           </View>
-        </TopAnchoredFeedProvider>
+        </TopAnchoredInboxProvider>
       </ApiProvider>
     </FeatureErrorBoundary>
   );

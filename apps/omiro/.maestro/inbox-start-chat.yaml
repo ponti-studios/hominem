@@ -1,0 +1,14 @@
+appId: com.pontistudios.hakumi.dev
+---
+- launchApp
+- assertVisible: Inbox
+- tapOn:
+    id: inbox-composer-input
+- inputText: Native first smoke chat
+- tapOn:
+    id: composer-start-chat
+- assertVisible: Native first smoke chat
+- assertVisible:
+    id: chat-composer-input
+- back
+- assertVisible: Inbox

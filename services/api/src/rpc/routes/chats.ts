@@ -8,6 +8,7 @@ import { streamSSE } from 'hono/streaming';
 import {
   ChatsSendSchema,
   ChatsCreateSchema,
+  ChatsStartStreamSchema,
   ChatsUpdateSchema,
   ChatsMessagesQuerySchema,
 } from '../../schemas/chats.schema';
@@ -85,6 +86,17 @@ function getChatId(c: { req: { param: (name: string) => string | undefined } }):
   return chatId;
 }
 
+function writeChunkEvent(stream: { writeSSE: (input: { data: string }) => Promise<void> }, chunk: string) {
+  return stream.writeSSE({ data: JSON.stringify({ type: 'chunk', chunk }) });
+}
+
+function writeErrorEvent(
+  stream: { writeSSE: (input: { data: string }) => Promise<void> },
+  message: string,
+) {
+  return stream.writeSSE({ data: JSON.stringify({ type: 'error', message }) });
+}
+
 const chatByIdRoutes = new Hono<AppContext>()
   .use('/stream', rateLimitMiddleware({ bucket: 'chat-stream', windowSec: 60, max: 30 }))
   .get('/', async (c) => {
@@ -146,13 +158,16 @@ const chatByIdRoutes = new Hono<AppContext>()
       throw new ValidationError('Message, notes, or files are required');
     }
 
-    await ChatRepository.insertMessage(db, {
-      chatId,
-      authorUserId: userId,
-      role: 'user',
-      content: storedUserContent,
-      files: resolvedFiles.length > 0 ? resolvedFiles : null,
-      referencedNoteIds: resolvedNotes.length > 0 ? resolvedNotes.map((n) => n.id) : null,
+    await runInTransaction(async (trx) => {
+      await ChatRepository.insertMessage(trx, {
+        chatId,
+        authorUserId: userId,
+        role: 'user',
+        content: storedUserContent,
+        files: resolvedFiles.length > 0 ? resolvedFiles : null,
+        referencedNoteIds: resolvedNotes.length > 0 ? resolvedNotes.map((n) => n.id) : null,
+      });
+      await ChatRepository.touchLastMessage(trx, chatId);
     });
     const prompt = buildPrompt(message, history, resolvedNotes, resolvedFiles);
     const completion = streamChatCompletion({
@@ -170,7 +185,7 @@ const chatByIdRoutes = new Hono<AppContext>()
           const text = chunk.choices?.[0]?.delta?.content;
           if (typeof text === 'string' && text.length > 0) {
             assistantText += text;
-            await stream.writeSSE({ data: JSON.stringify({ chunk: text }) });
+            await writeChunkEvent(stream, text);
           }
         }
 
@@ -189,7 +204,7 @@ const chatByIdRoutes = new Hono<AppContext>()
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Stream error';
-        await stream.writeSSE({ data: JSON.stringify({ error: message }) });
+        await writeErrorEvent(stream, message);
       }
     });
   });
@@ -206,5 +221,77 @@ export const chatsRoutes = new Hono<AppContext>()
     const { title } = c.req.valid('json');
     const chat = await ChatRepository.create(db, { userId, title });
     return c.json(toChatDto(chat), 201);
+  })
+  .post('/start-stream', zValidator('json', ChatsStartStreamSchema), async (c) => {
+    const userId = c.get('userId')!;
+    const { title, message, fileIds = [], noteIds = [] } = c.req.valid('json');
+
+    const resolvedNotes = await ChatRepository.resolveReferencedNotes(db, userId, noteIds, message);
+    const resolvedFiles = await ChatRepository.resolveChatFiles(db, userId, fileIds);
+    const storedUserContent = toStoredUserMessageContent(message, resolvedNotes, resolvedFiles);
+    if (!storedUserContent) {
+      throw new ValidationError('Message, notes, or files are required');
+    }
+
+    const chat = await runInTransaction(async (trx) => {
+      const createdChat = await ChatRepository.create(trx, { userId, title });
+      await ChatRepository.insertMessage(trx, {
+        chatId: createdChat.id,
+        authorUserId: userId,
+        role: 'user',
+        content: storedUserContent,
+        files: resolvedFiles.length > 0 ? resolvedFiles : null,
+        referencedNoteIds: resolvedNotes.length > 0 ? resolvedNotes.map((note) => note.id) : null,
+      });
+      await ChatRepository.touchLastMessage(trx, createdChat.id);
+      return createdChat;
+    });
+
+    const prompt = buildPrompt(message, [], resolvedNotes, resolvedFiles);
+    const completion = streamChatCompletion({
+      messages: [
+        { role: 'system', content: loadPrompt('chat-assistant') },
+        { role: 'user', content: prompt },
+      ],
+    });
+
+    return streamSSE(c, async (stream) => {
+      let assistantText = '';
+
+      await stream.writeSSE({
+        data: JSON.stringify({
+          type: 'ready',
+          chatId: chat.id,
+          chat: toChatDto(chat),
+        }),
+      });
+
+      try {
+        for await (const chunk of completion) {
+          const text = chunk.choices?.[0]?.delta?.content;
+          if (typeof text === 'string' && text.length > 0) {
+            assistantText += text;
+            await writeChunkEvent(stream, text);
+          }
+        }
+
+        await stream.writeSSE({ data: '[DONE]' });
+
+        if (assistantText.trim().length > 0) {
+          await runInTransaction(async (trx) => {
+            await ChatRepository.insertMessage(trx, {
+              chatId: chat.id,
+              authorUserId: userId,
+              role: 'assistant',
+              content: assistantText,
+            });
+            await ChatRepository.touchLastMessage(trx, chat.id);
+          });
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Stream error';
+        await writeErrorEvent(stream, message);
+      }
+    });
   })
   .route('/:id', chatByIdRoutes);

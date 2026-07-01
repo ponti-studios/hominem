@@ -3,14 +3,14 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 import { chatKeys } from '~/services/notes/query-keys';
-import { writeCachedChat } from '~/services/workspace/content-cache';
+import { writeCachedChat } from '~/services/content-cache';
 import {
-  clearWorkspaceResumeArtifact,
-  readWorkspaceResumeArtifact,
-} from '~/services/workspace/launch-state';
+  clearResumeTarget,
+  readResumeTarget,
+} from '~/services/navigation/launch-state';
 
-import { getChatActivityAt } from './session-activity';
-import type { ChatWithActivity } from './session-types';
+import { getChatActivityAt } from './chat-activity';
+import type { ChatWithActivity } from './chat-types';
 
 interface UseChatArchiveOptions {
   chatId: string;
@@ -27,13 +27,13 @@ export function useChatArchive({ chatId, onSuccess }: UseChatArchiveOptions) {
       return res.json();
     },
     onSuccess: (archivedChat) => {
-      if (readWorkspaceResumeArtifact()?.id === chatId) {
-        clearWorkspaceResumeArtifact();
+      if (readResumeTarget()?.id === chatId) {
+        clearResumeTarget();
       }
       writeCachedChat(archivedChat);
       queryClient.setQueryData(chatKeys.activeChat(chatId), archivedChat);
       queryClient.setQueryData<ChatWithActivity[] | undefined>(
-        chatKeys.archivedSessions,
+        chatKeys.archivedChats,
         (sessions) => {
           const nextArchivedChat: ChatWithActivity = {
             ...archivedChat,

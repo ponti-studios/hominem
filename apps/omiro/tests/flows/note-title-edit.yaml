@@ -11,7 +11,7 @@ appId: com.pontistudios.hakumi.dev
 - waitForAnimationToEnd:
     timeout: 3000
 - assertVisible:
-    id: 'feed-composer-input'
+    id: 'inbox-composer-input'
 - assertVisible:
     id: 'inbox-item-note-open'
 - tapOn:

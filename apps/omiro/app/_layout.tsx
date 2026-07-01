@@ -29,10 +29,10 @@ import { POSTHOG_ENABLED, posthog } from '~/services/posthog';
 import queryClient from '~/services/query-client';
 import { recordActiveDay } from '~/services/review-prompt/review-prompt';
 import {
-  consumeWorkspaceRestoreAttempt,
-  consumeWorkspaceResumeArtifact,
-} from '~/services/workspace/launch-state';
-import { getWorkspaceArtifactRoute } from '~/services/workspace/routes';
+  consumeRestoreAttempt,
+  consumeResumeTarget,
+} from '~/services/navigation/launch-state';
+import { getContentRoute } from '~/services/navigation/routes';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -95,10 +95,17 @@ function InnerRootLayout() {
       SplashScreen.hideAsync().catch(() => undefined);
     };
 
-    hide();
-    const timeout = setTimeout(hide, 1500);
+    // Boot resolution decides whether we land on (auth) or (protected); hiding
+    // the splash before that resolves flashes the wrong screen. The timeout is
+    // a safety net in case boot never settles.
+    if (authStatus !== 'booting') {
+      hide();
+      return;
+    }
+
+    const timeout = setTimeout(hide, 3000);
     return () => clearTimeout(timeout);
-  }, []);
+  }, [authStatus]);
 
   useEffect(() => {
     if (isSignedIn && currentUser?.id) {
@@ -139,16 +146,16 @@ function InnerRootLayout() {
       return;
     }
 
-    if (!consumeWorkspaceRestoreAttempt()) {
+    if (!consumeRestoreAttempt()) {
       return;
     }
 
-    const resumeArtifact = consumeWorkspaceResumeArtifact();
-    if (!resumeArtifact) {
+    const resumeTarget = consumeResumeTarget();
+    if (!resumeTarget) {
       return;
     }
 
-    const target = getWorkspaceArtifactRoute(resumeArtifact.kind, resumeArtifact.id);
+    const target = getContentRoute(resumeTarget.kind, resumeTarget.id);
     if (pathname !== target) {
       router.replace(target);
     }
