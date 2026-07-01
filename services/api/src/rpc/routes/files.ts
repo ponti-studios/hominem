@@ -1,7 +1,7 @@
 import type { FileRecord } from '@hominem/db';
 import { FileRepository, db } from '@hominem/db';
 import { fileProcessingQueue } from '@hominem/queues';
-import { fileStorageService } from '@hominem/storage';
+import { fileStorageService, isStorageServiceError } from '@hominem/storage';
 import { logger } from '@hominem/telemetry';
 import { Hono } from 'hono';
 
@@ -26,32 +26,28 @@ function toFilePayload(file: FileRecord) {
 }
 
 function toUploadServiceError(error: unknown): Error | null {
-  if (!(error instanceof Error)) {
-    return null;
-  }
-
-  const errorName = error.name.toLowerCase();
-  const errorMessage = error.message.toLowerCase();
-
-  if (errorMessage.includes('missing r2 credentials')) {
-    return new UnavailableError('File uploads are unavailable because storage is not configured.');
-  }
-
-  if (errorName.includes('s3serviceexception') || errorMessage.includes('unauthorized')) {
-    return new UnavailableError(
-      'File uploads are unavailable because storage authentication failed.',
-    );
-  }
-
-  if (
-    errorMessage.includes('timeout') ||
-    errorMessage.includes('econnrefused') ||
-    errorMessage.includes('enotfound') ||
-    errorMessage.includes('network')
-  ) {
-    return new UnavailableError(
-      'File uploads are temporarily unavailable because storage is unreachable.',
-    );
+  if (isStorageServiceError(error)) {
+    switch (error.code) {
+      case 'storage.config.missing':
+        return new UnavailableError(
+          'File uploads are unavailable because storage is not configured.',
+        );
+      case 'storage.credentials.invalid':
+      case 'storage.bucket.access_denied':
+        return new UnavailableError(
+          'File uploads are unavailable because storage authentication failed.',
+        );
+      case 'storage.network.unreachable':
+        return new UnavailableError(
+          'File uploads are temporarily unavailable because storage is unreachable.',
+        );
+      case 'storage.bucket.missing':
+        return new UnavailableError(
+          'File uploads are unavailable because the storage bucket is missing.',
+        );
+      default:
+        return new UnavailableError('File uploads are unavailable because storage failed.');
+    }
   }
 
   return null;

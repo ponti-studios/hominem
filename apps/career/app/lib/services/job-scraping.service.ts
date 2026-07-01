@@ -20,136 +20,143 @@ const extractedJobSchema = z.object({
   fullText: z.string().optional(),
 });
 
-const JOB_EXTRACTION_PROMPT =
-  'Extract the job posting into structured JSON with the following fields: job_title, companyName, companyDescription, jobDescription, location, requirements, skills, and fullText. Return only the job posting content and exclude navigation, ads, footers, cookie banners, and unrelated page chrome.';
+const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
+const EXTRACTION_MODEL = 'deepseek/deepseek-v4-flash';
 
-const JOB_EXTRACTION_SCHEMA = {
-  type: 'object',
-  properties: {
-    job_title: { type: 'string' },
-    companyName: { type: 'string' },
-    companyDescription: { type: 'string' },
-    jobDescription: { type: 'string' },
-    location: { type: 'string' },
-    requirements: {
-      type: 'array',
-      items: { type: 'string' },
-    },
-    skills: {
-      type: 'array',
-      items: { type: 'string' },
-    },
-    fullText: { type: 'string' },
-  },
-  required: ['fullText', 'job_title'],
-};
+export async function scrapeJobPosting(jobUrl: string): Promise<JobScrapingResult> {
+  try {
+    const apiKey = serverEnv().OPENROUTER_API_KEY;
 
-export class JobScrapingService {
-  private readonly cloudflareAccountId: string;
-  private readonly cloudflareApiToken: string;
-
-  constructor() {
-    try {
-      const env = serverEnv();
-      this.cloudflareAccountId = env.CLOUDFLARE_ACCOUNT_ID || '';
-      this.cloudflareApiToken = env.CLOUDFLARE_API_TOKEN || '';
-    } catch {
-      this.cloudflareAccountId = '';
-      this.cloudflareApiToken = '';
-    }
-
-    if (!this.cloudflareAccountId || !this.cloudflareApiToken) {
-      console.warn('Cloudflare credentials not configured. Job scraping will not work.');
-    }
-  }
-
-  async scrapeJobPosting(jobUrl: string): Promise<JobScrapingResult> {
-    try {
-      if (!this.cloudflareAccountId || !this.cloudflareApiToken) {
-        throw new Error('Cloudflare credentials not configured');
-      }
-
-      const response = await fetch(
-        `https://api.cloudflare.com/client/v4/accounts/${this.cloudflareAccountId}/browser-rendering/json`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${this.cloudflareApiToken}`,
-            'Content-Type': 'application/json',
+    const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: EXTRACTION_MODEL,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              'Extract the job posting at this URL into structured JSON.',
+              '',
+              `URL: ${jobUrl}`,
+              '',
+              'First use the web_fetch tool to get the page content, then extract the job details.',
+              '',
+              'Return a JSON object with these fields:',
+              '- job_title: the title of the position',
+              '- companyName: the name of the company',
+              '- companyDescription: description of the company (optional)',
+              '- jobDescription: full description of the job',
+              '- location: job location (optional)',
+              '- requirements: array of requirement strings (optional)',
+              '- skills: array of skill strings (optional)',
+              '- fullText: the complete text content of the entire page',
+            ].join('\n'),
           },
-          body: JSON.stringify({
-            url: jobUrl,
-            prompt: JOB_EXTRACTION_PROMPT,
-            gotoOptions: {
-              waitUntil: 'networkidle2',
-            },
-            response_format: {
-              type: 'json_schema',
-              schema: JOB_EXTRACTION_SCHEMA,
-            },
-          }),
-        },
+        ],
+        tools: [{ type: 'openrouter:web_fetch' }],
+        response_format: { type: 'json_object' },
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `OpenRouter API error: ${response.status} ${response.statusText} - ${errorText}`,
       );
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(
-          `Cloudflare API error: ${response.status} ${response.statusText} - ${errorText}`,
-        );
-      }
-
-      const payload = (await response.json()) as {
-        success?: boolean;
-        result?: unknown;
-        errors?: Array<{ message?: string }>;
-      };
-
-      if (!payload.success) {
-        throw new Error(
-          `Cloudflare API returned error: ${payload.errors?.[0]?.message || 'Unknown error'}`,
-        );
-      }
-
-      const extractedData = extractedJobSchema.parse(payload.result ?? {});
-      const fullText = extractedData.fullText ?? '';
-      const normalizedFullText = fullText.trim();
-
-      return {
-        success: true,
-        job_posting: {
-          job_title: extractedData.job_title || 'Unknown Position',
-          companyName: extractedData.companyName || 'Unknown Company',
-          companyDescription: extractedData.companyDescription || '',
-          jobDescription: extractedData.jobDescription || normalizedFullText,
-          location: extractedData.location || '',
-          requirements: extractedData.requirements || [],
-          skills: extractedData.skills || [],
-          fullText: normalizedFullText,
-          url: jobUrl,
-          scrapedAt: new Date().toISOString(),
-          wordCount: normalizedFullText
-            ? normalizedFullText.split(/\s+/).filter(Boolean).length
-            : 0,
-        },
-      };
-    } catch (error) {
-      console.error('Job posting scraping failed:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
-      };
     }
-  }
 
-  async checkHealth(): Promise<{ status: string; runtime?: string; timestamp?: string }> {
-    const isConfigured = Boolean(this.cloudflareAccountId && this.cloudflareApiToken);
+    type OpenRouterChoice = {
+      message?: {
+        content?: string | null;
+      };
+      finish_reason?: string;
+    };
+
+    const payload = (await response.json()) as {
+      choices?: OpenRouterChoice[];
+      error?: { message?: string };
+    };
+
+    if (payload.error) {
+      throw new Error(`OpenRouter API error: ${payload.error.message}`);
+    }
+
+    const content = payload.choices?.[0]?.message?.content;
+
+    if (!content) {
+      throw new Error('No content returned from OpenRouter');
+    }
+
+    let parsed: Record<string, unknown>;
+    try {
+      parsed = JSON.parse(content) as Record<string, unknown>;
+    } catch {
+      throw new Error('Failed to parse model response as JSON');
+    }
+
+    const extractedData = extractedJobSchema.parse(parsed);
+    const fullText = extractedData.fullText ?? '';
+    const normalizedFullText = fullText.trim();
 
     return {
-      status: isConfigured ? 'healthy' : 'unhealthy',
-      runtime: 'direct-api',
-      timestamp: new Date().toISOString(),
+      success: true,
+      job_posting: {
+        job_title: extractedData.job_title || 'Unknown Position',
+        companyName: extractedData.companyName || 'Unknown Company',
+        companyDescription: extractedData.companyDescription || '',
+        jobDescription: extractedData.jobDescription || normalizedFullText,
+        location: extractedData.location || '',
+        requirements: extractedData.requirements || [],
+        skills: extractedData.skills || [],
+        fullText: normalizedFullText,
+        url: jobUrl,
+        scrapedAt: new Date().toISOString(),
+        wordCount: normalizedFullText ? normalizedFullText.split(/\s+/).filter(Boolean).length : 0,
+      },
+    };
+  } catch (error) {
+    console.error('Job posting scraping failed:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
     };
   }
 }
 
-export const jobScrapingService = new JobScrapingService();
+export async function checkHealth(): Promise<{
+  status: string;
+  runtime?: string;
+  timestamp?: string;
+}> {
+  try {
+    const apiKey = serverEnv().OPENROUTER_API_KEY;
+
+    if (!apiKey) {
+      return {
+        status: 'unhealthy',
+        runtime: 'openrouter',
+        timestamp: new Date().toISOString(),
+      };
+    }
+
+    const response = await fetch(`${OPENROUTER_BASE_URL}/models`, {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    });
+
+    return {
+      status: response.ok ? 'healthy' : 'unhealthy',
+      runtime: 'openrouter',
+      timestamp: new Date().toISOString(),
+    };
+  } catch {
+    return {
+      status: 'unhealthy',
+      runtime: 'openrouter',
+      timestamp: new Date().toISOString(),
+    };
+  }
+}

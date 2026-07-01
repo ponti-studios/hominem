@@ -20,6 +20,7 @@ const t = {
       titleFallback: 'Note',
       contentPlaceholder: 'Start writing…',
       contentA11yLabel: 'Note content',
+      actionsLabel: 'Note actions',
       attachments: 'Attachments',
       previewMode: 'Preview',
       editMode: 'Edit',

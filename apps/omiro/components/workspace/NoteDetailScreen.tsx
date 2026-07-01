@@ -7,7 +7,7 @@ import { font, frame, submitLabel, textFieldStyle } from '@expo/ui/swift-ui/modi
 import { Image } from 'expo-image';
 import { Stack, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, TextInput, View } from 'react-native';
+import { Alert, Pressable, RefreshControl, ScrollView, TextInput, View } from 'react-native';
 import Markdown from 'react-native-markdown-display';
 
 import { InlineEnhanceTray } from '~/components/ai/InlineEnhanceTray';
@@ -18,6 +18,7 @@ import AppIcon from '~/components/ui/icon';
 import { useNoteEditor } from '~/hooks/use-note-editor';
 import { useNoteToolbar } from '~/hooks/use-note-toolbar';
 import { useInlineEnhance } from '~/services/ai';
+import { useNoteDelete } from '~/services/notes/use-note-delete';
 import { useNoteQuery } from '~/services/notes/use-note-query';
 import { writeWorkspaceResumeArtifact } from '~/services/workspace/launch-state';
 import { getWorkspaceHomeRoute } from '~/services/workspace/routes';
@@ -72,6 +73,7 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
 
   const { data: note, error, isInitialLoading, isRefreshing, refetch } = useNoteQuery({ noteId });
   const { save, updateCache, detachFile } = useNoteEditor(noteId);
+  const { mutate: deleteNote } = useNoteDelete({ noteId });
   const {
     isEnhanceOpen,
     enhanceInstruction,
@@ -124,6 +126,21 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
       year: 'numeric',
     });
   })();
+
+  const handleDeleteNote = useCallback(() => {
+    Alert.alert(t.workspace.item.deleteNote.title, t.workspace.item.deleteNote.message, [
+      { text: t.workspace.item.deleteNote.cancel, style: 'cancel' },
+      {
+        text: t.workspace.item.deleteNote.confirm,
+        style: 'destructive',
+        onPress: () => {
+          deleteNote(undefined, {
+            onSuccess: () => router.replace(homeRoute),
+          });
+        },
+      },
+    ]);
+  }, [deleteNote, homeRoute, router]);
 
   const handleBackPress = useCallback(() => {
     if (navigation.canGoBack()) {
@@ -220,11 +237,18 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
           icon={isPreviewing ? 'pencil' : 'eye'}
           onPress={() => setIsPreviewing((current) => !current)}
         />
-        <Stack.Toolbar.Button
-          accessibilityLabel="Enhance note"
-          icon="wand.and.sparkles"
-          onPress={toggleEnhance}
-        />
+        <Stack.Toolbar.Menu
+          accessibilityLabel={t.notes.editor.actionsLabel}
+          icon="ellipsis.circle"
+          title={t.notes.editor.actionsLabel}
+        >
+          <Stack.Toolbar.MenuAction onPress={toggleEnhance}>
+            {t.enhance.confirm}
+          </Stack.Toolbar.MenuAction>
+          <Stack.Toolbar.MenuAction destructive onPress={handleDeleteNote}>
+            {t.workspace.item.deleteNote.title}
+          </Stack.Toolbar.MenuAction>
+        </Stack.Toolbar.Menu>
       </Stack.Toolbar>
 
       <ScrollView

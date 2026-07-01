@@ -17,6 +17,7 @@ import {
   sanitizeFileName,
 } from '@hominem/utils/files';
 
+import { StorageServiceError } from './errors';
 import type { FileObject, PreparedUpload, StorageOptions, StoredFile } from './types';
 import { isSupportedUploadMimeType } from './upload-policy';
 
@@ -74,7 +75,7 @@ function getCloudflareR2StorageConfig(): StorageConnectionConfig | null {
   ].filter((value): value is string => Boolean(value));
 
   if (missing.length > 0) {
-    throw new Error(`Missing Cloudflare R2 configuration: ${missing.join(', ')}`);
+    throw new StorageServiceError('storage.config.missing', { missing });
   }
 
   return {
@@ -96,12 +97,71 @@ function getStorageConnectionConfig(): StorageConnectionConfig {
   }
 
   if (process.env.NODE_ENV === 'production') {
-    throw new Error(
-      'Missing Cloudflare R2 configuration in production. Set R2_ENDPOINT, R2_BUCKET_NAME, R2_ACCESS_KEY_ID, and R2_SECRET_ACCESS_KEY.',
-    );
+    throw new StorageServiceError('storage.config.missing', {
+      missing: ['R2_ENDPOINT', 'R2_BUCKET_NAME', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY'],
+    });
   }
 
   return localMinioStorageConfig;
+}
+
+function getBucketAccessError(bucketName: string, error: unknown): StorageServiceError {
+  if (!(error instanceof Error)) {
+    return new StorageServiceError('storage.bucket.access_unknown', {
+      bucketName,
+      causeType: typeof error,
+    });
+  }
+
+  const errorMessage = error.message.toLowerCase();
+
+  if (
+    errorMessage.includes('credential access key has length') ||
+    errorMessage.includes('signature') ||
+    errorMessage.includes('invalidaccesskeyid') ||
+    errorMessage.includes('authorizationheadermalformed')
+  ) {
+    return new StorageServiceError('storage.credentials.invalid', {
+      bucketName,
+      reason: error.message,
+    });
+  }
+
+  if (
+    errorMessage.includes('access denied') ||
+    errorMessage.includes('unauthorized') ||
+    errorMessage.includes('forbidden')
+  ) {
+    return new StorageServiceError('storage.bucket.access_denied', {
+      bucketName,
+      reason: error.message,
+    });
+  }
+
+  if (errorMessage.includes('no such bucket') || errorMessage.includes('not found')) {
+    return new StorageServiceError('storage.bucket.missing', {
+      bucketName,
+      reason: error.message,
+    });
+  }
+
+  if (
+    errorMessage.includes('timeout') ||
+    errorMessage.includes('econnrefused') ||
+    errorMessage.includes('enotfound') ||
+    errorMessage.includes('network')
+  ) {
+    return new StorageServiceError('storage.network.unreachable', {
+      bucketName,
+      reason: error.message,
+    });
+  }
+
+  return new StorageServiceError('storage.bucket.access_unknown', {
+    bucketName,
+    reason: error.message,
+    name: error.name,
+  });
 }
 
 class InMemoryStorageBackend {
@@ -417,9 +477,9 @@ export class R2StorageService {
   async ensureBucket(): Promise<void> {
     try {
       await this.client.send(new HeadBucketCommand({ Bucket: this.bucketName }));
-    } catch {
+    } catch (error) {
       if (!this.canCreateBucket) {
-        throw new Error(`Storage bucket "${this.bucketName}" does not exist or is not accessible`);
+        throw getBucketAccessError(this.bucketName, error);
       }
 
       await this.client.send(
