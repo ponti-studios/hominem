@@ -16,6 +16,8 @@ import { useReducedMotion } from '~/hooks/use-reduced-motion';
 const BTN_SIZE = spacing[6]; // 32px
 const BTN_ICON_SIZE = spacing[4] + 2; // 18px
 
+export type ActionButtonVariant = 'default' | 'primary' | 'muted';
+
 interface ActionButtonProps {
   icon: SFSymbol;
   onPress: () => void;
@@ -23,6 +25,7 @@ interface ActionButtonProps {
   accessibilityLabel: string;
   isAnimating?: boolean;
   testID?: string;
+  variant?: ActionButtonVariant;
 }
 
 export function ActionButton({
@@ -32,6 +35,7 @@ export function ActionButton({
   accessibilityLabel,
   isAnimating = false,
   testID,
+  variant = 'default',
 }: ActionButtonProps) {
   const themeColors = useThemeColors();
   const styles = useStyles();
@@ -48,6 +52,14 @@ export function ActionButton({
     transform: [{ rotate: `${rotation.value}deg` }],
   }));
 
+  const iconTintColor = disabled
+    ? themeColors['text-tertiary']
+    : variant === 'primary'
+      ? themeColors['bg-base']
+      : variant === 'muted'
+        ? themeColors['text-secondary']
+        : themeColors.white;
+
   return (
     <Pressable
       onPress={onPress}
@@ -58,28 +70,29 @@ export function ActionButton({
       testID={testID}
       style={({ pressed }) => [
         styles.actionBtn,
+        variant === 'primary' && !disabled ? styles.actionBtnPrimary : null,
         disabled ? styles.actionBtnDisabled : null,
         pressed && !disabled ? styles.actionBtnPressed : null,
       ]}
     >
       <Animated.View style={iconStyle}>
-        <AppIcon
-          name={icon}
-          size={BTN_ICON_SIZE}
-          tintColor={disabled ? themeColors['text-tertiary'] : themeColors.white}
-        />
+        <AppIcon name={icon} size={BTN_ICON_SIZE} tintColor={iconTintColor} />
       </Animated.View>
     </Pressable>
   );
 }
 
-const useStyles = makeStyles(() => ({
+const useStyles = makeStyles((theme) => ({
   actionBtn: {
     width: BTN_SIZE,
     height: BTN_SIZE,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  actionBtnPrimary: {
+    backgroundColor: theme.colors.foreground,
+    borderRadius: BTN_SIZE / 2,
   },
   actionBtnDisabled: {
     opacity: 0.5,

@@ -83,7 +83,6 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
   const router = useRouter();
   const contentInputRef = useRef<TextInput>(null);
   const homeRoute = getInboxRoute();
-  const [titleInputHeight, setTitleInputHeight] = useState(36);
   const [isPreviewing, setIsPreviewing] = useState(false);
   const canGoBack = navigation.canGoBack();
 
@@ -262,10 +261,6 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
         <TextInput
           multiline
           defaultValue={note.title ?? ''}
-          onContentSizeChange={(event) => {
-            const nextHeight = Math.max(36, Math.min(120, event.nativeEvent.contentSize.height));
-            setTitleInputHeight((current) => (current === nextHeight ? current : nextHeight));
-          }}
           onChangeText={(value) => {
             updateCache({ title: value });
             void save(
@@ -278,12 +273,7 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
           placeholderTextColor={themeColors['text-tertiary']}
           scrollEnabled={false}
           selectionColor={themeColors.accent}
-          style={[
-            styles.titleInput,
-            {
-              height: titleInputHeight,
-            },
-          ]}
+          style={styles.titleInput}
           testID="note-title-input"
           textAlignVertical="top"
         />

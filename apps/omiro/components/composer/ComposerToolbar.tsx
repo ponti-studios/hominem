@@ -87,13 +87,14 @@ export function ComposerToolbar({
           </Reanimated.View>
         ) : null}
         {mode === 'inbox' && secondaryAction && canSubmit ? (
-          <Reanimated.View entering={buttonEnter} exiting={buttonExit}>
+          <Reanimated.View entering={buttonEnter} exiting={buttonExit} style={styles.secondarySlot}>
             <ActionButton
               icon={secondaryAction.icon}
               onPress={secondaryAction.onPress}
               accessibilityLabel={secondaryAction.accessibilityLabel}
               testID={secondaryAction.testID}
               disabled={isSubmitting || !canSubmit}
+              variant="muted"
             />
           </Reanimated.View>
         ) : null}
@@ -115,6 +116,7 @@ export function ComposerToolbar({
                 (mode === 'inbox' ? 'composer-submit-note' : 'composer-submit-message')
               }
               disabled={!canSubmit}
+              variant="primary"
             />
           </Reanimated.View>
         ) : null}
@@ -141,5 +143,8 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: theme.colors['bg-surface'],
     borderRadius: 32,
     paddingHorizontal: spacing[1],
+  },
+  secondarySlot: {
+    marginRight: spacing[2],
   },
 }));
