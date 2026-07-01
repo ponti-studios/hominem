@@ -148,6 +148,8 @@ const t = {
       newChatTitle: 'New chat',
       newNoteTitle: 'New note',
       dismissComposer: 'Dismiss composer',
+      openComposerA11y: 'New note or chat',
+      closeComposerA11y: 'Close composer',
       notesFilterA11y: 'Show notes',
       chatsFilterA11y: 'Show chats',
       showSearchA11y: 'Search chats and notes',

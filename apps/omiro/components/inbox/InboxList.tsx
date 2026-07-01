@@ -1,5 +1,5 @@
 import { FlashList, type FlashListRef, type ListRenderItem } from '@shopify/flash-list';
-import React, { memo, useCallback, type ReactElement, type RefObject } from 'react';
+import React, { memo, useCallback, type RefObject } from 'react';
 import type { RefreshControlProps } from 'react-native';
 import { View } from 'react-native';
 
@@ -37,7 +37,6 @@ interface InboxListProps {
   refreshControl?: React.ReactElement<RefreshControlProps>;
   contentPaddingBottom?: number;
   contentPaddingTop?: number;
-  listHeader?: ReactElement;
 }
 
 const RenderInboxHomeItem = memo(({ item }: { item: InboxStreamItemData }) => (
@@ -67,7 +66,6 @@ export function InboxList({
   refreshControl,
   contentPaddingBottom,
   contentPaddingTop,
-  listHeader,
 }: InboxListProps) {
   const styles = useStyles();
   const rows = buildRows({ items });
@@ -125,7 +123,6 @@ export function InboxList({
       data={rows}
       keyboardDismissMode="on-drag"
       keyExtractor={(item) => item.id}
-      ListHeaderComponent={listHeader}
       ListFooterComponent={
         isFetchingNextPage ? (
           <Text variant="caption1" color="text-tertiary" style={styles.footerText}>
