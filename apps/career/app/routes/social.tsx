@@ -96,7 +96,7 @@ function SocialLinksEditorSection({
                   GitHub
                 </label>
                 <div className="flex">
-                  <span className="inline-flex items-center shrink-0 px-3 body-3 text-muted-foreground border border-r-0 border-input rounded-l-md bg-base">
+                  <span className="inline-flex items-center shrink-0 px-3 body-3 text-muted-foreground border border-r-0 rounded-l-md bg-base">
                     github.com/
                   </span>
                   <Input
@@ -128,7 +128,7 @@ function SocialLinksEditorSection({
                   LinkedIn
                 </label>
                 <div className="flex">
-                  <span className="inline-flex items-center shrink-0 px-3 body-3 text-muted-foreground border border-r-0 border-input rounded-l-md bg-base">
+                  <span className="inline-flex items-center shrink-0 px-3 body-3 text-muted-foreground border border-r-0 rounded-l-md bg-base">
                     linkedin.com/in/
                   </span>
                   <Input
@@ -160,7 +160,7 @@ function SocialLinksEditorSection({
                   Twitter / X
                 </label>
                 <div className="flex">
-                  <span className="inline-flex items-center shrink-0 px-3 body-3 text-muted-foreground border border-r-0 border-input rounded-l-md bg-base">
+                  <span className="inline-flex items-center shrink-0 px-3 body-3 text-muted-foreground border border-r-0 rounded-l-md bg-base">
                     x.com/
                   </span>
                   <Input

@@ -127,7 +127,8 @@ function resolveStorageFailure(error: unknown) {
   switch (error.code) {
     case 'storage.config.missing':
       return {
-        error: 'Resume storage is not configured yet. Check the storage configuration and try again.',
+        error:
+          'Resume storage is not configured yet. Check the storage configuration and try again.',
         details: error.details,
       };
     case 'storage.credentials.invalid':
@@ -144,7 +145,8 @@ function resolveStorageFailure(error: unknown) {
       };
     case 'storage.bucket.missing':
       return {
-        error: 'Resume storage bucket was not found. Check the Cloudflare R2 bucket name and try again.',
+        error:
+          'Resume storage bucket was not found. Check the Cloudflare R2 bucket name and try again.',
         details: error.details,
       };
     case 'storage.network.unreachable':
@@ -357,15 +359,14 @@ export const action: ActionFunction = async ({ request, context }) => {
       logger.error('Resume file upload failed', undefined, {
         owner_userid: user.id,
         fileName: file.name,
-        error: isStorageServiceError(error) ? error.code : error instanceof Error ? error.message : error,
+        error: isStorageServiceError(error)
+          ? error.code
+          : error instanceof Error
+            ? error.message
+            : error,
         ...(failure.details ? { storage: failure.details } : {}),
       });
-      return errorResponse(
-        failure.error,
-        503,
-        'storage',
-        true,
-      );
+      return errorResponse(failure.error, 503, 'storage', true);
     }
 
     let portfolio_id: string;

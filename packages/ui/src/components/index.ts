@@ -60,12 +60,7 @@ export { ActiveFiltersBar, FilterChip, FilterControls, FilterSelect } from './fi
 export { InboxStreamRow } from './inbox';
 export { Switch } from './switch';
 export { UpdateGuard } from './update-guard';
-export {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from './accordion';
+export { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './accordion';
 export { Badge, badgeVariants } from './badge';
 export { Button, buttonVariants } from './button';
 export {

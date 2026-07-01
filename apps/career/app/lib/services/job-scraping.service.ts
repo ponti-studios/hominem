@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { serverEnv } from '~/lib/env';
 import type { JobPosting } from '~/types/applications';
 
+import extractionPrompt from './prompts/job-extraction.prompt.md?raw';
+
 interface JobScrapingResult {
   success: boolean;
   job_posting?: JobPosting;
@@ -15,8 +17,24 @@ const extractedJobSchema = z.object({
   companyDescription: z.string().optional(),
   jobDescription: z.string().optional(),
   location: z.string().optional(),
+  salaryRange: z.string().optional(),
+  salaryDetails: z.string().optional(),
+  employmentType: z.string().optional(),
+  experienceLevel: z.string().optional(),
+  education: z.string().optional(),
   requirements: z.array(z.string()).optional(),
   skills: z.array(z.string()).optional(),
+  benefits: z.array(z.string()).optional(),
+  responsibilities: z.array(z.string()).optional(),
+  industry: z.string().optional(),
+  postedDate: z.string().optional(),
+  applicationDeadline: z.string().optional(),
+  department: z.string().optional(),
+  hiringManager: z.string().optional(),
+  companySize: z.string().optional(),
+  fundingStage: z.string().optional(),
+  technologyStack: z.array(z.string()).optional(),
+  cultureAspects: z.array(z.string()).optional(),
   fullText: z.string().optional(),
 });
 
@@ -37,28 +55,15 @@ export async function scrapeJobPosting(jobUrl: string): Promise<JobScrapingResul
         model: EXTRACTION_MODEL,
         messages: [
           {
+            role: 'system',
+            content: extractionPrompt,
+          },
+          {
             role: 'user',
-            content: [
-              'Extract the job posting at this URL into structured JSON.',
-              '',
-              `URL: ${jobUrl}`,
-              '',
-              'First use the web_fetch tool to get the page content, then extract the job details.',
-              '',
-              'Return a JSON object with these fields:',
-              '- job_title: the title of the position',
-              '- companyName: the name of the company',
-              '- companyDescription: description of the company (optional)',
-              '- jobDescription: full description of the job',
-              '- location: job location (optional)',
-              '- requirements: array of requirement strings (optional)',
-              '- skills: array of skill strings (optional)',
-              '- fullText: the complete text content of the entire page',
-            ].join('\n'),
+            content: `URL: ${jobUrl}`,
           },
         ],
         tools: [{ type: 'openrouter:web_fetch' }],
-        response_format: { type: 'json_object' },
       }),
     });
 
@@ -91,10 +96,16 @@ export async function scrapeJobPosting(jobUrl: string): Promise<JobScrapingResul
       throw new Error('No content returned from OpenRouter');
     }
 
+    // The model may wrap JSON in markdown code blocks — strip them
+    const trimmed = content.trim();
+    const jsonMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/);
+    const jsonString = jsonMatch ? jsonMatch[1].trim() : trimmed;
+
     let parsed: Record<string, unknown>;
     try {
-      parsed = JSON.parse(content) as Record<string, unknown>;
+      parsed = JSON.parse(jsonString) as Record<string, unknown>;
     } catch {
+      console.error('Failed to parse model response as JSON. Raw response:', content);
       throw new Error('Failed to parse model response as JSON');
     }
 
@@ -110,8 +121,24 @@ export async function scrapeJobPosting(jobUrl: string): Promise<JobScrapingResul
         companyDescription: extractedData.companyDescription || '',
         jobDescription: extractedData.jobDescription || normalizedFullText,
         location: extractedData.location || '',
+        salaryRange: extractedData.salaryRange || '',
+        salaryDetails: extractedData.salaryDetails || '',
+        employmentType: extractedData.employmentType || '',
+        experienceLevel: extractedData.experienceLevel || '',
+        education: extractedData.education || '',
         requirements: extractedData.requirements || [],
         skills: extractedData.skills || [],
+        benefits: extractedData.benefits || [],
+        responsibilities: extractedData.responsibilities || [],
+        industry: extractedData.industry || '',
+        postedDate: extractedData.postedDate || '',
+        applicationDeadline: extractedData.applicationDeadline || '',
+        department: extractedData.department || '',
+        hiringManager: extractedData.hiringManager || '',
+        companySize: extractedData.companySize || '',
+        fundingStage: extractedData.fundingStage || '',
+        technologyStack: extractedData.technologyStack || [],
+        cultureAspects: extractedData.cultureAspects || [],
         fullText: normalizedFullText,
         url: jobUrl,
         scrapedAt: new Date().toISOString(),
