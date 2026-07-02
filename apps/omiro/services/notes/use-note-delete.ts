@@ -2,12 +2,9 @@ import { useApiClient } from '@hominem/rpc/react';
 import type { Note } from '@hominem/rpc/types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 import { clearCachedNote } from '~/services/content-cache';
-import {
-  clearResumeTarget,
-  readResumeTarget,
-} from '~/services/navigation/launch-state';
+import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
+import { clearResumeTarget, readResumeTarget } from '~/services/navigation/launch-state';
 
 import { noteKeys } from './query-keys';
 

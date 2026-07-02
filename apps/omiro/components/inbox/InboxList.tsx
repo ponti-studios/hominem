@@ -45,9 +45,7 @@ const RenderInboxHomeItem = memo(({ item }: { item: InboxStreamItemData }) => (
 
 RenderInboxHomeItem.displayName = 'RenderInboxHomeItem';
 
-function buildRows({
-  items,
-}: Pick<InboxListProps, 'items'>): InboxListRow[] {
+function buildRows({ items }: Pick<InboxListProps, 'items'>): InboxListRow[] {
   return items.map((item) => ({
     type: 'item' as const,
     id: item.id,
@@ -70,13 +68,10 @@ export function InboxList({
   const styles = useStyles();
   const rows = buildRows({ items });
 
-  const renderItem = useCallback<ListRenderItem<InboxListRow>>(
-    ({ item }) => {
-      if (item.type === 'section') return null;
-      return <RenderInboxHomeItem item={item.item} />;
-    },
-    [],
-  );
+  const renderItem = useCallback<ListRenderItem<InboxListRow>>(({ item }) => {
+    if (item.type === 'section') return null;
+    return <RenderInboxHomeItem item={item.item} />;
+  }, []);
 
   if (error && items.length === 0) {
     return (

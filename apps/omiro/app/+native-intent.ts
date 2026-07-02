@@ -1,8 +1,4 @@
-import {
-  getContentRoute,
-  getInboxRoute,
-  getSettingsRoute,
-} from '~/services/navigation/routes';
+import { getContentRoute, getInboxRoute, getSettingsRoute } from '~/services/navigation/routes';
 
 /**
  * +native-intent.ts

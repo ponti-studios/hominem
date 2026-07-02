@@ -8,12 +8,9 @@ import { ComposerShell } from '~/components/composer/ComposerShell';
 import { ComposerTextInput } from '~/components/composer/ComposerTextInput';
 import { ComposerToolbar } from '~/components/composer/ComposerToolbar';
 import { useComposerController } from '~/components/composer/useComposerController';
+import { VoiceRecordingPanel } from '~/components/composer/VoiceRecordingPanel';
 import { useActiveChat, useAutoUpdateChatTitle, useSendMessage } from '~/services/chat';
-import {
-  clearChatDraft,
-  readChatDraft,
-  writeChatDraft,
-} from '~/services/navigation/launch-state';
+import { clearChatDraft, readChatDraft, writeChatDraft } from '~/services/navigation/launch-state';
 import t from '~/translations';
 
 export interface ChatComposerContentProps {
@@ -73,9 +70,13 @@ function ChatComposerDraftContent({
     canPickMedia,
     canToggleVoice,
     handleVoicePress,
+    cancelVoiceRecording,
     isVoiceBusy,
     isCleaningVoice,
     isRecording,
+    isRecordingElsewhere,
+    recordingStartedAt,
+    recordingMeterings,
     isEnhanceOpen,
     enhanceInstruction,
     setEnhanceInstruction,
@@ -112,6 +113,7 @@ function ChatComposerDraftContent({
   return (
     <ComposerShell
       testID={testID ?? 'chat-composer'}
+      isRecording={isRecording}
       accessory={showAttachments ? <ComposerAttachmentRow /> : undefined}
       input={
         <ComposerTextInput
@@ -123,7 +125,13 @@ function ChatComposerDraftContent({
         />
       }
       inlinePanel={
-        isEnhanceOpen ? (
+        isRecording ? (
+          <VoiceRecordingPanel
+            startedAt={recordingStartedAt}
+            meterings={recordingMeterings}
+            onCancel={() => void cancelVoiceRecording()}
+          />
+        ) : isEnhanceOpen ? (
           <InlineEnhanceTray
             instruction={enhanceInstruction}
             onInstructionChange={setEnhanceInstruction}
@@ -143,6 +151,7 @@ function ChatComposerDraftContent({
         <ComposerToolbar
           mode="chat"
           isRecording={isRecording}
+          isRecordingElsewhere={isRecordingElsewhere}
           isVoiceBusy={isVoiceBusy}
           isEnhancing={isEnhancing}
           isCleaningVoice={isCleaningVoice}

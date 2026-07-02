@@ -1,6 +1,8 @@
+import { Host, Circle } from '@expo/ui/swift-ui';
+import { glassEffect } from '@expo/ui/swift-ui/modifiers';
 import { spacing } from '@hominem/ui/tokens';
 import React, { useCallback, useState } from 'react';
-import { ActionSheetIOS } from 'react-native';
+import { ActionSheetIOS, Platform, StyleSheet, View } from 'react-native';
 
 import { useComposerContext } from '~/components/composer/ComposerContext';
 import { CameraModal } from '~/components/media/camera-modal';
@@ -10,6 +12,7 @@ import t from '~/translations';
 
 const MEDIA_BTN_SIZE = fontSizes.lg + 6;
 const MEDIA_BTN_ICON_SIZE = fontSizes.lg;
+const isGlassSupported = Platform.OS === 'ios';
 
 interface ComposerMediaProps {
   accessibilityLabel: string;
@@ -39,19 +42,33 @@ export function ComposerMedia({ accessibilityLabel, disabled = false }: Composer
 
   return (
     <>
-      <IconButton
-        accessibilityLabel={accessibilityLabel}
-        icon="plus"
-        iconSize={MEDIA_BTN_ICON_SIZE}
-        size={MEDIA_BTN_SIZE}
-        variant="filled"
-        circular
-        disabled={disabled}
-        disabledOpacity={0.5}
-        pressedOpacity={0.7}
-        hitSlop={spacing[2]}
-        onPress={showPlusMenu}
-      />
+      <View style={{ width: MEDIA_BTN_SIZE, height: MEDIA_BTN_SIZE }}>
+        {isGlassSupported && !disabled ? (
+          <Host style={StyleSheet.absoluteFill} pointerEvents="none">
+            <Circle
+              modifiers={[
+                glassEffect({
+                  glass: { variant: 'regular', interactive: true },
+                  shape: 'circle',
+                }),
+              ]}
+            />
+          </Host>
+        ) : null}
+        <IconButton
+          accessibilityLabel={accessibilityLabel}
+          icon="plus"
+          iconSize={MEDIA_BTN_ICON_SIZE}
+          size={MEDIA_BTN_SIZE}
+          variant={isGlassSupported ? undefined : 'filled'}
+          circular
+          disabled={disabled}
+          disabledOpacity={0.5}
+          pressedOpacity={0.7}
+          hitSlop={spacing[2]}
+          onPress={showPlusMenu}
+        />
+      </View>
       <CameraModal
         visible={isCameraOpen}
         onCapture={(photo) => {

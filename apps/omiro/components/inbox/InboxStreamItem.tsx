@@ -88,9 +88,7 @@ export const InboxStreamItem = memo(({ item, swipeEnabled = true }: InboxStreamI
           progress={progress}
           iconName={isChat ? 'archivebox' : 'trash'}
           onPress={isChat ? handleArchive : handleDelete}
-          accessibilityLabel={
-            isChat ? t.inbox.item.archive : t.inbox.item.deleteNote.confirm
-          }
+          accessibilityLabel={isChat ? t.inbox.item.archive : t.inbox.item.deleteNote.confirm}
           backgroundColor={isChat ? themeColors.accent : themeColors.destructive}
           style={styles.swipeAction}
         />

@@ -24,15 +24,12 @@ import { E2E_TESTING } from '~/constants';
 import { useScreenCapture } from '~/hooks/use-screen-capture';
 import { resolveAuthRedirect } from '~/navigation/auth-route-guard';
 import { AuthProvider, useAuth } from '~/services/auth/auth-provider';
+import { consumeRestoreAttempt, consumeResumeTarget } from '~/services/navigation/launch-state';
+import { getContentRoute } from '~/services/navigation/routes';
 import { initObservability } from '~/services/observability';
 import { POSTHOG_ENABLED, posthog } from '~/services/posthog';
 import queryClient from '~/services/query-client';
 import { recordActiveDay } from '~/services/review-prompt/review-prompt';
-import {
-  consumeRestoreAttempt,
-  consumeResumeTarget,
-} from '~/services/navigation/launch-state';
-import { getContentRoute } from '~/services/navigation/routes';
 
 SplashScreen.preventAutoHideAsync();
 

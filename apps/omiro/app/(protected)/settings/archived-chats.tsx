@@ -15,12 +15,7 @@ import t from '~/translations';
 export default function ArchivedChatsScreen() {
   const router = useRouter();
   const isFocused = useIsFocused();
-  const {
-    data: chats = [],
-    error,
-    isFetching,
-    refetch,
-  } = useArchivedChats({ enabled: isFocused });
+  const { data: chats = [], error, isFetching, refetch } = useArchivedChats({ enabled: isFocused });
   const onPressChat = useCallback(
     (chatId: string) => {
       router.push(getContentRoute('chat', chatId) as RelativePathString);

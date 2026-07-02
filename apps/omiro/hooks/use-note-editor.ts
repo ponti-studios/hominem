@@ -5,10 +5,10 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Alert } from 'react-native';
 
+import { writeCachedNote } from '~/services/content-cache';
 import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 import { useTopAnchoredInbox } from '~/services/inbox/top-anchored-inbox';
 import { noteKeys } from '~/services/notes/query-keys';
-import { writeCachedNote } from '~/services/content-cache';
 import t from '~/translations';
 
 import { createDebouncedNoteSaver, type NoteSavePayload } from './debounced-note-saver';

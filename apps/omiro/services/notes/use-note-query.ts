@@ -2,8 +2,8 @@ import { useApiClient } from '@hominem/rpc/react';
 import type { Note } from '@hominem/rpc/types';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { hasDefinedData, resolveRestoredQueryState } from '~/services/query/restored-query-state';
 import { readCachedNote, writeCachedNote } from '~/services/content-cache';
+import { hasDefinedData, resolveRestoredQueryState } from '~/services/query/restored-query-state';
 
 import { noteKeys } from './query-keys';
 

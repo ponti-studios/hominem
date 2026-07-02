@@ -83,7 +83,10 @@ export async function streamSSE<TEvent>({
 
       try {
         const parsed = JSON.parse(data) as { type?: string; message?: string; error?: string };
-        if ((parsed.type === 'error' || parsed.error) && typeof (parsed.message ?? parsed.error) === 'string') {
+        if (
+          (parsed.type === 'error' || parsed.error) &&
+          typeof (parsed.message ?? parsed.error) === 'string'
+        ) {
           rejectOnce(new Error(parsed.message ?? parsed.error ?? 'Stream error'));
           return;
         }

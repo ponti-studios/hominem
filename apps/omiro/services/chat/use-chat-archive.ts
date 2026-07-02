@@ -1,13 +1,10 @@
 import { useApiClient } from '@hominem/rpc/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
-import { chatKeys } from '~/services/notes/query-keys';
 import { writeCachedChat } from '~/services/content-cache';
-import {
-  clearResumeTarget,
-  readResumeTarget,
-} from '~/services/navigation/launch-state';
+import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
+import { clearResumeTarget, readResumeTarget } from '~/services/navigation/launch-state';
+import { chatKeys } from '~/services/notes/query-keys';
 
 import { getChatActivityAt } from './chat-activity';
 import type { ChatWithActivity } from './chat-types';

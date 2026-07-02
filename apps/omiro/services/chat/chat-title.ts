@@ -2,8 +2,8 @@ import { CHAT_TITLE_MAX_LENGTH } from '@hominem/rpc/types';
 import type { Chat, SessionSource } from '@hominem/rpc/types';
 import type { QueryClient } from '@tanstack/react-query';
 
-import { chatKeys, inboxKeys } from '~/services/notes/query-keys';
 import { writeCachedChat } from '~/services/content-cache';
+import { chatKeys, inboxKeys } from '~/services/notes/query-keys';
 
 import type { ChatWithActivity } from './chat-types';
 

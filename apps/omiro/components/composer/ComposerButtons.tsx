@@ -1,6 +1,8 @@
+import { Host, Circle } from '@expo/ui/swift-ui';
+import { glassEffect } from '@expo/ui/swift-ui/modifiers';
 import type { SFSymbol } from 'expo-symbols';
 import React from 'react';
-import { Pressable } from 'react-native';
+import { Platform, Pressable, StyleSheet } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -15,6 +17,7 @@ import { useReducedMotion } from '~/hooks/use-reduced-motion';
 
 const BTN_SIZE = spacing[6]; // 32px
 const BTN_ICON_SIZE = spacing[4] + 2; // 18px
+const isGlassSupported = Platform.OS === 'ios';
 
 export type ActionButtonVariant = 'default' | 'primary' | 'muted';
 
@@ -55,7 +58,7 @@ export function ActionButton({
   const iconTintColor = disabled
     ? themeColors['text-tertiary']
     : variant === 'primary'
-      ? themeColors['bg-base']
+      ? themeColors.white
       : variant === 'muted'
         ? themeColors['text-secondary']
         : themeColors.white;
@@ -70,11 +73,27 @@ export function ActionButton({
       testID={testID}
       style={({ pressed }) => [
         styles.actionBtn,
-        variant === 'primary' && !disabled ? styles.actionBtnPrimary : null,
+        variant === 'primary' && !disabled && !isGlassSupported ? styles.actionBtnPrimary : null,
         disabled ? styles.actionBtnDisabled : null,
         pressed && !disabled ? styles.actionBtnPressed : null,
       ]}
     >
+      {isGlassSupported && !disabled ? (
+        <Host style={StyleSheet.absoluteFill} pointerEvents="none">
+          <Circle
+            modifiers={[
+              glassEffect({
+                glass: {
+                  variant: 'regular',
+                  interactive: true,
+                  ...(variant === 'primary' ? { tint: themeColors.accent } : {}),
+                },
+                shape: 'circle',
+              }),
+            ]}
+          />
+        </Host>
+      ) : null}
       <Animated.View style={iconStyle}>
         <AppIcon name={icon} size={BTN_ICON_SIZE} tintColor={iconTintColor} />
       </Animated.View>
@@ -86,7 +105,8 @@ const useStyles = makeStyles((theme) => ({
   actionBtn: {
     width: BTN_SIZE,
     height: BTN_SIZE,
-    borderRadius: 8,
+    borderRadius: isGlassSupported ? BTN_SIZE / 2 : 8,
+    overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
   },

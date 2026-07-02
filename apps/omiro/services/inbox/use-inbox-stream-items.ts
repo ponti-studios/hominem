@@ -9,12 +9,12 @@ import {
   readCachedInboxItems,
   replaceCachedInboxItems,
 } from '~/services/inbox/cache';
+import { getContentRoute } from '~/services/navigation/routes';
 import { inboxKeys } from '~/services/notes/query-keys';
 import {
   hasNonEmptyListData,
   resolveRestoredQueryState,
 } from '~/services/query/restored-query-state';
-import { getContentRoute } from '~/services/navigation/routes';
 
 interface UseInboxStreamItemsOptions {
   enabled?: boolean;

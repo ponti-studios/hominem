@@ -1,8 +1,8 @@
 import type { Chat } from '@hominem/rpc/types';
 import type { QueryClient } from '@tanstack/react-query';
 
-import { chatKeys } from '~/services/notes/query-keys';
 import { writeCachedChat, writeCachedChatMessages } from '~/services/content-cache';
+import { chatKeys } from '~/services/notes/query-keys';
 
 import {
   createOptimisticMessage,
@@ -49,7 +49,9 @@ export function appendAssistantChunk(
 
   queryClient.setQueryData<MessageOutput[]>(chatKeys.messages(chatId), (previousMessages) =>
     previousMessages?.map((message) =>
-      message.id === assistantMessageId ? { ...message, message: message.message + chunk } : message,
+      message.id === assistantMessageId
+        ? { ...message, message: message.message + chunk }
+        : message,
     ),
   );
   persistMessages(queryClient, chatId);

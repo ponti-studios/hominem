@@ -8,6 +8,7 @@ import { ComposerShell } from '~/components/composer/ComposerShell';
 import { ComposerTextInput } from '~/components/composer/ComposerTextInput';
 import { ComposerToolbar } from '~/components/composer/ComposerToolbar';
 import { useComposerController } from '~/components/composer/useComposerController';
+import { VoiceRecordingPanel } from '~/components/composer/VoiceRecordingPanel';
 import { normalizeChatTitle, useStartChatFromInbox } from '~/services/chat';
 import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 import { useTopAnchoredInbox } from '~/services/inbox/top-anchored-inbox';
@@ -53,9 +54,13 @@ export function InboxComposerContent({
     canPickMedia,
     canToggleVoice,
     handleVoicePress,
+    cancelVoiceRecording,
     isVoiceBusy,
     isCleaningVoice,
     isRecording,
+    isRecordingElsewhere,
+    recordingStartedAt,
+    recordingMeterings,
     isEnhanceOpen,
     enhanceInstruction,
     setEnhanceInstruction,
@@ -149,6 +154,7 @@ export function InboxComposerContent({
   return (
     <ComposerShell
       testID={shellTestId}
+      isRecording={isRecording}
       accessory={showAttachments ? <ComposerAttachmentRow /> : undefined}
       input={
         <ComposerTextInput
@@ -160,7 +166,13 @@ export function InboxComposerContent({
         />
       }
       inlinePanel={
-        isEnhanceOpen ? (
+        isRecording ? (
+          <VoiceRecordingPanel
+            startedAt={recordingStartedAt}
+            meterings={recordingMeterings}
+            onCancel={() => void cancelVoiceRecording()}
+          />
+        ) : isEnhanceOpen ? (
           <InlineEnhanceTray
             instruction={enhanceInstruction}
             onInstructionChange={setEnhanceInstruction}
@@ -180,6 +192,7 @@ export function InboxComposerContent({
         <ComposerToolbar
           mode="inbox"
           isRecording={isRecording}
+          isRecordingElsewhere={isRecordingElsewhere}
           isVoiceBusy={isVoiceBusy}
           isEnhancing={isEnhancing}
           isCleaningVoice={isCleaningVoice}
@@ -193,7 +206,9 @@ export function InboxComposerContent({
           onSubmit={() => void (isChatEntryMode ? handleStartChat() : handleSave())}
           submitTestID={isChatEntryMode ? 'composer-submit-chat' : 'composer-submit-note'}
           submitAccessibilityLabel={
-            isChatEntryMode ? t.inbox.screen.startChatSubmitA11y : t.inboxComposer.composer.saveNoteA11y
+            isChatEntryMode
+              ? t.inbox.screen.startChatSubmitA11y
+              : t.inboxComposer.composer.saveNoteA11y
           }
           secondaryAction={secondaryAction}
         />

@@ -86,7 +86,10 @@ function getChatId(c: { req: { param: (name: string) => string | undefined } }):
   return chatId;
 }
 
-function writeChunkEvent(stream: { writeSSE: (input: { data: string }) => Promise<void> }, chunk: string) {
+function writeChunkEvent(
+  stream: { writeSSE: (input: { data: string }) => Promise<void> },
+  chunk: string,
+) {
   return stream.writeSSE({ data: JSON.stringify({ type: 'chunk', chunk }) });
 }
 

@@ -31,9 +31,9 @@ import {
 import { useCreateChat } from '~/services/chat/use-create-chat';
 import { formatRelativeAge } from '~/services/date/format-relative-age';
 import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
-import { chatKeys } from '~/services/notes/query-keys';
 import { writeResumeTarget } from '~/services/navigation/launch-state';
 import { getContentRoute, getInboxRoute } from '~/services/navigation/routes';
+import { chatKeys } from '~/services/notes/query-keys';
 import t from '~/translations';
 
 function getConversationActionIcon(kind: string, type?: string) {

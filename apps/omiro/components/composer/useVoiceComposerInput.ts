@@ -1,7 +1,10 @@
+import type { VoiceDiscardReason } from '@hominem/rpc/voice-events';
 import { logger } from '@hominem/telemetry';
-import { useCallback, useState, useSyncExternalStore } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
 
 import {
+  discardRecording,
   getRecordingSnapshot,
   startRecording,
   stopRecording,
@@ -25,11 +28,22 @@ interface UseVoiceComposerInputOptions {
   onError?: (error: VoiceComposerError) => void;
 }
 
+// Expo Modules attaches a stable `code` string to errors thrown from a
+// native Exception (see VoiceTranscriberModule.swift's VoiceTranscriberException).
+function getNativeErrorCode(error: unknown): string | undefined {
+  if (error && typeof error === 'object' && 'code' in error) {
+    const code = (error as { code?: unknown }).code;
+    return typeof code === 'string' ? code : undefined;
+  }
+  return undefined;
+}
+
 export function useVoiceComposerInput({
   getMessage,
   setMessage,
   onError,
 }: UseVoiceComposerInputOptions) {
+  const ownerId = useId();
   const { cleanup, isCleaningVoice } = useVoiceCleanup();
   const recordingSnapshot = useSyncExternalStore(
     subscribeRecording,
@@ -38,6 +52,8 @@ export function useVoiceComposerInput({
   );
   const [error, setError] = useState<VoiceComposerError | null>(null);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const isStartingRef = useRef(false);
+
   const setVoiceError = useCallback(
     (nextError: VoiceComposerError) => {
       setError(nextError);
@@ -49,6 +65,9 @@ export function useVoiceComposerInput({
   const clearError = useCallback(() => {
     setError(null);
   }, []);
+
+  const isOwnedByThisComposer = recordingSnapshot.ownerId === ownerId;
+  const isRecordingElsewhere = isRecorderActive(recordingSnapshot.state) && !isOwnedByThisComposer;
 
   const processStoppedRecording = useCallback(
     async (fileUri: string) => {
@@ -86,7 +105,16 @@ export function useVoiceComposerInput({
           });
       } catch (error) {
         logger.error('[voice-transcriber] transcription failed', error as Error);
-        setVoiceError(createVoiceComposerError('transcription-failed'));
+        // Permission can be revoked mid-session (e.g. the user backgrounds
+        // the app, revokes Speech Recognition in Settings, then returns and
+        // stops a long recording) — route that case to the same actionable
+        // permission-denied UX instead of a generic transcription failure.
+        const code = getNativeErrorCode(error);
+        setVoiceError(
+          createVoiceComposerError(
+            code === 'MISSING_PERMISSION' ? 'permission-denied' : 'transcription-failed',
+          ),
+        );
       } finally {
         setIsTranscribing(false);
       }
@@ -95,10 +123,19 @@ export function useVoiceComposerInput({
   );
 
   const stopAndTranscribeRecording = useCallback(async () => {
-    const fileUri = await stopRecording();
-    if (!fileUri) return;
-    await processStoppedRecording(fileUri);
-  }, [processStoppedRecording]);
+    const result = await stopRecording(ownerId);
+    if (!result.ok || !result.fileUri) return;
+    await processStoppedRecording(result.fileUri);
+  }, [ownerId, processStoppedRecording]);
+
+  const cancelVoiceRecording = useCallback(
+    async (reason: VoiceDiscardReason = 'user-cancelled') => {
+      await discardRecording(ownerId, reason);
+      setError(null);
+      setIsTranscribing(false);
+    },
+    [ownerId],
+  );
 
   const ensureSpeechRecognitionPermission = useCallback(async () => {
     const currentStatus = await VoiceTranscriberModule.getPermissions();
@@ -111,30 +148,47 @@ export function useVoiceComposerInput({
   }, []);
 
   const startVoiceRecording = useCallback(async () => {
+    if (isStartingRef.current) return;
+    isStartingRef.current = true;
     setError(null);
+
     try {
-      const hasSpeechRecognitionPermission = await ensureSpeechRecognitionPermission();
+      let hasSpeechRecognitionPermission: boolean;
+      try {
+        hasSpeechRecognitionPermission = await ensureSpeechRecognitionPermission();
+      } catch {
+        setVoiceError(createVoiceComposerError('permission-denied'));
+        return;
+      }
+
       if (!hasSpeechRecognitionPermission) {
         setVoiceError(createVoiceComposerError('permission-denied'));
         return;
       }
-    } catch {
-      setVoiceError(createVoiceComposerError('permission-denied'));
-      return;
+
+      const result = await startRecording(ownerId);
+      // A concurrent duplicate tap racing this async permission check is not a
+      // real failure — the recorder singleton correctly rejected the second
+      // caller, so there's nothing to surface to the user.
+      if (result.ok || result.reason === 'busy') return;
+
+      setVoiceError(
+        createVoiceComposerError(
+          result.reason === 'permission-denied' ? 'permission-denied' : 'recording-failed',
+        ),
+      );
+    } finally {
+      isStartingRef.current = false;
     }
-
-    const result = await startRecording();
-    if (result.ok) return;
-
-    setVoiceError(
-      createVoiceComposerError(
-        result.reason === 'permission-denied' ? 'permission-denied' : 'recording-failed',
-      ),
-    );
-  }, [ensureSpeechRecognitionPermission, setVoiceError]);
+  }, [ensureSpeechRecognitionPermission, ownerId, setVoiceError]);
 
   const handleVoicePress = useCallback(async () => {
-    if (recordingSnapshot.state === 'RECORDING' || recordingSnapshot.state === 'PAUSED') {
+    if (isRecordingElsewhere) return;
+
+    if (
+      isOwnedByThisComposer &&
+      (recordingSnapshot.state === 'RECORDING' || recordingSnapshot.state === 'PAUSED')
+    ) {
       await stopAndTranscribeRecording();
       return;
     }
@@ -144,11 +198,41 @@ export function useVoiceComposerInput({
     }
 
     await startVoiceRecording();
-  }, [recordingSnapshot.state, startVoiceRecording, stopAndTranscribeRecording]);
+  }, [
+    isOwnedByThisComposer,
+    isRecordingElsewhere,
+    recordingSnapshot.state,
+    startVoiceRecording,
+    stopAndTranscribeRecording,
+  ]);
 
-  const isRecording = isRecorderActive(recordingSnapshot.state);
+  // Discard (never transcribe) an owned recording left behind when this
+  // composer disappears — an unmount or navigation-away is abandonment, not
+  // user intent to submit.
+  useEffect(() => {
+    return () => {
+      const snapshot = getRecordingSnapshot();
+      if (snapshot.ownerId === ownerId && isRecorderActive(snapshot.state)) {
+        void discardRecording(ownerId, 'unmounted');
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ownerId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        const snapshot = getRecordingSnapshot();
+        if (snapshot.ownerId === ownerId && isRecorderActive(snapshot.state)) {
+          void discardRecording(ownerId, 'navigated-away');
+        }
+      };
+    }, [ownerId]),
+  );
+
+  const isRecording = isOwnedByThisComposer && isRecorderActive(recordingSnapshot.state);
   const voiceState = deriveVoiceComposerState({
-    recorderState: recordingSnapshot.state,
+    recorderState: isOwnedByThisComposer ? recordingSnapshot.state : 'IDLE',
     isTranscribing,
     isCleaningVoice,
     error,
@@ -158,11 +242,15 @@ export function useVoiceComposerInput({
 
   return {
     handleVoicePress,
+    cancelVoiceRecording,
     isBusy,
     isRecording,
+    isRecordingElsewhere,
     isCleaningVoice,
     voiceState,
     error,
     clearError,
+    recordingStartedAt: isRecording ? recordingSnapshot.startedAt : null,
+    recordingMeterings: isRecording ? recordingSnapshot.meterings : [],
   };
 }

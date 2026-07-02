@@ -1,14 +1,14 @@
-import NetInfo from '@react-native-community/netinfo';
 import type { ChatStreamEvent } from '@hominem/rpc/types';
+import NetInfo from '@react-native-community/netinfo';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { randomUUID } from 'expo-crypto';
 import { useCallback, useRef } from 'react';
 
 import { API_BASE_URL } from '~/constants';
 import { useAuth } from '~/services/auth/auth-provider';
+import { writeCachedChatMessages } from '~/services/content-cache';
 import { chatKeys, inboxKeys } from '~/services/notes/query-keys';
 import { isTestMode, MOCK_AI_RESPONSE } from '~/services/testing/test-mode';
-import { writeCachedChatMessages } from '~/services/content-cache';
 
 import {
   createOptimisticMessage,

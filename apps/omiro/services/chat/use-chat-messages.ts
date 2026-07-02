@@ -10,8 +10,8 @@ import {
 } from '~/services/content-cache';
 
 import { chatKeys } from '../notes/query-keys';
-import { type MessageOutput } from './chatMessages';
 import { selectChat } from './chat-activity';
+import { type MessageOutput } from './chatMessages';
 
 export const CHAT_MESSAGES_LIMIT = 50;
 

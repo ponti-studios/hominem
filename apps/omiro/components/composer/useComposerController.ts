@@ -39,9 +39,13 @@ export function useComposerController({
 
   const {
     handleVoicePress,
+    cancelVoiceRecording,
     isBusy: isVoiceBusy,
     isCleaningVoice,
     isRecording,
+    isRecordingElsewhere,
+    recordingStartedAt,
+    recordingMeterings,
   } = useVoiceComposerInput({ getMessage, setMessage, onError: onVoiceError });
 
   const {
@@ -59,7 +63,8 @@ export function useComposerController({
   const canSubmit = hasContent && !isInteractionBusy;
   const canOpenEnhance = hasContent && !isInteractionBusy && !isCleaningVoice;
   const canPickMedia = !isInteractionBusy;
-  const canToggleVoice = isRecording || (!isInteractionBusy && !isCleaningVoice);
+  const canToggleVoice =
+    isRecording || (!isInteractionBusy && !isCleaningVoice && !isRecordingElsewhere);
   const showAttachments = attachments.length > 0 || errors.length > 0 || isUploading;
 
   const clearComposer = useCallback(() => {
@@ -83,9 +88,13 @@ export function useComposerController({
     canToggleVoice,
     isInteractionBusy,
     handleVoicePress,
+    cancelVoiceRecording,
     isVoiceBusy,
     isCleaningVoice,
     isRecording,
+    isRecordingElsewhere,
+    recordingStartedAt,
+    recordingMeterings,
     isEnhanceOpen,
     enhanceInstruction,
     setEnhanceInstruction,

@@ -12,6 +12,7 @@ import t from '~/translations';
 interface ComposerToolbarProps {
   mode: 'inbox' | 'chat';
   isRecording: boolean;
+  isRecordingElsewhere: boolean;
   isVoiceBusy: boolean;
   isEnhancing: boolean;
   isCleaningVoice: boolean;
@@ -40,6 +41,7 @@ const pillLayout = LinearTransition.duration(180);
 export function ComposerToolbar({
   mode,
   isRecording,
+  isRecordingElsewhere,
   isVoiceBusy,
   isEnhancing,
   isCleaningVoice,
@@ -70,7 +72,11 @@ export function ComposerToolbar({
           icon={isRecording ? 'stop.fill' : 'mic.fill'}
           onPress={onVoicePress}
           accessibilityLabel={
-            isRecording ? t.inboxComposer.composer.stopVoiceInputA11y : t.inboxComposer.composer.startVoiceInputA11y
+            isRecordingElsewhere
+              ? t.inboxComposer.composer.recordingElsewhereA11y
+              : isRecording
+                ? t.inboxComposer.composer.stopVoiceInputA11y
+                : t.inboxComposer.composer.startVoiceInputA11y
           }
           disabled={!canToggleVoice}
           isAnimating={isVoiceBusy}
@@ -87,7 +93,7 @@ export function ComposerToolbar({
           </Reanimated.View>
         ) : null}
         {mode === 'inbox' && secondaryAction && canSubmit ? (
-          <Reanimated.View entering={buttonEnter} exiting={buttonExit} style={styles.secondarySlot}>
+          <Reanimated.View entering={buttonEnter} exiting={buttonExit}>
             <ActionButton
               icon={secondaryAction.icon}
               onPress={secondaryAction.onPress}
@@ -125,7 +131,7 @@ export function ComposerToolbar({
   );
 }
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles(() => ({
   toolbar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -139,12 +145,8 @@ const useStyles = makeStyles((theme) => ({
   trailing: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing[1],
-    backgroundColor: theme.colors['bg-surface'],
+    gap: spacing[2],
     borderRadius: 32,
     paddingHorizontal: spacing[1],
-  },
-  secondarySlot: {
-    marginRight: spacing[2],
   },
 }));

@@ -1,5 +1,5 @@
-import NetInfo from '@react-native-community/netinfo';
 import type { ChatsStartStreamEvent, ChatsStartStreamInput } from '@hominem/rpc/types';
+import NetInfo from '@react-native-community/netinfo';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { randomUUID } from 'expo-crypto';
 import { useRouter } from 'expo-router';
@@ -15,8 +15,8 @@ import {
 } from '~/services/chat/chat-stream-cache';
 import { streamSSE } from '~/services/chat/stream-sse';
 import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
-import { chatKeys } from '~/services/notes/query-keys';
 import { getContentRoute } from '~/services/navigation/routes';
+import { chatKeys } from '~/services/notes/query-keys';
 
 interface StartChatFromInboxOptions {
   onReady?: () => void;

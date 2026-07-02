@@ -13,10 +13,10 @@ import AppIcon from '~/components/ui/icon';
 import { useNoteEditor } from '~/hooks/use-note-editor';
 import { useNoteToolbar } from '~/hooks/use-note-toolbar';
 import { useInlineEnhance } from '~/services/ai';
-import { useNoteDelete } from '~/services/notes/use-note-delete';
-import { useNoteQuery } from '~/services/notes/use-note-query';
 import { writeResumeTarget } from '~/services/navigation/launch-state';
 import { getInboxRoute } from '~/services/navigation/routes';
+import { useNoteDelete } from '~/services/notes/use-note-delete';
+import { useNoteQuery } from '~/services/notes/use-note-query';
 import t from '~/translations';
 
 const COMPOSER_CLEARANCE = 220;

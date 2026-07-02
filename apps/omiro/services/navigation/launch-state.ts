@@ -57,10 +57,7 @@ export interface ChatComposerAttachment {
   uploadedFile?: UploadedFile;
 }
 
-interface SerializedChatComposerAttachment extends Omit<
-  ChatComposerAttachment,
-  'uploadedFile'
-> {
+interface SerializedChatComposerAttachment extends Omit<ChatComposerAttachment, 'uploadedFile'> {
   uploadedFile?: SerializedUploadedFile;
 }
 
