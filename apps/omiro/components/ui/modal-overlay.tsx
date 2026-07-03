@@ -41,11 +41,7 @@ export function ModalOverlay({
     >
       <Backdrop
         onPress={dismissOnBackdropPress ? onClose : undefined}
-        style={[
-          styles.backdrop,
-          { backgroundColor: themeColors[backdropToken] },
-          styles[position],
-        ]}
+        style={[styles.backdrop, { backgroundColor: themeColors[backdropToken] }, styles[position]]}
       >
         {children}
       </Backdrop>

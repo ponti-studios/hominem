@@ -28,11 +28,15 @@ vi.mock('../lib/logger', () => ({
   },
 }));
 
-vi.mock('@hominem/storage', () => ({
-  createStorageService: mocks.createStorageService,
-  resolveUploadMimeType: mocks.resolveUploadMimeType,
-  validateFile: mocks.validateFile,
-}));
+vi.mock('@hominem/storage', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@hominem/storage')>();
+  return {
+    ...actual,
+    createStorageService: mocks.createStorageService,
+    resolveUploadMimeType: mocks.resolveUploadMimeType,
+    validateFile: mocks.validateFile,
+  };
+});
 
 vi.mock('../lib/services/resume-conversion.service', () => ({
   saveResumeToDatabase: mocks.saveResumeToDatabase,

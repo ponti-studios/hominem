@@ -1,7 +1,7 @@
+import 'dotenv/config'
 import { defineConfig } from 'vitest/config'
 
-const TEST_DATABASE_URL =
-  process.env.DATABASE_URL_TEST;
+const TEST_DATABASE_URL = process.env.DATABASE_URL_TEST;
 
 export default defineConfig({
   resolve: {

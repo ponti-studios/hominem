@@ -265,7 +265,8 @@ function NoteEditorBody({
     [commitDraft, draft.title],
   );
 
-  const handleDetach = (fileId: string) => detachFile(fileId, note.files, draft.title, draft.content);
+  const handleDetach = (fileId: string) =>
+    detachFile(fileId, note.files, draft.title, draft.content);
 
   const dateline = formatNoteDateline(note);
 
@@ -412,7 +413,9 @@ function NoteEditorBody({
         ) : null}
       </ScrollView>
 
-      <NoteToolbar onAction={(command) => handleContentChange(formatting.applyFormat(draft.content, command))} />
+      <NoteToolbar
+        onAction={(command) => handleContentChange(formatting.applyFormat(draft.content, command))}
+      />
     </>
   );
 }

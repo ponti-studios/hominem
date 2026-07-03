@@ -1,5 +1,5 @@
-import { FlashList, type ListRenderItem } from '@shopify/flash-list';
 import type { Task } from '@hominem/rpc/types';
+import { FlashList, type ListRenderItem } from '@shopify/flash-list';
 import { Stack, useIsFocused, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { Alert, RefreshControl, View } from 'react-native';

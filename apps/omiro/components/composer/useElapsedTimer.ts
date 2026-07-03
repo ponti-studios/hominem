@@ -10,16 +10,21 @@ function formatElapsed(ms: number): string {
 // Ticks off a fixed `startedAt` timestamp (not a local counter) so the
 // elapsed time stays correct even if the panel showing it remounts mid-recording.
 export function useElapsedTimer(startedAt: number | null): string {
-  const [now, setNow] = useState(() => Date.now());
+  const [prevStartedAt, setPrevStartedAt] = useState(startedAt);
+  const [elapsedMs, setElapsedMs] = useState(0);
+
+  if (startedAt !== prevStartedAt) {
+    setPrevStartedAt(startedAt);
+    setElapsedMs(0);
+  }
 
   useEffect(() => {
     if (startedAt === null) return;
 
-    setNow(Date.now());
-    const interval = setInterval(() => setNow(Date.now()), 1000);
+    const interval = setInterval(() => setElapsedMs(Date.now() - startedAt), 1000);
     return () => clearInterval(interval);
   }, [startedAt]);
 
   if (startedAt === null) return '0:00';
-  return formatElapsed(now - startedAt);
+  return formatElapsed(elapsedMs);
 }

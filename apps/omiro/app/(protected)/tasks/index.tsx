@@ -1,11 +1,11 @@
-import { FlashList, type ListRenderItem } from '@shopify/flash-list';
 import type { TaskListItem as TaskListItemModel } from '@hominem/rpc/types';
+import { FlashList, type ListRenderItem } from '@shopify/flash-list';
 import { Stack, useIsFocused, useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { RefreshControl, View } from 'react-native';
 
-import { TaskListItem } from '~/components/tasks/TaskListItem';
 import { SwipeableTaskRow } from '~/components/tasks/SwipeableTaskRow';
+import { TaskListItem } from '~/components/tasks/TaskListItem';
 import { makeStyles } from '~/components/theme';
 import { EmptyState } from '~/components/ui/EmptyState';
 import { getTaskDetailRoute } from '~/services/navigation/routes';

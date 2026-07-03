@@ -111,9 +111,7 @@ export const VectorDocumentRepository = {
     let query = handle
       .selectFrom('app.vector_documents')
       .selectAll()
-      .select(
-        sql<number>`1 - (embedding <=> ${vectorLiteral}::vector)`.as('similarity'),
-      )
+      .select(sql<number>`1 - (embedding <=> ${vectorLiteral}::vector)`.as('similarity'))
       .where('owner_userid', '=', input.userId);
 
     if (input.entityType) {

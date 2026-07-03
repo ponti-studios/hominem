@@ -52,9 +52,7 @@ export function useTaskComplete({ parentId }: UseTaskCompleteOptions = {}) {
     },
     onSuccess: (updatedTask) => {
       queryClient.setQueryData<TaskListItem[]>(taskKeys.all, (current) =>
-        current?.map((task) =>
-          task.id === updatedTask.id ? { ...task, ...updatedTask } : task,
-        ),
+        current?.map((task) => (task.id === updatedTask.id ? { ...task, ...updatedTask } : task)),
       );
     },
   });

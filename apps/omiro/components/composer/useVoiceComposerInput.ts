@@ -118,7 +118,10 @@ export function useVoiceComposerInput({
             });
           });
       } catch (error) {
-        logger.error('[voice-transcriber] processStoppedRecording: transcription failed', error as Error);
+        logger.error(
+          '[voice-transcriber] processStoppedRecording: transcription failed',
+          error as Error,
+        );
         // Permission can be revoked mid-session (e.g. the user backgrounds
         // the app, revokes Speech Recognition in Settings, then returns and
         // stops a long recording) — route that case to the same actionable
@@ -139,7 +142,9 @@ export function useVoiceComposerInput({
   );
 
   const stopAndTranscribeRecording = useCallback(async () => {
-    logger.info('[voice-transcriber] stopAndTranscribeRecording: calling stopRecording', { ownerId });
+    logger.info('[voice-transcriber] stopAndTranscribeRecording: calling stopRecording', {
+      ownerId,
+    });
     const result = await stopRecording(ownerId);
     logger.info('[voice-transcriber] stopAndTranscribeRecording: stopRecording resolved', {
       ok: result.ok,
@@ -147,7 +152,9 @@ export function useVoiceComposerInput({
       reason: result.ok ? undefined : result.reason,
     });
     if (!result.ok || !result.fileUri) {
-      logger.warn('[voice-transcriber] stopAndTranscribeRecording: no fileUri, aborting transcription');
+      logger.warn(
+        '[voice-transcriber] stopAndTranscribeRecording: no fileUri, aborting transcription',
+      );
       return;
     }
     await processStoppedRecording(result.fileUri);
@@ -250,7 +257,6 @@ export function useVoiceComposerInput({
         void discardRecording(ownerId, 'unmounted');
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ownerId]);
 
   useFocusEffect(

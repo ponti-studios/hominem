@@ -22,11 +22,11 @@ import { Alert, Share, TextInput } from 'react-native';
 
 import { loadMarkdown } from '../components/chat/chat-message';
 import type { SendInput } from '../services/chat/use-send-message';
-import t from '../translations';
 import {
   hasNonEmptyListData,
   resolveRestoredQueryState,
 } from '../services/query/restored-query-state';
+import t from '../translations';
 
 export interface ChatServices {
   useChatMessages: (args: { chatId: string }) => {

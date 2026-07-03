@@ -17,7 +17,11 @@ import {
   readInboxDraft,
   writeInboxDraft,
 } from '~/services/navigation/launch-state';
-import { getArchivedChatsRoute, getSettingsRoute, getTasksRoute } from '~/services/navigation/routes';
+import {
+  getArchivedChatsRoute,
+  getSettingsRoute,
+  getTasksRoute,
+} from '~/services/navigation/routes';
 import t from '~/translations';
 
 export default function InboxScreen() {
