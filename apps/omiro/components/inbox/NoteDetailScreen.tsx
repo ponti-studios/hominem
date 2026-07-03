@@ -349,6 +349,7 @@ function NoteEditorBody({
             selection={formatting.controlledSelection}
             onChangeText={handleContentChange}
             onSelectionChange={formatting.onSelectionChange}
+            onFocus={() => formatting.onFocus(draft.content)}
             placeholder={t.notes.editor.contentPlaceholder}
             placeholderTextColor={themeColors['text-tertiary']}
             cursorColor={themeColors.accent}
