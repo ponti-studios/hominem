@@ -1,12 +1,20 @@
 import { createHash } from 'crypto';
 
-import { isValidGoogleHost } from '@hominem/utils/google';
-import { logger } from '@hominem/utils/logger';
+import { logger } from '@hominem/telemetry';
+
+function isValidGoogleHost(input: string): boolean {
+  try {
+    const url = new URL(input);
+    return url.hostname.endsWith('.google.com') || url.hostname.endsWith('.googleapis.com') || url.hostname.endsWith('.googleusercontent.com');
+  } catch {
+    return false;
+  }
+}
 import type { Context } from 'hono';
 import { Hono } from 'hono';
 
 import { ValidationError, ForbiddenError, UnavailableError, InternalError } from '../errors';
-import { cache } from '../lib/redis';
+import { redis as cache } from '@hominem/services/redis';
 import type { AppEnv } from '../server';
 
 export const imagesRoutes = new Hono<AppEnv>();

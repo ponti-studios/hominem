@@ -1,3 +1,4 @@
+import type { ChatStreamEvent } from '@hominem/rpc/types';
 import NetInfo from '@react-native-community/netinfo';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { randomUUID } from 'expo-crypto';
@@ -5,12 +6,16 @@ import { useCallback, useRef } from 'react';
 
 import { API_BASE_URL } from '~/constants';
 import { useAuth } from '~/services/auth/auth-provider';
+import { writeCachedChatMessages } from '~/services/content-cache';
 import { chatKeys, inboxKeys } from '~/services/notes/query-keys';
-import { writeCachedChatMessages } from '~/services/workspace/content-cache';
-
-import { createOptimisticMessage, type MessageOutput } from './chatMessages';
-import { streamSSE } from './stream-sse';
 import { isTestMode, MOCK_AI_RESPONSE } from '~/services/testing/test-mode';
+
+import {
+  createOptimisticMessage,
+  createStreamingPlaceholder,
+  type MessageOutput,
+} from './chatMessages';
+import { streamSSE } from './stream-sse';
 
 // Batch chunk writes at ~2 frames (60 fps) to avoid a setQueryData per token.
 const FLUSH_INTERVAL_MS = 32;
@@ -19,23 +24,6 @@ export interface SendInput {
   message: string;
   fileIds?: string[];
   noteIds?: string[];
-}
-
-function createStreamingPlaceholder(chatId: string, id: string): MessageOutput {
-  return {
-    id,
-    role: 'assistant',
-    message: '',
-    created_at: new Date().toISOString(),
-    chat_id: chatId,
-    profile_id: '',
-    focus_ids: null,
-    focus_items: null,
-    reasoning: null,
-    referencedNotes: null,
-    toolCalls: null,
-    isStreaming: true,
-  };
 }
 
 export function useSendMessage({ chatId }: { chatId: string }) {
@@ -80,9 +68,13 @@ export function useSendMessage({ chatId }: { chatId: string }) {
     writeBuffer();
   }, [writeBuffer]);
 
-  const onChunk = useCallback(
-    (chunk: string) => {
-      chunkBufferRef.current += chunk;
+  const onEvent = useCallback(
+    (event: ChatStreamEvent) => {
+      if (event.type !== 'chunk') {
+        return;
+      }
+
+      chunkBufferRef.current += event.chunk;
       scheduleFlush();
     },
     [scheduleFlush],
@@ -118,7 +110,7 @@ export function useSendMessage({ chatId }: { chatId: string }) {
       if (isTestMode()) {
         // Simulate streaming token-by-token without hitting the real API.
         for (const char of MOCK_AI_RESPONSE) {
-          onChunk(char);
+          onEvent({ type: 'chunk', chunk: char });
           await new Promise((r) => setTimeout(r, 2));
         }
         flushNow();
@@ -128,11 +120,12 @@ export function useSendMessage({ chatId }: { chatId: string }) {
       const net = await NetInfo.fetch();
       if (net.isConnected === false) throw new Error('offline_unavailable');
 
-      await streamSSE({
+      await streamSSE<ChatStreamEvent>({
         url: `${API_BASE_URL}/api/chats/${chatId}/stream`,
         payload: { message: message.trim(), fileIds, noteIds },
         getHeaders: getAuthHeaders,
-        onChunk,
+        onEvent,
+        onDone: flushNow,
       });
 
       flushNow();

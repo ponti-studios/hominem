@@ -1,4 +1,5 @@
 import { formatCurrency } from '@hominem/utils/numbers';
+
 import { cn } from '~/lib/utils';
 export interface CareerTimelineItem {
   date: string;

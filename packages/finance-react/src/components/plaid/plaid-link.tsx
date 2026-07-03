@@ -1,14 +1,14 @@
 import { useAuthContext } from '@hominem/auth';
 import { toast } from '@hominem/ui';
 import { Button } from '@hominem/ui/button';
-import { Alert, AlertDescription, AlertTitle } from '@hominem/ui/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@hominem/ui/alert';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@hominem/ui/components/ui/card';
+} from '@hominem/ui/card';
 import { cn } from '@hominem/ui/lib/utils';
 import { AlertCircle, Building2, Link } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';

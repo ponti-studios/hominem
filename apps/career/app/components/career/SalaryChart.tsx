@@ -135,7 +135,14 @@ export function SalaryChart({ data }: SalaryChartProps) {
           const y = getY(item.salary);
           return (
             <g key={`${item.year}-${index}`}>
-              <circle cx={x} cy={y} r="6" fill="var(--color-card)" stroke="var(--color-success)" strokeWidth="3" />
+              <circle
+                cx={x}
+                cy={y}
+                r="6"
+                fill="var(--color-card)"
+                stroke="var(--color-success)"
+                strokeWidth="3"
+              />
               {/* Year labels */}
               <text
                 x={x}

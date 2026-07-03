@@ -1,40 +1,31 @@
-import type { FlashListRef } from '@shopify/flash-list';
-import { Stack, useIsFocused, useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import ExpoSegmentedControl from '@expo/ui/community/segmented-control';
+import { Host, RNHostView } from '@expo/ui/swift-ui';
+import { Stack, useIsFocused, useRouter } from 'expo-router';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { RefreshControl, View } from 'react-native';
-import type { TextInput } from 'react-native';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Composer } from '~/components/composer/Composer';
-import { makeStyles } from '~/components/theme';
-import { WorkspaceHomeHeader } from '~/components/workspace/WorkspaceHomeHeader';
-import { WorkspaceHomeList } from '~/components/workspace/WorkspaceHomeList';
-import { WorkspaceSearchModal } from '~/components/workspace/WorkspaceSearchModal';
-import { useTopAnchoredFeed } from '~/services/inbox/top-anchored-feed';
+import { InboxList, type InboxListRef } from '~/components/inbox/InboxList';
+import { makeStyles, useThemeColors } from '~/components/theme';
+import { buildInboxSections, type InboxTab } from '~/services/inbox/screen-state';
+import { useTopAnchoredInbox } from '~/services/inbox/top-anchored-inbox';
 import { useInboxStreamItems } from '~/services/inbox/use-inbox-stream-items';
-import { recordWorkspaceScreenReady } from '~/services/performance/startup-metrics';
 import {
-  buildWorkspaceHomeSections,
-  type WorkspaceHomeTab,
-} from '~/services/workspace/home-screen-state';
-import {
-  clearFeedDraft,
-  consumeWorkspaceRestoreAttempt,
-  readFeedDraft,
-  writeFeedDraft,
-} from '~/services/workspace/launch-state';
-import {
-  getWorkspaceArchivedChatsRoute,
-  getWorkspaceSettingsRoute,
-} from '~/services/workspace/routes';
+  clearInboxDraft,
+  readInboxDraft,
+  writeInboxDraft,
+} from '~/services/navigation/launch-state';
+import { getArchivedChatsRoute, getSettingsRoute } from '~/services/navigation/routes';
+import t from '~/translations';
 
-export default function FeedScreen() {
+export default function InboxScreen() {
   const styles = useStyles();
+  const themeColors = useThemeColors();
   const isFocused = useIsFocused();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams<{ seed?: string }>();
   const {
     error,
     items,
@@ -45,113 +36,120 @@ export default function FeedScreen() {
     isFetchingNextPage,
     refetch,
   } = useInboxStreamItems({ enabled: isFocused });
-  const listRef = useRef<FlashListRef<any>>(null);
-  const searchInputRef = useRef<TextInput>(null);
-  const [activeTab, setActiveTab] = useState<WorkspaceHomeTab>('notes');
+  const listRef = useRef<InboxListRef>(null);
+  const [activeTab, setActiveTab] = useState<InboxTab>('notes');
   const [searchQuery, setSearchQuery] = useState('');
-  const [isSearchVisible, setIsSearchVisible] = useState(false);
+  const inboxDraft = readInboxDraft();
 
-  useTopAnchoredFeed({ listRef, headKey: items[0]?.id ?? null, isFocused });
+  useTopAnchoredInbox({ listRef, headKey: items[0]?.id ?? null, isFocused });
 
-  useEffect(() => {
-    if (!isFocused || params.seed) return;
-    if (!consumeWorkspaceRestoreAttempt()) return;
-    if (readFeedDraft().trim().length > 0) return;
-    recordWorkspaceScreenReady({ target: 'feed', restoreSource: 'default_feed' });
-  }, [isFocused, params.seed]);
+  const handleOpenSettings = useCallback(() => router.push(getSettingsRoute()), [router]);
 
-  useEffect(() => {
-    if (!isFocused) return;
-    if (params.seed) {
-      recordWorkspaceScreenReady({ target: 'feed', restoreSource: 'default_feed' });
-      return;
-    }
-    if (readFeedDraft().trim().length > 0) {
-      recordWorkspaceScreenReady({ target: 'feed', restoreSource: 'default_feed' });
-    }
-  }, [isFocused, params.seed]);
-
-  const handleOpenSettings = useCallback(() => router.push(getWorkspaceSettingsRoute()), [router]);
-
-  const handleOpenArchivedChats = useCallback(
-    () => router.push(getWorkspaceArchivedChatsRoute()),
-    [router],
-  );
-
-  const handleOpenSearch = useCallback(() => setIsSearchVisible(true), []);
-
-  const handleCloseSearch = useCallback(() => {
-    setIsSearchVisible(false);
-    setSearchQuery('');
-  }, []);
+  const handleOpenArchivedChats = useCallback(() => router.push(getArchivedChatsRoute()), [router]);
 
   const { searchResults, visibleItems } = useMemo(
     () =>
-      buildWorkspaceHomeSections({
+      buildInboxSections({
         items,
         tab: activeTab,
         searchQuery,
       }),
     [activeTab, items, searchQuery],
   );
+  const isSearching = searchQuery.trim().length > 0;
+  const displayItems = isSearching ? searchResults : visibleItems;
 
   return (
     <View style={styles.container}>
       <Stack.Screen
         options={{
-          headerShown: false,
+          headerShown: true,
+          title: '',
+          headerSearchBarOptions: {
+            placeholder: t.inbox.screen.searchPlaceholder,
+            placement: 'integratedButton',
+            allowToolbarIntegration: false,
+            hideWhenScrolling: false,
+            hideNavigationBar: false,
+            obscureBackground: false,
+            onCancelButtonPress: () => setSearchQuery(''),
+            onChangeText: (event) => setSearchQuery(event.nativeEvent.text),
+            tintColor: themeColors.foreground,
+          },
         }}
       />
-
-      <WorkspaceHomeHeader
-        activeTab={activeTab}
-        topInset={insets.top}
-        onChangeTab={setActiveTab}
-        onOpenArchivedChats={handleOpenArchivedChats}
-        onOpenSearch={handleOpenSearch}
-        onOpenSettings={handleOpenSettings}
-      />
+      <Stack.Toolbar placement="left">
+        <Stack.Toolbar.View hidesSharedBackground>
+          <Host>
+            <RNHostView matchContents>
+              <ExpoSegmentedControl
+                selectedIndex={activeTab === 'notes' ? 1 : 0}
+                style={styles.segmentedControl}
+                testID="inbox-tab-control"
+                values={[t.inbox.screen.chatsTab, t.inbox.screen.notesTab]}
+                onChange={(event) =>
+                  setActiveTab(event.nativeEvent.selectedSegmentIndex === 1 ? 'notes' : 'chats')
+                }
+              />
+            </RNHostView>
+          </Host>
+        </Stack.Toolbar.View>
+      </Stack.Toolbar>
+      <Stack.Toolbar placement="right">
+        <Stack.Toolbar.Menu
+          accessibilityLabel={t.inbox.screen.openMenuA11y}
+          icon="person.crop.circle"
+          title="Inbox"
+        >
+          <Stack.Toolbar.MenuAction icon="archivebox" onPress={handleOpenArchivedChats}>
+            {t.inbox.screen.archivedChats}
+          </Stack.Toolbar.MenuAction>
+          <Stack.Toolbar.MenuAction icon="gearshape" onPress={handleOpenSettings}>
+            {t.inbox.screen.settings}
+          </Stack.Toolbar.MenuAction>
+        </Stack.Toolbar.Menu>
+      </Stack.Toolbar>
 
       <View style={styles.listWrap}>
-        <WorkspaceHomeList
-          contentPaddingBottom={insets.bottom + 164}
-          error={error}
-          isFetchingNextPage={isFetchingNextPage}
-          isLoading={isInitialLoading}
-          items={visibleItems}
-          listRef={listRef}
-          tab={activeTab}
-          onEndReached={() => {
-            if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
-          }}
-          refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={refetch} />}
-        />
+        <View style={styles.listInner}>
+          <InboxList
+            contentPaddingBottom={insets.bottom + 164}
+            contentPaddingTop={4}
+            error={error}
+            isFetchingNextPage={isFetchingNextPage}
+            isLoading={isInitialLoading}
+            items={displayItems}
+            listRef={listRef}
+            tab={activeTab}
+            onEndReached={() => {
+              if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
+            }}
+            refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={refetch} />}
+          />
+        </View>
       </View>
 
       <KeyboardStickyView
-        offset={{ closed: 0, opened: 0 }}
+        offset={{ closed: 0, opened: 40 }}
         pointerEvents="box-none"
         style={styles.composerDock}
       >
-        <View style={[styles.composerWrap, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+        {/* oxfmt-ignore */}
+        <View
+          style={[
+            styles.composerWrap,
+            { paddingBottom: Math.max(insets.bottom, 12) },
+          ]}
+        >
           <Composer
-            mode="feed"
+            mode="inbox"
             entryMode={activeTab === 'chats' ? 'chat' : 'note'}
-            initialDraft={readFeedDraft()}
-            onDraftChange={writeFeedDraft}
-            onClearDraft={clearFeedDraft}
+            initialMessage={inboxDraft}
+            onDraftChange={writeInboxDraft}
+            onClearDraft={clearInboxDraft}
           />
         </View>
       </KeyboardStickyView>
-
-      <WorkspaceSearchModal
-        visible={isSearchVisible}
-        searchInputRef={searchInputRef}
-        searchQuery={searchQuery}
-        results={searchResults}
-        onClose={handleCloseSearch}
-        onChangeSearchQuery={setSearchQuery}
-      />
     </View>
   );
 }
@@ -164,15 +162,21 @@ const useStyles = makeStyles((theme) => ({
     right: 0,
   },
   composerWrap: {
-    backgroundColor: 'transparent',
-    paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingHorizontal: 8,
+    paddingTop: 8,
   },
   container: {
     backgroundColor: theme.colors['bg-base'],
     flex: 1,
   },
+  listInner: {
+    flex: 1,
+  },
   listWrap: {
     flex: 1,
+  },
+  segmentedControl: {
+    height: 32,
+    width: 168,
   },
 }));

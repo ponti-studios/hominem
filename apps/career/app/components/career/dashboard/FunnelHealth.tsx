@@ -1,4 +1,5 @@
-import { Card, CardContent } from '@hominem/ui/card';
+import { Card, CardContent } from '@hominem/ui';
+
 import type { ApplicationWithCompany } from '~/types/applications';
 
 interface StepRate {
@@ -12,9 +13,7 @@ function getStepRates(applications: ApplicationWithCompany[]): StepRate[] {
 
   const responses = applications.filter((a) => a.response_date).length;
   const interviews = applications.filter((a) => a.first_interview_date).length;
-  const offers = applications.filter(
-    (a) => a.status === 'OFFER' || a.status === 'ACCEPTED',
-  ).length;
+  const offers = applications.filter((a) => a.status === 'OFFER' || a.status === 'ACCEPTED').length;
 
   return [
     {
@@ -46,7 +45,7 @@ function getInterpretation(steps: StepRate[]): string {
   if (offerStep.rate < 25) {
     return "You're reaching interviews but not converting to offers. That's a closing problem — focus on interview preparation and how you handle the offer conversation.";
   }
-  return "Your funnel looks healthy. Keep the volume and quality up.";
+  return 'Your funnel looks healthy. Keep the volume and quality up.';
 }
 
 function rateColor(rate: number) {

@@ -1,11 +1,11 @@
-import { Label } from '@hominem/ui/components/ui/label';
+import { Label } from '@hominem/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@hominem/ui/components/ui/select';
+} from '@hominem/ui/select';
 import { useId } from 'react';
 
 export interface TagOption {

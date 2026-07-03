@@ -1,5 +1,5 @@
-import { logger } from '@hominem/utils/logger';
-import { fileStorageService } from '@hominem/utils/storage';
+import { logger } from '@hominem/telemetry';
+import { fileStorageService } from '@hominem/storage';
 import { Hono } from 'hono';
 import * as z from 'zod';
 

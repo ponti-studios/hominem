@@ -1,5 +1,5 @@
-import { createAuthEntryComponent } from '@hominem/ui';
-import { createAuthEntryAction, createAuthEntryLoader } from '@hominem/ui/auth-server-routes';
+import { createAuthEntryComponent } from '~/lib/ui-shims';
+import { createAuthEntryAction, createAuthEntryLoader } from '~/lib/auth-server-routes';
 
 import { AUTH_CONFIG, AUTH_SERVER_ROUTE_CONFIG } from './config';
 

@@ -1,7 +1,7 @@
 import type { Merchant } from '@hominem/rpc/types/finance.types';
-import { Badge } from '@hominem/ui/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/components/ui/card';
-import { Skeleton } from '@hominem/ui/components/ui/skeleton';
+import { Badge } from '@hominem/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
+import { Skeleton } from '@hominem/ui/skeleton';
 
 import { useFinanceTopMerchants } from '../../hooks/use-finance-top-merchants';
 

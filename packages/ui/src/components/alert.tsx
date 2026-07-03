@@ -38,7 +38,7 @@ function AlertTitle({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="alert-title"
-      className={cn('col-start-2 line-clamp-1 min-h-4 subheading-4', className)}
+      className={cn('subheading-4 col-start-2 line-clamp-1 min-h-4', className)}
       {...props}
     />
   );
@@ -49,7 +49,7 @@ function AlertDescription({ className, ...props }: React.ComponentProps<'div'>) 
     <div
       data-slot="alert-description"
       className={cn(
-        'text-muted-foreground col-start-2 grid justify-items-start gap-1 body-3 [&_p]:leading-relaxed',
+        'text-muted-foreground body-3 col-start-2 grid justify-items-start gap-1 [&_p]:leading-relaxed',
         className,
       )}
       {...props}

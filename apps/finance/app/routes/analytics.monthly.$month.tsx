@@ -1,5 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/components/ui/card';
-import { Skeleton } from '@hominem/ui/components/ui/skeleton';
+import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
+import { Skeleton } from '~/lib/ui-shims';
 import { redirect, useParams } from 'react-router';
 
 import { createServerHonoClient } from '~/lib/api.server';
@@ -16,7 +16,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   }
 
   const authResult = await requireAuth(request);
-  const client = createServerHonoClient(authResult.session?.access_token, request);
+  const client = createServerHonoClient(authResult.session?.token, request);
 
   const stats = await client.finance.getMonthlyStats({ month });
 

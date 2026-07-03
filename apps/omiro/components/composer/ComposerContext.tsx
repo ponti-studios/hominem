@@ -10,8 +10,11 @@ import React, {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
+  useRef,
   useState,
+  type SetStateAction,
 } from 'react';
 import { Alert } from 'react-native';
 
@@ -43,6 +46,7 @@ const ComposerContext = createContext<ComposerContextValue | undefined>(undefine
 
 interface ComposerProviderProps {
   children: React.ReactNode;
+  initialAttachments?: ComposerAttachment[];
 }
 
 function getAttachmentType(uploadedFile: UploadedFile): string {
@@ -51,11 +55,27 @@ function getAttachmentType(uploadedFile: UploadedFile): string {
     : classifyFileByMimeType(uploadedFile.mimetype);
 }
 
-export function ComposerProvider({ children }: ComposerProviderProps) {
+export function ComposerProvider({ children, initialAttachments = [] }: ComposerProviderProps) {
   const client = useApiClient();
-  const [attachments, setAttachments] = useState<ComposerAttachment[]>([]);
+  const [attachments, setAttachmentsState] = useState<ComposerAttachment[]>(
+    () => initialAttachments,
+  );
+  const attachmentsRef = useRef(initialAttachments);
 
   const { uploadAssets, uploadState, clearErrors } = useFileUpload();
+
+  const setAttachments = useCallback((next: SetStateAction<ComposerAttachment[]>) => {
+    setAttachmentsState((currentAttachments) => {
+      const resolvedAttachments =
+        typeof next === 'function'
+          ? (next as (currentAttachments: ComposerAttachment[]) => ComposerAttachment[])(
+              currentAttachments,
+            )
+          : next;
+      attachmentsRef.current = resolvedAttachments;
+      return resolvedAttachments;
+    });
+  }, []);
 
   // Attachment operations
   const onRemove = useCallback(
@@ -70,10 +90,10 @@ export function ComposerProvider({ children }: ComposerProviderProps) {
         return prev.filter((a) => a.id !== id);
       });
     },
-    [client],
+    [client, setAttachments],
   );
 
-  const clearAttachments = useCallback(() => setAttachments([]), []);
+  const clearAttachments = useCallback(() => setAttachments([]), [setAttachments]);
 
   const appendUploadedAssets = useCallback(
     async (
@@ -97,7 +117,7 @@ export function ComposerProvider({ children }: ComposerProviderProps) {
       setAttachments((prev) => [...prev, ...next]);
       return next;
     },
-    [uploadAssets],
+    [setAttachments, uploadAssets],
   );
 
   const pickAttachment = useCallback(async (): Promise<ComposerAttachment[]> => {
@@ -121,7 +141,7 @@ export function ComposerProvider({ children }: ComposerProviderProps) {
         uri: asset.uri,
       })),
     );
-  }, [clearErrors, attachments.length, appendUploadedAssets]);
+  }, [attachments.length, appendUploadedAssets, clearErrors]);
 
   const handleCameraCapture = useCallback(
     async (photo: { uri: string; fileName?: string }): Promise<ComposerAttachment[]> => {
@@ -167,6 +187,21 @@ export function ComposerProvider({ children }: ComposerProviderProps) {
     ],
   );
 
+  useEffect(
+    () => () => {
+      attachmentsRef.current.forEach((attachment) => {
+        if (!attachment.uploadedFile?.id) {
+          return;
+        }
+
+        void client.api.files[':fileId']
+          .$delete({ param: { fileId: attachment.uploadedFile.id } })
+          .catch(() => undefined);
+      });
+    },
+    [client],
+  );
+
   return <ComposerContext.Provider value={value}>{children}</ComposerContext.Provider>;
 }
 
@@ -177,6 +212,7 @@ export function useComposerContext() {
 }
 
 export function useComposerAttachments() {
-  const { attachments, errors, isUploading, progressByAssetId, onRemove } = useComposerContext();
-  return { attachments, errors, isUploading, progressByAssetId, onRemove };
+  const { attachments, errors, isUploading, progressByAssetId, onRemove, clearAttachments } =
+    useComposerContext();
+  return { attachments, errors, isUploading, progressByAssetId, onRemove, clearAttachments };
 }

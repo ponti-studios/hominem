@@ -1,4 +1,4 @@
-import { useApiClient } from '@hominem/ui';
+import { useApiClient } from '@hominem/ui/hooks';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 

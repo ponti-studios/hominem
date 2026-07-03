@@ -47,7 +47,7 @@ vi.mock('@hominem/services/files', () => ({
   },
 }));
 
-vi.mock('@hominem/utils/storage', () => ({
+vi.mock('@hominem/storage', () => ({
   fileStorageService: {
     getFile: mocks.getFile,
     getFileUrl: mocks.getFileUrl,
@@ -55,7 +55,7 @@ vi.mock('@hominem/utils/storage', () => ({
   },
 }));
 
-vi.mock('@hominem/utils/logger', () => ({
+vi.mock('@hominem/telemetry', () => ({
   logger: {
     error: mocks.loggerError,
     info: mocks.loggerInfo,

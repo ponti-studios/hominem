@@ -1,8 +1,7 @@
 import type { CareerSocialLinksRecord } from '@hominem/db';
 import { CareerRepository, db } from '@hominem/db';
-import { Button } from '@hominem/ui/button';
-import { Card, CardContent } from '@hominem/ui/card';
-import { Input } from '@hominem/ui/input';
+import { Button } from '@hominem/ui';
+import { Card, CardContent, Input } from '@hominem/ui';
 import { Github, Globe, Linkedin, SaveIcon, Twitter } from 'lucide-react';
 import { useEffect } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
@@ -59,7 +58,16 @@ function SocialLinksEditorSection({
     const formData2 = new FormData();
     formData2.append(
       'socialLinksData',
-      JSON.stringify([{ id: formData.id, github: formData.github, linkedin: formData.linkedin, twitter: formData.twitter, website: formData.website, portfolio_id }]),
+      JSON.stringify([
+        {
+          id: formData.id,
+          github: formData.github,
+          linkedin: formData.linkedin,
+          twitter: formData.twitter,
+          website: formData.website,
+          portfolio_id,
+        },
+      ]),
     );
 
     clearSubmissionError();
@@ -80,12 +88,15 @@ function SocialLinksEditorSection({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               {/* GitHub */}
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="github" className="subheading-4 text-text-primary flex items-center gap-2">
+                <label
+                  htmlFor="github"
+                  className="subheading-4 text-text-primary flex items-center gap-2"
+                >
                   <Github className="size-4 text-muted-foreground" />
                   GitHub
                 </label>
                 <div className="flex">
-                  <span className="inline-flex items-center shrink-0 px-3 body-3 text-muted-foreground border border-r-0 border-input rounded-l-md bg-base">
+                  <span className="inline-flex items-center shrink-0 px-3 body-3 text-muted-foreground border border-r-0 rounded-l-md bg-base">
                     github.com/
                   </span>
                   <Input
@@ -102,17 +113,22 @@ function SocialLinksEditorSection({
                     })}
                   />
                 </div>
-                {errors.github && <p className="body-4 text-destructive">{errors.github.message}</p>}
+                {errors.github && (
+                  <p className="body-4 text-destructive">{errors.github.message}</p>
+                )}
               </div>
 
               {/* LinkedIn */}
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="linkedin" className="subheading-4 text-text-primary flex items-center gap-2">
+                <label
+                  htmlFor="linkedin"
+                  className="subheading-4 text-text-primary flex items-center gap-2"
+                >
                   <Linkedin className="size-4 text-muted-foreground" />
                   LinkedIn
                 </label>
                 <div className="flex">
-                  <span className="inline-flex items-center shrink-0 px-3 body-3 text-muted-foreground border border-r-0 border-input rounded-l-md bg-base">
+                  <span className="inline-flex items-center shrink-0 px-3 body-3 text-muted-foreground border border-r-0 rounded-l-md bg-base">
                     linkedin.com/in/
                   </span>
                   <Input
@@ -129,17 +145,22 @@ function SocialLinksEditorSection({
                     })}
                   />
                 </div>
-                {errors.linkedin && <p className="body-4 text-destructive">{errors.linkedin.message}</p>}
+                {errors.linkedin && (
+                  <p className="body-4 text-destructive">{errors.linkedin.message}</p>
+                )}
               </div>
 
               {/* Twitter */}
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="twitter" className="subheading-4 text-text-primary flex items-center gap-2">
+                <label
+                  htmlFor="twitter"
+                  className="subheading-4 text-text-primary flex items-center gap-2"
+                >
                   <Twitter className="size-4 text-muted-foreground" />
                   Twitter / X
                 </label>
                 <div className="flex">
-                  <span className="inline-flex items-center shrink-0 px-3 body-3 text-muted-foreground border border-r-0 border-input rounded-l-md bg-base">
+                  <span className="inline-flex items-center shrink-0 px-3 body-3 text-muted-foreground border border-r-0 rounded-l-md bg-base">
                     x.com/
                   </span>
                   <Input
@@ -156,12 +177,17 @@ function SocialLinksEditorSection({
                     })}
                   />
                 </div>
-                {errors.twitter && <p className="body-4 text-destructive">{errors.twitter.message}</p>}
+                {errors.twitter && (
+                  <p className="body-4 text-destructive">{errors.twitter.message}</p>
+                )}
               </div>
 
               {/* Website */}
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="website" className="subheading-4 text-text-primary flex items-center gap-2">
+                <label
+                  htmlFor="website"
+                  className="subheading-4 text-text-primary flex items-center gap-2"
+                >
                   <Globe className="size-4 text-muted-foreground" />
                   Website
                 </label>
@@ -177,7 +203,9 @@ function SocialLinksEditorSection({
                     },
                   })}
                 />
-                {errors.website && <p className="body-4 text-destructive">{errors.website.message}</p>}
+                {errors.website && (
+                  <p className="body-4 text-destructive">{errors.website.message}</p>
+                )}
               </div>
             </div>
 

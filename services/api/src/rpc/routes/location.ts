@@ -1,5 +1,19 @@
-import { formatGeocodeFeatures, type Geocoding, LAYERS } from '@hominem/utils/location';
-import { logger } from '@hominem/utils/logger';
+const LAYERS = ['locality', 'neighbourhood', 'county', 'region', 'country'];
+
+type GeocodingFeature = { properties: { label?: string; locality?: string; region?: string; country?: string; layer?: string }; geometry?: { coordinates?: [number, number] } };
+type Geocoding = { features: GeocodingFeature[] };
+
+function formatGeocodeFeatures(results: Geocoding) {
+  return results.features.map((f) => ({
+    label: f.properties.label ?? '',
+    locality: f.properties.locality,
+    region: f.properties.region,
+    country: f.properties.country,
+    layer: f.properties.layer,
+    coordinates: f.geometry?.coordinates,
+  }));
+}
+import { logger } from '@hominem/telemetry';
 import { Hono } from 'hono';
 
 import { ValidationError, InternalError } from '../errors';

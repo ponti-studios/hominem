@@ -6,6 +6,7 @@ import {
   Stack,
   ThemeProvider,
   type RelativePathString,
+  usePathname,
   useRouter,
   useSegments,
 } from 'expo-router';
@@ -18,19 +19,19 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { logError } from '~/components/error-boundary/log-error';
 import { RootErrorBoundary } from '~/components/error-boundary/RootErrorBoundary';
-import { lightTheme, makeStyles } from '~/components/theme';
+import { theme, makeStyles } from '~/components/theme';
 import { E2E_TESTING } from '~/constants';
 import { useScreenCapture } from '~/hooks/use-screen-capture';
 import { resolveAuthRedirect } from '~/navigation/auth-route-guard';
 import { AuthProvider, useAuth } from '~/services/auth/auth-provider';
+import { consumeRestoreAttempt, consumeResumeTarget } from '~/services/navigation/launch-state';
+import { getContentRoute } from '~/services/navigation/routes';
 import { initObservability } from '~/services/observability';
-import { markStartupPhase } from '~/services/performance/startup-metrics';
 import { POSTHOG_ENABLED, posthog } from '~/services/posthog';
 import queryClient from '~/services/query-client';
 import { recordActiveDay } from '~/services/review-prompt/review-prompt';
 
 SplashScreen.preventAutoHideAsync();
-markStartupPhase('app_start');
 
 const useInnerStyles = makeStyles((t) =>
   StyleSheet.create({
@@ -75,14 +76,13 @@ const useRootStyles = makeStyles(() =>
 function InnerRootLayout() {
   const styles = useInnerStyles();
   const router = useRouter();
+  const pathname = usePathname();
   const segments = useSegments() as string[];
   const segmentKey = segments.join('/');
   const { authStatus, isSignedIn, currentUser, resetAuthForE2E, signOut } = useAuth();
   const hasMarkedShellReady = React.useRef(false);
   const lastRedirectSignatureRef = React.useRef<string | null>(null);
   useEffect(() => {
-    markStartupPhase('root_layout_mounted');
-
     let hasHidden = false;
     const hide = () => {
       if (hasHidden) {
@@ -92,10 +92,17 @@ function InnerRootLayout() {
       SplashScreen.hideAsync().catch(() => undefined);
     };
 
-    hide();
-    const timeout = setTimeout(hide, 1500);
+    // Boot resolution decides whether we land on (auth) or (protected); hiding
+    // the splash before that resolves flashes the wrong screen. The timeout is
+    // a safety net in case boot never settles.
+    if (authStatus !== 'booting') {
+      hide();
+      return;
+    }
+
+    const timeout = setTimeout(hide, 3000);
     return () => clearTimeout(timeout);
-  }, []);
+  }, [authStatus]);
 
   useEffect(() => {
     if (isSignedIn && currentUser?.id) {
@@ -107,7 +114,6 @@ function InnerRootLayout() {
 
   useEffect(() => {
     if (!hasMarkedShellReady.current && authStatus !== 'booting') {
-      markStartupPhase('shell_ready');
       hasMarkedShellReady.current = true;
     }
 
@@ -131,6 +137,26 @@ function InnerRootLayout() {
       router.replace(target as RelativePathString);
     }
   }, [authStatus, isSignedIn, router, segmentKey, segments]);
+
+  useEffect(() => {
+    if (authStatus === 'booting' || !isSignedIn || !currentUser?.id) {
+      return;
+    }
+
+    if (!consumeRestoreAttempt()) {
+      return;
+    }
+
+    const resumeTarget = consumeResumeTarget();
+    if (!resumeTarget) {
+      return;
+    }
+
+    const target = getContentRoute(resumeTarget.kind, resumeTarget.id);
+    if (pathname !== target) {
+      router.replace(target);
+    }
+  }, [authStatus, currentUser?.id, isSignedIn, pathname, router]);
 
   return (
     <RootErrorBoundary
@@ -180,12 +206,12 @@ const navigationTheme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
-    background: lightTheme.colors.background,
-    border: lightTheme.colors['border-default'],
-    card: lightTheme.colors.background,
-    notification: lightTheme.colors.accent,
-    primary: lightTheme.colors.accent,
-    text: lightTheme.colors.foreground,
+    background: theme.colors.background,
+    border: theme.colors['border-default'],
+    card: theme.colors.background,
+    notification: theme.colors.accent,
+    primary: theme.colors.accent,
+    text: theme.colors.foreground,
   },
 };
 

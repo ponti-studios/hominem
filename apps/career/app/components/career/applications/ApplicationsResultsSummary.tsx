@@ -1,4 +1,4 @@
-import { Button } from '@hominem/ui/button';
+import { Button } from '@hominem/ui';
 
 import type { ApplicationsResultsSummaryProps } from './types';
 

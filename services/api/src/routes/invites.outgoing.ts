@@ -1,5 +1,5 @@
 import { getOutboundInvites } from '@hominem/lists-services';
-import { logger } from '@hominem/utils/logger';
+import { logger } from '@hominem/telemetry';
 import { Hono } from 'hono';
 
 import { UnauthorizedError, InternalError } from '../errors';

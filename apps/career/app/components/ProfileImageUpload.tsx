@@ -1,4 +1,4 @@
-import { Button } from '@hominem/ui/button';
+import { Button } from '@hominem/ui';
 import { User } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 

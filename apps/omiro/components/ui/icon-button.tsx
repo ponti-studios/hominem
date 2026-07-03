@@ -7,15 +7,21 @@ import type {
   StyleProp,
   ViewStyle,
 } from 'react-native';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable } from 'react-native';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useDerivedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 
-import { componentSizes, themeSpacing, useThemeColors } from '~/components/theme';
+import { componentSizes, makeStyles, themeSpacing, useThemeColors } from '~/components/theme';
+import { useReducedMotion } from '~/hooks/use-reduced-motion';
 
 import AppIcon from './icon';
 
-export type IconButtonVariant = 'ghost' | 'filled';
-
-const FILLED_BACKGROUND = 'rgba(0, 0, 0, 0.9)';
+export type IconButtonVariant = 'ghost' | 'surface' | 'primary';
 
 export interface IconButtonProps extends Omit<PressableProps, 'children' | 'onPress' | 'style'> {
   accessibilityLabel: string;
@@ -27,6 +33,7 @@ export interface IconButtonProps extends Omit<PressableProps, 'children' | 'onPr
   tintColor?: ColorValue;
   disabledOpacity?: number;
   pressedOpacity?: number;
+  isAnimating?: boolean;
   onPress?: (event: GestureResponderEvent) => void;
   style?: StyleProp<ViewStyle>;
 }
@@ -40,23 +47,40 @@ export function IconButton({
   hitSlop = themeSpacing.sm,
   icon,
   iconSize = componentSizes.md,
+  isAnimating = false,
   onPress,
   pressedOpacity = 0.65,
   size = componentSizes.lg,
   style,
   tintColor,
-  variant,
+  variant = 'ghost',
   ...rest
 }: IconButtonProps) {
   const themeColors = useThemeColors();
+  const styles = useStyles();
+  const prefersReducedMotion = useReducedMotion();
+
+  const rotation = useDerivedValue(() => {
+    if (!isAnimating || prefersReducedMotion) {
+      return withTiming(0, { duration: 120 });
+    }
+
+    return withRepeat(withTiming(360, { duration: 900, easing: Easing.linear }), -1, false);
+  }, [isAnimating, prefersReducedMotion]);
+
+  const iconStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${rotation.value}deg` }],
+  }));
 
   const resolvedTintColor =
     tintColor ??
-    (variant === 'ghost'
-      ? themeColors['text-primary']
-      : variant === 'filled'
-        ? themeColors['white']
-        : themeColors['icon-primary']);
+    (disabled
+      ? themeColors['text-tertiary']
+      : variant === 'primary'
+        ? themeColors.background
+        : variant === 'ghost'
+          ? themeColors['text-primary']
+          : themeColors['icon-primary']);
 
   return (
     <Pressable
@@ -68,21 +92,33 @@ export function IconButton({
       style={({ pressed }) => [
         styles.button,
         { height: size, width: size },
-        variant === 'filled' ? { backgroundColor: FILLED_BACKGROUND } : null,
+        variant === 'surface' ? styles.surface : null,
+        variant === 'primary' ? styles.primary : null,
         circular ? { borderRadius: size / 2 } : null,
         style,
         disabled ? { opacity: disabledOpacity } : pressed ? { opacity: pressedOpacity } : null,
       ]}
       {...rest}
     >
-      <AppIcon name={icon} size={iconSize} tintColor={resolvedTintColor} />
+      <Animated.View style={iconStyle}>
+        <AppIcon name={icon} size={iconSize} tintColor={resolvedTintColor} />
+      </Animated.View>
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((theme) => ({
   button: {
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
-});
+  surface: {
+    backgroundColor: theme.colors['bg-surface'],
+    borderWidth: 1,
+    borderColor: theme.colors['border-default'],
+  },
+  primary: {
+    backgroundColor: theme.colors.foreground,
+  },
+}));

@@ -1,11 +1,18 @@
 import type { CareerSkillRecord } from '@hominem/db';
 import { CareerRepository, db, runInTransaction } from '@hominem/db';
-import { Button } from '@hominem/ui/button';
-import { Card, CardContent } from '@hominem/ui/card';
-import { Field } from '@hominem/ui/field';
-import { FilterChip } from '@hominem/ui/filters';
-import { Input } from '@hominem/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
+import { Button } from '@hominem/ui';
+import {
+  Card,
+  CardContent,
+  Field,
+  FilterChip,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@hominem/ui';
 import { LoaderPinwheel, PlusIcon, Sparkles } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useFetcher } from 'react-router';
@@ -36,7 +43,6 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 const CATEGORY_ORDER = ['technical', 'data', 'design', 'product', 'leadership', 'other'];
 
-
 interface SkillsEditorSectionProps {
   skills?: CareerSkillRecord[] | null;
   portfolio_id: string;
@@ -49,7 +55,11 @@ function SkillsEditorSection({ skills: initialSkills, portfolio_id }: SkillsEdit
   const [newSkillCategory, setNewSkillCategory] = useState('technical');
 
   const saveFetcher = useFetcher();
-  const deriveFetcher = useFetcher<{ success: boolean; skills?: EditableSkill[]; error?: string }>();
+  const deriveFetcher = useFetcher<{
+    success: boolean;
+    skills?: EditableSkill[];
+    error?: string;
+  }>();
 
   const { submissionError, clearSubmissionError } = useCareerEditorSubmission({
     fetcher: saveFetcher,
@@ -85,9 +95,7 @@ function SkillsEditorSection({ skills: initialSkills, portfolio_id }: SkillsEdit
   };
 
   const handleRemoveSkill = (skillToRemove: EditableSkill) => {
-    const updated = skills.filter((s) =>
-      s.id ? s.id !== skillToRemove.id : s !== skillToRemove,
-    );
+    const updated = skills.filter((s) => (s.id ? s.id !== skillToRemove.id : s !== skillToRemove));
     setSkills(updated);
     saveSkills(updated);
   };
@@ -190,14 +198,22 @@ function SkillsEditorSection({ skills: initialSkills, portfolio_id }: SkillsEdit
                 </Select>
               </Field>
               <div className="flex gap-2 pb-0.5">
-                <Button type="button" size="sm" onClick={handleAddSkill} disabled={!newSkillName.trim()}>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleAddSkill}
+                  disabled={!newSkillName.trim()}
+                >
                   Add
                 </Button>
                 <Button
                   type="button"
                   size="sm"
                   variant="outline"
-                  onClick={() => { setShowAddForm(false); setNewSkillName(''); }}
+                  onClick={() => {
+                    setShowAddForm(false);
+                    setNewSkillName('');
+                  }}
                 >
                   Cancel
                 </Button>
@@ -226,9 +242,7 @@ function SkillsEditorSection({ skills: initialSkills, portfolio_id }: SkillsEdit
         <div className="overflow-hidden rounded-lg border border-border bg-card divide-y divide-border">
           {sortedCategories.map((category) => (
             <div key={category} className="px-4 py-3">
-              <p className="ui-eyebrow mb-3">
-                {CATEGORY_LABELS[category] ?? category}
-              </p>
+              <p className="ui-eyebrow mb-3">{CATEGORY_LABELS[category] ?? category}</p>
               <div className="flex flex-wrap gap-2">
                 {skillsByCategory[category].map((skill, index) => (
                   <FilterChip
@@ -308,7 +322,5 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function Skills({ loaderData }: Route.ComponentProps) {
-  return (
-    <SkillsEditorSection skills={loaderData.skills} portfolio_id={loaderData.portfolio_id} />
-  );
+  return <SkillsEditorSection skills={loaderData.skills} portfolio_id={loaderData.portfolio_id} />;
 }

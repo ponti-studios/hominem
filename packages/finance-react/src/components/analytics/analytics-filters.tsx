@@ -1,10 +1,10 @@
 import { Button } from '@hominem/ui/button';
-import { DatePicker } from '@hominem/ui/components/date-picker';
-import { Badge } from '@hominem/ui/components/ui/badge';
-import { Card } from '@hominem/ui/components/ui/card';
-import { Label } from '@hominem/ui/components/ui/label';
-import { Skeleton } from '@hominem/ui/components/ui/skeleton';
-import { Switch } from '@hominem/ui/components/ui/switch';
+import { DatePicker } from '@hominem/ui/date-picker';
+import { Badge } from '@hominem/ui/badge';
+import { Card } from '@hominem/ui/card';
+import { Label } from '@hominem/ui/label';
+import { Skeleton } from '@hominem/ui/skeleton';
+import { Switch } from '@hominem/ui/switch';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Filter, X } from 'lucide-react';
 import { type Dispatch, type SetStateAction, useId, useState } from 'react';

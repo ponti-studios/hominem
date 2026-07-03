@@ -13,8 +13,8 @@
   "scripts": {
     "build": "node build.mjs",
     "dev": "SERVICE_NAME=api tsx --watch src/index.ts",
-    "format": "pnpm dlx oxfmt ./src",
-    "lint": "pnpm dlx oxlint ./src",
+    "format": "oxfmt src --write",
+    "lint": "oxlint src --fix",
     "start": "node dist/index.mjs",
     "start:worker": "node dist/worker.mjs",
     "typecheck": "tsgo --noEmit",

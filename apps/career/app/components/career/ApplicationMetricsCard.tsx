@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui';
 import { centsToDollars, formatPercentage } from '@hominem/utils/numbers';
 import { useMemo } from 'react';
 

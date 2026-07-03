@@ -31,7 +31,7 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        'rounded-3xl border bg-surface/95 shadow-xs',
+        'bg-surface/95 rounded-3xl border shadow-xs',
         centered
           ? cn(
               'flex flex-col items-center justify-center text-center',
@@ -39,16 +39,16 @@ export function EmptyState({
             )
           : cn('flex flex-col gap-3', large ? 'px-6 py-5' : 'px-5 py-4'),
         variant === 'default' && 'border-border-subtle',
-        variant === 'dashed' && 'border-2 border-dashed border-border-subtle',
-        variant === 'search' && 'border-dashed border-border-subtle bg-muted/30 shadow-none',
-        variant === 'quiet' && 'border-transparent bg-muted/25 shadow-none',
+        variant === 'dashed' && 'border-border-subtle border-2 border-dashed',
+        variant === 'search' && 'border-border-subtle bg-muted/30 border-dashed shadow-none',
+        variant === 'quiet' && 'bg-muted/25 border-transparent shadow-none',
         className,
       )}
     >
       {icon ? (
         <div
           className={cn(
-            'flex items-center justify-center rounded-2xl border border-border-subtle bg-background text-text-tertiary',
+            'border-border-subtle bg-background text-text-tertiary flex items-center justify-center rounded-2xl border',
             centered ? 'mb-4 size-12' : 'mb-1 size-10',
           )}
         >
@@ -56,9 +56,7 @@ export function EmptyState({
         </div>
       ) : null}
       {title ? (
-        <h2 className={cn('text-foreground', large ? 'heading-3' : 'heading-4')}>
-          {title}
-        </h2>
+        <h2 className={cn('text-foreground', large ? 'heading-3' : 'heading-4')}>{title}</h2>
       ) : null}
       {description ? (
         <p

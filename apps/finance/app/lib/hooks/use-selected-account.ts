@@ -29,27 +29,3 @@ export function useSelectedAccount() {
     setSelectedAccount,
   };
 }
-
-// Alternative hook that provides more control
-function _useSelectedAccountWithDefaults(defaultAccount = 'all') {
-  const queryClient = useQueryClient();
-
-  const selectedAccount = queryClient.getQueryData<string>(SELECTED_ACCOUNT_KEY) ?? defaultAccount;
-
-  const setSelectedAccount = useCallback(
-    (accountId: string) => {
-      queryClient.setQueryData(SELECTED_ACCOUNT_KEY, accountId);
-    },
-    [queryClient],
-  );
-
-  const resetSelectedAccount = useCallback(() => {
-    queryClient.setQueryData(SELECTED_ACCOUNT_KEY, defaultAccount);
-  }, [queryClient, defaultAccount]);
-
-  return {
-    selectedAccount,
-    setSelectedAccount,
-    resetSelectedAccount,
-  };
-}

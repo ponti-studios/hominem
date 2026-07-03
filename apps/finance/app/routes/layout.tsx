@@ -1,6 +1,6 @@
-import { PasskeyEnrollmentBanner, usePasskeyAuth } from '@hominem/ui';
-import { AppLayout } from '@hominem/ui/components/layout/app-layout';
-import { Toaster } from '@hominem/ui/components/ui/toaster';
+import { PasskeyEnrollmentBanner, usePasskeyAuth } from '~/lib/ui-shims';
+import { AppLayout } from '~/lib/ui-shims';
+import { Toaster } from '~/lib/ui-shims';
 import { useCallback, Suspense } from 'react';
 import { Outlet } from 'react-router';
 

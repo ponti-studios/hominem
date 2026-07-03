@@ -6,8 +6,6 @@ const isTest = process.env.NODE_ENV === 'test';
 const serverEnvSchema = z.object({
   DATABASE_URL: z.url(),
   VITE_PUBLIC_API_URL: z.url(),
-  CLOUDFLARE_ACCOUNT_ID: z.string().min(1).optional(),
-  CLOUDFLARE_API_TOKEN: z.string().min(1).optional(),
   OPENROUTER_API_KEY: isTest ? z.string().default('test-openrouter-key') : z.string(),
 });
 

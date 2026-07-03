@@ -53,8 +53,8 @@ import {
   type PlaceDeleteVisitOutput,
   type PlaceGetVisitStatsOutput,
 } from '@hominem/rpc/types/places.types';
-import { sanitizeStoredPhotos } from '@hominem/utils/images';
-import { logger } from '@hominem/utils/logger';
+
+import { logger } from '@hominem/telemetry';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import * as z from 'zod';
@@ -458,7 +458,7 @@ export const placesRoutes = new Hono<AppContext>()
 
           if (googlePlaceData) {
             const rawPhotos = extractPhotoReferences(googlePlaceData.photos ?? []);
-            fetchedPhotos = sanitizeStoredPhotos(rawPhotos);
+            fetchedPhotos = rawPhotos;
             fetchedImageUrl = fetchedPhotos.length > 0 ? fetchedPhotos[0]! : null;
 
             fetchedRating = googlePlaceData.rating !== undefined ? googlePlaceData.rating : null;
@@ -495,7 +495,7 @@ export const placesRoutes = new Hono<AppContext>()
         phoneNumber: placeInput.phoneNumber ?? fetchedPhoneNumber ?? null,
         photos:
           placeInput.photos && placeInput.photos.length > 0
-            ? sanitizeStoredPhotos(placeInput.photos)
+            ? placeInput.photos
             : (fetchedPhotos ?? null),
         imageUrl:
           placeInput.imageUrl ??

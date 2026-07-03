@@ -3,8 +3,8 @@ import { KeyIcon } from 'lucide-react';
 import { translateUi } from '../../translations';
 import { Button } from '../button';
 
-interface PasskeyButtonProps {
-  onClick: () => void;
+export interface PasskeyButtonProps {
+  onClick: () => void | Promise<void>;
   disabled?: boolean;
   isLoading?: boolean;
 }
@@ -18,7 +18,7 @@ export function PasskeyButton({
     <Button
       type="button"
       variant="secondary"
-      onClick={onClick}
+      onClick={() => void onClick()}
       disabled={disabled}
       className="gap-4"
       isLoading={isLoading}

@@ -1,20 +1,28 @@
 import React, { useCallback, useMemo } from 'react';
 import {
+  ActivityIndicator,
   Pressable,
   StyleProp,
   StyleSheet,
   Text,
-  useColorScheme,
   ViewStyle,
   type PressableStateCallbackType,
 } from 'react-native';
 
-import { componentSizes, fontSizes, fontWeights, radii, themeSpacing } from '~/components/theme';
+import {
+  colors,
+  componentSizes,
+  fontSizes,
+  fontWeights,
+  radii,
+  themeSpacing,
+} from '~/components/theme';
 
 interface ButtonProps {
   label: string;
   onPress: () => void;
   disabled?: boolean;
+  loading?: boolean;
   size?: 'sm' | 'md';
   variant?: 'primary' | 'secondary' | 'tertiary' | 'destructive-text';
   testID?: string;
@@ -24,13 +32,11 @@ export function Button({
   label,
   onPress,
   disabled = false,
+  loading = false,
   size = 'md',
   variant = 'primary',
   testID,
 }: ButtonProps) {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-
   const resolvedStyles = useMemo(() => {
     const baseStyle = {
       paddingVertical: themeSpacing.md,
@@ -44,13 +50,13 @@ export function Button({
 
     const variantStyles: Record<string, StyleProp<ViewStyle>> = {
       primary: {
-        backgroundColor: isDark ? '#FFFFFF' : '#000000',
+        backgroundColor: colors.primary,
         borderWidth: 0,
       },
       secondary: {
         backgroundColor: 'transparent',
         borderWidth: 1,
-        borderColor: isDark ? '#FFFFFF' : '#000000',
+        borderColor: colors.foreground,
       },
       tertiary: {
         backgroundColor: 'transparent',
@@ -63,40 +69,52 @@ export function Button({
     };
 
     const textColor = {
-      primary: isDark ? '#000000' : '#FFFFFF',
-      secondary: isDark ? '#FFFFFF' : '#000000',
-      tertiary: isDark ? '#FFFFFF' : '#000000',
-      'destructive-text': 'red',
+      primary: colors['primary-foreground'],
+      secondary: colors.foreground,
+      tertiary: colors.foreground,
+      'destructive-text': colors.destructive,
     };
 
     return {
       container: [baseStyle, variantStyles[variant], disabled && styles.disabled],
       text: textColor[variant],
     };
-  }, [disabled, isDark, variant]);
+  }, [disabled, variant]);
+
+  const isInteractionDisabled = disabled || loading;
 
   const pressableStyle = useCallback(
     ({ pressed }: PressableStateCallbackType) => [
       resolvedStyles.container,
-      pressed && !disabled && styles.pressed,
+      loading && styles.loading,
+      pressed && !isInteractionDisabled && styles.pressed,
     ],
-    [disabled, resolvedStyles.container],
+    [isInteractionDisabled, loading, resolvedStyles.container],
   );
 
   return (
-    <Pressable testID={testID} onPress={onPress} disabled={disabled} style={pressableStyle}>
-      <Text
-        style={[
-          styles.text,
-          size === 'sm' && styles.textSm,
-          {
-            color: resolvedStyles.text,
-            opacity: disabled ? 0.5 : 1,
-          },
-        ]}
-      >
-        {label}
-      </Text>
+    <Pressable
+      testID={testID}
+      onPress={onPress}
+      disabled={isInteractionDisabled}
+      style={pressableStyle}
+    >
+      {loading ? (
+        <ActivityIndicator color={resolvedStyles.text} size="small" />
+      ) : (
+        <Text
+          style={[
+            styles.text,
+            size === 'sm' && styles.textSm,
+            {
+              color: resolvedStyles.text,
+              opacity: disabled ? 0.5 : 1,
+            },
+          ]}
+        >
+          {label}
+        </Text>
+      )}
     </Pressable>
   );
 }
@@ -114,5 +132,8 @@ const styles = StyleSheet.create({
   },
   disabled: {
     opacity: 0.5,
+  },
+  loading: {
+    opacity: 0.7,
   },
 });

@@ -19,7 +19,11 @@ import {
   PublishNoteSchema,
   UpdateNoteInputSchema,
 } from '@hominem/rpc/schemas/notes.schema';
-import { appendNoteAttachments } from '@hominem/utils/upload';
+function appendNoteAttachments(content: string, files: { url: string; name?: string | null }[]): string {
+  if (!files.length) return content;
+  const attachments = files.map((f) => `\n[${f.name ?? 'attachment'}](${f.url})`).join('');
+  return content + attachments;
+}
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import type { Selectable } from 'kysely';

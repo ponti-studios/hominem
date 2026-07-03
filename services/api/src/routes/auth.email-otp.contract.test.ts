@@ -1,4 +1,4 @@
-import { getSetCookieHeaders } from '@hominem/utils/headers';
+
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { createServer } from '../server';
@@ -66,7 +66,7 @@ describe('auth email otp contract', () => {
 
   test('logs OTP info in development environment', async () => {
     const createServer = await importServerWithEnv({ NODE_ENV: 'development' });
-    const { logger } = await import('@hominem/utils/logger');
+    const { logger } = await import('@hominem/telemetry');
     const infoSpy = vi.spyOn(logger, 'info');
 
     try {
@@ -236,7 +236,7 @@ describe('auth email otp contract', () => {
     });
 
     expect(signInResponse.status).toBe(200);
-    const sessionCookieHeader = toCookieHeader(getSetCookieHeaders(signInResponse.headers));
+    const sessionCookieHeader = toCookieHeader(signInResponse.headers.getSetCookie());
     expect(sessionCookieHeader.length).toBeGreaterThan(0);
 
     const sessionResponse = await app.request('http://localhost/api/auth/session', {
@@ -268,7 +268,7 @@ describe('auth email otp contract', () => {
     expect(sessionResponse.status).toBe(401);
     const sessionPayload = (await sessionResponse.json()) as _SessionResponse;
     expect(sessionPayload.isAuthenticated).toBe(false);
-    expect(getSetCookieHeaders(sessionResponse.headers)).toHaveLength(0);
+    expect(sessionResponse.headers.getSetCookie()).toHaveLength(0);
   }, 15000);
 
   test('2.2 session probe ignores legacy app-token cookies', async () => {
@@ -282,7 +282,7 @@ describe('auth email otp contract', () => {
     });
 
     expect(sessionResponse.status).toBe(401);
-    expect(getSetCookieHeaders(sessionResponse.headers)).toHaveLength(0);
+    expect(sessionResponse.headers.getSetCookie()).toHaveLength(0);
   }, 15000);
 
   test('2.2 invalid otp is rejected and does not create authenticated session', async () => {

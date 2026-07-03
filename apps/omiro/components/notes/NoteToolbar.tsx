@@ -1,19 +1,10 @@
-import { GlassEffectContainer, Host, HStack, RNHostView } from '@expo/ui/swift-ui';
-import { frame, glassEffect } from '@expo/ui/swift-ui/modifiers';
 import type { SFSymbol } from 'expo-symbols';
 import React from 'react';
-import {
-  InputAccessoryView,
-  Keyboard,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { InputAccessoryView, Keyboard, ScrollView, StyleSheet, View } from 'react-native';
 
 import type { FormatCommand } from '~/components/notes/note-formatting';
-import { makeStyles, useThemeColors } from '~/components/theme';
-import AppIcon from '~/components/ui/icon';
+import { makeStyles } from '~/components/theme';
+import { IconButton } from '~/components/ui/icon-button';
 import t from '~/translations';
 
 export const NOTE_TOOLBAR_ID = 'note-editor-toolbar';
@@ -34,27 +25,16 @@ interface ToolbarButtonProps {
 }
 
 function ToolbarButton({ icon, onPress, disabled = false, label }: ToolbarButtonProps) {
-  const themeColors = useThemeColors();
-  const styles = useToolbarStyles();
   return (
-    <Pressable
+    <IconButton
       accessibilityLabel={label}
-      accessibilityRole="button"
       disabled={disabled}
       hitSlop={6}
+      icon={icon}
+      iconSize={17}
+      size={36}
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.buttonHost,
-        disabled ? styles.buttonDisabled : null,
-        pressed && !disabled ? styles.buttonPressed : null,
-      ]}
-    >
-      <AppIcon
-        tintColor={disabled ? themeColors['text-tertiary'] : themeColors.foreground}
-        name={icon}
-        size={17}
-      />
-    </Pressable>
+    />
   );
 }
 
@@ -180,35 +160,17 @@ export function NoteToolbar(props: NoteToolbarProps) {
   const styles = useToolbarStyles();
   return (
     <InputAccessoryView nativeID={NOTE_TOOLBAR_ID} backgroundColor="transparent">
-      <Host style={styles.host}>
-        <GlassEffectContainer>
-          <HStack
-            modifiers={[
-              glassEffect({
-                glass: { variant: 'regular' },
-                shape: 'rectangle',
-              }),
-              frame({ maxWidth: Number.POSITIVE_INFINITY }),
-            ]}
-          >
-            <RNHostView>
-              <View style={styles.container}>
-                <ToolbarButtons {...props} />
-              </View>
-            </RNHostView>
-          </HStack>
-        </GlassEffectContainer>
-      </Host>
+      <View style={styles.container}>
+        <ToolbarButtons {...props} />
+      </View>
     </InputAccessoryView>
   );
 }
 
 const useToolbarStyles = makeStyles((theme) => ({
-  host: {
-    width: '100%',
-  },
   container: {
     alignItems: 'center',
+    backgroundColor: theme.colors.background,
     borderTopColor: theme.colors['border-subtle'],
     borderTopWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
@@ -227,18 +189,6 @@ const useToolbarStyles = makeStyles((theme) => ({
     alignItems: 'center',
     flexDirection: 'row',
     gap: theme.spacing.sm,
-  },
-  buttonHost: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 36,
-    height: 36,
-  },
-  buttonPressed: {
-    opacity: 0.65,
-  },
-  buttonDisabled: {
-    opacity: 0.5,
   },
   divider: {
     backgroundColor: theme.colors['border-subtle'],

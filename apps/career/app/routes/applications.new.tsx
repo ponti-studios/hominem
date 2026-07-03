@@ -1,15 +1,21 @@
-import { Button } from '@hominem/ui/button';
-import { Card, CardContent } from '@hominem/ui/card';
-import { DatePicker } from '@hominem/ui/date-picker';
-import { Input } from '@hominem/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
+import {
+  Button,
+  Card,
+  CardContent,
+  DatePicker,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@hominem/ui';
 import { useState } from 'react';
 import { Form, Link, redirect } from 'react-router';
 
 import type { JobScrapeApiRequest, JobScrapeApiResponse } from '~/lib/api-contracts';
 import { userContext } from '~/lib/middleware';
 import { JobApplicationsService } from '~/lib/services/job-applications.service';
-import { cn } from '~/lib/utils';
 import type { JobPosting } from '~/types/applications';
 import { JobApplicationStatus } from '~/types/career';
 
@@ -242,9 +248,7 @@ export default function CreateJobApplication() {
                 {/* Scraped Data Preview */}
                 {scrapedData && (
                   <div className="mb-6 p-4 bg-accent/10 border border-accent/30 rounded-lg">
-                    <h3 className="heading-3 text-foreground mb-4">
-                      Extracted Job Information
-                    </h3>
+                    <h3 className="heading-3 text-foreground mb-4">Extracted Job Information</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {scrapedData.requirements.length > 0 && (
                         <div>
@@ -314,10 +318,7 @@ export default function CreateJobApplication() {
                 <Form method="post" className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <label
-                        htmlFor="position"
-                        className="subheading-4 text-muted-foreground"
-                      >
+                      <label htmlFor="position" className="subheading-4 text-muted-foreground">
                         Job Title *
                       </label>
                       <Input
@@ -331,10 +332,7 @@ export default function CreateJobApplication() {
                     </div>
 
                     <div className="space-y-2">
-                      <label
-                        htmlFor="company"
-                        className="subheading-4 text-muted-foreground"
-                      >
+                      <label htmlFor="company" className="subheading-4 text-muted-foreground">
                         Company *
                       </label>
                       <Input
@@ -402,10 +400,7 @@ export default function CreateJobApplication() {
                   </div>
 
                   <div className="space-y-2">
-                    <label
-                      htmlFor="job_posting"
-                      className="subheading-4 text-muted-foreground"
-                    >
+                    <label htmlFor="job_posting" className="subheading-4 text-muted-foreground">
                       Job Description
                     </label>
                     <textarea
@@ -427,10 +422,7 @@ export default function CreateJobApplication() {
                   </div>
 
                   <div className="space-y-2">
-                    <label
-                      htmlFor="salary_quoted"
-                      className="subheading-4 text-muted-foreground"
-                    >
+                    <label htmlFor="salary_quoted" className="subheading-4 text-muted-foreground">
                       Salary Range
                     </label>
                     <Input
@@ -443,9 +435,7 @@ export default function CreateJobApplication() {
 
                   {/* Recruiter Information */}
                   <div className="pt-4 border-t border-border">
-                    <h3 className="heading-3 text-foreground mb-4">
-                      Recruiter Information
-                    </h3>
+                    <h3 className="heading-3 text-foreground mb-4">Recruiter Information</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <label

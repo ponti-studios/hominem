@@ -4,7 +4,7 @@ import { DayPicker } from 'react-day-picker';
 
 import { cn } from '../lib/utils';
 
-type CalendarProps = React.ComponentProps<typeof DayPicker>;
+export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 
 function Calendar({ className, classNames, showOutsideDays = true, ...props }: CalendarProps) {
   return (
@@ -44,26 +44,27 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
         ...classNames,
       }}
       components={{
-        Chevron: ({ className, orientation, ...props }) => {
+        Chevron: ({ className: iconClassName, orientation, ...iconProps }) => {
           if (orientation === 'left') {
-            return <ChevronLeft className={cn('size-4', className)} {...props} />;
+            return <ChevronLeft className={cn('size-4', iconClassName)} {...iconProps} />;
           }
 
           if (orientation === 'right') {
-            return <ChevronRight className={cn('size-4', className)} {...props} />;
+            return <ChevronRight className={cn('size-4', iconClassName)} {...iconProps} />;
           }
 
           if (orientation === 'up') {
-            return <ChevronUp className={cn('size-4', className)} {...props} />;
+            return <ChevronUp className={cn('size-4', iconClassName)} {...iconProps} />;
           }
 
-          return <ChevronDown className={cn('size-4', className)} {...props} />;
+          return <ChevronDown className={cn('size-4', iconClassName)} {...iconProps} />;
         },
       }}
       {...props}
     />
   );
 }
+
 Calendar.displayName = 'Calendar';
 
 export { Calendar };

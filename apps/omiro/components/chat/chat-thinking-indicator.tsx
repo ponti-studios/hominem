@@ -1,8 +1,7 @@
 import { View } from 'react-native';
 import Animated, {
-  useAnimatedReaction,
   useAnimatedStyle,
-  useSharedValue,
+  useDerivedValue,
   withDelay,
   withRepeat,
   withSequence,
@@ -19,27 +18,21 @@ const CYCLE_IDLE = durations.standard * 6;
 const STAGGER_OFFSET = durations.enter;
 
 function useBounceDot(delayMs: number) {
-  const translateY = useSharedValue(0);
-
-  useAnimatedReaction(
-    () => translateY.value,
-    (_current: number, prev: number | null) => {
-      'worklet';
-      if (prev === null) {
-        translateY.value = withDelay(
-          delayMs,
-          withRepeat(
-            withSequence(
-              withTiming(-4, { duration: DOT_UP_DURATION }),
-              withTiming(2, { duration: DOT_DOWN_DURATION }),
-              withTiming(0, { duration: DOT_RETURN_DURATION }),
-              withTiming(0, { duration: CYCLE_IDLE }),
-            ),
-            -1,
+  const translateY = useDerivedValue(
+    () =>
+      withDelay(
+        delayMs,
+        withRepeat(
+          withSequence(
+            withTiming(-4, { duration: DOT_UP_DURATION }),
+            withTiming(2, { duration: DOT_DOWN_DURATION }),
+            withTiming(0, { duration: DOT_RETURN_DURATION }),
+            withTiming(0, { duration: CYCLE_IDLE }),
           ),
-        );
-      }
-    },
+          -1,
+        ),
+      ),
+    [delayMs],
   );
 
   return useAnimatedStyle(() => ({

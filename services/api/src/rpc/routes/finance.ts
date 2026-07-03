@@ -1,13 +1,13 @@
 import { Hono } from 'hono';
 
 import type { AppContext } from '../middleware/auth';
+
 import { accountsRoutes } from './finance.accounts';
 import { analyzeRoutes } from './finance.analyze';
 import { budgetRoutes } from './finance.budget';
 import { dataRoutes } from './finance.data';
 import { exportRoutes } from './finance.export';
 import { institutionsRoutes } from './finance.institutions';
-import { plaidRoutes } from './finance.plaid';
 import { runwayRoutes } from './finance.runway';
 import { tagsRoutes } from './finance.tags';
 import { transactionsRoutes } from './finance.transactions';
@@ -41,7 +41,6 @@ export const financeRoutes = new Hono<AppContext>()
   .route('/accounts', accountsRoutes)
   .route('/analyze', analyzeRoutes)
   .route('/tags', tagsRoutes)
-  .route('/plaid', plaidRoutes)
   .route('/budget', budgetRoutes)
   .route('/institutions', institutionsRoutes)
   .route('/runway', runwayRoutes)

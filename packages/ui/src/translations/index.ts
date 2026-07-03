@@ -1,37 +1,32 @@
-import i18next from 'i18next';
-
 import { UI_TRANSLATIONS_EN } from './en';
 
-const UI_NAMESPACE = 'ui';
-const DEFAULT_LANGUAGE = 'en';
+type TranslationValue = string | number | boolean;
+type TranslationOptions = Record<string, TranslationValue>;
 
-export function registerUiTranslations() {
-  if (!i18next.isInitialized) {
-    void i18next.init({
-      resources: {
-        [DEFAULT_LANGUAGE]: {
-          [UI_NAMESPACE]: UI_TRANSLATIONS_EN,
-        },
-      },
-      lng: DEFAULT_LANGUAGE,
-      fallbackLng: DEFAULT_LANGUAGE,
-      ns: [UI_NAMESPACE],
-      defaultNS: UI_NAMESPACE,
-      interpolation: {
-        escapeValue: false,
-      },
-    });
-    return;
-  }
+function getTranslationValue(key: string): unknown {
+  return key.split('.').reduce<unknown>((value, part) => {
+    if (value && typeof value === 'object' && part in value) {
+      return (value as Record<string, unknown>)[part];
+    }
 
-  if (!i18next.hasResourceBundle(DEFAULT_LANGUAGE, UI_NAMESPACE)) {
-    i18next.addResourceBundle(DEFAULT_LANGUAGE, UI_NAMESPACE, UI_TRANSLATIONS_EN, true, false);
-  }
+    return undefined;
+  }, UI_TRANSLATIONS_EN);
 }
 
-export function translateUi(key: string, options?: Record<string, string | number | boolean>) {
-  registerUiTranslations();
-  return String(i18next.t(key, { ns: UI_NAMESPACE, ...options }));
+export function registerUiTranslations() {
+  return UI_TRANSLATIONS_EN;
+}
+
+export function translateUi(key: string, options?: TranslationOptions) {
+  const value = getTranslationValue(key);
+  if (typeof value !== 'string') {
+    return key;
+  }
+
+  return value.replace(/{{\s*([a-zA-Z0-9_]+)\s*}}/g, (_, token: string) => {
+    const replacement = options?.[token];
+    return replacement === undefined ? '' : String(replacement);
+  });
 }
 
 export { UI_TRANSLATIONS_EN };

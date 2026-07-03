@@ -1,13 +1,13 @@
 import type { AccountWithPlaidInfo } from '@hominem/rpc/types/finance.types';
 import { Button } from '@hominem/ui/button';
-import { Badge } from '@hominem/ui/components/ui/badge';
+import { Badge } from '@hominem/ui/badge';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@hominem/ui/components/ui/card';
+} from '@hominem/ui/card';
 import { ArrowLeft, Building2, CreditCard, Eye, EyeOff, RefreshCcw } from 'lucide-react';
 import { Link } from 'react-router';
 

@@ -1,5 +1,5 @@
 import { getTransactionTags } from '@hominem/finance-services';
-import { logger } from '@hominem/utils/logger';
+import { logger } from '@hominem/telemetry';
 import { Hono } from 'hono';
 
 import { InternalError, UnauthorizedError } from '../../errors';

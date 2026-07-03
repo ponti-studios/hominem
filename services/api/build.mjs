@@ -16,6 +16,7 @@ const stubMissingPeerDeps = {
 };
 
 const sharedConfig = {
+  tsconfig: './tsconfig.json',
   platform: 'node',
   // Bundle all npm packages into a self-contained artifact.
   // Node.js builtins are automatically external via platform: 'node'.

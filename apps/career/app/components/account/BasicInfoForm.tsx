@@ -1,8 +1,6 @@
 import type { CareerPortfolioRecord } from '@hominem/db';
-import { Button } from '@hominem/ui/button';
-import { Input } from '@hominem/ui/input';
-import { Switch } from '@hominem/ui/switch';
-import { Textarea } from '@hominem/ui/textarea';
+import { Button } from '@hominem/ui';
+import { Input, Switch, Textarea } from '@hominem/ui';
 import { useEffect, useState } from 'react';
 import { Controller, useForm, type SubmitHandler } from 'react-hook-form';
 

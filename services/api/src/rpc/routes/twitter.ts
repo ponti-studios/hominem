@@ -16,7 +16,7 @@ import {
   type TwitterSyncOutput,
   type TwitterTweet,
 } from '@hominem/rpc/types/twitter.types';
-import { logger } from '@hominem/utils/logger';
+import { logger } from '@hominem/telemetry';
 import { Hono } from 'hono';
 
 import { NotFoundError, ValidationError, InternalError } from '../errors';

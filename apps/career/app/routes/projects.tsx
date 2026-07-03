@@ -2,8 +2,8 @@ import type {
   CareerProjectRecord as Project,
   CareerWorkExperienceRecord as WorkExperience,
 } from '@hominem/db';
-import { Button } from '@hominem/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
+import { Button } from '@hominem/ui';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui';
 import { FolderOpenIcon, PencilLineIcon, PlusIcon, XIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
@@ -168,10 +168,7 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
         <div className="border-b border-border p-4">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
             <div className="flex min-w-0 flex-col gap-2">
-              <label
-                htmlFor="project-client-filter"
-                className="subheading-4 text-muted-foreground"
-              >
+              <label htmlFor="project-client-filter" className="subheading-4 text-muted-foreground">
                 Client
               </label>
               <Select value={selectedClientId ?? ''} onValueChange={handleClientChange}>

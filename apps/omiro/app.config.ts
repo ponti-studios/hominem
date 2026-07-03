@@ -1,5 +1,7 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 
+const APP_THEME_COLOR = '#FCF1E8';
+
 const EXPO_OWNER = 'pontistudios';
 const EXPO_PROJECT_ID = '4dfac82b-644f-4ff3-be42-e8f941287aa1';
 const APPLE_TEAM_ID = '3QHJ2KN8AL';
@@ -17,13 +19,6 @@ const APP_ENVIRONMENTS = Object.freeze({
     scheme: 'hakumi',
   }),
 } as const);
-
-const shellTheme = {
-  mobile: {
-    splashBackgroundColor: '#000000',
-    notificationColor: '#000000',
-  },
-} as const;
 
 const ROOT_ASSETS_DIR = './assets';
 
@@ -44,6 +39,7 @@ function getExpoExtraConfig(
 ): {
   apiBaseUrl: string;
   mobilePasskeyEnabled: string;
+  noteNativeShellEnabled: string;
   posthogApiKey: string;
   posthogHost: string;
 } {
@@ -51,6 +47,7 @@ function getExpoExtraConfig(
   return {
     apiBaseUrl: getEnvValue(env.EXPO_PUBLIC_API_BASE_URL, ''),
     mobilePasskeyEnabled: getEnvValue(env.EXPO_PUBLIC_MOBILE_PASSKEY_ENABLED, 'false'),
+    noteNativeShellEnabled: getEnvValue(env.EXPO_PUBLIC_NOTE_NATIVE_SHELL_ENABLED, 'false'),
     posthogApiKey: getEnvValue(env.EXPO_PUBLIC_POSTHOG_API_KEY, ''),
     posthogHost: getEnvValue(env.EXPO_PUBLIC_POSTHOG_HOST, 'https://us.i.posthog.com'),
   };
@@ -158,7 +155,7 @@ export default ({ config }: ConfigContext) => {
     [
       'expo-splash-screen',
       {
-        backgroundColor: shellTheme.mobile.splashBackgroundColor,
+        backgroundColor: APP_THEME_COLOR,
         image: brandAssets.splash,
         enableFullScreenImage_legacy: true,
         resizeMode: 'cover',
@@ -173,7 +170,7 @@ export default ({ config }: ConfigContext) => {
     [
       'expo-notifications',
       {
-        color: shellTheme.mobile.notificationColor,
+        color: APP_THEME_COLOR,
       },
     ],
     [

@@ -1,9 +1,8 @@
 import '@testing-library/jest-dom';
+import { slugifyText } from '@hominem/utils/text';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-import { slugifyText } from '@hominem/utils/text';
 
 import { EditableArrayField } from '../EditableArrayField';
 
@@ -173,9 +172,7 @@ describe('EditableArrayField', () => {
       // After removing first item, second item becomes the first
       expect(screen.getByTestId(`array-input-${slugifyText('Item 2')}`)).toHaveValue('Item 2');
       // Should only have one input field now
-      expect(
-        screen.queryByTestId(`array-input-${slugifyText('Item 1')}`),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByTestId(`array-input-${slugifyText('Item 1')}`)).not.toBeInTheDocument();
     });
 
     it('adds new item when Enter is pressed on last input with content', async () => {
@@ -285,9 +282,7 @@ describe('EditableArrayField', () => {
       await expect(user.click(screen.getByTestId('save-button'))).resolves.not.toThrow();
 
       // Should exit edit mode
-      expect(
-        screen.queryByTestId(`array-input-${slugifyText('Item 1')}`),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByTestId(`array-input-${slugifyText('Item 1')}`)).not.toBeInTheDocument();
       expect(screen.getByTestId(`display-item-${slugifyText('Item 1')}`)).toBeInTheDocument();
       expect(submitSpy).toHaveBeenCalledOnce();
     });
@@ -302,9 +297,7 @@ describe('EditableArrayField', () => {
       await user.click(screen.getByTestId('save-button'));
 
       // Should be back in display mode
-      expect(
-        screen.queryByTestId(`array-input-${slugifyText('Item 1')}`),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByTestId(`array-input-${slugifyText('Item 1')}`)).not.toBeInTheDocument();
       expect(screen.getByTestId(`display-item-${slugifyText('Item 1')}`)).toBeInTheDocument();
     });
   });
@@ -333,9 +326,7 @@ describe('EditableArrayField', () => {
       await user.click(screen.getByTestId('edit-button'));
       await user.click(screen.getByTestId('cancel-button'));
 
-      expect(
-        screen.queryByTestId(`array-input-${slugifyText('Item 1')}`),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByTestId(`array-input-${slugifyText('Item 1')}`)).not.toBeInTheDocument();
       expect(screen.getByTestId(`display-item-${slugifyText('Item 1')}`)).toBeInTheDocument();
     });
 
@@ -432,9 +423,7 @@ describe('EditableArrayField', () => {
       expect(screen.getByTestId(`display-item-${slugifyText('New Item')}`)).toHaveTextContent(
         'New Item',
       );
-      expect(
-        screen.queryByTestId(`display-item-${slugifyText('Item 1')}`),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByTestId(`display-item-${slugifyText('Item 1')}`)).not.toBeInTheDocument();
       expect(screen.getByTestId('item-count')).toHaveTextContent('1 item');
     });
   });

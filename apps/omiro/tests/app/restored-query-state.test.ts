@@ -22,7 +22,7 @@ describe('resolveRestoredQueryState', () => {
     });
   });
 
-  it('keeps the feed in first-load mode until it has usable items', () => {
+  it('keeps the inbox in first-load mode until it has usable items', () => {
     expect(
       resolveRestoredQueryState({
         data: undefined,

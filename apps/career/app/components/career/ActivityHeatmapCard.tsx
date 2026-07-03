@@ -1,5 +1,4 @@
-import { Badge } from '@hominem/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
+import { Badge, Card, CardContent, CardHeader, CardTitle } from '@hominem/ui';
 import { useMemo } from 'react';
 
 import { useContainerWidth } from '~/hooks/useContainerWidth';

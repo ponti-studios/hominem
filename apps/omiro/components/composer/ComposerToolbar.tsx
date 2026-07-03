@@ -4,17 +4,25 @@ import React from 'react';
 import { View } from 'react-native';
 import Reanimated, { LinearTransition, SlideInRight, SlideOutRight } from 'react-native-reanimated';
 
-import { ActionButton } from '~/components/composer/ComposerButtons';
 import { ComposerMedia } from '~/components/composer/ComposerMedia';
-import { makeStyles } from '~/components/theme';
+import { makeStyles, useThemeColors } from '~/components/theme';
+import { IconButton } from '~/components/ui/icon-button';
 import t from '~/translations';
 
+const TOOL_BTN_SIZE = 38; // ToolBtn / SecondaryBtn per composer spec
+const PRIMARY_BTN_SIZE = 42; // PrimaryBtn per composer spec
+const TOOLBAR_ICON_SIZE = 20; // toolbar action icon size
+
 interface ComposerToolbarProps {
-  mode: 'feed' | 'chat';
+  mode: 'inbox' | 'chat';
   isRecording: boolean;
+  isRecordingElsewhere: boolean;
   isVoiceBusy: boolean;
   isEnhancing: boolean;
   isCleaningVoice: boolean;
+  canPickMedia: boolean;
+  canToggleVoice: boolean;
+  canEnhance: boolean;
   canSubmit: boolean;
   isSubmitting: boolean;
   onVoicePress: () => void;
@@ -37,9 +45,13 @@ const pillLayout = LinearTransition.duration(180);
 export function ComposerToolbar({
   mode,
   isRecording,
+  isRecordingElsewhere,
   isVoiceBusy,
   isEnhancing,
   isCleaningVoice,
+  canPickMedia,
+  canToggleVoice,
+  canEnhance,
   canSubmit,
   isSubmitting,
   onVoicePress,
@@ -50,63 +62,87 @@ export function ComposerToolbar({
   secondaryAction,
 }: ComposerToolbarProps) {
   const styles = useStyles();
-  const busy = isSubmitting || isVoiceBusy || isEnhancing;
+  const themeColors = useThemeColors();
 
   return (
     <View style={styles.toolbar}>
       <View style={styles.leading}>
         <ComposerMedia
-          accessibilityLabel={t.feed.composer.addAttachmentA11y}
-          disabled={isSubmitting}
+          accessibilityLabel={t.inboxComposer.composer.addAttachmentA11y}
+          disabled={!canPickMedia}
         />
       </View>
       <Reanimated.View style={styles.trailing} layout={pillLayout}>
-        <ActionButton
-          icon={isRecording ? 'stop.fill' : 'mic.fill'}
-          onPress={onVoicePress}
+        <IconButton
           accessibilityLabel={
-            isRecording ? t.feed.composer.stopVoiceInputA11y : t.feed.composer.startVoiceInputA11y
+            isRecordingElsewhere
+              ? t.inboxComposer.composer.recordingElsewhereA11y
+              : isRecording
+                ? t.inboxComposer.composer.stopVoiceInputA11y
+                : t.inboxComposer.composer.startVoiceInputA11y
           }
-          disabled={busy && !isRecording}
-          isAnimating={isVoiceBusy}
+          circular
+          disabled={!canToggleVoice}
+          icon={isRecording ? 'stop.fill' : 'mic.fill'}
+          iconSize={TOOLBAR_ICON_SIZE}
+          isAnimating={isVoiceBusy && !isRecording}
+          size={TOOL_BTN_SIZE}
+          variant="surface"
+          onPress={onVoicePress}
         />
         {canSubmit ? (
           <Reanimated.View entering={buttonEnter} exiting={buttonExit}>
-            <ActionButton
+            <IconButton
+              accessibilityLabel={t.inboxComposer.composer.enhanceTextA11y}
+              circular
+              disabled={!canEnhance}
               icon="wand.and.sparkles"
-              onPress={onEnhancePress}
-              accessibilityLabel={t.feed.composer.enhanceTextA11y}
-              disabled={busy}
+              iconSize={TOOLBAR_ICON_SIZE}
               isAnimating={isEnhancing || isCleaningVoice}
+              size={TOOL_BTN_SIZE}
+              variant="surface"
+              onPress={onEnhancePress}
             />
           </Reanimated.View>
         ) : null}
-        {mode === 'feed' && secondaryAction && canSubmit ? (
+        {mode === 'inbox' && secondaryAction && canSubmit ? (
           <Reanimated.View entering={buttonEnter} exiting={buttonExit}>
-            <ActionButton
-              icon={secondaryAction.icon}
-              onPress={secondaryAction.onPress}
+            <IconButton
               accessibilityLabel={secondaryAction.accessibilityLabel}
+              circular
+              disabled={isSubmitting || !canSubmit}
+              icon={secondaryAction.icon}
+              iconSize={TOOLBAR_ICON_SIZE}
+              size={TOOL_BTN_SIZE}
               testID={secondaryAction.testID}
-              disabled={busy}
+              tintColor={themeColors['icon-muted']}
+              variant="surface"
+              onPress={secondaryAction.onPress}
             />
           </Reanimated.View>
         ) : null}
         {canSubmit ? (
           <Reanimated.View entering={buttonEnter} exiting={buttonExit}>
-            <ActionButton
-              icon="arrow.up"
-              onPress={onSubmit}
+            <IconButton
               accessibilityLabel={
                 submitAccessibilityLabel ??
-                (mode === 'feed'
-                  ? t.feed.composer.saveNoteA11y
+                (mode === 'inbox'
+                  ? t.inboxComposer.composer.saveNoteA11y
                   : isSubmitting
                     ? t.chat.input.sendingA11y
                     : t.chat.input.sendMessageA11y)
               }
-              testID={submitTestID ?? (mode === 'feed' ? 'composer-submit-note' : 'composer-submit-message')}
-              disabled={busy}
+              circular
+              disabled={!canSubmit}
+              icon="arrow.up"
+              iconSize={TOOLBAR_ICON_SIZE}
+              size={PRIMARY_BTN_SIZE}
+              testID={
+                submitTestID ??
+                (mode === 'inbox' ? 'composer-submit-note' : 'composer-submit-message')
+              }
+              variant="primary"
+              onPress={onSubmit}
             />
           </Reanimated.View>
         ) : null}
@@ -129,8 +165,7 @@ const useStyles = makeStyles(() => ({
   trailing: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing[1],
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    gap: spacing[2],
     borderRadius: 32,
     paddingHorizontal: spacing[1],
   },

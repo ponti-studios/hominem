@@ -125,6 +125,9 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
         conditions: ['node'],
       },
     },
+    resolve: {
+      dedupe: ['react', 'react-dom'],
+    },
     optimizeDeps: {
       exclude: ['@react-router/node'],
     },

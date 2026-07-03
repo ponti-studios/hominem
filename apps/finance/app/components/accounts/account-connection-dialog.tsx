@@ -1,12 +1,12 @@
 import { Button } from '@hominem/ui/button';
-import { Badge } from '@hominem/ui/components/ui/badge';
+import { Badge } from '@hominem/ui/badge';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@hominem/ui/components/ui/select';
+} from '@hominem/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -159,7 +159,7 @@ export function AccountConnectionDialog({ account, trigger }: AccountConnectionD
             <div className="space-y-4">
               <div>
                 <h4 className="text-sm font-medium mb-2">Select Institution</h4>
-                <Select value={selectedInstitutionId} onValueChange={handleInstitutionChange}>
+                <Select value={selectedInstitutionId} onValueChange={(v: string | null) => v != null && handleInstitutionChange(v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Choose a financial institution" />
                   </SelectTrigger>
@@ -182,7 +182,7 @@ export function AccountConnectionDialog({ account, trigger }: AccountConnectionD
               {selectedInstitutionId && (
                 <div>
                   <h4 className="text-sm font-medium mb-2">Link to Plaid Account (Optional)</h4>
-                  <Select value={selectedPlaidAccountId} onValueChange={setSelectedPlaidAccountId}>
+                  <Select value={selectedPlaidAccountId} onValueChange={(v: string | null) => v != null && setSelectedPlaidAccountId(v)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Choose a connected Plaid account" />
                     </SelectTrigger>

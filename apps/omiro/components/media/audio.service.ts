@@ -1,7 +1,8 @@
-import { emitVoiceEvent } from '@hominem/rpc/voice-events';
+import { emitVoiceEvent, type VoiceDiscardReason } from '@hominem/rpc/voice-events';
 import { logger } from '@hominem/telemetry';
 import * as Audio from 'expo-audio';
 import AudioModule from 'expo-audio/build/AudioModule';
+import { File } from 'expo-file-system';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 
 export type RecorderState =
@@ -12,21 +13,16 @@ export type RecorderState =
   | 'PAUSED'
   | 'STOPPING';
 
+export type DiscardReason = VoiceDiscardReason;
+
 type RecordingSnapshot = {
   lastRecordingUri: string | null;
   meterings: number[];
   state: RecorderState;
+  ownerId: string | null;
+  startedAt: number | null;
 };
 
-type PlaybackSnapshot = {
-  audioUri: string | null;
-  duration: number;
-  isLoaded: boolean;
-  isPlaying: boolean;
-  position: number;
-};
-
-type AudioPlayer = ReturnType<typeof Audio.createAudioPlayer>;
 type AudioRecorder = InstanceType<typeof AudioModule.AudioRecorder>;
 
 type Listener<T> = (snapshot: T) => void;
@@ -62,105 +58,13 @@ function createStore<T>(initialValue: T) {
   };
 }
 
-export function createPlaybackController() {
-  const store = createStore<PlaybackSnapshot>({
-    audioUri: null,
-    duration: 0,
-    isLoaded: false,
-    isPlaying: false,
-    position: 0,
-  });
-
-  let player: AudioPlayer | null = null;
-  let pollHandle: ReturnType<typeof setInterval> | null = null;
-
-  const ensurePlayer = () => {
-    if (!player) {
-      player = Audio.createAudioPlayer(null);
-    }
-
-    return player;
-  };
-
-  const sync = () => {
-    if (!player) return;
-
-    store.setSnapshot({
-      audioUri: store.getSnapshot().audioUri,
-      duration: Math.floor(player.duration ?? 0),
-      isLoaded: player.isLoaded,
-      isPlaying: player.playing,
-      position: Math.floor(player.currentTime ?? 0),
-    });
-  };
-
-  const startPolling = () => {
-    if (pollHandle) return;
-
-    pollHandle = setInterval(sync, 100);
-    sync();
-  };
-
-  const stopPolling = () => {
-    if (!pollHandle) return;
-
-    clearInterval(pollHandle);
-    pollHandle = null;
-  };
-
-  return {
-    getSnapshot: store.getSnapshot,
-    subscribe: store.subscribe,
-    prepare: async (audioUri: string) => {
-      await Audio.setAudioModeAsync({ playsInSilentMode: true, interruptionMode: 'doNotMix' });
-
-      const nextPlayer = ensurePlayer();
-      nextPlayer.replace({ uri: audioUri });
-      await nextPlayer.seekTo(0);
-
-      store.setSnapshot({
-        audioUri,
-        duration: Math.floor(nextPlayer.duration ?? 0),
-        isLoaded: nextPlayer.isLoaded,
-        isPlaying: nextPlayer.playing,
-        position: 0,
-      });
-      startPolling();
-    },
-    play: async () => {
-      await Audio.setAudioModeAsync({ playsInSilentMode: true, interruptionMode: 'doNotMix' });
-
-      const nextPlayer = ensurePlayer();
-      nextPlayer.play();
-      startPolling();
-      sync();
-    },
-    pause: () => {
-      player?.pause();
-      sync();
-    },
-    seek: async (positionMs: number) => {
-      if (!player) return;
-
-      await player.seekTo(positionMs / 1000);
-      sync();
-    },
-    stop: async () => {
-      if (!player) return;
-
-      player.pause();
-      await player.seekTo(0);
-      stopPolling();
-      sync();
-    },
-  };
-}
-
 function createRecordingController() {
   const store = createStore<RecordingSnapshot>({
     lastRecordingUri: null,
     meterings: [],
     state: 'IDLE',
+    ownerId: null,
+    startedAt: null,
   });
 
   let recorder: AudioRecorder | null = null;
@@ -218,6 +122,8 @@ function createRecordingController() {
         lastRecordingUri: null,
         meterings: [],
         state: 'IDLE',
+        ownerId: null,
+        startedAt: null,
       });
     },
     pauseRecording: () => {
@@ -232,7 +138,7 @@ function createRecordingController() {
       recorder?.record();
       setState('RECORDING');
     },
-    startRecording: async () => {
+    startRecording: async (ownerId: string) => {
       if (store.getSnapshot().state !== 'IDLE') {
         return { ok: false as const, reason: 'busy' as const };
       }
@@ -264,6 +170,8 @@ function createRecordingController() {
           ...current,
           meterings: [],
           state: 'RECORDING',
+          ownerId,
+          startedAt: Date.now(),
         }));
         logger.info('[recorder] recording started', {
           state: 'RECORDING',
@@ -280,10 +188,14 @@ function createRecordingController() {
         return { ok: false as const, reason: 'error' as const };
       }
     },
-    stopRecording: async () => {
+    stopRecording: async (ownerId: string) => {
       const current = store.getSnapshot();
       if (current.state === 'IDLE' || current.state === 'STOPPING') {
-        return null;
+        return { ok: false as const, reason: 'no-recording' as const };
+      }
+
+      if (current.ownerId !== null && current.ownerId !== ownerId) {
+        return { ok: false as const, reason: 'not-owner' as const };
       }
 
       logger.info('[recorder] stop requested', {
@@ -315,13 +227,65 @@ function createRecordingController() {
         lastRecordingUri: fileUri ?? current.lastRecordingUri,
         meterings: [],
         state: 'IDLE',
+        ownerId: null,
+        startedAt: null,
       });
 
       if (fileUri) {
         emitVoiceEvent('voice_record_stopped', { platform: 'mobile-ios' });
       }
 
-      return fileUri;
+      return { ok: true as const, fileUri };
+    },
+    discardRecording: async (ownerId: string, reason: DiscardReason) => {
+      const current = store.getSnapshot();
+      if (current.state === 'IDLE' || current.state === 'STOPPING') {
+        return { ok: false as const, reason: 'no-recording' as const };
+      }
+
+      if (current.ownerId !== null && current.ownerId !== ownerId) {
+        return { ok: false as const, reason: 'not-owner' as const };
+      }
+
+      logger.info('[recorder] discard requested', {
+        state: current.state,
+        reason,
+      });
+
+      setState('STOPPING');
+
+      try {
+        await recorder?.stop();
+      } catch (error) {
+        logger.error('[recorder] discard stop failed', error as Error);
+      }
+
+      stopPolling();
+
+      await deactivateKeepAwake().catch((error: Error) =>
+        logger.error('[recorder] keep-awake deactivation failed', error),
+      );
+
+      const fileUri = recorder?.uri ?? null;
+      if (fileUri) {
+        try {
+          new File(fileUri).delete();
+        } catch (error) {
+          logger.error('[recorder] discard file delete failed', error as Error);
+        }
+      }
+
+      store.setSnapshot({
+        lastRecordingUri: current.lastRecordingUri,
+        meterings: [],
+        state: 'IDLE',
+        ownerId: null,
+        startedAt: null,
+      });
+
+      emitVoiceEvent('voice_record_discarded', { platform: 'mobile-ios', reason });
+
+      return { ok: true as const };
     },
   };
 }
@@ -336,22 +300,14 @@ export function subscribeRecording(listener: Listener<RecordingSnapshot>) {
   return recording.subscribe(listener);
 }
 
-export function clearRecording() {
-  recording.clearRecording();
+export async function startRecording(ownerId: string) {
+  return recording.startRecording(ownerId);
 }
 
-export function pauseRecording() {
-  recording.pauseRecording();
+export async function stopRecording(ownerId: string) {
+  return recording.stopRecording(ownerId);
 }
 
-export function resumeRecording() {
-  recording.resumeRecording();
-}
-
-export async function startRecording() {
-  return recording.startRecording();
-}
-
-export async function stopRecording() {
-  return recording.stopRecording();
+export async function discardRecording(ownerId: string, reason: DiscardReason) {
+  return recording.discardRecording(ownerId, reason);
 }

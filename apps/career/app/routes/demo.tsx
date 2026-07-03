@@ -1,6 +1,4 @@
-import { Badge } from '@hominem/ui/badge';
-import { buttonVariants } from '@hominem/ui/button';
-import { Card, CardContent } from '@hominem/ui/card';
+import { Badge, buttonVariants, Card, CardContent } from '@hominem/ui';
 import { ArrowLeft } from 'lucide-react';
 import type { MetaFunction } from 'react-router';
 import { Link } from 'react-router';

@@ -20,7 +20,11 @@ const t = {
       titleFallback: 'Note',
       contentPlaceholder: 'Start writing…',
       contentA11yLabel: 'Note content',
+      actionsLabel: 'Note actions',
       attachments: 'Attachments',
+      previewMode: 'Preview',
+      editMode: 'Edit',
+      previewEmpty: 'Nothing to preview yet.',
       removeFile: (name: string) => `Remove ${name}`,
       saveErrorTitle: 'Could not save note',
       saveErrorMessage: 'Your latest note changes could not be saved. Please try again.',
@@ -62,6 +66,8 @@ const t = {
       addAttachmentA11y: 'Add attachment',
       startVoiceInputA11y: 'Record voice note',
       stopVoiceInputA11y: 'Stop recording voice note',
+      recordingElsewhereA11y: 'Recording in progress elsewhere',
+      cancelRecordingA11y: 'Cancel recording',
       enhanceTextA11y: 'Enhance text with AI',
       sendMessageA11y: 'Send message',
       sendingA11y: 'Sending…',
@@ -115,13 +121,12 @@ const t = {
       discard: 'DISCARD',
     },
   },
-  workspace: {
-    home: {
-      title: 'Workspace',
-      subtitle:
-        'Capture something new, resume an active thread, or skim the artifacts that matter right now.',
-      loadErrorTitle: 'Workspace unavailable',
-      loadErrorDescription: "We couldn't load your workspace right now.",
+  inbox: {
+    screen: {
+      title: 'Inbox',
+      subtitle: 'Capture something new, pick up an active chat, or skim what matters right now.',
+      loadErrorTitle: 'Inbox unavailable',
+      loadErrorDescription: "We couldn't load your inbox right now.",
       retry: 'Try again',
       recentChats: 'Recents',
       recentNotes: 'Notes',
@@ -145,6 +150,8 @@ const t = {
       newChatTitle: 'New chat',
       newNoteTitle: 'New note',
       dismissComposer: 'Dismiss composer',
+      openComposerA11y: 'New note or chat',
+      closeComposerA11y: 'Close composer',
       notesFilterA11y: 'Show notes',
       chatsFilterA11y: 'Show chats',
       showSearchA11y: 'Search chats and notes',
@@ -154,19 +161,16 @@ const t = {
       openMoreA11y: 'Open more',
       openChatA11y: 'Start a new chat',
       startChatSubmitA11y: 'Start chat',
-      resumeChat: 'Resume chat',
-      resumeNote: 'Resume note',
       newChat: 'New chat',
       archivedChats: 'Archived chats',
       settings: 'Settings',
-      noResume: 'Everything you capture comes back here when you need it.',
       previewLabel: (kind: 'chat' | 'note') => (kind === 'chat' ? 'Chat preview' : 'Note preview'),
     },
     empty: {
-      title: 'Your workspace starts here',
+      title: 'Your inbox starts here',
       description:
         'Capture a note, ask Omiro to connect the dots, or attach a file. Everything you add comes back here when you need it.',
-      exampleWorkspace: 'Example workspace',
+      exampleInbox: 'Example inbox',
       preview: 'Preview',
       starters: {
         captureNote: {
@@ -200,11 +204,15 @@ const t = {
     item: {
       untitled: 'Untitled',
       untitledNote: 'Untitled note',
-      untitledSession: 'Untitled session',
+      untitledChat: 'Untitled chat',
+      actionsLabel: 'Item actions',
       chatLabel: 'Chat',
       noteLabel: 'Note',
+      open: 'Open',
+      archiveChat: 'Archive chat',
       deleteNote: {
         title: 'Delete note',
+        menu: 'Delete',
         message: 'This cannot be undone.',
         cancel: 'Cancel',
         confirm: 'Delete',
@@ -278,7 +286,7 @@ const t = {
     unlockPrompt: (appName: string) => `Unlock ${appName}`,
     unlockFallbackLabel: 'Use passcode',
     unlockCancelLabel: 'Cancel',
-    resumingSession: 'Resuming session…',
+    restoringSignIn: 'Restoring sign in…',
     emailEntry: {
       title: 'Remember everything.',
       helper: 'Capture anything; Retrieve everything.',
@@ -310,7 +318,7 @@ const t = {
   },
   onboarding: {
     title: 'What should Omiro call you?',
-    subtitle: 'This is only used to personalize your workspace. You can change it later.',
+    subtitle: 'This is only used to personalize your inbox. You can change it later.',
     namePlaceholder: 'Wyatt',
     nameError: 'Add a name or continue without one.',
     start: 'Start using Omiro',
@@ -332,12 +340,14 @@ const t = {
       returnToRoot: 'Return to root',
     },
   },
-  feed: {
+  inboxComposer: {
     composer: {
       placeholder: 'Write a note, ask something…',
       addAttachmentA11y: 'Add attachment',
       startVoiceInputA11y: 'Record voice note',
       stopVoiceInputA11y: 'Stop recording voice note',
+      recordingElsewhereA11y: 'Recording in progress elsewhere',
+      cancelRecordingA11y: 'Cancel recording',
       enhanceTextA11y: 'Enhance text with AI',
       openChatA11y: 'Open chat',
       saveNoteA11y: 'Save note',

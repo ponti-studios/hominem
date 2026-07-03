@@ -1,5 +1,5 @@
 import { CareerRepository, db } from '@hominem/db';
-import { createStorageService, validateFile } from '@hominem/storage';
+import { createStorageService, isStorageServiceError, validateFile } from '@hominem/storage';
 
 import { parseFormData } from '~/lib/route-utils';
 
@@ -27,6 +27,27 @@ const accountActionHandlers: Record<string, AccountActionHandler> = {
   'update-slug': handleUpdateSlugAction,
   'update-basics': handleUpdateBasicsAction,
 };
+
+function getProfileImageUploadErrorMessage(error: unknown): string {
+  if (!isStorageServiceError(error)) {
+    return error instanceof Error ? error.message : 'Failed to upload image';
+  }
+
+  switch (error.code) {
+    case 'storage.config.missing':
+      return 'Profile image storage is not configured yet.';
+    case 'storage.credentials.invalid':
+      return 'Profile image storage credentials were rejected.';
+    case 'storage.bucket.access_denied':
+      return 'Profile image storage access was denied.';
+    case 'storage.bucket.missing':
+      return 'Profile image storage bucket was not found.';
+    case 'storage.network.unreachable':
+      return 'Profile image storage is temporarily unreachable.';
+    default:
+      return 'Failed to upload image';
+  }
+}
 
 export async function handleAccountAction({
   formData,
@@ -121,10 +142,7 @@ async function handleUploadProfileImageAction({
         originalName: imageFile.name,
       });
     } catch (uploadError) {
-      throw new Response(
-        uploadError instanceof Error ? uploadError.message : 'Failed to upload image',
-        { status: 500 },
-      );
+      throw new Response(getProfileImageUploadErrorMessage(uploadError), { status: 500 });
     }
 
     try {
@@ -161,7 +179,12 @@ async function handleUpdateSlugAction({
     const newSlug = formData.get('slug');
     const portfolioId = formData.get('portfolio_id');
 
-    if (typeof newSlug !== 'string' || typeof portfolioId !== 'string' || !newSlug || !portfolioId) {
+    if (
+      typeof newSlug !== 'string' ||
+      typeof portfolioId !== 'string' ||
+      !newSlug ||
+      !portfolioId
+    ) {
       throw new Response('Slug and portfolio ID are required', { status: 400 });
     }
 

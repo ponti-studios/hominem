@@ -1,5 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/components/ui/card';
-import { LoadingSpinner } from '@hominem/ui/components/ui/loading-spinner';
+import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
+import { LoadingSpinner } from '@hominem/ui/loading-spinner';
 import { Target } from 'lucide-react';
 import { useMemo } from 'react';
 
@@ -55,7 +55,7 @@ export function BudgetOverview({ selectedMonthYear }: BudgetOverviewProps) {
       <Card>
         <CardContent className="flex items-center justify-center py-8">
           <div className="text-center">
-            <LoadingSpinner size="sm" className="mx-auto" />
+            <div className="mx-auto"><LoadingSpinner variant="sm" /></div>
             <p className="mt-2 text-xs text-muted-foreground">Loading budget data...</p>
           </div>
         </CardContent>

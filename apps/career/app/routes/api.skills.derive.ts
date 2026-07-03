@@ -45,7 +45,7 @@ export async function action({ request, context }: Route.ActionArgs) {
         tx,
         user.id,
         portfolio.id,
-        derived.map((skill, index) => ({
+        derived.map((skill) => ({
           name: skill.name,
           category: skill.category,
           level: skill.level,

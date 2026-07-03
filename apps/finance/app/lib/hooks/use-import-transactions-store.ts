@@ -4,24 +4,21 @@ import type {
   ImportRequestResponse,
   ImportTransactionsJob,
 } from '@hominem/queues';
-import { useApiClient } from '@hominem/ui';
-import { REDIS_CHANNELS } from '@hominem/utils/consts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useWebSocketStore, type WebSocketMessage } from '~/store/websocket-store';
 
 // Define constants for channel names and message types
-const IMPORT_PROGRESS_CHANNEL = REDIS_CHANNELS.IMPORT_PROGRESS;
-const IMPORT_PROGRESS_CHANNEL_SUBSCRIBED = REDIS_CHANNELS.SUBSCRIBED;
-const IMPORT_PROGRESS_CHANNEL_TYPE = REDIS_CHANNELS.SUBSCRIBE;
+const IMPORT_PROGRESS_CHANNEL = 'import:progress';
+const IMPORT_PROGRESS_CHANNEL_SUBSCRIBED = 'subscribed';
+const IMPORT_PROGRESS_CHANNEL_TYPE = 'subscribe';
 const IMPORT_TRANSACTIONS_KEY = [['finance', 'import-transactions']] as const;
 
 // Throttle delay for progress updates (in milliseconds)
 const PROGRESS_UPDATE_THROTTLE = 100;
 
 export function useImportTransactionsStore() {
-  const apiClient = useApiClient();
   const queryClient = useQueryClient();
   const { session } = useAuthContext();
   const [statuses, setStatuses] = useState<FileStatus[]>([]);
@@ -63,7 +60,7 @@ export function useImportTransactionsStore() {
 
   // Connect on initialization
   useEffect(() => {
-    connect(() => Promise.resolve(session?.access_token || null));
+    connect(() => Promise.resolve(session?.token || null));
   }, [connect, session]);
 
   // Throttled update function to reduce re-render frequency
@@ -207,11 +204,13 @@ export function useImportTransactionsStore() {
               formData.append('fileName', file.name);
               formData.append('deduplicateThreshold', '60');
 
-              // Use the API client's FormData method
-              const result = await apiClient.postFormData<ImportRequestResponse>(
-                '/api/finance/import',
-                formData,
-              );
+              // Post form data using fetch
+              const res = await fetch('/api/finance/import', {
+                method: 'POST',
+                body: formData,
+              });
+              if (!res.ok) throw new Error(`HTTP ${res.status}`);
+              const result = (await res.json()) as ImportRequestResponse;
 
               if (!result.success) {
                 throw new Error('Import failed');

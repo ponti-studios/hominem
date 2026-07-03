@@ -122,7 +122,7 @@ async function performMobileUploads(
       formData.append('originalName', originalName);
       formData.append('mimetype', mimetype);
 
-      const completion = await api.upload(formData) as UploadResponse;
+      const completion = (await api.upload(formData)) as UploadResponse;
 
       completedCount++;
       const overallProgress = Math.round((completedCount / assets.length) * 100);

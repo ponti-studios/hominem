@@ -1,9 +1,4 @@
-import {
-  lightColors,
-  radii,
-  spacing as tokenSpacing,
-  type ColorToken,
-} from '@hominem/ui/tokens';
+import { colorSystems, radii, spacing as tokenSpacing, type ColorToken } from '@hominem/ui/tokens';
 
 import { fontFamiliesNative, fontSizes, fontWeights, lineHeights } from './typography';
 
@@ -28,6 +23,8 @@ export const componentSizes = {
   xl: 44,
 } as const;
 
+export const colors = colorSystems.apple.dark;
+
 export const typography = {
   families: fontFamiliesNative,
   sizes: fontSizes,
@@ -35,15 +32,13 @@ export const typography = {
   lineHeights,
 } as const;
 
-export const lightTheme = {
-  colors: lightColors,
+export const theme = {
+  colors: colors,
   spacing: themeSpacing,
   borderRadii,
   componentSizes,
   typography,
 } as const;
-
-export const darkTheme = lightTheme;
 
 export type Theme = {
   colors: Record<ColorToken, string>;
@@ -54,7 +49,7 @@ export type Theme = {
 };
 
 export function useThemeColors() {
-  return lightColors;
+  return colors;
 }
 
-export default lightTheme;
+export default theme;

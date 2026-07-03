@@ -1,4 +1,4 @@
-import { buttonVariants } from '@hominem/ui/button';
+import { buttonVariants } from '@hominem/ui';
 import { Link } from 'react-router';
 
 import { FunnelHealth } from '~/components/career/dashboard/FunnelHealth';
@@ -146,9 +146,7 @@ function LandingPage() {
               <div className="mt-5 grid gap-5 border-y border-subtle py-5">
                 {searchProblems.map((problem, index) => (
                   <div key={problem.label}>
-                    <p className="ui-eyebrow">
-                      {String(index + 1).padStart(2, '0')}
-                    </p>
+                    <p className="ui-eyebrow">{String(index + 1).padStart(2, '0')}</p>
                     <p className="heading-4 mt-3 text-foreground">{problem.label}</p>
                     <p className="body-2 mt-2 max-w-2xl text-muted-foreground">{problem.copy}</p>
                   </div>

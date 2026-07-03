@@ -1,6 +1,6 @@
 import type { TimeSeriesDataPoint } from '@hominem/rpc/types/finance.types';
-import { Card, CardContent } from '@hominem/ui/components/ui/card';
-import { Skeleton } from '@hominem/ui/components/ui/skeleton';
+import { Card, CardContent } from '@hominem/ui/card';
+import { Skeleton } from '~/lib/ui-shims';
 import { Link, useNavigate } from 'react-router';
 
 import { useTimeSeriesData } from '~/lib/hooks/use-time-series';

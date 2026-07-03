@@ -4,6 +4,10 @@
   "description": "Unified authentication package for Hominem apps (web, mobile, CLI)",
   "type": "module",
   "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
     "./types": {
       "types": "./src/types.ts",
       "default": "./src/types.ts"
@@ -39,13 +43,17 @@
     "./client/passkey": {
       "types": "./src/client/passkey.ts",
       "default": "./src/client/passkey.ts"
+    },
+    "./server": {
+      "types": "./src/server.ts",
+      "default": "./src/server.ts"
     }
   },
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsgo --noEmit",
-    "format": "pnpm dlx oxfmt ./src",
-    "lint": "pnpm dlx oxlint ./src"
+    "format": "oxfmt src --write",
+    "lint": "oxlint src --fix"
   },
   "dependencies": {
     "@better-auth/passkey": "^1.6.11",

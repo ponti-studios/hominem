@@ -1,4 +1,4 @@
-import { Badge } from '@hominem/ui/badge';
+import { Badge } from '@hominem/ui';
 import { Link } from 'react-router';
 
 import {
@@ -44,7 +44,9 @@ export function ApplicationsDesktopTable({ applications }: ApplicationsDesktopTa
               </div>
 
               <p className="body-4 whitespace-nowrap text-text-tertiary">
-                {formatApplicationDate(application.application_date || application.start_date || null)}
+                {formatApplicationDate(
+                  application.application_date || application.start_date || null,
+                )}
               </p>
 
               <p className="body-4 whitespace-nowrap text-text-tertiary">

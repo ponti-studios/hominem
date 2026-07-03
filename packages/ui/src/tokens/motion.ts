@@ -10,7 +10,8 @@
  *
  * ## Animation mandate
  *
- * Web interactive animations MUST use GSAP via `@hominem/ui/lib/gsap`.
+ * Web interactive animations MUST use the shared GSAP helpers exposed by the
+ * consuming app.
  * The canonical sequences (playFocusExpand, playFocusCollapse,
  * playContextSwitch, playSubmitPulse, playEnterRow, playExitRow,
  * playShimmer) read the numeric constants from this file so all motion

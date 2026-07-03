@@ -1,13 +1,13 @@
 import type { AccountWithPlaidInfo } from '@hominem/rpc/types/finance.types';
 import { Button } from '@hominem/ui/button';
-import { Badge } from '@hominem/ui/components/ui/badge';
+import { Badge } from '@hominem/ui/badge';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@hominem/ui/components/ui/select';
+} from '@hominem/ui/select';
 import {
   Dialog,
   DialogContent,

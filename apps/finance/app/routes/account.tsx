@@ -1,6 +1,6 @@
 import { useAuthContext } from '@hominem/auth';
-import { useApiClient } from '@hominem/ui';
-import { toast } from '@hominem/ui';
+import { useApiClient } from '@hominem/rpc/react';
+import { toast } from '~/lib/ui-shims';
 import { Button, buttonVariants } from '@hominem/ui/button';
 import {
   AlertDialog,
@@ -11,14 +11,14 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@hominem/ui/components/ui/alert-dialog';
+} from '@hominem/ui/alert-dialog';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@hominem/ui/components/ui/card';
+} from '@hominem/ui/card';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
@@ -27,12 +27,16 @@ import { RouteLink } from '~/components/route-link';
 
 export default function AccountPage() {
   const { logout } = useAuthContext();
-  const api = useApiClient();
+  useApiClient(); // Keep for consistency, but use fetch instead
   const queryClient = useQueryClient();
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
 
   const deleteAllFinanceData = useMutation<void, Error, void>({
-    mutationFn: async () => api.delete('/api/finance'),
+    mutationFn: async () => {
+      const res = await fetch('/api/finance', { method: 'DELETE' });
+      if (!res.ok) throw new Error(`Failed to delete: ${res.status}`);
+      return res.json();
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['finance'] }); // Invalidate all finance related queries
       toast({

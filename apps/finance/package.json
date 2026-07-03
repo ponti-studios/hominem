@@ -31,10 +31,10 @@
     "date-fns": "^3.6.0",
     "isbot": "^5",
     "lucide-react": "0.562.0",
-    "react": "19.2.0",
-    "react-dom": "19.2.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
     "react-plaid-link": "^3.6.1",
-    "react-router": "7.12.0",
+    "react-router": "7.15.1",
     "recharts": "^2.15.1",
     "tailwind-merge": "^3.0.1",
     "workbox-window": "^7.4.0",
@@ -43,7 +43,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.52.0",
-    "@react-router/dev": "^7.5.2",
+    "@react-router/dev": "7.14.0",
     "@tailwindcss/vite": "^4.0.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@types/react": "19.2.10",
@@ -51,9 +51,9 @@
     "jsdom": "^25.0.1",
     "rollup-plugin-visualizer": "6.0.5",
     "typescript": "5.9.3",
-    "vite": "7.3.1",
+    "vite": "8.0.16",
     "vite-plugin-pwa": "^1.2.0",
     "vite-tsconfig-paths": "6.0.3",
-    "vitest": "4.0.16"
+    "vitest": "4.1.2"
   }
 }

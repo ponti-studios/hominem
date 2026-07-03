@@ -1,6 +1,6 @@
 import type { UpdateCareerJobApplicationInput } from '@hominem/db';
 import type { CareerInterviewEntry as InterviewEntry } from '@hominem/db';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hominem/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hominem/ui';
 import {
   Briefcase,
   Calendar,

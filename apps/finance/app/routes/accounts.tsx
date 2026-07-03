@@ -1,7 +1,7 @@
-import { toast } from '@hominem/ui';
+import { toast } from '~/lib/ui-shims';
 import { Button } from '@hominem/ui/button';
-import { Alert, AlertDescription, AlertTitle } from '@hominem/ui/components/ui/alert';
-import { Badge } from '@hominem/ui/components/ui/badge';
+import { Alert, AlertDescription, AlertTitle } from '@hominem/ui';
+import { Badge } from '@hominem/ui/badge';
 import {
   Card,
   CardContent,
@@ -9,7 +9,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@hominem/ui/components/ui/card';
+} from '@hominem/ui/card';
 import {
   AlertTriangle,
   Building2,
@@ -65,9 +65,9 @@ function normalizeAccount(account: RawAccountWithOptionalPlaid): AccountWithOpti
 
 export async function loader({ request }: Route.LoaderArgs) {
   const authResult = await requireAuth(request);
-  const client = createServerHonoClient(authResult.session?.access_token, request);
+  const client = createServerHonoClient(authResult.session?.token, request);
 
-  const data = await client.finance.listAllAccounts();
+  const data = await client.finance.listAllAccounts().catch(() => ({ accounts: [], connections: [] }));
 
   return data;
 }

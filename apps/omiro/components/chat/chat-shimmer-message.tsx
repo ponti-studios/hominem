@@ -1,8 +1,7 @@
 import { View } from 'react-native';
 import Animated, {
-  useAnimatedReaction,
   useAnimatedStyle,
-  useSharedValue,
+  useDerivedValue,
   withRepeat,
   withSequence,
   withTiming,
@@ -13,22 +12,16 @@ import { durations, makeStyles, radii, spacing } from '~/components/theme';
 const SHIMMER_DURATION = durations.standard * 5;
 
 function usePulse() {
-  const opacity = useSharedValue(0.4);
-
-  useAnimatedReaction(
-    () => opacity.value,
-    (_current: number, prev: number | null) => {
-      'worklet';
-      if (prev === null) {
-        opacity.value = withRepeat(
-          withSequence(
-            withTiming(1, { duration: SHIMMER_DURATION }),
-            withTiming(0.4, { duration: SHIMMER_DURATION }),
-          ),
-          -1,
-        );
-      }
-    },
+  const opacity = useDerivedValue(
+    () =>
+      withRepeat(
+        withSequence(
+          withTiming(1, { duration: SHIMMER_DURATION }),
+          withTiming(0.4, { duration: SHIMMER_DURATION }),
+        ),
+        -1,
+      ),
+    [],
   );
 
   return useAnimatedStyle(() => ({ opacity: opacity.value }));

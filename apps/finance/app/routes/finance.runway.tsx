@@ -1,9 +1,9 @@
 import { CHART_COLORS } from '@hominem/ui';
 import { Button } from '@hominem/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
-import { Badge } from '@hominem/ui/components/ui/badge';
+import { Badge } from '@hominem/ui/badge';
 import { Input } from '@hominem/ui/input';
-import { Label } from '@hominem/ui/label';
+import { Label } from '~/lib/ui-shims';
 import { AlertTriangle, Calendar, DollarSign, TrendingDown } from 'lucide-react';
 import { useId, useMemo, useState } from 'react';
 import {

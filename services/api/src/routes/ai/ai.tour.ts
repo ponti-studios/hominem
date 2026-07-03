@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 import { getSharedTextModel } from '@hominem/services/ai-model';
-import { logger } from '@hominem/utils/logger';
+import { logger } from '@hominem/telemetry';
 import { zValidator } from '@hono/zod-validator';
 import { generateObject } from 'ai';
 import { Hono } from 'hono';

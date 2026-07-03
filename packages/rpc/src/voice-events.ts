@@ -19,12 +19,17 @@ export type VoiceTransport = (typeof VOICE_TRANSPORTS)[number];
 export const VOICE_EVENTS = [
   'voice_record_started',
   'voice_record_stopped',
+  'voice_record_discarded',
   'voice_transcribe_requested',
   'voice_transcribe_succeeded',
   'voice_transcribe_failed',
 ] as const;
 
 export type VoiceEventName = (typeof VOICE_EVENTS)[number];
+
+export const VOICE_DISCARD_REASONS = ['user-cancelled', 'unmounted', 'navigated-away'] as const;
+
+export type VoiceDiscardReason = (typeof VOICE_DISCARD_REASONS)[number];
 
 export interface VoiceEventPayload {
   platform: 'web' | 'mobile-ios';
@@ -37,6 +42,7 @@ export interface VoiceEventPayload {
   transport?: VoiceTransport;
   streamMode?: 'stream' | 'request-response';
   stage?: 'request_prepare' | 'transport_send' | 'first_token' | 'complete';
+  reason?: VoiceDiscardReason;
 }
 
 /**
@@ -72,6 +78,7 @@ function toCaptureProperties(
     transport: payload.transport,
     streamMode: payload.streamMode,
     stage: payload.stage,
+    reason: payload.reason,
   };
 }
 

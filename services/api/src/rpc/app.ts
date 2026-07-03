@@ -4,25 +4,13 @@ import type { AppContext } from './middleware/auth';
 import { requestIdMiddleware } from './middleware/auth';
 import { apiErrorHandler } from './middleware/error';
 import { validationErrorMiddleware } from './middleware/validation';
-import { chatsRoutes } from './routes/chats';
-import { enhanceRoutes } from './routes/enhance';
-import { filesRoutes } from './routes/files';
-import { inboxRoutes } from './routes/inbox';
-import { notesRoutes } from './routes/notes';
-import { tasksRoutes } from './routes/tasks';
-import { authenticatedVoiceRoutes } from './routes/voice';
+import { economyRoutes } from './routes/economy';
 
 export const rpcApp = new Hono<AppContext>()
   .onError(apiErrorHandler)
   .use(requestIdMiddleware)
   .use(validationErrorMiddleware)
   .basePath('/api')
-  .route('/ai', enhanceRoutes)
-  .route('/chats', chatsRoutes)
-  .route('/inbox', inboxRoutes)
-  .route('/files', filesRoutes)
-  .route('/notes', notesRoutes)
-  .route('/tasks', tasksRoutes)
-  .route('/voice', authenticatedVoiceRoutes);
+  .route('', economyRoutes);
 
 export type AppType = typeof rpcApp;

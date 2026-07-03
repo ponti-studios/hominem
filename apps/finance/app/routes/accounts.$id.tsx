@@ -1,8 +1,8 @@
 import type { AccountGetOutput } from '@hominem/rpc/types/finance.types';
 import { Button } from '@hominem/ui/button';
-import { Alert, AlertDescription, AlertTitle } from '@hominem/ui/components/ui/alert';
-import { Badge } from '@hominem/ui/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@hominem/ui';
+import { Badge } from '@hominem/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
 import { ArrowLeft, RefreshCcw } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { redirect, useParams } from 'react-router';
@@ -55,7 +55,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   }
 
   const authResult = await requireAuth(request);
-  const client = createServerHonoClient(authResult.session?.access_token, request);
+  const client = createServerHonoClient(authResult.session?.token, request);
 
   const [account, transactionsResult] = await Promise.all([
     client.finance.getAccount({ id }),

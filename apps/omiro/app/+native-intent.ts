@@ -1,8 +1,4 @@
-import {
-  getWorkspaceArtifactRoute,
-  getWorkspaceHomeRoute,
-  getWorkspaceSettingsRoute,
-} from '~/services/workspace/routes';
+import { getContentRoute, getInboxRoute, getSettingsRoute } from '~/services/navigation/routes';
 
 /**
  * +native-intent.ts
@@ -31,9 +27,9 @@ export function redirectSystemPath({
   // Strip leading slash for matching
   const normalized = path.startsWith('/') ? path.slice(1) : path;
 
-  // App Intent / Siri: note/add -> feed
+  // App Intent / Siri: note/add -> inbox
   if (normalized === 'note/add') {
-    return getWorkspaceHomeRoute();
+    return getInboxRoute();
   }
 
   // OTP verification link: verify?token=xxx -> /(auth)/verify?token=xxx
@@ -44,41 +40,41 @@ export function redirectSystemPath({
   // Chat with specific ID: chat/<id>
   const chatIdMatch = normalized.match(/^chat\/([^?]+)/);
   if (chatIdMatch) {
-    return getWorkspaceArtifactRoute('chat', chatIdMatch[1]);
+    return getContentRoute('chat', chatIdMatch[1]);
   }
 
-  // Chat with seed (start new): chat?seed=<text> -> feed with seed
+  // Chat with seed (start new): chat?seed=<text> -> inbox with seed
   if (normalized.startsWith('chat')) {
     const seedParam = normalized.replace(/^chat\??/, '');
-    const homeRoute = getWorkspaceHomeRoute();
+    const homeRoute = getInboxRoute();
     return `${homeRoute}${seedParam ? `?${seedParam}` : ''}`;
   }
 
   // Notes with specific ID
   const notesIdMatch = normalized.match(/^notes\/(.+)/);
   if (notesIdMatch) {
-    return getWorkspaceArtifactRoute('note', notesIdMatch[1]);
+    return getContentRoute('note', notesIdMatch[1]);
   }
 
-  // Notes list -> feed
+  // Notes list -> inbox
   if (normalized === 'notes') {
-    return getWorkspaceHomeRoute();
+    return getInboxRoute();
   }
 
   // Focus with specific ID -> note detail
   const focusIdMatch = normalized.match(/^focus\/(.+)/);
   if (focusIdMatch) {
-    return getWorkspaceArtifactRoute('note', focusIdMatch[1]);
+    return getContentRoute('note', focusIdMatch[1]);
   }
 
-  // Focus list -> feed
+  // Focus list -> inbox
   if (normalized === 'focus') {
-    return getWorkspaceHomeRoute();
+    return getInboxRoute();
   }
 
   // Account/settings screen
   if (normalized.startsWith('account')) {
-    return getWorkspaceSettingsRoute();
+    return getSettingsRoute();
   }
 
   return path;

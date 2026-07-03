@@ -1,0 +1,9 @@
+appId: com.pontistudios.hakumi.dev
+---
+- launchApp
+- assertVisible: Inbox
+- tapOn: Open inbox menu
+- tapOn: Settings
+- assertVisible: Settings
+- back
+- assertVisible: Inbox

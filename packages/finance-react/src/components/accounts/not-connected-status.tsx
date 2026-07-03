@@ -1,4 +1,4 @@
-import { Badge } from '@hominem/ui/components/ui/badge';
+import { Badge } from '@hominem/ui/badge';
 import { AlertCircleIcon } from 'lucide-react';
 
 export function NotConnectedStatus() {

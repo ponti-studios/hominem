@@ -33,15 +33,23 @@ export function createOptimisticMessage(
   };
 }
 
-export function reconcileMessagesAfterSend(
-  previous: ChatMessageItem[],
-  serverMessages: ChatMessageItem[],
-): ChatMessageItem[] {
-  const withoutOptimistic = previous.filter(
-    (msg) => msg.role !== 'user' || serverMessages.some((m) => m.id === msg.id),
-  );
-  const newMessages = serverMessages.filter(
-    (serverMessage) => !withoutOptimistic.some((oldMessage) => oldMessage.id === serverMessage.id),
-  );
-  return [...withoutOptimistic, ...newMessages];
+export function createStreamingPlaceholder(
+  chatId: string,
+  id = fallbackId(),
+  message = '',
+): ChatMessageItem {
+  return {
+    id,
+    role: 'assistant',
+    message,
+    created_at: new Date().toISOString(),
+    chat_id: chatId,
+    profile_id: '',
+    focus_ids: null,
+    focus_items: null,
+    reasoning: null,
+    referencedNotes: null,
+    toolCalls: null,
+    isStreaming: true,
+  };
 }

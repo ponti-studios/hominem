@@ -1,6 +1,6 @@
 import { UserAuthService } from '@hominem/auth/server';
 import type { UserDeleteAccountOutput } from '@hominem/rpc/types/user.types';
-import { logger } from '@hominem/utils/logger';
+import { logger } from '@hominem/telemetry';
 import { Hono } from 'hono';
 
 import { authMiddleware, type AppContext } from '../middleware/auth';

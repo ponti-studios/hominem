@@ -1,4 +1,4 @@
-import { toast } from '@hominem/ui';
+import { toast } from '~/lib/ui-shims';
 import { Button } from '@hominem/ui/button';
 import {
   AlertDialog,
@@ -10,7 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@hominem/ui/components/ui/alert-dialog';
+} from '@hominem/ui/alert-dialog';
 import { RefreshCcw, Trash2 } from 'lucide-react';
 
 import { useRemovePlaidConnection, useSyncPlaidItem } from '~/lib/hooks/use-plaid';

@@ -17,8 +17,8 @@
   },
   "scripts": {
     "typecheck": "tsgo --noEmit",
-    "format": "pnpm dlx oxfmt ./src",
-    "lint": "pnpm dlx oxlint ./src"
+    "format": "oxfmt src --write",
+    "lint": "oxlint src --fix"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.529.0",

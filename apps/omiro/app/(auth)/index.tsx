@@ -1,6 +1,6 @@
 import type { RelativePathString } from 'expo-router';
 import { Redirect, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Pressable,
@@ -13,7 +13,6 @@ import {
 import Animated, {
   Easing,
   useAnimatedStyle,
-  useSharedValue,
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
@@ -21,7 +20,7 @@ import Animated, {
 import { FeatureErrorBoundary } from '~/components/error-boundary/FeatureErrorBoundary';
 import { useThemeColors } from '~/components/theme';
 import { Button } from '~/components/ui/button';
-import AppIcon from '~/components/ui/icon';
+import { IconChip } from '~/components/ui/icon-chip';
 import { CHAT_AUTH_CONFIG } from '~/config/auth';
 import { E2E_TESTING, MOBILE_PASSKEY_ENABLED } from '~/constants';
 import { useAuth } from '~/services/auth/auth-provider';
@@ -44,39 +43,34 @@ function AuthScreen() {
     error: passkeyError,
     isSupported: isPasskeySupported,
   } = useMobilePasskeyAuth({ loadPasskeys: false });
-
-  // Animations
-  const shakeX = useSharedValue(0);
-  const continueButtonOpacity = useSharedValue(0);
-
-  const shakeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shakeX.value }] }));
-  const continueButtonStyle = useAnimatedStyle(() => ({ opacity: continueButtonOpacity.value }));
-
-  // Animate Continue button in when a valid email is typed
   const normalizedEmail = normalizeEmail(email);
   const emailIsValid = isValidEmail(normalizedEmail);
-  useEffect(() => {
-    continueButtonOpacity.value = withTiming(emailIsValid ? 1 : 0, { duration: 36 });
-  }, [emailIsValid, continueButtonOpacity]);
 
-  // Shake input when a new error appears
-  const prevErrorRef = React.useRef<string | null>(null);
-  useEffect(() => {
-    if (authError && authError !== prevErrorRef.current) {
-      shakeX.value = withSequence(
-        withTiming(10, { duration: 50, easing: Easing.linear }),
-        withTiming(-10, { duration: 50, easing: Easing.linear }),
-        withTiming(7, { duration: 50, easing: Easing.linear }),
-        withTiming(-7, { duration: 50, easing: Easing.linear }),
-        withTiming(0, { duration: 50, easing: Easing.linear }),
-      );
-    }
-    prevErrorRef.current = authError;
-  }, [authError, shakeX]);
-
-  useEffect(() => {
-    posthog.capture('auth_screen_viewed');
-  }, []);
+  // Animations
+  const shakeStyle = useAnimatedStyle(
+    () => ({
+      transform: [
+        {
+          translateX: authError
+            ? withSequence(
+                withTiming(10, { duration: 50, easing: Easing.linear }),
+                withTiming(-10, { duration: 50, easing: Easing.linear }),
+                withTiming(7, { duration: 50, easing: Easing.linear }),
+                withTiming(-7, { duration: 50, easing: Easing.linear }),
+                withTiming(0, { duration: 50, easing: Easing.linear }),
+              )
+            : 0,
+        },
+      ],
+    }),
+    [authError],
+  );
+  const continueButtonStyle = useAnimatedStyle(
+    () => ({
+      opacity: withTiming(emailIsValid ? 1 : 0, { duration: 36 }),
+    }),
+    [emailIsValid],
+  );
 
   const handleSendCode = useCallback(async () => {
     posthog.capture('auth_send_code_pressed');
@@ -154,15 +148,6 @@ function AuthScreen() {
         style={[styles.container, { backgroundColor: themeColors.background }]}
         behavior="padding"
       >
-        <View
-          pointerEvents="none"
-          style={[styles.orbPrimary, { backgroundColor: themeColors['bg-surface'] }]}
-        />
-        <View
-          pointerEvents="none"
-          style={[styles.orbSecondary, { backgroundColor: themeColors['bg-elevated'] }]}
-        />
-
         <ScrollView
           testID="auth-screen"
           contentInsetAdjustmentBehavior="automatic"
@@ -172,16 +157,14 @@ function AuthScreen() {
         >
           <View style={styles.contentShell}>
             <View style={styles.card}>
-              <View style={[styles.iconChip, { backgroundColor: themeColors['bg-surface'] }]}>
-                <AppIcon name="envelope" />
-              </View>
+              <IconChip icon="envelope" />
 
               <View style={styles.copyBlock}>
                 <Text style={[styles.title, { color: themeColors.foreground }]}>
                   {t.auth.emailEntry.title}
                 </Text>
                 <Text style={[styles.helperText, { color: themeColors['text-secondary'] }]}>
-                  {isProbing ? t.auth.resumingSession : t.auth.emailEntry.helper}
+                  {isProbing ? t.auth.restoringSignIn : t.auth.emailEntry.helper}
                 </Text>
               </View>
 
@@ -293,13 +276,12 @@ function AuthScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    overflow: 'hidden',
   },
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 24,
+    paddingHorizontal: 24,
+    paddingVertical: 32,
   },
   contentShell: {
     width: '100%',
@@ -308,14 +290,7 @@ const styles = StyleSheet.create({
   card: {
     width: '100%',
     maxWidth: 420,
-    gap: 20,
-  },
-  iconChip: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
+    gap: 18,
   },
   copyBlock: {
     gap: 8,
@@ -342,24 +317,6 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 13,
     lineHeight: 18,
-  },
-  orbPrimary: {
-    position: 'absolute',
-    top: -120,
-    right: -60,
-    width: 300,
-    height: 300,
-    borderRadius: 150,
-    opacity: 0.42,
-  },
-  orbSecondary: {
-    position: 'absolute',
-    bottom: -150,
-    left: -120,
-    width: 340,
-    height: 340,
-    borderRadius: 170,
-    opacity: 0.34,
   },
   e2ePasskeyAction: {
     position: 'absolute',

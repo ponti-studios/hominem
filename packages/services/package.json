@@ -42,8 +42,8 @@
   },
   "scripts": {
     "typecheck": "tsgo --noEmit",
-    "format": "pnpm dlx oxfmt ./src",
-    "lint": "pnpm dlx oxlint ./src"
+    "format": "oxfmt src --write",
+    "lint": "oxlint src --fix"
   },
   "dependencies": {
     "@hominem/ai": "workspace:*",

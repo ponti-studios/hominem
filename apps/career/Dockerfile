@@ -10,6 +10,7 @@ ENV TURBO_TELEMETRY_DISABLED=1 \
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY packages ./packages
 COPY apps/career ./apps/career
+COPY tsconfig.base.json ./
 COPY tsconfig.profiles ./tsconfig.profiles
 COPY tsconfig.json ./
 

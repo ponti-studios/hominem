@@ -1,8 +1,9 @@
 import type React from 'react';
-import { Modal, Pressable, TextInput, View } from 'react-native';
+import { Pressable, TextInput, View } from 'react-native';
 
 import { Text, makeStyles, spacing } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
+import { ModalOverlay } from '~/components/ui/modal-overlay';
 import t from '~/translations';
 
 interface ChatSearchModalProps {
@@ -25,8 +26,8 @@ export function ChatSearchModal({
   const styles = useChatSearchStyles();
 
   return (
-    <Modal animationType="fade" onRequestClose={onClose} transparent visible={visible}>
-      <Pressable onPress={onClose} style={styles.searchBackdrop}>
+    <ModalOverlay visible={visible} onClose={onClose} position="top">
+      <View style={styles.searchInset}>
         <View style={styles.searchPanel}>
           <View style={styles.content}>
             <View style={styles.headerRow}>
@@ -57,8 +58,8 @@ export function ChatSearchModal({
             </Text>
           </View>
         </View>
-      </Pressable>
-    </Modal>
+      </View>
+    </ModalOverlay>
   );
 }
 
@@ -109,10 +110,7 @@ const useChatSearchStyles = makeStyles((theme) => ({
     fontSize: 17,
     fontWeight: '600',
   },
-  searchBackdrop: {
-    backgroundColor: theme.colors['overlay-modal-medium'],
-    flex: 1,
-    justifyContent: 'flex-start',
+  searchInset: {
     paddingHorizontal: spacing[4],
     paddingTop: spacing[7],
   },

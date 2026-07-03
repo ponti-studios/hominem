@@ -1,11 +1,11 @@
-import { Label } from '@hominem/ui/components/ui/label';
+import { Label } from '~/lib/ui-shims';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@hominem/ui/components/ui/select';
+} from '@hominem/ui/select';
 import { useId } from 'react';
 
 type GroupByOption = 'month' | 'week' | 'day';

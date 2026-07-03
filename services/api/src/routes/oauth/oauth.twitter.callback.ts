@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
 import { createAccount, getAccountByProviderAccountId, updateAccount } from '@hominem/auth/server';
-import { logger } from '@hominem/utils/logger';
+import { logger } from '@hominem/telemetry';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import * as z from 'zod';

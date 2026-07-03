@@ -12,7 +12,6 @@ import React, {
 
 import { E2E_TESTING } from '~/constants';
 import { createAuthContextSnapshot } from '~/services/auth/auth-provider-state';
-import { clearPendingAuthEmail } from '~/services/auth/pending-email';
 import { useAuthHeaders } from '~/services/auth/hooks/use-auth-headers';
 import { useBootSequence } from '~/services/auth/hooks/use-boot-sequence';
 import { useEmailOtp } from '~/services/auth/hooks/use-email-otp';
@@ -20,8 +19,9 @@ import { usePasskeyAuth } from '~/services/auth/hooks/use-passkey-auth';
 import { useResetAuthForE2E } from '~/services/auth/hooks/use-reset-auth-for-e2e';
 import { useSignOut } from '~/services/auth/hooks/use-sign-out';
 import { useUpdateProfile } from '~/services/auth/hooks/use-update-profile';
-import { clearPersistedSessionCookies } from '~/services/auth/session-cookie';
+import { clearPendingAuthEmail } from '~/services/auth/pending-email';
 import { type AuthStatusCompat } from '~/services/auth/provider-utils';
+import { clearPersistedSessionCookies } from '~/services/auth/session-cookie';
 import { authStateMachine, initialAuthState } from '~/services/auth/types';
 import { LocalStore } from '~/services/storage/local-store';
 

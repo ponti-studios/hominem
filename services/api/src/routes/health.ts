@@ -6,7 +6,7 @@ import {
   updateHealthRecord,
   type HealthRecordRow,
 } from '@hominem/health-services';
-import { logger } from '@hominem/utils/logger';
+import { logger } from '@hominem/telemetry';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import * as z from 'zod';

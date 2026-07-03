@@ -1,6 +1,6 @@
 import { ensureInstitutionExists, upsertPlaidItem } from '@hominem/finance-services';
-import { QUEUE_NAMES } from '@hominem/utils/consts';
-import { logger } from '@hominem/utils/logger';
+import { QUEUE_NAMES } from '@hominem/queues';
+import { logger } from '@hominem/telemetry';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import * as z from 'zod';

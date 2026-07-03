@@ -1,4 +1,4 @@
-import { Card, CardContent } from '@hominem/ui/card';
+import { Card, CardContent } from '@hominem/ui';
 
 interface StatCardProps {
   value: string | number;

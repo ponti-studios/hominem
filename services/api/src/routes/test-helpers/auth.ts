@@ -1,4 +1,4 @@
-import { getSetCookieHeaders } from '@hominem/utils/headers';
+
 import { vi } from 'vitest';
 
 export interface AppRequester {
@@ -115,7 +115,7 @@ export async function signInWithEmailOtp(app: AppRequester, email: string) {
 
   return {
     response,
-    cookieHeader: toCookieHeader(getSetCookieHeaders(response.headers)),
+    cookieHeader: toCookieHeader(response.headers.getSetCookie()),
     otp,
   };
 }

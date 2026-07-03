@@ -1,10 +1,16 @@
 import type { CareerTestimonialRecord as Testimonial } from '@hominem/db';
 import { CareerRepository, db } from '@hominem/db';
 import { EmptyState } from '@hominem/ui';
-import { Button } from '@hominem/ui/button';
-import { Input } from '@hominem/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
-import { Textarea } from '@hominem/ui/textarea';
+import { Button } from '@hominem/ui';
+import {
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Textarea,
+} from '@hominem/ui';
 import { PlusIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Controller, type SubmitHandler, useForm } from 'react-hook-form';

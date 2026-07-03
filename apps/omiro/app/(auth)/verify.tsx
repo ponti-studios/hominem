@@ -1,3 +1,4 @@
+import { useEmailAuth } from '@hominem/auth/client/provider';
 import { maskEmail } from '@hominem/auth/shared/mask-email';
 import type { RelativePathString } from 'expo-router';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -15,7 +16,6 @@ import Animated, {
   Easing,
   FadeIn,
   useAnimatedStyle,
-  useSharedValue,
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
@@ -23,14 +23,14 @@ import Animated, {
 import { useThemeColors } from '~/components/theme';
 import { CHAT_AUTH_CONFIG } from '~/config/auth';
 import { OTP_EXPIRES_SECONDS } from '~/config/auth-protocol';
-import { readPendingAuthEmail, writePendingAuthEmail } from '~/services/auth/pending-email';
+import { readPendingAuthEmail } from '~/services/auth/pending-email';
 import t from '~/translations';
 
 import { FeatureErrorBoundary } from '../../components/error-boundary/FeatureErrorBoundary';
 import { Button } from '../../components/ui/button';
 import AppIcon from '../../components/ui/icon';
+import { IconChip } from '../../components/ui/icon-chip';
 import { useAuth } from '../../services/auth/auth-provider';
-import { useEmailAuth } from '../../services/auth/hooks/use-email-auth';
 import { normalizeOtp } from '../../services/auth/validation';
 import { posthog } from '../../services/posthog';
 
@@ -42,6 +42,33 @@ function countdownColor(secondsLeft: number, themeColors: ReturnType<typeof useT
 
 function formatCountdown(s: number) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
+function resolveTokenSentAt(sentAt?: string) {
+  const parsedSentAt = sentAt ? Number(sentAt) : NaN;
+  return Number.isFinite(parsedSentAt) ? parsedSentAt : Date.now();
+}
+
+function resolveSecondsLeft(tokenSentAt: number, now = Date.now()) {
+  return Math.max(0, OTP_EXPIRES_SECONDS - Math.floor((now - tokenSentAt) / 1000));
+}
+
+function resolveAutoSubmitInput({
+  resolvedEmail,
+  token,
+}: {
+  resolvedEmail: string;
+  token?: string;
+}) {
+  const normalizedToken = normalizeOtp(token ?? '');
+  if (!resolvedEmail || normalizedToken.length !== 6) {
+    return null;
+  }
+
+  return {
+    normalizedToken,
+    submitKey: `${resolvedEmail}:${normalizedToken}`,
+  };
 }
 
 function VerifyScreen() {
@@ -58,55 +85,9 @@ function VerifyScreen() {
     sentAt?: string;
   }>();
   const resolvedEmail = emailParam ?? readPendingAuthEmail();
+  const initialTokenSentAt = React.useMemo(() => resolveTokenSentAt(sentAtParam), [sentAtParam]);
   const autoSubmitKeyRef = React.useRef<string | null>(null);
-
-  React.useEffect(() => {
-    if (emailParam) {
-      writePendingAuthEmail(emailParam);
-    }
-  }, [emailParam]);
-
-  // Countdown
-  const [tokenSentAt, setTokenSentAt] = React.useState(() =>
-    sentAtParam ? Number(sentAtParam) : Date.now(),
-  );
-  const [secondsLeft, setSecondsLeft] = React.useState(() =>
-    Math.max(
-      0,
-      OTP_EXPIRES_SECONDS -
-        Math.floor((Date.now() - (sentAtParam ? Number(sentAtParam) : Date.now())) / 1000),
-    ),
-  );
-
-  React.useEffect(() => {
-    setSecondsLeft(
-      Math.max(0, OTP_EXPIRES_SECONDS - Math.floor((Date.now() - tokenSentAt) / 1000)),
-    );
-    const id = setInterval(() => {
-      const left = Math.max(0, OTP_EXPIRES_SECONDS - Math.floor((Date.now() - tokenSentAt) / 1000));
-      setSecondsLeft(left);
-      if (left === 0) clearInterval(id);
-    }, 1000);
-    return () => clearInterval(id);
-  }, [tokenSentAt]);
-
-  // Success state — brief pause before redirect
   const [verifySucceeded, setVerifySucceeded] = React.useState(false);
-  React.useEffect(() => {
-    if (!verifySucceeded) return;
-    const id = setTimeout(() => {
-      router.replace(CHAT_AUTH_CONFIG.defaultPostAuthDestination as RelativePathString);
-    }, 900);
-    return () => clearTimeout(id);
-  }, [verifySucceeded, router]);
-
-  // Animations
-  const shakeX = useSharedValue(0);
-  const verifyButtonOpacity = useSharedValue(0);
-
-  const shakeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shakeX.value }] }));
-  const verifyButtonStyle = useAnimatedStyle(() => ({ opacity: verifyButtonOpacity.value }));
-
   const {
     otp,
     setOtp,
@@ -125,45 +106,86 @@ function VerifyScreen() {
       await requestEmailOtp(email);
     },
   });
-
-  // Shake input row when a new error appears
-  const prevErrorRef = React.useRef<string | null>(null);
-  React.useEffect(() => {
-    if (authError && authError !== prevErrorRef.current) {
-      shakeX.value = withSequence(
-        withTiming(10, { duration: 50, easing: Easing.linear }),
-        withTiming(-10, { duration: 50, easing: Easing.linear }),
-        withTiming(7, { duration: 50, easing: Easing.linear }),
-        withTiming(-7, { duration: 50, easing: Easing.linear }),
-        withTiming(0, { duration: 50, easing: Easing.linear }),
-      );
-    }
-    prevErrorRef.current = authError;
-  }, [authError, shakeX]);
-
   const normalizedOtp = normalizeOtp(otp).slice(0, 6);
 
-  // Animate Verify button in when 6 digits are present
-  React.useEffect(() => {
-    const ready = normalizedOtp.length === 6;
-    verifyButtonOpacity.value = withTiming(ready ? 1 : 0, { duration: 36 });
-  }, [normalizedOtp.length, verifyButtonOpacity]);
+  // Countdown
+  const [tokenSentAt, setTokenSentAt] = React.useState(initialTokenSentAt);
+  const [secondsLeft, setSecondsLeft] = React.useState(() =>
+    resolveSecondsLeft(initialTokenSentAt),
+  );
 
   React.useEffect(() => {
-    posthog.capture('auth_verify_screen_viewed');
-  }, []);
+    const id = setInterval(() => {
+      const left = resolveSecondsLeft(tokenSentAt);
+      setSecondsLeft(left);
+      if (left === 0) clearInterval(id);
+    }, 1000);
+    return () => clearInterval(id);
+  }, [tokenSentAt]);
+
+  // Success state — brief pause before redirect
+  React.useEffect(() => {
+    if (!verifySucceeded) return;
+    const id = setTimeout(() => {
+      router.replace(CHAT_AUTH_CONFIG.defaultPostAuthDestination as RelativePathString);
+    }, 900);
+    return () => clearTimeout(id);
+  }, [verifySucceeded, router]);
+
+  // Animations
+  const shakeStyle = useAnimatedStyle(
+    () => ({
+      transform: [
+        {
+          translateX: authError
+            ? withSequence(
+                withTiming(10, { duration: 50, easing: Easing.linear }),
+                withTiming(-10, { duration: 50, easing: Easing.linear }),
+                withTiming(7, { duration: 50, easing: Easing.linear }),
+                withTiming(-7, { duration: 50, easing: Easing.linear }),
+                withTiming(0, { duration: 50, easing: Easing.linear }),
+              )
+            : 0,
+        },
+      ],
+    }),
+    [authError],
+  );
+  const verifyButtonStyle = useAnimatedStyle(
+    () => ({
+      opacity: withTiming(normalizedOtp.length === 6 ? 1 : 0, { duration: 36 }),
+    }),
+    [normalizedOtp.length],
+  );
 
   React.useEffect(() => {
-    const normalizedToken = normalizeOtp(tokenParam ?? '');
-    const submitKey = `${resolvedEmail}:${normalizedToken}`;
-    if (autoSubmitKeyRef.current === submitKey || !resolvedEmail || normalizedToken.length !== 6) {
+    const autoSubmitInput = resolveAutoSubmitInput({
+      resolvedEmail,
+      token: tokenParam,
+    });
+    if (!autoSubmitInput || autoSubmitKeyRef.current === autoSubmitInput.submitKey) {
       return;
     }
-    autoSubmitKeyRef.current = submitKey;
-    setOtp(normalizedToken);
+
+    autoSubmitKeyRef.current = autoSubmitInput.submitKey;
+    setOtp(autoSubmitInput.normalizedToken);
     posthog.capture('auth_verify_link_opened');
-    void handleVerifyOtp(resolvedEmail, normalizedToken);
+    void handleVerifyOtp(resolvedEmail, autoSubmitInput.normalizedToken);
   }, [handleVerifyOtp, resolvedEmail, setOtp, tokenParam]);
+
+  const handleChangeEmail = React.useCallback(() => {
+    posthog.capture('auth_change_email_pressed');
+    router.replace('/(auth)' as RelativePathString);
+  }, [router]);
+  const handleVerifyPress = React.useCallback(() => {
+    posthog.capture('auth_verify_pressed');
+    return handleVerifyOtp(resolvedEmail, normalizedOtp);
+  }, [handleVerifyOtp, normalizedOtp, resolvedEmail]);
+  const handleResendPress = React.useCallback(async () => {
+    posthog.capture('auth_resend_pressed');
+    await handleResendOtp(resolvedEmail);
+    setTokenSentAt(Date.now());
+  }, [handleResendOtp, resolvedEmail]);
 
   if (isSignedIn && !verifySucceeded) {
     return <Redirect href={CHAT_AUTH_CONFIG.defaultPostAuthDestination as RelativePathString} />;
@@ -185,9 +207,13 @@ function VerifyScreen() {
         ]}
       >
         <Animated.View entering={FadeIn.duration(300)} style={styles.successContent}>
-          <View style={[styles.successChip, { backgroundColor: themeColors['bg-surface'] }]}>
-            <AppIcon name="checkmark.circle.fill" size={32} tintColor={themeColors.success} />
-          </View>
+          <IconChip
+            icon="checkmark.circle.fill"
+            size={72}
+            radius={24}
+            iconSize={32}
+            tintColor={themeColors.success}
+          />
           <Text style={[styles.successText, { color: themeColors.foreground }]}>
             {t.auth.verify.signedIn}
           </Text>
@@ -201,15 +227,6 @@ function VerifyScreen() {
       style={[styles.container, { backgroundColor: themeColors.background }]}
       behavior="padding"
     >
-      <View
-        pointerEvents="none"
-        style={[styles.orbPrimary, { backgroundColor: themeColors['bg-surface'] }]}
-      />
-      <View
-        pointerEvents="none"
-        style={[styles.orbSecondary, { backgroundColor: themeColors['bg-elevated'] }]}
-      />
-
       <ScrollView
         testID="auth-verify-screen"
         contentInsetAdjustmentBehavior="automatic"
@@ -219,9 +236,7 @@ function VerifyScreen() {
       >
         <View style={styles.contentShell}>
           <View style={styles.card}>
-            <View style={[styles.iconChip, { backgroundColor: themeColors['bg-surface'] }]}>
-              <AppIcon name="lock.shield" />
-            </View>
+            <IconChip icon="lock.shield" />
 
             <View style={styles.copyBlock}>
               <Text style={[styles.title, { color: themeColors.foreground }]}>
@@ -233,10 +248,7 @@ function VerifyScreen() {
                 </Text>
                 <Pressable
                   hitSlop={8}
-                  onPress={() => {
-                    posthog.capture('auth_change_email_pressed');
-                    router.replace('/(auth)' as RelativePathString);
-                  }}
+                  onPress={handleChangeEmail}
                   style={({ pressed }) => [
                     styles.emailChip,
                     { backgroundColor: themeColors['bg-surface'], opacity: pressed ? 0.65 : 1 },
@@ -284,8 +296,7 @@ function VerifyScreen() {
                     }}
                     onSubmitEditing={() => {
                       if (normalizedOtp.length === 6) {
-                        posthog.capture('auth_verify_pressed');
-                        void handleVerifyOtp(resolvedEmail, normalizedOtp);
+                        void handleVerifyPress();
                       }
                     }}
                     accessibilityLabel={t.auth.verify.oneTimeVerificationCodeA11y}
@@ -327,11 +338,7 @@ function VerifyScreen() {
                   <Button
                     testID="auth-resend-otp-primary"
                     label={t.auth.verify.resendButton}
-                    onPress={async () => {
-                      posthog.capture('auth_resend_pressed');
-                      await handleResendOtp(resolvedEmail);
-                      setTokenSentAt(Date.now());
-                    }}
+                    onPress={() => void handleResendPress()}
                     disabled={isBusy}
                     variant="primary"
                   />
@@ -339,10 +346,7 @@ function VerifyScreen() {
                   <Button
                     testID="auth-verify-otp"
                     label={t.auth.verify.verifyButton}
-                    onPress={() => {
-                      posthog.capture('auth_verify_pressed');
-                      void handleVerifyOtp(resolvedEmail, normalizedOtp);
-                    }}
+                    onPress={() => void handleVerifyPress()}
                     disabled={isSubmitting || normalizedOtp.length !== 6}
                     variant="primary"
                   />
@@ -353,21 +357,14 @@ function VerifyScreen() {
                 <Button
                   testID="auth-resend-otp"
                   label={t.auth.verify.resendButton}
-                  onPress={async () => {
-                    posthog.capture('auth_resend_pressed');
-                    await handleResendOtp(resolvedEmail);
-                    setTokenSentAt(Date.now());
-                  }}
+                  onPress={() => void handleResendPress()}
                   disabled={isBusy}
                   variant="tertiary"
                   size="sm"
                 />
                 <Button
                   label={t.auth.verify.changeEmailLink}
-                  onPress={() => {
-                    posthog.capture('auth_change_email_pressed');
-                    router.replace('/(auth)' as RelativePathString);
-                  }}
+                  onPress={handleChangeEmail}
                   disabled={isBusy}
                   variant="tertiary"
                   size="sm"
@@ -384,7 +381,6 @@ function VerifyScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    overflow: 'hidden',
   },
   successContainer: {
     alignItems: 'center',
@@ -394,13 +390,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 16,
   },
-  successChip: {
-    width: 72,
-    height: 72,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   successText: {
     fontSize: 22,
     fontWeight: '700',
@@ -408,8 +397,8 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 24,
+    paddingHorizontal: 24,
+    paddingTop: 32,
     paddingBottom: 80,
   },
   contentShell: {
@@ -419,14 +408,7 @@ const styles = StyleSheet.create({
   card: {
     width: '100%',
     maxWidth: 420,
-    gap: 20,
-  },
-  iconChip: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
+    gap: 18,
   },
   copyBlock: {
     gap: 8,
@@ -490,24 +472,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 12,
-  },
-  orbPrimary: {
-    position: 'absolute',
-    top: -120,
-    right: -60,
-    width: 300,
-    height: 300,
-    borderRadius: 150,
-    opacity: 0.62,
-  },
-  orbSecondary: {
-    position: 'absolute',
-    bottom: -150,
-    left: -120,
-    width: 340,
-    height: 340,
-    borderRadius: 170,
-    opacity: 0.34,
   },
 });
 

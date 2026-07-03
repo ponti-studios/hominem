@@ -2,7 +2,7 @@ import { data, type ActionFunction } from 'react-router';
 
 import type { JobScrapeApiRequest, JobScrapeApiResponse } from '~/lib/api-contracts';
 import { logger } from '~/lib/logger';
-import { jobScrapingService } from '~/lib/services/job-scraping.service';
+import { scrapeJobPosting } from '~/lib/services/job-scraping.service';
 
 export const action: ActionFunction = async ({ request }) => {
   try {
@@ -18,7 +18,7 @@ export const action: ActionFunction = async ({ request }) => {
       return data({ error: 'Invalid URL format' }, { status: 400 });
     }
 
-    const result = await jobScrapingService.scrapeJobPosting(jobUrl);
+    const result = await scrapeJobPosting(jobUrl);
 
     if (!result.success) {
       return data(

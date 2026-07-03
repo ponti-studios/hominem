@@ -1,0 +1,39 @@
+appId: com.pontistudios.hakumi.dev
+---
+# Flow: Chat back returns to inbox
+# Creates a chat from the home composer, taps the chat detail back control, and
+# verifies users land on the inbox instead of another history entry.
+
+- openLink: 'exp+hakumi://expo-development-client/?url=http%3A%2F%2F127.0.0.1%3A8081'
+- waitForAnimationToEnd:
+    timeout: 10000
+- openLink: 'hakumi-dev://'
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertVisible:
+    id: 'inbox-composer-input'
+- tapOn:
+    point: '42%, 11%'
+- waitForAnimationToEnd:
+    timeout: 1000
+- tapOn:
+    id: 'inbox-composer-input'
+- inputText: 'Back navigation probe'
+- waitForAnimationToEnd:
+    timeout: 1000
+- assertVisible:
+    id: 'composer-submit-chat'
+- tapOn:
+    id: 'composer-submit-chat'
+- waitForAnimationToEnd:
+    timeout: 5000
+- assertVisible: 'Back navigation probe'
+- assertVisible:
+    id: 'chat-composer-input'
+- tapOn:
+    id: 'BackButton'
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertVisible:
+    id: 'inbox-composer-input'
+- takeScreenshot: /tmp/omiro_chat_back_to_inbox

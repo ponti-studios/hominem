@@ -12,7 +12,7 @@ const mocks = vi.hoisted(() => ({
   processFile: vi.fn(),
 }));
 
-vi.mock('@hominem/utils/storage', () => ({
+vi.mock('@hominem/storage', () => ({
   fileStorageService: {
     createPreparedUpload: mocks.createPreparedUpload,
     fileExists: mocks.fileExists,
@@ -28,7 +28,7 @@ vi.mock('@hominem/services/files', () => ({
   },
 }));
 
-vi.mock('@hominem/utils/logger', () => ({
+vi.mock('@hominem/telemetry', () => ({
   logger: {
     error: mocks.loggerError,
   },

@@ -4,7 +4,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@hominem/ui/components/ui/select';
+} from '@hominem/ui/select';
 import { Calendar } from 'lucide-react';
 import { useMemo } from 'react';
 

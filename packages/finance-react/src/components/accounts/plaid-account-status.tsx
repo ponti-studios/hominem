@@ -11,7 +11,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@hominem/ui/components/ui/alert-dialog';
+} from '@hominem/ui/alert-dialog';
 import { RefreshCcw, Trash2 } from 'lucide-react';
 
 import { useRemovePlaidConnection, useSyncPlaidItem } from '../../hooks/use-plaid';

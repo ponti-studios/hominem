@@ -1,4 +1,4 @@
-import { LoadingSpinner } from '@hominem/ui/loading-spinner';
+import { LoadingSpinner } from '@hominem/ui';
 import { memo } from 'react';
 
 import { cn } from '~/lib/utils';

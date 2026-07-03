@@ -1,7 +1,16 @@
-import { Button } from '@hominem/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
-import { Input } from '@hominem/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
+import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@hominem/ui';
 import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 
@@ -128,7 +137,7 @@ export function ResumeCustomizer({
     <div className="space-y-6">
       <div className="text-center">
         <h2 className="heading-1 text-foreground mb-2">AI Resume Customizer</h2>
-                  <p className="body-3 text-muted-foreground">
+        <p className="body-3 text-muted-foreground">
           Paste a job posting below and we'll generate a customized resume based on your portfolio
         </p>
       </div>
@@ -194,10 +203,7 @@ export function ResumeCustomizer({
         >
           {/* Input Method Toggle */}
           <div>
-            <label
-              htmlFor="inputMethod"
-              className="block subheading-4 text-muted-foreground mb-2"
-            >
+            <label htmlFor="inputMethod" className="block subheading-4 text-muted-foreground mb-2">
               Input Method
             </label>
             <div className="flex gap-2" id="inputMethod">
@@ -313,10 +319,7 @@ export function ResumeCustomizer({
             </div>
 
             <div>
-              <label
-                htmlFor="focusAreas"
-                className="block subheading-4 text-muted-foreground mb-2"
-              >
+              <label htmlFor="focusAreas" className="block subheading-4 text-muted-foreground mb-2">
                 Focus Areas (optional)
               </label>
               <Input

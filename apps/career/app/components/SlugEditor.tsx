@@ -1,5 +1,4 @@
-import { Button } from '@hominem/ui/button';
-import { Input } from '@hominem/ui/input';
+import { Button, Input } from '@hominem/ui';
 import { Check, Loader2, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useSubmit } from 'react-router';
@@ -223,10 +222,7 @@ export function SlugEditor({ portfolio_id, initialSlug, onSave }: SlugEditorProp
       </div>
 
       <p
-        className={cn(
-          'body-4',
-          validation.message ? helperToneClassName : 'text-muted-foreground',
-        )}
+        className={cn('body-4', validation.message ? helperToneClassName : 'text-muted-foreground')}
       >
         {validation.message || 'Lowercase letters, numbers, and hyphens only.'}
       </p>

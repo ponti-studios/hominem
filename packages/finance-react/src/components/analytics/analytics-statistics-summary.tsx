@@ -1,5 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/components/ui/card';
-import { Skeleton } from '@hominem/ui/components/ui/skeleton';
+import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
+import { Skeleton } from '@hominem/ui/skeleton';
 
 import { useTimeSeriesData } from '../../hooks/use-time-series';
 

@@ -1,7 +1,6 @@
 import { AuthProvider } from '@hominem/auth';
 import { COMMON_FONT_LINKS, COMMON_ICON_LINKS, UpdateGuard } from '@hominem/ui';
 import type React from 'react';
-import { useCallback } from 'react';
 import {
   data,
   isRouteErrorResponse,
@@ -10,7 +9,6 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
-  useRevalidator,
 } from 'react-router';
 
 import type { Route } from './+types/root';
@@ -64,37 +62,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App({ loaderData }: Route.ComponentProps) {
-  const { authEnv, apiBaseUrl, session, user } = loaderData;
-  const revalidator = useRevalidator();
-  const clearOfflineCaches = useCallback(async () => {
-    if (!('caches' in window)) {
-      return;
-    }
-    const cacheNames = await caches.keys();
-    await Promise.all(cacheNames.map((name) => caches.delete(name)));
-  }, []);
-
-  const handleAuthEvent = useCallback(
-    (event: 'SIGNED_IN' | 'SIGNED_OUT' | 'TOKEN_REFRESHED') => {
-      if (event === 'SIGNED_OUT') {
-        void clearOfflineCaches();
-      }
-      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
-        revalidator.revalidate();
-      }
-    },
-    [clearOfflineCaches, revalidator],
-  );
+  const { authEnv, apiBaseUrl } = loaderData;
 
   return (
     <AuthProvider
       config={authEnv}
-      onAuthEvent={handleAuthEvent}
-      initialUser={user}
-      initialSession={session}
     >
       <HonoProvider baseUrl={apiBaseUrl}>
-        <UpdateGuard logo="/logo-finance.png" appName="Finance">
+        <UpdateGuard>
           <Outlet />
         </UpdateGuard>
       </HonoProvider>

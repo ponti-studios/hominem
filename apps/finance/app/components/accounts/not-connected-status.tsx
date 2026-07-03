@@ -1,5 +1,5 @@
 import { Button } from '@hominem/ui/button';
-import { Badge } from '@hominem/ui/components/ui/badge';
+import { Badge } from '@hominem/ui/badge';
 import { AlertCircleIcon, LinkIcon } from 'lucide-react';
 
 import type { Account } from '~/lib/types/account.types';

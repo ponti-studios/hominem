@@ -1,43 +1,44 @@
+import { createFinanceClient } from '@hominem/rpc/domains/finance';
 import { useApiClient } from '@hominem/rpc/react';
 import { useMutation, useQuery, useQueryClient, type UseQueryOptions } from '@tanstack/react-query';
-import type { ReactNode } from 'react';
+
+function useFinanceClient() {
+  const client = useApiClient();
+  return createFinanceClient(client as any);
+}
 
 /**
- * Compatibility wrapper for old hono-based useHonoQuery hook
- * Adapts old API to new react-query pattern
+ * Compatibility wrapper for old useHonoQuery hook — queries the finance domain.
  */
 export function useHonoQuery<TData = unknown>(
   queryKey: unknown[],
-  queryFn: (client: { finance: any }) => Promise<TData>,
+  queryFn: (client: { finance: ReturnType<typeof createFinanceClient> }) => Promise<TData>,
   options?: Partial<UseQueryOptions<TData>>,
 ) {
-  const client = useApiClient();
+  const financeClient = useFinanceClient();
 
   return useQuery({
     queryKey,
-    queryFn: () => queryFn({ finance: client.finance || client }),
+    queryFn: () => queryFn({ finance: financeClient }),
     ...options,
   } as UseQueryOptions<TData>);
 }
 
 /**
- * Compatibility wrapper for old hono-based useHonoMutation hook
- * Adapts old API to new react-query mutation pattern
+ * Compatibility wrapper for old useHonoMutation hook.
  */
 export function useHonoMutation<TData = unknown, TVariables = unknown>(
-  mutationFn: (client: { finance: any }, variables: TVariables) => Promise<TData>,
+  mutationFn: (client: { finance: ReturnType<typeof createFinanceClient> }, variables: TVariables) => Promise<TData>,
   options?: any,
 ) {
-  const client = useApiClient();
-  const queryClient = useQueryClient();
+  const financeClient = useFinanceClient();
 
   return useMutation({
-    mutationFn: (variables: TVariables) => mutationFn({ finance: client.finance || client }, variables),
-    onSuccess: (data) => {
+    mutationFn: (variables: TVariables) => mutationFn({ finance: financeClient }, variables),
+    onSuccess: (data: TData) => {
       options?.onSuccess?.(data);
-      queryClient.invalidateQueries();
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       options?.onError?.(error);
     },
     ...options,
@@ -45,19 +46,20 @@ export function useHonoMutation<TData = unknown, TVariables = unknown>(
 }
 
 /**
- * Utility hooks for common client operations
+ * Utility hooks for query cache operations.
  */
-export const useHonoUtils = () => {
+export function useHonoUtils() {
   const queryClient = useQueryClient();
   return {
-    invalidateQueries: (queryKey?: unknown[]) => {
-      if (queryKey) {
-        return queryClient.invalidateQueries({ queryKey });
-      }
+    invalidate: (queryKey?: unknown[]) => {
+      if (queryKey) return queryClient.invalidateQueries({ queryKey });
       return queryClient.invalidateQueries();
     },
-    setQueryData: (queryKey: unknown[], data: unknown) => {
-      return queryClient.setQueryData(queryKey, data);
+    invalidateQueries: (queryKey?: unknown[]) => {
+      if (queryKey) return queryClient.invalidateQueries({ queryKey });
+      return queryClient.invalidateQueries();
     },
+    setQueryData: (queryKey: unknown[], data: unknown) =>
+      queryClient.setQueryData(queryKey, data),
   };
-};
+}

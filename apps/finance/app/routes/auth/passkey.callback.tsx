@@ -1,4 +1,4 @@
-import { createAuthPasskeyCallbackRoute } from '@hominem/ui/auth-server-routes';
+import { createAuthPasskeyCallbackRoute } from '~/lib/auth-server-routes';
 
 import { AUTH_CONFIG } from './config';
 

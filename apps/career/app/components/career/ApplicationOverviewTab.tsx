@@ -1,7 +1,6 @@
 import type { CareerJobApplicationRecord as ApplicationWithCompany } from '@hominem/db';
-import { Button } from '@hominem/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
-import { Input } from '@hominem/ui/input';
+import { Button } from '@hominem/ui';
+import { Card, CardContent, CardHeader, CardTitle, Input } from '@hominem/ui';
 import { Briefcase, Calendar, DollarSign, ExternalLink, MapPin, TrendingUp } from 'lucide-react';
 import { useState } from 'react';
 import { Form } from 'react-router';

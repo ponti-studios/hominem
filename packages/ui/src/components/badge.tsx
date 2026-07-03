@@ -19,8 +19,7 @@ const badgeVariants = cva(
           'border-border text-foreground [a&]:void-hover [a&]:[--void-hover-bg:var(--color-accent)] [a&]:[--void-hover-color:var(--color-accent-foreground)] [a&]:[--void-hover-border:var(--color-accent)]',
         ghost:
           '[a&]:void-hover [a&]:[--void-hover-bg:var(--color-accent)] [a&]:[--void-hover-color:var(--color-accent-foreground)] [a&]:[--void-hover-border:transparent]',
-        link:
-          'text-primary underline-offset-4 [a&]:void-hover [a&]:hover:underline [a&]:[--void-hover-bg:transparent] [a&]:[--void-hover-color:var(--color-secondary-foreground)] [a&]:[--void-hover-border:transparent]',
+        link: 'text-primary underline-offset-4 [a&]:void-hover [a&]:hover:underline [a&]:[--void-hover-bg:transparent] [a&]:[--void-hover-color:var(--color-secondary-foreground)] [a&]:[--void-hover-border:transparent]',
       },
     },
     defaultVariants: {

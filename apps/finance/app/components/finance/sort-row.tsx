@@ -5,7 +5,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@hominem/ui/components/ui/select';
+} from '@hominem/ui/select';
 import type { SortDirection, SortField, SortOption } from '@hominem/ui/hooks';
 import { X } from 'lucide-react';
 

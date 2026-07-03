@@ -46,7 +46,7 @@ function PercentageProgressBar({
     <div className={cn('space-y-2', className)}>
       <div className="flex items-center justify-between gap-3 text-sm">
         <span className="text-muted-foreground">{label}</span>
-        <span className="font-medium text-foreground">{clampedPercentage.toFixed(0)}%</span>
+        <span className="text-foreground font-medium">{clampedPercentage.toFixed(0)}%</span>
       </div>
       <Progress value={clampedPercentage} indicatorClassName={color} />
     </div>
@@ -74,7 +74,7 @@ function VolumeProgressBar({
     <div className={cn('space-y-2', className)}>
       <div className="flex items-center justify-between gap-3 text-sm">
         <span className="text-muted-foreground">{label}</span>
-        <span className="font-medium text-foreground">{count}</span>
+        <span className="text-foreground font-medium">{count}</span>
       </div>
       <Progress value={percentage} indicatorClassName={color} />
     </div>

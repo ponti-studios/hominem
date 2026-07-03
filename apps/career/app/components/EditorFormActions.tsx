@@ -1,4 +1,4 @@
-import { Button } from '@hominem/ui/button';
+import { Button } from '@hominem/ui';
 
 export interface EditorFormActionsProps {
   isSaving: boolean;

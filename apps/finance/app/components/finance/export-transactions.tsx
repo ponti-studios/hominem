@@ -1,4 +1,4 @@
-import { toast } from '@hominem/ui';
+import { toast } from '~/lib/ui-shims';
 import { Button } from '@hominem/ui/button';
 
 import { useFinanceAccounts, useFinanceTransactions } from '~/lib/hooks/use-finance-data';

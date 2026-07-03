@@ -1,6 +1,6 @@
 import type { CareerPortfolioRecord } from '@hominem/db';
-import { Badge } from '@hominem/ui/badge';
-import { Button } from '@hominem/ui/button';
+import { Badge } from '@hominem/ui';
+import { Button } from '@hominem/ui';
 import { ExternalLink } from 'lucide-react';
 
 import { SlugEditor } from '~/components/SlugEditor';
@@ -71,7 +71,12 @@ export function CurrentPortfolioSection({
             />
 
             <div className="flex justify-end">
-              <Button type="button" onClick={() => onToggleReplaceResume()} variant="ghost" size="sm">
+              <Button
+                type="button"
+                onClick={() => onToggleReplaceResume()}
+                variant="ghost"
+                size="sm"
+              >
                 Cancel
               </Button>
             </div>
@@ -95,8 +100,12 @@ export function CurrentPortfolioSection({
                     )}
                   >
                     <div className="min-w-0">
-                      <p className="truncate subheading-4 text-foreground">{portfolioOption.title}</p>
-                      <p className="truncate body-4 text-muted-foreground">/p/{portfolioOption.slug}</p>
+                      <p className="truncate subheading-4 text-foreground">
+                        {portfolioOption.title}
+                      </p>
+                      <p className="truncate body-4 text-muted-foreground">
+                        /p/{portfolioOption.slug}
+                      </p>
                     </div>
 
                     <div className="flex items-center gap-2">

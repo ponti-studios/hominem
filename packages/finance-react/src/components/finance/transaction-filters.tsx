@@ -1,13 +1,13 @@
 import { Button } from '@hominem/ui/button';
-import { DatePicker } from '@hominem/ui/components/date-picker';
+import { DatePicker } from '@hominem/ui/date-picker';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@hominem/ui/components/ui/dropdown-menu';
-import { SearchInput } from '@hominem/ui/components/ui/search-input';
+} from '@hominem/ui/dropdown';
+import { SearchInput } from '@hominem/ui/input';
 import { FilterChip } from '@hominem/ui/filters';
 import type { SortOption } from '@hominem/ui/hooks';
 import { ListFilter, RefreshCcw } from 'lucide-react';

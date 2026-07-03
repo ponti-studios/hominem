@@ -83,7 +83,6 @@ export default function Portfolio({
           <h2 className="font-sans text-2xl font-light text-foreground">About</h2>
           <p className="text-muted-foreground leading-relaxed">{portfolio.bio}</p>
         </section>
-
       </header>
 
       {/* Work Experience */}

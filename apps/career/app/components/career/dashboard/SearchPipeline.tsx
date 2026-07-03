@@ -1,4 +1,5 @@
-import { Card, CardContent } from '@hominem/ui/card';
+import { Card, CardContent } from '@hominem/ui';
+
 import type { ApplicationWithCompany } from '~/types/applications';
 
 const DEAD_STATUSES = ['REJECTED', 'WITHDRAWN', 'CLOSED', 'NO_OFFER', 'DECLINED'];
@@ -10,16 +11,15 @@ function isLive(app: ApplicationWithCompany) {
 function getPipelineCounts(applications: ApplicationWithCompany[]) {
   const live = applications.filter(isLive);
 
-  const offer = live.filter(
-    (a) => a.status === 'OFFER' || a.status === 'ACCEPTED',
-  ).length;
+  const offer = live.filter((a) => a.status === 'OFFER' || a.status === 'ACCEPTED').length;
 
   const interviewing = live.filter(
     (a) => a.first_interview_date && a.status !== 'OFFER' && a.status !== 'ACCEPTED',
   ).length;
 
   const screening = live.filter(
-    (a) => a.response_date && !a.first_interview_date && a.status !== 'OFFER' && a.status !== 'ACCEPTED',
+    (a) =>
+      a.response_date && !a.first_interview_date && a.status !== 'OFFER' && a.status !== 'ACCEPTED',
   ).length;
 
   const waiting = live.filter(

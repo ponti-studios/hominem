@@ -3,12 +3,13 @@ import {
   OpenRouterRequestError,
   type VoiceTranscriptCleanupOutput,
 } from '@hominem/ai';
+import { logger } from '@hominem/telemetry';
+
 import {
   VoiceCleanupOutputSchema,
   type VoiceCleanupInput,
   type VoiceCleanupOutput,
 } from '../../schemas/voice.schema';
-import { logger } from '@hominem/telemetry';
 
 const VOICE_CLEANUP_MIN_LENGTH = 8;
 const VOICE_CLEANUP_MIN_WORDS = 2;

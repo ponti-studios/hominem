@@ -2,7 +2,12 @@ import { readFile } from 'node:fs/promises';
 
 import { createChatCompletion, getChatCompletionText, OpenRouterRequestError } from '@hominem/ai';
 import { CareerRepository, db } from '@hominem/db';
-import { createStorageService, resolveUploadMimeType, validateFile } from '@hominem/storage';
+import {
+  createStorageService,
+  isStorageServiceError,
+  resolveUploadMimeType,
+  validateFile,
+} from '@hominem/storage';
 import { data, type ActionFunction } from 'react-router';
 import { z } from 'zod';
 
@@ -73,7 +78,11 @@ function logRouteError(message: string, error: unknown, context?: Record<string,
         }
       : context;
 
-  logger.error(message || (error instanceof Error ? error.message : ''));
+  logger.error(
+    message || (error instanceof Error ? error.message : ''),
+    error instanceof Error ? error : undefined,
+    errorContext,
+  );
 }
 
 function resolveAiParseFailure(error: unknown) {
@@ -105,6 +114,52 @@ function resolveAiParseFailure(error: unknown) {
     error: 'Could not parse the resume with AI right now. Try again in a moment.',
     status: 502,
   };
+}
+
+function resolveStorageFailure(error: unknown) {
+  if (!isStorageServiceError(error)) {
+    return {
+      error: 'Could not store the resume file. Check the storage configuration and try again.',
+      details: undefined,
+    };
+  }
+
+  switch (error.code) {
+    case 'storage.config.missing':
+      return {
+        error:
+          'Resume storage is not configured yet. Check the storage configuration and try again.',
+        details: error.details,
+      };
+    case 'storage.credentials.invalid':
+      return {
+        error:
+          'Resume storage credentials were rejected. Check the Cloudflare R2 configuration and try again.',
+        details: error.details,
+      };
+    case 'storage.bucket.access_denied':
+      return {
+        error:
+          'Resume storage access was denied. Check the Cloudflare R2 bucket permissions and try again.',
+        details: error.details,
+      };
+    case 'storage.bucket.missing':
+      return {
+        error:
+          'Resume storage bucket was not found. Check the Cloudflare R2 bucket name and try again.',
+        details: error.details,
+      };
+    case 'storage.network.unreachable':
+      return {
+        error: 'Resume storage is temporarily unreachable. Try again in a moment.',
+        details: error.details,
+      };
+    default:
+      return {
+        error: 'Could not store the resume file. Check the storage configuration and try again.',
+        details: error.details,
+      };
+  }
 }
 
 export const action: ActionFunction = async ({ request, context }) => {
@@ -300,17 +355,18 @@ export const action: ActionFunction = async ({ request, context }) => {
         originalName: file.name,
       });
     } catch (error) {
+      const failure = resolveStorageFailure(error);
       logger.error('Resume file upload failed', undefined, {
         owner_userid: user.id,
         fileName: file.name,
-        error: error instanceof Error ? error.message : error,
+        error: isStorageServiceError(error)
+          ? error.code
+          : error instanceof Error
+            ? error.message
+            : error,
+        ...(failure.details ? { storage: failure.details } : {}),
       });
-      return errorResponse(
-        'Could not store the resume file. Check the storage configuration and try again.',
-        503,
-        'storage',
-        true,
-      );
+      return errorResponse(failure.error, 503, 'storage', true);
     }
 
     let portfolio_id: string;

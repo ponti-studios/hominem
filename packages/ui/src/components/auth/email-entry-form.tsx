@@ -3,7 +3,7 @@ import { Button } from '../button';
 import { TextField } from '../text-field';
 import { PasskeyButton } from './passkey-button';
 
-interface EmailEntryFormProps {
+export interface EmailEntryFormProps {
   email: string;
   error?: string;
   isSubmitting?: boolean;
@@ -20,8 +20,6 @@ export function EmailEntryForm({
   onSubmit,
   onPasskeyClick,
 }: EmailEntryFormProps) {
-  const displayError = error ?? undefined;
-
   return (
     <form
       onSubmit={(event) => {
@@ -39,7 +37,7 @@ export function EmailEntryForm({
           required
           placeholder={translateUi('auth.emailEntry.emailPlaceholder')}
           disabled={isSubmitting}
-          error={displayError}
+          error={error}
           onChange={(event) => onEmailChange(event.target.value)}
         />
 

@@ -30,8 +30,8 @@
     "build": "tsgo -p tsconfig.json",
     "dev": "tsgo --watch --preserveWatchOutput",
     "typecheck": "tsgo --noEmit",
-    "format": "pnpm dlx oxfmt ./src",
-    "lint": "pnpm dlx oxlint ./src"
+    "format": "oxfmt src --write",
+    "lint": "oxlint src --fix"
   },
   "dependencies": {
     "zod": "4.3.6"

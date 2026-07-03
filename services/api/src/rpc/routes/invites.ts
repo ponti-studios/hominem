@@ -35,7 +35,7 @@ import {
   type InvitesDeleteOutput,
   type InvitesPreviewOutput,
 } from '@hominem/rpc/types/invites.types';
-import { getHominemPhotoURL } from '@hominem/utils/images';
+
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 
@@ -121,7 +121,7 @@ export const invitesRoutes = new Hono<AppContext>()
         // Fall back to fetching by place photo id and resolve on the server
         if (!coverPhoto && firstPlace.itemId) {
           const rawPhoto = await getPlacePhotoById(firstPlace.itemId);
-          coverPhoto = rawPhoto ? getHominemPhotoURL(rawPhoto, 600, 400) : null;
+          coverPhoto = rawPhoto ? rawPhoto : null;
         }
       }
     }

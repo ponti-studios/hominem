@@ -1,5 +1,4 @@
-import { Badge } from '@hominem/ui/badge';
-import { Button } from '@hominem/ui/button';
+import { Badge, Button } from '@hominem/ui';
 import { LogOut } from 'lucide-react';
 
 import { ProfileImageUpload } from '~/components/ProfileImageUpload';

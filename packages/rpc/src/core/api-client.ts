@@ -1,5 +1,22 @@
-import type { AppType } from '@hominem/api/types';
 import { hc } from 'hono/client';
+
+export interface RpcResponse {
+  json(): Promise<unknown>;
+  arrayBuffer(): Promise<ArrayBuffer>;
+  text(): Promise<string>;
+}
+
+type RpcMethod = (args?: unknown) => Promise<RpcResponse>;
+
+export type RpcBranch = {
+  [key: string]: RpcBranch;
+} & {
+  $delete: RpcMethod;
+  $get: RpcMethod;
+  $patch: RpcMethod;
+  $post: RpcMethod;
+  $put: RpcMethod;
+};
 
 export interface ClientConfig {
   baseUrl: string;
@@ -7,10 +24,10 @@ export interface ClientConfig {
   onError?: (error: Error) => void;
 }
 
-export type HonoClient = ReturnType<typeof hc<AppType>>;
+export type HonoClient = RpcBranch & { api: RpcBranch };
 
 export function createApiClient(config: ClientConfig): HonoClient {
-  return hc<AppType>(config.baseUrl, {
+  const client = hc(config.baseUrl, {
     fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
       const headers = new Headers(init?.headers);
       const extraHeaders = await config.getHeaders?.();
@@ -40,5 +57,6 @@ export function createApiClient(config: ClientConfig): HonoClient {
       }
     },
   });
-}
 
+  return client as unknown as HonoClient;
+}

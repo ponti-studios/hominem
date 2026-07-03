@@ -1,6 +1,6 @@
 import { useAuthContext } from '@hominem/auth';
-import { LandingPage } from '@hominem/ui/components/layout/landing-page';
-import { LoadingSpinner } from '@hominem/ui/components/ui/loading-spinner';
+import { LandingPage } from '~/lib/ui-shims';
+import { LoadingSpinner } from '@hominem/ui/loading-spinner';
 import { ChartLine, Landmark, UploadCloud, Gauge } from 'lucide-react';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router';
@@ -29,7 +29,7 @@ export default function Home() {
   if (isLoading || user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="md" />
+        <LoadingSpinner variant="md" />
       </div>
     );
   }

@@ -1,5 +1,5 @@
 import type { AccountWithPlaidInfo } from '@hominem/rpc/types/finance.types';
-import { Badge } from '@hominem/ui/components/ui/badge';
+import { Badge } from '@hominem/ui/badge';
 import { CheckCircleIcon } from 'lucide-react';
 
 import { useAllInstitutions } from '../../hooks/use-institutions';

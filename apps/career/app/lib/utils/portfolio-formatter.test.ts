@@ -318,7 +318,6 @@ describe('formatPortfolioForLLM', () => {
     expect(result).not.toContain('Live URL: null');
   });
 
-
   it('should handle missing phone number', () => {
     const portfolio = createMockPortfolio({
       phone: null,

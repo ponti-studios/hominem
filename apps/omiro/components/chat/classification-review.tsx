@@ -1,11 +1,6 @@
 import type { ArtifactType } from '@hominem/rpc/types';
-import { Modal, ScrollView, View } from 'react-native';
-import Animated, {
-  useAnimatedReaction,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated';
+import { ScrollView, View } from 'react-native';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
@@ -18,6 +13,7 @@ import {
   spacing,
 } from '~/components/theme';
 import { Button } from '~/components/ui/button';
+import { ModalOverlay } from '~/components/ui/modal-overlay';
 import t from '~/translations';
 
 interface ClassificationReviewProps {
@@ -39,79 +35,70 @@ export function ClassificationReview({
 }: ClassificationReviewProps) {
   const styles = useClassificationStyles();
   const insets = useSafeAreaInsets();
-  const translateY = useSharedValue(80);
-  const opacity = useSharedValue(0);
-
-  useAnimatedReaction(
-    () => opacity.value,
-    (_current: number, prev: number | null) => {
-      'worklet';
-      if (prev === null) {
-        translateY.value = withTiming(0, { duration: durations.enter });
-        opacity.value = withTiming(1, { duration: durations.enter });
-      }
-    },
-  );
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ translateY: translateY.value }],
-  }));
 
   return (
-    <Modal transparent animationType="none" statusBarTranslucent>
-      <View style={styles.overlay}>
-        <Animated.View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }, animatedStyle]}>
-          <View style={styles.handle} />
-          <View style={styles.header}>
-            <Text color="text-secondary" style={styles.typeLabel}>
-              {t.chat.classification.saveAsPrefix} {t.chat.classification.typeLabel[proposedType]}
-            </Text>
-            <Text style={styles.title}>{proposedTitle}</Text>
+    <ModalOverlay
+      visible
+      onClose={onReject}
+      dismissOnBackdropPress={false}
+      backdropToken="overlay-modal-high"
+      position="bottom"
+      animationType="none"
+      statusBarTranslucent
+    >
+      <Animated.View
+        entering={FadeInUp.duration(durations.enter)}
+        style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}
+      >
+        <View style={styles.handle} />
+        <View style={styles.header}>
+          <Text color="text-secondary" style={styles.typeLabel}>
+            {t.chat.classification.saveAsPrefix} {t.chat.classification.typeLabel[proposedType]}
+          </Text>
+          <Text style={styles.title}>{proposedTitle}</Text>
+        </View>
+
+        {proposedChanges.length > 0 ? (
+          <View style={styles.changesList}>
+            {proposedChanges.map((change, index) => (
+              <View key={`${change}-${index}`} style={styles.changeRow}>
+                <Text color="text-secondary" style={styles.dash}>
+                  -
+                </Text>
+                <Text color="text-secondary" style={styles.changeText}>
+                  {change}
+                </Text>
+              </View>
+            ))}
           </View>
+        ) : null}
 
-          {proposedChanges.length > 0 ? (
-            <View style={styles.changesList}>
-              {proposedChanges.map((change, index) => (
-                <View key={`${change}-${index}`} style={styles.changeRow}>
-                  <Text color="text-secondary" style={styles.dash}>
-                    -
-                  </Text>
-                  <Text color="text-secondary" style={styles.changeText}>
-                    {change}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          ) : null}
+        <ScrollView nestedScrollEnabled style={styles.preview}>
+          <Text color="text-secondary" style={styles.previewText}>
+            {previewContent}
+          </Text>
+        </ScrollView>
 
-          <ScrollView nestedScrollEnabled style={styles.preview}>
-            <Text color="text-secondary" style={styles.previewText}>
-              {previewContent}
-            </Text>
-          </ScrollView>
-
-          <View style={styles.actionsRow}>
-            <View style={styles.actionSlot}>
-              <Button
-                testID="classification-review-accept"
-                label={t.chat.classification.saveLabel[proposedType]}
-                onPress={onAccept}
-                variant="primary"
-              />
-            </View>
-            <View style={styles.actionSlot}>
-              <Button
-                testID="classification-review-reject"
-                label={t.chat.classification.discard}
-                onPress={onReject}
-                variant="secondary"
-              />
-            </View>
+        <View style={styles.actionsRow}>
+          <View style={styles.actionSlot}>
+            <Button
+              testID="classification-review-accept"
+              label={t.chat.classification.saveLabel[proposedType]}
+              onPress={onAccept}
+              variant="primary"
+            />
           </View>
-        </Animated.View>
-      </View>
-    </Modal>
+          <View style={styles.actionSlot}>
+            <Button
+              testID="classification-review-reject"
+              label={t.chat.classification.discard}
+              onPress={onReject}
+              variant="secondary"
+            />
+          </View>
+        </View>
+      </Animated.View>
+    </ModalOverlay>
   );
 }
 
@@ -148,11 +135,6 @@ const useClassificationStyles = makeStyles((theme) => ({
   },
   header: {
     gap: spacing[1],
-  },
-  overlay: {
-    backgroundColor: theme.colors['overlay-modal-high'],
-    flex: 1,
-    justifyContent: 'flex-end',
   },
   preview: {
     backgroundColor: theme.colors.muted,

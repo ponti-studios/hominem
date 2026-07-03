@@ -1,5 +1,5 @@
 import * as AvatarPrimitive from '@radix-ui/react-avatar';
-import { type ClassValue } from 'clsx';
+import type { ClassValue } from 'clsx';
 import * as React from 'react';
 
 import { cn } from '../lib/utils';
@@ -50,7 +50,7 @@ function Avatar({
         {...props}
       >
         {children}
-        {statusBadge && (
+        {statusBadge ? (
           <span
             data-slot="avatar-badge"
             className={cn(
@@ -58,7 +58,7 @@ function Avatar({
               badgeDotSize[size],
             )}
           />
-        )}
+        ) : null}
       </AvatarPrimitive.Root>
     </AvatarContext.Provider>
   );
@@ -79,6 +79,7 @@ function AvatarFallback({
   ...props
 }: React.ComponentProps<typeof AvatarPrimitive.Fallback>) {
   const { size } = React.useContext(AvatarContext);
+
   return (
     <AvatarPrimitive.Fallback
       data-slot="avatar-fallback"
@@ -102,7 +103,7 @@ function AvatarGroup({
       <div
         data-slot="avatar-group"
         className={cn(
-          'flex -space-x-2 *:data-[slot=avatar]:ring-background *:data-[slot=avatar]:ring-2',
+          '*:data-[slot=avatar]:ring-background flex -space-x-2 *:data-[slot=avatar]:ring-2',
           className,
         )}
         {...props}
@@ -113,6 +114,7 @@ function AvatarGroup({
 
 function AvatarGroupCount({ className, ...props }: React.ComponentProps<'div'>) {
   const { size } = React.useContext(AvatarContext);
+
   return (
     <div
       data-slot="avatar-group-count"
@@ -127,4 +129,4 @@ function AvatarGroupCount({ className, ...props }: React.ComponentProps<'div'>) 
   );
 }
 
-export { Avatar, AvatarImage, AvatarFallback, AvatarGroup, AvatarGroupCount };
+export { Avatar, AvatarFallback, AvatarGroup, AvatarGroupCount, AvatarImage };

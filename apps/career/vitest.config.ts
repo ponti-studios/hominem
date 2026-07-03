@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitest/config'
 
 const TEST_DATABASE_URL =
-  process.env.DATABASE_URL_TEST ?? 'postgresql://postgres:postgres@127.0.0.1:4433/app-test';
+  process.env.DATABASE_URL_TEST;
 
 export default defineConfig({
   resolve: {

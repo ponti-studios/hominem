@@ -1,4 +1,4 @@
-import { PasskeyManagement, usePasskeyAuth } from '@hominem/ui';
+import { PasskeyManagement } from '@hominem/ui'; import { usePasskeyAuth } from '~/lib/ui-shims';
 import { useCallback } from 'react';
 import { redirect } from 'react-router';
 

@@ -1,7 +1,7 @@
-import { Badge } from '@hominem/ui/components/ui/badge';
-import { Button } from '@hominem/ui/components/ui/button';
-import { LoadingSpinner } from '@hominem/ui/components/ui/loading-spinner';
-import { useSort } from '@hominem/ui/hooks';
+import { Badge } from '@hominem/ui/badge';
+import { Button } from '@hominem/ui/button';
+import { LoadingSpinner } from '@hominem/ui/loading-spinner';
+import { useSort } from '~/lib/ui-shims';
 import { format, subMonths } from 'date-fns';
 import { ArrowDown, ArrowUp, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -319,7 +319,7 @@ export default function TagsAnalyticsPage() {
         <div className="relative">
           {isFetching && !isLoading && (
             <div className="absolute inset-0 bg-emphasis-medium z-10 flex items-center justify-center">
-              <LoadingSpinner size="md" />
+              <LoadingSpinner variant="md" />
             </div>
           )}
           <table className="w-full text-sm" aria-label="Tags breakdown">

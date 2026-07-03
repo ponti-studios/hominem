@@ -22,9 +22,9 @@
     }
   },
   "scripts": {
-    "lint": "pnpm dlx oxlint ./src",
+    "lint": "oxlint src --fix",
     "typecheck": "tsgo --noEmit",
-    "format": "pnpm dlx oxfmt ./src"
+    "format": "oxfmt src --write"
   },
   "dependencies": {
     "@opentelemetry/api": "^1.8.0",

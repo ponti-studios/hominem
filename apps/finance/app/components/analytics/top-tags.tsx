@@ -1,6 +1,6 @@
-import { Badge } from '@hominem/ui/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/components/ui/card';
-import { Skeleton } from '@hominem/ui/components/ui/skeleton';
+import { Badge } from '@hominem/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
+import { Skeleton } from '~/lib/ui-shims';
 
 import { useTagBreakdown } from '~/lib/hooks/use-analytics';
 import { formatCurrency } from '~/lib/number.utils';

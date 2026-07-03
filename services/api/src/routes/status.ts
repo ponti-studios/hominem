@@ -1,5 +1,5 @@
 import { db } from '@hominem/db';
-import { logger } from '@hominem/utils/logger';
+import { logger } from '@hominem/telemetry';
 import { Hono } from 'hono';
 
 import { UnavailableError } from '../errors';

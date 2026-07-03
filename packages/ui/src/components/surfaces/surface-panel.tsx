@@ -10,5 +10,5 @@ export function SurfacePanel<T extends ElementType = 'div'>({
 }: SurfacePanelProps<T>) {
   const Comp = as ?? 'div';
 
-  return <Comp className="rounded-3xl border-subtle bg-surface p-5" {...props} />;
+  return <Comp className="border-subtle bg-surface rounded-3xl p-5" {...props} />;
 }

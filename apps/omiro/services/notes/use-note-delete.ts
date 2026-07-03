@@ -2,12 +2,9 @@ import { useApiClient } from '@hominem/rpc/react';
 import type { Note } from '@hominem/rpc/types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { clearCachedNote } from '~/services/content-cache';
 import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
-import { clearCachedNote } from '~/services/workspace/content-cache';
-import {
-  clearWorkspaceResumeArtifact,
-  readWorkspaceResumeArtifact,
-} from '~/services/workspace/launch-state';
+import { clearResumeTarget, readResumeTarget } from '~/services/navigation/launch-state';
 
 import { noteKeys } from './query-keys';
 
@@ -24,8 +21,8 @@ export function useNoteDelete({ noteId }: UseNoteDeleteOptions) {
       await client.api.notes[':id'].$delete({ param: { id: noteId } });
     },
     onSuccess: () => {
-      if (readWorkspaceResumeArtifact()?.id === noteId) {
-        clearWorkspaceResumeArtifact();
+      if (readResumeTarget()?.id === noteId) {
+        clearResumeTarget();
       }
       clearCachedNote(noteId);
       queryClient.setQueryData<Note[]>(noteKeys.all, (current) =>

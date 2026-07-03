@@ -1,11 +1,11 @@
-import { Label } from '@hominem/ui/components/ui/label';
+import { Label } from '~/lib/ui-shims';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@hominem/ui/components/ui/select';
+} from '@hominem/ui/select';
 import { useId } from 'react';
 
 interface TagOption {
@@ -38,7 +38,7 @@ export function TagSelect({
   return (
     <div className={`space-y-2 ${className || ''}`}>
       <Label htmlFor={id}>{label}</Label>
-      <Select name="tag" value={selectedTag} onValueChange={onTagChange}>
+      <Select name="tag" value={selectedTag} onValueChange={(v: string | null) => v != null && onTagChange(v)}>
         <SelectTrigger id={id}>
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>

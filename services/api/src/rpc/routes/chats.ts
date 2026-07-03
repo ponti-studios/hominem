@@ -1,586 +1,300 @@
-import crypto from 'node:crypto';
-
-import {
-  archiveChatQuery,
-  createChatQuery,
-  getChatByIdQuery,
-  getUserChatsQuery,
-  getChatByNoteIdQuery,
-  updateChatTitleQuery,
-  deleteChatQuery,
-  MessageService,
-} from '@hominem/chat-services/server';
-import type { ArtifactType, ClassificationResponse } from '@hominem/chat-services/types';
-import {
-  type ChatsListOutput,
-  type ChatsGetOutput,
-  type ChatsArchiveOutput,
-  type ChatsCreateOutput,
-  type ChatsUpdateOutput,
-  type ChatsSendOutput,
-  type ChatsGetMessagesOutput,
-  chatsSendSchema,
-  chatsUISendSchema,
-} from '@hominem/rpc/types/chat.types';
-import { logger } from '@hominem/utils/logger';
+import { streamChatCompletion } from '@hominem/ai';
+import type { ChatMessageFileRecord, ChatMessageRecord, NoteContext } from '@hominem/db';
+import { ChatRepository, db, runInTransaction } from '@hominem/db';
 import { zValidator } from '@hono/zod-validator';
-import {
-  convertToCoreMessages,
-  streamText,
-  generateText,
-  generateObject,
-  type CoreMessage,
-  type Message,
-} from 'ai';
 import { Hono } from 'hono';
-import * as z from 'zod';
+import { streamSSE } from 'hono/streaming';
 
-import { InternalError, ForbiddenError, ValidationError, UnavailableError } from '../errors';
+import {
+  ChatsSendSchema,
+  ChatsCreateSchema,
+  ChatsStartStreamSchema,
+  ChatsUpdateSchema,
+  ChatsMessagesQuerySchema,
+} from '../../schemas/chats.schema';
+import { ValidationError } from '../errors';
 import { authMiddleware, type AppContext } from '../middleware/auth';
-import { setReviewItem } from '../services/review-store';
-import { toCoreMessage } from '../utils/ai-adapters';
-import { getOpenAIAdapter } from '../utils/llm';
-import { getAvailableTools } from '../utils/tools';
-import { resolveUploadedFiles } from '../utils/uploaded-files';
+import { rateLimitMiddleware } from '../middleware/rate-limit';
+import { loadPrompt } from '../utils/load-prompt';
+import { toChatDto, toChatMessageDto, toStoredUserMessageContent } from './chats.mapper';
 
-const messageService = new MessageService();
+function buildPrompt(
+  message: string,
+  history: ChatMessageRecord[],
+  notes: NoteContext[],
+  files: ChatMessageFileRecord[],
+): string {
+  const sections = [];
 
-const chatsCreateSchema = z.object({
-  title: z.string().min(1),
-  noteId: z.string().optional(),
-});
-
-const chatsUpdateSchema = z.object({
-  title: z.string().min(1),
-});
-
-const chatsMessagesQuerySchema = z.object({
-  limit: z.string().optional(),
-  offset: z.string().optional(),
-});
-
-const toPersistedToolCalls = (
-  calls: Array<{ toolName: string; toolCallId: string; args: Record<string, unknown> }>,
-) =>
-  calls.map((toolCall) => ({
-    toolName: toolCall.toolName,
-    type: 'tool-call' as const,
-    toolCallId: toolCall.toolCallId,
-    args: toolCall.args as Record<string, string>,
-  }));
-
-const GENERATION_ERROR_FALLBACK = '[Error: Stream processing failed]';
-const ATTACHMENT_TEXT_PREVIEW_LIMIT = 2_000;
-
-const toAssistantErrorContent = (error: unknown) => {
-  const message = (error instanceof Error ? error.message : String(error))
-    .replace(/\s+/g, ' ')
-    .trim();
-  if (!message) {
-    return GENERATION_ERROR_FALLBACK;
+  if (history.length > 0) {
+    sections.push(
+      [
+        'Conversation history:',
+        ...history.map((entry, index) => `${index + 1}. ${entry.role}: ${entry.content}`),
+      ].join('\n'),
+    );
   }
 
-  return `[Error: ${message}]`;
-};
+  sections.push(message.trim());
 
-type ResolvedChatAttachment = {
-  fileId: string;
-  filename: string;
-  mimeType: string;
-  size: number;
-  type: 'image' | 'file';
-  url: string;
-  extractedText?: string;
-};
+  if (notes.length > 0) {
+    sections.push(
+      [
+        'Referenced notes:',
+        ...notes.map((note, index) => {
+          const fileText = note.files
+            .flatMap((file) => {
+              const snippet = file.textContent ?? file.content;
+              return snippet ? [`- ${file.originalName}: ${snippet.slice(0, 1_000)}`] : [];
+            })
+            .join('\n');
 
-function buildAttachmentPromptContext(attachments: ResolvedChatAttachment[]): string {
-  if (attachments.length === 0) {
-    return '';
+          return [
+            `${index + 1}. ${note.title ?? 'Untitled note'} (${note.id})`,
+            note.content,
+            ...(fileText ? ['Attached files:', fileText] : []),
+          ].join('\n');
+        }),
+      ].join('\n\n'),
+    );
   }
 
-  return [
-    '',
-    'Attached files:',
-    ...attachments.map((attachment, index) => {
-      const details = `${index + 1}. ${attachment.filename} | ${attachment.mimeType}`;
-      const extractedText = attachment.extractedText?.trim();
+  if (files.length > 0) {
+    sections.push(
+      [
+        'Attached files:',
+        ...files.map((file, index) => {
+          const extractedText =
+            file.metadata && typeof file.metadata === 'object' && 'extractedText' in file.metadata
+              ? String(file.metadata.extractedText)
+              : '';
+          return [
+            `${index + 1}. ${file.filename ?? 'Attachment'} (${file.mimeType ?? 'application/octet-stream'})`,
+            ...(extractedText ? [extractedText] : []),
+          ].join('\n');
+        }),
+      ].join('\n\n'),
+    );
+  }
 
-      if (!extractedText) {
-        return details;
-      }
-
-      return `${details}\nExtracted content:\n${extractedText.slice(0, ATTACHMENT_TEXT_PREVIEW_LIMIT)}`;
-    }),
-  ].join('\n');
+  return sections.filter(Boolean).join('\n\n');
 }
 
-async function resolveChatAttachments(
-  userId: string,
-  fileIds: string[],
-): Promise<ResolvedChatAttachment[]> {
-  const files = await resolveUploadedFiles(userId, fileIds);
-
-  return files.map((file) => ({
-    fileId: file.id,
-    filename: file.originalName,
-    mimeType: file.mimetype,
-    size: file.size,
-    type: file.mimetype.startsWith('image/') ? 'image' : 'file',
-    url: file.url,
-    ...(file.textContent || file.content
-      ? {
-          extractedText: file.textContent || file.content,
-        }
-      : {}),
-  }));
+function getChatId(c: { req: { param: (name: string) => string | undefined } }): string {
+  const chatId = c.req.param('id');
+  if (!chatId) throw new ValidationError('Chat id is required');
+  return chatId;
 }
 
-/**
- * Sub-router for routes starting with /api/chats/:id
- */
+function writeChunkEvent(
+  stream: { writeSSE: (input: { data: string }) => Promise<void> },
+  chunk: string,
+) {
+  return stream.writeSSE({ data: JSON.stringify({ type: 'chunk', chunk }) });
+}
+
+function writeErrorEvent(
+  stream: { writeSSE: (input: { data: string }) => Promise<void> },
+  message: string,
+) {
+  return stream.writeSSE({ data: JSON.stringify({ type: 'error', message }) });
+}
+
 const chatByIdRoutes = new Hono<AppContext>()
-  // Get chat by ID
+  .use('/stream', rateLimitMiddleware({ bucket: 'chat-stream', windowSec: 60, max: 30 }))
   .get('/', async (c) => {
-    const chatId = c.req.param('id') as string;
     const userId = c.get('userId')!;
+    const chatId = getChatId(c);
 
-    const chatData = await getChatByIdQuery(chatId, userId);
-    if (!chatData) {
-      throw new ForbiddenError('Chat not found or access denied', { reason: 'ownership' });
-    }
+    const chat = await ChatRepository.getOwnedOrThrow(db, chatId, userId);
+    const messages = await ChatRepository.getMessages(db, chatId, 100, 0);
 
-    const messagesData = await messageService.getChatMessages(chatId, {
-      limit: 10,
-      orderBy: 'desc',
-    });
-
-    return c.json<ChatsGetOutput>({
-      ...chatData,
-      messages: messagesData.reverse(),
+    return c.json({
+      ...toChatDto(chat),
+      messages: messages.map(toChatMessageDto),
     });
   })
-
-  // Delete chat
-  .delete('/', async (c) => {
-    const chatId = c.req.param('id') as string;
+  .patch('/', zValidator('json', ChatsUpdateSchema), async (c) => {
     const userId = c.get('userId')!;
+    const chatId = getChatId(c);
+    const { title } = c.req.valid('json');
 
-    const success = await deleteChatQuery(chatId, userId);
-    if (!success) {
-      throw new ForbiddenError('Chat not found or access denied', { reason: 'ownership' });
-    }
+    await ChatRepository.getOwnedOrThrow(db, chatId, userId);
+    await ChatRepository.updateTitle(db, chatId, userId, title);
 
     return c.json({ success: true });
   })
-
-  // Update chat title
-  .patch('/', zValidator('json', chatsUpdateSchema), async (c) => {
-    const chatId = c.req.param('id') as string;
-    const userId = c.get('userId')!;
-    const { title } = c.req.valid('json');
-
-    const updated = await updateChatTitleQuery(chatId, title, userId);
-    if (!updated) {
-      throw new ForbiddenError('Chat not found or access denied', { reason: 'ownership' });
-    }
-
-    return c.json<ChatsUpdateOutput>({ success: true });
-  })
-
   .post('/archive', async (c) => {
-    const chatId = c.req.param('id') as string;
     const userId = c.get('userId')!;
+    const chatId = getChatId(c);
 
-    const archived = await archiveChatQuery(chatId, userId);
-    if (!archived) {
-      throw new ForbiddenError('Chat not found or access denied', { reason: 'ownership' });
-    }
+    await ChatRepository.getOwnedOrThrow(db, chatId, userId);
+    const archived = await ChatRepository.archive(db, chatId, userId);
 
-    return c.json<ChatsArchiveOutput>(archived);
+    return c.json(toChatDto(archived));
   })
-
-  // Send message with streaming
-  .post('/send', zValidator('json', chatsSendSchema), async (c) => {
+  .get('/messages', zValidator('query', ChatsMessagesQuerySchema), async (c) => {
     const userId = c.get('userId')!;
-    const chatId = c.req.param('id') as string;
-    const { message, fileIds = [] } = c.req.valid('json');
+    const chatId = getChatId(c);
 
-    logger.info('[chats.send] Request received', {
-      chatId,
-      userId,
-      messageLength: message.length,
-      fileCount: fileIds.length,
-    });
+    await ChatRepository.getOwnedOrThrow(db, chatId, userId);
+    const query = c.req.valid('query');
+    const limit = query.limit ? Number.parseInt(query.limit, 10) : 100;
+    const offset = query.offset ? Number.parseInt(query.offset, 10) : 0;
 
-    // Get or verify chat exists
-    let currentChat = await getChatByIdQuery(chatId, userId);
-    if (!currentChat) {
-      throw new ForbiddenError('Chat not found or access denied', { reason: 'ownership' });
-    }
-
-    logger.info('[chats.send] Chat found', { chatId });
-
-    const startTime = Date.now();
-
-    const historyMessages = await messageService.getChatMessages(currentChat.id, {
-      limit: 20,
-      orderBy: 'asc',
-    });
-
-    const attachments = await resolveChatAttachments(userId, fileIds);
-    const userMessageContent =
-      `${message.trim()}${buildAttachmentPromptContext(attachments)}`.trim();
-
-    logger.info('[chats.send] History loaded', { messageCount: historyMessages.length });
-
-    const messagesWithNewUser: CoreMessage[] = [
-      ...historyMessages.map((m) =>
-        toCoreMessage({
-          role: m.role,
-          content: m.content,
-        }),
-      ),
-      {
-        role: 'user',
-        content: userMessageContent,
-      },
-    ];
-
-    const adapter = getOpenAIAdapter();
-    logger.info('[chats.send] Calling generateText', {
-      model: adapter.modelId,
-      totalMessages: messagesWithNewUser.length,
-    });
-
-    let accumulatedContent = '';
-    interface ToolCallEntry {
-      toolName: string;
-      toolCallId: string;
-      args: Record<string, unknown>;
-    }
-    const accumulatedToolCalls: ToolCallEntry[] = [];
-    let didGenerationFail = false;
-
-    const generationStartTime = Date.now();
-    try {
-      const result = await generateText({
-        model: adapter,
-        tools: getAvailableTools(userId),
-        messages: messagesWithNewUser,
-      });
-      const generationMs = Date.now() - generationStartTime;
-      logger.info('[chats.send] generateText complete', {
-        generationMs,
-        contentLength: result.text.length,
-        toolCallCount: result.toolCalls.length,
-      });
-      accumulatedContent = result.text;
-      for (const call of result.toolCalls) {
-        accumulatedToolCalls.push({
-          toolName: call.toolName,
-          toolCallId: call.toolCallId,
-          args: call.args as Record<string, unknown>,
-        });
-      }
-    } catch (error) {
-      const generationMs = Date.now() - generationStartTime;
-      didGenerationFail = true;
-      accumulatedContent = toAssistantErrorContent(error);
-      logger.error('[chats.send] generateText failed', {
-        generationMs,
-        message: error instanceof Error ? error.message : String(error),
-        name: error instanceof Error ? error.name : undefined,
-        cause: error instanceof Error ? String(error.cause) : undefined,
-        stack: error instanceof Error ? error.stack : undefined,
-      });
-    }
-
-    const persistedMessages = await messageService.addMessages([
-      {
-        chatId: currentChat.id,
-        userId,
-        role: 'user',
-        content: message,
-        ...(attachments.length > 0
-          ? {
-              files: attachments.map((attachment) => ({
-                type: attachment.type,
-                fileId: attachment.fileId,
-                url: attachment.url,
-                filename: attachment.filename,
-                mimeType: attachment.mimeType,
-                size: attachment.size,
-                ...(attachment.extractedText
-                  ? {
-                      metadata: {
-                        extractedText: attachment.extractedText.slice(
-                          0,
-                          ATTACHMENT_TEXT_PREVIEW_LIMIT,
-                        ),
-                      },
-                    }
-                  : {}),
-              })),
-            }
-          : {}),
-      },
-      {
-        chatId: currentChat.id,
-        userId,
-        role: 'assistant',
-        content: didGenerationFail
-          ? accumulatedContent || GENERATION_ERROR_FALLBACK
-          : accumulatedContent,
-        ...(didGenerationFail
-          ? {}
-          : {
-              toolCalls: accumulatedToolCalls.map((tc) => ({
-                toolName: tc.toolName,
-                type: 'tool-call' as const,
-                toolCallId: tc.toolCallId,
-                args: tc.args as Record<string, string>,
-              })),
-            }),
-      },
-    ]);
-
-    const [userMessage, assistantMessage] = persistedMessages;
-    if (!userMessage || !assistantMessage) {
-      throw new InternalError('Failed to persist chat messages');
-    }
-
-    return c.json<ChatsSendOutput>({
-      streamId: assistantMessage.id,
-      chatId: currentChat.id,
-      chatTitle: currentChat.title,
-      messages: {
-        user: userMessage,
-        assistant: assistantMessage,
-      },
-      metadata: {
-        startTime: startTime,
-        timestamp: new Date().toISOString(),
-      },
-    });
+    const messages = await ChatRepository.getMessages(db, chatId, limit, offset);
+    return c.json(messages.map(toChatMessageDto));
   })
-
-  // AI SDK UI message endpoint for web/mobile useChat clients
-  .post('/ui/send', zValidator('json', chatsUISendSchema), async (c) => {
+  .post('/stream', zValidator('json', ChatsSendSchema), async (c) => {
     const userId = c.get('userId')!;
-    const routeChatId = c.req.param('id') as string;
-    const { messages } = c.req.valid('json');
+    const chatId = getChatId(c);
 
-    const currentChat = await getChatByIdQuery(routeChatId, userId);
-    if (!currentChat) {
-      throw new ForbiddenError('Chat not found or access denied', { reason: 'ownership' });
+    await ChatRepository.getOwnedOrThrow(db, chatId, userId);
+    const { message, fileIds = [], noteIds = [] } = c.req.valid('json');
+
+    const history = await ChatRepository.getMessages(db, chatId, 30, 0);
+    const resolvedNotes = await ChatRepository.resolveReferencedNotes(db, userId, noteIds, message);
+    const resolvedFiles = await ChatRepository.resolveChatFiles(db, userId, fileIds);
+
+    const storedUserContent = toStoredUserMessageContent(message, resolvedNotes, resolvedFiles);
+    if (!storedUserContent) {
+      throw new ValidationError('Message, notes, or files are required');
     }
 
-    const latestUserMessage = [...messages]
-      .reverse()
-      .find((candidate) => candidate.role === 'user' && candidate.content.trim().length > 0);
+    await runInTransaction(async (trx) => {
+      await ChatRepository.insertMessage(trx, {
+        chatId,
+        authorUserId: userId,
+        role: 'user',
+        content: storedUserContent,
+        files: resolvedFiles.length > 0 ? resolvedFiles : null,
+        referencedNoteIds: resolvedNotes.length > 0 ? resolvedNotes.map((n) => n.id) : null,
+      });
+      await ChatRepository.touchLastMessage(trx, chatId);
+    });
+    const prompt = buildPrompt(message, history, resolvedNotes, resolvedFiles);
+    const completion = streamChatCompletion({
+      messages: [
+        { role: 'system', content: loadPrompt('chat-assistant') },
+        { role: 'user', content: prompt },
+      ],
+    });
 
-    if (!latestUserMessage) {
-      throw new ValidationError('messages must include at least one user message with content');
-    }
+    return streamSSE(c, async (stream) => {
+      let assistantText = '';
 
-    const coreMessages = convertToCoreMessages(
-      messages.map((message) => {
-        const createdAt = message.createdAt ? new Date(message.createdAt) : undefined;
-        const sanitized: Message = {
-          id: message.id,
-          role: message.role,
-          content: message.content,
-          ...(createdAt ? { createdAt } : {}),
-        };
-        return sanitized;
-      }),
-    );
+      try {
+        for await (const chunk of completion) {
+          const text = chunk.choices?.[0]?.delta?.content;
+          if (typeof text === 'string' && text.length > 0) {
+            assistantText += text;
+            await writeChunkEvent(stream, text);
+          }
+        }
 
-    let result: ReturnType<typeof streamText>;
+        await stream.writeSSE({ data: '[DONE]' });
 
-    try {
-      result = streamText({
-        model: getOpenAIAdapter(),
-        tools: getAvailableTools(userId),
-        messages: coreMessages,
-        async onFinish(event) {
-          const persistedToolCalls = toPersistedToolCalls(
-            event.toolCalls.map((call) => ({
-              toolName: call.toolName,
-              toolCallId: call.toolCallId,
-              args: call.args as Record<string, unknown>,
-            })),
-          );
-
-          await messageService.addMessages([
-            {
-              chatId: currentChat.id,
-              userId,
-              role: 'user',
-              content: latestUserMessage.content,
-            },
-            {
-              chatId: currentChat.id,
-              userId,
+        if (assistantText.trim().length > 0) {
+          await runInTransaction(async (trx) => {
+            await ChatRepository.insertMessage(trx, {
+              chatId,
+              authorUserId: userId,
               role: 'assistant',
-              content: event.text,
-              ...(persistedToolCalls.length > 0 ? { toolCalls: persistedToolCalls } : {}),
-            },
-          ]);
-        },
-      });
-    } catch (error) {
-      logger.error('[chats.ui.send] Failed to start generation', { error });
-      throw new UnavailableError('Failed to generate assistant response');
-    }
-
-    return result.toDataStreamResponse();
-  })
-
-  // Get messages for a chat
-  .get('/messages', zValidator('query', chatsMessagesQuerySchema), async (c) => {
-    const chatId = c.req.param('id') as string;
-    const { limit, offset } = c.req.valid('query');
-
-    const options = {
-      orderBy: 'asc' as const,
-      limit: limit ? Number.parseInt(limit) : undefined,
-      offset: offset ? Number.parseInt(offset) : undefined,
-    };
-
-    const messagesData = await messageService.getChatMessages(chatId, options);
-    return c.json<ChatsGetMessagesOutput>(messagesData);
-  })
-
-  // Classify the conversation into a reviewable artifact
-  .post(
-    '/classify',
-    zValidator('json', z.object({ targetType: z.enum(['note', 'task', 'task_list', 'tracker']) })),
-    async (c) => {
-      const chatId = c.req.param('id') as string;
-      const userId = c.get('userId')!;
-      const { targetType } = c.req.valid('json') as { targetType: ArtifactType };
-
-      const chat = await getChatByIdQuery(chatId, userId);
-      if (!chat) {
-        throw new ForbiddenError('Chat not found or access denied', { reason: 'ownership' });
+              content: assistantText,
+            });
+            await ChatRepository.touchLastMessage(trx, chatId);
+          });
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Stream error';
+        await writeErrorEvent(stream, message);
       }
-
-      const messagesData = await messageService.getChatMessages(chatId, {
-        limit: 50,
-        orderBy: 'asc',
-      });
-      if (messagesData.length === 0) {
-        throw new ValidationError('No messages to classify');
-      }
-
-      const transcript = messagesData
-        .map((m) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
-        .join('\n');
-
-      const classifySchema = z.object({
-        proposedTitle: z.string().max(100),
-        proposedChanges: z.array(z.string()).max(5),
-        previewContent: z.string(),
-      });
-
-      const { object } = await generateObject<z.infer<typeof classifySchema>>({
-        model: getOpenAIAdapter(),
-        schema: classifySchema,
-        prompt: [
-          `You are classifying a chat conversation into a "${targetType}" artifact.`,
-          'Produce:',
-          '- proposedTitle: a concise, descriptive title (max 100 chars)',
-          '- proposedChanges: up to 5 short human-readable summary lines of what would be captured',
-          '- previewContent: the full Markdown content of the proposed artifact',
-          '',
-          'Conversation:',
-          transcript,
-        ].join('\n'),
-      });
-
-      const reviewItemId = crypto.randomUUID();
-      const reviewItem = {
-        id: reviewItemId,
-        sessionId: chatId,
-        proposedType: targetType,
-        proposedTitle: object.proposedTitle,
-        proposedChanges: object.proposedChanges,
-        previewContent: object.previewContent,
-        createdAt: new Date().toISOString(),
-      };
-
-      setReviewItem(reviewItem);
-
-      return c.json<ClassificationResponse>({
-        proposedType: targetType,
-        proposedTitle: object.proposedTitle,
-        proposedChanges: object.proposedChanges,
-        previewContent: object.previewContent,
-        reviewItemId,
-      });
-    },
-  );
+    });
+  });
 
 export const chatsRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
-  // Get user's chats
   .get('/', async (c) => {
     const userId = c.get('userId')!;
-    const limit = c.req.query('limit') ? Number.parseInt(c.req.query('limit')!) : 50;
-
-    const chatsData = await getUserChatsQuery(userId, limit);
-    return c.json<ChatsListOutput>(chatsData);
+    const chats = await ChatRepository.listForUser(db, userId, 100);
+    return c.json(chats.map(toChatDto));
   })
-
-  // Get or create chat for a note
-  .get('/note/:noteId', async (c) => {
+  .post('/', zValidator('json', ChatsCreateSchema), async (c) => {
     const userId = c.get('userId')!;
-    const noteId = c.req.param('noteId');
+    const { title } = c.req.valid('json');
+    const chat = await ChatRepository.create(db, { userId, title });
+    return c.json(toChatDto(chat), 201);
+  })
+  .post('/start-stream', zValidator('json', ChatsStartStreamSchema), async (c) => {
+    const userId = c.get('userId')!;
+    const { title, message, fileIds = [], noteIds = [] } = c.req.valid('json');
 
-    let chatData = await getChatByNoteIdQuery(noteId, userId);
-    if (!chatData) {
-      chatData = await createChatQuery({
-        userId,
-        title: 'Note Chat',
-        noteId,
-      });
+    const resolvedNotes = await ChatRepository.resolveReferencedNotes(db, userId, noteIds, message);
+    const resolvedFiles = await ChatRepository.resolveChatFiles(db, userId, fileIds);
+    const storedUserContent = toStoredUserMessageContent(message, resolvedNotes, resolvedFiles);
+    if (!storedUserContent) {
+      throw new ValidationError('Message, notes, or files are required');
     }
 
-    return c.json<ChatsCreateOutput>(chatData);
-  })
-
-  // Create chat
-  .post('/', zValidator('json', chatsCreateSchema), async (c) => {
-    const userId = c.get('userId')!;
-    const { title, noteId } = c.req.valid('json');
-
-    const result = await createChatQuery({
-      userId,
-      title,
-      ...(noteId && { noteId }),
+    const chat = await runInTransaction(async (trx) => {
+      const createdChat = await ChatRepository.create(trx, { userId, title });
+      await ChatRepository.insertMessage(trx, {
+        chatId: createdChat.id,
+        authorUserId: userId,
+        role: 'user',
+        content: storedUserContent,
+        files: resolvedFiles.length > 0 ? resolvedFiles : null,
+        referencedNoteIds: resolvedNotes.length > 0 ? resolvedNotes.map((note) => note.id) : null,
+      });
+      await ChatRepository.touchLastMessage(trx, createdChat.id);
+      return createdChat;
     });
 
-    return c.json<ChatsCreateOutput>(result, 201);
+    const prompt = buildPrompt(message, [], resolvedNotes, resolvedFiles);
+    const completion = streamChatCompletion({
+      messages: [
+        { role: 'system', content: loadPrompt('chat-assistant') },
+        { role: 'user', content: prompt },
+      ],
+    });
+
+    return streamSSE(c, async (stream) => {
+      let assistantText = '';
+
+      await stream.writeSSE({
+        data: JSON.stringify({
+          type: 'ready',
+          chatId: chat.id,
+          chat: toChatDto(chat),
+        }),
+      });
+
+      try {
+        for await (const chunk of completion) {
+          const text = chunk.choices?.[0]?.delta?.content;
+          if (typeof text === 'string' && text.length > 0) {
+            assistantText += text;
+            await writeChunkEvent(stream, text);
+          }
+        }
+
+        await stream.writeSSE({ data: '[DONE]' });
+
+        if (assistantText.trim().length > 0) {
+          await runInTransaction(async (trx) => {
+            await ChatRepository.insertMessage(trx, {
+              chatId: chat.id,
+              authorUserId: userId,
+              role: 'assistant',
+              content: assistantText,
+            });
+            await ChatRepository.touchLastMessage(trx, chat.id);
+          });
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Stream error';
+        await writeErrorEvent(stream, message);
+      }
+    });
   })
-
-  // Search chats (simple text search on title and conversation context)
-  .get('/search', async (c) => {
-    const userId = c.get('userId')!;
-    const query = c.req.query('q');
-    const limit = c.req.query('limit') ? Number.parseInt(c.req.query('limit')!) : 20;
-
-    if (!query) {
-      throw new ValidationError('Query is required');
-    }
-
-    // Get all user chats and filter locally (could optimize with DB full-text search later)
-    const allChats = await getUserChatsQuery(userId, 1000);
-    const filtered = allChats
-      .filter((chat) => chat.title.toLowerCase().includes(query.toLowerCase()))
-      .slice(0, limit);
-
-    return c.json({ chats: filtered });
-  })
-
   .route('/:id', chatByIdRoutes);

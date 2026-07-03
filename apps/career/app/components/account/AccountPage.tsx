@@ -1,5 +1,5 @@
 import { useAuthClient } from '@hominem/auth/client/provider';
-import { Button } from '@hominem/ui/button';
+import { Button } from '@hominem/ui';
 import { useState } from 'react';
 import { useNavigate, useRevalidator } from 'react-router';
 
@@ -24,7 +24,9 @@ export function AccountPage({ loaderData }: { loaderData: AccountLoaderData }) {
 
   const { user, portfolios, currentPortfolio } = loaderData;
 
-  const submitAccountAction = async <TData,>(formData: FormData): Promise<AccountActionResult<TData>> => {
+  const submitAccountAction = async <TData,>(
+    formData: FormData,
+  ): Promise<AccountActionResult<TData>> => {
     const response = await fetch('/account', {
       method: 'POST',
       body: formData,

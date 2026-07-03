@@ -4,61 +4,40 @@ import { HonoProvider as BaseHonoProvider } from '@hominem/rpc/react';
 import { useCallback } from 'react';
 import type { ReactNode } from 'react';
 
-/**
- * Hono RPC Provider Inner for Finance App
- */
-function HonoProviderInner({ children, baseUrl }: HonoProviderProps) {
-  const { authClient } = useAuthContext();
-
-  const getAuthToken = useCallback(async () => {
-    try {
-      const {
-        data: { session },
-      } = await authClient.auth.getSession();
-
-      return session?.access_token || null;
-    } catch (error) {
-      console.error('Failed to get auth token:', error);
-      return null;
-    }
-  }, [authClient]);
-
-  const config: ClientConfig = {
-    baseUrl,
-    getAuthToken,
-    onError: (error) => {
-      console.error('Hono RPC Error:', error);
-    },
-  };
-
-  return <BaseHonoProvider config={config}>{children}</BaseHonoProvider>;
-}
-
-/**
- * Hono RPC Provider for Finance App
- *
- * Replaces the old TRpcProvider with a simpler, faster RPC-based setup.
- * Performance: 84% faster type-checking compared to the previous implementation!
- */
 interface HonoProviderProps {
   children: ReactNode;
   baseUrl: string;
 }
 
-export function HonoProvider({ children, baseUrl }: HonoProviderProps) {
+// Always renders on client — hooks called unconditionally
+function HonoClientProvider({ children, baseUrl }: HonoProviderProps) {
   const authContext = useSafeAuth();
+  const { authClient } = useAuthContext();
 
-  const config: ClientConfig = {
-    baseUrl,
-    getAuthToken: async () => null,
-    onError: (error) => {
-      console.error('Hono RPC Error:', error);
-    },
-  };
+  const getHeaders = useCallback(async (): Promise<Record<string, string>> => {
+    try {
+      const session = await authClient.getSession();
+      const token = (session as any)?.data?.session?.token;
+      if (token) return { authorization: `Bearer ${token}` };
+    } catch {
+      // ignore
+    }
+    return {};
+  }, [authClient]);
 
-  if (!authContext) {
-    return <BaseHonoProvider config={config}>{children}</BaseHonoProvider>;
+  const config: ClientConfig = authContext
+    ? { baseUrl, getHeaders, onError: (e) => console.error('Hono RPC Error:', e) }
+    : { baseUrl, getHeaders: async () => ({}), onError: (e) => console.error('Hono RPC Error:', e) };
+
+  return <BaseHonoProvider config={config}>{children}</BaseHonoProvider>;
+}
+
+// SSR-safe wrapper — no hooks called here, delegates to HonoClientProvider on client
+export function HonoProvider({ children, baseUrl }: HonoProviderProps) {
+  if (typeof window === 'undefined') {
+    // SSR: skip all React Query / auth providers
+    return <>{children}</>;
   }
 
-  return <HonoProviderInner baseUrl={baseUrl}>{children}</HonoProviderInner>;
+  return <HonoClientProvider baseUrl={baseUrl}>{children}</HonoClientProvider>;
 }

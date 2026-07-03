@@ -1,7 +1,5 @@
 import { EmptyState } from '@hominem/ui';
-import { Badge } from '@hominem/ui/badge';
-import { Card, CardContent } from '@hominem/ui/card';
-import { PercentageProgressBar } from '@hominem/ui/progress';
+import { Badge, Card, CardContent, PercentageProgressBar } from '@hominem/ui';
 
 import type { TopCompany } from '~/lib/career/queries/job-applications';
 import { cn } from '~/lib/utils';
