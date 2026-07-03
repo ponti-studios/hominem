@@ -234,7 +234,9 @@ function Settings() {
           </Text>
         ) : null}
 
-        {saveError ? <Text style={[styles.statusText, styles.errorText]}>{saveError}</Text> : null}
+        {saveError ? (
+          <Text style={[styles.statusText, { color: themeColors.destructive }]}>{saveError}</Text>
+        ) : null}
 
         <View style={styles.row}>
           <View style={styles.rowLabelGroup}>
@@ -352,7 +354,9 @@ function Settings() {
                 onPress={() => onDeletePasskeyPress(pk.id, pk.name)}
                 style={({ pressed }) => ({ opacity: pressed ? 0.65 : 1 })}
               >
-                <Text style={styles.removeText}>{t.settings.passkeys.remove}</Text>
+                <Text style={[styles.removeText, { color: themeColors.destructive }]}>
+                  {t.settings.passkeys.remove}
+                </Text>
               </Pressable>
             </View>
           ))}
@@ -379,19 +383,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 8,
   },
-  deleteAction: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 40,
-  },
-  deleteActionText: {
-    color: '#8c1c1c',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  errorText: {
-    color: '#8c1c1c',
-  },
   inlineInput: {
     borderRadius: 10,
     fontSize: 15,
@@ -406,7 +397,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   removeText: {
-    color: '#8c1c1c',
     fontSize: 14,
     fontWeight: '500',
   },

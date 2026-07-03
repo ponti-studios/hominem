@@ -1,19 +1,8 @@
 import { useCallback, type ReactNode } from 'react';
 import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
-import { StyleSheet, Text, View } from 'react-native';
 
+import { ErrorFallback } from '~/components/error-boundary/ErrorFallback';
 import { logError } from '~/components/error-boundary/log-error';
-import {
-  componentSizes,
-  fontFamiliesNative,
-  fontSizes,
-  fontWeights,
-  lineHeights,
-  themeSpacing,
-  useThemeColors,
-} from '~/components/theme';
-import { Button } from '~/components/ui/button';
-import AppIcon from '~/components/ui/icon';
 import t from '~/translations';
 
 interface Props {
@@ -37,34 +26,17 @@ function FeatureFallback({
   featureName,
 }: FallbackProps & { featureName?: string }) {
   const message = error instanceof Error ? error.message : String(error);
-  const themeColors = useThemeColors();
 
   return (
-    <View style={styles.host}>
-      <View style={styles.content}>
-        <AppIcon
-          name="exclamationmark.triangle.fill"
-          size={componentSizes.lg}
-          tintColor={themeColors.destructive}
-        />
-        <Text style={[styles.title, { color: themeColors.foreground }]}>Something went wrong</Text>
-        <Text style={[styles.message, { color: themeColors['text-secondary'] }]}>
-          {createFeatureMessage(featureName)}
-        </Text>
-
-        {__DEV__ && message ? (
-          <Text style={[styles.debugMessage, { color: themeColors['text-tertiary'] }]}>
-            {message}
-          </Text>
-        ) : null}
-
-        <Button
-          label={t.errors.featureFallback.tryAgain}
-          onPress={resetErrorBoundary}
-          variant="secondary"
-        />
-      </View>
-    </View>
+    <ErrorFallback
+      title={t.errors.somethingWentWrong}
+      titleSize="title2"
+      message={createFeatureMessage(featureName)}
+      debugMessage={message}
+      actionLabel={t.errors.featureFallback.tryAgain}
+      onAction={resetErrorBoundary}
+      buttonVariant="secondary"
+    />
   );
 }
 
@@ -95,34 +67,3 @@ export function FeatureErrorBoundary({ children, fallback, onError, featureName 
     </ErrorBoundary>
   );
 }
-
-const styles = StyleSheet.create({
-  host: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  content: {
-    width: '100%',
-    maxWidth: 360,
-    alignItems: 'center',
-    gap: themeSpacing.md,
-  },
-  title: {
-    fontSize: fontSizes.title2,
-    fontWeight: fontWeights.bold,
-    textAlign: 'center',
-  },
-  message: {
-    fontSize: fontSizes.md,
-    lineHeight: lineHeights.body,
-    textAlign: 'center',
-  },
-  debugMessage: {
-    fontSize: fontSizes.caption1,
-    lineHeight: lineHeights.footnote,
-    fontFamily: fontFamiliesNative.mono,
-    textAlign: 'center',
-  },
-});

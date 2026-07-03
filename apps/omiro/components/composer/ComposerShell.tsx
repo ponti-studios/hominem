@@ -49,7 +49,7 @@ export function ComposerShell({
   return (
     <Animated.View style={[styles.surface, recordingBorderStyle]} testID={testID}>
       {accessory ? <View style={styles.accessory}>{accessory}</View> : null}
-      <View style={styles.inputRow}>{input}</View>
+      {isRecording ? null : <View style={styles.inputRow}>{input}</View>}
       {inlinePanel ? <View style={styles.inlinePanel}>{inlinePanel}</View> : null}
       <View style={styles.toolbarRow}>{toolbar}</View>
     </Animated.View>

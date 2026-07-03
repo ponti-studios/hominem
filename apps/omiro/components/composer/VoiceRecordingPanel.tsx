@@ -8,11 +8,14 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { ActionButton } from '~/components/composer/ComposerButtons';
 import { RecordingLevelMeter } from '~/components/composer/RecordingLevelMeter';
 import { useElapsedTimer } from '~/components/composer/useElapsedTimer';
-import { Text, makeStyles } from '~/components/theme';
+import { Text, makeStyles, useThemeColors } from '~/components/theme';
+import { IconButton } from '~/components/ui/icon-button';
 import t from '~/translations';
+
+const TOOL_BTN_SIZE = 38; // ToolBtn / SecondaryBtn per composer spec
+const TOOLBAR_ICON_SIZE = 20; // toolbar action icon size
 
 interface VoiceRecordingPanelProps {
   startedAt: number | null;
@@ -22,6 +25,7 @@ interface VoiceRecordingPanelProps {
 
 export function VoiceRecordingPanel({ startedAt, meterings, onCancel }: VoiceRecordingPanelProps) {
   const styles = useStyles();
+  const themeColors = useThemeColors();
   const elapsed = useElapsedTimer(startedAt);
   const dotOpacity = useAnimatedStyle(() => ({
     opacity: withRepeat(
@@ -38,12 +42,16 @@ export function VoiceRecordingPanel({ startedAt, meterings, onCancel }: VoiceRec
       <View style={styles.meter}>
         <RecordingLevelMeter meterings={meterings} />
       </View>
-      <ActionButton
-        icon="xmark"
-        onPress={onCancel}
+      <IconButton
         accessibilityLabel={t.inboxComposer.composer.cancelRecordingA11y}
+        circular
         disabled={false}
-        variant="muted"
+        icon="xmark"
+        iconSize={TOOLBAR_ICON_SIZE}
+        size={TOOL_BTN_SIZE}
+        tintColor={themeColors['icon-muted']}
+        variant="surface"
+        onPress={onCancel}
       />
     </View>
   );

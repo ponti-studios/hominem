@@ -1,14 +1,11 @@
-import { Host, Circle, RoundedRectangle } from '@expo/ui/swift-ui';
-import { glassEffect } from '@expo/ui/swift-ui/modifiers';
 import { radii, spacing } from '@hominem/ui/tokens';
 import React from 'react';
-import { ActivityIndicator, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, TextInput, View } from 'react-native';
 
 import { Text, makeStyles, useThemeColors } from '~/components/theme';
+import { Button } from '~/components/ui/button';
 import AppIcon from '~/components/ui/icon';
 import t from '~/translations';
-
-const isGlassSupported = Platform.OS === 'ios';
 
 interface InlineEnhanceTrayProps {
   instruction: string;
@@ -34,13 +31,6 @@ export function InlineEnhanceTray({
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.iconWrap}>
-          {isGlassSupported ? (
-            <Host style={StyleSheet.absoluteFill} pointerEvents="none">
-              <Circle
-                modifiers={[glassEffect({ glass: { variant: 'regular' }, shape: 'circle' })]}
-              />
-            </Host>
-          ) : null}
           <AppIcon name="wand.and.sparkles" size={16} tintColor={themeColors['text-secondary']} />
         </View>
         <View style={styles.headerText}>
@@ -90,42 +80,18 @@ export function InlineEnhanceTray({
       />
 
       <View style={styles.actions}>
-        <Pressable
-          onPress={onCancel}
-          style={({ pressed }) => [styles.action, { opacity: pressed ? 0.6 : 1 }]}
-        >
-          <Text style={styles.secondaryActionText}>{t.enhance.cancel}</Text>
-        </Pressable>
-
-        <Pressable
-          onPress={onConfirm}
-          disabled={isEnhancing}
-          style={({ pressed }) => [
-            styles.action,
-            styles.primaryAction,
-            { opacity: pressed || isEnhancing ? 0.8 : 1 },
-          ]}
-        >
-          {isGlassSupported ? (
-            <Host style={StyleSheet.absoluteFill} pointerEvents="none">
-              <RoundedRectangle
-                cornerRadius={radii.full}
-                modifiers={[
-                  glassEffect({
-                    glass: { variant: 'regular', interactive: true, tint: themeColors.accent },
-                    shape: 'roundedRectangle',
-                    cornerRadius: radii.full,
-                  }),
-                ]}
-              />
-            </Host>
-          ) : null}
-          {isEnhancing ? (
-            <ActivityIndicator size="small" color={themeColors.white} />
-          ) : (
-            <Text style={styles.primaryActionText}>{t.enhance.confirm}</Text>
-          )}
-        </Pressable>
+        <View style={styles.actionSlot}>
+          <Button label={t.enhance.cancel} onPress={onCancel} variant="tertiary" size="sm" />
+        </View>
+        <View style={styles.actionSlot}>
+          <Button
+            label={t.enhance.confirm}
+            onPress={onConfirm}
+            variant="primary"
+            size="sm"
+            loading={isEnhancing}
+          />
+        </View>
       </View>
 
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -145,7 +111,7 @@ const useStyles = makeStyles((theme) => ({
   },
   iconWrap: {
     alignItems: 'center',
-    backgroundColor: isGlassSupported ? 'transparent' : theme.colors['bg-elevated'],
+    backgroundColor: theme.colors['bg-surface'],
     borderRadius: radii.full,
     height: spacing[6],
     justifyContent: 'center',
@@ -198,26 +164,8 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: 'row',
     gap: spacing[2],
   },
-  action: {
-    alignItems: 'center',
-    borderRadius: radii.full,
+  actionSlot: {
     flex: 1,
-    height: 44,
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  secondaryActionText: {
-    color: theme.colors['text-secondary'],
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  primaryAction: {
-    backgroundColor: isGlassSupported ? 'transparent' : theme.colors.accent,
-  },
-  primaryActionText: {
-    color: theme.colors.white,
-    fontSize: 14,
-    fontWeight: '600',
   },
   errorText: {
     color: theme.colors.destructive,

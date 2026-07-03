@@ -71,23 +71,37 @@ export function useVoiceComposerInput({
 
   const processStoppedRecording = useCallback(
     async (fileUri: string) => {
+      logger.info('[voice-transcriber] processStoppedRecording: start', { fileUri });
       setIsTranscribing(true);
       setError(null);
 
       try {
+        logger.info('[voice-transcriber] processStoppedRecording: calling transcribeFile');
         const result = await VoiceTranscriberModule.transcribeFile(fileUri);
+        logger.info('[voice-transcriber] processStoppedRecording: transcribeFile resolved', {
+          rawTextLength: result.rawText.length,
+          locale: result.locale,
+          isOnDevice: result.isOnDevice,
+        });
         const rawText = result.rawText.trim();
-        if (!rawText) return;
+        if (!rawText) {
+          logger.warn('[voice-transcriber] processStoppedRecording: empty rawText, aborting');
+          return;
+        }
 
         const insertedDraft = mergeTranscriptIntoDraft(getMessage(), rawText);
         setMessage(insertedDraft);
         setIsTranscribing(false);
+        logger.info('[voice-transcriber] processStoppedRecording: draft updated, starting cleanup');
         void cleanup({
           rawText,
           locale: result.locale,
           source: 'apple-on-device',
         })
           .then((cleanupResult) => {
+            logger.info('[voice-cleanup] cleanup resolved', {
+              changed: cleanupResult.changed,
+            });
             setMessage(
               maybeApplyCleanedTranscript({
                 currentDraft: getMessage(),
@@ -104,12 +118,13 @@ export function useVoiceComposerInput({
             });
           });
       } catch (error) {
-        logger.error('[voice-transcriber] transcription failed', error as Error);
+        logger.error('[voice-transcriber] processStoppedRecording: transcription failed', error as Error);
         // Permission can be revoked mid-session (e.g. the user backgrounds
         // the app, revokes Speech Recognition in Settings, then returns and
         // stops a long recording) — route that case to the same actionable
         // permission-denied UX instead of a generic transcription failure.
         const code = getNativeErrorCode(error);
+        logger.info('[voice-transcriber] processStoppedRecording: native error code', { code });
         setVoiceError(
           createVoiceComposerError(
             code === 'MISSING_PERMISSION' ? 'permission-denied' : 'transcription-failed',
@@ -117,14 +132,24 @@ export function useVoiceComposerInput({
         );
       } finally {
         setIsTranscribing(false);
+        logger.info('[voice-transcriber] processStoppedRecording: finished');
       }
     },
     [cleanup, getMessage, setMessage, setVoiceError],
   );
 
   const stopAndTranscribeRecording = useCallback(async () => {
+    logger.info('[voice-transcriber] stopAndTranscribeRecording: calling stopRecording', { ownerId });
     const result = await stopRecording(ownerId);
-    if (!result.ok || !result.fileUri) return;
+    logger.info('[voice-transcriber] stopAndTranscribeRecording: stopRecording resolved', {
+      ok: result.ok,
+      fileUri: result.ok ? result.fileUri : undefined,
+      reason: result.ok ? undefined : result.reason,
+    });
+    if (!result.ok || !result.fileUri) {
+      logger.warn('[voice-transcriber] stopAndTranscribeRecording: no fileUri, aborting transcription');
+      return;
+    }
     await processStoppedRecording(result.fileUri);
   }, [ownerId, processStoppedRecording]);
 
@@ -183,20 +208,29 @@ export function useVoiceComposerInput({
   }, [ensureSpeechRecognitionPermission, ownerId, setVoiceError]);
 
   const handleVoicePress = useCallback(async () => {
+    logger.info('[voice-transcriber] handleVoicePress', {
+      isRecordingElsewhere,
+      isOwnedByThisComposer,
+      state: recordingSnapshot.state,
+    });
+
     if (isRecordingElsewhere) return;
 
     if (
       isOwnedByThisComposer &&
       (recordingSnapshot.state === 'RECORDING' || recordingSnapshot.state === 'PAUSED')
     ) {
+      logger.info('[voice-transcriber] handleVoicePress: stopping+transcribing');
       await stopAndTranscribeRecording();
       return;
     }
 
     if (recordingSnapshot.state !== 'IDLE') {
+      logger.info('[voice-transcriber] handleVoicePress: ignored, not IDLE and not owned-active');
       return;
     }
 
+    logger.info('[voice-transcriber] handleVoicePress: starting recording');
     await startVoiceRecording();
   }, [
     isOwnedByThisComposer,

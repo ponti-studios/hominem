@@ -64,21 +64,7 @@ export default function InboxScreen() {
       <Stack.Screen
         options={{
           headerShown: true,
-          headerTitle: () => (
-            <Host>
-              <RNHostView matchContents>
-                <ExpoSegmentedControl
-                  selectedIndex={activeTab === 'notes' ? 1 : 0}
-                  style={styles.segmentedControl}
-                  testID="inbox-tab-control"
-                  values={[t.inbox.screen.chatsTab, t.inbox.screen.notesTab]}
-                  onChange={(event) =>
-                    setActiveTab(event.nativeEvent.selectedSegmentIndex === 1 ? 'notes' : 'chats')
-                  }
-                />
-              </RNHostView>
-            </Host>
-          ),
+          title: '',
           headerSearchBarOptions: {
             placeholder: t.inbox.screen.searchPlaceholder,
             placement: 'integratedButton',
@@ -92,6 +78,23 @@ export default function InboxScreen() {
           },
         }}
       />
+      <Stack.Toolbar placement="left">
+        <Stack.Toolbar.View hidesSharedBackground>
+          <Host>
+            <RNHostView matchContents>
+              <ExpoSegmentedControl
+                selectedIndex={activeTab === 'notes' ? 1 : 0}
+                style={styles.segmentedControl}
+                testID="inbox-tab-control"
+                values={[t.inbox.screen.chatsTab, t.inbox.screen.notesTab]}
+                onChange={(event) =>
+                  setActiveTab(event.nativeEvent.selectedSegmentIndex === 1 ? 'notes' : 'chats')
+                }
+              />
+            </RNHostView>
+          </Host>
+        </Stack.Toolbar.View>
+      </Stack.Toolbar>
       <Stack.Toolbar placement="right">
         <Stack.Toolbar.Menu
           accessibilityLabel={t.inbox.screen.openMenuA11y}

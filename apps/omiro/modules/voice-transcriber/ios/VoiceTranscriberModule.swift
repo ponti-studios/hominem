@@ -1,12 +1,15 @@
 import ExpoModulesCore
 import Foundation
 import Speech
+import os.log
+
+private let voiceTranscriberLog = OSLog(subsystem: "com.hominem.omiro", category: "VoiceTranscriber")
 
 // A single Exception type carrying a stable `code` alongside its message, so
 // the JS side can branch on `error.code` (e.g. to route a revoked-permission
 // failure to the same UX as the initial permission gate) instead of parsing
 // free-text error messages, which are not a stable contract.
-private final class VoiceTranscriberException: Exception {
+private final class VoiceTranscriberException: Exception, @unchecked Sendable {
   private let messageText: String
   private let codeText: String
 
@@ -76,6 +79,13 @@ private final class VoiceTranscriptionTaskDelegate: NSObject, SFSpeechRecognitio
   // task of delegate callbacks and leaving the continuation (and the JS
   // caller) hanging forever.
   private let recognizer: SFSpeechRecognizer
+  // SFSpeechRecognitionTask holds its delegate weakly.
+  // Nothing outside this object survives past the
+  // synchronous setup closure in transcribeAudioFile, so without this
+  // self-retain the delegate — and with it any chance of a callback ever
+  // firing — gets deallocated immediately after the task is created,
+  // leaving the continuation (and the JS caller) hanging forever.
+  private var selfRetain: VoiceTranscriptionTaskDelegate?
 
   init(
     continuation: CheckedContinuation<VoiceTranscriptionResult, Error>,
@@ -87,6 +97,8 @@ private final class VoiceTranscriptionTaskDelegate: NSObject, SFSpeechRecognitio
     self.locale = locale
     self.isOnDevice = isOnDevice
     self.recognizer = recognizer
+    super.init()
+    self.selfRetain = self
   }
 
   func attachTask(_ task: SFSpeechRecognitionTask) {
@@ -101,6 +113,7 @@ private final class VoiceTranscriptionTaskDelegate: NSObject, SFSpeechRecognitio
     didResume = true
     task?.cancel()
     continuation.resume(throwing: error)
+    selfRetain = nil
   }
 
   private func resume(with transcript: String) {
@@ -113,6 +126,7 @@ private final class VoiceTranscriptionTaskDelegate: NSObject, SFSpeechRecognitio
 
     guard !transcript.isEmpty else {
       continuation.resume(throwing: VoiceTranscriberException.emptyTranscript)
+      selfRetain = nil
       return
     }
 
@@ -124,14 +138,46 @@ private final class VoiceTranscriptionTaskDelegate: NSObject, SFSpeechRecognitio
         isOnDevice: isOnDevice
       )
     )
+    selfRetain = nil
+  }
+
+  func speechRecognitionDidDetectSpeech(_ task: SFSpeechRecognitionTask) {
+    os_log("speechRecognitionDidDetectSpeech", log: voiceTranscriberLog, type: .info)
+  }
+
+  func speechRecognitionTaskFinishedReadingAudio(_ task: SFSpeechRecognitionTask) {
+    os_log("speechRecognitionTaskFinishedReadingAudio", log: voiceTranscriberLog, type: .info)
+  }
+
+  func speechRecognitionTask(_ task: SFSpeechRecognitionTask, didHypothesizeTranscription transcription: SFTranscription) {
+    os_log(
+      "didHypothesizeTranscription: %{public}@",
+      log: voiceTranscriberLog,
+      type: .info,
+      transcription.formattedString
+    )
   }
 
   func speechRecognitionTask(_ task: SFSpeechRecognitionTask, didFinishRecognition recognitionResult: SFSpeechRecognitionResult) {
     let transcript = recognitionResult.bestTranscription.formattedString.trimmingCharacters(in: .whitespacesAndNewlines)
+    os_log(
+      "didFinishRecognition isFinal=%{public}@ transcriptLength=%{public}d",
+      log: voiceTranscriberLog,
+      type: .info,
+      String(recognitionResult.isFinal),
+      transcript.count
+    )
     resume(with: transcript)
   }
 
   func speechRecognitionTask(_ task: SFSpeechRecognitionTask, didFinishSuccessfully successfully: Bool) {
+    os_log(
+      "didFinishSuccessfully=%{public}@ taskError=%{public}@",
+      log: voiceTranscriberLog,
+      type: .info,
+      String(successfully),
+      String(describing: task.error)
+    )
     guard successfully else {
       resume(throwing: task.error ?? VoiceTranscriberException.emptyTranscript)
       return
@@ -139,6 +185,7 @@ private final class VoiceTranscriptionTaskDelegate: NSObject, SFSpeechRecognitio
   }
 
   func speechRecognitionTaskWasCancelled(_ task: SFSpeechRecognitionTask) {
+    os_log("speechRecognitionTaskWasCancelled taskError=%{public}@", log: voiceTranscriberLog, type: .info, String(describing: task.error))
     resume(throwing: task.error ?? VoiceTranscriberException.emptyTranscript)
   }
 }
@@ -169,18 +216,44 @@ private func requestSpeechRecognitionAuthorization() async -> SFSpeechRecognizer
 }
 
 private func transcribeAudioFile(at audioUri: String) async throws -> VoiceTranscriptionResult {
-  guard SFSpeechRecognizer.authorizationStatus() == .authorized else {
+  os_log("transcribeAudioFile: start uri=%{public}@", log: voiceTranscriberLog, type: .info, audioUri)
+
+  let authStatus = SFSpeechRecognizer.authorizationStatus()
+  os_log("transcribeAudioFile: authStatus=%{public}@", log: voiceTranscriberLog, type: .info, permissionStatusString(authStatus))
+  guard authStatus == .authorized else {
+    os_log("transcribeAudioFile: missing permission, throwing", log: voiceTranscriberLog, type: .error)
     throw VoiceTranscriberException.missingPermission
   }
 
   guard let fileURL = URL(string: audioUri), fileURL.isFileURL else {
+    os_log("transcribeAudioFile: invalid audio URL, throwing", log: voiceTranscriberLog, type: .error)
     throw VoiceTranscriberException.invalidAudioURL
   }
 
+  let fileExists = FileManager.default.fileExists(atPath: fileURL.path)
+  let fileSize = (try? FileManager.default.attributesOfItem(atPath: fileURL.path)[.size] as? Int) ?? nil
+  os_log(
+    "transcribeAudioFile: fileExists=%{public}@ fileSize=%{public}@",
+    log: voiceTranscriberLog,
+    type: .info,
+    String(fileExists),
+    String(describing: fileSize)
+  )
+
   let locale = Locale(identifier: Locale.preferredLanguages.first ?? Locale.current.identifier)
   guard let recognizer = SFSpeechRecognizer(locale: locale) else {
+    os_log("transcribeAudioFile: recognizer unavailable for locale=%{public}@, throwing", log: voiceTranscriberLog, type: .error, locale.identifier)
     throw VoiceTranscriberException.recognizerUnavailable
   }
+
+  os_log(
+    "transcribeAudioFile: recognizer created locale=%{public}@ isAvailable=%{public}@ supportsOnDevice=%{public}@",
+    log: voiceTranscriberLog,
+    type: .info,
+    locale.identifier,
+    String(recognizer.isAvailable),
+    String(recognizer.supportsOnDeviceRecognition)
+  )
 
   // On-device speech models aren't guaranteed to be downloaded for every
   // locale/device, so prefer on-device recognition but gracefully fall back
@@ -191,6 +264,13 @@ private func transcribeAudioFile(at audioUri: String) async throws -> VoiceTrans
   request.shouldReportPartialResults = false
   request.requiresOnDeviceRecognition = isOnDevice
 
+  os_log(
+    "transcribeAudioFile: starting recognitionTask isOnDevice=%{public}@",
+    log: voiceTranscriberLog,
+    type: .info,
+    String(isOnDevice)
+  )
+
   return try await withCheckedThrowingContinuation { continuation in
     let delegate = VoiceTranscriptionTaskDelegate(
       continuation: continuation,
@@ -200,6 +280,7 @@ private func transcribeAudioFile(at audioUri: String) async throws -> VoiceTrans
     )
     let task = recognizer.recognitionTask(with: request, delegate: delegate)
     delegate.attachTask(task)
+    os_log("transcribeAudioFile: recognitionTask created, awaiting delegate callbacks", log: voiceTranscriberLog, type: .info)
   }
 }
 
@@ -217,7 +298,15 @@ public class VoiceTranscriberModule: Module {
     }
 
     AsyncFunction("transcribeFile") { (audioUri: String) async throws -> VoiceTranscriptionResult in
-      try await transcribeAudioFile(at: audioUri)
+      os_log("transcribeFile AsyncFunction invoked", log: voiceTranscriberLog, type: .info)
+      do {
+        let result = try await transcribeAudioFile(at: audioUri)
+        os_log("transcribeFile AsyncFunction resolving successfully", log: voiceTranscriberLog, type: .info)
+        return result
+      } catch {
+        os_log("transcribeFile AsyncFunction rejecting: %{public}@", log: voiceTranscriberLog, type: .error, String(describing: error))
+        throw error
+      }
     }
   }
 }

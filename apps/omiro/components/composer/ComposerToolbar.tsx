@@ -4,10 +4,14 @@ import React from 'react';
 import { View } from 'react-native';
 import Reanimated, { LinearTransition, SlideInRight, SlideOutRight } from 'react-native-reanimated';
 
-import { ActionButton } from '~/components/composer/ComposerButtons';
 import { ComposerMedia } from '~/components/composer/ComposerMedia';
-import { makeStyles } from '~/components/theme';
+import { makeStyles, useThemeColors } from '~/components/theme';
+import { IconButton } from '~/components/ui/icon-button';
 import t from '~/translations';
+
+const TOOL_BTN_SIZE = 38; // ToolBtn / SecondaryBtn per composer spec
+const PRIMARY_BTN_SIZE = 42; // PrimaryBtn per composer spec
+const TOOLBAR_ICON_SIZE = 20; // toolbar action icon size
 
 interface ComposerToolbarProps {
   mode: 'inbox' | 'chat';
@@ -58,6 +62,7 @@ export function ComposerToolbar({
   secondaryAction,
 }: ComposerToolbarProps) {
   const styles = useStyles();
+  const themeColors = useThemeColors();
 
   return (
     <View style={styles.toolbar}>
@@ -68,9 +73,7 @@ export function ComposerToolbar({
         />
       </View>
       <Reanimated.View style={styles.trailing} layout={pillLayout}>
-        <ActionButton
-          icon={isRecording ? 'stop.fill' : 'mic.fill'}
-          onPress={onVoicePress}
+        <IconButton
           accessibilityLabel={
             isRecordingElsewhere
               ? t.inboxComposer.composer.recordingElsewhereA11y
@@ -78,37 +81,49 @@ export function ComposerToolbar({
                 ? t.inboxComposer.composer.stopVoiceInputA11y
                 : t.inboxComposer.composer.startVoiceInputA11y
           }
+          circular
           disabled={!canToggleVoice}
-          isAnimating={isVoiceBusy}
+          icon={isRecording ? 'stop.fill' : 'mic.fill'}
+          iconSize={TOOLBAR_ICON_SIZE}
+          isAnimating={isVoiceBusy && !isRecording}
+          size={TOOL_BTN_SIZE}
+          variant="surface"
+          onPress={onVoicePress}
         />
         {canSubmit ? (
           <Reanimated.View entering={buttonEnter} exiting={buttonExit}>
-            <ActionButton
-              icon="wand.and.sparkles"
-              onPress={onEnhancePress}
+            <IconButton
               accessibilityLabel={t.inboxComposer.composer.enhanceTextA11y}
+              circular
               disabled={!canEnhance}
+              icon="wand.and.sparkles"
+              iconSize={TOOLBAR_ICON_SIZE}
               isAnimating={isEnhancing || isCleaningVoice}
+              size={TOOL_BTN_SIZE}
+              variant="surface"
+              onPress={onEnhancePress}
             />
           </Reanimated.View>
         ) : null}
         {mode === 'inbox' && secondaryAction && canSubmit ? (
           <Reanimated.View entering={buttonEnter} exiting={buttonExit}>
-            <ActionButton
-              icon={secondaryAction.icon}
-              onPress={secondaryAction.onPress}
+            <IconButton
               accessibilityLabel={secondaryAction.accessibilityLabel}
-              testID={secondaryAction.testID}
+              circular
               disabled={isSubmitting || !canSubmit}
-              variant="muted"
+              icon={secondaryAction.icon}
+              iconSize={TOOLBAR_ICON_SIZE}
+              size={TOOL_BTN_SIZE}
+              testID={secondaryAction.testID}
+              tintColor={themeColors['icon-muted']}
+              variant="surface"
+              onPress={secondaryAction.onPress}
             />
           </Reanimated.View>
         ) : null}
         {canSubmit ? (
           <Reanimated.View entering={buttonEnter} exiting={buttonExit}>
-            <ActionButton
-              icon="arrow.up"
-              onPress={onSubmit}
+            <IconButton
               accessibilityLabel={
                 submitAccessibilityLabel ??
                 (mode === 'inbox'
@@ -117,12 +132,17 @@ export function ComposerToolbar({
                     ? t.chat.input.sendingA11y
                     : t.chat.input.sendMessageA11y)
               }
+              circular
+              disabled={!canSubmit}
+              icon="arrow.up"
+              iconSize={TOOLBAR_ICON_SIZE}
+              size={PRIMARY_BTN_SIZE}
               testID={
                 submitTestID ??
                 (mode === 'inbox' ? 'composer-submit-note' : 'composer-submit-message')
               }
-              disabled={!canSubmit}
               variant="primary"
+              onPress={onSubmit}
             />
           </Reanimated.View>
         ) : null}

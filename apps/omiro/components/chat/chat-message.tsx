@@ -1,7 +1,7 @@
 import type { ChatMessageItem, ChatRenderIcon, MarkdownComponent } from '@hominem/chat';
 import { getReferencedNoteLabel } from '@hominem/chat';
 import { memo, useMemo, useState } from 'react';
-import { Modal, Pressable, TextInput, View } from 'react-native';
+import { Pressable, TextInput, View } from 'react-native';
 import Reanimated, { FadeInDown, FadeOutUp, LinearTransition } from 'react-native-reanimated';
 
 import {
@@ -15,6 +15,7 @@ import {
 } from '~/components/theme';
 import { IconButton } from '~/components/ui';
 import { Button } from '~/components/ui/button';
+import { ModalOverlay } from '~/components/ui/modal-overlay';
 import t from '~/translations';
 
 import { ChatThinkingIndicator } from './chat-thinking-indicator';
@@ -94,8 +95,13 @@ function MessageEditModal({
   const themeColors = useThemeColors();
 
   return (
-    <Modal animationType="fade" onRequestClose={onCancel} transparent visible={visible}>
-      <View style={styles.editBackdrop}>
+    <ModalOverlay
+      visible={visible}
+      onClose={onCancel}
+      dismissOnBackdropPress={false}
+      position="center"
+    >
+      <View style={styles.editBackdropInset}>
         <View style={styles.editSheet}>
           <Text style={styles.editTitle}>{t.chat.messageEdit.title}</Text>
           <TextInput
@@ -130,7 +136,7 @@ function MessageEditModal({
           </View>
         </View>
       </View>
-    </Modal>
+    </ModalOverlay>
   );
 }
 
@@ -501,16 +507,9 @@ const useChatMessageStyles = makeStyles((theme) => ({
     gap: spacing[2],
     width: '100%',
   },
-  editBackdrop: {
-    alignItems: 'center',
-    backgroundColor: theme.colors['overlay-modal-medium'],
-    bottom: 0,
-    justifyContent: 'center',
-    left: 0,
+  editBackdropInset: {
     paddingHorizontal: spacing[5],
-    position: 'absolute',
-    right: 0,
-    top: 0,
+    width: '100%',
   },
   editActionSlot: {
     flex: 1,

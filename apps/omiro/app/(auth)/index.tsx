@@ -20,7 +20,7 @@ import Animated, {
 import { FeatureErrorBoundary } from '~/components/error-boundary/FeatureErrorBoundary';
 import { useThemeColors } from '~/components/theme';
 import { Button } from '~/components/ui/button';
-import AppIcon from '~/components/ui/icon';
+import { IconChip } from '~/components/ui/icon-chip';
 import { CHAT_AUTH_CONFIG } from '~/config/auth';
 import { E2E_TESTING, MOBILE_PASSKEY_ENABLED } from '~/constants';
 import { useAuth } from '~/services/auth/auth-provider';
@@ -157,9 +157,7 @@ function AuthScreen() {
         >
           <View style={styles.contentShell}>
             <View style={styles.card}>
-              <View style={[styles.iconChip, { backgroundColor: themeColors['bg-surface'] }]}>
-                <AppIcon name="envelope" />
-              </View>
+              <IconChip icon="envelope" />
 
               <View style={styles.copyBlock}>
                 <Text style={[styles.title, { color: themeColors.foreground }]}>
@@ -293,13 +291,6 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 420,
     gap: 18,
-  },
-  iconChip: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   copyBlock: {
     gap: 8,

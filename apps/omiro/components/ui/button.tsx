@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo } from 'react';
 import {
+  ActivityIndicator,
   Pressable,
   StyleProp,
   StyleSheet,
@@ -21,6 +22,7 @@ interface ButtonProps {
   label: string;
   onPress: () => void;
   disabled?: boolean;
+  loading?: boolean;
   size?: 'sm' | 'md';
   variant?: 'primary' | 'secondary' | 'tertiary' | 'destructive-text';
   testID?: string;
@@ -30,6 +32,7 @@ export function Button({
   label,
   onPress,
   disabled = false,
+  loading = false,
   size = 'md',
   variant = 'primary',
   testID,
@@ -78,28 +81,40 @@ export function Button({
     };
   }, [disabled, variant]);
 
+  const isInteractionDisabled = disabled || loading;
+
   const pressableStyle = useCallback(
     ({ pressed }: PressableStateCallbackType) => [
       resolvedStyles.container,
-      pressed && !disabled && styles.pressed,
+      loading && styles.loading,
+      pressed && !isInteractionDisabled && styles.pressed,
     ],
-    [disabled, resolvedStyles.container],
+    [isInteractionDisabled, loading, resolvedStyles.container],
   );
 
   return (
-    <Pressable testID={testID} onPress={onPress} disabled={disabled} style={pressableStyle}>
-      <Text
-        style={[
-          styles.text,
-          size === 'sm' && styles.textSm,
-          {
-            color: resolvedStyles.text,
-            opacity: disabled ? 0.5 : 1,
-          },
-        ]}
-      >
-        {label}
-      </Text>
+    <Pressable
+      testID={testID}
+      onPress={onPress}
+      disabled={isInteractionDisabled}
+      style={pressableStyle}
+    >
+      {loading ? (
+        <ActivityIndicator color={resolvedStyles.text} size="small" />
+      ) : (
+        <Text
+          style={[
+            styles.text,
+            size === 'sm' && styles.textSm,
+            {
+              color: resolvedStyles.text,
+              opacity: disabled ? 0.5 : 1,
+            },
+          ]}
+        >
+          {label}
+        </Text>
+      )}
     </Pressable>
   );
 }
@@ -117,5 +132,8 @@ const styles = StyleSheet.create({
   },
   disabled: {
     opacity: 0.5,
+  },
+  loading: {
+    opacity: 0.7,
   },
 });

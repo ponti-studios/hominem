@@ -29,6 +29,7 @@ import t from '~/translations';
 import { FeatureErrorBoundary } from '../../components/error-boundary/FeatureErrorBoundary';
 import { Button } from '../../components/ui/button';
 import AppIcon from '../../components/ui/icon';
+import { IconChip } from '../../components/ui/icon-chip';
 import { useAuth } from '../../services/auth/auth-provider';
 import { normalizeOtp } from '../../services/auth/validation';
 import { posthog } from '../../services/posthog';
@@ -206,9 +207,13 @@ function VerifyScreen() {
         ]}
       >
         <Animated.View entering={FadeIn.duration(300)} style={styles.successContent}>
-          <View style={[styles.successChip, { backgroundColor: themeColors['bg-surface'] }]}>
-            <AppIcon name="checkmark.circle.fill" size={32} tintColor={themeColors.success} />
-          </View>
+          <IconChip
+            icon="checkmark.circle.fill"
+            size={72}
+            radius={24}
+            iconSize={32}
+            tintColor={themeColors.success}
+          />
           <Text style={[styles.successText, { color: themeColors.foreground }]}>
             {t.auth.verify.signedIn}
           </Text>
@@ -231,9 +236,7 @@ function VerifyScreen() {
       >
         <View style={styles.contentShell}>
           <View style={styles.card}>
-            <View style={[styles.iconChip, { backgroundColor: themeColors['bg-surface'] }]}>
-              <AppIcon name="lock.shield" />
-            </View>
+            <IconChip icon="lock.shield" />
 
             <View style={styles.copyBlock}>
               <Text style={[styles.title, { color: themeColors.foreground }]}>
@@ -387,13 +390,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 16,
   },
-  successChip: {
-    width: 72,
-    height: 72,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   successText: {
     fontSize: 22,
     fontWeight: '700',
@@ -413,13 +409,6 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 420,
     gap: 18,
-  },
-  iconChip: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   copyBlock: {
     gap: 8,
