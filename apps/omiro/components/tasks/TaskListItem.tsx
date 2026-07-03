@@ -15,11 +15,20 @@ interface TaskListItemProps {
   onToggleComplete: () => void;
 }
 
+function formatDueDate(dueAt: string): string {
+  return new Date(dueAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+function isOverdue(dueAt: string): boolean {
+  return new Date(dueAt).getTime() < Date.now();
+}
+
 export function TaskListItem({ task, onPress, onToggleComplete }: TaskListItemProps) {
   const styles = useStyles();
   const themeColors = useThemeColors();
   const isCompleted = task.status === 'completed';
   const isList = (task.childCount ?? 0) > 0;
+  const overdue = !isCompleted && task.dueAt !== null && isOverdue(task.dueAt);
 
   return (
     <View style={styles.row}>
@@ -47,19 +56,41 @@ export function TaskListItem({ task, onPress, onToggleComplete }: TaskListItemPr
         style={({ pressed }) => [styles.content, pressed && onPress && styles.pressed]}
         testID={`task-item-${task.id}`}
       >
-        <Text
-          numberOfLines={1}
-          style={[
-            styles.title,
-            { color: isCompleted ? themeColors['text-tertiary'] : themeColors['text-primary'] },
-            isCompleted && styles.titleCompleted,
-          ]}
-        >
-          {task.title}
-        </Text>
+        <View style={styles.titleRow}>
+          {!isCompleted && task.priority !== 'medium' ? (
+            <View
+              style={[
+                styles.priorityDot,
+                {
+                  backgroundColor:
+                    task.priority === 'high' ? themeColors.destructive : themeColors.success,
+                },
+              ]}
+            />
+          ) : null}
+          <Text
+            numberOfLines={1}
+            style={[
+              styles.title,
+              { color: isCompleted ? themeColors['text-tertiary'] : themeColors['text-primary'] },
+              isCompleted && styles.titleCompleted,
+            ]}
+          >
+            {task.title}
+          </Text>
+        </View>
         {isList ? (
           <Text style={[styles.meta, { color: themeColors['text-secondary'] }]}>
             {t.tasks.tasksCount(task.childCount ?? 0)}
+          </Text>
+        ) : task.dueAt ? (
+          <Text
+            style={[
+              styles.meta,
+              { color: overdue ? themeColors.destructive : themeColors['text-secondary'] },
+            ]}
+          >
+            {formatDueDate(task.dueAt)}
           </Text>
         ) : null}
       </Pressable>
@@ -82,6 +113,16 @@ const useStyles = makeStyles((theme) => ({
   },
   pressed: {
     opacity: 0.6,
+  },
+  priorityDot: {
+    borderRadius: 4,
+    height: 6,
+    width: 6,
+  },
+  titleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 6,
   },
   row: {
     alignItems: 'center',

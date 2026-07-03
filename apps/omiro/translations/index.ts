@@ -247,6 +247,28 @@ const t = {
     itemActionsA11y: 'Task actions',
     open: 'Open',
     delete: 'Delete',
+    emptyAction: 'Add your first task',
+    addTaskA11y: 'Add task',
+    addSubtaskA11y: 'Add subtask',
+    editor: {
+      titlePlaceholder: 'Task title',
+      descriptionPlaceholder: 'Add a description',
+      priorityLabel: 'Priority',
+      priority: {
+        low: 'Low',
+        medium: 'Medium',
+        high: 'High',
+      },
+      dueDateLabel: 'Due date',
+      dueToday: 'Today',
+      dueTomorrow: 'Tomorrow',
+      dueNextWeek: 'Next week',
+      clearDueDate: 'Clear',
+      cancel: 'Cancel',
+      create: 'Add',
+      save: 'Save',
+    },
+    editA11y: 'Edit task',
   },
   settings: {
     sections: {

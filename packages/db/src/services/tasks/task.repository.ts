@@ -14,6 +14,7 @@ export interface TaskRecord {
   parentTaskId: string | null;
   status: string;
   priority: string;
+  dueAt: string | null;
   completedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -26,6 +27,15 @@ export interface CreateTaskInput {
   description?: string | null;
   artifactType: 'task' | 'task_list';
   parentTaskId?: string | null;
+  priority?: string;
+  dueAt?: string | null;
+}
+
+export interface UpdateTaskInput {
+  title?: string;
+  description?: string | null;
+  priority?: string;
+  dueAt?: string | null;
 }
 
 export interface CreateTaskBatchInput {
@@ -52,6 +62,7 @@ function toTaskRecord(row: TaskRow, artifactType: 'task' | 'task_list'): TaskRec
     parentTaskId: row.parent_task_id,
     status: row.status,
     priority: row.priority,
+    dueAt: row.due_at ? new Date(row.due_at).toISOString() : null,
     completedAt: row.completed_at ? new Date(row.completed_at).toISOString() : null,
     createdAt: new Date(row.createdat).toISOString(),
     updatedAt: new Date(row.updatedat).toISOString(),
@@ -69,6 +80,8 @@ export const TaskRepository = {
         description: input.description?.trim() || null,
         parent_task_id: input.parentTaskId ?? null,
         primary_space_id: null,
+        ...(input.priority ? { priority: input.priority } : {}),
+        due_at: input.dueAt ? new Date(input.dueAt) : null,
       })
       .returningAll()
       .executeTakeFirstOrThrow();
@@ -189,6 +202,37 @@ export const TaskRepository = {
     }
 
     return toTaskRecord(row as TaskRow, 'task');
+  },
+
+  async update(
+    handle: DbHandle,
+    id: string,
+    userId: string,
+    patch: UpdateTaskInput,
+  ): Promise<TaskRecord> {
+    const row = await handle
+      .updateTable('app.tasks')
+      .set({
+        ...(patch.title !== undefined ? { title: patch.title.trim() } : {}),
+        ...(patch.description !== undefined
+          ? { description: patch.description?.trim() || null }
+          : {}),
+        ...(patch.priority !== undefined ? { priority: patch.priority } : {}),
+        ...(patch.dueAt !== undefined
+          ? { due_at: patch.dueAt ? new Date(patch.dueAt) : null }
+          : {}),
+      })
+      .where('id', '=', id)
+      .where('owner_userid', '=', userId)
+      .returningAll()
+      .executeTakeFirst();
+
+    if (!row) {
+      throw new NotFoundError('Task', { taskId: id });
+    }
+
+    const children = await TaskRepository.listChildren(handle, { parentId: id, userId });
+    return toTaskRecord(row as TaskRow, children.length > 0 ? 'task_list' : 'task');
   },
 
   async remove(handle: DbHandle, id: string, userId: string): Promise<TaskRecord> {

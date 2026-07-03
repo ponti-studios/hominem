@@ -1,9 +1,14 @@
 import * as z from 'zod';
 
+export const TaskPriority = z.enum(['low', 'medium', 'high']);
+
 export const CreateTaskSchema = z.object({
   title: z.string().trim().min(1).max(120),
   description: z.string().trim().optional().nullable(),
   artifactType: z.enum(['task', 'task_list']),
+  priority: TaskPriority.optional(),
+  dueAt: z.string().datetime().nullable().optional(),
+  parentTaskId: z.uuid().nullable().optional(),
 });
 
 export const ExtractTasksInputSchema = z.object({
@@ -25,3 +30,14 @@ export const CreateTaskBatchSchema = z.object({
 export const TaskParamSchema = z.object({ id: z.uuid() });
 
 export const UpdateTaskStatusSchema = z.object({ completed: z.boolean() });
+
+export const UpdateTaskSchema = z
+  .object({
+    title: z.string().trim().min(1).max(120).optional(),
+    description: z.string().trim().max(2000).nullable().optional(),
+    priority: TaskPriority.optional(),
+    dueAt: z.string().datetime().nullable().optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: 'At least one field must be provided',
+  });

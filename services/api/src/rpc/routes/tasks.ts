@@ -1,5 +1,5 @@
 import { extractTasks } from '@hominem/ai';
-import { db, runInTransaction, TaskRepository } from '@hominem/db';
+import { db, NotFoundError, runInTransaction, TaskRepository } from '@hominem/db';
 import { logger } from '@hominem/telemetry';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
@@ -9,6 +9,7 @@ import {
   CreateTaskSchema,
   ExtractTasksInputSchema,
   TaskParamSchema,
+  UpdateTaskSchema,
   UpdateTaskStatusSchema,
 } from '../../schemas/tasks.schema';
 import { authMiddleware, type AppContext } from '../middleware/auth';
@@ -31,11 +32,22 @@ export const tasksRoutes = new Hono<AppContext>()
   .post('/', zValidator('json', CreateTaskSchema), async (c) => {
     const userId = c.get('userId')!;
     const input = c.req.valid('json');
+
+    if (input.parentTaskId) {
+      const parent = await TaskRepository.getOwned(db, input.parentTaskId, userId);
+      if (!parent) {
+        throw new NotFoundError('Task', { taskId: input.parentTaskId });
+      }
+    }
+
     const task = await TaskRepository.create(db, {
       artifactType: input.artifactType,
       description: input.description ?? null,
       title: input.title,
       userId,
+      priority: input.priority,
+      dueAt: input.dueAt,
+      parentTaskId: input.parentTaskId ?? null,
     });
 
     return c.json(task, 201);
@@ -100,6 +112,19 @@ export const tasksRoutes = new Hono<AppContext>()
       const { completed } = c.req.valid('json');
 
       const task = await TaskRepository.setCompleted(db, id, userId, completed);
+      return c.json(task);
+    },
+  )
+  .patch(
+    '/:id',
+    zValidator('param', TaskParamSchema),
+    zValidator('json', UpdateTaskSchema),
+    async (c) => {
+      const userId = c.get('userId')!;
+      const { id } = c.req.valid('param');
+      const patch = c.req.valid('json');
+
+      const task = await TaskRepository.update(db, id, userId, patch);
       return c.json(task);
     },
   )
