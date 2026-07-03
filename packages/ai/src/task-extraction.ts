@@ -68,3 +68,74 @@ export async function extractTasks(
     throw normalizeOpenRouterError(error);
   }
 }
+
+export type VoiceTaskExtractionInput = OpenRouterClientOptions & {
+  transcript: string;
+  referenceDate: string;
+  timezone?: string;
+  model?: string;
+};
+
+export type ExtractedVoiceTask = {
+  title: string;
+  description?: string;
+  priority?: 'low' | 'medium' | 'high';
+  dueAt?: string;
+};
+
+export type VoiceTaskExtractionOutput = {
+  tasks: ExtractedVoiceTask[];
+};
+
+// Same nullable-vs-omitted normalization as RawTaskExtractionOutputSchema.
+const RawVoiceTaskExtractionSchema = z.object({
+  tasks: z
+    .array(
+      z.object({
+        title: z.string(),
+        description: z.string().nullable().optional(),
+        priority: z.enum(['low', 'medium', 'high']).nullable().optional(),
+        dueAt: z.string().nullable().optional(),
+      }),
+    )
+    .max(10),
+});
+
+export function parseVoiceTaskExtractionOutput(value: unknown): VoiceTaskExtractionOutput {
+  const parsed = RawVoiceTaskExtractionSchema.parse(value);
+  return {
+    tasks: parsed.tasks.map((task) => ({
+      title: task.title,
+      ...(task.description ? { description: task.description } : {}),
+      ...(task.priority ? { priority: task.priority } : {}),
+      ...(task.dueAt ? { dueAt: task.dueAt } : {}),
+    })),
+  };
+}
+
+export async function extractVoiceTasks(
+  input: VoiceTaskExtractionInput,
+  systemPrompt: string,
+): Promise<VoiceTaskExtractionOutput> {
+  const model = input.model ?? DEFAULT_TASK_EXTRACTION_MODEL;
+  const adapterOptions: OpenRouterTextAdapterOptions = {
+    ...input,
+    model: model as OpenRouterTextAdapterOptions['model'],
+  };
+
+  const contextHeader = `Reference date/time: ${input.referenceDate}${
+    input.timezone ? ` (timezone: ${input.timezone})` : ''
+  }`;
+
+  try {
+    const output = await chat({
+      adapter: createOpenRouterTextAdapter(adapterOptions),
+      systemPrompts: [systemPrompt],
+      messages: [{ role: 'user', content: `${contextHeader}\n\n${input.transcript}` }],
+      outputSchema: RawVoiceTaskExtractionSchema,
+    });
+    return parseVoiceTaskExtractionOutput(output);
+  } catch (error) {
+    throw normalizeOpenRouterError(error);
+  }
+}

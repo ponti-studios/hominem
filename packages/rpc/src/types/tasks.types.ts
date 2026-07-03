@@ -23,3 +23,7 @@ export type TaskDeleteOutput = InferResponseType<_TaskDeleteEndpoint, 200>;
 type _TaskUpdateEndpoint = HonoClient['api']['tasks'][':id']['$patch'];
 export type TasksUpdateInput = InferRequestType<_TaskUpdateEndpoint>['json'];
 export type TasksUpdateOutput = InferResponseType<_TaskUpdateEndpoint, 200>;
+
+type _TasksVoiceEndpoint = HonoClient['api']['tasks']['voice']['$post'];
+export type TasksVoiceInput = InferRequestType<_TasksVoiceEndpoint>['json'];
+export type TasksVoiceOutput = InferResponseType<_TasksVoiceEndpoint, 201>;

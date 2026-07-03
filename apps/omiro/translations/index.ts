@@ -269,6 +269,16 @@ const t = {
       save: 'Save',
     },
     editA11y: 'Edit task',
+    voice: {
+      startA11y: 'Add tasks by voice',
+      stopA11y: 'Stop and create tasks',
+      cancelRecordingA11y: 'Cancel recording',
+      transcribing: 'Transcribing…',
+      creating: 'Creating tasks…',
+      noTasksFound: "Didn't catch any tasks in that — try again?",
+      createdCount: (count: number) => `${count} task${count === 1 ? '' : 's'} added`,
+      dismissErrorHint: 'Tap to dismiss',
+    },
   },
   settings: {
     sections: {

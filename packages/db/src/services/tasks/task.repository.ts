@@ -41,7 +41,12 @@ export interface UpdateTaskInput {
 export interface CreateTaskBatchInput {
   userId: string;
   parentTitle: string;
-  tasks: { title: string; description?: string | null }[];
+  tasks: {
+    title: string;
+    description?: string | null;
+    priority?: string;
+    dueAt?: string | null;
+  }[];
 }
 
 export interface TaskBatchRecord {
@@ -108,6 +113,8 @@ export const TaskRepository = {
         description: item.description,
         artifactType: 'task',
         parentTaskId: parent.id,
+        priority: item.priority,
+        dueAt: item.dueAt,
       });
       tasks.push(task);
     }

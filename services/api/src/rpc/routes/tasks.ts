@@ -1,4 +1,4 @@
-import { extractTasks } from '@hominem/ai';
+import { extractTasks, extractVoiceTasks } from '@hominem/ai';
 import { db, NotFoundError, runInTransaction, TaskRepository } from '@hominem/db';
 import { logger } from '@hominem/telemetry';
 import { zValidator } from '@hono/zod-validator';
@@ -11,12 +11,14 @@ import {
   TaskParamSchema,
   UpdateTaskSchema,
   UpdateTaskStatusSchema,
+  VoiceTasksInputSchema,
 } from '../../schemas/tasks.schema';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 import { rateLimitMiddleware } from '../middleware/rate-limit';
 import { loadPrompt } from '../utils/load-prompt';
 
 const TASK_EXTRACTION_SYSTEM_PROMPT = loadPrompt('task-extraction');
+const VOICE_TASK_EXTRACTION_SYSTEM_PROMPT = loadPrompt('voice-task-extraction');
 
 function buildTaskListTitle(tasks: { title: string }[]): string {
   return tasks.length === 1 ? tasks[0].title : `${tasks.length} tasks`;
@@ -76,6 +78,50 @@ export const tasksRoutes = new Hono<AppContext>()
         description: tasks[0].description ?? null,
         title: tasks[0].title,
         userId,
+      });
+      return c.json({ parent: null, tasks: [task] }, 201);
+    }
+
+    const result = await runInTransaction((trx) =>
+      TaskRepository.createBatch(trx, {
+        userId,
+        parentTitle: buildTaskListTitle(tasks),
+        tasks,
+      }),
+    );
+
+    return c.json(result, 201);
+  })
+  .use('/voice', rateLimitMiddleware({ bucket: 'ai-task-voice', windowSec: 60, max: 20 }))
+  .post('/voice', zValidator('json', VoiceTasksInputSchema), async (c) => {
+    const userId = c.get('userId')!;
+    const { transcript, referenceDate, timezone } = c.req.valid('json');
+
+    let tasks: Awaited<ReturnType<typeof extractVoiceTasks>>['tasks'];
+    try {
+      ({ tasks } = await extractVoiceTasks(
+        { transcript, referenceDate: referenceDate ?? new Date().toISOString(), timezone },
+        VOICE_TASK_EXTRACTION_SYSTEM_PROMPT,
+      ));
+    } catch (error) {
+      logger.error('[ai/tasks/voice] OpenRouter error', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      return c.json({ error: 'Voice task extraction failed' }, 500);
+    }
+
+    if (tasks.length === 0) {
+      return c.json({ parent: null, tasks: [] }, 201);
+    }
+
+    if (tasks.length === 1) {
+      const task = await TaskRepository.create(db, {
+        artifactType: 'task',
+        description: tasks[0].description ?? null,
+        title: tasks[0].title,
+        userId,
+        priority: tasks[0].priority,
+        dueAt: tasks[0].dueAt,
       });
       return c.json({ parent: null, tasks: [task] }, 201);
     }

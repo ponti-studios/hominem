@@ -211,7 +211,7 @@ export default function ApplicationDetail({ loaderData, params }: Route.Componen
 
       {/* Application Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
-        <div>
+        <div className="space-y-2">
           <h1 className="heading-3 md:heading-2 text-foreground">{application.position}</h1>
           <div className="flex gap-2 body-3 text-muted-foreground">
             <p className="p-2 py-1 border rounded bg-surface">{company?.name}</p>

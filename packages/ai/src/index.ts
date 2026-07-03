@@ -45,6 +45,13 @@ export { cleanupVoiceTranscript } from './voice-cleanup';
 
 export type { VoiceTranscriptCleanupInput, VoiceTranscriptCleanupOutput } from './voice-cleanup';
 
-export { extractTasks } from './task-extraction';
+export { extractTasks, extractVoiceTasks } from './task-extraction';
 
-export type { ExtractedTask, TaskExtractionInput, TaskExtractionOutput } from './task-extraction';
+export type {
+  ExtractedTask,
+  ExtractedVoiceTask,
+  TaskExtractionInput,
+  TaskExtractionOutput,
+  VoiceTaskExtractionInput,
+  VoiceTaskExtractionOutput,
+} from './task-extraction';

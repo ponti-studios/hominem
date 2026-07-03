@@ -15,6 +15,12 @@ export const ExtractTasksInputSchema = z.object({
   transcript: z.string().min(1).max(20000),
 });
 
+export const VoiceTasksInputSchema = z.object({
+  transcript: z.string().min(1).max(20000),
+  referenceDate: z.string().datetime().optional(),
+  timezone: z.string().optional(),
+});
+
 export const CreateTaskBatchSchema = z.object({
   tasks: z
     .array(

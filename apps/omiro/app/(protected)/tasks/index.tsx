@@ -1,19 +1,22 @@
 import type { TaskListItem as TaskListItemModel } from '@hominem/rpc/types';
 import { FlashList, type ListRenderItem } from '@shopify/flash-list';
+import * as Haptics from 'expo-haptics';
 import { Stack, useIsFocused, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { RefreshControl, View } from 'react-native';
 
+import { VoiceRecordingPanel } from '~/components/composer/VoiceRecordingPanel';
 import { SwipeableTaskRow } from '~/components/tasks/SwipeableTaskRow';
 import { TaskEditorSheet, type TaskEditorValues } from '~/components/tasks/TaskEditorSheet';
 import { TaskListItem } from '~/components/tasks/TaskListItem';
-import { makeStyles } from '~/components/theme';
+import { Text, makeStyles } from '~/components/theme';
 import { EmptyState } from '~/components/ui/EmptyState';
 import { getTaskDetailRoute } from '~/services/navigation/routes';
 import { useTaskComplete } from '~/services/tasks/use-task-complete';
 import { useTaskCreate } from '~/services/tasks/use-task-create';
 import { useTaskDelete } from '~/services/tasks/use-task-delete';
 import { useTaskUpdate } from '~/services/tasks/use-task-update';
+import { useTaskVoiceCapture } from '~/services/tasks/use-task-voice-capture';
 import { useTasksQuery } from '~/services/tasks/use-tasks-query';
 import t from '~/translations';
 
@@ -29,6 +32,23 @@ export default function TasksScreen() {
   const { mutate: createTask, isPending: isCreating } = useTaskCreate();
   const { mutate: updateTask, isPending: isUpdating } = useTaskUpdate();
   const [editorState, setEditorState] = useState<EditorState>(null);
+  const voiceCapture = useTaskVoiceCapture();
+  const [voiceResult, setVoiceResult] = useState<number | null>(null);
+  const previousVoiceStateRef = useRef(voiceCapture.state);
+
+  useEffect(() => {
+    const previousState = previousVoiceStateRef.current;
+    previousVoiceStateRef.current = voiceCapture.state;
+    if (previousState !== 'creating' || voiceCapture.state !== 'idle') return;
+
+    const count = voiceCapture.createdCount ?? 0;
+    setVoiceResult(count);
+    if (count > 0) {
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    const timer = setTimeout(() => setVoiceResult(null), 2500);
+    return () => clearTimeout(timer);
+  }, [voiceCapture.state, voiceCapture.createdCount]);
 
   const handlePressTask = useCallback((task: TaskListItemModel) => {
     if ((task.childCount ?? 0) > 0) {
@@ -72,6 +92,14 @@ export default function TasksScreen() {
       <Stack.Screen options={{ title: t.tasks.screenTitle }} />
       <Stack.Toolbar placement="right">
         <Stack.Toolbar.Button
+          accessibilityLabel={
+            voiceCapture.isRecording ? t.tasks.voice.stopA11y : t.tasks.voice.startA11y
+          }
+          disabled={voiceCapture.isRecordingElsewhere}
+          icon={voiceCapture.isRecording ? 'stop.fill' : 'mic.fill'}
+          onPress={() => void voiceCapture.handleMicPress()}
+        />
+        <Stack.Toolbar.Button
           accessibilityLabel={t.tasks.addTaskA11y}
           icon="plus"
           onPress={() => setEditorState({ mode: 'create' })}
@@ -107,6 +135,39 @@ export default function TasksScreen() {
         renderItem={renderItem}
         showsVerticalScrollIndicator={false}
       />
+      {voiceCapture.state === 'recording' ? (
+        <View style={styles.voiceBar}>
+          <VoiceRecordingPanel
+            startedAt={voiceCapture.recordingStartedAt}
+            meterings={voiceCapture.recordingMeterings}
+            onCancel={() => void voiceCapture.cancelVoiceCapture()}
+          />
+        </View>
+      ) : null}
+      {voiceCapture.state === 'transcribing' || voiceCapture.state === 'creating' ? (
+        <View style={styles.voiceBar}>
+          <Text color="text-secondary">
+            {voiceCapture.state === 'transcribing'
+              ? t.tasks.voice.transcribing
+              : t.tasks.voice.creating}
+          </Text>
+        </View>
+      ) : null}
+      {voiceCapture.state === 'failed' && voiceCapture.error ? (
+        <View style={styles.voiceBar}>
+          <Text
+            color="destructive"
+            onPress={voiceCapture.clearError}
+          >{`${voiceCapture.error.message} · ${t.tasks.voice.dismissErrorHint}`}</Text>
+        </View>
+      ) : null}
+      {voiceCapture.state === 'idle' && voiceResult !== null ? (
+        <View style={styles.voiceBar}>
+          <Text color="text-secondary">
+            {voiceResult > 0 ? t.tasks.voice.createdCount(voiceResult) : t.tasks.voice.noTasksFound}
+          </Text>
+        </View>
+      ) : null}
       <TaskEditorSheet
         visible={editorState !== null}
         mode={editorState?.mode ?? 'create'}
@@ -138,5 +199,11 @@ const useStyles = makeStyles((theme) => ({
   },
   listContent: {
     paddingBottom: 24,
+  },
+  voiceBar: {
+    borderTopColor: theme.colors['border-subtle'],
+    borderTopWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
 }));
