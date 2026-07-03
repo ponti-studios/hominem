@@ -8,6 +8,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY packages ./packages
 COPY services/api ./services/api
 COPY tsconfig.profiles ./tsconfig.profiles
+COPY tsconfig.base.json ./
 COPY tsconfig.json ./
 
 RUN npm install -g pnpm@11.1.1 && \
@@ -24,7 +25,7 @@ ENV NODE_ENV=production \
     SERVICE_NAME=api \
     TURBO_TELEMETRY_DISABLED=1
 
-RUN apk add --no-cache ca-certificates curl && \
+RUN apk add --no-cache ca-certificates && \
     addgroup -g 1001 apiuser && \
     adduser -D -u 1001 -G apiuser -s /sbin/nologin -h /app apiuser && \
     mkdir -p /app/logs /tmp && \
@@ -38,8 +39,5 @@ COPY --from=builder --chown=apiuser:apiuser /app/services/api/dist ./dist
 USER apiuser
 
 EXPOSE ${PORT:-4040}
-
-HEALTHCHECK --interval=30s --timeout=3s --start-period=3s --retries=3 \
-    CMD curl -f -s -m 2 http://localhost:${PORT:-4040}/api/status || exit 1
 
 CMD ["node", "dist/index.mjs"]

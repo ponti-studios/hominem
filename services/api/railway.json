@@ -5,7 +5,7 @@
     "dockerfilePath": "/services/api/Dockerfile"
   },
   "deploy": {
-    "startCommand": "pnpm --filter @hominem/api run start",
+    "startCommand": "node dist/index.mjs",
     "healthcheckPath": "/api/status",
     "healthcheckTimeout": 120,
     "restartPolicyType": "ON_FAILURE",
