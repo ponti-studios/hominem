@@ -26,3 +26,8 @@ export const fileProcessingQueue: Queue = new BullQueue(QUEUE_NAMES.FILE_PROCESS
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   connection: redis as any,
 });
+
+export const embeddingQueue: Queue = new BullQueue(QUEUE_NAMES.EMBEDDING_GENERATION, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  connection: redis as any,
+});

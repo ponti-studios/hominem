@@ -854,6 +854,18 @@ export interface AppUserPortfolioPreferences {
   user_id: string;
 }
 
+export interface AppVectorDocuments {
+  content: string;
+  createdat: Generated<Timestamp>;
+  embedding: string;
+  entity_id: string;
+  entity_type: string;
+  id: Generated<string>;
+  metadata: Json | null;
+  owner_userid: string;
+  updatedat: Generated<Timestamp>;
+}
+
 export interface AppVideoChannels {
   createdat: Generated<Timestamp>;
   description: string | null;
@@ -1221,6 +1233,7 @@ export interface DB {
   'app.testimonials': AppTestimonials;
   'app.travel_trips': AppTravelTrips;
   'app.user_portfolio_preferences': AppUserPortfolioPreferences;
+  'app.vector_documents': AppVectorDocuments;
   'app.video_channels': AppVideoChannels;
   'app.video_views': AppVideoViews;
   'app.work_experiences': AppWorkExperiences;

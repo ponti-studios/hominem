@@ -1,6 +1,7 @@
 import { streamChatCompletion } from '@hominem/ai';
 import type { ChatMessageFileRecord, ChatMessageRecord, NoteContext } from '@hominem/db';
 import { ChatRepository, db, runInTransaction } from '@hominem/db';
+import { embeddingQueue } from '@hominem/queues';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { streamSSE } from 'hono/streaming';
@@ -17,6 +18,14 @@ import { authMiddleware, type AppContext } from '../middleware/auth';
 import { rateLimitMiddleware } from '../middleware/rate-limit';
 import { loadPrompt } from '../utils/load-prompt';
 import { toChatDto, toChatMessageDto, toStoredUserMessageContent } from './chats.mapper';
+
+async function enqueueChatEmbedding(userId: string, chatId: string) {
+  await embeddingQueue.add(
+    'generate-embedding',
+    { jobId: `chat-${chatId}`, userId, entityType: 'chat' as const, entityId: chatId },
+    { jobId: `chat-${chatId}`, removeOnComplete: true, removeOnFail: false },
+  );
+}
 
 function buildPrompt(
   message: string,
@@ -204,6 +213,7 @@ const chatByIdRoutes = new Hono<AppContext>()
             });
             await ChatRepository.touchLastMessage(trx, chatId);
           });
+          await enqueueChatEmbedding(userId, chatId);
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Stream error';
@@ -290,6 +300,7 @@ export const chatsRoutes = new Hono<AppContext>()
             });
             await ChatRepository.touchLastMessage(trx, chat.id);
           });
+          await enqueueChatEmbedding(userId, chat.id);
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Stream error';

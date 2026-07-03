@@ -1,4 +1,5 @@
-import { db, NoteRepository } from '@hominem/db';
+import { db, NoteRepository, VectorDocumentRepository } from '@hominem/db';
+import { embeddingQueue } from '@hominem/queues';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 
@@ -14,6 +15,14 @@ import {
 import { authMiddleware, type AppContext } from '../middleware/auth';
 import { toNoteDto, toNoteFeedItemDto } from './notes.mapper';
 const noteService = new NoteService();
+
+async function enqueueNoteEmbedding(userId: string, noteId: string) {
+  await embeddingQueue.add(
+    'generate-embedding',
+    { jobId: `note-${noteId}`, userId, entityType: 'note' as const, entityId: noteId },
+    { jobId: `note-${noteId}`, removeOnComplete: true, removeOnFail: false },
+  );
+}
 
 export const notesRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
@@ -71,6 +80,7 @@ export const notesRoutes = new Hono<AppContext>()
       content: input.content,
       ...(input.fileIds ? { fileIds: input.fileIds } : {}),
     });
+    await enqueueNoteEmbedding(userId, note.id);
 
     return c.json(toNoteDto(note), 201);
   })
@@ -94,6 +104,7 @@ export const notesRoutes = new Hono<AppContext>()
         ...(input.content !== undefined ? { content: input.content } : {}),
         ...(input.fileIds ? { fileIds: input.fileIds } : {}),
       });
+      await enqueueNoteEmbedding(userId, note.id);
 
       return c.json(toNoteDto(note));
     },
@@ -104,6 +115,7 @@ export const notesRoutes = new Hono<AppContext>()
 
     const note = await NoteRepository.load(db, id, userId);
     await NoteRepository.hardDelete(db, id, userId);
+    await VectorDocumentRepository.deleteForEntity(db, 'note', id);
 
     return c.json(toNoteDto(note));
   });

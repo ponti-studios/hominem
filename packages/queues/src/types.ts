@@ -128,3 +128,10 @@ export interface FileProcessingJob {
   mimetype: string;
   size: number;
 }
+
+export interface EmbeddingGenerationJob {
+  jobId: string;
+  userId: string;
+  entityType: 'note' | 'chat';
+  entityId: string;
+}

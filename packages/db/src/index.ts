@@ -70,6 +70,15 @@ export type {
   TaskRecord,
 } from './services/tasks/task.repository';
 
+export { VectorDocumentRepository } from './services/vector/vector-document.repository';
+export type {
+  SearchVectorDocumentsInput,
+  UpsertVectorDocumentInput,
+  VectorDocumentEntityType,
+  VectorDocumentRecord,
+  VectorDocumentSearchResult,
+} from './services/vector/vector-document.repository';
+
 export { CareerRepository } from './services/career/career.repository';
 export type {
   CareerCertificationRecord,
