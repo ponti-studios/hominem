@@ -1,4 +1,4 @@
-import { ENABLED_ARTIFACT_TYPES, type ArtifactType } from '@hominem/rpc/types';
+import type { ArtifactType } from '@hominem/rpc/types';
 
 import t from '~/translations';
 
@@ -23,15 +23,10 @@ export interface ConversationActionsModelInput {
   showDebug: boolean;
 }
 
-const TRANSFORM_TYPES = ENABLED_ARTIFACT_TYPES.filter(
-  (t): t is Exclude<ArtifactType, 'tracker'> => t !== 'tracker',
-);
-
-const TRANSFORM_LABELS: Record<Exclude<ConversationActionType, 'tracker'>, string> = {
-  note: t.chat.actions.transformToNote,
-  task: t.chat.actions.transformToTask,
-  task_list: t.chat.actions.transformToTaskList,
-};
+const TRANSFORM_ITEMS: { type: Exclude<ConversationActionType, 'tracker'>; label: string }[] = [
+  { type: 'note', label: t.chat.actions.transformToNote },
+  { type: 'task_list', label: t.chat.actions.createTasks },
+];
 
 export function buildConversationActionsModel(
   input: ConversationActionsModelInput,
@@ -54,9 +49,9 @@ export function buildConversationActionsModel(
   if (input.canTransform) {
     sections.push({
       title: t.chat.actions.sectionTransform,
-      items: TRANSFORM_TYPES.map((type) => ({
+      items: TRANSFORM_ITEMS.map(({ type, label }) => ({
         kind: 'transform',
-        label: TRANSFORM_LABELS[type],
+        label,
         type,
       })),
     });

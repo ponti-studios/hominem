@@ -11,6 +11,8 @@ export const DEFAULT_ENHANCE_MODEL = 'google/gemini-2.5-flash-lite';
 export const DEFAULT_SPEECH_MODEL = 'openai/gpt-4o-audio-preview';
 export const DEFAULT_VOICE_CLEANUP_MODEL =
   process.env.OPENROUTER_VOICE_CLEANUP_MODEL ?? 'openai/gpt-4o-mini';
+export const DEFAULT_TASK_EXTRACTION_MODEL =
+  process.env.OPENROUTER_TASK_EXTRACTION_MODEL ?? 'google/gemini-2.5-flash-lite';
 
 export type OpenRouterClientOptions = {
   httpReferer?: string;

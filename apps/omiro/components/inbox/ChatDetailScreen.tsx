@@ -160,7 +160,7 @@ export function ChatDetailScreen() {
     <>
       <Stack.Screen
         options={{
-          title: displayTitle,
+          title: '',
           headerBackButtonDisplayMode: 'minimal',
           headerBackVisible: canGoBack,
         }}
@@ -176,7 +176,6 @@ export function ChatDetailScreen() {
         <Stack.Toolbar.Menu
           accessibilityLabel={t.chat.conversationActionsLabel}
           icon="ellipsis.circle"
-          title={displayTitle}
         >
           {conversationActions.map((section) =>
             section.items.map((item) => {

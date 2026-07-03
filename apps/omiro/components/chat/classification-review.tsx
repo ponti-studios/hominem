@@ -21,6 +21,7 @@ interface ClassificationReviewProps {
   proposedTitle: string;
   proposedChanges: string[];
   previewContent: string;
+  items?: { title: string; description?: string }[];
   onAccept: () => void;
   onReject: () => void;
 }
@@ -30,11 +31,17 @@ export function ClassificationReview({
   proposedTitle,
   proposedChanges,
   previewContent,
+  items,
   onAccept,
   onReject,
 }: ClassificationReviewProps) {
   const styles = useClassificationStyles();
   const insets = useSafeAreaInsets();
+  const isEmptyExtraction = items !== undefined && items.length === 0;
+  const acceptLabel =
+    items !== undefined
+      ? t.chat.actions.createTasksLabel(items.length)
+      : t.chat.classification.saveLabel[proposedType];
 
   return (
     <ModalOverlay
@@ -73,21 +80,25 @@ export function ClassificationReview({
           </View>
         ) : null}
 
-        <ScrollView nestedScrollEnabled style={styles.preview}>
-          <Text color="text-secondary" style={styles.previewText}>
-            {previewContent}
-          </Text>
-        </ScrollView>
+        {items === undefined ? (
+          <ScrollView nestedScrollEnabled style={styles.preview}>
+            <Text color="text-secondary" style={styles.previewText}>
+              {previewContent}
+            </Text>
+          </ScrollView>
+        ) : null}
 
         <View style={styles.actionsRow}>
-          <View style={styles.actionSlot}>
-            <Button
-              testID="classification-review-accept"
-              label={t.chat.classification.saveLabel[proposedType]}
-              onPress={onAccept}
-              variant="primary"
-            />
-          </View>
+          {isEmptyExtraction ? null : (
+            <View style={styles.actionSlot}>
+              <Button
+                testID="classification-review-accept"
+                label={acceptLabel}
+                onPress={onAccept}
+                variant="primary"
+              />
+            </View>
+          )}
           <View style={styles.actionSlot}>
             <Button
               testID="classification-review-reject"

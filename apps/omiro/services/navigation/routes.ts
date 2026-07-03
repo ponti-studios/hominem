@@ -21,6 +21,14 @@ export function getArchivedChatsRoute(): RelativePathString {
   return '/(protected)/settings/archived-chats' as RelativePathString;
 }
 
+export function getTasksRoute(): RelativePathString {
+  return '/(protected)/tasks' as RelativePathString;
+}
+
+export function getTaskDetailRoute(id: string): RelativePathString {
+  return `/(protected)/tasks/${id}` as RelativePathString;
+}
+
 export function getContentRoute(
   kind: ContentKind,
   id: string,

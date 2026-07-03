@@ -18,9 +18,14 @@ import { deriveSessionSource, type SessionArtifactMessage } from './session-arti
  *
  * `reviewItemId` is present only in the server-side classification flow (web).
  * Client-side proposals (mobile) omit it.
+ *
+ * `items` is present only for multi-task extraction proposals — when set,
+ * the review UI should list each item instead of relying solely on
+ * `proposedTitle`/`proposedChanges`, and accepting creates one artifact per item.
  */
 export interface PendingReview extends ClassificationProposal {
   reviewItemId?: string;
+  items?: { title: string; description?: string }[];
 }
 
 interface LifecycleState {

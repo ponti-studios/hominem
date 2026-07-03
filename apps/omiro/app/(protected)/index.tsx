@@ -17,7 +17,7 @@ import {
   readInboxDraft,
   writeInboxDraft,
 } from '~/services/navigation/launch-state';
-import { getArchivedChatsRoute, getSettingsRoute } from '~/services/navigation/routes';
+import { getArchivedChatsRoute, getSettingsRoute, getTasksRoute } from '~/services/navigation/routes';
 import t from '~/translations';
 
 export default function InboxScreen() {
@@ -46,6 +46,8 @@ export default function InboxScreen() {
   const handleOpenSettings = useCallback(() => router.push(getSettingsRoute()), [router]);
 
   const handleOpenArchivedChats = useCallback(() => router.push(getArchivedChatsRoute()), [router]);
+
+  const handleOpenTasks = useCallback(() => router.push(getTasksRoute()), [router]);
 
   const { searchResults, visibleItems } = useMemo(
     () =>
@@ -101,6 +103,9 @@ export default function InboxScreen() {
           icon="person.crop.circle"
           title="Inbox"
         >
+          <Stack.Toolbar.MenuAction icon="checklist" onPress={handleOpenTasks}>
+            {t.inbox.screen.tasks}
+          </Stack.Toolbar.MenuAction>
           <Stack.Toolbar.MenuAction icon="archivebox" onPress={handleOpenArchivedChats}>
             {t.inbox.screen.archivedChats}
           </Stack.Toolbar.MenuAction>

@@ -1,0 +1,35 @@
+import { useApiClient } from '@hominem/rpc/react';
+import type { TaskDetailOutput, TaskListItem } from '@hominem/rpc/types';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
+import { taskKeys } from './query-keys';
+
+interface UseTaskDeleteOptions {
+  parentId?: string;
+}
+
+export function useTaskDelete({ parentId }: UseTaskDeleteOptions = {}) {
+  const client = useApiClient();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (taskId: string) => {
+      const res = await client.api.tasks[':id'].$delete({ param: { id: taskId } });
+      return res.json();
+    },
+    onSuccess: (_deletedTask, taskId) => {
+      queryClient.setQueryData<TaskListItem[]>(taskKeys.all, (current) =>
+        current?.filter((task) => task.id !== taskId),
+      );
+      queryClient.removeQueries({ queryKey: taskKeys.detail(taskId) });
+
+      if (parentId) {
+        queryClient.setQueryData<TaskDetailOutput>(taskKeys.detail(parentId), (current) =>
+          current
+            ? { ...current, children: current.children.filter((child) => child.id !== taskId) }
+            : current,
+        );
+      }
+    },
+  });
+}

@@ -62,7 +62,13 @@ export { FileRepository } from './services/files/file.repository';
 export type { FileRecord, UpsertFileInput } from './services/files/file.repository';
 
 export { TaskRepository } from './services/tasks/task.repository';
-export type { CreateTaskInput, TaskRecord } from './services/tasks/task.repository';
+export type {
+  CreateTaskBatchInput,
+  CreateTaskInput,
+  TaskBatchRecord,
+  TaskListRecord,
+  TaskRecord,
+} from './services/tasks/task.repository';
 
 export { CareerRepository } from './services/career/career.repository';
 export type {

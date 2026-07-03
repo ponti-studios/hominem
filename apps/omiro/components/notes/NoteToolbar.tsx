@@ -11,10 +11,6 @@ export const NOTE_TOOLBAR_ID = 'note-editor-toolbar';
 
 interface NoteToolbarProps {
   onAction: (action: FormatCommand) => void;
-  onUndo: () => void;
-  onRedo: () => void;
-  canUndo: boolean;
-  canRedo: boolean;
 }
 
 interface ToolbarButtonProps {
@@ -43,7 +39,7 @@ function ToolbarDivider() {
   return <View style={styles.divider} />;
 }
 
-function ToolbarButtons({ onAction, onUndo, onRedo, canUndo, canRedo }: NoteToolbarProps) {
+function ToolbarButtons({ onAction }: NoteToolbarProps) {
   const styles = useToolbarStyles();
   return (
     <>
@@ -127,23 +123,6 @@ function ToolbarButtons({ onAction, onUndo, onRedo, canUndo, canRedo }: NoteTool
           />
         </View>
       </ScrollView>
-
-      <ToolbarDivider />
-
-      <View style={styles.group}>
-        <ToolbarButton
-          icon="arrow.uturn.backward"
-          label={t.notes.toolbar.undo}
-          onPress={onUndo}
-          disabled={!canUndo}
-        />
-        <ToolbarButton
-          icon="arrow.uturn.forward"
-          label={t.notes.toolbar.redo}
-          onPress={onRedo}
-          disabled={!canRedo}
-        />
-      </View>
 
       <ToolbarDivider />
 

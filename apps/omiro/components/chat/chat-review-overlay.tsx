@@ -7,6 +7,7 @@ export interface ChatPendingReview {
   proposedTitle: string;
   proposedChanges: string[];
   previewContent: string;
+  items?: { title: string; description?: string }[];
 }
 
 interface ChatReviewOverlayProps {
@@ -28,6 +29,7 @@ export function ChatReviewOverlay({
 
   return (
     <ClassificationReview
+      items={pendingReview.items}
       onAccept={onAccept}
       onReject={onReject}
       previewContent={pendingReview.previewContent}
