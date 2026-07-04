@@ -1,12 +1,16 @@
 appId: com.pontistudios.hakumi.dev
 ---
-- launchApp
-- assertVisible: Inbox
+# Assumes seed data: at least one note exists in the inbox. Opens the
+# first note, confirms the editor renders, then navigates back to the
+# inbox.
+- runFlow: startup.yaml
 - assertVisible:
     id: inbox-item-note-open
 - tapOn:
     id: inbox-item-note-open
 - assertVisible:
     id: note-title-input
-- back
-- assertVisible: Inbox
+- tapOn:
+    id: BackButton
+- assertVisible:
+    id: inbox-composer-input

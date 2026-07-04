@@ -1,16 +1,9 @@
 import { logger } from '@hominem/telemetry';
-import { useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
+import { File } from 'expo-file-system';
+import { useCallback, useState } from 'react';
 
-import { isRecorderActive } from '~/components/composer/voiceComposerInput.helpers';
-import {
-  discardRecording,
-  getRecordingSnapshot,
-  startRecording,
-  stopRecording,
-  subscribeRecording,
-} from '~/components/media/audio.service';
-import VoiceTranscriberModule from '~/modules/voice-transcriber';
+import { getNativeErrorCode, useVoiceRecorder } from '~/hooks/useVoiceRecorder';
+import VoiceTranscriberModule, { VoiceTranscriberErrorCode } from '~/modules/voice-transcriber';
 
 import { useVoiceTasks } from './use-voice-tasks';
 
@@ -24,79 +17,64 @@ export type TaskVoiceCaptureErrorCode =
 
 export interface TaskVoiceCaptureError {
   code: TaskVoiceCaptureErrorCode;
+  transcript?: string;
+}
+
+export interface TaskVoiceCaptureErrorPresentation {
   title: string;
   message: string;
 }
 
-function createTaskVoiceCaptureError(code: TaskVoiceCaptureErrorCode): TaskVoiceCaptureError {
+export function getTaskVoiceCaptureErrorPresentation(
+  code: TaskVoiceCaptureErrorCode,
+): TaskVoiceCaptureErrorPresentation {
   switch (code) {
     case 'permission-denied':
       return {
-        code,
         title: 'Microphone access required',
         message: 'Allow microphone and speech recognition access to add tasks by voice.',
       };
     case 'recording-failed':
       return {
-        code,
         title: 'Voice recording failed',
         message: 'Omiro could not start recording right now.',
       };
     case 'transcription-failed':
       return {
-        code,
         title: 'Voice transcription failed',
         message: 'Your recording was kept, but the transcript could not be generated.',
       };
     case 'creation-failed':
       return {
-        code,
         title: "Couldn't create tasks",
         message: 'Your recording was transcribed, but the tasks could not be created.',
       };
   }
 }
 
-// Expo Modules attaches a stable `code` string to errors thrown from a
-// native Exception (see VoiceTranscriberModule.swift's VoiceTranscriberException).
-function getNativeErrorCode(error: unknown): string | undefined {
-  if (error && typeof error === 'object' && 'code' in error) {
-    const code = (error as { code?: unknown }).code;
-    return typeof code === 'string' ? code : undefined;
-  }
-  return undefined;
+function createTaskVoiceCaptureError(
+  code: TaskVoiceCaptureErrorCode,
+  transcript?: string,
+): TaskVoiceCaptureError {
+  return { code, transcript };
 }
 
 export function useTaskVoiceCapture() {
-  const ownerId = useId();
   const { mutateAsync: createVoiceTasks } = useVoiceTasks();
-  const recordingSnapshot = useSyncExternalStore(
-    subscribeRecording,
-    getRecordingSnapshot,
-    getRecordingSnapshot,
-  );
-  const [error, setError] = useState<TaskVoiceCaptureError | null>(null);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [createdCount, setCreatedCount] = useState<number | null>(null);
-  const isStartingRef = useRef(false);
-
-  const isOwnedByThisCapture = recordingSnapshot.ownerId === ownerId;
-  const isRecordingElsewhere = isRecorderActive(recordingSnapshot.state) && !isOwnedByThisCapture;
-
-  const ensureSpeechRecognitionPermission = useCallback(async () => {
-    const currentStatus = await VoiceTranscriberModule.getPermissions();
-    if (currentStatus === 'authorized') return true;
-
-    const nextStatus = await VoiceTranscriberModule.requestPermissions();
-    return nextStatus === 'authorized';
-  }, []);
+  // Transcription/creation failures are a distinct concern from recording
+  // lifecycle failures (permission/start), which useVoiceRecorder owns below —
+  // keeping them in separate state avoids processStoppedRecording needing to
+  // reference anything returned by that later hook call.
+  const [taskError, setTaskError] = useState<TaskVoiceCaptureError | null>(null);
 
   const processStoppedRecording = useCallback(
     async (fileUri: string) => {
       setIsTranscribing(true);
-      setError(null);
       setCreatedCount(null);
+      setTaskError(null);
 
       try {
         const result = await VoiceTranscriberModule.transcribeFile(fileUri);
@@ -115,19 +93,34 @@ export function useTaskVoiceCapture() {
           setCreatedCount(output.tasks.length);
         } catch (creationError) {
           logger.error('[task-voice-capture] task creation failed', creationError as Error);
-          setError(createTaskVoiceCaptureError('creation-failed'));
+          try {
+            new File(fileUri).delete();
+          } catch (deleteError) {
+            logger.error(
+              '[task-voice-capture] orphaned file delete failed',
+              deleteError as Error,
+            );
+          }
+          setTaskError(createTaskVoiceCaptureError('creation-failed', rawText));
         } finally {
           setIsCreating(false);
         }
       } catch (transcriptionError) {
-        logger.error(
-          '[task-voice-capture] transcription failed',
-          transcriptionError as Error,
-        );
+        logger.error('[task-voice-capture] transcription failed', transcriptionError as Error);
+        try {
+          new File(fileUri).delete();
+        } catch (deleteError) {
+          logger.error(
+            '[task-voice-capture] orphaned file delete failed',
+            deleteError as Error,
+          );
+        }
         const code = getNativeErrorCode(transcriptionError);
-        setError(
+        setTaskError(
           createTaskVoiceCaptureError(
-            code === 'MISSING_PERMISSION' ? 'permission-denied' : 'transcription-failed',
+            code === VoiceTranscriberErrorCode.MISSING_PERMISSION
+              ? 'permission-denied'
+              : 'transcription-failed',
           ),
         );
       } finally {
@@ -137,101 +130,34 @@ export function useTaskVoiceCapture() {
     [createVoiceTasks],
   );
 
-  const stopAndCreateTasks = useCallback(async () => {
-    const result = await stopRecording(ownerId);
-    if (!result.ok || !result.fileUri) return;
-    await processStoppedRecording(result.fileUri);
-  }, [ownerId, processStoppedRecording]);
+  const {
+    error: recorderError,
+    clearError: clearRecorderError,
+    handleMicPress,
+    cancelVoiceRecording,
+    isRecording,
+    isRecordingElsewhere,
+    recordingStartedAt,
+  } = useVoiceRecorder<TaskVoiceCaptureError>({
+    onRecordingStopped: processStoppedRecording,
+    createPermissionDeniedError: () => createTaskVoiceCaptureError('permission-denied'),
+    createRecordingFailedError: () => createTaskVoiceCaptureError('recording-failed'),
+  });
+
+  const error = recorderError ?? taskError;
+
+  const clearError = useCallback(() => {
+    clearRecorderError();
+    setTaskError(null);
+  }, [clearRecorderError]);
 
   const cancelVoiceCapture = useCallback(async () => {
-    await discardRecording(ownerId, 'user-cancelled');
-    setError(null);
+    await cancelVoiceRecording('user-cancelled');
     setIsTranscribing(false);
     setIsCreating(false);
-  }, [ownerId]);
+    setTaskError(null);
+  }, [cancelVoiceRecording]);
 
-  const startVoiceCapture = useCallback(async () => {
-    if (isStartingRef.current) return;
-    isStartingRef.current = true;
-    setError(null);
-    setCreatedCount(null);
-
-    try {
-      let hasSpeechRecognitionPermission: boolean;
-      try {
-        hasSpeechRecognitionPermission = await ensureSpeechRecognitionPermission();
-      } catch {
-        setError(createTaskVoiceCaptureError('permission-denied'));
-        return;
-      }
-
-      if (!hasSpeechRecognitionPermission) {
-        setError(createTaskVoiceCaptureError('permission-denied'));
-        return;
-      }
-
-      const result = await startRecording(ownerId);
-      // A concurrent duplicate tap racing this async permission check is not a
-      // real failure — the recorder singleton correctly rejected the second
-      // caller, so there's nothing to surface to the user.
-      if (result.ok || result.reason === 'busy') return;
-
-      setError(
-        createTaskVoiceCaptureError(
-          result.reason === 'permission-denied' ? 'permission-denied' : 'recording-failed',
-        ),
-      );
-    } finally {
-      isStartingRef.current = false;
-    }
-  }, [ensureSpeechRecognitionPermission, ownerId]);
-
-  const handleMicPress = useCallback(async () => {
-    if (isRecordingElsewhere) return;
-
-    if (
-      isOwnedByThisCapture &&
-      (recordingSnapshot.state === 'RECORDING' || recordingSnapshot.state === 'PAUSED')
-    ) {
-      await stopAndCreateTasks();
-      return;
-    }
-
-    if (recordingSnapshot.state !== 'IDLE') return;
-
-    await startVoiceCapture();
-  }, [
-    isOwnedByThisCapture,
-    isRecordingElsewhere,
-    recordingSnapshot.state,
-    startVoiceCapture,
-    stopAndCreateTasks,
-  ]);
-
-  // Discard (never transcribe) an owned recording left behind when this
-  // hook disappears — an unmount or navigation-away is abandonment, not
-  // user intent to submit.
-  useEffect(() => {
-    return () => {
-      const snapshot = getRecordingSnapshot();
-      if (snapshot.ownerId === ownerId && isRecorderActive(snapshot.state)) {
-        void discardRecording(ownerId, 'unmounted');
-      }
-    };
-  }, [ownerId]);
-
-  useFocusEffect(
-    useCallback(() => {
-      return () => {
-        const snapshot = getRecordingSnapshot();
-        if (snapshot.ownerId === ownerId && isRecorderActive(snapshot.state)) {
-          void discardRecording(ownerId, 'navigated-away');
-        }
-      };
-    }, [ownerId]),
-  );
-
-  const isRecording = isOwnedByThisCapture && isRecorderActive(recordingSnapshot.state);
   const state: TaskVoiceCaptureState = error
     ? 'failed'
     : isCreating
@@ -250,9 +176,8 @@ export function useTaskVoiceCapture() {
     isRecording,
     isRecordingElsewhere,
     error,
-    clearError: () => setError(null),
+    clearError,
     createdCount,
-    recordingStartedAt: isRecording ? recordingSnapshot.startedAt : null,
-    recordingMeterings: isRecording ? recordingSnapshot.meterings : [],
+    recordingStartedAt,
   };
 }

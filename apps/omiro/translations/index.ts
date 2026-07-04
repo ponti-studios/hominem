@@ -278,6 +278,7 @@ const t = {
       noTasksFound: "Didn't catch any tasks in that — try again?",
       createdCount: (count: number) => `${count} task${count === 1 ? '' : 's'} added`,
       dismissErrorHint: 'Tap to dismiss',
+      transcriptLabel: (transcript: string) => `Transcript: "${transcript}"`,
     },
   },
   settings: {
@@ -410,6 +411,7 @@ const t = {
       enhanceTextA11y: 'Enhance text with AI',
       openChatA11y: 'Open chat',
       saveNoteA11y: 'Save note',
+      dismissErrorHint: 'Tap to dismiss',
     },
   },
   camera: {

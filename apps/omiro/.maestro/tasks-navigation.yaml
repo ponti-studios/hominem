@@ -2,8 +2,7 @@ appId: com.pontistudios.hakumi.dev
 ---
 # Assumes seed data: a task_list titled "3 tasks" with children
 # "Renew passport", "Book dentist appointment", "Email Sarah about the project budget".
-- launchApp
-- assertVisible: Chats
+- runFlow: startup.yaml
 - tapOn: Open inbox menu
 - tapOn: Tasks
 - assertVisible: Tasks
@@ -12,7 +11,9 @@ appId: com.pontistudios.hakumi.dev
 - assertVisible: Renew passport
 - assertVisible: Book dentist appointment
 - assertVisible: Email Sarah about the project budget
-- back
+- tapOn:
+    id: BackButton
 - assertVisible: Tasks
-- back
+- tapOn:
+    id: BackButton
 - assertVisible: Chats

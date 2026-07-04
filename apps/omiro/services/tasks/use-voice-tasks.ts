@@ -1,13 +1,12 @@
 import { useApiClient } from '@hominem/rpc/react';
-import type {
-  TaskDetailOutput,
-  TaskListItem,
-  TasksVoiceInput,
-  TasksVoiceOutput,
-} from '@hominem/rpc/types';
+import type { TaskDetailOutput, TaskListItem, TasksVoiceInput } from '@hominem/rpc/types';
+import { TasksVoiceOutputSchema } from '@hominem/rpc/types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import type * as z from 'zod';
 
 import { taskKeys } from './query-keys';
+
+type TasksVoiceOutput = z.infer<typeof TasksVoiceOutputSchema>;
 
 export function useVoiceTasks() {
   const client = useApiClient();
@@ -22,7 +21,7 @@ export function useVoiceTasks() {
           typeof error.error === 'string' ? error.error : `Voice task creation failed (${res.status})`,
         );
       }
-      return (await res.json()) as TasksVoiceOutput;
+      return TasksVoiceOutputSchema.parse(await res.json());
     },
     onSuccess: ({ parent, tasks }: TasksVoiceOutput) => {
       if (tasks.length === 0) return;

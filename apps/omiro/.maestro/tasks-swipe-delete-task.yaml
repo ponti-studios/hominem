@@ -2,7 +2,7 @@ appId: com.pontistudios.hakumi.dev
 ---
 # Assumes seed data: a standalone task titled "Buy groceries" (no children)
 # at the top level of the Tasks list.
-- launchApp
+- runFlow: startup.yaml
 - tapOn: Open inbox menu
 - tapOn: Tasks
 - assertVisible: Buy groceries

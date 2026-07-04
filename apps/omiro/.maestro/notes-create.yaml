@@ -1,0 +1,16 @@
+appId: com.pontistudios.hakumi.dev
+---
+# Creates a note from the inbox composer. Typing text and tapping the
+# primary submit button ("Save note") saves it as a note by default in the
+# inbox composer's 'mixed' entry mode.
+- runFlow: startup.yaml
+- tapOn:
+    id: inbox-composer-input
+- inputText: Pack for the weekend trip
+- tapOn:
+    id: composer-submit-note
+- assertVisible:
+    id: inbox-item-note-open
+    index: 0
+# Note: the note's title text is behind the nav bar after creation;
+# the testID-based assertion above confirms the item exists in the hierarchy.

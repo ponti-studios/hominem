@@ -1,0 +1,18 @@
+appId: com.pontistudios.hakumi.dev
+---
+# Startup helper that waits for the app to be ready after launch.
+# Handles both cold starts (auth/boot screens) and warm launches
+# where the inbox is already visible.
+- launchApp
+# Wait for the inbox to be interactive. The app may briefly show a
+# booting indicator before navigating to the inbox or auth screen.
+- assertVisible:
+    id: protected-bootstrap
+    optional: true
+- assertVisible:
+    id: auth-screen
+    optional: true
+- assertVisible:
+    id: inbox-composer-input
+- assertVisible:
+    id: inbox-tab-control

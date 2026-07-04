@@ -23,6 +23,13 @@ type RecordingSnapshot = {
   startedAt: number | null;
 };
 
+// The fields consumers other than the level meter actually care about.
+// `meterings` changes on every 100ms poll tick, so any `useSyncExternalStore`
+// selector reading the full snapshot re-renders at that rate — this excludes
+// it and keeps a stable object reference across polls where nothing else
+// changed, so React can bail out of re-rendering.
+export type RecordingCoreSnapshot = Omit<RecordingSnapshot, 'meterings'>;
+
 type AudioRecorder = InstanceType<typeof AudioModule.AudioRecorder>;
 
 type Listener<T> = (snapshot: T) => void;
@@ -292,8 +299,41 @@ function createRecordingController() {
 
 const recording = createRecordingController();
 
+let coreSnapshot: RecordingCoreSnapshot = {
+  lastRecordingUri: null,
+  state: 'IDLE',
+  ownerId: null,
+  startedAt: null,
+};
+
+function toCoreSnapshot(snapshot: RecordingSnapshot): RecordingCoreSnapshot {
+  if (
+    coreSnapshot.lastRecordingUri === snapshot.lastRecordingUri &&
+    coreSnapshot.state === snapshot.state &&
+    coreSnapshot.ownerId === snapshot.ownerId &&
+    coreSnapshot.startedAt === snapshot.startedAt
+  ) {
+    return coreSnapshot;
+  }
+
+  coreSnapshot = {
+    lastRecordingUri: snapshot.lastRecordingUri,
+    state: snapshot.state,
+    ownerId: snapshot.ownerId,
+    startedAt: snapshot.startedAt,
+  };
+  return coreSnapshot;
+}
+
 export function getRecordingSnapshot() {
   return recording.getSnapshot();
+}
+
+// Same store as getRecordingSnapshot, minus `meterings` — use this in
+// useSyncExternalStore when you don't need per-poll metering data, so
+// components don't re-render 10x/sec during a recording.
+export function getRecordingCoreSnapshot(): RecordingCoreSnapshot {
+  return toCoreSnapshot(recording.getSnapshot());
 }
 
 export function subscribeRecording(listener: Listener<RecordingSnapshot>) {

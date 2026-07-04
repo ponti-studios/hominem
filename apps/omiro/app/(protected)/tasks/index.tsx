@@ -16,7 +16,10 @@ import { useTaskComplete } from '~/services/tasks/use-task-complete';
 import { useTaskCreate } from '~/services/tasks/use-task-create';
 import { useTaskDelete } from '~/services/tasks/use-task-delete';
 import { useTaskUpdate } from '~/services/tasks/use-task-update';
-import { useTaskVoiceCapture } from '~/services/tasks/use-task-voice-capture';
+import {
+  getTaskVoiceCaptureErrorPresentation,
+  useTaskVoiceCapture,
+} from '~/services/tasks/use-task-voice-capture';
 import { useTasksQuery } from '~/services/tasks/use-tasks-query';
 import t from '~/translations';
 
@@ -139,8 +142,9 @@ export default function TasksScreen() {
         <View style={styles.voiceBar}>
           <VoiceRecordingPanel
             startedAt={voiceCapture.recordingStartedAt}
-            meterings={voiceCapture.recordingMeterings}
             onCancel={() => void voiceCapture.cancelVoiceCapture()}
+            onDone={() => void voiceCapture.handleMicPress()}
+            doneAccessibilityLabel={t.tasks.voice.stopA11y}
           />
         </View>
       ) : null}
@@ -155,10 +159,14 @@ export default function TasksScreen() {
       ) : null}
       {voiceCapture.state === 'failed' && voiceCapture.error ? (
         <View style={styles.voiceBar}>
-          <Text
-            color="destructive"
-            onPress={voiceCapture.clearError}
-          >{`${voiceCapture.error.message} · ${t.tasks.voice.dismissErrorHint}`}</Text>
+          <Text color="destructive" onPress={voiceCapture.clearError}>
+            {`${getTaskVoiceCaptureErrorPresentation(voiceCapture.error.code).message} · ${t.tasks.voice.dismissErrorHint}`}
+          </Text>
+          {voiceCapture.error.transcript ? (
+            <Text color="text-secondary" numberOfLines={3}>
+              {t.tasks.voice.transcriptLabel(voiceCapture.error.transcript)}
+            </Text>
+          ) : null}
         </View>
       ) : null}
       {voiceCapture.state === 'idle' && voiceResult !== null ? (

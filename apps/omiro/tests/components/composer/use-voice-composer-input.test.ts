@@ -12,7 +12,7 @@ describe('voice composer input helpers', () => {
   it('derives a recording state while the recorder is active', () => {
     expect(
       deriveVoiceComposerState({
-        recorderState: 'RECORDING',
+        isRecording: true,
         isTranscribing: false,
         isCleaningVoice: false,
         error: null,
@@ -23,7 +23,7 @@ describe('voice composer input helpers', () => {
   it('derives a transcribing state after recording stops and before cleanup starts', () => {
     expect(
       deriveVoiceComposerState({
-        recorderState: 'IDLE',
+        isRecording: false,
         isTranscribing: true,
         isCleaningVoice: false,
         error: null,
@@ -34,7 +34,7 @@ describe('voice composer input helpers', () => {
   it('derives a cleaning state while cleanup is running', () => {
     expect(
       deriveVoiceComposerState({
-        recorderState: 'IDLE',
+        isRecording: false,
         isTranscribing: false,
         isCleaningVoice: true,
         error: null,
@@ -45,7 +45,7 @@ describe('voice composer input helpers', () => {
   it('derives a failed state when transcription fails', () => {
     expect(
       deriveVoiceComposerState({
-        recorderState: 'IDLE',
+        isRecording: false,
         isTranscribing: false,
         isCleaningVoice: false,
         error: createVoiceComposerError('transcription-failed'),

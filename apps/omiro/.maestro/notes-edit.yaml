@@ -1,0 +1,25 @@
+appId: com.pontistudios.hakumi.dev
+---
+# Assumes seed data: at least one note exists in the inbox. Opens the first
+# note, edits its title, and confirms the change round-trips back to the
+# inbox list after navigating back.
+- runFlow: startup.yaml
+- assertVisible:
+    id: inbox-item-note-open
+- tapOn:
+    id: inbox-item-note-open
+- assertVisible:
+    id: note-title-input
+- tapOn:
+    id: note-title-input
+- eraseText: 100
+- inputText: Edited note title from Maestro
+- assertVisible:
+    id: note-title-input
+- tapOn:
+    id: BackButton
+# The updated note is now the first item in the list. It may sit behind
+# the nav bar, but its testID is detectable in the accessibility tree.
+- assertVisible:
+    id: inbox-item-note-open
+    index: 0

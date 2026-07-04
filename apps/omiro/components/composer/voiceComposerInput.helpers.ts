@@ -9,6 +9,9 @@ export type VoiceComposerErrorCode =
 
 export interface VoiceComposerError {
   code: VoiceComposerErrorCode;
+}
+
+export interface VoiceComposerErrorPresentation {
   title: string;
   message: string;
 }
@@ -50,7 +53,7 @@ export function isRecorderActive(state: RecorderState) {
 }
 
 export function deriveVoiceComposerState(input: {
-  recorderState: RecorderState;
+  isRecording: boolean;
   isTranscribing: boolean;
   isCleaningVoice: boolean;
   error: VoiceComposerError | null;
@@ -58,27 +61,30 @@ export function deriveVoiceComposerState(input: {
   if (input.error) return 'failed';
   if (input.isCleaningVoice) return 'cleaning';
   if (input.isTranscribing) return 'transcribing';
-  if (isRecorderActive(input.recorderState)) return 'recording';
+  if (input.isRecording) return 'recording';
   return 'idle';
 }
 
 export function createVoiceComposerError(code: VoiceComposerErrorCode): VoiceComposerError {
+  return { code };
+}
+
+export function getVoiceComposerErrorPresentation(
+  code: VoiceComposerErrorCode,
+): VoiceComposerErrorPresentation {
   switch (code) {
     case 'permission-denied':
       return {
-        code,
         title: 'Microphone access required',
         message: 'Allow microphone and speech recognition access to record a voice note.',
       };
     case 'recording-failed':
       return {
-        code,
         title: 'Voice recording failed',
         message: 'Omiro could not start recording right now.',
       };
     case 'transcription-failed':
       return {
-        code,
         title: 'Voice transcription failed',
         message: 'Your recording was kept, but the transcript could not be generated.',
       };

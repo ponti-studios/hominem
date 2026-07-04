@@ -7,7 +7,9 @@ import { ComposerAttachmentRow } from '~/components/composer/ComposerAttachmentR
 import { ComposerShell } from '~/components/composer/ComposerShell';
 import { ComposerTextInput } from '~/components/composer/ComposerTextInput';
 import { ComposerToolbar } from '~/components/composer/ComposerToolbar';
+import { InlineErrorBanner } from '~/components/composer/InlineErrorBanner';
 import { useComposerController } from '~/components/composer/useComposerController';
+import { getVoiceComposerErrorPresentation } from '~/components/composer/voiceComposerInput.helpers';
 import { VoiceRecordingPanel } from '~/components/composer/VoiceRecordingPanel';
 import { normalizeChatTitle, useStartChatFromInbox } from '~/services/chat';
 import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
@@ -39,11 +41,6 @@ export function InboxComposerContent({
   const { startChat, isStartingChat } = useStartChatFromInbox();
   const inputRef = useRef<TextInput>(null);
   const isSubmitting = isSaving || isStartingChat;
-  const handleVoiceError = useCallback(
-    (error: { title: string; message: string }) =>
-      Alert.alert(error.title, error.message, [{ text: 'OK' }]),
-    [],
-  );
   const {
     message,
     setMessage,
@@ -60,7 +57,9 @@ export function InboxComposerContent({
     isRecording,
     isRecordingElsewhere,
     recordingStartedAt,
-    recordingMeterings,
+    voiceState,
+    voiceError,
+    clearVoiceError,
     isEnhanceOpen,
     enhanceInstruction,
     setEnhanceInstruction,
@@ -75,7 +74,6 @@ export function InboxComposerContent({
     isSubmitting,
     onDraftChange,
     onClearDraft,
-    onVoiceError: handleVoiceError,
   });
 
   const handleSave = useCallback(async () => {
@@ -169,8 +167,13 @@ export function InboxComposerContent({
         isRecording ? (
           <VoiceRecordingPanel
             startedAt={recordingStartedAt}
-            meterings={recordingMeterings}
             onCancel={() => void cancelVoiceRecording()}
+            onDone={() => void handleVoicePress()}
+          />
+        ) : voiceState === 'failed' && voiceError ? (
+          <InlineErrorBanner
+            message={getVoiceComposerErrorPresentation(voiceError.code).message}
+            onDismiss={clearVoiceError}
           />
         ) : isEnhanceOpen ? (
           <InlineEnhanceTray

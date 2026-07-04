@@ -19,11 +19,12 @@ const TOOLBAR_ICON_SIZE = 20; // toolbar action icon size
 
 interface VoiceRecordingPanelProps {
   startedAt: number | null;
-  meterings: number[];
   onCancel: () => void;
+  onDone?: () => void;
+  doneAccessibilityLabel?: string;
 }
 
-export function VoiceRecordingPanel({ startedAt, meterings, onCancel }: VoiceRecordingPanelProps) {
+export function VoiceRecordingPanel({ startedAt, onCancel, onDone, doneAccessibilityLabel }: VoiceRecordingPanelProps) {
   const styles = useStyles();
   const themeColors = useThemeColors();
   const elapsed = useElapsedTimer(startedAt);
@@ -40,8 +41,22 @@ export function VoiceRecordingPanel({ startedAt, meterings, onCancel }: VoiceRec
       <Animated.View style={[styles.dot, dotOpacity]} />
       <Text style={styles.timer}>{elapsed}</Text>
       <View style={styles.meter}>
-        <RecordingLevelMeter meterings={meterings} />
+        <RecordingLevelMeter />
       </View>
+      {onDone ? (
+        <IconButton
+          accessibilityLabel={
+            doneAccessibilityLabel ?? t.inboxComposer.composer.stopVoiceInputA11y
+          }
+          circular
+          disabled={false}
+          icon="stop.fill"
+          iconSize={TOOLBAR_ICON_SIZE}
+          size={TOOL_BTN_SIZE}
+          variant="primary"
+          onPress={onDone}
+        />
+      ) : null}
       <IconButton
         accessibilityLabel={t.inboxComposer.composer.cancelRecordingA11y}
         circular

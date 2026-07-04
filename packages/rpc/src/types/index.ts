@@ -4,5 +4,6 @@ export * from './files.types';
 export * from './inbox.types';
 export * from './mobile.types';
 export * from './notes.types';
+export * from './tasks.schemas';
 export * from './tasks.types';
 export * from './voice.types';
