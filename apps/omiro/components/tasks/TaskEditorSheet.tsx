@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Pressable, TextInput, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -82,6 +82,7 @@ export function TaskEditorSheet({
   const insets = useSafeAreaInsets();
   const titleInputRef = useRef<TextInput>(null);
 
+  const [prevVisible, setPrevVisible] = useState(visible);
   const [title, setTitle] = useState(initialValues?.title ?? EMPTY_VALUES.title);
   const [description, setDescription] = useState(
     initialValues?.description ?? EMPTY_VALUES.description,
@@ -91,13 +92,15 @@ export function TaskEditorSheet({
   );
   const [dueAt, setDueAt] = useState<string | null>(initialValues?.dueAt ?? EMPTY_VALUES.dueAt);
 
-  useEffect(() => {
-    if (!visible) return;
-    setTitle(initialValues?.title ?? EMPTY_VALUES.title);
-    setDescription(initialValues?.description ?? EMPTY_VALUES.description);
-    setPriority(initialValues?.priority ?? EMPTY_VALUES.priority);
-    setDueAt(initialValues?.dueAt ?? EMPTY_VALUES.dueAt);
-  }, [visible, initialValues]);
+  if (prevVisible !== visible) {
+    setPrevVisible(visible);
+    if (visible) {
+      setTitle(initialValues?.title ?? EMPTY_VALUES.title);
+      setDescription(initialValues?.description ?? EMPTY_VALUES.description);
+      setPriority(initialValues?.priority ?? EMPTY_VALUES.priority);
+      setDueAt(initialValues?.dueAt ?? EMPTY_VALUES.dueAt);
+    }
+  }
 
   const canSubmit = title.trim().length > 0 && !isSubmitting;
 
