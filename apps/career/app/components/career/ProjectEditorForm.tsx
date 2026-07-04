@@ -1,5 +1,4 @@
 import type { CareerProjectRecord as Project } from '@hominem/db';
-import { Button } from '@hominem/ui';
 import {
   Input,
   Select,
@@ -10,7 +9,7 @@ import {
   Textarea,
 } from '@hominem/ui';
 import { formatDateForInput } from '@hominem/utils/dates';
-import { useEffect } from 'react';
+import { useCallback, useMemo } from 'react';
 import { Controller, type SubmitHandler, useForm } from 'react-hook-form';
 import { useFetcher } from 'react-router';
 
@@ -19,6 +18,7 @@ import type { EditorSubmissionResult } from '~/hooks/useCareerEditorSubmission';
 import { useCareerEditorSubmission } from '../../hooks/useCareerEditorSubmission';
 import { EditorFormActions } from '../EditorFormActions';
 import { FormErrorAlert } from '../FormErrorAlert';
+import { TagInput } from '../TagInput';
 
 export interface ProjectWorkExperienceOption {
   id: string;
@@ -35,7 +35,7 @@ export interface ProjectFormValues {
   github_url?: string;
   image_url?: string;
   video_url?: string;
-  technologies_text: string;
+  technologies: string[];
   status?: string;
   start_date?: string;
   end_date?: string;
@@ -61,13 +61,6 @@ function normalizeOptionalText(value?: string | null) {
   return trimmed ? trimmed : undefined;
 }
 
-function parseTechnologies(value: string) {
-  return value
-    .split(',')
-    .map((item) => item.trim())
-    .filter((item) => item.length > 0);
-}
-
 function buildProjectDefaults({
   project,
   portfolioId,
@@ -86,7 +79,7 @@ function buildProjectDefaults({
     github_url: project?.github_url || '',
     image_url: project?.image_url || '',
     video_url: project?.video_url || '',
-    technologies_text: Array.isArray(project?.technologies) ? project.technologies.join(', ') : '',
+    technologies: Array.isArray(project?.technologies) ? (project.technologies as string[]) : [],
     status: project?.status || 'completed',
     start_date: formatDateForInput(project?.start_date),
     end_date: formatDateForInput(project?.end_date),
@@ -115,7 +108,10 @@ export function ProjectEditorForm({
 }: ProjectEditorFormProps) {
   const fetcher = useFetcher();
   const isNew = !project?.id;
-  const defaultValues = buildProjectDefaults({ project, portfolioId, initialWorkExperienceId });
+  const defaultValues = useMemo(
+    () => buildProjectDefaults({ project, portfolioId, initialWorkExperienceId }),
+    [project, portfolioId, initialWorkExperienceId]
+  );
 
   const {
     control,
@@ -127,10 +123,6 @@ export function ProjectEditorForm({
     defaultValues,
     mode: 'onChange',
   });
-
-  useEffect(() => {
-    reset(defaultValues);
-  }, [defaultValues, reset]);
 
   const { submissionError, clearSubmissionError } = useCareerEditorSubmission<Project>({
     fetcher,
@@ -144,6 +136,19 @@ export function ProjectEditorForm({
       onSuccess?.(result);
     },
   });
+
+  const fetchSkillSuggestions = useCallback(async (query: string) => {
+    try {
+      const url = new URL('/api/skills/search', window.location.origin);
+      url.searchParams.set('q', query);
+      const res = await fetch(url);
+      if (!res.ok) return [];
+      const data = await res.json();
+      return data.suggestions as string[];
+    } catch {
+      return [];
+    }
+  }, []);
 
   const onSubmit: SubmitHandler<ProjectFormValues> = (values) => {
     if (!isDirty && !isNew) {
@@ -161,7 +166,7 @@ export function ProjectEditorForm({
         github_url: normalizeOptionalText(values.github_url),
         image_url: normalizeOptionalText(values.image_url),
         video_url: normalizeOptionalText(values.video_url),
-        technologies: parseTechnologies(values.technologies_text),
+        technologies: values.technologies,
         work_experience_id: values.work_experience_id || null,
       }),
     );
@@ -169,6 +174,8 @@ export function ProjectEditorForm({
     clearSubmissionError();
     fetcher.submit(formData, { method: 'POST', action });
   };
+
+  const handleReset = () => reset(defaultValues);
 
   const handleDelete = () => {
     if (!project?.id || !confirm('Are you sure you want to delete this project?')) {
@@ -202,6 +209,7 @@ export function ProjectEditorForm({
           isValid={isValid}
           submitLabel={isNew ? 'Create Project' : 'Save Changes'}
           onDelete={!isNew ? handleDelete : undefined}
+          onReset={!isNew ? handleReset : undefined}
         />
       </div>
 
@@ -353,15 +361,21 @@ export function ProjectEditorForm({
 
       <div className="flex flex-col gap-2">
         <label htmlFor={`project-technologies-${project?.id || 'new'}`} className="label">
-          Technologies
+          Skills
         </label>
-        <Input
-          id={`project-technologies-${project?.id || 'new'}`}
-          type="text"
-          {...register('technologies_text')}
-          placeholder="React, TypeScript, Node.js"
+        <Controller
+          control={control}
+          name="technologies"
+          render={({ field }) => (
+            <TagInput
+              id={`project-technologies-${project?.id || 'new'}`}
+              value={field.value}
+              onChange={field.onChange}
+              placeholder="Type to add skills…"
+              fetchSuggestions={fetchSkillSuggestions}
+            />
+          )}
         />
-        <p className="body-4 text-muted-foreground mt-xs">Enter technologies separated by commas</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -430,18 +444,7 @@ export function ProjectEditorForm({
         </label>
       </div>
 
-      {isNew ? null : (
-        <div className="pt-2">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => reset(defaultValues)}
-            disabled={isSaving || !isDirty}
-          >
-            Reset changes
-          </Button>
-        </div>
-      )}
+
     </form>
   );
 }
