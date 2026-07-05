@@ -15,7 +15,10 @@ For each task:
   get a chance", "no rush", "low priority"). Omit the field when urgency isn't stated — do not guess.
 - **Due date**: if the transcript states or implies a date or relative time ("tomorrow", "next Friday",
   "in two weeks", "by end of day", "tonight"), resolve it against the provided reference date/time and
-  timezone into a full ISO 8601 timestamp. Omit the field when no date is mentioned — do not invent one.
+  timezone into a full ISO 8601 timestamp.
+  If the user gives a day/date but no exact clock time, use 12:00:00 (noon) in their local timezone,
+  not midnight.
+  Omit the field when no date is mentioned — do not invent one.
 - Do not invent tasks that aren't grounded in the transcript
 
 Decide how many tasks to return based on what's actually said:
