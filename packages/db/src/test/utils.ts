@@ -25,10 +25,10 @@ export const createDeterministicIdFactory = (prefix: string) => {
 export const ensureIntegrationUsers = async (
   users: Array<{ id: string; name: string; email?: string }>,
 ): Promise<{ ownerId: string; otherUserId: string }> => {
-  const { db } = await import('../db');
+  const { authDb } = await import('../db');
 
   for (const user of users) {
-    await db
+    await authDb
       .insertInto('user')
       .values({
         id: user.id,

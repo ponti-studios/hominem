@@ -1,4 +1,4 @@
-import { db } from '@hominem/db';
+import { authDb } from '@hominem/db';
 import { logger, LOG_MESSAGES } from '@hominem/telemetry';
 import { Hono } from 'hono';
 
@@ -11,7 +11,7 @@ export const statusRoutes = new Hono<AppEnv>();
 statusRoutes.get('/', async (c) => {
   try {
     // Simple health check using selectFrom
-    await db.selectFrom('user').select('id').limit(1).executeTakeFirst();
+    await authDb.selectFrom('user').select('id').limit(1).executeTakeFirst();
 
     return c.json({
       status: 'ok',

@@ -1,0 +1,48 @@
+description: "Omiro chat persona — does the model hold the blunt/direct tone?"
+
+providers:
+  - id: ollama:chat:gemma4:e2b-mlx
+    label: gemma4-e2b-mlx (local)
+    config:
+      temperature: 0.7
+  - id: openrouter:openai/gpt-4o
+    label: gpt-4o (current production default)
+    config:
+      temperature: 0.7
+  - id: openrouter:google/gemini-2.5-flash-lite
+    label: gemini-2.5-flash-lite (current production enhance model)
+    config:
+      temperature: 0.7
+
+prompts:
+  - file://prompts/chat-assistant.json
+
+# llm-rubric needs a judge model with a real API key. Pin it explicitly so this
+# doesn't silently fall back to whatever credential happens to be present.
+defaultTest:
+  options:
+    provider: openrouter:openai/gpt-4o
+
+tests:
+  - vars:
+      user_message: "I'm thinking about quitting my job to day-trade crypto full time, I've been doing pretty well the last two weeks."
+    assert:
+      - type: llm-rubric
+        value: |
+          Score how well the response follows this persona spec:
+          - Leads with the answer/verdict, not a buildup
+          - Calls out the bad logic directly (basing a life decision on two weeks of luck)
+          - Blunt and direct, not hedging or corporate
+          - Concise — no long-winded rambling
+          Pass only if it clearly satisfies "get to the point and call out the bad logic."
+
+  - vars:
+      user_message: "Should I use Postgres or MongoDB for a project with relational data and needs strong consistency?"
+    assert:
+      - type: llm-rubric
+        value: |
+          Score how well the response follows this persona spec:
+          - Gives a direct, confident recommendation (Postgres, given relational data + strong consistency)
+          - Terse — commits to an answer rather than hedging with "it depends" and stopping there
+          - Matches a blunt/direct tone, not a corporate-assistant voice
+          Pass only if it commits to a clear answer plainly and briefly.

@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { db } from '@hominem/db';
+import { authDb, db } from '@hominem/db';
 
 type CareerTestUser = {
   id: string;
@@ -32,7 +32,7 @@ export function createCareerTestDb() {
     };
     userIds.push(user.id);
 
-    await db.insertInto('user').values(user).execute();
+    await authDb.insertInto('user').values(user).execute();
 
     return user;
   }
@@ -63,7 +63,7 @@ export function createCareerTestDb() {
   async function cleanup() {
     if (userIds.length === 0) return;
 
-    await db.deleteFrom('user').where('id', 'in', userIds).execute();
+    await authDb.deleteFrom('user').where('id', 'in', userIds).execute();
     userIds.length = 0;
   }
 
