@@ -51,14 +51,14 @@ function deriveFileType(mimetype: string): FileRecord['type'] {
 function toFileRecord(row: FileRow): FileRecord {
   return {
     id: row.id,
-    userId: row.owner_userid,
-    originalName: row.original_name,
+    userId: row.ownerUserid,
+    originalName: row.originalName,
     type: deriveFileType(row.mimetype),
     mimetype: row.mimetype,
     size: row.size,
     url: row.url,
     ...(row.content ? { content: row.content } : {}),
-    ...(row.text_content ? { textContent: row.text_content } : {}),
+    ...(row.textContent ? { textContent: row.textContent } : {}),
     ...(row.metadata && typeof row.metadata === 'object'
       ? { metadata: row.metadata as Record<string, unknown> }
       : {}),
@@ -74,7 +74,7 @@ export const FileRepository = {
     const files = (await handle
       .selectFrom('app.files')
       .selectAll()
-      .where('owner_userid', '=', userId)
+      .where('ownerUserid', '=', userId)
       .orderBy('createdat', 'desc')
       .execute()) as FileRow[];
 
@@ -89,7 +89,7 @@ export const FileRepository = {
       .selectFrom('app.files')
       .selectAll()
       .where('id', '=', fileId)
-      .where('owner_userid', '=', userId)
+      .where('ownerUserid', '=', userId)
       .executeTakeFirst()) as FileRow | undefined;
 
     return file ? toFileRecord(file) : null;
@@ -114,7 +114,7 @@ export const FileRepository = {
       .selectFrom('app.files')
       .select(['url'])
       .where('id', '=', fileId)
-      .where('owner_userid', '=', userId)
+      .where('ownerUserid', '=', userId)
       .executeTakeFirst()) as { url: string } | undefined;
 
     if (!file) {
@@ -132,7 +132,7 @@ export const FileRepository = {
       .selectFrom('app.files')
       .select(['id'])
       .where('id', '=', fileId)
-      .where('owner_userid', '=', userId)
+      .where('ownerUserid', '=', userId)
       .executeTakeFirst()) as { id: string } | undefined;
 
     return Boolean(file);
@@ -148,27 +148,27 @@ export const FileRepository = {
       .insertInto('app.files')
       .values({
         id: input.id,
-        owner_userid: input.userId,
-        storage_key: input.storageKey,
-        original_name: input.originalName,
+        ownerUserid: input.userId,
+        storageKey: input.storageKey,
+        originalName: input.originalName,
         mimetype: input.mimetype,
         size: input.size,
         url: input.url,
         content: input.content ?? null,
-        text_content: input.textContent ?? null,
+        textContent: input.textContent ?? null,
         metadata: (input.metadata ?? null) as JsonValue | null,
         createdat: now,
         updatedat: now,
       })
       .onConflict((oc) =>
         oc.column('id').doUpdateSet({
-          storage_key: input.storageKey,
-          original_name: input.originalName,
+          storageKey: input.storageKey,
+          originalName: input.originalName,
           mimetype: input.mimetype,
           size: input.size,
           url: input.url,
           content: input.content ?? null,
-          text_content: input.textContent ?? null,
+          textContent: input.textContent ?? null,
           metadata: (input.metadata ?? null) as JsonValue | null,
           updatedat: now,
         }),
@@ -185,7 +185,7 @@ export const FileRepository = {
     await handle
       .deleteFrom('app.files')
       .where('id', '=', fileId)
-      .where('owner_userid', '=', userId)
+      .where('ownerUserid', '=', userId)
       .execute();
   },
 };

@@ -8,8 +8,8 @@ import type { FullPortfolio } from '../portfolio.server';
 export function formatPortfolioForLLM(portfolioData: FullPortfolio): string {
   let formatted = 'CANDIDATE PROFILE:\n';
   formatted += `Name: ${portfolioData.name}\n`;
-  formatted += `Current Role: ${portfolioData.job_title}\n`;
-  formatted += `Location: ${portfolioData.current_location}\n`;
+  formatted += `Current Role: ${portfolioData.jobTitle}\n`;
+  formatted += `Location: ${portfolioData.currentLocation}\n`;
   formatted += `Email: ${portfolioData.email}\n`;
   if (portfolioData.phone) formatted += `Phone: ${portfolioData.phone}\n`;
 
@@ -31,20 +31,20 @@ export function formatPortfolioForLLM(portfolioData: FullPortfolio): string {
   formatted += '\n\nWORK EXPERIENCE:';
   for (let i = 0; i < portfolioData.work_experiences.length; i++) {
     const exp = portfolioData.work_experiences[i];
-    const start_date = exp.start_date
-      ? new Date(exp.start_date).toLocaleDateString('en-US', {
+    const startDate = exp.startDate
+      ? new Date(exp.startDate).toLocaleDateString('en-US', {
           month: 'short',
           year: 'numeric',
         })
       : 'Unknown';
-    const end_date = exp.end_date
-      ? new Date(exp.end_date).toLocaleDateString('en-US', {
+    const endDate = exp.endDate
+      ? new Date(exp.endDate).toLocaleDateString('en-US', {
           month: 'short',
           year: 'numeric',
         })
       : 'Present';
 
-    formatted += `\n\n${i + 1}. ${exp.role} at ${exp.company} (${start_date} - ${end_date})\n`;
+    formatted += `\n\n${i + 1}. ${exp.role} at ${exp.company} (${startDate} - ${endDate})\n`;
     formatted += `   Description: ${exp.description}`;
 
     if (exp.metrics) formatted += `\n   Key Metrics: ${exp.metrics}`;
@@ -64,7 +64,7 @@ export function formatPortfolioForLLM(portfolioData: FullPortfolio): string {
     formatted += `\n\n${category}:`;
     for (const skill of skills) {
       formatted += `\n- ${skill.name} (${skill.level}% proficiency)`;
-      if (skill.years_of_experience) formatted += ` - ${skill.years_of_experience} years`;
+      if (skill.yearsOfExperience) formatted += ` - ${skill.yearsOfExperience} years`;
       if (skill.description) formatted += ` - ${skill.description}`;
     }
   }
@@ -79,8 +79,8 @@ export function formatPortfolioForLLM(portfolioData: FullPortfolio): string {
     if (technologies.length > 0) {
       formatted += `\n   Technologies: ${technologies.join(', ')}`;
     }
-    if (project.live_url) formatted += `\n   Live URL: ${project.live_url}`;
-    if (project.github_url) formatted += `\n   GitHub: ${project.github_url}`;
+    if (project.liveUrl) formatted += `\n   Live URL: ${project.liveUrl}`;
+    if (project.githubUrl) formatted += `\n   GitHub: ${project.githubUrl}`;
   }
 
   return formatted;

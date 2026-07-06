@@ -30,20 +30,20 @@ export interface ProjectFormValues {
   id?: string;
   title: string;
   description: string;
-  short_description?: string;
-  live_url?: string;
-  github_url?: string;
-  image_url?: string;
-  video_url?: string;
+  shortDescription?: string;
+  liveUrl?: string;
+  githubUrl?: string;
+  imageUrl?: string;
+  videoUrl?: string;
   technologies: string[];
   status?: string;
-  start_date?: string;
-  end_date?: string;
-  is_featured?: boolean;
-  is_visible?: boolean;
-  sort_order?: number;
-  portfolio_id: string;
-  work_experience_id?: string | null;
+  startDate?: string;
+  endDate?: string;
+  isFeatured?: boolean;
+  isVisible?: boolean;
+  sortOrder?: number;
+  portfolioId: string;
+  workExperienceId?: string | null;
 }
 
 interface ProjectEditorFormProps {
@@ -74,20 +74,20 @@ function buildProjectDefaults({
     id: project?.id,
     title: project?.title || '',
     description: project?.description || '',
-    short_description: project?.short_description || '',
-    live_url: project?.live_url || '',
-    github_url: project?.github_url || '',
-    image_url: project?.image_url || '',
-    video_url: project?.video_url || '',
+    shortDescription: project?.shortDescription || '',
+    liveUrl: project?.liveUrl || '',
+    githubUrl: project?.githubUrl || '',
+    imageUrl: project?.imageUrl || '',
+    videoUrl: project?.videoUrl || '',
     technologies: Array.isArray(project?.technologies) ? (project.technologies as string[]) : [],
     status: project?.status || 'completed',
-    start_date: formatDateForInput(project?.start_date),
-    end_date: formatDateForInput(project?.end_date),
-    is_featured: project?.is_featured || false,
-    is_visible: project?.is_visible !== false,
-    sort_order: project?.sort_order ?? 0,
-    portfolio_id: portfolioId,
-    work_experience_id: project?.work_experience_id ?? initialWorkExperienceId ?? '',
+    startDate: formatDateForInput(project?.startDate),
+    endDate: formatDateForInput(project?.endDate),
+    isFeatured: project?.isFeatured || false,
+    isVisible: project?.isVisible !== false,
+    sortOrder: project?.sortOrder ?? 0,
+    portfolioId: portfolioId,
+    workExperienceId: project?.workExperienceId ?? initialWorkExperienceId ?? '',
   };
 }
 
@@ -161,13 +161,13 @@ export function ProjectEditorForm({
       'projectData',
       JSON.stringify({
         ...values,
-        short_description: normalizeOptionalText(values.short_description),
-        live_url: normalizeOptionalText(values.live_url),
-        github_url: normalizeOptionalText(values.github_url),
-        image_url: normalizeOptionalText(values.image_url),
-        video_url: normalizeOptionalText(values.video_url),
+        shortDescription: normalizeOptionalText(values.shortDescription),
+        liveUrl: normalizeOptionalText(values.liveUrl),
+        githubUrl: normalizeOptionalText(values.githubUrl),
+        imageUrl: normalizeOptionalText(values.imageUrl),
+        videoUrl: normalizeOptionalText(values.videoUrl),
         technologies: values.technologies,
-        work_experience_id: values.work_experience_id || null,
+        workExperienceId: values.workExperienceId || null,
       }),
     );
 
@@ -185,7 +185,7 @@ export function ProjectEditorForm({
     const formData = new FormData();
     formData.append('operation', 'delete');
     formData.append('id', project.id);
-    formData.append('portfolio_id', portfolioId);
+    formData.append('portfolioId', portfolioId);
 
     clearSubmissionError();
     fetcher.submit(formData, { method: 'POST', action });
@@ -245,7 +245,7 @@ export function ProjectEditorForm({
           </label>
           <Controller
             control={control}
-            name="work_experience_id"
+            name="workExperienceId"
             render={({ field }) => (
               <Select
                 value={field.value ?? ''}
@@ -278,7 +278,7 @@ export function ProjectEditorForm({
         <Input
           id={`project-short-description-${project?.id || 'new'}`}
           type="text"
-          {...register('short_description')}
+          {...register('shortDescription')}
           placeholder="Brief one-line description"
         />
       </div>
@@ -317,7 +317,7 @@ export function ProjectEditorForm({
           <Input
             id={`project-live-url-${project?.id || 'new'}`}
             type="url"
-            {...register('live_url')}
+            {...register('liveUrl')}
             placeholder="https://example.com"
           />
         </div>
@@ -328,7 +328,7 @@ export function ProjectEditorForm({
           <Input
             id={`project-github-url-${project?.id || 'new'}`}
             type="url"
-            {...register('github_url')}
+            {...register('githubUrl')}
             placeholder="https://github.com/user/repo"
           />
         </div>
@@ -342,7 +342,7 @@ export function ProjectEditorForm({
           <Input
             id={`project-image-url-${project?.id || 'new'}`}
             type="url"
-            {...register('image_url')}
+            {...register('imageUrl')}
             placeholder="Project screenshot or image"
           />
         </div>
@@ -353,7 +353,7 @@ export function ProjectEditorForm({
           <Input
             id={`project-video-url-${project?.id || 'new'}`}
             type="url"
-            {...register('video_url')}
+            {...register('videoUrl')}
             placeholder="Demo video URL"
           />
         </div>
@@ -407,7 +407,7 @@ export function ProjectEditorForm({
           <Input
             id={`project-start-date-${project?.id || 'new'}`}
             type="date"
-            {...register('start_date')}
+            {...register('startDate')}
           />
         </div>
         <div className="flex flex-col gap-2">
@@ -417,7 +417,7 @@ export function ProjectEditorForm({
           <Input
             id={`project-end-date-${project?.id || 'new'}`}
             type="date"
-            {...register('end_date')}
+            {...register('endDate')}
           />
         </div>
       </div>
@@ -430,16 +430,16 @@ export function ProjectEditorForm({
           <Input
             id={`project-sort-order-${project?.id || 'new'}`}
             type="number"
-            {...register('sort_order', { valueAsNumber: true })}
+            {...register('sortOrder', { valueAsNumber: true })}
             min={0}
           />
         </div>
         <label className="flex items-center gap-2 md:self-end">
-          <input type="checkbox" {...register('is_featured')} className="checkbox" />
+          <input type="checkbox" {...register('isFeatured')} className="checkbox" />
           <span className="label">Featured Project</span>
         </label>
         <label className="flex items-center gap-2 md:self-end">
-          <input type="checkbox" {...register('is_visible')} className="checkbox" />
+          <input type="checkbox" {...register('isVisible')} className="checkbox" />
           <span className="label">Visible</span>
         </label>
       </div>

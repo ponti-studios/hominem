@@ -29,23 +29,23 @@ interface TestimonialFormValues {
   content: string;
   company?: string;
   rating?: number;
-  avatar_url?: string;
-  linkedin_url?: string;
-  portfolio_id: string;
+  avatarUrl?: string;
+  linkedinUrl?: string;
+  portfolioId: string;
 }
 
 interface TestimonialsEditorSectionProps {
   testimonials?: Testimonial[] | null;
-  portfolio_id: string;
+  portfolioId: string;
 }
 
 function TestimonialForm({
   testimonial,
-  portfolio_id,
+  portfolioId,
   onDelete,
 }: {
   testimonial?: Testimonial;
-  portfolio_id: string;
+  portfolioId: string;
   onDelete?: () => void;
 }) {
   const fetcher = useFetcher();
@@ -65,9 +65,9 @@ function TestimonialForm({
       content: testimonial?.content || '',
       company: testimonial?.company || '',
       rating: testimonial?.rating || undefined,
-      avatar_url: testimonial?.avatar_url || '',
-      linkedin_url: testimonial?.linkedin_url || '',
-      portfolio_id,
+      avatarUrl: testimonial?.avatarUrl || '',
+      linkedinUrl: testimonial?.linkedinUrl || '',
+      portfolioId,
     },
     mode: 'onChange',
   });
@@ -92,9 +92,9 @@ function TestimonialForm({
         content: result.data.content || '',
         company: result.data.company || '',
         rating: result.data.rating || undefined,
-        avatar_url: result.data.avatar_url || '',
-        linkedin_url: result.data.linkedin_url || '',
-        portfolio_id: result.data.portfolio_id,
+        avatarUrl: result.data.avatarUrl || '',
+        linkedinUrl: result.data.linkedinUrl || '',
+        portfolioId: result.data.portfolioId,
       });
     },
   });
@@ -122,7 +122,7 @@ function TestimonialForm({
       const formData = new FormData();
       formData.append('operation', 'delete');
       formData.append('id', testimonial.id);
-      formData.append('portfolio_id', portfolio_id);
+      formData.append('portfolioId', portfolioId);
 
       clearSubmissionError();
       fetcher.submit(formData, {
@@ -275,24 +275,24 @@ function TestimonialForm({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="flex flex-col gap-2">
-          <label htmlFor={`avatar_url-${testimonial?.id || 'new'}`} className="label">
+          <label htmlFor={`avatarUrl-${testimonial?.id || 'new'}`} className="label">
             Avatar URL (optional)
           </label>
           <Input
-            id={`avatar_url-${testimonial?.id || 'new'}`}
+            id={`avatarUrl-${testimonial?.id || 'new'}`}
             type="url"
-            {...register('avatar_url')}
+            {...register('avatarUrl')}
             placeholder="https://example.com/avatar.jpg"
           />
         </div>
         <div className="flex flex-col gap-2">
-          <label htmlFor={`linkedin_url-${testimonial?.id || 'new'}`} className="label">
+          <label htmlFor={`linkedinUrl-${testimonial?.id || 'new'}`} className="label">
             LinkedIn URL (optional)
           </label>
           <Input
-            id={`linkedin_url-${testimonial?.id || 'new'}`}
+            id={`linkedinUrl-${testimonial?.id || 'new'}`}
             type="url"
-            {...register('linkedin_url')}
+            {...register('linkedinUrl')}
             placeholder="https://linkedin.com/in/username"
           />
         </div>
@@ -303,7 +303,7 @@ function TestimonialForm({
 
 function TestimonialsEditorSection({
   testimonials: initialTestimonials,
-  portfolio_id,
+  portfolioId,
 }: TestimonialsEditorSectionProps) {
   const [showNewForm, setShowNewForm] = useState(false);
   const [testimonials, setTestimonials] = useState(initialTestimonials || []);
@@ -341,7 +341,7 @@ function TestimonialsEditorSection({
       <div className="flex flex-col gap-8">
         {/* Show new testimonial form if requested */}
         {showNewForm && (
-          <TestimonialForm portfolio_id={portfolio_id} onDelete={() => setShowNewForm(false)} />
+          <TestimonialForm portfolioId={portfolioId} onDelete={() => setShowNewForm(false)} />
         )}
 
         {/* Existing testimonials */}
@@ -349,7 +349,7 @@ function TestimonialsEditorSection({
           <TestimonialForm
             key={testimonial.id}
             testimonial={testimonial}
-            portfolio_id={portfolio_id}
+            portfolioId={portfolioId}
             onDelete={() => handleDelete(testimonial.id)}
           />
         ))}
@@ -373,10 +373,10 @@ export async function loader({ context }: Route.LoaderArgs) {
   const testimonials = await db
     .selectFrom('app.testimonials')
     .selectAll()
-    .where('portfolio_id', '=', portfolio.id)
-    .orderBy('sort_order', 'asc')
+    .where('portfolioId', '=', portfolio.id)
+    .orderBy('sortOrder', 'asc')
     .execute();
-  return { testimonials, portfolio_id: portfolio.id };
+  return { testimonials, portfolioId: portfolio.id };
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
@@ -401,7 +401,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 
       const testimonialData = testimonialDataResult as TestimonialFormValues;
 
-      if (!testimonialData.portfolio_id) {
+      if (!testimonialData.portfolioId) {
         return {
           success: false,
           operation,
@@ -415,13 +415,13 @@ export async function action({ request, context }: Route.ActionArgs) {
           const { id: _id, ...insertData } = testimonialData;
 
           const newTestimonial = await CareerRepository.createTestimonial(db, user.id, {
-            portfolio_id: insertData.portfolio_id,
+            portfolioId: insertData.portfolioId,
             name: insertData.name,
             title: insertData.title,
             company: insertData.company,
             content: insertData.content,
-            avatar_url: insertData.avatar_url,
-            linkedin_url: insertData.linkedin_url,
+            avatarUrl: insertData.avatarUrl,
+            linkedinUrl: insertData.linkedinUrl,
             rating: insertData.rating,
           });
 
@@ -443,13 +443,13 @@ export async function action({ request, context }: Route.ActionArgs) {
           };
         }
 
-        await CareerRepository.updateTestimonial(db, user.id, id, testimonialData.portfolio_id, {
+        await CareerRepository.updateTestimonial(db, user.id, id, testimonialData.portfolioId, {
           name: updateData.name,
           title: updateData.title,
           company: updateData.company,
           content: updateData.content,
-          avatar_url: updateData.avatar_url,
-          linkedin_url: updateData.linkedin_url,
+          avatarUrl: updateData.avatarUrl,
+          linkedinUrl: updateData.linkedinUrl,
           rating: updateData.rating,
         });
 
@@ -469,14 +469,14 @@ export async function action({ request, context }: Route.ActionArgs) {
 
     case 'delete': {
       const id = formData.get('id') as string;
-      const portfolio_id = formData.get('portfolio_id') as string;
+      const portfolioId = formData.get('portfolioId') as string;
 
-      if (!id || !portfolio_id) {
+      if (!id || !portfolioId) {
         return { success: false, operation, error: 'Choose a testimonial before deleting it.' };
       }
 
       try {
-        await CareerRepository.deleteTestimonial(db, user.id, id, portfolio_id);
+        await CareerRepository.deleteTestimonial(db, user.id, id, portfolioId);
         return { success: true, operation, message: 'Testimonial deleted successfully' };
       } catch (error) {
         console.error('Failed to delete testimonial:', error);
@@ -497,7 +497,7 @@ export default function Testimonials({ loaderData }: Route.ComponentProps) {
   return (
     <TestimonialsEditorSection
       testimonials={loaderData.testimonials}
-      portfolio_id={loaderData.portfolio_id}
+      portfolioId={loaderData.portfolioId}
     />
   );
 }

@@ -1,4 +1,4 @@
-import { Kysely, PostgresDialect, sql as kyselySql, type Compilable } from 'kysely';
+import { CamelCasePlugin, Kysely, PostgresDialect, sql as kyselySql, type Compilable } from 'kysely';
 import pg from 'pg';
 
 import { env } from './env';
@@ -48,6 +48,7 @@ export const db = new KyselyDb({
   dialect: new PostgresDialect({
     pool,
   }),
+  plugins: [new CamelCasePlugin()],
 });
 
 // Health check

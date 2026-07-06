@@ -42,9 +42,9 @@ export interface VectorDocumentSearchResult extends VectorDocumentRecord {
 function toVectorDocumentRecord(row: VectorDocumentRow): VectorDocumentRecord {
   return {
     id: row.id,
-    ownerUserId: row.owner_userid,
-    entityType: row.entity_type as VectorDocumentEntityType,
-    entityId: row.entity_id,
+    ownerUserId: row.ownerUserid,
+    entityType: row.entityType as VectorDocumentEntityType,
+    entityId: row.entityId,
     content: row.content,
     metadata: row.metadata,
     createdAt: new Date(row.createdat).toISOString(),
@@ -62,17 +62,17 @@ export const VectorDocumentRepository = {
     const metadata = input.metadata === undefined ? null : (input.metadata as never);
 
     const row = await handle
-      .insertInto('app.vector_documents')
+      .insertInto('app.vectorDocuments')
       .values({
-        owner_userid: input.ownerUserId,
-        entity_type: input.entityType,
-        entity_id: input.entityId,
+        ownerUserid: input.ownerUserId,
+        entityType: input.entityType,
+        entityId: input.entityId,
         content: input.content,
         embedding: sql`${vectorLiteral}::vector`,
         metadata,
       })
       .onConflict((oc) =>
-        oc.columns(['entity_type', 'entity_id']).doUpdateSet({
+        oc.columns(['entityType', 'entityId']).doUpdateSet({
           content: input.content,
           embedding: sql`${vectorLiteral}::vector`,
           metadata,
@@ -91,9 +91,9 @@ export const VectorDocumentRepository = {
     entityId: string,
   ): Promise<void> {
     await handle
-      .deleteFrom('app.vector_documents')
-      .where('entity_type', '=', entityType)
-      .where('entity_id', '=', entityId)
+      .deleteFrom('app.vectorDocuments')
+      .where('entityType', '=', entityType)
+      .where('entityId', '=', entityId)
       .execute();
   },
 
@@ -109,13 +109,13 @@ export const VectorDocumentRepository = {
     const limit = input.limit ?? 10;
 
     let query = handle
-      .selectFrom('app.vector_documents')
+      .selectFrom('app.vectorDocuments')
       .selectAll()
       .select(sql<number>`1 - (embedding <=> ${vectorLiteral}::vector)`.as('similarity'))
-      .where('owner_userid', '=', input.userId);
+      .where('ownerUserid', '=', input.userId);
 
     if (input.entityType) {
-      query = query.where('entity_type', '=', input.entityType);
+      query = query.where('entityType', '=', input.entityType);
     }
 
     if (input.threshold !== undefined) {

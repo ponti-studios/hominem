@@ -4,7 +4,7 @@ import type { ConvertedResumeData } from '../../types/resume';
 import { normalizePortfolioSlug } from '../../types/resume';
 
 export interface SaveResumeResult {
-  portfolio_id: string;
+  portfolioId: string;
   portfolioSlug: string;
 }
 
@@ -17,7 +17,7 @@ function serializeJsonColumn(value: unknown): string {
 }
 
 export async function saveResumeToDatabase(
-  owner_userid: string,
+  ownerUserid: string,
   data: ConvertedResumeData,
   options: SaveResumeOptions = {},
 ): Promise<SaveResumeResult> {
@@ -26,7 +26,7 @@ export async function saveResumeToDatabase(
       await tx
         .deleteFrom('app.portfolios')
         .where('id', '=', options.replacePortfolioId)
-        .where('owner_userid', '=', owner_userid)
+        .where('ownerUserid', '=', ownerUserid)
         .execute();
     }
 
@@ -35,34 +35,34 @@ export async function saveResumeToDatabase(
     const createdPortfolio = await tx
       .insertInto('app.portfolios')
       .values({
-        owner_userid: owner_userid,
+        ownerUserid: ownerUserid,
         slug,
         title: data.portfolio.title,
-        is_public: data.portfolio.is_public,
-        is_active: data.portfolio.is_active,
+        isPublic: data.portfolio.is_public,
+        isActive: data.portfolio.is_active,
         name: data.portfolio.name,
         initials: data.portfolio.initials ?? null,
-        job_title: data.portfolio.job_title,
+        jobTitle: data.portfolio.job_title,
         bio: data.portfolio.bio,
         tagline: data.portfolio.tagline,
-        current_location: data.portfolio.current_location,
-        location_tagline: data.portfolio.location_tagline ?? null,
-        availability_status: data.portfolio.availability_status,
-        availability_message: data.portfolio.availability_message ?? null,
+        currentLocation: data.portfolio.current_location,
+        locationTagline: data.portfolio.location_tagline ?? null,
+        availabilityStatus: data.portfolio.availability_status,
+        availabilityMessage: data.portfolio.availability_message ?? null,
         email: data.portfolio.email,
         phone: data.portfolio.phone ?? null,
       })
       .returning(['id'])
       .executeTakeFirstOrThrow();
 
-    const portfolio_id = createdPortfolio.id;
-    await CareerRepository.setCurrentPortfolioByUserId(tx, owner_userid, portfolio_id);
+    const portfolioId = createdPortfolio.id;
+    await CareerRepository.setCurrentPortfolioByUserId(tx, ownerUserid, portfolioId);
 
     if (data.social_links) {
       await tx
-        .insertInto('app.social_links')
+        .insertInto('app.socialLinks')
         .values({
-          portfolio_id: portfolio_id,
+          portfolioId: portfolioId,
           github: data.social_links.github ?? null,
           linkedin: data.social_links.linkedin ?? null,
           twitter: data.social_links.twitter ?? null,
@@ -73,15 +73,15 @@ export async function saveResumeToDatabase(
 
     for (const [index, workExperience] of data.workExperience.entries()) {
       await tx
-        .insertInto('app.work_experiences')
+        .insertInto('app.workExperiences')
         .values({
-          portfolio_id: portfolio_id,
+          portfolioId: portfolioId,
           company: workExperience.company,
           description: workExperience.description,
           role: workExperience.role,
-          start_date: workExperience.start_date ? new Date(workExperience.start_date) : null,
-          end_date: workExperience.end_date ? new Date(workExperience.end_date) : null,
-          sort_order: index,
+          startDate: workExperience.start_date ? new Date(workExperience.start_date) : null,
+          endDate: workExperience.end_date ? new Date(workExperience.end_date) : null,
+          sortOrder: index,
         })
         .execute();
     }
@@ -90,13 +90,13 @@ export async function saveResumeToDatabase(
       await tx
         .insertInto('app.skills')
         .values({
-          portfolio_id: portfolio_id,
+          portfolioId: portfolioId,
           name: skill.name,
           level: skill.level,
           category: skill.category ?? null,
           description: skill.description ?? null,
-          years_of_experience: skill.years_of_experience ?? null,
-          sort_order: index,
+          yearsOfExperience: skill.years_of_experience ?? null,
+          sortOrder: index,
         })
         .execute();
     }
@@ -105,25 +105,25 @@ export async function saveResumeToDatabase(
       await tx
         .insertInto('app.projects')
         .values({
-          portfolio_id: portfolio_id,
-          work_experience_id: null,
+          portfolioId: portfolioId,
+          workExperienceId: null,
           title: project.title,
           description: project.description,
-          short_description: project.short_description ?? null,
-          live_url: project.live_url ?? null,
-          github_url: project.github_url ?? null,
-          image_url: null,
-          video_url: null,
+          shortDescription: project.short_description ?? null,
+          liveUrl: project.live_url ?? null,
+          githubUrl: project.github_url ?? null,
+          imageUrl: null,
+          videoUrl: null,
           technologies: serializeJsonColumn(project.technologies),
           status: project.status,
-          is_visible: true,
-          sort_order: index,
-          is_featured: false,
+          isVisible: true,
+          sortOrder: index,
+          isFeatured: false,
         })
         .execute();
     }
 
-    return { portfolio_id, portfolioSlug: slug };
+    return { portfolioId, portfolioSlug: slug };
   });
 }
 

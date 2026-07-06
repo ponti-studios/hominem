@@ -23,7 +23,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const portfolio = await db
     .selectFrom('app.portfolios')
     .select('id')
-    .where('owner_userid', '=', user.id)
+    .where('ownerUserid', '=', user.id)
     .executeTakeFirst();
 
   let dbSkills: string[] = [];
@@ -31,7 +31,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     const rows = await db
       .selectFrom('app.skills')
       .select('name')
-      .where('portfolio_id', '=', portfolio.id)
+      .where('portfolioId', '=', portfolio.id)
       .where(sql<boolean>`name ILIKE ${'%' + query + '%'}`)
       .limit(10)
       .execute();

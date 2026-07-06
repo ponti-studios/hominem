@@ -63,12 +63,12 @@ export interface InsertChatMessageInput {
 function toChatRecord(row: ChatRow): ChatRecord {
   return {
     id: row.id,
-    userId: row.owner_userid,
+    userId: row.ownerUserid,
     title: row.title,
-    noteId: row.note_id ?? null,
-    archivedAt: row.archived_at?.toISOString() ?? null,
-    createdAt: row.createdat.toISOString(),
-    updatedAt: row.updatedat.toISOString(),
+    noteId: row.noteId ?? null,
+    archivedAt: row.archivedAt ? new Date(row.archivedAt).toISOString() : null,
+    createdAt: new Date(row.createdat).toISOString(),
+    updatedAt: new Date(row.updatedat).toISOString(),
   };
 }
 
@@ -76,14 +76,14 @@ function toChatMessageRecord(
   row: ChatMessageRow,
   noteTitlesById: Map<string, string | null>,
 ): ChatMessageRecord {
-  const referencedNoteIds = Array.isArray(row.referenced_note_ids)
-    ? (row.referenced_note_ids as string[])
+  const referencedNoteIds = Array.isArray(row.referencedNoteIds)
+    ? (row.referencedNoteIds as string[])
     : [];
 
   return {
     id: row.id,
-    chatId: row.chat_id,
-    userId: row.author_userid ?? '',
+    chatId: row.chatId,
+    userId: row.authorUserid ?? '',
     role: row.role as ChatMessageRole,
     content: row.content,
     files: parseChatMessageFiles(row.files),
@@ -94,11 +94,11 @@ function toChatMessageRecord(
             title: noteTitlesById.get(id) ?? null,
           }))
         : null,
-    toolCalls: parseChatMessageToolCalls(row.tool_calls),
+    toolCalls: parseChatMessageToolCalls(row.toolCalls),
     reasoning: row.reasoning ?? null,
-    parentMessageId: row.parent_message_id,
-    createdAt: row.createdat.toISOString(),
-    updatedAt: row.updatedat.toISOString(),
+    parentMessageId: row.parentMessageId,
+    createdAt: new Date(row.createdat).toISOString(),
+    updatedAt: new Date(row.updatedat).toISOString(),
   };
 }
 
@@ -115,14 +115,14 @@ export const ChatRepository = {
       .selectFrom('app.chats')
       .selectAll()
       .where('id', '=', chatId)
-      .where('owner_userid', '=', userId)
+      .where('ownerUserid', '=', userId)
       .executeTakeFirst();
 
     if (!chat) {
       throw new NotFoundError('Chat', { chatId });
     }
 
-    return toChatRecord(chat as ChatRow);
+    return toChatRecord(chat);
   },
 
   /**
@@ -132,11 +132,11 @@ export const ChatRepository = {
     const chat = await handle
       .selectFrom('app.chats')
       .selectAll()
-      .where('note_id', '=', noteId)
-      .where('owner_userid', '=', userId)
+      .where('noteId', '=', noteId)
+      .where('ownerUserid', '=', userId)
       .executeTakeFirst();
 
-    return chat ? toChatRecord(chat as ChatRow) : null;
+    return chat ? toChatRecord(chat) : null;
   },
 
   /**
@@ -146,9 +146,9 @@ export const ChatRepository = {
     const chats = (await handle
       .selectFrom('app.chats')
       .selectAll()
-      .where('owner_userid', '=', userId)
-      .where('archived_at', 'is', null)
-      .orderBy('last_message_at', 'desc')
+      .where('ownerUserid', '=', userId)
+      .where('archivedAt', 'is', null)
+      .orderBy('lastMessageAt', 'desc')
       .limit(limit)
       .execute()) as ChatRow[];
 
@@ -165,15 +165,15 @@ export const ChatRepository = {
     const chat = await handle
       .insertInto('app.chats')
       .values({
-        owner_userid: input.userId,
+        ownerUserid: input.userId,
         title: input.title,
-        note_id: input.noteId ?? null,
-        archived_at: input.archivedAt ?? null,
+        noteId: input.noteId ?? null,
+        archivedAt: input.archivedAt ?? null,
       })
       .returningAll()
       .executeTakeFirstOrThrow();
 
-    return toChatRecord(chat as ChatRow);
+    return toChatRecord(chat);
   },
 
   /**
@@ -189,7 +189,7 @@ export const ChatRepository = {
       .updateTable('app.chats')
       .set({ title, updatedat: new Date().toISOString() })
       .where('id', '=', chatId)
-      .where('owner_userid', '=', userId)
+      .where('ownerUserid', '=', userId)
       .executeTakeFirstOrThrow();
   },
 
@@ -200,15 +200,15 @@ export const ChatRepository = {
     const archived = await handle
       .updateTable('app.chats')
       .set({
-        archived_at: new Date().toISOString(),
+        archivedAt: new Date().toISOString(),
         updatedat: new Date().toISOString(),
       })
       .where('id', '=', chatId)
-      .where('owner_userid', '=', userId)
+      .where('ownerUserid', '=', userId)
       .returningAll()
       .executeTakeFirstOrThrow();
 
-    return toChatRecord(archived as ChatRow);
+    return toChatRecord(archived);
   },
 
   /**
@@ -218,7 +218,7 @@ export const ChatRepository = {
     await handle
       .deleteFrom('app.chats')
       .where('id', '=', chatId)
-      .where('owner_userid', '=', userId)
+      .where('ownerUserid', '=', userId)
       .execute();
   },
 
@@ -230,24 +230,24 @@ export const ChatRepository = {
       .selectFrom('app.chats')
       .select('id')
       .where('id', '=', chatId)
-      .where('owner_userid', '=', userId)
+      .where('ownerUserid', '=', userId)
       .executeTakeFirst();
 
     if (!existing) {
       return false;
     }
 
-    await handle.deleteFrom('app.chat_messages').where('chat_id', '=', chatId).execute();
+    await handle.deleteFrom('app.chatMessages').where('chatId', '=', chatId).execute();
     return true;
   },
 
   /**
-   * Touch last_message_at after sending messages.
+   * Touch lastMessageAt after sending messages.
    */
   async touchLastMessage(handle: DbHandle, chatId: string): Promise<void> {
     await handle
       .updateTable('app.chats')
-      .set({ last_message_at: new Date().toISOString() })
+      .set({ lastMessageAt: new Date().toISOString() })
       .where('id', '=', chatId)
       .execute();
   },
@@ -278,9 +278,9 @@ export const ChatRepository = {
     offset = 0,
   ): Promise<ChatMessageRecord[]> {
     const messages = (await handle
-      .selectFrom('app.chat_messages')
+      .selectFrom('app.chatMessages')
       .selectAll()
-      .where('chat_id', '=', chatId)
+      .where('chatId', '=', chatId)
       .orderBy('createdat', 'asc')
       .limit(limit)
       .offset(offset)
@@ -289,7 +289,7 @@ export const ChatRepository = {
     const noteIds = [
       ...new Set(
         messages.flatMap((m) =>
-          Array.isArray(m.referenced_note_ids) ? (m.referenced_note_ids as string[]) : [],
+          Array.isArray(m.referencedNoteIds) ? (m.referencedNoteIds as string[]) : [],
         ),
       ),
     ];
@@ -303,17 +303,17 @@ export const ChatRepository = {
    */
   async insertMessage(handle: DbHandle, input: InsertChatMessageInput): Promise<ChatMessageRow> {
     return (await handle
-      .insertInto('app.chat_messages')
+      .insertInto('app.chatMessages')
       .values({
-        chat_id: input.chatId,
-        author_userid: input.authorUserId,
+        chatId: input.chatId,
+        authorUserid: input.authorUserId,
         role: input.role,
         content: input.content,
         files: toJsonColumnValue(input.files as unknown[] | null),
-        referenced_note_ids: toJsonColumnValue(input.referencedNoteIds),
+        referencedNoteIds: toJsonColumnValue(input.referencedNoteIds),
         reasoning: input.reasoning ?? null,
-        tool_calls: toJsonColumnValue(input.toolCalls as unknown[] | null),
-        parent_message_id: input.parentMessageId ?? null,
+        toolCalls: toJsonColumnValue(input.toolCalls as unknown[] | null),
+        parentMessageId: input.parentMessageId ?? null,
       })
       .returningAll()
       .executeTakeFirstOrThrow()) as ChatMessageRow;
@@ -338,7 +338,7 @@ export const ChatRepository = {
         ? ((await handle
             .selectFrom('app.notes')
             .select(['id', 'title', 'content', 'excerpt'])
-            .where('owner_userid', '=', userId)
+            .where('ownerUserid', '=', userId)
             .where('id', 'in', explicitIds)
             .execute()) as NoteInfo[])
         : [];
@@ -352,7 +352,7 @@ export const ChatRepository = {
         ? ((await handle
             .selectFrom('app.notes')
             .select(['id', 'title', 'content', 'excerpt'])
-            .where('owner_userid', '=', userId)
+            .where('ownerUserid', '=', userId)
             .execute()) as NoteInfo[])
         : [];
 
@@ -381,22 +381,22 @@ export const ChatRepository = {
     }
 
     const files = (await handle
-      .selectFrom('app.note_files as noteFile')
-      .innerJoin('app.files as file', 'file.id', 'noteFile.file_id')
+      .selectFrom('app.noteFiles as noteFile')
+      .innerJoin('app.files as file', 'file.id', 'noteFile.fileId')
       .select([
-        'noteFile.note_id as noteId',
+        'noteFile.noteId as noteId',
         'file.id',
-        'file.original_name',
+        'file.originalName',
         'file.content',
-        'file.text_content',
+        'file.textContent',
       ])
-      .where('noteFile.note_id', 'in', noteIds)
+      .where('noteFile.noteId', 'in', noteIds)
       .execute()) as Array<{
       noteId: string;
       id: string;
-      original_name: string;
+      originalName: string;
       content: string | null;
-      text_content: string | null;
+      textContent: string | null;
     }>;
 
     for (const file of files) {
@@ -404,9 +404,9 @@ export const ChatRepository = {
       if (!note) continue;
       note.files.push({
         id: file.id,
-        originalName: file.original_name,
+        originalName: file.originalName,
         content: file.content,
-        textContent: file.text_content,
+        textContent: file.textContent,
       });
     }
 
@@ -429,14 +429,14 @@ export const ChatRepository = {
     const files = (await handle
       .selectFrom('app.files')
       .selectAll()
-      .where('owner_userid', '=', userId)
+      .where('ownerUserid', '=', userId)
       .where('id', 'in', uniqueIds)
       .execute()) as Array<{
       id: string;
       mimetype: string;
-      original_name: string;
+      originalName: string;
       size: number;
-      text_content: string | null;
+      textContent: string | null;
       url: string;
     }>;
 
@@ -449,11 +449,11 @@ export const ChatRepository = {
         type: file.mimetype.startsWith('image/') ? 'image' : 'file',
         fileId: file.id,
         url: file.url,
-        filename: file.original_name,
+        filename: file.originalName,
         mimeType: file.mimetype,
         size: file.size,
-        ...(file.text_content
-          ? { metadata: { extractedText: file.text_content.slice(0, 4_000) } }
+        ...(file.textContent
+          ? { metadata: { extractedText: file.textContent.slice(0, 4_000) } }
           : {}),
       }),
     );

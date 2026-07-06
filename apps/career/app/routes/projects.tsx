@@ -48,7 +48,7 @@ export function filterProjectsByClient(projects: Project[], selectedClientId?: s
     return projects;
   }
 
-  return projects.filter((project) => project.work_experience_id === selectedClientId);
+  return projects.filter((project) => project.workExperienceId === selectedClientId);
 }
 
 function ProjectSummaryCard({
@@ -71,7 +71,7 @@ function ProjectSummaryCard({
             <p className="body-4 truncate text-text-secondary">{clientLabel}</p>
             <span className="body-4 text-text-tertiary">·</span>
             <p className="body-4 text-text-tertiary">
-              {formatMonthYear(project.start_date)} - {formatMonthYear(project.end_date)}
+              {formatMonthYear(project.startDate)} - {formatMonthYear(project.endDate)}
             </p>
           </div>
         </div>
@@ -79,7 +79,7 @@ function ProjectSummaryCard({
         <p className="body-2 hidden truncate text-text-secondary md:block">{clientLabel}</p>
 
         <p className="body-4 hidden whitespace-nowrap text-text-tertiary md:block">
-          {formatMonthYear(project.start_date)} - {formatMonthYear(project.end_date)}
+          {formatMonthYear(project.startDate)} - {formatMonthYear(project.endDate)}
         </p>
 
         <Button
@@ -220,7 +220,7 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
                 key={project.id}
                 project={project}
                 clientLabel={
-                  clientsById.get(project.work_experience_id || '') || 'Unlinked project'
+                  clientsById.get(project.workExperienceId || '') || 'Unlinked project'
                 }
                 onEdit={(id) =>
                   navigate(currentSearch ? `/projects/${id}?${currentSearch}` : `/projects/${id}`)

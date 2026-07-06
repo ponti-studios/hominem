@@ -27,9 +27,9 @@ export const meta: Route.MetaFunction = () => [{ title: 'Skills | Craftd' }];
 type EditableSkill = Partial<CareerSkillRecord> & {
   name: string;
   level: number;
-  portfolio_id: string;
+  portfolioId: string;
   proof?: string | null;
-  ai_derived?: boolean;
+  aiDerived?: boolean;
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -45,10 +45,10 @@ const CATEGORY_ORDER = ['technical', 'data', 'design', 'product', 'leadership', 
 
 interface SkillsEditorSectionProps {
   skills?: CareerSkillRecord[] | null;
-  portfolio_id: string;
+  portfolioId: string;
 }
 
-function SkillsEditorSection({ skills: initialSkills, portfolio_id }: SkillsEditorSectionProps) {
+function SkillsEditorSection({ skills: initialSkills, portfolioId }: SkillsEditorSectionProps) {
   const [skills, setSkills] = useState<EditableSkill[]>(initialSkills || []);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newSkillName, setNewSkillName] = useState('');
@@ -86,7 +86,7 @@ function SkillsEditorSection({ skills: initialSkills, portfolio_id }: SkillsEdit
           name: skill.name,
           category: skill.category,
           level: skill.level,
-          portfolio_id: skill.portfolio_id,
+          portfolioId: skill.portfolioId,
         })),
       ),
     );
@@ -106,7 +106,7 @@ function SkillsEditorSection({ skills: initialSkills, portfolio_id }: SkillsEdit
       name: newSkillName.trim(),
       category: newSkillCategory,
       level: 70,
-      portfolio_id,
+      portfolioId,
     };
     const updated = [...skills, newSkill];
     setSkills(updated);
@@ -265,10 +265,10 @@ export async function loader({ context }: Route.LoaderArgs) {
   const skills = await db
     .selectFrom('app.skills')
     .selectAll()
-    .where('portfolio_id', '=', portfolio.id)
-    .orderBy('sort_order', 'asc')
+    .where('portfolioId', '=', portfolio.id)
+    .orderBy('sortOrder', 'asc')
     .execute();
-  return { skills, portfolio_id: portfolio.id };
+  return { skills, portfolioId: portfolio.id };
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
@@ -295,7 +295,7 @@ export async function action({ request, context }: Route.ActionArgs) {
       name: string;
       category?: string;
       level?: number;
-      portfolio_id: string;
+      portfolioId: string;
     }>;
 
     await runInTransaction((tx) =>
@@ -307,9 +307,9 @@ export async function action({ request, context }: Route.ActionArgs) {
           name: skill.name,
           category: skill.category,
           level: skill.level ?? 70,
-          ai_derived: false,
+          aiDerived: false,
           proof: null,
-          sort_order: index,
+          sortOrder: index,
         })),
       ),
     );
@@ -322,5 +322,5 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function Skills({ loaderData }: Route.ComponentProps) {
-  return <SkillsEditorSection skills={loaderData.skills} portfolio_id={loaderData.portfolio_id} />;
+  return <SkillsEditorSection skills={loaderData.skills} portfolioId={loaderData.portfolioId} />;
 }

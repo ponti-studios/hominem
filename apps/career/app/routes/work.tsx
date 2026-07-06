@@ -18,16 +18,16 @@ interface WorkExperienceFormValues {
   id?: string;
   role: string;
   company: string;
-  start_date?: string;
-  end_date?: string;
+  startDate?: string;
+  endDate?: string;
   description: string;
   achievements?: { value: string }[];
   action?: string;
   tags?: string[];
   metadata?: WorkExperienceMetadata;
-  sort_order?: number;
-  is_visible?: boolean;
-  portfolio_id: string;
+  sortOrder?: number;
+  isVisible?: boolean;
+  portfolioId: string;
 }
 
 function formatMonthYear(date: Date | string | null | undefined) {
@@ -59,7 +59,7 @@ function WorkExperienceSummaryCard({
             </p>
             <span className="body-4 text-text-tertiary">·</span>
             <p className="body-4 text-text-tertiary">
-              {formatMonthYear(experience.start_date)} - {formatMonthYear(experience.end_date)}
+              {formatMonthYear(experience.startDate)} - {formatMonthYear(experience.endDate)}
             </p>
           </div>
         </div>
@@ -69,7 +69,7 @@ function WorkExperienceSummaryCard({
         </p>
 
         <p className="body-4 hidden whitespace-nowrap text-text-tertiary md:block">
-          {formatMonthYear(experience.start_date)} - {formatMonthYear(experience.end_date)}
+          {formatMonthYear(experience.startDate)} - {formatMonthYear(experience.endDate)}
         </p>
 
         <Button
@@ -90,7 +90,7 @@ function WorkExperienceSummaryCard({
 export default function Work({ loaderData }: Route.ComponentProps) {
   const draftFetcher = useFetcher();
   const navigate = useNavigate();
-  const { work_experiences, portfolio_id } = loaderData;
+  const { work_experiences, portfolioId } = loaderData;
   const experiences = work_experiences || [];
 
   const { submissionError, clearSubmissionError } = useCareerEditorSubmission<WorkExperience>({
@@ -114,13 +114,13 @@ export default function Work({ loaderData }: Route.ComponentProps) {
         role: '',
         company: '',
         description: '',
-        start_date: '',
-        end_date: '',
+        startDate: '',
+        endDate: '',
         achievements: [],
         metadata: {},
-        sort_order: experiences.length,
-        is_visible: true,
-        portfolio_id,
+        sortOrder: experiences.length,
+        isVisible: true,
+        portfolioId,
       } satisfies WorkExperienceFormValues),
     );
 
@@ -178,7 +178,7 @@ export async function loader({ context }: Route.LoaderArgs) {
   const user = context.get(userContext)!;
   const portfolio = context.get(portfolioContext)!;
   const work_experiences = await CareerRepository.listUserWorkExperiences(db, user.id, 'desc');
-  return { work_experiences, portfolio_id: portfolio.id };
+  return { work_experiences, portfolioId: portfolio.id };
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
@@ -207,7 +207,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 
       const workExperienceData = workExperienceDataResult as WorkExperienceFormValues;
 
-      if (!workExperienceData.portfolio_id) {
+      if (!workExperienceData.portfolioId) {
         return {
           success: false,
           operation,
@@ -223,22 +223,22 @@ export async function action({ request, context }: Route.ActionArgs) {
           // Convert date strings to Date objects for database
           const dbData = {
             ...insertData,
-            start_date: stringToDate(insertData.start_date),
-            end_date: stringToDate(insertData.end_date),
+            startDate: stringToDate(insertData.startDate),
+            endDate: stringToDate(insertData.endDate),
           };
 
           const newExperience = await CareerRepository.createWorkExperience(db, user.id, {
-            portfolio_id: dbData.portfolio_id,
+            portfolioId: dbData.portfolioId,
             role: dbData.role,
             company: dbData.company,
             description: dbData.description,
-            start_date: dbData.start_date,
-            end_date: dbData.end_date,
+            startDate: dbData.startDate,
+            endDate: dbData.endDate,
             action: dbData.action,
             tags: dbData.tags,
             metadata: dbData.metadata as Record<string, unknown> | undefined,
-            sort_order: dbData.sort_order,
-            is_visible: dbData.is_visible,
+            sortOrder: dbData.sortOrder,
+            isVisible: dbData.isVisible,
           });
 
           return {
@@ -262,21 +262,21 @@ export async function action({ request, context }: Route.ActionArgs) {
         // Convert date strings to Date objects for database
         const dbData = {
           ...updateData,
-          start_date: stringToDate(updateData.start_date),
-          end_date: stringToDate(updateData.end_date),
+          startDate: stringToDate(updateData.startDate),
+          endDate: stringToDate(updateData.endDate),
         };
 
         await CareerRepository.updateWorkExperience(db, user.id, id, {
           role: dbData.role,
           company: dbData.company,
           description: dbData.description,
-          start_date: dbData.start_date,
-          end_date: dbData.end_date,
+          startDate: dbData.startDate,
+          endDate: dbData.endDate,
           action: dbData.action,
           tags: dbData.tags,
           metadata: dbData.metadata as Record<string, unknown> | undefined,
-          sort_order: dbData.sort_order,
-          is_visible: dbData.is_visible,
+          sortOrder: dbData.sortOrder,
+          isVisible: dbData.isVisible,
         });
 
         return { success: true, operation, message: 'Work experience updated successfully' };
@@ -295,14 +295,14 @@ export async function action({ request, context }: Route.ActionArgs) {
 
     case 'delete': {
       const id = formData.get('id') as string;
-      const portfolio_id = formData.get('portfolio_id') as string;
+      const portfolioId = formData.get('portfolioId') as string;
 
-      if (!id || !portfolio_id) {
+      if (!id || !portfolioId) {
         return { success: false, operation, error: 'Choose a work experience before deleting it.' };
       }
 
       try {
-        await CareerRepository.deleteWorkExperience(db, user.id, id, portfolio_id);
+        await CareerRepository.deleteWorkExperience(db, user.id, id, portfolioId);
         return { success: true, operation, message: 'Work experience deleted successfully' };
       } catch (error) {
         console.error('Failed to delete work experience:', error);

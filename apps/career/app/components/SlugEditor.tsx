@@ -6,7 +6,7 @@ import { useSubmit } from 'react-router';
 import { cn } from '~/lib/utils';
 
 interface SlugEditorProps {
-  portfolio_id: string;
+  portfolioId: string;
   initialSlug: string;
   onSave?: (newSlug: string) => void;
 }
@@ -20,7 +20,7 @@ interface ValidationState {
 
 const DEFAULT_SLUG_PLACEHOLDER = 'your-portfolio-name';
 
-export function SlugEditor({ portfolio_id, initialSlug, onSave }: SlugEditorProps) {
+export function SlugEditor({ portfolioId, initialSlug, onSave }: SlugEditorProps) {
   const submit = useSubmit();
 
   // Component state
@@ -78,7 +78,7 @@ export function SlugEditor({ portfolio_id, initialSlug, onSave }: SlugEditorProp
 
       try {
         const response = await fetch(
-          `/api/validate-slug?slug=${encodeURIComponent(slug)}&currentId=${encodeURIComponent(portfolio_id)}`,
+          `/api/validate-slug?slug=${encodeURIComponent(slug)}&currentId=${encodeURIComponent(portfolioId)}`,
         );
         const data = (await response.json()) as {
           success: boolean;
@@ -110,7 +110,7 @@ export function SlugEditor({ portfolio_id, initialSlug, onSave }: SlugEditorProp
         });
       }
     },
-    [portfolio_id, initialSlug],
+    [portfolioId, initialSlug],
   );
 
   // Debounce validation calls
@@ -134,7 +134,7 @@ export function SlugEditor({ portfolio_id, initialSlug, onSave }: SlugEditorProp
       const formData = new FormData();
       formData.append('action', 'update-slug');
       formData.append('slug', slugValue);
-      formData.append('portfolio_id', portfolio_id);
+      formData.append('portfolio_id', portfolioId);
 
       submit(formData, { method: 'post' });
 

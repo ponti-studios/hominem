@@ -27,17 +27,17 @@ export function BasicInfoForm({
       name: portfolio.name || '',
       initials: portfolio.initials || '',
       title: portfolio.title || '',
-      job_title: portfolio.job_title || '',
+      jobTitle: portfolio.jobTitle || '',
       bio: portfolio.bio || '',
       tagline: portfolio.tagline || '',
-      current_location: portfolio.current_location || '',
-      location_tagline: portfolio.location_tagline || '',
+      currentLocation: portfolio.currentLocation || '',
+      locationTagline: portfolio.locationTagline || '',
       email: portfolio.email || '',
       phone: portfolio.phone || '',
-      availability_status: portfolio.availability_status || false,
-      availability_message: portfolio.availability_message || '',
-      is_public: portfolio.is_public,
-      is_active: portfolio.is_active,
+      availabilityStatus: portfolio.availabilityStatus || false,
+      availabilityMessage: portfolio.availabilityMessage || '',
+      isPublic: portfolio.isPublic,
+      isActive: portfolio.isActive,
     },
   });
 
@@ -46,17 +46,17 @@ export function BasicInfoForm({
       name: portfolio.name || '',
       initials: portfolio.initials || '',
       title: portfolio.title || '',
-      job_title: portfolio.job_title || '',
+      jobTitle: portfolio.jobTitle || '',
       bio: portfolio.bio || '',
       tagline: portfolio.tagline || '',
-      current_location: portfolio.current_location || '',
-      location_tagline: portfolio.location_tagline || '',
+      currentLocation: portfolio.currentLocation || '',
+      locationTagline: portfolio.locationTagline || '',
       email: portfolio.email || '',
       phone: portfolio.phone || '',
-      availability_status: portfolio.availability_status || false,
-      availability_message: portfolio.availability_message || '',
-      is_public: portfolio.is_public,
-      is_active: portfolio.is_active,
+      availabilityStatus: portfolio.availabilityStatus || false,
+      availabilityMessage: portfolio.availabilityMessage || '',
+      isPublic: portfolio.isPublic,
+      isActive: portfolio.isActive,
     });
   }, [portfolio, reset]);
 
@@ -95,15 +95,15 @@ export function BasicInfoForm({
             <Input id="initials" {...register('initials')} maxLength={10} />
           </div>
           <div className="space-y-1">
-            <label htmlFor="job_title" className="subheading-4 text-muted-foreground">
+            <label htmlFor="jobTitle" className="subheading-4 text-muted-foreground">
               Job Title
             </label>
             <Input
-              id="job_title"
-              {...register('job_title', { required: 'Job title is required' })}
+              id="jobTitle"
+              {...register('jobTitle', { required: 'Job title is required' })}
             />
-            {errors.job_title && (
-              <p className="body-4 text-destructive">{errors.job_title.message}</p>
+            {errors.jobTitle && (
+              <p className="body-4 text-destructive">{errors.jobTitle.message}</p>
             )}
           </div>
           <div className="space-y-1">
@@ -160,23 +160,23 @@ export function BasicInfoForm({
       <EditorSection title="Location">
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-1">
-            <label htmlFor="current_location" className="subheading-4 text-muted-foreground">
+            <label htmlFor="currentLocation" className="subheading-4 text-muted-foreground">
               Location
             </label>
             <Input
-              id="current_location"
-              {...register('current_location', { required: 'Location is required' })}
+              id="currentLocation"
+              {...register('currentLocation', { required: 'Location is required' })}
               maxLength={255}
             />
-            {errors.current_location && (
-              <p className="body-4 text-destructive">{errors.current_location.message}</p>
+            {errors.currentLocation && (
+              <p className="body-4 text-destructive">{errors.currentLocation.message}</p>
             )}
           </div>
           <div className="space-y-1">
-            <label htmlFor="location_tagline" className="subheading-4 text-muted-foreground">
+            <label htmlFor="locationTagline" className="subheading-4 text-muted-foreground">
               Location tagline
             </label>
-            <Input id="location_tagline" {...register('location_tagline')} maxLength={255} />
+            <Input id="locationTagline" {...register('locationTagline')} maxLength={255} />
           </div>
         </div>
       </EditorSection>
@@ -186,11 +186,11 @@ export function BasicInfoForm({
           <div className="flex items-center justify-between rounded-2xl bg-muted/40 px-4 py-4">
             <p className="subheading-4 text-foreground">Open to opportunities</p>
             <Controller
-              name="availability_status"
+              name="availabilityStatus"
               control={control}
               render={({ field }) => (
                 <Switch
-                  id="availability_status"
+                  id="availabilityStatus"
                   checked={field.value}
                   onCheckedChange={field.onChange}
                 />

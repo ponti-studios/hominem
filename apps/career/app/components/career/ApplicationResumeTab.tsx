@@ -47,16 +47,16 @@ export function ApplicationResumeTab({
   const [showRegenerate, setShowRegenerate] = useState(false);
 
   const parsedJobPosting = useMemo<JobPosting | null>(() => {
-    if (!application.job_posting) return null;
+    if (!application.jobPosting) return null;
     try {
-      return JSON.parse(application.job_posting) as JobPosting;
+      return JSON.parse(application.jobPosting) as JobPosting;
     } catch {
       return null;
     }
-  }, [application.job_posting]);
+  }, [application.jobPosting]);
 
   const hasStructuredPosting = parsedJobPosting !== null;
-  const hasRawPosting = !hasStructuredPosting && Boolean(application.job_posting);
+  const hasRawPosting = !hasStructuredPosting && Boolean(application.jobPosting);
   const hasAnyPosting = hasStructuredPosting || hasRawPosting;
 
   const isSaving = fetcher.state !== 'idle';
@@ -76,7 +76,7 @@ export function ApplicationResumeTab({
           .filter(Boolean),
         ...(hasStructuredPosting
           ? { jobPostingData: parsedJobPosting! }
-          : { job_posting: application.job_posting ?? undefined }),
+          : { jobPosting: application.jobPosting ?? undefined }),
       };
       const response = await fetch('/api/resume/customize', {
         method: 'POST',

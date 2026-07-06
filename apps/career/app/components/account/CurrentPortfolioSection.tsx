@@ -34,7 +34,7 @@ export function CurrentPortfolioSection({
           <h2 className="heading-3">{currentPortfolio.title}</h2>
         </div>
 
-        {publicPortfolioUrl && currentPortfolio.is_public ? (
+        {publicPortfolioUrl && currentPortfolio.isPublic ? (
           <a
             href={publicPortfolioUrl}
             target="_blank"
@@ -49,7 +49,7 @@ export function CurrentPortfolioSection({
 
       <div className="space-y-5">
         <SlugEditor
-          portfolio_id={currentPortfolio.id}
+          portfolioId={currentPortfolio.id}
           initialSlug={currentPortfolio.slug}
           onSave={(slug) => onUpdateSlug(slug)}
         />

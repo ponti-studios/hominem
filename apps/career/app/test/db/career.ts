@@ -17,7 +17,7 @@ type CreatePortfolioOptions = {
   user?: CareerTestUser;
   slug?: string;
   title?: string;
-  job_title?: string;
+  jobTitle?: string;
 };
 
 export function createCareerTestDb() {
@@ -44,14 +44,14 @@ export function createCareerTestDb() {
     const portfolio = await db
       .insertInto('app.portfolios')
       .values({
-        owner_userid: user.id,
+        ownerUserid: user.id,
         slug,
         title: options.title ?? `${user.name} Portfolio`,
         name: user.name,
-        job_title: options.job_title ?? 'Engineer',
+        jobTitle: options.jobTitle ?? 'Engineer',
         bio: 'Bio',
         tagline: 'Tagline',
-        current_location: 'Los Angeles',
+        currentLocation: 'Los Angeles',
         email: user.email,
       })
       .returning(['id', 'slug', 'title'])

@@ -53,10 +53,10 @@ export async function loader({ context, request }: Route.LoaderArgs) {
     const pagination = {
       limit,
       offset,
-      orderBy: (searchParams.get('orderBy') || 'application_date') as
-        | 'application_date'
-        | 'response_date'
-        | 'offer_date'
+      orderBy: (searchParams.get('orderBy') || 'applicationDate') as
+        | 'applicationDate'
+        | 'responseDate'
+        | 'offerDate'
         | 'companyName'
         | 'position',
       orderDirection: (searchParams.get('orderDirection') as 'asc' | 'desc') || 'desc',

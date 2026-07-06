@@ -78,7 +78,7 @@ async function handleDeletePortfolioAction({
   formData: FormData;
   user: AccountPageUser;
 }): Promise<AccountActionResult> {
-  const portfolioId = formData.get('portfolio_id');
+  const portfolioId = formData.get('portfolioId');
 
   if (typeof portfolioId !== 'string' || !portfolioId) {
     throw new Response('Portfolio ID is required', { status: 400 });
@@ -100,7 +100,7 @@ async function handleSetCurrentPortfolioAction({
   formData: FormData;
   user: AccountPageUser;
 }): Promise<AccountActionResult> {
-  const portfolioId = formData.get('portfolio_id');
+  const portfolioId = formData.get('portfolioId');
 
   if (typeof portfolioId !== 'string' || !portfolioId) {
     throw new Response('Portfolio ID is required', { status: 400 });
@@ -121,7 +121,7 @@ async function handleUploadProfileImageAction({
 }: {
   formData: FormData;
   user: AccountPageUser;
-}): Promise<AccountActionResult<{ image_url: string }>> {
+}): Promise<AccountActionResult<{ imageUrl: string }>> {
   try {
     const imageFile = formData.get('image') as File | null;
 
@@ -156,7 +156,7 @@ async function handleUploadProfileImageAction({
     return {
       success: true,
       message: 'Profile image updated successfully',
-      data: { image_url: uploadResult.url },
+      data: { imageUrl: uploadResult.url },
     };
   } catch (error) {
     if (error instanceof Response) {
@@ -177,7 +177,7 @@ async function handleUpdateSlugAction({
 }): Promise<AccountActionResult<{ slug: string }>> {
   try {
     const newSlug = formData.get('slug');
-    const portfolioId = formData.get('portfolio_id');
+    const portfolioId = formData.get('portfolioId');
 
     if (
       typeof newSlug !== 'string' ||

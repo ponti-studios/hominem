@@ -6,60 +6,60 @@ import type {
 } from '@hominem/db';
 import { CareerRepository, db } from '@hominem/db';
 
-export async function getUserWorkExperiences(owner_userid: string) {
-  return CareerRepository.listUserWorkExperiences(db, owner_userid, 'desc');
+export async function getUserWorkExperiences(ownerUserid: string) {
+  return CareerRepository.listUserWorkExperiences(db, ownerUserid, 'desc');
 }
 
-export async function getUserWorkExperiencesDesc(owner_userid: string) {
-  return CareerRepository.listUserWorkExperiences(db, owner_userid, 'desc');
+export async function getUserWorkExperiencesDesc(ownerUserid: string) {
+  return CareerRepository.listUserWorkExperiences(db, ownerUserid, 'desc');
 }
 
-export async function getUserCareerEvents(owner_userid: string, limit?: number) {
-  return CareerRepository.listUserCareerEvents(db, owner_userid, limit);
+export async function getUserCareerEvents(ownerUserid: string, limit?: number) {
+  return CareerRepository.listUserCareerEvents(db, ownerUserid, limit);
 }
 
-export async function getUserJobApplications(owner_userid: string) {
-  return CareerRepository.listUserJobApplicationsWithCompany(db, owner_userid);
+export async function getUserJobApplications(ownerUserid: string) {
+  return CareerRepository.listUserJobApplicationsWithCompany(db, ownerUserid);
 }
 
-export async function getCurrentWorkExperience(owner_userid: string) {
-  const experiences = await getUserWorkExperiencesDesc(owner_userid);
-  return experiences.find((experience) => !experience.end_date) || experiences[0] || null;
+export async function getCurrentWorkExperience(ownerUserid: string) {
+  const experiences = await getUserWorkExperiencesDesc(ownerUserid);
+  return experiences.find((experience) => !experience.endDate) || experiences[0] || null;
 }
 
-export async function getFirstWorkExperience(owner_userid: string) {
-  const experiences = await CareerRepository.listUserWorkExperiences(db, owner_userid, 'asc');
+export async function getFirstWorkExperience(ownerUserid: string) {
+  const experiences = await CareerRepository.listUserWorkExperiences(db, ownerUserid, 'asc');
   return experiences[0] || null;
 }
 
 export async function getWorkExperiencesByDateRange(
-  owner_userid: string,
-  start_date: Date,
-  end_date: Date,
+  ownerUserid: string,
+  startDate: Date,
+  endDate: Date,
 ) {
-  const experiences = await getUserWorkExperiences(owner_userid);
+  const experiences = await getUserWorkExperiences(ownerUserid);
   return experiences.filter((experience) => {
-    if (!experience.start_date) {
+    if (!experience.startDate) {
       return false;
     }
 
-    const experienceStartDate = new Date(experience.start_date);
-    return experienceStartDate >= start_date && experienceStartDate <= end_date;
+    const experienceStartDate = new Date(experience.startDate);
+    return experienceStartDate >= startDate && experienceStartDate <= endDate;
   });
 }
 
-export async function getCareerEventsByType(owner_userid: string, event_type: string) {
-  const events = await getUserCareerEvents(owner_userid);
-  return events.filter((event) => event.event_type === event_type);
+export async function getCareerEventsByType(ownerUserid: string, eventType: string) {
+  const events = await getUserCareerEvents(ownerUserid);
+  return events.filter((event) => event.eventType === eventType);
 }
 
-export async function getJobApplicationsByStatus(owner_userid: string, status: string) {
-  const applications = await getUserJobApplications(owner_userid);
+export async function getJobApplicationsByStatus(ownerUserid: string, status: string) {
+  const applications = await getUserJobApplications(ownerUserid);
   return applications.filter((application) => application.status === status);
 }
 
-export async function getUserCompanies(owner_userid: string) {
-  const experiences = await getUserWorkExperiences(owner_userid);
+export async function getUserCompanies(ownerUserid: string) {
+  const experiences = await getUserWorkExperiences(ownerUserid);
   return [...new Set(experiences.map((experience) => experience.company))];
 }
 
@@ -75,14 +75,14 @@ export function extractJobApplications(joinedResults: JobApplicationWithCompany[
   return joinedResults;
 }
 
-export async function getWorkExperienceById(owner_userid: string, experienceId: string) {
-  return CareerRepository.getWorkExperienceById(db, owner_userid, experienceId);
+export async function getWorkExperienceById(ownerUserid: string, experienceId: string) {
+  return CareerRepository.getWorkExperienceById(db, ownerUserid, experienceId);
 }
 
 export async function updateWorkExperience(
-  owner_userid: string,
+  ownerUserid: string,
   experienceId: string,
   updates: UpdateCareerWorkExperienceInput,
 ) {
-  return CareerRepository.updateWorkExperience(db, owner_userid, experienceId, updates);
+  return CareerRepository.updateWorkExperience(db, ownerUserid, experienceId, updates);
 }

@@ -197,7 +197,7 @@ describe('resume convert action', () => {
     });
     mocks.deleteFile.mockResolvedValue(true);
     mocks.saveResumeToDatabase.mockResolvedValue({
-      portfolio_id: 'portfolio-id',
+      portfolioId: 'portfolio-id',
       portfolioSlug: 'charles-ponti',
     });
   });

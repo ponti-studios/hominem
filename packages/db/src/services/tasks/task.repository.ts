@@ -61,14 +61,14 @@ export interface TaskListRecord extends TaskRecord {
 function toTaskRecord(row: TaskRow, artifactType: 'task' | 'task_list'): TaskRecord {
   return {
     id: row.id,
-    ownerUserId: row.owner_userid,
+    ownerUserId: row.ownerUserid,
     title: row.title,
     description: row.description ?? null,
-    parentTaskId: row.parent_task_id,
+    parentTaskId: row.parentTaskId,
     status: row.status,
     priority: row.priority,
-    dueAt: row.due_at ? new Date(row.due_at).toISOString() : null,
-    completedAt: row.completed_at ? new Date(row.completed_at).toISOString() : null,
+    dueAt: row.dueAt ? new Date(row.dueAt).toISOString() : null,
+    completedAt: row.completedAt ? new Date(row.completedAt).toISOString() : null,
     createdAt: new Date(row.createdat).toISOString(),
     updatedAt: new Date(row.updatedat).toISOString(),
     artifactType,
@@ -80,13 +80,13 @@ export const TaskRepository = {
     const task = await handle
       .insertInto('app.tasks')
       .values({
-        owner_userid: input.userId,
+        ownerUserid: input.userId,
         title: input.title.trim(),
         description: input.description?.trim() || null,
-        parent_task_id: input.parentTaskId ?? null,
-        primary_space_id: null,
+        parentTaskId: input.parentTaskId ?? null,
+        primarySpaceId: null,
         ...(input.priority ? { priority: input.priority } : {}),
-        due_at: input.dueAt ? new Date(input.dueAt) : null,
+        dueAt: input.dueAt ? new Date(input.dueAt) : null,
       })
       .returningAll()
       .executeTakeFirstOrThrow();
@@ -134,11 +134,11 @@ export const TaskRepository = {
         eb
           .selectFrom('app.tasks as c')
           .select((ceb) => ceb.fn.countAll().as('count'))
-          .whereRef('c.parent_task_id', '=', 't.id')
+          .whereRef('c.parentTaskId', '=', 't.id')
           .as('child_count'),
       )
-      .where('t.owner_userid', '=', input.userId)
-      .where('t.parent_task_id', 'is', null)
+      .where('t.ownerUserid', '=', input.userId)
+      .where('t.parentTaskId', 'is', null)
       .orderBy('t.updatedat', 'desc')
       .execute();
 
@@ -158,8 +158,8 @@ export const TaskRepository = {
     const rows = await handle
       .selectFrom('app.tasks')
       .selectAll()
-      .where('parent_task_id', '=', input.parentId)
-      .where('owner_userid', '=', input.userId)
+      .where('parentTaskId', '=', input.parentId)
+      .where('ownerUserid', '=', input.userId)
       .orderBy('createdat', 'asc')
       .execute();
 
@@ -171,7 +171,7 @@ export const TaskRepository = {
       .selectFrom('app.tasks')
       .selectAll()
       .where('id', '=', id)
-      .where('owner_userid', '=', userId)
+      .where('ownerUserid', '=', userId)
       .executeTakeFirst();
 
     return (row as TaskRow | undefined) ?? null;
@@ -197,10 +197,10 @@ export const TaskRepository = {
       .updateTable('app.tasks')
       .set({
         status: completed ? 'completed' : 'pending',
-        completed_at: completed ? new Date() : null,
+        completedAt: completed ? new Date() : null,
       })
       .where('id', '=', id)
-      .where('owner_userid', '=', userId)
+      .where('ownerUserid', '=', userId)
       .returningAll()
       .executeTakeFirst();
 
@@ -226,11 +226,11 @@ export const TaskRepository = {
           : {}),
         ...(patch.priority !== undefined ? { priority: patch.priority } : {}),
         ...(patch.dueAt !== undefined
-          ? { due_at: patch.dueAt ? new Date(patch.dueAt) : null }
+          ? { dueAt: patch.dueAt ? new Date(patch.dueAt) : null }
           : {}),
       })
       .where('id', '=', id)
-      .where('owner_userid', '=', userId)
+      .where('ownerUserid', '=', userId)
       .returningAll()
       .executeTakeFirst();
 
@@ -252,15 +252,15 @@ export const TaskRepository = {
     if (children.length > 0) {
       await handle
         .deleteFrom('app.tasks')
-        .where('parent_task_id', '=', id)
-        .where('owner_userid', '=', userId)
+        .where('parentTaskId', '=', id)
+        .where('ownerUserid', '=', userId)
         .execute();
     }
 
     await handle
       .deleteFrom('app.tasks')
       .where('id', '=', id)
-      .where('owner_userid', '=', userId)
+      .where('ownerUserid', '=', userId)
       .execute();
 
     return toTaskRecord(row, children.length > 0 ? 'task_list' : 'task');

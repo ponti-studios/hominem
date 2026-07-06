@@ -53,7 +53,7 @@ describe('resume conversion slug generation', () => {
       user,
       slug: 'old-portfolio',
       title: 'Old Portfolio',
-      job_title: 'Old Role',
+      jobTitle: 'Old Role',
     });
 
     const data = makeConvertedResumeData({
@@ -111,7 +111,7 @@ describe('resume conversion slug generation', () => {
     const portfolios = await db
       .selectFrom('app.portfolios')
       .select(['id', 'slug', 'title'])
-      .where('owner_userid', '=', user.id)
+      .where('ownerUserid', '=', user.id)
       .execute();
     expect(portfolios).toHaveLength(2);
     expect(portfolios.map((portfolio) => portfolio.slug).sort()).toEqual([
@@ -119,27 +119,27 @@ describe('resume conversion slug generation', () => {
       'old-portfolio',
     ]);
 
-    const portfolio_id = portfolios.find((portfolio) => portfolio.slug === 'new-portfolio')!.id;
+    const portfolioId = portfolios.find((portfolio) => portfolio.slug === 'new-portfolio')!.id;
     const [workCount, skillCount, projectCount, social_links] = await Promise.all([
       db
-        .selectFrom('app.work_experiences')
+        .selectFrom('app.workExperiences')
         .select(({ fn }) => fn.countAll<number>().as('count'))
-        .where('portfolio_id', '=', portfolio_id)
+        .where('portfolioId', '=', portfolioId)
         .executeTakeFirstOrThrow(),
       db
         .selectFrom('app.skills')
         .select(({ fn }) => fn.countAll<number>().as('count'))
-        .where('portfolio_id', '=', portfolio_id)
+        .where('portfolioId', '=', portfolioId)
         .executeTakeFirstOrThrow(),
       db
         .selectFrom('app.projects')
         .select(['technologies'])
-        .where('portfolio_id', '=', portfolio_id)
+        .where('portfolioId', '=', portfolioId)
         .executeTakeFirstOrThrow(),
       db
-        .selectFrom('app.social_links')
+        .selectFrom('app.socialLinks')
         .select(['github'])
-        .where('portfolio_id', '=', portfolio_id)
+        .where('portfolioId', '=', portfolioId)
         .executeTakeFirstOrThrow(),
     ]);
 
@@ -149,12 +149,12 @@ describe('resume conversion slug generation', () => {
     expect(social_links.github).toBe('https://github.com/example');
 
     const preference = await db
-      .selectFrom('app.user_portfolio_preferences')
-      .select(['current_portfolio_id'])
-      .where('user_id', '=', user.id)
+      .selectFrom('app.userPortfolioPreferences')
+      .select(['currentPortfolioId'])
+      .where('userId', '=', user.id)
       .executeTakeFirstOrThrow();
 
-    expect(preference.current_portfolio_id).toBe(portfolio_id);
+    expect(preference.currentPortfolioId).toBe(portfolioId);
   });
 
   it('replaces only the selected portfolio when requested', async () => {
@@ -163,13 +163,13 @@ describe('resume conversion slug generation', () => {
       user,
       slug: 'replace-me',
       title: 'Replace Me',
-      job_title: 'Old Role',
+      jobTitle: 'Old Role',
     });
     await testDb.createPortfolio({
       user,
       slug: 'keep-me',
       title: 'Keep Me',
-      job_title: 'Existing Role',
+      jobTitle: 'Existing Role',
     });
 
     const data = makeConvertedResumeData({
@@ -196,7 +196,7 @@ describe('resume conversion slug generation', () => {
     const portfolios = await db
       .selectFrom('app.portfolios')
       .select(['slug'])
-      .where('owner_userid', '=', user.id)
+      .where('ownerUserid', '=', user.id)
       .execute();
 
     expect(portfolios.map((portfolio) => portfolio.slug).sort()).toEqual([

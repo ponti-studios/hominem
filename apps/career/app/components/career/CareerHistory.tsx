@@ -12,23 +12,23 @@ interface CareerHistoryProps {
 
 export function CareerHistory({ work_experiences }: CareerHistoryProps) {
   const sortedExperiences = work_experiences
-    .filter((experience) => experience.start_date)
+    .filter((experience) => experience.startDate)
     .sort((a, b) => {
-      const aIsCurrent = !a.end_date;
-      const bIsCurrent = !b.end_date;
+      const aIsCurrent = !a.endDate;
+      const bIsCurrent = !b.endDate;
 
       if (aIsCurrent !== bIsCurrent) {
         return aIsCurrent ? -1 : 1;
       }
 
-      const dateA = a.start_date ? new Date(a.start_date).getTime() : 0;
-      const dateB = b.start_date ? new Date(b.start_date).getTime() : 0;
+      const dateA = a.startDate ? new Date(a.startDate).getTime() : 0;
+      const dateB = b.startDate ? new Date(b.startDate).getTime() : 0;
       return dateB - dateA;
     });
 
-  const formatDateRange = (start_date: string | Date, end_date?: string | Date | null) => {
-    const start = new Date(start_date);
-    const end = end_date ? new Date(end_date) : null;
+  const formatDateRange = (startDate: string | Date, endDate?: string | Date | null) => {
+    const start = new Date(startDate);
+    const end = endDate ? new Date(endDate) : null;
 
     const startFormatted = start.toLocaleDateString('en-US', {
       month: 'short',
@@ -92,10 +92,10 @@ export function CareerHistory({ work_experiences }: CareerHistoryProps) {
 
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 body-3 text-muted-foreground">
                     <span data-testid="job-title">{experience.role}</span>
-                    {experience.start_date ? <span aria-hidden="true">•</span> : null}
-                    {experience.start_date ? (
+                    {experience.startDate ? <span aria-hidden="true">•</span> : null}
+                    {experience.startDate ? (
                       <span data-testid="date-range">
-                        {formatDateRange(experience.start_date, experience.end_date)}
+                        {formatDateRange(experience.startDate, experience.endDate)}
                       </span>
                     ) : null}
                   </div>
@@ -204,16 +204,16 @@ export function CareerHistory({ work_experiences }: CareerHistoryProps) {
                     <span className="truncate" data-testid="mobile-job-title">
                       {experience.role}
                     </span>
-                    {experience.start_date ? <span aria-hidden="true">•</span> : null}
-                    {experience.start_date ? (
+                    {experience.startDate ? <span aria-hidden="true">•</span> : null}
+                    {experience.startDate ? (
                       <span className="truncate" data-testid="mobile-date-range">
-                        {formatDateRange(experience.start_date, experience.end_date)}
+                        {formatDateRange(experience.startDate, experience.endDate)}
                       </span>
                     ) : null}
                   </div>
                 </div>
                 <div className="ml-4 flex items-center space-x-3">
-                  {!experience.end_date ? (
+                  {!experience.endDate ? (
                     <Badge
                       variant="outline"
                       className="border-success/30 bg-success/10 text-success"
@@ -223,8 +223,8 @@ export function CareerHistory({ work_experiences }: CareerHistoryProps) {
                     </Badge>
                   ) : (
                     <span className="body-3 text-muted-foreground" data-testid="mobile-end-date">
-                      {experience.end_date
-                        ? new Date(experience.end_date).toLocaleDateString('en-US', {
+                      {experience.endDate
+                        ? new Date(experience.endDate).toLocaleDateString('en-US', {
                             month: 'short',
                             year: 'numeric',
                           })

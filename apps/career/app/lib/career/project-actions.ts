@@ -21,7 +21,7 @@ export async function handleProjectMutationAction(request: Request, ownerUserId:
         projectDataResult as ProjectMutationValues,
       );
 
-      if (!projectData.portfolio_id) {
+      if (!projectData.portfolioId) {
         return {
           success: false,
           operation,
@@ -34,8 +34,8 @@ export async function handleProjectMutationAction(request: Request, ownerUserId:
           const { id: _id, ...insertData } = projectData;
           const newProject = await CareerRepository.createProject(db, ownerUserId, {
             ...insertData,
-            start_date: stringToDate(insertData.start_date),
-            end_date: stringToDate(insertData.end_date),
+            startDate: stringToDate(insertData.startDate),
+            endDate: stringToDate(insertData.endDate),
           });
 
           return {
@@ -55,10 +55,10 @@ export async function handleProjectMutationAction(request: Request, ownerUserId:
           };
         }
 
-        await CareerRepository.updateProject(db, ownerUserId, id, projectData.portfolio_id, {
+        await CareerRepository.updateProject(db, ownerUserId, id, projectData.portfolioId, {
           ...updateData,
-          start_date: stringToDate(updateData.start_date),
-          end_date: stringToDate(updateData.end_date),
+          startDate: stringToDate(updateData.startDate),
+          endDate: stringToDate(updateData.endDate),
         });
 
         return { success: true, operation, message: 'Project updated successfully' };
@@ -77,14 +77,14 @@ export async function handleProjectMutationAction(request: Request, ownerUserId:
 
     case 'delete': {
       const id = formData.get('id') as string;
-      const portfolio_id = formData.get('portfolio_id') as string;
+      const portfolioId = formData.get('portfolioId') as string;
 
-      if (!id || !portfolio_id) {
+      if (!id || !portfolioId) {
         return { success: false, operation, error: 'Choose a project before deleting it.' };
       }
 
       try {
-        await CareerRepository.deleteProject(db, ownerUserId, id, portfolio_id);
+        await CareerRepository.deleteProject(db, ownerUserId, id, portfolioId);
         return { success: true, operation, message: 'Project deleted successfully' };
       } catch (error) {
         console.error('Failed to delete project:', error);

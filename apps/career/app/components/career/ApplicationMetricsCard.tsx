@@ -37,7 +37,7 @@ export function ApplicationMetricsCard({ applications, metrics }: ApplicationMet
       const dateString = date.toISOString().split('T')[0];
 
       const hasApp = applications.some((app) => {
-        const appDate = app.application_date || app.start_date;
+        const appDate = app.applicationDate || app.startDate;
         if (!appDate) return false;
         return new Date(appDate).toISOString().split('T')[0] === dateString;
       });

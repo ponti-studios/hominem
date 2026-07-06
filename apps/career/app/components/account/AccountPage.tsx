@@ -70,7 +70,7 @@ export function AccountPage({ loaderData }: { loaderData: AccountLoaderData }) {
 
     const formData = new FormData();
     formData.append('action', 'delete');
-    formData.append('portfolio_id', currentPortfolio.id);
+    formData.append('portfolioId', currentPortfolio.id);
 
     await submitAccountAction(formData);
     revalidator.revalidate();
@@ -79,7 +79,7 @@ export function AccountPage({ loaderData }: { loaderData: AccountLoaderData }) {
   const handleSetCurrentPortfolio = async (portfolioId: string) => {
     const formData = new FormData();
     formData.append('action', 'set-current-portfolio');
-    formData.append('portfolio_id', portfolioId);
+    formData.append('portfolioId', portfolioId);
 
     await submitAccountAction(formData);
     revalidator.revalidate();
@@ -90,10 +90,10 @@ export function AccountPage({ loaderData }: { loaderData: AccountLoaderData }) {
     formData.append('image', croppedImageBlob, 'profile-image.jpg');
     formData.append('action', 'upload-profile-image');
 
-    const result = await submitAccountAction<{ image_url: string }>(formData);
+    const result = await submitAccountAction<{ imageUrl: string }>(formData);
     revalidator.revalidate();
 
-    return result.data?.image_url;
+    return result.data?.imageUrl;
   };
 
   const handleUpdateSlug = async (slug: string) => {
@@ -104,7 +104,7 @@ export function AccountPage({ loaderData }: { loaderData: AccountLoaderData }) {
     const formData = new FormData();
     formData.append('action', 'update-slug');
     formData.append('slug', slug);
-    formData.append('portfolio_id', currentPortfolio.id);
+    formData.append('portfolioId', currentPortfolio.id);
 
     await submitAccountAction<{ slug: string }>(formData);
     revalidator.revalidate();
@@ -126,7 +126,7 @@ export function AccountPage({ loaderData }: { loaderData: AccountLoaderData }) {
   };
 
   const handleDownloadPdf = async () => {
-    if (!currentPortfolio?.slug || !currentPortfolio.is_public) {
+    if (!currentPortfolio?.slug || !currentPortfolio.isPublic) {
       setPdfError('Portfolio must be public to generate PDF');
       return;
     }
@@ -144,7 +144,7 @@ export function AccountPage({ loaderData }: { loaderData: AccountLoaderData }) {
         },
         body: JSON.stringify({
           url: portfolioUrl,
-          owner_userid: user.id,
+          ownerUserid: user.id,
         }),
       });
 
@@ -205,7 +205,7 @@ export function AccountPage({ loaderData }: { loaderData: AccountLoaderData }) {
     <div className="space-y-8 pb-8">
       <AccountHeader
         currentPortfolio={currentPortfolio}
-        currentImageUrl={currentPortfolio.profile_image_url || undefined}
+        currentImageUrl={currentPortfolio.profileImageUrl || undefined}
         isSigningOut={isSigningOut}
         updatedAtLabel={`Updated ${new Date(currentPortfolio.updatedat).toLocaleDateString()}`}
         userDisplayName={userDisplayName}
@@ -234,7 +234,7 @@ export function AccountPage({ loaderData }: { loaderData: AccountLoaderData }) {
 
         <aside className="space-y-8">
           <AccountActions
-            canDownloadPdf={currentPortfolio.is_public}
+            canDownloadPdf={currentPortfolio.isPublic}
             isGeneratingPdf={pdfGenerating}
             onCreatePortfolio={() => navigate('/onboarding')}
             onDeletePortfolio={handleDeletePortfolio}
