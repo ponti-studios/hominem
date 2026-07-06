@@ -4,6 +4,7 @@ import { logger } from '@hominem/telemetry';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 
+import { recordAIUsageEvent } from '../../application/ai-usage.service';
 import {
   CreateTaskBatchSchema,
   CreateTaskSchema,
@@ -56,10 +57,19 @@ export const tasksRoutes = new Hono<AppContext>()
   })
   .use('/extract', rateLimitMiddleware({ bucket: 'ai-task-extract', windowSec: 60, max: 20 }))
   .post('/extract', zValidator('json', ExtractTasksInputSchema), async (c) => {
+    const userId = c.get('userId')!;
+    const requestId = c.get('requestId');
     const { transcript } = c.req.valid('json');
 
     try {
-      const { tasks } = await extractTasks({ transcript }, TASK_EXTRACTION_SYSTEM_PROMPT);
+      const { tasks, usage } = await extractTasks({ transcript }, TASK_EXTRACTION_SYSTEM_PROMPT);
+      await recordAIUsageEvent({
+        userId,
+        feature: 'task_extract',
+        operation: 'structured_output',
+        usage,
+        requestId,
+      });
       return c.json({ tasks });
     } catch (error) {
       logger.error('[ai/tasks/extract] OpenRouter error', {
@@ -95,14 +105,26 @@ export const tasksRoutes = new Hono<AppContext>()
   .use('/voice', rateLimitMiddleware({ bucket: 'ai-task-voice', windowSec: 60, max: 20 }))
   .post('/voice', zValidator('json', VoiceTasksInputSchema), async (c) => {
     const userId = c.get('userId')!;
+    const requestId = c.get('requestId');
     const { transcript, referenceDate, timezone } = c.req.valid('json');
 
     let tasks: Awaited<ReturnType<typeof extractVoiceTasks>>['tasks'];
     try {
-      ({ tasks } = await extractVoiceTasks(
+      const result = await extractVoiceTasks(
         { transcript, referenceDate: referenceDate ?? new Date().toISOString(), timezone },
         VOICE_TASK_EXTRACTION_SYSTEM_PROMPT,
-      ));
+      );
+      tasks = result.tasks;
+      await recordAIUsageEvent({
+        userId,
+        feature: 'voice_task_extract',
+        operation: 'structured_output',
+        usage: result.usage,
+        requestId,
+        metadata: {
+          timezone: timezone ?? null,
+        },
+      });
     } catch (error) {
       logger.error('[ai/tasks/voice] OpenRouter error', {
         error: error instanceof Error ? error.message : 'Unknown error',

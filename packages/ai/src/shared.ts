@@ -1,3 +1,4 @@
+import { toNullableNumber, toRequiredNumber } from '@hominem/utils';
 import { OpenRouter } from '@openrouter/sdk';
 
 export const DEFAULT_HTTP_REFERER = 'https://hominem.app';
@@ -48,8 +49,81 @@ export type ImageGenerationOptions = OpenRouterClientOptions & {
 export type JsonObject = Record<string, unknown>;
 export type OpenRouterClientLike = Pick<OpenRouter, 'chat' | 'embeddings'>;
 
+export type AIUsageMetrics = {
+  provider: 'openrouter';
+  model: string;
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+  costUsd: number | null;
+  cachedPromptTokens: number | null;
+  reasoningTokens: number | null;
+};
+
 export function isJsonObject(value: unknown): value is JsonObject {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+export function normalizeOpenRouterChatUsage(
+  model: string,
+  usage?: {
+    promptTokens?: unknown;
+    completionTokens?: unknown;
+    totalTokens?: unknown;
+    cost?: unknown;
+    promptTokensDetails?: { cachedTokens?: unknown } | null;
+    completionTokensDetails?: { reasoningTokens?: unknown } | null;
+  } | null,
+): AIUsageMetrics | null {
+  if (!usage) {
+    return null;
+  }
+
+  const promptTokens = toRequiredNumber(usage.promptTokens);
+  const completionTokens = toRequiredNumber(usage.completionTokens);
+  const totalTokens = toNullableNumber(usage.totalTokens) ?? promptTokens + completionTokens;
+
+  return {
+    provider: 'openrouter',
+    model,
+    promptTokens,
+    completionTokens,
+    totalTokens,
+    costUsd: toNullableNumber(usage.cost),
+    cachedPromptTokens: toNullableNumber(usage.promptTokensDetails?.cachedTokens),
+    reasoningTokens: toNullableNumber(usage.completionTokensDetails?.reasoningTokens),
+  };
+}
+
+export function normalizeOpenRouterEmbeddingUsage(
+  model: string,
+  usage?: {
+    promptTokens?: unknown;
+    totalTokens?: unknown;
+    cost?: unknown;
+    promptTokensDetails?: Record<string, unknown> | null;
+  } | null,
+): AIUsageMetrics | null {
+  if (!usage) {
+    return null;
+  }
+
+  const promptTokens = toRequiredNumber(usage.promptTokens);
+  const totalTokens = toNullableNumber(usage.totalTokens) ?? promptTokens;
+
+  return {
+    provider: 'openrouter',
+    model,
+    promptTokens,
+    completionTokens: 0,
+    totalTokens,
+    costUsd: toNullableNumber(usage.cost),
+    cachedPromptTokens:
+      usage.promptTokensDetails && isJsonObject(usage.promptTokensDetails)
+        ? toNullableNumber(usage.promptTokensDetails.cachedTokens)
+        : null,
+    reasoningTokens: null,
+  };
 }
 
 export class OpenRouterRequestError extends Error {

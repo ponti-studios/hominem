@@ -5,6 +5,8 @@ import { redis as cache } from '@hominem/services/redis';
 import { logger } from '@hominem/telemetry';
 import { Worker } from 'bullmq';
 
+import { recordAIUsageEvent } from '../application/ai-usage.service';
+
 const EMBEDDING_DIMENSIONS = 1536;
 
 let worker: Worker | null = null;
@@ -33,7 +35,8 @@ async function processEmbeddingJob(data: EmbeddingGenerationJob) {
     return;
   }
 
-  const embedding = await generateEmbedding(content, { dimensions: EMBEDDING_DIMENSIONS });
+  const embeddingResult = await generateEmbedding(content, { dimensions: EMBEDDING_DIMENSIONS });
+  const embedding = embeddingResult.embedding;
   if (embedding.length === 0) {
     logger.error('[embeddings] generation returned empty vector', {
       entityType: data.entityType,
@@ -41,6 +44,17 @@ async function processEmbeddingJob(data: EmbeddingGenerationJob) {
     });
     return;
   }
+
+  await recordAIUsageEvent({
+    userId: data.userId,
+    feature: 'embedding',
+    operation: 'embedding',
+    usage: embeddingResult.usage,
+    metadata: {
+      entityType: data.entityType,
+      entityId: data.entityId,
+    },
+  });
 
   await VectorDocumentRepository.upsert(db, {
     ownerUserId: data.userId,

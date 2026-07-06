@@ -1,4 +1,3 @@
-import { chat } from '@tanstack/ai';
 import { z } from 'zod';
 
 import {
@@ -6,7 +5,7 @@ import {
   normalizeOpenRouterError,
   type OpenRouterClientOptions,
 } from './shared';
-import { createOpenRouterTextAdapter, type OpenRouterTextAdapterOptions } from './text';
+import { createStructuredChatCompletion } from './text';
 
 export type VoiceTranscriptCleanupInput = OpenRouterClientOptions & {
   rawText: string;
@@ -16,6 +15,10 @@ export type VoiceTranscriptCleanupInput = OpenRouterClientOptions & {
 
 export type VoiceTranscriptCleanupOutput = {
   cleanedText: string;
+};
+
+export type VoiceTranscriptCleanupResult = VoiceTranscriptCleanupOutput & {
+  usage: import('./shared').AIUsageMetrics | null;
 };
 
 const VOICE_TRANSCRIPT_CLEANUP_SYSTEM_PROMPT = [
@@ -37,29 +40,34 @@ export function parseVoiceTranscriptCleanupOutput(value: unknown): VoiceTranscri
 
 export async function cleanupVoiceTranscript(
   input: VoiceTranscriptCleanupInput,
-): Promise<VoiceTranscriptCleanupOutput> {
+): Promise<VoiceTranscriptCleanupResult> {
   const model = input.model ?? DEFAULT_VOICE_CLEANUP_MODEL;
-  const adapterOptions: OpenRouterTextAdapterOptions = {
-    ...input,
-    model: model as OpenRouterTextAdapterOptions['model'],
-  };
 
   try {
-    const output = await chat({
-      adapter: createOpenRouterTextAdapter(adapterOptions),
-      systemPrompts: [VOICE_TRANSCRIPT_CLEANUP_SYSTEM_PROMPT],
-      messages: [
-        {
-          role: 'user',
-          content: JSON.stringify({
-            rawText: input.rawText,
-            ...(input.locale ? { locale: input.locale } : {}),
-          }),
-        },
-      ],
-      outputSchema: VoiceTranscriptCleanupOutputSchema,
-    });
-    return parseVoiceTranscriptCleanupOutput(output);
+    const { output, usage } = await createStructuredChatCompletion(
+      {
+        model,
+        schema: VoiceTranscriptCleanupOutputSchema,
+        schemaName: 'voice_transcript_cleanup',
+        schemaDescription: 'A minimally cleaned voice transcript preserving original meaning.',
+        messages: [
+          { role: 'system', content: VOICE_TRANSCRIPT_CLEANUP_SYSTEM_PROMPT },
+          {
+            role: 'user',
+            content: JSON.stringify({
+              rawText: input.rawText,
+              ...(input.locale ? { locale: input.locale } : {}),
+            }),
+          },
+        ],
+      },
+      input,
+    );
+
+    return {
+      ...parseVoiceTranscriptCleanupOutput(output),
+      usage,
+    };
   } catch (error) {
     throw normalizeOpenRouterError(error);
   }

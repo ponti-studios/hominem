@@ -1,12 +1,13 @@
 import type { ChatRequest, ChatResult, ChatStreamChunk } from '@openrouter/sdk/models';
-import { chat } from '@tanstack/ai';
 import type { AnyTextAdapter, ContentPart, ModelMessage, StreamChunk } from '@tanstack/ai';
+import { chat, convertSchemaToJsonSchema } from '@tanstack/ai';
 import {
   createOpenRouterText,
   openRouterText,
   type OpenRouterTextModelOptions,
 } from '@tanstack/ai-openrouter';
 import { webFetchTool, webSearchTool } from '@tanstack/ai-openrouter/tools';
+import { z } from 'zod';
 
 import {
   createOpenRouterClient,
@@ -16,7 +17,9 @@ import {
   DEFAULT_SPEECH_MODEL,
   DEFAULT_TEXT_MODEL,
   DEFAULT_TRANSCRIPTION_MODEL,
+  normalizeOpenRouterChatUsage,
   normalizeOpenRouterError,
+  type AIUsageMetrics,
   type OpenRouterClientOptions,
 } from './shared';
 
@@ -40,6 +43,11 @@ const OPENROUTER_STREAM_DONE = 'data: [DONE]\n\n';
 export type OpenRouterTextAdapterOptions = OpenRouterClientOptions & {
   model?: Parameters<typeof createOpenRouterText>[0];
   adapter?: AnyTextAdapter;
+};
+
+export type StructuredChatCompletionResult<T> = {
+  output: T;
+  usage: AIUsageMetrics | null;
 };
 
 export function createOpenRouterTextAdapter(options: OpenRouterTextAdapterOptions = {}) {
@@ -330,6 +338,68 @@ export async function* streamChatCompletion(
   }
 }
 
+export function getChatCompletionUsage(response: Pick<ChatResult, 'model' | 'usage'>) {
+  return normalizeOpenRouterChatUsage(response.model, response.usage);
+}
+
+function parseStructuredOutputText(response: ChatResult) {
+  const content = getChatCompletionText(response).trim();
+  if (!content) {
+    throw new Error('No structured output returned from OpenRouter');
+  }
+
+  try {
+    return JSON.parse(content) as unknown;
+  } catch (error) {
+    throw new Error(
+      error instanceof Error
+        ? `OpenRouter returned invalid structured JSON: ${error.message}`
+        : 'OpenRouter returned invalid structured JSON',
+    );
+  }
+}
+
+export async function createStructuredChatCompletion<TSchema extends z.ZodTypeAny>(
+  input: {
+    model: string;
+    messages: ChatRequest['messages'];
+    schema: TSchema;
+    schemaName: string;
+    schemaDescription?: string;
+    temperature?: number;
+    maxCompletionTokens?: number;
+  },
+  options: OpenRouterClientOptions = {},
+): Promise<StructuredChatCompletionResult<z.infer<TSchema>>> {
+  const response = await createChatCompletion(
+    {
+      model: input.model,
+      messages: input.messages,
+      responseFormat: {
+        type: 'json_schema',
+        jsonSchema: {
+          name: input.schemaName,
+          ...(input.schemaDescription ? { description: input.schemaDescription } : {}),
+          schema: convertSchemaToJsonSchema(input.schema, {
+            forStructuredOutput: true,
+          }) as Record<string, unknown>,
+          strict: true,
+        },
+      },
+      ...(input.temperature !== undefined ? { temperature: input.temperature } : {}),
+      ...(input.maxCompletionTokens !== undefined
+        ? { maxCompletionTokens: input.maxCompletionTokens }
+        : {}),
+    },
+    options,
+  );
+
+  return {
+    output: input.schema.parse(parseStructuredOutputText(response)),
+    usage: getChatCompletionUsage(response),
+  };
+}
+
 export function getChatCompletionText(response: ChatResult, fallback = ''): string {
   const content = response.choices?.[0]?.message?.content;
   return typeof content === 'string' ? content : fallback;
@@ -354,7 +424,10 @@ export async function enhanceText(
     maxCompletionTokens: 2000,
   });
 
-  return getChatCompletionText(response, input.text).trim() || input.text;
+  return {
+    text: getChatCompletionText(response, input.text).trim() || input.text,
+    usage: getChatCompletionUsage(response),
+  };
 }
 
 export { chat, openRouterText, webFetchTool, webSearchTool };

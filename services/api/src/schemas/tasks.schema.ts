@@ -7,7 +7,7 @@ export const CreateTaskSchema = z.object({
   description: z.string().trim().optional().nullable(),
   artifactType: z.enum(['task', 'task_list']),
   priority: TaskPriority.optional(),
-  dueAt: z.string().datetime().nullable().optional(),
+  dueAt: z.iso.datetime().nullable().optional(),
   parentTaskId: z.uuid().nullable().optional(),
 });
 
@@ -17,7 +17,7 @@ export const ExtractTasksInputSchema = z.object({
 
 export const VoiceTasksInputSchema = z.object({
   transcript: z.string().min(1).max(20000),
-  referenceDate: z.string().datetime().optional(),
+  referenceDate: z.iso.datetime().optional(),
   timezone: z.string().optional(),
 });
 
@@ -42,7 +42,7 @@ export const UpdateTaskSchema = z
     title: z.string().trim().min(1).max(120).optional(),
     description: z.string().trim().max(2000).nullable().optional(),
     priority: TaskPriority.optional(),
-    dueAt: z.string().datetime().nullable().optional(),
+    dueAt: z.iso.datetime().nullable().optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: 'At least one field must be provided',

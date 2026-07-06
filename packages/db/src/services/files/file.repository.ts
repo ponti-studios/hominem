@@ -3,7 +3,6 @@ import type { Selectable } from 'kysely';
 import { NotFoundError } from '../../errors';
 import type { DbHandle } from '../../transaction';
 import type { AppFiles, JsonValue } from '../../types/database';
-import { toRequiredIsoString } from '../_shared/mappers';
 
 type FileRow = Selectable<AppFiles>;
 
@@ -63,7 +62,7 @@ function toFileRecord(row: FileRow): FileRecord {
     ...(row.metadata && typeof row.metadata === 'object'
       ? { metadata: row.metadata as Record<string, unknown> }
       : {}),
-    uploadedAt: toRequiredIsoString(row.createdat),
+    uploadedAt: row.createdat.toISOString(),
   };
 }
 

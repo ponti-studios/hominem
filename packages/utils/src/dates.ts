@@ -15,33 +15,6 @@ export function stringToDate(dateString?: string): Date | undefined {
   return Number.isNaN(date.getTime()) ? undefined : date;
 }
 
-export function getTimezone() {
-  return Intl.DateTimeFormat().resolvedOptions().timeZone;
-}
-
-export function getLocalDate(date: Date): { localDateString: string; localDate: Date } {
-  const timeZone = getTimezone();
-
-  const offset = new Date().getTimezoneOffset();
-  const dateWithOffset = new Date(date.getTime() + offset * 60 * 1000);
-  const localDate = new Date(
-    dateWithOffset.getTime() - dateWithOffset.getTimezoneOffset() * 60 * 1000 * 2,
-  );
-
-  const localDateString = localDate.toLocaleString(undefined, {
-    timeZone,
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    timeZoneName: 'short',
-  });
-
-  return { localDateString, localDate };
-}
-
 export function adjustDateRange(
   dateFrom?: Date,
   dateTo?: Date,

@@ -1,0 +1,29 @@
+appId: com.pontistudios.hakumi.dev
+---
+# Assumes seed data: at least one note exists in the inbox. Opens the first
+# note, taps "Start chat" from the note's overflow menu, and confirms a new
+# chat is created, seeded with the note reference, and navigated to.
+- runFlow: startup.yaml
+- assertVisible:
+    id: inbox-item-note-open
+- tapOn:
+    id: inbox-item-note-open
+- assertVisible:
+    id: note-title-input
+- tapOn: "Note actions"
+- assertVisible: "Start chat"
+- tapOn: "Start chat"
+- assertVisible:
+    id: chat-composer-input
+- extendedWaitUntil:
+    visible:
+      text: ".*talk about this note.*"
+    timeout: 20000
+- tapOn:
+    id: BackButton
+- assertVisible:
+    id: note-title-input
+- tapOn:
+    id: BackButton
+- assertVisible:
+    id: inbox-composer-input

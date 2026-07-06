@@ -10,7 +10,6 @@ import {
 } from '../../guards';
 import type { DbHandle } from '../../transaction';
 import type { AppChatMessages, AppChats } from '../../types/database';
-import { toIsoString, toRequiredIsoString } from '../_shared/mappers';
 
 export type { ChatMessageFileRecord, ChatMessageToolCallRecord } from '../../guards';
 
@@ -67,9 +66,9 @@ function toChatRecord(row: ChatRow): ChatRecord {
     userId: row.owner_userid,
     title: row.title,
     noteId: row.note_id ?? null,
-    archivedAt: toIsoString(row.archived_at),
-    createdAt: toRequiredIsoString(row.createdat),
-    updatedAt: toRequiredIsoString(row.updatedat),
+    archivedAt: row.archived_at?.toISOString() ?? null,
+    createdAt: row.createdat.toISOString(),
+    updatedAt: row.updatedat.toISOString(),
   };
 }
 
@@ -98,8 +97,8 @@ function toChatMessageRecord(
     toolCalls: parseChatMessageToolCalls(row.tool_calls),
     reasoning: row.reasoning ?? null,
     parentMessageId: row.parent_message_id,
-    createdAt: toRequiredIsoString(row.createdat),
-    updatedAt: toRequiredIsoString(row.updatedat),
+    createdAt: row.createdat.toISOString(),
+    updatedAt: row.updatedat.toISOString(),
   };
 }
 

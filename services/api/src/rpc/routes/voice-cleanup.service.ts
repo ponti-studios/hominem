@@ -1,6 +1,7 @@
 import {
   cleanupVoiceTranscript,
   OpenRouterRequestError,
+  type AIUsageMetrics,
   type VoiceTranscriptCleanupOutput,
 } from '@hominem/ai';
 import { logger } from '@hominem/telemetry';
@@ -23,14 +24,14 @@ export type VoiceCleanupProviderError = {
 };
 
 export type VoiceCleanupServiceResult =
-  | { kind: 'success'; output: VoiceCleanupOutput }
+  | { kind: 'success'; output: VoiceCleanupOutput; usage: AIUsageMetrics | null }
   | VoiceCleanupProviderError;
 
 type VoiceCleanupDependencies = {
   cleanupTranscript: (input: {
     rawText: string;
     locale?: string;
-  }) => Promise<VoiceTranscriptCleanupOutput>;
+  }) => Promise<VoiceTranscriptCleanupOutput & { usage: AIUsageMetrics | null }>;
   logError: (message: string, context: Record<string, unknown>) => void;
 };
 
@@ -112,11 +113,12 @@ export async function cleanupVoiceInput(
     return {
       kind: 'success',
       output: buildFallbackOutput(rawText),
+      usage: null,
     };
   }
 
   try {
-    const { cleanedText } = await deps.cleanupTranscript({
+    const { cleanedText, usage } = await deps.cleanupTranscript({
       rawText,
       ...(input.locale ? { locale: input.locale } : {}),
     });
@@ -133,6 +135,7 @@ export async function cleanupVoiceInput(
         changed: safeCleanedText !== rawText,
         mode: 'constrained',
       }),
+      usage,
     };
   } catch (error) {
     deps.logError('[voice-cleanup] cleanup failed', {
@@ -153,6 +156,7 @@ export async function cleanupVoiceInput(
     return {
       kind: 'success',
       output: buildFallbackOutput(rawText),
+      usage: null,
     };
   }
 }

@@ -3,12 +3,11 @@
  * Please do not edit it manually.
  */
 
-import type { ColumnType } from 'kysely';
+import type { ColumnType } from "kysely";
 
-export type Generated<T> =
-  T extends ColumnType<infer S, infer I, infer U>
-    ? ColumnType<S, I | undefined, U>
-    : ColumnType<T, T | undefined, T>;
+export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
+  ? ColumnType<S, I | undefined, U>
+  : ColumnType<T, T | undefined, T>;
 
 export type Int8 = ColumnType<string, bigint | number | string, bigint | number | string>;
 
@@ -42,6 +41,24 @@ export interface Account {
   scope: string | null;
   updatedAt: Generated<Timestamp>;
   userId: string;
+}
+
+export interface AppAiUsageEvents {
+  cached_input_tokens: number | null;
+  cost_usd: Numeric | null;
+  createdat: Generated<Timestamp>;
+  feature: string;
+  id: Generated<string>;
+  input_tokens: number;
+  metadata: Json | null;
+  model: string;
+  operation: string;
+  output_tokens: number;
+  owner_userid: string;
+  provider: string;
+  reasoning_tokens: number | null;
+  request_id: string | null;
+  total_tokens: number;
 }
 
 export interface AppApplicationFiles {
@@ -954,12 +971,6 @@ export interface DeviceCode {
   userId: string | null;
 }
 
-export interface DrizzleDrizzleMigrations {
-  created_at: Int8 | null;
-  hash: string;
-  id: Generated<number>;
-}
-
 export interface GooseDbVersion {
   id: Generated<number>;
   is_applied: boolean;
@@ -973,6 +984,15 @@ export interface Jwks {
   id: string;
   privateKey: string;
   publicKey: string;
+}
+
+export interface LabsCaseUpdates {
+  case_id: string;
+  created_at: Generated<Timestamp>;
+  id: string;
+  neutral_content: string;
+  raw_content: string;
+  round: number;
 }
 
 export interface LabsCovidData {
@@ -1046,32 +1066,32 @@ export interface LabsCovidData {
   weekly_icu_admissions_per_million: number | null;
 }
 
+export interface LabsDrizzleMigrations {
+  created_at: Int8 | null;
+  hash: string;
+  id: Generated<number>;
+}
+
 export interface LabsRelationshipCases {
-  attacks: Json | null;
-  card_type: string | null;
-  color_theme: string | null;
-  commitment_level: string | null;
   created_at: Generated<Timestamp>;
-  description: string | null;
-  flaws: Json | null;
-  hp: string | null;
   id: string;
-  image_position: Json | null;
-  image_scale: number | null;
-  name: string;
-  photo_url: string | null;
-  strengths: Json | null;
-  updated_at: Generated<Timestamp>;
-  user_id: string;
+  label: string | null;
+  neutral_situation: string;
+  question: string;
+  quorum_size: Generated<number>;
+  raw_situation: string;
+  status: Generated<string>;
+  user_id: string | null;
 }
 
 export interface LabsRelationshipVerdicts {
   case_id: string;
-  comment: string | null;
+  comment: string;
   created_at: Generated<Timestamp>;
   fingerprint: string;
   id: string;
-  updated_at: Generated<Timestamp>;
+  update_id: string | null;
+  update_round: Generated<number>;
   user_id: string | null;
   value: string;
 }
@@ -1081,20 +1101,34 @@ export interface LabsRhobhDailyPuzzles {
   answer_type: string;
   clue: string;
   created_at: Generated<Timestamp>;
-  date_utc: Timestamp;
+  date_utc: Timestamp | null;
   detail: string;
-  franchise: string;
-  generation_status: string;
   id: Generated<number>;
-  news_mode: string;
   normalized_answer: string;
-  role: string;
-  source_published_at: Json;
-  source_summary: Json;
-  source_titles: Json;
-  source_urls: Json;
+  sources: Generated<Json>;
   updated_at: Generated<Timestamp>;
-  validation_status: string;
+}
+
+export interface LabsSearchDocuments {
+  body: string;
+  category: string;
+  created_at: Generated<Timestamp>;
+  embedding: string;
+  featured: Generated<boolean>;
+  id: Generated<number>;
+  kind: string;
+  location: string;
+  popularity: Generated<number>;
+  published_at: Timestamp;
+  search_text: string;
+  search_vector: Generated<string>;
+  source_url: string;
+  subtitle: string;
+  summary: string;
+  tags: Json;
+  title: string;
+  updated_at: Generated<Timestamp>;
+  year: number;
 }
 
 export interface LabsTflCameras {
@@ -1180,74 +1214,77 @@ export interface Verification {
 
 export interface DB {
   account: Account;
-  'app.application_files': AppApplicationFiles;
-  'app.application_notes': AppApplicationNotes;
-  'app.bookmarks': AppBookmarks;
-  'app.career_events': AppCareerEvents;
-  'app.certifications': AppCertifications;
-  'app.chat_messages': AppChatMessages;
-  'app.chats': AppChats;
-  'app.companies': AppCompanies;
-  'app.entities': AppEntities;
-  'app.entity_links': AppEntityLinks;
-  'app.event_attendees': AppEventAttendees;
-  'app.events': AppEvents;
-  'app.files': AppFiles;
-  'app.finance_accounts': AppFinanceAccounts;
-  'app.finance_institutions': AppFinanceInstitutions;
-  'app.finance_transactions': AppFinanceTransactions;
-  'app.goals': AppGoals;
-  'app.job_applications': AppJobApplications;
-  'app.key_results': AppKeyResults;
-  'app.music_albums': AppMusicAlbums;
-  'app.music_artists': AppMusicArtists;
-  'app.music_listens': AppMusicListens;
-  'app.music_playlist_tracks': AppMusicPlaylistTracks;
-  'app.music_playlists': AppMusicPlaylists;
-  'app.music_tracks': AppMusicTracks;
-  'app.note_files': AppNoteFiles;
-  'app.note_shares': AppNoteShares;
-  'app.note_versions': AppNoteVersions;
-  'app.notes': AppNotes;
-  'app.people': AppPeople;
-  'app.places': AppPlaces;
-  'app.plaid_items': AppPlaidItems;
-  'app.portfolio_analytics': AppPortfolioAnalytics;
-  'app.portfolios': AppPortfolios;
-  'app.possession_containers': AppPossessionContainers;
-  'app.possession_events': AppPossessionEvents;
-  'app.possessions': AppPossessions;
-  'app.projects': AppProjects;
-  'app.skills': AppSkills;
-  'app.social_links': AppSocialLinks;
-  'app.space_invites': AppSpaceInvites;
-  'app.space_items': AppSpaceItems;
-  'app.space_members': AppSpaceMembers;
-  'app.space_tags': AppSpaceTags;
-  'app.spaces': AppSpaces;
-  'app.tag_aliases': AppTagAliases;
-  'app.tag_assignments': AppTagAssignments;
-  'app.tags': AppTags;
-  'app.task_assignments': AppTaskAssignments;
-  'app.tasks': AppTasks;
-  'app.testimonials': AppTestimonials;
-  'app.travel_trips': AppTravelTrips;
-  'app.user_portfolio_preferences': AppUserPortfolioPreferences;
-  'app.vector_documents': AppVectorDocuments;
-  'app.video_channels': AppVideoChannels;
-  'app.video_views': AppVideoViews;
-  'app.work_experiences': AppWorkExperiences;
+  "app.ai_usage_events": AppAiUsageEvents;
+  "app.application_files": AppApplicationFiles;
+  "app.application_notes": AppApplicationNotes;
+  "app.bookmarks": AppBookmarks;
+  "app.career_events": AppCareerEvents;
+  "app.certifications": AppCertifications;
+  "app.chat_messages": AppChatMessages;
+  "app.chats": AppChats;
+  "app.companies": AppCompanies;
+  "app.entities": AppEntities;
+  "app.entity_links": AppEntityLinks;
+  "app.event_attendees": AppEventAttendees;
+  "app.events": AppEvents;
+  "app.files": AppFiles;
+  "app.finance_accounts": AppFinanceAccounts;
+  "app.finance_institutions": AppFinanceInstitutions;
+  "app.finance_transactions": AppFinanceTransactions;
+  "app.goals": AppGoals;
+  "app.job_applications": AppJobApplications;
+  "app.key_results": AppKeyResults;
+  "app.music_albums": AppMusicAlbums;
+  "app.music_artists": AppMusicArtists;
+  "app.music_listens": AppMusicListens;
+  "app.music_playlist_tracks": AppMusicPlaylistTracks;
+  "app.music_playlists": AppMusicPlaylists;
+  "app.music_tracks": AppMusicTracks;
+  "app.note_files": AppNoteFiles;
+  "app.note_shares": AppNoteShares;
+  "app.note_versions": AppNoteVersions;
+  "app.notes": AppNotes;
+  "app.people": AppPeople;
+  "app.places": AppPlaces;
+  "app.plaid_items": AppPlaidItems;
+  "app.portfolio_analytics": AppPortfolioAnalytics;
+  "app.portfolios": AppPortfolios;
+  "app.possession_containers": AppPossessionContainers;
+  "app.possession_events": AppPossessionEvents;
+  "app.possessions": AppPossessions;
+  "app.projects": AppProjects;
+  "app.skills": AppSkills;
+  "app.social_links": AppSocialLinks;
+  "app.space_invites": AppSpaceInvites;
+  "app.space_items": AppSpaceItems;
+  "app.space_members": AppSpaceMembers;
+  "app.space_tags": AppSpaceTags;
+  "app.spaces": AppSpaces;
+  "app.tag_aliases": AppTagAliases;
+  "app.tag_assignments": AppTagAssignments;
+  "app.tags": AppTags;
+  "app.task_assignments": AppTaskAssignments;
+  "app.tasks": AppTasks;
+  "app.testimonials": AppTestimonials;
+  "app.travel_trips": AppTravelTrips;
+  "app.user_portfolio_preferences": AppUserPortfolioPreferences;
+  "app.vector_documents": AppVectorDocuments;
+  "app.video_channels": AppVideoChannels;
+  "app.video_views": AppVideoViews;
+  "app.work_experiences": AppWorkExperiences;
   deviceCode: DeviceCode;
-  'drizzle.__drizzle_migrations': DrizzleDrizzleMigrations;
   goose_db_version: GooseDbVersion;
   jwks: Jwks;
-  'labs.covid_data': LabsCovidData;
-  'labs.relationship_cases': LabsRelationshipCases;
-  'labs.relationship_verdicts': LabsRelationshipVerdicts;
-  'labs.rhobh_daily_puzzles': LabsRhobhDailyPuzzles;
-  'labs.tfl_cameras': LabsTflCameras;
-  'ops.audit_logs': OpsAuditLogs;
-  'ops.search_logs': OpsSearchLogs;
+  "labs.__drizzle_migrations": LabsDrizzleMigrations;
+  "labs.case_updates": LabsCaseUpdates;
+  "labs.covid_data": LabsCovidData;
+  "labs.relationship_cases": LabsRelationshipCases;
+  "labs.relationship_verdicts": LabsRelationshipVerdicts;
+  "labs.rhobh_daily_puzzles": LabsRhobhDailyPuzzles;
+  "labs.search_documents": LabsSearchDocuments;
+  "labs.tfl_cameras": LabsTflCameras;
+  "ops.audit_logs": OpsAuditLogs;
+  "ops.search_logs": OpsSearchLogs;
   passkey: Passkey;
   session: Session;
   user: User;

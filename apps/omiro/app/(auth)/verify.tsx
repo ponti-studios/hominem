@@ -106,7 +106,7 @@ function VerifyScreen() {
       await requestEmailOtp(email);
     },
   });
-  const normalizedOtp = normalizeOtp(otp).slice(0, 6);
+  const normalizedOtp = normalizeOtp(otp);
 
   // Countdown
   const [tokenSentAt, setTokenSentAt] = React.useState(initialTokenSentAt);
@@ -292,7 +292,7 @@ function VerifyScreen() {
                     selectionColor={themeColors.foreground}
                     style={[styles.input, { color: themeColors.foreground }]}
                     onChangeText={(value) => {
-                      setOtp(normalizeOtp(value).slice(0, 6));
+                      setOtp(normalizeOtp(value));
                     }}
                     onSubmitEditing={() => {
                       if (normalizedOtp.length === 6) {

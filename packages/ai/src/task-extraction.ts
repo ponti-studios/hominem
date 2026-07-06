@@ -1,4 +1,3 @@
-import { chat } from '@tanstack/ai';
 import { z } from 'zod';
 
 import {
@@ -6,7 +5,7 @@ import {
   normalizeOpenRouterError,
   type OpenRouterClientOptions,
 } from './shared';
-import { createOpenRouterTextAdapter, type OpenRouterTextAdapterOptions } from './text';
+import { createStructuredChatCompletion } from './text';
 
 export type TaskExtractionInput = OpenRouterClientOptions & {
   transcript: string;
@@ -20,6 +19,11 @@ export type ExtractedTask = {
 
 export type TaskExtractionOutput = {
   tasks: ExtractedTask[];
+};
+
+export type TaskExtractionResult = {
+  tasks: ExtractedTask[];
+  usage: import('./shared').AIUsageMetrics | null;
 };
 
 // OpenRouter's structured-output mode marks optional fields nullable rather than
@@ -49,21 +53,28 @@ export function parseTaskExtractionOutput(value: unknown): TaskExtractionOutput 
 export async function extractTasks(
   input: TaskExtractionInput,
   systemPrompt: string,
-): Promise<TaskExtractionOutput> {
+): Promise<TaskExtractionResult> {
   const model = input.model ?? DEFAULT_TASK_EXTRACTION_MODEL;
-  const adapterOptions: OpenRouterTextAdapterOptions = {
-    ...input,
-    model: model as OpenRouterTextAdapterOptions['model'],
-  };
 
   try {
-    const output = await chat({
-      adapter: createOpenRouterTextAdapter(adapterOptions),
-      systemPrompts: [systemPrompt],
-      messages: [{ role: 'user', content: input.transcript }],
-      outputSchema: RawTaskExtractionOutputSchema,
-    });
-    return parseTaskExtractionOutput(output);
+    const { output, usage } = await createStructuredChatCompletion(
+      {
+        model,
+        schema: RawTaskExtractionOutputSchema,
+        schemaName: 'task_extraction',
+        schemaDescription: 'Extracted actionable tasks from free-form transcript text.',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: input.transcript },
+        ],
+      },
+      input,
+    );
+
+    return {
+      ...parseTaskExtractionOutput(output),
+      usage,
+    };
   } catch (error) {
     throw normalizeOpenRouterError(error);
   }
@@ -87,6 +98,11 @@ export type VoiceTaskExtractionOutput = {
   tasks: ExtractedVoiceTask[];
 };
 
+export type VoiceTaskExtractionResult = {
+  tasks: ExtractedVoiceTask[];
+  usage: import('./shared').AIUsageMetrics | null;
+};
+
 // Same nullable-vs-omitted normalization as RawTaskExtractionOutputSchema.
 const RawVoiceTaskExtractionSchema = z.object({
   tasks: z
@@ -102,8 +118,7 @@ const RawVoiceTaskExtractionSchema = z.object({
 });
 
 const DATE_ONLY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
-const UTC_MIDNIGHT_PATTERN =
-  /^(\d{4})-(\d{2})-(\d{2})T00:00(?::00(?:\.000)?)?(?:Z|\+00:00)$/i;
+const UTC_MIDNIGHT_PATTERN = /^(\d{4})-(\d{2})-(\d{2})T00:00(?::00(?:\.000)?)?(?:Z|\+00:00)$/i;
 
 function getTimeZoneOffsetMinutes(date: Date, timezone: string): number | null {
   try {
@@ -252,12 +267,8 @@ export function parseVoiceTaskExtractionOutput(
 export async function extractVoiceTasks(
   input: VoiceTaskExtractionInput,
   systemPrompt: string,
-): Promise<VoiceTaskExtractionOutput> {
+): Promise<VoiceTaskExtractionResult> {
   const model = input.model ?? DEFAULT_TASK_EXTRACTION_MODEL;
-  const adapterOptions: OpenRouterTextAdapterOptions = {
-    ...input,
-    model: model as OpenRouterTextAdapterOptions['model'],
-  };
 
   const contextHeader = `Reference date/time: ${formatVoiceTaskReferenceDate(
     input.referenceDate,
@@ -265,13 +276,25 @@ export async function extractVoiceTasks(
   )}${input.timezone ? ` (timezone: ${input.timezone})` : ''}`;
 
   try {
-    const output = await chat({
-      adapter: createOpenRouterTextAdapter(adapterOptions),
-      systemPrompts: [systemPrompt],
-      messages: [{ role: 'user', content: `${contextHeader}\n\n${input.transcript}` }],
-      outputSchema: RawVoiceTaskExtractionSchema,
-    });
-    return parseVoiceTaskExtractionOutput(output, input.timezone);
+    const { output, usage } = await createStructuredChatCompletion(
+      {
+        model,
+        schema: RawVoiceTaskExtractionSchema,
+        schemaName: 'voice_task_extraction',
+        schemaDescription:
+          'Extracted tasks with optional priority and due date from a voice transcript.',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: `${contextHeader}\n\n${input.transcript}` },
+        ],
+      },
+      input,
+    );
+
+    return {
+      ...parseVoiceTaskExtractionOutput(output, input.timezone),
+      usage,
+    };
   } catch (error) {
     throw normalizeOpenRouterError(error);
   }

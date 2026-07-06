@@ -1,9 +1,9 @@
+import { normalizeOtp } from '@hominem/utils';
+
+export { normalizeOtp } from '@hominem/utils';
+
 export function normalizeEmail(value: string): string {
   return value.trim().toLowerCase();
-}
-
-export function normalizeOtp(value: string): string {
-  return value.replace(/\D/g, '').slice(0, 6);
 }
 
 export function isValidEmail(value: string): boolean {

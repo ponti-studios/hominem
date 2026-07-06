@@ -33,6 +33,11 @@ const t = {
       loadErrorRetry: 'Try again',
       missingNoteTitle: 'Note unavailable',
       missingNoteMessage: 'This note may have been deleted or is no longer available.',
+      startChat: 'Start chat',
+      startChatMessage: "Let's talk about this note.",
+      startChatErrorTitle: 'Could not start chat',
+      startChatErrorOffline: 'You appear to be offline. Please reconnect and try again.',
+      startChatErrorGeneric: 'We could not start that chat right now. Please try again.',
     },
     toolbar: {
       bold: 'Bold',

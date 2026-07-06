@@ -3,6 +3,7 @@ export { openRouterText } from '@tanstack/ai-openrouter';
 export { webFetchTool, webSearchTool } from '@tanstack/ai-openrouter/tools';
 
 export {
+  createOpenRouterClient,
   DEFAULT_EMBEDDING_MODEL,
   DEFAULT_IMAGE_MODEL,
   DEFAULT_SPEECH_MODEL,
@@ -10,12 +11,14 @@ export {
   DEFAULT_TEXT_MODEL,
   DEFAULT_TRANSCRIPTION_MODEL,
   DEFAULT_VOICE_CLEANUP_MODEL,
-  createOpenRouterClient,
   isJsonObject,
+  normalizeOpenRouterChatUsage,
+  normalizeOpenRouterEmbeddingUsage,
   OpenRouterRequestError,
 } from './shared';
 
 export type {
+  AIUsageMetrics,
   EmbeddingOptions,
   ImageGenerationOptions,
   JsonObject,
@@ -31,6 +34,7 @@ export {
   createOpenRouterTextAdapter,
   enhanceText,
   getChatCompletionText,
+  getChatCompletionUsage,
   getSharedAiModelConfig,
   getSharedTextModel,
   postChatCompletion,

@@ -4,7 +4,6 @@ import type { Selectable } from 'kysely';
 import { NotFoundError, ValidationError } from '../../errors';
 import type { DbHandle } from '../../transaction';
 import type { AppFiles, AppNotes } from '../../types/database';
-import { toRequiredIsoString } from '../_shared/mappers';
 
 type NoteRow = Selectable<AppNotes>;
 
@@ -127,7 +126,7 @@ function toNoteFile(row: NoteFileSource): NoteFileRecord {
     mimetype: row.mimetype,
     size: row.size,
     url: row.url,
-    uploadedAt: toRequiredIsoString(row.createdat),
+    uploadedAt: row.createdat.toISOString(),
     ...(row.content ? { content: row.content } : {}),
     ...(row.text_content ? { textContent: row.text_content } : {}),
     ...(row.metadata && typeof row.metadata === 'object'
@@ -145,8 +144,8 @@ function toNoteRecord(row: NoteRow, files: NoteFileRecord[]): NoteRecord {
     excerpt: row.excerpt,
     parentNoteId: row.parent_note_id,
     files,
-    createdAt: toRequiredIsoString(row.createdat),
-    updatedAt: toRequiredIsoString(row.updatedat),
+    createdAt: row.createdat.toISOString(),
+    updatedAt: row.updatedat.toISOString(),
   };
 }
 
@@ -366,7 +365,7 @@ export const NoteRepository = {
       id: row.id,
       title: row.title,
       contentPreview: buildContentPreview(row.excerpt, row.content),
-      createdAt: toRequiredIsoString(row.createdat),
+      createdAt: row.createdat.toISOString(),
       authorId: row.owner_userid,
       metadata: {
         hasAttachments: attachmentIds.has(row.id),
@@ -378,7 +377,7 @@ export const NoteRepository = {
       notes,
       nextCursor:
         rows.length > limit && lastRow
-          ? encodeNoteFeedCursor(toRequiredIsoString(lastRow.createdat), lastRow.id)
+          ? encodeNoteFeedCursor(lastRow.createdat.toISOString(), lastRow.id)
           : null,
     };
   },
@@ -425,7 +424,7 @@ export const NoteRepository = {
       notes,
       nextCursor:
         rows.length > limit && lastRow
-          ? encodeNoteSearchCursor(toRequiredIsoString(lastRow.updatedat), lastRow.id)
+          ? encodeNoteSearchCursor(lastRow.updatedat.toISOString(), lastRow.id)
           : null,
     };
   },

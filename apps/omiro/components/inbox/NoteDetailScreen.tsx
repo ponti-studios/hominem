@@ -14,6 +14,7 @@ import AppIcon from '~/components/ui/icon';
 import { useNoteEditor } from '~/hooks/use-note-editor';
 import { useNoteFormatting } from '~/hooks/use-note-formatting';
 import { useInlineEnhance } from '~/services/ai';
+import { normalizeChatTitle, useStartChatFromInbox } from '~/services/chat';
 import { writeResumeTarget } from '~/services/navigation/launch-state';
 import { getInboxRoute } from '~/services/navigation/routes';
 import { useNoteDelete } from '~/services/notes/use-note-delete';
@@ -90,7 +91,7 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
   const canGoBack = navigation.canGoBack();
 
   const { data: note, error, isInitialLoading, isRefreshing, refetch } = useNoteQuery({ noteId });
-  const { save, updateCache, detachFile } = useNoteEditor(noteId);
+  const { save, flushSave, updateCache, detachFile } = useNoteEditor(noteId);
   const { mutate: deleteNote } = useNoteDelete({ noteId });
 
   const handleDeleteNote = useCallback(() => {
@@ -183,6 +184,7 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
       isRefreshing={isRefreshing}
       refetch={refetch}
       save={save}
+      flushSave={flushSave}
       updateCache={updateCache}
       detachFile={detachFile}
       onDeleteNote={handleDeleteNote}
@@ -197,6 +199,7 @@ interface NoteEditorBodyProps {
   isRefreshing: boolean;
   refetch: () => void;
   save: ReturnType<typeof useNoteEditor>['save'];
+  flushSave: ReturnType<typeof useNoteEditor>['flushSave'];
   updateCache: ReturnType<typeof useNoteEditor>['updateCache'];
   detachFile: ReturnType<typeof useNoteEditor>['detachFile'];
   onDeleteNote: () => void;
@@ -209,6 +212,7 @@ function NoteEditorBody({
   isRefreshing,
   refetch,
   save,
+  flushSave,
   updateCache,
   detachFile,
   onDeleteNote,
@@ -234,6 +238,8 @@ function NoteEditorBody({
     closeEnhance,
     runEnhance,
   } = useInlineEnhance();
+
+  const { startChat, isStartingChat } = useStartChatFromInbox();
 
   useEffect(() => {
     writeResumeTarget({
@@ -268,6 +274,27 @@ function NoteEditorBody({
   const handleDetach = (fileId: string) =>
     detachFile(fileId, note.files, draft.title, draft.content);
 
+  const handleStartChat = useCallback(async () => {
+    if (isStartingChat) return;
+
+    closeEnhance();
+
+    try {
+      await flushSave(draft.title, draft.content, fileIds);
+      await startChat({
+        title: normalizeChatTitle(draft.title || draft.content),
+        message: t.notes.editor.startChatMessage,
+        noteIds: [note.id],
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error && error.message === 'offline_unavailable'
+          ? t.notes.editor.startChatErrorOffline
+          : t.notes.editor.startChatErrorGeneric;
+      Alert.alert(t.notes.editor.startChatErrorTitle, message, [{ text: 'OK' }]);
+    }
+  }, [closeEnhance, draft.content, draft.title, fileIds, flushSave, isStartingChat, note.id, startChat]);
+
   const dateline = formatNoteDateline(note);
 
   return (
@@ -296,6 +323,13 @@ function NoteEditorBody({
         <Stack.Toolbar.Menu accessibilityLabel={t.notes.editor.actionsLabel} icon="ellipsis.circle">
           <Stack.Toolbar.MenuAction icon="sparkles" onPress={toggleEnhance}>
             {t.enhance.confirm}
+          </Stack.Toolbar.MenuAction>
+          <Stack.Toolbar.MenuAction
+            disabled={isStartingChat}
+            icon="bubble.left"
+            onPress={() => void handleStartChat()}
+          >
+            {t.notes.editor.startChat}
           </Stack.Toolbar.MenuAction>
           <Stack.Toolbar.MenuAction destructive icon="trash" onPress={onDeleteNote}>
             {t.inbox.item.deleteNote.title}

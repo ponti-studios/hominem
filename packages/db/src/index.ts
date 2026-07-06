@@ -28,9 +28,6 @@ export {
 } from './errors';
 export type { ErrorCode } from './errors';
 
-// Shared mapper utilities
-export { toIsoString, toRequiredIsoString } from './services/_shared/mappers';
-
 // Repositories
 export { NoteRepository } from './services/notes/note.repository';
 export type {
@@ -79,12 +76,25 @@ export type {
   VectorDocumentSearchResult,
 } from './services/vector/vector-document.repository';
 
+export { AIUsageEventRepository } from './services/ai/ai-usage.repository';
+export type {
+  AIUsageEventRecord,
+  AIUsageFeature,
+  AIUsageFeatureBreakdownRecord,
+  AIUsageModelBreakdownRecord,
+  AIUsageOperation,
+  AIUsageSummaryRecord,
+  CreateAIUsageEventInput,
+} from './services/ai/ai-usage.repository';
+
 export { CareerRepository } from './services/career/career.repository';
 export type {
+  CareerApplicationStage,
   CareerCertificationRecord,
   CareerCompanyRecord,
   CareerEventRecord,
   CareerFullPortfolioRecord,
+  CareerInterviewEntry,
   CareerJobApplicationRecord,
   CareerPortfolioRecord,
   CareerProjectRecord,
@@ -92,8 +102,6 @@ export type {
   CareerSocialLinksRecord,
   CareerTestimonialRecord,
   CareerWorkExperienceRecord,
-  CareerApplicationStage,
-  CareerInterviewEntry,
   CreateDefaultCareerPortfolioInput,
   UpdateCareerJobApplicationInput,
   UpdateCareerWorkExperienceInput,
