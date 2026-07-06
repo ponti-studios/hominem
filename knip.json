@@ -26,7 +26,15 @@
     }
   },
 
-  "ignoreDependencies": ["babel-preset-expo"],
+  "ignoreDependencies": [
+    "babel-preset-expo",
+    "tw-animate-css",
+    "tailwindcss",
+    "expo-updates",
+    "@expo/plist",
+    "@expo/image-utils",
+    "@expo/prebuild-config"
+  ],
 
   "ignoreBinaries": [],
 
